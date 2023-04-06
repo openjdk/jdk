@@ -829,19 +829,24 @@ public class Flow {
                     patterns = patterns.prepend(new BindingPattern(e.getKey().type));
                 }
             }
-            boolean repeat = true;
-            while (repeat) {
-                List<PatternDescription> updatedPatterns;
-                updatedPatterns = reduceBindingPatterns(selector.type, patterns);
-                updatedPatterns = reduceNestedPatterns(updatedPatterns);
-                updatedPatterns = reduceRecordPatterns(updatedPatterns);
-                repeat = updatedPatterns != patterns;
-                patterns = updatedPatterns;
-                if (checkCovered(selector.type, patterns)) {
-                    return true;
+            try {
+                boolean repeat = true;
+                while (repeat) {
+                    List<PatternDescription> updatedPatterns;
+                    updatedPatterns = reduceBindingPatterns(selector.type, patterns);
+                    updatedPatterns = reduceNestedPatterns(updatedPatterns);
+                    updatedPatterns = reduceRecordPatterns(updatedPatterns);
+                    repeat = updatedPatterns != patterns;
+                    patterns = updatedPatterns;
+                    if (checkCovered(selector.type, patterns)) {
+                        return true;
+                    }
                 }
+                return checkCovered(selector.type, patterns);
+            } catch (CompletionFailure cf) {
+                chk.completionError(selector.pos(), cf);
+                return true; //error recovery
             }
-            return checkCovered(selector.type, patterns);
         }
 
         private boolean checkCovered(Type seltype, List<PatternDescription> patterns) {
@@ -890,6 +895,13 @@ public class Flow {
                         ClassSymbol clazz = (ClassSymbol) sup.tsym;
 
                         if (clazz.isSealed() && clazz.isAbstract()) {
+                            //do not reduce to types unrelated to the selector type:
+                            Type clazzErasure = types.erasure(clazz.type);
+                            if (components(selectorType).stream()
+                                                        .map(c -> types.erasure(c))
+                                                        .noneMatch(c -> types.isSubtype(clazzErasure, c))) {
+                                continue;
+                            }
                             Set<Symbol> permitted = new HashSet<>();
                             for (Symbol permittedSubtype : clazz.permitted) {
                                 Type instantiated = infer.instantiatePatternType(selectorType, (TypeSymbol) permittedSubtype);
@@ -918,7 +930,7 @@ public class Flow {
                                             }
                                         }
 
-                                        if (fromClosure.isSealed()) {
+                                        if (fromClosure.isSealed() && fromClosure.isAbstract()) {
                                             permittedSubtypesClosure = permittedSubtypesClosure.prependList(fromClosure.permitted);
                                         }
                                     }
@@ -980,12 +992,10 @@ public class Flow {
                     var groupByHashes =
                             e.getValue()
                              .stream()
+                             //error recovery, ignore patterns with incorrect number of nested patterns:
+                             .filter(pd -> pd.nested.length == nestedPatternsCount)
                              .collect(groupingBy(pd -> pd.hashCode(mismatchingCandidateFin)));
                     for (var candidates : groupByHashes.values()) {
-                        if (candidates.size() < 2) {
-                            continue;
-                        }
-
                         var candidatesArr = candidates.toArray(s -> new RecordPattern[s]);
 
                         for (int firstCandidate = 0;
@@ -1009,10 +1019,6 @@ public class Flow {
                                     }
                                     join.append(rpOther);
                                 }
-                            }
-
-                            if (join.size() == 1) {
-                                continue;
                             }
 
                             var nestedPatterns = join.stream().map(rp -> rp.nested[mismatchingCandidateFin]).collect(List.collector());
@@ -1087,6 +1093,10 @@ public class Flow {
         private PatternDescription reduceRecordPattern(PatternDescription pattern) {
             if (pattern instanceof RecordPattern rpOne) {
                 Type[] componentType = rpOne.fullComponentTypes();
+                //error recovery, ignore patterns with incorrect number of nested patterns:
+                if (componentType.length != rpOne.nested.length) {
+                    return pattern;
+                }
                 PatternDescription[] reducedNestedPatterns = null;
                 boolean covered = true;
                 for (int i = 0; i < componentType.length; i++) {
