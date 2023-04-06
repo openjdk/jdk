@@ -59,6 +59,7 @@
 #else
 #define BLOCK_COMMENT(str) block_comment(str)
 #endif
+#define STOP(str) stop(str);
 #define BIND(label) bind(label); __ BLOCK_COMMENT(#label ":")
 
 static void pass_arg0(MacroAssembler* masm, Register arg) {
@@ -4483,9 +4484,10 @@ void MacroAssembler::rt_call(address dest, Register tmp) {
   }
 }
 
-// Attempt to fast-lock an object. Fall-through on success, branch to slow label
-// on failure.
-// Registers:
+// Implements fast-locking.
+// Branches to slow upon failure to lock the object.
+// Falls through upon success.
+//
 //  - obj: the object to be locked
 //  - hdr: the header, already loaded from obj, will be destroyed
 //  - tmp1, tmp2: temporary registers, will be destroyed
@@ -4516,13 +4518,50 @@ void MacroAssembler::fast_lock(Register obj, Register hdr, Register tmp1, Regist
   sw(tmp1, Address(xthread, JavaThread::lock_stack_top_offset()));
 }
 
+// Implements fast-unlocking.
+// Branches to slow upon failure.
+// Falls through upon success.
+//
+// - obj: the object to be unlocked
+// - hdr: the (pre-loaded) header of the object
+// - tmp1, tmp2: temporary registers
 void MacroAssembler::fast_unlock(Register obj, Register hdr, Register tmp1, Register tmp2, Label& slow) {
   assert(LockingMode == LIGHTWEIGHT, "only used with new lightweight locking");
   assert_different_registers(obj, hdr, tmp1, tmp2);
 
-  // Load the expected old header (lock-bits cleared to indicate 'locked') into hdr
-  mv(tmp1, ~markWord::lock_mask_in_place);
-  andr(hdr, hdr, tmp1);
+#ifdef ASSERT
+  {
+    // The following checks rely on the fact that LockStack is only ever modified by
+    // its owning thread, even if the lock got inflated concurrently; removal of LockStack
+    // entries after inflation will happen delayed in that case.
+
+    // Check for lock-stack underflow.
+    Label stack_ok;
+    lwu(tmp1, Address(xthread, JavaThread::lock_stack_top_offset()));
+    mv(tmp2, (unsigned)LockStack::start_offset());
+    bgt(tmp1, tmp2, stack_ok);
+    STOP("Lock-stack underflow");
+    bind(stack_ok);
+  }
+  {
+    // Check if the top of the lock-stack matches the unlocked object.
+    Label tos_ok;
+    subw(tmp1, tmp1, oopSize);
+    add(tmp1, xthread, tmp1);
+    ld(tmp1, Address(tmp1, 0));
+    beq(tmp1, obj, tos_ok);
+    STOP("Top of lock-stack does not match the unlocked object");
+    bind(tos_ok);
+  }
+  {
+    // Check that hdr is fast-locked.
+   Label hdr_ok;
+    andi(tmp1, hdr, markWord::lock_mask_in_place);
+    beqz(tmp1, hdr_ok);
+    STOP("Header is not fast-locked");
+    bind(hdr_ok);
+  }
+#endif
 
   // Load the new header (unlocked) into tmp1
   ori(tmp1, hdr, markWord::unlocked_value);
@@ -4535,5 +4574,9 @@ void MacroAssembler::fast_unlock(Register obj, Register hdr, Register tmp1, Regi
   // After successful unlock, pop object from lock-stack
   lwu(tmp1, Address(xthread, JavaThread::lock_stack_top_offset()));
   subw(tmp1, tmp1, oopSize);
+#ifdef ASSERT
+  add(tmp2, xthread, tmp1);
+  sd(zr, Address(tmp2, 0));
+#endif
   sw(tmp1, Address(xthread, JavaThread::lock_stack_top_offset()));
 }

@@ -1813,6 +1813,8 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     if (!UseHeavyMonitors) {
       if (LockingMode == LIGHTWEIGHT) {
         __ ld(old_hdr, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
+        __ andi(t0, old_hdr, markWord::monitor_value);
+        __ bnez(t0, slow_path_unlock);
         __ fast_unlock(obj_reg, old_hdr, swap_reg, t0, slow_path_unlock);
       } else if (LockingMode == LEGACY) {
         // get address of the stack lock

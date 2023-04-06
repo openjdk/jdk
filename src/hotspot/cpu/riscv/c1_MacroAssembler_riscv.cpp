@@ -110,6 +110,7 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
     // done
     bind(done);
   }
+
   increment(Address(xthread, JavaThread::held_monitor_count_offset()));
   return null_check_offset;
 }
@@ -134,6 +135,8 @@ void C1_MacroAssembler::unlock_object(Register hdr, Register obj, Register disp_
 
   if (LockingMode == LIGHTWEIGHT) {
     ld(hdr, Address(obj, oopDesc::mark_offset_in_bytes()));
+    andi(t0, hdr, markWord::monitor_value);
+    bnez(t0, slow_case, /* is_far */ true);
     fast_unlock(obj, hdr, t0, t1, slow_case);
   } else if (LockingMode == LEGACY) {
     // test if object header is pointing to the displaced header, and if so, restore
@@ -150,6 +153,7 @@ void C1_MacroAssembler::unlock_object(Register hdr, Register obj, Register disp_
     // done
     bind(done);
   }
+
   decrement(Address(xthread, JavaThread::held_monitor_count_offset()));
 }
 
