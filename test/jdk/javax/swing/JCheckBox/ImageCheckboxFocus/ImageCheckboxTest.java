@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ import javax.swing.UnsupportedLookAndFeelException;
 /*
  * @test
  * @key headful
- * @bug 8216358 8279586
+ * @bug 8216358 8279586 4130823
  * @summary [macos] The focus is invisible when tab to "Image Radio Buttons" and "Image CheckBoxes"
  * @library ../../regtesthelpers/
  * @build Util
@@ -90,15 +90,26 @@ public class ImageCheckboxTest {
         checkbox.paint(imageFocus.createGraphics());
 
         if (Util.compareBufferedImages(imageFocus, imageNoFocus)) {
-            File folder = new File(laf.getName());
-            if (!folder.exists()) {
-                folder.mkdir();
+            // In windows L&F, checkbox and radiobutton does not have focus rect
+            if (laf.getName().contains("Windows")) {
+                success = true;
+            } else {
+                File folder = new File(laf.getName());
+                if (!folder.exists()) {
+                    folder.mkdir();
+                }
+                ImageIO.write(imageFocus, "png", new File(folder, "/imageFocus.png"));
+                ImageIO.write(imageNoFocus, "png", new File(folder, "/imageNoFocus.png"));
+                System.err.println(laf.getName() + ": Changing of focus is not visualized");
+                success = false;
+	    }
+        } else {
+            // In windows L&F, focus should not be visualized
+            if (laf.getName().contains("Windows")) {
+                System.err.println(laf.getName() + ": Changing of focus is visualized");
+                success = false;
             }
-            ImageIO.write(imageFocus, "png", new File(folder, "/imageFocus.png"));
-            ImageIO.write(imageNoFocus, "png", new File(folder, "/imageNoFocus.png"));
-            System.err.println(laf.getName() + ": Changing of focus is not visualized");
-            success = false;
-        }
+	}
 
         checkbox.setFocusPainted(false);
         checkbox.paint(imageFocusNotPainted.createGraphics());
