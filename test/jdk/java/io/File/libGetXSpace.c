@@ -28,7 +28,7 @@
 #include <fileapi.h>
 #include <winerror.h>
 #else
-#include <sys/errno.h>
+#include <errno.h>
 #include <string.h>
 #if __APPLE__
 #include <sys/param.h>

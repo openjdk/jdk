@@ -22,7 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.jshell.execution;
+package jdk.jshell.execution.impl;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -32,7 +32,7 @@ import java.io.OutputStream;
  *
  * @author Jan Lahoda
  */
-class PipeInputStream extends InputStream {
+public class PipeInputStream extends InputStream {
 
     private static final int INITIAL_SIZE = 128;
     private int[] buffer = new int[INITIAL_SIZE];
