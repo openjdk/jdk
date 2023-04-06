@@ -102,14 +102,14 @@ public class ImageCheckboxTest {
                 ImageIO.write(imageNoFocus, "png", new File(folder, "/imageNoFocus.png"));
                 System.err.println(laf.getName() + ": Changing of focus is not visualized");
                 success = false;
-	    }
+            }
         } else {
             // In windows L&F, focus should not be visualized
             if (laf.getName().contains("Windows")) {
                 System.err.println(laf.getName() + ": Changing of focus is visualized");
                 success = false;
             }
-	}
+        }
 
         checkbox.setFocusPainted(false);
         checkbox.paint(imageFocusNotPainted.createGraphics());
