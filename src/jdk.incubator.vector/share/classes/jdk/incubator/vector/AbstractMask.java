@@ -68,18 +68,6 @@ abstract class AbstractMask<E> extends VectorMask<E> {
     }
 
     @Override
-    @ForceInline
-    public boolean laneIsSet(int i) {
-        int length = length();
-        Objects.checkIndex(i, length);
-        if (length <= Long.SIZE) {
-            return ((toLong() >>> i) & 1L) == 1;
-        } else {
-            return getBits()[i];
-        }
-    }
-
-    @Override
     public void intoArray(boolean[] bits, int i) {
         AbstractSpecies<E> vsp = (AbstractSpecies<E>) vectorSpecies();
         int laneCount = vsp.laneCount();

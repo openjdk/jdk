@@ -1202,9 +1202,10 @@ int ExtractNode::opcode(BasicType bt) {
   }
 }
 
-// Extract a scalar element of vector.
+// Extract a scalar element of vector by constant position.
 Node* ExtractNode::make(Node* v, ConINode* pos, BasicType bt) {
-  assert(pos->get_int() < Matcher::max_vector_size(bt), "pos in range");
+  assert(pos->get_int() >= 0 &&
+         pos->get_int() < Matcher::max_vector_size(bt), "pos in range");
   switch (bt) {
   case T_BOOLEAN: return new ExtractUBNode(v, pos);
   case T_BYTE:    return new ExtractBNode(v, pos);

@@ -1280,12 +1280,8 @@ class VectorLoadConstNode : public VectorNode {
 // Extract a scalar from a vector at position "pos"
 class ExtractNode : public Node {
  public:
-  ExtractNode(Node* src, ConINode* pos) : Node(nullptr, src, (Node*)pos) {
-    assert(in(2)->get_int() >= 0, "positive constants");
-  }
+  ExtractNode(Node* src, Node* pos) : Node(nullptr, src, pos) {}
   virtual int Opcode() const;
-  uint  pos() const { return in(2)->get_int(); }
-
   static Node* make(Node* v, ConINode* pos, BasicType bt);
   static int opcode(BasicType bt);
 };
@@ -1294,7 +1290,7 @@ class ExtractNode : public Node {
 // Extract a byte from a vector at position "pos"
 class ExtractBNode : public ExtractNode {
  public:
-  ExtractBNode(Node* src, ConINode* pos) : ExtractNode(src, pos) {}
+  ExtractBNode(Node* src, Node* pos) : ExtractNode(src, pos) {}
   virtual int Opcode() const;
   virtual const Type* bottom_type() const { return TypeInt::BYTE; }
   virtual uint ideal_reg() const { return Op_RegI; }
@@ -1304,9 +1300,9 @@ class ExtractBNode : public ExtractNode {
 // Extract a boolean from a vector at position "pos"
 class ExtractUBNode : public ExtractNode {
  public:
-  ExtractUBNode(Node* src, ConINode* pos) : ExtractNode(src, pos) {}
+  ExtractUBNode(Node* src, Node* pos) : ExtractNode(src, pos) {}
   virtual int Opcode() const;
-  virtual const Type* bottom_type() const { return TypeInt::UBYTE; }
+  virtual const Type* bottom_type() const { return TypeInt::BOOL; }
   virtual uint ideal_reg() const { return Op_RegI; }
 };
 
@@ -1314,7 +1310,7 @@ class ExtractUBNode : public ExtractNode {
 // Extract a char from a vector at position "pos"
 class ExtractCNode : public ExtractNode {
  public:
-  ExtractCNode(Node* src, ConINode* pos) : ExtractNode(src, pos) {}
+  ExtractCNode(Node* src, Node* pos) : ExtractNode(src, pos) {}
   virtual int Opcode() const;
   virtual const Type *bottom_type() const { return TypeInt::CHAR; }
   virtual uint ideal_reg() const { return Op_RegI; }
@@ -1324,7 +1320,7 @@ class ExtractCNode : public ExtractNode {
 // Extract a short from a vector at position "pos"
 class ExtractSNode : public ExtractNode {
  public:
-  ExtractSNode(Node* src, ConINode* pos) : ExtractNode(src, pos) {}
+  ExtractSNode(Node* src, Node* pos) : ExtractNode(src, pos) {}
   virtual int Opcode() const;
   virtual const Type *bottom_type() const { return TypeInt::SHORT; }
   virtual uint ideal_reg() const { return Op_RegI; }
@@ -1334,7 +1330,7 @@ class ExtractSNode : public ExtractNode {
 // Extract an int from a vector at position "pos"
 class ExtractINode : public ExtractNode {
  public:
-  ExtractINode(Node* src, ConINode* pos) : ExtractNode(src, pos) {}
+  ExtractINode(Node* src, Node* pos) : ExtractNode(src, pos) {}
   virtual int Opcode() const;
   virtual const Type *bottom_type() const { return TypeInt::INT; }
   virtual uint ideal_reg() const { return Op_RegI; }
@@ -1344,7 +1340,7 @@ class ExtractINode : public ExtractNode {
 // Extract a long from a vector at position "pos"
 class ExtractLNode : public ExtractNode {
  public:
-  ExtractLNode(Node* src, ConINode* pos) : ExtractNode(src, pos) {}
+  ExtractLNode(Node* src, Node* pos) : ExtractNode(src, pos) {}
   virtual int Opcode() const;
   virtual const Type *bottom_type() const { return TypeLong::LONG; }
   virtual uint ideal_reg() const { return Op_RegL; }
@@ -1354,7 +1350,7 @@ class ExtractLNode : public ExtractNode {
 // Extract a float from a vector at position "pos"
 class ExtractFNode : public ExtractNode {
  public:
-  ExtractFNode(Node* src, ConINode* pos) : ExtractNode(src, pos) {}
+  ExtractFNode(Node* src, Node* pos) : ExtractNode(src, pos) {}
   virtual int Opcode() const;
   virtual const Type *bottom_type() const { return Type::FLOAT; }
   virtual uint ideal_reg() const { return Op_RegF; }
@@ -1364,7 +1360,7 @@ class ExtractFNode : public ExtractNode {
 // Extract a double from a vector at position "pos"
 class ExtractDNode : public ExtractNode {
  public:
-  ExtractDNode(Node* src, ConINode* pos) : ExtractNode(src, pos) {}
+  ExtractDNode(Node* src, Node* pos) : ExtractNode(src, pos) {}
   virtual int Opcode() const;
   virtual const Type *bottom_type() const { return Type::DOUBLE; }
   virtual uint ideal_reg() const { return Op_RegD; }
