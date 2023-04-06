@@ -57,7 +57,7 @@ public class CtwRunner {
      * Value of {@code -Dsun.hotspot.tools.ctwrunner.ctw_extra_args}. Extra
      * comma-separated arguments to pass to CTW subprocesses.
      */
-    public static final String CTW_EXTRA_ARGS
+    private static final String CTW_EXTRA_ARGS
             = System.getProperty("sun.hotspot.tools.ctwrunner.ctw_extra_args", "");
 
 
