@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,24 +21,38 @@
  * questions.
  */
 
-import test.java.awt.regtesthelpers.Util;
-
-import javax.swing.SwingUtilities;
 import java.awt.Frame;
 import java.awt.Point;
 import java.awt.Robot;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
+import javax.swing.SwingUtilities;
 
-/**
+/*
  * @test
  * @key headful
  * @bug 8012026 8027154
  * @summary Component.getMousePosition() does not work in an applet on MacOS
- * @library ../../regtesthelpers
- * @build Util
- * @compile GetMousePositionWithPopup.java
- * @run main GetMousePositionWithPopup
+ *
+ * @requires (os.family == "windows")
+ * @run main/othervm -Dsun.java2d.uiScale.enabled=true -Dsun.java2d.uiScale=1 GetMousePositionWithPopup
+ * @run main/othervm -Dsun.java2d.uiScale.enabled=true -Dsun.java2d.uiScale=1.25 GetMousePositionWithPopup
+ * @run main/othervm -Dsun.java2d.uiScale.enabled=true -Dsun.java2d.uiScale=1.5 GetMousePositionWithPopup
+ * @run main/othervm -Dsun.java2d.uiScale.enabled=true -Dsun.java2d.uiScale=1.75 GetMousePositionWithPopup
+ * @run main/othervm -Dsun.java2d.uiScale.enabled=true -Dsun.java2d.uiScale=2 GetMousePositionWithPopup
+ * @run main/othervm -Dsun.java2d.uiScale.enabled=true -Dsun.java2d.uiScale=3 GetMousePositionWithPopup
+ */
+
+/*
+ * @test
+ * @key headful
+ * @bug 8012026 8027154
+ * @summary Component.getMousePosition() does not work in an applet on MacOS
+ *
+ * @requires (os.family == "mac" | os.family == "linux")
+ * @run main/othervm -Dsun.java2d.uiScale.enabled=true -Dsun.java2d.uiScale=1 GetMousePositionWithPopup
+ * @run main/othervm -Dsun.java2d.uiScale.enabled=true -Dsun.java2d.uiScale=2 GetMousePositionWithPopup
+ * @run main/othervm -Dsun.java2d.uiScale.enabled=true -Dsun.java2d.uiScale=3 GetMousePositionWithPopup
  */
 
 public class GetMousePositionWithPopup {
@@ -46,38 +60,44 @@ public class GetMousePositionWithPopup {
     private static Frame frame1;
     private static Frame frame2;
 
+    //expected mouse position w.r.t to Component
+    //(2nd Frame in this test) after final mouse move.
+    private static final int EXPECTED_MOUSE_POS = 50;
+
     public static void main(String[] args) throws Exception {
         try {
-        Robot r = Util.createRobot();
-        r.setAutoDelay(100);
-        r.mouseMove(0, 0);
-        Util.waitForIdle(null);
+            Robot r = new Robot();
+            r.setAutoDelay(300);
 
-        SwingUtilities.invokeAndWait(new Runnable() {
-            @Override
-            public void run() {
-                constructTestUI();
-            }
-        });
+            //1st mouse move
+            r.mouseMove(0, 0);
+            r.waitForIdle();
+            r.delay(100);
 
-        Util.waitForIdle(null);
-        r.mouseMove(149, 149);
-        Util.waitForIdle(null);
-        r.mouseMove(170, 170);
-        Util.waitForIdle(null);
+            SwingUtilities.invokeAndWait(GetMousePositionWithPopup::createTestUI);
+            r.waitForIdle();
+            r.delay(200);
+
+            //2nd mouse move
+            r.mouseMove(149, 149);
+            r.waitForIdle();
+            r.delay(200);
+
+            SwingUtilities.invokeAndWait(GetMousePositionWithPopup::addMouseListenerToFrame2);
+            //3rd mouse move
+            r.mouseMove(170, 170);
+            r.waitForIdle();
+            r.delay(100);
 
         } finally {
-            SwingUtilities.invokeLater(new Runnable() {
-                @Override
-                public void run() {
-                    frame1.dispose();
-                    frame2.dispose();
-                }
+            SwingUtilities.invokeLater(() -> {
+                frame1.dispose();
+                frame2.dispose();
             });
         }
     }
 
-    private static void constructTestUI() {
+    private static void createTestUI() {
         frame1 = new Frame();
         frame1.setBounds(100, 100, 100, 100);
         frame1.setVisible(true);
@@ -90,24 +110,28 @@ public class GetMousePositionWithPopup {
                 frame2 = new Frame();
                 frame2.setBounds(120, 120, 120, 120);
                 frame2.setVisible(true);
-                frame2.addMouseMotionListener(new MouseMotionAdapter() {
-                    @Override
-                    public void mouseMoved(MouseEvent e)
-                    {
-                        Point positionInFrame2 = frame2.getMousePosition();
-                        int deltaX = Math.abs(50 - positionInFrame2.x);
-                        int deltaY = Math.abs(50 - positionInFrame2.y);
-                        if (deltaX > 2 || deltaY > 2) {
-                            throw new RuntimeException("Wrong position reported. Should be [50, 50] but was [" +
-                                    positionInFrame2.x + ", " + positionInFrame2.y + "]");
-                        }
+            }
+        });
+    }
 
-                        Point positionInFrame1 = frame1.getMousePosition();
-                        if (positionInFrame1 != null) {
-                            throw new RuntimeException("Wrong position reported. Should be null");
-                        }
-                    }
-                });
+    private static void addMouseListenerToFrame2() {
+        frame2.addMouseMotionListener(new MouseMotionAdapter() {
+            @Override
+            public void mouseMoved(MouseEvent e) {
+                Point positionInFrame2 = frame2.getMousePosition();
+                int deltaX = Math.abs(EXPECTED_MOUSE_POS - positionInFrame2.x);
+                int deltaY = Math.abs(EXPECTED_MOUSE_POS - positionInFrame2.y);
+                if (deltaX > 2 || deltaY > 2) {
+                    throw new RuntimeException("Wrong position reported for Frame 2."
+                            + " Should be [50, 50] but was " + "[" + positionInFrame2.x
+                            + ", " + positionInFrame2.y + "]");
+                }
+
+                Point positionInFrame1 = frame1.getMousePosition();
+                if (positionInFrame1 != null) {
+                    throw new RuntimeException("Wrong position reported for Frame 1."
+                            + " Should be null");
+                }
             }
         });
     }
