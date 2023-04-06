@@ -1732,22 +1732,6 @@ Klass* SystemDictionary::find_constrained_instance_or_array_klass(
   return klass;
 }
 
-// Called by the compiler to find a loaded class directly or referenced in the loader constraint table.
-Klass* SystemDictionary::find_constrained_or_local_klass(Thread* current, Symbol* sym,
-                                                         Klass* accessing_klass,
-                                                         bool require_local) {
-  HandleMark hm(current);
-  Handle loader;
-  Handle domain;
-  if (accessing_klass != nullptr) {
-    loader = Handle(current, accessing_klass->class_loader());
-    domain = Handle(current, accessing_klass->protection_domain());
-  }
-
-  return require_local ? find_instance_or_array_klass(current, sym, loader, domain) :
-                         find_constrained_instance_or_array_klass(current, sym, loader);
-}
-
 bool SystemDictionary::add_loader_constraint(Symbol* class_name,
                                              Klass* klass_being_linked,
                                              Handle class_loader1,
