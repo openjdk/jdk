@@ -487,7 +487,7 @@ uint G1Policy::calculate_desired_eden_length_before_mixed(double base_time_ms,
                                                           uint max_eden_length) const {
   G1CollectionSetCandidates* candidates = _collection_set->candidates();
 
-  uint min_old_regions_end = MIN2(candidates->cur_idx() + calc_min_old_cset_length(candidates),
+  uint min_old_regions_end = MIN2(candidates->cur_idx() + calc_min_old_cset_length(candidates->num_regions()),
                                   candidates->num_regions());
   double predicted_region_evac_time_ms = base_time_ms;
   for (uint i = candidates->cur_idx(); i < min_old_regions_end; i++) {
@@ -1380,7 +1380,7 @@ size_t G1Policy::allowed_waste_in_collection_set() const {
   return G1HeapWastePercent * _g1h->capacity() / 100;
 }
 
-uint G1Policy::calc_min_old_cset_length(G1CollectionSetCandidates* candidates) const {
+uint G1Policy::calc_min_old_cset_length(uint num_candidate_regions) const {
   // The min old CSet region bound is based on the maximum desired
   // number of mixed GCs after a cycle. I.e., even if some old regions
   // look expensive, we should add them to the CSet anyway to make
@@ -1390,15 +1390,9 @@ uint G1Policy::calc_min_old_cset_length(G1CollectionSetCandidates* candidates) c
   // The calculation is based on the number of marked regions we added
   // to the CSet candidates in the first place, not how many remain, so
   // that the result is the same during all mixed GCs that follow a cycle.
-
-  const size_t region_num = candidates->num_regions();
-  const size_t gc_num = (size_t) MAX2(G1MixedGCCountTarget, (uintx) 1);
-  size_t result = region_num / gc_num;
-  // emulate ceiling
-  if (result * gc_num < region_num) {
-    result += 1;
-  }
-  return (uint) result;
+  const size_t gc_num = MAX2((size_t)G1MixedGCCountTarget, (size_t)1);
+  // Round up to be conservative.
+  return (uint)ceil((double)num_candidate_regions / gc_num);
 }
 
 uint G1Policy::calc_max_old_cset_length() const {
@@ -1406,16 +1400,9 @@ uint G1Policy::calc_max_old_cset_length() const {
   // as a percentage of the heap size. I.e., it should bound the
   // number of old regions added to the CSet irrespective of how many
   // of them are available.
-
-  const G1CollectedHeap* g1h = G1CollectedHeap::heap();
-  const size_t region_num = g1h->num_regions();
-  const size_t perc = (size_t) G1OldCSetRegionThresholdPercent;
-  size_t result = region_num * perc / 100;
-  // emulate ceiling
-  if (100 * result < region_num * perc) {
-    result += 1;
-  }
-  return (uint) result;
+  double result = (double)_g1h->num_regions() * G1OldCSetRegionThresholdPercent / 100;
+  // Round up to be conservative.
+  return (uint)ceil(result);
 }
 
 void G1Policy::calculate_old_collection_set_regions(G1CollectionSetCandidates* candidates,
@@ -1433,7 +1420,7 @@ void G1Policy::calculate_old_collection_set_regions(G1CollectionSetCandidates* c
 
   double optional_threshold_ms = time_remaining_ms * optional_prediction_fraction();
 
-  const uint min_old_cset_length = calc_min_old_cset_length(candidates);
+  const uint min_old_cset_length = calc_min_old_cset_length(candidates->num_regions());
   const uint max_old_cset_length = MAX2(min_old_cset_length, calc_max_old_cset_length());
   const uint max_optional_regions = max_old_cset_length - min_old_cset_length;
   bool check_time_remaining = use_adaptive_young_list_length();

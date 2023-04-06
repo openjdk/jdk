@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2077,6 +2077,12 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      * which a {@link DateFormatSymbols} has names in the given
      * {@code locale}.
      *
+     * <p>If there is no string representation of the {@code Calendar} {@code field}
+     * and the calendar is in non-lenient mode and any calendar fields have invalid values,
+     * {@code null} is returned. If there is a string representation of the {@code Calendar}
+     * {@code field} and the calendar is in non-lenient mode and any calendar fields
+     * have invalid values, {@code IllegalArgumentException} will be thrown.
+     *
      * @param field
      *        the calendar field for which the string representation
      *        is returned
@@ -2170,6 +2176,12 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      * all strings returned by {@link DateFormatSymbols#getShortMonths()}
      * and {@link DateFormatSymbols#getMonths()}.
      *
+     * <p>Unlike {@link #getDisplayName(int, int, Locale)}, this
+     * method will not throw an {@code IllegalArgumentException} if the
+     * {@code Calendar} is non-lenient and any of the calendar fields have
+     * invalid values. Instead, this method will return either {@code null} or
+     * a {@code Map}.
+     *
      * @param field
      *        the calendar field for which the display names are returned
      * @param style
@@ -2184,9 +2196,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      *        field values, or {@code null} if no display names
      *        are defined for {@code field}
      * @throws    IllegalArgumentException
-     *        if {@code field} or {@code style} is invalid,
-     *        or if this {@code Calendar} is non-lenient and any
-     *        of the calendar fields have invalid values
+     *        if {@code field} or {@code style} is invalid
      * @throws    NullPointerException
      *        if {@code locale} is null
      * @since 1.6

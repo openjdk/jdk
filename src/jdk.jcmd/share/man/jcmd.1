@@ -402,6 +402,12 @@ On Linux operating systems, the temporary directory is \f[V]/tmp\f[R].
 On Windwows, the temporary directory is specified by the \f[V]TMP\f[R]
 environment variable.)
 .IP \[bu] 2
+\f[V]preserve-repository=\f[R]{\f[V]true\f[R]|\f[V]false\f[R]} :
+Specifies whether files stored in the disk repository should be kept
+after the JVM has exited.
+If false, files are deleted.
+By default, this parameter is disabled.
+.IP \[bu] 2
 \f[V]stackdepth\f[R]: (Optional) Stack depth for stack traces.
 Setting this value greater than the default of 64 may cause a
 performance degradation.

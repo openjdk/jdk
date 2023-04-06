@@ -379,7 +379,14 @@ JvmtiExport::get_jvmti_interface(JavaVM *jvm, void **penv, jint version) {
   }
   if (Continuations::enabled()) {
     // Virtual threads support. There is a performance impact when VTMS transitions are enabled.
-    JvmtiVTMSTransitionDisabler::set_VTMS_notify_jvmti_events(true);
+    if (JvmtiEnv::get_phase() == JVMTI_PHASE_LIVE) {
+      if (!JvmtiVTMSTransitionDisabler::VTMS_notify_jvmti_events()) {
+        ThreadInVMfromNative __tiv(JavaThread::current());
+        JvmtiEnvBase::enable_virtual_threads_notify_jvmti();
+      }
+    } else {
+      JvmtiVTMSTransitionDisabler::set_VTMS_notify_jvmti_events(true);
+    }
   }
 
   if (JvmtiEnv::get_phase() == JVMTI_PHASE_LIVE) {
