@@ -345,7 +345,7 @@ instruct vaddD(vReg dst, vReg src1, vReg src2) %{
 
 // vector add - predicated
 
-instruct vadd_masked(vReg dst_src1, vReg src2, vRegMask_V0 vmask) %{
+instruct vaddB_masked(vReg dst_src1, vReg src2, vRegMask_V0 vmask) %{
   match(Set dst_src1 (AddVB (Binary dst_src1 src2) vmask));
   ins_cost(VEC_COST);
   format %{ "vadd.vv $dst_src1, $src2, $vmask\t#@vadd_masked" %}
