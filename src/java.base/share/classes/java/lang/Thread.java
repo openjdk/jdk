@@ -276,7 +276,8 @@ public class Thread implements Runnable {
 
     /*
      * ThreadLocal values pertaining to this thread. This map is maintained
-     * by the ThreadLocal class. */
+     * by the ThreadLocal class.
+     */
     ThreadLocal.ThreadLocalMap threadLocals;
 
     /*
@@ -448,7 +449,7 @@ public class Thread implements Runnable {
     private static native void yield0();
 
     /**
-     * Called before sleeping to create a jdk.ThreadSleepEvent event.
+     * Called before sleeping to create a jdk.ThreadSleep event.
      */
     private static ThreadSleepEvent beforeSleep(long nanos) {
         ThreadSleepEvent event = null;
@@ -465,7 +466,7 @@ public class Thread implements Runnable {
     }
 
     /**
-     * Called after sleeping to commit the jdk.ThreadSleepEvent event.
+     * Called after sleeping to commit the jdk.ThreadSleep event.
      */
     private static void afterSleep(ThreadSleepEvent event) {
         if (event != null) {
