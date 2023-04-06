@@ -31,6 +31,10 @@
 typedef AbstractRegSet<FloatRegister> vRegSet;
 
 address generate_poly1305_processBlocks2() {
+  address consts = __ pc();
+  __ emit_int64(5);
+  __ emit_int64(5);
+
   __ align(CodeEntryAlignment);
   StubCodeMark mark(this, "StubRoutines", "poly1305_processBlocks2");
   address start = __ pc();
@@ -45,7 +49,30 @@ address generate_poly1305_processBlocks2() {
   // Arguments
   const Register input_start = *regs, length = *++regs, acc_start = *++regs, r_start = *++regs;
 
-  // Rn is the randomly-generated key, packed into three registers
+
+  // {
+  //   RegSetIterator<Register> ri = regs;
+  //   const Register R[] = { *++ri, *++ri, *++ri};
+  //   ++ri;
+  //   const RegPair D[] = {{*++ri, *++ri},
+  //                        {*++ri, *++ri},
+  //                        {*++ri, *++ri},};
+  //   const Register RR = *++ri;
+
+  //   __ mov(R[0], 0x3fffffffffffff);
+  //   __ mov(R[1], R[0]);
+  //   __ mov(R[2], 5);
+
+  //   __ poly1305_multiply(D, R, R, RR, ri);
+
+  //   poo = __ pc();
+  //   __ nop();
+
+  //   __ poly1305_reduce(D);
+  // }
+
+
+  // Rn is the key, packed into three registers
   Register R[] = { *++regs, *++regs, *++regs,};
   __ pack_26(R[0], R[1], R[2], r_start);
 
@@ -114,9 +141,6 @@ address generate_poly1305_processBlocks2() {
   for (int i = 0; i < 5; i++) {
   __ movi(v_u0[i], __ T16B, 0);
   }
-  poo = __ pc();
-  __ nop();
-
   __ copy_3_to_5_regs(v_u0, u0[0]._lo, u0[1]._lo, u0[2]._lo);
 
   {

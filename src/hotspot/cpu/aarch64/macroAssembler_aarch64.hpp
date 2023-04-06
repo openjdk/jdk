@@ -1577,9 +1577,14 @@ public:
   void pack_26(Register dest0, Register dest1, Register dest2, Register src);
   void wide_mul(RegPair prod, Register n, Register m);
   void wide_madd(RegPair sum, Register n, Register m);
+  void clear_above(const RegPair d, int shift);
+  void shifted_add128(const RegPair d, const RegPair s, unsigned int shift,
+                      Register scratch = rscratch1);
+  void shifted_add128_times_5(const RegPair d, const RegPair s, unsigned int shift,
+                              Register scratch1 = rscratch1, Register scratch2 = rscratch2);
   // Widening multiply s * r -> u
-  void poly1305_multiply(const RegPair u[], Register s[], Register r[], Register RR2,
-                       RegSetIterator<Register> scratch);
+  void poly1305_multiply(const RegPair u[], const Register s[], const Register r[],
+                         Register RR2, RegSetIterator<Register> scratch);
   void poly1305_multiply_vec(const FloatRegister u[], const FloatRegister m[],
                              const FloatRegister r[], const FloatRegister rr[]);
 

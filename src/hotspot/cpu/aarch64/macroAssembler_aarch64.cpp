@@ -5942,8 +5942,8 @@ void MacroAssembler::wide_madd(RegPair sum, Register n, Register m) {
 }
 
 // Widening multiply s * r -> u
-void MacroAssembler::poly1305_multiply(const RegPair u[], Register s[], Register r[], Register RR2,
-                       RegSetIterator<Register> scratch) {
+void  MacroAssembler::poly1305_multiply(const RegPair u[], const Register s[], const Register r[],
+                       Register RR2, RegSetIterator<Register> scratch) {
   // Compute (S2 << 26) * 5.
   Register RS2 = *++scratch;
   lsl(RS2, s[2], 26);
@@ -6157,82 +6157,76 @@ void MacroAssembler::poly1305_transfer(const RegPair u0[],
   umov(u0[2]._lo, s[4], D, index);
 }
 
+// Compute d += s >> shift
+void MacroAssembler::shifted_add128(const RegPair d, const RegPair s, unsigned int shift,
+                                    Register scratch) {
+  extr(scratch, s._hi, s._lo, shift);
+  adds(d._lo, d._lo, scratch);
+  lsr(scratch, s._hi, shift);
+  adc(d._hi, d._hi, scratch);
+}
+
+void MacroAssembler::shifted_add128_times_5(const RegPair d, const RegPair s, unsigned int shift,
+                                            Register scratch1, Register scratch2) {
+  extr(scratch1, s._hi, s._lo, shift);
+  lsr(scratch2, s._hi, shift);
+  adds(d._lo, d._lo, scratch1);
+  adc(d._hi, d._hi, scratch2);
+
+  extr(scratch1, s._hi, s._lo, shift-2);
+  lsr(scratch2, s._hi, shift-2);
+  andr(scratch1, scratch1, ~3);
+  adds(d._lo, d._lo, scratch1);
+  adc(d._hi, d._hi, scratch2);
+}
+
+void MacroAssembler::clear_above(const RegPair d, int shift) {
+  bfc(d._lo, shift, 64-shift);
+  mov(d._hi, 0);
+}
+
 void MacroAssembler::poly1305_reduce(const RegPair u[]) {
   // Partial reduction mod 2**130 - 5
 
-  // Add the high part of u1 to u2
-  extr(rscratch1, u[1]._hi, u[1]._lo, 52);
-  adds(u[2]._lo, u[2]._lo, rscratch1);
-  NOT_DEBUG(adc(u[2]._hi, u[2]._hi, zr);)
-#ifdef ASSERT
-  adcs(u[2]._hi, u[2]._hi, zr);
-  {
-    Label L;
-    br(CC, L);
-    stop("Overflow in poly1305 reduction");
-    BIND(L);
-  }
-#endif
-  bfc(u[1]._lo, 52, 64-52);
-  DEBUG_ONLY(bfc(u[1]._hi, 0, 52));
+  // Assume:
+  // u[2] < 0x200000000000_0000000000000000 (i.e. 109 bits)
+  // u[1] < 0x200000000000_0000000000000000 (i.e. 109 bits)
+  // u[0] < 0x200000000000_0000000000000000 (i.e. 109 bits)
+
+  // This follows from the inputs to the 3x3 multiplication all being
+  // < 54 bits long.
+
+  // Add the high part (i.e. everything from bits 52 up) of u1 to u2
+  shifted_add128(u[2], u[1], 52);
+  clear_above(u[1], 52);                             // u[1] < 0x10000000000000 (i.e. 52 bits)
+
+  // Add the high part of u0 to u1
+  shifted_add128(u[1], u[0], 52);
+  clear_above(u[0], 52);                             // u[0] < 0x10000000000000 (i.e. 52 bits)
+                                                     // u[1] < 0x200000000000000 (i.e. 57 bits)
 
   // Then multiply the high part of u2 by 5 and add it back to u1:u0
   extr(rscratch1, u[2]._hi, u[2]._lo, 26);
   ubfx(rscratch1, rscratch1, 0, 52);
-  add(rscratch1, rscratch1, rscratch1, LSL, 2);
-  adds(u[0]._lo, u[0]._lo, rscratch1);
-  adc(u[0]._hi, u[0]._hi, zr);
-  bfc(u[2]._lo, 26, 64-26);
-
-  // Multiply the highest part of u2 by 5 and add it back to u1
-  ubfx(rscratch1, u[2]._hi, 14, 50);
-// #ifdef ASSERT
-//   {
-//     Label L;
-//     bfc(u[2]._hi, 0, 50);
-//     cbz(u[2]._hi, L);
-//     stop("Overflow in poly1305 reduction");
-//     BIND(L);
-//   }
-// #endif
-  add(rscratch1, rscratch1, rscratch1, LSL, 2);
-  add(u[1]._lo, u[1]._lo, rscratch1);
-
-  // Propagate carries through u2:u1:u0
-  extr(rscratch1, u[0]._hi, u[0]._lo, 52);
-  bfc(u[0]._lo, 52, 64-52);
-  DEBUG_ONLY(bfc(u[0]._hi, 0, 52));
-  adds(u[1]._lo, u[1]._lo, rscratch1);
-#ifdef ASSERT
-  {
-    Label L;
-    br(CC, L);
-    stop("Overflow in poly1305 reduction");
-    BIND(L);
-  }
-#endif
-
-  // Add the high part of u1 to u2
-  extr(rscratch1, u[1]._hi, u[1]._lo, 52);
-  adds(u[2]._lo, u[2]._lo, rscratch1);
-#ifdef ASSERT
-  {
-    Label L;
-    br(CC, L);
-    stop("Overflow in poly1305 reduction");
-    BIND(L);
-  }
-#endif
-  bfc(u[1]._lo, 52, 64-52);
-  DEBUG_ONLY(bfc(u[1]._hi, 0, 52));
-
-  // Multiply bits 26-63 of u2 by 5 and add to u0, clearing the top bits
-  // FIXME: This is probably unnecessary
-  ubfx(rscratch1, u[2]._lo, 26, 64-26);
-  bfc(u[2]._lo, 26, 64-26);
-  add(rscratch1, rscratch1, rscratch1, LSL, 2);
+  add(rscratch1, rscratch1, rscratch1, LSL, 2);      // rscratch1 *= 5
   add(u[0]._lo, u[0]._lo, rscratch1);
-  // u2 has no bits set above Bit 26
+
+  lsr(rscratch1, u[2]._hi, (26+52) % 64);
+  add(rscratch1, rscratch1, rscratch1, LSL, 2);      // rscratch1 *= 5
+  add(u[1]._lo, u[1]._lo, rscratch1);
+  clear_above(u[2], 26);                             // u[2] < 0x4000000 (i.e. 26 bits)
+                                                     // u[1] < 0x200000000000000 (i.e. 57 bits)
+                                                     // u[0] < 0x20000000000000 (i.e. 53 bits)
+
+  // u[1] -> u[2]
+  add(u[2]._lo, u[2]._lo, u[1]._lo, LSR, 52);        // u[2] < 0x8000000 (i.e. 27 bits)
+  bfc(u[1]._lo, 52, 64-52);                          // u[1] < 0x10000000000000 (i.e. 52 bits)
+
+  // u[0] -> u1
+  add(u[1]._lo, u[1]._lo, u[0]._lo, LSR, 52);
+  bfc(u[0]._lo, 52, 64-52);                          // u[0] < 0x10000000000000 (i.e. 52 bits)
+                                                     // u[1] < 0x20000000000000 (i.e. 53 bits)
+                                                     // u[2] < 0x4000000 (i.e. 27 bits)
 }
 
 void MacroAssembler::poly1305_fully_reduce(Register dest[], const RegPair u[]) {
