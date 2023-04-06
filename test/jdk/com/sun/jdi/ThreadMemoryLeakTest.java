@@ -66,15 +66,12 @@ class ThreadMemoryLeakTarg {
                     }
                     try {
                         String mainWrapper = System.getProperty("main.wrapper");
-                        if ("Virtual".equals(mainWrapper)) {
-                            // Virtual thread creation tends to overwhelm the debugger,
-                            // leading to high memory use for all the unprocessed events
-                            // that get queued up, so we need to slow it down a bit more
-                            // than we do for platform threads to avoid getting OOME.
-                            Thread.sleep(100);
-                        } else {
-                            Thread.sleep(50);
-                        }
+                        // Virtual thread creation tends to overwhelm the debugger,
+                        // leading to high memory use for all the unprocessed events
+                        // that get queued up, so we need to slow it down a bit more
+                        // than we do for platform threads to avoid getting OOME.
+                        long timeToSleep = "Virtual".equals(mainWrapper) ? 100 : 50;
+                        Thread.sleep(timeToSleep);
                     }
                     catch (InterruptedException e) {
                         throw new RuntimeException(e);
