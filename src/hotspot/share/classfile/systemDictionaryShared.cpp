@@ -522,7 +522,7 @@ void SystemDictionaryShared::handle_class_unloading(InstanceKlass* klass) {
     remove_dumptime_info(klass);
   }
 
-  {
+  if (Arguments::is_dumping_archive() || ClassListWriter::is_enabled()) {
     MutexLocker ml(Thread::current(), UnregisteredClassesTable_lock, Mutex::_no_safepoint_check_flag);
     if (_unregistered_classes_table != nullptr) {
       // Remove the class from _unregistered_classes_table: keep the entry but
@@ -533,6 +533,8 @@ void SystemDictionaryShared::handle_class_unloading(InstanceKlass* klass) {
         *v = nullptr;
       }
     }
+  } else {
+    assert(_unregistered_classes_table == nullptr, "must not be used");
   }
 
   if (ClassListWriter::is_enabled()) {
