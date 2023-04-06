@@ -2617,7 +2617,7 @@ void SuperWord::schedule() {
 }
 
 void SuperWord::schedule_reorder_memops(Node_List &memops_schedule) {
-  // For every slice (alias_idx), store the last memory state.
+  // For every slice (alias_idx), store the last memory state inside the loop.
   GrowableArray<Node*> last_state_in_slice;
 
   // (1) Set up the initial memory state from Phi.
@@ -2635,10 +2635,17 @@ void SuperWord::schedule_reorder_memops(Node_List &memops_schedule) {
     assert(n->is_Load() || n->is_Store(), "only loads or stores");
     int alias_idx = _phase->C->get_alias_index(n->adr_type());
     Node* last_state = last_state_in_slice.at(alias_idx);
-    assert(last_state != nullptr, "slice is mapped");
-    _igvn.replace_input_of(n, MemNode::Memory, last_state);
-    if (n->is_Store()) {
-      last_state_in_slice.at_put(alias_idx, n);
+    if (last_state == nullptr) {
+      // If there are only loads in a slice, we never update the memory
+      // state in the loop, hence there is no phi for the memory state.
+      // We just keep the old memory state that was outside the loop.
+      assert(n->is_Load() && !in_bb(n->in(MemNode::Memory)),
+             "only loads can have memory state from outside loop");
+    } else {
+      _igvn.replace_input_of(n, MemNode::Memory, last_state);
+      if (n->is_Store()) {
+        last_state_in_slice.at_put(alias_idx, n);
+      }
     }
   }
 
