@@ -205,7 +205,8 @@ public class MethodHandleProxies {
         try {
             var lookup = info.lookup.makeHiddenClassDefiner(info.template, DUMPER)
                     .defineClassAsLookup(true, classData);
-            proxy = lookup.findConstructor(lookup.lookupClass(), methodType(void.class)).invoke();
+            proxy = lookup.findConstructor(lookup.lookupClass(), methodType(void.class, Lookup.class))
+                    .invoke(lookup);
         } catch (Error e) {
             throw e;
         } catch (Throwable e) {
@@ -280,7 +281,13 @@ public class MethodHandleProxies {
 
     private static final List<ClassDesc> DEFAULT_RETHROWS = List.of(desc(RuntimeException.class), desc(Error.class));
     private static final ClassDesc CD_UndeclaredThrowableException = desc(UndeclaredThrowableException.class);
+    private static final ClassDesc CD_IllegalAccessError = desc(IllegalAccessError.class);
     private static final MethodTypeDesc MTD_void_Throwable = MethodTypeDesc.of(CD_void, CD_Throwable);
+    private static final MethodTypeDesc MTD_void_Lookup = MethodTypeDesc.of(CD_void, CD_MethodHandles_Lookup);
+    private static final MethodTypeDesc MTD_Class = MethodTypeDesc.of(CD_Class);
+    private static final MethodTypeDesc MTD_String = MethodTypeDesc.of(CD_String);
+    private static final MethodTypeDesc MTD_void_String = MethodTypeDesc.of(CD_void, CD_String);
+    private static final MethodTypeDesc MTD_int = MethodTypeDesc.of(CD_int);
 
     /**
      * Creates an implementation class file for a given interface. One implementation class is
@@ -298,11 +305,34 @@ public class MethodHandleProxies {
             clb.withSuperclass(CD_Object);
             clb.withFlags(ACC_FINAL | ACC_SYNTHETIC);
             clb.withInterfaceSymbols(ifaceDesc);
-            // <init>
-            clb.withMethodBody(INIT_NAME, MTD_void, 0, cob -> cob
-                    .aload(0)
-                    .invokespecial(CD_Object, INIT_NAME, MTD_void)
-                    .return_());
+            // <init>(Lookup)
+            clb.withMethodBody(INIT_NAME, MTD_void_Lookup, 0, cob -> {
+                cob.aload(0);
+                cob.invokespecial(CD_Object, INIT_NAME, MTD_void);
+
+                var failLabel = cob.newLabel();
+                // check lookupClass
+                cob.aload(1);
+                cob.invokevirtual(CD_MethodHandles_Lookup, "lookupClass", MTD_Class);
+                cob.constantInstruction(proxyDesc);
+                cob.if_acmpne(failLabel);
+                // check original access
+                cob.aload(1);
+                cob.invokevirtual(CD_MethodHandles_Lookup, "lookupModes", MTD_int);
+                cob.constantInstruction(Lookup.ORIGINAL);
+                cob.iand();
+                cob.ifeq(failLabel);
+                // success
+                cob.return_();
+                // throw exception
+                cob.labelBinding(failLabel);
+                cob.new_(CD_IllegalAccessError);
+                cob.dup();
+                cob.aload(1); // lookup
+                cob.invokevirtual(CD_Object, "toString", MTD_String);
+                cob.invokespecial(CD_IllegalAccessError, INIT_NAME, MTD_void_String);
+                cob.athrow();
+            });
 
             // actual implementations
             int classDataIndex = 2; // 0 is interfaceInfo, 1 is reserved for wrapper instance target

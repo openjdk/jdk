@@ -21,6 +21,16 @@
  * questions.
  */
 
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodHandles.Lookup;
+
 public interface Untrusted {
+    /**
+     * Leaks a lookup that has full privilege access in Untrusted.class.
+     */
+    static Lookup leakLookup() {
+        return MethodHandles.lookup();
+    }
+
     void exec();
 }

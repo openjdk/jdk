@@ -28,6 +28,7 @@
  *          java.base/jdk.internal.classfile.attribute
  *          java.base/jdk.internal.classfile.constantpool
  * @summary Basic sanity tests for MethodHandleProxies
+ * @build BasicTest Untrusted
  * @run junit/othervm -Djdk.invoke.MethodHandleProxies.dumpInterfaceInstances BasicTest
  */
 
@@ -40,6 +41,7 @@ import java.io.IOException;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.WrongMethodTypeException;
 import java.lang.reflect.AccessFlag;
 import java.lang.reflect.Method;
@@ -48,7 +50,6 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.function.IntFunction;
@@ -154,6 +155,20 @@ public class BasicTest {
         assertThrows(IllegalArgumentException.class, () -> asInterfaceInstance(MultiAbstractMethods.class, mh));
         assertThrows(IllegalArgumentException.class, () -> asInterfaceInstance(NoAbstractMethods.class, mh));
         assertThrows(WrongMethodTypeException.class, () -> asInterfaceInstance(IntSupplier.class, mh));
+    }
+
+    @Test
+    public void testNoInstantiation() throws IllegalAccessException, NoSuchMethodException {
+        Untrusted untrusted = asInterfaceInstance(Untrusted.class, MethodHandles.zero(void.class));
+        var instanceClass = untrusted.getClass();
+        var leakLookup = Untrusted.leakLookup();
+        assertEquals(Lookup.ORIGINAL, leakLookup.lookupModes() & Lookup.ORIGINAL, "Leaked lookup original flag");
+        var intfLookup = MethodHandles.privateLookupIn(instanceClass, Untrusted.leakLookup());
+        assertSame(instanceClass, intfLookup.lookupClass());
+        assertTrue(intfLookup.hasFullPrivilegeAccess());
+        assertEquals(0, intfLookup.lookupModes() & Lookup.ORIGINAL, "reflected lookup original flag");
+        var ctor = intfLookup.findConstructor(instanceClass, methodType(void.class, Lookup.class));
+        assertThrows(IllegalAccessError.class, () -> ctor.invoke(intfLookup));
     }
 
     void checkMethods(Method[] methods) {
