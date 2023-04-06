@@ -82,7 +82,7 @@ $(DST_DIR)/ctw.sh: $(DST_DIR)
 	chmod a+x $@
 
 $(DST_DIR)/ctwrunner.sh: $(DST_DIR)
-	echo '$${JAVA_HOME}/bin/java $${JAVA_OPTIONS} -Dtest.jdk=$${JAVA_HOME} -cp ctw.jar $$@' > $(CTWRUNNER_MAIN_CLASS) $@
+	echo '$${JAVA_HOME}/bin/java $${JAVA_OPTIONS} -Dtest.jdk=$${JAVA_HOME} -cp ctw.jar $(CTWRUNNER_MAIN_CLASS) $$@' > $@
 	chmod a+x $@
 
 $(DST_DIR)/ctw.jar: filelist $(DST_DIR)/wb.jar
@@ -92,13 +92,11 @@ $(DST_DIR)/ctw.jar: filelist $(DST_DIR)/wb.jar
 	@rm -rf $(OUTPUT_DIR)
 
 $(DST_DIR)/wb.jar: wb_filelist $(DST_DIR)
-	@mkdir -p $(OUTPUT_DIR)
 	$(JAVAC)  -sourcepath $(TESTLIBRARY_DIR) \
 		-d $(DST_DIR) \
 		-cp $(OUTPUT_DIR) \
 		@wb_filelist
 	cd $(DST_DIR); $(JAR) --create --file=wb.jar $(WB_CLASS_FILES)
-	@rm -rf $(OUTPUT_DIR)
 
 $(DST_DIR)/ctw.zip: $(DST_DIR)/ctw.sh $(DST_DIR)/ctwrunner.sh $(DST_DIR)/wb.jar $(DST_DIR)/ctw.jar $(DST_DIR)/ctwrunner.sh
 	zip -j $@ $?
