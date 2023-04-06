@@ -860,7 +860,7 @@ public class Flow {
             }
             return false;
         }
-        
+
         private List<Type> components(Type seltype) {
             return switch (seltype.getTag()) {
                 case CLASS -> {
