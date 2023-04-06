@@ -306,7 +306,7 @@ tier1_gc_epsilon = \
 
 tier2_gc_epsilon =
 
-tier1_gc_gcold = \
+tier3_gc_gcold = \
   gc/stress/gcold/TestGCOldWithG1.java \
   gc/stress/gcold/TestGCOldWithSerial.java \
   gc/stress/gcold/TestGCOldWithParallel.java
@@ -558,6 +558,7 @@ tier2 = \
 
 tier3 = \
   :hotspot_tier3_runtime \
+  :tier3_gc_gcold \
   :tier3_compiler \
   :tier3_gc_shenandoah
 
