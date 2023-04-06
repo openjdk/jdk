@@ -2618,7 +2618,8 @@ void SuperWord::schedule() {
 
 void SuperWord::schedule_reorder_memops(Node_List &memops_schedule) {
   // For every slice (alias_idx), store the last memory state inside the loop.
-  GrowableArray<Node*> last_state_in_slice;
+  int max_slices = _phase->C->num_alias_types();
+  GrowableArray<Node*> last_state_in_slice(max_slices, max_slices, nullptr);
 
   // (1) Set up the initial memory state from Phi.
   for (int i = 0; i < _mem_slice_head.length(); i++) {
