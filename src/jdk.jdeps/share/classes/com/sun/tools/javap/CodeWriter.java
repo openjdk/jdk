@@ -93,16 +93,17 @@ public class CodeWriter extends BasicWriter {
         List<InstructionDetailWriter> detailWriters = getDetailWriters(attr);
 
         int pc = 0;
-        for (var coe: attr) {
-            if (coe instanceof Instruction instr) {
-                for (InstructionDetailWriter w: detailWriters)
-                    w.writeDetails(pc, instr);
-                writeInstr(pc, instr, attr);
-//            } catch (ArrayIndexOutOfBoundsException | IllegalStateException e) {
-//                println(report("error at or after byte " + instr.getPC()));
-//                break;
-                pc += instr.sizeInBytes();
+        try {
+            for (var coe: attr) {
+                if (coe instanceof Instruction instr) {
+                    for (InstructionDetailWriter w: detailWriters)
+                        w.writeDetails(pc, instr);
+                    writeInstr(pc, instr, attr);
+                    pc += instr.sizeInBytes();
+                }
             }
+        } catch (IllegalArgumentException | IllegalStateException | IndexOutOfBoundsException e) {
+            report("error at or after byte " + pc);
         }
 
         for (InstructionDetailWriter w: detailWriters)

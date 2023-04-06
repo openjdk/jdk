@@ -109,7 +109,8 @@ public class ClassWriter extends BasicWriter {
         method = m;
     }
 
-    public void write(ClassModel cm) {
+    public boolean write(ClassModel cm) {
+        errorReported = false;
         setClassFile(cm);
 
         if (options.sysInfo || options.verbose) {
@@ -153,20 +154,19 @@ public class ClassWriter extends BasicWriter {
             var attr = classModel.findAttribute(Attributes.MODULE);
             if (attr.isPresent()) {
                 var modAttr = attr.get();
-                String name = modAttr.moduleName().name().stringValue();
                 if ((modAttr.moduleFlagsMask() & ACC_OPEN) != 0) {
                     print("open ");
                 }
                 print("module ");
-                print(name);
+                print(() -> modAttr.moduleName().name().stringValue());
                 if (modAttr.moduleVersion().isPresent()) {
                     print("@");
-                    print(modAttr.moduleVersion().get().stringValue());
+                    print(() -> modAttr.moduleVersion().get().stringValue());
                 }
             } else {
                 // fallback for malformed class files
                 print("class ");
-                print(getJavaName(classModel.thisClass().asInternalName()));
+                print(() -> getJavaName(classModel.thisClass().asInternalName()));
             }
         } else {
             if ((classModel.flags().flagsMask() & ACC_INTERFACE) == 0)
@@ -174,33 +174,33 @@ public class ClassWriter extends BasicWriter {
             else
                 print("interface ");
 
-            print(getJavaName(classModel.thisClass().asInternalName()));
+            print(() -> getJavaName(classModel.thisClass().asInternalName()));
         }
 
-        var sigAttr = classModel.findAttribute(Attributes.SIGNATURE).orElse(null);
-        if (sigAttr == null) {
-            // use info from class file header
-            if ((classModel.flags().flagsMask() & ACC_INTERFACE) == 0
-                    && classModel.superclass().isPresent()) {
-                String sn = getJavaName(classModel.superclass().get().asInternalName());
-                if (!sn.equals("java.lang.Object")) {
-                    print(" extends ");
-                    print(sn);
+        try {
+            var sigAttr = classModel.findAttribute(Attributes.SIGNATURE).orElse(null);
+            if (sigAttr == null) {
+                // use info from class file header
+                if ((classModel.flags().flagsMask() & ACC_INTERFACE) == 0
+                        && classModel.superclass().isPresent()) {
+                    String sn = getJavaName(classModel.superclass().get().asInternalName());
+                    if (!sn.equals("java.lang.Object")) {
+                        print(" extends ");
+                        print(sn);
+                    }
                 }
-            }
-            var interfaces = classModel.interfaces();
-            for (int i = 0; i < interfaces.size(); i++) {
-                print(i == 0 ? ((classModel.flags().flagsMask() & ACC_INTERFACE) == 0
-                        ? " implements " : " extends ") : ",");
-                print(getJavaName(interfaces.get(i).asInternalName()));
-            }
-        } else {
-            try {
+                var interfaces = classModel.interfaces();
+                for (int i = 0; i < interfaces.size(); i++) {
+                    print(i == 0 ? ((classModel.flags().flagsMask() & ACC_INTERFACE) == 0
+                            ? " implements " : " extends ") : ",");
+                    print(getJavaName(interfaces.get(i).asInternalName()));
+                }
+            } else {
                 var t = sigAttr.asClassSignature();
                 print(sigPrinter.print(t, (classModel.flags().flagsMask() & ACC_INTERFACE) != 0));
-            } catch (IllegalStateException e) {
-                report("Invalid value for Signature attribute: " + e.getMessage());
             }
+        } catch (IllegalArgumentException | IllegalStateException | IndexOutOfBoundsException e) {
+            report(e);
         }
 
         if (options.verbose) {
@@ -210,18 +210,22 @@ public class ClassWriter extends BasicWriter {
             println("major version: " + classModel.majorVersion());
             writeList(String.format("flags: (0x%04x) ", cm.flags().flagsMask()),
                     getClassFlags(cm.flags().flagsMask()), "\n");
-            print("this_class: #" + classModel.thisClass().index());
+            print("this_class: #");print(() -> classModel.thisClass().index());
             tab();
-            print("// " + classModel.thisClass().asInternalName());
+            print(() -> "// " + classModel.thisClass().asInternalName());
             println();
-            print("super_class: #" + classModel.superclass()
+            print("super_class: #");print(() -> classModel.superclass()
                     .map(ClassEntry::index).orElse(0));
-            if (classModel.superclass().isPresent()) {
-                tab();
-                print("// " + classModel.superclass().get().asInternalName());
+            try {
+                if (classModel.superclass().isPresent()) {
+                    tab();
+                    print(() -> "// " + classModel.superclass().get().asInternalName());
+                }
+            } catch (IllegalArgumentException | IllegalStateException | IndexOutOfBoundsException e) {
+                report(e);
             }
             println();
-            print("interfaces: " + classModel.interfaces().size());
+            print("interfaces: ");print(() -> classModel.interfaces().size());
             print(", fields: " + classModel.fields().size());
             print(", methods: " + classModel.methods().size());
             println(", attributes: " + classModel.attributes().size());
@@ -244,6 +248,7 @@ public class ClassWriter extends BasicWriter {
         if (options.verbose) {
             attrWriter.write(classModel.attributes());
         }
+        return !errorReported;
     }
     // where
 
@@ -389,18 +394,18 @@ public class ClassWriter extends BasicWriter {
         var flags = AccessFlags.ofField(f.flags().flagsMask());
         writeModifiers(flags.flags().stream().filter(fl -> fl.sourceModifier())
                 .map(fl -> Modifier.toString(fl.mask())).toList());
-        print(sigPrinter.print(
+        print(() -> sigPrinter.print(
                 f.findAttribute(Attributes.SIGNATURE)
                         .map(SignatureAttribute::asTypeSignature)
                         .orElseGet(() -> Signature.of(f.fieldTypeSymbol()))));
         print(" ");
-        print(f.fieldName().stringValue());
+        print(() -> f.fieldName().stringValue());
         if (options.showConstants) {
             var a = f.findAttribute(Attributes.CONSTANT_VALUE);
             if (a.isPresent()) {
                 print(" = ");
                 var cv = a.get();
-                print(getConstantValue(f.fieldTypeSymbol(), cv.constant()));
+                print(() -> getConstantValue(f.fieldTypeSymbol(), cv.constant()));
             }
         }
         print(";");
@@ -410,8 +415,9 @@ public class ClassWriter extends BasicWriter {
 
         boolean showBlank = false;
 
-        if (options.showDescriptors)
-            println("descriptor: " + f.fieldType().stringValue());
+        if (options.showDescriptors) {
+            print("descriptor: ");println(() -> f.fieldType().stringValue());
+        }
 
         if (options.verbose)
             writeList(String.format("flags: (0x%04x) ", flags.flagsMask()),
@@ -446,20 +452,17 @@ public class ClassWriter extends BasicWriter {
 
         int flags = m.flags().flagsMask();
 
-        MethodSignature d;
-
-        var sigAttr = m.findAttribute(Attributes.SIGNATURE);
-        if (sigAttr.isEmpty()) {
-            d = MethodSignature.parseFrom(m.methodType().stringValue());
-        } else {
-            d = sigAttr.get().asMethodSignature();
-        }
-
         var modifiers = new ArrayList<String>();
         for (var f : AccessFlags.ofMethod(flags).flags())
             if (f.sourceModifier()) modifiers.add(Modifier.toString(f.mask()));
 
-        String name = m.methodName().stringValue();
+        String name = "???";
+        try {
+            name = m.methodName().stringValue();
+        } catch (IllegalArgumentException | IllegalStateException | IndexOutOfBoundsException e) {
+            report(e);
+        }
+
         if ((classModel.flags().flagsMask() & ACC_INTERFACE) != 0 &&
                 ((flags & ACC_ABSTRACT) == 0) && !name.equals("<clinit>")) {
             if (classModel.majorVersion() > DEFAULT_ALLOWED_MAJOR_VERSION ||
@@ -470,42 +473,55 @@ public class ClassWriter extends BasicWriter {
                 }
             }
         }
-
         writeModifiers(modifiers);
-        if (!d.typeParameters().isEmpty()) {
-            print(sigPrinter.printTypeParams(d.typeParameters()) + " ");
-        }
-        switch (name) {
-            case "<init>":
-                print(getJavaName(classModel.thisClass().asInternalName()));
-                print(getJavaParameterTypes(d, flags));
-                break;
-            case "<clinit>":
-                print("{}");
-                break;
-            default:
-                print(getJavaName(sigPrinter.print(d.result())));
-                print(" ");
-                print(name);
-                print(getJavaParameterTypes(d, flags));
-                break;
-        }
 
-        var e_attr = m.findAttribute(Attributes.EXCEPTIONS);
-        // if there are generic exceptions, there must be erased exceptions
-        if (e_attr.isPresent()) {
-            var exceptions = e_attr.get();
-            print(" throws ");
-            if (!d.throwableSignatures().isEmpty()) { // use generic list if available
-                print(sigPrinter.printList("", d.throwableSignatures(), ""));
+        try {
+            var sigAttr = m.findAttribute(Attributes.SIGNATURE);
+            MethodSignature d;
+            if (sigAttr.isEmpty()) {
+                d = MethodSignature.parseFrom(m.methodType().stringValue());
             } else {
-                var exNames = exceptions.exceptions();
-                for (int i = 0; i < exNames.size(); i++) {
-                    if (i > 0)
-                        print(", ");
-                    print(getJavaName(exNames.get(i).asInternalName()));
+                d = sigAttr.get().asMethodSignature();
+            }
+
+            if (!d.typeParameters().isEmpty()) {
+                print(sigPrinter.printTypeParams(d.typeParameters()) + " ");
+            }
+            switch (name) {
+                case "<init>":
+                    print(getJavaName(classModel.thisClass().asInternalName()));
+                    print(getJavaParameterTypes(d, flags));
+                    break;
+                case "<clinit>":
+                    print("{}");
+                    break;
+                default:
+                    print(getJavaName(sigPrinter.print(d.result())));
+                    print(" ");
+                    print(name);
+                    print(getJavaParameterTypes(d, flags));
+                    break;
+            }
+
+            var e_attr = m.findAttribute(Attributes.EXCEPTIONS);
+            // if there are generic exceptions, there must be erased exceptions
+            if (e_attr.isPresent()) {
+                var exceptions = e_attr.get();
+                print(" throws ");
+                if (d != null && !d.throwableSignatures().isEmpty()) { // use generic list if available
+                    print(() -> sigPrinter.printList("", d.throwableSignatures(), ""));
+                } else {
+                    var exNames = exceptions.exceptions();
+                    for (int i = 0; i < exNames.size(); i++) {
+                        if (i > 0)
+                            print(", ");
+                        int ii = i;
+                        print(() -> getJavaName(exNames.get(ii).asInternalName()));
+                    }
                 }
             }
+        } catch (IllegalArgumentException | IllegalStateException | IndexOutOfBoundsException e) {
+            report(e);
         }
 
         println(";");
@@ -513,7 +529,7 @@ public class ClassWriter extends BasicWriter {
         indent(+1);
 
         if (options.showDescriptors) {
-            println("descriptor: " + m.methodType().stringValue());
+            print("descriptor: ");println(() -> m.methodType().stringValue());
         }
 
         if (options.verbose) {

@@ -63,63 +63,68 @@ public class ConstantWriter extends BasicWriter {
         int cpx = 1;
         while (cpx < constant_pool.entryCount()) {
             print(String.format("%" + width + "s", ("#" + cpx)));
-            var cpInfo = constant_pool.entryByIndex(cpx);
-            print(String.format(" = %-18s ", cpTagName(cpInfo.tag())));
-            switch (cpInfo) {
-                case ClassEntry info -> {
-                    print("#" + info.name().index());
-                    tab();
-                    println("// " + stringValue(info));
+            try {
+                var cpInfo = constant_pool.entryByIndex(cpx);
+                print(String.format(" = %-18s ", cpTagName(cpInfo.tag())));
+                switch (cpInfo) {
+                    case ClassEntry info -> {
+                        print(() -> "#" + info.name().index());
+                        tab();
+                        println(() -> "// " + stringValue(info));
+                    }
+                    case AnnotationConstantValueEntry info -> {
+                        println(() -> stringValue(info));
+                    }
+                    case MemberRefEntry info -> {
+                        print(() -> "#" + info.owner().index() + ".#"
+                                + info.nameAndType().index());
+                        tab();
+                        println(() -> "// " + stringValue(info));
+                    }
+                    case DynamicConstantPoolEntry info -> {
+                        print(() -> "#" + info.bootstrap().bsmIndex() + ":#"
+                                + info.nameAndType().index());
+                        tab();
+                        println(() -> "// " + stringValue(info));
+                    }
+                    case MethodHandleEntry info -> {
+                        print(() -> info.kind() + ":#" + info.reference().index());
+                        tab();
+                        println(() -> "// " + stringValue(info));
+                    }
+                    case MethodTypeEntry info -> {
+                        print(() -> "#" + info.descriptor().index());
+                        tab();
+                        println(() -> "//  " + stringValue(info));
+                    }
+                    case ModuleEntry info -> {
+                        print(() -> "#" + info.name().index());
+                        tab();
+                        println(() -> "// " + stringValue(info));
+                    }
+                    case NameAndTypeEntry info -> {
+                        print(() -> "#" + info.name().index() + ":#" + info.type().index());
+                        tab();
+                        println(() -> "// " + stringValue(info));
+                    }
+                    case PackageEntry info -> {
+                        print(() -> "#" + info.name().index());
+                        tab();
+                        println("// " + stringValue(info));
+                    }
+                    case StringEntry info -> {
+                        print(() -> "#" + info.utf8().index());
+                        tab();
+                        println(() -> "// " + stringValue(info));
+                    }
+                    default ->
+                        throw new IllegalArgumentException("unknown entry: "+ cpInfo);
                 }
-                case AnnotationConstantValueEntry info -> {
-                    println(stringValue(info));
-                }
-                case MemberRefEntry info -> {
-                    print("#" + info.owner().index() + ".#"
-                            + info.nameAndType().index());
-                    tab();
-                    println("// " + stringValue(info));
-                }
-                case DynamicConstantPoolEntry info -> {
-                    print("#" + info.bootstrap().bsmIndex() + ":#"
-                            + info.nameAndType().index());
-                    tab();
-                    println("// " + stringValue(info));
-                }
-                case MethodHandleEntry info -> {
-                    print(info.kind() + ":#" + info.reference().index());
-                    tab();
-                    println("// " + stringValue(info));
-                }
-                case MethodTypeEntry info -> {
-                    print("#" + info.descriptor().index());
-                    tab();
-                    println("//  " + stringValue(info));
-                }
-                case ModuleEntry info -> {
-                    print("#" + info.name().index());
-                    tab();
-                    println("// " + stringValue(info));
-                }
-                case NameAndTypeEntry info -> {
-                    print("#" + info.name().index() + ":#" + info.type().index());
-                    tab();
-                    println("// " + stringValue(info));
-                }
-                case PackageEntry info -> {
-                    print("#" + info.name().index());
-                    tab();
-                    println("// " + stringValue(info));
-                }
-                case StringEntry info -> {
-                    print("#" + info.utf8().index());
-                    tab();
-                    println("// " + stringValue(info));
-                }
-                default ->
-                    throw new IllegalArgumentException("unknown entry: "+ cpInfo);
+                cpx += cpInfo.width();
+            } catch (IllegalArgumentException | IllegalStateException | IndexOutOfBoundsException e) {
+                println(report(e));
+                cpx++;
             }
-            cpx += cpInfo.width();
         }
         indent(-1);
     }

@@ -68,8 +68,10 @@ public class AttributeWriter extends BasicWriter {
 
     public void write(List<Attribute<?>> attrs, CodeAttribute lr) {
         if (attrs != null) {
-            for (var attr : attrs) {
+            for (var attr : attrs) try {
                 write(attr, lr);
+            } catch (IllegalArgumentException | IllegalStateException | IndexOutOfBoundsException e) {
+                report(e);
             }
         }
     }

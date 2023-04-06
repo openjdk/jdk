@@ -676,14 +676,14 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
                 }
 //            }
         }
-        write(cfInfo);
+        if (!write(cfInfo)) return EXIT_ERROR;
 
         if (options.showInnerClasses) {
             ClassModel cm = cfInfo.cm;
             var a = cm.findAttribute(jdk.internal.classfile.Attributes.INNER_CLASSES);
             if (a.isPresent()) {
                 var inners = a.get();
-//                try {
+                try {
                     int result = EXIT_OK;
                     for (var inner : inners.classes()) {
                         var outerClassInfo = inner.outerClass();
@@ -698,10 +698,10 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
                         }
                     }
                     return result;
-//                } catch (ConstantPoolException e) {
-//                    reportError("err.bad.innerclasses.attribute", className);
-//                    return EXIT_ERROR;
-//                }
+                } catch (IndexOutOfBoundsException | IllegalArgumentException | IllegalStateException e) {
+                    reportError("err.bad.innerclasses.attribute", className);
+                    return EXIT_ERROR;
+                }
             }
         }
 
@@ -842,7 +842,7 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
         }
     }
 
-    public void write(ClassFileInfo info) {
+    public boolean write(ClassFileInfo info) {
         ClassWriter classWriter = ClassWriter.instance(context);
         if (options.sysInfo || options.verbose) {
             classWriter.setFile(info.fo.toUri());
@@ -851,7 +851,7 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
             classWriter.setFileSize(info.size);
         }
 
-        classWriter.write(info.cm);
+        return classWriter.write(info.cm);
     }
 
     private JavaFileManager getDefaultFileManager(final DiagnosticListener<? super JavaFileObject> dl, PrintWriter log) {
