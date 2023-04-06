@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 package jdk.internal.util;
 
 import jdk.internal.vm.annotation.ForceInline;
+import jdk.internal.vm.annotation.Stable;
 
 /**
  * System architecture enum values.
@@ -35,16 +36,14 @@ import jdk.internal.vm.annotation.ForceInline;
 public enum Architecture {
     X64(),        // Represents AMD64 and X86_64
     X86(),
-    IA64(),
-    ARM(),
     AARCH64(),
     RISCV64(),
-    S390X(),
+    S390(),
     PPC64LE(),
     ;
 
     // Cache a copy of the array for lightweight indexing
-    private static final Architecture[] archValues = Architecture.values();
+    private static final @Stable Architecture[] archValues = Architecture.values();
 
     /**
      * {@return {@code true} if the current architecture is X64, Aka amd64}
@@ -63,22 +62,6 @@ public enum Architecture {
     }
 
     /**
-     * {@return {@code true} if the current architecture is IA64}
-     */
-    @ForceInline
-    public static boolean isIA64() {
-        return OperatingSystemProps.TARGET_ARCH_IS_IA64;
-    }
-
-    /**
-     * {@return {@code true} if the current architecture is Arm}
-     */
-    @ForceInline
-    public static boolean isARM() {
-        return OperatingSystemProps.TARGET_ARCH_IS_ARM;
-    }
-
-    /**
      * {@return {@code true} if the current architecture is RISCV64}
      */
     @ForceInline
@@ -87,11 +70,11 @@ public enum Architecture {
     }
 
     /**
-     * {@return {@code true} if the current architecture is S390X}
+     * {@return {@code true} if the current architecture is S390}
      */
     @ForceInline
-    public static boolean isS390X() {
-        return OperatingSystemProps.TARGET_ARCH_IS_S390X;
+    public static boolean isS390() {
+        return OperatingSystemProps.TARGET_ARCH_IS_S390;
     }
 
     /**
@@ -111,7 +94,7 @@ public enum Architecture {
     }
 
     /**
-     * {@return return the current architecture}
+     * {@return the current architecture}
      */
     public static Architecture current() {
         return archValues[OperatingSystemProps.CURRENT_ARCH_ORDINAL];

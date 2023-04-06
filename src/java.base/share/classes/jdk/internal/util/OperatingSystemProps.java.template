@@ -49,12 +49,10 @@ class OperatingSystemProps {
     // The values must match the ordinals of the Architecture enum
     private static final int TARGET_ARCH_x86_64   = 0;   // aka X64, AMD64
     private static final int TARGET_ARCH_x86      = 1;
-    private static final int TARGET_ARCH_ia64     = 2;
-    private static final int TARGET_ARCH_arm      = 3;
-    private static final int TARGET_ARCH_aarch64  = 4;
-    private static final int TARGET_ARCH_riscv64  = 5;
-    private static final int TARGET_ARCH_s390x    = 6;
-    private static final int TARGET_ARCH_ppc64le  = 7;
+    private static final int TARGET_ARCH_aarch64  = 2;
+    private static final int TARGET_ARCH_riscv64  = 3;
+    private static final int TARGET_ARCH_s390x    = 4;
+    private static final int TARGET_ARCH_ppc64le  = 5;
 
     // Index/ordinal of the current Architecure enum as substituted by the build
     static final int CURRENT_ARCH_ORDINAL = TARGET_ARCH_@@OPENJDK_TARGET_CPU@@;
@@ -62,13 +60,12 @@ class OperatingSystemProps {
     // Architecture.is64Bit() uses this value
     static final int TARGET_ARCH_BITS = @@OPENJDK_TARGET_CPU_BITS@@;
 
-    // Precomputed booleans for each Architecture, shared with Architecure
+    // Precomputed booleans for each Architecture, shared with jdk.internal.util.Architecture
+    // The variables are named to match the Architecture value names, and the values are named to match the build variables.
     static final boolean TARGET_ARCH_IS_X64         = TARGET_ARCH_@@OPENJDK_TARGET_CPU@@ == TARGET_ARCH_x86_64;
     static final boolean TARGET_ARCH_IS_X86         = TARGET_ARCH_@@OPENJDK_TARGET_CPU@@ == TARGET_ARCH_x86;
-    static final boolean TARGET_ARCH_IS_IA64        = TARGET_ARCH_@@OPENJDK_TARGET_CPU@@ == TARGET_ARCH_ia64;
-    static final boolean TARGET_ARCH_IS_ARM         = TARGET_ARCH_@@OPENJDK_TARGET_CPU@@ == TARGET_ARCH_arm;
     static final boolean TARGET_ARCH_IS_AARCH64     = TARGET_ARCH_@@OPENJDK_TARGET_CPU@@ == TARGET_ARCH_aarch64;
     static final boolean TARGET_ARCH_IS_RISCV64     = TARGET_ARCH_@@OPENJDK_TARGET_CPU@@ == TARGET_ARCH_riscv64;
-    static final boolean TARGET_ARCH_IS_S390X       = TARGET_ARCH_@@OPENJDK_TARGET_CPU@@ == TARGET_ARCH_s390x;
+    static final boolean TARGET_ARCH_IS_S390        = TARGET_ARCH_@@OPENJDK_TARGET_CPU@@ == TARGET_ARCH_s390x;
     static final boolean TARGET_ARCH_IS_PPC64LE     = TARGET_ARCH_@@OPENJDK_TARGET_CPU@@ == TARGET_ARCH_ppc64le;
 }

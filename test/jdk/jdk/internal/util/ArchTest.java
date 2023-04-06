@@ -26,11 +26,9 @@ import java.util.stream.Stream;
 import jdk.internal.util.Architecture;
 
 import static jdk.internal.util.Architecture.AARCH64;
-import static jdk.internal.util.Architecture.ARM;
-import static jdk.internal.util.Architecture.IA64;
 import static jdk.internal.util.Architecture.PPC64LE;
 import static jdk.internal.util.Architecture.RISCV64;
-import static jdk.internal.util.Architecture.S390X;
+import static jdk.internal.util.Architecture.S390;
 import static jdk.internal.util.Architecture.X64;
 import static jdk.internal.util.Architecture.X86;
 
@@ -63,11 +61,9 @@ public class ArchTest {
             case "x86" -> X86;
             case "i386" -> X86;
             case "amd64" -> X64;  // Is alias for X86_64
-            case "ia64" -> IA64;  // unverified
-            case "arm" -> ARM;  // unverified
             case "aarch64" -> AARCH64;
             case "riscv64" -> RISCV64;  // unverified
-            case "s390x" -> S390X;  // unverified
+            case "s390x", "s390" -> S390;  // unverified
             case "ppc64le" -> PPC64LE;  // unverified
             default    -> fail("Unknown os.arch: " + osArch);
         };
@@ -82,11 +78,9 @@ public class ArchTest {
         return Stream.of(
                 Arguments.of(X64, Architecture.isX64()),
                 Arguments.of(X86, Architecture.isX86()),
-                Arguments.of(IA64, Architecture.isIA64()),
-                Arguments.of(ARM, Architecture.isARM()),
                 Arguments.of(AARCH64, Architecture.isAARCH64()),
                 Arguments.of(RISCV64, Architecture.isRISCV64()),
-                Arguments.of(S390X, Architecture.isS390X()),
+                Arguments.of(S390, Architecture.isS390()),
                 Arguments.of(PPC64LE, Architecture.isPPC64LE())
         );
     }
@@ -108,11 +102,9 @@ public class ArchTest {
         boolean expected64Bit = switch (current) {
             case X64 -> true;
             case X86 -> false;
-            case IA64 -> true;
-            case ARM -> true;
             case AARCH64 -> true;
             case RISCV64 -> true;
-            case S390X -> true;
+            case S390 -> true;
             case PPC64LE -> true;
         };
         assertEquals(Architecture.is64bit(), expected64Bit, "mismatch in is64bit");
