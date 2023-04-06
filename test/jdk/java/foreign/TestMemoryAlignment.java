@@ -62,10 +62,10 @@ public class TestMemoryAlignment {
                 .withOrder(ByteOrder.BIG_ENDIAN);
         assertEquals(layout.bitAlignment(), 32);
         ValueLayout aligned = layout.withBitAlignment(align);
-        MemoryLayout alignedGroup = MemoryLayout.structLayout(MemoryLayout.paddingLayout(8), aligned);
-        assertEquals(alignedGroup.bitAlignment(), align);
-        VarHandle vh = aligned.varHandle();
         try (Arena arena = Arena.ofConfined()) {
+            MemoryLayout alignedGroup = MemoryLayout.structLayout(MemoryLayout.paddingLayout(8), aligned);
+            assertEquals(alignedGroup.bitAlignment(), align);
+            VarHandle vh = aligned.varHandle();
             MemorySegment segment = arena.allocate(alignedGroup);;
             vh.set(segment.asSlice(1L), -42);
             assertEquals(align, 8); //this is the only case where access is aligned
@@ -78,19 +78,19 @@ public class TestMemoryAlignment {
     public void testUnalignedPath(long align) {
         MemoryLayout layout = ValueLayout.JAVA_INT.withOrder(ByteOrder.BIG_ENDIAN);
         MemoryLayout aligned = layout.withBitAlignment(align).withName("value");
-        GroupLayout alignedGroup = MemoryLayout.structLayout(MemoryLayout.paddingLayout(8), aligned);
         try {
+            GroupLayout alignedGroup = MemoryLayout.structLayout(MemoryLayout.paddingLayout(8), aligned);
             alignedGroup.varHandle(PathElement.groupElement("value"));
             assertEquals(align, 8); //this is the only case where path is aligned
-        } catch (UnsupportedOperationException ex) {
+        } catch (IllegalArgumentException ex) {
             assertNotEquals(align, 8); //if align != 8, path is always unaligned
         }
     }
 
     @Test(dataProvider = "alignments")
     public void testUnalignedSequence(long align) {
-        SequenceLayout layout = MemoryLayout.sequenceLayout(5, ValueLayout.JAVA_INT.withOrder(ByteOrder.BIG_ENDIAN).withBitAlignment(align));
         try {
+            SequenceLayout layout = MemoryLayout.sequenceLayout(5, ValueLayout.JAVA_INT.withOrder(ByteOrder.BIG_ENDIAN).withBitAlignment(align));
             VarHandle vh = layout.varHandle(PathElement.sequenceElement());
             try (Arena arena = Arena.ofConfined()) {
                 MemorySegment segment = arena.allocate(layout);;
@@ -98,7 +98,7 @@ public class TestMemoryAlignment {
                     vh.set(segment, i, -42);
                 }
             }
-        } catch (UnsupportedOperationException ex) {
+        } catch (IllegalArgumentException ex) {
             assertTrue(align > 32); //if align > 32, access is always unaligned (for some elements)
         }
     }

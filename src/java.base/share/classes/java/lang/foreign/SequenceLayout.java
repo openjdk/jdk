@@ -142,7 +142,8 @@ public sealed interface SequenceLayout extends MemoryLayout permits SequenceLayo
 
     /**
      * {@inheritDoc}
+     * @throws IllegalArgumentException {@inheritDoc}
+     * @throws IllegalArgumentException if {@code bitAlignment < elementLayout().bitAlignment()}.
      */
-    @Override
     SequenceLayout withBitAlignment(long bitAlignment);
 }

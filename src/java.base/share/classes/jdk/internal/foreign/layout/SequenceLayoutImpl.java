@@ -201,6 +201,14 @@ public final class SequenceLayoutImpl extends AbstractLayout<SequenceLayoutImpl>
     }
 
     @Override
+    public SequenceLayoutImpl withBitAlignment(long bitAlignment) {
+        if (bitAlignment < elementLayout.bitAlignment()) {
+            throw new IllegalArgumentException("Invalid alignment constraint");
+        }
+        return super.withBitAlignment(bitAlignment);
+    }
+
+    @Override
     public boolean hasNaturalAlignment() {
         return bitAlignment() == elementLayout.bitAlignment();
     }

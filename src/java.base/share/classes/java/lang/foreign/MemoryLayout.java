@@ -704,10 +704,12 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      * @param elementLayout the sequence element layout.
      * @return the new sequence layout with the given element layout and size.
      * @throws IllegalArgumentException if {@code elementCount } is negative.
+     * @throws IllegalArgumentException if {@code elementLayout.bitAlignment() > elementLayout.bitSize()}.
      */
     static SequenceLayout sequenceLayout(long elementCount, MemoryLayout elementLayout) {
         MemoryLayoutUtil.requireNonNegative(elementCount);
         Objects.requireNonNull(elementLayout);
+        Utils.checkElementAlignment(elementLayout, "Element layout alignment greater than its size");
         return wrapOverflow(() ->
                 SequenceLayoutImpl.of(elementCount, elementLayout));
     }
@@ -723,6 +725,7 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      *
      * @param elementLayout the sequence element layout.
      * @return a new sequence layout with the given element layout and maximum element count.
+     * @throws IllegalArgumentException if {@code elementLayout.bitAlignment() > elementLayout.bitSize()}.
      */
     static SequenceLayout sequenceLayout(MemoryLayout elementLayout) {
         Objects.requireNonNull(elementLayout);

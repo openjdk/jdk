@@ -41,7 +41,7 @@ public class MemoryLayoutTypeRetentionTest {
     // withName() et al. should return the same type as the original object.
 
     private static final String NAME = "a";
-    private static final long BIT_ALIGNMENT = Long.SIZE * 2;
+    private static final long BIT_ALIGNMENT = Byte.SIZE;
     private static final ByteOrder BYTE_ORDER = ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN
             ? ByteOrder.LITTLE_ENDIAN
             : ByteOrder.BIG_ENDIAN;
@@ -165,7 +165,9 @@ public class MemoryLayoutTypeRetentionTest {
 
     @Test
     public void testGroupLayout() {
-        GroupLayout v = MemoryLayout.structLayout(JAVA_INT, JAVA_LONG)
+        GroupLayout v = MemoryLayout.structLayout(
+                        JAVA_INT.withBitAlignment(BIT_ALIGNMENT),
+                        JAVA_LONG.withBitAlignment(BIT_ALIGNMENT))
                 .withBitAlignment(BIT_ALIGNMENT)
                 .withoutName()
                 .withName(NAME);
@@ -174,7 +176,9 @@ public class MemoryLayoutTypeRetentionTest {
 
     @Test
     public void testStructLayout() {
-        StructLayout v = MemoryLayout.structLayout(JAVA_INT, JAVA_LONG)
+        StructLayout v = MemoryLayout.structLayout(
+                        JAVA_INT.withBitAlignment(BIT_ALIGNMENT),
+                        JAVA_LONG.withBitAlignment(BIT_ALIGNMENT))
                 .withBitAlignment(BIT_ALIGNMENT)
                 .withoutName()
                 .withName(NAME);
@@ -183,7 +187,9 @@ public class MemoryLayoutTypeRetentionTest {
 
     @Test
     public void testUnionLayout() {
-        UnionLayout v = MemoryLayout.unionLayout(JAVA_INT, JAVA_LONG)
+        UnionLayout v = MemoryLayout.unionLayout(
+                    JAVA_INT.withBitAlignment(BIT_ALIGNMENT),
+                    JAVA_LONG.withBitAlignment(BIT_ALIGNMENT))
                 .withBitAlignment(BIT_ALIGNMENT)
                 .withoutName()
                 .withName(NAME);

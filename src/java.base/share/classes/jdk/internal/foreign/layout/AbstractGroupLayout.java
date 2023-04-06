@@ -49,15 +49,13 @@ public sealed abstract class AbstractGroupLayout<L extends AbstractGroupLayout<L
 
     private final Kind kind;
     private final List<MemoryLayout> elements;
+    final long minBitAlignment;
 
-    AbstractGroupLayout(Kind kind, List<MemoryLayout> elements) {
-        this(kind, elements, kind.alignof(elements), Optional.empty());
-    }
-
-    AbstractGroupLayout(Kind kind, List<MemoryLayout> elements, long bitAlignment, Optional<String> name) {
-        super(kind.sizeof(elements), bitAlignment, name); // Subclassing creates toctou problems here
+    AbstractGroupLayout(Kind kind, List<MemoryLayout> elements, long bitSize, long bitAlignment, long minBitAlignment, Optional<String> name) {
+        super(bitSize, bitAlignment, name); // Subclassing creates toctou problems here
         this.kind = kind;
         this.elements = List.copyOf(elements);
+        this.minBitAlignment = minBitAlignment;
     }
 
     /**
@@ -83,6 +81,14 @@ public sealed abstract class AbstractGroupLayout<L extends AbstractGroupLayout<L
                 .collect(Collectors.joining(kind.delimTag, "[", "]")));
     }
 
+    @Override
+    public L withBitAlignment(long bitAlignment) {
+        if (bitAlignment < minBitAlignment) {
+            throw new IllegalArgumentException("Invalid alignment constraint");
+        }
+        return super.withBitAlignment(bitAlignment);
+    }
+
     /**
      * {@inheritDoc}
      */
@@ -105,7 +111,7 @@ public sealed abstract class AbstractGroupLayout<L extends AbstractGroupLayout<L
 
     @Override
     public final boolean hasNaturalAlignment() {
-        return bitAlignment() == kind.alignof(elements);
+        return bitAlignment() == minBitAlignment;
     }
 
     /**
@@ -115,33 +121,16 @@ public sealed abstract class AbstractGroupLayout<L extends AbstractGroupLayout<L
         /**
          * A 'struct' kind.
          */
-        STRUCT("", Math::addExact),
+        STRUCT(""),
         /**
          * A 'union' kind.
          */
-        UNION("|", Math::max);
+        UNION("|");
 
         final String delimTag;
-        final LongBinaryOperator sizeOp;
 
-        Kind(String delimTag, LongBinaryOperator sizeOp) {
+        Kind(String delimTag) {
             this.delimTag = delimTag;
-            this.sizeOp = sizeOp;
-        }
-
-        long sizeof(List<MemoryLayout> elems) {
-            long size = 0;
-            for (MemoryLayout elem : elems) {
-                size = sizeOp.applyAsLong(size, elem.bitSize());
-            }
-            return size;
-        }
-
-        long alignof(List<MemoryLayout> elems) {
-            return elems.stream()
-                    .mapToLong(MemoryLayout::bitAlignment)
-                    .max() // max alignment in case we have member layouts
-                    .orElse(8); // or minimal alignment if no member layout is given
         }
     }
 }
