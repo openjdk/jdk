@@ -558,8 +558,8 @@ tier2 = \
 
 tier3 = \
   :hotspot_tier3_runtime \
-  :tier3_gc_gcold \
   :tier3_compiler \
+  :tier3_gc_gcold \
   :tier3_gc_shenandoah
 
 # Everything that is not in other tiers, but not apps
