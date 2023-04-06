@@ -306,7 +306,7 @@ public class SSLSocketEmptyFragments extends SSLContextTemplate {
     private ContextParameters getContextParameters() {
         return new ContextParameters(protocol, "PKIX", "NewSunX509");
     }
-    
+
     private static void log(String message) {
         System.out.println(message);
         System.out.flush();
