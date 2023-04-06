@@ -131,7 +131,7 @@ class DepGraph {
   DepMem* tail() { return _tail; }
 
   // Return dependence node corresponding to an ideal node
-  DepMem* dep(Node* node) { return _map.at(node->_idx); }
+  DepMem* dep(Node* node) const { return _map.at(node->_idx); }
 
   // Make a new dependence graph node for an ideal node.
   DepMem* make_node(Node* node);
@@ -161,7 +161,7 @@ private:
   bool     _done;
 
 public:
-  DepPreds(Node* n, DepGraph& dg);
+  DepPreds(Node* n, const DepGraph& dg);
   Node* current() { return _current; }
   bool  done()    { return _done; }
   void  next();
@@ -349,6 +349,10 @@ class SuperWord : public ResourceObj {
 #endif
   bool     do_vector_loop()        { return _do_vector_loop; }
   bool     do_reserve_copy()       { return _do_reserve_copy; }
+
+  const GrowableArray<Node_List*>& packset() const { return _packset; }
+  const GrowableArray<Node*>&      block()   const { return _block; }
+  const DepGraph&                  dg()      const { return _dg; }
  private:
   IdealLoopTree* _lpt;             // Current loop tree node
   CountedLoopNode* _lp;            // Current CountedLoopNode
@@ -412,12 +416,14 @@ class SuperWord : public ResourceObj {
   MemNode* align_to_ref()            { return _align_to_ref; }
   void  set_align_to_ref(MemNode* m) { _align_to_ref = m; }
 
-  Node* ctrl(Node* n) const { return _phase->has_ctrl(n) ? _phase->get_ctrl(n) : n; }
+  const Node* ctrl(const Node* n) const { return _phase->has_ctrl(n) ? _phase->get_ctrl(n) : n; }
 
   // block accessors
-  bool in_bb(Node* n)      { return n != nullptr && n->outcnt() > 0 && ctrl(n) == _bb; }
-  int  bb_idx(Node* n)     { assert(in_bb(n), "must be"); return _bb_idx.at(n->_idx); }
-  void set_bb_idx(Node* n, int i) { _bb_idx.at_put_grow(n->_idx, i); }
+ public:
+  bool in_bb(const Node* n) const  { return n != nullptr && n->outcnt() > 0 && ctrl(n) == _bb; }
+  int  bb_idx(const Node* n) const { assert(in_bb(n), "must be"); return _bb_idx.at(n->_idx); }
+ private:
+  void set_bb_idx(Node* n, int i)  { _bb_idx.at_put_grow(n->_idx, i); }
 
   // visited set accessors
   void visited_clear()           { _visited.clear(); }
@@ -554,6 +560,8 @@ class SuperWord : public ResourceObj {
   void merge_packs_to_cmove();
   // Verify that for every pack, all nodes are mutually independent
   DEBUG_ONLY(void verify_packs();)
+  // Remove cycles in packset.
+  void remove_cycles();
   // Adjust the memory graph for the packed operations
   void schedule();
   // Remove "current" from its current position in the memory graph and insert

@@ -11022,7 +11022,8 @@ myInit() {
             the current thread (see
             <functionlink id="GetCurrentThreadCpuTimerInfo"/> vs
             <functionlink id="GetThreadCpuTimerInfo"/>).
-            The current thread may not be a virtual thread. Otherwise, the error code
+            An implementation is not required to support this function
+            when the current thread is a virtual thread, in which case 
             <errorlink id="JVMTI_ERROR_UNSUPPORTED_OPERATION"></errorlink> will be returned.
             On many platforms this call will be equivalent to:
 <example>
@@ -11125,7 +11126,8 @@ myInit() {
           <jthread null="current" impl="noconvert"/>
             <description>
               The thread to query.
-              The <code>thread</code> may not be a virtual thread. Otherwise, the error code
+              An implementation is not required to support this function
+              when the given thread is a virtual thread, in which case
                <errorlink id="JVMTI_ERROR_UNSUPPORTED_OPERATION"></errorlink> will be returned.
              </description>
         </param>
