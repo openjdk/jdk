@@ -28,7 +28,7 @@
  *          java.base/jdk.internal.classfile.attribute
  *          java.base/jdk.internal.classfile.constantpool
  * @summary Basic sanity tests for MethodHandleProxies
- * @run junit/othervm -ea -esa -Djdk.invoke.MethodHandleProxies.dumpInterfaceInstances BasicTest
+ * @run junit/othervm -Djdk.invoke.MethodHandleProxies.dumpInterfaceInstances BasicTest
  */
 
 import jdk.internal.classfile.ClassHierarchyResolver;

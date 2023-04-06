@@ -38,6 +38,7 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandleProxies;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
 import static java.lang.invoke.MethodHandles.lookup;
@@ -51,10 +52,10 @@ import static java.lang.invoke.MethodType.methodType;
 @State(Scope.Thread)
 @Warmup(iterations = 10, time = 1, timeUnit = TimeUnit.SECONDS)
 @Measurement(iterations = 5, time = 2, timeUnit = TimeUnit.SECONDS)
-@Fork(3)
+@Fork(1)
 public class MethodHandleProxiesAsIFInstanceCreate {
     /**
-     * Avoids elimination of computation
+     * Avoids elimination of computation, set up to random value
      */
     public int i;
 
@@ -66,6 +67,7 @@ public class MethodHandleProxiesAsIFInstanceCreate {
     @Setup
     public void setup() throws Throwable {
         target = LOOKUP.findStatic(MethodHandleProxiesAsIFInstanceCreate.class, "doWork", MT_int_int);
+        i = ThreadLocalRandom.current().nextInt();
     }
 
     @Benchmark

@@ -193,17 +193,18 @@ public class MethodHandleProxies {
 
         // Interface-specific setup
         InterfaceInfo info = INTERFACE_INFOS.get(intfc); // throws IllegalArgumentException
-        var mhs = new MethodHandle[info.types.length + 1];
-        mhs[0] = target;
-        for (int i = 1; i < mhs.length; i++) {
-            mhs[i] = mh.asType(info.types[i - 1]); // throws WrongMethodTypeException
+        List<Object> classData = new ArrayList<>(info.types.length + 2);
+        classData.add(info);
+        classData.add(target);
+        for (var methodType : info.types) {
+            classData.add(mh.asType(methodType)); // throws WrongMethodTypeException
         }
 
         // Define the class under the interface
         Object proxy;
         try {
             var lookup = info.lookup.makeHiddenClassDefiner(info.template, DUMPER)
-                    .defineClassAsLookup(true, List.of(mhs));
+                    .defineClassAsLookup(true, classData);
             proxy = lookup.findConstructor(lookup.lookupClass(), methodType(void.class)).invoke();
         } catch (Error e) {
             throw e;
@@ -265,23 +266,12 @@ public class MethodHandleProxies {
     private static final ClassValue<WrapperInfo> WRAPPER_INFOS = new ClassValue<>() {
         @Override
         protected WrapperInfo computeValue(Class<?> type) {
-            var interfaces = type.getInterfaces();
-            if (interfaces.length != 1)
-                return WrapperInfo.INVALID;
-
-            var implementedType = interfaces[0];
-            InterfaceInfo itfInfo;
-            try {
-                itfInfo = INTERFACE_INFOS.get(implementedType);
-            } catch (IllegalArgumentException ex) {
-                // bad interface in WrapperInstance anno, may be attacks
-                return WrapperInfo.INVALID;
-            }
-
             if ((MethodHandles.classData(type) instanceof List<?> l)
-                    && l.size() == itfInfo.types.length + 1
-                    && l.get(0) instanceof MethodHandle mh) {
-                return new WrapperInfo(implementedType, mh);
+                    && l.size() > 2
+                    && l.get(0) instanceof InterfaceInfo info
+                    && l.size() == info.types.length + 2
+                    && l.get(1) instanceof MethodHandle mh) {
+                return new WrapperInfo(info.lookup.lookupClass(), mh);
             }
 
             return WrapperInfo.INVALID;
@@ -295,7 +285,7 @@ public class MethodHandleProxies {
     /**
      * Creates an implementation class file for a given interface. One implementation class is
      * defined for each method handle, with the same bytes but different class data:
-     * [wrapperInstanceTarget, methodtype1, methodtype2, ...]
+     * [interfaceInfo, wrapperInstanceTarget, methodtype1, methodtype2, ...]
      *
      * @param ifaceDesc the given interface
      * @param methodName the name of the single abstract method
@@ -315,7 +305,7 @@ public class MethodHandleProxies {
                     .return_());
 
             // actual implementations
-            int classDataIndex = 1; // 0 is reserved for wrapper instance target
+            int classDataIndex = 2; // 0 is interfaceInfo, 1 is reserved for wrapper instance target
             for (LocalMethodInfo mi : methods) {
                 var condy = DynamicConstantDesc.ofNamed(BSM_CLASS_DATA_AT, DEFAULT_NAME, CD_MethodHandle, classDataIndex++);
                 // we don't need to generate thrown exception attribute

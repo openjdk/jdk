@@ -38,6 +38,7 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandleProxies;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
 import static java.lang.invoke.MethodHandles.lookup;
@@ -52,10 +53,10 @@ import static java.lang.invoke.MethodType.methodType;
 @State(Scope.Thread)
 @Warmup(iterations = 10, time = 1, timeUnit = TimeUnit.SECONDS)
 @Measurement(iterations = 5, time = 2, timeUnit = TimeUnit.SECONDS)
-@Fork(3)
+@Fork(1)
 public class MethodHandleProxiesAsIFInstanceCall {
     /**
-     * Avoids elimination of computation
+     * Avoids elimination of computation, set up to random value
      */
     public int i;
 
@@ -107,27 +108,12 @@ public class MethodHandleProxiesAsIFInstanceCall {
 
     @Setup
     public void setup() throws Throwable {
-        target = LOOKUP.findStatic(MethodHandleProxiesAsIFInstanceCall.class, "doWork", MT_int_int);
-        doable = new Doable() {
-            @Override
-            public int doWork(int i) {
-                return MethodHandleProxiesAsIFInstanceCall.doWork(i);
-            }
-        };
-        handle = new Doable() {
-            @Override
-            public int doWork(int i) {
-                try {
-                    return (int) target.invokeExact((int) i);
-                } catch (Error | RuntimeException e) {
-                    throw e;
-                } catch (Throwable e) {
-                    throw new RuntimeException(e);
-                }
-            }
-        };
-        interfaceInstance = MethodHandleProxies.asInterfaceInstance(Doable.class, target);
-        lambda = (Doable) LambdaMetafactory.metafactory(LOOKUP, "doWork", MT_Doable, MT_int_int, target, MT_int_int).getTarget().invokeExact();
+        target = constantTarget;
+        doable = constantDoable;
+        handle = constantHandle;
+        interfaceInstance = constantInterfaceInstance;
+        lambda = constantLambda;
+        i = ThreadLocalRandom.current().nextInt();
     }
 
     @Benchmark

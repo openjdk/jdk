@@ -24,7 +24,7 @@
 /* @test
  * @bug 6983726
  * @build Untrusted WithSecurityManagerTest
- * @run main/othervm/policy=jtreg.security.policy -ea -esa
+ * @run main/othervm/policy=jtreg.security.policy
  *      -Djdk.invoke.MethodHandleProxies.dumpInterfaceInstances WithSecurityManagerTest
  * @summary Checks MethodHandleProxies behavior with security manager present
  */
