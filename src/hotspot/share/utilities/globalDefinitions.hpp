@@ -166,6 +166,9 @@ class oopDesc;
 #define JULONG_FORMAT_X          UINT64_FORMAT_X
 #endif
 
+// Format jdouble with defined precision
+#define JDOUBLE_FORMAT_P(precision) "%." #precision "f"
+
 // Format pointers which change size between 32- and 64-bit.
 #ifdef  _LP64
 #define INTPTR_FORMAT            "0x%016"     PRIxPTR
