@@ -23,6 +23,8 @@ public class Unnamed {
         assertEquals(3, testMultiValuesNested(new Box(new R4())));
         assertEquals(1, testMultiValuesNestedUnnamedVarAndPattern(new Box(new R1())));
         assertEquals(2, testMultiValuesNestedUnnamedVarAndPattern(new Box(new R4())));
+//        assertEquals(2, testMultiValuesGuards(new R3(), 1));
+//        assertEquals(3, testMultiValuesGuards(new R3(), 42));
     }
     private void unnamedTest() {
         int _ = 0;
@@ -45,13 +47,6 @@ public class Unnamed {
         if (r instanceof R(_)) {}
         for (int _ = 0, _ = 1; ;) {}
     }
-
-    sealed abstract class Base permits R1, R2, R3, R4 { }
-    final  class R1  extends Base { }
-    final  class R2  extends Base { }
-    final  class R3  extends Base { }
-    final  class R4  extends Base { }
-    record Box<T extends Base>(T content) { }
 
     int testMultiValuesTopLevel(Object o) {
         return switch (o) {
@@ -82,6 +77,22 @@ public class Unnamed {
         };
     }
 
+//    int testMultiValuesGuards(Base b, int x) {
+//        return switch (b) {
+//            case R1 r -> 1;
+//            case R2 _, R3 _, R4 _ when x == 1 -> 2;
+//            case R2 _, R3 _, R4 _ -> 3;
+//        };
+//    }
+
+//    int testMultiValuesNestedGuards(Box<?> b, int x) {
+//        return switch (b) {
+//            case Box(R1 _), Box(R2 _) -> 1;
+//            case Box(R3 _), Box(_) when x == 1 -> 2;
+//            case Box(R3 _), Box(_) -> 3;
+//        };
+//    }
+
     class Lock implements AutoCloseable {
         @Override
         public void close() {}
@@ -90,6 +101,13 @@ public class Unnamed {
         public void run(Object o1, Object o2);
     }
     record R(Object o) {}
+
+    sealed abstract class Base permits R1, R2, R3, R4 { }
+    final  class R1  extends Base { }
+    final  class R2  extends Base { }
+    final  class R3  extends Base { }
+    final  class R4  extends Base { }
+    record Box<T extends Base>(T content) { }
 
     void assertEquals(Object expected, Object actual) {
         if (!Objects.equals(expected, actual)) {
