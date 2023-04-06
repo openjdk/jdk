@@ -1,11 +1,14 @@
-UnnamedErrors.java:6:17: compiler.err.underscore.as.identifier
-UnnamedErrors.java:7:18: compiler.err.underscore.as.identifier
-UnnamedErrors.java:8:23: compiler.err.underscore.as.identifier
-UnnamedErrors.java:9:19: compiler.err.underscore.as.identifier
-UnnamedErrors.java:14:26: compiler.err.underscore.as.identifier
-UnnamedErrors.java:16:26: compiler.err.underscore.as.identifier
-UnnamedErrors.java:16:27: compiler.err.preview.feature.disabled.plural: (compiler.misc.feature.deconstruction.patterns)
-UnnamedErrors.java:19:18: compiler.err.underscore.as.identifier
-UnnamedErrors.java:26:18: compiler.err.preview.feature.disabled.plural: (compiler.misc.feature.pattern.switch)
-UnnamedErrors.java:26:22: compiler.err.underscore.as.identifier
-10 errors
+UnnamedErrors.java:7:17: compiler.err.underscore.as.identifier
+UnnamedErrors.java:8:18: compiler.err.underscore.as.identifier
+UnnamedErrors.java:9:23: compiler.err.underscore.as.identifier
+UnnamedErrors.java:10:19: compiler.err.underscore.as.identifier
+UnnamedErrors.java:15:26: compiler.err.underscore.as.identifier
+UnnamedErrors.java:17:26: compiler.err.underscore.as.identifier
+UnnamedErrors.java:20:18: compiler.err.underscore.as.identifier
+UnnamedErrors.java:27:18: compiler.err.restricted.type.not.allowed.here: var
+UnnamedErrors.java:27:22: compiler.err.underscore.as.identifier
+UnnamedErrors.java:29:13: compiler.err.unconditional.pattern.and.default
+UnnamedErrors.java:38:18: compiler.err.pattern.dominated
+- compiler.note.preview.filename: UnnamedErrors.java, DEFAULT
+- compiler.note.preview.recompile
+11 errors

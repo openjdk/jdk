@@ -12,12 +12,17 @@ public class Unnamed {
     }
 
     public void run() {
-        assertEquals(testMultiValuesTopLevel(new R1()), 1);
-        assertEquals(testMultiValuesTopLevel(new R3()), 2);
+        assertEquals(1, testMultiValuesTopLevel(new R1()));
+        assertEquals(2, testMultiValuesTopLevel(new R3()));
+        assertEquals(1, testMultiValuesTopLevel2(new R1()));
+        assertEquals(2, testMultiValuesTopLevel2(new R2()));
+        assertEquals(2, testMultiValuesTopLevel2(new R4()));
         assertEquals(1, testMultiValuesNested(new Box(new R1())));
         assertEquals(1, testMultiValuesNested(new Box(new R2())));
         assertEquals(2, testMultiValuesNested(new Box(new R3())));
         assertEquals(3, testMultiValuesNested(new Box(new R4())));
+        assertEquals(1, testMultiValuesNestedUnnamedVarAndPattern(new Box(new R1())));
+        assertEquals(2, testMultiValuesNestedUnnamedVarAndPattern(new Box(new R4())));
     }
     private void unnamedTest() {
         int _ = 0;
@@ -55,7 +60,14 @@ public class Unnamed {
         };
     }
 
-    private int testMultiValuesNested(Box<?> b) {
+    int testMultiValuesTopLevel2(Base o) {
+        return switch (o) {
+            case R1 r -> 1;
+            case R2 _, R3 _, R4 _ -> 2;
+        };
+    }
+
+    int testMultiValuesNested(Box<?> b) {
         return switch (b) {
             case Box(R1 _), Box(R2 _) -> 1;
             case Box(R3 _) -> 2;
@@ -63,19 +75,12 @@ public class Unnamed {
         };
     }
 
-    // TODO list
-    // - Default behavior with all the cases with underscores
-    //    switch (shape) {
-    //        case Circle c -> // use `c`
-    //        case Rectangle _, Triangle _ -> // default behavior
-    //    }
-    // - Box(Rectangle) is dead, but not according to the left-to-right domination order, this is OK
-    //    switch (box) {
-    //        case Box(Circle c) ->
-    //        case Box(Rectangle _), Box(_) ->
-    //    }
-    // - Guards with unnamed pattern variables disallowed
-    // - Domination
+    int testMultiValuesNestedUnnamedVarAndPattern(Box<?> b) {
+        return switch (b) {
+            case Box(R1 _), Box(R2 _) -> 1;
+            case Box(R3 _), Box(_) -> 2;
+        };
+    }
 
     class Lock implements AutoCloseable {
         @Override

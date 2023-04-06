@@ -273,7 +273,7 @@ public class TransPatterns extends TreeTranslator {
         Type castTargetType = types.erasure(TreeInfo.primaryPatternType(tree));
         VarSymbol bindingVar = bindingContext.bindingDeclared(binding);
 
-        if (bindingVar != null) {
+        if (bindingVar != null && bindingVar.name != names.underscore) {
             JCAssign fakeInit = (JCAssign)make.at(TreeInfo.getStartPos(tree)).Assign(
                     make.Ident(bindingVar), convert(make.Ident(currentValue), castTargetType)).setType(bindingVar.erasure(types));
             LetExpr nestedLE = make.LetExpr(List.of(make.Exec(fakeInit)),

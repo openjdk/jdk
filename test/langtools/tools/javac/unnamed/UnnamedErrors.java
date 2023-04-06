@@ -1,6 +1,7 @@
 /**
  * @test
- * @compile/fail/ref=UnnamedErrors.out -XDrawDiagnostics UnnamedErrors.java
+ * @enablePreview
+ * @compile/fail/ref=UnnamedErrors.out -XDrawDiagnostics -XDshould-stop.at=FLOW UnnamedErrors.java
  */
 public class UnnamedErrors {
     private int _; //no fields
@@ -27,6 +28,17 @@ public class UnnamedErrors {
                 System.out.println("no var _ top level");
             default:
                 System.out.println("");
+        }
+    }
+
+    void dominance1(Object o) {
+        switch (o) {
+            case Number _ ->
+                    System.out.println("A Number");
+            case Integer _, String _ ->             // Error - dominated case pattern: `Integer _`
+                    System.out.println("An Integer or a String");
+            default ->
+                    System.out.println("rest");
         }
     }
 }
