@@ -163,7 +163,7 @@ import java.util.stream.Stream;
  * <tr><th scope="row" style="font-weight:normal">{@code char*}, {@code int**}, {@code struct Point*}</th>
  *     <td style="text-align:center;">{@link ValueLayout#ADDRESS}</td>
  *     <td style="text-align:center;">{@link MemorySegment}</td>
- * <tr><th scope="row" style="font-weight:normal">{@code int (*foo)[10]}</th>
+ * <tr><th scope="row" style="font-weight:normal">{@code int (*ptr)[10]}</th>
  *     <td style="text-align:left;">
  * <pre>
  * ValueLayout.ADDRESS.withTargetLayout(
