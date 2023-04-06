@@ -44,7 +44,8 @@ import static java.lang.invoke.MethodHandles.lookup;
 import static java.lang.invoke.MethodType.methodType;
 
 /**
- * Benchmark evaluates the performance of MethodHandleProxies.*
+ * Benchmark evaluates the call performance of MethodHandleProxies.asInterfaceInstance
+ * return value, compared to
  */
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
@@ -52,7 +53,7 @@ import static java.lang.invoke.MethodType.methodType;
 @Warmup(iterations = 10, time = 1, timeUnit = TimeUnit.SECONDS)
 @Measurement(iterations = 5, time = 2, timeUnit = TimeUnit.SECONDS)
 @Fork(3)
-public class MethodHandleProxiesAsIFInstance {
+public class MethodHandleProxiesAsIFInstanceCall {
 
     /**
      * Implementation notes:
@@ -67,41 +68,65 @@ public class MethodHandleProxiesAsIFInstance {
     private static final Lookup LOOKUP = lookup();
     private static final MethodType MT_Doable = methodType(Doable.class);
     private static final MethodType MT_int_int = methodType(int.class, int.class);
+
+    // constant-fold
+    private static final MethodHandle constantTarget;
+    private static final Doable constantPrecreatedDoable;
+    private static final Doable constantPrecreatedInstance;
+    private static final Doable constantPrecreatedLambda;
+
+    // part of state object
     private MethodHandle target;
-    private Doable precreated;
+    private Doable precreatedDoable;
+    private Doable precreatedInstance;
     private Doable precreatedLambda;
+
+    static {
+        try {
+            constantTarget = LOOKUP.findStatic(MethodHandleProxiesAsIFInstanceCall.class, "doWork", MT_int_int);
+        } catch (NoSuchMethodException | IllegalAccessException e) {
+            throw new ExceptionInInitializerError(e);
+        }
+        constantPrecreatedDoable = new Doable() {
+            @Override
+            public int doWork(int i) {
+                return MethodHandleProxiesAsIFInstanceCall.doWork(i);
+            }
+        };
+        constantPrecreatedInstance = MethodHandleProxies.asInterfaceInstance(Doable.class, constantTarget);
+        constantPrecreatedLambda = MethodHandleProxiesAsIFInstanceCall::doWork;
+    }
 
     @Setup
     public void setup() throws Throwable {
-        target = LOOKUP.findStatic(MethodHandleProxiesAsIFInstance.class, "doWork", MT_int_int);
-        precreated = MethodHandleProxies.asInterfaceInstance(Doable.class, target);
-        precreatedLambda = MethodHandleProxiesAsIFInstance::doWork;
+        target = LOOKUP.findStatic(MethodHandleProxiesAsIFInstanceCall.class, "doWork", MT_int_int);
+        precreatedDoable = new Doable() {
+            @Override
+            public int doWork(int i) {
+                return MethodHandleProxiesAsIFInstanceCall.doWork(i);
+            }
+        };
+        precreatedInstance = MethodHandleProxies.asInterfaceInstance(Doable.class, target);
+        precreatedLambda = (Doable) LambdaMetafactory.metafactory(LOOKUP, "doWork", MT_Doable, MT_int_int, target, MT_int_int).getTarget().invokeExact();
+        ;
     }
 
     @Benchmark
-    public Doable lambdaCreate() throws Throwable {
-        Doable doable = (Doable) LambdaMetafactory.metafactory(LOOKUP, "doWork", MT_Doable, MT_int_int, target, MT_int_int).getTarget().invokeExact();
-        return doable;              // make sure allocation happens
+    public Doable directCall() {
+        i = doWork(i);
+        return null;
     }
 
     @Benchmark
-    public Doable testCreate() {
-        Doable doable = MethodHandleProxies.asInterfaceInstance(Doable.class, target);
-        return doable;              // make sure allocation happens
+    public Doable doableCall() {
+        i = precreatedDoable.doWork(i);
+        return precreatedDoable;
     }
 
     @Benchmark
-    public Doable lambdaCreateCall() throws Throwable {
-        Doable doable = (Doable) LambdaMetafactory.metafactory(LOOKUP, "doWork", MT_Doable, MT_int_int, target, MT_int_int).getTarget().invokeExact();
-        i = doable.doWork(i);       // make sure computation happens
-        return null;                // let allocation be eliminated
-    }
-
-    @Benchmark
-    public Doable testCreateCall() {
-        Doable doable = MethodHandleProxies.asInterfaceInstance(Doable.class, target);
-        i = doable.doWork(i);       // make sure computation happens
-        return null;                // let allocation be eliminated
+    public Doable interfaceInstanceCall() {
+        i = precreatedInstance.doWork(i);   // make sure computation happens
+        return precreatedInstance;
     }
 
     @Benchmark
@@ -111,35 +136,21 @@ public class MethodHandleProxiesAsIFInstance {
     }
 
     @Benchmark
-    public Doable testCall() {
-        i = precreated.doWork(i);   // make sure computation happens
-        return precreated;
+    public Doable constantDoableCall() {
+        i = constantPrecreatedDoable.doWork(i);
+        return constantPrecreatedDoable;
     }
 
     @Benchmark
-    public Doable baselineCompute() {
-        Doable doable = new Doable() {
-            @Override
-            public int doWork(int i) {
-                return MethodHandleProxiesAsIFInstance.doWork(i);
-            }
-        };
-
-        i = doable.doWork(i);       // make sure computation happens
-        return null;                // let allocation be eliminated
+    public Doable constantInterfaceInstanceCall() {
+        i = constantPrecreatedInstance.doWork(i);   // make sure computation happens
+        return constantPrecreatedInstance;
     }
 
     @Benchmark
-    public Doable baselineAllocCompute() {
-        Doable doable = new Doable() {
-            @Override
-            public int doWork(int i) {
-                return MethodHandleProxiesAsIFInstance.doWork(i);
-            }
-        };
-
-        i = doable.doWork(i);       // make sure computation happens
-        return doable;              // make sure allocation happens
+    public Doable constantLambdaCall() {
+        i = constantPrecreatedLambda.doWork(i); // make sure computation happens
+        return constantPrecreatedLambda;
     }
 
     public static int doWork(int i) {

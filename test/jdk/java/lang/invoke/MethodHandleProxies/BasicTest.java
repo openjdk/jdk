@@ -28,7 +28,7 @@
  *          java.base/jdk.internal.classfile.attribute
  *          java.base/jdk.internal.classfile.constantpool
  * @summary Basic sanity tests for MethodHandleProxies
- * @run junit BasicTest
+ * @run junit/othervm -ea -esa -Djdk.invoke.MethodHandleProxies.dumpInterfaceInstances BasicTest
  */
 
 import jdk.internal.classfile.ClassHierarchyResolver;
@@ -99,27 +99,6 @@ public class BasicTest {
         assertThrows(IllegalArgumentException.class, () -> wrapperInstanceTarget(lambda));
         assertSame(Comparator.class, wrapperInstanceType(proxy));
         assertThrows(IllegalArgumentException.class, () -> wrapperInstanceType(lambda));
-    }
-
-    // We both check for correctness and that it doesn't throw
-    @Test
-    public void testObjectMethods() throws Throwable {
-        var mh = MethodHandles.publicLookup()
-                .findVirtual(Integer.class, "compareTo", methodType(int.class, Integer.class));
-        @SuppressWarnings("unchecked")
-        Comparator<Integer> p1 = (Comparator<Integer>) asInterfaceInstance(Comparator.class, mh);
-        @SuppressWarnings("unchecked")
-        Comparator<Integer> p2 = (Comparator<Integer>) asInterfaceInstance(Comparator.class, mh);
-
-        assertEquals(System.identityHashCode(p1), p1.hashCode());
-        assertEquals(System.identityHashCode(p2), p2.hashCode());
-
-        assertEquals(p1, p1);
-        assertEquals(p1 == p2, p1.equals(p2));
-        assertEquals(p2 == p1, p2.equals(p1));
-
-        assertEquals(Objects.toIdentityString(p1), p1.toString());
-        assertEquals(Objects.toIdentityString(p2), p2.toString());
     }
 
     private <T extends Throwable> Closeable throwing(Class<T> clz, T value) {

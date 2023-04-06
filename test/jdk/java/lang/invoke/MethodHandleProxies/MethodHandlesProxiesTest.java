@@ -23,7 +23,8 @@
 
 /* @test
  * @bug 8206955 8269351
- * @run testng/othervm -ea -esa test.java.lang.invoke.MethodHandlesProxiesTest
+ * @run testng/othervm -ea -esa -Djdk.invoke.MethodHandleProxies.dumpInterfaceInstances
+ *      test.java.lang.invoke.MethodHandlesProxiesTest
  */
 
 package test.java.lang.invoke;
