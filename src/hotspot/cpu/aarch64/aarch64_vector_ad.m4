@@ -210,6 +210,12 @@ source %{
           return false;
         }
         break;
+      case Op_CompressBitsV:
+      case Op_ExpandBitsV:
+        if (UseSVE < 2 || !VM_Version::supports_svebitperm()) {
+          return false;
+        }
+        break;
       default:
         break;
     }
@@ -230,6 +236,8 @@ source %{
       case Op_MulReductionVF:
       case Op_MulReductionVI:
       case Op_MulReductionVL:
+      case Op_CompressBitsV:
+      case Op_ExpandBitsV:
         return false;
       // We use Op_LoadVectorMasked to implement the predicated Op_LoadVector.
       // Hence we turn to check whether Op_LoadVectorMasked is supported. The
@@ -3702,18 +3710,19 @@ instruct vmaskcast_extend_sve(pReg dst, pReg src) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vmaskcast_narrow_sve(pReg dst, pReg src) %{
+instruct vmaskcast_narrow_sve(pReg dst, pReg src, pReg ptmp) %{
   predicate(UseSVE > 0 &&
             Matcher::vector_length_in_bytes(n) < Matcher::vector_length_in_bytes(n->in(1)));
   match(Set dst (VectorMaskCast src));
-  format %{ "vmaskcast_narrow_sve $dst, $src" %}
+  effect(TEMP_DEF dst, TEMP ptmp);
+  format %{ "vmaskcast_narrow_sve $dst, $src\t# KILL $ptmp" %}
   ins_encode %{
     uint length_in_bytes_dst = Matcher::vector_length_in_bytes(this);
     uint length_in_bytes_src = Matcher::vector_length_in_bytes(this, $src);
     assert(length_in_bytes_dst * 2 == length_in_bytes_src ||
            length_in_bytes_dst * 4 == length_in_bytes_src ||
            length_in_bytes_dst * 8 == length_in_bytes_src, "invalid vector length");
-    __ sve_vmaskcast_narrow($dst$$PRegister, $src$$PRegister,
+    __ sve_vmaskcast_narrow($dst$$PRegister, $src$$PRegister, $ptmp$$PRegister,
                             length_in_bytes_dst, length_in_bytes_src);
   %}
   ins_pipe(pipe_slow);
@@ -4950,3 +4959,25 @@ instruct vsignum_gt128b(vReg dst, vReg src, vReg zero, vReg one, vReg tmp, pRegG
   %}
   ins_pipe(pipe_slow);
 %}
+
+dnl
+dnl BITPERM($1,        $2,      $3  )
+dnl BITPERM(insn_name, op_name, insn)
+define(`BITPERM', `
+instruct $1(vReg dst, vReg src1, vReg src2) %{
+  match(Set dst ($2 src1 src2));
+  format %{ "$1 $dst, $src1, $src2\t# vector (sve)" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    Assembler::SIMD_RegVariant size = __ elemType_to_regVariant(bt);
+    __ $3($dst$$FloatRegister, size,
+                $src1$$FloatRegister, $src2$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}')dnl
+dnl
+// ---------------------------------- CompressBitsV --------------------------------
+BITPERM(vcompressBits, CompressBitsV, sve_bext)
+
+// ----------------------------------- ExpandBitsV ---------------------------------
+BITPERM(vexpandBits, ExpandBitsV, sve_bdep)

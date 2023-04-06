@@ -415,6 +415,8 @@ class JavaThread: public Thread {
 
   StackOverflow    _stack_overflow_state;
 
+  void pretouch_stack();
+
   // Compiler exception handling (NOTE: The _exception_oop is *NOT* the same as _pending_exception. It is
   // used to temp. parsing values into and out of the runtime system during exception handling for compiled
   // code)

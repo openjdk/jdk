@@ -92,7 +92,9 @@ class VectorNode : public TypeNode {
 
   static int  opcode(int opc, BasicType bt);
   static int replicate_opcode(BasicType bt);
-  static bool vector_size_supported(BasicType bt, uint vlen);
+
+  // Limits on vector size (number of elements) for auto-vectorization.
+  static bool vector_size_supported_superword(const BasicType bt, int size);
   static bool implemented(int opc, uint vlen, BasicType bt);
   static bool is_shift(Node* n);
   static bool is_vshift_cnt(Node* n);
@@ -1286,7 +1288,7 @@ class ExtractBNode : public ExtractNode {
  public:
   ExtractBNode(Node* src, ConINode* pos) : ExtractNode(src, pos) {}
   virtual int Opcode() const;
-  virtual const Type *bottom_type() const { return TypeInt::INT; }
+  virtual const Type* bottom_type() const { return TypeInt::BYTE; }
   virtual uint ideal_reg() const { return Op_RegI; }
 };
 
@@ -1296,7 +1298,7 @@ class ExtractUBNode : public ExtractNode {
  public:
   ExtractUBNode(Node* src, ConINode* pos) : ExtractNode(src, pos) {}
   virtual int Opcode() const;
-  virtual const Type *bottom_type() const { return TypeInt::INT; }
+  virtual const Type* bottom_type() const { return TypeInt::UBYTE; }
   virtual uint ideal_reg() const { return Op_RegI; }
 };
 
@@ -1799,6 +1801,20 @@ public:
   SignumVDNode(Node* in1, Node* zero, Node* one, const TypeVect* vt)
   : VectorNode(in1, zero, one, vt) {}
 
+  virtual int Opcode() const;
+};
+
+class CompressBitsVNode : public VectorNode {
+public:
+  CompressBitsVNode(Node* in, Node* mask, const TypeVect* vt)
+  : VectorNode(in, mask, vt) {}
+  virtual int Opcode() const;
+};
+
+class ExpandBitsVNode : public VectorNode {
+public:
+  ExpandBitsVNode(Node* in, Node* mask, const TypeVect* vt)
+  : VectorNode(in, mask, vt) {}
   virtual int Opcode() const;
 };
 
