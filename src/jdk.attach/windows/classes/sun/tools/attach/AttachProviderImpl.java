@@ -39,17 +39,6 @@ import jdk.internal.util.Architecture;
 public class AttachProviderImpl extends HotSpotAttachProvider {
 
     public AttachProviderImpl() {
-        String os = System.getProperty("os.name");
-        if (os.startsWith("Windows 9") || os.equals("Windows Me")) {
-            throw new RuntimeException(
-                "This provider is not supported on this version of Windows");
-        }
-        if (!Architecture.isX86() &&
-            !Architecture.isX64() &&
-            !Architecture.isAARCH64()) {
-            throw new RuntimeException(
-                "This provider is not supported on this processor architecture: " + Architecture.current());
-        }
     }
 
     public String name() {
