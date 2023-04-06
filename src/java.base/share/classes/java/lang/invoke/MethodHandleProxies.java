@@ -28,17 +28,6 @@ package java.lang.invoke;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.DynamicConstantDesc;
 import java.lang.constant.MethodTypeDesc;
-
-import jdk.internal.classfile.Annotation;
-import jdk.internal.classfile.AnnotationElement;
-import jdk.internal.classfile.AnnotationValue;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.CodeBuilder;
-import jdk.internal.classfile.TypeKind;
-import jdk.internal.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
-import jdk.internal.util.ClassFileDumper;
-import sun.invoke.WrapperInstance;
-
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -52,8 +41,12 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
 
+import jdk.internal.classfile.Classfile;
+import jdk.internal.classfile.CodeBuilder;
+import jdk.internal.classfile.TypeKind;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
+import jdk.internal.util.ClassFileDumper;
 import sun.reflect.misc.ReflectUtil;
 
 import static java.lang.constant.ConstantDescs.*;
@@ -272,21 +265,11 @@ public class MethodHandleProxies {
     private static final ClassValue<WrapperInfo> WRAPPER_INFOS = new ClassValue<>() {
         @Override
         protected WrapperInfo computeValue(Class<?> type) {
-            // WrapperInstance is in non-exported package
-            @SuppressWarnings("removal")
-            var sm = System.getSecurityManager();
-            @SuppressWarnings("removal")
-            WrapperInstance anno = sm != null ? AccessController.doPrivileged(new PrivilegedAction<>() {
-                @Override
-                public WrapperInstance run() {
-                    return type.getDeclaredAnnotation(WrapperInstance.class);
-                }
-            }) : type.getDeclaredAnnotation(WrapperInstance.class);
-
-            if (anno == null)
+            var interfaces = type.getInterfaces();
+            if (interfaces.length != 1)
                 return WrapperInfo.INVALID;
 
-            var implementedType = anno.implementedType();
+            var implementedType = interfaces[0];
             InterfaceInfo itfInfo;
             try {
                 itfInfo = INTERFACE_INFOS.get(implementedType);
@@ -306,7 +289,6 @@ public class MethodHandleProxies {
     };
 
     private static final List<ClassDesc> DEFAULT_RETHROWS = List.of(desc(RuntimeException.class), desc(Error.class));
-    private static final ClassDesc CD_WrapperInstance = desc(WrapperInstance.class);
     private static final ClassDesc CD_UndeclaredThrowableException = desc(UndeclaredThrowableException.class);
     private static final MethodTypeDesc MTD_void_Throwable = MethodTypeDesc.of(CD_void, CD_Throwable);
 
@@ -326,8 +308,6 @@ public class MethodHandleProxies {
             clb.withSuperclass(CD_Object);
             clb.withFlags(ACC_FINAL | ACC_SYNTHETIC);
             clb.withInterfaceSymbols(ifaceDesc);
-            clb.with(RuntimeVisibleAnnotationsAttribute.of(Annotation.of(CD_WrapperInstance,
-                    AnnotationElement.of("implementedType", AnnotationValue.ofClass(ifaceDesc)))));
             // <init>
             clb.withMethodBody(INIT_NAME, MTD_void, 0, cob -> cob
                     .aload(0)
