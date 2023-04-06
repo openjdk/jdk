@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,32 +54,28 @@ import static java.lang.invoke.MethodType.methodType;
 @Measurement(iterations = 5, time = 2, timeUnit = TimeUnit.SECONDS)
 @Fork(3)
 public class MethodHandleProxiesAsIFInstanceCall {
-
     /**
-     * Implementation notes:
-     *   - asInterfaceInstance() can only target static MethodHandle (adapters needed to call instance method?)
-     *   - baselineCompute will quickly degrade to GC test, if escape analysis is unable to spare the allocation
-     *   - testCreate* will always be slower if allocation is not eliminated; baselineAllocCompute makes sure allocation is present
-     *   - lambda* compares lambda performance with asInterfaceInstance performance
+     * Avoids elimination of computation
      */
-
     public int i;
 
     private static final Lookup LOOKUP = lookup();
     private static final MethodType MT_Doable = methodType(Doable.class);
     private static final MethodType MT_int_int = methodType(int.class, int.class);
 
-    // constant-fold
+    // intentionally constant-folded
     private static final MethodHandle constantTarget;
-    private static final Doable constantPrecreatedDoable;
-    private static final Doable constantPrecreatedInstance;
-    private static final Doable constantPrecreatedLambda;
+    private static final Doable constantDoable;
+    private static final Doable constantHandle;
+    private static final Doable constantInterfaceInstance;
+    private static final Doable constantLambda;
 
-    // part of state object
+    // part of state object, non-constant
     private MethodHandle target;
-    private Doable precreatedDoable;
-    private Doable precreatedInstance;
-    private Doable precreatedLambda;
+    private Doable doable;
+    private Doable handle;
+    private Doable interfaceInstance;
+    private Doable lambda;
 
     static {
         try {
@@ -87,70 +83,96 @@ public class MethodHandleProxiesAsIFInstanceCall {
         } catch (NoSuchMethodException | IllegalAccessException e) {
             throw new ExceptionInInitializerError(e);
         }
-        constantPrecreatedDoable = new Doable() {
+        constantDoable = new Doable() {
             @Override
             public int doWork(int i) {
                 return MethodHandleProxiesAsIFInstanceCall.doWork(i);
             }
         };
-        constantPrecreatedInstance = MethodHandleProxies.asInterfaceInstance(Doable.class, constantTarget);
-        constantPrecreatedLambda = MethodHandleProxiesAsIFInstanceCall::doWork;
+        constantHandle = new Doable() {
+            @Override
+            public int doWork(int i) {
+                try {
+                    return (int) constantTarget.invokeExact((int) i);
+                } catch (Error | RuntimeException e) {
+                    throw e;
+                } catch (Throwable e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        };
+        constantInterfaceInstance = MethodHandleProxies.asInterfaceInstance(Doable.class, constantTarget);
+        constantLambda = MethodHandleProxiesAsIFInstanceCall::doWork;
     }
 
     @Setup
     public void setup() throws Throwable {
         target = LOOKUP.findStatic(MethodHandleProxiesAsIFInstanceCall.class, "doWork", MT_int_int);
-        precreatedDoable = new Doable() {
+        doable = new Doable() {
             @Override
             public int doWork(int i) {
                 return MethodHandleProxiesAsIFInstanceCall.doWork(i);
             }
         };
-        precreatedInstance = MethodHandleProxies.asInterfaceInstance(Doable.class, target);
-        precreatedLambda = (Doable) LambdaMetafactory.metafactory(LOOKUP, "doWork", MT_Doable, MT_int_int, target, MT_int_int).getTarget().invokeExact();
-        ;
+        handle = new Doable() {
+            @Override
+            public int doWork(int i) {
+                try {
+                    return (int) target.invokeExact((int) i);
+                } catch (Error | RuntimeException e) {
+                    throw e;
+                } catch (Throwable e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        };
+        interfaceInstance = MethodHandleProxies.asInterfaceInstance(Doable.class, target);
+        lambda = (Doable) LambdaMetafactory.metafactory(LOOKUP, "doWork", MT_Doable, MT_int_int, target, MT_int_int).getTarget().invokeExact();
     }
 
     @Benchmark
-    public Doable directCall() {
+    public void direct() {
         i = doWork(i);
-        return null;
     }
 
     @Benchmark
-    public Doable doableCall() {
-        i = precreatedDoable.doWork(i);
-        return precreatedDoable;
+    public void callDoable() {
+        i = doable.doWork(i);
     }
 
     @Benchmark
-    public Doable interfaceInstanceCall() {
-        i = precreatedInstance.doWork(i);   // make sure computation happens
-        return precreatedInstance;
+    public void callHandle() {
+        i = handle.doWork(i);
     }
 
     @Benchmark
-    public Doable lambdaCall() {
-        i = precreatedLambda.doWork(i); // make sure computation happens
-        return precreatedLambda;
+    public void callInterfaceInstance() {
+        i = interfaceInstance.doWork(i);
     }
 
     @Benchmark
-    public Doable constantDoableCall() {
-        i = constantPrecreatedDoable.doWork(i);
-        return constantPrecreatedDoable;
+    public void callLambda() {
+        i = lambda.doWork(i);
     }
 
     @Benchmark
-    public Doable constantInterfaceInstanceCall() {
-        i = constantPrecreatedInstance.doWork(i);   // make sure computation happens
-        return constantPrecreatedInstance;
+    public void constantDoable() {
+        i = constantDoable.doWork(i);
     }
 
     @Benchmark
-    public Doable constantLambdaCall() {
-        i = constantPrecreatedLambda.doWork(i); // make sure computation happens
-        return constantPrecreatedLambda;
+    public void constantHandle() {
+        i = constantHandle.doWork(i);
+    }
+
+    @Benchmark
+    public void constantInterfaceInstance() {
+        i = constantInterfaceInstance.doWork(i);
+    }
+
+    @Benchmark
+    public void constantLambda() {
+        i = constantLambda.doWork(i);
     }
 
     public static int doWork(int i) {

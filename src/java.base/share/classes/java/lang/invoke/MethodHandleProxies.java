@@ -256,14 +256,15 @@ public class MethodHandleProxies {
 
             // default class hierarchy resolver accesses system resources
             @SuppressWarnings("removal")
-            byte[] template = AccessController.doPrivileged(new PrivilegedAction<byte[]>() {
+            var sm = System.getSecurityManager();
+            @SuppressWarnings("removal")
+            byte[] template = sm != null ? AccessController.doPrivileged(new PrivilegedAction<byte[]>() {
                 @Override
                 public byte[] run() {
                     return createTemplate(desc(intfc), methods.get(0).getName(), infos);
                 }
-            });
+            }) : createTemplate(desc(intfc), methods.get(0).getName(), infos);
 
-                //= createTemplate(desc(intfc), methods.get(0).getName(), infos);
             return new InterfaceInfo(types, new Lookup(intfc), template);
         }
     };
@@ -271,13 +272,17 @@ public class MethodHandleProxies {
     private static final ClassValue<WrapperInfo> WRAPPER_INFOS = new ClassValue<>() {
         @Override
         protected WrapperInfo computeValue(Class<?> type) {
+            // WrapperInstance is in non-exported package
             @SuppressWarnings("removal")
-            WrapperInstance anno = AccessController.doPrivileged(new PrivilegedAction<>() {
+            var sm = System.getSecurityManager();
+            @SuppressWarnings("removal")
+            WrapperInstance anno = sm != null ? AccessController.doPrivileged(new PrivilegedAction<>() {
                 @Override
                 public WrapperInstance run() {
                     return type.getDeclaredAnnotation(WrapperInstance.class);
                 }
-            });
+            }) : type.getDeclaredAnnotation(WrapperInstance.class);
+
             if (anno == null)
                 return WrapperInfo.INVALID;
 
@@ -373,7 +378,7 @@ public class MethodHandleProxies {
     private static WrapperInfo ensureWrapperInstance(Object x) {
         var ret = WRAPPER_INFOS.get(x.getClass());
         if (ret == WrapperInfo.INVALID)
-            throw newIllegalArgumentException("not a wrapper instance: " + x);;
+            throw newIllegalArgumentException("not a wrapper instance: " + x);
 
         return ret;
     }

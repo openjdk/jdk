@@ -53,15 +53,9 @@ import static java.lang.invoke.MethodType.methodType;
 @Measurement(iterations = 5, time = 2, timeUnit = TimeUnit.SECONDS)
 @Fork(3)
 public class MethodHandleProxiesAsIFInstanceCreate {
-
     /**
-     * Implementation notes:
-     *   - asInterfaceInstance() can only target static MethodHandle (adapters needed to call instance method?)
-     *   - baselineCompute will quickly degrade to GC test, if escape analysis is unable to spare the allocation
-     *   - testCreate* will always be slower if allocation is not eliminated; baselineAllocCompute makes sure allocation is present
-     *   - lambda* compares lambda performance with asInterfaceInstance performance
+     * Avoids elimination of computation
      */
-
     public int i;
 
     private static final Lookup LOOKUP = lookup();
@@ -75,24 +69,24 @@ public class MethodHandleProxiesAsIFInstanceCreate {
     }
 
     @Benchmark
-    public Doable lambdaCreate() throws Throwable {
+    public Doable createLambda() throws Throwable {
         return (Doable) LambdaMetafactory.metafactory(LOOKUP, "doWork", MT_Doable, MT_int_int, target, MT_int_int).getTarget().invokeExact();
     }
 
     @Benchmark
-    public Doable interfaceInstanceCreate() {
+    public Doable createInterfaceInstance() {
         return MethodHandleProxies.asInterfaceInstance(Doable.class, target);
     }
 
     @Benchmark
-    public Doable lambdaCreateCall() throws Throwable {
+    public Doable createCallLambda() throws Throwable {
         Doable doable = (Doable) LambdaMetafactory.metafactory(LOOKUP, "doWork", MT_Doable, MT_int_int, target, MT_int_int).getTarget().invokeExact();
         i = doable.doWork(i);
         return doable;
     }
 
     @Benchmark
-    public Doable interfaceInstanceCreateCall() {
+    public Doable createCallInterfaceInstance() {
         Doable doable = MethodHandleProxies.asInterfaceInstance(Doable.class, target);
         i = doable.doWork(i);
         return doable;
