@@ -25,6 +25,7 @@
 
 package sun.net.www.protocol.http;
 
+import java.lang.invoke.MethodHandles;
 import java.net.Authenticator;
 import java.util.LinkedList;
 import java.util.ListIterator;
@@ -116,8 +117,7 @@ public class AuthCacheImpl implements AuthCache {
     static AuthCacheAccess authenticatorCacheAccess;
 
     static {
-        // need to initialize Authenticator class. Must be better way
-        Authenticator auth = new Authenticator(){};
+        ensureClassInitialized(Authenticator.class);
     }
 
     public static void setAuthCacheAccess(AuthCacheAccess access) {
@@ -128,5 +128,11 @@ public class AuthCacheImpl implements AuthCache {
 
     public static AuthCacheAccess getAuthCacheAccess() {
         return authenticatorCacheAccess;
+    }
+
+    private static void ensureClassInitialized(Class<?> c) {
+        try {
+            MethodHandles.lookup().ensureInitialized(c);
+        } catch (IllegalAccessException e) {}
     }
 }

@@ -55,9 +55,6 @@ import sun.net.www.HeaderParser;
 
 public abstract class AuthenticationInfo extends AuthCacheValue implements Cloneable {
 
-    @java.io.Serial
-    static final long serialVersionUID = -2588378268010453259L;
-
     // Constants saying what kind of authorization this is.  This determines
     // the namespace in the hash table lookup.
     public static final char SERVER_AUTHENTICATION = 's';
@@ -187,10 +184,6 @@ public abstract class AuthenticationInfo extends AuthCacheValue implements Clone
             requestLock.unlock();
         }
     }
-
-    //public String toString () {
-        //return ("{"+type+":"+authScheme+":"+protocol+":"+host+":"+port+":"+realm+":"+path+"}");
-    //}
 
     // REMIND:  This cache just grows forever.  We should put in a bounded
     //          cache, or maybe something using WeakRef's.
@@ -474,34 +467,6 @@ public abstract class AuthenticationInfo extends AuthCacheValue implements Clone
         } else {
             return type + ":" + protocol + ":" + host + ":" + port;
         }
-    }
-
-    String s1, s2;  /* used for serialization of pw */
-
-    @java.io.Serial
-    // should be safe to keep synchronized here
-    private synchronized void readObject(ObjectInputStream s)
-        throws IOException, ClassNotFoundException
-    {
-        s.defaultReadObject ();
-        pw = new PasswordAuthentication (s1, s2.toCharArray());
-        s1 = null; s2= null;
-/*
-        if (authenticatorKey == null) {
-            authenticatorKey = AuthenticatorKeys.DEFAULT;
-        }
-*/
-    }
-
-    @java.io.Serial
-    // should be safe to keep synchronized here
-    private synchronized void writeObject(java.io.ObjectOutputStream s)
-        throws IOException
-    {
-        //Objects.requireNonNull(authenticatorKey);
-        s1 = pw.getUserName();
-        s2 = new String (pw.getPassword());
-        s.defaultWriteObject ();
     }
 
     /**
