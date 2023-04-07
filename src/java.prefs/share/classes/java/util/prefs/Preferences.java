@@ -296,7 +296,7 @@ public abstract class Preferences {
         // 3. Use platform-specific system-wide default
         String platformFactory = switch (OperatingSystem.current()) {
             case WINDOWS -> "java.util.prefs.WindowsPreferencesFactory";
-            case MACOS ->  "java.util.prefs.MacOSXPreferencesFactory";
+            case MACOS -> "java.util.prefs.MacOSXPreferencesFactory";
             default -> "java.util.prefs.FileSystemPreferencesFactory";
         };
         try {
