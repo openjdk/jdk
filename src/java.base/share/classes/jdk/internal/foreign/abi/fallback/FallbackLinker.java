@@ -35,6 +35,7 @@ import java.lang.foreign.AddressLayout;
 import java.lang.foreign.Arena;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.GroupLayout;
+import java.lang.foreign.Linker;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.SegmentAllocator;
@@ -61,7 +62,7 @@ public final class FallbackLinker extends AbstractLinker {
             MH_DO_DOWNCALL = MethodHandles.lookup().findStatic(FallbackLinker.class, "doDowncall",
                     MethodType.methodType(Object.class, SegmentAllocator.class, Object[].class, FallbackLinker.DowncallData.class));
             MH_DO_UPCALL = MethodHandles.lookup().findStatic(FallbackLinker.class, "doUpcall",
-                    MethodType.methodType(void.class, MethodHandle.class, MemorySegment.class, MemorySegment.class, UpcallData.class));
+                    MethodType.methodType(void.class, MethodHandle.class, MemorySegment.class, MemorySegment.class, MemorySegment.class, UpcallData.class));
         } catch (ReflectiveOperationException e) {
             throw new ExceptionInInitializerError(e);
         }
@@ -108,12 +109,15 @@ public final class FallbackLinker extends AbstractLinker {
     protected UpcallStubFactory arrangeUpcall(MethodType targetType, FunctionDescriptor function, LinkerOptions options) {
         MemorySegment cif = makeCif(targetType, function, FFIABI.DEFAULT, Arena.ofAuto());
 
-        UpcallData invData = new UpcallData(function.returnLayout().orElse(null), function.argumentLayouts(), cif);
-        MethodHandle doUpcallMH = MethodHandles.insertArguments(MH_DO_UPCALL, 3, invData);
+        int captureStateMask = options.capturedCallState()
+                .mapToInt(CapturableState::mask)
+                .reduce(0, (a, b) -> a | b);
+        UpcallData invData = new UpcallData(function.returnLayout().orElse(null), function.argumentLayouts(), cif, captureStateMask != 0);
+        MethodHandle doUpcallMH = MethodHandles.insertArguments(MH_DO_UPCALL, MH_DO_UPCALL.type().parameterCount() - 1, invData);
 
         return (target, scope) -> {
             target = MethodHandles.insertArguments(doUpcallMH, 0, target);
-            return LibFallback.createClosure(cif, target, scope);
+            return LibFallback.createClosure(cif, target, captureStateMask, scope);
         };
     }
 
@@ -184,9 +188,10 @@ public final class FallbackLinker extends AbstractLinker {
     }
 
     // note that cif is not used, but we store it here to keep it alive
-    private record UpcallData(MemoryLayout returnLayout, List<MemoryLayout> argLayouts, MemorySegment cif) {}
+    private record UpcallData(MemoryLayout returnLayout, List<MemoryLayout> argLayouts, MemorySegment cif, boolean hasCapturedState) {}
 
-    private static void doUpcall(MethodHandle target, MemorySegment retPtr, MemorySegment argPtrs, UpcallData data) throws Throwable {
+    private static void doUpcall(MethodHandle target, MemorySegment retPtr, MemorySegment argPtrs,
+                                 MemorySegment ccsPtr, UpcallData data) throws Throwable {
         List<MemoryLayout> argLayouts = data.argLayouts();
         int numArgs = argLayouts.size();
         MemoryLayout retLayout = data.returnLayout();
@@ -195,13 +200,22 @@ public final class FallbackLinker extends AbstractLinker {
             MemorySegment retSeg = retLayout != null
                 ? retPtr.reinterpret(retLayout.byteSize(), upcallArena, null)
                 : null;
+            MemorySegment ccsSeg = ccsPtr.reinterpret(Linker.Option.captureStateLayout().byteSize(), upcallArena, null);
 
-            Object[] args = new Object[numArgs];
+            int outArgs = numArgs;
+            if (data.hasCapturedState()) {
+                outArgs++;
+            }
+            Object[] args = new Object[outArgs];
+            int argIdx = 0;
+            if (data.hasCapturedState()) {
+                args[argIdx++] = ccsSeg;
+            }
             for (int i = 0; i < numArgs; i++) {
                 MemoryLayout argLayout = argLayouts.get(i);
                 MemorySegment argPtr = argsSeg.getAtIndex(ADDRESS, i)
                         .reinterpret(argLayout.byteSize(), upcallArena, null);
-                args[i] = readValue(argPtr, argLayout);
+                args[argIdx++] = readValue(argPtr, argLayout);
             }
 
             Object result = target.invokeWithArguments(args);

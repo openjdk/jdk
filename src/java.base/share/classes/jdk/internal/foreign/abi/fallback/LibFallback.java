@@ -27,6 +27,7 @@ package jdk.internal.foreign.abi.fallback;
 import jdk.internal.foreign.abi.SharedUtils;
 
 import java.lang.foreign.Arena;
+import java.lang.foreign.Linker;
 import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
@@ -61,7 +62,8 @@ final class LibFallback {
 
     static short structTag() { return NativeConstants.STRUCT_TAG; }
 
-    private static final MethodType UPCALL_TARGET_TYPE = MethodType.methodType(void.class, MemorySegment.class, MemorySegment.class);
+    private static final MethodType UPCALL_TARGET_TYPE = MethodType.methodType(void.class,
+            MemorySegment.class, MemorySegment.class, MemorySegment.class);
 
     /**
      * Do a libffi based downcall. This method wraps the {@code ffi_call} function
@@ -108,39 +110,41 @@ final class LibFallback {
      * Create an upcallStub-style closure. This method wraps the {@code ffi_closure_alloc}
      * and {@code ffi_prep_closure_loc} functions.
      * <p>
-     * The closure will end up calling into {@link #doUpcall(long, long, MethodHandle)}
+     * The closure will end up calling into {@link #doUpcall(long, long, MethodHandle, long)}
      * <p>
-     * The target method handle should have the type {@code (MemorySegment, MemorySegment) -> void}. The first
+     * The target method handle should have the type {@code (MemorySegment, MemorySegment, MemorySegment) -> void}. The first
      * argument is a pointer to the buffer into which the native return value should be written. The second argument
-     * is a pointer to an array of pointers, which each point to a native argument value.
+     * is a pointer to an array of pointers, which each point to a native argument value. The third argument is
+     * a segment into which captured call state should be written (see {@link Linker.Option#captureCallState(String...)}).
      *
      * @param cif a pointer to a {@code ffi_cif} struct
      * @param target a method handle that points to the target function
+     * @param capturedStateMask mask of call state to capture. See {@link jdk.internal.foreign.abi.CapturableState}
      * @param arena the scope to which to attach the created upcall stub
      * @return the created upcall stub
      *
      * @throws IllegalStateException if the call to {@code ffi_prep_closure_loc} returns a non-zero status code
      * @throws IllegalArgumentException if {@code target} does not have the right type
      */
-    static MemorySegment createClosure(MemorySegment cif, MethodHandle target, Arena arena)
+    static MemorySegment createClosure(MemorySegment cif, MethodHandle target, int capturedStateMask, Arena arena)
             throws IllegalStateException, IllegalArgumentException {
         if (target.type() != UPCALL_TARGET_TYPE) {
             throw new IllegalArgumentException("Target handle has wrong type: " + target.type() + " != " + UPCALL_TARGET_TYPE);
         }
 
         long[] ptrs = new long[3];
-        checkStatus(createClosure(cif.address(), target, ptrs));
+        checkStatus(createClosure(cif.address(), target, capturedStateMask, ptrs));
         long closurePtr = ptrs[0];
         long execPtr = ptrs[1];
-        long globalTarget = ptrs[2];
+        long upcallData = ptrs[2];
 
-        return MemorySegment.ofAddress(execPtr).reinterpret(arena, unused -> freeClosure(closurePtr, globalTarget));
+        return MemorySegment.ofAddress(execPtr).reinterpret(arena, unused -> freeClosure(closurePtr, upcallData));
     }
 
     // the target function for a closure call
-    private static void doUpcall(long retPtr, long argPtrs, MethodHandle target) {
+    private static void doUpcall(long retPtr, long argPtrs, MethodHandle target, long ccsPtr) {
         try {
-            target.invokeExact(MemorySegment.ofAddress(retPtr), MemorySegment.ofAddress(argPtrs));
+            target.invokeExact(MemorySegment.ofAddress(retPtr), MemorySegment.ofAddress(argPtrs), MemorySegment.ofAddress(ccsPtr));
         } catch (Throwable t) {
             SharedUtils.handleUncaughtException(t);
         }
@@ -172,7 +176,7 @@ final class LibFallback {
 
     private static native long sizeofCif();
 
-    private static native int createClosure(long cif, Object userData, long[] ptrs);
+    private static native int createClosure(long cif, Object userData, int capturedStateMask, long[] ptrs);
     private static native void freeClosure(long closureAddress, long globalTarget);
     private static native void doDowncall(long cif, long fn, long rvalue, long avalues, long capturedState, int capturedStateMask);
 

@@ -28,6 +28,7 @@
 #include <ffi.h>
 
 #include <errno.h>
+#include <malloc.h>
 #ifdef _WIN64
 #include <Windows.h>
 #include <Winsock2.h>
@@ -38,7 +39,7 @@
 static JavaVM* VM;
 static jclass LibFallback_class;
 static jmethodID LibFallback_doUpcall_ID;
-static const char* LibFallback_doUpcall_sig = "(JJLjava/lang/invoke/MethodHandle;)V";
+static const char* LibFallback_doUpcall_sig = "(JJLjava/lang/invoke/MethodHandle;J)V";
 
 JNIEXPORT void JNICALL
 Java_jdk_internal_foreign_abi_fallback_LibFallback_init(JNIEnv* env, jclass cls) {
@@ -62,25 +63,26 @@ Java_jdk_internal_foreign_abi_fallback_LibFallback_ffi_1get_1struct_1offsets(JNI
   return ffi_get_struct_offsets((ffi_abi) abi, jlong_to_ptr(type), jlong_to_ptr(offsets));
 }
 
-static void do_capture_state(int32_t* value_ptr, int captured_state_mask) {
+enum CapturableState {
+  CCS_NONE = 0,
+  CCS_LAST_ERROR = 1,
+  CCS_WSA_LAST_ERROR = 1 << 1,
+  CCS_ERRNO = 1 << 2
+};
+
+static void do_capture_state_downcall(int32_t* value_ptr, int captured_state_mask) {
     // keep in synch with jdk.internal.foreign.abi.CapturableState
-  enum PreservableValues {
-    NONE = 0,
-    GET_LAST_ERROR = 1,
-    WSA_GET_LAST_ERROR = 1 << 1,
-    ERRNO = 1 << 2
-  };
 #ifdef _WIN64
-  if (captured_state_mask & GET_LAST_ERROR) {
+  if (captured_state_mask & CCS_LAST_ERROR) {
     *value_ptr = GetLastError();
   }
   value_ptr++;
-  if (captured_state_mask & WSA_GET_LAST_ERROR) {
+  if (captured_state_mask & CCS_WSA_LAST_ERROR) {
     *value_ptr = WSAGetLastError();
   }
   value_ptr++;
 #endif
-  if (captured_state_mask & ERRNO) {
+  if (captured_state_mask & CCS_ERRNO) {
     *value_ptr = errno;
   }
 }
@@ -91,7 +93,30 @@ Java_jdk_internal_foreign_abi_fallback_LibFallback_doDowncall(JNIEnv* env, jclas
 
   if (captured_state_mask != 0) {
     int32_t* captured_state = jlong_to_ptr(jcaptured_state);
-    do_capture_state(captured_state, captured_state_mask);
+    do_capture_state_downcall(captured_state, captured_state_mask);
+  }
+}
+
+struct UpcallUserData {
+  jobject target;
+  jint captured_state_mask;
+};
+
+// keep in sync with UpcallLinker::capture_state in hotspot
+static void do_capture_state_upcall(int32_t* value_ptr, int captured_state_mask) {
+  // keep in synch with jdk.internal.foreign.abi.CapturableState
+#ifdef _WIN64
+  if (captured_state_mask & CCS_LAST_ERROR) {
+    SetLastError(*value_ptr);
+  }
+  value_ptr++;
+  if (captured_state_mask & CCS_WSA_LAST_ERROR) {
+    WSASetLastError(*value_ptr);
+  }
+  value_ptr++;
+#endif
+  if (captured_state_mask & CCS_ERRNO) {
+    errno = *value_ptr;
   }
 }
 
@@ -100,38 +125,47 @@ static void do_upcall(ffi_cif* cif, void* ret, void** args, void* user_data) {
   JNIEnv* env;
   jint result = (*VM)->AttachCurrentThreadAsDaemon(VM, (void**) &env, NULL);
 
+  int32_t ccs[3];
+
   // call into doUpcall in LibFallback
-  jobject upcall_data = (jobject) user_data;
+  struct UpcallUserData* upcall_data = (struct UpcallUserData*) user_data;
   (*env)->CallStaticVoidMethod(env, LibFallback_class, LibFallback_doUpcall_ID,
-    ptr_to_jlong(ret), ptr_to_jlong(args), upcall_data);
+    ptr_to_jlong(ret), ptr_to_jlong(args), upcall_data->target, ptr_to_jlong(ccs));
 
   // always detach for now
   (*VM)->DetachCurrentThread(VM);
+
+  do_capture_state_upcall(ccs, upcall_data->captured_state_mask);
 }
 
-static void free_closure(JNIEnv* env, void* closure, jobject upcall_data) {
+static void free_closure(JNIEnv* env, void* closure, struct UpcallUserData* upcall_data) {
   ffi_closure_free(closure);
-  (*env)->DeleteGlobalRef(env, upcall_data);
+  (*env)->DeleteGlobalRef(env, upcall_data->target);
+  free(upcall_data);
 }
 
 JNIEXPORT jint JNICALL
-Java_jdk_internal_foreign_abi_fallback_LibFallback_createClosure(JNIEnv* env, jclass cls, jlong cif, jobject upcall_data, jlongArray jptrs) {
+Java_jdk_internal_foreign_abi_fallback_LibFallback_createClosure(JNIEnv* env, jclass cls, jlong cif, jobject target,
+                                                                 jint captured_state_mask, jlongArray jptrs) {
   void* code;
   void* closure = ffi_closure_alloc(sizeof(ffi_closure), &code);
 
-  jobject global_upcall_data = (*env)->NewGlobalRef(env, upcall_data);
+  jobject global_target = (*env)->NewGlobalRef(env, target);
+  struct UpcallUserData* upcall_data = malloc(sizeof *upcall_data);
+  upcall_data->target = global_target;
+  upcall_data->captured_state_mask = captured_state_mask;
 
-  ffi_status status = ffi_prep_closure_loc(closure, jlong_to_ptr(cif), &do_upcall, (void*) global_upcall_data, code);
+  ffi_status status = ffi_prep_closure_loc(closure, jlong_to_ptr(cif), &do_upcall, (void*) upcall_data, code);
 
   if (status != FFI_OK) {
-    free_closure(env,closure, global_upcall_data);
+    free_closure(env, closure, upcall_data);
     return status;
   }
 
   jlong* ptrs = (*env)->GetLongArrayElements(env, jptrs, NULL);
   ptrs[0] = ptr_to_jlong(closure);
   ptrs[1] = ptr_to_jlong(code);
-  ptrs[2] = ptr_to_jlong(global_upcall_data);
+  ptrs[2] = ptr_to_jlong(upcall_data);
   (*env)->ReleaseLongArrayElements(env, jptrs, ptrs, JNI_COMMIT);
 
   return status;
