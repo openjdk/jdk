@@ -24,6 +24,7 @@
 import java.awt.Frame;
 import java.awt.Point;
 import java.awt.Robot;
+import java.awt.Toolkit;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
 import javax.swing.SwingUtilities;
@@ -59,36 +60,39 @@ public class GetMousePositionWithPopup {
 
     private static Frame frame1;
     private static Frame frame2;
+    private static Robot robot;
+
+    private static final int MOUSE_POS1 = 0;
+    private static final int MOUSE_POS2 = 149;
+    private static final int MOUSE_POS3 = 170;
+
+    private static final int FRAME1_DIM = 100;
+    private static final int FRAME2_DIM = 120;
 
     //expected mouse position w.r.t to Component
-    //(2nd Frame in this test) after final mouse move.
-    private static final int EXPECTED_MOUSE_POS = 50;
+    //(2nd Frame in this test) after 3rd mouse move.
+    private static final int EXPECTED_MOUSE_POS = MOUSE_POS3 - FRAME2_DIM;
 
     public static void main(String[] args) throws Exception {
         try {
-            Robot r = new Robot();
-            r.setAutoDelay(300);
+            robot = new Robot();
+            robot.setAutoDelay(200);
 
             //1st mouse move
-            r.mouseMove(0, 0);
-            r.waitForIdle();
-            r.delay(100);
+            robot.mouseMove(MOUSE_POS1, MOUSE_POS1);
+            syncLocationToWindowManager();
 
             SwingUtilities.invokeAndWait(GetMousePositionWithPopup::createTestUI);
-            r.waitForIdle();
-            r.delay(200);
+            syncLocationToWindowManager();
 
             //2nd mouse move
-            r.mouseMove(149, 149);
-            r.waitForIdle();
-            r.delay(200);
+            robot.mouseMove(MOUSE_POS2, MOUSE_POS2);
+            syncLocationToWindowManager();
 
             SwingUtilities.invokeAndWait(GetMousePositionWithPopup::addMouseListenerToFrame2);
             //3rd mouse move
-            r.mouseMove(170, 170);
-            r.waitForIdle();
-            r.delay(100);
-
+            robot.mouseMove(MOUSE_POS3, MOUSE_POS3);
+            syncLocationToWindowManager();
         } finally {
             SwingUtilities.invokeLater(() -> {
                 frame1.dispose();
@@ -99,7 +103,7 @@ public class GetMousePositionWithPopup {
 
     private static void createTestUI() {
         frame1 = new Frame();
-        frame1.setBounds(100, 100, 100, 100);
+        frame1.setBounds(FRAME1_DIM, FRAME1_DIM, FRAME1_DIM, FRAME1_DIM);
         frame1.setVisible(true);
         frame1.addMouseMotionListener(new MouseMotionAdapter() {
             @Override
@@ -108,7 +112,7 @@ public class GetMousePositionWithPopup {
                     return;
                 }
                 frame2 = new Frame();
-                frame2.setBounds(120, 120, 120, 120);
+                frame2.setBounds(FRAME2_DIM, FRAME2_DIM, FRAME2_DIM, FRAME2_DIM);
                 frame2.setVisible(true);
             }
         });
@@ -134,5 +138,15 @@ public class GetMousePositionWithPopup {
                 }
             }
         });
+    }
+
+    private static void syncLocationToWindowManager() {
+        Toolkit.getDefaultToolkit().sync();
+        try {
+            Thread.sleep(500);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        robot.waitForIdle();
     }
 }
