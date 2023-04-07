@@ -284,8 +284,8 @@ final class SSLSocketInputRecord extends InputRecord implements SSLRecord {
         //
         if (contentType == ContentType.HANDSHAKE.id) {
             ByteBuffer handshakeFrag = fragment;
-            if (!handshakeFrag.hasRemaining()) {
-                throw new SSLProtocolException("Handshake fragments cannot be zero length.");
+            if (contentLen == 0) {
+                throw new SSLProtocolException("Handshake fragments must not be zero length.");
             }
 
             if ((handshakeBuffer != null) &&

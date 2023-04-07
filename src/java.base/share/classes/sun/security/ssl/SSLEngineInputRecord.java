@@ -263,8 +263,8 @@ final class SSLEngineInputRecord extends InputRecord implements SSLRecord {
         // parse handshake messages
         //
         if (contentType == ContentType.HANDSHAKE.id) {
-            if (!fragment.hasRemaining()) {
-                throw new SSLProtocolException("Handshake packets may not be zero-length");
+            if (contentLen == 0) {
+                throw new SSLProtocolException("Handshake packets must not be zero-length");
             }
 
             ByteBuffer handshakeFrag = fragment;
