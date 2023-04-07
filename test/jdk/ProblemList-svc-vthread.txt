@@ -53,6 +53,7 @@ com/sun/jdi/SetLocalWhileThreadInNative.java 8285422 generic-all
 com/sun/jdi/StepTest.java 8285422 generic-all
 com/sun/jdi/redefine/RedefineTest.java 8285422 generic-all
 com/sun/jdi/redefineMethod/RedefineTest.java 8285422 generic-all
+com/sun/jdi/PopAndInvokeTest.java 8305632 generic-all
 
 ####
 # JDI SDE Tests

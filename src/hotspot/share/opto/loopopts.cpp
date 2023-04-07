@@ -802,7 +802,7 @@ Node *PhaseIdealLoop::conditional_move( Node *region ) {
         cmov->dump(1);
       }
     }
-    if (VerifyLoopOptimizations) verify();
+    DEBUG_ONLY( if (VerifyLoopOptimizations) { verify(); } );
 #endif
   }
 
@@ -1436,9 +1436,7 @@ void PhaseIdealLoop::split_if_with_blocks_post(Node *n) {
           // Place it on the IGVN worklist for later cleanup.
           C->set_major_progress();
           dominated_by(prevdom->as_IfProj(), n->as_If(), false, true);
-#ifndef PRODUCT
-          if( VerifyLoopOptimizations ) verify();
-#endif
+          DEBUG_ONLY( if (VerifyLoopOptimizations) { verify(); } );
           return;
         }
         prevdom = dom;

@@ -586,14 +586,16 @@ public class DocCommentParser {
                 case '@':
                     if (newline)
                         break loop;
+                    break;
 
                 case '{':
                     depth++;
                     break;
 
                 case '}':
-                    if (depth == 0 || --depth == 0)
+                    if (depth == 0)
                         return m.at(pos).newTextTree(newString(pos, bp));
+                    depth--;
                     break;
             }
             newline = false;
