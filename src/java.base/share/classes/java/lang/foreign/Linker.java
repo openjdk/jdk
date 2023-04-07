@@ -571,8 +571,8 @@ public sealed interface Linker permits AbstractLinker {
 
         /**
          * {@return A linker option used to save portions of the execution state immediately after
-         *          calling a foreign function associated with a downcall method handle,
-         *          before it can be overwritten by the Java runtime, or read through conventional means}
+         *          calling a foreign function associated with a downcall method handle, or during the
+         *          execution of an upcall stub, to prevent it from being overwritten by the Java runtime}
          * <p>
          * Execution state is captured by a downcall method handle on invocation, by writing it
          * to a native segment provided by the user to the downcall method handle.
@@ -582,10 +582,15 @@ public sealed interface Linker permits AbstractLinker {
          * This parameter, called the 'capture state segment', represents the native segment into which
          * the captured state is written.
          * <p>
+         * For upcall stubs, the target method handle for the upcall should accept an additional leading
+         * {@link MemorySegment} parameter, which represents the capture state segment. Values that should be
+         * captured have to be written into this segment. After the upcall completes, the values in the capture
+         * state segment will be written to their respective execution state.
+         * <p>
          * The capture state segment should have the layout returned by {@linkplain #captureStateLayout}.
          * This layout is a struct layout which has a named field for each captured value.
          * <p>
-         * Captured state can be retrieved from the capture state segment by constructing var handles
+         * Captured state can be written to, or retrieved from the capture state segment by constructing var handles
          * from the {@linkplain #captureStateLayout capture state layout}.
          * <p>
          * The following example demonstrates the use of this linker option:
@@ -626,10 +631,15 @@ public sealed interface Linker permits AbstractLinker {
          * and possibly {@linkplain PaddingLayout padding layouts}.
          * As an example, on Windows, the returned layout might contain three value layouts named:
          * <ul>
-         *     <li>GetLastError</li>
-         *     <li>WSAGetLastError</li>
+         *     <li>LastError</li>
+         *     <li>WSALastError</li>
          *     <li>errno</li>
          * </ul>
+          * The {@code LastError} field corresponds to the value accessed through the Windows API {@code GetLastError} and
+          * {@code SetLastError} functions, the {@code WSALastError} field corresponds to the {@code WSAGetLastError} and
+          * {@code WSASetLastError} functions, and the {@code errno} field corresponds to the {@code errno} macro as
+          * defined in the C standard library.
+          * <p>
          * The following snipet shows how to obtain the names of the supported captured value layouts:
          * {@snippet lang = java:
          *    String capturedNames = Linker.Option.captureStateLayout().memberLayouts().stream()
