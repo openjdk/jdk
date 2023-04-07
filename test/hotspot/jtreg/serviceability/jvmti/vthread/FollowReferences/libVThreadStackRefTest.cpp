@@ -24,6 +24,7 @@
 #include <jni.h>
 #include <jvmti.h>
 #include <jvmti_common.h>
+#include <atomic>
 #include <string.h>
 
 namespace {
@@ -176,7 +177,7 @@ Java_VThreadStackRefTest_createObjAndCallback(JNIEnv* env, jclass clazz, jclass 
   env->CallVoidMethod(callback, mid);
 }
 
-static volatile bool timeToExit = false;
+static std::atomic<bool> timeToExit(false);
 
 extern "C" JNIEXPORT void JNICALL
 Java_VThreadStackRefTest_createObjAndWait(JNIEnv* env, jclass clazz, jclass cls) {
