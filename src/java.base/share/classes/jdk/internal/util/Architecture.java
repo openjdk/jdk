@@ -27,10 +27,10 @@ import jdk.internal.vm.annotation.Stable;
 
 /**
  * System architecture enum values.
- * Each architecture has a matching {@code public static boolean isXXX()} method
+ * Each architecture, except OTHER, has a matching {@code public static boolean isXXX()} method
  * that is true when running on that architecture.
- * The enum values correspond to architectures as named in the build system.
- * See the values of `OPENJDK_TARGET_ARCH_OSARCH`.
+ * The values of `OPENJDK_TARGET_ARCH_OSARCH` from the build are mapped to the
+ * architecture values.
  */
 public enum Architecture {
     OTHER,      // An unknown architecture not specifically named
@@ -50,7 +50,7 @@ public enum Architecture {
      */
     @ForceInline
     public static boolean isX64() {
-        return OperatingSystemProps.TARGET_ARCH_IS_X64;
+        return PlatformProps.TARGET_ARCH_IS_X64;
     }
 
     /**
@@ -58,7 +58,7 @@ public enum Architecture {
      */
     @ForceInline
     public static boolean isX86() {
-        return OperatingSystemProps.TARGET_ARCH_IS_X86;
+        return PlatformProps.TARGET_ARCH_IS_X86;
     }
 
     /**
@@ -66,7 +66,7 @@ public enum Architecture {
      */
     @ForceInline
     public static boolean isRISCV64() {
-        return OperatingSystemProps.TARGET_ARCH_IS_RISCV64;
+        return PlatformProps.TARGET_ARCH_IS_RISCV64;
     }
 
     /**
@@ -74,7 +74,7 @@ public enum Architecture {
      */
     @ForceInline
     public static boolean isS390() {
-        return OperatingSystemProps.TARGET_ARCH_IS_S390;
+        return PlatformProps.TARGET_ARCH_IS_S390;
     }
 
     /**
@@ -82,7 +82,7 @@ public enum Architecture {
      */
     @ForceInline
     public static boolean isPPC64() {
-        return OperatingSystemProps.TARGET_ARCH_IS_PPC64;
+        return PlatformProps.TARGET_ARCH_IS_PPC64;
     }
 
     /**
@@ -90,14 +90,14 @@ public enum Architecture {
      */
     @ForceInline
     public static boolean isAARCH64() {
-        return OperatingSystemProps.TARGET_ARCH_IS_AARCH64;
+        return PlatformProps.TARGET_ARCH_IS_AARCH64;
     }
 
     /**
      * {@return the current architecture}
      */
     public static Architecture current() {
-        return OperatingSystemProps.current;
+        return PlatformProps.CURRENT_ARCH;
     }
 
     /**
@@ -105,7 +105,7 @@ public enum Architecture {
      */
     @ForceInline
     public static boolean is64bit() {
-        return OperatingSystemProps.TARGET_ARCH_BITS == 64;
+        return PlatformProps.TARGET_ARCH_BITS == 64;
     }
 
     /**
@@ -113,6 +113,6 @@ public enum Architecture {
      */
     @ForceInline
     public static boolean isLittleEndian() {
-        return OperatingSystemProps.TARGET_ARCH_LITTLE_ENDIAN;
+        return PlatformProps.TARGET_ARCH_LITTLE_ENDIAN;
     }
 }
