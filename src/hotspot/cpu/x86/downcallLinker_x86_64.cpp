@@ -146,24 +146,10 @@ void DowncallStubGenerator::generate() {
     // out arg area (e.g. for stack args)
   };
 
-  VMStorage shuffle_reg = as_VMStorage(rbx);
-  JavaCallingConvention in_conv;
-  NativeCallingConvention out_conv(_input_registers);
-  ArgumentShuffle arg_shuffle(_signature, _num_args, _signature, _num_args, &in_conv, &out_conv, shuffle_reg);
-
-#ifndef PRODUCT
-  LogTarget(Trace, foreign, downcall) lt;
-  if (lt.is_enabled()) {
-    ResourceMark rm;
-    LogStream ls(lt);
-    arg_shuffle.print_on(&ls);
-  }
-#endif
-
   // in bytes
   int allocated_frame_size = 0;
   allocated_frame_size += _abi._shadow_space_bytes;
-  allocated_frame_size += arg_shuffle.out_arg_bytes();
+  allocated_frame_size += ForeignGlobals::compute_out_arg_bytes(_input_registers);
 
   // when we don't use a return buffer we need to spill the return value around our slow path calls
   bool should_save_return_value = !_needs_return_buffer;
@@ -190,6 +176,20 @@ void DowncallStubGenerator::generate() {
     locs.set_frame_data(StubLocations::CAPTURED_STATE_BUFFER, allocated_frame_size);
     allocated_frame_size += BytesPerWord;
   }
+
+  GrowableArray<VMStorage> java_regs;
+  ForeignGlobals::java_calling_convention(_signature, _num_args, java_regs);
+  GrowableArray<VMStorage> out_regs = ForeignGlobals::replace_place_holders(_input_registers, locs);
+  ArgumentShuffle arg_shuffle(java_regs, out_regs, as_VMStorage(rbx));
+
+#ifndef PRODUCT
+  LogTarget(Trace, foreign, downcall) lt;
+  if (lt.is_enabled()) {
+    ResourceMark rm;
+    LogStream ls(lt);
+    arg_shuffle.print_on(&ls);
+  }
+#endif
 
   allocated_frame_size = align_up(allocated_frame_size, 16);
   _frame_size_slots += framesize_base + (allocated_frame_size >> LogBytesPerInt);
@@ -220,7 +220,7 @@ void DowncallStubGenerator::generate() {
   }
 
   __ block_comment("{ argument shuffle");
-  arg_shuffle.generate(_masm, shuffle_reg, 0, _abi._shadow_space_bytes, locs);
+  arg_shuffle.generate(_masm, 0, _abi._shadow_space_bytes);
   __ block_comment("} argument shuffle");
 
   __ call(as_Register(locs.get(StubLocations::TARGET_ADDRESS)));

@@ -150,23 +150,9 @@ void DowncallStubGenerator::generate() {
   Register tmp1 = r9;
   Register tmp2 = r10;
 
-  VMStorage shuffle_reg = as_VMStorage(r19);
-  JavaCallingConvention in_conv;
-  NativeCallingConvention out_conv(_input_registers);
-  ArgumentShuffle arg_shuffle(_signature, _num_args, _signature, _num_args, &in_conv, &out_conv, shuffle_reg);
-
-#ifndef PRODUCT
-  LogTarget(Trace, foreign, downcall) lt;
-  if (lt.is_enabled()) {
-    ResourceMark rm;
-    LogStream ls(lt);
-    arg_shuffle.print_on(&ls);
-  }
-#endif
-
   int allocated_frame_size = 0;
   assert(_abi._shadow_space_bytes == 0, "not expecting shadow space on AArch64");
-  allocated_frame_size += arg_shuffle.out_arg_bytes();
+  allocated_frame_size += ForeignGlobals::compute_out_arg_bytes(_input_registers);
 
   bool should_save_return_value = !_needs_return_buffer;
   RegSpiller out_reg_spiller(_output_registers);
@@ -192,6 +178,20 @@ void DowncallStubGenerator::generate() {
     locs.set_frame_data(StubLocations::CAPTURED_STATE_BUFFER, allocated_frame_size);
     allocated_frame_size += BytesPerWord;
   }
+
+  GrowableArray<VMStorage> java_regs;
+  ForeignGlobals::java_calling_convention(_signature, _num_args, java_regs);
+  GrowableArray<VMStorage> out_regs = ForeignGlobals::replace_place_holders(_input_registers, locs);
+  ArgumentShuffle arg_shuffle(java_regs, out_regs, as_VMStorage(r19));
+
+#ifndef PRODUCT
+  LogTarget(Trace, foreign, downcall) lt;
+  if (lt.is_enabled()) {
+    ResourceMark rm;
+    LogStream ls(lt);
+    arg_shuffle.print_on(&ls);
+  }
+#endif
 
   _frame_size_slots = align_up(framesize + (allocated_frame_size >> LogBytesPerInt), 4);
   assert(is_even(_frame_size_slots/2), "sp not 16-byte aligned");
@@ -219,7 +219,7 @@ void DowncallStubGenerator::generate() {
   }
 
   __ block_comment("{ argument shuffle");
-  arg_shuffle.generate(_masm, shuffle_reg, 0, _abi._shadow_space_bytes, locs);
+  arg_shuffle.generate(_masm, 0, _abi._shadow_space_bytes);
   __ block_comment("} argument shuffle");
 
   __ blr(as_Register(locs.get(StubLocations::TARGET_ADDRESS)));
