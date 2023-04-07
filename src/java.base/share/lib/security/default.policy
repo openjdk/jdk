@@ -109,7 +109,6 @@ grant codeBase "jrt:/java.xml.crypto" {
 
 grant codeBase "jrt:/jdk.accessibility" {
     permission java.lang.RuntimePermission "accessClassInPackage.sun.awt";
-    permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.util";
 };
 
 grant codeBase "jrt:/jdk.charsets" {
