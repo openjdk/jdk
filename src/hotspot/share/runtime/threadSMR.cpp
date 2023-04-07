@@ -824,11 +824,22 @@ bool ThreadsListHandle::cv_internal_thread_to_JavaThread(jobject jthread,
   // Looks like a live JavaThread at this point.
 
   if (java_thread != JavaThread::current()) {
-    // jthread is not for the current JavaThread so have to verify
+    // jthread is not for the current JavaThread so we could verify
     // the JavaThread * against the ThreadsList.
-    if (EnableThreadSMRExtraValidityChecks && !includes(java_thread)) {
-      // Not on the JavaThreads list so it is not alive.
-      return false;
+    if (EnableThreadSMRExtraValidityChecks) {
+      // The java.lang.Thread's JavaThread* value is cleared by ensure_join()
+      // in the middle of the JavaThread's exit() call. The JavaThread removes
+      // itself from the ThreadsList at the end of the JavaThread's exit()
+      // call. Since we have a non-nullptr java_thread value here, we know
+      // that this ThreadsListHandle is protecting the JavaThread so this
+      // is optional verification against future changes.
+      bool is_on_list = includes(java_thread);
+      assert(is_on_list, "java_thread=" INTPTR_FORMAT " is not on ThreadsList("
+             INTPTR_FORMAT ")", p2i(java_thread), p2i(this->list()));
+      // Robustness check for non-ASSERT bits:
+      if (!is_on_list) {
+        return false;
+      }
     }
   }
 
