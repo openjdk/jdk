@@ -264,6 +264,8 @@ final class SSLEngineInputRecord extends InputRecord implements SSLRecord {
         //
         if (contentType == ContentType.HANDSHAKE.id) {
             if (contentLen == 0) {
+                // From RFC 8446: "Implementations MUST NOT send zero-length fragments
+                // of Handshake types, even if those fragments contain padding."
                 throw new SSLProtocolException("Handshake packets must not be zero-length");
             }
 
