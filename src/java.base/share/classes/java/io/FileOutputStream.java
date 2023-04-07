@@ -392,7 +392,7 @@ public class FileOutputStream extends OutputStream
      * If cleanup of native resources is needed, other mechanisms such as
      * {@linkplain java.lang.ref.Cleaner} should be used.
      *
-     * @implNote
+     * @apiNote
      * When this stream has an associated channel, this method may invoke
      * itself reentrantly. Therefore, subclasses that override this method
      * should be prepared to handle possible reentrant invocation.
