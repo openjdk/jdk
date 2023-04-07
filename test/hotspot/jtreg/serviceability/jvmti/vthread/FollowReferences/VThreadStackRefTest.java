@@ -139,7 +139,7 @@ public class VThreadStackRefTest {
         try {
             verifyVthreadMounted(vthreadUnmounted, false);
             verifyVthreadMounted(vthreadMounted, true);
-            
+
             test(testClasses);
         } finally {
             // Finish all threads
