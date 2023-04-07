@@ -409,6 +409,10 @@ void Method::metaspace_pointers_do(MetaspaceClosure* it) {
 void Method::remove_unshareable_info() {
   unlink_method();
   JFR_ONLY(REMOVE_METHOD_ID(this);)
+  // extra optimization, so we don't need to do this at runtime
+  if (!access_flags().loops_flag_init()) {
+    compute_has_loops_flag();
+  }
 }
 
 void Method::restore_unshareable_info(TRAPS) {
