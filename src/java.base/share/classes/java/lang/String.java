@@ -36,6 +36,7 @@ import java.nio.CharBuffer;
 import java.nio.charset.*;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.Formatter;
 import java.util.List;
@@ -3454,7 +3455,7 @@ public final class String
         Objects.requireNonNull(delimiter);
         Objects.requireNonNull(elements);
         var delim = delimiter.toString();
-        var elems = new String[8];
+        var elems = new String[elements instanceof Collection<?> c ? c.size() : 8];
         int size = 0;
         for (CharSequence cs: elements) {
             if (size >= elems.length) {
