@@ -461,6 +461,9 @@ abstract public class TestScaffold extends TargetAdapter {
         testFailed = true;
     }
 
+    final List<String> doubleWordArgs = List.of("-cp", "-classpath", "--add-opens", "--class-path",
+            "--upgrade-module-path", "--add-modules", "-d", "--add-exports", "--patch-module", "--module-path");
+
     private ArgInfo parseArgs(String args[]) {
         ArgInfo argInfo = new ArgInfo();
         // Parse arguments, like java/j* tools command-line arguments
@@ -495,17 +498,13 @@ abstract public class TestScaffold extends TargetAdapter {
                 redefineAsynchronously = true;
             } else if (arg.startsWith("-J")) {
                 argInfo.targetVMArgs += (arg.substring(2) + ' ');
-
-                /*
-                 * classpath can span two arguments so we need to handle
-                 * it specially.
-                 */
-                if (arg.equals("-J-classpath")) {
+                throw new RuntimeException("-J-option is not supported. Incorrect arg: " + args[i]);
+            } else if (arg.startsWith("-")) {
+                argInfo.targetVMArgs += (arg + ' ');
+                if (doubleWordArgs.contains(arg)) {
                     i++;
                     argInfo.targetVMArgs += (args[i] + ' ');
                 }
-            } else if (arg.startsWith("-")) {
-                argInfo.targetVMArgs += (arg + ' ');
             } else {
                 classNameParsed = true;
                 argInfo.targetAppCommandLine += (arg + ' ');
