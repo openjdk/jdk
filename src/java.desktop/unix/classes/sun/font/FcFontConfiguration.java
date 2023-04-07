@@ -39,7 +39,6 @@ import java.util.Locale;
 import java.util.Properties;
 import java.util.Scanner;
 
-import jdk.internal.util.OperatingSystem;
 import sun.awt.FcFontManager;
 import sun.awt.FontConfiguration;
 import sun.awt.FontDescriptor;
@@ -314,7 +313,7 @@ public class FcFontConfiguration extends FontConfiguration {
 
         super.setOsNameAndVersion();
 
-        if (!OperatingSystem.isLinux()) {
+        if (!osName.equals("Linux")) {
             return;
         }
         try {

@@ -25,7 +25,7 @@
 
 package com.sun.media.sound;
 
-import jdk.internal.util.OperatingSystem;
+import sun.awt.OSInfo;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -681,7 +681,7 @@ public final class SoftSynthesizer implements AudioSynthesizer,
             actions.add(new PrivilegedAction<InputStream>() {
                 @Override
                 public InputStream run() {
-                    if (OperatingSystem.isLinux()) {
+                    if (OSInfo.getOSType() == OSInfo.OSType.LINUX) {
 
                         File[] systemSoundFontsDir = new File[] {
                             /* Arch, Fedora, Mageia */
@@ -715,7 +715,7 @@ public final class SoftSynthesizer implements AudioSynthesizer,
             actions.add(new PrivilegedAction<InputStream>() {
                 @Override
                 public InputStream run() {
-                    if (OperatingSystem.isWindows()) {
+                    if (OSInfo.getOSType() == OSInfo.OSType.WINDOWS) {
                         File gm_dls = new File(System.getenv("SystemRoot")
                                 + "\\system32\\drivers\\gm.dls");
                         if (gm_dls.isFile()) {

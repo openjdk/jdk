@@ -46,13 +46,10 @@ import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
 import java.util.Vector;
-
 import sun.font.CompositeFontDescriptor;
 import sun.font.SunFontManager;
 import sun.font.FontUtilities;
 import sun.util.logging.PlatformLogger;
-
-import jdk.internal.util.OperatingSystem;
 
 /**
  * Provides the definitions of the five logical fonts: Serif, SansSerif,
@@ -1376,7 +1373,7 @@ public abstract class FontConfiguration {
                 // The corresponding finename entry for a component
                 // font name is mandatory on Windows, but it's
                 // optional on Solaris and Linux.
-                if (OperatingSystem.isWindows()) {
+                if (OSInfo.getOSType() == OSInfo.OSType.WINDOWS) {
                     System.err.println("\n Error: <filename."
                                        + getString(table_componentFontNameIDs[ii])
                                        + "> entry is missing!!!");

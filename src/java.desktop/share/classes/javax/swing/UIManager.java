@@ -53,8 +53,8 @@ import java.util.StringTokenizer;
 import java.util.Vector;
 import java.util.Locale;
 
-import jdk.internal.util.OperatingSystem;
 import sun.awt.SunToolkit;
+import sun.awt.OSInfo;
 import sun.security.action.GetPropertyAction;
 import sun.swing.SwingUtilities2;
 import java.util.HashMap;
@@ -380,7 +380,8 @@ public class UIManager implements Serializable
                   "com.sun.java.swing.plaf.motif.MotifLookAndFeel"));
 
         // Only include windows on Windows boxes.
-        if (OperatingSystem.isWindows()) {
+        OSInfo.OSType osType = OSInfo.getOSType();
+        if (osType == OSInfo.OSType.WINDOWS) {
             iLAFs.add(new LookAndFeelInfo("Windows",
                         "com.sun.java.swing.plaf.windows.WindowsLookAndFeel"));
             if (Toolkit.getDefaultToolkit().getDesktopProperty(
@@ -389,7 +390,7 @@ public class UIManager implements Serializable
                  "com.sun.java.swing.plaf.windows.WindowsClassicLookAndFeel"));
             }
         }
-        else if (OperatingSystem.isMacOS()) {
+        else if (osType == OSInfo.OSType.MACOSX) {
             iLAFs.add(new LookAndFeelInfo("Mac OS X", "com.apple.laf.AquaLookAndFeel"));
         }
         else {
@@ -657,7 +658,8 @@ public class UIManager implements Serializable
         if (systemLAF != null) {
             return systemLAF;
         }
-        if (OperatingSystem.isWindows()) {
+        OSInfo.OSType osType = OSInfo.getOSType();
+        if (osType == OSInfo.OSType.WINDOWS) {
             return "com.sun.java.swing.plaf.windows.WindowsLookAndFeel";
         } else {
             Toolkit toolkit = Toolkit.getDefaultToolkit();
@@ -669,7 +671,7 @@ public class UIManager implements Serializable
                     return "com.sun.java.swing.plaf.gtk.GTKLookAndFeel";
                 }
             }
-            if (OperatingSystem.isMacOS()) {
+            if (osType == OSInfo.OSType.MACOSX) {
                 if (toolkit.getClass() .getName()
                                        .equals("sun.lwawt.macosx.LWCToolkit")) {
                     return "com.apple.laf.AquaLookAndFeel";
@@ -1285,7 +1287,7 @@ public class UIManager implements Serializable
             java.security.AccessController.doPrivileged(
                 new java.security.PrivilegedAction<Object>() {
                 public Object run() {
-                    if (OperatingSystem.isMacOS()) {
+                    if (OSInfo.getOSType() == OSInfo.OSType.MACOSX) {
                         props.put(defaultLAFKey, getSystemLookAndFeelClassName());
                     }
 

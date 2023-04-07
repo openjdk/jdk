@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,9 @@
 
 package sun.awt;
 
+import jdk.internal.util.OperatingSystem;
+
+import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.HashMap;
 import java.util.Map;
@@ -63,6 +66,10 @@ public class OSInfo {
 
     private static final Map<String, WindowsVersion> windowsVersionMap = new HashMap<String, OSInfo.WindowsVersion>();
 
+    // Cache the OSType for getOSType()
+    private static final OSType CURRENT_OSTYPE = getOSTypeImpl();  // No DoPriv needed
+
+
     static {
         windowsVersionMap.put(WINDOWS_95.toString(), WINDOWS_95);
         windowsVersionMap.put(WINDOWS_98.toString(), WINDOWS_98);
@@ -76,7 +83,7 @@ public class OSInfo {
 
     private static final PrivilegedAction<OSType> osTypeAction = new PrivilegedAction<OSType>() {
         public OSType run() {
-            return getOSType();
+            return getOSTypeImpl();
         }
     };
 
@@ -87,30 +94,20 @@ public class OSInfo {
     /**
      * Returns type of operating system.
      */
-    public static OSType getOSType() throws SecurityException {
-        String osName = System.getProperty(OS_NAME);
+    public static OSType getOSType() {
+        return CURRENT_OSTYPE;
+    }
 
-        if (osName != null) {
-            if (osName.contains("Windows")) {
-                return WINDOWS;
-            }
-
-            if (osName.contains("Linux")) {
-                return LINUX;
-            }
-
-            if (osName.contains("OS X")) {
-                return MACOSX;
-            }
-
-            if (osName.contains("AIX")) {
-                return AIX;
-            }
-
-            // determine another OS here
-        }
-
-        return UNKNOWN;
+    private static OSType getOSTypeImpl() {
+        OperatingSystem os = OperatingSystem.current();
+        return switch (os) {
+            // Map OperatingSystem enum values to OSType enum values.
+            case WINDOWS -> WINDOWS;
+            case LINUX -> LINUX;
+            case MACOS -> MACOSX;
+            case AIX -> AIX;
+            default -> UNKNOWN;
+        };
     }
 
     public static PrivilegedAction<OSType> getOSTypeAction() {

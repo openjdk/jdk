@@ -33,7 +33,7 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import javax.swing.plaf.FontUIResource;
 
-import jdk.internal.util.OperatingSystem;
+import sun.awt.OSInfo;
 import sun.util.logging.PlatformLogger;
 
 /**
@@ -66,9 +66,9 @@ public final class FontUtilities {
             @Override
             public Object run() {
 
-                isLinux = OperatingSystem.isLinux();
+                isLinux = OSInfo.getOSType() == OSInfo.OSType.LINUX;
 
-                isMacOSX = OperatingSystem.isMacOS();
+                isMacOSX = OSInfo.getOSType() == OSInfo.OSType.MACOSX;
                 if (isMacOSX) {
                     // os.version has values like 10.13.6, 10.14.6
                     // If it is not positively recognised as 10.13 or less,
@@ -100,7 +100,7 @@ public final class FontUtilities {
                 } else {
                     useJDKScaler = false;
                 }
-                isWindows = OperatingSystem.isWindows();
+                isWindows = OSInfo.getOSType() == OSInfo.OSType.WINDOWS;
                 String debugLevel =
                     System.getProperty("sun.java2d.debugfonts");
 

@@ -36,6 +36,8 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 
 import java.io.File;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 
 import javax.swing.JToolBar;
 import javax.swing.JFileChooser;
@@ -51,7 +53,6 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.border.BevelBorder;
 import javax.swing.filechooser.FileSystemView;
 
-import jdk.internal.util.OperatingSystem;
 import sun.awt.shell.ShellFolder;
 import sun.awt.OSInfo;
 
@@ -77,7 +78,7 @@ public class WindowsPlacesBar extends JToolBar
         setFloatable(false);
         putClientProperty("JToolBar.isRollover", Boolean.TRUE);
 
-        boolean isXPPlatform = (OperatingSystem.isWindows() &&
+        boolean isXPPlatform = (OSInfo.getOSType() == OSInfo.OSType.WINDOWS &&
                 OSInfo.getWindowsVersion().compareTo(OSInfo.WINDOWS_XP) >= 0);
 
         if (isXPStyle) {

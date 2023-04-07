@@ -53,7 +53,7 @@ import java.io.FileReader;
 import java.net.URL;
 import java.nio.file.Files;
 
-import jdk.internal.util.OperatingSystem;
+import sun.awt.OSInfo;
 import sun.awt.util.ThreadGroupUtils;
 
 /*
@@ -147,16 +147,20 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
     }
 
     static boolean isMac() {
-        return OperatingSystem.isMacOS();
+        return OSInfo.getOSType() == OSInfo.OSType.MACOSX;
+    }
+
+    static boolean isLinux() {
+        return OSInfo.getOSType() == OSInfo.OSType.LINUX;
     }
 
     static boolean isBSD() {
-        return (OperatingSystem.isLinux() ||
-                OperatingSystem.isMacOS());
+        return (OSInfo.getOSType() == OSInfo.OSType.LINUX ||
+                OSInfo.getOSType() == OSInfo.OSType.MACOSX);
     }
 
     static boolean isAIX() {
-        return OperatingSystem.isAix();
+        return OSInfo.getOSType() == OSInfo.OSType.AIX;
     }
 
     static final int UNINITIALIZED = -1;

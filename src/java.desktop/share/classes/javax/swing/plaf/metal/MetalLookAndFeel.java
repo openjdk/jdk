@@ -39,7 +39,6 @@ import java.lang.ref.WeakReference;
 
 import java.security.AccessController;
 
-import jdk.internal.util.OperatingSystem;
 import sun.awt.*;
 import sun.security.action.GetPropertyAction;
 import sun.swing.DefaultLayoutStyle;
@@ -119,7 +118,7 @@ public class MetalLookAndFeel extends BasicLookAndFeel
      */
     static boolean isWindows() {
         if (!checkedWindows) {
-            if (OperatingSystem.isWindows()) {
+            if (OSInfo.getOSType() == OSInfo.OSType.WINDOWS) {
                 isWindows = true;
                 @SuppressWarnings("removal")
                 String systemFonts = AccessController.doPrivileged(

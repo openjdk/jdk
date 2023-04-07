@@ -80,9 +80,9 @@ import java.util.ArrayList;
 import java.util.Locale;
 import java.util.Properties;
 
-import jdk.internal.util.OperatingSystem;
 import sun.awt.CharsetString;
 import sun.awt.FontConfiguration;
+import sun.awt.OSInfo;
 import sun.awt.PlatformFont;
 import sun.awt.SunToolkit;
 import sun.font.FontAccess;
@@ -345,7 +345,7 @@ public class PSPrinterJob extends RasterPrinterJob {
                             new java.security.PrivilegedAction<Object>() {
             public Object run() {
                 mFontProps = initProps();
-                isMac = OperatingSystem.isMacOS();
+                isMac = OSInfo.getOSType() == OSInfo.OSType.MACOSX;
                 return null;
             }
         });
@@ -1623,8 +1623,8 @@ public class PSPrinterJob extends RasterPrinterJob {
             ncomps+=1; // for jobsheet
         }
 
-        if (OperatingSystem.isLinux() ||
-                OperatingSystem.isMacOS()) {
+        if (OSInfo.getOSType() == OSInfo.OSType.LINUX ||
+                OSInfo.getOSType() == OSInfo.OSType.MACOSX) {
             execCmd = new String[ncomps];
             execCmd[n++] = "/usr/bin/lpr";
             if ((pFlags & PRINTER) != 0) {

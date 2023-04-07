@@ -29,7 +29,7 @@ import java.awt.*;
 import java.awt.event.*;
 import java.awt.peer.*;
 
-import jdk.internal.util.OperatingSystem;
+import sun.awt.OSInfo;
 import sun.util.logging.PlatformLogger;
 
 class XScrollbarPeer extends XComponentPeer implements ScrollbarPeer, XScrollbarClient {
@@ -77,7 +77,7 @@ class XScrollbarPeer extends XComponentPeer implements ScrollbarPeer, XScrollbar
      * Currently uses hardcoded values
      */
     private int getDefaultDimension() {
-        if (OperatingSystem.isLinux()) {
+        if (OSInfo.getOSType() == OSInfo.OSType.LINUX) {
             return DEFAULT_WIDTH_LINUX;
         } else {
             return DEFAULT_WIDTH_SOLARIS;

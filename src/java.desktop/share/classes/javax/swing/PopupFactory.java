@@ -39,13 +39,14 @@ import java.awt.Toolkit;
 import java.awt.Window;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.security.AccessController;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import jdk.internal.util.OperatingSystem;
 import sun.awt.EmbeddedFrame;
+import sun.awt.OSInfo;
 import sun.swing.SwingAccessor;
 
 import static javax.swing.ClientPropertyKey.PopupFactory_FORCE_HEAVYWEIGHT_POPUP;
@@ -288,7 +289,7 @@ public class PopupFactory {
             return getMediumWeightPopup(owner, contents, ownerX, ownerY);
         case HEAVY_WEIGHT_POPUP:
             Popup popup = getHeavyWeightPopup(owner, contents, ownerX, ownerY);
-            if (OperatingSystem.isMacOS() && (owner != null) &&
+            if ((OSInfo.getOSType() == OSInfo.OSType.MACOSX) && (owner != null) &&
                 (EmbeddedFrame.getAppletIfAncestorOf(owner) != null)) {
                 ((HeavyWeightPopup)popup).setCacheEnabled(false);
             }
