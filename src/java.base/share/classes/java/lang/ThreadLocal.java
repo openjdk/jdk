@@ -802,7 +802,7 @@ public class ThreadLocal<T> {
 
     /**
      * Reads the value of the jdk.traceVirtualThreadLocals property to determine if
-     * a stack trace should be printed when a virtual threads sets a thread local.
+     * a stack trace should be printed when a virtual thread sets a thread local.
      */
     private static boolean traceVirtualThreadLocals() {
         String propValue = GetPropertyAction.privilegedGetProperty("jdk.traceVirtualThreadLocals");

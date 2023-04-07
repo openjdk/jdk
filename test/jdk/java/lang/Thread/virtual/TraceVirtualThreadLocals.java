@@ -49,7 +49,7 @@ class TraceVirtualThreadLocals {
             };
             name.get();
         });
-        assertContains(output, "java.lang.ThreadLocal.get");
+        assertContains(output, "java.lang.ThreadLocal.setInitialValue");
     }
 
     @Test

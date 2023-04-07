@@ -26,7 +26,7 @@ package jdk.internal.event;
 /**
  * ThreadSleepEvent to optionally throw OOME at create, begin or commit time.
  */
-public class ThreadSleepEvent {
+public class ThreadSleepEvent extends Event {
     private static boolean throwOnCreate;
     private static boolean throwOnBegin;
     private static boolean throwOnCommit;
@@ -55,12 +55,14 @@ public class ThreadSleepEvent {
         }
     }
 
+    @Override
     public void begin() {
         if (throwOnBegin) {
             throw new OutOfMemoryError();
         }
     }
 
+    @Override
     public void commit() {
         if (throwOnCommit) {
             throw new OutOfMemoryError();

@@ -26,7 +26,7 @@ package jdk.internal.event;
 /**
  * VirtualThreadPinnedEvent to optionally throw OOME at create, begin or commit time.
  */
-public class VirtualThreadPinnedEvent {
+public class VirtualThreadPinnedEvent extends Event {
     private static boolean throwOnCreate;
     private static boolean throwOnBegin;
     private static boolean throwOnCommit;
@@ -49,12 +49,14 @@ public class VirtualThreadPinnedEvent {
         }
     }
 
+    @Override
     public void begin() {
         if (throwOnBegin) {
             throw new OutOfMemoryError();
         }
     }
 
+    @Override
     public void commit() {
         if (throwOnCommit) {
             throw new OutOfMemoryError();
