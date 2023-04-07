@@ -107,9 +107,9 @@ public class SplitWithDelimitersTest {
     @ParameterizedTest
     @MethodSource
     void testSplit(String[] expected, String target, String regex, int limit) {
-        String[] computedWith = target.split(regex, limit, true);
+        String[] computedWith = target.splitWithDelimiters(regex, limit);
         assertArrayEquals(expected, computedWith);
-        String[] computedWithout = target.split(regex, limit, false);
+        String[] computedWithout = target.split(regex, limit);
         assertArrayEquals(dropOddIndexed(expected, limit), computedWithout);
     }
 

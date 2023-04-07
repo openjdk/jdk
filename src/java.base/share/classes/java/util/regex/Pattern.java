@@ -1216,10 +1216,72 @@ public final class Pattern
     /**
      * Splits the given input sequence around matches of this pattern.
      *
-     * <p> This method works as if by invoking the three-argument
-     * {@link #split(java.lang.CharSequence, int, boolean) split} method with
-     * the given {@code input} sequence, the given {@code limit} and
-     * {@code false} as the last argument.
+     * <p> The array returned by this method contains each substring of the
+     * input sequence that is terminated by another subsequence that matches
+     * this pattern or is terminated by the end of the input sequence.  The
+     * substrings in the array are in the order in which they occur in the
+     * input. If this pattern does not match any subsequence of the input then
+     * the resulting array has just one element, namely the input sequence in
+     * string form.
+     *
+     * <p> When there is a positive-width match at the beginning of the input
+     * sequence then an empty leading substring is included at the beginning
+     * of the resulting array. A zero-width match at the beginning however
+     * never produces such empty leading substring.
+     *
+     * <p> The {@code limit} parameter controls the number of times the
+     * pattern is applied and therefore affects the length of the resulting
+     * array.
+     * <ul>
+     *    <li><p>
+     *    If the <i>limit</i> is positive then the pattern will be applied
+     *    at most <i>limit</i>&nbsp;-&nbsp;1 times, the array's length will be
+     *    no greater than <i>limit</i>, and the array's last entry will contain
+     *    all input beyond the last matched delimiter.</p></li>
+     *
+     *    <li><p>
+     *    If the <i>limit</i> is zero then the pattern will be applied as
+     *    many times as possible, the array can have any length, and trailing
+     *    empty strings will be discarded.</p></li>
+     *
+     *    <li><p>
+     *    If the <i>limit</i> is negative then the pattern will be applied
+     *    as many times as possible and the array can have any length.</p></li>
+     * </ul>
+     *
+     * <p> The input {@code "boo:and:foo"}, for example, yields the following
+     * results with these parameters:
+     *
+     * <table class="plain" style="margin-left:2em;">
+     * <caption style="display:none">Split example showing regex, limit, and result</caption>
+     * <thead>
+     * <tr>
+     *     <th scope="col">Regex</th>
+     *     <th scope="col">Limit</th>
+     *     <th scope="col">Result</th>
+     * </tr>
+     * </thead>
+     * <tbody>
+     * <tr><th scope="row" rowspan="3" style="font-weight:normal">:</th>
+     *     <th scope="row" style="font-weight:normal; text-align:right; padding-right:1em">2</th>
+     *     <td>{@code { "boo", "and:foo" }}</td></tr>
+     * <tr><!-- : -->
+     *     <th scope="row" style="font-weight:normal; text-align:right; padding-right:1em">5</th>
+     *     <td>{@code { "boo", "and", "foo" }}</td></tr>
+     * <tr><!-- : -->
+     *     <th scope="row" style="font-weight:normal; text-align:right; padding-right:1em">-2</th>
+     *     <td>{@code { "boo", "and", "foo" }}</td></tr>
+     * <tr><th scope="row" rowspan="3" style="font-weight:normal">o</th>
+     *     <th scope="row" style="font-weight:normal; text-align:right; padding-right:1em">5</th>
+     *     <td>{@code { "b", "", ":and:f", "", "" }}</td></tr>
+     * <tr><!-- o -->
+     *     <th scope="row" style="font-weight:normal; text-align:right; padding-right:1em">-2</th>
+     *     <td>{@code { "b", "", ":and:f", "", "" }}</td></tr>
+     * <tr><!-- o -->
+     *     <th scope="row" style="font-weight:normal; text-align:right; padding-right:1em">0</th>
+     *     <td>{@code { "b", "", ":and:f" }}</td></tr>
+     * </tbody>
+     * </table>
      *
      * @param  input
      *         The character sequence to be split
@@ -1235,50 +1297,42 @@ public final class Pattern
     }
 
     /**
-     * Splits the given input sequence around matches of this pattern.
+     * Splits the given input sequence around matches of this pattern and
+     * returns both the strings and the matching delimiters.
      *
-     * <p> When {@code withDelimiter} is {@code false},
-     * the array returned by this method contains each substring of the
+     * <p> The array returned by this method contains each substring of the
      * input sequence that is terminated by another subsequence that matches
-     * this pattern or is terminated by the end of the input sequence.  The
-     * substrings in the array are in the order in which they occur in the
-     * input. If this pattern does not match any subsequence of the input then
-     * the resulting array has just one element, namely the input sequence in
-     * string form.
-     *
-     * <p> When {@code withDelimiter} is {@code true}, each of the substrings
-     * returned in the array described above is immediately followed by the
-     * subsequence that matches this pattern, <em>except</em> for the
-     * last substring, which is not followed by anything.
-     * Thus, the element at index {@code 0} is the first substring, followed
-     * by the first subsequence matching this pattern, and so on,
-     * up to the last substring.
+     * this pattern or is terminated by the end of the input sequence.
+     * Each substring is immediately followed by the subsequence (the delimiter)
+     * that matches this pattern, <em>except</em> for the last substring, which
+     * is not followed by anything.
+     * The substrings in the array and the delimiters are in the order in which
+     * they occur in the input.
+     * If this pattern does not match any subsequence of the input then the
+     * resulting array has just one element, namely the input sequence in string
+     * form.
      *
      * <p> When there is a positive-width match at the beginning of the input
      * sequence then an empty leading substring is included at the beginning
-     * of the resulting array. A zero-width match at the beginning however
-     * never produces such empty leading substring.
+     * of the resulting array.
+     * A zero-width match at the beginning however never produces such empty
+     * leading substring.
      *
      * <p> The {@code limit} parameter controls the number of times the
      * pattern is applied and therefore affects the length of the resulting
      * array.
      * <ul>
-     *    <li><p>
-     *    If the <i>limit</i> is positive then the pattern will be applied
-     *    at most <i>limit</i>&nbsp;-&nbsp;1 times, the array's length will be
-     *    no greater than <i>limit</i> when {@code withDelimiter} is
-     *    {@code false}, and no greater than 2 &centerdot; <i>limit</i> - 1
-     *    otherwise. The array's last entry will contain all input beyond the
-     *    last matched delimiter.</p></li>
+     *    <li> If the <i>limit</i> is positive then the pattern will be applied
+     *    at most <i>limit</i> - 1 times, the array's length will be
+     *    no greater than 2 &centerdot; <i>limit</i> - 1, and the array's last
+     *    entry will contain all input beyond the last matched delimiter.</li>
      *
-     *    <li><p>
-     *    If the <i>limit</i> is zero then the pattern will be applied as many
-     *    times as possible, the array can have any length, and trailing empty
-     *    strings, whether substrings or delimiters, will be discarded.</p></li>
+     *    <li> If the <i>limit</i> is zero then the pattern will be applied as
+     *    many times as possible, the array can have any length, and trailing
+     *    empty strings, whether substrings or delimiters, will be discarded.</li>
      *
-     *    <li><p>
-     *    If the <i>limit</i> is negative then the pattern will be applied
-     *    as many times as possible and the array can have any length.</p></li>
+     *    <li> If the <i>limit</i> is negative then the pattern will be applied
+     *    as many times as possible and the array can have any length.</li>
      * </ul>
      *
      * <p> The input {@code "boo:::and::foo"}, for example, yields the following
@@ -1290,53 +1344,27 @@ public final class Pattern
      * <tr>
      *     <th scope="col">Regex</th>
      *     <th scope="col">Limit</th>
-     *     <th scope="col">With Delimiters</th>
      *     <th scope="col">Result</th>
      * </tr>
      * </thead>
      * <tbody>
-     * <tr><th scope="row" rowspan="6" style="font-weight:normal">:+</th>
-     *     <th scope="row" rowspan="2" style="font-weight:normal; text-align:right; padding-right:1em">2</th>
-     *     <th scope="row" style="font-weight:normal; text-align:left; padding-right:1em">false</th>
-     *     <td>{@code { "boo", "and::foo" }}</td></tr>
-     * <tr><!-- :+ -->
-     *     <th scope="row" style="font-weight:normal; text-align:left; padding-right:1em">true</th>
+     * <tr><th scope="row" rowspan="3" style="font-weight:normal">:+</th>
+     *     <th scope="row" style="font-weight:normal; text-align:right; padding-right:1em">2</th>
      *     <td>{@code { "boo", ":::", "and::foo" }}</td></tr>
-     * <tr><!-- :+ -->
-     *     <th scope="row" rowspan="2" style="font-weight:normal; text-align:right; padding-right:1em">5</th>
-     *     <th scope="row" style="font-weight:normal; text-align:left; padding-right:1em">false</th>
-     *     <td>{@code { "boo", "and", "foo" }}</td></tr>
-     * <tr><!-- :+ -->
-     *     <th scope="row" style="font-weight:normal; text-align:left; padding-right:1em">true</th>
+     * <tr><!-- : -->
+     *     <th scope="row" style="font-weight:normal; text-align:right; padding-right:1em">5</th>
      *     <td>{@code { "boo", ":::", "and", "::", "foo" }}</td></tr>
-     * <tr><!-- :+ -->
-     *     <th scope="row" rowspan="2" style="font-weight:normal; text-align:right; padding-right:1em">-1</th>
-     *     <th scope="row" style="font-weight:normal; text-align:left; padding-right:1em">false</th>
-     *     <td>{@code { "boo", "and", "foo" }}</td></tr>
-     * <tr><!-- :+ -->
-     *     <th scope="row" style="font-weight:normal; text-align:left; padding-right:1em">true</th>
+     * <tr><!-- : -->
+     *     <th scope="row" style="font-weight:normal; text-align:right; padding-right:1em">-1</th>
      *     <td>{@code { "boo", ":::", "and", "::", "foo" }}</td></tr>
-     * <tr><!-- :+ -->
-     * <tr><th scope="row" rowspan="6" style="font-weight:normal">o</th>
-     *     <th scope="row" rowspan="2" style="font-weight:normal; text-align:right; padding-right:1em">5</th>
-     *     <th scope="row" style="font-weight:normal; text-align:left; padding-right:1em">false</th>
-     *     <td>{@code { "b", "", ":::and::f", "", "" }}</td></tr>
-     * <tr><!-- o -->
-     *     <th scope="row" style="font-weight:normal; text-align:left; padding-right:1em">true</th>
+     * <tr><th scope="row" rowspan="3" style="font-weight:normal">o</th>
+     *     <th scope="row" style="font-weight:normal; text-align:right; padding-right:1em">5</th>
      *     <td>{@code { "b", "o", "", "o", ":::and::f", "o", "", "o", "" }}</td></tr>
      * <tr><!-- o -->
-     *     <th scope="row" rowspan="2" style="font-weight:normal; text-align:right; padding-right:1em">-1</th>
-     *     <th scope="row" style="font-weight:normal; text-align:left; padding-right:1em">false</th>
-     *     <td>{@code { "b", "", ":::and::f", "", "" }}</td></tr>
-     * <tr><!-- o -->
-     *     <th scope="row" style="font-weight:normal; text-align:left; padding-right:1em">true</th>
+     *     <th scope="row" style="font-weight:normal; text-align:right; padding-right:1em">-1</th>
      *     <td>{@code { "b", "o", "", "o", ":::and::f", "o", "", "o", "" }}</td></tr>
      * <tr><!-- o -->
-     *     <th scope="row" rowspan="2" style="font-weight:normal; text-align:right; padding-right:1em">0</th>
-     *     <th scope="row" style="font-weight:normal; text-align:left; padding-right:1em">false</th>
-     *     <td>{@code { "b", "", ":::and::f" }}</td></tr>
-     * <tr><!-- o -->
-     *     <th scope="row" style="font-weight:normal; text-align:left; padding-right:1em">true</th>
+     *     <th scope="row" style="font-weight:normal; text-align:right; padding-right:1em">0</th>
      *     <td>{@code { "b", "o", "", "o", ":::and::f", "o", "", "o" }}</td></tr>
      * </tbody>
      * </table>
@@ -1347,15 +1375,16 @@ public final class Pattern
      * @param  limit
      *         The result threshold, as described above
      *
-     * @param  withDelimiters
-     *         Whether the result should include the matched delimiters
-     *
      * @return  The array of strings computed by splitting the input
      *          around matches of this pattern
      *
-     * @since 21
+     * @since   21
      */
-    public String[] split(CharSequence input, int limit, boolean withDelimiters) {
+    public String[] splitWithDelimiters(CharSequence input, int limit) {
+        return split(input, limit, true);
+    }
+
+    private String[] split(CharSequence input, int limit, boolean withDelimiters) {
         int matchCount = 0;
         int index = 0;
         boolean matchLimited = limit > 0;
@@ -1407,11 +1436,30 @@ public final class Pattern
     /**
      * Splits the given input sequence around matches of this pattern.
      *
-     * <p> This method works as if by invoking the three-argument
-     * {@link #split(java.lang.CharSequence, int, boolean) split} method with
-     * the given {@code input} sequence, a {@code limit} of {@code 0} and
-     * {@code false} as the last argument.
-     * Trailing empty strings are therefore not included in the resulting array.
+     * <p> This method works as if by invoking the two-argument {@link
+     * #split(java.lang.CharSequence, int) split} method with the given input
+     * sequence and a limit argument of zero.  Trailing empty strings are
+     * therefore not included in the resulting array. </p>
+     *
+     * <p> The input {@code "boo:and:foo"}, for example, yields the following
+     * results with these expressions:
+     *
+     * <table class="plain" style="margin-left:2em">
+     * <caption style="display:none">Split examples showing regex and result</caption>
+     * <thead>
+     * <tr>
+     *  <th scope="col">Regex</th>
+     *  <th scope="col">Result</th>
+     * </tr>
+     * </thead>
+     * <tbody>
+     * <tr><th scope="row" style="text-weight:normal">:</th>
+     *     <td>{@code { "boo", "and", "foo" }}</td></tr>
+     * <tr><th scope="row" style="text-weight:normal">o</th>
+     *     <td>{@code { "b", "", ":and:f" }}</td></tr>
+     * </tbody>
+     * </table>
+     *
      *
      * @param  input
      *         The character sequence to be split
