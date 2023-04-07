@@ -64,6 +64,12 @@ public class bug8303950_legacyWindowPaintBehavior {
                 Window w3 = createWindow( WINDOW_BACKGROUND, null, x, y + 400, 400, 400, true, "window 3");
                 Window w4 =  createWindow( WINDOW_BACKGROUND, ROOTPANE_BACKGROUND, x + 400, y + 400, 400, 400, true, "window 4");
 
+                createWhiteBackground(w1, w2, w3, w4);
+                w1.toFront();
+                w2.toFront();
+                w3.toFront();
+                w4.toFront();
+
                 SwingUtilities.invokeLater(new Runnable() {
                     int ctr = 0;
                     boolean failed = false;
@@ -104,6 +110,27 @@ public class bug8303950_legacyWindowPaintBehavior {
         semaphore.acquireUninterruptibly();
     }
 
+    /**
+     * Create a white window behind a series of Windows
+     */
+    private static Window createWhiteBackground(Window... windows) {
+        JWindow background = new JWindow();
+
+        Rectangle totalBounds = windows[0].getBounds();
+        for (int a = 1; a < windows.length; a++) {
+            totalBounds.add(windows[a].getBounds());
+        }
+
+        background.pack();
+        background.setBounds(totalBounds);
+        background.setVisible(true);
+
+        background.setBackground(Color.white);
+        background.getContentPane().setBackground(Color.white);
+
+        return background;
+    }
+
     private static JWindow createWindow(Color windowBackground, Color rootPaneBackground, int x, int y, int w, int h, boolean translucent, String name) {
         JWindow window = new JWindow();
         window.setName(name);
@@ -117,7 +144,10 @@ public class bug8303950_legacyWindowPaintBehavior {
             window.getRootPane().setBackground(rootPaneBackground);
 
         window.getContentPane().setLayout(new BorderLayout());
-        JTextArea text = new JTextArea("translucent = " + translucent+"\nrootPaneBackground = " + rootPaneBackground);
+        JTextArea text = new JTextArea("translucent = " + translucent +
+                "\nwindowBackground = " + toString(windowBackground) +
+                "\nrootPaneBackground = " + toString(rootPaneBackground) +
+                "\n\"Panel.background\" = " + toString( (Color) UIManager.getDefaults().get("Panel.background")));
         text.setOpaque(false);
         text.setEditable(false);
         window.getContentPane().add(text, BorderLayout.NORTH);
@@ -127,5 +157,11 @@ public class bug8303950_legacyWindowPaintBehavior {
         window.setVisible(true);
 
         return window;
+    }
+
+    private static String toString(Color color) {
+        if (color == null)
+            return "null";
+        return "#" + Integer.toUnsignedString(color.getRGB(), 16);
     }
 }
