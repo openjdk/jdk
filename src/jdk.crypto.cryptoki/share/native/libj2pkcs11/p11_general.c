@@ -73,12 +73,12 @@ jfieldID mech_pHandleID;
 jclass jByteArrayClass;
 jclass jLongClass;
 
-JavaVM* jvm = NULL;
+JavaVM* jvm_j2pkcs11 = NULL;
 
 jboolean debug = 0;
 
 JNIEXPORT jint JNICALL DEF_JNI_OnLoad(JavaVM *vm, void *reserved) {
-    jvm = vm;
+    jvm_j2pkcs11 = vm;
     return JNI_VERSION_1_4;
 }
 
@@ -210,7 +210,7 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1Initialize
 (JNIEnv *env, jobject obj, jobject jInitArgs)
 {
     /*
-     * Initalize Cryptoki
+     * Initialize Cryptoki
      */
     CK_C_INITIALIZE_ARGS_PTR ckpInitArgs;
     CK_RV rv;
