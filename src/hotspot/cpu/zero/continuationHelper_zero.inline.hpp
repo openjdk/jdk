@@ -56,11 +56,11 @@ inline void ContinuationHelper::push_pd(const frame& f) {
   Unimplemented();
 }
 
-inline address ContinuationHelper::return_pc_at(intptr_t* sp) {
+inline address ContinuationHelper::return_address_at(intptr_t* sp) {
   return *(address*)sp;
 }
 
-inline void ContinuationHelper::patch_pc_at(intptr_t* sp, address pc) {
+inline void ContinuationHelper::patch_return_address_at(intptr_t* sp, address pc) {
   *(address*)sp = pc;
 }
 

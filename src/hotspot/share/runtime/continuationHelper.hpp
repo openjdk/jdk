@@ -44,8 +44,8 @@ public:
 
   static inline void push_pd(const frame& f);
 
-  static inline address return_pc_at(intptr_t* sp);
-  static inline void patch_pc_at(intptr_t* sp, address pc);
+  static inline address return_address_at(intptr_t* sp);
+  static inline void patch_return_address_at(intptr_t* sp, address pc);
 
   static inline int frame_align_words(int size);
   static inline intptr_t* frame_align_pointer(intptr_t* sp);
