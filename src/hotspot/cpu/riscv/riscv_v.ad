@@ -2454,19 +2454,6 @@ instruct vmask_gen_imm(vRegMask dst, immL con) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vmask_gen_sub(vRegMask dst, iRegL src1, iRegL src2) %{
-  match(Set dst (VectorMaskGen (SubL src1 src2)));
-  format %{ "vmask_gen_sub $dst, $src2, $src1" %}
-  ins_encode %{
-    BasicType bt = Matcher::vector_element_basic_type(this);
-    Assembler::SEW sew = Assembler::elemtype_to_sew(bt);
-    __ sub(t1, $src1$$Register, $src2$$Register);
-    __ vsetvli(t0, t1, sew);
-    __ vmxnor_mm(as_VectorRegister($dst$$reg), as_VectorRegister($dst$$reg), as_VectorRegister($dst$$reg));
-  %}
-  ins_pipe(pipe_slow);
-%}
-
 instruct vmaskAll_immI(vRegMask dst, immI src) %{
   match(Set dst (MaskAll src));
   format %{ "vmaskAll_immI $dst, $src" %}
