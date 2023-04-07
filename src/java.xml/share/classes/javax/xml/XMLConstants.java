@@ -29,21 +29,21 @@ package javax.xml;
  * Defines constants for XML Processing APIs.
  *
  * <h2 id="PropPrec">Property Precedence</h2>
- * Some of the properties defined in this class, for example, the external access
- * properties (ACCESS_EXTERNAL_*) and USE_CATALOG, support multiple ways to set
- * their values. These properties follow the
+ * Properties such as the external access properties (ACCESS_EXTERNAL_*) and
+ * USE_CATALOG, can be specified through multiple configuration sources. Their
+ * precedence is described in the section
  * <a href="{@docRoot}/java.xml/module-summary.html#PP">Property Precedence</a>
- * defined in the module summary for the property settings.
+ * of the module summary.
  *
  * <h2 id="EAP">External Access Properties</h2>
- * The format of the value for the external access properties
- * {@link #ACCESS_EXTERNAL_DTD}, {@link #ACCESS_EXTERNAL_SCHEMA}
- * and {@link #ACCESS_EXTERNAL_STYLESHEET} is defined as follows.
+ * The value of the external access properties, including {@link #ACCESS_EXTERNAL_DTD},
+ * {@link #ACCESS_EXTERNAL_SCHEMA}, and {@link #ACCESS_EXTERNAL_STYLESHEET},
+ * is defined as follows.
  *
- * <h3 id="EAPValue">Value:</h3> a list of protocols separated by comma. A protocol is the scheme portion of a
- * {@link java.net.URI}, or in the case of the JAR protocol, "jar" plus the scheme portion
- * separated by colon.
- * A scheme is defined as:
+ * <h3 id="EAPValue">Value:</h3>
+ * A list of protocols separated by comma. A protocol is the scheme portion of a
+ * {@link java.net.URI}, or in the case of the JAR protocol, "jar" plus the scheme
+ * portion separated by colon. A scheme is defined as:
  *
  * <blockquote>
  * scheme = alpha *( alpha | digit | "+" | "-" | "." )<br>
@@ -59,8 +59,8 @@ package javax.xml;
  *
  * </blockquote>
  *
- * <p>
- * <b>Default value:</b> The default value is implementation specific and therefore not specified.
+ * <h3>Default value:</h3>
+ * The default value is implementation specific and therefore not specified.
  * The following options are provided for consideration:
  * <blockquote>
  * <UL>
@@ -73,8 +73,8 @@ package javax.xml;
  *      that process XML/XSD/XSL with external references.
  * </blockquote>
  *
- * <p>
- * <b>Granting all access:</b>  the keyword "all" grants permission to all protocols.
+ * <h3>Granting all access:</h3>
+ * The keyword "all" grants permission to all protocols.
  *
  *
  * @author Jeff Suttor
@@ -279,7 +279,6 @@ public final class XMLConstants {
          *
          * <p>
          * <b>Configuration File:</b>
-          * <b>Configuration File:</b>
          * Yes. The property can be set in the
          * <a href="{@docRoot}/java.xml/module-summary.html#ConfigurationFile">configuration file</a>.
         *

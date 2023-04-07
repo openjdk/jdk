@@ -167,12 +167,13 @@ import jdk.xml.internal.SecuritySupport;
  * <h2>Property Precedence</h2>
  * The Catalog Features follow the
  * <a href="{@docRoot}/java.xml/module-summary.html#PP">Property Precedence</a>
- * as described in the module summary with regards to settings with the configuration
- * file, system and API properties. In addition to the general procedure,
- * the Catalog Features are further supported in the catalog file itself where
- * they can be specified as attributes for the catalog and group entries. When
- * the attributes are specified, they shall take preference over any of
- * the other settings.
+ * as described in the module summary with regards to the priority with which
+ * their values are retrieved from the various configuration sources such as
+ * the JAXP configuration file, system and API properties. In addition to the
+ * general configuration sources, the Catalog Features are further supported in
+ * the catalog file itself where they can be specified as attributes of the catalog
+ * and group entries. When the attributes are specified, they shall take preference
+ * over any of the other configuration sources.
  * For example, if a {@code prefer} attribute is set in the catalog file as in
  * {@code <catalog prefer="public">}, any other input for the "prefer" property
  * is not necessary or will be ignored.

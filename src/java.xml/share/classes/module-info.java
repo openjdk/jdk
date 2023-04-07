@@ -27,8 +27,9 @@
  * Defines the Java API for XML Processing (JAXP), the Streaming API for XML (StAX),
  * the Simple API for XML (SAX), and the W3C Document Object Model (DOM) API.
  *
- * <h2 id="ConfigurationFile">Configuration File</h2>
- * The XML processing APIs in this module support the use of a configuration file for
+ * <h2 id="ConfigurationFile">JAXP Configuration File</h2>
+ * JAXP supports the use of a configuration file for the
+ * <a href="#LookupMechanism">Factory Lookup Mechanism</a> and
  * setting properties that have defined corresponding system properties.
  *
  * <h3>Format</h3>
@@ -36,7 +37,7 @@
  * <p>
  * The keys are the names of the system properties, for example, those listed in
  * column {@code System Property Name} of the table <a href="#Factories">JAXP Factories</a>,
- * or {@code System Property} in table {@code Catalog Features}
+ * or {@code System Property} in the table {@code Catalog Features}
  * of class {@link javax.xml.catalog.CatalogFeatures CatalogFeatures}.
  *
  * <p>
@@ -54,29 +55,29 @@
  * </pre>
  *
  *
- * <h3 id="CF_Default">Default</h3>
+ * <h3 id="CF_Default">{@code jaxp.properties}</h3>
  * By default, the <a href="#Factories">JAXP Factories</a> will look for a
  * configuration file called {@code jaxp.properties} in the {@code conf} directory
- * of the Java installation and use the settings if any for configuring the
- * factories.
+ * of the Java installation and use the entries if any to customize the behavior
+ * of the factories.
  *
  * <p>
- * The default file will be read only once during a factory initialization and
- * the values are used while the factory is alive.  If the file does not exist when
+ * {@code jaxp.properties} will be read only once during the initialization of
+ * the JAXP implementation and cached in memory. If the file does not exist when
  * the first attempt is made to read from it, no further attempts are made to check
  * for its existence. It is not possible to change the value of any property after
  * it has been read for the first time.
  *
  *
- * <h3 id="CF_SP">System Property</h3>
- * The system property {@code java.xml.config.file} can be used to set up a
- * configuration file outside of the JDK to override any or all of the settings
- * in the default configuration file (jaxp.properties).
+ * <h3 id="CF_SP">User-defined Configuration File</h3>
+ * A user-defined configuration file can be set outside of the JDK by using the
+ * system property {@code java.xml.config.file}.
+ *
  * <p>
  * When the system property is specified, the configuration file it points to
- * will be read and the property settings in it used to override those in the
- * default file. If the system property does not exist when a factory is instantiated,
- * no further attempt will be made to locate it while the factory is alive.
+ * will be read and the property entries in it used to override those in
+ * {@code jaxp.properties}. If the system property does not exist when a factory
+ * is instantiated, no further attempt will be made to check for its existence.
  * <p>
  * The value of the property shall be a valid file path to a configuration file.
  * If the file path is not absolute, it will be considered relative to the working
@@ -249,31 +250,25 @@
  * </ul>
  *
  * <h2 id="PP">Property Precedence</h2>
- * Properties in this module may be set in several different ways, including
- * initialization, the {@link javax.xml.XMLConstants#FEATURE_SECURE_PROCESSING FEATURE_SECURE_PROCESSING}
- * (hereafter referred to FSP), <a href="#ConfigurationFile">configuration file</a>,
- * system properties, the API properties. These settings have a precedence order
- * as follows, with earlier ones override the later:
+ * Properties in this module can be set in multiple ways, including using
+ * the API properties, system properties, <a href="#ConfigurationFile">JAXP Configuration File</a>,
+ * the {@link javax.xml.XMLConstants#FEATURE_SECURE_PROCESSING FEATURE_SECURE_PROCESSING}
+ * (hereafter referred to FSP), and the default values. The order of precedence
+ * for the configuration sources is defined as follows, with earlier ones overriding the later:
  *
  * <ul>
  * <li><p>
- *      Properties specified through factories or processors API. For example,
- *      <pre>
- *      {@code
- *      DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
- *      dbf.setAttribute(property, value);
- *      }
- *      </pre>
+ *      Properties specified through factories or processors API;
  * </li>
  * <li><p>
  *      Properties set using the corresponding System properties;
  * </li>
  * <li><p>
- *      Properties set in a <a href="#ConfigurationFile">configuration file</a>
+ *      Properties set in a user-defined <a href="#ConfigurationFile">Configuration File</a>
  * pointed to by the system property {@code java.xml.config.file};
  * </li>
  * <li><p>
- *      Properties set in the default configuration file
+ *      Properties set in the default JAXP Configuration File
  * <a href="#CF_Default">{@code jaxp.properties}</a>;
  * </li>
  * <li><p>
@@ -283,13 +278,62 @@
  * </li>
  * </ul>
  *
+ * Using the {@link javax.xml.catalog.CatalogFeatures CatalogFeatures}' RESOLVE
+ * property as an example, the followings illustrate how these rules are applied.
+ * <ul>
+ * <li><p>
+ *      Properties specified through factories or processors API have the highest
+ * precedence. The following code therefore effectively set the RESOLVE property
+ * to {@code strict}, regardless of settings in any other configuration sources.
+ * <pre>
+ *     {@code
+ *     DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+ *     dbf.setAttribute(CatalogFeatures.Feature.RESOLVE.getPropertyName(), "strict");
+ *     }
+ * </pre>
+ *
+ * </li>
+ * <li><p>
+ *      If the property is not set on the factory such as in the above code, a
+ * system property setting will be in effect.
+ * <pre>
+ *     {@code
+ *     // in the following example, the RESOLVE property is set to 'continue'
+ *     // for the entire application
+ *     java -Djavax.xml.catalog.resolve=continue myApp
+ *
+ *     // in the following code snipet, the property is set to 'ignore' for the
+ *     // factory that follows
+ *     System.setProperty("javax.xml.catalog.resolve", "ignore");
+ *     DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+ *     ...
+ *     System.clearProperty("javax.xml.catalog.resolve");
+ *     }
+ * </pre>
+ * </li>
+ * <li><p>
+ *      If the property is not set on the factory, nor through its system property,
+ * the setting in a configuration file will take effect. The following entry
+ * sets the property to '{@code continue}'.
+ * <pre>
+ *     {@code
+ *     javax.xml.catalog.resolve=continue
+ *     }
+ * </pre>
+ * </li>
+ * <li><p>
+ *     If the property is not set anywhere, it will be resolved to its
+ * default value that is '{@code strict}'.
+ * </li>
+ * </ul>
+ *
  * @implNote
  *
- * <h2 id="ConfigurationFile">Configuration File</h2>
- * The <a href="#ConfigurationFile">configuration file</a> defined by the XML
+ * <h2 id="ConfigurationFile">JAXP Configuration File</h2>
+ * The <a href="#ConfigurationFile">JAXP Configuration File</a> defined by the XML
  * processing API may be used to set the JDK implementation specific properties
  * and features. A configuration file may contain any of the properties listed in
- * table <a href="#Properties">Implementation Specific Properties</a> and
+ * the table <a href="#Properties">Implementation Specific Properties</a> and
  * <a href="#Features">Features</a>. See also
  * <a href="#PP">Property Precedence</a> for the use of the configuration
  * file in setting properties.
@@ -337,10 +381,10 @@
  * may be cleared afterwards.
  *
  * <h3>Configuration File</h3>
- * A system property can be specified in the <a href="#ConfigurationFile">Configuration File</a>
- * to set the behavior for all invocations of the JDK. The format is
- * {@code key=value}, where the key is the property name as listed in column
- * {@code Full Name} and value in column {@code Value} in table
+ * A system property can be specified in the <a href="#ConfigurationFile">JAXP Configuration File</a>
+ * to set the behavior for the JAXP factories. The format is
+ * {@code key=value}, where the key is the property name as listed in the column
+ * {@code Full Name} and value in the column {@code Value} in the table
  * <a href="#Properties">Implementation Specific Properties</a> and
  * <a href="#Features">Features</a>. For example:
  * <pre>
@@ -350,10 +394,11 @@
  *
  * <h3 id="PropPrec">Property Precedence</h3>
  * The JDK implementation specific features and properties follow the same procedure
- * as described in section <a href="#PP">Property Precedence</a> in setting properties.
+ * as described in section <a href="#PP">Property Precedence</a> in retrieving
+ * property values.
  * Specific to the initialized values, the restrictive values that are set when
  * {@link javax.xml.XMLConstants#FEATURE_SECURE_PROCESSING FSP} is true are shown
- * in {@code "Value"}'s subcolumn {@code "Enforced"} in table
+ * in {@code "Value"}'s subcolumn {@code "Enforced"} in the table
  * <a href="#Features">Implementation Specific Features</a> and
  * <a href="#Properties">Properties</a>.
  *
@@ -823,12 +868,14 @@
  * the value (e.g. "64000" for {@code entityExpansionLimit}).
  *
  * <p id="Note5">
- * <b>[5]</b> A value "yes" indicates the property is a Security Property. Refer
- * to the <a href="#PropPrec">Property Precedence</a> on how secure processing
- * may affect the value of a Security Property.
+ * <b>[5]</b> A value "yes" indicates the property is a Security Property. As indicated
+ * in the <a href="#PropPrec">Property Precedence</a>, the values listed in the column
+ * {@code enforced} will be used to initialize these properties when
+ * {@link javax.xml.XMLConstants#FEATURE_SECURE_PROCESSING FSP} is true.
+ *
  * <p id="Note6">
  * <b>[6]</b> One or more processors that support the property. The values of the
- * field are IDs described in table <a href="#Processor">Processors</a>.
+ * field are IDs described in the table <a href="#Processor">Processors</a>.
  * <p id="Note7">
  * <b>[7]</b> Indicates the initial release the property is introduced.
  *
