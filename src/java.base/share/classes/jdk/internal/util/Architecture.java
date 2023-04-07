@@ -31,15 +31,15 @@ import jdk.internal.vm.annotation.Stable;
  * that is true when running on that architecture.
  * The enum values correspond to architectures as named in the build system.
  * See the values of `OPENJDK_TARGET_ARCH_OSARCH`.
- * The order and ordinal values must match the values defined in OperatingSystemProps.java.template.
  */
 public enum Architecture {
-    X64(),        // Represents AMD64 and X86_64
-    X86(),
-    AARCH64(),
-    RISCV64(),
-    S390(),
-    PPC64LE(),
+    OTHER,      // An unknown architecture not specifically named
+    X64,        // Represents AMD64 and X86_64
+    X86,
+    AARCH64,
+    RISCV64,
+    S390,
+    PPC64,
     ;
 
     // Cache a copy of the array for lightweight indexing
@@ -81,8 +81,8 @@ public enum Architecture {
      * {@return {@code true} if the current architecture is PPC64LE}
      */
     @ForceInline
-    public static boolean isPPC64LE() {
-        return OperatingSystemProps.TARGET_ARCH_IS_PPC64LE;
+    public static boolean isPPC64() {
+        return OperatingSystemProps.TARGET_ARCH_IS_PPC64;
     }
 
     /**
@@ -97,7 +97,7 @@ public enum Architecture {
      * {@return the current architecture}
      */
     public static Architecture current() {
-        return archValues[OperatingSystemProps.CURRENT_ARCH_ORDINAL];
+        return OperatingSystemProps.current;
     }
 
     /**
@@ -106,5 +106,13 @@ public enum Architecture {
     @ForceInline
     public static boolean is64bit() {
         return OperatingSystemProps.TARGET_ARCH_BITS == 64;
+    }
+
+    /**
+     * {@return {@code true} if the current architecture is little-endian}
+     */
+    @ForceInline
+    public static boolean isLittleEndian() {
+        return OperatingSystemProps.TARGET_ARCH_LITTLE_ENDIAN;
     }
 }

@@ -25,8 +25,9 @@ import java.util.stream.Stream;
 
 import jdk.internal.util.Architecture;
 
+import static jdk.internal.util.Architecture.OTHER;
 import static jdk.internal.util.Architecture.AARCH64;
-import static jdk.internal.util.Architecture.PPC64LE;
+import static jdk.internal.util.Architecture.PPC64;
 import static jdk.internal.util.Architecture.RISCV64;
 import static jdk.internal.util.Architecture.S390;
 import static jdk.internal.util.Architecture.X64;
@@ -64,8 +65,8 @@ public class ArchTest {
             case "aarch64" -> AARCH64;
             case "riscv64" -> RISCV64;  // unverified
             case "s390x", "s390" -> S390;  // unverified
-            case "ppc64le" -> PPC64LE;  // unverified
-            default    -> fail("Unknown os.arch: " + osArch);
+            case "ppc64le" -> PPC64;  // unverified
+            default -> OTHER;
         };
         assertEquals(Architecture.current(), arch, "mismatch in Architecture.current vs " + osArch);
     }
@@ -81,7 +82,7 @@ public class ArchTest {
                 Arguments.of(AARCH64, Architecture.isAARCH64()),
                 Arguments.of(RISCV64, Architecture.isRISCV64()),
                 Arguments.of(S390, Architecture.isS390()),
-                Arguments.of(PPC64LE, Architecture.isPPC64LE())
+                Arguments.of(PPC64, Architecture.isPPC64())
         );
     }
 
@@ -100,13 +101,32 @@ public class ArchTest {
     public void is64BitVsCurrent() {
         Architecture current = Architecture.current();
         boolean expected64Bit = switch (current) {
+            case OTHER -> Architecture.is64bit();   // Always ok, expected value is unknown
             case X64 -> true;
             case X86 -> false;
             case AARCH64 -> true;
             case RISCV64 -> true;
             case S390 -> true;
-            case PPC64LE -> true;
+            case PPC64 -> true;
         };
         assertEquals(Architecture.is64bit(), expected64Bit, "mismatch in is64bit");
+    }
+
+    /**
+     * Test that Architecture.isLittleEndian() matches Architecture.current().
+     */
+    @Test
+    public void isLittleEndianVsCurrent() {
+        Architecture current = Architecture.current();
+        boolean expectedEndian = switch (current) {
+            case OTHER -> Architecture.isLittleEndian();   // Always ok, expected value is unknown
+            case X64 -> true;
+            case X86 -> true;
+            case AARCH64 -> true;
+            case RISCV64 -> true;
+            case S390 -> false;
+            case PPC64 -> true;
+        };
+        assertEquals(Architecture.isLittleEndian(), expectedEndian, "mismatch in isLittleEndian");
     }
 }

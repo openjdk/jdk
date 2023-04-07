@@ -34,8 +34,6 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
-import jdk.internal.util.Architecture;
-
 public class AttachProviderImpl extends HotSpotAttachProvider {
 
     public AttachProviderImpl() {
