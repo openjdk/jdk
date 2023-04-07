@@ -27,7 +27,7 @@
  * @requires vm.continuations
  * @enablePreview
  * @run main/othervm/native
- *      -Djava.util.concurrent.ForkJoinPool.common.parallelism=1
+ *      -Djdk.virtualThreadScheduler.parallelism=1
  *      -agentlib:VThreadStackRefTest
  *      VThreadStackRefTest
  */
@@ -51,6 +51,11 @@ import java.util.concurrent.CountDownLatch;
  */
 public class VThreadStackRefTest {
 
+    // Currently we cannot test JNI locals for unmounted threads
+    // as native calls pin virtual thread.
+    // TODO: revise if this changes.
+    static final boolean testUnmountedJNILocals = false;
+
     // The flag is set by createObjAndWait method.
     static volatile boolean mountedVthreadReady = false;
 
@@ -58,17 +63,22 @@ public class VThreadStackRefTest {
         CountDownLatch dumpedLatch = new CountDownLatch(1);
 
         CountDownLatch unmountedThreadReady = new CountDownLatch(1);
-        // Unmounted virtual thread with stack local and JNI local.
+        // Unmounted virtual thread with stack local.
         Thread vthreadUnmounted = Thread.ofVirtual().start(() -> {
             Object referenced = new VThreadUnmountedReferenced();
             System.out.println("created " + referenced.getClass());
-            createObjAndCallback(VThreadUnmountedJNIReferenced.class,
-                new Runnable() {
-                    public void run() {
-                        unmountedThreadReady.countDown();
-                        await(dumpedLatch);
-                    }
-                });
+            if (testUnmountedJNILocals) {
+                createObjAndCallback(VThreadUnmountedJNIReferenced.class,
+                    new Runnable() {
+                        public void run() {
+                            unmountedThreadReady.countDown();
+                            await(dumpedLatch);
+                        }
+                    });
+            } else {
+                unmountedThreadReady.countDown();
+                await(dumpedLatch);
+            }
             Reference.reachabilityFence(referenced);
         });
         // Wait until unmounted thread is ready.
@@ -110,7 +120,9 @@ public class VThreadStackRefTest {
 
         TestCase[] testCases = new TestCase[] {
             new TestCase(VThreadUnmountedReferenced.class, 1, vthreadUnmounted.getId()),
-            new TestCase(VThreadUnmountedJNIReferenced.class, 1, vthreadUnmounted.getId()),
+            new TestCase(VThreadUnmountedJNIReferenced.class,
+                         testUnmountedJNILocals ? 1 : 0,
+                         testUnmountedJNILocals ? vthreadUnmounted.getId() : 0),
             new TestCase(VThreadMountedReferenced.class, 1, vthreadMounted.getId()),
             new TestCase(VThreadMountedJNIReferenced.class, 1, vthreadMounted.getId()),
             new TestCase(PThreadReferenced.class, 1, pthread.getId()),
@@ -124,11 +136,16 @@ public class VThreadStackRefTest {
             System.out.println("  (" + i + ") " + testClasses[i]);
         }
 
-        test(testClasses);
-
-        // Finish all threads
-        endWait();               // signal mounted vthread to exit
-        dumpedLatch.countDown(); // signal unmounted vthread and platform thread to exit
+        try {
+            verifyVthreadMounted(vthreadUnmounted, false);
+            verifyVthreadMounted(vthreadMounted, true);
+            
+            test(testClasses);
+        } finally {
+            // Finish all threads
+            endWait();               // signal mounted vthread to exit
+            dumpedLatch.countDown(); // signal unmounted vthread and platform thread to exit
+        }
 
         vthreadMounted.join();
         vthreadUnmounted.join();
@@ -158,6 +175,19 @@ public class VThreadStackRefTest {
             dumpedLatch.await();
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    private static void verifyVthreadMounted(Thread t, boolean expectedMounted) {
+        // Hucky, but simple.
+        // If virtual thread is mounted, its toString() contains
+        // info about carrier thread, something like
+        // VirtualThread[#27]/runnable@ForkJoinPool-1-worker-1
+        String s = t.toString();
+        boolean mounted = t.isVirtual() && s.contains("/runnable@");
+        System.out.println("Thread " + t + ": " + (mounted ? "mounted" : "unmounted"));
+        if (mounted != expectedMounted) {
+            throw new RuntimeException("Thread " + t + " has unexpected mount state");
         }
     }
 
