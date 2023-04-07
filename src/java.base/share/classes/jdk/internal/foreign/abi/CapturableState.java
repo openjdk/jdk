@@ -36,9 +36,9 @@ import static java.lang.foreign.ValueLayout.JAVA_INT;
 import static sun.security.action.GetPropertyAction.privilegedGetProperty;
 
 public enum CapturableState {
-    GET_LAST_ERROR    ("LastError",    JAVA_INT, 1 << 0, Utils.IS_WINDOWS),
-    WSA_GET_LAST_ERROR("WSALastError", JAVA_INT, 1 << 1, Utils.IS_WINDOWS),
-    ERRNO             ("errno",           JAVA_INT, 1 << 2, true);
+    LAST_ERROR    ("LastError",    JAVA_INT, 1 << 0, Utils.IS_WINDOWS),
+    WSA_LAST_ERROR("WSALastError", JAVA_INT, 1 << 1, Utils.IS_WINDOWS),
+    ERRNO         ("errno",        JAVA_INT, 1 << 2, true);
 
     public static final StructLayout LAYOUT = MemoryLayout.structLayout(
         supportedStates().map(CapturableState::layout).toArray(MemoryLayout[]::new));
