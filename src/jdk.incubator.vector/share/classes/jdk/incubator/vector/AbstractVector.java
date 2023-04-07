@@ -217,6 +217,10 @@ abstract class AbstractVector<E> extends Vector<E> {
     @ForceInline
     @SuppressWarnings({"rawtypes", "unchecked"})
     final VectorShuffle<E> iotaShuffle(int start, int step, boolean wrap) {
+        if (start == 0 && step == 1) {
+            return iotaShuffle();
+        }
+
         if ((length() & (length() - 1)) != 0) {
             return wrap ? shuffleFromOp(i -> (VectorIntrinsics.wrapToRange(i * step + start, length())))
                         : shuffleFromOp(i -> i * step + start);
