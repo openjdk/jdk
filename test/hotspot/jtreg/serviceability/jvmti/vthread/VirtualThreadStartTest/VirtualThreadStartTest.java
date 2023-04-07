@@ -69,7 +69,8 @@ public class VirtualThreadStartTest {
         int startedThreads = getAndResetStartedThreads();
         System.out.println("ThreadStart event count: " + startedThreads + ", expected: " + THREAD_CNT);
         if (startedThreads != THREAD_CNT) {
-            throw new RuntimeException("Failed: wrong ThreadStart event count");
+            throw new RuntimeException("Failed: wrong ThreadStart count: " +
+                                       startedThreads + " expected: " + THREAD_CNT);
         }
     }
 }

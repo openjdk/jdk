@@ -357,7 +357,7 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, UseVectorizedMismatchIntrinsic, false, DIAGNOSTIC,          \
           "Enables intrinsification of ArraysSupport.vectorizedMismatch()") \
                                                                             \
-  product(bool, UseVectorizedHashCodeIntrinsic, false, DIAGNOSTIC,           \
+  product(bool, UseVectorizedHashCodeIntrinsic, false, DIAGNOSTIC,          \
           "Enables intrinsification of ArraysSupport.vectorizedHashCode()") \
                                                                             \
   product(bool, UseCopySignIntrinsic, false, DIAGNOSTIC,                    \
@@ -365,6 +365,9 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   product(bool, UseSignumIntrinsic, false, DIAGNOSTIC,                      \
           "Enables intrinsification of Math.signum")                        \
+                                                                            \
+  product_pd(bool, DelayCompilerStubsGeneration, DIAGNOSTIC,                \
+          "Use Compiler thread for compiler's stubs generation")            \
                                                                             \
   product(ccstrlist, DisableIntrinsic, "", DIAGNOSTIC,                      \
          "do not expand intrinsics whose (internal) names appear here")     \
@@ -688,10 +691,6 @@ const int ObjectAlignmentInBytes = 8;
           "Allow parallel defineClass requests for class loaders "          \
           "registering as parallel capable")                                \
                                                                             \
-  product(bool, EnableWaitForParallelLoad, false,                           \
-          "(Deprecated) Enable legacy parallel classloading logic for "     \
-          "class loaders not registered as parallel capable")               \
-                                                                            \
   product_pd(bool, DontYieldALot,                                           \
           "Throw away obvious excess yield calls")                          \
                                                                             \
@@ -856,9 +855,6 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   develop(bool, TraceInlineCacheClearing, false,                            \
           "Trace clearing of inline caches in nmethods")                    \
-                                                                            \
-  develop(bool, TraceDependencies, false,                                   \
-          "Trace dependencies")                                             \
                                                                             \
   develop(bool, VerifyDependencies, trueInDebug,                            \
           "Exercise and verify the compilation dependency mechanism")       \
@@ -1297,8 +1293,8 @@ const int ObjectAlignmentInBytes = 8;
           "Delay in milliseconds for option SafepointTimeout")              \
           range(0, max_intx LP64_ONLY(/MICROUNITS))                         \
                                                                             \
-  product(bool, UseSystemMemoryBarrier, false, EXPERIMENTAL,                \
-          "Try to enable system memory barrier")                            \
+  product(bool, UseSystemMemoryBarrier, false,                              \
+          "Try to enable system memory barrier if supported by OS")         \
                                                                             \
   product(intx, NmethodSweepActivity, 4,                                    \
           "Removes cold nmethods from code cache if > 0. Higher values "    \
