@@ -2843,9 +2843,7 @@ bool LibraryCallKit::inline_unsafe_allocate() {
     const TypeFunc *tf = OptoRuntime::notify_allocation_Type();
     address funcAddr = OptoRuntime::notify_allocation();
     sync_kit(ideal);
-    // TODO should be following assert removed?
-    // _multianewarray is needed to don't crash in escape.cpp:1034 assert(strncmp(name, "_multianewarray", 15) == 0, "TODO: add failed case check");
-    Node* call = make_runtime_call(RC_NO_LEAF, tf, funcAddr, "_multianewarray", TypePtr::BOTTOM, obj);
+    Node* call = make_runtime_call(RC_NO_LEAF, tf, funcAddr, "_notify_allocation", TypePtr::BOTTOM, obj);
     ideal.sync_kit(this);
     ideal.set(result,_gvn.transform(new ProjNode(call, TypeFunc::Parms+0)));
   } ideal.else_(); {
