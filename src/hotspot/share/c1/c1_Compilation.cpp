@@ -154,6 +154,7 @@ void Compilation::build_hir() {
   }
   if (log)  log->done("parse");
   if (!_hir->is_valid()) {
+    assert(false, "invalid parsing");
     bailout("invalid parsing");
     return;
   }
@@ -287,6 +288,7 @@ void Compilation::emit_code_epilog(LIR_Assembler* assembler) {
   CodeOffsets* code_offsets = assembler->offsets();
 
   if (!code()->finalize_stubs()) {
+    assert(false, "CodeCache is full");
     bailout("CodeCache is full");
     return;
   }
@@ -341,6 +343,7 @@ bool Compilation::setup_code_buffer(CodeBuffer* code, int call_stub_estimate) {
 int Compilation::emit_code_body() {
   // emit code
   if (!setup_code_buffer(code(), allocator()->num_calls())) {
+    assert(false, "size requested greater than avail code buffer size");
     BAILOUT_("size requested greater than avail code buffer size", 0);
   }
   code()->initialize_oop_recorder(env()->oop_recorder());
@@ -374,6 +377,7 @@ int Compilation::compile_java_method() {
 
   if (BailoutOnExceptionHandlers) {
     if (method()->has_exception_handlers()) {
+      assert(false, "linear scan can't handle exception handlers");
       bailout("linear scan can't handle exception handlers");
     }
   }
@@ -381,6 +385,7 @@ int Compilation::compile_java_method() {
   CHECK_BAILOUT_(no_frame_size);
 
   if (is_profiling() && !method()->ensure_method_data()) {
+    assert(false, "mdo allocation failed");
     BAILOUT_("mdo allocation failed", no_frame_size);
   }
 
@@ -450,6 +455,7 @@ void Compilation::compile_method() {
   if (!method()->can_be_compiled()) {
     // Prevent race condition 6328518.
     // This can happen if the method is obsolete or breakpointed.
+    assert(false, "Bailing out because method is not compilable");
     bailout("Bailing out because method is not compilable");
     return;
   }

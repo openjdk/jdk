@@ -185,6 +185,7 @@ BlockBegin* BlockListBuilder::make_block_at(int cur_bci, BlockBegin* predecessor
 
   if (predecessor != NULL) {
     if (block->is_set(BlockBegin::exception_entry_flag)) {
+      assert(false, "Exception handler can be reached by both normal and exceptional control flow");
       BAILOUT_("Exception handler can be reached by both normal and exceptional control flow", block);
     }
 
@@ -1014,6 +1015,7 @@ void GraphBuilder::load_constant() {
 
     push(t, append(x));
   } else {
+    assert(false, "could not resolve a constant");
     BAILOUT("could not resolve a constant");
   }
 }
@@ -1048,6 +1050,7 @@ void GraphBuilder::store_local(ValueStack* state, Value x, int index) {
            cur_scope_data != NULL && cur_scope_data->parsing_jsr() && cur_scope_data->scope() == scope();
            cur_scope_data = cur_scope_data->parent()) {
         if (cur_scope_data->jsr_return_address_local() == index) {
+          assert(false, "subroutine overwrites return address from previous subroutine");
           BAILOUT("subroutine overwrites return address from previous subroutine");
         }
       }
@@ -1392,6 +1395,7 @@ void GraphBuilder::jsr(int dest) {
        cur_scope_data != NULL && cur_scope_data->parsing_jsr() && cur_scope_data->scope() == scope();
        cur_scope_data = cur_scope_data->parent()) {
     if (cur_scope_data->jsr_entry_bci() == dest) {
+      assert(false, "too-complicated jsr/ret structure");
       BAILOUT("too-complicated jsr/ret structure");
     }
   }
@@ -1404,9 +1408,13 @@ void GraphBuilder::jsr(int dest) {
 
 
 void GraphBuilder::ret(int local_index) {
-  if (!parsing_jsr()) BAILOUT("ret encountered while not parsing subroutine");
+  if (!parsing_jsr()) {
+    assert(false, "ret encountered while not parsing subroutine");
+    BAILOUT("ret encountered while not parsing subroutine");
+  }
 
   if (local_index != scope_data()->jsr_return_address_local()) {
+    assert(false, "can not handle complicated jsr/ret constructs");
     BAILOUT("can not handle complicated jsr/ret constructs");
   }
 
@@ -2404,6 +2412,7 @@ Instruction* GraphBuilder::append_with_bci(Instruction* instr, int bci) {
     // set the bailout state but complete normal processing.  We
     // might do a little more work before noticing the bailout so we
     // want processing to continue normally until it's noticed.
+    assert(false, "Method and/or inlining is too large");
     bailout("Method and/or inlining is too large");
   }
 
@@ -2504,6 +2513,7 @@ XHandlers* GraphBuilder::handle_exception(Instruction* instruction) {
           // It's acceptable for an exception handler to cover itself
           // but we don't handle that in the parser currently.  It's
           // very rare so we bailout instead of trying to handle it.
+          assert(false, "exception handler covers itself");
           BAILOUT_("exception handler covers itself", exception_handlers);
         }
         assert(entry->bci() == h->handler_bci(), "must match");
@@ -2529,6 +2539,7 @@ XHandlers* GraphBuilder::handle_exception(Instruction* instruction) {
         // problem is caught by the infinite recursion test in
         // GraphBuilder::jsr() if the join doesn't work.
         if (!entry->try_merge(cur_state, compilation()->has_irreducible_loops())) {
+          assert(false, "error while joining with exception handler, prob. due to complicated jsr/rets");
           BAILOUT_("error while joining with exception handler, prob. due to complicated jsr/rets", exception_handlers);
         }
 
@@ -2764,6 +2775,7 @@ BlockEnd* GraphBuilder::iterate_bytecodes_for_block(int bci) {
         && scope()->is_top_scope()
         && parsing_jsr()
         && s.cur_bci() == compilation()->osr_bci()) {
+      assert(false, "OSR not supported while a jsr is active");
       bailout("OSR not supported while a jsr is active");
     }
 
@@ -2976,7 +2988,7 @@ BlockEnd* GraphBuilder::iterate_bytecodes_for_block(int bci) {
       case Bytecodes::_ifnonnull      : if_null(objectType, If::neq); break;
       case Bytecodes::_goto_w         : _goto(s.cur_bci(), s.get_far_dest()); break;
       case Bytecodes::_jsr_w          : jsr(s.get_far_dest()); break;
-      case Bytecodes::_breakpoint     : BAILOUT_("concurrent setting of breakpoint", NULL);
+      case Bytecodes::_breakpoint     : assert(false, "concurrent setting of breakpoint"); BAILOUT_("concurrent setting of breakpoint", NULL);
       default                         : ShouldNotReachHere(); break;
     }
 
@@ -3014,7 +3026,10 @@ BlockEnd* GraphBuilder::iterate_bytecodes_for_block(int bci) {
     BlockBegin* sux = end->sux_at(i);
     assert(sux->is_predecessor(block()), "predecessor missing");
     // be careful, bailout if bytecodes are strange
-    if (!sux->try_merge(end->state(), compilation()->has_irreducible_loops())) BAILOUT_("block join failed", NULL);
+    if (!sux->try_merge(end->state(), compilation()->has_irreducible_loops())) {
+      assert(false, "block join failed");
+      BAILOUT_("block join failed", NULL);
+    }
     scope_data()->add_to_work_list(end->sux_at(i));
   }
 
@@ -3336,6 +3351,7 @@ GraphBuilder::GraphBuilder(Compilation* compilation, IRScope* scope)
       // compiled version which could lead to monotonicity problems on
       // intel.
       if (CheckIntrinsics && !scope->method()->intrinsic_candidate()) {
+        assert(false, "failed to inline intrinsic, method not annotated");
         BAILOUT("failed to inline intrinsic, method not annotated");
       }
 
@@ -3356,7 +3372,10 @@ GraphBuilder::GraphBuilder(Compilation* compilation, IRScope* scope)
 
       // Emit the intrinsic node.
       bool result = try_inline_intrinsics(scope->method());
-      if (!result) BAILOUT("failed to inline intrinsic");
+      if (!result) {
+        assert(false, "failed to inline intrinsic");
+        BAILOUT("failed to inline intrinsic");
+      }
       method_return(dpop());
 
       // connect the begin and end blocks and we're all done.
@@ -3379,6 +3398,7 @@ GraphBuilder::GraphBuilder(Compilation* compilation, IRScope* scope)
         // object removed from the list of discovered references during
         // reference processing.
         if (CheckIntrinsics && !scope->method()->intrinsic_candidate()) {
+          assert(false, "failed to inline intrinsic, method not annotated");
           BAILOUT("failed to inline intrinsic, method not annotated");
         }
 
@@ -3399,7 +3419,10 @@ GraphBuilder::GraphBuilder(Compilation* compilation, IRScope* scope)
 
         // Emit the intrinsic node.
         bool result = try_inline_intrinsics(scope->method());
-        if (!result) BAILOUT("failed to inline intrinsic");
+        if (!result) {
+          assert(false, "failed to inline intrinsic");
+          BAILOUT("failed to inline intrinsic");
+        }
         method_return(apop());
 
         // connect the begin and end blocks and we're all done.
@@ -3447,11 +3470,13 @@ GraphBuilder::GraphBuilder(Compilation* compilation, IRScope* scope)
   if (osr_bci != -1) {
     BlockBegin* osr_block = blm.bci2block()->at(osr_bci);
     if (!osr_block->is_set(BlockBegin::was_visited_flag)) {
+      assert(false, "osr entry must have been visited for osr compile");
       BAILOUT("osr entry must have been visited for osr compile");
     }
 
     // check if osr entry point has empty stack - we cannot handle non-empty stacks at osr entry points
     if (!osr_block->state()->stack_is_empty()) {
+      assert(false, "stack not empty at OSR entry point");
       BAILOUT("stack not empty at OSR entry point");
     }
   }
@@ -3702,6 +3727,7 @@ bool GraphBuilder::try_inline_intrinsics(ciMethod* callee, bool ignore_return) {
     if (!InlineNatives) {
       // Return false and also set message that the inlining of
       // intrinsics has been disabled in general.
+      assert(false, "intrinsic method inlining disabled");
       INLINE_BAILOUT("intrinsic method inlining disabled");
     } else {
       return false;
@@ -3865,22 +3891,42 @@ void GraphBuilder::fill_sync_handler(Value lock, BlockBegin* sync_handler, bool 
 bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, bool ignore_return, Bytecodes::Code bc, Value receiver) {
   assert(!callee->is_native(), "callee must not be native");
   if (CompilationPolicy::should_not_inline(compilation()->env(), callee)) {
+    // Bailout expected. For example, callee may already be compiled by C2.
     INLINE_BAILOUT("inlining prohibited by policy");
   }
   // first perform tests of things it's not possible to inline
   if (callee->has_exception_handlers() &&
-      !InlineMethodsWithExceptionHandlers) INLINE_BAILOUT("callee has exception handlers");
+      !InlineMethodsWithExceptionHandlers) {
+    assert(false, "callee has exception handlers");
+    INLINE_BAILOUT("callee has exception handlers");
+  }
   if (callee->is_synchronized() &&
-      !InlineSynchronizedMethods         ) INLINE_BAILOUT("callee is synchronized");
-  if (!callee->holder()->is_linked())      INLINE_BAILOUT("callee's klass not linked yet");
+      !InlineSynchronizedMethods) {
+    assert(false, "callee is synchronized");
+    INLINE_BAILOUT("callee is synchronized");
+  }
+  if (!callee->holder()->is_linked()) {
+    // TODO: why? assert(false, "callee's klass not linked yet");
+    INLINE_BAILOUT("callee's klass not linked yet");
+  }
   if (bc == Bytecodes::_invokestatic &&
-      !callee->holder()->is_initialized()) INLINE_BAILOUT("callee's klass not initialized yet");
-  if (!callee->has_balanced_monitors())    INLINE_BAILOUT("callee's monitors do not match");
+      !callee->holder()->is_initialized()) {
+    assert(false, "callee's klass not initialized yet");
+    INLINE_BAILOUT("callee's klass not initialized yet");
+  }
+  if (!callee->has_balanced_monitors()) {
+    assert(false, "callee's monitors do not match");
+    INLINE_BAILOUT("callee's monitors do not match");
+  }
 
   // Proper inlining of methods with jsrs requires a little more work.
-  if (callee->has_jsrs()                 ) INLINE_BAILOUT("jsrs not handled properly by inliner yet");
+  if (callee->has_jsrs()) {
+    assert(false, "jsrs not handled properly by inliner yet");
+    INLINE_BAILOUT("jsrs not handled properly by inliner yet");
+  }
 
   if (is_profiling() && !callee->ensure_method_data()) {
+    assert(false, "mdo allocation failed");
     INLINE_BAILOUT("mdo allocation failed");
   }
 
@@ -3897,6 +3943,7 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, bool ign
 
     recv = state()->stack_at(args_base);
     if (recv->is_null_obj()) {
+      assert(false, "receiver is always null");
       INLINE_BAILOUT("receiver is always null");
     }
   }
@@ -3904,8 +3951,14 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, bool ign
   // now perform tests that are based on flag settings
   bool inlinee_by_directive = compilation()->directive()->should_inline(callee);
   if (callee->force_inline() || inlinee_by_directive) {
-    if (inline_level() > MaxForceInlineLevel                      ) INLINE_BAILOUT("MaxForceInlineLevel");
-    if (recursive_inline_level(callee) > C1MaxRecursiveInlineLevel) INLINE_BAILOUT("recursive inlining too deep");
+    if (inline_level() > MaxForceInlineLevel) {
+      assert(false, "MaxForceInlineLevel");
+      INLINE_BAILOUT("MaxForceInlineLevel");
+    }
+    if (recursive_inline_level(callee) > C1MaxRecursiveInlineLevel) {
+      // Bailout expected. We keep the recursion very shallow.
+      INLINE_BAILOUT("recursive inlining too deep");
+    }
 
     const char* msg = "";
     if (callee->force_inline())  msg = "force inline by annotation";
@@ -3913,13 +3966,23 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, bool ign
     print_inlining(callee, msg);
   } else {
     // use heuristic controls on inlining
-    if (inline_level() > C1MaxInlineLevel                       ) INLINE_BAILOUT("inlining too deep");
+    if (inline_level() > C1MaxInlineLevel) {
+      // Bailout expected. We do not want too many nested calls inlined.
+      INLINE_BAILOUT("inlining too deep");
+    }
     int callee_recursive_level = recursive_inline_level(callee);
-    if (callee_recursive_level > C1MaxRecursiveInlineLevel      ) INLINE_BAILOUT("recursive inlining too deep");
-    if (callee->code_size_for_inlining() > max_inline_size()    ) INLINE_BAILOUT("callee is too large");
+    if (callee_recursive_level > C1MaxRecursiveInlineLevel) {
+      // Bailout expected. We keep the recursion very shallow.
+      INLINE_BAILOUT("recursive inlining too deep");
+    }
+    if (callee->code_size_for_inlining() > max_inline_size()) {
+      // Bailout expected. We only inline small methods.
+      INLINE_BAILOUT("callee is too large");
+    }
     // Additional condition to limit stack usage for non-recursive calls.
     if ((callee_recursive_level == 0) &&
         (callee->max_stack() + callee->max_locals() - callee->size_of_parameters() > C1InlineStackLimit)) {
+      // Bailout expected. We only inline small methods.
       INLINE_BAILOUT("callee uses too much stack");
     }
 
@@ -3932,11 +3995,13 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, bool ign
         top = top->caller();
       }
       if (!top->method()->holder()->is_subclass_of(ciEnv::current()->Throwable_klass())) {
+        // TODO why? assert(false, "don't inline Throwable constructors");
         INLINE_BAILOUT("don't inline Throwable constructors");
       }
     }
 
     if (compilation()->env()->num_inlined_bytecodes() > DesiredMethodLimit) {
+      assert(false, "total inlining greater than DesiredMethodLimit");
       INLINE_BAILOUT("total inlining greater than DesiredMethodLimit");
     }
     // printing

@@ -1355,6 +1355,7 @@ void LIRGenerator::do_NewObjectArray(NewObjectArray* x) {
   CodeStub* slow_path = new NewObjectArrayStub(klass_reg, len, reg, info);
   ciKlass* obj = (ciKlass*) ciObjArrayKlass::make(x->klass());
   if (obj == ciEnv::unloaded_ciobjarrayklass()) {
+    assert(false, "encountered unloaded_ciobjarrayklass due to out of memory error");
     BAILOUT("encountered unloaded_ciobjarrayklass due to out of memory error");
   }
   klass2reg_with_patching(klass_reg, obj, patching_info);

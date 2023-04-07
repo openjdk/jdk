@@ -125,6 +125,7 @@ LIR_Assembler::~LIR_Assembler() {
 void LIR_Assembler::check_codespace() {
   CodeSection* cs = _masm->code_section();
   if (cs->remaining() < (int)(NOT_LP64(1*K)LP64_ONLY(2*K))) {
+    assert(false, "CodeBuffer overflow");
     BAILOUT("CodeBuffer overflow");
   }
 }

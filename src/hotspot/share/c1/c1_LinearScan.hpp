@@ -343,6 +343,7 @@ class LinearScan : public CompilationResourceObj {
     if (map->legal_vm_reg_name(name)) {
       map->set_oop(name);
     } else {
+      assert(false, "illegal oopMap register name");
       bailout("illegal oopMap register name");
     }
   }

@@ -203,6 +203,7 @@ void C1_MacroAssembler::initialize_body(Register obj, Register len_in_bytes, int
 
   bind(done);
   if (tpc == nullptr) {
+    assert(false, "no space for trampoline stub");
     Compilation::current()->bailout("no space for trampoline stub");
   }
 }
@@ -239,6 +240,7 @@ void C1_MacroAssembler::initialize_object(Register obj, Register klass, Register
        lea(t1, Address(obj, hdr_size_in_bytes));
        address tpc = zero_words(t1, con_size_in_bytes / BytesPerWord);
        if (tpc == nullptr) {
+         assert(false, "no space for trampoline stub");
          Compilation::current()->bailout("no space for trampoline stub");
          return;
        }

@@ -112,6 +112,7 @@ LIR_Opr LIR_Assembler::osrBufferPointer() {
 address LIR_Assembler::float_constant(float f) {
   address const_addr = __ float_constant(f);
   if (const_addr == NULL) {
+    assert(false, "const section overflow");
     bailout("const section overflow");
     return __ code()->consts()->start();
   } else {
@@ -123,6 +124,7 @@ address LIR_Assembler::float_constant(float f) {
 address LIR_Assembler::double_constant(double d) {
   address const_addr = __ double_constant(d);
   if (const_addr == NULL) {
+    assert(false, "const section overflow");
     bailout("const section overflow");
     return __ code()->consts()->start();
   } else {
@@ -133,6 +135,7 @@ address LIR_Assembler::double_constant(double d) {
 address LIR_Assembler::int_constant(jlong n) {
   address const_addr = __ long_constant(n);
   if (const_addr == NULL) {
+    assert(false, "const section overflow");
     bailout("const section overflow");
     return __ code()->consts()->start();
   } else {
@@ -381,6 +384,7 @@ int LIR_Assembler::emit_exception_handler() {
   address handler_base = __ start_a_stub(exception_handler_size());
   if (handler_base == NULL) {
     // not enough space left for the handler
+    assert(false, "exception handler overflow");
     bailout("exception handler overflow");
     return -1;
   }
@@ -468,6 +472,7 @@ int LIR_Assembler::emit_deopt_handler() {
   address handler_base = __ start_a_stub(deopt_handler_size());
   if (handler_base == NULL) {
     // not enough space left for the handler
+    assert(false, "deopt handler overflow");
     bailout("deopt handler overflow");
     return -1;
   }
@@ -2034,6 +2039,7 @@ void LIR_Assembler::align_call(LIR_Code code) {  }
 void LIR_Assembler::call(LIR_OpJavaCall* op, relocInfo::relocType rtype) {
   address call = __ trampoline_call(Address(op->addr(), rtype));
   if (call == NULL) {
+    assert(false, "trampoline stub overflow");
     bailout("trampoline stub overflow");
     return;
   }
@@ -2045,6 +2051,7 @@ void LIR_Assembler::call(LIR_OpJavaCall* op, relocInfo::relocType rtype) {
 void LIR_Assembler::ic_call(LIR_OpJavaCall* op) {
   address call = __ ic_call(op->addr());
   if (call == NULL) {
+    assert(false, "trampoline stub overflow");
     bailout("trampoline stub overflow");
     return;
   }
@@ -2056,6 +2063,7 @@ void LIR_Assembler::emit_static_call_stub() {
   address call_pc = __ pc();
   address stub = __ start_a_stub(call_stub_size());
   if (stub == NULL) {
+    assert(false, "static call stub overflow");
     bailout("static call stub overflow");
     return;
   }

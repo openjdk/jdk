@@ -241,6 +241,7 @@ int LinearScan::allocate_spill_slot(bool double_word) {
 
   // if too many slots used, bailout compilation.
   if (result > 2000) {
+    assert(false, "too many stack slots used");
     bailout("too many stack slots used");
   }
 
@@ -261,6 +262,7 @@ void LinearScan::assign_spill_slot(Interval* it) {
 
 void LinearScan::propagate_spill_slots() {
   if (!frame_map()->finalize_frame(max_spills())) {
+    assert(false, "frame too large");
     bailout("frame too large");
   }
 }
@@ -809,6 +811,7 @@ void LinearScan::compute_global_live_sets() {
     iteration_count++;
 
     if (change_occurred && iteration_count > 50) {
+      assert(false, "too many iterations in compute_global_live_sets");
       BAILOUT("too many iterations in compute_global_live_sets");
     }
   } while (change_occurred);
@@ -1675,6 +1678,7 @@ void LinearScan::allocate_registers() {
     assert(not_precolored_fpu_intervals == Interval::end(), "missed an uncolored fpu interval");
 #else
     if (not_precolored_fpu_intervals != Interval::end()) {
+      assert(false, "missed an uncolored fpu interval");
       BAILOUT("missed an uncolored fpu interval");
     }
 #endif
@@ -2530,11 +2534,13 @@ void LinearScan::init_compute_debug_info() {
 MonitorValue* LinearScan::location_for_monitor_index(int monitor_index) {
   Location loc;
   if (!frame_map()->location_for_monitor_object(monitor_index, &loc)) {
+    assert(false, "too large frame");
     bailout("too large frame");
   }
   ScopeValue* object_scope_value = new LocationValue(loc);
 
   if (!frame_map()->location_for_monitor_lock(monitor_index, &loc)) {
+    assert(false, "too large frame");
     bailout("too large frame");
   }
   return new MonitorValue(object_scope_value, loc);
@@ -2543,6 +2549,7 @@ MonitorValue* LinearScan::location_for_monitor_index(int monitor_index) {
 LocationValue* LinearScan::location_for_name(int name, Location::Type loc_type) {
   Location loc;
   if (!frame_map()->locations_for_slot(name, loc_type, &loc)) {
+    assert(false, "too large frame");
     bailout("too large frame");
   }
   return new LocationValue(loc);
@@ -2711,6 +2718,7 @@ int LinearScan::append_scope_value_for_operand(LIR_Opr opr, GrowableArray<ScopeV
       Location loc1;
       Location::Type loc_type = opr->type() == T_LONG ? Location::lng : Location::dbl;
       if (!frame_map()->locations_for_slot(opr->double_stack_ix(), loc_type, &loc1, NULL)) {
+        assert(false, "too large frame");
         bailout("too large frame");
       }
 
@@ -2719,6 +2727,7 @@ int LinearScan::append_scope_value_for_operand(LIR_Opr opr, GrowableArray<ScopeV
 #else
       Location loc1, loc2;
       if (!frame_map()->locations_for_slot(opr->double_stack_ix(), Location::normal, &loc1, &loc2)) {
+        assert(false, "too large frame");
         bailout("too large frame");
       }
       first =  new LocationValue(loc1);
@@ -3971,6 +3980,7 @@ LIR_Opr MoveResolver::get_virtual_register(Interval* interval) {
   // a few extra registers before we really run out which helps to avoid to trip over assertions.
   int reg_num = interval->reg_num();
   if (reg_num + 20 >= LIR_Opr::vreg_max) {
+    assert(false, "out of virtual registers in linear scan");
     _allocator->bailout("out of virtual registers in linear scan");
     if (reg_num + 2 >= LIR_Opr::vreg_max) {
       // Wrap it around and continue until bailout really happens to avoid hitting assertions.

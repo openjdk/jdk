@@ -431,6 +431,7 @@ CodeEmitInfo* LIRGenerator::state_for(Instruction* x, ValueStack* state, bool ig
     }
     if (!liveness.is_valid()) {
       // Degenerate or breakpointed method.
+      assert(false, "Degenerate or breakpointed method");
       bailout("Degenerate or breakpointed method");
     } else {
       assert((int)liveness.size() == s->locals_size(), "error in use of liveness");
@@ -968,6 +969,7 @@ void LIRGenerator::move_to_phi(PhiResolver* resolver, Value cur_val, Value sux_v
       for (int i = 0; i < phi->operand_count(); i++) {
         Value op = phi->operand_at(i);
         if (op != NULL && op->type()->is_illegal()) {
+          assert(false, "illegal phi operand");
           bailout("illegal phi operand");
         }
       }
@@ -977,6 +979,7 @@ void LIRGenerator::move_to_phi(PhiResolver* resolver, Value cur_val, Value sux_v
       // Phi and local would need to get invalidated
       // (which is unexpected for Linear Scan).
       // But this case is very rare so we simply bail out.
+      assert(false, "propagation of illegal phi");
       bailout("propagation of illegal phi");
       return;
     }
@@ -1029,6 +1032,7 @@ LIR_Opr LIRGenerator::new_register(BasicType type) {
   // Add a little fudge factor for the bailout since the bailout is only checked periodically. This allows us to hand out
   // a few extra registers before we really run out which helps to avoid to trip over assertions.
   if (vreg_num + 20 >= LIR_Opr::vreg_max) {
+    assert(false, "out of virtual registers in LIR generator");
     bailout("out of virtual registers in LIR generator");
     if (vreg_num + 2 >= LIR_Opr::vreg_max) {
       // Wrap it around and continue until bailout really happens to avoid hitting assertions.
@@ -3261,6 +3265,7 @@ void LIRGenerator::increment_event_counter_impl(CodeEmitInfo* info,
   if (level == CompLevel_limited_profile) {
     MethodCounters* counters_adr = method->ensure_method_counters();
     if (counters_adr == NULL) {
+      assert(false, "method counters allocation failed");
       bailout("method counters allocation failed");
       return;
     }

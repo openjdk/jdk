@@ -108,6 +108,7 @@ static inline bool is_compiler_linking_event_writer(const ciKlass * holder, cons
 // C1
 void JfrResolution::on_c1_resolution(const GraphBuilder * builder, const ciKlass * holder, const ciMethod * target) {
   if (is_compiler_linking_event_writer(holder, target) && !IS_METHOD_BLESSED(builder->method()->get_Method())) {
+    assert(false, "linking error: %s", link_error_msg);
     builder->bailout(link_error_msg);
   }
 }
