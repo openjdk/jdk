@@ -192,6 +192,8 @@ public abstract class Collator
      * described in
      * <a href="http://www.unicode.org/reports/tr15/">Unicode
      * Standard Annex #15: Unicode Normalization Forms</a>.
+     *
+     * @spec https://www.unicode.org/reports/tr15 Unicode Normalization Forms
      * @see java.text.Collator#getDecomposition
      * @see java.text.Collator#setDecomposition
      */
@@ -211,6 +213,8 @@ public abstract class Collator
      * described in
      * <a href="http://www.unicode.org/reports/tr15/">Unicode
      * Standard Annex #15: Unicode Normalization Forms</a>.
+     *
+     * @spec https://www.unicode.org/reports/tr15 Unicode Normalization Forms
      * @see java.text.Collator#getDecomposition
      * @see java.text.Collator#setDecomposition
      */

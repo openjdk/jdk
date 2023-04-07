@@ -637,14 +637,6 @@ final class DoubleMaxVector extends DoubleVector {
 
         @Override
         @ForceInline
-        public DoubleMaxMask eq(VectorMask<Double> mask) {
-            Objects.requireNonNull(mask);
-            DoubleMaxMask m = (DoubleMaxMask)mask;
-            return xor(m.not());
-        }
-
-        @Override
-        @ForceInline
         /*package-private*/
         DoubleMaxMask indexPartiallyInUpperRange(long offset, long limit) {
             return (DoubleMaxMask) VectorSupport.indexPartiallyInUpperRange(
@@ -691,9 +683,9 @@ final class DoubleMaxVector extends DoubleVector {
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a | b));
         }
 
+        @Override
         @ForceInline
-        /* package-private */
-        DoubleMaxMask xor(VectorMask<Double> mask) {
+        public DoubleMaxMask xor(VectorMask<Double> mask) {
             Objects.requireNonNull(mask);
             DoubleMaxMask m = (DoubleMaxMask)mask;
             return VectorSupport.binaryOp(VECTOR_OP_XOR, DoubleMaxMask.class, null, long.class, VLENGTH,

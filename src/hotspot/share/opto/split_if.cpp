@@ -742,7 +742,5 @@ void PhaseIdealLoop::do_split_if(Node* iff, RegionNode** new_false_region, Regio
     *new_true_region = new_true;
   }
 
-#ifndef PRODUCT
-  if( VerifyLoopOptimizations ) verify();
-#endif
+  DEBUG_ONLY( if (VerifyLoopOptimizations) { verify(); } );
 }

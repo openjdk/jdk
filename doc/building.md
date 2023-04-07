@@ -1147,7 +1147,7 @@ Note that X11 is needed even if you only want to build a headless JDK.
 ### Cross compiling with Debian sysroots
 
 Fortunately, you can create sysroots for foreign architectures with tools
-provided by your OS. On Debian/Ubuntu systems, one could use `qemu-deboostrap` to
+provided by your OS. On Debian/Ubuntu systems, one could use `debootstrap` to
 create the *target* system chroot, which would have the native libraries and headers
 specific to that *target* system. After that, we can use the cross-compiler on the *build*
 system, pointing into chroot to get the build dependencies right. This allows building
@@ -1162,7 +1162,7 @@ For example, cross-compiling to AArch64 from x86_64 could be done like this:
 
   * Create chroot on the *build* system, configuring it for *target* system:
     ```
-    sudo qemu-debootstrap \
+    sudo debootstrap \
       --arch=arm64 \
       --verbose \
       --include=fakeroot,symlinks,build-essential,libx11-dev,libxext-dev,libxrender-dev,libxrandr-dev,libxtst-dev,libxt-dev,libcups2-dev,libfontconfig1-dev,libasound2-dev,libfreetype6-dev,libpng-dev,libffi-dev \
@@ -1170,6 +1170,8 @@ For example, cross-compiling to AArch64 from x86_64 could be done like this:
       buster \
       ~/sysroot-arm64 \
       http://httpredir.debian.org/debian/
+    # If the target architecture is `riscv64`,
+    # the path should be `debian-ports` instead of `debian`.
     ```
 
   * Make sure the symlinks inside the newly created chroot point to proper locations:
@@ -1217,6 +1219,7 @@ Architectures that are known to successfully cross-compile like this are:
   m68k          sid          m68k          m68k-linux-gnu           zero
   alpha         sid          alpha         alpha-linux-gnu          zero
   sh4           sid          sh4           sh4-linux-gnu            zero
+  riscv64       sid          riscv64       riscv64-linux-gnu        (all)
 
 ### Building for ARM/aarch64
 
@@ -1225,6 +1228,44 @@ useful to set the ABI profile. A number of pre-defined ABI profiles are
 available using `--with-abi-profile`: arm-vfp-sflt, arm-vfp-hflt, arm-sflt,
 armv5-vfp-sflt, armv6-vfp-hflt. Note that soft-float ABIs are no longer
 properly supported by the JDK.
+
+### Building for RISC-V
+
+The RISC-V community provides a basic
+[GNU compiler toolchain](https://github.com/riscv-collab/riscv-gnu-toolchain),
+but the [external libraries](#External-Library-Requirements) required by OpenJDK
+complicate the building process. The placeholder `<toolchain-installed-path>`
+shown below is the path where you want to install the toolchain.
+
+  * Install the RISC-V GNU compiler toolchain:
+    ```
+    git clone --recursive https://github.com/riscv-collab/riscv-gnu-toolchain
+    cd riscv-gnu-toolchain
+    ./configure --prefix=<toolchain-installed-path>
+    make linux
+    export PATH=<toolchain-installed-path>/bin:$PATH
+    ```
+
+  * Cross-compile all the required libraries:
+    ```
+    # An example for libffi
+    git clone https://github.com/libffi/libffi
+    cd libffi
+    ./configure --host=riscv64-unknown-linux-gnu --prefix=<toolchain-installed-path>/sysroot/usr
+    make
+    make install
+    ```
+
+  * Configure and build OpenJDK:
+    ```
+    bash configure \
+      --with-boot-jdk=$BOOT_JDK \
+      --openjdk-target=riscv64-linux-gnu \
+      --with-sysroot=<toolchain-installed-path>/sysroot \
+      --with-toolchain-path=<toolchain-installed-path>/bin \
+      --with-extra-path=<toolchain-installed-path>/bin
+    make images
+    ```
 
 ### Building for musl
 

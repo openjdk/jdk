@@ -1525,6 +1525,8 @@ public final class DateTimeFormatterBuilder {
      * @param requestedTemplate the requested template to use, not null
      * @return this, for chaining, not null
      * @throws IllegalArgumentException if {@code requestedTemplate} is invalid
+     *
+     * @spec https://www.unicode.org/reports/tr35 Unicode Locale Data Markup Language (LDML)
      * @see #appendPattern(String)
      * @since 19
      */
@@ -1608,6 +1610,8 @@ public final class DateTimeFormatterBuilder {
      *
      * @param style the text style to use, not null
      * @return this, for chaining, not null
+     *
+     * @spec https://www.unicode.org/reports/tr35 Unicode Locale Data Markup Language (LDML)
      * @since 16
      */
     public DateTimeFormatterBuilder appendDayPeriodText(TextStyle style) {
