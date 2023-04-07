@@ -499,10 +499,10 @@ public class FileInputStream extends InputStream
      * If cleanup of native resources is needed, other mechanisms such as
      * {@linkplain java.lang.ref.Cleaner} should be used.
      *
-     * @apiNote
-     * When this stream has an associated channel, this method may invoke
-     * itself reentrantly. Therefore, subclasses that override this method
-     * should be prepared to handle possible reentrant invocation.
+     * <p>
+     * If this stream has an associated channel then this method will close the
+     * channel, which in turn will close this stream. Subclasses that override
+     * this method should be prepared to handle possible reentrant invocation.
      *
      * @throws     IOException  {@inheritDoc}
      *
