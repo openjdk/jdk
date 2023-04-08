@@ -692,7 +692,7 @@ Java_java_util_prefs_MacOSXPreferencesFile_addChildToNode
     // copyMutableNode creates the node if necessary
     parent = copyMutableNode(path, name, user, host, &topKey, &topValue);
     throwIfNull(parent, "copyMutableNode failed");
-    beforeAdd = CFDictionaryContainsKey(parent, child);
+    beforeAdd = CFDictionaryContainsKey(parent, child) ? JNI_TRUE : JNI_FALSE;
     CFDictionaryAddValue(parent, child, node);
     if (!beforeAdd)
         beforeAdd = CFDictionaryContainsKey(parent, child) ? JNI_TRUE : JNI_FALSE;
