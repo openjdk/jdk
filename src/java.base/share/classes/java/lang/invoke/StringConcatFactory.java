@@ -119,7 +119,8 @@ public final class StringConcatFactory {
      * @since 21
      */
     @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
-    public static final int MAX_INDY_CONCAT_ARG_SLOTS = 200;
+    public static final int MAX_INDY_CONCAT_ARG_SLOTS;
+    static { MAX_INDY_CONCAT_ARG_SLOTS = 200; }
 
     private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
 
@@ -1043,7 +1044,7 @@ public final class StringConcatFactory {
      * interleaves fragments and values. fragment|value|fragment|value|...|value|fragment.
      * The number of fragments must be one more that the number of ptypes.
      * The total number of slots used by the ptypes must be less than or equal
-     * to {@value #MAX_INDY_CONCAT_ARG_SLOTS}.
+     * to {@link #MAX_INDY_CONCAT_ARG_SLOTS}.
      *
      * @param fragments list of string fragments
      * @param ptypes    list of expression types
