@@ -241,7 +241,7 @@ julong os::Linux::available_memory() {
     char buf[80];
     do {
       julong mem_available;
-      if (fscanf(fp, "MemAvailable: %lu kB", &mem_available) == 1) {
+      if (fscanf(fp, "MemAvailable: " JULONG_FORMAT " kB", &mem_available) == 1) {
         avail_mem = mem_available;
         break;
       }
