@@ -361,6 +361,8 @@ final class StringConcatHelper {
                                 FormatConcatItem value) {
         try {
             return value.prepend(indexCoder, buf);
+        } catch (Error ex) {
+            throw ex;
         } catch (Throwable ex) {
             throw new AssertionError("FormatConcatItem prepend error", ex);
         }

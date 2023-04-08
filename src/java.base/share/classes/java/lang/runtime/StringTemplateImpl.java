@@ -97,7 +97,7 @@ final class StringTemplateImpl extends Carriers.CarrierObject implements StringT
     public List<Object> values() {
         try {
             return (List<Object>)valuesMH.invokeExact(this);
-        } catch (RuntimeException | OutOfMemoryError ex) {
+        } catch (RuntimeException | Error ex) {
             throw ex;
         } catch (Throwable ex) {
             throw new RuntimeException("string template values failure", ex);
@@ -107,8 +107,8 @@ final class StringTemplateImpl extends Carriers.CarrierObject implements StringT
     @Override
     public String interpolate() {
         try {
-            return (String) interpolateMH.invokeExact(this);
-        } catch (RuntimeException | OutOfMemoryError ex) {
+            return (String)interpolateMH.invokeExact(this);
+        } catch (RuntimeException | Error ex) {
             throw ex;
         } catch (Throwable ex) {
             throw new RuntimeException("string template interpolate failure", ex);
