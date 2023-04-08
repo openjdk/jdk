@@ -638,6 +638,12 @@ import jdk.internal.util.regex.Grapheme;
  *   <li> Join_Control
  *   <li> Noncharacter_Code_Point
  *   <li> Assigned
+ *   <li> Emoji
+ *   <li> Emoji_Presentation
+ *   <li> Emoji_Modifier
+ *   <li> Emoji_Modifier_Base
+ *   <li> Emoji_Component
+ *   <li> Extended_Pictographic
  * </ul>
  * <p>
  * The following <b>Predefined Character classes</b> and <b>POSIX character classes</b>
@@ -784,6 +790,7 @@ import jdk.internal.util.regex.Grapheme;
  * O'Reilly and Associates, 2006.</a>
  * </p>
  *
+ * @spec https://www.unicode.org/reports/tr18 Unicode Regular Expressions
  * @see java.lang.String#split(String, int)
  * @see java.lang.String#split(String)
  *
@@ -939,6 +946,8 @@ public final class Pattern
      * folding.
      * <p>
      * Specifying this flag may impose a performance penalty.  </p>
+     *
+     * @spec https://www.unicode.org/reports/tr18 Unicode Regular Expressions
      * @since 1.7
      */
     public static final int UNICODE_CHARACTER_CLASS = 0x100;

@@ -61,6 +61,8 @@ import static java.util.Objects.requireNonNull;
  * java.util.EnumMap map} implementations are available.
  *
  * @param <E> The type of the enum subclass
+ *
+ * @spec serialization/index.html Java Object Serialization Specification
  * @serial exclude
  * @author  Josh Bloch
  * @author  Neal Gafter

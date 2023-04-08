@@ -51,15 +51,4 @@ com/sun/jdi/RedefineTTYLineNumber.java 8285422 generic-all
 com/sun/jdi/ReferrersTest.java 8285422 generic-all
 com/sun/jdi/SetLocalWhileThreadInNative.java 8285422 generic-all
 com/sun/jdi/StepTest.java 8285422 generic-all
-com/sun/jdi/redefine/RedefineTest.java 8285422 generic-all
-com/sun/jdi/redefineMethod/RedefineTest.java 8285422 generic-all
-
-####
-# JDI SDE Tests
-# Use custom classpath
-
-com/sun/jdi/sde/FilterMangleTest.java 8285423 generic-all
-com/sun/jdi/sde/MangleTest.java 8285423 generic-all
-com/sun/jdi/sde/MangleStepTest.java 8285423 generic-all
-com/sun/jdi/sde/TemperatureTableTest.java 8285423 generic-all
-com/sun/jdi/sde/SourceDebugExtensionTest.java 8285423 generic-all
+com/sun/jdi/PopAndInvokeTest.java 8305632 generic-all
