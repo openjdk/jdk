@@ -61,7 +61,6 @@ public class OSInfo {
     public static final WindowsVersion WINDOWS_VISTA = new WindowsVersion(6, 0);
     public static final WindowsVersion WINDOWS_7 = new WindowsVersion(6, 1);
 
-    private static final String OS_NAME = "os.name";
     private static final String OS_VERSION = "os.version";
 
     private static final Map<String, WindowsVersion> windowsVersionMap = new HashMap<String, OSInfo.WindowsVersion>();
