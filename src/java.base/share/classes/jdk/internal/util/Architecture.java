@@ -23,7 +23,6 @@
 package jdk.internal.util;
 
 import jdk.internal.vm.annotation.ForceInline;
-import jdk.internal.vm.annotation.Stable;
 
 /**
  * System architecture enum values.
@@ -41,9 +40,6 @@ public enum Architecture {
     S390,
     PPC64,
     ;
-
-    // Cache a copy of the array for lightweight indexing
-    private static final @Stable Architecture[] archValues = Architecture.values();
 
     /**
      * {@return {@code true} if the current architecture is X64, Aka amd64}
