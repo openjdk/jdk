@@ -221,9 +221,7 @@ julong os::available_memory() {
 }
 
 julong os::Linux::available_memory() {
-  // values in struct sysinfo are "unsigned long"
-  struct sysinfo si;
-  julong avail_mem;
+  julong avail_mem = 0UL;
 
   if (OSContainer::is_containerized()) {
     jlong mem_limit = OSContainer::memory_limit_in_bytes();
@@ -238,8 +236,24 @@ julong os::Linux::available_memory() {
     }
   }
 
-  sysinfo(&si);
-  avail_mem = (julong)si.freeram * si.mem_unit;
+  FILE *fp = os::fopen("/proc/meminfo", "r");
+  if (fp) {
+    char buf[80];
+    do {
+      julong mem_available;
+      if (fscanf(fp, "MemAvailable: %lu kB", &mem_available) == 1) {
+        avail_mem = mem_available;
+        break;
+      }
+    } while (fgets(buf, sizeof(buf), fp) != nullptr);
+    fclose(fp);
+  }
+  if (avail_mem == 0UL) {
+    // values in struct sysinfo are "unsigned long"
+    struct sysinfo si;
+    sysinfo(&si);
+    avail_mem = (julong)si.freeram * si.mem_unit;
+  }
   log_trace(os)("available memory: " JULONG_FORMAT, avail_mem);
   return avail_mem;
 }
