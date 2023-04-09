@@ -251,25 +251,24 @@ class ChannelInputStream extends InputStream {
             }
         }
 
-        if (out instanceof ChannelOutputStream cos && cos.channel() instanceof FileChannel fc) {
-            ReadableByteChannel rbc = ch;
-
-            if (rbc instanceof SelectableChannel sc) {
-                synchronized (sc.blockingLock()) {
-                    if (!sc.isBlocking())
-                        throw new IllegalBlockingModeException();
-                    return transfer(rbc, fc);
-                }
-            }
-
-            return transfer(rbc, fc);
-        }
-
-        // ReadableByteChannel -> WritableByteChannel
         if (out instanceof ChannelOutputStream cos) {
             ReadableByteChannel rbc = ch;
             WritableByteChannel wbc = cos.channel();
 
+            // ReadableByteChannel -> FileChannel
+            if (wbc instanceof FileChannel fc) {
+                if (rbc instanceof SelectableChannel sc) {
+                    synchronized (sc.blockingLock()) {
+                        if (!sc.isBlocking())
+                            throw new IllegalBlockingModeException();
+                        return transfer(rbc, fc);
+                    }
+                }
+
+                return transfer(rbc, fc);
+            }
+
+            // ReadableByteChannel -> WritableByteChannel
             if (rbc instanceof SelectableChannel rsc) {
                 synchronized (rsc.blockingLock()) {
                     if (!rsc.isBlocking())
