@@ -2603,15 +2603,15 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
             if (read() != '<')
                 throw error("\\k is not followed by '<' for named capturing group");
             String name = groupname(read());
-            Integer index = namedGroupsMap().get(name);
-            if (index == null)
+            Integer number = namedGroupsMap().get(name);
+            if (number == null)
                 throw error("named capturing group <" + name + "> does not exist");
             if (create) {
                 hasGroupRef = true;
                 if (has(CASE_INSENSITIVE))
-                    root = new CIBackRef(index, has(UNICODE_CASE));
+                    root = new CIBackRef(number, has(UNICODE_CASE));
                 else
-                    root = new BackRef(index);
+                    root = new BackRef(number);
             }
             return -1;
         case 'l':

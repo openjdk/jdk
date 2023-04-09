@@ -1075,10 +1075,11 @@ public final class Matcher implements MatchResult {
                             throw new IllegalArgumentException(
                                     "capturing group name {" + gname +
                                             "} starts with digit character");
-                        if (!namedGroups().containsKey(gname))
+                        Integer number = namedGroups().get(gname);
+                        if (number == null)
                             throw new IllegalArgumentException(
                                     "No group with name {" + gname + "}");
-                        refNum = namedGroups().get(gname);
+                        refNum = number;
                         cursor++;
                     } else {
                         // The first number is always a group
@@ -1819,10 +1820,10 @@ public final class Matcher implements MatchResult {
     int getMatchedGroupIndex(String name) {
         Objects.requireNonNull(name, "Group name");
         checkMatch();
-        Integer index = namedGroups().get(name);
-        if (index == null)
+        Integer number = namedGroups().get(name);
+        if (number == null)
             throw new IllegalArgumentException("No group with name <" + name + ">");
-        return index;
+        return number;
     }
 
     private void checkGroup(int group) {
