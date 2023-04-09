@@ -265,7 +265,7 @@ class ChannelInputStream extends InputStream {
             return transfer(rbc, fc);
         }
 
-        // ReableByteChannel -> WritableByteChannel
+        // ReadableByteChannel -> WritableByteChannel
         if (out instanceof ChannelOutputStream cos) {
             ReadableByteChannel rbc = ch;
             WritableByteChannel wbc = cos.channel();
