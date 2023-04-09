@@ -2520,6 +2520,12 @@ void MacroAssembler::resolve_global_jobject(Register value, Register tmp1, Regis
   bind(done);
 }
 
+void MacroAssembler::breakpoint(uint16_t hint_imm16) {
+  // BRK with hint
+  const uint32_t c = 0xD4200000 | (((uint32_t)hint_imm16) << 5);
+  emit_int32(c) ;
+}
+
 void MacroAssembler::stop(const char* msg) {
   BLOCK_COMMENT(msg);
   dcps1(0xdeae);

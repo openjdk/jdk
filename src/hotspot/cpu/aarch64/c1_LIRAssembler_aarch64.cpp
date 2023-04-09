@@ -140,7 +140,7 @@ address LIR_Assembler::int_constant(jlong n) {
   }
 }
 
-void LIR_Assembler::breakpoint() { Unimplemented(); }
+void LIR_Assembler::breakpoint() { __ breakpoint(); }
 
 void LIR_Assembler::push(LIR_Opr opr) { Unimplemented(); }
 

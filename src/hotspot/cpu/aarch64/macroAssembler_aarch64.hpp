@@ -1027,6 +1027,9 @@ public:
   // only if +VerifyFPU
   void verify_FPU(int stack_depth, const char* s = "illegal FPU state");
 
+  // emit unconditional trap.
+  void breakpoint(uint16_t hint_uimm16 = 0);
+
   // prints msg, dumps registers and stops execution
   void stop(const char* msg);
 
