@@ -32,24 +32,23 @@ import javax.swing.text.html.CSS;
 import javax.swing.text.html.StyleSheet;
 
 public class CSSBug {
-  
+ 
     public static void main(String[] args) {
         StyleSheet ss = new StyleSheet();
         String fontSize = "42";
-    
+
         SimpleAttributeSet a = new SimpleAttributeSet();
         ss.addCSSAttribute( a, CSS.Attribute.FONT_SIZE, fontSize);
-    
+
         SimpleAttributeSet b = new SimpleAttributeSet();
         ss.addCSSAttribute( b, CSS.Attribute.FONT_SIZE, fontSize);
-    
+
         if (a.isEqual( b) ) {
             System.out.println( "a equals b");
         } else {
             System.out.println("a = " + a);
             System.out.println("b = " + b);
             throw new RuntimeException("Attribute a is not equal to b");
-	}
-  }
-
+        }
+    }
 }
