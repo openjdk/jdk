@@ -45,7 +45,7 @@ public class bug4200096 {
             @Override
             public void println(Object x) {
                 super.println(x);
-                if (x instanceof Object)
+                if (x instanceof Throwable)
                     System.exit(1);
             }
         });
@@ -81,7 +81,7 @@ public class bug4200096 {
                     imageHeight = height;
                 }
 
-                if (this.imageWidth != null || imageHeight != null)
+                if (imageWidth != null || imageHeight != null)
                     return false;
                 return true;
 
