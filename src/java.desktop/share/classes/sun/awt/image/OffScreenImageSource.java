@@ -26,8 +26,6 @@
 package sun.awt.image;
 
 import java.util.Hashtable;
-import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.awt.image.ImageConsumer;
 import java.awt.image.ImageProducer;
 import java.awt.image.Raster;
@@ -43,8 +41,6 @@ public class OffScreenImageSource implements ImageProducer {
     int width;
     int height;
     Hashtable<?, ?> properties;
-
-    private List<ImageConsumer> imageConsumers = new CopyOnWriteArrayList<>();
 
     public OffScreenImageSource(BufferedImage image,
                                 Hashtable<?, ?> properties) {
@@ -62,17 +58,22 @@ public class OffScreenImageSource implements ImageProducer {
         this(image, null);
     }
 
-    public void addConsumer(ImageConsumer ic) {
-        imageConsumers.add(ic);
-        produce(ic);
+    // We can only have one consumer since we immediately return the data...
+    private ImageConsumer theConsumer;
+
+    public synchronized void addConsumer(ImageConsumer ic) {
+        theConsumer = ic;
+        produce();
     }
 
-    public boolean isConsumer(ImageConsumer ic) {
-        return imageConsumers.contains(ic);
+    public synchronized boolean isConsumer(ImageConsumer ic) {
+        return (ic == theConsumer);
     }
 
-    public void removeConsumer(ImageConsumer ic) {
-        imageConsumers.remove(ic);
+    public synchronized void removeConsumer(ImageConsumer ic) {
+        if (theConsumer == ic) {
+            theConsumer = null;
+        }
     }
 
     public void startProduction(ImageConsumer ic) {
@@ -82,7 +83,9 @@ public class OffScreenImageSource implements ImageProducer {
     public void requestTopDownLeftRightResend(ImageConsumer ic) {
     }
 
-    private void sendPixels(ImageConsumer theConsumer) {
+    private void sendPixels() {
+        if (theConsumer == null) return;
+
         ColorModel cm = image.getColorModel();
         WritableRaster raster = image.getRaster();
         int numDataElements = raster.getNumDataElements();
@@ -92,14 +95,12 @@ public class OffScreenImageSource implements ImageProducer {
 
         if (cm instanceof IndexColorModel) {
             byte[] pixels = new byte[width];
-            if (isConsumer(theConsumer))
-                theConsumer.setColorModel(cm);
+            theConsumer.setColorModel(cm);
 
             if (raster instanceof ByteComponentRaster) {
                 needToCvt = false;
                 for (int y=0; y < height; y++) {
-                    if (!isConsumer(theConsumer))
-                        return;
+                    if (theConsumer == null) return;
                     raster.getDataElements(0, y, width, 1, pixels);
                     theConsumer.setPixels(0, y, width, 1, cm, pixels, 0,
                             width);
@@ -109,8 +110,7 @@ public class OffScreenImageSource implements ImageProducer {
                 needToCvt = false;
                 // Binary image.  Need to unpack it
                 for (int y=0; y < height; y++) {
-                    if (!isConsumer(theConsumer))
-                        return;
+                    if (theConsumer == null) return;
                     raster.getPixels(0, y, width, 1, scanline);
                     for (int x=0; x < width; x++) {
                         pixels[x] = (byte) scanline[x];
@@ -125,8 +125,7 @@ public class OffScreenImageSource implements ImageProducer {
                 // Probably a short or int "GRAY" image
                 needToCvt = false;
                 for (int y=0; y < height; y++) {
-                    if (!isConsumer(theConsumer))
-                        return;
+                    if (theConsumer == null) return;
                     raster.getPixels(0, y, width, 1, scanline);
                     theConsumer.setPixels(0, y, width, 1, cm, scanline, 0,
                                           width);
@@ -134,14 +133,12 @@ public class OffScreenImageSource implements ImageProducer {
             }
         }
         else if (cm instanceof DirectColorModel) {
-            if (isConsumer(theConsumer))
-                theConsumer.setColorModel(cm);
+            theConsumer.setColorModel(cm);
             needToCvt = false;
             switch (dataType) {
             case DataBuffer.TYPE_INT:
                 for (int y=0; y < height; y++) {
-                    if (!isConsumer(theConsumer))
-                        return;
+                    if (theConsumer == null) return;
                     raster.getDataElements(0, y, width, 1, scanline);
                     theConsumer.setPixels(0, y, width, 1, cm, scanline, 0,
                                           width);
@@ -150,8 +147,7 @@ public class OffScreenImageSource implements ImageProducer {
             case DataBuffer.TYPE_BYTE:
                 byte[] bscanline = new byte[width];
                 for (int y=0; y < height; y++) {
-                    if (!isConsumer(theConsumer))
-                        return;
+                    if (theConsumer == null) return;
                     raster.getDataElements(0, y, width, 1, bscanline);
                     for (int x=0; x < width; x++) {
                         scanline[x] = bscanline[x]&0xff;
@@ -163,8 +159,7 @@ public class OffScreenImageSource implements ImageProducer {
             case DataBuffer.TYPE_USHORT:
                 short[] sscanline = new short[width];
                 for (int y=0; y < height; y++) {
-                    if (!isConsumer(theConsumer))
-                        return;
+                    if (theConsumer == null) return;
                     raster.getDataElements(0, y, width, 1, sscanline);
                     for (int x=0; x < width; x++) {
                         scanline[x] = sscanline[x]&0xffff;
@@ -181,12 +176,10 @@ public class OffScreenImageSource implements ImageProducer {
         if (needToCvt) {
             // REMIND: Need to add other types of CMs here
             ColorModel newcm = ColorModel.getRGBdefault();
-            if (isConsumer(theConsumer))
-                theConsumer.setColorModel(newcm);
+            theConsumer.setColorModel(newcm);
 
             for (int y=0; y < height; y++) {
-                if (!isConsumer(theConsumer))
-                    return;
+                if (theConsumer == null) return;
                 for (int x=0; x < width; x++) {
                     scanline[x] = image.getRGB(x, y);
                 }
@@ -196,17 +189,18 @@ public class OffScreenImageSource implements ImageProducer {
         }
     }
 
-    private void produce(ImageConsumer theConsumer) {
+    private void produce() {
         try {
-            if (isConsumer(theConsumer))
-                theConsumer.setDimensions(image.getWidth(), image.getHeight());
-            if (isConsumer(theConsumer))
-                theConsumer.setProperties(properties);
-            sendPixels(theConsumer);
-            if (isConsumer(theConsumer))
-                theConsumer.imageComplete(ImageConsumer.SINGLEFRAMEDONE);
+            if (theConsumer == null) return;
+            theConsumer.setDimensions(image.getWidth(), image.getHeight());
+            if (theConsumer == null) return;
+            theConsumer.setProperties(properties);
+            sendPixels();
+            if (theConsumer == null) return;
+            theConsumer.imageComplete(ImageConsumer.SINGLEFRAMEDONE);
 
-            if (isConsumer(theConsumer)) {
+            // If 'theconsumer' has not unregistered itself after previous call
+            if (theConsumer != null) {
                 try {
                     theConsumer.imageComplete(ImageConsumer.STATICIMAGEDONE);
                 } catch (RuntimeException e) {
@@ -221,8 +215,9 @@ public class OffScreenImageSource implements ImageProducer {
         } catch (NullPointerException e) {
             e.printStackTrace();
 
-            if (isConsumer(theConsumer))
+            if (theConsumer != null) {
                 theConsumer.imageComplete(ImageConsumer.IMAGEERROR);
+            }
         }
     }
 }
