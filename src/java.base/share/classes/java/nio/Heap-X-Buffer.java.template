@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -277,6 +277,41 @@ class Heap$Type$Buffer$RW$
     }
 
 #if[char]
+
+    public $Type$Buffer append(CharSequence csq) {
+#if[rw]
+        return append(csq, 0, csq.length());
+#else[rw]
+        throw new ReadOnlyBufferException();
+#end[rw]
+    }
+
+    public $Type$Buffer append(CharSequence csq, int start, int end) {
+#if[rw]
+        checkSession();
+
+        if (csq == null)
+            csq = "null";
+
+        if (csq instanceof String str) {
+            str.getChars(start, end, hb, ix(position()));
+            position(position() + end - start);
+            return this;
+        } else if (csq instanceof StringBuffer strbuf) {
+            strbuf.getChars(start, end, hb, ix(position()));
+            position(position() + end - start);
+            return this;
+        } else if (csq instanceof StringBuilder strbld) {
+            strbld.getChars(start, end, hb, ix(position()));
+            position(position() + end - start);
+            return this;
+        }
+
+        return super.append(csq, start, end);
+#else[rw]
+        throw new ReadOnlyBufferException();
+#end[rw]
+    }
 
     public $Type$Buffer put(String src, int start, int end) {
 #if[rw]
