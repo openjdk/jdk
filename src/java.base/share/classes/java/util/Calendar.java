@@ -1632,6 +1632,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      *
      * @param zone the time zone to use
      * @return a Calendar.
+     * @throws NullPointerException if {@code zone} is {@code null}
      */
     public static Calendar getInstance(TimeZone zone)
     {
@@ -1649,6 +1650,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      *
      * @param aLocale the locale for the week data
      * @return a Calendar.
+     * @throws NullPointerException if {@code aLocale} is {@code null}
      */
     public static Calendar getInstance(Locale aLocale)
     {
@@ -1663,6 +1665,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      * @param zone the time zone to use
      * @param aLocale the locale for the week data
      * @return a Calendar.
+     * @throws NullPointerException if {@code zone} or {@code aLocale} is {@code null}
      */
     public static Calendar getInstance(TimeZone zone,
                                        Locale aLocale)
