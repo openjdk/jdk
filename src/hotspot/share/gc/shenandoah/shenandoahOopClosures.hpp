@@ -48,7 +48,7 @@ private:
   bool _weak;
 
 protected:
-  template <class T, GenerationMode GENERATION>
+  template <class T, ShenandoahGenerationType GENERATION>
   void work(T *p);
 
 public:
@@ -72,7 +72,7 @@ class ShenandoahMarkUpdateRefsSuperClosure : public ShenandoahMarkRefsSuperClosu
 protected:
   ShenandoahHeap* const _heap;
 
-  template <class T, GenerationMode GENERATION>
+  template <class T, ShenandoahGenerationType GENERATION>
   inline void work(T* p);
 
 public:
@@ -83,7 +83,7 @@ public:
   };
 };
 
-template <GenerationMode GENERATION>
+template <ShenandoahGenerationType GENERATION>
 class ShenandoahMarkUpdateRefsClosure : public ShenandoahMarkUpdateRefsSuperClosure {
 private:
   template <class T>
@@ -97,7 +97,7 @@ public:
   virtual void do_oop(oop* p)       { do_oop_work(p); }
 };
 
-template <GenerationMode GENERATION>
+template <ShenandoahGenerationType GENERATION>
 class ShenandoahMarkRefsClosure : public ShenandoahMarkRefsSuperClosure {
 private:
   template <class T>

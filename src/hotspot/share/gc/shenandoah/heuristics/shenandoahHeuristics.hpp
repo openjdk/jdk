@@ -75,11 +75,11 @@ protected:
 
   ShenandoahGeneration* _generation;
 
-  // if (_generation->generation_mode() == GLOBAL) _region_data represents
+  // if (_generation->type() == GLOBAL) _region_data represents
   //  the results of most recently completed global marking pass
-  // if (_generation->generation_mode() == OLD) _region_data represents
+  // if (_generation->type() == OLD) _region_data represents
   //  the results of most recently completed old-gen marking pass
-  // if (_generation->generation_mode() == YOUNG) _region_data represents
+  // if (_generation->type() == YOUNG) _region_data represents
   //  the results of most recently completed young-gen marking pass
   //
   // Note that there is some redundancy represented in _region_data because

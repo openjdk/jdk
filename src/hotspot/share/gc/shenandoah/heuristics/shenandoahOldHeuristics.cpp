@@ -44,7 +44,7 @@ ShenandoahOldHeuristics::ShenandoahOldHeuristics(ShenandoahOldGeneration* genera
   _promotion_failed(false),
   _old_generation(generation)
 {
-  assert(_generation->generation_mode() == OLD, "This service only available for old-gc heuristics");
+  assert(_generation->is_old(), "This service only available for old-gc heuristics");
 }
 
 bool ShenandoahOldHeuristics::prime_collection_set(ShenandoahCollectionSet* collection_set) {
@@ -212,7 +212,7 @@ void ShenandoahOldHeuristics::choose_collection_set(ShenandoahCollectionSet* col
 }
 
 void ShenandoahOldHeuristics::prepare_for_old_collections() {
-  assert(_generation->generation_mode() == OLD, "This service only available for old-gc heuristics");
+  assert(_generation->is_old(), "This service only available for old-gc heuristics");
   ShenandoahHeap* heap = ShenandoahHeap::heap();
 
   size_t cand_idx = 0;

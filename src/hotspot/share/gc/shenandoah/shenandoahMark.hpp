@@ -45,7 +45,7 @@ protected:
   ShenandoahMark(ShenandoahGeneration* generation);
 
 public:
-  template<class T, GenerationMode GENERATION>
+  template<class T, ShenandoahGenerationType GENERATION>
   static inline void mark_through_ref(T* p, ShenandoahObjToScanQueue* q, ShenandoahObjToScanQueue* old, ShenandoahMarkingContext* const mark_context, bool weak);
 
   // Loom support
@@ -76,13 +76,13 @@ private:
 
   inline void count_liveness(ShenandoahLiveData* live_data, oop obj);
 
-  template <class T, GenerationMode GENERATION, bool CANCELLABLE, StringDedupMode STRING_DEDUP>
+  template <class T, ShenandoahGenerationType GENERATION, bool CANCELLABLE, StringDedupMode STRING_DEDUP>
   void mark_loop_work(T* cl, ShenandoahLiveData* live_data, uint worker_id, TaskTerminator *t, StringDedup::Requests* const req);
 
-  template <GenerationMode GENERATION, bool CANCELLABLE, StringDedupMode STRING_DEDUP>
+  template <ShenandoahGenerationType GENERATION, bool CANCELLABLE, StringDedupMode STRING_DEDUP>
   void mark_loop_prework(uint worker_id, TaskTerminator *terminator, ShenandoahReferenceProcessor *rp, StringDedup::Requests* const req, bool update_refs);
 
-  template <GenerationMode GENERATION>
+  template <ShenandoahGenerationType GENERATION>
   static bool in_generation(oop obj);
 
   static void mark_ref(ShenandoahObjToScanQueue* q,
@@ -93,10 +93,10 @@ private:
   inline void dedup_string(oop obj, StringDedup::Requests* const req);
 protected:
   template<bool CANCELLABLE, StringDedupMode STRING_DEDUP>
-  void mark_loop(GenerationMode generation, uint worker_id, TaskTerminator* terminator, ShenandoahReferenceProcessor *rp,
+  void mark_loop(ShenandoahGenerationType generation, uint worker_id, TaskTerminator* terminator, ShenandoahReferenceProcessor *rp,
                  StringDedup::Requests* const req);
 
-  void mark_loop(GenerationMode generation, uint worker_id, TaskTerminator* terminator, ShenandoahReferenceProcessor *rp,
+  void mark_loop(ShenandoahGenerationType generation, uint worker_id, TaskTerminator* terminator, ShenandoahReferenceProcessor *rp,
                  bool cancellable, StringDedupMode dedup_mode, StringDedup::Requests* const req);
 };
 

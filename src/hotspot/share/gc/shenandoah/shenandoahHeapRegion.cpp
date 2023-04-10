@@ -95,7 +95,7 @@ void ShenandoahHeapRegion::report_illegal_transition(const char *method) {
   fatal("%s", ss.freeze());
 }
 
-void ShenandoahHeapRegion::make_regular_allocation(ShenandoahRegionAffiliation affiliation) {
+void ShenandoahHeapRegion::make_regular_allocation(ShenandoahAffiliation affiliation) {
   shenandoah_assert_heaplocked();
   reset_age();
   switch (_state) {
@@ -172,7 +172,7 @@ void ShenandoahHeapRegion::make_humongous_start() {
   }
 }
 
-void ShenandoahHeapRegion::make_humongous_start_bypass(ShenandoahRegionAffiliation affiliation) {
+void ShenandoahHeapRegion::make_humongous_start_bypass(ShenandoahAffiliation affiliation) {
   shenandoah_assert_heaplocked();
   assert (ShenandoahHeap::heap()->is_full_gc_in_progress(), "only for full GC");
   set_affiliation(affiliation);
@@ -203,7 +203,7 @@ void ShenandoahHeapRegion::make_humongous_cont() {
   }
 }
 
-void ShenandoahHeapRegion::make_humongous_cont_bypass(ShenandoahRegionAffiliation affiliation) {
+void ShenandoahHeapRegion::make_humongous_cont_bypass(ShenandoahAffiliation affiliation) {
   shenandoah_assert_heaplocked();
   assert (ShenandoahHeap::heap()->is_full_gc_in_progress(), "only for full GC");
   set_affiliation(affiliation);
@@ -248,7 +248,7 @@ void ShenandoahHeapRegion::make_unpinned() {
 
   switch (_state) {
     case _pinned:
-      assert(affiliation() != FREE, "Pinned region should not be FREE");
+      assert(is_affiliated(), "Pinned region should be affiliated");
       set_state(_regular);
       return;
     case _regular:
@@ -410,19 +410,7 @@ void ShenandoahHeapRegion::print_on(outputStream* st) const {
       ShouldNotReachHere();
   }
 
-  switch (ShenandoahHeap::heap()->region_affiliation(this)) {
-    case ShenandoahRegionAffiliation::FREE:
-      st->print("|F");
-      break;
-    case ShenandoahRegionAffiliation::YOUNG_GENERATION:
-      st->print("|Y");
-      break;
-    case ShenandoahRegionAffiliation::OLD_GENERATION:
-      st->print("|O");
-      break;
-    default:
-      ShouldNotReachHere();
-  }
+  st->print("|%s", shenandoah_affiliation_code(affiliation()));
 
 #define SHR_PTR_FORMAT "%12" PRIxPTR
 
@@ -935,15 +923,15 @@ size_t ShenandoahHeapRegion::pin_count() const {
   return Atomic::load(&_critical_pins);
 }
 
-void ShenandoahHeapRegion::set_affiliation(ShenandoahRegionAffiliation new_affiliation) {
+void ShenandoahHeapRegion::set_affiliation(ShenandoahAffiliation new_affiliation) {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
 
-  ShenandoahRegionAffiliation region_affiliation = heap->region_affiliation(this);
+  ShenandoahAffiliation region_affiliation = heap->region_affiliation(this);
   {
     ShenandoahMarkingContext* const ctx = heap->complete_marking_context();
     log_debug(gc)("Setting affiliation of Region " SIZE_FORMAT " from %s to %s, top: " PTR_FORMAT ", TAMS: " PTR_FORMAT
                   ", watermark: " PTR_FORMAT ", top_bitmap: " PTR_FORMAT,
-                  index(), affiliation_name(region_affiliation), affiliation_name(new_affiliation),
+                  index(), shenandoah_affiliation_name(region_affiliation), shenandoah_affiliation_name(new_affiliation),
                   p2i(top()), p2i(ctx->top_at_mark_start(this)), p2i(_update_watermark), p2i(ctx->top_bitmap(this)));
   }
 
@@ -970,11 +958,11 @@ void ShenandoahHeapRegion::set_affiliation(ShenandoahRegionAffiliation new_affil
   }
 
   log_trace(gc)("Changing affiliation of region %zu from %s to %s",
-    index(), affiliation_name(region_affiliation), affiliation_name(new_affiliation));
+    index(), shenandoah_affiliation_name(region_affiliation), shenandoah_affiliation_name(new_affiliation));
 
-  if (region_affiliation == ShenandoahRegionAffiliation::YOUNG_GENERATION) {
+  if (region_affiliation == ShenandoahAffiliation::YOUNG_GENERATION) {
     heap->young_generation()->decrement_affiliated_region_count();
-  } else if (region_affiliation == ShenandoahRegionAffiliation::OLD_GENERATION) {
+  } else if (region_affiliation == ShenandoahAffiliation::OLD_GENERATION) {
     heap->old_generation()->decrement_affiliated_region_count();
   }
 

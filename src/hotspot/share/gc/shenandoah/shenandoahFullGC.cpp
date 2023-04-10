@@ -452,7 +452,7 @@ private:
   ShenandoahHeapRegion*          _old_to_region;
   ShenandoahHeapRegion*          _young_to_region;
   ShenandoahHeapRegion*          _from_region;
-  ShenandoahRegionAffiliation    _from_affiliation;
+  ShenandoahAffiliation          _from_affiliation;
   HeapWord*                      _old_compact_point;
   HeapWord*                      _young_compact_point;
   uint                           _worker_id;
@@ -479,13 +479,13 @@ public:
     _from_region = from_region;
     _from_affiliation = from_region->affiliation();
     if (_from_region->has_live()) {
-      if (_from_affiliation == ShenandoahRegionAffiliation::OLD_GENERATION) {
+      if (_from_affiliation == ShenandoahAffiliation::OLD_GENERATION) {
         if (_old_to_region == nullptr) {
           _old_to_region = from_region;
           _old_compact_point = from_region->bottom();
         }
       } else {
-        assert(_from_affiliation == ShenandoahRegionAffiliation::YOUNG_GENERATION, "from_region must be OLD or YOUNG");
+        assert(_from_affiliation == ShenandoahAffiliation::YOUNG_GENERATION, "from_region must be OLD or YOUNG");
         if (_young_to_region == nullptr) {
           _young_to_region = from_region;
           _young_compact_point = from_region->bottom();
@@ -537,7 +537,7 @@ public:
     uint object_age = p->age();
 
     bool promote_object = false;
-    if ((_from_affiliation == ShenandoahRegionAffiliation::YOUNG_GENERATION) &&
+    if ((_from_affiliation == ShenandoahAffiliation::YOUNG_GENERATION) &&
         (from_region_age + object_age >= InitialTenuringThreshold)) {
       if ((_old_to_region != nullptr) && (_old_compact_point + obj_size > _old_to_region->end())) {
         finish_old_region();
@@ -559,7 +559,7 @@ public:
       }
     }
 
-    if (promote_object || (_from_affiliation == ShenandoahRegionAffiliation::OLD_GENERATION)) {
+    if (promote_object || (_from_affiliation == ShenandoahAffiliation::OLD_GENERATION)) {
       assert(_old_to_region != nullptr, "_old_to_region should not be nullptr when evacuating to OLD region");
       if (_old_compact_point + obj_size > _old_to_region->end()) {
         ShenandoahHeapRegion* new_to_region;
@@ -594,7 +594,7 @@ public:
       p->forward_to(cast_to_oop(_old_compact_point));
       _old_compact_point += obj_size;
     } else {
-      assert(_from_affiliation == ShenandoahRegionAffiliation::YOUNG_GENERATION,
+      assert(_from_affiliation == ShenandoahAffiliation::YOUNG_GENERATION,
              "_from_region must be OLD_GENERATION or YOUNG_GENERATION");
       assert(_young_to_region != nullptr, "_young_to_region should not be nullptr when compacting YOUNG _from_region");
 
@@ -750,7 +750,7 @@ void ShenandoahPrepareForCompactionTask::work(uint worker_id) {
     while (from_region != nullptr) {
       assert(is_candidate_region(from_region), "Sanity");
       log_debug(gc)("Worker %u compacting %s Region " SIZE_FORMAT " which had used " SIZE_FORMAT " and %s live",
-                    worker_id, affiliation_name(from_region->affiliation()),
+                    worker_id, from_region->affiliation_name(),
                     from_region->index(), from_region->used(), from_region->has_live()? "has": "does not have");
       cl.set_from_region(from_region);
       if (from_region->has_live()) {
@@ -885,17 +885,17 @@ public:
         if (!_ctx->is_marked(humongous_obj)) {
           assert(!r->has_live(),
                  "Humongous Start %s Region " SIZE_FORMAT " is not marked, should not have live",
-                 affiliation_name(r->affiliation()),  r->index());
+                 r->affiliation_name(),  r->index());
           log_debug(gc)("Trashing immediate humongous region " SIZE_FORMAT " because not marked", r->index());
           _heap->trash_humongous_region_at(r);
         } else {
           assert(r->has_live(),
-                 "Humongous Start %s Region " SIZE_FORMAT " should have live", affiliation_name(r->affiliation()),  r->index());
+                 "Humongous Start %s Region " SIZE_FORMAT " should have live", r->affiliation_name(),  r->index());
         }
       } else if (r->is_humongous_continuation()) {
         // If we hit continuation, the non-live humongous starts should have been trashed already
         assert(r->humongous_start_region()->has_live(),
-               "Humongous Continuation %s Region " SIZE_FORMAT " should have live", affiliation_name(r->affiliation()),  r->index());
+               "Humongous Continuation %s Region " SIZE_FORMAT " should have live", r->affiliation_name(),  r->index());
       } else if (r->is_regular()) {
         if (!r->has_live()) {
           log_debug(gc)("Trashing immediate regular region " SIZE_FORMAT " because has no live", r->index());
@@ -1390,7 +1390,7 @@ void ShenandoahFullGC::compact_humongous_objects() {
       new_obj->init_mark();
 
       {
-        ShenandoahRegionAffiliation original_affiliation = r->affiliation();
+        ShenandoahAffiliation original_affiliation = r->affiliation();
         for (size_t c = old_start; c <= old_end; c++) {
           ShenandoahHeapRegion* r = heap->get_region(c);
           // Leave humongous region affiliation unchanged.

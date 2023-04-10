@@ -96,7 +96,7 @@ void ShenandoahAdaptiveHeuristics::choose_collection_set_from_regiondata(Shenand
   // more garbage.  This represents one of the reasons why we keep looking at regions even after we decide, for example,
   // to exclude one of the regions because it might require evacuation of too much live data.
   bool is_generational = heap->mode()->is_generational();
-  bool is_global = (_generation->generation_mode() == GLOBAL);
+  bool is_global = _generation->is_global();
   size_t capacity = heap->young_generation()->max_capacity();
 
   // cur_young_garbage represents the amount of memory to be reclaimed from young-gen.  In the case that live objects

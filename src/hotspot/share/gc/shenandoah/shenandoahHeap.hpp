@@ -30,12 +30,12 @@
 #include "gc/shared/markBitMap.hpp"
 #include "gc/shared/softRefPolicy.hpp"
 #include "gc/shared/collectedHeap.hpp"
-#include "gc/shenandoah/mode/shenandoahGenerationalMode.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahAllocRequest.hpp"
 #include "gc/shenandoah/shenandoahLock.hpp"
 #include "gc/shenandoah/shenandoahEvacOOMHandler.hpp"
 #include "gc/shenandoah/shenandoahEvacTracker.hpp"
+#include "gc/shenandoah/shenandoahGenerationType.hpp"
 #include "gc/shenandoah/shenandoahMmuTracker.hpp"
 #include "gc/shenandoah/shenandoahPadding.hpp"
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
@@ -69,6 +69,7 @@ class ShenandoahFreeSet;
 class ShenandoahConcurrentMark;
 class ShenandoahFullGC;
 class ShenandoahMonitoringSupport;
+class ShenandoahMode;
 class ShenandoahPacer;
 class ShenandoahReferenceProcessor;
 class ShenandoahVerifier;
@@ -118,7 +119,7 @@ public:
   virtual bool is_thread_safe() { return false; }
 };
 
-template<GenerationMode GENERATION>
+template<ShenandoahGenerationType GENERATION>
 class ShenandoahGenerationRegionClosure : public ShenandoahHeapRegionClosure {
  public:
   explicit ShenandoahGenerationRegionClosure(ShenandoahHeapRegionClosure* cl) : _cl(cl) {}
@@ -271,7 +272,7 @@ private:
   bool      _heap_region_special;
   size_t    _num_regions;
   ShenandoahHeapRegion** _regions;
-  uint8_t* _affiliations;       // Holds array of enum ShenandoahRegionAffiliation, including FREE status in non-generational mode
+  uint8_t* _affiliations;       // Holds array of enum ShenandoahAffiliation, including FREE status in non-generational mode
   ShenandoahRegionIterator _update_refs_iterator;
 
 public:
@@ -547,7 +548,7 @@ public:
   ShenandoahYoungGeneration* young_generation()  const { return _young_generation;  }
   ShenandoahGeneration*      global_generation() const { return _global_generation; }
   ShenandoahOldGeneration*   old_generation()    const { return _old_generation;    }
-  ShenandoahGeneration*      generation_for(ShenandoahRegionAffiliation affiliation) const;
+  ShenandoahGeneration*      generation_for(ShenandoahAffiliation affiliation) const;
   const ShenandoahGenerationSizer* generation_sizer()  const { return &_generation_sizer;  }
 
   size_t max_size_for(ShenandoahGeneration* generation) const;
@@ -612,8 +613,8 @@ private:
   void stw_process_weak_roots(bool full_gc);
   void stw_weak_refs(bool full_gc);
 
-  inline void assert_lock_for_affiliation(ShenandoahRegionAffiliation orig_affiliation,
-                                          ShenandoahRegionAffiliation new_affiliation);
+  inline void assert_lock_for_affiliation(ShenandoahAffiliation orig_affiliation,
+                                          ShenandoahAffiliation new_affiliation);
 
   // Heap iteration support
   void scan_roots_for_iteration(ShenandoahScanObjectStack* oop_stack, ObjectIterateScanRootClosure* oops);
@@ -635,11 +636,11 @@ public:
   inline bool is_in_old(const void* p) const;
   inline bool is_old(oop pobj) const;
 
-  inline ShenandoahRegionAffiliation region_affiliation(const ShenandoahHeapRegion* r);
-  inline void set_affiliation(ShenandoahHeapRegion* r, ShenandoahRegionAffiliation new_affiliation);
+  inline ShenandoahAffiliation region_affiliation(const ShenandoahHeapRegion* r);
+  inline void set_affiliation(ShenandoahHeapRegion* r, ShenandoahAffiliation new_affiliation);
 
-  inline ShenandoahRegionAffiliation region_affiliation(size_t index);
-  inline void set_affiliation(size_t index, ShenandoahRegionAffiliation new_affiliation);
+  inline ShenandoahAffiliation region_affiliation(size_t index);
+  inline void set_affiliation(size_t index, ShenandoahAffiliation new_affiliation);
 
   bool requires_barriers(stackChunkOop obj) const override;
 
@@ -781,7 +782,7 @@ private:
   ShenandoahEvacOOMHandler _oom_evac_handler;
   ShenandoahSharedFlag _old_gen_oom_evac;
 
-  inline oop try_evacuate_object(oop src, Thread* thread, ShenandoahHeapRegion* from_region, ShenandoahRegionAffiliation target_gen);
+  inline oop try_evacuate_object(oop src, Thread* thread, ShenandoahHeapRegion* from_region, ShenandoahAffiliation target_gen);
   void handle_old_evacuation(HeapWord* obj, size_t words, bool promotion);
   void handle_old_evacuation_failure();
 

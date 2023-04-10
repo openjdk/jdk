@@ -61,7 +61,7 @@ ShenandoahControlThread::ShenandoahControlThread() :
   _regulator_lock(Mutex::nosafepoint - 2, "ShenandoahRegulatorGC_lock", true),
   _periodic_task(this),
   _requested_gc_cause(GCCause::_no_cause_specified),
-  _requested_generation(GenerationMode::GLOBAL),
+  _requested_generation(ShenandoahGenerationType::GLOBAL),
   _degen_point(ShenandoahGC::_degenerated_outside_cycle),
   _degen_generation(nullptr),
   _allocs_seen(0),
@@ -93,7 +93,7 @@ void ShenandoahControlThread::run_service() {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
 
   GCMode default_mode = concurrent_normal;
-  GenerationMode generation = GLOBAL;
+  ShenandoahGenerationType generation = GLOBAL;
   GCCause::Cause default_cause = GCCause::_shenandoah_concurrent_gc;
 
   double last_shrink_time = os::elapsedTime();
@@ -148,7 +148,7 @@ void ShenandoahControlThread::run_service() {
       }
 
       ShenandoahHeuristics* heuristics = _degen_generation->heuristics();
-      generation = _degen_generation->generation_mode();
+      generation = _degen_generation->type();
       bool old_gen_evacuation_failed = heap->clear_old_evacuation_failure();
 
       // Do not bother with degenerated cycle if old generation evacuation failed.
@@ -460,7 +460,7 @@ void ShenandoahControlThread::process_phase_timings(const ShenandoahHeap* heap) 
 //      +--->  Global Degen +--------------------> Full <----+
 //
 void ShenandoahControlThread::service_concurrent_normal_cycle(
-  const ShenandoahHeap* heap, const GenerationMode generation, GCCause::Cause cause) {
+        const ShenandoahHeap* heap, const ShenandoahGenerationType generation, GCCause::Cause cause) {
   GCIdMark gc_id_mark;
   switch (generation) {
     case YOUNG: {
@@ -682,7 +682,7 @@ void ShenandoahControlThread::service_concurrent_cycle(const ShenandoahHeap* hea
   } else {
     assert(heap->cancelled_gc(), "Must have been cancelled");
     check_cancellation_or_degen(gc.degen_point());
-    assert(generation->generation_mode() != OLD, "Old GC takes a different control path");
+    assert(!generation->is_old(), "Old GC takes a different control path");
     // Concurrent young-gen collection degenerates to young
     // collection.  Same for global collections.
     _degen_generation = generation;
@@ -753,11 +753,11 @@ bool ShenandoahControlThread::service_stw_degenerated_cycle(GCCause::Cause cause
   gc.collect(cause);
 
   assert(heap->young_generation()->task_queues()->is_empty(), "Unexpected young generation marking tasks");
-  if (_degen_generation->generation_mode() == GLOBAL) {
+  if (_degen_generation->is_global()) {
     assert(heap->old_generation()->task_queues()->is_empty(), "Unexpected old generation marking tasks");
     assert(heap->global_generation()->task_queues()->is_empty(), "Unexpected global generation marking tasks");
   } else {
-    assert(_degen_generation->generation_mode() == YOUNG, "Expected degenerated young cycle, if not global.");
+    assert(_degen_generation->is_young(), "Expected degenerated young cycle, if not global.");
     ShenandoahOldGeneration* old_generation = (ShenandoahOldGeneration*) heap->old_generation();
     if (old_generation->state() == ShenandoahOldGeneration::BOOTSTRAPPING && !gc.upgraded_to_full()) {
       old_generation->transition_to(ShenandoahOldGeneration::MARKING);
@@ -823,7 +823,7 @@ void ShenandoahControlThread::request_gc(GCCause::Cause cause) {
   }
 }
 
-bool ShenandoahControlThread::request_concurrent_gc(GenerationMode generation) {
+bool ShenandoahControlThread::request_concurrent_gc(ShenandoahGenerationType generation) {
   if (_preemption_requested.is_set() || _gc_requested.is_set() || ShenandoahHeap::heap()->cancelled_gc()) {
     // ignore subsequent requests from the heuristics
     return false;
@@ -839,7 +839,7 @@ bool ShenandoahControlThread::request_concurrent_gc(GenerationMode generation) {
   }
 
   if (preempt_old_marking(generation)) {
-    log_info(gc)("Preempting old generation mark to allow %s GC.", generation_name(generation));
+    log_info(gc)("Preempting old generation mark to allow %s GC.", shenandoah_generation_name(generation));
     _requested_gc_cause = GCCause::_shenandoah_concurrent_gc;
     _requested_generation = generation;
     _preemption_requested.set();
@@ -859,7 +859,7 @@ void ShenandoahControlThread::notify_control_thread() {
   _control_lock.notify();
 }
 
-bool ShenandoahControlThread::preempt_old_marking(GenerationMode generation) {
+bool ShenandoahControlThread::preempt_old_marking(ShenandoahGenerationType generation) {
   return generation == YOUNG && _allow_old_preemption.try_unset();
 }
 

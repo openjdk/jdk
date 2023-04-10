@@ -91,7 +91,7 @@ private:
   ShenandoahSharedFlag _do_counters_update;
   ShenandoahSharedFlag _force_counters_update;
   GCCause::Cause       _requested_gc_cause;
-  GenerationMode       _requested_generation;
+  ShenandoahGenerationType _requested_generation;
   ShenandoahGC::ShenandoahDegenPoint _degen_point;
   ShenandoahGeneration* _degen_generation;
 
@@ -136,7 +136,7 @@ private:
   bool is_implicit_gc(GCCause::Cause cause) const;
 
   // Returns true if the old generation marking was interrupted to allow a young cycle.
-  bool preempt_old_marking(GenerationMode generation);
+  bool preempt_old_marking(ShenandoahGenerationType generation);
 
   // Returns true if the soft maximum heap has been changed using management APIs.
   bool check_soft_max_changed() const;
@@ -158,7 +158,7 @@ public:
 
   void request_gc(GCCause::Cause cause);
   // Return true if the request to start a concurrent GC for the given generation succeeded.
-  bool request_concurrent_gc(GenerationMode generation);
+  bool request_concurrent_gc(ShenandoahGenerationType generation);
 
   void handle_counters_update();
   void handle_force_counters_update();
@@ -173,7 +173,7 @@ public:
   bool in_graceful_shutdown();
 
   void service_concurrent_normal_cycle(const ShenandoahHeap* heap,
-                                       const GenerationMode generation,
+                                       const ShenandoahGenerationType generation,
                                        GCCause::Cause cause);
 
   void service_concurrent_old_cycle(const ShenandoahHeap* heap,

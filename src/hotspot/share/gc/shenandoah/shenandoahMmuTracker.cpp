@@ -259,7 +259,7 @@ bool ShenandoahGenerationSizer::transfer_capacity(ShenandoahGeneration* from, Sh
   }
 
   size_t regions_to_transfer = MAX2(1u, uint(double(available_regions) * _resize_increment));
-  if (from->generation_mode() == YOUNG) {
+  if (from->is_young()) {
     regions_to_transfer = adjust_transfer_from_young(from, regions_to_transfer);
   } else {
     regions_to_transfer = adjust_transfer_to_young(to, regions_to_transfer);
@@ -279,7 +279,7 @@ bool ShenandoahGenerationSizer::transfer_capacity(ShenandoahGeneration* from, Sh
 }
 
 size_t ShenandoahGenerationSizer::adjust_transfer_from_young(ShenandoahGeneration* from, size_t regions_to_transfer) const {
-  assert(from->generation_mode() == YOUNG, "Expect to transfer from young");
+  assert(from->is_young(), "Expect to transfer from young");
   size_t young_capacity_regions = from->max_capacity() / ShenandoahHeapRegion::region_size_bytes();
   size_t new_young_regions = young_capacity_regions - regions_to_transfer;
   size_t minimum_young_regions = min_young_regions();
@@ -294,7 +294,7 @@ size_t ShenandoahGenerationSizer::adjust_transfer_from_young(ShenandoahGeneratio
 }
 
 size_t ShenandoahGenerationSizer::adjust_transfer_to_young(ShenandoahGeneration* to, size_t regions_to_transfer) const {
-  assert(to->generation_mode() == YOUNG, "Can only transfer between young and old.");
+  assert(to->is_young(), "Can only transfer between young and old.");
   size_t young_capacity_regions = to->max_capacity() / ShenandoahHeapRegion::region_size_bytes();
   size_t new_young_regions = young_capacity_regions + regions_to_transfer;
   size_t maximum_young_regions = max_young_regions();

@@ -1,5 +1,4 @@
 /*
- * Copyright (c) 2013, 2021, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,35 +22,41 @@
  *
  */
 
-#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHCONCURRENTMARK_HPP
-#define SHARE_GC_SHENANDOAH_SHENANDOAHCONCURRENTMARK_HPP
+#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHAFFILIATION_HPP
+#define SHARE_GC_SHENANDOAH_SHENANDOAHAFFILIATION_HPP
 
-#include "gc/shenandoah/shenandoahMark.hpp"
-
-template <ShenandoahGenerationType GENERATION>
-class ShenandoahConcurrentMarkingTask;
-template<ShenandoahGenerationType GENERATION>
-class ShenandoahFinalMarkingTask;
-class ShenandoahGeneration;
-
-class ShenandoahConcurrentMark: public ShenandoahMark {
-  template <ShenandoahGenerationType GENERATION> friend class ShenandoahConcurrentMarkingTask;
-  template <ShenandoahGenerationType GENERATION> friend class ShenandoahFinalMarkingTask;
-
-public:
-  ShenandoahConcurrentMark(ShenandoahGeneration* generation);
-
-  // Concurrent mark roots
-  void mark_concurrent_roots();
-
-  // Concurrent mark
-  void concurrent_mark();
-
-  // Finish mark at a safepoint
-  void finish_mark();
-
-private:
-  void finish_mark_work();
+enum ShenandoahAffiliation {
+  FREE,
+  YOUNG_GENERATION,
+  OLD_GENERATION,
 };
 
-#endif // SHARE_GC_SHENANDOAH_SHENANDOAHCONCURRENTMARK_HPP
+inline const char* shenandoah_affiliation_code(ShenandoahAffiliation type) {
+  switch(type) {
+    case FREE:
+      return "F";
+    case YOUNG_GENERATION:
+      return "Y";
+    case OLD_GENERATION:
+      return "O";
+    default:
+      ShouldNotReachHere();
+      return "?";
+  }
+}
+
+inline const char* shenandoah_affiliation_name(ShenandoahAffiliation type) {
+  switch (type) {
+    case FREE:
+      return "FREE";
+    case YOUNG_GENERATION:
+      return "YOUNG";
+    case OLD_GENERATION:
+      return "OLD";
+    default:
+      ShouldNotReachHere();
+      return "?";
+  }
+}
+
+#endif // SHARE_GC_SHENANDOAH_SHENANDOAHAFFILIATION_HPP

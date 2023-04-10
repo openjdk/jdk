@@ -75,7 +75,7 @@ inline bool ShenandoahMarkingContext::allocated_after_mark_start(const HeapWord*
 }
 
 inline void ShenandoahMarkingContext::capture_top_at_mark_start(ShenandoahHeapRegion *r) {
-  if (r->affiliation() != FREE) {
+  if (r->is_affiliated()) {
     size_t idx = r->index();
     HeapWord* old_tams = _top_at_mark_starts_base[idx];
     HeapWord* new_tams = r->top();
@@ -91,11 +91,11 @@ inline void ShenandoahMarkingContext::capture_top_at_mark_start(ShenandoahHeapRe
            idx, p2i(old_tams), p2i(new_tams));
 
     log_debug(gc)("Capturing TAMS for %s Region " SIZE_FORMAT ", was: %llx, now: %llx",
-                  affiliation_name(r->affiliation()), idx, (unsigned long long) old_tams, (unsigned long long) new_tams);
+                  r->affiliation_name(), idx, (unsigned long long) old_tams, (unsigned long long) new_tams);
 
     if ((old_tams == r->bottom()) && (new_tams > old_tams)) {
       log_debug(gc)("Clearing mark bitmap for %s Region " SIZE_FORMAT " while capturing TAMS",
-                    affiliation_name(r->affiliation()), idx);
+                    r->affiliation_name(), idx);
 
       clear_bitmap(r);
     }

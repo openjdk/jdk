@@ -84,7 +84,7 @@ void ShenandoahScanRememberedTask::do_work(uint worker_id) {
     log_debug(gc)("ShenandoahScanRememberedTask::do_work(%u), processing slice of region "
                   SIZE_FORMAT " at offset " SIZE_FORMAT ", size: " SIZE_FORMAT,
                   worker_id, region->index(), assignment._chunk_offset, assignment._chunk_size);
-    if (region->affiliation() == OLD_GENERATION) {
+    if (region->is_old()) {
       size_t cluster_size =
         CardTable::card_size_in_words() * ShenandoahCardCluster<ShenandoahDirectCardMarkRememberedSet>::CardsPerCluster;
       size_t clusters = assignment._chunk_size / cluster_size;

@@ -374,7 +374,7 @@ jint ShenandoahHeap::initialize() {
       _regions[i] = r;
       assert(!collection_set()->is_in(i), "New region should not be in collection set");
 
-      _affiliations[i] = ShenandoahRegionAffiliation::FREE;
+      _affiliations[i] = ShenandoahAffiliation::FREE;
     }
 
     // Initialize to complete
@@ -450,7 +450,7 @@ jint ShenandoahHeap::initialize() {
 }
 
 size_t ShenandoahHeap::max_size_for(ShenandoahGeneration* generation) const {
-  switch (generation->generation_mode()) {
+  switch (generation->type()) {
     case YOUNG:  return _generation_sizer.max_young_size();
     case OLD:    return max_capacity() - _generation_sizer.min_young_size();
     case GLOBAL: return max_capacity();
@@ -461,7 +461,7 @@ size_t ShenandoahHeap::max_size_for(ShenandoahGeneration* generation) const {
 }
 
 size_t ShenandoahHeap::min_size_for(ShenandoahGeneration* generation) const {
-  switch (generation->generation_mode()) {
+  switch (generation->type()) {
     case YOUNG:  return _generation_sizer.min_young_size();
     case OLD:    return max_capacity() - _generation_sizer.max_young_size();
     case GLOBAL: return min_capacity();
@@ -689,7 +689,7 @@ bool ShenandoahHeap::is_old_bitmap_stable() const {
 }
 
 bool ShenandoahHeap::is_gc_generation_young() const {
-  return _gc_generation != nullptr && _gc_generation->generation_mode() == YOUNG;
+  return _gc_generation != nullptr && _gc_generation->is_young();
 }
 
 size_t ShenandoahHeap::used() const {
@@ -1294,7 +1294,7 @@ HeapWord* ShenandoahHeap::allocate_memory_under_lock(ShenandoahAllocRequest& req
     if (!try_smaller_lab_size) {
       result = (allow_allocation)? _free_set->allocate(req, in_new_region): nullptr;
       if (result != nullptr) {
-        if (req.affiliation() == ShenandoahRegionAffiliation::OLD_GENERATION) {
+        if (req.is_old()) {
           ShenandoahThreadLocalData::reset_plab_promoted(thread);
           if (req.is_gc_alloc()) {
             if (req.type() ==  ShenandoahAllocRequest::_alloc_plab) {
@@ -1339,7 +1339,7 @@ HeapWord* ShenandoahHeap::allocate_memory_under_lock(ShenandoahAllocRequest& req
         }
       } else {
         // The allocation failed.  If this was a plab allocation, We've already retired it and no longer have a plab.
-        if ((req.affiliation() == ShenandoahRegionAffiliation::OLD_GENERATION) && req.is_gc_alloc() &&
+        if (req.is_old() && req.is_gc_alloc() &&
             (req.type() == ShenandoahAllocRequest::_alloc_plab)) {
           // We don't need to disable PLAB promotions because there is no PLAB.  We leave promotions enabled because
           // this allows the surrounding infrastructure to retry alloc_plab_slow() with a smaller PLAB size.
@@ -1851,8 +1851,7 @@ void ShenandoahHeap::on_cycle_start(GCCause::Cause cause, ShenandoahGeneration* 
 void ShenandoahHeap::on_cycle_end(ShenandoahGeneration* generation) {
   generation->heuristics()->record_cycle_end();
 
-  if (mode()->is_generational() &&
-      ((generation->generation_mode() == GLOBAL) || upgraded_to_full())) {
+  if (mode()->is_generational() && (generation->is_global() || upgraded_to_full())) {
     // If we just completed a GLOBAL GC, claim credit for completion of young-gen and old-gen GC as well
     young_generation()->heuristics()->record_cycle_end();
     old_generation()->heuristics()->record_cycle_end();
@@ -2639,11 +2638,11 @@ private:
       log_debug(gc)("ShenandoahUpdateHeapRefsTask::do_work(%u) looking at region " SIZE_FORMAT, worker_id, r->index());
       bool region_progress = false;
       if (r->is_active() && !r->is_cset()) {
-        if (!_heap->mode()->is_generational() || (r->affiliation() == ShenandoahRegionAffiliation::YOUNG_GENERATION)) {
+        if (!_heap->mode()->is_generational() || r->is_young()) {
           _heap->marked_object_oop_iterate(r, &cl, update_watermark);
           region_progress = true;
-        } else if (r->affiliation() == ShenandoahRegionAffiliation::OLD_GENERATION) {
-          if (_heap->active_generation()->generation_mode() == GLOBAL) {
+        } else if (r->is_old()) {
+          if (_heap->active_generation()->is_global()) {
             // Note that GLOBAL collection is not as effectively balanced as young and mixed cycles.  This is because
             // concurrent GC threads are parceled out entire heap regions of work at a time and there
             // is no "catchup phase" consisting of remembered set scanning, during which parcels of work are smaller
@@ -2668,7 +2667,7 @@ private:
 
           assert(r->get_update_watermark() == r->bottom(),
                  "%s Region " SIZE_FORMAT " is_active but not recognized as YOUNG or OLD so must be newly transitioned from FREE",
-                 affiliation_name(r->affiliation()), r->index());
+                 r->affiliation_name(), r->index());
         }
       }
       if (region_progress && ShenandoahPacing) {
@@ -2680,7 +2679,7 @@ private:
       r = _regions->next();
     }
 
-    if (_heap->mode()->is_generational() && (_heap->active_generation()->generation_mode() != GLOBAL)) {
+    if (_heap->mode()->is_generational() && !_heap->active_generation()->is_global()) {
       // Since this is generational and not GLOBAL, we have to process the remembered set.  There's no remembered
       // set processing if not in generational mode or if GLOBAL mode.
 
@@ -2693,7 +2692,7 @@ private:
       while (!_heap->check_cancelled_gc_and_yield(CONCURRENT) && _work_chunks->next(&assignment)) {
         // Keep grabbing next work chunk to process until finished, or asked to yield
         ShenandoahHeapRegion* r = assignment._r;
-        if (r->is_active() && !r->is_cset() && (r->affiliation() == ShenandoahRegionAffiliation::OLD_GENERATION)) {
+        if (r->is_active() && !r->is_cset() && r->is_old()) {
           HeapWord* start_of_range = r->bottom() + assignment._chunk_offset;
           HeapWord* end_of_range = r->get_update_watermark();
           if (end_of_range > start_of_range + assignment._chunk_size) {
@@ -3115,7 +3114,7 @@ void ShenandoahHeap::transfer_old_pointers_from_satb() {
 template<>
 void ShenandoahGenerationRegionClosure<YOUNG>::heap_region_do(ShenandoahHeapRegion* region) {
   // Visit young and free regions
-  if (region->affiliation() != OLD_GENERATION) {
+  if (!region->is_old()) {
     _cl->heap_region_do(region);
   }
 }
@@ -3123,7 +3122,7 @@ void ShenandoahGenerationRegionClosure<YOUNG>::heap_region_do(ShenandoahHeapRegi
 template<>
 void ShenandoahGenerationRegionClosure<OLD>::heap_region_do(ShenandoahHeapRegion* region) {
   // Visit old and free regions
-  if (region->affiliation() != YOUNG_GENERATION) {
+  if (!region->is_young()) {
     _cl->heap_region_do(region);
   }
 }
@@ -3148,7 +3147,7 @@ void ShenandoahHeap::verify_rem_set_at_mark() {
 
   log_debug(gc)("Verifying remembered set at %s mark", doing_mixed_evacuations()? "mixed": "young");
 
-  if (is_old_bitmap_stable() || active_generation()->generation_mode() == GLOBAL) {
+  if (is_old_bitmap_stable() || active_generation()->is_global()) {
     ctx = complete_marking_context();
   } else {
     ctx = nullptr;
@@ -3283,7 +3282,7 @@ void ShenandoahHeap::verify_rem_set_at_update_ref() {
   ShenandoahRegionIterator iterator;
   ShenandoahMarkingContext* ctx;
 
-  if (is_old_bitmap_stable() || active_generation()->generation_mode() == GLOBAL) {
+  if (is_old_bitmap_stable() || active_generation()->is_global()) {
     ctx = complete_marking_context();
   } else {
     ctx = nullptr;
@@ -3300,7 +3299,7 @@ void ShenandoahHeap::verify_rem_set_at_update_ref() {
   }
 }
 
-ShenandoahGeneration* ShenandoahHeap::generation_for(ShenandoahRegionAffiliation affiliation) const {
+ShenandoahGeneration* ShenandoahHeap::generation_for(ShenandoahAffiliation affiliation) const {
   if (!mode()->is_generational()) {
     return global_generation();
   } else if (affiliation == YOUNG_GENERATION) {

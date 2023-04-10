@@ -181,7 +181,8 @@ const char* ShenandoahOldGeneration::name() const {
 }
 
 bool ShenandoahOldGeneration::contains(ShenandoahHeapRegion* region) const {
-  return region->affiliation() != YOUNG_GENERATION;
+  // TODO: Should this be region->is_old() instead?
+  return !region->is_young();
 }
 
 void ShenandoahOldGeneration::parallel_heap_region_iterate(ShenandoahHeapRegionClosure* cl) {

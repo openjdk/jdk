@@ -187,7 +187,7 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
 
   // Global marking has completed. We need to fill in any unmarked objects in the old generation
   // so that subsequent remembered set scans will not walk pointers into reclaimed memory.
-  if (!heap->cancelled_gc() && heap->mode()->is_generational() && _generation->generation_mode() == GLOBAL) {
+  if (!heap->cancelled_gc() && heap->mode()->is_generational() && _generation->is_global()) {
     entry_global_coalesce_and_fill();
   }
 
@@ -370,7 +370,7 @@ void ShenandoahConcurrentGC::entry_reset() {
 }
 
 void ShenandoahConcurrentGC::entry_scan_remembered_set() {
-  if (_generation->generation_mode() == YOUNG) {
+  if (_generation->is_young()) {
     ShenandoahHeap* const heap = ShenandoahHeap::heap();
     TraceCollectorStats tcs(heap->monitoring_support()->concurrent_collection_counters());
     const char* msg = "Concurrent remembered set scanning";
@@ -622,7 +622,7 @@ void ShenandoahConcurrentGC::op_init_mark() {
 
 
   if (heap->mode()->is_generational()) {
-      if (_generation->generation_mode() == YOUNG || (_generation->generation_mode() == GLOBAL && ShenandoahVerify)) {
+      if (_generation->is_young() || (_generation->is_global() && ShenandoahVerify)) {
       // The current implementation of swap_remembered_set() copies the write-card-table
       // to the read-card-table. The remembered sets are also swapped for GLOBAL collections
       // so that the verifier works with the correct copy of the card table when verifying.
@@ -630,7 +630,7 @@ void ShenandoahConcurrentGC::op_init_mark() {
         _generation->swap_remembered_set();
     }
 
-    if (_generation->generation_mode() == GLOBAL) {
+    if (_generation->is_global()) {
       heap->cancel_old_gc();
     } else if (heap->is_concurrent_old_mark_in_progress()) {
       // Purge the SATB buffers, transferring any valid, old pointers to the

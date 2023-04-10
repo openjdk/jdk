@@ -38,7 +38,7 @@
 #include "gc/shenandoah/shenandoahSTWMark.hpp"
 #include "gc/shenandoah/shenandoahVerifier.hpp"
 
-template<GenerationMode GENERATION>
+template<ShenandoahGenerationType GENERATION>
 class ShenandoahInitMarkRootsClosure : public OopClosure {
  private:
   ShenandoahObjToScanQueue* const _queue;
@@ -54,13 +54,13 @@ class ShenandoahInitMarkRootsClosure : public OopClosure {
   void do_oop(oop* p)       { do_oop_work(p); }
 };
 
-template<GenerationMode GENERATION>
+template<ShenandoahGenerationType GENERATION>
 ShenandoahInitMarkRootsClosure<GENERATION>::ShenandoahInitMarkRootsClosure(ShenandoahObjToScanQueue* q) :
 _queue(q),
 _mark_context(ShenandoahHeap::heap()->marking_context()) {
 }
 
-template <GenerationMode GENERATION>
+template <ShenandoahGenerationType GENERATION>
 template <class T>
 void ShenandoahInitMarkRootsClosure<GENERATION>::do_oop_work(T* p) {
   // Only called from STW mark, should not be used to bootstrap old generation marking.
@@ -117,7 +117,7 @@ void ShenandoahSTWMark::mark() {
 
   {
     // Mark
-    if (_generation->generation_mode() == YOUNG) {
+    if (_generation->is_young()) {
       // But only scan the remembered set for young generation.
       _generation->scan_remembered_set(false /* is_concurrent */);
     }
@@ -138,7 +138,7 @@ void ShenandoahSTWMark::mark() {
 }
 
 void ShenandoahSTWMark::mark_roots(uint worker_id) {
-  switch (_generation->generation_mode()) {
+  switch (_generation->type()) {
     case GLOBAL: {
       ShenandoahInitMarkRootsClosure<GLOBAL> init_mark(task_queues()->queue(worker_id));
       _root_scanner.roots_do(&init_mark, worker_id);
@@ -160,7 +160,7 @@ void ShenandoahSTWMark::finish_mark(uint worker_id) {
   ShenandoahReferenceProcessor* rp = ShenandoahHeap::heap()->active_generation()->ref_processor();
   StringDedup::Requests requests;
 
-  mark_loop(_generation->generation_mode(),
+  mark_loop(_generation->type(),
             worker_id, &_terminator, rp,
             false /* not cancellable */,
             ShenandoahStringDedup::is_enabled() ? ALWAYS_DEDUP : NO_DEDUP, &requests);

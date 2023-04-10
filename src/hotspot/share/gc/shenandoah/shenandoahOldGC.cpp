@@ -54,7 +54,7 @@ void ShenandoahOldGC::op_final_mark() {
   }
 
   if (!heap->cancelled_gc()) {
-    assert(_mark.generation()->generation_mode() == OLD, "Generation of Old-Gen GC should be OLD");
+    assert(_mark.generation()->is_old(), "Generation of Old-Gen GC should be OLD");
     _mark.finish_mark();
     assert(!heap->cancelled_gc(), "STW mark cannot OOM");
 

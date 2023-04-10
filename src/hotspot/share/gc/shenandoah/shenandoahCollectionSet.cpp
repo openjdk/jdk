@@ -91,13 +91,13 @@ void ShenandoahCollectionSet::add_region(ShenandoahHeapRegion* r) {
 
   _cset_map[r->index()] = 1;
 
-  if (r->affiliation() == YOUNG_GENERATION) {
+  if (r->is_young()) {
     _young_region_count++;
     _young_bytes_to_evacuate += r->get_live_data_bytes();
     if (r->age() >= InitialTenuringThreshold) {
       _young_bytes_to_promote += r->get_live_data_bytes();
     }
-  } else if (r->affiliation() == OLD_GENERATION) {
+  } else if (r->is_old()) {
     _old_region_count++;
     _old_bytes_to_evacuate += r->get_live_data_bytes();
     _old_garbage += r->garbage();

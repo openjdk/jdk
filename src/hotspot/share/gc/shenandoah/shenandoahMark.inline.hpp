@@ -115,7 +115,7 @@ inline void ShenandoahMark::count_liveness(ShenandoahLiveData* live_data, oop ob
 
   if (!region->is_humongous_start()) {
     assert(!region->is_humongous(), "Cannot have continuations here");
-    assert(region->affiliation() != FREE, "Do not count live data within Free Regular Region " SIZE_FORMAT, region_idx);
+    assert(region->is_affiliated(), "Do not count live data within Free Regular Region " SIZE_FORMAT, region_idx);
     ShenandoahLiveData cur = live_data[region_idx];
     size_t new_val = size + cur;
     if (new_val >= SHENANDOAH_LIVEDATA_MAX) {
@@ -130,11 +130,11 @@ inline void ShenandoahMark::count_liveness(ShenandoahLiveData* live_data, oop ob
     shenandoah_assert_in_correct_region(nullptr, obj);
     size_t num_regions = ShenandoahHeapRegion::required_regions(size * HeapWordSize);
 
-    assert(region->affiliation() != FREE, "Do not count live data within FREE Humongous Start Region " SIZE_FORMAT, region_idx);
+    assert(region->is_affiliated(), "Do not count live data within FREE Humongous Start Region " SIZE_FORMAT, region_idx);
     for (size_t i = region_idx; i < region_idx + num_regions; i++) {
       ShenandoahHeapRegion* chain_reg = heap->get_region(i);
       assert(chain_reg->is_humongous(), "Expecting a humongous region");
-      assert(chain_reg->affiliation() != FREE, "Do not count live data within FREE Humongous Continuation Region " SIZE_FORMAT, i);
+      assert(chain_reg->is_affiliated(), "Do not count live data within FREE Humongous Continuation Region " SIZE_FORMAT, i);
       chain_reg->increase_live_data_gc_words(chain_reg->used() >> LogHeapWordSize);
     }
   }
@@ -237,7 +237,7 @@ inline void ShenandoahMark::do_chunked_array(ShenandoahObjToScanQueue* q, T* cl,
   array->oop_iterate_range(cl, from, to);
 }
 
-template <GenerationMode GENERATION>
+template <ShenandoahGenerationType GENERATION>
 class ShenandoahSATBBufferClosure : public SATBBufferClosure {
 private:
   ShenandoahObjToScanQueue* _queue;
@@ -262,7 +262,7 @@ public:
   }
 };
 
-template<GenerationMode GENERATION>
+template<ShenandoahGenerationType GENERATION>
 bool ShenandoahMark::in_generation(oop obj) {
   // Each in-line expansion of in_generation() resolves GENERATION at compile time.
   if (GENERATION == YOUNG)
@@ -275,7 +275,7 @@ bool ShenandoahMark::in_generation(oop obj) {
     return false;
 }
 
-template<class T, GenerationMode GENERATION>
+template<class T, ShenandoahGenerationType GENERATION>
 inline void ShenandoahMark::mark_through_ref(T *p, ShenandoahObjToScanQueue* q, ShenandoahObjToScanQueue* old, ShenandoahMarkingContext* const mark_context, bool weak) {
   T o = RawAccess<>::oop_load(p);
   if (!CompressedOops::is_null(o)) {
