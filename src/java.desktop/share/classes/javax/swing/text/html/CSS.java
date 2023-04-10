@@ -2200,6 +2200,19 @@ public class CSS implements Serializable {
             return Integer.valueOf(getValue(null, null));
         }
 
+        public int hashCode() {
+            return Float.hashCode(value);
+        }
+        public boolean equals(Object val) {
+            if (val instanceof CSS.FontSize size) {
+                if (value == size.value) {
+                    return true;
+                }
+                return false;
+            }
+            return false;
+        }
+
         float value;
         boolean index;
         LengthUnit lu;
@@ -2991,7 +3004,6 @@ public class CSS implements Serializable {
         short type;
         float value;
         String units = null;
-
 
         static final short UNINITIALIZED_LENGTH = (short)10;
     }
