@@ -2741,7 +2741,9 @@ public class ClassReader {
         try {
             bp = 0;
             buf.reset();
-            buf.appendStream(c.classfile.openInputStream());
+            try (InputStream input = c.classfile.openInputStream()) {
+                buf.appendStream(input);
+            }
             readClassBuffer(c);
             if (!missingTypeVariables.isEmpty() && !foundTypeVariables.isEmpty()) {
                 List<Type> missing = missingTypeVariables;

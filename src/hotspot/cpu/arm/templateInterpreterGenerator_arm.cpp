@@ -1007,8 +1007,10 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   __ mov(Rtemp, _thread_in_native_trans);
   __ str_32(Rtemp, Address(Rthread, JavaThread::thread_state_offset()));
 
-    // Force this write out before the read below
-  __ membar(MacroAssembler::StoreLoad, Rtemp);
+  // Force this write out before the read below
+  if (!UseSystemMemoryBarrier) {
+    __ membar(MacroAssembler::StoreLoad, Rtemp);
+  }
 
   // Protect the return value in the interleaved code: save it to callee-save registers.
   __ mov(Rsaved_result_lo, R0);
