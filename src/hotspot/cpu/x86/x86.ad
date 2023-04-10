@@ -8591,7 +8591,7 @@ instruct rearrangeS_evex(vec dst, vec src, vec shuffle) %{
 
 instruct loadShuffleI(vec dst, vec src, vec vtmp) %{
   predicate((Matcher::vector_element_basic_type(n) == T_INT || Matcher::vector_element_basic_type(n) == T_FLOAT) &&
-            Matcher::vector_length(n) == 4 && UseAVX < 2);
+            Matcher::vector_length(n) == 4 && UseAVX == 0);
   match(Set dst (VectorLoadShuffle src));
   effect(TEMP dst, TEMP vtmp);
   format %{ "vector_load_shuffle $dst, $src\t! using $vtmp as TEMP" %}
@@ -8620,8 +8620,8 @@ instruct loadShuffleI(vec dst, vec src, vec vtmp) %{
 %}
 
 instruct rearrangeI(vec dst, vec shuffle) %{
- predicate((Matcher::vector_element_basic_type(n) == T_INT || Matcher::vector_element_basic_type(n) == T_FLOAT) &&
-           Matcher::vector_length(n) == 4 && UseAVX < 2);
+  predicate((Matcher::vector_element_basic_type(n) == T_INT || Matcher::vector_element_basic_type(n) == T_FLOAT) &&
+            UseAVX == 0);
   match(Set dst (VectorRearrange dst shuffle));
   format %{ "vector_rearrange $dst, $shuffle, $dst" %}
   ins_encode %{
@@ -8633,11 +8633,11 @@ instruct rearrangeI(vec dst, vec shuffle) %{
 
 instruct loadShuffleI_avx(vec dst, vec src) %{
   predicate((Matcher::vector_element_basic_type(n) == T_INT || Matcher::vector_element_basic_type(n) == T_FLOAT) &&
-            UseAVX >= 2);
+            UseAVX > 0);
   match(Set dst (VectorLoadShuffle src));
   format %{ "vector_load_shuffle $dst, $src" %}
   ins_encode %{
-  int vlen_enc = vector_length_encoding(this);
+    int vlen_enc = vector_length_encoding(this);
     __ vpmovzxbd($dst$$XMMRegister, $src$$XMMRegister, vlen_enc);
   %}
   ins_pipe( pipe_slow );
@@ -8645,15 +8645,13 @@ instruct loadShuffleI_avx(vec dst, vec src) %{
 
 instruct rearrangeI_avx(vec dst, vec src, vec shuffle) %{
   predicate((Matcher::vector_element_basic_type(n) == T_INT || Matcher::vector_element_basic_type(n) == T_FLOAT) &&
-            UseAVX >= 2);
+            UseAVX > 0);
   match(Set dst (VectorRearrange src shuffle));
   format %{ "vector_rearrange $dst, $shuffle, $src" %}
   ins_encode %{
     int vlen_enc = vector_length_encoding(this);
-    if (vlen_enc == Assembler::AVX_128bit) {
-      vlen_enc = Assembler::AVX_256bit;
-    }
-    __ vpermd($dst$$XMMRegister, $shuffle$$XMMRegister, $src$$XMMRegister, vlen_enc);
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ vector_rearrange_int_float(bt, $dst$$XMMRegister, $shuffle$$XMMRegister, $src$$XMMRegister, vlen_enc);
   %}
   ins_pipe( pipe_slow );
 %}

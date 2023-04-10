@@ -1288,7 +1288,7 @@ class ExtractBNode : public ExtractNode {
  public:
   ExtractBNode(Node* src, ConINode* pos) : ExtractNode(src, pos) {}
   virtual int Opcode() const;
-  virtual const Type *bottom_type() const { return TypeInt::INT; }
+  virtual const Type* bottom_type() const { return TypeInt::BYTE; }
   virtual uint ideal_reg() const { return Op_RegI; }
 };
 
@@ -1298,7 +1298,7 @@ class ExtractUBNode : public ExtractNode {
  public:
   ExtractUBNode(Node* src, ConINode* pos) : ExtractNode(src, pos) {}
   virtual int Opcode() const;
-  virtual const Type *bottom_type() const { return TypeInt::INT; }
+  virtual const Type* bottom_type() const { return TypeInt::UBYTE; }
   virtual uint ideal_reg() const { return Op_RegI; }
 };
 
@@ -1801,6 +1801,20 @@ public:
   SignumVDNode(Node* in1, Node* zero, Node* one, const TypeVect* vt)
   : VectorNode(in1, zero, one, vt) {}
 
+  virtual int Opcode() const;
+};
+
+class CompressBitsVNode : public VectorNode {
+public:
+  CompressBitsVNode(Node* in, Node* mask, const TypeVect* vt)
+  : VectorNode(in, mask, vt) {}
+  virtual int Opcode() const;
+};
+
+class ExpandBitsVNode : public VectorNode {
+public:
+  ExpandBitsVNode(Node* in, Node* mask, const TypeVect* vt)
+  : VectorNode(in, mask, vt) {}
   virtual int Opcode() const;
 };
 
