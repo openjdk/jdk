@@ -3941,7 +3941,7 @@ void SuperWord::compute_vector_element_type() {
             // vectorized if the signedness info is imprecise.
             const Type* vt = vtn;
             int op = in->Opcode();
-            if (VectorNode::is_shift_opcode(op) || op == Op_AbsI) {
+            if (VectorNode::is_shift_opcode(op) || op == Op_AbsI || op == Op_ReverseBytesI) {
               Node* load = in->in(1);
               if (load->is_Load() && in_bb(load) && (velt_type(load)->basic_type() == T_INT)) {
                 // Only Load nodes distinguish signed (LoadS/LoadB) and unsigned
