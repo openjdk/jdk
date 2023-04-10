@@ -293,17 +293,22 @@ class Heap$Type$Buffer$RW$
         if (csq == null)
             csq = "null";
 
+        int length = end - start;
+        int pos = position();
+        if (length > limit() - pos)
+            throw new BufferOverflowException();
+
         if (csq instanceof String str) {
-            str.getChars(start, end, hb, ix(position()));
-            position(position() + end - start);
+            str.getChars(start, end, hb, ix(pos));
+            position(pos + length);
             return this;
         } else if (csq instanceof StringBuffer strbuf) {
-            strbuf.getChars(start, end, hb, ix(position()));
-            position(position() + end - start);
+            strbuf.getChars(start, end, hb, ix(pos));
+            position(pos + length);
             return this;
         } else if (csq instanceof StringBuilder strbld) {
-            strbld.getChars(start, end, hb, ix(position()));
-            position(position() + end - start);
+            strbld.getChars(start, end, hb, ix(pos));
+            position(pos + length);
             return this;
         }
 
