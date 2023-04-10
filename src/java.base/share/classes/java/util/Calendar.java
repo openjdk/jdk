@@ -459,9 +459,11 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
 
     /**
      * Field number for {@code get} and {@code set} indicating the day
-     * of the week.  This field takes values {@code SUNDAY},
-     * {@code MONDAY}, {@code TUESDAY}, {@code WEDNESDAY},
-     * {@code THURSDAY}, {@code FRIDAY}, and {@code SATURDAY}.
+     * of the week. If the calendar is non-lenient, this field takes values
+     * {@code SUNDAY}, {@code MONDAY}, {@code TUESDAY}, {@code WEDNESDAY},
+     * {@code THURSDAY}, {@code FRIDAY}, and {@code SATURDAY}. Otherwise, any
+     * int values are accepted and normalized to one of the previously
+     * mentioned values.
      *
      * @see #SUNDAY
      * @see #MONDAY
