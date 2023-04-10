@@ -212,7 +212,7 @@ public final class ConstantDescs {
             = ofConstantBootstrap(CD_ConstantBootstraps, "fieldVarHandle",
             CD_VarHandle, CD_Class, CD_Class);
 
-    /** {@link MethodHandleDesc} representing {@link ConstantBootstraps#staticFieldVarHandle(Lookup, String, Class, Class, Class) ConstantBootstraps.staticVarHandle} */
+    /** {@link MethodHandleDesc} representing {@link ConstantBootstraps#staticFieldVarHandle(Lookup, String, Class, Class, Class) ConstantBootstraps.staticFieldVarHandle} */
     public static final DirectMethodHandleDesc BSM_VARHANDLE_STATIC_FIELD
             = ofConstantBootstrap(CD_ConstantBootstraps, "staticFieldVarHandle",
             CD_VarHandle, CD_Class, CD_Class);
