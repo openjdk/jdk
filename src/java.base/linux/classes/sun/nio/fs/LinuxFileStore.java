@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -142,19 +142,9 @@ class LinuxFileStore
             }
 
             // user_xattr option not present but we special-case ext4 as we
-            // know that extended attributes are enabled by default for
-            // kernel version >= 2.6.39
+            // know that extended attributes are enabled by default
             if (entry().fstype().equals("ext4")) {
-                if (!xattrChecked) {
-                    // check kernel version
-                    int[] kernelVersion = getKernelVersion();
-                    xattrEnabled = kernelVersion[0] > 2 ||
-                        (kernelVersion[0] == 2 && kernelVersion[1] > 6) ||
-                        (kernelVersion[0] == 2 && kernelVersion[1] == 6 &&
-                            kernelVersion[2] >= 39);
-                    xattrChecked = true;
-                }
-                return xattrEnabled;
+                return true;
             }
 
             // not ext4 so probe mount point
