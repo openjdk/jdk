@@ -32,7 +32,7 @@ import javax.swing.text.html.CSS;
 import javax.swing.text.html.StyleSheet;
 
 public class CSSBug {
- 
+
     public static void main(String[] args) {
         StyleSheet ss = new StyleSheet();
         String fontSize = "42";
