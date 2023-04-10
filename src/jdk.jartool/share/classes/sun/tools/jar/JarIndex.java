@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,30 +23,27 @@
  * questions.
  */
 
-package jdk.internal.util.jar;
+package sun.tools.jar;
 
-import sun.nio.cs.UTF_8;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.jar.*;
 import java.util.zip.*;
 
-import static sun.security.action.GetPropertyAction.privilegedGetProperty;
 
 /**
  * This class is used to maintain mappings from packages, classes
  * and resources to their enclosing JAR files. Mappings are kept
  * at the package level except for class or resource files that
- * are located at the root directory. URLClassLoader uses the mapping
- * information to determine where to fetch an extension class or
- * resource from.
+ * are located at the root directory.
  *
- * @author  Zhenghua Li
- * @since   1.3
+ * @author Zhenghua Li
+ * @since 1.3
  */
 
-public class JarIndex {
+class JarIndex {
 
     /**
      * The hash map that maintains mappings from
@@ -68,7 +65,7 @@ public class JarIndex {
     /**
      * The index file name.
      */
-    public static final String INDEX_NAME = "META-INF/INDEX.LIST";
+    static final String INDEX_NAME = "META-INF/INDEX.LIST";
 
     /**
      * true if, and only if, sun.misc.JarIndex.metaInfFilenames is set to true.
@@ -76,25 +73,7 @@ public class JarIndex {
      * be added to the index. Otherwise, just the directory names are added.
      */
     private static final boolean metaInfFilenames =
-        "true".equals(privilegedGetProperty("sun.misc.JarIndex.metaInfFilenames"));
-
-    /**
-     * Constructs a new, empty jar index.
-     */
-    public JarIndex() {
-        indexMap = new HashMap<>();
-        jarMap = new HashMap<>();
-    }
-
-    /**
-     * Constructs a new index from the specified input stream.
-     *
-     * @param is the input stream containing the index data
-     */
-    public JarIndex(InputStream is) throws IOException {
-        this();
-        read(is);
-    }
+            "true".equals(System.getProperty("sun.misc.JarIndex.metaInfFilenames"));
 
     /**
      * Constructs a new index for the specified list of jar files.
@@ -102,32 +81,10 @@ public class JarIndex {
      * @param files the list of jar files to construct the index from.
      */
     public JarIndex(String[] files) throws IOException {
-        this();
+        this.indexMap = new HashMap<>();
+        this.jarMap = new HashMap<>();
         this.jarFiles = files;
         parseJars(files);
-    }
-
-    /**
-     * Returns the jar index, or <code>null</code> if none.
-     *
-     * @param jar the JAR file to get the index from.
-     * @exception IOException if an I/O error has occurred.
-     */
-    public static JarIndex getJarIndex(JarFile jar) throws IOException {
-        JarIndex index = null;
-        JarEntry e = jar.getJarEntry(INDEX_NAME);
-        // if found, then load the index
-        if (e != null) {
-            index = new JarIndex(jar.getInputStream(e));
-        }
-        return index;
-    }
-
-    /**
-     * Returns the jar files that are defined in this index.
-     */
-    public String[] getJarFiles() {
-        return jarFiles;
     }
 
     /*
@@ -147,23 +104,6 @@ public class JarIndex {
     }
 
     /**
-     * Returns the list of jar files that are mapped to the file.
-     *
-     * @param fileName the key of the mapping
-     */
-    public List<String> get(String fileName) {
-        List<String> jarFiles;
-        if ((jarFiles = indexMap.get(fileName)) == null) {
-            /* try the package name again */
-            int pos;
-            if((pos = fileName.lastIndexOf('/')) != -1) {
-                jarFiles = indexMap.get(fileName.substring(0, pos));
-            }
-        }
-        return jarFiles;
-    }
-
-    /**
      * Add the mapping from the specified file to the specified
      * jar file. If there were no mapping for the package of the
      * specified file before, a new list will be created,
@@ -176,10 +116,10 @@ public class JarIndex {
      * @param jarName the jar file that the file is mapped to
      *
      */
-    public void add(String fileName, String jarName) {
+    private void add(String fileName, String jarName) {
         String packageName;
         int pos;
-        if((pos = fileName.lastIndexOf('/')) != -1) {
+        if ((pos = fileName.lastIndexOf('/')) != -1) {
             packageName = fileName.substring(0, pos);
         } else {
             packageName = fileName;
@@ -253,7 +193,7 @@ public class JarIndex {
      */
     public void write(OutputStream out) throws IOException {
         BufferedWriter bw = new BufferedWriter
-            (new OutputStreamWriter(out, UTF_8.INSTANCE));
+                (new OutputStreamWriter(out, StandardCharsets.UTF_8));
         bw.write("JarIndex-Version: 1.0\n\n");
 
         if (jarFiles != null) {
@@ -270,64 +210,6 @@ public class JarIndex {
                 bw.write("\n");
             }
             bw.flush();
-        }
-    }
-
-
-    /**
-     * Reads the index from the specified InputStream.
-     *
-     * @param is the input stream
-     * @exception IOException if an I/O error has occurred
-     */
-    public void read(InputStream is) throws IOException {
-        BufferedReader br = new BufferedReader
-            (new InputStreamReader(is, UTF_8.INSTANCE));
-        String line;
-        String currentJar = null;
-
-        /* an ordered list of jar file names */
-        ArrayList<String> jars = new ArrayList<>();
-
-        /* read until we see a .jar line */
-        while((line = br.readLine()) != null && !line.endsWith(".jar"));
-
-        for(;line != null; line = br.readLine()) {
-            if (line.isEmpty())
-                continue;
-
-            if (line.endsWith(".jar")) {
-                currentJar = line;
-                jars.add(currentJar);
-            } else {
-                String name = line;
-                addMapping(name, currentJar);
-            }
-        }
-
-        jarFiles = jars.toArray(new String[jars.size()]);
-    }
-
-    /**
-     * Merges the current index into another index, taking into account
-     * the relative path of the current index.
-     *
-     * @param toIndex The destination index which the current index will
-     *                merge into.
-     * @param path    The relative path of the this index to the destination
-     *                index.
-     *
-     */
-    public void merge(JarIndex toIndex, String path) {
-        for (Map.Entry<String, List<String>> e : indexMap.entrySet()) {
-            String packageName = e.getKey();
-            List<String> from_list = e.getValue();
-            for (String jarName : from_list) {
-                if (path != null) {
-                    jarName = path.concat(jarName);
-                }
-                toIndex.addMapping(packageName, jarName);
-            }
         }
     }
 }
