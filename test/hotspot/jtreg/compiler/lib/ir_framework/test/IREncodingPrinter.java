@@ -248,8 +248,8 @@ public class IREncodingPrinter {
                                     "Use applyIfAnd or applyIfOr or only 1 condition for applyIfNot" + failAt());
         }
         TestFormat.checkNoThrow(flagConstraints <= 1, "Can only specify one flag constraint" + failAt());
-        TestFormat.checkNoThrow(cpuFeatureConstraints <= 1, "Can only specify one platform feature constraint" + failAt());
-        TestFormat.checkNoThrow(platformFeatureConstraints <= 1, "Can only specify one CPU feature constraint" + failAt());
+        TestFormat.checkNoThrow(cpuFeatureConstraints <= 1, "Can only specify one CPU feature constraint" + failAt());
+        TestFormat.checkNoThrow(platformFeatureConstraints <= 1, "Can only specify one platform feature constraint" + failAt());
     }
 
     private boolean isIRNodeUnsupported(IR irAnno) {
