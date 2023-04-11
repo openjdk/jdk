@@ -46,7 +46,7 @@ public class bug6884066 {
     private static volatile Point point;
 
     public static void main(String[] args) throws Exception {
-        try {	    
+        try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
 
             Robot robot = new Robot();
