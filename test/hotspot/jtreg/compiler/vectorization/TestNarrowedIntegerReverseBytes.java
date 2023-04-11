@@ -24,12 +24,12 @@
 /* @test
  * @bug 8305324
  * @summary C2: Wrong execution of vectorizing Interger.reverseBytes
- * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:CompileCommand=compileonly,compiler.c2.Test8305324::* compiler.c2.Test8305324
+ * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:CompileCommand=compileonly,compiler.vectorization.TestNarrowedIntegerReverseBytes::* compiler.vectorization.TestNarrowedIntegerReverseBytes
  */
 
-package compiler.c2;
+package compiler.vectorization;
 
-public class Test8305324 {
+public class TestNarrowedIntegerReverseBytes {
 
     static final int LEN = 33;
     static byte byteArray[] = new byte[LEN];
