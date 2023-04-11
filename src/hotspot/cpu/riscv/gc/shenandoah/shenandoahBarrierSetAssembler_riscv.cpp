@@ -61,7 +61,7 @@ void ShenandoahBarrierSetAssembler::arraycopy_prologue(MacroAssembler* masm, Dec
 
       __ lbu(t0, gc_state);
       if (ShenandoahSATBBarrier && dest_uninitialized) {
-        __ andi(t0, t0, ShenandoahHeap::HAS_FORWARDED);
+        __ test_bit(t0, t0, ShenandoahHeap::HAS_FORWARDED_BITPOS);
         __ beqz(t0, done);
       } else {
         __ andi(t0, t0, ShenandoahHeap::HAS_FORWARDED | ShenandoahHeap::MARKING);
@@ -247,13 +247,13 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm,
 
   // Check for heap stability
   if (is_strong) {
-    __ andi(t1, t1, ShenandoahHeap::HAS_FORWARDED);
+    __ test_bit(t1, t1, ShenandoahHeap::HAS_FORWARDED_BITPOS);
     __ beqz(t1, heap_stable);
   } else {
     Label lrb;
-    __ andi(t0, t1, ShenandoahHeap::WEAK_ROOTS);
+    __ test_bit(t0, t1, ShenandoahHeap::WEAK_ROOTS_BITPOS);
     __ bnez(t0, lrb);
-    __ andi(t0, t1, ShenandoahHeap::HAS_FORWARDED);
+    __ test_bit(t0, t1, ShenandoahHeap::HAS_FORWARDED_BITPOS);
     __ beqz(t0, heap_stable);
     __ bind(lrb);
   }
@@ -277,7 +277,7 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm,
     __ srli(t0, x10, ShenandoahHeapRegion::region_size_bytes_shift_jint());
     __ add(t1, t1, t0);
     __ lbu(t1, Address(t1));
-    __ andi(t0, t1, 1);
+    __ test_bit(t0, t1, 0);
     __ beqz(t0, not_cset);
   }
 
@@ -449,7 +449,7 @@ void ShenandoahBarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler
   __ lbu(t1, gc_state);
 
   // Check for heap in evacuation phase
-  __ andi(t0, t1, ShenandoahHeap::EVACUATION);
+  __ test_bit(t0, t1, ShenandoahHeap::EVACUATION_BITPOS);
   __ bnez(t0, slowpath);
 
   __ bind(done);
@@ -642,7 +642,7 @@ void ShenandoahBarrierSetAssembler::generate_c1_pre_barrier_runtime_stub(StubAss
   // Is marking still active?
   Address gc_state(thread, in_bytes(ShenandoahThreadLocalData::gc_state_offset()));
   __ lb(tmp, gc_state);
-  __ andi(tmp, tmp, ShenandoahHeap::MARKING);
+  __ test_bit(tmp, tmp, ShenandoahHeap::MARKING_BITPOS);
   __ beqz(tmp, done);
 
   // Can we store original value in the thread's buffer?

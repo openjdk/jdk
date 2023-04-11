@@ -1311,13 +1311,6 @@ JvmtiEnv::GetThreadInfo(jthread thread, jvmtiThreadInfo* info_ptr) {
   }
 
   oop loader = java_lang_Thread::context_class_loader(thread_obj());
-  if (loader != nullptr) {
-    // Do the same as Thread.getContextClassLoader and set context_class_loader to be
-    // the system class loader when the field value is the "not supported" placeholder.
-    if (loader == java_lang_Thread_Constants::get_NOT_SUPPORTED_CLASSLOADER()) {
-      loader = SystemDictionary::java_system_loader();
-    }
-  }
   context_class_loader = Handle(current_thread, loader);
 
   { const char *n;
