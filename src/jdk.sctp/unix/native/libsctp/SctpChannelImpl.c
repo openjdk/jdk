@@ -70,7 +70,7 @@ static jmethodID ss_ctrID;     /* sun.nio.ch.sctp.Shutdown.<init>            */
 /* defined in SctpNet.c */
 jobject SockAddrToInetSocketAddress(JNIEnv* env, struct sockaddr* addr);
 
-jint handleSocketError(JNIEnv *env, jint errorValue);
+jint sctpHandleSocketError(JNIEnv *env, jint errorValue);
 
 /*
  * Class:     sun_nio_ch_sctp_SctpChannelImpl
@@ -247,7 +247,7 @@ void handleSendFailed
         if (remaining > 0) {
             if ((rv = recvmsg(fd, msg, 0)) < 0) {
                 free(addressP);
-                handleSocketError(env, errno);
+                sctpHandleSocketError(env, errno);
                 return;
             }
 
@@ -458,7 +458,7 @@ JNIEXPORT jint JNICALL Java_sun_nio_ch_sctp_SctpChannelImpl_receive0
 #endif /* __linux__ */
 
             } else {
-                handleSocketError(env, errno);
+                sctpHandleSocketError(env, errno);
                 return 0;
             }
         }
@@ -482,7 +482,7 @@ JNIEXPORT jint JNICALL Java_sun_nio_ch_sctp_SctpChannelImpl_receive0
                 iov->iov_base = newBuf + rv;
                 iov->iov_len = SCTP_NOTIFICATION_SIZE - rv;
                 if ((rv = recvmsg(fd, msg, flags)) < 0) {
-                    handleSocketError(env, errno);
+                    sctpHandleSocketError(env, errno);
                     free(newBuf);
                     return 0;
                 }
@@ -582,7 +582,7 @@ JNIEXPORT jint JNICALL Java_sun_nio_ch_sctp_SctpChannelImpl_send0
             JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException",
                             "Socket is shutdown for writing");
         } else {
-            handleSocketError(env, errno);
+            sctpHandleSocketError(env, errno);
             return 0;
         }
     }
