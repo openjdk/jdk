@@ -3543,13 +3543,13 @@ public final class String
      * @return  the {@code String}, converted to lowercase.
      * @see     java.lang.String#toLowerCase(Locale)
      * @see     java.lang.String#lowercase()
-     * 
+     *
      * @deprecated This method is locale sensitive, and may produce unexpected
      * results if used for strings that are intended to be interpreted locale
-     * independently. 
+     * independently.
      * <p>
      * Instead, to obtain correct results for locale insensitive strings, use
-     * {@code lowercase()} or {@code toLowerCase(Locale.ROOT)}; otherwise, 
+     * {@code lowercase()} or {@code toLowerCase(Locale.ROOT)}; otherwise,
      * use {@code toLowerCase(Locale.getDefault())}.
      */
     @Deprecated(since="21")
@@ -3646,13 +3646,13 @@ public final class String
      * @return  the {@code String}, converted to uppercase.
      * @see     java.lang.String#toUpperCase(Locale)
      * @see     java.lang.String#uppercase()
-     * 
+     *
      * @deprecated This method is locale sensitive, and may produce unexpected
      * results if used for strings that are intended to be interpreted locale
-     * independently. 
+     * independently.
      * <p>
      * Instead, to obtain correct results for locale insensitive strings, use
-     * {@code uppercase()} or {@code toUpperCase(Locale.ROOT)}; otherwise, 
+     * {@code uppercase()} or {@code toUpperCase(Locale.ROOT)}; otherwise,
      * use {@code toUpperCase(Locale.getDefault())}.
      */
     @Deprecated(since="21")
