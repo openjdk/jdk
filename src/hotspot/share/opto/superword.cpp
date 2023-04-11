@@ -3934,20 +3934,21 @@ void SuperWord::compute_vector_element_type() {
           }
           if (same_type) {
             // In any Java arithmetic operation, operands of small integer types
-            // (boolean, byte, char & short) should be promoted to int first. As
-            // vector elements of small types don't have upper bits of int, for
-            // RShiftI or AbsI operations, the compiler has to know the precise
-            // signedness info of the 1st operand. These operations shouldn't be
-            // vectorized if the signedness info is imprecise.
+            // (boolean, byte, char & short) should be promoted to int first.
+            // During narrowed integer type backward propagation, for some operations
+            // like RShiftI, Abs, and ReverseBytesI,
+            // the compiler has to know the higher order bits of the 1st operand,
+            // which will be lost in the narrowed type. These operations shouldn't
+            // be vectorized if the higher order bits info is imprecise.
             const Type* vt = vtn;
             int op = in->Opcode();
-            if (VectorNode::is_shift_opcode(op) || op == Op_AbsI || op == Op_ReverseBytesI) {
+            if (VectorNode::requires_higher_order_bits_of_integer(op)) {
               Node* load = in->in(1);
               if (load->is_Load() && in_bb(load) && (velt_type(load)->basic_type() == T_INT)) {
                 // Only Load nodes distinguish signed (LoadS/LoadB) and unsigned
                 // (LoadUS/LoadUB) values. Store nodes only have one version.
                 vt = velt_type(load);
-              } else if (op != Op_LShiftI) {
+              } else {
                 // Widen type to int to avoid the creation of vector nodes. Note
                 // that left shifts work regardless of the signedness.
                 vt = TypeInt::INT;
