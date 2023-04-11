@@ -287,4 +287,6 @@ extern sctp_peeloff_func* nio_sctp_peeloff;
 
 jboolean loadSocketExtensionFuncs(JNIEnv* env);
 
+extern jint sctpHandleSocketError(JNIEnv *env, jint errorValue);
+
 #endif /* !SUN_NIO_CH_SCTP_H */
