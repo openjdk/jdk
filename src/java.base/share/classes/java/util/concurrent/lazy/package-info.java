@@ -190,10 +190,18 @@
  *     }
  * }
  *
- * Todo: Describe IntKeyMapper
+ * Sometimes, there is a mapping from an {@code int} key to an index, preventing
+ * the key to be used directly. For example, when caching only certain
+ * values as shown below where we cache every 10th value:
+ * {@snippet lang = java:
+ *
+ *   // Todo: refactor how int mappers are obtained and show an example here.
+ *
+ * }
  *
  * <h3 id="lazymapper">LazyMapper</h3>
- * When several lazy values are to be held and accessible via arbitrary keys of
+ *
+ * When several lazy values are to be held and accessible via keys of arbitrary
  * type {@code K}, general mappers can be obtained for any pre-given collection
  * of keys.  Even though this could be modeled by users via a second level of a
  * regular Java Map, special constructs are available providing equivalent

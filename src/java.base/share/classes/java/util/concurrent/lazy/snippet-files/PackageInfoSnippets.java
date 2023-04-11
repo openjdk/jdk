@@ -195,6 +195,57 @@ public class PackageInfoSnippets {
     }
     // @end
 
+    // @start region="DemoFibMapped"
+    final class DemoFibMapped {
+
+        // 0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144 ...
+        // fib(11) = 89
+        // n non-negative
+        static int fib(int n) {
+            return (n <= 1)
+                    ? n
+                    : fib(n - 1) + fib(n - 2);
+        }
+
+        private static final int INTERVAL = 10; // Must be > 2
+
+        private static final LazyReferenceArray<Integer> FIB_10_CACHE =
+                Lazy.ofEmptyArray(3);
+
+        private static final LazyReferenceArray.IntKeyMapper KEY_MAPPER =
+                LazyReferenceArray.IntKeyMapper.ofConstant(INTERVAL);
+
+        /**
+         * Main method
+         *
+         * @param args from command line
+         * @throws InterruptedException if a thred was interrupted
+         */
+        public static void main(String[] args) throws InterruptedException {
+            System.out.println("fib(11) = " + fib(11)); // 288 invocations
+
+            System.out.println(FIB_10_CACHE);
+            System.out.println("cachedFib(11) = " + cachedFib(11)); // 288 invocations
+
+            System.out.println(FIB_10_CACHE);
+            System.out.println("cachedFib(11) = " + cachedFib(11)); // 111 invocations
+        }
+
+        // Only works for values up to ~30
+
+        static int cachedFib(int n) {
+            if (n <= 1)
+                return n;
+            return FIB_10_CACHE.mapIntAndApply(KEY_MAPPER, n,
+                    DemoFibMapped::fib,
+                    DemoFibMapped::fib);
+        }
+
+        private DemoFibMapped() {
+        }
+    }
+    // @end
+
     static class Foo {
     }
 
@@ -234,7 +285,7 @@ public class PackageInfoSnippets {
     }
 
     User findUserById(Connection c,
-                              int id) {
+                      int id) {
         return new User(id);
     }
 
