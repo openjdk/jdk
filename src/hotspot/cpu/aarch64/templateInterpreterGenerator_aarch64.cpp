@@ -146,7 +146,6 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
   // r19_sender_sp: sender sp
   // esp: args
 
-  
   // These don't need a safepoint check because they aren't virtually
   // callable. We won't enter these intrinsics from compiled code.
   // If in the future we added an intrinsic which was virtually callable
