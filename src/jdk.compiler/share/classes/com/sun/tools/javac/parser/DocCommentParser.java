@@ -593,6 +593,7 @@ public class DocCommentParser {
         int depth = 1;
         textStart = -1;
 
+        loop:
         while (bp < buflen) {
 
             switch (ch) {
