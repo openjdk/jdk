@@ -3559,8 +3559,8 @@ public final class String
 
     /**
      * Converts all of the characters in this {@code String} to lower
-     * case using the rules of the root locale. This method is equivalent to
-     * {@code toLowerCase(Locale.ROOT)}.
+     * case using the rules of the invariant locale. This method is equivalent
+     * to {@code toLowerCase(Locale.ROOT)}.
      *
      * @return  the {@code String}, converted to lowercase.
      * @see     java.lang.String#toLowerCase(Locale)
@@ -3662,8 +3662,8 @@ public final class String
 
     /**
      * Converts all of the characters in this {@code String} to upper
-     * case using the rules of the root locale. This method is equivalent to
-     * {@code toUpperCase(Locale.ROOT)}.
+     * case using the rules of the invariant locale. This method is equivalent
+     * to {@code toUpperCase(Locale.ROOT)}.
      *
      * @return  the {@code String}, converted to uppercase.
      * @see     java.lang.String#toUpperCase(Locale)
