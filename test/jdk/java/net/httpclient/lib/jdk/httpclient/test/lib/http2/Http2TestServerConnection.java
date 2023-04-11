@@ -730,8 +730,9 @@ public class Http2TestServerConnection {
                 }
                 throw closed;
             } finally {
-                // isEof() for if END_STREAM has been seen.
-                // q.size() > 0 for if frames in Queue have not been read.
+                // If the handler reads the exchange's InputStream, this code will have no effect. If the handler does not
+                // read the exchange's InputStream and the send window has been exceeded, then a RST_STREAM frame with
+                // the error code NO_ERROR will be sent to the client before closing.
                 if (bis instanceof BodyInputStream inputStream && (!inputStream.isEof() || inputStream.q.size() > 0)) {
                     bos.sendResetOnClose(ResetFrame.NO_ERROR);
                 }
