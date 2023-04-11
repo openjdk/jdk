@@ -80,12 +80,6 @@ public class OSInfo {
         windowsVersionMap.put(WINDOWS_7.toString(), WINDOWS_7);
     }
 
-    private static final PrivilegedAction<OSType> osTypeAction = new PrivilegedAction<OSType>() {
-        public OSType run() {
-            return getOSTypeImpl();
-        }
-    };
-
     private OSInfo() {
         // Don't allow to create instances
     }
@@ -107,10 +101,6 @@ public class OSInfo {
             case AIX -> AIX;
             default -> UNKNOWN;
         };
-    }
-
-    public static PrivilegedAction<OSType> getOSTypeAction() {
-        return osTypeAction;
     }
 
     public static WindowsVersion getWindowsVersion() throws SecurityException {
