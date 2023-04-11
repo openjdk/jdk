@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2015 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,7 +77,9 @@ inline void frame::setup() {
 
   // Continuation frames on the java heap are not aligned.
   // When thawing interpreted frames the sp can be unaligned (see new_stack_frame()).
-  assert(_on_heap || (is_aligned(_sp, alignment_in_bytes) || is_interpreted_frame()) && is_aligned(_fp, alignment_in_bytes),
+  assert(_on_heap ||
+         (is_aligned(_sp, alignment_in_bytes) || is_interpreted_frame()) &&
+         (is_aligned(_fp, alignment_in_bytes) || !is_fully_initialized()),
          "invalid alignment sp:" PTR_FORMAT " unextended_sp:" PTR_FORMAT " fp:" PTR_FORMAT, p2i(_sp), p2i(_unextended_sp), p2i(_fp));
 }
 

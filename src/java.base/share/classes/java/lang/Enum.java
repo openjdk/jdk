@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,6 +61,8 @@ import static java.util.Objects.requireNonNull;
  * java.util.EnumMap map} implementations are available.
  *
  * @param <E> The type of the enum subclass
+ *
+ * @spec serialization/index.html Java Object Serialization Specification
  * @serial exclude
  * @author  Josh Bloch
  * @author  Neal Gafter
@@ -129,9 +131,9 @@ public abstract class Enum<E extends Enum<E>>
      * It is for use by code emitted by the compiler in response to
      * enum class declarations.
      *
-     * @param name - The name of this enum constant, which is the identifier
+     * @param name The name of this enum constant, which is the identifier
      *               used to declare it.
-     * @param ordinal - The ordinal of this enumeration constant (its position
+     * @param ordinal The ordinal of this enumeration constant (its position
      *         in the enum declaration, where the initial constant is assigned
      *         an ordinal of zero).
      */

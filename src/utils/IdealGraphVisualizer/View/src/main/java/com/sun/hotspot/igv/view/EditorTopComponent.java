@@ -28,11 +28,10 @@ import com.sun.hotspot.igv.data.Group;
 import com.sun.hotspot.igv.data.InputGraph;
 import com.sun.hotspot.igv.data.InputNode;
 import com.sun.hotspot.igv.data.services.InputGraphProvider;
-import com.sun.hotspot.igv.filter.FilterChain;
-import com.sun.hotspot.igv.filter.FilterChainProvider;
-import com.sun.hotspot.igv.settings.Settings;
+import com.sun.hotspot.igv.graph.Figure;
 import com.sun.hotspot.igv.util.LookupHistory;
 import com.sun.hotspot.igv.util.RangeSlider;
+import com.sun.hotspot.igv.util.StringUtils;
 import com.sun.hotspot.igv.view.actions.*;
 import java.awt.*;
 import java.awt.event.MouseEvent;
@@ -46,7 +45,6 @@ import org.openide.actions.UndoAction;
 import org.openide.awt.Toolbar;
 import org.openide.awt.ToolbarPool;
 import org.openide.awt.UndoRedo;
-import org.openide.util.Lookup;
 import org.openide.util.NbBundle;
 import org.openide.util.Utilities;
 import org.openide.util.actions.Presenter;
@@ -70,14 +68,11 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
     private final JPanel centerPanel;
     private final CardLayout cardLayout;
     private final Toolbar quickSearchToolbar;
+    private boolean useBoldDisplayName = false;
     private static final JPanel quickSearchPresenter = (JPanel) ((Presenter.Toolbar) Utilities.actionsForPath("Actions/Search").get(0)).getToolbarPresenter();
     private static final String PREFERRED_ID = "EditorTopComponent";
     private static final String SATELLITE_STRING = "satellite";
     private static final String SCENE_STRING = "scene";
-
-    public EditorTopComponent(InputGraph graph) {
-        this(new DiagramViewModel(graph));
-    }
 
     public EditorTopComponent(DiagramViewModel diagramViewModel) {
         initComponents();
@@ -373,8 +368,34 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
     }
 
     @Override
+    public void setDisplayName(String displayName) {
+        super.setDisplayName(displayName);
+        if (useBoldDisplayName) {
+            setHtmlDisplayName("<html><b>" + StringUtils.escapeHTML(getDisplayName()) + "</b>");
+        } else {
+            setHtmlDisplayName(getDisplayName());
+        }
+    }
+
+    private void setBoldDisplayName(boolean bold) {
+        useBoldDisplayName = bold;
+        setDisplayName(getDisplayName());
+    }
+
+    @Override
     protected void componentActivated() {
         super.componentActivated();
+        getModel().activateModel();
+        WindowManager manager = WindowManager.getDefault();
+        for (Mode m : manager.getModes()) {
+            for (TopComponent topComponent : manager.getOpenedTopComponents(m)) {
+                if (topComponent instanceof EditorTopComponent) {
+                    EditorTopComponent editor = (EditorTopComponent) topComponent;
+                    editor.setBoldDisplayName(false);
+                }
+            }
+        }
+        setBoldDisplayName(true);
         quickSearchToolbar.add(quickSearchPresenter);
         quickSearchPresenter.revalidate();
     }
@@ -390,19 +411,23 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
 
     @Override
     public TopComponent cloneComponent() {
-        DiagramViewModel model = new DiagramViewModel(getModel().getFirstGraph());
-        if (getModel().getGraph().isDiffGraph()) {
-            model.setPositions(getModel().getFirstPosition(), getModel().getSecondPosition());
-        }
-        model.setHiddenNodes(new HashSet<>(getModel().getHiddenNodes()));
-        model.setShowCFG(getModel().getShowCFG());
-        model.setShowSea(getModel().getShowSea());
-        model.setShowBlocks(getModel().getShowBlocks());
-        model.setShowNodeHull(getModel().getShowNodeHull());
-        model.setShowEmptyBlocks(getModel().getShowEmptyBlocks());
-        model.setHideDuplicates(getModel().getHideDuplicates());
+        DiagramViewModel model = new DiagramViewModel(getModel());
+        model.setGlobalSelection(false, false);
         EditorTopComponent etc = new EditorTopComponent(model);
+
+        Set<InputNode> selectedNodes = new HashSet<>();
+        for (Figure figure : getModel().getSelectedFigures()) {
+            selectedNodes.add(figure.getInputNode());
+        }
+        etc.addSelectedNodes(selectedNodes, false);
+        model.setGlobalSelection(GlobalSelectionAction.get(GlobalSelectionAction.class).isSelected(), false);
         etc.resetUndoRedo();
+
+        int currentZoomLevel = scene.getZoomPercentage();
+        SwingUtilities.invokeLater(() -> {
+            etc.setZoomLevel(currentZoomLevel);
+            etc.centerSelectedNodes();
+        });
         return etc;
     }
 
