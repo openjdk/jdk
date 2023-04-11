@@ -3543,8 +3543,22 @@ public final class String
      * @return  the {@code String}, converted to lowercase.
      * @see     java.lang.String#toLowerCase(Locale)
      */
+    @Deprecated(since="21")
     public String toLowerCase() {
         return toLowerCase(Locale.getDefault());
+    }
+
+    /**
+     * Converts all of the characters in this {@code String} to lower
+     * case using the rules of the root locale. This method is equivalent to
+     * {@code toLowerCase(Locale.ROOT)}.
+     *
+     * @return  the {@code String}, converted to lowercase.
+     * @see     java.lang.String#toLowerCase(Locale)
+     * @since   21
+     */
+    public String lowercase() {
+        return toLowerCase(Locale.ROOT);
     }
 
     /**
@@ -3622,8 +3636,24 @@ public final class String
      *
      * @return  the {@code String}, converted to uppercase.
      * @see     java.lang.String#toUpperCase(Locale)
+     * 
+     * @deprecated 
      */
+    @Deprecated(since="21")
     public String toUpperCase() {
+        return toUpperCase(Locale.getDefault());
+    }
+
+    /**
+     * Converts all of the characters in this {@code String} to upper
+     * case using the rules of the root locale. This method is equivalent to
+     * {@code toUpperCase(Locale.ROOT)}.
+     *
+     * @return  the {@code String}, converted to uppercase.
+     * @see     java.lang.String#toUpperCase(Locale)
+     * @since   21
+     */
+    public String uppercase() {
         return toUpperCase(Locale.getDefault());
     }
 
