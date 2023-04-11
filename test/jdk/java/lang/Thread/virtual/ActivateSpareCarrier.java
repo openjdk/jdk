@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,10 +28,9 @@
  *   carrier thread (cT1) and doesn't activate a spare. Subsequent blocking operations
  *   that pin a virtual thread to cT1 should attempt to activate a spare.
  * @requires vm.continuations
- * @enablePreview
  * @run main/othervm
  *     -Djdk.virtualThreadScheduler.parallelism=1
- *     -Djdk.virtualThreadScheduler.maxPoolSize=2 ActiviateSpareCarrier 100
+ *     -Djdk.virtualThreadScheduler.maxPoolSize=2 ActivateSpareCarrier 100
  */
 
 import java.time.Duration;
@@ -40,7 +39,7 @@ import java.util.List;
 import java.util.concurrent.ForkJoinWorkerThread;
 import java.util.stream.Collectors;
 
-public class ActiviateSpareCarrier {
+public class ActivateSpareCarrier {
 
     private static final int DEFAULT_ITERTAIONS = 10_000;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,33 +21,45 @@
  * questions.
  */
 
+package jdk.internal.event;
+
 /**
- * @test
- * @bug 8284199
- * @summary Test StructuredTaskScope without --enable-preview
- * @modules jdk.incubator.concurrent
- * @run junit/othervm PreviewFeaturesNotEnabled
+ * VirtualThreadPinnedEvent to optionally throw OOME at create, begin or commit time.
  */
+public class VirtualThreadPinnedEvent extends Event {
+    private static boolean throwOnCreate;
+    private static boolean throwOnBegin;
+    private static boolean throwOnCommit;
 
-import jdk.incubator.concurrent.StructuredTaskScope;
-import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
-
-class PreviewFeaturesNotEnabled {
-    /**
-     * One-arg constructor needs --enable-preview.
-     */
-    @Test
-    void testUnsupportedOperationException() {
-        assertThrows(UnsupportedOperationException.class, StructuredTaskScope::new);
+    public static void setCreateThrows(boolean value) {
+        throwOnCreate = value;
     }
 
-    /**
-     * Two-arg constructor does not need --enable-preview.
-     */
-    @Test
-    void testNoUnsupportedOperationException() {
-        try (var scope = new StructuredTaskScope<Object>(null, Thread::new)) {
+    public static void setBeginThrows(boolean value) {
+        throwOnBegin = value;
+    }
+
+    public static void setCommitThrows(boolean value) {
+        throwOnCommit = value;
+    }
+
+    public VirtualThreadPinnedEvent() {
+        if (throwOnCreate) {
+            throw new OutOfMemoryError();
+        }
+    }
+
+    @Override
+    public void begin() {
+        if (throwOnBegin) {
+            throw new OutOfMemoryError();
+        }
+    }
+
+    @Override
+    public void commit() {
+        if (throwOnCommit) {
+            throw new OutOfMemoryError();
         }
     }
 }

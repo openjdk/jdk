@@ -36,6 +36,9 @@
  *                   -XX:+WhiteBoxAPI
  *                   -XX:CompileCommand=dontinline,compiler.codecache.stress.Helper$TestCase::method
  *                   -XX:CompileCommand=exclude,java.lang.Thread::sleep
+ *                   -XX:CompileCommand=exclude,java.lang.Thread::beforeSleep
+ *                   -XX:CompileCommand=exclude,java.lang.Thread::afterSleep
+ *                   -XX:CompileCommand=exclude,java.lang.Math::min
  *                   -XX:CompileCommand=exclude,jdk.internal.event.ThreadSleepEvent::*
  *                   -XX:CompileCommand=exclude,jdk.internal.event.SleepEvent::*
  *                   -XX:CompileCommand=exclude,jdk.internal.event.Event::*
@@ -45,6 +48,9 @@
  *                   -XX:+WhiteBoxAPI
  *                   -XX:CompileCommand=dontinline,compiler.codecache.stress.Helper$TestCase::method
  *                   -XX:CompileCommand=exclude,java.lang.Thread::sleep
+ *                   -XX:CompileCommand=exclude,java.lang.Thread::beforeSleep
+ *                   -XX:CompileCommand=exclude,java.lang.Thread::afterSleep
+ *                   -XX:CompileCommand=exclude,java.lang.Math::min
  *                   -XX:CompileCommand=exclude,jdk.internal.event.ThreadSleepEvent::*
  *                   -XX:CompileCommand=exclude,jdk.internal.event.SleepEvent::*
  *                   -XX:CompileCommand=exclude,jdk.internal.event.Event::*
