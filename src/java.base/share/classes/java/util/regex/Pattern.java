@@ -1316,7 +1316,7 @@ public final class Pattern
      * sequence then an empty leading substring is included at the beginning
      * of the resulting array.
      * A zero-width match at the beginning however never produces such empty
-     * leading substring.
+     * leading substring nor the empty delimiter.
      *
      * <p> The {@code limit} parameter controls the number of times the
      * pattern is applied and therefore affects the length of the resulting
