@@ -1613,7 +1613,7 @@ void InterpreterMacroAssembler::call_VM_leaf_base(address entry_point,
    ld(t0, Address(fp, frame::interpreter_frame_last_sp_offset * wordSize));
    beqz(t0, L);
    stop("InterpreterMacroAssembler::call_VM_leaf_base:"
-        " last_sp != null");
+        " last_sp isn't null");
    bind(L);
   }
 #endif /* ASSERT */
@@ -1640,7 +1640,7 @@ void InterpreterMacroAssembler::call_VM_base(Register oop_result,
     ld(t0, Address(fp, frame::interpreter_frame_last_sp_offset * wordSize));
     beqz(t0, L);
     stop("InterpreterMacroAssembler::call_VM_base:"
-         " last_sp != null");
+         " last_sp isn't null");
     bind(L);
   }
 #endif /* ASSERT */

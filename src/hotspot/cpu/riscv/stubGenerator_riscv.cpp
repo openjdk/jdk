@@ -1833,7 +1833,7 @@ class StubGenerator: public StubCodeGenerator {
     __ load_klass(t1, dst);
     __ bne(t1, scratch_src_klass, L_failed);
 
-    // if [src->is_Array() != null] then return -1
+    // if src->is_Array() isn't null then return -1
     // i.e. (lh >= 0)
     __ andi(t0, lh, 1UL << 31);
     __ beqz(t0, L_failed);

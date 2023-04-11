@@ -227,7 +227,7 @@ class SlowSignatureHandler
 
   virtual void pass_object() {
     intptr_t* addr = single_slot_addr();
-    intptr_t value = *addr == 0 ? nullptr : (intptr_t)addr;
+    intptr_t value = *addr == 0 ? (intptr_t)nullptr : (intptr_t)addr;
     if (pass_gpr(value) < 0) {
       pass_stack(value);
     }
