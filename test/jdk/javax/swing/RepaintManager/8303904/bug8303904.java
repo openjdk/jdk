@@ -40,7 +40,7 @@ import java.util.Objects;
 public class bug8303904 extends JDialog {
     static bug8303904 dialog;
     static boolean testCompleted = false;
-    static boolean testFailed = false;
+    static boolean TEST_FAILED = false;
 
     public static void main(String[] args) {
         System.setProperty("swing.volatileImageBufferEnabled", "false");
@@ -100,7 +100,7 @@ public class bug8303904 extends JDialog {
                 System.out.println("dialog.createImage produced " + img);
                 if (img.getTransparency() != Transparency.TRANSLUCENT) {
                     System.err.println("dialog.createImage(..) should return a translucent image");
-                    testFailed = true;
+                    TEST_FAILED = true;
                 }
             }
 
@@ -115,11 +115,11 @@ public class bug8303904 extends JDialog {
                     Color c = robot.getPixelColor(p.x + 7, p.y + 7);
                     if (c.getRed() < 200 || c.getGreen() < 200 || c.getBlue() < 200) {
                         System.err.println("The top-left corner of the dialog should be near white, but it was " + c);
-                        testFailed = true;
+                        TEST_FAILED = true;
                     }
                 } catch (AWTException e) {
                     e.printStackTrace();
-                    testFailed = true;
+                    TEST_FAILED = true;
                 }
             }
         });
@@ -131,8 +131,8 @@ public class bug8303904 extends JDialog {
             } catch (InterruptedException e) {}
         }
 
-        if (testFailed)
-            System.exit(1);
+        if (TEST_FAILED)
+            throw new RuntimeException("This test failed; see System.err for details.");
     }
 
     JTextPane instructions = new JTextPane();
