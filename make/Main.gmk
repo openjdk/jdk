@@ -752,7 +752,7 @@ ifeq ($(BUILD_JTREG_TEST_THREAD_FACTORY), true)
   $(eval $(call SetupTarget, build-test-test-thread-factory, \
       MAKEFILE := test/BuildJtregTestThreadFactory, \
       TARGET := build, \
-      DEPS := interim-langtools, \
+      DEPS := interim-langtools exploded-image, \
   ))
 
   # Copies the jtreg test thread factory into the test image
