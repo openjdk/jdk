@@ -226,9 +226,7 @@ public class DocCommentParser {
                                     break loop;
                                 }
                             }
-
-                            default -> {
-                            }
+                            default -> { }
                         }
                     }
                     addPendingText(trees, bp - 1);
