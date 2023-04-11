@@ -2068,7 +2068,7 @@ static jobject read_field_value(Handle obj, long displacement, jchar type_char, 
 
       // Perform the read including any barriers required to make the reference strongly reachable
       // since it will be wrapped as a JavaConstant.
-      oop value = obj->obj_field_access<ON_UNKNOWN_OOP_REF>(displacement);
+      oop value = obj->obj_field_access<MO_SEQ_CST | ON_UNKNOWN_OOP_REF>(displacement);
 
       if (value == nullptr) {
         return JVMCIENV->get_jobject(JVMCIENV->get_JavaConstant_NULL_POINTER());
