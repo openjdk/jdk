@@ -68,8 +68,7 @@ public class bug4200096 {
      * </p>
      */
     private static void runImageDimensionTest() {
-        BufferedImage bufferedImage = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
-        Image img = bufferedImage.getScaledInstance(2, 2, Image.SCALE_SMOOTH);
+        Image img = createAbstractImage();
         ImageObserver observer = new ImageObserver() {
             Integer imageWidth, imageHeight;
             @Override
@@ -88,6 +87,22 @@ public class bug4200096 {
             }
         };
         img.getWidth(observer);
+    }
+
+    /**
+     * This creates an Image that is not a BufferedImage.
+     * <p>
+     * This specific implementation happens to rely on scaling an existing
+     * BufferedImage, because that seemed like an easy way to avoid bundling a
+     * JPG/PNG with this unit test. But this return value still happens to be
+     * a ToolkitImage, which is what a JPG/PNG would also be (when loaded
+     * via the Toolkit class and not ImageIO).
+     * </p>
+     */
+    private static Image createAbstractImage() {
+        BufferedImage bufferedImage = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
+        Image img = bufferedImage.getScaledInstance(2, 2, Image.SCALE_SMOOTH);
+        return img;
     }
 
     /**
