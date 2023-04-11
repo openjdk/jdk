@@ -1,3 +1,5 @@
+import java.io.*;
+
 class MergeAllVirts {
     int a;
     int b;
@@ -55,6 +57,7 @@ class MergeAllVirts {
     }
     static void blackhole() {} // not inline this.
     static void blackhole(MergeAllVirts obj) {} // not inline this.
+    static void blackhole(File file) throws IOException {}
     public static MergeAllVirts escaped2(boolean cond1, boolean cond2) {
         MergeAllVirts obj = new MergeAllVirts();
 
@@ -138,11 +141,30 @@ class MergeAllVirts {
         }
 
     }
+    private static void fail(String msg, Object... args) {
+        throw new RuntimeException(msg);
+    }
 
+    // JVM-1880: merge the same object but they have different aliases in its predecessors.
+    // one common reason is exception handler. C2 parse forces to generate a phi for them.
+    // inspired by sun.net.sdp.SdpProvider::<init>
+    public static Object merge_2virts(File file) {
+        MergeAllVirts obj = new MergeAllVirts();
+
+        try {
+            blackhole(file);
+        } catch(IOException e) {
+            // create a phi node : n = phi(region, _, obj)
+            fail("Error reading %s: %s", file, e.getMessage());
+        }
+        // merge here: phi(r, m, n) and n is phi(region, _, obj)
+        // same object but different aliases!
+        return obj;
+    }
 
     public static void main(String[] args) {
         long iterations = 0;
-
+        File file = new File("hello");
         try {
             while (true) {
                 boolean cond = 0 == (iterations & 0xf);
@@ -162,6 +184,7 @@ class MergeAllVirts {
                 MergeAllVirts.escaped4(cond);
                 check_result4(cond, cached.sum());
 
+                MergeAllVirts.merge_2virts(file);
                 iterations++;
             }
         } finally {

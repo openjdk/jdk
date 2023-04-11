@@ -1856,8 +1856,6 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
                       Node* mv = ensure_object_materialized(m, as, map(), r, block()->init_pnum());
                       phi->replace_edge(m, mv);
                       as.update(id, new EscapedState(phi));
-                    } else {
-                      assert(false, "should be the same oop if they are both virtual");
                     }
                   }
                 }
