@@ -127,9 +127,8 @@ void ShenandoahBarrierSetAssembler::arraycopy_prologue(MacroAssembler* masm, Dec
       bool disjoint = (decorators & ARRAYCOPY_DISJOINT) != 0;
       bool obj_int = type == T_OBJECT LP64_ONLY(&& UseCompressedOops);
 
-      // We need to squirrel away the original element count because the
-      // array copy assembly will destroy the value and we need it for the
-      // card marking barrier.
+      // We need to save the original element count because the array copy stub
+      // will destroy the value and we need it for the card marking barrier.
 #ifdef _LP64
       if (!checkcast) {
         if (!obj_int) {
@@ -141,7 +140,7 @@ void ShenandoahBarrierSetAssembler::arraycopy_prologue(MacroAssembler* masm, Dec
         }
       }
 #else
-if (disjoint) {
+      if (disjoint) {
         __ mov(rdx, dst);          // save 'to'
       }
 #endif
@@ -166,10 +165,10 @@ if (disjoint) {
 #endif
       assert_different_registers(src, dst, count, thread);
 
-      Label done;
+      Label L_done;
       // Short-circuit if count == 0.
       __ testptr(count, count);
-      __ jcc(Assembler::zero, done);
+      __ jcc(Assembler::zero, L_done);
 
       // Avoid runtime call when not active.
       Address gc_state(thread, in_bytes(ShenandoahThreadLocalData::gc_state_offset()));
@@ -180,7 +179,7 @@ if (disjoint) {
         flags = ShenandoahHeap::HAS_FORWARDED | ShenandoahHeap::YOUNG_MARKING | ShenandoahHeap::OLD_MARKING;
       }
       __ testb(gc_state, flags);
-      __ jcc(Assembler::zero, done);
+      __ jcc(Assembler::zero, L_done);
 
       save_machine_state(masm, /* handle_gpr = */ true, /* handle_fp = */ false);
 
@@ -200,7 +199,7 @@ if (disjoint) {
 
       restore_machine_state(masm, /* handle_gpr = */ true, /* handle_fp = */ false);
 
-      __ bind(done);
+      __ bind(L_done);
       NOT_LP64(__ pop(thread);)
     }
   }
@@ -214,7 +213,7 @@ void ShenandoahBarrierSetAssembler::arraycopy_epilogue(MacroAssembler* masm, Dec
   bool obj_int = type == T_OBJECT LP64_ONLY(&& UseCompressedOops);
   Register tmp = rax;
 
-if (is_reference_type(type)) {
+  if (is_reference_type(type)) {
 #ifdef _LP64
     if (!checkcast) {
       if (!obj_int) {
@@ -663,8 +662,8 @@ void ShenandoahBarrierSetAssembler::store_check(MacroAssembler* masm, Register o
   // The calculation for byte_map_base is as follows:
   // byte_map_base = _byte_map - (uintptr_t(low_bound) >> card_shift);
   // So this essentially converts an address to a displacement and it will
-  // never need to be relocated. On 64bit however the value may be too
-  // large for a 32bit displacement.
+  // never need to be relocated. On 64-bit however the value may be too
+  // large for a 32-bit displacement.
   intptr_t byte_map_base = (intptr_t)ct->byte_map_base();
   if (__ is_simm32(byte_map_base)) {
     card_addr = Address(noreg, obj, Address::times_1, byte_map_base);
@@ -682,7 +681,7 @@ void ShenandoahBarrierSetAssembler::store_check(MacroAssembler* masm, Register o
   if (UseCondCardMark) {
     Label L_already_dirty;
     __ cmpb(card_addr, dirty);
-    __ jcc(Assembler::equal, L_already_dirty);
+    __ jccb(Assembler::equal, L_already_dirty);
     __ movb(card_addr, dirty);
     __ bind(L_already_dirty);
   } else {
@@ -731,7 +730,7 @@ void ShenandoahBarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet 
       BarrierSetAssembler::store_at(masm, decorators, type, Address(tmp1, 0), val, noreg, noreg, noreg);
     } else {
       iu_barrier(masm, val, tmp3);
-      // XXX: store_check missing from upstream
+      // TODO: store_check missing in upstream
       BarrierSetAssembler::store_at(masm, decorators, type, Address(tmp1, 0), val, noreg, noreg, noreg);
       store_check(masm, tmp1);
     }
@@ -939,7 +938,9 @@ void ShenandoahBarrierSetAssembler::cmpxchg_oop(MacroAssembler* masm,
 
 #define TIMES_OOP (UseCompressedOops ? Address::times_4 : Address::times_8)
 
-void ShenandoahBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* masm, DecoratorSet decorators, Register addr, Register count, Register tmp) {
+void ShenandoahBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* masm, DecoratorSet decorators,
+                                                                     Register addr, Register count,
+                                                                     Register tmp) {
   if (!ShenandoahHeap::heap()->mode()->is_generational()) {
     return;
   }
@@ -952,9 +953,9 @@ void ShenandoahBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssemb
   const Register end = count;
   assert_different_registers(addr, end);
 
+  // Zero count? Nothing to do.
   __ testl(count, count);
-  __ jcc(Assembler::zero, L_done); // zero count - nothing to do
-
+  __ jccb(Assembler::zero, L_done);
 
 #ifdef _LP64
   __ leaq(end, Address(addr, count, TIMES_OOP, 0));  // end == addr+count*oop_size
@@ -965,23 +966,25 @@ void ShenandoahBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssemb
 
   __ mov64(tmp, disp);
   __ addptr(addr, tmp);
-__ BIND(L_loop);
+
+  __ BIND(L_loop);
   __ movb(Address(addr, count, Address::times_1), 0);
   __ decrement(count);
-  __ jcc(Assembler::greaterEqual, L_loop);
+  __ jccb(Assembler::greaterEqual, L_loop);
 #else
-  __ lea(end,  Address(addr, count, Address::times_ptr, -wordSize));
+  __ lea(end, Address(addr, count, Address::times_ptr, -wordSize));
   __ shrptr(addr, CardTable::card_shift());
-  __ shrptr(end,   CardTable::card_shift());
+  __ shrptr(end,  CardTable::card_shift());
   __ subptr(end, addr); // end --> count
-__ BIND(L_loop);
+
+  __ BIND(L_loop);
   Address cardtable(addr, count, Address::times_1, disp);
   __ movb(cardtable, 0);
   __ decrement(count);
-  __ jcc(Assembler::greaterEqual, L_loop);
+  __ jccb(Assembler::greaterEqual, L_loop);
 #endif
 
-__ BIND(L_done);
+  __ BIND(L_done);
 }
 
 #undef __

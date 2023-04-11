@@ -30,7 +30,7 @@
 
 template <ShenandoahGenerationType GENERATION>
 class ShenandoahConcurrentMarkingTask;
-template<ShenandoahGenerationType GENERATION>
+template <ShenandoahGenerationType GENERATION>
 class ShenandoahFinalMarkingTask;
 class ShenandoahGeneration;
 

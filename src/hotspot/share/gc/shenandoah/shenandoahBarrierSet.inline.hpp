@@ -186,7 +186,7 @@ inline void ShenandoahBarrierSet::keep_alive_if_weak(DecoratorSet decorators, oo
 }
 
 template <DecoratorSet decorators, typename T>
-inline void ShenandoahBarrierSet::write_ref_field_post(T* field, oop newVal) {
+inline void ShenandoahBarrierSet::write_ref_field_post(T* field) {
   if (ShenandoahHeap::heap()->mode()->is_generational()) {
     volatile CardTable::CardValue* byte = card_table()->byte_for(field);
     *byte = CardTable::dirty_card_val();
@@ -256,7 +256,9 @@ inline oop ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_loa
 template <DecoratorSet decorators, typename BarrierSetT>
 template <typename T>
 inline void ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_store_common(T* addr, oop value) {
-  shenandoah_assert_marked_if(nullptr, value, !CompressedOops::is_null(value) && ShenandoahHeap::heap()->is_evacuation_in_progress() &&
+  shenandoah_assert_marked_if(nullptr, value,
+                              !CompressedOops::is_null(value) &&
+                              ShenandoahHeap::heap()->is_evacuation_in_progress() &&
                               !(ShenandoahHeap::heap()->is_gc_generation_young() && ShenandoahHeap::heap()->heap_region_containing(value)->is_old()));
   shenandoah_assert_not_in_cset_if(addr, value, value != nullptr && !ShenandoahHeap::heap()->cancelled_gc());
   ShenandoahBarrierSet* const bs = ShenandoahBarrierSet::barrier_set();
@@ -278,7 +280,8 @@ inline void ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_st
   shenandoah_assert_not_forwarded_except  (addr, value, value == nullptr || ShenandoahHeap::heap()->cancelled_gc() || !ShenandoahHeap::heap()->is_concurrent_mark_in_progress());
 
   oop_store_common(addr, value);
-  ShenandoahBarrierSet::barrier_set()->write_ref_field_post<decorators>(addr, value);
+  ShenandoahBarrierSet* bs = ShenandoahBarrierSet::barrier_set();
+  bs->write_ref_field_post<decorators>(addr);
 }
 
 template <DecoratorSet decorators, typename BarrierSetT>
@@ -300,7 +303,7 @@ inline oop ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_ato
   assert((decorators & (AS_NO_KEEPALIVE | ON_UNKNOWN_OOP_REF)) == 0, "must be absent");
   ShenandoahBarrierSet* bs = ShenandoahBarrierSet::barrier_set();
   oop result = bs->oop_cmpxchg(decorators, addr, compare_value, new_value);
-  bs->write_ref_field_post<decorators>(addr, new_value);
+  bs->write_ref_field_post<decorators>(addr);
   return result;
 }
 
@@ -311,7 +314,7 @@ inline oop ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_ato
   DecoratorSet resolved_decorators = AccessBarrierSupport::resolve_possibly_unknown_oop_ref_strength<decorators>(base, offset);
   auto addr = AccessInternal::oop_field_addr<decorators>(base, offset);
   oop result = bs->oop_cmpxchg(resolved_decorators, addr, compare_value, new_value);
-  bs->write_ref_field_post<decorators>(addr, new_value);
+  bs->write_ref_field_post<decorators>(addr);
   return result;
 }
 
@@ -329,7 +332,7 @@ inline oop ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_ato
   assert((decorators & (AS_NO_KEEPALIVE | ON_UNKNOWN_OOP_REF)) == 0, "must be absent");
   ShenandoahBarrierSet* bs = ShenandoahBarrierSet::barrier_set();
   oop result = bs->oop_xchg(decorators, addr, new_value);
-  bs->write_ref_field_post<decorators>(addr, new_value);
+  bs->write_ref_field_post<decorators>(addr);
   return result;
 }
 
@@ -340,7 +343,7 @@ inline oop ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_ato
   DecoratorSet resolved_decorators = AccessBarrierSupport::resolve_possibly_unknown_oop_ref_strength<decorators>(base, offset);
   auto addr = AccessInternal::oop_field_addr<decorators>(base, offset);
   oop result = bs->oop_xchg(resolved_decorators, addr, new_value);
-  bs->write_ref_field_post<decorators>(addr, new_value);
+  bs->write_ref_field_post<decorators>(addr);
   return result;
 }
 

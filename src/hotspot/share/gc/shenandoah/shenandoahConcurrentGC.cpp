@@ -116,15 +116,14 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
   {
     ShenandoahBreakpointMarkScope breakpoint_mark_scope(cause);
 
-    // Reset task queue stats here, rather than in mark_concurrent_roots
+    // Reset task queue stats here, rather than in mark_concurrent_roots,
     // because remembered set scan will `push` oops into the queues and
     // resetting after this happens will lose those counts.
     TASKQUEUE_STATS_ONLY(_mark.task_queues()->reset_taskqueue_stats());
 
     // Concurrent remembered set scanning
     entry_scan_remembered_set();
-    // When RS scanning yields, we will need a check_cancellation_and_abort()
-    // degeneration point here.
+    // TODO: When RS scanning yields, we will need a check_cancellation_and_abort() degeneration point here.
 
     // Concurrent mark roots
     entry_mark_roots();
@@ -219,7 +218,6 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
   }
 
   if (heap->mode()->is_generational()) {
-    size_t old_available, young_available;
     {
       ShenandoahYoungGeneration* young_gen = heap->young_generation();
       ShenandoahGeneration* old_gen = heap->old_generation();
@@ -234,9 +232,6 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
       old_gen->unadjust_available();
       // No need to old_gen->increase_used().
       // That was done when plabs were allocated, accounting for both old evacs and promotions.
-
-      young_available = young_gen->adjusted_available();
-      old_available = old_gen->adjusted_available();
 
       heap->set_alloc_supplement_reserve(0);
       heap->set_young_evac_reserve(0);
@@ -622,12 +617,13 @@ void ShenandoahConcurrentGC::op_init_mark() {
 
 
   if (heap->mode()->is_generational()) {
-      if (_generation->is_young() || (_generation->is_global() && ShenandoahVerify)) {
+    if (_generation->is_young() || (_generation->is_global() && ShenandoahVerify)) {
       // The current implementation of swap_remembered_set() copies the write-card-table
       // to the read-card-table. The remembered sets are also swapped for GLOBAL collections
       // so that the verifier works with the correct copy of the card table when verifying.
-        ShenandoahGCPhase phase(ShenandoahPhaseTimings::init_swap_rset);
-        _generation->swap_remembered_set();
+      // TODO: This path should not really depend on ShenandoahVerify.
+      ShenandoahGCPhase phase(ShenandoahPhaseTimings::init_swap_rset);
+      _generation->swap_remembered_set();
     }
 
     if (_generation->is_global()) {
@@ -776,14 +772,15 @@ void ShenandoahConcurrentGC::op_final_mark() {
       if (heap->mode()->is_generational()) {
         // Calculate the temporary evacuation allowance supplement to young-gen memory capacity (for allocations
         // and young-gen evacuations).
-        size_t young_available = heap->young_generation()->adjust_available(heap->get_alloc_supplement_reserve());
+        intptr_t adjustment = heap->get_alloc_supplement_reserve();
+        size_t young_available = heap->young_generation()->adjust_available(adjustment);
         // old_available is memory that can hold promotions and evacuations.  Subtract out the memory that is being
         // loaned for young-gen allocations or evacuations.
-        size_t old_available = heap->old_generation()->adjust_available(-heap->get_alloc_supplement_reserve());
+        size_t old_available = heap->old_generation()->adjust_available(-adjustment);
 
         log_info(gc, ergo)("After generational memory budget adjustments, old available: " SIZE_FORMAT
                            "%s, young_available: " SIZE_FORMAT "%s",
-                           byte_size_in_proper_unit(old_available), proper_unit_for_byte_size(old_available),
+                           byte_size_in_proper_unit(old_available),   proper_unit_for_byte_size(old_available),
                            byte_size_in_proper_unit(young_available), proper_unit_for_byte_size(young_available));
       }
 
@@ -1242,7 +1239,7 @@ void ShenandoahConcurrentGC::init_mark_event_message(char* buf, size_t len) cons
 void ShenandoahConcurrentGC::final_mark_event_message(char* buf, size_t len) const {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   assert(!heap->has_forwarded_objects() || heap->is_concurrent_old_mark_in_progress(),
-         "Should not have forwarded objects during final mark (unless old gen concurrent mark is running)");
+         "Should not have forwarded objects during final mark, unless old gen concurrent mark is running");
   if (heap->unload_classes()) {
     jio_snprintf(buf, len, "Pause Final Mark (%s) (unload classes)", _generation->name());
   } else {
@@ -1253,7 +1250,7 @@ void ShenandoahConcurrentGC::final_mark_event_message(char* buf, size_t len) con
 void ShenandoahConcurrentGC::conc_mark_event_message(char* buf, size_t len) const {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   assert(!heap->has_forwarded_objects() || heap->is_concurrent_old_mark_in_progress(),
-         "Should not have forwarded objects concurrent mark (unless old gen concurrent mark is running");
+         "Should not have forwarded objects concurrent mark, unless old gen concurrent mark is running");
   if (heap->unload_classes()) {
     jio_snprintf(buf, len, "Concurrent marking (%s) (unload classes)", _generation->name());
   } else {

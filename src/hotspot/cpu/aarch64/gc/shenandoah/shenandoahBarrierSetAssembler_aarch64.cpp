@@ -386,11 +386,8 @@ void ShenandoahBarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet d
 
 void ShenandoahBarrierSetAssembler::store_check(MacroAssembler* masm, Register obj) {
   if (!ShenandoahHeap::heap()->mode()->is_generational()) {
-      return;
+    return;
   }
-
-  ShenandoahBarrierSet* ctbs = ShenandoahBarrierSet::barrier_set();
-  CardTable* ct = ctbs->card_table();
 
   __ lsr(obj, obj, CardTable::card_shift());
 
@@ -400,7 +397,7 @@ void ShenandoahBarrierSetAssembler::store_check(MacroAssembler* masm, Register o
 
   if (UseCondCardMark) {
     Label L_already_dirty;
-    __ ldrb(rscratch2,  Address(obj, rscratch1));
+    __ ldrb(rscratch2, Address(obj, rscratch1));
     __ cbz(rscratch2, L_already_dirty);
     __ strb(zr, Address(obj, rscratch1));
     __ bind(L_already_dirty);
@@ -636,19 +633,21 @@ void ShenandoahBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssemb
     return;
   }
 
-  ShenandoahBarrierSet* bs = ShenandoahBarrierSet::barrier_set();
-  CardTable* ct = bs->card_table();
-
   Label L_loop, L_done;
   const Register end = count;
 
-  __ cbz(count, L_done); // zero count - nothing to do
+  // Zero count? Nothing to do.
+  __ cbz(count, L_done);
 
-  __ lea(end, Address(start, count, Address::lsl(LogBytesPerHeapOop))); // end = start + count << LogBytesPerHeapOop
-  __ sub(end, end, BytesPerHeapOop); // last element address to make inclusive
+  // end = start + count << LogBytesPerHeapOop
+  // last element address to make inclusive
+  __ lea(end, Address(start, count, Address::lsl(LogBytesPerHeapOop)));
+  __ sub(end, end, BytesPerHeapOop);
   __ lsr(start, start, CardTable::card_shift());
   __ lsr(end, end, CardTable::card_shift());
-  __ sub(count, end, start); // number of bytes to copy
+
+  // number of bytes to copy
+  __ sub(count, end, start);
 
   __ load_byte_map_base(scratch);
   __ add(start, start, scratch);

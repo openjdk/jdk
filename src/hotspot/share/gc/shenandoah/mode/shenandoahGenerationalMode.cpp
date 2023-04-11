@@ -63,3 +63,4 @@ ShenandoahHeuristics* ShenandoahGenerationalMode::initialize_heuristics(Shenando
 
   return new ShenandoahAdaptiveHeuristics(generation);
 }
+

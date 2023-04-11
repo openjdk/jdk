@@ -29,7 +29,7 @@
 #include "utilities/ostream.hpp"
 
 class ShenandoahEvacuationStats : public CHeapObj<mtGC> {
- private:
+private:
   size_t _evacuations_completed;
   size_t _bytes_completed;
   size_t _evacuations_attempted;
@@ -37,7 +37,7 @@ class ShenandoahEvacuationStats : public CHeapObj<mtGC> {
 
   AgeTable _age_table;
 
- public:
+public:
   ShenandoahEvacuationStats();
   void begin_evacuation(size_t bytes);
   void end_evacuation(size_t bytes, uint age);
@@ -53,19 +53,20 @@ struct ShenandoahCycleStats {
 };
 
 class ShenandoahEvacuationTracker : public CHeapObj<mtGC> {
- private:
-  ShenandoahEvacuationStats  _workers_global;
-  ShenandoahEvacuationStats  _mutators_global;
+private:
+  ShenandoahEvacuationStats _workers_global;
+  ShenandoahEvacuationStats _mutators_global;
 
- public:
+public:
   void begin_evacuation(Thread* thread, size_t bytes);
   void end_evacuation(Thread* thread, size_t bytes, uint age);
 
   void print_global_on(outputStream* st);
-  static void print_evacuations_on(outputStream* st, ShenandoahEvacuationStats* workers, ShenandoahEvacuationStats* mutators);
+  static void print_evacuations_on(outputStream* st,
+                                   ShenandoahEvacuationStats* workers,
+                                   ShenandoahEvacuationStats* mutators);
 
   ShenandoahCycleStats flush_cycle_to_global();
- private:
 };
 
 #endif //SHARE_GC_SHENANDOAH_SHENANDOAHEVACTRACKER_HPP

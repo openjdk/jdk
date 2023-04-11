@@ -809,7 +809,7 @@ void ShenandoahHeap::op_uncommit(double shrink_before, size_t shrink_until) {
 
 void ShenandoahHeap::handle_old_evacuation(HeapWord* obj, size_t words, bool promotion) {
   // Only register the copy of the object that won the evacuation race.
-  card_scan()->register_object_wo_lock(obj);
+  card_scan()->register_object_without_lock(obj);
 
   // Mark the entire range of the evacuated object as dirty.  At next remembered set scan,
   // we will clear dirty bits that do not hold interesting pointers.  It's more efficient to
@@ -1042,7 +1042,7 @@ void ShenandoahHeap::retire_plab(PLAB* plab, Thread* thread) {
     // safely walk the region backing the plab.
     log_debug(gc)("retire_plab() is registering remnant of size " SIZE_FORMAT " at " PTR_FORMAT,
                   plab->waste() - waste, p2i(top));
-    card_scan()->register_object_wo_lock(top);
+    card_scan()->register_object_without_lock(top);
   }
 }
 

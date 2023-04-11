@@ -56,6 +56,7 @@ const double ShenandoahAdaptiveHeuristics::HIGHEST_EXPECTED_AVAILABLE_AT_END = 0
 const double ShenandoahAdaptiveHeuristics::MINIMUM_CONFIDENCE = 0.319; // 25%
 const double ShenandoahAdaptiveHeuristics::MAXIMUM_CONFIDENCE = 3.291; // 99.9%
 
+// TODO: Provide comment here or remove if not used
 const uint ShenandoahAdaptiveHeuristics::MINIMUM_RESIZE_INTERVAL = 10;
 
 ShenandoahAdaptiveHeuristics::ShenandoahAdaptiveHeuristics(ShenandoahGeneration* generation) :
@@ -95,6 +96,7 @@ void ShenandoahAdaptiveHeuristics::choose_collection_set_from_regiondata(Shenand
   // particular, regions that have reached tenure age will be sorted into this array before younger regions that contain
   // more garbage.  This represents one of the reasons why we keep looking at regions even after we decide, for example,
   // to exclude one of the regions because it might require evacuation of too much live data.
+  // TODO: Split it in the separate methods for clarity.
   bool is_generational = heap->mode()->is_generational();
   bool is_global = _generation->is_global();
   size_t capacity = heap->young_generation()->max_capacity();
@@ -261,9 +263,10 @@ void ShenandoahAdaptiveHeuristics::record_success_concurrent(bool abbreviated) {
     z_score = (double(available) - available_avg) / available_sd;
     log_debug(gc, ergo)("%s Available: " SIZE_FORMAT " %sB, z-score=%.3f. Average available: %.1f %sB +/- %.1f %sB.",
                         _generation->name(),
-                        byte_size_in_proper_unit(available), proper_unit_for_byte_size(available), z_score,
+                        byte_size_in_proper_unit(available),     proper_unit_for_byte_size(available),
+                        z_score,
                         byte_size_in_proper_unit(available_avg), proper_unit_for_byte_size(available_avg),
-                        byte_size_in_proper_unit(available_sd), proper_unit_for_byte_size(available_sd));
+                        byte_size_in_proper_unit(available_sd),  proper_unit_for_byte_size(available_sd));
   }
 
   _available.add(double(available));
@@ -336,7 +339,7 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
   size_t usable = ShenandoahHeap::heap()->free_set()->available();
   if (usable < available) {
     log_debug(gc)("Usable (" SIZE_FORMAT "%s) is less than available (" SIZE_FORMAT "%s)",
-                  byte_size_in_proper_unit(usable), proper_unit_for_byte_size(usable),
+                  byte_size_in_proper_unit(usable),    proper_unit_for_byte_size(usable),
                   byte_size_in_proper_unit(available), proper_unit_for_byte_size(available));
     available = usable;
   }
@@ -350,8 +353,8 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
   if (available < min_threshold) {
     log_info(gc)("Trigger (%s): Free (" SIZE_FORMAT "%s) is below minimum threshold (" SIZE_FORMAT "%s)",
                  _generation->name(),
-                 byte_size_in_proper_unit(available), proper_unit_for_byte_size(available),
-                 byte_size_in_proper_unit(min_threshold),       proper_unit_for_byte_size(min_threshold));
+                 byte_size_in_proper_unit(available),     proper_unit_for_byte_size(available),
+                 byte_size_in_proper_unit(min_threshold), proper_unit_for_byte_size(min_threshold));
     return resize_and_evaluate();
   }
 
@@ -362,8 +365,8 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
     if (available < init_threshold) {
       log_info(gc)("Trigger (%s): Learning " SIZE_FORMAT " of " SIZE_FORMAT ". Free (" SIZE_FORMAT "%s) is below initial threshold (" SIZE_FORMAT "%s)",
                    _generation->name(), _gc_times_learned + 1, max_learn,
-                   byte_size_in_proper_unit(available), proper_unit_for_byte_size(available),
-                   byte_size_in_proper_unit(init_threshold),      proper_unit_for_byte_size(init_threshold));
+                   byte_size_in_proper_unit(available),       proper_unit_for_byte_size(available),
+                   byte_size_in_proper_unit(init_threshold),  proper_unit_for_byte_size(init_threshold));
       return true;
     }
   }
@@ -421,13 +424,13 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
 
   double avg_alloc_rate = _allocation_rate.upper_bound(_margin_of_error_sd);
   log_debug(gc)("%s: average GC time: %.2f ms, allocation rate: %.0f %s/s",
-    _generation->name(), avg_cycle_time * 1000, byte_size_in_proper_unit(avg_alloc_rate), proper_unit_for_byte_size(avg_alloc_rate));
+          _generation->name(), avg_cycle_time * 1000,
+          byte_size_in_proper_unit(avg_alloc_rate), proper_unit_for_byte_size(avg_alloc_rate));
 
   if (avg_cycle_time > allocation_headroom / avg_alloc_rate) {
-
     log_info(gc)("Trigger (%s): Average GC time (%.2f ms) is above the time for average allocation rate (%.0f %sB/s) to deplete free headroom (" SIZE_FORMAT "%s) (margin of error = %.2f)",
                  _generation->name(), avg_cycle_time * 1000,
-                 byte_size_in_proper_unit(avg_alloc_rate), proper_unit_for_byte_size(avg_alloc_rate),
+                 byte_size_in_proper_unit(avg_alloc_rate),      proper_unit_for_byte_size(avg_alloc_rate),
                  byte_size_in_proper_unit(allocation_headroom), proper_unit_for_byte_size(allocation_headroom),
                  _margin_of_error_sd);
 
@@ -447,7 +450,6 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
                  _generation->name(), avg_cycle_time * 1000,
                  byte_size_in_proper_unit(rate), proper_unit_for_byte_size(rate),
                  byte_size_in_proper_unit(allocation_headroom), proper_unit_for_byte_size(allocation_headroom),
-
                  _spike_threshold_sd);
     _last_trigger = SPIKE;
     return resize_and_evaluate();
@@ -464,14 +466,14 @@ bool ShenandoahAdaptiveHeuristics::resize_and_evaluate() {
   }
 
   if (_cycles_since_last_resize <= MINIMUM_RESIZE_INTERVAL) {
-    log_info(gc, ergo)("Not resizing %s for another " UINT32_FORMAT " cycles.",
-        _generation->name(),  _cycles_since_last_resize);
+    log_info(gc, ergo)("Not resizing %s for another " UINT32_FORMAT " cycles",
+            _generation->name(), _cycles_since_last_resize);
     return true;
   }
 
   if (!heap->generation_sizer()->transfer_capacity(_generation)) {
     // We could not enlarge our generation, so we must start a gc cycle.
-    log_info(gc, ergo)("Could not increase size of %s, begin gc cycle.", _generation->name());
+    log_info(gc, ergo)("Could not increase size of %s, begin gc cycle", _generation->name());
     return true;
   }
 

@@ -44,7 +44,7 @@ void ShenandoahEvacuationStats::end_evacuation(size_t bytes, uint age) {
   ++_evacuations_completed;
   _bytes_completed += bytes;
   if (age > 0) {
-    _age_table.add(age, bytes / oopSize);
+    _age_table.add(age, bytes >> LogBytesPerWord);
   }
 }
 
@@ -68,10 +68,10 @@ void ShenandoahEvacuationStats::print_on(outputStream* st) {
   size_t abandoned_count = _evacuations_attempted - _evacuations_completed;
   st->print_cr("Evacuated " SIZE_FORMAT "%s across " SIZE_FORMAT " objects, "
             "abandoned " SIZE_FORMAT "%s across " SIZE_FORMAT " objects.",
-            byte_size_in_proper_unit(_bytes_completed),
-            proper_unit_for_byte_size(_bytes_completed), _evacuations_completed,
-            byte_size_in_proper_unit(abandoned_size),
-            proper_unit_for_byte_size(abandoned_size), abandoned_count);
+            byte_size_in_proper_unit(_bytes_completed), proper_unit_for_byte_size(_bytes_completed),
+            _evacuations_completed,
+            byte_size_in_proper_unit(abandoned_size),   proper_unit_for_byte_size(abandoned_size),
+            abandoned_count);
   _age_table.print_on(st, InitialTenuringThreshold);
 }
 
@@ -97,6 +97,7 @@ void ShenandoahEvacuationTracker::print_evacuations_on(outputStream* st,
       if (r->is_young()) {
         young_region_ages.add(r->age(), r->get_live_data_words());
       } else {
+        assert(r->is_old(), "Sanity");
         old_region_ages.add(r->age(), r->get_live_data_words());
       }
     }
@@ -109,7 +110,7 @@ void ShenandoahEvacuationTracker::print_evacuations_on(outputStream* st,
 }
 
 class ShenandoahStatAggregator : public ThreadClosure {
- public:
+public:
   ShenandoahEvacuationStats* _target;
   explicit ShenandoahStatAggregator(ShenandoahEvacuationStats* target) : _target(target) {}
   virtual void do_thread(Thread* thread) override {

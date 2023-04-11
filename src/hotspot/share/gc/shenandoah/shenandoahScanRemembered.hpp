@@ -619,12 +619,12 @@ public:
   // before calling it.
   void register_object(HeapWord* address);
 
-  // register_object_wo_lock() does not require that the caller hold
+  // register_object_without_lock() does not require that the caller hold
   // the heap lock before calling it, under the assumption that the
   // caller has assure no other thread will endeavor to concurrently
   // register objects that start within the same card's memory region
   // as address.
-  void register_object_wo_lock(HeapWord* address);
+  void register_object_without_lock(HeapWord* address);
 
   // During the reference updates phase of GC, we walk through each old-gen memory region that was
   // not part of the collection set and we invalidate all unmarked objects.  As part of this effort,
@@ -840,7 +840,7 @@ public:
 
   void reset_object_range(HeapWord *from, HeapWord *to);
   void register_object(HeapWord *addr);
-  void register_object_wo_lock(HeapWord *addr);
+  void register_object_without_lock(HeapWord *addr);
   void coalesce_objects(HeapWord *addr, size_t length_in_words);
 
   HeapWord* first_object_in_card(size_t card_index) {

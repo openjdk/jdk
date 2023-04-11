@@ -183,12 +183,12 @@ inline void
 ShenandoahCardCluster<RememberedSet>::register_object(HeapWord* address) {
   shenandoah_assert_heaplocked();
 
-  register_object_wo_lock(address);
+  register_object_without_lock(address);
 }
 
 template<typename RememberedSet>
 inline void
-ShenandoahCardCluster<RememberedSet>::register_object_wo_lock(HeapWord* address) {
+ShenandoahCardCluster<RememberedSet>::register_object_without_lock(HeapWord* address) {
   size_t card_at_start = _rs->card_index_for_addr(address);
   HeapWord *card_start_address = _rs->addr_for_card_index(card_at_start);
   uint8_t offset_in_card = address - card_start_address;
@@ -419,8 +419,8 @@ ShenandoahScanRemembered<RememberedSet>::register_object(HeapWord *addr) {
 
 template<typename RememberedSet>
 inline void
-ShenandoahScanRemembered<RememberedSet>::register_object_wo_lock(HeapWord *addr) {
-  _scc->register_object_wo_lock(addr);
+ShenandoahScanRemembered<RememberedSet>::register_object_without_lock(HeapWord *addr) {
+  _scc->register_object_without_lock(addr);
 }
 
 template <typename RememberedSet>

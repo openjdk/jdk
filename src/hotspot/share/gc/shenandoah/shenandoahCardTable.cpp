@@ -31,6 +31,9 @@ void ShenandoahCardTable::initialize() {
   CardTable::initialize();
   _write_byte_map = _byte_map;
   _write_byte_map_base = _byte_map_base;
+
+  // TODO: Why rs_align is 0 on page_size == os::vm_page_size?
+  // ReservedSpace constructor would assert rs_align >= os::vm_page_size().
   const size_t rs_align = _page_size == (size_t) os::vm_page_size() ? 0 :
     MAX2(_page_size, (size_t) os::vm_allocation_granularity());
 
@@ -44,7 +47,7 @@ void ShenandoahCardTable::initialize() {
   _read_byte_map = (CardValue*) heap_rs.base();
   _read_byte_map_base = _read_byte_map - (uintptr_t(low_bound) >> card_shift());
 
-  log_trace(gc, barrier)("ShenandoahCardTable::ShenandoahCardTable: ");
+  log_trace(gc, barrier)("ShenandoahCardTable::ShenandoahCardTable:");
   log_trace(gc, barrier)("    &_read_byte_map[0]: " INTPTR_FORMAT "  &_read_byte_map[_last_valid_index]: " INTPTR_FORMAT,
                   p2i(&_read_byte_map[0]), p2i(&_read_byte_map[last_valid_index()]));
   log_trace(gc, barrier)("    _read_byte_map_base: " INTPTR_FORMAT, p2i(_read_byte_map_base));
@@ -68,6 +71,7 @@ bool ShenandoahCardTable::is_in_young(const void* obj) const {
   return ShenandoahHeap::heap()->is_in_young(obj);
 }
 
+// TODO: Seems to be unused
 bool ShenandoahCardTable::is_dirty(MemRegion mr) {
   for (size_t i = index_for(mr.start()); i <= index_for(mr.end() - 1); i++) {
     CardValue* byte = byte_for_index(i);

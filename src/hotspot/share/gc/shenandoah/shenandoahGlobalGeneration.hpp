@@ -45,17 +45,20 @@ public:
   virtual size_t used() const override;
   virtual size_t available() const override;
 
-  virtual void set_concurrent_mark_in_progress(bool in_progress)  override;
+  virtual void set_concurrent_mark_in_progress(bool in_progress) override;
 
-  bool contains(ShenandoahHeapRegion* region) const  override;
+  bool contains(ShenandoahHeapRegion* region) const override;
 
-  bool contains(oop obj) const override { return true; }
+  bool contains(oop obj) const override {
+    // TODO: Should this assert is_in()?
+    return true;
+  }
 
-  void parallel_heap_region_iterate(ShenandoahHeapRegionClosure* cl)  override;
+  void parallel_heap_region_iterate(ShenandoahHeapRegionClosure* cl) override;
 
-  void heap_region_iterate(ShenandoahHeapRegionClosure* cl)  override;
+  void heap_region_iterate(ShenandoahHeapRegionClosure* cl) override;
 
-  bool is_concurrent_mark_in_progress()  override;
+  bool is_concurrent_mark_in_progress() override;
 };
 
 #endif // SHARE_VM_GC_SHENANDOAH_SHENANDOAHGLOBALGENERATION_HPP

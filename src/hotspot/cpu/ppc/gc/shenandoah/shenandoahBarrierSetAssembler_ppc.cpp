@@ -599,7 +599,7 @@ void ShenandoahBarrierSetAssembler::load_at(
 
 void ShenandoahBarrierSetAssembler::store_check(MacroAssembler* masm, Register base, RegisterOrConstant ind_or_offs, Register tmp) {
   if (!ShenandoahHeap::heap()->mode()->is_generational()) {
-      return;
+    return;
   }
 
   ShenandoahBarrierSet* ctbs = ShenandoahBarrierSet::barrier_set();
@@ -804,10 +804,13 @@ void ShenandoahBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssemb
   CardTable* ct = bs->card_table();
   assert_different_registers(addr, count, R0);
 
-  Label Lskip_loop, Lstore_loop;
+  Label L_skip_loop, L_store_loop;
 
   __ sldi_(count, count, LogBytesPerHeapOop);
-  __ beq(CCR0, Lskip_loop); // zero length
+
+  // Zero length? Skip.
+  __ beq(CCR0, L_skip_loop);
+
   __ addi(count, count, -BytesPerHeapOop);
   __ add(count, addr, count);
   // Use two shifts to clear out those low order two bits! (Cannot opt. into 1.)
@@ -818,12 +821,13 @@ void ShenandoahBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssemb
   __ addi(count, count, 1);
   __ li(R0, 0);
   __ mtctr(count);
+
   // Byte store loop
-  __ bind(Lstore_loop);
+  __ bind(L_store_loop);
   __ stb(R0, 0, addr);
   __ addi(addr, addr, 1);
-  __ bdnz(Lstore_loop);
-  __ bind(Lskip_loop);
+  __ bdnz(L_store_loop);
+  __ bind(L_skip_loop);
 }
 
 #undef __

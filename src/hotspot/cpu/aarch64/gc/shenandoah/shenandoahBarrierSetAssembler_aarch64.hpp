@@ -62,7 +62,9 @@ private:
   void resolve_forward_pointer_not_null(MacroAssembler* masm, Register dst, Register tmp = noreg);
   void load_reference_barrier(MacroAssembler* masm, Register dst, Address load_addr, DecoratorSet decorators);
 
-  void gen_write_ref_array_post_barrier(MacroAssembler* masm, DecoratorSet decorators, Register start, Register count, Register scratch, RegSet saved_regs);
+  void gen_write_ref_array_post_barrier(MacroAssembler* masm, DecoratorSet decorators,
+                                        Register start, Register count,
+                                        Register scratch, RegSet saved_regs);
 
 public:
 

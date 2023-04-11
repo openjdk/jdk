@@ -397,7 +397,7 @@ public:
   bool oop_fill_and_coalesce();
 
   // Like oop_fill_and_coalesce(), but without honoring cancellation requests.
-  bool oop_fill_and_coalesce_wo_cancel();
+  bool oop_fill_and_coalesce_without_cancel();
 
   // During global collections, this service iterates through an old-gen heap region that is not part of collection
   // set to fill and register ranges of dead memory.  Note that live objects were previously registered.  Some dead objects

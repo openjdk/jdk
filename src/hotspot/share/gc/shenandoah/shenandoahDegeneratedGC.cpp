@@ -97,12 +97,12 @@ void ShenandoahDegenGC::op_degenerated() {
       // We can only get to a degenerated global cycle _after_ a concurrent global cycle
       // has been cancelled. In which case, we expect the concurrent global cycle to have
       // cancelled the old gc already.
-      assert(!heap->is_old_gc_active(), "Old GC should not be active during global cycle.");
+      assert(!heap->is_old_gc_active(), "Old GC should not be active during global cycle");
     }
 
     if (!heap->is_concurrent_old_mark_in_progress()) {
       // If we are not marking the old generation, there should be nothing in the old mark queues
-      assert(heap->old_generation()->task_queues()->is_empty(), "Old gen task queues should be empty.");
+      assert(heap->old_generation()->task_queues()->is_empty(), "Old gen task queues should be empty");
     }
   }
 #endif
@@ -133,10 +133,13 @@ void ShenandoahDegenGC::op_degenerated() {
 
       // Note that we can only do this for "outside-cycle" degens, otherwise we would risk
       // changing the cycle parameters mid-cycle during concurrent -> degenerated handover.
-      heap->set_unload_classes((!heap->mode()->is_generational() || _generation->is_global()) && _generation->heuristics()->can_unload_classes());
+      heap->set_unload_classes(_generation->heuristics()->can_unload_classes() &&
+                                (!heap->mode()->is_generational() || _generation->is_global()));
 
-      if (heap->mode()->is_generational() && (_generation->is_young() || (_generation->is_global() && ShenandoahVerify))) {
+      if (heap->mode()->is_generational() &&
+            (_generation->is_young() || (_generation->is_global() && ShenandoahVerify))) {
         // Swap remembered sets for young, or if the verifier will run during a global collect
+        // TODO: This path should not depend on ShenandoahVerify
         _generation->swap_remembered_set();
       }
 
@@ -276,12 +279,13 @@ void ShenandoahDegenGC::op_degenerated() {
   }
 
   if (heap->mode()->is_generational()) {
-    // In case degeneration interrupted concurrent evacuation or update references, we need to clean up transient state.
-    // Otherwise, these actions have no effect.
+    // In case degeneration interrupted concurrent evacuation or update references,
+    // we need to clean up transient state. Otherwise, these actions have no effect.
 
     heap->young_generation()->unadjust_available();
     heap->old_generation()->unadjust_available();
-    // No need to old_gen->increase_used().  That was done when plabs were allocated, accounting for both old evacs and promotions.
+    // No need to old_gen->increase_used(). That was done when plabs were allocated,
+    // accounting for both old evacs and promotions.
 
     heap->set_alloc_supplement_reserve(0);
     heap->set_young_evac_reserve(0);

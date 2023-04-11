@@ -75,18 +75,17 @@ protected:
 
   ShenandoahGeneration* _generation;
 
-  // if (_generation->type() == GLOBAL) _region_data represents
-  //  the results of most recently completed global marking pass
-  // if (_generation->type() == OLD) _region_data represents
-  //  the results of most recently completed old-gen marking pass
-  // if (_generation->type() == YOUNG) _region_data represents
-  //  the results of most recently completed young-gen marking pass
+  // Depending on generation mode, region data represents the results of the relevant
+  // most recently completed marking pass:
+  //   - in GLOBAL mode, global marking pass
+  //   - in OLD mode,    old-gen marking pass
+  //   - in YOUNG mode,  young-gen marking pass
   //
-  // Note that there is some redundancy represented in _region_data because
-  // each instance is an array large enough to hold all regions.  However,
-  // any region in young-gen is not in old-gen.  And any time we are
+  // Note that there is some redundancy represented in region data because
+  // each instance is an array large enough to hold all regions. However,
+  // any region in young-gen is not in old-gen. And any time we are
   // making use of the GLOBAL data, there is no need to maintain the
-  // YOUNG or OLD data.  Consider this redundancy of data structure to
+  // YOUNG or OLD data. Consider this redundancy of data structure to
   // have negligible cost unless proven otherwise.
   RegionData* _region_data;
 
@@ -157,7 +156,7 @@ public:
 
   virtual void reset_gc_learning();
 
-  virtual size_t select_aged_regions(size_t old_available, size_t num_regions, bool preselected_regions[]);
+  virtual size_t select_aged_regions(size_t old_available, size_t num_regions, bool* preselected_regions);
 
   virtual void choose_collection_set(ShenandoahCollectionSet* collection_set, ShenandoahOldHeuristics* old_heuristics);
 

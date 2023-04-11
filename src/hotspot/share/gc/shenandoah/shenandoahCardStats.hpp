@@ -29,21 +29,21 @@
 #include "gc/shenandoah/shenandoahNumberSeq.hpp"
 
 enum CardStatType {
-  DIRTY_RUN = 0,
-  CLEAN_RUN = 1,
-  DIRTY_CARDS = 2,
-  CLEAN_CARDS = 3,
-  MAX_DIRTY_RUN = 4,
-  MAX_CLEAN_RUN = 5,
-  DIRTY_SCAN_OBJS = 6,
-  ALTERNATIONS = 7,
-  MAX_CARD_STAT_TYPE = 8
+  DIRTY_RUN           = 0,
+  CLEAN_RUN           = 1,
+  DIRTY_CARDS         = 2,
+  CLEAN_CARDS         = 3,
+  MAX_DIRTY_RUN       = 4,
+  MAX_CLEAN_RUN       = 5,
+  DIRTY_SCAN_OBJS     = 6,
+  ALTERNATIONS        = 7,
+  MAX_CARD_STAT_TYPE  = 8
 };
 
 enum CardStatLogType {
-  CARD_STAT_SCAN_RS = 0,
-  CARD_STAT_UPDATE_REFS = 1,
-  MAX_CARD_STAT_LOG_TYPE = 2
+  CARD_STAT_SCAN_RS       = 0,
+  CARD_STAT_UPDATE_REFS   = 1,
+  MAX_CARD_STAT_LOG_TYPE  = 2
 };
 
 class ShenandoahCardStats: public CHeapObj<mtGC> {
@@ -53,9 +53,6 @@ private:
 
   size_t _dirty_card_cnt;
   size_t _clean_card_cnt;
-
-  size_t _dirty_run;
-  size_t _clean_run;
 
   size_t _max_dirty_run;
   size_t _max_clean_run;
@@ -83,12 +80,12 @@ public:
    void record() {
     if (ShenandoahEnableCardStats) {
       // Update global stats for distribution of dirty/clean cards as a percentage of chunk
-      _local_card_stats[DIRTY_CARDS].add((double)_dirty_card_cnt*100/(double)_cards_in_cluster);
-      _local_card_stats[CLEAN_CARDS].add((double)_clean_card_cnt*100/(double)_cards_in_cluster);
+      _local_card_stats[DIRTY_CARDS].add(percent_of(_dirty_card_cnt, _cards_in_cluster));
+      _local_card_stats[CLEAN_CARDS].add(percent_of(_clean_card_cnt, _cards_in_cluster));
 
       // Update global stats for max dirty/clean run distribution as a percentage of chunk
-      _local_card_stats[MAX_DIRTY_RUN].add((double)_max_dirty_run*100/(double)_cards_in_cluster);
-      _local_card_stats[MAX_CLEAN_RUN].add((double)_max_clean_run*100/(double)_cards_in_cluster);
+      _local_card_stats[MAX_DIRTY_RUN].add(percent_of(_max_dirty_run, _cards_in_cluster));
+      _local_card_stats[MAX_CLEAN_RUN].add(percent_of(_max_clean_run, _cards_in_cluster));
 
       // Update global stats for dirty obj scan counts
       _local_card_stats[DIRTY_SCAN_OBJS].add(_dirty_scan_obj_cnt);
@@ -107,7 +104,7 @@ public:
       }
       _dirty_card_cnt += len;
       assert(len <= _cards_in_cluster, "Error");
-      _local_card_stats[DIRTY_RUN].add((double)len*100.0/(double)_cards_in_cluster);
+      _local_card_stats[DIRTY_RUN].add(percent_of(len, _cards_in_cluster));
     }
   }
 
@@ -119,7 +116,7 @@ public:
       }
       _clean_card_cnt += len;
       assert(len <= _cards_in_cluster, "Error");
-      _local_card_stats[CLEAN_RUN].add((double)len*100.0/(double)_cards_in_cluster);
+      _local_card_stats[CLEAN_RUN].add(percent_of(len, _cards_in_cluster));
     }
   }
 
