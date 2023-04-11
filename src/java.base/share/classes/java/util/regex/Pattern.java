@@ -1376,7 +1376,8 @@ public final class Pattern
      *         The result threshold, as described above
      *
      * @return  The array of strings computed by splitting the input
-     *          around matches of this pattern
+     *          around matches of this pattern, alternating
+     *          substrings and matching delimiters
      *
      * @since   21
      */

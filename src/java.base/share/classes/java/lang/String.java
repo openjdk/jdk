@@ -3231,13 +3231,6 @@ public final class String
      *
      * <p> The array returned by this method contains each substring of this
      * string that is terminated by another substring that matches the given
-     * expression or is terminated by the end of the string.  The substrings in
-     * the array are in the order in which they occur in this string.  If the
-     * expression does not match any part of the input then the resulting array
-     * has just one element, namely this string.
-     *
-     * <p> The array returned by this method contains each substring of this
-     * string that is terminated by another substring that matches the given
      * expression or is terminated by the end of the string.
      * Each substring is immediately followed by the subsequence (the delimiter)
      * that matches the given expression, <em>except</em> for the last
@@ -3322,7 +3315,8 @@ public final class String
      *         the result threshold, as described above
      *
      * @return  the array of strings computed by splitting this string
-     *          around matches of the given regular expression
+     *          around matches of the given regular expression, alternating
+     *          substrings and matching delimiters
      *
      * @since   21
      */
