@@ -94,13 +94,16 @@ class VirtualState: public ObjectState {
 };
 
 class EscapedState: public ObjectState {
-  Node* const _materialized;
+  Node* _materialized;
 
  public:
   EscapedState(Node* materialized) : _materialized(materialized) {}
 
   bool is_virtual() const override { return false;}
   Node* get_materialized_value() override { return _materialized; }
+  void set_materialized_value(Node* node) {
+    _materialized = node;
+  }
   ObjectState* clone() const override {
     return new EscapedState(_materialized);
   }

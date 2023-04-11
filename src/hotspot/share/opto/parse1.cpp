@@ -1841,22 +1841,18 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
 
               // Part-1: only check 'm'. ensure_phi has replaced m with phi.
               if (DoPartialEscapeAnalysis && phi != nullptr) {
-                ObjID id = as.is_alias(phi);
+                VirtualState* vs;
 
-                if (id != nullptr) {
-                  as.add_alias(id, phi); // order matters here since we use refcnt to delete dead id.
+                if ((vs = as.as_virtual(phi)) != nullptr) { // m is Virtual
+                  ObjID id = as.is_alias(phi);
+                  ObjectState* pred_os;
 
-                  if (as.get_object_state(id)->is_virtual() && id == pred_as.is_alias(n)) {
-                    ObjectState* pred_os = pred_as.get_object_state(id);
-
-                    if (!pred_os->is_virtual()) {
-                      // materialize 'm' because it has been materialized in save_block.
-                      assert(pred_os->get_materialized_value() == n, "sanity: materialized value in save_block is n");
-                      as.add_alias(id, m);
-                      Node* mv = ensure_object_materialized(m, as, map(), r, block()->init_pnum());
-                      phi->replace_edge(m, mv);
-                      as.update(id, new EscapedState(phi));
-                    }
+                  if (id == pred_as.is_alias(n) && !((pred_os = pred_as.get_object_state(id))->is_virtual())) { // n is escaped.
+                    // materialize 'm' because it has been materialized in save_block.
+                    assert(pred_os->get_materialized_value() == n, "sanity: materialized value in save_block is n");
+                    Node* mv = ensure_object_materialized(m, as, map(), r, block()->init_pnum());
+                    phi->replace_edge(m, mv);
+                    as.update(id, new EscapedState(phi));
                   }
                 }
               } // DoPartialEscapeAnalysis
@@ -1864,9 +1860,7 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
           }
           break;
         }
-      } else {
       }
-
       // At this point, n might be top if:
       //  - there is no phi (because TypeFlow detected a conflict), or
       //  - the corresponding control edges is top (a dead incoming path)
@@ -1886,7 +1880,7 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
               if (!as.get_object_state(id)->is_virtual() && pred_as.get_object_state(id)->is_virtual()) {
                 n = ensure_object_materialized(n, pred_as, newin, r, pnum);
               } else if (as.get_object_state(id)->is_virtual() && !pred_as.get_object_state(id)->is_virtual()) {
-                // TODO: materailize all.
+                // TODO: materialize all.
                 assert(false, "not implement yet");
               }
             } // else part is case #2: n is nullptr in pred_as. Do nothing.
@@ -2147,6 +2141,12 @@ PhiNode *Parse::ensure_phi(int idx, bool nocreate) {
       //
       // [xliu]: does ideal graph ensure SSA property?
       as.remove_alias(id, o);
+
+      ObjectState* os = as.get_object_state(id);
+      if (!os->is_virtual()) {
+        EscapedState* es = static_cast<EscapedState*>(os);
+        es->set_materialized_value(phi);
+      }
     }
   }
   return phi;
