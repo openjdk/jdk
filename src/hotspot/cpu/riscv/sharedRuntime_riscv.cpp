@@ -665,7 +665,7 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
 
     { // Bypass the barrier for non-static methods
       __ lwu(t0, Address(xmethod, Method::access_flags_offset()));
-      __ andi(t1, t0, JVM_ACC_STATIC);
+      __ test_bit(t1, t0, exact_log2(JVM_ACC_STATIC));
       __ beqz(t1, L_skip_barrier); // non-static
     }
 
