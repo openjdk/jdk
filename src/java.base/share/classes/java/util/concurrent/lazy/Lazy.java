@@ -14,6 +14,8 @@ import java.util.function.Supplier;
 /**
  * This class provides common factories and builders classes for all
  * Lazy class variants.
+ *
+ * @since 22
  */
 @PreviewFeature(feature = PreviewFeature.Feature.LAZY)
 public final class Lazy {
@@ -109,12 +111,14 @@ public final class Lazy {
      * an exception will be thrown.
      * <p>
      * {@snippet lang = java:
-     *    LazyReference<T> lazy = LazyReference.ofEmpty();
-     *    T value = lazy.getOrNull();
-     *    assertIsNull(value); // Value is initially null
-     *    // ...
-     *    T value = lazy.supplyIfEmpty(Value::new);
-     *    assertNotNull(value); // Value is non-null
+     *     class Fox {
+     *
+     *         private final LazyReference<String> lazy = Lazy.ofEmpty();
+     *
+     *         String init(String color) {
+     *             return lazy.supplyIfEmpty(() -> "The quick " + color + " fox");
+     *         }
+     *     }
      *}
      *
      * @param <T> The type of the value
@@ -131,9 +135,15 @@ public final class Lazy {
      * {@link LazyReference#supplyIfEmpty(Supplier)}.
      * <p>
      * {@snippet lang = java:
-     *    LazyReference<T> lazy = Lazy.of(Value::new);
-     *    // ...
-     *    T value = lazy.get();
+     *     class DemoPreset {
+     *
+     *         private static final LazyReference<Foo> FOO = Lazy.of(Foo::new);
+     *
+     *         public Foo theBar() {
+     *             // Foo is lazily constructed and recorded here upon first invocation
+     *             return FOO.get();
+     *         }
+     *     }
      *}
      *
      * @param <T>            The type of the value
@@ -147,6 +157,23 @@ public final class Lazy {
     /**
      * {@return a builder that can be used to build a custom LazyReference}.
      * @param <T> type of the value the LazyReference will handle.
+     * Here is how a lazy value can be computed in the background and that may already be computed
+     * when first requested from user code:
+     * {@snippet lang = java:
+     *     class DemoBackground {
+     *
+     *         private static final LazyReference<Foo> lazy = Lazy.<Foo>builder()
+     *                 .withSupplier(Foo::new)
+     *                 .withEarliestEvaluation(Lazy.Evaluation.CREATION_BACKGROUND)
+     *                 .build();
+     *
+     *         public static void main(String[] args) throws InterruptedException {
+     *             Thread.sleep(1000);
+     *             // lazy is likely already pre-computed here by a background thread
+     *             System.out.println("lazy.get() = " + lazy.get());
+     *         }
+     *     }
+     * }
      */
     // Todo: Figure out a better way for determining the type (e.g. type token)
     public static <T> LazyReference.Builder<T> builder() {
@@ -160,12 +187,17 @@ public final class Lazy {
      * an exception will be thrown.
      * <p>
      * {@snippet lang = java:
-     *    // Cache the first 64 users
-     *    private static final LazyReferenceArray<User> lazy = Lazy.ofEmptyArray(64);
-     *    ...
-     *    Connection c = ...
-     *    User value = lazy.computeIfEmpty(42, i -> findUserById(c, i));
-     *    assertNotNull(value); // Value is non-null
+     * class UserCache {
+     *
+     *         // Cache the first 64 users
+     *         private static final LazyReferenceArray<User> USER_CACHE =
+     *                 Lazy.ofEmptyArray(64);
+     *
+     *         public User user(int id) {
+     *             Connection c = getDatabaseConnection();
+     *             return USER_CACHE.computeIfEmpty(id, i -> findUserById(c, i));
+     *         }
+     *     }
      *}
      *
      * @param <T>  The type of the values
@@ -186,10 +218,20 @@ public final class Lazy {
      * {@link LazyReferenceArray#computeIfEmpty(int, IntFunction)}.
      * <p>
      * {@snippet lang = java:
-     *    LazyReferenceArray<Value> lazy = Lazy.ofArray(32, index -> new Value(1L << index));
-     *    // ...
-     *    Value value = lazy.get(16);
-     *}
+     *     class DemoArray {
+     *
+     *         private static final LazyReferenceArray<Value> VALUE_PO2_CACHE =
+     *                 Lazy.ofArray(32, index -> new Value(1L << index));
+     *
+     *         public Value powerOfTwoValue(int n) {
+     *             if (n < 0 || n >= VALUE_PO2_CACHE.length()) {
+     *                 throw new IllegalArgumentException(Integer.toString(n));
+     *             }
+     *
+     *             return VALUE_PO2_CACHE.apply(n);
+     *         }
+     *     }
+     * }
      *
      * @param <T>          The type of the values
      * @param size         the size of the array
@@ -214,17 +256,16 @@ public final class Lazy {
      * {@link LazyReferenceArray#computeIfEmpty(int, IntFunction)}.
      * <p>
      * {@snippet lang = java:
-     *    Function<String, Optional<String>> pageCache = Lazy.ofMapper(
-     *                      List.of("home", "products", "contact"), DbTools::lookupPage);
-     *    // ...
-     *     String pageName = ...;
+     *     class DemoLazyMapper {
      *
-     *    String text = pageCache.apply(pageName)
-     *                      .orElseGet(() -> lookupPage(pageName));
-     *    // ...
-     *    String lookupPage(String pageName) {
-     *      // Gets the HTML code for the named page from the content database
-     *    }
+     *         private final Function<String, Optional<String>> pageCache = Lazy.mapping(
+     *                 List.of("home", "products", "contact"), DbTools::lookupPage);
+     *
+     *         public String renderPage(String pageName) {
+     *             return pageCache.apply(pageName)
+     *                     .orElseGet(() -> DbTools.lookupPage(pageName));
+     *         }
+     *     }
      *}
      *
      * @param <K> the type of keys maintained by this mapper
@@ -232,8 +273,8 @@ public final class Lazy {
      * @param keys to be mapped
      * @param mapper to apply when computing and recording values
      */
-    public static <K, V> Function<K, Optional<V>> ofMapper(Collection<K> keys,
-                                                           Function<? super K, ? extends V> mapper) {
+    public static <K, V> Function<K, Optional<V>> mapping(Collection<K> keys,
+                                                          Function<? super K, ? extends V> mapper) {
         Objects.requireNonNull(keys);
         Objects.requireNonNull(mapper);
         return new LazySingleMapper<>(keys, mapper);
@@ -246,24 +287,34 @@ public final class Lazy {
      * provided to the returned Function}.
      * <p>
      * {@snippet lang = java:
-     *    Function<Integer, Optional<String>> lazy = Lazy.ofMapper(List.of(
-     *            new KeyMapper(400, this::loadBadRequestFromDb),
-     *            new KeyMapper(401, this::loadUnaothorizedFromDb),
-     *            new KeyMapper(403, this::loadForbiddenFromDb),
-     *            new KeyMapper(404, this::loadNotFoundFromDb)
-     *         );
-     *    // ...
-     *    if (returnCode >= 400) {
-     *        response.println(lazy.apply(returnCode)
-     *                             .orElse("<!DOCTYPE html><title>Oops: "+returnCode+"</title>"));
-     *    }
+     * class DemoErrorPageMapper {
+     *
+     *         private static final Function<Integer, Optional<String>> lazy =
+     *                 Lazy.mapping(
+     *                         List.of(
+     *                                 KeyMapper.of(400, DbTools::loadBadRequestPage),
+     *                                 KeyMapper.of(401, DbTools::loadUnaothorizedPage),
+     *                                 KeyMapper.of(403, DbTools::loadForbiddenPage),
+     *                                 KeyMapper.of(404, DbTools::loadNotFoundPage)
+     *                         )
+     *                 );
+     *
+     *         public String servePage(Request request) {
+     *             int returnCode = check(request);
+     *             if (returnCode >= 400) {
+     *                 return lazy.apply(returnCode)
+     *                         .orElse("<!DOCTYPE html><title>Oops: " + returnCode + "</title>");
+     *             }
+     *             return render(request);
+     *         }
+     *     }
      *}
      *
      * @param <K> the type of keys maintained by this mapper
      * @param <V> the type of mapped values
      * @param keyMappers to be lazily evaluated and recorded
      */
-    public static <K, V> Function<K, Optional<V>> ofMapper(Collection<KeyMapper<K, V>> keyMappers) {
+    public static <K, V> Function<K, Optional<V>> mapping(Collection<KeyMapper<K, V>> keyMappers) {
         Objects.requireNonNull(keyMappers);
         return new LazyMapper<>(keyMappers);
     }

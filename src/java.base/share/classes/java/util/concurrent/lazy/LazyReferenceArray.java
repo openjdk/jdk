@@ -64,6 +64,7 @@ import java.util.stream.Stream;
  * at most as described by {@link Stable}.
  *
  * @param <V> The type of the values to be recorded
+ * @since 22
  */
 @PreviewFeature(feature = PreviewFeature.Feature.LAZY)
 public final class LazyReferenceArray<V> implements IntFunction<V> {

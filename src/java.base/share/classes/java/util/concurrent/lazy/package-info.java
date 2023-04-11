@@ -43,42 +43,49 @@
  *
  * In its simplest form, Lazy can provide atomic lazy evaluation using a <em>preset-supplier</em>:
  *
- * {@snippet lang = java :
- * class Foo {
- *   private static final LazyReference<Bar> BAR = Lazy.of(Bar::new);
+ * {@snippet class="PackageInfoSnippets" region="DemoPreset"}
  *
- *   public Bar theBar() {
- *     return BAR.get(); // Bar is lazily computed here on first invocation
- *   }
- * }
+ * {@snippet lang = java :
+ *     class DemoPreset {
+ *
+ *         private static final LazyReference<Foo> FOO = Lazy.of(Foo::new);
+ *
+ *         public Foo theBar() {
+ *             // Foo is lazily constructed and recorded here upon first invocation
+ *             return FOO.get();
+ *         }
+ *     }
  *}
  * The performance of the example above is on pair with using an inner/private class
  * holding a lazily initialized variable but with no overhead imposed by the extra
  * class as illustraded hereunder:
  *
  {@snippet lang = java :
- * class Foo {
+ *     class DemoHolder {
  *
- *   public Bar theBar() {
- *      class Holder {
- *          Bar bar = new Bar();
- *      }
- *     return Holder.bar; // Bar is lazily computed here on first invocation
- *   }
- * }
+ *         public Foo theBar() {
+ *             class Holder {
+ *                 private static final Foo FOO = new Foo();
+ *             }
+ *
+ *             // Foo is lazily constructed and recorded here upon first invocation
+ *             return Holder.FOO;
+ *         }
+ *     }
  *}
  *
  * On some occasions, a preset-supplier might not be known a priori or the
  * lazy value to compute might depend on values not known at declaration time.  In
  * such cases, an empty LazyReference can be obtained and used as exemplified below:
  * {@snippet lang = java:
- * class Fox {
- *     private final LazyReference<String> lazy = Lazy.ofEmpty();
+ *     class Fox {
  *
- *     String init(String color) {
- *         return lazy.supplyIfEmpty(() -> "The quick " + color + " fox");
+ *         private final LazyReference<String> lazy = Lazy.ofEmpty();
+ *
+ *         String init(String color) {
+ *             return lazy.supplyIfEmpty(() -> "The quick " + color + " fox");
+ *         }
  *     }
- * }
  *}
  *
  * A custom configurable LazyReference can be obtained via the
@@ -86,39 +93,39 @@
  * Here is how a lazy value can be computed in the background and that may already be computed
  * when first requested from user code:
  * {@snippet lang = java:
- * class BackgroundDemo {
- *    private static final LazyReference<Foo> lazy = Lazy.<Foo>builder()
- *             .withSupplier(Foo::new)
- *             .withEarliestEvaluation(Lazy.Evaluation.CREATION_BACKGROUND)
- *             .build();
+ *     class DemoBackground {
  *
- *     public static void main(String[] args) throws InterruptedException {
- *         Thread.sleep(1000);
- *         // lazy is likely already pre-computed here by a background thread
- *         System.out.println("lazy.get() = " + lazy.get());
+ *         private static final LazyReference<Foo> lazy = Lazy.<Foo>builder()
+ *                 .withSupplier(Foo::new)
+ *                 .withEarliestEvaluation(Lazy.Evaluation.CREATION_BACKGROUND)
+ *                 .build();
+ *
+ *         public static void main(String[] args) throws InterruptedException {
+ *             Thread.sleep(1000);
+ *             // lazy is likely already pre-computed here by a background thread
+ *             System.out.println("lazy.get() = " + lazy.get());
+ *         }
  *     }
- * }
  * }
  *
  * {@code LazyReference<T>} implements {@code Supplier<T>} allowing simple
  * interoperability with legacy code and less specific type declaration
  * as shown in the example hereunder:
  * {@snippet lang = java:
- *    class SupplierDemo {
+ *     class SupplierDemo {
  *
  *         // Eager Supplier of Foo
  *         private static final Supplier<Foo> EAGER_FOO = Foo::new;
  *
  *         // Turns an eager Supplier into a caching lazy Supplier
- *         private static final Supplier<Foo> LAZY_CACHE_FOO = Lazy.of(EAGER_FOO);
+ *         private static final Supplier<Foo> LAZILY_CACHED_FOO = Lazy.of(EAGER_FOO);
  *
  *         public static void main(String[] args) {
- *            // Lazily compute the one and only Foo
- *            Foo theFoo = LAZY_CACHE_FOO.get();
+ *             // Lazily compute the one-and-only Foo
+ *             Foo theFoo = LAZILY_CACHED_FOO.get();
  *         }
- *    }
+ *     }
  *}
- *
  * LazyReference contains additional methods for checking its
  * {@linkplain java.util.concurrent.lazy.LazyReference#state() state} and getting
  * any {@linkplain java.util.concurrent.lazy.LazyReference#exception()} that might be thrown
@@ -131,14 +138,19 @@
  * for LazyReference instance but with an extra initial arity, indicating the desired length/index
  * of the array:
  * {@snippet lang = java:
- * class ArrayDemo {
- *    private static final LazyReferenceArray<Value> VALUE_PO2_CACHE =
- *            Lazy.ofArray(32, index -> new Value(1L << index));
+ *     class DemoArray {
  *
- *    Value powerOfTwoValue(int n) {
- *        return VALUE_PO2_CACHE.get(n);
- *    }
- * }
+ *         private static final LazyReferenceArray<Value> VALUE_PO2_CACHE =
+ *                 Lazy.ofArray(32, index -> new Value(1L << index));
+ *
+ *         public Value powerOfTwoValue(int n) {
+ *             if (n < 0 || n >= VALUE_PO2_CACHE.length()) {
+ *                 throw new IllegalArgumentException(Integer.toString(n));
+ *             }
+ *
+ *             return VALUE_PO2_CACHE.apply(n);
+ *         }
+ *     }
  * }
  * As can be seen above, an array takes an {@link java.util.function.IntFunction} rather
  * than a {@link java.util.function.Supplier }, allowing custom values to be
@@ -147,34 +159,35 @@
  * As was the case for LazyReference, empty LazyReferenceArray instances can also be
  * constructed, allowing lazy mappers known at a later stage to be used:
  * {@snippet lang = java:
- * class UserCache {
- *     // Cache the first 64 users
- *     private static final LazyReferenceArray<User> USER_CACHE = Lazy.ofEmptyArray(64);
+ *     class UserCache {
  *
- *     User user(int id) {
- *         Connection c = getDatabaseConnection();
- *         User value = lazy.computeIfEmpty(id, i -> findUserById(c, i));
- *         assertNotNull(value); // Value is non-null
+ *         // Cache the first 64 users
+ *         private static final LazyReferenceArray<User> USER_CACHE = Lazy.ofEmptyArray(64);
+ *
+ *         public User user(int id) {
+ *             Connection c = getDatabaseConnection();
+ *             return USER_CACHE.computeIfEmpty(id, i -> findUserById(c, i));
+ *         }
  *     }
- * }
  * }
  *
  * {@code LazyReferenceArray<T>} implements {@code IntFunction<T>} allowing simple interoperability
  * with existing code and with less specific type declarations as shown hereunder:
  * {@snippet lang = java:
- * class IntFunctionDemo {
- *     // Eager Supplier of Foo
- *     private static final IntFunction<Foo> EAGER_FOO =
- *             index -> new Foo(index);
+ *     class DemoIntFunction {
  *
- *     // Turns an eager Supplier into a caching lazy Supplier
- *     private static final IntSupplier<Foo> LAZY_CACHE_FOO =
- *             Lazy.ofArray(64, eagerFoo);
+ *         // Eager IntFunction<Value>
+ *         private static final IntFunction<Value> EAGER_VALUE =
+ *                 index -> new Value(index);
  *
- *     public static void main(String[] args) {
- *        Foo foo42 = LAZY_CACHE_FOO.apply(42);
+ *         // Turns an eager IntFunction into a caching lazy IntFunction
+ *         private static final IntFunction<Value> LAZILY_CACHED_VALUES =
+ *                 Lazy.ofArray(64, EAGER_VALUE);
+ *
+ *         public static void main(String[] args) {
+ *             Value value42 = LAZILY_CACHED_VALUES.apply(42);
+ *         }
  *     }
- * }
  * }
  *
  * Todo: Describe IntKeyMapper
@@ -186,41 +199,41 @@
  * regular Java Map, special constructs are available providing equivalent
  * functionality but with potentially better performance and lower memory usage.
  * {@snippet lang = java:
- * class LazyMapperDemo {
- *    private final Function<String, Optional<String>> pageCache = Lazy.ofMapper(
- *                      List.of("home", "products", "contact"), DbTools::lookupPage);
-
- *     String renderPage(String pageName) {
- *         return pageCache.apply(pageName)
- *                      .orElseGet(() -> lookupPage(pageName));
+ *     class DemoLazyMapper {
+ *
+ *         private final Function<String, Optional<String>> pageCache = Lazy.mapping(
+ *                 List.of("home", "products", "contact"), DbTools::lookupPage);
+ *
+ *         public String renderPage(String pageName) {
+ *             return pageCache.apply(pageName)
+ *                     .orElseGet(() -> DbTools.lookupPage(pageName));
+ *         }
  *     }
-
- *    String lookupPage(String pageName) {
- *      // Gets the HTML code for the named page from a content database
- *    }
- * }
  *}
  * Individual key mapping can also be provided via a collection of
  * {@linkplain java.util.concurrent.lazy.KeyMapper key mappers} as shown in this example:
  * {@snippet lang = java:
- * class MapperDemo {
+ * class DemoErrorPageMapper {
  *
- *    private static final Function<Integer, Optional<String>> lazy =
- *            Lazy.ofMapper(List.of(
- *                new KeyMapper(400, this::loadBadRequestFromDb),
- *                new KeyMapper(401, this::loadUnaothorizedFromDb),
- *                new KeyMapper(403, this::loadForbiddenFromDb),
- *                new KeyMapper(404, this::loadNotFoundFromDb)
- *            ));
+ *         private static final Function<Integer, Optional<String>> lazy =
+ *                 Lazy.mapping(
+ *                         List.of(
+ *                                 KeyMapper.of(400, DbTools::loadBadRequestPage),
+ *                                 KeyMapper.of(401, DbTools::loadUnaothorizedPage),
+ *                                 KeyMapper.of(403, DbTools::loadForbiddenPage),
+ *                                 KeyMapper.of(404, DbTools::loadNotFoundPage)
+ *                         )
+ *                 );
  *
- *    void servePage(Request request, Response response) {
- *        int returnCode = renderPage(request, response);
- *        if (returnCode >= 400) {
- *            response.println(lazy.apply(returnCode)
- *                                 .orElse("<!DOCTYPE html><title>Oops: "+returnCode+"</title>"));
- *        }
- *    }
- * }
+ *         public String servePage(Request request) {
+ *             int returnCode = check(request);
+ *             if (returnCode >= 400) {
+ *                 return lazy.apply(returnCode)
+ *                         .orElse("<!DOCTYPE html><title>Oops: " + returnCode + "</title>");
+ *             }
+ *             return render(request);
+ *         }
+ *     }
  *}
  *
  * <h3 id="general">General Properties of the Lazy Constructs</h3>
