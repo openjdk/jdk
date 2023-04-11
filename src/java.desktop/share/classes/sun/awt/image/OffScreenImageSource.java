@@ -62,16 +62,16 @@ public class OffScreenImageSource implements ImageProducer {
         this(image, null);
     }
 
-    public void addConsumer(ImageConsumer ic) {
+    public synchronized void addConsumer(ImageConsumer ic) {
         imageConsumers.add(ic);
         produce(ic);
     }
 
-    public boolean isConsumer(ImageConsumer ic) {
+    public synchronized boolean isConsumer(ImageConsumer ic) {
         return imageConsumers.contains(ic);
     }
 
-    public void removeConsumer(ImageConsumer ic) {
+    public synchronized void removeConsumer(ImageConsumer ic) {
         imageConsumers.remove(ic);
     }
 
@@ -198,8 +198,8 @@ public class OffScreenImageSource implements ImageProducer {
 
     private void produce(ImageConsumer theConsumer) {
         try {
-            if (isConsumer(theConsumer))
-                theConsumer.setDimensions(image.getWidth(), image.getHeight());
+            // isConsumer(theConsumer) MUST be true at this point:
+            theConsumer.setDimensions(image.getWidth(), image.getHeight());
             if (isConsumer(theConsumer))
                 theConsumer.setProperties(properties);
             sendPixels(theConsumer);
