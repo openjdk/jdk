@@ -533,6 +533,7 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   bool modified = false;
   int cnt = 0;                  // Count of values merging
   DEBUG_ONLY( int cnt_orig = req(); ) // Save original inputs count
+  DEBUG_ONLY( uint outcnt_orig = outcnt(); )
   int del_it = 0;               // The last input path we delete
   bool found_top = false; // irreducible loops need to check reachability if we find TOP
   // For all inputs...
@@ -563,7 +564,6 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         continue;
       }
       cnt++;                    // One more value merging
-
     } else if (can_reshape) {   // Else found dead path with DU info
       PhaseIterGVN *igvn = phase->is_IterGVN();
       del_req(i);               // Yank path from self
@@ -581,13 +581,15 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       }
 
       if (add_to_worklist) {
-        igvn->add_users_to_worklist0(this);
+        igvn->add_users_to_worklist(this);
         add_to_worklist = false;
       }
 
       i--;
     }
   }
+
+  assert(outcnt() == outcnt_orig, "not expect to remove any use");
 
   if (can_reshape && found_top && loop_status() == RegionNode::LoopStatus::MaybeIrreducibleEntry) {
     // Is it a dead irreducible loop?
