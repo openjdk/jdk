@@ -1319,15 +1319,18 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public static final CaseKind RULE = CaseKind.RULE;
         public final CaseKind caseKind;
         public List<JCCaseLabel> labels;
+        public JCExpression guard;
         public List<JCStatement> stats;
         public JCTree body;
         public boolean completesNormally;
         protected JCCase(CaseKind caseKind, List<JCCaseLabel> labels,
+                         JCExpression guard,
                          List<JCStatement> stats, JCTree body) {
             Assert.checkNonNull(labels);
             Assert.check(labels.isEmpty() || labels.head != null);
             this.caseKind = caseKind;
             this.labels = labels;
+            this.guard = guard;
             this.stats = stats;
             this.body = body;
         }
@@ -1349,6 +1352,8 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
 
         @Override @DefinedBy(Api.COMPILER_TREE)
         public List<JCCaseLabel> getLabels() { return labels; }
+        @Override @DefinedBy(Api.COMPILER_TREE)
+        public JCExpression getGuard() { return guard; }
         @Override @DefinedBy(Api.COMPILER_TREE)
         public List<JCStatement> getStatements() {
             return caseKind == CaseKind.STATEMENT ? stats : null;
@@ -2359,21 +2364,14 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
             implements PatternCaseLabelTree {
 
         public JCPattern pat;
-        public JCExpression guard;
 
-        protected JCPatternCaseLabel(JCPattern pat, JCExpression guard) {
+        protected JCPatternCaseLabel(JCPattern pat) {
             this.pat = pat;
-            this.guard = guard;
         }
 
         @Override @DefinedBy(Api.COMPILER_TREE)
         public JCPattern getPattern() {
             return pat;
-        }
-
-        @Override @DefinedBy(Api.COMPILER_TREE)
-        public JCExpression getGuard() {
-            return guard;
         }
 
         @Override
@@ -3385,7 +3383,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         JCLabeledStatement Labelled(Name label, JCStatement body);
         JCSwitch Switch(JCExpression selector, List<JCCase> cases);
         JCSwitchExpression SwitchExpression(JCExpression selector, List<JCCase> cases);
-        JCCase Case(CaseTree.CaseKind caseKind, List<JCCaseLabel> labels,
+        JCCase Case(CaseTree.CaseKind caseKind, List<JCCaseLabel> labels, JCExpression guard,
                     List<JCStatement> stats, JCTree body);
         JCSynchronized Synchronized(JCExpression lock, JCBlock body);
         JCTry Try(JCBlock body, List<JCCatch> catchers, JCBlock finalizer);

@@ -323,6 +323,7 @@ implements CRTFlags {
         public void visitCase(JCCase tree) {
             SourceRange sr = new SourceRange(startPos(tree), endPos(tree));
             sr.mergeWith(csp(tree.labels));
+            sr.mergeWith(csp(tree.guard));
             sr.mergeWith(csp(tree.stats));
             result = sr;
         }
@@ -343,7 +344,6 @@ implements CRTFlags {
         public void visitPatternCaseLabel(JCPatternCaseLabel tree) {
             SourceRange sr = new SourceRange(startPos(tree), endPos(tree));
             sr.mergeWith(csp(tree.pat));
-            sr.mergeWith(csp(tree.guard));
             result = sr;
         }
 

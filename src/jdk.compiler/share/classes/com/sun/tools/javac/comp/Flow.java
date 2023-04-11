@@ -802,10 +802,10 @@ public class Flow {
             List<PatternDescription> patterns = List.nil();
             Map<Symbol, Set<Symbol>> enum2Constants = new HashMap<>();
             for (JCCase c : cases) {
-                for (var l : c.labels) {
-                    if (!TreeInfo.unguardedCaseLabel(l))
-                        continue;
+                if (!TreeInfo.unguardedCase(c))
+                    continue;
 
+                for (var l : c.labels) {
                     if (l instanceof JCPatternCaseLabel patternLabel) {
                         for (Type component : components(selector.type)) {
                             patterns = patterns.prepend(PatternDescription.from(types, component, patternLabel.pat));
@@ -2312,10 +2312,6 @@ public class Flow {
 
         void scanPattern(JCTree tree) {
             scan(tree);
-            if (inits.isReset()) {
-                inits.assign(initsWhenTrue);
-                uninits.assign(uninitsWhenTrue);
-            }
         }
 
         /** Analyze a condition. Make sure to set (un)initsWhenTrue(WhenFalse)
@@ -2756,17 +2752,10 @@ public class Flow {
                 for (JCCaseLabel pat : c.labels) {
                     scanPattern(pat);
                 }
-                if (l.head.stats.isEmpty() &&
-                    l.tail.nonEmpty() &&
-                    l.tail.head.labels.size() == 1 &&
-                    TreeInfo.isNullCaseLabel(l.tail.head.labels.head)) {
-                    //handling:
-                    //case Integer i:
-                    //case null:
-                    //joining these two cases together - processing Integer i pattern,
-                    //but statements from case null:
-                    l = l.tail;
-                    c = l.head;
+                scan(c.guard);
+                if (inits.isReset()) {
+                    inits.assign(initsWhenTrue);
+                    uninits.assign(uninitsWhenTrue);
                 }
                 scan(c.stats);
                 if (c.completesNormally && c.caseKind == JCCase.RULE) {
@@ -3158,9 +3147,8 @@ public class Flow {
         }
 
         @Override
-        public void visitPatternCaseLabel(JCPatternCaseLabel tree) {
-            scan(tree.pat);
-            scan(tree.guard);
+        public void visitCase(JCCase tree) {
+            super.visitCase(tree); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/OverriddenMethodBody
         }
 
         void referenced(Symbol sym) {
@@ -3246,7 +3234,7 @@ public class Flow {
                     sym.pos < currentTree.getStartPosition()) {
                 switch (currentTree.getTag()) {
                     case CLASSDEF:
-                    case PATTERNCASELABEL:
+                    case CASE:
                     case LAMBDA:
                         if ((sym.flags() & (EFFECTIVELY_FINAL | FINAL)) == 0) {
                            reportEffectivelyFinalError(pos, sym);
@@ -3277,7 +3265,7 @@ public class Flow {
         void reportEffectivelyFinalError(DiagnosticPosition pos, Symbol sym) {
             Fragment subKey = switch (currentTree.getTag()) {
                 case LAMBDA -> Fragments.Lambda;
-                case PATTERNCASELABEL -> Fragments.Guard;
+                case CASE -> Fragments.Guard;
                 case CLASSDEF -> Fragments.InnerCls;
                 default -> throw new AssertionError("Unexpected tree kind: " + currentTree.getTag());
             };
@@ -3317,8 +3305,8 @@ public class Flow {
         }
 
         @Override
-        public void visitPatternCaseLabel(JCPatternCaseLabel tree) {
-             scan(tree.pat);
+        public void visitCase(JCCase tree) {
+            scan(tree.labels);
             JCTree prevTree = currentTree;
             try {
                 currentTree = tree;
@@ -3326,6 +3314,7 @@ public class Flow {
             } finally {
                 currentTree = prevTree;
             }
+            scan(tree.stats);
         }
 
         @Override

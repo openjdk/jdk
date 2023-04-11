@@ -861,6 +861,10 @@ public class Pretty extends JCTree.Visitor {
                 print("case ");
                 printExprs(tree.labels);
             }
+            if (tree.guard != null) {
+                print(" when ");
+                print(tree.guard);
+            }
             if (tree.caseKind == JCCase.STATEMENT) {
                 print(':');
                 println();
@@ -903,10 +907,6 @@ public class Pretty extends JCTree.Visitor {
     public void visitPatternCaseLabel(JCPatternCaseLabel tree) {
         try {
             print(tree.pat);
-            if (tree.guard != null) {
-                print(" when ");
-                print(tree.guard);
-            }
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

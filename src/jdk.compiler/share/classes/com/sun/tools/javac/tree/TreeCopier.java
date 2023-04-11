@@ -153,6 +153,7 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
     public JCTree visitCase(CaseTree node, P p) {
         JCCase t = (JCCase) node;
         List<JCCaseLabel> labels = copy(t.labels, p);
+        JCExpression guard = copy(t.guard, p);
         List<JCStatement> stats = copy(t.stats, p);
         JCTree body;
         if (node.getCaseKind() == CaseTree.CaseKind.RULE) {
@@ -161,7 +162,7 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
         } else {
             body = null;
         }
-        return M.at(t.pos).Case(t.caseKind, labels, stats, body);
+        return M.at(t.pos).Case(t.caseKind, labels, guard, stats, body);
     }
 
     @DefinedBy(Api.COMPILER_TREE)
@@ -514,8 +515,7 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
     public JCTree visitPatternCaseLabel(PatternCaseLabelTree node, P p) {
         JCPatternCaseLabel t = (JCPatternCaseLabel) node;
         JCPattern pat = copy(t.pat, p);
-        JCExpression guard = copy(t.guard, p);
-        return M.at(t.pos).PatternCaseLabel(pat, guard);
+        return M.at(t.pos).PatternCaseLabel(pat);
     }
 
     @DefinedBy(Api.COMPILER_TREE)

@@ -551,6 +551,7 @@ public class TransTypes extends TreeTranslator {
 
     public void visitCase(JCCase tree) {
         tree.labels = translate(tree.labels, null);
+        tree.guard = translate(tree.guard, syms.booleanType);
         tree.stats = translate(tree.stats);
         result = tree;
     }
@@ -569,7 +570,6 @@ public class TransTypes extends TreeTranslator {
     @Override
     public void visitPatternCaseLabel(JCPatternCaseLabel tree) {
         tree.pat = translate(tree.pat, null);
-        tree.guard = translate(tree.guard, syms.booleanType);
         result = tree;
     }
 

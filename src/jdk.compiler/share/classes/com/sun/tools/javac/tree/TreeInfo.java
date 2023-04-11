@@ -1361,11 +1361,8 @@ public class TreeInfo {
                          .anyMatch(l -> TreeInfo.isNullCaseLabel(l));
     }
 
-    public static boolean unguardedCaseLabel(JCCaseLabel cse) {
-        if (!cse.hasTag(PATTERNCASELABEL)) {
-            return true;
-        }
-        JCExpression guard = ((JCPatternCaseLabel) cse).guard;
+    public static boolean unguardedCase(JCCase cse) {
+        JCExpression guard = cse.guard;
         if (guard == null) {
             return true;
         }

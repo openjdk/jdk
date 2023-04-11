@@ -178,6 +178,7 @@ public class TreeScanner extends Visitor {
 
     public void visitCase(JCCase tree) {
         scan(tree.labels);
+        scan(tree.guard);
         scan(tree.stats);
     }
 
@@ -319,7 +320,6 @@ public class TreeScanner extends Visitor {
     @Override
     public void visitPatternCaseLabel(JCPatternCaseLabel tree) {
         scan(tree.pat);
-        scan(tree.guard);
     }
 
     @Override

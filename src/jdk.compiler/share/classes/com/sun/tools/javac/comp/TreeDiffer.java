@@ -297,7 +297,9 @@ public class TreeDiffer extends TreeScanner {
     @Override
     public void visitCase(JCCase tree) {
         JCCase that = (JCCase) parameter;
-        result = scan(tree.labels, that.labels) && scan(tree.stats, that.stats);
+        result = scan(tree.labels, that.labels) &&
+                 scan(tree.guard, that.guard) &&
+                 scan(tree.stats, that.stats);
     }
 
     @Override
@@ -309,7 +311,7 @@ public class TreeDiffer extends TreeScanner {
     @Override
     public void visitPatternCaseLabel(JCPatternCaseLabel tree) {
         JCPatternCaseLabel that = (JCPatternCaseLabel) parameter;
-        result = scan(tree.pat, that.pat) && scan(tree.guard, that.guard);
+        result = scan(tree.pat, that.pat);
     }
 
     @Override

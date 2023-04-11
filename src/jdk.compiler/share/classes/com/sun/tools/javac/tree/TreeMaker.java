@@ -293,8 +293,8 @@ public class TreeMaker implements JCTree.Factory {
     }
 
     public JCCase Case(CaseTree.CaseKind caseKind, List<JCCaseLabel> labels,
-                       List<JCStatement> stats, JCTree body) {
-        JCCase tree = new JCCase(caseKind, labels, stats, body);
+                       JCExpression guard, List<JCStatement> stats, JCTree body) {
+        JCCase tree = new JCCase(caseKind, labels, guard, stats, body);
         tree.pos = pos;
         return tree;
     }
@@ -501,8 +501,8 @@ public class TreeMaker implements JCTree.Factory {
         return tree;
     }
 
-    public JCPatternCaseLabel PatternCaseLabel(JCPattern pat, JCExpression guard) {
-        JCPatternCaseLabel tree = new JCPatternCaseLabel(pat, guard);
+    public JCPatternCaseLabel PatternCaseLabel(JCPattern pat) {
+        JCPatternCaseLabel tree = new JCPatternCaseLabel(pat);
         tree.pos = pos;
         return tree;
     }

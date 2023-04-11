@@ -208,6 +208,7 @@ public class TreeTranslator extends JCTree.Visitor {
 
     public void visitCase(JCCase tree) {
         tree.labels = translate(tree.labels);
+        tree.guard = translate(tree.guard);
         tree.stats = translate(tree.stats);
         result = tree;
     }
@@ -377,7 +378,6 @@ public class TreeTranslator extends JCTree.Visitor {
     @Override
     public void visitPatternCaseLabel(JCPatternCaseLabel tree) {
         tree.pat = translate(tree.pat);
-        tree.guard = translate(tree.guard);
         result = tree;
     }
 
