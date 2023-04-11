@@ -52,7 +52,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import jdk.internal.misc.Blocker;
-import jdk.internal.util.StaticProperty;
 import sun.nio.ch.DirectBuffer;
 import sun.nio.ch.IOStatus;
 import sun.security.action.GetPropertyAction;
@@ -74,15 +73,37 @@ abstract class UnixFileSystem
 
     private final UnixFileSystemProvider provider;
     private final byte[] defaultDirectory;
+    private final boolean needToResolveAgainstDefaultDirectory;
     private final UnixPath rootDirectory;
 
     // package-private
-    UnixFileSystem(UnixFileSystemProvider provider) {
-        String dir = StaticProperty.userDir();
+    UnixFileSystem(UnixFileSystemProvider provider, String dir) {
         this.provider = provider;
         this.defaultDirectory = Util.toBytes(UnixPath.normalizeAndCheck(dir));
         if (this.defaultDirectory[0] != '/') {
             throw new RuntimeException("default directory must be absolute");
+        }
+
+        // if process-wide chdir is allowed or default directory is not the
+        // process working directory then paths must be resolved against the
+        // default directory.
+        String propValue = GetPropertyAction
+                .privilegedGetProperty("sun.nio.fs.chdirAllowed", "false");
+        boolean chdirAllowed = propValue.isEmpty() ? true : Boolean.parseBoolean(propValue);
+        if (chdirAllowed) {
+            this.needToResolveAgainstDefaultDirectory = true;
+        } else {
+            byte[] cwd = UnixNativeDispatcher.getcwd();
+            boolean defaultIsCwd = (cwd.length == defaultDirectory.length);
+            if (defaultIsCwd) {
+                for (int i=0; i<cwd.length; i++) {
+                    if (cwd[i] != defaultDirectory[i]) {
+                        defaultIsCwd = false;
+                        break;
+                    }
+                }
+            }
+            this.needToResolveAgainstDefaultDirectory = !defaultIsCwd;
         }
 
         // the root directory
@@ -92,6 +113,10 @@ abstract class UnixFileSystem
     // package-private
     byte[] defaultDirectory() {
         return defaultDirectory;
+    }
+
+    boolean needToResolveAgainstDefaultDirectory() {
+        return needToResolveAgainstDefaultDirectory;
     }
 
     boolean isCaseInsensitiveAndPreserving() {

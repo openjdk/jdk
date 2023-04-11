@@ -644,14 +644,6 @@ final class Float128Vector extends FloatVector {
 
         @Override
         @ForceInline
-        public Float128Mask eq(VectorMask<Float> mask) {
-            Objects.requireNonNull(mask);
-            Float128Mask m = (Float128Mask)mask;
-            return xor(m.not());
-        }
-
-        @Override
-        @ForceInline
         /*package-private*/
         Float128Mask indexPartiallyInUpperRange(long offset, long limit) {
             return (Float128Mask) VectorSupport.indexPartiallyInUpperRange(
@@ -698,9 +690,9 @@ final class Float128Vector extends FloatVector {
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a | b));
         }
 
+        @Override
         @ForceInline
-        /* package-private */
-        Float128Mask xor(VectorMask<Float> mask) {
+        public Float128Mask xor(VectorMask<Float> mask) {
             Objects.requireNonNull(mask);
             Float128Mask m = (Float128Mask)mask;
             return VectorSupport.binaryOp(VECTOR_OP_XOR, Float128Mask.class, null, int.class, VLENGTH,

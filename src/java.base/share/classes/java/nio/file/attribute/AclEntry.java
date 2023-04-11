@@ -58,6 +58,8 @@ import java.util.*;
  * <p> ACL entries are immutable and are safe for use by multiple concurrent
  * threads.
  *
+ * @spec https://www.rfc-editor.org/info/rfc3530
+ *      RFC 3530: Network File System (NFS) version 4 Protocol
  * @since 1.7
  */
 

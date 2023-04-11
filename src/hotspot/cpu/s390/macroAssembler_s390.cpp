@@ -3651,11 +3651,6 @@ void MacroAssembler::load_klass(Register klass, Register src_oop) {
   }
 }
 
-void MacroAssembler::load_klass_check_null(Register klass, Register src_oop, Register tmp) {
-  null_check(src_oop, tmp, oopDesc::klass_offset_in_bytes());
-  load_klass(klass, src_oop);
-}
-
 void MacroAssembler::store_klass(Register klass, Register dst_oop, Register ck) {
   if (UseCompressedClassPointers) {
     assert_different_registers(dst_oop, klass, Z_R0);
