@@ -117,15 +117,18 @@ public class bug4200096 {
 
         for (TestCase testCase : TestCase.values()) {
             BufferedImage bufferedImage = new BufferedImage(10, 10, BufferedImage.TYPE_INT_ARGB);
-            Image img = bufferedImage.getScaledInstance(20, 20, Image.SCALE_SMOOTH);
+            if (!"sun.awt.image.OffScreenImageSource".equals(
+                    bufferedImage.getSource().getClass().getName())) {
+                throw new IllegalStateException("This isn't necessarily a problem, but it invalidates the usefulness of this test.");
+            }
 
             ImageConsumer consumer = new ImageConsumer() {
 
                 private void run(TestCase methodInvocation) {
-                    if (!img.getSource().isConsumer(this))
+                    if (!bufferedImage.getSource().isConsumer(this))
                         throw new IllegalStateException();
                     if (testCase == methodInvocation)
-                        img.getSource().removeConsumer(this);
+                        bufferedImage.getSource().removeConsumer(this);
                 }
 
                 @Override
@@ -167,9 +170,9 @@ public class bug4200096 {
                 }
             };
 
-            img.getSource().startProduction(consumer);
+            bufferedImage.getSource().startProduction(consumer);
 
-            if (img.getSource().isConsumer(consumer)) {
+            if (bufferedImage.getSource().isConsumer(consumer)) {
                 // this confirms our calls to .removeConsumer above were being invoked as expected
                 throw new IllegalStateException("This test is not executing as expected.");
             }
