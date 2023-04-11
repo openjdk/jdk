@@ -52,6 +52,7 @@ public class bug4200096 {
 
         runImageDimensionTest();
         runImageConsumerTest();
+        runNullTest();
     }
 
     /**
@@ -177,5 +178,15 @@ public class bug4200096 {
                 throw new IllegalStateException("This test is not executing as expected.");
             }
         }
+    }
+
+    /**
+     * This makes sure if OffScreenImageSource#addConsumer(null) is called: we
+     * treat that as a no-op and return immediately without printing anything
+     * to System.err.
+     */
+    public static void runNullTest() {
+        BufferedImage bufferedImage = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
+        bufferedImage.getSource().addConsumer(null);
     }
 }

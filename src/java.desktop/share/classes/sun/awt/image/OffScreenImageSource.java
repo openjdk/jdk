@@ -63,6 +63,8 @@ public class OffScreenImageSource implements ImageProducer {
     }
 
     public synchronized void addConsumer(ImageConsumer ic) {
+        if (ic == null)
+            return;
         imageConsumers.add(ic);
         produce(ic);
     }
