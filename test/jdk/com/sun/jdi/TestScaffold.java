@@ -466,16 +466,16 @@ abstract public class TestScaffold extends TargetAdapter {
 
     private ArgInfo parseArgs(String args[]) {
         ArgInfo argInfo = new ArgInfo();
-        // Parse arguments, like java/j* tools command-line arguments
-        // the first argument not-starting with '-' is treated as a classname
-        // the other arguments are split to targetVMArgs targetAppCommandLine correspondingly
+        // Parse arguments, like java/j* tools command-line arguments.
+        // The first argument not-starting with '-' is treated as a classname.
+        // The other arguments are split to targetVMArgs targetAppCommandLine correspondingly.
         // The example of args for line '@run driver Frames2Test -Xss4M' is  '-Xss4M' 'Frames2Targ'.
         // The result without any wrapper enabled:
-        // argInfo.targetAppCommandLine : Frames2Targ
-        // argInfo.targetVMArgs : -Xss4M
+        //     argInfo.targetAppCommandLine : Frames2Targ
+        //     argInfo.targetVMArgs : -Xss4M
         // The result with wrapper enabled:
-        // argInfo.targetAppCommandLine : TestScaffold Virtual Frames2Targ
-        // argInfo.targetVMArgs : -Xss4M
+        //     argInfo.targetAppCommandLine : TestScaffold Virtual Frames2Targ
+        //     argInfo.targetVMArgs : -Xss4M
         boolean classNameParsed = false;
         for (int i = 0; i < args.length; i++) {
             String arg = args[i].trim();
@@ -497,7 +497,7 @@ abstract public class TestScaffold extends TargetAdapter {
             } else if (arg.equals("-redefasync")) {
                 redefineAsynchronously = true;
             } else if (arg.startsWith("-J")) {
-                throw new RuntimeException("-J-option format is not supported. Incorrect arg: " + args[i]);
+                throw new RuntimeException("-J-option format is not supported. Incorrect arg: " + arg);
             } else if (arg.startsWith("-")) {
                 argInfo.targetVMArgs += (arg + ' ');
                 if (doubleWordArgs.contains(arg)) {
