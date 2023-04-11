@@ -64,20 +64,20 @@ public final class CocoaConstants {
         1 << NSEventTypeOtherMouseDragged;
 
     /*
-    NSAppKitDefined      = 13,
-    NSSystemDefined      = 14,
-    NSApplicationDefined = 15,
-    NSPeriodic           = 16,
-    NSCursorUpdate       = 17,
+    NSEventTypeAppKitDefined      = 13,
+    NSEventTypeSystemDefined      = 14,
+    NSEventTypeApplicationDefined = 15,
+    NSEventTypePeriodic           = 16,
+    NSEventTypeCursorUpdate       = 17,
     NSEventTypeScrollWheel        = 22,
-    NSTabletPoint        = 23,
-    NSTabletProximity    = 24,
-    NSEventTypeGesture   = 29,
-    NSEventTypeMagnify   = 30,
-    NSEventTypeSwipe     = 31,
-    NSEventTypeRotate    = 18,
-    NSEventTypeBeginGesture = 19,
-    NSEventTypeEndGesture   = 20
+    NSEventTypeTabletPoint        = 23,
+    NSEventTypeTabletProximity    = 24,
+    NSEventTypeGesture            = 29,
+    NSEventTypeMagnify            = 30,
+    NSEventTypeSwipe              = 31,
+    NSEventTypeRotate             = 18,
+    NSEventTypeBeginGesture       = 19,
+    NSEventTypeEndGesture         = 20
     */
 
     // See http://developer.apple.com/library/mac/#documentation/Carbon/Reference/QuartzEventServicesRef/Reference/reference.html
