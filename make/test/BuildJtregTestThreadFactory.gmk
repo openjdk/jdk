@@ -38,9 +38,9 @@ TTF_SUPPORT := $(SUPPORT_OUTPUTDIR)/test/jtreg_test_thread_factory
 TTF_JAR := $(TTF_SUPPORT)/jtregTestThreadFactory.jar
 
 $(eval $(call SetupJavaCompilation, BUILD_JTREG_TEST_THREAD_FACTORY, \
+    TARGET_RELEASE := $(TARGET_RELEASE_NEWJDK_UPGRADED), \
     SRC := $(TTF_BASEDIR)/src/share/classes, \
     BIN := $(TTF_SUPPORT)/classes, \
-    DISABLED_WARNINGS := preview, \
     JAR := $(TTF_JAR), \
 ))
 
