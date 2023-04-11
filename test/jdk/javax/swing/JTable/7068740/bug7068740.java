@@ -126,7 +126,7 @@ public class bug7068740 {
             UIManager.setLookAndFeel(new MetalLookAndFeel());
             setUp();
             robot.waitForIdle();
-            robot.delay(1000);	    
+            robot.delay(1000);
             doTest();
         } catch (UnsupportedLookAndFeelException e) {
             e.printStackTrace();
@@ -136,7 +136,7 @@ public class bug7068740 {
                 if (frame != null) {
                     frame.dispose();
                 }
-            });		
-        }	    
+            });
+        }
     }
 }
