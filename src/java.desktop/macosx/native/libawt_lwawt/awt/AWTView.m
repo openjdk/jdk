@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -377,9 +377,9 @@ static BOOL shouldUsePressAndHold() {
     jint clickCount;
 
     if (type == NSEventTypeMouseEntered ||
-        type == NSEventTypeMouseExited ||
-        type == NSEventTypeScrollWheel ||
-        type == NSEventTypeMouseMoved) {
+        type == NSEventTypeMouseExited  ||
+        type == NSEventTypeScrollWheel  ||
+        type == NSEventTypeMouseMoved)  {
         clickCount = 0;
     } else {
         clickCount = [event clickCount];

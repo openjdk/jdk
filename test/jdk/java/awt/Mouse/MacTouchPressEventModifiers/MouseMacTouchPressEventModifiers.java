@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2022, JetBrains s.r.o.. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -22,10 +22,12 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 8294426
- * @summary The test verifies that a press {@link java.awt.event.MouseEvent} contains correct modifiers although the according native mouse event is accompanied by no mouse modifiers.
+ * @summary The test verifies that a press {@link java.awt.event.MouseEvent}
+ * contains correct modifiers although the according native mouse event is
+ * accompanied by no mouse modifiers.
  * @author Nikita.Provotorov@jetbrains.com
  *
  * @key headful

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -999,7 +999,9 @@ AWT_ASSERT_APPKIT_THREAD;
 }
 
 - (void)sendEvent:(NSEvent *)event {
-        if ([event type] == NSEventTypeLeftMouseDown || [event type] == NSEventTypeRightMouseDown || [event type] == NSEventTypeOtherMouseDown) {
+        if ([event type] == NSEventTypeLeftMouseDown  ||
+            [event type] == NSEventTypeRightMouseDown ||
+            [event type] == NSEventTypeOtherMouseDown) {
             if ([self isBlocked]) {
                 // Move parent windows to front and make sure that a child window is displayed
                 // in front of its nearest parent.
