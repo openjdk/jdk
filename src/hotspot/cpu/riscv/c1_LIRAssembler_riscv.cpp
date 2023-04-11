@@ -1294,7 +1294,7 @@ void LIR_Assembler::logic_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr
     Register Rdst = dst->as_register();
     if (right->is_constant()) {
       int right_const = right->as_jint();
-      if (Assembler::operand_valid_for_add_immediate(right_const)) {
+      if (Assembler::is_simm12(right_const)) {
         logic_op_imm(Rdst, Rleft, right_const, code);
         __ addw(Rdst, Rdst, zr);
      } else {
@@ -1309,7 +1309,7 @@ void LIR_Assembler::logic_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr
     Register Rdst = dst->as_register_lo();
     if (right->is_constant()) {
       long right_const = right->as_jlong();
-      if (Assembler::operand_valid_for_add_immediate(right_const)) {
+      if (Assembler::is_simm12(right_const)) {
         logic_op_imm(Rdst, Rleft, right_const, code);
       } else {
         __ mv(t0, right_const);
@@ -1633,7 +1633,7 @@ void LIR_Assembler::check_conflict(ciKlass* exact_klass, intptr_t current_klass,
     __ beqz(t0, next);
 
     // already unknown. Nothing to do anymore.
-    __ andi(t0, tmp, TypeEntries::type_unknown);
+    __ test_bit(t0, tmp, exact_log2(TypeEntries::type_unknown));
     __ bnez(t0, next);
 
     if (TypeEntries::is_type_none(current_klass)) {
@@ -1655,7 +1655,7 @@ void LIR_Assembler::check_conflict(ciKlass* exact_klass, intptr_t current_klass,
 
     __ ld(tmp, mdo_addr);
     // already unknown. Nothing to do anymore.
-    __ andi(t0, tmp, TypeEntries::type_unknown);
+    __ test_bit(t0, tmp, exact_log2(TypeEntries::type_unknown));
     __ bnez(t0, next);
   }
 
@@ -1710,7 +1710,7 @@ void LIR_Assembler::check_no_conflict(ciKlass* exact_klass, intptr_t current_kla
 
     __ ld(tmp, mdo_addr);
     // already unknown. Nothing to do anymore.
-    __ andi(t0, tmp, TypeEntries::type_unknown);
+    __ test_bit(t0, tmp, exact_log2(TypeEntries::type_unknown));
     __ bnez(t0, next);
 
     __ ori(tmp, tmp, TypeEntries::type_unknown);
@@ -1825,7 +1825,7 @@ void LIR_Assembler::leal(LIR_Opr addr, LIR_Opr dest, LIR_PatchCode patch_code, C
       offset += ((intptr_t)index_op->as_constant_ptr()->as_jint()) << scale;
     }
 
-    if (!is_imm_in_range(offset, 12, 0)) {
+    if (!Assembler::is_simm12(offset)) {
       __ la(t0, as_Address(adr));
       __ mv(dst, t0);
       return;

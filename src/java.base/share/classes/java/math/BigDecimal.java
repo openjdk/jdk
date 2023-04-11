@@ -3596,7 +3596,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      */
     private boolean fractionOnly() {
         assert this.signum() != 0;
-        return (this.precision() - this.scale) <= 0;
+        return this.precision() <= this.scale;
     }
 
     /**
@@ -3624,8 +3624,15 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         if (fractionOnly())
             throw new ArithmeticException("Rounding necessary");
 
-        // If more than 19 digits in integer part it cannot possibly fit
-        if ((precision() - scale) > 19) // [OK for negative scale too]
+        /*
+         * If more than 19 digits in integer part it cannot possibly fit.
+         * Ensure that arithmetic does not overflow, so instead of
+         *      precision() - scale > 19
+         * prefer
+         *      precision() - 19 > scale
+         * since precision() > 0, so the lhs cannot overflow.
+         */
+        if (precision() - 19 > scale) // [OK for negative scale too]
             throw new java.lang.ArithmeticException("Overflow");
 
         // round to an integer, with Exception if decimal part non-0

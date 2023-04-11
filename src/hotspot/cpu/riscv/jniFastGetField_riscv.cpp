@@ -84,7 +84,7 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
   Address safepoint_counter_addr(rcounter_addr, 0);
   __ lwu(rcounter, safepoint_counter_addr);
   // An even value means there are no ongoing safepoint operations
-  __ andi(t0, rcounter, 1);
+  __ test_bit(t0, rcounter, 0);
   __ bnez(t0, slow);
 
   if (JvmtiExport::can_post_field_access()) {
