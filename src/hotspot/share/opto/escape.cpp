@@ -1031,7 +1031,7 @@ void ConnectionGraph::add_call_node(CallNode* call) {
     ciMethod* meth = call->as_CallJava()->method();
     if (meth == nullptr) {
       const char* name = call->as_CallStaticJava()->_name;
-      if (strncmp(name, "_notify_allocation", 18) == 0) { // Object escapes to JVMTI
+      if (strncmp(name, "_notify_jvmti_object_alloc", 26) == 0) { // Object escapes to JVMTI
         add_java_object(call, PointsToNode::GlobalEscape);
       } else {
         assert(strncmp(name, "_multianewarray", 15) == 0, "TODO: add failed case check");

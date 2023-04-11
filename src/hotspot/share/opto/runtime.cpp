@@ -110,7 +110,7 @@ address OptoRuntime::_rethrow_Java                                = nullptr;
 address OptoRuntime::_slow_arraycopy_Java                         = nullptr;
 address OptoRuntime::_register_finalizer_Java                     = nullptr;
 #if INCLUDE_JVMTI
-address OptoRuntime::_notify_allocation                           = nullptr;
+address OptoRuntime::_notify_jvmti_object_alloc                   = nullptr;
 address OptoRuntime::_notify_jvmti_mount                          = nullptr;
 address OptoRuntime::_notify_jvmti_unmount                        = nullptr;
 #endif
@@ -154,7 +154,7 @@ bool OptoRuntime::generate(ciEnv* env) {
   gen(env, _multianewarray5_Java           , multianewarray5_Type         , multianewarray5_C               ,    0 , true, false);
   gen(env, _multianewarrayN_Java           , multianewarrayN_Type         , multianewarrayN_C               ,    0 , true, false);
 #if INCLUDE_JVMTI
-  gen(env, _notify_allocation              , notify_allocation_Type       , SharedRuntime::notify_allocation,    0 , true, false);
+  gen(env, _notify_jvmti_object_alloc      , notify_jvmti_object_alloc_Type, SharedRuntime::notify_jvmti_object_alloc, 0, true, false);
   gen(env, _notify_jvmti_mount             , notify_jvmti_Type            , SharedRuntime::notify_jvmti_mount,   0 , true, false);
   gen(env, _notify_jvmti_unmount           , notify_jvmti_Type            , SharedRuntime::notify_jvmti_unmount, 0 , true, false);
 #endif
@@ -477,7 +477,7 @@ const TypeFunc *OptoRuntime::new_instance_Type() {
 }
 
 #if INCLUDE_JVMTI
-const TypeFunc *OptoRuntime::notify_allocation_Type() {
+const TypeFunc *OptoRuntime::notify_jvmti_object_alloc_Type() {
   // create input type (domain)
   const Type **fields = TypeTuple::fields(1);
   fields[TypeFunc::Parms+0] = TypeInstPtr::NOTNULL;

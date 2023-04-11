@@ -628,7 +628,7 @@ void SharedRuntime::throw_and_post_jvmti_exception(JavaThread* current, Symbol* 
 }
 
 #if INCLUDE_JVMTI
-JRT_ENTRY(void, SharedRuntime::notify_allocation(oopDesc* o, JavaThread* current))
+JRT_ENTRY(void, SharedRuntime::notify_jvmti_object_alloc(oopDesc* o, JavaThread* current))
   Handle h = Handle(current, o);
   if (JvmtiExport::should_post_vm_object_alloc()) {
     JvmtiExport::post_vm_object_alloc(current, o);
