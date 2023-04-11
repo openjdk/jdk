@@ -111,6 +111,7 @@ module java.base {
     exports java.util;
     exports java.util.concurrent;
     exports java.util.concurrent.atomic;
+    exports java.util.concurrent.lazy;
     exports java.util.concurrent.locks;
     exports java.util.function;
     exports java.util.jar;

@@ -7,10 +7,10 @@ import java.util.function.Function;
  * of type K and a mapper that can compute an associated
  * value of type V at a later time.
  *
- * @param key    to bind to a mapper
- * @param mapper to be applied for the key at a later time
  * @param <K>    the type of the key maintained by this association
  * @param <V>    the type of mapped values
+ * @param key    to bind to a mapper
+ * @param mapper to be applied for the key at a later time
  */
 public record KeyMapper<K, V>(
         K key,

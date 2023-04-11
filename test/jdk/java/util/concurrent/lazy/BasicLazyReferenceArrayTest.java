@@ -24,6 +24,7 @@
 /*
  * @test
  * @summary Verify basic BasicLazyReferenceArray operations
+ * @enablePreview
  * @run junit BasicLazyReferenceArrayTest
  */
 

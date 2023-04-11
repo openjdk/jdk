@@ -8,7 +8,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.lazy.KeyMapper;
 import java.util.concurrent.lazy.Lazy;
 import java.util.concurrent.lazy.LazyReferenceArray;
-import java.util.concurrent.lazy.playground.DemoMapObject;
 import java.util.function.Function;
 
 import static java.util.stream.Collectors.toMap;

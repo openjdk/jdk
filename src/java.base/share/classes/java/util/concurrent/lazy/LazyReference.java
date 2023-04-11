@@ -36,8 +36,6 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
-// Build time, background, etc. computation (time shifting) (referentially transparent)
-
 /**
  * An object reference in which the value can be lazily and atomically computed.
  * <p>
@@ -319,8 +317,15 @@ public final class LazyReference<V>
         /**
          * {@return a builder that will use the provided {@code earliestEvaluation} when
          * eventially {@linkplain #build() building} a LazyReference}.
+         * <p>
+         * Any supplier configured with this builder must be referentially transparent
+         * and thus must have no side-effect in order to allow transparent time-shifting of
+         * evaluation.
+         * <p>
+         * No guarantees are made with respect to the latest time of evaluation and
+         * consequently, the value might always be evaliate {@linkplain Lazy.Evaluation#AT_USE at use}.
          *
-         * @param earliestEvaluation to use
+         * @param earliestEvaluation to use.
          */
         Builder<T> withEarliestEvaluation(Lazy.Evaluation earliestEvaluation);
 

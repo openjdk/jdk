@@ -12,7 +12,7 @@ import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
 /**
- * This class provides common factories and configuration classes for all
+ * This class provides common factories and builders classes for all
  * Lazy class variants.
  */
 @PreviewFeature(feature = PreviewFeature.Feature.LAZY)

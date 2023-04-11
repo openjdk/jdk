@@ -24,6 +24,7 @@
 /*
  * @test
  * @summary Verify basic BasicLazyReferenceArray operations
+ * @enablePreview
  * @run junit LazyReferenceArrayMappingTest
  */
 
@@ -47,38 +48,20 @@ final class LazyReferenceArrayMappingTest {
     CountingIntegerMapper mapper;
 
     LazyReferenceArray.IntKeyMapper intKeyMapper;
-    LazyReferenceArray.KeyMapper<String> keyMapper;
 
     @BeforeEach
     void setup() {
         lazy = Lazy.ofEmptyArray(SIZE);
         mapper = new CountingIntegerMapper(SIZE);
         intKeyMapper = LazyReferenceArray.IntKeyMapper.ofConstant(2);
-        // keyMapper = LazyReferenceArray.KeyMapper.ofHashing("A", "B", "C");
     }
 
-/*    @Test
+    @Test
     void mapInt() {
         int two = lazy.mapIntAndApply(intKeyMapper, 2, i -> 2, i -> 0);
         assertEquals(2, two);
         int three = lazy.mapIntAndApply(intKeyMapper, 3, i -> 2, i -> 0);
         assertEquals(0, three);
-    }*/
-
-    @Test
-    void a() {
-        var pm = LazyReferenceArray.KeyMapper.polynomialMapper("A", "B", "C");
-        System.out.println(pm);
-    }
-
-    @Test
-    void mapString() {
-        LazyReferenceArray<String> lazyStrings = Lazy.ofEmptyArray(keyMapper.requiredLength().getAsInt());
-        Function<String, String> mapper = s -> s.repeat(10);
-        String as = lazyStrings.mapAndApply(keyMapper, "A", mapper, Function.identity());
-        assertEquals(mapper.apply("A"), as);
-        String x = lazyStrings.mapAndApply(keyMapper, "X", mapper, Function.identity());
-        assertEquals("X", x);
     }
 
     static private final class CountingIntegerMapper implements IntFunction<Integer> {
