@@ -650,7 +650,7 @@ public class BitSet implements Cloneable, java.io.Serializable {
         checkInvariants();
 
         int len = length();
-        if ( len < 0 )
+        if (len < 0)
             len = Integer.MAX_VALUE;
 
         // If no set bits in range return empty bitset
