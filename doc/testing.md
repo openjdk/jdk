@@ -381,7 +381,7 @@ This is only valid if the failure handler is built.
 #### JTREG_TEST_THREAD_FACTORY
 
 Sets the `-testThreadFactory` for JTReg. The source code of all plugins is located
-in `test/jtreg_test_thread_factory/'. The plugins is built as a part of test image.
+in `test/jtreg_test_thread_factory/'. The plugins are built as a part of test image.
 
 #### TEST_MODE
 
