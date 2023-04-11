@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 package nsk.share.jpda;
 
 import java.io.IOException;
+import java.lang.ref.Cleaner;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import nsk.share.*;
@@ -93,6 +94,10 @@ public class SocketIOPipe extends Log.Logger implements Finalizable {
         this.timeout = timeout;
         this.listening = listening;
         this.name = name;
+
+        // As an alternative to finalize() call, register cleanup() method to be called
+        // when this instance becomes unreachable.
+        Cleaner.create().register(this, () -> cleanup());
     }
 
     /**
@@ -104,6 +109,10 @@ public class SocketIOPipe extends Log.Logger implements Finalizable {
         this.port = port;
         this.timeout = timeout;
         this.listening = listening;
+
+        // As an alternative to finalize() call, register cleanup() method to be called
+        // when this instance becomes unreachable.
+        Cleaner.create().register(this, () -> cleanup());
     }
 
     /**
@@ -308,17 +317,20 @@ public class SocketIOPipe extends Log.Logger implements Finalizable {
 
     /**
      * Perform finalization of the object by invoking close().
+     *
+     * This is replacement of finalize() method and is called
+     * when this instance becomes unreachable.
+     *
      */
-    protected void finalize() throws Throwable {
+    public void cleanup() {
         close();
-        super.finalize();
     }
 
     /**
      * Perform finalization of the object at exit by invoking finalize().
      */
     public void finalizeAtExit() throws Throwable {
-        finalize();
+        cleanup();
     }
 
     /**

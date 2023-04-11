@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringReader;
+import java.lang.ref.Cleaner;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
@@ -191,6 +192,9 @@ public class Log extends FinalizableObject {
         // install finalizer to print errors summary at exit
         Finalizer finalizer = new Finalizer(this);
         finalizer.activate();
+
+        // register the clenup method to be called when this Log instance becomes unreachable.
+        Cleaner.create().register(this, () -> cleanup());
 
         // Don't log exceptions from this method. It would just add unnecessary logs.
         loggedExceptions.add("nsk.share.jdi.SerialExecutionDebugger.executeTests");
@@ -470,7 +474,7 @@ public class Log extends FinalizableObject {
      */
     @Deprecated
     protected synchronized void logTo(PrintStream stream) {
-        finalize(); // flush older log stream
+        cleanup(); // flush older log stream
         out = stream;
         verbose = true;
     }
@@ -605,8 +609,12 @@ public class Log extends FinalizableObject {
 
     /**
      * Print errors summary if mode is verbose, flush and cancel output stream.
+     *
+     * This is replacement of the finalize() method and is called when this
+     * Log instance becomes unreachable.
+     *
      */
-    protected void finalize() {
+    public void cleanup() {
         if (verbose() && isErrorsSummaryEnabled()) {
             printErrorsSummary();
         }
@@ -619,7 +627,7 @@ public class Log extends FinalizableObject {
      * Perform finalization at the exit.
      */
     public void finalizeAtExit() {
-        finalize();
+        cleanup();
     }
 
     /**

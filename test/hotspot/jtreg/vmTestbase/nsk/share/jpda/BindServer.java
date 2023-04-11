@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 package nsk.share.jpda;
 
 import java.io.*;
+import java.lang.ref.Cleaner;
 import java.net.*;
 import java.util.*;
 
@@ -94,6 +95,12 @@ public class BindServer implements Finalizable {
     private int acceptedRequests = 0;
     private int unauthorizedRequests = 0;
     private int busyRequests = 0;
+
+    public BindServer() {
+        // The Cleaner alternative to deprecated finalize() method
+        // that is called when the instance becomes unreachable.
+        Cleaner.create().register(this, () -> cleanup());
+    }
 
     /**
      * Start <code>BindServer</code> utility from command line.
@@ -217,7 +224,7 @@ public class BindServer implements Finalizable {
 
         logger.trace(TRACE_LEVEL_THREADS, "BindServer: exiting main thread");
         try {
-            finalize();
+            cleanup();
         } catch (Throwable e) {
             e.printStackTrace(log.getOutStream());
             logger.complain("Caught exception while finalization of BindServer:\n\t" + e);
@@ -406,21 +413,22 @@ public class BindServer implements Finalizable {
      * Make finalization of <code>BindServer</code> object by invoking
      * method <code>close()</code>.
      *
+     * This is replacement of the deprecated finalize() and is called
+     * when this instance becomes unreachable.
+     *
      * @see #close()
      */
-    protected void finalize() throws Throwable {
+    public void cleanup() {
         close();
-        super.finalize();
     }
 
     /**
      * Make finalization of <code>BindServer</code> object at program exit
-     * by invoking method <code>finalize()</code>.
+     * by invoking method <code>cleanup()</code>.
      *
-     * @see #finalize()
      */
     public void finalizeAtExit() throws Throwable {
-        finalize();
+        cleanup();
         logger.trace(TRACE_LEVEL_THREADS, "BindServer: finalization at exit completed");
     }
 

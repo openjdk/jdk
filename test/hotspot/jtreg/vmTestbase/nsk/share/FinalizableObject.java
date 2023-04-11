@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,7 @@ package nsk.share;
 
 /**
  * This class is an simple exalmple of finalizable object, that implements interface
- * <code>Finalizable</code> and invokes standard <code>finalize()</code> method
- * as finalization.
+ * <code>Finalizable</code>.
  *
  * @see Finalizable
  * @see Finalizer
@@ -36,15 +35,12 @@ public class FinalizableObject implements Finalizable {
     /**
      * This method will be invoked by <tt>Finalizer</tt> when virtual mashine
      * shuts down.
-     * For <code>FinalizableObject</code> this method just invoke
-     * <code>finalize()</code>.
      *
      * @throws Throwable if any throwable exception thrown during finalization
      *
-     * @see Object#finalize()
      * @see Finalizer
      */
     public void finalizeAtExit() throws Throwable {
-        finalize();
+
     }
 }
