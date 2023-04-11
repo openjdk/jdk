@@ -3670,7 +3670,7 @@ public final class String
      * @since   21
      */
     public String uppercase() {
-        return toUpperCase(Locale.getDefault());
+        return toUpperCase(Locale.ROOT);
     }
 
     /**
