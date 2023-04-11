@@ -2292,8 +2292,8 @@ void PhaseIdealLoop::do_unroll(IdealLoopTree *loop, Node_List &old_new, bool adj
       // (1) Convert to long.
       Node* limit_l = new ConvI2LNode(limit);
       register_new_node(limit_l, get_ctrl(limit));
-      Node* stride_l = new ConvI2LNode(stride);
-      register_new_node(stride_l, get_ctrl(limit));
+      Node* stride_l = _igvn.longcon(stride_con);
+      set_ctrl(stride_l, C->root());
 
       // (2) Subtract: compute in long, to prevent underflow.
       Node* new_limit_l = new SubLNode(limit_l, stride_l);
