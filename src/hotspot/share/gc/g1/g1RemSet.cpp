@@ -550,14 +550,18 @@ class G1ScanHRForRegionClosure : public HeapRegionClosure {
     return scanned_to;
   }
 
-  void do_claimed_block(uint const region_idx_for_card, CardValue* first_card, size_t const num_cards) {
-    HeapWord* const card_start = _ct->addr_for(first_card);
+  void do_claimed_block(uint const region_idx, CardValue* const dirty_l, CardValue* const dirty_r) {
+    _ct->change_dirty_cards_to(dirty_l, dirty_r, _scanned_card_value);
+    size_t num_cards = dirty_r - dirty_l;
+    _blocks_scanned++;
+
+    HeapWord* const card_start = _ct->addr_for(dirty_l);
 #ifdef ASSERT
-    HeapRegion* hr = _g1h->region_at_or_null(region_idx_for_card);
+    HeapRegion* hr = _g1h->region_at_or_null(region_idx);
     assert(hr == NULL || hr->is_in_reserved(card_start),
-             "Card start " PTR_FORMAT " to scan outside of region %u", p2i(card_start), _g1h->region_at(region_idx_for_card)->hrm_index());
+             "Card start " PTR_FORMAT " to scan outside of region %u", p2i(card_start), _g1h->region_at(region_idx)->hrm_index());
 #endif
-    HeapWord* const top = _scan_state->scan_top(region_idx_for_card);
+    HeapWord* const top = _scan_state->scan_top(region_idx);
     if (card_start >= top) {
       return;
     }
@@ -567,12 +571,13 @@ class G1ScanHRForRegionClosure : public HeapRegionClosure {
       return;
     }
     MemRegion mr(MAX2(card_start, _scanned_to), scan_end);
-    _scanned_to = scan_memregion(region_idx_for_card, mr);
+    _scanned_to = scan_memregion(region_idx, mr);
 
     _cards_scanned += num_cards;
   }
 
-  class ClaimedChunk {
+  // To locate consecutive dirty cards inside a chunk.
+  class ChunkScanner {
     using Word = size_t;
 
     CardValue* const _start_card;
@@ -640,8 +645,9 @@ class G1ScanHRForRegionClosure : public HeapRegionClosure {
 
       return _end_card;
     }
+
   public:
-    ClaimedChunk(CardValue* const start_card, CardValue* const end_card) :
+    ChunkScanner(CardValue* const start_card, CardValue* const end_card) :
       _start_card(start_card),
       _end_card(end_card) {
         assert(is_word_aligned(start_card), "precondition");
@@ -689,13 +695,10 @@ class G1ScanHRForRegionClosure : public HeapRegionClosure {
       CardValue* const start_card = _ct->byte_for_index(region_card_base_idx);
       CardValue* const end_card = start_card + claim.size();
 
-      ClaimedChunk chunk{start_card, end_card};
-      chunk.on_dirty_cards([&] (CardValue* dirty_l, CardValue* dirty_r) {
-                             _ct->change_dirty_cards_to(dirty_l, dirty_r, _scanned_card_value);
-                             size_t num_cards = dirty_r - dirty_l;
-                             do_claimed_block(region_idx, dirty_l, num_cards);
-                             _blocks_scanned++;
-                           });
+      ChunkScanner chunk_scanner{start_card, end_card};
+      chunk_scanner.on_dirty_cards([&] (CardValue* dirty_l, CardValue* dirty_r) {
+                                     do_claimed_block(region_idx, dirty_l, dirty_r);
+                                   });
     }
   }
 
