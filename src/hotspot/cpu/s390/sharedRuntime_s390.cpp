@@ -1043,7 +1043,7 @@ static void object_move(MacroAssembler *masm,
     __ z_stg(rOop, oop_slot_offset, Z_SP);
     __ add2reg(rHandle, oop_slot_offset, Z_SP);
 
-    // If Oop == null, use a null handle.
+    // If Oop is null, use a null handle.
     __ compare64_and_branch(rOop, (RegisterOrConstant)0L, Assembler::bcondNotEqual, skip);
     __ clear_reg(rHandle, true, false);
     __ bind(skip);
@@ -2076,7 +2076,7 @@ static address gen_c2i_adapter(MacroAssembler  *masm,
   // Call patching needed?
   __ load_and_test_long(Z_R0_scratch, method_(code));
   __ z_lg(ientry, method_(interpreter_entry));  // Preload interpreter entry (also if patching).
-  __ z_brne(patch_callsite);                    // Patch required if code != null (compiled target exists).
+  __ z_brne(patch_callsite);                    // Patch required if code isn't null (compiled target exists).
 
   __ bind(skip_fixup);  // Return point from patch_callsite.
 

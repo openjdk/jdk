@@ -4011,8 +4011,8 @@ void TemplateTable::instanceof() {
   }
 
   __ bind(done);
-  // tos = 0: obj == null or  obj is not an instanceof the specified klass
-  // tos = 1: obj != null and obj is     an instanceof the specified klass
+  // tos = 0: obj is    null or  obj is not an instanceof the specified klass
+  // tos = 1: obj isn't null and obj is     an instanceof the specified klass
   BLOCK_COMMENT("} instanceof");
 }
 
@@ -4140,7 +4140,7 @@ void TemplateTable::monitorenter() {
     __ bind(exit);
   }
 
-  // Rfree_slot != null -> found one
+  // Rfree_slot isn't null -> found one
   __ compareU64_and_branch(Rfree_slot, (intptr_t)0L, Assembler::bcondNotEqual, allocated);
 
   // Allocate one if there's no free slot.

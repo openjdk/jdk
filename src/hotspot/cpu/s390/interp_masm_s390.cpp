@@ -275,7 +275,7 @@ void InterpreterMacroAssembler::check_and_handle_earlyret(Register scratch_reg) 
     Register jvmti_thread_state = Z_ARG2;
     Register tmp                = Z_ARG3;
     load_and_test_long(jvmti_thread_state, Address(Z_thread, JavaThread::jvmti_thread_state_offset()));
-    z_bre(L); // if (thread->jvmti_thread_state() == null) exit;
+    z_bre(L); // if (thread->jvmti_thread_state() == nullptr) exit;
 
     // Initiate earlyret handling only if it is not already being processed.
     // If the flag has the earlyret_processing bit set, it means that this code
@@ -981,7 +981,7 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
   //   // We stored the monitor address into the object's mark word.
   // } else if (THREAD->is_lock_owned((address)displaced_header))
   //   // Simple recursive case.
-  //   monitor->lock()->set_displaced_header(null);
+  //   monitor->lock()->set_displaced_header(nullptr);
   // } else {
   //   // Slow path.
   //   InterpreterRuntime::monitorenter(THREAD, monitor);
@@ -1026,7 +1026,7 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
 
   // } else if (THREAD->is_lock_owned((address)displaced_header))
   //   // Simple recursive case.
-  //   monitor->lock()->set_displaced_header(null);
+  //   monitor->lock()->set_displaced_header(nullptr);
 
   // We did not see an unlocked object so try the fast recursive case.
 
@@ -1080,12 +1080,12 @@ void InterpreterMacroAssembler::unlock_object(Register monitor, Register object)
 // else {
   // template code:
   //
-  // if ((displaced_header = monitor->displaced_header()) == null) {
+  // if ((displaced_header = monitor->displaced_header()) == nullptr) {
   //   // Recursive unlock. Mark the monitor unlocked by setting the object field to null.
-  //   monitor->set_obj(null);
+  //   monitor->set_obj(nullptr);
   // } else if (Atomic::cmpxchg(obj->mark_addr(), monitor, displaced_header) == monitor) {
   //   // We swapped the unlocked mark in displaced_header into the object's mark word.
-  //   monitor->set_obj(null);
+  //   monitor->set_obj(nullptr);
   // } else {
   //   // Slow path.
   //   InterpreterRuntime::monitorexit(monitor);
@@ -1106,9 +1106,9 @@ void InterpreterMacroAssembler::unlock_object(Register monitor, Register object)
 
   assert_different_registers(monitor, object, displaced_header, current_header);
 
-  // if ((displaced_header = monitor->displaced_header()) == null) {
+  // if ((displaced_header = monitor->displaced_header()) == nullptr) {
   //   // Recursive unlock. Mark the monitor unlocked by setting the object field to null.
-  //   monitor->set_obj(null);
+  //   monitor->set_obj(nullptr);
 
   clear_mem(obj_entry, sizeof(oop));
 
@@ -1120,7 +1120,7 @@ void InterpreterMacroAssembler::unlock_object(Register monitor, Register object)
 
   // } else if (Atomic::cmpxchg(obj->mark_addr(), monitor, displaced_header) == monitor) {
   //   // We swapped the unlocked mark in displaced_header into the object's mark word.
-  //   monitor->set_obj(null);
+  //   monitor->set_obj(nullptr);
 
   // If we still have a lightweight lock, unlock the object and be done.
 
@@ -1464,13 +1464,13 @@ void InterpreterMacroAssembler::record_klass_in_profile_helper(
 // Example state machine code for three profile rows:
 //   // main copy of decision tree, rooted at row[1]
 //   if (row[0].rec == rec) { row[0].incr(); goto done; }
-//   if (row[0].rec != null) {
+//   if (row[0].rec != nullptr) {
 //     // inner copy of decision tree, rooted at row[1]
 //     if (row[1].rec == rec) { row[1].incr(); goto done; }
-//     if (row[1].rec != null) {
+//     if (row[1].rec != nullptr) {
 //       // degenerate decision tree, rooted at row[2]
 //       if (row[2].rec == rec) { row[2].incr(); goto done; }
-//       if (row[2].rec != null) { count.incr(); goto done; } // overflow
+//       if (row[2].rec != nullptr) { count.incr(); goto done; } // overflow
 //       row[2].init(rec); goto done;
 //     } else {
 //       // remember row[1] is empty

@@ -1125,12 +1125,12 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   // z_ijava_state->locals = Z_esp + parameter_count bytes
   __ z_stg(Z_locals, _z_ijava_state_neg(locals), fp);
 
-  // z_ijava_state->oop_temp = null;
+  // z_ijava_state->oop_temp = nullptr;
   __ store_const(Address(fp, oop_tmp_offset), 0);
 
   // Initialize z_ijava_state->mdx.
   Register Rmdp = Z_bcp;
-  // native_call: assert that mdo == null
+  // native_call: assert that mdo is null
   const bool check_for_mdo = !native_call DEBUG_ONLY(|| native_call);
   if (ProfileInterpreter && check_for_mdo) {
     Label get_continue;

@@ -115,7 +115,7 @@ void OptoRuntime::generate_exception_blob() {
   // Pop the exception blob's C frame that has been pushed before.
   __ z_lgr(Z_SP, saved_sp);
 
-  // [Z_RET]!=null was possible in hotspot5 but not in sapjvm6.
+  // [Z_RET] isn't null was possible in hotspot5 but not in sapjvm6.
   // C2I adapter extensions are now removed by a resize in the frame manager
   // (unwind_initial_activation_pending_exception).
 #ifdef ASSERT
