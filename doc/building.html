@@ -134,6 +134,8 @@ id="toc-cross-compiling-with-debian-sysroots">Cross compiling with
 Debian sysroots</a></li>
 <li><a href="#building-for-armaarch64"
 id="toc-building-for-armaarch64">Building for ARM/aarch64</a></li>
+<li><a href="#building-for-risc-v" id="toc-building-for-risc-v">Building
+for RISC-V</a></li>
 <li><a href="#building-for-musl" id="toc-building-for-musl">Building for
 musl</a></li>
 <li><a href="#verifying-the-build"
@@ -1376,10 +1378,10 @@ No such file or directory cp: cannot stat
 Debian sysroots</h3>
 <p>Fortunately, you can create sysroots for foreign architectures with
 tools provided by your OS. On Debian/Ubuntu systems, one could use
-<code>qemu-deboostrap</code> to create the <em>target</em> system
-chroot, which would have the native libraries and headers specific to
-that <em>target</em> system. After that, we can use the cross-compiler
-on the <em>build</em> system, pointing into chroot to get the build
+<code>debootstrap</code> to create the <em>target</em> system chroot,
+which would have the native libraries and headers specific to that
+<em>target</em> system. After that, we can use the cross-compiler on the
+<em>build</em> system, pointing into chroot to get the build
 dependencies right. This allows building for foreign architectures with
 native compilation speed.</p>
 <p>For example, cross-compiling to AArch64 from x86_64 could be done
@@ -1389,7 +1391,7 @@ like this:</p>
 <code>apt install g++-aarch64-linux-gnu gcc-aarch64-linux-gnu</code></p></li>
 <li><p>Create chroot on the <em>build</em> system, configuring it for
 <em>target</em> system:
-<code>sudo qemu-debootstrap \       --arch=arm64 \       --verbose \       --include=fakeroot,symlinks,build-essential,libx11-dev,libxext-dev,libxrender-dev,libxrandr-dev,libxtst-dev,libxt-dev,libcups2-dev,libfontconfig1-dev,libasound2-dev,libfreetype6-dev,libpng-dev,libffi-dev \       --resolve-deps \       buster \       ~/sysroot-arm64 \       http://httpredir.debian.org/debian/</code></p></li>
+<code>sudo debootstrap \       --arch=arm64 \       --verbose \       --include=fakeroot,symlinks,build-essential,libx11-dev,libxext-dev,libxrender-dev,libxrandr-dev,libxtst-dev,libxt-dev,libcups2-dev,libfontconfig1-dev,libasound2-dev,libfreetype6-dev,libpng-dev,libffi-dev \       --resolve-deps \       buster \       ~/sysroot-arm64 \       http://httpredir.debian.org/debian/     # If the target architecture is `riscv64`,     # the path should be `debian-ports` instead of `debian`.</code></p></li>
 <li><p>Make sure the symlinks inside the newly created chroot point to
 proper locations:
 <code>sudo chroot ~/sysroot-arm64 symlinks -cr .</code></p></li>
@@ -1516,6 +1518,13 @@ are:</p>
 <td style="text-align: left;">sh4-linux-gnu</td>
 <td>zero</td>
 </tr>
+<tr class="even">
+<td style="text-align: left;">riscv64</td>
+<td style="text-align: left;">sid</td>
+<td style="text-align: left;">riscv64</td>
+<td style="text-align: left;">riscv64-linux-gnu</td>
+<td>(all)</td>
+</tr>
 </tbody>
 </table>
 <h3 id="building-for-armaarch64">Building for ARM/aarch64</h3>
@@ -1525,6 +1534,21 @@ profiles are available using <code>--with-abi-profile</code>:
 arm-vfp-sflt, arm-vfp-hflt, arm-sflt, armv5-vfp-sflt, armv6-vfp-hflt.
 Note that soft-float ABIs are no longer properly supported by the
 JDK.</p>
+<h3 id="building-for-risc-v">Building for RISC-V</h3>
+<p>The RISC-V community provides a basic <a
+href="https://github.com/riscv-collab/riscv-gnu-toolchain">GNU compiler
+toolchain</a>, but the <a href="#External-Library-Requirements">external
+libraries</a> required by OpenJDK complicate the building process. The
+placeholder <code>&lt;toolchain-installed-path&gt;</code> shown below is
+the path where you want to install the toolchain.</p>
+<ul>
+<li><p>Install the RISC-V GNU compiler toolchain:
+<code>git clone --recursive https://github.com/riscv-collab/riscv-gnu-toolchain     cd riscv-gnu-toolchain     ./configure --prefix=&lt;toolchain-installed-path&gt;     make linux     export PATH=&lt;toolchain-installed-path&gt;/bin:$PATH</code></p></li>
+<li><p>Cross-compile all the required libraries:
+<code># An example for libffi     git clone https://github.com/libffi/libffi     cd libffi     ./configure --host=riscv64-unknown-linux-gnu --prefix=&lt;toolchain-installed-path&gt;/sysroot/usr     make     make install</code></p></li>
+<li><p>Configure and build OpenJDK:
+<code>bash configure \       --with-boot-jdk=$BOOT_JDK \       --openjdk-target=riscv64-linux-gnu \       --with-sysroot=&lt;toolchain-installed-path&gt;/sysroot \       --with-toolchain-path=&lt;toolchain-installed-path&gt;/bin \       --with-extra-path=&lt;toolchain-installed-path&gt;/bin     make images</code></p></li>
+</ul>
 <h3 id="building-for-musl">Building for musl</h3>
 <p>Just like it's possible to cross-compile for a different CPU, it's
 possible to cross-compile for musl libc on a glibc-based <em>build</em>

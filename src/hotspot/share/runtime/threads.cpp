@@ -1159,6 +1159,7 @@ jboolean Threads::is_supported_jni_version(jint version) {
   if (version == JNI_VERSION_10) return JNI_TRUE;
   if (version == JNI_VERSION_19) return JNI_TRUE;
   if (version == JNI_VERSION_20) return JNI_TRUE;
+  if (version == JNI_VERSION_21) return JNI_TRUE;
   return JNI_FALSE;
 }
 

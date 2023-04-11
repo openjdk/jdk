@@ -655,14 +655,6 @@ final class Short64Vector extends ShortVector {
 
         @Override
         @ForceInline
-        public Short64Mask eq(VectorMask<Short> mask) {
-            Objects.requireNonNull(mask);
-            Short64Mask m = (Short64Mask)mask;
-            return xor(m.not());
-        }
-
-        @Override
-        @ForceInline
         /*package-private*/
         Short64Mask indexPartiallyInUpperRange(long offset, long limit) {
             return (Short64Mask) VectorSupport.indexPartiallyInUpperRange(
@@ -709,9 +701,9 @@ final class Short64Vector extends ShortVector {
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a | b));
         }
 
+        @Override
         @ForceInline
-        /* package-private */
-        Short64Mask xor(VectorMask<Short> mask) {
+        public Short64Mask xor(VectorMask<Short> mask) {
             Objects.requireNonNull(mask);
             Short64Mask m = (Short64Mask)mask;
             return VectorSupport.binaryOp(VECTOR_OP_XOR, Short64Mask.class, null, short.class, VLENGTH,
