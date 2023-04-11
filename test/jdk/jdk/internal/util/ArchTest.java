@@ -71,7 +71,7 @@ public class ArchTest {
             case "aarch64" -> AARCH64;
             case "riscv64" -> RISCV64;  // unverified
             case "s390x", "s390" -> S390;  // unverified
-            case "ppc64le" -> PPC64;  // unverified
+            case "ppc64", "ppc64le" -> PPC64;  // unverified
             default -> OTHER;
         };
         assertEquals(Architecture.current(), arch, "mismatch in Architecture.current vs " + osArch);
