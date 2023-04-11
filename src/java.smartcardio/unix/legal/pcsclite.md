@@ -1,18 +1,31 @@
-## PC/SC Lite v1.9.5
+## PC/SC Lite v1.9.9
 
 ### PC/SC Lite Notice
 ```
 MUSCLE SmartCard Development ( https://pcsclite.apdu.fr/ )
 
 Only 3 header files are included in this distribution: winscard.h, wintypes.h, pcsclite.h
-Copyright for winscard.h and wintypes.h:
-- Copyright (c) 1999-2004 David Corcoran <corcoran@musclecard.com>
-- Copyright (c) 2002-2011 Ludovic Rousseau <ludovic.rousseau@free.fr>
 
-pcsclite.h has the same as above but with an additional copyright holder:
-- Copyright (C) 2005      Martin Paljak <martin@paljak.pri.ee>
+Copyright for winscard.h:
+ * Copyright (C) 1999-2003
+ *  David Corcoran <corcoran@musclecard.com>
+ * Copyright (C) 2002-2009
+ *  Ludovic Rousseau <ludovic.rousseau@free.fr>
 
-All rights reserved.
+Copyright for wintypes.h:
+ * Copyright (C) 1999
+ *  David Corcoran <corcoran@musclecard.com>
+ * Copyright (C) 2002-2011
+ *  Ludovic Rousseau <ludovic.rousseau@free.fr>
+
+Copyright for pcsclite.h:
+ * Copyright (C) 1999-2004
+ *  David Corcoran <corcoran@musclecard.com>
+ * Copyright (C) 2002-2011
+ *  Ludovic Rousseau <ludovic.rousseau@free.fr>
+ * Copyright (C) 2005
+ *  Martin Paljak <martin@paljak.pri.ee>
+
 ```
 
 ### PC/SC Lite License
