@@ -105,18 +105,6 @@ class LinuxFileStore
         throw new IOException("Mount point not found");
     }
 
-    // get kernel version as a three element array {major, minor, micro}
-    private static int[] getKernelVersion() {
-        Pattern pattern = Pattern.compile("\\D+");
-        String[] matches = pattern.split(System.getProperty("os.version"));
-        int[] majorMinorMicro = new int[3];
-        int length = Math.min(matches.length, majorMinorMicro.length);
-        for (int i = 0; i < length; i++) {
-            majorMinorMicro[i] = Integer.parseInt(matches[i]);
-        }
-        return majorMinorMicro;
-    }
-
     @Override
     public boolean supportsFileAttributeView(Class<? extends FileAttributeView> type) {
         // support DosFileAttributeView and UserDefinedAttributeView if extended
