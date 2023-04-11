@@ -475,7 +475,7 @@ abstract public class TestScaffold extends TargetAdapter {
         // argInfo.targetVMArgs : -Xss4M
         // The result with wrapper enabled:
         // argInfo.targetAppCommandLine : TestScaffold Virtual Frames2Targ
-        // argInfo.targetVMArgs : -Xss4M --enable-preview
+        // argInfo.targetVMArgs : -Xss4M
         boolean classNameParsed = false;
         for (int i = 0; i < args.length; i++) {
             String arg = args[i].trim();
@@ -497,8 +497,7 @@ abstract public class TestScaffold extends TargetAdapter {
             } else if (arg.equals("-redefasync")) {
                 redefineAsynchronously = true;
             } else if (arg.startsWith("-J")) {
-                argInfo.targetVMArgs += (arg.substring(2) + ' ');
-                throw new RuntimeException("-J-option is not supported. Incorrect arg: " + args[i]);
+                throw new RuntimeException("-J-option format is not supported. Incorrect arg: " + args[i]);
             } else if (arg.startsWith("-")) {
                 argInfo.targetVMArgs += (arg + ' ');
                 if (doubleWordArgs.contains(arg)) {
