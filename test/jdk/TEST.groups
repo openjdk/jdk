@@ -640,7 +640,7 @@ jdk_core_manual_no_input_security = \
     sun/security/smartcardio/TestTransmit.java \
     sun/security/tools/jarsigner/compatibility/Compatibility.java
 
-jdk_core_manual_human = \
+jdk_core_manual_interactive = \
     com/sun/jndi/dns/Test6991580.java \
     java/util/TimeZone/DefaultTimeZoneTest.java \
     sun/security/tools/keytool/i18n.java \
