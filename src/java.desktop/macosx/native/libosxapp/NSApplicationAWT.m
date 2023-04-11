@@ -370,7 +370,7 @@ untilDate:(NSDate *)expiration inMode:(NSString *)mode dequeue:(BOOL)deqFlag {
         void (^block)() = (void (^)()) [event data1];
         block();
         [block release];
-    } else if ([event type] == NSKeyUp && ([event modifierFlags] & NSCommandKeyMask)) {
+    } else if ([event type] == NSEventTypeKeyUp && ([event modifierFlags] & NSCommandKeyMask)) {
         // Cocoa won't send us key up event when releasing a key while Cmd is down,
         // so we have to do it ourselves.
         [[self keyWindow] sendEvent:event];

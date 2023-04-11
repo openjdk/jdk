@@ -187,7 +187,7 @@ public class CPlatformView extends CFRetainedResource {
         int absX = event.getAbsX();
         int absY = event.getAbsY();
 
-        if (event.getType() == CocoaConstants.NSScrollWheel) {
+        if (event.getType() == CocoaConstants.NSEventTypeScrollWheel) {
             responder.handleScrollEvent(x, y, absX, absY, event.getModifierFlags(),
                                         event.getScrollDeltaX(), event.getScrollDeltaY(),
                                         event.getScrollPhase());

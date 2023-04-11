@@ -98,7 +98,7 @@ static BOOL inDoDragDropLoop;
 
 + (jint) scrollStateWithEvent: (NSEvent*) event {
 
-    if ([event type] != NSScrollWheel) {
+    if ([event type] != NSEventTypeScrollWheel) {
         return 0;
     }
 
@@ -126,7 +126,7 @@ static BOOL inDoDragDropLoop;
 }
 
 + (BOOL) hasPreciseScrollingDeltas: (NSEvent*) event {
-    return [event type] == NSScrollWheel
+    return [event type] == NSEventTypeScrollWheel
         && [event respondsToSelector:@selector(hasPreciseScrollingDeltas)]
         && [event hasPreciseScrollingDeltas];
 }

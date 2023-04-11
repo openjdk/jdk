@@ -1022,7 +1022,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
             // We are going to show a modal window. Previously displayed window will be
             // blocked/disabled. So we have to send mouse exited event to it now, since
             // all mouse events are discarded for blocked/disabled windows.
-            execute(ptr -> nativeSynthesizeMouseEnteredExitedEvents(ptr, CocoaConstants.NSMouseExited));
+            execute(ptr -> nativeSynthesizeMouseEnteredExitedEvents(ptr, CocoaConstants.NSEventTypeMouseExited));
         }
 
         execute(ptr -> nativeSetEnabled(ptr, !blocked));

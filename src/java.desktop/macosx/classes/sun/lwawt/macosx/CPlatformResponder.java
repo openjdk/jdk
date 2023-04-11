@@ -139,7 +139,7 @@ final class CPlatformResponder {
                         short keyCode, boolean needsKeyTyped, boolean needsKeyReleased) {
         boolean isFlagsChangedEvent =
             isNpapiCallback ? (eventType == CocoaConstants.NPCocoaEventFlagsChanged) :
-                              (eventType == CocoaConstants.NSFlagsChanged);
+                              (eventType == CocoaConstants.NSEventTypeFlagsChanged);
 
         int jeventType = KeyEvent.KEY_PRESSED;
         int jkeyCode = KeyEvent.VK_UNDEFINED;

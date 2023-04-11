@@ -30,38 +30,38 @@ public final class CocoaConstants {
     private CocoaConstants(){}
 
     //from the NSEvent class reference:
-    public static final int NSLeftMouseDown      = 1;
-    public static final int NSLeftMouseUp        = 2;
-    public static final int NSRightMouseDown     = 3;
-    public static final int NSRightMouseUp       = 4;
-    public static final int NSMouseMoved         = 5;
-    public static final int NSLeftMouseDragged   = 6;
-    public static final int NSRightMouseDragged  = 7;
-    public static final int NSMouseEntered       = 8;
-    public static final int NSMouseExited        = 9;
-    public static final int NSKeyDown            = 10;
-    public static final int NSKeyUp              = 11;
-    public static final int NSFlagsChanged       = 12;
+    public static final int NSEventTypeLeftMouseDown      = 1;
+    public static final int NSEventTypeLeftMouseUp        = 2;
+    public static final int NSEventTypeRightMouseDown     = 3;
+    public static final int NSEventTypeRightMouseUp       = 4;
+    public static final int NSEventTypeMouseMoved         = 5;
+    public static final int NSEventTypeLeftMouseDragged   = 6;
+    public static final int NSEventTypeRightMouseDragged  = 7;
+    public static final int NSEventTypeMouseEntered       = 8;
+    public static final int NSEventTypeMouseExited        = 9;
+    public static final int NSEventTypeKeyDown            = 10;
+    public static final int NSEventTypeKeyUp              = 11;
+    public static final int NSEventTypeFlagsChanged       = 12;
 
-    public static final int NSScrollWheel        = 22;
-    public static final int NSOtherMouseDown     = 25;
-    public static final int NSOtherMouseUp       = 26;
-    public static final int NSOtherMouseDragged  = 27;
+    public static final int NSEventTypeScrollWheel        = 22;
+    public static final int NSEventTypeOtherMouseDown     = 25;
+    public static final int NSEventTypeOtherMouseUp       = 26;
+    public static final int NSEventTypeOtherMouseDragged  = 27;
 
     public static final int AllLeftMouseEventsMask =
-        1 << NSLeftMouseDown |
-        1 << NSLeftMouseUp |
-        1 << NSLeftMouseDragged;
+        1 << NSEventTypeLeftMouseDown |
+        1 << NSEventTypeLeftMouseUp |
+        1 << NSEventTypeLeftMouseDragged;
 
     public static final int AllRightMouseEventsMask =
-        1 << NSRightMouseDown |
-        1 << NSRightMouseUp |
-        1 << NSRightMouseDragged;
+        1 << NSEventTypeRightMouseDown |
+        1 << NSEventTypeRightMouseUp |
+        1 << NSEventTypeRightMouseDragged;
 
     public static final int AllOtherMouseEventsMask =
-        1 << NSOtherMouseDown |
-        1 << NSOtherMouseUp |
-        1 << NSOtherMouseDragged;
+        1 << NSEventTypeOtherMouseDown |
+        1 << NSEventTypeOtherMouseUp |
+        1 << NSEventTypeOtherMouseDragged;
 
     /*
     NSAppKitDefined      = 13,
@@ -69,7 +69,7 @@ public final class CocoaConstants {
     NSApplicationDefined = 15,
     NSPeriodic           = 16,
     NSCursorUpdate       = 17,
-    NSScrollWheel        = 22,
+    NSEventTypeScrollWheel        = 22,
     NSTabletPoint        = 23,
     NSTabletProximity    = 24,
     NSEventTypeGesture   = 29,
