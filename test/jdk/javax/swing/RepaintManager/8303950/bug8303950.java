@@ -41,6 +41,8 @@ public class bug8303950 {
     static final Color FLICKER_OF_BACKGROUND_COLOR = new Color(91, 152, 214);
     static final Color CORRECT_FOREGROUND_COLOR = new Color(119, 33, 236);
 
+    private static boolean TEST_FAILED = false;
+
     public static void main(String[] args) throws Exception {
         SwingUtilities.invokeAndWait(new Runnable() {
             @Override
@@ -91,7 +93,7 @@ public class bug8303950 {
                                     }
                                     if (notSetupSamples + flickerSamples > 0) {
                                         System.err.println("This test failed.");
-                                        System.exit(1);
+                                        TEST_FAILED = true;
                                     } else {
                                         System.out.println("This test passed.");
                                         return;
@@ -108,7 +110,7 @@ public class bug8303950 {
                             }
                         } catch (AWTException e) {
                             e.printStackTrace();
-                            System.exit(1);
+                            TEST_FAILED = true;
                         }
                     }
 
@@ -145,6 +147,8 @@ public class bug8303950 {
             }
         });
         Thread.currentThread().sleep(5000);
+        if (TEST_FAILED)
+            throw new Exception("This test failed; see System.err for details.");
     }
 
     static class FlickerTestWindow extends JWindow {
