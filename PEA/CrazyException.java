@@ -13,16 +13,11 @@ class CrazyException {
         }
         return x;
     }
+
     public static void close() {}
     public static void main(String[] args)  {
-        int iterations = 0;
-        try {
-            while (iterations < 20_000) {
-                CrazyException.foo(0 == (iterations & 0xf));
-                iterations++;
-            }
-        } finally {
-            System.err.println("Epsilon Test: " + iterations);
+        for (int i = 0; i < 20_000; ++i) {
+            CrazyException.foo(0 == ( i& 0xf));
         }
     }
 }
