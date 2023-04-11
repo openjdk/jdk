@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018, 2020, Red Hat, Inc. All rights reserved.
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,12 +105,12 @@ public:
   // "false", available work has been observed in one of the task queues,
   // so the global task is not complete.
   bool offer_termination() {
-    return offer_termination(NULL);
+    return offer_termination(nullptr);
   }
 
   // As above, but it also terminates if the should_exit_termination()
   // method of the terminator parameter returns true. If terminator is
-  // NULL, then it is ignored.
+  // null, then it is ignored.
   bool offer_termination(TerminatorTerminator* terminator);
 
   // Reset the terminator, so that it may be reused again.

@@ -54,15 +54,14 @@ public:
 
 // Second set of post evacuate collection set tasks containing (s means serial):
 // - Eagerly Reclaim Humongous Objects (s)
-// - Reset Hot Card Cache (s)
 // - Update Derived Pointers (s)
 // - Clear Retained Region Bitmaps (on evacuation failure)
 // - Redirty Logged Cards
 // - Restore Preserved Marks (on evacuation failure)
 // - Free Collection Set
+// - Resize TLABs
 class G1PostEvacuateCollectionSetCleanupTask2 : public G1BatchedTask {
   class EagerlyReclaimHumongousObjectsTask;
-  class ResetHotCardCacheTask;
 #if COMPILER2_OR_JVMCI
   class UpdateDerivedPointersTask;
 #endif
@@ -70,6 +69,7 @@ class G1PostEvacuateCollectionSetCleanupTask2 : public G1BatchedTask {
   class ClearRetainedRegionBitmaps;
   class RedirtyLoggedCardsTask;
   class RestorePreservedMarksTask;
+  class ResizeTLABsTask;
   class FreeCollectionSetTask;
 
 public:

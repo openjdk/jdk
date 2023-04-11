@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,11 +48,11 @@ GrowableArray<MemoryPool*>* MemoryService::_pools_list =
 GrowableArray<MemoryManager*>* MemoryService::_managers_list =
   new (mtServiceability) GrowableArray<MemoryManager*>(init_managers_list_size, mtServiceability);
 
-MemoryManager*   MemoryService::_code_cache_manager    = NULL;
+MemoryManager*   MemoryService::_code_cache_manager    = nullptr;
 GrowableArray<MemoryPool*>* MemoryService::_code_heap_pools =
     new (mtServiceability) GrowableArray<MemoryPool*>(init_code_heap_pools_size, mtServiceability);
-MemoryPool*      MemoryService::_metaspace_pool        = NULL;
-MemoryPool*      MemoryService::_compressed_class_pool = NULL;
+MemoryPool*      MemoryService::_metaspace_pool        = nullptr;
+MemoryPool*      MemoryService::_compressed_class_pool = nullptr;
 
 class GcThreadCountClosure: public ThreadClosure {
  private:
@@ -98,7 +98,7 @@ void MemoryService::add_code_heap_memory_pool(CodeHeap* heap, const char* name) 
   _code_heap_pools->append(code_heap_pool);
   _pools_list->append(code_heap_pool);
 
-  if (_code_cache_manager == NULL) {
+  if (_code_cache_manager == nullptr) {
     // Create CodeCache memory manager
     _code_cache_manager = MemoryManager::get_code_cache_memory_manager();
     _managers_list->append(_code_cache_manager);
@@ -130,7 +130,7 @@ MemoryManager* MemoryService::get_memory_manager(instanceHandle mh) {
       return mgr;
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 MemoryPool* MemoryService::get_memory_pool(instanceHandle ph) {
@@ -140,7 +140,7 @@ MemoryPool* MemoryService::get_memory_pool(instanceHandle ph) {
       return pool;
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 void MemoryService::track_memory_usage() {

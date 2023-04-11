@@ -813,24 +813,6 @@ var getJibProfilesProfiles = function (input, common, data) {
         }
     });
 
-    // Define the reference implementation profiles. These are basically the same
-    // as the open profiles, but upload artifacts to a different location.
-    common.main_profile_names.forEach(function (name) {
-        var riName = name + "-ri";
-        var riDebugName = riName + common.debug_suffix;
-        var openName = name + common.open_suffix;
-        var openDebugName = openName + common.debug_suffix;
-        profiles[riName] = clone(profiles[openName]);
-        profiles[riDebugName] = clone(profiles[openDebugName]);
-        // Rewrite all remote dirs to "bundles/openjdk/BCL/..."
-        for (artifactName in profiles[riName].artifacts) {
-            var artifact = profiles[riName].artifacts[artifactName];
-            artifact.remote = replaceAll(
-                "\/GPL\/", "/BCL/",
-                (artifact.remote != null ? artifact.remote : artifact.local));
-        }
-    });
-
     // For open profiles, the non-debug jdk bundles, need an "open" prefix on the
     // remote bundle names, forming the word "openjdk". See JDK-8188789.
     common.main_profile_names.forEach(function (name) {
@@ -869,7 +851,7 @@ var getJibProfilesProfiles = function (input, common, data) {
     [ "linux-aarch64", "linux-x64", "macosx-x64", "macosx-aarch64", "windows-x64" ]
         .forEach(function (name) {
             var o = artifactData[name]
-            var jdk_subdir = (o.jdk_subdir != null ? o.jdk_subdir : "jdk-" + data.version);
+            var jdk_subdir = "jdk-" + data.version;
             var jdk_suffix = (o.jdk_suffix != null ? o.jdk_suffix : "tar.gz");
             var pf = o.platform
             var jcovName = name + "-jcov";
@@ -1010,6 +992,20 @@ var getJibProfilesProfiles = function (input, common, data) {
         };
         profiles["run-test"] = concatObjects(profiles["run-test"], macosxRunTestExtra);
         profiles["run-test-prebuilt"] = concatObjects(profiles["run-test-prebuilt"], macosxRunTestExtra);
+    } else if (input.build_os == "windows") {
+        // On windows, add the devkit debugger to the path in all the run-test profiles
+        // to make them available to the jtreg failure handler.
+        var archDir = "x64";
+        if (input.build_arch == "aarch64") {
+            archDir = "arm64"
+        }
+        windowsRunTestExtra = {
+            environment_path: [
+                input.get("devkit", "install_path") + "/10/Debuggers/" + archDir
+            ]
+        }
+        profiles["run-test"] = concatObjects(profiles["run-test"], windowsRunTestExtra);
+        profiles["run-test-prebuilt"] = concatObjects(profiles["run-test-prebuilt"], windowsRunTestExtra);
     }
 
     // The profile run-test-prebuilt defines src.conf as the src bundle. When
@@ -1051,8 +1047,8 @@ var getJibProfilesDependencies = function (input, common) {
     var devkit_platform_revisions = {
         linux_x64: "gcc11.2.0-OL6.4+1.0",
         macosx: "Xcode12.4+1.1",
-        windows_x64: "VS2022-17.1.0+1.0",
-        linux_aarch64: "gcc11.2.0-OL7.6+1.0",
+        windows_x64: "VS2022-17.1.0+1.1",
+        linux_aarch64: input.build_cpu == "x64" ? "gcc11.2.0-OL7.6+1.1" : "gcc11.2.0-OL7.6+1.0",
         linux_arm: "gcc8.2.0-Fedora27+1.0",
         linux_ppc64le: "gcc8.2.0-Fedora27+1.0",
         linux_s390x: "gcc8.2.0-Fedora27+1.0",

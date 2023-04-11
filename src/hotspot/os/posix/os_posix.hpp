@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,8 +76,8 @@ public:
   // A safe implementation of realpath which will not cause a buffer overflow if the resolved path
   //   is longer than PATH_MAX.
   // On success, returns 'outbuf', which now contains the path.
-  // On error, it will return NULL and set errno. The content of 'outbuf' is undefined.
-  // On truncation error ('outbuf' too small), it will return NULL and set errno to ENAMETOOLONG.
+  // On error, it will return null and set errno. The content of 'outbuf' is undefined.
+  // On truncation error ('outbuf' too small), it will return null and set errno to ENAMETOOLONG.
   static char* realpath(const char* filename, char* outbuf, size_t outbuflen);
 
   // Returns true if given uid is root.

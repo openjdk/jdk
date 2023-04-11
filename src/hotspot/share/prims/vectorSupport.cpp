@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,7 +83,7 @@ BasicType VectorSupport::klass2bt(InstanceKlass* ik) {
   // static final Class<?> ETYPE;
   Klass* holder = ik->find_field(vmSymbols::ETYPE_name(), vmSymbols::class_signature(), &fd);
 
-  assert(holder != NULL, "sanity");
+  assert(holder != nullptr, "sanity");
   assert(fd.is_static(), "");
   assert(fd.offset() > 0, "");
 
@@ -103,7 +103,7 @@ jint VectorSupport::klass2length(InstanceKlass* ik) {
   // static final int VLENGTH;
   Klass* holder = ik->find_field(vmSymbols::VLENGTH_name(), vmSymbols::int_signature(), &fd);
 
-  assert(holder != NULL, "sanity");
+  assert(holder != nullptr, "sanity");
   assert(fd.is_static(), "");
   assert(fd.offset() > 0, "");
 

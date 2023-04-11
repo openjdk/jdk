@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,14 +141,14 @@ void C2_MacroAssembler::fast_unlock(Register Roop, Register Rbox, Register Rscra
   Label done;
 
   ldr(Rmark, Address(Rbox, BasicLock::displaced_header_offset_in_bytes()));
-  // If hdr is NULL, we've got recursive locking and there's nothing more to do
+  // If hdr is null, we've got recursive locking and there's nothing more to do
   cmp(Rmark, 0);
   b(done, eq);
 
   // Restore the object header
   bool allow_fallthrough_on_failure = true;
   bool one_shot = true;
-  cas_for_lock_release(Rmark, Rbox, Roop, Rscratch, done, allow_fallthrough_on_failure, one_shot);
+  cas_for_lock_release(Rbox, Rmark, Roop, Rscratch, done, allow_fallthrough_on_failure, one_shot);
 
   bind(done);
 }

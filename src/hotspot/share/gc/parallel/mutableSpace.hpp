@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,7 +101,7 @@ class MutableSpace: public CHeapObj<mtGC> {
                           bool clear_space,
                           bool mangle_space,
                           bool setup_pages = SetupPages,
-                          WorkerThreads* pretouch_workers = NULL);
+                          WorkerThreads* pretouch_workers = nullptr);
 
   virtual void clear(bool mangle_space);
   virtual void update() { }
@@ -137,7 +137,7 @@ class MutableSpace: public CHeapObj<mtGC> {
   virtual size_t tlab_used(Thread* thr) const             { return used_in_bytes();                }
   virtual size_t unsafe_max_tlab_alloc(Thread* thr) const { return free_in_bytes();                }
 
-  // Allocation (return NULL if full)
+  // Allocation (return null if full)
   virtual HeapWord* cas_allocate(size_t word_size);
   // Optional deallocation. Used in NUMA-allocator.
   bool cas_deallocate(HeapWord *obj, size_t size);

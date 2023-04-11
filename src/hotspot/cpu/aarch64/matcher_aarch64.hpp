@@ -145,8 +145,7 @@
 
   // Does the CPU supports vector unsigned comparison instructions?
   static const bool supports_vector_comparison_unsigned(int vlen, BasicType bt) {
-    // Not supported on SVE yet.
-    return !UseSVE;
+    return true;
   }
 
   // Some microarchitectures have mask registers used on vectors
