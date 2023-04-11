@@ -24,6 +24,7 @@ import java.util.Locale;
 import java.util.stream.Stream;
 
 import jdk.internal.util.Architecture;
+import jdk.internal.misc.Unsafe;
 
 import static jdk.internal.util.Architecture.OTHER;
 import static jdk.internal.util.Architecture.AARCH64;
@@ -46,9 +47,14 @@ import static org.junit.jupiter.api.Assertions.fail;
  * @bug 8304915
  * @summary Verify Architecture enum maps to system property os.arch
  * @modules java.base/jdk.internal.util
+ * @modules java.base/jdk.internal.misc
  * @run junit ArchTest
  */
 public class ArchTest {
+    private static boolean IS_BIG_ENDIAN = Unsafe.getUnsafe().isBigEndian();
+
+    private static boolean IS_64BIT_ADDRESS = Unsafe.getUnsafe().addressSize() == 8;
+
     /**
      * Test consistency of System property "os.arch" with Architecture.current().
      */
@@ -95,38 +101,20 @@ public class ArchTest {
     }
 
     /**
-     * Test that Architecture.is64bit() matches Architecture.current().
+     * Test that Architecture.is64bit() matches Unsafe.addressSize() == 8.
      */
     @Test
     public void is64BitVsCurrent() {
-        Architecture current = Architecture.current();
-        boolean expected64Bit = switch (current) {
-            case OTHER -> Architecture.is64bit();   // Always ok, expected value is unknown
-            case X64 -> true;
-            case X86 -> false;
-            case AARCH64 -> true;
-            case RISCV64 -> true;
-            case S390 -> true;
-            case PPC64 -> true;
-        };
-        assertEquals(Architecture.is64bit(), expected64Bit, "mismatch in is64bit");
+        assertEquals(Architecture.is64bit(), IS_64BIT_ADDRESS,
+                "Architecture.is64bit() does not match UNSAFE.addressSize() == 8");
     }
 
     /**
-     * Test that Architecture.isLittleEndian() matches Architecture.current().
+     * Test that Architecture.isLittleEndian() == !Unsafe.isBigEndian().
      */
     @Test
     public void isLittleEndianVsCurrent() {
-        Architecture current = Architecture.current();
-        boolean expectedEndian = switch (current) {
-            case OTHER -> Architecture.isLittleEndian();   // Always ok, expected value is unknown
-            case X64 -> true;
-            case X86 -> true;
-            case AARCH64 -> true;
-            case RISCV64 -> true;
-            case S390 -> false;
-            case PPC64 -> true;
-        };
-        assertEquals(Architecture.isLittleEndian(), expectedEndian, "mismatch in isLittleEndian");
+        assertEquals(Architecture.isLittleEndian(), !IS_BIG_ENDIAN,
+                "isLittleEndian does not match UNSAFE.isBigEndian()");
     }
 }

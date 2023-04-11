@@ -23,6 +23,7 @@
 package jdk.internal.util;
 
 import jdk.internal.vm.annotation.ForceInline;
+import java.util.Locale;
 
 /**
  * System architecture enum values.
@@ -40,6 +41,8 @@ public enum Architecture {
     S390,
     PPC64,
     ;
+
+    private static Architecture CURRENT_ARCH = initArch(PlatformProps.CURRENT_ARCH_STRING);
 
     /**
      * {@return {@code true} if the current architecture is X64, Aka amd64}
@@ -93,7 +96,7 @@ public enum Architecture {
      * {@return the current architecture}
      */
     public static Architecture current() {
-        return PlatformProps.CURRENT_ARCH;
+        return CURRENT_ARCH;
     }
 
     /**
@@ -110,5 +113,19 @@ public enum Architecture {
     @ForceInline
     public static boolean isLittleEndian() {
         return PlatformProps.TARGET_ARCH_LITTLE_ENDIAN;
+    }
+
+
+    /**
+     * Returns the Architecture of the built architecture.
+     * Build time names are mapped to respective uppercase enum values.
+     * Names not recognized are mapped to Architecture.OTHER.
+     */
+    private static Architecture initArch(String archName) {
+        try {
+            return Architecture.valueOf(archName.toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException ile) {
+            return Architecture.OTHER;
+        }
     }
 }

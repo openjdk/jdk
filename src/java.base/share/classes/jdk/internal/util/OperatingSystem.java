@@ -25,6 +25,8 @@ package jdk.internal.util;
 import jdk.internal.util.PlatformProps;
 import jdk.internal.vm.annotation.ForceInline;
 
+import java.util.Locale;
+
 /**
  * Enumeration of operating system types and testing for the current OS.
  * The enumeration can be used to dispatch to OS specific code or values.
@@ -80,6 +82,8 @@ public enum OperatingSystem {
     AIX,
     ;
 
+    private static final OperatingSystem CURRENT_OS = initOS(PlatformProps.CURRENT_OS_STRING);
+
     /**
      * {@return {@code true} if built for the Linux operating system}
      */
@@ -116,6 +120,16 @@ public enum OperatingSystem {
      * {@return the current operating system}
      */
     public static OperatingSystem current() {
-        return PlatformProps.CURRENT_OS;
+        return CURRENT_OS;
     }
+
+    /**
+     * Returns the OperatingSystem of the build.
+     * Build time names are mapped to respective uppercase enum values.
+     * Names not recognized throw an ExceptionInInitializerError with IllegalArgumentException.
+     */
+    private static OperatingSystem initOS(String osName) {
+        return OperatingSystem.valueOf(osName.toUpperCase(Locale.ROOT));
+    }
+
 }

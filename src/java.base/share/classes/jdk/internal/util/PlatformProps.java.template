@@ -32,7 +32,15 @@ import java.util.Locale;
 class PlatformProps {
 
     // Index/ordinal of the current OperatingSystem enum as substituted by the build
-    static final OperatingSystem CURRENT_OS = initOS("@@OPENJDK_TARGET_OS@@");
+    static final String CURRENT_OS_STRING = mapOSString("@@OPENJDK_TARGET_OS@@");
+
+    // Map the build time OS name to the known values of OperatingSystem enum.
+    private static String mapOSString(String osName) {
+        return switch (osName) {
+            case "macosx" -> "macos";
+            default -> osName;
+        };
+    }
 
     // Precomputed booleans for each Operating System
     static final boolean TARGET_OS_IS_LINUX   = "@@OPENJDK_TARGET_OS@@" == "linux";
@@ -40,21 +48,18 @@ class PlatformProps {
     static final boolean TARGET_OS_IS_WINDOWS = "@@OPENJDK_TARGET_OS@@" == "windows";
     static final boolean TARGET_OS_IS_AIX     = "@@OPENJDK_TARGET_OS@@" == "aix";
 
-    /**
-     * Returns the OperatingSystem of the build.
-     * Build time names are mapped to respective uppercase enum values.
-     * Names not recognized are throw an ExceptionInInitializerError with IllegalArgumentException.
-     */
-    private static OperatingSystem initOS(String osName) {
-        String mapped = switch (osName) {
-            case "macosx" -> "macos";
-            default -> osName;
-        };
-        return OperatingSystem.valueOf(mapped.toUpperCase(Locale.ROOT));
-    }
-
     // The Architecture value for the current architecture
-    static final Architecture CURRENT_ARCH = initArch("@@OPENJDK_TARGET_CPU@@");
+    static final String CURRENT_ARCH_STRING = mapArchString("@@OPENJDK_TARGET_CPU@@");
+
+    // Map the build time arch name to the well known values.
+    private static String mapArchString(String archName) {
+        return switch (archName) {
+            case "x86_64" -> "x64";
+            case "ppc64le" -> "ppc64";
+            case "s390x" -> "s390";
+            default -> archName;
+        };
+    }
 
     // Architecture.is64Bit() uses this value
     static final int TARGET_ARCH_BITS = @@OPENJDK_TARGET_CPU_BITS@@;
@@ -71,23 +76,4 @@ class PlatformProps {
     static final boolean TARGET_ARCH_IS_RISCV64     = "@@OPENJDK_TARGET_CPU@@" == "riscv64";
     static final boolean TARGET_ARCH_IS_S390        = "@@OPENJDK_TARGET_CPU@@" == "s390x";
     static final boolean TARGET_ARCH_IS_PPC64       = "@@OPENJDK_TARGET_CPU@@" == "ppc64";
-
-    /**
-     * Returns the Architecture of the built architecture.
-     * Build time names are mapped to respective uppercase enum values.
-     * Names not recognized are mapped to Architecture.OTHER.
-     */
-    private static Architecture initArch(String archName) {
-        try {
-            String mapped = switch (archName) {
-                case "x86_64" -> "x64";
-                case "ppc64le" -> "ppc64";
-                case "s390x" -> "s390";
-                default -> archName;
-            };
-            return Architecture.valueOf(mapped.toUpperCase(Locale.ROOT));
-        } catch (IllegalArgumentException ile) {
-            return Architecture.OTHER;
-        }
-    }
 }
