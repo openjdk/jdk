@@ -50,7 +50,7 @@ public class TestCriticalUpcall extends UpcallTestHelper {
         public static void main(String[] args) throws Throwable {
             System.loadLibrary("Critical");
 
-            MethodHandle mh = downcallHandle("do_upcall", FunctionDescriptor.ofVoid(C_POINTER), Linker.Option.critical());
+            MethodHandle mh = downcallHandle("do_upcall", FunctionDescriptor.ofVoid(C_POINTER), Linker.Option.critical(false));
             MemorySegment stub = upcallStub(Runner.class, "target", FunctionDescriptor.ofVoid());
             mh.invokeExact(stub);
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,14 +27,10 @@
 #define EXPORT
 #endif
 
-EXPORT void test_args(void* ptr) {}
-
-EXPORT void test_return(void* (*cb)(void)) {
-    cb();
-}
-
-EXPORT void test_critical(int* arr, int num) {
-    for (int i = 0; i < num; i++) {
-        arr[i]++;
-    }
+EXPORT int sum_ints(int* arr, int size) {
+  int sum = 0;
+  for (int i = 0; i < size; i++) {
+    sum += arr[i];
+  }
+  return sum;
 }

@@ -169,6 +169,26 @@ GrowableArray<VMStorage> ForeignGlobals::upcall_filter_receiver_reg(const Growab
   return out;
 }
 
+GrowableArray<VMStorage> ForeignGlobals::downcall_filter_offset_regs(const GrowableArray<VMStorage>& regs,
+                                                                     BasicType* signature, int num_args,
+                                                                     bool& has_objects) {
+  GrowableArray<VMStorage> result(regs.length());
+  int reg_idx = 0;
+  for (int sig_idx = 0; sig_idx < num_args; sig_idx++) {
+    if (signature[sig_idx] == T_VOID) {
+      continue; // ignore upper halves
+    }
+
+    result.push(regs.at(reg_idx++));
+    if (signature[sig_idx] == T_OBJECT) {
+      has_objects = true;
+      sig_idx++; // skip offset
+      reg_idx++;
+    }
+  }
+  return result;
+}
+
 class ArgumentShuffle::ComputeMoveOrder: public StackObj {
   class MoveOperation;
 
@@ -261,7 +281,8 @@ class ArgumentShuffle::ComputeMoveOrder: public StackObj {
       _tmp_vmreg(tmp_vmreg),
       _edges(in_regs.length()),
       _moves(in_regs.length()) {
-    assert(in_regs.length() == out_regs.length(), "stray registers?");
+    assert(in_regs.length() == out_regs.length(),
+      "stray registers? %d != %d", in_regs.length(), out_regs.length());
   }
 
   void compute() {

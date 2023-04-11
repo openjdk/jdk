@@ -32,10 +32,11 @@ import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.lang.foreign.FunctionDescriptor;
+import java.lang.foreign.Linker;
 import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
 
-import static java.lang.foreign.ValueLayout.ADDRESS;
+import static org.testng.Assert.*;
 
 public class TestPassHeapSegment extends UpcallTestHelper  {
 
@@ -46,14 +47,25 @@ public class TestPassHeapSegment extends UpcallTestHelper  {
     @Test(expectedExceptions = IllegalArgumentException.class,
         expectedExceptionsMessageRegExp = ".*Heap segment not allowed.*")
     public void testNoHeapArgs() throws Throwable {
-        MethodHandle handle = downcallHandle("test_args", FunctionDescriptor.ofVoid(ADDRESS));
+        MethodHandle handle = downcallHandle("test_args", FunctionDescriptor.ofVoid(C_POINTER));
         MemorySegment segment = MemorySegment.ofArray(new byte[]{ 0, 1, 2 });
-        handle.invoke(segment); // should throw
+        handle.invokeExact(segment); // should throw
     }
 
     @Test(dataProvider = "specs")
     public void testNoHeapReturns(boolean spec) throws IOException, InterruptedException {
         runInNewProcess(Runner.class, spec).assertStdErrContains("Heap segment not allowed");
+    }
+
+    @Test
+    public void testCritical() throws Throwable {
+        MethodHandle handle = downcallHandle("test_critical", FunctionDescriptor.ofVoid(C_POINTER, C_INT), Linker.Option.critical(true));
+        int[] ints = { 0, 1, 2 };
+        MemorySegment segment = MemorySegment.ofArray(ints);
+        handle.invokeExact(segment, 3);
+        for (int i = 0; i < ints.length; i++) {
+            assertEquals(ints[i], i + 1);
+        }
     }
 
     public static class Runner {
@@ -63,8 +75,8 @@ public class TestPassHeapSegment extends UpcallTestHelper  {
         }
 
         public static void main(String[] args) throws Throwable {
-            MethodHandle handle = downcallHandle("test_return", FunctionDescriptor.ofVoid(ADDRESS));
-            MemorySegment upcallStub = upcallStub(Runner.class, "target", FunctionDescriptor.of(ADDRESS));
+            MethodHandle handle = downcallHandle("test_return", FunctionDescriptor.ofVoid(C_POINTER));
+            MemorySegment upcallStub = upcallStub(Runner.class, "target", FunctionDescriptor.of(C_POINTER));
             handle.invoke(upcallStub);
         }
 

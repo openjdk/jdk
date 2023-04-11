@@ -49,13 +49,13 @@ public class TestCritical extends NativeTestHelper {
 
     @Test
     public void testEmpty() throws Throwable {
-        MethodHandle handle = downcallHandle("empty", FunctionDescriptor.ofVoid(), Linker.Option.critical());
+        MethodHandle handle = downcallHandle("empty", FunctionDescriptor.ofVoid(), Linker.Option.critical(false));
         handle.invokeExact();
     }
 
     @Test
     public void testIdentity() throws Throwable {
-        MethodHandle handle = downcallHandle("identity", FunctionDescriptor.of(C_INT, C_INT), Linker.Option.critical());
+        MethodHandle handle = downcallHandle("identity", FunctionDescriptor.of(C_INT, C_INT), Linker.Option.critical(false));
         int result = (int) handle.invokeExact(42);
         assertEquals(result, 42);
     }
@@ -66,7 +66,7 @@ public class TestCritical extends NativeTestHelper {
                 C_LONG_LONG.withName("x"),
                 C_LONG_LONG.withName("y"));
 
-        MethodHandle handle = downcallHandle("with_return_buffer", FunctionDescriptor.of(bigLayout), Linker.Option.critical());
+        MethodHandle handle = downcallHandle("with_return_buffer", FunctionDescriptor.of(bigLayout), Linker.Option.critical(false));
         VarHandle vhX = bigLayout.varHandle(MemoryLayout.PathElement.groupElement("x"));
         VarHandle vhY = bigLayout.varHandle(MemoryLayout.PathElement.groupElement("y"));
         try (Arena arena = Arena.ofConfined()) {

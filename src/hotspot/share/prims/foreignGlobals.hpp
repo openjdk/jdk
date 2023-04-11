@@ -91,6 +91,11 @@ public:
   // The receiver method handle for upcalls is injected manually into the argument list by the upcall stub. We need a
   // filtered list to generate an argument shuffle for the rest of the arguments.
   static GrowableArray<VMStorage> upcall_filter_receiver_reg(const GrowableArray<VMStorage>& unfiltered_regs);
+
+  // Oop offsets are not passed on to native code.
+  // Filter out the registers of oop offsets to create a list that we can pass to ArgumentShuffle.
+  static GrowableArray<VMStorage> downcall_filter_offset_regs(const GrowableArray<VMStorage>& regs, BasicType* signature,
+                                                              int num_args, bool& has_objects);
 };
 
 // Helper class useful for generating spills and fills of a set of registers.

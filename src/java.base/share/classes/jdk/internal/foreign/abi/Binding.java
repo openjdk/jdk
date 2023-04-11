@@ -24,6 +24,7 @@
  */
 package jdk.internal.foreign.abi;
 
+import jdk.internal.foreign.AbstractMemorySegmentImpl;
 import jdk.internal.foreign.Utils;
 import jdk.internal.foreign.abi.BindingInterpreter.LoadFunc;
 import jdk.internal.foreign.abi.BindingInterpreter.StoreFunc;
@@ -202,7 +203,7 @@ public sealed interface Binding {
                    LoadFunc loadFunc, SegmentAllocator allocator);
 
     private static void checkType(Class<?> type) {
-        if (!type.isPrimitive() || type == void.class)
+        if (type != Object.class && (!type.isPrimitive() || type == void.class))
             throw new IllegalArgumentException("Illegal type: " + type);
     }
 
@@ -270,6 +271,14 @@ public sealed interface Binding {
 
     static UnboxAddress unboxAddress() {
         return UnboxAddress.INSTANCE;
+    }
+
+    static SegmentBase segmentBase() {
+        return SegmentBase.INSTANCE;
+    }
+
+    static SegmentOffset segmentOffset() {
+        return SegmentOffset.INSTANCE;
     }
 
     static Dup dup() {
@@ -411,6 +420,16 @@ public sealed interface Binding {
 
         public Binding.Builder unboxAddress() {
             bindings.add(Binding.unboxAddress());
+            return this;
+        }
+
+        public Binding.Builder segmentBase() {
+            bindings.add(Binding.segmentBase());
+            return this;
+        }
+
+        public Binding.Builder segmentOffset() {
+            bindings.add(Binding.segmentOffset());
             return this;
         }
 
@@ -672,6 +691,48 @@ public sealed interface Binding {
         public void interpret(Deque<Object> stack, StoreFunc storeFunc,
                               LoadFunc loadFunc, SegmentAllocator allocator) {
             stack.push(SharedUtils.unboxSegment((MemorySegment)stack.pop()));
+        }
+    }
+
+    /**
+     * SEGMENT_BASE()
+     * AbstractMemorySegmentImpl::unsafeGetBase
+     */
+    record SegmentBase() implements Binding {
+        static final SegmentBase INSTANCE = new SegmentBase();
+
+        @Override
+        public void verify(Deque<Class<?>> stack) {
+            Class<?> actualType = stack.pop();
+            SharedUtils.checkType(actualType, MemorySegment.class);
+            stack.push(Object.class);
+        }
+
+        @Override
+        public void interpret(Deque<Object> stack, StoreFunc storeFunc,
+                              LoadFunc loadFunc, SegmentAllocator allocator) {
+            stack.push(((AbstractMemorySegmentImpl)stack.pop()).unsafeGetBase());
+        }
+    }
+
+    /**
+     * SEGMENT_OFFSET()
+     * AbstractMemorySegmentImpl::unsafeGetOffset
+     */
+    record SegmentOffset() implements Binding {
+        static final SegmentOffset INSTANCE = new SegmentOffset();
+
+        @Override
+        public void verify(Deque<Class<?>> stack) {
+            Class<?> actualType = stack.pop();
+            SharedUtils.checkType(actualType, MemorySegment.class);
+            stack.push(long.class);
+        }
+
+        @Override
+        public void interpret(Deque<Object> stack, StoreFunc storeFunc,
+                              LoadFunc loadFunc, SegmentAllocator allocator) {
+            stack.push(((AbstractMemorySegmentImpl)stack.pop()).unsafeGetOffset());
         }
     }
 
