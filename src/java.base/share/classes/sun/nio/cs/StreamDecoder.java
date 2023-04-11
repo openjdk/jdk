@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,11 +72,8 @@ public class StreamDecoder extends Reader {
         throws UnsupportedEncodingException
     {
         String csn = charsetName;
-        if (csn == null) {
-            csn = Charset.defaultCharset().name();
-        }
         try {
-            return new StreamDecoder(in, lock, Charset.forName(csn));
+            return new StreamDecoder(in, lock, csn == null ? Charset.defaultCharset() : Charset.forName(csn));
         } catch (IllegalCharsetNameException | UnsupportedCharsetException x) {
             throw new UnsupportedEncodingException (csn);
         }
