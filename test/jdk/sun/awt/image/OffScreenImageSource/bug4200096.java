@@ -45,8 +45,8 @@ public class bug4200096 {
             @Override
             public void println(Object x) {
                 super.println(x);
-                if (x instanceof Throwable)
-                    System.exit(1);
+                if (x instanceof NullPointerException e)
+                    throw new RuntimeException(e);
             }
         });
 
@@ -156,7 +156,7 @@ public class bug4200096 {
 
             if (img.getSource().isConsumer(consumer)) {
                 // this confirms our calls to .removeConsumer above were being invoked as expected
-                System.exit(1);
+                throw new IllegalStateException("This test is not executing as expected.");
             }
         }
     }
