@@ -3154,6 +3154,13 @@ public final class URI
             return p;
         }
 
+        // parse as a Registry-based authority if not insisting
+        // upon a server-based authority
+        private boolean parseRegistryChars()
+        {
+            return requireServerAuthority?false:true;
+        }
+
         // Check that each of the chars in [start, end) matches the given mask
         //
         private void checkChars(int start, int end,
@@ -3522,6 +3529,15 @@ public final class URI
                     break;
                 p = q;
             } while (p < n);
+
+            if(parseRegistryChars())
+            {
+                while(p < n &&  !at(p, n, ':'))
+                {
+                    q = scan(p, p+1, L_REG_NAME, H_REG_NAME);
+                    p = q;
+                }
+            }
 
             if ((p < n) && !at(p, n, ':'))
                 fail("Illegal character in hostname", p);
