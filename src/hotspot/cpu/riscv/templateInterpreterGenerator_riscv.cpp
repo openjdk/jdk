@@ -45,6 +45,7 @@
 #include "runtime/arguments.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
@@ -114,7 +115,7 @@ address TemplateInterpreterGenerator::generate_slow_signature_handler() {
     const FloatRegister r = g_FPArgReg[i];
     Label d, done;
 
-    __ andi(t0, c_rarg3, 1UL << i);
+    __ test_bit(t0, c_rarg3, i);
     __ bnez(t0, d);
     __ flw(r, Address(sp, (10 + i) * wordSize));
     __ j(done);
@@ -440,18 +441,27 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
     __ profile_return_type(mdp, obj, tmp);
   }
 
-  // Pop N words from the stack
-  __ get_cache_and_index_at_bcp(x11, x12, 1, index_size);
-  __ ld(x11, Address(x11, ConstantPoolCache::base_offset() + ConstantPoolCacheEntry::flags_offset()));
-  __ andi(x11, x11, ConstantPoolCacheEntry::parameter_size_mask);
+  const Register cache = x11;
+  const Register index = x12;
 
-  __ shadd(esp, x11, esp, t0, 3);
+  if (index_size == sizeof(u4)) {
+    __ load_resolved_indy_entry(cache, index);
+    __ load_unsigned_short(cache, Address(cache, in_bytes(ResolvedIndyEntry::num_parameters_offset())));
+    __ shadd(esp, cache, esp, t0, 3);
+  } else {
+    // Pop N words from the stack
+    __ get_cache_and_index_at_bcp(cache, index, 1, index_size);
+    __ ld(cache, Address(cache, ConstantPoolCache::base_offset() + ConstantPoolCacheEntry::flags_offset()));
+    __ andi(cache, cache, ConstantPoolCacheEntry::parameter_size_mask);
+
+    __ shadd(esp, cache, esp, t0, 3);
+  }
 
   // Restore machine SP
   __ restore_sp_after_call();
 
- __ check_and_handle_popframe(xthread);
- __ check_and_handle_earlyret(xthread);
+  __ check_and_handle_popframe(xthread);
+  __ check_and_handle_earlyret(xthread);
 
   __ get_dispatch();
   __ dispatch_next(state, step);
@@ -751,7 +761,7 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   __ ld(xcpool, Address(xcpool, ConstantPool::cache_offset_in_bytes()));
   __ sd(xcpool, Address(sp, 3 * wordSize));
   __ sub(t0, xlocals, fp);
-  __ srli(t0, t0, Interpreter::logStackElementSize);   // t0 = xlocals - fp();
+  __ srai(t0, t0, Interpreter::logStackElementSize);   // t0 = xlocals - fp();
   // Store relativized xlocals, see frame::interpreter_frame_locals().
   __ sd(t0, Address(sp, 2 * wordSize));
 
@@ -1071,7 +1081,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   {
     Label L;
     __ lwu(t, Address(xmethod, Method::access_flags_offset()));
-    __ andi(t0, t, JVM_ACC_STATIC);
+    __ test_bit(t0, t, exact_log2(JVM_ACC_STATIC));
     __ beqz(t0, L);
     // get mirror
     __ load_mirror(t, xmethod, x28, t1);
@@ -1150,7 +1160,9 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   __ sw(t0, Address(xthread, JavaThread::thread_state_offset()));
 
   // Force this write out before the read below
-  __ membar(MacroAssembler::AnyAny);
+  if (!UseSystemMemoryBarrier) {
+    __ membar(MacroAssembler::AnyAny);
+  }
 
   // check for safepoint operation in progress and/or pending suspend requests
   {
@@ -1258,7 +1270,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   {
     Label L;
     __ lwu(t, Address(xmethod, Method::access_flags_offset()));
-    __ andi(t0, t, JVM_ACC_SYNCHRONIZED);
+    __ test_bit(t0, t, exact_log2(JVM_ACC_SYNCHRONIZED));
     __ beqz(t0, L);
     // the code below should be shared with interpreter macro
     // assembler implementation

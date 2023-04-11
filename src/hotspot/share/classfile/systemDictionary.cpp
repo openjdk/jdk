@@ -44,7 +44,6 @@
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
-#include "code/codeCache.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "interpreter/bootstrapInfo.hpp"
 #include "jfr/jfrEvents.hpp"
@@ -70,7 +69,6 @@
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/deoptimization.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
@@ -831,7 +829,7 @@ InstanceKlass* SystemDictionary::resolve_hidden_class_from_stream(
   }
 
   // Add to class hierarchy, and do possible deoptimizations.
-  add_to_hierarchy(THREAD, k);
+  k->add_to_hierarchy(THREAD);
   // But, do not add to dictionary.
 
   k->link_class(CHECK_NULL);
@@ -1355,11 +1353,7 @@ InstanceKlass* SystemDictionary::load_instance_class(Symbol* name,
     // before references to the initiating class loader.
     loader_data->record_dependency(loaded_class);
 
-    { // Grabbing the Compile_lock prevents systemDictionary updates
-      // during compilations.
-      MutexLocker mu(THREAD, Compile_lock);
-      update_dictionary(THREAD, loaded_class, loader_data);
-    }
+    update_dictionary(THREAD, loaded_class, loader_data);
 
     if (JvmtiExport::should_post_class_load()) {
       JvmtiExport::post_class_load(THREAD, loaded_class);
@@ -1418,14 +1412,11 @@ void SystemDictionary::define_instance_class(InstanceKlass* k, Handle class_load
   }
 
   // Add to class hierarchy, and do possible deoptimizations.
-  add_to_hierarchy(THREAD, k);
+  k->add_to_hierarchy(THREAD);
 
-  {
-    MutexLocker mu_r(THREAD, Compile_lock);
-    // Add to systemDictionary - so other classes can see it.
-    // Grabs and releases SystemDictionary_lock
-    update_dictionary(THREAD, k, loader_data);
-  }
+  // Add to systemDictionary - so other classes can see it.
+  // Grabs and releases SystemDictionary_lock
+  update_dictionary(THREAD, k, loader_data);
 
   // notify jvmti
   if (JvmtiExport::should_post_class_load()) {
@@ -1535,49 +1526,6 @@ InstanceKlass* SystemDictionary::find_or_define_instance_class(Symbol* class_nam
   return defined_k;
 }
 
-
-// ----------------------------------------------------------------------------
-// Update hierarchy. This is done before the new klass has been added to the SystemDictionary. The Compile_lock
-// is grabbed, to ensure that the compiler is not using the class hierarchy.
-
-void SystemDictionary::add_to_hierarchy(JavaThread* current, InstanceKlass* k) {
-  assert(k != nullptr, "just checking");
-  assert(!SafepointSynchronize::is_at_safepoint(), "must NOT be at safepoint");
-
-  // In case we are not using CHA based vtables we need to make sure the loaded
-  // deopt is completed before anyone links this class.
-  // Linking is done with _init_monitor held, by loading and deopting with it
-  // held we make sure the deopt is completed before linking.
-  if (!UseVtableBasedCHA) {
-    k->init_monitor()->lock();
-  }
-
-  DeoptimizationScope deopt_scope;
-  {
-    MutexLocker ml(current, Compile_lock);
-
-    k->set_init_state(InstanceKlass::loaded);
-    // make sure init_state store is already done.
-    // The compiler reads the hierarchy outside of the Compile_lock.
-    // Access ordering is used to add to hierarchy.
-
-    // Link into hierarchy.
-    k->append_to_sibling_list();                    // add to superklass/sibling list
-    k->process_interfaces();                        // handle all "implements" declarations
-
-    // Now mark all code that depended on old class hierarchy.
-    // Note: must be done *after* linking k into the hierarchy (was bug 12/9/97)
-    if (Universe::is_fully_initialized()) {
-      CodeCache::mark_dependents_on(&deopt_scope, k);
-    }
-  }
-  // Perform the deopt handshake outside Compile_lock.
-  deopt_scope.deoptimize_marked();
-
-  if (!UseVtableBasedCHA) {
-    k->init_monitor()->unlock();
-  }
-}
 
 // ----------------------------------------------------------------------------
 // GC support
@@ -1729,19 +1677,16 @@ void SystemDictionary::check_constraints(InstanceKlass* k,
 void SystemDictionary::update_dictionary(JavaThread* current,
                                          InstanceKlass* k,
                                          ClassLoaderData* loader_data) {
-  // Compile_lock prevents systemDictionary updates during compilations
-  assert_locked_or_safepoint(Compile_lock);
-  Symbol* name  = k->name();
-
-  MutexLocker mu1(SystemDictionary_lock);
+  MonitorLocker mu1(SystemDictionary_lock);
 
   // Make a new dictionary entry.
+  Symbol* name  = k->name();
   Dictionary* dictionary = loader_data->dictionary();
   InstanceKlass* sd_check = dictionary->find_class(current, name);
   if (sd_check == nullptr) {
     dictionary->add_klass(current, name, k);
   }
-  SystemDictionary_lock->notify_all();
+  mu1.notify_all();
 }
 
 

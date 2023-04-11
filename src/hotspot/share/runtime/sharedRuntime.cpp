@@ -46,6 +46,7 @@
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "metaprogramming/primitiveConversions.hpp"
 #include "oops/compiledICHolder.inline.hpp"
 #include "oops/klass.hpp"
 #include "oops/method.inline.hpp"
@@ -242,12 +243,11 @@ JRT_LEAF(jfloat, SharedRuntime::frem(jfloat x, jfloat y))
 #ifdef _WIN64
   // 64-bit Windows on amd64 returns the wrong values for
   // infinity operands.
-  union { jfloat f; juint i; } xbits, ybits;
-  xbits.f = x;
-  ybits.f = y;
+  juint xbits = PrimitiveConversions::cast<juint>(x);
+  juint ybits = PrimitiveConversions::cast<juint>(y);
   // x Mod Infinity == x unless x is infinity
-  if (((xbits.i & float_sign_mask) != float_infinity) &&
-       ((ybits.i & float_sign_mask) == float_infinity) ) {
+  if (((xbits & float_sign_mask) != float_infinity) &&
+       ((ybits & float_sign_mask) == float_infinity) ) {
     return x;
   }
   return ((jfloat)fmod_winx64((double)x, (double)y));
@@ -258,12 +258,11 @@ JRT_END
 
 JRT_LEAF(jdouble, SharedRuntime::drem(jdouble x, jdouble y))
 #ifdef _WIN64
-  union { jdouble d; julong l; } xbits, ybits;
-  xbits.d = x;
-  ybits.d = y;
+  julong xbits = PrimitiveConversions::cast<julong>(x);
+  julong ybits = PrimitiveConversions::cast<julong>(y);
   // x Mod Infinity == x unless x is infinity
-  if (((xbits.l & double_sign_mask) != double_infinity) &&
-       ((ybits.l & double_sign_mask) == double_infinity) ) {
+  if (((xbits & double_sign_mask) != double_infinity) &&
+       ((ybits & double_sign_mask) == double_infinity) ) {
     return x;
   }
   return ((jdouble)fmod_winx64((double)x, (double)y));
@@ -629,6 +628,14 @@ void SharedRuntime::throw_and_post_jvmti_exception(JavaThread* current, Symbol* 
 }
 
 #if INCLUDE_JVMTI
+JRT_ENTRY(void, SharedRuntime::notify_jvmti_object_alloc(oopDesc* o, JavaThread* current))
+  Handle h = Handle(current, o);
+  if (JvmtiExport::should_post_vm_object_alloc()) {
+    JvmtiExport::post_vm_object_alloc(current, o);
+  }
+  current->set_vm_result(h());
+JRT_END
+
 JRT_ENTRY(void, SharedRuntime::notify_jvmti_mount(oopDesc* vt, jboolean hide, jboolean first_mount, JavaThread* current))
   jobject vthread = JNIHandles::make_local(const_cast<oopDesc*>(vt));
 
@@ -2883,11 +2890,11 @@ AdapterHandlerEntry* AdapterHandlerLibrary::create_adapter(AdapterBlob*& new_ada
                                                            BasicType* sig_bt,
                                                            bool allocate_code_blob) {
 
-  // StubRoutines::code2() is initialized after this function can be called. As a result,
-  // VerifyAdapterCalls and VerifyAdapterSharing can fail if we re-use code that generated
-  // prior to StubRoutines::code2() being set. Checks refer to checks generated in an I2C
-  // stub that ensure that an I2C stub is called from an interpreter frame.
-  bool contains_all_checks = StubRoutines::code2() != nullptr;
+  // StubRoutines::_final_stubs_code is initialized after this function can be called. As a result,
+  // VerifyAdapterCalls and VerifyAdapterSharing can fail if we re-use code that generated prior
+  // to all StubRoutines::_final_stubs_code being set. Checks refer to runtime range checks generated
+  // in an I2C stub that ensure that an I2C stub is called from an interpreter frame or stubs.
+  bool contains_all_checks = StubRoutines::final_stubs_code() != nullptr;
 
   VMRegPair stack_regs[16];
   VMRegPair* regs = (total_args_passed <= 16) ? stack_regs : NEW_RESOURCE_ARRAY(VMRegPair, total_args_passed);

@@ -1159,7 +1159,7 @@ void C2_MacroAssembler::string_equals(Register a1, Register a2,
   Label TAIL03, TAIL01;
 
   // 0-7 bytes left.
-  andi(t0, cnt1, 4);
+  test_bit(t0, cnt1, 2);
   beqz(t0, TAIL03);
   {
     lwu(tmp1, Address(a1, 0));
@@ -1171,7 +1171,7 @@ void C2_MacroAssembler::string_equals(Register a1, Register a2,
 
   bind(TAIL03);
   // 0-3 bytes left.
-  andi(t0, cnt1, 2);
+  test_bit(t0, cnt1, 1);
   beqz(t0, TAIL01);
   {
     lhu(tmp1, Address(a1, 0));
@@ -1184,7 +1184,7 @@ void C2_MacroAssembler::string_equals(Register a1, Register a2,
   bind(TAIL01);
   if (elem_size == 1) { // Only needed when comparing 1-byte elements
     // 0-1 bytes left.
-    andi(t0, cnt1, 1);
+    test_bit(t0, cnt1, 0);
     beqz(t0, SAME);
     {
       lbu(tmp1, Address(a1, 0));

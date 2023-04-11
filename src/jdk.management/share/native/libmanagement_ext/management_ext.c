@@ -32,7 +32,7 @@
 #define ERR_MSG_SIZE 128
 
 const JmmInterface* jmm_interface = NULL;
-JavaVM* jvm = NULL;
+static JavaVM* jvm = NULL;
 jint jmm_version = 0;
 
 JNIEXPORT jint JNICALL
