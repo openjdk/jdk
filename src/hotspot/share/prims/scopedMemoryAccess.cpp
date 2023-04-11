@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,12 +97,12 @@ public:
     }
 
     ResourceMark rm;
-    if (_deopt != NULL && last_frame.is_compiled_frame() && last_frame.can_be_deoptimized()) {
+    if (_deopt != nullptr && last_frame.is_compiled_frame() && last_frame.can_be_deoptimized()) {
       CloseScopedMemoryFindOopClosure cl(_deopt);
       CompiledMethod* cm = last_frame.cb()->as_compiled_method();
 
       /* FIXME: this doesn't work if reachability fences are violated by C2
-      last_frame.oops_do(&cl, NULL, &register_map);
+      last_frame.oops_do(&cl, nullptr, &register_map);
       if (cl.found()) {
            //Found the deopt oop in a compiled method; deoptimize.
            Deoptimization::deoptimize(jt, last_frame);

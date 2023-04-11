@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2019 SAP SE. All rights reserved.
  * Copyright (c) 2022, IBM Corp.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -64,17 +64,17 @@ class StringList {
   }
 
   // Append string to end of list.
-  // Returns NULL if oom.
+  // Returns null if oom.
   char* append(const char* s) {
     if (_cap == _num) {
       if (!enlarge()) {
-        return NULL;
+        return nullptr;
       }
     }
     assert0(_cap > _num);
     char* s2 = ::strdup(s);
     if (!s2) {
-      return NULL;
+      return nullptr;
     }
     _list[_num] = s2;
     trcVerbose("StringDir: added %s at pos %d", s2, _num);
@@ -85,13 +85,13 @@ class StringList {
 public:
 
   StringList()
-    : _list(NULL)
+    : _list(nullptr)
     , _cap(0)
     , _num(0)
   {}
 
   // String is copied into the list; pointer to copy is returned.
-  // Returns NULL if oom.
+  // Returns null if oom.
   char* add (const char* s) {
     for (int i = 0; i < _num; i++) {
       if (strcmp(_list[i], s) == 0) {
@@ -124,7 +124,7 @@ static void print_entry(const loaded_module_t* lm, outputStream* os) {
   }
 }
 
-static loaded_module_t* g_first = NULL;
+static loaded_module_t* g_first = nullptr;
 
 static loaded_module_t* find_entry_for_text_address(const void* p) {
   for (loaded_module_t* lm = g_first; lm; lm = lm->next) {
@@ -133,7 +133,7 @@ static loaded_module_t* find_entry_for_text_address(const void* p) {
       return lm;
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 static loaded_module_t* find_entry_for_data_address(const void* p) {
@@ -143,12 +143,12 @@ static loaded_module_t* find_entry_for_data_address(const void* p) {
       return lm;
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 // Adds a new entry to the list (ordered by text address ascending).
 static void add_entry_to_list(loaded_module_t* lm, loaded_module_t** start) {
-  loaded_module_t* last = NULL;
+  loaded_module_t* last = nullptr;
   loaded_module_t* lm2 = *start;
   while (lm2 && lm2->text < lm->text) {
     last = lm2;
@@ -169,7 +169,7 @@ static void free_entry_list(loaded_module_t** start) {
     ::free(lm);
     lm = lm2;
   }
-  *start = NULL;
+  *start = nullptr;
 }
 
 
@@ -181,12 +181,12 @@ static bool reload_table() {
 
   trcVerbose("reload module table...");
 
-  loaded_module_t* new_list = NULL;
-  const struct ld_info* ldi = NULL;
+  loaded_module_t* new_list = nullptr;
+  const struct ld_info* ldi = nullptr;
 
   // Call loadquery(L_GETINFO..) to get a list of all loaded Dlls from AIX. loadquery
   // requires a large enough buffer.
-  uint8_t* buffer = NULL;
+  uint8_t* buffer = nullptr;
   size_t buflen = 1024;
   for (;;) {
     buffer = (uint8_t*) ::realloc(buffer, buflen);
@@ -249,7 +249,7 @@ static bool reload_table() {
         goto cleanup;
       }
     } else {
-      lm->member = NULL;
+      lm->member = nullptr;
     }
 
     if (strcmp(lm->shortname, "libjvm.so") == 0) {
@@ -263,7 +263,7 @@ static bool reload_table() {
       lm->text, lm->text_len,
       lm->data, lm->data_len,
       lm->path, lm->shortname,
-      (lm->member ? lm->member : "NULL"),
+      (lm->member ? lm->member : "null"),
       lm->is_in_vm
     );
 
@@ -283,7 +283,7 @@ static bool reload_table() {
     free_entry_list(&g_first);
   }
   g_first = new_list;
-  new_list = NULL;
+  new_list = nullptr;
 
   rc = true;
 
@@ -362,7 +362,7 @@ bool LoadedLibraries::find_for_text_address(const void* p,
 
 bool LoadedLibraries::find_for_data_address (
   const void* p,
-  loaded_module_t* info // optional. can be NULL:
+  loaded_module_t* info // optional. can be null:
 ) {
   MiscUtils::AutoCritSect lck(&g_cs);
   if (!g_first) {

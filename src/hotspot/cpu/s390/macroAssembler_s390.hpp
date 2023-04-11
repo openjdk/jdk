@@ -904,9 +904,6 @@ class MacroAssembler: public Assembler {
   }
   void asm_assert_frame_size(Register expected_size, Register tmp, const char* msg, int id) PRODUCT_RETURN;
 
-  // Verify Z_thread contents.
-  void verify_thread();
-
   // Save and restore functions: Exclude Z_R0.
   void save_volatile_regs(   Register dst, int offset, bool include_fp, bool include_flags);
   void restore_volatile_regs(Register src, int offset, bool include_fp, bool include_flags);

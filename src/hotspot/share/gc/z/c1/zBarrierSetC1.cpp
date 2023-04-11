@@ -47,6 +47,9 @@ ZLoadBarrierStubC1::ZLoadBarrierStubC1(LIRAccess& access, LIR_Opr ref, address r
     // Has index or displacement, need tmp register to load address into
     _tmp = access.gen()->new_pointer_register();
   }
+
+  FrameMap* f = Compilation::current()->frame_map();
+  f->update_reserved_argument_area_size(2 * BytesPerWord);
 }
 
 DecoratorSet ZLoadBarrierStubC1::decorators() const {

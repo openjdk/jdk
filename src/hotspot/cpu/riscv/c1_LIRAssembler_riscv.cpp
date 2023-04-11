@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
- * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -450,7 +450,7 @@ void LIR_Assembler::const2reg(LIR_Opr src, LIR_Opr dest, LIR_PatchCode patch_cod
   switch (c->type()) {
     case T_INT:
       assert(patch_code == lir_patch_none, "no patching handled here");
-      __ mvw(dest->as_register(), c->as_jint());
+      __ mv(dest->as_register(), c->as_jint());
       break;
 
     case T_ADDRESS:
@@ -518,7 +518,7 @@ void LIR_Assembler::const2stack(LIR_Opr src, LIR_Opr dest) {
       if (c->as_jint_bits() == 0) {
         __ sw(zr, frame_map()->address_for_slot(dest->single_stack_ix()));
       } else {
-        __ mvw(t1, c->as_jint_bits());
+        __ mv(t1, c->as_jint_bits());
         __ sw(t1, frame_map()->address_for_slot(dest->single_stack_ix()));
       }
       break;
@@ -1001,7 +1001,7 @@ void LIR_Assembler::emit_alloc_obj(LIR_OpAllocObj* op) {
   if (op->init_check()) {
     __ lbu(t0, Address(op->klass()->as_register(),
                        InstanceKlass::init_state_offset()));
-    __ mvw(t1, InstanceKlass::fully_initialized);
+    __ mv(t1, (u1)InstanceKlass::fully_initialized);
     add_debug_info_for_null_check_here(op->stub()->info());
     __ bne(t0, t1, *op->stub()->entry(), /* is_far */ true);
   }
@@ -1294,7 +1294,7 @@ void LIR_Assembler::logic_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr
     Register Rdst = dst->as_register();
     if (right->is_constant()) {
       int right_const = right->as_jint();
-      if (Assembler::operand_valid_for_add_immediate(right_const)) {
+      if (Assembler::is_simm12(right_const)) {
         logic_op_imm(Rdst, Rleft, right_const, code);
         __ addw(Rdst, Rdst, zr);
      } else {
@@ -1309,7 +1309,7 @@ void LIR_Assembler::logic_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr
     Register Rdst = dst->as_register_lo();
     if (right->is_constant()) {
       long right_const = right->as_jlong();
-      if (Assembler::operand_valid_for_add_immediate(right_const)) {
+      if (Assembler::is_simm12(right_const)) {
         logic_op_imm(Rdst, Rleft, right_const, code);
       } else {
         __ mv(t0, right_const);
@@ -1633,7 +1633,7 @@ void LIR_Assembler::check_conflict(ciKlass* exact_klass, intptr_t current_klass,
     __ beqz(t0, next);
 
     // already unknown. Nothing to do anymore.
-    __ andi(t0, tmp, TypeEntries::type_unknown);
+    __ test_bit(t0, tmp, exact_log2(TypeEntries::type_unknown));
     __ bnez(t0, next);
 
     if (TypeEntries::is_type_none(current_klass)) {
@@ -1655,7 +1655,7 @@ void LIR_Assembler::check_conflict(ciKlass* exact_klass, intptr_t current_klass,
 
     __ ld(tmp, mdo_addr);
     // already unknown. Nothing to do anymore.
-    __ andi(t0, tmp, TypeEntries::type_unknown);
+    __ test_bit(t0, tmp, exact_log2(TypeEntries::type_unknown));
     __ bnez(t0, next);
   }
 
@@ -1710,7 +1710,7 @@ void LIR_Assembler::check_no_conflict(ciKlass* exact_klass, intptr_t current_kla
 
     __ ld(tmp, mdo_addr);
     // already unknown. Nothing to do anymore.
-    __ andi(t0, tmp, TypeEntries::type_unknown);
+    __ test_bit(t0, tmp, exact_log2(TypeEntries::type_unknown));
     __ bnez(t0, next);
 
     __ ori(tmp, tmp, TypeEntries::type_unknown);
@@ -1825,7 +1825,7 @@ void LIR_Assembler::leal(LIR_Opr addr, LIR_Opr dest, LIR_PatchCode patch_code, C
       offset += ((intptr_t)index_op->as_constant_ptr()->as_jint()) << scale;
     }
 
-    if (!is_imm_in_range(offset, 12, 0)) {
+    if (!Assembler::is_simm12(offset)) {
       __ la(t0, as_Address(adr));
       __ mv(dst, t0);
       return;
@@ -1924,7 +1924,7 @@ void LIR_Assembler::membar_loadstore() { __ membar(MacroAssembler::LoadStore); }
 void LIR_Assembler::membar_storeload() { __ membar(MacroAssembler::StoreLoad); }
 
 void LIR_Assembler::on_spin_wait() {
-  Unimplemented();
+  __ pause();
 }
 
 void LIR_Assembler::get_thread(LIR_Opr result_reg) {

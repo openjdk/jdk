@@ -1230,7 +1230,7 @@ namespace AccessInternal {
   private:
     P *const _addr;
   public:
-    OopLoadProxy(P* addr) : _addr(addr) {}
+    explicit OopLoadProxy(P* addr) : _addr(addr) {}
 
     inline operator oop() {
       return load<decorators | INTERNAL_VALUE_IS_OOP, P, oop>(_addr);

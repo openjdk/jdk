@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,9 @@ import java.util.HashMap;
 import java.security.Provider;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+
+import jdk.internal.util.OperatingSystem;
+import jdk.internal.util.StaticProperty;
 import org.ietf.jgss.Oid;
 import sun.security.action.GetBooleanAction;
 import sun.security.action.PutAllAction;
@@ -54,7 +57,8 @@ public final class SunNativeProvider extends Provider {
     private static final String INFO = "Sun Native GSS provider";
     private static final String MF_CLASS =
         "sun.security.jgss.wrapper.NativeGSSFactory";
-    private static final boolean DEBUG =
+
+    static final boolean DEBUG =
         GetBooleanAction.privilegedGetProperty("sun.security.nativegss.debug");
 
     static void debug(String message) {
@@ -86,25 +90,22 @@ public final class SunNativeProvider extends Provider {
                         String defaultLib
                                 = System.getProperty("sun.security.jgss.lib");
                         if (defaultLib == null || defaultLib.trim().equals("")) {
-                            String osname = System.getProperty("os.name");
-                            if (osname.startsWith("Linux")) {
-                                gssLibs = new String[]{
-                                    "libgssapi.so",
-                                    "libgssapi_krb5.so",
-                                    "libgssapi_krb5.so.2",
+                            gssLibs = switch (OperatingSystem.current()) {
+                                case LINUX -> new String[]{
+                                        "libgssapi.so",
+                                        "libgssapi_krb5.so",
+                                        "libgssapi_krb5.so.2",
                                 };
-                            } else if (osname.contains("OS X")) {
-                                gssLibs = new String[]{
-                                    "libgssapi_krb5.dylib",
-                                    "/usr/lib/sasl2/libgssapiv2.2.so",
-                               };
-                            } else if (osname.contains("Windows")) {
-                                // Full path needed, DLL is in jre/bin
-                                gssLibs = new String[]{ System.getProperty("java.home")
-                                        + "\\bin\\sspi_bridge.dll" };
-                            } else {
-                                gssLibs = new String[0];
-                            }
+                                case MACOS -> new String[]{
+                                        "libgssapi_krb5.dylib",
+                                        "/usr/lib/sasl2/libgssapiv2.2.so",
+                                };
+                                case WINDOWS -> new String[]{
+                                        // Full path needed, DLL is in jre/bin
+                                        StaticProperty.javaHome() + "\\bin\\sspi_bridge.dll",
+                                };
+                                default -> new String[0];
+                            };
                         } else {
                             gssLibs = new String[]{ defaultLib };
                         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -403,7 +403,7 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
   };
 
   typedef LinkedListImpl<int> Offsets;
-  typedef ResizeableResourceHashtable<address, Offsets> SharedTrampolineRequests;
+  typedef ResizeableResourceHashtable<address, Offsets, AnyObj::C_HEAP, mtCompiler> SharedTrampolineRequests;
 
  private:
   enum {
@@ -715,7 +715,7 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
   void log_section_sizes(const char* name);
 
   // Make a set of stubs final. It can create/optimize stubs.
-  void finalize_stubs();
+  bool finalize_stubs();
 
   // Request for a shared stub to the interpreter
   void shared_stub_to_interp_for(ciMethod* callee, csize_t call_offset);

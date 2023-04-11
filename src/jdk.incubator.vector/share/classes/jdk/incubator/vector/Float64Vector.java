@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -640,10 +640,11 @@ final class Float64Vector extends FloatVector {
 
         @Override
         @ForceInline
-        public Float64Mask eq(VectorMask<Float> mask) {
-            Objects.requireNonNull(mask);
-            Float64Mask m = (Float64Mask)mask;
-            return xor(m.not());
+        /*package-private*/
+        Float64Mask indexPartiallyInUpperRange(long offset, long limit) {
+            return (Float64Mask) VectorSupport.indexPartiallyInUpperRange(
+                Float64Mask.class, float.class, VLENGTH, offset, limit,
+                (o, l) -> (Float64Mask) TRUE_MASK.indexPartiallyInRange(o, l));
         }
 
         // Unary operations
@@ -685,9 +686,9 @@ final class Float64Vector extends FloatVector {
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a | b));
         }
 
+        @Override
         @ForceInline
-        /* package-private */
-        Float64Mask xor(VectorMask<Float> mask) {
+        public Float64Mask xor(VectorMask<Float> mask) {
             Objects.requireNonNull(mask);
             Float64Mask m = (Float64Mask)mask;
             return VectorSupport.binaryOp(VECTOR_OP_XOR, Float64Mask.class, null, int.class, VLENGTH,

@@ -41,12 +41,37 @@
 #include "gc/shared/taskqueue.inline.hpp"
 #include "oops/stackChunkOop.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/threadSMR.inline.hpp"
 #include "utilities/bitMap.inline.hpp"
 
 inline bool G1STWIsAliveClosure::do_object_b(oop p) {
   // An object is reachable if it is outside the collection set,
   // or is inside and copied.
   return !_g1h->is_in_cset(p) || p->is_forwarded();
+}
+
+inline JavaThread* const* G1JavaThreadsListClaimer::claim(uint& count) {
+  count = 0;
+  if (Atomic::load(&_cur_claim) >= _list.length()) {
+    return nullptr;
+  }
+  uint claim = Atomic::fetch_and_add(&_cur_claim, _claim_step);
+  if (claim >= _list.length()) {
+    return nullptr;
+  }
+  count = MIN2(_list.length() - claim, _claim_step);
+  return _list.list()->threads() + claim;
+}
+
+inline void G1JavaThreadsListClaimer::apply(ThreadClosure* cl) {
+  JavaThread* const* list;
+  uint count;
+
+  while ((list = claim(count)) != nullptr) {
+    for (uint i = 0; i < count; i++) {
+      cl->do_thread(list[i]);
+    }
+  }
 }
 
 G1GCPhaseTimes* G1CollectedHeap::phase_times() const {
@@ -82,8 +107,15 @@ inline HeapRegion* G1CollectedHeap::region_at(uint index) const { return _hrm.at
 // Return the region with the given index, or NULL if unmapped. It assumes the index is valid.
 inline HeapRegion* G1CollectedHeap::region_at_or_null(uint index) const { return _hrm.at_or_null(index); }
 
-inline HeapRegion* G1CollectedHeap::next_region_in_humongous(HeapRegion* hr) const {
-  return _hrm.next_region_in_humongous(hr);
+template <typename Func>
+inline void G1CollectedHeap::humongous_obj_regions_iterate(HeapRegion* start, const Func& f) {
+  assert(start->is_starts_humongous(), "must be");
+
+  do {
+    HeapRegion* next = _hrm.next_region_in_humongous(start);
+    f(start);
+    start = next;
+  } while (start != nullptr);
 }
 
 inline uint G1CollectedHeap::addr_to_region(const void* addr) const {
@@ -214,7 +246,7 @@ inline bool G1CollectedHeap::requires_barriers(stackChunkOop obj) const {
 }
 
 inline bool G1CollectedHeap::is_obj_filler(const oop obj) {
-  Klass* k = obj->klass();
+  Klass* k = obj->klass_raw();
   return k == Universe::fillerArrayKlassObj() || k == vmClasses::FillerObject_klass();
 }
 

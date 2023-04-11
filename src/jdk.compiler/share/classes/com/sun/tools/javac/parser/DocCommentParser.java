@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -152,6 +152,10 @@ public class DocCommentParser {
         }
     }
 
+    char peekChar() {
+        return buf[bp < buflen ? bp + 1 : buflen];
+    }
+
     protected List<DCTree> blockContent() {
         return blockContent(Phase.BODY);
     }
@@ -170,9 +174,6 @@ public class DocCommentParser {
         while (bp < buflen) {
             switch (ch) {
                 case '\n': case '\r': case '\f':
-                    newline = true;
-                    // fallthrough
-
                 case ' ': case '\t':
                     nextChar();
                     break;
@@ -224,9 +225,32 @@ public class DocCommentParser {
                     break;
 
                 case '@':
+                    // check for context-sensitive escape sequences:
+                    //   newline whitespace @@
+                    //   newline whitespace @*
+                    //   *@/
                     if (newline) {
-                        addPendingText(trees, lastNonWhite);
-                        break loop;
+                        char peek = peekChar();
+                        if (peek == '@' || peek == '*') {
+                            addPendingText(trees, bp - 1);
+                            nextChar();
+                            trees.add(m.at(bp - 1).newEscapeTree(ch));
+                            newline = false;
+                            nextChar();
+                            textStart = bp;
+                            break;
+                        } else {
+                            addPendingText(trees, lastNonWhite);
+                            break loop;
+                        }
+                    } else if (textStart != -1 && buf[bp - 1] == '*' && peekChar() == '/') {
+                        addPendingText(trees, bp - 1);
+                        nextChar();
+                        trees.add(m.at(bp - 1).newEscapeTree('/'));
+                        newline = false;
+                        nextChar();
+                        textStart = bp;
+                        break;
                     }
                     // fallthrough
 
@@ -280,9 +304,10 @@ public class DocCommentParser {
                     }
                 }
             }
+            int prefPos = bp;
             blockContent();
 
-            return erroneous("dc.no.tag.name", p);
+            return erroneous("dc.no.tag.name", p, prefPos);
         } catch (ParseException e) {
             blockContent();
             return erroneous(e.getMessage(), p, e.pos);
@@ -293,10 +318,24 @@ public class DocCommentParser {
         newline = false;
         nextChar();
         if (ch == '@') {
-            addPendingText(list, bp - 2);
-            list.add(inlineTag());
-            textStart = bp;
-            lastNonWhite = -1;
+            // check for context-sensitive escape-sequence
+            //   {@@
+            if (peekChar() == '@') {
+                if (textStart == -1) {
+                    textStart = bp - 1;
+                }
+                addPendingText(list, bp - 1);
+                nextChar();
+                list.add(m.at(bp - 1).newEscapeTree('@'));
+                nextChar();
+                textStart = -1;
+                lastNonWhite = bp;
+            } else {
+                addPendingText(list, bp - 2);
+                list.add(inlineTag());
+                textStart = bp;
+                lastNonWhite = -1;
+            }
         } else {
             if (textStart == -1)
                 textStart = bp - 1;
@@ -315,7 +354,7 @@ public class DocCommentParser {
         try {
             nextChar();
             if (!isIdentifierStart(ch)) {
-                return erroneous("dc.no.tag.name", p);
+                return erroneous("dc.no.tag.name", p, bp);
             }
             Name name = readTagName();
             TagParser tp = tagParsers.get(name);
@@ -375,9 +414,6 @@ public class DocCommentParser {
         while (bp < buflen) {
             switch (ch) {
                 case '\n': case '\r': case '\f':
-                    newline = true;
-                    break;
-
                 case ' ': case '\t':
                     break;
 
@@ -422,9 +458,6 @@ public class DocCommentParser {
         while (bp < buflen) {
             switch (ch) {
                 case '\n': case '\r': case '\f':
-                    newline = true;
-                    // fallthrough
-
                 case ' ': case '\t':
                     if (depth == 0)
                         break loop;
@@ -502,9 +535,6 @@ public class DocCommentParser {
         while (bp < buflen) {
             switch (ch) {
                 case '\n': case '\r': case '\f':
-                    newline = true;
-                    break;
-
                 case ' ': case '\t':
                     break;
 
@@ -527,7 +557,6 @@ public class DocCommentParser {
      * Reads a term (that is, one word).
      * It is an error if the beginning of the next tag is detected.
      */
-    @SuppressWarnings("fallthrough")
     protected DCText inlineWord() {
         int pos = bp;
         int depth = 0;
@@ -535,23 +564,22 @@ public class DocCommentParser {
         while (bp < buflen) {
             switch (ch) {
                 case '\n':
-                    newline = true;
-                    // fallthrough
-
                 case '\r': case '\f': case ' ': case '\t':
                     return m.at(pos).newTextTree(newString(pos, bp));
 
                 case '@':
                     if (newline)
                         break loop;
+                    break;
 
                 case '{':
                     depth++;
                     break;
 
                 case '}':
-                    if (depth == 0 || --depth == 0)
+                    if (depth == 0)
                         return m.at(pos).newTextTree(newString(pos, bp));
+                    depth--;
                     break;
             }
             newline = false;
@@ -579,9 +607,6 @@ public class DocCommentParser {
 
             switch (ch) {
                 case '\n': case '\r': case '\f':
-                    newline = true;
-                    // fall through
-
                 case ' ': case '\t':
                     nextChar();
                     break;
@@ -624,8 +649,30 @@ public class DocCommentParser {
                     break;
 
                 case '@':
-                    if (newline)
-                        break loop;
+                    // check for context-sensitive escape sequences:
+                    //   newline whitespace @@
+                    //   newline whitespace @*
+                    //   *@/
+                    if (newline) {
+                        char peek = peekChar();
+                        if (peek == '@' || peek == '*') {
+                            addPendingText(trees, bp - 1);
+                            nextChar();
+                            trees.add(m.at(bp - 1).newEscapeTree(ch));
+                            newline = false;
+                            nextChar();
+                            textStart = bp;
+                            break;
+                        }
+                    } else if (textStart != -1 && buf[bp - 1] == '*' && peekChar() == '/') {
+                        addPendingText(trees, bp - 1);
+                        nextChar();
+                        trees.add(m.at(bp - 1).newEscapeTree('/'));
+                        newline = false;
+                        nextChar();
+                        textStart = bp;
+                        break;
+                    }
                     // fallthrough
 
                 default:

@@ -286,7 +286,7 @@ AC_DEFUN([BASIC_CHECK_TAR],
   if test "x$TAR_TYPE" = "xgnu"; then
     TAR_INCLUDE_PARAM="T"
     TAR_SUPPORTS_TRANSFORM="true"
-  elif test "x$TAR_TYPE" = "aix"; then
+  elif test "x$TAR_TYPE" = "xaix"; then
     # -L InputList of aix tar: name of file listing the files and directories
     # that need to be archived or extracted
     TAR_INCLUDE_PARAM="L"
@@ -434,7 +434,7 @@ AC_DEFUN_ONCE([BASIC_SETUP_PANDOC],
 
   if test "x$PANDOC" != x; then
     AC_MSG_CHECKING([for pandoc version])
-    PANDOC_VERSION=`$PANDOC --version 2>&1 | $HEAD -1 | $CUT -d " " -f 2`
+    PANDOC_VERSION=`$PANDOC --version 2>&1 | $TR -d '\r' | $HEAD -1 | $CUT -d " " -f 2`
     AC_MSG_RESULT([$PANDOC_VERSION])
 
     if test "x$PANDOC_VERSION" != x$RECOMMENDED_PANDOC_VERSION; then
@@ -443,7 +443,7 @@ AC_DEFUN_ONCE([BASIC_SETUP_PANDOC],
 
     PANDOC_MARKDOWN_FLAG="markdown"
     AC_MSG_CHECKING([if the pandoc smart extension needs to be disabled for markdown])
-    if $PANDOC --list-extensions | $GREP -q '\+smart'; then
+    if $PANDOC --list-extensions | $GREP -q '+smart'; then
       AC_MSG_RESULT([yes])
       PANDOC_MARKDOWN_FLAG="markdown-smart"
     else

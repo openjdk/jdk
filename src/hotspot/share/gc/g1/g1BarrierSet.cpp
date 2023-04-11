@@ -101,7 +101,7 @@ void G1BarrierSet::write_ref_field_post_slow(volatile CardValue* byte) {
   }
 }
 
-void G1BarrierSet::invalidate(MemRegion mr) {
+void G1BarrierSet::invalidate(JavaThread* thread, MemRegion mr) {
   if (mr.is_empty()) {
     return;
   }
@@ -120,9 +120,8 @@ void G1BarrierSet::invalidate(MemRegion mr) {
 
   OrderAccess::storeload();
   // Enqueue if necessary.
-  Thread* thr = Thread::current();
   G1DirtyCardQueueSet& qset = G1BarrierSet::dirty_card_queue_set();
-  G1DirtyCardQueue& queue = G1ThreadLocalData::dirty_card_queue(thr);
+  G1DirtyCardQueue& queue = G1ThreadLocalData::dirty_card_queue(thread);
   for (; byte <= last_byte; byte++) {
     CardValue bv = *byte;
     assert(bv != G1CardTable::g1_young_card_val(), "Invalid card");

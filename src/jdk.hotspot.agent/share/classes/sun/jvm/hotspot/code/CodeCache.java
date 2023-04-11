@@ -49,13 +49,8 @@ public class CodeCache {
     Type type = db.lookupType("CodeCache");
 
     // Get array of CodeHeaps
-    // Note: CodeHeap may be subclassed with optional private heap mechanisms.
-    Type codeHeapType = db.lookupType("CodeHeap");
-    VirtualBaseConstructor<CodeHeap> heapConstructor =
-        new VirtualBaseConstructor<>(db, codeHeapType, "sun.jvm.hotspot.memory", CodeHeap.class);
-
     AddressField heapsField = type.getAddressField("_heaps");
-    heapArray = GrowableArray.create(heapsField.getValue(), heapConstructor);
+    heapArray = GrowableArray.create(heapsField.getValue(), new StaticBaseConstructor<>(CodeHeap.class));
 
     virtualConstructor = new VirtualConstructor(db);
     // Add mappings for all possible CodeBlob subclasses

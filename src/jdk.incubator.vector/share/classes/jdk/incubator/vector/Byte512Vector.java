@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -775,10 +775,11 @@ final class Byte512Vector extends ByteVector {
 
         @Override
         @ForceInline
-        public Byte512Mask eq(VectorMask<Byte> mask) {
-            Objects.requireNonNull(mask);
-            Byte512Mask m = (Byte512Mask)mask;
-            return xor(m.not());
+        /*package-private*/
+        Byte512Mask indexPartiallyInUpperRange(long offset, long limit) {
+            return (Byte512Mask) VectorSupport.indexPartiallyInUpperRange(
+                Byte512Mask.class, byte.class, VLENGTH, offset, limit,
+                (o, l) -> (Byte512Mask) TRUE_MASK.indexPartiallyInRange(o, l));
         }
 
         // Unary operations
@@ -820,9 +821,9 @@ final class Byte512Vector extends ByteVector {
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a | b));
         }
 
+        @Override
         @ForceInline
-        /* package-private */
-        Byte512Mask xor(VectorMask<Byte> mask) {
+        public Byte512Mask xor(VectorMask<Byte> mask) {
             Objects.requireNonNull(mask);
             Byte512Mask m = (Byte512Mask)mask;
             return VectorSupport.binaryOp(VECTOR_OP_XOR, Byte512Mask.class, null, byte.class, VLENGTH,

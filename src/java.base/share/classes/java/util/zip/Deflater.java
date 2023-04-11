@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -232,7 +232,7 @@ public class Deflater {
      * @see Deflater#needsInput
      */
     public void setInput(byte[] input, int off, int len) {
-        Preconditions.checkFromIndexSize(len, off, input.length, Preconditions.AIOOBE_FORMATTER);
+        Preconditions.checkFromIndexSize(off, len, input.length, Preconditions.AIOOBE_FORMATTER);
         synchronized (zsRef) {
             this.input = null;
             this.inputArray = input;
@@ -297,7 +297,7 @@ public class Deflater {
      * @see Inflater#getAdler()
      */
     public void setDictionary(byte[] dictionary, int off, int len) {
-        Preconditions.checkFromIndexSize(len, off, dictionary.length, Preconditions.AIOOBE_FORMATTER);
+        Preconditions.checkFromIndexSize(off, len, dictionary.length, Preconditions.AIOOBE_FORMATTER);
         synchronized (zsRef) {
             ensureOpen();
             setDictionary(zsRef.address(), dictionary, off, len);
@@ -556,7 +556,7 @@ public class Deflater {
      * @since 1.7
      */
     public int deflate(byte[] output, int off, int len, int flush) {
-        Preconditions.checkFromIndexSize(len, off, output.length, Preconditions.AIOOBE_FORMATTER);
+        Preconditions.checkFromIndexSize(off, len, output.length, Preconditions.AIOOBE_FORMATTER);
         if (flush != NO_FLUSH && flush != SYNC_FLUSH && flush != FULL_FLUSH) {
             throw new IllegalArgumentException();
         }

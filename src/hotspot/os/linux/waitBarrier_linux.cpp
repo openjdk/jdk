@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@
 #endif
 
 static int futex(volatile int *addr, int futex_op, int op_arg) {
-  return syscall(SYS_futex, addr, futex_op, op_arg, NULL, NULL, 0);
+  return syscall(SYS_futex, addr, futex_op, op_arg, nullptr, nullptr, 0);
 }
 
 void LinuxWaitBarrier::arm(int barrier_tag) {

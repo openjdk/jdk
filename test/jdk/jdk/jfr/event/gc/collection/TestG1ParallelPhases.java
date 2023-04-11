@@ -87,6 +87,8 @@ public class TestG1ParallelPhases {
             .collect(toSet());
 
         Set<String> allPhases = of(
+            "RetireTLABsAndFlushLogs",
+            "NonJavaThreadFlushLogs",
             "ExtRootScan",
             "ThreadRoots",
             "VM Global",
@@ -97,7 +99,6 @@ public class TestG1ParallelPhases {
             "CLDGRoots",
             "CMRefRoots",
             "MergeER",
-            "MergeHCC",
             "MergeRS",
             "MergeLB",
             "ScanHR",
@@ -106,7 +107,7 @@ public class TestG1ParallelPhases {
             "Termination",
             "RedirtyCards",
             "RecalculateUsed",
-            "ResetHotCardCache",
+            "ResizeTLABs",
             "FreeCSet",
             "UpdateDerivedPointers",
             "EagerlyReclaimHumongousObjects",
