@@ -43,6 +43,8 @@ public class bug8303950_legacyWindowPaintBehavior {
     private static Color WINDOW_BACKGROUND = Color.red;
     private static Color ROOTPANE_BACKGROUND = Color.blue;
 
+    static boolean TEST_FAILED = false;
+
     public static void main(String[] args) throws Exception {
         Semaphore semaphore = new Semaphore(1);
         semaphore.acquireUninterruptibly();
@@ -72,7 +74,6 @@ public class bug8303950_legacyWindowPaintBehavior {
 
                 SwingUtilities.invokeLater(new Runnable() {
                     int ctr = 0;
-                    boolean failed = false;
                     @Override
                     public void run() {
                         while (ctr++ < 100_000) {
@@ -89,8 +90,6 @@ public class bug8303950_legacyWindowPaintBehavior {
                         } catch (AWTException e) {
                             throw new RuntimeException(e);
                         } finally {
-                            if (failed)
-                                System.exit(1);
                             semaphore.release();
                         }
                     }
@@ -101,13 +100,15 @@ public class bug8303950_legacyWindowPaintBehavior {
                                 Math.abs(actual.getGreen() - expectedColor.getGreen()) > 150 ||
                                 Math.abs(actual.getBlue() - expectedColor.getBlue()) > 150) {
                             System.err.println("name = \"" + window.getName() + "\" expected = " + expectedColor + ", actual = " + actual);
-                            failed = true;
+                            TEST_FAILED = true;
                         }
                     }
                 });
             }
         });
         semaphore.acquireUninterruptibly();
+        if (TEST_FAILED)
+            throw new Exception("This test failed; see System.err for details.");
     }
 
     /**
