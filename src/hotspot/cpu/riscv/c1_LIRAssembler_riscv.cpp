@@ -1633,7 +1633,7 @@ void LIR_Assembler::check_conflict(ciKlass* exact_klass, intptr_t current_klass,
     __ beqz(t0, next);
 
     // already unknown. Nothing to do anymore.
-    __ andi(t0, tmp, TypeEntries::type_unknown);
+    __ test_bit(t0, tmp, exact_log2(TypeEntries::type_unknown));
     __ bnez(t0, next);
 
     if (TypeEntries::is_type_none(current_klass)) {
@@ -1655,7 +1655,7 @@ void LIR_Assembler::check_conflict(ciKlass* exact_klass, intptr_t current_klass,
 
     __ ld(tmp, mdo_addr);
     // already unknown. Nothing to do anymore.
-    __ andi(t0, tmp, TypeEntries::type_unknown);
+    __ test_bit(t0, tmp, exact_log2(TypeEntries::type_unknown));
     __ bnez(t0, next);
   }
 
@@ -1710,7 +1710,7 @@ void LIR_Assembler::check_no_conflict(ciKlass* exact_klass, intptr_t current_kla
 
     __ ld(tmp, mdo_addr);
     // already unknown. Nothing to do anymore.
-    __ andi(t0, tmp, TypeEntries::type_unknown);
+    __ test_bit(t0, tmp, exact_log2(TypeEntries::type_unknown));
     __ bnez(t0, next);
 
     __ ori(tmp, tmp, TypeEntries::type_unknown);
