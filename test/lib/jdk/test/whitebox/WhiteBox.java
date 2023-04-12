@@ -748,4 +748,6 @@ public class WhiteBox {
   public native void lockCritical();
 
   public native void unlockCritical();
+
+  public native boolean setVirtualThreadsNotifyJvmtiMode(boolean enabled);
 }

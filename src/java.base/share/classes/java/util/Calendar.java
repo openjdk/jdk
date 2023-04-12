@@ -459,9 +459,11 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
 
     /**
      * Field number for {@code get} and {@code set} indicating the day
-     * of the week.  This field takes values {@code SUNDAY},
-     * {@code MONDAY}, {@code TUESDAY}, {@code WEDNESDAY},
-     * {@code THURSDAY}, {@code FRIDAY}, and {@code SATURDAY}.
+     * of the week. If the calendar is non-lenient, this field takes values
+     * {@code SUNDAY}, {@code MONDAY}, {@code TUESDAY}, {@code WEDNESDAY},
+     * {@code THURSDAY}, {@code FRIDAY}, and {@code SATURDAY}. Otherwise, any
+     * int values are accepted and normalized to one of the previously
+     * mentioned values.
      *
      * @see #SUNDAY
      * @see #MONDAY
@@ -1632,6 +1634,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      *
      * @param zone the time zone to use
      * @return a Calendar.
+     * @throws NullPointerException if {@code zone} is {@code null}
      */
     public static Calendar getInstance(TimeZone zone)
     {
@@ -1649,6 +1652,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      *
      * @param aLocale the locale for the week data
      * @return a Calendar.
+     * @throws NullPointerException if {@code aLocale} is {@code null}
      */
     public static Calendar getInstance(Locale aLocale)
     {
@@ -1663,6 +1667,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      * @param zone the time zone to use
      * @param aLocale the locale for the week data
      * @return a Calendar.
+     * @throws NullPointerException if {@code zone} or {@code aLocale} is {@code null}
      */
     public static Calendar getInstance(TimeZone zone,
                                        Locale aLocale)

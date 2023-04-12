@@ -31,12 +31,15 @@ import java.io.EOFException;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.IOError;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
+import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.StringReader;
+import java.io.Writer;
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleFinder;
 import java.lang.module.ModuleReference;
@@ -117,6 +120,7 @@ import jdk.internal.jshell.tool.Selector.FormatUnresolved;
 import jdk.internal.jshell.tool.Selector.FormatWhen;
 import jdk.internal.editor.spi.BuildInEditorProvider;
 import jdk.internal.editor.external.ExternalEditor;
+import jdk.internal.org.jline.reader.UserInterruptException;
 import static java.util.Arrays.asList;
 import static java.util.Arrays.stream;
 import static java.util.Collections.singletonList;
@@ -131,6 +135,7 @@ import static jdk.internal.jshell.debug.InternalDebugControl.DBG_FMGR;
 import static jdk.internal.jshell.debug.InternalDebugControl.DBG_GEN;
 import static jdk.internal.jshell.debug.InternalDebugControl.DBG_WRAP;
 import static jdk.internal.jshell.tool.ContinuousCompletionProvider.STARTSWITH_MATCHER;
+import jdk.jshell.JShellConsole;
 
 /**
  * Command line REPL tool for Java using the JShell API.
@@ -1093,6 +1098,7 @@ public class JShellTool implements MessageHandler {
                 .in(userin)
                 .out(userout)
                 .err(usererr)
+                .console(new IOContextConsole())
                 .tempVariableNameGenerator(() -> "$" + currentNameSpace.tidNext())
                 .idGenerator((sn, i) -> (currentNameSpace == startNamespace || state.status(sn).isActive())
                         ? currentNameSpace.tid(sn)
@@ -4029,6 +4035,84 @@ public class JShellTool implements MessageHandler {
         @Override
         public boolean matchesType() {
             return false;
+        }
+    }
+
+    private final class IOContextConsole implements JShellConsole {
+
+        private Reader reader;
+        private PrintWriter writer;
+
+        @Override
+        public synchronized PrintWriter writer() {
+            if (writer == null) {
+                writer = new PrintWriter(new Writer() {
+                    @Override
+                    public void write(char[] cbuf, int off, int len) throws IOException {
+                        input.userOutput().write(cbuf, off, len);
+                    }
+                    @Override
+                    public void flush() throws IOException {
+                        input.userOutput().flush();
+                    }
+                    @Override
+                    public void close() throws IOException {
+                        input.userOutput().close();
+                    }
+                });
+            }
+            return writer;
+        }
+
+        @Override
+        public synchronized Reader reader() {
+            if (reader == null) {
+                reader = new Reader() {
+                    @Override
+                    public int read(char[] cbuf, int off, int len) throws IOException {
+                        if (len == 0) return 0;
+                        try {
+                            cbuf[off] = input.readUserInputChar();
+                            return 1;
+                        } catch (UserInterruptException ex) {
+                            return -1;
+                        }
+                    }
+
+                    @Override
+                    public void close() throws IOException {
+                    }
+                };
+            }
+            return reader;
+        }
+
+        @Override
+        public String readLine(String prompt) {
+            try {
+                return input.readUserLine(prompt);
+            } catch (IOException ex) {
+                throw new IOError(ex);
+            }
+        }
+
+        @Override
+        public char[] readPassword(String prompt) {
+            try {
+                return input.readPassword(prompt);
+            } catch (IOException ex) {
+                throw new IOError(ex);
+            }
+        }
+
+        @Override
+        public void flush() {
+            writer().flush();
+        }
+
+        @Override
+        public Charset charset() {
+            return input.charset();
         }
     }
 }

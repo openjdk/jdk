@@ -99,9 +99,9 @@ void InterpreterMacroAssembler::check_and_handle_popframe(Register java_thread) 
     // This method is only called just after the call into the vm in
     // call_VM_base, so the arg registers are available.
     lwu(t1, Address(xthread, JavaThread::popframe_condition_offset()));
-    andi(t0, t1, JavaThread::popframe_pending_bit);
+    test_bit(t0, t1, exact_log2(JavaThread::popframe_pending_bit));
     beqz(t0, L);
-    andi(t0, t1, JavaThread::popframe_processing_bit);
+    test_bit(t0, t1, exact_log2(JavaThread::popframe_processing_bit));
     bnez(t0, L);
     // Call Interpreter::remove_activation_preserving_args_entry() to get the
     // address of the same-named entrypoint in the generated interpreter code.
@@ -523,7 +523,7 @@ void InterpreterMacroAssembler::dispatch_base(TosState state,
   if (needs_thread_local_poll) {
     NOT_PRODUCT(block_comment("Thread-local Safepoint poll"));
     ld(t1, Address(xthread, JavaThread::polling_word_offset()));
-    andi(t1, t1, SafepointMechanism::poll_bit());
+    test_bit(t1, t1, exact_log2(SafepointMechanism::poll_bit()));
     bnez(t1, safepoint);
   }
   if (table == Interpreter::dispatch_table(state)) {
@@ -620,7 +620,7 @@ void InterpreterMacroAssembler::remove_activation(
   // get method access flags
   ld(x11, Address(fp, frame::interpreter_frame_method_offset * wordSize));
   ld(x12, Address(x11, Method::access_flags_offset()));
-  andi(t0, x12, JVM_ACC_SYNCHRONIZED);
+  test_bit(t0, x12, exact_log2(JVM_ACC_SYNCHRONIZED));
   beqz(t0, unlocked);
 
   // Don't unlock anything if the _do_not_unlock_if_synchronized flag
@@ -805,7 +805,7 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
     if (DiagnoseSyncOnValueBasedClasses != 0) {
       load_klass(tmp, obj_reg);
       lwu(tmp, Address(tmp, Klass::access_flags_offset()));
-      andi(tmp, tmp, JVM_ACC_IS_VALUE_BASED_CLASS);
+      test_bit(tmp, tmp, exact_log2(JVM_ACC_IS_VALUE_BASED_CLASS));
       bnez(tmp, slow_case);
     }
 
@@ -1673,7 +1673,7 @@ void InterpreterMacroAssembler::profile_obj_type(Register obj, const Address& md
                   // do. The unknown bit may have been
                   // set already but no need to check.
 
-  andi(t0, obj, TypeEntries::type_unknown);
+  test_bit(t0, obj, exact_log2(TypeEntries::type_unknown));
   bnez(t0, next);
   // already unknown. Nothing to do anymore.
 
@@ -1941,10 +1941,10 @@ void InterpreterMacroAssembler::get_method_counters(Register method,
 }
 
 #ifdef ASSERT
-void InterpreterMacroAssembler::verify_access_flags(Register access_flags, uint32_t flag_bits,
+void InterpreterMacroAssembler::verify_access_flags(Register access_flags, uint32_t flag,
                                                     const char* msg, bool stop_by_hit) {
   Label L;
-  andi(t0, access_flags, flag_bits);
+  test_bit(t0, access_flags, exact_log2(flag));
   if (stop_by_hit) {
     beqz(t0, L);
   } else {

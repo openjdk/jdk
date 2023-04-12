@@ -2286,12 +2286,13 @@ void TemplateTable::load_invokedynamic_entry(Register method) {
   const Register cache    = R31;
   const Register index    = R21_tmp1;
   const Register tmp      = R11_scratch1;
+  const int array_base_offset = Array<ResolvedIndyEntry>::base_offset_in_bytes();
   assert_different_registers(method, appendix, cache, index, tmp);
 
   Label resolved;
 
   __ load_resolved_indy_entry(cache, index);
-  __ ld_ptr(method, in_bytes(ResolvedIndyEntry::method_offset()), cache);
+  __ ld_ptr(method, array_base_offset + in_bytes(ResolvedIndyEntry::method_offset()), cache);
 
   // The invokedynamic is unresolved iff method is NULL
   __ cmpdi(CCR0, method, 0);
@@ -2305,7 +2306,7 @@ void TemplateTable::load_invokedynamic_entry(Register method) {
   __ call_VM(noreg, entry, R4_ARG2, true);
   // Update registers with resolved info
   __ load_resolved_indy_entry(cache, index);
-  __ ld_ptr(method, in_bytes(ResolvedIndyEntry::method_offset()), cache);
+  __ ld_ptr(method, array_base_offset + in_bytes(ResolvedIndyEntry::method_offset()), cache);
 
   DEBUG_ONLY(__ cmpdi(CCR0, method, 0));
   __ asm_assert_ne("Should be resolved by now");
@@ -2314,12 +2315,12 @@ void TemplateTable::load_invokedynamic_entry(Register method) {
 
   Label L_no_push;
   // Check if there is an appendix
-  __ lbz(index, in_bytes(ResolvedIndyEntry::flags_offset()), cache);
+  __ lbz(index, array_base_offset + in_bytes(ResolvedIndyEntry::flags_offset()), cache);
   __ rldicl_(R0, index, 64-ResolvedIndyEntry::has_appendix_shift, 63);
   __ beq(CCR0, L_no_push);
 
   // Get appendix
-  __ lhz(index, in_bytes(ResolvedIndyEntry::resolved_references_index_offset()), cache);
+  __ lhz(index, array_base_offset + in_bytes(ResolvedIndyEntry::resolved_references_index_offset()), cache);
   // Push the appendix as a trailing parameter
   assert(cache->is_nonvolatile(), "C-call in resolve_oop_handle");
   __ load_resolved_reference_at_index(appendix, index, /* temp */ ret_addr, tmp);
@@ -2333,7 +2334,7 @@ void TemplateTable::load_invokedynamic_entry(Register method) {
     address table_addr = (address) Interpreter::invoke_return_entry_table_for(code);
 
     // compute return type
-    __ lbz(index, in_bytes(ResolvedIndyEntry::result_type_offset()), cache);
+    __ lbz(index, array_base_offset + in_bytes(ResolvedIndyEntry::result_type_offset()), cache);
     __ load_dispatch_table(Rtable_addr, (address*)table_addr);
     __ sldi(index, index, LogBytesPerWord);
     // Get return address.
