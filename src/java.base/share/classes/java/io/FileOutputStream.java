@@ -53,7 +53,6 @@ import sun.nio.ch.FileChannelImpl;
  * Subclasses are responsible for the cleanup of resources acquired by the subclass.
  * Subclasses requiring that resource cleanup take place after a stream becomes
  * unreachable should use the {@link java.lang.ref.Cleaner} mechanism.
-
  *
  * @author  Arthur van Hoff
  * @see     java.io.File
