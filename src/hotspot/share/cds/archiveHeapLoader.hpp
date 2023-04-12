@@ -40,21 +40,21 @@ struct LoadedArchiveHeapRegion;
 
 class ArchiveHeapLoader : AllStatic {
 public:
-  // At runtime, heap regions in the CDS archive can be used in two different ways,
+  // At runtime, the heap region in the CDS archive can be used in two different ways,
   // depending on the GC type:
-  // - Mapped: (G1 only) the regions are directly mapped into the Java heap
-  // - Loaded: At VM start-up, the objects in the heap regions are copied into the
+  // - Mapped: (G1 only) the region is directly mapped into the Java heap
+  // - Loaded: At VM start-up, the objects in the heap region are copied into the
   //           Java heap. This is easier to implement than mapping but
   //           slightly less efficient, as the embedded pointers need to be relocated.
   static bool can_use() { return can_map() || can_load(); }
 
-  // Can this VM map archived heap regions? Currently only G1+compressed{oops,cp}
+  // Can this VM map archived heap region? Currently only G1+compressed{oops,cp}
   static bool can_map() {
     CDS_JAVA_HEAP_ONLY(return (UseG1GC && UseCompressedClassPointers);)
     NOT_CDS_JAVA_HEAP(return false;)
   }
 
-  // Can this VM load the objects from archived heap regions into the heap at start-up?
+  // Can this VM load the objects from archived heap region into the heap at start-up?
   static bool can_load()  NOT_CDS_JAVA_HEAP_RETURN_(false);
   static void finish_initialization() NOT_CDS_JAVA_HEAP_RETURN;
   static bool is_loaded() {
@@ -83,7 +83,7 @@ public:
   }
 
   // NarrowOops stored in the CDS archive may use a different encoding scheme
-  // than CompressedOops::{base,shift} -- see FileMapInfo::map_heap_regions_impl.
+  // than CompressedOops::{base,shift} -- see FileMapInfo::map_heap_region_impl.
   // To decode them, do not use CompressedOops::decode_not_null. Use this
   // function instead.
   inline static oop decode_from_archive(narrowOop v) NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
@@ -101,7 +101,7 @@ public:
                                       MemRegion region, address oopmap,
                                       size_t oopmap_size_in_bits) NOT_CDS_JAVA_HEAP_RETURN;
 
-  static void fixup_regions() NOT_CDS_JAVA_HEAP_RETURN;
+  static void fixup_region() NOT_CDS_JAVA_HEAP_RETURN;
 
 #if INCLUDE_CDS_JAVA_HEAP
   static void init_mapped_heap_relocation(ptrdiff_t delta, int dumptime_oop_shift);
@@ -150,7 +150,7 @@ private:
 
 public:
 
-  static bool load_heap_regions(FileMapInfo* mapinfo);
+  static bool load_heap_region(FileMapInfo* mapinfo);
   static void assert_in_loaded_heap(uintptr_t o) {
     assert(is_in_loaded_heap(o), "must be");
   }

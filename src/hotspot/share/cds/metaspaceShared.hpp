@@ -92,8 +92,8 @@ public:
 
   static void initialize_shared_spaces() NOT_CDS_RETURN;
 
-  // Return true if given address is in the shared metaspace regions (i.e., excluding any
-  // mapped heap regions.)
+  // Return true if given address is in the shared metaspace regions (i.e., excluding the
+  // mapped heap region.)
   static bool is_in_shared_metaspace(const void* p) {
     return MetaspaceObj::is_shared((const MetaspaceObj*)p);
   }

@@ -77,10 +77,10 @@ void ArchiveHeapLoader::init_narrow_oop_decoding(address base, int shift) {
   _narrow_oop_shift = shift;
 }
 
-void ArchiveHeapLoader::fixup_regions() {
+void ArchiveHeapLoader::fixup_region() {
   FileMapInfo* mapinfo = FileMapInfo::current_info();
   if (is_mapped()) {
-    mapinfo->fixup_mapped_heap_regions();
+    mapinfo->fixup_mapped_heap_region();
   } else if (_loading_failed) {
     fill_failed_loaded_heap();
   }
@@ -321,7 +321,7 @@ bool ArchiveHeapLoader::load_heap_region_impl(FileMapInfo* mapinfo, LoadedArchiv
   return true;
 }
 
-bool ArchiveHeapLoader::load_heap_regions(FileMapInfo* mapinfo) {
+bool ArchiveHeapLoader::load_heap_region(FileMapInfo* mapinfo) {
   assert(UseCompressedOops, "loaded heap for !UseCompressedOops is unimplemented");
   init_narrow_oop_decoding(mapinfo->narrow_oop_base(), mapinfo->narrow_oop_shift());
 

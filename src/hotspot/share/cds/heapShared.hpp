@@ -140,7 +140,7 @@ class HeapShared: AllStatic {
   friend class VerifySharedOopClosure;
 
 public:
-  // Can this VM write heap regions into the CDS archive? Currently only G1+compressed{oops,cp}
+  // Can this VM write a heap region into the CDS archive? Currently only G1+compressed{oops,cp}
   static bool can_write() {
     CDS_JAVA_HEAP_ONLY(
       if (_disable_writing) {
@@ -366,7 +366,7 @@ private:
   static void remove_scratch_objects(Klass* k);
 
   // We use the HeapShared::roots() array to make sure that objects stored in the
-  // archived heap regions are not prematurely collected. These roots include:
+  // archived heap region are not prematurely collected. These roots include:
   //
   //    - mirrors of classes that have not yet been loaded.
   //    - ConstantPool::resolved_references() of classes that have not yet been loaded.

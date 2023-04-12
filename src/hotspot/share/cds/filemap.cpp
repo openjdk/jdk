@@ -2013,15 +2013,15 @@ size_t FileMapInfo::readonly_total() {
 #if INCLUDE_CDS_JAVA_HEAP
 static MemRegion mapped_heap_memregion;
 
-bool FileMapInfo::has_heap_regions() {
+bool FileMapInfo::has_heap_region() {
   return (region_at(MetaspaceShared::hp)->used() > 0);
 }
 
-// Returns the address range of the archived heap regions computed using the
+// Returns the address range of the archived heap region computed using the
 // current oop encoding mode. This range may be different than the one seen at
 // dump time due to encoding mode differences. The result is used in determining
 // if/how these regions should be relocated at run time.
-MemRegion FileMapInfo::get_heap_regions_requested_range() {
+MemRegion FileMapInfo::get_heap_region_requested_range() {
   FileMapRegion* r = region_at(MetaspaceShared::hp);
   size_t size = r->used();
   assert(size > 0, "must have non-empty heap region");
@@ -2037,14 +2037,14 @@ MemRegion FileMapInfo::get_heap_regions_requested_range() {
   return MemRegion((HeapWord*)start, (HeapWord*)end);
 }
 
-void FileMapInfo::map_or_load_heap_regions() {
+void FileMapInfo::map_or_load_heap_region() {
   bool success = false;
 
-  if (can_use_heap_regions()) {
+  if (can_use_heap_region()) {
     if (ArchiveHeapLoader::can_map()) {
-      success = map_heap_regions();
+      success = map_heap_region();
     } else if (ArchiveHeapLoader::can_load()) {
-      success = ArchiveHeapLoader::load_heap_regions(this);
+      success = ArchiveHeapLoader::load_heap_region(this);
     } else {
       if (!UseCompressedOops && !ArchiveHeapLoader::can_map()) {
         // TODO - remove implicit knowledge of G1
@@ -2060,8 +2060,8 @@ void FileMapInfo::map_or_load_heap_regions() {
   }
 }
 
-bool FileMapInfo::can_use_heap_regions() {
-  if (!has_heap_regions()) {
+bool FileMapInfo::can_use_heap_region() {
+  if (!has_heap_region()) {
     return false;
   }
   if (JvmtiExport::should_post_class_file_load_hook() && JvmtiExport::has_early_class_hook_env()) {
@@ -2155,27 +2155,13 @@ address FileMapInfo::heap_region_mapped_address(FileMapRegion* r) {
   return heap_region_requested_address(r) + ArchiveHeapLoader::mapped_heap_delta();
 }
 
-//
-// Map the closed and open archive heap objects to the runtime java heap.
-//
-// The shared objects are mapped at (or close to ) the java heap top in
-// closed archive regions. The mapped objects contain no out-going
-// references to any other java heap regions. GC does not write into the
-// mapped closed archive heap region.
-//
-// The open archive heap objects are mapped below the shared objects in
-// the runtime java heap. The mapped open archive heap data only contains
-// references to the shared objects and open archive objects initially.
-// During runtime execution, out-going references to any other java heap
-// regions may be added. GC may mark and update references in the mapped
-// open archive objects.
-void FileMapInfo::map_heap_regions_impl() {
+void FileMapInfo::map_heap_region_impl() {
   // G1 -- always map at the very top of the heap to avoid fragmentation.
   assert(UseG1GC, "the following code assumes G1");
   _heap_pointers_need_patching = false;
 
   MemRegion heap_range = G1CollectedHeap::heap()->reserved();
-  MemRegion archive_range = get_heap_regions_requested_range();
+  MemRegion archive_range = get_heap_region_requested_range();
 
   address heap_end = (address)heap_range.end();
   address archive_end = (address)archive_range.end();
@@ -2218,19 +2204,18 @@ void FileMapInfo::map_heap_regions_impl() {
     }
   }
 
-  // Now, map the open heap regions: GC can write into these regions.
-  if (map_heap_regions_impl_inner()) {
+  if (map_heap_region_impl_inner()) {
     ArchiveHeapLoader::set_mapped();
   }
 }
 
-bool FileMapInfo::map_heap_regions() {
-  map_heap_regions_impl();
+bool FileMapInfo::map_heap_region() {
+  map_heap_region_impl();
 
   return ArchiveHeapLoader::is_mapped();
 }
 
-bool FileMapInfo::map_heap_regions_impl_inner() {
+bool FileMapInfo::map_heap_region_impl_inner() {
   FileMapRegion* r = region_at(MetaspaceShared::hp);
   size_t size = r->used();
 
@@ -2305,7 +2290,7 @@ void FileMapInfo::patch_heap_embedded_pointers() {
 
 // This internally allocates objects using vmClasses::Object_klass(), so it
 // must be called after the Object_klass is loaded
-void FileMapInfo::fixup_mapped_heap_regions() {
+void FileMapInfo::fixup_mapped_heap_region() {
   assert(vmClasses::Object_klass_loaded(), "must be");
   // Make the mapped heap region parseable
   if (ArchiveHeapLoader::is_mapped()) {

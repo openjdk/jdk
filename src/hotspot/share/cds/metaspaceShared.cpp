@@ -98,12 +98,7 @@ bool MetaspaceShared::_use_full_module_graph = true;
 // The CDS archive is divided into the following regions:
 //     rw  - read-write metadata
 //     ro  - read-only metadata and read-only tables
-//
-//     ca0 - closed archive heap space #0
-//     ca1 - closed archive heap space #1 (may be empty)
-//     oa0 - open archive heap space #0
-//     oa1 - open archive heap space #1 (may be empty)
-//
+//     hp  - heap region
 //     bm  - bitmap for relocating the above 7 regions.
 //
 // The rw and ro regions are linearly allocated, in the order of rw->ro.
@@ -119,8 +114,9 @@ bool MetaspaceShared::_use_full_module_graph = true;
 // [5] SymbolTable, StringTable, SystemDictionary, and a few other read-only data
 //     are copied into the ro region as read-only tables.
 //
-// The ca0/ca1 and oa0/oa1 regions are populated inside HeapShared::archive_objects.
-// Their layout is independent of the rw/ro regions.
+// The heap region is populated by HeapShared::archive_objects.
+//
+// The bitmap region is used to relocate the ro/rw/hp regions.
 
 static DumpRegion _symbol_region("symbols");
 
@@ -1127,9 +1123,9 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
           assert(ccs_end > cds_base, "Sanity check");
           CompressedKlassPointers::initialize(cds_base, ccs_end - cds_base);
 
-          // map_heap_regions() compares the current narrow oop and klass encodings
+          // map_or_load_heap_region() compares the current narrow oop and klass encodings
           // with the archived ones, so it must be done after all encodings are determined.
-          static_mapinfo->map_or_load_heap_regions();
+          static_mapinfo->map_or_load_heap_region();
         }
       });
     log_info(cds)("optimized module handling: %s", MetaspaceShared::use_optimized_module_handling() ? "enabled" : "disabled");

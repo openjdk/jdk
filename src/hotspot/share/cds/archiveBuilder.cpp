@@ -1050,7 +1050,6 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
   }
 
 #if INCLUDE_CDS_JAVA_HEAP
-  // open and closed archive regions
   static void log_heap_region(ArchiveHeapInfo* heap_info) {
     MemRegion r = heap_info->memregion();
     address start = address(r.start());
