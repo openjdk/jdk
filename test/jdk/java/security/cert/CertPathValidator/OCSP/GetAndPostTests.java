@@ -63,12 +63,9 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import sun.security.testlibrary.SimpleOCSPServer;
-import sun.security.testlibrary.SimpleOCSPServer;
-import sun.security.testlibrary.SimpleOCSPServer;
 import sun.security.util.DerOutputStream;
 import sun.security.util.DerValue;
 import sun.security.util.ObjectIdentifier;
-import sun.security.testlibrary.SimpleOCSPServer;
 
 public class GetAndPostTests {
     private static final String PASS = "passphrase";
@@ -114,13 +111,8 @@ public class GetAndPostTests {
                     endEntCert.getSerialNumber(),
                     new SimpleOCSPServer.CertStatusInfo(
                             SimpleOCSPServer.CertStatus.CERT_STATUS_GOOD)));
-            ocspResponder.start();
-            // Wait 5 seconds for server ready
-            boolean readyStatus =
-                    ocspResponder.awaitServerReady(5, TimeUnit.SECONDS);
-            if (!readyStatus) {
-                throw new RuntimeException("Server not ready");
-            }
+
+            tryToStartOcspServer(ocspResponder);
 
             int ocspPort = ocspResponder.getPort();
             URI ocspURI = new URI("http://localhost:" + ocspPort);
@@ -167,6 +159,20 @@ public class GetAndPostTests {
                 ocspResponder.stop();
             }
         }
+    }
+
+    private static void tryToStartOcspServer(SimpleOCSPServer ocspResponder) throws InterruptedException, IOException {
+        for (int i = 0 ; i < 6 ; ++i) {
+            ocspResponder.start();
+
+            if (ocspResponder.awaitServerReady(10, TimeUnit.SECONDS)) {
+                return;
+            } else {
+                System.err.println("Server not ready after 10 seconds. Trying to restart it.");
+                ocspResponder.shutdownNow();
+            }
+        }
+        throw new RuntimeException("Server not ready after 60 seconds.");
     }
 
     /**

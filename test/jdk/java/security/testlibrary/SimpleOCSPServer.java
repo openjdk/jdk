@@ -292,6 +292,13 @@ public class SimpleOCSPServer {
         }
     }
 
+    public synchronized void shutdownNow() {
+        stop();
+        if (threadPool != null) {
+            threadPool.shutdownNow();
+        }
+    }
+
     /**
      * Print {@code SimpleOCSPServer} operating parameters.
      *
