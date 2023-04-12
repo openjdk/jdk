@@ -33,6 +33,7 @@
 #include "gc/shared/gcLogPrecious.hpp"
 #include "jvm.h"
 #include "logging/logConfiguration.hpp"
+#include "memory/allocation.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/metaspaceUtils.hpp"
 #include "memory/resourceArea.inline.hpp"

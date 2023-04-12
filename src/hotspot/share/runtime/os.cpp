@@ -1202,6 +1202,11 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
   }
 #endif
 
+  // Still nothing? If NMT is enabled, we can ask what it thinks...
+  if (MemTracker::print_containing_region(addr, st)) {
+    return;
+  }
+
   // Try an OS specific find
   if (os::find(addr, st)) {
     return;

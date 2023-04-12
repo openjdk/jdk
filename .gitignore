@@ -1,6 +1,7 @@
 /build/
 /dist/
 /.idea/
+__.idea/
 /.vscode/
 /nbproject/
 nbproject/private/
@@ -15,11 +16,12 @@ test/nashorn/lib
 NashornProfile.txt
 **/JTreport/**
 **/JTwork/**
+**/hs_err_pid*.log
 /src/utils/LogCompilation/target/
 /.project/
 /.settings/
 /.project
 /.classpath
 /.cproject
-__.idea/
-**/hs_err_pid*.log
+/compile_commands.json
+/.cache

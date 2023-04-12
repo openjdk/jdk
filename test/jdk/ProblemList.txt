@@ -533,21 +533,17 @@ java/net/MulticastSocket/SetLoopbackMode.java                   7122846 macosx-a
 
 java/net/MulticastSocket/Test.java                              7145658 macosx-all
 
-java/net/MulticastSocket/SetGetNetworkInterfaceTest.java        8219083 windows-all
-
 java/net/ServerSocket/AcceptInheritHandle.java                  8211854 aix-ppc64
-
-java/net/SocketOption/OptionsTest.java                          8304286 windows-all
 
 ############################################################################
 
 # jdk_nio
 
-java/nio/channels/DatagramChannel/Unref.java                    8233437 generic-all
-
 java/nio/channels/AsynchronousSocketChannel/StressLoopback.java 8211851 aix-ppc64
 
 java/nio/channels/DatagramChannel/ManySourcesAndTargets.java    8264385 macosx-aarch64
+
+java/nio/channels/DatagramChannel/Unref.java                    8233437 generic-all
 
 jdk/nio/zipfs/TestLocOffsetFromZip64EF.java                     8301183 linux-all
 

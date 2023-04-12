@@ -73,7 +73,7 @@ import java.util.stream.StreamSupport;
  * @author John Rose
  * @since  1.2
  */
-public class Arrays {
+public final class Arrays {
 
     // Suppresses default constructor, ensuring non-instantiability.
     private Arrays() {}

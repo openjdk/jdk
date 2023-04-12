@@ -146,7 +146,7 @@ address TemplateInterpreterGenerator::generate_ClassCastException_handler() {
 
 address TemplateInterpreterGenerator::generate_exception_handler_common(
         const char* name, const char* message, bool pass_oop) {
-  assert(!pass_oop || message == NULL, "either oop or message but not both");
+  assert(!pass_oop || message == nullptr, "either oop or message but not both");
   address entry = __ pc();
 
   Register rarg = NOT_LP64(rax) LP64_ONLY(c_rarg1);
@@ -206,7 +206,7 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
 
   // Restore stack bottom in case i2c adjusted stack
   __ movptr(rsp, Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize));
-  // and NULL it as marker that esp is now tos until next java call
+  // and null it as marker that esp is now tos until next java call
   __ movptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), NULL_WORD);
 
   __ restore_bcp();
@@ -220,12 +220,17 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
 
   const Register cache = rbx;
   const Register index = rcx;
-  __ get_cache_and_index_at_bcp(cache, index, 1, index_size);
-
-  const Register flags = cache;
-  __ movl(flags, Address(cache, index, Address::times_ptr, ConstantPoolCache::base_offset() + ConstantPoolCacheEntry::flags_offset()));
-  __ andl(flags, ConstantPoolCacheEntry::parameter_size_mask);
-  __ lea(rsp, Address(rsp, flags, Interpreter::stackElementScale()));
+  if (index_size == sizeof(u4)) {
+    __ load_resolved_indy_entry(cache, index);
+    __ load_unsigned_short(cache, Address(cache, in_bytes(ResolvedIndyEntry::num_parameters_offset())));
+    __ lea(rsp, Address(rsp, cache, Interpreter::stackElementScale()));
+  } else {
+    __ get_cache_and_index_at_bcp(cache, index, 1, index_size);
+    Register flags = cache;
+    __ movl(flags, Address(cache, index, Address::times_ptr, ConstantPoolCache::base_offset() + ConstantPoolCacheEntry::flags_offset()));
+    __ andl(flags, ConstantPoolCacheEntry::parameter_size_mask);
+    __ lea(rsp, Address(rsp, flags, Interpreter::stackElementScale()));
+  }
 
    const Register java_thread = NOT_LP64(rcx) LP64_ONLY(r15_thread);
    if (JvmtiExport::can_pop_frame()) {
@@ -254,7 +259,7 @@ address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state, i
   }
 #endif // _LP64
 
-  // NULL last_sp until next java call
+  // null last_sp until next java call
   __ movptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), NULL_WORD);
   __ restore_bcp();
   __ restore_locals();
@@ -297,7 +302,7 @@ address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state, i
     __ should_not_reach_here();
     __ bind(L);
   }
-  if (continuation == NULL) {
+  if (continuation == nullptr) {
     __ dispatch_next(state, step);
   } else {
     __ jump_to_entry(continuation);
@@ -434,8 +439,8 @@ void TemplateInterpreterGenerator::generate_counter_overflow(Label& do_continue)
   // InterpreterRuntime::frequency_counter_overflow takes two
   // arguments, the first (thread) is passed by call_VM, the second
   // indicates if the counter overflow occurs at a backwards branch
-  // (NULL bcp).  We pass zero for it.  The call returns the address
-  // of the verified entry point for the method or NULL if the
+  // (null bcp).  We pass zero for it.  The call returns the address
+  // of the verified entry point for the method or null if the
   // compilation did not complete (either went background or bailed
   // out).
   Register rarg = NOT_LP64(rax) LP64_ONLY(c_rarg1);
@@ -535,7 +540,7 @@ void TemplateInterpreterGenerator::generate_stack_overflow_check(void) {
 
   // Note: the restored frame is not necessarily interpreted.
   // Use the shared runtime version of the StackOverflowError.
-  assert(StubRoutines::throw_StackOverflowError_entry() != NULL, "stub not yet generated");
+  assert(StubRoutines::throw_StackOverflowError_entry() != nullptr, "stub not yet generated");
   __ jump(ExternalAddress(StubRoutines::throw_StackOverflowError_entry()));
   // all done with frame size check
   __ bind(after_frame_check_pop);
@@ -589,7 +594,7 @@ void TemplateInterpreterGenerator::lock_method() {
       Label L;
       __ testptr(rax, rax);
       __ jcc(Assembler::notZero, L);
-      __ stop("synchronization object is NULL");
+      __ stop("synchronization object is null");
       __ bind(L);
     }
 #endif // ASSERT
@@ -687,7 +692,7 @@ address TemplateInterpreterGenerator::generate_Reference_get_entry(void) {
   Label slow_path;
   // rbx: method
 
-  // Check if local 0 != NULL
+  // Check if local 0 != null
   // If the receiver is null then it is OK to jump to the slow path.
   __ movptr(rax, Address(rsp, wordSize));
 
@@ -1302,7 +1307,7 @@ address TemplateInterpreterGenerator::generate_abstract_entry(void) {
 
   // abstract method entry
 
-  //  pop return address, reset last_sp to NULL
+  //  pop return address, reset last_sp to null
   __ empty_expression_stack();
   __ restore_bcp();      // rsi must be correct for exception handler   (was destroyed)
   __ restore_locals();   // make sure locals pointer is correct as well (was destroyed)
@@ -1650,7 +1655,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
     __ jcc(Assembler::notEqual, L_done);
 
     // The member name argument must be restored if _invokestatic is re-executed after a PopFrame call.
-    // Detect such a case in the InterpreterRuntime function and return the member name argument, or NULL.
+    // Detect such a case in the InterpreterRuntime function and return the member name argument, or null.
 
     __ get_method(rdx);
     __ movptr(rax, Address(local0, 0));
@@ -1839,7 +1844,7 @@ void TemplateInterpreterGenerator::trace_bytecode(Template* t) {
   // The run-time runtime saves the right registers, depending on
   // the tosca in-state for the given template.
 
-  assert(Interpreter::trace_code(t->tos_in()) != NULL,
+  assert(Interpreter::trace_code(t->tos_in()) != nullptr,
          "entry must have been generated");
 #ifndef _LP64
   __ call(RuntimeAddress(Interpreter::trace_code(t->tos_in())));

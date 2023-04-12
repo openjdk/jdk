@@ -245,12 +245,20 @@ int dtrace_waited_probe(ObjectMonitor* monitor, Handle obj, JavaThread* thr) {
   return 0;
 }
 
-static const int NINFLATIONLOCKS = 256;
-static PlatformMutex* gInflationLocks[NINFLATIONLOCKS];
+static constexpr size_t inflation_lock_count() {
+  return 256;
+}
+
+// Static storage for an array of PlatformMutex.
+alignas(PlatformMutex) static uint8_t _inflation_locks[inflation_lock_count()][sizeof(PlatformMutex)];
+
+static inline PlatformMutex* inflation_lock(size_t index) {
+  return reinterpret_cast<PlatformMutex*>(_inflation_locks[index]);
+}
 
 void ObjectSynchronizer::initialize() {
-  for (int i = 0; i < NINFLATIONLOCKS; i++) {
-    gInflationLocks[i] = new PlatformMutex();
+  for (size_t i = 0; i < inflation_lock_count(); i++) {
+    ::new(static_cast<void*>(inflation_lock(i))) PlatformMutex();
   }
   // Start the ceiling with the estimate for one thread.
   set_in_use_list_ceiling(AvgMonitorsPerThreadEstimate);
@@ -576,42 +584,6 @@ void ObjectSynchronizer::exit(oop object, BasicLock* lock, JavaThread* current) 
 }
 
 // -----------------------------------------------------------------------------
-// Class Loader  support to workaround deadlocks on the class loader lock objects
-// Also used by GC
-// complete_exit()/reenter() are used to wait on a nested lock
-// i.e. to give up an outer lock completely and then re-enter
-// Used when holding nested locks - lock acquisition order: lock1 then lock2
-//  1) complete_exit lock1 - saving recursion count
-//  2) wait on lock2
-//  3) when notified on lock2, unlock lock2
-//  4) reenter lock1 with original recursion count
-//  5) lock lock2
-// NOTE: must use heavy weight monitor to handle complete_exit/reenter()
-intx ObjectSynchronizer::complete_exit(Handle obj, JavaThread* current) {
-  // The ObjectMonitor* can't be async deflated until ownership is
-  // dropped inside exit() and the ObjectMonitor* must be !is_busy().
-  ObjectMonitor* monitor = inflate(current, obj(), inflate_cause_vm_internal);
-  intx recur_count = monitor->complete_exit(current);
-  current->dec_held_monitor_count(recur_count + 1);
-  return recur_count;
-}
-
-// NOTE: must use heavy weight monitor to handle complete_exit/reenter()
-void ObjectSynchronizer::reenter(Handle obj, intx recursions, JavaThread* current) {
-  // An async deflation can race after the inflate() call and before
-  // reenter() -> enter() can make the ObjectMonitor busy. reenter() ->
-  // enter() returns false if we have lost the race to async deflation
-  // and we simply try again.
-  while (true) {
-    ObjectMonitor* monitor = inflate(current, obj(), inflate_cause_vm_internal);
-    if (monitor->reenter(recursions, current)) {
-      current->inc_held_monitor_count(recursions + 1);
-      return;
-    }
-  }
-}
-
-// -----------------------------------------------------------------------------
 // JNI locks on java objects
 // NOTE: must use heavy weight monitor to handle jni monitor enter
 void ObjectSynchronizer::jni_enter(Handle obj, JavaThread* current) {
@@ -776,11 +748,11 @@ static markWord read_stable_mark(oop obj) {
         // then for each thread on the list, set the flag and unpark() the thread.
 
         // Index into the lock array based on the current object address.
-        static_assert(is_power_of_2(NINFLATIONLOCKS), "must be");
-        int ix = (cast_from_oop<intptr_t>(obj) >> 5) & (NINFLATIONLOCKS-1);
+        static_assert(is_power_of_2(inflation_lock_count()), "must be");
+        size_t ix = (cast_from_oop<intptr_t>(obj) >> 5) & (inflation_lock_count() - 1);
         int YieldThenBlock = 0;
-        assert(ix >= 0 && ix < NINFLATIONLOCKS, "invariant");
-        gInflationLocks[ix]->lock();
+        assert(ix < inflation_lock_count(), "invariant");
+        inflation_lock(ix)->lock();
         while (obj->mark_acquire() == markWord::INFLATING()) {
           // Beware: naked_yield() is advisory and has almost no effect on some platforms
           // so we periodically call current->_ParkEvent->park(1).
@@ -791,7 +763,7 @@ static markWord read_stable_mark(oop obj) {
             os::naked_yield();
           }
         }
-        gInflationLocks[ix]->unlock();
+        inflation_lock(ix)->unlock();
       }
     } else {
       SpinPause();       // SMP-polite spinning
