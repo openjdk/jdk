@@ -26,8 +26,6 @@
 package sun.awt.image;
 
 import java.util.Hashtable;
-import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.awt.image.ImageConsumer;
 import java.awt.image.ImageProducer;
 import java.awt.image.Raster;
@@ -44,7 +42,8 @@ public class OffScreenImageSource implements ImageProducer {
     int height;
     Hashtable<?, ?> properties;
 
-    private List<ImageConsumer> imageConsumers = new CopyOnWriteArrayList<>();
+    // we can only have one ImageConsumer at a time because addConsumer is synchronized
+    private DisposableImageConsumer activeConsumer;
 
     public OffScreenImageSource(BufferedImage image,
                                 Hashtable<?, ?> properties) {
@@ -65,16 +64,19 @@ public class OffScreenImageSource implements ImageProducer {
     public synchronized void addConsumer(ImageConsumer ic) {
         if (ic == null)
             return;
-        imageConsumers.add(ic);
-        produce(ic);
+        activeConsumer = new DisposableImageConsumer(ic);
+        produce(activeConsumer);
     }
 
     public synchronized boolean isConsumer(ImageConsumer ic) {
-        return imageConsumers.contains(ic);
+        return activeConsumer != null && activeConsumer.delegate == ic;
     }
 
     public synchronized void removeConsumer(ImageConsumer ic) {
-        imageConsumers.remove(ic);
+        if (activeConsumer != null && activeConsumer.delegate == ic) {
+            activeConsumer.isDisposed = true;
+            activeConsumer = null;
+        }
     }
 
     public void startProduction(ImageConsumer ic) {
@@ -84,7 +86,7 @@ public class OffScreenImageSource implements ImageProducer {
     public void requestTopDownLeftRightResend(ImageConsumer ic) {
     }
 
-    private void sendPixels(ImageConsumer theConsumer) {
+    private void sendPixels(DisposableImageConsumer theConsumer) {
         ColorModel cm = image.getColorModel();
         WritableRaster raster = image.getRaster();
         int numDataElements = raster.getNumDataElements();
@@ -94,14 +96,11 @@ public class OffScreenImageSource implements ImageProducer {
 
         if (cm instanceof IndexColorModel) {
             byte[] pixels = new byte[width];
-            if (isConsumer(theConsumer))
-                theConsumer.setColorModel(cm);
+            theConsumer.setColorModel(cm);
 
             if (raster instanceof ByteComponentRaster) {
                 needToCvt = false;
-                for (int y=0; y < height; y++) {
-                    if (!isConsumer(theConsumer))
-                        return;
+                for (int y=0; y < height && !theConsumer.isDisposed; y++) {
                     raster.getDataElements(0, y, width, 1, pixels);
                     theConsumer.setPixels(0, y, width, 1, cm, pixels, 0,
                             width);
@@ -110,69 +109,58 @@ public class OffScreenImageSource implements ImageProducer {
             else if (raster instanceof BytePackedRaster) {
                 needToCvt = false;
                 // Binary image.  Need to unpack it
-                for (int y=0; y < height; y++) {
-                    if (!isConsumer(theConsumer))
-                        return;
+                for (int y=0; y < height && !theConsumer.isDisposed; y++) {
                     raster.getPixels(0, y, width, 1, scanline);
                     for (int x=0; x < width; x++) {
                         pixels[x] = (byte) scanline[x];
                     }
                     theConsumer.setPixels(0, y, width, 1, cm, pixels, 0,
-                                          width);
+                            width);
                 }
             }
             else if (dataType == DataBuffer.TYPE_SHORT ||
-                     dataType == DataBuffer.TYPE_INT)
+                    dataType == DataBuffer.TYPE_INT)
             {
                 // Probably a short or int "GRAY" image
                 needToCvt = false;
-                for (int y=0; y < height; y++) {
-                    if (!isConsumer(theConsumer))
-                        return;
+                for (int y=0; y < height && !theConsumer.isDisposed; y++) {
                     raster.getPixels(0, y, width, 1, scanline);
                     theConsumer.setPixels(0, y, width, 1, cm, scanline, 0,
-                                          width);
+                            width);
                 }
             }
         }
         else if (cm instanceof DirectColorModel) {
-            if (isConsumer(theConsumer))
-                theConsumer.setColorModel(cm);
+            theConsumer.setColorModel(cm);
             needToCvt = false;
             switch (dataType) {
             case DataBuffer.TYPE_INT:
-                for (int y=0; y < height; y++) {
-                    if (!isConsumer(theConsumer))
-                        return;
+                for (int y=0; y < height && !theConsumer.isDisposed; y++) {
                     raster.getDataElements(0, y, width, 1, scanline);
                     theConsumer.setPixels(0, y, width, 1, cm, scanline, 0,
-                                          width);
+                            width);
                 }
                 break;
             case DataBuffer.TYPE_BYTE:
                 byte[] bscanline = new byte[width];
-                for (int y=0; y < height; y++) {
-                    if (!isConsumer(theConsumer))
-                        return;
+                for (int y=0; y < height && !theConsumer.isDisposed; y++) {
                     raster.getDataElements(0, y, width, 1, bscanline);
                     for (int x=0; x < width; x++) {
                         scanline[x] = bscanline[x]&0xff;
                     }
                     theConsumer.setPixels(0, y, width, 1, cm, scanline, 0,
-                                          width);
+                            width);
                 }
                 break;
             case DataBuffer.TYPE_USHORT:
                 short[] sscanline = new short[width];
-                for (int y=0; y < height; y++) {
-                    if (!isConsumer(theConsumer))
-                        return;
+                for (int y=0; y < height && !theConsumer.isDisposed; y++) {
                     raster.getDataElements(0, y, width, 1, sscanline);
                     for (int x=0; x < width; x++) {
                         scanline[x] = sscanline[x]&0xffff;
                     }
                     theConsumer.setPixels(0, y, width, 1, cm, scanline, 0,
-                                          width);
+                            width);
                 }
                 break;
             default:
@@ -183,32 +171,27 @@ public class OffScreenImageSource implements ImageProducer {
         if (needToCvt) {
             // REMIND: Need to add other types of CMs here
             ColorModel newcm = ColorModel.getRGBdefault();
-            if (isConsumer(theConsumer))
-                theConsumer.setColorModel(newcm);
+            theConsumer.setColorModel(newcm);
 
-            for (int y=0; y < height; y++) {
-                if (!isConsumer(theConsumer))
-                    return;
+            for (int y=0; y < height && !theConsumer.isDisposed; y++) {
                 for (int x=0; x < width; x++) {
                     scanline[x] = image.getRGB(x, y);
                 }
                 theConsumer.setPixels(0, y, width, 1, newcm, scanline, 0,
-                                      width);
+                        width);
             }
         }
     }
 
-    private void produce(ImageConsumer theConsumer) {
+    private void produce(DisposableImageConsumer theConsumer) {
         try {
-            // isConsumer(theConsumer) MUST be true at this point:
             theConsumer.setDimensions(image.getWidth(), image.getHeight());
-            if (isConsumer(theConsumer))
-                theConsumer.setProperties(properties);
+            theConsumer.setProperties(properties);
             sendPixels(theConsumer);
-            if (isConsumer(theConsumer))
-                theConsumer.imageComplete(ImageConsumer.SINGLEFRAMEDONE);
+            theConsumer.imageComplete(ImageConsumer.SINGLEFRAMEDONE);
 
-            if (isConsumer(theConsumer)) {
+            // If 'theconsumer' has not unregistered itself after previous call
+            if (theConsumer != null) {
                 try {
                     theConsumer.imageComplete(ImageConsumer.STATICIMAGEDONE);
                 } catch (RuntimeException e) {
@@ -223,8 +206,71 @@ public class OffScreenImageSource implements ImageProducer {
         } catch (NullPointerException e) {
             e.printStackTrace();
 
-            if (isConsumer(theConsumer))
+            if (theConsumer != null) {
                 theConsumer.imageComplete(ImageConsumer.IMAGEERROR);
+            }
         }
+    }
+}
+
+/**
+ * This ImageConsumer passes every notification to an inner delegate ImageConsumer
+ * as long as {@link #isDisposed} remains false.
+ * <p>
+ * This effectively lets us "turn off" notifications to the inner ImageConsumer without
+ * having to constantly confirm that that ImageConsumer remains attached to the
+ * OffScreenImageSource. Some ImageConsumers may detach mid-production, so letting us
+ * disable notifications mid-production is an important feature.
+ * </p>
+ */
+class DisposableImageConsumer implements ImageConsumer {
+
+    public final ImageConsumer delegate;
+    public boolean isDisposed = false;
+
+    public DisposableImageConsumer(ImageConsumer consumer) {
+        delegate = consumer;
+    }
+
+    @Override
+    public void setDimensions(int width, int height) {
+        if (!isDisposed)
+            delegate.setDimensions(width, height);
+    }
+
+    @Override
+    public void setProperties(Hashtable<?, ?> props) {
+        if (!isDisposed)
+            delegate.setProperties(props);
+    }
+
+    @Override
+    public void setColorModel(ColorModel model) {
+        if (!isDisposed)
+            delegate.setColorModel(model);
+    }
+
+    @Override
+    public void setHints(int hintflags) {
+        if (!isDisposed)
+            delegate.setHints(hintflags);
+    }
+
+    @Override
+    public void setPixels(int x, int y, int w, int h, ColorModel model, byte[] pixels, int off, int scansize) {
+        if (!isDisposed)
+            delegate.setPixels(x, y, w, h, model, pixels, off, scansize);
+    }
+
+    @Override
+    public void setPixels(int x, int y, int w, int h, ColorModel model, int[] pixels, int off, int scansize) {
+        if (!isDisposed)
+            delegate.setPixels(x, y, w, h, model, pixels, off, scansize);
+    }
+
+    @Override
+    public void imageComplete(int status) {
+        if (!isDisposed)
+            delegate.imageComplete(status);
     }
 }
