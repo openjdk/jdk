@@ -46,12 +46,12 @@ class NTLMAuthenticationProxy {
     static final boolean supportsTransparentAuth = supported ? supportsTransparentAuth() : false;
 
     private final Constructor<? extends AuthenticationInfo> fourArgCtr;
-    private final Constructor<? extends AuthenticationInfo> sixArgCtr;
+    private final Constructor<? extends AuthenticationInfo> fiveArgCtr;
 
     private NTLMAuthenticationProxy(Constructor<? extends AuthenticationInfo> fourArgCtr,
-                                    Constructor<? extends AuthenticationInfo> sixArgCtr) {
+                                    Constructor<? extends AuthenticationInfo> fiveArgCtr) {
         this.fourArgCtr = fourArgCtr;
-        this.sixArgCtr = sixArgCtr;
+        this.fiveArgCtr = fiveArgCtr;
     }
 
 
@@ -74,7 +74,7 @@ class NTLMAuthenticationProxy {
                               PasswordAuthentication pw,
                               AuthCacheImpl authcache) {
         try {
-            return sixArgCtr.newInstance(isProxy, host, port, pw, authcache);
+            return fiveArgCtr.newInstance(isProxy, host, port, pw, authcache);
         } catch (ReflectiveOperationException roe) {
             finest(roe);
         }
@@ -117,7 +117,7 @@ class NTLMAuthenticationProxy {
     @SuppressWarnings("unchecked")
     private static NTLMAuthenticationProxy tryLoadNTLMAuthentication() {
         Class<? extends AuthenticationInfo> cl;
-        Constructor<? extends AuthenticationInfo> fourArg, sixArg;
+        Constructor<? extends AuthenticationInfo> fourArg, fiveArg;
         try {
             cl = (Class<? extends AuthenticationInfo>)Class.forName(clazzStr, true, null);
             if (cl != null) {
@@ -125,7 +125,7 @@ class NTLMAuthenticationProxy {
                                              URL.class,
                                              PasswordAuthentication.class,
                                              AuthCacheImpl.class);
-                sixArg = cl.getConstructor(boolean.class,
+                fiveArg = cl.getConstructor(boolean.class,
                                             String.class,
                                             int.class,
                                             PasswordAuthentication.class,
@@ -133,7 +133,7 @@ class NTLMAuthenticationProxy {
                 supportsTA = cl.getDeclaredMethod(supportsTAStr);
                 isTrustedSite = cl.getDeclaredMethod(isTrustedSiteStr, java.net.URL.class);
                 return new NTLMAuthenticationProxy(fourArg,
-                                                   sixArg);
+                                                   fiveArg);
             }
         } catch (ClassNotFoundException cnfe) {
             finest(cnfe);

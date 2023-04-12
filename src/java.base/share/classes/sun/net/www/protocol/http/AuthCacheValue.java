@@ -44,11 +44,7 @@ public abstract class AuthCacheValue {
     /**
      * The default authentication cache
      */
-    protected static AuthCacheImpl defCache = new AuthCacheImpl();
-
-    public static void setAuthCache (AuthCacheImpl map) {
-        defCache = map;
-    }
+    protected static final AuthCacheImpl defCache = new AuthCacheImpl();
 
     /* Package private ctor to prevent extension outside package */
 

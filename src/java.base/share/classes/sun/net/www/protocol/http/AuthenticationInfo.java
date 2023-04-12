@@ -73,7 +73,7 @@ public abstract class AuthenticationInfo extends AuthCacheValue implements Clone
 
     /* AuthCacheValue: */
 
-    protected transient PasswordAuthentication pw;
+    protected PasswordAuthentication pw;
 
     public PasswordAuthentication credentials() {
         return pw;
@@ -214,7 +214,7 @@ public abstract class AuthenticationInfo extends AuthCacheValue implements Clone
     String path;
 
     /** A cache to obtain credentials from if the default cache not to be used */
-    transient AuthCacheImpl authcache; // may be null
+    AuthCacheImpl authcache;
 
     /** Use this constructor only for proxy entries */
     public AuthenticationInfo(char type, AuthScheme authScheme, String host,
@@ -327,13 +327,13 @@ public abstract class AuthenticationInfo extends AuthCacheValue implements Clone
      * Return the AuthenticationInfo object from the cache if it's path is
      * a substring of the supplied URLs path.
      */
-    static AuthenticationInfo getAuth(String key, URL url, AuthCacheImpl authcache) {
+    static AuthenticationInfo getAuth(String key, URL url, AuthCacheImpl acache) {
         // use default cache if none supplied
-        authcache = authcache == null ? defCache : authcache;
+        acache = acache == null ? defCache : acache;
         if (url == null) {
-            return (AuthenticationInfo)authcache.get (key, null);
+            return (AuthenticationInfo)acache.get (key, null);
         } else {
-            return (AuthenticationInfo)authcache.get (key, url.getPath());
+            return (AuthenticationInfo)acache.get (key, url.getPath());
         }
     }
 
@@ -342,11 +342,11 @@ public abstract class AuthenticationInfo extends AuthCacheValue implements Clone
      * for preemptive header-setting. Note, the protocol field is always
      * blank for proxies.
      */
-    static AuthenticationInfo getProxyAuth(String host, int port, AuthCacheImpl authcache) {
+    static AuthenticationInfo getProxyAuth(String host, int port, AuthCacheImpl acache) {
         String key = PROXY_AUTHENTICATION + "::" + host.toLowerCase() + ":" + port;
         // use default cache if none supplied
-        authcache = authcache == null ? defCache : authcache;
-        AuthenticationInfo result = (AuthenticationInfo) authcache.get(key, null);
+        acache = acache == null ? defCache : acache;
+        AuthenticationInfo result = (AuthenticationInfo) acache.get(key, null);
         return result;
     }
 
@@ -362,14 +362,14 @@ public abstract class AuthenticationInfo extends AuthCacheValue implements Clone
         return key;
     }
 
-    private static AuthenticationInfo getCachedProxyAuth(String key, AuthCacheImpl authcache) {
-        authcache = authcache == null ? defCache : authcache;
-        return (AuthenticationInfo) authcache.get(key, null);
+    private static AuthenticationInfo getCachedProxyAuth(String key, AuthCacheImpl acache) {
+        acache = acache == null ? defCache : acache;
+        return (AuthenticationInfo) acache.get(key, null);
     }
 
-    static AuthenticationInfo getProxyAuth(String key, AuthCacheImpl authcache) {
-        if (!serializeAuth) return getCachedProxyAuth(key, authcache);
-        return requestAuthentication(key, authcache, AuthenticationInfo::getCachedProxyAuth);
+    static AuthenticationInfo getProxyAuth(String key, AuthCacheImpl acache) {
+        if (!serializeAuth) return getCachedProxyAuth(key, acache);
+        return requestAuthentication(key, acache, AuthenticationInfo::getCachedProxyAuth);
     }
 
 

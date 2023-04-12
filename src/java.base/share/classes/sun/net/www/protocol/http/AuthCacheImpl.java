@@ -112,15 +112,17 @@ public class AuthCacheImpl implements AuthCache {
         }
     }
 
-    private static Map<Authenticator,AuthCacheImpl> caches =
+    private static final Map<Authenticator,AuthCacheImpl> caches =
         Collections.synchronizedMap(new WeakHashMap<>());
 
     public static AuthCacheImpl getAuthCacheFor(Authenticator auth) {
-        var c = caches.get(auth);
-        if (c == null) {
-            c = new AuthCacheImpl();
-            caches.put(auth, c);
+        synchronized (caches) {
+            var c = caches.get(auth);
+            if (c == null) {
+                c = new AuthCacheImpl();
+                caches.put(auth, c);
+            }
+            return c;
         }
-        return c;
     }
 }
