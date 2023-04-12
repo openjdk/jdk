@@ -135,6 +135,10 @@ bool ZDriverMinor::is_busy() const {
 void ZDriverMinor::collect(const ZDriverRequest& request) {
   switch (request.cause()) {
   case GCCause::_wb_young_gc:
+    // Start synchronous GC
+    _port.send_sync(request);
+    break;
+
   case GCCause::_scavenge_alot:
   case GCCause::_z_timer:
   case GCCause::_z_allocation_rate:
