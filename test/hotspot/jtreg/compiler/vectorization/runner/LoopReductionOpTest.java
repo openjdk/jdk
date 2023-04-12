@@ -35,6 +35,7 @@
  *                   -XX:+WhiteBoxAPI
  *                   compiler.vectorization.runner.LoopReductionOpTest
  *
+ * @requires (os.simpleArch == "x64") | (os.simpleArch == "aarch64")
  * @requires vm.compiler2.enabled & vm.flagless
  *
  */
@@ -77,9 +78,9 @@ public class LoopReductionOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse3", "true"},
         counts = {IRNode.LOAD_VECTOR, ">0"})
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse3", "true"},
         counts = {IRNode.ADD_REDUCTION_V, ">0"})
     public int reductionAddSumOfArray() {
         int res = 0;
@@ -119,9 +120,9 @@ public class LoopReductionOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"sve", "true", "sse2", "true"},
+    @IR(applyIfCPUFeatureOr = {"sve", "true", "avx2", "true"},
         counts = {IRNode.LOAD_VECTOR, ">0"})
-    @IR(applyIfCPUFeatureOr = {"sve", "true", "sse2", "true"},
+    @IR(applyIfCPUFeatureOr = {"sve", "true", "avx2", "true"},
         counts = {IRNode.ADD_REDUCTION_V, ">0"})
     public int reductionAddSumOfMultiple() {
         int res = 0;
@@ -178,7 +179,7 @@ public class LoopReductionOpTest extends VectorizationTestRunner {
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
         counts = {IRNode.STORE_VECTOR, ">0"})
-    @IR(applyIfCPUFeatureOr = {"sse2", "true"},
+    @IR(applyIfCPUFeatureOr = {"avx2", "true"},
         counts = {IRNode.ADD_REDUCTION_V, ">0"})
     public long reductionWithNonReductionDifferentSizes() {
         long res = 0L;

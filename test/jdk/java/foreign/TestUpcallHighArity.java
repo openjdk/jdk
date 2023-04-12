@@ -26,6 +26,7 @@
  * @test
  * @enablePreview
  * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64" | os.arch == "riscv64"
+ * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcallHighArity
  *
  * @run testng/othervm/native
@@ -33,28 +34,20 @@
  *   TestUpcallHighArity
  */
 
-import java.lang.foreign.Arena;
-import java.lang.foreign.FunctionDescriptor;
-import java.lang.foreign.GroupLayout;
-import java.lang.foreign.Linker;
-import java.lang.foreign.MemoryLayout;
-import java.lang.foreign.MemorySegment;
+import java.lang.foreign.*;
 
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
-import java.lang.foreign.SegmentScope;
 import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
-
-import static org.testng.Assert.assertEquals;
+import java.util.function.Consumer;
 
 public class TestUpcallHighArity extends CallGeneratorHelper {
     static final MethodHandle MH_do_upcall;
-    static final MethodHandle MH_passAndSave;
     static final Linker LINKER = Linker.nativeLinker();
 
     // struct S_PDI { void* p0; double p1; int p2; };
@@ -66,60 +59,37 @@ public class TestUpcallHighArity extends CallGeneratorHelper {
     );
 
     static {
-        try {
-            System.loadLibrary("TestUpcallHighArity");
-            MH_do_upcall = LINKER.downcallHandle(
-                    findNativeOrThrow("do_upcall"),
-                    FunctionDescriptor.ofVoid(C_POINTER,
-                    S_PDI_LAYOUT, C_INT, C_DOUBLE, C_POINTER,
-                    S_PDI_LAYOUT, C_INT, C_DOUBLE, C_POINTER,
-                    S_PDI_LAYOUT, C_INT, C_DOUBLE, C_POINTER,
-                    S_PDI_LAYOUT, C_INT, C_DOUBLE, C_POINTER)
-            );
-            MH_passAndSave = MethodHandles.lookup().findStatic(TestUpcallHighArity.class, "passAndSave",
-                    MethodType.methodType(void.class, Object[].class, AtomicReference.class, List.class));
-        } catch (ReflectiveOperationException e) {
-            throw new InternalError(e);
-        }
-    }
-
-    static void passAndSave(Object[] o, AtomicReference<Object[]> ref, List<MemoryLayout> layouts) {
-        for (int i = 0; i < o.length; i++) {
-            if (layouts.get(i) instanceof GroupLayout) {
-                MemorySegment ms = (MemorySegment) o[i];
-                MemorySegment copy = MemorySegment.allocateNative(ms.byteSize(), SegmentScope.auto());
-                copy.copyFrom(ms);
-                o[i] = copy;
-            }
-        }
-        ref.set(o);
+        System.loadLibrary("TestUpcallHighArity");
+        MH_do_upcall = LINKER.downcallHandle(
+                findNativeOrThrow("do_upcall"),
+                FunctionDescriptor.ofVoid(C_POINTER,
+                S_PDI_LAYOUT, C_INT, C_DOUBLE, C_POINTER,
+                S_PDI_LAYOUT, C_INT, C_DOUBLE, C_POINTER,
+                S_PDI_LAYOUT, C_INT, C_DOUBLE, C_POINTER,
+                S_PDI_LAYOUT, C_INT, C_DOUBLE, C_POINTER)
+        );
     }
 
     @Test(dataProvider = "args")
     public void testUpcall(MethodHandle downcall, MethodType upcallType,
                            FunctionDescriptor upcallDescriptor) throws Throwable {
         AtomicReference<Object[]> capturedArgs = new AtomicReference<>();
-        MethodHandle target = MethodHandles.insertArguments(MH_passAndSave, 1, capturedArgs, upcallDescriptor.argumentLayouts())
-                                         .asCollector(Object[].class, upcallType.parameterCount())
-                                         .asType(upcallType);
         try (Arena arena = Arena.openConfined()) {
-            MemorySegment upcallStub = LINKER.upcallStub(target, upcallDescriptor, arena.scope());
             Object[] args = new Object[upcallType.parameterCount() + 1];
-            args[0] = upcallStub;
+            args[0] = makeArgSaverCB(upcallDescriptor, arena, capturedArgs, -1);
             List<MemoryLayout> argLayouts = upcallDescriptor.argumentLayouts();
+            List<Consumer<Object>> checks = new ArrayList<>();
             for (int i = 1; i < args.length; i++) {
-                args[i] = makeArg(argLayouts.get(i - 1), null, false);
+                TestValue testValue = genTestValue(argLayouts.get(i - 1), arena);
+                args[i] = testValue.value();
+                checks.add(testValue.check());
             }
 
             downcall.invokeWithArguments(args);
 
             Object[] capturedArgsArr = capturedArgs.get();
             for (int i = 0; i < capturedArgsArr.length; i++) {
-                if (upcallDescriptor.argumentLayouts().get(i) instanceof GroupLayout) {
-                    assertStructEquals((MemorySegment) capturedArgsArr[i], (MemorySegment) args[i + 1], argLayouts.get(i));
-                } else {
-                    assertEquals(capturedArgsArr[i], args[i + 1], "For index " + i);
-                }
+                checks.get(i).accept(capturedArgsArr[i]);
             }
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1121,16 +1121,22 @@ public class      BeanContextSupport extends BeanContextChildSupport
         String propertyName = pce.getPropertyName();
         Object source       = pce.getSource();
 
-        synchronized(children) {
-            if ("beanContext".equals(propertyName) &&
-                containsKey(source)                    &&
-                children.get(source).isRemovePending()) {
-                BeanContext bc = getBeanContextPeer();
+        if ("beanContext".equals(propertyName)) {
+            synchronized (BeanContext.globalHierarchyLock) {
+                synchronized (children) {
+                    if (containsKey(source)
+                            && children.get(source).isRemovePending())
+                    {
+                        BeanContext bc = getBeanContextPeer();
 
-                if (bc.equals(pce.getOldValue()) && !bc.equals(pce.getNewValue())) {
-                    remove(source, false);
-                } else {
-                    children.get(source).setRemovePending(false);
+                        if (bc.equals(pce.getOldValue())
+                                && !bc.equals(pce.getNewValue()))
+                        {
+                            remove(source, false);
+                        } else {
+                            children.get(source).setRemovePending(false);
+                        }
+                    }
                 }
             }
         }

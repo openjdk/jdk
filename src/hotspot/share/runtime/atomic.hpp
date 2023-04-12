@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,6 @@
 
 #include "memory/allocation.hpp"
 #include "metaprogramming/enableIf.hpp"
-#include "metaprogramming/isSame.hpp"
-#include "metaprogramming/isSigned.hpp"
 #include "metaprogramming/primitiveConversions.hpp"
 #include "runtime/orderAccess.hpp"
 #include "utilities/align.hpp"
@@ -153,7 +151,7 @@ public:
                           T exchange_value,
                           atomic_memory_order order = memory_order_conservative);
 
-  // Performs atomic compare of *dest and NULL, and replaces *dest
+  // Performs atomic compare of *dest and nullptr, and replaces *dest
   // with exchange_value if the comparison succeeded.  Returns true if
   // the comparison succeeded and the exchange occurred.  This is
   // often used as part of lazy initialization, as a lock-free
@@ -527,10 +525,10 @@ inline D Atomic::sub(D volatile* dest, I sub_value, atomic_memory_order order) {
   STATIC_ASSERT(std::is_integral<I>::value);
   // If D is a pointer type, use [u]intptr_t as the addend type,
   // matching signedness of I.  Otherwise, use D as the addend type.
-  using PI = std::conditional_t<IsSigned<I>::value, intptr_t, uintptr_t>;
+  using PI = std::conditional_t<std::is_signed<I>::value, intptr_t, uintptr_t>;
   using AddendType = std::conditional_t<std::is_pointer<D>::value, PI, D>;
   // Only allow conversions that can't change the value.
-  STATIC_ASSERT(IsSigned<I>::value == IsSigned<AddendType>::value);
+  STATIC_ASSERT(std::is_signed<I>::value == std::is_signed<AddendType>::value);
   STATIC_ASSERT(sizeof(I) <= sizeof(AddendType));
   AddendType addend = sub_value;
   // Assumes two's complement integer representation.
@@ -676,7 +674,7 @@ struct Atomic::AddImpl<
   typename EnableIf<std::is_integral<I>::value &&
                     std::is_integral<D>::value &&
                     (sizeof(I) <= sizeof(D)) &&
-                    (IsSigned<I>::value == IsSigned<D>::value)>::type>
+                    (std::is_signed<I>::value == std::is_signed<D>::value)>::type>
 {
   static D add_and_fetch(D volatile* dest, I add_value, atomic_memory_order order) {
     D addend = add_value;
@@ -698,7 +696,7 @@ struct Atomic::AddImpl<
 
   // Type of the scaled addend.  An integral type of the same size as a
   // pointer, and the same signedness as I.
-  using SI = std::conditional_t<IsSigned<I>::value, intptr_t, uintptr_t>;
+  using SI = std::conditional_t<std::is_signed<I>::value, intptr_t, uintptr_t>;
 
   // Type of the unscaled destination.  A pointer type with pointee size == 1.
   using UP = const char*;
@@ -756,7 +754,7 @@ inline bool Atomic::replace_if_null(D* volatile* dest, T* value,
   // Presently using a trivial implementation in terms of cmpxchg.
   // Consider adding platform support, to permit the use of compiler
   // intrinsics like gcc's __sync_bool_compare_and_swap.
-  D* expected_null = NULL;
+  D* expected_null = nullptr;
   return expected_null == cmpxchg(dest, expected_null, value, order);
 }
 
@@ -791,8 +789,8 @@ template<typename D, typename U, typename T>
 struct Atomic::CmpxchgImpl<
   D*, U*, T*,
   typename EnableIf<Atomic::IsPointerConvertible<T*, D*>::value &&
-                    IsSame<std::remove_cv_t<D>,
-                           std::remove_cv_t<U>>::value>::type>
+                    std::is_same<std::remove_cv_t<D>,
+                                 std::remove_cv_t<U>>::value>::type>
 {
   D* operator()(D* volatile* dest, U* compare_value, T* exchange_value,
                atomic_memory_order order) const {

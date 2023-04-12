@@ -65,14 +65,14 @@ public class CompressedClassSpaceSize {
 
 
         // Make sure the minimum size is set correctly and printed
-        // (Note: ccs size shall be rounded up to the minimum size of 4m since metaspace reservations
-        //  are done in a 4m granularity. Note that this is **reserved** size and does not affect rss.
+        // (Note: ccs size are rounded up to the next larger root chunk boundary (16m).
+        // Note that this is **reserved** size and does not affect rss.
         pb = ProcessTools.createJavaProcessBuilder("-XX:+UnlockDiagnosticVMOptions",
                                                    "-XX:CompressedClassSpaceSize=1m",
                                                    "-Xlog:gc+metaspace=trace",
                                                    "-version");
         output = new OutputAnalyzer(pb.start());
-        output.shouldMatch("Compressed class space.*4194304")
+        output.shouldMatch("Compressed class space.*16777216")
               .shouldHaveExitValue(0);
 
 

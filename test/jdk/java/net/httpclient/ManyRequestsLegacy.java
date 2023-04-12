@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,10 +31,10 @@
  * @compile ../../../com/sun/net/httpserver/LogFilter.java
  * @compile ../../../com/sun/net/httpserver/EchoHandler.java
  * @compile ../../../com/sun/net/httpserver/FileServerHandler.java
- * @run main/othervm/timeout=40 ManyRequestsLegacy
- * @run main/othervm/timeout=40 -Dtest.insertDelay=true ManyRequestsLegacy
- * @run main/othervm/timeout=40 -Dtest.chunkSize=64 ManyRequestsLegacy
- * @run main/othervm/timeout=40 -Dtest.insertDelay=true
+ * @run main/othervm/timeout=80 -Dsun.net.httpserver.idleInterval=50000 ManyRequestsLegacy
+ * @run main/othervm/timeout=80 -Dtest.insertDelay=true -Dsun.net.httpserver.idleInterval=50000 ManyRequestsLegacy
+ * @run main/othervm/timeout=80 -Dtest.chunkSize=64 -Dsun.net.httpserver.idleInterval=50000 ManyRequestsLegacy
+ * @run main/othervm/timeout=80 -Dtest.insertDelay=true -Dsun.net.httpserver.idleInterval=50000
  *                              -Dtest.chunkSize=64 ManyRequestsLegacy
  * @summary Send a large number of requests asynchronously using the legacy
  *          URL.openConnection(), to help sanitize results of the test

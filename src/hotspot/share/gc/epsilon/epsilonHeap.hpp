@@ -55,7 +55,7 @@ public:
 
   EpsilonHeap() :
           _memory_manager("Epsilon Heap", ""),
-          _space(NULL) {};
+          _space(nullptr) {};
 
   Name kind() const override {
     return CollectedHeap::Epsilon;
@@ -114,7 +114,7 @@ public:
   void unpin_object(JavaThread* thread, oop obj) override { }
 
   // No support for block parsing.
-  HeapWord* block_start(const void* addr) const { return NULL;  }
+  HeapWord* block_start(const void* addr) const { return nullptr;  }
   bool block_is_obj(const HeapWord* addr) const { return false; }
 
   // No GC threads

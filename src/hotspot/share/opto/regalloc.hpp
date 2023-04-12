@@ -127,7 +127,7 @@ public:
   static int _max_framesize;
 
   virtual void dump_frame() const = 0;
-  virtual char *dump_register( const Node *n, char *buf  ) const = 0;
+  virtual char *dump_register( const Node *n, char *buf, size_t buf_size) const = 0;
   static void print_statistics();
 #endif
 };

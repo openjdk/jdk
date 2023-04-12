@@ -279,8 +279,7 @@ static void DMem_DumpHeader(MemoryBlockHeader * header) {
         "-------";
 
     DMem_VerifyHeader(header);
-    snprintf(report, sizeof(report), reportFormat, header->filename,
-            header->linenumber, header->size, header->order);
+    snprintf(report, sizeof(report), reportFormat, header->filename, header->linenumber, header->size, header->order);
     DTRACE_PRINTLN(report);
 }
 

@@ -640,7 +640,7 @@ CK_RV notifyCallback(
 )
 {
     NotifyEncapsulation *notifyEncapsulation;
-    extern JavaVM *jvm;
+    extern JavaVM *jvm_j2pkcs11;
     JNIEnv *env;
     jint returnValue;
     jlong jSessionHandle;
@@ -658,21 +658,21 @@ CK_RV notifyCallback(
     notifyEncapsulation = (NotifyEncapsulation *) pApplication;
 
     /* Get the currently running Java VM */
-    if (jvm == NULL) { return rv ; } /* there is no VM running */
+    if (jvm_j2pkcs11 == NULL) { return rv ; } /* there is no VM running */
 
     /* Determine, if current thread is already attached */
-    returnValue = (*jvm)->GetEnv(jvm, (void **) &env, JNI_VERSION_1_2);
+    returnValue = (*jvm_j2pkcs11)->GetEnv(jvm_j2pkcs11, (void **) &env, JNI_VERSION_1_2);
     if (returnValue == JNI_EDETACHED) {
         /* thread detached, so attach it */
         wasAttached = 0;
-        returnValue = (*jvm)->AttachCurrentThread(jvm, (void **) &env, NULL);
+        returnValue = (*jvm_j2pkcs11)->AttachCurrentThread(jvm_j2pkcs11, (void **) &env, NULL);
     } else if (returnValue == JNI_EVERSION) {
         /* this version of JNI is not supported, so just try to attach */
         /* we assume it was attached to ensure that this thread is not detached
          * afterwards even though it should not
          */
         wasAttached = 1;
-        returnValue = (*jvm)->AttachCurrentThread(jvm, (void **) &env, NULL);
+        returnValue = (*jvm_j2pkcs11)->AttachCurrentThread(jvm_j2pkcs11, (void **) &env, NULL);
     } else {
         /* attached */
         wasAttached = 1;
@@ -707,7 +707,7 @@ CK_RV notifyCallback(
 
     /* if we attached this thread to the VM just for callback, we detach it now */
     if (wasAttached) {
-        returnValue = (*jvm)->DetachCurrentThread(jvm);
+        returnValue = (*jvm_j2pkcs11)->DetachCurrentThread(jvm_j2pkcs11);
     }
 
     return rv ;

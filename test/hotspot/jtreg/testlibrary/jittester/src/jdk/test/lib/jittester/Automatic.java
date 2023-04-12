@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@ public class Automatic {
     public static final int MINUTES_TO_WAIT = Integer.getInteger("jdk.test.lib.jittester", 3);
 
     private static Pair<IRNode, IRNode> generateIRTree(String name) {
+        ProductionLimiter.resetTimer();
         SymbolTable.removeAll();
         TypeList.removeAll();
 
@@ -117,34 +118,41 @@ public class Automatic {
         List<TestsGenerator> generators = getTestGenerators();
         do {
             double start = System.currentTimeMillis();
-            System.out.print("[" + LocalTime.now() + "] |");
-            String name = "Test_" + counter;
-            Pair<IRNode, IRNode> irTree = generateIRTree(name);
-            System.out.printf(" %8d |", counter);
-            long maxWaitTime = TimeUnit.MINUTES.toMillis(MINUTES_TO_WAIT);
-            double generationTime = System.currentTimeMillis() - start;
-            System.out.printf(" %8.0f |", generationTime);
-            start = System.currentTimeMillis();
-            Thread generatorThread = new Thread(() -> {
-                for (TestsGenerator generator : generators) {
-                        generator.accept(irTree.first, irTree.second);
-                }
-            });
-            generatorThread.start();
             try {
-                generatorThread.join(maxWaitTime);
-            } catch (InterruptedException ie) {
-                throw new Error("Test generation interrupted: " + ie, ie);
-            }
-            if (generatorThread.isAlive()) {
-                // maxTime reached, so, proceed to next test generation
-                generatorThread.interrupt();
-            } else {
-                double runningTime = System.currentTimeMillis() - start;
-                System.out.printf(" %8.0f |%n", runningTime);
-                if (runningTime < maxWaitTime) {
-                    ++counter;
+                System.out.print("[" + LocalTime.now() + "] |");
+                String name = "Test_" + counter;
+                Pair<IRNode, IRNode> irTree = generateIRTree(name);
+                System.out.printf(" %8d |", counter);
+                long maxWaitTime = TimeUnit.MINUTES.toMillis(MINUTES_TO_WAIT);
+                double generationTime = System.currentTimeMillis() - start;
+                System.out.printf(" %8.0f |", generationTime);
+                start = System.currentTimeMillis();
+                Thread generatorThread = new Thread(() -> {
+                    for (TestsGenerator generator : generators) {
+                        generator.accept(irTree.first, irTree.second);
+                    }
+                });
+                generatorThread.start();
+                try {
+                    generatorThread.join(maxWaitTime);
+                } catch (InterruptedException ie) {
+                    throw new Error("Test generation interrupted: " + ie, ie);
                 }
+                if (generatorThread.isAlive()) {
+                    // maxTime reached, so, proceed to next test generation
+                    generatorThread.interrupt();
+                } else {
+                    double runningTime = System.currentTimeMillis() - start;
+                    System.out.printf(" %8.0f |%n", runningTime);
+                    if (runningTime < maxWaitTime) {
+                        ++counter;
+                    }
+                }
+            } catch (RuntimeException ignored) {
+                // Generation failures happen due to nature of fuzzing test generators,
+                // such errors are ignored.
+                System.out.println("Test_" + counter + " ignored, generation failed due to " +
+                        ignored.getMessage());
             }
         } while (counter < ProductionParams.numberOfTests.value());
     }

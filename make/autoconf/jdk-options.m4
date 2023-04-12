@@ -415,7 +415,8 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_ADDRESS_SANITIZER],
       CHECK_AVAILABLE: [
         AC_MSG_CHECKING([if AddressSanitizer (asan) is available])
         if test "x$TOOLCHAIN_TYPE" = "xgcc" ||
-            test "x$TOOLCHAIN_TYPE" = "xclang"; then
+           test "x$TOOLCHAIN_TYPE" = "xclang" ||
+           test "x$TOOLCHAIN_TYPE" = "xmicrosoft"; then
           AC_MSG_RESULT([yes])
         else
           AC_MSG_RESULT([no])
@@ -423,11 +424,20 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_ADDRESS_SANITIZER],
         fi
       ],
       IF_ENABLED: [
-        # ASan is simply incompatible with gcc -Wstringop-truncation. See
-        # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=85650
-        # It's harmless to be suppressed in clang as well.
-        ASAN_CFLAGS="-fsanitize=address -Wno-stringop-truncation -fno-omit-frame-pointer -DADDRESS_SANITIZER"
-        ASAN_LDFLAGS="-fsanitize=address"
+        if test "x$TOOLCHAIN_TYPE" = "xgcc" ||
+           test "x$TOOLCHAIN_TYPE" = "xclang"; then
+          # ASan is simply incompatible with gcc -Wstringop-truncation. See
+          # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=85650
+          # It's harmless to be suppressed in clang as well.
+          ASAN_CFLAGS="-fsanitize=address -Wno-stringop-truncation -fno-omit-frame-pointer -fno-common -DADDRESS_SANITIZER"
+          ASAN_LDFLAGS="-fsanitize=address"
+        elif test "x$TOOLCHAIN_TYPE" = "xmicrosoft"; then
+          # -Oy- is equivalent to -fno-omit-frame-pointer in GCC/Clang.
+          ASAN_CFLAGS="-fsanitize=address -Oy- -DADDRESS_SANITIZER"
+          # MSVC produces a warning if you pass -fsanitize=address to the linker. It also complains
+          $ if -DEBUG is not passed to the linker when building with ASan.
+          ASAN_LDFLAGS="-debug"
+        fi
         JVM_CFLAGS="$JVM_CFLAGS $ASAN_CFLAGS"
         JVM_LDFLAGS="$JVM_LDFLAGS $ASAN_LDFLAGS"
         CFLAGS_JDKLIB="$CFLAGS_JDKLIB $ASAN_CFLAGS"
@@ -437,8 +447,40 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_ADDRESS_SANITIZER],
         LDFLAGS_JDKLIB="$LDFLAGS_JDKLIB $ASAN_LDFLAGS"
         LDFLAGS_JDKEXE="$LDFLAGS_JDKEXE $ASAN_LDFLAGS"
       ])
-
   AC_SUBST(ASAN_ENABLED)
+])
+
+###############################################################################
+#
+# LeakSanitizer
+#
+AC_DEFUN_ONCE([JDKOPT_SETUP_LEAK_SANITIZER],
+[
+  UTIL_ARG_ENABLE(NAME: lsan, DEFAULT: false, RESULT: LSAN_ENABLED,
+      DESC: [enable LeakSanitizer],
+      CHECK_AVAILABLE: [
+        AC_MSG_CHECKING([if LeakSanitizer (lsan) is available])
+        if test "x$TOOLCHAIN_TYPE" = "xgcc" ||
+            test "x$TOOLCHAIN_TYPE" = "xclang"; then
+          AC_MSG_RESULT([yes])
+        else
+          AC_MSG_RESULT([no])
+          AVAILABLE=false
+        fi
+      ],
+      IF_ENABLED: [
+        LSAN_CFLAGS="-fsanitize=leak -fno-omit-frame-pointer -DLEAK_SANITIZER"
+        LSAN_LDFLAGS="-fsanitize=leak"
+        JVM_CFLAGS="$JVM_CFLAGS $LSAN_CFLAGS"
+        JVM_LDFLAGS="$JVM_LDFLAGS $LSAN_LDFLAGS"
+        CFLAGS_JDKLIB="$CFLAGS_JDKLIB $LSAN_CFLAGS"
+        CFLAGS_JDKEXE="$CFLAGS_JDKEXE $LSAN_CFLAGS"
+        CXXFLAGS_JDKLIB="$CXXFLAGS_JDKLIB $LSAN_CFLAGS"
+        CXXFLAGS_JDKEXE="$CXXFLAGS_JDKEXE $LSAN_CFLAGS"
+        LDFLAGS_JDKLIB="$LDFLAGS_JDKLIB $LSAN_LDFLAGS"
+        LDFLAGS_JDKEXE="$LDFLAGS_JDKEXE $LSAN_LDFLAGS"
+      ])
+  AC_SUBST(LSAN_ENABLED)
 ])
 
 ###############################################################################

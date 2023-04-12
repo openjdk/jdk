@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,8 @@ grant codeBase "file:${test.classes}/../../../../../test/lib/-" {
     permission java.io.FilePermission "${test.src}/../../../../../lib/jdk/test/lib/net/testkeys", "read";
 };
 
-// for JTwork/classes/0/java/net/httpclient/http2/server/*
-grant codeBase "file:${test.classes}/../../../../../java/net/httpclient/http2/server/*" {
+// for jdk/httpclient/test/lib/* classes
+grant codeBase "file:${test.classes}/../../../../../test/jdk/java/net/httpclient/lib/-" {
     permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.net.http.common";
     permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.net.http.frame";
     permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.net.http.hpack";

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -134,7 +134,7 @@ public class SequenceInputStream extends InputStream {
      * {@inheritDoc}
      * <p>
      * This method
-     * tries to read one character from the current substream. If it
+     * tries to read one byte from the current substream. If it
      * reaches the end of the stream, it calls the {@code close}
      * method of the current substream and begins reading from the next
      * substream.
@@ -163,7 +163,7 @@ public class SequenceInputStream extends InputStream {
      * <p>
      * The {@code read} method of {@code SequenceInputStream}
      * tries to read the data from the current substream. If it fails to
-     * read any characters because the substream has reached the end of
+     * read any bytes because the substream has reached the end of
      * the stream, it calls the {@code close} method of the current
      * substream and begins reading from the next substream.
      *
@@ -240,12 +240,18 @@ public class SequenceInputStream extends InputStream {
     public long transferTo(OutputStream out) throws IOException {
         Objects.requireNonNull(out, "out");
         if (getClass() == SequenceInputStream.class) {
-            long c = 0;
+            long transferred = 0;
             while (in != null) {
-                c += in.transferTo(out);
+                if (transferred < Long.MAX_VALUE) {
+                    try {
+                        transferred = Math.addExact(transferred, in.transferTo(out));
+                    } catch (ArithmeticException ignore) {
+                        return Long.MAX_VALUE;
+                    }
+                }
                 nextStream();
             }
-            return c;
+            return transferred;
         } else {
             return super.transferTo(out);
         }

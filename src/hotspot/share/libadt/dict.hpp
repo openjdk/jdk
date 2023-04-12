@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,11 +65,11 @@ class Dict : public AnyObj { // Dictionary structure
   uint32_t Size(void) const { return _cnt; }
 
   // Insert inserts the given key-value pair into the dictionary.  The prior
-  // value of the key is returned; NULL if the key was not previously defined.
+  // value of the key is returned; null if the key was not previously defined.
   void* Insert(void* key, void* val, bool replace = true); // A new key-value
   void* Delete(void* key);        // Delete & return old
 
-  // Find finds the value of a given key; or NULL if not found.
+  // Find finds the value of a given key; or null if not found.
   // The dictionary is NOT changed.
   void* operator [](const void* key) const;  // Do a lookup
 

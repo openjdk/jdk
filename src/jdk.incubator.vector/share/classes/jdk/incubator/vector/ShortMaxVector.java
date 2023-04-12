@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -649,10 +649,11 @@ final class ShortMaxVector extends ShortVector {
 
         @Override
         @ForceInline
-        public ShortMaxMask eq(VectorMask<Short> mask) {
-            Objects.requireNonNull(mask);
-            ShortMaxMask m = (ShortMaxMask)mask;
-            return xor(m.not());
+        /*package-private*/
+        ShortMaxMask indexPartiallyInUpperRange(long offset, long limit) {
+            return (ShortMaxMask) VectorSupport.indexPartiallyInUpperRange(
+                ShortMaxMask.class, short.class, VLENGTH, offset, limit,
+                (o, l) -> (ShortMaxMask) TRUE_MASK.indexPartiallyInRange(o, l));
         }
 
         // Unary operations
@@ -694,9 +695,9 @@ final class ShortMaxVector extends ShortVector {
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a | b));
         }
 
+        @Override
         @ForceInline
-        /* package-private */
-        ShortMaxMask xor(VectorMask<Short> mask) {
+        public ShortMaxMask xor(VectorMask<Short> mask) {
             Objects.requireNonNull(mask);
             ShortMaxMask m = (ShortMaxMask)mask;
             return VectorSupport.binaryOp(VECTOR_OP_XOR, ShortMaxMask.class, null, short.class, VLENGTH,
