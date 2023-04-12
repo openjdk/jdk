@@ -35,13 +35,17 @@ import jdk.jfr.Recording;
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.test.lib.jfr.Events;
 
+import jdk.test.whitebox.WhiteBox;
+
 /**
  * @test
  * @key jfr
  * @requires vm.hasJFR & vm.gc.Z
  * @key jfr
  * @library /test/lib /test/jdk
- * @run main/othervm -Xmx50m -XX:+UseZGC -XX:+UnlockExperimentalVMOptions -XX:-UseFastUnorderedTimeStamps -Xlog:gc* jdk.jfr.event.gc.collection.TestGarbageCollectionEventWithZMinor
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UseZGC -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UnlockExperimentalVMOptions -XX:-UseFastUnorderedTimeStamps -Xlog:gc* jdk.jfr.event.gc.collection.TestGarbageCollectionEventWithZMinor
  */
 public class TestGarbageCollectionEventWithZMinor {
 
@@ -52,7 +56,7 @@ public class TestGarbageCollectionEventWithZMinor {
         Recording recording = new Recording();
         recording.enable(EVENT_NAME).withThreshold(Duration.ofMillis(0));
         recording.start();
-        triggerMinor();
+        WhiteBox.getWhiteBox().youngGC();
         recording.stop();
 
         boolean isAnyFound = false;
@@ -77,21 +81,4 @@ public class TestGarbageCollectionEventWithZMinor {
         }
         assertTrue(isAnyFound, "No matching event found");
     }
-
-    private static void triggerMinor() {
-	// The OOM mechanism always triggers at least one minor collection.
-	// Therefore, by provoking an OOM, we should be able to deterministically
-	// provoke at least one minor collection.
-        var keepAlive = new LinkedList<>();
-
-        try {
-            for (;;) {
-                keepAlive.add(new byte[128 * 1024]);
-            }
-        } catch (OutOfMemoryError e) {
-            keepAlive = null;
-            System.gc();
-        }
-    }
-
 }
