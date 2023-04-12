@@ -1933,6 +1933,23 @@ const bool Matcher::match_rule_supported_vector_masked(int opcode, int vlen, Bas
     case Op_AndVMask:
     case Op_XorVMask:
     case Op_OrVMask:
+    case Op_LoadVector:
+        opcode = Op_LoadVectorMasked;
+    case Op_StoreVector:
+        opcode = Op_StoreVectorMasked;
+    case Op_RShiftVB:
+    case Op_RShiftVS:
+    case Op_RShiftVI:
+    case Op_RShiftVL:
+    case Op_LShiftVB:
+    case Op_LShiftVS:
+    case Op_LShiftVI:
+    case Op_LShiftVL:
+    case Op_URShiftVB:
+    case Op_URShiftVS:
+    case Op_URShiftVI:
+    case Op_URShiftVL:
+    case Op_VectorBlend:
       return match_rule_supported_vector(opcode, vlen, bt);
     default:
       return false;
