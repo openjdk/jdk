@@ -32,11 +32,14 @@ import java.awt.image.BufferedImage;
 
 /**
  * This makes sure if OffScreenImageSource#addConsumer(null) is called: we
- * treat that as a no-op and return immediately without printing anything
- * to System.err.
+ * treat that as a no-op and return immediately.
  * <p>
- * This test exists primarily to make sure the resolution to4200096 does not change
- * legacy behavior.
+ * This test exists primarily to make sure the resolution to 4200096 does not
+ * significantly change legacy behavior. Whether or not a NPE is printed to
+ * System.err is not a hotly contested question, but at one point one of the
+ * proposed (and rejected) resolutions to 4200096 had the potential to
+ * throw a NPE when addConsumer(null) was called. That would be a
+ * significant change that we want to avoid.
  * </p>
  */
  public class AddNullConsumerTest {
