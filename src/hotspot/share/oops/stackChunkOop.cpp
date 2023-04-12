@@ -38,6 +38,11 @@
 #include "runtime/smallRegisterMap.inline.hpp"
 #include "runtime/stackChunkFrameStream.inline.hpp"
 
+// Note: Some functions in this file work with stale object pointers, e.g.
+//       DerivedPointerSupport. Be extra careful to not put those pointers into
+//       variables of the 'oop' type. There's extra GC verification around oops
+//       that may fail when stale oops are being used.
+
 template <typename RegisterMapT>
 class FrameOopIterator : public OopIterator {
 private:
