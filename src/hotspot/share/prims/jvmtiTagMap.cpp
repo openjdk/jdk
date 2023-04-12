@@ -2869,47 +2869,47 @@ inline bool VM_HeapWalkOperation::collect_stack_roots() {
 // walks the stack of the thread, finds all references (locals
 // and JNI calls) and reports these as stack references.
 inline bool VM_HeapWalkOperation::collect_vthread_stack_roots(oop vt) {
-    if (!JvmtiEnvBase::is_vthread_alive(vt)) {
-        return true;
-    }
-    ContinuationWrapper c(java_lang_VirtualThread::continuation(vt));
-    if (c.is_empty()) {
-        return true;
-    }
-    assert(!c.is_mounted(), "sanity check");
-
-    stackChunkOop chunk = c.last_nonempty_chunk();
-    if (chunk == nullptr || chunk->is_empty()) {
-        return true;
-    }
-
-    // vframes are resource allocated
-    Thread* current_thread = Thread::current();
-    ResourceMark rm(current_thread);
-    HandleMark hm(current_thread);
-
-    StackChunkFrameStream<ChunkFrames::Mixed> fs(chunk);
-    RegisterMap reg_map(nullptr,
-        RegisterMap::UpdateMap::include,
-        RegisterMap::ProcessFrames::include,
-        RegisterMap::WalkContinuation::include);
-    fs.initialize_register_map(&reg_map);
-
-    JNILocalRootsClosure blk;
-    // JavaThread is not required for unmounted virtual threads
-    StackRootCollector stack_collector(tag_map(), &blk, nullptr);
-    if (!stack_collector.set_thread(vt)) {
-        return false;
-    }
-
-    for (; !fs.is_done(); fs.next(&reg_map)) {
-        frame fr = fs.to_frame();
-        vframe* vf = vframe::new_vframe(&fr, &reg_map, nullptr);
-        if (!stack_collector.do_frame(vf)) {
-            return false;
-        }
-    }
+  if (!JvmtiEnvBase::is_vthread_alive(vt)) {
     return true;
+  }
+  ContinuationWrapper c(java_lang_VirtualThread::continuation(vt));
+  if (c.is_empty()) {
+    return true;
+  }
+  assert(!c.is_mounted(), "sanity check");
+
+  stackChunkOop chunk = c.last_nonempty_chunk();
+  if (chunk == nullptr || chunk->is_empty()) {
+    return true;
+  }
+
+  // vframes are resource allocated
+  Thread* current_thread = Thread::current();
+  ResourceMark rm(current_thread);
+  HandleMark hm(current_thread);
+
+  StackChunkFrameStream<ChunkFrames::Mixed> fs(chunk);
+  RegisterMap reg_map(nullptr,
+                      RegisterMap::UpdateMap::include,
+                      RegisterMap::ProcessFrames::include,
+                      RegisterMap::WalkContinuation::include);
+  fs.initialize_register_map(&reg_map);
+
+  JNILocalRootsClosure blk;
+  // JavaThread is not required for unmounted virtual threads
+  StackRootCollector stack_collector(tag_map(), &blk, nullptr);
+  if (!stack_collector.set_thread(vt)) {
+    return false;
+  }
+
+  for (; !fs.is_done(); fs.next(&reg_map)) {
+    frame fr = fs.to_frame();
+    vframe* vf = vframe::new_vframe(&fr, &reg_map, nullptr);
+    if (!stack_collector.do_frame(vf)) {
+      return false;
+    }
+  }
+  return true;
 }
 
 // visit an object
