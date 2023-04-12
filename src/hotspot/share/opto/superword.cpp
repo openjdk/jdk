@@ -3942,13 +3942,13 @@ void SuperWord::compute_vector_element_type() {
             // be vectorized if the higher order bits info is imprecise.
             const Type* vt = vtn;
             int op = in->Opcode();
-            if (VectorNode::requires_higher_order_bits_of_integer(op)) {
+            if (VectorNode::is_shift_opcode(op) || op == Op_AbsI || op == Op_ReverseBytesI) {
               Node* load = in->in(1);
               if (load->is_Load() && in_bb(load) && (velt_type(load)->basic_type() == T_INT)) {
                 // Only Load nodes distinguish signed (LoadS/LoadB) and unsigned
                 // (LoadUS/LoadUB) values. Store nodes only have one version.
                 vt = velt_type(load);
-              } else {
+              } else if (op != Op_LShiftI) {
                 // Widen type to int to avoid the creation of vector nodes. Note
                 // that left shifts work regardless of the signedness.
                 vt = TypeInt::INT;

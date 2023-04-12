@@ -434,21 +434,6 @@ bool VectorNode::is_shift_opcode(int opc) {
   }
 }
 
-// Decide if an operation on integer requires information
-// of its higher order bits/bytes
-bool VectorNode::requires_higher_order_bits_of_integer(int opc) {
-  if (is_shift_opcode(opc) && opc != Op_LShiftI) {
-    return true;
-  }
-  switch (opc) {
-    case Op_AbsI:
-    case Op_ReverseBytesI:
-      return true;
-    default:
-      return false;
-  }
-}
-
 bool VectorNode::can_transform_shift_op(Node* n, BasicType bt) {
   if (n->Opcode() != Op_URShiftI) {
     return false;
