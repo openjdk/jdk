@@ -126,7 +126,7 @@ public enum OperatingSystem {
     /**
      * Returns the OperatingSystem of the build.
      * Build time names are mapped to respective uppercase enum values.
-     * Names not recognized throw an ExceptionInInitializerError with IllegalArgumentException.
+     * Names not recognized throw ExceptionInInitializerError with IllegalArgumentException.
      */
     private static OperatingSystem initOS(String osName) {
         return OperatingSystem.valueOf(osName.toUpperCase(Locale.ROOT));

@@ -29,7 +29,7 @@ import java.util.Locale;
  * System architecture enum values.
  * Each architecture, except OTHER, has a matching {@code public static boolean isXXX()} method
  * that is true when running on that architecture.
- * The values of `OPENJDK_TARGET_ARCH_OSARCH` from the build are mapped to the
+ * The values of `OPENJDK_TARGET_CPU` from the build are mapped to the
  * architecture values.
  */
 public enum Architecture {

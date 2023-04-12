@@ -64,14 +64,12 @@ public class ArchTest {
         System.out.printf("System property os.arch: \"%s\", Architecture.current(): \"%s\"%n",
                 osArch, Architecture.current());
         Architecture arch = switch (osArch) {
-            case "x86_64" -> X64;
-            case "x86" -> X86;
-            case "i386" -> X86;
-            case "amd64" -> X64;  // Is alias for X86_64
+            case "x86_64", "amd64" -> X64;
+            case "x86", "i386" -> X86;
             case "aarch64" -> AARCH64;
             case "riscv64" -> RISCV64;  // unverified
             case "s390x", "s390" -> S390;  // unverified
-            case "ppc64", "ppc64le" -> PPC64;  // unverified
+            case "ppc64", "ppc64le" -> PPC64;
             default -> OTHER;
         };
         assertEquals(Architecture.current(), arch, "mismatch in Architecture.current vs " + osArch);
@@ -97,7 +95,7 @@ public class ArchTest {
     public void isArch(Architecture arch, boolean isArch) {
         Architecture current = Architecture.current();
         assertEquals(arch == current, isArch,
-                "Mismatch " + arch + " == " + current + " vs is" + arch);
+                "Method is" + arch + "(): returned " + isArch + ", should be (" + arch + " == " + current + ")");
     }
 
     /**
