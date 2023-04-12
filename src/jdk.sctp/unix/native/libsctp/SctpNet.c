@@ -62,7 +62,7 @@ static int preCloseFD = -1;     /* File descriptor to which we dup other fd's
  * functions, as well as locating the individual functions.
  * There will be a pending exception if this method returns false.
  */
-jboolean loadSocketExtensionFuncs
+static jboolean loadSocketExtensionFuncs
   (JNIEnv* env) {
     if (dlopen(nativeSctpLib, RTLD_GLOBAL | RTLD_LAZY) == NULL) {
         JNU_ThrowByName(env, "java/lang/UnsupportedOperationException",
