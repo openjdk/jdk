@@ -122,8 +122,11 @@ public class HtmlLinkInfo {
     // True iff the preview flags should be skipped for this link.
     private boolean skipPreview;
 
-    // True if type parameters should be separated by line breaks.
+    // True if type parameters should be separated by hard line breaks.
     private boolean addLineBreaksInTypeParameters = false;
+
+    // True if additional <wbr> tags should be added to type parameters
+    private boolean addLineBreakOpportunitiesInTypeParameters = false;
 
     // True if annotations on type parameters should be shown.
     private boolean showTypeParameterAnnotations = false;
@@ -309,6 +312,23 @@ public class HtmlLinkInfo {
      */
     public boolean addLineBreaksInTypeParameters() {
         return addLineBreaksInTypeParameters;
+    }
+
+    /**
+     * Sets the addLineBreakOpportunitiesInTypeParameters flag for this link.
+     * @param addLineBreakOpportunities the new value
+     * @return this object
+     */
+    public HtmlLinkInfo addLineBreakOpportunitiesInTypeParameters(boolean addLineBreakOpportunities) {
+        this.addLineBreakOpportunitiesInTypeParameters = addLineBreakOpportunities;
+        return this;
+    }
+
+    /**
+     * {@return true if line break opportunities should be added to type parameters}
+     */
+    public boolean addLineBreakOpportunitiesInTypeParameters() {
+        return addLineBreakOpportunitiesInTypeParameters;
     }
 
     /**

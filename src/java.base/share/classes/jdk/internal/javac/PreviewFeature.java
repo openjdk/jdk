@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,7 +68,7 @@ public @interface PreviewFeature {
         SWITCH_PATTERN_MATCHING(),
         @JEP(number=432, title="Record Patterns", status="Second Preview")
         RECORD_PATTERNS,
-        @JEP(number=436, title="Virtual Threads", status="Second Preview")
+        // not used
         VIRTUAL_THREADS,
         @JEP(number=434, title="Foreign Function & Memory API", status="Second Preview")
         FOREIGN,

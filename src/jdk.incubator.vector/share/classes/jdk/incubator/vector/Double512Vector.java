@@ -652,14 +652,6 @@ final class Double512Vector extends DoubleVector {
 
         @Override
         @ForceInline
-        public Double512Mask eq(VectorMask<Double> mask) {
-            Objects.requireNonNull(mask);
-            Double512Mask m = (Double512Mask)mask;
-            return xor(m.not());
-        }
-
-        @Override
-        @ForceInline
         /*package-private*/
         Double512Mask indexPartiallyInUpperRange(long offset, long limit) {
             return (Double512Mask) VectorSupport.indexPartiallyInUpperRange(
@@ -706,9 +698,9 @@ final class Double512Vector extends DoubleVector {
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a | b));
         }
 
+        @Override
         @ForceInline
-        /* package-private */
-        Double512Mask xor(VectorMask<Double> mask) {
+        public Double512Mask xor(VectorMask<Double> mask) {
             Objects.requireNonNull(mask);
             Double512Mask m = (Double512Mask)mask;
             return VectorSupport.binaryOp(VECTOR_OP_XOR, Double512Mask.class, null, long.class, VLENGTH,
