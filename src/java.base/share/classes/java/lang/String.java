@@ -3548,7 +3548,7 @@ public final class String
      * independently.
      * <p>
      * Instead, to obtain correct results for locale insensitive strings, use
-     * {@code toLowerCase(Locale.ROOT)}; otherwise, use 
+     * {@code toLowerCase(Locale.ROOT)}; otherwise, use
      * {@code toLowerCase(Locale.getDefault())}.
      */
     @Deprecated(since="21")
