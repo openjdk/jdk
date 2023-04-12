@@ -324,6 +324,7 @@ void mutex_init() {
   MUTEX_DEFN(CDSLambda_lock                  , PaddedMutex  , nosafepoint);
   MUTEX_DEFN(DumpRegion_lock                 , PaddedMutex  , nosafepoint);
   MUTEX_DEFN(ClassListFile_lock              , PaddedMutex  , nosafepoint);
+  MUTEX_DEFN(UnregisteredClassesTable_lock   , PaddedMutex  , nosafepoint-1);
   MUTEX_DEFN(LambdaFormInvokers_lock         , PaddedMutex  , safepoint);
   MUTEX_DEFN(ScratchObjects_lock             , PaddedMutex  , nosafepoint-1); // Holds DumpTimeTable_lock
 #endif // INCLUDE_CDS

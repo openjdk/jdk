@@ -466,7 +466,6 @@ abstract public class TestScaffold extends TargetAdapter {
         String mainWrapper = System.getProperty("main.wrapper");
         if ("Virtual".equals(mainWrapper)) {
             argInfo.targetAppCommandLine = TestScaffold.class.getName() + " " + mainWrapper + " ";
-            argInfo.targetVMArgs += "--enable-preview ";
         } else if ("true".equals(System.getProperty("test.enable.preview"))) {
             // the test specified @enablePreview.
             argInfo.targetVMArgs += "--enable-preview ";
@@ -710,6 +709,21 @@ abstract public class TestScaffold extends TargetAdapter {
             } catch (InterruptedException e) {
             }
         }
+
+        // Make sure debuggee exits with no errors. Otherwise failures might go unnoticed.
+        Process p = vm.process();
+        try {
+            p.waitFor();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+        int res = p.exitValue();
+        // Some tests purposefully exit with an exception, which produces exitValue
+        // 1, so we have to allow it also.
+        if (res != 0 && res != 1) {
+            throw new RuntimeException("Non-zero debuggee exitValue: " + res);
+        }
+
         traceln("TS: waitForVMDisconnect: done");
     }
 
@@ -977,10 +991,10 @@ abstract public class TestScaffold extends TargetAdapter {
         mainMethod.setAccessible(true);
 
         if (wrapper.equals("Virtual")) {
-            threadFactory = r -> newVirtualThread(r);
+            threadFactory = Thread.ofVirtual().factory();
             MainThreadGroup tg = new MainThreadGroup();
             // TODO fix to set virtual scheduler group when become available
-            Thread vthread = newVirtualThread(() -> {
+            Thread vthread = Thread.ofVirtual().unstarted(() -> {
                 try {
                     mainMethod.invoke(null, new Object[] { classArgs });
                 } catch (InvocationTargetException e) {
@@ -1027,20 +1041,6 @@ abstract public class TestScaffold extends TargetAdapter {
             uncaughtThrowable = e;
         }
         Throwable uncaughtThrowable = null;
-    }
-
-    // Need to use reflection while virtual threads --enable-preview feature
-    private static Thread newVirtualThread(Runnable task) {
-        try {
-            Object builder = Thread.class.getMethod("ofVirtual").invoke(null);
-            Class<?> clazz = Class.forName("java.lang.Thread$Builder");
-            java.lang.reflect.Method unstarted = clazz.getMethod("unstarted", Runnable.class);
-            return (Thread) unstarted.invoke(builder, task);
-        } catch (RuntimeException | Error e) {
-            throw e;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
     }
 
     public static Thread newThread(Runnable task) {

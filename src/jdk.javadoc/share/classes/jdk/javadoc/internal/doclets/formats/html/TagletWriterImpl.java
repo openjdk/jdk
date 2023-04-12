@@ -222,9 +222,9 @@ public class TagletWriterImpl extends TagletWriter {
         DocTree searchTerm = tag.getSearchTerm();
         String tagText = (searchTerm instanceof TextTree tt) ? tt.getBody() : "";
         if (tagText.charAt(0) == '"' && tagText.charAt(tagText.length() - 1) == '"') {
-            tagText = tagText.substring(1, tagText.length() - 1)
-                             .replaceAll("\\s+", " ");
+            tagText = tagText.substring(1, tagText.length() - 1);
         }
+        tagText = tagText.replaceAll("\\s+", " ");
 
         Content desc = htmlWriter.commentTagsToContent(element, tag.getDescription(), context.within(tag));
         String descText = extractText(desc);
@@ -771,7 +771,8 @@ public class TagletWriterImpl extends TagletWriter {
         String specTreeURL = specTree.getURL().getBody();
         List<? extends DocTree> specTreeLabel = specTree.getTitle();
         Content label = htmlWriter.commentTagsToContent(holder, specTreeLabel, isFirstSentence);
-        return getExternalSpecContent(holder, specTree, specTreeURL, textOf(specTreeLabel), label);
+        return getExternalSpecContent(holder, specTree, specTreeURL,
+                textOf(specTreeLabel).replaceAll("\\s+", " "), label);
     }
 
     Content getExternalSpecContent(Element holder, DocTree docTree, String url, String searchText, Content title) {
