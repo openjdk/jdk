@@ -894,6 +894,8 @@ static inline intptr_t get_next_hash(Thread* current, oop obj) {
   return value;
 }
 
+// Can be called from non JavaThreads (e.g., VMThread) for FastHashCode
+// calculations as part of JVM/TI tagging.
 static bool is_lock_owned(Thread* thread, oop obj) {
   assert(LockingMode == LIGHTWEIGHT, "only call this with new lightweight locking enabled");
   return thread->is_Java_thread() ? JavaThread::cast(thread)->lock_stack().contains(obj) : false;

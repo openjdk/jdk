@@ -1129,6 +1129,8 @@ JVM_ENTRY(jint, jmm_GetThreadInfo(JNIEnv *env, jlongArray ids, jint maxDepth, jo
   if (maxDepth == 0) {
     // No stack trace to dump so we do not need to stop the world.
     // Since we never do the VM op here we must set the threads list.
+    // Since we are not stopping the world, the data we gather here
+    // may change the moment after we return it.
     dump_result.set_t_list();
     for (int i = 0; i < num_threads; i++) {
       jlong tid = ids_ah->long_at(i);

@@ -1047,7 +1047,7 @@ enum LockingMode {
   MONITOR     = 0,
   // Legacy stack-locking, with monitors as 2nd tier
   LEGACY      = 1,
-  // New lightweight locing, with monitors as 2nd tier
+  // New lightweight locking, with monitors as 2nd tier
   LIGHTWEIGHT = 2
 };
 

@@ -6258,7 +6258,7 @@ void MacroAssembler::fast_unlock(Register obj, Register hdr, Register t1, Regist
 #ifdef ASSERT
   {
     // The following checks rely on the fact that LockStack is only ever modified by
-    // its owning stack, even if the lock got inflated concurrently; removal of LockStack
+    // its owning thread, even if the lock got inflated concurrently; removal of LockStack
     // entries after inflation will happen delayed in that case.
 
     // Check for lock-stack underflow.
