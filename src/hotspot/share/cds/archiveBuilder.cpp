@@ -1072,19 +1072,19 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
                            p2i(to_requested(start)));
         byte_size = ArchiveHeapWriter::heap_roots_word_size() * BytesPerWord;
       } else {
-        // We have reached the end of the region
+        // We have reached the end of the region, but have some unused space
+        // at the end.
+        log_info(cds, map)(PTR_FORMAT ": @@ Unused heap space " SIZE_FORMAT " bytes",
+                           p2i(to_requested(start)), size_t(end - start));
+        log_data(start, end, to_requested(start), /*is_heap=*/true);
         break;
       }
       address oop_end = start + byte_size;
       log_data(start, oop_end, to_requested(start), /*is_heap=*/true);
       start = oop_end;
     }
-    if (start < end) {
-      log_info(cds, map)(PTR_FORMAT ": @@ Unused heap space " SIZE_FORMAT " bytes",
-                         p2i(to_requested(start)), size_t(end - start));
-      log_data(start, end, to_requested(start), /*is_heap=*/true);
-    }
   }
+
   static address to_requested(address p) {
     return ArchiveHeapWriter::buffered_addr_to_requested_addr(p);
   }

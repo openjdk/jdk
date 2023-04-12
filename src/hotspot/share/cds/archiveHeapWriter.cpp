@@ -366,7 +366,7 @@ template <typename T> oop ArchiveHeapWriter::load_source_oop_from_buffer(T* buff
 
 template <typename T> void ArchiveHeapWriter::store_requested_oop_in_buffer(T* buffered_addr,
                                                                             oop request_oop) {
-  //assert(is_in_requested_regions(request_oop), "must be");
+  assert(is_in_requested_range(request_oop), "must be");
   store_oop_in_buffer(buffered_addr, request_oop);
 }
 
@@ -525,10 +525,7 @@ void ArchiveHeapWriter::compute_ptrmap(ArchiveHeapInfo* heap_info) {
     BitMap::idx_t idx = requested_field_addr - bottom;
     heap_info->ptrmap()->set_bit(idx);
     num_non_null_ptrs ++;
-
-    if (max_idx < idx) {
-      max_idx = idx;
-    }
+    max_idx = MAX2(max_idx, idx);
 
     // Set the native pointer to the requested address of the metadata (at runtime, the metadata will have
     // this address if the RO/RW regions are mapped at the default location).

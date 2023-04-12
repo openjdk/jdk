@@ -513,11 +513,7 @@ HeapWord* G1CollectedHeap::attempt_allocation_slow(size_t word_size) {
 
 bool G1CollectedHeap::check_archive_addresses(MemRegion range) {
   MemRegion reserved = _hrm.reserved();
-  if (!reserved.contains(range.start()) || !reserved.contains(range.last())) {
-    return false;
-  } else {
-    return true;
-  }
+  return reserved.contains(range.start()) && reserved.contains(range.last());
 }
 
 bool G1CollectedHeap::alloc_archive_regions(MemRegion range) {

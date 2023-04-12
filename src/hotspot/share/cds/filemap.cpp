@@ -1662,7 +1662,6 @@ static size_t write_bitmap(const CHeapBitMap* map, char* output, size_t offset) 
 
 char* FileMapInfo::write_bitmap_region(const CHeapBitMap* ptrmap, ArchiveHeapInfo* heap_info,
                                        size_t &size_in_bytes) {
-  size_t size_in_bits = ptrmap->size();
   size_in_bytes = ptrmap->size_in_bytes();
 
   if (heap_info->is_used()) {
@@ -1670,9 +1669,14 @@ char* FileMapInfo::write_bitmap_region(const CHeapBitMap* ptrmap, ArchiveHeapInf
     size_in_bytes += heap_info->ptrmap()->size_in_bytes();
   }
 
+  // The bitmap region contains up to 3 parts:
+  // ptrmap:              metaspace pointers inside the ro/rw regions
+  // heap_info->oopmap(): Java oop pointers in the heap region
+  // heap_info->ptrmap(): metaspace pointers in the heap region
   char* buffer = NEW_C_HEAP_ARRAY(char, size_in_bytes, mtClassShared);
-  size_t written = write_bitmap(ptrmap, buffer, 0);
-  header()->set_ptrmap_size_in_bits(size_in_bits);
+  size_t written = 0;
+  written = write_bitmap(ptrmap, buffer, written);
+  header()->set_ptrmap_size_in_bits(ptrmap->size());
 
   if (heap_info->is_used()) {
     FileMapRegion* r = region_at(MetaspaceShared::hp);
@@ -2018,24 +2022,14 @@ bool FileMapInfo::has_heap_regions() {
 // dump time due to encoding mode differences. The result is used in determining
 // if/how these regions should be relocated at run time.
 MemRegion FileMapInfo::get_heap_regions_requested_range() {
-  address start = (address) max_uintx;
-  address end   = nullptr;
-
   FileMapRegion* r = region_at(MetaspaceShared::hp);
   size_t size = r->used();
-  if (size > 0) {
-    address s = heap_region_requested_address(r);
-    address e = s + size;
-    log_info(cds)("Heap region = " INTPTR_FORMAT " - " INTPTR_FORMAT " = "  SIZE_FORMAT_W(8) " bytes",
-                  p2i(s), p2i(e), size);
-    if (start > s) {
-      start = s;
-    }
-    if (end < e) {
-      end = e;
-    }
-  }
-  assert(end != nullptr, "must have at least one used heap region");
+  assert(size > 0, "must have non-empty heap region");
+
+  address start = heap_region_requested_address(r);
+  address end = start + size;
+  log_info(cds)("Heap region = " INTPTR_FORMAT " - " INTPTR_FORMAT " = "  SIZE_FORMAT_W(8) " bytes",
+                p2i(start), p2i(end), size);
 
   start = align_down(start, HeapRegion::GrainBytes);
   end = align_up(end, HeapRegion::GrainBytes);
