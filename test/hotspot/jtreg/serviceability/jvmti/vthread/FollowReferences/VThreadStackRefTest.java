@@ -155,15 +155,18 @@ public class VThreadStackRefTest {
         for (int i = 0; i < testCases.length; i++) {
             int refCount = getRefCount(i);
             long threadId = getRefThreadID(i);
-            System.out.println("  (" + i + ") " + testCases[i].cls()
+            String status = "OK";
+            if (refCount != testCases[i].expectedCount()
+                    || threadId != testCases[i].expectedThreadId()) {
+                failed = true;
+                status = "ERROR";
+            }
+            System.out.println("  (" + i + ") " + status
+                               + " " + testCases[i].cls()
                                + ": ref count = " + refCount
                                + " (expected " + testCases[i].expectedCount() + ")"
                                + ", thread id = " + threadId
                                + " (expected " + testCases[i].expectedThreadId() + ")");
-            if (refCount != testCases[i].expectedCount()
-                    || threadId != testCases[i].expectedThreadId()) {
-                failed = true;
-            }
         }
         if (failed) {
             throw new RuntimeException("Test failed");

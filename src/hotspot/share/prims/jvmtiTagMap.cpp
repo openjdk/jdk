@@ -2357,74 +2357,6 @@ bool StackRootCollector::do_frame(vframe* vf) {
   return true;
 }
 
-// A supporting closure used to process unmounted virtual threads.
-class VThreadClosure : public ObjectClosure {
-private:
-  JvmtiTagMap* tag_map;
-  JNILocalRootsClosure* blk;
-  bool _continue;
-
-public:
-  VThreadClosure(JvmtiTagMap* tag_map, JNILocalRootsClosure* blk): tag_map(tag_map), blk(blk), _continue(true) {}
-
-  inline bool stopped() const { return !_continue; }
-
-  // called for each object in the heap
-  void do_object(oop o);
-};
-
-void VThreadClosure::do_object(oop o) {
-  if (stopped()) {
-    return;
-  }
-
-  if (!java_lang_VirtualThread::is_subclass(o->klass())) {
-    return;
-  }
-  if (!JvmtiEnvBase::is_vthread_alive(o)) {
-    return;
-  }
-  ContinuationWrapper c(java_lang_VirtualThread::continuation(o));
-  if (c.is_empty()) {
-    return;
-  }
-  assert(!c.is_mounted(), "sanity check");
-
-  stackChunkOop chunk = c.last_nonempty_chunk();
-  if (chunk == nullptr || chunk->is_empty()) {
-    return;
-  }
-
-  // vframes are resource allocated
-  Thread* current_thread = Thread::current();
-  ResourceMark rm(current_thread);
-  HandleMark hm(current_thread);
-
-  StackChunkFrameStream<ChunkFrames::Mixed> fs(chunk);
-  RegisterMap reg_map(nullptr,
-                      RegisterMap::UpdateMap::include,
-                      RegisterMap::ProcessFrames::include,
-                      RegisterMap::WalkContinuation::include);
-  fs.initialize_register_map(&reg_map);
-
-  // JavaThread is not required for unmounted virtual threads
-  StackRootCollector stack_collector(tag_map, blk, nullptr);
-  if (!stack_collector.set_thread(o)) {
-    _continue = false;
-    return;
-  }
-
-  for (; !fs.is_done(); fs.next(&reg_map)) {
-    frame fr = fs.to_frame();
-    vframe* vf = vframe::new_vframe(&fr, &reg_map, nullptr);
-    if (!stack_collector.do_frame(vf)) {
-      _continue = false;
-      return;
-    }
-  }
-}
-
-
 // A VM operation to iterate over objects that are reachable from
 // a set of roots or an initial object.
 //
@@ -2488,6 +2420,7 @@ class VM_HeapWalkOperation: public VM_Operation {
   inline bool collect_simple_roots();
   inline bool collect_stack_roots();
   inline bool collect_stack_roots(JavaThread* java_thread, JNILocalRootsClosure* blk);
+  inline bool collect_vthread_stack_roots(oop vt);
 
   // visit an object
   inline bool visit(oop o);
@@ -2836,8 +2769,9 @@ inline bool VM_HeapWalkOperation::collect_simple_roots() {
   return true;
 }
 
-// Walk the stack of a given thread and find all references (locals
-// and JNI calls) and report these as stack references
+// Reports the thread as JVMTI_HEAP_REFERENCE_THREAD,
+// walks the stack of the thread, finds all references (locals
+// and JNI calls) and reports these as stack references
 inline bool VM_HeapWalkOperation::collect_stack_roots(JavaThread* java_thread,
                                                       JNILocalRootsClosure* blk)
 {
@@ -2848,16 +2782,21 @@ inline bool VM_HeapWalkOperation::collect_stack_roots(JavaThread* java_thread,
   }
   assert(threadObj != nullptr, "sanity check");
 
+  StackRootCollector stack_collector(tag_map(), blk, java_thread);
+
   if (!java_thread->has_last_Java_frame()) {
     // this may be only platform thread
     assert(mounted_vt == nullptr, "must be");
+
+    if (!stack_collector.set_thread(threadObj)) {
+        return false;
+    }
+
     // no last java frame but there may be JNI locals
     blk->set_context(tag_for(_tag_map, threadObj), java_lang_Thread::thread_id(threadObj), 0, (jmethodID)nullptr);
     java_thread->active_handles()->oops_do(blk);
     return !blk->stopped();
   } else {
-    StackRootCollector stack_collector(tag_map(), blk, java_thread);
-
     // vframes are resource allocated
     Thread* current_thread = Thread::current();
     ResourceMark rm(current_thread);
@@ -2923,13 +2862,54 @@ inline bool VM_HeapWalkOperation::collect_stack_roots() {
       }
     }
   }
+  return true;
+}
 
-  // process unmounted vthreads.
-  VThreadClosure vt(tag_map(), &blk);
-  Universe::heap()->ensure_parsability(false);
-  Universe::heap()->object_iterate(&vt);
+// Reports the unmounted virtual thread as JVMTI_HEAP_REFERENCE_THREAD,
+// walks the stack of the thread, finds all references (locals
+// and JNI calls) and reports these as stack references.
+inline bool VM_HeapWalkOperation::collect_vthread_stack_roots(oop vt) {
+    if (!JvmtiEnvBase::is_vthread_alive(vt)) {
+        return true;
+    }
+    ContinuationWrapper c(java_lang_VirtualThread::continuation(vt));
+    if (c.is_empty()) {
+        return true;
+    }
+    assert(!c.is_mounted(), "sanity check");
 
-  return !blk.stopped() && !vt.stopped();
+    stackChunkOop chunk = c.last_nonempty_chunk();
+    if (chunk == nullptr || chunk->is_empty()) {
+        return true;
+    }
+
+    // vframes are resource allocated
+    Thread* current_thread = Thread::current();
+    ResourceMark rm(current_thread);
+    HandleMark hm(current_thread);
+
+    StackChunkFrameStream<ChunkFrames::Mixed> fs(chunk);
+    RegisterMap reg_map(nullptr,
+        RegisterMap::UpdateMap::include,
+        RegisterMap::ProcessFrames::include,
+        RegisterMap::WalkContinuation::include);
+    fs.initialize_register_map(&reg_map);
+
+    JNILocalRootsClosure blk;
+    // JavaThread is not required for unmounted virtual threads
+    StackRootCollector stack_collector(tag_map(), &blk, nullptr);
+    if (!stack_collector.set_thread(vt)) {
+        return false;
+    }
+
+    for (; !fs.is_done(); fs.next(&reg_map)) {
+        frame fr = fs.to_frame();
+        vframe* vf = vframe::new_vframe(&fr, &reg_map, nullptr);
+        if (!stack_collector.do_frame(vf)) {
+            return false;
+        }
+    }
+    return true;
 }
 
 // visit an object
@@ -2950,6 +2930,11 @@ bool VM_HeapWalkOperation::visit(oop o) {
         return iterate_over_class(o);
       }
     } else {
+      if (is_advanced_heap_walk() && java_lang_VirtualThread::is_subclass(o->klass())) {
+        if (!collect_vthread_stack_roots(o)) {
+          return false;
+        }
+      }
       return iterate_over_object(o);
     }
   }
