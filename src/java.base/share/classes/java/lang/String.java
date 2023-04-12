@@ -3514,8 +3514,6 @@ public final class String
      *
      * @param locale use the case transformation rules for this locale
      * @return the {@code String}, converted to lowercase.
-     * @see     java.lang.String#toLowerCase()
-     * @see     java.lang.String#toUpperCase()
      * @see     java.lang.String#toUpperCase(Locale)
      * @since   1.1
      */
@@ -3538,36 +3536,22 @@ public final class String
      * returns {@code "t\u005Cu0131tle"}, where '\u005Cu0131' is the
      * LATIN SMALL LETTER DOTLESS I character.
      * To obtain correct results for locale insensitive strings, use
-     * {@code lowercase()} or {@code toLowerCase(Locale.ROOT)}.
+     * {@code toLowerCase(Locale.ROOT)}.
      *
      * @return  the {@code String}, converted to lowercase.
      * @see     java.lang.String#toLowerCase(Locale)
-     * @see     java.lang.String#lowercase()
      *
      * @deprecated This method is locale sensitive, and may produce unexpected
      * results if used for strings that are intended to be interpreted locale
      * independently.
      * <p>
      * Instead, to obtain correct results for locale insensitive strings, use
-     * {@code lowercase()} or {@code toLowerCase(Locale.ROOT)}; otherwise,
-     * use {@code toLowerCase(Locale.getDefault())}.
+     * {@code toLowerCase(Locale.ROOT)}; otherwise, use 
+     * {@code toLowerCase(Locale.getDefault())}.
      */
     @Deprecated(since="21")
     public String toLowerCase() {
         return toLowerCase(Locale.getDefault());
-    }
-
-    /**
-     * Converts all of the characters in this {@code String} to lower
-     * case using the rules of the invariant locale. This method is equivalent
-     * to {@code toLowerCase(Locale.ROOT)}.
-     *
-     * @return  the {@code String}, converted to lowercase.
-     * @see     java.lang.String#toLowerCase(Locale)
-     * @since   21
-     */
-    public String lowercase() {
-        return toLowerCase(Locale.ROOT);
     }
 
     /**
@@ -3641,36 +3625,22 @@ public final class String
      * returns {@code "T\u005Cu0130TLE"}, where '\u005Cu0130' is the
      * LATIN CAPITAL LETTER I WITH DOT ABOVE character.
      * To obtain correct results for locale insensitive strings, use
-     * {@code uppercase()} or {@code toUpperCase(Locale.ROOT)}.
+     * {@code toUpperCase(Locale.ROOT)}.
      *
      * @return  the {@code String}, converted to uppercase.
      * @see     java.lang.String#toUpperCase(Locale)
-     * @see     java.lang.String#uppercase()
      *
      * @deprecated This method is locale sensitive, and may produce unexpected
      * results if used for strings that are intended to be interpreted locale
      * independently.
      * <p>
      * Instead, to obtain correct results for locale insensitive strings, use
-     * {@code uppercase()} or {@code toUpperCase(Locale.ROOT)}; otherwise,
-     * use {@code toUpperCase(Locale.getDefault())}.
+     * {@code toUpperCase(Locale.ROOT)}; otherwise, use
+     * {@code toUpperCase(Locale.getDefault())}.
      */
     @Deprecated(since="21")
     public String toUpperCase() {
         return toUpperCase(Locale.getDefault());
-    }
-
-    /**
-     * Converts all of the characters in this {@code String} to upper
-     * case using the rules of the invariant locale. This method is equivalent
-     * to {@code toUpperCase(Locale.ROOT)}.
-     *
-     * @return  the {@code String}, converted to uppercase.
-     * @see     java.lang.String#toUpperCase(Locale)
-     * @since   21
-     */
-    public String uppercase() {
-        return toUpperCase(Locale.ROOT);
     }
 
     /**
