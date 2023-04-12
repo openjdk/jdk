@@ -278,9 +278,31 @@ class Heap$Type$Buffer$RW$
 
 #if[char]
 
+    //
+    // Use getChars() to load chars directly into the heap buffer array.
+    // This improves performance versus converting the StringBuilder to a
+    // String and then appending the String as StringBuilder::toString
+    // allocates memory for and copies all the contained chars
+    //
+    private $Type$Buffer append(StringBuilder strbld, int start, int end) {
+        checkSession();
+
+        int length = end - start;
+        int pos = position();
+        if (length > limit() - pos)
+            throw new BufferOverflowException();
+
+        strbld.getChars(start, end, hb, ix(pos));
+        position(pos + length);
+        return this;
+    }
+
     public $Type$Buffer append(CharSequence csq) {
 #if[rw]
-        return append(csq, 0, csq.length());
+        if (csq instanceof StringBuilder strbld)
+            return append(strbld, 0, strbld.length());
+
+        return super.append(csq);
 #else[rw]
         throw new ReadOnlyBufferException();
 #end[rw]
@@ -288,29 +310,8 @@ class Heap$Type$Buffer$RW$
 
     public $Type$Buffer append(CharSequence csq, int start, int end) {
 #if[rw]
-        checkSession();
-
-        if (csq == null)
-            csq = "null";
-
-        int length = end - start;
-        int pos = position();
-        if (length > limit() - pos)
-            throw new BufferOverflowException();
-
-        if (csq instanceof String str) {
-            str.getChars(start, end, hb, ix(pos));
-            position(pos + length);
-            return this;
-        } else if (csq instanceof StringBuffer strbuf) {
-            strbuf.getChars(start, end, hb, ix(pos));
-            position(pos + length);
-            return this;
-        } else if (csq instanceof StringBuilder strbld) {
-            strbld.getChars(start, end, hb, ix(pos));
-            position(pos + length);
-            return this;
-        }
+        if (csq instanceof StringBuilder strbld)
+            return append(strbld, start, end);
 
         return super.append(csq, start, end);
 #else[rw]
