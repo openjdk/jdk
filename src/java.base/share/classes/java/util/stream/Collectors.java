@@ -1985,7 +1985,7 @@ public final class Collectors {
         @Override
         public T get(Object key) {
             if (key instanceof Boolean b) {
-                return b.booleanValue() ? forTrue : forFalse;
+                return b ? forTrue : forFalse;
             } else {
                 return null;
             }
