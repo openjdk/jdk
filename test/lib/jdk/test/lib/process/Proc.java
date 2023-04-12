@@ -328,7 +328,7 @@ public class Proc {
         }
 
         if (compile) {
-            var comp = CompilerUtils.compile(
+            boolean comp = CompilerUtils.compile(
                     Path.of(System.getProperty("test.src"), clazz + ".java"),
                     Path.of(System.getProperty("test.classes")),
                     cmd.subList(1, cmd.size()).toArray(new String[0]));
