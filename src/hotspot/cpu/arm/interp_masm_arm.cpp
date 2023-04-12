@@ -864,7 +864,7 @@ void InterpreterMacroAssembler::set_do_not_unlock_if_synchronized(bool flag, Reg
 void InterpreterMacroAssembler::lock_object(Register Rlock) {
   assert(Rlock == R1, "the second argument");
 
-  if (UseHeavyMonitors) {
+  if (LockingMode == LM_MONITOR) {
     call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter), Rlock);
   } else {
     Label done;
@@ -987,7 +987,7 @@ void InterpreterMacroAssembler::lock_object(Register Rlock) {
 void InterpreterMacroAssembler::unlock_object(Register Rlock) {
   assert(Rlock == R0, "the first argument");
 
-  if (UseHeavyMonitors) {
+  if (LockingMode == LM_MONITOR) {
     call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorexit), Rlock);
   } else {
     Label done, slow_case;

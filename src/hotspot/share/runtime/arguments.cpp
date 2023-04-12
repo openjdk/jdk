@@ -1980,26 +1980,6 @@ bool Arguments::check_vm_args_consistency() {
   }
 #endif
 
-#if !defined(X86) && !defined(AARCH64) && !defined(PPC64) && !defined(RISCV64)
-  if (UseHeavyMonitors) {
-    jio_fprintf(defaultStream::error_stream(),
-                "UseHeavyMonitors is not fully implemented on this architecture");
-    return false;
-  }
-#endif
-#if (defined(X86) || defined(PPC64)) && !defined(ZERO)
-  if (UseHeavyMonitors && UseRTMForStackLocks) {
-    jio_fprintf(defaultStream::error_stream(),
-                "-XX:+UseHeavyMonitors and -XX:+UseRTMForStackLocks are mutually exclusive");
-
-    return false;
-  }
-#endif
-  if (VerifyHeavyMonitors && !UseHeavyMonitors) {
-    jio_fprintf(defaultStream::error_stream(),
-                "-XX:+VerifyHeavyMonitors requires -XX:+UseHeavyMonitors");
-    return false;
-  }
 
 #if !defined(X86) && !defined(AARCH64) && !defined(RISCV64) && !defined(ARM)
   if (LockingMode == LIGHTWEIGHT) {
@@ -2007,10 +1987,31 @@ bool Arguments::check_vm_args_consistency() {
     warning("New lightweight locking not supported on this platform");
   }
 #endif
+
   if (UseHeavyMonitors) {
-    FLAG_SET_CMDLINE(LockingMode, 0);
+    FLAG_SET_CMDLINE(LockingMode, LM_MONITOR);
   }
 
+#if !defined(X86) && !defined(AARCH64) && !defined(PPC64) && !defined(RISCV64)
+  if (LockingMode == LM_MONITOR) {
+    jio_fprintf(defaultStream::error_stream(),
+                "LockingMode == 0 (LM_MONITOR) is not fully implemented on this architecture");
+    return false;
+  }
+#endif
+#if (defined(X86) || defined(PPC64)) && !defined(ZERO)
+  if (LockingMode == LM_MONITOR && UseRTMForStackLocks) {
+    jio_fprintf(defaultStream::error_stream(),
+                "LockingMode == 0 (LM_MONITOR) and -XX:+UseRTMForStackLocks are mutually exclusive");
+
+    return false;
+  }
+#endif
+  if (VerifyHeavyMonitors && LockingMode != LM_MONITOR) {
+    jio_fprintf(defaultStream::error_stream(),
+                "-XX:+VerifyHeavyMonitors requires LockingMode == 0 (LM_MONITOR)");
+    return false;
+  }
   return status;
 }
 

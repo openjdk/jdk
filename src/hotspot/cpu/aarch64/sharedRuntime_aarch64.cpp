@@ -1778,42 +1778,41 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     // Load the oop from the handle
     __ ldr(obj_reg, Address(oop_handle_reg, 0));
 
-    if (!UseHeavyMonitors) {
-      if (LockingMode == LM_LIGHTWEIGHT) {
-        __ ldr(swap_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
-        __ fast_lock(obj_reg, swap_reg, tmp, rscratch1, slow_path_lock);
-      } else if (LockingMode == LM_LEGACY) {
-        // Load (object->mark() | 1) into swap_reg %r0
-        __ ldr(rscratch1, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
-        __ orr(swap_reg, rscratch1, 1);
-
-        // Save (object->mark() | 1) into BasicLock's displaced header
-        __ str(swap_reg, Address(lock_reg, mark_word_offset));
-
-        // src -> dest iff dest == r0 else r0 <- dest
-        __ cmpxchg_obj_header(r0, lock_reg, obj_reg, rscratch1, count, /*fallthrough*/nullptr);
-
-        // Hmm should this move to the slow path code area???
-
-        // Test if the oopMark is an obvious stack pointer, i.e.,
-        //  1) (mark & 3) == 0, and
-        //  2) sp <= mark < mark + os::pagesize()
-        // These 3 tests can be done by evaluating the following
-        // expression: ((mark - sp) & (3 - os::vm_page_size())),
-        // assuming both stack pointer and pagesize have their
-        // least significant 2 bits clear.
-        // NOTE: the oopMark is in swap_reg %r0 as the result of cmpxchg
-
-        __ sub(swap_reg, sp, swap_reg);
-        __ neg(swap_reg, swap_reg);
-        __ ands(swap_reg, swap_reg, 3 - (int)os::vm_page_size());
-
-        // Save the test result, for recursive case, the result is zero
-        __ str(swap_reg, Address(lock_reg, mark_word_offset));
-        __ br(Assembler::NE, slow_path_lock);
-      }
-    } else {
+    if (LockingMode == LM_MONITOR) {
       __ b(slow_path_lock);
+    } else if (LockingMode == LM_LEGACY) {
+      // Load (object->mark() | 1) into swap_reg %r0
+      __ ldr(rscratch1, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
+      __ orr(swap_reg, rscratch1, 1);
+
+      // Save (object->mark() | 1) into BasicLock's displaced header
+      __ str(swap_reg, Address(lock_reg, mark_word_offset));
+
+      // src -> dest iff dest == r0 else r0 <- dest
+      __ cmpxchg_obj_header(r0, lock_reg, obj_reg, rscratch1, count, /*fallthrough*/nullptr);
+
+      // Hmm should this move to the slow path code area???
+
+      // Test if the oopMark is an obvious stack pointer, i.e.,
+      //  1) (mark & 3) == 0, and
+      //  2) sp <= mark < mark + os::pagesize()
+      // These 3 tests can be done by evaluating the following
+      // expression: ((mark - sp) & (3 - os::vm_page_size())),
+      // assuming both stack pointer and pagesize have their
+      // least significant 2 bits clear.
+      // NOTE: the oopMark is in swap_reg %r0 as the result of cmpxchg
+
+      __ sub(swap_reg, sp, swap_reg);
+      __ neg(swap_reg, swap_reg);
+      __ ands(swap_reg, swap_reg, 3 - (int)os::vm_page_size());
+
+      // Save the test result, for recursive case, the result is zero
+      __ str(swap_reg, Address(lock_reg, mark_word_offset));
+      __ br(Assembler::NE, slow_path_lock);
+    } else {
+      assert(LockingMode == LM_LIGHTWEIGHT, "");
+      __ ldr(swap_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
+      __ fast_lock(obj_reg, swap_reg, tmp, rscratch1, slow_path_lock);
     }
     __ bind(count);
     __ increment(Address(rthread, JavaThread::held_monitor_count_offset()));
@@ -1937,25 +1936,25 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
       save_native_result(masm, ret_type, stack_slots);
     }
 
-    if (!UseHeavyMonitors) {
-      if (LockingMode == LM_LIGHTWEIGHT) {
-        __ ldr(old_hdr, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
-        __ tbnz(old_hdr, exact_log2(markWord::monitor_value), slow_path_unlock);
-        __ fast_unlock(obj_reg, old_hdr, swap_reg, rscratch1, slow_path_unlock);
-      } else if (LockingMode == LM_LEGACY) {
-        // get address of the stack lock
-        __ lea(r0, Address(sp, lock_slot_offset * VMRegImpl::stack_slot_size));
-        //  get old displaced header
-        __ ldr(old_hdr, Address(r0, 0));
+    if (LockingMode == LM_MONITOR) {
+      __ b(slow_path_unlock);
+    } else if (LockingMode == LM_LEGACY) {
+      // get address of the stack lock
+      __ lea(r0, Address(sp, lock_slot_offset * VMRegImpl::stack_slot_size));
+      //  get old displaced header
+      __ ldr(old_hdr, Address(r0, 0));
 
-        // Atomic swap old header if oop still contains the stack lock
-        Label count;
-        __ cmpxchg_obj_header(r0, old_hdr, obj_reg, rscratch1, count, &slow_path_unlock);
-        __ bind(count);
-      }
+      // Atomic swap old header if oop still contains the stack lock
+      Label count;
+      __ cmpxchg_obj_header(r0, old_hdr, obj_reg, rscratch1, count, &slow_path_unlock);
+      __ bind(count);
       __ decrement(Address(rthread, JavaThread::held_monitor_count_offset()));
     } else {
-      __ b(slow_path_unlock);
+      assert(LockingMode == LM_LIGHTWEIGHT, "");
+      __ ldr(old_hdr, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
+      __ tbnz(old_hdr, exact_log2(markWord::monitor_value), slow_path_unlock);
+      __ fast_unlock(obj_reg, old_hdr, swap_reg, rscratch1, slow_path_unlock);
+      __ decrement(Address(rthread, JavaThread::held_monitor_count_offset()));
     }
 
     // slow path re-enters here

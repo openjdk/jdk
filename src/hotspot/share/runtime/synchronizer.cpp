@@ -474,7 +474,7 @@ void ObjectSynchronizer::handle_sync_on_value_based_class(Handle obj, JavaThread
 
 static bool useHeavyMonitors() {
 #if defined(X86) || defined(AARCH64) || defined(PPC64) || defined(RISCV64)
-  return UseHeavyMonitors;
+  return LockingMode == LM_MONITOR;
 #else
   return false;
 #endif
@@ -909,7 +909,7 @@ intptr_t ObjectSynchronizer::FastHashCode(Thread* current, oop obj) {
     intptr_t hash;
     markWord mark = read_stable_mark(obj);
     if (VerifyHeavyMonitors) {
-      assert(UseHeavyMonitors, "+VerifyHeavyMonitors requires +UseHeavyMonitors");
+      assert(LockingMode == LM_MONITOR, "+VerifyHeavyMonitors requires LockingMode == 0 (LM_MONITOR)");
       guarantee((obj->mark().value() & markWord::lock_mask_in_place) != markWord::locked_value, "must not be lightweight/stack-locked");
     }
     if (mark.is_neutral()) {               // if this is a normal header

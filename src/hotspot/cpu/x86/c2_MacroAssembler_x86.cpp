@@ -590,7 +590,7 @@ void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmp
 
 #if INCLUDE_RTM_OPT
   if (UseRTMForStackLocks && use_rtm) {
-    assert(!UseHeavyMonitors, "+UseHeavyMonitors and +UseRTMForStackLocks are mutually exclusive");
+    assert(LockingMode != LM_MONITOR, "LockingMode == 0 (LM_MONITOR) and +UseRTMForStackLocks are mutually exclusive");
     rtm_stack_locking(objReg, tmpReg, scrReg, cx2Reg,
                       stack_rtm_counters, method_data, profile_rtm,
                       DONE_LABEL, IsInflated);
@@ -601,29 +601,28 @@ void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmp
   testptr(tmpReg, markWord::monitor_value); // inflated vs stack-locked|neutral
   jcc(Assembler::notZero, IsInflated);
 
-  if (!UseHeavyMonitors) {
-    if (LockingMode == LM_LIGHTWEIGHT) {
-      fast_lock_impl(objReg, tmpReg, thread, scrReg, NO_COUNT);
-      jmp(COUNT);
-    } else if (LockingMode == LM_LEGACY) {
-      // Attempt stack-locking ...
-      orptr (tmpReg, markWord::unlocked_value);
-      movptr(Address(boxReg, 0), tmpReg);          // Anticipate successful CAS
-      lock();
-      cmpxchgptr(boxReg, Address(objReg, oopDesc::mark_offset_in_bytes()));      // Updates tmpReg
-      jcc(Assembler::equal, COUNT);           // Success
-
-      // Recursive locking.
-      // The object is stack-locked: markword contains stack pointer to BasicLock.
-      // Locked by current thread if difference with current SP is less than one page.
-      subptr(tmpReg, rsp);
-      // Next instruction set ZFlag == 1 (Success) if difference is less then one page.
-      andptr(tmpReg, (int32_t) (NOT_LP64(0xFFFFF003) LP64_ONLY(7 - (int)os::vm_page_size())) );
-      movptr(Address(boxReg, 0), tmpReg);
-    }
-  } else {
+  if (LockingMode == LM_MONITOR) {
     // Clear ZF so that we take the slow path at the DONE label. objReg is known to be not 0.
     testptr(objReg, objReg);
+  } else if (LockingMode == LM_LEGACY) {
+    // Attempt stack-locking ...
+    orptr (tmpReg, markWord::unlocked_value);
+    movptr(Address(boxReg, 0), tmpReg);          // Anticipate successful CAS
+    lock();
+    cmpxchgptr(boxReg, Address(objReg, oopDesc::mark_offset_in_bytes()));      // Updates tmpReg
+    jcc(Assembler::equal, COUNT);           // Success
+
+    // Recursive locking.
+    // The object is stack-locked: markword contains stack pointer to BasicLock.
+    // Locked by current thread if difference with current SP is less than one page.
+    subptr(tmpReg, rsp);
+    // Next instruction set ZFlag == 1 (Success) if difference is less then one page.
+    andptr(tmpReg, (int32_t) (NOT_LP64(0xFFFFF003) LP64_ONLY(7 - (int)os::vm_page_size())) );
+    movptr(Address(boxReg, 0), tmpReg);
+  } else {
+    assert(LockingMode == LM_LIGHTWEIGHT, "");
+    fast_lock_impl(objReg, tmpReg, thread, scrReg, NO_COUNT);
+    jmp(COUNT);
   }
   jmp(DONE_LABEL);
 
@@ -754,7 +753,7 @@ void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register t
 
 #if INCLUDE_RTM_OPT
   if (UseRTMForStackLocks && use_rtm) {
-    assert(!UseHeavyMonitors, "+UseHeavyMonitors and +UseRTMForStackLocks are mutually exclusive");
+    assert(LockingMode != LM_MONITOR, "LockingMode == 0 (LM_MONITOR) and +UseRTMForStackLocks are mutually exclusive");
     Label L_regular_unlock;
     movptr(tmpReg, Address(objReg, oopDesc::mark_offset_in_bytes())); // fetch markword
     andptr(tmpReg, markWord::lock_mask_in_place);                     // look at 2 lock bits
@@ -771,7 +770,7 @@ void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register t
     jcc   (Assembler::zero, COUNT);                                   // 0 indicates recursive stack-lock
   }
   movptr(tmpReg, Address(objReg, oopDesc::mark_offset_in_bytes()));   // Examine the object's markword
-  if (!UseHeavyMonitors) {
+  if (LockingMode != LM_MONITOR) {
     testptr(tmpReg, markWord::monitor_value);                         // Inflated?
     jcc(Assembler::zero, Stacked);
     if (LockingMode == LM_LIGHTWEIGHT) {
@@ -911,7 +910,7 @@ void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register t
   jmpb  (DONE_LABEL);
 
 #endif
-  if (!UseHeavyMonitors) {
+  if (LockingMode != LM_MONITOR) {
     bind  (Stacked);
     if (LockingMode == LM_LIGHTWEIGHT) {
       mov(boxReg, tmpReg);

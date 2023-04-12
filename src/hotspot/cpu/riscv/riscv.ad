@@ -2416,53 +2416,52 @@ encode %{
     __ andi(t0, disp_hdr, markWord::monitor_value);
     __ bnez(t0, object_has_monitor);
 
-    if (!UseHeavyMonitors) {
-      if (LockingMode == LM_LIGHTWEIGHT) {
-        Label slow;
-        __ fast_lock(oop, disp_hdr, tmp, t0, slow);
-
-        // Indicate success on completion.
-        __ mv(flag, zr);
-        __ j(count);
-        __ bind(slow);
-        __ mv(flag, 1); // Set non-zero flag to indicate 'failure' -> take slow-path
-        __ j(no_count);
-      } else if (LockingMode == LM_LEGACY) {
-        // Set tmp to be (markWord of object | UNLOCK_VALUE).
-        __ ori(tmp, disp_hdr, markWord::unlocked_value);
-
-        // Initialize the box. (Must happen before we update the object mark!)
-        __ sd(tmp, Address(box, BasicLock::displaced_header_offset_in_bytes()));
-
-        // Compare object markWord with an unlocked value (tmp) and if
-        // equal exchange the stack address of our box with object markWord.
-        // On failure disp_hdr contains the possibly locked markWord.
-        __ cmpxchg(/*memory address*/oop, /*expected value*/tmp, /*new value*/box, Assembler::int64, Assembler::aq,
-                   Assembler::rl, /*result*/disp_hdr);
-        __ mv(flag, zr);
-        __ beq(disp_hdr, tmp, cont); // prepare zero flag and goto cont if we won the cas
-
-        assert(oopDesc::mark_offset_in_bytes() == 0, "offset of _mark is not 0");
-
-        // If the compare-and-exchange succeeded, then we found an unlocked
-        // object, will have now locked it will continue at label cont
-        // We did not see an unlocked object so try the fast recursive case.
-
-        // Check if the owner is self by comparing the value in the
-        // markWord of object (disp_hdr) with the stack pointer.
-        __ sub(disp_hdr, disp_hdr, sp);
-        __ mv(tmp, (intptr_t) (~(os::vm_page_size()-1) | (uintptr_t)markWord::lock_mask_in_place));
-        // If (mark & lock_mask) == 0 and mark - sp < page_size, we are stack-locking and goto cont,
-        // hence we can store 0 as the displaced header in the box, which indicates that it is a
-        // recursive lock.
-        __ andr(tmp/*==0?*/, disp_hdr, tmp);
-        __ sd(tmp/*==0, perhaps*/, Address(box, BasicLock::displaced_header_offset_in_bytes()));
-        __ mv(flag, tmp); // we can use the value of tmp as the result here
-      }
-      __ j(cont);
-    } else {
+    if (LockingMode == LM_MONITOR) {
       __ mv(flag, 1); // Set non-zero flag to indicate 'failure' -> take slow-path
       __ j(cont);
+    } else if (LockingMode == LM_LEGACY) {
+      // Set tmp to be (markWord of object | UNLOCK_VALUE).
+      __ ori(tmp, disp_hdr, markWord::unlocked_value);
+
+      // Initialize the box. (Must happen before we update the object mark!)
+      __ sd(tmp, Address(box, BasicLock::displaced_header_offset_in_bytes()));
+
+      // Compare object markWord with an unlocked value (tmp) and if
+      // equal exchange the stack address of our box with object markWord.
+      // On failure disp_hdr contains the possibly locked markWord.
+      __ cmpxchg(/*memory address*/oop, /*expected value*/tmp, /*new value*/box, Assembler::int64, Assembler::aq,
+                 Assembler::rl, /*result*/disp_hdr);
+      __ mv(flag, zr);
+      __ beq(disp_hdr, tmp, cont); // prepare zero flag and goto cont if we won the cas
+
+      assert(oopDesc::mark_offset_in_bytes() == 0, "offset of _mark is not 0");
+
+      // If the compare-and-exchange succeeded, then we found an unlocked
+      // object, will have now locked it will continue at label cont
+      // We did not see an unlocked object so try the fast recursive case.
+
+      // Check if the owner is self by comparing the value in the
+      // markWord of object (disp_hdr) with the stack pointer.
+      __ sub(disp_hdr, disp_hdr, sp);
+      __ mv(tmp, (intptr_t) (~(os::vm_page_size()-1) | (uintptr_t)markWord::lock_mask_in_place));
+      // If (mark & lock_mask) == 0 and mark - sp < page_size, we are stack-locking and goto cont,
+      // hence we can store 0 as the displaced header in the box, which indicates that it is a
+      // recursive lock.
+      __ andr(tmp/*==0?*/, disp_hdr, tmp);
+      __ sd(tmp/*==0, perhaps*/, Address(box, BasicLock::displaced_header_offset_in_bytes()));
+      __ mv(flag, tmp); // we can use the value of tmp as the result here
+      __ j(cont);
+    } else {
+      assert(LockingMode == LM_LIGHTWEIGHT, "");
+      Label slow;
+      __ fast_lock(oop, disp_hdr, tmp, t0, slow);
+
+      // Indicate success on completion.
+      __ mv(flag, zr);
+      __ j(count);
+      __ bind(slow);
+      __ mv(flag, 1); // Set non-zero flag to indicate 'failure' -> take slow-path
+      __ j(no_count);
     }
 
     // Handle existing monitor.
@@ -2531,30 +2530,29 @@ encode %{
     __ andi(t0, tmp, markWord::monitor_value);
     __ bnez(t0, object_has_monitor);
 
-    if (!UseHeavyMonitors) {
-      if (LockingMode == LM_LIGHTWEIGHT) {
-        Label slow;
-        __ fast_unlock(oop, tmp, box, disp_hdr, slow);
-
-        // Indicate success on completion.
-        __ mv(flag, zr);
-        __ j(count);
-        __ bind(slow);
-        __ mv(flag, 1); // Set non-zero flag to indicate 'failure' -> take slow path
-        __ j(no_count);
-      } else if (LockingMode == LM_LEGACY) {
-        // Check if it is still a light weight lock, this is true if we
-        // see the stack address of the basicLock in the markWord of the
-        // object.
-
-        __ cmpxchg(/*memory address*/oop, /*expected value*/box, /*new value*/disp_hdr, Assembler::int64, Assembler::relaxed,
-                   Assembler::rl, /*result*/tmp);
-        __ xorr(flag, box, tmp); // box == tmp if cas succeeds
-        __ j(cont);
-      }
-    } else {
+    if (LockingMode == LM_MONITOR) {
       __ mv(flag, 1); // Set non-zero flag to indicate 'failure' -> take slow path
       __ j(cont);
+    } else if (LockingMode == LM_LEGACY) {
+      // Check if it is still a light weight lock, this is true if we
+      // see the stack address of the basicLock in the markWord of the
+      // object.
+
+      __ cmpxchg(/*memory address*/oop, /*expected value*/box, /*new value*/disp_hdr, Assembler::int64, Assembler::relaxed,
+                 Assembler::rl, /*result*/tmp);
+      __ xorr(flag, box, tmp); // box == tmp if cas succeeds
+      __ j(cont);
+    } else {
+      assert(LockingMode == LM_LIGHTWEIGHT, "");
+      Label slow;
+      __ fast_unlock(oop, tmp, box, disp_hdr, slow);
+
+      // Indicate success on completion.
+      __ mv(flag, zr);
+      __ j(count);
+      __ bind(slow);
+      __ mv(flag, 1); // Set non-zero flag to indicate 'failure' -> take slow path
+      __ j(no_count);
     }
 
     assert(oopDesc::mark_offset_in_bytes() == 0, "offset of _mark is not 0");
