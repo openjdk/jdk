@@ -1067,6 +1067,18 @@ Node* MaxNode::build_min_max_diff_with_zero(Node* a, Node* b, bool is_max, const
   return res;
 }
 
+Node* MaxNode::constant_add_input(Node* n, jint* con) {
+  if (n->Opcode() == Op_AddI && n->in(2)->is_Con()) {
+    const Type* t = n->in(2)->bottom_type();
+    if (t == Type::TOP) {
+      return nullptr;
+    }
+    *con = t->is_int()->get_con();
+    n = n->in(1);
+  }
+  return n;
+}
+
 //=============================================================================
 //------------------------------add_ring---------------------------------------
 // Supplied function returns the sum of the inputs.
@@ -1103,27 +1115,15 @@ Node* MaxINode::Ideal(PhaseGVN* phase, bool can_reshape) {
   }
 
   // Get left input & constant
-  Node* x = l;
   jint x_off = 0;
-  if (x->Opcode() == Op_AddI && // Check for "x+c0" and collect constant
-      x->in(2)->is_Con()) {
-    const Type* t = x->in(2)->bottom_type();
-    if (t == Type::TOP) return nullptr;  // No progress
-    x_off = t->is_int()->get_con();
-    x = x->in(1);
-  }
+  Node* x = constant_add_input(l, &x_off);
+  if (x == nullptr) return nullptr;
 
   // Scan a right-spline-tree for MAXs
-  Node* y = r;
   jint y_off = 0;
   // Check final part of MAX tree
-  if (y->Opcode() == Op_AddI && // Check for "y+c1" and collect constant
-      y->in(2)->is_Con()) {
-    const Type* t = y->in(2)->bottom_type();
-    if (t == Type::TOP) return nullptr;  // No progress
-    y_off = t->is_int()->get_con();
-    y = y->in(1);
-  }
+  Node* y = constant_add_input(r, &y_off);
+  if (x == nullptr) return nullptr;
   if (x->_idx > y->_idx && r->Opcode() != Op_MaxI) {
     swap_edges(1, 2);
     return this;
@@ -1133,15 +1133,9 @@ Node* MaxINode::Ideal(PhaseGVN* phase, bool can_reshape) {
 
   if (r->Opcode() == Op_MaxI) {
     assert(r != r->in(2), "dead loop in MaxINode::Ideal");
-    y = r->in(1);
     // Check final part of MAX tree
-    if (y->Opcode() == Op_AddI &&// Check for "y+c1" and collect constant
-        y->in(2)->is_Con()) {
-      const Type* t = y->in(2)->bottom_type();
-      if (t == Type::TOP) return nullptr;  // No progress
-      y_off = t->is_int()->get_con();
-      y = y->in(1);
-    }
+    y = constant_add_input(r->in(1), &y_off);
+    if (y == nullptr) return nullptr;
 
     if (x->_idx > y->_idx)
       return new MaxINode(r->in(1), phase->transform(new MaxINode(l, r->in(2))));
@@ -1186,27 +1180,15 @@ Node *MinINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   }
 
   // Get left input & constant
-  Node *x = l;
   jint x_off = 0;
-  if( x->Opcode() == Op_AddI && // Check for "x+c0" and collect constant
-      x->in(2)->is_Con() ) {
-    const Type *t = x->in(2)->bottom_type();
-    if( t == Type::TOP ) return nullptr;  // No progress
-    x_off = t->is_int()->get_con();
-    x = x->in(1);
-  }
+  Node* x = constant_add_input(l, &x_off);
+  if (x == nullptr) return nullptr;
 
   // Scan a right-spline-tree for MINs
-  Node *y = r;
   jint y_off = 0;
   // Check final part of MIN tree
-  if( y->Opcode() == Op_AddI && // Check for "y+c1" and collect constant
-      y->in(2)->is_Con() ) {
-    const Type *t = y->in(2)->bottom_type();
-    if( t == Type::TOP ) return nullptr;  // No progress
-    y_off = t->is_int()->get_con();
-    y = y->in(1);
-  }
+  Node* y = constant_add_input(r, &y_off);
+  if (y == nullptr) return nullptr;
   if( x->_idx > y->_idx && r->Opcode() != Op_MinI ) {
     swap_edges(1, 2);
     return this;
@@ -1216,15 +1198,8 @@ Node *MinINode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   if( r->Opcode() == Op_MinI ) {
     assert( r != r->in(2), "dead loop in MinINode::Ideal" );
-    y = r->in(1);
     // Check final part of MIN tree
-    if( y->Opcode() == Op_AddI &&// Check for "y+c1" and collect constant
-        y->in(2)->is_Con() ) {
-      const Type *t = y->in(2)->bottom_type();
-      if( t == Type::TOP ) return nullptr;  // No progress
-      y_off = t->is_int()->get_con();
-      y = y->in(1);
-    }
+    y = constant_add_input(r->in(1), &y_off);
 
     if( x->_idx > y->_idx )
       return new MinINode(r->in(1),phase->transform(new MinINode(l,r->in(2))));

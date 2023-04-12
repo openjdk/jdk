@@ -284,6 +284,12 @@ public:
   static Node* min_diff_with_zero(Node* a, Node* b, const Type* t, PhaseGVN& gvn) {
     return build_min_max_diff_with_zero(a, b, false, t, gvn);
   }
+
+  // Return:
+  // <x, C>,       if n is of the form x + C, where 'C' is a non-TOP constant;
+  // <nullptr, _>, if n is of the form x + C, where 'C' is a TOP constant;
+  // <n, con>      otherwise.
+  static Node* constant_add_input(Node* n, jint* con);
 };
 
 //------------------------------MaxINode---------------------------------------
