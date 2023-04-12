@@ -758,11 +758,11 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
       br(Assembler::NE, slow_case);
     }
 
-    if (LockingMode == LIGHTWEIGHT) {
+    if (LockingMode == LM_LIGHTWEIGHT) {
       ldr(tmp, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
       fast_lock(obj_reg, tmp, rscratch1, rscratch2, slow_case);
       b(count);
-    } else if (LockingMode == LEGACY) {
+    } else if (LockingMode == LM_LEGACY) {
       // Load (object->mark() | 1) into swap_reg
       ldr(rscratch1, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
       orr(swap_reg, rscratch1, 1);
@@ -816,7 +816,7 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
     bind(slow_case);
 
     // Call the runtime routine for slow case
-    if (LockingMode == LIGHTWEIGHT) {
+    if (LockingMode == LM_LIGHTWEIGHT) {
       call_VM(noreg,
               CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter_obj),
               obj_reg);
@@ -861,7 +861,7 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg)
 
     save_bcp(); // Save in case of exception
 
-    if (LockingMode != LIGHTWEIGHT) {
+    if (LockingMode != LM_LIGHTWEIGHT) {
       // Convert from BasicObjectLock structure to object and BasicLock
       // structure Store the BasicLock address into %r0
       lea(swap_reg, Address(lock_reg, BasicObjectLock::lock_offset_in_bytes()));
@@ -873,7 +873,7 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg)
     // Free entry
     str(zr, Address(lock_reg, BasicObjectLock::obj_offset_in_bytes()));
 
-    if (LockingMode == LIGHTWEIGHT) {
+    if (LockingMode == LM_LIGHTWEIGHT) {
       Label slow_case;
 
       // Check for non-symmetric locking. This is allowed by the spec and the interpreter
@@ -894,7 +894,7 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg)
       fast_unlock(obj_reg, header_reg, swap_reg, rscratch1, slow_case);
       b(count);
       bind(slow_case);
-    } else if (LockingMode == LEGACY) {
+    } else if (LockingMode == LM_LEGACY) {
       // Load the old header from BasicLock structure
       ldr(header_reg, Address(swap_reg,
                               BasicLock::displaced_header_offset_in_bytes()));

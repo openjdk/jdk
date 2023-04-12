@@ -214,7 +214,7 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
 
   assert(oopDesc::mark_offset_in_bytes() == 0, "Required by atomic instructions");
 
-  if (LockingMode == LIGHTWEIGHT) {
+  if (LockingMode == LM_LIGHTWEIGHT) {
     log_trace(fastlock2)("C1_MacroAssembler::lock fast");
 
     Register t1 = disp_hdr; // Needs saving, probably
@@ -224,7 +224,7 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
     fast_lock_2(obj /* obj */, t1, t2, t3, 1 /* savemask - save t1 */, slow_case);
     // Success: fall through
 
-  } else if (LockingMode == LEGACY) {
+  } else if (LockingMode == LM_LEGACY) {
 
     // On MP platforms the next load could return a 'stale' value if the memory location has been modified by another thread.
     // That would be acceptable as ether CAS or slow case path is taken in that case.
@@ -276,7 +276,7 @@ void C1_MacroAssembler::unlock_object(Register hdr, Register obj, Register disp_
 
   assert(oopDesc::mark_offset_in_bytes() == 0, "Required by atomic instructions");
 
-  if (LockingMode == LIGHTWEIGHT) {
+  if (LockingMode == LM_LIGHTWEIGHT) {
     log_trace(fastlock2)("C1_MacroAssembler::unlock fast");
 
     ldr(obj, Address(disp_hdr, obj_offset));
@@ -289,7 +289,7 @@ void C1_MacroAssembler::unlock_object(Register hdr, Register obj, Register disp_
                     slow_case);
     // Success: Fall through
 
-  } else if (LockingMode == LEGACY) {
+  } else if (LockingMode == LM_LEGACY) {
 
     // Load displaced header and object from the lock
     ldr(hdr, Address(disp_hdr, mark_offset));

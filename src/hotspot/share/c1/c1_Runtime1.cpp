@@ -757,8 +757,8 @@ JRT_BLOCK_ENTRY(void, Runtime1::monitorenter(JavaThread* current, oopDesc* obj, 
   if (UseHeavyMonitors) {
     lock->set_obj(obj);
   }
-  assert(LockingMode == LIGHTWEIGHT || obj == lock->obj(), "must match");
-  SharedRuntime::monitor_enter_helper(obj, LockingMode == LIGHTWEIGHT ? nullptr : lock->lock(), current);
+  assert(LockingMode == LM_LIGHTWEIGHT || obj == lock->obj(), "must match");
+  SharedRuntime::monitor_enter_helper(obj, LockingMode == LM_LIGHTWEIGHT ? nullptr : lock->lock(), current);
 JRT_END
 
 

@@ -1154,12 +1154,12 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     // Remember the handle for the unlocking code
     __ mov(sync_handle, R1);
 
-    if (LockingMode == LIGHTWEIGHT) {
+    if (LockingMode == LM_LIGHTWEIGHT) {
       log_trace(fastlock2)("SharedRuntime lock fast");
       __ fast_lock_2(sync_obj /* object */, disp_hdr /* t1 */, tmp /* t2 */, Rtemp /* t3 */,
                      0x7 /* savemask */, slow_lock);
       // Fall through to lock_done
-    } else if (LockingMode == LEGACY) {
+    } else if (LockingMode == LM_LEGACY) {
       const Register mark = tmp;
       // On MP platforms the next load could return a 'stale' value if the memory location has been modified by another thread.
       // That would be acceptable as either CAS or slow case path is taken in that case
@@ -1239,11 +1239,11 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   Label slow_unlock, unlock_done;
   if (method->is_synchronized()) {
-    if (LockingMode == LIGHTWEIGHT) {
+    if (LockingMode == LM_LIGHTWEIGHT) {
       log_trace(fastlock2)("SharedRuntime unlock fast");
       __ fast_unlock_2(sync_obj, R2, tmp, Rtemp, 7, slow_unlock);
       // Fall through
-    } else if (LockingMode == LEGACY) {
+    } else if (LockingMode == LM_LEGACY) {
       // See C1_MacroAssembler::unlock_object() for more comments
       __ ldr(sync_obj, Address(sync_handle));
 

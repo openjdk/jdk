@@ -62,7 +62,7 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
   // Load object header
   movptr(hdr, Address(obj, hdr_offset));
 
-  if (LockingMode == LIGHTWEIGHT) {
+  if (LockingMode == LM_LIGHTWEIGHT) {
 #ifdef _LP64
     const Register thread = r15_thread;
 #else
@@ -70,7 +70,7 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
     get_thread(thread);
 #endif
     fast_lock_impl(obj, hdr, thread, tmp, slow_case);
-  } else  if (LockingMode == LEGACY) {
+  } else  if (LockingMode == LM_LEGACY) {
     Label done;
     // and mark it as unlocked
     orptr(hdr, markWord::unlocked_value);
@@ -119,7 +119,7 @@ void C1_MacroAssembler::unlock_object(Register hdr, Register obj, Register disp_
   assert(hdr != obj && hdr != disp_hdr && obj != disp_hdr, "registers must be different");
   Label done;
 
-  if (LockingMode != LIGHTWEIGHT) {
+  if (LockingMode != LM_LIGHTWEIGHT) {
     // load displaced header
     movptr(hdr, Address(disp_hdr, 0));
     // if the loaded hdr is null we had recursive locking
@@ -132,11 +132,11 @@ void C1_MacroAssembler::unlock_object(Register hdr, Register obj, Register disp_
   movptr(obj, Address(disp_hdr, BasicObjectLock::obj_offset_in_bytes()));
   verify_oop(obj);
 
-  if (LockingMode == LIGHTWEIGHT) {
+  if (LockingMode == LM_LIGHTWEIGHT) {
     movptr(disp_hdr, Address(obj, hdr_offset));
     andptr(disp_hdr, ~(int32_t)markWord::lock_mask_in_place);
     fast_unlock_impl(obj, disp_hdr, hdr, slow_case);
-  } else if (LockingMode == LEGACY) {
+  } else if (LockingMode == LM_LEGACY) {
     // test if object header is pointing to the displaced header, and if so, restore
     // the displaced header in the object - if the object header is not pointing to
     // the displaced header, get the object header instead

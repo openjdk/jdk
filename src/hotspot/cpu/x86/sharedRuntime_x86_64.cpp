@@ -2150,11 +2150,11 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     __ movptr(obj_reg, Address(oop_handle_reg, 0));
 
     if (!UseHeavyMonitors) {
-      if (LockingMode == LIGHTWEIGHT) {
+      if (LockingMode == LM_LIGHTWEIGHT) {
         // Load object header
         __ movptr(swap_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
         __ fast_lock_impl(obj_reg, swap_reg, r15_thread, rscratch1, slow_path_lock);
-      } else if (LockingMode == LEGACY) {
+      } else if (LockingMode == LM_LEGACY) {
         // Load immediate 1 into swap_reg %rax
         __ movl(swap_reg, 1);
 
@@ -2300,7 +2300,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     // Get locked oop from the handle we passed to jni
     __ movptr(obj_reg, Address(oop_handle_reg, 0));
 
-    if (LockingMode == LEGACY) {
+    if (LockingMode == LM_LEGACY) {
       Label not_recur;
       // Simple recursive lock?
       __ cmpptr(Address(rsp, lock_slot_offset * VMRegImpl::stack_slot_size), NULL_WORD);
@@ -2316,11 +2316,11 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     }
 
     if (!UseHeavyMonitors) {
-      if (LockingMode == LIGHTWEIGHT) {
+      if (LockingMode == LM_LIGHTWEIGHT) {
         __ movptr(swap_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
         __ andptr(swap_reg, ~(int32_t)markWord::lock_mask_in_place);
         __ fast_unlock_impl(obj_reg, swap_reg, lock_reg, slow_path_unlock);
-      } else if (LockingMode == LEGACY) {
+      } else if (LockingMode == LM_LEGACY) {
         // get address of the stack lock
         __ lea(rax, Address(rsp, lock_slot_offset * VMRegImpl::stack_slot_size));
         //  get old displaced header

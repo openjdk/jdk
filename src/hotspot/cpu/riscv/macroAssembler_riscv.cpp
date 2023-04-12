@@ -4492,7 +4492,7 @@ void MacroAssembler::rt_call(address dest, Register tmp) {
 //  - hdr: the header, already loaded from obj, will be destroyed
 //  - tmp1, tmp2: temporary registers, will be destroyed
 void MacroAssembler::fast_lock(Register obj, Register hdr, Register tmp1, Register tmp2, Label& slow) {
-  assert(LockingMode == LIGHTWEIGHT, "only used with new lightweight locking");
+  assert(LockingMode == LM_LIGHTWEIGHT, "only used with new lightweight locking");
   assert_different_registers(obj, hdr, tmp1, tmp2);
 
   // Check if we would have space on lock-stack for the object.
@@ -4526,7 +4526,7 @@ void MacroAssembler::fast_lock(Register obj, Register hdr, Register tmp1, Regist
 // - hdr: the (pre-loaded) header of the object
 // - tmp1, tmp2: temporary registers
 void MacroAssembler::fast_unlock(Register obj, Register hdr, Register tmp1, Register tmp2, Label& slow) {
-  assert(LockingMode == LIGHTWEIGHT, "only used with new lightweight locking");
+  assert(LockingMode == LM_LIGHTWEIGHT, "only used with new lightweight locking");
   assert_different_registers(obj, hdr, tmp1, tmp2);
 
 #ifdef ASSERT

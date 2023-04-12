@@ -172,7 +172,7 @@ class markWord {
     return markWord(value() | unlocked_value);
   }
   bool has_locker() const {
-    assert(LockingMode == LEGACY, "should only be called with traditional stack locking");
+    assert(LockingMode == LM_LEGACY, "should only be called with traditional stack locking");
     return (value() & lock_mask_in_place) == locked_value;
   }
   BasicLock* locker() const {
@@ -181,7 +181,7 @@ class markWord {
   }
 
   bool is_fast_locked() const {
-    assert(LockingMode == LIGHTWEIGHT, "should only be called with new lightweight locking");
+    assert(LockingMode == LM_LIGHTWEIGHT, "should only be called with new lightweight locking");
     return (value() & lock_mask_in_place) == locked_value;
   }
   markWord set_fast_locked() const {
@@ -199,8 +199,8 @@ class markWord {
   }
   bool has_displaced_mark_helper() const {
     intptr_t lockbits = value() & lock_mask_in_place;
-    return LockingMode == LIGHTWEIGHT  ? lockbits == monitor_value   // monitor?
-                                       : (lockbits & unlocked_value) == 0; // monitor | stack-locked?
+    return LockingMode == LM_LIGHTWEIGHT  ? lockbits == monitor_value   // monitor?
+                                          : (lockbits & unlocked_value) == 0; // monitor | stack-locked?
   }
   markWord displaced_mark_helper() const;
   void set_displaced_mark_helper(markWord m) const;

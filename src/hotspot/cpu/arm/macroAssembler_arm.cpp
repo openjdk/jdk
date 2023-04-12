@@ -1764,7 +1764,7 @@ void MacroAssembler::read_polling_page(Register dest, relocInfo::relocType rtype
 //  - Success: fallthrough
 //  - Error:   break to slow, Z cleared.
 void MacroAssembler::fast_lock_2(Register obj, Register t1, Register t2, Register t3, unsigned savemask, Label& slow) {
-  assert(LockingMode == LIGHTWEIGHT, "only used with new lightweight locking");
+  assert(LockingMode == LM_LIGHTWEIGHT, "only used with new lightweight locking");
   assert_different_registers(obj, t1, t2, t3);
 
 #ifdef ASSERT
@@ -1822,7 +1822,7 @@ void MacroAssembler::fast_lock_2(Register obj, Register t1, Register t2, Registe
 //  - Success: fallthrough
 //  - Error:   break to slow, Z cleared.
 void MacroAssembler::fast_unlock_2(Register obj, Register t1, Register t2, Register t3, unsigned savemask, Label& slow) {
-  assert(LockingMode == LIGHTWEIGHT, "only used with new lightweight locking");
+  assert(LockingMode == LM_LIGHTWEIGHT, "only used with new lightweight locking");
   assert_different_registers(obj, t1, t2, t3);
 
 #ifdef ASSERT
