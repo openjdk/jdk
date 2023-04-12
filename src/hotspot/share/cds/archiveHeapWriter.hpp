@@ -93,7 +93,7 @@ class ArchiveHeapWriter : AllStatic {
   static size_t _buffer_used;
 
   // The bottom of the copy of Heap::roots() inside this->_buffer.
-  static size_t _heap_roots_bottom;
+  static size_t _heap_roots_bottom_offset;
   static size_t _heap_roots_word_size;
 
   // The address range of the requested location of the archived heap objects.
@@ -182,7 +182,7 @@ public:
   static address requested_address();  // requested address of the lowest achived heap object
   static oop heap_roots_requested_address(); // requested address of HeapShared::roots()
   static address buffered_heap_roots_addr() {
-    return offset_to_buffered_address<address>(_heap_roots_bottom);
+    return offset_to_buffered_address<address>(_heap_roots_bottom_offset);
   }
   static size_t heap_roots_word_size() {
     return _heap_roots_word_size;

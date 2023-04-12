@@ -51,7 +51,7 @@ GrowableArrayCHeap<u1, mtClassShared>* ArchiveHeapWriter::_buffer;
 
 // The following are offsets from buffer_bottom()
 size_t ArchiveHeapWriter::_buffer_used;
-size_t ArchiveHeapWriter::_heap_roots_bottom;
+size_t ArchiveHeapWriter::_heap_roots_bottom_offset;
 
 size_t ArchiveHeapWriter::_heap_roots_word_size;
 
@@ -153,7 +153,7 @@ address ArchiveHeapWriter::buffered_addr_to_requested_addr(address buffered_addr
 }
 
 oop ArchiveHeapWriter::heap_roots_requested_address() {
-  return cast_to_oop(_requested_bottom + _heap_roots_bottom);
+  return cast_to_oop(_requested_bottom + _heap_roots_bottom_offset);
 }
 
 address ArchiveHeapWriter::requested_address() {
@@ -176,7 +176,7 @@ void ArchiveHeapWriter::ensure_buffer_space(size_t min_bytes) {
 
 void ArchiveHeapWriter::copy_roots_to_buffer(GrowableArrayCHeap<oop, mtClassShared>* roots) {
   Klass* k = Universe::objectArrayKlassObj(); // already relocated to point to archived klass
-  int length = roots != nullptr ? roots->length() : 0;
+  int length = roots->length();
   _heap_roots_word_size = objArrayOopDesc::object_size(length);
   size_t byte_size = _heap_roots_word_size * HeapWordSize;
   if (byte_size >= MIN_GC_REGION_ALIGNMENT) {
@@ -211,9 +211,9 @@ void ArchiveHeapWriter::copy_roots_to_buffer(GrowableArrayCHeap<oop, mtClassShar
       * arrayOop->obj_at_addr<oop>(i) = o;
     }
   }
-  log_info(cds)("archived obj roots[%d] = " SIZE_FORMAT " bytes, klass = %p, obj = %p", length, byte_size, k, mem);
+  log_info(cds, heap)("archived obj roots[%d] = " SIZE_FORMAT " bytes, klass = %p, obj = %p", length, byte_size, k, mem);
 
-  _heap_roots_bottom = _buffer_used;
+  _heap_roots_bottom_offset = _buffer_used;
   _buffer_used = new_used;
 }
 
@@ -230,7 +230,8 @@ void ArchiveHeapWriter::copy_source_objs_to_buffer(GrowableArrayCHeap<oop, mtCla
 
   copy_roots_to_buffer(roots);
 
-  log_info(cds, heap)("Size of heap region = " SIZE_FORMAT " bytes", _buffer_used);
+  log_info(cds)("Size of heap region = " SIZE_FORMAT " bytes, %d objects, %d roots",
+                _buffer_used, _source_objs->length() + 1, roots->length());
 }
 
 size_t ArchiveHeapWriter::filler_array_byte_size(int length) {
@@ -480,7 +481,7 @@ void ArchiveHeapWriter::relocate_embedded_oops(GrowableArrayCHeap<oop, mtClassSh
 
   // Relocate HeapShared::roots(), which is created in copy_roots_to_buffer() and
   // doesn't have a corresponding src_obj, so we can't use EmbeddedOopRelocator on it.
-  oop requested_roots = requested_obj_from_buffer_offset(_heap_roots_bottom);
+  oop requested_roots = requested_obj_from_buffer_offset(_heap_roots_bottom_offset);
   update_header_for_requested_obj(requested_roots, nullptr, Universe::objectArrayKlassObj());
   int length = roots != nullptr ? roots->length() : 0;
   for (int i = 0; i < length; i++) {
