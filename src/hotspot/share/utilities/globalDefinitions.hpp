@@ -50,7 +50,7 @@ class oopDesc;
 #endif
 
 #ifndef ATTRIBUTE_ALIGNED
-#define ATTRIBUTE_ALIGNED(alignment) alignas(alignment)
+#define ATTRIBUTE_ALIGNED(x)
 #endif
 
 #ifndef ATTRIBUTE_FLATTEN
