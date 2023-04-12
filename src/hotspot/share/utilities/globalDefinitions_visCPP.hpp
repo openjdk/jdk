@@ -115,6 +115,9 @@ inline int g_isfinite(jdouble f)                 { return _finite(f); }
 #define NOINLINE     __declspec(noinline)
 #define ALWAYSINLINE __forceinline
 
+// Alignment
+#define ATTRIBUTE_ALIGNED(x) __declspec(align(x))
+
 #ifdef _M_ARM64
 #define USE_VECTORED_EXCEPTION_HANDLING
 #endif
