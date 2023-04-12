@@ -71,11 +71,10 @@ public class StreamDecoder extends Reader {
                                                      String charsetName)
         throws UnsupportedEncodingException
     {
-        String csn = charsetName;
         try {
-            return new StreamDecoder(in, lock, csn == null ? Charset.defaultCharset() : Charset.forName(csn));
+            return new StreamDecoder(in, lock, Charset.forName(charsetName));
         } catch (IllegalCharsetNameException | UnsupportedCharsetException x) {
-            throw new UnsupportedEncodingException (csn);
+            throw new UnsupportedEncodingException (charsetName);
         }
     }
 

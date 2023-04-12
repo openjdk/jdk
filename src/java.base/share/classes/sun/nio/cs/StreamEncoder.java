@@ -58,11 +58,10 @@ public final class StreamEncoder extends Writer {
                                                       String charsetName)
         throws UnsupportedEncodingException
     {
-        String csn = charsetName;
         try {
-            return new StreamEncoder(out, lock, csn == null ? Charset.defaultCharset() : Charset.forName(csn));
+            return new StreamEncoder(out, lock, Charset.forName(charsetName));
         } catch (IllegalCharsetNameException | UnsupportedCharsetException x) {
-            throw new UnsupportedEncodingException (csn);
+            throw new UnsupportedEncodingException (charsetName);
         }
     }
 
