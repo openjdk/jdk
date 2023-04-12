@@ -3464,7 +3464,7 @@ JVM_LEAF(jboolean, JVM_IsContinuationsSupported(void))
 JVM_END
 
 JVM_LEAF(jboolean, JVM_IsForeignLinkerSupported(void))
-  return ForeignGlobals::has_port() ? JNI_TRUE : JNI_FALSE;
+  return ForeignGlobals::is_foreign_linker_supported() ? JNI_TRUE : JNI_FALSE;
 JVM_END
 
 // String support ///////////////////////////////////////////////////////////////////////////

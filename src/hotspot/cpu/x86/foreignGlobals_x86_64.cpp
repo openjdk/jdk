@@ -30,7 +30,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/formatBuffer.hpp"
 
-bool ForeignGlobals::has_port() {
+bool ForeignGlobals::is_foreign_linker_supported() {
   return true;
 }
 

@@ -44,7 +44,7 @@ bool ABIDescriptor::is_volatile_reg(FloatRegister reg) const {
          || _float_additional_volatile_registers.contains(reg);
 }
 
-bool ForeignGlobals::has_port() {
+bool ForeignGlobals::is_foreign_linker_supported() {
   return true;
 }
 
