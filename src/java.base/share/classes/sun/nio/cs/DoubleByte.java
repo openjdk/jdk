@@ -128,11 +128,6 @@ public class DoubleByte {
         }
 
         protected CoderResult crMalformedOrUnmappable(int b1, int b2) {
-            if (b2c[b1] == B2C_UNMAPPABLE ||                // isNotLeadingByte(b1)
-                b2c[b2] != B2C_UNMAPPABLE ||                // isLeadingByte(b2)
-                decodeSingle(b2) != UNMAPPABLE_DECODING) {  // isSingle(b2)
-                return CoderResult.malformedForLength(1);
-            }
             return CoderResult.unmappableForLength(2);
         }
 
