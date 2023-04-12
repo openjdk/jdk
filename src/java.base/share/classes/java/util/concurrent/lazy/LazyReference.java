@@ -25,6 +25,7 @@
 package java.util.concurrent.lazy;
 
 import jdk.internal.javac.PreviewFeature;
+import jdk.internal.util.concurrent.lazy.LazyUtil;
 import jdk.internal.vm.annotation.Stable;
 
 import java.lang.invoke.MethodHandles;
@@ -32,9 +33,10 @@ import java.lang.invoke.VarHandle;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
+
+import static jdk.internal.util.concurrent.lazy.LazyUtil.varHandle;
 
 /**
  * An object reference in which the value can be lazily and atomically computed.
@@ -70,13 +72,24 @@ import java.util.function.Supplier;
 public final class LazyReference<V>
         implements Supplier<V> {
 
-    // Allows access to the state variable with arbitary memory semantics
-    private static final VarHandle VALUE_HANDLE = valueHandle();
+    // Allows access to the "value" field with arbitary memory semantics
+    private static final VarHandle VALUE_HANDLE;
+
+    static {
+        try {
+            VALUE_HANDLE = MethodHandles.lookup()
+                    .findVarHandle(LazyReference.class, "value", Object.class);
+            // .withInvokeExactBehavior(); // Make sure no boxing is made?
+        } catch (ReflectiveOperationException e) {
+            throw new ExceptionInInitializerError(e);
+        }
+    }
 
     private final Lazy.Evaluation earliestEvaluation;
-    private final Semaphore semaphore;
 
     private Supplier<? extends V> presetProvider;
+
+    private volatile boolean supplying;
 
     @Stable
     private Object value;
@@ -85,7 +98,6 @@ public final class LazyReference<V>
                   Supplier<? extends V> presetSupplier) {
         this.earliestEvaluation = earliestEvaluation;
         this.presetProvider = presetSupplier;
-        this.semaphore = new Semaphore(1);
         if (earliestEvaluation != Lazy.Evaluation.AT_USE && presetSupplier != null) {
             // Start computing the value via a background Thread.
             Thread.ofVirtual()
@@ -99,7 +111,6 @@ public final class LazyReference<V>
         this.earliestEvaluation = Lazy.Evaluation.CREATION;
         this.presetProvider = null;
         this.value = Objects.requireNonNull(value);
-        this.semaphore = null;
     }
 
     /**
@@ -121,6 +132,7 @@ public final class LazyReference<V>
      *}
      */
     public Lazy.State state() {
+        // Try normal memory semantics first
         Object o = value;
         if (o != null) {
             return o instanceof Exception
@@ -128,23 +140,19 @@ public final class LazyReference<V>
                     : Lazy.State.PRESENT;
         }
 
-        if (semaphore.availablePermits() == 0) {
+        if (supplying) {
             return Lazy.State.CONSTRUCTING;
         }
 
-        semaphore.acquireUninterruptibly();
-        try {
-            o = value;
-            if (o instanceof Exception) {
-                return Lazy.State.ERROR;
-            }
-            if (o == null) {
-                return Lazy.State.EMPTY;
-            }
-            return Lazy.State.PRESENT;
-        } finally {
-            semaphore.release();
+        // Use volatile semantics
+        o = VALUE_HANDLE.getVolatile(this);
+        if (o instanceof Exception) {
+            return Lazy.State.ERROR;
         }
+        if (o == null) {
+            return Lazy.State.EMPTY;
+        }
+        return Lazy.State.PRESENT;
     }
 
     /**
@@ -238,44 +246,34 @@ public final class LazyReference<V>
             return castOrThrow(o);
         }
 
-        // implies acquire/release semantics when entering/leaving the monitor
-        semaphore.acquireUninterruptibly();
-        try {
+        // implies volatile semantics when entering/leaving the monitor
+        synchronized (this) {
             // Here, visibility is guaranteed
             o = value;
             if (o != null) {
                 return castOrThrow(o);
             }
+            if (supplier == null) {
+                throw new IllegalStateException("No pre-set supplier given");
+            }
             try {
-                if (supplier == null) {
-                    throw new IllegalStateException("No pre-set supplier given");
-                }
-
+                supplying = true;
                 V v = supplier.get();
                 if (v == null) {
                     throw new NullPointerException("Supplier returned null");
                 }
-
-                // Alt 1
-                // Prevents reordering. Changes only go in one direction.
-                // https://developer.arm.com/documentation/102336/0100/Load-Acquire-and-Store-Release-instructions
-                setValueRelease(v);
-
-                // Alt 2
-                // VarHandle.fullFence();
-                // VarHandle.fullFence();
+                VALUE_HANDLE.setVolatile(this, v);
                 return v;
             } catch (Throwable e) {
                 // Record the throwable instead of the value.
-                // Prevents reordering.
-                setValueRelease(e);
+                VALUE_HANDLE.setVolatile(this, e);
                 // Rethrow
                 throw e;
             } finally {
+                // Volatile semantics
+                supplying = false;
                 forgetPresetProvided();
             }
-        } finally {
-            semaphore.release();
         }
     }
 
@@ -394,23 +392,10 @@ public final class LazyReference<V>
         return (V) o;
     }
 
-    private void setValueRelease(Object value) {
-        VALUE_HANDLE.setRelease(this, value);
-    }
-
     private void forgetPresetProvided() {
         // Stops preventing the provider from being collected once it has been
         // used (if initially set).
         this.presetProvider = null;
     }
 
-    private static VarHandle valueHandle() {
-        try {
-            return MethodHandles.lookup()
-                    .findVarHandle(LazyReference.class, "value", Object.class);
-            // .withInvokeExactBehavior(); // Make sure no boxing is made?
-        } catch (ReflectiveOperationException e) {
-            throw new ExceptionInInitializerError(e);
-        }
-    }
 }
