@@ -26,7 +26,6 @@
 #define SHARE_RUNTIME_LOCKSTACK_INLINE_HPP
 
 #include "memory/iterator.hpp"
-#include "oops/access.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/lockStack.hpp"
 #include "runtime/safepoint.hpp"
@@ -108,7 +107,7 @@ inline bool LockStack::contains(oop o) const {
   }
   int end = to_index(_top);
   for (int i = end - 1; i >= 0; i--) {
-    if (NativeAccess<>::oop_load(&_base[i]) == o) {
+    if (_base[i] == o) {
       verify("post-contains");
       return true;
     }
