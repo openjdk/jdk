@@ -31,8 +31,8 @@
 #ifndef _MANAGEMENT_EXT_H_
 #define _MANAGEMENT_EXT_H_
 
-extern const JmmInterface* jmm_interface;
-extern jint jmm_version;
+extern const JmmInterface* jmm_interface_management_ext;
+extern jint jmm_version_management_ext;
 extern void throw_internal_error(JNIEnv* env, const char* msg);
 
 #endif
