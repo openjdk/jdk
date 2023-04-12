@@ -40,7 +40,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.ArrayList;
 import java.util.Objects;
@@ -58,7 +57,6 @@ import jdk.internal.net.http.HttpConnection.HttpPublisher;
 import jdk.internal.net.http.common.FlowTube;
 import jdk.internal.net.http.common.FlowTube.TubeSubscriber;
 import jdk.internal.net.http.common.HeaderDecoder;
-import jdk.internal.net.http.common.HttpHeadersBuilder;
 import jdk.internal.net.http.common.Log;
 import jdk.internal.net.http.common.Logger;
 import jdk.internal.net.http.common.MinimalFuture;
@@ -586,7 +584,6 @@ class Http2Connection  {
         return keyString(isSecure, proxy, host, port);
     }
 
-
     // Compute the key for an HttpConnection in the Http2ClientImpl pool:
     // The key string follows one of the three forms below:
     //    {C,S}:H:host:port
@@ -614,15 +611,18 @@ class Http2Connection  {
         else if (!secure && port == -1)
             port = 80;
         var key = (secure ? "S:" : "C:");
+        host = Utils.wrapBracketsIfIPv6(host);
         if (proxy != null && !secure) {
+            String proxyHost = Utils.wrapBracketsIfIPv6(proxy.getHostString());
             // clear connection through proxy
-            key = key + "P:" + proxy.getHostString() + ":" + proxy.getPort();
+            key = key + "P:" + proxyHost + ":" + proxy.getPort();
         } else if (proxy == null) {
             // direct connection to host
             key = key + "H:" + host + ":" + port;
         } else {
+            String proxyHost = Utils.wrapBracketsIfIPv6(proxy.getHostString());
             // tunnel connection through proxy
-            key = key + "T:H:" + host + ":" + port + ";P:" + proxy.getHostString() + ":" + proxy.getPort();
+            key = key + "T:H:" + host + ":" + port + ";P:" + proxyHost + ":" + proxy.getPort();
         }
         return  key;
     }
