@@ -262,8 +262,7 @@ class ArchiveHeapLoader::PatchLoadedRegionPointers: public BitMapClosure {
 bool ArchiveHeapLoader::init_loaded_region(FileMapInfo* mapinfo, LoadedArchiveHeapRegion* loaded_region,
                                            MemRegion& archive_space) {
   size_t total_bytes = 0;
-  int i = MetaspaceShared::hp;
-  FileMapRegion* r = mapinfo->region_at(i);
+  FileMapRegion* r = mapinfo->region_at(MetaspaceShared::hp);
   r->assert_is_heap_region();
   if (r->used() == 0) {
     return false;
@@ -271,7 +270,7 @@ bool ArchiveHeapLoader::init_loaded_region(FileMapInfo* mapinfo, LoadedArchiveHe
 
   assert(is_aligned(r->used(), HeapWordSize), "must be");
   total_bytes += r->used();
-  loaded_region->_region_index = i;
+  loaded_region->_region_index = MetaspaceShared::hp;
   loaded_region->_region_size = r->used();
   loaded_region->_dumptime_base = (uintptr_t)mapinfo->heap_region_dumptime_address(r);
 
@@ -442,10 +441,9 @@ void ArchiveHeapLoader::patch_native_pointers() {
     return;
   }
 
-  int i = MetaspaceShared::hp;
-  FileMapRegion* r = FileMapInfo::current_info()->region_at(i);
+  FileMapRegion* r = FileMapInfo::current_info()->region_at(MetaspaceShared::hp);
   if (r->mapped_base() != nullptr && r->has_ptrmap()) {
-    log_info(cds, heap)("Patching native pointers in heap region %d", i);
+    log_info(cds, heap)("Patching native pointers in heap region");
     BitMapView bm = r->ptrmap_view();
     PatchNativePointers patcher((Metadata**)r->mapped_base());
     bm.iterate(&patcher);
