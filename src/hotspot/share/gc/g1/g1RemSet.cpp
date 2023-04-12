@@ -427,7 +427,7 @@ public:
 
   uint claim_cards_to_scan(uint region, uint increment) {
     assert(region < _max_reserved_regions, "Tried to access invalid region %u", region);
-    return Atomic::fetch_and_add(&_card_table_scan_state[region], increment);
+    return Atomic::fetch_and_add(&_card_table_scan_state[region], increment, memory_order_relaxed);
   }
 
   void add_dirty_region(uint const region) {

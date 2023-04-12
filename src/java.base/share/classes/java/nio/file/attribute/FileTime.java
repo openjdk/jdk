@@ -409,6 +409,9 @@ public final class FileTime
      * are not present. The year before "{@code 0001}" is "{@code -0001}".
      *
      * @return  the string representation of this file time
+     *
+     * @spec https://www.w3.org/TR/NOTE-datetime Date and Time Formats
+     * @spec https://www.w3.org/TR/xmlschema-2 XML Schema Part 2: Datatypes Second Edition
      */
     @Override
     public String toString() {

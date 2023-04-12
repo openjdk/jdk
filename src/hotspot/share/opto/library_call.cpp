@@ -50,6 +50,7 @@
 #include "opto/runtime.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/subnode.hpp"
+#include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "prims/unsafe.hpp"
 #include "runtime/jniHandles.inline.hpp"
@@ -2828,8 +2829,29 @@ bool LibraryCallKit::inline_unsafe_allocate() {
     test = _gvn.transform(new SubINode(inst, bits));
     // The 'test' is non-zero if we need to take a slow path.
   }
-
   Node* obj = new_instance(kls, test);
+#if INCLUDE_JVMTI
+  // Check if JvmtiExport::_should_notify_object_alloc is enabled and post notifications
+  IdealKit ideal(this);
+  IdealVariable result(ideal); ideal.declarations_done();
+  Node* ONE = ideal.ConI(1);
+  Node* addr = makecon(TypeRawPtr::make((address) &JvmtiExport::_should_notify_object_alloc));
+  Node* should_post_vm_object_alloc = ideal.load(ideal.ctrl(), addr, TypeInt::BOOL, T_BOOLEAN, Compile::AliasIdxRaw);
+
+  ideal.sync_kit(this);
+  ideal.if_then(should_post_vm_object_alloc, BoolTest::eq, ONE); {
+    const TypeFunc *tf = OptoRuntime::notify_jvmti_object_alloc_Type();
+    address funcAddr = OptoRuntime::notify_jvmti_object_alloc();
+    sync_kit(ideal);
+    Node* call = make_runtime_call(RC_NO_LEAF, tf, funcAddr, "_notify_jvmti_object_alloc", TypePtr::BOTTOM, obj);
+    ideal.sync_kit(this);
+    ideal.set(result,_gvn.transform(new ProjNode(call, TypeFunc::Parms+0)));
+  } ideal.else_(); {
+    ideal.set(result,obj);
+  } ideal.end_if();
+  final_sync(ideal);
+  obj = ideal.value(result);
+#endif //INCLUDE_JVMTI
   set_result(obj);
   return true;
 }
@@ -2876,13 +2898,17 @@ bool LibraryCallKit::inline_native_notify_jvmti_funcs(address funcAddr, const ch
     make_runtime_call(RC_NO_LEAF, tf, funcAddr, funcName, TypePtr::BOTTOM, vt_oop, hide, cond);
     ideal.sync_kit(this);
   } ideal.else_(); {
-    // set hide value to the VTMS transition bit in current JavaThread
+    // set hide value to the VTMS transition bit in current JavaThread and VirtualThread object
+    Node* vt_oop = _gvn.transform(argument(0)); // this argument - VirtualThread oop
     Node* thread = ideal.thread();
-    Node* addr = basic_plus_adr(thread, in_bytes(JavaThread::is_in_VTMS_transition_offset()));
+    Node* jt_addr = basic_plus_adr(thread, in_bytes(JavaThread::is_in_VTMS_transition_offset()));
+    Node* vt_addr = basic_plus_adr(vt_oop, java_lang_Thread::is_in_VTMS_transition_offset());
     const TypePtr *addr_type = _gvn.type(addr)->isa_ptr();
 
     sync_kit(ideal);
-    access_store_at(nullptr, addr, addr_type, hide, _gvn.type(hide), T_BOOLEAN, IN_NATIVE | MO_UNORDERED);
+    access_store_at(nullptr, jt_addr, addr_type, hide, _gvn.type(hide), T_BOOLEAN, IN_NATIVE | MO_UNORDERED);
+    access_store_at(nullptr, vt_addr, addr_type, hide, _gvn.type(hide), T_BOOLEAN, IN_NATIVE | MO_UNORDERED);
+
     ideal.sync_kit(this);
   } ideal.end_if();
   final_sync(ideal);
@@ -2890,19 +2916,15 @@ bool LibraryCallKit::inline_native_notify_jvmti_funcs(address funcAddr, const ch
   return true;
 }
 
-// If notifications are enabled then just update the temporary VTMS transition bit.
+// Always update the temporary VTMS transition bit.
 bool LibraryCallKit::inline_native_notify_jvmti_hide() {
   if (!DoJVMTIVirtualThreadTransitions) {
     return true;
   }
   IdealKit ideal(this);
 
-  Node* ONE = ideal.ConI(1);
-  Node* addr = makecon(TypeRawPtr::make((address)&JvmtiVTMSTransitionDisabler::_VTMS_notify_jvmti_events));
-  Node* notify_jvmti_enabled = ideal.load(ideal.ctrl(), addr, TypeInt::BOOL, T_BOOLEAN, Compile::AliasIdxRaw);
-
-  ideal.if_then(notify_jvmti_enabled, BoolTest::eq, ONE); {
-    // set the VTMS temporary transition bit in current JavaThread
+  {
+    // unconditionally update the temporary VTMS transition bit in current JavaThread
     Node* thread = ideal.thread();
     Node* hide = _gvn.transform(argument(1)); // hide argument for temporary VTMS transition notification
     Node* addr = basic_plus_adr(thread, in_bytes(JavaThread::is_in_tmp_VTMS_transition_offset()));
@@ -2911,7 +2933,7 @@ bool LibraryCallKit::inline_native_notify_jvmti_hide() {
     sync_kit(ideal);
     access_store_at(nullptr, addr, addr_type, hide, _gvn.type(hide), T_BOOLEAN, IN_NATIVE | MO_UNORDERED);
     ideal.sync_kit(this);
-  } ideal.end_if();
+  }
   final_sync(ideal);
 
   return true;

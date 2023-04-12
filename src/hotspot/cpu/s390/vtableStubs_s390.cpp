@@ -84,7 +84,7 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
   const Register rcvr_klass   = Z_R1_scratch;
   address        npe_addr     = __ pc(); // npe == NULL ptr exception
   // Get receiver klass.
-  __ load_klass_check_null(rcvr_klass, Z_ARG1, Z_R1_scratch);
+  __ load_klass(rcvr_klass, Z_ARG1);
 
 #ifndef PRODUCT
   if (DebugVtables) {
@@ -194,7 +194,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   // Get receiver klass.
   // Must do an explicit check if offset too large or implicit checks are disabled.
   address npe_addr = __ pc(); // npe == NULL ptr exception
-  __ load_klass_check_null(rcvr_klass, Z_ARG1, Z_R1_scratch);
+  __ load_klass(rcvr_klass, Z_ARG1);
 
   // Receiver subtype check against REFC.
   __ z_lg(interface, Address(Z_method, CompiledICHolder::holder_klass_offset()));

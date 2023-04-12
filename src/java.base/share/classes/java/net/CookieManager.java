@@ -109,6 +109,7 @@ import sun.util.logging.PlatformLogger;
  *
  * <p>The implementation conforms to <a href="http://www.ietf.org/rfc/rfc2965.txt">RFC 2965</a>, section 3.3.
  *
+ * @spec https://www.rfc-editor.org/info/rfc2965 RFC 2965: HTTP State Management Mechanism
  * @see CookiePolicy
  * @author Edward Wang
  * @since 1.6

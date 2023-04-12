@@ -147,7 +147,7 @@ double G1MMUTracker::when_sec(double current_timestamp, double pause_time) {
   double limit = current_timestamp + pause_time - _time_slice;
   // Iterate from newest to oldest.
   for (int i = 0; i < _no_entries; ++i) {
-    int index = trim_index(_head_index + i);
+    int index = trim_index(_head_index - i);
     G1MMUTrackerElem *elem = &_array[index];
     // Outside the window.
     if (elem->end_time() <= limit) {
