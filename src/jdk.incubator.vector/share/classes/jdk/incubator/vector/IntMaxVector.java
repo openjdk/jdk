@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -649,10 +649,11 @@ final class IntMaxVector extends IntVector {
 
         @Override
         @ForceInline
-        public IntMaxMask eq(VectorMask<Integer> mask) {
-            Objects.requireNonNull(mask);
-            IntMaxMask m = (IntMaxMask)mask;
-            return xor(m.not());
+        /*package-private*/
+        IntMaxMask indexPartiallyInUpperRange(long offset, long limit) {
+            return (IntMaxMask) VectorSupport.indexPartiallyInUpperRange(
+                IntMaxMask.class, int.class, VLENGTH, offset, limit,
+                (o, l) -> (IntMaxMask) TRUE_MASK.indexPartiallyInRange(o, l));
         }
 
         // Unary operations
@@ -694,9 +695,9 @@ final class IntMaxVector extends IntVector {
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a | b));
         }
 
+        @Override
         @ForceInline
-        /* package-private */
-        IntMaxMask xor(VectorMask<Integer> mask) {
+        public IntMaxMask xor(VectorMask<Integer> mask) {
             Objects.requireNonNull(mask);
             IntMaxMask m = (IntMaxMask)mask;
             return VectorSupport.binaryOp(VECTOR_OP_XOR, IntMaxMask.class, null, int.class, VLENGTH,

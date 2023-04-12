@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2020, the original author or authors.
+ * Copyright (c) 2002-2021, the original author or authors.
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -12,8 +12,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public interface Parser {
-    static final String REGEX_VARIABLE = "[a-zA-Z_]{1,}[a-zA-Z0-9_-]*";
-    static final String REGEX_COMMAND = "[:]{0,1}[a-zA-Z]{1,}[a-zA-Z0-9_-]*";
+    String REGEX_VARIABLE = "[a-zA-Z_]+[a-zA-Z0-9_-]*";
+    String REGEX_COMMAND = "[:]?[a-zA-Z]+[a-zA-Z0-9_-]*";
 
     ParsedLine parse(String line, int cursor, ParseContext context) throws SyntaxError;
 
@@ -34,7 +34,7 @@ public interface Parser {
     }
 
     default String getCommand(final String line) {
-        String out = "";
+        String out;
         Pattern  patternCommand = Pattern.compile("^\\s*" + REGEX_VARIABLE + "=(" + REGEX_COMMAND + ")(\\s+|$)");
         Matcher matcher = patternCommand.matcher(line);
         if (matcher.find()) {
@@ -68,7 +68,7 @@ public interface Parser {
 
         /** Parsed words will have all characters present in input line
          * including quotes and escape chars.
-         * May throw EOFError in which case we have incomplete input.
+         * We should tolerate and ignore errors.
          */
         SPLIT_LINE,
 

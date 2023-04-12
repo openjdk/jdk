@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 4893959 8013069
+ * @bug 4893959 8013069 8288050
  * @summary basic test for PBE MAC algorithms.
  * @author Valerie Peng
  */
@@ -36,15 +36,18 @@ import javax.crypto.*;
 import javax.crypto.spec.*;
 
 public class HmacPBESHA1 {
+
     private static final String[] MAC_ALGOS = {
         "HmacPBESHA1",
         "PBEWithHmacSHA1",
         "PBEWithHmacSHA224",
         "PBEWithHmacSHA256",
         "PBEWithHmacSHA384",
-        "PBEWithHmacSHA512"
+        "PBEWithHmacSHA512",
+        "PBEWithHmacSHA512/224",
+        "PBEWithHmacSHA512/256",
     };
-    private static final int[] MAC_LENGTHS = { 20, 20, 28, 32, 48, 64 };
+    private static final int[] MAC_LENGTHS = { 20, 20, 28, 32, 48, 64, 28, 32 };
     private static final String KEY_ALGO = "PBE";
     private static final String PROVIDER = "SunJCE";
 

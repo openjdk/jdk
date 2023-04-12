@@ -32,7 +32,7 @@
 #define ERR_MSG_SIZE 128
 
 const JmmInterface* jmm_interface = NULL;
-JavaVM* jvm = NULL;
+static JavaVM* jvm = NULL;
 jint jmm_version = 0;
 
 JNIEXPORT jint JNICALL
@@ -57,6 +57,6 @@ JNIEXPORT jint JNICALL
 void throw_internal_error(JNIEnv* env, const char* msg) {
     char errmsg[128];
 
-    sprintf(errmsg, "errno: %d error: %s\n", errno, msg);
+    snprintf(errmsg, sizeof(errmsg), "errno: %d error: %s\n", errno, msg);
     JNU_ThrowInternalError(env, errmsg);
 }

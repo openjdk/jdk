@@ -102,7 +102,6 @@ class ParallelScavengeHeap : public CollectedHeap {
   HeapWord* allocate_old_gen_and_record(size_t word_size);
 
  protected:
-  static inline size_t total_invocations();
   HeapWord* allocate_new_tlab(size_t min_size, size_t requested_size, size_t* actual_size) override;
 
   inline bool should_alloc_in_eden(size_t size) const;
@@ -113,11 +112,11 @@ class ParallelScavengeHeap : public CollectedHeap {
   ParallelScavengeHeap() :
     CollectedHeap(),
     _death_march_count(0),
-    _young_manager(NULL),
-    _old_manager(NULL),
-    _eden_pool(NULL),
-    _survivor_pool(NULL),
-    _old_pool(NULL),
+    _young_manager(nullptr),
+    _old_manager(nullptr),
+    _eden_pool(nullptr),
+    _survivor_pool(nullptr),
+    _old_pool(nullptr),
     _workers("GC Thread", ParallelGCThreads) { }
 
   // For use by VM operations
@@ -193,7 +192,7 @@ class ParallelScavengeHeap : public CollectedHeap {
   // Memory allocation.   "gc_time_limit_was_exceeded" will
   // be set to true if the adaptive size policy determine that
   // an excessive amount of time is being spent doing collections
-  // and caused a NULL to be returned.  If a NULL is not returned,
+  // and caused a null to be returned.  If a null is not returned,
   // "gc_time_limit_was_exceeded" has an undefined meaning.
   HeapWord* mem_allocate(size_t size, bool* gc_overhead_limit_was_exceeded) override;
 

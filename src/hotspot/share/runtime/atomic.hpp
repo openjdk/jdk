@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -151,7 +151,7 @@ public:
                           T exchange_value,
                           atomic_memory_order order = memory_order_conservative);
 
-  // Performs atomic compare of *dest and NULL, and replaces *dest
+  // Performs atomic compare of *dest and nullptr, and replaces *dest
   // with exchange_value if the comparison succeeded.  Returns true if
   // the comparison succeeded and the exchange occurred.  This is
   // often used as part of lazy initialization, as a lock-free
@@ -754,7 +754,7 @@ inline bool Atomic::replace_if_null(D* volatile* dest, T* value,
   // Presently using a trivial implementation in terms of cmpxchg.
   // Consider adding platform support, to permit the use of compiler
   // intrinsics like gcc's __sync_bool_compare_and_swap.
-  D* expected_null = NULL;
+  D* expected_null = nullptr;
   return expected_null == cmpxchg(dest, expected_null, value, order);
 }
 

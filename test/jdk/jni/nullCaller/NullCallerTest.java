@@ -32,7 +32,6 @@
  *          jdk.compiler
  * @build NullCallerTest
  *        jdk.test.lib.compiler.CompilerUtils
- * @requires os.family != "aix"
  * @run main/native NullCallerTest
  */
 

@@ -513,7 +513,7 @@ class LambdaFormEditor {
     }
 
     private BoundMethodHandle.SpeciesData newSpeciesData(BasicType type) {
-        return oldSpeciesData().extendWith((byte) type.ordinal());
+        return oldSpeciesData().extendWith(type);
     }
 
     BoundMethodHandle bindArgumentL(BoundMethodHandle mh, int pos, Object value) {

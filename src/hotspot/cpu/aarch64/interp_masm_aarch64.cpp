@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -802,7 +802,7 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
     // copy
     mov(rscratch1, sp);
     sub(swap_reg, swap_reg, rscratch1);
-    ands(swap_reg, swap_reg, (uint64_t)(7 - os::vm_page_size()));
+    ands(swap_reg, swap_reg, (uint64_t)(7 - (int)os::vm_page_size()));
 
     // Save the test result, for recursive case, the result is zero
     str(swap_reg, Address(lock_reg, mark_offset));
@@ -1832,4 +1832,15 @@ void InterpreterMacroAssembler::profile_parameters_type(Register mdp, Register t
 
     bind(profile_continue);
   }
+}
+
+void InterpreterMacroAssembler::load_resolved_indy_entry(Register cache, Register index) {
+  // Get index out of bytecode pointer, get_cache_entry_pointer_at_bcp
+  get_cache_index_at_bcp(index, 1, sizeof(u4));
+  // Get address of invokedynamic array
+  ldr(cache, Address(rcpool, in_bytes(ConstantPoolCache::invokedynamic_entries_offset())));
+  // Scale the index to be the entry index * sizeof(ResolvedInvokeDynamicInfo)
+  lsl(index, index, log2i_exact(sizeof(ResolvedIndyEntry)));
+  add(cache, cache, Array<ResolvedIndyEntry>::base_offset_in_bytes());
+  lea(cache, Address(cache, index));
 }

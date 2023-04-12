@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -663,10 +663,11 @@ final class Int256Vector extends IntVector {
 
         @Override
         @ForceInline
-        public Int256Mask eq(VectorMask<Integer> mask) {
-            Objects.requireNonNull(mask);
-            Int256Mask m = (Int256Mask)mask;
-            return xor(m.not());
+        /*package-private*/
+        Int256Mask indexPartiallyInUpperRange(long offset, long limit) {
+            return (Int256Mask) VectorSupport.indexPartiallyInUpperRange(
+                Int256Mask.class, int.class, VLENGTH, offset, limit,
+                (o, l) -> (Int256Mask) TRUE_MASK.indexPartiallyInRange(o, l));
         }
 
         // Unary operations
@@ -708,9 +709,9 @@ final class Int256Vector extends IntVector {
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a | b));
         }
 
+        @Override
         @ForceInline
-        /* package-private */
-        Int256Mask xor(VectorMask<Integer> mask) {
+        public Int256Mask xor(VectorMask<Integer> mask) {
             Objects.requireNonNull(mask);
             Int256Mask m = (Int256Mask)mask;
             return VectorSupport.binaryOp(VECTOR_OP_XOR, Int256Mask.class, null, int.class, VLENGTH,

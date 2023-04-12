@@ -219,6 +219,9 @@ JDKOPT_SETUP_ADDRESS_SANITIZER
 # UndefinedBehaviorSanitizer
 JDKOPT_SETUP_UNDEFINED_BEHAVIOR_SANITIZER
 
+# LeakSanitizer
+JDKOPT_SETUP_LEAK_SANITIZER
+
 ###############################################################################
 #
 # Check dependencies for external and internal libraries.

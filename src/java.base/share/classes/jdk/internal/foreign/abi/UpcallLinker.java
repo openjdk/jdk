@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package jdk.internal.foreign.abi;
 
+import jdk.internal.foreign.abi.AbstractLinker.UpcallStubFactory;
 import sun.security.action.GetPropertyAction;
 
 import java.lang.foreign.MemorySegment;
@@ -35,6 +36,7 @@ import java.lang.invoke.MethodType;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
 import static java.lang.invoke.MethodHandles.exactInvoker;
@@ -55,23 +57,27 @@ public class UpcallLinker {
         try {
             MethodHandles.Lookup lookup = lookup();
             MH_invokeInterpBindings = lookup.findStatic(UpcallLinker.class, "invokeInterpBindings",
-                    methodType(Object.class, Object[].class, InvocationData.class));
+                    methodType(Object.class, MethodHandle.class, Object[].class, InvocationData.class));
         } catch (ReflectiveOperationException e) {
             throw new InternalError(e);
         }
     }
 
-    public static MemorySegment make(ABIDescriptor abi, MethodHandle target, CallingSequence callingSequence, SegmentScope scope) {
+    public static UpcallStubFactory makeFactory(MethodType targetType, ABIDescriptor abi, CallingSequence callingSequence) {
         assert callingSequence.forUpcall();
         Binding.VMLoad[] argMoves = argMoveBindings(callingSequence);
         Binding.VMStore[] retMoves = retMoveBindings(callingSequence);
 
         MethodType llType = callingSequence.callerMethodType();
 
-        MethodHandle doBindings;
+        UnaryOperator<MethodHandle> doBindingsMaker;
         if (USE_SPEC) {
-            doBindings = BindingSpecializer.specialize(target, callingSequence, abi);
-            assert doBindings.type() == llType;
+            MethodHandle doBindings = BindingSpecializer.specializeUpcall(targetType, callingSequence, abi);
+            doBindingsMaker = target -> {
+                MethodHandle handle = MethodHandles.insertArguments(doBindings, 0, target);
+                assert handle.type() == llType;
+                return handle;
+            };
         } else {
             Map<VMStorage, Integer> argIndices = SharedUtils.indexMap(argMoves);
             Map<VMStorage, Integer> retIndices = SharedUtils.indexMap(retMoves);
@@ -79,21 +85,29 @@ public class UpcallLinker {
             if (callingSequence.needsReturnBuffer()) {
                 spreaderCount--; // return buffer is dropped from the argument list
             }
-            target = target.asSpreader(Object[].class, spreaderCount);
-            InvocationData invData = new InvocationData(target, argIndices, retIndices, callingSequence, retMoves, abi);
-            doBindings = insertArguments(MH_invokeInterpBindings, 1, invData);
-            doBindings = doBindings.asCollector(Object[].class, llType.parameterCount());
-            doBindings = doBindings.asType(llType);
+            final int finalSpreaderCount = spreaderCount;
+            InvocationData invData = new InvocationData(argIndices, retIndices, callingSequence, retMoves, abi);
+            MethodHandle doBindings = insertArguments(MH_invokeInterpBindings, 2, invData);
+            doBindingsMaker = target -> {
+                target = target.asSpreader(Object[].class, finalSpreaderCount);
+                MethodHandle handle = MethodHandles.insertArguments(doBindings, 0, target);
+                handle = handle.asCollector(Object[].class, llType.parameterCount());
+                return handle.asType(llType);
+            };
         }
 
-        checkPrimitive(doBindings.type());
-        doBindings = insertArguments(exactInvoker(doBindings.type()), 0, doBindings);
         VMStorage[] args = Arrays.stream(argMoves).map(Binding.Move::storage).toArray(VMStorage[]::new);
         VMStorage[] rets = Arrays.stream(retMoves).map(Binding.Move::storage).toArray(VMStorage[]::new);
         CallRegs conv = new CallRegs(args, rets);
-        long entryPoint = makeUpcallStub(doBindings, abi, conv,
-                callingSequence.needsReturnBuffer(), callingSequence.returnBufferSize());
-        return UpcallStubs.makeUpcall(entryPoint, scope);
+        return (target, scope) -> {
+            assert target.type() == targetType;
+            MethodHandle doBindings = doBindingsMaker.apply(target);
+            checkPrimitive(doBindings.type());
+            doBindings = insertArguments(exactInvoker(doBindings.type()), 0, doBindings);
+            long entryPoint = makeUpcallStub(doBindings, abi, conv,
+                    callingSequence.needsReturnBuffer(), callingSequence.returnBufferSize());
+            return UpcallStubs.makeUpcall(entryPoint, scope);
+        };
     }
 
     private static void checkPrimitive(MethodType type) {
@@ -120,14 +134,13 @@ public class UpcallLinker {
                 .toArray(Binding.VMStore[]::new);
     }
 
-    private record InvocationData(MethodHandle leaf,
-                                  Map<VMStorage, Integer> argIndexMap,
+    private record InvocationData(Map<VMStorage, Integer> argIndexMap,
                                   Map<VMStorage, Integer> retIndexMap,
                                   CallingSequence callingSequence,
                                   Binding.VMStore[] retMoves,
                                   ABIDescriptor abi) {}
 
-    private static Object invokeInterpBindings(Object[] lowLevelArgs, InvocationData invData) throws Throwable {
+    private static Object invokeInterpBindings(MethodHandle leaf, Object[] lowLevelArgs, InvocationData invData) throws Throwable {
         Binding.Context allocator = invData.callingSequence.allocationSize() != 0
                 ? Binding.Context.ofBoundedAllocator(invData.callingSequence.allocationSize())
                 : Binding.Context.ofScope();
@@ -154,7 +167,7 @@ public class UpcallLinker {
             }
 
             // invoke our target
-            Object o = invData.leaf.invoke(highLevelArgs);
+            Object o = leaf.invoke(highLevelArgs);
 
             if (DEBUG) {
                 System.err.println("Java return:");
@@ -162,7 +175,7 @@ public class UpcallLinker {
             }
 
             Object[] returnValues = new Object[invData.retIndexMap.size()];
-            if (invData.leaf.type().returnType() != void.class) {
+            if (leaf.type().returnType() != void.class) {
                 BindingInterpreter.unbox(o, invData.callingSequence.returnBindings(),
                         (storage, type, value) -> returnValues[invData.retIndexMap.get(storage)] = value, null);
             }

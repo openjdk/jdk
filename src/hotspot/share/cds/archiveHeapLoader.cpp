@@ -91,7 +91,7 @@ void ArchiveHeapLoader::fixup_regions() {
   } else if (_loading_failed) {
     fill_failed_loaded_heap();
   }
-  if (is_fully_available()) {
+  if (is_in_use()) {
     if (!MetaspaceShared::use_full_module_graph()) {
       // Need to remove all the archived java.lang.Module objects from HeapShared::roots().
       ClassLoaderDataShared::clear_archived_oops();
@@ -410,7 +410,7 @@ bool ArchiveHeapLoader::load_regions(FileMapInfo* mapinfo, LoadedArchiveHeapRegi
       bm.iterate(&patcher);
     }
 
-    r->set_mapped_base((char*)load_address);
+    assert(r->mapped_base() == (char*)load_address, "sanity");
     load_address += r->used();
   }
 
@@ -472,7 +472,9 @@ void ArchiveHeapLoader::finish_initialization() {
       verify_loaded_heap();
     }
   }
-  patch_native_pointers();
+  if (is_in_use()) {
+    patch_native_pointers();
+  }
 }
 
 void ArchiveHeapLoader::finish_loaded_heap() {

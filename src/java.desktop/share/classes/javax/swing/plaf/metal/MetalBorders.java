@@ -235,33 +235,32 @@ public class MetalBorders {
         }
     }
 
-    /**
-     * The class represents the border of a {@code JInternalFrame}.
-     */
-    @SuppressWarnings("serial") // Superclass is not serializable across versions
-    public static class InternalFrameBorder extends AbstractBorder implements UIResource {
+    @SuppressWarnings("serial")
+    private abstract static sealed class AbstractMetalWindowBorder
+            extends AbstractBorder
+            implements UIResource
+            permits FrameBorder, DialogBorder, InternalFrameBorderImpl {
+
+        protected Color background;
+        protected Color highlight;
+        protected Color shadow;
+
         private static final int CORNER = 14;
 
-        /**
-         * Constructs a {@code InternalFrameBorder}.
-         */
-        public InternalFrameBorder() {}
-
-        public void paintBorder(Component c, Graphics g, int x, int y,
-                                int w, int h) {
+        @Override
+        public final void paintBorder(Component c, Graphics g,
+                                      int x, int y, int w, int h) {
             SwingUtilities3.paintBorder(c, g,
                                         x, y, w, h,
                                         this::paintUnscaledBorder);
         }
 
-        private void paintUnscaledBorder(Component c, Graphics g,
-                                         int width, int height,
-                                         double scaleFactor) {
-            Color background;
-            Color highlight;
-            Color shadow;
+        protected abstract boolean isActive(Component c);
 
-            if (c instanceof JInternalFrame && ((JInternalFrame)c).isSelected()) {
+        protected abstract boolean isResizable(Component c);
+
+        protected void updateColors(Component c) {
+            if (isActive(c)) {
                 background = MetalLookAndFeel.getPrimaryControlDarkShadow();
                 highlight = MetalLookAndFeel.getPrimaryControlShadow();
                 shadow = MetalLookAndFeel.getPrimaryControlInfo();
@@ -270,29 +269,41 @@ public class MetalBorders {
                 highlight = MetalLookAndFeel.getControlShadow();
                 shadow = MetalLookAndFeel.getControlInfo();
             }
+        }
 
-            // scaled border
+        private void paintUnscaledBorder(Component c, Graphics g,
+                                         int width, int height,
+                                         double scaleFactor) {
+            updateColors(c);
+
+            // scaled thickness
             int thickness = (int) Math.ceil(4 * scaleFactor);
-
             g.setColor(background);
             // Draw the bulk of the border
             for (int i = 0; i <= thickness; i++) {
                 g.drawRect(i, i, width - (i * 2), height - (i * 2));
             }
 
-            if (c instanceof JInternalFrame && ((JInternalFrame)c).isResizable()) {
-                // midpoint at which highlight & shadow lines
-                // are positioned on the border
+            if (isResizable(c)) {
+                //midpoint at which highlight & shadow lines
+                //are positioned on the border
                 int midPoint = thickness / 2;
-                int stkWidth = clipRound(scaleFactor);
-                int offset = (((scaleFactor - stkWidth) >= 0) && ((stkWidth % 2) != 0)) ? 1 : 0;
-                int loc1 = thickness % 2 == 0 ? midPoint + stkWidth / 2 - stkWidth : midPoint;
-                int loc2 = thickness % 2 == 0 ? midPoint + stkWidth / 2 : midPoint + stkWidth;
+                int strokeWidth = clipRound(scaleFactor);
+                int offset = (((scaleFactor - strokeWidth) >= 0)
+                              && ((strokeWidth % 2) != 0)) ? 1 : 0;
+
+                int loc1 = (thickness % 2 == 0)
+                           ? midPoint + strokeWidth / 2 - strokeWidth
+                           : midPoint;
+                int loc2 = (thickness % 2 == 0)
+                           ? midPoint + strokeWidth / 2
+                           : midPoint + strokeWidth;
+
                 // scaled corner
                 int corner = (int) Math.round(CORNER * scaleFactor);
 
                 if (g instanceof Graphics2D) {
-                    ((Graphics2D) g).setStroke(new BasicStroke((float) stkWidth));
+                    ((Graphics2D) g).setStroke(new BasicStroke((float) strokeWidth));
                 }
 
                 // Draw the Long highlight lines
@@ -315,72 +326,53 @@ public class MetalBorders {
             }
         }
 
-        public Insets getBorderInsets(Component c, Insets newInsets) {
+        @Override
+        public final Insets getBorderInsets(Component c, Insets newInsets) {
             newInsets.set(4, 4, 4, 4);
             return newInsets;
         }
     }
 
-    /**
-     * Border for a Frame.
-     * @since 1.4
-     */
-    @SuppressWarnings("serial") // Superclass is not serializable across versions
-    static class FrameBorder extends AbstractBorder implements UIResource {
-        private static final int corner = 14;
+    @SuppressWarnings("serial")
+    private static final class InternalFrameBorderImpl extends AbstractMetalWindowBorder {
 
-        public void paintBorder(Component c, Graphics g, int x, int y,
-            int w, int h) {
-
-            Color background;
-            Color highlight;
-            Color shadow;
-
-            Window window = SwingUtilities.getWindowAncestor(c);
-            if (window != null && window.isActive()) {
-                background = MetalLookAndFeel.getPrimaryControlDarkShadow();
-                highlight = MetalLookAndFeel.getPrimaryControlShadow();
-                shadow = MetalLookAndFeel.getPrimaryControlInfo();
-            } else {
-                background = MetalLookAndFeel.getControlDarkShadow();
-                highlight = MetalLookAndFeel.getControlShadow();
-                shadow = MetalLookAndFeel.getControlInfo();
-            }
-
-            g.setColor(background);
-            // Draw outermost lines
-            g.drawLine( x+1, y+0, x+w-2, y+0);
-            g.drawLine( x+0, y+1, x+0, y +h-2);
-            g.drawLine( x+w-1, y+1, x+w-1, y+h-2);
-            g.drawLine( x+1, y+h-1, x+w-2, y+h-1);
-
-            // Draw the bulk of the border
-            for (int i = 1; i < 5; i++) {
-                g.drawRect(x+i,y+i,w-(i*2)-1, h-(i*2)-1);
-            }
-
-            if ((window instanceof Frame) && ((Frame) window).isResizable()) {
-                g.setColor(highlight);
-                // Draw the Long highlight lines
-                g.drawLine( corner+1, 3, w-corner, 3);
-                g.drawLine( 3, corner+1, 3, h-corner);
-                g.drawLine( w-2, corner+1, w-2, h-corner);
-                g.drawLine( corner+1, h-2, w-corner, h-2);
-
-                g.setColor(shadow);
-                // Draw the Long shadow lines
-                g.drawLine( corner, 2, w-corner-1, 2);
-                g.drawLine( 2, corner, 2, h-corner-1);
-                g.drawLine( w-3, corner, w-3, h-corner-1);
-                g.drawLine( corner, h-3, w-corner-1, h-3);
-            }
-
+        @Override
+        protected boolean isActive(Component c) {
+            return (c instanceof JInternalFrame
+                    && ((JInternalFrame)c).isSelected());
         }
 
-        public Insets getBorderInsets(Component c, Insets newInsets)
-        {
-            newInsets.set(5, 5, 5, 5);
-            return newInsets;
+        @Override
+        protected boolean isResizable(Component c) {
+            return ((c instanceof JInternalFrame
+                    && ((JInternalFrame) c).isResizable()));
+        }
+    }
+
+    /**
+     * The class represents the border of a {@code JInternalFrame}.
+     */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
+    public static class InternalFrameBorder extends AbstractBorder implements UIResource {
+
+        private final InternalFrameBorderImpl border;
+
+        /**
+         * Constructs a {@code InternalFrameBorder}.
+         */
+        public InternalFrameBorder() {
+            border = new InternalFrameBorderImpl();
+        }
+
+        @Override
+        public void paintBorder(Component c, Graphics g, int x, int y,
+                                int w, int h) {
+            border.paintBorder(c, g, x, y, w, h);
+        }
+
+        @Override
+        public Insets getBorderInsets(Component c, Insets newInsets) {
+            return border.getBorderInsets(c, newInsets);
         }
     }
 
@@ -389,48 +381,59 @@ public class MetalBorders {
      * @since 1.4
      */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    static class DialogBorder extends AbstractBorder implements UIResource
-    {
-        private static final int corner = 14;
+    static final class FrameBorder extends AbstractMetalWindowBorder implements UIResource {
 
-        protected Color getActiveBackground()
-        {
+        @Override
+        protected boolean isActive(Component c) {
+            Window window = SwingUtilities.getWindowAncestor(c);
+            return (window != null && window.isActive());
+        }
+
+        @Override
+        protected boolean isResizable(Component c) {
+            Window window = SwingUtilities.getWindowAncestor(c);
+            return ((window instanceof Frame)
+                    && ((Frame) window).isResizable());
+        }
+    }
+
+    /**
+     * Border for a Frame.
+     * @since 1.4
+     */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
+    static sealed class DialogBorder
+            extends AbstractMetalWindowBorder
+            implements UIResource
+            permits ErrorDialogBorder, QuestionDialogBorder, WarningDialogBorder {
+
+        protected Color getActiveBackground() {
             return MetalLookAndFeel.getPrimaryControlDarkShadow();
         }
 
-        protected Color getActiveHighlight()
-        {
+        protected final Color getActiveHighlight() {
             return MetalLookAndFeel.getPrimaryControlShadow();
         }
 
-        protected Color getActiveShadow()
-        {
+        protected final Color getActiveShadow() {
             return MetalLookAndFeel.getPrimaryControlInfo();
         }
 
-        protected Color getInactiveBackground()
-        {
+        protected final Color getInactiveBackground() {
             return MetalLookAndFeel.getControlDarkShadow();
         }
 
-        protected Color getInactiveHighlight()
-        {
+        protected final Color getInactiveHighlight() {
             return MetalLookAndFeel.getControlShadow();
         }
 
-        protected Color getInactiveShadow()
-        {
+        protected final Color getInactiveShadow() {
             return MetalLookAndFeel.getControlInfo();
         }
 
-        public void paintBorder(Component c, Graphics g, int x, int y, int w, int h)
-        {
-            Color background;
-            Color highlight;
-            Color shadow;
-
-            Window window = SwingUtilities.getWindowAncestor(c);
-            if (window != null && window.isActive()) {
+        @Override
+        protected final void updateColors(Component c) {
+            if (isActive(c)) {
                 background = getActiveBackground();
                 highlight = getActiveHighlight();
                 shadow = getActiveShadow();
@@ -439,42 +442,19 @@ public class MetalBorders {
                 highlight = getInactiveHighlight();
                 shadow = getInactiveShadow();
             }
-
-            g.setColor(background);
-            // Draw outermost lines
-            g.drawLine( x + 1, y + 0, x + w-2, y + 0);
-            g.drawLine( x + 0, y + 1, x + 0, y + h - 2);
-            g.drawLine( x + w - 1, y + 1, x + w - 1, y + h - 2);
-            g.drawLine( x + 1, y + h - 1, x + w - 2, y + h - 1);
-
-            // Draw the bulk of the border
-            for (int i = 1; i < 5; i++) {
-                g.drawRect(x+i,y+i,w-(i*2)-1, h-(i*2)-1);
-            }
-
-
-            if ((window instanceof Dialog) && ((Dialog) window).isResizable()) {
-                g.setColor(highlight);
-                // Draw the Long highlight lines
-                g.drawLine( corner+1, 3, w-corner, 3);
-                g.drawLine( 3, corner+1, 3, h-corner);
-                g.drawLine( w-2, corner+1, w-2, h-corner);
-                g.drawLine( corner+1, h-2, w-corner, h-2);
-
-                g.setColor(shadow);
-                // Draw the Long shadow lines
-                g.drawLine( corner, 2, w-corner-1, 2);
-                g.drawLine( 2, corner, 2, h-corner-1);
-                g.drawLine( w-3, corner, w-3, h-corner-1);
-                g.drawLine( corner, h-3, w-corner-1, h-3);
-            }
-
         }
 
-        public Insets getBorderInsets(Component c, Insets newInsets)
-        {
-            newInsets.set(5, 5, 5, 5);
-            return newInsets;
+        @Override
+        protected final boolean isActive(Component c) {
+            Window window = SwingUtilities.getWindowAncestor(c);
+            return (window != null && window.isActive());
+        }
+
+        @Override
+        protected final boolean isResizable(Component c) {
+            Window window = SwingUtilities.getWindowAncestor(c);
+            return ((window instanceof Dialog)
+                    && ((Dialog) window).isResizable());
         }
     }
 
@@ -483,7 +463,7 @@ public class MetalBorders {
      * @since 1.4
      */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    static class ErrorDialogBorder extends DialogBorder implements UIResource
+    static final class ErrorDialogBorder extends DialogBorder implements UIResource
     {
         protected Color getActiveBackground() {
             return UIManager.getColor("OptionPane.errorDialog.border.background");
@@ -497,7 +477,7 @@ public class MetalBorders {
      * @since 1.4
      */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    static class QuestionDialogBorder extends DialogBorder implements UIResource
+    static final class QuestionDialogBorder extends DialogBorder implements UIResource
     {
         protected Color getActiveBackground() {
             return UIManager.getColor("OptionPane.questionDialog.border.background");
@@ -510,7 +490,7 @@ public class MetalBorders {
      * @since 1.4
      */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    static class WarningDialogBorder extends DialogBorder implements UIResource
+    static final class WarningDialogBorder extends DialogBorder implements UIResource
     {
         protected Color getActiveBackground() {
             return UIManager.getColor("OptionPane.warningDialog.border.background");

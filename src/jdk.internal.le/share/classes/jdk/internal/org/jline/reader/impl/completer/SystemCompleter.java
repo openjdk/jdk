@@ -67,7 +67,7 @@ public class SystemCompleter implements Completer {
         if (cmd != null) {
             if (completers.containsKey(cmd)) {
                 out = cmd;
-            } else if (aliasCommand.containsKey(cmd)) {
+            } else {
                 out = aliasCommand.get(cmd);
             }
         }

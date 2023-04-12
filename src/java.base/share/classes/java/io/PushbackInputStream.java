@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -421,7 +421,11 @@ public class PushbackInputStream extends FilterInputStream {
                 out.write(buffer);
                 pos = buffer.length;
             }
-            return avail + in.transferTo(out);
+            try {
+                return Math.addExact(avail, in.transferTo(out));
+            } catch (ArithmeticException ignore) {
+                return Long.MAX_VALUE;
+            }
         } else {
             return super.transferTo(out);
         }

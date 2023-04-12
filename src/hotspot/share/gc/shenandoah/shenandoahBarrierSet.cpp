@@ -45,7 +45,7 @@ ShenandoahBarrierSet::ShenandoahBarrierSet(ShenandoahHeap* heap) :
   BarrierSet(make_barrier_set_assembler<ShenandoahBarrierSetAssembler>(),
              make_barrier_set_c1<ShenandoahBarrierSetC1>(),
              make_barrier_set_c2<ShenandoahBarrierSetC2>(),
-             ShenandoahNMethodBarrier ? new ShenandoahBarrierSetNMethod(heap) : NULL,
+             ShenandoahNMethodBarrier ? new ShenandoahBarrierSetNMethod(heap) : nullptr,
              new ShenandoahBarrierSetStackChunk(),
              BarrierSet::FakeRtti(BarrierSet::ShenandoahBarrierSet)),
   _heap(heap),
@@ -103,7 +103,7 @@ void ShenandoahBarrierSet::on_thread_attach(Thread *thread) {
     ShenandoahThreadLocalData::initialize_gclab(thread);
 
     BarrierSetNMethod* bs_nm = barrier_set_nmethod();
-    if (bs_nm != NULL) {
+    if (bs_nm != nullptr) {
       thread->set_nmethod_disarmed_guard_value(bs_nm->disarmed_guard_value());
     }
 
@@ -120,7 +120,7 @@ void ShenandoahBarrierSet::on_thread_detach(Thread *thread) {
   _satb_mark_queue_set.flush_queue(queue);
   if (thread->is_Java_thread()) {
     PLAB* gclab = ShenandoahThreadLocalData::gclab(thread);
-    if (gclab != NULL) {
+    if (gclab != nullptr) {
       gclab->retire();
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ class ReplacedNodes {
     Node* _initial;
     Node* _improved;
   public:
-    ReplacedNode() : _initial(NULL), _improved(NULL) {}
+    ReplacedNode() : _initial(nullptr), _improved(nullptr) {}
     ReplacedNode(Node* initial, Node* improved) : _initial(initial), _improved(improved) {}
     Node* initial() const  { return _initial; }
     Node* improved() const { return _improved; }
@@ -65,7 +65,7 @@ class ReplacedNodes {
 
  public:
   ReplacedNodes()
-    : _replaced_nodes(NULL) {}
+    : _replaced_nodes(nullptr) {}
 
   void clone();
   void record(Node* initial, Node* improved);

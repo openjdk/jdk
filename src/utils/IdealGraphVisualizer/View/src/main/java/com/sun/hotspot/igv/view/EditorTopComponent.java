@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,11 +28,10 @@ import com.sun.hotspot.igv.data.Group;
 import com.sun.hotspot.igv.data.InputGraph;
 import com.sun.hotspot.igv.data.InputNode;
 import com.sun.hotspot.igv.data.services.InputGraphProvider;
-import com.sun.hotspot.igv.filter.FilterChain;
-import com.sun.hotspot.igv.filter.FilterChainProvider;
-import com.sun.hotspot.igv.settings.Settings;
+import com.sun.hotspot.igv.graph.Figure;
 import com.sun.hotspot.igv.util.LookupHistory;
 import com.sun.hotspot.igv.util.RangeSlider;
+import com.sun.hotspot.igv.util.StringUtils;
 import com.sun.hotspot.igv.view.actions.*;
 import java.awt.*;
 import java.awt.event.MouseEvent;
@@ -46,7 +45,6 @@ import org.openide.actions.UndoAction;
 import org.openide.awt.Toolbar;
 import org.openide.awt.ToolbarPool;
 import org.openide.awt.UndoRedo;
-import org.openide.util.Lookup;
 import org.openide.util.NbBundle;
 import org.openide.util.Utilities;
 import org.openide.util.actions.Presenter;
@@ -62,7 +60,7 @@ import org.openide.windows.WindowManager;
  *
  * @author Thomas Wuerthinger
  */
-public final class EditorTopComponent extends TopComponent {
+public final class EditorTopComponent extends TopComponent implements TopComponent.Cloneable {
 
     private final DiagramViewer scene;
     private final InstanceContent graphContent;
@@ -70,26 +68,17 @@ public final class EditorTopComponent extends TopComponent {
     private final JPanel centerPanel;
     private final CardLayout cardLayout;
     private final Toolbar quickSearchToolbar;
+    private boolean useBoldDisplayName = false;
     private static final JPanel quickSearchPresenter = (JPanel) ((Presenter.Toolbar) Utilities.actionsForPath("Actions/Search").get(0)).getToolbarPresenter();
     private static final String PREFERRED_ID = "EditorTopComponent";
     private static final String SATELLITE_STRING = "satellite";
     private static final String SCENE_STRING = "scene";
 
-    public EditorTopComponent(InputGraph graph) {
+    public EditorTopComponent(DiagramViewModel diagramViewModel) {
         initComponents();
 
         LookupHistory.init(InputGraphProvider.class);
         setFocusable(true);
-        FilterChain filterChain;
-        FilterChain sequence;
-        FilterChainProvider provider = Lookup.getDefault().lookup(FilterChainProvider.class);
-        if (provider == null) {
-            filterChain = new FilterChain();
-            sequence = new FilterChain();
-        } else {
-            filterChain = provider.getFilterChain();
-            sequence = provider.getSequence();
-        }
 
         setName(NbBundle.getMessage(EditorTopComponent.class, "CTL_EditorTopComponent"));
         setToolTipText(NbBundle.getMessage(EditorTopComponent.class, "HINT_EditorTopComponent"));
@@ -120,7 +109,6 @@ public final class EditorTopComponent extends TopComponent {
         JPanel container = new JPanel(new BorderLayout());
         add(container, BorderLayout.NORTH);
 
-        DiagramViewModel diagramViewModel = new DiagramViewModel(graph, filterChain, sequence);
         RangeSlider rangeSlider = new RangeSlider(diagramViewModel);
         if (diagramViewModel.getGroup().getGraphs().size() == 1) {
             rangeSlider.setVisible(false);
@@ -147,7 +135,7 @@ public final class EditorTopComponent extends TopComponent {
             setToolTipText(diagramViewModel.getGroup().getDisplayName());
         });
 
-        diagramViewModel.getGraphChangedEvent().addListener(model -> graphChanged(model));
+        diagramViewModel.getGraphChangedEvent().addListener(this::graphChanged);
 
         cardLayout = new CardLayout();
         centerPanel = new JPanel();
@@ -188,26 +176,25 @@ public final class EditorTopComponent extends TopComponent {
         ButtonGroup layoutButtons = new ButtonGroup();
 
         JToggleButton seaLayoutButton = new JToggleButton(new EnableSeaLayoutAction(this));
-        seaLayoutButton.setSelected(Settings.get().getInt(Settings.DEFAULT_VIEW, Settings.DEFAULT_VIEW_DEFAULT) == Settings.DefaultView.SEA_OF_NODES);
+        seaLayoutButton.setSelected(diagramViewModel.getShowSea());
         layoutButtons.add(seaLayoutButton);
         toolBar.add(seaLayoutButton);
 
         JToggleButton blockLayoutButton = new JToggleButton(new EnableBlockLayoutAction(this));
-        blockLayoutButton.setSelected(Settings.get().getInt(Settings.DEFAULT_VIEW, Settings.DEFAULT_VIEW_DEFAULT) == Settings.DefaultView.CLUSTERED_SEA_OF_NODES);
+        blockLayoutButton.setSelected(diagramViewModel.getShowBlocks());
         layoutButtons.add(blockLayoutButton);
         toolBar.add(blockLayoutButton);
 
         EnableCFGLayoutAction cfgLayoutAction = new EnableCFGLayoutAction(this);
         JToggleButton cfgLayoutButton = new JToggleButton(cfgLayoutAction);
-        cfgLayoutButton.setSelected(Settings.get().getInt(Settings.DEFAULT_VIEW, Settings.DEFAULT_VIEW_DEFAULT) == Settings.DefaultView.CONTROL_FLOW_GRAPH);
+        cfgLayoutButton.setSelected(diagramViewModel.getShowCFG());
         layoutButtons.add(cfgLayoutButton);
         toolBar.add(cfgLayoutButton);
 
         toolBar.addSeparator();
-        toolBar.add(new JToggleButton(new OverviewAction(centerPanel)));
-        toolBar.add(new JToggleButton(new PredSuccAction()));
-        toolBar.add(new JToggleButton(new ShowEmptyBlocksAction(cfgLayoutAction, true)));
-        toolBar.add(new JToggleButton(new HideDuplicatesAction()));
+        toolBar.add(new JToggleButton(new PredSuccAction(diagramViewModel.getShowNodeHull())));
+        toolBar.add(new JToggleButton(new ShowEmptyBlocksAction(cfgLayoutAction, diagramViewModel.getShowEmptyBlocks())));
+        toolBar.add(new JToggleButton(new HideDuplicatesAction(diagramViewModel.getHideDuplicates())));
 
         toolBar.addSeparator();
         UndoAction undoAction = UndoAction.get(UndoAction.class);
@@ -218,12 +205,12 @@ public final class EditorTopComponent extends TopComponent {
         toolBar.add(redoAction);
 
         toolBar.addSeparator();
-
         JToggleButton globalSelectionButton = new JToggleButton(GlobalSelectionAction.get(GlobalSelectionAction.class));
         globalSelectionButton.setHideActionText(true);
         toolBar.add(globalSelectionButton);
         toolBar.add(new JToggleButton(new SelectionModeAction()));
         toolBar.addSeparator();
+        toolBar.add(new JToggleButton(new OverviewAction(centerPanel)));
         toolBar.add(new ZoomLevelAction(scene));
         toolBar.add(Box.createHorizontalGlue());
 
@@ -381,8 +368,34 @@ public final class EditorTopComponent extends TopComponent {
     }
 
     @Override
+    public void setDisplayName(String displayName) {
+        super.setDisplayName(displayName);
+        if (useBoldDisplayName) {
+            setHtmlDisplayName("<html><b>" + StringUtils.escapeHTML(getDisplayName()) + "</b>");
+        } else {
+            setHtmlDisplayName(getDisplayName());
+        }
+    }
+
+    private void setBoldDisplayName(boolean bold) {
+        useBoldDisplayName = bold;
+        setDisplayName(getDisplayName());
+    }
+
+    @Override
     protected void componentActivated() {
         super.componentActivated();
+        getModel().activateModel();
+        WindowManager manager = WindowManager.getDefault();
+        for (Mode m : manager.getModes()) {
+            for (TopComponent topComponent : manager.getOpenedTopComponents(m)) {
+                if (topComponent instanceof EditorTopComponent) {
+                    EditorTopComponent editor = (EditorTopComponent) topComponent;
+                    editor.setBoldDisplayName(false);
+                }
+            }
+        }
+        setBoldDisplayName(true);
         quickSearchToolbar.add(quickSearchPresenter);
         quickSearchPresenter.revalidate();
     }
@@ -390,6 +403,32 @@ public final class EditorTopComponent extends TopComponent {
     @Override
     public UndoRedo getUndoRedo() {
         return scene.getUndoRedo();
+    }
+
+    public void resetUndoRedo() {
+        scene.resetUndoRedoManager();
+    }
+
+    @Override
+    public TopComponent cloneComponent() {
+        DiagramViewModel model = new DiagramViewModel(getModel());
+        model.setGlobalSelection(false, false);
+        EditorTopComponent etc = new EditorTopComponent(model);
+
+        Set<InputNode> selectedNodes = new HashSet<>();
+        for (Figure figure : getModel().getSelectedFigures()) {
+            selectedNodes.add(figure.getInputNode());
+        }
+        etc.addSelectedNodes(selectedNodes, false);
+        model.setGlobalSelection(GlobalSelectionAction.get(GlobalSelectionAction.class).isSelected(), false);
+        etc.resetUndoRedo();
+
+        int currentZoomLevel = scene.getZoomPercentage();
+        SwingUtilities.invokeLater(() -> {
+            etc.setZoomLevel(currentZoomLevel);
+            etc.centerSelectedNodes();
+        });
+        return etc;
     }
 
     /** This method is called from within the constructor to

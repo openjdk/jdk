@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,15 +45,15 @@ public class TestPreconditions {
         counts = {IRNode.LOOP, ">= 1000"})
     public static void testApplyIfOnly() {}
 
-    // The IR check should not be applied, since the CPU feature does not exist.
+    // The IR check should not be applied, since asimd is aarch64 and sse intel.
     @Test
-    @IR(applyIfCPUFeature = {"this-feature-does-not-exist-at-all", "true"},
+    @IR(applyIfCPUFeatureAnd = {"asimd", "true", "sse", "true"},
         counts = {IRNode.LOOP, ">= 1000"})
     public static void testApplyIfCPUFeatureOnly() {}
 
-    // The IR check should not be applied, since the CPU feature does not exist.
+    // The IR check should not be applied, since asimd is aarch64 and sse intel.
     @Test
-    @IR(applyIfCPUFeature = {"this-feature-does-not-exist-at-all", "true"},
+    @IR(applyIfCPUFeatureAnd = {"asimd", "true", "sse", "true"},
         applyIf = {"LoopMaxUnroll", "= 8"},
         counts = {IRNode.LOOP, ">= 1000"})
     public static void testApplyBoth() {}
