@@ -161,6 +161,7 @@ public class AuthCache {
         var is2 = urlc2.getInputStream();
         is2.readAllBytes();
         is2.close();
+        urlc1 = urlc2 = null;
 
         boolean a1Called = a1.wasCalled();
         boolean a2Called = a2.wasCalled();

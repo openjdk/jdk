@@ -226,7 +226,7 @@ public abstract class AuthenticationInfo extends AuthCacheValue implements Clone
         this.port = port;
         this.realm = realm;
         this.path = null;
-        this.authcache = acache == null ? cache : acache;
+        this.authcache = acache == null ? defCache : acache;
     }
 
     public Object clone() {
@@ -260,7 +260,7 @@ public abstract class AuthenticationInfo extends AuthCacheValue implements Clone
         else {
             this.path = reducePath (urlPath);
         }
-        this.authcache = acache == null ? cache : acache;
+        this.authcache = acache == null ? defCache : acache;
     }
 
     /*
@@ -329,7 +329,7 @@ public abstract class AuthenticationInfo extends AuthCacheValue implements Clone
      */
     static AuthenticationInfo getAuth(String key, URL url, AuthCacheImpl authcache) {
         // use default cache if none supplied
-        authcache = authcache == null ? cache : authcache;
+        authcache = authcache == null ? defCache : authcache;
         if (url == null) {
             return (AuthenticationInfo)authcache.get (key, null);
         } else {
@@ -345,7 +345,7 @@ public abstract class AuthenticationInfo extends AuthCacheValue implements Clone
     static AuthenticationInfo getProxyAuth(String host, int port, AuthCacheImpl authcache) {
         String key = PROXY_AUTHENTICATION + "::" + host.toLowerCase() + ":" + port;
         // use default cache if none supplied
-        authcache = authcache == null ? cache : authcache;
+        authcache = authcache == null ? defCache : authcache;
         AuthenticationInfo result = (AuthenticationInfo) authcache.get(key, null);
         return result;
     }
@@ -363,7 +363,7 @@ public abstract class AuthenticationInfo extends AuthCacheValue implements Clone
     }
 
     private static AuthenticationInfo getCachedProxyAuth(String key, AuthCacheImpl authcache) {
-        authcache = authcache == null ? cache : authcache;
+        authcache = authcache == null ? defCache : authcache;
         return (AuthenticationInfo) authcache.get(key, null);
     }
 

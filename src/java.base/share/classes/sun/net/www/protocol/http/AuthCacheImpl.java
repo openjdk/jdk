@@ -27,9 +27,12 @@ package sun.net.www.protocol.http;
 
 import java.lang.invoke.MethodHandles;
 import java.net.Authenticator;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.ListIterator;
 import java.util.HashMap;
+import java.util.Map;
+import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -109,30 +112,15 @@ public class AuthCacheImpl implements AuthCache {
         }
     }
 
-    @FunctionalInterface
-    public interface AuthCacheAccess {
-        public AuthCacheImpl getCache(Authenticator a);
-    }
+    private static Map<Authenticator,AuthCacheImpl> caches =
+        Collections.synchronizedMap(new WeakHashMap<>());
 
-    static AuthCacheAccess authenticatorCacheAccess;
-
-    static {
-        ensureClassInitialized(Authenticator.class);
-    }
-
-    public static void setAuthCacheAccess(AuthCacheAccess access) {
-        if (authenticatorCacheAccess == null && access != null) {
-            authenticatorCacheAccess = access;
+    public static AuthCacheImpl getAuthCacheFor(Authenticator auth) {
+        var c = caches.get(auth);
+        if (c == null) {
+            c = new AuthCacheImpl();
+            caches.put(auth, c);
         }
-    }
-
-    public static AuthCacheAccess getAuthCacheAccess() {
-        return authenticatorCacheAccess;
-    }
-
-    private static void ensureClassInitialized(Class<?> c) {
-        try {
-            MethodHandles.lookup().ensureInitialized(c);
-        } catch (IllegalAccessException e) {}
+        return c;
     }
 }

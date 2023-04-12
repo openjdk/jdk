@@ -83,7 +83,7 @@ class NegotiateAuthentication extends AuthenticationInfo {
               hci.scheme.equalsIgnoreCase("Negotiate") ? NEGOTIATE : KERBEROS,
               hci.url,
               "",
-              AuthCacheImpl.getAuthCacheAccess().getCache(hci.authenticator));
+              AuthCacheImpl.getAuthCacheFor(hci.authenticator));
         this.hci = hci;
     }
 

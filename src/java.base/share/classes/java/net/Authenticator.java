@@ -25,8 +25,6 @@
 
 package java.net;
 
-import sun.net.www.protocol.http.AuthCacheImpl;
-
 /**
  * The class Authenticator represents an object that knows how to obtain
  * authentication for a network connection.  Usually, it will do this
@@ -72,14 +70,11 @@ class Authenticator {
     private String requestingScheme;
     private URL requestingURL;
     private RequestorType requestingAuthType;
-    private final AuthCacheImpl cache;
 
     /**
      * Constructor for subclasses to call.
      */
-    public Authenticator() {
-        this.cache = new AuthCacheImpl();
-    }
+    public Authenticator() {}
 
     /**
      * The type of the entity requesting authentication.
@@ -577,13 +572,5 @@ class Authenticator {
      */
     protected RequestorType getRequestorType () {
         return requestingAuthType;
-    }
-
-    static {
-        AuthCacheImpl.setAuthCacheAccess(Authenticator::getCache);
-    }
-
-    static AuthCacheImpl getCache(Authenticator a) {
-        return a == null ? null : a.cache;
     }
 }

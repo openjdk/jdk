@@ -539,7 +539,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                         "Authenticator must be set before connecting");
             }
             authenticator = Objects.requireNonNull(auth);
-            authCache = AuthCacheImpl.getAuthCacheAccess().getCache(authenticator);
+            authCache = AuthCacheImpl.getAuthCacheFor(authenticator);
         } finally {
             unlock();
         }

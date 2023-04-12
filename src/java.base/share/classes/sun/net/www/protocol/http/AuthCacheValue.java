@@ -42,12 +42,12 @@ public abstract class AuthCacheValue {
     };
 
     /**
-     * Caches authentication info entered by user.  See cacheKey()
+     * The default authentication cache
      */
-    protected static AuthCacheImpl cache = new AuthCacheImpl();
+    protected static AuthCacheImpl defCache = new AuthCacheImpl();
 
     public static void setAuthCache (AuthCacheImpl map) {
-        cache = map;
+        defCache = map;
     }
 
     /* Package private ctor to prevent extension outside package */
