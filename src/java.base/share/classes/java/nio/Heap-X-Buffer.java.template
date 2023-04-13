@@ -284,23 +284,25 @@ class Heap$Type$Buffer$RW$
     // String and then appending the String as StringBuilder::toString
     // allocates memory for and copies all the contained chars
     //
-    private $Type$Buffer append(StringBuilder strbld, int start, int end) {
+    private $Type$Buffer append(StringBuilder sb, int start, int end) {
         checkSession();
 
         int length = end - start;
         int pos = position();
-        if (length > limit() - pos)
+        int lim = limit();
+        int rem = (pos <= lim) ? lim - pos : 0;
+        if (length > rem)
             throw new BufferOverflowException();
 
-        strbld.getChars(start, end, hb, ix(pos));
+        sb.getChars(start, end, hb, ix(pos));
         position(pos + length);
         return this;
     }
 
     public $Type$Buffer append(CharSequence csq) {
 #if[rw]
-        if (csq instanceof StringBuilder strbld)
-            return append(strbld, 0, strbld.length());
+        if (csq instanceof StringBuilder sb)
+            return append(sb, 0, sb.length());
 
         return super.append(csq);
 #else[rw]
@@ -310,8 +312,8 @@ class Heap$Type$Buffer$RW$
 
     public $Type$Buffer append(CharSequence csq, int start, int end) {
 #if[rw]
-        if (csq instanceof StringBuilder strbld)
-            return append(strbld, start, end);
+        if (csq instanceof StringBuilder sb)
+            return append(sb, start, end);
 
         return super.append(csq, start, end);
 #else[rw]

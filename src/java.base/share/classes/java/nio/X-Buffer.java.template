@@ -2044,7 +2044,6 @@ public abstract sealed class $Type$Buffer
      * @since  1.5
      */
     public $Type$Buffer append(CharSequence csq, int start, int end) {
-        CharSequence cs = (csq == null ? "null" : csq);
         if (csq instanceof CharBuffer cb) {
             int pos = position();
             int length = end - start;
@@ -2052,6 +2051,7 @@ public abstract sealed class $Type$Buffer
             position(pos + length);
             return this;
         }
+        CharSequence cs = (csq == null ? "null" : csq);
         return put(cs.subSequence(start, end).toString());
     }
 
