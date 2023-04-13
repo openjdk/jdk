@@ -33,7 +33,9 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * The Key Encapsulation Mechanism.
+ * This class provides the functionality of a Key Encapsulation Mechanism (KEM).
+ * A KEM can be used to secure symmetric keys using asymmetric or public key
+ * cryptography.
  * <p>
  * The {@code getInstance} method creates a new {@code KEM} object that
  * implements the specified algorithm.
@@ -42,13 +44,14 @@ import java.util.Objects;
  * {@code newEncapsulator} and {@code newDecapsulator} methods on the
  * same {@code KEM} object at the same time.
  * <p>
- * If no provider is specified in the {@code getInstance} method when
- * instantiating a {@code KEM} object, depending on the type of private key
- * or public key, and the optional {@code AlgorithmParameterSpec} object,
- * the {@code newEncapsulator} or {@code newDecapsulator} method
- * may return encapsulators or decapsulators from different providers. The user
- * can call the {@link Encapsulator#provider} or {@link Decapsulator#provider}
- * method to get the provider.
+ * If a provider is not specified in the {@code getInstance} method when
+ * instantiating a {@code KEM} object, the {@code newEncapsulator} and
+ * {@code newDecapsulator} method may return encapsulators or decapsulators
+ * from different providers. The provider selected is based on the parameters
+ * passed to the the {@code newEncapsulator} or {@code newDecapsulator} methods:
+ * the private or public key and the optional {@code AlgorithmParameterSpec}.
+ * The {@link Encapsulator#provider} and {@link Decapsulator#provider} methods
+ * return the selected provider."
  * <p>
  * {@code Encapsulator} and {@code Decapsulator} objects are immutable.
  * It is safe to invoke multiple {@code encapsulate} and {@code decapsulate}
@@ -386,19 +389,23 @@ public final class KEM {
     private final KEMSpi spi;
     private final Provider provider;
 
-    private KEM(KEMSpi spi, Provider provider) {
+    private final String algorithm;
+
+    private KEM(String algorithm, KEMSpi spi, Provider provider) {
         assert spi != null;
         assert provider != null;
         this.delayed = null;
         this.spi = spi;
         this.provider = provider;
+        this.algorithm = algorithm;
     }
 
-    private KEM(DelayedKEM delayed) {
+    private KEM(String algorithm, DelayedKEM delayed) {
         assert delayed != null;
         this.delayed = delayed;
         this.spi = null;
         this.provider = null;
+        this.algorithm = algorithm;
     }
 
     /**
@@ -422,12 +429,11 @@ public final class KEM {
         if (list.isEmpty()) {
             throw new NoSuchAlgorithmException(algorithm + " KEM not available");
         }
-        return new KEM(new DelayedKEM(list.toArray(new Provider.Service[0])));
+        return new KEM(algorithm, new DelayedKEM(list.toArray(new Provider.Service[0])));
     }
 
     /**
      * Returns a {@code KEM} object that implements the specified algorithm
-     * and supports the specified {@code KEMParameterSpec} parameters
      * from the specified security provider.
      *
      * @param algorithm the name of the KEM algorithm.
@@ -438,8 +444,10 @@ public final class KEM {
      * @param provider the provider. If {@code null}, this method is equivalent
      *                 to {@link #getInstance(String)}.
      * @return the new {@code KEM} object
-     * @throws NoSuchAlgorithmException if no {@code Provider} supports a
-     *         {@code KEM} implementation for the specified algorithm
+     * @throws NoSuchAlgorithmException if a {@code provider} is specified and
+     *          it does not support the specified KEM algorithm,
+     *          or if {@code provider} is {@code null} and there is no provider
+     *          that supports a KEM implementation of the specified algorithm
      * @throws NullPointerException if {@code algorithm} is {@code null}
      */
     public static KEM getInstance(String algorithm, Provider provider)
@@ -452,12 +460,11 @@ public final class KEM {
                 KEMSpi.class,
                 Objects.requireNonNull(algorithm, "null algorithm name"),
                 provider);
-        return new KEM((KEMSpi) instance.impl, instance.provider);
+        return new KEM(algorithm, (KEMSpi) instance.impl, instance.provider);
     }
 
     /**
      * Returns a {@code KEM} object that implements the specified algorithm
-     * and supports the specified {@code KEMParameterSpec} parameters
      * from the specified security provider.
      *
      * @param algorithm the name of the KEM algorithm.
@@ -468,8 +475,10 @@ public final class KEM {
      * @param provider the provider. If {@code null}, this method is equivalent
      *                 to {@link #getInstance(String)}.
      * @return the new {@code KEM} object
-     * @throws NoSuchAlgorithmException if no {@code Provider} supports a
-     *         {@code KEM} implementation for the specified algorithm
+     * @throws NoSuchAlgorithmException if a {@code provider} is specified and
+     *          it does not support the specified KEM algorithm,
+     *          or if {@code provider} is {@code null} and there is no provider
+     *          that supports a KEM implementation of the specified algorithm
      * @throws NoSuchProviderException if the specified provider is not
      *         registered in the security provider list
      * @throws NullPointerException if {@code algorithm} is {@code null}
@@ -484,20 +493,20 @@ public final class KEM {
                 KEMSpi.class,
                 Objects.requireNonNull(algorithm, "null algorithm name"),
                 provider);
-        return new KEM((KEMSpi) instance.impl, instance.provider);
+        return new KEM(algorithm, (KEMSpi) instance.impl, instance.provider);
     }
 
     /**
      * Creates a KEM encapsulator.
      * <p>
-     * The method is equivalent to {@code newEncapsulator(pk, null, null)}.
+     * This method is equivalent to {@code newEncapsulator(pk, null, null)}.
      *
      * @param pk the receiver's public key, must not be {@code null}
      * @return the encapsulator for this key
      * @throws InvalidKeyException if {@code pk} is invalid
      * @throws NullPointerException if {@code pk} is {@code null}
      * @throws UnsupportedOperationException if this method is not supported
-     *          and a {@code AlgorithmParameterSpec} must be provided
+     *          because an {@code AlgorithmParameterSpec} must be provided
      */
     public Encapsulator newEncapsulator(PublicKey pk)
             throws InvalidKeyException {
@@ -512,17 +521,17 @@ public final class KEM {
     /**
      * Creates a KEM encapsulator.
      * <p>
-     * The method is equivalent to {@code newEncapsulator(pk, null, secureRandom)}.
+     * This method is equivalent to {@code newEncapsulator(pk, null, secureRandom)}.
      *
      * @param pk the receiver's public key, must not be {@code null}
-     * @param secureRandom the source of randomness for encapsulation,
-     *                     If {@code null}, the implementation should provide
-     *                     a default one.
+     * @param secureRandom the source of randomness for encapsulation.
+     *                     If {@code} null, a default one from the
+     *                     implementation will be used.
      * @return the encapsulator for this key, not {@code null}
      * @throws InvalidKeyException if {@code pk} is invalid
      * @throws NullPointerException if {@code pk} is {@code null}
      * @throws UnsupportedOperationException if this method is not supported
-     *          and a {@code AlgorithmParameterSpec} must be provided
+     *          because an {@code AlgorithmParameterSpec} must be provided
      */
     public Encapsulator newEncapsulator(PublicKey pk, SecureRandom secureRandom)
             throws InvalidKeyException {
@@ -553,9 +562,9 @@ public final class KEM {
      *
      * @param pk the receiver's public key, must not be {@code null}
      * @param spec the optional parameter, can be {@code null}
-     * @param secureRandom the source of randomness for encapsulation,
-     *                     If {@code null}, the implementation should provide
-     *                     a default one.
+     * @param secureRandom the source of randomness for encapsulation.
+     *                     If {@code} null, a default one from the
+     *                     implementation will be used.
      * @return the encapsulator for this key, not {@code null}
      * @throws InvalidAlgorithmParameterException if {@code spec} is invalid
      *          or one is required but {@code spec} is {@code null}
@@ -574,14 +583,14 @@ public final class KEM {
     /**
      * Creates a KEM decapsulator.
      * <p>
-     * The method is equivalent to {@code newDecapsulator(sk, null)}.
+     * This method is equivalent to {@code newDecapsulator(sk, null)}.
      *
      * @param sk the receiver's private key, must not be {@code null}
      * @return the decapsulator for this key, not {@code null}
      * @throws InvalidKeyException if {@code sk} is invalid
      * @throws NullPointerException if {@code sk} is {@code null}
      * @throws UnsupportedOperationException if this method is not supported
-     *          and a {@code AlgorithmParameterSpec} must be provided
+     *          because an {@code AlgorithmParameterSpec} must be provided
      */
     public Decapsulator newDecapsulator(PrivateKey sk)
             throws InvalidKeyException {
@@ -609,5 +618,14 @@ public final class KEM {
         return delayed != null
                 ? delayed.newDecapsulator(sk, spec)
                 : new Decapsulator(spi.engineNewDecapsulator(sk, spec), provider);
+    }
+
+    /**
+     * Returns the name of the algorithm for this {@code KEM} object.
+     *
+     * @return the name of the algorithm for this {@code KEM} object.
+     */
+    public String getAlgorithm() {
+        return this.algorithm;
     }
 }

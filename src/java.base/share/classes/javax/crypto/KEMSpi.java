@@ -32,27 +32,26 @@ import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
 
 /**
- * This class defines the Service Provider Interface (SPI)
- * for the {@link KEM} class. A security provider implements this interface
- * to implement a KEM algorithm.
+ * This class defines the Service Provider Interface (SPI) for the {@link KEM}
+ * class. A security provider implements this interface to provide an
+ * implementation of a Key Encapsulation Mechanism (KEM) algorithm.
  * <p>
- * A KEM algorithm may contain a family of configurations.
- * Different configurations accept different types of keys, uses different
- * underlying cryptographic primitives, and supports different sizes of shared
- * secrets and key encapsulation messages. A configuration must be decided
+ * A KEM algorithm may support a family of configurations. Each configuration
+ * may accept different types of keys, cryptographic primitives, and sizes of
+ * shared secrets and key encapsulation messages. A configuration is defined
  * by the KEM algorithm name, the key it uses, and an optional
- * {@code AlgorithmParameterSpec} argument when creating an encapsulator or
- * decapsulator. The result of either {@link #engineNewDecapsulator} or
- * {@link #engineNewDecapsulator} must be of a single configuration,
- * where its {@link EncapsulatorSpi#engineSecretSize()} and
- * {@link EncapsulatorSpi#engineEncapsulationSize()} are constants.
+ * {@code AlgorithmParameterSpec} argument that is specified when creating
+ * an encapsulator or decapsulator. The result of calling
+ * {@link #engineNewDecapsulator} or {@link #engineNewDecapsulator} must be of
+ * a single configuration, where its {@link EncapsulatorSpi#engineSecretSize()}
+ * and {@link EncapsulatorSpi#engineEncapsulationSize()} are constants.
  * <p>
- * A {@code KEMSpi} implementation should be immutable. It should be safe to
+ * A {@code KEMSpi} implementation must be immutable. It must be safe to
  * call multiple {@code engineNewEncapsulator} and {@code engineNewDecapsulator}
  * methods at the same time.
  * <p>
- * {@code EncapsulatorSpi} and {@code DecapsulatorSpi} implementations should
- * be immutable. It should be safe to invoke multiple {@code encapsulate} and
+ * {@code EncapsulatorSpi} and {@code DecapsulatorSpi} implementations must
+ * be immutable. It must be safe to invoke multiple {@code encapsulate} and
  * {@code decapsulate} methods at the same time. Each invocation of
  * {@code encapsulate} should generate a new shared secret and key
  * encapsulation message.
@@ -208,12 +207,12 @@ public interface KEMSpi {
      * <p>
      * The caller of this method has already validated the parameters to
      * ensure that {@code pk} is not {@code null}. Therefore an implementation
-     * of this method does not to validate it.
+     * of this method does not need to validate it.
      *
      * @param pk the receiver's public key. This argument is never {@code null}.
      * @param spec the optional parameter, can be {@code null}
-     * @param secureRandom the source of randomness for encapsulation,
-     *                     If {@code null}, the implementation should provide
+     * @param secureRandom the source of randomness for encapsulation.
+     *                     If {@code null}, the implementation must provide
      *                     a default one.
      * @return the encapsulator for this key, must not be {@code null}
      * @throws InvalidAlgorithmParameterException if {@code spec} is invalid
@@ -230,10 +229,10 @@ public interface KEMSpi {
      * <p>
      * The caller of this method has already validated the parameters to
      * ensure that {@code sk} is not {@code null}. Therefore an implementation
-     * of this method does not to validate it.
+     * of this method does not need to validate it.
      *
      * @param sk the receiver's private key. This argument is never {@code null}.
-     * @param spec the parameter, can be {@code null}
+     * @param spec the optional parameter, can be {@code null}
      * @return the decapsulator for this key, must not be {@code null}
      * @throws InvalidAlgorithmParameterException if {@code spec} is invalid
      *          or one is required but {@code spec} is {@code null}

@@ -27,7 +27,7 @@ package javax.crypto;
 import java.security.GeneralSecurityException;
 
 /**
- * An {@link Exception} child class that is thrown by the
+ * An exception that is thrown by the
  * {@link javax.crypto.KEM.Decapsulator#decapsulate} method to denote an
  * error during decapsulation.
  *
