@@ -32,9 +32,23 @@ ifeq ($(call isTargetOs, windows), true)
   $(eval $(call SetupJdkLibrary, BUILD_LIBLE, \
       NAME := le, \
       OPTIMIZATION := LOW, \
-      CFLAGS := $(CFLAGS_JDKLIB), \
+      CFLAGS := $(CXXFLAGS_JDKLIB), \
       LDFLAGS := $(LDFLAGS_JDKLIB), \
       LIBS := $(JDKLIB_LIBS) user32.lib, \
+  ))
+
+  TARGETS += $(BUILD_LIBLE)
+
+endif
+
+ifeq ($(call isTargetOs, linux), true)
+
+  $(eval $(call SetupJdkLibrary, BUILD_LIBLE, \
+      NAME := le, \
+      OPTIMIZATION := LOW, \
+      CFLAGS := $(CXXFLAGS_JDKLIB), \
+      LDFLAGS := $(LDFLAGS_JDKLIB), \
+      LIBS := $(JDKLIB_LIBS) -lstdc++, \
   ))
 
   TARGETS += $(BUILD_LIBLE)
