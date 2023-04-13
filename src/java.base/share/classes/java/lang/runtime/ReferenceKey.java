@@ -31,8 +31,6 @@ import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
 import java.util.Objects;
 
-import jdk.internal.javac.PreviewFeature;
-
 /**
  * View/wrapper of keys used by the backing {@link ReferencedKeyMap}.
  * There are two style of keys; one for entries in the backing map and
@@ -42,8 +40,10 @@ import jdk.internal.javac.PreviewFeature;
  * @param <T> key type
  *
  * @since 21
+ *
+ * Warning: This class is part of PreviewFeature.Feature.STRING_TEMPLATES.
+ *          Do not rely on its availability.
  */
-@PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
 interface ReferenceKey<T> {
     /**
      * {@return the value of the unwrapped key}

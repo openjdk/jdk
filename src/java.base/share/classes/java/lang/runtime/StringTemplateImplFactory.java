@@ -33,16 +33,16 @@ import java.lang.invoke.StringConcatFactory;
 import java.util.Arrays;
 import java.util.List;
 
-import jdk.internal.javac.PreviewFeature;
-
 /**
  * This class synthesizes {@link StringTemplate StringTemplates} based on
  * fragments and bootstrap method type. Usage is primarily from
  * {@link java.lang.runtime.TemplateRuntime}.
  *
  * @since 21
+ *
+ * Warning: This class is part of PreviewFeature.Feature.STRING_TEMPLATES.
+ *          Do not rely on its availability.
  */
-@PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
 final class StringTemplateImplFactory {
 
     /**

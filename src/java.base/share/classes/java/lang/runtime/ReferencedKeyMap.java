@@ -40,8 +40,6 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import jdk.internal.javac.PreviewFeature;
-
 /**
  * This class provides management of {@link Map maps} where it is desirable to
  * remove entries automatically when the key is garbage collected. This is
@@ -78,8 +76,12 @@ import jdk.internal.javac.PreviewFeature;
  *
  * @param <K> the type of keys maintained by this map
  * @param <V> the type of mapped values
+ *
+ * @since 21
+ *
+ * Warning: This class is part of PreviewFeature.Feature.STRING_TEMPLATES.
+ *          Do not rely on its availability.
  */
-@PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
 final class ReferencedKeyMap<K, V> implements Map<K, V> {
     /**
      * true if {@link SoftReference} keys are to be used,

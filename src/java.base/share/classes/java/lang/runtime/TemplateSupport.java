@@ -32,15 +32,16 @@ import java.util.Objects;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.JavaTemplateAccess;
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * This class provides runtime support for string templates. The methods within
  * are intended for internal use only.
  *
  * @since 21
+ *
+ * Warning: This class is part of PreviewFeature.Feature.STRING_TEMPLATES.
+ *          Do not rely on its availability.
  */
-@PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
 final class TemplateSupport implements JavaTemplateAccess {
 
     /**

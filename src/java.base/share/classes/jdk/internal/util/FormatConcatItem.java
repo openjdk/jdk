@@ -25,16 +25,16 @@
 
 package jdk.internal.util;
 
-import jdk.internal.javac.PreviewFeature;
-
 /**
  * Implementations of this class provide information necessary to
  * assist {@link java.lang.invoke.StringConcatFactory} perform optimal
  * insertion.
  *
  * @since 21
+ *
+ * Warning: This class is part of PreviewFeature.Feature.STRING_TEMPLATES.
+ *          Do not rely on its availability.
  */
-@PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
 public interface FormatConcatItem {
     /**
      * Calculate the length of the insertion.

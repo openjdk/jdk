@@ -34,7 +34,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
-import jdk.internal.javac.PreviewFeature;
 import jdk.internal.misc.Unsafe;
 
 import static java.lang.invoke.MethodType.methodType;
@@ -81,8 +80,10 @@ import static java.lang.invoke.MethodType.methodType;
  * so that future improvements will not be hampered by issues of backward compatibility.
  *
  * @since 21
+ *
+ * Warning: This class is part of PreviewFeature.Feature.STRING_TEMPLATES.
+ *          Do not rely on its availability.
  */
-@PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
 final class Carriers {
     /**
      * Maximum number of components in a carrier (based on the maximum
@@ -549,7 +550,7 @@ final class Carriers {
     }
 
     /**
-     * Class used to tally ahd track the number of ints, longs and objects.
+     * Class used to tally and track the number of ints, longs and objects.
      *
      * @param longCount    number of longs and doubles
      * @param intCount     number of byte, short, int, chars and booleans
