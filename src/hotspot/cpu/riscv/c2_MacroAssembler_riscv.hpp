@@ -200,7 +200,7 @@
 
  void rvv_vsetvli(BasicType bt, int length_in_bytes, Register tmp = t0);
 
- void rvv_compare(VectorRegister dst, BasicType bt, int length_in_bytes,
+ void compare_v(VectorRegister dst, BasicType bt, int length_in_bytes,
                   VectorRegister src1, VectorRegister src2, int cond, VectorMask vm = Assembler::unmasked);
 
  // In Matcher::scalable_predicate_reg_slots,
@@ -227,7 +227,7 @@
   }
 
   // Clear vector registers independent of previous vl and vtype.
-  void rvv_clear_register(VectorRegister v) {
+  void clear_register_v(VectorRegister v) {
     vsetvli(t0, x0, Assembler::e64);
     vxor_vv(v, v, v);
   }

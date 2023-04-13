@@ -916,14 +916,14 @@ reg_class reg_flags(RFLAGS);
 // https://github.com/riscv/riscv-v-spec/blob/master/v-spec.adoc#53-vector-masking
 // The mask value used to control execution of a masked vector
 // instruction is always supplied by vector register v0.
-reg_class vectmask_reg_v0 (
+reg_class vmask_reg_v0 (
     V0
 );
 
 // Class for RVV mask registers
 // We need two more vmask registers to do the vector mask logical ops,
 // so define v30, v31 as mask register too.
-reg_class vectmask_reg (
+reg_class vmask_reg (
     V0,
     V30,
     V31
@@ -1961,7 +1961,7 @@ const bool Matcher::vector_needs_partial_operations(Node* node, const TypeVect* 
 }
 
 const RegMask* Matcher::predicate_reg_mask(void) {
-  return &_VECTMASK_REG_mask;
+  return &_VMASK_REG_mask;
 }
 
 const TypeVectMask* Matcher::predicate_reg_type(const Type* elemTy, int length) {
@@ -3596,7 +3596,7 @@ operand vReg()
 // vector instruction is always supplied by vector register v0.
 operand vRegMask_V0()
 %{
-  constraint(ALLOC_IN_RC(vectmask_reg_v0));
+  constraint(ALLOC_IN_RC(vmask_reg_v0));
   match(RegVectMask);
   match(vRegMask);
   op_cost(0);
@@ -3606,7 +3606,7 @@ operand vRegMask_V0()
 
 operand vRegMask()
 %{
-  constraint(ALLOC_IN_RC(vectmask_reg));
+  constraint(ALLOC_IN_RC(vmask_reg));
   match(RegVectMask);
   match(vRegMask_V0);
   op_cost(0);
