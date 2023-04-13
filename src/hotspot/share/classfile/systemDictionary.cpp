@@ -80,6 +80,7 @@
 #include "services/diagnosticCommand.hpp"
 #include "services/finalizerService.hpp"
 #include "services/threadService.hpp"
+#include "utilities/concurrentHashTable.inline.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/utf8.hpp"
 #if INCLUDE_CDS
@@ -89,31 +90,53 @@
 #include "jfr/jfr.hpp"
 #endif
 
-class InvokeMethodKey : public StackObj {
-  private:
-    Symbol* _symbol;
-    intptr_t _iid;
 
-  public:
-    InvokeMethodKey(Symbol* symbol, intptr_t iid) :
-        _symbol(symbol),
-        _iid(iid) {}
+class InvokeMethodEntry : public StackObj {
+  Symbol* _symbol;
+  intptr_t _iid;
+  Method*  _method;  // value
 
-    static bool key_comparison(InvokeMethodKey const &k1, InvokeMethodKey const &k2){
-        return k1._symbol == k2._symbol && k1._iid == k2._iid;
-    }
+  friend class InvokeMethodConfig;
+ public:
+  InvokeMethodEntry(Symbol* symbol, intptr_t iid) :
+      _symbol(symbol),
+      _iid(iid), _method(nullptr) {}
 
-    static unsigned int compute_hash(const InvokeMethodKey &k) {
-        Symbol* sym = k._symbol;
-        intptr_t iid = k._iid;
-        unsigned int hash = (unsigned int) sym -> identity_hash();
-        return (unsigned int) (hash ^ iid);
-    }
+  void set_method(Method* m) { _method = m; }
+  Method* method() const { return _method; }
 
+  bool equals(const InvokeMethodEntry* key, bool* is_dead) {
+    *is_dead = false; // ignored
+    return _symbol == key->_symbol && _iid == key->_iid;
+  }
+
+  unsigned int get_hash() const {
+    unsigned int hash = (unsigned int) _symbol -> identity_hash();
+    return (unsigned int) (hash ^ _iid);
+  }
 };
 
-ResourceHashtable<InvokeMethodKey, Method*, 139, AnyObj::C_HEAP, mtClass,
-                  InvokeMethodKey::compute_hash, InvokeMethodKey::key_comparison> _invoke_method_intrinsic_table;
+class InvokeMethodConfig {
+ public:
+  using Value = InvokeMethodEntry;
+
+  static unsigned int get_hash(const Value &k, bool* is_dead) {
+    *is_dead = false;
+    return k.get_hash();
+  }
+
+  static void* allocate_node(void* context, size_t size, Value const& value) {
+    value._symbol->make_permanent(); // The signature is never unloaded.
+    return AllocateHeap(size, mtClass);
+  }
+  static void free_node(void* context, void* memory, Value & value) {
+    FreeHeap(memory);
+  }
+};
+
+using InvokeMethodIntrinsicTable = ConcurrentHashTable<InvokeMethodConfig, mtClass>;
+static InvokeMethodIntrinsicTable* _invoke_method_intrinsic_table;
+
 ResourceHashtable<SymbolHandle, OopHandle, 139, AnyObj::C_HEAP, mtClass, SymbolHandle::compute_hash> _invoke_method_type_table;
 
 OopHandle   SystemDictionary::_java_system_loader;
@@ -1582,21 +1605,24 @@ void SystemDictionary::methods_do(void f(Method*)) {
     ClassLoaderDataGraph::methods_do(f);
   }
 
-  auto doit = [&] (InvokeMethodKey key, Method* method) {
-    f(method);
+  auto doit = [&] (InvokeMethodEntry* value) {
+    f(value->method());
+    return true;
   };
 
-  {
-    MutexLocker ml(InvokeMethodTable_lock);
-    _invoke_method_intrinsic_table.iterate_all(doit);
+  if (SafepointSynchronize::is_at_safepoint()) {
+    _invoke_method_intrinsic_table->do_safepoint_scan(doit);
+  } else {
+    _invoke_method_intrinsic_table->do_scan(Thread::current(), doit);
   }
-
 }
 
 // ----------------------------------------------------------------------------
 // Initialization
 
 void SystemDictionary::initialize(TRAPS) {
+ _invoke_method_intrinsic_table = new InvokeMethodIntrinsicTable(ceil_log2(139));
+
 #if INCLUDE_CDS
   SystemDictionaryShared::initialize();
 #endif
@@ -1938,41 +1964,47 @@ Method* SystemDictionary::find_method_handle_intrinsic(vmIntrinsicID iid,
          MethodHandles::is_signature_polymorphic_intrinsic(iid) &&
          iid != vmIntrinsics::_invokeGeneric,
          "must be a known MH intrinsic iid=%d: %s", iid_as_int, vmIntrinsics::name_at(iid));
+  Method* result = nullptr;
 
-  {
-    MutexLocker ml(THREAD, InvokeMethodTable_lock);
-    InvokeMethodKey key(signature, iid_as_int);
-    Method** met = _invoke_method_intrinsic_table.get(key);
-    if (met != nullptr) {
-      return *met;
-    }
+  InvokeMethodEntry key(signature, iid_as_int);
+  auto get = [&] (InvokeMethodEntry* value) {
+    // function called if value is found so is never null
+    result = value->method();
+  };
 
-    bool throw_error = false;
-    // This function could get an OOM but it is safe to call inside of a lock because
-    // throwing OutOfMemoryError doesn't call Java code.
-    methodHandle m = Method::make_method_handle_intrinsic(iid, signature, CHECK_NULL);
-    if (!Arguments::is_interpreter_only() || iid == vmIntrinsics::_linkToNative) {
-        // Generate a compiled form of the MH intrinsic
-        // linkToNative doesn't have interpreter-specific implementation, so always has to go through compiled version.
-        AdapterHandlerLibrary::create_native_wrapper(m);
-        // Check if have the compiled code.
-        throw_error = (!m->has_compiled_code());
-    }
+  bool rehash_warning; // ignored
+  bool found = _invoke_method_intrinsic_table->get(THREAD, key, get, &rehash_warning);
+  if (found) {
+    return result;
+  }
 
-    if (!throw_error) {
-      signature->make_permanent(); // The signature is never unloaded.
-      bool created = _invoke_method_intrinsic_table.put(key, m());
-      assert(created, "must be since we still hold the lock");
-      assert(Arguments::is_interpreter_only() || (m->has_compiled_code() &&
-             m->code()->entry_point() == m->from_compiled_entry()),
-             "MH intrinsic invariant");
-      return m();
+  methodHandle m = Method::make_method_handle_intrinsic(iid, signature, CHECK_NULL);
+  if (!Arguments::is_interpreter_only() || iid == vmIntrinsics::_linkToNative) {
+    // Generate a compiled form of the MH intrinsic
+    // linkToNative doesn't have interpreter-specific implementation, so always has to go through compiled version.
+    AdapterHandlerLibrary::create_native_wrapper(m);
+    // Check if have the compiled code.
+    if (!m->has_compiled_code()) {
+      THROW_MSG_NULL(vmSymbols::java_lang_VirtualMachineError(),
+                     "Out of space in CodeCache for method handle intrinsic");
     }
   }
 
-  // Throw error outside of the lock.
-  THROW_MSG_NULL(vmSymbols::java_lang_VirtualMachineError(),
-                 "Out of space in CodeCache for method handle intrinsic");
+  key.set_method(m());
+  bool created = _invoke_method_intrinsic_table->insert_get(THREAD, key, key, get);
+  if (!created) {
+    assert(result != m(), "should be different");
+    // There was already this method in the table.  Need to deallocate the one created here,
+    // and its associated small constant pool.
+    ClassLoaderData* method_cld = m->method_holder()->class_loader_data();
+    method_cld->add_to_deallocate_list(m->constants());
+    method_cld->add_to_deallocate_list(m());
+  }
+
+  assert(Arguments::is_interpreter_only() || (result->has_compiled_code() &&
+         result->code()->entry_point() == result->from_compiled_entry()),
+         "MH intrinsic invariant");
+  return result;
 }
 
 // Helper for unpacking the return value from linkMethod and linkCallSite.

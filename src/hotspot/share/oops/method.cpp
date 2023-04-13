@@ -135,8 +135,11 @@ void Method::deallocate_contents(ClassLoaderData* loader_data) {
   set_method_data(nullptr);
   MetadataFactory::free_metadata(loader_data, method_counters());
   clear_method_counters();
-  // The nmethod will be gone when we get here.
-  if (code() != nullptr) _code = nullptr;
+  // The nmethod will be gone when we get here for RedefineClasses
+  if (code() != nullptr) {
+    ((nmethod*)_code)->flush();
+    _code = nullptr;
+  }
 }
 
 void Method::release_C_heap_structures() {
