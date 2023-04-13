@@ -31,6 +31,7 @@ import java.lang.invoke.ConstantCallSite;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.lang.invoke.MutableCallSite;
 import java.util.stream.Stream;
 
 import static java.util.Objects.requireNonNull;
@@ -51,6 +52,7 @@ public class SwitchBootstraps {
 
     private static final MethodHandle DO_TYPE_SWITCH;
     private static final MethodHandle DO_ENUM_SWITCH;
+    private static final MethodHandle LAZY_DO_ENUM_SWITCH;
 
     static {
         try {
@@ -58,6 +60,8 @@ public class SwitchBootstraps {
                                            MethodType.methodType(int.class, Object.class, int.class, Object[].class));
             DO_ENUM_SWITCH = LOOKUP.findStatic(SwitchBootstraps.class, "doEnumSwitch",
                                            MethodType.methodType(int.class, Enum.class, int.class, Object[].class));
+            LAZY_DO_ENUM_SWITCH = LOOKUP.findStatic(SwitchBootstraps.class, "lazyDoEnumSwitch",
+                                                    MethodType.methodType(int.class, Enum.class, int.class, Object[].class, MethodHandles.Lookup.class, Class.class, MutableCallSite.class));
         }
         catch (ReflectiveOperationException e) {
             throw new ExceptionInInitializerError(e);
@@ -235,13 +239,51 @@ public class SwitchBootstraps {
         labels = labels.clone();
 
         Class<?> enumClass = invocationType.parameterType(0);
+        Stream.of(labels).forEach(l -> validateEnumLabel(enumClass, l));
+        MutableCallSite result =
+                new MutableCallSite(invocationType);
+
+        MethodHandle temporary =
+                MethodHandles.insertArguments(LAZY_DO_ENUM_SWITCH, 2, labels, lookup, enumClass, result);
+        temporary = temporary.asType(invocationType);
+
+        result.setTarget(temporary);
+
+        return result;
+    }
+
+    private static <E extends Enum<E>> void validateEnumLabel(Class<?> enumClassTemplate, Object label) {
+        if (label == null) {
+            throw new IllegalArgumentException("null label found");
+        }
+        Class<?> labelClass = label.getClass();
+        if (labelClass == Class.class) {
+            if (label != enumClassTemplate) {
+                throw new IllegalArgumentException("the Class label: " + label +
+                                                   ", expected the provided enum class: " + enumClassTemplate);
+            }
+        } else if (labelClass == String.class) {
+            //OK
+        } else {
+            throw new IllegalArgumentException("label with illegal type found: " + labelClass +
+                                               ", expected label of type either String or Class");
+        }
+    }
+
+    private static int lazyDoEnumSwitch(Enum<?> target, int startIndex, Object[] labels, MethodHandles.Lookup lookup, Class<?> enumClass, MutableCallSite callSite) throws Throwable {
+        if (target == null) {
+            return -1;
+        }
+
         labels = Stream.of(labels).map(l -> convertEnumConstants(lookup, enumClass, l)).toArray();
 
-        MethodHandle target =
+        MethodHandle optimized =
                 MethodHandles.insertArguments(DO_ENUM_SWITCH, 2, (Object) labels);
-        target = target.asType(invocationType);
+        optimized = optimized.asType(callSite.type());
 
-        return new ConstantCallSite(target);
+        callSite.setTarget(optimized);
+
+        return (int) optimized.invoke(target, startIndex);
     }
 
     private static <E extends Enum<E>> Object convertEnumConstants(MethodHandles.Lookup lookup, Class<?> enumClassTemplate, Object label) {

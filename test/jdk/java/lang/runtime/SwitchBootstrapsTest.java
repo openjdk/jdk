@@ -29,10 +29,13 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.runtime.SwitchBootstraps;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.testng.annotations.Test;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 
 /**
@@ -187,5 +190,28 @@ public class SwitchBootstrapsTest {
         } catch (IllegalArgumentException ex) {
             //OK
         }
+    }
+
+    private static AtomicBoolean enumInitialized = new AtomicBoolean();
+    public void testEnumInitialization() throws Throwable {
+        enumInitialized.set(false);
+
+        enum E {
+            A;
+
+            static {
+                enumInitialized.set(true);
+            }
+        }
+
+        MethodType enumSwitchType = MethodType.methodType(int.class, E.class, int.class);
+
+        CallSite invocation = (CallSite) BSM_ENUM_SWITCH.invoke(MethodHandles.lookup(), "", enumSwitchType, new Object[] {"A"});
+        assertFalse(enumInitialized.get());
+        invocation.dynamicInvoker().invoke(null, 0);
+        assertFalse(enumInitialized.get());
+        E e = E.A;
+        assertTrue(enumInitialized.get());
+        invocation.dynamicInvoker().invoke(e, 0);
     }
 }
