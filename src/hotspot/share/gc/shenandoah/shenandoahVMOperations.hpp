@@ -62,7 +62,7 @@ class VM_ShenandoahInitMark: public VM_ShenandoahOperation {
 private:
   ShenandoahConcurrentGC* const _gc;
 public:
-  explicit VM_ShenandoahInitMark(ShenandoahConcurrentGC* gc) :
+  VM_ShenandoahInitMark(ShenandoahConcurrentGC* gc) :
     VM_ShenandoahOperation(),
     _gc(gc) {};
   VM_Operation::VMOp_Type type() const { return VMOp_ShenandoahInitMark; }
@@ -74,7 +74,7 @@ class VM_ShenandoahFinalMarkStartEvac: public VM_ShenandoahOperation {
 private:
   ShenandoahConcurrentGC* const _gc;
 public:
-  explicit VM_ShenandoahFinalMarkStartEvac(ShenandoahConcurrentGC* gc) :
+  VM_ShenandoahFinalMarkStartEvac(ShenandoahConcurrentGC* gc) :
     VM_ShenandoahOperation(),
     _gc(gc) {};
   VM_Operation::VMOp_Type type() const { return VMOp_ShenandoahFinalMarkStartEvac; }
@@ -133,11 +133,12 @@ public:
 
 class VM_ShenandoahFinalRoots: public VM_ShenandoahOperation {
   ShenandoahConcurrentGC* const _gc;
-  bool _incr_region_ages;
+  const bool _incr_region_ages;
 public:
   VM_ShenandoahFinalRoots(ShenandoahConcurrentGC* gc, bool incr_region_ages) :
     VM_ShenandoahOperation(),
-    _gc(gc), _incr_region_ages(incr_region_ages) {};
+    _gc(gc),
+    _incr_region_ages(incr_region_ages) {};
   VM_Operation::VMOp_Type type() const { return VMOp_ShenandoahFinalRoots; }
   const char* name()             const { return "Shenandoah Final Roots"; }
   virtual void doit();

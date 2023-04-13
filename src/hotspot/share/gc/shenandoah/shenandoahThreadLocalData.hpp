@@ -97,7 +97,6 @@ private:
 
     // TODO: Preserve these stats somewhere for mutator threads.
     delete _evacuation_stats;
-    _evacuation_stats = nullptr;
   }
 
   static ShenandoahThreadLocalData* data(Thread* thread) {
@@ -208,6 +207,7 @@ public:
   }
 
   static void subtract_from_plab_evacuated(Thread* thread, size_t increment) {
+    // TODO: Assert underflow
     data(thread)->_plab_evacuated -= increment;
   }
 
@@ -224,6 +224,7 @@ public:
   }
 
   static void subtract_from_plab_promoted(Thread* thread, size_t increment) {
+    // TODO: Assert underflow
     data(thread)->_plab_promoted -= increment;
   }
 

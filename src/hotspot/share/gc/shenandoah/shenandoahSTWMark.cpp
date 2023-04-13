@@ -40,24 +40,24 @@
 
 template<ShenandoahGenerationType GENERATION>
 class ShenandoahInitMarkRootsClosure : public OopClosure {
- private:
+private:
   ShenandoahObjToScanQueue* const _queue;
   ShenandoahMarkingContext* const _mark_context;
 
   template <class T>
-    inline void do_oop_work(T* p);
+  inline void do_oop_work(T* p);
 
- public:
+public:
   ShenandoahInitMarkRootsClosure(ShenandoahObjToScanQueue* q);
 
   void do_oop(narrowOop* p) { do_oop_work(p); }
   void do_oop(oop* p)       { do_oop_work(p); }
 };
 
-template<ShenandoahGenerationType GENERATION>
+template <ShenandoahGenerationType GENERATION>
 ShenandoahInitMarkRootsClosure<GENERATION>::ShenandoahInitMarkRootsClosure(ShenandoahObjToScanQueue* q) :
-_queue(q),
-_mark_context(ShenandoahHeap::heap()->marking_context()) {
+  _queue(q),
+  _mark_context(ShenandoahHeap::heap()->marking_context()) {
 }
 
 template <ShenandoahGenerationType GENERATION>

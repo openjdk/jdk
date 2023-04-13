@@ -60,6 +60,7 @@ public:
   inline bool mark_weak(oop obj);
 
   // Simple versions of marking accessors, to be used outside of marking (e.g. no possible concurrent updates)
+  // TODO: Do these really need to be const?
   inline bool is_marked(const oop) const;
   inline bool is_marked_strong(const oop obj) const;
   inline bool is_marked_weak(const oop obj) const;

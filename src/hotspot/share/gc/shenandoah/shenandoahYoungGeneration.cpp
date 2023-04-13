@@ -37,10 +37,6 @@ ShenandoahYoungGeneration::ShenandoahYoungGeneration(uint max_queues, size_t max
   _old_gen_task_queues(nullptr) {
 }
 
-const char* ShenandoahYoungGeneration::name() const {
-  return "YOUNG";
-}
-
 void ShenandoahYoungGeneration::set_concurrent_mark_in_progress(bool in_progress) {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   heap->set_concurrent_young_mark_in_progress(in_progress);

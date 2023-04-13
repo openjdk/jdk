@@ -45,7 +45,7 @@ class outputStream;
   f(CNT_PREFIX ## CLDUnlink,                DESC_PREFIX "Unlink CLDs")                 \
   f(CNT_PREFIX ## WeakRefProc,              DESC_PREFIX "Weak References")             \
   f(CNT_PREFIX ## ParallelMark,             DESC_PREFIX "Parallel Mark")               \
-  f(CNT_PREFIX ## ScanClusters,             DESC_PREFIX "Scan Clusters")
+  f(CNT_PREFIX ## ScanClusters,             DESC_PREFIX "Scan Clusters")               \
   // end
 
 #define SHENANDOAH_PHASE_DO(f)                                                         \
@@ -261,8 +261,10 @@ private:
   double _start_time;
   EventGCPhaseParallel _event;
 public:
-  ShenandoahWorkerTimingsTracker(ShenandoahPhaseTimings::Phase phase, ShenandoahPhaseTimings::ParPhase par_phase,
-                                 uint worker_id, bool cumulative = false);
+  ShenandoahWorkerTimingsTracker(ShenandoahPhaseTimings::Phase phase,
+                                 ShenandoahPhaseTimings::ParPhase par_phase,
+                                 uint worker_id,
+                                 bool cumulative = false);
   ~ShenandoahWorkerTimingsTracker();
 };
 
