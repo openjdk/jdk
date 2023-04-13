@@ -230,7 +230,7 @@ sealed interface Digits permits Digits.DecimalDigits, Digits.HexDigits, Digits.O
         private static final short[] DIGITS;
 
         /**
-         * Singleton instance of HexDigits.
+         * Singleton instance of OctalDigits.
          */
         static final Digits INSTANCE = new OctalDigits();
 
