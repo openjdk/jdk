@@ -622,8 +622,8 @@ static bool no_flip_branch(Block *b) {
 void PhaseCFG::convert_NeverBranch_to_Goto(Block *b) {
   int end_idx = b->end_idx();
   NeverBranchNode* never_branch = b->get_node(end_idx)->as_NeverBranch();
-  Block* succ = get_block_for_node(never_branch->proj_out(0)->unique_ctrl_out_or_null());
-  Block* dead = get_block_for_node(never_branch->proj_out(1)->unique_ctrl_out_or_null());
+  Block* succ = get_block_for_node(never_branch->proj_out(0)->unique_ctrl_out());
+  Block* dead = get_block_for_node(never_branch->proj_out(1)->unique_ctrl_out());
   assert(succ == b->_succs[0] || succ == b->_succs[1], "succ is a successor");
   assert(dead == b->_succs[0] || dead == b->_succs[1], "dead is a successor");
 

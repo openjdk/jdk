@@ -261,7 +261,7 @@ oop HeapShared::get_root(int index, bool clear) {
 void HeapShared::clear_root(int index) {
   assert(index >= 0, "sanity");
   assert(UseSharedSpaces, "must be");
-  if (ArchiveHeapLoader::is_fully_available()) {
+  if (ArchiveHeapLoader::is_in_use()) {
     if (log_is_enabled(Debug, cds, heap)) {
       oop old = roots()->obj_at(index);
       log_debug(cds, heap)("Clearing root %d: was " PTR_FORMAT, index, p2i(old));
@@ -378,8 +378,6 @@ void HeapShared::remove_scratch_objects(Klass* k) {
 }
 
 void HeapShared::archive_java_mirrors() {
-  init_seen_objects_table();
-
   for (int i = T_BOOLEAN; i < T_VOID+1; i++) {
     BasicType bt = (BasicType)i;
     if (!is_reference_type(bt)) {
@@ -404,7 +402,7 @@ void HeapShared::archive_java_mirrors() {
     if (m != nullptr) {
       Klass* buffered_k = ArchiveBuilder::get_buffered_klass(orig_k);
       bool success = archive_reachable_objects_from(1, _default_subgraph_info, m, /*is_closed_archive=*/ false);
-      guarantee(success, "scratch mirrors should not point to any unachivable objects");
+      guarantee(success, "scratch mirrors must point to only archivable objects");
       buffered_k->set_archived_java_mirror(append_root(m));
       ResourceMark rm;
       log_trace(cds, heap, mirror)(
@@ -425,8 +423,16 @@ void HeapShared::archive_java_mirrors() {
       }
     }
   }
+}
 
-  delete_seen_objects_table();
+void HeapShared::archive_strings() {
+  oop shared_strings_array = StringTable::init_shared_table(_dumped_interned_strings);
+  bool success = archive_reachable_objects_from(1, _default_subgraph_info, shared_strings_array, /*is_closed_archive=*/ false);
+  // We must succeed because:
+  // - _dumped_interned_strings do not contain any large strings.
+  // - StringTable::init_shared_table() doesn't create any large arrays.
+  assert(success, "shared strings array must not point to arrays or strings that are too large to archive");
+  StringTable::set_shared_strings_array_index(append_root(shared_strings_array));
 }
 
 void HeapShared::mark_native_pointers(oop orig_obj) {
@@ -501,7 +507,7 @@ void HeapShared::check_enum_obj(int level,
 
 // See comments in HeapShared::check_enum_obj()
 bool HeapShared::initialize_enum_klass(InstanceKlass* k, TRAPS) {
-  if (!ArchiveHeapLoader::is_fully_available()) {
+  if (!ArchiveHeapLoader::is_in_use()) {
     return false;
   }
 
@@ -556,7 +562,6 @@ void HeapShared::archive_objects(GrowableArray<MemRegion>* closed_regions,
   }
 
   ArchiveHeapWriter::write(_pending_roots, closed_regions, open_regions, closed_bitmaps, open_bitmaps);
-  StringTable::write_shared_table(_dumped_interned_strings);
 }
 
 void HeapShared::copy_interned_strings() {
@@ -564,14 +569,13 @@ void HeapShared::copy_interned_strings() {
 
   auto copier = [&] (oop s, bool value_ignored) {
     assert(s != nullptr, "sanity");
-    if (!ArchiveHeapWriter::is_string_too_large_to_archive(s)) {
-      bool success = archive_reachable_objects_from(1, _default_subgraph_info,
-                                                    s, /*is_closed_archive=*/true);
-      assert(success, "must be");
-      // Prevent string deduplication from changing the value field to
-      // something not in the archive.
-      java_lang_String::set_deduplication_forbidden(s);
-    }
+    assert(!ArchiveHeapWriter::is_string_too_large_to_archive(s), "large strings must have been filtered");
+    bool success = archive_reachable_objects_from(1, _default_subgraph_info,
+                                                  s, /*is_closed_archive=*/true);
+    assert(success, "string must be short enough to be archived");
+    // Prevent string deduplication from changing the value field to
+    // something not in the archive.
+    java_lang_String::set_deduplication_forbidden(s);
   };
   _dumped_interned_strings->iterate_all(copier);
 
@@ -589,10 +593,18 @@ void HeapShared::copy_closed_objects() {
                            false /* is_full_module_graph */);
 }
 
+void HeapShared::copy_special_open_objects() {
+  // Archive special objects that do not belong to any subgraphs
+  init_seen_objects_table();
+  archive_java_mirrors();
+  archive_strings();
+  delete_seen_objects_table();
+}
+
 void HeapShared::copy_open_objects() {
   assert(HeapShared::can_write(), "must be");
 
-  archive_java_mirrors();
+  copy_special_open_objects();
 
   archive_object_subgraphs(open_archive_subgraph_entry_fields,
                            false /* is_closed_archive */,
@@ -861,7 +873,7 @@ void HeapShared::serialize_root(SerializeClosure* soc) {
     assert(oopDesc::is_oop_or_null(roots_oop), "is oop");
     // Create an OopHandle only if we have actually mapped or loaded the roots
     if (roots_oop != nullptr) {
-      assert(ArchiveHeapLoader::is_fully_available(), "must be");
+      assert(ArchiveHeapLoader::is_in_use(), "must be");
       _roots = OopHandle(Universe::vm_global(), roots_oop);
     }
   } else {
@@ -921,7 +933,7 @@ static void verify_the_heap(Klass* k, const char* which) {
 // this case, we will not load the ArchivedKlassSubGraphInfoRecord and will clear its roots.
 void HeapShared::resolve_classes(JavaThread* current) {
   assert(UseSharedSpaces, "runtime only!");
-  if (!ArchiveHeapLoader::is_fully_available()) {
+  if (!ArchiveHeapLoader::is_in_use()) {
     return; // nothing to do
   }
   resolve_classes_for_subgraphs(current, closed_archive_subgraph_entry_fields);
@@ -954,7 +966,7 @@ void HeapShared::resolve_classes_for_subgraph_of(JavaThread* current, Klass* k) 
 
 void HeapShared::initialize_from_archived_subgraph(JavaThread* current, Klass* k) {
   JavaThread* THREAD = current;
-  if (!ArchiveHeapLoader::is_fully_available()) {
+  if (!ArchiveHeapLoader::is_in_use()) {
     return; // nothing to do
   }
 

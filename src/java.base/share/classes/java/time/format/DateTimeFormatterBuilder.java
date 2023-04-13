@@ -1525,6 +1525,8 @@ public final class DateTimeFormatterBuilder {
      * @param requestedTemplate the requested template to use, not null
      * @return this, for chaining, not null
      * @throws IllegalArgumentException if {@code requestedTemplate} is invalid
+     *
+     * @spec https://www.unicode.org/reports/tr35 Unicode Locale Data Markup Language (LDML)
      * @see #appendPattern(String)
      * @since 19
      */
@@ -1608,6 +1610,8 @@ public final class DateTimeFormatterBuilder {
      *
      * @param style the text style to use, not null
      * @return this, for chaining, not null
+     *
+     * @spec https://www.unicode.org/reports/tr35 Unicode Locale Data Markup Language (LDML)
      * @since 16
      */
     public DateTimeFormatterBuilder appendDayPeriodText(TextStyle style) {
@@ -4516,9 +4520,9 @@ public final class DateTimeFormatterBuilder {
 
         // cache per instance for now
         private final Map<Locale, Entry<Integer, SoftReference<PrefixTree>>>
-            cachedTree = new HashMap<>();
+            cachedTree = HashMap.newHashMap(1);
         private final Map<Locale, Entry<Integer, SoftReference<PrefixTree>>>
-            cachedTreeCI = new HashMap<>();
+            cachedTreeCI = HashMap.newHashMap(1);
 
         @Override
         protected PrefixTree getTree(DateTimeParseContext context) {
@@ -4527,9 +4531,8 @@ public final class DateTimeFormatterBuilder {
             }
             Locale locale = context.getLocale();
             boolean isCaseSensitive = context.isCaseSensitive();
-            Set<String> regionIds = new HashSet<>(ZoneRulesProvider.getAvailableZoneIds());
-            Set<String> nonRegionIds = new HashSet<>(64);
-            int regionIdsSize = regionIds.size();
+            Set<String> availableZoneIds = ZoneRulesProvider.getAvailableZoneIds();
+            int regionIdsSize = availableZoneIds.size();
 
             Map<Locale, Entry<Integer, SoftReference<PrefixTree>>> cached =
                 isCaseSensitive ? cachedTree : cachedTreeCI;
@@ -4542,6 +4545,8 @@ public final class DateTimeFormatterBuilder {
                 (tree = entry.getValue().get()) == null)) {
                 tree = PrefixTree.newTree(context);
                 zoneStrings = TimeZoneNameUtility.getZoneStrings(locale);
+                Set<String> nonRegionIds = HashSet.newHashSet(64);
+                Set<String> regionIds = new HashSet<>(availableZoneIds);
                 for (String[] names : zoneStrings) {
                     String zid = names[0];
                     if (!regionIds.remove(zid)) {
