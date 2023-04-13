@@ -164,7 +164,7 @@ public final class FormatProcessor implements Processor<String, RuntimeException
      * a {@link StringTemplate} will produce a result equivalent to that provided by
      * {@link FormatProcessor#process(StringTemplate)}. This {@link MethodHandle}
      * is used by {@link FormatProcessor#FMT} and the ilk to perform a more
-     * specialized composition of a result. This is specialization is done by
+     * specialized composition of a result. This specialization is done by
      * prescanning the fragments and value types of a {@link StringTemplate}.
      * <p>
      * Process template expressions can be specialized  when the processor is
