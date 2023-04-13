@@ -628,6 +628,14 @@ void SharedRuntime::throw_and_post_jvmti_exception(JavaThread* current, Symbol* 
 }
 
 #if INCLUDE_JVMTI
+JRT_ENTRY(void, SharedRuntime::notify_jvmti_object_alloc(oopDesc* o, JavaThread* current))
+  Handle h = Handle(current, o);
+  if (JvmtiExport::should_post_vm_object_alloc()) {
+    JvmtiExport::post_vm_object_alloc(current, o);
+  }
+  current->set_vm_result(h());
+JRT_END
+
 JRT_ENTRY(void, SharedRuntime::notify_jvmti_mount(oopDesc* vt, jboolean hide, jboolean first_mount, JavaThread* current))
   jobject vthread = JNIHandles::make_local(const_cast<oopDesc*>(vt));
 
