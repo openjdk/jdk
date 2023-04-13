@@ -1035,18 +1035,18 @@ void InstanceKlass::add_initialization_error(JavaThread* current, Handle excepti
   // If the initialization error is OOM, this might not work, but if GC kicks in
   // this would be still be helpful.
   JavaThread* THREAD = current;
-  Handle cause = java_lang_Throwable::get_cause_with_stack_trace(exception, THREAD);
-  if (HAS_PENDING_EXCEPTION || cause.is_null()) {
-    CLEAR_PENDING_EXCEPTION;
+  Handle init_error = java_lang_Throwable::create_initialization_error(current, exception);
+  ResourceMark rm(THREAD);
+  if (init_error.is_null()) {
+    log_trace(class, init)("Initialization error is null for class %s", external_name());
     return;
   }
 
   MutexLocker ml(THREAD, ClassInitError_lock);
-  OopHandle elem = OopHandle(Universe::vm_global(), cause());
-  bool created = false;
+  OopHandle elem = OopHandle(Universe::vm_global(), init_error());
+  bool created;
   _initialization_error_table.put_if_absent(this, elem, &created);
   assert(created, "Initialization is single threaded");
-  ResourceMark rm(THREAD);
   log_trace(class, init)("Initialization error added for class %s", external_name());
 }
 

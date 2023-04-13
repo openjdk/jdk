@@ -569,7 +569,7 @@ class java_lang_Throwable: AllStatic {
   static void get_stack_trace_elements(Handle throwable, objArrayHandle stack_trace, TRAPS);
 
   // For recreating class initialization error exceptions.
-  static Handle get_cause_with_stack_trace(Handle throwable, TRAPS);
+  static Handle create_initialization_error(JavaThread* current, Handle throwable);
 
   // Printing
   static void print(oop throwable, outputStream* st);
