@@ -66,10 +66,12 @@ static inline JvmtiAgent* head(JvmtiAgent** list) {
 }
 
 
-// The storage list is a single cas-linked-list, to allow for concurrent iterations. Especially during initial loading of agents,
-// there exist an order requirement to iterate oldest -> newest. Our concurrent storage linked-list is newest -> oldest.
+// The storage list is a single cas-linked-list, to allow for concurrent iterations.
+// Especially during initial loading of agents, there exist an order requirement to iterate oldest -> newest.
+// Our concurrent storage linked-list is newest -> oldest.
 // The correct order is preserved by the iterator, by storing a filtered set of entries in a stack.
-JvmtiAgentList::Iterator::Iterator(JvmtiAgent** list, Filter filter) : _stack(new GrowableArrayCHeap<JvmtiAgent*, mtServiceability>(16)), _filter(filter) {
+JvmtiAgentList::Iterator::Iterator(JvmtiAgent** list, Filter filter) :
+  _stack(new GrowableArrayCHeap<JvmtiAgent*, mtServiceability>(16)), _filter(filter) {
   JvmtiAgent* next = head(list);
   while (next != nullptr) {
     next = select(next);
