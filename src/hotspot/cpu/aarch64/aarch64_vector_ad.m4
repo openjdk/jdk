@@ -4090,7 +4090,7 @@ instruct vmask_gen_I(pReg pd, iRegIorL2I src, rFlagsReg cr) %{
   format %{ "vmask_gen_I $pd, $src\t# KILL cr" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
-    __ sve_whilelow($pd$$PRegister, __ elemType_to_regVariant(bt), zr, $src$$Register);
+    __ sve_whileltw($pd$$PRegister, __ elemType_to_regVariant(bt), zr, $src$$Register);
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -4102,7 +4102,7 @@ instruct vmask_gen_L(pReg pd, iRegL src, rFlagsReg cr) %{
   format %{ "vmask_gen_L $pd, $src\t# KILL cr" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
-    __ sve_whilelo($pd$$PRegister, __ elemType_to_regVariant(bt), zr, $src$$Register);
+    __ sve_whilelt($pd$$PRegister, __ elemType_to_regVariant(bt), zr, $src$$Register);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -4126,7 +4126,7 @@ instruct vmask_gen_sub(pReg pd, iRegL src1, iRegL src2, rFlagsReg cr) %{
   format %{ "vmask_gen_sub $pd, $src2, $src1\t# KILL cr" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
-    __ sve_whilelo($pd$$PRegister, __ elemType_to_regVariant(bt), $src2$$Register, $src1$$Register);
+    __ sve_whilelt($pd$$PRegister, __ elemType_to_regVariant(bt), $src2$$Register, $src1$$Register);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -4852,7 +4852,7 @@ instruct mcompress(pReg dst, pReg pg, rFlagsReg cr) %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     Assembler::SIMD_RegVariant size = __ elemType_to_regVariant(bt);
     __ sve_cntp(rscratch1, size, ptrue, $pg$$PRegister);
-    __ sve_whilelo(as_PRegister($dst$$reg), size, zr, rscratch1);
+    __ sve_whilelt(as_PRegister($dst$$reg), size, zr, rscratch1);
   %}
   ins_pipe(pipe_slow);
 %}

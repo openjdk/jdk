@@ -807,7 +807,7 @@ class StubGenerator: public StubCodeGenerator {
 
     {
       Label L1, L2;
-      __ andi(t0, count, 4);
+      __ test_bit(t0, count, 2);
       __ beqz(t0, L1);
 
       __ ld(tmp_reg0, Address(s, 1 * unit));
@@ -829,7 +829,7 @@ class StubGenerator: public StubCodeGenerator {
         __ addi(d, d, bias);
       }
 
-      __ andi(t0, count, 2);
+      __ test_bit(t0, count, 1);
       __ beqz(t0, L2);
       if (direction == copy_backwards) {
         __ addi(s, s, 2 * unit);
@@ -1695,7 +1695,7 @@ class StubGenerator: public StubCodeGenerator {
     __ beqz(t0, L_long_aligned);
     __ andi(t0, t0, BytesPerInt - 1);
     __ beqz(t0, L_int_aligned);
-    __ andi(t0, t0, 1);
+    __ test_bit(t0, t0, 0);
     __ beqz(t0, L_short_aligned);
     __ j(RuntimeAddress(byte_copy_entry));
 
@@ -1776,7 +1776,7 @@ class StubGenerator: public StubCodeGenerator {
 
     // if [src_pos < 0] then return -1
     // i.e. sign bit set
-    __ andi(t0, src_pos, 1UL << 31);
+    __ test_bit(t0, src_pos, 31);
     __ bnez(t0, L_failed);
 
     // if [dst == NULL] then return -1
@@ -1784,7 +1784,7 @@ class StubGenerator: public StubCodeGenerator {
 
     // if [dst_pos < 0] then return -1
     // i.e. sign bit set
-    __ andi(t0, dst_pos, 1UL << 31);
+    __ test_bit(t0, dst_pos, 31);
     __ bnez(t0, L_failed);
 
     // registers used as temp
@@ -1795,7 +1795,7 @@ class StubGenerator: public StubCodeGenerator {
     // if [length < 0] then return -1
     __ addw(scratch_length, length, zr);    // length (elements count, 32-bits value)
     // i.e. sign bit set
-    __ andi(t0, scratch_length, 1UL << 31);
+    __ test_bit(t0, scratch_length, 31);
     __ bnez(t0, L_failed);
 
     __ load_klass(scratch_src_klass, src);
@@ -1835,7 +1835,7 @@ class StubGenerator: public StubCodeGenerator {
 
     // if [src->is_Array() != NULL] then return -1
     // i.e. (lh >= 0)
-    __ andi(t0, lh, 1UL << 31);
+    __ test_bit(t0, lh, 31);
     __ beqz(t0, L_failed);
 
     // At this point, it is known to be a typeArray (array_tag 0x3).
@@ -1886,9 +1886,9 @@ class StubGenerator: public StubCodeGenerator {
     // The possible values of elsize are 0-3, i.e. exact_log2(element
     // size in bytes).  We do a simple bitwise binary search.
   __ BIND(L_copy_bytes);
-    __ andi(t0, x22_elsize, 2);
+    __ test_bit(t0, x22_elsize, 1);
     __ bnez(t0, L_copy_ints);
-    __ andi(t0, x22_elsize, 1);
+    __ test_bit(t0, x22_elsize, 0);
     __ bnez(t0, L_copy_shorts);
     __ add(from, src, src_pos); // src_addr
     __ add(to, dst, dst_pos); // dst_addr
@@ -1902,7 +1902,7 @@ class StubGenerator: public StubCodeGenerator {
     __ j(RuntimeAddress(short_copy_entry));
 
   __ BIND(L_copy_ints);
-    __ andi(t0, x22_elsize, 1);
+    __ test_bit(t0, x22_elsize, 0);
     __ bnez(t0, L_copy_longs);
     __ shadd(from, src_pos, src, t0, 2); // src_addr
     __ shadd(to, dst_pos, dst, t0, 2); // dst_addr
@@ -2077,7 +2077,7 @@ class StubGenerator: public StubCodeGenerator {
       switch (t) {
         case T_BYTE:
           // One byte misalignment happens only for byte arrays.
-          __ andi(t0, to, 1);
+          __ test_bit(t0, to, 0);
           __ beqz(t0, L_skip_align1);
           __ sb(value, Address(to, 0));
           __ addi(to, to, 1);
@@ -2086,7 +2086,7 @@ class StubGenerator: public StubCodeGenerator {
           // Fallthrough
         case T_SHORT:
           // Two bytes misalignment happens only for byte and short (char) arrays.
-          __ andi(t0, to, 2);
+          __ test_bit(t0, to, 1);
           __ beqz(t0, L_skip_align2);
           __ sh(value, Address(to, 0));
           __ addi(to, to, 2);
@@ -2095,7 +2095,7 @@ class StubGenerator: public StubCodeGenerator {
           // Fallthrough
         case T_INT:
           // Align to 8 bytes, we know we are 4 byte aligned to start.
-          __ andi(t0, to, 4);
+          __ test_bit(t0, to, 2);
           __ beqz(t0, L_skip_align4);
           __ sw(value, Address(to, 0));
           __ addi(to, to, 4);
@@ -2139,27 +2139,27 @@ class StubGenerator: public StubCodeGenerator {
     __ bind(L_fill_elements);
     switch (t) {
       case T_BYTE:
-        __ andi(t0, count, 1);
+        __ test_bit(t0, count, 0);
         __ beqz(t0, L_fill_2);
         __ sb(value, Address(to, 0));
         __ addi(to, to, 1);
         __ bind(L_fill_2);
-        __ andi(t0, count, 2);
+        __ test_bit(t0, count, 1);
         __ beqz(t0, L_fill_4);
         __ sh(value, Address(to, 0));
         __ addi(to, to, 2);
         __ bind(L_fill_4);
-        __ andi(t0, count, 4);
+        __ test_bit(t0, count, 2);
         __ beqz(t0, L_exit2);
         __ sw(value, Address(to, 0));
         break;
       case T_SHORT:
-        __ andi(t0, count, 1);
+        __ test_bit(t0, count, 0);
         __ beqz(t0, L_fill_4);
         __ sh(value, Address(to, 0));
         __ addi(to, to, 2);
         __ bind(L_fill_4);
-        __ andi(t0, count, 2);
+        __ test_bit(t0, count, 1);
         __ beqz(t0, L_exit2);
         __ sw(value, Address(to, 0));
         break;
@@ -3091,7 +3091,7 @@ class StubGenerator: public StubCodeGenerator {
     void unroll_2(Register count, T block) {
       Label loop, end, odd;
       beqz(count, end);
-      andi(t0, count, 0x1);
+      test_bit(t0, count, 0);
       bnez(t0, odd);
       align(16);
       bind(loop);
@@ -3107,7 +3107,7 @@ class StubGenerator: public StubCodeGenerator {
     void unroll_2(Register count, T block, Register d, Register s, Register tmp) {
       Label loop, end, odd;
       beqz(count, end);
-      andi(tmp, count, 0x1);
+      test_bit(tmp, count, 0);
       bnez(tmp, odd);
       align(16);
       bind(loop);
@@ -3359,7 +3359,7 @@ class StubGenerator: public StubCodeGenerator {
     void last_squaring(Register i) {
       Label dont;
       // if ((i & 1) == 0) {
-      andi(t0, i, 0x1);
+      test_bit(t0, i, 0);
       bnez(t0, dont); {
         // MACC(Ra, Rb, tmp0, tmp1, tmp2);
         // Ra = *++Pa;
