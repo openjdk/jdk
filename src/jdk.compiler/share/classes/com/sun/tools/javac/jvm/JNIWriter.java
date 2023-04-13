@@ -271,8 +271,7 @@ public class JNIWriter {
                 valueStr = value.toString() + "L";
                 break;
             case LONG:
-                // Visual C++ supports the i64 suffix, not LL.
-                valueStr = value.toString() + ((isWindows) ? "i64" : "LL");
+                valueStr = value.toString() + "LL";
                 break;
             case CHAR:
                 Character ch = (Character) value;
