@@ -258,9 +258,6 @@ public final class X11GraphicsEnvironment extends SunGraphicsEnvironment {
                 it.remove();
             }
         }
-        for (final X11GraphicsDevice gd : devices.values()) {
-            gd.resetBoundsCache();
-        }
     }
 
     @Override

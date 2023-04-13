@@ -66,6 +66,7 @@ public final class X11GraphicsDevice extends GraphicsDevice
     private static Boolean xrandrExtSupported;
     private SunDisplayChanger topLevels = new SunDisplayChanger();
     private DisplayMode origDisplayMode;
+    private Rectangle bounds;
     private boolean shutdownHookRegistered;
     private int scale;
 
@@ -129,25 +130,10 @@ public final class X11GraphicsDevice extends GraphicsDevice
         return rect;
     }
 
-    private volatile Rectangle boundsCached;
-
-    private Rectangle getBoundsCached() {
-        final Rectangle localBoundsCached = boundsCached;
-        if (localBoundsCached == null) {
-            final Rectangle newBounds = getBoundsImpl();
-            boundsCached = newBounds;
-            return newBounds;
-        } else {
-            return localBoundsCached;
-        }
-    }
-
-    public void resetBoundsCache() {
-        boundsCached = null;
-    }
-
     public Rectangle getBounds() {
-        return new Rectangle(getBoundsCached());
+        synchronized (this) {
+            return bounds.getBounds();
+        }
     }
 
     /**
@@ -537,6 +523,7 @@ public final class X11GraphicsDevice extends GraphicsDevice
     @Override
     public synchronized void displayChanged() {
         scale = initScaleFactor();
+        bounds = getBoundsImpl();
         // On X11 the visuals do not change, and therefore we don't need
         // to reset the defaultConfig, config, doubleBufferVisuals,
         // neither do we need to reset the native data.
@@ -601,6 +588,5 @@ public final class X11GraphicsDevice extends GraphicsDevice
         assert XToolkit.isAWTLockHeldByCurrentThread();
 
         screen = device.screen;
-        resetBoundsCache();
     }
 }
