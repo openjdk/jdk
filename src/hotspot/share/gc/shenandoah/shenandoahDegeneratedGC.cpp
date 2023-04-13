@@ -70,8 +70,7 @@ void ShenandoahDegenGC::vmop_degenerated() {
 }
 
 void ShenandoahDegenGC::entry_degenerated() {
-  char msg[1024];
-  degen_event_message(_degen_point, msg, sizeof(msg));
+  const char* msg = degen_event_message(_degen_point);
   ShenandoahPausePhase gc_phase(msg, ShenandoahPhaseTimings::degen_gc, true /* log_heap_usage */);
   EventMark em("%s", msg);
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
@@ -442,8 +441,25 @@ void ShenandoahDegenGC::op_degenerated_futile() {
   full_gc.op_full(GCCause::_shenandoah_upgrade_to_full_gc);
 }
 
-void ShenandoahDegenGC::degen_event_message(ShenandoahDegenPoint point, char* buf, size_t len) const {
-  jio_snprintf(buf, len, "Pause Degenerated %s GC (%s)", _generation->name(), ShenandoahGC::degen_point_to_string(point));
+const char* ShenandoahDegenGC::degen_event_message(ShenandoahDegenPoint point) const {
+  const ShenandoahHeap* heap = ShenandoahHeap::heap();
+  switch (point) {
+    case _degenerated_unset:
+      SHENANDOAH_RETURN_EVENT_MESSAGE(heap, _generation->type(), "Pause Degenerated GC", " (<UNSET>)");
+    case _degenerated_outside_cycle:
+      SHENANDOAH_RETURN_EVENT_MESSAGE(heap, _generation->type(), "Pause Degenerated GC", " (Outside of Cycle)");
+    case _degenerated_roots:
+      SHENANDOAH_RETURN_EVENT_MESSAGE(heap, _generation->type(), "Pause Degenerated GC", " (Roots)");
+    case _degenerated_mark:
+      SHENANDOAH_RETURN_EVENT_MESSAGE(heap, _generation->type(), "Pause Degenerated GC", " (Mark)");
+    case _degenerated_evac:
+      SHENANDOAH_RETURN_EVENT_MESSAGE(heap, _generation->type(), "Pause Degenerated GC", " (Evacuation)");
+    case _degenerated_updaterefs:
+      SHENANDOAH_RETURN_EVENT_MESSAGE(heap, _generation->type(), "Pause Degenerated GC", " (Update Refs)");
+    default:
+      ShouldNotReachHere();
+      SHENANDOAH_RETURN_EVENT_MESSAGE(heap, _generation->type(), "Pause Degenerated GC", " (?)");
+  }
 }
 
 void ShenandoahDegenGC::upgrade_to_full() {
