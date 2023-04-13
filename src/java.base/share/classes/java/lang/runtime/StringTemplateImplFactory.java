@@ -57,6 +57,15 @@ final class StringTemplateImplFactory {
      */
     private static final MethodHandle CONSTRUCTOR;
 
+
+    /*
+     * Frequently used method types.
+     */
+    private static final MethodType MT_STRING_STIMPL =
+            MethodType.methodType(String.class, StringTemplateImpl.class);
+    private static final MethodType MT_LIST_STIMPL =
+            MethodType.methodType(List.class, StringTemplateImpl.class);
+
     /**
      * List (for nullable) of MethodHandle;
      */
@@ -109,14 +118,12 @@ final class StringTemplateImplFactory {
             throw new RuntimeException("constructing internal string template", ex);
         }
         interpolateMH = MethodHandles.filterArguments(interpolateMH, 0, components);
-        mt = MethodType.methodType(String.class, StringTemplateImpl.class);
-        interpolateMH = MethodHandles.permuteArguments(interpolateMH, mt, permute);
+        interpolateMH = MethodHandles.permuteArguments(interpolateMH, MT_STRING_STIMPL, permute);
 
         mt = MethodType.methodType(List.class, ptypes);
         MethodHandle valuesMH = TO_LIST.asCollector(Object[].class, components.length).asType(mt);
         valuesMH = MethodHandles.filterArguments(valuesMH, 0, components);
-        mt = MethodType.methodType(List.class, StringTemplateImpl.class);
-        valuesMH = MethodHandles.permuteArguments(valuesMH, mt, permute);
+        valuesMH = MethodHandles.permuteArguments(valuesMH, MT_LIST_STIMPL, permute);
 
         MethodHandle constructor = MethodHandles.insertArguments(CONSTRUCTOR,0,
                 elements.primitiveCount(), elements.objectCount(),

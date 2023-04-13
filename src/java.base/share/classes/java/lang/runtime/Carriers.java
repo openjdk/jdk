@@ -283,8 +283,6 @@ final class Carriers {
          * @return {@link MethodHandle} to generic carrier constructor.
          */
         MethodHandle constructor(CarrierShape carrierShape) {
-            int longCount = carrierShape.longCount();
-            int intCount = carrierShape.intCount();
             int objectCount = carrierShape.objectCount();
             int primitiveCount = carrierShape.primitiveCount();
 
@@ -366,7 +364,7 @@ final class Carriers {
         /**
          * Cache mapping {@link MethodType} to previously defined {@link CarrierElements}.
          */
-        private static Map<MethodType, CarrierElements>
+        private static final Map<MethodType, CarrierElements>
                 methodTypeCache = ReferencedKeyMap.create(ConcurrentHashMap::new);
 
         /**

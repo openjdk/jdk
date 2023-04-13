@@ -101,12 +101,15 @@ public final class TemplateRuntime {
     }
 
     /**
-     * String template bootstrap method for creating large string templates.
-     * The non-static arguments are the fragments list and values list.
+     * String template bootstrap method for creating large string templates,
+     * i.e., when the number of value slots exceeds
+     * {@link java.lang.invoke.StringConcatFactory#MAX_INDY_CONCAT_ARG_SLOTS}.
+     * The non-static arguments are the fragments array and values array.
      *
      * @param lookup          method lookup
-     * @param name            method name
+     * @param name            method name - not used
      * @param type            method type
+     *                        (String[], Object[]) -> StringTemplate
      *
      * @return {@link CallSite} to handle create large string template
      *
@@ -129,9 +132,10 @@ public final class TemplateRuntime {
      * The non-static arguments are the values.
      *
      * @param lookup          method lookup
-     * @param name            method name
+     * @param name            method name - not used
      * @param type            method type
-     * @param fragments       fragments from string template
+     *                        (ptypes...) -> StringTemplate
+     * @param fragments       fragment array for string template
      *
      * @return {@link CallSite} to handle create string template
      *
@@ -155,13 +159,14 @@ public final class TemplateRuntime {
 
     /**
      * String template bootstrap method for static final processors.
-     * The static arguments include the fragments list  and a {@link MethodHandle}
+     * The static arguments include the fragments array  and a {@link MethodHandle}
      * to retrieve the value of the static final processor.
      * The non-static arguments are the values.
      *
      * @param lookup          method lookup
-     * @param name            method name
+     * @param name            method name - not used
      * @param type            method type
+     *                        (ptypes...) -> Object
      * @param processorGetter {@link MethodHandle} to get static final processor
      * @param fragments       fragments from string template
      *

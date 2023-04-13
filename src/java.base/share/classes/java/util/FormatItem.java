@@ -68,7 +68,7 @@ class FormatItem {
             JLA.stringConcatHelper("selectPutChar",
                     MethodType.methodType(MethodHandle.class, long.class));
 
-    private static final long charMix(long lengthCoder, char value) {
+    private static long charMix(long lengthCoder, char value) {
         try {
             return (long)CHAR_MIX.invokeExact(lengthCoder, value);
         } catch (Error | RuntimeException ex) {
@@ -78,11 +78,11 @@ class FormatItem {
         }
     }
 
-    private static final long stringMix(long lengthCoder, String value) {
+    private static long stringMix(long lengthCoder, String value) {
         return JLA.stringConcatMix(lengthCoder, value);
     }
 
-    private static final long stringPrepend(long lengthCoder, byte[] buffer,
+    private static long stringPrepend(long lengthCoder, byte[] buffer,
                                             String value) throws Throwable {
         return (long)STRING_PREPEND.invokeExact(lengthCoder, buffer, value,
                 (String)null);

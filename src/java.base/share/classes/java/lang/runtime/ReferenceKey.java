@@ -110,7 +110,7 @@ interface ReferenceKey<T> {
 
         @Override
         public String toString() {
-            return "java.util.WeakKey#" + System.identityHashCode(this);
+            return this.getClass().getCanonicalName() + "#" + System.identityHashCode(this);
         }
     }
 
@@ -169,7 +169,7 @@ interface ReferenceKey<T> {
 
         @Override
         public String toString() {
-            return "java.util.SoftKey#" + System.identityHashCode(this);
+            return this.getClass().getCanonicalName() + "#" + System.identityHashCode(this);
         }
     }
 
@@ -223,7 +223,7 @@ interface ReferenceKey<T> {
 
         @Override
         public String toString() {
-            return "java.util.StrongKey#" + System.identityHashCode(this);
+            return this.getClass().getCanonicalName() + "#" + System.identityHashCode(this);
         }
     }
 

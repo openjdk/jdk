@@ -25,8 +25,6 @@
 
 package jdk.internal.access;
 
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodType;
 import java.util.List;
 
 public interface JavaTemplateAccess {

@@ -127,8 +127,8 @@ final class StringTemplateImpl extends Carriers.CarrierObject implements StringT
         return Objects.hash(fragments(), values());
     }
 
-    @java.lang.Override
-    public java.lang.String toString() {
+    @Override
+    public String toString() {
         return StringTemplate.toString(this);
     }
 }
