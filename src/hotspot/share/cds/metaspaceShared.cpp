@@ -682,7 +682,6 @@ void MetaspaceShared::preload_and_dump() {
       log_error(cds)("%s: %s", PENDING_EXCEPTION->klass()->external_name(),
                      java_lang_String::as_utf8_string(java_lang_Throwable::message(PENDING_EXCEPTION)));
       MetaspaceShared::unrecoverable_writing_error("VM exits due to exception, use -Xlog:cds,exceptions=trace for detail");
-      //vm_exit_during_initialization(-1, "VM exits due to exception, use -Xlog:cds,exceptions=trace for detail");
     }
   } else {
     // On success, the VM_PopulateDumpSharedSpace op should have
