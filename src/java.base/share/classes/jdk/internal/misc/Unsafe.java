@@ -3861,6 +3861,24 @@ public final class Unsafe {
         }
     }
 
+    /** The offset in the object header to the lock flags */
+    private static final int LOCK_OFFSET = ADDRESS_SIZE == 8 ? 4 : 0;
+
+    /**
+     * {@return {@code true} if the provided Object is locked
+     * by a Thread using {@code synchronized}}.
+     *
+     * @param o Object to check if locked
+     * @see src/hotspot/share/oops/markWord.hpp
+     */
+    @ForceInline
+    public boolean isLocked(Object o) {
+        // 0x03 is the mask for the two lock bits ("lock_mask_in_place" in markWord.hpp)
+        // 0x01 is the value for "unlocked_value" in markWord.hpp
+        // Todo: make this method intrinsic in vmIntrinsics.hpp calling markWord::is_locked
+        return (getIntVolatile(o, LOCK_OFFSET) & 0x03) == 0x01; // ??
+    }
+
     // The following deprecated methods are used by JSR 166.
 
     @Deprecated(since="12", forRemoval=true)

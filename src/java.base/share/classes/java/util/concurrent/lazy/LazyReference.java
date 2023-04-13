@@ -25,6 +25,7 @@
 package java.util.concurrent.lazy;
 
 import jdk.internal.javac.PreviewFeature;
+import jdk.internal.misc.Unsafe;
 import jdk.internal.util.concurrent.lazy.LazyUtil;
 import jdk.internal.vm.annotation.Stable;
 
@@ -72,6 +73,8 @@ import static jdk.internal.util.concurrent.lazy.LazyUtil.varHandle;
 public final class LazyReference<V>
         implements Supplier<V> {
 
+    private static final Unsafe UNSAFE = Unsafe.getUnsafe();
+
     // Allows access to the "value" field with arbitary memory semantics
     private static final VarHandle VALUE_HANDLE;
 
@@ -88,8 +91,6 @@ public final class LazyReference<V>
     private final Lazy.Evaluation earliestEvaluation;
 
     private Supplier<? extends V> presetProvider;
-
-    private volatile boolean supplying;
 
     @Stable
     private Object value;
@@ -140,7 +141,7 @@ public final class LazyReference<V>
                     : Lazy.State.PRESENT;
         }
 
-        if (supplying) {
+        if (UNSAFE.isLocked(this)) {
             return Lazy.State.CONSTRUCTING;
         }
 
@@ -257,7 +258,6 @@ public final class LazyReference<V>
                 throw new IllegalStateException("No pre-set supplier given");
             }
             try {
-                supplying = true;
                 V v = supplier.get();
                 if (v == null) {
                     throw new NullPointerException("Supplier returned null");
@@ -271,7 +271,6 @@ public final class LazyReference<V>
                 throw e;
             } finally {
                 // Volatile semantics
-                supplying = false;
                 forgetPresetProvided();
             }
         }
