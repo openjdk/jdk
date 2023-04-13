@@ -4300,6 +4300,97 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
   }
 }
 
+// Look up the method for a megamorphic invokeinterface call.
+// The target method is determined by <intf_klass, itable_index>.
+// The receiver klass is in recv_klass.
+// On success, the result will be in method_result, and execution falls through.
+// On failure, execution transfers to the given label.
+void MacroAssembler::lookup_interface_method_stub(Register recv_klass,
+                                                  Register holder_klass,
+                                                  Register resolved_klass,
+                                                  Register method_result,
+                                                  Register scan_temp,
+                                                  Register temp_reg2,
+                                                  Register receiver,
+                                                  int itable_index,
+                                                  Label& L_no_such_interface) {
+  assert_different_registers(recv_klass, method_result, holder_klass, resolved_klass, scan_temp, temp_reg2, receiver);
+
+  // Compute start of first itableOffsetEntry (which is at the end of the vtable)
+  int vtable_base = in_bytes(Klass::vtable_start_offset());
+  int itentry_off = itableMethodEntry::method_offset_in_bytes();
+  int scan_step   = itableOffsetEntry::size() * wordSize;
+  int vte_size    = vtableEntry::size_in_bytes();
+  int ioffset = itableOffsetEntry::interface_offset_in_bytes();
+  int ooffset = itableOffsetEntry::offset_offset_in_bytes();
+  Register the_tmp = (temp_reg2 == noreg ? recv_klass : temp_reg2);
+  Address::ScaleFactor times_vte_scale = Address::times_ptr;
+  assert(vte_size == wordSize, "adjust times_vte_scale");
+
+  Label slowpath, slow_loop, slow_postloop, small_loop, found_holder, last_load;
+
+  // pseudo code:
+  //
+  // <calculate first load address>
+  // <first load>;
+  // if (holder_klass != resolved_klass) goto slowpath;
+  // <check if first load is a hit>;
+  // <small_loop>; // searching holder_klass only
+  // goto found_holder;
+  // <slowpath>; // search (slow_loop) both resolved_klass and holder_klass until resolved_klass found
+  // if <holder_klass still not found> goto small_looop;
+  // <found_holder>; // load method
+
+  movl(scan_temp, Address(recv_klass, Klass::vtable_length_offset()));
+  movptr(method_result, Address(recv_klass, scan_temp, times_vte_scale, vtable_base + ioffset));
+  lea(scan_temp, Address(recv_klass, scan_temp, times_vte_scale, vtable_base + ioffset + scan_step));
+  xorptr(the_tmp, the_tmp);
+
+  cmpptr(holder_klass, resolved_klass);
+  jccb(Assembler::notEqual, slowpath);
+
+  testptr(method_result, method_result);
+  jccb(Assembler::zero, L_no_such_interface);
+  cmpptr(holder_klass, method_result);
+  jccb(Assembler::equal, found_holder);
+
+  bind(small_loop);
+  movptr(method_result, Address(scan_temp, 0));
+  addptr(scan_temp, scan_step);
+  cmpptr(holder_klass, method_result);
+  jccb(Assembler::equal, found_holder);
+  testptr(method_result, method_result);
+  jccb(Assembler::notZero, small_loop);
+  jmpb(L_no_such_interface);
+
+  bind(slow_loop);
+  movptr(method_result, Address(scan_temp, 0));
+  addptr(scan_temp, scan_step);
+  bind(slowpath);
+  cmpptr(holder_klass, method_result);
+  cmovl(Assembler::equal, the_tmp, Address(scan_temp, ooffset - ioffset - scan_step));
+  cmpptr(resolved_klass, method_result);
+  jccb(Assembler::equal, slow_postloop);
+  testptr(method_result, method_result);
+  jccb(Assembler::notZero, slow_loop);
+  jmpb(L_no_such_interface);
+  bind(slow_postloop);
+  testptr(the_tmp, the_tmp);
+  jccb(Assembler::zero, small_loop);
+  jmpb(last_load);
+
+  bind(found_holder);
+  movl(the_tmp, Address(scan_temp, ooffset - ioffset - scan_step));
+  bind(last_load);
+  assert(itableMethodEntry::size() * wordSize == wordSize, "adjust the scaling in the code below");
+  if (temp_reg2 == noreg) {
+    load_klass(scan_temp, receiver, noreg); // reload receiver class into scan_temp
+    movptr(method_result, Address(scan_temp, the_tmp, Address::times_1, itable_index * wordSize + itentry_off));
+  } else {
+    movptr(method_result, Address(recv_klass, the_tmp, Address::times_1, itable_index * wordSize + itentry_off));
+  }
+}
+
 
 // virtual method calling
 void MacroAssembler::lookup_virtual_method(Register recv_klass,
