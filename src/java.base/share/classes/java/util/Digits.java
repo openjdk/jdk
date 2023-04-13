@@ -27,7 +27,6 @@ package java.util;
 
 import java.lang.invoke.MethodHandle;
 
-import jdk.internal.javac.PreviewFeature;
 import jdk.internal.vm.annotation.Stable;
 
 /**
@@ -36,7 +35,6 @@ import jdk.internal.vm.annotation.Stable;
  *
  * @since 21
  */
-@PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
 sealed interface Digits permits Digits.DecimalDigits, Digits.HexDigits, Digits.OctalDigits {
     /**
      * Insert digits for long value in buffer from high index to low index.
