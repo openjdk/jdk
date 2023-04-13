@@ -136,24 +136,9 @@ final class Long64Vector extends LongVector {
     @ForceInline
     Long64Shuffle iotaShuffle() { return Long64Shuffle.IOTA; }
 
-    @ForceInline
-    Long64Shuffle iotaShuffle(int start, int step, boolean wrap) {
-      if (wrap) {
-        return (Long64Shuffle)VectorSupport.shuffleIota(ETYPE, Long64Shuffle.class, VSPECIES, VLENGTH, start, step, 1,
-                (l, lstart, lstep, s) -> s.shuffleFromOp(i -> (VectorIntrinsics.wrapToRange(i*lstep + lstart, l))));
-      } else {
-        return (Long64Shuffle)VectorSupport.shuffleIota(ETYPE, Long64Shuffle.class, VSPECIES, VLENGTH, start, step, 0,
-                (l, lstart, lstep, s) -> s.shuffleFromOp(i -> (i*lstep + lstart)));
-      }
-    }
-
     @Override
     @ForceInline
-    Long64Shuffle shuffleFromBytes(byte[] reorder) { return new Long64Shuffle(reorder); }
-
-    @Override
-    @ForceInline
-    Long64Shuffle shuffleFromArray(int[] indexes, int i) { return new Long64Shuffle(indexes, i); }
+    Long64Shuffle shuffleFromArray(int[] indices, int i) { return new Long64Shuffle(indices, i); }
 
     @Override
     @ForceInline
@@ -352,9 +337,11 @@ final class Long64Vector extends LongVector {
         return (long) super.reduceLanesTemplate(op, Long64Mask.class, (Long64Mask) m);  // specialized
     }
 
+    @Override
     @ForceInline
-    public VectorShuffle<Long> toShuffle() {
-        return super.toShuffleTemplate(Long64Shuffle.class); // specialize
+    public final
+    <F> VectorShuffle<F> toShuffle(AbstractSpecies<F> dsp) {
+        return super.toShuffleTemplate(dsp);
     }
 
     // Specialized unary testing
@@ -764,23 +751,26 @@ final class Long64Vector extends LongVector {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
         static final Class<Long> ETYPE = long.class; // used by the JVM
 
-        Long64Shuffle(byte[] reorder) {
-            super(VLENGTH, reorder);
+        Long64Shuffle(long[] indices) {
+            super(indices);
+            assert(VLENGTH == indices.length);
+            assert(indicesInRange(indices));
         }
 
-        public Long64Shuffle(int[] reorder) {
-            super(VLENGTH, reorder);
+        Long64Shuffle(int[] indices, int i) {
+            this(prepare(indices, i));
         }
 
-        public Long64Shuffle(int[] reorder, int i) {
-            super(VLENGTH, reorder, i);
+        Long64Shuffle(IntUnaryOperator fn) {
+            this(prepare(fn));
         }
 
-        public Long64Shuffle(IntUnaryOperator fn) {
-            super(VLENGTH, fn);
+        long[] indices() {
+            return (long[])getPayload();
         }
 
         @Override
+        @ForceInline
         public LongSpecies vspecies() {
             return VSPECIES;
         }
@@ -788,40 +778,70 @@ final class Long64Vector extends LongVector {
         static {
             // There must be enough bits in the shuffle lanes to encode
             // VLENGTH valid indexes and VLENGTH exceptional ones.
-            assert(VLENGTH < Byte.MAX_VALUE);
-            assert(Byte.MIN_VALUE <= -VLENGTH);
+            assert(VLENGTH < Long.MAX_VALUE);
+            assert(Long.MIN_VALUE <= -VLENGTH);
         }
         static final Long64Shuffle IOTA = new Long64Shuffle(IDENTITY);
 
         @Override
         @ForceInline
-        public Long64Vector toVector() {
-            return VectorSupport.shuffleToVector(VCLASS, ETYPE, Long64Shuffle.class, this, VLENGTH,
-                                                    (s) -> ((Long64Vector)(((AbstractShuffle<Long>)(s)).toVectorTemplate())));
+        Long64Vector toBitsVector() {
+            return (Long64Vector) super.toBitsVectorTemplate();
         }
 
         @Override
         @ForceInline
-        public <F> VectorShuffle<F> cast(VectorSpecies<F> s) {
-            AbstractSpecies<F> species = (AbstractSpecies<F>) s;
-            if (length() != species.laneCount())
-                throw new IllegalArgumentException("VectorShuffle length and species length differ");
-            int[] shuffleArray = toArray();
-            return s.shuffleFromArray(shuffleArray, 0).check(s);
+        LongVector toBitsVector0() {
+            return Long64Vector.VSPECIES.dummyVector().vectorFactory(indices());
         }
 
-        @ForceInline
         @Override
-        public Long64Shuffle rearrange(VectorShuffle<Long> shuffle) {
-            Long64Shuffle s = (Long64Shuffle) shuffle;
-            byte[] reorder1 = reorder();
-            byte[] reorder2 = s.reorder();
-            byte[] r = new byte[reorder1.length];
-            for (int i = 0; i < reorder1.length; i++) {
-                int ssi = reorder2[i];
-                r[i] = reorder1[ssi];  // throws on exceptional index
+        @ForceInline
+        public int laneSource(int i) {
+            return (int)toBitsVector().lane(i);
+        }
+
+        @Override
+        @ForceInline
+        public void intoArray(int[] a, int offset) {
+            a[offset] = laneSource(0);
+        }
+
+        private static long[] prepare(int[] indices, int offset) {
+            long[] a = new long[VLENGTH];
+            for (int i = 0; i < VLENGTH; i++) {
+                int si = indices[offset + i];
+                si = partiallyWrapIndex(si, VLENGTH);
+                a[i] = (long)si;
             }
-            return new Long64Shuffle(r);
+            return a;
+        }
+
+        private static long[] prepare(IntUnaryOperator f) {
+            long[] a = new long[VLENGTH];
+            for (int i = 0; i < VLENGTH; i++) {
+                int si = f.applyAsInt(i);
+                si = partiallyWrapIndex(si, VLENGTH);
+                a[i] = (long)si;
+            }
+            return a;
+        }
+
+        private static boolean indicesInRange(long[] indices) {
+            int length = indices.length;
+            for (long si : indices) {
+                if (si >= (long)length || si < (long)(-length)) {
+                    boolean assertsEnabled = false;
+                    assert(assertsEnabled = true);
+                    if (assertsEnabled) {
+                        String msg = ("index "+si+"out of range ["+length+"] in "+
+                                  java.util.Arrays.toString(indices));
+                        throw new AssertionError(msg);
+                    }
+                    return false;
+                }
+            }
+            return true;
         }
     }
 
