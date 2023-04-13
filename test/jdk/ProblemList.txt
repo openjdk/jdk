@@ -694,6 +694,8 @@ com/sun/jdi/InvokeHangTest.java                                 8218463 linux-al
 
 com/sun/jdi/AfterThreadDeathTest.java                           8232839 linux-all
 
+com/sun/jdi/JdbLastErrorTest.java                               8305913 windows-x64
+
 ############################################################################
 
 # jdk_time
