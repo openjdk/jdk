@@ -935,8 +935,6 @@ public class FileChannelImpl
             throw new NonWritableChannelException();
         if ((position < 0) || (count < 0))
             throw new IllegalArgumentException();
-        if (position > size())
-            return 0;
 
         // System calls supporting fast transfers might not work on files
         // which advertise zero size such as those in Linux /proc

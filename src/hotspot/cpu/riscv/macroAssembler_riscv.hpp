@@ -195,7 +195,6 @@ class MacroAssembler: public Assembler {
   void access_store_at(BasicType type, DecoratorSet decorators, Address dst,
                        Register val, Register tmp1, Register tmp2, Register tmp3);
   void load_klass(Register dst, Register src, Register tmp = t0);
-  void load_klass_check_null(Register dst, Register src, Register tmp = t0);
   void store_klass(Register dst, Register src, Register tmp = t0);
   void cmp_klass(Register oop, Register trial_klass, Register tmp1, Register tmp2, Label &L);
 
@@ -1210,6 +1209,9 @@ public:
 
   // shift left by shamt and add
   void shadd(Register Rd, Register Rs1, Register Rs2, Register tmp, int shamt);
+
+  // test single bit in Rs, result is set to Rd
+  void test_bit(Register Rd, Register Rs, uint32_t bit_pos, Register tmp = t0);
 
   // Here the float instructions with safe deal with some exceptions.
   // e.g. convert from NaN, +Inf, -Inf to int, float, double
