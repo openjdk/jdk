@@ -189,10 +189,10 @@ public class SwitchErrors {
                 break;
         }
     }
-    void test8269146a2(Integer i) {
+    void test8269146a2a(Integer i) {
         switch (i) {
             //error - illegal combination of pattern and constant:
-            case Integer o when o != null, 1:
+            case Integer o, 1:
                 break;
             default:
                 break;
@@ -217,14 +217,14 @@ public class SwitchErrors {
     void test8269301a(Integer i) {
         switch (i) {
             //error - illegal combination of pattern, constant and default
-            case 1, Integer o when o != null, default:
+            case 1, Integer o, default:
                 break;
         }
     }
-    void test8269301b(Integer i) {
+    void test8269301ba(Integer i) {
         switch (i) {
             //error - illegal combination of pattern, constant and default
-            case Integer o when o != null, 1, default:
+            case Integer o, 1, default:
                 break;
         }
     }
@@ -298,6 +298,29 @@ public class SwitchErrors {
         record R<T extends Number>() implements A<T> {}
         A<String> i = null;
         if (i instanceof R()) {
+        }
+    }
+    void test8269146a2b(Integer i) {
+        switch (i) {
+            //error - illegal combination of pattern and constant:
+            case Integer o when o != null, 1:
+                break;
+            default:
+                break;
+        }
+    }
+    void test8269301ab(Integer i) {
+        switch (i) {
+            //error - illegal combination of pattern, constant and default
+            case 1, Integer o when o != null, default:
+                break;
+        }
+    }
+    void test8269301bb(Integer i) {
+        switch (i) {
+            //error - illegal combination of pattern, constant and default
+            case Integer o when o != null, 1, default:
+                break;
         }
     }
 }
