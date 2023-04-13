@@ -476,7 +476,7 @@ void os::initialize_jdk_signal_support(TRAPS) {
   if (!ReduceSignalUsage) {
     // Setup JavaThread for processing signals
     const char* name = "Signal Dispatcher";
-    Handle thread_oop = JavaThread::create_system_thread_object(name, true /* visible */, CHECK);
+    Handle thread_oop = JavaThread::create_system_thread_object(name, CHECK);
 
     JavaThread* thread = new JavaThread(&signal_thread_entry);
     JavaThread::vm_exit_on_osthread_failure(thread);

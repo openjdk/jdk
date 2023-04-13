@@ -457,7 +457,7 @@ void AttachListener::init() {
   EXCEPTION_MARK;
 
   const char* name = "Attach Listener";
-  Handle thread_oop = JavaThread::create_system_thread_object(name, true /* visible */, THREAD);
+  Handle thread_oop = JavaThread::create_system_thread_object(name, THREAD);
   if (has_init_error(THREAD)) {
     set_state(AL_NOT_INITIALIZED);
     return;
