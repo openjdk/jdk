@@ -130,6 +130,12 @@ class InvokeMethodConfig {
     return AllocateHeap(size, mtClass);
   }
   static void free_node(void* context, void* memory, Value & value) {
+    // There was already this method in the table.  Need to deallocate the one created here,
+    // and its associated small constant pool.
+    Method* m = value._method;
+    ClassLoaderData* method_cld = m->method_holder()->class_loader_data();
+    method_cld->add_to_deallocate_list(m->constants());
+    method_cld->add_to_deallocate_list(m);
     FreeHeap(memory);
   }
 };
@@ -1992,15 +1998,7 @@ Method* SystemDictionary::find_method_handle_intrinsic(vmIntrinsicID iid,
 
   key.set_method(m());
   bool created = _invoke_method_intrinsic_table->insert_get(THREAD, key, key, get);
-  if (!created) {
-    assert(result != m(), "should be different");
-    // There was already this method in the table.  Need to deallocate the one created here,
-    // and its associated small constant pool.
-    ClassLoaderData* method_cld = m->method_holder()->class_loader_data();
-    method_cld->add_to_deallocate_list(m->constants());
-    method_cld->add_to_deallocate_list(m());
-  }
-
+  assert(created || result != m(), "m should be freed");
   assert(Arguments::is_interpreter_only() || (result->has_compiled_code() &&
          result->code()->entry_point() == result->from_compiled_entry()),
          "MH intrinsic invariant");
