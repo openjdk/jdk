@@ -92,13 +92,21 @@ public class SSLEngineTemplate extends SSLContextTemplate {
         cTOs = ByteBuffer.allocateDirect(netBufferMax);
         sTOc = ByteBuffer.allocateDirect(netBufferMax);
 
-        clientOut = ByteBuffer.wrap("Hi Server, I'm Client".getBytes());
-        serverOut = ByteBuffer.wrap("Hello Client, I'm Server".getBytes());
+        clientOut = createClientOutputBuffer();
+        serverOut = createServerOutputBuffer();
+    }
+
+    protected ByteBuffer createServerOutputBuffer() {
+        return ByteBuffer.wrap("Hello Client, I'm Server".getBytes());
     }
 
     //
     // Protected methods could be used to customize the test case.
     //
+
+    protected ByteBuffer createClientOutputBuffer() {
+        return ByteBuffer.wrap("Hi Server, I'm Client".getBytes());
+    }
 
     /*
      * Configure the client side engine.
