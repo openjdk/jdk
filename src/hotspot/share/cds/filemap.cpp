@@ -80,29 +80,6 @@
 #define O_BINARY 0     // otherwise do nothing.
 #endif
 
-// Complain and stop. All error conditions occurring during the writing of
-// an archive file should stop the process.  Unrecoverable errors during
-// the reading of the archive file should stop the process.
-
-static void fail_exit(const char *msg, va_list ap) {
-  // This occurs very early during initialization: tty is not initialized.
-  jio_fprintf(defaultStream::error_stream(),
-              "An error has occurred while processing the"
-              " shared archive file.\n");
-  jio_vfprintf(defaultStream::error_stream(), msg, ap);
-  jio_fprintf(defaultStream::error_stream(), "\n");
-  // Do not change the text of the below message because some tests check for it.
-  vm_exit_during_initialization("Unable to use shared archive.", nullptr);
-}
-
-
-void FileMapInfo::fail_stop(const char *msg, ...) {
-        va_list ap;
-  va_start(ap, msg);
-  fail_exit(msg, ap);   // Never returns.
-  va_end(ap);           // for completeness.
-}
-
 // Fill in the fileMapInfo structure with data about this VM instance.
 
 // This method copies the vm version info into header_version.  If the version is too
@@ -367,7 +344,7 @@ void SharedClassPathEntry::init(bool is_modules_image,
     //
     // If we can't access a jar file in the boot path, then we can't
     // make assumptions about where classes get loaded from.
-    FileMapInfo::fail_stop("Unable to open file %s.", cpe->name());
+    MetaspaceShared::unrecoverable_loading_error(err_msg("Unable to open file %s.", cpe->name()));
   }
 
   // No need to save the name of the module file, as it will be computed at run time
@@ -1097,7 +1074,7 @@ bool FileMapInfo::validate_shared_path_table() {
       const char* hint_msg = log_is_enabled(Info, class, path) ?
           "" : " (hint: enable -Xlog:class+path=info to diagnose the failure)";
       if (RequireSharedSpaces) {
-        fail_stop("%s%s", mismatch_msg, hint_msg);
+        MetaspaceShared::unrecoverable_loading_error(err_msg("%s%s", mismatch_msg, hint_msg));
       } else {
         log_warning(cds)("%s%s", mismatch_msg, hint_msg);
       }
@@ -1447,7 +1424,7 @@ bool FileMapInfo::init_from_file(int fd) {
 
 void FileMapInfo::seek_to_position(size_t pos) {
   if (os::lseek(_fd, (long)pos, SEEK_SET) < 0) {
-    fail_stop("Unable to seek to position " SIZE_FORMAT, pos);
+    MetaspaceShared::unrecoverable_loading_error(err_msg("Unable to seek to position %ld", pos));
   }
 }
 
@@ -1493,8 +1470,8 @@ void FileMapInfo::open_for_write() {
   remove(_full_path);
   int fd = os::open(_full_path, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, 0444);
   if (fd < 0) {
-    fail_stop("Unable to create shared archive file %s: (%s).", _full_path,
-              os::strerror(errno));
+    MetaspaceShared::unrecoverable_writing_error(err_msg("Unable to create shared archive file %s: (%s).", _full_path,
+              os::strerror(errno)));
   }
   _fd = fd;
   _file_open = true;
@@ -1731,11 +1708,11 @@ size_t FileMapInfo::write_heap_regions(GrowableArray<MemRegion>* regions,
 
   int arr_len = regions == nullptr ? 0 : regions->length();
   if (arr_len > max_num_regions) {
-    fail_stop("Unable to write archive heap memory regions: "
+    MetaspaceShared::unrecoverable_writing_error(err_msg("Unable to write archive heap memory regions: "
               "number of memory regions exceeds maximum due to fragmentation. "
               "Please increase java heap size "
               "(current MaxHeapSize is " SIZE_FORMAT ", InitialHeapSize is " SIZE_FORMAT ").",
-              MaxHeapSize, InitialHeapSize);
+              MaxHeapSize, InitialHeapSize));
   }
 
   size_t total_size = 0;
@@ -1769,7 +1746,7 @@ void FileMapInfo::write_bytes(const void* buffer, size_t nbytes) {
     // If the shared archive is corrupted, close it and remove it.
     close();
     remove(_full_path);
-    fail_stop("Unable to write to shared archive file.");
+    MetaspaceShared::unrecoverable_writing_error("Unable to write to shared archive file.");
   }
   _file_offset += nbytes;
 }
@@ -1810,7 +1787,7 @@ void FileMapInfo::write_bytes_aligned(const void* buffer, size_t nbytes) {
 void FileMapInfo::close() {
   if (_file_open) {
     if (::close(_fd) < 0) {
-      fail_stop("Unable to close the shared archive file.");
+      MetaspaceShared::unrecoverable_loading_error("Unable to close the shared archive file.");
     }
     _file_open = false;
     _fd = -1;
@@ -2537,7 +2514,7 @@ void FileMapInfo::unmap_region(int i) {
 
 void FileMapInfo::assert_mark(bool check) {
   if (!check) {
-    fail_stop("Mark mismatch while restoring from shared file.");
+    MetaspaceShared::unrecoverable_loading_error("Mark mismatch while restoring from shared file.");
   }
 }
 
