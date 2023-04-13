@@ -226,7 +226,7 @@ final class LCMSImageLayout {
                     l.nextRowOffset = byteRaster.getScanlineStride();
                     l.nextPixelOffset = byteRaster.getPixelStride();
 
-                    int firstBand = image.getSampleModel().getNumBands() - 1;
+                    int firstBand = byteRaster.getSampleModel().getNumBands() - 1;
                     l.offset = byteRaster.getDataOffset(firstBand);
                     l.dataArray = byteRaster.getDataStorage();
                     l.dataArrayLength = byteRaster.getDataStorage().length;
