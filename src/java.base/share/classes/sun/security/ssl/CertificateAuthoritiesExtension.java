@@ -30,6 +30,7 @@ import java.nio.ByteBuffer;
 import java.security.cert.X509Certificate;
 import java.text.MessageFormat;
 import java.util.*;
+import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLProtocolException;
 import javax.security.auth.x500.X500Principal;
 import sun.security.ssl.SSLExtension.ExtensionConsumer;
@@ -277,7 +278,11 @@ final class CertificateAuthoritiesExtension {
                     new CertificateAuthoritiesSpec(shc, buffer);
 
             // Update the context.
-            shc.peerSupportedAuthorities = spec.getAuthorities();
+            try {
+                shc.peerSupportedAuthorities = spec.getAuthorities();
+            } catch (IllegalArgumentException iae) {
+                throw new SSLException(iae);
+            }
             shc.handshakeExtensions.put(
                     SSLExtension.CH_CERTIFICATE_AUTHORITIES, spec);
 
