@@ -724,6 +724,16 @@ public class IRNode {
         beforeMatchingNameRegex(MUL_VI, "MulVI");
     }
 
+    public static final String MUL_VF = PREFIX + "MUL_VF" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(MUL_VF, "MulVF");
+    }
+
+    public static final String MUL_VD = PREFIX + "MUL_VD" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(MUL_VD, "MulVD");
+    }
+
     public static final String MUL_REDUCTION_VD = PREFIX + "MUL_REDUCTION_VD" + POSTFIX;
     static {
         superWordNodes(MUL_REDUCTION_VD, "MulReductionVD");
@@ -1406,6 +1416,16 @@ public class IRNode {
     public static final String XOR3_SVE = PREFIX + "XOR3_SVE" + POSTFIX;
     static {
         machOnlyNameRegex(XOR3_SVE, "veor3_sve");
+    }
+
+    public static final String COMPRESS_BITSV = PREFIX + "COMPRESS_BITSV" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(COMPRESS_BITSV, "CompressBitsV");
+    }
+
+    public static final String EXPAND_BITSV = PREFIX + "EXPAND_BITSV" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(EXPAND_BITSV, "ExpandBitsV");
     }
 
     /*

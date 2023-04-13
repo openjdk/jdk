@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@ import java.text.spi.DateFormatSymbolsProvider;
 import java.text.spi.DecimalFormatSymbolsProvider;
 import java.text.spi.NumberFormatProvider;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
@@ -125,13 +124,15 @@ public abstract class LocaleProviderAdapter {
         String order = GetPropertyAction.privilegedGetProperty("java.locale.providers");
         ArrayList<Type> typeList = new ArrayList<>();
         String invalidTypeMessage = null;
+        String compatWarningMessage = null;
 
         // Check user specified adapter preference
         if (order != null && !order.isEmpty()) {
             String[] types = order.split(",");
             for (String type : types) {
                 type = type.trim().toUpperCase(Locale.ROOT);
-                if (type.equals("COMPAT")) {
+                if (type.equals("COMPAT") || type.equals("JRE")) {
+                    compatWarningMessage = "COMPAT locale provider will be removed in a future release";
                     type = "JRE";
                 }
                 try {
@@ -168,6 +169,10 @@ public abstract class LocaleProviderAdapter {
             // provider name or format in the system property
             getLogger(LocaleProviderAdapter.class.getCanonicalName())
                 .log(Logger.Level.INFO, invalidTypeMessage);
+        }
+        if (compatWarningMessage != null) {
+            getLogger(LocaleProviderAdapter.class.getCanonicalName())
+                .log(Logger.Level.WARNING, compatWarningMessage);
         }
     }
 

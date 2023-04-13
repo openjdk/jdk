@@ -116,6 +116,8 @@ class BitMap {
 
   template<typename ReturnType> struct IterateInvoker;
 
+  struct IteratorImpl;
+
   // Threshold for performing small range operation, even when large range
   // operation was requested. Measured in words.
   static const size_t small_range_words = 32;
@@ -264,7 +266,7 @@ class BitMap {
   void verify_range(idx_t beg, idx_t end) const NOT_DEBUG_RETURN;
 
   // Applies an operation to the index of each set bit in [beg, end), in
-  // increasing order.
+  // increasing (decreasing for reverse iteration) order.
   //
   // If i is an index of the bitmap, the operation is either
   // - function(i)
@@ -276,8 +278,10 @@ class BitMap {
   // an operation returning false.
   //
   // If an operation modifies the bitmap, modifications to bits at indices
-  // greater than the current index will affect which further indices the
-  // operation will be applied to.
+  // greater than (less than for reverse iteration) the current index will
+  // affect which further indices the operation will be applied to.
+  //
+  // See also the Iterator and ReverseIterator classes.
   //
   // precondition: beg and end form a valid range for the bitmap.
   template<typename Function>
@@ -295,6 +299,27 @@ class BitMap {
   bool iterate(BitMapClosureType* cl) const {
     return iterate(cl, 0, size());
   }
+
+  template<typename Function>
+  bool reverse_iterate(Function function, idx_t beg, idx_t end) const;
+
+  template<typename BitMapClosureType>
+  bool reverse_iterate(BitMapClosureType* cl, idx_t beg, idx_t end) const;
+
+  template<typename Function>
+  bool reverse_iterate(Function function) const {
+    return reverse_iterate(function, 0, size());
+  }
+
+  template<typename BitMapClosureType>
+  bool reverse_iterate(BitMapClosureType* cl) const {
+    return reverse_iterate(cl, 0, size());
+  }
+
+  class Iterator;
+  class ReverseIterator;
+  class RBFIterator;
+  class ReverseRBFIterator;
 
   // Return the index of the first set (or clear) bit in the range [beg, end),
   // or end if none found.
@@ -367,6 +392,167 @@ class BitMap {
   // Printing
   void print_on(outputStream* st) const;
 #endif
+};
+
+// Implementation support for bitmap iteration.  While it could be used to
+// support bi-directional iteration, it is only intended to be used for
+// uni-directional iteration.  The directionality is determined by the using
+// class.
+struct BitMap::IteratorImpl {
+  const BitMap* _map;
+  idx_t _cur_beg;
+  idx_t _cur_end;
+
+  void assert_not_empty() const NOT_DEBUG_RETURN;
+
+  // Constructs an empty iterator.
+  IteratorImpl();
+
+  // Constructs an iterator for map, over the range [beg, end).
+  // May be constructed for one of forward or reverse iteration.
+  // precondition: beg and end form a valid range for map.
+  // precondition: either beg == end or
+  // (1) if for forward iteration, then beg must designate a set bit,
+  // (2) if for reverse iteration, then end-1 must designate a set bit.
+  IteratorImpl(const BitMap* map, idx_t beg, idx_t end);
+
+  // Returns true if the remaining iteration range is empty.
+  bool is_empty() const;
+
+  // Returns the index of the first set bit in the remaining iteration range.
+  // precondition: !is_empty()
+  // precondition: constructed for forward iteration.
+  idx_t first() const;
+
+  // Returns the index of the last set bit in the remaining iteration range.
+  // precondition: !is_empty()
+  // precondition: constructed for reverse iteration.
+  idx_t last() const;
+
+  // Updates first() to the position of the first set bit in the range
+  // [first() + 1, last()]. The iterator instead becomes empty if there
+  // aren't any set bits in that range.
+  // precondition: !is_empty()
+  // precondition: constructed for forward iteration.
+  void step_first();
+
+  // Updates last() to the position of the last set bit in the range
+  // [first(), last()). The iterator instead becomes empty if there aren't
+  // any set bits in that range.
+  // precondition: !is_empty()
+  // precondition: constructed for reverse iteration.
+  void step_last();
+};
+
+// Provides iteration over the indices of the set bits in a range of a bitmap,
+// in increasing order. This is an alternative to the iterate() function.
+class BitMap::Iterator {
+  IteratorImpl _impl;
+
+public:
+  // Constructs an empty iterator.
+  Iterator();
+
+  // Constructs an iterator for map, over the range [0, map.size()).
+  explicit Iterator(const BitMap& map);
+
+  // Constructs an iterator for map, over the range [beg, end).
+  // If there are no set bits in that range, the resulting iterator is empty.
+  // Otherwise, index() is initially the position of the first set bit in
+  // that range.
+  // precondition: beg and end form a valid range for map.
+  Iterator(const BitMap& map, idx_t beg, idx_t end);
+
+  // Returns true if the remaining iteration range is empty.
+  bool is_empty() const;
+
+  // Returns the index of the first set bit in the remaining iteration range.
+  // precondition: !is_empty()
+  idx_t index() const;
+
+  // Updates index() to the position of the first set bit in the range
+  // [index(), end), where end was the corresponding constructor argument.
+  // The iterator instead becomes empty if there aren't any set bits in
+  // that range.
+  // precondition: !is_empty()
+  void step();
+
+  // Range-based for loop support.
+  RBFIterator begin() const;
+  RBFIterator end() const;
+};
+
+// Provides iteration over the indices of the set bits in a range of a bitmap,
+// in decreasing order. This is an alternative to the reverse_iterate() function.
+class BitMap::ReverseIterator {
+  IteratorImpl _impl;
+
+  static idx_t initial_end(const BitMap& map, idx_t beg, idx_t end);
+
+public:
+  // Constructs an empty iterator.
+  ReverseIterator();
+
+  // Constructs a reverse iterator for map, over the range [0, map.size()).
+  explicit ReverseIterator(const BitMap& map);
+
+  // Constructs a reverse iterator for map, over the range [beg, end).
+  // If there are no set bits in that range, the resulting iterator is empty.
+  // Otherwise, index() is initially the position of the last set bit in
+  // that range.
+  // precondition: beg and end form a valid range for map.
+  ReverseIterator(const BitMap& map, idx_t beg, idx_t end);
+
+  // Returns true if the remaining iteration range is empty.
+  bool is_empty() const;
+
+  // Returns the index of the last set bit in the remaining iteration range.
+  // precondition: !is_empty()
+  idx_t index() const;
+
+  // Updates index() to the position of the last set bit in the range
+  // [beg, index()), where beg was the corresponding constructor argument.
+  // The iterator instead becomes empty if there aren't any set bits in
+  // that range.
+  // precondition: !is_empty()
+  void step();
+
+  // Range-based for loop support.
+  ReverseRBFIterator begin() const;
+  ReverseRBFIterator end() const;
+};
+
+// Provides range-based for loop iteration support.  This class is not
+// intended for direct use by an application.  It provides the functionality
+// required by a range-based for loop with an Iterator as the range.
+class BitMap::RBFIterator {
+  friend class Iterator;
+
+  IteratorImpl _impl;
+
+  RBFIterator(const BitMap* map, idx_t beg, idx_t end);
+
+public:
+  bool operator!=(const RBFIterator& i) const;
+  idx_t operator*() const;
+  RBFIterator& operator++();
+};
+
+// Provides range-based for loop reverse iteration support.  This class is
+// not intended for direct use by an application.  It provides the
+// functionality required by a range-based for loop with a ReverseIterator
+// as the range.
+class BitMap::ReverseRBFIterator {
+  friend class ReverseIterator;
+
+  IteratorImpl _impl;
+
+  ReverseRBFIterator(const BitMap* map, idx_t beg, idx_t end);
+
+public:
+  bool operator!=(const ReverseRBFIterator& i) const;
+  idx_t operator*() const;
+  ReverseRBFIterator& operator++();
 };
 
 // CRTP: BitmapWithAllocator exposes the following Allocator interfaces upward to GrowableBitMap.

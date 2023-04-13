@@ -47,10 +47,10 @@ void G1RemSetTrackingPolicy::update_at_allocate(HeapRegion* r) {
     r->rem_set()->set_state_complete();
   } else if (r->is_archive()) {
     // Archive regions never move ever. So never build remembered sets for them.
-    r->rem_set()->set_state_empty();
+    r->rem_set()->set_state_untracked();
   } else if (r->is_old()) {
     // By default, do not create remembered set for new old regions.
-    r->rem_set()->set_state_empty();
+    r->rem_set()->set_state_untracked();
   } else {
     guarantee(false, "Unhandled region %u with heap region type %s", r->hrm_index(), r->get_type_str());
   }

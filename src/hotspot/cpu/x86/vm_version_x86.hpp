@@ -711,6 +711,11 @@ public:
   static bool is_intel_skylake() { return is_intel_family_core() &&
                                           extended_cpu_model() == CPU_MODEL_SKYLAKE; }
 
+#ifdef COMPILER2
+  // Determine if it's running on Cascade Lake using default options.
+  static bool is_default_intel_cascade_lake();
+#endif
+
   static int avx3_threshold();
 
   static bool is_intel_tsc_synched_at_init();

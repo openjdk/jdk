@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -127,6 +127,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void get_cache_index_at_bcp(Register Rdst, int bcp_offset, size_t index_size);
 
   void get_cache_and_index_at_bcp(Register cache, int bcp_offset, size_t index_size = sizeof(u2));
+  void load_resolved_indy_entry(Register cache, Register index);
 
   void get_u4(Register Rdst, Register Rsrc, int offset, signedOrNot is_signed);
 
