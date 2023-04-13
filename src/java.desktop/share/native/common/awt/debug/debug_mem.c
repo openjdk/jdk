@@ -69,7 +69,7 @@ typedef struct MemoryListLink {
  * Global Data structures
  */
 static DMemState         DMemGlobalState;
-const DMemState *        DMemStatePtr = &DMemGlobalState;
+const  DMemState *       DMemStatePtr = &DMemGlobalState;
 static MemoryListLink    MemoryList = {NULL,NULL,FALSE};
 static dmutex_t          DMemMutex = NULL;
 
