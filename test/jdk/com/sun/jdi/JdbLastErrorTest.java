@@ -60,9 +60,12 @@ class TestNativeLastError {
             lookup.find("SetLastError").orElseThrow(),
             FunctionDescriptor.ofVoid(ValueLayout.JAVA_INT));
 
+        // One "warmup" call avoids VM activity (e.g. Thread::current) disturbing last error value.
+        int lastError = (int) getLastError.invoke();
+
         for (int i = 0; i < 10; i++) {
             setLastError.invoke(VALUE);
-            int lastError = (int) getLastError.invoke();
+            lastError = (int) getLastError.invoke();
             System.out.println("lastError = " + lastError);
             if (lastError != VALUE) {
                 System.err.println("iteration " + i + " got lastError = " + lastError
