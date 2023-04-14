@@ -476,16 +476,21 @@ public abstract sealed class Reference<T>
      * <p> This method is invoked only by Java code; when the garbage collector
      * enqueues references it does so directly, without invoking this method.
      *
-     * <p>Memory consistency effects: Actions in a thread prior to <b><i>successfully</i></b>
-     * enqueueing a reference on a queue
+     * <p>Memory consistency effects: Actions in a thread prior to calling
+     * {@code enqueue} <b><i>successfully</i></b>
      * <a href="{@docRoot}/java.base/java/util/concurrent/package-summary.html#MemoryVisibility"><i>happen-before</i></a>
      * the reference is removed from the queue by {@link ReferenceQueue#poll}
      * or {@link ReferenceQueue#remove}.
      *
+     * <p>This method is invoked only by Java code; when the garbage collector
+     * enqueues references it does so directly, without invoking this method.
+     *
      * @apiNote
-     * An unsuccessful enqueue() can occur if the GC collects the referent before
-     * the enqueue() call. {@link #reachabilityFence(Object)} can prevent this, by
-     * keeping the referent strongly-reachable.
+     * Use of this method allows the registered queue's
+     * {@link ReferenceQueue#poll} and {@link ReferenceQueue#remove} methods
+     * to return this reference even though the referent is still strongly
+     * reachable. That is, before the referent has reached the expected
+     * reachability level.
      *
      * @return   {@code true} if this reference object was successfully
      *           enqueued; {@code false} if it was already enqueued or if
