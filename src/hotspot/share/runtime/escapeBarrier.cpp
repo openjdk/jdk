@@ -123,8 +123,8 @@ bool EscapeBarrier::deoptimize_objects_all_threads() {
   if (!barrier_active()) return true;
   ResourceMark rm(calling_thread());
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread *jt = jtiwh.next(); ) {
-    // Skip virtual threads
-    if (jt->is_vthread_mounted()) {
+    // Skip thread with mounted continuation
+    if (jt->last_continuation()) {
       continue;
     }
     if (jt->frames_to_pop_failed_realloc() > 0) {
