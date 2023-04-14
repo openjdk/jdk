@@ -290,6 +290,8 @@ public:
   // <nullptr, _>, if n is of the form x + C, where 'C' is a TOP constant;
   // <n, con>      otherwise.
   static Node* constant_add_input(Node* n, jint* con);
+
+  static bool optimize_max_of_max(PhaseGVN* phase, bool min, bool left, Node* x, Node* y, Node* n, jint x_off, jint y_off, Node** out);
 };
 
 //------------------------------MaxINode---------------------------------------
