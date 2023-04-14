@@ -35,7 +35,7 @@ on:
       platforms:
         description: 'Platform(s) to execute on (comma separated, e.g. "linux-x64, macos, aarch64")'
         required: true
-        default: 'linux-x64, linux-x86, linux-x64-variants, linux-cross-compile, macos-x64, macos-aarch64, windows-x64, windows-aarch64, docs'
+        default: 'linux-x64, linux-x86, linux-x64-variants, linux-cross-compile, macos-x64, macos-aarch64, windows-x64, windows-aarch64, windows-x64-viscpp-link-time-opt, docs'
       configure-arguments:
         description: 'Additional configure arguments'
         required: false
@@ -65,6 +65,7 @@ jobs:
       macos-aarch64: ${{ steps.include.outputs.macos-aarch64 }}
       windows-x64: ${{ steps.include.outputs.windows-x64 }}
       windows-aarch64: ${{ steps.include.outputs.windows-aarch64 }}
+      windows-x64-viscpp-link-time-opt: ${{ steps.include.outputs.windows-x64-viscpp-link-time-opt }}
       docs: ${{ steps.include.outputs.docs }}
 
     steps:
@@ -117,6 +118,7 @@ jobs:
           echo "macos-aarch64=$(check_platform macos-aarch64 macos aarch64)" >> $GITHUB_OUTPUT
           echo "windows-x64=$(check_platform windows-x64 windows x64)" >> $GITHUB_OUTPUT
           echo "windows-aarch64=$(check_platform windows-aarch64 windows aarch64)" >> $GITHUB_OUTPUT
+          echo "windows-x64-viscpp-link-time-opt=$(check_platform windows-x64-viscpp-link-time-opt windows x64)" >> $GITHUB_OUTPUT
           echo "docs=$(check_platform docs)" >> $GITHUB_OUTPUT
 
   ###
