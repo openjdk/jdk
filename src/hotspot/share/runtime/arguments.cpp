@@ -1307,8 +1307,7 @@ bool Arguments::add_property(const char* prop, PropertyWriteable writeable, Prop
     // passed to Java, like any other system property
     if (strlen(value) == 0 || strcasecmp(value, "NONE") == 0) {
         // for applications using NONE or empty value, log a more informative message
-        warning("The java.compiler system property is obsolete and no longer supported,"
-                " use -Xint if you want to run the application in interpreted-only mode.");
+        warning("The java.compiler system property is obsolete and no longer supported, use -Xint");
     } else {
         warning("The java.compiler system property is obsolete and no longer supported.");
     }
