@@ -36,6 +36,8 @@ class outputStream;
 
 namespace metaspace {
 
+class MetaspaceHumongousArea;
+
 // This is the free list underlying the ChunkManager.
 //
 // Chunks are kept in a vector of double-linked double-headed lists
@@ -166,6 +168,8 @@ public:
     return nullptr;
   }
 
+  bool find_adjacent_chunks(int num, MetaspaceHumongousArea* out);
+
 #ifdef ASSERT
   bool contains(const Metachunk* c) const;
   void verify() const;
@@ -229,6 +233,10 @@ public:
   // return the first chunk whose committed words >= min_committed_words.
   // Return null if no such chunk was found.
   Metachunk* search_chunk_descending(chunklevel_t level, size_t min_committed_words);
+
+  bool find_adjacent_root_chunks(int num, MetaspaceHumongousArea* out) {
+    return list_for_level(chunklevel::ROOT_CHUNK_LEVEL)->find_adjacent_chunks(num, out);
+  }
 
   // Returns total size in all lists (including uncommitted areas)
   size_t word_size() const;

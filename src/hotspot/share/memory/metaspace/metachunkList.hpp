@@ -60,6 +60,7 @@ public:
   void add(Metachunk* c) {
     DEBUG_ONLY(verify_does_not_contain(c);)
     c->set_next(_first);
+    c->set_prev(nullptr);
     if (_first) {
       _first->set_prev(c);
     }

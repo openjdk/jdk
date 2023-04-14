@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2020 SAP SE. All rights reserved.
+ * Copyright (c) 2023, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +30,7 @@
 #include "memory/allocation.hpp"
 #include "memory/metaspace/commitLimiter.hpp"
 #include "memory/metaspace/counters.hpp"
+#include "memory/metaspace/metachunkList.hpp"
 #include "memory/metaspace/virtualSpaceNode.hpp"
 #include "memory/virtualspace.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -38,6 +40,7 @@ class outputStream;
 namespace metaspace {
 
 class Metachunk;
+class MetaspaceHumongousArea;
 class FreeChunkListVector;
 
 // VirtualSpaceList manages a series of virtual memory regions used
@@ -76,6 +79,9 @@ class VirtualSpaceList : public CHeapObj<mtClass> {
   // Used to check limits before committing memory.
   CommitLimiter* const _commit_limiter;
 
+  // Free list of salvaged root chunks
+  MetachunkList _salvaged_root_chunks;
+
   // Statistics
 
   // Holds sum of reserved space, in words, over all list nodes.
@@ -87,7 +93,10 @@ class VirtualSpaceList : public CHeapObj<mtClass> {
   // Create a new node and append it to the list. After
   // this function, _current_node shall point to a new empty node.
   // List must be expandable for this to work.
-  void create_new_node();
+  void create_new_node(size_t min_word_size = 0);
+
+  // Given a node, salvage its remaining root chunks
+  void salvage_chunks_from_node(VirtualSpaceNode* node);
 
 public:
 
@@ -107,6 +116,14 @@ public:
   // the list cannot be expanded (in practice this means we reached CompressedClassSpaceSize).
   Metachunk* allocate_root_chunk();
 
+  // Special function to handle humongous allocations.
+  // Allocate a humongous area consisting of n adjacent (uncommitted) root chunks
+  // Fails and returns false if we cannot place this area because the address space ran out
+  // (in practice this means we reached CompressedClassSpaceSize)
+  bool allocate_humongous_area(size_t word_size, MetaspaceHumongousArea* out);
+
+  MetaspaceHumongousArea* allocate_humongous_area(size_t word_size);
+
   //// Statistics ////
 
   // Return sum of reserved words in all nodes.
@@ -114,6 +131,9 @@ public:
 
   // Return sum of committed words in all nodes.
   size_t committed_words() const    { return _committed_words_counter.get(); }
+
+  // Returns number of words that can be committed before hitting a limit
+  size_t committed_possible_expansion_words() const;
 
   // Return number of nodes in this list.
   int num_nodes() const             { return _nodes_counter.get(); }

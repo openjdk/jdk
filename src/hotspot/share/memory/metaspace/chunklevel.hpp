@@ -119,6 +119,9 @@ STATIC_ASSERT(ROOT_CHUNK_LEVEL == LOWEST_CHUNK_LEVEL);
 // print helpers
 void print_chunk_size(outputStream* st, chunklevel_t lvl);
 
+// Returns true if given size is humongous
+inline bool is_humongous_word_size(size_t s) { return s > MAX_CHUNK_WORD_SIZE; }
+
 } // namespace chunklevel
 
 } // namespace metaspace

@@ -1726,10 +1726,6 @@ WB_ENTRY(void, WB_DeallocateToMetaspaceTestArena(JNIEnv* env, jobject wb, jlong 
   arena0->deallocate((MetaWord*)p, (size_t) word_size);
 WB_END
 
-WB_ENTRY(jlong, WB_GetMaxMetaspaceAllocationSize(JNIEnv* env, jobject wb))
-  return (jlong) Metaspace::max_allocation_word_size() * BytesPerWord;
-WB_END
-
 //////////////
 
 WB_ENTRY(jlong, WB_AllocateMetaspace(JNIEnv* env, jobject wb, jobject class_loader, jlong size))
@@ -2825,7 +2821,6 @@ static JNINativeMethod methods[] = {
   {CC"destroyMetaspaceTestArena", CC"(J)V",           (void*)&WB_DestroyMetaspaceTestArena},
   {CC"allocateFromMetaspaceTestArena", CC"(JJ)J",     (void*)&WB_AllocateFromMetaspaceTestArena},
   {CC"deallocateToMetaspaceTestArena", CC"(JJJ)V",    (void*)&WB_DeallocateToMetaspaceTestArena},
-  {CC"maxMetaspaceAllocationSize", CC"()J",           (void*)&WB_GetMaxMetaspaceAllocationSize},
 
   {CC"isJVMTIIncluded", CC"()Z",                      (void*)&WB_IsJVMTIIncluded},
   {CC"waitUnsafe", CC"(I)V",                          (void*)&WB_WaitUnsafe},

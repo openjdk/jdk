@@ -27,6 +27,7 @@
 #include "memory/metaspace/counters.hpp"
 #include "memory/metaspace/freeChunkList.hpp"
 #include "memory/metaspace/metachunkList.hpp"
+#include "memory/metaspace/metaspaceHumongousArea.hpp"
 #include "memory/metaspace/metaspaceSettings.hpp"
 //#define LOG_PLEASE
 #include "metaspaceGtestCommon.hpp"
@@ -37,6 +38,7 @@ using metaspace::FreeChunkList;
 using metaspace::FreeChunkListVector;
 using metaspace::MemRangeCounter;
 using metaspace::MetachunkList;
+using metaspace::MetaspaceHumongousArea;
 using metaspace::Settings;
 
 TEST_VM(metaspace, metachunklist) {
@@ -268,4 +270,3 @@ TEST_VM(metaspace, freechunklist_retrieval) {
   context.return_chunk(c_2g);
 
 }
-

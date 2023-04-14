@@ -499,8 +499,6 @@ public class WhiteBox {
   public native long allocateFromMetaspaceTestArena(long arena, long word_size);
   public native void deallocateToMetaspaceTestArena(long arena, long p, long word_size);
 
-  public native long maxMetaspaceAllocationSize();
-
   // Don't use these methods directly
   // Use jdk.test.whitebox.gc.GC class instead.
   public native boolean isGCSupported(int name);

@@ -32,6 +32,7 @@
 #include "memory/metaspace/metaspaceArenaGrowthPolicy.hpp"
 #include "memory/metaspace/metaspaceCommon.hpp"
 #include "memory/metaspace/metaspaceContext.hpp"
+#include "memory/metaspace/metaspaceHumongousArea.hpp"
 #include "memory/metaspace/metaspaceSettings.hpp"
 #include "memory/metaspace/metaspaceStatistics.hpp"
 #include "memory/metaspace/virtualSpaceList.hpp"
@@ -42,6 +43,8 @@
 #include "utilities/globalDefinitions.hpp"
 
 namespace metaspace {
+
+using namespace chunklevel;
 
 #define LOGFMT         "ChkMgr @" PTR_FORMAT " (%s)"
 #define LOGFMT_ARGS    p2i(this), this->_name
@@ -235,6 +238,65 @@ Metachunk* ChunkManager::get_chunk_locked(chunklevel_t preferred_level, chunklev
 
   DEBUG_ONLY(verify_locked();)
   return c;
+}
+
+// Special function to handle humongous allocations.
+// Allocate a humongous area consisting of n adjacent chunks. Commit them such that their
+// combined committed area covers word_size.
+// As with get_chunk, return nullptr if failed (commit error or out of addres space).
+// May fail for the same reasons as get_chunk.
+bool ChunkManager::allocate_humongous_committed_area(size_t word_size, MetaspaceHumongousArea* out) {
+
+  MutexLocker fcl(Metaspace_lock, Mutex::_no_safepoint_check_flag);
+
+  const int num_rootchunks_needed = align_up(word_size, MAX_CHUNK_WORD_SIZE) / MAX_CHUNK_WORD_SIZE;
+  const size_t committed_space_needed = align_up(word_size, Settings::commit_granule_words());
+
+  // Check for possible commit failures first. Rather fail now: we have nothing changed yet, nothing
+  // to roll back.
+  // Note: this is a simplification compared to the normal allocation path since we know that any
+  // space we will allocate below will be fully uncommitted.
+  if (_vslist->committed_possible_expansion_words() < committed_space_needed) {
+    UL2(debug, "Not enough commit headroom (need " SIZE_FORMAT " words)", committed_space_needed);
+    return false;
+  }
+
+  // Try to find n adjacent chunks in our freelist. If that fails, carve out new root chunks.
+  if (_chunks.find_adjacent_root_chunks(num_rootchunks_needed, out)) {
+    UL2(debug, "Allocated %d root chunks from freelist", num_rootchunks_needed);
+  } else {
+    UL2(debug, "Failed to allocate %d root chunks from freelist.", num_rootchunks_needed);
+    if (_vslist->allocate_humongous_area(word_size, out)) {
+      UL2(debug, "Allocated %d root chunks from virtual space", num_rootchunks_needed);
+    } else {
+      UL2(debug, "Failed to allocate %d root chunks from virtual space.", num_rootchunks_needed);
+      return false;
+    }
+  }
+
+//  // last chunk: it is likely it does not have to be a root chunk, and handing out a root
+//  // chunk would be a waste of address space (note: this does not affect RSS, since we commit
+//  // on granule level).
+//  const size_t last_chunk_needed_size = word_size % chunklevel::MAX_CHUNK_WORD_SIZE;
+//  const metaspace::chunklevel_t last_chunk_sufficient_level =
+//      metaspace::chunklevel::level_fitting_word_size(last_chunk_needed_size);
+//  split_chunk_and_add_splinters(out->last(), last_chunk_sufficient_level);
+
+  // Prepare chunks for arena
+  out->prepare_for_arena(word_size);
+
+  DEBUG_ONLY(out->verify(word_size, true, true);)
+
+  // Logging
+  LogTarget(Debug, metaspace) lt;
+  if (lt.is_enabled()) {
+    LogStream ls(lt);
+    out->print_on(&ls);
+  }
+
+  DEBUG_ONLY(verify_locked();)
+
+  return true;
 }
 
 // Return a single chunk to the ChunkManager and adjust accounting. May merge chunk

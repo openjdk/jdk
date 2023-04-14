@@ -52,13 +52,13 @@ TEST_VM(metaspace, misc_sizes)   {
 
 }
 
-TEST_VM(metaspace, misc_max_alloc_size)   {
+TEST_VM(metaspace, humongous)   {
 
   // Make sure we can allocate what we promise to allocate...
   for (int i = 0; i < 2; i ++) {
     const bool in_class_space = (i == 0);
     const Metaspace::MetadataType mdType = in_class_space ? Metaspace::ClassType : Metaspace::NonClassType;
-    const size_t sz = Metaspace::max_allocation_word_size();
+    const size_t sz = Metaspace::humongous_allocation_word_size() + 1;
     ClassLoaderData* cld = ClassLoaderData::the_null_class_loader_data();
     MetaWord* p = cld->metaspace_non_null()->allocate(sz, mdType);
     if (p == nullptr) {

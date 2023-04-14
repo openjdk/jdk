@@ -743,7 +743,7 @@ TEST_VM(metaspace, MetaspaceArena_growth_boot_nc_not_inplace) {
 //  block should be reused by the next allocation).
 static void test_repeatedly_allocate_and_deallocate(bool is_topmost) {
   // Test various sizes, including (important) the max. possible block size = 1 root chunk
-  for (size_t blocksize = Metaspace::max_allocation_word_size(); blocksize >= 1; blocksize /= 2) {
+  for (size_t blocksize = Metaspace::humongous_allocation_word_size(); blocksize >= 1; blocksize /= 2) {
     size_t used1 = 0, used2 = 0, committed1 = 0, committed2 = 0;
     MetaWord* p = NULL, *p2 = NULL;
 
@@ -782,3 +782,42 @@ TEST_VM(metaspace, MetaspaceArena_test_repeatedly_allocate_and_deallocate_top_al
 TEST_VM(metaspace, MetaspaceArena_test_repeatedly_allocate_and_deallocate_nontop_allocation) {
   test_repeatedly_allocate_and_deallocate(false);
 }
+
+// Test that repeated allocation-deallocation cycles with the same block size
+//  do not increase metaspace usage after the initial allocation (the deallocated
+//  block should be reused by the next allocation).
+static void test_allocate_humongous(bool class_space, bool test_dealloc) {
+
+  MetaspaceGtestContext context;
+  const int num_allocations = 3;
+  const int num_max_chunks_per_allocations = 4;
+
+  for (int reps = 0; reps < 1000; reps ++) {
+    {
+      MetaspaceArenaTestHelper helper(context, Metaspace::StandardMetaspaceType, class_space);
+      for (int n = 0; n < num_allocations; n++) {
+        MetaWord* p = nullptr;
+        const size_t alloc_size = MIN2(1, os::random() % num_max_chunks_per_allocations) * MAX_CHUNK_WORD_SIZE;
+        helper.allocate_from_arena_with_tests_expect_success(&p, alloc_size);
+        size_t committed2 = context.committed_words();
+        if (test_dealloc) {
+          helper.deallocate_with_tests(p, alloc_size);
+        }
+      }
+    } // <- Arena goes out of scope and dies; all chunks are returned to the chunk manager
+
+    // Check total usage. It should not ramp up; after the first few iterations, it should stay stable,
+    // not raise beyond a reasonable level.
+    const size_t max_expected_word_size = num_max_chunks_per_allocations * num_allocations * MAX_CHUNK_WORD_SIZE;
+    ASSERT_LT(context.committed_words(), max_expected_word_size);
+    ASSERT_LT(context.reserved_words(), max_expected_word_size);
+    // Purge; should uncommit all
+    context.purge_area();
+    ASSERT_0(context.committed_words());
+  }
+}
+
+TEST_VM(metaspace, MetaspaceArena_test_humongous_class_space_no_dealloc)      { test_allocate_humongous(true, false); }
+TEST_VM(metaspace, MetaspaceArena_test_humongous_class_space_dealloc)         { test_allocate_humongous(true, true); }
+TEST_VM(metaspace, MetaspaceArena_test_humongous_non_class_space_no_dealloc)  { test_allocate_humongous(false, false); }
+TEST_VM(metaspace, MetaspaceArena_test_humongous_non_class_space_dealloc)     { test_allocate_humongous(false, true); }

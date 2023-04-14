@@ -290,6 +290,8 @@ public:
   size_t free_words() const                   { return word_size() - used_words(); }
   size_t free_below_committed_words() const   { return committed_words() - used_words(); }
   void reset_used_words()                     { _used_words = 0; }
+  bool is_fully_used() const                  { return used_words() == word_size(); }
+  bool is_fully_unused() const                { return used_words() == 0; }
 
   size_t committed_words() const      { return _committed_words; }
   void set_committed_words(size_t v);

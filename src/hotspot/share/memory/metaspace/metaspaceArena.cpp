@@ -34,6 +34,7 @@
 #include "memory/metaspace/metaspaceArena.hpp"
 #include "memory/metaspace/metaspaceArenaGrowthPolicy.hpp"
 #include "memory/metaspace/metaspaceCommon.hpp"
+#include "memory/metaspace/metaspaceHumongousArea.hpp"
 #include "memory/metaspace/metaspaceSettings.hpp"
 #include "memory/metaspace/metaspaceStatistics.hpp"
 #include "memory/metaspace/virtualSpaceList.hpp"
@@ -221,7 +222,10 @@ bool MetaspaceArena::attempt_enlarge_current_chunk(size_t requested_word_size) {
 // At any point, if we hit a commit limit, we return null.
 MetaWord* MetaspaceArena::allocate(size_t requested_word_size) {
   MutexLocker cl(lock(), Mutex::_no_safepoint_check_flag);
-  UL2(trace, "requested " SIZE_FORMAT " words.", requested_word_size);
+
+  const bool is_humongous_allocation = requested_word_size > chunklevel::MAX_CHUNK_WORD_SIZE;
+  UL2(trace, "requested " SIZE_FORMAT " words%s.",
+      requested_word_size, is_humongous_allocation ? " (humongous)" : "");
 
   MetaWord* p = nullptr;
   const size_t raw_word_size = get_raw_word_size_for_requested_word_size(requested_word_size);
@@ -241,7 +245,9 @@ MetaWord* MetaspaceArena::allocate(size_t requested_word_size) {
   }
 
   // Primary allocation
-  p = allocate_inner(requested_word_size);
+  p = is_humongous_allocation ?
+      allocate_humongous(requested_word_size) :
+      allocate_inner(requested_word_size);
 
 #ifdef ASSERT
   // Fence allocation
@@ -261,6 +267,47 @@ MetaWord* MetaspaceArena::allocate(size_t requested_word_size) {
 #endif // ASSERT
 
   return p;
+}
+
+// Allocate a humongous block of memory (larger than root chunk size).
+MetaWord* MetaspaceArena::allocate_humongous(size_t requested_word_size) {
+
+  assert_lock_strong(lock());
+  const size_t raw_word_size = get_raw_word_size_for_requested_word_size(requested_word_size);
+
+  MetaspaceHumongousArea area;
+
+  if (!chunk_manager()->allocate_humongous_committed_area(raw_word_size, &area)) {
+    UL(info, "Humongous allocation failed.");
+    return nullptr;
+  }
+
+  area.verify(raw_word_size, true, true);
+
+  Metachunk* first_chunk = area.first();
+  MetaWord* result = first_chunk->base();
+
+  // Add new chunks to the list of arena live chunks. The last chunk added becomes the new
+  // current chunk and thus will be used up for further allocations.
+  Metachunk* c = first_chunk;
+  while (c != nullptr) {
+    Metachunk* next = c->next();
+    _chunks.add(c);
+    c = next;
+  }
+
+  // Logging, accounting, statistics
+  DEBUG_ONLY(InternalStats::inc_num_humongous_allocs();)
+  DEBUG_ONLY(InternalStats::inc_num_allocs();)
+  _total_used_words_counter->increment_by(raw_word_size);
+
+  DEBUG_ONLY(verify_locked();)
+
+  UL2(trace, "after humongous allocation: %u chunk(s), current:" METACHUNK_FULL_FORMAT,
+      _chunks.count(), METACHUNK_FULL_FORMAT_ARGS(current_chunk()));
+  UL2(trace, "returning " PTR_FORMAT ".", p2i(result));
+
+  return result;
 }
 
 // Allocate from the arena proper, once dictionary allocations and fencing are sorted out.
@@ -358,7 +405,7 @@ void MetaspaceArena::deallocate_locked(MetaWord* p, size_t word_size) {
   assert_lock_strong(lock());
   // At this point a current chunk must exist since we only deallocate if we did allocate before.
   assert(current_chunk() != nullptr, "stray deallocation?");
-  assert(is_valid_area(p, word_size),
+  assert(is_valid_live_area(p, word_size),
          "Pointer range not part of this Arena and cannot be deallocated: (" PTR_FORMAT ".." PTR_FORMAT ").",
          p2i(p), p2i(p + word_size));
 
@@ -453,19 +500,28 @@ void MetaspaceArena::verify() const {
   verify_locked();
 }
 
-// Returns true if the area indicated by pointer and size have actually been allocated
-// from this arena.
-bool MetaspaceArena::is_valid_area(MetaWord* p, size_t word_size) const {
-  assert(p != nullptr && word_size > 0, "Sanity");
-  bool found = false;
-  for (const Metachunk* c = _chunks.first(); c != nullptr && !found; c = c->next()) {
-    assert(c->is_valid_committed_pointer(p) ==
-           c->is_valid_committed_pointer(p + word_size - 1), "range intersects");
-    found = c->is_valid_committed_pointer(p);
+// Returns true if the pointer points into live (used) area of arena.
+// Find the containing chunk of p
+const Metachunk* MetaspaceArena::containing_chunk(const MetaWord* p) const {
+  const Metachunk* c = _chunks.first();
+  while (c != nullptr && !c->is_valid_committed_pointer(p)) {
+    c = c->next();
   }
-  return found;
+  return c;
 }
 
+// Returns true if area is contained within this arena.
+bool MetaspaceArena::is_valid_live_area(const MetaWord* p, size_t word_size) const {
+  assert(p != nullptr && word_size > 0, "Sanity");
+  const Metachunk* c1 = containing_chunk(p);
+  const Metachunk* c2 = containing_chunk(p + word_size - 1);
+  if (c1 != nullptr && c2 != nullptr) {
+    // Humongous areas span multiple chunks.
+    assert(chunklevel::is_humongous_word_size(word_size) || c1 == c2, "range intersects");
+    return true;
+  }
+  return false;
+}
 #endif // ASSERT
 
 void MetaspaceArena::print_on(outputStream* st) const {

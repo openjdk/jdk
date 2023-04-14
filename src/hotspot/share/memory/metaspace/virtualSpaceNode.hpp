@@ -208,10 +208,6 @@ public:
   // On success, true is returned, false otherwise.
   bool attempt_enlarge_chunk(Metachunk* c, FreeChunkListVector* freelists);
 
-  // Attempts to uncommit free areas according to the rules set in settings.
-  // Returns number of words uncommitted.
-  size_t uncommit_free_areas();
-
   /// misc /////
 
   // Returns size, in words, of the used space in this node alone.

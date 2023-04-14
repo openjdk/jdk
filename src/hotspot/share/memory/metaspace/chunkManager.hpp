@@ -34,6 +34,7 @@
 
 namespace metaspace {
 
+class MetaspaceHumongousArea;
 class VirtualSpaceList;
 struct ChunkManagerStats;
 
@@ -126,6 +127,20 @@ public:
 
   // Convenience function - get a chunk of a given level, uncommitted.
   Metachunk* get_chunk(chunklevel_t lvl) { return get_chunk(lvl, lvl, 0); }
+
+  // Special function to handle humongous allocations.
+  // Allocate a humongous area consisting of n adjacent chunks. Commit them such that their
+  // combined committed area covers word_size.
+  // May fail for the same reasons as get_chunk.
+  bool allocate_humongous_committed_area(size_t word_size, MetaspaceHumongousArea* out);
+
+  // For humongous allocation:
+  // Return a series of adjacent chunks that together span an area of at least word_size words.
+  // Commit the first word_size words of this area.
+  // This is used to allocate more than would fit into a single root chunk. Returned chunks would normally
+  // be n root chunks, or n-1 root chunks and a trailing smaller chunk, but this is an implementation
+  // detail.
+  Metachunk* get_multiple_committed_chunks_spanning(size_t word_size);
 
   // Return a single chunk to the ChunkManager and adjust accounting. May merge chunk
   //  with neighbors.

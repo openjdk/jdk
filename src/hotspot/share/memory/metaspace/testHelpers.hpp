@@ -31,6 +31,7 @@
 #include "memory/metaspace/commitLimiter.hpp"
 #include "memory/metaspace/counters.hpp"
 #include "memory/metaspace/metaspaceContext.hpp"
+#include "memory/metaspace/virtualSpaceList.hpp"
 #include "memory/virtualspace.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -96,7 +97,7 @@ public:
 
   // Accessors
   const CommitLimiter& commit_limiter() const { return _commit_limiter; }
-  const VirtualSpaceList& vslist() const      { return *(_context->vslist()); }
+  VirtualSpaceList& vslist() const      { return *(_context->vslist()); }
   ChunkManager& cm()                          { return *(_context->cm()); }
 
   // Returns reserve- and commit limit we run the test with (in the real world,
@@ -106,7 +107,8 @@ public:
 
   // Convenience function to retrieve total committed/used words
   size_t used_words() const       { return _used_words_counter.get(); }
-  size_t committed_words() const  { return _commit_limiter.committed_words(); }
+  size_t committed_words() const  { return _context->vslist()->committed_words(); }
+  size_t reserved_words() const   { return _context->vslist()->reserved_words(); }
 
   DEBUG_ONLY(void verify() const;)
 

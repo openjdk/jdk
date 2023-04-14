@@ -32,12 +32,15 @@
 #include "memory/metaspace/freeChunkList.hpp"
 #include "memory/metaspace/metaspaceContext.hpp"
 #include "memory/metaspace/metaspaceCommon.hpp"
+#include "memory/metaspace/metaspaceHumongousArea.hpp"
 #include "memory/metaspace/virtualSpaceList.hpp"
 #include "memory/metaspace/virtualSpaceNode.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/mutexLocker.hpp"
 
 namespace metaspace {
+
+using namespace chunklevel;
 
 #define LOGFMT         "VsList @" PTR_FORMAT " (%s)"
 #define LOGFMT_ARGS    p2i(this), this->_name
@@ -91,16 +94,21 @@ VirtualSpaceList::~VirtualSpaceList() {
 // Create a new node and append it to the list. After
 // this function, _current_node shall point to a new empty node.
 // List must be expandable for this to work.
-void VirtualSpaceList::create_new_node() {
+void VirtualSpaceList::create_new_node(size_t min_word_size) {
   assert(_can_expand, "List is not expandable");
   assert_lock_strong(Metaspace_lock);
 
-  VirtualSpaceNode* vsn = VirtualSpaceNode::create_node(Settings::virtual_space_node_default_word_size(),
+  const size_t min_word_size_aligned = align_up(min_word_size, chunklevel::MAX_CHUNK_WORD_SIZE);
+  const size_t node_size = MAX2(min_word_size_aligned, Settings::virtual_space_node_default_word_size());
+
+  VirtualSpaceNode* vsn = VirtualSpaceNode::create_node(node_size,
                                                         _commit_limiter,
                                                         &_reserved_words_counter, &_committed_words_counter);
   vsn->set_next(_first_node);
   Atomic::release_store(&_first_node, vsn);
   _nodes_counter.increment();
+
+  UL2(debug, "added new node of size " SIZE_FORMAT ", (now: %d).", node_size, num_nodes());
 }
 
 // Allocate a root chunk from this list.
@@ -109,6 +117,12 @@ void VirtualSpaceList::create_new_node() {
 // Also, no limits are checked, since no committing takes place.
 Metachunk*  VirtualSpaceList::allocate_root_chunk() {
   assert_lock_strong(Metaspace_lock);
+
+  Metachunk* c = _salvaged_root_chunks.remove_first();
+  if (c != nullptr) {
+    UL(debug, "Returning salvaged root chunk.");
+    return c;
+  }
 
   if (_first_node == nullptr ||
       _first_node->free_words() < chunklevel::MAX_CHUNK_WORD_SIZE) {
@@ -124,17 +138,70 @@ Metachunk*  VirtualSpaceList::allocate_root_chunk() {
 
     if (_can_expand) {
       create_new_node();
-      UL2(debug, "added new node (now: %d).", num_nodes());
     } else {
       UL(debug, "list cannot expand.");
       return nullptr; // We cannot expand this list.
     }
   }
 
-  Metachunk* c = _first_node->allocate_root_chunk();
+  c = _first_node->allocate_root_chunk();
   assert(c != nullptr, "This should have worked");
 
   return c;
+}
+
+// Given a node, salvage its remaining root chunks
+void VirtualSpaceList::salvage_chunks_from_node(VirtualSpaceNode* node) {
+  assert_lock_strong(Metaspace_lock);
+  Metachunk* c = node->allocate_root_chunk();
+  const int count1 = _salvaged_root_chunks.count();
+  while (c != nullptr) {
+    _salvaged_root_chunks.add(c);
+    c = node->allocate_root_chunk();
+  }
+  const int count2 = _salvaged_root_chunks.count();
+  if (count2 > count1) {
+    UL2(debug, "Salvaged %d root chunks from current node.", count2 - count1);
+  }
+}
+
+// Returns number of words that can be committed before hitting a limit
+size_t VirtualSpaceList::committed_possible_expansion_words() const {
+  return _commit_limiter->possible_expansion_words();
+}
+
+// Special function to handle humongous allocations.
+// Allocate a humongous area consisting of n adjacent (uncommitted) root chunks
+// Fails and returns false if we cannot place this area because the address space ran out
+// (in practice this means we reached CompressedClassSpaceSize)
+bool VirtualSpaceList::allocate_humongous_area(size_t word_size, MetaspaceHumongousArea* out) {
+
+  assert_lock_strong(Metaspace_lock);
+  assert(word_size > MAX_CHUNK_WORD_SIZE, "Why are we here?");
+
+  // Is the current node large enough? No: salvage it and start a new node.
+  if (_first_node == nullptr || _first_node->free_words() < word_size) {
+    if (_can_expand) {
+      salvage_chunks_from_node(_first_node);
+      create_new_node(word_size);
+    } else {
+      UL(debug, "list cannot expand.");
+      return false; // aka out of compressed class space
+    }
+  }
+
+  // Allocate chunks from the current node. Node allocates via pointer bump, so chunks will be
+  // adjacent.
+  const int num_chunks_needed = align_up(word_size, MAX_CHUNK_WORD_SIZE) / MAX_CHUNK_WORD_SIZE;
+  for (int i = 0; i < num_chunks_needed; i++) {
+    Metachunk* c = _first_node->allocate_root_chunk();
+    assert(c != nullptr, "Node too small"); // should work since we made sure node is large enough
+    out->add_to_tail(c);
+  }
+
+  DEBUG_ONLY(out->verify(word_size, false, false);)
+
+  return true;
 }
 
 // Print all nodes in this space list.

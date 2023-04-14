@@ -133,7 +133,6 @@ void BlockTree::verify() const {
 
       // check size and ordering
       tree_assert_invalid_node(n->_word_size >= MinWordSize, n);
-      tree_assert_invalid_node(n->_word_size <= chunklevel::MAX_CHUNK_WORD_SIZE, n);
       tree_assert_invalid_node(n->_word_size > info.lim1, n);
       tree_assert_invalid_node(n->_word_size < info.lim2, n);
 

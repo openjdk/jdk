@@ -58,6 +58,9 @@ class InternalStats : public AllStatic {
   /* Number of times an arena retired a chunk */    \
   DEBUG_ONLY(x_atomic(num_chunks_retired))          \
                                                     \
+  /* Number of humongous allocations. */            \
+  x_atomic(num_humongous_allocs)                    \
+                                                    \
   /* Number of times an allocation failed */        \
   /*  because we hit a limit. */                    \
   x_atomic(num_allocs_failed_limit)                 \
