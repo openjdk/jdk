@@ -571,6 +571,8 @@ Java_sun_nio_ch_Net_setIntOption0(JNIEnv *env, jclass clazz, jobject fdo,
     }
 }
 
+jint handleSocketErrorWithMessage(JNIEnv *env, jint errorValue, const char* message);
+
 JNIEXPORT jint JNICALL
 Java_sun_nio_ch_Net_joinOrDrop4(JNIEnv *env, jobject this, jboolean join, jobject fdo,
                                 jint group, jint interf, jint source)
@@ -614,7 +616,7 @@ Java_sun_nio_ch_Net_joinOrDrop4(JNIEnv *env, jobject this, jboolean join, jobjec
     if (n < 0) {
         if (join && (errno == ENOPROTOOPT || errno == EOPNOTSUPP))
             return IOS_UNAVAILABLE;
-        handleSocketError(env, errno);
+        handleSocketErrorWithMessage(env, errno, "setsockopt failed");
     }
     return 0;
 }
@@ -691,7 +693,7 @@ Java_sun_nio_ch_Net_joinOrDrop6(JNIEnv *env, jobject this, jboolean join, jobjec
     if (n < 0) {
         if (join && (errno == ENOPROTOOPT || errno == EOPNOTSUPP))
             return IOS_UNAVAILABLE;
-        handleSocketError(env, errno);
+        handleSocketErrorWithMessage(env, errno, "setsockopt failed");
     }
     return 0;
 }
@@ -913,8 +915,12 @@ Java_sun_nio_ch_Net_sendOOB(JNIEnv* env, jclass this, jobject fdo, jbyte b)
 }
 
 /* Declared in nio_util.h */
-
 jint handleSocketError(JNIEnv *env, jint errorValue)
+{
+    return handleSocketErrorWithMessage(env, errorValue, NULL);
+}
+
+jint handleSocketErrorWithMessage(JNIEnv *env, jint errorValue, const char* message)
 {
     char *xn;
     switch (errorValue) {
@@ -944,6 +950,10 @@ jint handleSocketError(JNIEnv *env, jint errorValue)
             break;
     }
     errno = errorValue;
-    JNU_ThrowByNameWithLastError(env, xn, "NioSocketError");
+    if (message == NULL) {
+        JNU_ThrowByNameWithLastError(env, xn, "NioSocketError");
+    } else {
+        JNU_ThrowByNameWithMessageAndLastError(env, xn, message);
+    }
     return IOS_THROWN;
 }
