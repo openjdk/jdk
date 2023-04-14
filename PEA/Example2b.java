@@ -4,7 +4,7 @@ class Example2b {
 
     public String foo(boolean cond) {
         String x = null;
-        
+
         if (cond) {
             x = new String("hello");
         }
@@ -13,15 +13,24 @@ class Example2b {
     }
     public String foo2(boolean cond) {
         String x = null;
-        
+
         if (cond) {
             x = new String("hello");
-            _cache = x;       // object 'x' escapes 
+            _cache = x;       // object 'x' escapes
         }
 
         return x;
     }
 
+    public String foo3(String str, boolean cond) {
+        if (str == null) {
+            str = new String("hello");
+        }
+        if (cond) {
+            _cache = str;
+        }
+        return str;
+    }
     public static void main(String[] args)  {
         Example2b kase = new Example2b();
         int iterations = 0;
@@ -32,11 +41,22 @@ class Example2b {
                 if (s != null && !s.equals("hello")) {
                     throw new RuntimeException("e");
                 }
-                
+
                 kase.foo2(cond);
                 if (kase._cache != null && !kase._cache.equals("hello")) {
                     throw new RuntimeException("e2");
                 }
+
+                if (0 == (iterations % 2)) {
+                    s = kase.foo3(null, cond);
+                } else {
+                    s= kase.foo3(kase._cache, cond);
+                }
+
+                if (s != null && !s.equals("hello")) {
+                    throw new RuntimeException("e3");
+                }
+
                 iterations++;
             }
         } finally {
