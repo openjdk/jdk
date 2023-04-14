@@ -127,10 +127,10 @@ JNIEXPORT jlong JNICALL Java_jdk_net_AIXSocketOptions_getSoPeerCred0
     socklen_t len = sizeof(cred_info);
 
     if ((rv=getsockopt(fd, SOL_SOCKET, SO_PEERID, &cred_info, &len)) < 0) {
-        handleError(env, rv, "get  failed");
+        handleError(env, rv, "get SO_PEERID failed");
     } else {
         if ((int)cred_info.euid == -1) {
-            handleError(env, -1, "get  failed");
+            handleError(env, -1, "get SO_PEERID failed");
             cred_info.euid = cred_info.egid = -1;
         }
     }
