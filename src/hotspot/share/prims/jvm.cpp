@@ -3913,16 +3913,13 @@ JVM_ENTRY(void, JVM_VirtualThreadMount(JNIEnv* env, jobject vthread, jboolean hi
     assert(!JvmtiExport::can_support_virtual_threads(), "sanity check");
     return;
   }
-  if (!JvmtiVTMSTransitionDisabler::VTMS_notify_jvmti_events()) {
+  if (JvmtiVTMSTransitionDisabler::VTMS_notify_jvmti_events()) {
+    JvmtiVTMSTransitionDisabler::VTMS_mount(vthread, hide, first_mount);
+  } else {
+    // set transition bit value in JavaThread and java.lang.VirtualThread object
     thread->set_is_in_VTMS_transition(hide);
     oop vt = JNIHandles::resolve_external_guard(vthread);
     java_lang_Thread::set_is_in_VTMS_transition(vt, hide);
-    return;
-  }
-  if (hide) {
-   JvmtiVTMSTransitionDisabler::VTMS_mount_begin(vthread, first_mount);
-  } else {
-   JvmtiVTMSTransitionDisabler::VTMS_mount_end(vthread, first_mount);
   }
 #else
   fatal("Should only be called with JVMTI enabled");
@@ -3937,16 +3934,13 @@ JVM_ENTRY(void, JVM_VirtualThreadUnmount(JNIEnv* env, jobject vthread, jboolean 
     assert(!JvmtiExport::can_support_virtual_threads(), "sanity check");
     return;
   }
-  if (!JvmtiVTMSTransitionDisabler::VTMS_notify_jvmti_events()) {
+  if (JvmtiVTMSTransitionDisabler::VTMS_notify_jvmti_events()) {
+    JvmtiVTMSTransitionDisabler::VTMS_unmount(vthread, hide, last_unmount);
+  } else {
+    // set transition bit value in JavaThread and java.lang.VirtualThread object
     thread->set_is_in_VTMS_transition(hide);
     oop vt = JNIHandles::resolve_external_guard(vthread);
     java_lang_Thread::set_is_in_VTMS_transition(vt, hide);
-    return;
-  }
-  if (hide) {
-   JvmtiVTMSTransitionDisabler::VTMS_unmount_begin(vthread, last_unmount);
-  } else {
-   JvmtiVTMSTransitionDisabler::VTMS_unmount_end(vthread, last_unmount);
   }
 #else
   fatal("Should only be called with JVMTI enabled");

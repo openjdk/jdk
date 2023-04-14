@@ -639,21 +639,13 @@ JRT_END
 JRT_ENTRY(void, SharedRuntime::notify_jvmti_mount(oopDesc* vt, jboolean hide, jboolean first_mount, JavaThread* current))
   jobject vthread = JNIHandles::make_local(const_cast<oopDesc*>(vt));
 
-  if (hide) {
-    JvmtiVTMSTransitionDisabler::VTMS_mount_begin(vthread, first_mount);
-  } else {
-    JvmtiVTMSTransitionDisabler::VTMS_mount_end(vthread, first_mount);
-  }
+  JvmtiVTMSTransitionDisabler::VTMS_mount(vthread, hide, first_mount);
 JRT_END
 
 JRT_ENTRY(void, SharedRuntime::notify_jvmti_unmount(oopDesc* vt, jboolean hide, jboolean last_unmount, JavaThread* current))
   jobject vthread = JNIHandles::make_local(const_cast<oopDesc*>(vt));
 
-  if (hide) {
-    JvmtiVTMSTransitionDisabler::VTMS_unmount_begin(vthread, last_unmount);
-  } else {
-    JvmtiVTMSTransitionDisabler::VTMS_unmount_end(vthread, last_unmount);
-  }
+  JvmtiVTMSTransitionDisabler::VTMS_unmount(vthread, hide, last_unmount);
 JRT_END
 #endif // INCLUDE_JVMTI
 
