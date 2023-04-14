@@ -252,6 +252,19 @@ jobs:
       make-arguments: ${{ github.event.inputs.make-arguments }}
     if: needs.select.outputs.macos-aarch64 == 'true'
 
+  build-windows-x64-viscpp-link-time-opt:
+    name: windows-x64-viscpp-link-time-opt
+    needs: select
+    uses: ./.github/workflows/build-windows.yml
+    with:
+      platform: windows-x64
+      msvc-toolset-version: '14.29'
+      msvc-toolset-architecture: 'x86.x64'
+      extra-conf-options: '--enable-jvm-feature-link-time-opt'
+      configure-arguments: ${{ github.event.inputs.configure-arguments }}
+      make-arguments: ${{ github.event.inputs.make-arguments }}
+    if: needs.select.outputs.windows-x64-viscpp-link-time-opt == 'true'
+
   build-windows-x64:
     name: windows-x64
     needs: select
