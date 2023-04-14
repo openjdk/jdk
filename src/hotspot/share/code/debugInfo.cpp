@@ -71,8 +71,7 @@ ScopeValue* DebugInfoReadStream::read_object_value(bool is_auto_box) {
 #ifdef ASSERT
   assert(_obj_pool != nullptr, "object pool does not exist");
   for (int i = _obj_pool->length() - 1; i >= 0; i--) {
-    assert(!_obj_pool->at(i)->is_object() || _obj_pool->at(i)->as_ObjectValue()->id() != id, "should not be read twice");
-    assert(!_obj_pool->at(i)->is_object_merge() || _obj_pool->at(i)->as_ObjectMergeValue()->id() != id, "should not be read twice");
+    assert(_obj_pool->at(i)->as_ObjectValue()->id() != id, "should not be read twice");
   }
 #endif
   ObjectValue* result = is_auto_box ? new AutoBoxObjectValue(id) : new ObjectValue(id);
@@ -87,8 +86,7 @@ ScopeValue* DebugInfoReadStream::read_object_merge_value() {
 #ifdef ASSERT
   assert(_obj_pool != nullptr, "object pool does not exist");
   for (int i = _obj_pool->length() - 1; i >= 0; i--) {
-    assert(!_obj_pool->at(i)->is_object() || _obj_pool->at(i)->as_ObjectValue()->id() != id, "should not be read twice");
-    assert(!_obj_pool->at(i)->is_object_merge() || _obj_pool->at(i)->as_ObjectMergeValue()->id() != id, "should not be read twice");
+    assert(_obj_pool->at(i)->as_ObjectValue()->id() != id, "should not be read twice");
   }
 #endif
   ObjectMergeValue* result = new ObjectMergeValue(id);
@@ -168,7 +166,7 @@ void ObjectValue::set_value(oop value) {
 }
 
 void ObjectValue::read_object(DebugInfoReadStream* stream) {
-  _only_merge_sr_candidate = stream->read_bool();
+  _only_merge_candidate = stream->read_bool();
   _klass = read_from(stream);
   assert(_klass->is_constant_oop(), "should be constant java mirror oop");
   int length = stream->read_int();
@@ -186,7 +184,7 @@ void ObjectValue::write_on(DebugInfoWriteStream* stream) {
     set_visited(true);
     stream->write_int(is_auto_box() ? AUTO_BOX_OBJECT_CODE : OBJECT_CODE);
     stream->write_int(_id);
-    stream->write_bool(_only_merge_sr_candidate);
+    stream->write_bool(_only_merge_candidate);
     _klass->write_on(stream);
     int length = _field_values.length();
     stream->write_int(length);
@@ -199,7 +197,7 @@ void ObjectValue::write_on(DebugInfoWriteStream* stream) {
 void ObjectValue::print_on(outputStream* st) const {
   st->print("%s: ID=%d, is_merge_candidate=%d, skip_field_assignment=%d, N.Fields=%d",
             is_auto_box() ? "box_obj" : "obj", _id,
-            _only_merge_sr_candidate, _skip_field_assignment, _field_values.length());
+            _only_merge_candidate, _skip_rematerialization, _field_values.length());
   st->print_cr(", klass: %s ", java_lang_Class::as_Klass(_klass->as_ConstantOopReadValue()->value()())->external_name());
   st->print("Fields: ");
   print_fields_on(st);
@@ -249,8 +247,9 @@ ObjectValue* ObjectMergeValue::select(frame* fr, RegisterMap* reg_map) {
     // allocated it during the deoptimization
     _selected->set_value(sv_merge_pointer->get_obj()());
 
-    // No need for field assignment as the object wasn't really scalar replaced
-    _selected->set_skip_field_assignment();
+    // No need to allocate the object or do field reassignment since
+    // the object wasn't really scalar replaced.
+    _selected->set_skip_rematerialization();
 
     return _selected;
   } else {

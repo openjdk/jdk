@@ -404,6 +404,10 @@ bool ConnectionGraph::compute_escape() {
     for (uint i = 0; i < reducible_merges.size(); i++ ) {
       Node* n = reducible_merges.at(i);
       reduce_this_phi(n->as_Phi());
+      if (C->failing()) {
+        NOT_PRODUCT(escape_state_statistics(java_objects_worklist);)
+        return false;
+      }
     }
     _igvn->set_delay_transform(delay);
   }
@@ -497,6 +501,13 @@ bool ConnectionGraph::can_reduce_this_phi_check_users(PhiNode* ophi) const {
 // 'can_reduce_this_phi_inputs' and 'can_reduce_this_phi_users' for more
 // details.
 bool ConnectionGraph::can_reduce_this_phi(PhiNode* ophi) const {
+  // If there was an error attempting to reduce allocation merges for this
+  // method we might have disabled the compilation and be retrying
+  // with RAM disabled.
+  if (!_compile->do_reduce_allocation_merges()) {
+    return false;
+  }
+
   const Type* phi_t = _igvn->type(ophi);
   if (phi_t == nullptr || phi_t->make_ptr() == nullptr ||
                           phi_t->make_ptr()->isa_instptr() == nullptr ||
@@ -633,10 +644,12 @@ void ConnectionGraph::reduce_this_phi_on_safepoints(PhiNode* ophi, Unique_Node_L
     smerge->init_req(0, _compile->root());
     _igvn->register_new_node_with_optimizer(smerge);
 
-    // Keep a copy of the original pointer to NSR objects
+    // The next two inputs are:
+    //  (1) A copy of the original pointer to NSR objects.
+    //  (2) A selector, used to decide if we need to rematerialize an object
+    //      or use the pointer to a NSR object.
+    // See more details of these fields in the declaration of SafePointScalarMergeNode
     sfpt->add_req(ophi);
-
-    // Add the selector so we know which direction the execution took
     sfpt->add_req(selector);
 
     for (uint i = 1; i < ophi->req(); i++) {
@@ -652,10 +665,9 @@ void ConnectionGraph::reduce_this_phi_on_safepoints(PhiNode* ophi, Unique_Node_L
       AllocateNode* alloc = ptn->ideal_node()->as_Allocate();
       SafePointScalarObjectNode* sobj = mexp.create_scalarized_object_description(alloc, sfpt);
       if (sobj == nullptr) {
-        fatal("Failed to create SafePointScalarObjectNode!");
+        C2Compiler::retry_no_reduce_allocation_merges();
+        return;
       }
-
-      jvms->set_endoff(sfpt->req());
 
       // Now make a pass over the debug information replacing any references
       // to the allocated object with "sobj"
@@ -666,7 +678,7 @@ void ConnectionGraph::reduce_this_phi_on_safepoints(PhiNode* ophi, Unique_Node_L
       // If the sfpt was NOT using the scalarized object directly then this SOBJ
       // is just a candidate for rematerialization.
       if (reps == 0) {
-        sobj->set_only_merge_sr_candidate(true);
+        sobj->set_only_merge_candidate(true);
       }
 
       // Register the scalarized object as a candidate for reallocation
@@ -676,6 +688,10 @@ void ConnectionGraph::reduce_this_phi_on_safepoints(PhiNode* ophi, Unique_Node_L
     // Replaces debug information references to "ophi" in "sfpt" with references to "smerge"
     int debug_end = jvms->debug_end();
     sfpt->replace_edges_in_range(ophi, smerge, debug_start, debug_end, _igvn);
+
+    // The call to 'replace_edges_in_range' above might have removed the
+    // reference to ophi that we need at _merge_pointer_idx. The line below make
+    // sure the reference is maintained.
     sfpt->set_req(smerge->merge_pointer_idx(jvms), ophi);
     _igvn->_worklist.push(sfpt);
   }
@@ -2234,11 +2250,16 @@ void ConnectionGraph::adjust_scalar_replaceable_state(JavaObjectNode* jobj, Uniq
       PointsToNode* ptn = j.get();
       if (ptn->is_JavaObject() && ptn != jobj) {
         Node* use_n = use->ideal_node();
-        if (ReduceAllocationMerges && use_n->is_Phi() &&
-            (reducible_merges.member(use_n) || can_reduce_this_phi(use_n->as_Phi()))) {
+
+        // If it's already a candidate or confirmed reducible merge we can skip verification
+        if (candidates.member(use_n) || reducible_merges.member(use_n)) {
+          continue;
+        }
+
+        if (ReduceAllocationMerges && use_n->is_Phi() && can_reduce_this_phi(use_n->as_Phi())) {
           candidates.push(use_n);
         } else {
-          // Mark all objects as NSR & NonUnique if we can't remove the merge
+          // Mark all objects as NSR if we can't remove the merge
           set_not_scalar_replaceable(jobj NOT_PRODUCT(COMMA trace_merged_message(ptn)));
           set_not_scalar_replaceable(ptn NOT_PRODUCT(COMMA trace_merged_message(jobj)));
         }
@@ -2315,6 +2336,10 @@ void ConnectionGraph::adjust_scalar_replaceable_state(JavaObjectNode* jobj, Uniq
           set_not_scalar_replaceable(jobj NOT_PRODUCT(COMMA "may point to more than one object"));
           set_not_scalar_replaceable(base NOT_PRODUCT(COMMA "may point to more than one object"));
         }
+      }
+
+      if (!jobj->scalar_replaceable()) {
+        return;
       }
     }
   }

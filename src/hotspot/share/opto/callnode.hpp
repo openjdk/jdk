@@ -513,7 +513,7 @@ class SafePointScalarObjectNode: public TypeNode {
 
   Node* _alloc;                   // Just for debugging purposes.
 
-  bool _only_merge_sr_candidate;  // Will be true if the object described by this Node is only
+  bool _only_merge_candidate;     // Will be true if the object described by this Node is only
                                   // used as part of a reduced allocation merge.
 
   virtual uint hash() const;
@@ -536,8 +536,8 @@ public:
   }
   uint n_fields()    const { return _n_fields; }
 
-  bool is_only_merge_sr_candidate()           { return _only_merge_sr_candidate; }
-  void set_only_merge_sr_candidate(bool only) { _only_merge_sr_candidate = only; }
+  bool is_only_merge_candidate()           { return _only_merge_candidate; }
+  void set_only_merge_candidate(bool only) { _only_merge_candidate = only; }
 
 #ifdef ASSERT
   Node* alloc() const { return _alloc; }

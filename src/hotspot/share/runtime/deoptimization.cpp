@@ -306,11 +306,11 @@ static void print_objects(JavaThread* deoptee_thread,
       ObjectMergeValue* merged = objects->at(i)->as_ObjectMergeValue();
       sv = merged->select(frame, reg_map);
       // Klass may be null if the object was actually a NSR input of a merge.
-      k = sv->klass() != nullptr ? java_lang_Class::as_Klass(sv->klass()->as_ConstantOopReadValue()->value()()) : nullptr;
+      k = (sv != nullptr && sv->klass() != nullptr) ? java_lang_Class::as_Klass(sv->klass()->as_ConstantOopReadValue()->value()()) : nullptr;
     } else if (objects->at(i)->is_object()) {
       sv = objects->at(i)->as_ObjectValue();
       // This object is only a candidate inside an ObjectMergeValue
-      if (sv->is_only_merge_sr_candidate()) {
+      if (sv->is_only_merge_candidate()) {
         continue;
       }
       k = java_lang_Class::as_Klass(sv->klass()->as_ConstantOopReadValue()->value()());
@@ -1243,16 +1243,15 @@ bool Deoptimization::realloc_objects(JavaThread* thread, frame* fr, RegisterMap*
         continue;
       }
 
-      // Will be non-null when it's a pointer from a merge where the
-      // executed path is of an object NOT scalar replaced.
-      if (!sv->value().is_null()) {
+      // Will be true whenever the object was a NSR input of an allocation merge
+      if (sv->skip_rematerialization()) {
         continue;
       }
     } else if (objects->at(i)->is_object()) {
       sv = objects->at(i)->as_ObjectValue();
 
       // This object is only a candidate inside an ObjectMergeValue
-      if (sv->is_only_merge_sr_candidate()) {
+      if (sv->is_only_merge_candidate()) {
         continue;
       }
     } else {
@@ -1625,7 +1624,7 @@ void Deoptimization::reassign_fields(frame* fr, RegisterMap* reg_map, GrowableAr
       //
       // If the pointer didn't come from a scalar replaced object then
       // we don't need to do field reassignment.
-      if (sv->is_only_merge_sr_candidate() || sv->skip_field_assignment()) {
+      if (sv->is_only_merge_candidate() || sv->skip_rematerialization()) {
         continue;
       }
     } else {

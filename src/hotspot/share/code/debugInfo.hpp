@@ -133,21 +133,21 @@ class ObjectValue: public ScopeValue {
   GrowableArray<ScopeValue*> _field_values;
   Handle                     _value;
   bool                       _visited;
-  bool                       _only_merge_sr_candidate;// Will be true if this object is just representing
+  bool                       _only_merge_candidate;   // Will be true if this object is just representing
                                                       // a scalar replaced object inside an ObjectMergeValue.
 
-  bool                       _skip_field_assignment;  // Will be true if the _value field of this object
+  bool                       _skip_rematerialization; // Will be true if the _value field of this object
                                                       // actually holds a pointer to a non-scalarized object
                                                       // that was participating in an allocation merge.
  public:
-  ObjectValue(int id, ScopeValue* klass, bool only_merge_sr_candidate = false)
+  ObjectValue(int id, ScopeValue* klass, bool only_merge_candidate = false)
      : _id(id)
      , _klass(klass)
      , _field_values()
      , _value()
      , _visited(false)
-     , _only_merge_sr_candidate(only_merge_sr_candidate)
-     , _skip_field_assignment(false) {
+     , _only_merge_candidate(only_merge_candidate)
+     , _skip_rematerialization(false) {
     assert(klass->is_constant_oop(), "should be constant java mirror oop");
   }
 
@@ -157,8 +157,8 @@ class ObjectValue: public ScopeValue {
      , _field_values()
      , _value()
      , _visited(false)
-     , _only_merge_sr_candidate(false)
-     , _skip_field_assignment(false) {}
+     , _only_merge_candidate(false)
+     , _skip_rematerialization(false) {}
 
   // Accessors
   bool                        is_object() const                   { return true; }
@@ -169,14 +169,14 @@ class ObjectValue: public ScopeValue {
   int                         field_size()                        { return _field_values.length(); }
   Handle                      value() const                       { return _value; }
   bool                        is_visited() const                  { return _visited; }
-  bool                        is_only_merge_sr_candidate() const  { return _only_merge_sr_candidate; }
-  bool                        skip_field_assignment() const       { return _skip_field_assignment; }
+  bool                        is_only_merge_candidate() const     { return _only_merge_candidate; }
+  bool                        skip_rematerialization() const      { return _skip_rematerialization; }
 
   void                        set_id(int id)                      { _id = id; }
   void                        set_value(oop value);
   void                        set_visited(bool visited)           { _visited = visited; }
-  void                        set_merge_candidate(bool cnd)       { _only_merge_sr_candidate = cnd; }
-  void                        set_skip_field_assignment()         { _skip_field_assignment = true; }
+  void                        set_merge_candidate(bool cnd)       { _only_merge_candidate = cnd; }
+  void                        set_skip_rematerialization()        { _skip_rematerialization = true; }
 
   // Serialization of debugging information
   void read_object(DebugInfoReadStream* stream);

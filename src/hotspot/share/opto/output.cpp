@@ -755,7 +755,7 @@ void PhaseOutput::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
             cik->is_array_klass(), "Not supported allocation.");
       sv = new ObjectValue(spobj->_idx,
                            new ConstantOopWriteValue(cik->java_mirror()->constant_encoding()),
-                           spobj->is_only_merge_sr_candidate());
+                           spobj->is_only_merge_candidate());
       set_sv_for_object_node(objs, sv);
 
       uint first_ind = spobj->first_index(sfpt->jvms());
@@ -775,7 +775,7 @@ void PhaseOutput::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
       GrowableArray<ScopeValue*> deps;
 
       int merge_pointer_idx = smerge->merge_pointer_idx(sfpt->jvms());
-      (void)FillLocArray(0, NULL, sfpt->in(merge_pointer_idx), &deps, NULL);
+      (void)FillLocArray(0, sfpt, sfpt->in(merge_pointer_idx), &deps, objs);
       assert(deps.length() == 1, "missing value");
 
       int selector_idx = smerge->selector_idx(sfpt->jvms());
@@ -786,8 +786,8 @@ void PhaseOutput::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
       set_sv_for_object_node(objs, sv);
 
       for (uint i = 1; i < smerge->req(); i++) {
-        Node* fld_node = smerge->in(i);
-        (void)FillLocArray(sv->possible_objects()->length(), sfpt, fld_node, sv->possible_objects(), objs);
+        Node* obj_node = smerge->in(i);
+        (void)FillLocArray(sv->possible_objects()->length(), sfpt, obj_node, sv->possible_objects(), objs);
       }
     }
     array->append(sv);
@@ -1060,7 +1060,7 @@ void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
                  cik->is_array_klass(), "Not supported allocation.");
           ObjectValue* sv = new ObjectValue(spobj->_idx,
                                             new ConstantOopWriteValue(cik->java_mirror()->constant_encoding()),
-                                            spobj->is_only_merge_sr_candidate());
+                                            spobj->is_only_merge_candidate());
           PhaseOutput::set_sv_for_object_node(objs, sv);
 
           uint first_ind = spobj->first_index(youngest_jvms);

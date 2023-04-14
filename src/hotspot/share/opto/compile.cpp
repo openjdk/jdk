@@ -518,6 +518,12 @@ void Compile::print_compile_messages() {
     tty->print_cr("** Bailout: Recompile without iterative escape analysis**");
     tty->print_cr("*********************************************************");
   }
+  if (do_reduce_allocation_merges() != ReduceAllocationMerges && PrintOpto) {
+    // Recompiling without reducing allocation merges
+    tty->print_cr("*********************************************************");
+    tty->print_cr("** Bailout: Recompile without reduce allocation merges **");
+    tty->print_cr("*********************************************************");
+  }
   if ((eliminate_boxing() != EliminateAutoBox) && PrintOpto) {
     // Recompiling without boxing elimination
     tty->print_cr("*********************************************************");

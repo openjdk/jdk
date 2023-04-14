@@ -1463,12 +1463,12 @@ void SafePointNode::disconnect_from_root(PhaseIterGVN *igvn) {
 
 //==============  SafePointScalarObjectNode  ==============
 
-SafePointScalarObjectNode::SafePointScalarObjectNode(const TypeOopPtr* tp, Node* alloc, uint first_index, uint n_fields, bool only_merge_sr_candidate) :
+SafePointScalarObjectNode::SafePointScalarObjectNode(const TypeOopPtr* tp, Node* alloc, uint first_index, uint n_fields, bool only_merge_candidate) :
   TypeNode(tp, 1), // 1 control input -- seems required.  Get from root.
   _first_index(first_index),
   _n_fields(n_fields),
   _alloc(alloc),
-  _only_merge_sr_candidate(only_merge_sr_candidate)
+  _only_merge_candidate(only_merge_candidate)
 {
 #ifdef ASSERT
   if (!alloc->is_Allocate() && !(alloc->Opcode() == Op_VectorBox)) {

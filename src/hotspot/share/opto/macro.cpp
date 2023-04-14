@@ -845,6 +845,8 @@ SafePointScalarObjectNode* PhaseMacroExpand::create_scalarized_object_descriptio
     sfpt->add_req(field_val);
   }
 
+  sfpt->jvms()->set_endoff(sfpt->req());
+
   return sobj;
 }
 
@@ -864,14 +866,10 @@ bool PhaseMacroExpand::scalar_replacement(AllocateNode *alloc, GrowableArray <Sa
       return false;
     }
 
-    JVMState *jvms = sfpt->jvms();
-    jvms->set_endoff(sfpt->req());
-
     // Now make a pass over the debug information replacing any references
     // to the allocated object with "sobj"
-    int start = jvms->debug_start();
-    int end   = jvms->debug_end();
-    sfpt->replace_edges_in_range(res, sobj, start, end, &_igvn);
+    JVMState *jvms = sfpt->jvms();
+    sfpt->replace_edges_in_range(res, sobj, jvms->debug_start(), jvms->debug_end(), &_igvn);
     _igvn._worklist.push(sfpt);
 
     // keep it for rollback
