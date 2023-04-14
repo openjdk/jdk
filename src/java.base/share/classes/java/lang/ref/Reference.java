@@ -476,6 +476,12 @@ public abstract sealed class Reference<T>
      * <p> This method is invoked only by Java code; when the garbage collector
      * enqueues references it does so directly, without invoking this method.
      *
+     * <p>Memory consistency effects: Actions in a thread prior to successfully
+     * enqueueing a reference on a queue
+     * <a href="{@docRoot}/java.base/java/util/concurrent/package-summary.html#MemoryVisibility"><i>happen-before</i></a>
+     * the reference is removed from the queue by {@link ReferenceQueue#poll}
+     * or {@link ReferenceQueue#remove}.
+     *
      * @return   {@code true} if this reference object was successfully
      *           enqueued; {@code false} if it was already enqueued or if
      *           it was not registered with a queue when it was created
@@ -513,7 +519,7 @@ public abstract sealed class Reference<T>
     /**
      * Ensures that the given object remains
      * <a href="package-summary.html#reachability"><em>strongly reachable</em></a>,
-     * regardless of any prior actions of the program that might otherwise cause
+     * regardless of any other actions of the program that might otherwise cause
      * the object to become unreachable; thus, the object is not
      * reclaimable by garbage collection at least until after the invocation of
      * this method. {@link Reference}s referring to the given object will not be
@@ -524,16 +530,14 @@ public abstract sealed class Reference<T>
      * <p> This method establishes an ordering for <em>strong reachability</em>
      * with respect to garbage collection.  It controls relations that are
      * otherwise only implicit in a program -- the reachability conditions
-     * triggering garbage collection.  This method is designed for use
+     * triggering garbage collection.  This method is applicable only
      * when reclamation may have visible effects,
      * such as for objects with finalizers or that use Cleaner.
      *
      * <p>Memory consistency effects: Actions in a thread prior to calling
      * reachabilityFence(x)
      * <a href="{@docRoot}/java.base/java/util/concurrent/package-summary.html#MemoryVisibility"><i>happen-before</i></a>
-     * any Reference to x is enqueued on a ReferenceQueue (as happens when a
-     * {@linkplain Cleaner#register cleaning action} for x runs on a
-     * {@linkplain Cleaner}'s thread).
+     * the garbage collector enqueues any Reference to x on a ReferenceQueue.
      *
      * @apiNote
      * Reference processing or finalization may occur whenever the virtual machine detects that no
