@@ -164,7 +164,8 @@ char* DumpRegion::expand_top_to(char* newtop) {
       // This is just a sanity check and should not appear in any real world usage. This
       // happens only if you allocate more than 2GB of shared objects and would require
       // millions of shared classes.
-      MetaspaceShared::unrecoverable_writing_error("Out of memory in the CDS archive\nPlease reduce the number of shared classes.");
+      log_error(cds)("Out of memory in the CDS archive. Please reduce the number of shared classes.");
+      MetaspaceShared::unrecoverable_writing_error();
     }
   }
 

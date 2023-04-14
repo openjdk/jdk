@@ -310,7 +310,7 @@ void MetaspaceShared::read_extra_data(JavaThread* current, const char* filename)
     if (utf8_length == 0x7fffffff) {
       // buf_len will overflown 32-bit value.
       log_error(cds)("string length too large: %d", utf8_length);
-      unrecoverable_loading_error();
+      MetaspaceShared::unrecoverable_loading_error();
     }
     int buf_len = utf8_length+1;
     char* utf8_buffer = NEW_RESOURCE_ARRAY(char, buf_len);
@@ -979,9 +979,9 @@ void MetaspaceShared::initialize_runtime_shared_and_meta_spaces() {
     DynamicDumpSharedSpaces = false;
     log_info(cds)("Unable to map shared spaces");
     if (PrintSharedArchiveAndExit) {
-      unrecoverable_loading_error("Unable to use shared archive.");
+      MetaspaceShared::unrecoverable_loading_error("Unable to use shared archive.");
     } else if (RequireSharedSpaces) {
-      unrecoverable_loading_error("Unable to map shared spaces");
+      MetaspaceShared::unrecoverable_loading_error("Unable to map shared spaces");
     }
   }
 
@@ -996,7 +996,7 @@ void MetaspaceShared::initialize_runtime_shared_and_meta_spaces() {
     delete dynamic_mapinfo;
   }
   if (RequireSharedSpaces && has_failed) {
-      unrecoverable_loading_error("Unable to map shared spaces");
+      MetaspaceShared::unrecoverable_loading_error("Unable to map shared spaces");
   }
 }
 
@@ -1024,7 +1024,7 @@ FileMapInfo* MetaspaceShared::open_dynamic_archive() {
   if (!mapinfo->initialize()) {
     delete(mapinfo);
     if (RequireSharedSpaces) {
-      unrecoverable_loading_error("Failed to initialize dynamic archive");
+      MetaspaceShared::unrecoverable_loading_error("Failed to initialize dynamic archive");
     }
     return nullptr;
   }
