@@ -803,7 +803,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         Register t = x15;
         __ load_klass(t, x10);
         __ lwu(t, Address(t, Klass::access_flags_offset()));
-        __ andi(t0, t, JVM_ACC_HAS_FINALIZER);
+        __ test_bit(t0, t, exact_log2(JVM_ACC_HAS_FINALIZER));
         __ bnez(t0, register_finalizer);
         __ ret();
 

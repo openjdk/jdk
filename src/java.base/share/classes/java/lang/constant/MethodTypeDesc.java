@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
  */
 package java.lang.constant;
 
+import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.TypeDescriptor;
 import java.util.List;
@@ -187,6 +188,16 @@ public sealed interface MethodTypeDesc
                                    .collect(Collectors.joining(",")),
                              returnType().displayName());
     }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @apiNote {@linkplain MethodTypeDesc} can represent method type descriptors
+     * that are not representable by {@linkplain MethodType}, such as methods with
+     * more than 255 parameter slots, so attempts to resolve these may result in errors.
+     */
+    @Override
+    MethodType resolveConstantDesc(MethodHandles.Lookup lookup) throws ReflectiveOperationException;
 
     /**
      * Compares the specified object with this descriptor for equality.  Returns

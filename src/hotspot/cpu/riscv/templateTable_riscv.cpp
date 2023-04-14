@@ -1104,7 +1104,7 @@ void TemplateTable::bastore() {
   __ load_klass(x12, x13);
   __ lwu(x12, Address(x12, Klass::layout_helper_offset()));
   Label L_skip;
-  __ andi(t0, x12, Klass::layout_helper_boolean_diffbit());
+  __ test_bit(t0, x12, exact_log2(Klass::layout_helper_boolean_diffbit()));
   __ beqz(t0, L_skip);
   __ andi(x10, x10, 1);  // if it is a T_BOOLEAN array, mask the stored value to 0/1
   __ bind(L_skip);
@@ -2086,7 +2086,7 @@ void TemplateTable::_return(TosState state) {
     __ load_klass(x13, c_rarg1);
     __ lwu(x13, Address(x13, Klass::access_flags_offset()));
     Label skip_register_finalizer;
-    __ andi(t0, x13, JVM_ACC_HAS_FINALIZER);
+    __ test_bit(t0, x13, exact_log2(JVM_ACC_HAS_FINALIZER));
     __ beqz(t0, skip_register_finalizer);
 
     __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::register_finalizer), c_rarg1);
@@ -2256,7 +2256,7 @@ void TemplateTable::load_invokedynamic_entry(Register method) {
   Label L_no_push;
   // Check if there is an appendix
   __ load_unsigned_byte(index, Address(cache, in_bytes(ResolvedIndyEntry::flags_offset())));
-  __ andi(t0, index, 1UL << ResolvedIndyEntry::has_appendix_shift);
+  __ test_bit(t0, index, ResolvedIndyEntry::has_appendix_shift);
   __ beqz(t0, L_no_push);
 
   // Get appendix
@@ -2519,7 +2519,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   __ bind(Done);
 
   Label notVolatile;
-  __ andi(t0, raw_flags, 1UL << ConstantPoolCacheEntry::is_volatile_shift);
+  __ test_bit(t0, raw_flags, ConstantPoolCacheEntry::is_volatile_shift);
   __ beqz(t0, notVolatile);
   __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
   __ bind(notVolatile);
@@ -2618,7 +2618,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
 
   {
     Label notVolatile;
-    __ andi(t0, x15, 1UL << ConstantPoolCacheEntry::is_volatile_shift);
+    __ test_bit(t0, x15, ConstantPoolCacheEntry::is_volatile_shift);
     __ beqz(t0, notVolatile);
     __ membar(MacroAssembler::StoreStore | MacroAssembler::LoadStore);
     __ bind(notVolatile);
@@ -2828,7 +2828,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
 
   {
     Label notVolatile;
-    __ andi(t0, x15, 1UL << ConstantPoolCacheEntry::is_volatile_shift);
+    __ test_bit(t0, x15, ConstantPoolCacheEntry::is_volatile_shift);
     __ beqz(t0, notVolatile);
     __ membar(MacroAssembler::StoreLoad | MacroAssembler::StoreStore);
     __ bind(notVolatile);
@@ -2929,7 +2929,7 @@ void TemplateTable::fast_storefield(TosState state) {
 
   {
     Label notVolatile;
-    __ andi(t0, x13, 1UL << ConstantPoolCacheEntry::is_volatile_shift);
+    __ test_bit(t0, x13, ConstantPoolCacheEntry::is_volatile_shift);
     __ beqz(t0, notVolatile);
     __ membar(MacroAssembler::StoreStore | MacroAssembler::LoadStore);
     __ bind(notVolatile);
@@ -2977,7 +2977,7 @@ void TemplateTable::fast_storefield(TosState state) {
 
   {
     Label notVolatile;
-    __ andi(t0, x13, 1UL << ConstantPoolCacheEntry::is_volatile_shift);
+    __ test_bit(t0, x13, ConstantPoolCacheEntry::is_volatile_shift);
     __ beqz(t0, notVolatile);
     __ membar(MacroAssembler::StoreLoad | MacroAssembler::StoreStore);
     __ bind(notVolatile);
@@ -3063,7 +3063,7 @@ void TemplateTable::fast_accessfield(TosState state) {
   }
   {
     Label notVolatile;
-    __ andi(t0, x13, 1UL << ConstantPoolCacheEntry::is_volatile_shift);
+    __ test_bit(t0, x13, ConstantPoolCacheEntry::is_volatile_shift);
     __ beqz(t0, notVolatile);
     __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
     __ bind(notVolatile);
@@ -3107,7 +3107,7 @@ void TemplateTable::fast_xaccess(TosState state) {
     Label notVolatile;
     __ lwu(x13, Address(x12, in_bytes(ConstantPoolCache::base_offset() +
                                       ConstantPoolCacheEntry::flags_offset())));
-    __ andi(t0, x13, 1UL << ConstantPoolCacheEntry::is_volatile_shift);
+    __ test_bit(t0, x13, ConstantPoolCacheEntry::is_volatile_shift);
     __ beqz(t0, notVolatile);
     __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
     __ bind(notVolatile);
@@ -3156,7 +3156,7 @@ void TemplateTable::prepare_invoke(int byte_no,
   // maybe push appendix to arguments (just before return address)
   if (is_invokehandle) {
     Label L_no_push;
-    __ andi(t0, flags, 1UL << ConstantPoolCacheEntry::has_appendix_shift);
+    __ test_bit(t0, flags, ConstantPoolCacheEntry::has_appendix_shift);
     __ beqz(t0, L_no_push);
     // Push the appendix as a trailing parameter.
     // This must be done before we get the receiver,
@@ -3197,7 +3197,7 @@ void TemplateTable::invokevirtual_helper(Register index,
   assert_different_registers(index, recv, x10, x13);
   // Test for an invoke of a final method
   Label notFinal;
-  __ andi(t0, flags, 1UL << ConstantPoolCacheEntry::is_vfinal_shift);
+  __ test_bit(t0, flags, ConstantPoolCacheEntry::is_vfinal_shift);
   __ beqz(t0, notFinal);
 
   const Register method = index;  // method must be xmethod
@@ -3289,7 +3289,7 @@ void TemplateTable::invokeinterface(int byte_no) {
   // Special case of invokeinterface called for virtual method of
   // java.lang.Object. See cpCache.cpp for details
   Label notObjectMethod;
-  __ andi(t0, x13, 1UL << ConstantPoolCacheEntry::is_forced_virtual_shift);
+  __ test_bit(t0, x13, ConstantPoolCacheEntry::is_forced_virtual_shift);
   __ beqz(t0, notObjectMethod);
 
   invokevirtual_helper(xmethod, x12, x13);
@@ -3299,7 +3299,7 @@ void TemplateTable::invokeinterface(int byte_no) {
 
   // Check for private method invocation - indicated by vfinal
   Label notVFinal;
-  __ andi(t0, x13, 1UL << ConstantPoolCacheEntry::is_vfinal_shift);
+  __ test_bit(t0, x13, ConstantPoolCacheEntry::is_vfinal_shift);
   __ beqz(t0, notVFinal);
 
   // Check receiver klass into x13
@@ -3468,7 +3468,7 @@ void TemplateTable::_new() {
   // get instance_size in InstanceKlass (scaled to a count of bytes)
   __ lwu(x13, Address(x14, Klass::layout_helper_offset()));
   // test to see if it has a finalizer or is malformed in some way
-  __ andi(t0, x13, Klass::_lh_instance_slow_path_bit);
+  __ test_bit(t0, x13, exact_log2(Klass::_lh_instance_slow_path_bit));
   __ bnez(t0, slow_case);
 
   // Allocate the instance:
