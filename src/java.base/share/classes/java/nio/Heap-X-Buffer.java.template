@@ -280,11 +280,13 @@ class Heap$Type$Buffer$RW$
 
     //
     // Use getChars() to load chars directly into the heap buffer array.
-    // This improves performance versus converting the StringBuilder to a
-    // String and then appending the String as StringBuilder::toString
-    // allocates memory for and copies all the contained chars
+    // For a String or StringBuffer source this improves performance if
+    // a proper subsequence is being appended as copying to a new intermediate
+    // String object is avoided. For a StringBuilder where either a subsequence
+    // or the full sequence of chars is being appended, copying the chars to
+    // an intermedite String in StringBuilder::toString is avoided.
     //
-    private $Type$Buffer append(StringBuilder sb, int start, int end) {
+    private $Type$Buffer appendChars(CharSequence csq, int start, int end) {
         checkSession();
 
         int length = end - start;
@@ -294,15 +296,23 @@ class Heap$Type$Buffer$RW$
         if (length > rem)
             throw new BufferOverflowException();
 
-        sb.getChars(start, end, hb, ix(pos));
+        if (csq instanceof StringBuilder bld) {
+            bld.getChars(start, end, hb, ix(pos));
+        } else if (csq instanceof String str) {
+            str.getChars(start, end, hb, ix(pos));
+        } else if (csq instanceof StringBuffer buf) {
+            buf.getChars(start, end, hb, ix(pos));
+        }
+
         position(pos + length);
+
         return this;
     }
 
     public $Type$Buffer append(CharSequence csq) {
 #if[rw]
-        if (csq instanceof StringBuilder sb)
-            return append(sb, 0, sb.length());
+        if (csq instanceof StringBuilder)
+            return appendChars(csq, 0, csq.length());
 
         return super.append(csq);
 #else[rw]
@@ -312,8 +322,12 @@ class Heap$Type$Buffer$RW$
 
     public $Type$Buffer append(CharSequence csq, int start, int end) {
 #if[rw]
-        if (csq instanceof StringBuilder sb)
-            return append(sb, start, end);
+        if (start == 0 && end == csq.length())
+            return append(csq);
+
+        if (csq instanceof String || csq instanceof StringBuffer ||
+            csq instanceof StringBuilder)
+            return appendChars(csq, start, end);
 
         return super.append(csq, start, end);
 #else[rw]
