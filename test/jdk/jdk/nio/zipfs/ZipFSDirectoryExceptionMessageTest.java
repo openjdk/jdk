@@ -37,7 +37,8 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * @test
  * @bug 8305945
- * @summary Validate that Zip FS provides the correct exception message
+ * @summary Validate that Zip FS provides the correct exception message when an
+ * attempt is made to obtain an InputStream from a directory entry
  * @modules jdk.zipfs
  * @run junit ZipFSDirectoryExceptionMessageTest
  */
@@ -53,7 +54,7 @@ public class ZipFSDirectoryExceptionMessageTest {
     /**
      * Zip file to create
      */
-    public static final String ZIP_FILE = "directoryExceptionTest.zip";
+    public static final Path ZIP_FILE = Path.of("directoryExceptionTest.zip");
 
     /**
      * Create a Zip file which contains a single directory entry
@@ -67,7 +68,7 @@ public class ZipFSDirectoryExceptionMessageTest {
         ze.setSize(0);
         ze.setCrc(0);
         try (ZipOutputStream zos = new ZipOutputStream(
-                Files.newOutputStream(Path.of(ZIP_FILE)))) {
+                Files.newOutputStream(ZIP_FILE))) {
             zos.putNextEntry(ze);
         }
     }
@@ -78,7 +79,7 @@ public class ZipFSDirectoryExceptionMessageTest {
      */
     @AfterEach
     public void cleanup() throws IOException {
-        Files.deleteIfExists(Path.of(ZIP_FILE));
+        Files.deleteIfExists(ZIP_FILE);
     }
 
     /**
@@ -89,7 +90,7 @@ public class ZipFSDirectoryExceptionMessageTest {
      */
     @Test
     public void testException() throws IOException {
-        try (FileSystem zipfs = FileSystems.newFileSystem(Path.of(ZIP_FILE))) {
+        try (FileSystem zipfs = FileSystems.newFileSystem(ZIP_FILE)) {
             var file = zipfs.getPath(DIRECTORY_NAME);
             var x = assertThrows(FileSystemException.class, () -> Files.newInputStream(file));
             assertEquals(x.getMessage(), DIR_EXCEPTION_MESSAGE);
