@@ -298,10 +298,10 @@ class Heap$Type$Buffer$RW$
 
         if (csq instanceof String str) {
             str.getChars(start, end, hb, ix(pos));
-        } else if (csq instanceof StringBuilder bld) {
-            bld.getChars(start, end, hb, ix(pos));
-        } else if (csq instanceof StringBuffer buf) {
-            buf.getChars(start, end, hb, ix(pos));
+        } else if (csq instanceof StringBuilder sb) {
+            sb.getChars(start, end, hb, ix(pos));
+        } else if (csq instanceof StringBuffer sb) {
+            sb.getChars(start, end, hb, ix(pos));
         }
 
         position(pos + length);
