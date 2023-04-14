@@ -160,7 +160,7 @@ void C2_MacroAssembler::fast_unlock(Register Roop, Register Rbox, Register Rscra
   // Restore the object header
   bool allow_fallthrough_on_failure = true;
   bool one_shot = true;
-  cas_for_lock_release(Rmark, Rbox, Roop, Rscratch, done, allow_fallthrough_on_failure, one_shot);
+  cas_for_lock_release(Rbox, Rmark, Roop, Rscratch, done, allow_fallthrough_on_failure, one_shot);
 
   bind(done);
 }
