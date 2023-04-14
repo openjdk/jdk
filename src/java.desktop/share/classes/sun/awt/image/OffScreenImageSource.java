@@ -100,7 +100,7 @@ public class OffScreenImageSource implements ImageProducer {
                 for (int y=0; y < height; y++) {
                     raster.getDataElements(0, y, width, 1, pixels);
                     theConsumer.setPixels(0, y, width, 1, cm, pixels, 0,
-                            width);
+                                          width);
                 }
             }
             else if (raster instanceof BytePackedRaster) {
@@ -112,18 +112,18 @@ public class OffScreenImageSource implements ImageProducer {
                         pixels[x] = (byte) scanline[x];
                     }
                     theConsumer.setPixels(0, y, width, 1, cm, pixels, 0,
-                            width);
+                                          width);
                 }
             }
             else if (dataType == DataBuffer.TYPE_SHORT ||
-                    dataType == DataBuffer.TYPE_INT)
+                     dataType == DataBuffer.TYPE_INT)
             {
                 // Probably a short or int "GRAY" image
                 needToCvt = false;
                 for (int y=0; y < height; y++) {
                     raster.getPixels(0, y, width, 1, scanline);
                     theConsumer.setPixels(0, y, width, 1, cm, scanline, 0,
-                            width);
+                                          width);
                 }
             }
         }
@@ -135,7 +135,7 @@ public class OffScreenImageSource implements ImageProducer {
                 for (int y=0; y < height; y++) {
                     raster.getDataElements(0, y, width, 1, scanline);
                     theConsumer.setPixels(0, y, width, 1, cm, scanline, 0,
-                            width);
+                                          width);
                 }
                 break;
             case DataBuffer.TYPE_BYTE:
@@ -146,7 +146,7 @@ public class OffScreenImageSource implements ImageProducer {
                         scanline[x] = bscanline[x]&0xff;
                     }
                     theConsumer.setPixels(0, y, width, 1, cm, scanline, 0,
-                            width);
+                                          width);
                 }
                 break;
             case DataBuffer.TYPE_USHORT:
@@ -157,7 +157,7 @@ public class OffScreenImageSource implements ImageProducer {
                         scanline[x] = sscanline[x]&0xffff;
                     }
                     theConsumer.setPixels(0, y, width, 1, cm, scanline, 0,
-                            width);
+                                          width);
                 }
                 break;
             default:
@@ -175,7 +175,7 @@ public class OffScreenImageSource implements ImageProducer {
                     scanline[x] = image.getRGB(x, y);
                 }
                 theConsumer.setPixels(0, y, width, 1, newcm, scanline, 0,
-                        width);
+                                      width);
             }
         }
     }
