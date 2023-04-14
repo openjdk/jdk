@@ -321,19 +321,23 @@ public class SimpleAttributeSet implements MutableAttributeSet, Serializable, Cl
      * @return the string
      */
     public String toString() {
-        String s = "";
+        StringBuilder s = new StringBuilder();
         Enumeration<?> names = getAttributeNames();
         while (names.hasMoreElements()) {
             Object key = names.nextElement();
             Object value = getAttribute(key);
             if (value instanceof AttributeSet) {
                 // don't go recursive
-                s = s + key + "=**AttributeSet** ";
+                s.append(key)
+                 .append("=**AttributeSet** ");
             } else {
-                s = s + key + "=" + value + " ";
+                s.append(key)
+                 .append("=")
+                 .append(value)
+                 .append(" ");
             }
         }
-        return s;
+        return s.toString();
     }
 
     @Serial
