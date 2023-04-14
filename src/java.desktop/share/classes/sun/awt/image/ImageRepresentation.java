@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,7 +109,8 @@ public class ImageRepresentation extends ImageWatched implements ImageConsumer
             src.checkSecurity(null, false);
         }
         int missinginfo = flags & ~availinfo;
-        if ((availinfo & (ImageObserver.ERROR |  ImageObserver.FRAMEBITS) ) == 0 && missinginfo != 0) {
+        if ((availinfo & (ImageObserver.ERROR | ImageObserver.FRAMEBITS)) == 0
+             && missinginfo != 0) {
             numWaiters++;
             try {
                 startProduction();
