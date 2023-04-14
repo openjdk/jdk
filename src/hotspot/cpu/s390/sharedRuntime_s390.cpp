@@ -1838,7 +1838,9 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     save_native_result(masm, ret_type, workspace_slot_offset); // Make Z_R2 available as work reg.
 
     // Force this write out before the read below.
-    __ z_fence();
+    if (!UseSystemMemoryBarrier) {
+      __ z_fence();
+    }
 
     __ safepoint_poll(sync, Z_R1);
 

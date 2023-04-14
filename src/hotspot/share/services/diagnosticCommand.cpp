@@ -193,16 +193,6 @@ void HelpDCmd::execute(DCmdSource source, TRAPS) {
                          factory->is_enabled() ? "" : " [disabled]");
       output()->print_cr("%s", factory->description());
       output()->print_cr("\nImpact: %s", factory->impact());
-      JavaPermission p = factory->permission();
-      if(p._class != nullptr) {
-        if(p._action != nullptr) {
-          output()->print_cr("\nPermission: %s(%s, %s)",
-                  p._class, p._name == nullptr ? "null" : p._name, p._action);
-        } else {
-          output()->print_cr("\nPermission: %s(%s)",
-                  p._class, p._name == nullptr ? "null" : p._name);
-        }
-      }
       output()->cr();
       cmd = factory->create_resource_instance(output());
       if (cmd != nullptr) {
@@ -1071,17 +1061,6 @@ ThreadDumpToFileDCmd::ThreadDumpToFileDCmd(outputStream* output, bool heap) :
   _dcmdparser.add_dcmd_option(&_overwrite);
   _dcmdparser.add_dcmd_option(&_format);
   _dcmdparser.add_dcmd_argument(&_filepath);
-}
-
-int ThreadDumpToFileDCmd::num_arguments() {
-  ResourceMark rm;
-  ThreadDumpToFileDCmd* dcmd = new ThreadDumpToFileDCmd(nullptr, false);
-  if (dcmd != nullptr) {
-    DCmdMark mark(dcmd);
-    return dcmd->_dcmdparser.num_arguments();
-  } else {
-    return 0;
-  }
 }
 
 void ThreadDumpToFileDCmd::execute(DCmdSource source, TRAPS) {

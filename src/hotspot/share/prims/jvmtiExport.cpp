@@ -379,10 +379,13 @@ JvmtiExport::get_jvmti_interface(JavaVM *jvm, void **penv, jint version) {
   }
   if (Continuations::enabled()) {
     // Virtual threads support. There is a performance impact when VTMS transitions are enabled.
-    java_lang_VirtualThread::set_notify_jvmti_events(true);
     if (JvmtiEnv::get_phase() == JVMTI_PHASE_LIVE) {
-      ThreadInVMfromNative __tiv(JavaThread::current());
-      java_lang_VirtualThread::init_static_notify_jvmti_events();
+      if (!JvmtiVTMSTransitionDisabler::VTMS_notify_jvmti_events()) {
+        ThreadInVMfromNative __tiv(JavaThread::current());
+        JvmtiEnvBase::enable_virtual_threads_notify_jvmti();
+      }
+    } else {
+      JvmtiVTMSTransitionDisabler::set_VTMS_notify_jvmti_events(true);
     }
   }
 
@@ -1042,6 +1045,10 @@ bool JvmtiExport::has_early_class_hook_env() {
 }
 
 bool JvmtiExport::_should_post_class_file_load_hook = false;
+
+// This flag is read by C2 during VM internal objects allocation
+bool JvmtiExport::_should_notify_object_alloc = false;
+
 
 // this entry is for class file load hook on class load, redefine and retransform
 bool JvmtiExport::post_class_file_load_hook(Symbol* h_name,

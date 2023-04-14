@@ -476,7 +476,7 @@ void os::initialize_jdk_signal_support(TRAPS) {
   if (!ReduceSignalUsage) {
     // Setup JavaThread for processing signals
     const char* name = "Signal Dispatcher";
-    Handle thread_oop = JavaThread::create_system_thread_object(name, true /* visible */, CHECK);
+    Handle thread_oop = JavaThread::create_system_thread_object(name, CHECK);
 
     JavaThread* thread = new JavaThread(&signal_thread_entry);
     JavaThread::vm_exit_on_osthread_failure(thread);
@@ -1201,6 +1201,11 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
     }
   }
 #endif
+
+  // Still nothing? If NMT is enabled, we can ask what it thinks...
+  if (MemTracker::print_containing_region(addr, st)) {
+    return;
+  }
 
   // Try an OS specific find
   if (os::find(addr, st)) {
