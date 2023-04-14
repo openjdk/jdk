@@ -239,6 +239,8 @@ static bool should_clear_soft_references(GCCause::Cause cause) {
   case GCCause::_z_allocation_stall:
     return true;
 
+  case GCCause::_heap_dump:
+  case GCCause::_heap_inspection:
   case GCCause::_wb_breakpoint:
   case GCCause::_dcmd_gc_run:
   case GCCause::_java_lang_system_gc:
@@ -270,6 +272,8 @@ static bool should_clear_soft_references(GCCause::Cause cause) {
 static bool should_preclean_young(GCCause::Cause cause) {
   // Preclean young if implied by the GC cause
   switch (cause) {
+  case GCCause::_heap_dump:
+  case GCCause::_heap_inspection:
   case GCCause::_wb_full_gc:
   case GCCause::_wb_breakpoint:
   case GCCause::_dcmd_gc_run:
@@ -320,6 +324,8 @@ bool ZDriverMajor::is_busy() const {
 
 void ZDriverMajor::collect(const ZDriverRequest& request) {
   switch (request.cause()) {
+  case GCCause::_heap_dump:
+  case GCCause::_heap_inspection:
   case GCCause::_wb_full_gc:
   case GCCause::_dcmd_gc_run:
   case GCCause::_java_lang_system_gc:

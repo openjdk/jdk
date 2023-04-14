@@ -187,6 +187,8 @@ void ZCollectedHeap::collect(GCCause::Cause cause) {
     _driver_minor->collect(ZDriverRequest(cause, ZYoungGCThreads, 0));
     break;
 
+  case GCCause::_heap_dump:
+  case GCCause::_heap_inspection:
   case GCCause::_wb_full_gc:
   case GCCause::_wb_breakpoint:
   case GCCause::_dcmd_gc_run:
@@ -214,10 +216,9 @@ void ZCollectedHeap::collect_as_vm_thread(GCCause::Cause cause) {
   // These collection requests are ignored since ZGC can't run a synchronous
   // GC cycle from within the VM thread. This is considered benign, since the
   // only GC causes coming in here should be heap dumper and heap inspector.
-  // However, neither the heap dumper nor the heap inspector really need a GC
-  // to happen, but the result of their heap iterations might in that case be
-  // less accurate since they might include objects that would otherwise have
-  // been collected by a GC.
+  // If the heap dumper or heap inspector explicitly requests a gc and the
+  // caller is not the VM thread a synchronous GC cycle is performed from the
+  // caller thread in the prologue.
   assert(Thread::current()->is_VM_thread(), "Should be the VM thread");
   guarantee(cause == GCCause::_heap_dump ||
             cause == GCCause::_heap_inspection, "Invalid cause");
