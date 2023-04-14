@@ -39,7 +39,6 @@ import java.awt.Toolkit;
 import java.awt.Window;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.security.AccessController;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;

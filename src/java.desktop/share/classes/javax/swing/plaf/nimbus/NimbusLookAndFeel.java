@@ -34,7 +34,6 @@ import javax.swing.plaf.synth.SynthLookAndFeel;
 import javax.swing.plaf.synth.SynthStyle;
 import javax.swing.plaf.synth.SynthStyleFactory;
 import javax.swing.plaf.UIResource;
-import java.security.AccessController;
 import java.awt.Color;
 import java.awt.Container;
 import java.awt.Graphics2D;
@@ -55,7 +54,6 @@ import sun.swing.ImageIconUIResource;
 import javax.swing.plaf.synth.SynthIcon;
 import sun.swing.plaf.GTKKeybindings;
 import sun.swing.plaf.WindowsKeybindings;
-import sun.security.action.GetPropertyAction;
 
 /**
  * <p>The NimbusLookAndFeel class.</p>
@@ -348,14 +346,6 @@ public class NimbusLookAndFeel extends SynthLookAndFeel {
      */
     public void register(Region region, String prefix) {
         defaults.register(region, prefix);
-    }
-
-    /**
-     * Simple utility method that reads system keys.
-     */
-    @SuppressWarnings("removal")
-    private String getSystemProperty(String key) {
-        return AccessController.doPrivileged(new GetPropertyAction(key));
     }
 
     @Override

@@ -27,8 +27,6 @@ package sun.awt;
 
 import jdk.internal.util.OperatingSystem;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.HashMap;
 import java.util.Map;
 
