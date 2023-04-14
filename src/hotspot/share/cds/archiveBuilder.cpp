@@ -1269,7 +1269,7 @@ void ArchiveBuilder::report_out_of_space(const char* name, size_t needed_bytes) 
   _rw_region.print_out_of_space_msg(name, needed_bytes);
   _ro_region.print_out_of_space_msg(name, needed_bytes);
 
-  log_error(cds)("Unable to allocate from '%s' region\nPlease reduce the number of shared classes.", name);
+  log_error(cds)("Unable to allocate from '%s' region: Please reduce the number of shared classes.", name);
   MetaspaceShared::unrecoverable_writing_error();
 }
 

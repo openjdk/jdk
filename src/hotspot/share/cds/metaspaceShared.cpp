@@ -267,7 +267,7 @@ void MetaspaceShared::initialize_for_static_dump() {
   size_t symbol_rs_size = LP64_ONLY(3 * G) NOT_LP64(128 * M);
   _symbol_rs = ReservedSpace(symbol_rs_size);
   if (!_symbol_rs.is_reserved()) {
-    log_error(cds)("Unable to reserve memory for symbols\n%ld bytes.", symbol_rs_size);
+    log_error(cds)("Unable to reserve memory for symbols: %ld bytes.", symbol_rs_size);
     MetaspaceShared::unrecoverable_writing_error();
   }
   _symbol_region.init(&_symbol_rs, &_symbol_vs);
@@ -907,7 +907,7 @@ bool MetaspaceShared::is_shared_dynamic(void* p) {
 // - When -XX:+RequireSharedSpaces is specified, AND the JVM cannot load the archive(s) due
 //   to version or classpath mismatch.
 void MetaspaceShared::unrecoverable_loading_error(const char* message) {
-  log_error(cds)("An error has occurred while processing the shared archive file.\n");
+  log_error(cds)("An error has occurred while processing the shared archive file.");
   if (message != nullptr) {
     log_error(cds)("%s", message);
   }
