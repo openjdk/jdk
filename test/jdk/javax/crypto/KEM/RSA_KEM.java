@@ -374,11 +374,6 @@ public class RSA_KEM {
             public SecretKey engineDecapsulate(byte[] encapsulation,
                     int from, int to, String algorithm)
                     throws DecapsulateException {
-                int nLen = rsk.getModulus().bitLength();
-                int nSize = (nLen + 7) / 8;
-                if (encapsulation.length != nSize) {
-                    throw new DecapsulateException("wrong length");
-                }
                 try {
                     byte[] Z = RSACore.rsa(encapsulation, rsk, false);
                     return new SecretKeySpec(kdf(Z), from, to, algorithm);

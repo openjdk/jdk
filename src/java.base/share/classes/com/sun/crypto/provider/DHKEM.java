@@ -69,9 +69,6 @@ public class DHKEM implements KEMSpi {
         @Override
         public SecretKey engineDecapsulate(byte[] encapsulation,
                 int from, int to, String algorithm) throws DecapsulateException {
-            if (encapsulation.length != params.Npk) {
-                throw new DecapsulateException("Incorrect encapsulation length");
-            }
             try {
                 PublicKey pkE = params.DeserializePublicKey(encapsulation);
                 byte[] dh = params.DH(skR, pkE);

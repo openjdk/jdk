@@ -123,7 +123,6 @@ public interface KEMSpi {
          * @return an {@link KEM.Encapsulated} object containing a portion of
          *          the shared secret as a key with the specified algorithm,
          *          the key encapsulation message, and optional parameters.
-         *          The return value must not be {@code null}.
          * @throws UnsupportedOperationException if the combination of
          *          {@code from}, {@code to}, and {@code algorithm}
          *          is not supported by the decapsulator.
@@ -134,6 +133,10 @@ public interface KEMSpi {
 
         /**
          * Returns the size of the shared secret.
+         * <p>
+         * This method can be called to find out the length of the share secret
+         * before {@code engineEncapsulate} is called or if the obtained
+         * {@code SecretKey} is not extractable.
          *
          * @return the size of the shared secret as a finite non-negative integer
          * @see KEM.Encapsulator#secretSize()
@@ -142,6 +145,9 @@ public interface KEMSpi {
 
         /**
          * Returns the size of the key encapsulation message.
+         * <p>
+         * This method can be called to find out the length of the encapsulation
+         * message before {@code engineEncapsulate} is called.
          *
          * @return the size of the key encapsulation message as a finite non-negative integer
          * @see KEM.Encapsulator#encapsulationSize()
@@ -165,7 +171,9 @@ public interface KEMSpi {
          * <p>
          * The caller of this method has already validated the parameters to
          * ensure that neither {@code encapsulation} not {@code algorithm} is
-         * {@code null}, and the values of {@code from} and {@code to} are
+         * {@code null}, the size of {@code encapsulation} is equal to the
+         * value returned by {@link #engineEncapsulationSize()}, and
+         * the values of {@code from} and {@code to} are
          * within the correct range. Therefore an implementation of this method
          * does not to validate them.
          *
@@ -174,7 +182,7 @@ public interface KEMSpi {
          * @param to the final index of the shared secret to be returned, exclusive.
          * @param algorithm the algorithm for the secret key returned
          * @return a portion of the shared secret as a {@code SecretKey} with
-         *          the specified algorithm, must not be {@code null}
+         *          the specified algorithm
          * @throws UnsupportedOperationException if the combination of
          *          {@code from}, {@code to}, and {@code algorithm}
          *          is not supported by the decapsulator.
@@ -187,6 +195,10 @@ public interface KEMSpi {
 
         /**
          * Returns the size of the shared secret.
+         * <p>
+         * This method can be called to find out the length of the share secret
+         * before {@code engineDecapsulate} is called or if the obtained
+         * {@code SecretKey} is not extractable.
          *
          * @return the size of the shared secret as a finite non-negative integer
          * @see KEM.Decapsulator#secretSize()
@@ -195,6 +207,10 @@ public interface KEMSpi {
 
         /**
          * Returns the size of the key encapsulation message.
+         * <p>
+         * This method can be used to extract the encapsulation message
+         * from a longer byte array if no length information is provided
+         * by a higher level protocol.
          *
          * @return the size of the key encapsulation message as a finite non-negative integer
          * @see KEM.Decapsulator#encapsulationSize()
@@ -214,7 +230,7 @@ public interface KEMSpi {
      * @param secureRandom the source of randomness for encapsulation.
      *                     If {@code null}, the implementation must provide
      *                     a default one.
-     * @return the encapsulator for this key, must not be {@code null}
+     * @return the encapsulator for this key
      * @throws InvalidAlgorithmParameterException if {@code spec} is invalid
      *          or one is required but {@code spec} is {@code null}
      * @throws InvalidKeyException if {@code pk} is invalid
@@ -233,7 +249,7 @@ public interface KEMSpi {
      *
      * @param sk the receiver's private key. This argument is never {@code null}.
      * @param spec the optional parameter, can be {@code null}
-     * @return the decapsulator for this key, must not be {@code null}
+     * @return the decapsulator for this key
      * @throws InvalidAlgorithmParameterException if {@code spec} is invalid
      *          or one is required but {@code spec} is {@code null}
      * @throws InvalidKeyException if {@code sk} is invalid
