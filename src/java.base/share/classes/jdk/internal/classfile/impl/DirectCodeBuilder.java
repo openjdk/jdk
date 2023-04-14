@@ -335,7 +335,11 @@ public final class DirectCodeBuilder
                                                   handlers);
                     maxStack = gen.maxStack();
                     maxLocals = gen.maxLocals();
-                    stackMapAttr = gen.stackMapTableAttribute();
+                    if (buf.getMajorVersion() >= Classfile.JAVA_6_VERSION) {
+                        stackMapAttr = gen.stackMapTableAttribute();
+                    } else {
+                        stackMapAttr = null;
+                    }
                 }
                 attributes.withAttribute(stackMapAttr);
 

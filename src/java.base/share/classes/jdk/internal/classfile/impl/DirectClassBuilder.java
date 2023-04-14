@@ -169,6 +169,7 @@ public final class DirectClassBuilder
         BufWriter head = new BufWriterImpl(constantPool, size);
         BufWriterImpl tail = new BufWriterImpl(constantPool, size);
         tail.setThisClass(thisClassEntry);
+        tail.setMajorVersion(majorVersion);
 
         // The tail consists of fields and methods, and attributes
         // This should trigger all the CP/BSM mutation

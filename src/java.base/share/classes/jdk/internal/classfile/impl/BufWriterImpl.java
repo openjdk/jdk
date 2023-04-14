@@ -41,6 +41,7 @@ public final class BufWriterImpl implements BufWriter {
     private final ConstantPoolBuilder constantPool;
     private LabelContext labelContext;
     private ClassEntry thisClass;
+    private int majorVersion;
     byte[] elems;
     int offset = 0;
 
@@ -76,6 +77,14 @@ public final class BufWriterImpl implements BufWriter {
 
     public void setThisClass(ClassEntry thisClass) {
         this.thisClass = thisClass;
+    }
+
+    public int getMajorVersion() {
+        return majorVersion;
+    }
+
+    public void setMajorVersion(int majorVersion) {
+        this.majorVersion = majorVersion;
     }
 
     @Override

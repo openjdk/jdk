@@ -242,8 +242,17 @@ public final class CodeImpl
 
     private void inflateJumpTargets() {
         Optional<StackMapTableAttribute> a = findAttribute(Attributes.STACK_MAP_TABLE);
-        if (a.isEmpty())
+        if (a.isEmpty()) {
+            if (classReader.readU2(6) <= Classfile.JAVA_6_VERSION) {
+                //fallback to jump targets inflation without StackMapTableAttribute
+                for (int pos=codeStart; pos<codeEnd; ) {
+                    var i = bcToInstruction(classReader.readU1(pos), pos);
+                    if (i instanceof BranchInstruction br) br.target();
+                    pos += i.sizeInBytes();
+                }
+            }
             return;
+        }
         @SuppressWarnings("unchecked")
         int stackMapPos = ((BoundAttribute<StackMapTableAttribute>) a.get()).payloadStart;
 
