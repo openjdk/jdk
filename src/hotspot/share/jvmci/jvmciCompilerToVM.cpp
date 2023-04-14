@@ -450,12 +450,7 @@ C2V_VMENTRY_NULL(jobject, getImplementor, (JNIEnv* env, jobject, ARGUMENT_PAIR(k
         err_msg("Expected interface type, got %s", klass->external_name()));
   }
   InstanceKlass* iklass = InstanceKlass::cast(klass);
-  JVMCIKlassHandle handle(THREAD);
-  {
-    // Need Compile_lock around implementor()
-    MutexLocker locker(Compile_lock);
-    handle = iklass->implementor();
-  }
+  JVMCIKlassHandle handle(THREAD, iklass->implementor());
   JVMCIObject implementor = JVMCIENV->get_jvmci_type(handle, JVMCI_CHECK_NULL);
   return JVMCIENV->get_jobject(implementor);
 C2V_END
