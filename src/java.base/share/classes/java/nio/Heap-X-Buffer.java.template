@@ -322,9 +322,6 @@ class Heap$Type$Buffer$RW$
 
     public $Type$Buffer append(CharSequence csq, int start, int end) {
 #if[rw]
-        if (start == 0 && end == csq.length())
-            return append(csq);
-
         if (csq instanceof String || csq instanceof StringBuffer ||
             csq instanceof StringBuilder)
             return appendChars(csq, start, end);
