@@ -41,13 +41,13 @@ import sun.nio.ch.FileChannelImpl;
  * {@code FileReader}.
  *
  * @apiNote
- * To release resources used by this stream {@link #close} should be called
- * directly or by try-with-resources.
+ * The {@link #close} method should be called to release resources used by this
+ * stream, either directly, or by try-with-resources.
  *
  * @implSpec
  * Subclasses are responsible for the cleanup of resources acquired by the subclass.
  * Subclasses requiring that resource cleanup take place after a stream becomes
- * unreachable should use the {@link java.lang.ref.Cleaner} mechanism.
+ * unreachable should use {@link java.lang.ref.Cleaner} or some other mechanism.
  *
  * @author  Arthur van Hoff
  * @see     java.io.File
