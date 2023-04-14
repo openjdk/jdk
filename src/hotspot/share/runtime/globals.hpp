@@ -717,7 +717,7 @@ const int ObjectAlignmentInBytes = 8;
   /* because of overflow issue                                   */         \
   product(intx, GuaranteedAsyncDeflationInterval, 60000, DIAGNOSTIC,        \
           "Async deflate idle monitors every so many milliseconds even "    \
-          "MonitorUsedDeflationThreshold is NOT exceeded (0 is off).")      \
+          "when MonitorUsedDeflationThreshold is NOT exceeded (0 is off).") \
           range(0, max_jint)                                                \
                                                                             \
   product(size_t, AvgMonitorsPerThreadEstimate, 1024, DIAGNOSTIC,           \
