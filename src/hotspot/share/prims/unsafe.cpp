@@ -783,21 +783,23 @@ UNSAFE_ENTRY(void, Unsafe_Park(JNIEnv *env, jobject unsafe, jboolean isAbsolute,
 
 UNSAFE_ENTRY(void, Unsafe_Unpark(JNIEnv *env, jobject unsafe, jobject jthread)) {
   if (jthread != nullptr) {
-    ThreadsListHandle tlh;
-    JavaThread* thr = nullptr;
-    oop java_thread = nullptr;
-    (void) tlh.cv_internal_thread_to_JavaThread(jthread, &thr, &java_thread);
-    if (java_thread != nullptr) {
-      // This is a valid oop.
-      if (thr != nullptr) {
-        // The JavaThread is alive.
-        Parker* p = thr->parker();
-        HOTSPOT_THREAD_UNPARK((uintptr_t) p);
-        p->unpark();
+    oop thread_oop = JNIHandles::resolve_non_null(jthread);
+    if (java_lang_Thread::thread(thread_oop) != nullptr) {
+      ThreadsListHandle tlh; // Provides memory barrier
+      if (java_lang_Thread::thread(thread_oop) != nullptr) {
+        JavaThread* thr = nullptr;
+        // We verified that java_lang_Thread::thread(thread_oop) != nullptr
+        // before and after creating tlh above so quick_mode can be used in
+        // this conversion call.
+        if (tlh.cv_internal_thread_to_JavaThread(jthread, &thr, nullptr, true /* quick_mode */)) {
+          // The JavaThread is safe to access.
+          Parker* p = thr->parker();
+          HOTSPOT_THREAD_UNPARK((uintptr_t) p);
+          p->unpark();
+        }
       }
-    }
-  } // ThreadsListHandle is destroyed here.
-
+    } // ThreadsListHandle is destroyed here.
+  }
 } UNSAFE_END
 
 UNSAFE_ENTRY(jint, Unsafe_GetLoadAverage0(JNIEnv *env, jobject unsafe, jdoubleArray loadavg, jint nelem)) {

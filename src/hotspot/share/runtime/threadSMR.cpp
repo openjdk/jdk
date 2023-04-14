@@ -795,9 +795,14 @@ ThreadsListHandle::~ThreadsListHandle() {
 // to the converted JavaThread * and true is returned. On error,
 // returns false.
 //
+// If quick_mode is true, java_lang_Thread::thread(thread_oop) was verified
+// in the caller to be a non-nullptr before and after the ThreadsListHandle
+// was created so we can skip the ThreadsList search.
+//
 bool ThreadsListHandle::cv_internal_thread_to_JavaThread(jobject jthread,
                                                          JavaThread ** jt_pp,
-                                                         oop * thread_oop_p) {
+                                                         oop * thread_oop_p,
+                                                         bool quick_mode) {
   assert(this->list() != nullptr, "must have a ThreadsList");
   assert(jt_pp != nullptr, "must have a return JavaThread pointer");
   // thread_oop_p is optional so no assert()
@@ -817,20 +822,28 @@ bool ThreadsListHandle::cv_internal_thread_to_JavaThread(jobject jthread,
 
   JavaThread *java_thread = java_lang_Thread::thread(thread_oop);
   if (java_thread == nullptr) {
-    // The java.lang.Thread does not contain a JavaThread * so it has
-    // not yet run or it has died.
+    // The java.lang.Thread does not contain a JavaThread* so it has not
+    // run enough to be put on a ThreadsList or it has exited enough to
+    // make it past ensure_join() where the JavaThread* is cleared.
     return false;
   }
   // Looks like a live JavaThread at this point.
 
   if (java_thread != JavaThread::current()) {
-    // jthread is not for the current JavaThread so have to verify
-    // the JavaThread * against the ThreadsList.
-    if (EnableThreadSMRExtraValidityChecks && !includes(java_thread)) {
-      // Not on the JavaThreads list so it is not alive.
+    // java_thread is not the current JavaThread so we have to verify it
+    // against the ThreadsList unless we're in quick_mode.
+    //
+    // In quick_mode, java_lang_Thread::thread(thread_oop) was verified
+    // in the caller to be a non-nullptr before and after creation of the
+    // ThreadsListHandle so we can skip the ThreadsList search.
+    //
+    if (!quick_mode && !includes(java_thread)) {
+      // Not on this ThreadsList so it is not protected.
       return false;
     }
   }
+
+  assert(includes(java_thread), "must be");
 
   // Return a live JavaThread that is "protected" by the
   // ThreadsListHandle in the caller.

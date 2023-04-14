@@ -1656,7 +1656,6 @@ void JavaThread::prepare(jobject jni_thread, ThreadPriority prio) {
   assert(InstanceKlass::cast(thread_oop->klass())->is_linked(),
          "must be initialized");
   set_threadOopHandles(thread_oop());
-  java_lang_Thread::set_thread(thread_oop(), this);
 
   if (prio == NoPriority) {
     prio = java_lang_Thread::priority(thread_oop());
@@ -1672,6 +1671,9 @@ void JavaThread::prepare(jobject jni_thread, ThreadPriority prio) {
   // added to the Threads list for if a GC happens, then the java_thread oop
   // will not be visited by GC.
   Threads::add(this);
+  // Publish the JavaThread* in java.lang.Thread after the JavaThread* is
+  // on a ThreadsList.
+  java_lang_Thread::set_thread(thread_oop(), this);
 }
 
 oop JavaThread::current_park_blocker() {
@@ -2095,9 +2097,6 @@ void JavaThread::start_internal_daemon(JavaThread* current, JavaThread* target,
   MutexLocker mu(current, Threads_lock);
 
   // Initialize the fields of the thread_oop first.
-
-  java_lang_Thread::set_thread(thread_oop(), target); // isAlive == true now
-
   if (prio != NoPriority) {
     java_lang_Thread::set_priority(thread_oop(), prio);
     // Note: we don't call os::set_priority here. Possibly we should,
@@ -2110,6 +2109,9 @@ void JavaThread::start_internal_daemon(JavaThread* current, JavaThread* target,
   target->set_threadOopHandles(thread_oop());
 
   Threads::add(target); // target is now visible for safepoint/handshake
+  // Publish the JavaThread* in java.lang.Thread after the JavaThread* is
+  // on a ThreadsList.
+  java_lang_Thread::set_thread(thread_oop(), target); // isAlive == true now
   Thread::start(target);
 }
 

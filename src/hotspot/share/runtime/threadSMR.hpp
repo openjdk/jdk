@@ -58,6 +58,24 @@ class ThreadsList;
 //     :  // do stuff with 'jt'...
 //   }
 //
+// JNI jobject example with quick_mode enabled:
+//   jobject jthread = ...;
+//   :
+//   oop thread_oop = JNIHandles::resolve_non_null(jthread);
+//   if (java_lang_Thread::thread(thread_oop) != nullptr) {
+//     ThreadsListHandle tlh;
+//     if (java_lang_Thread::thread(thread_oop) != nullptr) {
+//       JavaThread* jt = nullptr;
+//       bool is_alive = tlh.cv_internal_thread_to_JavaThread(jthread, &jt, nullptr, true /* quick_mode */);
+//       if (is_alive) {
+//         :  // do stuff with 'jt'...
+//       }
+//     }
+//   }
+// Because java_lang_Thread::thread(thread_oop) is verified to be a
+// non-nullptr before and after the ThreadsListHandle is created, we
+// do not have to do the ThreadsList search in the conversion function.
+//
 // JVM/TI jthread example:
 //   jthread thread = ...;
 //   :
@@ -318,7 +336,7 @@ public:
   inline Iterator begin();
   inline Iterator end();
 
-  bool cv_internal_thread_to_JavaThread(jobject jthread, JavaThread ** jt_pp, oop * thread_oop_p);
+  bool cv_internal_thread_to_JavaThread(jobject jthread, JavaThread ** jt_pp, oop * thread_oop_p, bool quick_mode = false);
 
   bool includes(JavaThread* p) {
     return list()->includes(p);
