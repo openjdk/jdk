@@ -267,7 +267,8 @@ void MetaspaceShared::initialize_for_static_dump() {
   size_t symbol_rs_size = LP64_ONLY(3 * G) NOT_LP64(128 * M);
   _symbol_rs = ReservedSpace(symbol_rs_size);
   if (!_symbol_rs.is_reserved()) {
-    MetaspaceShared::unrecoverable_writing_error(err_msg("Unable to reserve memory for symbols\n%ld bytes.", symbol_rs_size));
+    log_error(cds)("Unable to reserve memory for symbols\n%ld bytes.", symbol_rs_size);
+    MetaspaceShared::unrecoverable_writing_error();
   }
   _symbol_region.init(&_symbol_rs, &_symbol_vs);
 }
@@ -308,7 +309,8 @@ void MetaspaceShared::read_extra_data(JavaThread* current, const char* filename)
     ResourceMark rm(current);
     if (utf8_length == 0x7fffffff) {
       // buf_len will overflown 32-bit value.
-      unrecoverable_loading_error(err_msg("string length too large: %d", utf8_length));
+      log_error(cds)("string length too large: %d", utf8_length);
+      unrecoverable_loading_error();
     }
     int buf_len = utf8_length+1;
     char* utf8_buffer = NEW_RESOURCE_ARRAY(char, buf_len);
@@ -563,9 +565,6 @@ void VM_PopulateDumpSharedSpace::doit() {
             "for testing purposes only and should not be used in a production environment");
   }
 
-  // There may be pending VM operations. We have changed some global states
-  // (such as vmClasses::_klasses) that may cause these VM operations
-  // to fail. For safety, forget these operations and exit the VM directly.
   MetaspaceShared::exit_after_static_dump();
 }
 
@@ -676,8 +675,9 @@ void MetaspaceShared::preload_and_dump() {
   preload_and_dump_impl(THREAD);
   if (HAS_PENDING_EXCEPTION) {
     if (PENDING_EXCEPTION->is_a(vmClasses::OutOfMemoryError_klass())) {
-      MetaspaceShared::unrecoverable_writing_error(err_msg("Out of memory. Please run with a larger Java heap, current MaxHeapSize = "
-                                  SIZE_FORMAT "M", MaxHeapSize/M));
+      log_error(cds)("Out of memory. Please run with a larger Java heap, current MaxHeapSize = "
+                     SIZE_FORMAT "M", MaxHeapSize/M);
+      MetaspaceShared::unrecoverable_writing_error();
     } else {
       log_error(cds)("%s: %s", PENDING_EXCEPTION->klass()->external_name(),
                      java_lang_String::as_utf8_string(java_lang_Throwable::message(PENDING_EXCEPTION)));
@@ -907,18 +907,19 @@ bool MetaspaceShared::is_shared_dynamic(void* p) {
 // - When -XX:+RequireSharedSpaces is specified, AND the JVM cannot load the archive(s) due
 //   to version or classpath mismatch.
 void MetaspaceShared::unrecoverable_loading_error(const char* message) {
-  jio_fprintf(defaultStream::error_stream(),
-              "An error has occurred while processing the"
-              " shared archive file.\n");
-  log_error(cds)("%s", message);
+  log_error(cds)("An error has occurred while processing the shared archive file.\n");
+  if (message != nullptr) {
+    log_error(cds)("%s", message);
+  }
   vm_exit_during_initialization("Unable to use shared archive.", nullptr);
 }
 
 // This function is called when the JVM is unable to write the specified CDS archive due to an
 // unrecoverable error.
 void MetaspaceShared::unrecoverable_writing_error(const char* message) {
-  tty->print_cr("%s", message);
-  log_error(cds)("%s", message);
+  if (message != nullptr) {
+    log_error(cds)("%s", message);
+  }
   vm_exit(1);
 }
 

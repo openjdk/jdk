@@ -189,8 +189,9 @@ void DumpRegion::commit_to(char* newtop) {
   assert(commit <= uncommitted, "sanity");
 
   if (!_vs->expand_by(commit, false)) {
-    MetaspaceShared::unrecoverable_writing_error(err_msg("Failed to expand shared space to " SIZE_FORMAT " bytes",
-                                                         need_committed_size));
+    log_error(cds)("Failed to expand shared space to " SIZE_FORMAT " bytes",
+                    need_committed_size);
+    MetaspaceShared::unrecoverable_writing_error();
   }
 
   const char* which;

@@ -344,7 +344,8 @@ void SharedClassPathEntry::init(bool is_modules_image,
     //
     // If we can't access a jar file in the boot path, then we can't
     // make assumptions about where classes get loaded from.
-    MetaspaceShared::unrecoverable_loading_error(err_msg("Unable to open file %s.", cpe->name()));
+    log_error(cds)("Unable to open file %s.", cpe->name());
+    MetaspaceShared::unrecoverable_loading_error();
   }
 
   // No need to save the name of the module file, as it will be computed at run time
@@ -1074,7 +1075,8 @@ bool FileMapInfo::validate_shared_path_table() {
       const char* hint_msg = log_is_enabled(Info, class, path) ?
           "" : " (hint: enable -Xlog:class+path=info to diagnose the failure)";
       if (RequireSharedSpaces) {
-        MetaspaceShared::unrecoverable_loading_error(err_msg("%s%s", mismatch_msg, hint_msg));
+        log_error(cds)("%s%s", mismatch_msg, hint_msg);
+        MetaspaceShared::unrecoverable_loading_error();
       } else {
         log_warning(cds)("%s%s", mismatch_msg, hint_msg);
       }
@@ -1424,7 +1426,8 @@ bool FileMapInfo::init_from_file(int fd) {
 
 void FileMapInfo::seek_to_position(size_t pos) {
   if (os::lseek(_fd, (long)pos, SEEK_SET) < 0) {
-    MetaspaceShared::unrecoverable_loading_error(err_msg("Unable to seek to position %ld", pos));
+    log_error(cds)("Unable to seek to position %ld", pos);
+    MetaspaceShared::unrecoverable_loading_error();
   }
 }
 
@@ -1470,8 +1473,9 @@ void FileMapInfo::open_for_write() {
   remove(_full_path);
   int fd = os::open(_full_path, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, 0444);
   if (fd < 0) {
-    MetaspaceShared::unrecoverable_writing_error(err_msg("Unable to create shared archive file %s: (%s).", _full_path,
-              os::strerror(errno)));
+    log_error(cds)("Unable to create shared archive file %s: (%s).", _full_path,
+                   os::strerror(errno));
+    MetaspaceShared::unrecoverable_writing_error();
   }
   _fd = fd;
   _file_open = true;
@@ -1708,11 +1712,12 @@ size_t FileMapInfo::write_heap_regions(GrowableArray<MemRegion>* regions,
 
   int arr_len = regions == nullptr ? 0 : regions->length();
   if (arr_len > max_num_regions) {
-    MetaspaceShared::unrecoverable_writing_error(err_msg("Unable to write archive heap memory regions: "
-              "number of memory regions exceeds maximum due to fragmentation. "
-              "Please increase java heap size "
-              "(current MaxHeapSize is " SIZE_FORMAT ", InitialHeapSize is " SIZE_FORMAT ").",
-              MaxHeapSize, InitialHeapSize));
+    log_error(cds)("Unable to write archive heap memory regions: "
+                   "number of memory regions exceeds maximum due to fragmentation. "
+                   "Please increase java heap size "
+                   "(current MaxHeapSize is " SIZE_FORMAT ", InitialHeapSize is " SIZE_FORMAT ").",
+                   MaxHeapSize, InitialHeapSize);
+    MetaspaceShared::unrecoverable_writing_error();
   }
 
   size_t total_size = 0;
