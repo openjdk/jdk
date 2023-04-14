@@ -124,7 +124,7 @@ bool EscapeBarrier::deoptimize_objects_all_threads() {
   ResourceMark rm(calling_thread());
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread *jt = jtiwh.next(); ) {
     // Skip thread with mounted continuation
-    if (jt->last_continuation()) {
+    if (jt->last_continuation() != nullptr) {
       continue;
     }
     if (jt->frames_to_pop_failed_realloc() > 0) {
