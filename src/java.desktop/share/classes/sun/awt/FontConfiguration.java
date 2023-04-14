@@ -106,7 +106,6 @@ public abstract class FontConfiguration {
             initFontConfig();
             inited = true;
         }
-
         return true;
     }
 
@@ -154,7 +153,6 @@ public abstract class FontConfiguration {
      */
     public boolean fontFilesArePresent() {
         init();
-
         short fontNameID = compFontNameIDs[0][0][0];
         short fileNameID = getComponentFileID(fontNameID);
         final String fileName = mapFileName(getComponentFileName(fileNameID));
