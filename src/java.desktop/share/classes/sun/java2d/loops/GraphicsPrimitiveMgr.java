@@ -267,7 +267,7 @@ public final class GraphicsPrimitiveMgr {
             primitives = newGen;
         }
 
-        static GraphicsPrimitive locate(int primTypeID) {
+        static synchronized GraphicsPrimitive locate(int primTypeID) {
             if (primitives == null) {
                 return null;
             }
