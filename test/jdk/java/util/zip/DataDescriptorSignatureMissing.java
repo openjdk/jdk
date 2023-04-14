@@ -36,6 +36,8 @@
 import org.testng.annotations.Test;
 
 import java.io.*;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.util.zip.*;
 
@@ -99,8 +101,28 @@ public class DataDescriptorSignatureMissing {
         // Create a ZIP file with a signature-less data descriptor for the first entry
         ByteArrayOutputStream sigLess = new ByteArrayOutputStream();
         sigLess.write(sigZip, 0, sigOffset);
+        // Skip the signature
         sigLess.write(sigZip, crcOffset, sigZip.length - crcOffset);
 
-        return sigLess.toByteArray();
+        byte[] siglessZip = sigLess.toByteArray();
+
+        // Adjust the CEN offset in the END header
+        ByteBuffer buffer = ByteBuffer.wrap(siglessZip).order(ByteOrder.LITTLE_ENDIAN);
+        // Reduce cenOffset by 4 bytes
+        int cenOff = siglessZip.length - ZipFile.ENDHDR + ZipFile.ENDOFF;
+        int realCenOff = buffer.getInt(cenOff) - Integer.BYTES;
+        buffer.putInt(cenOff, realCenOff);
+
+        // Adjust the LOC offset in the second CEN header
+        int cen = realCenOff;
+        // Skip past the first CEN header
+        int nlen = buffer.getShort(cen + ZipFile.CENNAM);
+        cen += ZipFile.CENHDR + nlen;
+
+        // Reduce LOC offset by 4 bytes
+        int locOff = cen + ZipFile.CENOFF;
+        buffer.putInt(locOff, buffer.getInt(locOff) - Integer.BYTES);
+
+        return siglessZip;
     }
 }
