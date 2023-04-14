@@ -932,7 +932,7 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
     //   // We stored the monitor address into the object's mark word.
     // } else if (THREAD->is_lock_owned((address)displaced_header))
     //   // Simple recursive case.
-    //   monitor->lock()->set_displaced_header(NULL);
+    //   monitor->lock()->set_displaced_header(nullptr);
     // } else {
     //   // Slow path.
     //   InterpreterRuntime::monitorenter(THREAD, monitor);
@@ -993,7 +993,7 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
 
     // } else if (THREAD->is_lock_owned((address)displaced_header))
     //   // Simple recursive case.
-    //   monitor->lock()->set_displaced_header(NULL);
+    //   monitor->lock()->set_displaced_header(nullptr);
 
     // We did not see an unlocked object so try the fast recursive case.
 
@@ -1043,12 +1043,12 @@ void InterpreterMacroAssembler::unlock_object(Register monitor) {
 
     // template code:
     //
-    // if ((displaced_header = monitor->displaced_header()) == NULL) {
-    //   // Recursive unlock. Mark the monitor unlocked by setting the object field to NULL.
-    //   monitor->set_obj(NULL);
+    // if ((displaced_header = monitor->displaced_header()) == nullptr) {
+    //   // Recursive unlock. Mark the monitor unlocked by setting the object field to null.
+    //   monitor->set_obj(nullptr);
     // } else if (Atomic::cmpxchg(obj->mark_addr(), monitor, displaced_header) == monitor) {
     //   // We swapped the unlocked mark in displaced_header into the object's mark word.
-    //   monitor->set_obj(NULL);
+    //   monitor->set_obj(nullptr);
     // } else {
     //   // Slow path.
     //   InterpreterRuntime::monitorexit(monitor);
@@ -1074,7 +1074,7 @@ void InterpreterMacroAssembler::unlock_object(Register monitor) {
 
     // } else if (Atomic::cmpxchg(obj->mark_addr(), monitor, displaced_header) == monitor) {
     //   // We swapped the unlocked mark in displaced_header into the object's mark word.
-    //   monitor->set_obj(NULL);
+    //   monitor->set_obj(nullptr);
 
     // If we still have a lightweight lock, unlock the object and be done.
 
@@ -1109,7 +1109,7 @@ void InterpreterMacroAssembler::unlock_object(Register monitor) {
     Label done;
     b(done); // Monitor register may be overwritten! Runtime has already freed the slot.
 
-    // Exchange worked, do monitor->set_obj(NULL);
+    // Exchange worked, do monitor->set_obj(nullptr);
     align(32, 12);
     bind(free_slot);
     li(R0, 0);
@@ -1701,7 +1701,7 @@ void InterpreterMacroAssembler::record_klass_in_profile_helper(
   }
 
   // In the fall-through case, we found no matching receiver, but we
-  // observed the receiver[start_row] is NULL.
+  // observed the receiver[start_row] is null.
 
   // Fill in the receiver field and increment the count.
   int recvr_offset = in_bytes(VirtualCallData::receiver_offset(start_row));
@@ -2114,7 +2114,7 @@ void InterpreterMacroAssembler::check_and_forward_exception(Register Rscratch1, 
   li(Rtmp, 0);
   mr_if_needed(R3, Rexception);
   std(Rtmp, thread_(pending_exception)); // Clear exception in thread
-  if (Interpreter::rethrow_exception_entry() != NULL) {
+  if (Interpreter::rethrow_exception_entry() != nullptr) {
     // Already got entry address.
     load_dispatch_table(Rtmp, (address*)Interpreter::rethrow_exception_entry());
   } else {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -370,7 +370,7 @@ OopMapSet* Runtime1::generate_patching(StubAssembler* sasm, address target) {
   // return to the deoptimization handler entry that will cause re-execution
   // of the current bytecode.
   DeoptimizationBlob* deopt_blob = SharedRuntime::deopt_blob();
-  assert(deopt_blob != NULL, "deoptimization blob must have been created");
+  assert(deopt_blob != nullptr, "deoptimization blob must have been created");
 
   // Return to the deoptimization handler entry for unpacking and rexecute.
   // If we simply returned the we'd deopt as if any call we patched had just
@@ -390,7 +390,7 @@ OopMapSet* Runtime1::generate_patching(StubAssembler* sasm, address target) {
 }
 
 OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
-  OopMapSet* oop_maps = NULL;
+  OopMapSet* oop_maps = nullptr;
 
   // For better readability.
   const bool must_gc_arguments = true;
@@ -648,7 +648,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         oop_maps = stub_call_with_stack_parms(sasm, noreg, CAST_FROM_FN_PTR(address, deoptimize), 1, /*do_return*/ false);
 
         DeoptimizationBlob* deopt_blob = SharedRuntime::deopt_blob();
-        assert(deopt_blob != NULL, "deoptimization blob must have been created");
+        assert(deopt_blob != nullptr, "deoptimization blob must have been created");
         address stub = deopt_blob->unpack_with_reexecution();
         //__ load_const_optimized(R0, stub);
         __ add_const_optimized(R0, R29_TOC, MacroAssembler::offset_to_global_toc(stub));
@@ -716,7 +716,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         oop_maps->add_gc_map(call_offset, oop_map);
 
         DeoptimizationBlob* deopt_blob = SharedRuntime::deopt_blob();
-        assert(deopt_blob != NULL, "deoptimization blob must have been created");
+        assert(deopt_blob != nullptr, "deoptimization blob must have been created");
         restore_live_registers(sasm, noreg, noreg);
 
         address stub = deopt_blob->unpack_with_reexecution();
@@ -754,7 +754,7 @@ OopMapSet* Runtime1::generate_handle_exception(StubID id, StubAssembler* sasm) {
 
   // Save registers, if required.
   OopMapSet* oop_maps = new OopMapSet();
-  OopMap* oop_map = NULL;
+  OopMap* oop_map = nullptr;
   const Register Rexception    = R3 /*LIRGenerator::exceptionOopOpr()*/,
                  Rexception_pc = R4 /*LIRGenerator::exceptionPcOpr()*/;
 

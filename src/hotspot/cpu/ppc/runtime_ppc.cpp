@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -108,7 +108,7 @@ void OptoRuntime::generate_exception_blob() {
   address calls_return_pc = __ last_calls_return_pc();
 # ifdef ASSERT
   __ cmpdi(CCR0, R3_RET, 0);
-  __ asm_assert_ne("handle_exception_C must not return NULL");
+  __ asm_assert_ne("handle_exception_C must not return null");
 # endif
 
   // Set an oopmap for the call site. This oopmap will only be used if we

@@ -97,11 +97,11 @@ class RegisterSaver {
                          Register r_temp,
                          int frame_size,
                          int total_args,
-                         const VMRegPair *regs, const VMRegPair *regs2 = NULL);
+                         const VMRegPair *regs, const VMRegPair *regs2 = nullptr);
   static void restore_argument_registers_and_pop_frame(MacroAssembler*masm,
                          int frame_size,
                          int total_args,
-                         const VMRegPair *regs, const VMRegPair *regs2 = NULL);
+                         const VMRegPair *regs, const VMRegPair *regs2 = nullptr);
 
   // During deoptimization only the result registers need to be restored
   // all the other values have already been extracted.
@@ -279,7 +279,7 @@ OopMap* RegisterSaver::push_frame_reg_args_and_save_live_registers(MacroAssemble
   const int register_save_offset = frame_size_in_bytes - register_save_size;
 
   // OopMap frame size is in c2 stack slots (sizeof(jint)) not bytes or words.
-  OopMap* map = generate_oop_map ? new OopMap(frame_size_in_slots, 0) : NULL;
+  OopMap* map = generate_oop_map ? new OopMap(frame_size_in_slots, 0) : nullptr;
 
   BLOCK_COMMENT("push_frame_reg_args_and_save_live_registers {");
 
@@ -472,7 +472,7 @@ void RegisterSaver::push_frame_and_save_argument_registers(MacroAssembler* masm,
       st_off -= wordSize;
     }
   }
-  if (regs2 != NULL) {
+  if (regs2 != nullptr) {
     for (int i = 0; i < total_args; i++) {
       VMReg r_1 = regs2[i].first();
       VMReg r_2 = regs2[i].second();
@@ -510,7 +510,7 @@ void RegisterSaver::restore_argument_registers_and_pop_frame(MacroAssembler*masm
       st_off -= wordSize;
     }
   }
-  if (regs2 != NULL)
+  if (regs2 != nullptr)
     for (int i = 0; i < total_args; i++) {
       VMReg r_1 = regs2[i].first();
       VMReg r_2 = regs2[i].second();
@@ -803,11 +803,11 @@ int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
          "passing C arguments in wrong stack slots");
 #endif
   // We fill-out regs AND regs2 if an argument must be passed in a
-  // register AND in a stack slot. If regs2 is NULL in such a
+  // register AND in a stack slot. If regs2 is null in such a
   // situation, we bail-out with a fatal error.
   for (int i = 0; i < total_args_passed; ++i, ++arg) {
     // Initialize regs2 to BAD.
-    if (regs2 != NULL) regs2[i].set_bad();
+    if (regs2 != nullptr) regs2[i].set_bad();
 
     switch(sig_bt[i]) {
 
@@ -871,7 +871,7 @@ int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
         // convention, too.
         if (arg >= Argument::n_regs_not_on_stack_c) {
           // ... and on the stack.
-          guarantee(regs2 != NULL, "must pass float in register and stack slot");
+          guarantee(regs2 != nullptr, "must pass float in register and stack slot");
           VMReg reg2 = VMRegImpl::stack2reg(stk + FLOAT_WORD_OFFSET_IN_SLOT);
           regs2[i].set1(reg2);
           stk += inc_stk_for_intfloat;
@@ -898,7 +898,7 @@ int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
         // convention, too.
         if (arg >= Argument::n_regs_not_on_stack_c) {
           // ... and on the stack.
-          guarantee(regs2 != NULL, "must pass float in register and stack slot");
+          guarantee(regs2 != nullptr, "must pass float in register and stack slot");
           VMReg reg2 = VMRegImpl::stack2reg(stk);
           regs2[i].set2(reg2);
           stk += inc_stk_for_longdouble;
@@ -968,7 +968,7 @@ static address gen_c2i_adapter(MacroAssembler *masm,
   __ beq(CCR0, call_interpreter);
 
 
-  // Patch caller's callsite, method_(code) was not NULL which means that
+  // Patch caller's callsite, method_(code) was not null which means that
   // compiled code exists.
   __ mflr(return_pc);
   __ std(return_pc, _abi0(lr), R1_SP);
@@ -1236,7 +1236,7 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
 
   assert(!MacroAssembler::needs_explicit_null_check(oopDesc::klass_offset_in_bytes()),
          "klass offset should reach into any page");
-  // Check for NULL argument if we don't have implicit null checks.
+  // Check for null argument if we don't have implicit null checks.
   if (!ImplicitNullChecks || !os::zero_page_read_protected()) {
     if (TrapBasedNullChecks) {
       __ trap_null_check(R3_ARG1);
@@ -1250,7 +1250,7 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
       __ BIND(valid);
     }
   }
-  // Assume argument is not NULL, load klass from receiver.
+  // Assume argument is not null, load klass from receiver.
   __ load_klass(receiver_klass, R3_ARG1);
 
   __ ld(ic_klass, CompiledICHolder::holder_klass_offset(), ic);
@@ -1286,7 +1286,7 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
   c2i_entry = __ pc();
 
   // Class initialization barrier for static methods
-  address c2i_no_clinit_check_entry = NULL;
+  address c2i_no_clinit_check_entry = nullptr;
   if (VM_Version::supports_fast_class_init_checks()) {
     Label L_skip_barrier;
 
@@ -1343,7 +1343,7 @@ static void object_move(MacroAssembler* masm,
     __ ld(  r_temp_2, reg2offset(src.first()), r_caller_sp);
     __ cmpdi(CCR0, r_temp_2, 0);
     __ bne(CCR0, skip);
-    // Use a NULL handle if oop is NULL.
+    // Use a null handle if oop is null.
     __ li(r_handle, 0);
     __ bind(skip);
 
@@ -1373,7 +1373,7 @@ static void object_move(MacroAssembler* masm,
 
     __ cmpdi(CCR0, r_oop, 0);
     __ bne(CCR0, skip);
-    // Use a NULL handle if oop is NULL.
+    // Use a null handle if oop is null.
     __ li(r_handle, 0);
     __ bind(skip);
 
@@ -2114,11 +2114,11 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
                                        stack_slots / VMRegImpl::slots_per_word,
                                        in_ByteSize(-1),
                                        in_ByteSize(-1),
-                                       (OopMapSet*)NULL);
+                                       (OopMapSet*)nullptr);
   }
 
   address native_func = method->native_function();
-  assert(native_func != NULL, "must have function");
+  assert(native_func != nullptr, "must have function");
 
   // First, create signature for outgoing C call
   // --------------------------------------------------------------------------
@@ -2141,7 +2141,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   BasicType *out_sig_bt = NEW_RESOURCE_ARRAY(BasicType, total_c_args);
   VMRegPair *out_regs   = NEW_RESOURCE_ARRAY(VMRegPair, total_c_args);
   VMRegPair *out_regs2  = NEW_RESOURCE_ARRAY(VMRegPair, total_c_args);
-  BasicType* in_elem_bt = NULL;
+  BasicType* in_elem_bt = nullptr;
 
   // Create the signature for the C call:
   //   1) add the JNIEnv*
@@ -2946,7 +2946,7 @@ void SharedRuntime::generate_deopt_blob() {
   InterpreterMacroAssembler* masm = new InterpreterMacroAssembler(&buffer);
   Label exec_mode_initialized;
   int frame_size_in_words;
-  OopMap* map = NULL;
+  OopMap* map = nullptr;
   OopMapSet *oop_maps = new OopMapSet();
 
   // size of ABI112 plus spill slots for R3_RET and F1_RET.
@@ -2988,7 +2988,7 @@ void SharedRuntime::generate_deopt_blob() {
                                                                    /*generate_oop_map=*/ true,
                                                                    return_pc_adjustment_no_exception,
                                                                    RegisterSaver::return_pc_is_lr);
-  assert(map != NULL, "OopMap must have been created");
+  assert(map != nullptr, "OopMap must have been created");
 
   __ li(exec_mode_reg, Deoptimization::Unpack_deopt);
   // Save exec mode for unpack_frames.
@@ -3298,7 +3298,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
 
 // Generate a special Compile2Runtime blob that saves all registers, and setup oopmap.
 SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_type) {
-  assert(StubRoutines::forward_exception_entry() != NULL,
+  assert(StubRoutines::forward_exception_entry() != nullptr,
          "must be generated before");
 
   ResourceMark rm;
@@ -3428,7 +3428,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(address destination, const cha
   int frame_size_in_bytes;
 
   OopMapSet *oop_maps = new OopMapSet();
-  OopMap* map = NULL;
+  OopMap* map = nullptr;
 
   address start = __ pc();
 

@@ -427,12 +427,12 @@ class MacroAssembler: public Assembler {
   inline void load_from_polling_page(Register polling_page_address, int offset = 0);
   // Check whether instruction is a read access to the polling page
   // which was emitted by load_from_polling_page(..).
-  static bool is_load_from_polling_page(int instruction, void* ucontext/*may be NULL*/,
-                                        address* polling_address_ptr = NULL);
+  static bool is_load_from_polling_page(int instruction, void* ucontext/*may be nullptr*/,
+                                        address* polling_address_ptr = nullptr);
 
-  // Support for NULL-checks
+  // Support for null-checks
   //
-  // Generates code that causes a NULL OS exception if the content of reg is NULL.
+  // Generates code that causes a null OS exception if the content of reg is null.
   // If the accessed location is M[reg + offset] and the offset is known, provide the
   // offset. No explicit code generation is needed if the offset is within a certain
   // range (0 <= offset <= page_size).
@@ -542,7 +542,7 @@ class MacroAssembler: public Assembler {
   void cmpxchgd(ConditionRegister flag,
                 Register dest_current_value, RegisterOrConstant compare_value, Register exchange_value,
                 Register addr_base, int semantics, bool cmpxchgx_hint = false,
-                Register int_flag_success = noreg, Label* failed = NULL, bool contention_hint = false, bool weak = false);
+                Register int_flag_success = noreg, Label* failed = nullptr, bool contention_hint = false, bool weak = false);
 
   // interface method calling
   void lookup_interface_method(Register recv_klass,
@@ -561,7 +561,7 @@ class MacroAssembler: public Assembler {
   // Test sub_klass against super_klass, with fast and slow paths.
 
   // The fast path produces a tri-state answer: yes / no / maybe-slow.
-  // One of the three labels can be NULL, meaning take the fall-through.
+  // One of the three labels can be null, meaning take the fall-through.
   // If super_check_offset is -1, the value is loaded up from super_klass.
   // No registers are killed, except temp_reg and temp2_reg.
   // If super_check_offset is not -1, temp2_reg is not used and can be noreg.
@@ -571,7 +571,7 @@ class MacroAssembler: public Assembler {
                                      Register temp2_reg,
                                      Label* L_success,
                                      Label* L_failure,
-                                     Label* L_slow_path = NULL, // default fall through
+                                     Label* L_slow_path = nullptr, // default fall through
                                      RegisterOrConstant super_check_offset = RegisterOrConstant(-1));
 
   // The rest of the type check; must be wired to a corresponding fast path.
@@ -583,7 +583,7 @@ class MacroAssembler: public Assembler {
                                      Register super_klass,
                                      Register temp1_reg,
                                      Register temp2_reg,
-                                     Label* L_success = NULL,
+                                     Label* L_success = nullptr,
                                      Register result_reg = noreg);
 
   // Simplified, combined version, good for typical uses.
@@ -596,8 +596,8 @@ class MacroAssembler: public Assembler {
 
   void clinit_barrier(Register klass,
                       Register thread,
-                      Label* L_fast_path = NULL,
-                      Label* L_slow_path = NULL);
+                      Label* L_fast_path = nullptr,
+                      Label* L_slow_path = nullptr);
 
   // Method handle support (JSR 292).
   RegisterOrConstant argument_offset(RegisterOrConstant arg_slot, Register temp_reg, int extra_slot_offset = 0);
@@ -631,7 +631,7 @@ class MacroAssembler: public Assembler {
   void rtm_profiling(Register abort_status_Reg, Register temp_Reg,
                      RTMLockingCounters* rtm_counters, Metadata* method_data, bool profile_rtm);
   void rtm_retry_lock_on_abort(Register retry_count, Register abort_status,
-                               Label& retryLabel, Label* checkRetry = NULL);
+                               Label& retryLabel, Label* checkRetry = nullptr);
   void rtm_retry_lock_on_busy(Register retry_count, Register owner_addr, Label& retryLabel);
   void rtm_stack_locking(ConditionRegister flag, Register obj, Register mark_word, Register tmp,
                          Register retry_on_abort_count,
@@ -647,9 +647,9 @@ class MacroAssembler: public Assembler {
 
   void compiler_fast_lock_object(ConditionRegister flag, Register oop, Register box,
                                  Register tmp1, Register tmp2, Register tmp3,
-                                 RTMLockingCounters* rtm_counters = NULL,
-                                 RTMLockingCounters* stack_rtm_counters = NULL,
-                                 Metadata* method_data = NULL,
+                                 RTMLockingCounters* rtm_counters = nullptr,
+                                 RTMLockingCounters* stack_rtm_counters = nullptr,
+                                 Metadata* method_data = nullptr,
                                  bool use_rtm = false, bool profile_rtm = false);
 
   void compiler_fast_unlock_object(ConditionRegister flag, Register oop, Register box,
@@ -707,7 +707,7 @@ class MacroAssembler: public Assembler {
   inline void access_load_at(BasicType type, DecoratorSet decorators,
                              Register base, RegisterOrConstant ind_or_offs, Register dst,
                              Register tmp1, Register tmp2,
-                             MacroAssembler::PreservationLevel preservation_level, Label *L_handle_null = NULL);
+                             MacroAssembler::PreservationLevel preservation_level, Label *L_handle_null = nullptr);
 
  public:
   // Specify tmp1 for better code in certain compressed oops cases. Specify Label to bail out on null oop.
@@ -715,7 +715,7 @@ class MacroAssembler: public Assembler {
   inline void load_heap_oop(Register d, RegisterOrConstant offs, Register s1,
                             Register tmp1, Register tmp2,
                             MacroAssembler::PreservationLevel preservation_level,
-                            DecoratorSet decorators = 0, Label *L_handle_null = NULL);
+                            DecoratorSet decorators = 0, Label *L_handle_null = nullptr);
 
   inline void store_heap_oop(Register d, RegisterOrConstant offs, Register s1,
                              Register tmp1, Register tmp2, Register tmp3,
@@ -927,10 +927,10 @@ class MacroAssembler: public Assembler {
   };
 
   // Prints msg, dumps registers and stops execution.
-  void stop                 (const char* msg = NULL) { stop(stop_stop,               msg); }
-  void untested             (const char* msg = NULL) { stop(stop_untested,           msg); }
-  void unimplemented        (const char* msg = NULL) { stop(stop_unimplemented,      msg); }
-  void should_not_reach_here(const char* msg = NULL) { stop(stop_shouldnotreachhere, msg); }
+  void stop                 (const char* msg = nullptr) { stop(stop_stop,               msg); }
+  void untested             (const char* msg = nullptr) { stop(stop_untested,           msg); }
+  void unimplemented        (const char* msg = nullptr) { stop(stop_unimplemented,      msg); }
+  void should_not_reach_here(const char* msg = nullptr) { stop(stop_shouldnotreachhere, msg); }
 
   void zap_from_to(Register low, int before, Register high, int after, Register val, Register addr) PRODUCT_RETURN;
 };
