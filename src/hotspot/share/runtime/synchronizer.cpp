@@ -1114,6 +1114,7 @@ bool ObjectSynchronizer::is_async_deflation_needed() {
     // are too many monitors in use. We don't deflate more frequently
     // than AsyncDeflationInterval (unless is_async_deflation_requested)
     // in order to not swamp the MonitorDeflationThread.
+    log_info(monitorinflation)("Async deflation needed: monitors used are above the threshold");
     return true;
   }
 
@@ -1122,7 +1123,11 @@ bool ObjectSynchronizer::is_async_deflation_needed() {
     // It's been longer than our specified guaranteed deflate interval.
     // We need to clean up the used monitors even if the threshold is
     // not reached, to keep the memory utilization at bay when many threads
-    // touched many monitors.
+    // touched many monitors. This inflation is expected to have no progress
+    // in normal conditions, so it should not count towards non-progress
+    // adjustments.
+    _no_progress_cnt = 0;
+    log_info(monitorinflation)("Async deflation needed: guaranteed interval reached");
     return true;
   }
 
