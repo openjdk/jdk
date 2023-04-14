@@ -82,7 +82,7 @@ public class ZipFSDirectoryExceptionMessageTest {
     }
 
     /**
-     * Validate that Zip FS throws the correct Exception message was thrown when
+     * Validate that Zip FS returns the correct Exception message when
      * attempting to obtain an InputStream from a path representing a directory
      *
      * @throws IOException If an error occurs
