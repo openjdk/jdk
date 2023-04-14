@@ -143,7 +143,7 @@ private:
   double predict_base_time_ms(size_t pending_cards, size_t rs_length) const;
 
   // Copy time for a region is copying live data.
-  double predict_region_copy_time_ms(HeapRegion* hr) const;
+  double predict_region_copy_time_ms(HeapRegion* hr, bool for_young_only_phase) const;
   // Merge-scan time for a region is handling remembered sets of that region (as a single unit).
   double predict_region_merge_scan_time(HeapRegion* hr, bool for_young_only_phase) const;
   // Non-copy time for a region is handling remembered sets and other time.

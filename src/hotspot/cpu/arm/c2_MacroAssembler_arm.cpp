@@ -147,7 +147,6 @@ void C2_MacroAssembler::fast_unlock(Register Roop, Register Rbox, Register Rscra
   if (LockingMode == LM_LIGHTWEIGHT) {
     log_trace(fastlock2)("C2_MacroAssembler::unlock fast");
 
-
     fast_unlock_2(Roop /* obj */, Rbox /* t1 */, Rscratch /* t2 */, Rscratch2 /* t3 */,
                     1 /* savemask (save t1) */,
                     done);
@@ -168,7 +167,7 @@ void C2_MacroAssembler::fast_unlock(Register Roop, Register Rbox, Register Rscra
     // Restore the object header
     bool allow_fallthrough_on_failure = true;
     bool one_shot = true;
-    cas_for_lock_release(Rmark, Rbox, Roop, Rscratch, done, allow_fallthrough_on_failure, one_shot);
+    cas_for_lock_release(Rbox, Rmark, Roop, Rscratch, done, allow_fallthrough_on_failure, one_shot);
   }
   bind(done);
 

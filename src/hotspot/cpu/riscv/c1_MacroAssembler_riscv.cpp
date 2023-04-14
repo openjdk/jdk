@@ -65,8 +65,8 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
   if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(hdr, obj);
     lwu(hdr, Address(hdr, Klass::access_flags_offset()));
-    andi(t0, hdr, JVM_ACC_IS_VALUE_BASED_CLASS);
-    bnez(t0, slow_case, /* is_far */ true);
+    test_bit(t0, hdr, exact_log2(JVM_ACC_IS_VALUE_BASED_CLASS));
+    bnez(t0, slow_case, true /* is_far */);
   }
 
   // Load object header
@@ -316,7 +316,7 @@ void C1_MacroAssembler::allocate_array(Register obj, Register len, Register tmp1
 
 void C1_MacroAssembler::inline_cache_check(Register receiver, Register iCache, Label &L) {
   verify_oop(receiver);
-  // explicit NULL check not needed since load from [klass_offset] causes a trap
+  // explicit null check not needed since load from [klass_offset] causes a trap
   // check against inline cache
   assert(!MacroAssembler::needs_explicit_null_check(oopDesc::klass_offset_in_bytes()), "must add explicit null check");
   assert_different_registers(receiver, iCache, t0, t2);
@@ -332,7 +332,7 @@ void C1_MacroAssembler::build_frame(int framesize, int bang_size_in_bytes) {
 
   // Insert nmethod entry barrier into frame.
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  bs->nmethod_entry_barrier(this, NULL /* slow_path */, NULL /* continuation */, NULL /* guard */);
+  bs->nmethod_entry_barrier(this, nullptr /* slow_path */, nullptr /* continuation */, nullptr /* guard */);
 }
 
 void C1_MacroAssembler::remove_frame(int framesize) {
@@ -416,8 +416,8 @@ static c1_float_cond_branch_insn c1_float_cond_branch[] =
   (c1_float_cond_branch_insn)&MacroAssembler::float_ble,
   (c1_float_cond_branch_insn)&MacroAssembler::float_bge,
   (c1_float_cond_branch_insn)&MacroAssembler::float_bgt,
-  NULL, // lir_cond_belowEqual
-  NULL, // lir_cond_aboveEqual
+  nullptr, // lir_cond_belowEqual
+  nullptr, // lir_cond_aboveEqual
 
   /* DOUBLE branches */
   (c1_float_cond_branch_insn)&MacroAssembler::double_beq,
@@ -426,8 +426,8 @@ static c1_float_cond_branch_insn c1_float_cond_branch[] =
   (c1_float_cond_branch_insn)&MacroAssembler::double_ble,
   (c1_float_cond_branch_insn)&MacroAssembler::double_bge,
   (c1_float_cond_branch_insn)&MacroAssembler::double_bgt,
-  NULL, // lir_cond_belowEqual
-  NULL  // lir_cond_aboveEqual
+  nullptr, // lir_cond_belowEqual
+  nullptr  // lir_cond_aboveEqual
 };
 
 void C1_MacroAssembler::c1_cmp_branch(int cmpFlag, Register op1, Register op2, Label& label,

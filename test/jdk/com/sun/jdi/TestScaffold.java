@@ -461,44 +461,63 @@ abstract public class TestScaffold extends TargetAdapter {
         testFailed = true;
     }
 
+    final List<String> doubleWordArgs = List.of("-cp", "-classpath", "--add-opens", "--class-path",
+            "--upgrade-module-path", "--add-modules", "-d", "--add-exports", "--patch-module", "--module-path");
+
     private ArgInfo parseArgs(String args[]) {
         ArgInfo argInfo = new ArgInfo();
-        String mainWrapper = System.getProperty("main.wrapper");
-        if ("Virtual".equals(mainWrapper)) {
-            argInfo.targetAppCommandLine = TestScaffold.class.getName() + " " + mainWrapper + " ";
-            argInfo.targetVMArgs += "--enable-preview ";
-        } else if ("true".equals(System.getProperty("test.enable.preview"))) {
-            // the test specified @enablePreview.
-            argInfo.targetVMArgs += "--enable-preview ";
-        }
-
+        // Parse arguments, like java/j* tools command-line arguments.
+        // The first argument not-starting with '-' is treated as a classname.
+        // The other arguments are split to targetVMArgs targetAppCommandLine correspondingly.
+        // The example of args for line '@run driver Frames2Test -Xss4M' is  '-Xss4M' 'Frames2Targ'.
+        // The result without any wrapper enabled:
+        //     argInfo.targetAppCommandLine : Frames2Targ
+        //     argInfo.targetVMArgs : -Xss4M
+        // The result with wrapper enabled:
+        //     argInfo.targetAppCommandLine : TestScaffold Virtual Frames2Targ
+        //     argInfo.targetVMArgs : -Xss4M
+        boolean classNameParsed = false;
         for (int i = 0; i < args.length; i++) {
-            if (args[i].equals("-connect")) {
+            String arg = args[i].trim();
+            if (classNameParsed) {
+                // once classname is read, treat any other arguments as app arguments
+                argInfo.targetAppCommandLine += (arg + ' ');
+                continue;
+            }
+            if (arg.equals("-connect")) {
                 i++;
                 argInfo.connectorSpec = args[i];
-            } else if (args[i].equals("-trace")) {
+            } else if (arg.equals("-trace")) {
                 i++;
                 argInfo.traceFlags = Integer.decode(args[i]).intValue();
-            } else if (args[i].equals("-redefstart")) {
+            } else if (arg.equals("-redefstart")) {
                 redefineAtStart = true;
-            } else if (args[i].equals("-redefevent")) {
+            } else if (arg.equals("-redefevent")) {
                 redefineAtEvents = true;
-            } else if (args[i].equals("-redefasync")) {
+            } else if (arg.equals("-redefasync")) {
                 redefineAsynchronously = true;
-            } else if (args[i].startsWith("-J")) {
-                argInfo.targetVMArgs += (args[i].substring(2) + ' ');
-
-                /*
-                 * classpath can span two arguments so we need to handle
-                 * it specially.
-                 */
-                if (args[i].equals("-J-classpath")) {
+            } else if (arg.startsWith("-J")) {
+                throw new RuntimeException("-J-option format is not supported. Incorrect arg: " + arg);
+            } else if (arg.startsWith("-")) {
+                argInfo.targetVMArgs += (arg + ' ');
+                if (doubleWordArgs.contains(arg)) {
                     i++;
                     argInfo.targetVMArgs += (args[i] + ' ');
                 }
             } else {
-                argInfo.targetAppCommandLine += (args[i] + ' ');
+                classNameParsed = true;
+                argInfo.targetAppCommandLine += (arg + ' ');
             }
+        }
+
+        // Need to change args to run wrapper using command like 'TestScaffold Virtual <app-name>'
+        String mainWrapper = System.getProperty("main.wrapper");
+        if (mainWrapper != null && !argInfo.targetAppCommandLine.isEmpty()) {
+            argInfo.targetAppCommandLine = TestScaffold.class.getName() + ' '
+                    + mainWrapper + ' ' + argInfo.targetAppCommandLine;
+        } else if ("true".equals(System.getProperty("test.enable.preview"))) {
+            // the test specified @enablePreview.
+            argInfo.targetVMArgs += "--enable-preview ";
         }
         return argInfo;
     }
@@ -529,7 +548,7 @@ abstract public class TestScaffold extends TargetAdapter {
     public void connect(String args[]) {
         ArgInfo argInfo = parseArgs(args);
 
-        argInfo.targetVMArgs += VMConnection.getDebuggeeVMOptions();
+        argInfo.targetVMArgs = VMConnection.getDebuggeeVMOptions() + " " + argInfo.targetVMArgs;
         connection = new VMConnection(argInfo.connectorSpec,
                                       argInfo.traceFlags);
 
@@ -710,6 +729,21 @@ abstract public class TestScaffold extends TargetAdapter {
             } catch (InterruptedException e) {
             }
         }
+
+        // Make sure debuggee exits with no errors. Otherwise failures might go unnoticed.
+        Process p = vm.process();
+        try {
+            p.waitFor();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+        int res = p.exitValue();
+        // Some tests purposefully exit with an exception, which produces exitValue
+        // 1, so we have to allow it also.
+        if (res != 0 && res != 1) {
+            throw new RuntimeException("Non-zero debuggee exitValue: " + res);
+        }
+
         traceln("TS: waitForVMDisconnect: done");
     }
 
@@ -977,10 +1011,10 @@ abstract public class TestScaffold extends TargetAdapter {
         mainMethod.setAccessible(true);
 
         if (wrapper.equals("Virtual")) {
-            threadFactory = r -> newVirtualThread(r);
+            threadFactory = Thread.ofVirtual().factory();
             MainThreadGroup tg = new MainThreadGroup();
             // TODO fix to set virtual scheduler group when become available
-            Thread vthread = newVirtualThread(() -> {
+            Thread vthread = Thread.ofVirtual().unstarted(() -> {
                 try {
                     mainMethod.invoke(null, new Object[] { classArgs });
                 } catch (InvocationTargetException e) {
@@ -1027,20 +1061,6 @@ abstract public class TestScaffold extends TargetAdapter {
             uncaughtThrowable = e;
         }
         Throwable uncaughtThrowable = null;
-    }
-
-    // Need to use reflection while virtual threads --enable-preview feature
-    private static Thread newVirtualThread(Runnable task) {
-        try {
-            Object builder = Thread.class.getMethod("ofVirtual").invoke(null);
-            Class<?> clazz = Class.forName("java.lang.Thread$Builder");
-            java.lang.reflect.Method unstarted = clazz.getMethod("unstarted", Runnable.class);
-            return (Thread) unstarted.invoke(builder, task);
-        } catch (RuntimeException | Error e) {
-            throw e;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
     }
 
     public static Thread newThread(Runnable task) {

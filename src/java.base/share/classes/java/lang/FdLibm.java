@@ -3301,4 +3301,196 @@ class FdLibm {
             return (jx >= 0)? z: -z;
         }
     }
+
+    static final class IEEEremainder {
+        private IEEEremainder() {throw new UnsupportedOperationException();}
+
+        static double compute(double x, double p) {
+            int hx, hp;
+            /*unsigned*/ int sx, lx, lp;
+            double p_half;
+
+            hx = __HI(x);           // high word of x
+            lx = __LO(x);           // low  word of x
+            hp = __HI(p);           // high word of p
+            lp = __LO(p);           // low  word of p
+            sx = hx & 0x8000_0000;
+            hp &= 0x7fff_ffff;
+            hx &= 0x7fff_ffff;
+
+            // purge off exception values
+            if ((hp | lp) == 0) {// p = 0
+                return (x*p)/(x*p);
+            }
+            if ((hx >= 0x7ff0_0000) ||                   // not finite
+                ((hp >= 0x7ff0_0000) &&                   // p is NaN
+                 (((hp - 0x7ff0_0000) | lp) != 0)))
+                return (x*p)/(x*p);
+
+            if (hp <= 0x7fdf_ffff) {  // now x < 2p
+                x = __ieee754_fmod(x, p + p);
+            }
+            if (((hx - hp) | (lx - lp)) == 0) {
+                return 0.0*x;
+            }
+            x  = Math.abs(x);
+            p  = Math.abs(p);
+            if (hp < 0x0020_0000) {
+                if (x + x > p) {
+                    x -= p;
+                    if (x + x >= p) {
+                        x -= p;
+                    }
+                }
+            } else {
+                p_half = 0.5*p;
+                if (x > p_half) {
+                    x -= p;
+                    if (x >= p_half) {
+                        x -= p;
+                    }
+                }
+            }
+            return __HI(x, __HI(x)^sx);
+        }
+
+        private static double __ieee754_fmod(double x, double y) {
+            int n, hx, hy, hz, ix, iy, sx;
+            /*unsigned*/ int lx, ly, lz;
+
+            hx = __HI(x);           // high word of x
+            lx = __LO(x);           // low  word of x
+            hy = __HI(y);           // high word of y
+            ly = __LO(y);           // low  word of y
+            sx = hx & 0x8000_0000;  // sign of x
+            hx ^= sx;               // |x|
+            hy &= 0x7fff_ffff;      // |y|
+
+            // purge off exception values
+            if ((hy | ly) == 0 || (hx >= 0x7ff0_0000)||       // y = 0, or x not finite
+               ((hy | ((ly | -ly) >>> 31)) > 0x7ff0_0000))    // or y is NaN, unsigned shift
+                return (x*y)/(x*y);
+            if (hx <= hy) {
+                if ((hx < hy) || (Integer.compareUnsigned(lx, ly) < 0)) { // |x| < |y| return x
+                    return x;
+                }
+                if (lx == ly) {
+                    return signedZero(sx);  // |x| = |y| return x*0
+                }
+            }
+
+            ix = ilogb(hx, lx);
+            iy = ilogb(hy, ly);
+
+            // set up {hx, lx}, {hy, ly} and align y to x
+            if (ix >= -1022)
+                hx = 0x0010_0000 | (0x000f_ffff & hx);
+            else {          // subnormal x, shift x to normal
+                n = -1022 - ix;
+                if (n <= 31) {
+                    hx = (hx << n) | (lx >>> (32 - n)); // unsigned shift
+                    lx <<= n;
+                } else {
+                    hx = lx << (n - 32);
+                    lx = 0;
+                }
+            }
+            if (iy >= -1022)
+                hy = 0x0010_0000 | (0x000f_ffff & hy);
+            else {          // subnormal y, shift y to normal
+                n = -1022 - iy;
+                if (n <= 31) {
+                    hy = (hy << n)|(ly >>> (32 - n)); // unsigned shift
+                    ly <<= n;
+                } else {
+                    hy = ly << (n - 32);
+                    ly = 0;
+                }
+            }
+
+            // fix point fmod
+            n = ix - iy;
+            while (n-- != 0) {
+                hz = hx - hy;
+                lz = lx - ly;
+                if (Integer.compareUnsigned(lx, ly) < 0) {
+                    hz -= 1;
+                }
+                if (hz < 0){
+                    hx = hx + hx +(lx >>> 31); // unsigned shift
+                    lx = lx + lx;
+                } else {
+                    if ((hz | lz) == 0) {        // return sign(x)*0
+                        return signedZero(sx);
+                    }
+                    hx = hz + hz + (lz >>> 31); // unsigned shift
+                    lx = lz + lz;
+                }
+            }
+            hz = hx - hy;
+            lz = lx - ly;
+            if (Integer.compareUnsigned(lx, ly) < 0) {
+                hz -= 1;
+            }
+            if (hz >= 0) {
+                hx = hz;
+                lx = lz;
+            }
+
+            // convert back to floating value and restore the sign
+            if ((hx | lx) == 0) {                  // return sign(x)*0
+                return signedZero(sx);
+            }
+            while (hx < 0x0010_0000) {      // normalize x
+                hx = hx + hx + (lx >>> 31); // unsigned shift
+                lx = lx + lx;
+                iy -= 1;
+            }
+            if (iy >= -1022) {        // normalize output
+                hx = ((hx - 0x0010_0000) | ((iy + 1023) << 20));
+                x = __HI_LO(hx | sx, lx);
+            } else {                // subnormal output
+                n = -1022 - iy;
+
+                if (n <= 20) {
+                    lx = (lx >>> n)|(/*(unsigned)*/hx << (32 - n)); // unsigned shift
+                    hx >>= n;
+                } else if (n <= 31) {
+                    lx = (hx << (32 - n))|(lx >>> n); // unsigned shift
+                    hx = sx;
+                } else {
+                    lx = hx >>(n - 32);
+                    hx = sx;
+                }
+                x = __HI_LO(hx | sx, lx);
+                x *= 1.0;           // create necessary signal
+            }
+            return x;               // exact output
+        }
+
+        /*
+         * Return a double zero with the same sign as the int argument.
+         */
+        private static double signedZero(int sign) {
+            return +0.0 * ( (double)sign);
+        }
+
+        private static int ilogb(int hz, int lz) {
+            int iz, i;
+            if (hz < 0x0010_0000) {     // subnormal z
+                if (hz == 0) {
+                    for (iz = -1043, i = lz; i > 0; i <<= 1) {
+                        iz -= 1;
+                    }
+                } else {
+                    for (iz = -1022, i = (hz << 11); i > 0; i <<= 1) {
+                        iz -= 1;
+                    }
+                }
+            } else {
+                iz = (hz >> 20) - 1023;
+            }
+            return iz;
+        }
+    }
 }

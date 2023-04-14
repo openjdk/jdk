@@ -242,6 +242,7 @@ import sun.security.action.GetIntegerAction;
  * <cite>Java Object Serialization Specification,</cite> Section 1.13,
  * "Serialization of Records"</a> for additional information.
  *
+ * @spec serialization/index.html Java Object Serialization Specification
  * @author      Mike Warres
  * @author      Roger Riggs
  * @see java.io.DataInput
