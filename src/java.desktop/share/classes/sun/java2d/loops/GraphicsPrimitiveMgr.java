@@ -278,7 +278,6 @@ public final class GraphicsPrimitiveMgr {
                 }
             }
             return null;
-            //throw new InternalError("No general handler registered for"+signature);
         }
     }
 
