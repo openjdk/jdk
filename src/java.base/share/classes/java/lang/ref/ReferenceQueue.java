@@ -35,13 +35,12 @@ import jdk.internal.misc.VM;
  * Reference queues, to which registered reference objects are appended by the
  * garbage collector after the appropriate reachability changes are detected.
  *
- * This interaction between the garbage collector and ReferenceQueues has
- * a memory consistency effect. Actions in a thread preceding a call to
- * {@link Reference.reachabilityFence} on a Reference's
- * <a href="../package-summary.html>referent</a>
- * <a href="{@docRoot}/java.base/java/util/concurrent/package-summary.html#MemoryVisibility"><i>happen-before</i></a>
- * any References to that referent become available on a ReferenceQueue.
-
+ * <p>Memory consistency effects: The enqueueing of a reference on a
+ * queue (by the garbage collector, or by a call to {@link Reference#enqueue}
+ * <a href="{@docRoot}/java.base/java/util/concurrent/package-summary.html#MemoryVisibility"><i>happens-before</i></a>
+ * the reference is removed from the queue by {@link ReferenceQueue#poll} or
+ * {@link ReferenceQueue#remove}.
+ *
  * @param <T> the type of the reference object
  *
  * @author   Mark Reinhold
