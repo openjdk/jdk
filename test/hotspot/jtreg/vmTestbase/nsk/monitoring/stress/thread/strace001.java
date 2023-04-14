@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,6 +141,8 @@ public class strace001 {
         expectedSystemTrace = new String[]{
                 "java.lang.Thread.sleep",
                 "java.lang.Thread.sleep0",
+                "java.lang.Thread.beforeSleep",
+                "java.lang.Thread.afterSleep",
                 "java.lang.Thread.yield",
                 "java.lang.Thread.yield0",
                 "java.lang.Thread.currentCarrierThread",
