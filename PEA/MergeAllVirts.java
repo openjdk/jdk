@@ -139,8 +139,8 @@ class MergeAllVirts {
         if (!okay) {
             throw new RuntimeException("wrong answer: " + cond + " "  + sum);
         }
-
     }
+
     private static void fail(String msg, Object... args) {
         throw new RuntimeException(msg);
     }
@@ -162,9 +162,42 @@ class MergeAllVirts {
         return obj;
     }
 
+    public static MergeAllVirts merge_virts(boolean cond1, boolean cond2) {
+        MergeAllVirts obj = new MergeAllVirts();
+        if (cond1) {
+            if (cond2) {
+                obj.a = 1;
+            } else {
+                obj.a = 2;
+            }
+            blackhole(); // merge obj.a here.
+        } else {
+            obj.b = 20;  // merge both obj.a and obj.b
+        }
+        return obj;
+    }
+
+    static void check_result_virts(boolean cond1, boolean cond2, int sum) {
+        boolean okay;
+        if (cond1) {
+            if (cond2) {
+                okay = sum == 101;
+            } else {
+                okay = sum == 102;
+            }
+        } else {
+            okay = sum == 120;
+        }
+
+        if (!okay) {
+            throw new RuntimeException("wrong answer: " + cond1 + " " + cond2 + " "  + sum);
+        }
+    }
+
     public static void main(String[] args) {
         long iterations = 0;
         File file = new File("hello");
+        boolean cond2 = true;
         try {
             while (true) {
                 boolean cond = 0 == (iterations & 0xf);
@@ -174,7 +207,7 @@ class MergeAllVirts {
                 MergeAllVirts.escaped(cond);
                 check_result(cond, cached.sum());
 
-                boolean cond2 = 0 == ((iterations + 3) & 0xf);
+                cond2 = cond2 ^ cond;
                 sum = MergeAllVirts.escaped2(cond, cond2).sum();
                 check_result2(cond, sum);
 
@@ -185,6 +218,9 @@ class MergeAllVirts {
                 check_result4(cond, cached.sum());
 
                 MergeAllVirts.merge_2virts(file);
+
+                sum = MergeAllVirts.merge_virts(cond, cond2).sum();
+                check_result_virts(cond, cond2, sum);
                 iterations++;
             }
         } finally {
