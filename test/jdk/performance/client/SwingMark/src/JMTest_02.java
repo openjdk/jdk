@@ -133,8 +133,8 @@ public class JMTest_02 extends AbstractSwingTest {
         EventQueue queue = Toolkit.getDefaultToolkit().getSystemEventQueue();
         for (int i = 0; i < nCount; i++) {
             menu = jmenubar.getMenu(i);
-            int nItemCount = menu.getItemCount();            
-            
+            int nItemCount = menu.getItemCount();
+
             for (int j = 0; j < nItemCount; j ++) {
                 firstMnem = menu.getMnemonic();
                 key = new KeyEvent(menu, KeyEvent.KEY_PRESSED,
@@ -143,7 +143,7 @@ public class JMTest_02 extends AbstractSwingTest {
                 rest();
 
                 for (int k = 0; k < j; k++) {
-                    key = new KeyEvent(menu, KeyEvent.KEY_PRESSED, 
+                    key = new KeyEvent(menu, KeyEvent.KEY_PRESSED,
                                        new Date().getTime(), 0, direction);
                     queue.postEvent(key);
                     try {

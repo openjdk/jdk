@@ -155,7 +155,7 @@ public class JMTest_05 extends AbstractSwingTest {
                         rest();
 
                         mnem = mi.getMnemonic();
-                        key = new KeyEvent(menu, KeyEvent.KEY_PRESSED, 
+                        key = new KeyEvent(menu, KeyEvent.KEY_PRESSED,
                                            new Date().getTime(), 0, mnem);
                         queue.postEvent(key);
                         try {
