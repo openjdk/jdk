@@ -31,7 +31,6 @@
 #include "utilities/macros.hpp"
 
 class OopStorage;
-class SuspendibleThreadSetJoiner;
 
 // Thread class for string deduplication.  There is only one instance of
 // this class.  This thread processes deduplication requests.  It also
@@ -58,11 +57,11 @@ class StringDedup::Processor : public ConcurrentGCThread {
   bool wait_for_requests() const;
 
   // Yield if requested.  Returns !should_terminate() after possible yield.
-  bool yield_or_continue(SuspendibleThreadSetJoiner* joiner) const;
+  bool yield_or_continue() const;
 
   class ProcessRequest;
-  void process_requests(SuspendibleThreadSetJoiner* joiner) const;
-  void cleanup_table(SuspendibleThreadSetJoiner* joiner, bool grow_only, bool force) const;
+  void process_requests() const;
+  void cleanup_table(bool grow_only, bool force) const;
 
   void log_statistics();
 

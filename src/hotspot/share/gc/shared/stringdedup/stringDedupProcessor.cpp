@@ -104,18 +104,16 @@ StringDedup::StorageUse* StringDedup::Processor::storage_for_requests() {
   return StorageUse::obtain(&_storage_for_requests);
 }
 
-bool StringDedup::Processor::yield_or_continue(SuspendibleThreadSetJoiner* joiner) const {
-  if (joiner->should_yield()) {
-    joiner->yield();
+bool StringDedup::Processor::yield_or_continue() const {
+  if (SuspendibleThreadSet::should_yield()) {
+    SuspendibleThreadSet::yield();
   }
   return !should_terminate();
 }
 
-void StringDedup::Processor::cleanup_table(SuspendibleThreadSetJoiner* joiner,
-                                           bool grow_only,
-                                           bool force) const {
+void StringDedup::Processor::cleanup_table(bool grow_only, bool force) const {
   if (Table::cleanup_start_if_needed(grow_only, force)) {
-    while (yield_or_continue(joiner)) {
+    while (yield_or_continue()) {
       if (!Table::cleanup_step()) break;
     }
     Table::cleanup_end();
@@ -124,7 +122,6 @@ void StringDedup::Processor::cleanup_table(SuspendibleThreadSetJoiner* joiner,
 
 class StringDedup::Processor::ProcessRequest final : public OopClosure {
   OopStorage* _storage;
-  SuspendibleThreadSetJoiner* _joiner;
   size_t _release_index;
   oop* _bulk_release[OopStorage::bulk_allocate_limit];
 
@@ -139,9 +136,8 @@ class StringDedup::Processor::ProcessRequest final : public OopClosure {
   }
 
 public:
-  ProcessRequest(OopStorage* storage, SuspendibleThreadSetJoiner* joiner) :
+  ProcessRequest(OopStorage* storage) :
     _storage(storage),
-    _joiner(joiner),
     _release_index(0),
     _bulk_release()
   {}
@@ -153,7 +149,7 @@ public:
   virtual void do_oop(narrowOop*) { ShouldNotReachHere(); }
 
   virtual void do_oop(oop* ref) {
-    if (_processor->yield_or_continue(_joiner)) {
+    if (_processor->yield_or_continue()) {
       oop java_string = NativeAccess<ON_PHANTOM_OOP_REF>::oop_load(ref);
       release_ref(ref);
       // Dedup java_string, after checking for various reasons to skip it.
@@ -168,7 +164,7 @@ public:
         Table::deduplicate(java_string);
         if (Table::is_grow_needed()) {
           _cur_stat.report_process_pause();
-          _processor->cleanup_table(_joiner, true /* grow_only */, false /* force */);
+          _processor->cleanup_table(true /* grow_only */, false /* force */);
           _cur_stat.report_process_resume();
         }
       }
@@ -176,9 +172,9 @@ public:
   }
 };
 
-void StringDedup::Processor::process_requests(SuspendibleThreadSetJoiner* joiner) const {
+void StringDedup::Processor::process_requests() const {
   OopStorage::ParState<true, false> par_state{_storage_for_processing->storage(), 1};
-  ProcessRequest processor{_storage_for_processing->storage(), joiner};
+  ProcessRequest processor{_storage_for_processing->storage()};
   par_state.oops_do(&processor);
 }
 
@@ -194,11 +190,10 @@ void StringDedup::Processor::run_service() {
     _cur_stat.report_idle_end();
     _cur_stat.report_concurrent_start();
     _cur_stat.report_process_start();
-    process_requests(&sts_joiner);
+    process_requests();
     if (should_terminate()) break;
     _cur_stat.report_process_end();
-    cleanup_table(&sts_joiner,
-                  false /* grow_only */,
+    cleanup_table(false /* grow_only */,
                   StringDeduplicationResizeALot /* force */);
     if (should_terminate()) break;
     _cur_stat.report_concurrent_end();
