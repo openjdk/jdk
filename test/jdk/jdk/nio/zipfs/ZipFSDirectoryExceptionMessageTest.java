@@ -85,6 +85,7 @@ public class ZipFSDirectoryExceptionMessageTest {
     /**
      * Validate that Zip FS returns the correct Exception message when
      * attempting to obtain an InputStream from a path representing a directory
+     * and the FileSystemException::getOtherfile returns null
      *
      * @throws IOException If an error occurs
      */
@@ -93,6 +94,8 @@ public class ZipFSDirectoryExceptionMessageTest {
         try (FileSystem zipfs = FileSystems.newFileSystem(ZIP_FILE)) {
             var file = zipfs.getPath(DIRECTORY_NAME);
             var x = assertThrows(FileSystemException.class, () -> Files.newInputStream(file));
+            // validate that other file should be null
+            assertNull(x.getOtherFile());
             assertEquals(DIR_EXCEPTION_MESSAGE, x.getMessage());
         }
     }
