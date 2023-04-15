@@ -93,7 +93,7 @@ public class ZipFSDirectoryExceptionMessageTest {
         try (FileSystem zipfs = FileSystems.newFileSystem(ZIP_FILE)) {
             var file = zipfs.getPath(DIRECTORY_NAME);
             var x = assertThrows(FileSystemException.class, () -> Files.newInputStream(file));
-            assertEquals(x.getMessage(), DIR_EXCEPTION_MESSAGE);
+            assertEquals(DIR_EXCEPTION_MESSAGE, x.getMessage());
         }
     }
 }
