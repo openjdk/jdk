@@ -45,16 +45,14 @@ StringDedup::Stat::Stat() :
   _process(0),
   _resize_table(0),
   _cleanup_table(0),
-  _block(0),
   _concurrent_start(),
   _concurrent_elapsed(),
   _phase_start(),
   _idle_elapsed(),
   _process_elapsed(),
   _resize_table_elapsed(),
-  _cleanup_table_elapsed(),
-  _block_elapsed() {
-}
+  _cleanup_table_elapsed()
+{}
 
 void StringDedup::Stat::add(const Stat* const stat) {
   _inspected           += stat->_inspected;
@@ -74,13 +72,11 @@ void StringDedup::Stat::add(const Stat* const stat) {
   _process             += stat->_process;
   _resize_table        += stat->_resize_table;
   _cleanup_table       += stat->_cleanup_table;
-  _block               += stat->_block;
   _concurrent_elapsed  += stat->_concurrent_elapsed;
   _idle_elapsed        += stat->_idle_elapsed;
   _process_elapsed     += stat->_process_elapsed;
   _resize_table_elapsed += stat->_resize_table_elapsed;
   _cleanup_table_elapsed += stat->_cleanup_table_elapsed;
-  _block_elapsed       += stat->_block_elapsed;
 }
 
 // Support for log output formatting
@@ -194,38 +190,13 @@ void StringDedup::Stat::report_cleanup_table_end() {
   report_phase_end("Cleanup Table", &_cleanup_table_elapsed);
 }
 
-Tickspan* StringDedup::Stat::elapsed_for_phase(Phase phase) {
-  switch (phase) {
-  case Phase::process: return &_process_elapsed;
-  case Phase::resize_table: return &_resize_table_elapsed;
-  case Phase::cleanup_table: return &_cleanup_table_elapsed;
-  }
-  ShouldNotReachHere();
-  return nullptr;
-}
-
-void StringDedup::Stat::block_phase(Phase phase) {
-  Ticks now = Ticks::now();
-  *elapsed_for_phase(phase) += now - _phase_start;
-  _phase_start = now;
-  _block++;
-}
-
-void StringDedup::Stat::unblock_phase() {
-  Ticks now = Ticks::now();
-  _block_elapsed += now - _phase_start;
-  _phase_start = now;
-}
-
 void StringDedup::Stat::log_times(const char* prefix) const {
   log_debug(stringdedup)(
     "  %s Process: %zu/" STRDEDUP_ELAPSED_FORMAT_MS
-    ", Idle: %zu/" STRDEDUP_ELAPSED_FORMAT_MS
-    ", Blocked: %zu/" STRDEDUP_ELAPSED_FORMAT_MS,
+    ", Idle: %zu/" STRDEDUP_ELAPSED_FORMAT_MS,
     prefix,
     _process, strdedup_elapsed_param_ms(_process_elapsed),
-    _idle, strdedup_elapsed_param_ms(_idle_elapsed),
-    _block, strdedup_elapsed_param_ms(_block_elapsed));
+    _idle, strdedup_elapsed_param_ms(_idle_elapsed));
   if (_resize_table > 0) {
     log_debug(stringdedup)(
       "  %s Resize Table: %zu/" STRDEDUP_ELAPSED_FORMAT_MS,

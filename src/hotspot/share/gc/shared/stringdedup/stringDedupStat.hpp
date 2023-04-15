@@ -63,7 +63,6 @@ private:
   size_t _process;
   size_t _resize_table;
   size_t _cleanup_table;
-  size_t _block;
 
   // Time spent by the deduplication thread in different phases
   Ticks _concurrent_start;
@@ -73,11 +72,9 @@ private:
   Tickspan _process_elapsed;
   Tickspan _resize_table_elapsed;
   Tickspan _cleanup_table_elapsed;
-  Tickspan _block_elapsed;
 
   void report_phase_start(const char* phase);
   void report_phase_end(const char* phase, Tickspan* elapsed);
-  Tickspan* elapsed_for_phase(Phase phase);
 
   void log_times(const char* prefix) const;
 
@@ -155,9 +152,6 @@ public:
 
   void report_concurrent_start();
   void report_concurrent_end();
-
-  void block_phase(Phase phase);
-  void unblock_phase();
 
   void add(const Stat* const stat);
   void log_statistics(bool total) const;

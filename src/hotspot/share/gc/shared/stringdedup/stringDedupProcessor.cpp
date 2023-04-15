@@ -107,9 +107,7 @@ StringDedup::StorageUse* StringDedup::Processor::storage_for_requests() {
 bool StringDedup::Processor::yield_or_continue(SuspendibleThreadSetJoiner* joiner,
                                                Stat::Phase phase) const {
   if (joiner->should_yield()) {
-    _cur_stat.block_phase(phase);
     joiner->yield();
-    _cur_stat.unblock_phase();
   }
   return !should_terminate();
 }
