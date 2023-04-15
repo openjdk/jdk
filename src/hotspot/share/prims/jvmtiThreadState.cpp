@@ -292,7 +292,7 @@ JvmtiVTMSTransitionDisabler::~JvmtiVTMSTransitionDisabler() {
 // disable VTMS transitions for one virtual thread
 void
 JvmtiVTMSTransitionDisabler::VTMS_transition_disable_for_one() {
-  assert(_thread != NULL, "sanity check");
+  assert(_thread != nullptr, "sanity check");
   JavaThread* thread = JavaThread::current();
   HandleMark hm(thread);
   Handle vth = Handle(thread, JNIHandles::resolve_external_guard(_thread));
