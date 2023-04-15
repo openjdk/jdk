@@ -104,8 +104,7 @@ StringDedup::StorageUse* StringDedup::Processor::storage_for_requests() {
   return StorageUse::obtain(&_storage_for_requests);
 }
 
-bool StringDedup::Processor::yield_or_continue(SuspendibleThreadSetJoiner* joiner,
-                                               Stat::Phase phase) const {
+bool StringDedup::Processor::yield_or_continue(SuspendibleThreadSetJoiner* joiner) const {
   if (joiner->should_yield()) {
     joiner->yield();
   }
@@ -116,8 +115,7 @@ void StringDedup::Processor::cleanup_table(SuspendibleThreadSetJoiner* joiner,
                                            bool grow_only,
                                            bool force) const {
   if (Table::cleanup_start_if_needed(grow_only, force)) {
-    Stat::Phase phase = Table::cleanup_phase();
-    while (yield_or_continue(joiner, phase)) {
+    while (yield_or_continue(joiner)) {
       if (!Table::cleanup_step()) break;
     }
     Table::cleanup_end();
@@ -155,7 +153,7 @@ public:
   virtual void do_oop(narrowOop*) { ShouldNotReachHere(); }
 
   virtual void do_oop(oop* ref) {
-    if (_processor->yield_or_continue(_joiner, Stat::Phase::process)) {
+    if (_processor->yield_or_continue(_joiner)) {
       oop java_string = NativeAccess<ON_PHANTOM_OOP_REF>::oop_load(ref);
       release_ref(ref);
       // Dedup java_string, after checking for various reasons to skip it.

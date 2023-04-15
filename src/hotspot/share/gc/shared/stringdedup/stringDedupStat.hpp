@@ -34,14 +34,6 @@
 // Operation counters are updated when deduplicating a string.
 // Phase timing information is collected by the processing thread.
 class StringDedup::Stat {
-public:
-  // Only phases that can be blocked, so excluding "idle".
-  enum class Phase {
-    process,
-    resize_table,
-    cleanup_table
-  };
-
 private:
   // Counters
   size_t _inspected;

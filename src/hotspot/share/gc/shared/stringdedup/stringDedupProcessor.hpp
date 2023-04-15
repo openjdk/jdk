@@ -58,7 +58,7 @@ class StringDedup::Processor : public ConcurrentGCThread {
   bool wait_for_requests() const;
 
   // Yield if requested.  Returns !should_terminate() after possible yield.
-  bool yield_or_continue(SuspendibleThreadSetJoiner* joiner, Stat::Phase phase) const;
+  bool yield_or_continue(SuspendibleThreadSetJoiner* joiner) const;
 
   class ProcessRequest;
   void process_requests(SuspendibleThreadSetJoiner* joiner) const;

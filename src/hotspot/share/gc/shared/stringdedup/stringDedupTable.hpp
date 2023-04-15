@@ -138,10 +138,6 @@ public:
   // precondition: a cleanup is in progress.
   static void cleanup_end();
 
-  // Return the phase kind for the cleanup being performed.
-  // precondition: a cleanup is in progress.
-  static Stat::Phase cleanup_phase();
-
   static void verify();
   static void log_statistics();
 };
