@@ -57,9 +57,12 @@ StringDedup::Processor* StringDedup::_processor = nullptr;
 StringDedup::Stat StringDedup::_cur_stat{};
 StringDedup::Stat StringDedup::_total_stat{};
 
-const Klass* StringDedup::_string_klass_or_null = nullptr;
-uint StringDedup::_enabled_age_threshold = 0;
-uint StringDedup::_enabled_age_limit = 0;
+// Configuration for predicates used to decide whether to deduplicate.
+// The initial values are suitable for deduplication being disabled.
+const Klass* StringDedup::_string_klass_or_null = nullptr; // No klass will match.
+static_assert(markWord::max_age < UINT_MAX, "assumption");
+uint StringDedup::_enabled_age_threshold = UINT_MAX;       // Age never equals max.
+uint StringDedup::_enabled_age_limit = 0;                  // Age is never less than zero.
 
 bool StringDedup::ergo_initialize() {
   return Config::ergo_initialize();
@@ -84,14 +87,6 @@ void StringDedup::initialize() {
     Processor::initialize();
     _enabled = true;
     log_info_p(stringdedup, init)("String Deduplication is enabled");
-  } else {
-    // No klass will ever match.
-    _string_klass_or_null = nullptr;
-    // Age can never equal UINT_MAX.
-    static_assert(markWord::max_age < UINT_MAX, "assumption");
-    _enabled_age_threshold = UINT_MAX;
-    // Age can never be less than zero.
-    _enabled_age_limit = 0;
   }
   _initialized = true;
 }
