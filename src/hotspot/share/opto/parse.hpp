@@ -436,8 +436,13 @@ class Parse : public GraphKit {
   void     set_wrote_fields(bool z)   { _wrote_fields = z; }
   Node*    alloc_with_final() const   { return _alloc_with_final; }
   void set_alloc_with_final(Node* n)  {
-    assert((_alloc_with_final == nullptr) || (_alloc_with_final == n), "different init objects?");
-    _alloc_with_final = n;
+    if (DoPartialEscapeAnalysis) {
+      assert((_alloc_with_final == nullptr) || (_alloc_with_final == jvms()->alloc_state().is_alias(n)), "different init objects?");
+      _alloc_with_final = jvms()->alloc_state().is_alias(n);
+    } else {
+      assert((_alloc_with_final == nullptr) || (_alloc_with_final == n), "different init objects?");
+      _alloc_with_final = n;
+    }
   }
 
   Block*             block()    const { return _block; }
@@ -645,6 +650,7 @@ class Parse : public GraphKit {
 
   // Use speculative type to optimize CmpP node
   Node* optimize_cmp_with_klass(Node* c);
+  void emit_trailing_barrier(Node* obj);
 
  public:
 #ifndef PRODUCT
