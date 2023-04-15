@@ -60,7 +60,7 @@ class TestNativeLastError {
             lookup.find("SetLastError").orElseThrow(),
             FunctionDescriptor.ofVoid(ValueLayout.JAVA_INT));
 
-        // One "warmup" call avoids VM activity (e.g. Thread::current) disturbing last error value.
+        // "Warmup" call to ensure method resolution does not change last error value:
         int lastError = (int) getLastError.invoke();
 
         for (int i = 0; i < 10; i++) {
