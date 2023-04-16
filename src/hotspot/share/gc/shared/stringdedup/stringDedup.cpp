@@ -35,6 +35,7 @@
 #include "gc/shared/stringdedup/stringDedupStat.hpp"
 #include "gc/shared/stringdedup/stringDedupStorageUse.hpp"
 #include "gc/shared/stringdedup/stringDedupTable.hpp"
+#include "gc/shared/stringdedup/stringDedupThread.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.hpp"
 #include "memory/iterator.hpp"
@@ -53,6 +54,7 @@
 bool StringDedup::_initialized = false;
 bool StringDedup::_enabled = false;
 
+StringDedupThread* StringDedup::_thread = nullptr;
 StringDedup::Processor* StringDedup::_processor = nullptr;
 StringDedup::Stat StringDedup::_cur_stat{};
 StringDedup::Stat StringDedup::_total_stat{};
@@ -85,22 +87,32 @@ void StringDedup::initialize() {
     _enabled_age_limit = Config::age_threshold();
     Table::initialize();
     Processor::initialize();
+    // Don't create the thread yet.
     _enabled = true;
     log_info_p(stringdedup, init)("String Deduplication is enabled");
   }
   _initialized = true;
 }
 
+void StringDedup::start() {
+  assert(is_enabled(), "precondition");
+  assert(_thread == nullptr, "precondition");
+  StringDedupThread::initialize();
+  assert(_thread != nullptr, "invariant");
+}
+
 void StringDedup::stop() {
   assert(is_enabled(), "precondition");
-  assert(_processor != nullptr, "invariant");
-  _processor->stop();
+  if (_thread != nullptr) {     // May not have created the thread yet.
+    _thread->stop();
+  }
 }
 
 void StringDedup::threads_do(ThreadClosure* tc) {
   assert(is_enabled(), "precondition");
-  assert(_processor != nullptr, "invariant");
-  tc->do_thread(_processor);
+  if (_thread != nullptr) {     // May not have created the thread yet.
+    tc->do_thread(_thread);
+  }
 }
 
 void StringDedup::forbid_deduplication(oop java_string) {

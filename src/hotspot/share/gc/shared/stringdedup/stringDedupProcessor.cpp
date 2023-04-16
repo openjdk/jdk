@@ -33,6 +33,7 @@
 #include "gc/shared/stringdedup/stringDedupStat.hpp"
 #include "gc/shared/stringdedup/stringDedupStorageUse.hpp"
 #include "gc/shared/stringdedup/stringDedupTable.hpp"
+#include "gc/shared/stringdedup/stringDedupThread.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.hpp"
@@ -43,10 +44,6 @@
 #include "utilities/debug.hpp"
 #include "utilities/globalCounter.hpp"
 #include "utilities/globalDefinitions.hpp"
-
-StringDedup::Processor::Processor() : ConcurrentGCThread() {
-  set_name("StringDedupProcessor");
-}
 
 OopStorage* StringDedup::Processor::_storages[2] = {};
 
@@ -64,9 +61,10 @@ void StringDedup::Processor::initialize_storage() {
   _storage_for_processing = new StorageUse(_storages[1]);
 }
 
+StringDedup::Processor::Processor() {}
+
 void StringDedup::Processor::initialize() {
   _processor = new Processor();
-  _processor->create_and_start();
 }
 
 bool StringDedup::Processor::wait_for_requests() const {
@@ -105,10 +103,11 @@ StringDedup::StorageUse* StringDedup::Processor::storage_for_requests() {
 }
 
 bool StringDedup::Processor::yield_or_continue() const {
-  if (SuspendibleThreadSet::should_yield()) {
-    SuspendibleThreadSet::yield();
-  }
-  return !should_terminate();
+  return _thread->yield_or_continue();
+}
+
+bool StringDedup::Processor::should_terminate() const {
+  return _thread->should_terminate();
 }
 
 void StringDedup::Processor::cleanup_table(bool grow_only, bool force) const {
@@ -178,7 +177,7 @@ void StringDedup::Processor::process_requests() const {
   par_state.oops_do(&processor);
 }
 
-void StringDedup::Processor::run_service() {
+void StringDedup::Processor::run() {
   while (!should_terminate()) {
     _cur_stat.report_idle_start();
     if (!wait_for_requests()) {
@@ -199,11 +198,6 @@ void StringDedup::Processor::run_service() {
     _cur_stat.report_concurrent_end();
     log_statistics();
   }
-}
-
-void StringDedup::Processor::stop_service() {
-  MonitorLocker ml(StringDedup_lock, Mutex::_no_safepoint_check_flag);
-  ml.notify_all();
 }
 
 void StringDedup::Processor::log_statistics() {

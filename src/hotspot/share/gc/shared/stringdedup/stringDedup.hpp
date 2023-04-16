@@ -102,6 +102,7 @@
 #include "utilities/globalDefinitions.hpp"
 
 class Klass;
+class StringDedupThread;
 class ThreadClosure;
 
 // The StringDedup class provides the API for the deduplication mechanism.
@@ -110,6 +111,8 @@ class ThreadClosure;
 // feature.  Other functions in the StringDedup class are called where
 // needed, without requiring GC-specific code.
 class StringDedup : public AllStatic {
+  friend class StringDedupThread;
+
   class Config;
   class Processor;
   class Stat;
@@ -119,6 +122,7 @@ class StringDedup : public AllStatic {
   static bool _initialized;
   static bool _enabled;
 
+  static StringDedupThread* _thread;
   static Processor* _processor;
   static Stat _cur_stat;
   static Stat _total_stat;
@@ -139,6 +143,10 @@ public:
 
   // Returns true if string deduplication is enabled.
   static bool is_enabled() { return _enabled; }
+
+  // Create and start the deduplication processor thread.
+  // precondition: is_enabled()
+  static void start();
 
   // Stop the deduplication processor thread.
   // precondition: is_enabled()

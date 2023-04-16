@@ -691,6 +691,11 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   }
 #endif
 
+  // Start string deduplication thread if requested.
+  if (StringDedup::is_enabled()) {
+    StringDedup::start();
+  }
+
   // Pre-initialize some JSR292 core classes to avoid deadlock during class loading.
   // It is done after compilers are initialized, because otherwise compilations of
   // signature polymorphic MH intrinsics can be missed
