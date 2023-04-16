@@ -29,18 +29,18 @@
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "utilities/macros.hpp"
 
+class JavaThread;
 class OopStorage;
-class StringDedupThread;
 
 // This class performs string deduplication.  There is only one instance of
 // this class.  It processes deduplication requests.  It also manages the
 // deduplication table, performing resize and cleanup operations as needed.
 // This includes managing the OopStorage objects used to hold requests.
 //
-// Processing periodically checks and yields for safepoints.  This is done
-// to minimize latency.  The Table provides incremental operations for
-// resizing and for removing dead entries, so safepoint checks can be
-// performed between steps in those operations.
+// Processing periodically checks for and yields at safepoints.  Processing of
+// requests is performed in incremental chunks.  The Table provides
+// incremental operations for resizing and for removing dead entries, so
+// safepoint checks can be performed between steps in those operations.
 class StringDedup::Processor : public CHeapObj<mtGC> {
   Processor();
   ~Processor() = default;
@@ -51,14 +51,16 @@ class StringDedup::Processor : public CHeapObj<mtGC> {
   static StorageUse* volatile _storage_for_requests;
   static StorageUse* _storage_for_processing;
 
-  // Returns !should_terminate();
-  bool wait_for_requests() const;
+  JavaThread* _thread;
 
-  // Yield if requested.  Returns !should_terminate() after possible yield.
-  bool yield_or_continue() const;
+  // Wait until there are requests to be processed.  The storage for requests
+  // and storage for processing are swapped; the former requests storage
+  // becomes the current processing storage, and vice versa.
+  // precondition: the processing storage is empty.
+  void wait_for_requests() const;
 
-  // Return true if stop requested.
-  bool should_terminate() const;
+  // Yield if requested.
+  void yield() const;
 
   class ProcessRequest;
   void process_requests() const;
@@ -72,7 +74,9 @@ public:
   static void initialize_storage();
   static StorageUse* storage_for_requests();
 
-  void run();
+  // Use thread as the deduplication thread.
+  // precondition: thread == Thread::current()
+  void run(JavaThread* thread);
 };
 
 #endif // SHARE_GC_SHARED_STRINGDEDUP_STRINGDEDUPPROCESSOR_HPP

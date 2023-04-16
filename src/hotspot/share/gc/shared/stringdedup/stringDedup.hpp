@@ -93,6 +93,10 @@
 // but before weak reference processing, the GC should flush or delete all
 // of its Requests objects.
 //
+// The deduplication thread is a daemon JavaThread.  No thread visitor is
+// needed, as it is handled via the normal JavaThread visiting mechanism.
+// Similarly, there is no need for a stop() function.
+//
 // For additional information on string deduplication, please see JEP 192,
 // https://openjdk.org/jeps/192
 
@@ -122,7 +126,6 @@ class StringDedup : public AllStatic {
   static bool _initialized;
   static bool _enabled;
 
-  static StringDedupThread* _thread;
   static Processor* _processor;
   static Stat _cur_stat;
   static Stat _total_stat;
@@ -147,14 +150,6 @@ public:
   // Create and start the deduplication processor thread.
   // precondition: is_enabled()
   static void start();
-
-  // Stop the deduplication processor thread.
-  // precondition: is_enabled()
-  static void stop();
-
-  // Visit the deduplication processor thread.
-  // precondition: is_enabled()
-  static void threads_do(ThreadClosure* tc);
 
   // Marks the String as not being subject to deduplication.  This can be
   // used to prevent deduplication of Strings whose value array must remain

@@ -1272,9 +1272,6 @@ void Threads::print_on(outputStream* st, bool print_stacks,
   PrintOnClosure cl(st);
   cl.do_thread(VMThread::vm_thread());
   Universe::heap()->gc_threads_do(&cl);
-  if (StringDedup::is_enabled()) {
-    StringDedup::threads_do(&cl);
-  }
   cl.do_thread(WatcherThread::watcher_thread());
   cl.do_thread(AsyncLogWriter::instance());
 
@@ -1335,11 +1332,6 @@ void Threads::print_on_error(outputStream* st, Thread* current, char* buf,
   if (Universe::heap() != nullptr) {
     PrintOnErrorClosure print_closure(st, current, buf, buflen, &found_current);
     Universe::heap()->gc_threads_do(&print_closure);
-  }
-
-  if (StringDedup::is_enabled()) {
-    PrintOnErrorClosure print_closure(st, current, buf, buflen, &found_current);
-    StringDedup::threads_do(&print_closure);
   }
 
   if (!found_current) {

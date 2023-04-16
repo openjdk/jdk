@@ -50,16 +50,18 @@ private:
   size_t _skipped_shared;
 
   // Phase counters for deduplication thread
-  size_t _concurrent;
+  size_t _active;
   size_t _idle;
   size_t _process;
   size_t _resize_table;
   size_t _cleanup_table;
 
   // Time spent by the deduplication thread in different phases
-  Ticks _concurrent_start;
-  Tickspan _concurrent_elapsed;
+  Ticks _active_start;
+  Tickspan _active_elapsed;
   Ticks _phase_start;
+  // These phases are disjoint, so share _phase_start.
+  // Some of these overlap with active, hence need _active_start.
   Tickspan _idle_elapsed;
   Tickspan _process_elapsed;
   Tickspan _resize_table_elapsed;
@@ -142,8 +144,8 @@ public:
   void report_cleanup_table_start(size_t entry_count, size_t dead_count);
   void report_cleanup_table_end();
 
-  void report_concurrent_start();
-  void report_concurrent_end();
+  void report_active_start();
+  void report_active_end();
 
   void add(const Stat* const stat);
   void log_statistics(bool total) const;

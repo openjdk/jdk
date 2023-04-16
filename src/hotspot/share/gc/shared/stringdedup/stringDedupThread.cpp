@@ -26,34 +26,27 @@
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/stringdedup/stringDedupProcessor.hpp"
 #include "gc/shared/stringdedup/stringDedupThread.hpp"
-#include "gc/shared/suspendibleThreadSet.hpp"
-#include "runtime/java.hpp"
-#include "runtime/mutexLocker.hpp"
+#include "runtime/handles.hpp"
+#include "runtime/os.hpp"
+#include "utilities/exceptions.hpp"
 
-StringDedupThread::StringDedupThread() : ConcurrentGCThread() {}
+StringDedupThread::StringDedupThread() : JavaThread(thread_entry) {}
 
 void StringDedupThread::initialize() {
-  StringDedupThread* t = new StringDedupThread();
-  StringDedup::_thread = t;     // Must be set before starting.
-  t->set_name("StringDedupThread");
-  t->create_and_start(NormPriority);
-  if (t->osthread() == nullptr) {
-    vm_exit_during_initialization("Failed to start string deduplication thread");
-  }
+  EXCEPTION_MARK;
+
+  const char* name = "StringDedupThread";
+  Handle thread_oop = JavaThread::create_system_thread_object(name, CHECK);
+  StringDedupThread* thread = new StringDedupThread();
+  JavaThread::vm_exit_on_osthread_failure(thread);
+  JavaThread::start_internal_daemon(THREAD, thread, thread_oop, NormPriority);
 }
 
-void StringDedupThread::run_service() {
-  StringDedup::_processor->run();
+void StringDedupThread::thread_entry(JavaThread* thread, TRAPS) {
+  StringDedup::_processor->run(thread);
 }
 
-void StringDedupThread::stop_service() {
-  MonitorLocker ml(StringDedup_lock, Mutex::_no_safepoint_check_flag);
-  ml.notify_all();
+bool StringDedupThread::is_hidden_from_external_view() const {
+  return true;
 }
 
-bool StringDedupThread::yield_or_continue() const {
-  if (SuspendibleThreadSet::should_yield()) {
-    SuspendibleThreadSet::yield();
-  }
-  return !should_terminate();
-}

@@ -25,8 +25,9 @@
 #ifndef SHARE_GC_SHARED_STRINGDEDUP_STRINGDEDUPTHREAD_HPP
 #define SHARE_GC_SHARED_STRINGDEDUP_STRINGDEDUPTHREAD_HPP
 
-#include "gc/shared/concurrentGCThread.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
+#include "runtime/javaThread.hpp"
+#include "utilities/exceptions.hpp"
 #include "utilities/macros.hpp"
 
 // Thread class for string deduplication.  There is only one instance of this
@@ -36,21 +37,20 @@
 // Unlike most of the classes in the stringdedup implementation, this class is
 // not an inner class of StringDedup.  This is because we need a simple public
 // identifier for use by VMStructs.
-class StringDedupThread : public ConcurrentGCThread {
+class StringDedupThread : public JavaThread {
+  friend class VMStructs;
+
   StringDedupThread();
   ~StringDedupThread() = default;
 
   NONCOPYABLE(StringDedupThread);
 
-protected:
-  void run_service() override;
-  void stop_service() override;
+  static void thread_entry(JavaThread* thread, TRAPS);
 
 public:
   static void initialize();
 
-  // Yield if requested.  Returns !should_terminate() after possible yield.
-  bool yield_or_continue() const;
+  bool is_hidden_from_external_view() const override;
 };
 
 #endif // SHARE_GC_SHARED_STRINGDEDUP_STRINGDEDUPTHREAD_HPP

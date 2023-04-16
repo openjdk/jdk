@@ -44,7 +44,6 @@
 #include "oops/markWord.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/globals.hpp"
-#include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/safepoint.hpp"
@@ -54,7 +53,6 @@
 bool StringDedup::_initialized = false;
 bool StringDedup::_enabled = false;
 
-StringDedupThread* StringDedup::_thread = nullptr;
 StringDedup::Processor* StringDedup::_processor = nullptr;
 StringDedup::Stat StringDedup::_cur_stat{};
 StringDedup::Stat StringDedup::_total_stat{};
@@ -87,7 +85,7 @@ void StringDedup::initialize() {
     _enabled_age_limit = Config::age_threshold();
     Table::initialize();
     Processor::initialize();
-    // Don't create the thread yet.
+    // Don't create the thread yet.  JavaThreads need to be created later.
     _enabled = true;
     log_info_p(stringdedup, init)("String Deduplication is enabled");
   }
@@ -96,23 +94,7 @@ void StringDedup::initialize() {
 
 void StringDedup::start() {
   assert(is_enabled(), "precondition");
-  assert(_thread == nullptr, "precondition");
   StringDedupThread::initialize();
-  assert(_thread != nullptr, "invariant");
-}
-
-void StringDedup::stop() {
-  assert(is_enabled(), "precondition");
-  if (_thread != nullptr) {     // May not have created the thread yet.
-    _thread->stop();
-  }
-}
-
-void StringDedup::threads_do(ThreadClosure* tc) {
-  assert(is_enabled(), "precondition");
-  if (_thread != nullptr) {     // May not have created the thread yet.
-    tc->do_thread(_thread);
-  }
 }
 
 void StringDedup::forbid_deduplication(oop java_string) {

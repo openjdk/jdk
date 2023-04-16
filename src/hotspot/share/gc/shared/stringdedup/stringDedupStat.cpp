@@ -40,13 +40,13 @@ StringDedup::Stat::Stat() :
   _skipped_dead(0),
   _skipped_incomplete(0),
   _skipped_shared(0),
-  _concurrent(0),
+  _active(0),
   _idle(0),
   _process(0),
   _resize_table(0),
   _cleanup_table(0),
-  _concurrent_start(),
-  _concurrent_elapsed(),
+  _active_start(),
+  _active_elapsed(),
   _phase_start(),
   _idle_elapsed(),
   _process_elapsed(),
@@ -67,12 +67,12 @@ void StringDedup::Stat::add(const Stat* const stat) {
   _skipped_dead        += stat->_skipped_dead;
   _skipped_incomplete  += stat->_skipped_incomplete;
   _skipped_shared      += stat->_skipped_shared;
-  _concurrent          += stat->_concurrent;
+  _active              += stat->_active;
   _idle                += stat->_idle;
   _process             += stat->_process;
   _resize_table        += stat->_resize_table;
   _cleanup_table       += stat->_cleanup_table;
-  _concurrent_elapsed  += stat->_concurrent_elapsed;
+  _active_elapsed      += stat->_active_elapsed;
   _idle_elapsed        += stat->_idle_elapsed;
   _process_elapsed     += stat->_process_elapsed;
   _resize_table_elapsed += stat->_resize_table_elapsed;
@@ -109,19 +109,19 @@ void StringDedup::Stat::log_summary(const Stat* last_stat, const Stat* total_sta
     last_stat->_deduped, STRDEDUP_BYTES_PARAM(last_stat->_deduped_bytes),
     total_deduped_bytes_percent,
     strdedup_elapsed_param_ms(last_stat->_process_elapsed),
-    strdedup_elapsed_param_ms(last_stat->_concurrent_elapsed));
+    strdedup_elapsed_param_ms(last_stat->_active_elapsed));
 }
 
-void StringDedup::Stat::report_concurrent_start() {
-  log_debug(stringdedup, phases, start)("Concurrent start");
-  _concurrent_start = Ticks::now();
-  _concurrent++;
+void StringDedup::Stat::report_active_start() {
+  log_debug(stringdedup, phases, start)("Active start");
+  _active_start = Ticks::now();
+  _active++;
 }
 
-void StringDedup::Stat::report_concurrent_end() {
-  _concurrent_elapsed += (Ticks::now() - _concurrent_start);
-  log_debug(stringdedup, phases)("Concurrent end: " STRDEDUP_ELAPSED_FORMAT_MS,
-                                 strdedup_elapsed_param_ms(_concurrent_elapsed));
+void StringDedup::Stat::report_active_end() {
+  _active_elapsed += (Ticks::now() - _active_start);
+  log_debug(stringdedup, phases)("Active end: " STRDEDUP_ELAPSED_FORMAT_MS,
+                                 strdedup_elapsed_param_ms(_active_elapsed));
 }
 
 void StringDedup::Stat::report_phase_start(const char* phase) {

@@ -33,13 +33,12 @@
 #include "gc/shared/stringdedup/stringDedupStat.hpp"
 #include "gc/shared/stringdedup/stringDedupStorageUse.hpp"
 #include "gc/shared/stringdedup/stringDedupTable.hpp"
-#include "gc/shared/stringdedup/stringDedupThread.hpp"
-#include "gc/shared/suspendibleThreadSet.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.hpp"
 #include "memory/iterator.hpp"
 #include "oops/access.inline.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalCounter.hpp"
@@ -61,60 +60,57 @@ void StringDedup::Processor::initialize_storage() {
   _storage_for_processing = new StorageUse(_storages[1]);
 }
 
-StringDedup::Processor::Processor() {}
+StringDedup::Processor::Processor() : _thread(nullptr) {}
 
 void StringDedup::Processor::initialize() {
   _processor = new Processor();
 }
 
-bool StringDedup::Processor::wait_for_requests() const {
-  // Wait for the current request storage object to be non-empty.  The
-  // num-dead notification from the Table notifies the monitor.
-  if (!should_terminate()) {
+void StringDedup::Processor::wait_for_requests() const {
+  assert(Thread::current() == _thread, "precondition");
+  // Wait for the current request storage object to be non-empty, or for the
+  // table to need cleanup.  The num-dead notification from the Table notifies
+  // the monitor.
+  {
+    ThreadBlockInVM tbivm(_thread);
     MonitorLocker ml(StringDedup_lock, Mutex::_no_safepoint_check_flag);
     OopStorage* storage = Atomic::load(&_storage_for_requests)->storage();
-    while (!should_terminate() &&
-           (storage->allocation_count() == 0) &&
+    while ((storage->allocation_count() == 0) &&
            !Table::is_dead_entry_removal_needed()) {
       ml.wait();
     }
   }
   // Swap the request and processing storage objects.
-  if (!should_terminate()) {
-    log_trace(stringdedup)("swapping request storages");
-    _storage_for_processing = Atomic::xchg(&_storage_for_requests, _storage_for_processing);
-    GlobalCounter::write_synchronize();
-  }
+  log_trace(stringdedup)("swapping request storages");
+  _storage_for_processing = Atomic::xchg(&_storage_for_requests, _storage_for_processing);
+  GlobalCounter::write_synchronize();
   // Wait for the now current processing storage object to no longer be used
   // by an in-progress GC.  Again here, the num-dead notification from the
   // Table notifies the monitor.
-  if (!should_terminate()) {
+  {
     log_trace(stringdedup)("waiting for storage to process");
+    ThreadBlockInVM tbivm(_thread);
     MonitorLocker ml(StringDedup_lock, Mutex::_no_safepoint_check_flag);
-    while (_storage_for_processing->is_used_acquire() && !should_terminate()) {
+    while (_storage_for_processing->is_used_acquire()) {
       ml.wait();
     }
   }
-  return !should_terminate();
 }
 
 StringDedup::StorageUse* StringDedup::Processor::storage_for_requests() {
   return StorageUse::obtain(&_storage_for_requests);
 }
 
-bool StringDedup::Processor::yield_or_continue() const {
-  return _thread->yield_or_continue();
-}
-
-bool StringDedup::Processor::should_terminate() const {
-  return _thread->should_terminate();
+void StringDedup::Processor::yield() const {
+  assert(Thread::current() == _thread, "precondition");
+  ThreadBlockInVM tbivm(_thread);
 }
 
 void StringDedup::Processor::cleanup_table(bool grow_only, bool force) const {
   if (Table::cleanup_start_if_needed(grow_only, force)) {
-    while (yield_or_continue()) {
-      if (!Table::cleanup_step()) break;
-    }
+    do {
+      yield();
+    } while (Table::cleanup_step());
     Table::cleanup_end();
   }
 }
@@ -148,54 +144,48 @@ public:
   virtual void do_oop(narrowOop*) { ShouldNotReachHere(); }
 
   virtual void do_oop(oop* ref) {
-    if (_processor->yield_or_continue()) {
-      oop java_string = NativeAccess<ON_PHANTOM_OOP_REF>::oop_load(ref);
-      release_ref(ref);
-      // Dedup java_string, after checking for various reasons to skip it.
-      if (java_string == nullptr) {
-        // String became unreachable before we got a chance to process it.
-        _cur_stat.inc_skipped_dead();
-      } else if (java_lang_String::value(java_string) == nullptr) {
-        // Request during String construction, before its value array has
-        // been initialized.
-        _cur_stat.inc_skipped_incomplete();
-      } else {
-        Table::deduplicate(java_string);
-        if (Table::is_grow_needed()) {
-          _cur_stat.report_process_pause();
-          _processor->cleanup_table(true /* grow_only */, false /* force */);
-          _cur_stat.report_process_resume();
-        }
+    _processor->yield();
+    oop java_string = NativeAccess<ON_PHANTOM_OOP_REF>::oop_load(ref);
+    release_ref(ref);
+    // Dedup java_string, after checking for various reasons to skip it.
+    if (java_string == nullptr) {
+      // String became unreachable before we got a chance to process it.
+      _cur_stat.inc_skipped_dead();
+    } else if (java_lang_String::value(java_string) == nullptr) {
+      // Request during String construction, before its value array has
+      // been initialized.
+      _cur_stat.inc_skipped_incomplete();
+    } else {
+      Table::deduplicate(java_string);
+      if (Table::is_grow_needed()) {
+        _cur_stat.report_process_pause();
+        _processor->cleanup_table(true /* grow_only */, false /* force */);
+        _cur_stat.report_process_resume();
       }
     }
   }
 };
 
 void StringDedup::Processor::process_requests() const {
+  _cur_stat.report_process_start();
   OopStorage::ParState<true, false> par_state{_storage_for_processing->storage(), 1};
   ProcessRequest processor{_storage_for_processing->storage()};
   par_state.oops_do(&processor);
+  _cur_stat.report_process_end();
 }
 
-void StringDedup::Processor::run() {
-  while (!should_terminate()) {
+void StringDedup::Processor::run(JavaThread* thread) {
+  assert(thread == Thread::current(), "precondition");
+  _thread = thread;
+  log_debug(stringdedup)("Starting string deduplication thread");
+  while (true) {
     _cur_stat.report_idle_start();
-    if (!wait_for_requests()) {
-      assert(should_terminate(), "invariant");
-      break;
-    }
-    SuspendibleThreadSetJoiner sts_joiner{};
-    if (should_terminate()) break;
+    wait_for_requests();
     _cur_stat.report_idle_end();
-    _cur_stat.report_concurrent_start();
-    _cur_stat.report_process_start();
+    _cur_stat.report_active_start();
     process_requests();
-    if (should_terminate()) break;
-    _cur_stat.report_process_end();
-    cleanup_table(false /* grow_only */,
-                  StringDeduplicationResizeALot /* force */);
-    if (should_terminate()) break;
-    _cur_stat.report_concurrent_end();
+    cleanup_table(false /* grow_only */, StringDeduplicationResizeALot /* force */);
+    _cur_stat.report_active_end();
     log_statistics();
   }
 }
