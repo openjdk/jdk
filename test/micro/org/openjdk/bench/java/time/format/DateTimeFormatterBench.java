@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,11 +24,8 @@ package org.openjdk.bench.java.time.format;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeFormatterBuilder;
-import java.time.temporal.ChronoField;
 import java.time.temporal.ChronoUnit;
 
 import java.util.Locale;
@@ -65,18 +62,6 @@ public class DateTimeFormatterBench {
 
     private static final ZonedDateTime[] ZONED_DATE_TIMES = createZonedDateTimes();
 
-    private static final DateTimeFormatter FORMATTER_WITH_PADDING = new DateTimeFormatterBuilder()
-            .appendLiteral("Date:")
-            .padNext(20, ' ')
-            .append(DateTimeFormatter.ISO_DATE)
-            .toFormatter();
-
-    private static final DateTimeFormatter YEAR_FORMATTER = new DateTimeFormatterBuilder()
-            .appendLiteral("Year:")
-            .padNext(5)
-            .appendValue(ChronoField.YEAR)
-            .toFormatter();
-
     @Param({
             "HH:mm:ss",
             "HH:mm:ss.SSS",
@@ -87,7 +72,7 @@ public class DateTimeFormatterBench {
 
     private static Instant[] createInstants() {
         // Various instants during the same day
-        final Instant loInstant = Instant.EPOCH.plus(Duration.ofDays(365 * 50)); // 2020-01-01
+        final Instant loInstant = Instant.EPOCH.plus(Duration.ofDays(365*50)); // 2020-01-01
         final Instant hiInstant = loInstant.plus(Duration.ofDays(1));
         final long maxOffsetNanos = Duration.between(loInstant, hiInstant).toNanos();
         final Random random = new Random(0);
@@ -106,16 +91,14 @@ public class DateTimeFormatterBench {
                 .toArray(ZonedDateTime[]::new);
     }
 
-    private final StringBuilder stringBuilder = new StringBuilder(100);
+    private StringBuilder stringBuilder = new StringBuilder(100);
     private DateTimeFormatter dateTimeFormatter;
-    private LocalDateTime now;
 
     @Setup
     public void setup() {
         dateTimeFormatter = DateTimeFormatter
                 .ofPattern(pattern, Locale.US)
                 .withZone(TIME_ZONE.toZoneId());
-        now = LocalDateTime.now();
     }
 
     @Benchmark
@@ -134,16 +117,6 @@ public class DateTimeFormatterBench {
             dateTimeFormatter.formatTo(zonedDateTime, stringBuilder);
             blackhole.consume(stringBuilder);
         }
-    }
-
-    @Benchmark
-    public String formatWithPadding() {
-        return FORMATTER_WITH_PADDING.format(now);
-    }
-
-    @Benchmark
-    public String formatWithZeroPadding() {
-        return YEAR_FORMATTER.format(now);
     }
 
 }
