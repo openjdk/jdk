@@ -303,11 +303,15 @@ public final class LocalTime
      * @throws DateTimeException if the value of any field is out of range
      */
     public static LocalTime of(int hour, int minute) {
-        HOUR_OF_DAY.checkValidValue(hour);
+        if (hour < 0 || hour > 23) {
+            throw new DateTimeException("Invalid value for HourOfDay (valid values 0 - 23): " + hour);
+        }
         if (minute == 0) {
             return HOURS[hour];  // for performance
         }
-        MINUTE_OF_HOUR.checkValidValue(minute);
+        if (minute < 0 || minute > 59) {
+            throw new DateTimeException("Invalid value for MinuteOfHour (valid values 0 - 59): " + minute);
+        }
         return new LocalTime(hour, minute, 0, 0);
     }
 
@@ -324,12 +328,18 @@ public final class LocalTime
      * @throws DateTimeException if the value of any field is out of range
      */
     public static LocalTime of(int hour, int minute, int second) {
-        HOUR_OF_DAY.checkValidValue(hour);
+        if (hour < 0 || hour > 23) {
+            throw new DateTimeException("Invalid value for HourOfDay (valid values 0 - 23): " + hour);
+        }
         if ((minute | second) == 0) {
             return HOURS[hour];  // for performance
         }
-        MINUTE_OF_HOUR.checkValidValue(minute);
-        SECOND_OF_MINUTE.checkValidValue(second);
+        if (minute < 0 || minute > 59) {
+            throw new DateTimeException("Invalid value for MinuteOfHour (valid values 0 - 59): " + minute);
+        }
+        if (second < 0 || second > 59) {
+            throw new DateTimeException("Invalid value for SecondOfMinute (valid values 0 - 59): " + second);
+        }
         return new LocalTime(hour, minute, second, 0);
     }
 
@@ -346,10 +356,18 @@ public final class LocalTime
      * @throws DateTimeException if the value of any field is out of range
      */
     public static LocalTime of(int hour, int minute, int second, int nanoOfSecond) {
-        HOUR_OF_DAY.checkValidValue(hour);
-        MINUTE_OF_HOUR.checkValidValue(minute);
-        SECOND_OF_MINUTE.checkValidValue(second);
-        NANO_OF_SECOND.checkValidValue(nanoOfSecond);
+        if (hour < 0 || hour > 23) {
+            throw new DateTimeException("Invalid value for HourOfDay (valid values 0 - 23): " + hour);
+        }
+        if (minute < 0 || minute > 59) {
+            throw new DateTimeException("Invalid value for MinuteOfHour (valid values 0 - 59): " + minute);
+        }
+        if (second < 0 || second > 59) {
+            throw new DateTimeException("Invalid value for SecondOfMinute (valid values 0 - 59): " + second);
+        }
+        if (nanoOfSecond < 0 || nanoOfSecond > 999_999_999) {
+            throw new DateTimeException("Invalid value for NanoOfSecond (valid values 0 - 999999999): " + nanoOfSecond);
+        }
         return create(hour, minute, second, nanoOfSecond);
     }
 
@@ -387,7 +405,10 @@ public final class LocalTime
      * @throws DateTimeException if the second-of-day value is invalid
      */
     public static LocalTime ofSecondOfDay(long secondOfDay) {
-        SECOND_OF_DAY.checkValidValue(secondOfDay);
+        if (secondOfDay < 0 || secondOfDay > 86399L) {
+            throw new DateTimeException("Invalid value for SecondOfDay (valid values 0 - 86399): " + secondOfDay);
+        }
+
         int hours = (int) (secondOfDay / SECONDS_PER_HOUR);
         secondOfDay -= hours * SECONDS_PER_HOUR;
         int minutes = (int) (secondOfDay / SECONDS_PER_MINUTE);
@@ -405,7 +426,10 @@ public final class LocalTime
      * @throws DateTimeException if the nanos of day value is invalid
      */
     public static LocalTime ofNanoOfDay(long nanoOfDay) {
-        NANO_OF_DAY.checkValidValue(nanoOfDay);
+        if (nanoOfDay < 0 || nanoOfDay > 86399999999999L) {
+            throw new DateTimeException("Invalid value for NanoOfDay (valid values 0 - 86399999999999): " + nanoOfDay);
+        }
+
         int hours = (int) (nanoOfDay / NANOS_PER_HOUR);
         nanoOfDay -= hours * NANOS_PER_HOUR;
         int minutes = (int) (nanoOfDay / NANOS_PER_MINUTE);
@@ -901,7 +925,11 @@ public final class LocalTime
         if (this.hour == hour) {
             return this;
         }
-        HOUR_OF_DAY.checkValidValue(hour);
+
+        if (hour < 0 || hour > 23) {
+            throw new DateTimeException("Invalid value for HourOfDay (valid values 0 - 23): " + hour);
+        }
+
         return create(hour, minute, second, nano);
     }
 
@@ -918,7 +946,11 @@ public final class LocalTime
         if (this.minute == minute) {
             return this;
         }
-        MINUTE_OF_HOUR.checkValidValue(minute);
+
+        if (minute < 0 || minute > 59) {
+            throw new DateTimeException("Invalid value for MinuteOfHour (valid values 0 - 59): " + minute);
+        }
+
         return create(hour, minute, second, nano);
     }
 
@@ -935,7 +967,11 @@ public final class LocalTime
         if (this.second == second) {
             return this;
         }
-        SECOND_OF_MINUTE.checkValidValue(second);
+
+        if (second < 0 || second > 59) {
+            throw new DateTimeException("Invalid value for SecondOfMinute (valid values 0 - 59): " + second);
+        }
+
         return create(hour, minute, second, nano);
     }
 
@@ -952,7 +988,11 @@ public final class LocalTime
         if (this.nano == nanoOfSecond) {
             return this;
         }
-        NANO_OF_SECOND.checkValidValue(nanoOfSecond);
+
+        if (nanoOfSecond < 0 || nanoOfSecond > 999_999_999) {
+            throw new DateTimeException("Invalid value for NanoOfSecond (valid values 0 - 999999999): " + nanoOfSecond);
+        }
+
         return create(hour, minute, second, nanoOfSecond);
     }
 

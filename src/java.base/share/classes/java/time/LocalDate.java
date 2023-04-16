@@ -249,9 +249,13 @@ public final class LocalDate
      *  or if the day-of-month is invalid for the month-year
      */
     public static LocalDate of(int year, Month month, int dayOfMonth) {
-        YEAR.checkValidValue(year);
+        if (year < Year.MIN_VALUE || year > Year.MAX_VALUE) {
+            throw new DateTimeException("Invalid value for Year (valid values " + Year.MIN_VALUE + " - " + Year.MAX_VALUE + "): " + year);
+        }
         Objects.requireNonNull(month, "month");
-        DAY_OF_MONTH.checkValidValue(dayOfMonth);
+        if (dayOfMonth < 1 || dayOfMonth > 31) {
+            throw new DateTimeException("Invalid value for DayOfMonth (valid values 1 - 28/31): " + dayOfMonth);
+        }
         return create(year, month.getValue(), dayOfMonth);
     }
 
@@ -269,9 +273,15 @@ public final class LocalDate
      *  or if the day-of-month is invalid for the month-year
      */
     public static LocalDate of(int year, int month, int dayOfMonth) {
-        YEAR.checkValidValue(year);
-        MONTH_OF_YEAR.checkValidValue(month);
-        DAY_OF_MONTH.checkValidValue(dayOfMonth);
+        if (year < Year.MIN_VALUE || year > Year.MAX_VALUE) {
+            throw new DateTimeException("Invalid value for Year (valid values " + Year.MIN_VALUE + " - " + Year.MAX_VALUE + "): " + year);
+        }
+        if (month < 1 || month > 12) {
+            throw new DateTimeException("Invalid value for MonthOfYear (valid values 1 - 12): " + month);
+        }
+        if (dayOfMonth < 1 || dayOfMonth > 31) {
+            throw new DateTimeException("Invalid value for DayOfMonth (valid values 1 - 28/31): " + dayOfMonth);
+        }
         return create(year, month, dayOfMonth);
     }
 
@@ -289,8 +299,12 @@ public final class LocalDate
      *  or if the day-of-year is invalid for the year
      */
     public static LocalDate ofYearDay(int year, int dayOfYear) {
-        YEAR.checkValidValue(year);
-        DAY_OF_YEAR.checkValidValue(dayOfYear);
+        if (year < Year.MIN_VALUE || year > Year.MAX_VALUE) {
+            throw new DateTimeException("Invalid value for Year (valid values " + Year.MIN_VALUE + " - " + Year.MAX_VALUE + "): " + year);
+        }
+        if (dayOfYear < 1 || dayOfYear > 366) {
+            throw new DateTimeException("Invalid value for DayOfYear (valid values 1 - 365/366): " + dayOfYear);
+        }
         boolean leap = IsoChronology.INSTANCE.isLeapYear(year);
         if (dayOfYear == 366 && leap == false) {
             throw new DateTimeException("Invalid date 'DayOfYear 366' as '" + year + "' is not a leap year");
@@ -1066,7 +1080,9 @@ public final class LocalDate
         if (this.year == year) {
             return this;
         }
-        YEAR.checkValidValue(year);
+        if (year < Year.MIN_VALUE || year > Year.MAX_VALUE) {
+            throw new DateTimeException("Invalid value for Year (valid values " + Year.MIN_VALUE + " - " + Year.MAX_VALUE + "): " + year);
+        }
         return resolvePreviousValid(year, month, day);
     }
 
@@ -1085,7 +1101,9 @@ public final class LocalDate
         if (this.month == month) {
             return this;
         }
-        MONTH_OF_YEAR.checkValidValue(month);
+        if (month < 1 || month > 12) {
+            throw new DateTimeException("Invalid value for MonthOfYear (valid values 1 - 12): " + month);
+        }
         return resolvePreviousValid(year, month, day);
     }
 
@@ -1365,7 +1383,9 @@ public final class LocalDate
                 } else if (month < 12) {
                     return new LocalDate(year, month + 1, (int) (dom - monthLen));
                 } else {
-                    YEAR.checkValidValue(year + 1);
+                    if (year + 1 < Year.MIN_VALUE || year + 1 > Year.MAX_VALUE) {
+                        throw new DateTimeException("Invalid value for Year (valid values " + Year.MIN_VALUE + " - " + Year.MAX_VALUE + "): " + year);
+                    }
                     return new LocalDate(year + 1, 1, (int) (dom - monthLen));
                 }
             }
