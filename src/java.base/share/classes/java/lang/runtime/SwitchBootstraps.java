@@ -25,6 +25,7 @@
 
 package java.lang.runtime;
 
+import java.lang.Enum.EnumDesc;
 import java.lang.invoke.CallSite;
 import java.lang.invoke.ConstantBootstraps;
 import java.lang.invoke.ConstantCallSite;
@@ -90,7 +91,7 @@ public class SwitchBootstraps {
      *       from the target's class; or</li>
      *   <li>the element is of type {@code String} or {@code Integer} and
      *       equals to the target.</li>
-     *   <li>the element is of type that is an enum and
+     *   <li>the element is of type {@code EnumDesc}, that describes a constant that is
      *       equals to the target.</li>
      * </ul>
      * <p>
@@ -112,7 +113,7 @@ public class SwitchBootstraps {
      * invocation type is not not a method type of first parameter of a reference type,
      * second parameter of type {@code int} and with {@code int} as its return type,
      * or if {@code labels} contains an element that is not of type {@code String},
-     * {@code Integer}, {@code Class} or an enum type.
+     * {@code Integer}, {@code Class} or {@code EnumDesc}.
      * @jvms 4.4.6 The CONSTANT_NameAndType_info Structure
      * @jvms 4.4.10 The CONSTANT_Dynamic_info and CONSTANT_InvokeDynamic_info Structures
      */
@@ -142,7 +143,7 @@ public class SwitchBootstraps {
         if (labelClass != Class.class &&
             labelClass != String.class &&
             labelClass != Integer.class &&
-            !labelClass.isEnum()) {
+            labelClass != EnumDesc.class) {
             throw new IllegalArgumentException("label with illegal type found: " + label.getClass());
         }
     }
@@ -162,6 +163,11 @@ public class SwitchBootstraps {
                 if (target instanceof Number input && constant.intValue() == input.intValue()) {
                     return i;
                 } else if (target instanceof Character input && constant.intValue() == input.charValue()) {
+                    return i;
+                }
+            } else if (label instanceof EnumDesc<?> enumDesc) {
+                if (target.getClass().isEnum() &&
+                    ((Enum<?>) target).describeConstable().stream().anyMatch(d -> d.equals(enumDesc))) {
                     return i;
                 }
             } else if (label.equals(target)) {

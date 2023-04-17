@@ -37,6 +37,7 @@ import com.sun.tools.javac.code.Symbol.BindingSymbol;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.DynamicMethodSymbol;
 import com.sun.tools.javac.code.Symbol.DynamicVarSymbol;
+import com.sun.tools.javac.code.Symbol.MethodHandleSymbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
 import com.sun.tools.javac.code.Symtab;
 import com.sun.tools.javac.code.Type.ClassType;
@@ -104,6 +105,8 @@ import com.sun.tools.javac.tree.JCTree.LetExpr;
 import com.sun.tools.javac.tree.TreeInfo;
 import com.sun.tools.javac.tree.TreeScanner;
 import com.sun.tools.javac.util.Assert;
+import com.sun.tools.javac.util.JCDiagnostic;
+import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.List;
 
 /**
@@ -838,16 +841,7 @@ public class TransPatterns extends TreeTranslator {
                 if (selector.tsym.isEnum()) {
                     return LoadableConstant.String(sym.getSimpleName().toString());
                 } else {
-                    List<Type> bsm_staticArgs = List.of(syms.methodHandleLookupType,
-                                                        syms.stringType,
-                                                        new ClassType(syms.classType.getEnclosingType(),
-                                                                      List.of(sym.owner.type),
-                                                                      syms.classType.tsym));
-
-                    MethodSymbol bsm = rs.resolveInternalMethod(l.pos(), env, syms.constantBootstrapsType,
-                            names.enumConstant, bsm_staticArgs, List.nil());
-
-                    return new DynamicVarSymbol(sym.getSimpleName(), sym, bsm.asHandle(), sym.owner.type, new LoadableConstant[0]);
+                    return createEnumDesc(l.pos(), (ClassSymbol) sym.owner, sym.getSimpleName());
                 }
             } else {
                 Assert.checkNonNull(expr.type.constValue());
@@ -862,6 +856,39 @@ public class TransPatterns extends TreeTranslator {
         } else {
             return null;
         }
+    }
+
+    private LoadableConstant createEnumDesc(DiagnosticPosition pos, ClassSymbol enumClass, Name constant) {
+        //ConstantBootstrap.invoke(..., EnumDesc.of(ConstantBootstrap.invoke(..., ClassDesc.of(enumClass)), constant))
+        MethodSymbol classDesc = rs.resolveInternalMethod(pos, env, syms.classDescType, names.of, List.of(syms.stringType), List.nil());
+        MethodSymbol enumDesc = rs.resolveInternalMethod(pos, env, syms.enumDescType, names.of, List.of(syms.classDescType, syms.stringType), List.nil());
+        return invokeMethodWrapper(pos,
+                                   enumDesc.asHandle(),
+                                   invokeMethodWrapper(pos,
+                                                       classDesc.asHandle(),
+                                                       LoadableConstant.String(enumClass.flatname.toString())),
+                                   LoadableConstant.String(constant.toString()));
+    }
+
+    private LoadableConstant invokeMethodWrapper(DiagnosticPosition pos, MethodHandleSymbol toCall, LoadableConstant... params) {
+        List<Type> bsm_staticArgs = List.of(syms.methodHandleLookupType,
+                                            syms.stringType,
+                                            new ClassType(syms.classType.getEnclosingType(),
+                                                          List.of(syms.botType), //XXX - botType
+                                                          syms.classType.tsym),
+                                            syms.methodHandleType,
+                                            types.makeArrayType(syms.objectType));
+
+        MethodSymbol bsm = rs.resolveInternalMethod(pos, env, syms.constantBootstrapsType,
+                names.invoke, bsm_staticArgs, List.nil());
+
+        LoadableConstant[] actualParams = new LoadableConstant[params.length + 1];
+
+        actualParams[0] = toCall;
+
+        System.arraycopy(params, 0, actualParams, 1, params.length);
+
+        return new DynamicVarSymbol(bsm.name, bsm.owner, bsm.asHandle(), toCall.getReturnType(), actualParams);
     }
 
     @Override
