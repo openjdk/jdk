@@ -44,7 +44,7 @@ public class LanguageSubtagRegistryTest {
     static boolean err = false;
 
     private static final String ACCEPT_LANGUAGE =
-        "Accept-Language: aam, adp, aeb, ajp, ajs, aog, apc, aue, bcg, bic, bpp, cey, cbr, cnp, cqu, crr, csp, csx, dif, dmw, dsz, ehs, ema,"
+        "Accept-Language: aam, adp, aeb, ajs, aog, apc, ajp, aue, bcg, bic, bpp, cey, cbr, cnp, cqu, crr, csp, csx, dif, dmw, dsz, ehs, ema,"
         + " en-gb-oed, gti, iba, jks, kdz, kjh, kmb, koj, kru, ksp, kwq, kxe, kzk, lgs, lii, lmm, lsb, lsc, lsn, lsv, lsw, lvi, mtm,"
         + " ngv, nns, ola, oyb, pat, phr, plu, pnd, pub, rib, rnb, rsn, scv, snz, sqx, suj, szy, taj, tdg, tjj, tjp, tpn, tvx,"
         + " umi, uss, uth, ysm, zko, wkr;q=0.9, ar-hyw;q=0.8, yug;q=0.5, gfx;q=0.4";
@@ -56,14 +56,13 @@ public class LanguageSubtagRegistryTest {
             new LanguageRange("aeb", 1.0),
             new LanguageRange("ar-aeb", 1.0),
             new LanguageRange("ajt", 1.0),
-            new LanguageRange("ajp", 1.0),
-            new LanguageRange("ar-ajp", 1.0),
             new LanguageRange("ajs", 1.0),
             new LanguageRange("sgn-ajs", 1.0),
             new LanguageRange("aog", 1.0),
             new LanguageRange("myd", 1.0),
             new LanguageRange("apc", 1.0),
             new LanguageRange("ar-apc", 1.0),
+            new LanguageRange("ajp", 1.0),
             new LanguageRange("aue", 1.0),
             new LanguageRange("ktz", 1.0),
             new LanguageRange("bcg", 1.0),
