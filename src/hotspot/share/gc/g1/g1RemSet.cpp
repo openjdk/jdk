@@ -205,26 +205,20 @@ private:
   class G1ClearCardTableTask : public G1AbstractSubTask {
     G1CollectedHeap* _g1h;
     G1DirtyRegions* _regions;
-    uint _chunk_length;
-
     uint volatile _cur_dirty_regions;
 
     G1RemSetScanState* _scan_state;
 
+    static constexpr uint num_cards_per_worker = M;
   public:
     G1ClearCardTableTask(G1CollectedHeap* g1h,
                          G1DirtyRegions* regions,
-                         uint chunk_length,
                          G1RemSetScanState* scan_state) :
       G1AbstractSubTask(G1GCPhaseTimes::ClearCardTable),
       _g1h(g1h),
       _regions(regions),
-      _chunk_length(chunk_length),
       _cur_dirty_regions(0),
-      _scan_state(scan_state) {
-
-      assert(chunk_length > 0, "must be");
-    }
+      _scan_state(scan_state) {}
 
     double worker_cost() const override {
       uint num_regions = _regions->size();
@@ -233,9 +227,10 @@ private:
         // There is no card table clean work, only some cleanup of memory.
         return AlmostNoWork;
       }
-      return ((double)align_up((size_t)num_regions << HeapRegion::LogCardsPerRegion, chunk_size()) / chunk_size());
-    }
 
+      double num_cards = num_regions << HeapRegion::LogCardsPerRegion;
+      return ceil(num_cards / num_cards_per_worker);
+    }
 
     virtual ~G1ClearCardTableTask() {
       _scan_state->cleanup();
@@ -244,12 +239,12 @@ private:
 #endif
     }
 
-    static uint chunk_size() { return M; }
-
     void do_work(uint worker_id) override {
+      const uint num_regions_per_worker = num_cards_per_worker / (uint)HeapRegion::CardsPerRegion;
+
       while (_cur_dirty_regions < _regions->size()) {
-        uint next = Atomic::fetch_and_add(&_cur_dirty_regions, _chunk_length);
-        uint max = MIN2(next + _chunk_length, _regions->size());
+        uint next = Atomic::fetch_and_add(&_cur_dirty_regions, num_regions_per_worker);
+        uint max = MIN2(next + num_regions_per_worker, _regions->size());
 
         for (uint i = next; i < max; i++) {
           HeapRegion* r = _g1h->region_at(_regions->at(i));
@@ -368,9 +363,7 @@ public:
   }
 
   G1AbstractSubTask* create_cleanup_after_scan_heap_roots_task() {
-    uint const chunk_length = G1ClearCardTableTask::chunk_size() / (uint)HeapRegion::CardsPerRegion;
-
-    return new G1ClearCardTableTask(G1CollectedHeap::heap(), _all_dirty_regions, chunk_length, this);
+    return new G1ClearCardTableTask(G1CollectedHeap::heap(), _all_dirty_regions, this);
   }
 
   void cleanup() {
