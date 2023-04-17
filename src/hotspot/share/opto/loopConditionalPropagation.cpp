@@ -40,18 +40,19 @@ private:
     TreeNode* _left;
     TreeNode* _right;
     int _rpo;
+    Node* _control;
 
   public:
-    TreeNode(Node* n, const Type* type)
-            : _node(n), _type(type), _left(nullptr), _right(nullptr), _rpo(0) {
+    TreeNode(Node* n, const Type* type, Node* control)
+            : _node(n), _type(type), _left(nullptr), _right(nullptr), _rpo(0), _control(control) {
     }
 
-    TreeNode(Node* n, const Type* type, int rpo, TreeNode* left, TreeNode* right)
-            : _node(n), _type(type), _left(left), _right(right), _rpo(rpo) {
+    TreeNode(Node* n, const Type* type, int rpo, TreeNode* left, TreeNode* right, Node* control)
+            : _node(n), _type(type), _left(left), _right(right), _rpo(rpo), _control(control) {
     }
 
     TreeNode()
-            : _node(nullptr), _type(nullptr), _left(nullptr), _right(nullptr), _rpo(0) {
+            : _node(nullptr), _type(nullptr), _left(nullptr), _right(nullptr), _rpo(0), _control(nullptr) {
     }
 
     const Node* node() const { return _node; };
@@ -96,36 +97,37 @@ private:
       return nullptr;
     }
 
-    TreeNode* set_type(Node* n, const Type* t, int rpo) {
+    TreeNode* set_type(Node* n, const Type* t, int rpo, Node* control) {
       assert(UseNewCode3, "");
 //      assert(track_type(n), "");
       assert(_rpo <= rpo, "");
       if (_node == n) {
         if (_rpo < rpo) {
-          return new TreeNode(_node, t, rpo, _left, _right);
+          return new TreeNode(_node, t, rpo, _left, _right, control);
         } else {
           _type = t;
+          _control = control;
           return this;
         }
       } else if (n->_idx < idx()) {
         assert(_left != nullptr, "");
-        TreeNode* tn = _left->set_type(n, t, rpo);
+        TreeNode* tn = _left->set_type(n, t, rpo, control);
         if (_rpo == rpo) {
           _left = tn;
           return this;
         } else {
           assert(tn != _left, "");
-          return new TreeNode(_node, _type, rpo, tn, _right);
+          return new TreeNode(_node, _type, rpo, tn, _right, _control);
         }
       } else if (n->_idx > idx()) {
         assert(_right != nullptr, "");
-        TreeNode* tn = _right->set_type(n, t, rpo);
+        TreeNode* tn = _right->set_type(n, t, rpo, control);
         if (_rpo == rpo) {
           _right = tn;
           return this;
         } else {
           assert(tn != _right, "");
-          return new TreeNode(_node, _type, rpo, _left, tn);
+          return new TreeNode(_node, _type, rpo, _left, tn, _control);
         }
       }
       ShouldNotReachHere();
@@ -197,6 +199,17 @@ private:
       assert(tn != nullptr, "");
       return tn->_type;
     }
+
+    const Type* get_type(const Node* n, Node* c) {
+      assert(UseNewCode3, "");
+//      assert(track_type(n), "");
+      const TreeNode* tn = find(n);
+      assert(tn != nullptr, "");
+      if (tn->_control != c) {
+        return nullptr;
+      }
+      return tn->_type;
+    }
   };
 
   struct interval {
@@ -208,7 +221,7 @@ private:
     assert(UseNewCode3, "");
     GrowableArray<TreeNode> nodes;
     Compile* C = _phase->C;
-    nodes.push(TreeNode(C->root(), PhaseTransform::type(C->root())));
+    nodes.push(TreeNode(C->root(), PhaseTransform::type(C->root()), C->root()));
     visited.set(C->root()->_idx);
     int cfg = 0;
     for (int i = 0; i < nodes.length(); i++) {
@@ -216,7 +229,7 @@ private:
       for (uint j = 0; j < tn.node()->req(); j++) {
         Node* in = tn.node()->in(j);
         if (in != nullptr && !visited.test_set(in->_idx)) {
-          nodes.push(TreeNode(in, PhaseTransform::type(in)));
+          nodes.push(TreeNode(in, PhaseTransform::type(in), C->root()));
         }
       }
     }
@@ -304,6 +317,11 @@ private:
     GrowableArray<Entry> _updates;
     TypeUpdate* _prev;
     Node* _control;
+
+    TypeUpdate(TypeUpdate* prev, Node* control, int size)
+            : _updates(size), _prev(prev), _control(control) {
+    }
+
   public:
 
     TypeUpdate(TypeUpdate* prev, Node* control)
@@ -384,6 +402,14 @@ private:
     Node* control() const {
       return _control;
     }
+
+    TypeUpdate* copy() const {
+      TypeUpdate* c = new TypeUpdate(_prev, _control, _updates.length());
+      for (int i = 0; i < _updates.length(); ++i) {
+        c->_updates.push(_updates.at(i));
+      }
+      return c;
+    }
   };
 
   ResizeableResourceHashtable<ControlDataPair, const Type*, AnyObj::RESOURCE_AREA, mtInternal, ControlDataPair::hash, ControlDataPair::equals> _types;
@@ -462,10 +488,10 @@ private:
     PhaseTransform::set_type(n, t);
   }
 
-  void set_type_tree(Node* n, const Type* t, const Type* old_t, int rpo) {
+  void set_type_tree(Node* n, const Type* t, const Type* old_t, int rpo, Node* control) {
     assert(UseNewCode3, "");
     PhaseTransform::set_type(n, t);
-    _current_types = _current_types->set_type(n, t, rpo);
+    _current_types = _current_types->set_type(n, t, rpo, control);
   }
 
   Type_Array _types_tree_clone;
@@ -563,7 +589,8 @@ public:
     _old_version(true),
     _value_calls(0),
     _current_updates(nullptr),
-    _dom_updates(nullptr) {
+    _dom_updates(nullptr),
+    _prev_updates(nullptr) {
     assert(nstack.is_empty(), "");
     assert(_rpo_list.size() == 0, "");
     phase->rpo(C->root(), nstack, _visited, _rpo_list, true);
@@ -754,14 +781,17 @@ public:
           if (j == c->req()) {
             if (prev_types_at_c != nullptr) {
               const Type* prev_t = t;
-              t = t->filter(prev_types_at_c->get_type(node));
-              assert(t == prev_t, "");
-              t = saturate(t, prev_types_at_c->get_type(node), nullptr);
-              if (c->is_Loop() && t != prev_types_at_c->get_type(node)) {
-                ShouldNotReachHere();
-                extra = true;
+              const Type* prev_type = prev_types_at_c->get_type(node, c);
+              if (prev_type != nullptr) {
+                t = t->filter(prev_type);
+                assert(t == prev_t, "");
+                t = saturate(t, prev_type, nullptr);
+                if (c->is_Loop() && t != prev_type) {
+                  ShouldNotReachHere();
+                  extra = true;
+                }
+                t = t->filter(current_type);
               }
-              t = t->filter(current_type);
             }
 
             if (t != current_type) {
@@ -769,7 +799,7 @@ public:
 #ifdef ASSERT
                 assert(narrows_type(types_at_c->get_type(node), t), "");
 #endif
-                types_at_c = types_at_c->set_type(node, t, rpo);
+                types_at_c = types_at_c->set_type(node, t, rpo, c);
 //                      assert(!UseNewCode2 || t == get_type(c, node), "");
 //                    set_type(c, node, t);
                 enqueue_uses(node, c);
@@ -838,7 +868,7 @@ public:
       const Type* t = n->Value(this);
       if (n->is_Phi() ) {
         const Type* prev_type = nullptr;
-        prev_type = prev_types_at_c != nullptr ? prev_types_at_c->get_type(n): nullptr;
+        prev_type = prev_types_at_c != nullptr ? prev_types_at_c->get_type(n, c): nullptr;
         if (prev_type != nullptr) {
           const Type* prev_t = t;
           t = t->filter(prev_type);
@@ -857,7 +887,7 @@ public:
 #ifdef ASSERT
         assert(narrows_type(PhaseTransform::type(n), t), "");
 #endif
-        set_type_tree(n, t, PhaseTransform::type(n), rpo);
+        set_type_tree(n, t, PhaseTransform::type(n), rpo, c);
         enqueue_uses(n, c);
       }
     }
@@ -944,6 +974,7 @@ public:
     Node* dom = _phase->idom(c);
     _current_updates = updates_at(c);
     _dom_updates = updates_at(dom);
+    _prev_updates = nullptr;
     if (_current_updates == nullptr) {
       _current_updates = _dom_updates;
       if (_current_updates != nullptr) {
@@ -958,6 +989,7 @@ public:
         _current_updates = _dom_updates;
         _updates->put(c, _current_updates);
       } else {
+        _prev_updates = _current_updates->copy();
         sync(dom);
         for (int j = 0; j < _current_updates->length();) {
           Node* n = _current_updates->node_at(j);
@@ -1023,17 +1055,19 @@ public:
             const Type* prev_t = t;
             const Type* current_type = find_prev_type_between(n, in, dom);
             if (iterations > 1) {
-              const Type* prev_round_t = type_if_present(c, n);
-              if (prev_round_t == nullptr) {
-                prev_round_t = current_type;
+              const Type* prev_round_t = nullptr;
+              if (_prev_updates != nullptr) {
+                prev_round_t = _prev_updates->type_if_present(n);
               }
-              t = t->filter(prev_round_t);
-              assert(t == prev_t, "");
-              t = saturate(t, prev_round_t, nullptr);
-              if (c->is_Loop() && t != prev_round_t) {
-                extra = true;
+              if (prev_round_t != nullptr) {
+                t = t->filter(prev_round_t);
+                assert(t == prev_t, "");
+                t = saturate(t, prev_round_t, nullptr);
+                if (c->is_Loop() && t != prev_round_t) {
+                  extra = true;
+                }
+                t = t->filter(current_type);
               }
-              t = t->filter(current_type);
             }
 
             if (t != current_type) {
@@ -1098,8 +1132,12 @@ public:
       Node* n = _wq.pop();
       _value_calls++;
       const Type* t = n->Value(this);
-      if (n->is_Phi() ) {
-        const Type* prev_type = PhaseTransform::type(n);
+      const Type* current_type = PhaseTransform::type(n);
+      if (n->is_Phi() && iterations > 1) {
+        const Type* prev_type = nullptr;
+        if (_prev_updates != nullptr) {
+          prev_type = _prev_updates->type_if_present(n);
+        }
         if (prev_type != nullptr) {
           const Type* prev_t = t;
           t = t->filter(prev_type);
@@ -1113,12 +1151,12 @@ public:
           }
         }
       }
-      t = t->filter(PhaseTransform::type(n));
-      if (t != PhaseTransform::type(n)) {
+      t = t->filter(current_type);
+      if (t != current_type) {
 #ifdef ASSERT
-        assert(narrows_type(PhaseTransform::type(n), t), "");
+        assert(narrows_type(current_type, t), "");
 #endif
-        set_type(n, t, PhaseTransform::type(n), rpo);
+        set_type(n, t, current_type, rpo);
         enqueue_uses(n, c);
       }
     }
@@ -1142,7 +1180,7 @@ public:
         narrow_length_type = narrow_length_type->filter(length_type);
         assert(narrows_type(length_type, narrow_length_type), "");
         if (narrow_length_type != length_type) {
-          types_at_c = types_at_c->set_type(length, narrow_length_type, rpo);
+          types_at_c = types_at_c->set_type(length, narrow_length_type, rpo, c);
           enqueue_uses(length, c);
         }
       }
@@ -1301,7 +1339,7 @@ public:
 #ifdef ASSERT
         _conditions.set(c->_idx);
 #endif
-        types_at_c = types_at_c->set_type(n, new_n_t, rpo);
+        types_at_c = types_at_c->set_type(n, new_n_t, rpo, c);
         enqueue_uses(n, c);
       }
       if (n->Opcode() == Op_ConvL2I) {
@@ -1316,7 +1354,7 @@ public:
 #ifdef ASSERT
             _conditions.set(c->_idx);
 #endif
-            types_at_c = types_at_c->set_type(in, new_in_t, rpo);
+            types_at_c = types_at_c->set_type(in, new_in_t, rpo, c);
             enqueue_uses(in, c);
           }
         }
@@ -1781,6 +1819,7 @@ public:
 
   TypeUpdate* _current_updates;
   TypeUpdate* _dom_updates;
+  TypeUpdate* _prev_updates;
 };
 
 void PhaseIdealLoop::conditional_elimination(VectorSet &visited, Node_Stack &nstack, Node_List &rpo_list) {
