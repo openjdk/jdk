@@ -608,6 +608,17 @@ public final class ZoneInfoFile {
                 params[8] = endRule.secondOfDay * 1000;
                 params[9] = toSTZTime[endRule.timeDefinition];
                 dstSavings = (startRule.offsetAfter - startRule.offsetBefore) * 1000;
+
+                // Note: known mismatching -> Africa/Cairo
+                // ZoneInfo :      startDayOfWeek=5     <= Thursday
+                //                 startTime=86400000   <= 24:00
+                // This:           startDayOfWeek=6     <= Friday
+                //                 startTime=0          <= 0:00
+                if (zoneId.equals("Africa/Cairo") &&
+                        params[7] == Calendar.FRIDAY && params[8] == 0) {
+                    params[7] = Calendar.THURSDAY;
+                    params[8] = SECONDS_PER_DAY * 1000;
+                }
             } else if (nTrans > 0) {  // only do this if there is something in table already
                 if (lastyear < LASTYEAR) {
                     // ZoneInfo has an ending entry for 2037

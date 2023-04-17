@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 4028006 4044013 4096694 4107276 4107570 4112869 4130885 7039469 7126465 7158483
  *      8008577 8077685 8098547 8133321 8138716 8148446 8151876 8159684 8166875 8181157
- *      8228469 8274407
+ *      8228469 8274407 8305113
  * @modules java.base/sun.util.resources
  * @library /java/text/testlib
  * @summary test TimeZone
@@ -121,7 +121,7 @@ public class TimeZoneTest extends IntlTest
             new ZoneDescriptor("GMT", 0, false),
             new ZoneDescriptor("UTC", 0, false),
             new ZoneDescriptor("ECT", 60, true),
-            new ZoneDescriptor("ART", 120, false),
+            new ZoneDescriptor("ART", 120, true),
             new ZoneDescriptor("EET", 120, true),
             new ZoneDescriptor("EAT", 180, false),
             new ZoneDescriptor("MET", 60, true),
