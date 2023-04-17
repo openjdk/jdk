@@ -405,13 +405,10 @@ void Method::metaspace_pointers_do(MetaspaceClosure* it) {
 // (to objects outside the shared spaces).  We won't be able to predict
 // where they should point in a new JVM.  Further initialize some
 // entries now in order allow them to be write protected later.
+
 void Method::remove_unshareable_info() {
   unlink_method();
   JFR_ONLY(REMOVE_METHOD_ID(this);)
-  // extra optimization, so we don't need to do this at runtime
-  if (!is_overpass() && !access_flags().loops_flag_init()) {
-    compute_has_loops_flag();
-  }
 }
 
 void Method::restore_unshareable_info(TRAPS) {

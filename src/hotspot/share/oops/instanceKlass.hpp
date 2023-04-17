@@ -1141,6 +1141,7 @@ public:
   void init_shared_package_entry();
   bool can_be_verified_at_dumptime() const;
   bool methods_contain_jsr_bytecode() const;
+  void compute_has_loops_flag_for_methods();
 #endif
 
   jint compute_modifier_flags() const;
