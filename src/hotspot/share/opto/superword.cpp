@@ -2616,49 +2616,85 @@ void SuperWord::schedule() {
   // }
 }
 
-void SuperWord::schedule_reorder_memops(Node_List &memops_schedule) {
-  // For every slice (alias_idx), store the last memory state inside the loop.
-  int max_slices = _phase->C->num_alias_types();
-  GrowableArray<Node*> last_state_in_slice(max_slices, max_slices, nullptr);
 
-  // (1) Set up the initial memory state from Phi.
+// Reorder the memory graph for all slices in parallel. We walk over the schedule once,
+// and track the current memory state of each slice.
+void SuperWord::schedule_reorder_memops(Node_List &memops_schedule) {
+  int max_slices = _phase->C->num_alias_types();
+  // When iterating over the memops_schedule, we keep track of the current memory state,
+  // which is the Phi or a store in the loop.
+  GrowableArray<Node*> current_state_in_slice(max_slices, max_slices, nullptr);
+  // The memory state after the loop is the last store inside the loop. If we reorder the
+  // loop we may have a different last store, and we need to adjust the uses accordingly.
+  GrowableArray<Node*> old_last_store_in_slice(max_slices, max_slices, nullptr);
+
+  // (1) Set up the initial memory state from Phi. And find the old last store.
   for (int i = 0; i < _mem_slice_head.length(); i++) {
     Node* phi  = _mem_slice_head.at(i);
     assert(phi->is_Phi(), "must be phi");
     int alias_idx = _phase->C->get_alias_index(phi->adr_type());
-    last_state_in_slice.at_put_grow(alias_idx, phi, nullptr);
+    current_state_in_slice.at_put(alias_idx, phi);
+
+    // If we have a memory phi, we have a last store in the loop, find it over backedge.
+    StoreNode* last_store = phi->in(2)->as_Store();
+    old_last_store_in_slice.at_put(alias_idx, last_store);
   }
 
-  // (2) Walk over memops_schedule, append memops to the last state
+  // (2) Walk over memops_schedule, append memops to the current state
   //     of that slice. If it is a Store, we take it as the new state.
   for (uint i = 0; i < memops_schedule.size(); i++) {
     MemNode* n = memops_schedule.at(i)->as_Mem();
     assert(n->is_Load() || n->is_Store(), "only loads or stores");
     int alias_idx = _phase->C->get_alias_index(n->adr_type());
-    Node* last_state = last_state_in_slice.at(alias_idx);
-    if (last_state == nullptr) {
+    Node* current_state = current_state_in_slice.at(alias_idx);
+    if (current_state == nullptr) {
       // If there are only loads in a slice, we never update the memory
       // state in the loop, hence there is no phi for the memory state.
       // We just keep the old memory state that was outside the loop.
       assert(n->is_Load() && !in_bb(n->in(MemNode::Memory)),
              "only loads can have memory state from outside loop");
     } else {
-      _igvn.replace_input_of(n, MemNode::Memory, last_state);
+      _igvn.replace_input_of(n, MemNode::Memory, current_state);
       if (n->is_Store()) {
-        last_state_in_slice.at_put(alias_idx, n);
+        current_state_in_slice.at_put(alias_idx, n);
       }
     }
   }
 
-  // (3) For each slice, we add the last state to the backedge
-  //     in the Phi.
+  // (3) For each slice, we add the current state to the backedge
+  //     in the Phi. Further, we replace uses of the old last store
+  //     with uses of the new last store (current_state).
+  Node_List uses_after_loop;
   for (int i = 0; i < _mem_slice_head.length(); i++) {
     Node* phi  = _mem_slice_head.at(i);
     int alias_idx = _phase->C->get_alias_index(phi->adr_type());
-    Node* last_state = last_state_in_slice.at(alias_idx);
-    assert(last_state != nullptr, "slice is mapped");
-    assert(last_state != phi, "did some work in between");
-    _igvn.replace_input_of(phi, 2, last_state);
+    Node* current_state = current_state_in_slice.at(alias_idx);
+    assert(current_state != nullptr, "slice is mapped");
+    assert(current_state != phi, "did some work in between");
+    assert(current_state->is_Store(), "sanity");
+    _igvn.replace_input_of(phi, 2, current_state);
+
+    // Replace uses of old last store with current_state (new last store)
+    // Do it in two loops: first find all the uses, and change the graph
+    // in as second loop so that we do not break the iterator.
+    Node* last_store = old_last_store_in_slice.at(alias_idx);
+    assert(last_store != nullptr, "we have a old last store");
+    uses_after_loop.clear();
+    for (DUIterator_Fast kmax, k = last_store->fast_outs(kmax); k < kmax; k++) {
+      Node* use = last_store->fast_out(k);
+      if (!in_bb(use)) {
+        uses_after_loop.push(use);
+      }
+    }
+    for (uint k = 0; k < uses_after_loop.size(); k++) {
+      Node* use = uses_after_loop.at(k);
+      for (uint j = 0; j < use->req(); j++) {
+        Node* def = use->in(j);
+        if (def == last_store) {
+          _igvn.replace_input_of(use, j, current_state);
+        }
+      }
+    }
   }
 }
 
