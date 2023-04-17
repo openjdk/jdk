@@ -168,13 +168,13 @@ public abstract class Enum<E extends Enum<E>>
         return this==other;
     }
 
-    /**
+    /*
      * The hash code of this enumeration constant.
      *
-     * @implNote Once initialized, the field value does not change.
+     * Once initialized, the field value does not change.
      * HotSpot's identity hash code generation also never returns zero
      * as the identity hash code. This makes zero a convenient marker
-     * for the un-initialized value for both {@link @Stable} and the lazy
+     * for the un-initialized value for both Stable and the lazy
      * initialization code.
      */
     @Stable
