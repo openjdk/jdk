@@ -261,17 +261,9 @@ bool ChunkManager::allocate_humongous_committed_area(size_t word_size, Metaspace
     return false;
   }
 
-  // Try to find n adjacent chunks in our freelist. If that fails, carve out new root chunks.
-  if (_chunks.find_adjacent_root_chunks(num_rootchunks_needed, out)) {
-    UL2(debug, "Allocated %d root chunks from freelist", num_rootchunks_needed);
-  } else {
-    UL2(debug, "Failed to allocate %d root chunks from freelist.", num_rootchunks_needed);
-    if (_vslist->allocate_humongous_area(word_size, out)) {
-      UL2(debug, "Allocated %d root chunks from virtual space", num_rootchunks_needed);
-    } else {
-      UL2(debug, "Failed to allocate %d root chunks from virtual space.", num_rootchunks_needed);
-      return false;
-    }
+  if (!_vslist->allocate_humongous_area(word_size, out)) {
+    UL2(debug, "Failed to allocate %d root chunks from virtual space.", num_rootchunks_needed);
+    return false;
   }
 
 //  // last chunk: it is likely it does not have to be a root chunk, and handing out a root

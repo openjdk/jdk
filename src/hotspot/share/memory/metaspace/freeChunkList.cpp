@@ -25,7 +25,6 @@
 
 #include "precompiled.hpp"
 #include "memory/metaspace/freeChunkList.hpp"
-#include "memory/metaspace/metaspaceHumongousArea.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
@@ -86,55 +85,6 @@ void FreeChunkList::verify() const {
 }
 
 #endif // ASSERT
-
-
-static int compare(const void* p, const void* p2) {
-  return ((Metachunk*)p)->base() < ((Metachunk*)p2)->base();
-}
-
-// Find a number of adjacent chunks and return the head of that list
-bool FreeChunkList::find_adjacent_chunks(int num, MetaspaceHumongousArea* out) {
-  bool result = false;
-  const int num_free = _num_chunks.get();
-  if (num >= num_free) {
-
-    // Sort free chunks by base address. This is not terribly efficient, but this is a rare
-    // code path and not worth more elaborate code.
-    Metachunk** sort_array = NEW_C_HEAP_ARRAY(Metachunk*, num_free, mtMetaspace);
-    int i = 0;
-    for (Metachunk* c = _first; c != nullptr; c = c->next()) {
-      assert(i < num, "Sanity");
-      sort_array[i++] = c;
-    }
-    ::qsort(sort_array, num, sizeof(Metachunk*), compare);
-
-    // Search for n adjacent chunks
-    int candidate = -1;
-    for (int i = 1; i < num_free - 1 && (candidate != -1 && (i - candidate) < num); i++) {
-      if (sort_array[i - 1]->end() == sort_array[i]->base()) {
-        if (candidate == -1) {
-          candidate = i;
-        }
-      } else {
-        candidate = -1;
-      }
-    }
-
-    // If found, remove from freelist and add to output list
-    if (candidate != -1) {
-      for (int i = candidate; i < num; i++) {
-        assert(i < num_free, "Sanity");
-        Metachunk* c = sort_array[i];
-        remove(c);
-        out->add_to_tail(c);
-      }
-      result = true;
-    }
-
-    FREE_C_HEAP_ARRAY(Metachunk*, sort_array);
-  }
-  return result;
-}
 
 // Returns total size in all lists (regardless of commit state of underlying memory)
 size_t FreeChunkListVector::word_size() const {
