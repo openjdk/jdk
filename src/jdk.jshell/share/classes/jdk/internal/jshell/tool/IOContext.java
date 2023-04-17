@@ -26,6 +26,9 @@
 package jdk.internal.jshell.tool;
 
 import java.io.IOException;
+import java.io.Writer;
+import java.nio.charset.Charset;
+import jdk.internal.org.jline.reader.UserInterruptException;
 
 /**
  * Interface for defining user interaction with the shell.
@@ -56,7 +59,27 @@ abstract class IOContext implements AutoCloseable {
 
     public abstract int readUserInput() throws IOException;
 
+    public char readUserInputChar() throws IOException {
+        throw new UserInterruptException("");
+    }
+
+    public String readUserLine(String prompt) throws IOException {
+        throw new UserInterruptException("");
+    }
+
+    public Writer userOutput() {
+        throw new UnsupportedOperationException();
+    }
+
+    public char[] readPassword(String prompt) throws IOException {
+        throw new UserInterruptException("");
+    }
+
     public void setIndent(int indent) {}
+
+    public Charset charset() {
+        throw new UnsupportedOperationException();
+    }
 
     class InputInterruptedException extends Exception {
         private static final long serialVersionUID = 1L;
