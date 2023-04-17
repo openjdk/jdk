@@ -890,7 +890,7 @@ public class Flow {
             for (PatternDescription pdOne : patterns) {
                 if (pdOne instanceof BindingPattern bpOne) {
                     Set<PatternDescription> toRemove = new HashSet<>();
-                    List<PatternDescription> toAdd = List.nil();
+                    Set<PatternDescription> toAdd = new HashSet<>();
 
                     for (Type sup : types.directSupertypes(bpOne.type)) {
                         ListBuffer<PatternDescription> bindings = new ListBuffer<>();
@@ -945,16 +945,26 @@ public class Flow {
 
                             if (permitted.isEmpty()) {
                                 toRemove.addAll(bindings);
-                                toAdd = toAdd.prepend(new BindingPattern(clazz.type));
+                                toAdd.add(new BindingPattern(clazz.type));
                             }
                         }
                     }
 
-                    if (toAdd.nonEmpty()) {
-                        for (PatternDescription pd : toRemove) {
+                    Set<PatternDescription> cleanedToRemove = new HashSet<>(toRemove);
+                    Set<PatternDescription> cleanedToAdd = new HashSet<>(toAdd);
+
+                    //make sure we don't unnecessarily modify the list of patterns with
+                    //addition and removal of the same binding pattern:
+                    cleanedToRemove.removeAll(toAdd);
+                    cleanedToAdd.removeAll(toRemove);
+
+                    if (!cleanedToAdd.isEmpty() || !cleanedToRemove.isEmpty()) {
+                        for (PatternDescription pd : cleanedToRemove) {
                             patterns = List.filter(patterns, pd);
                         }
-                        patterns = patterns.prependList(toAdd);
+                        for (PatternDescription pd : cleanedToAdd) {
+                            patterns = patterns.prepend(pd);
+                        }
                         return patterns;
                     }
                 }
