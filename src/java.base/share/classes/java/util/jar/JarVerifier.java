@@ -33,7 +33,6 @@ import java.security.SignatureException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 
-import jdk.internal.util.jar.JarIndex;
 import sun.security.util.ManifestDigester;
 import sun.security.util.ManifestEntryVerifier;
 import sun.security.util.SignatureFileVerifier;
@@ -146,7 +145,7 @@ class JarVerifier {
                 }
                 String uname = name.toUpperCase(Locale.ENGLISH);
                 if (uname.equals(JarFile.MANIFEST_NAME) ||
-                        uname.equals(JarIndex.INDEX_NAME)) {
+                        uname.equals(JarFile.INDEX_NAME)) {
                     return;
                 }
 

@@ -150,7 +150,6 @@ class SystemDictionary : AllStatic {
                                              Handle class_loader,
                                              Handle protection_domain);
 
- private:
   // Lookup an instance or array class that has already been loaded
   // either into the given class loader, or else into another class
   // loader that is constrained (via loader constraints) to produce
@@ -175,13 +174,6 @@ class SystemDictionary : AllStatic {
   static Klass* find_constrained_instance_or_array_klass(Thread* current,
                                                          Symbol* class_name,
                                                          Handle class_loader);
-
- public:
-  // Called by the compiler to find a loaded class directly or referenced in the
-  // loader constraint table.
-  static Klass* find_constrained_or_local_klass(Thread* current, Symbol* sym,
-                                                Klass* accessing_klass,
-                                                bool require_local);
 
   static void classes_do(MetaspaceClosure* it);
   // Iterate over all methods in all klasses
@@ -318,6 +310,11 @@ private:
   static InstanceKlass* load_instance_class(Symbol* class_name,
                                             Handle class_loader, TRAPS);
 
+  // Class loader constraints
+  static void check_constraints(InstanceKlass* k, ClassLoaderData* loader,
+                                bool defining, TRAPS);
+  static void update_dictionary(JavaThread* current, InstanceKlass* k, ClassLoaderData* loader_data);
+
   static bool is_shared_class_visible(Symbol* class_name, InstanceKlass* ik,
                                       PackageEntry* pkg_entry,
                                       Handle class_loader);
@@ -332,6 +329,7 @@ private:
                                                Handle protection_domain, TRAPS);
   // Second part of load_shared_class
   static void load_shared_class_misc(InstanceKlass* ik, ClassLoaderData* loader_data) NOT_CDS_RETURN;
+
 protected:
   // Used by SystemDictionaryShared
 
@@ -367,19 +365,6 @@ public:
 
   // Return Symbol or throw exception if name given is can not be a valid Symbol.
   static Symbol* class_name_symbol(const char* name, Symbol* exception, TRAPS);
-
-protected:
-
-  // Basic find on loaded classes
-  static InstanceKlass* find_class(Symbol* class_name, ClassLoaderData* loader_data);
-
-  // Basic find on classes in the midst of being loaded
-  static Symbol* find_placeholder(Symbol* name, ClassLoaderData* loader_data);
-
-  // Class loader constraints
-  static void check_constraints(InstanceKlass* k, ClassLoaderData* loader,
-                                bool defining, TRAPS);
-  static void update_dictionary(JavaThread* current, InstanceKlass* k, ClassLoaderData* loader_data);
 };
 
 #endif // SHARE_CLASSFILE_SYSTEMDICTIONARY_HPP
