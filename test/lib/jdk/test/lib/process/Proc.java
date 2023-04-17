@@ -271,7 +271,7 @@ public class Proc {
         return this;
     }
     // Compile as well
-    public Proc compile() throws IOException {
+    public Proc compile() {
         compile = true;
         return this;
     }
