@@ -168,14 +168,8 @@ public abstract class Enum<E extends Enum<E>>
         return this==other;
     }
 
-    /*
+    /**
      * The hash code of this enumeration constant.
-     *
-     * Once initialized, the field value does not change.
-     * HotSpot's identity hash code generation also never returns zero
-     * as the identity hash code. This makes zero a convenient marker
-     * for the un-initialized value for both Stable and the lazy
-     * initialization code.
      */
     @Stable
     private int hash;
@@ -186,6 +180,11 @@ public abstract class Enum<E extends Enum<E>>
      * @return a hash code for this enum constant.
      */
     public final int hashCode() {
+        // Once initialized, the hash field value does not change.
+        // HotSpot's identity hash code generation also never returns zero
+        // as the identity hash code. This makes zero a convenient marker
+        // for the un-initialized value for both @Stable and the lazy
+        // initialization code below.
         int hc = hash;
         if (hc == 0) {
             hc = hash = System.identityHashCode(this);
