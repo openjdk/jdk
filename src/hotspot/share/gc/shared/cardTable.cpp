@@ -30,6 +30,7 @@
 #include "gc/shared/space.inline.hpp"
 #include "logging/log.hpp"
 #include "memory/virtualspace.hpp"
+#include "runtime/init.hpp"
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
 #include "services/memTracker.hpp"
@@ -74,7 +75,6 @@ CardTable::CardTable(MemRegion whole_heap) :
   _byte_map(nullptr),
   _byte_map_base(nullptr),
   _covered(MemRegion::create_array(max_covered_regions, mtGC)),
-  _committed(MemRegion::create_array(max_covered_regions, mtGC)),
   _guard_region()
 {
   assert((uintptr_t(_whole_heap.start())  & (_card_size - 1))  == 0, "heap must start at card boundary");
@@ -83,7 +83,6 @@ CardTable::CardTable(MemRegion whole_heap) :
 
 CardTable::~CardTable() {
   MemRegion::destroy_array(_covered, max_covered_regions);
-  MemRegion::destroy_array(_committed, max_covered_regions);
 }
 
 void CardTable::initialize(void* region0_start, void* region1_start) {
@@ -130,56 +129,57 @@ void CardTable::initialize(void* region0_start, void* region1_start) {
   log_trace(gc, barrier)("    _byte_map_base: " PTR_FORMAT, p2i(_byte_map_base));
 }
 
+MemRegion CardTable::committed_for(const MemRegion mr) const {
+  HeapWord* addr_l = (HeapWord*)align_down(byte_for(mr.start()), _page_size);
+  HeapWord* addr_r = mr.is_empty()
+                       ? addr_l
+                       : (HeapWord*)align_up(byte_after(mr.last()), _page_size);
+
+  if (mr.start() == _covered[0].start()) {
+    // In case the card for gen-boundary is not page-size aligned, the crossing page belongs to _covered[1]
+    addr_r = MIN2(addr_r, (HeapWord*)align_down(byte_for(_covered[1].start()), _page_size));
+  }
+
+  return MemRegion(addr_l, addr_r);
+}
+
 void CardTable::initialize_covered_region(void* region0_start, void* region1_start) {
   assert(_whole_heap.start() == region0_start, "precondition");
   assert(region0_start < region1_start, "precondition");
 
   assert(_covered[0].start() == nullptr, "precondition");
-  assert(_committed[0].start() == nullptr, "precondition");
-
   assert(_covered[1].start() == nullptr, "precondition");
-  assert(_committed[1].start() == nullptr, "precondition");
 
   _covered[0] = MemRegion((HeapWord*)region0_start, (size_t)0);
-  _committed[0] = MemRegion((HeapWord*)align_down(byte_for(region0_start), _page_size), (size_t)0);
-
   _covered[1] = MemRegion((HeapWord*)region1_start, (size_t)0);
-  _committed[1] = MemRegion((HeapWord*)align_down(byte_for(region1_start), _page_size), (size_t)0);
 }
 
 void CardTable::resize_covered_region(MemRegion new_region) {
   assert(UseSerialGC || UseParallelGC, "only these two collectors");
   assert(_whole_heap.contains(new_region),
          "attempt to cover area not in reserved area");
-  int idx = new_region.start() == _whole_heap.start() ? 0 : 1;
+  assert(_covered[0].start() != nullptr, "precondition");
+  assert(_covered[1].start() != nullptr, "precondition");
 
-  assert(_covered[idx].start() != nullptr, "precondition");
-  assert(_committed[idx].start() != nullptr, "precondition");
+  int idx = new_region.start() == _whole_heap.start() ? 0 : 1;
 
   // We don't allow changes to the start of a region, only the end.
   assert(_covered[idx].start() == new_region.start(), "inv");
-  assert(_committed[idx].start() == (HeapWord*)align_down(byte_for(new_region.start()), _page_size), "inv");
+
+  MemRegion old_committed = committed_for(_covered[idx]);
 
   _covered[idx] = new_region;
 
-  HeapWord* addr_l = (HeapWord*)align_down(byte_for(new_region.start()), _page_size);
-  HeapWord* addr_r = (HeapWord*)align_up(byte_after(new_region.last()), _page_size);
+  MemRegion new_committed = committed_for(new_region);
 
-  if (idx == 0) {
-    // In case the card for gen-boundary is not page-size aligned, make sure to not uncommit it erroneously.
-    addr_r = MIN2(addr_r, _committed[1].start());
-  }
-
-  MemRegion new_committed = MemRegion(addr_l, addr_r);
-
-  if (new_committed.word_size() == _committed[idx].word_size()) {
+  if (new_committed.word_size() == old_committed.word_size()) {
     return;
   }
 
-  if (new_committed.word_size() > _committed[idx].word_size()) {
+  if (new_committed.word_size() > old_committed.word_size()) {
     // Expand.
-    MemRegion delta = MemRegion(_committed[idx].end(),
-                                new_committed.word_size() - _committed[idx].word_size());
+    MemRegion delta = MemRegion(old_committed.end(),
+                                new_committed.word_size() - old_committed.word_size());
 
     os::commit_memory_or_exit((char*)delta.start(),
                               delta.byte_size(),
@@ -191,27 +191,29 @@ void CardTable::resize_covered_region(MemRegion new_region) {
   } else {
     // Shrink.
     MemRegion delta = MemRegion(new_committed.end(),
-                                _committed[idx].word_size() - new_committed.word_size());
+                                old_committed.word_size() - new_committed.word_size());
     bool res = os::uncommit_memory((char*)delta.start(),
                                    delta.byte_size());
     assert(res, "uncommit should succeed");
   }
 
-  _committed[idx] = new_committed;
-
   log_trace(gc, barrier)("CardTable::resize_covered_region: ");
   log_trace(gc, barrier)("    _covered[%d].start(): " PTR_FORMAT " _covered[%d].last(): " PTR_FORMAT,
                          idx, p2i(_covered[idx].start()), idx, p2i(_covered[idx].last()));
-  log_trace(gc, barrier)("    _committed[%d].start(): " PTR_FORMAT "  _committed[%d].last(): " PTR_FORMAT,
-                         idx, p2i(_committed[idx].start()), idx, p2i(_committed[idx].last()));
+  log_trace(gc, barrier)("    committed_start: " PTR_FORMAT "  committed_last: " PTR_FORMAT,
+                         p2i(new_committed.start()), p2i(new_committed.last()));
   log_trace(gc, barrier)("    byte_for(start): " PTR_FORMAT "  byte_for(last): " PTR_FORMAT,
                          p2i(byte_for(_covered[idx].start())),  p2i(byte_for(_covered[idx].last())));
   log_trace(gc, barrier)("    addr_for(start): " PTR_FORMAT "  addr_for(last): " PTR_FORMAT,
-                         p2i(addr_for((CardValue*) _committed[idx].start())),  p2i(addr_for((CardValue*) _committed[idx].last())));
+                         p2i(addr_for((CardValue*) new_committed.start())),  p2i(addr_for((CardValue*) new_committed.last())));
 
+#ifdef ASSERT
   // Touch the last card of the covered region to show that it
   // is committed (or SEGV).
-  debug_only((void) (*byte_for(_covered[idx].last()));)
+  if (is_init_completed()) {
+    (void) (*(volatile CardValue*)byte_for(_covered[idx].last()));
+  }
+#endif
 }
 
 // Note that these versions are precise!  The scanning code has to handle the

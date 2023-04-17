@@ -58,13 +58,6 @@ protected:
 
   // The covered regions should be in address order.
   MemRegion* _covered;
-  // The committed regions correspond one-to-one to the covered regions.
-  // They represent the card-table memory that has been committed to service
-  // the corresponding covered region.  It may be that committed region for
-  // one covered region corresponds to a larger region because of page-size
-  // roundings.  Thus, a committed region for one covered region may
-  // actually extend onto the card-table space for the next covered region.
-  MemRegion* _committed;
 
   // The last card is a guard card; never committed.
   MemRegion _guard_region;
@@ -92,6 +85,7 @@ protected:
 private:
   void initialize_covered_region(void* region0_start, void* region1_start);
 
+  MemRegion committed_for(const MemRegion mr) const;
 public:
   CardTable(MemRegion whole_heap);
   virtual ~CardTable();
