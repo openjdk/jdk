@@ -4089,7 +4089,6 @@ public class Attr extends JCTree.Visitor {
                 if (!allowUnconditionalPatternsInstanceOf) {
                     log.error(DiagnosticFlag.SOURCE_LEVEL, tree.pos(),
                               Feature.UNCONDITIONAL_PATTERN_IN_INSTANCEOF.error(this.sourceName));
-                    allowUnconditionalPatternsInstanceOf = true;
                 }
             }
             typeTree = TreeInfo.primaryPatternTypeTree((JCPattern) tree.pattern);
