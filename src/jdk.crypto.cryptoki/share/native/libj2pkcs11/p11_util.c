@@ -63,12 +63,11 @@ void removeAllModuleEntries(JNIEnv *env);
  * the object is not connected to the module.
  *
  * @param env Used to call JNI functions and to get the Exception class.
- */ 
+ */
 static void throwDisconnectedRuntimeException(JNIEnv *env)
-{       
+{
     p11ThrowPKCS11RuntimeException(env, "This object is not connected to a module.");
 }
-
 
 /* ************************************************************************** */
 /* Functions for keeping track of currently active and loaded modules         */

@@ -37,8 +37,8 @@ extern "C" {
   extern jint getJavaTime(OM_uint32);
   extern OM_uint32 getGSSTime(jint);
   extern void checkStatus(JNIEnv *, jobject, OM_uint32, OM_uint32, char*);
-  extern void gssThrowOutOfMemoryError(JNIEnv *, const char*);
   extern jint checkTime(OM_uint32);
+  extern void gssThrowOutOfMemoryError(JNIEnv *, const char*);
   extern void initGSSBuffer(JNIEnv *, jbyteArray, gss_buffer_t);
   extern void resetGSSBuffer(gss_buffer_t);
 
