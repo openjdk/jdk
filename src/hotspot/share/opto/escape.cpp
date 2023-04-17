@@ -2252,7 +2252,10 @@ void ConnectionGraph::adjust_scalar_replaceable_state(JavaObjectNode* jobj, Uniq
         Node* use_n = use->ideal_node();
 
         // If it's already a candidate or confirmed reducible merge we can skip verification
-        if (candidates.member(use_n) || reducible_merges.member(use_n)) {
+        if (candidates.member(use_n)) {
+          continue;
+        } else if (reducible_merges.member(use_n)) {
+          candidates.push(use_n);
           continue;
         }
 
