@@ -102,7 +102,7 @@ public class CodeWriter extends BasicWriter {
                     pc += instr.sizeInBytes();
                 }
             }
-        } catch (IllegalArgumentException | IllegalStateException | IndexOutOfBoundsException e) {
+        } catch (IllegalArgumentException e) {
             report("error at or after byte " + pc);
         }
 

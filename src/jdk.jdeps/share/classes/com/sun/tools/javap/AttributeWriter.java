@@ -70,7 +70,7 @@ public class AttributeWriter extends BasicWriter {
         if (attrs != null) {
             for (var attr : attrs) try {
                 write(attr, lr);
-            } catch (IllegalArgumentException | IllegalStateException | IndexOutOfBoundsException e) {
+            } catch (IllegalArgumentException e) {
                 report(e);
             }
         }

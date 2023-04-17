@@ -199,7 +199,7 @@ public class ClassWriter extends BasicWriter {
                 var t = sigAttr.asClassSignature();
                 print(sigPrinter.print(t, (classModel.flags().flagsMask() & ACC_INTERFACE) != 0));
             }
-        } catch (IllegalArgumentException | IllegalStateException | IndexOutOfBoundsException e) {
+        } catch (IllegalArgumentException e) {
             report(e);
         }
 
@@ -221,7 +221,7 @@ public class ClassWriter extends BasicWriter {
                     tab();
                     print(() -> "// " + classModel.superclass().get().asInternalName());
                 }
-            } catch (IllegalArgumentException | IllegalStateException | IndexOutOfBoundsException e) {
+            } catch (IllegalArgumentException e) {
                 report(e);
             }
             println();
@@ -459,7 +459,7 @@ public class ClassWriter extends BasicWriter {
         String name = "???";
         try {
             name = m.methodName().stringValue();
-        } catch (IllegalArgumentException | IllegalStateException | IndexOutOfBoundsException e) {
+        } catch (IllegalArgumentException e) {
             report(e);
         }
 
@@ -520,7 +520,7 @@ public class ClassWriter extends BasicWriter {
                     }
                 }
             }
-        } catch (IllegalArgumentException | IllegalStateException | IndexOutOfBoundsException e) {
+        } catch (IllegalArgumentException e) {
             report(e);
         }
 

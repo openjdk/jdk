@@ -44,5 +44,7 @@ public class T8260403 {
             throw new AssertionError("Failure exit code expected");
         if (sw.toString().contains("Fatal error"))
             throw new AssertionError("Unguarded fatal error");
+        if (sw.toString().contains("error while reading constant pool"))
+            throw new AssertionError("Unguarded constant pool error");
     }
 }

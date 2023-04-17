@@ -121,7 +121,7 @@ public class ConstantWriter extends BasicWriter {
                         throw new IllegalArgumentException("unknown entry: "+ cpInfo);
                 }
                 cpx += cpInfo.width();
-            } catch (IllegalArgumentException | IllegalStateException | IndexOutOfBoundsException e) {
+            } catch (IllegalArgumentException e) {
                 println(report(e));
                 cpx++;
             }

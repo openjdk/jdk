@@ -57,7 +57,7 @@ public class BasicWriter {
     protected void print(Supplier<Object> safeguardedCode) {
         try {
             print(safeguardedCode.get());
-        } catch (IllegalArgumentException | IllegalStateException | IndexOutOfBoundsException e) {
+        } catch (IllegalArgumentException e) {
             print(report(e));
         }
     }

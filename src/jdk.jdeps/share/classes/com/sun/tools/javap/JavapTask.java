@@ -615,9 +615,9 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
         for (String className: classes) {
             try {
                 result = writeClass(classWriter, className);
-//            } catch (ConstantPoolException e) {
-//                reportError("err.bad.constant.pool", className, e.getLocalizedMessage());
-//                result = EXIT_ERROR;
+            } catch (ConstantPoolException e) {
+                reportError("err.bad.constant.pool", className, e.getLocalizedMessage());
+                result = EXIT_ERROR;
             } catch (EOFException e) {
                 reportError("err.end.of.file", className);
                 result = EXIT_ERROR;
@@ -635,7 +635,7 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
             } catch (OutOfMemoryError e) {
                 reportError("err.nomem");
                 result = EXIT_ERROR;
-            } catch (IllegalArgumentException | IllegalStateException | IndexOutOfBoundsException e) {
+            } catch (IllegalArgumentException e) {
                 Object msg = e.getLocalizedMessage();
                 if (msg == null) {
                     msg = e;
@@ -698,7 +698,7 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
                         }
                     }
                     return result;
-                } catch (IndexOutOfBoundsException | IllegalArgumentException | IllegalStateException e) {
+                } catch (IllegalArgumentException e) {
                     reportError("err.bad.innerclasses.attribute", className);
                     return EXIT_ERROR;
                 }
