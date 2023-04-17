@@ -28,6 +28,9 @@ name: 'Build (cross-compile)'
 on:
   workflow_call:
     inputs:
+      platform:
+        required: true
+        type: string
       gcc-major-version:
         required: true
         type: string
@@ -46,6 +49,14 @@ on:
       make-arguments:
         required: false
         type: string
+      make-target:
+        required: false
+        type: string
+        default: 'product-bundles test-bundles'
+      debug-levels:
+        required: false
+        type: string
+        default: '[ "debug", "release" ]'
 
 jobs:
   build-cross-compile:
@@ -55,40 +66,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target-cpu:
-          - aarch64
-          - arm
-          - s390x
-          - ppc64le
-          - riscv64
+        debug-level: ${{ fromJSON(inputs.debug-levels) }}
         include:
-          - target-cpu: aarch64
-            gnu-arch: aarch64
-            debian-arch: arm64
-            debian-repository: https://httpredir.debian.org/debian/
-            debian-version: bullseye
-          - target-cpu: arm
-            gnu-arch: arm
-            debian-arch: armhf
-            debian-repository: https://httpredir.debian.org/debian/
-            debian-version: bullseye
-            gnu-abi: eabihf
-          - target-cpu: s390x
-            gnu-arch: s390x
-            debian-arch: s390x
-            debian-repository: https://httpredir.debian.org/debian/
-            debian-version: bullseye
-          - target-cpu: ppc64le
-            gnu-arch: powerpc64le
-            debian-arch: ppc64el
-            debian-repository: https://httpredir.debian.org/debian/
-            debian-version: bullseye
-          - target-cpu: riscv64
-            gnu-arch: riscv64
-            debian-arch: riscv64
-            debian-repository: https://deb.debian.org/debian-ports
-            debian-keyring: /usr/share/keyrings/debian-ports-archive-keyring.gpg
-            debian-version: sid
+          - debug-level: debug
+            flags: --with-debug-level=fastdebug
+            suffix: -debug
 
     steps:
       - name: 'Checkout the JDK source'
@@ -100,12 +82,27 @@ jobs:
         with:
           platform: linux-x64
 
+      - name: 'Get JTReg'
+        id: jtreg
+        uses: ./.github/actions/get-jtreg
+
+      - name: 'Get GTest'
+        id: gtest
+        uses: ./.github/actions/get-gtest
+
         # Use linux-x64 JDK bundle as build JDK
       - name: 'Get build JDK'
         id: buildjdk
         uses: ./.github/actions/get-bundles
         with:
           platform: linux-x64
+          path: buildjdk
+
+      - name: 'Initialize platform variables'
+        id: platform-variables
+        uses: ./.github/actions/init-platform-variables
+        with:
+          platform: ${{ inputs.platform }}
 
         # Upgrading apt to solve libc6 installation bugs, see JDK-8260460.
       - name: 'Install toolchain and dependencies'
@@ -116,61 +113,40 @@ jobs:
           sudo apt-get install \
               gcc-${{ inputs.gcc-major-version }}=${{ inputs.apt-gcc-version }} \
               g++-${{ inputs.gcc-major-version }}=${{ inputs.apt-gcc-version }} \
-              gcc-${{ inputs.gcc-major-version }}-${{ matrix.gnu-arch }}-linux-gnu${{ matrix.gnu-abi}}=${{ inputs.apt-gcc-cross-version }} \
-              g++-${{ inputs.gcc-major-version }}-${{ matrix.gnu-arch }}-linux-gnu${{ matrix.gnu-abi}}=${{ inputs.apt-gcc-cross-version }} \
+              gcc-${{ inputs.gcc-major-version }}-${{ steps.platform-variables.outputs.gnu-arch }}-linux-gnu${{ steps.platform-variables.outputs.gnu-abi }}=${{ inputs.apt-gcc-cross-version }} \
+              g++-${{ inputs.gcc-major-version }}-${{ steps.platform-variables.outputs.gnu-arch }}-linux-gnu${{ steps.platform-variables.outputs.gnu-abi }}=${{ inputs.apt-gcc-cross-version }} \
               libxrandr-dev libxtst-dev libcups2-dev libasound2-dev \
               debian-ports-archive-keyring
           sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-${{ inputs.gcc-major-version }} 100 --slave /usr/bin/g++ g++ /usr/bin/g++-${{ inputs.gcc-major-version }}
 
-      - name: 'Check cache for sysroot'
-        id: get-cached-sysroot
-        uses: actions/cache@v3
-        with:
-          path: sysroot
-          key: sysroot-${{ matrix.debian-arch }}-${{ hashFiles('./.github/workflows/build-cross-compile.yml') }}
-
-      - name: 'Install sysroot dependencies'
-        run: sudo apt-get install debootstrap qemu-user-static
-        if: steps.get-cached-sysroot.outputs.cache-hit != 'true'
-
       - name: 'Create sysroot'
-        run: >
-          sudo debootstrap
-          --arch=${{ matrix.debian-arch }}
-          --verbose
-          --include=fakeroot,symlinks,build-essential,libx11-dev,libxext-dev,libxrender-dev,libxrandr-dev,libxtst-dev,libxt-dev,libcups2-dev,libfontconfig1-dev,libasound2-dev,libfreetype6-dev,libpng-dev
-          --resolve-deps
-          $(test -n "${{ matrix.debian-keyring }}" && echo "--keyring=${{ matrix.debian-keyring }}")
-          ${{ matrix.debian-version }}
-          sysroot
-          ${{ matrix.debian-repository }}
-        if: steps.get-cached-sysroot.outputs.cache-hit != 'true'
-
-      - name: 'Prepare sysroot'
-        run: |
-          # Prepare sysroot and remove unused files to minimize cache
-          sudo chroot sysroot symlinks -cr .
-          sudo chown ${USER} -R sysroot
-          rm -rf sysroot/{dev,proc,run,sys,var}
-          rm -rf sysroot/usr/{sbin,bin,share}
-          rm -rf sysroot/usr/lib/{apt,udev,systemd}
-        if: steps.get-cached-sysroot.outputs.cache-hit != 'true'
+        uses: ./.github/actions/create-sysroot
+        with:
+          target-cpu: ${{ steps.platform-variables.outputs.target-cpu }}
+          gnu-arch: ${{ steps.platform-variables.outputs.gnu-arch }}
+          debian-arch: ${{ steps.platform-variables.outputs.debian-arch }}
+          debian-repository: ${{ steps.platform-variables.outputs.debian-repository }}
+          debian-version: ${{ steps.platform-variables.outputs.debian-version }}
+          debian-keyring: ${{ steps.platform-variables.outputs.debian-keyring }}
 
       - name: 'Configure'
         run: >
           bash configure
-          --with-conf-name=linux-${{ matrix.target-cpu }}
+          --with-conf-name=linux-${{ steps.platform-variables.outputs.target-cpu }}
+          ${{ matrix.flags }}
           --with-version-opt=${GITHUB_ACTOR}-${GITHUB_SHA}
           --with-boot-jdk=${{ steps.bootjdk.outputs.path }}
+          --with-jtreg=${{ steps.jtreg.outputs.path }}
+          --with-gtest=${{ steps.gtest.outputs.path }}
+          --enable-jtreg-failure-handler
           --with-zlib=system
-          --enable-debug
           --disable-precompiled-headers
-          --openjdk-target=${{ matrix.gnu-arch }}-linux-gnu${{ matrix.gnu-abi}}
+          --openjdk-target=${{ steps.platform-variables.outputs.gnu-arch }}-linux-gnu${{ steps.platform-variables.outputs.gnu-abi }}
           --with-sysroot=sysroot
           --with-build-jdk=${{ steps.buildjdk.outputs.jdk-path }}
           --with-jmod-compress=zip-1
-          CC=${{ matrix.gnu-arch }}-linux-gnu${{ matrix.gnu-abi}}-gcc-${{ inputs.gcc-major-version }}
-          CXX=${{ matrix.gnu-arch }}-linux-gnu${{ matrix.gnu-abi}}-g++-${{ inputs.gcc-major-version }}
+          CC=${{ steps.platform-variables.outputs.gnu-arch }}-linux-gnu${{ steps.platform-variables.outputs.gnu-abi }}-gcc-${{ inputs.gcc-major-version }}
+          CXX=${{ steps.platform-variables.outputs.gnu-arch }}-linux-gnu${{ steps.platform-variables.outputs.gnu-abi }}-g++-${{ inputs.gcc-major-version }}
           ${{ inputs.extra-conf-options }} ${{ inputs.configure-arguments }} || (
           echo "Dumping config.log:" &&
           cat config.log &&
@@ -180,5 +156,12 @@ jobs:
         id: build
         uses: ./.github/actions/do-build
         with:
-          make-target: 'hotspot ${{ inputs.make-arguments }}'
-          platform: linux-${{ matrix.target-cpu }}
+          make-target: '${{ inputs.make-target }} ${{ inputs.make-arguments }}'
+          platform: '${{ inputs.platform }}'
+          debug-suffix: '${{ matrix.suffix }}'
+
+      - name: 'Upload bundles'
+        uses: ./.github/actions/upload-bundles
+        with:
+          platform: '${{ inputs.platform }}'
+          debug-suffix: '${{ matrix.suffix }}'

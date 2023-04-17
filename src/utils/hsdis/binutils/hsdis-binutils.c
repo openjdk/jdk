@@ -566,7 +566,9 @@ static void init_disassemble_info_from_bfd(struct disassemble_info* dinfo,
   dinfo->flavour = bfd_get_flavour(abfd);
   dinfo->arch = bfd_get_arch(abfd);
   dinfo->mach = bfd_get_mach(abfd);
-  dinfo->disassembler_options = disassembler_options;
+  dinfo->disassembler_options =
+    disassembler_options != NULL && disassembler_options[0] != '\0' ?
+      disassembler_options : NULL;
 #ifdef SEC_ELF_OCTETS
   /* bfd_octets_per_byte() has 2 args since binutils 2.34 */
   dinfo->octets_per_byte = bfd_octets_per_byte (abfd, NULL);
