@@ -1291,11 +1291,13 @@ bool SuperWord::are_adjacent_refs(Node* s1, Node* s2) {
     return false;
   }
 
-  // FIXME - co_locate_pack fails on Stores in different mem-slices, so
-  // only pack memops that are in the same alias set until that's fixed.
+  // Adjacent memory references must be on the same slice.
   if (!same_memory_slice(s1->as_Mem(), s2->as_Mem())) {
     return false;
   }
+
+  // Adjacent memory references must have the same base, be comparable
+  // and have the correct distance between them.
   SWPointer p1(s1->as_Mem(), this, nullptr, false);
   SWPointer p2(s2->as_Mem(), this, nullptr, false);
   if (p1.base() != p2.base() || !p1.comparable(p2)) return false;
