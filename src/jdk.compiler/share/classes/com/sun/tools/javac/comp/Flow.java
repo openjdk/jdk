@@ -852,8 +852,8 @@ public class Flow {
 
         private boolean checkCovered(Type seltype, List<PatternDescription> patterns) {
             for (Type seltypeComponent : components(seltype)) {
-                for (var it1 = patterns; it1.nonEmpty(); it1 = it1.tail) {
-                    if (it1.head instanceof BindingPattern bp &&
+                for (PatternDescription pd : patterns) {
+                    if (pd instanceof BindingPattern bp &&
                         types.isSubtype(seltypeComponent, types.erasure(bp.type))) {
                         return true;
                     }
@@ -877,9 +877,7 @@ public class Flow {
                     yield List.of(types.erasure(seltype));
                 }
                 case TYPEVAR -> components(((TypeVar) seltype).getUpperBound());
-                default -> {
-                    yield List.of(types.erasure(seltype));
-                }
+                default -> List.of(types.erasure(seltype));
             };
         }
 
@@ -889,8 +887,8 @@ public class Flow {
          * for the sealed supertype.
          */
         private List<PatternDescription> reduceBindingPatterns(Type selectorType, List<PatternDescription> patterns) {
-            for (var it1 = patterns; it1.nonEmpty(); it1 = it1.tail) {
-                if (it1.head instanceof BindingPattern bpOne) {
+            for (PatternDescription pdOne : patterns) {
+                if (pdOne instanceof BindingPattern bpOne) {
                     Set<PatternDescription> toRemove = new HashSet<>();
                     List<PatternDescription> toAdd = List.nil();
 
@@ -902,7 +900,7 @@ public class Flow {
                             //do not reduce to types unrelated to the selector type:
                             Type clazzErasure = types.erasure(clazz.type);
                             if (components(selectorType).stream()
-                                                        .map(c -> types.erasure(c))
+                                                        .map(types::erasure)
                                                         .noneMatch(c -> types.isSubtype(clazzErasure, c))) {
                                 continue;
                             }
@@ -913,8 +911,8 @@ public class Flow {
                                 return instantiated != null && types.isCastable(selectorType, instantiated);
                             });
 
-                            for (var it2 = patterns; it2.nonEmpty(); it2 = it2.tail) {
-                                if (it2.head instanceof BindingPattern bpOther) {
+                            for (PatternDescription pdOther : patterns) {
+                                if (pdOther instanceof BindingPattern bpOther) {
                                     boolean reduces = false;
                                     Set<Symbol> currentPermittedSubTypes =
                                             allPermittedSubTypes((ClassSymbol) bpOther.type.tsym, s -> true);
@@ -940,7 +938,7 @@ public class Flow {
                                     }
 
                                     if (reduces) {
-                                        bindings.append(it2.head);
+                                        bindings.append(pdOther);
                                     }
                                 }
                             }
@@ -1002,13 +1000,13 @@ public class Flow {
         private List<PatternDescription> reduceNestedPatterns(List<PatternDescription> patterns) {
             /* implementation note:
              * finding a sub-set of patterns that only differ in a single
-             * column is time consuming task, so this method speeds it up by:
+             * column is time-consuming task, so this method speeds it up by:
              * - group the patterns by their record class
              * - for each column (nested pattern) do:
-             * -- group patterns by their hashs
+             * -- group patterns by their hash
              * -- in each such by-hash group, find sub-sets that only differ in
-             *    the chosen column, and tcall reduceBindingPatterns and reduceNestedPatterns
-             *    on patterns in the chosed column, as described above
+             *    the chosen column, and then call reduceBindingPatterns and reduceNestedPatterns
+             *    on patterns in the chosen column, as described above
              */
             var grouppedPerRecordClass =
                     patterns.stream()
@@ -1030,7 +1028,7 @@ public class Flow {
                              .filter(pd -> pd.nested.length == nestedPatternsCount)
                              .collect(groupingBy(pd -> pd.hashCode(mismatchingCandidateFin)));
                     for (var candidates : groupByHashes.values()) {
-                        var candidatesArr = candidates.toArray(s -> new RecordPattern[s]);
+                        var candidatesArr = candidates.toArray(RecordPattern[]::new);
 
                         for (int firstCandidate = 0;
                              firstCandidate < candidatesArr.length;
@@ -1073,9 +1071,12 @@ public class Flow {
                                 }
 
                                 for (PatternDescription nested : updatedPatterns) {
-                                    PatternDescription[] nue = Arrays.copyOf(rpOne.nested, rpOne.nested.length);
-                                    nue[mismatchingCandidateFin] = nested;
-                                    result.append(new RecordPattern(rpOne.recordType(), rpOne.fullComponentTypes(), nue));
+                                    PatternDescription[] newNested =
+                                            Arrays.copyOf(rpOne.nested, rpOne.nested.length);
+                                    newNested[mismatchingCandidateFin] = nested;
+                                    result.append(new RecordPattern(rpOne.recordType(),
+                                                                    rpOne.fullComponentTypes(),
+                                                                    newNested));
                                 }
                                 return result.toList();
                             }
@@ -1108,20 +1109,20 @@ public class Flow {
          * and replace those with a simple binding pattern over $record.
          */
         private List<PatternDescription> reduceRecordPatterns(List<PatternDescription> patterns) {
-            var newList = new ListBuffer<PatternDescription>();
+            var newPatterns = new ListBuffer<PatternDescription>();
             boolean modified = false;
-            for (var it = patterns; it.nonEmpty(); it = it.tail) {
-                if (it.head instanceof RecordPattern rpOne) {
-                    PatternDescription nue = reduceRecordPattern(rpOne);
-                    if (nue != rpOne) {
-                        newList.append(nue);
-                        modified |= true;
+            for (PatternDescription pd : patterns) {
+                if (pd instanceof RecordPattern rpOne) {
+                    PatternDescription reducedPattern = reduceRecordPattern(rpOne);
+                    if (reducedPattern != rpOne) {
+                        newPatterns.append(reducedPattern);
+                        modified = true;
                         continue;
                     }
                 }
-                newList.append(it.head);
+                newPatterns.append(pd);
             }
-            return modified ? newList.toList() : patterns;
+            return modified ? newPatterns.toList() : patterns;
         }
 
         private PatternDescription reduceRecordPattern(PatternDescription pattern) {
@@ -1142,7 +1143,8 @@ public class Flow {
                         reducedNestedPatterns[i] = newNested;
                     }
 
-                    covered &= newNested instanceof BindingPattern bp && types.isSubtype(types.erasure(componentType[i]), types.erasure(bp.type));
+                    covered &= newNested instanceof BindingPattern bp &&
+                               types.isSubtype(types.erasure(componentType[i]), types.erasure(bp.type));
                 }
                 if (covered) {
                     return new BindingPattern(rpOne.recordType);
