@@ -1933,10 +1933,6 @@ const bool Matcher::match_rule_supported_vector_masked(int opcode, int vlen, Bas
     case Op_AndVMask:
     case Op_XorVMask:
     case Op_OrVMask:
-    case Op_LoadVector:
-        opcode = Op_LoadVectorMasked;
-    case Op_StoreVector:
-        opcode = Op_StoreVectorMasked;
     case Op_RShiftVB:
     case Op_RShiftVS:
     case Op_RShiftVI:
@@ -1950,10 +1946,17 @@ const bool Matcher::match_rule_supported_vector_masked(int opcode, int vlen, Bas
     case Op_URShiftVI:
     case Op_URShiftVL:
     case Op_VectorBlend:
-      return match_rule_supported_vector(opcode, vlen, bt);
+      break;
+    case Op_LoadVector:
+      opcode = Op_LoadVectorMasked;
+      break;
+    case Op_StoreVector:
+      opcode = Op_StoreVectorMasked;
+      break;
     default:
       return false;
   }
+  return match_rule_supported_vector(opcode, vlen, bt);
 }
 
 const bool Matcher::vector_needs_partial_operations(Node* node, const TypeVect* vt) {
