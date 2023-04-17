@@ -181,7 +181,7 @@ public class VMSupport {
     }
 
     /**
-     * Parses {@code rawAnnotationBytes} into a list of {@link Annotation}s and then
+     * Parses {@code rawAnnotations} into a list of {@link Annotation}s and then
      * serializes them to a byte array with {@link #encodeAnnotations(Collection)}.
      */
     public static byte[] encodeAnnotations(byte[] rawAnnotations,
