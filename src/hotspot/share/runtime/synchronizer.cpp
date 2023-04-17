@@ -290,6 +290,7 @@ bool volatile ObjectSynchronizer::_is_async_deflation_requested = false;
 bool volatile ObjectSynchronizer::_is_final_audit = false;
 jlong ObjectSynchronizer::_last_async_deflation_time_ns = 0;
 static uintx _no_progress_cnt = 0;
+static bool _no_progress_skip_increment = false;
 
 // =====================> Quick functions
 
@@ -1131,17 +1132,14 @@ bool ObjectSynchronizer::is_async_deflation_needed() {
     // tracking, otherwise threshold heuristics would think it was triggered, experienced
     // no progress, and needs to backoff more aggressively. In this "no progress" case,
     // the generic code would bump the no-progress counter, and we compensate for that
-    // by decrementing here. Since we always go to the operation after leaving here,
-    // we only go one step into negative counts.
+    // by telling it to skip the update.
     //
     // If this deflation has progress, then it should let non-progress tracking
     // know about this, otherwise the threshold heuristics would kick in, potentially
     // experience no-progress due to aggressive cleanup by this deflation, and think
     // it is still in no-progress stride. In this "progress" case, the generic code would
-    // zero the counter. We can keep a decrement here, because it would be effectively
-    // no-op after dropping to zero.
-    assert(_no_progress_cnt >= 0, "Should be non-negative");
-    _no_progress_cnt--;
+    // zero the counter, and we allow it to happen.
+    _no_progress_skip_increment = true;
 
     return true;
   }
@@ -1563,9 +1561,10 @@ size_t ObjectSynchronizer::deflate_idle_monitors(ObjectMonitorsHashtable* table)
 
   if (deflated_count != 0) {
     _no_progress_cnt = 0;
+  } else if (_no_progress_skip_increment) {
+    _no_progress_skip_increment = false;
   } else {
     _no_progress_cnt++;
-    assert(_no_progress_cnt >= 0, "Should be non-negative");
   }
 
   return deflated_count;
