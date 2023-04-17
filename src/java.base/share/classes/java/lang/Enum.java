@@ -172,9 +172,9 @@ public abstract class Enum<E extends Enum<E>>
      * The hash code of this enumeration constant.
      *
      * @implNote Once initialized, the field value does not change.
-     * Hotspot's identity hash code generation also never returns zero
-     * as the identity hash code. This allows to treat zero as the marker
-     * for the un-initialized value for both {#link @Stable} and the lazy
+     * HotSpot's identity hash code generation also never returns zero
+     * as the identity hash code. This makes zero a convenient marker
+     * for the un-initialized value for both {@link @Stable} and the lazy
      * initialization code.
      */
     @Stable
