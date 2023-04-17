@@ -21,17 +21,6 @@
  * questions.
  */
 
-/*
- * @test
- * @summary Basic test for ofFileDownload
- * @bug 8196965
- * @library /test/lib /test/jdk/java/net/httpclient/lib
- * @build jdk.httpclient.test.lib.http2.Http2TestServer jdk.test.lib.net.SimpleSSLContext
- *        jdk.test.lib.Platform jdk.test.lib.util.FileUtils
- * @run testng/othervm AsFileDownloadTest
- * @run testng/othervm/java.security.policy=AsFileDownloadTest.policy AsFileDownloadTest
- */
-
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
@@ -79,6 +68,16 @@ import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 
+/*
+ * @test
+ * @summary Basic test for ofFileDownload
+ * @bug 8196965
+ * @library /test/lib /test/jdk/java/net/httpclient/lib
+ * @build jdk.httpclient.test.lib.http2.Http2TestServer jdk.test.lib.net.SimpleSSLContext
+ *        jdk.test.lib.Platform jdk.test.lib.util.FileUtils
+ * @run testng/othervm AsFileDownloadTest
+ * @run testng/othervm/java.security.policy=AsFileDownloadTest.policy AsFileDownloadTest
+ */
 public class AsFileDownloadTest {
 
     SSLContext sslContext;
@@ -287,8 +286,10 @@ public class AsFileDownloadTest {
     // -- Infrastructure
 
     static String serverAuthority(HttpServer server) {
-        return InetAddress.getLoopbackAddress().getHostName() + ":"
-                + server.getAddress().getPort();
+        final String hostIP = InetAddress.getLoopbackAddress().getHostAddress();
+        // escape for ipv6
+        final String h = hostIP.contains(":") ? "[" + hostIP + "]" : hostIP;
+        return h + ":" + server.getAddress().getPort();
     }
 
     @BeforeTest

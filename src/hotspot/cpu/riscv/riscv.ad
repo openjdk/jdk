@@ -1870,6 +1870,10 @@ const bool Matcher::vector_needs_partial_operations(Node* node, const TypeVect* 
   return false;
 }
 
+const bool Matcher::vector_needs_load_shuffle(BasicType elem_bt, int vlen) {
+  return false;
+}
+
 const RegMask* Matcher::predicate_reg_mask(void) {
   return NULL;
 }
@@ -2406,12 +2410,12 @@ encode %{
     if (DiagnoseSyncOnValueBasedClasses != 0) {
       __ load_klass(flag, oop);
       __ lwu(flag, Address(flag, Klass::access_flags_offset()));
-      __ andi(flag, flag, JVM_ACC_IS_VALUE_BASED_CLASS, tmp /* tmp */);
+      __ test_bit(flag, flag, exact_log2(JVM_ACC_IS_VALUE_BASED_CLASS), tmp /* tmp */);
       __ bnez(flag, cont, true /* is_far */);
     }
 
     // Check for existing monitor
-    __ andi(t0, disp_hdr, markWord::monitor_value);
+    __ test_bit(t0, disp_hdr, exact_log2(markWord::monitor_value));
     __ bnez(t0, object_has_monitor);
 
     if (!UseHeavyMonitors) {
@@ -2510,7 +2514,7 @@ encode %{
 
     // Handle existing monitor.
     __ ld(tmp, Address(oop, oopDesc::mark_offset_in_bytes()));
-    __ andi(t0, tmp, markWord::monitor_value);
+    __ test_bit(t0, tmp, exact_log2(markWord::monitor_value));
     __ bnez(t0, object_has_monitor);
 
     if (!UseHeavyMonitors) {

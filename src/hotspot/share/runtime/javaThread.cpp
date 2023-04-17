@@ -739,7 +739,9 @@ static void ensure_join(JavaThread* thread) {
   // Thread is exiting. So set thread_status field in  java.lang.Thread class to TERMINATED.
   java_lang_Thread::set_thread_status(threadObj(), JavaThreadStatus::TERMINATED);
   // Clear the native thread instance - this makes isAlive return false and allows the join()
-  // to complete once we've done the notify_all below
+  // to complete once we've done the notify_all below. Needs a release() to obey Java Memory Model
+  // requirements.
+  OrderAccess::release();
   java_lang_Thread::set_thread(threadObj(), nullptr);
   lock.notify_all(thread);
   // Ignore pending exception, since we are exiting anyway
@@ -2065,8 +2067,7 @@ void JavaThread::verify_cross_modify_fence_failure(JavaThread *thread) {
 // Helper function to create the java.lang.Thread object for a
 // VM-internal thread. The thread will have the given name, and be
 // a member of the "system" ThreadGroup.
-Handle JavaThread::create_system_thread_object(const char* name,
-                                               bool is_visible, TRAPS) {
+Handle JavaThread::create_system_thread_object(const char* name, TRAPS) {
   Handle string = java_lang_String::create_from_str(name, CHECK_NH);
 
   // Initialize thread_oop to put it into the system threadGroup.
