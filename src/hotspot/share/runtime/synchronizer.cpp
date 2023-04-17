@@ -290,7 +290,6 @@ bool volatile ObjectSynchronizer::_is_async_deflation_requested = false;
 bool volatile ObjectSynchronizer::_is_final_audit = false;
 jlong ObjectSynchronizer::_last_async_deflation_time_ns = 0;
 static uintx _no_progress_cnt = 0;
-static bool _no_progress_allow_updates = false;
 
 // =====================> Quick functions
 
@@ -1075,7 +1074,6 @@ static bool monitors_used_above_threshold(MonitorList* list) {
     log_info(monitorinflation)("Too many deflations without progress; "
                                "bumping in_use_list_ceiling from " SIZE_FORMAT
                                " to " SIZE_FORMAT, old_ceiling, new_ceiling);
-    assert(_no_progress_allow_updates, "Sanity");
     _no_progress_cnt = 0;
     ceiling = new_ceiling;
   }
@@ -1105,7 +1103,6 @@ bool ObjectSynchronizer::is_async_deflation_needed() {
   if (is_async_deflation_requested()) {
     // Async deflation request.
     log_info(monitorinflation)("Async deflation needed: explicit request");
-    _no_progress_allow_updates = false;
     return true;
   }
 
@@ -1119,7 +1116,6 @@ bool ObjectSynchronizer::is_async_deflation_needed() {
     // than AsyncDeflationInterval (unless is_async_deflation_requested)
     // in order to not swamp the MonitorDeflationThread.
     log_info(monitorinflation)("Async deflation needed: monitors used are above the threshold");
-    _no_progress_allow_updates = true;
     return true;
   }
 
@@ -1128,11 +1124,25 @@ bool ObjectSynchronizer::is_async_deflation_needed() {
     // It's been longer than our specified guaranteed deflate interval.
     // We need to clean up the used monitors even if the threshold is
     // not reached, to keep the memory utilization at bay when many threads
-    // touched many monitors. This deflation might have no progress
-    // in normal conditions, do not allow it to affect the threshold
-    // heuristics no-progress tracking.
+    // touched many monitors.
     log_info(monitorinflation)("Async deflation needed: guaranteed interval reached");
-    _no_progress_allow_updates = false;
+
+    // If this deflation has no progress, then it should not affect the no-progress
+    // tracking, otherwise threshold heuristics would think it was triggered, experienced
+    // no progress, and needs to backoff more aggressively. In this "no progress" case,
+    // the generic code would bump the no-progress counter, and we compensate for that
+    // by decrementing here. Since we always go to the operation after leaving here,
+    // we only go one step into negative counts.
+    //
+    // If this deflation has progress, then it should let non-progress tracking
+    // know about this, otherwise the threshold heuristics would kick in, potentially
+    // experience no-progress due to aggressive cleanup by this deflation, and think
+    // it is still in no-progress stride. In this "progress" case, the generic code would
+    // zero the counter. We can keep a decrement here, because it would be effectively
+    // no-op after dropping to zero.
+    assert(_no_progress_cnt >= 0, "Should be non-negative");
+    _no_progress_cnt--;
+
     return true;
   }
 
@@ -1551,12 +1561,11 @@ size_t ObjectSynchronizer::deflate_idle_monitors(ObjectMonitorsHashtable* table)
 
   GVars.stw_random = os::random();
 
-  if (_no_progress_allow_updates) {
-    if (deflated_count != 0) {
-      _no_progress_cnt = 0;
-    } else {
-      _no_progress_cnt++;
-    }
+  if (deflated_count != 0) {
+    _no_progress_cnt = 0;
+  } else {
+    _no_progress_cnt++;
+    assert(_no_progress_cnt >= 0, "Should be non-negative");
   }
 
   return deflated_count;
