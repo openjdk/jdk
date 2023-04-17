@@ -2097,13 +2097,11 @@ void CMoveKit::make_cmove_pack(Node_List* cmove_pk) {
     map(cmov, new_cmove_pk);
     map(bol, new_cmove_pk);
     map(cmp, new_cmove_pk);
-
-    _sw->set_my_pack(cmov, new_cmove_pk); // and keep old packs for cmp and bool
   }
-  _sw->_packset.remove(cmove_pk);
-  _sw->_packset.remove(bool_pk);
-  _sw->_packset.remove(cmp_pk);
-  _sw->_packset.append(new_cmove_pk);
+  _sw->remove_pack(cmove_pk);
+  _sw->remove_pack(bool_pk);
+  _sw->remove_pack(cmp_pk);
+  _sw->add_pack_and_set_my_pack(new_cmove_pk);
   NOT_PRODUCT(if(_sw->is_trace_cmov()) {tty->print_cr("CMoveKit::make_cmove_pack: added syntactic CMove pack"); _sw->print_pack(new_cmove_pk);})
 }
 
@@ -2317,6 +2315,7 @@ bool SuperWord::profitable(Node_List* p) {
 
 #ifdef ASSERT
 void SuperWord::verify_packs() {
+  // Verify independence at pack level.
   for (int i = 0; i < _packset.length(); i++) {
     Node_List* p = _packset.at(i);
     Node* dependence = find_dependence(p);
@@ -2334,6 +2333,27 @@ void SuperWord::verify_packs() {
       print_pack(p);
     }
     assert(dependence == nullptr, "all nodes in pack must be mutually independent");
+  }
+
+  // Verify all nodes in packset have my_pack set correctly.
+  Unique_Node_List processed;
+  for (int i = 0; i < _packset.length(); i++) {
+    Node_List* p = _packset.at(i);
+    for (uint k = 0; k < p->size(); k++) {
+      Node* n = p->at(k);
+      assert(in_bb(n), "only nodes in bb can be in packset");
+      assert(!processed.member(n), "node should only occur once in packset");
+      assert(my_pack(n) == p, "n has consisten packset info");
+      processed.push(n);
+    }
+  }
+
+  // Check that no other node has my_pack set.
+  for (int i = 0; i < _block.length(); i++) {
+    Node* n = _block.at(i);
+    if (!processed.member(n)) {
+      assert(my_pack(n) == nullptr, "should not have pack if not in packset");
+    }
   }
 }
 #endif
@@ -4078,6 +4098,25 @@ void SuperWord::remove_pack_at(int pos) {
     set_my_pack(s, nullptr);
   }
   _packset.remove_at(pos);
+}
+
+// Remove pack in packlist
+void SuperWord::remove_pack(Node_List* p) {
+  for (uint i = 0; i < p->size(); i++) {
+    Node* s = p->at(i);
+    set_my_pack(s, nullptr);
+  }
+  _packset.remove(p);
+}
+
+// Add pack to packlist, and set my_pack
+void SuperWord::add_pack_and_set_my_pack(Node_List* p) {
+  for (uint i = 0; i < p->size(); i++) {
+    Node* s = p->at(i);
+    assert(my_pack(s) == nullptr, "only add to one pack");
+    set_my_pack(s, p);
+  }
+  _packset.append(p);
 }
 
 void SuperWord::packset_sort(int n) {

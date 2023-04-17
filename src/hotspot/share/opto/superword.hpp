@@ -558,7 +558,8 @@ class SuperWord : public ResourceObj {
   void filter_packs();
   // Merge CMove into new vector-nodes
   void merge_packs_to_cmove();
-  // Verify that for every pack, all nodes are mutually independent
+  // Verify that for every pack, all nodes are mutually independent.
+  // Also verify that packset and my_pack are consistent.
   DEBUG_ONLY(void verify_packs();)
   // Remove cycles in packset.
   void remove_cycles();
@@ -608,6 +609,10 @@ class SuperWord : public ResourceObj {
   Node_List* in_pack(Node* s, Node_List* p);
   // Remove the pack at position pos in the packset
   void remove_pack_at(int pos);
+  // Remove pack in packlist
+  void remove_pack(Node_List* p);
+  // Add pack to packlist, and set my_pack
+  void add_pack_and_set_my_pack(Node_List* p);
   // Return the node executed first in pack p.
   Node* executed_first(Node_List* p);
   // Return the node executed last in pack p.
