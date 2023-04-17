@@ -394,8 +394,12 @@ void DefNewGeneration::compute_space_boundaries(uintx minimum_eden_size,
   uintx survivor_size = compute_survivor_size(size, SpaceAlignment);
   uintx eden_size = size - (2*survivor_size);
   if (eden_size > max_eden_size()) {
-    eden_size = max_eden_size();
-    survivor_size = (size - eden_size)/2;
+    // Need to reduce eden_size to satisfy the max constraint. The delta needs
+    // to be 2*SpaceAlignment aligned so that both survivors are properly
+    // aligned.
+    uintx eden_delta = align_up(eden_size - max_eden_size(), 2*SpaceAlignment);
+    eden_size     -= eden_delta;
+    survivor_size += eden_delta/2;
   }
   assert(eden_size > 0 && survivor_size <= eden_size, "just checking");
 
