@@ -98,7 +98,7 @@ JNIEXPORT jlong JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1OpenSession
     if (jNotify != NULL) {
         notifyEncapsulation = (NotifyEncapsulation *) malloc(sizeof(NotifyEncapsulation));
         if (notifyEncapsulation == NULL) {
-            throwOutOfMemoryError(env, 0);
+            p11ThrowOutOfMemoryError(env, 0);
             return 0L;
         }
         notifyEncapsulation->jApplicationData = (jApplication != NULL)
@@ -328,7 +328,7 @@ JNIEXPORT jbyteArray JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1GetOpera
 
     ckpState = (CK_BYTE_PTR) malloc(ckStateLength);
     if (ckpState == NULL) {
-        throwOutOfMemoryError(env, 0);
+        p11ThrowOutOfMemoryError(env, 0);
         return NULL;
     }
 
@@ -517,7 +517,7 @@ void putNotifyEntry(JNIEnv *env, CK_SESSION_HANDLE hSession, NotifyEncapsulation
 
     newNode = (NotifyListNode *) malloc(sizeof(NotifyListNode));
     if (newNode == NULL) {
-        throwOutOfMemoryError(env, 0);
+        p11ThrowOutOfMemoryError(env, 0);
         return;
     }
     newNode->hSession = hSession;

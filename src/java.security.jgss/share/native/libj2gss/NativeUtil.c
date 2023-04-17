@@ -453,7 +453,7 @@ jint getJavaErrorCode(int cNonCallingErr) {
 
 
 /* Throws a Java Exception by name */
-void throwByName(JNIEnv *env, const char *name, const char *msg) {
+static void throwByName(JNIEnv *env, const char *name, const char *msg) {
     jclass cls = (*env)->FindClass(env, name);
 
     if (cls != NULL) {
@@ -461,7 +461,7 @@ void throwByName(JNIEnv *env, const char *name, const char *msg) {
     }
 }
 
-void throwOutOfMemoryError(JNIEnv *env, const char *message) {
+void gssThrowOutOfMemoryError(JNIEnv *env, const char *message) {
     throwByName(env, "java/lang/OutOfMemoryError", message);
 }
 
@@ -602,7 +602,7 @@ void initGSSBuffer(JNIEnv *env, jbyteArray jbytes,
     len = (*env)->GetArrayLength(env, jbytes);
     value = malloc(len);
     if (value == NULL) {
-      throwOutOfMemoryError(env, NULL);
+      gssThrowOutOfMemoryError(env, NULL);
       return;
     } else {
       (*env)->GetByteArrayRegion(env, jbytes, 0, len, value);
@@ -677,13 +677,13 @@ gss_OID newGSSOID(JNIEnv *env, jobject jOid) {
     }
     cOid = malloc(sizeof(struct gss_OID_desc_struct));
     if (cOid == NULL) {
-      throwOutOfMemoryError(env,NULL);
+      gssThrowOutOfMemoryError(env,NULL);
       return GSS_C_NO_OID;
     }
     cOid->length = (*env)->GetArrayLength(env, jbytes) - 2;
     cOid->elements = malloc(cOid->length);
     if (cOid->elements == NULL) {
-      throwOutOfMemoryError(env,NULL);
+      gssThrowOutOfMemoryError(env,NULL);
       goto cleanup;
     }
     (*env)->GetByteArrayRegion(env, jbytes, 2, cOid->length,

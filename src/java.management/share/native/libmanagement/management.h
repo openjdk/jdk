@@ -33,6 +33,5 @@
 
 extern const JmmInterface* jmm_interface;
 extern jint jmm_version;
-extern void throw_internal_error(JNIEnv* env, const char* msg);
 
 #endif

@@ -36,6 +36,5 @@
 // statically linking.
 extern const JmmInterface* jmm_interface_management_ext;
 extern jint jmm_version_management_ext;
-extern void throw_internal_error(JNIEnv* env, const char* msg);
 
 #endif

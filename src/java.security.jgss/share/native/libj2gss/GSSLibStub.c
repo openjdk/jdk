@@ -198,7 +198,7 @@ gss_channel_bindings_t newGSSCB(JNIEnv *env, jobject jcb) {
 
   cb = malloc(sizeof(struct gss_channel_bindings_struct));
   if (cb == NULL) {
-    throwOutOfMemoryError(env,NULL);
+    gssThrowOutOfMemoryError(env,NULL);
     return NULL;
   }
 

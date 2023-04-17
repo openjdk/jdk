@@ -53,10 +53,3 @@ JNIEXPORT jint JNICALL
     jmm_version_management_ext = jmm_interface_management_ext->GetVersion(env);
     return (*env)->GetVersion(env);
 }
-
-void throw_internal_error(JNIEnv* env, const char* msg) {
-    char errmsg[128];
-
-    snprintf(errmsg, sizeof(errmsg), "errno: %d error: %s\n", errno, msg);
-    JNU_ThrowInternalError(env, errmsg);
-}

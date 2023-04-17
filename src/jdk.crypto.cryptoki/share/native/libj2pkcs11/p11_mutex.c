@@ -92,7 +92,7 @@ CK_C_INITIALIZE_ARGS_PTR makeCKInitArgsAdapter(JNIEnv *env, jobject jInitArgs)
     /* convert the Java InitArgs object to a pointer to a CK_C_INITIALIZE_ARGS structure */
     ckpInitArgs = (CK_C_INITIALIZE_ARGS_PTR) malloc(sizeof(CK_C_INITIALIZE_ARGS));
     if (ckpInitArgs == NULL) {
-        throwOutOfMemoryError(env, 0);
+        p11ThrowOutOfMemoryError(env, 0);
         return NULL_PTR;
     }
     ckpInitArgs->flags = (CK_FLAGS)0;
@@ -155,7 +155,7 @@ CK_C_INITIALIZE_ARGS_PTR makeCKInitArgsAdapter(JNIEnv *env, jobject jInitArgs)
         ckpGlobalInitArgs = (CK_C_INITIALIZE_ARGS_PTR) malloc(sizeof(CK_C_INITIALIZE_ARGS));
         if (ckpGlobalInitArgs == NULL) {
             free(ckpInitArgs);
-            throwOutOfMemoryError(env, 0);
+            p11ThrowOutOfMemoryError(env, 0);
             return NULL_PTR;
         }
 

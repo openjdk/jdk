@@ -31,8 +31,8 @@
 
 #include "j2secmod.h"
 
-extern void throwNullPointerException(JNIEnv *env, const char *message);
-extern void throwIOException(JNIEnv *env, const char *message);
+extern void p11ThrowNullPointerException(JNIEnv *env, const char *message);
+extern void p11ThrowIOException(JNIEnv *env, const char *message);
 
 void *findFunction(JNIEnv *env, jlong jHandle, const char *functionName) {
     HINSTANCE hModule = (HINSTANCE)jHandle;
@@ -40,7 +40,7 @@ void *findFunction(JNIEnv *env, jlong jHandle, const char *functionName) {
     if (fAddress == NULL) {
         char errorMessage[256];
         _snprintf(errorMessage, sizeof(errorMessage), "Symbol not found: %s", functionName);
-        throwNullPointerException(env, errorMessage);
+        p11ThrowNullPointerException(env, errorMessage);
         return NULL;
     }
     return fAddress;
@@ -81,7 +81,7 @@ JNIEXPORT jlong JNICALL Java_sun_security_pkcs11_Secmod_nssLoadLibrary
             NULL
         );
         dprintf1("-error: %s\n", lpMsgBuf);
-        throwIOException(env, (char*)lpMsgBuf);
+        p11ThrowIOException(env, (char*)lpMsgBuf);
         LocalFree(lpMsgBuf);
         return 0;
     }

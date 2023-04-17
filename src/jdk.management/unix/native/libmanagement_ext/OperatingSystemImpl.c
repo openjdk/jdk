@@ -82,6 +82,13 @@ static jlong page_size = 0;
   #define closedir closedir64
 #endif
 
+static void throw_internal_error(JNIEnv* env, const char* msg) {
+    char errmsg[128];
+
+    snprintf(errmsg, sizeof(errmsg), "errno: %d error: %s\n", errno, msg);
+    JNU_ThrowInternalError(env, errmsg);
+}
+
 // true = get available swap in bytes
 // false = get total swap in bytes
 static jlong get_total_or_available_swap_space_size(JNIEnv* env, jboolean available) {
