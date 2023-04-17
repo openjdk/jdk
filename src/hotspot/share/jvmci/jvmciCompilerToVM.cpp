@@ -2050,14 +2050,14 @@ static jobject read_field_value(Handle obj, long displacement, jchar type_char, 
   // folding Unsafe.get* methods with volatile semantics.
 
   switch (basic_type) {
-    case T_BOOLEAN: value = obj->bool_field_acquire(displacement);  break;
-    case T_BYTE:    value = obj->byte_field_acquire(displacement);  break;
-    case T_SHORT:   value = obj->short_field_acquire(displacement); break;
-    case T_CHAR:    value = obj->char_field_acquire(displacement);  break;
+    case T_BOOLEAN: value = HeapAccess<MO_SEQ_CST>::load(obj->field_addr<jboolean>(displacement)); break;
+    case T_BYTE:    value = HeapAccess<MO_SEQ_CST>::load(obj->field_addr<jbyte>(displacement));    break;
+    case T_SHORT:   value = HeapAccess<MO_SEQ_CST>::load(obj->field_addr<jshort>(displacement));   break;
+    case T_CHAR:    value = HeapAccess<MO_SEQ_CST>::load(obj->field_addr<jchar>(displacement));    break;
     case T_FLOAT:
-    case T_INT:     value = obj->int_field_acquire(displacement);   break;
+    case T_INT:     value = HeapAccess<MO_SEQ_CST>::load(obj->field_addr<jint>(displacement));     break;
     case T_DOUBLE:
-    case T_LONG:    value = obj->long_field_acquire(displacement);  break;
+    case T_LONG:    value = HeapAccess<MO_SEQ_CST>::load(obj->field_addr<jlong>(displacement));    break;
 
     case T_OBJECT: {
       if (displacement == java_lang_Class::component_mirror_offset() && java_lang_Class::is_instance(obj()) &&
@@ -2067,7 +2067,9 @@ static jobject read_field_value(Handle obj, long displacement, jchar type_char, 
         return JVMCIENV->get_jobject(JVMCIENV->get_JavaConstant_NULL_POINTER());
       }
 
-      oop value = obj->obj_field_acquire(displacement);
+      // Perform the read including any barriers required to make the reference strongly reachable
+      // since it will be wrapped as a JavaConstant.
+      oop value = obj->obj_field_access<MO_SEQ_CST | ON_UNKNOWN_OOP_REF>(displacement);
 
       if (value == nullptr) {
         return JVMCIENV->get_jobject(JVMCIENV->get_JavaConstant_NULL_POINTER());
