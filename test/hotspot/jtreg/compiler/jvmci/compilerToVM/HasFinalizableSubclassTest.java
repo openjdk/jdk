@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,13 +73,10 @@ public class HasFinalizableSubclassTest {
         result.add(new TestCase(SingleImplementerInterface.class, false));
         // iface with default finalize method
         result.add(new TestCase(MultipleImplementersInterface.class, false));
-        // class which implements iface
-        // since the deprecated finalize() method is removed from the class,
-        // the expected value here should be false
-        result.add(new TestCase(MultipleImplementer1.class, false));
-        // abstract class with subclass that has no finalize
-        // The finalize() method of the exxtender is removed due to deprecation
-        result.add(new TestCase(AbstractClass.class, false));
+        // class which implements iface w/ default finalize method
+        result.add(new TestCase(MultipleImplementer1.class, true));
+        // abstract class with finalizeable subclass
+        result.add(new TestCase(AbstractClass.class, true));
         // non-implemented iface
         result.add(new TestCase(DoNotImplementInterface.class, false));
         return result;
