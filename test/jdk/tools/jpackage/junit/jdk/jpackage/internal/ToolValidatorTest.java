@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 package jdk.jpackage.internal;
 
 import java.nio.file.Path;
+import jdk.internal.util.OperatingSystem;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.junit.Assert.assertNull;
@@ -93,7 +94,7 @@ public class ToolValidatorTest {
 
     static {
         String fname = "java";
-        if (Platform.isWindows()) {
+        if (OperatingSystem.isWindows()) {
             fname = fname + ".exe";
         }
         TOOL_JAVA = Path.of(System.getProperty("java.home"), "bin", fname).toString();

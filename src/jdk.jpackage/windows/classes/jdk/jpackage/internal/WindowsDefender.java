@@ -36,7 +36,7 @@ final class WindowsDefender {
         boolean result = false;
 
         if (OperatingSystem.isWindows() &&
-            Platform.getMajorVersion() == 10) {
+                OperatingSystem.version().major() == 10) {
 
             // If DisableRealtimeMonitoring is not enabled then there
             // may be a problem.

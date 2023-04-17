@@ -25,8 +25,6 @@
 
 package jdk.jpackage.internal;
 
-import jdk.internal.util.OperatingSystem;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Writer;
@@ -51,6 +49,8 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
+import jdk.internal.util.OperatingSystem;
+import jdk.internal.util.Version;
 import static jdk.jpackage.internal.MacAppBundler.BUNDLE_ID_SIGNING_PREFIX;
 import static jdk.jpackage.internal.MacAppBundler.DEVELOPER_ID_APP_SIGNING_KEY;
 import static jdk.jpackage.internal.MacBaseInstallerBundler.SIGNING_KEYCHAIN;
@@ -610,9 +610,7 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
 
     public static void addNewKeychain(Map<String, ? super Object> params)
                                     throws IOException, InterruptedException {
-        if (Platform.getMajorVersion() < 10 ||
-                (Platform.getMajorVersion() == 10 &&
-                Platform.getMinorVersion() < 12)) {
+        if (OperatingSystem.version().compareTo(new Version(10,12)) < 0) {
             // we need this for OS X 10.12+
             return;
         }
@@ -664,9 +662,7 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
 
     public static void restoreKeychainList(Map<String, ? super Object> params)
             throws IOException{
-        if (Platform.getMajorVersion() < 10 ||
-                (Platform.getMajorVersion() == 10 &&
-                Platform.getMinorVersion() < 12)) {
+        if (OperatingSystem.version().compareTo(new Version(10, 12)) < 0) {
             // we need this for OS X 10.12+
             return;
         }

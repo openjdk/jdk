@@ -193,7 +193,7 @@ public final class ApplicationLayout implements PathGroup.Facade<ApplicationLayo
             return macAppImage();
         }
 
-        throw Platform.throwUnknownPlatformError();
+        throw new IllegalArgumentException("Unknown platform: " + OperatingSystem.current());
     }
 
     public static ApplicationLayout javaRuntime() {
