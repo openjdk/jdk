@@ -683,23 +683,23 @@ public:
           Node* node = iter.node();
           int idx = updates->find(node);
           assert(idx != -1, "");
-//          assert(iter.type1() == updates->prev_type_at(idx), "");
-//          assert(iter.type2() == updates->type_at(idx), "");
-          assert(narrows_type(iter.type1(), updates->prev_type_at(idx)), "");
-          assert(narrows_type(iter.type2(), updates->type_at(idx)), "");
+          assert(iter.type1() == updates->prev_type_at(idx), "");
+          assert(iter.type2() == updates->type_at(idx), "");
+//          assert(narrows_type(iter.type1(), updates->prev_type_at(idx)), "");
+//          assert(narrows_type(iter.type2(), updates->type_at(idx)), "");
           count++;
         }
         int count2 = 0;
         if (updates != nullptr && updates->control() == c) {
           for (int j = 0; j < updates->length(); ++j) {
             Node* n = updates->node_at(j);
-//            assert(types_at_c->get_type(n) == updates->type_at(j), "");
-//            assert(types_at_dom->get_type(n) == updates->prev_type_at(j), "");
-            assert(narrows_type(types_at_c->get_type(n), updates->type_at(j)), "");
-            assert(narrows_type(types_at_dom->get_type(n), updates->prev_type_at(j)), "");
+            assert(types_at_c->get_type(n) == updates->type_at(j), "");
+            assert(types_at_dom->get_type(n) == updates->prev_type_at(j), "");
+//            assert(narrows_type(types_at_c->get_type(n), updates->type_at(j)), "");
+//            assert(narrows_type(types_at_dom->get_type(n), updates->prev_type_at(j)), "");
             if (updates->prev_type_at(j) != updates->type_at(j)) {
               count2++;
-//              assert(types_at_dom->get_type(n) != types_at_c->get_type(n), "");
+              assert(types_at_dom->get_type(n) != types_at_c->get_type(n), "");
             }
           }
           assert(count <= count2, "");
@@ -1084,10 +1084,10 @@ public:
       sync(dom);
       analyze_allocate_array(rpo, c, alloc);
     }
-    if (_control_dependent_node.test(c->_idx)) {
+    if (_control_dependent_node.test(c->_idx) || true) {
       for (DUIterator_Fast imax, i = c->fast_outs(imax); i < imax; i++) {
         Node* u = c->fast_out(i);
-        if (!u->is_CFG() && u->in(0) == c && u->Opcode() != Op_CheckCastPP && _phase->has_node(u) && (!UseNewCode3 || _visited.test(u->_idx)) && _control_dependent_node.test(u->_idx)) {
+        if (!u->is_CFG() && u->in(0) == c && u->Opcode() != Op_CheckCastPP && _phase->has_node(u) && (!UseNewCode3 || _visited.test(u->_idx)) /*&& _control_dependent_node.test(u->_idx)*/) {
           _wq.push(u);
         }
       }
