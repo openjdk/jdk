@@ -26,7 +26,6 @@
 #define CPU_ARM_BYTES_ARM_HPP
 
 #include "memory/allStatic.hpp"
-#include "runtime/vm_version.hpp"
 #include "utilities/macros.hpp"
 
 #ifndef VM_LITTLE_ENDIAN
@@ -120,7 +119,7 @@ class Bytes: AllStatic {
   }
 
   static inline void put_native_u2(address p, u2 x) {
-    if (((intptr_t(p) & 1) == 0) || UseUnalignedAccesses) {
+    if ((intptr_t(p) & 1) == 0) {
       *(u2*)p = x;
     } else {
       p[0] = x;
@@ -129,7 +128,7 @@ class Bytes: AllStatic {
   }
 
   static inline void put_native_u4(address p, u4 x) {
-    switch (UseUnalignedAccesses ? 0 : intptr_t(p) & 3) {
+    switch (intptr_t(p) & 3) {
       case 0:  *(u4*)p = x;
                break;
       case 2:  ((u2*)p)[0] = x;
@@ -144,7 +143,7 @@ class Bytes: AllStatic {
   }
 
   static inline void put_native_u8(address p, u8 x) {
-    switch (UseUnalignedAccesses ? 0 : intptr_t(p) & 7) {
+    switch (intptr_t(p) & 7) {
       case 0:  *(u8*)p = x;
                break;
       case 4:  ((u4*)p)[0] = x;

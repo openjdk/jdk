@@ -26,7 +26,6 @@
 #define CPU_X86_BYTES_X86_HPP
 
 #include "memory/allStatic.hpp"
-#include "runtime/vm_version.hpp"
 #include "utilities/align.hpp"
 #include "utilities/byteswap.hpp"
 #include "utilities/macros.hpp"
@@ -53,7 +52,7 @@ class Bytes: AllStatic {
   static inline void put_native(void* p, T x) {
     assert(p != nullptr, "null pointer");
 
-    if (is_aligned(p, sizeof(T)) || UseUnalignedAccesses) {
+    if (is_aligned(p, sizeof(T))) {
       *(T*)p = x;
     } else {
       memcpy(p, &x, sizeof(T));

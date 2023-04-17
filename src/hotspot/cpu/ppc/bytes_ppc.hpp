@@ -27,7 +27,6 @@
 #define CPU_PPC_BYTES_PPC_HPP
 
 #include "memory/allStatic.hpp"
-#include "runtime/vm_version.hpp"
 #include "utilities/byteswap.hpp"
 
 class Bytes: AllStatic {
@@ -86,7 +85,7 @@ class Bytes: AllStatic {
 
 
   static inline void put_native_u2(address p, u2 x) {
-    if ( ((intptr_t(p) & 1) == 0) || UseUnalignedAccesses )  *(u2*)p = x;
+    if ( (intptr_t(p) & 1) == 0 )  *(u2*)p = x;
     else {
       p[1] = x >> 8;
       p[0] = x;
@@ -94,7 +93,7 @@ class Bytes: AllStatic {
   }
 
   static inline void put_native_u4(address p, u4 x) {
-    switch ( UseUnalignedAccesses ? 0 : intptr_t(p) & 3 ) {
+    switch ( intptr_t(p) & 3 ) {
     case 0:  *(u4*)p = x;
               break;
 
@@ -111,7 +110,7 @@ class Bytes: AllStatic {
   }
 
   static inline void put_native_u8(address p, u8 x) {
-    switch ( UseUnalignedAccesses ? 0 : intptr_t(p) & 7 ) {
+    switch ( intptr_t(p) & 7 ) {
     case 0:  *(u8*)p = x;
              break;
 
@@ -195,7 +194,7 @@ class Bytes: AllStatic {
 
 
   static inline void put_native_u2(address p, u2 x) {
-    if ( ((intptr_t(p) & 1) == 0) || UseUnalignedAccesses ) { *(u2*)p = x; }
+    if ( (intptr_t(p) & 1) == 0 ) { *(u2*)p = x; }
     else {
       p[0] = x >> 8;
       p[1] = x;
@@ -203,7 +202,7 @@ class Bytes: AllStatic {
   }
 
   static inline void put_native_u4(address p, u4 x) {
-    switch ( UseUnalignedAccesses ? 0 : intptr_t(p) & 3 ) {
+    switch ( intptr_t(p) & 3 ) {
     case 0:  *(u4*)p = x;
               break;
 
@@ -220,7 +219,7 @@ class Bytes: AllStatic {
   }
 
   static inline void put_native_u8(address p, u8 x) {
-    switch ( UseUnalignedAccesses ? 0 : intptr_t(p) & 7 ) {
+    switch ( intptr_t(p) & 7 ) {
     case 0:  *(u8*)p = x;
              break;
 
