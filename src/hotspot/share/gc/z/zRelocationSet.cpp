@@ -42,13 +42,12 @@ private:
   ZForwardingAllocator* const    _allocator;
   ZForwarding**                  _forwardings;
   const size_t                   _nforwardings;
+  const ZArray<ZPage*>*          _small;
+  const ZArray<ZPage*>*          _medium;
   ZArrayParallelIterator<ZPage*> _small_iter;
   ZArrayParallelIterator<ZPage*> _medium_iter;
-  volatile size_t                _small_next;
-  volatile size_t                _medium_next;
 
-  void install(ZForwarding* forwarding, volatile size_t* next) {
-    const size_t index = Atomic::fetch_and_add(next, 1u);
+  void install(ZForwarding* forwarding, size_t index) {
     assert(index < _nforwardings, "Invalid index");
 
     ZPage* const page = forwarding->page();
@@ -68,12 +67,12 @@ private:
     }
   }
 
-  void install_small(ZForwarding* forwarding) {
-    install(forwarding, &_small_next);
+  void install_small(ZForwarding* forwarding, size_t index) {
+    install(forwarding, index);
   }
 
-  void install_medium(ZForwarding* forwarding) {
-    install(forwarding, &_medium_next);
+  void install_medium(ZForwarding* forwarding, size_t index) {
+    install(forwarding, index);
   }
 
   ZPageAge to_age(ZPage* page) {
@@ -86,10 +85,10 @@ public:
       _allocator(allocator),
       _forwardings(nullptr),
       _nforwardings(selector->selected_small()->length() + selector->selected_medium()->length()),
+      _small(selector->selected_small()),
+      _medium(selector->selected_medium()),
       _small_iter(selector->selected_small()),
-      _medium_iter(selector->selected_medium()),
-      _small_next(selector->selected_medium()->length()),
-      _medium_next(0) {
+      _medium_iter(selector->selected_medium()) {
 
     // Reset the allocator to have room for the relocation
     // set, all forwardings, and all forwarding entries.
@@ -108,15 +107,17 @@ public:
 
   virtual void work() {
     // Allocate and install forwardings for small pages
-    for (ZPage* page; _small_iter.next(&page);) {
+    for (size_t page_index; _small_iter.next_index(&page_index);) {
+      ZPage* page = _small->at(int(page_index));
       ZForwarding* const forwarding = ZForwarding::alloc(_allocator, page, to_age(page));
-      install_small(forwarding);
+      install_small(forwarding, _medium->length() + page_index);
     }
 
     // Allocate and install forwardings for medium pages
-    for (ZPage* page; _medium_iter.next(&page);) {
+    for (size_t page_index; _medium_iter.next_index(&page_index);) {
+      ZPage* page = _medium->at(int(page_index));
       ZForwarding* const forwarding = ZForwarding::alloc(_allocator, page, to_age(page));
-      install_medium(forwarding);
+      install_medium(forwarding, page_index);
     }
   }
 
