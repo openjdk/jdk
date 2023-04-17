@@ -1269,7 +1269,7 @@ Node* MaxLNode::Identity(PhaseGVN* phase) {
   const TypeLong* t1 = phase->type(in(1))->is_long();
   const TypeLong* t2 = phase->type(in(2))->is_long();
 
-  // Can we determine minimum statically?
+  // Can we determine maximum statically?
   if (t1->_lo >= t2->_hi) {
     return in(1);
   } else if (t2->_lo >= t1->_hi) {
