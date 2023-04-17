@@ -376,14 +376,14 @@ final class CompilerToVM {
      * Ensures that the type referenced by the specified {@code JVM_CONSTANT_InvokeDynamic} entry at
      * index {@code cpi} in {@code constantPool} is loaded and initialized.
      *
-     * The behavior of this method is undefined if {@code cpi} does not denote a
-     * {@code JVM_CONSTANT_InvokeDynamic} entry.
+     * @throws IllegalArgumentException if {@code cpi} is not an invokedynamic index
+     * @return the invokedynamic index
      */
-    void resolveInvokeDynamicInPool(HotSpotConstantPool constantPool, int cpi) {
-        resolveInvokeDynamicInPool(constantPool, constantPool.getConstantPoolPointer(), cpi);
+    int resolveInvokeDynamicInPool(HotSpotConstantPool constantPool, int cpi) {
+        return resolveInvokeDynamicInPool(constantPool, constantPool.getConstantPoolPointer(), cpi);
     }
 
-    private native void resolveInvokeDynamicInPool(HotSpotConstantPool constantPool, long constantPoolPointer, int cpi);
+    private native int resolveInvokeDynamicInPool(HotSpotConstantPool constantPool, long constantPoolPointer, int cpi);
 
     /**
      * Resolves the details for invoking the bootstrap method associated with the

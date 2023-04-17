@@ -25,7 +25,7 @@
  * @test 8167461
  * @summary Verify PipeInputStream works.
  * @modules jdk.compiler/com.sun.tools.javac.util
- *          jdk.jshell/jdk.jshell.execution:open
+ *          jdk.jshell/jdk.jshell.execution.impl:open
  * @run testng PipeInputStreamTest
  */
 
@@ -59,7 +59,7 @@ public class PipeInputStreamTest {
     }
 
     private Pair<InputStream, OutputStream> createPipeStream() throws Exception {
-        Class<?> pipeStreamClass = Class.forName("jdk.jshell.execution.PipeInputStream");
+        Class<?> pipeStreamClass = Class.forName("jdk.jshell.execution.impl.PipeInputStream");
         Constructor<?> c = pipeStreamClass.getDeclaredConstructor();
         c.setAccessible(true);
         Object pipeStream = c.newInstance();

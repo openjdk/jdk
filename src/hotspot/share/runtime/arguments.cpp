@@ -43,6 +43,7 @@
 #include "memory/allocation.inline.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/oop.inline.hpp"
+#include "prims/jvmtiAgentList.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/flags/jvmFlag.hpp"
@@ -64,6 +65,7 @@
 #include "utilities/parseInteger.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/stringUtils.hpp"
+#include "utilities/systemMemoryBarrier.hpp"
 #if INCLUDE_JFR
 #include "jfr/jfr.hpp"
 #endif
@@ -103,9 +105,6 @@ char*  Arguments::SharedArchivePath             = nullptr;
 char*  Arguments::SharedDynamicArchivePath      = nullptr;
 
 LegacyGCLogging Arguments::_legacyGCLogging     = { 0, 0 };
-
-AgentLibraryList Arguments::_libraryList;
-AgentLibraryList Arguments::_agentList;
 
 // These are not set by the JDK's built-in launchers, but they can be set by
 // programs that embed the JVM using JNI_CreateJavaVM. See comments around
@@ -216,25 +215,6 @@ SystemProperty::SystemProperty(const char* key, const char* value, bool writeabl
   _writeable = writeable;
 }
 
-AgentLibrary::AgentLibrary(const char* name, const char* options,
-               bool is_absolute_path, void* os_lib,
-               bool instrument_lib) {
-  _name = AllocateHeap(strlen(name)+1, mtArguments);
-  strcpy(_name, name);
-  if (options == nullptr) {
-    _options = nullptr;
-  } else {
-    _options = AllocateHeap(strlen(options)+1, mtArguments);
-    strcpy(_options, options);
-  }
-  _is_absolute_path = is_absolute_path;
-  _os_lib = os_lib;
-  _next = nullptr;
-  _state = agent_invalid;
-  _is_static_lib = false;
-  _is_instrument_lib = instrument_lib;
-}
-
 // Check if head of 'option' matches 'name', and sets 'tail' to the remaining
 // part of the option string.
 static bool match_option(const JavaVMOption *option, const char* name,
@@ -324,23 +304,6 @@ bool needs_module_property_warning = false;
 #define UPGRADE_PATH_LEN 12
 #define ENABLE_NATIVE_ACCESS "enable.native.access"
 #define ENABLE_NATIVE_ACCESS_LEN 20
-
-void Arguments::add_init_library(const char* name, const char* options) {
-  _libraryList.add(new AgentLibrary(name, options, false, nullptr));
-}
-
-void Arguments::add_init_agent(const char* name, const char* options, bool absolute_path) {
-  _agentList.add(new AgentLibrary(name, options, absolute_path, nullptr));
-}
-
-void Arguments::add_instrument_agent(const char* name, const char* options, bool absolute_path) {
-  _agentList.add(new AgentLibrary(name, options, absolute_path, nullptr, true));
-}
-
-// Late-binding agents not started via arguments
-void Arguments::add_loaded_agent(AgentLibrary *agentLib) {
-  _agentList.add(agentLib);
-}
 
 // Return TRUE if option matches 'property', or 'property=', or 'property.'.
 static bool matches_property_suffix(const char* option, const char* property, size_t len) {
@@ -558,8 +521,9 @@ static SpecialFlag const special_jvm_flags[] = {
   { "G1UseAdaptiveConcRefinement",  JDK_Version::undefined(), JDK_Version::jdk(20), JDK_Version::undefined() },
   { "G1ConcRefinementServiceIntervalMillis", JDK_Version::undefined(), JDK_Version::jdk(20), JDK_Version::undefined() },
 
-  { "G1ConcRSLogCacheSize",    JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::undefined() },
-  { "G1ConcRSHotCardLimit",   JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::undefined() },
+  { "G1UsePreventiveGC",            JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::jdk(22) },
+  { "G1ConcRSLogCacheSize",         JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::undefined() },
+  { "G1ConcRSHotCardLimit",         JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::undefined() },
 
 #ifdef ASSERT
   { "DummyObsoleteTestFlag",        JDK_Version::undefined(), JDK_Version::jdk(18), JDK_Version::undefined() },
@@ -2152,6 +2116,8 @@ jint Arguments::parse_vm_init_args(const JavaVMInitArgs *vm_options_args,
 
   os::init_container_support();
 
+  SystemMemoryBarrier::initialize();
+
   // Do final processing now that all arguments have been parsed
   result = finalize_vm_init_args(patch_mod_javabase);
   if (result != JNI_OK) {
@@ -2377,7 +2343,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
           return JNI_ERR;
         }
 #endif // !INCLUDE_JVMTI
-        add_init_library(name, options);
+        JvmtiAgentList::add_xrun(name, options, false);
         FREE_C_HEAP_ARRAY(char, name);
         FREE_C_HEAP_ARRAY(char, options);
       }
@@ -2449,7 +2415,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
           return JNI_ERR;
         }
 #endif // !INCLUDE_JVMTI
-        add_init_agent(name, options, is_absolute_path);
+        JvmtiAgentList::add(name, options, is_absolute_path);
         os::free(name);
         os::free(options);
       }
@@ -2464,8 +2430,9 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
         size_t length = strlen(tail) + 1;
         char *options = NEW_C_HEAP_ARRAY(char, length, mtArguments);
         jio_snprintf(options, length, "%s", tail);
-        add_instrument_agent("instrument", options, false);
+        JvmtiAgentList::add("instrument", options, false);
         FREE_C_HEAP_ARRAY(char, options);
+
         // java agents need module java.instrument
         if (!create_numbered_module_property("jdk.module.addmods", "java.instrument", addmods_count++)) {
           return JNI_ENOMEM;
@@ -3591,7 +3558,7 @@ static bool use_vm_log() {
   if (LogCompilation || !FLAG_IS_DEFAULT(LogFile) ||
       PrintCompilation || PrintInlining || PrintDependencies || PrintNativeNMethods ||
       PrintDebugInfo || PrintRelocations || PrintNMethods || PrintExceptionHandlers ||
-      PrintAssembly || TraceDeoptimization || TraceDependencies ||
+      PrintAssembly || TraceDeoptimization ||
       (VerifyDependencies && FLAG_IS_CMDLINE(VerifyDependencies))) {
     return true;
   }
@@ -4004,10 +3971,9 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
     FLAG_SET_DEFAULT(PrintNMTStatistics, false);
   }
 
-  if (TraceDependencies && VerifyDependencies) {
-    if (!FLAG_IS_DEFAULT(TraceDependencies)) {
-      warning("TraceDependencies results may be inflated by VerifyDependencies");
-    }
+  bool trace_dependencies = log_is_enabled(Debug, dependencies);
+  if (trace_dependencies && VerifyDependencies) {
+    warning("dependency logging results may be inflated by VerifyDependencies");
   }
 
   apply_debugger_ergo();
