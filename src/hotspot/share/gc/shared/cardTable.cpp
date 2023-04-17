@@ -73,8 +73,8 @@ CardTable::CardTable(MemRegion whole_heap) :
   _byte_map_size(0),
   _byte_map(nullptr),
   _byte_map_base(nullptr),
-  _covered(MemRegion::create_array(_max_covered_regions, mtGC)),
-  _committed(MemRegion::create_array(_max_covered_regions, mtGC)),
+  _covered(MemRegion::create_array(max_covered_regions, mtGC)),
+  _committed(MemRegion::create_array(max_covered_regions, mtGC)),
   _guard_region()
 {
   assert((uintptr_t(_whole_heap.start())  & (_card_size - 1))  == 0, "heap must start at card boundary");
@@ -82,8 +82,8 @@ CardTable::CardTable(MemRegion whole_heap) :
 }
 
 CardTable::~CardTable() {
-  MemRegion::destroy_array(_covered, _max_covered_regions);
-  MemRegion::destroy_array(_committed, _max_covered_regions);
+  MemRegion::destroy_array(_covered, max_covered_regions);
+  MemRegion::destroy_array(_committed, max_covered_regions);
 }
 
 void CardTable::initialize(void* region0_start, void* region1_start) {
@@ -126,7 +126,7 @@ void CardTable::initialize(void* region0_start, void* region1_start) {
 
   log_trace(gc, barrier)("CardTable::CardTable: ");
   log_trace(gc, barrier)("    &_byte_map[0]: " PTR_FORMAT "  &_byte_map[last_valid_index()]: " PTR_FORMAT,
-                  p2i(&_byte_map[0]), p2i(&_byte_map[last_valid_index()]));
+                         p2i(&_byte_map[0]), p2i(&_byte_map[last_valid_index()]));
   log_trace(gc, barrier)("    _byte_map_base: " PTR_FORMAT, p2i(_byte_map_base));
 }
 
@@ -150,13 +150,13 @@ void CardTable::initialize_covered_region(void* region0_start, void* region1_sta
 void CardTable::resize_covered_region(MemRegion new_region) {
   assert(UseSerialGC || UseParallelGC, "only these two collectors");
   assert(_whole_heap.contains(new_region),
-           "attempt to cover area not in reserved area");
+         "attempt to cover area not in reserved area");
   int idx = new_region.start() == _whole_heap.start() ? 0 : 1;
 
   assert(_covered[idx].start() != nullptr, "precondition");
   assert(_committed[idx].start() != nullptr, "precondition");
 
-  // We don't change the start of a region, only the end.
+  // We don't allow changes to the start of a region, only the end.
   assert(_covered[idx].start() == new_region.start(), "inv");
   assert(_committed[idx].start() == (HeapWord*)align_down(byte_for(new_region.start()), _page_size), "inv");
 
@@ -166,7 +166,7 @@ void CardTable::resize_covered_region(MemRegion new_region) {
   HeapWord* addr_r = (HeapWord*)align_up(byte_after(new_region.last()), _page_size);
 
   if (idx == 0) {
-    // in case the card for gen-boundary is not page-size aligned
+    // In case the card for gen-boundary is not page-size aligned, make sure to not uncommit it erroneously.
     addr_r = MIN2(addr_r, _committed[1].start());
   }
 
@@ -177,7 +177,7 @@ void CardTable::resize_covered_region(MemRegion new_region) {
   }
 
   if (new_committed.word_size() > _committed[idx].word_size()) {
-    // expand
+    // Expand.
     MemRegion delta = MemRegion(_committed[idx].end(),
                                 new_committed.word_size() - _committed[idx].word_size());
 
@@ -189,7 +189,7 @@ void CardTable::resize_covered_region(MemRegion new_region) {
 
     memset(delta.start(), clean_card, delta.byte_size());
   } else {
-    // shrink
+    // Shrink.
     MemRegion delta = MemRegion(new_committed.end(),
                                 _committed[idx].word_size() - new_committed.word_size());
     bool res = os::uncommit_memory((char*)delta.start(),
@@ -249,7 +249,7 @@ uintx CardTable::ct_max_alignment_constraint() {
 void CardTable::invalidate(MemRegion mr) {
   assert(align_down(mr.start(), HeapWordSize) == mr.start(), "Unaligned start");
   assert(align_up  (mr.end(),   HeapWordSize) == mr.end(),   "Unaligned end"  );
-  for (int i = 0; i < _max_covered_regions; i++) {
+  for (int i = 0; i < max_covered_regions; i++) {
     MemRegion mri = mr.intersection(_covered[i]);
     if (!mri.is_empty()) dirty_MemRegion(mri);
   }

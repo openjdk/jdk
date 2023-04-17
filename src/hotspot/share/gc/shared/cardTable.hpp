@@ -54,7 +54,7 @@ protected:
   // normally reserve space for such tables, and commit parts of the table
   // "covering" parts of the heap that are committed. At most one covered
   // region per generation is needed.
-  static constexpr int _max_covered_regions = 2;
+  static constexpr int max_covered_regions = 2;
 
   // The covered regions should be in address order.
   MemRegion* _covered;
