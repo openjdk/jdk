@@ -736,6 +736,9 @@ constructors in public and protected classes in exported packages.
 \f[V]options\f[R]: Warns about the issues relating to use of command
 line options.
 .IP \[bu] 2
+\f[V]output-file-clash\f[R]: Warns if any output file is overwritten during compilation.
+This can occur, for example, on case-insensitive filesystems.
+.IP \[bu] 2
 \f[V]overloads\f[R]: Warns about the issues related to method overloads.
 .IP \[bu] 2
 \f[V]overrides\f[R]: Warns about the issues related to method overrides.
@@ -775,6 +778,9 @@ instances of value-based classes.
 .IP \[bu] 2
 \f[V]text-blocks\f[R]: Warns about inconsistent white space characters
 in text block indentation.
+.IP \[bu] 2
+\f[V]this-escape\f[R]: Warns about constructors leaking
+\f[V]this\f[R] prior to subclass initialization.
 .IP \[bu] 2
 \f[V]try\f[R]: Warns about the issues relating to the use of try blocks
 (that is, try-with-resources).
@@ -2211,6 +2217,48 @@ To resolve this issue, you can call the \f[V]static\f[R] method
 .PP
 Alternately, you can remove the \f[V]static\f[R] keyword from the
 declaration of the method \f[V]m1\f[R].
+.RE
+.TP
+\f[V]this\-escape\f[R]
+Warns about constructors leaking \f[V]this\f[R] prior to subclass
+initialization.
+For example, this class:
+.RS
+.IP
+.nf
+\f[CB]
+public class MyClass {
+  public MyClass() {
+    System.out.println(this.hashCode());
+  }
+}
+\f[R]
+.fi
+.PP
+generates the following warning:
+.IP
+.nf
+\f[CB]
+MyClass.java:3: warning: [this-escape] possible 'this' escape
+                         before subclass is fully initialized
+    System.out.println(this.hashCode());
+                                    ^
+\f[R]
+.fi
+.PP
+A 'this' escape warning is generated when a constructor does something
+that might result in a subclass method being invoked before the
+constructor returns.
+In such cases the subclass method would be operating on an incompletely
+initialized instance.
+In the above example, a subclass of \f[V]MyClass\f[R] that overrides
+\f[V]hashCode()\f[R] to incorporate its own fields would likely produce
+an incorrect result when invoked as shown.
+.PP
+Warnings are only generated if a subclass could exist that is outside
+of the current module (or package, if no module) being compiled.
+So, for example, constructors in final and non-public classes do not
+generate warnings.
 .RE
 .TP
 \f[V]try\f[R]

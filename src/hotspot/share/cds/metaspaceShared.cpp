@@ -560,7 +560,7 @@ void VM_PopulateDumpSharedSpace::doit() {
   }
 
   if (AllowArchivingWithJavaAgent) {
-    warning("This archive was created with AllowArchivingWithJavaAgent. It should be used "
+    log_warning(cds)("This archive was created with AllowArchivingWithJavaAgent. It should be used "
             "for testing purposes only and should not be used in a production environment");
   }
 
@@ -801,6 +801,7 @@ void MetaspaceShared::preload_and_dump_impl(TRAPS) {
   log_info(cds)("Rewriting and linking classes: done");
 
 #if INCLUDE_CDS_JAVA_HEAP
+  StringTable::allocate_shared_strings_array(CHECK);
   ArchiveHeapWriter::init();
   if (use_full_module_graph()) {
     HeapShared::reset_archived_object_states(CHECK);
@@ -941,7 +942,7 @@ void MetaspaceShared::initialize_runtime_shared_and_meta_spaces() {
   } else {
     set_shared_metaspace_range(nullptr, nullptr, nullptr);
     if (DynamicDumpSharedSpaces) {
-      warning("-XX:ArchiveClassesAtExit is unsupported when base CDS archive is not loaded. Run with -Xlog:cds for more info.");
+      log_warning(cds)("-XX:ArchiveClassesAtExit is unsupported when base CDS archive is not loaded. Run with -Xlog:cds for more info.");
     }
     UseSharedSpaces = false;
     // The base archive cannot be mapped. We cannot dump the dynamic shared archive.
@@ -1436,9 +1437,6 @@ void MetaspaceShared::initialize_shared_spaces() {
   intptr_t* array = (intptr_t*)buffer;
   ReadClosure rc(&array);
   serialize(&rc);
-
-  // Initialize the run-time symbol table.
-  SymbolTable::create_table();
 
   // Finish up archived heap initialization. These must be
   // done after ReadClosure.

@@ -52,12 +52,15 @@ class STWGCTimer;
 class DefNewGeneration: public Generation {
   friend class VMStructs;
 
-protected:
   Generation* _old_gen;
   uint        _tenuring_threshold;   // Tenuring threshold for next collection.
   AgeTable    _age_table;
   // Size of object to pretenure in words; command line provides bytes
   size_t      _pretenure_size_threshold_words;
+
+  // ("Weak") Reference processing support
+  SpanSubjectToDiscoveryClosure _span_based_discoverer;
+  ReferenceProcessor* _ref_processor;
 
   AgeTable*   age_table() { return &_age_table; }
 
@@ -161,6 +164,10 @@ protected:
                    const char* policy="Serial young collection pauses");
 
   virtual Generation::Name kind() { return Generation::DefNew; }
+
+  // allocate and initialize ("weak") refs processing support
+  void ref_processor_init();
+  ReferenceProcessor* const ref_processor() { return _ref_processor; }
 
   // Accessing spaces
   ContiguousSpace* eden() const           { return _eden_space; }

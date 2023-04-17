@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -189,6 +189,10 @@ AC_DEFUN([FLAGS_SETUP_WARNINGS],
       WARNINGS_ENABLE_ALL_CXXFLAGS="$WARNINGS_ENABLE_ALL_CFLAGS $WARNINGS_ENABLE_ADDITIONAL_CXX"
 
       DISABLED_WARNINGS="unused-parameter unused"
+      # gcc10/11 on ppc generate lots of abi warnings about layout of aggregates containing vectors
+      if test "x$OPENJDK_TARGET_CPU_ARCH" = "xppc"; then
+        DISABLED_WARNINGS="$DISABLED_WARNINGS psabi"
+      fi
       ;;
 
     clang)
@@ -633,7 +637,7 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
   STATIC_LIBS_CFLAGS="-DSTATIC_BUILD=1"
   if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang; then
     STATIC_LIBS_CFLAGS="$STATIC_LIBS_CFLAGS -ffunction-sections -fdata-sections \
-      -DJNIEXPORT='__attribute__((visibility(\"hidden\")))'"
+      -DJNIEXPORT='__attribute__((visibility(\"default\")))'"
   else
     STATIC_LIBS_CFLAGS="$STATIC_LIBS_CFLAGS -DJNIEXPORT="
   fi

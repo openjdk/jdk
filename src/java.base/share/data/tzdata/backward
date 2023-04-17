@@ -297,6 +297,7 @@ Link	America/Argentina/Cordoba	America/Rosario
 Link	America/Tijuana		America/Santa_Isabel
 Link	America/Denver		America/Shiprock
 Link	America/Toronto		America/Thunder_Bay
+Link	America/Edmonton	America/Yellowknife
 Link	Pacific/Auckland	Antarctica/South_Pole
 Link	Asia/Shanghai		Asia/Chongqing
 Link	Asia/Shanghai		Asia/Harbin
