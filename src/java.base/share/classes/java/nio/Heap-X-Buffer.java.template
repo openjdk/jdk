@@ -311,6 +311,16 @@ class Heap$Type$Buffer$RW$
 
     public $Type$Buffer append(CharSequence csq) {
 #if[rw]
+        //
+        // No special casing of String here as the implementation of
+        // append(String) in the base class uses put(String) which is
+        // already using getChars().
+        //
+        // No special casing of StringBuffer as it is uninteresting
+        // legacy code superseded by StringBuilder. Also as it caches
+        // the String value little difference is observed in the
+        // microbenchmark.
+        //
         if (csq instanceof StringBuilder)
             return appendChars(csq, 0, csq.length());
 
