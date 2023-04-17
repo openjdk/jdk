@@ -79,7 +79,7 @@ public class TextAreaTest extends AbstractSwingTest {
 
    private void loadBundle() {
        ResourceBundle bundle = ResourceBundle.getBundle("resources.TextAreaTest");
-       DISPLAY_STRING =  bundle.getString("DisplayString");
+       DISPLAY_STRING = bundle.getString("DisplayString");
    }
 
 
@@ -121,7 +121,7 @@ class TextAppender implements Runnable {
     String appendString;
 
     public TextAppender(JTextArea textArea, String appendThis) {
-        area =  textArea;
+        area = textArea;
         appendString = appendThis;
     }
 

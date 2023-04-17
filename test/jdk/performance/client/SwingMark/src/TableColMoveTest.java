@@ -91,7 +91,7 @@ class TableColMover implements Runnable {
     JTable table;
 
     public TableColMover(JTable table) {
-        this.table =  table;
+        this.table = table;
     }
 
     public void run() {

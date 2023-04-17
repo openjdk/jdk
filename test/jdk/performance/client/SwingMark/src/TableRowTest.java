@@ -83,7 +83,7 @@ public class TableRowTest extends AbstractSwingTest {
 
     private void loadBundle() {
       ResourceBundle bundle = ResourceBundle.getBundle("resources.TableRowTest");
-      data =  (Object[][])bundle.getObject("TableData");
+      data = (Object[][])bundle.getObject("TableData");
     }
 
     public String getTestName() {
@@ -163,7 +163,7 @@ class TableScroller implements Runnable {
 
 
     public TableScroller(JTable tableToScroll, int scrollBy, int selectionMode) {
-        table =  tableToScroll;
+        table = tableToScroll;
         scrollAmount = scrollBy;
         table.setSelectionMode( selectionMode);
     }
@@ -179,7 +179,7 @@ class TableScroller implements Runnable {
                 break;
             case ListSelectionModel.SINGLE_INTERVAL_SELECTION:
                 currentRowSelection = Math.min(currentRowSelection, table.getRowCount()-1);
-                int maxRow =  table.getRowCount()-1;
+                int maxRow = table.getRowCount()-1;
                 table.addRowSelectionInterval(currentRowSelection,
                            Math.min(currentRowSelection+5, maxRow));
                 currentRowSelection++;
@@ -210,7 +210,7 @@ class TableRowAdder implements Runnable {
 
 
     public TableRowAdder(JTable table, Object[][] data, boolean add) {
-        this.table =  table;
+        this.table = table;
         this.data = data;
         this.add = add;
     }

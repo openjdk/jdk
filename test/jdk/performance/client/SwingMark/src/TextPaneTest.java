@@ -99,7 +99,7 @@ public class TextPaneTest extends AbstractSwingTest {
         String appendString;
 
         public TextAppender(JTextPane textArea, String appendThis) {
-            area =  textArea;
+            area = textArea;
             appendString = appendThis;
         }
 

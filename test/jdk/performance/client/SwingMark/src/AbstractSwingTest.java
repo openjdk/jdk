@@ -132,7 +132,7 @@ public abstract class AbstractSwingTest {
 
             if (test.getPaintCount() > 0) {
                System.out.println("Called Paint: " + test.getPaintCount() + " times");
-            }  else {
+            } else {
                System.out.println("Painting calls not counted.");
             }
 

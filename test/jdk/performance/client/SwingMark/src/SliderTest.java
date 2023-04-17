@@ -100,7 +100,7 @@ class SliderInc implements Runnable {
     int incAmount = 1;
 
     public SliderInc(JSlider sliderToIncrement, int incrementBy) {
-        slider =  sliderToIncrement;
+        slider = sliderToIncrement;
         incAmount = incrementBy;
     }
 

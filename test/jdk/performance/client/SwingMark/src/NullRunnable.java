@@ -35,7 +35,7 @@
   * @see SwingMarkPanel#runTests
   */
 
-class NullRunnable implements Runnable  {
+class NullRunnable implements Runnable {
    static NullRunnable singleton = new NullRunnable();
    public void run() {
    }

@@ -125,7 +125,7 @@ public class AdvancedTextAreaTest extends AbstractSwingTest {
 
 
         public TextAppender(JTextArea textArea, String appendThis) {
-            area =  textArea;
+            area = textArea;
             appendString = appendThis;
         }
 
@@ -138,7 +138,7 @@ public class AdvancedTextAreaTest extends AbstractSwingTest {
         JTextArea area;
 
         public TextCutter(JTextArea textArea) {
-            area =  textArea;
+            area = textArea;
         }
 
         public void run() {
@@ -150,7 +150,7 @@ public class AdvancedTextAreaTest extends AbstractSwingTest {
         JTextArea area;
 
         public TextCopier(JTextArea textArea) {
-                area =  textArea;
+                area = textArea;
         }
 
         public void run() {
@@ -166,7 +166,7 @@ public class AdvancedTextAreaTest extends AbstractSwingTest {
 
         @SuppressWarnings("deprecation")
         public TextFontSetter(JTextArea textArea) {
-            area =  textArea;
+            area = textArea;
             random = new Random();
             fonts = Toolkit.getDefaultToolkit().getFontList();
         }
@@ -185,7 +185,7 @@ public class AdvancedTextAreaTest extends AbstractSwingTest {
         JTextArea area;
 
         public TextPaster(JTextArea textArea) {
-            area =  textArea;
+            area = textArea;
         }
 
         public void run() {
@@ -200,7 +200,7 @@ public class AdvancedTextAreaTest extends AbstractSwingTest {
         Random random;
 
         public TextSelector(JTextArea textArea) {
-            area =  textArea;
+            area = textArea;
             random = new Random();
         }
 
@@ -229,7 +229,7 @@ public class AdvancedTextAreaTest extends AbstractSwingTest {
         Random random;
 
         public CaretSetter(JTextArea textArea) {
-            area =  textArea;
+            area = textArea;
             random = new Random();
         }
 

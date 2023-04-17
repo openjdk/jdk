@@ -111,7 +111,7 @@ class LabelChanger implements Runnable {
 
 
    public LabelChanger(JLabel[] labelsToChange) {
-      labels =  labelsToChange;
+      labels = labelsToChange;
    }
 
    public void setColor(Color newColor) {

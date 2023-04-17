@@ -51,7 +51,7 @@ public class ListTest extends AbstractSwingTest {
     public JComponent getTestComponent() {
         loadBundle();
         JPanel panel = new JPanel();
-        String[] list1Data =  new String[list1ItemCount];
+        String[] list1Data = new String[list1ItemCount];
         for ( int i = 0; i < list1ItemCount; i++) {
            list1Data[i] = DISPLAY_STRING+" " + i;
         }
@@ -66,7 +66,7 @@ public class ListTest extends AbstractSwingTest {
 
      private void loadBundle() {
          ResourceBundle bundle = ResourceBundle.getBundle("resources.ListTest");
-         DISPLAY_STRING =  bundle.getString("DisplayString");
+         DISPLAY_STRING = bundle.getString("DisplayString");
      }
 
      public String getTestName() {
@@ -113,7 +113,7 @@ class ListScroller implements Runnable {
 
 
    public ListScroller(JList listToScroll, int scrollBy) {
-      list =  listToScroll;
+      list = listToScroll;
       scrollAmount = scrollBy;
    }
 

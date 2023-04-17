@@ -84,7 +84,7 @@ public class TableColTest extends AbstractSwingTest {
       // remove column
       System.out.println("1)Removing Columns");
       TableColAdder colRemover = new TableColAdder(currentTable,false);
-      while(currentTable.getColumnCount() > 0 )  {
+      while(currentTable.getColumnCount() > 0 ) {
         try {
             SwingUtilities.invokeAndWait(colRemover);
         } catch (Exception e) {System.out.println(e);}
