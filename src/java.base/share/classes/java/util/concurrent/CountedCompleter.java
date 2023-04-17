@@ -744,7 +744,7 @@ public abstract class CountedCompleter<T> extends ForkJoinTask<T> {
      * Supports ForkJoinTask exception propagation.
      */
     @Override
-    final void onFJTExceptionSet(Throwable ex) {
+    final void onAuxExceptionSet(Throwable ex) {
         CountedCompleter<?> a = this, p = a;
         do {} while (a.onExceptionalCompletion(ex, p) &&
                      (a = (p = a).completer) != null &&
