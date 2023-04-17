@@ -1132,18 +1132,17 @@ final class $vectortype$ extends $abstractvectortype$ {
             toBitsVector().intoArray(a, offset);
 #end[intOrFloat]
 #if[longOrDouble]
-#if[!1L]
-            VectorSpecies<Integer> species = VectorSpecies.of(
-                    int.class,
-                    VectorShape.forBitSize(length() * Integer.SIZE));
-            Vector<Long> v = toBitsVector();
-            v.convertShape(VectorOperators.L2I, species, 0)
-                    .reinterpretAsInts()
-                    .intoArray(a, offset);
-#end[!1L]
-#if[1L]
-            a[offset] = laneSource(0);
-#end[1L]
+            if (VSPECIES.laneCount() == 1) {
+                a[offset] = laneSource(0);
+            } else {
+                VectorSpecies<Integer> species = VectorSpecies.of(
+                        int.class,
+                        VectorShape.forBitSize(length() * Integer.SIZE));
+                Vector<Long> v = toBitsVector();
+                v.convertShape(VectorOperators.L2I, species, 0)
+                        .reinterpretAsInts()
+                        .intoArray(a, offset);
+            }
 #end[longOrDouble]
         }
 

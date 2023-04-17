@@ -802,13 +802,17 @@ final class DoubleMaxVector extends DoubleVector {
         @Override
         @ForceInline
         public void intoArray(int[] a, int offset) {
-            VectorSpecies<Integer> species = VectorSpecies.of(
-                    int.class,
-                    VectorShape.forBitSize(length() * Integer.SIZE));
-            Vector<Long> v = toBitsVector();
-            v.convertShape(VectorOperators.L2I, species, 0)
-                    .reinterpretAsInts()
-                    .intoArray(a, offset);
+            if (VSPECIES.laneCount() == 1) {
+                a[offset] = laneSource(0);
+            } else {
+                VectorSpecies<Integer> species = VectorSpecies.of(
+                        int.class,
+                        VectorShape.forBitSize(length() * Integer.SIZE));
+                Vector<Long> v = toBitsVector();
+                v.convertShape(VectorOperators.L2I, species, 0)
+                        .reinterpretAsInts()
+                        .intoArray(a, offset);
+            }
         }
 
         private static long[] prepare(int[] indices, int offset) {
