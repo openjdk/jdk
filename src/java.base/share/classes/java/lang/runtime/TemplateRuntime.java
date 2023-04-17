@@ -202,6 +202,8 @@ public final class TemplateRuntime {
      * @param values    array of expression values
      *
      * @return result of processing the string template
+     *
+     * @throws Throwable when {@link Processor#process(StringTemplate)} throws
      */
     private static Object defaultProcess(
             List<String> fragments,

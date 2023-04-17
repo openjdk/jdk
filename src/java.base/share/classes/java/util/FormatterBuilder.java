@@ -375,6 +375,9 @@ final class FormatterBuilder {
                             insertArguments(FIHexadecimal_MH, 0, zeroPad, hasPrefix));
                 }
             }
+            default -> {
+                // pass thru
+            }
         }
 
         if (handled) {

@@ -522,7 +522,7 @@ final class StringConcatHelper {
     /*
      * Initialize after phase1.
      */
-    static class LateInit {
+    private static class LateInit {
         static final MethodHandle GETCHAR_LATIN1_MH;
 
         static final MethodHandle GETCHAR_UTF16_MH;
