@@ -28,21 +28,27 @@ import java.util.concurrent.CountDownLatch;
 /**
  * @test
  * @bug 6995195
- * @summary Verify that concurrent classloading of GraphicsPrimitiveMgr and Blit doesn't deadlock
+ * @summary Verify that concurrent classloading of GraphicsPrimitiveMgr
+ *          and Blit doesn't deadlock
  * @run main/othervm/timeout=20 GraphicsPrimitiveMgrTest
  */
 public class GraphicsPrimitiveMgrTest {
 
     private static volatile CountDownLatch latch;
 
-    public static void main(final String[] args) throws ClassNotFoundException, InterruptedException {
+    private static final String C1 = "sun.java2d.loops.GraphicsPrimitiveMgr";
+    private static final String C2 = "sun.java2d.loops.Blit";
+
+    public static void main(final String[] args)
+        throws ClassNotFoundException, InterruptedException
+    {
         // force loading awt library
         Class.forName("java.awt.Toolkit");
 
         latch = new CountDownLatch(2);
 
-        Thread t1 = new Thread(() -> loadClass("sun.java2d.loops.GraphicsPrimitiveMgr"));
-        Thread t2 = new Thread(() -> loadClass("sun.java2d.loops.Blit"));
+        Thread t1 = new Thread(() -> loadClass(C1));
+        Thread t2 = new Thread(() -> loadClass(C2));
 
         t1.start();
         t2.start();
