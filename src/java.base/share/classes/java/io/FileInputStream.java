@@ -42,7 +42,7 @@ import sun.nio.ch.FileChannelImpl;
  *
  * @apiNote
  * The {@link #close} method should be called to release resources used by this
- * stream, either directly, or by try-with-resources.
+ * stream, either directly, or with the {@code try}-with-resources statement.
  *
  * @implSpec
  * Subclasses are responsible for the cleanup of resources acquired by the subclass.
