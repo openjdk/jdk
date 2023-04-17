@@ -275,7 +275,9 @@ public interface SortedSet<E> extends Set<E>, SequencedSet<E> {
      * @throws UnsupportedOperationException always
      * @since 21
      */
-    default void addFirst(E e) { throw new UnsupportedOperationException(); }
+    default void addFirst(E e) {
+        throw new UnsupportedOperationException();
+    }
 
     /**
      * Throws {@code UnsupportedOperationException}. The encounter order induced by this
@@ -288,22 +290,42 @@ public interface SortedSet<E> extends Set<E>, SequencedSet<E> {
      * @throws UnsupportedOperationException always
      * @since 21
      */
-    default void addLast(E e) { throw new UnsupportedOperationException(); }
+    default void addLast(E e) {
+        throw new UnsupportedOperationException();
+    }
 
     /**
      * {@inheritDoc}
+     *
+     * @implSpec
+     * The implementation in this class returns the result of calling the {@code first} method.
+     *
      * @since 21
      */
-    default E getFirst() { return this.first(); }
+    default E getFirst() {
+        return this.first();
+    }
 
     /**
      * {@inheritDoc}
+     *
+     * @implSpec
+     * The implementation in this class returns the result of calling the {@code last} method.
+     *
      * @since 21
      */
-    default E getLast() { return this.last(); }
+    default E getLast() {
+        return this.last();
+    }
 
     /**
      * {@inheritDoc}
+     *
+     * @implSpec
+     * The implementation in this class calls the {@code first} method to obtain the first
+     * element, then it calls {@code remove(element)} to remove the element, and then it returns
+     * the element.
+     *
      * @since 21
      */
     default E removeFirst() {
@@ -314,6 +336,12 @@ public interface SortedSet<E> extends Set<E>, SequencedSet<E> {
 
     /**
      * {@inheritDoc}
+     *
+     * @implSpec
+     * The implementation in this class calls the {@code last} method to obtain the last
+     * element, then it calls {@code remove(element)} to remove the element, and then it returns
+     * the element.
+     *
      * @since 21
      */
     default E removeLast() {

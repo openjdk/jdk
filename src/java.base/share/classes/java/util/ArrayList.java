@@ -443,11 +443,11 @@ public class ArrayList<E> extends AbstractList<E>
      * {@inheritDoc}
      */
     public E getLast() {
-        int sz = size;
-        if (sz == 0) {
+        int last = size - 1;
+        if (last < 0) {
             throw new NoSuchElementException();
         } else {
-            return elementData(sz - 1);
+            return elementData(last);
         }
     }
 
@@ -565,14 +565,13 @@ public class ArrayList<E> extends AbstractList<E>
      * {@inheritDoc}
      */
     public E removeLast() {
-        int sz = size;
-        if (sz == 0) {
+        int last = size - 1;
+        if (last < 0) {
             throw new NoSuchElementException();
         } else {
             Object[] es = elementData;
-            sz--;
-            @SuppressWarnings("unchecked") E oldValue = (E) es[sz];
-            fastRemove(es, sz);
+            @SuppressWarnings("unchecked") E oldValue = (E) es[last];
+            fastRemove(es, last);
             return oldValue;
         }
     }

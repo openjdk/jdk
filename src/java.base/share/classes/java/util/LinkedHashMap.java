@@ -61,7 +61,7 @@ import java.util.function.Function;
  * order they were presented.)
  *
  * <p>A special {@link #LinkedHashMap(int,float,boolean) constructor} is
- * provided to create a linked hash map whose order of iteration is the order
+ * provided to create a linked hash map whose encounter order is the order
  * in which its entries were last accessed, from least-recently accessed to
  * most-recently (<i>access-order</i>).  This kind of map is well-suited to
  * building LRU caches.  Invoking the {@code put}, {@code putIfAbsent},
@@ -72,8 +72,12 @@ import java.util.function.Function;
  * of the entry if the value is replaced.  The {@code putAll} method generates one
  * entry access for each mapping in the specified map, in the order that
  * key-value mappings are provided by the specified map's entry set iterator.
- * <i>No other methods generate entry accesses.</i>  In particular, operations
- * on collection-views do <i>not</i> affect the order of iteration of the
+ * <i>No other methods generate entry accesses.</i> Invoking these methods on the
+ * reversed view generates accesses to entries on the backing map. Note that in the
+ * reversed view, an access to an entry moves it first in encounter order.
+ * Explicit-positioning methods such as {@code putFirst} or {@code lastEntry}
+ * do not generate entry accesses. Operations on the {@code keySet}, {@code values},
+ * and {@code entrySet} views do <i>not</i> affect the encounter order of the
  * backing map.
  *
  * <p>The {@link #removeEldestEntry(Map.Entry)} method may be overridden to

@@ -784,54 +784,94 @@ public interface List<E> extends SequencedCollection<E> {
 
     /**
      * {@inheritDoc}
+     *
+     * @implSpec
+     * The implementation in this class calls {@code add(0, e)}.
+     *
      * @since 21
      */
-    default void addFirst(E e) { this.add(0, e); }
+    default void addFirst(E e) {
+        this.add(0, e);
+    }
 
     /**
      * {@inheritDoc}
+     *
+     * @implSpec
+     * The implementation in this class calls {@code add(e)}.
+     *
      * @since 21
      */
-    default void addLast(E e) { this.add(e); }
+    default void addLast(E e) {
+        this.add(e);
+    }
 
     /**
      * {@inheritDoc}
+     *
+     * @implSpec
+     * If this List is not empty, the implementation in this class returns the result
+     * of calling {@code get(0)}. Otherwise, it throws {@code NoSuchElementException}.
+     *
      * @since 21
      */
     default E getFirst() {
-        if (this.isEmpty())
+        if (this.isEmpty()) {
             throw new NoSuchElementException();
-        return this.get(0);
+        } else {
+            return this.get(0);
+        }
     }
 
     /**
      * {@inheritDoc}
+     *
+     * @implSpec
+     * If this List is not empty, the implementation in this class returns the result
+     * of calling {@code get(size() - 1)}. Otherwise, it throws {@code NoSuchElementException}.
+     *
      * @since 21
      */
     default E getLast() {
-        if (this.isEmpty())
+        if (this.isEmpty()) {
             throw new NoSuchElementException();
-        return this.get(this.size()-1);
+        } else {
+            return this.get(this.size() - 1);
+        }
     }
 
     /**
      * {@inheritDoc}
+     *
+     * @implSpec
+     * If this List is not empty, the implementation in this class returns the result
+     * of calling {@code remove(0)}. Otherwise, it throws {@code NoSuchElementException}.
+     *
      * @since 21
      */
     default E removeFirst() {
-        if (this.isEmpty())
+        if (this.isEmpty()) {
             throw new NoSuchElementException();
-        return this.remove(0);
+        } else {
+            return this.remove(0);
+        }
     }
 
     /**
      * {@inheritDoc}
+     *
+     * @implSpec
+     * If this List is not empty, the implementation in this class returns the result
+     * of calling {@code remove(size() - 1)}. Otherwise, it throws {@code NoSuchElementException}.
+     *
      * @since 21
      */
     default E removeLast() {
-        if (this.isEmpty())
+        if (this.isEmpty()) {
             throw new NoSuchElementException();
-        return this.remove(this.size()-1);
+        } else {
+            return this.remove(this.size() - 1);
+        }
     }
 
     /**

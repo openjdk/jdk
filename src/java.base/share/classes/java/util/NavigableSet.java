@@ -323,6 +323,40 @@ public interface NavigableSet<E> extends SortedSet<E> {
 
     /**
      * {@inheritDoc}
+     *
+     * @implSpec
+     * If this set is not empty, the implementation in this class returns the result of calling
+     * the {@code pollFirst} method. Otherwise, it throws {@code NoSuchElementException}.
+     *
+     * @since 21
+     */
+    default E removeFirst() {
+        if (this.isEmpty()) {
+            throw new NoSuchElementException();
+        } else {
+            return this.pollFirst();
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @implSpec
+     * If this set is not empty, the implementation in this class returns the result of calling
+     * the {@code pollLast} method. Otherwise, it throws {@code NoSuchElementException}.
+     *
+     * @since 21
+     */
+    default E removeLast() {
+        if (this.isEmpty()) {
+            throw new NoSuchElementException();
+        } else {
+            return this.pollLast();
+        }
+    }
+
+    /**
+     * {@inheritDoc}
      * <p>
      * This method is equivalent to {@link #descendingSet descendingSet}.
      *
