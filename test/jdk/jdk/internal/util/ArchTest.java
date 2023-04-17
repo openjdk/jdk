@@ -67,7 +67,7 @@ public class ArchTest {
             case "x86_64", "amd64" -> X64;
             case "x86", "i386" -> X86;
             case "aarch64" -> AARCH64;
-            case "riscv64" -> RISCV64;  // unverified
+            case "riscv64" -> RISCV64;
             case "s390x", "s390" -> S390;  // unverified
             case "ppc64", "ppc64le" -> PPC64;
             default -> OTHER;
