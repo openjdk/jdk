@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2022 Unicode, Inc.
+<!-- Copyright © 1991-2023 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -204,6 +204,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</monthWidth>
 					</monthContext>
 					<monthContext type="stand-alone">
+						<monthWidth type="abbreviated">
+							<month type="1">जनवरी</month>
+							<month type="2">फ़रवरी</month>
+							<month type="3">मार्च</month>
+							<month type="4">अप्रैल</month>
+							<month type="5">मे</month>
+							<month type="6">जून</month>
+							<month type="7">जुलाई</month>
+							<month type="8">अगस्त</month>
+							<month type="9">सतुंबर</month>
+							<month type="10">अकतुम्बर</month>
+							<month type="11">नवूमबर</month>
+							<month type="12">दसूमबर</month>
+						</monthWidth>
 						<monthWidth type="narrow">
 							<month type="1">ज</month>
 							<month type="2">फ़</month>
@@ -236,6 +250,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</months>
 				<days>
 					<dayContext type="format">
+						<dayWidth type="abbreviated">
+							<day type="sun">आथवार</day>
+							<day type="mon">चंदिरवार</day>
+							<day type="tue">बुवार</day>
+							<day type="wed">बोदवार</day>
+							<day type="thu">ब्रेसवार</day>
+							<day type="fri">जुम्मा</day>
+							<day type="sat">बटवार</day>
+						</dayWidth>
 						<dayWidth type="narrow">
 							<day type="sun">अ</day>
 							<day type="mon">च</day>
@@ -256,6 +279,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</dayWidth>
 					</dayContext>
 					<dayContext type="stand-alone">
+						<dayWidth type="abbreviated">
+							<day type="sun">आथवार</day>
+							<day type="mon">चंदिरवार</day>
+							<day type="tue">बुवार</day>
+							<day type="wed">बोदवार</day>
+							<day type="thu">ब्रेसवार</day>
+							<day type="fri">जुम्मा</day>
+							<day type="sat">बटवार</day>
+						</dayWidth>
 						<dayWidth type="narrow">
 							<day type="sun">अ</day>
 							<day type="mon">च</day>
@@ -283,6 +315,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<quarter type="2">Q2</quarter>
 							<quarter type="3">Q3</quarter>
 							<quarter type="4">Q4</quarter>
+						</quarterWidth>
+						<quarterWidth type="narrow">
+							<quarter type="1">1</quarter>
+							<quarter type="2">2</quarter>
+							<quarter type="3">3</quarter>
+							<quarter type="4">4</quarter>
 						</quarterWidth>
 						<quarterWidth type="wide">
 							<quarter type="1">1st सह माह</quarter>
@@ -323,6 +361,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<eras>
 					<eraNames>
 						<era type="0">ईसा ब्रोंठ</era>
+						<era type="0" alt="variant">BC</era>
 						<era type="1">ईस्वी</era>
 					</eraNames>
 					<eraAbbr>
@@ -606,6 +645,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<plusSign>+</plusSign>
 			<minusSign>-</minusSign>
 		</symbols>
+		<decimalFormats numberSystem="arabext">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern>#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
 		<decimalFormats numberSystem="latn">
 			<decimalFormatLength>
 				<decimalFormat>
@@ -613,6 +659,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</decimalFormat>
 			</decimalFormatLength>
 		</decimalFormats>
+		<scientificFormats numberSystem="arabext">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern>#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
 		<scientificFormats numberSystem="latn">
 			<scientificFormatLength>
 				<scientificFormat>
@@ -620,6 +673,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</scientificFormat>
 			</scientificFormatLength>
 		</scientificFormats>
+		<percentFormats numberSystem="arabext">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern>#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
 		<percentFormats numberSystem="latn">
 			<percentFormatLength>
 				<percentFormat>
@@ -627,12 +687,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</percentFormat>
 			</percentFormatLength>
 		</percentFormats>
+		<currencyFormats numberSystem="arabext">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern>¤#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
 		<currencyFormats numberSystem="latn">
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>¤#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
+			<unitPattern count="one">{0} {1}</unitPattern>
+			<unitPattern count="other">{0} {1}</unitPattern>
 		</currencyFormats>
 		<currencies>
 			<currency type="BRL">
@@ -708,5 +777,29 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	<personNames>
 		<nameOrderLocales order="givenFirst">und ks</nameOrderLocales>
 		<nameOrderLocales order="surnameFirst">ko si ta te vi yue zh</nameOrderLocales>
+		<sampleName item="nativeG">
+			<nameField type="given">ज़ेनडेया</nameField>
+		</sampleName>
+		<sampleName item="nativeGS">
+			<nameField type="given">आइरीन</nameField>
+		</sampleName>
+		<sampleName item="nativeGGS">
+			<nameField type="given">मेरी सू</nameField>
+		</sampleName>
+		<sampleName item="nativeFull">
+			<nameField type="given">बर्टराम विल्बरफोरस</nameField>
+		</sampleName>
+		<sampleName item="foreignG">
+			<nameField type="given">सिन्बाद</nameField>
+		</sampleName>
+		<sampleName item="foreignGS">
+			<nameField type="given">काथे</nameField>
+		</sampleName>
+		<sampleName item="foreignGGS">
+			<nameField type="given">ज़ाज़िलिया</nameField>
+		</sampleName>
+		<sampleName item="foreignFull">
+			<nameField type="given">एडा कारनीलिया</nameField>
+		</sampleName>
 	</personNames>
 </ldml>
