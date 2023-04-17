@@ -177,18 +177,18 @@ public class TestClassNameWarning extends TestRunner {
         ClassFile cf2 = new ClassFile(
                 cf.magic, cf.minor_version, cf.major_version, cf.constant_pool,
                 cf.access_flags,
-                cf.this_class,
+                0, // this_class,
                 cf.super_class, cf.interfaces, cf.fields, cf.methods, cf.attributes);
         new ClassWriter().write(cf2, Files.newOutputStream(classes.resolve("Z.class")));
 
         List<String> log = new JavapTask(tb)
                 .classpath(classes.toString())
                 .classes("Z")
-                .run()
+                .run(Task.Expect.FAIL, 1)
                 .writeAll()
                 .getOutputLines(Task.OutputKind.DIRECT);
 
-        checkOutput(log, true, "Warning:.*Z.class does not contain class Z");
+        checkOutput(log, true, "Error: error while reading constant pool for Z: Bad CP index: 0");
     }
 
     /**
