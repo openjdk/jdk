@@ -412,7 +412,7 @@ class StubGenerator: public StubCodeGenerator {
     __ stw(exception_line, in_bytes(JavaThread::exception_line_offset()), R16_thread);
 
     // complete return to VM
-    assert(StubRoutines::_call_stub_return_address != NULL, "must have been generated before");
+    assert(StubRoutines::_call_stub_return_address != nullptr, "must have been generated before");
 
     __ mtlr(R4_ARG2);
     // continue in call stub
@@ -2134,7 +2134,7 @@ class StubGenerator: public StubCodeGenerator {
 
     Label L_miss;
 
-    __ check_klass_subtype_fast_path(sub_klass, super_klass, temp, R0, &L_success, &L_miss, NULL,
+    __ check_klass_subtype_fast_path(sub_klass, super_klass, temp, R0, &L_success, &L_miss, nullptr,
                                      super_check_offset);
     __ check_klass_subtype_slow_path(sub_klass, super_klass, temp, R0, &L_success);
 
@@ -2412,15 +2412,15 @@ class StubGenerator: public StubCodeGenerator {
     // (2) src_pos must not be negative.
     // (3) dst_pos must not be negative.
     // (4) length  must not be negative.
-    // (5) src klass and dst klass should be the same and not NULL.
+    // (5) src klass and dst klass should be the same and not null.
     // (6) src and dst should be arrays.
     // (7) src_pos + length must not exceed length of src.
     // (8) dst_pos + length must not exceed length of dst.
     BLOCK_COMMENT("arraycopy initial argument checks");
 
-    __ cmpdi(CCR1, src, 0);      // if (src == NULL) return -1;
+    __ cmpdi(CCR1, src, 0);      // if (src == nullptr) return -1;
     __ extsw_(src_pos, src_pos); // if (src_pos < 0) return -1;
-    __ cmpdi(CCR5, dst, 0);      // if (dst == NULL) return -1;
+    __ cmpdi(CCR5, dst, 0);      // if (dst == nullptr) return -1;
     __ cror(CCR1, Assembler::equal, CCR0, Assembler::less);
     __ extsw_(dst_pos, dst_pos); // if (src_pos < 0) return -1;
     __ cror(CCR5, Assembler::equal, CCR0, Assembler::less);
@@ -4713,7 +4713,7 @@ class StubGenerator: public StubCodeGenerator {
 
     // nmethod entry barriers for concurrent class unloading
     BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
-    if (bs_nm != NULL) {
+    if (bs_nm != nullptr) {
       StubRoutines::ppc::_nmethod_entry_barrier            = generate_nmethod_entry_barrier();
     }
 

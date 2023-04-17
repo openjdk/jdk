@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,7 +98,7 @@ static BOOL inDoDragDropLoop;
 
 + (jint) scrollStateWithEvent: (NSEvent*) event {
 
-    if ([event type] != NSScrollWheel) {
+    if ([event type] != NSEventTypeScrollWheel) {
         return 0;
     }
 
@@ -126,7 +126,7 @@ static BOOL inDoDragDropLoop;
 }
 
 + (BOOL) hasPreciseScrollingDeltas: (NSEvent*) event {
-    return [event type] == NSScrollWheel
+    return [event type] == NSEventTypeScrollWheel
         && [event respondsToSelector:@selector(hasPreciseScrollingDeltas)]
         && [event hasPreciseScrollingDeltas];
 }

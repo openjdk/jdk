@@ -73,12 +73,12 @@ jfieldID mech_pHandleID;
 jclass jByteArrayClass;
 jclass jLongClass;
 
-JavaVM* jvm = NULL;
+JavaVM* jvm_j2pkcs11 = NULL;
 
 jboolean debug = 0;
 
 JNIEXPORT jint JNICALL DEF_JNI_OnLoad(JavaVM *vm, void *reserved) {
-    jvm = vm;
+    jvm_j2pkcs11 = vm;
     return JNI_VERSION_1_4;
 }
 

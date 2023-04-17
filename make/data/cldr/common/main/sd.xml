@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2022 Unicode, Inc.
+<!-- Copyright © 1991-2023 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -802,7 +802,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="TM">ترڪمانستان</territory>
 			<territory type="TN">تيونيسيا</territory>
 			<territory type="TO">ٽونگا</territory>
-			<territory type="TR">ترڪي</territory>
+			<territory type="TR">ترڪييي</territory>
 			<territory type="TT">ٽريني ڊيڊ ۽ ٽوباگو ٻيٽ</territory>
 			<territory type="TV">توالو</territory>
 			<territory type="TW">تائیوان</territory>
@@ -834,6 +834,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="ZW">زمبابوي</territory>
 			<territory type="ZZ">اڻڄاتل خطو</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">انگلينڊ</subdivision>
+			<subdivision type="gbsct">اسڪاٽلينڊ</subdivision>
+			<subdivision type="gbwls">ويلز</subdivision>
+		</subdivisions>
 		<variants>
 			<variant type="POSIX">ڪمپيوٽر</variant>
 		</variants>
@@ -1001,9 +1006,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -1011,9 +1022,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -1447,9 +1464,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -1457,9 +1480,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -1678,6 +1707,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="11">ماگھا</month>
 							<month type="12">ڦلگونا</month>
 						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1">1</month>
+							<month type="2">2</month>
+							<month type="3">3</month>
+							<month type="4">4</month>
+							<month type="5">5</month>
+							<month type="6">6</month>
+							<month type="7">7</month>
+							<month type="8">8</month>
+							<month type="9">9</month>
+							<month type="10">10</month>
+							<month type="11">11</month>
+							<month type="12">12</month>
+						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1">چئترا</month>
 							<month type="2">ويشاخ</month>
@@ -1747,6 +1790,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="11">ذوالقعد</month>
 							<month type="12">ذوالحجہ</month>
 						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1">1</month>
+							<month type="2">2</month>
+							<month type="3">3</month>
+							<month type="4">4</month>
+							<month type="5">5</month>
+							<month type="6">6</month>
+							<month type="7">7</month>
+							<month type="8">8</month>
+							<month type="9">9</month>
+							<month type="10">10</month>
+							<month type="11">11</month>
+							<month type="12">12</month>
+						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1">محرم</month>
 							<month type="2">صفر</month>
@@ -1763,6 +1820,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</monthWidth>
 					</monthContext>
 					<monthContext type="stand-alone">
+						<monthWidth type="abbreviated">
+							<month type="1">محرم</month>
+							<month type="2">صفر</month>
+							<month type="3">ربيع الاول</month>
+							<month type="4">ربیع الاخر</month>
+							<month type="5">جمادی الاول</month>
+							<month type="6">جمادي الاخر</month>
+							<month type="7">رجب</month>
+							<month type="8">شعبان</month>
+							<month type="9">رمضان</month>
+							<month type="10">شوال</month>
+							<month type="11">ذوالقعد</month>
+							<month type="12">ذوالحجہ</month>
+						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1">محرم</month>
 							<month type="2">صفر</month>
@@ -1779,6 +1850,232 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</monthWidth>
 					</monthContext>
 				</months>
+				<eras>
+					<eraNames>
+						<era type="0">AH</era>
+					</eraNames>
+					<eraNarrow>
+						<era type="0">AH</era>
+					</eraNarrow>
+				</eras>
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern>G y MMMM d, EEEE</pattern>
+							<datetimeSkeleton>GyMMMMEEEEd</datetimeSkeleton>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern>G y MMMM d</pattern>
+							<datetimeSkeleton>GyMMMMd</datetimeSkeleton>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern>G y MMM d</pattern>
+							<datetimeSkeleton>GyMMMd</datetimeSkeleton>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>GGGGG y-MM-dd</pattern>
+							<datetimeSkeleton>GGGGGyMMdd</datetimeSkeleton>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<dateTimeFormats>
+					<dateTimeFormatLength type="full">
+						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="long">
+						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="medium">
+						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="short">
+						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<availableFormats>
+						<dateFormatItem id="d">d</dateFormatItem>
+						<dateFormatItem id="E">ccc</dateFormatItem>
+						<dateFormatItem id="Ed">d, E</dateFormatItem>
+						<dateFormatItem id="Gy">G y</dateFormatItem>
+						<dateFormatItem id="GyMd">M/d/y GGGGG</dateFormatItem>
+						<dateFormatItem id="GyMMM">G y MMM</dateFormatItem>
+						<dateFormatItem id="GyMMMd">G y MMM d</dateFormatItem>
+						<dateFormatItem id="GyMMMEd">G y MMM d, E</dateFormatItem>
+						<dateFormatItem id="M">L</dateFormatItem>
+						<dateFormatItem id="Md">MM-dd</dateFormatItem>
+						<dateFormatItem id="MEd">MM-dd, E</dateFormatItem>
+						<dateFormatItem id="MMM">LLL</dateFormatItem>
+						<dateFormatItem id="MMMd">MMM d</dateFormatItem>
+						<dateFormatItem id="MMMEd">MMM d, E</dateFormatItem>
+						<dateFormatItem id="MMMMd">MMMM d</dateFormatItem>
+						<dateFormatItem id="y">G y</dateFormatItem>
+						<dateFormatItem id="yyyy">G y</dateFormatItem>
+						<dateFormatItem id="yyyyM">GGGGG y-MM</dateFormatItem>
+						<dateFormatItem id="yyyyMd">GGGGG y-MM-dd</dateFormatItem>
+						<dateFormatItem id="yyyyMEd">GGGGG y-MM-dd, E</dateFormatItem>
+						<dateFormatItem id="yyyyMMM">G y MMM</dateFormatItem>
+						<dateFormatItem id="yyyyMMMd">G y MMM d</dateFormatItem>
+						<dateFormatItem id="yyyyMMMEd">G y MMM d, E</dateFormatItem>
+						<dateFormatItem id="yyyyMMMM">G y MMMM</dateFormatItem>
+						<dateFormatItem id="yyyyQQQ">G y QQQ</dateFormatItem>
+						<dateFormatItem id="yyyyQQQQ">G y QQQQ</dateFormatItem>
+					</availableFormats>
+					<intervalFormats>
+						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
+						<intervalFormatItem id="Bh">
+							<greatestDifference id="B">h B – h B</greatestDifference>
+							<greatestDifference id="h">h – h B</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Bhm">
+							<greatestDifference id="B">h:mm B – h:mm B</greatestDifference>
+							<greatestDifference id="h">h:mm – h:mm B</greatestDifference>
+							<greatestDifference id="m">h:mm – h:mm B</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="d">
+							<greatestDifference id="d">d–d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Gy">
+							<greatestDifference id="G">G y – G y</greatestDifference>
+							<greatestDifference id="y">G y–y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyM">
+							<greatestDifference id="G">GGGGG y-MM – GGGGG y-MM</greatestDifference>
+							<greatestDifference id="M">GGGGG y-MM – y-MM</greatestDifference>
+							<greatestDifference id="y">GGGGG y-MM – y-MM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMd">
+							<greatestDifference id="d">GGGGG y-MM-dd – y-MM-dd</greatestDifference>
+							<greatestDifference id="G">GGGGG y-MM-dd – GGGGG y-MM-dd</greatestDifference>
+							<greatestDifference id="M">GGGGG y-MM-dd – y-MM-dd</greatestDifference>
+							<greatestDifference id="y">GGGGG y-MM-dd – y-MM-dd</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMEd">
+							<greatestDifference id="d">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
+							<greatestDifference id="G">GGGGG y-MM-dd, E – GGGGG y-MM-dd, E</greatestDifference>
+							<greatestDifference id="M">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
+							<greatestDifference id="y">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMM">
+							<greatestDifference id="G">G y MMM – G y MMM</greatestDifference>
+							<greatestDifference id="M">G y MMM–MMM</greatestDifference>
+							<greatestDifference id="y">G y MMM – y MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMd">
+							<greatestDifference id="d">G y MMM d–d</greatestDifference>
+							<greatestDifference id="G">G y MMM d – G y MMM d</greatestDifference>
+							<greatestDifference id="M">G y MMM d – MMM d</greatestDifference>
+							<greatestDifference id="y">G y MMM d – y MMM d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMEd">
+							<greatestDifference id="d">G y MMM d, E – MMM d, E</greatestDifference>
+							<greatestDifference id="G">G y MMM d, E – G y MMM d, E</greatestDifference>
+							<greatestDifference id="M">G y MMM d, E – MMM d, E</greatestDifference>
+							<greatestDifference id="y">G y MMM d, E – y MMM d, E</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="h">
+							<greatestDifference id="a">h a – h a</greatestDifference>
+							<greatestDifference id="h">h–h a</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="H">
+							<greatestDifference id="H">HH–HH</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hm">
+							<greatestDifference id="a">h:mm a – h:mm a</greatestDifference>
+							<greatestDifference id="h">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="m">h:mm–h:mm a</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hm">
+							<greatestDifference id="H">HH:mm–HH:mm</greatestDifference>
+							<greatestDifference id="m">HH:mm–HH:mm</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hmv">
+							<greatestDifference id="a">h:mm a – h:mm a v</greatestDifference>
+							<greatestDifference id="h">h:mm–h:mm a v</greatestDifference>
+							<greatestDifference id="m">h:mm–h:mm a v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hmv">
+							<greatestDifference id="H">HH:mm–HH:mm v</greatestDifference>
+							<greatestDifference id="m">HH:mm–HH:mm v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hv">
+							<greatestDifference id="a">h a – h a v</greatestDifference>
+							<greatestDifference id="h">h–h a v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hv">
+							<greatestDifference id="H">HH–HH v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="M">
+							<greatestDifference id="M">MM–MM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Md">
+							<greatestDifference id="d">MM-dd – MM-dd</greatestDifference>
+							<greatestDifference id="M">MM-dd – MM-dd</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MEd">
+							<greatestDifference id="d">MM-dd, E – MM-dd, E</greatestDifference>
+							<greatestDifference id="M">MM-dd, E – MM-dd, E</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMM">
+							<greatestDifference id="M">LLL–LLL</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMd">
+							<greatestDifference id="d">MMM d–d</greatestDifference>
+							<greatestDifference id="M">MMM d – MMM d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMEd">
+							<greatestDifference id="d">MMM d, E – MMM d, E</greatestDifference>
+							<greatestDifference id="M">MMM d, E – MMM d, E</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="y">
+							<greatestDifference id="y">G y–y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yM">
+							<greatestDifference id="M">GGGGG y-MM – y-MM</greatestDifference>
+							<greatestDifference id="y">GGGGG y-MM – y-MM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMd">
+							<greatestDifference id="d">GGGGG y-MM-dd – y-MM-dd</greatestDifference>
+							<greatestDifference id="M">GGGGG y-MM-dd – y-MM-dd</greatestDifference>
+							<greatestDifference id="y">GGGGG y-MM-dd – y-MM-dd</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMEd">
+							<greatestDifference id="d">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
+							<greatestDifference id="M">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
+							<greatestDifference id="y">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMM">
+							<greatestDifference id="M">G y MMM–MMM</greatestDifference>
+							<greatestDifference id="y">G y MMM – y MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMd">
+							<greatestDifference id="d">G y MMM d–d</greatestDifference>
+							<greatestDifference id="M">G y MMM d – MMM d</greatestDifference>
+							<greatestDifference id="y">G y MMM d – y MMM d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMEd">
+							<greatestDifference id="d">G y MMM d, E – MMM d, E</greatestDifference>
+							<greatestDifference id="M">G y MMM d, E – MMM d, E</greatestDifference>
+							<greatestDifference id="y">G y MMM d, E – y MMM d, E</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMM">
+							<greatestDifference id="M">G y MMMM–MMMM</greatestDifference>
+							<greatestDifference id="y">G y MMMM – y MMMM</greatestDifference>
+						</intervalFormatItem>
+					</intervalFormats>
+				</dateTimeFormats>
 			</calendar>
 		</calendars>
 		<fields>
@@ -1885,6 +2182,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="month-short">
 				<displayName>مهينو</displayName>
+				<relative type="-1">پوئين مهيني</relative>
+				<relative type="0">هن مهيني</relative>
+				<relative type="1">اڳين مهيني</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} مهينن ۾</relativeTimePattern>
 					<relativeTimePattern count="other">{0} مهينن ۾</relativeTimePattern>
@@ -1896,6 +2196,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="month-narrow">
 				<displayName>مهينو</displayName>
+				<relative type="-1">پوئين مهيني</relative>
+				<relative type="0">هن مهيني</relative>
+				<relative type="1">اڳين مهيني</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} مهينن ۾</relativeTimePattern>
 					<relativeTimePattern count="other">{0} مهينن ۾</relativeTimePattern>
@@ -1922,6 +2225,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="week-short">
 				<displayName>هفتو</displayName>
+				<relative type="-1">پوئين هفتي</relative>
+				<relative type="0">هن هفتي</relative>
+				<relative type="1">اڳين هفتي</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} هفتن ۾</relativeTimePattern>
 					<relativeTimePattern count="other">{0} هفتن ۾</relativeTimePattern>
@@ -1934,6 +2240,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="week-narrow">
 				<displayName>هفتو</displayName>
+				<relative type="-1">پوئين هفتي</relative>
+				<relative type="0">هن هفتي</relative>
+				<relative type="1">اڳين هفتي</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} هفتن ۾</relativeTimePattern>
 					<relativeTimePattern count="other">{0} هفتن ۾</relativeTimePattern>
@@ -1969,6 +2278,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="day-short">
 				<displayName>ڏينهن</displayName>
+				<relative type="-1">ڪل</relative>
+				<relative type="0">اڄ</relative>
+				<relative type="1">سڀاڻي</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} ڏينهن ۾</relativeTimePattern>
 					<relativeTimePattern count="other">{0} ڏينهن ۾</relativeTimePattern>
@@ -1980,6 +2292,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="day-narrow">
 				<displayName>ڏينهن</displayName>
+				<relative type="-1">ڪل</relative>
+				<relative type="0">اڄ</relative>
+				<relative type="1">سڀاڻي</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} ڏينهن ۾</relativeTimePattern>
 					<relativeTimePattern count="other">{0} ڏينهن ۾</relativeTimePattern>
@@ -3211,6 +3526,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="America/Hermosillo">
 				<exemplarCity>هرموسلو</exemplarCity>
+			</zone>
+			<zone type="America/Ciudad_Juarez">
+				<exemplarCity>سوڊيڊ جوريز</exemplarCity>
 			</zone>
 			<zone type="America/Mazatlan">
 				<exemplarCity>مزاٽلان</exemplarCity>
@@ -5843,6 +6161,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<compoundUnit type="10p-2">
 				<unitPrefixPattern>سينٽي{0}</unitPrefixPattern>
 			</compoundUnit>
+			<compoundUnit type="10p-3">
+				<unitPrefixPattern>m{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="10p-6">
 				<unitPrefixPattern>micro{0}</unitPrefixPattern>
 			</compoundUnit>
@@ -6223,6 +6544,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} ایمپئیر</unitPattern>
 			</unit>
 			<unit type="electric-milliampere">
+				<displayName>ملي ايمپئير</displayName>
 				<unitPattern count="one">{0} ملي ايمپئير</unitPattern>
 				<unitPattern count="other">{0} ملي ايمپئير</unitPattern>
 			</unit>
@@ -6352,8 +6674,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} ڊاٽس في انچ</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
+				<displayName>پڪسلز</displayName>
 				<unitPattern count="one">{0} dot</unitPattern>
 				<unitPattern count="other">{0} dots</unitPattern>
+			</unit>
+			<unit type="length-earth-radius">
+				<displayName>R⊕</displayName>
+				<unitPattern count="one">{0} R⊕</unitPattern>
+				<unitPattern count="other">{0} R⊕</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
 				<displayName>ڪلوميٽر</displayName>
@@ -6435,6 +6763,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} فلڪيات جا يونٽ</unitPattern>
 				<unitPattern count="other">{0} فلڪيات جا يونٽ</unitPattern>
 			</unit>
+			<unit type="length-furlong">
+				<displayName>fur</displayName>
+				<unitPattern count="one">{0} fur</unitPattern>
+				<unitPattern count="other">{0} fur</unitPattern>
+			</unit>
+			<unit type="length-fathom">
+				<displayName>fm</displayName>
+				<unitPattern count="one">{0} fth</unitPattern>
+				<unitPattern count="other">{0} fth</unitPattern>
+			</unit>
 			<unit type="length-nautical-mile">
 				<displayName>سمندري ميل</displayName>
 				<unitPattern count="one">{0} سمندري ميل</unitPattern>
@@ -6506,6 +6844,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>ٽن</displayName>
 				<unitPattern count="one">{0} ٽن</unitPattern>
 				<unitPattern count="other">{0} ٽن</unitPattern>
+			</unit>
+			<unit type="mass-stone">
+				<displayName>st</displayName>
+				<unitPattern count="one">{0} st</unitPattern>
+				<unitPattern count="other">{0} st</unitPattern>
 			</unit>
 			<unit type="mass-pound">
 				<displayName>پائونڊ</displayName>
@@ -6762,6 +7105,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} ايڪڙ فٽ</unitPattern>
 				<unitPattern count="other">{0} ايڪڙ فٽ</unitPattern>
 			</unit>
+			<unit type="volume-bushel">
+				<displayName>bu</displayName>
+				<unitPattern count="one">{0} bu</unitPattern>
+				<unitPattern count="other">{0} bu</unitPattern>
+			</unit>
 			<unit type="volume-gallon">
 				<displayName>گيلن</displayName>
 				<unitPattern count="one">{0} گيلن</unitPattern>
@@ -6813,6 +7161,41 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>بيريلز</displayName>
 				<unitPattern count="one">{0} بيريلز</unitPattern>
 				<unitPattern count="other">{0} بيريلز</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName>dstspn</displayName>
+				<unitPattern count="one">{0} dstspn</unitPattern>
+				<unitPattern count="other">{0} dstspn</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<displayName>dstspn Imp</displayName>
+				<unitPattern count="one">{0} dstspn Imp</unitPattern>
+				<unitPattern count="other">{0} dstspn Imp</unitPattern>
+			</unit>
+			<unit type="volume-drop">
+				<displayName>drop</displayName>
+				<unitPattern count="one">{0} drop</unitPattern>
+				<unitPattern count="other">{0} drop</unitPattern>
+			</unit>
+			<unit type="volume-dram">
+				<displayName>dram fluid</displayName>
+				<unitPattern count="one">{0} dram fl</unitPattern>
+				<unitPattern count="other">{0} dram fl</unitPattern>
+			</unit>
+			<unit type="volume-jigger">
+				<displayName>jigger</displayName>
+				<unitPattern count="one">{0} jigger</unitPattern>
+				<unitPattern count="other">{0} jigger</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<displayName>pinch</displayName>
+				<unitPattern count="one">{0} pinch</unitPattern>
+				<unitPattern count="other">{0} pinch</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName>qt Imp</displayName>
+				<unitPattern count="one">{0} qt Imp.</unitPattern>
+				<unitPattern count="other">{0} qt Imp.</unitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName>ڪارڊينل ڊائريڪشن</displayName>
@@ -7271,11 +7654,27 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} هرٽز</unitPattern>
 				<unitPattern count="other">{0} هرٽز</unitPattern>
 			</unit>
+			<unit type="graphics-em">
+				<unitPattern count="one">{0} em</unitPattern>
+				<unitPattern count="other">{0} em</unitPattern>
+			</unit>
 			<unit type="graphics-pixel">
 				<displayName>پڪسلز</displayName>
+				<unitPattern count="one">{0} px</unitPattern>
+				<unitPattern count="other">{0} px</unitPattern>
 			</unit>
 			<unit type="graphics-megapixel">
 				<displayName>ميگا پڪسلز</displayName>
+				<unitPattern count="one">{0} MP</unitPattern>
+				<unitPattern count="other">{0} MP</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-centimeter">
+				<unitPattern count="one">{0} ppcm</unitPattern>
+				<unitPattern count="other">{0} ppcm</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-inch">
+				<unitPattern count="one">{0} ppi</unitPattern>
+				<unitPattern count="other">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
 				<displayName>dpcm</displayName>
@@ -7286,6 +7685,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>dpi</displayName>
 				<unitPattern count="one">{0} dpi</unitPattern>
 				<unitPattern count="other">{0} dpi</unitPattern>
+			</unit>
+			<unit type="graphics-dot">
+				<displayName>پڪسلز</displayName>
+				<unitPattern count="one">{0} px</unitPattern>
+				<unitPattern count="other">{0} px</unitPattern>
+			</unit>
+			<unit type="length-earth-radius">
+				<unitPattern count="one">{0} R⊕</unitPattern>
+				<unitPattern count="other">{0} R⊕</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
 				<displayName>ڪلوميٽر</displayName>
@@ -7367,6 +7775,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} فلڪيات جا يونٽ</unitPattern>
 				<unitPattern count="other">{0} فلڪيات جا يونٽ</unitPattern>
 			</unit>
+			<unit type="length-furlong">
+				<unitPattern count="one">{0} fur</unitPattern>
+				<unitPattern count="other">{0} fur</unitPattern>
+			</unit>
+			<unit type="length-fathom">
+				<unitPattern count="one">{0} fth</unitPattern>
+				<unitPattern count="other">{0} fth</unitPattern>
+			</unit>
 			<unit type="length-nautical-mile">
 				<displayName>سمندري ميل</displayName>
 				<unitPattern count="one">{0} سمندري ميل</unitPattern>
@@ -7391,6 +7807,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>لڪس</displayName>
 				<unitPattern count="one">{0} lx</unitPattern>
 				<unitPattern count="other">{0} lx</unitPattern>
+			</unit>
+			<unit type="light-candela">
+				<unitPattern count="one">{0} cd</unitPattern>
+				<unitPattern count="other">{0} cd</unitPattern>
+			</unit>
+			<unit type="light-lumen">
+				<unitPattern count="one">{0} lm</unitPattern>
+				<unitPattern count="other">{0} lm</unitPattern>
 			</unit>
 			<unit type="light-solar-luminosity">
 				<displayName>سولر ليومينوسائيٽيز</displayName>
@@ -7423,6 +7847,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>ٽن</displayName>
 				<unitPattern count="one">{0} ٽن</unitPattern>
 				<unitPattern count="other">{0} ٽن</unitPattern>
+			</unit>
+			<unit type="mass-stone">
+				<unitPattern count="one">{0} st</unitPattern>
+				<unitPattern count="other">{0} st</unitPattern>
 			</unit>
 			<unit type="mass-pound">
 				<displayName>پائونڊ</displayName>
@@ -7520,6 +7948,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="pressure-atmosphere">
 				<unitPattern count="one">{0} atm</unitPattern>
 				<unitPattern count="other">{0} atm</unitPattern>
+			</unit>
+			<unit type="pressure-pascal">
+				<unitPattern count="one">{0} Pa</unitPattern>
+				<unitPattern count="other">{0} Pa</unitPattern>
 			</unit>
 			<unit type="pressure-hectopascal">
 				<unitPattern count="one">{0} hPa</unitPattern>
@@ -7664,6 +8096,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} ايڪڙ فٽ</unitPattern>
 				<unitPattern count="other">{0} ايڪڙ فٽ</unitPattern>
 			</unit>
+			<unit type="volume-bushel">
+				<unitPattern count="one">{0} bu</unitPattern>
+				<unitPattern count="other">{0} bu</unitPattern>
+			</unit>
 			<unit type="volume-gallon">
 				<displayName>گيلن</displayName>
 				<unitPattern count="one">{0} گيلن</unitPattern>
@@ -7716,6 +8152,34 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} bbl</unitPattern>
 				<unitPattern count="other">{0} bbl</unitPattern>
 			</unit>
+			<unit type="volume-dessert-spoon">
+				<unitPattern count="one">{0} dstspn</unitPattern>
+				<unitPattern count="other">{0} dstspn</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<unitPattern count="one">{0} dstspn Imp</unitPattern>
+				<unitPattern count="other">{0} dstspn Imp</unitPattern>
+			</unit>
+			<unit type="volume-drop">
+				<unitPattern count="one">{0} drop</unitPattern>
+				<unitPattern count="other">{0} drop</unitPattern>
+			</unit>
+			<unit type="volume-dram">
+				<unitPattern count="one">{0} dram fl</unitPattern>
+				<unitPattern count="other">{0} dram fl</unitPattern>
+			</unit>
+			<unit type="volume-jigger">
+				<unitPattern count="one">{0} jigger</unitPattern>
+				<unitPattern count="other">{0} jigger</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<unitPattern count="one">{0} pinch</unitPattern>
+				<unitPattern count="other">{0} pinch</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<unitPattern count="one">{0} qt Imp.</unitPattern>
+				<unitPattern count="other">{0} qt Imp.</unitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName>ڊائريڪشن</displayName>
 				<coordinateUnitPattern type="east">{0} اوڀر</coordinateUnitPattern>
@@ -7739,6 +8203,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</compoundUnit>
 			<compoundUnit type="10p-9">
 				<unitPrefixPattern>n{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-12">
+				<unitPrefixPattern>p{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p-15">
 				<unitPrefixPattern>f{0}</unitPrefixPattern>
@@ -7782,6 +8249,30 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<compoundUnit type="10p24">
 				<unitPrefixPattern>Y{0}</unitPrefixPattern>
 			</compoundUnit>
+			<compoundUnit type="1024p1">
+				<unitPrefixPattern>Ki{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p2">
+				<unitPrefixPattern>Mi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p3">
+				<unitPrefixPattern>Gi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p4">
+				<unitPrefixPattern>Ti{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p5">
+				<unitPrefixPattern>Pi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p6">
+				<unitPrefixPattern>Ei{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p7">
+				<unitPrefixPattern>Zi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p8">
+				<unitPrefixPattern>Yi{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
 			</compoundUnit>
@@ -7790,26 +8281,179 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<compoundUnitPattern1 count="one">{0}²</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other">{0}²</compoundUnitPattern1>
 			</compoundUnit>
+			<compoundUnit type="power3">
+				<compoundUnitPattern1>{0}³</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one">{0}³</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0}³</compoundUnitPattern1>
+			</compoundUnit>
 			<compoundUnit type="times">
 				<compoundUnitPattern>{0}⋅{1}</compoundUnitPattern>
 			</compoundUnit>
+			<unit type="angle-revolution">
+				<displayName>گردش</displayName>
+				<unitPattern count="one">{0} گردشون</unitPattern>
+				<unitPattern count="other">{0} گردشون</unitPattern>
+			</unit>
+			<unit type="angle-radian">
+				<unitPattern count="one">{0}رئڊ</unitPattern>
+				<unitPattern count="other">{0}رئڊ</unitPattern>
+			</unit>
+			<unit type="angle-degree">
+				<displayName>ڊگري</displayName>
+				<unitPattern count="one">{0} ڊگريز</unitPattern>
+				<unitPattern count="other">{0} ڊگريز</unitPattern>
+			</unit>
+			<unit type="angle-arc-minute">
+				<displayName>آرڪ منٽز</displayName>
+				<unitPattern count="one">{0} آرڪ منٽز</unitPattern>
+				<unitPattern count="other">{0} آرڪ منٽز</unitPattern>
+			</unit>
+			<unit type="angle-arc-second">
+				<displayName>آرڪ سيڪنڊز</displayName>
+				<unitPattern count="one">{0} آرڪ سيڪنڊز</unitPattern>
+				<unitPattern count="other">{0} آرڪ سيڪنڊز</unitPattern>
+			</unit>
+			<unit type="area-square-kilometer">
+				<displayName>اسڪوائر ڪلوميٽر</displayName>
+				<unitPattern count="one">{0} اسڪوائر ڪلوميٽر</unitPattern>
+				<unitPattern count="other">{0} اسڪوائر ڪلوميٽر</unitPattern>
+				<perUnitPattern>{0} اسڪوائر ڪلوميٽر</perUnitPattern>
+			</unit>
+			<unit type="area-hectare">
+				<displayName>هيڪٽر</displayName>
+				<unitPattern count="one">{0}ھيڪٽر</unitPattern>
+				<unitPattern count="other">{0}ھيڪٽر</unitPattern>
+			</unit>
+			<unit type="area-square-meter">
+				<displayName>اسڪوائر ميٽر</displayName>
+				<unitPattern count="one">{0}m²</unitPattern>
+				<unitPattern count="other">{0}m²</unitPattern>
+				<perUnitPattern>{0} في اسڪوائر ميٽر</perUnitPattern>
+			</unit>
+			<unit type="area-square-centimeter">
+				<displayName>اسڪوائر سينٽي ميٽر</displayName>
+				<unitPattern count="one">{0} اسڪوائر سينٽي ميٽر</unitPattern>
+				<unitPattern count="other">{0} اسڪوائر سينٽي ميٽر</unitPattern>
+				<perUnitPattern>{0} في اسڪوائر سينٽي ميٽر</perUnitPattern>
+			</unit>
+			<unit type="area-square-mile">
+				<displayName>اسڪوائر ميل</displayName>
+				<unitPattern count="one">{0} اسڪوائر ميل</unitPattern>
+				<unitPattern count="other">{0} اسڪوائر ميل</unitPattern>
+				<perUnitPattern>{0} في اسڪوائر ميل</perUnitPattern>
+			</unit>
+			<unit type="area-acre">
+				<displayName>ايڪڙ</displayName>
+				<unitPattern count="one">{0} ايڪڙ</unitPattern>
+				<unitPattern count="other">{0} ايڪڙ</unitPattern>
+			</unit>
+			<unit type="area-square-yard">
+				<displayName>اسڪوائر يارڊ</displayName>
+				<unitPattern count="one">{0} ااسڪوائر يارڊ</unitPattern>
+				<unitPattern count="other">{0} ااسڪوائر يارڊ</unitPattern>
+			</unit>
+			<unit type="area-square-foot">
+				<displayName>اسڪوائر فٽ</displayName>
+				<unitPattern count="one">{0} اسڪوائر فٽ</unitPattern>
+				<unitPattern count="other">{0} اسڪوائر فٽ</unitPattern>
+			</unit>
+			<unit type="area-square-inch">
+				<displayName>اسڪوائر انچ</displayName>
+				<unitPattern count="one">{0} اسڪوائر انچ</unitPattern>
+				<unitPattern count="other">{0} اسڪوائر انچ</unitPattern>
+				<perUnitPattern>{0} في اسڪوائر انچ</perUnitPattern>
+			</unit>
+			<unit type="area-dunam">
+				<displayName>دنام</displayName>
+				<unitPattern count="one">{0} دنام</unitPattern>
+				<unitPattern count="other">{0} دنام</unitPattern>
+			</unit>
+			<unit type="concentr-karat">
+				<displayName>قيراط</displayName>
+				<unitPattern count="one">{0} قيراط</unitPattern>
+				<unitPattern count="other">{0} قيراط</unitPattern>
+			</unit>
+			<unit type="concentr-milligram-ofglucose-per-deciliter">
+				<displayName>ملي گرامز في ڊيسي ليٽر</displayName>
+			</unit>
+			<unit type="concentr-millimole-per-liter">
+				<displayName>ملي مولز في ليٽر</displayName>
+				<unitPattern count="one">{0} ملي مولز في ليٽر</unitPattern>
+				<unitPattern count="other">{0} ملي مولز في ليٽر</unitPattern>
+			</unit>
 			<unit type="concentr-item">
 				<displayName>آئٽم</displayName>
+				<unitPattern count="one">{0} آئٽم</unitPattern>
+				<unitPattern count="other">{0} آئٽم</unitPattern>
 			</unit>
 			<unit type="concentr-percent">
 				<displayName>%</displayName>
 				<unitPattern count="one">{0}%</unitPattern>
 				<unitPattern count="other">{0}%</unitPattern>
 			</unit>
+			<unit type="concentr-permyriad">
+				<displayName>پيرمائيرڊ</displayName>
+			</unit>
+			<unit type="concentr-mole">
+				<displayName>مول</displayName>
+			</unit>
+			<unit type="consumption-liter-per-kilometer">
+				<displayName>ليٽرز في ڪلو ميٽر</displayName>
+			</unit>
 			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>L/100km</displayName>
 				<unitPattern count="one">{0} L/100km</unitPattern>
 				<unitPattern count="other">{0} L/100km</unitPattern>
 			</unit>
+			<unit type="consumption-mile-per-gallon">
+				<displayName>ميل في گيلن</displayName>
+			</unit>
+			<unit type="consumption-mile-per-gallon-imperial">
+				<displayName>ميل في امپيريل گيلن</displayName>
+			</unit>
+			<unit type="digital-gigabit">
+				<displayName>Gb</displayName>
+			</unit>
+			<unit type="digital-megabit">
+				<displayName>ميگا بٽ</displayName>
+				<unitPattern count="one">{0} ميگا بٽز</unitPattern>
+				<unitPattern count="other">{0} ميگا بٽز</unitPattern>
+			</unit>
+			<unit type="digital-kilobyte">
+				<displayName>ڪلو بائيٽ</displayName>
+				<unitPattern count="one">{0} ڪلو بائيٽ</unitPattern>
+				<unitPattern count="other">{0} ڪلو بائيٽز</unitPattern>
+			</unit>
+			<unit type="digital-kilobit">
+				<displayName>ڪلو بٽ</displayName>
+				<unitPattern count="one">{0} ڪلو بٽز</unitPattern>
+				<unitPattern count="other">{0} ڪلو بٽز</unitPattern>
+			</unit>
+			<unit type="digital-byte">
+				<displayName>بائيٽ</displayName>
+				<unitPattern count="one">{0} بائيٽ</unitPattern>
+				<unitPattern count="other">{0} بائيٽ</unitPattern>
+			</unit>
+			<unit type="digital-bit">
+				<displayName>بٽ</displayName>
+				<unitPattern count="one">{0} بٽ</unitPattern>
+				<unitPattern count="other">{0} بٽ</unitPattern>
+			</unit>
+			<unit type="duration-century">
+				<displayName>c</displayName>
+				<unitPattern count="one">{0} c</unitPattern>
+				<unitPattern count="other">{0} c</unitPattern>
+			</unit>
+			<unit type="duration-decade">
+				<displayName>ڏهاڪا</displayName>
+				<unitPattern count="one">{0} ڏهاڪو</unitPattern>
+				<unitPattern count="other">{0} ڏهاڪا</unitPattern>
+			</unit>
 			<unit type="duration-year">
 				<displayName>سال</displayName>
 				<unitPattern count="one">{0} سال</unitPattern>
 				<unitPattern count="other">{0} سال</unitPattern>
+				<perUnitPattern>{0} في سال</perUnitPattern>
 			</unit>
 			<unit type="duration-quarter">
 				<displayName>ٽه ماهي</displayName>
@@ -7821,42 +8465,135 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>مهينو</displayName>
 				<unitPattern count="one">{0} مهينا</unitPattern>
 				<unitPattern count="other">{0} مهينا</unitPattern>
+				<perUnitPattern>{0} في مهيني</perUnitPattern>
 			</unit>
 			<unit type="duration-week">
 				<displayName>هفتو</displayName>
 				<unitPattern count="one">{0} هفتا</unitPattern>
 				<unitPattern count="other">{0} هفتي</unitPattern>
+				<perUnitPattern>{0} في هفتي</perUnitPattern>
 			</unit>
 			<unit type="duration-day">
 				<displayName>ڏينهن</displayName>
 				<unitPattern count="one">{0} ڏينهن</unitPattern>
 				<unitPattern count="other">{0} ڏينهن</unitPattern>
+				<perUnitPattern>{0} في ڏينهن</perUnitPattern>
 			</unit>
 			<unit type="duration-hour">
 				<displayName>ڪلاڪ</displayName>
 				<unitPattern count="one">{0} ڪلاڪ</unitPattern>
 				<unitPattern count="other">{0} ڪلاڪ</unitPattern>
+				<perUnitPattern>{0} في ڪلاڪ</perUnitPattern>
 			</unit>
 			<unit type="duration-minute">
 				<displayName>منٽ</displayName>
 				<unitPattern count="one">{0} منٽ</unitPattern>
 				<unitPattern count="other">{0} منٽ</unitPattern>
+				<perUnitPattern>{0} في منٽ</perUnitPattern>
 			</unit>
 			<unit type="duration-second">
 				<displayName>سيڪنڊ</displayName>
 				<unitPattern count="one">{0} s</unitPattern>
 				<unitPattern count="other">{0} سيڪنڊ</unitPattern>
+				<perUnitPattern>{0} في سيڪنڊ</perUnitPattern>
 			</unit>
 			<unit type="duration-millisecond">
 				<displayName>ملي سيڪنڊ</displayName>
 				<unitPattern count="one">{0} ms</unitPattern>
 				<unitPattern count="other">{0} ms</unitPattern>
 			</unit>
+			<unit type="duration-microsecond">
+				<displayName>مائڪرو سيڪنڊ</displayName>
+				<unitPattern count="one">{0} مائڪرو سيڪنڊ</unitPattern>
+				<unitPattern count="other">{0} مائڪرو سيڪنڊ</unitPattern>
+			</unit>
+			<unit type="duration-nanosecond">
+				<displayName>نينو سيڪنڊ</displayName>
+				<unitPattern count="one">{0} نينو سيڪنڊ</unitPattern>
+				<unitPattern count="other">{0} نينو سيڪنڊ</unitPattern>
+			</unit>
+			<unit type="electric-ampere">
+				<displayName>ایمپئیر</displayName>
+				<unitPattern count="one">{0} ایمپئیر</unitPattern>
+				<unitPattern count="other">{0} ایمپئیر</unitPattern>
+			</unit>
+			<unit type="electric-milliampere">
+				<displayName>ملي ايمپئير</displayName>
+				<unitPattern count="one">{0} ملي ايمپيئر</unitPattern>
+				<unitPattern count="other">{0} ملي ايمپيئر</unitPattern>
+			</unit>
+			<unit type="electric-ohm">
+				<displayName>اوهمس</displayName>
+			</unit>
+			<unit type="electric-volt">
+				<displayName>وولٽ</displayName>
+				<unitPattern count="one">{0} وولٽ</unitPattern>
+				<unitPattern count="other">{0} وولٽ</unitPattern>
+			</unit>
+			<unit type="energy-kilocalorie">
+				<displayName>ڪلو ڪيلوريز</displayName>
+				<unitPattern count="one">{0} ڪلو ڪيلوريز</unitPattern>
+				<unitPattern count="other">{0} ڪلو ڪيلوريز</unitPattern>
+			</unit>
+			<unit type="energy-calorie">
+				<displayName>ڪيلوري</displayName>
+				<unitPattern count="one">{0} ڪيلوري</unitPattern>
+				<unitPattern count="other">{0} ڪيلوري</unitPattern>
+			</unit>
+			<unit type="energy-foodcalorie">
+				<displayName>ڪيلوري</displayName>
+				<unitPattern count="one">{0} ڪيلوري</unitPattern>
+				<unitPattern count="other">{0} ڪيلوري</unitPattern>
+			</unit>
+			<unit type="energy-kilojoule">
+				<displayName>ڪلو جول</displayName>
+			</unit>
+			<unit type="energy-joule">
+				<displayName>جول</displayName>
+				<unitPattern count="one">{0} جول</unitPattern>
+				<unitPattern count="other">{0} جول</unitPattern>
+			</unit>
+			<unit type="energy-kilowatt-hour">
+				<displayName>ڪلو واٽ في ڪلاڪ</displayName>
+				<unitPattern count="one">{0} ڪلو واٽ في ڪلڪ</unitPattern>
+				<unitPattern count="other">{0} ڪلو واٽ في ڪلڪ</unitPattern>
+			</unit>
+			<unit type="energy-electronvolt">
+				<displayName>اليڪٽرون وولٽ</displayName>
+			</unit>
+			<unit type="force-pound-force">
+				<displayName>پائونڊ-فورس</displayName>
+			</unit>
+			<unit type="force-newton">
+				<displayName>نيوٽن</displayName>
+			</unit>
 			<unit type="force-kilowatt-hour-per-100-kilometer">
+				<displayName>ڪ و آ / 100 ڪ م</displayName>
 				<unitPattern count="one">{0}ڪ و آ/100 ڪ م</unitPattern>
 				<unitPattern count="other">{0}ڪ و آ/100 ڪ م</unitPattern>
 			</unit>
+			<unit type="frequency-gigahertz">
+				<displayName>گيگا هرٽز</displayName>
+				<unitPattern count="one">{0} گيگا هرٽز</unitPattern>
+				<unitPattern count="other">{0} گيگا هرٽز</unitPattern>
+			</unit>
+			<unit type="frequency-megahertz">
+				<displayName>ميگا هرٽز</displayName>
+				<unitPattern count="one">{0} ميگا هرٽز</unitPattern>
+				<unitPattern count="other">{0} ميگا هرٽز</unitPattern>
+			</unit>
+			<unit type="frequency-kilohertz">
+				<displayName>ڪلو هرٽز</displayName>
+				<unitPattern count="one">{0} ڪلو هرٽز</unitPattern>
+				<unitPattern count="other">{0} ڪلو هرٽز</unitPattern>
+			</unit>
+			<unit type="frequency-hertz">
+				<displayName>هرٽز</displayName>
+				<unitPattern count="one">{0} هرٽز</unitPattern>
+				<unitPattern count="other">{0} هرٽز</unitPattern>
+			</unit>
 			<unit type="graphics-em">
+				<displayName>em</displayName>
 				<unitPattern count="one">{0}em</unitPattern>
 				<unitPattern count="other">{0}em</unitPattern>
 			</unit>
@@ -7871,10 +8608,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0}MP</unitPattern>
 			</unit>
 			<unit type="graphics-pixel-per-centimeter">
+				<displayName>ppcm</displayName>
 				<unitPattern count="one">{0}ppcm</unitPattern>
 				<unitPattern count="other">{0}ppcm</unitPattern>
 			</unit>
 			<unit type="graphics-pixel-per-inch">
+				<displayName>ppi</displayName>
 				<unitPattern count="one">{0}ppi</unitPattern>
 				<unitPattern count="other">{0}ppi</unitPattern>
 			</unit>
@@ -7889,31 +8628,130 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0}dpi</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
+				<displayName>پڪسلز</displayName>
 				<unitPattern count="one">{0}dot</unitPattern>
 				<unitPattern count="other">{0}dot</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>R⊕</displayName>
+				<unitPattern count="one">{0} R⊕</unitPattern>
+				<unitPattern count="other">{0} R⊕</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
 				<displayName>ڪلوميٽر</displayName>
 				<unitPattern count="one">{0} ڪلوميٽر</unitPattern>
 				<unitPattern count="other">{0} ڪلوميٽر</unitPattern>
+				<perUnitPattern>{0} في ڪلوميٽر</perUnitPattern>
 			</unit>
 			<unit type="length-meter">
 				<displayName>ميٽر</displayName>
 				<unitPattern count="one">{0} ميٽر</unitPattern>
 				<unitPattern count="other">{0} ميٽر</unitPattern>
+				<perUnitPattern>{0} في ميٽر</perUnitPattern>
+			</unit>
+			<unit type="length-decimeter">
+				<displayName>ڊيسي ميٽر</displayName>
+				<unitPattern count="one">{0} ڊيسي ميٽر</unitPattern>
+				<unitPattern count="other">{0} ڊيسي ميٽر</unitPattern>
 			</unit>
 			<unit type="length-centimeter">
 				<displayName>سينٽي ميٽر</displayName>
 				<unitPattern count="one">{0} cm</unitPattern>
 				<unitPattern count="other">{0} cm</unitPattern>
+				<perUnitPattern>{0} في سينٽي ميٽر</perUnitPattern>
 			</unit>
 			<unit type="length-millimeter">
 				<displayName>ملي ميٽر</displayName>
 				<unitPattern count="one">{0} ملي ميٽر</unitPattern>
 				<unitPattern count="other">{0} ملي ميٽر</unitPattern>
+			</unit>
+			<unit type="length-micrometer">
+				<displayName>مائڪرو ميٽر</displayName>
+				<unitPattern count="one">{0} مائڪرو ميٽر</unitPattern>
+				<unitPattern count="other">{0} مائڪرو ميٽر</unitPattern>
+			</unit>
+			<unit type="length-nanometer">
+				<displayName>نينو ميٽر</displayName>
+				<unitPattern count="one">{0} نينو ميٽر</unitPattern>
+				<unitPattern count="other">{0} نينو ميٽر</unitPattern>
+			</unit>
+			<unit type="length-picometer">
+				<displayName>پيڪو ميٽر</displayName>
+				<unitPattern count="one">{0} پيڪو ميٽر</unitPattern>
+				<unitPattern count="other">{0} پيڪو ميٽر</unitPattern>
+			</unit>
+			<unit type="length-mile">
+				<displayName>ميل</displayName>
+				<unitPattern count="one">{0} ميل</unitPattern>
+				<unitPattern count="other">{0} ميل</unitPattern>
+			</unit>
+			<unit type="length-yard">
+				<displayName>گز</displayName>
+				<unitPattern count="one">{0} گز</unitPattern>
+				<unitPattern count="other">{0} گز</unitPattern>
+			</unit>
+			<unit type="length-foot">
+				<displayName>فوٽ</displayName>
+				<unitPattern count="one">{0} فوٽ</unitPattern>
+				<unitPattern count="other">{0} فوٽ</unitPattern>
+				<perUnitPattern>{0} في فوٽ</perUnitPattern>
+			</unit>
+			<unit type="length-inch">
+				<displayName>انچ</displayName>
+				<unitPattern count="one">{0} انچ</unitPattern>
+				<unitPattern count="other">{0} انچ</unitPattern>
+				<perUnitPattern>{0} في انچ</perUnitPattern>
+			</unit>
+			<unit type="length-parsec">
+				<displayName>پارسيڪ</displayName>
+				<unitPattern count="one">{0} pc</unitPattern>
+				<unitPattern count="other">{0} pc</unitPattern>
+			</unit>
+			<unit type="length-light-year">
+				<displayName>لائيٽ ايئرس</displayName>
+				<unitPattern count="one">{0} لائيٽ ايئرس</unitPattern>
+				<unitPattern count="other">{0} لائيٽ ايئرس</unitPattern>
+			</unit>
+			<unit type="length-astronomical-unit">
+				<displayName>فلڪيات جا يونٽ</displayName>
+				<unitPattern count="one">{0} فلڪيات جا يونٽ</unitPattern>
+				<unitPattern count="other">{0} فلڪيات جا يونٽ</unitPattern>
+			</unit>
+			<unit type="length-furlong">
+				<displayName>fur</displayName>
+				<unitPattern count="one">{0} fur</unitPattern>
+				<unitPattern count="other">{0} fur</unitPattern>
+			</unit>
+			<unit type="length-fathom">
+				<displayName>fm</displayName>
+				<unitPattern count="one">{0} fth</unitPattern>
+				<unitPattern count="other">{0} fth</unitPattern>
+			</unit>
+			<unit type="length-nautical-mile">
+				<displayName>سمندري ميل</displayName>
+				<unitPattern count="one">{0} سمندري ميل</unitPattern>
+				<unitPattern count="other">{0} سمندري ميل</unitPattern>
+			</unit>
+			<unit type="length-mile-scandinavian">
+				<displayName>ايس ايم آئي</displayName>
+				<unitPattern count="one">{0}ايس ايم آئي</unitPattern>
+				<unitPattern count="other">{0}ايس ايم آئي</unitPattern>
+			</unit>
+			<unit type="length-point">
+				<displayName>پوائينٽون</displayName>
+				<unitPattern count="one">{0}پوائينٽ</unitPattern>
+				<unitPattern count="other">{0}پوائينٽ</unitPattern>
+			</unit>
+			<unit type="length-solar-radius">
+				<displayName>R☉</displayName>
+				<unitPattern count="one">{0}R☉</unitPattern>
+				<unitPattern count="other">{0}R☉</unitPattern>
+			</unit>
+			<unit type="light-lux">
+				<displayName>لڪس</displayName>
+			</unit>
+			<unit type="light-solar-luminosity">
+				<displayName>سولر ليومينوسائيٽيز</displayName>
 			</unit>
 			<unit type="mass-tonne">
 				<displayName>ٽَـ</displayName>
@@ -7937,20 +8775,218 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0}مـ.گـ.</unitPattern>
 				<unitPattern count="other">{0}مـ.گـ.</unitPattern>
 			</unit>
+			<unit type="mass-ton">
+				<displayName>ٽن</displayName>
+				<unitPattern count="one">{0} ٽن</unitPattern>
+				<unitPattern count="other">{0} ٽن</unitPattern>
+			</unit>
+			<unit type="mass-pound">
+				<displayName>پائونڊ</displayName>
+				<unitPattern count="one">{0} پائونڊ</unitPattern>
+				<unitPattern count="other">{0} پائونڊ</unitPattern>
+				<perUnitPattern>{0} في پائونڊ</perUnitPattern>
+			</unit>
+			<unit type="mass-ounce">
+				<displayName>اونس</displayName>
+				<unitPattern count="one">{0} اونس</unitPattern>
+				<unitPattern count="other">{0} اونس</unitPattern>
+				<perUnitPattern>{0} في اونس</perUnitPattern>
+			</unit>
+			<unit type="mass-ounce-troy">
+				<displayName>ٽرائي اونس</displayName>
+				<unitPattern count="one">{0} ٽرائي اونس</unitPattern>
+				<unitPattern count="other">{0} ٽرائي اونس</unitPattern>
+			</unit>
+			<unit type="mass-carat">
+				<displayName>ڪيرٽ</displayName>
+				<unitPattern count="one">{0} ڪيرٽ</unitPattern>
+				<unitPattern count="other">{0} ڪيرٽ</unitPattern>
+			</unit>
+			<unit type="mass-dalton">
+				<displayName>ڊالٽنز</displayName>
+			</unit>
+			<unit type="mass-earth-mass">
+				<displayName>ارٿ ماسز</displayName>
+			</unit>
+			<unit type="mass-grain">
+				<displayName>گرين</displayName>
+				<unitPattern count="one">{0} گرين</unitPattern>
+				<unitPattern count="other">{0} گرين</unitPattern>
+			</unit>
+			<unit type="power-gigawatt">
+				<displayName>گيگا واٽ</displayName>
+				<unitPattern count="one">{0} گيگا واٽ</unitPattern>
+				<unitPattern count="other">{0} گيگا واٽ</unitPattern>
+			</unit>
+			<unit type="power-megawatt">
+				<displayName>ميگا واٽ</displayName>
+				<unitPattern count="one">{0} ميگا واٽ</unitPattern>
+				<unitPattern count="other">{0} ميگا واٽ</unitPattern>
+			</unit>
+			<unit type="power-kilowatt">
+				<displayName>ڪلو واٽ</displayName>
+				<unitPattern count="one">{0} ڪلو واٽ</unitPattern>
+				<unitPattern count="other">{0} ڪلو واٽ</unitPattern>
+			</unit>
+			<unit type="power-watt">
+				<displayName>واٽز</displayName>
+				<unitPattern count="one">{0} واٽ</unitPattern>
+				<unitPattern count="other">{0} واٽ</unitPattern>
+			</unit>
+			<unit type="power-milliwatt">
+				<displayName>ملي واٽ</displayName>
+				<unitPattern count="one">{0} ملي واٽ</unitPattern>
+				<unitPattern count="other">{0} ملي واٽ</unitPattern>
+			</unit>
+			<unit type="power-horsepower">
+				<displayName>هارس پاور</displayName>
+				<unitPattern count="one">{0} هارس پاور</unitPattern>
+				<unitPattern count="other">{0} هارس پاور</unitPattern>
+			</unit>
+			<unit type="pressure-bar">
+				<displayName>بار</displayName>
+				<unitPattern count="one">{0} بار</unitPattern>
+				<unitPattern count="other">{0} بارس</unitPattern>
+			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName>ڪلوميٽر في ڪلاڪ</displayName>
 				<unitPattern count="one">{0} km/h</unitPattern>
 				<unitPattern count="other">{0} km/h</unitPattern>
+			</unit>
+			<unit type="speed-meter-per-second">
+				<displayName>ميٽر في سيڪنڊ</displayName>
+				<unitPattern count="one">{0} ميٽر في سيڪنڊ</unitPattern>
+				<unitPattern count="other">{0} ميٽر في سيڪنڊ</unitPattern>
+			</unit>
+			<unit type="speed-mile-per-hour">
+				<displayName>ميل في ڪلاڪ</displayName>
+				<unitPattern count="one">{0} ميل في ڪلاڪ</unitPattern>
+				<unitPattern count="other">{0} ميل في ڪلاڪ</unitPattern>
+			</unit>
+			<unit type="speed-knot">
+				<displayName>ناٽ</displayName>
+				<unitPattern count="one">{0} ناٽ</unitPattern>
+				<unitPattern count="other">{0} ناٽ</unitPattern>
 			</unit>
 			<unit type="temperature-celsius">
 				<displayName>°C</displayName>
 				<unitPattern count="one">{0}°C</unitPattern>
 				<unitPattern count="other">{0}°C</unitPattern>
 			</unit>
+			<unit type="volume-cubic-kilometer">
+				<displayName>ڪيوبڪ ڪلوميٽر</displayName>
+				<unitPattern count="one">{0} ڪيوبڪ ڪلوميٽر</unitPattern>
+				<unitPattern count="other">{0} ڪيوبڪ ڪلوميٽر</unitPattern>
+			</unit>
+			<unit type="volume-cubic-meter">
+				<displayName>ڪيوبڪ ميٽر</displayName>
+				<unitPattern count="one">{0} ڪيوبڪ ميٽر</unitPattern>
+				<unitPattern count="other">{0} ڪيوبڪ ميٽر</unitPattern>
+				<perUnitPattern>{0} في ڪيوبڪ ميٽر</perUnitPattern>
+			</unit>
+			<unit type="volume-cubic-centimeter">
+				<displayName>ڪيوبڪ سينٽي ميٽر</displayName>
+				<unitPattern count="one">{0} ڪيوبڪ سينٽي ميٽر</unitPattern>
+				<unitPattern count="other">{0} ڪيوبڪ سينٽي ميٽر</unitPattern>
+				<perUnitPattern>{0} في ڪيوبڪ سينٽي ميٽر</perUnitPattern>
+			</unit>
+			<unit type="volume-cubic-mile">
+				<displayName>ڪيوبڪ ميل</displayName>
+				<unitPattern count="one">{0} ڪيوبڪ ميل</unitPattern>
+				<unitPattern count="other">{0} ڪيوبڪ ميل</unitPattern>
+			</unit>
+			<unit type="volume-cubic-yard">
+				<displayName>ڪيوبڪ يارڊ</displayName>
+				<unitPattern count="one">{0} ڪيوبڪ يارڊ</unitPattern>
+				<unitPattern count="other">{0} ڪيوبڪ يارڊ</unitPattern>
+			</unit>
+			<unit type="volume-cubic-foot">
+				<displayName>ڪيوبڪ فٽ</displayName>
+				<unitPattern count="one">{0} ڪيوبڪ فٽ</unitPattern>
+				<unitPattern count="other">{0} ڪيوبڪ فٽ</unitPattern>
+			</unit>
+			<unit type="volume-cubic-inch">
+				<displayName>ڪيوبڪ انچ</displayName>
+				<unitPattern count="one">{0} ڪيوبڪ انچ</unitPattern>
+				<unitPattern count="other">{0} ڪيوبڪ انچ</unitPattern>
+			</unit>
+			<unit type="volume-megaliter">
+				<displayName>ميگا ليٽر</displayName>
+				<unitPattern count="one">{0} ميگا ليٽر</unitPattern>
+				<unitPattern count="other">{0} ميگا ليٽر</unitPattern>
+			</unit>
+			<unit type="volume-hectoliter">
+				<displayName>هيڪٽو ليٽر</displayName>
+				<unitPattern count="one">{0} هيڪٽو ليٽر</unitPattern>
+				<unitPattern count="other">{0} هيڪٽو ليٽر</unitPattern>
+			</unit>
 			<unit type="volume-liter">
 				<displayName>ليٽر</displayName>
 				<unitPattern count="one">{0} ليٽر</unitPattern>
 				<unitPattern count="other">{0} ليٽر</unitPattern>
+				<perUnitPattern>{0} في ليٽر</perUnitPattern>
+			</unit>
+			<unit type="volume-deciliter">
+				<displayName>ڊيسي ليٽر</displayName>
+				<unitPattern count="one">{0} ڊيسي ليٽر</unitPattern>
+				<unitPattern count="other">{0} ڊيسي ليٽر</unitPattern>
+			</unit>
+			<unit type="volume-centiliter">
+				<displayName>سينٽي ليٽر</displayName>
+				<unitPattern count="one">{0} سينٽي ليٽر</unitPattern>
+				<unitPattern count="other">{0} سينٽي ليٽر</unitPattern>
+			</unit>
+			<unit type="volume-milliliter">
+				<displayName>ملي ليٽر</displayName>
+				<unitPattern count="one">{0} ملي ليٽر</unitPattern>
+				<unitPattern count="other">{0} ملي ليٽر</unitPattern>
+			</unit>
+			<unit type="volume-cup-metric">
+				<displayName>ميٽرڪ ڪپ</displayName>
+				<unitPattern count="one">{0} ميٽرڪ ڪپ</unitPattern>
+				<unitPattern count="other">{0} ميٽرڪ ڪپ</unitPattern>
+			</unit>
+			<unit type="volume-acre-foot">
+				<displayName>ايڪڙ فٽ</displayName>
+				<unitPattern count="one">{0} ايڪڙ فٽ</unitPattern>
+				<unitPattern count="other">{0} ايڪڙ فٽ</unitPattern>
+			</unit>
+			<unit type="volume-gallon">
+				<displayName>گيلن</displayName>
+				<unitPattern count="one">{0} گيلن</unitPattern>
+				<unitPattern count="other">{0} گيلن</unitPattern>
+				<perUnitPattern>{0} في گيلن</perUnitPattern>
+			</unit>
+			<unit type="volume-gallon-imperial">
+				<displayName>امپيريل گيلن</displayName>
+				<unitPattern count="one">{0} امپيريل گيلن</unitPattern>
+				<unitPattern count="other">{0} امپيريل گيلن</unitPattern>
+				<perUnitPattern>{0} في امپيريل گيلن</perUnitPattern>
+			</unit>
+			<unit type="volume-quart">
+				<displayName>چوٿائي گيلن</displayName>
+				<unitPattern count="one">{0} چوٿائي گيلن</unitPattern>
+				<unitPattern count="other">{0} چوٿائي گيلن</unitPattern>
+			</unit>
+			<unit type="volume-cup">
+				<displayName>ڪپ ماپو</displayName>
+				<unitPattern count="one">{0} ڪپ ماپو</unitPattern>
+				<unitPattern count="other">{0} ڪپ ماپو</unitPattern>
+			</unit>
+			<unit type="volume-fluid-ounce">
+				<displayName>پاڻياٺ اونس</displayName>
+				<unitPattern count="one">{0} پاڻياٺ اونس</unitPattern>
+				<unitPattern count="other">{0} پاڻياٺ اونس</unitPattern>
+			</unit>
+			<unit type="volume-tablespoon">
+				<displayName>کاڌي جا چمچا</displayName>
+				<unitPattern count="one">{0} کاڌي جا چمچا</unitPattern>
+				<unitPattern count="other">{0} کاڌي جا چمچا</unitPattern>
+			</unit>
+			<unit type="volume-teaspoon">
+				<displayName>چانهن جا چمچا</displayName>
+				<unitPattern count="one">{0} چانهن جا چمچا</unitPattern>
+				<unitPattern count="other">{0} چانهن جا چمچا</unitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName>ڊائريڪشن</displayName>
@@ -7983,13 +9019,29 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<listPatternPart type="end">{0}, يا {1}</listPatternPart>
 			<listPatternPart type="2">{0} يا {1}</listPatternPart>
 		</listPattern>
+		<listPattern type="or-narrow">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0}, يا {1}</listPatternPart>
+			<listPatternPart type="2">{0} يا {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="or-short">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0}, يا {1}</listPatternPart>
+			<listPatternPart type="2">{0} يا {1}</listPatternPart>
+		</listPattern>
 		<listPattern type="standard-narrow">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
 			<listPatternPart type="end">{0}, {1}</listPatternPart>
 			<listPatternPart type="2">{0}, {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="standard-short">
 			<listPatternPart type="start">{0}, {1}</listPatternPart>
 			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0}، ۽ {1}</listPatternPart>
+			<listPatternPart type="2">{0} ۽ {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="unit">
 			<listPatternPart type="start">{0}, {1}</listPatternPart>
@@ -8190,27 +9242,162 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	<personNames>
 		<nameOrderLocales order="givenFirst">und sd</nameOrderLocales>
 		<nameOrderLocales order="surnameFirst">ko si ta te vi yue zh</nameOrderLocales>
-		<sampleName item="givenOnly">
+		<personName order="givenFirst" length="long" usage="referring" formality="informal">
+			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="addressing" formality="formal">
+			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="addressing" formality="informal">
+			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="monogram" formality="informal">
+			<namePattern>{given-monogram-allCaps}{given2-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="referring" formality="formal">
+			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="referring" formality="informal">
+			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="addressing" formality="formal">
+			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="addressing" formality="informal">
+			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="monogram" formality="formal">
+			<namePattern>{given-monogram-allCaps}{given2-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="monogram" formality="informal">
+			<namePattern>{given-monogram-allCaps}{given2-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="referring" formality="formal">
+			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="referring" formality="informal">
+			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="addressing" formality="formal">
+			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="addressing" formality="informal">
+			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="monogram" formality="formal">
+			<namePattern>{given-monogram-allCaps}{given2-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="monogram" formality="informal">
+			<namePattern>{given-monogram-allCaps}{given2-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="referring" formality="informal">
+			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="addressing" formality="formal">
+			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="addressing" formality="informal">
+			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="monogram" formality="informal">
+			<namePattern>{surname-monogram-allCaps}{given-monogram-allCaps}{given2-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="referring" formality="formal">
+			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="referring" formality="informal">
+			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="addressing" formality="formal">
+			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="addressing" formality="informal">
+			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}{given-monogram-allCaps}{given2-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="monogram" formality="informal">
+			<namePattern>{surname-monogram-allCaps}{given-monogram-allCaps}{given2-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="referring" formality="formal">
+			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="referring" formality="informal">
+			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="addressing" formality="formal">
+			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="addressing" formality="informal">
+			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}{given-monogram-allCaps}{given2-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="monogram" formality="informal">
+			<namePattern>{surname-monogram-allCaps}{given-monogram-allCaps}{given2-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="sorting" length="long" usage="referring" formality="informal">
+			<namePattern>{surname} {surname2}, {title} {given} {given2} {credentials}</namePattern>
+		</personName>
+		<personName order="sorting" length="medium" usage="referring" formality="formal">
+			<namePattern>{surname} {surname2}, {title} {given} {given2} {credentials}</namePattern>
+		</personName>
+		<personName order="sorting" length="medium" usage="referring" formality="informal">
+			<namePattern>{surname} {surname2}, {title} {given} {given2} {credentials}</namePattern>
+		</personName>
+		<personName order="sorting" length="short" usage="referring" formality="formal">
+			<namePattern>{surname} {surname2}, {title} {given} {given2} {credentials}</namePattern>
+		</personName>
+		<personName order="sorting" length="short" usage="referring" formality="informal">
+			<namePattern>{surname} {surname2}, {title} {given} {given2} {credentials}</namePattern>
+		</personName>
+		<sampleName item="nativeG">
 			<nameField type="given">سنباد</nameField>
 		</sampleName>
-		<sampleName item="givenSurnameOnly">
+		<sampleName item="nativeGS">
 			<nameField type="given">آئرين</nameField>
 			<nameField type="surname">ائڊلر</nameField>
 		</sampleName>
-		<sampleName item="given12Surname">
-			<nameField type="given">جان</nameField>
+		<sampleName item="nativeGGS">
+			<nameField type="given">ميري سيو</nameField>
 			<nameField type="given2">ھامش</nameField>
 			<nameField type="surname">واٽسن</nameField>
 		</sampleName>
-		<sampleName item="full">
-			<nameField type="prefix">پروفيسر ڊاڪٽر</nameField>
+		<sampleName item="nativeFull">
+			<nameField type="title">محترم</nameField>
+			<nameField type="given">برٽرم ولبرفورس</nameField>
+			<nameField type="given-informal">برٽي</nameField>
+			<nameField type="given2">ھينري رابرٽ</nameField>
+			<nameField type="surname-prefix">∅∅∅</nameField>
+			<nameField type="surname-core">ووسٽر</nameField>
+			<nameField type="surname2">∅∅∅</nameField>
+			<nameField type="generation">جونيئر</nameField>
+			<nameField type="credentials">ايم پي</nameField>
+		</sampleName>
+		<sampleName item="foreignG">
+			<nameField type="given">سندباد</nameField>
+		</sampleName>
+		<sampleName item="foreignGS">
+			<nameField type="given">ڪئٿي</nameField>
+			<nameField type="surname">ملر</nameField>
+		</sampleName>
+		<sampleName item="foreignGGS">
+			<nameField type="given">زيزيليا</nameField>
+			<nameField type="given2">ھئمش</nameField>
+			<nameField type="surname">اسٽوبر</nameField>
+		</sampleName>
+		<sampleName item="foreignFull">
+			<nameField type="title">پروفيسر ڊاڪٽر</nameField>
 			<nameField type="given">ايڊا ڪورنيليا</nameField>
 			<nameField type="given-informal">نيل</nameField>
-			<nameField type="given2">ايوا سوفيه</nameField>
-			<nameField type="surname-prefix">وين ڊين</nameField>
-			<nameField type="surname-core">ولف</nameField>
-			<nameField type="surname2">بيڪر شمڊٽ</nameField>
-			<nameField type="suffix">ايم ڊي پي ايڇ ڊي</nameField>
+			<nameField type="given2">سيزر مارٽن</nameField>
+			<nameField type="surname-prefix">وان</nameField>
+			<nameField type="surname-core">برل</nameField>
+			<nameField type="surname2">گونزالس ڊومنگو</nameField>
+			<nameField type="generation">جونيئر</nameField>
+			<nameField type="credentials">ايم ڊي ڊي ڊي ايس</nameField>
 		</sampleName>
 	</personNames>
 </ldml>

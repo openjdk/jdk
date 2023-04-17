@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,8 +95,11 @@ public class Transfer {
 
         bytesWritten = sinkChannel.transferFrom(sourceChannel, 1000, 10);
 
-        if (bytesWritten > 0)
-            throw new RuntimeException("Wrote past file size");
+        if (bytesWritten > 10)
+            throw new RuntimeException("Wrote too many bytes");
+
+        if (sinkChannel.size() != 1000 + bytesWritten)
+            throw new RuntimeException("Unexpected sink size");
 
         sourceChannel.close();
         sinkChannel.close();

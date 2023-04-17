@@ -82,7 +82,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
   // construct the sender and do some validation of it. This goes a long way
   // toward eliminating issues when we get in frame construction code
 
-  if (_cb != NULL) {
+  if (_cb != nullptr) {
 
     // First check if the frame is complete and the test is reliable.
     // Unfortunately we can only check frame completeness for runtime stubs
@@ -111,7 +111,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
     }
 
     // At this point, there still is a chance that fp_safe is false.
-    // In particular, (fp == NULL) might be true. So let's check and
+    // In particular, fp might be null. So let's check and
     // bail out before we actually dereference from fp.
     if (!fp_safe) {
       return false;
@@ -130,7 +130,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
 
     // We must always be able to find a recognizable pc.
     CodeBlob* sender_blob = CodeCache::find_blob(sender_pc);
-    if (sender_blob == NULL) {
+    if (sender_blob == nullptr) {
       return false;
     }
 
@@ -186,7 +186,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
 }
 
 frame frame::sender_for_entry_frame(RegisterMap *map) const {
-  assert(map != NULL, "map must be set");
+  assert(map != nullptr, "map must be set");
   // Java frame called from C; skip all C frames and return top C
   // frame of that chunk as the sender.
   JavaFrameAnchor* jfa = entry_frame_call_wrapper()->anchor();
@@ -195,7 +195,7 @@ frame frame::sender_for_entry_frame(RegisterMap *map) const {
   map->clear();
   assert(map->include_argument_oops(), "should be set by clear");
 
-  if (jfa->last_Java_pc() != NULL) {
+  if (jfa->last_Java_pc() != nullptr) {
     frame fr(jfa->last_Java_sp(), jfa->last_Java_pc());
     return fr;
   }
@@ -262,7 +262,7 @@ void frame::patch_pc(Thread* thread, address pc) {
   own_abi()->lr = (uint64_t)pc;
   _pc = pc; // must be set before call to get_deopt_original_pc
   address original_pc = CompiledMethod::get_deopt_original_pc(this);
-  if (original_pc != NULL) {
+  if (original_pc != nullptr) {
     assert(original_pc == old_pc, "expected original PC to be stored before patching");
     _deopt_state = is_deoptimized;
     _pc = original_pc;
