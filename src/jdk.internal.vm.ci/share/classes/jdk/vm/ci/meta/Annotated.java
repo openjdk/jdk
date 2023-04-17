@@ -32,13 +32,15 @@ import java.util.List;
 public interface Annotated {
 
     /**
-     * Gets this element's annotations whose types are in the set composed of {@code type1},
+     * Constructs the annotations present on this element whose types are in the set composed of {@code type1},
      * {@code type2} and {@code types}. All enum types referenced by the returned annotation are
      * initialized. Class initialization is not triggered for enum types referenced by other
      * annotations of this element.
      *
      * If this element is a class, then {@link Inherited} annotations are included in the set of
      * annotations considered.
+     *
+     * See {@link java.lang.reflect.AnnotatedElement} for the definition of <em>present</em>.
      *
      * @param type1 an annotation type
      * @param type2 an annotation type
@@ -54,7 +56,9 @@ public interface Annotated {
     }
 
     /**
-     * Gets this element's annotation of type {@code type}.
+     * Constructs the annotation present on this element of type {@code type}.
+     *
+     * See {@link java.lang.reflect.AnnotatedElement} for the definition of <em>present</em>.
      *
      * @param type the type object corresponding to the annotation interface type
      * @return this element's annotation for the specified annotation type if present on this
