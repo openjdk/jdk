@@ -73,6 +73,7 @@ public final class X11GraphicsDevice extends GraphicsDevice
     public X11GraphicsDevice(int screennum) {
         this.screen = screennum;
         this.scale = initScaleFactor();
+        this.bounds = getBoundsImpl();
     }
 
     /**
