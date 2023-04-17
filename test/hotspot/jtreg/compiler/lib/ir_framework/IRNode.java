@@ -1420,24 +1420,9 @@ public class IRNode {
 
     // x86 specific
 
-    public static final String CONVI2B_X86 = PREFIX + "CONVI2B_X86" + POSTFIX;
+    public static final String CMOVEI_01_X86 = PREFIX + "CMOVEI_01_X86" + POSTFIX;
     static {
-        machOnlyNameRegex(CONVI2B_X86, "convI2B");
-    }
-
-    public static final String CONVI2B_FLIP_X86 = PREFIX + "CONVI2B_FLIP_X86" + POSTFIX;
-    static {
-        machOnlyNameRegex(CONVI2B_FLIP_X86, "convI2B_Flip");
-    }
-
-    public static final String CONVP2B_X86 = PREFIX + "CONVP2B_X86" + POSTFIX;
-    static {
-        machOnlyNameRegex(CONVP2B_X86, "convP2B");
-    }
-
-    public static final String CONVP2B_FLIP_X86 = PREFIX + "CONVP2B_FLIP_X86" + POSTFIX;
-    static {
-        machOnlyNameRegex(CONVP2B_FLIP_X86, "convP2B_Flip");
+        machOnlyNameRegex(CMOVEI_01_X86, "cmovI_imm_01");
     }
 
     /*

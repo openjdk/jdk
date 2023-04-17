@@ -43,25 +43,25 @@ public class TestConv2BMatches {
     }
 
     @Test
-    @IR(counts = {IRNode.CONVI2B_FLIP_X86, "1"})
+    @IR(counts = {IRNode.CMOVEI_01_X86, "1"})
     public boolean testIntEquals0(int x) {
         return x == 0;
     }
 
     @Test
-    @IR(counts = {IRNode.CONVI2B_X86, "1"})
+    @IR(counts = {IRNode.CMOVEI_01_X86, "1"})
     public boolean testIntNotEquals0(int x) {
         return x != 0;
     }
 
     @Test
-    @IR(counts = {IRNode.CONVP2B_FLIP_X86, "1"})
+    @IR(counts = {IRNode.CMOVEI_01_X86, "1"})
     public boolean testObjEqualsNull(Object o) {
         return o == null;
     }
 
     @Test
-    @IR(counts = {IRNode.CONVP2B_X86, "1"})
+    @IR(counts = {IRNode.CMOVEI_01_X86, "1"})
     public boolean testObjNotEqualsNull(Object o) {
         return o != null;
     }

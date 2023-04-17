@@ -325,7 +325,7 @@ ProjNode* PhaseIdealLoop::clone_predicate_to_unswitched_loop(ProjNode* predicate
   assert(predicate_proj->in(0)->in(1)->in(1)->Opcode()==Op_Opaque1, "must be");
   Node* opq = new Opaque1Node(C, predicate_proj->in(0)->in(1)->in(1)->in(1));
   C->add_predicate_opaq(opq);
-  Node* bol = new Conv2BNode(opq);
+  Node* bol = new Conv2BNode(Compile::current(), opq);
   register_new_node(opq, ctrl);
   register_new_node(bol, ctrl);
   _igvn.hash_delete(iff);

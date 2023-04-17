@@ -207,6 +207,11 @@ Node *CMoveINode::Ideal(PhaseGVN *phase, bool can_reshape) {
     }
   }
 
+  // If we're late in the optimization process, we may have already macro expanded Conv2B nodes
+  if (phase->C->post_loop_opts_phase()) {
+    return nullptr;
+  }
+
   // Now check for booleans
   int flip = 0;
 
@@ -237,10 +242,14 @@ Node *CMoveINode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   // Convert to a bool (flipped)
   // Build int->bool conversion
-  if (PrintOpto) { tty->print_cr("CMOV to I2B"); }
-  Node *n = new Conv2BNode( cmp->in(1) );
-  if( flip )
-  n = new XorINode( phase->transform(n), phase->intcon(1) );
+  if (PrintOpto) {
+    tty->print_cr("CMOV to I2B");
+  }
+
+  Node* n = new Conv2BNode(Compile::current(), cmp->in(1));
+  if (flip) {
+    n = new XorINode(phase->transform(n), phase->intcon(1));
+  }
 
   return n;
 }
