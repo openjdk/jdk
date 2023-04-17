@@ -759,7 +759,7 @@ void CompileBroker::compilation_init_phase2() {
 }
 
 Handle CompileBroker::create_thread_oop(const char* name, TRAPS) {
-  Handle thread_oop = JavaThread::create_system_thread_object(name, false /* not visible */, CHECK_NH);
+  Handle thread_oop = JavaThread::create_system_thread_object(name, CHECK_NH);
   return thread_oop;
 }
 

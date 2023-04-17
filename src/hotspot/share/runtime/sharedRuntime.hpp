@@ -265,6 +265,7 @@ class SharedRuntime: AllStatic {
   static void throw_and_post_jvmti_exception(JavaThread* current, Symbol* name, const char *message = nullptr);
 
 #if INCLUDE_JVMTI
+  static void notify_jvmti_object_alloc(oopDesc* o, JavaThread* current);
   // Functions for JVMTI notifications
   static void notify_jvmti_mount(oopDesc* vt, jboolean hide, jboolean first_mount, JavaThread* current);
   static void notify_jvmti_unmount(oopDesc* vt, jboolean hide, jboolean last_unmount, JavaThread* current);
