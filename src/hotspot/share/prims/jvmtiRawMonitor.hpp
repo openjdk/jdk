@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,7 +111,7 @@ class JvmtiRawMonitor : public CHeapObj<mtSynchronizer>  {
   };
 
   // Non-aborting operator new
-  void* operator new(size_t size) throw() {
+  void* operator new(size_t size) {
     return CHeapObj::operator new(size, std::nothrow);
   }
 

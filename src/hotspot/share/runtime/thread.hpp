@@ -200,7 +200,7 @@ class Thread: public ThreadShadow {
   // with the calling Thread?
   static bool is_JavaThread_protected_by_TLH(const JavaThread* target);
 
-  void* operator new(size_t size) throw() { return allocate(size, true); }
+  void* operator new(size_t size) { return allocate(size, true); }
   void* operator new(size_t size, const std::nothrow_t& nothrow_constant) throw() {
     return allocate(size, false); }
   void  operator delete(void* p);

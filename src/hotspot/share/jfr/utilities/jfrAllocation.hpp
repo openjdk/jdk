@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,9 +53,9 @@ class JfrCHeapObj : public CHeapObj<mtTracing> {
   static char* allocate_array_noinline(size_t elements, size_t element_size);
 
  public:
-  NOINLINE void* operator new(size_t size) throw();
+  NOINLINE void* operator new(size_t size);
   NOINLINE void* operator new (size_t size, const std::nothrow_t&  nothrow_constant) throw();
-  NOINLINE void* operator new [](size_t size) throw();
+  NOINLINE void* operator new [](size_t size);
   NOINLINE void* operator new [](size_t size, const std::nothrow_t&  nothrow_constant) throw();
   void  operator delete(void* p, size_t size);
   void  operator delete [] (void* p, size_t size);
