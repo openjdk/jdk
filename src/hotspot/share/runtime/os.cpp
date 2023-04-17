@@ -41,6 +41,7 @@
 #include "memory/universe.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "prims/jvmtiAgent.hpp"
 #include "prims/jvm_misc.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
@@ -534,7 +535,7 @@ void* os::native_java_library() {
  * executable if agent_lib->is_static_lib() == true or in the shared library
  * referenced by 'handle'.
  */
-void* os::find_agent_function(AgentLibrary *agent_lib, bool check_lib,
+void* os::find_agent_function(JvmtiAgent *agent_lib, bool check_lib,
                               const char *syms[], size_t syms_len) {
   assert(agent_lib != nullptr, "sanity check");
   const char *lib_name;
@@ -561,29 +562,29 @@ void* os::find_agent_function(AgentLibrary *agent_lib, bool check_lib,
 }
 
 // See if the passed in agent is statically linked into the VM image.
-bool os::find_builtin_agent(AgentLibrary *agent_lib, const char *syms[],
+bool os::find_builtin_agent(JvmtiAgent* agent, const char *syms[],
                             size_t syms_len) {
   void *ret;
   void *proc_handle;
   void *save_handle;
 
-  assert(agent_lib != nullptr, "sanity check");
-  if (agent_lib->name() == nullptr) {
+  assert(agent != nullptr, "sanity check");
+  if (agent->name() == nullptr) {
     return false;
   }
   proc_handle = get_default_process_handle();
   // Check for Agent_OnLoad/Attach_lib_name function
-  save_handle = agent_lib->os_lib();
+  save_handle = agent->os_lib();
   // We want to look in this process' symbol table.
-  agent_lib->set_os_lib(proc_handle);
-  ret = find_agent_function(agent_lib, true, syms, syms_len);
+  agent->set_os_lib(proc_handle);
+  ret = find_agent_function(agent, true, syms, syms_len);
   if (ret != nullptr) {
     // Found an entry point like Agent_OnLoad_lib_name so we have a static agent
-    agent_lib->set_valid();
-    agent_lib->set_static_lib(true);
+    agent->set_static_lib();
+    agent->set_loaded();
     return true;
   }
-  agent_lib->set_os_lib(save_handle);
+  agent->set_os_lib(save_handle);
   return false;
 }
 
