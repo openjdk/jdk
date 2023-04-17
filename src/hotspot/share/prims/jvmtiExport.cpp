@@ -714,7 +714,7 @@ void JvmtiExport::post_vm_initialized() {
       JvmtiJavaThreadEventTransition jet(thread);
       jvmtiEventVMInit callback = env->callbacks()->VMInit;
       if (callback != nullptr) {
-        // We map the jvmtiEnv to its Agent to measure when and for how long
+        // We map the JvmtiEnv to its Agent to measure when and for how long
         // it took to initialize so that JFR can report this information.
         JvmtiAgent* const agent = lookup_uninitialized_agent(env, reinterpret_cast<void*>(callback));
         if (agent != nullptr) {
