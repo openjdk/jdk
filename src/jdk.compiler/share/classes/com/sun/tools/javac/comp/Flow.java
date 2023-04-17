@@ -62,6 +62,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
+import java.util.function.Predicate;
 
 import static java.util.stream.Collectors.groupingBy;
 
@@ -890,6 +891,9 @@ public class Flow {
         private List<PatternDescription> reduceBindingPatterns(Type selectorType, List<PatternDescription> patterns) {
             for (var it1 = patterns; it1.nonEmpty(); it1 = it1.tail) {
                 if (it1.head instanceof BindingPattern bpOne) {
+                    Set<PatternDescription> toRemove = new HashSet<>();
+                    List<PatternDescription> toAdd = List.nil();
+
                     for (Type sup : types.directSupertypes(bpOne.type)) {
                         ListBuffer<PatternDescription> bindings = new ListBuffer<>();
                         ClassSymbol clazz = (ClassSymbol) sup.tsym;
@@ -902,36 +906,36 @@ public class Flow {
                                                         .noneMatch(c -> types.isSubtype(clazzErasure, c))) {
                                 continue;
                             }
-                            Set<Symbol> permitted = new HashSet<>();
-                            for (Symbol permittedSubtype : clazz.permitted) {
-                                Type instantiated = infer.instantiatePatternType(selectorType, (TypeSymbol) permittedSubtype);
-                                if (instantiated != null && types.isCastable(selectorType, instantiated)) {
-                                    permitted.add(permittedSubtype);
-                                }
-                            }
-                            permitted.remove(bpOne.type.tsym);
-                            bindings.append(it1.head);
-                            for (var it2 = it1.tail; it2.nonEmpty(); it2 = it2.tail) {
+
+                            Set<Symbol> permitted = allPermittedSubTypes(clazz, csym -> {
+                                Type instantiated = infer.instantiatePatternType(selectorType, csym);
+
+                                return instantiated != null && types.isCastable(selectorType, instantiated);
+                            });
+
+                            for (var it2 = patterns; it2.nonEmpty(); it2 = it2.tail) {
                                 if (it2.head instanceof BindingPattern bpOther) {
                                     boolean reduces = false;
+                                    Set<Symbol> currentPermittedSubTypes =
+                                            allPermittedSubTypes((ClassSymbol) bpOther.type.tsym, s -> true);
 
-                                    List<Symbol> permittedSubtypesClosure = List.of(bpOther.type.tsym);
+                                    PERMITTED: for (Iterator<Symbol> it = permitted.iterator(); it.hasNext();) {
+                                        Symbol perm = it.next();
 
-                                    while (permittedSubtypesClosure.nonEmpty()) {
-                                        ClassSymbol fromClosure = (ClassSymbol) permittedSubtypesClosure.head;
-                                        permittedSubtypesClosure = permittedSubtypesClosure.tail;
-
-                                        for (Iterator<Symbol> it = permitted.iterator(); it.hasNext();) {
-                                            Symbol perm = it.next();
-
-                                            if (types.isSubtype(types.erasure(fromClosure.type), types.erasure(perm.type))) {
-                                                it.remove();
-                                                reduces = true;
-                                            }
+                                        if (types.isSubtype(types.erasure(perm.type),
+                                                            types.erasure(bpOther.type))) {
+                                            it.remove();
+                                            reduces = true;
+                                            continue PERMITTED;
                                         }
 
-                                        if (fromClosure.isSealed() && fromClosure.isAbstract()) {
-                                            permittedSubtypesClosure = permittedSubtypesClosure.prependList(fromClosure.permitted);
+                                        for (Symbol currentPermitted : currentPermittedSubTypes) {
+                                            if (types.isSubtype(types.erasure(currentPermitted.type),
+                                                                types.erasure(perm.type))) {
+                                                it.remove();
+                                                reduces = true;
+                                                continue PERMITTED;
+                                            }
                                         }
                                     }
 
@@ -940,18 +944,48 @@ public class Flow {
                                     }
                                 }
                             }
+
                             if (permitted.isEmpty()) {
-                                for (PatternDescription pd : bindings) {
-                                    patterns = List.filter(patterns, pd);
-                                }
-                                patterns = patterns.prepend(new BindingPattern(clazz.type));
-                                return patterns;
+                                toRemove.addAll(bindings);
+                                toAdd = toAdd.prepend(new BindingPattern(clazz.type));
                             }
                         }
+                    }
+
+                    if (toAdd.nonEmpty()) {
+                        for (PatternDescription pd : toRemove) {
+                            patterns = List.filter(patterns, pd);
+                        }
+                        patterns = patterns.prependList(toAdd);
+                        return patterns;
                     }
                 }
             }
             return patterns;
+        }
+
+        private Set<Symbol> allPermittedSubTypes(ClassSymbol root, Predicate<ClassSymbol> accept) {
+            Set<Symbol> permitted = new HashSet<>();
+            List<ClassSymbol> permittedSubtypesClosure = List.of(root);
+
+            while (permittedSubtypesClosure.nonEmpty()) {
+                ClassSymbol current = permittedSubtypesClosure.head;
+
+                permittedSubtypesClosure = permittedSubtypesClosure.tail;
+
+                if (current.isSealed() && current.isAbstract()) {
+                    for (Symbol sym : current.permitted) {
+                        ClassSymbol csym = (ClassSymbol) sym;
+
+                        if (accept.test(csym)) {
+                            permittedSubtypesClosure = permittedSubtypesClosure.prepend(csym);
+                            permitted.add(csym);
+                        }
+                    }
+                }
+            }
+
+            return permitted;
         }
 
         /* Among the set of patterns, find sub-set of patterns such:

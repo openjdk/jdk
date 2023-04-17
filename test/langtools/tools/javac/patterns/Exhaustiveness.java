@@ -1549,6 +1549,29 @@ public class Exhaustiveness extends TestRunner {
                "1 error");
     }
 
+    @Test
+    public void testComplexSubTypes5(Path base) throws Exception {
+        doTest(base,
+               new String[0],
+               """
+               class Test {
+                   sealed interface I permits A, B, C { }
+                   interface I3 { }
+                   sealed interface I2 extends I3 permits B, C { }
+                   final class A implements I {}
+                   final class B implements I, I2 {}
+                   final class C implements I, I2 {}
+
+                   int m(I i) {
+                       return switch (i) {
+                           case A a -> 1;
+                           case I3 e -> 2;
+                       };
+                   }
+               }
+               """);
+    }
+
     private static final int NESTING_CONSTANT = 5;
 
     Set<String> createDeeplyNestedVariants() {
