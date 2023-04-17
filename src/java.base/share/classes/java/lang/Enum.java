@@ -37,6 +37,8 @@ import java.lang.constant.DynamicConstantDesc;
 import java.lang.invoke.MethodHandles;
 import java.util.Optional;
 
+import jdk.internal.vm.annotation.Stable;
+
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -167,12 +169,28 @@ public abstract class Enum<E extends Enum<E>>
     }
 
     /**
+     * The hash code of this enumeration constant.
+     *
+     * @implNote Once initialized, the field value does not change.
+     * Hotspot's identity hash code generation also never returns zero
+     * as the identity hash code. This allows to treat zero as the marker
+     * for the un-initialized value for both {#link @Stable} and the lazy
+     * initialization code.
+     */
+    @Stable
+    private int hash;
+
+    /**
      * Returns a hash code for this enum constant.
      *
      * @return a hash code for this enum constant.
      */
     public final int hashCode() {
-        return super.hashCode();
+        int hc = hash;
+        if (hc == 0) {
+            hc = hash = System.identityHashCode(this);
+        }
+        return hc;
     }
 
     /**
