@@ -320,7 +320,7 @@ Node* PhaseVector::expand_vbox_node_helper(Node* vbox,
                                            const TypeInstPtr* box_type,
                                            const TypeVect* vect_type,
                                            VectorSet &visited) {
-  // JDK-8304948 shows an example that there may be a circle in the graph
+  // JDK-8304948 shows an example that there may be a cycle in the graph
   // after the transformation of Phi:
   // Phi (VectorBox VectorBox) => VectorBox (Phi Phi)
   if (visited.test_set(vbox->_idx)) {

@@ -80,7 +80,7 @@ public class VectorBoxExpandTest {
     //              |     /
     //           VectorBox
     //
-    // which the circle case should be taken into consideration as well.
+    // where the cycle case should be taken into consideration as well.
     private static void test() {
         IntVector a = IntVector.fromArray(IntVector.SPECIES_PREFERRED, iarr, 0);
 
