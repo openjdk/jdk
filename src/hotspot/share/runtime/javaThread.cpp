@@ -1980,6 +1980,10 @@ Klass* JavaThread::security_get_caller_class(int depth) {
   return nullptr;
 }
 
+bool JavaThread::sleep_millis(jlong millis) {
+  return sleep_nanos(millis_to_nanos(millis));
+}
+
 // java.lang.Thread.sleep support
 // Returns true if sleep time elapsed as expected, and false
 // if the thread was interrupted.

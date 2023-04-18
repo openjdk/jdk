@@ -5249,19 +5249,18 @@ class HighResolutionInterval : public CHeapObj<mtThread> {
 // explicit "PARKED" == 01b and "SIGNALED" == 10b bits.
 //
 
-int PlatformEvent::park(jlong millis, jint nanos) {
-  assert(0 <= nanos && nanos < NANOSECS_PER_MILLISEC, "nanos are in range");
+int PlatformEvent::park_nanos(jlong nanos) {
+  assert(0 <= nanos, "nanos are in range");
 
   // Windows timers are still quite unpredictable to handle sub-millisecond granularity.
   // Instead of implementing this method, fall back to the millisecond sleep, treating
   // any positive requested nanos as a full millisecond.
-  if (millis < max_jlong && nanos > 0) {
-    millis++;
-  }
+  jlong millis = align_up(nanos, NANOSECS_PER_MILLISEC) / NANOSECS_PER_MILLISEC;
+  assert(nanos == 0 || millis != 0, "Only pass zero millis on zero nanos");
   return park(millis);
 }
 
-int PlatformEvent::park(jlong Millis) {
+int PlatformEvent::park_millis(jlong Millis) {
   // Transitions for _Event:
   //   -1 => -1 : illegal
   //    1 =>  0 : pass - return immediately

@@ -810,7 +810,7 @@ void ObjectMonitor::EnterI(JavaThread* current) {
 
     // park self
     if (_Responsible == current) {
-      current->_ParkEvent->park((jlong) recheckInterval);
+      current->_ParkEvent->park_millis((jlong) recheckInterval);
       // Increase the recheckInterval, but clamp the value.
       recheckInterval *= 8;
       if (recheckInterval > MAX_RECHECK_INTERVAL) {
@@ -1521,7 +1521,7 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
         if (millis <= 0) {
           current->_ParkEvent->park();
         } else {
-          ret = current->_ParkEvent->park(millis);
+          ret = current->_ParkEvent->park_millis(millis);
         }
       }
     }

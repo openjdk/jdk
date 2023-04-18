@@ -1538,7 +1538,7 @@ void PlatformEvent::park() {       // AKA "down()"
 }
 
 int PlatformEvent::park_millis(jlong millis) {
-  park_nanos(millis_to_nanos_bounded(millis, 0, ));
+  return park_nanos(millis_to_nanos_bounded(millis));
 }
 
 int PlatformEvent::park_nanos(jlong nanos) {

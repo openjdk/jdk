@@ -1621,7 +1621,7 @@ void JVMCIRuntime::fatal_exception(JVMCIEnv* JVMCIENV, const char* message) {
     }
   } else {
     // Allow error reporting thread to print the stack trace.
-    THREAD->sleep(200);
+    THREAD->sleep_millis(200);
   }
   fatal("Fatal exception in JVMCI: %s", message);
 }
