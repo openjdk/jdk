@@ -132,11 +132,11 @@ void CardTable::initialize(void* region0_start, void* region1_start) {
 MemRegion CardTable::committed_for(const MemRegion mr) const {
   HeapWord* addr_l = (HeapWord*)align_down(byte_for(mr.start()), _page_size);
   HeapWord* addr_r = mr.is_empty()
-                       ? addr_l
-                       : (HeapWord*)align_up(byte_after(mr.last()), _page_size);
+                   ? addr_l
+                   : (HeapWord*)align_up(byte_after(mr.last()), _page_size);
 
   if (mr.start() == _covered[0].start()) {
-    // In case the card for gen-boundary is not page-size aligned, the crossing page belongs to _covered[1]
+    // In case the card for gen-boundary is not page-size aligned, the crossing page belongs to _covered[1].
     addr_r = MIN2(addr_r, (HeapWord*)align_down(byte_for(_covered[1].start()), _page_size));
   }
 
