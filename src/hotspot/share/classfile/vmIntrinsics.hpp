@@ -583,6 +583,11 @@ class methodHandle;
   do_intrinsic(_Continuation_doYield,      jdk_internal_vm_Continuation, doYield_name,      continuationDoYield_signature, F_SN) \
    do_alias(    continuationDoYield_signature,     void_int_signature)                                                  \
                                                                                                                         \
+  /* java/lang/VirtualThread */                                                                                         \
+  do_intrinsic(_notifyJvmtiMount, java_lang_VirtualThread, notifyJvmtiMount_name, bool_bool_void_signature, F_RN)       \
+  do_intrinsic(_notifyJvmtiUnmount, java_lang_VirtualThread, notifyJvmtiUnmount_name, bool_bool_void_signature, F_RN)   \
+  do_intrinsic(_notifyJvmtiHideFrames, java_lang_VirtualThread, notifyJvmtiHideFrames_name, bool_void_signature, F_RN)  \
+                                                                                                                        \
   /* support for UnsafeConstants */                                                                                     \
   do_class(jdk_internal_misc_UnsafeConstants,      "jdk/internal/misc/UnsafeConstants")                                 \
                                                                                                                         \
@@ -957,24 +962,6 @@ class methodHandle;
                                                "Ljdk/internal/vm/vector/VectorSupport$FromBitsCoercedOperation;)"                              \
                                                "Ljdk/internal/vm/vector/VectorSupport$VectorPayload;")                                         \
    do_name(vector_frombits_coerced_name, "fromBitsCoerced")                                                                                    \
-                                                                                                                                               \
-  do_intrinsic(_VectorShuffleIota, jdk_internal_vm_vector_VectorSupport, vector_shuffle_step_iota_name, vector_shuffle_step_iota_sig, F_S)     \
-   do_signature(vector_shuffle_step_iota_sig, "(Ljava/lang/Class;"                                                                             \
-                                               "Ljava/lang/Class;"                                                                             \
-                                               "Ljdk/internal/vm/vector/VectorSupport$VectorSpecies;"                                          \
-                                               "IIII"                                                                                          \
-                                               "Ljdk/internal/vm/vector/VectorSupport$ShuffleIotaOperation;)"                                  \
-                                               "Ljdk/internal/vm/vector/VectorSupport$VectorShuffle;")                                         \
-   do_name(vector_shuffle_step_iota_name, "shuffleIota")                                                                                       \
-                                                                                                                                               \
-  do_intrinsic(_VectorShuffleToVector, jdk_internal_vm_vector_VectorSupport, vector_shuffle_to_vector_name, vector_shuffle_to_vector_sig, F_S) \
-   do_signature(vector_shuffle_to_vector_sig, "(Ljava/lang/Class;"                                                                             \
-                                               "Ljava/lang/Class;"                                                                             \
-                                               "Ljava/lang/Class;"                                                                             \
-                                               "Ljdk/internal/vm/vector/VectorSupport$VectorShuffle;"                                          \
-                                               "ILjdk/internal/vm/vector/VectorSupport$ShuffleToVectorOperation;)"                             \
-                                               "Ljdk/internal/vm/vector/VectorSupport$Vector;")                                                \
-   do_name(vector_shuffle_to_vector_name, "shuffleToVector")                                                                                   \
                                                                                                                                                \
   do_intrinsic(_VectorLoadOp, jdk_internal_vm_vector_VectorSupport, vector_load_op_name, vector_load_op_sig, F_S)                              \
    do_signature(vector_load_op_sig, "(Ljava/lang/Class;"                                                                                       \

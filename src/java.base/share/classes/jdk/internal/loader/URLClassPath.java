@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,8 +71,6 @@ import java.util.zip.ZipFile;
 import jdk.internal.access.JavaNetURLAccess;
 import jdk.internal.access.JavaUtilZipFileAccess;
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.util.jar.InvalidJarIndexError;
-import jdk.internal.util.jar.JarIndex;
 import sun.net.util.URLUtil;
 import sun.net.www.ParseUtil;
 import sun.security.action.GetPropertyAction;
@@ -91,7 +89,6 @@ public class URLClassPath {
     private static final boolean DISABLE_ACC_CHECKING;
     private static final boolean DISABLE_CP_URL_CHECK;
     private static final boolean DEBUG_CP_URL_CHECK;
-    private static final boolean ENABLE_JAR_INDEX;
 
     static {
         Properties props = GetPropertyAction.privilegedGetProperties();
@@ -111,9 +108,6 @@ public class URLClassPath {
         // the check is not disabled).
         p = props.getProperty("jdk.net.URLClassPath.showIgnoredClassPathEntries");
         DEBUG_CP_URL_CHECK = p != null ? p.equals("true") || p.isEmpty() : false;
-
-        p = props.getProperty("jdk.net.URLClassPath.enableJarIndex");
-        ENABLE_JAR_INDEX = p != null ? p.equals("true") || p.isEmpty() : false;
     }
 
     /* The original search path of URLs. */
@@ -714,7 +708,6 @@ public class URLClassPath {
     private static class JarLoader extends Loader {
         private JarFile jar;
         private final URL csu;
-        private JarIndex index;
         private URLStreamHandler handler;
         private final HashMap<String, Loader> lmap;
         @SuppressWarnings("removal")
@@ -779,31 +772,6 @@ public class URLClassPath {
                                     Thread.dumpStack();
                                 }
                                 jar = getJarFile(csu);
-                                if (!ENABLE_JAR_INDEX) {
-                                    return null;
-                                }
-                                index = JarIndex.getJarIndex(jar);
-                                if (index != null) {
-                                    String[] jarfiles = index.getJarFiles();
-                                // Add all the dependent URLs to the lmap so that loaders
-                                // will not be created for them by URLClassPath.getLoader(int)
-                                // if the same URL occurs later on the main class path.  We set
-                                // Loader to null here to avoid creating a Loader for each
-                                // URL until we actually need to try to load something from them.
-                                    for (int i = 0; i < jarfiles.length; i++) {
-                                        try {
-                                            @SuppressWarnings("deprecation")
-                                            URL jarURL = new URL(csu, jarfiles[i]);
-                                            // If a non-null loader already exists, leave it alone.
-                                            String urlNoFragString = URLUtil.urlNoFragString(jarURL);
-                                            if (!lmap.containsKey(urlNoFragString)) {
-                                                lmap.put(urlNoFragString, null);
-                                            }
-                                        } catch (MalformedURLException e) {
-                                            continue;
-                                        }
-                                    }
-                                }
                                 return null;
                             }
                         }, acc);
@@ -845,18 +813,6 @@ public class URLClassPath {
             uc.setRequestProperty(USER_AGENT_JAVA_VERSION, JAVA_VERSION);
             JarFile jarFile = ((JarURLConnection)uc).getJarFile();
             return checkJar(jarFile);
-        }
-
-        /*
-         * Returns the index of this JarLoader if it exists.
-         */
-        JarIndex getIndex() {
-            try {
-                ensureOpen();
-            } catch (IOException e) {
-                throw new InternalError(e);
-            }
-            return index;
         }
 
         /*
@@ -968,138 +924,15 @@ public class URLClassPath {
             if (entry != null)
                 return checkResource(name, check, entry);
 
-            if (index == null)
-                return null;
 
-            HashSet<String> visited = new HashSet<>();
-            return getResource(name, check, visited);
-        }
-
-        /*
-         * Version of getResource() that tracks the jar files that have been
-         * visited by linking through the index files. This helper method uses
-         * a HashSet to store the URLs of jar files that have been searched and
-         * uses it to avoid going into an infinite loop, looking for a
-         * non-existent resource.
-         */
-        @SuppressWarnings("removal")
-        Resource getResource(final String name, boolean check,
-                             Set<String> visited) {
-            Resource res;
-            String[] jarFiles;
-            int count = 0;
-            List<String> jarFilesList;
-
-            /* If there no jar files in the index that can potential contain
-             * this resource then return immediately.
-             */
-            if ((jarFilesList = index.get(name)) == null)
-                return null;
-
-            do {
-                int size = jarFilesList.size();
-                jarFiles = jarFilesList.toArray(new String[size]);
-                /* loop through the mapped jar file list */
-                while (count < size) {
-                    String jarName = jarFiles[count++];
-                    JarLoader newLoader;
-                    final URL url;
-
-                    try{
-                        @SuppressWarnings("deprecation")
-                        var _unused = url = new URL(csu, jarName);
-                        String urlNoFragString = URLUtil.urlNoFragString(url);
-                        if ((newLoader = (JarLoader)lmap.get(urlNoFragString)) == null) {
-                            /* no loader has been set up for this jar file
-                             * before
-                             */
-                            newLoader = AccessController.doPrivileged(
-                                new PrivilegedExceptionAction<>() {
-                                    public JarLoader run() throws IOException {
-                                        return new JarLoader(url, handler,
-                                            lmap, acc);
-                                    }
-                                }, acc);
-
-                            /* this newly opened jar file has its own index,
-                             * merge it into the parent's index, taking into
-                             * account the relative path.
-                             */
-                            JarIndex newIndex = newLoader.getIndex();
-                            if (newIndex != null) {
-                                int pos = jarName.lastIndexOf('/');
-                                newIndex.merge(this.index, (pos == -1 ?
-                                    null : jarName.substring(0, pos + 1)));
-                            }
-
-                            /* put it in the global hashtable */
-                            lmap.put(urlNoFragString, newLoader);
-                        }
-                    } catch (PrivilegedActionException | MalformedURLException e) {
-                        continue;
-                    }
-
-                    /* Note that the addition of the url to the list of visited
-                     * jars incorporates a check for presence in the hashmap
-                     */
-                    boolean visitedURL = !visited.add(URLUtil.urlNoFragString(url));
-                    if (!visitedURL) {
-                        try {
-                            newLoader.ensureOpen();
-                        } catch (IOException e) {
-                            throw new InternalError(e);
-                        }
-                        final JarEntry entry = newLoader.jar.getJarEntry(name);
-                        if (entry != null) {
-                            return newLoader.checkResource(name, check, entry);
-                        }
-
-                        /* Verify that at least one other resource with the
-                         * same package name as the lookedup resource is
-                         * present in the new jar
-                         */
-                        if (!newLoader.validIndex(name)) {
-                            /* the mapping is wrong */
-                            throw new InvalidJarIndexError("Invalid index");
-                        }
-                    }
-
-                    /* If newLoader is the current loader or if it is a
-                     * loader that has already been searched or if the new
-                     * loader does not have an index then skip it
-                     * and move on to the next loader.
-                     */
-                    if (visitedURL || newLoader == this ||
-                            newLoader.getIndex() == null) {
-                        continue;
-                    }
-
-                    /* Process the index of the new loader
-                     */
-                    if ((res = newLoader.getResource(name, check, visited))
-                            != null) {
-                        return res;
-                    }
-                }
-                // Get the list of jar files again as the list could have grown
-                // due to merging of index files.
-                jarFilesList = index.get(name);
-
-            // If the count is unchanged, we are done.
-            } while (count < jarFilesList.size());
             return null;
         }
-
 
         /*
          * Returns the JAR file local class path, or null if none.
          */
         @Override
         URL[] getClassPath() throws IOException {
-            if (index != null) {
-                return null;
-            }
-
             ensureOpen();
 
             // Only get manifest when necessary
