@@ -305,6 +305,10 @@ source %{
     }
   }
 
+  const bool Matcher::vector_needs_load_shuffle(BasicType elem_bt, int vlen) {
+    return false;
+  }
+
   // Assert that the given node is not a variable shift.
   bool assert_not_var_shift(const Node* n) {
     assert(!n->as_ShiftV()->is_var_shift(), "illegal variable shift");
@@ -4090,7 +4094,7 @@ instruct vmask_gen_I(pReg pd, iRegIorL2I src, rFlagsReg cr) %{
   format %{ "vmask_gen_I $pd, $src\t# KILL cr" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
-    __ sve_whilelow($pd$$PRegister, __ elemType_to_regVariant(bt), zr, $src$$Register);
+    __ sve_whileltw($pd$$PRegister, __ elemType_to_regVariant(bt), zr, $src$$Register);
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -4102,7 +4106,7 @@ instruct vmask_gen_L(pReg pd, iRegL src, rFlagsReg cr) %{
   format %{ "vmask_gen_L $pd, $src\t# KILL cr" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
-    __ sve_whilelo($pd$$PRegister, __ elemType_to_regVariant(bt), zr, $src$$Register);
+    __ sve_whilelt($pd$$PRegister, __ elemType_to_regVariant(bt), zr, $src$$Register);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -4126,7 +4130,7 @@ instruct vmask_gen_sub(pReg pd, iRegL src1, iRegL src2, rFlagsReg cr) %{
   format %{ "vmask_gen_sub $pd, $src2, $src1\t# KILL cr" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
-    __ sve_whilelo($pd$$PRegister, __ elemType_to_regVariant(bt), $src2$$Register, $src1$$Register);
+    __ sve_whilelt($pd$$PRegister, __ elemType_to_regVariant(bt), $src2$$Register, $src1$$Register);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -4418,41 +4422,6 @@ instruct vtest_alltrue_sve(rFlagsReg cr, pReg src1, pReg src2, pReg ptmp) %{
   ins_pipe(pipe_slow);
 %}
 
-// ------------------------------ Vector shuffle -------------------------------
-
-instruct loadshuffle(vReg dst, vReg src) %{
-  match(Set dst (VectorLoadShuffle src));
-  format %{ "loadshuffle $dst, $src" %}
-  ins_encode %{
-    BasicType bt = Matcher::vector_element_basic_type(this);
-    uint length_in_bytes = Matcher::vector_length_in_bytes(this);
-    if (bt == T_BYTE) {
-      if ($dst$$FloatRegister != $src$$FloatRegister) {
-        if (VM_Version::use_neon_for_vector(length_in_bytes)) {
-          __ orr($dst$$FloatRegister, length_in_bytes == 16 ? __ T16B : __ T8B,
-                 $src$$FloatRegister, $src$$FloatRegister);
-        } else {
-          assert(UseSVE > 0, "must be sve");
-          __ sve_orr($dst$$FloatRegister, $src$$FloatRegister, $src$$FloatRegister);
-        }
-      }
-    } else {
-      if (VM_Version::use_neon_for_vector(length_in_bytes)) {
-        // 4S/8S, 4I, 4F
-        __ uxtl($dst$$FloatRegister, __ T8H, $src$$FloatRegister, __ T8B);
-        if (type2aelembytes(bt) == 4) {
-          __ uxtl($dst$$FloatRegister, __ T4S, $dst$$FloatRegister, __ T4H);
-        }
-      } else {
-        assert(UseSVE > 0, "must be sve");
-        __ sve_vector_extend($dst$$FloatRegister,  __ elemType_to_regVariant(bt),
-                             $src$$FloatRegister, __ B);
-      }
-    }
-  %}
-  ins_pipe(pipe_slow);
-%}
-
 // ------------------------------ Vector rearrange -----------------------------
 
 // Here is an example that rearranges a NEON vector with 4 ints:
@@ -4475,6 +4444,7 @@ instruct loadshuffle(vReg dst, vReg src) %{
 //   need to lookup 2/4 bytes as a group. For VectorRearrange long, we use bsl
 //   to implement rearrange.
 
+// Maybe move the shuffle preparation to VectorLoadShuffle
 instruct rearrange_HS_neon(vReg dst, vReg src, vReg shuffle, vReg tmp1, vReg tmp2) %{
   predicate(UseSVE == 0 &&
             (Matcher::vector_element_basic_type(n) == T_SHORT ||
@@ -4852,7 +4822,7 @@ instruct mcompress(pReg dst, pReg pg, rFlagsReg cr) %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     Assembler::SIMD_RegVariant size = __ elemType_to_regVariant(bt);
     __ sve_cntp(rscratch1, size, ptrue, $pg$$PRegister);
-    __ sve_whilelo(as_PRegister($dst$$reg), size, zr, rscratch1);
+    __ sve_whilelt(as_PRegister($dst$$reg), size, zr, rscratch1);
   %}
   ins_pipe(pipe_slow);
 %}

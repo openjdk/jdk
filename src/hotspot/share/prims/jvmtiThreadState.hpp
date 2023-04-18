@@ -98,6 +98,8 @@ class JvmtiVTMSTransitionDisabler {
   static bool VTMS_notify_jvmti_events()             { return _VTMS_notify_jvmti_events; }
   static void set_VTMS_notify_jvmti_events(bool val) { _VTMS_notify_jvmti_events = val; }
 
+  static void set_VTMS_transition_count(bool val)    { _VTMS_transition_count = val; }
+
   // parameter is_SR: suspender or resumer
   JvmtiVTMSTransitionDisabler(bool is_SR = false);
   JvmtiVTMSTransitionDisabler(jthread thread);

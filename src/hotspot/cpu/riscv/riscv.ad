@@ -1735,13 +1735,11 @@ void BoxLockNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   int offset = ra_->reg2offset(in_RegMask(0).find_first_elem());
   int reg    = ra_->get_encode(this);
 
-  if (is_imm_in_range(offset, 12, 0)) {
+  if (Assembler::is_simm12(offset)) {
     __ addi(as_Register(reg), sp, offset);
-  } else if (is_imm_in_range(offset, 32, 0)) {
+  } else {
     __ li32(t0, offset);
     __ add(as_Register(reg), sp, t0);
-  } else {
-    ShouldNotReachHere();
   }
 }
 
@@ -1749,7 +1747,7 @@ uint BoxLockNode::size(PhaseRegAlloc *ra_) const {
   // BoxLockNode is not a MachNode, so we can't just call MachNode::size(ra_).
   int offset = ra_->reg2offset(in_RegMask(0).find_first_elem());
 
-  if (is_imm_in_range(offset, 12, 0)) {
+  if (Assembler::is_simm12(offset)) {
     return NativeInstruction::instruction_size;
   } else {
     return 3 * NativeInstruction::instruction_size; // lui + addiw + add;
@@ -1960,6 +1958,10 @@ const bool Matcher::match_rule_supported_vector_masked(int opcode, int vlen, Bas
 }
 
 const bool Matcher::vector_needs_partial_operations(Node* node, const TypeVect* vt) {
+  return false;
+}
+
+const bool Matcher::vector_needs_load_shuffle(BasicType elem_bt, int vlen) {
   return false;
 }
 
@@ -2499,12 +2501,12 @@ encode %{
     if (DiagnoseSyncOnValueBasedClasses != 0) {
       __ load_klass(flag, oop);
       __ lwu(flag, Address(flag, Klass::access_flags_offset()));
-      __ andi(flag, flag, JVM_ACC_IS_VALUE_BASED_CLASS, tmp /* tmp */);
+      __ test_bit(flag, flag, exact_log2(JVM_ACC_IS_VALUE_BASED_CLASS), tmp /* tmp */);
       __ bnez(flag, cont, true /* is_far */);
     }
 
     // Check for existing monitor
-    __ andi(t0, disp_hdr, markWord::monitor_value);
+    __ test_bit(t0, disp_hdr, exact_log2(markWord::monitor_value));
     __ bnez(t0, object_has_monitor);
 
     if (!UseHeavyMonitors) {
@@ -2603,7 +2605,7 @@ encode %{
 
     // Handle existing monitor.
     __ ld(tmp, Address(oop, oopDesc::mark_offset_in_bytes()));
-    __ andi(t0, tmp, markWord::monitor_value);
+    __ test_bit(t0, tmp, exact_log2(markWord::monitor_value));
     __ bnez(t0, object_has_monitor);
 
     if (!UseHeavyMonitors) {
@@ -2980,7 +2982,7 @@ operand immI_63()
 // 32 bit integer valid for add immediate
 operand immIAdd()
 %{
-  predicate(Assembler::operand_valid_for_add_immediate((int64_t)n->get_int()));
+  predicate(Assembler::is_simm12((int64_t)n->get_int()));
   match(ConI);
   op_cost(0);
   format %{ %}
@@ -2990,7 +2992,7 @@ operand immIAdd()
 // 32 bit integer valid for sub immediate
 operand immISub()
 %{
-  predicate(Assembler::operand_valid_for_add_immediate(-(int64_t)n->get_int()));
+  predicate(Assembler::is_simm12(-(int64_t)n->get_int()));
   match(ConI);
   op_cost(0);
   format %{ %}
@@ -3145,7 +3147,7 @@ operand immL_pc_off()
 // 64 bit integer valid for add immediate
 operand immLAdd()
 %{
-  predicate(Assembler::operand_valid_for_add_immediate(n->get_long()));
+  predicate(Assembler::is_simm12(n->get_long()));
   match(ConL);
   op_cost(0);
   format %{ %}
@@ -3155,7 +3157,7 @@ operand immLAdd()
 // 64 bit integer valid for sub immediate
 operand immLSub()
 %{
-  predicate(Assembler::operand_valid_for_add_immediate(-(n->get_long())));
+  predicate(Assembler::is_simm12(-(n->get_long())));
   match(ConL);
   op_cost(0);
   format %{ %}
@@ -3236,7 +3238,7 @@ operand immF0()
 
 operand immIOffset()
 %{
-  predicate(is_imm_in_range(n->get_int(), 12, 0));
+  predicate(Assembler::is_simm12(n->get_int()));
   match(ConI);
   op_cost(0);
   format %{ %}
@@ -3245,7 +3247,7 @@ operand immIOffset()
 
 operand immLOffset()
 %{
-  predicate(is_imm_in_range(n->get_long(), 12, 0));
+  predicate(Assembler::is_simm12(n->get_long()));
   match(ConL);
   op_cost(0);
   format %{ %}
@@ -5362,7 +5364,7 @@ instruct prefetchalloc( memory mem ) %{
   format %{ "prefetch_w $mem\t# Prefetch for write" %}
 
   ins_encode %{
-    if (is_imm_in_range($mem$$disp, 12, 0)) {
+    if (Assembler::is_simm12($mem$$disp)) {
       if (($mem$$disp & 0x1f) == 0) {
         __ prefetch_w(as_Register($mem$$base), $mem$$disp);
       } else {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -369,16 +369,16 @@ public class TestJavaFX extends JavadocTester {
                     <div class="col-last odd-row-color method-summary-table method-summary-table-tab\
                     2 method-summary-table-tab4">&nbsp;</div>
                     <div class="col-first even-row-color method-summary-table method-summary-table-t\
-                    ab2 method-summary-table-tab4"><code>final java.util.List&lt;java.util.Set&lt;? \
-                    super java.lang.Object&gt;&gt;</code></div>
+                    ab2 method-summary-table-tab4"><code>final java.util.List<wbr>&lt;java.util.Set&\
+                    lt;? super java.lang.Object&gt;&gt;</code></div>
                     <div class="col-second even-row-color method-summary-table method-summary-table-\
                     tab2 method-summary-table-tab4"><code><a href="#deltaProperty()" class="member-n\
                     ame-link">deltaProperty</a>()</code></div>
                     <div class="col-last even-row-color method-summary-table method-summary-table-ta\
                     b2 method-summary-table-tab4">&nbsp;</div>
                     <div class="col-first odd-row-color method-summary-table method-summary-table-ta\
-                    b2 method-summary-table-tab4"><code>final java.util.List&lt;java.lang.String&gt;\
-                    </code></div>
+                    b2 method-summary-table-tab4"><code>final java.util.List<wbr>&lt;java.lang.Strin\
+                    g&gt;</code></div>
                     <div class="col-second odd-row-color method-summary-table method-summary-table-t\
                     ab2 method-summary-table-tab4"><code><a href="#gammaProperty()" class="member-na\
                     me-link">gammaProperty</a>()</code></div>

@@ -508,7 +508,7 @@ double G1Policy::predict_survivor_regions_evac_time() const {
   for (GrowableArrayIterator<HeapRegion*> it = survivor_regions->begin();
        it != survivor_regions->end();
        ++it) {
-    survivor_regions_evac_time += predict_region_copy_time_ms(*it);
+    survivor_regions_evac_time += predict_region_copy_time_ms(*it, _g1h->collector_state()->in_young_only_phase());
   }
 
   return survivor_regions_evac_time;
@@ -1034,9 +1034,9 @@ double G1Policy::predict_eden_copy_time_ms(uint count, size_t* bytes_to_copy) co
   return _analytics->predict_object_copy_time_ms(expected_bytes, collector_state()->in_young_only_phase());
 }
 
-double G1Policy::predict_region_copy_time_ms(HeapRegion* hr) const {
+double G1Policy::predict_region_copy_time_ms(HeapRegion* hr, bool for_young_only_phase) const {
   size_t const bytes_to_copy = predict_bytes_to_copy(hr);
-  return _analytics->predict_object_copy_time_ms(bytes_to_copy, collector_state()->in_young_only_phase());
+  return _analytics->predict_object_copy_time_ms(bytes_to_copy, for_young_only_phase);
 }
 
 double G1Policy::predict_region_merge_scan_time(HeapRegion* hr, bool for_young_only_phase) const {
@@ -1044,8 +1044,8 @@ double G1Policy::predict_region_merge_scan_time(HeapRegion* hr, bool for_young_o
   size_t scan_card_num = _analytics->predict_scan_card_num(rs_length, for_young_only_phase);
 
   return
-    _analytics->predict_card_merge_time_ms(rs_length, collector_state()->in_young_only_phase()) +
-    _analytics->predict_card_scan_time_ms(scan_card_num, collector_state()->in_young_only_phase());
+    _analytics->predict_card_merge_time_ms(rs_length, for_young_only_phase) +
+    _analytics->predict_card_scan_time_ms(scan_card_num, for_young_only_phase);
 }
 
 double G1Policy::predict_region_non_copy_time_ms(HeapRegion* hr,
@@ -1063,7 +1063,9 @@ double G1Policy::predict_region_non_copy_time_ms(HeapRegion* hr,
 }
 
 double G1Policy::predict_region_total_time_ms(HeapRegion* hr, bool for_young_only_phase) const {
-  return predict_region_non_copy_time_ms(hr, for_young_only_phase) + predict_region_copy_time_ms(hr);
+  return
+    predict_region_non_copy_time_ms(hr, for_young_only_phase) +
+    predict_region_copy_time_ms(hr, for_young_only_phase);
 }
 
 bool G1Policy::should_allocate_mutator_region() const {
