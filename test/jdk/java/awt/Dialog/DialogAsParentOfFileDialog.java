@@ -102,7 +102,8 @@ public class DialogAsParentOfFileDialog {
         fdialog = new FileDialog(dlg, title);
         passed =
             fdialog.getOwner() == dlg
-            && (fdialog.getTitle() == null || fdialog.getTitle().equals(""));
+            && (fdialog.getTitle() == null
+                || fdialog.getTitle().equals(""));
         System.out.println(passed ? "passed" : "FAILED");
         if (!passed) {
             errors.append(nl);
@@ -179,7 +180,8 @@ public class DialogAsParentOfFileDialog {
         }
     }
 
-    public static void main(String[] args) throws InterruptedException, InvocationTargetException {
+    public static void main(String[] args) throws InterruptedException,
+                                           InvocationTargetException {
         EventQueue.invokeAndWait(() -> {
             new DialogAsParentOfFileDialog().start();
         });
