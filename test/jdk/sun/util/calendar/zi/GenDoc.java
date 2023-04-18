@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -154,24 +154,26 @@ class GenDoc extends BackEnd {
             outD.mkdirs();
 
             /* If mapfile is available, add a link to the appropriate map */
-            if ((mapList == null) && (Main.getMapFile() != null)) {
-                FileReader fr = new FileReader(Main.getMapFile());
-                BufferedReader in = new BufferedReader(fr);
-                mapList = new HashMap<String,LatitudeAndLongitude>();
-                String line;
-                while ((line = in.readLine()) != null) {
-                    // skip blank and comment lines
-                    if (line.length() == 0 || line.charAt(0) == '#') {
-                        continue;
+            if (mapList == null) {
+                mapList = new HashMap<String, LatitudeAndLongitude>();
+                if (Main.getMapFile() != null) {
+                    FileReader fr = new FileReader(Main.getMapFile());
+                    BufferedReader in = new BufferedReader(fr);
+                    String line;
+                    while ((line = in.readLine()) != null) {
+                        // skip blank and comment lines
+                        if (line.length() == 0 || line.charAt(0) == '#') {
+                            continue;
+                        }
+                        StringTokenizer tokens = new StringTokenizer(line);
+                        String token = tokens.nextToken();  /* We don't use the first token. */
+                        token = tokens.nextToken();
+                        LatitudeAndLongitude location = new LatitudeAndLongitude(token);
+                        token = tokens.nextToken();
+                        mapList.put(token, location);
                     }
-                    StringTokenizer tokens = new StringTokenizer(line);
-                    String token = tokens.nextToken();  /* We don't use the first token. */
-                    token = tokens.nextToken();
-                    LatitudeAndLongitude location = new LatitudeAndLongitude(token);
-                    token = tokens.nextToken();
-                    mapList.put(token, location);
+                    in.close();
                 }
-                in.close();
             }
 
             /* Open zoneinfo file to write. */
