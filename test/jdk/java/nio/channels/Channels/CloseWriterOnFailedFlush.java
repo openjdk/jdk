@@ -34,7 +34,7 @@ import java.nio.channels.WritableByteChannel;
 import java.nio.charset.MalformedInputException;
 import java.nio.charset.StandardCharsets;
 
-public class Close {
+public class CloseWriterOnFailedFlush {
     private static final String STR_IOE = "Test";   // IOException
     private static final String STR_MIE = "\ud83c"; // MalformedInputException
 
