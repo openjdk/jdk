@@ -482,8 +482,6 @@ public:
   // Remap the shared readonly space to shared readwrite, private.
   bool  remap_shared_readonly_as_readwrite();
 
-  // Errors.
-  static void fail_stop(const char *msg, ...) ATTRIBUTE_PRINTF(1, 2);
   static bool memory_mapping_failed() {
     CDS_ONLY(return _memory_mapping_failed;)
     NOT_CDS(return false;)
