@@ -216,6 +216,14 @@ import static java.net.spi.InetAddressResolver.LookupPolicy.IPV6_FIRST;
  * </dd>
  * </dl>
  *
+ * @spec https://www.rfc-editor.org/info/rfc1918
+ *      RFC 1918: Address Allocation for Private Internets
+ * @spec https://www.rfc-editor.org/info/rfc2365
+ *      RFC 2365: Administratively Scoped IP Multicast
+ * @spec https://www.rfc-editor.org/info/rfc2373
+ *      RFC 2373: IP Version 6 Addressing Architecture
+ * @spec https://www.rfc-editor.org/info/rfc790
+ *      RFC 790: Assigned numbers
  * @author  Chris Warth
  * @see     java.net.InetAddress#getByAddress(byte[])
  * @see     java.net.InetAddress#getByAddress(java.lang.String, byte[])
@@ -1408,6 +1416,9 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
      *               for a global IPv6 address.
      * @throws     SecurityException if a security manager exists
      *             and its checkConnect method doesn't allow the operation
+     *
+     * @spec https://www.rfc-editor.org/info/rfc2373 RFC 2373: IP Version 6 Addressing Architecture
+     * @spec https://www.rfc-editor.org/info/rfc3330 RFC 3330: Special-Use IPv4 Addresses
      */
     public static InetAddress getByName(String host)
         throws UnknownHostException {
@@ -1451,6 +1462,8 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
      * @throws     SecurityException  if a security manager exists and its
      *               {@code checkConnect} method doesn't allow the operation.
      *
+     * @spec https://www.rfc-editor.org/info/rfc2373 RFC 2373: IP Version 6 Addressing Architecture
+     * @spec https://www.rfc-editor.org/info/rfc3330 RFC 3330: Special-Use IPv4 Addresses
      * @see SecurityManager#checkConnect
      */
     public static InetAddress[] getAllByName(String host)
@@ -1508,6 +1521,10 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
             InetAddress[] ret = new InetAddress[1];
             if(addr != null) {
                 if (addr.length == Inet4Address.INADDRSZ) {
+                    if (numericZone != -1 || ifname != null) {
+                        // IPv4-mapped address must not contain zone-id
+                        throw new UnknownHostException(host + ": invalid IPv4-mapped address");
+                    }
                     ret[0] = new Inet4Address(null, addr);
                 } else {
                     if (ifname != null) {
@@ -1552,22 +1569,23 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
         int percent = s.indexOf ('%');
         int slen = s.length();
         int digit, zone=0;
+        int multmax = Integer.MAX_VALUE / 10; // for int overflow detection
         if (percent == -1) {
             return -1;
         }
         for (int i=percent+1; i<slen; i++) {
             char c = s.charAt(i);
-            if (c == ']') {
-                if (i == percent+1) {
-                    /* empty per-cent field */
-                    return -1;
-                }
-                break;
+            if ((digit = IPAddressUtil.parseAsciiDigit(c, 10)) < 0) {
+                return -1;
             }
-            if ((digit = Character.digit (c, 10)) < 0) {
+            if (zone > multmax) {
                 return -1;
             }
             zone = (zone * 10) + digit;
+            if (zone < 0) {
+                return -1;
+            }
+
         }
         return zone;
     }

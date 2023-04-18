@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ bool CompilationModeFlag::initialize() {
   _mode = Mode::NORMAL;
   // During parsing we want to be very careful not to use any methods of CompilerConfig that depend on
   // CompilationModeFlag.
-  if (CompilationMode != NULL) {
+  if (CompilationMode != nullptr) {
     if (strcmp(CompilationMode, "default") == 0 || strcmp(CompilationMode, "normal") == 0) {
       assert(_mode == Mode::NORMAL, "Precondition");
     } else if (strcmp(CompilationMode, "quick-only") == 0) {
@@ -121,6 +121,16 @@ intx CompilerConfig::scaled_compile_threshold(intx threshold) {
 // Returns freq_log scaled with CompileThresholdScaling
 intx CompilerConfig::scaled_freq_log(intx freq_log) {
   return scaled_freq_log(freq_log, CompileThresholdScaling);
+}
+
+// For XXXThreshold flags, which all have a valid range of [0 .. max_jint]
+intx CompilerConfig::jvmflag_scaled_compile_threshold(intx threshold) {
+  return MAX2((intx)0, MIN2(scaled_compile_threshold(threshold), (intx)max_jint));
+}
+
+// For XXXNotifyFreqLog flags, which all have a valid range of [0 .. 30]
+intx CompilerConfig::jvmflag_scaled_freq_log(intx freq_log) {
+  return MAX2((intx)0, MIN2(scaled_freq_log(freq_log), (intx)30));
 }
 
 // Returns threshold scaled with the value of scale.
@@ -325,7 +335,7 @@ void CompilerConfig::set_compilation_policy_flags() {
   }
 
   if (CompileThresholdScaling < 0) {
-    vm_exit_during_initialization("Negative value specified for CompileThresholdScaling", NULL);
+    vm_exit_during_initialization("Negative value specified for CompileThresholdScaling", nullptr);
   }
 
   if (CompilationModeFlag::disable_intermediate()) {
@@ -364,29 +374,29 @@ void CompilerConfig::set_compilation_policy_flags() {
   // Scale tiered compilation thresholds.
   // CompileThresholdScaling == 0.0 is equivalent to -Xint and leaves compilation thresholds unchanged.
   if (!FLAG_IS_DEFAULT(CompileThresholdScaling) && CompileThresholdScaling > 0.0) {
-    FLAG_SET_ERGO(Tier0InvokeNotifyFreqLog, scaled_freq_log(Tier0InvokeNotifyFreqLog));
-    FLAG_SET_ERGO(Tier0BackedgeNotifyFreqLog, scaled_freq_log(Tier0BackedgeNotifyFreqLog));
+    FLAG_SET_ERGO(Tier0InvokeNotifyFreqLog, jvmflag_scaled_freq_log(Tier0InvokeNotifyFreqLog));
+    FLAG_SET_ERGO(Tier0BackedgeNotifyFreqLog, jvmflag_scaled_freq_log(Tier0BackedgeNotifyFreqLog));
 
-    FLAG_SET_ERGO(Tier3InvocationThreshold, scaled_compile_threshold(Tier3InvocationThreshold));
-    FLAG_SET_ERGO(Tier3MinInvocationThreshold, scaled_compile_threshold(Tier3MinInvocationThreshold));
-    FLAG_SET_ERGO(Tier3CompileThreshold, scaled_compile_threshold(Tier3CompileThreshold));
-    FLAG_SET_ERGO(Tier3BackEdgeThreshold, scaled_compile_threshold(Tier3BackEdgeThreshold));
+    FLAG_SET_ERGO(Tier3InvocationThreshold, jvmflag_scaled_compile_threshold(Tier3InvocationThreshold));
+    FLAG_SET_ERGO(Tier3MinInvocationThreshold, jvmflag_scaled_compile_threshold(Tier3MinInvocationThreshold));
+    FLAG_SET_ERGO(Tier3CompileThreshold, jvmflag_scaled_compile_threshold(Tier3CompileThreshold));
+    FLAG_SET_ERGO(Tier3BackEdgeThreshold, jvmflag_scaled_compile_threshold(Tier3BackEdgeThreshold));
 
     // Tier2{Invocation,MinInvocation,Compile,Backedge}Threshold should be scaled here
     // once these thresholds become supported.
 
-    FLAG_SET_ERGO(Tier2InvokeNotifyFreqLog, scaled_freq_log(Tier2InvokeNotifyFreqLog));
-    FLAG_SET_ERGO(Tier2BackedgeNotifyFreqLog, scaled_freq_log(Tier2BackedgeNotifyFreqLog));
+    FLAG_SET_ERGO(Tier2InvokeNotifyFreqLog, jvmflag_scaled_freq_log(Tier2InvokeNotifyFreqLog));
+    FLAG_SET_ERGO(Tier2BackedgeNotifyFreqLog, jvmflag_scaled_freq_log(Tier2BackedgeNotifyFreqLog));
 
-    FLAG_SET_ERGO(Tier3InvokeNotifyFreqLog, scaled_freq_log(Tier3InvokeNotifyFreqLog));
-    FLAG_SET_ERGO(Tier3BackedgeNotifyFreqLog, scaled_freq_log(Tier3BackedgeNotifyFreqLog));
+    FLAG_SET_ERGO(Tier3InvokeNotifyFreqLog, jvmflag_scaled_freq_log(Tier3InvokeNotifyFreqLog));
+    FLAG_SET_ERGO(Tier3BackedgeNotifyFreqLog, jvmflag_scaled_freq_log(Tier3BackedgeNotifyFreqLog));
 
-    FLAG_SET_ERGO(Tier23InlineeNotifyFreqLog, scaled_freq_log(Tier23InlineeNotifyFreqLog));
+    FLAG_SET_ERGO(Tier23InlineeNotifyFreqLog, jvmflag_scaled_freq_log(Tier23InlineeNotifyFreqLog));
 
-    FLAG_SET_ERGO(Tier4InvocationThreshold, scaled_compile_threshold(Tier4InvocationThreshold));
-    FLAG_SET_ERGO(Tier4MinInvocationThreshold, scaled_compile_threshold(Tier4MinInvocationThreshold));
-    FLAG_SET_ERGO(Tier4CompileThreshold, scaled_compile_threshold(Tier4CompileThreshold));
-    FLAG_SET_ERGO(Tier4BackEdgeThreshold, scaled_compile_threshold(Tier4BackEdgeThreshold));
+    FLAG_SET_ERGO(Tier4InvocationThreshold, jvmflag_scaled_compile_threshold(Tier4InvocationThreshold));
+    FLAG_SET_ERGO(Tier4MinInvocationThreshold, jvmflag_scaled_compile_threshold(Tier4MinInvocationThreshold));
+    FLAG_SET_ERGO(Tier4CompileThreshold, jvmflag_scaled_compile_threshold(Tier4CompileThreshold));
+    FLAG_SET_ERGO(Tier4BackEdgeThreshold, jvmflag_scaled_compile_threshold(Tier4BackEdgeThreshold));
   }
 
 #ifdef COMPILER1

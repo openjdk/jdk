@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -305,10 +305,10 @@ reg_class int_rbx_reg(RBX);
 // Singleton class for RCX int register
 reg_class int_rcx_reg(RCX);
 
-// Singleton class for RCX int register
+// Singleton class for RDX int register
 reg_class int_rdx_reg(RDX);
 
-// Singleton class for RCX int register
+// Singleton class for RDI int register
 reg_class int_rdi_reg(RDI);
 
 // Singleton class for instruction pointer
@@ -889,7 +889,7 @@ void MachPrologNode::format(PhaseRegAlloc* ra_, outputStream* st) const {
   }
   if (C->stub_function() != NULL && BarrierSet::barrier_set()->barrier_set_nmethod() != NULL) {
     st->print("\n\t");
-    st->print("cmpl    [r15_thread + #disarmed_offset], #disarmed_value\t");
+    st->print("cmpl    [r15_thread + #disarmed_guard_value_offset], #disarmed_guard_value\t");
     st->print("\n\t");
     st->print("je      fast_entry\t");
     st->print("\n\t");
@@ -6080,6 +6080,7 @@ instruct storeL(memory mem, rRegL src)
 // Store Pointer
 instruct storeP(memory mem, any_RegP src)
 %{
+  predicate(n->as_Store()->barrier_data() == 0);
   match(Set mem (StoreP mem src));
 
   ins_cost(125); // XXX
@@ -6092,7 +6093,7 @@ instruct storeP(memory mem, any_RegP src)
 
 instruct storeImmP0(memory mem, immP0 zero)
 %{
-  predicate(UseCompressedOops && (CompressedOops::base() == NULL));
+  predicate(UseCompressedOops && (CompressedOops::base() == NULL) && n->as_Store()->barrier_data() == 0);
   match(Set mem (StoreP mem zero));
 
   ins_cost(125); // XXX
@@ -6106,6 +6107,7 @@ instruct storeImmP0(memory mem, immP0 zero)
 // Store NULL Pointer, mark word, or other simple pointer constant.
 instruct storeImmP(memory mem, immP31 src)
 %{
+  predicate(n->as_Store()->barrier_data() == 0);
   match(Set mem (StoreP mem src));
 
   ins_cost(150); // XXX
@@ -8460,44 +8462,34 @@ instruct xchgN( memory mem, rRegN newval) %{
 //----------Abs Instructions-------------------------------------------
 
 // Integer Absolute Instructions
-instruct absI_rReg(rRegI dst, rRegI src, rRegI tmp, rFlagsReg cr)
+instruct absI_rReg(rRegI dst, rRegI src, rFlagsReg cr)
 %{
   match(Set dst (AbsI src));
-  effect(TEMP dst, TEMP tmp, KILL cr);
-  format %{ "movl $tmp, $src\n\t"
-            "sarl $tmp, 31\n\t"
-            "movl $dst, $src\n\t"
-            "xorl $dst, $tmp\n\t"
-            "subl $dst, $tmp\n"
-          %}
+  effect(TEMP dst, KILL cr);
+  format %{ "xorl    $dst, $dst\t# abs int\n\t"
+            "subl    $dst, $src\n\t"
+            "cmovll  $dst, $src" %}
   ins_encode %{
-    __ movl($tmp$$Register, $src$$Register);
-    __ sarl($tmp$$Register, 31);
-    __ movl($dst$$Register, $src$$Register);
-    __ xorl($dst$$Register, $tmp$$Register);
-    __ subl($dst$$Register, $tmp$$Register);
+    __ xorl($dst$$Register, $dst$$Register);
+    __ subl($dst$$Register, $src$$Register);
+    __ cmovl(Assembler::less, $dst$$Register, $src$$Register);
   %}
 
   ins_pipe(ialu_reg_reg);
 %}
 
 // Long Absolute Instructions
-instruct absL_rReg(rRegL dst, rRegL src, rRegL tmp, rFlagsReg cr)
+instruct absL_rReg(rRegL dst, rRegL src, rFlagsReg cr)
 %{
   match(Set dst (AbsL src));
-  effect(TEMP dst, TEMP tmp, KILL cr);
-  format %{ "movq $tmp, $src\n\t"
-            "sarq $tmp, 63\n\t"
-            "movq $dst, $src\n\t"
-            "xorq $dst, $tmp\n\t"
-            "subq $dst, $tmp\n"
-          %}
+  effect(TEMP dst, KILL cr);
+  format %{ "xorl    $dst, $dst\t# abs long\n\t"
+            "subq    $dst, $src\n\t"
+            "cmovlq  $dst, $src" %}
   ins_encode %{
-    __ movq($tmp$$Register, $src$$Register);
-    __ sarq($tmp$$Register, 63);
-    __ movq($dst$$Register, $src$$Register);
-    __ xorq($dst$$Register, $tmp$$Register);
-    __ subq($dst$$Register, $tmp$$Register);
+    __ xorl($dst$$Register, $dst$$Register);
+    __ subq($dst$$Register, $src$$Register);
+    __ cmovq(Assembler::less, $dst$$Register, $src$$Register);
   %}
 
   ins_pipe(ialu_reg_reg);
@@ -12072,6 +12064,32 @@ instruct array_equalsC_evex(rdi_RegP ary1, rsi_RegP ary2, rax_RegI result,
   ins_pipe( pipe_slow );
 %}
 
+instruct arrays_hashcode(rdi_RegP ary1, rdx_RegI cnt1, rbx_RegI result, immU8 basic_type,
+                         legRegD tmp_vec1, legRegD tmp_vec2, legRegD tmp_vec3, legRegD tmp_vec4,
+                         legRegD tmp_vec5, legRegD tmp_vec6, legRegD tmp_vec7, legRegD tmp_vec8,
+                         legRegD tmp_vec9, legRegD tmp_vec10, legRegD tmp_vec11, legRegD tmp_vec12,
+                         legRegD tmp_vec13, rRegI tmp1, rRegI tmp2, rRegI tmp3, rFlagsReg cr)
+%{
+  predicate(UseAVX >= 2);
+  match(Set result (VectorizedHashCode (Binary ary1 cnt1) (Binary result basic_type)));
+  effect(TEMP tmp_vec1, TEMP tmp_vec2, TEMP tmp_vec3, TEMP tmp_vec4, TEMP tmp_vec5, TEMP tmp_vec6,
+         TEMP tmp_vec7, TEMP tmp_vec8, TEMP tmp_vec9, TEMP tmp_vec10, TEMP tmp_vec11, TEMP tmp_vec12,
+         TEMP tmp_vec13, TEMP tmp1, TEMP tmp2, TEMP tmp3, USE_KILL ary1, USE_KILL cnt1,
+         USE basic_type, KILL cr);
+
+  format %{ "Array HashCode array[] $ary1,$cnt1,$result,$basic_type -> $result   // KILL all" %}
+  ins_encode %{
+    __ arrays_hashcode($ary1$$Register, $cnt1$$Register, $result$$Register,
+                       $tmp1$$Register, $tmp2$$Register, $tmp3$$Register,
+                       $tmp_vec1$$XMMRegister, $tmp_vec2$$XMMRegister, $tmp_vec3$$XMMRegister,
+                       $tmp_vec4$$XMMRegister, $tmp_vec5$$XMMRegister, $tmp_vec6$$XMMRegister,
+                       $tmp_vec7$$XMMRegister, $tmp_vec8$$XMMRegister, $tmp_vec9$$XMMRegister,
+                       $tmp_vec10$$XMMRegister, $tmp_vec11$$XMMRegister, $tmp_vec12$$XMMRegister,
+                       $tmp_vec13$$XMMRegister, (BasicType)$basic_type$$constant);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
 instruct count_positives(rsi_RegP ary1, rcx_RegI len, rax_RegI result,
                          legRegD tmp1, legRegD tmp2, rbx_RegI tmp3, rFlagsReg cr,)
 %{
@@ -13025,35 +13043,6 @@ instruct jmpLoopEnd(cmpOp cop, rFlagsReg cr, label labl)
   ins_pipe(pipe_jcc);
 %}
 
-// Jump Direct Conditional - Label defines a relative address from Jcc+1
-instruct jmpLoopEndU(cmpOpU cop, rFlagsRegU cmp, label labl) %{
-  match(CountedLoopEnd cop cmp);
-  effect(USE labl);
-
-  ins_cost(300);
-  format %{ "j$cop,u   $labl\t# loop end" %}
-  size(6);
-  ins_encode %{
-    Label* L = $labl$$label;
-    __ jcc((Assembler::Condition)($cop$$cmpcode), *L, false); // Always long jump
-  %}
-  ins_pipe(pipe_jcc);
-%}
-
-instruct jmpLoopEndUCF(cmpOpUCF cop, rFlagsRegUCF cmp, label labl) %{
-  match(CountedLoopEnd cop cmp);
-  effect(USE labl);
-
-  ins_cost(200);
-  format %{ "j$cop,u   $labl\t# loop end" %}
-  size(6);
-  ins_encode %{
-    Label* L = $labl$$label;
-    __ jcc((Assembler::Condition)($cop$$cmpcode), *L, false); // Always long jump
-  %}
-  ins_pipe(pipe_jcc);
-%}
-
 // Jump Direct Conditional - using unsigned comparison
 instruct jmpConU(cmpOpU cop, rFlagsRegU cmp, label labl) %{
   match(If cop cmp);
@@ -13226,37 +13215,6 @@ instruct jmpLoopEnd_short(cmpOp cop, rFlagsReg cr, label labl) %{
   ins_short_branch(1);
 %}
 
-// Jump Direct Conditional - Label defines a relative address from Jcc+1
-instruct jmpLoopEndU_short(cmpOpU cop, rFlagsRegU cmp, label labl) %{
-  match(CountedLoopEnd cop cmp);
-  effect(USE labl);
-
-  ins_cost(300);
-  format %{ "j$cop,us  $labl\t# loop end" %}
-  size(2);
-  ins_encode %{
-    Label* L = $labl$$label;
-    __ jccb((Assembler::Condition)($cop$$cmpcode), *L);
-  %}
-  ins_pipe(pipe_jcc);
-  ins_short_branch(1);
-%}
-
-instruct jmpLoopEndUCF_short(cmpOpUCF cop, rFlagsRegUCF cmp, label labl) %{
-  match(CountedLoopEnd cop cmp);
-  effect(USE labl);
-
-  ins_cost(300);
-  format %{ "j$cop,us  $labl\t# loop end" %}
-  size(2);
-  ins_encode %{
-    Label* L = $labl$$label;
-    __ jccb((Assembler::Condition)($cop$$cmpcode), *L);
-  %}
-  ins_pipe(pipe_jcc);
-  ins_short_branch(1);
-%}
-
 // Jump Direct Conditional - using unsigned comparison
 instruct jmpConU_short(cmpOpU cop, rFlagsRegU cmp, label labl) %{
   match(If cop cmp);
@@ -13341,15 +13299,15 @@ instruct cmpFastLockRTM(rFlagsReg cr, rRegP object, rbx_RegP box, rax_RegI tmp, 
   ins_pipe(pipe_slow);
 %}
 
-instruct cmpFastLock(rFlagsReg cr, rRegP object, rbx_RegP box, rax_RegI tmp, rRegP scr, rRegP cx1) %{
+instruct cmpFastLock(rFlagsReg cr, rRegP object, rbx_RegP box, rax_RegI tmp, rRegP scr) %{
   predicate(!Compile::current()->use_rtm());
   match(Set cr (FastLock object box));
-  effect(TEMP tmp, TEMP scr, TEMP cx1, USE_KILL box);
+  effect(TEMP tmp, TEMP scr, USE_KILL box);
   ins_cost(300);
   format %{ "fastlock $object,$box\t! kills $box,$tmp,$scr" %}
   ins_encode %{
     __ fast_lock($object$$Register, $box$$Register, $tmp$$Register,
-                 $scr$$Register, $cx1$$Register, noreg, NULL, NULL, NULL, false, false);
+                 $scr$$Register, noreg, noreg, NULL, NULL, NULL, false, false);
   %}
   ins_pipe(pipe_slow);
 %}

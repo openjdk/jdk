@@ -174,6 +174,8 @@ public final class Util {
             if (screen.equals(color)) {
                 return true;
             }
+            System.out.println("Robot.getPixelColor Expected: " + color);
+            System.out.println("Robot.getPixelColor Actual: " + screen);
         }
         return false;
     }

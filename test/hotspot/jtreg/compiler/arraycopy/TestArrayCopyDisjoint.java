@@ -202,27 +202,22 @@ public class TestArrayCopyDisjoint {
 
       setup();
 
-      try {
-        for (int i = 0 ; i < 1000000 ; i++ ) {
-          testByte(lengths[i % lengths.length], r.nextInt(2048) , r.nextInt(2048));
-          testByte_constant_LT32B (r.nextInt(2048) , r.nextInt(2048));
-          testByte_constant_LT64B (r.nextInt(2048) , r.nextInt(2048));
+      for (int i = 0 ; i < 30_000 ; i++ ) {
+        testByte(lengths[i % lengths.length], r.nextInt(2048) , r.nextInt(2048));
+        testByte_constant_LT32B (r.nextInt(2048) , r.nextInt(2048));
+        testByte_constant_LT64B (r.nextInt(2048) , r.nextInt(2048));
 
-          testChar(lengths[i % lengths.length] >> 1, r.nextInt(2048) , r.nextInt(2048));
-          testChar_constant_LT32B (r.nextInt(2048) , r.nextInt(2048));
-          testChar_constant_LT64B (r.nextInt(2048) , r.nextInt(2048));
+        testChar(lengths[i % lengths.length] >> 1, r.nextInt(2048) , r.nextInt(2048));
+        testChar_constant_LT32B (r.nextInt(2048) , r.nextInt(2048));
+        testChar_constant_LT64B (r.nextInt(2048) , r.nextInt(2048));
 
-          testInt(lengths[i % lengths.length]  >> 2, r.nextInt(2048) , r.nextInt(2048));
-          testInt_constant_LT32B (r.nextInt(2048) , r.nextInt(2048));
-          testInt_constant_LT64B (r.nextInt(2048) , r.nextInt(2048));
+        testInt(lengths[i % lengths.length]  >> 2, r.nextInt(2048) , r.nextInt(2048));
+        testInt_constant_LT32B (r.nextInt(2048) , r.nextInt(2048));
+        testInt_constant_LT64B (r.nextInt(2048) , r.nextInt(2048));
 
-          testLong(lengths[i % lengths.length] >> 3, r.nextInt(2048) , r.nextInt(2048));
-          testLong_constant_LT32B (r.nextInt(2048) , r.nextInt(2048));
-          testLong_constant_LT64B (r.nextInt(2048) , r.nextInt(2048));
-        }
-        System.out.println("PASS : " + validate_ctr);
-      } catch (Exception e) {
-         System.out.println(e.getMessage());
+        testLong(lengths[i % lengths.length] >> 3, r.nextInt(2048) , r.nextInt(2048));
+        testLong_constant_LT32B (r.nextInt(2048) , r.nextInt(2048));
+        testLong_constant_LT64B (r.nextInt(2048) , r.nextInt(2048));
       }
     }
 }

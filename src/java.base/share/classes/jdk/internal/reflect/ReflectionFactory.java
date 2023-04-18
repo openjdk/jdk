@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -479,7 +479,7 @@ public class ReflectionFactory {
      * Returns a MethodHandle for {@code writeReplace} on the serializable class
      * or null if no match found.
      * @param cl a serializable class
-     * @returnss the {@code writeReplace} MethodHandle or {@code null} if not found
+     * @return the {@code writeReplace} MethodHandle or {@code null} if not found
      */
     public final MethodHandle writeReplaceForSerialization(Class<?> cl) {
         return getReplaceResolveForSerialization(cl, "writeReplace");
@@ -489,7 +489,7 @@ public class ReflectionFactory {
      * Returns a MethodHandle for {@code readResolve} on the serializable class
      * or null if no match found.
      * @param cl a serializable class
-     * @returns the {@code writeReplace} MethodHandle or {@code null} if not found
+     * @return the {@code writeReplace} MethodHandle or {@code null} if not found
      */
     public final MethodHandle readResolveForSerialization(Class<?> cl) {
         return getReplaceResolveForSerialization(cl, "readResolve");
@@ -500,7 +500,7 @@ public class ReflectionFactory {
      * signature constraints.
      * @param cl a serializable class
      * @param methodName the method name to find
-     * @returns a MethodHandle for the method or {@code null} if not found or
+     * @return a MethodHandle for the method or {@code null} if not found or
      *       has the wrong signature.
      */
     private MethodHandle getReplaceResolveForSerialization(Class<?> cl,
@@ -567,7 +567,7 @@ public class ReflectionFactory {
 
     /**
      * Return the accessible constructor for OptionalDataException signaling eof.
-     * @returns the eof constructor for OptionalDataException
+     * @return the eof constructor for OptionalDataException
      */
     public final Constructor<OptionalDataException> newOptionalDataExceptionForSerialization() {
         try {
@@ -731,7 +731,7 @@ public class ReflectionFactory {
      * otherwise.
      * @param cl1 a class
      * @param cl2 another class
-     * @returns true if the two classes are in the same classloader and package
+     * @return true if the two classes are in the same classloader and package
      */
     private static boolean packageEquals(Class<?> cl1, Class<?> cl2) {
         assert !cl1.isArray() && !cl2.isArray();

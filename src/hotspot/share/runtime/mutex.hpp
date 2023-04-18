@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,7 +89,7 @@ class Mutex : public CHeapObj<mtSynchronizer> {
 
  private:
   // The _owner field is only set by the current thread, either to itself after it has acquired
-  // the low-level _lock, or to NULL before it has released the _lock. Accesses by any thread other
+  // the low-level _lock, or to null before it has released the _lock. Accesses by any thread other
   // than the lock owner are inherently racy.
   Thread* volatile _owner;
   void raw_set_owner(Thread* new_owner) { Atomic::store(&_owner, new_owner); }
@@ -168,7 +168,7 @@ class Mutex : public CHeapObj<mtSynchronizer> {
   void lock(); // prints out warning if VM thread blocks
   void lock(Thread *thread); // overloaded with current thread
   void unlock();
-  bool is_locked() const                     { return owner() != NULL; }
+  bool is_locked() const                     { return owner() != nullptr; }
 
   bool try_lock(); // Like lock(), but unblocking. It returns false instead
  private:
@@ -212,8 +212,8 @@ class Monitor : public Mutex {
   // Wait until monitor is notified (or times out).
   // Defaults are to make safepoint checks, wait time is forever (i.e.,
   // zero). Returns true if wait times out; otherwise returns false.
-  bool wait(int64_t timeout = 0);
-  bool wait_without_safepoint_check(int64_t timeout = 0);
+  bool wait(uint64_t timeout = 0);
+  bool wait_without_safepoint_check(uint64_t timeout = 0);
   void notify();
   void notify_all();
 };

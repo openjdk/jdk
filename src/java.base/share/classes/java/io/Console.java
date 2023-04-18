@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -384,7 +384,13 @@ public sealed class Console implements Flushable permits ProxyingConsole {
         Console c;
 
         try {
-            // Try loading providers
+            /*
+             * The JdkConsole provider used for Console instantiation can be specified
+             * with the system property "jdk.console", whose value designates the module
+             * name of the implementation, and which defaults to "java.base". If no
+             * providers are available, or instantiation failed, java.base built-in
+             * Console implementation is used.
+             */
             PrivilegedAction<Console> pa = () -> {
                 var consModName = System.getProperty("jdk.console",
                         JdkConsoleProvider.DEFAULT_PROVIDER_MODULE_NAME);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -187,10 +187,10 @@ void VerificationType::print_on(outputStream* st) const {
       } else if (is_uninitialized()) {
         st->print("uninitialized %d", bci());
       } else {
-        if (name() != NULL) {
+        if (name() != nullptr) {
           name()->print_value_on(st);
         } else {
-          st->print_cr("NULL");
+          st->print_cr("null");
         }
       }
   }

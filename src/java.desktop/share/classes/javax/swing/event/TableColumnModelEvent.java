@@ -88,12 +88,12 @@ public class TableColumnModelEvent extends java.util.EventObject
      *
      * @return int value for index from which the column was moved or removed
      */
-    public int getFromIndex() { return fromIndex; };
+    public int getFromIndex() { return fromIndex; }
 
     /**
      * Returns the toIndex.  Valid for add and moved events
      *
      * @return int value of column's new index
      */
-    public int getToIndex() { return toIndex; };
+    public int getToIndex() { return toIndex; }
 }

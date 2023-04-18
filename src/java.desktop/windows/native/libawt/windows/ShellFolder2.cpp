@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -300,7 +300,7 @@ JNIEXPORT void JNICALL Java_sun_awt_shell_Win32ShellFolderManager2_initializeCom
     HRESULT hr = ::CoInitialize(NULL);
     if (FAILED(hr)) {
         char c[64];
-        sprintf(c, "Could not initialize COM: HRESULT=0x%08X", hr);
+        snprintf(c, sizeof(c), "Could not initialize COM: HRESULT=0x%08X", hr);
         JNU_ThrowInternalError(env, c);
     }
 }
@@ -974,7 +974,7 @@ JNIEXPORT jlong JNICALL Java_sun_awt_shell_Win32ShellFolder2_extractIcon
         return 0;
     }
 
-    HICON hIcon = NULL;
+    HICON hIcon;
 
     HRESULT hres;
     IExtractIconW* pIcon;
@@ -995,15 +995,21 @@ JNIEXPORT jlong JNICALL Java_sun_awt_shell_Win32ShellFolder2_extractIcon
                 iconSize = (16 << 16) + size;
             }
             hres = pIcon->Extract(szBuf, index, &hIcon, &hIconSmall, iconSize);
-            if (size < 24) {
-                fn_DestroyIcon((HICON)hIcon);
-                hIcon = hIconSmall;
+            if (SUCCEEDED(hres)) {
+                if (size < 24) {
+                    fn_DestroyIcon((HICON)hIcon);
+                    hIcon = hIconSmall;
+                } else {
+                    fn_DestroyIcon((HICON)hIconSmall);
+                }
             } else {
-                fn_DestroyIcon((HICON)hIconSmall);
+                hIcon = NULL;
             }
         } else if (hres == E_PENDING) {
             pIcon->Release();
-            return E_PENDING;
+            return (unsigned) E_PENDING;
+        } else {
+            hIcon = NULL;
         }
         pIcon->Release();
     }

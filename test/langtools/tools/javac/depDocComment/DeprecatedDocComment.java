@@ -23,7 +23,7 @@
 
 public class DeprecatedDocComment {
 
-    public static void main(String argv[]) {
+    public static void meth() {
       DeprecatedDocComment2.deprecatedTest1();
       DeprecatedDocComment2.deprecatedTest2();
       DeprecatedDocComment2.deprecatedTest3();

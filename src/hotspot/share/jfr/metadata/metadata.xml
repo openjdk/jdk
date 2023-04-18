@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <!--
- Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -723,7 +723,7 @@
 
   <Event name="NativeMemoryUsage" category="Java Virtual Machine, Memory" label="Native Memory Usage Per Type"
     description="Native memory usage for a given memory type in the JVM" period="everyChunk">
-    <Field type="string" name="type" label="Memory Type" description="Type used for the native memory allocation" />
+    <Field type="NMTType" name="type" label="Memory Type" description="Type used for the native memory allocation" />
     <Field type="ulong" contentType="bytes" name="reserved" label="Reserved Memory" description="Reserved bytes for this type" />
     <Field type="ulong" contentType="bytes" name="committed" label="Committed Memory" description="Committed bytes for this type" />
   </Event>
@@ -789,7 +789,9 @@
     <Field type="string" name="commandLine" label="Command Line" />
   </Event>
 
-  <Event name="CPUInformation" category="Operating System, Processor" label="CPU Information" period="endChunk">
+  <Event name="CPUInformation" category="Operating System, Processor" label="CPU Information"
+         description="Characteristics and descriptions of the processor(s) the JVM is running on"
+         period="endChunk">
     <Field type="string" name="cpu" label="Type" />
     <Field type="string" name="description" label="Description" />
     <Field type="uint" name="sockets" label="Sockets" />
@@ -797,14 +799,18 @@
     <Field type="uint" name="hwThreads" label="Hardware Threads" />
   </Event>
 
-  <Event name="CPUTimeStampCounter" category="Operating System, Processor" label="CPU Time Stamp Counter" period="endChunk">
+  <Event name="CPUTimeStampCounter" category="Operating System, Processor" label="CPU Time Stamp Counter"
+         description="Information about the CPU time stamp mechanism / (RD)TSC"
+         period="endChunk">
     <Field type="boolean" name="fastTimeEnabled" label="Fast Time" />
     <Field type="boolean" name="fastTimeAutoEnabled" label="Trusted Platform" />
     <Field type="long" contentType="hertz" name="osFrequency" label="OS Frequency" />
     <Field type="long" contentType="hertz" name="fastTimeFrequency" label="Fast Time Frequency" />
   </Event>
 
-  <Event name="CPULoad" category="Operating System, Processor" label="CPU Load" description="OS CPU Load" period="everyChunk">
+  <Event name="CPULoad" category="Operating System, Processor" label="CPU Load"
+         description="Information about the recent CPU usage of the JVM process"
+         period="everyChunk">
     <Field type="float" contentType="percentage" name="jvmUser" label="JVM User" />
     <Field type="float" contentType="percentage" name="jvmSystem" label="JVM System" />
     <Field type="float" contentType="percentage" name="machineTotal" label="Machine Total" />
@@ -1144,11 +1150,14 @@
     <Field type="ulong" contentType="bytes" name="size" label="Size Written" />
   </Event>
 
-  <Event name="HeapDump" category="Java Virtual Machine, Diagnostics" label="Heap Dump" stackTrace="true" thread="true">
-    <Field type="string" name="destination" label="Destination" />
+  <Event name="HeapDump" category="Java Virtual Machine, Diagnostics" label="Heap Dump" description="Information about a successfully written Java heap dump"
+    stackTrace="true" thread="true">
+    <Field type="string" name="destination" label="Destination Path of the Dump" />
     <Field type="long" name="size" label="Size" />
     <Field type="boolean" name="gcBeforeDump" label="GC Before Dump" />
-    <Field type="boolean" name="onOutOfMemoryError" label="On Out of Memory Error" />
+    <Field type="boolean" name="onOutOfMemoryError" label="Heap Dump on Out of Memory Error" />
+    <Field type="boolean" name="overwrite" label="Overwrite" description="Heap dump overwrites previous file location if it exists" />
+    <Field type="int" name="compression" label="Compression Level" description="Compression level of the dump, if larger than 0 we use gzip compression with this level" />
   </Event>
 
   <Event name="GCLocker" category="Java Virtual Machine, GC, Detailed" label="GC Locker" startTime="true" thread="true" stackTrace="true">
@@ -1161,6 +1170,25 @@
     <Field type="Symbol" name="codeSource" label="Code Source" description="URL from where the class was loaded" />
     <Field type="ulong" name="objects" label="Finalizable Objects on Heap" description="Number of objects on heap that can be finalized" />
     <Field type="ulong" name="totalFinalizersRun" label="Finalizers Run" description="Total number of finalizers run since JVM start" />
+  </Event>
+
+  <Event name="JavaAgent" category="Java Virtual Machine, Diagnostics" label="Java Agent" description="A Java programming language agent making use of the java.lang.instrument package for instrumenting programs running on the JVM"
+    thread="false" startTime="false" period="endChunk" stackTrace="false">
+    <Field type="string" name="name" label="Name" />
+    <Field type="string" name="options" label="Options" />
+    <Field type="boolean" name="dynamic" label="Dynamic" description="If the agent attached to the JVM dynamically during runtime, i.e. not at startup" />
+    <Field type="Ticks" name="initializationTime" label="Initialization Time" description="The time the JVM initialized the agent" />
+    <Field type="Tickspan" name="initializationDuration" label="Initialization Duration" description="The duration of executing the initialization method, either premain or agentmain" />
+  </Event>
+
+  <Event name="NativeAgent" category="Java Virtual Machine, Diagnostics" label="Native Agent" description="A native programming language agent making use of the JVMTI interface used by development, profiling and monitoring tools"
+    thread="false" startTime="false" period="endChunk" stackTrace="false">
+    <Field type="string" name="name" label="Name" />
+    <Field type="string" name="options" label="Options" />
+    <Field type="boolean" name="dynamic" label="Dynamic" description="If the library attached to the JVM dynamically during runtime, i.e. not at startup" />
+    <Field type="Ticks" name="initializationTime" label="Initialization Time" description="The time the JVM initialized the agent" />
+    <Field type="Tickspan" name="initializationDuration" label="Initialization Duration" description="The duration of executing the JVMTI VMInit event callback. If no VMInit callback is specified, the duration is 0. For a dynamically loaded agent, it is the duration of executing the call to Agent_OnAttach." />
+    <Field type="string" name="path" label="Path" description="The path of the library" />
   </Event>
 
   <Type name="DeoptimizationReason" label="Deoptimization Reason">
@@ -1367,6 +1395,10 @@
 
   <Type name="ChunkHeader" label="Chunk Header">
     <Field type="byte" array="true" name="payload" label="Payload" />
+  </Type>
+
+  <Type name="NMTType" label="Native Memory Tracking Type">
+    <Field type="string" name="name" label="Name" />
   </Type>
 
   <Relation name="JavaMonitorAddress"/>

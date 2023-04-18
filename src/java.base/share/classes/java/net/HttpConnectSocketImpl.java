@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -124,8 +124,8 @@ import java.util.Set;
         // close the original socket impl and release its descriptor
         close();
 
-        // update the Sockets impl to the impl from the http Socket
-        SocketImpl si = httpSocket.impl;
+        // change Socket to use httpSocket's SocketImpl
+        SocketImpl si = httpSocket.impl();
         socket.setImpl(si);
 
         // best effort is made to try and reset options previously set

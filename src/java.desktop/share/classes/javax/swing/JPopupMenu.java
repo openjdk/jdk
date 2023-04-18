@@ -542,7 +542,7 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
      *
      * @param label a string specifying the label for the popup menu
      *
-     * @see #setLabel
+     * @see #getLabel
      */
     @BeanProperty(description
             = "The label for the popup menu.")

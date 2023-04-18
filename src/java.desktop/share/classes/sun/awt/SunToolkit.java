@@ -130,7 +130,7 @@ public abstract class SunToolkit extends Toolkit
         touchKeyboardAutoShowIsEnabled = Boolean.parseBoolean(
             GetPropertyAction.privilegedGetProperty(
                 "awt.touchKeyboardAutoShowIsEnabled", "true"));
-    };
+    }
 
     /**
      * Special mask for the UngrabEvent events, in addition to the
@@ -231,7 +231,9 @@ public abstract class SunToolkit extends Toolkit
      *     }
      */
 
-    private static final ReentrantLock AWT_LOCK = new ReentrantLock();
+    @SuppressWarnings("removal")
+    private static final ReentrantLock AWT_LOCK = new ReentrantLock(
+            AccessController.doPrivileged(new GetBooleanAction("awt.lock.fair")));
     private static final Condition AWT_LOCK_COND = AWT_LOCK.newCondition();
 
     public static final void awtLock() {
@@ -410,7 +412,7 @@ public abstract class SunToolkit extends Toolkit
 
     public static void setLWRequestStatus(Window changed,boolean status){
         AWTAccessor.getWindowAccessor().setLWRequestStatus(changed, status);
-    };
+    }
 
     public static void checkAndSetPolicy(Container cont) {
         FocusTraversalPolicy defaultPolicy = KeyboardFocusManager.

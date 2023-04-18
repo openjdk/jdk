@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2022 Unicode, Inc.
+<!-- Copyright © 1991-2023 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -219,15 +219,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateTimeFormat>
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
-						<dateTimeFormat type="atTime">
-							<pattern>{1}, {0}</pattern>
-						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
-							<pattern>{1}, {0}</pattern>
-						</dateTimeFormat>
-						<dateTimeFormat type="atTime">
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -235,16 +229,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
-						<dateTimeFormat type="atTime">
-							<pattern>{1}, {0}</pattern>
-						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
-						</dateTimeFormat>
-						<dateTimeFormat type="atTime">
-							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
@@ -403,9 +391,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<dateTimeFormatLength type="medium">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
-						</dateTimeFormat>
-						<dateTimeFormat type="atTime">
-							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
@@ -1025,8 +1010,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<decimalFormats numberSystem="latn">
 			<decimalFormatLength type="long">
 				<decimalFormat>
+					<pattern type="1000000000000" count="one">0 billón</pattern>
 					<pattern type="1000000000000" count="other">0 billón</pattern>
+					<pattern type="10000000000000" count="one">00 billones</pattern>
 					<pattern type="10000000000000" count="other">00 billones</pattern>
+					<pattern type="100000000000000" count="one">000 billones</pattern>
 					<pattern type="100000000000000" count="other">000 billones</pattern>
 				</decimalFormat>
 			</decimalFormatLength>
@@ -1365,9 +1353,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="acceleration-g-force">
 				<displayName>G</displayName>
 			</unit>
-			<unit type="acceleration-meter-per-square-second">
-				<displayName>m/s²</displayName>
-			</unit>
 			<unit type="area-square-meter">
 				<displayName>metros²</displayName>
 			</unit>
@@ -1416,15 +1401,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} kWh/100km</unitPattern>
 				<unitPattern count="other">{0} kWh/100km</unitPattern>
 			</unit>
-			<unit type="graphics-megapixel">
-				<displayName>Mpx</displayName>
-			</unit>
-			<unit type="graphics-dot-per-centimeter">
-				<displayName>ppcm</displayName>
-			</unit>
-			<unit type="graphics-dot">
-				<displayName>pt</displayName>
-			</unit>
 			<unit type="length-parsec">
 				<displayName>parsec</displayName>
 			</unit>
@@ -1437,21 +1413,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ua</displayName>
 			</unit>
 			<unit type="length-nautical-mile">
+				<displayName>nmi</displayName>
 				<unitPattern count="one">{0}nmi</unitPattern>
 				<unitPattern count="other">{0}nmi</unitPattern>
 			</unit>
 			<unit type="length-mile-scandinavian">
 				<unitPattern count="one">{0}mi esc.</unitPattern>
 				<unitPattern count="other">{0}mi esc.</unitPattern>
-			</unit>
-			<unit type="mass-tonne">
-				<displayName>t</displayName>
-			</unit>
-			<unit type="mass-milligram">
-				<displayName>mg</displayName>
-			</unit>
-			<unit type="mass-microgram">
-				<displayName>μg</displayName>
 			</unit>
 			<unit type="mass-ton">
 				<displayName>ton</displayName>
@@ -1463,15 +1431,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0}ozt</unitPattern>
 				<unitPattern count="other">{0}ozt</unitPattern>
 			</unit>
-			<unit type="mass-carat">
-				<displayName>ct</displayName>
-			</unit>
 			<unit type="power-horsepower">
+				<displayName>hp</displayName>
 				<unitPattern count="one">{0}hp</unitPattern>
 				<unitPattern count="other">{0}hp</unitPattern>
-			</unit>
-			<unit type="speed-knot">
-				<displayName>kn</displayName>
 			</unit>
 			<unit type="volume-milliliter">
 				<unitPattern count="one">{0}ml</unitPattern>
@@ -1481,6 +1444,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>pt</displayName>
 				<unitPattern count="one">{0}pt</unitPattern>
 				<unitPattern count="other">{0}pt</unitPattern>
+			</unit>
+			<unit type="volume-tablespoon">
+				<displayName>cdas.</displayName>
+			</unit>
+			<unit type="volume-teaspoon">
+				<displayName>cdtas.</displayName>
 			</unit>
 			<unit type="volume-barrel">
 				<unitPattern count="one">{0}bbl</unitPattern>
@@ -1570,34 +1539,31 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<initialPattern type="initial">{0}.</initialPattern>
 		<initialPattern type="initialSequence">{0} {1}</initialPattern>
 		<personName order="givenFirst" length="medium" usage="referring" formality="formal">
-			<namePattern>{given} {given2-initial} {surname} {suffix}</namePattern>
+			<namePattern>{given} {given2-initial} {surname} {credentials}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="referring" formality="formal">
-			<namePattern>{surname} {surname2} {given} {given2} {suffix}</namePattern>
+			<namePattern>{surname} {surname2} {given} {given2} {credentials}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="addressing" formality="formal">
-			<namePattern>{prefix} {surname} {surname2}</namePattern>
+			<namePattern>{title} {surname} {surname2}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="referring" formality="formal">
-			<namePattern>{surname} {given} {given2-initial} {suffix}</namePattern>
+			<namePattern>{surname} {given} {given2-initial} {credentials}</namePattern>
 		</personName>
-		<sampleName item="givenOnly">
+		<sampleName item="nativeG">
 			<nameField type="given">Diego</nameField>
 		</sampleName>
-		<sampleName item="givenSurnameOnly">
+		<sampleName item="nativeGS">
 			<nameField type="surname">García</nameField>
 		</sampleName>
-		<sampleName item="given12Surname">
+		<sampleName item="nativeGGS">
 			<nameField type="given">Juan</nameField>
 			<nameField type="given2">Manuel</nameField>
 			<nameField type="surname">Rodríguez</nameField>
 		</sampleName>
-		<sampleName item="full">
-			<nameField type="prefix">Prof. Dra.</nameField>
-			<nameField type="given">Mercedes Inés</nameField>
-			<nameField type="given-informal">Juanma</nameField>
-			<nameField type="given2">Ana Laura</nameField>
-			<nameField type="suffix">Dr./Dra.</nameField>
+		<sampleName item="foreignFull">
+			<nameField type="title">Prof. Dra.</nameField>
+			<nameField type="credentials">Dr./Dra.</nameField>
 		</sampleName>
 	</personNames>
 </ldml>

@@ -176,7 +176,7 @@ J2dTraceInit();
         }
 
 #ifdef __cplusplus
-};
+}
 #endif /* __cplusplus */
 
 #endif /* _Included_Trace */

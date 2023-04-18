@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,9 +68,9 @@ class ZeroInterpreter: public AbstractInterpreter {
                          address   osr_buf,
                          TRAPS);
 
-  static address throw_NullPointerException_entry() { return NULL; }
-  static address throw_ArithmeticException_entry()  { return NULL; }
-  static address throw_StackOverflowError_entry()   { return NULL; }
+  static address throw_NullPointerException_entry() { return nullptr; }
+  static address throw_ArithmeticException_entry()  { return nullptr; }
+  static address throw_StackOverflowError_entry()   { return nullptr; }
 
 # include "zeroInterpreter_zero.hpp"
 };

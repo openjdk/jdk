@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,12 +46,12 @@ DumpTimeClassInfo::DumpTimeClassInfo(const DumpTimeClassInfo& src) {
   _clsfile_crc32 = src._clsfile_crc32;
   _excluded = src._excluded;
   _is_early_klass = src._is_early_klass;
-  _verifier_constraints = NULL;
-  _verifier_constraint_flags = NULL;
-  _loader_constraints = NULL;
+  _verifier_constraints = nullptr;
+  _verifier_constraint_flags = nullptr;
+  _loader_constraints = nullptr;
 
-  assert(src._enum_klass_static_fields == NULL, "This should not happen with dynamic dump.");
-  _enum_klass_static_fields = NULL;
+  assert(src._enum_klass_static_fields == nullptr, "This should not happen with dynamic dump.");
+  _enum_klass_static_fields = nullptr;
 
   {
     int n = src.num_verifier_constraints();
@@ -77,12 +77,12 @@ DumpTimeClassInfo::DumpTimeClassInfo(const DumpTimeClassInfo& src) {
 }
 
 DumpTimeClassInfo::~DumpTimeClassInfo() {
-  if (_verifier_constraints != NULL) {
-    assert(_verifier_constraint_flags != NULL, "must be");
+  if (_verifier_constraints != nullptr) {
+    assert(_verifier_constraint_flags != nullptr, "must be");
     delete _verifier_constraints;
     delete _verifier_constraint_flags;
   }
-  if (_loader_constraints != NULL) {
+  if (_loader_constraints != nullptr) {
     delete _loader_constraints;
   }
 }
@@ -95,10 +95,10 @@ size_t DumpTimeClassInfo::runtime_info_bytesize() const {
 
 void DumpTimeClassInfo::add_verification_constraint(InstanceKlass* k, Symbol* name,
          Symbol* from_name, bool from_field_is_protected, bool from_is_array, bool from_is_object) {
-  if (_verifier_constraints == NULL) {
+  if (_verifier_constraints == nullptr) {
     _verifier_constraints = new (mtClass) GrowableArray<DTVerifierConstraint>(4, mtClass);
   }
-  if (_verifier_constraint_flags == NULL) {
+  if (_verifier_constraint_flags == nullptr) {
     _verifier_constraint_flags = new (mtClass) GrowableArray<char>(4, mtClass);
   }
   GrowableArray<DTVerifierConstraint>* vc_array = _verifier_constraints;
@@ -140,7 +140,7 @@ static char get_loader_type_by(oop  loader) {
 void DumpTimeClassInfo::record_linking_constraint(Symbol* name, Handle loader1, Handle loader2) {
   assert(loader1 != loader2, "sanity");
   LogTarget(Info, class, loader, constraints) log;
-  if (_loader_constraints == NULL) {
+  if (_loader_constraints == nullptr) {
     _loader_constraints = new (mtClass) GrowableArray<DTLoaderConstraint>(4, mtClass);
   }
   char lt1 = get_loader_type_by(loader1());
@@ -172,14 +172,14 @@ void DumpTimeClassInfo::record_linking_constraint(Symbol* name, Handle loader1, 
 }
 
 void DumpTimeClassInfo::add_enum_klass_static_field(int archived_heap_root_index) {
-  if (_enum_klass_static_fields == NULL) {
+  if (_enum_klass_static_fields == nullptr) {
     _enum_klass_static_fields = new (mtClass) GrowableArray<int>(20, mtClass);
   }
   _enum_klass_static_fields->append(archived_heap_root_index);
 }
 
 int DumpTimeClassInfo::enum_klass_static_field(int which_field) {
-  assert(_enum_klass_static_fields != NULL, "must be");
+  assert(_enum_klass_static_fields != nullptr, "must be");
   return _enum_klass_static_fields->at(which_field);
 }
 
@@ -199,7 +199,7 @@ DumpTimeClassInfo* DumpTimeSharedClassTable::allocate_info(InstanceKlass* k) {
 DumpTimeClassInfo* DumpTimeSharedClassTable::get_info(InstanceKlass* k) {
   assert(!k->is_shared(), "Do not call with shared classes");
   DumpTimeClassInfo* p = get(k);
-  assert(p != NULL, "we must not see any non-shared InstanceKlass* that's "
+  assert(p != nullptr, "we must not see any non-shared InstanceKlass* that's "
          "not stored with SystemDictionaryShared::init_dumptime_info");
   assert(p->_klass == k, "Sanity");
   return p;

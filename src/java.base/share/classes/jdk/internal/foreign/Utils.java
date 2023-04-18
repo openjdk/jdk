@@ -29,16 +29,22 @@ package jdk.internal.foreign;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.SegmentAllocator;
+import java.lang.foreign.StructLayout;
 import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.VarHandle;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.foreign.abi.SharedUtils;
 import jdk.internal.vm.annotation.ForceInline;
+import sun.invoke.util.Wrapper;
+
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 
 /**
@@ -62,8 +68,8 @@ public final class Utils {
                     MethodType.methodType(boolean.class, byte.class));
             BOOL_TO_BYTE = lookup.findStatic(Utils.class, "booleanToByte",
                     MethodType.methodType(byte.class, boolean.class));
-            ADDRESS_TO_LONG = lookup.findVirtual(MemorySegment.class, "address",
-                    MethodType.methodType(long.class));
+            ADDRESS_TO_LONG = lookup.findStatic(SharedUtils.class, "unboxSegment",
+                    MethodType.methodType(long.class, MemorySegment.class));
             LONG_TO_ADDRESS_SAFE = lookup.findStatic(Utils.class, "longToAddressSafe",
                     MethodType.methodType(MemorySegment.class, long.class));
             LONG_TO_ADDRESS_UNSAFE = lookup.findStatic(Utils.class, "longToAddressUnsafe",
@@ -197,5 +203,46 @@ public final class Utils {
                 ((byteAlignment & (byteAlignment - 1)) != 0L)) {
             throw new IllegalArgumentException("Invalid alignment constraint : " + byteAlignment);
         }
+    }
+
+    private static long computePadding(long offset, long align) {
+        boolean isAligned = offset == 0 || offset % align == 0;
+        if (isAligned) {
+            return 0;
+        } else {
+            long gap = offset % align;
+            return align - gap;
+        }
+    }
+
+    /**
+     * {@return return a struct layout constructed from the given elements, with padding
+     * computed automatically so that they are naturally aligned}.
+     *
+     * @param elements the structs' fields
+     */
+    public static StructLayout computePaddedStructLayout(MemoryLayout... elements) {
+        long offset = 0L;
+        List<MemoryLayout> layouts = new ArrayList<>();
+        long align = 0;
+        for (MemoryLayout l : elements) {
+            long padding = computePadding(offset, l.bitAlignment());
+            if (padding != 0) {
+                layouts.add(MemoryLayout.paddingLayout(padding));
+                offset += padding;
+            }
+            layouts.add(l);
+            align = Math.max(align, l.bitAlignment());
+            offset += l.bitSize();
+        }
+        long padding = computePadding(offset, align);
+        if (padding != 0) {
+            layouts.add(MemoryLayout.paddingLayout(padding));
+        }
+        return MemoryLayout.structLayout(layouts.toArray(MemoryLayout[]::new));
+    }
+
+    public static int byteWidthOfPrimitive(Class<?> primitive) {
+        return Wrapper.forPrimitiveType(primitive).bitWidth() / 8;
     }
 }

@@ -1734,6 +1734,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IndexOutOfBoundsException when the access operation falls outside the <em>spatial bounds</em> of the
      * memory segment.
      * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}.
+     * @throws UnsupportedOperationException if {@code value} is not a {@linkplain #isNative() native} segment.
      */
     @ForceInline
     default void set(ValueLayout.OfAddress layout, long offset, MemorySegment value) {
@@ -2079,6 +2080,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IndexOutOfBoundsException when the access operation falls outside the <em>spatial bounds</em> of the
      * memory segment.
      * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}.
+     * @throws UnsupportedOperationException if {@code value} is not a {@linkplain #isNative() native} segment.
      */
     @ForceInline
     default void setAtIndex(ValueLayout.OfAddress layout, long index, MemorySegment value) {

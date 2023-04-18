@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,11 +73,22 @@
 static char g_dummy;
 char* g_assert_poison = &g_dummy;
 static intx g_asserting_thread = 0;
-static void* g_assertion_context = NULL;
+static void* g_assertion_context = nullptr;
 #endif // CAN_SHOW_REGISTERS_ON_ASSERT
 
-// Set to suppress secondary error reporting.
-bool Debugging = false;
+int DebuggingContext::_enabled = 0; // Initially disabled.
+
+DebuggingContext::DebuggingContext() {
+  _enabled += 1;                // Increase nesting count.
+}
+
+DebuggingContext::~DebuggingContext() {
+  if (is_enabled()) {
+    _enabled -= 1;              // Decrease nesting count.
+  } else {
+    fatal("Debugging nesting confusion");
+  }
+}
 
 #ifndef ASSERT
 #  ifdef _DEBUG
@@ -110,7 +121,7 @@ struct Crasher {
   Crasher() {
     // Using getenv - no other mechanism would work yet.
     const char* s = ::getenv("HOTSPOT_FATAL_ERROR_DURING_DYNAMIC_INITIALIZATION");
-    if (s != NULL && ::strcmp(s, "1") == 0) {
+    if (s != nullptr && ::strcmp(s, "1") == 0) {
       fatal("HOTSPOT_FATAL_ERROR_DURING_DYNAMIC_INITIALIZATION");
     }
   }
@@ -344,7 +355,7 @@ void report_vm_error(const char* file, int line, const char* error_msg)
 static void print_error_for_unit_test(const char* message, const char* detail_fmt, va_list detail_args) {
   if (ExecutingUnitTests) {
     char detail_msg[256];
-    if (detail_fmt != NULL) {
+    if (detail_fmt != nullptr) {
       // Special handling for the sake of gtest death tests which expect the assert
       // message to be printed in one short line to stderr (see TEST_VM_ASSERT_MSG) and
       // cannot be tweaked to accept our normal assert message.
@@ -353,7 +364,7 @@ static void print_error_for_unit_test(const char* message, const char* detail_fm
       jio_vsnprintf(detail_msg, sizeof(detail_msg), detail_fmt, detail_args_copy);
 
       // the VM assert tests look for "assert failed: "
-      if (message == NULL) {
+      if (message == nullptr) {
         fprintf(stderr, "assert failed: %s", detail_msg);
       } else {
         if (strlen(detail_msg) > 0) {
@@ -370,12 +381,11 @@ static void print_error_for_unit_test(const char* message, const char* detail_fm
 
 void report_vm_error(const char* file, int line, const char* error_msg, const char* detail_fmt, ...)
 {
-  if (Debugging || error_is_suppressed(file, line)) return;
   va_list detail_args;
   va_start(detail_args, detail_fmt);
-  void* context = NULL;
+  void* context = nullptr;
 #ifdef CAN_SHOW_REGISTERS_ON_ASSERT
-  if (g_assertion_context != NULL && os::current_thread_id() == g_asserting_thread) {
+  if (g_assertion_context != nullptr && os::current_thread_id() == g_asserting_thread) {
     context = g_assertion_context;
   }
 #endif // CAN_SHOW_REGISTERS_ON_ASSERT
@@ -392,12 +402,11 @@ void report_vm_status_error(const char* file, int line, const char* error_msg,
 }
 
 void report_fatal(VMErrorType error_type, const char* file, int line, const char* detail_fmt, ...) {
-  if (Debugging || error_is_suppressed(file, line)) return;
   va_list detail_args;
   va_start(detail_args, detail_fmt);
-  void* context = NULL;
+  void* context = nullptr;
 #ifdef CAN_SHOW_REGISTERS_ON_ASSERT
-  if (g_assertion_context != NULL && os::current_thread_id() == g_asserting_thread) {
+  if (g_assertion_context != nullptr && os::current_thread_id() == g_asserting_thread) {
     context = g_assertion_context;
   }
 #endif // CAN_SHOW_REGISTERS_ON_ASSERT
@@ -405,18 +414,17 @@ void report_fatal(VMErrorType error_type, const char* file, int line, const char
   print_error_for_unit_test("fatal error", detail_fmt, detail_args);
 
   VMError::report_and_die(error_type, "fatal error", detail_fmt, detail_args,
-                          Thread::current_or_null(), NULL, NULL, context,
+                          Thread::current_or_null(), nullptr, nullptr, context,
                           file, line, 0);
   va_end(detail_args);
 }
 
 void report_vm_out_of_memory(const char* file, int line, size_t size,
                              VMErrorType vm_err_type, const char* detail_fmt, ...) {
-  if (Debugging) return;
   va_list detail_args;
   va_start(detail_args, detail_fmt);
 
-  print_error_for_unit_test(NULL, detail_fmt, detail_args);
+  print_error_for_unit_test(nullptr, detail_fmt, detail_args);
 
   VMError::report_and_die(Thread::current_or_null(), file, line, size, vm_err_type, detail_fmt, detail_args);
   va_end(detail_args);
@@ -482,13 +490,11 @@ void report_java_out_of_memory(const char* message) {
 
 class Command : public StackObj {
  private:
-  ResourceMark rm;
-  bool debug_save;
+  ResourceMark _rm;
+  DebuggingContext _debugging;
  public:
   static int level;
   Command(const char* str) {
-    debug_save = Debugging;
-    Debugging = true;
     if (level++ > 0)  return;
     tty->cr();
     tty->print_cr("\"Executing %s\"", str);
@@ -496,7 +502,6 @@ class Command : public StackObj {
 
   ~Command() {
     tty->flush();
-    Debugging = debug_save;
     level--;
   }
 };
@@ -520,8 +525,8 @@ extern "C" JNIEXPORT void nm(intptr_t p) {
   // Actually we look through all CodeBlobs (the nm name has been kept for backwards compatibility)
   Command c("nm");
   CodeBlob* cb = CodeCache::find_blob((address)p);
-  if (cb == NULL) {
-    tty->print_cr("NULL");
+  if (cb == nullptr) {
+    tty->print_cr("null");
   } else {
     cb->print();
   }
@@ -531,9 +536,9 @@ extern "C" JNIEXPORT void nm(intptr_t p) {
 extern "C" JNIEXPORT void disnm(intptr_t p) {
   Command c("disnm");
   CodeBlob* cb = CodeCache::find_blob((address) p);
-  if (cb != NULL) {
+  if (cb != nullptr) {
     nmethod* nm = cb->as_nmethod_or_null();
-    if (nm != NULL) {
+    if (nm != nullptr) {
       nm->print();
     } else {
       cb->print();
@@ -548,7 +553,7 @@ extern "C" JNIEXPORT void printnm(intptr_t p) {
   os::snprintf_checked(buffer, sizeof(buffer), "printnm: " INTPTR_FORMAT, p);
   Command c(buffer);
   CodeBlob* cb = CodeCache::find_blob((address) p);
-  if (cb != NULL && cb->is_nmethod()) {
+  if (cb != nullptr && cb->is_nmethod()) {
     nmethod* nm = (nmethod*)cb;
     nm->print_nmethod(true);
   } else {
@@ -583,8 +588,8 @@ extern "C" JNIEXPORT void verify() {
 extern "C" JNIEXPORT void pp(void* p) {
   Command c("pp");
   FlagSetting fl(DisplayVMOutput, true);
-  if (p == NULL) {
-    tty->print_cr("NULL");
+  if (p == nullptr) {
+    tty->print_cr("null");
     return;
   }
   if (Universe::heap()->is_in(p)) {
@@ -597,15 +602,8 @@ extern "C" JNIEXPORT void pp(void* p) {
     // catch the signal and disable the pp() command for further use.
     // In order to avoid that, switch off SIGSEGV handling with "handle SIGSEGV nostop" before
     // invoking pp()
-    if (MemTracker::enabled()) {
-      // Does it point into a known mmapped region?
-      if (VirtualMemoryTracker::print_containing_region(p, tty)) {
-        return;
-      }
-      // Does it look like the start of a malloced block?
-      if (MallocTracker::print_pointer_information(p, tty)) {
-        return;
-      }
+    if (MemTracker::print_containing_region(p, tty)) {
+      return;
     }
     tty->print_cr(PTR_FORMAT, p2i(p));
   }
@@ -615,7 +613,7 @@ extern "C" JNIEXPORT void pp(void* p) {
 extern "C" JNIEXPORT void findpc(intptr_t x);
 
 extern "C" JNIEXPORT void ps() { // print stack
-  if (Thread::current_or_null() == NULL) return;
+  if (Thread::current_or_null() == nullptr) return;
   Command c("ps");
 
   // Prints the stack of the current Java thread
@@ -682,7 +680,7 @@ extern "C" JNIEXPORT void psd() {
 
 
 extern "C" JNIEXPORT void pss() { // print all stacks
-  if (Thread::current_or_null() == NULL) return;
+  if (Thread::current_or_null() == nullptr) return;
   Command c("pss");
   Threads::print(true, PRODUCT_ONLY(false) NOT_PRODUCT(true));
 }
@@ -719,7 +717,7 @@ extern "C" JNIEXPORT void events() {
 extern "C" JNIEXPORT Method* findm(intptr_t pc) {
   Command c("findm");
   nmethod* nm = CodeCache::find_nmethod((address)pc);
-  return (nm == NULL) ? (Method*)NULL : nm->method();
+  return (nm == nullptr) ? (Method*)nullptr : nm->method();
 }
 
 
@@ -860,7 +858,7 @@ extern "C" JNIEXPORT void pns(void* sp, void* fp, void* pc) { // print native st
 extern "C" JNIEXPORT void pns2() { // print native stack
   Command c("pns2");
   static char buf[O_BUFLEN];
-  if (os::platform_print_native_stack(tty, NULL, buf, sizeof(buf))) {
+  if (os::platform_print_native_stack(tty, nullptr, buf, sizeof(buf))) {
     // We have printed the native stack in platform-specific code,
     // so nothing else to do in this case.
   } else {
@@ -874,7 +872,7 @@ extern "C" JNIEXPORT void pns2() { // print native stack
 
 // Returns true iff the address p is readable and *(intptr_t*)p != errvalue
 extern "C" bool dbg_is_safe(const void* p, intptr_t errvalue) {
-  return p != NULL && SafeFetchN((intptr_t*)const_cast<void*>(p), errvalue) != errvalue;
+  return p != nullptr && SafeFetchN((intptr_t*)const_cast<void*>(p), errvalue) != errvalue;
 }
 
 extern "C" bool dbg_is_good_oop(oopDesc* o) {

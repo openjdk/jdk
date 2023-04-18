@@ -113,6 +113,7 @@ import jdk.internal.reflect.Reflection;
  * typically terminate the OS process hosting the JVM and do not interact with the JNI Invocation
  * API.
  *
+ * @spec jni/index.html Java Native Interface Specification
  * @see     java.lang.Runtime#getRuntime()
  * @jls     12.8 Program Exit
  * @since   1.0
@@ -155,6 +156,11 @@ public class Runtime {
      *
      * <p> The {@link System#exit(int) System.exit} method is the
      * conventional and convenient means of invoking this method.
+     *
+     * @implNote
+     * If the {@linkplain System#getLogger(String) system logger} for {@code java.lang.Runtime}
+     * is enabled with logging level {@link System.Logger.Level#DEBUG Level.DEBUG} the stack trace
+     * of the call to {@code Runtime.exit()} is logged.
      *
      * @param  status
      *         Termination status.  By convention, a nonzero status code
@@ -344,6 +350,10 @@ public class Runtime {
      * @throws  IllegalArgumentException
      *          If {@code command} is empty
      *
+     * @implNote
+     * In the reference implementation, logging of the created process can be enabled,
+     * see {@link ProcessBuilder#start()} for details.
+     *
      * @see     #exec(String[], String[], File)
      * @see     ProcessBuilder
      */
@@ -391,6 +401,10 @@ public class Runtime {
      *
      * @throws  IllegalArgumentException
      *          If {@code command} is empty
+     *
+     * @implNote
+     * In the reference implementation, logging of the created process can be enabled,
+     * see {@link ProcessBuilder#start()} for details.
      *
      * @see     #exec(String[], String[], File)
      * @see     ProcessBuilder
@@ -453,6 +467,10 @@ public class Runtime {
      * @throws  IllegalArgumentException
      *          If {@code command} is empty
      *
+     * @implNote
+     * In the reference implementation, logging of the created process can be enabled,
+     * see {@link ProcessBuilder#start()} for details.
+     *
      * @see     ProcessBuilder
      * @since 1.3
      */
@@ -498,6 +516,10 @@ public class Runtime {
      *          If {@code cmdarray} is an empty array
      *          (has length {@code 0})
      *
+     * @implNote
+     * In the reference implementation, logging of the created process can be enabled,
+     * see {@link ProcessBuilder#start()} for details.
+     *
      * @see     ProcessBuilder
      */
     public Process exec(String[] cmdarray) throws IOException {
@@ -541,6 +563,10 @@ public class Runtime {
      *          If {@code cmdarray} is an empty array
      *          (has length {@code 0})
      *
+     * @implNote
+     * In the reference implementation, logging of the created process can be enabled,
+     * see {@link ProcessBuilder#start()} for details.
+     *
      * @see     ProcessBuilder
      */
     public Process exec(String[] cmdarray, String[] envp) throws IOException {
@@ -569,6 +595,8 @@ public class Runtime {
      * be required to start a process on some operating systems.
      * As a result, the subprocess may inherit additional environment variable
      * settings beyond those in the specified environment.
+     * The minimal set of system dependent environment variables
+     * may override the values provided in the environment.
      *
      * <p>{@link ProcessBuilder#start()} is now the preferred way to
      * start a process with a modified environment.
@@ -633,6 +661,10 @@ public class Runtime {
      * @throws  IndexOutOfBoundsException
      *          If {@code cmdarray} is an empty array
      *          (has length {@code 0})
+     *
+     * @implNote
+     * In the reference implementation, logging of the created process can be enabled,
+     * see {@link ProcessBuilder#start()} for details.
      *
      * @see     ProcessBuilder
      * @since 1.3
@@ -792,6 +824,7 @@ public class Runtime {
      *             a native library image by the host system.
      * @throws     NullPointerException if {@code filename} is
      *             {@code null}
+     * @spec jni/index.html Java Native Interface Specification
      * @see        java.lang.Runtime#getRuntime()
      * @see        java.lang.SecurityException
      * @see        java.lang.SecurityManager#checkLink(java.lang.String)
@@ -857,6 +890,7 @@ public class Runtime {
      *             native library image by the host system.
      * @throws     NullPointerException if {@code libname} is
      *             {@code null}
+     * @spec jni/index.html Java Native Interface Specification
      * @see        java.lang.SecurityException
      * @see        java.lang.SecurityManager#checkLink(java.lang.String)
      */

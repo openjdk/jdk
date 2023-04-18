@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ class VirtualSpaceSummary : public StackObj {
   HeapWord* _reserved_end;
 public:
   VirtualSpaceSummary() :
-      _start(NULL), _committed_end(NULL), _reserved_end(NULL) { }
+      _start(nullptr), _committed_end(nullptr), _reserved_end(nullptr) { }
   VirtualSpaceSummary(HeapWord* start, HeapWord* committed_end, HeapWord* reserved_end) :
       _start(start), _committed_end(committed_end), _reserved_end(reserved_end) { }
 
@@ -52,7 +52,7 @@ class SpaceSummary : public StackObj {
   size_t    _used;
 public:
   SpaceSummary() :
-      _start(NULL), _end(NULL), _used(0) { }
+      _start(nullptr), _end(nullptr), _used(0) { }
   SpaceSummary(HeapWord* start, HeapWord* end, size_t used) :
       _start(start), _end(end), _used(used) { }
 

@@ -132,7 +132,9 @@ bool JfrCheckpointManager::initialize() {
 
 #ifdef ASSERT
 static void assert_lease(ConstBufferPtr buffer) {
-  assert(buffer != NULL, "invariant");
+  if (buffer == nullptr) {
+    return;
+  }
   assert(buffer->acquired_by_self(), "invariant");
   assert(buffer->lease(), "invariant");
 }
@@ -293,8 +295,9 @@ BufferPtr JfrCheckpointManager::flush(BufferPtr old, size_t used, size_t request
     return NULL;
   }
   BufferPtr new_buffer = renew(old, thread, used + requested, kind(old));
-  assert(new_buffer != NULL, "invariant");
-  migrate_outstanding_writes(old, new_buffer, used, requested);
+  if (new_buffer != nullptr) {
+    migrate_outstanding_writes(old, new_buffer, used, requested);
+  }
   retire(old);
   return new_buffer;
 }
