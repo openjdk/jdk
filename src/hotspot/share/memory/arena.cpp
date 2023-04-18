@@ -49,7 +49,6 @@ STATIC_ASSERT(is_aligned((int)Chunk::non_pool_size, ARENA_AMALLOC_ALIGNMENT));
 // NB: not using Mutex because pools are used before Threads are initialized
 class ChunkPool {
   Chunk*       _first;        // first cached Chunk; its first word points to next chunk
-  size_t       _num_chunks;   // number of unused chunks in pool
   const size_t _size;         // (inner payload) size of the chunks this pool serves
 
   // Our four static pools
@@ -57,7 +56,7 @@ class ChunkPool {
   static ChunkPool _pools[_num_pools];
 
  public:
-  ChunkPool(size_t size) : _first(nullptr), _num_chunks(0), _size(size) {}
+  ChunkPool(size_t size) : _first(nullptr), _size(size) {}
 
   // Allocate a chunk from the pool; returns null if pool is empty.
   Chunk* allocate() {
@@ -65,7 +64,6 @@ class ChunkPool {
     Chunk* c = _first;
     if (_first != nullptr) {
       _first = _first->next();
-      _num_chunks--;
     }
     return c;
   }
@@ -76,38 +74,21 @@ class ChunkPool {
     ThreadCritical tc;
     chunk->set_next(_first);
     _first = chunk;
-    _num_chunks++;
   }
 
   // Prune the pool
   void prune() {
-    static const int blocksToKeep = 5;
-    Chunk* cur = nullptr;
-    Chunk* next;
-    // if we have more than n chunks, free all of them
+    // Free all chunks while in ThreadCritical lock
+    // so NMT adjustment is stable.
     ThreadCritical tc;
-    if (_num_chunks > blocksToKeep) {
-      // free chunks at end of queue, for better locality
-      cur = _first;
-      for (size_t i = 0; i < (blocksToKeep - 1); i++) {
-        assert(cur != nullptr, "counter out of sync?");
-        cur = cur->next();
-      }
-      assert(cur != nullptr, "counter out of sync?");
-
+    Chunk* cur = _first;
+    Chunk* next = nullptr;
+    while (cur != nullptr) {
       next = cur->next();
-      cur->set_next(nullptr);
+      os::free(cur);
       cur = next;
-
-      // Free all remaining chunks while in ThreadCritical lock
-      // so NMT adjustment is stable.
-      while(cur != nullptr) {
-        next = cur->next();
-        os::free(cur);
-        _num_chunks--;
-        cur = next;
-      }
     }
+    _first = nullptr;
   }
 
   static void clean() {
@@ -135,10 +116,10 @@ ChunkPool ChunkPool::_pools[] = { Chunk::size, Chunk::medium_size, Chunk::init_s
 //
 
 class ChunkPoolCleaner : public PeriodicTask {
-  enum { CleaningInterval = 5000 };      // cleaning interval in ms
+  static const int cleaning_interval = 5000; // cleaning interval in ms
 
  public:
-   ChunkPoolCleaner() : PeriodicTask(CleaningInterval) {}
+   ChunkPoolCleaner() : PeriodicTask(cleaning_interval) {}
    void task() {
      ChunkPool::clean();
    }

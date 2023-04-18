@@ -451,7 +451,7 @@ else
                         -DHB_NO_PRAGMA_GCC_DIAGNOSTIC
    endif
    ifeq ($(call isTargetOs, linux macosx), true)
-     HARFBUZZ_CFLAGS += -DHAVE_INTEL_ATOMIC_PRIMITIVES
+     HARFBUZZ_CFLAGS += -DHAVE_INTEL_ATOMIC_PRIMITIVES -DHB_NO_VISIBILITY
    endif
 
    # Early re-canonizing has to be disabled to workaround an internal XlC compiler error
@@ -465,7 +465,8 @@ else
 
    HARFBUZZ_DISABLED_WARNINGS_gcc := missing-field-initializers strict-aliasing \
        unused-result
-   HARFBUZZ_DISABLED_WARNINGS_CXX_gcc := class-memaccess
+   # noexcept-type required for GCC 7 builds. Not required for GCC 8+.
+   HARFBUZZ_DISABLED_WARNINGS_CXX_gcc := class-memaccess noexcept-type
    HARFBUZZ_DISABLED_WARNINGS_clang := missing-field-initializers range-loop-analysis
    HARFBUZZ_DISABLED_WARNINGS_microsoft := 4267 4244
 

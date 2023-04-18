@@ -26,7 +26,6 @@
  * @summary Test Thread.holdsLock when lock held by carrier thread
  * @requires vm.continuations
  * @modules java.base/java.lang:+open
- * @enablePreview
  * @run junit HoldsLock
  */
 
@@ -35,7 +34,6 @@
  * @summary Test Thread.holdsLock when lock held by carrier thread
  * @requires vm.continuations & vm.debug
  * @modules java.base/java.lang:+open
- * @enablePreview
  * @run junit/othervm -XX:+UseHeavyMonitors HoldsLock
  */
 
@@ -55,6 +53,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Disabled;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assumptions.*;
 
 class HoldsLock {
     static final Object LOCK1 = new Object();
@@ -88,6 +87,8 @@ class HoldsLock {
 
     @Test
     void testThreadInfo() throws Exception {
+        assumeFalse(Thread.currentThread().isVirtual(), "Main thread must be platform thread");
+
         var q = new ArrayBlockingQueue<Runnable>(5);
 
         Thread carrier = spawnCarrier(q);

@@ -41,7 +41,7 @@ import jdk.internal.org.jline.utils.AttributedStyle;
  * @author <a href="mailto:mwp1@cornell.edu">Marc Prud'hommeaux</a>
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  * @since 2.3
- * @deprecated use <code>org.jline.builtins.Completers$FileNameCompleter</code> instead
+ * @deprecated use <code>jdk.internal.org.jline.builtins.Completers$FileNameCompleter</code> instead
  */
 @Deprecated
 public class FileNameCompleter implements Completer
