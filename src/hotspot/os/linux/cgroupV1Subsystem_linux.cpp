@@ -38,40 +38,26 @@
  * on the contents of the mountinfo and cgroup files.
  */
 void CgroupV1Controller::set_subsystem_path(char *cgroup_path) {
-  char buf[MAXPATHLEN+1];
+  stringStream ss;
   if (_root != NULL && cgroup_path != NULL) {
     if (strcmp(_root, "/") == 0) {
-      int buflen;
-      strncpy(buf, _mount_point, MAXPATHLEN);
-      buf[MAXPATHLEN-1] = '\0';
+      ss.print_raw(_mount_point);
       if (strcmp(cgroup_path,"/") != 0) {
-        buflen = strlen(buf);
-        if ((buflen + strlen(cgroup_path)) > (MAXPATHLEN-1)) {
-          return;
-        }
-        strncat(buf, cgroup_path, MAXPATHLEN-buflen);
-        buf[MAXPATHLEN-1] = '\0';
+        ss.print_raw(cgroup_path);
       }
-      _path = os::strdup(buf);
+      _path = os::strdup(ss.base());
     } else {
       if (strcmp(_root, cgroup_path) == 0) {
-        strncpy(buf, _mount_point, MAXPATHLEN);
-        buf[MAXPATHLEN-1] = '\0';
-        _path = os::strdup(buf);
+        ss.print_raw(_mount_point);
+        _path = os::strdup(ss.base());
       } else {
         char *p = strstr(cgroup_path, _root);
         if (p != NULL && p == _root) {
           if (strlen(cgroup_path) > strlen(_root)) {
-            int buflen;
-            strncpy(buf, _mount_point, MAXPATHLEN);
-            buf[MAXPATHLEN-1] = '\0';
-            buflen = strlen(buf);
-            if ((buflen + strlen(cgroup_path) - strlen(_root)) > (MAXPATHLEN-1)) {
-              return;
-            }
-            strncat(buf, cgroup_path + strlen(_root), MAXPATHLEN-buflen);
-            buf[MAXPATHLEN-1] = '\0';
-            _path = os::strdup(buf);
+            ss.print_raw(_mount_point);
+            const char* cg_path_sub = cgroup_path + strlen(_root);
+            ss.print_raw(cg_path_sub);
+            _path = os::strdup(ss.base());
           }
         }
       }
