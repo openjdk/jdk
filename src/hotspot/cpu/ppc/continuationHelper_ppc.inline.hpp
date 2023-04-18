@@ -43,11 +43,11 @@ inline intptr_t* ContinuationHelper::frame_align_pointer(intptr_t* p) {
 
 template<typename FKind>
 inline void ContinuationHelper::update_register_map(const frame& f, RegisterMap* map) {
-  Unimplemented();
+  // Nothing to do
 }
 
 inline void ContinuationHelper::update_register_map_with_callee(const frame& f, RegisterMap* map) {
-  Unimplemented();
+  // Nothing to do
 }
 
 inline void ContinuationHelper::push_pd(const frame& f) {
