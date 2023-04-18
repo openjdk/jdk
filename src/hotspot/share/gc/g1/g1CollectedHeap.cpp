@@ -523,16 +523,12 @@ void G1CollectedHeap::iterate_regions_in_range(MemRegion range, const Func& func
   HeapRegion* end_region = _hrm.addr_to_region(range.last());
 
   while (curr_region != nullptr) {
-
     bool is_last = curr_region == end_region;
+    HeapRegion* next_region = is_last ? nullptr : _hrm.next_region_in_heap(curr_region);
 
     func(curr_region, is_last);
 
-    if (is_last) {
-      curr_region = nullptr;
-    } else {
-      curr_region = _hrm.next_region_in_heap(curr_region);
-    }
+    curr_region = next_region;
   }
 }
 
