@@ -84,8 +84,7 @@ void G1CollectionSetCandidates::verify() const {
     HeapRegion *cur = _regions[idx];
     guarantee(cur != NULL, "Regions after _front_idx %u cannot be NULL but %u is", _front_idx, idx);
     // The first disjunction filters out regions with objects that were explicitly
-    // pinned after being added to the collection set candidates. Archive regions
-    // should never have been added to the collection set though.
+    // pinned after being added to the collection set candidates.
     guarantee(cur->is_pinned() ||
               G1CollectionSetChooser::should_add(cur),
               "Region %u should be eligible for addition.", cur->hrm_index());

@@ -611,7 +611,7 @@ void G1CollectedHeap::dealloc_archive_regions(MemRegion range) {
          p2i(start_address), p2i(last_address));
   size_used += range.byte_size();
 
-  // Free, empty and uncommit archive regions.
+  // Free, empty and uncommit regions with CDS archive content.
   auto dealloc_archive_region = [&] (HeapRegion* r, bool is_last) {
     guarantee(r->is_old(), "Expected old region at index %u", r->hrm_index());
     _old_set.remove(r);
@@ -624,7 +624,7 @@ void G1CollectedHeap::dealloc_archive_regions(MemRegion range) {
   iterate_regions_in_range(range, dealloc_archive_region);
 
   if (shrink_count != 0) {
-    log_debug(gc, ergo, heap)("Attempt heap shrinking (archive regions). Total size: " SIZE_FORMAT "B",
+    log_debug(gc, ergo, heap)("Attempt heap shrinking (CDS archive regions). Total size: " SIZE_FORMAT "B",
                               HeapRegion::GrainWords * HeapWordSize * shrink_count);
     // Explicit uncommit.
     uncommit_regions(shrink_count);
