@@ -138,7 +138,7 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
   NativeCallingConvention in_conv(call_regs._arg_regs);
   ArgumentShuffle arg_shuffle(in_sig_bt, total_in_args, out_sig_bt, total_out_args, &in_conv, &out_conv, shuffle_reg);
   // The Java call uses the JIT ABI, but we also call C.
-  int out_arg_area = MAX2(frame::jit_out_preserve_size + arg_shuffle.out_arg_bytes(), (int)frame::abi_reg_args_size);
+  int out_arg_area = MAX2(frame::jit_out_preserve_size + arg_shuffle.out_arg_bytes(), (int)frame::native_abi_reg_args_size);
 
 #ifndef PRODUCT
   LogTarget(Trace, foreign, upcall) lt;
@@ -228,7 +228,7 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
     __ addi(as_Register(locs.get(StubLocations::RETURN_BUFFER)), R1_SP, ret_buf_offset);
   }
   __ ld(callerSP, _abi0(callers_sp), R1_SP); // preset (used to access caller frame argument slots)
-  arg_shuffle.generate(_masm, as_VMStorage(callerSP), frame::abi_minframe_size, frame::jit_out_preserve_size, locs);
+  arg_shuffle.generate(_masm, as_VMStorage(callerSP), frame::native_abi_minframe_size, frame::jit_out_preserve_size, locs);
   __ block_comment("} argument shuffle");
 
   __ block_comment("{ receiver ");

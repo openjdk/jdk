@@ -151,19 +151,19 @@ void DowncallStubGenerator::generate() {
   // We use the number of input VMStorage elements because PPC64 requires slots for all arguments
   // (even if they are passed in registers), at least 8.
   // This may be a bit more than needed when HFA is used (see CallArranger.java).
-  // (abi_reg_args is abi_minframe plus space for 8 argument register spill slots)
-  assert(_abi._shadow_space_bytes == frame::abi_minframe_size, "expected space according to ABI");
-  int allocated_frame_size = frame::abi_minframe_size + MAX2(_input_registers.length(), 8) * BytesPerWord;
+  // (native_abi_reg_args is native_abi_minframe plus space for 8 argument register spill slots)
+  assert(_abi._shadow_space_bytes == frame::native_abi_minframe_size, "expected space according to ABI");
+  int allocated_frame_size = frame::native_abi_minframe_size + MAX2(_input_registers.length(), 8) * BytesPerWord;
 
   bool should_save_return_value = !_needs_return_buffer;
   RegSpiller out_reg_spiller(_output_registers);
   int spill_offset = -1;
 
   if (should_save_return_value) {
-    spill_offset = frame::abi_reg_args_size;
+    spill_offset = frame::native_abi_reg_args_size;
     // Spill area can be shared with additional out args (>8),
     // since it is only used after the call.
-    int frame_size_including_spill_area = frame::abi_reg_args_size + out_reg_spiller.spill_size_bytes();
+    int frame_size_including_spill_area = frame::native_abi_reg_args_size + out_reg_spiller.spill_size_bytes();
     if (frame_size_including_spill_area > allocated_frame_size) {
       allocated_frame_size = frame_size_including_spill_area;
     }
@@ -205,7 +205,7 @@ void DowncallStubGenerator::generate() {
   __ stw(R0, in_bytes(JavaThread::thread_state_offset()), R16_thread);
 
   __ block_comment("{ argument shuffle");
-  arg_shuffle.generate(_masm, as_VMStorage(callerSP), frame::jit_out_preserve_size, frame::abi_minframe_size, locs);
+  arg_shuffle.generate(_masm, as_VMStorage(callerSP), frame::jit_out_preserve_size, frame::native_abi_minframe_size, locs);
   __ block_comment("} argument shuffle");
 
   __ call_c(call_target_address);
