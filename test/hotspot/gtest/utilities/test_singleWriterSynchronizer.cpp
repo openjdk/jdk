@@ -136,7 +136,7 @@ TEST_VM(TestSingleWriterSynchronizer, stress) {
   JavaThread* cur = JavaThread::current();
   {
     ThreadInVMfromNative invm(cur);
-    cur->sleep(milliseconds_to_run);
+    cur->sleep_millis(milliseconds_to_run);
   }
   continue_running = 0;
   for (uint i = 0; i < nreaders + 1; ++i) {
