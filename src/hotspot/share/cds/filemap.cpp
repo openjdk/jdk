@@ -1673,7 +1673,6 @@ char* FileMapInfo::write_bitmap_region(const CHeapBitMap* ptrmap, ArchiveHeapInf
   return buffer;
 }
 
-<<<<<<< HEAD
 size_t FileMapInfo::write_heap_region(ArchiveHeapInfo* heap_info) {
   char* start = heap_info->start();
   size_t size = heap_info->byte_size();
