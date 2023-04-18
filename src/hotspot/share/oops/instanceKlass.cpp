@@ -2627,7 +2627,7 @@ void InstanceKlass::init_shared_package_entry() {
 void InstanceKlass::compute_has_loops_flag_for_methods() {
   Array<Method*>* methods = this->methods();
   for (int index = 0; index < methods->length(); ++index) {
-    Method *m = methods->at(index);
+    Method* m = methods->at(index);
     if (!m->is_overpass()) { // work around JDK-8305771
       m->compute_has_loops_flag();
     }
