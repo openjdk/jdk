@@ -197,9 +197,7 @@ class Bundle {
         // parentsMap contains resources from id's parents.
         Map<String, Object> parentsMap = new HashMap<>();
         for (int i = cldrBundles.length - 1; i > index; i--) {
-            if (!("no".equals(cldrBundles[i]) || cldrBundles[i].startsWith("no_"))) {
-                parentsMap.putAll(CLDRConverter.getCLDRBundle(cldrBundles[i]));
-            }
+            parentsMap.putAll(CLDRConverter.getCLDRBundle(cldrBundles[i]));
         }
         // Duplicate myMap as parentsMap for "root" so that the
         // fallback works. This is a hack, though.

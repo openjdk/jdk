@@ -8395,6 +8395,14 @@ FormatData/de_AT/latn.NumberElements/12=.
 FormatData/fr/latn.NumberElements/11=
 FormatData/fr_CH/latn.NumberElements/11=.
 
+# bug # 8295564
+FormatData/nb/latn.NumberElements/0=,
+FormatData/nb/latn.NumberElements/1=\u00a0
+FormatData/no/latn.NumberElements/0=,
+FormatData/no/latn.NumberElements/1=\u00a0
+FormatData/nn/latn.NumberElements/0=,
+FormatData/nn/latn.NumberElements/1=\u00a0
+
 # tzdata2022f
 TimeZoneNames/en/America\/Ojinaga/1=Central Standard Time
 TimeZoneNames/en/America\/Chihuahua/1=Central Standard Time
