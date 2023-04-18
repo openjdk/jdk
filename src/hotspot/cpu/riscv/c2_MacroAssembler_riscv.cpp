@@ -1747,11 +1747,11 @@ void C2_MacroAssembler::compare_floating_point_v(VectorRegister vd, BasicType bt
   rvv_vsetvli(bt, length_in_bytes);
   vmxor_mm(vd, vd, vd);
   assert(is_floating_point_type(bt), "unsupported element type");
-  // vmfeq and vmfne raise the invalid operation exception 
+  // vmfeq and vmfne raise the invalid operation exception
   // only on signaling NaN inputs.
-  // vmflt, vmfle, vmfgt, and vmfge raise the invalid operation 
-  // exception on both signaling and quiet NaN inputs, so we should 
-  // mask the signaling compares when either input is NaN 
+  // vmflt, vmfle, vmfgt, and vmfge raise the invalid operation
+  // exception on both signaling and quiet NaN inputs, so we should
+  // mask the signaling compares when either input is NaN
   // to implement floating-point quiet compares.
   if (cond == BoolTest::le || cond == BoolTest::ge || cond == BoolTest::lt || cond == BoolTest::gt) {
     vmfeq_vv(tmp1, src1, src1);
