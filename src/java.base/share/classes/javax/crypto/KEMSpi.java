@@ -42,15 +42,17 @@ import java.security.spec.AlgorithmParameterSpec;
  * by the KEM algorithm name, the key it uses, and an optional
  * {@code AlgorithmParameterSpec} argument that is specified when creating
  * an encapsulator or decapsulator. The result of calling
- * {@link #engineNewDecapsulator} or {@link #engineNewDecapsulator} must be of
- * a single configuration, where its {@link EncapsulatorSpi#engineSecretSize()}
- * and {@link EncapsulatorSpi#engineEncapsulationSize()} are constants.
+ * {@link #engineNewEncapsulator} or {@link #engineNewDecapsulator} must return
+ * an encapsulator or decapsulator that maps to a single configuration,
+ * where its {@link EncapsulatorSpi#engineSecretSize()} and
+ * {@link EncapsulatorSpi#engineEncapsulationSize()} methods return constant
+ * values.
  * <p>
  * A {@code KEMSpi} implementation must be immutable. It must be safe to
  * call multiple {@code engineNewEncapsulator} and {@code engineNewDecapsulator}
  * methods at the same time.
  * <p>
- * {@code EncapsulatorSpi} and {@code DecapsulatorSpi} implementations must
+ * {@code EncapsulatorSpi} and {@code DecapsulatorSpi} implementations must also
  * be immutable. It must be safe to invoke multiple {@code encapsulate} and
  * {@code decapsulate} methods at the same time. Each invocation of
  * {@code encapsulate} should generate a new shared secret and key

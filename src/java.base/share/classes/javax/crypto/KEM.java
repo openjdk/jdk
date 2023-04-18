@@ -78,6 +78,8 @@ import java.util.Objects;
  *
  *    assert Arrays.equals(k1.getEncoded(), k2.getEncoded());
  * }
+ *
+ * @since 21
  */
 public final class KEM {
 
