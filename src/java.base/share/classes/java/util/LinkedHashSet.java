@@ -31,12 +31,15 @@ package java.util;
  * {@code HashSet} in that it maintains a doubly-linked list running through
  * all of its entries.  This linked list defines the encounter order (iteration
  * order), which is the order in which elements were inserted into the set
- * (<i>insertion-order</i>). Note that encounter order is <i>not</i> affected
+ * (<i>insertion-order</i>). The least recently inserted element (the eldest) is
+ * first, and the youngest element is last. Note that encounter order is <i>not</i> affected
  * if an element is <i>re-inserted</i> into the set with the {@code add} method.
  * (An element {@code e} is reinserted into a set {@code s} if {@code s.add(e)} is
  * invoked when {@code s.contains(e)} would return {@code true} immediately prior to
- * the invocation.) The encounter order of elements already in the set can be changed
- * by using the {@link #addFirst addFirst} and {@link #addLast addLast} methods.
+ * the invocation.) The reverse-ordered view of this set is in the opposite order, with
+ * the youngest element appearing first and the eldest element appearing last. The encounter
+ * order of elements already in the set can be changed by using the
+ * {@link #addFirst addFirst} and {@link #addLast addLast} methods.
  *
  * <p>This implementation spares its clients from the unspecified, generally
  * chaotic ordering provided by {@link HashSet}, without incurring the

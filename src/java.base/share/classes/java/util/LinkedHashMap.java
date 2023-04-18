@@ -37,11 +37,14 @@ import java.util.function.Function;
  * {@code HashMap} in that it maintains a doubly-linked list running through all of
  * its entries.  This linked list defines the encounter order (the order of iteration),
  * which is normally the order in which keys were inserted into the map
- * (<i>insertion-order</i>).  Note that encounter order is not affected
+ * (<i>insertion-order</i>). The least recently inserted entry (the eldest) is
+ * first, and the youngest entry is last. Note that encounter order is not affected
  * if a key is <i>re-inserted</i> into the map with the {@code put} method. (A key
  * {@code k} is reinserted into a map {@code m} if {@code m.put(k, v)} is invoked when
  * {@code m.containsKey(k)} would return {@code true} immediately prior to
- * the invocation.) The encounter order of existing keys can be changed by using
+ * the invocation.) The reverse-ordered view of this map is in the opposite order, with
+ * the youngest entry appearing first and the eldest entry appearing last.
+ * The encounter order of entries already in the map can be changed by using
  * the {@link #putFirst putFirst} and {@link #putLast putLast} methods.
  *
  * <p>This implementation spares its clients from the unspecified, generally
@@ -75,10 +78,11 @@ import java.util.function.Function;
  * <i>No other methods generate entry accesses.</i> Invoking these methods on the
  * reversed view generates accesses to entries on the backing map. Note that in the
  * reversed view, an access to an entry moves it first in encounter order.
- * Explicit-positioning methods such as {@code putFirst} or {@code lastEntry}
+ * Explicit-positioning methods such as {@code putFirst} or {@code lastEntry}, whether on
+ * the map or on its reverse-ordered view, perform the positioning operation and
  * do not generate entry accesses. Operations on the {@code keySet}, {@code values},
- * and {@code entrySet} views do <i>not</i> affect the encounter order of the
- * backing map.
+ * and {@code entrySet} views or on their sequenced counterparts do <i>not</i> affect
+ * the encounter order of the backing map.
  *
  * <p>The {@link #removeEldestEntry(Map.Entry)} method may be overridden to
  * impose a policy for removing stale mappings automatically when new mappings
