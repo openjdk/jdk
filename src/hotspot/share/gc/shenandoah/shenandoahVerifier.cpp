@@ -347,14 +347,17 @@ public:
 // a subset (e.g. the young generation or old generation) of the total heap.
 class ShenandoahCalculateRegionStatsClosure : public ShenandoahHeapRegionClosure {
 private:
-  size_t _used, _committed, _garbage, _regions;
+  size_t _used, _committed, _garbage, _regions, _humongous_waste;
 public:
-  ShenandoahCalculateRegionStatsClosure() : _used(0), _committed(0), _garbage(0), _regions(0) {};
+  ShenandoahCalculateRegionStatsClosure() : _used(0), _committed(0), _garbage(0), _regions(0), _humongous_waste(0) {};
 
   void heap_region_do(ShenandoahHeapRegion* r) {
     _used += r->used();
     _garbage += r->garbage();
     _committed += r->is_committed() ? ShenandoahHeapRegion::region_size_bytes() : 0;
+    if (r->is_humongous()) {
+      _humongous_waste += r->free();
+    }
     _regions++;
     log_debug(gc)("ShenandoahCalculateRegionStatsClosure: adding " SIZE_FORMAT " for %s Region " SIZE_FORMAT ", yielding: " SIZE_FORMAT,
             r->used(), (r->is_humongous() ? "humongous" : "regular"), r->index(), _used);
@@ -364,6 +367,7 @@ public:
   size_t committed() { return _committed; }
   size_t garbage() { return _garbage; }
   size_t regions() { return _regions; }
+  size_t waste() { return _humongous_waste; }
 
   // span is the total memory affiliated with these stats (some of which is in use and other is available)
   size_t span() { return _regions * ShenandoahHeapRegion::region_size_bytes(); }
@@ -402,7 +406,7 @@ class ShenandoahGenerationStatsClosure : public ShenandoahHeapRegionClosure {
   static void validate_usage(const char* label, ShenandoahGeneration* generation, ShenandoahCalculateRegionStatsClosure& stats) {
     size_t generation_used = generation->used();
     guarantee(stats.used() == generation_used,
-              "%s: generation (%s) used size must be consistent: generation-used = " SIZE_FORMAT "%s, regions-used = " SIZE_FORMAT "%s",
+              "%s: generation (%s) used size must be consistent: generation-used: " SIZE_FORMAT "%s, regions-used: " SIZE_FORMAT "%s",
               label, generation->name(),
               byte_size_in_proper_unit(generation_used), proper_unit_for_byte_size(generation_used),
               byte_size_in_proper_unit(stats.used()),    proper_unit_for_byte_size(stats.used()));
@@ -418,6 +422,12 @@ class ShenandoahGenerationStatsClosure : public ShenandoahHeapRegionClosure {
 //              label, generation->name(), stats.regions(),
 //              byte_size_in_proper_unit(capacity), proper_unit_for_byte_size(capacity));
 
+    size_t humongous_waste = generation->get_humongous_waste();
+    guarantee(stats.waste() == humongous_waste,
+              "%s: generation (%s) humongous waste must be consistent: generation: " SIZE_FORMAT "%s, regions: " SIZE_FORMAT "%s",
+              label, generation->name(),
+              byte_size_in_proper_unit(humongous_waste), proper_unit_for_byte_size(humongous_waste),
+              byte_size_in_proper_unit(stats.waste()),   proper_unit_for_byte_size(stats.waste()));
   }
 };
 

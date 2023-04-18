@@ -282,11 +282,17 @@ void ShenandoahHeapRegion::make_trash() {
   shenandoah_assert_heaplocked();
   reset_age();
   switch (_state) {
-    case _cset:
-      // Reclaiming cset regions
     case _humongous_start:
     case _humongous_cont:
-      // Reclaiming humongous regions
+    {
+      // Reclaiming humongous regions and reclaim humongous waste.  When this region is eventually recycled, we'll reclaim
+      // its used memory.  At recycle time, we no longer recognize this as a humongous region.
+      if (ShenandoahHeap::heap()->mode()->is_generational()) {
+        decrement_humongous_waste();
+      }
+    }
+    case _cset:
+      // Reclaiming cset regions
     case _regular:
       // Immediate region reclaim
       set_state(_trash);
@@ -655,7 +661,9 @@ void ShenandoahHeapRegion::recycle() {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   shenandoah_assert_heaplocked();
 
-  heap->generation_for(affiliation())->decrease_used(used());
+  if (ShenandoahHeap::heap()->mode()->is_generational()) {
+    heap->generation_for(affiliation())->decrease_used(used());
+  }
 
   set_top(bottom());
   clear_live_data();
@@ -1036,9 +1044,16 @@ size_t ShenandoahHeapRegion::promote_humongous() {
         log_debug(gc)("promoting humongous region " SIZE_FORMAT ", from " PTR_FORMAT " to " PTR_FORMAT,
                       r->index(), p2i(r->bottom()), p2i(r->top()));
         // We mark the entire humongous object's range as dirty after loop terminates, so no need to dirty the range here
-        r->set_affiliation(OLD_GENERATION);
         old_generation->increase_used(r->used());
         young_generation->decrease_used(r->used());
+        r->set_affiliation(OLD_GENERATION);
+      }
+
+      ShenandoahHeapRegion* tail = heap->get_region(index_limit - 1);
+      size_t waste = tail->free();
+      if (waste != 0) {
+        old_generation->increase_humongous_waste(waste);
+        young_generation->decrease_humongous_waste(waste);
       }
       // Then fall through to finish the promotion after releasing the heap lock.
     } else {
@@ -1072,4 +1087,13 @@ size_t ShenandoahHeapRegion::promote_humongous() {
     heap->card_scan()->mark_range_as_dirty(bottom(), obj->size());
   }
   return index_limit - index();
+}
+
+void ShenandoahHeapRegion::decrement_humongous_waste() const {
+  assert(is_humongous(), "Should only use this for humongous regions");
+  size_t waste_bytes = free();
+  if (waste_bytes > 0) {
+    ShenandoahHeap::heap()->generation_for(affiliation())->decrease_humongous_waste(waste_bytes);
+    ShenandoahHeap::heap()->global_generation()->decrease_humongous_waste(waste_bytes);
+  }
 }

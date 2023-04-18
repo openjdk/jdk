@@ -579,13 +579,23 @@ HeapWord* ShenandoahFreeSet::allocate_contiguous(ShenandoahAllocRequest& req) {
                         PTR_FORMAT " at transition from FREE to %s",
                         p2i(r->bottom()), p2i(r->end()), p2i(ctx->top_bitmap(r)), req.affiliation_name());
 
+    // While individual regions report their true use, all humongous regions are marked used in the free set.
     _mutator_free_bitmap.clear_bit(r->index());
   }
-
-  // While individual regions report their true use, all humongous regions are
-  // marked used in the free set.
-  increase_used(ShenandoahHeapRegion::region_size_bytes() * num);
-  generation->increase_used(words_size * HeapWordSize);
+  size_t total_humongous_size = ShenandoahHeapRegion::region_size_bytes() * num;
+  increase_used(total_humongous_size);
+  if (_heap->mode()->is_generational()) {
+    size_t humongous_waste = total_humongous_size - words_size * HeapWordSize;
+    _heap->global_generation()->increase_used(words_size * HeapWordSize);
+    _heap->global_generation()->increase_humongous_waste(humongous_waste);
+    if (req.is_young()) {
+      _heap->young_generation()->increase_used(words_size * HeapWordSize);
+      _heap->young_generation()->increase_humongous_waste(humongous_waste);
+    } else if (req.is_old()) {
+      _heap->old_generation()->increase_used(words_size * HeapWordSize);
+      _heap->old_generation()->increase_humongous_waste(humongous_waste);
+    }
+  }
 
   if (remainder != 0) {
     // Record this remainder as allocation waste

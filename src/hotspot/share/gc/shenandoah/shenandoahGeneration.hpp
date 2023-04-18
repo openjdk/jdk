@@ -52,6 +52,14 @@ private:
 protected:
   // Usage
   size_t _affiliated_region_count;
+
+  // How much free memory is left in the last region of humongous objects.
+  // This is _not_ included in used, but it _is_ deducted from available,
+  // which gives the heuristics a more accurate view of how much memory remains
+  // for allocation. This figure is also included the heap status logging.
+  // The units are bytes. The value is only changed on a safepoint or under the
+  // heap lock.
+  size_t _humongous_waste;
   volatile size_t _used;
   volatile size_t _bytes_allocated_since_gc_start;
   size_t _max_capacity;
@@ -195,6 +203,10 @@ private:
   void clear_used();
   void increase_used(size_t bytes);
   void decrease_used(size_t bytes);
+
+  void increase_humongous_waste(size_t bytes);
+  void decrease_humongous_waste(size_t bytes);
+  size_t get_humongous_waste() const { return _humongous_waste; }
 
   virtual bool is_concurrent_mark_in_progress() = 0;
   void confirm_heuristics_mode();

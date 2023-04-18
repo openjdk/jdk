@@ -68,6 +68,7 @@ private:
   void adjust_bounds();
   bool touches_bounds(size_t num) const;
 
+  // Used of free set represents the amount of is_mutator_free set that has been consumed since most recent rebuild.
   void increase_used(size_t amount);
   void clear_internal();
 
