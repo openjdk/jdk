@@ -328,7 +328,7 @@ Node* ConvI2LNode::Identity(PhaseGVN* phase) {
   // since the conversions have no effect.
   if (in(1)->Opcode() == Op_ConvL2I) {
     Node* x = in(1)->in(1);
-    const TypeLong* t = phase->type(x)->is_long();
+    const TypeLong* t = phase->type(x)->isa_long();
     if (t != nullptr && t->_lo >= min_jint && t->_hi <= max_jint) {
       return x;
     }

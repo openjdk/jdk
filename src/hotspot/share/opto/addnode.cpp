@@ -1310,13 +1310,13 @@ Node* fold_subI_no_underflow_pattern(Node* n, PhaseGVN* phase) {
   // Check that the two clamps have the correct values.
   jlong clamp = (n->Opcode() == Op_MaxL) ? min_jint : max_jint;
   auto is_clamp = [&](Node* c) {
-    const TypeLong* t = phase->type(c)->is_long();
+    const TypeLong* t = phase->type(c)->isa_long();
     return t != nullptr && t->is_con() &&
            t->get_con() == clamp;
   };
   // Check that the constants are negative if MaxL, and positive if MinL.
   auto is_sub_con = [&](Node* c) {
-    const TypeLong* t = phase->type(c)->is_long();
+    const TypeLong* t = phase->type(c)->isa_long();
     return t != nullptr && t->is_con() &&
            t->get_con() < max_jint && t->get_con() > min_jint &&
            (t->get_con() < 0) == (n->Opcode() == Op_MaxL);
