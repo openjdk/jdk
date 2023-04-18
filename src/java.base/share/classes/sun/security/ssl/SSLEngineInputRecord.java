@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -263,6 +263,12 @@ final class SSLEngineInputRecord extends InputRecord implements SSLRecord {
         // parse handshake messages
         //
         if (contentType == ContentType.HANDSHAKE.id) {
+            if (contentLen == 0) {
+                // From RFC 8446: "Implementations MUST NOT send zero-length fragments
+                // of Handshake types, even if those fragments contain padding."
+                throw new SSLProtocolException("Handshake packets must not be zero-length");
+            }
+
             ByteBuffer handshakeFrag = fragment;
             if ((handshakeBuffer != null) &&
                     (handshakeBuffer.remaining() != 0)) {

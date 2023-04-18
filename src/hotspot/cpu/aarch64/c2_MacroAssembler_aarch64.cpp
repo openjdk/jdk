@@ -1763,9 +1763,9 @@ void C2_MacroAssembler::sve_gen_mask_imm(PRegister dst, BasicType bt, uint32_t l
   } else if (lane_cnt == max_vector_length - (max_vector_length % 3)) {
     sve_ptrue(dst, size, /* MUL3 */ 0b11110);
   } else {
-    // Encode to "whilelow" for the remaining cases.
+    // Encode to "whileltw" for the remaining cases.
     mov(rscratch1, lane_cnt);
-    sve_whilelow(dst, size, zr, rscratch1);
+    sve_whileltw(dst, size, zr, rscratch1);
   }
 }
 

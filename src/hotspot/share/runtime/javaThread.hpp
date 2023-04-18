@@ -1152,10 +1152,9 @@ public:
   static void verify_cross_modify_fence_failure(JavaThread *thread) PRODUCT_RETURN;
 
   // Helper function to create the java.lang.Thread object for a
-  // VM-internal thread. The thread will have the given name, be
-  // part of the System ThreadGroup and if is_visible is true will be
-  // discoverable via the system ThreadGroup.
-  static Handle create_system_thread_object(const char* name, bool is_visible, TRAPS);
+  // VM-internal thread. The thread will have the given name and be
+  // part of the System ThreadGroup.
+  static Handle create_system_thread_object(const char* name, TRAPS);
 
   // Helper function to start a VM-internal daemon thread.
   // E.g. ServiceThread, NotificationThread, CompilerThread etc.
