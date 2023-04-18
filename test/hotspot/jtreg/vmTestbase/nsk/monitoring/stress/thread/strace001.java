@@ -147,6 +147,7 @@ public class strace001 {
                 "java.lang.Thread.yield0",
                 "java.lang.Thread.currentCarrierThread",
                 "java.lang.Thread.currentThread",
+                "java.util.concurrent.TimeUnit.toNanos",
                 "jdk.internal.event.ThreadSleepEvent.<clinit>",
                 "jdk.internal.event.ThreadSleepEvent.isTurnedOn",
                 "jdk.internal.event.ThreadSleepEvent.isEnabled"
