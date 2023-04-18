@@ -557,9 +557,6 @@ bool G1CollectedHeap::alloc_archive_regions(MemRegion range) {
   while (curr_region != NULL) {
     assert(curr_region->is_empty() && !curr_region->is_pinned(),
            "Region already in use (index %u)", curr_region->hrm_index());
-    curr_region->set_old();
-    _hr_printer.alloc(curr_region);
-    _old_set.add(curr_region);
 
     HeapWord* top;
     HeapRegion* next_region;
@@ -571,6 +568,11 @@ bool G1CollectedHeap::alloc_archive_regions(MemRegion range) {
       next_region = NULL;
     }
     curr_region->set_top(top);
+
+    curr_region->set_old();
+    _hr_printer.alloc(curr_region);
+    _old_set.add(curr_region);
+
     curr_region = next_region;
   }
   return true;
