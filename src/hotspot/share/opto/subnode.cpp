@@ -683,6 +683,9 @@ const Type* CmpUNode::Value(PhaseGVN* phase) const {
   if (t2 == TypeInt::INT) { // Compare to bottom?
     return bottom_type();
   }
+
+  const Type* t_sub = sub(t1, t2); // compare based on immediate inputs
+
   uint in1_op = in1->Opcode();
   if (in1_op == Op_AddI || in1_op == Op_SubI) {
     // The problem rise when result of AddI(SubI) may overflow
@@ -735,13 +738,15 @@ const Type* CmpUNode::Value(PhaseGVN* phase) const {
         const TypeInt* tr2 = TypeInt::make(lo_tr2, hi_tr2, w);
         const TypeInt* cmp1 = sub(tr1, t2)->is_int();
         const TypeInt* cmp2 = sub(tr2, t2)->is_int();
-        // compute union, so that cmp handles all possible results from the two cases
-        return cmp1->meet(cmp2);
+        // Compute union, so that cmp handles all possible results from the two cases
+        const Type* t_cmp = cmp1->meet(cmp2);
+        // Pick narrowest type, based on overflow computation and on immediate inputs
+        return t_sub->filter(t_cmp);
       }
     }
   }
 
-  return sub(t1, t2);            // Local flavor of type subtraction
+  return t_sub;
 }
 
 bool CmpUNode::is_index_range_check() const {
