@@ -146,6 +146,7 @@
  * restricted methods is only granted to the modules listed by that option. If this option is not specified,
  * access to restricted methods is enabled for all modules, but access to restricted methods will result in runtime warnings.
  *
+ * @spec jni/index.html Java Native Interface Specification
  */
 package java.lang.foreign;
 

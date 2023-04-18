@@ -350,10 +350,9 @@ import jdk.internal.vm.annotation.ForceInline;
  * <p>
  * The {@code MemorySegment} API uses <em>zero-length memory segments</em> to represent:
  * <ul>
- *     <li>pointers returned from a foreign function;</li>
- *     <li>pointers passed by a foreign function to an
- *     {@linkplain Linker#upcallStub(MethodHandle, FunctionDescriptor, Arena, Option...) upcall stub}; and</li>
- *     <li>pointers {@linkplain MemorySegment#get(AddressLayout, long) read} from a memory segment.</li>
+ *     <li>pointers <a href="Linker.html#by-ref">returned from a foreign function</a>;</li>
+ *     <li>pointers <a href="Linker.html#function-pointers">passed by a foreign function to an upcall stub</a>; and</li>
+ *     <li>pointers read from a memory segment (more on that below).</li>
  * </ul>
  * The address of the zero-length segment is the address stored in the pointer. The spatial and temporal bounds of the
  * zero-length segment are as follows:
@@ -367,49 +366,53 @@ import jdk.internal.vm.annotation.ForceInline;
  *     memory segments cannot be accessed directly, they can be passed, opaquely, to other pointer-accepting foreign functions.</li>
  * </ul>
  * <p>
- * To work with native zero-length memory segments, clients have several options, all of which are <em>unsafe</em>.
+ * To demonstrate how clients can work with zero-length memory segments, consider the case of a client that wants
+ * to read a pointer from some memory segment. This can be done via the
+ * {@linkplain MemorySegment#get(AddressLayout, long)} access method. This method accepts an
+ * {@linkplain AddressLayout address layout} (e.g. {@link ValueLayout#ADDRESS}), the layout of the pointer
+ * to be read. For instance on a 64-bit platform, the size of an address layout is 64 bits. The access operation
+ * also accepts an offset, expressed in bytes, which indicates the position (relative to the start of the memory segment)
+ * at which the pointer is stored. The access operation returns a zero-length native memory segment, backed by a region
+ * of memory whose starting address is the 64-bit value read at the specified offset.
  * <p>
- * First, clients can unsafely resize a zero-length memory segment by {@linkplain #reinterpret(long) obtaining} a
- * memory segment with the same base address as the zero-length memory segment, but with the desired size,
- * so that the resulting segment can then be accessed directly, as follows:
+ * The returned zero-length memory segment cannot be accessed directly by the client: since the size of the segment
+ * is zero, any access operation would result in out-of-bounds access. Instead, the client must, <em>unsafely</em>,
+ * assign new spatial bounds to the zero-length memory segment. This can be done via the
+ * {@link #reinterpret(long)} method, as follows:
  *
  * {@snippet lang = java:
- * MemorySegment foreign = someSegment.get(ValueLayout.ADDRESS, 0); // size = 0
- *                                    .reinterpret(4)               // size = 4
- * int x = foreign.get(ValueLayout.JAVA_INT, 0);                    // ok
+ * MemorySegment z = segment.get(ValueLayout.ADDRESS, ...);   // size = 0
+ * MemorySegment ptr = z.reinterpret(16);                     // size = 16
+ * int x = ptr.getAtIndex(ValueLayout.JAVA_INT, 3);           // ok
  *}
  * <p>
- * In some cases, a client might additionally want to assign new temporal bounds to a zero-length memory segment.
- * This can be done using the {@link #reinterpret(long, Arena, Consumer)} method, which returns a
- * new native segment with the desired size and the same temporal bounds as those in the provided arena:
+ * In some cases, the client might additionally want to assign new temporal bounds to a zero-length memory segment.
+ * This can be done via the {@link #reinterpret(long, Arena, Consumer)} method, which returns a
+ * new native segment with the desired size and the same temporal bounds as those of the provided arena:
  *
  * {@snippet lang = java:
- * MemorySegment foreign = null;
+ * MemorySegment ptr = null;
  * try (Arena arena = Arena.ofConfined()) {
- *       foreign = someSegment.get(ValueLayout.ADDRESS, 0)           // size = 0, scope = always alive
- *                            .reinterpret(4, arena, null);          // size = 4, scope = arena.scope()
- *       int x = foreign.get(ValueLayout.JAVA_INT, 0);               // ok
+ *       MemorySegment z = segment.get(ValueLayout.ADDRESS, ...);    // size = 0, scope = always alive
+ *       ptr = z.reinterpret(16, arena, null);                       // size = 4, scope = arena.scope()
+ *       int x = ptr.getAtIndex(ValueLayout.JAVA_INT, 3);            // ok
  * }
- * int x = foreign.get(ValueLayout.JAVA_INT, 0); // throws IllegalStateException
+ * int x = ptr.getAtIndex(ValueLayout.JAVA_INT, 3);                  // throws IllegalStateException
  *}
  *
- * Alternatively, if the size of the foreign segment is known statically, clients can associate a
- * {@linkplain AddressLayout#withTargetLayout(MemoryLayout) target layout} with the address layout used to obtain the
- * segment. When an access operation, or a function descriptor that is passed to a downcall method handle,
- * uses an address value layout with target layout {@code T}, the runtime will wrap any corresponding raw addresses
- * with native segments with size set to {@code T.byteSize()}:
+ * Alternatively, if the size of the region of memory backing the zero-length memory segment is known statically,
+ * the client can overlay a {@linkplain AddressLayout#withTargetLayout(MemoryLayout) target layout} on the address
+ * layout used when reading a pointer. The target layout is then used to dynamically
+ * <em>expand</em> the size of the native memory segment returned by the access operation, so that the size
+ * of the segment is the same as the size of the target layout. In other words, the returned segment is no
+ * longer a zero-length memory segment, and the pointer it represents can be dereferenced directly:
  *
  * {@snippet lang = java:
- * MemorySegment foreign = someSegment.get(ValueLayout.ADDRESS.withTargetLayout(JAVA_INT), 0); // size = 4
- * int x = foreign.get(ValueLayout.JAVA_INT, 0);                                               // ok
+ * AddressLayout intArrPtrLayout = ValueLayout.ADDRESS.withTargetLayout(
+ *         MemoryLayout.sequenceLayout(4, ValueLayout.JAVA_INT)); // layout for int (*ptr)[4]
+ * MemorySegment ptr = segment.get(intArrPtrLayout, ...);         // size = 16
+ * int x = ptr.getAtIndex(ValueLayout.JAVA_INT, 3);               // ok
  *}
- * <p>
- * Which approach is taken largely depends on the information that a client has available when obtaining a memory segment
- * wrapping a native pointer. For instance, if such pointer points to a C struct, the client might prefer to resize the
- * segment unsafely, to match the size of the struct (so that out-of-bounds access will be detected by the API). If the
- * size is known statically, using an address layout with the correct target layout might be preferable.
- * In other instances, however, there will be no, or little information as to what spatial and/or temporal bounds should
- * be associated with a given native pointer. In these cases using an unbounded address layout might be preferable.
  * <p>
  * All the methods which can be used to manipulate zero-length memory segments
  * ({@link #reinterpret(long)}, {@link #reinterpret(Arena, Consumer)}, {@link #reinterpret(long, Arena, Consumer)} and

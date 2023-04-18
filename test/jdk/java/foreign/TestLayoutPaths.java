@@ -177,44 +177,6 @@ public class TestLayoutPaths {
     }
 
     @Test
-    public void testBadContainerAlign() {
-        GroupLayout g = MemoryLayout.structLayout(JAVA_INT.withBitAlignment(16).withName("foo")).withBitAlignment(8);
-        try {
-            g.bitOffset(groupElement("foo"));
-            g.byteOffset(groupElement("foo"));
-        } catch (Throwable ex) {
-            throw new AssertionError(ex); // should be ok!
-        }
-        try {
-            g.varHandle(groupElement("foo")); //ok
-            assertTrue(false); //should fail!
-        } catch (UnsupportedOperationException ex) {
-            //ok
-        } catch (Throwable ex) {
-            throw new AssertionError(ex); //should fail!
-        }
-    }
-
-    @Test
-    public void testBadAlignOffset() {
-        GroupLayout g = MemoryLayout.structLayout(MemoryLayout.paddingLayout(8), JAVA_INT.withBitAlignment(16).withName("foo"));
-        try {
-            g.bitOffset(groupElement("foo"));
-            g.byteOffset(groupElement("foo"));
-        } catch (Throwable ex) {
-            throw new AssertionError(ex); // should be ok!
-        }
-        try {
-            g.varHandle(groupElement("foo")); //ok
-            assertTrue(false); //should fail!
-        } catch (UnsupportedOperationException ex) {
-            //ok
-        } catch (Throwable ex) {
-            throw new AssertionError(ex); //should fail!
-        }
-    }
-
-    @Test
     public void testBadSequencePathInOffset() {
         SequenceLayout seq = MemoryLayout.sequenceLayout(10, JAVA_INT);
         // bad path elements
@@ -252,9 +214,9 @@ public class TestLayoutPaths {
         long[] offsets = { 0, 8, 24, 56 };
         GroupLayout g = MemoryLayout.structLayout(
                 ValueLayout.JAVA_BYTE.withName("0"),
-                ValueLayout.JAVA_CHAR.withName("1"),
-                ValueLayout.JAVA_FLOAT.withName("2"),
-                ValueLayout.JAVA_LONG.withName("3")
+                ValueLayout.JAVA_CHAR.withBitAlignment(8).withName("1"),
+                ValueLayout.JAVA_FLOAT.withBitAlignment(8).withName("2"),
+                ValueLayout.JAVA_LONG.withBitAlignment(8).withName("3")
         );
 
         // test select
@@ -361,10 +323,10 @@ public class TestLayoutPaths {
             (JAVA_INT.bitSize() * 2) * 4 + JAVA_INT.bitSize()
         });
         testCases.add(new Object[] {
-            MemoryLayout.sequenceLayout(10, MemoryLayout.structLayout(MemoryLayout.paddingLayout(8), JAVA_INT.withName("y"))),
+            MemoryLayout.sequenceLayout(10, MemoryLayout.structLayout(MemoryLayout.paddingLayout(32), JAVA_INT.withName("y"))),
             new PathElement[] { sequenceElement(), groupElement("y") },
             new long[] { 4 },
-            (JAVA_INT.bitSize() + 8) * 4 + 8
+            (JAVA_INT.bitSize() + 32) * 4 + 32
         });
         testCases.add(new Object[] {
             MemoryLayout.sequenceLayout(10, JAVA_INT),

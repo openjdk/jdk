@@ -149,9 +149,9 @@ public sealed interface ValueLayout extends MemoryLayout permits
 
     /**
      * {@inheritDoc}
+     * @throws IllegalArgumentException {@inheritDoc}
      */
     @Override
-
     ValueLayout withBitAlignment(long bitAlignment);
 
     /**
@@ -177,6 +177,7 @@ public sealed interface ValueLayout extends MemoryLayout permits
 
         /**
          * {@inheritDoc}
+         * @throws IllegalArgumentException {@inheritDoc}
          */
         @Override
         OfBoolean withBitAlignment(long bitAlignment);
@@ -212,6 +213,7 @@ public sealed interface ValueLayout extends MemoryLayout permits
 
         /**
          * {@inheritDoc}
+         * @throws IllegalArgumentException {@inheritDoc}
          */
         @Override
         OfByte withBitAlignment(long bitAlignment);
@@ -248,6 +250,7 @@ public sealed interface ValueLayout extends MemoryLayout permits
 
         /**
          * {@inheritDoc}
+         * @throws IllegalArgumentException {@inheritDoc}
          */
         @Override
         OfChar withBitAlignment(long bitAlignment);
@@ -284,6 +287,7 @@ public sealed interface ValueLayout extends MemoryLayout permits
 
         /**
          * {@inheritDoc}
+         * @throws IllegalArgumentException {@inheritDoc}
          */
         @Override
         OfShort withBitAlignment(long bitAlignment);
@@ -320,6 +324,7 @@ public sealed interface ValueLayout extends MemoryLayout permits
 
         /**
          * {@inheritDoc}
+         * @throws IllegalArgumentException {@inheritDoc}
          */
         @Override
         OfInt withBitAlignment(long bitAlignment);
@@ -392,6 +397,7 @@ public sealed interface ValueLayout extends MemoryLayout permits
 
         /**
          * {@inheritDoc}
+         * @throws IllegalArgumentException {@inheritDoc}
          */
         @Override
         OfLong withBitAlignment(long bitAlignment);
@@ -428,6 +434,7 @@ public sealed interface ValueLayout extends MemoryLayout permits
 
         /**
          * {@inheritDoc}
+         * @throws IllegalArgumentException {@inheritDoc}
          */
         @Override
         OfDouble withBitAlignment(long bitAlignment);
