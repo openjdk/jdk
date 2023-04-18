@@ -34,7 +34,7 @@
 
 define_pd_global(bool, ImplicitNullChecks,    true);  // Generate code for implicit null checks.
 define_pd_global(bool, TrapBasedNullChecks,   true);
-define_pd_global(bool, UncommonNullCast,      true);  // Uncommon-trap NULLs passed to check cast.
+define_pd_global(bool, UncommonNullCast,      true);  // Uncommon-trap nulls passed to check cast.
 
 define_pd_global(bool, DelayCompilerStubsGeneration, COMPILER2_OR_JVMCI);
 
@@ -56,7 +56,7 @@ define_pd_global(intx, StackRedPages,         DEFAULT_STACK_RED_PAGES);
 define_pd_global(intx, StackShadowPages,      DEFAULT_STACK_SHADOW_PAGES);
 define_pd_global(intx, StackReservedPages,    DEFAULT_STACK_RESERVED_PAGES);
 
-define_pd_global(bool,  VMContinuations, AIX_ONLY(false) NOT_AIX(true));
+define_pd_global(bool,  VMContinuations, true BIG_ENDIAN_ONLY(&& false));
 
 // Use large code-entry alignment.
 define_pd_global(uintx, CodeCacheSegmentSize,  128);

@@ -551,16 +551,16 @@ void C2_MacroAssembler::string_indexof(Register haystack, Register needle,
   sub(t0, needle_len, 16); // small patterns still should be handled by simple algorithm
   bltz(t0, LINEARSEARCH);
   mv(result, zr);
-  RuntimeAddress stub = NULL;
+  RuntimeAddress stub = nullptr;
   if (isLL) {
     stub = RuntimeAddress(StubRoutines::riscv::string_indexof_linear_ll());
-    assert(stub.target() != NULL, "string_indexof_linear_ll stub has not been generated");
+    assert(stub.target() != nullptr, "string_indexof_linear_ll stub has not been generated");
   } else if (needle_isL) {
     stub = RuntimeAddress(StubRoutines::riscv::string_indexof_linear_ul());
-    assert(stub.target() != NULL, "string_indexof_linear_ul stub has not been generated");
+    assert(stub.target() != nullptr, "string_indexof_linear_ul stub has not been generated");
   } else {
     stub = RuntimeAddress(StubRoutines::riscv::string_indexof_linear_uu());
-    assert(stub.target() != NULL, "string_indexof_linear_uu stub has not been generated");
+    assert(stub.target() != nullptr, "string_indexof_linear_uu stub has not been generated");
   }
   address call = trampoline_call(stub);
   if (call == nullptr) {
@@ -952,7 +952,7 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
   }
 
   bind(STUB);
-  RuntimeAddress stub = NULL;
+  RuntimeAddress stub = nullptr;
   switch (ae) {
     case StrIntrinsicNode::LL:
       stub = RuntimeAddress(StubRoutines::riscv::compare_long_string_LL());
@@ -969,7 +969,7 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
     default:
       ShouldNotReachHere();
   }
-  assert(stub.target() != NULL, "compare_long_string stub has not been generated");
+  assert(stub.target() != nullptr, "compare_long_string stub has not been generated");
   address call = trampoline_call(stub);
   if (call == nullptr) {
     DEBUG_ONLY(reset_labels(DONE, SHORT_LOOP, SHORT_STRING, SHORT_LAST, SHORT_LOOP_TAIL, SHORT_LAST2, SHORT_LAST_INIT, SHORT_LOOP_START));
@@ -1211,21 +1211,21 @@ static conditional_branch_insn conditional_branches[] =
   /* SHORT branches */
   (conditional_branch_insn)&MacroAssembler::beq,
   (conditional_branch_insn)&MacroAssembler::bgt,
-  NULL, // BoolTest::overflow
+  nullptr, // BoolTest::overflow
   (conditional_branch_insn)&MacroAssembler::blt,
   (conditional_branch_insn)&MacroAssembler::bne,
   (conditional_branch_insn)&MacroAssembler::ble,
-  NULL, // BoolTest::no_overflow
+  nullptr, // BoolTest::no_overflow
   (conditional_branch_insn)&MacroAssembler::bge,
 
   /* UNSIGNED branches */
   (conditional_branch_insn)&MacroAssembler::beq,
   (conditional_branch_insn)&MacroAssembler::bgtu,
-  NULL,
+  nullptr,
   (conditional_branch_insn)&MacroAssembler::bltu,
   (conditional_branch_insn)&MacroAssembler::bne,
   (conditional_branch_insn)&MacroAssembler::bleu,
-  NULL,
+  nullptr,
   (conditional_branch_insn)&MacroAssembler::bgeu
 };
 
@@ -1234,21 +1234,21 @@ static float_conditional_branch_insn float_conditional_branches[] =
   /* FLOAT SHORT branches */
   (float_conditional_branch_insn)&MacroAssembler::float_beq,
   (float_conditional_branch_insn)&MacroAssembler::float_bgt,
-  NULL,  // BoolTest::overflow
+  nullptr,  // BoolTest::overflow
   (float_conditional_branch_insn)&MacroAssembler::float_blt,
   (float_conditional_branch_insn)&MacroAssembler::float_bne,
   (float_conditional_branch_insn)&MacroAssembler::float_ble,
-  NULL, // BoolTest::no_overflow
+  nullptr, // BoolTest::no_overflow
   (float_conditional_branch_insn)&MacroAssembler::float_bge,
 
   /* DOUBLE SHORT branches */
   (float_conditional_branch_insn)&MacroAssembler::double_beq,
   (float_conditional_branch_insn)&MacroAssembler::double_bgt,
-  NULL,
+  nullptr,
   (float_conditional_branch_insn)&MacroAssembler::double_blt,
   (float_conditional_branch_insn)&MacroAssembler::double_bne,
   (float_conditional_branch_insn)&MacroAssembler::double_ble,
-  NULL,
+  nullptr,
   (float_conditional_branch_insn)&MacroAssembler::double_bge
 };
 
@@ -1661,9 +1661,9 @@ void C2_MacroAssembler::reduce_minmax_FD_v(FloatRegister dst,
 }
 
 bool C2_MacroAssembler::in_scratch_emit_size() {
-  if (ciEnv::current()->task() != NULL) {
+  if (ciEnv::current()->task() != nullptr) {
     PhaseOutput* phase_output = Compile::current()->output();
-    if (phase_output != NULL && phase_output->in_scratch_emit_size()) {
+    if (phase_output != nullptr && phase_output->in_scratch_emit_size()) {
       return true;
     }
   }
