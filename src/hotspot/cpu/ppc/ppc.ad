@@ -3799,7 +3799,7 @@ frame %{
   // out_preserve_stack_slots for calls to C. Supports the var-args
   // backing area for register parms.
   //
-  varargs_C_out_slots_killed(((frame::abi_reg_args_size - frame::jit_out_preserve_size) / VMRegImpl::stack_slot_size));
+  varargs_C_out_slots_killed(((frame::native_abi_reg_args_size - frame::jit_out_preserve_size) / VMRegImpl::stack_slot_size));
 
   // The after-PROLOG location of the return address. Location of
   // return address specifies a type (REG or STACK) and a number
