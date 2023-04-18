@@ -206,6 +206,9 @@ public class TestJNICriticalStressTest {
 
         largeMap = populateMap(LARGE_MAP_SIZE);
 
+        // Start threads to allocate memory, this will trigger both GCLocker initiated
+        // garbage collections (GCs) and regular GCs. Thus increasing the likelihood of
+        // having different types of GCs happening concurrently with the System.gc call.
         println("Starting " + allocThreadNum + " allocating threads");
         for (int i = 0; i < allocThreadNum; i += 1) {
             new Thread(new AllocatingWorker()).start();
