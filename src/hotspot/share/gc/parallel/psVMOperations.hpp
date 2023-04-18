@@ -40,12 +40,12 @@ class VM_ParallelGCFailedAllocation : public VM_CollectForAllocation {
 };
 
 class VM_ParallelGCSystemGC: public VM_GC_Operation {
-  bool _gc_succeeded;
+  bool _full_gc_succeeded;
  public:
   VM_ParallelGCSystemGC(uint gc_count, uint full_gc_count, GCCause::Cause gc_cause);
   virtual VMOp_Type type() const { return VMOp_ParallelGCSystemGC; }
   virtual void doit();
-  bool gc_succeeded() const { return _gc_succeeded; }
+  bool full_gc_succeeded() const { return _full_gc_succeeded; }
   static bool is_cause_full(GCCause::Cause cause);
 };
 
