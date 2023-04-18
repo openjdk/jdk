@@ -205,7 +205,7 @@ void G1BarrierSetC2::pre_barrier(GraphKit* kit,
     // In this case both val_type and alias_idx are unused.
     assert(pre_val != nullptr, "must be loaded already");
     // Nothing to be done if pre_val is null.
-    if (pre_val->bottom_type() == TypePtr::nullptr_PTR) return;
+    if (pre_val->bottom_type() == TypePtr::NULL_PTR) return;
     assert(pre_val->bottom_type()->basic_type() == T_OBJECT, "or we shouldn't be here");
   }
   assert(bt == T_OBJECT, "or we shouldn't be here");
