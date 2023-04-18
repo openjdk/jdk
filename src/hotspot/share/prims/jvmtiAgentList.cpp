@@ -28,7 +28,6 @@
 #include "prims/jvmtiExport.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/os.inline.hpp"
-#include "utilities/growableArray.hpp"
 
 JvmtiAgent* JvmtiAgentList::_list = nullptr;
 
@@ -80,10 +79,6 @@ JvmtiAgentList::Iterator::Iterator(JvmtiAgent** list, Filter filter) :
       next = next->next();
     }
   }
-}
-
-JvmtiAgentList::Iterator::~Iterator() {
-  delete _stack;
 }
 
 bool JvmtiAgentList::Iterator::has_next() const {
