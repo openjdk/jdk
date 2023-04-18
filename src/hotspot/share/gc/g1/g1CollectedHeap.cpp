@@ -512,8 +512,7 @@ HeapWord* G1CollectedHeap::attempt_allocation_slow(size_t word_size) {
 }
 
 bool G1CollectedHeap::check_archive_addresses(MemRegion range) {
-  MemRegion reserved = _hrm.reserved();
-  return reserved.contains(range.start()) && reserved.contains(range.last());
+  return _hrm.reserved().contains(range);
 }
 
 template <typename Func>
@@ -587,31 +586,6 @@ bool G1CollectedHeap::alloc_archive_regions(MemRegion range) {
   return true;
 }
 
-inline HeapWord* G1CollectedHeap::attempt_allocation(size_t min_word_size,
-                                                     size_t desired_word_size,
-                                                     size_t* actual_word_size) {
-  assert_heap_not_locked_and_not_at_safepoint();
-  assert(!is_humongous(desired_word_size), "attempt_allocation() should not "
-         "be called for humongous allocation requests");
-
-  HeapWord* result = _allocator->attempt_allocation(min_word_size, desired_word_size, actual_word_size);
-
-  if (result == NULL) {
-    *actual_word_size = desired_word_size;
-    result = attempt_allocation_slow(desired_word_size);
-  }
-
-  assert_heap_not_locked();
-  if (result != NULL) {
-    assert(*actual_word_size != 0, "Actual size must have been set here");
-    dirty_young_block(result, *actual_word_size);
-  } else {
-    *actual_word_size = 0;
-  }
-
-  return result;
-}
-
 void G1CollectedHeap::populate_archive_regions_bot_part(MemRegion range) {
   assert(!is_init_completed(), "Expect to be called at JVM init time");
 
@@ -656,6 +630,31 @@ void G1CollectedHeap::dealloc_archive_regions(MemRegion range) {
     uncommit_regions(shrink_count);
   }
   decrease_used(size_used);
+}
+
+inline HeapWord* G1CollectedHeap::attempt_allocation(size_t min_word_size,
+                                                     size_t desired_word_size,
+                                                     size_t* actual_word_size) {
+  assert_heap_not_locked_and_not_at_safepoint();
+  assert(!is_humongous(desired_word_size), "attempt_allocation() should not "
+         "be called for humongous allocation requests");
+
+  HeapWord* result = _allocator->attempt_allocation(min_word_size, desired_word_size, actual_word_size);
+
+  if (result == NULL) {
+    *actual_word_size = desired_word_size;
+    result = attempt_allocation_slow(desired_word_size);
+  }
+
+  assert_heap_not_locked();
+  if (result != NULL) {
+    assert(*actual_word_size != 0, "Actual size must have been set here");
+    dirty_young_block(result, *actual_word_size);
+  } else {
+    *actual_word_size = 0;
+  }
+
+  return result;
 }
 
 HeapWord* G1CollectedHeap::attempt_allocation_humongous(size_t word_size) {
