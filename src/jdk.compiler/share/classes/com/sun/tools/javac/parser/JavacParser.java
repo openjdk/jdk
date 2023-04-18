@@ -3854,8 +3854,6 @@ public class JavacParser implements Parser {
             ListBuffer<JCTree> semiList = new ListBuffer<>();
             while (firstTypeDecl && mods == null && token.kind == SEMI) {
                 semiList.append(toP(F.at(token.pos).Skip()));
-                if (peekToken(EOF::equals))
-                    break;
                 nextToken();
             }
             if (firstTypeDecl && mods == null && token.kind == IMPORT) {
@@ -3899,10 +3897,12 @@ public class JavacParser implements Parser {
                     }
                 }
                 defs.appendList(semiList.toList());
-                JCTree def = typeDeclaration(mods, docComment);
-                if (def instanceof JCExpressionStatement statement)
-                    def = statement.expr;
-                defs.append(def);
+                if (token.kind != EOF) {
+                    JCTree def = typeDeclaration(mods, docComment);
+                    if (def instanceof JCExpressionStatement statement)
+                        def = statement.expr;
+                    defs.append(def);
+                }
                 mods = null;
                 firstTypeDecl = false;
             }
