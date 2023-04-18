@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2022 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,8 +91,8 @@ class StubGenerator: public StubCodeGenerator {
     address start = __ function_entry();
 
     // some sanity checks
-    assert((sizeof(frame::abi_minframe) % 16) == 0,           "unaligned");
-    assert((sizeof(frame::abi_reg_args) % 16) == 0,           "unaligned");
+    assert((sizeof(frame::native_abi_minframe) % 16) == 0,    "unaligned");
+    assert((sizeof(frame::native_abi_reg_args) % 16) == 0,    "unaligned");
     assert((sizeof(frame::spill_nonvolatiles) % 16) == 0,     "unaligned");
     assert((sizeof(frame::parent_ijava_frame_abi) % 16) == 0, "unaligned");
     assert((sizeof(frame::entry_frame_locals) % 16) == 0,     "unaligned");
@@ -540,7 +540,7 @@ class StubGenerator: public StubCodeGenerator {
     MacroAssembler* masm = new MacroAssembler(&code);
 
     OopMapSet* oop_maps  = new OopMapSet();
-    int frame_size_in_bytes = frame::abi_reg_args_size;
+    int frame_size_in_bytes = frame::native_abi_reg_args_size;
     OopMap* map = new OopMap(frame_size_in_bytes / sizeof(jint), 0);
 
     address start = __ pc();
@@ -4553,7 +4553,7 @@ class StubGenerator: public StubCodeGenerator {
     __ mtctr(tmp1); __ bctr();
     __ bind(thaw_success);
 
-    __ addi(R3_RET, R3_RET, frame::abi_reg_args_size); // Large abi required for C++ calls.
+    __ addi(R3_RET, R3_RET, frame::native_abi_reg_args_size); // Large abi required for C++ calls.
     __ neg(R3_RET, R3_RET);
     // align down resulting in a smaller negative offset
     __ clrrdi(R3_RET, R3_RET, exact_log2(frame::alignment_in_bytes));
@@ -4617,7 +4617,7 @@ class StubGenerator: public StubCodeGenerator {
     Register tmp1 = R10_ARG8;
     Register tmp2 = R9_ARG7;
 
-    int framesize = frame::abi_reg_args_size / VMRegImpl::stack_slot_size;
+    int framesize = frame::native_abi_reg_args_size / VMRegImpl::stack_slot_size;
     address start = __ pc();
     __ mflr(tmp1);
     __ std(tmp1, _abi0(lr), R1_SP);  // save return pc

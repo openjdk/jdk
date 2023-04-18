@@ -717,7 +717,7 @@ void VM_Version::print_platform_virtualization_info(outputStream* st) {
   // - LPAR
   // - whole "Box" (CPUs )
   // - z/VM / KVM (VM<nn>); this is not available in an LPAR-only setup
-  const char* kw[] = { "LPAR", "CPUs", "VM", NULL };
+  const char* kw[] = { "LPAR", "CPUs", "VM", nullptr };
   const char* info_file = "/proc/sysinfo";
 
   if (!print_matching_lines_from_file(info_file, st, kw)) {
@@ -842,7 +842,7 @@ void VM_Version::set_features_from(const char* march) {
   bool err = false;
   bool prt = false;
 
-  if ((march != NULL) && (march[0] != '\0')) {
+  if ((march != nullptr) && (march[0] != '\0')) {
     const int buf_len = 16;
     const int hdr_len =  5;
     char buf[buf_len];
@@ -909,10 +909,10 @@ void VM_Version::set_features_from(const char* march) {
 //                <  0: failure: required number of feature bit string words (buffer too small).
 //                == 0: failure: operation aborted.
 //
-static long (*getFeatures)(unsigned long*, int, int) = NULL;
+static long (*getFeatures)(unsigned long*, int, int) = nullptr;
 
 void VM_Version::set_getFeatures(address entryPoint) {
-  if (getFeatures == NULL) {
+  if (getFeatures == nullptr) {
     getFeatures = (long(*)(unsigned long*, int, int))entryPoint;
   }
 }

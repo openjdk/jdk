@@ -367,7 +367,8 @@ void DynamicArchive::check_for_dynamic_dump() {
 
 #define __THEMSG " is unsupported when base CDS archive is not loaded. Run with -Xlog:cds for more info."
     if (RecordDynamicDumpInfo) {
-      vm_exit_during_initialization("-XX:+RecordDynamicDumpInfo" __THEMSG, nullptr);
+      log_error(cds)("-XX:+RecordDynamicDumpInfo%s", __THEMSG);
+      MetaspaceShared::unrecoverable_loading_error();
     } else {
       assert(ArchiveClassesAtExit != nullptr, "sanity");
       log_warning(cds)("-XX:ArchiveClassesAtExit" __THEMSG);
