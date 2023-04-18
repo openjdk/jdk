@@ -2099,8 +2099,8 @@ void CMoveKit::make_cmove_pack(Node_List* cmove_pk) {
     map(cmp, new_cmove_pk);
   }
   _sw->remove_pack(cmove_pk);
-  _sw->remove_pack(bool_pk);
-  _sw->remove_pack(cmp_pk);
+  //_sw->remove_pack(bool_pk);
+  //_sw->remove_pack(cmp_pk);
   _sw->add_pack_and_set_my_pack(new_cmove_pk);
   NOT_PRODUCT(if(_sw->is_trace_cmov()) {tty->print_cr("CMoveKit::make_cmove_pack: added syntactic CMove pack"); _sw->print_pack(new_cmove_pk);})
 }
@@ -2188,6 +2188,10 @@ bool SuperWord::implemented(Node_List* p) {
     } else if (is_cmove_fp_opcode(opc)) {
       retValue = is_cmov_pack(p) && VectorNode::implemented(opc, size, velt_basic_type(p0));
       NOT_PRODUCT(if(retValue && is_trace_cmov()) {tty->print_cr("SWPointer::implemented: found cmove pack"); print_pack(p);})
+    } else if (is_cmov_pack(p)) {
+      // Accept internal CMove nodes that are later hacked away, see SuperWord::output.
+      assert(p0->Opcode() == Op_CmpF || p0->Opcode() == Op_CmpD || p0->Opcode() == Op_Bool, "cmov nodes only");
+      retValue = true;
     } else if (requires_long_to_int_conversion(opc)) {
       // Java API for Long.bitCount/numberOfLeadingZeros/numberOfTrailingZeros
       // returns int type, but Vector API for them returns long type. To unify
