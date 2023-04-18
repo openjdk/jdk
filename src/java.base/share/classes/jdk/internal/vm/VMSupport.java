@@ -229,7 +229,7 @@ public class VMSupport {
     }
 
     /**
-     * Encodes a list of annotations to a byte array. The byte array can be decoded with {@link #decodeAnnotations(byte[], AnnotationDecoder)}.
+     * Encodes annotations to a byte array. The byte array can be decoded with {@link #decodeAnnotations(byte[], AnnotationDecoder)}.
      */
     public static byte[] encodeAnnotations(Collection<Annotation> annotations) {
         try {
