@@ -40,8 +40,8 @@ class ReverseOrderSortedMapView<K, V> extends AbstractMap<K, V> implements Sorte
     }
 
     public static <K, V> SortedMap<K, V> of(SortedMap<K, V> map) {
-        if (map instanceof ReverseOrderSortedMapView) {
-            return ((ReverseOrderSortedMapView<K, V>)map).base;
+        if (map instanceof ReverseOrderSortedMapView<K, V> rosmv) {
+            return rosmv.base;
         } else {
             return new ReverseOrderSortedMapView<>(map);
         }

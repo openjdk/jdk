@@ -896,7 +896,7 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
      *
      * @param <E> the view's element type
      */
-    /* non-public */ static class ViewCollection<E> implements Collection<E> {
+    /* non-public */ abstract static class ViewCollection<E> implements Collection<E> {
         UnsupportedOperationException uoe() { return new UnsupportedOperationException(); }
         final Collection<E> view;
 

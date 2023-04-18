@@ -1181,7 +1181,7 @@ public class Collections {
         }
 
         @SuppressWarnings("unchecked")
-        private SequencedCollection<E> rc() {
+        private SequencedCollection<E> sc() {
             return (SequencedCollection<E>) c;
         }
 
@@ -1189,7 +1189,7 @@ public class Collections {
         // not serializable because it points to the reversed collection view, which usually isn't
         // serializable.
         public SequencedCollection<E> reversed() {
-            return new UnmodifiableSequencedCollection<>(rc().reversed());
+            return new UnmodifiableSequencedCollection<>(sc().reversed());
         }
 
         public void addFirst(E e) {
@@ -1201,11 +1201,11 @@ public class Collections {
         }
 
         public E getFirst() {
-            return rc().getFirst();
+            return sc().getFirst();
         }
 
         public E getLast() {
-            return rc().getLast();
+            return sc().getLast();
         }
 
         public E removeFirst() {
@@ -5901,7 +5901,7 @@ public class Collections {
      * @since 1.6
      */
     public static <E> Set<E> newSetFromMap(Map<E, Boolean> map) {
-        if (! map.isEmpty())
+        if (! map.isEmpty()) // implicit null check
             throw new IllegalArgumentException("Map is non-empty");
         return new SetFromMap<>(map);
     }
@@ -6011,7 +6011,7 @@ public class Collections {
      * @since 21
      */
     public static <E> SequencedSet<E> newSequencedSetFromMap(SequencedMap<E, Boolean> map) {
-        if (! map.isEmpty())
+        if (! map.isEmpty()) // implicit null check
             throw new IllegalArgumentException("Map is non-empty");
         return new SequencedSetFromMap<>(map);
     }

@@ -42,8 +42,8 @@ class ReverseOrderListView<E> implements List<E> {
     final boolean modifiable;
 
     public static <T> List<T> of(List<T> list, boolean modifiable) {
-        if (list instanceof ReverseOrderListView) {
-            return ((ReverseOrderListView<T>)list).base;
+        if (list instanceof ReverseOrderListView<T> rolv) {
+            return rolv.base;
         } else if (list instanceof RandomAccess) {
             return new ReverseOrderListView.Rand<>(list, modifiable);
         } else {
@@ -57,7 +57,7 @@ class ReverseOrderListView<E> implements List<E> {
         }
     }
 
-    ReverseOrderListView(List<E> list, boolean modifiable) {
+    private ReverseOrderListView(List<E> list, boolean modifiable) {
         this.base = list;
         this.modifiable = modifiable;
     }
@@ -72,8 +72,9 @@ class ReverseOrderListView<E> implements List<E> {
      * behavior if every mutator of this class always checks.
      */
     void checkModifiable() {
-        if (! modifiable)
+        if (! modifiable) {
             throw new UnsupportedOperationException();
+        }
     }
 
     class DescendingIterator implements Iterator<E> {

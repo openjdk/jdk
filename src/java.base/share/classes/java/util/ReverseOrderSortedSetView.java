@@ -44,8 +44,8 @@ class ReverseOrderSortedSetView<E> implements SortedSet<E> {
     }
 
     public static <T> SortedSet<T> of(SortedSet<T> set) {
-        if (set instanceof ReverseOrderSortedSetView) {
-            return ((ReverseOrderSortedSetView<T>)set).base;
+        if (set instanceof ReverseOrderSortedSetView<T> rossv) {
+            return rossv.base;
         } else {
             return new ReverseOrderSortedSetView<>(set);
         }

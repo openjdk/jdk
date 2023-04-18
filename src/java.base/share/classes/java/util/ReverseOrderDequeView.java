@@ -42,8 +42,8 @@ class ReverseOrderDequeView<E> implements Deque<E> {
     }
 
     public static <T> Deque<T> of(Deque<T> deque) {
-        if (deque instanceof ReverseOrderDequeView) {
-            return ((ReverseOrderDequeView<T>)deque).base;
+        if (deque instanceof ReverseOrderDequeView<T> rodv) {
+            return rodv.base;
         } else {
             return new ReverseOrderDequeView<>(deque);
         }
