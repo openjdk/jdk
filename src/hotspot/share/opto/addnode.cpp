@@ -1279,6 +1279,83 @@ Node* MaxLNode::Identity(PhaseGVN* phase) {
   return MaxNode::Identity(phase);
 }
 
+// Collapse the "addition with overflow-protection" pattern, and the symetrical
+// "subtraction with underflow-protection" pattern. These are created during the
+// unrolling, when we have to adjust the limit by subtracting the stride, but want
+// to protect agains underflow: MaxL(SubL(limit, stride), min_jint).
+// If we have more than one of those in a sequence:
+//
+//   x  con2
+//   |  |
+//   AddL  clamp2
+//     |    |
+//    Max/MinL con1
+//          |  |
+//          AddL  clamp1
+//            |    |
+//           Max/MinL (n)
+//
+// We want to collapse it to:
+//
+//   x  con1  con2
+//   |    |    |
+//   |   AddLNode (new_con)
+//   |    |
+//  AddLNode  clamp1
+//        |    |
+//       Max/MinL (n)
+//
+Node* fold_subI_no_underflow_pattern(Node* n, PhaseGVN* phase) {
+  assert(n->Opcode() == Op_MaxL || n->Opcode() == Op_MinL, "sanity");
+  // Check that the two clamps have the correct values.
+  jlong clamp = (n->Opcode() == Op_MaxL) ? min_jint : max_jint;
+  auto is_clamp = [&](Node* c) {
+    const TypeLong* t = phase->type(c)->is_long();
+    return t != nullptr && t->is_con() &&
+           t->get_con() == clamp;
+  };
+  // Check that the constants are negative if MaxL, and positive if MinL.
+  auto is_sub_con = [&](Node* c) {
+    const TypeLong* t = phase->type(c)->is_long();
+    return t != nullptr && t->is_con() &&
+           t->get_con() < max_jint && t->get_con() > min_jint &&
+           (t->get_con() < 0) == (n->Opcode() == Op_MaxL);
+  };
+  // Verify the graph level by level:
+  Node* add1   = n->in(1);
+  Node* clamp1 = n->in(2);
+  if (add1->Opcode() == Op_AddL && is_clamp(clamp1)) {
+    Node* max2 = add1->in(1);
+    Node* con1 = add1->in(2);
+    if (max2->Opcode() == n->Opcode() && is_sub_con(con1)) {
+      Node* add2   = max2->in(1);
+      Node* clamp2 = max2->in(2);
+      if (add2->Opcode() == Op_AddL && is_clamp(clamp2)) {
+        Node* x    = add2->in(1);
+        Node* con2 = add2->in(2);
+        if (is_sub_con(con2)) {
+          Node* new_con = phase->transform(new AddLNode(con1, con2));
+          Node* new_sub = phase->transform(new AddLNode(x, new_con));
+          n->set_req_X(1, new_sub, phase);
+          return n;
+        }
+      }
+    }
+  }
+  return nullptr;
+}
+
+Node* MaxLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  Node* n = AddNode::Ideal(phase, can_reshape);
+  if (n != nullptr) {
+    return n;
+  }
+  if (can_reshape) {
+    return fold_subI_no_underflow_pattern(this, phase);
+  }
+  return nullptr;
+}
+
 const Type* MinLNode::add_ring(const Type* t0, const Type* t1) const {
   const TypeLong* r0 = t0->is_long();
   const TypeLong* r1 = t1->is_long();
@@ -1298,6 +1375,17 @@ Node* MinLNode::Identity(PhaseGVN* phase) {
   }
 
   return MaxNode::Identity(phase);
+}
+
+Node* MinLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  Node* n = AddNode::Ideal(phase, can_reshape);
+  if (n != nullptr) {
+    return n;
+  }
+  if (can_reshape) {
+    return fold_subI_no_underflow_pattern(this, phase);
+  }
+  return nullptr;
 }
 
 //------------------------------add_ring---------------------------------------
