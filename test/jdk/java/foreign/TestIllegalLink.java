@@ -156,20 +156,6 @@ public class TestIllegalLink extends NativeTestHelper {
             },
             {
                     FunctionDescriptor.ofVoid(MemoryLayout.structLayout(
-                            C_CHAR.withName("x"),
-                            C_INT.withName("y"), // not aligned
-                            MemoryLayout.paddingLayout(24))),
-                    "unexpected offset"
-            },
-            {
-                    FunctionDescriptor.ofVoid(MemoryLayout.structLayout(
-                            ValueLayout.JAVA_INT,
-                            ValueLayout.ADDRESS, // not aligned
-                            MemoryLayout.paddingLayout(32))),
-                    "unexpected offset"
-            },
-            {
-                    FunctionDescriptor.ofVoid(MemoryLayout.structLayout(
                             ValueLayout.JAVA_INT,
                             MemoryLayout.paddingLayout(32), // no excess padding
                             ValueLayout.JAVA_INT)),
