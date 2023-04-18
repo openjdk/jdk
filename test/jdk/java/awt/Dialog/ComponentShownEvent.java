@@ -44,7 +44,8 @@ public class ComponentShownEvent {
     Frame f;
     Dialog d;
 
-    public void start() throws InterruptedException, InvocationTargetException, AWTException {
+    public void start() throws InterruptedException,
+                        InvocationTargetException, AWTException {
         Robot robot = new Robot();
         try {
             EventQueue.invokeAndWait(() -> {
@@ -83,7 +84,8 @@ public class ComponentShownEvent {
         }
     }
 
-    public static void main(String[] args) throws InterruptedException, InvocationTargetException, AWTException {
+    public static void main(String[] args) throws InterruptedException,
+                               InvocationTargetException, AWTException {
         ComponentShownEvent test = new ComponentShownEvent();
         test.start();
         System.out.println("test passed");
