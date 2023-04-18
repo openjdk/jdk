@@ -26,109 +26,161 @@ import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
 /*
- * @test
+ * @test id=allDisabled
  * @bug 8305994
  * @summary Test the GuaranteedAsyncDeflationInterval option
  * @requires vm.flagless
- * @modules java.base/jdk.internal.misc
  * @library /test/lib
- * @run driver GuaranteedAsyncDeflationIntervalTest
+ * @run driver GuaranteedAsyncDeflationIntervalTest allDisabled
+ */
+
+/*
+ * @test id=guaranteedNoMUDT
+ * @requires vm.flagless
+ * @library /test/lib
+ * @run driver GuaranteedAsyncDeflationIntervalTest guaranteedNoMUDT
+ */
+
+/*
+ * @test id=guaranteedNoADI
+ * @requires vm.flagless
+ * @library /test/lib
+ * @run driver GuaranteedAsyncDeflationIntervalTest guaranteedNoADI
+ */
+
+/*
+ * @test id=allEnabled
+ * @requires vm.flagless
+ * @library /test/lib
+ * @run driver GuaranteedAsyncDeflationIntervalTest allEnabled
  */
 
 public class GuaranteedAsyncDeflationIntervalTest {
 
-    public static void main(String[] args) throws Exception {
-        if (args.length == 0) {
-          driver();
-        } else {
-          test();
-        }
-    }
+    public static class Test {
+        // Inflate a lot of monitors, so that threshold heuristics definitely fires
+        public static final int MONITORS = 10_000;
 
-    // Inflate a lot of monitors, so that threshold heuristics definitely fires
-    public static final int MONITORS = 10_000;
+        public static Object[] monitors;
 
-    public static Object[] monitors;
-
-    public static void test() throws Exception {
-        monitors = new Object[MONITORS];
-        for (int i = 0; i < MONITORS; i++) {
-            Object o = new Object();
-            synchronized (o) {
-                try {
-                    o.wait(1); // Inflate!
-                } catch (InterruptedException ie) {
+        public static void main(String... args) throws Exception {
+            monitors = new Object[MONITORS];
+            for (int i = 0; i < MONITORS; i++) {
+                Object o = new Object();
+                synchronized (o) {
+                    try {
+                        o.wait(1); // Inflate!
+                    } catch (InterruptedException ie) {
+                    }
                 }
+                monitors[i] = o;
             }
-            monitors[i] = o;
-        }
 
-        try {
-            Thread.sleep(10_000);
-        } catch (InterruptedException ie) {
+            try {
+                Thread.sleep(10_000);
+            } catch (InterruptedException ie) {
+            }
         }
     }
 
-    public static void driver() throws Exception {
-        final String MSG_THRESHOLD  = "Async deflation needed: monitors used are above the threshold";
-        final String MSG_GUARANTEED = "Async deflation needed: guaranteed interval reached";
-
-        // Try with all heuristics disabled
-        {
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-                "-Xmx100M",
-                "-XX:+UnlockDiagnosticVMOptions",
-                "-XX:GuaranteedAsyncDeflationInterval=0",
-                "-XX:MonitorUsedDeflationThreshold=0",
-                "-Xlog:monitorinflation=info",
-                "GuaranteedAsyncDeflationIntervalTest",
-                "test");
-
-            OutputAnalyzer oa = new OutputAnalyzer(pb.start());
-            oa.shouldHaveExitValue(0);
-
-            oa.shouldNotContain(MSG_THRESHOLD);
-            oa.shouldNotContain(MSG_GUARANTEED);
-            assertNoDeflations(oa);
+    public static void main(String[] args) throws Exception {
+        if (args.length < 1) {
+            throw new IllegalArgumentException("Expect the test label");
         }
 
-        // Try with guaranteed interval only enabled
-        {
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-                "-Xmx100M",
-                "-XX:+UnlockDiagnosticVMOptions",
-                "-XX:GuaranteedAsyncDeflationInterval=100",
-                "-XX:MonitorUsedDeflationThreshold=0",
-                "-Xlog:monitorinflation=info",
-                "GuaranteedAsyncDeflationIntervalTest",
-                "test");
-
-            OutputAnalyzer oa = new OutputAnalyzer(pb.start());
-            oa.shouldHaveExitValue(0);
-
-            oa.shouldNotContain(MSG_THRESHOLD);
-            oa.shouldContain(MSG_GUARANTEED);
-            assertDeflations(oa);
+        String test = args[0];
+        switch (test) {
+            case "allDisabled":
+                testAllDisabled();
+                break;
+            case "guaranteedNoMUDT":
+                testGuaranteedNoMUDT();
+                break;
+            case "guaranteedNoADI":
+                testGuaranteedNoADI();
+                break;
+            case "allEnabled":
+                testAllEnabled();
+                break;
+            default:
+                throw new IllegalArgumentException("Unknown test: " + test);
         }
+    }
 
-        // Try with both threshold heuristics and guaranteed interval enabled
-        {
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-                "-Xmx100M",
-                "-XX:+UnlockDiagnosticVMOptions",
-                "-XX:GuaranteedAsyncDeflationInterval=5000",
-                "-XX:MonitorUsedDeflationThreshold=10",
-                "-Xlog:monitorinflation=info",
-                "GuaranteedAsyncDeflationIntervalTest",
-                "test");
+    static final String MSG_THRESHOLD  = "Async deflation needed: monitors used are above the threshold";
+    static final String MSG_GUARANTEED = "Async deflation needed: guaranteed interval";
 
-            OutputAnalyzer oa = new OutputAnalyzer(pb.start());
-            oa.shouldHaveExitValue(0);
+    // Try with all heuristics disabled
+    public static void testAllDisabled() throws Exception {
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+            "-Xmx100M",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:GuaranteedAsyncDeflationInterval=0",
+            "-XX:AsyncDeflationInterval=0",
+            "-XX:MonitorUsedDeflationThreshold=0",
+            "-Xlog:monitorinflation=info",
+            "GuaranteedAsyncDeflationIntervalTest$Test");
 
-            oa.shouldContain(MSG_THRESHOLD);
-            oa.shouldContain(MSG_GUARANTEED);
-            assertDeflations(oa);
-        }
+        OutputAnalyzer oa = new OutputAnalyzer(pb.start());
+        oa.shouldHaveExitValue(0);
+
+        oa.shouldNotContain(MSG_THRESHOLD);
+        oa.shouldNotContain(MSG_GUARANTEED);
+        assertNoDeflations(oa);
+    }
+
+    // Try with guaranteed interval only enabled, threshold heuristics disabled via MUDT
+    public static void testGuaranteedNoMUDT() throws Exception {
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+            "-Xmx100M",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:GuaranteedAsyncDeflationInterval=100",
+            "-XX:MonitorUsedDeflationThreshold=0",
+            "-Xlog:monitorinflation=info",
+            "GuaranteedAsyncDeflationIntervalTest$Test");
+
+        OutputAnalyzer oa = new OutputAnalyzer(pb.start());
+        oa.shouldHaveExitValue(0);
+
+        oa.shouldNotContain(MSG_THRESHOLD);
+        oa.shouldContain(MSG_GUARANTEED);
+        assertDeflations(oa);
+    }
+
+    // Try with guaranteed interval only enabled, threshold heuristics disabled via ADI
+    public static void testGuaranteedNoADI() throws Exception {
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+            "-Xmx100M",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:GuaranteedAsyncDeflationInterval=100",
+            "-XX:AsyncDeflationInterval=0",
+            "-Xlog:monitorinflation=info",
+            "GuaranteedAsyncDeflationIntervalTest$Test");
+
+        OutputAnalyzer oa = new OutputAnalyzer(pb.start());
+        oa.shouldHaveExitValue(0);
+
+        oa.shouldNotContain(MSG_THRESHOLD);
+        oa.shouldContain(MSG_GUARANTEED);
+        assertDeflations(oa);
+    }
+
+    // Try with both threshold heuristics and guaranteed interval enabled
+    public static void testAllEnabled() throws Exception {
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+            "-Xmx100M",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:GuaranteedAsyncDeflationInterval=5000",
+            "-XX:MonitorUsedDeflationThreshold=10",
+            "-Xlog:monitorinflation=info",
+            "GuaranteedAsyncDeflationIntervalTest$Test");
+
+        OutputAnalyzer oa = new OutputAnalyzer(pb.start());
+        oa.shouldHaveExitValue(0);
+
+        oa.shouldContain(MSG_THRESHOLD);
+        oa.shouldContain(MSG_GUARANTEED);
+        assertDeflations(oa);
     }
 
     private static void assertNoDeflations(OutputAnalyzer oa) {
