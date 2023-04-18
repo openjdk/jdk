@@ -539,14 +539,14 @@ public class Thread implements Runnable {
             if (currentThread() instanceof VirtualThread vthread) {
                 vthread.sleepNanos(totalNanos);
             } else {
-                sleep0(millis, nanos);
+                sleep0(totalNanos);
             }
         } finally {
             afterSleep(event);
         }
     }
 
-    private static native void sleep0(long millis, int nanos) throws InterruptedException;
+    private static native void sleep0(long nanos) throws InterruptedException;
 
     /**
      * Causes the currently executing thread to sleep (temporarily cease

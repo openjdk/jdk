@@ -1983,14 +1983,9 @@ Klass* JavaThread::security_get_caller_class(int depth) {
 // java.lang.Thread.sleep support
 // Returns true if sleep time elapsed as expected, and false
 // if the thread was interrupted.
-bool JavaThread::sleep(jlong millis) {
-  return sleep(millis, 0);
-}
-
-bool JavaThread::sleep(jlong millis, jint nanos) {
+bool JavaThread::sleep_nanos(jlong nanos) {
   assert(this == Thread::current(),  "thread consistency check");
-  assert(0 <= millis, "millis are in range");
-  assert(0 <= nanos && nanos < NANOSECS_PER_MILLISEC, "nanos are in range");
+  assert(0 <= nanos, "nanos are in range");
 
   ParkEvent * const slp = this->_SleepEvent;
   // Because there can be races with thread interruption sending an unpark()
@@ -2004,10 +1999,7 @@ bool JavaThread::sleep(jlong millis, jint nanos) {
 
   jlong prevtime = os::javaTimeNanos();
 
-  // Be conscious about math overflows when converting millis to nanos:
-  // cap the millis to max_secs.
-  static const jlong max_secs = 100000000;
-  jlong nanos_remaining = millis_to_nanos_bounded(millis, nanos, max_secs);
+  jlong nanos_remaining = nanos;
 
   for (;;) {
     // interruption has precedence over timing out
@@ -2022,9 +2014,7 @@ bool JavaThread::sleep(jlong millis, jint nanos) {
     {
       ThreadBlockInVM tbivm(this);
       OSThreadWaitState osts(this->osthread(), false /* not Object.wait() */);
-      jlong step_millis = nanos_to_millis(nanos_remaining);
-      jlong step_nanos  = nanos_remaining - millis_to_nanos(step_millis);
-      slp->park(step_millis, step_nanos);
+      slp->park_nanos(nanos_remaining);
     }
 
     // Update elapsed time tracking

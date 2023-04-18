@@ -1329,6 +1329,16 @@ static void unpack_abs_time(timespec* abstime, jlong deadline, jlong now_sec) {
   }
 }
 
+static jlong millis_to_nanos_bounded(jlong millis) {
+  // We have to watch for overflow when converting millis to nanos,
+  // but if millis is that large then we will end up limiting to
+  // MAX_SECS anyway, so just do that here.
+  if (millis / MILLIUNITS > MAX_SECS) {
+    millis = jlong(MAX_SECS) * MILLIUNITS;
+  }
+  return millis_to_nanos(millis);
+}
+
 static void to_abstime(timespec* abstime, jlong timeout,
                        bool isAbsolute, bool isRealtime) {
   DEBUG_ONLY(int max_secs = MAX_SECS;)
@@ -1362,7 +1372,7 @@ static void to_abstime(timespec* abstime, jlong timeout,
 // Create an absolute time 'millis' milliseconds in the future, using the
 // real-time (time-of-day) clock. Used by PosixSemaphore.
 void os::Posix::to_RTC_abstime(timespec* abstime, int64_t millis) {
-  to_abstime(abstime, millis_to_nanos_bounded(millis, 0, MAX_SECS),
+  to_abstime(abstime, millis_to_nanos_bounded(millis),
              false /* not absolute */,
              true  /* use real-time clock */);
 }
@@ -1527,13 +1537,12 @@ void PlatformEvent::park() {       // AKA "down()"
   guarantee(_event >= 0, "invariant");
 }
 
-int PlatformEvent::park(jlong millis) {
-  return park(millis, 0);
+int PlatformEvent::park_millis(jlong millis) {
+  park_nanos(millis_to_nanos_bounded(millis, 0, ));
 }
 
-int PlatformEvent::park(jlong millis, jint nanos) {
-  assert(0 <= millis, "millis are in range");
-  assert(0 <= nanos && nanos < NANOSECS_PER_MILLISEC, "nanos are in range");
+int PlatformEvent::park_nanos(jlong nanos) {
+  assert(0 <= nanos, "nanos are in range");
 
   // Transitions for _event:
   //   -1 => -1 : illegal
@@ -1554,8 +1563,7 @@ int PlatformEvent::park(jlong millis, jint nanos) {
 
   if (v == 0) { // Do this the hard way by blocking ...
     struct timespec abst;
-    jlong timeout = millis_to_nanos_bounded(millis, nanos, MAX_SECS);
-    to_abstime(&abst, timeout, false, false);
+    to_abstime(&abst, nanos, false, false);
 
     int ret = OS_TIMEOUT;
     int status = pthread_mutex_lock(_mutex);
