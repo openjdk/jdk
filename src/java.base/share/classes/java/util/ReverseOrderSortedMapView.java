@@ -34,7 +34,7 @@ class ReverseOrderSortedMapView<K, V> extends AbstractMap<K, V> implements Sorte
     final SortedMap<K, V> base;
     final Comparator<? super K> cmp;
 
-    ReverseOrderSortedMapView(SortedMap<K, V> map) {
+    private ReverseOrderSortedMapView(SortedMap<K, V> map) {
         base = map;
         cmp = Collections.reverseOrder(map.comparator());
     }

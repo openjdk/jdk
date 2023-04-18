@@ -37,7 +37,7 @@ import jdk.internal.util.ArraysSupport;
 class ReverseOrderDequeView<E> implements Deque<E> {
     final Deque<E> base;
 
-    ReverseOrderDequeView(Deque<E> deque) {
+    private ReverseOrderDequeView(Deque<E> deque) {
         base = deque;
     }
 

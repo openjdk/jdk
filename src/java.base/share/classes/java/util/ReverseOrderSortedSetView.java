@@ -38,7 +38,7 @@ class ReverseOrderSortedSetView<E> implements SortedSet<E> {
     final SortedSet<E> base;
     final Comparator<? super E> comp;
 
-    ReverseOrderSortedSetView(SortedSet<E> set) {
+    private ReverseOrderSortedSetView(SortedSet<E> set) {
         base = set;
         comp = Collections.reverseOrder(set.comparator());
     }
