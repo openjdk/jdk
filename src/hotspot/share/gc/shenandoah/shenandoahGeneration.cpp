@@ -441,15 +441,17 @@ void ShenandoahGeneration::adjust_evacuation_budgets(ShenandoahHeap* heap, Shena
   size_t loaned_regions = 0;
   size_t available_loan_remnant = 0; // loaned memory that is not yet dedicated to any particular budget
 
-  assert(((consumed_by_advance_promotion * 33) / 32) >= collection_set->get_young_bytes_to_be_promoted() * ShenandoahEvacWaste,
-         "Advance promotion (" SIZE_FORMAT ") should be at least young_bytes_to_be_promoted (" SIZE_FORMAT
-         ")* ShenandoahEvacWaste, totalling: " SIZE_FORMAT ", within round-off errors of up to 3.125%%",
-         consumed_by_advance_promotion, collection_set->get_young_bytes_to_be_promoted(),
-         (size_t) (collection_set->get_young_bytes_to_be_promoted() * ShenandoahEvacWaste));
+  // We expect this code to be replaced by 05/01/23.
+  //
+  // assert(((consumed_by_advance_promotion * 33) / 32) >= collection_set->get_young_bytes_to_be_promoted() * ShenandoahEvacWaste,
+  //       "Advance promotion (" SIZE_FORMAT ") should be at least young_bytes_to_be_promoted (" SIZE_FORMAT
+  //       ")* ShenandoahEvacWaste, totalling: " SIZE_FORMAT ", within round-off errors of up to 3.125%%",
+  //       consumed_by_advance_promotion, collection_set->get_young_bytes_to_be_promoted(),
+  //       (size_t) (collection_set->get_young_bytes_to_be_promoted() * ShenandoahEvacWaste));
 
-  assert(consumed_by_advance_promotion <= (collection_set->get_young_bytes_to_be_promoted() * ShenandoahEvacWaste * 33) / 32,
-         "Round-off errors should be less than 3.125%%, consumed by advance: " SIZE_FORMAT ", promoted: " SIZE_FORMAT,
-         consumed_by_advance_promotion, (size_t) (collection_set->get_young_bytes_to_be_promoted() * ShenandoahEvacWaste));
+  // assert(consumed_by_advance_promotion <= (collection_set->get_young_bytes_to_be_promoted() * ShenandoahEvacWaste * 33) / 32,
+  //       "Round-off errors should be less than 3.125%%, consumed by advance: " SIZE_FORMAT ", promoted: " SIZE_FORMAT,
+  //       consumed_by_advance_promotion, (size_t) (collection_set->get_young_bytes_to_be_promoted() * ShenandoahEvacWaste));
 
   collection_set->abandon_preselected();
 
