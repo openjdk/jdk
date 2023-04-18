@@ -210,7 +210,7 @@ public class Proc {
         return this;
     }
     // Adds classpath to defaults. Can be called multiple times.
-    // once called, addcp is always true
+    // Once called, addcp is always true.
     public Proc addcp(String... s) {
         addcp = true;
         return cp(s);
