@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -316,7 +316,7 @@ class MacroAssembler: public Assembler {
   // Push a frame of size `bytes'. No abi space provided.
   void push_frame(unsigned int bytes, Register tmp);
 
-  // Push a frame of size `bytes' plus abi_reg_args on top.
+  // Push a frame of size `bytes' plus native_abi_reg_args on top.
   void push_frame_reg_args(unsigned int bytes, Register tmp);
 
   // Setup up a new C frame with a spill area for non-volatile GPRs and additional
