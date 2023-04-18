@@ -31,10 +31,9 @@ struct NoopNode: public CHeapObj<mtGC> {
 private:
     HeapWord* _start;
     size_t _size = 0;
-    NoopNode* _prev;
     NoopNode* _next;
 public:
-    NoopNode(HeapWord* start, size_t size, NoopNode* next = nullptr, NoopNode* prev = nullptr): _start(start), _size(size), _prev(prev), _next(next) {}
+    NoopNode(HeapWord* start, size_t size, NoopNode* next = nullptr): _start(start), _size(size), _next(next) {}
 
     inline HeapWord* start() const { return _start; }
 
@@ -42,53 +41,32 @@ public:
 
     inline NoopNode* next() const { return _next; }
 
-    inline NoopNode* prev() const { return _prev; }
-
     inline void setNext(NoopNode* next) { _next = next; }
 
-    inline void setPrev(NoopNode* prev) { _prev = prev; }
-
     inline void setSize(size_t size) { _size = size; }
+
+    inline void setStart(HeapWord* start) { _start = start; }
 };
 
 class NoopFreeList: public CHeapObj<mtGC> {
 private:
     NoopNode* _head;
-    NoopNode* _tail;
     MarkBitMap* _free_chunk_bitmap;
     static const size_t _chunk_size_alignment = 2;
 public:
     NoopFreeList(NoopNode* head, MarkBitMap* fc);
 
     static void link_next(NoopNode* cur, NoopNode* next);
-    void unlink(NoopNode* NoopNode);
+    void remove_next(NoopNode* NoopNode);
 
     void append(NoopNode* NoopNode);
 
     static size_t adjust_chunk_size(size_t size);
 
-    void slice_node(NoopNode* node, size_t size);
+    NoopNode* slice_node(NoopNode* node, size_t size);
     
     //Pop from list
     NoopNode* getFirstFit(size_t size);
-    
-
-    //Align to MAX2(size, MinBlockSize)
-    //ChunkSize - object header(MarkWord)
-    //isFree????secondWord(_prev)???
-    //prev points not to real node?
-
-    //Free block bitmap !!!!!
-
-    //Alloc algo
-        //Heap -> allocate() if not null return heapword 
-            //-> Space.allocate() (mark not free and return heapword) 
-            //-> List.getFirstFit() (pop from list)
-
-    //Dealloc 
-        //Sweep -> SweepClosure -> 
-                                    //1. freeNotFree() -> return to free list, mark, convert to block etc.
-                                    //2. isFree() == true -> read size and skip 
 };
 
 #endif

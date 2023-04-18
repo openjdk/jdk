@@ -2,9 +2,9 @@
 #include "gc/noop/noopInitLogger.hpp"
 
 //Constructor
-NoopFreeList::NoopFreeList(NoopNode* head, MarkBitMap* fc): _head(head), _tail(head), _free_chunk_bitmap(fc) {
-        //_free_chunk_bitmap->mark(_head->start());
-        //_free_chunk_bitmap->mark(_head->start() + _head->size() - 1);
+NoopFreeList::NoopFreeList(NoopNode* head, MarkBitMap* fc): _head(head), _free_chunk_bitmap(fc) {
+        fc->mark(head->start());
+        fc->mark(head->start() + _head->size() - 1);
 }
 
 //Alignment
@@ -13,74 +13,65 @@ size_t NoopFreeList::adjust_chunk_size(size_t size) {
 }
 
 //Remove and add to list methods
-void NoopFreeList::unlink(NoopNode* node) {
-    if (node->prev() != NULL) { node->prev()->setNext(node->next()); }
-    else { //HEAD
-        _head = node->next();
-    }
-    if (node->next() != NULL) { node->next()->setPrev(node->prev()); }
+void NoopFreeList::remove_next(NoopNode* node) {
+    
 
-    node->setNext(NULL);
-    node->setPrev(NULL);
+    assert(_free_chunk_bitmap->is_marked(node->start()) 
+        && _free_chunk_bitmap->is_marked(node->start() + node->size() - 1),
+        "Node is not marked");
+    _free_chunk_bitmap->clear(node->start());
+    _free_chunk_bitmap->clear(node->start() + node->size() - 1);
 }
 
 void NoopFreeList::link_next(NoopNode* cur, NoopNode* next) {
-    NoopNode* prev_next = cur->next(); //NULL
-    
+    NoopNode* old_next = cur->next();
     cur->setNext(next);
-    next->setNext(prev_next);// rem->next = NULL
-    next->setPrev(cur); //rem->prev = cur
-
-    if (prev_next != NULL) { prev_next->setPrev(next); }
+    next->setNext(old_next);
 }
 
 void NoopFreeList::append(NoopNode* node) {
     assert(is_aligned(node->size(), _chunk_size_alignment), "Chunk size is not aligned");
-
-    _tail->setNext(node);
-    node->setPrev(_tail);
-
-    _tail = node;
 }
 
-//Node slicing
-void NoopFreeList::slice_node(NoopNode* node, size_t size) {
+//Returns new node and resizes old one
+NoopNode* NoopFreeList::slice_node(NoopNode* node, size_t size) {
     assert(is_aligned(size, _chunk_size_alignment), "Chunk size is not aligned");
     size_t old_size = node->size();
     size_t remainder_size = old_size - size;
 
     if (remainder_size > 0) {
-        node->setSize(size);
+        node->setSize(remainder_size);
         
-        NoopNode* remainder = new NoopNode(node->start() + size, remainder_size);
+        NoopNode* res = new NoopNode(node->start() + remainder_size, size);
 
+        //Linking node to old one
+        //link_next(node, res);
+        
         //Marking new nodes
-        //_free_chunk_bitmap->mark(node->start() + node->size() - 1);
-        //_free_chunk_bitmap->mark(remainder->start());
-
-        link_next(node, remainder);
+        //_free_chunk_bitmap->mark(res->start());
+        _free_chunk_bitmap->clear(node->start() + old_size - 1);
+        _free_chunk_bitmap->mark(node->start() + remainder_size - 1);
+        return res;
+    } else {
+        assert(false, "Should not reach here while some memory left");
+        return node;
     }
 }
 
 //First fit
 NoopNode* NoopFreeList::getFirstFit(size_t size) {
-    log_info(gc)("_head is %li", (long)_head->start());
     if (_head == NULL) { return NULL; }
-    NoopNode* res = _head;
+    NoopNode* fitting_node = _head;
     size_t desired_size = adjust_chunk_size(size);
 
-    log_info(gc)("Desired size %li", desired_size);
-
-    while (res->size() < desired_size) {
-        if (res->next() == NULL) { 
+    while (fitting_node->size() < desired_size) {
+        if (fitting_node->next() == NULL) { 
             return NULL; 
         }
-        res = res->next();
+        fitting_node = fitting_node->next();
     }
-    //Node is found, slice to needed size and append remainder
-    slice_node(res, desired_size);
-
-    unlink(res);
+    //Node is found, get new node of needed size
+    NoopNode* res = slice_node(fitting_node, desired_size);
 
     assert(_head != NULL, "New head is null");
 

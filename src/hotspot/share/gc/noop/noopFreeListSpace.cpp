@@ -11,6 +11,10 @@ void NoopFreeListSpace::initialize(MemRegion mr, bool clear_space, bool mangle_s
 }
 
 HeapWord* NoopFreeListSpace::allocate(size_t size) {
-    log_info(gc)("Allocation request");
-    return _free_list->getFirstFit(size)->start();
+    //log_info(gc)("Allocation request");
+    NoopNode* resNode = _free_list->getFirstFit(size);
+    HeapWord* res = resNode->start();
+    delete resNode;
+
+    return res;
 }
