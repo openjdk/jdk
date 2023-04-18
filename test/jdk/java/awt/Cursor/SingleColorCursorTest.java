@@ -39,6 +39,7 @@ import java.awt.Point;
 import java.awt.Toolkit;
 import java.awt.image.BufferedImage;
 import java.lang.reflect.InvocationTargetException;
+
 public class SingleColorCursorTest extends Panel {
     public void init() {
         setLayout (new BorderLayout());
