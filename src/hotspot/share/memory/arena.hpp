@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -140,8 +140,8 @@ protected:
 
   // Fast delete in area.  Common case is: NOP (except for storage reclaimed)
   bool Afree(void *ptr, size_t size) {
-    if (ptr == NULL) {
-      return true; // as with free(3), freeing NULL is a noop.
+    if (ptr == nullptr) {
+      return true; // as with free(3), freeing null is a noop.
     }
 #ifdef ASSERT
     if (ZapResourceArea) memset(ptr, badResourceValue, size); // zap freed memory
@@ -174,8 +174,8 @@ protected:
 private:
   // Reset this Arena to empty, access will trigger grow if necessary
   void   reset(void) {
-    _first = _chunk = NULL;
-    _hwm = _max = NULL;
+    _first = _chunk = nullptr;
+    _hwm = _max = nullptr;
     set_size_in_bytes(0);
   }
 };

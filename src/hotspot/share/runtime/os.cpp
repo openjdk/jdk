@@ -41,6 +41,7 @@
 #include "memory/universe.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "prims/jvmtiAgent.hpp"
 #include "prims/jvm_misc.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
@@ -60,10 +61,11 @@
 #include "runtime/threadSMR.hpp"
 #include "runtime/vmOperations.hpp"
 #include "runtime/vm_version.hpp"
+#include "sanitizers/address.hpp"
 #include "services/attachListener.hpp"
 #include "services/mallocTracker.hpp"
 #include "services/mallocHeader.inline.hpp"
-#include "services/memTracker.hpp"
+#include "services/memTracker.inline.hpp"
 #include "services/nmtPreInit.hpp"
 #include "services/nmtCommon.hpp"
 #include "services/threadService.hpp"
@@ -81,13 +83,10 @@
 # include <errno.h>
 
 OSThread*         os::_starting_thread    = nullptr;
-address           os::_polling_page       = nullptr;
 volatile unsigned int os::_rand_seed      = 1234567;
 int               os::_processor_count    = 0;
 int               os::_initial_active_processor_count = 0;
 os::PageSizes     os::_page_sizes;
-
-static size_t cur_malloc_words = 0;  // current size for MallocMaxTestWords
 
 DEBUG_ONLY(bool os::_mutex_init_done = false;)
 
@@ -478,7 +477,7 @@ void os::initialize_jdk_signal_support(TRAPS) {
   if (!ReduceSignalUsage) {
     // Setup JavaThread for processing signals
     const char* name = "Signal Dispatcher";
-    Handle thread_oop = JavaThread::create_system_thread_object(name, true /* visible */, CHECK);
+    Handle thread_oop = JavaThread::create_system_thread_object(name, CHECK);
 
     JavaThread* thread = new JavaThread(&signal_thread_entry);
     JavaThread::vm_exit_on_osthread_failure(thread);
@@ -536,7 +535,7 @@ void* os::native_java_library() {
  * executable if agent_lib->is_static_lib() == true or in the shared library
  * referenced by 'handle'.
  */
-void* os::find_agent_function(AgentLibrary *agent_lib, bool check_lib,
+void* os::find_agent_function(JvmtiAgent *agent_lib, bool check_lib,
                               const char *syms[], size_t syms_len) {
   assert(agent_lib != nullptr, "sanity check");
   const char *lib_name;
@@ -563,29 +562,29 @@ void* os::find_agent_function(AgentLibrary *agent_lib, bool check_lib,
 }
 
 // See if the passed in agent is statically linked into the VM image.
-bool os::find_builtin_agent(AgentLibrary *agent_lib, const char *syms[],
+bool os::find_builtin_agent(JvmtiAgent* agent, const char *syms[],
                             size_t syms_len) {
   void *ret;
   void *proc_handle;
   void *save_handle;
 
-  assert(agent_lib != nullptr, "sanity check");
-  if (agent_lib->name() == nullptr) {
+  assert(agent != nullptr, "sanity check");
+  if (agent->name() == nullptr) {
     return false;
   }
   proc_handle = get_default_process_handle();
   // Check for Agent_OnLoad/Attach_lib_name function
-  save_handle = agent_lib->os_lib();
+  save_handle = agent->os_lib();
   // We want to look in this process' symbol table.
-  agent_lib->set_os_lib(proc_handle);
-  ret = find_agent_function(agent_lib, true, syms, syms_len);
+  agent->set_os_lib(proc_handle);
+  ret = find_agent_function(agent, true, syms, syms_len);
   if (ret != nullptr) {
     // Found an entry point like Agent_OnLoad_lib_name so we have a static agent
-    agent_lib->set_valid();
-    agent_lib->set_static_lib(true);
+    agent->set_static_lib();
+    agent->set_loaded();
     return true;
   }
-  agent_lib->set_os_lib(save_handle);
+  agent->set_os_lib(save_handle);
   return false;
 }
 
@@ -605,23 +604,6 @@ char* os::strdup_check_oom(const char* str, MEMFLAGS flags) {
     vm_exit_out_of_memory(strlen(str) + 1, OOM_MALLOC_ERROR, "os::strdup_check_oom");
   }
   return p;
-}
-
-//
-// This function supports testing of the malloc out of memory
-// condition without really running the system out of memory.
-//
-
-static bool has_reached_max_malloc_test_peak(size_t alloc_size) {
-  if (MallocMaxTestWords > 0) {
-    size_t words = (alloc_size / BytesPerWord);
-
-    if ((cur_malloc_words + words) > MallocMaxTestWords) {
-      return true;
-    }
-    Atomic::add(&cur_malloc_words, words);
-  }
-  return false;
 }
 
 #ifdef ASSERT
@@ -658,8 +640,8 @@ void* os::malloc(size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
   // we chose the latter.
   size = MAX2((size_t)1, size);
 
-  // For the test flag -XX:MallocMaxTestWords
-  if (has_reached_max_malloc_test_peak(size)) {
+  // Observe MallocLimit
+  if (MemTracker::check_exceeds_limit(size, memflags)) {
     return nullptr;
   }
 
@@ -695,7 +677,7 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCa
 
   // Special handling for NMT preinit phase before arguments are parsed
   void* rc = nullptr;
-  if (NMTPreInit::handle_realloc(&rc, memblock, size)) {
+  if (NMTPreInit::handle_realloc(&rc, memblock, size, memflags)) {
     return rc;
   }
 
@@ -710,11 +692,6 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCa
   // we chose the latter.
   size = MAX2((size_t)1, size);
 
-  // For the test flag -XX:MallocMaxTestWords
-  if (has_reached_max_malloc_test_peak(size)) {
-    return nullptr;
-  }
-
   if (MemTracker::enabled()) {
     // NMT realloc handling
 
@@ -725,11 +702,20 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCa
       return nullptr;
     }
 
+    const size_t old_size = MallocTracker::malloc_header(memblock)->size();
+
+    // Observe MallocLimit
+    if ((size > old_size) && MemTracker::check_exceeds_limit(size - old_size, memflags)) {
+      return nullptr;
+    }
+
     // Perform integrity checks on and mark the old block as dead *before* calling the real realloc(3) since it
     // may invalidate the old block, including its header.
-    MallocHeader* header = MallocTracker::malloc_header(memblock);
-    header->assert_block_integrity(); // Assert block hasn't been tampered with.
+    MallocHeader* header = MallocHeader::resolve_checked(memblock);
+    assert(memflags == header->flags(), "weird NMT flags mismatch (new:\"%s\" != old:\"%s\")\n",
+           NMTUtil::flag_to_name(memflags), NMTUtil::flag_to_name(header->flags()));
     const MallocHeader::FreeInfo free_info = header->free_info();
+
     header->mark_block_as_dead();
 
     // the real realloc
@@ -749,7 +735,7 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCa
     void* const new_inner_ptr = MemTracker::record_malloc(new_outer_ptr, size, memflags, stack);
 
 #ifdef ASSERT
-    size_t old_size = free_info.size;
+    assert(old_size == free_info.size, "Sanity");
     if (old_size < size) {
       // We also zap the newly extended region.
       ::memset((char*)new_inner_ptr + old_size, uninitBlockPad, size - old_size);
@@ -942,6 +928,16 @@ bool os::print_function_and_library_name(outputStream* st,
   return have_function_name || have_library_name;
 }
 
+ATTRIBUTE_NO_ASAN static void print_hex_readable_pointer(outputStream* st, address p,
+                                                         int unitsize) {
+  switch (unitsize) {
+    case 1: st->print("%02x", *(u1*)p); break;
+    case 2: st->print("%04x", *(u2*)p); break;
+    case 4: st->print("%08x", *(u4*)p); break;
+    case 8: st->print("%016" FORMAT64_MODIFIER "x", *(u8*)p); break;
+  }
+}
+
 void os::print_hex_dump(outputStream* st, address start, address end, int unitsize,
                         int bytes_per_line, address logical_start) {
   assert(unitsize == 1 || unitsize == 2 || unitsize == 4 || unitsize == 8, "just checking");
@@ -960,12 +956,7 @@ void os::print_hex_dump(outputStream* st, address start, address end, int unitsi
   st->print(PTR_FORMAT ":   ", p2i(logical_p));
   while (p < end) {
     if (is_readable_pointer(p)) {
-      switch (unitsize) {
-        case 1: st->print("%02x", *(u1*)p); break;
-        case 2: st->print("%04x", *(u2*)p); break;
-        case 4: st->print("%08x", *(u4*)p); break;
-        case 8: st->print("%016" FORMAT64_MODIFIER "x", *(u8*)p); break;
-      }
+      print_hex_readable_pointer(st, p, unitsize);
     } else {
       st->print("%*.*s", 2*unitsize, 2*unitsize, "????????????????");
     }
@@ -1211,6 +1202,11 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
     }
   }
 #endif
+
+  // Still nothing? If NMT is enabled, we can ask what it thinks...
+  if (MemTracker::print_containing_region(addr, st)) {
+    return;
+  }
 
   // Try an OS specific find
   if (os::find(addr, st)) {
@@ -1828,7 +1824,7 @@ bool os::release_memory(char* addr, size_t bytes) {
 
 // Prints all mappings
 void os::print_memory_mappings(outputStream* st) {
-  os::print_memory_mappings(nullptr, (size_t)-1, st);
+  os::print_memory_mappings(nullptr, SIZE_MAX, st);
 }
 
 // Pretouching must use a store, not just a load.  On many OSes loads from

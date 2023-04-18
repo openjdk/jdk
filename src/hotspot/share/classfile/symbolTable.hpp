@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,6 @@ class SymbolTable : public AllStatic {
   // Set if one bucket is out of balance due to hash algorithm deficiency
   static volatile bool _needs_rehashing;
 
-  static void delete_symbol(Symbol* sym);
   static void grow(JavaThread* jt);
   static void clean_dead_entries(JavaThread* jt);
 
@@ -75,9 +74,8 @@ class SymbolTable : public AllStatic {
   static void mark_has_items_to_clean();
   static bool has_items_to_clean();
 
-  static Symbol* allocate_symbol(const char* name, int len, bool c_heap); // Assumes no characters larger than 0x7F
   static Symbol* do_lookup(const char* name, int len, uintx hash);
-  static Symbol* do_add_if_needed(const char* name, int len, uintx hash, bool heap);
+  static Symbol* do_add_if_needed(const char* name, int len, uintx hash, bool is_permanent);
 
   // lookup only, won't add. Also calculate hash. Used by the ClassfileParser.
   static Symbol* lookup_only(const char* name, int len, unsigned int& hash);
@@ -89,7 +87,7 @@ class SymbolTable : public AllStatic {
                           const char** name, int* lengths,
                           int* cp_indices, unsigned int* hashValues);
 
-  static Symbol* lookup_shared(const char* name, int len, unsigned int hash) NOT_CDS_RETURN_(NULL);
+  static Symbol* lookup_shared(const char* name, int len, unsigned int hash) NOT_CDS_RETURN_(nullptr);
   static Symbol* lookup_dynamic(const char* name, int len, unsigned int hash);
   static Symbol* lookup_common(const char* name, int len, unsigned int hash);
 
@@ -122,7 +120,7 @@ public:
   // Probing
   // Needed for preloading classes in signatures when compiling.
   // Returns the symbol is already present in symbol table, otherwise
-  // NULL.  NO ALLOCATION IS GUARANTEED!
+  // null.  NO ALLOCATION IS GUARANTEED!
   static Symbol* probe(const char* name, int len) {
     unsigned int ignore_hash;
     return lookup_only(name, len, ignore_hash);

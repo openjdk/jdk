@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ class   PhaseRegAlloc;
 
 
 //-----------------------------------------------------------------------------
-// Expandable closed hash-table of nodes, initialized to NULL.
+// Expandable closed hash-table of nodes, initialized to null.
 // Note that the constructor just zeros things
 // Storage is reclaimed when the Arena's lifetime is over.
 class NodeHash : public StackObj {
@@ -83,7 +83,7 @@ public:
   // Return 75% of _max, rounded up.
   uint   insert_limit() const { return _max - (_max>>2); }
 
-  void   clear();               // Set all entries to NULL, keep storage.
+  void   clear();               // Set all entries to null, keep storage.
   // Size of hash table
   uint   size()         const { return _max; }
   // Return Node* at index in table
@@ -117,7 +117,7 @@ public:
 
 //-----------------------------------------------------------------------------
 // Map dense integer indices to Types.  Uses classic doubling-array trick.
-// Abstractly provides an infinite array of Type*'s, initialized to NULL.
+// Abstractly provides an infinite array of Type*'s, initialized to null.
 // Note that the constructor just zeros things, and since I use Arena
 // allocation I do not need a destructor to reclaim storage.
 // Despite the general name, this class is customized for use by PhaseTransform.
@@ -126,8 +126,8 @@ class Type_Array : public StackObj {
   uint   _max;
   const Type **_types;
   void grow( uint i );          // Grow array node to fit
-  const Type *operator[] ( uint i ) const // Lookup, or NULL for not mapped
-  { return (i<_max) ? _types[i] : (Type*)NULL; }
+  const Type *operator[] ( uint i ) const // Lookup, or null for not mapped
+  { return (i<_max) ? _types[i] : (Type*)nullptr; }
   friend class PhaseTransform;
 public:
   Type_Array(Arena *a) : _a(a), _max(0), _types(0) {}
@@ -220,38 +220,43 @@ public:
   // Get a previously recorded type for the node n.
   // This type must already have been recorded.
   // If you want the type of a very new (untransformed) node,
-  // you must use type_or_null, and test the result for NULL.
+  // you must use type_or_null, and test the result for null.
   const Type* type(const Node* n) const {
     assert(_pnum != Ideal_Loop, "should not be used from PhaseIdealLoop");
-    assert(n != NULL, "must not be null");
+    assert(n != nullptr, "must not be null");
     const Type* t = _types.fast_lookup(n->_idx);
-    assert(t != NULL, "must set before get");
+    assert(t != nullptr, "must set before get");
     return t;
   }
   // Get a previously recorded type for the node n,
-  // or else return NULL if there is none.
+  // or else return null if there is none.
   const Type* type_or_null(const Node* n) const {
     assert(_pnum != Ideal_Loop, "should not be used from PhaseIdealLoop");
     return _types.fast_lookup(n->_idx);
   }
   // Record a type for a node.
   void    set_type(const Node* n, const Type *t) {
-    assert(t != NULL, "type must not be null");
+    assert(t != nullptr, "type must not be null");
     _types.map(n->_idx, t);
+  }
+  void    clear_type(const Node* n) {
+    if (n->_idx < _types.Size()) {
+      _types.map(n->_idx, nullptr);
+    }
   }
   // Record an initial type for a node, the node's bottom type.
   void    set_type_bottom(const Node* n) {
     // Use this for initialization when bottom_type() (or better) is not handy.
     // Usually the initialization should be to n->Value(this) instead,
     // or a hand-optimized value like Type::MEMORY or Type::CONTROL.
-    assert(_types[n->_idx] == NULL, "must set the initial type just once");
+    assert(_types[n->_idx] == nullptr, "must set the initial type just once");
     _types.map(n->_idx, n->bottom_type());
   }
   // Make sure the types array is big enough to record a size for the node n.
   // (In product builds, we never want to do range checks on the types array!)
   void ensure_type_or_null(const Node* n) {
     if (n->_idx >= _types.Size())
-      _types.map(n->_idx, NULL);   // Grow the types array as needed.
+      _types.map(n->_idx, nullptr);   // Grow the types array as needed.
   }
 
   // Utility functions:
@@ -259,18 +264,18 @@ public:
   const TypeLong* find_long_type(Node* n);
   jint  find_int_con( Node* n, jint  value_if_unknown) {
     const TypeInt* t = find_int_type(n);
-    return (t != NULL && t->is_con()) ? t->get_con() : value_if_unknown;
+    return (t != nullptr && t->is_con()) ? t->get_con() : value_if_unknown;
   }
   jlong find_long_con(Node* n, jlong value_if_unknown) {
     const TypeLong* t = find_long_type(n);
-    return (t != NULL && t->is_con()) ? t->get_con() : value_if_unknown;
+    return (t != nullptr && t->is_con()) ? t->get_con() : value_if_unknown;
   }
 
   // Make an idealized constant, i.e., one of ConINode, ConPNode, ConFNode, etc.
   // Same as transform(ConNode::make(t)).
   ConNode* makecon(const Type* t);
   virtual ConNode* uncached_makecon(const Type* t)  // override in PhaseValues
-  { ShouldNotCallThis(); return NULL; }
+  { ShouldNotCallThis(); return nullptr; }
 
   // Fast int or long constant.  Same as TypeInt::make(i) or TypeLong::make(l).
   ConINode* intcon(jint i);
@@ -334,7 +339,10 @@ public:
   // Caller guarantees that old_type and new_type are no higher than limit_type.
   virtual const Type* saturate(const Type* new_type, const Type* old_type,
                                const Type* limit_type) const
-  { ShouldNotCallThis(); return NULL; }
+  { ShouldNotCallThis(); return nullptr; }
+  virtual const Type* saturate_and_maybe_push_to_igvn_worklist(const TypeNode* n, const Type* new_type) {
+    return saturate(new_type, type_or_null(n), n->type());
+  }
 
   // true if CFG node d dominates CFG node n
   virtual bool is_dominator(Node *d, Node *n) { fatal("unimplemented for this pass"); return false; };
@@ -372,7 +380,7 @@ public:
   PhaseValues(Arena* arena, uint est_max_size);
   PhaseValues(PhaseValues* pt);
   NOT_PRODUCT(~PhaseValues();)
-  PhaseIterGVN* is_IterGVN() { return (_iterGVN) ? (PhaseIterGVN*)this : NULL; }
+  PhaseIterGVN* is_IterGVN() { return (_iterGVN) ? (PhaseIterGVN*)this : nullptr; }
 
   // Some Ideal and other transforms delete --> modify --> insert values
   bool   hash_delete(Node* n)     { return _table.hash_delete(n); }
@@ -476,6 +484,10 @@ public:
   // Node::Value, Node::Identity, hash-based value numbering, Node::Ideal_DU
   // and dominator info to a fixed point.
   void optimize();
+#ifdef ASSERT
+  void verify_optimize();
+  bool verify_node_value(Node* n);
+#endif
 
 #ifndef PRODUCT
   void trace_PhaseIterGVN(Node* n, Node* nn, const Type* old_type);
@@ -494,7 +506,7 @@ public:
   // transforms can be triggered on the region.
   // Optional 'orig' is an earlier version of this node.
   // It is significant only for debugging and profiling.
-  Node* register_new_node_with_optimizer(Node* n, Node* orig = NULL);
+  Node* register_new_node_with_optimizer(Node* n, Node* orig = nullptr);
 
   // Kill a globally dead Node.  All uses are also globally dead and are
   // aggressively trimmed.
@@ -564,8 +576,16 @@ public:
   bool no_dependent_zero_check(Node* n) const;
 
 #ifndef PRODUCT
+  static bool is_verify_def_use() {
+    // '-XX:VerifyIterativeGVN=1'
+    return (VerifyIterativeGVN % 10) == 1;
+  }
+  static bool is_verify_Value() {
+    // '-XX:VerifyIterativeGVN=10'
+    return ((VerifyIterativeGVN % 100) / 10) == 1;
+  }
 protected:
-  // Sub-quadratic implementation of VerifyIterativeGVN.
+  // Sub-quadratic implementation of '-XX:VerifyIterativeGVN=1' (Use-Def verification).
   julong _verify_counter;
   julong _verify_full_passes;
   enum { _verify_window_size = 30 };
@@ -605,6 +625,7 @@ class PhaseCCP : public PhaseIterGVN {
   // Worklist algorithm identifies constants
   void analyze();
 #ifdef ASSERT
+  void verify_type(Node* n, const Type* tnew, const Type* told);
   // For every node n on verify list, check if type(n) == n->Value()
   void verify_analyze(Unique_Node_List& worklist_verify);
 #endif
@@ -618,6 +639,14 @@ class PhaseCCP : public PhaseIterGVN {
   // Returns new_type->widen(old_type), which increments the widen bits until
   // giving up with TypeInt::INT or TypeLong::LONG.
   // Result is clipped to limit_type if necessary.
+  virtual const Type* saturate_and_maybe_push_to_igvn_worklist(const TypeNode* n, const Type* new_type) {
+    const Type* t = saturate(new_type, type_or_null(n), n->type());
+    if (t != new_type) {
+      // Type was widened in CCP, but IGVN may be able to make it narrower.
+      _worklist.push((Node*)n);
+    }
+    return t;
+  }
 
 #ifndef PRODUCT
   static uint _total_invokes;    // For profiling, count invocations

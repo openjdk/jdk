@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "cds/archiveBuilder.hpp"
+#include "cds/archiveHeapWriter.hpp"
 #include "cds/archiveUtils.hpp"
 #include "cds/cppVtables.hpp"
 #include "cds/dumpAllocStats.hpp"
@@ -330,7 +331,7 @@ address ArchiveBuilder::reserve_buffer() {
   ReservedSpace rs(buffer_size, MetaspaceShared::core_region_alignment(), os::vm_page_size());
   if (!rs.is_reserved()) {
     log_error(cds)("Failed to reserve " SIZE_FORMAT " bytes of output buffer.", buffer_size);
-    os::_exit(0);
+    MetaspaceShared::unrecoverable_writing_error();
   }
 
   // buffer_bottom is the lowest address of the 2 core regions (rw, ro) when
@@ -380,7 +381,7 @@ address ArchiveBuilder::reserve_buffer() {
     log_error(cds)("my_archive_requested_top    = " INTPTR_FORMAT, p2i(my_archive_requested_top));
     log_error(cds)("SharedBaseAddress (" INTPTR_FORMAT ") is too high. "
                    "Please rerun java -Xshare:dump with a lower value", p2i(_requested_static_archive_bottom));
-    os::_exit(0);
+    MetaspaceShared::unrecoverable_writing_error();
   }
 
   if (DumpSharedSpaces) {
@@ -830,14 +831,11 @@ uintx ArchiveBuilder::any_to_offset(address p) const {
   return buffer_to_offset(p);
 }
 
-// Update a Java object to point its Klass* to the address whene
-// the class would be mapped at runtime.
-void ArchiveBuilder::relocate_klass_ptr_of_oop(oop o) {
+narrowKlass ArchiveBuilder::get_requested_narrow_klass(Klass* k) {
   assert(DumpSharedSpaces, "sanity");
-  Klass* k = get_buffered_klass(o->klass());
+  k = get_buffered_klass(k);
   Klass* requested_k = to_requested(k);
-  narrowKlass nk = CompressedKlassPointers::encode_not_null(requested_k, _requested_static_archive_bottom);
-  o->set_narrow_klass(nk);
+  return CompressedKlassPointers::encode_not_null(requested_k, _requested_static_archive_bottom);
 }
 
 // RelocateBufferToRequested --- Relocate all the pointers in rw/ro,
@@ -1062,19 +1060,18 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
 
       while (start < end) {
         size_t byte_size;
-        oop archived_oop = cast_to_oop(start);
-        oop original_oop = HeapShared::get_original_object(archived_oop);
+        oop original_oop = ArchiveHeapWriter::buffered_addr_to_source_obj(start);
         if (original_oop != nullptr) {
           ResourceMark rm;
           log_info(cds, map)(PTR_FORMAT ": @@ Object %s",
                              p2i(to_requested(start)), original_oop->klass()->external_name());
           byte_size = original_oop->size() * BytesPerWord;
-        } else if (archived_oop == HeapShared::roots()) {
+        } else if (start == ArchiveHeapWriter::buffered_heap_roots_addr()) {
           // HeapShared::roots() is copied specially so it doesn't exist in
           // HeapShared::OriginalObjectTable. See HeapShared::copy_roots().
           log_info(cds, map)(PTR_FORMAT ": @@ Object HeapShared::roots (ObjArray)",
                              p2i(to_requested(start)));
-          byte_size = objArrayOopDesc::object_size(HeapShared::roots()->length()) * BytesPerWord;
+          byte_size = ArchiveHeapWriter::heap_roots_word_size() * BytesPerWord;
         } else {
           // We have reached the end of the region
           break;
@@ -1091,7 +1088,7 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
     }
   }
   static address to_requested(address p) {
-    return HeapShared::to_requested_address(p);
+    return ArchiveHeapWriter::buffered_addr_to_requested_addr(p);
   }
 #endif
 
@@ -1272,8 +1269,8 @@ void ArchiveBuilder::report_out_of_space(const char* name, size_t needed_bytes) 
   _rw_region.print_out_of_space_msg(name, needed_bytes);
   _ro_region.print_out_of_space_msg(name, needed_bytes);
 
-  vm_exit_during_initialization(err_msg("Unable to allocate from '%s' region", name),
-                                "Please reduce the number of shared classes.");
+  log_error(cds)("Unable to allocate from '%s' region: Please reduce the number of shared classes.", name);
+  MetaspaceShared::unrecoverable_writing_error();
 }
 
 

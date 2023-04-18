@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,8 +41,8 @@ class PlatformEvent : public CHeapObj<mtSynchronizer> {
   public:
     PlatformEvent() {
       _Event   = 0 ;
-      _ParkHandle = CreateEvent (NULL, false, false, NULL) ;
-      guarantee (_ParkHandle != NULL, "invariant") ;
+      _ParkHandle = CreateEvent (nullptr, false, false, nullptr) ;
+      guarantee (_ParkHandle != nullptr, "invariant") ;
     }
 
     // Exercise caution using reset() and fired() - they may require MEMBARs
@@ -61,8 +61,8 @@ class PlatformParker {
 
  public:
   PlatformParker() {
-    _ParkHandle = CreateEvent (NULL, true, false, NULL) ;
-    guarantee(_ParkHandle != NULL, "invariant") ;
+    _ParkHandle = CreateEvent (nullptr, true, false, nullptr) ;
+    guarantee(_ParkHandle != nullptr, "invariant") ;
   }
   ~PlatformParker() {
     CloseHandle(_ParkHandle);

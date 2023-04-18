@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,8 +53,10 @@ class Krb5Util {
         @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
-            SunNativeProvider.debug("Checking ServicePermission(" +
-                                    target + ", " + action + ")");
+            if (SunNativeProvider.DEBUG) {
+                SunNativeProvider.debug("Checking ServicePermission(" +
+                        target + ", " + action + ")");
+            }
             ServicePermission perm =
                 new ServicePermission(target, action);
             sm.checkPermission(perm);

@@ -32,6 +32,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.StringJoiner;
+
+import jdk.internal.util.ByteArray;
 import sun.reflect.misc.ReflectUtil;
 
 /**
@@ -153,6 +155,7 @@ import sun.reflect.misc.ReflectUtil;
  * <p>Records are serialized differently than ordinary serializable or externalizable
  * objects, see <a href="ObjectInputStream.html#record-serialization">record serialization</a>.
  *
+ * @spec serialization/index.html Java Object Serialization Specification
  * @author      Mike Warres
  * @author      Roger Riggs
  * @see java.io.DataOutput
@@ -582,7 +585,7 @@ public class ObjectOutputStream
      * substituted or the original object.
      *
      * <p>Null can be returned as the object to be substituted, but may cause
-     * NullReferenceException in classes that contain references to the
+     * {@link NullPointerException} in classes that contain references to the
      * original object since they may be expecting an object instead of
      * null.
      *
@@ -668,6 +671,7 @@ public class ObjectOutputStream
      *
      * @param   desc class descriptor to write to the stream
      * @throws  IOException If an I/O error has occurred.
+     * @spec serialization/index.html Java Object Serialization Specification
      * @see java.io.ObjectInputStream#readClassDescriptor()
      * @see #useProtocolVersion(int)
      * @see java.io.ObjectStreamConstants#PROTOCOL_VERSION_1
@@ -1638,7 +1642,7 @@ public class ObjectOutputStream
         }
 
         public void put(String name, boolean val) {
-            Bits.putBoolean(primVals, getFieldOffset(name, Boolean.TYPE), val);
+            ByteArray.setBoolean(primVals, getFieldOffset(name, Boolean.TYPE), val);
         }
 
         public void put(String name, byte val) {
@@ -1646,27 +1650,27 @@ public class ObjectOutputStream
         }
 
         public void put(String name, char val) {
-            Bits.putChar(primVals, getFieldOffset(name, Character.TYPE), val);
+            ByteArray.setChar(primVals, getFieldOffset(name, Character.TYPE), val);
         }
 
         public void put(String name, short val) {
-            Bits.putShort(primVals, getFieldOffset(name, Short.TYPE), val);
+            ByteArray.setShort(primVals, getFieldOffset(name, Short.TYPE), val);
         }
 
         public void put(String name, int val) {
-            Bits.putInt(primVals, getFieldOffset(name, Integer.TYPE), val);
+            ByteArray.setInt(primVals, getFieldOffset(name, Integer.TYPE), val);
         }
 
         public void put(String name, float val) {
-            Bits.putFloat(primVals, getFieldOffset(name, Float.TYPE), val);
+            ByteArray.setFloat(primVals, getFieldOffset(name, Float.TYPE), val);
         }
 
         public void put(String name, long val) {
-            Bits.putLong(primVals, getFieldOffset(name, Long.TYPE), val);
+            ByteArray.setLong(primVals, getFieldOffset(name, Long.TYPE), val);
         }
 
         public void put(String name, double val) {
-            Bits.putDouble(primVals, getFieldOffset(name, Double.TYPE), val);
+            ByteArray.setDouble(primVals, getFieldOffset(name, Double.TYPE), val);
         }
 
         public void put(String name, Object val) {
@@ -1908,7 +1912,7 @@ public class ObjectOutputStream
                 out.write(hbuf, 0, 2);
             } else {
                 hbuf[0] = TC_BLOCKDATALONG;
-                Bits.putInt(hbuf, 1, len);
+                ByteArray.setInt(hbuf, 1, len);
                 out.write(hbuf, 0, 5);
             }
         }
@@ -1925,7 +1929,7 @@ public class ObjectOutputStream
             if (pos >= MAX_BLOCK_SIZE) {
                 drain();
             }
-            Bits.putBoolean(buf, pos++, v);
+            ByteArray.setBoolean(buf, pos++, v);
         }
 
         public void writeByte(int v) throws IOException {
@@ -1937,7 +1941,7 @@ public class ObjectOutputStream
 
         public void writeChar(int v) throws IOException {
             if (pos + 2 <= MAX_BLOCK_SIZE) {
-                Bits.putChar(buf, pos, (char) v);
+                ByteArray.setChar(buf, pos, (char) v);
                 pos += 2;
             } else {
                 dout.writeChar(v);
@@ -1946,7 +1950,7 @@ public class ObjectOutputStream
 
         public void writeShort(int v) throws IOException {
             if (pos + 2 <= MAX_BLOCK_SIZE) {
-                Bits.putShort(buf, pos, (short) v);
+                ByteArray.setShort(buf, pos, (short) v);
                 pos += 2;
             } else {
                 dout.writeShort(v);
@@ -1955,7 +1959,7 @@ public class ObjectOutputStream
 
         public void writeInt(int v) throws IOException {
             if (pos + 4 <= MAX_BLOCK_SIZE) {
-                Bits.putInt(buf, pos, v);
+                ByteArray.setInt(buf, pos, v);
                 pos += 4;
             } else {
                 dout.writeInt(v);
@@ -1964,7 +1968,7 @@ public class ObjectOutputStream
 
         public void writeFloat(float v) throws IOException {
             if (pos + 4 <= MAX_BLOCK_SIZE) {
-                Bits.putFloat(buf, pos, v);
+                ByteArray.setFloat(buf, pos, v);
                 pos += 4;
             } else {
                 dout.writeFloat(v);
@@ -1973,7 +1977,7 @@ public class ObjectOutputStream
 
         public void writeLong(long v) throws IOException {
             if (pos + 8 <= MAX_BLOCK_SIZE) {
-                Bits.putLong(buf, pos, v);
+                ByteArray.setLong(buf, pos, v);
                 pos += 8;
             } else {
                 dout.writeLong(v);
@@ -1982,7 +1986,7 @@ public class ObjectOutputStream
 
         public void writeDouble(double v) throws IOException {
             if (pos + 8 <= MAX_BLOCK_SIZE) {
-                Bits.putDouble(buf, pos, v);
+                ByteArray.setDouble(buf, pos, v);
                 pos += 8;
             } else {
                 dout.writeDouble(v);
@@ -2042,7 +2046,7 @@ public class ObjectOutputStream
                 }
                 int stop = Math.min(endoff, off + (MAX_BLOCK_SIZE - pos));
                 while (off < stop) {
-                    Bits.putBoolean(buf, pos++, v[off++]);
+                    ByteArray.setBoolean(buf, pos++, v[off++]);
                 }
             }
         }
@@ -2055,7 +2059,7 @@ public class ObjectOutputStream
                     int avail = (MAX_BLOCK_SIZE - pos) >> 1;
                     int stop = Math.min(endoff, off + avail);
                     while (off < stop) {
-                        Bits.putChar(buf, pos, v[off++]);
+                        ByteArray.setChar(buf, pos, v[off++]);
                         pos += 2;
                     }
                 } else {
@@ -2072,7 +2076,7 @@ public class ObjectOutputStream
                     int avail = (MAX_BLOCK_SIZE - pos) >> 1;
                     int stop = Math.min(endoff, off + avail);
                     while (off < stop) {
-                        Bits.putShort(buf, pos, v[off++]);
+                        ByteArray.setShort(buf, pos, v[off++]);
                         pos += 2;
                     }
                 } else {
@@ -2089,7 +2093,7 @@ public class ObjectOutputStream
                     int avail = (MAX_BLOCK_SIZE - pos) >> 2;
                     int stop = Math.min(endoff, off + avail);
                     while (off < stop) {
-                        Bits.putInt(buf, pos, v[off++]);
+                        ByteArray.setInt(buf, pos, v[off++]);
                         pos += 4;
                     }
                 } else {
@@ -2106,7 +2110,7 @@ public class ObjectOutputStream
                     int avail = (MAX_BLOCK_SIZE - pos) >> 2;
                     int stop = Math.min(endoff, off + avail);
                     while (off < stop) {
-                        Bits.putFloat(buf, pos, v[off++]);
+                        ByteArray.setFloat(buf, pos, v[off++]);
                         pos += 4;
                     }
                 } else {
@@ -2123,7 +2127,7 @@ public class ObjectOutputStream
                     int avail = (MAX_BLOCK_SIZE - pos) >> 3;
                     int stop = Math.min(endoff, off + avail);
                     while (off < stop) {
-                        Bits.putLong(buf, pos, v[off++]);
+                        ByteArray.setLong(buf, pos, v[off++]);
                         pos += 8;
                     }
                 } else {
@@ -2140,7 +2144,7 @@ public class ObjectOutputStream
                     int avail = (MAX_BLOCK_SIZE - pos) >> 3;
                     int stop = Math.min(endoff, off + avail);
                     while (off < stop) {
-                        Bits.putDouble(buf, pos, v[off++]);
+                        ByteArray.setDouble(buf, pos, v[off++]);
                         pos += 8;
                     }
                 } else {

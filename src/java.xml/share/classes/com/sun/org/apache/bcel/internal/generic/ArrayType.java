@@ -24,56 +24,55 @@ import com.sun.org.apache.bcel.internal.Const;
 
 /**
  * Denotes array type, such as int[][]
- *
  */
 public final class ArrayType extends ReferenceType {
 
-    private int dimensions;
-    private Type basicType;
-
+    private final int dimensions;
+    private final Type basicType;
 
     /**
      * Convenience constructor for array type, e.g. int[]
      *
      * @param type array type, e.g. T_INT
+     * @param dimensions array dimensions
      */
     public ArrayType(final byte type, final int dimensions) {
         this(BasicType.getType(type), dimensions);
     }
 
-
     /**
      * Convenience constructor for reference array type, e.g. Object[]
      *
-     * @param class_name complete name of class (java.lang.String, e.g.)
+     * @param className complete name of class (java.lang.String, e.g.)
+     * @param dimensions array dimensions
      */
-    public ArrayType(final String class_name, final int dimensions) {
-        this(ObjectType.getInstance(class_name), dimensions);
+    public ArrayType(final String className, final int dimensions) {
+        this(ObjectType.getInstance(className), dimensions);
     }
-
 
     /**
      * Constructor for array of given type
      *
      * @param type type of array (may be an array itself)
+     * @param dimensions array dimensions
      */
     public ArrayType(final Type type, final int dimensions) {
         super(Const.T_ARRAY, "<dummy>");
-        if ((dimensions < 1) || (dimensions > Const.MAX_BYTE)) {
+        if (dimensions < 1 || dimensions > Const.MAX_BYTE) {
             throw new ClassGenException("Invalid number of dimensions: " + dimensions);
         }
         switch (type.getType()) {
-            case Const.T_ARRAY:
-                final ArrayType array = (ArrayType) type;
-                this.dimensions = dimensions + array.dimensions;
-                basicType = array.basicType;
-                break;
-            case Const.T_VOID:
-                throw new ClassGenException("Invalid type: void[]");
-            default: // Basic type or reference
-                this.dimensions = dimensions;
-                basicType = type;
-                break;
+        case Const.T_ARRAY:
+            final ArrayType array = (ArrayType) type;
+            this.dimensions = dimensions + array.dimensions;
+            basicType = array.basicType;
+            break;
+        case Const.T_VOID:
+            throw new ClassGenException("Invalid type: void[]");
+        default: // Basic type or reference
+            this.dimensions = dimensions;
+            basicType = type;
+            break;
         }
         final StringBuilder buf = new StringBuilder();
         for (int i = 0; i < this.dimensions; i++) {
@@ -83,6 +82,17 @@ public final class ArrayType extends ReferenceType {
         super.setSignature(buf.toString());
     }
 
+    /**
+     * @return true if both type objects refer to the same array type.
+     */
+    @Override
+    public boolean equals(final Object type) {
+        if (type instanceof ArrayType) {
+            final ArrayType array = (ArrayType) type;
+            return array.dimensions == dimensions && array.basicType.equals(basicType);
+        }
+        return false;
+    }
 
     /**
      * @return basic type of array, i.e., for int[][][] the basic type is int
@@ -91,6 +101,24 @@ public final class ArrayType extends ReferenceType {
         return basicType;
     }
 
+    /**
+     * Gets the name of referenced class.
+     *
+     * @return name of referenced class.
+     * @since 6.7.0
+     */
+    @Override
+    @Deprecated
+    public String getClassName() {
+        return signature;
+    }
+
+    /**
+     * @return number of dimensions of array
+     */
+    public int getDimensions() {
+        return dimensions;
+    }
 
     /**
      * @return element type of array, i.e., for int[][][] the element type is int[][]
@@ -102,30 +130,11 @@ public final class ArrayType extends ReferenceType {
         return new ArrayType(basicType, dimensions - 1);
     }
 
-
-    /** @return number of dimensions of array
-     */
-    public int getDimensions() {
-        return dimensions;
-    }
-
-
-    /** @return a hash code value for the object.
+    /**
+     * @return a hash code value for the object.
      */
     @Override
     public int hashCode() {
         return basicType.hashCode() ^ dimensions;
-    }
-
-
-    /** @return true if both type objects refer to the same array type.
-     */
-    @Override
-    public boolean equals( final Object _type ) {
-        if (_type instanceof ArrayType) {
-            final ArrayType array = (ArrayType) _type;
-            return (array.dimensions == dimensions) && array.basicType.equals(basicType);
-        }
-        return false;
     }
 }

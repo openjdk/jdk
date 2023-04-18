@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,10 +36,10 @@
 #include "jvmci/jvmci.hpp"
 #endif
 
-MetadataOnStackBuffer* MetadataOnStackMark::_used_buffers = NULL;
-MetadataOnStackBuffer* MetadataOnStackMark::_free_buffers = NULL;
+MetadataOnStackBuffer* MetadataOnStackMark::_used_buffers = nullptr;
+MetadataOnStackBuffer* MetadataOnStackMark::_free_buffers = nullptr;
 
-MetadataOnStackBuffer* MetadataOnStackMark::_current_buffer = NULL;
+MetadataOnStackBuffer* MetadataOnStackMark::_current_buffer = nullptr;
 NOT_PRODUCT(bool MetadataOnStackMark::_is_active = false;)
 
 class MetadataOnStackClosure : public MetadataClosure {
@@ -52,7 +52,7 @@ class MetadataOnStackClosure : public MetadataClosure {
 // in metadata Handles.
 MetadataOnStackMark::MetadataOnStackMark(bool walk_all_metadata, bool redefinition_walk) {
   assert(SafepointSynchronize::is_at_safepoint(), "sanity check");
-  assert(_used_buffers == NULL, "sanity check");
+  assert(_used_buffers == nullptr, "sanity check");
   assert(!_is_active, "MetadataOnStackMarks do not nest");
   assert(!redefinition_walk || walk_all_metadata,
          "walk_all_metadata must be true for redefinition_walk");
@@ -85,7 +85,7 @@ MetadataOnStackMark::~MetadataOnStackMark() {
   retire_current_buffer();
 
   MetadataOnStackBuffer* buffer = _used_buffers;
-  while (buffer != NULL) {
+  while (buffer != nullptr) {
     // Clear on stack state for all metadata.
     size_t size = buffer->size();
     for (size_t i  = 0; i < size; i++) {
@@ -97,7 +97,7 @@ MetadataOnStackMark::~MetadataOnStackMark() {
 
     // Move the buffer to the free list.
     buffer->clear();
-    buffer->set_next_used(NULL);
+    buffer->set_next_used(nullptr);
     buffer->set_next_free(_free_buffers);
     _free_buffers = buffer;
 
@@ -105,13 +105,13 @@ MetadataOnStackMark::~MetadataOnStackMark() {
     buffer = next;
   }
 
-  _used_buffers = NULL;
+  _used_buffers = nullptr;
 
   NOT_PRODUCT(_is_active = false;)
 }
 
 void MetadataOnStackMark::retire_buffer(MetadataOnStackBuffer* buffer) {
-  if (buffer == NULL) {
+  if (buffer == nullptr) {
     return;
   }
   buffer->set_next_used(_used_buffers);
@@ -121,18 +121,18 @@ void MetadataOnStackMark::retire_buffer(MetadataOnStackBuffer* buffer) {
 // Current buffer is full or we're ready to walk them, add it to the used list.
 void MetadataOnStackMark::retire_current_buffer() {
   retire_buffer(_current_buffer);
-  _current_buffer = NULL;
+  _current_buffer = nullptr;
 }
 
 // Get buffer off free list.
 MetadataOnStackBuffer* MetadataOnStackMark::allocate_buffer() {
   MetadataOnStackBuffer* allocated = _free_buffers;
 
-  if (allocated != NULL) {
+  if (allocated != nullptr) {
     _free_buffers = allocated->next_free();
   }
 
-  if (allocated == NULL) {
+  if (allocated == nullptr) {
     allocated = new MetadataOnStackBuffer();
   }
 
@@ -147,12 +147,12 @@ void MetadataOnStackMark::record(Metadata* m) {
 
   MetadataOnStackBuffer* buffer = _current_buffer;
 
-  if (buffer != NULL && buffer->is_full()) {
+  if (buffer != nullptr && buffer->is_full()) {
     retire_buffer(buffer);
-    buffer = NULL;
+    buffer = nullptr;
   }
 
-  if (buffer == NULL) {
+  if (buffer == nullptr) {
     buffer = allocate_buffer();
     _current_buffer = buffer;
   }

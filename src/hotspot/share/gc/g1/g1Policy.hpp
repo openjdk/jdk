@@ -143,7 +143,7 @@ private:
   double predict_base_time_ms(size_t pending_cards, size_t rs_length) const;
 
   // Copy time for a region is copying live data.
-  double predict_region_copy_time_ms(HeapRegion* hr) const;
+  double predict_region_copy_time_ms(HeapRegion* hr, bool for_young_only_phase) const;
   // Merge-scan time for a region is handling remembered sets of that region (as a single unit).
   double predict_region_merge_scan_time(HeapRegion* hr, bool for_young_only_phase) const;
   // Non-copy time for a region is handling remembered sets and other time.
@@ -257,8 +257,9 @@ public:
   size_t pending_cards_at_gc_start() const { return _pending_cards_at_gc_start; }
 
   // Calculate the minimum number of old regions we'll add to the CSet
-  // during a mixed GC.
-  uint calc_min_old_cset_length(G1CollectionSetCandidates* candidates) const;
+  // during a single mixed GC given the initial number of regions selected during
+  // marking.
+  uint calc_min_old_cset_length(uint num_candidate_regions) const;
 
   // Calculate the maximum number of old regions we'll add to the CSet
   // during a mixed GC.

@@ -54,6 +54,7 @@
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
+#include "prims/jvmtiAgentList.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/deoptimization.hpp"
@@ -72,6 +73,7 @@
 #include "runtime/vmOperations.hpp"
 #include "runtime/vmThread.hpp"
 #include "runtime/vm_version.hpp"
+#include "sanitizers/leak.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -114,7 +116,7 @@ void collect_profiled_methods(Method* m) {
 }
 
 void print_method_profiling_data() {
-  if (ProfileInterpreter COMPILER1_PRESENT(|| C1UpdateMethodData) &&
+  if ((ProfileInterpreter COMPILER1_PRESENT(|| C1UpdateMethodData)) &&
      (PrintMethodData || CompilerOracle::should_print_methods())) {
     ResourceMark rm;
     collected_profiled_methods = new GrowableArray<Method*>(1024);
@@ -416,6 +418,38 @@ void before_exit(JavaThread* thread, bool halt) {
     }
   }
 
+  // At this point only one thread is executing this logic. Any other threads
+  // attempting to invoke before_exit() will wait above and return early once
+  // this thread finishes before_exit().
+
+  // Do not add any additional shutdown logic between the above mutex logic and
+  // leak sanitizer logic below. Any additional shutdown code which performs some
+  // cleanup should be added after the leak sanitizer logic below.
+
+#ifdef LEAK_SANITIZER
+  // If we are built with LSan, we need to perform leak checking. If we are
+  // terminating normally, not halting and no VM error, we perform a normal
+  // leak check which terminates if leaks are found. If we are not terminating
+  // normally, halting or VM error, we perform a recoverable leak check which
+  // prints leaks but will not terminate.
+  if (!halt && !VMError::is_error_reported()) {
+    LSAN_DO_LEAK_CHECK();
+  } else {
+    // Ignore the return value.
+    static_cast<void>(LSAN_DO_RECOVERABLE_LEAK_CHECK());
+  }
+#endif
+
+#if INCLUDE_CDS
+  // Dynamic CDS dumping must happen whilst we can still reliably
+  // run Java code.
+  DynamicArchive::dump_at_exit(thread, ArchiveClassesAtExit);
+  assert(!thread->has_pending_exception(), "must be");
+#endif
+
+
+  // Actual shutdown logic begins here.
+
 #if INCLUDE_JVMCI
   if (EnableJVMCI) {
     JVMCI::shutdown(thread);
@@ -483,26 +517,11 @@ void before_exit(JavaThread* thread, bool halt) {
   // Always call even when there are not JVMTI environments yet, since environments
   // may be attached late and JVMTI must track phases of VM execution
   JvmtiExport::post_vm_death();
-  Threads::shutdown_vm_agents();
+  JvmtiAgentList::unload_agents();
 
   // Terminate the signal thread
   // Note: we don't wait until it actually dies.
   os::terminate_signal_thread();
-
-#if INCLUDE_CDS
-  if (DynamicArchive::should_dump_at_vm_exit()) {
-    assert(ArchiveClassesAtExit != nullptr, "Must be already set");
-    ExceptionMark em(thread);
-    DynamicArchive::dump(ArchiveClassesAtExit, thread);
-    if (thread->has_pending_exception()) {
-      ResourceMark rm(thread);
-      oop pending_exception = thread->pending_exception();
-      log_error(cds)("ArchiveClassesAtExit has failed %s: %s", pending_exception->klass()->external_name(),
-                     java_lang_String::as_utf8_string(java_lang_Throwable::message(pending_exception)));
-      thread->clear_pending_exception();
-    }
-  }
-#endif
 
   print_statistics();
   Universe::heap()->print_tracing_info();

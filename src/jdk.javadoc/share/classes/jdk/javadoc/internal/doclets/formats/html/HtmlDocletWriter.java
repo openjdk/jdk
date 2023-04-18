@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -66,6 +67,7 @@ import com.sun.source.doctree.DocTree.Kind;
 import com.sun.source.doctree.EndElementTree;
 import com.sun.source.doctree.EntityTree;
 import com.sun.source.doctree.ErroneousTree;
+import com.sun.source.doctree.EscapeTree;
 import com.sun.source.doctree.IndexTree;
 import com.sun.source.doctree.InheritDocTree;
 import com.sun.source.doctree.LinkTree;
@@ -287,23 +289,30 @@ public class HtmlDocletWriter {
      * @param dl the content to which the method information will be added
      */
     private void addMethodInfo(ExecutableElement method, Content dl) {
-        TypeElement enclosing = utils.getEnclosingTypeElement(method);
-        List<? extends TypeMirror> intfacs = enclosing.getInterfaces();
-        ExecutableElement overriddenMethod = utils.overriddenMethod(method);
-        VisibleMemberTable vmt = configuration.getVisibleMemberTable(enclosing);
-        // Check whether there is any implementation or overridden info to be
-        // printed. If no overridden or implementation info needs to be
-        // printed, do not print this section.
-        if ((!intfacs.isEmpty()
-                && !vmt.getImplementedMethods(method).isEmpty())
-                || overriddenMethod != null) {
-            MethodWriterImpl.addImplementsInfo(this, method, dl);
-            if (overriddenMethod != null) {
-                MethodWriterImpl.addOverridden(this,
-                        utils.overriddenType(method),
-                        overriddenMethod,
-                        dl);
-            }
+        var enclosing = (TypeElement) method.getEnclosingElement();
+        var overrideInfo = utils.overriddenMethod(method);
+        var enclosingVmt = configuration.getVisibleMemberTable(enclosing);
+        var implementedMethods = enclosingVmt.getImplementedMethods(method);
+        if ((!enclosing.getInterfaces().isEmpty()
+                && !implementedMethods.isEmpty())
+                || overrideInfo != null) {
+            // TODO note that if there are any overridden interface methods throughout the
+            //   hierarchy, !enclosingVmt.getImplementedMethods(method).isEmpty(), their information
+            //   will be printed if *any* of the below is true:
+            //     * the enclosing has _directly_ implemented interfaces
+            //     * the overridden method is not null
+            //   If both are false, the information will not be printed: there will be no
+            //   "Specified by" documentation. The examples of that can be seen in documentation
+            //   for these methods:
+            //     * ForkJoinPool.execute(java.lang.Runnable)
+            //  This is a long-standing bug, which must be fixed separately: JDK-8302316
+            MethodWriterImpl.addImplementsInfo(this, method, implementedMethods, dl);
+        }
+        if (overrideInfo != null) {
+            MethodWriterImpl.addOverridden(this,
+                    overrideInfo.overriddenMethodOwner(),
+                    overrideInfo.overriddenMethod(),
+                    dl);
         }
     }
 
@@ -1338,6 +1347,12 @@ public class HtmlDocletWriter {
                 }
 
                 @Override
+                public Boolean visitEscape(EscapeTree node, Content content) {
+                    result.add(node.getBody());
+                    return false;
+                }
+
+                @Override
                 public Boolean visitInheritDoc(InheritDocTree node, Content content) {
                     Content output = getInlineTagOutput(element, node, context);
                     content.add(output);
@@ -1543,7 +1558,8 @@ public class HtmlDocletWriter {
         Element currentPageElement = (this instanceof PackageWriterImpl packageWriter)
                 ? packageWriter.packageElement : getCurrentPageElement();
         return currentPageElement != null && !utils.isModule(element)
-                && utils.containingPackage(currentPageElement) == utils.containingPackage(element);
+                && Objects.equals(utils.containingPackage(currentPageElement),
+                utils.containingPackage(element));
     }
 
     /**
@@ -1771,7 +1787,7 @@ public class HtmlDocletWriter {
                                 ContentBuilder annotation,
                                 Map<? extends ExecutableElement, ? extends AnnotationValue> map,
                                 boolean linkBreak) {
-        linkInfo.label = Text.of("@" + annotationDoc.getSimpleName());
+        linkInfo.label("@" + annotationDoc.getSimpleName());
         annotation.add(getLink(linkInfo));
         if (!map.isEmpty()) {
             annotation.add("(");
@@ -1887,7 +1903,7 @@ public class HtmlDocletWriter {
                         String name = utils.isIncluded(t.asElement())
                                 ? t.asElement().getSimpleName().toString()
                                 : utils.getFullyQualifiedName(t.asElement());
-                        linkInfo.label = Text.of(name + utils.getDimension(t) + ".class");
+                        linkInfo.label(name + utils.getDimension(t) + ".class");
                         return getLink(linkInfo);
                     }
                     @Override
