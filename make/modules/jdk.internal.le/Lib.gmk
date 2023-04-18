@@ -55,4 +55,18 @@ ifeq ($(call isTargetOs, linux), true)
 
 endif
 
+ifeq ($(call isTargetOs, macosx), true)
+
+  $(eval $(call SetupJdkLibrary, BUILD_LIBLE, \
+      NAME := le, \
+      OPTIMIZATION := LOW, \
+      CFLAGS := $(CXXFLAGS_JDKLIB), \
+      LDFLAGS := $(LDFLAGS_JDKLIB), \
+      LIBS := $(JDKLIB_LIBS) -lstdc++, \
+  ))
+
+  TARGETS += $(BUILD_LIBLE)
+
+endif
+
 ################################################################################
