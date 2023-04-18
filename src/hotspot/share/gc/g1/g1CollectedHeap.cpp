@@ -516,6 +516,27 @@ bool G1CollectedHeap::check_archive_addresses(MemRegion range) {
   return reserved.contains(range.start()) && reserved.contains(range.last());
 }
 
+template <typename Func>
+void G1CollectedHeap::iterate_regions_in_range(MemRegion range, const Func& func) {
+  // Mark each G1 region touched by the range as old, add it to
+  // the old set, and set top.
+  HeapRegion* curr_region = _hrm.addr_to_region(range.start());
+  HeapRegion* end_region = _hrm.addr_to_region(range.last());
+
+  while (curr_region != nullptr) {
+
+    bool is_last = curr_region == end_region;
+
+    func(curr_region, is_last);
+
+    if (is_last) {
+      curr_region = nullptr;
+    } else {
+      curr_region = _hrm.next_region_in_heap(curr_region);
+    }
+  }
+}
+
 bool G1CollectedHeap::alloc_archive_regions(MemRegion range) {
   assert(!is_init_completed(), "Expect to be called at JVM init time");
   MutexLocker x(Heap_lock);
@@ -551,30 +572,18 @@ bool G1CollectedHeap::alloc_archive_regions(MemRegion range) {
 
   // Mark each G1 region touched by the range as old, add it to
   // the old set, and set top.
-  HeapRegion* curr_region = _hrm.addr_to_region(start_address);
-  HeapRegion* last_region = _hrm.addr_to_region(last_address);
+  auto set_region_to_old = [&] (HeapRegion* r, bool is_last) {
+    assert(r->is_empty() && !r->is_pinned(), "Region already in use (%u)", r->hrm_index());
 
-  while (curr_region != NULL) {
-    assert(curr_region->is_empty() && !curr_region->is_pinned(),
-           "Region already in use (index %u)", curr_region->hrm_index());
+    HeapWord* top = is_last ? last_address + 1 : r->end();
+    r->set_top(top);
 
-    HeapWord* top;
-    HeapRegion* next_region;
-    if (curr_region != last_region) {
-      top = curr_region->end();
-      next_region = _hrm.next_region_in_heap(curr_region);
-    } else {
-      top = last_address + 1;
-      next_region = NULL;
-    }
-    curr_region->set_top(top);
+    r->set_old();
+    _hr_printer.alloc(r);
+    _old_set.add(r);
+  };
 
-    curr_region->set_old();
-    _hr_printer.alloc(curr_region);
-    _old_set.add(curr_region);
-
-    curr_region = next_region;
-  }
+  iterate_regions_in_range(range, set_region_to_old);
   return true;
 }
 
@@ -606,20 +615,10 @@ inline HeapWord* G1CollectedHeap::attempt_allocation(size_t min_word_size,
 void G1CollectedHeap::populate_archive_regions_bot_part(MemRegion range) {
   assert(!is_init_completed(), "Expect to be called at JVM init time");
 
-  HeapWord* st = range.start();
-  HeapWord* last = range.last();
-  HeapRegion* hr_st = _hrm.addr_to_region(st);
-  HeapRegion* hr_last = _hrm.addr_to_region(last);
-
-  HeapRegion* hr_curr = hr_st;
-  while (hr_curr != NULL) {
-    hr_curr->update_bot();
-    if (hr_curr != hr_last) {
-      hr_curr = _hrm.next_region_in_heap(hr_curr);
-    } else {
-      hr_curr = NULL;
-    }
-  }
+  iterate_regions_in_range(range,
+                           [&] (HeapRegion* r, bool is_last) {
+                             r->update_bot();
+                           });
 }
 
 void G1CollectedHeap::dealloc_archive_regions(MemRegion range) {
@@ -638,28 +637,17 @@ void G1CollectedHeap::dealloc_archive_regions(MemRegion range) {
          p2i(start_address), p2i(last_address));
   size_used += range.byte_size();
 
-  HeapRegion* start_region = _hrm.addr_to_region(start_address);
-  HeapRegion* last_region = _hrm.addr_to_region(last_address);
-
-  // After verifying that each region was marked as an old region by
-  // alloc_archive_regions, set it free and empty and uncommit it.
-  HeapRegion* curr_region = start_region;
-  while (curr_region != NULL) {
-    guarantee(curr_region->is_old(),
-              "Expected old region at index %u", curr_region->hrm_index());
-    uint curr_index = curr_region->hrm_index();
-    _old_set.remove(curr_region);
-    curr_region->set_free();
-    curr_region->set_top(curr_region->bottom());
-    if (curr_region != last_region) {
-      curr_region = _hrm.next_region_in_heap(curr_region);
-    } else {
-      curr_region = NULL;
-    }
-
-    _hrm.shrink_at(curr_index, 1);
+  // Free, empty and uncommit archive regions.
+  auto dealloc_archive_region = [&] (HeapRegion* r, bool is_last) {
+    guarantee(r->is_old(), "Expected old region at index %u", r->hrm_index());
+    _old_set.remove(r);
+    r->set_free();
+    r->set_top(r->bottom());
+    _hrm.shrink_at(r->hrm_index(), 1);
     shrink_count++;
-  }
+  };
+
+  iterate_regions_in_range(range, dealloc_archive_region);
 
   if (shrink_count != 0) {
     log_debug(gc, ergo, heap)("Attempt heap shrinking (archive regions). Total size: " SIZE_FORMAT "B",

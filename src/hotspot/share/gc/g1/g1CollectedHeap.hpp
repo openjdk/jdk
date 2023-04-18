@@ -707,6 +707,11 @@ public:
   // Verify that the range is within the reserved heap.
   bool check_archive_addresses(MemRegion range);
 
+  // Execute func(HeapRegion* r, bool is_last) on every region covered by the
+  // given range.
+  template <typename Func>
+  void iterate_regions_in_range(MemRegion range, const Func& func);
+
   // Commit the appropriate G1 region(s) containing the specified range
   // and mark them as 'old' region(s).
   bool alloc_archive_regions(MemRegion range);
