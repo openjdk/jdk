@@ -125,7 +125,7 @@ final class StringTemplateImplFactory {
         valuesMH = MethodHandles.filterArguments(valuesMH, 0, components);
         valuesMH = MethodHandles.permuteArguments(valuesMH, MT_LIST_STIMPL, permute);
 
-        MethodHandle constructor = MethodHandles.insertArguments(CONSTRUCTOR,0,
+        MethodHandle constructor = MethodHandles.insertArguments(CONSTRUCTOR, 0,
                 elements.primitiveCount(), elements.objectCount(),
                 fragments, valuesMH, interpolateMH);
         constructor = MethodHandles.foldArguments(elements.initializer(), 0, constructor);
