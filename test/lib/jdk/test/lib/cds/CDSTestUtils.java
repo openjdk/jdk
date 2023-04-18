@@ -34,8 +34,10 @@ import java.nio.file.StandardCopyOption;
 import static java.nio.file.StandardCopyOption.COPY_ATTRIBUTES;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import java.text.SimpleDateFormat;
+import java.util.List;
 import java.util.ArrayList;
 import java.util.Date;
+import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.Utils;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
@@ -424,7 +426,8 @@ public class CDSTestUtils {
     public static OutputAnalyzer runWithArchive(CDSOptions opts)
         throws Exception {
 
-        ArrayList<String> cmd = opts.getRuntimePrefix();
+        ArrayList<String> cmd = new ArrayList<String>();
+        cmd.addAll(opts.prefix);
         cmd.add("-Xshare:" + opts.xShareMode);
         cmd.add("-Dtest.timeout.factor=" + TestTimeoutFactor);
 
@@ -599,10 +602,79 @@ public class CDSTestUtils {
         return new File(dir, name);
     }
 
+    // Check commandline for the last instance of Xshare to see if the process can load
+    // a CDS archive
+    public static boolean isRunningWithArchive(List<String> cmd) {
+        // -Xshare only works for the java executable
+        if (!cmd.get(0).equals(JDKToolFinder.getJDKTool("java")) || cmd.size() < 2) {
+            return false;
+        }
+
+        // -Xshare options are likely at the end of the args list
+        for (int i = cmd.size() - 1; i >= 1; i--) {
+            String s = cmd.get(i);
+            if (s.equals("-Xshare:dump") || s.equals("-Xshare:off")) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public static boolean isGCOption(String s) {
+        return s.startsWith("-XX:+Use") && s.endsWith("GC");
+    }
+
+    public static boolean hasGCOption(List<String> cmd) {
+        for (String s : cmd) {
+            if (isGCOption(s)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Handle and insert test.cds.runtime.options to commandline
+    // The test.cds.runtime.options property is used to inject extra VM options to
+    // subprocesses launched by the CDS test cases using executeAndLog().
+    // The injection applies only to subprocesses that:
+    //   - are launched by the standard java launcher (bin/java)
+    //   - are not dumping the CDS archive with -Xshare:dump
+    //   - do not explicitly disable CDS via -Xshare:off
+    //
+    // The main purpose of this property is to test the runtime loading of
+    // the CDS "archive heap region" with non-default garbage collectors. E.g.,
+    //
+    // jtreg -vmoptions:-Dtest.cds.runtime.options=-XX:+UnlockExperimentalVMOptions,-XX:+UseEpsilonGC \
+    //       test/hotspot/jtreg/runtime/cds
+    //
+    // Note that the injection is not applied to -Xshare:dump, so that the CDS archives
+    // will be dumped with G1, which is the only collector that supports dumping
+    // the archive heap region. Similarly, if a UseXxxGC option already exists in the command line,
+    // the UseXxxGC option added in test.cds.runtime.options will be ignored.
+    public static void handleCDSRuntimeOptions(ProcessBuilder pb) {
+        List<String> cmd = pb.command();
+        String jtropts = System.getProperty("test.cds.runtime.options");
+        if (jtropts != null && isRunningWithArchive(cmd)) {
+            // There cannot be multiple GC options in the command line so some
+            // options may be ignored
+            ArrayList<String> cdsRuntimeOpts = new ArrayList<String>();
+            boolean hasGCOption = hasGCOption(cmd);
+            for (String s : jtropts.split(",")) {
+                if (!CDSOptions.disabledRuntimePrefixes.contains(s) &&
+                    !(hasGCOption && isGCOption(s))) {
+                    cdsRuntimeOpts.add(s);
+                }
+            }
+            pb.command().addAll(1, cdsRuntimeOpts);
+        }
+    }
 
     // ============================= Logging
     public static OutputAnalyzer executeAndLog(ProcessBuilder pb, String logName) throws Exception {
         long started = System.currentTimeMillis();
+
+        handleCDSRuntimeOptions(pb);
+
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         String logFileNameStem =
             String.format("%04d", getNextLogCounter()) + "-" + logName;
