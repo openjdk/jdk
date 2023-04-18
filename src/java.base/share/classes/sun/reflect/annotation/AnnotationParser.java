@@ -336,6 +336,8 @@ public class AnnotationParser {
                                           ByteBuffer buf,
                                           ConstantPool constPool,
                                           Class<?> container) {
+        // Note that VMSupport.encodeAnnotation (used by JVMCI) may need to
+        // be updated if new annotation member types are added.
         Object result = null;
         int tag = buf.get();
         switch(tag) {
