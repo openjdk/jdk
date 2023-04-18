@@ -167,7 +167,7 @@ public class DocCommentParser {
     }
 
     /**
-     * Reads "rich text" content, consisting of text, html and inline tags,
+     * Reads "rich text" content, consisting of text, HTML and inline tags,
      * according to the given {@code phase}.
      *
      * Inline tags are only recognized in {@code BODY} and {@code INLINE}
@@ -178,15 +178,12 @@ public class DocCommentParser {
      * <ul>
      * <li>{@code PREAMBLE}: the appearance of {@code <body>} (or {@code <main>}),
      *      as determined by {@link #isEndPreamble()}
-     * <li>{@code BODY}: the beginning of a block tag, or when readung from
-     *      an HTML file, the appearance of {@code </main>} (or {@code </body>},
+     * <li>{@code BODY}: the beginning of a block tag, or when reading from
+     *      an HTML file, the appearance of {@code </main>} (or {@code </body>}),
      *       as determined by {@link #isEndBody()}
      * <li>{@code INLINE}: '}', after skipping any matching {@code { }}
-     * <li>{@code PREAMBLE}: end of file
+     * <li>{@code POSTAMBLE}: end of file
      * </ul>
-     *
-     *
-     *
      */
     protected List<DCTree> content(Phase phase) {
         ListBuffer<DCTree> trees = new ListBuffer<>();
@@ -835,7 +832,6 @@ public class DocCommentParser {
      * <li>doctype: {@code <!doctype ... >}
      * <li>cdata: {@code <![CDATA[ ... ]]>}
      * </ul>
-     *  or
      */
     private DCTree html() {
         int p = bp;
