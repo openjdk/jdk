@@ -35,6 +35,7 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.lazy.EmptyLazyReference;
 import java.util.concurrent.lazy.Lazy;
 import java.util.concurrent.lazy.LazyReference;
 import java.util.function.Supplier;
@@ -44,7 +45,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 final class BasicLazyReferenceTest {
 
-    LazyReference<Integer> lazy;
+    EmptyLazyReference<Integer> lazy;
     CountingIntegerSupplier supplier;
 
     @BeforeEach
@@ -55,10 +56,10 @@ final class BasicLazyReferenceTest {
 
     @Test
     void supply() {
-        Integer val = lazy.supplyIfEmpty(supplier);
+        Integer val = lazy.apply(supplier);
         assertEquals(CountingIntegerSupplier.MAGIC_VALUE, val);
         assertEquals(1, supplier.invocations());
-        Integer val2 = lazy.supplyIfEmpty(supplier);
+        Integer val2 = lazy.apply(supplier);
         assertEquals(CountingIntegerSupplier.MAGIC_VALUE, val);
         assertEquals(1, supplier.invocations());
     }
@@ -67,22 +68,16 @@ final class BasicLazyReferenceTest {
     void nulls() {
         // Mapper is null
         assertThrows(NullPointerException.class,
-                () -> lazy.supplyIfEmpty(null));
+                () -> lazy.apply(null));
         // Mapper returns null
         assertThrows(NullPointerException.class,
-                () -> lazy.supplyIfEmpty(() -> null));
-    }
-
-    @Test
-    void noPresetGet() {
-        assertThrows(IllegalStateException.class,
-                () -> lazy.get());
+                () -> lazy.apply(() -> null));
     }
 
     @Test
     void state() {
         assertEquals(Lazy.State.EMPTY, lazy.state());
-        Integer val = lazy.supplyIfEmpty(supplier);
+        Integer val = lazy.apply(supplier);
         assertEquals(Lazy.State.PRESENT, lazy.state());
     }
 
@@ -119,13 +114,13 @@ final class BasicLazyReferenceTest {
             throw new UnsupportedOperationException();
         };
         assertThrows(UnsupportedOperationException.class,
-                () -> lazy.supplyIfEmpty(throwSupplier));
+                () -> lazy.apply(throwSupplier));
 
         assertEquals(Lazy.State.ERROR, lazy.state());
         assertTrue(lazy.exception().isPresent());
 
         // Should not invoke the supplier as we are already in ERROR state
-        assertThrows(NoSuchElementException.class, () -> lazy.supplyIfEmpty(throwSupplier));
+        assertThrows(NoSuchElementException.class, () -> lazy.apply(throwSupplier));
     }
 
     // Todo:repeate the test 1000 times
@@ -138,19 +133,23 @@ final class BasicLazyReferenceTest {
                         Thread.onSpinWait();
                     }
                     // Try to access the instance "simultaneously"
-                    lazy.supplyIfEmpty(supplier);
+                    lazy.apply(supplier);
                 }))
                 .toList();
         threads.forEach(Thread::start);
         Thread.sleep(10);
         gate.set(true);
         join(threads);
-        assertEquals(CountingIntegerSupplier.MAGIC_VALUE, lazy.get());
+        assertEquals(CountingIntegerSupplier.MAGIC_VALUE, lazy.apply(supplier));
         assertEquals(1, supplier.invocations());
     }
 
     @Test
     void testToString() throws InterruptedException {
+        assertTrue(lazy.toString().endsWith("EmptyLazyReference[EMPTY]"));
+        lazy.apply(supplier);
+        assertTrue(lazy.toString().endsWith("EmptyLazyReference[42]"));
+
         var lazy0 = Lazy.of(() -> 0);
         var lazy1 = Lazy.of(() -> 1);
         lazy1.get();
@@ -165,8 +164,8 @@ final class BasicLazyReferenceTest {
             // Happy path
         }
 
-        assertEquals("LazyReference[EMPTY]", lazy0.toString());
-        assertEquals("LazyReference[1]", lazy1.toString());
+        assertTrue(lazy0.toString().endsWith("LazyReference[EMPTY]"));
+        assertTrue(lazy1.toString().endsWith("LazyReference[1]"));
 
         // Todo: Figure out why this fails
         // assertEquals("LazyReference[ERROR]", lazy2.toString());

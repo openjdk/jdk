@@ -2,42 +2,48 @@ package jdk.internal.util.concurrent.lazy;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
-import java.util.concurrent.lazy.LazyReference;
+import java.util.NoSuchElementException;
+import java.util.function.Supplier;
 
 public final class LazyUtil {
+
+    // Object that flags the Lazy is being constucted. Any object that is not a Throwable can be used.
+    public static final Object CONSTRUCTING = LazyUtil.class;
+
     private LazyUtil() {
     }
-/*
-    // Atomically aquires (sets) the provided flag and returns if it was not previously set
-    // (using volatile semantics)
-    private boolean acquire(int flag) {
-        int previousFlag = (int) FLAGS_HANDLE.getAndBitwiseOr(this, flag);
-        return (previousFlag & flag) == 0;
-    }
 
-    // Atomically releases (clears) the provided flag and returns if it was previously set
-    // (using volatile semantics)
-    private boolean release(int flag) {
-        int previousFlag = (int) FLAGS_HANDLE.getAndBitwiseAnd(this, ~flag);
-        return (previousFlag & flag) != 0;
-    }
-
-    // Atomically obtains (gets) the provided flag (using volatile semantics)
-    private boolean get(int flag) {
-        int flags = (int) FLAGS_HANDLE.getVolatile(this);
-        return (flags & flag) != 0;
-    }*/
-
-    public static VarHandle varHandle(MethodHandles.Lookup lookup,
-                                      String fieldName,
-                                      Class<?> fieldType) {
-        try {
-            return lookup
-                    .findVarHandle(LazyReference.class, fieldName, fieldType);
-            // .withInvokeExactBehavior(); // Make sure no boxing is made?
-        } catch (ReflectiveOperationException e) {
-            throw new ExceptionInInitializerError(e);
+    static <V> V supplyIfEmpty(AbstractBaseLazyReference<V> lazy,
+                               Supplier<? extends V> supplier) {
+        // implies volatile semantics when entering/leaving the monitor
+        synchronized (lazy) {
+            // Here, visibility is guaranteed
+            V v = lazy.value;
+            if (v != null) {
+                return v;
+            }
+            if (lazy.auxilaryObject instanceof Throwable throwable) {
+                throw new NoSuchElementException(throwable);
+            }
+            if (supplier == null) {
+                throw new IllegalStateException("No pre-set supplier given");
+            }
+            try {
+                lazy.auxilaryObject = CONSTRUCTING;
+                v = supplier.get();
+                if (v == null) {
+                    throw new NullPointerException("Supplier returned null");
+                }
+                AbstractBaseLazyReference.VALUE_HANDLE.setVolatile(lazy, v);
+                return v;
+            } catch (Throwable e) {
+                // Record the throwable instead of the value.
+                AbstractBaseLazyReference.AUX_HANDLE.setVolatile(lazy, e);
+                // Rethrow
+                throw e;
+            } finally {
+                lazy.afterSupplying();
+            }
         }
     }
-
 }

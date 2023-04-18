@@ -45,7 +45,7 @@
  *
  * {@snippet class="PackageInfoSnippets" region="DemoPreset"}
  *
- * {@snippet lang = java :
+ * {@snippet lang = java:
  *     class DemoPreset {
  *
  *         private static final LazyReference<Foo> FOO = Lazy.of(Foo::new);
@@ -80,23 +80,22 @@
  * {@snippet lang = java:
  *     class Fox {
  *
- *         private final LazyReference<String> lazy = Lazy.ofEmpty();
+ *         private final EmptyLazyReference<String> lazy = Lazy.ofEmpty();
  *
  *         String init(String color) {
- *             return lazy.supplyIfEmpty(() -> "The quick " + color + " fox");
+ *             return lazy.apply(() -> "The quick " + color + " fox");
  *         }
  *     }
  *}
  *
  * A custom configurable LazyReference can be obtained via the
- * {@linkplain java.util.concurrent.lazy.Lazy#builder() builder} method.
+ * {@linkplain java.util.concurrent.lazy.Lazy#builder(java.util.function.Supplier)} method.
  * Here is how a lazy value can be computed in the background and that may already be computed
  * when first requested from user code:
  * {@snippet lang = java:
  *     class DemoBackground {
  *
- *         private static final LazyReference<Foo> lazy = Lazy.<Foo>builder()
- *                 .withSupplier(Foo::new)
+ *         private static final LazyReference<Foo> lazy = Lazy.builder(Foo::new)
  *                 .withEarliestEvaluation(Lazy.Evaluation.CREATION_BACKGROUND)
  *                 .build();
  *
@@ -106,7 +105,7 @@
  *             System.out.println("lazy.get() = " + lazy.get());
  *         }
  *     }
- * }
+ *}
  *
  * {@code LazyReference<T>} implements {@code Supplier<T>} allowing simple
  * interoperability with legacy code and less specific type declaration
@@ -126,21 +125,21 @@
  *         }
  *     }
  *}
- * LazyReference contains additional methods for checking its
- * {@linkplain java.util.concurrent.lazy.LazyReference#state() state} and getting
- * any {@linkplain java.util.concurrent.lazy.LazyReference#exception()} that might be thrown
+ * LazyReference and EmptyLazyReference contains additional methods for checking its
+ * {@linkplain java.util.concurrent.lazy.BaseLazyReference#state() state} and getting
+ * any {@linkplain java.util.concurrent.lazy.BaseLazyReference#exception()} that might be thrown
  * by the provider.
  *
  * <h3 id="lazyarray">LazyArray</h3>
  *
- * Arrays of lazy values (i.e. {@link java.util.concurrent.lazy.LazyReferenceArray}) can also be
+ * Arrays of lazy values (i.e. {@link java.util.concurrent.lazy.LazyArray}) can also be
  * obtained via {@link java.util.concurrent.lazy.Lazy} factory methods in the same way as
  * for LazyReference instance but with an extra initial arity, indicating the desired length/index
  * of the array:
  * {@snippet lang = java:
  *     class DemoArray {
  *
- *         private static final LazyReferenceArray<Value> VALUE_PO2_CACHE =
+ *         private static final LazyArray<Value> VALUE_PO2_CACHE =
  *                 Lazy.ofArray(32, index -> new Value(1L << index));
  *
  *         public Value powerOfTwoValue(int n) {
@@ -151,7 +150,7 @@
  *             return VALUE_PO2_CACHE.apply(n);
  *         }
  *     }
- * }
+ *}
  * As can be seen above, an array takes an {@link java.util.function.IntFunction} rather
  * than a {@link java.util.function.Supplier }, allowing custom values to be
  * computed and entered into the array depending on the current index being used.
@@ -162,14 +161,14 @@
  *     class UserCache {
  *
  *         // Cache the first 64 users
- *         private static final LazyReferenceArray<User> USER_CACHE = Lazy.ofEmptyArray(64);
+ *         private static final EmptyLazyArray<User> USER_CACHE = Lazy.ofEmptyArray(64);
  *
  *         public User user(int id) {
  *             Connection c = getDatabaseConnection();
  *             return USER_CACHE.computeIfEmpty(id, i -> findUserById(c, i));
  *         }
  *     }
- * }
+ *}
  *
  * {@code LazyReferenceArray<T>} implements {@code IntFunction<T>} allowing simple interoperability
  * with existing code and with less specific type declarations as shown hereunder:

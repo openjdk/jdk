@@ -36,8 +36,9 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.lazy.EmptyLazyArray;
 import java.util.concurrent.lazy.Lazy;
-import java.util.concurrent.lazy.LazyReferenceArray;
+import java.util.concurrent.lazy.LazyArray;
 import java.util.function.Consumer;
 import java.util.function.IntFunction;
 import java.util.stream.IntStream;
@@ -49,7 +50,7 @@ final class BasicLazyReferenceArrayTest {
     private static final int SIZE = 63;
     private static final int INDEX = 13;
 
-    LazyReferenceArray<Integer> lazy;
+    EmptyLazyArray<Integer> lazy;
     CountingIntegerMapper mapper;
 
     @BeforeEach
@@ -79,12 +80,6 @@ final class BasicLazyReferenceArrayTest {
     }
 
     @Test
-    void noPresetGet() {
-        assertThrows(IllegalStateException.class,
-                () -> lazy.apply(INDEX));
-    }
-
-    @Test
     void state() {
         assertEquals(Lazy.State.EMPTY, lazy.state(INDEX));
         Integer val = lazy.computeIfEmpty(INDEX, mapper);
@@ -93,7 +88,7 @@ final class BasicLazyReferenceArrayTest {
 
     @Test
     void presetMapperBasic() {
-        LazyReferenceArray<Integer> presetLazy = Lazy.ofArray(SIZE, mapper);
+        LazyArray<Integer> presetLazy = Lazy.ofArray(SIZE, mapper);
         assertEquals(0, mapper.invocations(INDEX));
         for (int i = 0; i < 2; i++) {
             assertEquals(INDEX, presetLazy.apply(INDEX));
@@ -164,7 +159,7 @@ final class BasicLazyReferenceArrayTest {
 
         var toString = lazy.toString();
 
-        assertEquals("LazyReferenceArray[-, 1, !]", toString);
+        assertTrue(toString.endsWith("EmptyLazyArray[-, 1, !]"));
     }
 
     // Todo:repeate the test 1000 times
@@ -184,7 +179,7 @@ final class BasicLazyReferenceArrayTest {
         Thread.sleep(10);
         gate.set(true);
         join(threads);
-        assertEquals(INDEX, lazy.apply(INDEX));
+        assertEquals(INDEX, lazy.getOr(INDEX, null));
         assertEquals(1, mapper.invocations(INDEX));
     }
 

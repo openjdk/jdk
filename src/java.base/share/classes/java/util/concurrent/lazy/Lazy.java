@@ -3,6 +3,13 @@ package java.util.concurrent.lazy;
 import jdk.internal.javac.PreviewFeature;
 import jdk.internal.util.concurrent.lazy.LazyMapper;
 import jdk.internal.util.concurrent.lazy.LazySingleMapper;
+import jdk.internal.util.concurrent.lazy.StandardEmptyLazyReference;
+import jdk.internal.util.concurrent.lazy.StandardEmptyLazyReferenceBuilder;
+import jdk.internal.util.concurrent.lazy.StandardLazyReference;
+import jdk.internal.util.concurrent.lazy.StandardLazyReferenceBuilder;
+import jdk.internal.util.concurrent.lazy.array.StandardEmptyLazyArray;
+import jdk.internal.util.concurrent.lazy.array.StandardLazyArray;
+import jdk.internal.util.concurrent.lazy.array.TranslatedEmptyLazyArray;
 
 import java.util.Collection;
 import java.util.Objects;
@@ -21,7 +28,8 @@ import java.util.function.Supplier;
 public final class Lazy {
 
     // Suppresses default constructor, ensuring non-instantiability.
-    private Lazy() {}
+    private Lazy() {
+    }
 
     /**
      * The State indicates the current state of a Lazy instance:
@@ -105,26 +113,23 @@ public final class Lazy {
     }
 
     /**
-     * {@return a new empty LazyReference with no pre-set supplier}.
-     * <p>
-     * If an attempt is made to invoke the {@link LazyReference#get()} method when no element is present,
-     * an exception will be thrown.
+     * {@return a new EmptyLazyReference with no pre-set supplier}.
      * <p>
      * {@snippet lang = java:
      *     class Fox {
      *
-     *         private final LazyReference<String> lazy = Lazy.ofEmpty();
+     *         private final EmptyLazyReference<String> lazy = Lazy.ofEmpty();
      *
      *         String init(String color) {
-     *             return lazy.supplyIfEmpty(() -> "The quick " + color + " fox");
+     *             return lazy.apply(() -> "The quick " + color + " fox");
      *         }
      *     }
      *}
      *
-     * @param <T> The type of the value
+     * @param <V> The type of the value
      */
-    public static <T> LazyReference<T> ofEmpty() {
-        return new LazyReference<>(Evaluation.AT_USE, null);
+    public static <V> EmptyLazyReference<V> ofEmpty() {
+        return new StandardEmptyLazyReference<>();
     }
 
     /**
@@ -132,7 +137,7 @@ public final class Lazy {
      * <p>
      * If an attempt is made to invoke the {@link LazyReference#get()} method when no element is present,
      * the provided {@code presetSupplier} will automatically be invoked as specified by
-     * {@link LazyReference#supplyIfEmpty(Supplier)}.
+     * {@link EmptyLazyReference#apply(Object)}.
      * <p>
      * {@snippet lang = java:
      *     class DemoPreset {
@@ -146,24 +151,47 @@ public final class Lazy {
      *     }
      *}
      *
-     * @param <T>            The type of the value
+     * @param <V>            The type of the value
      * @param presetSupplier to invoke when lazily constructing a value
      */
-    public static <T> LazyReference<T> of(Supplier<? extends T> presetSupplier) {
+    public static <V> LazyReference<V> of(Supplier<? extends V> presetSupplier) {
         Objects.requireNonNull(presetSupplier);
-        return new LazyReference<>(Evaluation.AT_USE, presetSupplier);
+        return new StandardLazyReference<>(presetSupplier);
+    }
+
+    /**
+     * {@return a builder that can be used to build a custom EmptyLazyReference}.
+     *
+     * @param <V> type of the value the EmptyLazyReference will handle.
+     *            Here is how a lazy value can be pre-computed:
+     *            {@snippet lang = java:
+     *                           class DemoPrecomputed {
+     *
+     *                               private static final EmptyLazyReference<Foo> lazy = Lazy.<Foo>emptyBuilder()
+     *                                       .withValue(new Foo())
+     *                                       .build();
+     *
+     *                               public static void main(String[] args) throws InterruptedException {
+     *                                   // lazy is already pre-computed here
+     *                                   System.out.println("lazy.apply(Foo::new) = " + lazy.apply(Foo::new));
+     *                               }
+     *                           }
+     *}
+     */
+    // Todo: Figure out a better way for determining the type (e.g. type token)
+    public static <V> EmptyLazyReference.Builder<V> emptyBuilder() {
+        return new StandardEmptyLazyReferenceBuilder<>();
     }
 
     /**
      * {@return a builder that can be used to build a custom LazyReference}.
-     * @param <T> type of the value the LazyReference will handle.
+     * <p>
      * Here is how a lazy value can be computed in the background and that may already be computed
      * when first requested from user code:
      * {@snippet lang = java:
      *     class DemoBackground {
      *
-     *         private static final LazyReference<Foo> lazy = Lazy.<Foo>builder()
-     *                 .withSupplier(Foo::new)
+     *         private static final LazyReference<Foo> lazy = Lazy.builder(Foo::new)
      *                 .withEarliestEvaluation(Lazy.Evaluation.CREATION_BACKGROUND)
      *                 .build();
      *
@@ -173,25 +201,25 @@ public final class Lazy {
      *             System.out.println("lazy.get() = " + lazy.get());
      *         }
      *     }
-     * }
+     *}
+     *
+     * @param <V>            type of the value the LazyReference will handle.
+     * @param presetSupplier to use when computing and storing the value
      */
-    // Todo: Figure out a better way for determining the type (e.g. type token)
-    public static <T> LazyReference.Builder<T> builder() {
-        return new LazyReference.LazyReferenceBuilder<>();
+    public static <V> LazyReference.Builder<V> builder(Supplier<? extends V> presetSupplier) {
+        Objects.requireNonNull(presetSupplier);
+        return new StandardLazyReferenceBuilder<>(presetSupplier);
     }
 
     /**
-     * {@return a new empty LazyReferenceArray with no pre-set mapper}.
+     * {@return a new EmptyLazyArray with no pre-set mapper}.
      * <p>
-     * If an attempt is made to invoke the {@link LazyReferenceArray#apply(int)} method when no element is present,
-     * an exception will be thrown.
-     * <p>
+     * Below an example of how an EmptyLazyArray is used as a cache:
      * {@snippet lang = java:
-     * class UserCache {
+     *     class UserCache {
      *
      *         // Cache the first 64 users
-     *         private static final LazyReferenceArray<User> USER_CACHE =
-     *                 Lazy.ofEmptyArray(64);
+     *         private static final EmptyLazyArray<User> USER_CACHE = Lazy.ofEmptyArray(64);
      *
      *         public User user(int id) {
      *             Connection c = getDatabaseConnection();
@@ -200,50 +228,90 @@ public final class Lazy {
      *     }
      *}
      *
-     * @param <T>  The type of the values
+     * @param <V>  The type of the values
      * @param size the size of the array
      */
-    public static <T> LazyReferenceArray<T> ofEmptyArray(int size) {
+    public static <V> EmptyLazyArray<V> ofEmptyArray(int size) {
         if (size < 0) {
             throw new IllegalArgumentException();
         }
-        return new LazyReferenceArray<>(size);
+        return new StandardEmptyLazyArray<>(size);
     }
 
     /**
-     * {@return a new empty LazyReferenceArray with a pre-set mapper}.
+     * {@return a new EmptyLazyArray with a pre-set mapper}.
      * <p>
-     * If an attempt is made to invoke the {@link LazyReferenceArray#apply(int)} ()} method when no element is present,
-     * the provided {@code presetMapper} will automatically be invoked as specified by
-     * {@link LazyReferenceArray#computeIfEmpty(int, IntFunction)}.
-     * <p>
+     * Below, an example of how to cache values in an array is shown:
      * {@snippet lang = java:
-     *     class DemoArray {
+     * class DemoArray {
      *
-     *         private static final LazyReferenceArray<Value> VALUE_PO2_CACHE =
-     *                 Lazy.ofArray(32, index -> new Value(1L << index));
+     * private static final LazyArray<Value> VALUE_PO2_CACHE =
+     * Lazy.ofArray(32, index -> new Value(1L << index));
      *
-     *         public Value powerOfTwoValue(int n) {
-     *             if (n < 0 || n >= VALUE_PO2_CACHE.length()) {
-     *                 throw new IllegalArgumentException(Integer.toString(n));
-     *             }
-     *
-     *             return VALUE_PO2_CACHE.apply(n);
-     *         }
-     *     }
+     * public Value powerOfTwoValue(int n) {
+     * if (n < 0 || n >= VALUE_PO2_CACHE.length()) {
+     * throw new IllegalArgumentException(Integer.toString(n));
      * }
      *
-     * @param <T>          The type of the values
+     * return VALUE_PO2_CACHE.apply(n);
+     * }
+     * }
+     *}
+     *
+     * @param <V>          The type of the values
      * @param size         the size of the array
      * @param presetMapper to invoke when lazily constructing a value
      */
-    public static <T> LazyReferenceArray<T> ofArray(int size,
-                                                    IntFunction<? extends T> presetMapper) {
+    public static <V> LazyArray<V> ofArray(int size,
+                                           IntFunction<? extends V> presetMapper) {
         if (size < 0) {
             throw new IllegalArgumentException();
         }
         Objects.requireNonNull(presetMapper);
-        return new LazyReferenceArray<>(size, presetMapper);
+        return new StandardLazyArray<>(size, presetMapper);
+    }
+
+    /**
+     * {@return a new EmptyLazyArray with no pre-set mapper and with the index translated
+     * by the provided {@code translation}}.
+     * <p>
+     * Translated lazy arrays are useful for caching certain values as shown in the example below:
+     * <p>
+     * {@snippet lang = java:
+     *     class DemoFibMapped {
+     *
+     *          static int fib(int n) {
+     *             return (n <= 1)
+     *                     ? n
+     *                     : fib(n - 1) + fib(n - 2);
+     *         }
+     *
+     *         private static final EmptyLazyArray<Integer> FIB_10_CACHE =
+     *                 Lazy.ofEmptyTranslatedArray(3, 10);
+     *
+     *         // Only works for values up to ~30
+     *
+     *         static int cachedFib(int n) {
+     *             if (n <= 1)
+     *                 return n;
+     *             return FIB_10_CACHE.computeIfEmpty(n, DemoFibMapped::fib);
+     *         }
+     *     }
+     *}
+     *
+     * @param <V>         The type of the values
+     * @param size        the size of the array
+     * @param translation the translation factor to use
+     */
+    public static <V> EmptyLazyArray<V> ofEmptyTranslatedArray(int size,
+                                                               int translation) {
+        if (size < 0 || translation < 0) {
+            throw new IllegalArgumentException();
+        }
+        if ((long) size * translation > Integer.MAX_VALUE) {
+            throw new IllegalArgumentException("Out of int range.");
+        }
+        return new TranslatedEmptyLazyArray<>(size, translation);
     }
 
     /**
@@ -251,10 +319,7 @@ public final class Lazy {
      * lazily computed and recorded by the provided {@code mapper} or {@linkplain Optional#empty() Optional.empty()}
      * if a key that is not part of the provided collection of {@code keys} is provided to the returned Function}.
      * <p>
-     * If an attempt is made to invoke the {@link LazyReferenceArray#apply(int)} ()} method when no element is present,
-     * the provided {@code presetMapper} will automatically be invoked as specified by
-     * {@link LazyReferenceArray#computeIfEmpty(int, IntFunction)}.
-     * <p>
+     * Here is an example of how to construct a cache for three pre-known strings:
      * {@snippet lang = java:
      *     class DemoLazyMapper {
      *
@@ -268,9 +333,9 @@ public final class Lazy {
      *     }
      *}
      *
-     * @param <K> the type of keys maintained by this mapper
-     * @param <V> the type of mapped values
-     * @param keys to be mapped
+     * @param <K>    the type of keys maintained by this mapper
+     * @param <V>    the type of mapped values
+     * @param keys   to be mapped
      * @param mapper to apply when computing and recording values
      */
     public static <K, V> Function<K, Optional<V>> mapping(Collection<K> keys,
@@ -310,8 +375,8 @@ public final class Lazy {
      *     }
      *}
      *
-     * @param <K> the type of keys maintained by this mapper
-     * @param <V> the type of mapped values
+     * @param <K>        the type of keys maintained by this mapper
+     * @param <V>        the type of mapped values
      * @param keyMappers to be lazily evaluated and recorded
      */
     public static <K, V> Function<K, Optional<V>> mapping(Collection<KeyMapper<K, V>> keyMappers) {

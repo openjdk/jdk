@@ -2,12 +2,8 @@ package jdk.internal.util.concurrent.lazy;
 
 import java.util.Collection;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.lazy.KeyMapper;
-import java.util.concurrent.lazy.Lazy;
-import java.util.concurrent.lazy.LazyReferenceArray;
 import java.util.function.Function;
 
 import static java.util.stream.Collectors.toMap;

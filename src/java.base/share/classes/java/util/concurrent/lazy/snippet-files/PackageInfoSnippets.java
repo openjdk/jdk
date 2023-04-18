@@ -26,10 +26,12 @@ package java.util.concurrent.lazy.snippets;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.lazy.EmptyLazyArray;
+import java.util.concurrent.lazy.EmptyLazyReference;
 import java.util.concurrent.lazy.KeyMapper;
 import java.util.concurrent.lazy.Lazy;
+import java.util.concurrent.lazy.LazyArray;
 import java.util.concurrent.lazy.LazyReference;
-import java.util.concurrent.lazy.LazyReferenceArray;
 import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
@@ -71,10 +73,10 @@ public class PackageInfoSnippets {
     // @start region="Fox"
     class Fox {
 
-        private final LazyReference<String> lazy = Lazy.ofEmpty();
+        private final EmptyLazyReference<String> lazy = Lazy.ofEmpty();
 
         String init(String color) {
-            return lazy.supplyIfEmpty(() -> "The quick " + color + " fox");
+            return lazy.apply(() -> "The quick " + color + " fox");
         }
     }
     // @end
@@ -82,8 +84,7 @@ public class PackageInfoSnippets {
     // @start region="DemoBackground"
     class DemoBackground {
 
-        private static final LazyReference<Foo> lazy = Lazy.<Foo>builder()
-                .withSupplier(Foo::new)
+        private static final LazyReference<Foo> lazy = Lazy.builder(Foo::new)
                 .withEarliestEvaluation(Lazy.Evaluation.CREATION_BACKGROUND)
                 .build();
 
@@ -91,6 +92,20 @@ public class PackageInfoSnippets {
             Thread.sleep(1000);
             // lazy is likely already pre-computed here by a background thread
             System.out.println("lazy.get() = " + lazy.get());
+        }
+    }
+    // @end
+
+    // @start region="DemoBackground"
+    class DemoPrecomputed {
+
+        private static final EmptyLazyReference<Foo> lazy = Lazy.<Foo>emptyBuilder()
+                .withValue(new Foo())
+                .build();
+
+        public static void main(String[] args) throws InterruptedException {
+            // lazy is already pre-computed here
+            System.out.println("lazy.apply(Foo::new) = " + lazy.apply(Foo::new));
         }
     }
     // @end
@@ -114,7 +129,7 @@ public class PackageInfoSnippets {
     // @start region="DemoArray"
     class DemoArray {
 
-        private static final LazyReferenceArray<Value> VALUE_PO2_CACHE =
+        private static final LazyArray<Value> VALUE_PO2_CACHE =
                 Lazy.ofArray(32, index -> new Value(1L << index));
 
         public Value powerOfTwoValue(int n) {
@@ -131,8 +146,7 @@ public class PackageInfoSnippets {
     class UserCache {
 
         // Cache the first 64 users
-        private static final LazyReferenceArray<User> USER_CACHE =
-                Lazy.ofEmptyArray(64);
+        private static final EmptyLazyArray<User> USER_CACHE = Lazy.ofEmptyArray(64);
 
         public User user(int id) {
             Connection c = getDatabaseConnection();
@@ -207,13 +221,17 @@ public class PackageInfoSnippets {
                     : fib(n - 1) + fib(n - 2);
         }
 
-        private static final int INTERVAL = 10; // Must be > 2
+        private static final EmptyLazyArray<Integer> FIB_10_CACHE =
+                Lazy.ofEmptyTranslatedArray(3, 10);
 
-        private static final LazyReferenceArray<Integer> FIB_10_CACHE =
-                Lazy.ofEmptyArray(3);
 
-        private static final LazyReferenceArray.IntKeyMapper KEY_MAPPER =
-                LazyReferenceArray.IntKeyMapper.ofConstant(INTERVAL);
+        // Only works for values up to ~30
+
+        static int cachedFib(int n) {
+            if (n <= 1)
+                return n;
+            return FIB_10_CACHE.computeIfEmpty(n, DemoFibMapped::fib);
+        }
 
         /**
          * Main method
@@ -231,15 +249,6 @@ public class PackageInfoSnippets {
             System.out.println("cachedFib(11) = " + cachedFib(11)); // 111 invocations
         }
 
-        // Only works for values up to ~30
-
-        static int cachedFib(int n) {
-            if (n <= 1)
-                return n;
-            return FIB_10_CACHE.mapIntAndApply(KEY_MAPPER, n,
-                    DemoFibMapped::fib,
-                    DemoFibMapped::fib);
-        }
 
         private DemoFibMapped() {
         }

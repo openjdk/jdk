@@ -31,9 +31,8 @@
 import org.junit.jupiter.api.*;
 
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.lazy.EmptyLazyArray;
 import java.util.concurrent.lazy.Lazy;
-import java.util.concurrent.lazy.LazyReferenceArray;
-import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.stream.IntStream;
 
@@ -44,24 +43,34 @@ final class LazyReferenceArrayMappingTest {
     private static final int SIZE = 63;
     private static final int INDEX = 13;
 
-    LazyReferenceArray<Integer> lazy;
+    EmptyLazyArray<Integer> lazy;
     CountingIntegerMapper mapper;
-
-    LazyReferenceArray.IntKeyMapper intKeyMapper;
 
     @BeforeEach
     void setup() {
         lazy = Lazy.ofEmptyArray(SIZE);
         mapper = new CountingIntegerMapper(SIZE);
-        intKeyMapper = LazyReferenceArray.IntKeyMapper.ofConstant(2);
     }
 
     @Test
     void mapInt() {
-        int two = lazy.mapIntAndApply(intKeyMapper, 2, i -> 2, i -> 0);
-        assertEquals(2, two);
-        int three = lazy.mapIntAndApply(intKeyMapper, 3, i -> 2, i -> 0);
-        assertEquals(0, three);
+        AtomicInteger cnt = new AtomicInteger();
+        IntFunction<Integer> mapper = i -> {
+            return cnt.getAndIncrement();
+        };
+
+        EmptyLazyArray<Integer> translated = Lazy.ofEmptyTranslatedArray(SIZE, 2);
+        // 2 is cached
+        int first = translated.computeIfEmpty(2, mapper);
+        assertEquals(0, first);
+        int second = translated.computeIfEmpty(2, mapper);
+        assertEquals(0, second);
+
+        // 3 is not cached
+        int third = translated.computeIfEmpty(3, mapper);
+        assertEquals(1, third);
+        int fourth = translated.computeIfEmpty(3, mapper);
+        assertEquals(2, fourth);
     }
 
     static private final class CountingIntegerMapper implements IntFunction<Integer> {
