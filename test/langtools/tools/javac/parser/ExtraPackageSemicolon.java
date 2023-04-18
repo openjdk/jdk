@@ -25,42 +25,65 @@
  * @test
  * @bug 8305671
  * @summary Verify an extra semicolon is allowed after package decl with no imports
- * @modules jdk.compiler/com.sun.tools.javac.code
-*/
+ * @library /tools/lib
+ * @modules jdk.compiler/com.sun.tools.javac.api
+ *          jdk.compiler/com.sun.tools.javac.main
+ *          jdk.compiler/com.sun.tools.javac.util
+ * @build toolbox.ToolBox toolbox.JavacTask
+ * @run main ExtraPackageSemicolon
+ */
 
 import com.sun.tools.javac.Main;
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.PrintStream;
-import java.io.PrintWriter;
-import java.io.StringWriter;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
-public class ExtraPackageSemicolon {
+import toolbox.TestRunner;
+import toolbox.ToolBox;
+import toolbox.JavacTask;
+import toolbox.Task;
 
-    public static void runTest(String filename, String source) throws Exception {
-        final File sourceFile = new File(filename);
-        System.err.println("writing: " + sourceFile);
-        try (PrintStream output = new PrintStream(new FileOutputStream(sourceFile))) {
-            output.println(source);
-        }
-        final StringWriter diags = new StringWriter();
-        final String[] params = new String[] { sourceFile.toString() };
-        System.err.println("compiling: " + sourceFile);
-        int ret = Main.compile(params, new PrintWriter(diags, true));
-        System.err.println("exit value: " + ret);
-        String output = diags.toString().trim();
-        if (!output.isEmpty())
-            System.err.println("output:\n" + output);
-        else
-            System.err.println("no output");
-        if (ret != 0)
-            throw new AssertionError("compilation failed, but expected success");
+public class ExtraPackageSemicolon extends TestRunner {
+
+    protected ToolBox tb;
+
+    public ExtraPackageSemicolon() {
+        super(System.err);
+        tb = new ToolBox();
+    }
+
+    protected void runTests() throws Exception {
+        runTests(m -> new Object[] { Paths.get(m.getName()) });
+    }
+
+    @Test
+    public void test(Path base) throws Exception {
+        testCompile(base, "package p;");
+        testCompile(base, "package p;;");
+        testCompile(base, "package p;;   ");
+        testCompile(base, "package p\n;");
+        testCompile(base, "package p\n;\n");
+        testCompile(base, "package p\n;\n;\n");
+        testCompile(base, "package p;;;;;;;;;;;;;;;;;;;;;;;;;;;;");
+        testCompile(base, "package p;; ;; ;; ;;; ;;; ;;; ;;");
+        testCompile(base, "package p;;\n;;\n;;\n;;;\n;;;\n;;;\n;;");
+        testCompile(base, "package p;\nimport java.util.Map;");
+        testCompile(base, "package p;\nimport java.util.Map;\n;");
+        testCompile(base, "package p;\nimport java.util.Map;\n;; ;;");
+    }
+
+    private void testCompile(Path base, String javaSource) throws Exception {
+        Path src = base.resolve("src");
+        tb.writeJavaFiles(src, javaSource);
+        Path classes = base.resolve("classes");
+        tb.createDirectories(classes);
+        new JavacTask(tb, Task.Mode.CMDLINE)
+            .outdir(classes)
+            .files(tb.findJavaFiles(src))
+            .run(Task.Expect.SUCCESS);
     }
 
     public static void main(String... args) throws Exception {
-        runTest("Test1.java", "package p;");
-        runTest("Test2.java", "package p;;");
-        runTest("Test3.java", "package p;; ;; ;; ;;; ;;; ;;; ;;");
+        new ExtraPackageSemicolon().runTests();
     }
 }
