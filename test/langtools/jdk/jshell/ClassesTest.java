@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8145239 8129559 8080354 8189248 8010319 8246353 8247456
+ * @bug 8145239 8129559 8080354 8189248 8010319 8246353 8247456 8292755
  * @summary Tests for EvaluationState.classes
  * @build KullaTesting TestingInputStream ExpectedDiagnostic
  * @run testng ClassesTest
@@ -340,6 +340,20 @@ public class ClassesTest extends KullaTesting {
                    added(VALID),
                    ste(aClass, Status.RECOVERABLE_DEFINED, Status.VALID, false, null));
         assertEval("new A()");
+    }
+
+    public void testDefaultMethodInInterface() {
+        assertEvalFail("""
+                       interface C {
+                           public void run() {
+                               try {
+                                   throw IllegalStateException();
+                               } catch (Throwable t) {
+                                   throw new RuntimeException(t);
+                               }
+                           }
+                       }
+                       """);
     }
 
 }
