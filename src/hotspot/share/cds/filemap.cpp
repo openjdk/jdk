@@ -2165,6 +2165,10 @@ bool FileMapInfo::map_heap_region() {
 
   if (map_heap_region_impl()) {
 #ifdef ASSERT
+    // The "old" regions must be parsable -- we cannot have any unused space
+    // at the start of the lowest G1 region that contains archived objects.
+    assert(is_aligned(_mapped_heap_memregion.start(), HeapRegion::GrainBytes), "must be");
+
     // Make sure we map at the very top of the heap - see comments in
     // init_heap_region_relocation().
     MemRegion heap_range = G1CollectedHeap::heap()->reserved();
@@ -2174,7 +2178,7 @@ bool FileMapInfo::map_heap_region() {
     address mapped_heap_region_end = (address)_mapped_heap_memregion.end();
     assert(heap_end >= mapped_heap_region_end, "must be");
     assert(heap_end - mapped_heap_region_end < (intx)(HeapRegion::GrainBytes),
-           "must be at the top of the heap to avoid fragmentation"); 
+           "must be at the top of the heap to avoid fragmentation");
 #endif
 
     ArchiveHeapLoader::set_mapped();
@@ -2291,14 +2295,9 @@ void FileMapInfo::patch_heap_embedded_pointers() {
       r->oopmap_size_in_bits());
 }
 
-// This internally allocates objects using vmClasses::Object_klass(), so it
-// must be called after the Object_klass is loaded
 void FileMapInfo::fixup_mapped_heap_region() {
-  assert(vmClasses::Object_klass_loaded(), "must be");
-  // Make the mapped heap region parseable
   if (ArchiveHeapLoader::is_mapped()) {
     assert(!_mapped_heap_memregion.is_empty(), "sanity");
-    G1CollectedHeap::heap()->fill_archive_regions(_mapped_heap_memregion);
 
     // Populate the archive regions' G1BlockOffsetTableParts. That ensures
     // fast G1BlockOffsetTablePart::block_start operations for any given address

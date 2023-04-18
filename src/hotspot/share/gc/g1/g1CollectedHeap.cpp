@@ -576,54 +576,6 @@ bool G1CollectedHeap::alloc_archive_regions(MemRegion range) {
   return true;
 }
 
-// FIXME -- this function should be removed -- all the G1 regions within the
-// range should be full, except for the last region. However, it's OK
-// for the last region (an "old" region) to be not completely full, right??
-void G1CollectedHeap::fill_archive_regions(MemRegion range) {
-  assert(!is_init_completed(), "Expect to be called at JVM init time");
-  MemRegion reserved = _hrm.reserved();
-
-  // Create filler objects, if needed, in the G1 regions
-  // that are within specified address range. The data actually within the
-  // MemRegion will not be modified. That is assumed to have been initialized
-  // elsewhere, probably via an mmap of archived heap data.
-  MutexLocker x(Heap_lock);
-  HeapWord* start_address = range.start();
-  HeapWord* last_address = range.last();
-
-  assert(reserved.contains(start_address) && reserved.contains(last_address),
-         "MemRegion outside of heap [" PTR_FORMAT ", " PTR_FORMAT "]",
-         p2i(start_address), p2i(last_address));
-
-  HeapRegion* start_region = _hrm.addr_to_region(start_address);
-  HeapRegion* last_region = _hrm.addr_to_region(last_address);
-  HeapWord* bottom_address = start_region->bottom();
-
-  // Verify that the regions were all marked as old regions by
-  // alloc_archive_regions.
-  HeapRegion* curr_region = start_region;
-  while (curr_region != NULL) {
-    guarantee(curr_region->is_old(),
-              "Expected old region at index %u", curr_region->hrm_index());
-    if (curr_region != last_region) {
-      curr_region = _hrm.next_region_in_heap(curr_region);
-    } else {
-      curr_region = NULL;
-    }
-  }
-
-  // Fill the memory below the allocated range with dummy object(s),
-  // if the region bottom does not match the start of the next region,
-  // it means there is a gap.
-  assert(start_address >= bottom_address, "bottom address should not be greater than start address");
-  if (start_address > bottom_address) {
-    assert(0, "should not be here!");
-    size_t fill_size = pointer_delta(start_address, bottom_address);
-    G1CollectedHeap::fill_with_objects(bottom_address, fill_size);
-    increase_used(fill_size * HeapWordSize);
-  }
-}
-
 inline HeapWord* G1CollectedHeap::attempt_allocation(size_t min_word_size,
                                                      size_t desired_word_size,
                                                      size_t* actual_word_size) {

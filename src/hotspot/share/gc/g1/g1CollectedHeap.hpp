@@ -711,11 +711,6 @@ public:
   // and mark them as 'old' region(s).
   bool alloc_archive_regions(MemRegion range);
 
-  // Insert any required filler objects in the G1 regions around the specified
-  // range to make the regions parseable. This must be called after
-  // alloc_archive_regions, and after class loading has occurred.
-  void fill_archive_regions(MemRegion range);
-
   // Populate the G1BlockOffsetTablePart for archived regions with the given
   // memory range.
   void populate_archive_regions_bot_part(MemRegion range);
