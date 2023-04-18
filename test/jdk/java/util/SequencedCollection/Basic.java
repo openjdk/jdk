@@ -159,6 +159,13 @@ public class Basic {
         ).iterator();
     }
 
+    @DataProvider(name="unpositionedAdd")
+    public Iterator<Object[]> unpositionedAdd() {
+        return Arrays.<Object[]>asList(
+            new Object[] { "LinkedHashSet", new LinkedHashSet<>(ORIGINAL), ORIGINAL }
+        ).iterator();
+    }
+
     @DataProvider(name="removes")
     public Iterator<Object[]> removes() {
         return Arrays.asList(
@@ -524,6 +531,22 @@ public class Basic {
         var ref = new ArrayList<>(baseref);
         ref.add(0, "x");
         seq.reversed().addLast("x");
+        checkContents(seq, ref);
+    }
+
+    @Test(dataProvider="unpositionedAdd")
+    public void testUnpositionedAdd(String label, SequencedCollection<String> seq, List<String> baseref) {
+        var ref = new ArrayList<>(baseref);
+        ref.add("x");
+        seq.add("x");
+        checkContents(seq, ref);
+    }
+
+    @Test(dataProvider="unpositionedAdd")
+    public void testUnpositionedAddRev(String label, SequencedCollection<String> seq, List<String> baseref) {
+        var ref = new ArrayList<>(baseref);
+        ref.add("x");
+        seq.reversed().add("x");
         checkContents(seq, ref);
     }
 

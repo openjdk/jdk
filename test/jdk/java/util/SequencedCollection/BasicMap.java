@@ -140,6 +140,14 @@ public class BasicMap {
         ).iterator();
     }
 
+    @DataProvider(name="putUnpositioned")
+    public Iterator<Object[]> putUnpositioned() {
+        return Arrays.asList(
+            new Object[] { "LinkedHashMap", false, load(new LinkedHashMap<>(), ORIGINAL), ORIGINAL },
+            new Object[] { "LinkedHashMap", true,  load(new LinkedHashMap<>(), ORIGINAL), ORIGINAL }
+        ).iterator();
+    }
+
     @DataProvider(name="putThrows")
     public Iterator<Object[]> putThrows() {
         return Arrays.asList(
@@ -582,6 +590,54 @@ public class BasicMap {
         var ref = new ArrayList<>(baseref);
         ref.add(0, Map.entry("x", 99));
         map.reversed().putLast("x", 99);
+        checkContents(map, ref);
+    }
+
+    @Test(dataProvider="putUnpositioned")
+    public void testUnposPut(String label, boolean rev, SequencedMap<String, Integer> map, List<Map.Entry<String, Integer>> baseref) {
+        var ref = new ArrayList<>(baseref);
+        ref.add(Map.entry("x", 99));
+        (rev ? map.reversed() : map).put("x", 99);
+        checkContents(map, ref);
+    }
+
+    @Test(dataProvider="putUnpositioned")
+    public void testUnposPutAll(String label, boolean rev, SequencedMap<String, Integer> map, List<Map.Entry<String, Integer>> baseref) {
+        var ref = new ArrayList<>(baseref);
+        ref.add(Map.entry("x", 99));
+        (rev ? map.reversed() : map).putAll(Map.of("x", 99));
+        checkContents(map, ref);
+    }
+
+    @Test(dataProvider="putUnpositioned")
+    public void testUnposPutIfAbsent(String label, boolean rev, SequencedMap<String, Integer> map, List<Map.Entry<String, Integer>> baseref) {
+        var ref = new ArrayList<>(baseref);
+        ref.add(Map.entry("x", 99));
+        (rev ? map.reversed() : map).putIfAbsent("x", 99);
+        checkContents(map, ref);
+    }
+
+    @Test(dataProvider="putUnpositioned")
+    public void testUnposCompute(String label, boolean rev, SequencedMap<String, Integer> map, List<Map.Entry<String, Integer>> baseref) {
+        var ref = new ArrayList<>(baseref);
+        ref.add(Map.entry("x", 99));
+        (rev ? map.reversed() : map).compute("x", (k, v) -> 99);
+        checkContents(map, ref);
+    }
+
+    @Test(dataProvider="putUnpositioned")
+    public void testUnposComputeIfAbsent(String label, boolean rev, SequencedMap<String, Integer> map, List<Map.Entry<String, Integer>> baseref) {
+        var ref = new ArrayList<>(baseref);
+        ref.add(Map.entry("x", 99));
+        (rev ? map.reversed() : map).computeIfAbsent("x", k -> 99);
+        checkContents(map, ref);
+    }
+
+    @Test(dataProvider="putUnpositioned")
+    public void testUnposMerge(String label, boolean rev, SequencedMap<String, Integer> map, List<Map.Entry<String, Integer>> baseref) {
+        var ref = new ArrayList<>(baseref);
+        ref.add(Map.entry("x", 99));
+        (rev ? map.reversed() : map).merge("x", 99, /*unused*/ (k, v) -> -1);
         checkContents(map, ref);
     }
 

@@ -1140,13 +1140,7 @@ public class LinkedHashMap<K,V>
         }
 
         public void putAll(Map<? extends K, ? extends V> m) {
-            for (var e : m.entrySet()) {
-                if (base.containsKey(e.getKey())) {
-                    base.put(e.getKey(), e.getValue());
-                } else {
-                    base.putFirst(e.getKey(), e.getValue());
-                }
-            }
+            base.putAll(m);
         }
 
         public void clear() {
