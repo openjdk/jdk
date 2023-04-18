@@ -161,27 +161,72 @@ instruct vstoremask(vReg dst, vRegMask_V0 src, immI size) %{
 // vector mask compare
 
 instruct vmaskcmp(vRegMask dst, vReg src1, vReg src2, immI cond) %{
+  predicate(Matcher::vector_element_basic_type(n) == T_BYTE ||
+            Matcher::vector_element_basic_type(n) == T_SHORT ||
+            Matcher::vector_element_basic_type(n) == T_INT ||
+            Matcher::vector_element_basic_type(n) == T_LONG);
   match(Set dst (VectorMaskCmp (Binary src1 src2) cond));
   format %{ "vmaskcmp $dst, $src1, $src2, $cond" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     uint length_in_bytes = Matcher::vector_length_in_bytes(this);
-    __ compare_v(as_VectorRegister($dst$$reg), bt, length_in_bytes, as_VectorRegister($src1$$reg),
-                   as_VectorRegister($src2$$reg), (int)($cond$$constant));
+    __ compare_integral_v(as_VectorRegister($dst$$reg), bt, length_in_bytes, as_VectorRegister($src1$$reg),
+                          as_VectorRegister($src2$$reg), (int)($cond$$constant));
   %}
   ins_pipe(pipe_slow);
 %}
 
 instruct vmaskcmp_masked(vRegMask dst, vReg src1, vReg src2, immI cond, vRegMask_V0 vmask, vReg tmp) %{
+  predicate(Matcher::vector_element_basic_type(n) == T_BYTE ||
+            Matcher::vector_element_basic_type(n) == T_SHORT ||
+            Matcher::vector_element_basic_type(n) == T_INT ||
+            Matcher::vector_element_basic_type(n) == T_LONG);
   match(Set dst (VectorMaskCmp (Binary src1 src2) (Binary cond vmask)));
   effect(TEMP tmp);
   format %{ "vmaskcmp_masked $dst, $src1, $src2, $vmask, $tmp, $cond" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     uint length_in_bytes = Matcher::vector_length_in_bytes(this);
-    __ compare_v(as_VectorRegister($tmp$$reg), bt, length_in_bytes, as_VectorRegister($src1$$reg),
-                   as_VectorRegister($src2$$reg), (int)($cond$$constant), Assembler::v0_t);
+    __ compare_integral_v(as_VectorRegister($tmp$$reg), bt, length_in_bytes, as_VectorRegister($src1$$reg),
+                          as_VectorRegister($src2$$reg), (int)($cond$$constant), Assembler::v0_t);
     __ vmv1r_v(as_VectorRegister($dst$$reg), as_VectorRegister($tmp$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// vector mask float compare
+
+instruct vmaskcmp_DF(vRegMask dst, vReg src1, vReg src2, immI cond, vReg tmp1, vReg tmp2) %{
+  predicate(Matcher::vector_element_basic_type(n) == T_FLOAT ||
+            Matcher::vector_element_basic_type(n) == T_DOUBLE);
+  match(Set dst (VectorMaskCmp (Binary src1 src2) cond));
+  effect(TEMP tmp1, TEMP tmp2);
+  format %{ "vmaskcmp_DF $dst, $src1, $src2, $cond" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this);
+    __ compare_floating_point_v(as_VectorRegister($dst$$reg), bt, length_in_bytes,
+                                as_VectorRegister($src1$$reg), as_VectorRegister($src2$$reg),
+                                as_VectorRegister($tmp1$$reg), as_VectorRegister($tmp2$$reg),
+                                (int)($cond$$constant));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vmaskcmp_DF_masked(vRegMask dst, vReg src1, vReg src2, immI cond, vRegMask_V0 vmask, vReg tmp1, vReg tmp2, vReg tmp3) %{
+  predicate(Matcher::vector_element_basic_type(n) == T_FLOAT ||
+            Matcher::vector_element_basic_type(n) == T_DOUBLE);
+  match(Set dst (VectorMaskCmp (Binary src1 src2) (Binary cond vmask)));
+  effect(TEMP tmp1, TEMP tmp2, TEMP tmp3);
+  format %{ "vmaskcmp_DF_masked $dst, $src1, $src2, $vmask, $tmp1, $tmp2, $tmp3 $cond" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this);
+    __ compare_floating_point_v(as_VectorRegister($tmp1$$reg), bt, length_in_bytes,
+                                as_VectorRegister($src1$$reg), as_VectorRegister($src2$$reg),
+                                as_VectorRegister($tmp2$$reg), as_VectorRegister($tmp3$$reg),
+                                (int)($cond$$constant), Assembler::v0_t);
+    __ vmv1r_v(as_VectorRegister($dst$$reg), as_VectorRegister($tmp1$$reg));
   %}
   ins_pipe(pipe_slow);
 %}

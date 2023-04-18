@@ -1723,34 +1723,55 @@ void C2_MacroAssembler::rvv_vsetvli(BasicType bt, int length_in_bytes, Register 
   }
 }
 
-void C2_MacroAssembler::compare_v(VectorRegister vd, BasicType bt, int length_in_bytes,
-                                  VectorRegister src1, VectorRegister src2, int cond, VectorMask vm) {
+void C2_MacroAssembler::compare_integral_v(VectorRegister vd, BasicType bt, int length_in_bytes,
+                                           VectorRegister src1, VectorRegister src2, int cond, VectorMask vm) {
   rvv_vsetvli(bt, length_in_bytes);
   vmxor_mm(vd, vd, vd);
-  if (bt == T_FLOAT || bt == T_DOUBLE) {
-    switch (cond) {
-      case BoolTest::eq: vmfeq_vv(vd, src1, src2, vm); break;
-      case BoolTest::ne: vmfne_vv(vd, src1, src2, vm); break;
-      case BoolTest::le: vmfle_vv(vd, src1, src2, vm); break;
-      case BoolTest::ge: vmfge_vv(vd, src1, src2, vm); break;
-      case BoolTest::lt: vmflt_vv(vd, src1, src2, vm); break;
-      case BoolTest::gt: vmfgt_vv(vd, src1, src2, vm); break;
-      default:
-        assert(false, "unsupported compare condition");
-        ShouldNotReachHere();
+  assert(is_integral_type(bt), "unsupported element type");
+  switch (cond) {
+    case BoolTest::eq: vmseq_vv(vd, src1, src2, vm); break;
+    case BoolTest::ne: vmsne_vv(vd, src1, src2, vm); break;
+    case BoolTest::le: vmsle_vv(vd, src1, src2, vm); break;
+    case BoolTest::ge: vmsge_vv(vd, src1, src2, vm); break;
+    case BoolTest::lt: vmslt_vv(vd, src1, src2, vm); break;
+    case BoolTest::gt: vmsgt_vv(vd, src1, src2, vm); break;
+    default:
+      assert(false, "unsupported compare condition");
+      ShouldNotReachHere();
+  }
+}
+
+void C2_MacroAssembler::compare_floating_point_v(VectorRegister vd, BasicType bt, int length_in_bytes,
+                                                 VectorRegister src1, VectorRegister src2,
+                                                 VectorRegister tmp1, VectorRegister tmp2, int cond, VectorMask vm) {
+  rvv_vsetvli(bt, length_in_bytes);
+  vmxor_mm(vd, vd, vd);
+  assert(is_floating_point_type(bt), "unsupported element type");
+  // vmfeq and vmfne raise the invalid operation exception 
+  // only on signaling NaN inputs.
+  // vmflt, vmfle, vmfgt, and vmfge raise the invalid operation 
+  // exception on both signaling and quiet NaN inputs, so we should 
+  // mask the signaling compares when either input is NaN 
+  // to implement floating-point quiet compares.
+  if (cond == BoolTest::le || cond == BoolTest::ge || cond == BoolTest::lt || cond == BoolTest::gt) {
+    vmfeq_vv(tmp1, src1, src1);
+    vmfeq_vv(tmp2, src2, src2);
+    if (vm == Assembler::v0_t) {
+      vmand_mm(tmp2, tmp1, tmp2);
+      vmand_mm(v0, v0, tmp2);
+    } else {
+      vmand_mm(v0, tmp1, tmp2);
     }
-  } else {
-    assert(is_integral_type(bt), "unsupported element type");
-    switch (cond) {
-      case BoolTest::eq: vmseq_vv(vd, src1, src2, vm); break;
-      case BoolTest::ne: vmsne_vv(vd, src1, src2, vm); break;
-      case BoolTest::le: vmsle_vv(vd, src1, src2, vm); break;
-      case BoolTest::ge: vmsge_vv(vd, src1, src2, vm); break;
-      case BoolTest::lt: vmslt_vv(vd, src1, src2, vm); break;
-      case BoolTest::gt: vmsgt_vv(vd, src1, src2, vm); break;
-      default:
-        assert(false, "unsupported compare condition");
-        ShouldNotReachHere();
-    }
+  }
+  switch (cond) {
+    case BoolTest::eq: vmfeq_vv(vd, src1, src2, vm); break;
+    case BoolTest::ne: vmfne_vv(vd, src1, src2, vm); break;
+    case BoolTest::le: vmfle_vv(vd, src1, src2, Assembler::v0_t); break;
+    case BoolTest::ge: vmfge_vv(vd, src1, src2, Assembler::v0_t); break;
+    case BoolTest::lt: vmflt_vv(vd, src1, src2, Assembler::v0_t); break;
+    case BoolTest::gt: vmfgt_vv(vd, src1, src2, Assembler::v0_t); break;
+    default:
+      assert(false, "unsupported compare condition");
+      ShouldNotReachHere();
   }
 }
