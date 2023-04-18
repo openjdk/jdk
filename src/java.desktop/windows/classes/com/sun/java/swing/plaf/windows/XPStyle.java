@@ -55,7 +55,11 @@ import sun.awt.windows.ThemeReader;
 import sun.security.action.GetPropertyAction;
 import sun.swing.CachedPainter;
 
+import java.awt.geom.AffineTransform;
+
 import static com.sun.java.swing.plaf.windows.TMSchema.*;
+
+import java.lang.Math;
 
 
 /**
@@ -659,9 +663,11 @@ class XPStyle {
         public void flush() {
             super.flush();
         }
-
+        
         protected void paintToImage(Component c, Image image, Graphics g,
                                     int w, int h, Object[] args) {
+
+
             Skin skin = (Skin)args[0];
             Part part = skin.part;
             State state = (State)args[1];
@@ -675,6 +681,12 @@ class XPStyle {
             w = bi.getWidth();
             h = bi.getHeight();
 
+
+            Graphics2D g2d = (Graphics2D) g;
+            AffineTransform  at = g2d.getTransform();
+
+            int dpi = (int)(at.getScaleX() * 96);
+
             WritableRaster raster = bi.getRaster();
             DataBufferInt dbi = (DataBufferInt)raster.getDataBuffer();
             // Note that stealData() requires a markDirty() afterwards
@@ -682,8 +694,10 @@ class XPStyle {
             ThemeReader.paintBackground(SunWritableRaster.stealData(dbi, 0),
                                         part.getControlName(c), part.getValue(),
                                         State.getValue(part, state),
-                                        0, 0, w, h, w);
+                                        0, 0, w, h, w, dpi);
+
             SunWritableRaster.markDirty(dbi);
+
         }
 
         protected Image createImage(Component c, int w, int h,
