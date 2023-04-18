@@ -717,8 +717,8 @@ public:
 
   // For the specified range, uncommit the containing G1 regions
   // which had been allocated by alloc_archive_regions. This should be called
-  // rather than fill_archive_regions at JVM init time if the archive heap's
-  // contents cannot be used (e.g., if CRC check fails).
+  // at JVM init time if the archive heap's contents cannot be used (e.g., if
+  // CRC check fails).
   void dealloc_archive_regions(MemRegion range);
 
 private:
