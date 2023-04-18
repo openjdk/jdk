@@ -110,22 +110,21 @@ public interface KEMSpi {
          * An implementation must support the case where {@code from} is 0,
          * {@code from} is the same as the output of {@code secretSize()},
          * and {@code algorithm} is "Generic".
-         * <p>
-         * The caller of this method has already validated the parameters to
-         * ensure that {@code algorithm} is not {@code null}, and the values
-         * of {@code from} and {@code to} are within the correct range.
-         * Therefore an implementation of this method does not need to
-         * validate them.
          *
-         * @param from the initial index of the shared secret to be returned, inclusive
-         * @param to the final index of the shared secret to be returned, exclusive.
-         * @param algorithm the algorithm for the secret key returned
+         * @param from the initial index of the shared secret byte array
+         *          to be returned, inclusive
+         * @param to the final index of the shared secret byte array
+         *          to be returned, exclusive
+         * @param algorithm the algorithm name for the secret key that is returned
          * @return an {@link KEM.Encapsulated} object containing a portion of
          *          the shared secret as a key with the specified algorithm,
          *          the key encapsulation message, and optional parameters.
+         * @throws ArrayIndexOutOfBoundsException if {@code from < 0},
+         *     {@code from > to}, or {@code to > secretSize()}
+         * @throws NullPointerException if {@code algorithm} is {@code null}
          * @throws UnsupportedOperationException if the combination of
          *          {@code from}, {@code to}, and {@code algorithm}
-         *          is not supported by the decapsulator.
+         *          is not supported by the encapsulator
          * @see KEM.Encapsulated
          * @see KEM.Encapsulator#encapsulate(int, int, String)
          */
@@ -168,26 +167,27 @@ public interface KEMSpi {
          * An implementation must support the case where {@code from} is 0,
          * {@code from} is the same as the output of {@code secretSize()},
          * and {@code algorithm} is "Generic".
-         * <p>
-         * The caller of this method has already validated the parameters to
-         * ensure that neither {@code encapsulation} not {@code algorithm} is
-         * {@code null}, the size of {@code encapsulation} is equal to the
-         * value returned by {@link #engineEncapsulationSize()}, and
-         * the values of {@code from} and {@code to} are
-         * within the correct range. Therefore an implementation of this method
-         * does not to validate them.
          *
-         * @param encapsulation the key encapsulation message from the sender
-         * @param from the initial index of the shared secret to be returned, inclusive
-         * @param to the final index of the shared secret to be returned, exclusive.
-         * @param algorithm the algorithm for the secret key returned
+         * @param encapsulation the key encapsulation message from the sender.
+         *          The size must be equal to the value returned by
+         *          {@link #engineEncapsulationSize()} ()}, or a
+         *          {@code DecapsulateException} must be thrown.
+         * @param from the initial index of the shared secret byte array
+         *          to be returned, inclusive
+         * @param to the final index of the shared secret byte array
+         *          to be returned, exclusive
+         * @param algorithm the algorithm name for the secret key that is returned
          * @return a portion of the shared secret as a {@code SecretKey} with
          *          the specified algorithm
-         * @throws UnsupportedOperationException if the combination of
-         *          {@code from}, {@code to}, and {@code algorithm}
-         *          is not supported by the decapsulator.
          * @throws DecapsulateException if an error occurs during the
          *          decapsulation process
+         * @throws ArrayIndexOutOfBoundsException if {@code from < 0},
+         *          {@code from > to}, or {@code to > secretSize()}
+         * @throws NullPointerException if {@code encapsulation} or
+         *          {@code algorithm} is {@code null}
+         * @throws UnsupportedOperationException if the combination of
+         *          {@code from}, {@code to}, and {@code algorithm}
+         *          is not supported by the decapsulator
          * @see KEM.Decapsulator#decapsulate(byte[], int, int, String)
          */
         SecretKey engineDecapsulate(byte[] encapsulation, int from, int to, String algorithm)
@@ -220,12 +220,8 @@ public interface KEMSpi {
 
     /**
      * Creates a KEM encapsulator.
-     * <p>
-     * The caller of this method has already validated the parameters to
-     * ensure that {@code pk} is not {@code null}. Therefore an implementation
-     * of this method does not need to validate it.
      *
-     * @param pk the receiver's public key. This argument is never {@code null}.
+     * @param pk the receiver's public key, must not be {@code null}
      * @param spec the optional parameter, can be {@code null}
      * @param secureRandom the source of randomness for encapsulation.
      *                     If {@code null}, the implementation must provide
@@ -242,13 +238,9 @@ public interface KEMSpi {
 
     /**
      * Creates a KEM decapsulator.
-     * <p>
-     * The caller of this method has already validated the parameters to
-     * ensure that {@code sk} is not {@code null}. Therefore an implementation
-     * of this method does not need to validate it.
      *
-     * @param sk the receiver's private key. This argument is never {@code null}.
-     * @param spec the optional parameter, can be {@code null}
+     * @param sk the receiver's private key, must not be {@code null}
+     * @param spec the parameter, can be {@code null}
      * @return the decapsulator for this key
      * @throws InvalidAlgorithmParameterException if {@code spec} is invalid
      *          or one is required but {@code spec} is {@code null}

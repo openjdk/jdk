@@ -38,6 +38,7 @@ import java.security.*;
 import java.security.interfaces.*;
 import java.security.spec.*;
 import java.util.Arrays;
+import java.util.Objects;
 
 // Implementing DHKEM defined inside https://www.rfc-editor.org/rfc/rfc9180.html,
 // without the AuthEncap and AuthDecap functions
@@ -49,6 +50,8 @@ public class DHKEM implements KEMSpi {
 
         @Override
         public KEM.Encapsulated engineEncapsulate(int from, int to, String algorithm) {
+            Objects.checkFromToIndex(from, to, params.Nsecret);
+            Objects.requireNonNull(algorithm, "null algorithm");
             KeyPair kpE = params.generateKeyPair(secureRandom);
             PrivateKey skE = kpE.getPrivate();
             PublicKey pkE = kpE.getPublic();
@@ -69,6 +72,12 @@ public class DHKEM implements KEMSpi {
         @Override
         public SecretKey engineDecapsulate(byte[] encapsulation,
                 int from, int to, String algorithm) throws DecapsulateException {
+            Objects.checkFromToIndex(from, to, params.Nsecret);
+            Objects.requireNonNull(algorithm, "null algorithm");
+            Objects.requireNonNull(encapsulation, "null encapsulation");
+            if (encapsulation.length != params.Npk) {
+                throw new DecapsulateException("incorrect encapsulation size");
+            }
             try {
                 PublicKey pkE = params.DeserializePublicKey(encapsulation);
                 byte[] dh = params.DH(skR, pkE);
@@ -309,6 +318,9 @@ public class DHKEM implements KEMSpi {
     public EncapsulatorSpi engineNewEncapsulator(
             PublicKey pk, AlgorithmParameterSpec spec, SecureRandom secureRandom)
             throws InvalidAlgorithmParameterException, InvalidKeyException {
+        if (pk == null) {
+            throw new InvalidKeyException("input key is null");
+        }
         if (spec != null) {
             throw new InvalidAlgorithmParameterException("no spec needed");
         }
@@ -319,6 +331,9 @@ public class DHKEM implements KEMSpi {
     @Override
     public DecapsulatorSpi engineNewDecapsulator(PrivateKey sk, AlgorithmParameterSpec spec)
             throws InvalidAlgorithmParameterException, InvalidKeyException {
+        if (sk == null) {
+            throw new InvalidKeyException("input key is null");
+        }
         if (spec != null) {
             throw new InvalidAlgorithmParameterException("no spec needed");
         }

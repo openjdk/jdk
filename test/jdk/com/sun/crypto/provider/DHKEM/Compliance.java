@@ -33,7 +33,6 @@ import jdk.test.lib.Utils;
 
 import javax.crypto.DecapsulateException;
 import javax.crypto.KEM;
-import javax.crypto.KEMSpi;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.security.*;
@@ -56,7 +55,6 @@ public class Compliance {
         try {
             Security.insertProviderAt(new ProviderImpl(), 1);
             delayed();
-            badprovider();
         } finally {
             Security.removeProvider("XP");
         }
@@ -101,10 +99,10 @@ public class Compliance {
 
         Utils.runAndCheckException(
                 () -> kem.newEncapsulator(null),
-                NullPointerException.class);
+                InvalidKeyException.class);
         Utils.runAndCheckException(
                 () -> kem.newDecapsulator(null),
-                NullPointerException.class);
+                InvalidKeyException.class);
 
         // Still an EC key, rejected by implementation
         Utils.runAndCheckException(
@@ -179,7 +177,6 @@ public class Compliance {
         ProviderImpl() {
             super("XP", "1", "XP");
             put("KEM.DHKEM", "Compliance$KEMImpl");
-            put("KEM.BAD", "Compliance$BadKEMImpl");
         }
     }
 
@@ -282,139 +279,5 @@ public class Compliance {
                 throw new AssertionError("thrown by " + t.getStackTrace()[0].getClassName());
             }
         }
-    }
-
-    static class BadKEMParameterSpec implements AlgorithmParameterSpec {
-        final int ss;
-        final int es;
-        final SecretKey sk;
-        final byte[] encap;
-        final boolean noenc;
-
-        public BadKEMParameterSpec(int ss, int es, SecretKey sk, byte[] encap, boolean noenc) {
-            this.ss = ss;
-            this.es = es;
-            this.sk = sk;
-            this.encap = encap;
-            this.noenc = noenc;
-        }
-
-        BadKEMParameterSpec ss(int ss) {
-            return new BadKEMParameterSpec(ss, es, sk, encap, noenc);
-        }
-
-        BadKEMParameterSpec es(int es) {
-            return new BadKEMParameterSpec(ss, es, sk, encap, noenc);
-        }
-
-        BadKEMParameterSpec sk(SecretKey sk) {
-            return new BadKEMParameterSpec(ss, es, sk, encap, noenc);
-        }
-
-        BadKEMParameterSpec encap(byte[] encap) {
-            return new BadKEMParameterSpec(ss, es, sk, encap, noenc);
-        }
-
-        BadKEMParameterSpec noenc(boolean noenc) {
-            return new BadKEMParameterSpec(ss, es, sk, encap, noenc);
-        }
-    }
-
-    static class BadHandler implements KEMSpi.DecapsulatorSpi, KEMSpi.EncapsulatorSpi {
-        final BadKEMParameterSpec spec;
-        BadHandler(BadKEMParameterSpec spec) {
-            this.spec = spec;
-        }
-        @Override
-        public SecretKey engineDecapsulate(byte[] encapsulation, int from, int to, String algorithm) throws DecapsulateException {
-            return spec.sk;
-        }
-
-        @Override
-        public int engineSecretSize() {
-            return spec.ss;
-        }
-
-        @Override
-        public int engineEncapsulationSize() {
-            return spec.es;
-        }
-
-        @Override
-        public KEM.Encapsulated engineEncapsulate(int from, int to, String algorithm) {
-            return spec.noenc ? null : new KEM.Encapsulated(spec.sk, spec.encap, null);
-        }
-    }
-
-    public static class BadKEMImpl implements KEMSpi {
-
-        @Override
-        public EncapsulatorSpi engineNewEncapsulator(PublicKey pk, AlgorithmParameterSpec spec, SecureRandom secureRandom) {
-            return spec == null ? null : new BadHandler((BadKEMParameterSpec) spec);
-        }
-
-        @Override
-        public DecapsulatorSpi engineNewDecapsulator(PrivateKey sk, AlgorithmParameterSpec spec) {
-            return spec == null ? null : new BadHandler((BadKEMParameterSpec) spec);
-        }
-    }
-
-    static void badprovider() throws Exception {
-        KeyPair kpX = KeyPairGenerator.getInstance("X25519").generateKeyPair();
-        SecretKeySpec k = new SecretKeySpec(new byte[10], "AES");
-        Utils.runAndCheckException(() -> KEM.getInstance("BAD").newEncapsulator(kpX.getPublic()),
-                ExChecker.of(AssertionError.class).by(KEM.Encapsulator.class));
-        Utils.runAndCheckException(() -> KEM.getInstance("BAD").newDecapsulator(kpX.getPrivate()),
-                ExChecker.of(AssertionError.class).by(KEM.Decapsulator.class));
-
-        BadKEMParameterSpec good = new BadKEMParameterSpec(10, 10, k, new byte[10], false);
-        KEM kem = KEM.getInstance("BAD");
-        KEM.Encapsulator e = kem.newEncapsulator(kpX.getPublic(), good, null);
-        Asserts.assertEQ(e.secretSize(), 10);
-        Asserts.assertEQ(e.encapsulationSize(), 10);
-        Asserts.assertTrue(e.encapsulate().key() != null);
-        Asserts.assertTrue(e.encapsulate().encapsulation() != null);
-        KEM.Decapsulator d = kem.newDecapsulator(kpX.getPrivate(), good);
-        Asserts.assertEQ(d.secretSize(), 10);
-        Asserts.assertEQ(d.encapsulationSize(), 10);
-        Asserts.assertTrue(d.decapsulate(new byte[0]) != null);
-
-        Utils.runAndCheckException(() -> KEM.getInstance("BAD")
-                        .newEncapsulator(kpX.getPublic(), good.noenc(true), null).encapsulate(),
-                ExChecker.of(AssertionError.class).by(KEM.Encapsulator.class));
-        Utils.runAndCheckException(() -> KEM.getInstance("BAD")
-                        .newEncapsulator(kpX.getPublic(), good.ss(-1), null).secretSize(),
-                ExChecker.of(AssertionError.class).by(KEM.Encapsulator.class));
-        Utils.runAndCheckException(() -> KEM.getInstance("BAD")
-                        .newEncapsulator(kpX.getPublic(), good.ss(Integer.MAX_VALUE), null).secretSize(),
-                ExChecker.of(AssertionError.class).by(KEM.Encapsulator.class));
-        Utils.runAndCheckException(() -> KEM.getInstance("BAD")
-                        .newEncapsulator(kpX.getPublic(), good.es(-1), null).encapsulationSize(),
-                ExChecker.of(AssertionError.class).by(KEM.Encapsulator.class));
-        Utils.runAndCheckException(() -> KEM.getInstance("BAD")
-                        .newEncapsulator(kpX.getPublic(), good.es(Integer.MAX_VALUE), null).encapsulationSize(),
-                ExChecker.of(AssertionError.class).by(KEM.Encapsulator.class));
-        Utils.runAndCheckException(() -> KEM.getInstance("BAD")
-                        .newEncapsulator(kpX.getPublic(), good.sk(null), null).encapsulate(),
-                ExChecker.of(NullPointerException.class));
-        Utils.runAndCheckException(() -> KEM.getInstance("BAD")
-                        .newEncapsulator(kpX.getPublic(), good.encap(null), null).encapsulate(),
-                ExChecker.of(NullPointerException.class));
-
-        Utils.runAndCheckException(() -> KEM.getInstance("BAD")
-                        .newDecapsulator(kpX.getPrivate(), good.ss(-1)).secretSize(),
-                ExChecker.of(AssertionError.class).by(KEM.Decapsulator.class));
-        Utils.runAndCheckException(() -> KEM.getInstance("BAD")
-                        .newDecapsulator(kpX.getPrivate(), good.ss(Integer.MAX_VALUE)).secretSize(),
-                ExChecker.of(AssertionError.class).by(KEM.Decapsulator.class));
-        Utils.runAndCheckException(() -> KEM.getInstance("BAD")
-                        .newDecapsulator(kpX.getPrivate(), good.es(-1)).encapsulationSize(),
-                ExChecker.of(AssertionError.class).by(KEM.Decapsulator.class));
-        Utils.runAndCheckException(() -> KEM.getInstance("BAD")
-                        .newDecapsulator(kpX.getPrivate(), good.es(Integer.MAX_VALUE)).encapsulationSize(),
-                ExChecker.of(AssertionError.class).by(KEM.Decapsulator.class));
-        Utils.runAndCheckException(() -> KEM.getInstance("BAD")
-                        .newDecapsulator(kpX.getPrivate(), good.sk(null)).decapsulate(new byte[1]),
-                ExChecker.of(AssertionError.class).by(KEM.Decapsulator.class));
     }
 }

@@ -61,15 +61,19 @@ import java.util.Objects;
  *
  * Example:
  * {@snippet lang = java:
+ *    // Receiver side
  *    var kpg = KeyPairGenerator.getInstance("X25519");
  *    var kp = kpg.generateKeyPair();
  *
- *    var kem = KEM.getInstance("DHKEM");
- *    var sender = kem.newEncapsulator(kp.getPublic());
+ *    // Sender side
+ *    var kem1 = KEM.getInstance("DHKEM");
+ *    var sender = kem1.newEncapsulator(kp.getPublic());
  *    var encapsulated = sender.encapsulate();
  *    var k1 = encapsulated.key();
  *
- *    var receiver = kem.newDecapsulator(kp.getPrivate());
+ *    // Receiver side
+ *    var kem2 = KEM.getInstance("DHKEM");
+ *    var receiver = kem2.newDecapsulator(kp.getPrivate());
  *    var k2 = receiver.decapsulate(encapsulated.encapsulation());
  *
  *    assert Arrays.equals(k1.getEncoded(), k2.getEncoded());
@@ -218,17 +222,10 @@ public final class KEM {
         public SecretKey decapsulate(byte[] encapsulation,
                 int from, int to, String algorithm)
                 throws DecapsulateException {
-            Objects.checkFromToIndex(from, to, secretSize());
-            Objects.requireNonNull(encapsulation, "null encapsulation");
-            if (encapsulation.length != encapsulationSize()) {
-                throw new DecapsulateException("Invalid encapsulation size");
-            }
-            var result = d.engineDecapsulate(
+            return d.engineDecapsulate(
                     encapsulation,
                     from, to,
-                    Objects.requireNonNull(algorithm, "null algorithm"));
-            assert result != null : "null engineDecapsulate result";
-            return result;
+                    algorithm);
         }
 
         /**
@@ -335,11 +332,7 @@ public final class KEM {
          *          is not supported by the encapsulator
          */
         public Encapsulated encapsulate(int from, int to, String algorithm) {
-            Objects.checkFromToIndex(from, to, secretSize());
-            var result = e.engineEncapsulate(from, to,
-                    Objects.requireNonNull(algorithm, "null algorithm"));
-            assert result != null : "null engineEncapsulate result";
-            return result;
+            return e.engineEncapsulate(from, to, algorithm);
         }
 
         /**
@@ -385,6 +378,9 @@ public final class KEM {
         private KEM.Encapsulator newEncapsulator(PublicKey pk,
                 AlgorithmParameterSpec spec, SecureRandom secureRandom)
                 throws InvalidAlgorithmParameterException, InvalidKeyException {
+            if (pk == null) {
+                throw new InvalidKeyException("input key is null");
+            }
             RuntimeException re = null;
             InvalidAlgorithmParameterException iape = null;
             InvalidKeyException ike = null;
@@ -428,6 +424,9 @@ public final class KEM {
 
         private KEM.Decapsulator newDecapsulator(PrivateKey sk, AlgorithmParameterSpec spec)
                 throws InvalidAlgorithmParameterException, InvalidKeyException {
+            if (sk == null) {
+                throw new InvalidKeyException("input key is null");
+            }
             RuntimeException re = null;
             InvalidAlgorithmParameterException iape = null;
             InvalidKeyException ike = null;
@@ -498,7 +497,7 @@ public final class KEM {
      * @return the new {@code KEM} object
      * @throws NoSuchAlgorithmException if no {@code Provider} supports a
      *         {@code KEM} implementation for the specified algorithm
-     * @throws NullPointerException if the input argument is {@code null}
+     * @throws NullPointerException if {@code algorithm} is {@code null}
      */
     public static KEM getInstance(String algorithm)
             throws NoSuchAlgorithmException {
@@ -583,7 +582,6 @@ public final class KEM {
      * @param pk the receiver's public key, must not be {@code null}
      * @return the encapsulator for this key
      * @throws InvalidKeyException if {@code pk} is invalid
-     * @throws NullPointerException if {@code pk} is {@code null}
      * @throws UnsupportedOperationException if this method is not supported
      *          because an {@code AlgorithmParameterSpec} must be provided
      */
@@ -608,7 +606,6 @@ public final class KEM {
      *                     implementation will be used.
      * @return the encapsulator for this key
      * @throws InvalidKeyException if {@code pk} is invalid
-     * @throws NullPointerException if {@code pk} is {@code null}
      * @throws UnsupportedOperationException if this method is not supported
      *          because an {@code AlgorithmParameterSpec} must be provided
      */
@@ -648,12 +645,10 @@ public final class KEM {
      * @throws InvalidAlgorithmParameterException if {@code spec} is invalid
      *          or one is required but {@code spec} is {@code null}
      * @throws InvalidKeyException if {@code pk} is invalid
-     * @throws NullPointerException if {@code pk} is {@code null}
      */
     public Encapsulator newEncapsulator(PublicKey pk,
             AlgorithmParameterSpec spec, SecureRandom secureRandom)
             throws InvalidAlgorithmParameterException, InvalidKeyException {
-        Objects.requireNonNull(pk, "null public key");
         return delayed != null
                 ? delayed.newEncapsulator(pk, spec, secureRandom)
                 : new Encapsulator(spi.engineNewEncapsulator(pk, spec, secureRandom), provider);
@@ -667,7 +662,6 @@ public final class KEM {
      * @param sk the receiver's private key, must not be {@code null}
      * @return the decapsulator for this key
      * @throws InvalidKeyException if {@code sk} is invalid
-     * @throws NullPointerException if {@code sk} is {@code null}
      * @throws UnsupportedOperationException if this method is not supported
      *          because an {@code AlgorithmParameterSpec} must be provided
      */
@@ -689,11 +683,9 @@ public final class KEM {
      * @throws InvalidAlgorithmParameterException if {@code spec} is invalid
      *          or one is required but {@code spec} is {@code null}
      * @throws InvalidKeyException if {@code sk} is invalid
-     * @throws NullPointerException if {@code sk} is {@code null}
      */
     public Decapsulator newDecapsulator(PrivateKey sk, AlgorithmParameterSpec spec)
             throws InvalidAlgorithmParameterException, InvalidKeyException {
-        Objects.requireNonNull(sk, "null private key");
         return delayed != null
                 ? delayed.newDecapsulator(sk, spec)
                 : new Decapsulator(spi.engineNewDecapsulator(sk, spec), provider);

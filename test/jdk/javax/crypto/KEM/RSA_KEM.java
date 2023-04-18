@@ -48,6 +48,7 @@ import java.security.spec.InvalidParameterSpecException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 public class RSA_KEM {
     public static void main(String[] args) throws Exception {
@@ -374,6 +375,12 @@ public class RSA_KEM {
             public SecretKey engineDecapsulate(byte[] encapsulation,
                     int from, int to, String algorithm)
                     throws DecapsulateException {
+                Objects.checkFromToIndex(from, to, kspec.kdfLen());
+                Objects.requireNonNull(algorithm, "null algorithm");
+                Objects.requireNonNull(encapsulation, "null encapsulation");
+                if (encapsulation.length != KeyUtil.getKeySize(rsk) / 8) {
+                    throw new DecapsulateException("incorrect encapsulation size");
+                }
                 try {
                     byte[] Z = RSACore.rsa(encapsulation, rsk, false);
                     return new SecretKeySpec(kdf(Z), from, to, algorithm);
@@ -384,6 +391,8 @@ public class RSA_KEM {
 
             @Override
             public KEM.Encapsulated engineEncapsulate(int from, int to, String algorithm) {
+                Objects.checkFromToIndex(from, to, kspec.kdfLen());
+                Objects.requireNonNull(algorithm, "null algorithm");
                 int nLen = rpk.getModulus().bitLength();
                 int nSize = (nLen + 7) / 8;
                 BigInteger z;
@@ -460,7 +469,7 @@ public class RSA_KEM {
 
             @Override
             public int engineEncapsulationSize() {
-                return KeyUtil.getKeySize(rsk == null ? rpk : rsk);
+                return KeyUtil.getKeySize(rsk == null ? rpk : rsk) / 8;
             }
         }
     }
