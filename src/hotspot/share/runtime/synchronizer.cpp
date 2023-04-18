@@ -1086,7 +1086,7 @@ static bool monitors_used_above_threshold(MonitorList* list) {
   size_t monitor_usage = (monitors_used * 100LL) / ceiling;
   if (int(monitor_usage) > MonitorUsedDeflationThreshold) {
     log_info(monitorinflation)("monitors_used=" SIZE_FORMAT ", ceiling=" SIZE_FORMAT
-                               ", monitor_usage=" SIZE_FORMAT ", threshold=" SIZE_FORMAT,
+                               ", monitor_usage=" SIZE_FORMAT ", threshold=" INTX_FORMAT,
                                monitors_used, ceiling, monitor_usage, MonitorUsedDeflationThreshold);
     return true;
   }
@@ -1136,7 +1136,7 @@ bool ObjectSynchronizer::is_async_deflation_needed() {
     // We need to clean up the used monitors even if the threshold is
     // not reached, to keep the memory utilization at bay when many threads
     // touched many monitors.
-    log_info(monitorinflation)("Async deflation needed: guaranteed interval (" JLONG_FORMAT " ms) "
+    log_info(monitorinflation)("Async deflation needed: guaranteed interval (" INTX_FORMAT " ms) "
                                "is greater than time since last deflation (" JLONG_FORMAT " ms)",
                                GuaranteedAsyncDeflationInterval, time_since_last);
 
