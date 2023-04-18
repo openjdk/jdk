@@ -184,6 +184,8 @@ public:
     return _mode;
   }
 
+  static ShenandoahGenerationType select_global_generation();
+
  private:
   static const char* gc_mode_name(GCMode mode);
   void notify_control_thread();

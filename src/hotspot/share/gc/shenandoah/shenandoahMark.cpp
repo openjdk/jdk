@@ -98,8 +98,11 @@ void ShenandoahMark::mark_loop(ShenandoahGenerationType generation, uint worker_
       // Old generation collection only performs marking, it should not update references.
       mark_loop_prework<OLD, CANCELLABLE, STRING_DEDUP>(worker_id, terminator, rp, req, false);
       break;
-    case GLOBAL:
-      mark_loop_prework<GLOBAL, CANCELLABLE, STRING_DEDUP>(worker_id, terminator, rp, req, update_refs);
+    case GLOBAL_GEN:
+      mark_loop_prework<GLOBAL_GEN, CANCELLABLE, STRING_DEDUP>(worker_id, terminator, rp, req, update_refs);
+      break;
+    case GLOBAL_NON_GEN:
+      mark_loop_prework<GLOBAL_NON_GEN, CANCELLABLE, STRING_DEDUP>(worker_id, terminator, rp, req, update_refs);
       break;
     default:
       ShouldNotReachHere();

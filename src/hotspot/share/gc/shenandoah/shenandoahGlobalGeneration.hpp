@@ -32,8 +32,8 @@
 // A "generation" that represents the whole heap.
 class ShenandoahGlobalGeneration : public ShenandoahGeneration {
 public:
-  ShenandoahGlobalGeneration(uint max_queues, size_t max_capacity, size_t soft_max_capacity)
-  : ShenandoahGeneration(GLOBAL, max_queues, max_capacity, soft_max_capacity) { }
+  ShenandoahGlobalGeneration(bool generational, uint max_queues, size_t max_capacity, size_t soft_max_capacity)
+  : ShenandoahGeneration(generational ? GLOBAL_GEN : GLOBAL_NON_GEN, max_queues, max_capacity, soft_max_capacity) { }
 
 public:
   virtual const char* name() const override;

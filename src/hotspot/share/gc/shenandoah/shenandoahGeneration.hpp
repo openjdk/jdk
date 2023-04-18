@@ -90,7 +90,7 @@ private:
 
   bool is_young() const  { return _type == YOUNG; }
   bool is_old() const    { return _type == OLD; }
-  bool is_global() const { return _type == GLOBAL; }
+  bool is_global() const { return _type == GLOBAL_GEN || _type == GLOBAL_NON_GEN; }
 
   inline ShenandoahGenerationType type() const { return _type; }
 

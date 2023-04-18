@@ -83,7 +83,7 @@ private:
   void mark_loop_prework(uint worker_id, TaskTerminator *terminator, ShenandoahReferenceProcessor *rp, StringDedup::Requests* const req, bool update_refs);
 
   template <ShenandoahGenerationType GENERATION>
-  static bool in_generation(oop obj);
+  static bool in_generation(ShenandoahHeap* const heap, oop obj);
 
   static void mark_ref(ShenandoahObjToScanQueue* q,
                        ShenandoahMarkingContext* const mark_context,

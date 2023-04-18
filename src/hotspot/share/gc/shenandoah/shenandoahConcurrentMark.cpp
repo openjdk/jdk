@@ -198,10 +198,17 @@ void ShenandoahConcurrentMark::mark_concurrent_roots() {
       workers->run_task(&task);
       break;
     }
-    case GLOBAL: {
+    case GLOBAL_GEN: {
       assert(old_task_queues() == nullptr, "Global mark should not have old gen mark queues");
-      ShenandoahMarkConcurrentRootsTask<GLOBAL> task(task_queues(), nullptr, rp,
-                                                     ShenandoahPhaseTimings::conc_mark_roots, workers->active_workers());
+      ShenandoahMarkConcurrentRootsTask<GLOBAL_GEN> task(task_queues(), nullptr, rp,
+                                                         ShenandoahPhaseTimings::conc_mark_roots, workers->active_workers());
+      workers->run_task(&task);
+      break;
+    }
+    case GLOBAL_NON_GEN: {
+      assert(old_task_queues() == nullptr, "Non-generational mark should not have old gen mark queues");
+      ShenandoahMarkConcurrentRootsTask<GLOBAL_NON_GEN> task(task_queues(), nullptr, rp,
+                                                         ShenandoahPhaseTimings::conc_mark_roots, workers->active_workers());
       workers->run_task(&task);
       break;
     }
@@ -250,9 +257,15 @@ void ShenandoahConcurrentMark::concurrent_mark() {
         workers->run_task(&task);
         break;
       }
-      case GLOBAL: {
+      case GLOBAL_GEN: {
         TaskTerminator terminator(nworkers, task_queues());
-        ShenandoahConcurrentMarkingTask<GLOBAL> task(this, &terminator);
+        ShenandoahConcurrentMarkingTask<GLOBAL_GEN> task(this, &terminator);
+        workers->run_task(&task);
+        break;
+      }
+      case GLOBAL_NON_GEN: {
+        TaskTerminator terminator(nworkers, task_queues());
+        ShenandoahConcurrentMarkingTask<GLOBAL_NON_GEN> task(this, &terminator);
         workers->run_task(&task);
         break;
       }
@@ -318,8 +331,13 @@ void ShenandoahConcurrentMark::finish_mark_work() {
       heap->workers()->run_task(&task);
       break;
     }
-    case GLOBAL:{
-      ShenandoahFinalMarkingTask<GLOBAL> task(this, &terminator, ShenandoahStringDedup::is_enabled());
+    case GLOBAL_GEN:{
+      ShenandoahFinalMarkingTask<GLOBAL_GEN> task(this, &terminator, ShenandoahStringDedup::is_enabled());
+      heap->workers()->run_task(&task);
+      break;
+    }
+    case GLOBAL_NON_GEN:{
+      ShenandoahFinalMarkingTask<GLOBAL_NON_GEN> task(this, &terminator, ShenandoahStringDedup::is_enabled());
       heap->workers()->run_task(&task);
       break;
     }
