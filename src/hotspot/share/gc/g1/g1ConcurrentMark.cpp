@@ -1895,7 +1895,7 @@ HeapRegion* G1ConcurrentMark::claim_region(uint worker_id) {
       } else {
         assert(limit == bottom,
                "the region limit should be at bottom");
-        // we return null and the caller should try calling
+        // We return null and the caller should try calling
         // claim_region() again.
         return nullptr;
       }

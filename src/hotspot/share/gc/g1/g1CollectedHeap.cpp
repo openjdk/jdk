@@ -1212,7 +1212,7 @@ HeapWord* G1CollectedHeap::satisfy_failed_allocation(size_t word_size,
 // Attempting to expand the heap sufficiently
 // to support an allocation of the given "word_size".  If
 // successful, perform the allocation and return the address of the
-// allocated block, or else "null".
+// allocated block, or else null.
 
 HeapWord* G1CollectedHeap::expand_and_allocate(size_t word_size) {
   assert_at_safepoint_on_vm_thread();

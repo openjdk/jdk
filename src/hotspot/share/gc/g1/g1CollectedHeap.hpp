@@ -350,10 +350,10 @@ private:
                                    "should not be at a safepoint"));          \
   } while (0)
 
-#define assert_at_safepoint_on_vm_thread()                                    \
-  do {                                                                        \
-    assert_at_safepoint();                                                    \
-    assert(Thread::current_or_null() != nullptr, "no current thread");           \
+#define assert_at_safepoint_on_vm_thread()                                        \
+  do {                                                                            \
+    assert_at_safepoint();                                                        \
+    assert(Thread::current_or_null() != nullptr, "no current thread");            \
     assert(Thread::current()->is_VM_thread(), "current thread is not VM thread"); \
   } while (0)
 
@@ -520,7 +520,7 @@ private:
   // Attempting to expand the heap sufficiently
   // to support an allocation of the given "word_size".  If
   // successful, perform the allocation and return the address of the
-  // allocated block, or else "null".
+  // allocated block, or else null.
   HeapWord* expand_and_allocate(size_t word_size);
 
   void verify_numa_regions(const char* desc);

@@ -42,8 +42,8 @@
 
 const TypeFunc *G1BarrierSetC2::write_ref_field_pre_entry_Type() {
   const Type **fields = TypeTuple::fields(2);
-  fields[TypeFunc::Parms+0] = TypeInstPtr::NOTnullptr; // original field value
-  fields[TypeFunc::Parms+1] = TypeRawPtr::NOTnullptr; // thread
+  fields[TypeFunc::Parms+0] = TypeInstPtr::NOTNULL; // original field value
+  fields[TypeFunc::Parms+1] = TypeRawPtr::NOTNULL; // thread
   const TypeTuple *domain = TypeTuple::make(TypeFunc::Parms+2, fields);
 
   // create result type (range)
@@ -55,8 +55,8 @@ const TypeFunc *G1BarrierSetC2::write_ref_field_pre_entry_Type() {
 
 const TypeFunc *G1BarrierSetC2::write_ref_field_post_entry_Type() {
   const Type **fields = TypeTuple::fields(2);
-  fields[TypeFunc::Parms+0] = TypeRawPtr::NOTnullptr;  // Card addr
-  fields[TypeFunc::Parms+1] = TypeRawPtr::NOTnullptr;  // thread
+  fields[TypeFunc::Parms+0] = TypeRawPtr::NOTNULL;  // Card addr
+  fields[TypeFunc::Parms+1] = TypeRawPtr::NOTNULL;  // thread
   const TypeTuple *domain = TypeTuple::make(TypeFunc::Parms+2, fields);
 
   // create result type (range)
@@ -73,12 +73,12 @@ const TypeFunc *G1BarrierSetC2::write_ref_field_post_entry_Type() {
  * marking are kept alive, all reference updates need to any previous
  * reference stored before writing.
  *
- * If the previous value is nullptr there is no need to save the old value.
- * References that are nullptr are filtered during runtime by the barrier
+ * If the previous value is null there is no need to save the old value.
+ * References that are null are filtered during runtime by the barrier
  * code to avoid unnecessary queuing.
  *
  * However in the case of newly allocated objects it might be possible to
- * prove that the reference about to be overwritten is nullptr during compile
+ * prove that the reference about to be overwritten is null during compile
  * time and avoid adding the barrier code completely.
  *
  * The compiler needs to determine that the object in which a field is about
@@ -248,9 +248,9 @@ void G1BarrierSetC2::pre_barrier(GraphKit* kit,
       pre_val = __ load(__ ctrl(), adr, val_type, bt, alias_idx, false, MemNode::unordered, LoadNode::Pinned);
     }
 
-    // if (pre_val != null)
+    // if (pre_val != nullptr)
     __ if_then(pre_val, BoolTest::ne, kit->null()); {
-      Node* buffer  = __ load(__ ctrl(), buffer_adr, TypeRawPtr::NOTnullptr, T_ADDRESS, Compile::AliasIdxRaw);
+      Node* buffer  = __ load(__ ctrl(), buffer_adr, TypeRawPtr::NOTNULL, T_ADDRESS, Compile::AliasIdxRaw);
 
       // is the queue for this thread full?
       __ if_then(index, BoolTest::ne, zeroX, likely); {
@@ -270,7 +270,7 @@ void G1BarrierSetC2::pre_barrier(GraphKit* kit,
         const TypeFunc *tf = write_ref_field_pre_entry_Type();
         __ make_leaf_call(tf, CAST_FROM_FN_PTR(address, G1BarrierSetRuntime::write_ref_field_pre_entry), "write_ref_field_pre_entry", pre_val, tls);
       } __ end_if();  // (!index)
-    } __ end_if();  // (pre_val != null)
+    } __ end_if();  // (pre_val != nullptr)
   } __ end_if();  // (!marking)
 
   // Final sync IdealKit and GraphKit.
@@ -288,7 +288,7 @@ void G1BarrierSetC2::pre_barrier(GraphKit* kit,
  *
  * To reduce the number of updates to the remembered set the post-barrier
  * filters updates to fields in objects located in the Young Generation,
- * the same region as the reference, when the nullptr is being written or
+ * the same region as the reference, when the null is being written or
  * if the card is already marked as dirty by an earlier write.
  *
  * Under certain circumstances it is possible to avoid generating the
@@ -379,11 +379,11 @@ void G1BarrierSetC2::post_barrier(GraphKit* kit,
                                   bool use_precise) const {
   // If we are writing a null then we need no post barrier
 
-  if (val != nullptr && val->is_Con() && val->bottom_type() == TypePtr::nullptr_PTR) {
+  if (val != nullptr && val->is_Con() && val->bottom_type() == TypePtr::NULL_PTR) {
     // Must be null
     const Type* t = val->bottom_type();
-    assert(t == Type::TOP || t == TypePtr::nullptr_PTR, "must be null");
-    // No post barrier if writing nullx
+    assert(t == Type::TOP || t == TypePtr::NULL_PTR, "must be null");
+    // No post barrier if writing null
     return;
   }
 
@@ -434,7 +434,7 @@ void G1BarrierSetC2::post_barrier(GraphKit* kit,
   // Use ctrl to avoid hoisting these values past a safepoint, which could
   // potentially reset these fields in the JavaThread.
   Node* index  = __ load(__ ctrl(), index_adr, TypeX_X, TypeX_X->basic_type(), Compile::AliasIdxRaw);
-  Node* buffer = __ load(__ ctrl(), buffer_adr, TypeRawPtr::NOTnullptr, T_ADDRESS, Compile::AliasIdxRaw);
+  Node* buffer = __ load(__ ctrl(), buffer_adr, TypeRawPtr::NOTNULL, T_ADDRESS, Compile::AliasIdxRaw);
 
   // Convert the store obj pointer to an int prior to doing math on it
   // Must use ctrl to prevent "integerized oop" existing across safepoint
@@ -459,7 +459,7 @@ void G1BarrierSetC2::post_barrier(GraphKit* kit,
     // if (xor_res == 0) same region so skip
     __ if_then(xor_res, BoolTest::ne, zeroX, likely); {
 
-      // No barrier if we are storing a null
+      // No barrier if we are storing a null.
       __ if_then(val, BoolTest::ne, kit->null(), likely); {
 
         // Ok must mark the card if not already dirty
@@ -563,7 +563,7 @@ void G1BarrierSetC2::insert_pre_barrier(GraphKit* kit, Node* base_oop, Node* off
       __ sync_kit(kit);
 
       Node* one = __ ConI(1);
-      // is_instof == 0 if base_oop == null
+      // is_instof == 0 if base_oop == nullptr
       __ if_then(is_instof, BoolTest::eq, one, unlikely); {
 
         // Update graphKit from IdeakKit.

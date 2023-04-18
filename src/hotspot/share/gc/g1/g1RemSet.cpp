@@ -1456,7 +1456,7 @@ bool G1RemSet::clean_card_before_refine(CardValue** const card_ptr_addr) {
   check_card_ptr(card_ptr, _ct);
 
   // If the card is no longer dirty, nothing to do.
-  // We cannot load the card value before the "r == null" check, because G1
+  // We cannot load the card value before the "r == nullptr" check above, because G1
   // could uncommit parts of the card table covering uncommitted regions.
   if (*card_ptr != G1CardTable::dirty_card_val()) {
     return false;
