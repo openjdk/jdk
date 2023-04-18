@@ -557,20 +557,22 @@ public:
                     unsigned int runtime_prefix_len) NOT_CDS_RETURN_(false);
   bool  validate_boot_class_paths() NOT_CDS_RETURN_(false);
   bool  validate_app_class_paths(int shared_app_paths_len) NOT_CDS_RETURN_(false);
-  bool  map_heap_region_impl_inner() NOT_CDS_JAVA_HEAP_RETURN_(false);
+  bool  map_heap_region_impl() NOT_CDS_JAVA_HEAP_RETURN_(false);
   void  dealloc_heap_region() NOT_CDS_JAVA_HEAP_RETURN;
   bool  can_use_heap_region();
   bool  load_heap_region() NOT_CDS_JAVA_HEAP_RETURN_(false);
   bool  map_heap_region() NOT_CDS_JAVA_HEAP_RETURN_(false);
-  void  map_heap_region_impl() NOT_CDS_JAVA_HEAP_RETURN;
+  void  init_heap_region_relocation();
   MapArchiveResult map_region(int i, intx addr_delta, char* mapped_base_address, ReservedSpace rs);
   bool  relocate_pointers_in_core_regions(intx addr_delta);
 
+  static MemRegion _mapped_heap_memregion;
+
 public:
-  address heap_region_dumptime_address(FileMapRegion* r) NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
-  address heap_region_requested_address(FileMapRegion* r) NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
-  address heap_region_mapped_address(FileMapRegion* r) NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
-  narrowOop encoded_heap_region_dumptime_address(FileMapRegion* r);
+  address heap_region_dumptime_address() NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
+  address heap_region_requested_address() NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
+  address heap_region_mapped_address() NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
+  narrowOop encoded_heap_region_dumptime_address();
 
 private:
 

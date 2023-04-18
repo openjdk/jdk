@@ -617,6 +617,7 @@ void G1CollectedHeap::fill_archive_regions(MemRegion range) {
   // it means there is a gap.
   assert(start_address >= bottom_address, "bottom address should not be greater than start address");
   if (start_address > bottom_address) {
+    assert(0, "should not be here!");
     size_t fill_size = pointer_delta(start_address, bottom_address);
     G1CollectedHeap::fill_with_objects(bottom_address, fill_size);
     increase_used(fill_size * HeapWordSize);

@@ -153,9 +153,8 @@ class PatchUncompressedEmbeddedPointers: public BitMapClosure {
 
 void ArchiveHeapLoader::patch_compressed_embedded_pointers(BitMapView bm,
                                                   FileMapInfo* info,
-                                                  FileMapRegion* map_region,
                                                   MemRegion region) {
-  narrowOop dt_encoded_bottom = info->encoded_heap_region_dumptime_address(map_region);
+  narrowOop dt_encoded_bottom = info->encoded_heap_region_dumptime_address();
   narrowOop rt_encoded_bottom = CompressedOops::encode_not_null(cast_to_oop(region.start()));
   log_info(cds)("patching heap embedded pointers: narrowOop 0x%8x -> 0x%8x",
                   (uint)dt_encoded_bottom, (uint)rt_encoded_bottom);
@@ -181,7 +180,6 @@ void ArchiveHeapLoader::patch_compressed_embedded_pointers(BitMapView bm,
 // Patch all the non-null pointers that are embedded in the archived heap objects
 // in this (mapped) region
 void ArchiveHeapLoader::patch_embedded_pointers(FileMapInfo* info,
-                                                FileMapRegion* map_region,
                                                 MemRegion region, address oopmap,
                                                 size_t oopmap_size_in_bits) {
   BitMapView bm((BitMap::bm_word_t*)oopmap, oopmap_size_in_bits);
@@ -193,7 +191,7 @@ void ArchiveHeapLoader::patch_embedded_pointers(FileMapInfo* info,
 #endif
 
   if (UseCompressedOops) {
-    patch_compressed_embedded_pointers(bm, info, map_region, region);
+    patch_compressed_embedded_pointers(bm, info, region);
   } else {
     PatchUncompressedEmbeddedPointers patcher((oop*)region.start());
     bm.iterate(&patcher);
@@ -272,7 +270,7 @@ bool ArchiveHeapLoader::init_loaded_region(FileMapInfo* mapinfo, LoadedArchiveHe
   total_bytes += r->used();
   loaded_region->_region_index = MetaspaceShared::hp;
   loaded_region->_region_size = r->used();
-  loaded_region->_dumptime_base = (uintptr_t)mapinfo->heap_region_dumptime_address(r);
+  loaded_region->_dumptime_base = (uintptr_t)mapinfo->heap_region_dumptime_address();
 
   assert(is_aligned(total_bytes, HeapWordSize), "must be");
   size_t word_size = total_bytes / HeapWordSize;

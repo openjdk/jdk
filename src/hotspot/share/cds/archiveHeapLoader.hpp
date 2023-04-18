@@ -93,11 +93,9 @@ public:
 
   static void patch_compressed_embedded_pointers(BitMapView bm,
                                                  FileMapInfo* info,
-                                                 FileMapRegion* map_region,
                                                  MemRegion region) NOT_CDS_JAVA_HEAP_RETURN;
 
   static void patch_embedded_pointers(FileMapInfo* info,
-                                      FileMapRegion* map_region,
                                       MemRegion region, address oopmap,
                                       size_t oopmap_size_in_bits) NOT_CDS_JAVA_HEAP_RETURN;
 
