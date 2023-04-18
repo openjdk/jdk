@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,14 +21,32 @@
  * questions.
  */
 
-package sun.security.util;
-
-import java.security.Permission;
-
-/**
- * A factory object that creates Permission objects.
+/*
+ * @test
+ * @bug 8305524
+ * @run main/othervm -Xbatch compiler.arraycopy.TestArrayCopyMaskedWithSub
  */
 
-public interface PermissionFactory<T extends Permission> {
-    T newPermission(String name);
+package compiler.arraycopy;
+
+public class TestArrayCopyMaskedWithSub {
+    private static char[] src = {'A', 'A', 'A', 'A', 'A'};
+    private static char[] dst = {'B', 'B', 'B', 'B', 'B'};
+
+    private static void copy(int nlen) {
+      System.arraycopy(src, 0, dst, 0, -nlen);
+    }
+
+    public static void main(String[] args) {
+      for (int i = 0; i < 25000; i++) {
+        copy(0);
+      }
+      copy(-5);
+      for (char c : dst) {
+        if (c != 'A') {
+          throw new RuntimeException("Wrong value!");
+        }
+      }
+      System.out.println("PASS");
+    }
 }

@@ -143,24 +143,9 @@ final class $vectortype$ extends $abstractvectortype$ {
     @ForceInline
     $shuffletype$ iotaShuffle() { return $shuffletype$.IOTA; }
 
-    @ForceInline
-    $shuffletype$ iotaShuffle(int start, int step, boolean wrap) {
-      if (wrap) {
-        return ($shuffletype$)VectorSupport.shuffleIota(ETYPE, $shuffletype$.class, VSPECIES, VLENGTH, start, step, 1,
-                (l, lstart, lstep, s) -> s.shuffleFromOp(i -> (VectorIntrinsics.wrapToRange(i*lstep + lstart, l))));
-      } else {
-        return ($shuffletype$)VectorSupport.shuffleIota(ETYPE, $shuffletype$.class, VSPECIES, VLENGTH, start, step, 0,
-                (l, lstart, lstep, s) -> s.shuffleFromOp(i -> (i*lstep + lstart)));
-      }
-    }
-
     @Override
     @ForceInline
-    $shuffletype$ shuffleFromBytes(byte[] reorder) { return new $shuffletype$(reorder); }
-
-    @Override
-    @ForceInline
-    $shuffletype$ shuffleFromArray(int[] indexes, int i) { return new $shuffletype$(indexes, i); }
+    $shuffletype$ shuffleFromArray(int[] indices, int i) { return new $shuffletype$(indices, i); }
 
     @Override
     @ForceInline
@@ -361,9 +346,11 @@ final class $vectortype$ extends $abstractvectortype$ {
         return (long) super.reduceLanesTemplate(op, $masktype$.class, ($masktype$) m);  // specialized
     }
 
+    @Override
     @ForceInline
-    public VectorShuffle<$Boxtype$> toShuffle() {
-        return super.toShuffleTemplate($shuffletype$.class); // specialize
+    public final
+    <F> VectorShuffle<F> toShuffle(AbstractSpecies<F> dsp) {
+        return super.toShuffleTemplate(dsp);
     }
 
     // Specialized unary testing
@@ -1060,25 +1047,28 @@ final class $vectortype$ extends $abstractvectortype$ {
 
     static final class $shuffletype$ extends AbstractShuffle<$Boxtype$> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
-        static final Class<$Boxtype$> ETYPE = $type$.class; // used by the JVM
+        static final Class<$Boxbitstype$> ETYPE = $bitstype$.class; // used by the JVM
 
-        $shuffletype$(byte[] reorder) {
-            super(VLENGTH, reorder);
+        $shuffletype$($bitstype$[] indices) {
+            super(indices);
+            assert(VLENGTH == indices.length);
+            assert(indicesInRange(indices));
         }
 
-        public $shuffletype$(int[] reorder) {
-            super(VLENGTH, reorder);
+        $shuffletype$(int[] indices, int i) {
+            this(prepare(indices, i));
         }
 
-        public $shuffletype$(int[] reorder, int i) {
-            super(VLENGTH, reorder, i);
+        $shuffletype$(IntUnaryOperator fn) {
+            this(prepare(fn));
         }
 
-        public $shuffletype$(IntUnaryOperator fn) {
-            super(VLENGTH, fn);
+        $bitstype$[] indices() {
+            return ($bitstype$[])getPayload();
         }
 
         @Override
+        @ForceInline
         public $Type$Species vspecies() {
             return VSPECIES;
         }
@@ -1086,40 +1076,112 @@ final class $vectortype$ extends $abstractvectortype$ {
         static {
             // There must be enough bits in the shuffle lanes to encode
             // VLENGTH valid indexes and VLENGTH exceptional ones.
-            assert(VLENGTH < Byte.MAX_VALUE);
-            assert(Byte.MIN_VALUE <= -VLENGTH);
+            assert(VLENGTH < $Boxbitstype$.MAX_VALUE);
+            assert($Boxbitstype$.MIN_VALUE <= -VLENGTH);
         }
         static final $shuffletype$ IOTA = new $shuffletype$(IDENTITY);
 
         @Override
         @ForceInline
-        public $vectortype$ toVector() {
-            return VectorSupport.shuffleToVector(VCLASS, ETYPE, $shuffletype$.class, this, VLENGTH,
-                                                    (s) -> (($vectortype$)(((AbstractShuffle<$Boxtype$>)(s)).toVectorTemplate())));
+        $bitsvectortype$ toBitsVector() {
+            return ($bitsvectortype$) super.toBitsVectorTemplate();
         }
 
         @Override
         @ForceInline
-        public <F> VectorShuffle<F> cast(VectorSpecies<F> s) {
-            AbstractSpecies<F> species = (AbstractSpecies<F>) s;
-            if (length() != species.laneCount())
-                throw new IllegalArgumentException("VectorShuffle length and species length differ");
-            int[] shuffleArray = toArray();
-            return s.shuffleFromArray(shuffleArray, 0).check(s);
+        $Bitstype$Vector toBitsVector0() {
+            return $bitsvectortype$.VSPECIES.dummyVector().vectorFactory(indices());
         }
 
-        @ForceInline
         @Override
-        public $shuffletype$ rearrange(VectorShuffle<$Boxtype$> shuffle) {
-            $shuffletype$ s = ($shuffletype$) shuffle;
-            byte[] reorder1 = reorder();
-            byte[] reorder2 = s.reorder();
-            byte[] r = new byte[reorder1.length];
-            for (int i = 0; i < reorder1.length; i++) {
-                int ssi = reorder2[i];
-                r[i] = reorder1[ssi];  // throws on exceptional index
+        @ForceInline
+        public int laneSource(int i) {
+            return (int)toBitsVector().lane(i);
+        }
+
+        @Override
+        @ForceInline
+        public void intoArray(int[] a, int offset) {
+#if[byte]
+            VectorSpecies<Integer> species = IntVector.SPECIES_$BITS$;
+            Vector<Byte> v = toBitsVector();
+            v.convertShape(VectorOperators.B2I, species, 0)
+                    .reinterpretAsInts()
+                    .intoArray(a, offset);
+            v.convertShape(VectorOperators.B2I, species, 1)
+                    .reinterpretAsInts()
+                    .intoArray(a, offset + species.length());
+            v.convertShape(VectorOperators.B2I, species, 2)
+                    .reinterpretAsInts()
+                    .intoArray(a, offset + species.length() * 2);
+            v.convertShape(VectorOperators.B2I, species, 3)
+                    .reinterpretAsInts()
+                    .intoArray(a, offset + species.length() * 3);
+#end[byte]
+#if[short]
+            VectorSpecies<Integer> species = IntVector.SPECIES_$BITS$;
+            Vector<Short> v = toBitsVector();
+            v.convertShape(VectorOperators.S2I, species, 0)
+                    .reinterpretAsInts()
+                    .intoArray(a, offset);
+            v.convertShape(VectorOperators.S2I, species, 1)
+                    .reinterpretAsInts()
+                    .intoArray(a, offset + species.length());
+#end[short]
+#if[intOrFloat]
+            toBitsVector().intoArray(a, offset);
+#end[intOrFloat]
+#if[longOrDouble]
+#if[!1L]
+            VectorSpecies<Integer> species = VectorSpecies.of(
+                    int.class,
+                    VectorShape.forBitSize(length() * Integer.SIZE));
+            Vector<Long> v = toBitsVector();
+            v.convertShape(VectorOperators.L2I, species, 0)
+                    .reinterpretAsInts()
+                    .intoArray(a, offset);
+#end[!1L]
+#if[1L]
+            a[offset] = laneSource(0);
+#end[1L]
+#end[longOrDouble]
+        }
+
+        private static $bitstype$[] prepare(int[] indices, int offset) {
+            $bitstype$[] a = new $bitstype$[VLENGTH];
+            for (int i = 0; i < VLENGTH; i++) {
+                int si = indices[offset + i];
+                si = partiallyWrapIndex(si, VLENGTH);
+                a[i] = ($bitstype$)si;
             }
-            return new $shuffletype$(r);
+            return a;
+        }
+
+        private static $bitstype$[] prepare(IntUnaryOperator f) {
+            $bitstype$[] a = new $bitstype$[VLENGTH];
+            for (int i = 0; i < VLENGTH; i++) {
+                int si = f.applyAsInt(i);
+                si = partiallyWrapIndex(si, VLENGTH);
+                a[i] = ($bitstype$)si;
+            }
+            return a;
+        }
+
+        private static boolean indicesInRange($bitstype$[] indices) {
+            int length = indices.length;
+            for ($bitstype$ si : indices) {
+                if (si >= ($bitstype$)length || si < ($bitstype$)(-length)) {
+                    boolean assertsEnabled = false;
+                    assert(assertsEnabled = true);
+                    if (assertsEnabled) {
+                        String msg = ("index "+si+"out of range ["+length+"] in "+
+                                  java.util.Arrays.toString(indices));
+                        throw new AssertionError(msg);
+                    }
+                    return false;
+                }
+            }
+            return true;
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1367,23 +1367,13 @@ public abstract class FontConfiguration {
     private static void sanityCheck() {
         int errors = 0;
 
-        //This method will only be called during build time, do we
-        //need do PrivilegedAction?
-        @SuppressWarnings("removal")
-        String osName = java.security.AccessController.doPrivileged(
-                            new java.security.PrivilegedAction<String>() {
-            public String run() {
-                return System.getProperty("os.name");
-            }
-        });
-
         //componentFontNameID starts from "1"
         for (int ii = 1; ii < table_filenames.length; ii++) {
             if (table_filenames[ii] == -1) {
                 // The corresponding finename entry for a component
                 // font name is mandatory on Windows, but it's
                 // optional on Solaris and Linux.
-                if (osName.contains("Windows")) {
+                if (OSInfo.getOSType() == OSInfo.OSType.WINDOWS) {
                     System.err.println("\n Error: <filename."
                                        + getString(table_componentFontNameIDs[ii])
                                        + "> entry is missing!!!");
