@@ -1815,13 +1815,12 @@ public class File
      * {@code root} directory from which all other files in that file system
      * can be reached.  Windows platforms, for example, have a root directory
      * for each active drive; UNIX platforms have a single root directory,
-     * namely {@code "/"}.  The set of available filesystem roots is affected
-     * by various system-level operations such as the insertion or ejection of
-     * removable media and the disconnecting or unmounting of physical or
-     * virtual disk drives.
+     * namely {@code "/"}.  The set of filesystem roots is affected
+     * by various system-level operations such as the disconnecting or
+     * unmounting of physical or virtual disk drives.
      *
      * <p> This method returns an array of {@code File} objects that denote the
-     * root directories of the available filesystem roots.  It is guaranteed
+     * root directories of the existing filesystem roots.  It is guaranteed
      * that the canonical pathname of any file physically present on the local
      * machine will begin with one of the roots returned by this method.
      *
