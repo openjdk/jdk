@@ -2138,7 +2138,9 @@ public class ObjectInputStream
 
         ObjectStreamClass desc = readClassDesc(false);
         int len = bin.readInt();
-
+        if (len < 0) {
+            throw new InvalidClassException(desc.getName(), "Array length < 0 (" + len + ")");
+        }
         filterCheck(desc.forClass(), len);
 
         Object array = null;
