@@ -45,8 +45,8 @@ package java.util;
  * {@link Collection#spliterator spliterator}, {@link Collection#stream stream},
  * and all overloads of the {@link Collection#toArray toArray} method.
  * <p>
- * This interface provides methods to add elements, to retrieve elements, and to remove
- * elements at either end of the collection.
+ * This interface provides methods to add, retrieve, and remove elements at either end
+ * of the collection.
  * <p>
  * This interface also defines the {@link #reversed reversed} method, which provides
  * a reverse-ordered <a href="Collection.html#view">view</a> of this collection.

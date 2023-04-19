@@ -1713,6 +1713,8 @@ public class CopyOnWriteArrayList<E>
      * to this list. In addition, modifications to this list will be visible
      * in the reversed view. Sublists and iterators of the reversed view have
      * the same restrictions as those of this list.
+     *
+     * @since 21
      */
     public List<E> reversed() {
         return new Reversed<>(this, lock);

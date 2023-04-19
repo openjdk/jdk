@@ -26,8 +26,9 @@
 package java.util;
 
 /**
- * A collection that is both a {@link SequencedCollection} and a {@link Set}. As such, it can be
- * thought of as either as a {@code Set} that also has a well-defined encounter order, or as a
+ * A collection that is both a {@link SequencedCollection} and a {@link Set}. As such,
+ * it can be thought of either as a {@code Set} that also has a well-defined
+ * <a href="SequencedCollection.html#encounter">encounter order</a>, or as a
  * {@code SequencedCollection} that also has unique elements.
  * <p>
  * This interface has the same requirements on the {@code equals} and {@code hashCode}

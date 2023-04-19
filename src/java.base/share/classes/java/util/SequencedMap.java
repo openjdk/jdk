@@ -43,10 +43,8 @@ package java.util;
  * {@link #sequencedValues sequencedValues},
  * and
  * {@link #sequencedEntrySet sequencedEntrySet} methods all reflect the encounter order
- * of this map. Even though the return values of the
- * {@link #keySet keySet},
- * {@link #values values}, and
- * {@link #entrySet entrySet} methods are not sequenced <i>types</i>, the elements
+ * of this map. Even though the return values of the {@code keySet}, {@code values}, and
+ * {@code entrySet} methods are not sequenced <i>types</i>, the elements
  * in those view collections do reflect the encounter order of this map. Thus, the
  * iterators returned by the statements
  * <pre>{@code

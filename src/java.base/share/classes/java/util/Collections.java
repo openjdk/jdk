@@ -371,7 +371,7 @@ public class Collections {
      *
      * @apiNote
      * This method mutates the specified list in-place. To obtain a
-     * reversed-ordered view of a list without mutating it, use the
+     * reverse-ordered view of a list without mutating it, use the
      * {@link List#reversed List.reversed} method.
      *
      * @param  list the list whose elements are to be reversed.
@@ -6067,8 +6067,8 @@ public class Collections {
      *
      * @apiNote
      * This method provides a view that inverts the sense of certain operations,
-     * but it doesn't reverse the encounter order. To obtain a reversed-ordered
-     * view, use the {@link Deque#reversed Deque::reversed} method.
+     * but it doesn't reverse the encounter order. To obtain a reverse-ordered
+     * view, use the {@link Deque#reversed Deque.reversed} method.
      *
      * @param  <T> the class of the objects in the deque
      * @param deque the deque
