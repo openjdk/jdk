@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,14 +21,17 @@
  * questions.
  */
 
-package sun.security.util;
+package jdk.jfr.event.runtime;
 
-import java.security.Permission;
+import java.lang.instrument.Instrumentation;
 
-/**
- * A factory object that creates Permission objects.
- */
+public class JavaAgent {
 
-public interface PermissionFactory<T extends Permission> {
-    T newPermission(String name);
+    public static void agentmain(String agentArgs, Instrumentation inst) throws Exception {
+        System.out.println("agentmain: " + agentArgs);
+    }
+
+    public static void premain(String agentArgs, Instrumentation inst) throws Exception {
+        System.out.println("premain: " + agentArgs);
+    }
 }

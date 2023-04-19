@@ -293,7 +293,7 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, RegisterSet reg
   OopMap* map = new OopMap(frame_size_in_slots, 0);
 
   int regstosave_num = 0;
-  const RegisterSaver::LiveRegType* live_regs = NULL;
+  const RegisterSaver::LiveRegType* live_regs = nullptr;
 
   switch (reg_set) {
     case all_registers:
@@ -398,7 +398,7 @@ OopMap* RegisterSaver::generate_oop_map(MacroAssembler* masm, RegisterSet reg_se
   OopMap* map = new OopMap(frame_size_in_slots, 0);
 
   int regstosave_num = 0;
-  const RegisterSaver::LiveRegType* live_regs = NULL;
+  const RegisterSaver::LiveRegType* live_regs = nullptr;
 
   switch (reg_set) {
     case all_registers:
@@ -448,7 +448,7 @@ void RegisterSaver::restore_live_registers(MacroAssembler* masm, RegisterSet reg
   bool     float_spilled = false;
 
   int regstosave_num = 0;
-  const RegisterSaver::LiveRegType* live_regs = NULL;
+  const RegisterSaver::LiveRegType* live_regs = nullptr;
 
   switch (reg_set) {
     case all_registers:
@@ -762,7 +762,7 @@ int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
                                         VMRegPair *regs,
                                         VMRegPair *regs2,
                                         int total_args_passed) {
-  assert(regs2 == NULL, "second VMRegPair array not used on this platform");
+  assert(regs2 == nullptr, "second VMRegPair array not used on this platform");
 
   // Calling conventions for C runtime calls and calls to JNI native methods.
   const VMReg z_iarg_reg[5] = {
@@ -1017,7 +1017,7 @@ static void object_move(MacroAssembler *masm,
     __ add2reg(rHandle, reg2offset(src.first())+frame_offset, Z_SP);
     __ load_and_test_long(Z_R0, Address(rHandle));
     __ z_brne(skip);
-    // Use a NULL handle if oop is NULL.
+    // Use a null handle if oop is null.
     __ clear_reg(rHandle, true, false);
     __ bind(skip);
 
@@ -1043,7 +1043,7 @@ static void object_move(MacroAssembler *masm,
     __ z_stg(rOop, oop_slot_offset, Z_SP);
     __ add2reg(rHandle, oop_slot_offset, Z_SP);
 
-    // If Oop == NULL, use a NULL handle.
+    // If Oop is null, use a null handle.
     __ compare64_and_branch(rOop, (RegisterOrConstant)0L, Assembler::bcondNotEqual, skip);
     __ clear_reg(rHandle, true, false);
     __ bind(skip);
@@ -1324,7 +1324,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
                                        stack_slots / VMRegImpl::slots_per_word,
                                        in_ByteSize(-1),
                                        in_ByteSize(-1),
-                                       (OopMapSet *) NULL);
+                                       (OopMapSet *) nullptr);
   }
 
 
@@ -1335,7 +1335,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   ///////////////////////////////////////////////////////////////////////
 
   address native_func = method->native_function();
-  assert(native_func != NULL, "must have function");
+  assert(native_func != nullptr, "must have function");
 
   //---------------------------------------------------------------------
   // We have received a description of where all the java args are located
@@ -1363,7 +1363,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
 
   BasicType *out_sig_bt = NEW_RESOURCE_ARRAY(BasicType, total_c_args);
   VMRegPair *out_regs   = NEW_RESOURCE_ARRAY(VMRegPair, total_c_args);
-  BasicType* in_elem_bt = NULL;
+  BasicType* in_elem_bt = nullptr;
 
   // Create the signature for the C call:
   //   1) add the JNIEnv*
@@ -1457,7 +1457,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   // *_slot_offset indicates offset from SP in #stack slots
   // *_offset      indicates offset from SP in #bytes
 
-  int stack_slots = c_calling_convention(out_sig_bt, out_regs, /*regs2=*/NULL, total_c_args) + // 1+2
+  int stack_slots = c_calling_convention(out_sig_bt, out_regs, /*regs2=*/nullptr, total_c_args) + // 1+2
                     SharedRuntime::out_preserve_stack_slots(); // see c_calling_convention
 
   // Now the space for the inbound oop handle area.
@@ -2075,7 +2075,7 @@ static address gen_c2i_adapter(MacroAssembler  *masm,
   // Call patching needed?
   __ load_and_test_long(Z_R0_scratch, method_(code));
   __ z_lg(ientry, method_(interpreter_entry));  // Preload interpreter entry (also if patching).
-  __ z_brne(patch_callsite);                    // Patch required if code != NULL (compiled target exists).
+  __ z_brne(patch_callsite);                    // Patch required if code isn't null (compiled target exists).
 
   __ bind(skip_fixup);  // Return point from patch_callsite.
 
@@ -2358,7 +2358,7 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
   address c2i_entry = __ pc();
 
   // Class initialization barrier for static methods
-  address c2i_no_clinit_check_entry = NULL;
+  address c2i_no_clinit_check_entry = nullptr;
   if (VM_Version::supports_fast_class_init_checks()) {
     Label L_skip_barrier;
 
@@ -2510,7 +2510,7 @@ void SharedRuntime::generate_deopt_blob() {
   CodeBuffer buffer("deopt_blob", 2048, 1024);
   InterpreterMacroAssembler* masm = new InterpreterMacroAssembler(&buffer);
   Label exec_mode_initialized;
-  OopMap* map = NULL;
+  OopMap* map = nullptr;
   OopMapSet *oop_maps = new OopMapSet();
 
   unsigned int start_off = __ offset();
@@ -2627,7 +2627,7 @@ void SharedRuntime::generate_deopt_blob() {
   // occur so we don't need an oopmap. the value of the pc in the
   // frame is not particularly important.  it just needs to identify the blob.
 
-  // Don't set last_Java_pc anymore here (is implicitly NULL then).
+  // Don't set last_Java_pc anymore here (is implicitly null then).
   // the correct PC is retrieved in pd_last_frame() in that case.
   __ set_last_Java_frame(/*sp*/Z_SP, noreg);
   // With EscapeAnalysis turned on, this call may safepoint
@@ -2844,7 +2844,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
   __ z_br(Z_R14);
 
   masm->flush();
-  _uncommon_trap_blob = UncommonTrapBlob::create(&buffer, NULL, framesize_in_bytes/wordSize);
+  _uncommon_trap_blob = UncommonTrapBlob::create(&buffer, nullptr, framesize_in_bytes/wordSize);
 }
 #endif // COMPILER2
 
@@ -2854,7 +2854,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
 // Generate a special Compile2Runtime blob that saves all registers,
 // and setup oopmap.
 SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_type) {
-  assert(StubRoutines::forward_exception_entry() != NULL,
+  assert(StubRoutines::forward_exception_entry() != nullptr,
          "must be generated before");
 
   ResourceMark rm;
@@ -2866,7 +2866,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
   MacroAssembler* masm = new MacroAssembler(&buffer);
 
   unsigned int start_off = __ offset();
-  address call_pc = NULL;
+  address call_pc = nullptr;
   int frame_size_in_bytes;
 
   bool cause_return = (poll_type == POLL_AT_RETURN);
@@ -2955,7 +2955,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
 // must do any gc of the args.
 //
 RuntimeStub* SharedRuntime::generate_resolve_blob(address destination, const char* name) {
-  assert (StubRoutines::forward_exception_entry() != NULL, "must be generated before");
+  assert (StubRoutines::forward_exception_entry() != nullptr, "must be generated before");
 
   // allocate space for the code
   ResourceMark rm;
@@ -2964,7 +2964,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(address destination, const cha
   MacroAssembler* masm                = new MacroAssembler(&buffer);
 
   OopMapSet *oop_maps = new OopMapSet();
-  OopMap* map = NULL;
+  OopMap* map = nullptr;
 
   unsigned int start_off = __ offset();
 
