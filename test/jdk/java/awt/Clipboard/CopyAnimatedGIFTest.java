@@ -51,7 +51,6 @@ public class CopyAnimatedGIFTest {
     private static final CountDownLatch latch = new CountDownLatch(1);
 
     private Image img;
-    private static Frame frame;
 
     private static final byte[] imageData = {
             (byte) 0x47, (byte) 0x49, (byte) 0x46, (byte) 0x38, (byte) 0x39,
@@ -81,6 +80,8 @@ public class CopyAnimatedGIFTest {
     };
 
     private void createGUI() {
+
+        Frame frame;
 
         img = Toolkit.getDefaultToolkit().createImage(imageData);
 
@@ -117,15 +118,6 @@ public class CopyAnimatedGIFTest {
 
         if (!latch.await(TIMEOUT, MILLISECONDS)) {
             throw new RuntimeException("Image copying taking too long.");
-        } else {
-            EventQueue.invokeAndWait(CopyAnimatedGIFTest::dispose);
-        }
-    }
-
-    private static void dispose() {
-        if (frame != null) {
-            frame.dispose();
-            frame = null;
         }
     }
 
