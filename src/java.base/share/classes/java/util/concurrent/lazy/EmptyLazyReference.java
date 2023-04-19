@@ -47,7 +47,7 @@ public sealed interface EmptyLazyReference<V>
 
     /**
      * Returns the present value or, if no present value exists, atomically attempts
-     * to compute the value using the <em>provided {@code supplier}</em>.
+     * to compute the value using the provided {@code supplier}.
      * <p>
      * If the provided {@code supplier} itself throws an (unchecked) exception, the
      * exception is rethrown, and no value is recorded.  The most

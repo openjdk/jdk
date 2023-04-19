@@ -24,19 +24,18 @@
  */
 
 /**
- * <h2 id="lazy">Lazy</h2>
- *
- * <p>
  * A small toolkit of classes supporting lock-free, thread-safe
- * use of lazily initialized values with superior performance.  Providers of
- * lazy values are guaranteed to be invoked at most one time.  This contrasts
+ * use of lazily initialized values and arrays with superior performance.  Providers
+ * of lazy values are guaranteed to be invoked at most one time.  This contrasts
  * to {@link java.util.concurrent.atomic.AtomicReferenceArray } where any number
  * of updates can be done and where there is no simple way to atomically compute
  * a value (guaranteed to only be computed once) if missing.
  * <p>
  * The lazy implementations are optimized for the case where there are N invocations
  * trying to obtain a value and where N >> 1, for example where N is > 2<sup>20</sup>.
- * <p>
+ *
+ *  <h2 id="lazy">Lazy</h2>
+ *
  * Lazy types are all generic with respect to the reference value of type V they compute and
  * come in four fundamental flavors grouped in two dimensions; "Element Capacity" and "Preprovidedness":
  * <h3 id="element-capacity">Element Capacity</h3>
@@ -65,7 +64,7 @@
  *     available via {@link java.util.concurrent.lazy.Lazy#ofEmptyArray(int) Lazy.ofEmptyArray(int length)}</li>
  * </ul>
  *
- * Hence, the Array types provide an extra arity where the index is specified compared to the Reference types.
+ * Hence, the Array type methods provide an extra arity where the index is specified compared to the Reference types.
  *
  * <h2 id="lazy-factories">Lazy Factories</h2>
  *
@@ -75,8 +74,6 @@
  * <h3 id="lazyreference">LazyReference</h3>
  *
  * In its simplest form, Lazy can provide atomic lazy evaluation using a <em>preset-supplier</em>:
- *
- * {@snippet class="PackageInfoSnippets" region="DemoPreset"}
  *
  * {@snippet lang = java:
  *     class DemoPreset {
@@ -91,7 +88,7 @@
  *}
  * The performance of the example above is on pair with using an inner/private class
  * holding a lazily initialized variable but with no overhead imposed by the extra
- * class as illustraded hereunder:
+ * class. A corresponding private class is illustraded hereunder:
  *
  {@snippet lang = java :
  *     class DemoHolder {
@@ -129,7 +126,7 @@
  *     class DemoBackground {
  *
  *         private static final LazyReference<Foo> lazy = Lazy.builder(Foo::new)
- *                 .withEarliestEvaluation(Lazy.Evaluation.CREATION_BACKGROUND)
+ *                 .withEarliestEvaluation(Lazy.Evaluation.POST_CREATION)
  *                 .build();
  *
  *         public static void main(String[] args) throws InterruptedException {
@@ -226,8 +223,9 @@
  * the key to be used directly. If there is a constant translation factor between index and
  * actual keys, the {@linkplain java.util.concurrent.lazy.Lazy .ofEmptyTranslatedArray()} can be used.
  * <p>
- * For example, when caching oevery 10th Fibonacci value, the following snippet can be used:
+ * For example, when caching every 10th Fibonacci value, the following snippet can be used:
  * {@snippet lang = java:
+ *         // Un-cached fibonacci method
  *         static int fib(int n) {
  *             return (n <= 1)
  *                     ? n
@@ -235,11 +233,10 @@
  *         }
  *
  *         private static final EmptyLazyArray<Integer> FIB_10_CACHE =
- *                 Lazy.ofEmptyTranslatedArray(3, 10);
+ *                 Lazy.ofEmptyTranslatedArray(5, 10);
  *
  *
- *         // Only works for values up to ~30
- *
+ *         // Only works for values up to ~50 as the backing array is of length 5.
  *         static int cachedFib(int n) {
  *             if (n <= 1)
  *                 return n;
@@ -247,13 +244,13 @@
  *         }
  * }
  *
- * <h3 id="lazymapper">LazyMapper</h3>
+ * <h3 id="lazy-mapper">Lazy Mapper</h3>
  *
  * When several lazy values are to be held and accessible via keys of arbitrary
  * type {@code K}, general mappers can be obtained for any pre-given collection
- * of keys.  Even though this could be modeled by users via a second level of a
+ * of keys.  Even though this could be modeled directly by users via a second level of a
  * regular Java Map, special constructs are available providing equivalent
- * functionality but with potentially better performance and lower memory usage.
+ * functionality but with potentially better performance and lower memory usage:
  * {@snippet lang = java:
  *     class DemoLazyMapper {
  *
@@ -299,21 +296,24 @@
  *
  * All lazy constructs are "nullofobic" meaning a provider can never return {@code null}.  If nullablilty
  * for values stored are desired, the values have to be modeled using a construct that can express
- * {@code null} values in an explicit way such as {@link java.util.Optional#empty()}:
+ * {@code null} values in an explicit way such as {@link java.util.Optional#empty()} as exemplified here:
  * {@snippet lang = java:
- * import java.util.Optional;class NullDemo {
- *   private Supplier<Optional<Color>> backgroundColor =
- *           Lazy.of(() -> Optional.ofNullable(calculateBgColor()));
+ *     class NullDemo {
  *
- *   Color backgroundColor() {
- *       return backgroundColor.get()
- *                  .orElse("<unknown>");
- *    }
+ *         private Supplier<Optional<Color>> backgroundColor =
+ *                 Lazy.of(() -> Optional.ofNullable(calculateBgColor()));
  *
- *   private Color calculateBgColor() {
- *       // Read background color from file returning "null" if it fails.
- *   }
- * }
+ *         Color backgroundColor(Color defaultColor) {
+ *             return backgroundColor.get()
+ *                     .orElse(defaultColor);
+ *         }
+ *
+ *         private Color calculateBgColor() {
+ *             // Read background color from file returning "null" if it fails.
+ *             // ...
+ *             return null;
+ *         }
+ *     }
  *}
  *
  * @since 22

@@ -47,10 +47,10 @@ public sealed interface EmptyLazyArray<V>
 
     /**
      * Returns the present value at the provided {@code index} or, if no present value exists,
-     * atomically attempts to compute the value using the <em>provided {@code mappper}</em>.
+     * atomically attempts to compute the value using the provided {@code mappper}.
      *
-     * <p>If the mapper returns {@code null}, an exception is thrown.
-     * If the provided {@code ,mapper} itself throws an (unchecked) exception, the
+     * <p>If the mapper returns {@code null}, an exception is thrown.  If the
+     * provided {@code mapper} itself throws an (unchecked) exception, the
      * exception is rethrown, and no value is recorded.  The most
      * common usage is to construct a new object serving as a memoized result, as in:
      * <p>
@@ -67,9 +67,9 @@ public sealed interface EmptyLazyArray<V>
      * @param index   to the slot to be used
      * @param mappper to apply if no previous value exists
      * @return the value (pre-existing or newly computed)
-     * @throws ArrayIndexOutOfBoundsException if the provided {@code index} is {@code < 0}
-     *                                        or {@code index >= length()}
-     * @throws NullPointerException           if the provided {@code mappper} is {@code null}.
+     * @throws ArrayIndexOutOfBoundsException if {@code index < 0} or {@code index >= length()}
+     * @throws NullPointerException           if the provided {@code mappper} is {@code null} or if
+     *                                        the provided {@code mapper} itself returns {@code null}.
      * @throws NoSuchElementException         if a maper has previously thrown an exception for the
      *                                        provided {@code index}.
      */

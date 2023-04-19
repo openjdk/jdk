@@ -85,7 +85,7 @@ public class PackageInfoSnippets {
     class DemoBackground {
 
         private static final LazyReference<Foo> lazy = Lazy.builder(Foo::new)
-                .withEarliestEvaluation(Lazy.Evaluation.CREATION_BACKGROUND)
+                .withEarliestEvaluation(Lazy.Evaluation.POST_CREATION)
                 .build();
 
         public static void main(String[] args) throws InterruptedException {
@@ -96,7 +96,7 @@ public class PackageInfoSnippets {
     }
     // @end
 
-    // @start region="DemoBackground"
+    // @start region="DemoPrecomputed"
     class DemoPrecomputed {
 
         private static final EmptyLazyReference<Foo> lazy = Lazy.<Foo>emptyBuilder()
@@ -209,12 +209,34 @@ public class PackageInfoSnippets {
     }
     // @end
 
+    class NullDemo {
+
+        private Supplier<Optional<Color>> backgroundColor =
+                Lazy.of(() -> Optional.ofNullable(calculateBgColor()));
+
+        Color backgroundColor(Color defaultColor) {
+            return backgroundColor.get()
+                    .orElse(defaultColor);
+        }
+
+        private Color calculateBgColor() {
+            // Read background color from file returning "null" if it fails.
+            // ...
+            return null;
+        }
+    }
+
+    private static final class Color{}
+
+
     // @start region="DemoFibMapped"
     final class DemoFibMapped {
 
         // 0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144 ...
         // fib(11) = 89
         // n non-negative
+
+        // Un-cached fibonacci method
         static int fib(int n) {
             return (n <= 1)
                     ? n
@@ -222,11 +244,10 @@ public class PackageInfoSnippets {
         }
 
         private static final EmptyLazyArray<Integer> FIB_10_CACHE =
-                Lazy.ofEmptyTranslatedArray(3, 10);
+                Lazy.ofEmptyTranslatedArray(5, 10);
 
 
-        // Only works for values up to ~30
-
+        // Only works for values up to ~50 as the backing array is of length 5.
         static int cachedFib(int n) {
             if (n <= 1)
                 return n;

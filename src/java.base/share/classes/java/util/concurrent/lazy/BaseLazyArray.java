@@ -54,7 +54,7 @@ public sealed interface BaseLazyArray<V>
     public int length();
 
     /**
-     * {@return The {@link State } of this Lazy}.
+     * {@return the {@link State State} of this Lazy}.
      * <p>
      * The value is a snapshot of the current State.
      * No attempt is made to compute a value if it is not already present.
@@ -70,6 +70,7 @@ public sealed interface BaseLazyArray<V>
      *     }
      *}
      * @param index to retrieve the State from
+     * @throws ArrayIndexOutOfBoundsException if {@code index< 0} or {@code index >= length()}
      */
     public State state(int index);
 
@@ -78,17 +79,20 @@ public sealed interface BaseLazyArray<V>
      * {@link Optional#empty()} if no exception was thrown}.
      *
      * @param index to retrieve the exception from
+     * @throws ArrayIndexOutOfBoundsException if {@code index< 0} or {@code index >= length()}
      */
     public Optional<Throwable> exception(int index);
 
     /**
-     * {@return the value at the provided {@code index} if the value is {@link State#PRESENT}
-     * or {@code defaultValue} if the value is {@link State#EMPTY} or {@link State#CONSTRUCTING}}.
+     * {@return the value at the provided {@code index} if the state is {@link State#PRESENT PRESENT}
+     * or {@code defaultValue} if the value is {@link State#EMPTY EMPTY} or
+     * {@link State#CONSTRUCTING CONSTRUCTING}}.
      *
      * @param index        for which the value shall be obtained.
      * @param defaultValue to use if no value is present
-     * @throws NoSuchElementException if a provider for the provided {@code index} has previously
-     *                                thrown an exception.
+     * @throws ArrayIndexOutOfBoundsException if {@code index< 0} or {@code index >= length()}
+     * @throws NoSuchElementException         if a provider for the provided {@code index} has previously
+     *                                        thrown an exception.
      */
     V getOr(int index, V defaultValue);
 

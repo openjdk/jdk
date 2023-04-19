@@ -47,7 +47,7 @@ public sealed interface BaseLazyReference<V>
         permits EmptyLazyReference, LazyReference, AbstractBaseLazyReference, AbstractPreComputedLazyReference {
 
     /**
-     * {@return The {@link Lazy.State } of this Lazy}.
+     * {@return the {@link Lazy.State State} of this Lazy}.
      * <p>
      * The value is a snapshot of the current State.
      * No attempt is made to compute a value if it is not already present.
@@ -72,8 +72,9 @@ public sealed interface BaseLazyReference<V>
     public Optional<Throwable> exception();
 
     /**
-     * {@return the value if the value is {@link Lazy.State#PRESENT}
-     * or {@code defaultValue} if the value is {@link Lazy.State#EMPTY} or {@link Lazy.State#CONSTRUCTING}}.
+     * {@return the value if the state is {@link Lazy.State#PRESENT PRESENT}
+     * or {@code defaultValue} if the state is {@link Lazy.State#EMPTY EMPTY}
+     * or {@link Lazy.State#CONSTRUCTING CONSTRUCTING}}.
      *
      * @param defaultValue to use if no value is present
      * @throws NoSuchElementException if a provider has previously thrown an exception.

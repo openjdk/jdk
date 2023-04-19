@@ -33,9 +33,10 @@ import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
 /**
- * A lazy references with a pre-set supplier...
+ * A lazy array with a pre-set supplier which will be invoken at most once,
+ * per slot, for example when {@link LazyArray#apply(int) apply(index)} is invoked.
  *
- * @param <V> The type of the value to be recorded
+ * @param <V> The type of the values to be recorded
  *
  * @since 22
  */
@@ -66,8 +67,7 @@ public sealed interface LazyArray<V>
      *
      * @param index to the slot to be used
      * @return the value (pre-existing or newly computed)
-     * @throws ArrayIndexOutOfBoundsException if the provided {@code index} is {@code < 0}
-     *                                        or {@code index >= length()}
+     * @throws ArrayIndexOutOfBoundsException if {@code index< 0} or {@code index >= length()}
      * @throws IllegalStateException          if a value was not already present and no
      *                                        pre-set mapper was specified.
      * @throws NoSuchElementException         if a maper has previously thrown an exception for the
@@ -77,13 +77,12 @@ public sealed interface LazyArray<V>
     public V apply(int index);
 
     /**
-     * Forces computation of all {@link java.util.concurrent.lazy.Lazy.State#EMPTY} slots in
+     * Forces computation of all {@link java.util.concurrent.lazy.Lazy.State#EMPTY EMPTY} slots in
      * slot order.
      * <p>
      * If the pre-set mapper throws an (unchecked) exception, the
-     * exception is rethrown, and no value is recorded. This means, subsequent slots
+     * exception is rethrown, and no value is recorded. This also means, subsequent slots
      * are not computed.
-     *
      */
     public void force();
 

@@ -57,17 +57,20 @@ public final class Lazy {
     }
 
     /**
-     * The State indicates the current state of a Lazy instance:
+     * The State indicates the current state of a Lazy instance.
+     * <p>
+     * The following values are supported:
      * <ul>
-     *     <li><a id="empty"><b>EMPTY</b></a>
-     *     <p> No value is present (initial state).</p></li>
-     *     <li><a id="constructing"><b>CONSTRUCTING</b></a>
+     *     <li><a id="empty"><b>{@link State#EMPTY}</b></a>
+     *     <p> No value is present (initial non-final state).</p></li>
+     *     <li><a id="constructing"><b>{@link State#CONSTRUCTING}</b></a>
      *     <p> A value is being constructed but the value is not yet available (transient state).</p></li>
-     *     <li><a id="present"><b>PRESENT</b></a>
+     *     <li><a id="present"><b>{@link State#PRESENT}</b></a>
      *     <p> A value is present and is available via an accessor (final state).</p></li>
-     *     <li><a id="error"><b>ERROR</b></a>
+     *     <li><a id="error"><b>{@link State#ERROR}</b></a>
      *     <p> The construction of tha value failed and a value will never be present (final state).
-     *     The error is available via an accessor for some implementations.</p></li>
+     *     The error is available via either the {@link BaseLazyReference#exception()} or
+     *     the {@link BaseLazyArray#exception(int)} accessor.</p></li>
      * </ul>
      */
     public enum State {
@@ -89,7 +92,7 @@ public final class Lazy {
         ERROR;
 
         /**
-         * {@return if this state is final (e.g. can never change)}.
+         * {@return if this state is final (e.g. can no longer change)}.
          */
         static boolean isFinal(State state) {
             return state == PRESENT ||
@@ -98,16 +101,20 @@ public final class Lazy {
     }
 
     /**
-     * The Evaluation indicates the erliest point at which a Lazy can be evaluated:
+     * The Evaluation indicates the erliest point at which a Lazy can be evaluated.
+     * <p>
+     * The following values are supported:
      * <ul>
-     *     <li><a id="compilation"><b>COMPILATION</b></a>
-     *     <p> The value can be evaluated at compile time.</p></li>
-     *     <li><a id="distillation"><b>DISTILLATION</b></a>
-     *     <p> The value can be evaluated at distillation time.</p></li>
-     *     <li><a id="creation"><b>CREATION</b></a>
-     *     <p> The value can be evaluated upon creating the Lazy (in another background thread).</p></li>
-     *     <li><a id="at-use"><b>AT_USE</b></a>
+     *     <li><a id="at-use"><b>{@link Evaluation#AT_USE}</b></a>
      *     <p> The value cannot be evaluated before being used (default evaluation).</p></li>
+     *     <li><a id="post-creation"><b>{@link Evaluation#POST_CREATION}</b></a>
+     *     <p> The value can be evaluated after the Lazy has been created (in another background thread).</p></li>
+     *     <li><a id="creation"><b>{@link Evaluation#CREATION}</b></a>
+     *     <p> The value can be evaluated upon creating the Lazy (in the same thread).</p></li>
+     *     <li><a id="distillation"><b>{@link Evaluation#DISTILLATION}</b></a>
+     *     <p> The value can be evaluated at distillation time.</p></li>
+     *     <li><a id="compilation"><b>{@link Evaluation#COMPILATION}</b></a>
+     *     <p> The value can be evaluated at compile time.</p></li>
      * </ul>
      */
     public enum Evaluation {
@@ -116,13 +123,13 @@ public final class Lazy {
          */
         AT_USE,
         /**
-         * Indicates the value can be evaluated upon creating the Lazy (in the same thread)
+         * Indicates the value can be evaluated after the Lazy has been created (in another background thread).
+         */
+        POST_CREATION,
+        /**
+         * Indicates the value can be evaluated upon defining the Lazy (in the same thread).
          */
         CREATION,
-        /**
-         * Indicates the value can be evaluated upon creating the Lazy (in another background thread)
-         */
-        CREATION_BACKGROUND,
         /**
          * Indicates the value can be evaluated at distillation time.
          */
@@ -185,18 +192,18 @@ public final class Lazy {
      *
      * @param <V> type of the value the EmptyLazyReference will handle.
      *            Here is how a lazy value can be pre-computed:
-     *            {@snippet lang = java:
-     *                           class DemoPrecomputed {
+     * {@snippet lang = java:
+     *      class DemoPrecomputed {
      *
-     *                               private static final EmptyLazyReference<Foo> lazy = Lazy.<Foo>emptyBuilder()
-     *                                       .withValue(new Foo())
-     *                                       .build();
+     *         private static final EmptyLazyReference<Foo> lazy = Lazy.<Foo>emptyBuilder()
+     *                 .withValue(new Foo())
+     *                 .build();
      *
-     *                               public static void main(String[] args) throws InterruptedException {
-     *                                   // lazy is already pre-computed here
-     *                                   System.out.println("lazy.apply(Foo::new) = " + lazy.apply(Foo::new));
-     *                               }
-     *                           }
+     *         public static void main(String[] args) throws InterruptedException {
+     *             // lazy is already pre-computed here
+     *             System.out.println("lazy.apply(Foo::new) = " + lazy.apply(Foo::new));
+     *         }
+     *     }
      *}
      */
     // Todo: Figure out a better way for determining the type (e.g. type token)
@@ -213,7 +220,7 @@ public final class Lazy {
      *     class DemoBackground {
      *
      *         private static final LazyReference<Foo> lazy = Lazy.builder(Foo::new)
-     *                 .withEarliestEvaluation(Lazy.Evaluation.CREATION_BACKGROUND)
+     *                 .withEarliestEvaluation(Lazy.Evaluation.POST_CREATION)
      *                 .build();
      *
      *         public static void main(String[] args) throws InterruptedException {

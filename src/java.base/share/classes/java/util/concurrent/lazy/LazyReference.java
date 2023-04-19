@@ -33,7 +33,8 @@ import java.util.NoSuchElementException;
 import java.util.function.Supplier;
 
 /**
- * A lazy references with a pre-set supplier...
+ * A lazy reference with a pre-set supplier which will be invoken at most once,
+ * for example when {@link LazyReference#get() get()} is invoked.
  *
  * @param <V> The type of the value to be recorded
  *
