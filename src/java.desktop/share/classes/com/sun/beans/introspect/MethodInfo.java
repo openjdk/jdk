@@ -25,18 +25,34 @@
 
 package com.sun.beans.introspect;
 
+import java.io.Closeable;
+import java.io.Externalizable;
+import java.io.Serializable;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 
 import com.sun.beans.TypeResolver;
 import com.sun.beans.finder.MethodFinder;
 
 final class MethodInfo {
+
+    static final HashSet<Class<?>> IGNORABLE_INTERFACES = new HashSet<>(6);
+    static {
+        IGNORABLE_INTERFACES.add(AutoCloseable.class);
+        IGNORABLE_INTERFACES.add(Cloneable.class);
+        IGNORABLE_INTERFACES.add(Closeable.class);
+        IGNORABLE_INTERFACES.add(Comparable.class);
+        IGNORABLE_INTERFACES.add(Externalizable.class);
+        IGNORABLE_INTERFACES.add(Serializable.class);
+    }
+
     final Method method;
     final Class<?> type;
 
@@ -66,6 +82,8 @@ final class MethodInfo {
     static List<Method> get(Class<?> type) {
         List<Method> list = null;
         if (type != null) {
+
+            // Add declared methods
             boolean inaccessible = !Modifier.isPublic(type.getModifiers());
             for (Method method : type.getMethods()) {
                 if (method.getDeclaringClass().equals(type)) {
@@ -80,12 +98,18 @@ final class MethodInfo {
                             // method = null; // ignore inaccessible methods
                         }
                     }
-                    if (method != null) {
-                        if (list == null) {
-                            list = new ArrayList<>();
-                        }
-                        list.add(method);
-                    }
+                    if (method != null)
+                        (list = createIfNeeded(list)).add(method);
+                }
+            }
+
+            // Add default methods inherited from interfaces
+            for (Class<?> iface : type.getInterfaces()) {
+                if (IGNORABLE_INTERFACES.contains(iface))
+                    continue;
+                for (Method method : iface.getMethods()) {
+                    if ((method.getModifiers() & Modifier.ABSTRACT) == 0)
+                        (list = createIfNeeded(list)).add(method);
                 }
             }
         }
@@ -94,6 +118,10 @@ final class MethodInfo {
             return Collections.unmodifiableList(list);
         }
         return Collections.emptyList();
+    }
+
+    private static List<Method> createIfNeeded(List<Method> list) {
+        return list != null ? list : new ArrayList<>();
     }
 
     /**
