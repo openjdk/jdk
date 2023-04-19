@@ -285,8 +285,7 @@ class ReverseOrderListView<E> implements List<E> {
 
     @SuppressWarnings("unchecked")
     public <T> T[] toArray(T[] a) {
-        // TODO can probably optimize this
-        return toArray(i -> (T[]) java.lang.reflect.Array.newInstance(a.getClass().getComponentType(), i));
+        return ArraysSupport.toArrayReversed(base, a);
     }
 
     public <T> T[] toArray(IntFunction<T[]> generator) {

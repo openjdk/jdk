@@ -24,6 +24,8 @@
  */
 package jdk.internal.util;
 
+import java.util.Arrays;
+import java.util.Collection;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.Unsafe;
@@ -771,5 +773,37 @@ public class ArraysSupport {
             a[j] = t;
         }
         return a;
+    }
+
+    /**
+     * Dump the contents of the given collection into the given array, in reverse order.
+     * This mirrors the semantics of Collection.toArray(T[]) in regard to reusing the given
+     * array, appending null if necessary, or allocating a new array of the same component type.
+     * <p>
+     * A constraint is that this method should issue exactly one method call on the collection
+     * to obtain the elements and the size. Having a separate size() call or using an Iterator
+     * could result in errors if the collection changes size between calls. This implies that
+     * the elements need to be obtained via a single call to one of the toArray() methods.
+     * This further implies allocating memory proportional to the number of elements and
+     * making an extra copy, but this seems unavoidable.
+     * <p>
+     * An obvious approach would be simply to call coll.toArray(array) and then reverse the
+     * order of the elements. This doesn't work, because if given array is sufficiently long,
+     * we cannot tell how many elements were copied into it and thus there is no way to reverse
+     * the right set of elements while leaving the remaining array elements undisturbed.
+     *
+     * @throws ArrayStoreException if coll contains elements that can't be stored in the array
+     */
+    public static <T> T[] toArrayReversed(Collection<?> coll, T[] array) {
+        T[] newArray = reverse(coll.toArray(Arrays.copyOfRange(array, 0, 0)));
+        if (newArray.length > array.length) {
+            return newArray;
+        } else {
+            System.arraycopy(newArray, 0, array, 0, newArray.length);
+            if (array.length > newArray.length) {
+                array[newArray.length] = null;
+            }
+            return array;
+        }
     }
 }
