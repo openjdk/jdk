@@ -204,13 +204,15 @@ public class strace001 {
     // The method performs checks of the stack trace
     private static boolean checkTrace(StackTraceElement[] elements) {
         int length = elements.length;
-        int expectedLength = depth + 5;
+        // The length of the trace must not be greater than
+        // expectedLength.  Number of recursionJava() or
+        // recursionNative() methods must not be greater than depth,
+        // also one run() and one waitForSign(), plus whatever can be
+        // reached from Thread.yield or Thread.sleep.
+        int expectedLength = depth + 6;
         boolean result = true;
 
-        // Check the length of the trace. It must not be greater than
-        // expectedLength. Number of recursionJava() or recursionNative()
-        // methods must not ne greater than depth, also one Object.wait() or
-        // Thread.yield() method, one run( ) and one waitForSign().
+        // Check the length of the trace
         if (length > expectedLength) {
             log.complain("Length of the stack trace is " + length + ", but "
                        + "expected to be not greater than " + expectedLength);
