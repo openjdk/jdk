@@ -132,13 +132,11 @@ public class NTLMAuthentication extends AuthenticationInfo {
      * If this notation is not used, then the domain will be taken
      * from a system property: "http.auth.ntlm.domain".
      */
-    public NTLMAuthentication(boolean isProxy, URL url, PasswordAuthentication pw,
-                              AuthCacheImpl authcache) {
+    public NTLMAuthentication(boolean isProxy, URL url, PasswordAuthentication pw) {
         super(isProxy ? PROXY_AUTHENTICATION : SERVER_AUTHENTICATION,
                 AuthScheme.NTLM,
                 url,
-                "",
-                authcache);
+                "");
         init (pw);
     }
 
@@ -175,14 +173,12 @@ public class NTLMAuthentication extends AuthenticationInfo {
     * Constructor used for proxy entries
     */
     public NTLMAuthentication(boolean isProxy, String host, int port,
-                              PasswordAuthentication pw,
-                              AuthCacheImpl authcache) {
+                              PasswordAuthentication pw) {
         super(isProxy ? PROXY_AUTHENTICATION : SERVER_AUTHENTICATION,
                 AuthScheme.NTLM,
                 host,
                 port,
-                "",
-                authcache);
+                "");
         init (pw);
     }
 

@@ -82,8 +82,7 @@ class NegotiateAuthentication extends AuthenticationInfo {
         super(RequestorType.PROXY==hci.authType ? PROXY_AUTHENTICATION : SERVER_AUTHENTICATION,
               hci.scheme.equalsIgnoreCase("Negotiate") ? NEGOTIATE : KERBEROS,
               hci.url,
-              "",
-              AuthCacheImpl.getAuthCacheFor(hci.authenticator));
+              "");
         this.hci = hci;
     }
 

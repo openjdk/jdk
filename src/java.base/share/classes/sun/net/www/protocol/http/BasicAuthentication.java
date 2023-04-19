@@ -63,9 +63,9 @@ class BasicAuthentication extends AuthenticationInfo {
      */
     public BasicAuthentication(boolean isProxy, String host, int port,
                                String realm, PasswordAuthentication pw,
-                               boolean isUTF8, AuthCacheImpl authCache) {
+                               boolean isUTF8) {
         super(isProxy ? PROXY_AUTHENTICATION : SERVER_AUTHENTICATION,
-              AuthScheme.BASIC, host, port, realm, authCache);
+              AuthScheme.BASIC, host, port, realm);
         this.auth = authValueFrom(pw, isUTF8);
         this.pw = pw;
     }
@@ -74,10 +74,9 @@ class BasicAuthentication extends AuthenticationInfo {
      * Create a BasicAuthentication
      */
     public BasicAuthentication(boolean isProxy, String host, int port,
-                               String realm, String auth,
-                               AuthCacheImpl authCache) {
+                               String realm, String auth) {
         super(isProxy ? PROXY_AUTHENTICATION : SERVER_AUTHENTICATION,
-              AuthScheme.BASIC, host, port, realm, authCache);
+              AuthScheme.BASIC, host, port, realm);
         this.auth = "Basic " + auth;
     }
 
@@ -85,10 +84,9 @@ class BasicAuthentication extends AuthenticationInfo {
      * Create a BasicAuthentication
      */
     public BasicAuthentication(boolean isProxy, URL url, String realm,
-                               PasswordAuthentication pw, boolean isUTF8,
-                               AuthCacheImpl authCache) {
+                               PasswordAuthentication pw, boolean isUTF8) {
         super(isProxy ? PROXY_AUTHENTICATION : SERVER_AUTHENTICATION,
-              AuthScheme.BASIC, url, realm, authCache);
+              AuthScheme.BASIC, url, realm);
         this.auth = authValueFrom(pw, isUTF8);
         this.pw = pw;
     }
@@ -113,9 +111,9 @@ class BasicAuthentication extends AuthenticationInfo {
      * Create a BasicAuthentication
      */
     public BasicAuthentication(boolean isProxy, URL url, String realm,
-                               String auth, AuthCacheImpl authCache) {
+                               String auth) {
         super(isProxy ? PROXY_AUTHENTICATION : SERVER_AUTHENTICATION,
-              AuthScheme.BASIC, url, realm, authCache);
+              AuthScheme.BASIC, url, realm);
         this.auth = "Basic " + auth;
     }
 

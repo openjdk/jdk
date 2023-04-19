@@ -213,12 +213,9 @@ public abstract class AuthenticationInfo extends AuthCacheValue implements Clone
     /** The shortest path from the URL we authenticated against. */
     String path;
 
-    /** A cache to obtain credentials from if the default cache not to be used */
-    AuthCacheImpl authcache;
-
     /** Use this constructor only for proxy entries */
     public AuthenticationInfo(char type, AuthScheme authScheme, String host,
-                              int port, String realm, AuthCacheImpl acache) {
+                              int port, String realm) {
         this.type = type;
         this.authScheme = authScheme;
         this.protocol = "";
@@ -226,7 +223,6 @@ public abstract class AuthenticationInfo extends AuthCacheValue implements Clone
         this.port = port;
         this.realm = realm;
         this.path = null;
-        this.authcache = acache == null ? defCache : acache;
     }
 
     public Object clone() {
@@ -242,8 +238,7 @@ public abstract class AuthenticationInfo extends AuthCacheValue implements Clone
      * Constructor used to limit the authorization to the path within
      * the URL. Use this constructor for origin server entries.
      */
-    public AuthenticationInfo(char type, AuthScheme authScheme, URL url, String realm,
-                              AuthCacheImpl acache) {
+    public AuthenticationInfo(char type, AuthScheme authScheme, URL url, String realm) {
         this.type = type;
         this.authScheme = authScheme;
         this.protocol = url.getProtocol().toLowerCase();
@@ -260,7 +255,6 @@ public abstract class AuthenticationInfo extends AuthCacheValue implements Clone
         else {
             this.path = reducePath (urlPath);
         }
-        this.authcache = acache == null ? defCache : acache;
     }
 
     /*
@@ -376,7 +370,7 @@ public abstract class AuthenticationInfo extends AuthCacheValue implements Clone
     /**
      * Add this authentication to the cache
      */
-    void addToCache() {
+    void addToCache(AuthCacheImpl authcache) {
         String key = cacheKey(true);
         if (useAuthCache()) {
             authcache.put(key, this);
@@ -397,7 +391,7 @@ public abstract class AuthenticationInfo extends AuthCacheValue implements Clone
     /**
      * Remove this authentication from the cache
      */
-    void removeFromCache() {
+    void removeFromCache(AuthCacheImpl authcache) {
         authcache.remove(cacheKey(true), this);
         if (supportsPreemptiveAuthorization()) {
             authcache.remove(cacheKey(false), this);

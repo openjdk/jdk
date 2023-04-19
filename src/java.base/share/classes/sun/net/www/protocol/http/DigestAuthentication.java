@@ -296,12 +296,11 @@ class DigestAuthentication extends AuthenticationInfo {
      */
     public DigestAuthentication(boolean isProxy, URL url, String realm,
                                 String authMethod, PasswordAuthentication pw,
-                                Parameters params, AuthCacheImpl authcache) {
+                                Parameters params){
         super(isProxy ? PROXY_AUTHENTICATION : SERVER_AUTHENTICATION,
               AuthScheme.DIGEST,
               url,
-              realm,
-              authcache);
+              realm);
         this.authMethod = authMethod;
         this.pw = pw;
         this.params = params;
@@ -309,13 +308,12 @@ class DigestAuthentication extends AuthenticationInfo {
 
     public DigestAuthentication(boolean isProxy, String host, int port, String realm,
                                 String authMethod, PasswordAuthentication pw,
-                                Parameters params, AuthCacheImpl authcache) {
+                                Parameters params) {
         super(isProxy ? PROXY_AUTHENTICATION : SERVER_AUTHENTICATION,
               AuthScheme.DIGEST,
               host,
               port,
-              realm,
-              authcache);
+              realm);
         this.authMethod = authMethod;
         this.pw = pw;
         this.params = params;
