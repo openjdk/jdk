@@ -413,6 +413,7 @@ void Method::remove_unshareable_info() {
 
 void Method::restore_unshareable_info(TRAPS) {
   assert(is_method() && is_valid_method(this), "ensure C++ vtable is restored");
+  assert(!queued_for_compilation(), "method's queued_for_compilation flag should not be set");
 }
 #endif
 
@@ -1194,6 +1195,7 @@ void Method::unlink_method() {
 
   set_method_data(nullptr);
   clear_method_counters();
+  clear_queued_for_compilation();
 }
 #endif
 
