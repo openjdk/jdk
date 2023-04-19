@@ -785,8 +785,10 @@ UNSAFE_ENTRY(void, Unsafe_Unpark(JNIEnv *env, jobject unsafe, jobject jthread)) 
   if (jthread != nullptr) {
     oop thread_oop = JNIHandles::resolve_non_null(jthread);
     if (java_lang_Thread::thread(thread_oop) != nullptr) {
+      // Try to capture the live JavaThread in a ThreadsListHandle:
       ThreadsListHandle tlh; // Provides memory barrier
       if (java_lang_Thread::thread(thread_oop) != nullptr) {
+        // The still live JavaThread is protected by the ThreadsListHandle.
         JavaThread* thr = nullptr;
         // We verified that java_lang_Thread::thread(thread_oop) != nullptr
         // before and after creating tlh above so quick_mode can be used in
