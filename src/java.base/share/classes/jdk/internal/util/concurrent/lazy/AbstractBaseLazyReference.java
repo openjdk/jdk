@@ -24,7 +24,6 @@
  */
 package jdk.internal.util.concurrent.lazy;
 
-import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.annotation.Stable;
 
 import java.lang.invoke.MethodHandles;
@@ -38,8 +37,6 @@ import java.util.concurrent.lazy.Lazy;
 public abstract sealed class AbstractBaseLazyReference<V>
         implements BaseLazyReference<V>
         permits StandardEmptyLazyReference, StandardLazyReference {
-
-    static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
     // Allows access to the "value" field with arbitary memory semantics
     static final VarHandle VALUE_HANDLE;

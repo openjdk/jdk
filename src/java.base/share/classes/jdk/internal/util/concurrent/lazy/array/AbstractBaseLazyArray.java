@@ -24,7 +24,6 @@
  */
 package jdk.internal.util.concurrent.lazy.array;
 
-import jdk.internal.misc.Unsafe;
 import jdk.internal.util.concurrent.lazy.AbstractBaseLazyReference;
 import jdk.internal.util.concurrent.lazy.StandardEmptyLazyReference;
 import jdk.internal.vm.annotation.Stable;
