@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,10 @@ package javax.swing.text.rtf;
 
 import java.io.*;
 import java.lang.*;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.charset.CoderResult;
+import java.nio.charset.CharsetDecoder;
 
 /**
  * <b>RTFParser</b> is a subclass of <b>AbstractFilter</b> which understands basic RTF syntax
@@ -69,6 +73,10 @@ abstract class RTFParser extends AbstractFilter
 
   private final int S_inblob = 6;        // in a \bin blob
 
+    protected CharsetDecoder decoder = null;
+    private byte[] ba = new byte[2];
+    protected ByteBuffer decoderBB = ByteBuffer.wrap(ba);
+
   /** Implemented by subclasses to interpret a parameter-less RTF keyword.
    *  The keyword is passed without the leading '/' or any delimiting
    *  whitespace. */
@@ -109,6 +117,7 @@ abstract class RTFParser extends AbstractFilter
     //warnings = System.out;
 
     specialsTable = rtfSpecialsTable;
+    decoderBB.limit(1);
   }
 
   // TODO: Handle wrapup at end of file correctly.
@@ -182,6 +191,7 @@ abstract class RTFParser extends AbstractFilter
           }
           state = S_backslashed;
         } else {
+          ch = decode(ch);
           currentCharacters.append(ch);
         }
         break;
@@ -301,7 +311,8 @@ abstract class RTFParser extends AbstractFilter
         if (Character.digit(ch, 16) != -1)
         {
           pendingCharacter = pendingCharacter * 16 + Character.digit(ch, 16);
-          ch = translationTable[pendingCharacter];
+          ch = decoder == null ? translationTable[pendingCharacter]
+                               : decode((char)pendingCharacter);
           if (ch != 0)
               handleText(ch);
         }
@@ -359,5 +370,35 @@ abstract class RTFParser extends AbstractFilter
 
     super.close();
   }
+
+    private char[] ca = new char[1];
+    private CharBuffer decoderCB = CharBuffer.wrap(ca);
+
+    private char decode(char ch) {
+        if (decoder == null) return ch;
+        decoderBB.put((byte) ch);
+        decoderBB.rewind();
+        decoderCB.clear();
+        CoderResult cr = decoder.decode(decoderBB, decoderCB, false);
+        if (cr.isUnderflow()) {
+            if (decoderCB.position() == 1) {
+                char c = decoderCB.get(0);
+                decoder.reset();
+                decoderBB.clear();
+                decoderBB.limit(1);
+                return c;
+            } else {
+                decoder.reset();
+                decoderBB.limit(2);
+                decoderBB.position(1);
+                return 0;
+            }
+        } else {
+            decoder.reset();
+            decoderBB.clear();
+            decoderBB.limit(1);
+            return '\uFFFD';
+        }
+    }
 
 }
