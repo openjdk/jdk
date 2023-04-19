@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,23 +25,32 @@
  * @test
  * @bug 8033980
  * @summary verify serialization compatibility for XMLGregorianCalendar and Duration
- * @run main SerializationTest read
+ * @run testng SerializationTest
  */
 
-import java.io.*;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
 import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.Duration;
 import javax.xml.datatype.XMLGregorianCalendar;
 
+import org.testng.Assert;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
+
 /**
- * use "read" to test compatibility
- * SerializationTest read
- *
- * use "write" to create test files
- * SerializationTest write javaVersion
- * where javaVersion is 6, 7, 8, or 9
- *
+ * Verify serialization compatibility for XMLGregorianCalendar and Duration
  * @author huizhe.wang@oracle.com</a>
  */
 public class SerializationTest {
@@ -62,75 +71,83 @@ public class SerializationTest {
     final String EXPECTED_DURATION = "P1Y1M1DT1H1M1S";
     static String[] JDK = {"JDK6", "JDK7", "JDK8", "JDK9"};
 
-    public static void main(String[] args) {
-        SerializationTest test = new SerializationTest();
+    /**
+     * Create the Data files.
+     * @throws DatatypeConfigurationException
+     * @throws IOException
+     */
+    @BeforeClass
+    public void setup() throws DatatypeConfigurationException, IOException {
+        for(String jdkVersion : JDK) {
+            if(!Files.exists(Path.of(filePath, jdkVersion+FILENAME_CAL ))) {
+                DatatypeFactory dtf = DatatypeFactory.newInstance();
+                XMLGregorianCalendar c = dtf.newXMLGregorianCalendar(EXPECTED_CAL);
+                toFile((Serializable) c, filePath + jdkVersion + FILENAME_CAL);
 
-        if (args[0].equalsIgnoreCase("read")) {
-            test.testReadCal();
-            test.testReadDuration();
-            test.report();
-        } else {
-            int ver = Integer.valueOf(args[1]).intValue();
-            test.createTestFile(JDK[ver - 6]);
-        }
-
-    }
-
-    public void testReadCal() {
-        try {
-            for (String javaVersion : JDK) {
-                XMLGregorianCalendar d1 = (XMLGregorianCalendar) fromFile(
-                        javaVersion + FILENAME_CAL);
-                if (!d1.toString().equalsIgnoreCase(EXPECTED_CAL)) {
-                    fail("Java version: " + javaVersion
-                            + "\nExpected: " + EXPECTED_CAL
-                            + "\nActual: " + d1.toString());
-                } else {
-                    success("testReadCal: read " + javaVersion + " serialized file, passed.");
-                }
             }
-        } catch (ClassNotFoundException ex) {
-            fail("testReadCal: " + ex.getMessage());
-        } catch (IOException ex) {
-            fail("testReadCal: " + ex.getMessage());
-        }
-    }
-
-    public void testReadDuration() {
-        try {
-            for (String javaVersion : JDK) {
-                Duration d1 = (Duration) fromFile(
-                        javaVersion + FILENAME_DURATION);
-                if (!d1.toString().equalsIgnoreCase(EXPECTED_DURATION)) {
-                    fail("Java version: " + javaVersion
-                            + "\nExpected: " + EXPECTED_DURATION
-                            + "\nActual: " + d1.toString());
-                } else {
-                    success("testReadDuration: read " + javaVersion + " serialized file, passed.");
-                }
+            if(!Files.exists(Path.of(filePath, jdkVersion+"t"+FILENAME_DURATION ))) {
+                DatatypeFactory dtf = DatatypeFactory.newInstance();
+                Duration d = dtf.newDuration(EXPECTED_DURATION);
+                toFile((Serializable) d, filePath + jdkVersion + FILENAME_DURATION);
             }
-        } catch (ClassNotFoundException ex) {
-            fail("testReadDuration: " + ex.getMessage());
-        } catch (IOException ex) {
-            fail("testReadDuration: " + ex.getMessage());
         }
     }
 
     /**
-     * Create test files
-     *
-     * @param javaVersion JDK version
+     *Delete the data files.
+     * @throws IOException
      */
-    public void createTestFile(String javaVersion) {
-        try {
-            DatatypeFactory dtf = DatatypeFactory.newInstance();
-            XMLGregorianCalendar c = dtf.newXMLGregorianCalendar(EXPECTED_CAL);
-            Duration d = dtf.newDuration(EXPECTED_DURATION);
-            toFile((Serializable) c, filePath + javaVersion + FILENAME_CAL);
-            toFile((Serializable) d, filePath + javaVersion + FILENAME_DURATION);
-        } catch (Exception e) {
-            fail(e.getMessage());
+    @AfterClass
+    public void cleanup() throws IOException {
+        for(String jdkVersion : JDK) {
+            Files.deleteIfExists(Path.of(filePath, jdkVersion+FILENAME_CAL ));
+            Files.deleteIfExists(Path.of(filePath, jdkVersion+FILENAME_DURATION ));
         }
+    }
+
+
+    /**
+     *Provide data for JDK version and Gregorian Calender
+     */
+    @DataProvider(name = "GregorianCalendar")
+    public Object [][]gregorianCalendarData() {
+        return new Object [][] {{JDK[0], EXPECTED_CAL}, {JDK[1], EXPECTED_CAL},
+                {JDK[2], EXPECTED_CAL}, {JDK[3], EXPECTED_CAL}};
+    }
+
+    /**
+     * Provide data for JDK version and Duration
+     */
+    @DataProvider(name = "GregorianDuration")
+    public Object [][]gregorianDurationData() {
+        return new Object [][] {{JDK[0], EXPECTED_DURATION}, {JDK[1], EXPECTED_DURATION},
+                {JDK[2], EXPECTED_DURATION}, {JDK[3], EXPECTED_DURATION}};
+    }
+
+    /**
+     * verify serialization compatibility for XMLGregorianCalendar
+     * @param javaVersion
+     * @param gregorianDate
+     * @throws IOException
+     * @throws ClassNotFoundException
+     */
+    @Test(dataProvider="GregorianCalendar")
+    public void testReadCal(String javaVersion, String gregorianDate) throws IOException, ClassNotFoundException {
+        XMLGregorianCalendar d1 = (XMLGregorianCalendar) fromFile(javaVersion + FILENAME_CAL);
+        Assert.assertEquals(d1.toString(), gregorianDate);
+    }
+
+    /**
+     * verify serialization compatibility for Duration
+     * @param javaVersion
+     * @param gregorianDuration
+     * @throws IOException
+     * @throws ClassNotFoundException
+     */
+    @Test(dataProvider = "GregorianDuration")
+    public void testReadDuration(String javaVersion, String gregorianDuration) throws IOException, ClassNotFoundException {
+        Duration d1 = (Duration) fromFile(javaVersion + FILENAME_DURATION);
+        Assert.assertEquals(d1.toString().toUpperCase(), gregorianDuration);
     }
 
     /**
@@ -153,32 +170,6 @@ public class SerializationTest {
         ObjectOutputStream oos = new ObjectOutputStream(fout);
         oos.writeObject(o);
         oos.close();
-    }
-
-    static String errMessage;
-    int passed = 0, failed = 0;
-
-    void fail(String errMsg) {
-        if (errMessage == null) {
-            errMessage = errMsg;
-        } else {
-            errMessage = errMessage + "\n" + errMsg;
-        }
-        failed++;
-    }
-
-    void success(String msg) {
-        passed++;
-        System.out.println(msg);
-    }
-
-    public void report() {
-
-        System.out.println("\nNumber of tests passed: " + passed);
-        System.out.println("Number of tests failed: " + failed + "\n");
-
-        if (errMessage != null) {
-            throw new RuntimeException(errMessage);
-        }
+        fout.close();
     }
 }
