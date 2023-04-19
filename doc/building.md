@@ -970,14 +970,14 @@ https://sourceware.org/autobook/autobook/autobook_17.html). If no
 targets are given, a native toolchain for the current platform will be
 created. Currently, at least the following targets are known to work:
 
- Supported devkit targets
- -------------------------
- x86_64-linux-gnu
- aarch64-linux-gnu
- arm-linux-gnueabihf
- ppc64-linux-gnu
- ppc64le-linux-gnu
- s390x-linux-gnu
+| Supported devkit targets |
+| ------------------------ |
+| x86_64-linux-gnu         |
+| aarch64-linux-gnu        |
+| arm-linux-gnueabihf      |
+| ppc64-linux-gnu          |
+| ppc64le-linux-gnu        |
+| s390x-linux-gnu          |
 
 `BASE_OS` must be one of "OEL6" for Oracle Enterprise Linux 6 or
 "Fedora" (if not specified "OEL6" will be the default). If the base OS
@@ -1204,22 +1204,22 @@ it might require a little nudge with:
 
 Architectures that are known to successfully cross-compile like this are:
 
-  Target        Debian tree  Debian arch   `--openjdk-target=...`   `--with-jvm-variants=...`
-  ------------  ------------ ------------- ------------------------ --------------
-  x86           buster       i386          i386-linux-gnu           (all)
-  arm           buster       armhf         arm-linux-gnueabihf      (all)
-  aarch64       buster       arm64         aarch64-linux-gnu        (all)
-  ppc64le       buster       ppc64el       powerpc64le-linux-gnu    (all)
-  s390x         buster       s390x         s390x-linux-gnu          (all)
-  mipsle        buster       mipsel        mipsel-linux-gnu         zero
-  mips64le      buster       mips64el      mips64el-linux-gnueabi64 zero
-  armel         buster       arm           arm-linux-gnueabi        zero
-  ppc           sid          powerpc       powerpc-linux-gnu        zero
-  ppc64be       sid          ppc64         powerpc64-linux-gnu      (all)
-  m68k          sid          m68k          m68k-linux-gnu           zero
-  alpha         sid          alpha         alpha-linux-gnu          zero
-  sh4           sid          sh4           sh4-linux-gnu            zero
-  riscv64       sid          riscv64       riscv64-linux-gnu        (all)
+| Target       | Debian tree  | Debian arch   | `--openjdk-target=...`   | `--with-jvm-variants=...` |
+| ------------ | ------------ | ------------- | ------------------------ | ------------------------- |
+| x86          | buster       | i386          | i386-linux-gnu           | (all)                     |
+| arm          | buster       | armhf         | arm-linux-gnueabihf      | (all)                     |
+| aarch64      | buster       | arm64         | aarch64-linux-gnu        | (all)                     |
+| ppc64le      | buster       | ppc64el       | powerpc64le-linux-gnu    | (all)                     |
+| s390x        | buster       | s390x         | s390x-linux-gnu          | (all)                     |
+| mipsle       | buster       | mipsel        | mipsel-linux-gnu         | zero                      |
+| mips64le     | buster       | mips64el      | mips64el-linux-gnueabi64 | zero                      |
+| armel        | buster       | arm           | arm-linux-gnueabi        | zero                      |
+| ppc          | sid          | powerpc       | powerpc-linux-gnu        | zero                      |
+| ppc64be      | sid          | ppc64         | powerpc64-linux-gnu      | (all)                     |
+| m68k         | sid          | m68k          | m68k-linux-gnu           | zero                      |
+| alpha        | sid          | alpha         | alpha-linux-gnu          | zero                      |
+| sh4          | sid          | sh4           | sh4-linux-gnu            | zero                      |
+| riscv64      | sid          | riscv64       | riscv64-linux-gnu        | (all)                     |
 
 ### Building for ARM/aarch64
 
