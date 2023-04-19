@@ -28,7 +28,10 @@ package sun.net.www.protocol.http;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.net.PasswordAuthentication;
+import java.net.Authenticator;
 import java.net.URL;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.HashMap;
 import java.util.Objects;
 import java.util.concurrent.locks.Condition;
@@ -316,14 +319,12 @@ public abstract class AuthenticationInfo extends AuthCacheValue implements Clone
         return requestAuthentication(key, cache, AuthenticationInfo::getCachedServerAuth);
     }
 
-
     /**
      * Return the AuthenticationInfo object from the cache if it's path is
      * a substring of the supplied URLs path.
      */
     static AuthenticationInfo getAuth(String key, URL url, AuthCacheImpl acache) {
-        // use default cache if none supplied
-        acache = acache == null ? defCache : acache;
+        Objects.requireNonNull(acache);
         if (url == null) {
             return (AuthenticationInfo)acache.get (key, null);
         } else {
@@ -337,9 +338,8 @@ public abstract class AuthenticationInfo extends AuthCacheValue implements Clone
      * blank for proxies.
      */
     static AuthenticationInfo getProxyAuth(String host, int port, AuthCacheImpl acache) {
+        Objects.requireNonNull(acache);
         String key = PROXY_AUTHENTICATION + "::" + host.toLowerCase() + ":" + port;
-        // use default cache if none supplied
-        acache = acache == null ? defCache : acache;
         AuthenticationInfo result = (AuthenticationInfo) acache.get(key, null);
         return result;
     }
@@ -357,7 +357,7 @@ public abstract class AuthenticationInfo extends AuthCacheValue implements Clone
     }
 
     private static AuthenticationInfo getCachedProxyAuth(String key, AuthCacheImpl acache) {
-        acache = acache == null ? defCache : acache;
+        Objects.requireNonNull(acache);
         return (AuthenticationInfo) acache.get(key, null);
     }
 
@@ -371,6 +371,7 @@ public abstract class AuthenticationInfo extends AuthCacheValue implements Clone
      * Add this authentication to the cache
      */
     void addToCache(AuthCacheImpl authcache) {
+        Objects.requireNonNull(authcache);
         String key = cacheKey(true);
         if (useAuthCache()) {
             authcache.put(key, this);
@@ -392,6 +393,7 @@ public abstract class AuthenticationInfo extends AuthCacheValue implements Clone
      * Remove this authentication from the cache
      */
     void removeFromCache(AuthCacheImpl authcache) {
+        Objects.requireNonNull(authcache);
         authcache.remove(cacheKey(true), this);
         if (supportsPreemptiveAuthorization()) {
             authcache.remove(cacheKey(false), this);

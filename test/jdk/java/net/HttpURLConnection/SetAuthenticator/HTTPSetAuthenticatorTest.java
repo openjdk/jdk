@@ -62,6 +62,7 @@ import java.util.stream.Stream;
  *                 authentication when in Server mode. There should be
  *                 no real difference between BASICSERVER and BASIC - it should
  *                 be transparent on the client side.
+ * @run main/othervm HTTPSetAuthenticatorTest NONE SERVER PROXY SERVER307 PROXY305
  * @run main/othervm -Dhttp.auth.digest.reEnabledAlgorithms=MD5 HTTPSetAuthenticatorTest DIGEST SERVER
  * @run main/othervm -Dhttp.auth.digest.reEnabledAlgorithms=MD5 HTTPSetAuthenticatorTest DIGEST PROXY
  * @run main/othervm -Dhttp.auth.digest.reEnabledAlgorithms=MD5 HTTPSetAuthenticatorTest DIGEST PROXY305
@@ -120,6 +121,7 @@ public class HTTPSetAuthenticatorTest extends HTTPTest {
                                 ? 0 : EXPECTED_AUTH_CALLS_PER_TEST;
         int count;
         int defaultCount = AUTHENTICATOR.count.get();
+        System.out.println("XXX1 default count = " + defaultCount);
 
         // Connect to the server with a GET request, then with a
         // POST that contains "Hello World!"
@@ -188,7 +190,7 @@ public class HTTPSetAuthenticatorTest extends HTTPTest {
         }
 
         // Now tries with explicitly setting the default authenticator: it should
-        // be invoked again.
+        // not be invoked again.
         // Uncomment the code below when 8169068 is available.
         System.out.println("\nClient: Explicitly setting the default authenticator: "
             + toString(Authenticator.getDefault()));
@@ -204,10 +206,10 @@ public class HTTPSetAuthenticatorTest extends HTTPTest {
                 + " expected it to be called " + expected(expectedIncrement));
         }
         count =  AUTHENTICATOR.count.get();
-        if (count != defaultCount + 2 * expectedIncrement) {
+        if (count != defaultCount + expectedIncrement) {
             throw new AssertionError("Default Authenticator called " + count(count)
                 + " expected it to be called "
-                + expected(defaultCount + 2 * expectedIncrement));
+                + expected(defaultCount + expectedIncrement));
         }
 
         // Now tries to set an authenticator on a connected connection.
@@ -278,7 +280,7 @@ public class HTTPSetAuthenticatorTest extends HTTPTest {
         // All good!
         // return the number of times the default authenticator is supposed
         // to have been called.
-        return scheme == HttpSchemeType.NONE ? 0 : 2 * EXPECTED_AUTH_CALLS_PER_TEST;
+        return scheme == HttpSchemeType.NONE ? 0 : EXPECTED_AUTH_CALLS_PER_TEST;
     }
 
     static String toString(Authenticator a) {

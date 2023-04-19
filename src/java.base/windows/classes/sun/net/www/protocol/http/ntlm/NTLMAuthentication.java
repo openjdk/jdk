@@ -35,7 +35,6 @@ import java.util.Properties;
 import sun.net.NetProperties;
 import sun.net.www.HeaderParser;
 import sun.net.www.protocol.http.AuthenticationInfo;
-import sun.net.www.protocol.http.AuthCacheImpl;
 import sun.net.www.protocol.http.AuthScheme;
 import sun.net.www.protocol.http.HttpURLConnection;
 import sun.security.action.GetPropertyAction;

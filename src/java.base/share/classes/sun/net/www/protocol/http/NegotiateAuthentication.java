@@ -33,7 +33,6 @@ import java.util.HashMap;
 import java.util.concurrent.locks.ReentrantLock;
 
 import sun.net.www.HeaderParser;
-import sun.net.www.protocol.http.AuthCacheImpl;
 import static sun.net.www.protocol.http.AuthScheme.NEGOTIATE;
 import static sun.net.www.protocol.http.AuthScheme.KERBEROS;
 import sun.security.action.GetPropertyAction;
@@ -81,8 +80,7 @@ class NegotiateAuthentication extends AuthenticationInfo {
     public NegotiateAuthentication(HttpCallerInfo hci) {
         super(RequestorType.PROXY==hci.authType ? PROXY_AUTHENTICATION : SERVER_AUTHENTICATION,
               hci.scheme.equalsIgnoreCase("Negotiate") ? NEGOTIATE : KERBEROS,
-              hci.url,
-              "");
+              hci.url, "");
         this.hci = hci;
     }
 

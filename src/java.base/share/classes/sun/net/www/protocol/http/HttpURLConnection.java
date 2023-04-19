@@ -309,8 +309,11 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
     protected HttpClient http;
     protected Handler handler;
     protected Proxy instProxy;
-    protected volatile Authenticator authenticator = privGetDefaultAuthenticator();
-    protected volatile AuthCacheImpl authCache = AuthCacheImpl.getAuthCacheFor(authenticator);
+    protected volatile Authenticator authenticator =
+        privGetDefaultAuthenticator();
+
+    protected volatile AuthCacheImpl authCache =
+        AuthCacheImpl.getAuthCacheFor(authenticator);
 
     private CookieHandler cookieHandler;
     private final ResponseCache cacheHandler;
@@ -2468,8 +2471,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                          */
                         if (tryTransparentNTLMProxy ||
                               (!tryTransparentNTLMProxy && a != null)) {
-                            ret = NTLMAuthenticationProxy.proxy.create(true, host,
-                                    port, a, authCache);
+                            ret = NTLMAuthenticationProxy.proxy.create(true, host, port, a);
                         }
 
                         /* set to false so that we do not try again */
@@ -2646,8 +2648,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                          */
                         if (tryTransparentNTLMServer ||
                               (!tryTransparentNTLMServer && a != null)) {
-                            ret = NTLMAuthenticationProxy.proxy.create(false,
-                                     url1, a, authCache);
+                            ret = NTLMAuthenticationProxy.proxy.create(false, url1, a);
                         }
 
                         /* set to false so that we do not try again */
