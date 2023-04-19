@@ -5254,9 +5254,13 @@ int PlatformEvent::park_nanos(jlong nanos) {
 
   // Windows timers are still quite unpredictable to handle sub-millisecond granularity.
   // Instead of implementing sub-millisecond sleeps, fall back to the usual behavior of
-  // rounding up any positive requested nanos to the a full millisecond. This is how
+  // rounding up any excess requested nanos to the full millisecond. This is how
   // Thread.sleep(millis, nanos) has always behaved with only millisecond granularity.
-  jlong millis = align_up(nanos, NANOSECS_PER_MILLISEC) / NANOSECS_PER_MILLISEC;
+  jlong millis = nanos / NANOSECS_PER_MILLISEC;
+  jlong nanos = nanos - millis * NANOSECS_PER_MILLISEC;
+  if (nanos > 0) {
+    millis++;
+  }
   assert(millis > 0, "should always be positive");
   return park(millis);
 }
