@@ -258,7 +258,7 @@ int JvmtiRawMonitor::simple_wait(Thread* self, jlong millis) {
         if (millis <= 0) {
           self->_ParkEvent->park();
         } else {
-          self->_ParkEvent->park_millis(millis);
+          self->_ParkEvent->park(millis);
         }
         // Return to VM before post-check of interrupt state
       }
@@ -270,7 +270,7 @@ int JvmtiRawMonitor::simple_wait(Thread* self, jlong millis) {
     if (millis <= 0) {
       self->_ParkEvent->park();
     } else {
-      self->_ParkEvent->park_millis(millis);
+      self->_ParkEvent->park(millis);
     }
   }
 

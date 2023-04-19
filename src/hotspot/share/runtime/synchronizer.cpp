@@ -758,7 +758,7 @@ static markWord read_stable_mark(oop obj) {
           // so we periodically call current->_ParkEvent->park(1).
           // We use a mixed spin/yield/block mechanism.
           if ((YieldThenBlock++) >= 16) {
-            Thread::current()->_ParkEvent->park_millis(1);
+            Thread::current()->_ParkEvent->park(1);
           } else {
             os::naked_yield();
           }

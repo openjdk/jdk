@@ -1980,7 +1980,7 @@ Klass* JavaThread::security_get_caller_class(int depth) {
   return nullptr;
 }
 
-bool JavaThread::sleep_millis(jlong millis) {
+bool JavaThread::sleep(jlong millis) {
   return sleep_nanos(millis_to_nanos(millis));
 }
 

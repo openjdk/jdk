@@ -216,7 +216,7 @@ static void run_test(BufferNode::Allocator* allocator, CompletedList* cbl) {
   tty->print_cr("Stressing allocator for %u ms", milliseconds_to_run);
   {
     ThreadInVMfromNative invm(this_thread);
-    this_thread->sleep_millis(milliseconds_to_run);
+    this_thread->sleep(milliseconds_to_run);
   }
   Atomic::release_store(&allocator_running, false);
   for (uint i = 0; i < nthreads; ++i) {

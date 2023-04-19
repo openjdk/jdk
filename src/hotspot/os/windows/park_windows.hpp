@@ -50,7 +50,7 @@ class PlatformEvent : public CHeapObj<mtSynchronizer> {
     int  fired() { return _Event; }
     void park () ;
     void unpark () ;
-    int  park_millis(jlong millis);
+    int  park(jlong millis);
     int  park_nanos(jlong nanos);
 };
 

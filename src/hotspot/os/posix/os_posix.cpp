@@ -1537,7 +1537,7 @@ void PlatformEvent::park() {       // AKA "down()"
   guarantee(_event >= 0, "invariant");
 }
 
-int PlatformEvent::park_millis(jlong millis) {
+int PlatformEvent::park(jlong millis) {
   return park_nanos(millis_to_nanos_bounded(millis));
 }
 

@@ -5261,7 +5261,7 @@ int PlatformEvent::park_nanos(jlong nanos) {
   return park(millis);
 }
 
-int PlatformEvent::park_millis(jlong Millis) {
+int PlatformEvent::park(jlong Millis) {
   // Transitions for _Event:
   //   -1 => -1 : illegal
   //    1 =>  0 : pass - return immediately
