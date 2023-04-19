@@ -1623,6 +1623,8 @@ public:
                            const FloatRegister rr_v[]);
   void poly1305_reduce_vec(const FloatRegister u[], const FloatRegister upper_bits,
                            AbstractRegSet<FloatRegister> scratch);
+  void poly1305_load(Register s[], Register input_start);
+  void poly1305_step(Register s[], const RegPair u[], Register input_start);
   void poly1305_add(const Register dest[], const RegPair src[]);
 
   void mov26(FloatRegister d, Register s, int lsb);
@@ -1636,7 +1638,6 @@ public:
   void poly1305_reduce(const RegPair u[]);
   void poly1305_reduce_step(FloatRegister d, FloatRegister s, FloatRegister upper_bits, FloatRegister scratch);
   void poly1305_fully_reduce(Register dest[], const RegPair u[]);
-  void poly1305_step(Register s[], const RegPair u[], Register input_start);
   void poly1305_transfer(const RegPair d[], const FloatRegister s[],
                          int lane, FloatRegister vscratch);
   void copy_3_regs(const Register dest[], const Register src[]);

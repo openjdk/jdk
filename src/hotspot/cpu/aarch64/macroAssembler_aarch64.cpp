@@ -6522,17 +6522,18 @@ void MacroAssembler::poly1305_fully_reduce(Register dest[], const RegPair u[]) {
   csel(dest[2], dest[2], u[2]._lo, HS);
 }
 
-void MacroAssembler::poly1305_step(Register s[], const RegPair u[], Register input_start) {
+void MacroAssembler::poly1305_load(Register s[], Register input_start) {
   ldp(rscratch1, rscratch2, post(input_start, 2 * wordSize));
   ubfx(s[0], rscratch1, 0, 52);
   extr(s[1], rscratch2, rscratch1, 52);
   ubfx(s[1], s[1], 0, 52);
   ubfx(s[2], rscratch2, 40, 24);
   orr(s[2], s[2], 1 << 24);
+}
 
-  for (int i = 0; i < 3; i++) {
-    add(s[i], u[i]._lo, s[i]);
-  }
+void MacroAssembler::poly1305_step(Register s[], const RegPair u[], Register input_start) {
+  poly1305_load(s, input_start);
+  poly1305_add(s, u);
 }
 
 void MacroAssembler::copy_3_regs(const Register dest[], const Register src[]) {

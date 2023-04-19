@@ -30,7 +30,7 @@
 
 typedef AbstractRegSet<FloatRegister> vRegSet;
 
-static constexpr bool use_vec = false;
+static constexpr bool use_vec = true;
 
 address generate_poly1305_processBlocks2() {
   address consts = __ pc();
@@ -190,10 +190,9 @@ address generate_poly1305_processBlocks2() {
     __ poly1305_multiply(u0, S0, R, RR2, regs);
     __ poly1305_reduce(u0);
 
-    __ poly1305_step(S0, u1, input_start);
+    __ poly1305_load(S0, input_start);
     __ poly1305_add(S0, u0);
-    poo = __ pc();
-    
+    __ poly1305_add(S0, u1);
     __ poly1305_multiply(u0, S0, R, RR2, regs);
     __ poly1305_reduce(u0);
 
