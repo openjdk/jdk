@@ -31,7 +31,7 @@ public class UnnamedErrors {
         }
     }
 
-    void dominance1(Object o) {
+    void dominance_error(Object o) {
         switch (o) {
             case Number _ ->
                     System.out.println("A Number");
@@ -41,4 +41,29 @@ public class UnnamedErrors {
                     System.out.println("rest");
         }
     }
+
+    void mixed_named_unnamed_error(Object o) {
+        switch (o) {
+            case Integer i, String _ ->
+                    System.out.println("named/unnamed");
+            default ->
+                    System.out.println("rest");
+        }
+
+        switch (o) {
+            case Integer _, String s ->
+                    System.out.println("unnamed/named");
+            default ->
+                    System.out.println("rest");
+        }
+
+        switch (o) {
+            case PairIS(_, _), String s ->
+                    System.out.println("unnamed patterns/named");
+            default ->
+                    System.out.println("rest");
+        }
+    }
+
+    record PairIS(int i, String s) {}
 }

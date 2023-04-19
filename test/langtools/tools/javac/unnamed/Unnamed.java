@@ -23,9 +23,15 @@ public class Unnamed {
         assertEquals(3, testMultiValuesNested(new Box(new R4())));
         assertEquals(1, testMultiValuesNestedUnnamedVarAndPattern(new Box(new R1())));
         assertEquals(2, testMultiValuesNestedUnnamedVarAndPattern(new Box(new R4())));
+        assertEquals(1, testMultiValuesNestedMix(new Box(new R1())));
+        assertEquals(1, testMultiValuesNestedMix(new Box2(new R1())));
+        assertEquals(1, testMultiValuesNestedMix2(new Box(new R1())));
+        assertEquals(1, testMultiValuesNestedMix2("BOX"));
+        assertEquals(2, testMultiValuesNestedMix2(new Box2(new R1())));
 //        assertEquals(2, testMultiValuesGuards(new R3(), 1));
 //        assertEquals(3, testMultiValuesGuards(new R3(), 42));
     }
+
     private void unnamedTest() {
         int _ = 0;
         int _ = 1;
@@ -77,7 +83,21 @@ public class Unnamed {
         };
     }
 
-//    int testMultiValuesGuards(Base b, int x) {
+    int testMultiValuesNestedMix(Object b) {
+        return switch (b) {
+            case Box(_), Box2(_) -> 1;
+            default -> 2;
+        };
+    }
+
+    int testMultiValuesNestedMix2(Object b) {
+        return switch (b) {
+            case Box(_), String _ -> 1;
+            default -> 2;
+        };
+    }
+
+//    int testMultiValuesGuards(Base b, int x) {        // TODO
 //        return switch (b) {
 //            case R1 r -> 1;
 //            case R2 _, R3 _, R4 _ when x == 1 -> 2;
@@ -85,7 +105,7 @@ public class Unnamed {
 //        };
 //    }
 
-//    int testMultiValuesNestedGuards(Box<?> b, int x) {
+//    int testMultiValuesNestedGuards(Box<?> b, int x) { // TODO
 //        return switch (b) {
 //            case Box(R1 _), Box(R2 _) -> 1;
 //            case Box(R3 _), Box(_) when x == 1 -> 2;
@@ -108,6 +128,7 @@ public class Unnamed {
     final  class R3  extends Base { }
     final  class R4  extends Base { }
     record Box<T extends Base>(T content) { }
+    record Box2<T extends Base>(T content) { }
 
     void assertEquals(Object expected, Object actual) {
         if (!Objects.equals(expected, actual)) {

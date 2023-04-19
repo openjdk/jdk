@@ -65,13 +65,8 @@ import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Name;
 import com.sun.tools.javac.util.Names;
 
-import java.util.Collections;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.HashMap;
-import java.util.IdentityHashMap;
-import java.util.LinkedHashMap;
-import java.util.Set;
 
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Symbol.RecordComponent;
@@ -552,25 +547,22 @@ public class TransPatterns extends TreeTranslator {
                         JCExpression test = null;
                         JCExpression accTest = null;
                         boolean first = true;
+
+                        boolean multiplePatternsAndDifferent = labels.size() > 1 &&
+                                !labels.stream().map(l -> l.pat.type.tsym).allMatch(labels.get(0).pat.type.tsym::equals);
+
                         for (JCPatternCaseLabel label: labels) {
                             test = (JCExpression) this.<JCTree>translate(label.pat);
+
+                            if (multiplePatternsAndDifferent) {
+                                test = makeBinary(Tag.AND, makeTypeTest(make.Ident(temp), make.Type(label.pat.type)), test);
+                            }
+
                             if (label.guard != null) {
                                 JCExpression guard = translate(label.guard);
-                                if (hasJoinedNull) {
-                                    JCPattern pattern = label.pat;
-                                    while (pattern instanceof JCParenthesizedPattern parenthesized) {
-                                        pattern = parenthesized.pattern;
-                                    }
-                                    Assert.check(pattern.hasTag(Tag.BINDINGPATTERN));
-                                    BindingSymbol binding = (BindingSymbol) ((JCBindingPattern) pattern).var.sym;
-                                    guard = makeBinary(Tag.OR,
-                                            makeBinary(Tag.EQ,
-                                                    make.Ident(bindingContext.getBindingFor(binding)),
-                                                    makeNull()),
-                                            guard);
-                                }
                                 test = makeBinary(Tag.AND, test, guard);
                             }
+
                             if (!first) {
                                 accTest = makeBinary(Tag.OR, accTest, test);
                             } else {
@@ -579,6 +571,7 @@ public class TransPatterns extends TreeTranslator {
                             }
                         }
                         test = accTest;
+
                         c.stats = translate(c.stats);
                         JCContinue continueSwitch = make.at(clearedPatterns.head.pos()).Continue(null);
                         continueSwitch.target = tree;
@@ -667,6 +660,25 @@ public class TransPatterns extends TreeTranslator {
                 }
             }.scan(c.stats);
         }
+
+    // TODO: copied from check
+    private boolean checkAllUnderscore(JCPattern pattern) {
+        return switch (pattern.getTag()) {
+            case BINDINGPATTERN:
+                JCBindingPattern bp = (JCBindingPattern) pattern;
+                yield bp.var.name == names.underscore;
+            case RECORDPATTERN:
+                JCRecordPattern rp = (JCRecordPattern) pattern;
+                yield rp.getNestedPatterns().stream().allMatch(component -> checkAllUnderscore(component));
+            case PARENTHESIZEDPATTERN:
+                JCParenthesizedPattern pp = (JCParenthesizedPattern) pattern;
+                yield checkAllUnderscore(pp.pattern);
+            case ANYPATTERN:
+                yield true;
+            default:
+                yield false;
+        };
+    }
 
     void appendBreakIfNeeded(JCTree switchTree, List<JCCase> cases, JCCase c) {
         if (c.caseKind == CaseTree.CaseKind.RULE || (cases.last() == c && c.completesNormally)) {
