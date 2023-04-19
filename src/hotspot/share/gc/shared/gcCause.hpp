@@ -96,8 +96,9 @@ class GCCause : public AllStatic {
   }
 
   inline static bool is_explicit_gc(GCCause::Cause cause) {
-    return (cause == GCCause::_java_lang_system_gc ||
-            cause == GCCause::_dcmd_gc_run ||
+    return (is_user_requested_gc(cause) ||
+            is_serviceability_requested_gc(cause) ||
+            cause == GCCause::_wb_young_gc ||
             cause == GCCause::_wb_full_gc);
   }
 

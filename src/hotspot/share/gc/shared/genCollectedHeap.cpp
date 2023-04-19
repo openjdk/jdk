@@ -801,7 +801,7 @@ void GenCollectedHeap::collect(GCCause::Cause cause) {
                         cause, max_generation);
     VMThread::execute(&op);
 
-    if (!GCCause::is_explicit_gc(cause)) {
+    if (!GCCause::is_explicit_gc(cause) || should_run_young_gc) {
       return;
     }
 
