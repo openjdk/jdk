@@ -110,6 +110,7 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
     final int instanceKlassStateBeingInitialized = getConstant("InstanceKlass::being_initialized", Integer.class);
 
     final int annotationsFieldAnnotationsOffset = getFieldOffset("Annotations::_fields_annotations", Integer.class, "Array<AnnotationArray*>*");
+    final int annotationsClassAnnotationsOffset = getFieldOffset("Annotations::_class_annotations", Integer.class, "AnnotationArray*");
     final int fieldsAnnotationsBaseOffset = getFieldValue("CompilerToVM::Data::_fields_annotations_base_offset", Integer.class, "int");
 
     final int arrayU1LengthOffset = getFieldOffset("Array<int>::_length", Integer.class, "int");
