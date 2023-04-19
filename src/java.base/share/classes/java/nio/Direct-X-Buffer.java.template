@@ -452,8 +452,7 @@ class Direct$Type$Buffer$RW$$BO$
         checkSession();
 
         int length = end - start;
-        Objects.checkFromIndexSize(start, length,
-                                   csq == null ? 0 : csq.length());
+        Objects.checkFromIndexSize(start, length, csq.length());
 
         int pos = position();
         int lim = limit();
