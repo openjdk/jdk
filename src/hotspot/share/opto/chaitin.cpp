@@ -271,7 +271,7 @@ PhaseChaitin::PhaseChaitin(uint unique, PhaseCFG &cfg, Matcher &matcher, bool sc
   for (uint i = 0; i < NUMBUCKS; i++) {
     blkcnt += buckcnt[i];
   }
-  assert(blkcnt == _cfg.number_of_blocks(), "Block array not totally filled");
+  assert(blkcnt == nr_blocks, "Block array not totally filled");
 #endif
 }
 
