@@ -154,6 +154,10 @@ void print128(u128 n) {
 }
 
 void print52(u64 x2, u64 x1, u64 x0) {
+  u64 over = x2 >> 26;
+  x2 = x2 << (64-26) >> (64-26);
+  x0 += over * 5;
+  
   u128 x_sum = 0;
   x_sum = x_sum
     + x0

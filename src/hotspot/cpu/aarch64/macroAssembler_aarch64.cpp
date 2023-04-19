@@ -6547,3 +6547,9 @@ void MacroAssembler::add_3_reg_pairs(const RegPair dest[], const RegPair src[]) 
     adc(dest[i]._hi, dest[i]._hi, src[i]._hi);
   }
 }
+
+void MacroAssembler::poly1305_add(const Register dest[], const RegPair src[]) {
+  add(dest[0], dest[0], src[0]._lo);
+  add(dest[1], dest[1], src[1]._lo);
+  add(dest[2], dest[2], src[2]._lo);
+}

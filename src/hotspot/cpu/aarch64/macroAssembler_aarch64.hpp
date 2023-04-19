@@ -1623,6 +1623,7 @@ public:
                            const FloatRegister rr_v[]);
   void poly1305_reduce_vec(const FloatRegister u[], const FloatRegister upper_bits,
                            AbstractRegSet<FloatRegister> scratch);
+  void poly1305_add(const Register dest[], const RegPair src[]);
 
   void mov26(FloatRegister d, Register s, int lsb);
   void expand26(Register d, Register r);
