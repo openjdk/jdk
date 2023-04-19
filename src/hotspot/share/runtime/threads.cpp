@@ -56,6 +56,7 @@
 #include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
+#include "prims/jvmtiAgentList.hpp"
 #include "prims/jvm_misc.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
@@ -332,10 +333,6 @@ static void call_initPhase3(TRAPS) {
 void Threads::initialize_java_lang_classes(JavaThread* main_thread, TRAPS) {
   TraceTime timer("Initialize java.lang classes", TRACETIME_LOG(Info, startuptime));
 
-  if (EagerXrunInit && Arguments::init_libraries_at_startup()) {
-    create_vm_init_libraries();
-  }
-
   initialize_class(vmSymbols::java_lang_String(), CHECK);
 
   // Inject CompactStrings value after the static initializers for String ran.
@@ -499,16 +496,8 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // Initialize output stream logging
   ostream_init_log();
 
-  // Convert -Xrun to -agentlib: if there is no JVM_OnLoad
-  // Must be before create_vm_init_agents()
-  if (Arguments::init_libraries_at_startup()) {
-    convert_vm_init_libraries_to_agents();
-  }
-
   // Launch -agentlib/-agentpath and converted -Xrun agents
-  if (Arguments::init_agents_at_startup()) {
-    create_vm_init_agents();
-  }
+  JvmtiAgentList::load_agents();
 
   // Initialize Threads state
   _number_of_threads = 0;
@@ -623,6 +612,11 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // Notify JVMTI agents that VM has started (JNI is up) - nop if no agents.
   JvmtiExport::post_early_vm_start();
 
+  // Launch -Xrun agents early if EagerXrunInit is set
+  if (EagerXrunInit) {
+    JvmtiAgentList::load_xrun_agents();
+  }
+
   initialize_java_lang_classes(main_thread, CHECK_JNI_ERR);
 
   quicken_jni_functions();
@@ -658,11 +652,9 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
     }
   }
 
-  // Launch -Xrun agents
-  // Must be done in the JVMTI live phase so that for backward compatibility the JDWP
-  // back-end can launch with -Xdebug -Xrunjdwp.
-  if (!EagerXrunInit && Arguments::init_libraries_at_startup()) {
-    create_vm_init_libraries();
+  // Launch -Xrun agents if EagerXrunInit is not set.
+  if (!EagerXrunInit) {
+    JvmtiAgentList::load_xrun_agents();
   }
 
   Chunk::start_chunk_pool_cleaner_task();
@@ -802,208 +794,6 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   }
 
   return JNI_OK;
-}
-
-// type for the Agent_OnLoad and JVM_OnLoad entry points
-extern "C" {
-  typedef jint (JNICALL *OnLoadEntry_t)(JavaVM *, char *, void *);
-}
-// Find a command line agent library and return its entry point for
-//         -agentlib:  -agentpath:   -Xrun
-// num_symbol_entries must be passed-in since only the caller knows the number of symbols in the array.
-static OnLoadEntry_t lookup_on_load(AgentLibrary* agent,
-                                    const char *on_load_symbols[],
-                                    size_t num_symbol_entries) {
-  OnLoadEntry_t on_load_entry = nullptr;
-  void *library = nullptr;
-
-  if (!agent->valid()) {
-    char buffer[JVM_MAXPATHLEN];
-    char ebuf[1024] = "";
-    const char *name = agent->name();
-    const char *msg = "Could not find agent library ";
-
-    // First check to see if agent is statically linked into executable
-    if (os::find_builtin_agent(agent, on_load_symbols, num_symbol_entries)) {
-      library = agent->os_lib();
-    } else if (agent->is_absolute_path()) {
-      library = os::dll_load(name, ebuf, sizeof ebuf);
-      if (library == nullptr) {
-        const char *sub_msg = " in absolute path, with error: ";
-        size_t len = strlen(msg) + strlen(name) + strlen(sub_msg) + strlen(ebuf) + 1;
-        char *buf = NEW_C_HEAP_ARRAY(char, len, mtThread);
-        jio_snprintf(buf, len, "%s%s%s%s", msg, name, sub_msg, ebuf);
-        // If we can't find the agent, exit.
-        vm_exit_during_initialization(buf, nullptr);
-        FREE_C_HEAP_ARRAY(char, buf);
-      }
-    } else {
-      // Try to load the agent from the standard dll directory
-      if (os::dll_locate_lib(buffer, sizeof(buffer), Arguments::get_dll_dir(),
-                             name)) {
-        library = os::dll_load(buffer, ebuf, sizeof ebuf);
-      }
-      if (library == nullptr) { // Try the library path directory.
-        if (os::dll_build_name(buffer, sizeof(buffer), name)) {
-          library = os::dll_load(buffer, ebuf, sizeof ebuf);
-        }
-        if (library == nullptr) {
-          const char *sub_msg = " on the library path, with error: ";
-          const char *sub_msg2 = "\nModule java.instrument may be missing from runtime image.";
-
-          size_t len = strlen(msg) + strlen(name) + strlen(sub_msg) +
-                       strlen(ebuf) + strlen(sub_msg2) + 1;
-          char *buf = NEW_C_HEAP_ARRAY(char, len, mtThread);
-          if (!agent->is_instrument_lib()) {
-            jio_snprintf(buf, len, "%s%s%s%s", msg, name, sub_msg, ebuf);
-          } else {
-            jio_snprintf(buf, len, "%s%s%s%s%s", msg, name, sub_msg, ebuf, sub_msg2);
-          }
-          // If we can't find the agent, exit.
-          vm_exit_during_initialization(buf, nullptr);
-          FREE_C_HEAP_ARRAY(char, buf);
-        }
-      }
-    }
-    agent->set_os_lib(library);
-    agent->set_valid();
-  }
-
-  // Find the OnLoad function.
-  on_load_entry =
-    CAST_TO_FN_PTR(OnLoadEntry_t, os::find_agent_function(agent,
-                                                          false,
-                                                          on_load_symbols,
-                                                          num_symbol_entries));
-  return on_load_entry;
-}
-
-// Find the JVM_OnLoad entry point
-static OnLoadEntry_t lookup_jvm_on_load(AgentLibrary* agent) {
-  const char *on_load_symbols[] = JVM_ONLOAD_SYMBOLS;
-  return lookup_on_load(agent, on_load_symbols, sizeof(on_load_symbols) / sizeof(char*));
-}
-
-// Find the Agent_OnLoad entry point
-static OnLoadEntry_t lookup_agent_on_load(AgentLibrary* agent) {
-  const char *on_load_symbols[] = AGENT_ONLOAD_SYMBOLS;
-  return lookup_on_load(agent, on_load_symbols, sizeof(on_load_symbols) / sizeof(char*));
-}
-
-// For backwards compatibility with -Xrun
-// Convert libraries with no JVM_OnLoad, but which have Agent_OnLoad to be
-// treated like -agentpath:
-// Must be called before agent libraries are created
-void Threads::convert_vm_init_libraries_to_agents() {
-  AgentLibrary* agent;
-  AgentLibrary* next;
-
-  for (agent = Arguments::libraries(); agent != nullptr; agent = next) {
-    next = agent->next();  // cache the next agent now as this agent may get moved off this list
-    OnLoadEntry_t on_load_entry = lookup_jvm_on_load(agent);
-
-    // If there is an JVM_OnLoad function it will get called later,
-    // otherwise see if there is an Agent_OnLoad
-    if (on_load_entry == nullptr) {
-      on_load_entry = lookup_agent_on_load(agent);
-      if (on_load_entry != nullptr) {
-        // switch it to the agent list -- so that Agent_OnLoad will be called,
-        // JVM_OnLoad won't be attempted and Agent_OnUnload will
-        Arguments::convert_library_to_agent(agent);
-      } else {
-        vm_exit_during_initialization("Could not find JVM_OnLoad or Agent_OnLoad function in the library", agent->name());
-      }
-    }
-  }
-}
-
-// Create agents for -agentlib:  -agentpath:  and converted -Xrun
-// Invokes Agent_OnLoad
-// Called very early -- before JavaThreads exist
-void Threads::create_vm_init_agents() {
-  extern struct JavaVM_ main_vm;
-  AgentLibrary* agent;
-
-  JvmtiExport::enter_onload_phase();
-
-  for (agent = Arguments::agents(); agent != nullptr; agent = agent->next()) {
-    // CDS dumping does not support native JVMTI agent.
-    // CDS dumping supports Java agent if the AllowArchivingWithJavaAgent diagnostic option is specified.
-    if (Arguments::is_dumping_archive()) {
-      if(!agent->is_instrument_lib()) {
-        vm_exit_during_cds_dumping("CDS dumping does not support native JVMTI agent, name", agent->name());
-      } else if (!AllowArchivingWithJavaAgent) {
-        vm_exit_during_cds_dumping(
-          "Must enable AllowArchivingWithJavaAgent in order to run Java agent during CDS dumping");
-      }
-    }
-
-    OnLoadEntry_t  on_load_entry = lookup_agent_on_load(agent);
-
-    if (on_load_entry != nullptr) {
-      // Invoke the Agent_OnLoad function
-      jint err = (*on_load_entry)(&main_vm, agent->options(), nullptr);
-      if (err != JNI_OK) {
-        vm_exit_during_initialization("agent library failed to init", agent->name());
-      }
-    } else {
-      vm_exit_during_initialization("Could not find Agent_OnLoad function in the agent library", agent->name());
-    }
-  }
-
-  JvmtiExport::enter_primordial_phase();
-}
-
-extern "C" {
-  typedef void (JNICALL *Agent_OnUnload_t)(JavaVM *);
-}
-
-void Threads::shutdown_vm_agents() {
-  // Send any Agent_OnUnload notifications
-  const char *on_unload_symbols[] = AGENT_ONUNLOAD_SYMBOLS;
-  size_t num_symbol_entries = ARRAY_SIZE(on_unload_symbols);
-  extern struct JavaVM_ main_vm;
-  for (AgentLibrary* agent = Arguments::agents(); agent != nullptr; agent = agent->next()) {
-
-    // Find the Agent_OnUnload function.
-    Agent_OnUnload_t unload_entry = CAST_TO_FN_PTR(Agent_OnUnload_t,
-                                                   os::find_agent_function(agent,
-                                                   false,
-                                                   on_unload_symbols,
-                                                   num_symbol_entries));
-
-    // Invoke the Agent_OnUnload function
-    if (unload_entry != nullptr) {
-      JavaThread* thread = JavaThread::current();
-      ThreadToNativeFromVM ttn(thread);
-      HandleMark hm(thread);
-      (*unload_entry)(&main_vm);
-    }
-  }
-}
-
-// Called for after the VM is initialized for -Xrun libraries which have not been converted to agent libraries
-// Invokes JVM_OnLoad
-void Threads::create_vm_init_libraries() {
-  extern struct JavaVM_ main_vm;
-  AgentLibrary* agent;
-
-  for (agent = Arguments::libraries(); agent != nullptr; agent = agent->next()) {
-    OnLoadEntry_t on_load_entry = lookup_jvm_on_load(agent);
-
-    if (on_load_entry != nullptr) {
-      // Invoke the JVM_OnLoad function
-      JavaThread* thread = JavaThread::current();
-      ThreadToNativeFromVM ttn(thread);
-      HandleMark hm(thread);
-      jint err = (*on_load_entry)(&main_vm, agent->options(), nullptr);
-      if (err != JNI_OK) {
-        vm_exit_during_initialization("-Xrun library failed to init", agent->name());
-      }
-    } else {
-      vm_exit_during_initialization("Could not find JVM_OnLoad function in -Xrun library", agent->name());
-    }
-  }
 }
 
 // Threads::destroy_vm() is normally called from jni_DestroyJavaVM() when

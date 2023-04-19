@@ -180,7 +180,7 @@ void MethodHandles::jump_from_method_handle(MacroAssembler* _masm, Register meth
   __ z_br(target);
 
   __ bind(L_no_such_method);
-  assert(StubRoutines::throw_AbstractMethodError_entry() != NULL, "not yet generated!");
+  assert(StubRoutines::throw_AbstractMethodError_entry() != nullptr, "not yet generated!");
   __ load_const_optimized(target, StubRoutines::throw_AbstractMethodError_entry());
   __ z_br(target);
 }
@@ -249,14 +249,14 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
     // adapters via MethodHandleNatives.linkMethod. They all allow an
     // appendix argument.
     __ should_not_reach_here();           // Empty stubs make SG sick.
-    return NULL;
+    return nullptr;
   }
 
   // No need in interpreter entry for linkToNative for now.
   // Interpreter calls compiled entry through i2c.
   if (iid == vmIntrinsics::_linkToNative) {
     __ should_not_reach_here();           // Empty stubs make SG sick.
-    return NULL;
+    return nullptr;
   }
 
   // Z_R10: sender SP (must preserve; see prepare_to_jump_from_interprted)
@@ -559,8 +559,8 @@ void trace_method_handle_stub(const char* adaptername,
                               intptr_t* sender_sp,
                               intptr_t* args,
                               intptr_t* tracing_fp) {
-  bool has_mh = (strstr(adaptername, "/static") == NULL &&
-                 strstr(adaptername, "linkTo") == NULL);    // Static linkers don't have MH.
+  bool has_mh = (strstr(adaptername, "/static") == nullptr &&
+                 strstr(adaptername, "linkTo") == nullptr);    // Static linkers don't have MH.
   const char* mh_reg_name = has_mh ? "Z_R4_mh" : "Z_R4";
   log_info(methodhandles)("MH %s %s=" INTPTR_FORMAT " sender_sp=" INTPTR_FORMAT " args=" INTPTR_FORMAT,
                           adaptername, mh_reg_name,
