@@ -35,23 +35,22 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import com.sun.beans.TypeResolver;
 import com.sun.beans.finder.MethodFinder;
 
 final class MethodInfo {
 
-    static final HashSet<Class<?>> IGNORABLE_INTERFACES = new HashSet<>(6);
-    static {
-        IGNORABLE_INTERFACES.add(AutoCloseable.class);
-        IGNORABLE_INTERFACES.add(Cloneable.class);
-        IGNORABLE_INTERFACES.add(Closeable.class);
-        IGNORABLE_INTERFACES.add(Comparable.class);
-        IGNORABLE_INTERFACES.add(Externalizable.class);
-        IGNORABLE_INTERFACES.add(Serializable.class);
-    }
+    static final Set<Class<?>> IGNORABLE_INTERFACES = Set.of(
+        AutoCloseable.class,
+        Cloneable.class,
+        Closeable.class,
+        Comparable.class,
+        Externalizable.class,
+        Serializable.class
+    );
 
     final Method method;
     final Class<?> type;
