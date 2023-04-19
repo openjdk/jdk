@@ -625,7 +625,7 @@ getStringCp1252Chars(JNIEnv *env, jstring jstr)
 }
 
 static int fastEncoding = NO_ENCODING_YET;
-static jobject jnuEncoding = NULL;
+static jobject jnuCharset = NULL;
 
 /* Cached method IDs */
 static jmethodID String_init_ID;        /* String(byte[], Charset) */
@@ -653,7 +653,7 @@ newSizedStringJava(JNIEnv *env, const char *str, const int len)
         CHECK_NULL_RETURN(strClazz, 0);
         (*env)->SetByteArrayRegion(env, bytes, 0, len, (jbyte *)str);
         result = (*env)->NewObject(env, strClazz,
-                                   String_init_ID, bytes, jnuEncoding);
+                                   String_init_ID, bytes, jnuCharset);
         (*env)->DeleteLocalRef(env, bytes);
         return result;
     }
@@ -752,9 +752,9 @@ InitializeEncoding(JNIEnv *env, const char *encname)
             (*env)->DeleteLocalRef(env, enc);
 
             if (!exc && charset.l != NULL) {
-                jnuEncoding = (*env)->NewGlobalRef(env, charset.l);
+                jnuCharset = (*env)->NewGlobalRef(env, charset.l);
                 (*env)->DeleteLocalRef(env, charset.l);
-                break;
+                break; // success, continue below
             } else if (strcmp(charsetname, "UTF-8") != 0) { // fall back
                 charsetname = "UTF-8";
                 fastEncoding = FAST_UTF_8;
@@ -812,7 +812,7 @@ static const char* getStringBytes(JNIEnv *env, jstring jstr) {
     if ((*env)->EnsureLocalCapacity(env, 2) < 0)
         return 0;
 
-    hab = (*env)->CallObjectMethod(env, jstr, String_getBytes_ID, jnuEncoding);
+    hab = (*env)->CallObjectMethod(env, jstr, String_getBytes_ID, jnuCharset);
     if (hab != 0) {
         if (!(*env)->ExceptionCheck(env)) {
             jint len = (*env)->GetArrayLength(env, hab);
