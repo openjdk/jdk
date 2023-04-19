@@ -72,20 +72,20 @@ public class SleepSanity {
         }
     }
 
-    private static void testTimes(TestCase t, long min, long max) throws Exception {
+    private static void testTimes(TestCase t, long millisMin, long millisMax) throws Exception {
         long start = System.nanoTime();
         t.run();
         long end = System.nanoTime();
         long duration = TimeUnit.NANOSECONDS.toMillis(end - start);
-        assertTrue(duration >= min, "Duration " + duration + "ms, expected >= " + min + "ms");
-        assertTrue(duration <= max, "Duration " + duration + "ms, expected <= " + max + "ms");
+        assertTrue(duration >= millisMin, "Duration " + duration + "ms, expected >= " + millisMin + "ms");
+        assertTrue(duration <= millisMax, "Duration " + duration + "ms, expected <= " + millisMax + "ms");
     }
 
-    private static void testTimeout(TestCase t, long timeout) throws Exception {
+    private static void testTimeout(TestCase t, long millis) throws Exception {
         Thread captThread = Thread.currentThread();
         Thread watcher = new Thread(() -> {
             try {
-                Thread.sleep(timeout);
+                Thread.sleep(millis);
             } catch (InterruptedException ie)  {
                 // Do nothing
             }
