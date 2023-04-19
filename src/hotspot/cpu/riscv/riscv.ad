@@ -8022,36 +8022,6 @@ instruct castVV(vReg dst)
 // ============================================================================
 // Convert Instructions
 
-// int to bool
-instruct convI2Bool(iRegINoSp dst, iRegI src)
-%{
-  match(Set dst (Conv2B src));
-
-  ins_cost(ALU_COST);
-  format %{ "snez  $dst, $src\t#@convI2Bool" %}
-
-  ins_encode %{
-    __ snez(as_Register($dst$$reg), as_Register($src$$reg));
-  %}
-
-  ins_pipe(ialu_reg);
-%}
-
-// pointer to bool
-instruct convP2Bool(iRegINoSp dst, iRegP src)
-%{
-  match(Set dst (Conv2B src));
-
-  ins_cost(ALU_COST);
-  format %{ "snez  $dst, $src\t#@convP2Bool" %}
-
-  ins_encode %{
-    __ snez(as_Register($dst$$reg), as_Register($src$$reg));
-  %}
-
-  ins_pipe(ialu_reg);
-%}
-
 // int <-> long
 
 instruct convI2L_reg_reg(iRegLNoSp dst, iRegIorL2I src)

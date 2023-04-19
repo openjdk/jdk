@@ -1418,13 +1418,6 @@ public class IRNode {
         beforeMatchingNameRegex(EXPAND_BITSV, "ExpandBitsV");
     }
 
-    // x86 specific
-
-    public static final String CMOVEI_01_X86 = PREFIX + "CMOVEI_01_X86" + POSTFIX;
-    static {
-        machOnlyNameRegex(CMOVEI_01_X86, "cmovI_imm_01");
-    }
-
     /*
      * Utility methods to set up IR_NODE_MAPPINGS.
      */

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -8608,60 +8608,6 @@ instruct xorI_mem_imm(memory dst, immI src, eFlagsReg cr) %{
   opcode(0x81,0x6);  /* Opcode 81 /6 id */
   ins_encode( OpcSE( src ), RMopc_Mem(secondary, dst ), Con8or32( src ) );
   ins_pipe( ialu_mem_imm );
-%}
-
-//----------Convert Int to Boolean---------------------------------------------
-
-instruct movI_nocopy(rRegI dst, rRegI src) %{
-  effect( DEF dst, USE src );
-  format %{ "MOV    $dst,$src" %}
-  ins_encode( enc_Copy( dst, src) );
-  ins_pipe( ialu_reg_reg );
-%}
-
-instruct ci2b( rRegI dst, rRegI src, eFlagsReg cr ) %{
-  effect( USE_DEF dst, USE src, KILL cr );
-
-  size(4);
-  format %{ "NEG    $dst\n\t"
-            "ADC    $dst,$src" %}
-  ins_encode( neg_reg(dst),
-              OpcRegReg(0x13,dst,src) );
-  ins_pipe( ialu_reg_reg_long );
-%}
-
-instruct convI2B( rRegI dst, rRegI src, eFlagsReg cr ) %{
-  match(Set dst (Conv2B src));
-
-  expand %{
-    movI_nocopy(dst,src);
-    ci2b(dst,src,cr);
-  %}
-%}
-
-instruct movP_nocopy(rRegI dst, eRegP src) %{
-  effect( DEF dst, USE src );
-  format %{ "MOV    $dst,$src" %}
-  ins_encode( enc_Copy( dst, src) );
-  ins_pipe( ialu_reg_reg );
-%}
-
-instruct cp2b( rRegI dst, eRegP src, eFlagsReg cr ) %{
-  effect( USE_DEF dst, USE src, KILL cr );
-  format %{ "NEG    $dst\n\t"
-            "ADC    $dst,$src" %}
-  ins_encode( neg_reg(dst),
-              OpcRegReg(0x13,dst,src) );
-  ins_pipe( ialu_reg_reg_long );
-%}
-
-instruct convP2B( rRegI dst, eRegP src, eFlagsReg cr ) %{
-  match(Set dst (Conv2B src));
-
-  expand %{
-    movP_nocopy(dst,src);
-    cp2b(dst,src,cr);
-  %}
 %}
 
 instruct cmpLTMask(eCXRegI dst, ncxRegI p, ncxRegI q, eFlagsReg cr) %{

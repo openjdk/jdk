@@ -21,7 +21,7 @@
  * questions.
  */
 
-package compiler.c2.irTests.x86;
+package compiler.c2.irTests;
 
 import jdk.test.lib.Asserts;
 import compiler.lib.ir_framework.*;
@@ -30,38 +30,37 @@ import jdk.test.lib.Utils;
 
 /*
  * @test
- * @summary Test that Conv2B nodes are matched into the correct mach nodes on x86_64.
+ * @summary Test that patterns leading to Conv2B are correctly macro expanded.
  * @bug 8051725
  * @library /test/lib /
  * @requires vm.compiler2.enabled
- * @requires os.arch == "x86_64" | os.arch == "amd64"
- * @run driver compiler.c2.irTests.x86.TestConv2BMatches
+ * @run driver compiler.c2.irTests.TestConv2BExpansion
  */
-public class TestConv2BMatches {
+public class TestConv2BExpansion {
     public static void main(String[] args) {
         TestFramework.run();
     }
 
     @Test
-    @IR(counts = {IRNode.CMOVEI_01_X86, "1"})
+    @IR(counts = {IRNode.CMOVE_I, "1"}, failOn = {IRNode.XOR})
     public boolean testIntEquals0(int x) {
         return x == 0;
     }
 
     @Test
-    @IR(counts = {IRNode.CMOVEI_01_X86, "1"})
+    @IR(counts = {IRNode.CMOVE_I, "1"})
     public boolean testIntNotEquals0(int x) {
         return x != 0;
     }
 
     @Test
-    @IR(counts = {IRNode.CMOVEI_01_X86, "1"})
+    @IR(counts = {IRNode.CMOVE_I, "1"}, failOn = {IRNode.XOR})
     public boolean testObjEqualsNull(Object o) {
         return o == null;
     }
 
     @Test
-    @IR(counts = {IRNode.CMOVEI_01_X86, "1"})
+    @IR(counts = {IRNode.CMOVE_I, "1"})
     public boolean testObjNotEqualsNull(Object o) {
         return o != null;
     }

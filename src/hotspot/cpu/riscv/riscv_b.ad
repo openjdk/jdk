@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
 // Copyright (c) 2022, Huawei Technologies Co., Ltd. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
@@ -555,20 +555,6 @@ instruct ornL_reg_reg_b(iRegLNoSp dst, iRegL src1, iRegL src2, immL_M1 m1) %{
     __ orn(as_Register($dst$$reg),
            as_Register($src1$$reg),
            as_Register($src2$$reg));
-  %}
-
-  ins_pipe(ialu_reg_reg);
-%}
-
-// AndI 0b0..010..0 + ConvI2B
-instruct convI2Bool_andI_reg_immIpowerOf2(iRegINoSp dst, iRegIorL2I src, immIpowerOf2 mask) %{
-  predicate(UseZbs);
-  match(Set dst (Conv2B (AndI src mask)));
-  ins_cost(ALU_COST);
-
-  format %{ "bexti  $dst, $src, $mask\t#@convI2Bool_andI_reg_immIpowerOf2" %}
-  ins_encode %{
-    __ bexti($dst$$Register, $src$$Register, exact_log2((juint)($mask$$constant)));
   %}
 
   ins_pipe(ialu_reg_reg);

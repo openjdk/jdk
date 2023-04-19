@@ -7764,35 +7764,6 @@ instruct xorL_reg_uimm32(iRegL dst, uimmL32 con, flagsReg cr) %{
   ins_pipe(pipe_class_dummy);
 %}
 
-//----------Convert to Boolean-------------------------------------------------
-
-// Convert integer to boolean.
-instruct convI2B(iRegI dst, iRegI src, flagsReg cr) %{
-  match(Set dst (Conv2B src));
-  effect(KILL cr);
-  ins_cost(3 * DEFAULT_COST);
-  size(6);
-  format %{ "convI2B $dst,$src" %}
-  ins_encode %{
-    __ z_lnr($dst$$Register, $src$$Register);  // Rdst := -|Rsrc|, i.e. Rdst == 0 <=> Rsrc == 0
-    __ z_srl($dst$$Register, 31);              // Rdst := sign(Rdest)
-  %}
-  ins_pipe(pipe_class_dummy);
-%}
-
-instruct convP2B(iRegI dst, iRegP_N2P src, flagsReg cr) %{
-  match(Set dst (Conv2B src));
-  effect(KILL cr);
-  ins_cost(3 * DEFAULT_COST);
-  size(10);
-  format %{ "convP2B $dst,$src" %}
-  ins_encode %{
-    __ z_lngr($dst$$Register, $src$$Register);     // Rdst := -|Rsrc| i.e. Rdst == 0 <=> Rsrc == 0
-    __ z_srlg($dst$$Register, $dst$$Register, 63); // Rdst := sign(Rdest)
-  %}
-  ins_pipe(pipe_class_dummy);
-%}
-
 instruct cmpLTMask_reg_reg(iRegI dst, iRegI src, flagsReg cr) %{
   match(Set dst (CmpLTMask dst src));
   effect(KILL cr);
