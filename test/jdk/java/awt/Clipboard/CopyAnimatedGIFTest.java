@@ -80,15 +80,12 @@ public class CopyAnimatedGIFTest {
     };
 
     private void createGUI() {
-
-        Frame frame;
-
         img = Toolkit.getDefaultToolkit().createImage(imageData);
 
         ImageCanvas canvas = new ImageCanvas(img);
         canvas.setBackground(Color.BLUE);
 
-        frame = new Frame("CopyAnimatedGIFTest");
+        Frame frame = new Frame("CopyAnimatedGIFTest");
         frame.setSize(400, 200);
         frame.add(canvas);
         frame.setVisible(true);
