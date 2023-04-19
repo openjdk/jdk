@@ -357,6 +357,11 @@ void ZMark::follow_array_object(objArrayOop obj, bool finalizable) {
       ZMarkBarrierFollowOopClosure<false /* finalizable */, ZGenerationIdOptional::old> cl;
       cl.do_klass(obj->klass());
     }
+  } else {
+    ZMarkBarrierFollowOopClosure<false /* finalizable */, ZGenerationIdOptional::none> cl;
+    if (cl.do_metadata()) {
+      cl.do_klass(obj->klass());
+    }
   }
 
   // Should be convertible to colorless oop
