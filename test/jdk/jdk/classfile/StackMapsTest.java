@@ -226,9 +226,9 @@ class StackMapsTest {
                 .andThen(ClassTransform.endHandler(clb -> clb.withVersion(49, 0)))));
         assertFalse(ClassPrinter.toTree(version49, ClassPrinter.Verbosity.CRITICAL_ATTRIBUTES).walk().anyMatch(n -> n.name().equals("stack map frames")));
 
-        //test transformation to class version 50 with re-generation of StackMapTable attributes
+        //test transformation to class version 51 with re-generation of StackMapTable attributes
          assertEmpty(Classfile.parse(version49.transform(ClassTransform.transformingMethodBodies(CodeTransform.ACCEPT_ALL)
-                .andThen(ClassTransform.endHandler(clb -> clb.withVersion(50, 0))))).verify(null));
+                .andThen(ClassTransform.endHandler(clb -> clb.withVersion(51, 0))))).verify(null));
     }
 
     private static final FileSystem JRT = FileSystems.getFileSystem(URI.create("jrt:/"));

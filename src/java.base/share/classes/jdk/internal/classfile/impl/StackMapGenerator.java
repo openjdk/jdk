@@ -638,6 +638,8 @@ public final class StackMapGenerator {
                 }
                 currentFrame.pushStack(type1);
             }
+            case Classfile.JSR, Classfile.JSR_W, Classfile.RET ->
+                generatorError("Instructions jsr, jsr_w, or ret must not appear in the class file version >= 51.0");
             default ->
                 generatorError(String.format("Bad instruction: %02x", opcode));
         }

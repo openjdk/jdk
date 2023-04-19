@@ -66,6 +66,8 @@ import static jdk.internal.classfile.Opcode.GOTO;
 import static jdk.internal.classfile.Opcode.GOTO_W;
 import static jdk.internal.classfile.Opcode.IINC;
 import static jdk.internal.classfile.Opcode.IINC_W;
+import static jdk.internal.classfile.Opcode.JSR;
+import static jdk.internal.classfile.Opcode.JSR_W;
 import static jdk.internal.classfile.Opcode.LDC2_W;
 import static jdk.internal.classfile.Opcode.LDC_W;
 
@@ -322,7 +324,7 @@ public final class DirectCodeBuilder
                     maxStack = original.maxStack();
                     stackMapAttr = original.findAttribute(Attributes.STACK_MAP_TABLE).orElse(null);
                 }
-                else {
+                else if (buf.getMajorVersion() >= Classfile.JAVA_7_VERSION) {
                     //new instance of generator immediately calculates maxStack, maxLocals, all frames,
                     // patches dead bytecode blocks and removes them from exception table
                     StackMapGenerator gen = new StackMapGenerator(DirectCodeBuilder.this,
@@ -335,12 +337,13 @@ public final class DirectCodeBuilder
                                                   handlers);
                     maxStack = gen.maxStack();
                     maxLocals = gen.maxLocals();
-                    if (buf.getMajorVersion() >= Classfile.JAVA_6_VERSION) {
-                        stackMapAttr = gen.stackMapTableAttribute();
-                    } else {
-                        stackMapAttr = null;
-                    }
+                    stackMapAttr = gen.stackMapTableAttribute();
                 }
+                else {
+                    maxStack = maxLocals = 255;
+                    stackMapAttr = null;
+                }
+
                 attributes.withAttribute(stackMapAttr);
 
                 buf.writeU2(maxStack);
@@ -453,17 +456,7 @@ public final class DirectCodeBuilder
         bytecodesBufWriter.writeU1(opcode.bytecode() & 0xFF);
     }
 
-    public void writeLoad(Opcode opcode, int localVar) {
-        writeBytecode(opcode);
-        switch (opcode.sizeIfFixed()) {
-            case 1 -> { }
-            case 2 -> bytecodesBufWriter.writeU1(localVar);
-            case 4 -> bytecodesBufWriter.writeU2(localVar);
-            default -> throw new IllegalArgumentException("Unexpected instruction size: " + opcode);
-        }
-    }
-
-    public void writeStore(Opcode opcode, int localVar) {
+    public void writeLocalVar(Opcode opcode, int localVar) {
         writeBytecode(opcode);
         switch (opcode.sizeIfFixed()) {
             case 1 -> { }
@@ -497,6 +490,9 @@ public final class DirectCodeBuilder
                                          && targetBci - instructionPc < Short.MIN_VALUE))) {
             if (op == GOTO) {
                 writeBytecode(GOTO_W);
+                writeLabelOffset(4, instructionPc, target);
+            } else if (op == JSR) {
+                writeBytecode(JSR_W);
                 writeLabelOffset(4, instructionPc, target);
             } else {
                 writeBytecode(BytecodeHelpers.reverseBranchOpcode(op));
