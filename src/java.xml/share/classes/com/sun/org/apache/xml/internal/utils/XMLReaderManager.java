@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -37,13 +37,15 @@ import org.xml.sax.XMLReader;
  * Creates XMLReader objects and caches them for re-use.
  * This class follows the singleton pattern.
  *
- * @LastModified: Jan 2022
+ * @LastModified: Jan 2023
  */
 public class XMLReaderManager {
 
     private static final XMLReaderManager m_singletonManager =
                                                      new XMLReaderManager();
     private static final String property = "org.xml.sax.driver";
+    private final static String LEXICAL_HANDLER_PROPERTY =
+        "http://xml.org/sax/properties/lexical-handler";
 
     /**
      * Cache of XMLReader objects
@@ -186,12 +188,22 @@ public class XMLReaderManager {
      */
     public synchronized void releaseXMLReader(XMLReader reader) {
         // If the reader that's being released is the cached reader
-        // for this thread, remove it from the m_isUse list.
+        // for this thread, remove it from the m_inUse list.
         ReaderWrapper rw = m_readers.get();
-        if (rw.reader == reader && reader != null) {
+        if (rw != null && rw.reader == reader && reader != null) {
+            // reset the reader for reuse
+            reader.setContentHandler(null);
+            reader.setDTDHandler(null);
+            reader.setEntityResolver(null);
+            try {
+                reader.setProperty(LEXICAL_HANDLER_PROPERTY, null);
+            } catch (SAXNotRecognizedException | SAXNotSupportedException ex) {
+                // shouldn't happen as the property is supported.
+            }
             m_inUse.remove(reader);
         }
     }
+
     /**
      * Return the state of the services mechanism feature.
      */
