@@ -162,11 +162,11 @@ This table lists the OS versions used by Oracle when building the JDK. Such
 information is always subject to change, but this table is up to date at the
 time of writing.
 
- Operating system   Vendor/version used
- -----------------  -------------------------------------------------------
- Linux              Oracle Enterprise Linux 6.4 / 7.6
- macOS              Mac OS X 10.13 (High Sierra)
- Windows            Windows Server 2012 R2
+| Operating system  | Vendor/version used                |
+| ----------------- | ---------------------------------- |
+| Linux             | Oracle Enterprise Linux 6.4 / 7.6  |
+| macOS             | Mac OS X 10.13 (High Sierra)       |
+| Windows           | Windows Server 2012 R2             |
 
 The double version numbers for Linux are due to the hybrid model
 used at Oracle, where header files and external libraries from an older version
