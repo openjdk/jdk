@@ -30,7 +30,7 @@ extern "C" {
 
 static jvmtiEnv *jvmti = NULL;
 static jmethodID mid_B = NULL;
-static jobject exception_obj = NULL; 
+static jobject exception_obj = NULL;
 static jrawMonitorID monitor = NULL;
 static volatile bool bp_sync_reached = false;
 
@@ -56,7 +56,7 @@ Breakpoint(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread,
   err = jvmti->RawMonitorWait(monitor, 0);
   if (err == JVMTI_ERROR_INTERRUPT) {
     LOG("Breakpoint: In method TestTask.B(): expected JVMTI_ERROR_INTERRUPT from RawMonitorWait\n");
-  } else { 
+  } else {
     check_jvmti_status(jni, err, "Breakpoint: Failed in RawMonitorWait");
   }
   err = jvmti->RawMonitorExit(monitor);
@@ -150,14 +150,14 @@ Java_StopThreadTest_resumeThread(JNIEnv *jni, jclass cls, jthread thread) {
   LOG("Main: resumeThread\n");
   jvmtiError err = jvmti->ResumeThread(thread);
   check_jvmti_status(jni, err, "Agent resumeThread: Failed in JVMTI ResumeThread");
-} 
+}
 
 JNIEXPORT jint JNICALL
 Java_StopThreadTest_stopThread(JNIEnv *jni, jclass cls, jthread thread) {
   jvmtiError err = jvmti->StopThread(thread, exception_obj);
   LOG("Main: stopThread: StopThread returned code: %s (%d)\n", TranslateError(err), err);
   return (jint)err;
-} 
+}
 
 JNIEXPORT void JNICALL
 Java_StopThreadTest_ensureAtBreakpoint(JNIEnv *jni, jclass cls) {

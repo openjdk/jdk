@@ -1190,7 +1190,7 @@ JvmtiEnv::StopThread(jthread thread, jobject exception) {
 
   jvmtiError err = get_threadOop_and_JavaThread(tlh.list(), thread, &java_thread, &thread_oop);
 
-  bool is_virtual = thread_oop != nullptr && thread_oop->is_a(vmClasses::BaseVirtualThread_klass());  
+  bool is_virtual = thread_oop != nullptr && thread_oop->is_a(vmClasses::BaseVirtualThread_klass());
 
   if (is_virtual && !is_JavaThread_current(java_thread, thread_oop)) {
     if (!JvmtiVTSuspender::is_vthread_suspended(thread_oop)) {

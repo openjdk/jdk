@@ -228,7 +228,7 @@ public class StopThreadTest {
         // StopThread is used to send an AssertionError object two times:
         //  - when not suspended: THREAD_NOT_SUSPENDED is expected
         //  - when suspended: expected to succeed
-        static void B() { 
+        static void B() {
             log("TestTask.B: started");
         }
 
