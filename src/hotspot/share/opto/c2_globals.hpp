@@ -395,7 +395,7 @@
           "instructions.")                                                  \
                                                                             \
   develop(bool, StressRecompilation, false,                                 \
-          "Recompile each compiled method without subsuming loads "         \
+          "Recompile eacgh compiled method without subsuming loads "         \
           "or escape analysis.")                                            \
                                                                             \
   develop(intx, ImplicitNullCheckThreshold, 3,                              \

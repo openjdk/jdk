@@ -417,6 +417,9 @@ private:
   Updates* _updates;
 
   bool valid_use(Node* u, Node* c, const Node* n) {
+//    if (u->is_CFG()) {
+//      return false;
+//    }
 //    assert(!UseNewCode3 || _phase->has_node(u) == _visited.test(u->_idx), "");
     if (!_phase->has_node(u) || (UseNewCode3 && !_visited.test(u->_idx))) {
       return false;
@@ -569,6 +572,7 @@ private:
   bool _progress;
   bool _old_version;
   int _value_calls;
+  GrowableArray<int> _value_calls_graph;
 
 public:
   PhaseConditionalPropagation(PhaseIdealLoop* phase, VectorSet &visited, Node_Stack &nstack, Node_List &rpo_list)
@@ -690,8 +694,31 @@ public:
 //      }
     }
 
-//    tty->print_cr("XXX value calls %d %d %d", _value_calls, iterations, _rpo_list.size());
-
+    int live_nodes = 0;
+    if (false) {
+      ResourceMark rm;
+      Unique_Node_List wq;
+      wq.push(C->root());
+      for (uint i = 0; i < wq.size(); ++i) {
+        Node* n = wq.at(i);
+        for (uint j = 0; j < n->req(); ++j) {
+          Node* in = n->in(j);
+          if (in != nullptr) {
+            wq.push(in);
+          }
+        }
+      }
+      live_nodes = wq.size();
+      for (int i = 0; i < _value_calls_graph.length(); ++i) {
+        int cnt = _value_calls_graph.at(i);
+        if (cnt == 0) {
+          continue;
+        }
+        extern const char *NodeClassNames[];
+        tty->print_cr("XXX %s : %d", NodeClassNames[i], cnt);
+      }
+      tty->print_cr("XXX value calls %d %d %d %d", _value_calls, iterations, _rpo_list.size(), live_nodes);
+    }
 
     if (UseNewCode2 && UseNewCode3) {
       for (int i = _rpo_list.size() - 1; i >= 0; i--) {
@@ -849,11 +876,11 @@ public:
       sync_from_tree(dom);
       types_at_c = analyze_allocate_array_tree(rpo, c, types_at_c, alloc);
     }
-    if (_control_dependent_node.test(c->_idx) || true) {
+    if (_control_dependent_node.test(c->_idx) || false) {
       for (DUIterator_Fast imax, i = c->fast_outs(imax); i < imax; i++) {
         Node* u = c->fast_out(i);
 
-        if (!u->is_CFG() && u->in(0) == c && u->Opcode() != Op_CheckCastPP && _phase->has_node(u) && _visited.test(u->_idx) /*&& _control_dependent_node.test(u->_idx)*/) {
+        if (!u->is_CFG() && u->in(0) == c && u->Opcode() != Op_CheckCastPP && _phase->has_node(u) && _visited.test(u->_idx) && _control_dependent_node.test(u->_idx)) {
           _wq.push(u);
         }
       }
@@ -877,9 +904,9 @@ public:
                 n->in(0)->as_CountedLoop()->can_be_counted_loop(this))) {
             t = saturate(t, prev_type, nullptr);
           }
-          if (c->is_Loop() && t != prev_type) {
-            extra = true;
-          }
+        }
+        if (c->is_Loop() && t != prev_type) {
+          extra = true;
         }
       }
       t = t->filter(PhaseTransform::type(n));
@@ -996,12 +1023,25 @@ public:
           const Type* dom_t = PhaseTransform::type(n);
           const Type* t = _current_updates->type_at(j);
           const Type* new_t = t->filter(dom_t);
+/*          BasicType bt = T_ILLEGAL;
+          if (new_t->isa_int()) {
+            bt = T_INT;
+          } else if (new_t->isa_long()) {
+            bt = T_LONG;
+          }
+          if (new_t != t &&
+              bt != T_ILLEGAL &&
+              new_t->is_integer(bt)->lo_as_long() == dom_t->is_integer(bt)->lo_as_long() &&
+              new_t->is_integer(bt)->hi_as_long() == dom_t->is_integer(bt)->hi_as_long()) {
+            _current_updates->remove_at(j);
+          } else */
           if (new_t == dom_t) {
             _current_updates->remove_at(j);
           } else {
             _current_updates->set_prev_type_at(j, dom_t);
             _current_updates->set_type_at(j, new_t);
             enqueue_uses(n, c);
+//            _wq.push(n);
             j++;
           }
         }
@@ -1066,7 +1106,7 @@ public:
                 if (c->is_Loop() && t != prev_round_t) {
                   extra = true;
                 }
-                t = t->filter(current_type);
+//                t = t->filter(current_type);
               }
             }
 
@@ -1118,10 +1158,11 @@ public:
       sync(dom);
       analyze_allocate_array(rpo, c, alloc);
     }
-    if (_control_dependent_node.test(c->_idx) || true) {
+    const bool always = false;
+    if (_control_dependent_node.test(c->_idx) || always) {
       for (DUIterator_Fast imax, i = c->fast_outs(imax); i < imax; i++) {
         Node* u = c->fast_out(i);
-        if (!u->is_CFG() && u->in(0) == c && u->Opcode() != Op_CheckCastPP && _phase->has_node(u) && (!UseNewCode3 || _visited.test(u->_idx)) /*&& _control_dependent_node.test(u->_idx)*/) {
+        if (!u->is_CFG() && u->in(0) == c && u->Opcode() != Op_CheckCastPP && _phase->has_node(u) && (!UseNewCode3 || _visited.test(u->_idx)) && (always || _control_dependent_node.test(u->_idx))) {
           _wq.push(u);
         }
       }
@@ -1130,7 +1171,9 @@ public:
     sync(c);
     while (_wq.size() > 0) {
       Node* n = _wq.pop();
+//      tty->print("[%d]", c->_idx); n->dump();
       _value_calls++;
+      _value_calls_graph.at_put(n->Opcode(), _value_calls_graph.at_grow(n->Opcode(), 0) + 1);
       const Type* t = n->Value(this);
       const Type* current_type = PhaseTransform::type(n);
       if (n->is_Phi() && iterations > 1) {
@@ -1146,9 +1189,9 @@ public:
                 n->in(0)->as_CountedLoop()->can_be_counted_loop(this))) {
             t = saturate(t, prev_type, nullptr);
           }
-          if (c->is_Loop() && t != prev_type) {
-            extra = true;
-          }
+        }
+        if (c->is_Loop() && t != prev_type) {
+          extra = true;
         }
       }
       t = t->filter(current_type);
@@ -1617,8 +1660,18 @@ public:
       {
         Node* con = nullptr;
         bool progress = false;
+        assert(_wq2.size() == 0, "");
+//        Unique_Node_List uses;
         for (DUIterator_Fast imax, i = node->fast_outs(imax); i < imax; i++) {
           Node* use = node->fast_out(i);
+          if (_wq2.member(use)) {
+            continue;
+          }
+          _wq2.push(use);
+//          uses.push(use);
+//        }
+//        for (uint j = 0; j < uses.size(); ++j) {
+//          Node* use = uses.at(j);
           if (use->is_Phi()) {
             Node* r = use->in(0);
             if (r->Opcode() == Op_Region && r->req() == 3 &&
@@ -1688,6 +1741,9 @@ public:
               _phase->C->set_major_progress();
             }
           }
+        }
+        while (_wq2.size() != 0) {
+          _wq2.pop();
         }
         return progress;
       }
