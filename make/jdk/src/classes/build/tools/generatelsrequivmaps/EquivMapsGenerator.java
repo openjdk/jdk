@@ -136,10 +136,29 @@ public class EquivMapsGenerator {
             }
         } else { // language, extlang, legacy, and redundant
             if (!initialLanguageMap.containsKey(preferred)) {
-                sb = new StringBuilder(preferred);
-                sb.append(',');
-                sb.append(tag);
-                initialLanguageMap.put(preferred, sb);
+                // IANA update 4/13 introduced case where a preferred value
+                // can have a preferred value itself.
+                // eg: ar-ajp has pref ajp which has pref apc
+                boolean foundInOther = false;
+                final String finalPref = ","+preferred;
+                final String inbtwnPref = ","+preferred+",";
+                // Check if current pref exists inside a value for another pref
+                List<StringBuilder> doublePrefs = initialLanguageMap.entrySet()
+                        .stream().filter(e -> (e.getValue().toString().endsWith(finalPref) ||
+                                e.getValue().toString().contains(inbtwnPref)))
+                        .map(Map.Entry::getValue)
+                        .collect(Collectors.toList());
+                for (StringBuilder otherPrefVal : doublePrefs) {
+                    otherPrefVal.append(",");
+                    otherPrefVal.append(tag);
+                    foundInOther = true;
+                }
+                if (!foundInOther) { // does not exist in other pref value, so add as new entry
+                    sb = new StringBuilder(preferred);
+                    sb.append(',');
+                    sb.append(tag);
+                    initialLanguageMap.put(preferred, sb);
+                }
             } else {
                 sb = initialLanguageMap.get(preferred);
                 sb.append(',');

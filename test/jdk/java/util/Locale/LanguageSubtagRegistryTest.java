@@ -62,6 +62,7 @@ public class LanguageSubtagRegistryTest {
             new LanguageRange("myd", 1.0),
             new LanguageRange("apc", 1.0),
             new LanguageRange("ar-apc", 1.0),
+            new LanguageRange("ar-ajp", 1.0),
             new LanguageRange("ajp", 1.0),
             new LanguageRange("aue", 1.0),
             new LanguageRange("ktz", 1.0),
