@@ -54,7 +54,6 @@ PhaseLive::PhaseLive(const PhaseCFG &cfg, const LRG_List &names, Arena *arena, b
 
 void PhaseLive::compute(uint maxlrg) {
   _maxlrg   = maxlrg;
-  _worklist = new (_arena) Block_List();
 
   // Init the sparse live arrays.  This data is live on exit from here!
   // The _live info is the live-out info.
@@ -87,6 +86,9 @@ void PhaseLive::compute(uint maxlrg) {
   memset(_deltas, 0, sizeof(IndexSet*)* _cfg.number_of_blocks());
 
   _free_IndexSet = nullptr;
+
+  Block_List wl;
+  _worklist = &wl;
 
   // Blocks having done pass-1
   VectorSet first_pass;
@@ -149,7 +151,7 @@ void PhaseLive::compute(uint maxlrg) {
     first_pass.set(block->_pre_order);
 
     // Inner loop: blocks that picked up new live-out values to be propagated
-    while (_worklist->size()) {
+    while (_worklist->size() != 0) {
       Block* block = _worklist->pop();
       IndexSet *delta = getset(block);
       assert(delta->count(), "missing delta set");
