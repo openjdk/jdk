@@ -41,6 +41,7 @@
 #include "sanitizers/address.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/quickSort.hpp"
 
 namespace metaspace {
 
@@ -240,17 +241,19 @@ Metachunk* ChunkManager::get_chunk_locked(chunklevel_t preferred_level, chunklev
   return c;
 }
 
-// Special function to handle humongous allocations.
-// Allocate a humongous area consisting of n adjacent chunks. Commit them such that their
-// combined committed area covers word_size.
-// As with get_chunk, return nullptr if failed (commit error or out of addres space).
-// May fail for the same reasons as get_chunk.
+static int compare_chunk_base(Metachunk* c1, Metachunk* c2) { return c1->base() > c2->base() ? 1 : -1; }
+
+// Return a number of chunks that together span a contiguous area of at least word_size words. The
+// first word_size words of this area should be committed.
+// Returns false on error; as with get_chunk(), this function fails if we either run out of address
+// space (e.g. CompressedClassSpace) or hit a commit limit (GC threshold or MaxMetaspaceSize).
 bool ChunkManager::allocate_humongous_committed_area(size_t word_size, MetaspaceHumongousArea* out) {
 
   MutexLocker fcl(Metaspace_lock, Mutex::_no_safepoint_check_flag);
 
   const int num_rootchunks_needed = align_up(word_size, MAX_CHUNK_WORD_SIZE) / MAX_CHUNK_WORD_SIZE;
   const size_t committed_space_needed = align_up(word_size, Settings::commit_granule_words());
+  bool success = false;
 
   // Check for possible commit failures first. Rather fail now: we have nothing changed yet, nothing
   // to roll back.
@@ -261,18 +264,47 @@ bool ChunkManager::allocate_humongous_committed_area(size_t word_size, Metaspace
     return false;
   }
 
-  if (!_vslist->allocate_humongous_area(word_size, out)) {
-    UL2(debug, "Failed to allocate %d root chunks from virtual space.", num_rootchunks_needed);
-    return false;
+  // First, attempt to re-use free root chunks:
+  const int num_free_root_chunks = _chunks.num_chunks_at_level(ROOT_CHUNK_LEVEL);
+  if (num_free_root_chunks >= num_rootchunks_needed) {
+
+    // Search for root chunks in our freelist that describe a contiguous address space
+    // large enough to house word_size. We do this by sorting all root chunks by base address,
+    // then searching for a contiguous area. This is not the fastest way, but its simple, and
+    // since this should be executed rarely there is no need for more complexity.
+    Metachunk** sorted = NEW_C_HEAP_ARRAY(Metachunk*, num_free_root_chunks, mtMetaspace);
+    int i = 0;
+    for (Metachunk* c = _chunks.first_at_level(ROOT_CHUNK_LEVEL); c != nullptr; c = c->next()) {
+      sorted[i++] = c;
+    }
+    QuickSort::sort(sorted, num_free_root_chunks, compare_chunk_base, false);
+    int candidate = 0;
+    for (int i = 1; i < num_free_root_chunks && (i - candidate) < num_rootchunks_needed; i++) {
+      if (sorted[i - 1]->end() != sorted[i]->base()) {
+        candidate = i;
+      }
+    }
+    if ((num_free_root_chunks - candidate) >= num_rootchunks_needed) { // Found a chain!
+      for (int i = candidate; i < candidate + num_rootchunks_needed; i++) {
+        Metachunk* c = sorted[i];
+        _chunks.remove(c);
+        out->add_to_tail(c);
+      }
+      UL2(debug, "Removed %d root chunks from freelist.", num_rootchunks_needed);
+      success = true;
+    }
+    FREE_C_HEAP_ARRAY(Metachunk*, sorted);
   }
 
-//  // last chunk: it is likely it does not have to be a root chunk, and handing out a root
-//  // chunk would be a waste of address space (note: this does not affect RSS, since we commit
-//  // on granule level).
-//  const size_t last_chunk_needed_size = word_size % chunklevel::MAX_CHUNK_WORD_SIZE;
-//  const metaspace::chunklevel_t last_chunk_sufficient_level =
-//      metaspace::chunklevel::level_fitting_word_size(last_chunk_needed_size);
-//  split_chunk_and_add_splinters(out->last(), last_chunk_sufficient_level);
+  // If we had no success doing that, carve out new chunks from the virtual space.
+  if (!success) {
+    if (!_vslist->allocate_humongous_area(word_size, out)) {
+      UL2(debug, "Failed to allocate %d root chunks from virtual space.", num_rootchunks_needed);
+      return false;
+    }
+  }
+
+  DEBUG_ONLY(out->verify(word_size, false, false);)
 
   // Prepare chunks for arena
   out->prepare_for_arena(word_size);

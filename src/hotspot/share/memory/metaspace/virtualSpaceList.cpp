@@ -182,7 +182,9 @@ bool VirtualSpaceList::allocate_humongous_area(size_t word_size, MetaspaceHumong
   // Is the current node large enough? No: salvage it and start a new node.
   if (_first_node == nullptr || _first_node->free_words() < word_size) {
     if (_can_expand) {
-      salvage_chunks_from_node(_first_node);
+      if (_first_node != nullptr) {
+        salvage_chunks_from_node(_first_node);
+      }
       create_new_node(word_size);
     } else {
       UL(debug, "list cannot expand.");

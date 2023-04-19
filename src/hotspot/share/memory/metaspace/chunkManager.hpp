@@ -128,10 +128,10 @@ public:
   // Convenience function - get a chunk of a given level, uncommitted.
   Metachunk* get_chunk(chunklevel_t lvl) { return get_chunk(lvl, lvl, 0); }
 
-  // Special function to handle humongous allocations.
-  // Allocate a humongous area consisting of n adjacent chunks. Commit them such that their
-  // combined committed area covers word_size.
-  // May fail for the same reasons as get_chunk.
+  // Return a number of chunks that together span a contiguous area of at least word_size words. The
+  // first word_size words of this area should be committed.
+  // Returns false on error; as with get_chunk(), this function fails if we either run out of address
+  // space (e.g. CompressedClassSpace) or hit a commit limit (GC threshold or MaxMetaspaceSize).
   bool allocate_humongous_committed_area(size_t word_size, MetaspaceHumongousArea* out);
 
   // For humongous allocation:

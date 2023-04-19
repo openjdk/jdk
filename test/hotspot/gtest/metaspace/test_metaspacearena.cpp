@@ -783,41 +783,78 @@ TEST_VM(metaspace, MetaspaceArena_test_repeatedly_allocate_and_deallocate_nontop
   test_repeatedly_allocate_and_deallocate(false);
 }
 
-// Test that repeated allocation-deallocation cycles with the same block size
-//  do not increase metaspace usage after the initial allocation (the deallocated
-//  block should be reused by the next allocation).
-static void test_allocate_humongous(bool class_space, bool test_dealloc) {
-
-  MetaspaceGtestContext context;
-  const int num_allocations = 3;
-  const int num_max_chunks_per_allocations = 4;
-
-  for (int reps = 0; reps < 1000; reps ++) {
-    {
-      MetaspaceArenaTestHelper helper(context, Metaspace::StandardMetaspaceType, class_space);
-      for (int n = 0; n < num_allocations; n++) {
-        MetaWord* p = nullptr;
-        const size_t alloc_size = MIN2(1, os::random() % num_max_chunks_per_allocations) * MAX_CHUNK_WORD_SIZE;
-        helper.allocate_from_arena_with_tests_expect_success(&p, alloc_size);
-        size_t committed2 = context.committed_words();
-        if (test_dealloc) {
-          helper.deallocate_with_tests(p, alloc_size);
-        }
-      }
-    } // <- Arena goes out of scope and dies; all chunks are returned to the chunk manager
-
-    // Check total usage. It should not ramp up; after the first few iterations, it should stay stable,
-    // not raise beyond a reasonable level.
-    const size_t max_expected_word_size = num_max_chunks_per_allocations * num_allocations * MAX_CHUNK_WORD_SIZE;
-    ASSERT_LT(context.committed_words(), max_expected_word_size);
-    ASSERT_LT(context.reserved_words(), max_expected_word_size);
-    // Purge; should uncommit all
-    context.purge_area();
-    ASSERT_0(context.committed_words());
-  }
+static size_t random_humongous_size(int min_nodes_covered) {
+  return Metaspace::humongous_allocation_word_size() +
+         os::random() % ((min_nodes_covered - 1) * Metaspace::humongous_allocation_word_size());
 }
 
-TEST_VM(metaspace, MetaspaceArena_test_humongous_class_space_no_dealloc)      { test_allocate_humongous(true, false); }
-TEST_VM(metaspace, MetaspaceArena_test_humongous_class_space_dealloc)         { test_allocate_humongous(true, true); }
-TEST_VM(metaspace, MetaspaceArena_test_humongous_non_class_space_no_dealloc)  { test_allocate_humongous(false, false); }
-TEST_VM(metaspace, MetaspaceArena_test_humongous_non_class_space_dealloc)     { test_allocate_humongous(false, true); }
+#define ASSERT_RESERVED_COMMITTED                                        \
+	  ASSERT_EQ(expected_reserved, context.reserved_words());              \
+	  ASSERT_EQ(expected_committed, context.committed_words());
+
+TEST_VM(metaspace, MetaspaceArena_test_humongous_allocation) {
+  MetaspaceGtestContext context;
+  ASSERT_0(context.reserved_words());
+  ASSERT_0(context.committed_words());
+
+  const size_t humongous_large = random_humongous_size(10);
+  const size_t humongous_small = random_humongous_size(3);
+
+  const size_t expected_reserved = align_up(humongous_large, MAX_CHUNK_WORD_SIZE);
+  size_t expected_committed = 0;
+
+  size_t last_allocation_size = 0;
+
+  // First a large allocation.
+  {
+    MetaspaceArenaTestHelper helper(context, Metaspace::StandardMetaspaceType, false);
+    helper.allocate_from_arena_with_tests(humongous_large);
+    expected_committed = align_up(humongous_large, Settings::commit_granule_words());
+    ASSERT_RESERVED_COMMITTED
+  } // <-- arena goes out of scope and dies -> chunks go to chunk manager
+
+  ASSERT_RESERVED_COMMITTED
+
+  context.purge_area();
+
+  // Now we should have uncommitted everything
+  expected_committed = 0;
+  ASSERT_RESERVED_COMMITTED
+
+  // Another allocation; smaller; should reuse the free chunks. Reserved should not go up.
+  {
+    MetaspaceArenaTestHelper helper(context, Metaspace::StandardMetaspaceType, false);
+    helper.allocate_from_arena_with_tests(humongous_small);
+    expected_committed = align_up(humongous_small, Settings::commit_granule_words());
+    ASSERT_RESERVED_COMMITTED
+  } // <-- arena goes out of scope and dies -> chunks go to chunk manager
+
+  ASSERT_RESERVED_COMMITTED
+
+  context.purge_area();
+
+  // Now we should have uncommitted everything
+  expected_committed = 0;
+  ASSERT_RESERVED_COMMITTED
+}
+
+TEST_VM(metaspace, MetaspaceArena_test_humongous_repeated_allocation) {
+  MetaspaceGtestContext context;
+  ASSERT_0(context.reserved_words());
+  ASSERT_0(context.committed_words());
+
+  // Test that repeated allocations of the same size won't accumulate.
+  const size_t sz = random_humongous_size(5);
+  const size_t expected_reserved = align_up(sz, MAX_CHUNK_WORD_SIZE);
+  const size_t expected_committed = align_up(sz, Settings::commit_granule_words());
+
+  for (int i = 0; i < 40; i++) {
+
+    MetaspaceArenaTestHelper helper(context, Metaspace::StandardMetaspaceType, false);
+    helper.allocate_from_arena_with_tests(sz);
+    ASSERT_RESERVED_COMMITTED
+
+  } // <-- arena goes out of scope and dies -> chunks go to chunk manager and should be reused in the next round
+
+  ASSERT_RESERVED_COMMITTED
+}
