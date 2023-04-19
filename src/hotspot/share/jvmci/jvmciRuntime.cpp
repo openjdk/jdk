@@ -939,7 +939,9 @@ int JVMCIRuntime::release_cleared_oop_handles() {
     // Example: to_release: 2
 
     // Bulk release the handles with a null referent
-    object_handles()->release(_oop_handles.adr_at(num_alive), to_release);
+    if (to_release != 0) {
+      object_handles()->release(_oop_handles.adr_at(num_alive), to_release);
+    }
 
     // Truncate oop handles to only those with a non-null referent
     JVMCI_event_1("compacted oop handles in JVMCI runtime %d from %d to %d", _id, _oop_handles.length(), num_alive);
@@ -1671,16 +1673,9 @@ Klass* JVMCIRuntime::get_klass_by_name_impl(Klass*& accessing_klass,
     domain = Handle(THREAD, accessing_klass->protection_domain());
   }
 
-  Klass* found_klass;
-  {
-    ttyUnlocker ttyul;  // release tty lock to avoid ordering problems
-    MutexLocker ml(THREAD, Compile_lock);
-    if (!require_local) {
-      found_klass = SystemDictionary::find_constrained_instance_or_array_klass(THREAD, sym, loader);
-    } else {
-      found_klass = SystemDictionary::find_instance_or_array_klass(THREAD, sym, loader, domain);
-    }
-  }
+  Klass* found_klass = require_local ?
+                         SystemDictionary::find_instance_or_array_klass(THREAD, sym, loader, domain) :
+                         SystemDictionary::find_constrained_instance_or_array_klass(THREAD, sym, loader);
 
   // If we fail to find an array klass, look again for its element type.
   // The element type may be available either locally or via constraints.
