@@ -5257,8 +5257,8 @@ int PlatformEvent::park_nanos(jlong nanos) {
   // rounding up any excess requested nanos to the full millisecond. This is how
   // Thread.sleep(millis, nanos) has always behaved with only millisecond granularity.
   jlong millis = nanos / NANOSECS_PER_MILLISEC;
-  jlong nanos = nanos - millis * NANOSECS_PER_MILLISEC;
-  if (nanos > 0) {
+  jlong nanos_left = nanos - millis * NANOSECS_PER_MILLISEC;
+  if (nanos_left > 0) {
     millis++;
   }
   assert(millis > 0, "should always be positive");
