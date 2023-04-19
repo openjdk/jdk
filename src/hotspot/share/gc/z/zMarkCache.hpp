@@ -44,12 +44,14 @@ public:
 
 class ZMarkCache : public StackObj {
 private:
-  const size_t    _shift;
+  size_t          _shift;
   ZMarkCacheEntry _cache[ZMarkCacheSize];
 
 public:
   ZMarkCache(size_t nstripes);
   ~ZMarkCache();
+
+  void set_nstripes(size_t nstripes);
 
   void inc_live(ZPage* page, size_t bytes);
 };

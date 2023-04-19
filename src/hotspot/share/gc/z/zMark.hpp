@@ -80,13 +80,14 @@ private:
   void follow_object(oop obj, bool finalizable);
   void mark_and_follow(ZMarkContext* context, ZMarkStackEntry entry);
 
+  bool rebalance_work(ZMarkContext* context);
   bool drain(ZMarkContext* context);
   bool try_steal_local(ZMarkContext* context);
   bool try_steal_global(ZMarkContext* context);
   bool try_steal(ZMarkContext* context);
   bool flush();
   bool try_proactive_flush();
-  bool try_terminate();
+  bool try_terminate(ZMarkContext* context);
   void leave();
   bool try_end();
 

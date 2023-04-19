@@ -78,8 +78,7 @@ inline void ZMark::mark_object(zaddress addr) {
 
   // Push
   ZMarkThreadLocalStacks* const stacks = ZThreadLocalData::mark_stacks(Thread::current(), _generation->id());
-  ZMarkStripe* const stripe = gc_thread ? _stripes.stripe_for_addr_worker(untype(addr))
-                                        : _stripes.stripe_for_addr_barrier(untype(addr));
+  ZMarkStripe* const stripe = _stripes.stripe_for_addr(untype(addr));
   ZMarkStackEntry entry(untype(ZAddress::offset(addr)), !mark_before_push, inc_live, follow, finalizable);
 
   assert(ZHeap::heap()->is_young(addr) == _generation->is_young(), "Phase/object mismatch");

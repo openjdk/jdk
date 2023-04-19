@@ -27,12 +27,17 @@
 #include "gc/z/zLock.hpp"
 #include "utilities/globalDefinitions.hpp"
 
+class ZMarkStripeSet;
+
 class ZMarkTerminate {
 private:
   uint           _nworkers;
   volatile uint  _nworking;
+  volatile uint  _nawakening;
   volatile bool  _resurrected;
   ZConditionLock _lock;
+
+  void maybe_reduce_stripes(ZMarkStripeSet* stripes, size_t used_nstripes);
 
 public:
   ZMarkTerminate();
@@ -40,8 +45,10 @@ public:
   void reset(uint nworkers);
   void leave();
 
+  bool saturated();
+
   void wake_up();
-  bool try_terminate();
+  bool try_terminate(ZMarkStripeSet* stripes, size_t used_nstripes);
   void set_resurrected(bool value);
   bool resurrected();
 };

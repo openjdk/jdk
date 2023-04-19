@@ -35,7 +35,6 @@ ZMarkStripe::ZMarkStripe(uintptr_t base) :
     _overflowed(base) {}
 
 ZMarkStripeSet::ZMarkStripeSet(uintptr_t base) :
-    _nstripes(0),
     _nstripes_mask(0),
     _stripes() {
 
@@ -53,10 +52,13 @@ void ZMarkStripeSet::set_nstripes(size_t nstripes) {
 
   // Mutators may read these values concurrently. It doesn't matter
   // if they see the old or new values.
-  Atomic::store(&_nstripes, nstripes);
   Atomic::store(&_nstripes_mask, nstripes - 1);
 
-  log_debug(gc, marking)("Using " SIZE_FORMAT " mark stripes", _nstripes);
+  log_debug(gc, marking)("Using " SIZE_FORMAT " mark stripes", nstripes);
+}
+
+size_t ZMarkStripeSet::nstripes() const {
+  return Atomic::load(&_nstripes_mask) + 1;
 }
 
 bool ZMarkStripeSet::is_empty() const {
@@ -70,21 +72,24 @@ bool ZMarkStripeSet::is_empty() const {
 }
 
 ZMarkStripe* ZMarkStripeSet::stripe_for_worker(uint nworkers, uint worker_id) {
-  const size_t spillover_limit = (nworkers / _nstripes) * _nstripes;
+  size_t mask = Atomic::load(&_nstripes_mask);
+  size_t stripes = mask + 1;
+
+  const size_t spillover_limit = (nworkers / stripes) * stripes;
   size_t index;
 
   if (worker_id < spillover_limit) {
     // Not a spillover worker, use natural stripe
-    index = worker_id & _nstripes_mask;
+    index = worker_id & mask;
   } else {
     // Distribute spillover workers evenly across stripes
     const size_t spillover_nworkers = nworkers - spillover_limit;
     const size_t spillover_worker_id = worker_id - spillover_limit;
-    const double spillover_chunk = (double)_nstripes / (double)spillover_nworkers;
+    const double spillover_chunk = (double)stripes / (double)spillover_nworkers;
     index = spillover_worker_id * spillover_chunk;
   }
 
-  assert(index < _nstripes, "Invalid index");
+  assert(index < stripes, "Invalid index");
   return &_stripes[index];
 }
 

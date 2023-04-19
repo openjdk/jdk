@@ -170,7 +170,8 @@ void ZMarkStackSpace::free() {
 
 ZMarkStackAllocator::ZMarkStackAllocator() :
     _space(),
-    _freelist(_space.start()) {}
+    _freelist(_space.start()),
+    _expanded_recently(false) {}
 
 bool ZMarkStackAllocator::is_initialized() const {
   return _space.is_initialized();
@@ -205,6 +206,10 @@ ZMarkStackMagazine* ZMarkStackAllocator::alloc_magazine() {
     return magazine;
   }
 
+  if (!Atomic::load(&_expanded_recently)) {
+    Atomic::cmpxchg(&_expanded_recently, false, true);
+  }
+
   // Allocate new magazine
   const uintptr_t addr = _space.alloc(ZMarkStackMagazineSize);
   if (addr == 0) {
@@ -212,6 +217,14 @@ ZMarkStackMagazine* ZMarkStackAllocator::alloc_magazine() {
   }
 
   return create_magazine_from_space(addr, ZMarkStackMagazineSize);
+}
+
+bool ZMarkStackAllocator::clear_and_get_expanded_recently() {
+  if (!Atomic::load(&_expanded_recently)) {
+    return false;
+  }
+
+  return Atomic::cmpxchg(&_expanded_recently, true, false);
 }
 
 void ZMarkStackAllocator::free_magazine(ZMarkStackMagazine* magazine) {

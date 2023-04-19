@@ -190,7 +190,7 @@ static zpointer* decode_partial_array_offset(uintptr_t offset) {
 void ZMark::push_partial_array(zpointer* addr, size_t length, bool finalizable) {
   assert(is_aligned(addr, ZMarkPartialArrayMinSize), "Address misaligned");
   ZMarkThreadLocalStacks* const stacks = ZThreadLocalData::mark_stacks(Thread::current(), _generation->id());
-  ZMarkStripe* const stripe = _stripes.stripe_for_addr_worker((uintptr_t)addr);
+  ZMarkStripe* const stripe = _stripes.stripe_for_addr((uintptr_t)addr);
   const uintptr_t offset = encode_partial_array_offset(addr);
   const ZMarkStackEntry entry(offset, length, finalizable);
 
@@ -462,22 +462,47 @@ void ZMark::mark_and_follow(ZMarkContext* context, ZMarkStackEntry entry) {
   }
 }
 
+// This function returns true if we need to stop working to resize threads or
+// abort marking
+bool ZMark::rebalance_work(ZMarkContext* context) {
+  size_t assumed_nstripes = context->nstripes();
+  size_t nstripes = _stripes.nstripes();
+
+  if (assumed_nstripes != nstripes) {
+    context->set_nstripes(nstripes);
+  } else if (nstripes < calculate_nstripes(_nworkers) && _allocator.clear_and_get_expanded_recently()) {
+    size_t new_nstripes = nstripes << 1;
+    _stripes.set_nstripes(new_nstripes);
+    context->set_nstripes(new_nstripes);
+  }
+
+  ZMarkStripe* stripe = _stripes.stripe_for_worker(_nworkers, WorkerThread::worker_id());
+  if (context->stripe() != stripe) {
+    // Need to switch stripe
+    context->set_stripe(stripe);
+    flush_and_free();
+  } else if (!_terminate.saturated()) {
+    // Work imbalance detected; striped marking is likely going to be in the way
+    flush_and_free();
+  }
+  SuspendibleThreadSet::yield();
+  return ZAbort::should_abort() || _generation->should_worker_resize();
+}
+
 bool ZMark::drain(ZMarkContext* context) {
-  ZMarkStripe* const stripe = context->stripe();
   ZMarkThreadLocalStacks* const stacks = context->stacks();
   ZMarkStackEntry entry;
   size_t processed = 0;
 
+  context->set_stripe(_stripes.stripe_for_worker(_nworkers, WorkerThread::worker_id()));
+  context->set_nstripes(_stripes.nstripes());
+
   // Drain stripe stacks
-  while (stacks->pop(&_allocator, &_stripes, stripe, entry)) {
+  while (stacks->pop(&_allocator, &_stripes, context->stripe(), entry)) {
     mark_and_follow(context, entry);
 
-    if ((processed++ & 31) == 0) {
-      // Yield once per 32 oops
-      SuspendibleThreadSet::yield();
-      if (ZAbort::should_abort() || _generation->should_worker_resize()) {
-        return false;
-      }
+    if ((processed++ & 31) == 0 && rebalance_work(context)) {
+      return false;
     }
   }
 
@@ -615,8 +640,8 @@ bool ZMark::try_proactive_flush() {
   return flush();
 }
 
-bool ZMark::try_terminate() {
-  return _terminate.try_terminate();
+bool ZMark::try_terminate(ZMarkContext* context) {
+  return _terminate.try_terminate(&_stripes, context->nstripes());
 }
 
 void ZMark::leave() {
@@ -650,7 +675,7 @@ bool ZMark::follow_work(bool partial) {
       continue;
     }
 
-    if (try_terminate()) {
+    if (try_terminate(&context)) {
       // Terminate
       return true;
     }

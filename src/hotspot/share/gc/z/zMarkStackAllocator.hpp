@@ -35,6 +35,7 @@ private:
   uintptr_t          _start;
   volatile uintptr_t _top;
   volatile uintptr_t _end;
+  volatile bool      _recently_expanded;
 
   size_t used() const;
 
@@ -60,6 +61,7 @@ class ZMarkStackAllocator : public CHeapObj<mtGC> {
 private:
   ZCACHE_ALIGNED ZMarkStackSpace        _space;
   ZCACHE_ALIGNED ZMarkStackMagazineList _freelist;
+  ZCACHE_ALIGNED volatile bool          _expanded_recently;
 
   ZMarkStackMagazine* create_magazine_from_space(uintptr_t addr, size_t size);
 
@@ -70,6 +72,8 @@ public:
 
   uintptr_t start() const;
   size_t size() const;
+
+  bool clear_and_get_expanded_recently();
 
   ZMarkStackMagazine* alloc_magazine();
   void free_magazine(ZMarkStackMagazine* magazine);

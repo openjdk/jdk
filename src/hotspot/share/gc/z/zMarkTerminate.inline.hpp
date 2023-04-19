@@ -30,16 +30,20 @@
 #include "gc/z/zLock.inline.hpp"
 #include "logging/log.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/thread.inline.hpp"
+#include "runtime/osThread.hpp"
 
 inline ZMarkTerminate::ZMarkTerminate() :
     _nworkers(0),
     _nworking(0),
+    _nawakening(0),
     _resurrected(false),
     _lock() {}
 
 inline void ZMarkTerminate::reset(uint nworkers) {
   Atomic::store(&_nworkers, nworkers);
   Atomic::store(&_nworking, nworkers);
+  _nawakening = 0;
 }
 
 inline void ZMarkTerminate::leave() {
@@ -52,7 +56,15 @@ inline void ZMarkTerminate::leave() {
   }
 }
 
-inline bool ZMarkTerminate::try_terminate() {
+inline void ZMarkTerminate::maybe_reduce_stripes(ZMarkStripeSet* stripes, size_t used_nstripes) {
+  size_t nstripes = stripes->nstripes();
+  if (used_nstripes == nstripes && nstripes > 1u) {
+    nstripes >>= 1;
+    stripes->set_nstripes(nstripes);
+  }
+}
+
+inline bool ZMarkTerminate::try_terminate(ZMarkStripeSet* stripes, size_t used_nstripes) {
   SuspendibleThreadSetLeaver sts_leaver;
   ZLocker<ZConditionLock> locker(&_lock);
   Atomic::store(&_nworking, _nworking - 1);
@@ -61,25 +73,49 @@ inline bool ZMarkTerminate::try_terminate() {
     _lock.notify_all();
     return true;
   }
+  // If a worker runs out of work, it might be a sign that we have too many stripes
+  // hiding work. Try to reduce the number of stripes if possible.
+  maybe_reduce_stripes(stripes, used_nstripes);
   _lock.wait();
+  // We either got notification about more work
+  // or got a spurious wakeup; don't terminate
+  if (_nawakening > 0) {
+    Atomic::store(&_nawakening, _nawakening - 1);
+  }
   if (_nworking == 0) {
     // We got notified all work is done; terminate
     return true;
   }
-  // We either got notification about more work
-  // or got a spurious wakeup; don't terminate
   Atomic::store(&_nworking, _nworking + 1);
   return false;
 }
 
 inline void ZMarkTerminate::wake_up() {
-  if (Atomic::load(&_nworking) == Atomic::load(&_nworkers)) {
-    // Everyone is working
+  uint nworking = Atomic::load(&_nworking);
+  uint nawakening = Atomic::load(&_nawakening);
+  if (nworking + nawakening == Atomic::load(&_nworkers)) {
+    // Everyone is working or about to
+    return;
+  }
+
+  if (nworking == 0) {
+    // Marking when marking task is not active
     return;
   }
 
   ZLocker<ZConditionLock> locker(&_lock);
-  _lock.notify();
+  if (_nworking + _nawakening != _nworkers) {
+    // Everyone is not working
+    Atomic::store(&_nawakening, _nawakening + 1);
+    _lock.notify();
+  }
+}
+
+inline bool ZMarkTerminate::saturated() {
+  uint nworking = Atomic::load(&_nworking);
+  uint nawakening = Atomic::load(&_nawakening);
+
+  return nworking + nawakening == Atomic::load(&_nworkers);
 }
 
 inline void ZMarkTerminate::set_resurrected(bool value) {
