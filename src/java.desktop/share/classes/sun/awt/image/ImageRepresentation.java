@@ -110,7 +110,7 @@ public class ImageRepresentation extends ImageWatched implements ImageConsumer
         }
         int missinginfo = flags & ~availinfo;
         if ((availinfo & (ImageObserver.ERROR | ImageObserver.FRAMEBITS)) == 0
-             && missinginfo != 0) {
+            && missinginfo != 0) {
             numWaiters++;
             try {
                 startProduction();
