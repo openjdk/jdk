@@ -451,12 +451,12 @@ class Direct$Type$Buffer$RW$$BO$
     private $Type$Buffer appendChars(CharSequence csq, int start, int end) {
         checkSession();
 
-        int length = end - start;
-        Objects.checkFromIndexSize(start, length, csq.length());
+        Objects.checkFromToIndex(start, end, csq.length());
 
         int pos = position();
         int lim = limit();
         int rem = (pos <= lim) ? lim - pos : 0;
+        int length = end - start;
         if (length > rem)
             throw new BufferOverflowException();
 
