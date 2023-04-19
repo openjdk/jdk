@@ -851,6 +851,10 @@ public final class ClassPrinterImpl {
                                 "targets", "target", Stream.concat(Stream.of(si.defaultTarget())
                                         .map(com::labelToBci), si.cases().stream()
                                                 .map(sc -> com.labelToBci(sc.target())))));
+                        case DiscontinuedInstruction.JsrInstruction jsr -> in.with(leaf(
+                                "target", com.labelToBci(jsr.target())));
+                        case DiscontinuedInstruction.RetInstruction ret ->  in.with(leaf(
+                                "slot", ret.slot()));
                         default -> {}
                     }
                     bci += ins.sizeInBytes();
