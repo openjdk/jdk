@@ -49,8 +49,10 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 public class CopyAnimatedGIFTest {
     private static final long TIMEOUT = 10000;
     private static final CountDownLatch latch = new CountDownLatch(1);
+
     private Image img;
     private static Frame frame;
+
     private static final byte[] imageData = {
             (byte) 0x47, (byte) 0x49, (byte) 0x46, (byte) 0x38, (byte) 0x39,
             (byte) 0x61, (byte) 0x04, (byte) 0x00, (byte) 0x04, (byte) 0x00,
@@ -77,11 +79,12 @@ public class CopyAnimatedGIFTest {
             (byte) 0x00, (byte) 0x00, (byte) 0x02, (byte) 0x04, (byte) 0x8c,
             (byte) 0x8f, (byte) 0x19, (byte) 0x05, (byte) 0x00, (byte) 0x3b
     };
+
     private void createGUI() {
 
         img = Toolkit.getDefaultToolkit().createImage(imageData);
 
-        imgCanvas canvas = new imgCanvas(img);
+        ImageCanvas canvas = new ImageCanvas(img);
         canvas.setBackground(Color.BLUE);
 
         frame = new Frame("CopyAnimatedGIFTest");
@@ -89,6 +92,7 @@ public class CopyAnimatedGIFTest {
         frame.add(canvas);
         frame.setVisible(true);
     }
+
     private void copyImage() {
         Clipboard sys = Toolkit.getDefaultToolkit().getSystemClipboard();
         sys.setContents(new MyTransferable(img), null);
@@ -117,15 +121,17 @@ public class CopyAnimatedGIFTest {
             EventQueue.invokeAndWait(CopyAnimatedGIFTest::dispose);
         }
     }
+
     private static void dispose() {
         if (frame != null) {
             frame.dispose();
             frame = null;
         }
     }
-    private static class imgCanvas extends Canvas {
+
+    private static class ImageCanvas extends Canvas {
         private final Image img;
-        public imgCanvas(Image img) {
+        public ImageCanvas(Image img) {
             this.img = img;
         }
 
@@ -163,3 +169,5 @@ public class CopyAnimatedGIFTest {
     }
 
 }
+
+
