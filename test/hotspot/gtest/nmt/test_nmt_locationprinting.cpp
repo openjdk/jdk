@@ -47,7 +47,7 @@ static void test_pointer(const void* p, bool expected_return_code, const char* e
 
 static void test_for_live_c_heap_block(size_t sz, ssize_t offset) {
   char* c = NEW_C_HEAP_ARRAY(char, sz, mtTest);
-  LOG_HERE("C-block starts " PTR_FORMAT ", size " SIZE_FORMAT ".", p2i(c), offset);
+  LOG_HERE("C-block starts " PTR_FORMAT ", size " SIZE_FORMAT ".", p2i(c), sz);
   memset(c, 0, sz);
   if (MemTracker::enabled()) {
     const char* expected_string = "into live malloced block";
@@ -69,7 +69,7 @@ static void test_for_dead_c_heap_block(size_t sz, ssize_t offset) {
     return;
   }
   char* c = NEW_C_HEAP_ARRAY(char, sz, mtTest);
-  LOG_HERE("C-block starts " PTR_FORMAT ", size " SIZE_FORMAT ".", p2i(c), offset);
+  LOG_HERE("C-block starts " PTR_FORMAT ", size " SIZE_FORMAT ".", p2i(c), sz);
   memset(c, 0, sz);
   // We cannot just free the allocation to try dead block printing, since the memory
   // may be immediately reused by concurrent code. Instead, we mark the block as dead
@@ -99,13 +99,13 @@ TEST_VM(NMT, location_printing_cheap_live_6) { test_for_live_c_heap_block(4, 0);
 TEST_VM(NMT, location_printing_cheap_live_7) { test_for_live_c_heap_block(4, 4); }                  // just outside a very small block
 
 #ifdef LINUX
-TEST_VM(NMT, DISABLED_location_printing_cheap_dead_1) { test_for_dead_c_heap_block(2 * K, 0); }              // start of payload
-TEST_VM(NMT, DISABLED_location_printing_cheap_dead_2) { test_for_dead_c_heap_block(2 * K, -7); }             // into header
-TEST_VM(NMT, DISABLED_location_printing_cheap_dead_3) { test_for_dead_c_heap_block(2 * K, K + 1); }          // into payload
-TEST_VM(NMT, DISABLED_location_printing_cheap_dead_4) { test_for_dead_c_heap_block(2 * K, K + 2); }          // into payload (check for even/odd errors)
+TEST_VM(NMT, location_printing_cheap_dead_1) { test_for_dead_c_heap_block(2 * K, 0); }              // start of payload
+TEST_VM(NMT, location_printing_cheap_dead_2) { test_for_dead_c_heap_block(2 * K, -7); }             // into header
+TEST_VM(NMT, location_printing_cheap_dead_3) { test_for_dead_c_heap_block(2 * K, K + 1); }          // into payload
+TEST_VM(NMT, location_printing_cheap_dead_4) { test_for_dead_c_heap_block(2 * K, K + 2); }          // into payload (check for even/odd errors)
 TEST_VM(NMT, location_printing_cheap_dead_5) { test_for_dead_c_heap_block(2 * K + 1, 2 * K + 2); }  // just outside payload
-TEST_VM(NMT, DISABLED_location_printing_cheap_dead_6) { test_for_dead_c_heap_block(4, 0); }                  // into a very small block
-TEST_VM(NMT, DISABLED_location_printing_cheap_dead_7) { test_for_dead_c_heap_block(4, 4); }                  // just outside a very small block
+TEST_VM(NMT, location_printing_cheap_dead_6) { test_for_dead_c_heap_block(4, 0); }                  // into a very small block
+TEST_VM(NMT, location_printing_cheap_dead_7) { test_for_dead_c_heap_block(4, 4); }                  // just outside a very small block
 #endif
 
 static void test_for_mmap(size_t sz, ssize_t offset) {

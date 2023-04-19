@@ -735,7 +735,7 @@ void KlassSubGraphInfo::check_allowed_klass(InstanceKlass* ik) {
   ResourceMark rm;
   log_error(cds, heap)("Class %s not allowed in archive heap. Must be in java.base%s",
                        ik->external_name(), extra_msg);
-  os::_exit(1);
+  MetaspaceShared::unrecoverable_writing_error();
 }
 
 bool KlassSubGraphInfo::is_non_early_klass(Klass* k) {
@@ -1213,7 +1213,7 @@ bool HeapShared::archive_reachable_objects_from(int level,
     // these objects that are referenced (directly or indirectly) by static fields.
     ResourceMark rm;
     log_error(cds, heap)("Cannot archive object of class %s", orig_obj->klass()->external_name());
-    os::_exit(1);
+    MetaspaceShared::unrecoverable_writing_error();
   }
 
   // java.lang.Class instances cannot be included in an archived object sub-graph. We only support
@@ -1223,7 +1223,7 @@ bool HeapShared::archive_reachable_objects_from(int level,
   // object that is referenced (directly or indirectly) by static fields.
   if (java_lang_Class::is_instance(orig_obj) && subgraph_info != _default_subgraph_info) {
     log_error(cds, heap)("(%d) Unknown java.lang.Class object is in the archived sub-graph", level);
-    os::_exit(1);
+    MetaspaceShared::unrecoverable_writing_error();
   }
 
   if (has_been_seen_during_subgraph_recording(orig_obj)) {
@@ -1252,7 +1252,7 @@ bool HeapShared::archive_reachable_objects_from(int level,
         // We don't know how to handle an object that has been archived, but some of its reachable
         // objects cannot be archived. Bail out for now. We might need to fix this in the future if
         // we have a real use case.
-        os::_exit(1);
+        MetaspaceShared::unrecoverable_writing_error();
       }
     }
   }

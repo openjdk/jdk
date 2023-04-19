@@ -895,7 +895,7 @@ class PhaseIdealLoop : public PhaseTransform {
 public:
   // Set/get control node out.  Set lower bit to distinguish from IdealLoopTree
   // Returns true if "n" is a data node, false if it's a control node.
-  bool has_ctrl( Node *n ) const { return ((intptr_t)_nodes[n->_idx]) & 1; }
+  bool has_ctrl(const Node* n) const { return ((intptr_t)_nodes[n->_idx]) & 1; }
 
 private:
   // clear out dead code after build_loop_late
@@ -972,7 +972,7 @@ public:
 
   PhaseIterGVN &igvn() const { return _igvn; }
 
-  bool has_node( Node* n ) const {
+  bool has_node(const Node* n) const {
     guarantee(n != nullptr, "No Node.");
     return _nodes[n->_idx] != nullptr;
   }
@@ -1003,8 +1003,7 @@ public:
   // location of all Nodes in the subsumed block, we lazily do it.  As we
   // pull such a subsumed block out of the array, we write back the final
   // correct block.
-  Node *get_ctrl( Node *i ) {
-
+  Node* get_ctrl(const Node* i) {
     assert(has_node(i), "");
     Node *n = get_ctrl_no_update(i);
     _nodes.map( i->_idx, (Node*)((intptr_t)n + 1) );
@@ -1024,12 +1023,12 @@ public:
     }
   }
 
-  Node *get_ctrl_no_update_helper(Node *i) const {
+  Node* get_ctrl_no_update_helper(const Node* i) const {
     assert(has_ctrl(i), "should be control, not loop");
     return (Node*)(((intptr_t)_nodes[i->_idx]) & ~1);
   }
 
-  Node *get_ctrl_no_update(Node *i) const {
+  Node* get_ctrl_no_update(const Node* i) const {
     assert( has_ctrl(i), "" );
     Node *n = get_ctrl_no_update_helper(i);
     if (!n->in(0)) {
