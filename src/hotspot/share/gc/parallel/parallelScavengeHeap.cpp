@@ -553,7 +553,9 @@ void ParallelScavengeHeap::collect(GCCause::Cause cause) {
     VM_ParallelGCSystemGC op(gc_count, full_gc_count, cause);
     VMThread::execute(&op);
 
-    if (!GCCause::is_explicit_gc(cause) || op.full_gc_succeeded()) {
+    if (!GCCause::is_explicit_gc(cause) ||
+        !VM_ParallelGCSystemGC::is_cause_full(cause) ||
+        op.full_gc_succeeded()) {
       return;
     }
 
