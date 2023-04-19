@@ -5994,14 +5994,14 @@ public class Collections {
      * in that the map's {@code removeEldestEntry} is overridden to provide
      * an eviction policy, which is not possible with a {@code LinkedHashSet}.
      *
-     * <pre>{@code
+     * {@snippet :
      *     SequencedSet<String> set = Collections.newSequencedSetFromMap(
      *         new LinkedHashMap<String, Boolean>() {
      *             protected boolean removeEldestEntry(Map.Entry<String, Boolean> e) {
      *                 return this.size() > 5;
      *             }
      *        });
-     * }</pre>
+     * }
      *
      * @param <E> the class of the map keys and of the objects in the
      *        returned set

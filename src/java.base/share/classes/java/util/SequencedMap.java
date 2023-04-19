@@ -47,10 +47,10 @@ package java.util;
  * {@code entrySet} methods are not sequenced <i>types</i>, the elements
  * in those view collections do reflect the encounter order of this map. Thus, the
  * iterators returned by the statements
- * <pre>{@code
+ * {@snippet :
  *     var it1 = sequencedMap.entrySet().iterator();
  *     var it2 = sequencedMap.sequencedEntrySet().iterator();
- * }</pre>
+ * }
  * both provide the mappings of {@code sequencedMap} in that map's encounter order.
  * <p>
  * This interface provides methods to add mappings, to retrieve mappings, and to remove
@@ -67,9 +67,9 @@ package java.util;
  * the mappings in order from the last mapping of this map to the first. In addition, all of
  * the view collections of the reversed view also reflect the inverse of this map's
  * encounter order. For example,
- * <pre>{@code
+ * {@snippet :
  *     var itr = sequencedMap.reversed().entrySet().iterator();
- * }</pre>
+ * }
  * provides the mappings of this map in the inverse of the encounter order, that is, from
  * the last mapping to the first mapping. The availability of the {@code reversed} method,
  * and its impact on the ordering semantics of all applicable methods and views, allow convenient
@@ -99,9 +99,9 @@ package java.util;
  * Depending upon the implementation, the {@code Entry} instances returned by other
  * means might or might not be connected to the underlying map. For example, consider
  * an {@code Entry} obtained in the following manner:
- * <pre>{@code
+ * {@snippet :
  *     var entry = sequencedMap.sequencedEntrySet().getFirst();
- * }</pre>
+ * }
  * It is not specified by this interface whether the {@code setValue} method of the
  * {@code Entry} thus obtained will update a mapping in the underlying map, or whether
  * it will throw an exception, or whether changes to the underlying map are visible in
