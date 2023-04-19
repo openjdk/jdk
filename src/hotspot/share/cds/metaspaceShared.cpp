@@ -838,6 +838,7 @@ bool MetaspaceShared::try_link_class(JavaThread* current, InstanceKlass* ik) {
       SystemDictionaryShared::set_class_has_failed_verification(ik);
       _has_error_classes = true;
     }
+    ik->compute_has_loops_flag_for_methods();
     BytecodeVerificationLocal = saved;
     return true;
   } else {
