@@ -126,6 +126,7 @@ public class WindbgDebuggerLocal extends DebuggerBase implements WindbgDebugger 
   /** From the Debugger interface via JVMDebugger */
   public synchronized void attach(int processID) throws DebuggerException {
     attachInit();
+    updatePaths();
     attach0(processID);
     attached = true;
     isCore = false;
@@ -134,6 +135,7 @@ public class WindbgDebuggerLocal extends DebuggerBase implements WindbgDebugger 
   /** From the Debugger interface via JVMDebugger */
   public synchronized void attach(String executableName, String coreFileName) throws DebuggerException {
     attachInit();
+    updatePaths(executableName);
     attach0(executableName, coreFileName);
     attached = true;
     isCore = true;
@@ -409,6 +411,43 @@ public class WindbgDebuggerLocal extends DebuggerBase implements WindbgDebugger 
     threadList = new ArrayList<>();
   }
 
+  private void updatePaths() {
+    if (imagePath == null) {
+      // look up for images on the base of PATH environment variable
+      imagePath = System.getenv("PATH");
+    }
+    if (symbolPath == null) {
+      // expected that sybmols lay next to related images
+      symbolPath = imagePath;
+    }
+  }
+
+  private void updatePaths(String executableName) {
+    if (imagePath == null) {
+        StringBuilder images = new StringBuilder();
+        // look for images next to given executable...
+        File executable = new File(executableName);
+        File executable_folder = executable.getParentFile();
+        images.append(executable_folder.getAbsolutePath());
+        images.append(';');
+        // ...then in <server> subfolder...
+        File jvm_folder = new File(executable_folder, "server");
+        images.append(jvm_folder.getAbsolutePath());
+        images.append(';');
+        // ...and finally using PATH environment variable
+        images.append(System.getenv("PATH"));
+        imagePath = images.toString();
+    }
+    if (symbolPath == null) {
+      StringBuilder symbols = new StringBuilder();
+      // request Windows symbol table from remote server...
+      symbols.append("srv*https://msdl.microsoft.com/download/symbols;");
+      // ...and look for symbols next to related images
+      symbols.append(imagePath);
+      symbolPath = symbols.toString();
+    }
+  }
+
   private void resetNativePointers() {
     ptrIDebugClient          = 0L;
     ptrIDebugControl         = 0L;
@@ -613,17 +652,8 @@ public class WindbgDebuggerLocal extends DebuggerBase implements WindbgDebugger 
 
     // where do I find '.exe', '.dll' files?
     imagePath = System.getProperty("sun.jvm.hotspot.debugger.windbg.imagePath");
-    if (imagePath == null) {
-      imagePath = System.getenv("PATH");
-    }
-
     // where do I find '.pdb', '.dbg' files?
     symbolPath = System.getProperty("sun.jvm.hotspot.debugger.windbg.symbolPath");
-
-    // mostly, debug files would be find where .dll's, .exe's are found.
-    if (symbolPath == null) {
-      symbolPath = imagePath;
-    }
 
     // should we parse DLL symbol table in Java code or use
     // Windbg's native lookup facility? By default, we use
