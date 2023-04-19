@@ -233,11 +233,7 @@ PhaseChaitin::PhaseChaitin(uint unique, PhaseCFG &cfg, Matcher &matcher, bool sc
 
   for (uint i = 0; i < NUMBUCKS; i++) {
     buckets[i] = &start[i*nr_blocks];
-  }
-  for (uint i = 0; i < NUMBUCKS; i++) {
     buckcnt[i] = 0;
-  }
-  for (uint i = 0; i < NUMBUCKS; i++) {
     // Bump by three orders of magnitude each time
     cutoff *= 0.001;
     buckval[i] = cutoff;
