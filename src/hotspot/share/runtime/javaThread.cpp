@@ -1989,7 +1989,7 @@ bool JavaThread::sleep(jlong millis) {
 // if the thread was interrupted.
 bool JavaThread::sleep_nanos(jlong nanos) {
   assert(this == Thread::current(),  "thread consistency check");
-  assert(0 <= nanos, "nanos are in range");
+  assert(nanos >= 0, "nanos are in range");
 
   ParkEvent * const slp = this->_SleepEvent;
   // Because there can be races with thread interruption sending an unpark()
