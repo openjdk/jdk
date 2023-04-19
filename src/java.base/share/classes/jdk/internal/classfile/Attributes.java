@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -147,7 +147,7 @@ public class Attributes {
 
     /** Attribute mapper for the {@code BootstrapMethods} attribute */
     public static final AttributeMapper<BootstrapMethodsAttribute>
-            BOOTSTRAP_METHODS = new AbstractAttributeMapper<>(NAME_BOOTSTRAP_METHODS, Classfile.JAVA_17_VERSION) {
+            BOOTSTRAP_METHODS = new AbstractAttributeMapper<>(NAME_BOOTSTRAP_METHODS, Classfile.JAVA_7_VERSION) {
                 @Override
                 public BootstrapMethodsAttribute readAttribute(AttributedElement e, ClassReader cf, int p) {
                     return new BoundAttribute.BoundBootstrapMethodsAttribute(cf, this, p);
@@ -517,7 +517,7 @@ public class Attributes {
 
     /** Attribute mapper for the {@code PermittedSubclasses} attribute */
     public static final AttributeMapper<PermittedSubclassesAttribute>
-            PERMITTED_SUBCLASSES = new AbstractAttributeMapper<>(NAME_PERMITTED_SUBCLASSES, Classfile.JAVA_15_VERSION) {
+            PERMITTED_SUBCLASSES = new AbstractAttributeMapper<>(NAME_PERMITTED_SUBCLASSES, Classfile.JAVA_17_VERSION) {
                 @Override
                 public PermittedSubclassesAttribute readAttribute(AttributedElement e, ClassReader cf, int p) {
                     return new BoundAttribute.BoundPermittedSubclassesAttribute(cf, this, p);
