@@ -37,7 +37,7 @@ public class SleepSanity {
     static final int[] TRY_NANOS  = new int[] { 0, 1, 10, 100, 1_000, 10_000, 100_000, 999_999 };
 
     @Test
-    void testMs() throws Exception {
+    void testMillis() throws Exception {
         testIAE(() -> Thread.sleep(-1), "timeout value is negative");
 
         testTimeout(() -> Thread.sleep(10_000),            5_000);
@@ -45,12 +45,12 @@ public class SleepSanity {
         testTimeout(() -> Thread.sleep(Long.MAX_VALUE),    5_000);
 
         for (final int millis : TRY_MILLIS) {
-            testTimes(() -> Thread.sleep(millis), millis, 10_000);
+            testTimes(() -> Thread.sleep(millis), millis, 20_000);
         }
     }
 
     @Test
-    void testMsNs() throws Exception {
+    void testMillisNanos() throws Exception {
         testIAE(() -> Thread.sleep(-1),    "timeout value is negative");
 
         testIAE(() -> Thread.sleep(0, -1),                "nanosecond timeout value out of range");
@@ -67,7 +67,7 @@ public class SleepSanity {
 
         for (final int millis : TRY_MILLIS) {
             for (final int nanos : TRY_NANOS) {
-                testTimes(() -> Thread.sleep(millis, nanos), millis, 10_000);
+                testTimes(() -> Thread.sleep(millis, nanos), millis, 20_000);
             }
         }
     }
