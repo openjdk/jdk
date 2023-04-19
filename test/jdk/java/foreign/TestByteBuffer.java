@@ -332,7 +332,7 @@ public class TestByteBuffer {
                     assertEquals(byteBuffer.capacity(), segment.byteSize());
                     assertEquals(byteBuffer.isReadOnly(), segment.isReadOnly());
                     assertTrue(byteBuffer.isDirect());
-                } catch(IOException e) {
+                } catch (IOException e) {
                     if (e.getMessage().equals("Function not implemented"))
                         throw new SkipException(e.getMessage(), e);
                 } finally {
