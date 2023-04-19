@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,16 +35,21 @@ import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 
 /**
- * The test checks that the JDI method:<br>
- * <code>com.sun.jdi.ThreadReference.stop()</code><br>
- * properly throws <i>InvalidTypeException</i> - if specified
- * throwable is not an instance of java.lang.Throwable in the
- * target VM.<p>
+ * The test checks that the JDI method:<br><code>com.sun.jdi.ThreadReference.stop()</code><br>
+ * behaves properly in various situations. I consists of 5 subtests.
  *
- * Debugger part of the test tries to stop debuggee thread
- * through the JDI method using as a parameter an object
- * reference of the main debuggee class <i>stop002t</i> itself
- * which is not <code>Throwable</code>.
+ * TEST #1: Tests that stop() properly throws <i>InvalidTypeException</i> if
+ * specified throwable is not an instance of java.lang.Throwable in the target VM.<p>
+ *
+ * TEST #2: Verifies that stop() works when suspended at a breakpoint.
+ *
+ * TEST #3: Verify that stop() works when not suspended in a loop. For virtual threads
+ * we expect an IncompatibleThreadStateException.
+ *
+ * TEST #4: Verify that stop() works when suspended in a loop.
+ *
+ * TEST #5: Verify that stop() works when suspended in Thread.sleep(). For virtual
+ * threads we expect an OpaqueFrameException.
  */
 public class stop002 {
     static final String DEBUGGEE_CLASS =
@@ -54,18 +59,23 @@ public class stop002 {
     static final String DEBUGGEE_THRNAME = "stop002tThr";
 
     // debuggee local var used to find needed non-throwable object
-    static final String DEBUGGEE_LOCALVAR = "stop002tNonThrowable";
-    // debuggee field used to indicate that testing is over
-    static final String DEBUGGEE_FIELD = "stopLooping";
+    static final String DEBUGGEE_NON_THROWABLE_VAR= "stop002tNonThrowable";
+    // debuggee local var used to find needed non-throwable object
+    static final String DEBUGGEE_THROWABLE_VAR = "stop002tThrowable";
+    // debuggee fields used to indicate to exit infinite loops
+    static final String DEBUGGEE_STOP_LOOP1_FIELD = "stopLooping1";
+    static final String DEBUGGEE_STOP_LOOP2_FIELD = "stopLooping2";
 
     // debuggee source line where it should be stopped
-    static final int DEBUGGEE_STOPATLINE = 69;
+    static final int DEBUGGEE_STOPATLINE = 80;
 
     static final int DELAY = 500; // in milliseconds
 
     static final String COMMAND_READY = "ready";
     static final String COMMAND_GO = "go";
     static final String COMMAND_QUIT = "quit";
+
+    static final boolean vthreadMode = "Virtual".equals(System.getProperty("main.wrapper"));
 
     private ArgumentHandler argHandler;
     private Log log;
@@ -101,68 +111,173 @@ public class stop002 {
             return quitDebuggee();
         }
 
-        ThreadReference thrRef = null;
-        if ((thrRef =
-                debuggee.threadByName(DEBUGGEE_THRNAME)) == null) {
+        ThreadReference thrRef = debuggee.threadByName(DEBUGGEE_THRNAME);
+        if (thrRef == null) {
             log.complain("TEST FAILURE: method Debugee.threadByName() returned null for debuggee thread "
                 + DEBUGGEE_THRNAME);
             tot_res = Consts.TEST_FAILED;
             return quitDebuggee();
         }
 
-        Field doExit = null;
+        Field stopLoop1 = null;
+        Field stopLoop2 = null;
         ObjectReference objRef = null;
+        ObjectReference throwableRef = null;
         try {
             // debuggee main class
             ReferenceType rType = debuggee.classByName(DEBUGGEE_CLASS);
 
             suspendAtBP(rType, DEBUGGEE_STOPATLINE);
-            objRef = findObjRef(thrRef, DEBUGGEE_LOCALVAR);
+            objRef = findObjRef(thrRef, DEBUGGEE_NON_THROWABLE_VAR);
+            throwableRef = findObjRef(thrRef, DEBUGGEE_THROWABLE_VAR);
 
-            // this field is used to indicate that debuggee has to
-            // stop looping
-            doExit = rType.fieldByName(DEBUGGEE_FIELD);
-
-            log.display("Resuming debuggee VM ...");
-            vm.resume();
-            log.display("Resumption of debuggee VM done");
-
-            log.display("\nTrying to stop debuggee thread \"" + thrRef
-                + "\"\n\tusing non-throwable object reference \""
-                + objRef + "\" as a parameter ...");
-
-// Check the tested assersion
-            try {
-                thrRef.stop(objRef);
-                log.complain("TEST FAILED: expected IllegalArgumentException was not thrown"
-                    + "\n\twhen attempted to stop debuggee thread \"" + thrRef
-                    + "\"\n\tusing non-throwable object reference \""
-                    + objRef + "\" as a parameter");
-                tot_res = Consts.TEST_FAILED;
-            } catch(InvalidTypeException ee) {
-                log.display("CHECK PASSED: caught expected " + ee);
-            } catch(Exception ue) {
-                ue.printStackTrace();
-                log.complain("TEST FAILED: ThreadReference.stop(): caught unexpected "
-                    + ue + "\n\tinstead of InvalidTypeException"
-                    + "\n\twhen attempted to stop debuggee thread \"" + thrRef
-                    + "\"\n\tusing non-throwable object reference \""
-                    + objRef + "\" as a parameter");
-                tot_res = Consts.TEST_FAILED;
+            // These fields are used to indicate that debuggee has to stop looping
+            stopLoop1 = rType.fieldByName(DEBUGGEE_STOP_LOOP1_FIELD);
+            stopLoop2 = rType.fieldByName(DEBUGGEE_STOP_LOOP2_FIELD);
+            if (stopLoop1 == null || stopLoop2 == null) {
+                throw new RuntimeException("Failed to find a \"stop loop\" field");
             }
 
+            log.display("non-throwable object: \"" + objRef + "\"");
+            log.display("throwable object:     \"" + throwableRef + "\"");
+            log.display("debuggee thread:      \"" + thrRef + "\"");
+
+            /*
+             * Test #1: verify using a non-throwable object with stop() fails appropriately.
+             */
+            log.display("\nTEST #1: Trying to stop debuggee thread using non-throwable object");
+            try {
+                thrRef.stop(objRef); // objRef is an instance of the debuggee class, not a Throwable
+                log.complain("TEST #1 FAILED: expected IllegalArgumentException was not thrown");
+                tot_res = Consts.TEST_FAILED;
+            } catch(InvalidTypeException ee) {
+                log.display("TEST #1 PASSED: caught expected " + ee);
+            } catch(Exception ue) {
+                ue.printStackTrace();
+                log.complain("TEST #1 FAILED: caught unexpected " + ue + "instead of InvalidTypeException");
+                tot_res = Consts.TEST_FAILED;
+            }
+            log.display("TEST #1: all done.");
+
+            /*
+             * Test #2: verify that stop() works when suspended at a breakpoint.
+             */
+            log.display("\nTEST #2: Trying to stop debuggee thread while suspended at a breakpoint");
+            try {
+                thrRef.stop(throwableRef);
+                log.display("TEST #2 PASSED: stop() call succeeded.");
+            } catch(Exception ue) {
+                ue.printStackTrace();
+                log.complain("TEST #2 FAILED: caught unexpected " + ue);
+                tot_res = Consts.TEST_FAILED;
+            }
+            log.display("TEST #2: Resuming debuggee VM to allow async exception to be handled");
+            vm.resume();
+            log.display("TEST #2: all done.");
+
+            /*
+             * Test #3: verify that stop() works when not suspended in a loop.
+             */
+            Thread.sleep(1000); // Allow debuggee to get into loop first
+            log.display("\nTEST #3: Trying to stop debuggee thread while not suspended in a loop");
+            try {
+                thrRef.stop(throwableRef);
+                if (vthreadMode) {
+                    log.complain("TEST #3 FAILED: expected IllegalThreadStateException"
+                                 + " was not thrown for virtual thread");
+                    tot_res = Consts.TEST_FAILED;
+                } else {
+                    log.display("TEST #3 PASSED: stop() call succeeded.");
+                }
+            } catch(Exception ue) {
+                if (vthreadMode && ue instanceof IllegalThreadStateException) {
+                    log.display("TEST #3 PASSED: stop() call threw IllegalThreadStateException"
+                                + " for virtual thread");
+                } else {
+                    ue.printStackTrace();
+                    log.complain("TEST #3 FAILED: caught unexpected " + ue);
+                    tot_res = Consts.TEST_FAILED;
+                }
+            } finally {
+                // Force the debuggee out of the loop. Not really needed if the stop() call
+                // successfully threw the async exception, but it's easier to just always do this.
+                log.display("TEST #3: clearing loop flag.");
+                objRef.setValue(stopLoop1, vm.mirrorOf(true));
+            }
+            log.display("TEST #3: all done.");
+
+            /*
+             * Test #4: verify that stop() works when suspended in a loop
+             */
+            Thread.sleep(1000); // Allow debuggee to get into loop first.
+            log.display("\nTEST #4: Trying to stop debuggee thread while suspended in a loop");
+            try {
+                thrRef.suspend();
+                thrRef.stop(throwableRef);
+                if (vthreadMode && objRef == null) {
+                    log.complain("TEST #4 FAILED: expected OpaqueFrameException was not thrown");
+                    tot_res = Consts.TEST_FAILED;
+                } else {
+                    log.display("TEST #4 PASSED: stop() call succeeded.");
+                }
+            } catch(Throwable ue) {
+                if (vthreadMode && ue instanceof OpaqueFrameException) {
+                    log.display("TEST #4 PASSED: stop() call threw OpaqueFrameException for virtual thread.");
+                } else {
+                    ue.printStackTrace();
+                    log.complain("TEST #4 FAILED: caught unexpected " + ue);
+                    tot_res = Consts.TEST_FAILED;
+                }
+            } finally {
+                log.display("TEST #4: resuming thread.");
+                thrRef.resume();
+                // Force the debuggee out of the loop. Not really needed if the stop() call
+                // successfully threw the async exception, but it's easier to just always do this.
+                log.display("TEST #4: clearing loop flag.");
+                objRef.setValue(stopLoop2, vm.mirrorOf(true));
+            }
+            log.display("TEST #4: all done.");
+
+            /*
+             * Test #5: verify that stop() works when suspended in Thread.sleep()
+             */
+            Thread.sleep(1000); // Allow debuggee to reach Thread.sleep() first.
+            log.display("\nTEST #5: Trying to stop debuggee thread while suspended in Thread.sleep()");
+            try {
+                thrRef.suspend();
+                thrRef.stop(throwableRef);
+                if (vthreadMode) {
+                    log.complain("TEST #5 FAILED: expected OpaqueFrameException was not thrown");
+                    tot_res = Consts.TEST_FAILED;
+                } else {
+                    log.display("TEST #5 PASSED: stop() call for suspended thread succeeded");
+                }
+            } catch(Throwable ue) {
+                if (vthreadMode && ue instanceof OpaqueFrameException) {
+                    log.display("TEST #5 PASSED: stop() call threw OpaqueFrameException for virtual thread");
+                } else {
+                    ue.printStackTrace();
+                    log.complain("TEST #5 FAILED: caught unexpected " + ue);
+                    tot_res = Consts.TEST_FAILED;
+                }
+            } finally {
+                log.display("TEST #5: resuming thread.");
+                thrRef.resume();
+            }
+            log.display("TEST #5: all done.");
         } catch (Exception e) {
             e.printStackTrace();
             log.complain("TEST FAILURE: caught unexpected exception: " + e);
             tot_res = Consts.TEST_FAILED;
         } finally {
-// Finish the test
-            // force an method to exit
-            if (objRef != null && doExit != null) {
+            // Force the debuggee out of both loops
+            if (objRef != null && stopLoop1 != null && stopLoop2 !=  null) {
                 try {
-                    objRef.setValue(doExit, vm.mirrorOf(true));
+                    objRef.setValue(stopLoop1, vm.mirrorOf(true));
+                    objRef.setValue(stopLoop2, vm.mirrorOf(true));
                 } catch(Exception sve) {
                     sve.printStackTrace();
+                    tot_res = Consts.TEST_FAILED;
                 }
             }
         }
