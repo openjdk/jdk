@@ -159,6 +159,8 @@ public class SerializationTest {
             filePath);
         ObjectInputStream objectinputstream = new ObjectInputStream(streamIn);
         Object o = objectinputstream.readObject();
+        objectinputstream.close();
+        streamIn.close();
         return o;
     }
 
