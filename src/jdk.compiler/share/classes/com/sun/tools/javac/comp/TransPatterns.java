@@ -661,25 +661,6 @@ public class TransPatterns extends TreeTranslator {
             }.scan(c.stats);
         }
 
-    // TODO: copied from check
-    private boolean checkAllUnderscore(JCPattern pattern) {
-        return switch (pattern.getTag()) {
-            case BINDINGPATTERN:
-                JCBindingPattern bp = (JCBindingPattern) pattern;
-                yield bp.var.name == names.underscore;
-            case RECORDPATTERN:
-                JCRecordPattern rp = (JCRecordPattern) pattern;
-                yield rp.getNestedPatterns().stream().allMatch(component -> checkAllUnderscore(component));
-            case PARENTHESIZEDPATTERN:
-                JCParenthesizedPattern pp = (JCParenthesizedPattern) pattern;
-                yield checkAllUnderscore(pp.pattern);
-            case ANYPATTERN:
-                yield true;
-            default:
-                yield false;
-        };
-    }
-
     void appendBreakIfNeeded(JCTree switchTree, List<JCCase> cases, JCCase c) {
         if (c.caseKind == CaseTree.CaseKind.RULE || (cases.last() == c && c.completesNormally)) {
             JCTree pos = c.stats.nonEmpty() ? c.stats.last()
