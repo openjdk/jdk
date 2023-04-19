@@ -808,7 +808,7 @@ void DeoptimizeObjectsALotThread::deoptimize_objects_alot_loop_single() {
         eb.deoptimize_objects(100);
       }
       // Now sleep after the escape barriers destructor resumed deoptee_thread.
-      sleep(DeoptimizeObjectsALotInterval);
+      sleep_millis(DeoptimizeObjectsALotInterval);
     }
   }
 }
@@ -825,7 +825,7 @@ void DeoptimizeObjectsALotThread::deoptimize_objects_alot_loop_all() {
       eb.deoptimize_objects_all_threads();
     }
     // Now sleep after the escape barriers destructor resumed the java threads.
-    sleep(DeoptimizeObjectsALotInterval);
+    sleep_millis(DeoptimizeObjectsALotInterval);
   }
 }
 #endif // defined(ASSERT) && COMPILER2_OR_JVMCI
