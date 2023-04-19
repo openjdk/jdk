@@ -37,7 +37,8 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 /**
- * Base interface for lazy reference arrays , which are ... // Todo: write more here
+ * Base interface for lazy reference arrays, which contains metods
+ * common to all lazy array types.
  *
  * @param <V> The type of values to be recorded
  *

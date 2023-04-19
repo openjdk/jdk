@@ -34,7 +34,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
- * An empty lazy references has no pre-set supplier...
+ * An empty lazy reference whith no pre-set provider.
  *
  * @param <V> The type of the value to be recorded
  *

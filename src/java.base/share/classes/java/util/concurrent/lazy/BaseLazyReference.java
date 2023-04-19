@@ -35,7 +35,8 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 
 /**
- * Base interface for lazy references , which are ... // Todo: write more here
+ * Base interface for lazy references, which contains metods
+ * common to all lazy reference types.
  *
  * @param <V> The type of the value to be recorded
  *

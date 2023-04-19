@@ -34,7 +34,7 @@ import java.util.Objects;
 import java.util.function.IntFunction;
 
 /**
- * An empty lazy references with no pre-set supplier...
+ * An empty lazy array with no pre-set provider.
  *
  * @param <V> The type of the value to be recorded
  *

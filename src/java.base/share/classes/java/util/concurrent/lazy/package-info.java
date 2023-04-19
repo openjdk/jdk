@@ -106,7 +106,8 @@
  *
  * On some occasions, a preset-supplier might not be known a priori or the
  * lazy value to compute might depend on values not known at declaration time.  In
- * such cases, an empty LazyReference can be obtained and used as exemplified below:
+ * such cases, an {@link java.util.concurrent.lazy.EmptyLazyReference EmptyLazyReference} can be obtained
+ * and used as exemplified below:
  * {@snippet lang = java:
  *     class Fox {
  *
