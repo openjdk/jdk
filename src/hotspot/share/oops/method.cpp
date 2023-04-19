@@ -126,8 +126,6 @@ Method::Method(ConstMethod* xconst, AccessFlags access_flags, Symbol* name) {
   NOT_PRODUCT(_name = name;)
 }
 
-// Release Method*.  The nmethod will be gone when we get here because
-// we've walked the code cache.
 void Method::deallocate_contents(ClassLoaderData* loader_data) {
   MetadataFactory::free_metadata(loader_data, constMethod());
   set_constMethod(nullptr);
@@ -135,8 +133,10 @@ void Method::deallocate_contents(ClassLoaderData* loader_data) {
   set_method_data(nullptr);
   MetadataFactory::free_metadata(loader_data, method_counters());
   clear_method_counters();
-  // The nmethod will be gone when we get here, for redefinition but not
-  // for method handle intrinsics.
+  // The nmethod will be gone when we get here for redefinition because
+  // we've walked the code cache, but not for method handle intrinsics.
+  // This is safe for method handle intrinsics because this method has
+  // not been published so nothing has called through this nmethod.
   if (code() != nullptr) {
     ((nmethod*)_code)->flush();
     _code = nullptr;
