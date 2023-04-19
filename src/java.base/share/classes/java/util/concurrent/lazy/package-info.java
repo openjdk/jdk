@@ -53,7 +53,7 @@
  * <ul>
  *     <li>(1A) {@link LazyReference} with e.g. {@link java.util.concurrent.lazy.LazyReference#get() get()}<p>
  *     available via {@link java.util.concurrent.lazy.Lazy#of(java.util.function.Supplier) Lazy.of(Supplier&lt;V&gt; presetSupplier)}</li>
- *     
+ *
  *     <li>(1B) {@link EmptyLazyReference} with e.g. {@link java.util.concurrent.lazy.EmptyLazyReference#apply(java.lang.Object) apply(Supplier&lt;V&gt; supplier)}<p>
  *     available via {@link java.util.concurrent.lazy.Lazy#ofEmpty() Lazy.ofEmpty()}</li>
  *

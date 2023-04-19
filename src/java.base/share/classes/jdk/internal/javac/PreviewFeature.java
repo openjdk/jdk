@@ -72,7 +72,7 @@ public @interface PreviewFeature {
         VIRTUAL_THREADS,
         @JEP(number=434, title="Foreign Function & Memory API", status="Second Preview")
         FOREIGN,
-        // JEP TBI
+        // JEP number TBD
         @JEP(number=-1, title="Lazy Initialization", status="First Preview")
         LAZY,
         /**
