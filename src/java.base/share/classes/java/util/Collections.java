@@ -6020,7 +6020,7 @@ public class Collections {
      * @serial include
      */
     private static class SequencedSetFromMap<E> extends SetFromMap<E> implements SequencedSet<E> {
-        private final E nsee(Map.Entry<E, Boolean> e) {
+        private E nsee(Map.Entry<E, Boolean> e) {
             if (e == null) {
                 throw new NoSuchElementException();
             } else {
@@ -6028,7 +6028,7 @@ public class Collections {
             }
         }
 
-        private final SequencedMap<E, Boolean> map() {
+        private SequencedMap<E, Boolean> map() {
             return (SequencedMap<E, Boolean>) super.m;
         }
 
