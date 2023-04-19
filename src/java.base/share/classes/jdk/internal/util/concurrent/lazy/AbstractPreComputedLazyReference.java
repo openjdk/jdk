@@ -7,8 +7,9 @@ import java.util.concurrent.lazy.EmptyLazyReference;
 import java.util.concurrent.lazy.Lazy;
 import java.util.function.Supplier;
 
-abstract class AbstractPreComputedLazyReference<V>
-        implements BaseLazyReference<V> {
+public abstract sealed class AbstractPreComputedLazyReference<V>
+        implements BaseLazyReference<V>
+        permits PreComputedLazyReference,  PreComputedEmptyLazyReference {
 
     final V value;
 

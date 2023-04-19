@@ -30,6 +30,8 @@ import jdk.internal.util.concurrent.lazy.PreComputedEmptyLazyReference;
 import jdk.internal.util.concurrent.lazy.PreComputedLazyReference;
 import jdk.internal.util.concurrent.lazy.StandardEmptyLazyReference;
 import jdk.internal.util.concurrent.lazy.StandardLazyReference;
+import jdk.internal.util.concurrent.lazy.array.StandardEmptyLazyArray;
+import jdk.internal.util.concurrent.lazy.array.StandardLazyArray;
 
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
@@ -59,6 +61,9 @@ public class ObjectLayout {
 
         analyze(StandardEmptyLazyReference.class);
         analyze(StandardLazyReference.class);
+
+        analyze(StandardLazyArray.class);
+        analyze(StandardEmptyLazyArray.class);
 
     }
 

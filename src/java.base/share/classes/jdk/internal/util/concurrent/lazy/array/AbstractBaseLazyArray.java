@@ -51,8 +51,9 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-abstract class AbstractBaseLazyArray<V, L extends AbstractBaseLazyReference<V>>
-        implements BaseLazyArray<V> {
+public sealed abstract class AbstractBaseLazyArray<V, L extends AbstractBaseLazyReference<V>>
+        implements BaseLazyArray<V>
+        permits StandardEmptyLazyArray, StandardLazyArray, TranslatedEmptyLazyArray {
 
     private final LazyReference<ListView> listView = Lazy.of(ListView::new);
 

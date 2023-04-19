@@ -35,8 +35,9 @@ import java.util.Optional;
 import java.util.concurrent.lazy.BaseLazyReference;
 import java.util.concurrent.lazy.Lazy;
 
-public abstract class AbstractBaseLazyReference<V>
-        implements BaseLazyReference<V> {
+public abstract sealed class AbstractBaseLazyReference<V>
+        implements BaseLazyReference<V>
+        permits StandardEmptyLazyReference, StandardLazyReference {
 
     static final Unsafe UNSAFE = Unsafe.getUnsafe();
 

@@ -44,8 +44,8 @@ import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
 /**
- * This class provides common factories and builders classes for all
- * Lazy class variants.
+ * This class provides common factories and builders for all
+ * Lazy types.
  *
  * @since 22
  */
@@ -78,7 +78,7 @@ public final class Lazy {
         /**
          * Indicates a value is being constructed but is not yet available.
          */
-        CONSTRUCTING, // Todo: Consider dropping this state
+        CONSTRUCTING,
         /**
          * Indicates a value is present. This is a <em>final state</em>.
          */
@@ -96,10 +96,6 @@ public final class Lazy {
                     state == ERROR;
         }
     }
-
-    static final int EMPTY_ORDINAL = 0;
-    static final int PRESENT_ORDINAL = 2;
-    static final int ERROR_ORDINAL = 3;
 
     /**
      * The Evaluation indicates the erliest point at which a Lazy can be evaluated:

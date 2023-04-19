@@ -26,6 +26,10 @@
 package java.util.concurrent.lazy;
 
 import jdk.internal.javac.PreviewFeature;
+import jdk.internal.util.concurrent.lazy.AbstractBaseLazyReference;
+import jdk.internal.util.concurrent.lazy.AbstractPreComputedLazyReference;
+import jdk.internal.util.concurrent.lazy.PreComputedLazyReference;
+import jdk.internal.util.concurrent.lazy.StandardEmptyLazyReference;
 
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -39,7 +43,8 @@ import java.util.Optional;
  * @since 22
  */
 @PreviewFeature(feature = PreviewFeature.Feature.LAZY)
-public sealed interface BaseLazyReference<V> permits EmptyLazyReference, LazyReference {
+public sealed interface BaseLazyReference<V>
+        permits EmptyLazyReference, LazyReference, AbstractBaseLazyReference, AbstractPreComputedLazyReference {
 
     /**
      * {@return The {@link Lazy.State } of this Lazy}.

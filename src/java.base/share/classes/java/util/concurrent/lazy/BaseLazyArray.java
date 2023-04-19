@@ -26,6 +26,7 @@
 package java.util.concurrent.lazy;
 
 import jdk.internal.javac.PreviewFeature;
+import jdk.internal.util.concurrent.lazy.array.AbstractBaseLazyArray;
 import jdk.internal.util.concurrent.lazy.array.StandardEmptyLazyArray;
 
 import java.util.List;
@@ -44,7 +45,8 @@ import java.util.stream.Stream;
  * @since 22
  */
 @PreviewFeature(feature = PreviewFeature.Feature.LAZY)
-public sealed interface BaseLazyArray<V> permits EmptyLazyArray, LazyArray {
+public sealed interface BaseLazyArray<V>
+        permits EmptyLazyArray, LazyArray, AbstractBaseLazyArray {
 
     /**
      * {@return the length of the array}.
