@@ -24,20 +24,53 @@
  */
 
 /**
+ * <h2 id="lazy">Lazy</h2>
+ *
+ * <p>
  * A small toolkit of classes supporting lock-free, thread-safe
  * use of lazily initialized values with superior performance.  Providers of
  * lazy values are guaranteed to be invoked at most one time.  This contrasts
  * to {@link java.util.concurrent.atomic.AtomicReferenceArray } where any number
  * of updates can be done and where there is no simple way to atomically compute
  * a value (guaranteed to only be computed once) if missing.
- *  <p>
+ * <p>
  * The lazy implementations are optimized for the case where there are N invocations
  * trying to obtain a value and where N >> 1, for example where N is > 2<sup>20</sup>.
+ * <p>
+ * Lazy types are all generic with respect to the reference value of type V they compute and
+ * come in four fundamental flavors grouped in two dimensions; "Element Capacity" and "Preprovidedness":
+ * <h3 id="element-capacity">Element Capacity</h3>
+ * <ol type="1">
+ *    <li>Reference (1 element)</li>
+ *    <li>Array     (N elements)</li>
+ * </ol>
+ * <h3 id="perprovidedness">Preprovidedness</h3>
+ * <ol type="A">
+ *     <li>Preprovided (with a pre-configured value provider)</li>
+ *     <li>Empty (with no value provider)</li>
+ * </ol>
+ * <p>
+ * These dimensions are combined to form:
+ * <ul>
+ *     <li>(1A) {@link LazyReference} with e.g. {@link java.util.concurrent.lazy.LazyReference#get() get()}<p>
+ *     available via {@link java.util.concurrent.lazy.Lazy#of(java.util.function.Supplier) Lazy.of(Supplier&lt;V&gt; presetSupplier)}</li>
+ *     
+ *     <li>(1B) {@link EmptyLazyReference} with e.g. {@link java.util.concurrent.lazy.EmptyLazyReference#apply(java.lang.Object) apply(Supplier&lt;V&gt; supplier)}<p>
+ *     available via {@link java.util.concurrent.lazy.Lazy#ofEmpty() Lazy.ofEmpty()}</li>
  *
- * <h2 id="lazy">Lazy</h2>
+ *     <li>(2A) {@link LazyArray} with e.g. {@link java.util.concurrent.lazy.LazyArray#apply(int) apply(int index)}<p>
+ *     available via {@link java.util.concurrent.lazy.Lazy#ofArray(int, java.util.function.IntFunction) Lazy.ofArray(int length, IntFunction&lt;V&gt; presetMapper)}</li>
  *
- * Instances of the many lazy types are obtained via the {@link java.util.concurrent.lazy.Lazy} class
- * using factory methods and builders.
+ *     <li>(2B) {@link EmptyLazyArray} with e.g. {@link java.util.concurrent.lazy.EmptyLazyArray#computeIfEmpty(int, java.util.function.IntFunction) computeIfEmpty(int index, IntFunction&lt;V&gt; mapper)}<p>
+ *     available via {@link java.util.concurrent.lazy.Lazy#ofEmptyArray(int) Lazy.ofEmptyArray(int length)}</li>
+ * </ul>
+ *
+ * Hence, the Array types provide an extra arity where the index is specified compared to the Reference types.
+ *
+ * <h2 id="lazy-factories">Lazy Factories</h2>
+ *
+ * As shown in the table above, instances of the many lazy types are obtained via the {@link java.util.concurrent.lazy.Lazy} class
+ * using factory methods and can also be obtained and configured via builders.
  *
  * <h3 id="lazyreference">LazyReference</h3>
  *
@@ -190,12 +223,28 @@
  * }
  *
  * Sometimes, there is a mapping from an {@code int} key to an index, preventing
- * the key to be used directly. For example, when caching only certain
- * values as shown below where we cache every 10th value:
+ * the key to be used directly. If there is a constant translation factor between index and
+ * actual keys, the {@linkplain java.util.concurrent.lazy.Lazy .ofEmptyTranslatedArray()} can be used.
+ * <p>
+ * For example, when caching oevery 10th Fibonacci value, the following snippet can be used:
  * {@snippet lang = java:
+ *         static int fib(int n) {
+ *             return (n <= 1)
+ *                     ? n
+ *                     : fib(n - 1) + fib(n - 2);
+ *         }
  *
- *   // Todo: refactor how int mappers are obtained and show an example here.
+ *         private static final EmptyLazyArray<Integer> FIB_10_CACHE =
+ *                 Lazy.ofEmptyTranslatedArray(3, 10);
  *
+ *
+ *         // Only works for values up to ~30
+ *
+ *         static int cachedFib(int n) {
+ *             if (n <= 1)
+ *                 return n;
+ *             return FIB_10_CACHE.computeIfEmpty(n, DemoFibMapped::fib);
+ *         }
  * }
  *
  * <h3 id="lazymapper">LazyMapper</h3>
