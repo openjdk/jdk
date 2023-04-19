@@ -113,12 +113,9 @@ public class CopyAnimatedGIFTest {
 
         if (!latch.await(TIMEOUT, MILLISECONDS)) {
             throw new RuntimeException("Image copying taking too long.");
-        }
-        else
-        {
+        } else {
             EventQueue.invokeAndWait(CopyAnimatedGIFTest::dispose);
         }
-
     }
     private static void dispose() {
         if (frame != null) {
