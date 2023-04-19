@@ -26,9 +26,9 @@
 package java.util;
 
 /**
- * A collection that has a well-defined encounter order, that supports operations at
- * both ends, and that is reversible. The elements of a sequenced collection have an
- * <i>encounter order</i>, where conceptually the elements have a linear arrangement
+ * A collection that has a well-defined encounter order, that supports operations at both ends,
+ * and that is reversible. The elements of a sequenced collection have an <a id="encounter">
+ * <i>encounter order</i></a>, where conceptually the elements have a linear arrangement
  * from the first element to the last element. Given any two elements, one element is
  * either before (closer to the first element) or after (closer to the last element)
  * the other element.

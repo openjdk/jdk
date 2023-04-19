@@ -26,10 +26,10 @@
 package java.util;
 
 /**
- * A Map that has a well-defined encounter order, that supports operations at both
- * ends, and that is reversible. The <i>encounter order</i> of a {@code SequencedMap}
- * is similar to that of the elements of a {@link SequencedCollection}, but the ordering
- * applies to mappings instead of individual elements.
+ * A Map that has a well-defined encounter order, that supports operations at both ends, and
+ * that is reversible. The <a href="SequencedCollection.html#encounter">encounter order</a>
+ * of a {@code SequencedMap} is similar to that of the elements of a {@link SequencedCollection},
+ * but the ordering applies to mappings instead of individual elements.
  * <p>
  * The bulk operations on this map, including the {@link #forEach forEach} and the
  * {@link #replaceAll replaceAll} methods, operate on this map's mappings in

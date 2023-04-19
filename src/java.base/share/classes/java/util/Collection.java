@@ -33,8 +33,11 @@ import java.util.stream.StreamSupport;
 /**
  * The root interface in the <i>collection hierarchy</i>.  A collection
  * represents a group of objects, known as its <i>elements</i>.  Some
- * collections allow duplicate elements and others do not.  Some are ordered
- * and others unordered.  The JDK does not provide any <i>direct</i>
+ * collections allow duplicate elements and others do not.  Some are ordered,
+ * and others are unordered. Collections that have a defined
+ * <a href="SequencedCollection.html#encounter">encounter order</a>
+ * are generally subtypes of the {@link SequencedCollection} interface.
+ * The JDK does not provide any <i>direct</i>
  * implementations of this interface: it provides implementations of more
  * specific subinterfaces like {@code Set} and {@code List}.  This interface
  * is typically used to pass collections around and manipulate them where
@@ -503,7 +506,9 @@ public interface Collection<E> extends Iterable<E> {
      * the specified collection is modified while the operation is in progress.
      * (This implies that the behavior of this call is undefined if the
      * specified collection is this collection, and this collection is
-     * nonempty.)
+     * nonempty.) If the specified collection has a defined
+     * <a href="SequencedCollection.html#encounter">encounter order</a>,
+     * processing of its elements generally occurs in that order.
      *
      * @param c collection containing elements to be added to this collection
      * @return {@code true} if this collection changed as a result of the call
