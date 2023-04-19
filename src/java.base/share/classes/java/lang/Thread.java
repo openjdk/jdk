@@ -496,8 +496,24 @@ public class Thread implements Runnable {
      *          cleared when this exception is thrown.
      */
     public static void sleep(long millis) throws InterruptedException {
-        sleep(millis, 0);
+        if (millis < 0) {
+            throw new IllegalArgumentException("timeout value is negative");
+        }
+
+        long nanos = MILLISECONDS.toNanos(millis);
+        ThreadSleepEvent event = beforeSleep(nanos);
+        try {
+            if (currentThread() instanceof VirtualThread vthread) {
+                vthread.sleepNanos(nanos);
+            } else {
+                sleep0(nanos);
+            }
+        } finally {
+            afterSleep(event);
+        }
     }
+
+    private static native void sleep0(long nanos) throws InterruptedException;
 
     /**
      * Causes the currently executing thread to sleep (temporarily cease
@@ -546,8 +562,6 @@ public class Thread implements Runnable {
         }
     }
 
-    private static native void sleep0(long nanos) throws InterruptedException;
-
     /**
      * Causes the currently executing thread to sleep (temporarily cease
      * execution) for the specified duration, subject to the precision and
@@ -570,10 +584,16 @@ public class Thread implements Runnable {
             return;
         }
 
-        // convert to milliseconds and nanos
-        long millis = NANOSECONDS.toMillis(nanos);
-        nanos -= MILLISECONDS.toNanos(millis);
-        sleep(millis, (int)nanos);
+        ThreadSleepEvent event = beforeSleep(nanos);
+        try {
+            if (currentThread() instanceof VirtualThread vthread) {
+                vthread.sleepNanos(nanos);
+            } else {
+                sleep0(nanos);
+            }
+        } finally {
+            afterSleep(event);
+        }
     }
 
     /**
