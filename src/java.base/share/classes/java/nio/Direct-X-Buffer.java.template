@@ -452,15 +452,18 @@ class Direct$Type$Buffer$RW$$BO$
         checkSession();
 
         int length = end - start;
+        Objects.checkFromIndexSize(start, length,
+                                   csq == null ? 0 : csq.length());
+
         int pos = position();
         int lim = limit();
         int rem = (pos <= lim) ? lim - pos : 0;
         if (length > rem)
             throw new BufferOverflowException();
 
-        char[] buf = new char[APPEND_BUF_SIZE];
+        char[] buf = new char[Math.min(APPEND_BUF_SIZE, length)];
         int index = pos;
-        do {
+        while (start < end) {
             int count = end - start;
             if (count > buf.length)
                 count = buf.length;
@@ -477,7 +480,7 @@ class Direct$Type$Buffer$RW$$BO$
 
             start += count;
             index += count;
-        } while (start < end);
+        }
 
         position(pos + length);
 
