@@ -32,7 +32,7 @@
  *          /test/hotspot/jtreg/runtime/cds/appcds/dynamicArchive/test-classes
  * @build LambdaProxyDuringShutdownApp jdk.test.whitebox.WhiteBox LambdaVerification
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar lambda_proxy_shutdown.jar LambdaVerification
- *             LambdaProxyDuringShutdownApp MyShutdown Outer Outer$Inner
+ *             LambdaProxyDuringShutdownApp ShutdownHelper Outer Outer$Inner
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar WhiteBox.jar jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. LambdaProxyDuringShutdown
