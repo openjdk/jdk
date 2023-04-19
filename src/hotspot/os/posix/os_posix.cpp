@@ -1542,7 +1542,7 @@ int PlatformEvent::park_millis(jlong millis) {
 }
 
 int PlatformEvent::park_nanos(jlong nanos) {
-  assert(0 <= nanos, "nanos are in range");
+  assert(nanos > 0, "nanos are positive");
 
   // Transitions for _event:
   //   -1 => -1 : illegal

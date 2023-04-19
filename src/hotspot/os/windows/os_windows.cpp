@@ -5250,13 +5250,14 @@ class HighResolutionInterval : public CHeapObj<mtThread> {
 //
 
 int PlatformEvent::park_nanos(jlong nanos) {
-  assert(0 <= nanos, "nanos are in range");
+  assert(nanos > 0, "nanos are positive");
 
   // Windows timers are still quite unpredictable to handle sub-millisecond granularity.
-  // Instead of implementing this method, fall back to the millisecond sleep, treating
-  // any positive requested nanos as a full millisecond.
+  // Instead of implementing sub-millisecond sleeps, fall back to the usual behavior of
+  // rounding up any positive requested nanos to the a full millisecond. This is how
+  // Thread.sleep(millis, nanos) has always behaved with only millisecond granularity.
   jlong millis = align_up(nanos, NANOSECS_PER_MILLISEC) / NANOSECS_PER_MILLISEC;
-  assert(nanos == 0 || millis != 0, "Only pass zero millis on zero nanos");
+  assert(millis > 0, "should always be positive");
   return park(millis);
 }
 
