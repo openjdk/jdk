@@ -111,8 +111,8 @@ class JvmtiRawMonitor : public CHeapObj<mtSynchronizer>  {
   };
 
   // Non-aborting operator new
-  void* operator new(size_t size) {
-    return CHeapObj::operator new(size, std::nothrow);
+  void* operator new(size_t size, const std::nothrow_t&  nothrow_constant) throw() {
+    return CHeapObj::operator new(size, nothrow_constant);
   }
 
   JvmtiRawMonitor(const char* name);

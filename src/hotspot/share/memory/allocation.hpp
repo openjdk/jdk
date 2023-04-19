@@ -282,9 +282,9 @@ class CHeapObj {
 // Calling new or delete will result in fatal error.
 
 class StackObj {
- private:
-  void* operator new(size_t size) throw() = delete;
-  void* operator new [](size_t size) throw() = delete;
+ public:
+  void* operator new(size_t size) = delete;
+  void* operator new [](size_t size) = delete;
   void  operator delete(void* p) = delete;
   void  operator delete [](void* p) = delete;
 };
@@ -515,8 +515,8 @@ protected:
     return res;
   }
 
-  void* operator new [](size_t size) throw() = delete;
-  void* operator new [](size_t size, const std::nothrow_t& nothrow_constant) throw() = delete;
+  void* operator new [](size_t size) = delete;
+  void* operator new [](size_t size, const std::nothrow_t& nothrow_constant) = delete;
   void  operator delete(void* p);
   void  operator delete [](void* p) = delete;
 
