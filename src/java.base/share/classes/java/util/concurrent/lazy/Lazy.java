@@ -271,19 +271,19 @@ public final class Lazy {
      * <p>
      * Below, an example of how to cache values in an array is shown:
      * {@snippet lang = java:
-     * class DemoArray {
+     *     class DemoArray {
      *
-     * private static final LazyArray<Value> VALUE_PO2_CACHE =
-     * Lazy.ofArray(32, index -> new Value(1L << index));
+     *         private static final LazyArray<Value> VALUE_PO2_CACHE =
+     *                 Lazy.ofArray(32, index -> new Value(1L << index));
      *
-     * public Value powerOfTwoValue(int n) {
-     * if (n < 0 || n >= VALUE_PO2_CACHE.length()) {
-     * throw new IllegalArgumentException(Integer.toString(n));
-     * }
+     *         public Value powerOfTwoValue(int n) {
+     *             if (n < 0 || n >= VALUE_PO2_CACHE.length()) {
+     *                 throw new IllegalArgumentException(Integer.toString(n));
+     *             }
      *
-     * return VALUE_PO2_CACHE.apply(n);
-     * }
-     * }
+     *             return VALUE_PO2_CACHE.apply(n);
+     *         }
+     *     }
      *}
      *
      * @param <V>          The type of the values
