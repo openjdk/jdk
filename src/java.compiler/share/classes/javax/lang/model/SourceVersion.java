@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,6 +72,7 @@ public enum SourceVersion {
      *  20: no changes (pattern matching for switch in fourth preview,
      *      record patterns in second preview)
      *  21: tbd
+     *  22: tbd
      */
 
     /**
@@ -385,7 +386,19 @@ public enum SourceVersion {
      * href="https://docs.oracle.com/javase/specs/jls/se21/html/index.html">
      * <cite>The Java Language Specification, Java SE 21 Edition</cite></a>
      */
-    RELEASE_21;
+    RELEASE_21,
+
+    /**
+     * The version recognized by the Java Platform, Standard Edition
+     * 22.
+     *
+     * @since 22
+     *
+     * @see <a
+     * href="https://docs.oracle.com/javase/specs/jls/se22/html/index.html">
+     * <cite>The Java Language Specification, Java SE 22 Edition</cite></a>
+     */
+    RELEASE_22;
 
     // Note that when adding constants for newer releases, the
     // behavior of latest() and latestSupported() must be updated too.
@@ -394,7 +407,7 @@ public enum SourceVersion {
      * {@return the latest source version that can be modeled}
      */
     public static SourceVersion latest() {
-        return RELEASE_21;
+        return RELEASE_22;
     }
 
     private static final SourceVersion latestSupported = getLatestSupported();
@@ -409,7 +422,7 @@ public enum SourceVersion {
     private static SourceVersion getLatestSupported() {
         int intVersion = Runtime.version().feature();
         return (intVersion >= 11) ?
-            valueOf("RELEASE_" + Math.min(21, intVersion)):
+            valueOf("RELEASE_" + Math.min(22, intVersion)):
             RELEASE_10;
     }
 

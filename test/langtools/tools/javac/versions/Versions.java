@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4981566 5028634 5094412 6304984 7025786 7025789 8001112 8028545 8000961 8030610 8028546 8188870 8173382 8173382 8193290 8205619 8028563 8245147 8245586 8257453 8286035
+ * @bug 4981566 5028634 5094412 6304984 7025786 7025789 8001112 8028545 8000961 8030610 8028546 8188870 8173382 8173382 8193290 8205619 8028563 8245147 8245586 8257453 8286035 8306586
  * @summary Check interpretation of -target and -source options
  * @modules java.compiler
  *          jdk.compiler
@@ -71,9 +71,9 @@ public class Versions {
 
     public static final Set<String> VALID_SOURCES =
         Set.of("1.8", "1.9", "1.10", "11", "12", "13", "14",
-               "15", "16", "17", "18", "19", "20", "21");
+               "15", "16", "17", "18", "19", "20", "21", "22");
 
-    public static final String LATEST_MAJOR_VERSION = "65.0";
+    public static final String LATEST_MAJOR_VERSION = "66.0";
 
     static enum SourceTarget {
         EIGHT(true,      "52.0",  "8", Versions::checksrc8),
@@ -89,7 +89,8 @@ public class Versions {
         EIGHTEEN(false,  "62.0", "18", Versions::checksrc18),
         NINETEEN(false,  "63.0", "19", Versions::checksrc19),
         TWENTY(false,    "64.0", "20", Versions::checksrc20),
-        TWENTY_ONE(false,"65.0", "21", Versions::checksrc20);
+        TWENTY_ONE(false,"65.0", "21", Versions::checksrc20),
+        TWENTY_TWO(false,"66.0", "22", Versions::checksrc20);
 
         private final boolean dotOne;
         private final String classFileVer;
