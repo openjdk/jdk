@@ -17,6 +17,7 @@ import java.io.IOException;
 import jdk.internal.org.jline.terminal.Attributes;
 import jdk.internal.org.jline.terminal.Size;
 import jdk.internal.org.jline.terminal.impl.jna.JnaNativePty;
+import jdk.internal.org.jline.terminal.impl.jna.LastErrorException;
 import jdk.internal.org.jline.terminal.spi.TerminalProvider;
 
 import static jdk.internal.org.jline.terminal.impl.jna.linux.CLibrary.TCSADRAIN;

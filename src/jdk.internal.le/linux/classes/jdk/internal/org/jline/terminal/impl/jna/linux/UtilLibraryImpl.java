@@ -24,6 +24,7 @@
  */
 package jdk.internal.org.jline.terminal.impl.jna.linux;
 
+import jdk.internal.org.jline.terminal.impl.jna.LastErrorException;
 import jdk.internal.org.jline.terminal.impl.jna.linux.LinuxNativePty.UtilLibrary;
 
 public final class UtilLibraryImpl implements UtilLibrary {

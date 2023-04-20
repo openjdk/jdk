@@ -23,7 +23,7 @@ import jdk.internal.org.jline.terminal.impl.AbstractPty;
 import jdk.internal.org.jline.terminal.spi.TerminalProvider;
 import jdk.internal.org.jline.terminal.spi.Pty;
 //import jdk.internal.org.jline.terminal.impl.jna.freebsd.FreeBsdNativePty;
-import jdk.internal.org.jline.terminal.impl.jna.linux.LinuxNativePty;
+//import jdk.internal.org.jline.terminal.impl.jna.linux.LinuxNativePty;
 //import jdk.internal.org.jline.terminal.impl.jna.osx.OsXNativePty;
 //import jdk.internal.org.jline.terminal.impl.jna.solaris.SolarisNativePty;
 
@@ -44,7 +44,7 @@ public abstract class JnaNativePty extends AbstractPty implements Pty {
 //            }
 //            return OsXNativePty.current(console);
 //        } else if (Platform.isLinux()) {
-            return LinuxNativePty.current(console);
+//            return LinuxNativePty.current(console);
 //        } else if (Platform.isSolaris()) {
 //            return SolarisNativePty.current(console);
 //        } else if (Platform.isFreeBSD()) {
@@ -52,13 +52,14 @@ public abstract class JnaNativePty extends AbstractPty implements Pty {
 //        } else {
 //            throw new UnsupportedOperationException();
 //        }
+        return JDKNativePty.current(console);
     }
 
     public static JnaNativePty open(Attributes attr, Size size) throws IOException {
 //        if (Platform.isMac()) {
 //            return OsXNativePty.open(attr, size);
 //        } else if (Platform.isLinux()) {
-            return LinuxNativePty.open(attr, size);
+//            return LinuxNativePty.open(attr, size);
 //        } else if (Platform.isSolaris()) {
 //            return SolarisNativePty.open(attr, size);
 //        } else if (Platform.isFreeBSD()) {
@@ -66,6 +67,7 @@ public abstract class JnaNativePty extends AbstractPty implements Pty {
 //        } else {
 //            throw new UnsupportedOperationException();
 //        }
+        return JDKNativePty.open(attr, size);
     }
 
     protected JnaNativePty(int master, FileDescriptor masterFD, int slave, FileDescriptor slaveFD, String name) {
@@ -173,7 +175,7 @@ public abstract class JnaNativePty extends AbstractPty implements Pty {
 //        if (Platform.isMac()) {
 //            return OsXNativePty.isatty(fd) == 1;
 //        } else if (Platform.isLinux()) {
-            return LinuxNativePty.isatty(fd) == 1;
+//            return LinuxNativePty.isatty(fd) == 1;
 //        } else if (Platform.isSolaris()) {
 //            return SolarisNativePty.isatty(fd) == 1;
 //        } else if (Platform.isFreeBSD()) {
@@ -181,13 +183,14 @@ public abstract class JnaNativePty extends AbstractPty implements Pty {
 //        } else {
 //            return false;
 //        }
+        return JDKNativePty.isatty(fd) == 1;
     }
 
     private static String ttyname(int fd) {
 //        if (Platform.isMac()) {
 //            return OsXNativePty.ttyname(fd);
 //        } else if (Platform.isLinux()) {
-            return LinuxNativePty.ttyname(fd);
+//            return LinuxNativePty.ttyname(fd);
 //        } else if (Platform.isSolaris()) {
 //            return SolarisNativePty.ttyname(fd);
 //        } else if (Platform.isFreeBSD()) {
@@ -195,6 +198,7 @@ public abstract class JnaNativePty extends AbstractPty implements Pty {
 //        } else {
 //            return null;
 //        }
+        return JDKNativePty.ttyname(fd);
     }
 
 }

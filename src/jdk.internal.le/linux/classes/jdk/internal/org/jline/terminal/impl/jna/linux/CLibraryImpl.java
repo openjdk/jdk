@@ -24,6 +24,8 @@
  */
 package jdk.internal.org.jline.terminal.impl.jna.linux;
 
+import jdk.internal.org.jline.terminal.impl.jna.LastErrorException;
+
 public final class CLibraryImpl implements CLibrary {
 
     static {

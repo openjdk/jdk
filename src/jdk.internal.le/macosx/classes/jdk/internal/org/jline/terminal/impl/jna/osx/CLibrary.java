@@ -23,6 +23,7 @@ import jdk.internal.org.jline.terminal.Attributes.InputFlag;
 import jdk.internal.org.jline.terminal.Attributes.LocalFlag;
 import jdk.internal.org.jline.terminal.Attributes.OutputFlag;
 import jdk.internal.org.jline.terminal.Size;
+import jdk.internal.org.jline.terminal.impl.jna.LastErrorException;
 
 public interface CLibrary { //extends com.sun.jna.Library {
 
