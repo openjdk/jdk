@@ -4395,24 +4395,7 @@ JVMState* LibraryCallKit::arraycopy_restore_alloc_state(AllocateArrayNode* alloc
       }
 
       if (no_interfering_store) {
-        JVMState* old_jvms = alloc->jvms()->clone_shallow(C);
-        uint size = alloc->req();
-        SafePointNode* sfpt = new SafePointNode(size, old_jvms);
-        old_jvms->set_map(sfpt);
-        for (uint i = 0; i < size; i++) {
-          sfpt->init_req(i, alloc->in(i));
-        }
-        // re-push array length for deoptimization
-        sfpt->ins_req(old_jvms->stkoff() + old_jvms->sp(), alloc->in(AllocateNode::ALength));
-        old_jvms->set_sp(old_jvms->sp()+1);
-        old_jvms->set_monoff(old_jvms->monoff()+1);
-        old_jvms->set_scloff(old_jvms->scloff()+1);
-        old_jvms->set_endoff(old_jvms->endoff()+1);
-        old_jvms->set_should_reexecute(true);
-
-        sfpt->set_i_o(map()->i_o());
-        sfpt->set_memory(map()->memory());
-        sfpt->set_control(map()->control());
+        SafePointNode* sfpt = create_safepoint_with_state_before_array_allocation(alloc);
 
         JVMState* saved_jvms = jvms();
         saved_reexecute_sp = _reexecute_sp;
@@ -4427,6 +4410,30 @@ JVMState* LibraryCallKit::arraycopy_restore_alloc_state(AllocateArrayNode* alloc
   return NULL;
 }
 
+// Clone the JVMState of the array allocation and create a new safepoint with it. Re-push the array length to the stack
+// such that uncommon traps can be emitted to re-execute the array allocation in the interpreter.
+SafePointNode* LibraryCallKit::create_safepoint_with_state_before_array_allocation(const AllocateArrayNode* alloc) const {
+  JVMState* old_jvms = alloc->jvms()->clone_shallow(C);
+  uint size = alloc->req();
+  SafePointNode* sfpt = new SafePointNode(size, old_jvms);
+  old_jvms->set_map(sfpt);
+  for (uint i = 0; i < size; i++) {
+    sfpt->init_req(i, alloc->in(i));
+  }
+  // re-push array length for deoptimization
+  sfpt->ins_req(old_jvms->stkoff() + old_jvms->sp(), alloc->in(AllocateNode::ALength));
+  old_jvms->set_sp(old_jvms->sp()+1);
+  old_jvms->set_monoff(old_jvms->monoff()+1);
+  old_jvms->set_scloff(old_jvms->scloff()+1);
+  old_jvms->set_endoff(old_jvms->endoff()+1);
+  old_jvms->set_should_reexecute(true);
+
+  sfpt->set_i_o(map()->i_o());
+  sfpt->set_memory(map()->memory());
+  sfpt->set_control(map()->control());
+  return sfpt;
+}
+
 // In case of a deoptimization, we restart execution at the
 // allocation, allocating a new array. We would leave an uninitialized
 // array in the heap that GCs wouldn't expect. Move the allocation
@@ -4434,18 +4441,20 @@ JVMState* LibraryCallKit::arraycopy_restore_alloc_state(AllocateArrayNode* alloc
 // deoptimize. This is possible because tightly_coupled_allocation()
 // guarantees there's no observer of the allocated array at this point
 // and the control flow is simple enough.
-void LibraryCallKit::arraycopy_move_allocation_here(AllocateArrayNode* alloc, Node* dest, JVMState* saved_jvms,
+void LibraryCallKit::arraycopy_move_allocation_here(AllocateArrayNode* alloc, Node* dest, JVMState* saved_jvms_before_guards,
                                                     int saved_reexecute_sp, uint new_idx) {
-  if (saved_jvms != NULL && !stopped()) {
+  if (saved_jvms_before_guards != NULL && !stopped()) {
+    replace_unrelated_uncommon_traps_with_alloc_state(alloc, saved_jvms_before_guards);
+
     assert(alloc != NULL, "only with a tightly coupled allocation");
     // restore JVM state to the state at the arraycopy
-    saved_jvms->map()->set_control(map()->control());
-    assert(saved_jvms->map()->memory() == map()->memory(), "memory state changed?");
-    assert(saved_jvms->map()->i_o() == map()->i_o(), "IO state changed?");
+    saved_jvms_before_guards->map()->set_control(map()->control());
+    assert(saved_jvms_before_guards->map()->memory() == map()->memory(), "memory state changed?");
+    assert(saved_jvms_before_guards->map()->i_o() == map()->i_o(), "IO state changed?");
     // If we've improved the types of some nodes (null check) while
     // emitting the guards, propagate them to the current state
-    map()->replaced_nodes().apply(saved_jvms->map(), new_idx);
-    set_jvms(saved_jvms);
+    map()->replaced_nodes().apply(saved_jvms_before_guards->map(), new_idx);
+    set_jvms(saved_jvms_before_guards);
     _reexecute_sp = saved_reexecute_sp;
 
     // Remove the allocation from above the guards
@@ -4521,6 +4530,58 @@ void LibraryCallKit::arraycopy_move_allocation_here(AllocateArrayNode* alloc, No
   }
 }
 
+// Unrelated UCTs between the array allocation and the array copy, which are considered safe by tightly_coupled_allocation(),
+// need to be replaced by an UCT with a state before the array allocation (including the array length). This is necessary
+// because we could hit one of these UCTs (which are executed before the emitted array copy guards and the actual array
+// allocation which is moved down in arraycopy_move_allocation_here()). When later resuming execution in the interpreter,
+// we would have wrongly skipped the array allocation. To prevent this, we resume execution at the array allocation in
+// the interpreter similar to what we are doing for the newly emitted guards for the array copy.
+void LibraryCallKit::replace_unrelated_uncommon_traps_with_alloc_state(AllocateArrayNode* alloc,
+                                                                       JVMState* saved_jvms_before_guards) {
+  if (saved_jvms_before_guards->map()->control()->is_IfProj()) {
+    // There is at least one unrelated uncommon trap which needs to be replaced.
+    SafePointNode* sfpt = create_safepoint_with_state_before_array_allocation(alloc);
+
+    JVMState* saved_jvms = jvms();
+    const int saved_reexecute_sp = _reexecute_sp;
+    set_jvms(sfpt->jvms());
+    _reexecute_sp = jvms()->sp();
+
+    replace_unrelated_uncommon_traps_with_alloc_state(saved_jvms_before_guards);
+
+    // Restore state
+    set_jvms(saved_jvms);
+    _reexecute_sp = saved_reexecute_sp;
+  }
+}
+
+// Replace the unrelated uncommon traps with new uncommon trap nodes by reusing the action and reason. The new uncommon
+// traps will have the state of the array allocation. Let the old uncommon trap nodes die.
+void LibraryCallKit::replace_unrelated_uncommon_traps_with_alloc_state(JVMState* saved_jvms_before_guards) {
+  Node* if_proj = saved_jvms_before_guards->map()->control(); // Start the search right before the newly emitted guards
+  while (if_proj->is_IfProj()) {
+    CallStaticJavaNode* uncommon_trap = get_uncommon_trap_from_success_proj(if_proj);
+    if (uncommon_trap != nullptr) {
+      create_new_uncommon_trap(uncommon_trap);
+    }
+    assert(if_proj->in(0)->is_If(), "must be If");
+    if_proj = if_proj->in(0)->in(0);
+  }
+  assert(if_proj->is_Proj() && if_proj->in(0)->is_Initialize(),
+         "must have reached control projection of init node");
+}
+
+void LibraryCallKit::create_new_uncommon_trap(CallStaticJavaNode* uncommon_trap_call) {
+  const int trap_request = uncommon_trap_call->uncommon_trap_request();
+  assert(trap_request != 0, "no valid UCT trap request");
+  PreserveJVMState pjvms(this);
+  set_control(uncommon_trap_call->in(0));
+  uncommon_trap(Deoptimization::trap_request_reason(trap_request),
+                Deoptimization::trap_request_action(trap_request));
+  assert(stopped(), "Should be stopped");
+  _gvn.hash_delete(uncommon_trap_call);
+  uncommon_trap_call->set_req(0, top()); // not used anymore, kill it
+}
 
 //------------------------------inline_arraycopy-----------------------
 // public static native void java.lang.System.arraycopy(Object src,  int  srcPos,
@@ -4541,12 +4602,12 @@ bool LibraryCallKit::inline_arraycopy() {
   AllocateArrayNode* alloc = tightly_coupled_allocation(dest);
 
   int saved_reexecute_sp = -1;
-  JVMState* saved_jvms = arraycopy_restore_alloc_state(alloc, saved_reexecute_sp);
+  JVMState* saved_jvms_before_guards = arraycopy_restore_alloc_state(alloc, saved_reexecute_sp);
   // See arraycopy_restore_alloc_state() comment
   // if alloc == NULL we don't have to worry about a tightly coupled allocation so we can emit all needed guards
-  // if saved_jvms != NULL (then alloc != NULL) then we can handle guards and a tightly coupled allocation
-  // if saved_jvms == NULL and alloc != NULL, we can't emit any guards
-  bool can_emit_guards = (alloc == NULL || saved_jvms != NULL);
+  // if saved_jvms_before_guards != NULL (then alloc != NULL) then we can handle guards and a tightly coupled allocation
+  // if saved_jvms_before_guards == NULL and alloc != NULL, we can't emit any guards
+  bool can_emit_guards = (alloc == NULL || saved_jvms_before_guards != NULL);
 
   // The following tests must be performed
   // (1) src and dest are arrays.
@@ -4562,12 +4623,12 @@ bool LibraryCallKit::inline_arraycopy() {
   // (3) src and dest must not be null.
   // always do this here because we need the JVM state for uncommon traps
   Node* null_ctl = top();
-  src  = saved_jvms != NULL ? null_check_oop(src, &null_ctl, true, true) : null_check(src,  T_ARRAY);
+  src  = saved_jvms_before_guards != NULL ? null_check_oop(src, &null_ctl, true, true) : null_check(src, T_ARRAY);
   assert(null_ctl->is_top(), "no null control here");
   dest = null_check(dest, T_ARRAY);
 
   if (!can_emit_guards) {
-    // if saved_jvms == NULL and alloc != NULL, we don't emit any
+    // if saved_jvms_before_guards == NULL and alloc != NULL, we don't emit any
     // guards but the arraycopy node could still take advantage of a
     // tightly allocated allocation. tightly_coupled_allocation() is
     // called again to make sure it takes the null check above into
@@ -4681,7 +4742,7 @@ bool LibraryCallKit::inline_arraycopy() {
 
   ciMethod* trap_method = method();
   int trap_bci = bci();
-  if (saved_jvms != NULL) {
+  if (saved_jvms_before_guards != NULL) {
     trap_method = alloc->jvms()->method();
     trap_bci = alloc->jvms()->bci();
   }
@@ -4753,9 +4814,8 @@ bool LibraryCallKit::inline_arraycopy() {
     const TypeKlassPtr* dest_klass_t = _gvn.type(dest_klass)->is_klassptr();
     const Type *toop = TypeOopPtr::make_from_klass(dest_klass_t->klass());
     src = _gvn.transform(new CheckCastPPNode(control(), src, toop));
+    arraycopy_move_allocation_here(alloc, dest, saved_jvms_before_guards, saved_reexecute_sp, new_idx);
   }
-
-  arraycopy_move_allocation_here(alloc, dest, saved_jvms, saved_reexecute_sp, new_idx);
 
   if (stopped()) {
     return true;
@@ -4821,28 +4881,15 @@ LibraryCallKit::tightly_coupled_allocation(Node* ptr) {
     // There may be guards which feed into the slow_region.
     // Any other control flow means that we might not get a chance
     // to finish initializing the allocated object.
-    if ((ctl->is_IfFalse() || ctl->is_IfTrue()) && ctl->in(0)->is_If()) {
-      IfNode* iff = ctl->in(0)->as_If();
-      Node* not_ctl = iff->proj_out_or_null(1 - ctl->as_Proj()->_con);
-      assert(not_ctl != NULL && not_ctl != ctl, "found alternate");
-      // One more try:  Various low-level checks bottom out in
-      // uncommon traps.  If the debug-info of the trap omits
-      // any reference to the allocation, as we've already
-      // observed, then there can be no objection to the trap.
-      bool found_trap = false;
-      for (DUIterator_Fast jmax, j = not_ctl->fast_outs(jmax); j < jmax; j++) {
-        Node* obs = not_ctl->fast_out(j);
-        if (obs->in(0) == not_ctl && obs->is_Call() &&
-            (obs->as_Call()->entry_point() == SharedRuntime::uncommon_trap_blob()->entry_point())) {
-          found_trap = true; break;
-        }
-      }
-      if (found_trap) {
-        ctl = iff->in(0);       // This test feeds a harmless uncommon trap.
-        continue;
-      }
+    // Various low-level checks bottom out in uncommon traps. These
+    // are considered safe since we've already checked above that
+    // there is no unexpected observer of this allocation.
+    if (get_uncommon_trap_from_success_proj(ctl) != nullptr) {
+      assert(ctl->in(0)->is_If(), "must be If");
+      ctl = ctl->in(0)->in(0);
+    } else {
+      return nullptr;
     }
-    return NULL;
   }
 
   // If we get this far, we have an allocation which immediately
@@ -4851,6 +4898,20 @@ LibraryCallKit::tightly_coupled_allocation(Node* ptr) {
   // a new control state to which we will anchor the destination pointer.
 
   return alloc;
+}
+
+CallStaticJavaNode* LibraryCallKit::get_uncommon_trap_from_success_proj(Node* node) {
+  if (node->is_IfProj()) {
+    Node* other_proj = node->as_IfProj()->other_if_proj();
+    for (DUIterator_Fast jmax, j = other_proj->fast_outs(jmax); j < jmax; j++) {
+      Node* obs = other_proj->fast_out(j);
+      if (obs->in(0) == other_proj && obs->is_CallStaticJava() &&
+          (obs->as_CallStaticJava()->entry_point() == SharedRuntime::uncommon_trap_blob()->entry_point())) {
+        return obs->as_CallStaticJava();
+      }
+    }
+  }
+  return nullptr;
 }
 
 //-------------inline_encodeISOArray-----------------------------------
