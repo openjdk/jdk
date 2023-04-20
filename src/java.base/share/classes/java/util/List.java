@@ -788,6 +788,8 @@ public interface List<E> extends SequencedCollection<E> {
      * @implSpec
      * The implementation in this class calls {@code add(0, e)}.
      *
+     * @throws NullPointerException {@inheritDoc}
+     * @throws UnsupportedOperationException {@inheritDoc}
      * @since 21
      */
     default void addFirst(E e) {
@@ -800,6 +802,8 @@ public interface List<E> extends SequencedCollection<E> {
      * @implSpec
      * The implementation in this class calls {@code add(e)}.
      *
+     * @throws NullPointerException {@inheritDoc}
+     * @throws UnsupportedOperationException {@inheritDoc}
      * @since 21
      */
     default void addLast(E e) {
@@ -813,6 +817,7 @@ public interface List<E> extends SequencedCollection<E> {
      * If this List is not empty, the implementation in this class returns the result
      * of calling {@code get(0)}. Otherwise, it throws {@code NoSuchElementException}.
      *
+     * @throws NoSuchElementException {@inheritDoc}
      * @since 21
      */
     default E getFirst() {
@@ -830,6 +835,7 @@ public interface List<E> extends SequencedCollection<E> {
      * If this List is not empty, the implementation in this class returns the result
      * of calling {@code get(size() - 1)}. Otherwise, it throws {@code NoSuchElementException}.
      *
+     * @throws NoSuchElementException {@inheritDoc}
      * @since 21
      */
     default E getLast() {
@@ -847,6 +853,8 @@ public interface List<E> extends SequencedCollection<E> {
      * If this List is not empty, the implementation in this class returns the result
      * of calling {@code remove(0)}. Otherwise, it throws {@code NoSuchElementException}.
      *
+     * @throws NoSuchElementException {@inheritDoc}
+     * @throws UnsupportedOperationException {@inheritDoc}
      * @since 21
      */
     default E removeFirst() {
@@ -864,6 +872,8 @@ public interface List<E> extends SequencedCollection<E> {
      * If this List is not empty, the implementation in this class returns the result
      * of calling {@code remove(size() - 1)}. Otherwise, it throws {@code NoSuchElementException}.
      *
+     * @throws NoSuchElementException {@inheritDoc}
+     * @throws UnsupportedOperationException {@inheritDoc}
      * @since 21
      */
     default E removeLast() {

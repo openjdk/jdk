@@ -300,6 +300,7 @@ public interface SortedSet<E> extends Set<E>, SequencedSet<E> {
      * @implSpec
      * The implementation in this class returns the result of calling the {@code first} method.
      *
+     * @throws NoSuchElementException {@inheritDoc}
      * @since 21
      */
     default E getFirst() {
@@ -312,6 +313,7 @@ public interface SortedSet<E> extends Set<E>, SequencedSet<E> {
      * @implSpec
      * The implementation in this class returns the result of calling the {@code last} method.
      *
+     * @throws NoSuchElementException {@inheritDoc}
      * @since 21
      */
     default E getLast() {
@@ -326,6 +328,8 @@ public interface SortedSet<E> extends Set<E>, SequencedSet<E> {
      * element, then it calls {@code remove(element)} to remove the element, and then it returns
      * the element.
      *
+     * @throws NoSuchElementException {@inheritDoc}
+     * @throws UnsupportedOperationException {@inheritDoc}
      * @since 21
      */
     default E removeFirst() {
@@ -342,6 +346,8 @@ public interface SortedSet<E> extends Set<E>, SequencedSet<E> {
      * element, then it calls {@code remove(element)} to remove the element, and then it returns
      * the element.
      *
+     * @throws NoSuchElementException {@inheritDoc}
+     * @throws UnsupportedOperationException {@inheritDoc}
      * @since 21
      */
     default E removeLast() {

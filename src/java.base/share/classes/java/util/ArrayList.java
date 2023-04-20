@@ -430,6 +430,9 @@ public class ArrayList<E> extends AbstractList<E>
 
     /**
      * {@inheritDoc}
+     *
+     * @throws NoSuchElementException {@inheritDoc}
+     * @since 21
      */
     public E getFirst() {
         if (size == 0) {
@@ -441,6 +444,9 @@ public class ArrayList<E> extends AbstractList<E>
 
     /**
      * {@inheritDoc}
+     *
+     * @throws NoSuchElementException {@inheritDoc}
+     * @since 21
      */
     public E getLast() {
         int last = size - 1;
@@ -516,6 +522,8 @@ public class ArrayList<E> extends AbstractList<E>
 
     /**
      * {@inheritDoc}
+     *
+     * @since 21
      */
     public void addFirst(E element) {
         add(0, element);
@@ -523,6 +531,8 @@ public class ArrayList<E> extends AbstractList<E>
 
     /**
      * {@inheritDoc}
+     *
+     * @since 21
      */
     public void addLast(E element) {
         add(element);
@@ -549,6 +559,9 @@ public class ArrayList<E> extends AbstractList<E>
 
     /**
      * {@inheritDoc}
+     *
+     * @throws NoSuchElementException {@inheritDoc}
+     * @since 21
      */
     public E removeFirst() {
         if (size == 0) {
@@ -563,6 +576,9 @@ public class ArrayList<E> extends AbstractList<E>
 
     /**
      * {@inheritDoc}
+     *
+     * @throws NoSuchElementException {@inheritDoc}
+     * @since 21
      */
     public E removeLast() {
         int last = size - 1;

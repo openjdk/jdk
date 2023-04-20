@@ -328,6 +328,8 @@ public interface NavigableSet<E> extends SortedSet<E> {
      * If this set is not empty, the implementation in this class returns the result of calling
      * the {@code pollFirst} method. Otherwise, it throws {@code NoSuchElementException}.
      *
+     * @throws NoSuchElementException {@inheritDoc}
+     * @throws UnsupportedOperationException {@inheritDoc}
      * @since 21
      */
     default E removeFirst() {
@@ -345,6 +347,8 @@ public interface NavigableSet<E> extends SortedSet<E> {
      * If this set is not empty, the implementation in this class returns the result of calling
      * the {@code pollLast} method. Otherwise, it throws {@code NoSuchElementException}.
      *
+     * @throws NoSuchElementException {@inheritDoc}
+     * @throws UnsupportedOperationException {@inheritDoc}
      * @since 21
      */
     default E removeLast() {

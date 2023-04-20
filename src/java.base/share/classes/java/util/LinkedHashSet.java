@@ -256,6 +256,8 @@ public class LinkedHashSet<E>
 
     /**
      * {@inheritDoc}
+     *
+     * @throws NoSuchElementException {@inheritDoc}
      * @since 21
      */
     public E getFirst() {
@@ -264,6 +266,8 @@ public class LinkedHashSet<E>
 
     /**
      * {@inheritDoc}
+     *
+     * @throws NoSuchElementException {@inheritDoc}
      * @since 21
      */
     public E getLast() {
@@ -273,6 +277,7 @@ public class LinkedHashSet<E>
     /**
      * {@inheritDoc}
      *
+     * @throws NoSuchElementException {@inheritDoc}
      * @since 21
      */
     public E removeFirst() {
@@ -281,6 +286,8 @@ public class LinkedHashSet<E>
 
     /**
      * {@inheritDoc}
+     *
+     * @throws NoSuchElementException {@inheritDoc}
      * @since 21
      */
     public E removeLast() {

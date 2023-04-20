@@ -405,6 +405,9 @@ public class CopyOnWriteArrayList<E>
 
     /**
      * {@inheritDoc}
+     *
+     * @throws NoSuchElementException {@inheritDoc}
+     * @since 21
      */
     public E getFirst() {
         Object[] es = getArray();
@@ -416,6 +419,9 @@ public class CopyOnWriteArrayList<E>
 
     /**
      * {@inheritDoc}
+     *
+     * @throws NoSuchElementException {@inheritDoc}
+     * @since 21
      */
     public E getLast() {
         Object[] es = getArray();
@@ -493,6 +499,8 @@ public class CopyOnWriteArrayList<E>
 
     /**
      * {@inheritDoc}
+     *
+     * @since 21
      */
     public void addFirst(E e) {
         add(0, e);
@@ -500,6 +508,8 @@ public class CopyOnWriteArrayList<E>
 
     /**
      * {@inheritDoc}
+     *
+     * @since 21
      */
     public void addLast(E e) {
         synchronized (lock) {
@@ -536,6 +546,9 @@ public class CopyOnWriteArrayList<E>
 
     /**
      * {@inheritDoc}
+     *
+     * @throws NoSuchElementException {@inheritDoc}
+     * @since 21
      */
     public E removeFirst() {
         synchronized (lock) {
@@ -548,6 +561,9 @@ public class CopyOnWriteArrayList<E>
 
     /**
      * {@inheritDoc}
+     *
+     * @throws NoSuchElementException {@inheritDoc}
+     * @since 21
      */
     public E removeLast() {
         synchronized (lock) {
