@@ -3704,30 +3704,7 @@ bool PhaseIdealLoop::only_has_infinite_loops() {
     assert(head->is_Region(), "");
     worklist.push(head);
   }
-  // BFS traversal down the CFG, except through NeverBranch exits
-  for (uint i = 0; i < worklist.size(); ++i) {
-    Node* n = worklist.at(i);
-    assert(n->is_CFG(), "only traverse CFG");
-    if (n->is_Root()) {
-      // Found root -> there was an exit!
-      return false;
-    } else if (n->is_NeverBranch()) {
-      // Only follow the loop-internal projection, not the NeverBranch exit
-      ProjNode* proj = n->as_NeverBranch()->proj_out_or_null(0);
-      assert(proj != nullptr, "must find loop-internal projection of NeverBranch");
-      worklist.push(proj);
-    } else {
-      // Traverse all CFG outputs
-      for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
-        Node* use = n->fast_out(i);
-        if (use->is_CFG()) {
-          worklist.push(use);
-        }
-      }
-    }
-  }
-  // No exit found for any loop -> all are infinite
-  return true;
+  return RegionNode::are_all_nodes_in_infinite_subgraph(worklist);
 }
 #endif
 

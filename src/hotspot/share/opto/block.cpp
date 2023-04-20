@@ -1378,7 +1378,13 @@ void PhaseCFG::verify() const {
                 }
               }
             }
-            assert(is_loop || block->find_node(def) < j, "uses must follow definitions");
+            // Uses must be before definition, except if:
+            // - We are in some kind of loop we already detected
+            // - We are in infinite loop, where Region may not have been turned into LoopNode
+            assert(block->find_node(def) < j ||
+                   is_loop ||
+                   (n->is_Phi() && block->head()->as_Region()->is_in_infinite_subgraph()),
+                   "uses must follow definitions (except in loops)");
           }
         }
       }

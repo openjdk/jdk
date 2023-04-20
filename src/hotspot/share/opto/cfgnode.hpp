@@ -90,6 +90,10 @@ public:
   PhiNode* has_unique_phi() const; // returns the unique phi user, or NULL
   // Is this region node unreachable from root?
   bool is_unreachable_region(const PhaseGVN* phase);
+#ifdef ASSERT
+  bool is_in_infinite_subgraph();
+  static bool are_all_nodes_in_infinite_subgraph(Unique_Node_List& worklist);
+#endif //ASSERT
   virtual int Opcode() const;
   virtual uint size_of() const { return sizeof(*this); }
   virtual bool pinned() const { return (const Node*)in(0) == this; }

@@ -393,6 +393,47 @@ bool RegionNode::is_unreachable_from_root(const PhaseGVN* phase) const {
   return true; // The Region node is unreachable - it is dead.
 }
 
+#ifdef ASSERT
+// Is this region in an infinite subgraph?
+// (no path to root except through false NeverBranch exit)
+bool RegionNode::is_in_infinite_subgraph() {
+  ResourceMark rm;
+  Unique_Node_List worklist;
+  worklist.push(this);
+  return RegionNode::are_all_nodes_in_infinite_subgraph(worklist);
+}
+
+// Are all nodes in worklist in infinite subgraph?
+// (no path to root except through false NeverBranch exit)
+// worklist is directly used for the traversal
+bool RegionNode::are_all_nodes_in_infinite_subgraph(Unique_Node_List& worklist) {
+  // BFS traversal down the CFG, except through NeverBranch exits
+  for (uint i = 0; i < worklist.size(); ++i) {
+    Node* n = worklist.at(i);
+    assert(n->is_CFG(), "only traverse CFG");
+    if (n->is_Root()) {
+      // Found root -> there was an exit!
+      return false;
+    } else if (n->is_NeverBranch()) {
+      // Only follow the loop-internal projection, not the NeverBranch exit
+      ProjNode* proj = n->as_NeverBranch()->proj_out_or_null(0);
+      assert(proj != nullptr, "must find loop-internal projection of NeverBranch");
+      worklist.push(proj);
+    } else {
+      // Traverse all CFG outputs
+      for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
+        Node* use = n->fast_out(i);
+        if (use->is_CFG()) {
+          worklist.push(use);
+        }
+      }
+    }
+  }
+  // No exit found for any loop -> all are infinite
+  return true;
+}
+#endif //ASSERT
+
 bool RegionNode::try_clean_mem_phi(PhaseGVN *phase) {
   // Incremental inlining + PhaseStringOpts sometimes produce:
   //
