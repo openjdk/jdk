@@ -68,8 +68,6 @@ public class AccessFlags implements /* imports */ ClassConstants {
   public boolean isObsolete          () { return (flags & JVM_ACC_IS_OBSOLETE            ) != 0; }
 
   // Klass* flags
-  public boolean hasMirandaMethods    () { return (flags & JVM_ACC_HAS_MIRANDA_METHODS    ) != 0; }
-  public boolean hasVanillaConstructor() { return (flags & JVM_ACC_HAS_VANILLA_CONSTRUCTOR) != 0; }
   public boolean hasFinalizer         () { return (flags & JVM_ACC_HAS_FINALIZER          ) != 0; }
   public boolean isCloneable          () { return (flags & JVM_ACC_IS_CLONEABLE           ) != 0; }
 

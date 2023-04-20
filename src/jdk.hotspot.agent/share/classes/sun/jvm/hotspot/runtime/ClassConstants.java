@@ -123,10 +123,6 @@ public interface ClassConstants
     public static final long JVM_ACC_IS_OBSOLETE            = 0x00010000;
 
     // Klass* flags
-    // True if this class has miranda methods in it's vtable
-    public static final long JVM_ACC_HAS_MIRANDA_METHODS      = 0x10000000;
-    // True if klass has a vanilla default constructor
-    public static final long JVM_ACC_HAS_VANILLA_CONSTRUCTOR  = 0x20000000;
     // True if klass has a non-empty finalize() method
     public static final long JVM_ACC_HAS_FINALIZER            = 0x40000000;
     // True if klass supports the Clonable interface
