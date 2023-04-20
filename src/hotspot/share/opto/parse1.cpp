@@ -613,8 +613,6 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
   // Parse all the basic blocks.
   do_all_blocks();
 
-  C->set_default_node_notes(caller_nn);
-
   // Check for bailouts during conversion to graph
   if (failing()) {
     if (log)  log->done("parse");
@@ -624,6 +622,10 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
   // Fix up all exiting control flow.
   set_map(entry_map);
   do_exits();
+
+  // Only reset this now, to make sure that debug information emitted
+  // for exiting control flow still refers to the inlined method.
+  C->set_default_node_notes(caller_nn);
 
   if (log)  log->done("parse nodes='%d' live='%d' memory='" SIZE_FORMAT "'",
                       C->unique(), C->live_nodes(), C->node_arena()->used());
