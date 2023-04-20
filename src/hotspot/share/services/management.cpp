@@ -1121,16 +1121,9 @@ JVM_ENTRY(jint, jmm_GetThreadInfo(JNIEnv *env, jlongArray ids, jint maxDepth, jo
   // in the ThreadSnapshot are marked and adjusted during GC.
   ThreadDumpResult dump_result(num_threads);
 
-  // When using the new lightweight locking, we need to take
-  // a safepoint here, because the thread snapshot code calls
-  // ObjectSynchronizer::get_lock_owner() and it would potentially
-  // give wrong results when Java threads are running and
-  // entering/leaving locks while we inspect the thread stacks.
   if (maxDepth == 0) {
     // No stack trace to dump so we do not need to stop the world.
     // Since we never do the VM op here we must set the threads list.
-    // Since we are not stopping the world, the data we gather here
-    // may change the moment after we return it.
     dump_result.set_t_list();
     for (int i = 0; i < num_threads; i++) {
       jlong tid = ids_ah->long_at(i);
