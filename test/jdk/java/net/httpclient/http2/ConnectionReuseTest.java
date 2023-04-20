@@ -30,6 +30,8 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.Stream;
 
 import javax.net.ssl.SSLContext;
@@ -105,12 +107,24 @@ public class ConnectionReuseTest {
     }
 
     private static Stream<Arguments> requestURIs() throws Exception {
-        return Stream.of(
-                // h2 over HTTPS
-                Arguments.of(new URI("https://" + https2_Server.serverAuthority() + "/")),
-                // h2 over HTTP
-                Arguments.of(new URI("http://" + http2_Server.serverAuthority() + "/"))
-        );
+        final List<Arguments> arguments = new ArrayList<>();
+        // h2 over HTTPS
+        arguments.add(Arguments.of(new URI("https://" + https2_Server.serverAuthority() + "/")));
+        // h2 over HTTP
+        arguments.add(Arguments.of(new URI("http://" + http2_Server.serverAuthority() + "/")));
+        if (IPSupport.preferIPv6Addresses()) {
+            if (https2_Server.getAddress().getAddress().isLoopbackAddress()) {
+                // h2 over HTTPS, use the short form of the host, in the request URI
+                arguments.add(Arguments.of(new URI("https://[::1]:" +
+                        https2_Server.getAddress().getPort() + "/")));
+            }
+            if (http2_Server.getAddress().getAddress().isLoopbackAddress()) {
+                // h2 over HTTP, use the short form of the host, in the request URI
+                arguments.add(Arguments.of(new URI("http://[::1]:" +
+                        http2_Server.getAddress().getPort() + "/")));
+            }
+        }
+        return arguments.stream();
     }
 
     /**
