@@ -1982,7 +1982,14 @@ Klass* JavaThread::security_get_caller_class(int depth) {
 
 // Internal convenience function for millisecond resolution sleeps.
 bool JavaThread::sleep(jlong millis) {
-  return sleep_nanos(millis_to_nanos(millis));
+  jlong nanos;
+  if (millis > max_jlong / NANOUNITS_PER_MILLIUNIT) {
+    // Conversion to nanos would overflow, saturate at max
+    nanos = max_jlong;
+  } else {
+    nanos = millis * NANOUNITS_PER_MILLIUNIT;
+  }
+  return sleep_nanos(nanos);
 }
 
 // java.lang.Thread.sleep support

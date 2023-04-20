@@ -1339,6 +1339,13 @@ static jlong millis_to_nanos_bounded(jlong millis) {
   return millis_to_nanos(millis);
 }
 
+static jlong nanos_to_nanos_bounded(jlong nanos) {
+  if (nanos / NANOUNITS > MAX_SECS) {
+    nanos = jlong(MAX_SECS) * NANOUNITS;
+  }
+  return nanos;
+}
+
 static void to_abstime(timespec* abstime, jlong timeout,
                        bool isAbsolute, bool isRealtime) {
   DEBUG_ONLY(int max_secs = MAX_SECS;)
@@ -1563,7 +1570,7 @@ int PlatformEvent::park_nanos(jlong nanos) {
 
   if (v == 0) { // Do this the hard way by blocking ...
     struct timespec abst;
-    to_abstime(&abst, nanos, false, false);
+    to_abstime(&abst, nanos_to_nanos_bounded(nanos), false, false);
 
     int ret = OS_TIMEOUT;
     int status = pthread_mutex_lock(_mutex);
