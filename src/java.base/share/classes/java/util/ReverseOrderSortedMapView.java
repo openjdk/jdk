@@ -100,6 +100,9 @@ class ReverseOrderSortedMapView<K, V> extends AbstractMap<K, V> implements Sorte
             // inherit add(), which throws UOE
             public Iterator<K> iterator() { return descendingKeyIterator(base); }
             public int size() { return base.size(); }
+            public void clear() { base.keySet().clear(); }
+            public boolean contains(Object o) { return base.keySet().contains(o); }
+            public boolean remove(Object o) { return base.keySet().remove(o); }
         };
     }
 
@@ -108,6 +111,9 @@ class ReverseOrderSortedMapView<K, V> extends AbstractMap<K, V> implements Sorte
             // inherit add(), which throws UOE
             public Iterator<V> iterator() { return descendingValueIterator(base); }
             public int size() { return base.size(); }
+            public void clear() { base.values().clear(); }
+            public boolean contains(Object o) { return base.values().contains(o); }
+            public boolean remove(Object o) { return base.values().remove(o); }
         };
     }
 
@@ -116,6 +122,9 @@ class ReverseOrderSortedMapView<K, V> extends AbstractMap<K, V> implements Sorte
             // inherit add(), which throws UOE
             public Iterator<Entry<K, V>> iterator() { return descendingEntryIterator(base); }
             public int size() { return base.size(); }
+            public void clear() { base.entrySet().clear(); }
+            public boolean contains(Object o) { return base.entrySet().contains(o); }
+            public boolean remove(Object o) { return base.entrySet().remove(o); }
         };
     }
 
