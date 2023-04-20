@@ -37,9 +37,9 @@ import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.regex.Pattern;
 import java.util.TimeZone;
 import java.util.TreeMap;
-import java.util.stream.Collectors;
 
 /**
  * This tool reads the IANA Language Subtag Registry data file downloaded from
@@ -140,20 +140,20 @@ public class EquivMapsGenerator {
                 // can have a preferred value itself.
                 // eg: ar-ajp has pref ajp which has pref apc
                 boolean foundInOther = false;
-                final String finalPref = ","+preferred;
-                final String inbtwnPref = ","+preferred+",";
+                Pattern pattern = Pattern.compile("\\b"+preferred+"\\b");
                 // Check if current pref exists inside a value for another pref
-                List<StringBuilder> doublePrefs = initialLanguageMap.entrySet()
-                        .stream().filter(e -> (e.getValue().toString().endsWith(finalPref) ||
-                                e.getValue().toString().contains(inbtwnPref)))
-                        .map(Map.Entry::getValue)
-                        .collect(Collectors.toList());
+                List<StringBuilder> doublePrefs = initialLanguageMap
+                        .values()
+                        .stream()
+                        .filter(e -> pattern.matcher(e.toString()).find())
+                        .toList();
                 for (StringBuilder otherPrefVal : doublePrefs) {
                     otherPrefVal.append(",");
                     otherPrefVal.append(tag);
                     foundInOther = true;
                 }
-                if (!foundInOther) { // does not exist in other pref value, so add as new entry
+                if (!foundInOther) {
+                    // does not exist in any other pref's values, so add as new entry
                     sb = new StringBuilder(preferred);
                     sb.append(',');
                     sb.append(tag);
@@ -175,7 +175,7 @@ public class EquivMapsGenerator {
             // "yue" is defined both as extlang and redundant. Remove the dup.
             subtags = Arrays.stream(initialLanguageMap.get(preferred).toString().split(","))
                     .distinct()
-                    .collect(Collectors.toList())
+                    .toList()
                     .toArray(new String[0]);
 
             if (subtags.length == 2) {
@@ -260,7 +260,7 @@ public class EquivMapsGenerator {
         + "    static final Map<String, String[]> multiEquivsMap;\n"
         + "    static final Map<String, String> regionVariantEquivMap;\n\n"
         + "    static {\n"
-        + "        singleEquivMap = new HashMap<>(";
+        + "        singleEquivMap = HashMap.newHashMap(";
 
     private static final String footerText =
         "    }\n\n"
@@ -283,9 +283,9 @@ public class EquivMapsGenerator {
             writer.write(getOpenJDKCopyright());
             writer.write(headerText
                 + (int)(sortedLanguageMap1.size() / 0.75f + 1) + ");\n"
-                + "        multiEquivsMap = new HashMap<>("
+                + "        multiEquivsMap = HashMap.newHashMap("
                 + (int)(sortedLanguageMap2.size() / 0.75f + 1) + ");\n"
-                + "        regionVariantEquivMap = new HashMap<>("
+                + "        regionVariantEquivMap = HashMap.newHashMap("
                 + (int)(sortedRegionVariantMap.size() / 0.75f + 1) + ");\n\n"
                 + "        // This is an auto-generated file and should not be manually edited.\n"
                 + "        //   LSR Revision: " + LSRrevisionDate);
