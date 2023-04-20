@@ -615,8 +615,10 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
             height = Math.abs(height);
         }
 
-        if (metadata.compression == BI_RGB) {
-            long imageDataSize = ((long)width * height * (bitsPerPixel / 8));
+        if (metadata.compression == BI_RGB &&
+            metadata.paletteSize == 0 &&
+            metadata.bitsPerPixel >= 16) {
+            long imageDataSize = (((long)width * height * bitsPerPixel) / 8);
             if (imageDataSize > (bitmapFileSize - bitmapOffset)) {
                 throw new IIOException(I18N.getString("BMPImageReader9"));
             }
