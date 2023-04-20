@@ -197,4 +197,25 @@ public class JDIBase {
         throw new JDITestRuntimeException("** event '" + event + "' IS NOT a breakpoint **");
     }
 
+    // Similar to breakpointForCommunication, but skips Locatable events from unexpected locations.
+    // It's useful for cases when enabled event requests can cause notifications from system threads
+    // (like MethodEntryRequest, MethodExitRequest).
+    protected void breakpointForCommunication(String debuggeeName) throws JDITestRuntimeException {
+        log2("breakpointForCommunication");
+        while (true) {
+            getEventSet();
+
+            Event event = eventIterator.nextEvent();
+            if (event instanceof BreakpointEvent) {
+                return;
+            }
+            if (EventFilters.filtered(event, debuggeeName)) {
+                log2("  got unexpected event: " + event + ", skipping");
+                eventSet.resume();
+            } else {
+                throw new JDITestRuntimeException("** event '" + event + "' IS NOT a breakpoint **");
+            }
+        }
+    }
+
 }
