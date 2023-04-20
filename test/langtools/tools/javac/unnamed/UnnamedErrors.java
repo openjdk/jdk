@@ -65,5 +65,13 @@ public class UnnamedErrors {
         }
     }
 
+    private void test1() {
+        try (Lock _ = null) {
+        } catch (_) { }
+    }
+    class Lock implements AutoCloseable {
+        @Override
+        public void close() {}
+    }
     record PairIS(int i, String s) {}
 }
