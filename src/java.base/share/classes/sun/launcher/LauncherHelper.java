@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,11 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandleInfo;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodHandles.Lookup;
+import java.lang.invoke.MethodType;
 import java.lang.module.Configuration;
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleDescriptor.Exports;
@@ -48,6 +53,7 @@ import java.lang.module.ModuleFinder;
 import java.lang.module.ModuleReference;
 import java.lang.module.ResolvedModule;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.math.BigDecimal;
@@ -840,39 +846,62 @@ public final class LauncherHelper {
         return false;
     }
 
+    /*
+     * main type flags
+     */
+    private static final int MAIN_WITHOUT_ARGS = 1;
+    private static final int MAIN_NONSTATIC = 2;
+    private static int mainType = 0;
+
+    /*
+     * Return type so that launcher invokes the correct main
+     */
+    public static int getMainType() {
+        return mainType;
+    }
+
     // Check the existence and signature of main and abort if incorrect
     static void validateMainClass(Class<?> mainClass) {
-        Method mainMethod = null;
         try {
-            mainMethod = mainClass.getMethod("main", String[].class);
-        } catch (NoSuchMethodException nsme) {
-            // invalid main or not FX application, abort with an error
-            abort(null, "java.launcher.cls.error4", mainClass.getName(),
-                  JAVAFX_APPLICATION_CLASS_NAME);
-        } catch (Throwable e) {
-            if (mainClass.getModule().isNamed()) {
-                abort(e, "java.launcher.module.error5",
-                      mainClass.getName(), mainClass.getModule().getName(),
-                      e.getClass().getName(), e.getLocalizedMessage());
-            } else {
-                abort(e, "java.launcher.cls.error7", mainClass.getName(),
-                      e.getClass().getName(), e.getLocalizedMessage());
+            Method mainMethod = VM.findMainMethod(mainClass);
+            if (mainMethod == null) {
+                // invalid main or not FX application, abort with an error
+                abort(null, "java.launcher.cls.error4", mainClass.getName(),
+                        JAVAFX_APPLICATION_CLASS_NAME);
             }
-        }
-
-        /*
-         * getMethod (above) will choose the correct method, based
-         * on its name and parameter type, however, we still have to
-         * ensure that the method is static and returns a void.
-         */
-        int mod = mainMethod.getModifiers();
-        if (!Modifier.isStatic(mod)) {
-            abort(null, "java.launcher.cls.error2", "static",
-                  mainMethod.getDeclaringClass().getName());
-        }
-        if (mainMethod.getReturnType() != java.lang.Void.TYPE) {
-            abort(null, "java.launcher.cls.error3",
-                  mainMethod.getDeclaringClass().getName());
+            int mod = mainMethod.getModifiers();
+            boolean isPublic = Modifier.isStatic(mod);
+            boolean isStatic = Modifier.isStatic(mod);
+            if (isStatic && !isPublic && mainClass.getPackageName().isEmpty()) {
+                abort(null, "java.launcher.cls.error2", "static",
+                        mainMethod.getDeclaringClass().getName());
+            }
+            if (!isStatic) {
+                try {
+                    Constructor<?> constructor = mainClass.getDeclaredConstructor();
+                    if (Modifier.isPrivate(constructor.getModifiers())) {
+                        abort(null, "java.launcher.cls.error8",
+                                mainMethod.getDeclaringClass().getName());
+                    }
+                } catch (Throwable ex) {
+                    abort(null, "java.launcher.cls.error8",
+                            mainMethod.getDeclaringClass().getName());
+                }
+            }
+            boolean hasArgs = mainMethod.getParameterCount() != 0;
+            mainType = (isStatic ? 0 : MAIN_NONSTATIC) |
+                       (hasArgs ? 0 : MAIN_WITHOUT_ARGS);
+        } catch (Throwable throwable) {
+            if (mainClass.getModule().isNamed()) {
+                abort(throwable, "java.launcher.module.error5",
+                        mainClass.getName(), mainClass.getModule().getName(),
+                        throwable.getClass().getName(),
+                        throwable.getLocalizedMessage());
+            } else {
+                abort(throwable, "java.launcher.cls.error7", mainClass.getName(),
+                        throwable.getClass().getName(),
+                        throwable.getLocalizedMessage());
+            }
         }
     }
 

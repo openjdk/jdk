@@ -5488,6 +5488,10 @@ public class Attr extends JCTree.Visitor {
                 chk.checkClassOverrideEqualsAndHashIfNeeded(env.tree.pos(), c);
                 chk.checkFunctionalInterface((JCClassDecl) env.tree, c);
                 chk.checkLeaksNotAccessible(env, (JCClassDecl) env.tree);
+
+                if ((c.flags_field & Flags.ANONYMOUS_MAIN_CLASS) != 0) {
+                    chk.checkHasMain(env.tree.pos(), c);
+                }
             } finally {
                 env.info.returnResult = prevReturnRes;
                 log.useSource(prev);

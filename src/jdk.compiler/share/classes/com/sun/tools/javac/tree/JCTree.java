@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -623,6 +623,30 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public Tag getTag() {
             return TOPLEVEL;
         }
+
+        public boolean isAnonymousMainClass() {
+            // Detect anonymous main class.
+            for (JCTree def : defs) {
+                if (def.hasTag(Tag.METHODDEF) || def.hasTag(Tag.VARDEF)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public JCClassDecl getAnonymousMainClass() {
+            // Find anonymous main class.
+            for (JCTree def : defs) {
+                if (def.hasTag(CLASSDEF)) {
+                    JCClassDecl cls = (JCClassDecl)def;
+                    if ((cls.getModifiers().flags & Flags.ANONYMOUS_MAIN_CLASS) != 0) {
+                        return cls;
+                    }
+                }
+            }
+            return null;
+        }
+
     }
 
     /**

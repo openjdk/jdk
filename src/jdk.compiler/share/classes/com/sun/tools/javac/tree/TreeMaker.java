@@ -132,6 +132,8 @@ public class TreeMaker implements JCTree.Factory {
                 || node instanceof JCModuleDecl
                 || node instanceof JCSkip
                 || node instanceof JCErroneous
+                || node instanceof JCMethodDecl
+                || node instanceof JCVariableDecl
                 || (node instanceof JCExpressionStatement expressionStatement
                     && expressionStatement.expr instanceof JCErroneous),
                     () -> node.getClass().getSimpleName());

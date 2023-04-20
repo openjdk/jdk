@@ -549,27 +549,11 @@ public class SourceLauncherTest extends TestRunner {
     }
 
     @Test
-    public void testMainNotPublic(Path base) throws IOException {
-        tb.writeJavaFiles(base,
-                "class NotPublic { static void main(String... args) { } }");
-        testError(base.resolve("NotPublic.java"), "",
-                "error: 'main' method is not declared 'public static'");
-    }
-
-    @Test
-    public void testMainNotStatic(Path base) throws IOException {
-        tb.writeJavaFiles(base,
-                "class NotStatic { public void main(String... args) { } }");
-        testError(base.resolve("NotStatic.java"), "",
-                "error: 'main' method is not declared 'public static'");
-    }
-
-    @Test
     public void testMainNotVoid(Path base) throws IOException {
         tb.writeJavaFiles(base,
                 "class NotVoid { public static int main(String... args) { return 0; } }");
         testError(base.resolve("NotVoid.java"), "",
-                "error: 'main' method is not declared with a return type of 'void'");
+                "error: can't find main(String[]) method in class: NotVoid");
     }
 
     @Test

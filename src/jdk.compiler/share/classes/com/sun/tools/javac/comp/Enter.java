@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package com.sun.tools.javac.comp;
 import java.util.Map;
 import java.util.Optional;
 
+import javax.lang.model.SourceVersion;
 import javax.tools.JavaFileObject;
 import javax.tools.JavaFileManager;
 
@@ -35,15 +36,20 @@ import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Kinds.KindName;
 import com.sun.tools.javac.code.Kinds.KindSelector;
 import com.sun.tools.javac.code.Scope.*;
+import com.sun.tools.javac.code.Source.Feature;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Type.*;
+import com.sun.tools.javac.file.PathFileObject;
 import com.sun.tools.javac.main.Option.PkgInfo;
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.resources.CompilerProperties.Warnings;
 import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.util.*;
+import com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
+import com.sun.tools.javac.util.JCDiagnostic.Error;
+import com.sun.tools.javac.util.JCDiagnostic.Fragment;
 import com.sun.tools.javac.util.List;
 
 import static com.sun.tools.javac.code.Flags.*;
@@ -104,6 +110,8 @@ public class Enter extends JCTree.Visitor {
     TypeEnvs typeEnvs;
     Modules modules;
     JCDiagnostic.Factory diags;
+    Source source;
+    Preview preview;
 
     private final Todo todo;
 
@@ -129,6 +137,8 @@ public class Enter extends JCTree.Visitor {
         names = Names.instance(context);
         modules = Modules.instance(context);
         diags = JCDiagnostic.Factory.instance(context);
+        source = Source.instance(context);
+        preview = Preview.instance(context);
 
         predefClassDef = make.ClassDef(
             make.Modifiers(PUBLIC),
@@ -308,8 +318,6 @@ public class Enter extends JCTree.Visitor {
 
     @Override
     public void visitTopLevel(JCCompilationUnit tree) {
-//        Assert.checkNonNull(tree.modle, tree.sourcefile.toString());
-
         JavaFileObject prev = log.useSource(tree.sourcefile);
         boolean addEnv = false;
         boolean isPkgInfo = tree.sourcefile.isNameCompatible("package-info",
@@ -385,6 +393,9 @@ public class Enter extends JCTree.Visitor {
                 tree.packge.package_info = c;
                 tree.packge.sourcefile = tree.sourcefile;
             }
+            if (tree.isAnonymousMainClass() && tree.getAnonymousMainClass() == null) {
+                constructAnonymousMainClass(tree, source, preview, make, log, names);
+            }
             classEnter(tree.defs, topEnv);
             if (addEnv) {
                 todo.append(packageEnv);
@@ -419,6 +430,54 @@ public class Enter extends JCTree.Visitor {
             }
         };
 
+    // Restructure top level to be an top level anonymous class.
+    public static void constructAnonymousMainClass(JCCompilationUnit tree,
+                                                   Source source, Preview preview,
+                                                   TreeMaker make, Log log, Names names) {
+        Feature feature = Feature.ANONYMOUS_MAIN_CLASSES;
+        if (preview.isPreview(feature) && !preview.isEnabled()) {
+            //preview feature without --preview flag, error
+            log.error(DiagnosticFlag.SOURCE_LEVEL, tree.pos, preview.disabledError(feature));
+        } else if (!feature.allowedInSource(source)) {
+            //incompatible source level, error
+            log.error(DiagnosticFlag.SOURCE_LEVEL, tree.pos, feature.error(source.name));
+        } else if (preview.isPreview(feature)) {
+            //use of preview feature, warn
+            preview.warnPreview(tree.pos, feature);
+        }
+
+        make.at(tree.pos);
+        String simplename = PathFileObject.getSimpleName(tree.sourcefile);
+        if (simplename.endsWith(".java")) {
+            simplename = simplename.substring(0, simplename.length() - ".java".length());
+        }
+        if (!SourceVersion.isIdentifier(simplename) || SourceVersion.isKeyword(simplename)) {
+            log.error(null, Errors.BadFileName(simplename));
+        }
+        Name name = names.fromString(simplename);
+
+        ListBuffer<JCTree> topDefs = new ListBuffer<>();
+        ListBuffer<JCTree> defs = new ListBuffer<>();
+
+        for (JCTree def : tree.defs) {
+            if (def.hasTag(Tag.PACKAGEDEF)) {
+                log.error(null, Errors.AnonymousMainClassShouldNotHavePackageDeclaration);
+            } else if (def.hasTag(Tag.IMPORT)) {
+                topDefs.append(def);
+            } else {
+                defs.append(def);
+            }
+        }
+
+        JCModifiers anonMods = make.at(tree.pos)
+                .Modifiers(FINAL|MANDATED|SYNTHETIC|ANONYMOUS_MAIN_CLASS, List.nil());
+        JCClassDecl anon = make.at(tree.pos).ClassDef(
+                anonMods, name, List.nil(), null, List.nil(), List.nil(),
+                defs.toList());
+        topDefs.append(anon);
+        tree.defs = topDefs.toList();
+    }
+
     @Override
     public void visitClassDef(JCClassDecl tree) {
         Symbol owner = env.info.scope.owner;
@@ -440,6 +499,9 @@ public class Enter extends JCTree.Visitor {
                 }
                 log.error(tree.pos(),
                           Errors.ClassPublicShouldBeInFile(topElement, tree.name));
+            }
+            if ((tree.mods.flags & ANONYMOUS_MAIN_CLASS) != 0) {
+                syms.removeClass(env.toplevel.modle, tree.name);
             }
         } else {
             if (!tree.name.isEmpty() &&

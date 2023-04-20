@@ -44,7 +44,7 @@ import static com.sun.tools.javac.parser.Tokens.*;
  */
 public class Scanner implements Lexer {
 
-    private Tokens tokens;
+    protected Tokens tokens;
 
     /** The token, set by nextToken().
      */

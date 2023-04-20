@@ -27,11 +27,17 @@ package jdk.internal.misc;
 
 import static java.lang.Thread.State.*;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import jdk.internal.access.JavaLangInvokeAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.vm.annotation.Stable;
 import sun.nio.ch.FileChannelImpl;
@@ -495,4 +501,79 @@ public class VM {
     public static List<BufferPool> getBufferPools() {
         return BufferPoolsHolder.BUFFER_POOLS;
     }
+
+    private static Method findMethod(boolean isStatic, Class<?> cls, String name, MethodType mt) {
+        try {
+            JavaLangInvokeAccess jlia = SharedSecrets.getJavaLangInvokeAccess();
+            MethodHandle mh = isStatic ? jlia.findStatic(cls, name, mt) : jlia.findVirtual(cls, name, mt);
+
+            if (mh == null) {
+                return null;
+            }
+
+            Method method = MethodHandles.reflectAs(Method.class, mh);
+
+            return isPrivate(method) ? null : method;
+        } catch (ReflectiveOperationException e) {
+            return null;
+        }
+    }
+
+    private static boolean isPrivate(Method method) {
+        return method != null && Modifier.isPrivate(method.getModifiers());
+    }
+
+    private static boolean isPublic(Method method) {
+        return method != null && Modifier.isPublic(method.getModifiers());
+    }
+
+    public static Method findMainMethod(Class<?> mainClass) {
+        MethodType withArgsMT = MethodType.methodType(void.class, String[].class);
+        MethodType noArgsMT = MethodType.methodType(void.class);
+
+        Method staticWithArgs = findMethod(true, mainClass, "main", withArgsMT);
+        Method staticNoArgs = findMethod(true, mainClass, "main", noArgsMT);
+
+        if (isPublic(staticWithArgs)) {
+            if (staticWithArgs.getDeclaringClass() != mainClass) {
+                System.err.println("WARNING: static main in super class will be deprecated.");
+            }
+
+            return staticWithArgs;
+        }
+
+        if (!Runtime.version().pre().orElse("").equals("ea")) {
+            String[] args = getRuntimeArguments();
+
+            if (args == null || !List.of(args).contains("--enable-preview")) {
+                return null;
+            }
+        }
+
+        if (staticWithArgs != null && staticWithArgs.getDeclaringClass() != mainClass) {
+            staticWithArgs = null;
+        }
+
+        if (staticNoArgs != null && staticNoArgs.getDeclaringClass() != mainClass) {
+            staticNoArgs = null;
+        }
+
+        if (staticWithArgs != null && !isPublic(staticNoArgs)) {
+            return staticWithArgs;
+        }
+
+        if (staticNoArgs != null) {
+            return staticNoArgs;
+        }
+
+        Method virtualWithArgs = findMethod(false, mainClass, "main", withArgsMT);
+        Method virtualNoArgs = findMethod(false, mainClass, "main", noArgsMT);
+
+        if (isPublic(virtualWithArgs) || virtualWithArgs != null && !isPublic(virtualNoArgs)) {
+            return virtualWithArgs;
+        }
+
+        return virtualNoArgs;
+    }
+
 }

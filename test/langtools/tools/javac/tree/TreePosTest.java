@@ -343,6 +343,10 @@ public class TreePosTest {
      */
     private class PosTester extends TreeScanner {
         void test(JCCompilationUnit tree) {
+            if (tree.isAnonymousMainClass()) {
+                return;
+            }
+
             sourcefile = tree.sourcefile;
             endPosTable = tree.endPositions;
             encl = new Info();
