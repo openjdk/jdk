@@ -492,7 +492,7 @@ void Thread::print_on_error(outputStream* st, char* buf, int buflen) const {
 
   OSThread* os_thr = osthread();
   if (os_thr != nullptr) {
-    st->fill_to(64);
+    st->fill_to(60);
     if (os_thr->get_state() != ZOMBIE) {
       st->print(" [stack: " PTR_FORMAT "," PTR_FORMAT "] (" PROPERFMT ")",
                 p2i(stack_end()), p2i(stack_base()),

@@ -1515,7 +1515,7 @@ void JavaThread::print_on_error(outputStream* st, char *buf, int buflen) const {
   st->print("%s \"%s\"", type_name(), get_thread_name_string(buf, buflen));
   Thread* current = Thread::current_or_null_safe();
   assert(current != nullptr, "cannot be called by a detached thread");
-  st->fill_to(64);
+  st->fill_to(60);
   if (!current->is_Java_thread() || JavaThread::cast(current)->is_oop_safe()) {
     // Only access threadObj() if current thread is not a JavaThread
     // or if it is a JavaThread that can safely access oops.
@@ -1529,7 +1529,7 @@ void JavaThread::print_on_error(outputStream* st, char *buf, int buflen) const {
   if (osthread()) {
     st->print(", id=%d", osthread()->thread_id());
   }
-  st->print(", stack(" PTR_FORMAT "," PTR_FORMAT "), stack size " PROPERFMT,
+  st->print(", stack(" PTR_FORMAT "," PTR_FORMAT ") (" PROPERFMT ")",
             p2i(stack_end()), p2i(stack_base()),
             PROPERFMTARGS((size_t)(stack_base() - stack_end())));
   st->print("]");

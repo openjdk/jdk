@@ -1359,10 +1359,11 @@ void Threads::print_on_error(outputStream* st, Thread* current, char* buf,
   st->cr();
 
   st->print_cr("Threads with active compile tasks:");
-  print_threads_compiling(st, buf, buflen);
+  unsigned num = print_threads_compiling(st, buf, buflen);
+  st->print_cr("Total: %u", num);
 }
 
-void Threads::print_threads_compiling(outputStream* st, char* buf, int buflen, bool short_form) {
+unsigned Threads::print_threads_compiling(outputStream* st, char* buf, int buflen, bool short_form) {
   unsigned num = 0;
   ALL_JAVA_THREADS(thread) {
     if (thread->is_Compiler_thread()) {
@@ -1381,7 +1382,7 @@ void Threads::print_threads_compiling(outputStream* st, char* buf, int buflen, b
       }
     }
   }
-  st->print_cr("Total: %u", num);
+  return num;
 }
 
 void Threads::verify() {
