@@ -49,7 +49,7 @@ void VM_ParallelGCFailedAllocation::doit() {
   }
 }
 
-bool VM_ParallelGCSystemGC::is_cause_full(GCCause::Cause cause) {
+static bool is_cause_full(GCCause::Cause cause) {
   return (cause != GCCause::_gc_locker) && (cause != GCCause::_wb_young_gc)
          DEBUG_ONLY(&& (cause != GCCause::_scavenge_alot));
 }

@@ -2104,7 +2104,7 @@ bool G1CollectedHeap::try_collect_fullgc(GCCause::Cause cause,
     VMThread::execute(&op);
 
     // Request is trivially finished.
-    if (!GCCause::is_explicit_gc(cause) || op.gc_succeeded()) {
+    if (!GCCause::is_explicit_full_gc(cause) || op.gc_succeeded()) {
       return op.gc_succeeded();
     }
 

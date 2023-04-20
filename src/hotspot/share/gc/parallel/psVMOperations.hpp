@@ -46,7 +46,6 @@ class VM_ParallelGCSystemGC: public VM_GC_Operation {
   virtual VMOp_Type type() const { return VMOp_ParallelGCSystemGC; }
   virtual void doit();
   bool full_gc_succeeded() const { return _full_gc_succeeded; }
-  static bool is_cause_full(GCCause::Cause cause);
 };
 
 #endif // SHARE_GC_PARALLEL_PSVMOPERATIONS_HPP
