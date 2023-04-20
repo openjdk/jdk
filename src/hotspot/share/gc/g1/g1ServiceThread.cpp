@@ -112,12 +112,10 @@ void G1ServiceThread::notify() {
 }
 
 void G1ServiceThread::sleep_before_next_cycle() {
+  MonitorLocker ml(&_monitor, Mutex::_no_safepoint_check_flag);
   if (should_terminate()) {
     return;
-  }
-
-  MonitorLocker ml(&_monitor, Mutex::_no_safepoint_check_flag);
-  if (_task_queue.is_empty()) {
+  } else if (_task_queue.is_empty()) {
     // Sleep until new task is registered if no tasks available.
     log_trace(gc, task)("G1 Service Thread (wait for new tasks)");
     ml.wait(0);
