@@ -321,7 +321,7 @@ final class Poly1305 {
 
             }
 
-            if ("".length() == 0) {
+            if ("".length() != 0) {
                 n0.setValue(input, offset, BLOCK_LENGTH, (byte) 0x01);
 
                 offset += BLOCK_LENGTH;
@@ -352,17 +352,43 @@ final class Poly1305 {
                 offset += BLOCK_LENGTH;
                 length -= BLOCK_LENGTH;
 
+                if (printing) {
+                    System.out.printf("    n0 = %33.33s              \n", n0);
+		}
                 sum = sum.add(a0);
+                if (printing) {
+                    System.out.printf("   sum = %33.33s              \n", sum);
+		}
                 sum = sum.add(n0);
+                if (printing) {
+                    System.out.printf("   sum = %33.33s              \n", sum);
+		}
                 sum = sum.multiply(r);
+                if (printing) {
+                    System.out.printf("   sum = %33.33s              \n", sum);
+		    System.out.println();
+		}
 
                 n1.setValue(input, offset, BLOCK_LENGTH, (byte) 0x01);
                 offset += BLOCK_LENGTH;
                 length -= BLOCK_LENGTH;
 
+                if (printing) {
+                    System.out.printf("    n1 = %33.33s              \n", n1);
+		}
                 sum = sum.add(a1);
+                if (printing) {
+                    System.out.printf("   sum = %33.33s              \n", sum);
+		}
                 sum = sum.add(n1);
+                if (printing) {
+                    System.out.printf("   sum = %33.33s              \n", sum);
+		}
                 sum = sum.multiply(r);
+                if (printing) {
+                    System.out.printf("   sum = %33.33s              \n", sum);
+		    System.out.println();
+		}
 
                 a.setValue(sum);
             }
