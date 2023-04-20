@@ -97,8 +97,9 @@ final class MethodInfo {
                             // method = null; // ignore inaccessible methods
                         }
                     }
-                    if (method != null)
+                    if (method != null) {
                         (list = createIfNeeded(list)).add(method);
+                    }
                 }
             }
 
@@ -107,8 +108,9 @@ final class MethodInfo {
                 if (IGNORABLE_INTERFACES.contains(iface))
                     continue;
                 for (Method method : iface.getMethods()) {
-                    if ((method.getModifiers() & Modifier.ABSTRACT) == 0)
+                    if ((method.getModifiers() & Modifier.ABSTRACT) == 0) {
                         (list = createIfNeeded(list)).add(method);
+                    }
                 }
             }
         }
