@@ -43,6 +43,7 @@
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
+#include "prims/jvmtiAgentList.hpp"
 #include "prims/jvmtiCodeBlobEvents.hpp"
 #include "prims/jvmtiEventController.hpp"
 #include "prims/jvmtiEventController.inline.hpp"
@@ -697,6 +698,13 @@ void JvmtiExport::initialize_oop_storage() {
   _weak_tag_storage->register_num_dead_callback(&JvmtiTagMap::gc_notification);
 }
 
+// Lookup an agent from an JvmtiEnv. Return agent only if it is not yet initialized.
+// An agent can create multiple JvmtiEnvs, but for agent initialization, we are only interested in the initial one.
+static JvmtiAgent* lookup_uninitialized_agent(JvmtiEnv* env, void* callback) {
+  JvmtiAgent* const agent = JvmtiAgentList::lookup(env, callback);
+  return agent == nullptr || agent->is_initialized() ? nullptr : agent;
+}
+
 void JvmtiExport::post_vm_initialized() {
   EVT_TRIG_TRACE(JVMTI_EVENT_VM_INIT, ("Trg VM init event triggered" ));
 
@@ -713,12 +721,25 @@ void JvmtiExport::post_vm_initialized() {
       JvmtiJavaThreadEventTransition jet(thread);
       jvmtiEventVMInit callback = env->callbacks()->VMInit;
       if (callback != nullptr) {
+        // We map the JvmtiEnv to its Agent to measure when and for how long
+        // it took to initialize so that JFR can report this information.
+        JvmtiAgent* const agent = lookup_uninitialized_agent(env, reinterpret_cast<void*>(callback));
+        if (agent != nullptr) {
+          agent->initialization_begin();
+        }
         (*callback)(env->jvmti_external(), jem.jni_env(), jem.jni_thread());
+        if (agent != nullptr) {
+          agent->initialization_end();
+        }
       }
     }
   }
-}
 
+  // Agents are initialized as part of posting the VMInit event above.
+  // For -Xrun agents and agents with no VMInit callback, we explicitly ensure they are also initialized.
+  // JVM_OnLoad and Agent_OnLoad callouts are performed too early for the proper timestamp logic.
+  JvmtiAgentList::initialize();
+}
 
 void JvmtiExport::post_vm_death() {
   EVT_TRIG_TRACE(JVMTI_EVENT_VM_DEATH, ("Trg VM death event triggered" ));
@@ -1045,6 +1066,10 @@ bool JvmtiExport::has_early_class_hook_env() {
 }
 
 bool JvmtiExport::_should_post_class_file_load_hook = false;
+
+// This flag is read by C2 during VM internal objects allocation
+bool JvmtiExport::_should_notify_object_alloc = false;
+
 
 // this entry is for class file load hook on class load, redefine and retransform
 bool JvmtiExport::post_class_file_load_hook(Symbol* h_name,
@@ -2924,118 +2949,6 @@ void JvmtiExport::clear_detected_exception(JavaThread* thread) {
 void JvmtiExport::transition_pending_onload_raw_monitors() {
   JvmtiPendingMonitors::transition_raw_monitors();
 }
-
-////////////////////////////////////////////////////////////////////////////////////////////////
-#if INCLUDE_SERVICES
-// Attach is disabled if SERVICES is not included
-
-// type for the Agent_OnAttach entry point
-extern "C" {
-  typedef jint (JNICALL *OnAttachEntry_t)(JavaVM*, char *, void *);
-}
-
-jint JvmtiExport::load_agent_library(const char *agent, const char *absParam,
-                                     const char *options, outputStream* st) {
-  char ebuf[1024] = {0};
-  char buffer[JVM_MAXPATHLEN];
-  void* library = nullptr;
-  jint result = JNI_ERR;
-  const char *on_attach_symbols[] = AGENT_ONATTACH_SYMBOLS;
-  size_t num_symbol_entries = ARRAY_SIZE(on_attach_symbols);
-
-  // The abs parameter should be "true" or "false"
-  bool is_absolute_path = (absParam != nullptr) && (strcmp(absParam,"true")==0);
-
-  // Initially marked as invalid. It will be set to valid if we can find the agent
-  AgentLibrary *agent_lib = new AgentLibrary(agent, options, is_absolute_path, nullptr);
-
-  // Check for statically linked in agent. If not found then if the path is
-  // absolute we attempt to load the library. Otherwise we try to load it
-  // from the standard dll directory.
-
-  if (!os::find_builtin_agent(agent_lib, on_attach_symbols, num_symbol_entries)) {
-    if (is_absolute_path) {
-      library = os::dll_load(agent, ebuf, sizeof ebuf);
-    } else {
-      // Try to load the agent from the standard dll directory
-      if (os::dll_locate_lib(buffer, sizeof(buffer), Arguments::get_dll_dir(),
-                             agent)) {
-        library = os::dll_load(buffer, ebuf, sizeof ebuf);
-      }
-      if (library == nullptr) {
-        // not found - try OS default library path
-        if (os::dll_build_name(buffer, sizeof(buffer), agent)) {
-          library = os::dll_load(buffer, ebuf, sizeof ebuf);
-        }
-      }
-    }
-    if (library != nullptr) {
-      agent_lib->set_os_lib(library);
-      agent_lib->set_valid();
-    }
-  }
-  // If the library was loaded then we attempt to invoke the Agent_OnAttach
-  // function
-  if (agent_lib->valid()) {
-    // Lookup the Agent_OnAttach function
-    OnAttachEntry_t on_attach_entry = nullptr;
-    on_attach_entry = CAST_TO_FN_PTR(OnAttachEntry_t,
-       os::find_agent_function(agent_lib, false, on_attach_symbols, num_symbol_entries));
-    if (on_attach_entry == nullptr) {
-      // Agent_OnAttach missing - unload library
-      if (!agent_lib->is_static_lib()) {
-        os::dll_unload(library);
-      }
-      st->print_cr("%s is not available in %s",
-                   on_attach_symbols[0], agent_lib->name());
-      delete agent_lib;
-    } else {
-      // Invoke the Agent_OnAttach function
-      JavaThread* THREAD = JavaThread::current(); // For exception macros.
-      {
-        extern struct JavaVM_ main_vm;
-        JvmtiThreadEventMark jem(THREAD);
-        JvmtiJavaThreadEventTransition jet(THREAD);
-
-        result = (*on_attach_entry)(&main_vm, (char*)options, nullptr);
-
-        // Agent_OnAttach may have used JNI
-        if (THREAD->is_pending_jni_exception_check()) {
-          THREAD->clear_pending_jni_exception_check();
-        }
-      }
-
-      // Agent_OnAttach may have used JNI
-      if (HAS_PENDING_EXCEPTION) {
-        CLEAR_PENDING_EXCEPTION;
-      }
-
-      // If OnAttach returns JNI_OK then we add it to the list of
-      // agent libraries so that we can call Agent_OnUnload later.
-      if (result == JNI_OK) {
-        Arguments::add_loaded_agent(agent_lib);
-      } else {
-        if (!agent_lib->is_static_lib()) {
-          os::dll_unload(library);
-        }
-        delete agent_lib;
-      }
-
-      // Agent_OnAttach executed so completion status is JNI_OK
-      st->print_cr("return code: %d", result);
-      result = JNI_OK;
-    }
-  } else {
-    st->print_cr("%s was not loaded.", agent);
-    if (*ebuf != '\0') {
-      st->print_cr("%s", ebuf);
-    }
-  }
-  return result;
-}
-
-#endif // INCLUDE_SERVICES
-////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Setup current current thread for event collection.
 void JvmtiEventCollector::setup_jvmti_thread_state() {

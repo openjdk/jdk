@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
  * @test
  * @summary Stress test virtual threads with a variation of the Skynet 1M benchmark
  * @requires vm.continuations
- * @enablePreview
  * @run main/othervm/timeout=300 -Xmx1g Skynet
  */
 
@@ -33,7 +32,6 @@
  * @test
  * @requires vm.debug == true & vm.continuations
  * @requires vm.gc.Z
- * @enablePreview
  * @run main/othervm/timeout=300 -XX:+UnlockDiagnosticVMOptions
  *     -XX:+ZVerifyViews -XX:ZCollectionInterval=0.01 -Xmx1g Skynet
  */

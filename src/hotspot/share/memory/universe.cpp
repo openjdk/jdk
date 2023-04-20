@@ -326,31 +326,28 @@ void Universe::genesis(TRAPS) {
 
   { AutoModifyRestore<bool> temporarily(_bootstrapping, true);
 
-    { MutexLocker mc(THREAD, Compile_lock);
+    java_lang_Class::allocate_fixup_lists();
 
-      java_lang_Class::allocate_fixup_lists();
+    // determine base vtable size; without that we cannot create the array klasses
+    compute_base_vtable_size();
 
-      // determine base vtable size; without that we cannot create the array klasses
-      compute_base_vtable_size();
-
-      if (!UseSharedSpaces) {
-        // Initialization of the fillerArrayKlass must come before regular
-        // int-TypeArrayKlass so that the int-Array mirror points to the
-        // int-TypeArrayKlass.
-        _fillerArrayKlassObj = TypeArrayKlass::create_klass(T_INT, "Ljdk/internal/vm/FillerArray;", CHECK);
-        for (int i = T_BOOLEAN; i < T_LONG+1; i++) {
-          _typeArrayKlassObjs[i] = TypeArrayKlass::create_klass((BasicType)i, CHECK);
-        }
-
-        ClassLoaderData* null_cld = ClassLoaderData::the_null_class_loader_data();
-
-        _the_array_interfaces_array     = MetadataFactory::new_array<Klass*>(null_cld, 2, nullptr, CHECK);
-        _the_empty_int_array            = MetadataFactory::new_array<int>(null_cld, 0, CHECK);
-        _the_empty_short_array          = MetadataFactory::new_array<u2>(null_cld, 0, CHECK);
-        _the_empty_method_array         = MetadataFactory::new_array<Method*>(null_cld, 0, CHECK);
-        _the_empty_klass_array          = MetadataFactory::new_array<Klass*>(null_cld, 0, CHECK);
-        _the_empty_instance_klass_array = MetadataFactory::new_array<InstanceKlass*>(null_cld, 0, CHECK);
+    if (!UseSharedSpaces) {
+      // Initialization of the fillerArrayKlass must come before regular
+      // int-TypeArrayKlass so that the int-Array mirror points to the
+      // int-TypeArrayKlass.
+      _fillerArrayKlassObj = TypeArrayKlass::create_klass(T_INT, "Ljdk/internal/vm/FillerArray;", CHECK);
+      for (int i = T_BOOLEAN; i < T_LONG+1; i++) {
+        _typeArrayKlassObjs[i] = TypeArrayKlass::create_klass((BasicType)i, CHECK);
       }
+
+      ClassLoaderData* null_cld = ClassLoaderData::the_null_class_loader_data();
+
+      _the_array_interfaces_array     = MetadataFactory::new_array<Klass*>(null_cld, 2, nullptr, CHECK);
+      _the_empty_int_array            = MetadataFactory::new_array<int>(null_cld, 0, CHECK);
+      _the_empty_short_array          = MetadataFactory::new_array<u2>(null_cld, 0, CHECK);
+      _the_empty_method_array         = MetadataFactory::new_array<Method*>(null_cld, 0, CHECK);
+      _the_empty_klass_array          = MetadataFactory::new_array<Klass*>(null_cld, 0, CHECK);
+      _the_empty_instance_klass_array = MetadataFactory::new_array<InstanceKlass*>(null_cld, 0, CHECK);
     }
 
     vmSymbols::initialize();
