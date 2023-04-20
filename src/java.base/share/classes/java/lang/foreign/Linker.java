@@ -198,7 +198,7 @@ import java.util.stream.Stream;
  * </table></blockquote>
  * <p>
  * All the native linker implementations limit the function descriptors that they support to those that contain
- * only so-called <em>canonical</em> layouts. A canonical layout has the following restrictions:
+ * only so-called <em>canonical</em> layouts. A canonical layout has the following characteristics:
  * <ol>
  * <li>Its alignment constraint is set to its <a href="MemoryLayout.html#layout-align">natural alignment</a></li>
  * <li>If it is a {@linkplain ValueLayout value layout}, its {@linkplain ValueLayout#order() byte order} is
