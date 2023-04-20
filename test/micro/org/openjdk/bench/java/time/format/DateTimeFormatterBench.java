@@ -118,5 +118,4 @@ public class DateTimeFormatterBench {
             blackhole.consume(stringBuilder);
         }
     }
-
 }
