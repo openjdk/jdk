@@ -107,6 +107,9 @@ class ChunkManager : public CHeapObj<mtMetaspace> {
   // Calculates the total number of committed words over all chunks. Walks chunks.
   size_t calc_committed_word_size_locked() const;
 
+  // Attempt to allocate a humongous area with chunks from the freelists.
+  bool allocate_humongous_committed_area_from_freelist(size_t word_size, MetaspaceHumongousArea* out);
+
 public:
 
   // Creates a chunk manager with a given name (which is for debug purposes only)

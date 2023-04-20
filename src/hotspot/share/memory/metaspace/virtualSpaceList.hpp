@@ -116,13 +116,10 @@ public:
   // the list cannot be expanded (in practice this means we reached CompressedClassSpaceSize).
   Metachunk* allocate_root_chunk();
 
-  // Special function to handle humongous allocations.
   // Allocate a humongous area consisting of n adjacent (uncommitted) root chunks
   // Fails and returns false if we cannot place this area because the address space ran out
   // (in practice this means we reached CompressedClassSpaceSize)
   bool allocate_humongous_area(size_t word_size, MetaspaceHumongousArea* out);
-
-  MetaspaceHumongousArea* allocate_humongous_area(size_t word_size);
 
   //// Statistics ////
 

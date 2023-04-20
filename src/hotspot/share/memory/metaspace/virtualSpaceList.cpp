@@ -170,7 +170,6 @@ size_t VirtualSpaceList::committed_possible_expansion_words() const {
   return _commit_limiter->possible_expansion_words();
 }
 
-// Special function to handle humongous allocations.
 // Allocate a humongous area consisting of n adjacent (uncommitted) root chunks
 // Fails and returns false if we cannot place this area because the address space ran out
 // (in practice this means we reached CompressedClassSpaceSize)
@@ -179,25 +178,32 @@ bool VirtualSpaceList::allocate_humongous_area(size_t word_size, MetaspaceHumong
   assert_lock_strong(Metaspace_lock);
   assert(word_size > MAX_CHUNK_WORD_SIZE, "Why are we here?");
 
-  // Is the current node large enough? No: salvage it and start a new node.
-  if (_first_node == nullptr || _first_node->free_words() < word_size) {
+  // Is the current node large enough? No: start a new node that is. Before, salvage
+  // remaining address space in the old node.
+  bool need_new_node = false;
+
+  if (_first_node == nullptr) {
+    need_new_node = true;
+  } else if (_first_node->free_words() < word_size) {
+    need_new_node = true;
+    salvage_chunks_from_node(_first_node);
+  }
+
+  if (need_new_node) {
     if (_can_expand) {
-      if (_first_node != nullptr) {
-        salvage_chunks_from_node(_first_node);
-      }
       create_new_node(word_size);
     } else {
-      UL(debug, "list cannot expand.");
+      UL(debug, "List cannot expand.");
       return false; // aka out of compressed class space
     }
   }
 
-  // Allocate chunks from the current node. Node allocates via pointer bump, so chunks will be
-  // adjacent.
+  // Allocate chunks from the current node and add them to the output list. Since node allocats via
+  // pointer bump, sequential allocations will yield adjacent chunks.
   const int num_chunks_needed = align_up(word_size, MAX_CHUNK_WORD_SIZE) / MAX_CHUNK_WORD_SIZE;
   for (int i = 0; i < num_chunks_needed; i++) {
     Metachunk* c = _first_node->allocate_root_chunk();
-    assert(c != nullptr, "Node too small"); // should work since we made sure node is large enough
+    assert(c != nullptr, "Node too small"); // We just made sure it isn't
     out->add_to_tail(c);
   }
 
