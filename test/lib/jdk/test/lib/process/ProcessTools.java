@@ -27,12 +27,13 @@ import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.Platform;
 import jdk.test.lib.Utils;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
-import java.lang.Thread.State;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.charset.Charset;
@@ -77,8 +78,13 @@ public final class ProcessTools {
 
     /**
      * <p>Starts a process from its builder.</p>
-     * <span>The default redirects of STDOUT and STDERR are started</span>
-     *
+     * <span>The process output is saved in ByteArrayOutputStream and available for
+     * analysis after process is finished. </span>
+     * <p>
+     * Same as
+     * {@linkplain #startProcess(String, ProcessBuilder, Consumer, Predicate, long, TimeUnit) startProcess}
+     * {@code (name, processBuilder, null, null, -1, TimeUnit.NANOSECONDS)}
+     * </p>
      * @param name           The process name
      * @param processBuilder The process builder
      * @return Returns the initialized process
@@ -92,12 +98,18 @@ public final class ProcessTools {
 
     /**
      * <p>Starts a process from its builder.</p>
-     * <span>The default redirects of STDOUT and STDERR are started</span>
-     * <p>It is possible to monitor the in-streams via the provided {@code consumer}
+     * <span>Allows to read process output with provided {@linkplain Consumer}.
+     * The process output is saved in ByteArrayOutputStream and available for
+     * analysis after process is finished. </span>
+     * <p>
+     * Same as
+     * {@linkplain #startProcess(String, ProcessBuilder, Consumer, Predicate, long, TimeUnit) startProcess}
+     * {@code (name, processBuilder, consumer, null, -1, TimeUnit.NANOSECONDS)}
+     * </p>
      *
      * @param name           The process name
-     * @param consumer       {@linkplain Consumer} instance to process the in-streams
      * @param processBuilder The process builder
+     * @param consumer       {@linkplain Consumer} instance to process the in-streams
      * @return Returns the initialized process
      * @throws IOException
      */
@@ -116,10 +128,14 @@ public final class ProcessTools {
 
     /**
      * <p>Starts a process from its builder.</p>
-     * <span>The default redirects of STDOUT and STDERR are started</span>
+     * <span>Allows to wait for process warm-up using {@linkplain Predicate}
+     * The process output is saved in ByteArrayOutputStream and available for
+     * analysis after process is finished.
+     * </span>
      * <p>
-     * It is possible to wait for the process to get to a warmed-up state
-     * via {@linkplain Predicate} condition on the STDOUT/STDERR
+     * Same as
+     * {@linkplain #startProcess(String, ProcessBuilder, Consumer, Predicate, long, TimeUnit) startProcess}
+     * {@code (name, processBuilder, null, linePredicate, timeout, unit)}
      * </p>
      *
      * @param name           The process name
@@ -146,11 +162,12 @@ public final class ProcessTools {
 
     /**
      * <p>Starts a process from its builder.</p>
-     * <span>The default redirects of STDOUT and STDERR are started</span>
+     * <span>The process output is saved in ByteArrayOutputStream and available for
+     * analysis after process is finished. </span>
      * <p>
      * It is possible to wait for the process to get to a warmed-up state
      * via {@linkplain Predicate} condition on the STDOUT/STDERR and monitor the
-     * in-streams via the provided {@linkplain Consumer}
+     * in-streams via the provided {@linkplain Consumer}*
      * </p>
      *
      * @param name           The process name
@@ -181,6 +198,12 @@ public final class ProcessTools {
 
         stdout.addPump(new LineForwarder(name, System.out));
         stderr.addPump(new LineForwarder(name, System.err));
+        ByteArrayOutputStream outBaos = new ByteArrayOutputStream();
+        ByteArrayOutputStream errBaos = new ByteArrayOutputStream();
+
+        stdout.addOutputStream(outBaos);
+        stderr.addOutputStream(errBaos);
+
         if (lineConsumer != null) {
             StreamPumper.LinePump pump = new StreamPumper.LinePump() {
                 @Override
@@ -250,7 +273,7 @@ public final class ProcessTools {
             throw e;
         }
 
-        return new ProcessImpl(p, stdoutTask, stderrTask);
+        return new ProcessImpl(p, stdoutTask, stderrTask, outBaos, errBaos);
     }
 
     /**
@@ -701,14 +724,19 @@ public final class ProcessTools {
 
     private static class ProcessImpl extends Process {
 
+        private final ByteArrayOutputStream outBaos;
+        private final ByteArrayOutputStream errBaos;
         private final Process p;
         private final Future<Void> stdoutTask;
         private final Future<Void> stderrTask;
 
-        public ProcessImpl(Process p, Future<Void> stdoutTask, Future<Void> stderrTask) {
+        public ProcessImpl(Process p, Future<Void> stdoutTask, Future<Void> stderrTask,
+                           ByteArrayOutputStream outBaos, ByteArrayOutputStream errBaos) {
             this.p = p;
             this.stdoutTask = stdoutTask;
             this.stderrTask = stderrTask;
+            this.outBaos = outBaos;
+            this.errBaos = errBaos;
         }
 
         @Override
@@ -718,12 +746,20 @@ public final class ProcessTools {
 
         @Override
         public InputStream getInputStream() {
-            return p.getInputStream();
+            try {
+                waitFor();
+            } catch (InterruptedException ie) {
+            }
+            return new ByteArrayInputStream(outBaos.toByteArray());
         }
 
         @Override
         public InputStream getErrorStream() {
-            return p.getErrorStream();
+            try {
+                waitFor();
+            } catch (InterruptedException ie) {
+            }
+            return new ByteArrayInputStream(errBaos.toByteArray());
         }
 
         @Override
