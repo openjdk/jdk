@@ -40,6 +40,10 @@ public class DefaultMethodBeanPropertyTest {
         default Object getObj() {
             return null;
         }
+
+        public static int getStaticValue() {
+            return 0;
+        }
     }
 
     public interface IfaceB extends IfaceA {
