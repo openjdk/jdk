@@ -721,7 +721,7 @@ public abstract sealed class AbstractInstruction
 
         public int branchByteOffset() {
             return size == 3
-                   ? (int) (short) code.classReader.readU2(pos + 1)
+                   ? code.classReader.readS2(pos + 1)
                    : code.classReader.readInt(pos + 1);
         }
 
