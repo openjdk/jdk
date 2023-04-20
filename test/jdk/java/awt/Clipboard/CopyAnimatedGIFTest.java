@@ -129,6 +129,7 @@ public class CopyAnimatedGIFTest {
             g.drawImage(img, 0, 0, getSize().width, getSize().height, this);
         }
     }
+
     private static class MyTransferable implements Transferable {
         private final Image img;
         private final DataFlavor[] flavors = {DataFlavor.imageFlavor};
