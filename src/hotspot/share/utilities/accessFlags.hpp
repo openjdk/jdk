@@ -51,8 +51,6 @@ enum {
   JVM_ACC_NOT_C2_COMPILABLE       = 0x02000000,
   JVM_ACC_NOT_C1_COMPILABLE       = 0x04000000,
   JVM_ACC_NOT_C2_OSR_COMPILABLE   = 0x08000000,
-  JVM_ACC_HAS_LINE_NUMBER_TABLE   = 0x00100000,
-  JVM_ACC_HAS_CHECKED_EXCEPTIONS  = 0x00400000,
   JVM_ACC_HAS_JSRS                = 0x00800000,
   JVM_ACC_IS_OLD                  = 0x00010000,     // RedefineClasses() has replaced this method
   JVM_ACC_IS_OBSOLETE             = 0x00020000,     // RedefineClasses() has made method obsolete
@@ -68,9 +66,6 @@ enum {
   JVM_ACC_HAS_FINAL_METHOD        = 0x01000000,     // True if klass has final method
   JVM_ACC_IS_HIDDEN_CLASS         = 0x04000000,     // True if klass is hidden
   JVM_ACC_IS_VALUE_BASED_CLASS    = 0x08000000,     // True if klass is marked as a ValueBased class
-
-  // Method* flags
-  JVM_ACC_HAS_LOCAL_VARIABLE_TABLE= 0x00400000,
 };
 
 
@@ -109,8 +104,6 @@ class AccessFlags {
   bool is_not_c1_compilable    () const { return (_flags & JVM_ACC_NOT_C1_COMPILABLE      ) != 0; }
   bool is_not_c2_compilable    () const { return (_flags & JVM_ACC_NOT_C2_COMPILABLE      ) != 0; }
   bool is_not_c2_osr_compilable() const { return (_flags & JVM_ACC_NOT_C2_OSR_COMPILABLE  ) != 0; }
-  bool has_linenumber_table    () const { return (_flags & JVM_ACC_HAS_LINE_NUMBER_TABLE  ) != 0; }
-  bool has_checked_exceptions  () const { return (_flags & JVM_ACC_HAS_CHECKED_EXCEPTIONS ) != 0; }
   bool has_jsrs                () const { return (_flags & JVM_ACC_HAS_JSRS               ) != 0; }
   bool is_old                  () const { return (_flags & JVM_ACC_IS_OLD                 ) != 0; }
   bool is_obsolete             () const { return (_flags & JVM_ACC_IS_OBSOLETE            ) != 0; }
@@ -125,11 +118,6 @@ class AccessFlags {
   bool is_cloneable_fast       () const { return (_flags & JVM_ACC_IS_CLONEABLE_FAST      ) != 0; }
   bool is_hidden_class         () const { return (_flags & JVM_ACC_IS_HIDDEN_CLASS        ) != 0; }
   bool is_value_based_class    () const { return (_flags & JVM_ACC_IS_VALUE_BASED_CLASS   ) != 0; }
-
-  // Method* flags
-  bool has_localvariable_table () const { return (_flags & JVM_ACC_HAS_LOCAL_VARIABLE_TABLE) != 0; }
-  void set_has_localvariable_table()    { atomic_set_bits(JVM_ACC_HAS_LOCAL_VARIABLE_TABLE); }
-  void clear_has_localvariable_table()  { atomic_clear_bits(JVM_ACC_HAS_LOCAL_VARIABLE_TABLE); }
 
   bool on_stack() const                 { return (_flags & JVM_ACC_ON_STACK) != 0; }
 
@@ -168,8 +156,6 @@ class AccessFlags {
   void set_not_c1_compilable()         { atomic_set_bits(JVM_ACC_NOT_C1_COMPILABLE);       }
   void set_not_c2_compilable()         { atomic_set_bits(JVM_ACC_NOT_C2_COMPILABLE);       }
   void set_not_c2_osr_compilable()     { atomic_set_bits(JVM_ACC_NOT_C2_OSR_COMPILABLE);   }
-  void set_has_linenumber_table()      { atomic_set_bits(JVM_ACC_HAS_LINE_NUMBER_TABLE);   }
-  void set_has_checked_exceptions()    { atomic_set_bits(JVM_ACC_HAS_CHECKED_EXCEPTIONS);  }
   void set_has_jsrs()                  { atomic_set_bits(JVM_ACC_HAS_JSRS);                }
   void set_is_old()                    { atomic_set_bits(JVM_ACC_IS_OLD);                  }
   void set_is_obsolete()               { atomic_set_bits(JVM_ACC_IS_OBSOLETE);             }
