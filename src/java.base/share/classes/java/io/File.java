@@ -1813,16 +1813,19 @@ public class File
      * <p> A particular Java platform may support zero or more
      * hierarchically-organized file systems.  Each file system has a
      * {@code root} directory from which all other files in that file system
-     * can be reached.  Windows platforms, for example, have a root directory
-     * for each active drive; UNIX platforms have a single root directory,
-     * namely {@code "/"}.  The set of filesystem roots is affected
-     * by various system-level operations such as the disconnecting or
-     * unmounting of physical or virtual disk drives.
+     * can be reached.
      *
      * <p> This method returns an array of {@code File} objects that denote the
      * root directories of the existing filesystem roots.  It is guaranteed
      * that the canonical pathname of any file physically present on the local
      * machine will begin with one of the roots returned by this method.
+     *
+     * @implNote
+     * Windows platforms, for example, have a root directory
+     * for each active drive; UNIX platforms have a single root directory,
+     * namely {@code "/"}.  The set of filesystem roots is affected
+     * by various system-level operations such as the disconnecting or
+     * unmounting of physical or virtual disk drives.
      *
      * <p> The canonical pathname of a file that resides on some other machine
      * and is accessed via a remote-filesystem protocol such as SMB or NFS may
