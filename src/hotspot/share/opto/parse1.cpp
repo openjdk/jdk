@@ -1527,23 +1527,6 @@ void Parse::Block::record_state(Parse* p, int pnum) {
 
   _from_block = p->block();
   _init_pnum = pnum;
-
-  // it looks like p->block() is null only when the current method is java.lang.Object.<init>
-  if (p->block() != nullptr) {
-    JVMState* jvms = _start_map->jvms();
-    PEAState& state = jvms->alloc_state();
-    auto mrs = liveness();
-
-    // purge all dead
-    for (int i = 0; i < jvms->loc_size(); ++i) {
-      Node* lv = _start_map->local(jvms, i);
-      ObjID obj = state.is_alias(lv);
-
-      if (!mrs.at(i) && obj != nullptr) {
-        state.remove_alias(obj, lv);
-      }
-    }
-  }
 }
 
 
@@ -2061,25 +2044,24 @@ int Parse::Block::add_new_path() {
   RegionNode* r = map->control()->as_Region();
 
   // Add new path to the region.
-  uint pnum = r->req();
+  const uint pnum = r->req();
   r->add_req(nullptr);
 
-  for (uint i = 1; i < map->req(); i++) {
-    Node* n = map->in(i);
-    if (i == TypeFunc::Memory) {
+  for (DUIterator_Fast imax, i = r->fast_outs(imax); i < imax; i++) {
+    Node* n = r->fast_out(i);
+
+    if (n->is_MergeMem()) {
       // Ensure a phi on all currently known memories.
       for (MergeMemStream mms(n->as_MergeMem()); mms.next_non_empty(); ) {
         Node* phi = mms.memory();
-        if (phi->is_Phi() && phi->as_Phi()->region() == r) {
+        if (phi->is_Phi() && phi->as_Phi()->region() == r && phi->req() <= pnum) {
           assert(phi->req() == pnum, "must be same size as region");
           phi->add_req(nullptr);
         }
       }
-    } else {
-      if (n->is_Phi() && n->as_Phi()->region() == r) {
-        assert(n->req() == pnum, "must be same size as region");
-        n->add_req(nullptr);
-      }
+    } else if (n->is_Phi() && n->as_Phi()->region() == r && n->req() <= pnum) {
+      assert(n->req() == pnum, "must be same size as region");
+      n->add_req(nullptr);
     }
   }
 
