@@ -28,6 +28,12 @@ public class Unnamed {
         assertEquals(1, testMultiValuesNestedMix2(new Box(new R1())));
         assertEquals(1, testMultiValuesNestedMix2("BOX"));
         assertEquals(2, testMultiValuesNestedMix2(new Box2(new R1())));
+        assertEquals(1, testMultiValuesStatementBlock(Integer.valueOf(42)));
+        assertEquals(1, testMultiValuesStatementBlock(Float.valueOf(42.0f)));
+        assertEquals(2, testMultiValuesStatementBlock("BOX"));
+        assertEquals(1, testMultiValuesStatementBlock2(new Box(new R1())));
+        assertEquals(1, testMultiValuesStatementBlock2("BOX"));
+        assertEquals(2, testMultiValuesStatementBlock2(new Box2(new R1())));
 //        assertEquals(2, testMultiValuesGuards(new R3(), 1));
 //        assertEquals(3, testMultiValuesGuards(new R3(), 42));
     }
@@ -95,6 +101,26 @@ public class Unnamed {
             case Box(_), String _ -> 1;
             default -> 2;
         };
+    }
+
+    int testMultiValuesStatementBlock(Object o) {
+        switch (o) {
+            case Integer _:
+            case Number _:
+                return 1;
+            default:
+                return 2;
+        }
+    }
+
+    int testMultiValuesStatementBlock2(Object o) {
+        switch (o) {
+            case Box(_):
+            case String _:
+                return 1;
+            default:
+                return 2;
+        }
     }
 
 //    int testMultiValuesGuards(Base b, int x) {        // TODO
