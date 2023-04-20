@@ -57,6 +57,8 @@ public class RequestFocusOwnerTest {
     private volatile static Dimension buttonSize;
     private volatile static boolean focusGained = false;
     private volatile static boolean requestStatus;
+    private volatile static Object focusLock = new Object();
+    private volatile static int delay = 500;
 
     private volatile static FocusListener listener = new FocusListener() {
 
@@ -69,6 +71,9 @@ public class RequestFocusOwnerTest {
         public void focusGained(FocusEvent e) {
             System.out.println(e.getSource() + ": gained focus.");
             focusGained = true;
+            synchronized (focusLock) {
+                focusLock.notifyAll();
+            }
         }
     };
 
@@ -126,11 +131,15 @@ public class RequestFocusOwnerTest {
                 robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
                 robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
 
-                robot.waitForIdle();
+                if (!focusGained) {
+                    synchronized (focusLock) {
+                        focusLock.wait(delay * 10);
+                    }
+                }
 
                 if (!focusGained) {
                     throw new RuntimeException(
-                        "FAIL: Button did not gain focus when clicked. Test cannot proceed!");
+                        "FAIL: Button did not gain focus when clicked!");
                 }
             }
 
@@ -139,7 +148,11 @@ public class RequestFocusOwnerTest {
                 requestStatus = checkbox.requestFocusInWindow();
             });
 
-            robot.waitForIdle();
+            if (!focusGained) {
+                synchronized (focusLock) {
+                    focusLock.wait(delay * 10);
+                }
+            }
 
             if (!requestStatus) {
                 throw new RuntimeException(
@@ -148,7 +161,8 @@ public class RequestFocusOwnerTest {
 
             if (!focusGained) {
                 throw new RuntimeException(
-                    "FAIL: Checkbox.requestFocusInWindow did not transfer the focus to Checkbox");
+                    "FAIL: Checkbox.requestFocusInWindow did not transfer "
+                    + "the focus to Checkbox");
             }
 
             if (!checkbox.hasFocus()) {
@@ -161,22 +175,28 @@ public class RequestFocusOwnerTest {
                 requestStatus = choice.requestFocusInWindow();
             });
 
-            robot.waitForIdle();
+            if (!focusGained) {
+                synchronized (focusLock) {
+                    focusLock.wait(delay * 10);
+                }
+            }
 
             if (!requestStatus) {
                 throw new RuntimeException(
-                    "FAIL: Choice.requestFocusInWindow for a disabled Choice returned false");
+                    "FAIL: Choice.requestFocusInWindow for a disabled Choice"
+                    + " returned false");
             }
 
             if (!focusGained) {
                 throw new RuntimeException(
-                    "FAIL: Choice.requestFocusInWindow did not transfer the focus to disabled Choice");
+                    "FAIL: Choice.requestFocusInWindow did not transfer the"
+                    + " focus to disabled Choice");
             }
 
             if (!choice.hasFocus()) {
                 throw new RuntimeException(
-                    "FAIL: Choice.hasFocus for disabled Choice returns false after"
-                        + " calling Choice.requestFocusInWindow");
+                    "FAIL: Choice.hasFocus for disabled Choice returns false"
+                    + " after calling Choice.requestFocusInWindow");
             }
             focusGained = false;
             EventQueue.invokeAndWait(() -> {
@@ -186,7 +206,8 @@ public class RequestFocusOwnerTest {
 
             if (requestStatus) {
                 throw new RuntimeException(
-                    "FAIL: TextField.requestFocusInWindow returned true for hidden TextField");
+                    "FAIL: TextField.requestFocusInWindow returned true for"
+                    + " hidden TextField");
             }
 
             if (focusGained) {
@@ -195,8 +216,8 @@ public class RequestFocusOwnerTest {
             }
             if (textField.hasFocus()) {
                 throw new RuntimeException(
-                    "FAIL: TextField.hasFocus for hidden TextField returns true after calling"
-                        + " TextField.requestFocusInWindow");
+                    "FAIL: TextField.hasFocus for hidden TextField returns true"
+                    + " after calling TextField.requestFocusInWindow");
             }
 
             focusGained = false;
@@ -208,7 +229,8 @@ public class RequestFocusOwnerTest {
 
             if (requestStatus) {
                 throw new RuntimeException(
-                    "FAIL: List.requestFocusInWindow returned true for non-focusable List");
+                    "FAIL: List.requestFocusInWindow returned true for"
+                    + " non-focusable List");
             }
 
             if (focusGained) {
@@ -217,8 +239,8 @@ public class RequestFocusOwnerTest {
             }
             if (list.hasFocus()) {
                 throw new RuntimeException(
-                    "FAIL: List.hasFocus for non-focusable List returns true after calling"
-                        + " List.requestFocusInWindow");
+                    "FAIL: List.hasFocus for non-focusable List returns true"
+                    + " after calling List.requestFocusInWindow");
             }
 
             System.out.println("Test passed!");
