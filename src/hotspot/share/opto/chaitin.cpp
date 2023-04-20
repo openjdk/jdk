@@ -247,7 +247,7 @@ PhaseChaitin::PhaseChaitin(uint unique, PhaseCFG &cfg, Matcher &matcher, bool sc
       if (j == NUMBUCKS - 1 || blk->_freq > bval) {
         uint cnt = buckcnt[j];
         // Assign block to end of list for appropriate bucket
-        buckets[j][cnt] = _cfg.get_block(i);
+        buckets[j][cnt] = blk;
         buckcnt[j] = cnt+1;
         break; // kick out of inner loop
       }
@@ -261,6 +261,8 @@ PhaseChaitin::PhaseChaitin(uint unique, PhaseCFG &cfg, Matcher &matcher, bool sc
     ::memmove(offset, buckets[i], buckcnt[i]*sizeof(Block*));
     offset += buckcnt[i];
   }
+  assert((&buckets[0][0] + nr_blocks) == offset, "should be");
+
   // Free the now unused memory
   FREE_RESOURCE_ARRAY(Block*, buckets[1], (NUMBUCKS-1)*nr_blocks);
   // Finally, point the _blks to our memory
