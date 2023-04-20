@@ -132,8 +132,7 @@ Java_StopThreadTest_prepareAgent(JNIEnv *jni, jclass cls, jclass task_clazz, job
   err = jvmti->SetBreakpoint(mid_B, 0);
   check_jvmti_status(jni, err, "prepareAgent: Failed in JVMTI SetBreakpoint");
 
-  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_BREAKPOINT, NULL);
-  check_jvmti_status(jni, err, "prepareAgent: Failed to enable BREAKPOINT event");
+  set_event_notification_mode(jvmti, JVMTI_ENABLE, JVMTI_EVENT_BREAKPOINT, NULL);
 
   LOG("Main: prepareAgent finished\n");
 }
@@ -141,15 +140,13 @@ Java_StopThreadTest_prepareAgent(JNIEnv *jni, jclass cls, jclass task_clazz, job
 JNIEXPORT void JNICALL
 Java_StopThreadTest_suspendThread(JNIEnv *jni, jclass cls, jthread thread) {
   LOG("Main: suspendThread\n");
-  jvmtiError err = jvmti->SuspendThread(thread);
-  check_jvmti_status(jni, err, "Agent suspendThread: Failed in JVMTI SuspendThread");
+  suspend_thread(jvmti, jni, thread);
 }
 
 JNIEXPORT void JNICALL
 Java_StopThreadTest_resumeThread(JNIEnv *jni, jclass cls, jthread thread) {
   LOG("Main: resumeThread\n");
-  jvmtiError err = jvmti->ResumeThread(thread);
-  check_jvmti_status(jni, err, "Agent resumeThread: Failed in JVMTI ResumeThread");
+  resume_thread(jvmti, jni, thread);
 }
 
 JNIEXPORT jint JNICALL

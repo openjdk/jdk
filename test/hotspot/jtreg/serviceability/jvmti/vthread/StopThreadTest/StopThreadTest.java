@@ -35,8 +35,7 @@
  *     All cases are using JVMTI StopThread to send an AssertionError object.
  *
  * @requires vm.continuations
- * @compile --enable-preview -source ${jdk.version} StopThreadTest.java
- * @run main/othervm/native --enable-preview -agentlib:StopThreadTest StopThreadTest
+ * @run main/othervm/native -agentlib:StopThreadTest StopThreadTest
  */
 
 import java.lang.AssertionError;
@@ -59,16 +58,25 @@ public class StopThreadTest {
 
     static int status = PASSED;
 
-    static void setFailed() { status = FAILED; }
+    static void setFailed(String msg) {
+        log("\nFAILED: " + msg); 
+        status = FAILED;
+    }
 
-    public static void main(String args[]) throws Exception {
-        if (run(args) == FAILED) {
-            throw new RuntimeException("StopThreadTest failed!");
+    static void throwFailed(String msg) {
+        log("\nFAILED: " + msg); 
+        throw new RuntimeException("StopThreadTest failed!");
+    }
+
+    public static void main(String args[]) {
+        run();
+        if (status == FAILED) {
+            throwFailed("StopThreadTest!");
         }
         log("\nStopThreadTest passed");
     }
 
-    public static int run(String args[]) {
+    public static void run() {
         TestTask testTask = new TestTask();
         Thread testTaskThread = null;
         AssertionError excObject = new AssertionError();
@@ -84,8 +92,7 @@ public class StopThreadTest {
             log("\nMain #A.1: unsuspended");
             retCode = stopThread(testTaskThread);
             if (retCode != THREAD_NOT_SUSPENDED) {
-                log("Failed: Main #A.1: expected THREAD_NOT_SUSPENDED instead of: " + retCode);
-                setFailed();
+                throwFailed("Main #A.1: expected THREAD_NOT_SUSPENDED instead of: " + retCode);
             } else {
                 log("Main #A.1: got expected THREAD_NOT_SUSPENDED");
             }
@@ -94,8 +101,7 @@ public class StopThreadTest {
             suspendThread(testTaskThread);
             retCode = stopThread(testTaskThread);
             if (retCode != JVMTI_ERROR_NONE) {
-                log("Failed: Main #A.2: expected JVMTI_ERROR_NONE instead of: " + retCode);
-                setFailed();
+                throwFailed("Main #A.2: expected JVMTI_ERROR_NONE instead of: " + retCode);
             } else {
                 log("Main #A.2: got expected JVMTI_ERROR_NONE");
             }
@@ -108,16 +114,14 @@ public class StopThreadTest {
             log("\nMain #B.1: unsuspended");
             retCode = stopThread(testTaskThread);
             if (retCode != THREAD_NOT_SUSPENDED) {
-                log("Failed: Main #B.1: expected THREAD_NOT_SUSPENDED instead of: " + retCode);
-                setFailed();
+                throwFailed("Main #B.1: expected THREAD_NOT_SUSPENDED instead of: " + retCode);
             }
 
             log("\nMain #B.2: suspended");
             suspendThread(testTaskThread);
             retCode = stopThread(testTaskThread);
             if (retCode != JVMTI_ERROR_NONE) {
-                log("Failed: Main #B.2: expected JVMTI_ERROR_NONE");
-                setFailed();
+                throwFailed("Main #B.2: expected JVMTI_ERROR_NONE");
             }
             resumeThread(testTaskThread);
 
@@ -133,10 +137,8 @@ public class StopThreadTest {
         try {
             testTaskThread.join();
         } catch (InterruptedException ex) {
-            System.out.println("# Unexpected " + ex);
-            setFailed();
+            throwFailed("Unexpected " + ex);
         }
-        return status;
     }
 
 
@@ -181,8 +183,7 @@ public class StopThreadTest {
                 seenExceptionFromA = true;
             }
             if (!seenExceptionFromA) {
-                log("Failed: TestTask.run: expected AssertionError from method A()");
-                StopThreadTest.setFailed();
+                StopThreadTest.setFailed("TestTask.run: expected AssertionError from method A()");
             }
             sleep(1); // to cause yield
 
@@ -194,8 +195,7 @@ public class StopThreadTest {
                 seenExceptionFromB = true;
             }
             if (!seenExceptionFromB) {
-                log("Failed: TestTask.run: expected AssertionError from method B()");
-                StopThreadTest.setFailed();
+                StopThreadTest.setFailed("TestTask.run: expected AssertionError from method B()");
             }
             sleep(1); // to cause yield
 
@@ -207,8 +207,7 @@ public class StopThreadTest {
                 seenExceptionFromC = true;
             }
             if (!seenExceptionFromC) {
-                log("Failed: TestTask.run: expected AssertionError from method C()");
-                StopThreadTest.setFailed();
+                StopThreadTest.setFailed("TestTask.run: expected AssertionError from method C()");
             }
             finished = true;
         }
