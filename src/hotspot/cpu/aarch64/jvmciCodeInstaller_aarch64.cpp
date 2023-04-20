@@ -90,10 +90,6 @@ void CodeInstaller::pd_patch_DataSectionReference(int pc_offset, int data_offset
   if (inst->is_adr_aligned() || inst->is_ldr_literal()
       || (NativeInstruction::maybe_cpool_ref(pc))) {
     address dest = _constants->start() + data_offset;
-    if (_nmethod_entry_patch_offset == pc_offset) {
-      // Remember the offset into constants
-      _nmethod_entry_patch_offset = data_offset;
-    }
     _instructions->relocate(pc, section_word_Relocation::spec((address) dest, CodeBuffer::SECT_CONSTS));
     JVMCI_event_3("relocating at " PTR_FORMAT " (+%d) with destination at %d", p2i(pc), pc_offset, data_offset);
   } else {

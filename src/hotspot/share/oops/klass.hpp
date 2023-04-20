@@ -394,6 +394,10 @@ protected:
   static ByteSize modifier_flags_offset()        { return in_ByteSize(offset_of(Klass, _modifier_flags)); }
   static ByteSize layout_helper_offset()         { return in_ByteSize(offset_of(Klass, _layout_helper)); }
   static ByteSize access_flags_offset()          { return in_ByteSize(offset_of(Klass, _access_flags)); }
+#if INCLUDE_JVMCI
+  static ByteSize subklass_offset()              { return in_ByteSize(offset_of(Klass, _subklass)); }
+  static ByteSize next_sibling_offset()          { return in_ByteSize(offset_of(Klass, _next_sibling)); }
+#endif
 
   // Unpacking layout_helper:
   static const int _lh_neutral_value           = 0;  // neutral non-array non-instance value
