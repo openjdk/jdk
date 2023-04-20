@@ -37,9 +37,9 @@ import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.regex.Pattern;
 import java.util.TimeZone;
 import java.util.TreeMap;
+import java.util.regex.Pattern;
 
 /**
  * This tool reads the IANA Language Subtag Registry data file downloaded from
