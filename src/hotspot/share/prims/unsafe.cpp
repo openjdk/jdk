@@ -783,22 +783,27 @@ UNSAFE_ENTRY(void, Unsafe_Park(JNIEnv *env, jobject unsafe, jboolean isAbsolute,
 
 UNSAFE_ENTRY(void, Unsafe_Unpark(JNIEnv *env, jobject unsafe, jobject jthread)) {
   if (jthread != nullptr) {
+    // ThreadsListHandle.cv_internal_thread_to_JavaThread() would normally
+    // be used for this conversion from jthread -> JavaThread*, but we've
+    // seen performance issues with very large numbers of threads due to
+    // the ThreadsListHandle.includes() call in the conversion function.
+    //
+    // So we verify that java_lang_Thread::thread(thread_oop) != nullptr
+    // before and after creating tlh below and that lets us know that thr
+    // is protected by tlh without a tlh.includes() call.
+    //
     oop thread_oop = JNIHandles::resolve_non_null(jthread);
     if (java_lang_Thread::thread(thread_oop) != nullptr) {
       // Try to capture the live JavaThread in a ThreadsListHandle:
-      ThreadsListHandle tlh; // Provides memory barrier
-      if (java_lang_Thread::thread(thread_oop) != nullptr) {
-        // The still live JavaThread is protected by the ThreadsListHandle.
-        JavaThread* thr = nullptr;
-        // We verified that java_lang_Thread::thread(thread_oop) != nullptr
-        // before and after creating tlh above so quick_mode can be used in
-        // this conversion call.
-        if (tlh.cv_internal_thread_to_JavaThread(jthread, &thr, nullptr, true /* quick_mode */)) {
-          // The JavaThread is safe to access.
-          Parker* p = thr->parker();
-          HOTSPOT_THREAD_UNPARK((uintptr_t) p);
-          p->unpark();
-        }
+      ThreadsListHandle tlh;
+      JavaThread* thr = nullptr;
+      if ((thr = java_lang_Thread::thread(thread_oop)) != nullptr) {
+        // The still live JavaThread is protected by the ThreadsListHandle
+        // so it is safe to access.
+        assert(tlh.includes(thr), "must be");
+        Parker* p = thr->parker();
+        HOTSPOT_THREAD_UNPARK((uintptr_t) p);
+        p->unpark();
       }
     } // ThreadsListHandle is destroyed here.
   }

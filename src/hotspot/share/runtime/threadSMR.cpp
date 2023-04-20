@@ -795,14 +795,9 @@ ThreadsListHandle::~ThreadsListHandle() {
 // to the converted JavaThread * and true is returned. On error,
 // returns false.
 //
-// If quick_mode is true, java_lang_Thread::thread(thread_oop) was verified
-// in the caller to be a non-nullptr before and after the ThreadsListHandle
-// was created so we can skip the ThreadsList search.
-//
 bool ThreadsListHandle::cv_internal_thread_to_JavaThread(jobject jthread,
                                                          JavaThread ** jt_pp,
-                                                         oop * thread_oop_p,
-                                                         bool quick_mode) {
+                                                         oop * thread_oop_p) {
   assert(this->list() != nullptr, "must have a ThreadsList");
   assert(jt_pp != nullptr, "must have a return JavaThread pointer");
   // thread_oop_p is optional so no assert()
@@ -831,19 +826,12 @@ bool ThreadsListHandle::cv_internal_thread_to_JavaThread(jobject jthread,
 
   if (java_thread != JavaThread::current()) {
     // java_thread is not the current JavaThread so we have to verify it
-    // against the ThreadsList unless we're in quick_mode.
-    //
-    // In quick_mode, java_lang_Thread::thread(thread_oop) was verified
-    // in the caller to be a non-nullptr before and after creation of the
-    // ThreadsListHandle so we can skip the ThreadsList search.
-    //
-    if (!quick_mode && !includes(java_thread)) {
+    // against the ThreadsList:
+    if (!includes(java_thread)) {
       // Not on this ThreadsList so it is not protected.
       return false;
     }
   }
-
-  assert(includes(java_thread), "must be");
 
   // Return a live JavaThread that is "protected" by the
   // ThreadsListHandle in the caller.
