@@ -94,7 +94,6 @@ public class CopyAnimatedGIFTest {
     private void copyImage() {
         Clipboard sys = Toolkit.getDefaultToolkit().getSystemClipboard();
         sys.setContents(new MyTransferable(img), null);
-
     }
 
     public static void main(String[] args) throws Exception {
