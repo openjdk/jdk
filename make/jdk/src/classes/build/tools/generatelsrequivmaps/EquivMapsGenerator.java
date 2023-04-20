@@ -140,7 +140,7 @@ public class EquivMapsGenerator {
                 // can have a preferred value itself.
                 // eg: ar-ajp has pref ajp which has pref apc
                 boolean foundInOther = false;
-                Pattern pattern = Pattern.compile("\\b"+preferred+"\\b");
+                Pattern pattern = Pattern.compile(","+preferred+"(,|$)");
                 // Check if current pref exists inside a value for another pref
                 List<StringBuilder> doublePrefs = initialLanguageMap
                         .values()
