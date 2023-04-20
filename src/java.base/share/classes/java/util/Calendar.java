@@ -2630,7 +2630,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
         if (stamp_a == UNSET || stamp_b == UNSET) {
             return UNSET;
         }
-        return (stamp_a > stamp_b) ? stamp_a : stamp_b;
+        return Math.max(stamp_a, stamp_b);
     }
 
     /**
