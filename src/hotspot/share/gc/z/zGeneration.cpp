@@ -1455,7 +1455,7 @@ void ZGenerationOld::remap_young_roots() {
   // reason is that this code is run under the driver lock, which means that a young generation
   // collection might be waiting for this code to complete.
   uint prev_nworkers = _workers.active_workers();
-  uint remap_nworkers = clamp(MAX2(_workers.active_workers(), ZGeneration::young()->workers()->active_workers()), 1u, ZOldGCThreads);
+  uint remap_nworkers = clamp(ZGeneration::young()->workers()->active_workers() + prev_nworkers, 1u, ZOldGCThreads);
   _workers.set_active_workers(remap_nworkers);
 
   // TODO: The STS joiner is only needed to satisfy z_assert_is_barrier_safe that doesn't
