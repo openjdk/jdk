@@ -30,8 +30,6 @@ import java.io.ObjectInputStream;
 import java.net.PasswordAuthentication;
 import java.net.Authenticator;
 import java.net.URL;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.HashMap;
 import java.util.Objects;
 import java.util.concurrent.locks.Condition;
