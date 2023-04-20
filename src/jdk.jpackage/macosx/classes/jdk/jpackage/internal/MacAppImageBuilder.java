@@ -374,7 +374,7 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
                         ENTITLEMENTS.fetchFrom(params));
             }
             restoreKeychainList(params);
-        } else if (Platform.isArmMac()) {
+        } else if (Platform.isMac()) {
             signAppBundle(params, root, "-", null, null);
         } else {
             // Calling signAppBundle() without signingIdentity will result in
