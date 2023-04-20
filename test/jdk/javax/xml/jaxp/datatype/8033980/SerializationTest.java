@@ -78,15 +78,14 @@ public class SerializationTest {
      */
     @BeforeClass
     public void setup() throws DatatypeConfigurationException, IOException {
+        DatatypeFactory dtf = DatatypeFactory.newInstance();
         for(String jdkVersion : JDK) {
             if(!Files.exists(Path.of(filePath, jdkVersion+FILENAME_CAL ))) {
-                DatatypeFactory dtf = DatatypeFactory.newInstance();
                 XMLGregorianCalendar c = dtf.newXMLGregorianCalendar(EXPECTED_CAL);
                 toFile((Serializable) c, filePath + jdkVersion + FILENAME_CAL);
 
             }
             if(!Files.exists(Path.of(filePath, jdkVersion+"t"+FILENAME_DURATION ))) {
-                DatatypeFactory dtf = DatatypeFactory.newInstance();
                 Duration d = dtf.newDuration(EXPECTED_DURATION);
                 toFile((Serializable) d, filePath + jdkVersion + FILENAME_DURATION);
             }
