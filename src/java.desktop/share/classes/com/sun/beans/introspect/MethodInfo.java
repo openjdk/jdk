@@ -108,7 +108,7 @@ final class MethodInfo {
                 if (IGNORABLE_INTERFACES.contains(iface))
                     continue;
                 for (Method method : iface.getMethods()) {
-                    if ((method.getModifiers() & Modifier.ABSTRACT) == 0) {
+                    if (!Modifier.isAbstract(method.getModifiers())) {
                         (list = createIfNeeded(list)).add(method);
                     }
                 }
