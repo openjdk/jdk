@@ -1540,12 +1540,11 @@ public class BufferedImage extends java.awt.Image
   /**
    * Adds a tile observer.  If the observer is already present,
    * it receives multiple notifications.
-   *
-   * @implSpec
-   * The default implementation ignores the given observer since
-   * {@code BufferedImage} {@linkplain #getRaster() single tile}
-   * is always checked out for writing, so there is no event to
-   * dispatch.
+   * <p>
+   * The default implementation ignores its parameters and does
+   * nothing, since {@code BufferedImage} is always checked out
+   * for writing and cannot be made read-only,
+   * so there can never be events to dispatch.
    *
    * @param to the specified {@link TileObserver}
    */
@@ -1556,10 +1555,9 @@ public class BufferedImage extends java.awt.Image
    * Removes a tile observer.  If the observer was not registered,
    * nothing happens.  If the observer was registered for multiple
    * notifications, it is now registered for one fewer notification.
-   *
-   * @implSpec
-   * The default implementation ignores the given observer since
-   * {@link #addTileObserver(TileObserver)} adds none.
+   * <p>
+   * The default implementation ignores the given observer,
+   * since {@link #addTileObserver(TileObserver)} adds none.
    *
    * @param to the specified {@code TileObserver}.
    */
@@ -1568,6 +1566,7 @@ public class BufferedImage extends java.awt.Image
 
     /**
      * Returns whether or not a tile is currently checked out for writing.
+     *
      * @param tileX the x index of the tile.
      * @param tileY the y index of the tile.
      * @return {@code true} if the tile specified by the specified
@@ -1588,12 +1587,15 @@ public class BufferedImage extends java.awt.Image
      * Returns an array of {@link Point} objects indicating which tiles
      * are checked out for writing.  Returns {@code null} if none are
      * checked out.
-     *
-     * @implSpec
-     * The default implementation unconditionally returns a single
-     * point with (0,0) coordinates since {@code BufferedImage}
-     * {@linkplain #getRaster() single tile} is always checked out
-     * for writing.
+     * <p>
+     * Since a {@code BufferedImage} consists of a single tile,
+     * and that tile is always checked out for writing, the
+     * default implementation returns an array of one point.
+     * Further, the offset shall be consistent with
+     * {@link #getMinTileX()} and {@link #getMinTileY()},
+     * which are always (0,0) in {@code BufferedImage}.
+     * That will always be the coordinates of the single
+     * returned {@code Point}.
      *
      * @return a {@code Point} array that indicates the tiles that
      *          are checked out for writing, or {@code null} if no
@@ -1623,8 +1625,7 @@ public class BufferedImage extends java.awt.Image
    * Checks out a tile for writing.  All registered
    * {@code TileObservers} are notified when a tile goes from having
    * no writers to having one writer.
-   *
-   * @implSpec
+   * <p>
    * The default implementation unconditionally returns the
    * {@linkplain #getRaster() single tile} without checking
    * the passed values. No listeners are notified since the
@@ -1647,8 +1648,7 @@ public class BufferedImage extends java.awt.Image
    * to undefined results.  All registered {@code TileObservers}
    * are notified when a tile goes from having one writer to having no
    * writers.
-   *
-   * @implSpec
+   * <p>
    * The default implementation is a no-op and immediately returns
    * without checking the passed values. No listeners are notified
    * since the {@linkplain #getRaster() single tile} is always
