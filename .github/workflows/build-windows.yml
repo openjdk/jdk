@@ -104,6 +104,11 @@ jobs:
           '/c/Program Files (x86)/Microsoft Visual Studio/Installer/vs_installer.exe' \
             modify --quiet --installPath 'C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise' \
             --add Microsoft.VisualStudio.Component.VC.${{ inputs.msvc-toolset-version }}.${{ inputs.msvc-toolset-architecture }}
+        # Runner images can provide the component already, and the attempt to install it would
+        # fail this step. Configure script below would look for the specific MSVC version
+        # anyway, and would fail there if the component installation failed for a different
+        # reason. Do not treat failures at this step as fatal.
+        continue-on-error: true
 
       - name: 'Configure'
         run: >
