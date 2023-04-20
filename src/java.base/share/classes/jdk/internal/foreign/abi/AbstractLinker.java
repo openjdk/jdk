@@ -117,6 +117,7 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
         descriptor.returnLayout().ifPresent(AbstractLinker::checkHasNaturalAlignmentRecursive);
         descriptor.argumentLayouts().forEach(AbstractLinker::checkHasNaturalAlignmentRecursive);
     }
+
     private static void checkHasNaturalAlignmentRecursive(MemoryLayout layout) {
         checkHasNaturalAlignment(layout);
         if (layout instanceof GroupLayout gl) {
