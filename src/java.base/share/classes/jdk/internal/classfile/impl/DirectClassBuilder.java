@@ -167,9 +167,7 @@ public final class DirectClassBuilder
         // We maintain two writers, and then we join them at the end
         int size = sizeHint == 0 ? 256 : sizeHint;
         BufWriter head = new BufWriterImpl(constantPool, size);
-        BufWriterImpl tail = new BufWriterImpl(constantPool, size);
-        tail.setThisClass(thisClassEntry);
-        tail.setMajorVersion(majorVersion);
+        BufWriterImpl tail = new BufWriterImpl(constantPool, size, thisClassEntry, majorVersion);
 
         // The tail consists of fields and methods, and attributes
         // This should trigger all the CP/BSM mutation
