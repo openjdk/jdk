@@ -282,11 +282,11 @@ public class EquivMapsGenerator {
                 Paths.get(fileName))) {
             writer.write(getOpenJDKCopyright());
             writer.write(headerText
-                + (int)(sortedLanguageMap1.size() / 0.75f + 1) + ");\n"
+                + sortedLanguageMap1.size() + ");\n"
                 + "        multiEquivsMap = HashMap.newHashMap("
-                + (int)(sortedLanguageMap2.size() / 0.75f + 1) + ");\n"
+                + sortedLanguageMap2.size() + ");\n"
                 + "        regionVariantEquivMap = HashMap.newHashMap("
-                + (int)(sortedRegionVariantMap.size() / 0.75f + 1) + ");\n\n"
+                + sortedRegionVariantMap.size() + ");\n\n"
                 + "        // This is an auto-generated file and should not be manually edited.\n"
                 + "        //   LSR Revision: " + LSRrevisionDate);
             writer.newLine();
