@@ -59,7 +59,6 @@ final class CompilerToVM {
      * These values mirror the equivalent values from {@code Unsafe} but are appropriate for the JVM
      * being compiled against.
      */
-    // Checkstyle: stop
     final int ARRAY_BOOLEAN_BASE_OFFSET;
     final int ARRAY_BYTE_BASE_OFFSET;
     final int ARRAY_SHORT_BASE_OFFSET;
@@ -78,7 +77,6 @@ final class CompilerToVM {
     final int ARRAY_FLOAT_INDEX_SCALE;
     final int ARRAY_DOUBLE_INDEX_SCALE;
     final int ARRAY_OBJECT_INDEX_SCALE;
-    // Checkstyle: resume
 
     @SuppressWarnings("try")
     CompilerToVM() {
