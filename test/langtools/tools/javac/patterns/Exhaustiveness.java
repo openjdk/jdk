@@ -1572,6 +1572,33 @@ public class Exhaustiveness extends TestRunner {
                """);
     }
 
+    @Test
+    public void testComplexSubTypes6(Path base) throws Exception {
+        doTest(base,
+               new String[0],
+               """
+               class Test {
+                   sealed interface I0 permits I1, I2 { }
+                   sealed interface I00 permits I1, I2 { }
+
+                   sealed interface I1 extends I0, I00 permits B, C { }
+                   sealed interface I2 extends I0, I00 permits B, C { }
+
+                   static final class B implements I1, I2 { }
+                   static final class C implements I1, I2 { }
+
+                   int test(Object o) {
+                       return switch (o) {
+                           case B c -> 2;
+                           case C d -> 3;
+                       };
+                   }
+               }
+               """,
+               "Test.java:12:16: compiler.err.not.exhaustive",
+               "1 error");
+    }
+
     private static final int NESTING_CONSTANT = 5;
 
     Set<String> createDeeplyNestedVariants() {
@@ -1795,6 +1822,30 @@ public class Exhaustiveness extends TestRunner {
                    }
                }
                """);
+        doTest(base,
+               new String[0],
+               """
+               package test;
+               public class Test {
+                   sealed interface I {}
+                   sealed interface S1 extends I {}
+                   sealed interface S2 extends I {}
+                   final class C1 implements S1 {}
+                   final class C2 implements S2 {}
+                   final class C12 implements S1, S2 {}
+
+                   void test(I i) {
+                       switch (i) {
+                           case C12 c ->
+                               System.out.println("C12");
+                           case C1 c ->
+                               System.out.println("C1");
+                           case C2 c ->
+                               System.out.println("C2");
+                       }
+                   }
+               }
+               """);
     }
 
     @Test
@@ -1820,6 +1871,136 @@ public class Exhaustiveness extends TestRunner {
                                System.out.println("C2");
                            case R(C12 c) ->
                                System.out.println("C12");
+                       }
+                   }
+               }
+               """);
+        doTest(base,
+               new String[0],
+               """
+               package test;
+               public class Test {
+                   sealed interface I {}
+                   sealed interface S1 extends I {}
+                   sealed interface S2 extends I {}
+                   final class C1 implements S1 {}
+                   final class C2 implements S2 {}
+                   final class C12 implements S1, S2 {}
+                   record R(I i) {}
+
+                   void test(R r) {
+                       switch (r) {
+                           case R(C12 c) ->
+                               System.out.println("C12");
+                           case R(C1 c) ->
+                               System.out.println("C1");
+                           case R(C2 c) ->
+                               System.out.println("C2");
+                       }
+                   }
+               }
+               """);
+    }
+
+    @Test
+    public void testDiamondInheritance5(Path base) throws Exception {
+        doTest(base,
+               new String[0],
+               """
+               package test;
+               public class Test {
+                   sealed interface I {}
+                   sealed interface S1 extends I {}
+                   sealed interface S2 extends I {}
+                   sealed interface S3 extends I {}
+                   final class C13 implements S1, S3 {}
+                   final class C23 implements S2, S3 {}
+
+                   void test(I i) {
+                       switch (i) {
+                           case C13 c ->
+                               System.out.println("C13");
+                           case C23 c ->
+                               System.out.println("C23");
+                       }
+                   }
+               }
+               """);
+    }
+
+    @Test
+    public void testDiamondInheritance6(Path base) throws Exception {
+        doTest(base,
+               new String[0],
+               """
+               package test;
+               public class Test {
+                   sealed interface I {}
+                   sealed interface S1 extends I {}
+                   sealed interface S2 extends I {}
+                   final class C1 implements S1 {}
+                   sealed abstract class C2 implements S2 {}
+                   final class C2Prime extends C2 {}
+                   final class C12 implements S1, S2 {}
+
+                   void test(I i) {
+                       switch (i) {
+                           case C1 c ->
+                               System.out.println("C1");
+                           case C2Prime c ->
+                               System.out.println("C2");
+                           case C12 c ->
+                               System.out.println("C12");
+                       }
+                   }
+               }
+               """);
+        doTest(base,
+               new String[0],
+               """
+               package test;
+               public class Test {
+                   sealed interface I {}
+                   sealed interface S1 extends I {}
+                   sealed interface S2 extends I {}
+                   final class C1 implements S1 {}
+                   sealed abstract class C2 implements S2 {}
+                   final class C2Prime extends C2 {}
+                   final class C12 implements S1, S2 {}
+
+                   void test(I i) {
+                       switch (i) {
+                           case C2Prime c ->
+                               System.out.println("C2");
+                           case C1 c ->
+                               System.out.println("C1");
+                           case C12 c ->
+                               System.out.println("C12");
+                       }
+                   }
+               }
+               """);
+        doTest(base,
+               new String[0],
+               """
+               package test;
+               public class Test {
+                   sealed interface I {}
+                   sealed interface S1 extends I {}
+                   sealed interface S2 extends I {}
+                   final class C1 implements S1 {}
+                   sealed abstract class C2 implements S2 {}
+                   final class C2Prime extends C2 {}
+                   final class C12 implements S1, S2 {}
+
+                   void test(I i) {
+                       switch (i) {
+                           case C12 c ->
+                               System.out.println("C12");
+                           case C1 c ->
+                               System.out.println("C1");
+                           case C2Prime c ->
+                               System.out.println("C2");
                        }
                    }
                }

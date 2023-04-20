@@ -63,6 +63,7 @@ import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.groupingBy;
 
@@ -771,6 +772,15 @@ public class Flow {
             public int hashCode() {
                 return type.tsym.hashCode();
             }
+            @Override
+            public boolean equals(Object o) {
+                return o instanceof BindingPattern other &&
+                       type.tsym == other.type.tsym;
+            }
+            @Override
+            public String toString() {
+                return type.tsym + " _";
+            }
         }
 
         record RecordPattern(Type recordType, int _hashCode, Type[] fullComponentTypes, PatternDescription... nested) implements PatternDescription {
@@ -779,8 +789,16 @@ public class Flow {
                 this(recordType, hashCode(-1, recordType, fullComponentTypes, nested), fullComponentTypes, nested);
             }
 
+            @Override
             public int hashCode() {
                 return _hashCode;
+            }
+
+            @Override
+            public boolean equals(Object o) {
+                return o instanceof RecordPattern other &&
+                       recordType.tsym == other.recordType.tsym &&
+                       Arrays.equals(nested, other.nested);
             }
 
             public int hashCode(int excludeComponent) {
@@ -796,6 +814,12 @@ public class Flow {
                     }
                 }
                 return hash;
+            }
+            @Override
+            public String toString() {
+                return recordType.tsym + "(" + Arrays.stream(nested)
+                                                     .map(pd -> pd.toString())
+                                                     .collect(Collectors.joining(", ")) + ")";
             }
         }
 
@@ -887,16 +911,23 @@ public class Flow {
          * for the sealed supertype.
          */
         private List<PatternDescription> reduceBindingPatterns(Type selectorType, List<PatternDescription> patterns) {
+            Set<Symbol> existingBindings = patterns.stream()
+                                                   .filter(pd -> pd instanceof BindingPattern)
+                                                   .map(pd -> ((BindingPattern) pd).type.tsym)
+                                                   .collect(Collectors.toSet());
+
             for (PatternDescription pdOne : patterns) {
                 if (pdOne instanceof BindingPattern bpOne) {
                     Set<PatternDescription> toRemove = new HashSet<>();
                     Set<PatternDescription> toAdd = new HashSet<>();
 
                     for (Type sup : types.directSupertypes(bpOne.type)) {
-                        ListBuffer<PatternDescription> bindings = new ListBuffer<>();
                         ClassSymbol clazz = (ClassSymbol) sup.tsym;
 
-                        if (clazz.isSealed() && clazz.isAbstract()) {
+                        if (clazz.isSealed() && clazz.isAbstract() &&
+                            //if a binding pattern for clazz already exists, no need to analyze it again:
+                            !existingBindings.contains(clazz)) {
+                            ListBuffer<PatternDescription> bindings = new ListBuffer<>();
                             //do not reduce to types unrelated to the selector type:
                             Type clazzErasure = types.erasure(clazz.type);
                             if (components(selectorType).stream()
@@ -920,6 +951,13 @@ public class Flow {
                                     PERMITTED: for (Iterator<Symbol> it = permitted.iterator(); it.hasNext();) {
                                         Symbol perm = it.next();
 
+                                        for (Symbol currentPermitted : currentPermittedSubTypes) {
+                                            if (types.isSubtype(types.erasure(currentPermitted.type),
+                                                                types.erasure(perm.type))) {
+                                                it.remove();
+                                                continue PERMITTED;
+                                            }
+                                        }
                                         if (types.isSubtype(types.erasure(perm.type),
                                                             types.erasure(bpOther.type))) {
                                             it.remove();
@@ -927,14 +965,6 @@ public class Flow {
                                             continue PERMITTED;
                                         }
 
-                                        for (Symbol currentPermitted : currentPermittedSubTypes) {
-                                            if (types.isSubtype(types.erasure(currentPermitted.type),
-                                                                types.erasure(perm.type))) {
-                                                it.remove();
-                                                reduces = true;
-                                                continue PERMITTED;
-                                            }
-                                        }
                                     }
 
                                     if (reduces) {
@@ -950,19 +980,11 @@ public class Flow {
                         }
                     }
 
-                    Set<PatternDescription> cleanedToRemove = new HashSet<>(toRemove);
-                    Set<PatternDescription> cleanedToAdd = new HashSet<>(toAdd);
-
-                    //make sure we don't unnecessarily modify the list of patterns with
-                    //addition and removal of the same binding pattern:
-                    cleanedToRemove.removeAll(toAdd);
-                    cleanedToAdd.removeAll(toRemove);
-
-                    if (!cleanedToAdd.isEmpty() || !cleanedToRemove.isEmpty()) {
-                        for (PatternDescription pd : cleanedToRemove) {
+                    if (!toAdd.isEmpty() || !toRemove.isEmpty()) {
+                        for (PatternDescription pd : toRemove) {
                             patterns = List.filter(patterns, pd);
                         }
-                        for (PatternDescription pd : cleanedToAdd) {
+                        for (PatternDescription pd : toAdd) {
                             patterns = patterns.prepend(pd);
                         }
                         return patterns;
@@ -1048,9 +1070,13 @@ public class Flow {
 
                             join.append(rpOne);
 
-                            NEXT_PATTERN: for (int nextCandidate = firstCandidate + 1;
+                            NEXT_PATTERN: for (int nextCandidate = 0;
                                                nextCandidate < candidatesArr.length;
                                                nextCandidate++) {
+                                if (firstCandidate == nextCandidate) {
+                                    continue;
+                                }
+
                                 RecordPattern rpOther = candidatesArr[nextCandidate];
                                 if (rpOne.recordType.tsym == rpOther.recordType.tsym) {
                                     for (int i = 0; i < rpOne.nested.length; i++) {
@@ -1066,6 +1092,7 @@ public class Flow {
                             var nestedPatterns = join.stream().map(rp -> rp.nested[mismatchingCandidateFin]).collect(List.collector());
                             var updatedPatterns = reduceNestedPatterns(nestedPatterns);
 
+                            updatedPatterns = reduceRecordPatterns(updatedPatterns);
                             updatedPatterns = reduceBindingPatterns(rpOne.fullComponentTypes()[mismatchingCandidateFin], updatedPatterns);
 
                             if (nestedPatterns != updatedPatterns) {
@@ -1133,7 +1160,7 @@ public class Flow {
                 newPatterns.append(pd);
             }
             return modified ? newPatterns.toList() : patterns;
-        }
+                }
 
         private PatternDescription reduceRecordPattern(PatternDescription pattern) {
             if (pattern instanceof RecordPattern rpOne) {
