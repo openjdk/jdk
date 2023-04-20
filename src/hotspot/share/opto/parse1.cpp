@@ -1880,12 +1880,9 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
             id = pred_as.is_alias(n);
 
             if (id != nullptr) {
-              // case #1: n is live in its block. we need to import it to AS because phi is not top().
-              // references encounter before are constants including nullptr or arguments.
-
-              // current block has not seen id before. it's likely m is null, n is not!
-              // we mark phi=(null, n) as 'Escaped'. or we have 'or we have Bad graph detected'.
-              //
+              // Current block has not seen id before. It's likely t is null, ConP or a global variable.
+              // however, n is tracked in predecessor block. We mark t'= phi(t, n) as 'Escaped', or we would
+              // have 'Bad graph detected'.
               as.update(id, new EscapedState(phi));
               as.add_alias(id, phi);
             }
