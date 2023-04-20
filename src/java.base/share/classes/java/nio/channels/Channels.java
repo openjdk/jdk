@@ -590,7 +590,7 @@ public final class Channels {
      * behaves in exactly the same way as the expression
      *
      * <pre> {@code
-     *     Channels.newWriter(ch, Charset.forName(csName).newEncoder(), -1)
+     *     Channels.newWriter(ch, charset.newEncoder(), -1)
      * } </pre>
      *
      * <p> The writer's default action for malformed-input and unmappable-character
