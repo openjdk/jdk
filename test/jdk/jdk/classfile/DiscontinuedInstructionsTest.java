@@ -57,12 +57,17 @@ class DiscontinuedInstructionsTest {
                               .with(DiscontinuedInstruction.JsrInstruction.of(Opcode.JSR_W, bb.breakLabel()))
                               .return_();
                         })
-                        .astore(55)
+                        .astore(355)
                         .aload(0)
                         .swap()
                         .invokevirtual(cd_list, "add", MethodTypeDesc.of(CD_boolean, CD_Object))
                         .pop()
-                        .with(DiscontinuedInstruction.RetInstruction.of(55))));
+                        .with(DiscontinuedInstruction.RetInstruction.of(355))));
+
+        var c = Classfile.parse(bytes).methods().get(0).code().get();
+        assertEquals(356, c.maxLocals());
+        assertEquals(8, c.maxStack());
+
 
         var list = new ArrayList<String>();
         new ByteArrayClassLoader(DiscontinuedInstructionsTest.class.getClassLoader(), testClass, bytes)

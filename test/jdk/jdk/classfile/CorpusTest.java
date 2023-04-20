@@ -58,6 +58,7 @@ import jdk.internal.classfile.Attributes;
 import jdk.internal.classfile.BufWriter;
 import jdk.internal.classfile.Classfile;
 import jdk.internal.classfile.ClassTransform;
+import jdk.internal.classfile.CodeTransform;
 import jdk.internal.classfile.constantpool.ConstantPool;
 import jdk.internal.classfile.constantpool.PoolEntry;
 import jdk.internal.classfile.constantpool.Utf8Entry;
@@ -203,12 +204,29 @@ class CorpusTest {
         byte[] newBytes = Classfile.build(
                 classModel.thisClass().asSymbol(),
                 classModel::forEachElement);
-        var newModel = Classfile.parse(newBytes);
+        var newModel = Classfile.parse(newBytes, Classfile.Option.generateStackmap(false));
         assertEqualsDeep(ClassRecord.ofClassModel(newModel, CompatibilityFilter.By_ClassBuilder),
                 ClassRecord.ofClassModel(classModel, CompatibilityFilter.By_ClassBuilder),
                 "ClassModel[%s] transformed by ClassBuilder (actual) vs ClassModel before transformation (expected)".formatted(path));
 
         assertEmpty(newModel.verify(null));
+
+        //testing maxStack and maxLocals are calculated identically by StackMapGenerator and StackCounter
+        byte[] noStackMaps = newModel.transform(ClassTransform.transformingMethodBodies(CodeTransform.ACCEPT_ALL));
+        var noStackModel = Classfile.parse(noStackMaps);
+        var itStack = newModel.methods().iterator();
+        var itNoStack = noStackModel.methods().iterator();
+        while (itStack.hasNext()) {
+            assertTrue(itNoStack.hasNext());
+            var m1 = itStack.next();
+            var m2 = itNoStack.next();
+            var text1 = m1.methodName().stringValue() + m1.methodType().stringValue() + ": "
+                      + m1.code().map(c -> c.maxLocals() + " / " + c.maxStack()).orElse("-");
+            var text2 = m2.methodName().stringValue() + m2.methodType().stringValue() + ": "
+                      + m2.code().map(c -> c.maxLocals() + " / " + c.maxStack()).orElse("-");
+            assertEquals(text1, text2);
+        }
+        assertFalse(itNoStack.hasNext());
     }
 
 //    @Test(enabled = false)

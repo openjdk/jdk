@@ -75,12 +75,12 @@ public final class DirectCodeBuilder
         extends AbstractDirectBuilder<CodeModel>
         implements TerminalCodeBuilder, LabelContext {
     private final List<CharacterRange> characterRanges = new ArrayList<>();
-    private final List<AbstractPseudoInstruction.ExceptionCatchImpl> handlers = new ArrayList<>();
+    final List<AbstractPseudoInstruction.ExceptionCatchImpl> handlers = new ArrayList<>();
     private final List<LocalVariable> localVariables = new ArrayList<>();
     private final List<LocalVariableType> localVariableTypes = new ArrayList<>();
     private final boolean transformFwdJumps, transformBackJumps;
     private final Label startLabel, endLabel;
-    private final MethodInfo methodInfo;
+    final MethodInfo methodInfo;
     final BufWriter bytecodesBufWriter;
     private CodeAttribute mruParent;
     private int[] mruParentTable;
@@ -316,7 +316,9 @@ public final class DirectCodeBuilder
                 boolean canReuseStackmaps = codeAndExceptionsMatch(codeLength);
 
                 if (!constantPool.options().generateStackmaps) {
-                    maxStack = maxLocals = 255;
+                    StackCounter cntr = StackCounter.of(DirectCodeBuilder.this, buf);
+                    maxStack = cntr.maxStack();
+                    maxLocals = cntr.maxLocals();
                     stackMapAttr = null;
                 }
                 else if (canReuseStackmaps) {
@@ -327,20 +329,15 @@ public final class DirectCodeBuilder
                 else if (buf.getMajorVersion() >= Classfile.JAVA_7_VERSION) {
                     //new instance of generator immediately calculates maxStack, maxLocals, all frames,
                     // patches dead bytecode blocks and removes them from exception table
-                    StackMapGenerator gen = new StackMapGenerator(DirectCodeBuilder.this,
-                                                  buf.thisClass().asSymbol(),
-                                                  methodInfo.methodName().stringValue(),
-                                                  MethodTypeDesc.ofDescriptor(methodInfo.methodType().stringValue()),
-                                                  (methodInfo.methodFlags() & Classfile.ACC_STATIC) != 0,
-                                                  bytecodesBufWriter.asByteBuffer().slice(0, codeLength),
-                                                  constantPool,
-                                                  handlers);
+                    StackMapGenerator gen = StackMapGenerator.of(DirectCodeBuilder.this, buf);
                     maxStack = gen.maxStack();
                     maxLocals = gen.maxLocals();
                     stackMapAttr = gen.stackMapTableAttribute();
                 }
                 else {
-                    maxStack = maxLocals = 255;
+                    StackCounter cntr = StackCounter.of(DirectCodeBuilder.this, buf);
+                    maxStack = cntr.maxStack();
+                    maxLocals = cntr.maxLocals();
                     stackMapAttr = null;
                 }
 
