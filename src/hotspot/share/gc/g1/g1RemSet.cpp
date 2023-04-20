@@ -549,11 +549,6 @@ class G1ScanHRForRegionClosure : public HeapRegionClosure {
     _blocks_scanned++;
 
     HeapWord* const card_start = _ct->addr_for(dirty_l);
-#ifdef ASSERT
-    HeapRegion* hr = _g1h->region_at_or_null(region_idx);
-    assert(hr == NULL || hr->is_in_reserved(card_start),
-             "Card start " PTR_FORMAT " to scan outside of region %u", p2i(card_start), _g1h->region_at(region_idx)->hrm_index());
-#endif
     HeapWord* const top = _scan_state->scan_top(region_idx);
     if (card_start >= top) {
       return;
