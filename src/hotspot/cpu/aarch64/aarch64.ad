@@ -4318,7 +4318,7 @@ operand immI_positive()
 // BoolTest condition for signed compare
 operand immI_cmp_cond()
 %{
-  predicate(n->get_int() < (int)(BoolTest::unsigned_compare));
+  predicate(!Matcher::is_unsigned_booltest_pred(n->get_int()));
   match(ConI);
 
   op_cost(0);
@@ -4329,7 +4329,7 @@ operand immI_cmp_cond()
 // BoolTest condition for unsigned compare
 operand immI_cmpU_cond()
 %{
-  predicate(n->get_int() > (int)(BoolTest::unsigned_compare));
+  predicate(Matcher::is_unsigned_booltest_pred(n->get_int()));
   match(ConI);
 
   op_cost(0);
@@ -4439,7 +4439,7 @@ operand immI19()
 // 5 bit signed integer
 operand immI5()
 %{
-  predicate(((-(1 << 4)) <= n->get_int()) && (n->get_int() < (1 << 4)));
+  predicate(Assembler::is_simm(n->get_int(), 5));
   match(ConI);
 
   op_cost(0);
@@ -4450,7 +4450,7 @@ operand immI5()
 // 7 bit unsigned integer
 operand immIU7()
 %{
-  predicate((0 <= n->get_int()) && (n->get_int() < (1 << 7)));
+  predicate(Assembler::is_uimm(n->get_int(), 7));
   match(ConI);
 
   op_cost(0);
@@ -4603,7 +4603,7 @@ operand immLoffset16()
 // 5 bit signed long integer
 operand immL5()
 %{
-  predicate(((-(1 << 4)) <= n->get_long()) && (n->get_long() < (1 << 4)));
+  predicate(Assembler::is_simm(n->get_long(), 5));
   match(ConL);
 
   op_cost(0);
@@ -4614,7 +4614,7 @@ operand immL5()
 // 7 bit unsigned long integer
 operand immLU7()
 %{
-  predicate((0 <= n->get_long()) && (n->get_long() < (1 << 7)));
+  predicate(Assembler::is_uimm(n->get_long(), 7));
   match(ConL);
 
   op_cost(0);
