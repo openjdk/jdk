@@ -198,25 +198,25 @@ public class IRNode {
 
     public static final String ALLOC = PREFIX + "ALLOC" + POSTFIX;
     static {
-        String optoRegex = "(.*precise .*\\R((.*(?i:mov|xorl|nop|spill).*|\\s*)\\R)*.*(?i:call,static).*wrapper for: _new_instance_Java" + END;
+        String optoRegex = "(.*precise .*\\R((.*(?i:add|addw|mulw|mov|xorl|nop|spill).*|\\s*)\\R)*.*(?i:call,static).*wrapper for: _new_instance_Java" + END;
         allocNodes(ALLOC, "Allocate", optoRegex);
     }
 
     public static final String ALLOC_OF = COMPOSITE_PREFIX + "ALLOC_OF" + POSTFIX;
     static {
-        String regex = "(.*precise .*" + IS_REPLACED + ":.*\\R((.*(?i:mov|xorl|nop|spill).*|\\s*)\\R)*.*(?i:call,static).*wrapper for: _new_instance_Java" + END;
+        String regex = "(.*precise .*" + IS_REPLACED + ":.*\\R((.*(?i:add|addw|mulw|mov|xorl|nop|spill).*|\\s*)\\R)*.*(?i:call,static).*wrapper for: _new_instance_Java" + END;
         optoOnly(ALLOC_OF, regex);
     }
 
     public static final String ALLOC_ARRAY = PREFIX + "ALLOC_ARRAY" + POSTFIX;
     static {
-        String optoRegex = "(.*precise \\[.*\\R((.*(?i:mov|xor|nop|spill).*|\\s*|.*(LGHI|LI).*)\\R)*.*(?i:call,static).*wrapper for: _new_array_Java" + END;
+        String optoRegex = "(.*precise \\[.*\\R((.*(?i:add|addw|mulw|mov|xor|nop|spill).*|\\s*|.*(LGHI|LI).*)\\R)*.*(?i:call,static).*wrapper for: _new_array_Java" + END;
         allocNodes(ALLOC_ARRAY, "AllocateArray", optoRegex);
     }
 
     public static final String ALLOC_ARRAY_OF = COMPOSITE_PREFIX + "ALLOC_ARRAY_OF" + POSTFIX;
     static {
-        String regex = "(.*precise \\[.*" + IS_REPLACED + ":.*\\R((.*(?i:mov|xorl|nop|spill).*|\\s*|.*(LGHI|LI).*)\\R)*.*(?i:call,static).*wrapper for: _new_array_Java" + END;
+        String regex = "(.*precise \\[.*" + IS_REPLACED + ":.*\\R((.*(?i:add|addw|mulw|mov|xorl|nop|spill).*|\\s*|.*(LGHI|LI).*)\\R)*.*(?i:call,static).*wrapper for: _new_array_Java" + END;
         optoOnly(ALLOC_ARRAY_OF, regex);
     }
 
