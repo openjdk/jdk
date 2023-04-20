@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -953,6 +953,12 @@ void Compile::Init(int aliaslevel) {
 
   _immutable_memory = NULL; // filled in at first inquiry
 
+#ifdef ASSERT
+  _type_verify_symmetry = true;
+  _phase_optimize_finished = false;
+  _exception_backedge = false;
+#endif
+
   // Globally visible Nodes
   // First set TOP to NULL to give safe behavior during creation of RootNode
   set_cached_top_node(NULL);
@@ -1055,12 +1061,6 @@ void Compile::Init(int aliaslevel) {
   Copy::zero_to_bytes(_alias_cache, sizeof(_alias_cache));
   // A NULL adr_type hits in the cache right away.  Preload the right answer.
   probe_alias_cache(NULL)->_index = AliasIdxTop;
-
-#ifdef ASSERT
-  _type_verify_symmetry = true;
-  _phase_optimize_finished = false;
-  _exception_backedge = false;
-#endif
 }
 
 //---------------------------init_start----------------------------------------
