@@ -1115,19 +1115,4 @@ public final class Utils {
         }
         return sb.toString();
     }
-
-    /**
-     * Wraps the {@code hostAddr} in square brackets and returns that result, if the passed
-     * address represents a IPv6 address, else return back the {@code hostAddr}
-     */
-    public static String wrapBracketsIfIPv6(final String hostAddr) {
-        assert hostAddr != null : "host address is null";
-        final boolean needBrackets = (hostAddr.contains(":")
-                && !hostAddr.startsWith("[")
-                && !hostAddr.endsWith("]"));
-        if (!needBrackets) {
-            return hostAddr;
-        }
-        return "[" + hostAddr + "]";
-    }
 }

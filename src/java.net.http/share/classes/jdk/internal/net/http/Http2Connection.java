@@ -608,18 +608,15 @@ class Http2Connection  {
         else if (!secure && port == -1)
             port = 80;
         var key = (secure ? "S:" : "C:");
-        host = Utils.wrapBracketsIfIPv6(host);
         if (proxy != null && !secure) {
-            String proxyHost = Utils.wrapBracketsIfIPv6(proxy.getHostString());
             // clear connection through proxy
-            key = key + "P:" + proxyHost + ":" + proxy.getPort();
+            key = key + "P:" + proxy.getHostString() + ":" + proxy.getPort();
         } else if (proxy == null) {
             // direct connection to host
             key = key + "H:" + host + ":" + port;
         } else {
-            String proxyHost = Utils.wrapBracketsIfIPv6(proxy.getHostString());
             // tunnel connection through proxy
-            key = key + "T:H:" + host + ":" + port + ";P:" + proxyHost + ":" + proxy.getPort();
+            key = key + "T:H:" + host + ":" + port + ";P:" + proxy.getHostString() + ":" + proxy.getPort();
         }
         return  key;
     }
