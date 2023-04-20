@@ -144,7 +144,7 @@ public class QuickTypeTest {
                 }
             });
         }
-    }// start()
+    }
 
  }// class QuickTypeTest
 
