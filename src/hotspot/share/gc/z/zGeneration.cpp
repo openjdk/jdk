@@ -762,12 +762,12 @@ uint ZGenerationYoung::compute_tenuring_threshold(ZRelocationSetSelectorStats st
 
   log_trace(gc, reloc)("Young Allocated: " SIZE_FORMAT "M", young_allocated / M);
   log_trace(gc, reloc)("Young Garbage: " SIZE_FORMAT "M", young_garbage / M);
-  log_info(gc, reloc)("Allocated To Garbage: %.1f", allocated_garbage_ratio);
+  log_debug(gc, reloc)("Allocated To Garbage: %.1f", allocated_garbage_ratio);
   log_trace(gc, reloc)("Young Log: %.1f", young_log);
   log_trace(gc, reloc)("Young Residency Reciprocal: %.1f", young_residency_reciprocal);
   log_trace(gc, reloc)("Young Residency Factor: %.1f", young_residency_factor);
-  log_info(gc, reloc)("Young Log Residency: %.1f", young_log_residency);
-  log_info(gc, reloc)("Life Decay Factor: %.1f", young_life_decay_factor);
+  log_debug(gc, reloc)("Young Log Residency: %.1f", young_log_residency);
+  log_debug(gc, reloc)("Life Decay Factor: %.1f", young_life_decay_factor);
 
   // Round to an integer as we can't have non-integral tenuring threshold.
   uint tenuring_threshold = clamp((uint)round(tenuring_threshold_raw), 1u, MIN2(last_populated_age + 1u, (uint)MaxTenuringThreshold));
