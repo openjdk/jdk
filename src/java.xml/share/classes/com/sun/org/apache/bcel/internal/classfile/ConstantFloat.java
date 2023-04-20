@@ -27,8 +27,7 @@ import java.io.IOException;
 import com.sun.org.apache.bcel.internal.Const;
 
 /**
- * This class is derived from the abstract {@link Constant}
- * and represents a reference to a float object.
+ * This class is derived from the abstract {@link Constant} and represents a reference to a float object.
  *
  * @see     Constant
  * @LastModified: Jun 2019
@@ -37,6 +36,25 @@ public final class ConstantFloat extends Constant implements ConstantObject {
 
     private float bytes;
 
+    /**
+     * Initialize from another object. Note that both objects use the same references (shallow copy). Use clone() for a
+     * physical copy.
+     *
+     * @param c Source to copy.
+     */
+    public ConstantFloat(final ConstantFloat c) {
+        this(c.getBytes());
+    }
+
+    /**
+     * Initialize instance from file data.
+     *
+     * @param file Input stream
+     * @throws IOException if an I/O error occurs.
+     */
+    ConstantFloat(final DataInput file) throws IOException {
+        this(file.readFloat());
+    }
 
     /**
      * @param bytes Data
@@ -46,52 +64,28 @@ public final class ConstantFloat extends Constant implements ConstantObject {
         this.bytes = bytes;
     }
 
-
     /**
-     * Initialize from another object. Note that both objects use the same
-     * references (shallow copy). Use clone() for a physical copy.
-     */
-    public ConstantFloat(final ConstantFloat c) {
-        this(c.getBytes());
-    }
-
-
-    /**
-     * Initialize instance from file data.
-     *
-     * @param file Input stream
-     * @throws IOException
-     */
-    ConstantFloat(final DataInput file) throws IOException {
-        this(file.readFloat());
-    }
-
-
-    /**
-     * Called by objects that are traversing the nodes of the tree implicitely
-     * defined by the contents of a Java class. I.e., the hierarchy of methods,
-     * fields, attributes, etc. spawns a tree of objects.
+     * Called by objects that are traversing the nodes of the tree implicitly defined by the contents of a Java class.
+     * I.e., the hierarchy of methods, fields, attributes, etc. spawns a tree of objects.
      *
      * @param v Visitor object
      */
     @Override
-    public void accept( final Visitor v ) {
+    public void accept(final Visitor v) {
         v.visitConstantFloat(this);
     }
-
 
     /**
      * Dump constant float to file stream in binary format.
      *
      * @param file Output file stream
-     * @throws IOException
+     * @throws IOException if an I/O error occurs.
      */
     @Override
-    public void dump( final DataOutputStream file ) throws IOException {
+    public void dump(final DataOutputStream file) throws IOException {
         file.writeByte(super.getTag());
         file.writeFloat(bytes);
     }
-
 
     /**
      * @return data, i.e., 4 bytes.
@@ -100,14 +94,20 @@ public final class ConstantFloat extends Constant implements ConstantObject {
         return bytes;
     }
 
+    /**
+     * @return Float object
+     */
+    @Override
+    public Object getConstantValue(final ConstantPool cp) {
+        return Float.valueOf(bytes);
+    }
 
     /**
      * @param bytes the raw bytes that represent this float
      */
-    public void setBytes( final float bytes ) {
+    public void setBytes(final float bytes) {
         this.bytes = bytes;
     }
-
 
     /**
      * @return String representation.
@@ -115,13 +115,5 @@ public final class ConstantFloat extends Constant implements ConstantObject {
     @Override
     public String toString() {
         return super.toString() + "(bytes = " + bytes + ")";
-    }
-
-
-    /** @return Float object
-     */
-    @Override
-    public Object getConstantValue( final ConstantPool cp ) {
-        return bytes;
     }
 }

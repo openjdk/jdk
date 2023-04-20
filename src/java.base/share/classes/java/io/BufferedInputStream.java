@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,9 @@ import jdk.internal.util.ArraysSupport;
  */
 public class BufferedInputStream extends FilterInputStream {
 
-    private static int DEFAULT_BUFFER_SIZE = 8192;
+    private static final int DEFAULT_BUFFER_SIZE = 8192;
+
+    private static final byte[] EMPTY = new byte[0];
 
     /**
      * As this class is used early during bootstrap, it's motivated to use
@@ -69,6 +71,9 @@ public class BufferedInputStream extends FilterInputStream {
 
     // initialized to null when BufferedInputStream is sub-classed
     private final InternalLock lock;
+
+    // initial buffer size (DEFAULT_BUFFER_SIZE or size specified to constructor)
+    private final int initialSize;
 
     /**
      * The internal buffer array where the data is stored. When necessary,
@@ -96,7 +101,7 @@ public class BufferedInputStream extends FilterInputStream {
 
     /**
      * The current position in the buffer. This is the index of the next
-     * character to be read from the {@code buf} array.
+     * byte to be read from the {@code buf} array.
      * <p>
      * This value is always in the range {@code 0}
      * through {@code count}. If it is less
@@ -166,14 +171,40 @@ public class BufferedInputStream extends FilterInputStream {
     }
 
     /**
-     * Check to make sure that buffer has not been nulled out due to
-     * close; if not return it;
+     * Returns the internal buffer, optionally allocating it if empty.
+     * @param allocateIfEmpty true to allocate if empty
+     * @throws IOException if the stream is closed (buf is null)
+     */
+    private byte[] getBufIfOpen(boolean allocateIfEmpty) throws IOException {
+        byte[] buffer = buf;
+        if (allocateIfEmpty && buffer == EMPTY) {
+            buffer = new byte[initialSize];
+            if (!U.compareAndSetReference(this, BUF_OFFSET, EMPTY, buffer)) {
+                // re-read buf
+                buffer = buf;
+            }
+        }
+        if (buffer == null) {
+            throw new IOException("Stream closed");
+        }
+        return buffer;
+    }
+
+    /**
+     * Returns the internal buffer, allocating it if empty.
+     * @throws IOException if the stream is closed (buf is null)
      */
     private byte[] getBufIfOpen() throws IOException {
-        byte[] buffer = buf;
-        if (buffer == null)
+        return getBufIfOpen(true);
+    }
+
+    /**
+     * Throws IOException if the stream is closed (buf is null).
+     */
+    private void ensureOpen() throws IOException {
+        if (buf == null) {
             throw new IOException("Stream closed");
-        return buffer;
+        }
     }
 
     /**
@@ -205,13 +236,15 @@ public class BufferedInputStream extends FilterInputStream {
         if (size <= 0) {
             throw new IllegalArgumentException("Buffer size <= 0");
         }
-        buf = new byte[size];
-
-        // use monitors when BufferedInputStream is sub-classed
+        initialSize = size;
         if (getClass() == BufferedInputStream.class) {
+            // use internal lock and lazily create buffer when not subclassed
             lock = InternalLock.newLockOrNull();
+            buf = EMPTY;
         } else {
+            // use monitors and eagerly create buffer when subclassed
             lock = null;
+            buf = new byte[size];
         }
     }
 
@@ -297,7 +330,7 @@ public class BufferedInputStream extends FilterInputStream {
     }
 
     /**
-     * Read characters into a portion of an array, reading from the underlying
+     * Read bytes into a portion of an array, reading from the underlying
      * stream at most once if necessary.
      */
     private int read1(byte[] b, int off, int len) throws IOException {
@@ -307,7 +340,8 @@ public class BufferedInputStream extends FilterInputStream {
                if there is no mark/reset activity, do not bother to copy the
                bytes into the local buffer.  In this way buffered streams will
                cascade harmlessly. */
-            if (len >= getBufIfOpen().length && markpos == -1) {
+            int size = Math.max(getBufIfOpen(false).length, initialSize);
+            if (len >= size && markpos == -1) {
                 return getInIfOpen().read(b, off, len);
             }
             fill();
@@ -342,7 +376,7 @@ public class BufferedInputStream extends FilterInputStream {
      *
      * </ul> If the first {@code read} on the underlying stream returns
      * {@code -1} to indicate end-of-file then this method returns
-     * {@code -1}.  Otherwise this method returns the number of bytes
+     * {@code -1}.  Otherwise, this method returns the number of bytes
      * actually read.
      *
      * <p> Subclasses of this class are encouraged, but not required, to
@@ -374,7 +408,7 @@ public class BufferedInputStream extends FilterInputStream {
     }
 
     private int implRead(byte[] b, int off, int len) throws IOException {
-        getBufIfOpen(); // Check for closed stream
+        ensureOpen();
         if ((off | len | (off + len) | (b.length - (off + len))) < 0) {
             throw new IndexOutOfBoundsException();
         } else if (len == 0) {
@@ -421,7 +455,7 @@ public class BufferedInputStream extends FilterInputStream {
     }
 
     private long implSkip(long n) throws IOException {
-        getBufIfOpen(); // Check for closed stream
+        ensureOpen();
         if (n <= 0) {
             return 0;
         }
@@ -544,7 +578,7 @@ public class BufferedInputStream extends FilterInputStream {
     }
 
     private void implReset() throws IOException {
-        getBufIfOpen(); // Cause exception if closed
+        ensureOpen();
         if (markpos < 0)
             throw new IOException("Resetting to invalid mark");
         pos = markpos;
@@ -614,7 +648,11 @@ public class BufferedInputStream extends FilterInputStream {
                 out.write(buffer);
                 pos = count;
             }
-            return avail + getInIfOpen().transferTo(out);
+            try {
+                return Math.addExact(avail, getInIfOpen().transferTo(out));
+            } catch (ArithmeticException ignore) {
+                return Long.MAX_VALUE;
+            }
         } else {
             return super.transferTo(out);
         }

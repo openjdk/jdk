@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -149,6 +149,18 @@ public class WhiteBox {
   private native int encodeConstantPoolIndyIndex0(int index);
   public         int encodeConstantPoolIndyIndex(int index) {
     return encodeConstantPoolIndyIndex0(index);
+  }
+
+  private native int getIndyInfoLength0(Class<?> aClass);
+  public         int getIndyInfoLength(Class<?> aClass) {
+    Objects.requireNonNull(aClass);
+    return getIndyInfoLength0(aClass);
+  }
+
+  private native int getIndyCPIndex0(Class<?> aClass, int index);
+  public         int getIndyCPIndex(Class<?> aClass, int index) {
+    Objects.requireNonNull(aClass);
+    return getIndyCPIndex0(aClass, index);
   }
 
   // JVMTI
@@ -708,6 +720,8 @@ public class WhiteBox {
                                    String procSelfCgroup,
                                    String procSelfMountinfo);
   public native void printOsInfo();
+  public native long hostPhysicalMemory();
+  public native long hostPhysicalSwap();
 
   // Decoder
   public native void disableElfSectionCache();
@@ -736,4 +750,6 @@ public class WhiteBox {
   public native void lockCritical();
 
   public native void unlockCritical();
+
+  public native boolean setVirtualThreadsNotifyJvmtiMode(boolean enabled);
 }

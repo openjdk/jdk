@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -115,8 +115,8 @@ void VM_Version::get_os_cpu_info() {
 
   if (FILE *f = fopen("/proc/cpuinfo", "r")) {
     char buf[512], *p;
-    while (fgets(buf, sizeof (buf), f) != NULL) {
-      if ((p = strchr(buf, ':')) != NULL) {
+    while (fgets(buf, sizeof (buf), f) != nullptr) {
+      if ((p = strchr(buf, ':')) != nullptr) {
         if (strncmp(buf, "mmu", sizeof "mmu" - 1) == 0) {
           if (_vm_mode[0] != '\0') {
             continue;

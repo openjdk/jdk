@@ -173,7 +173,7 @@ public class ArchiveHeapTestClass {
     static void testProductBuild() throws Exception {
         OutputAnalyzer output;
 
-        output = dumpHelloOnly("-XX:ArchiveHeapTestClass=NoSuchClass");
+        output = dumpHelloOnly("-XX:-IgnoreUnrecognizedVMOptions", "-XX:ArchiveHeapTestClass=NoSuchClass");
         mustFail(output, "VM option 'ArchiveHeapTestClass' is develop and is available only in debug version of VM.");
     }
 }

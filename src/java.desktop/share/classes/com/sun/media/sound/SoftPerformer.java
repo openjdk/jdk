@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * This class decodes information from ModelPeformer for use in SoftVoice.
+ * This class decodes information from ModelPerformer for use in SoftVoice.
  * It also adds default connections if they where missing in ModelPerformer.
  *
  * @author Karl Helgason
@@ -694,13 +694,7 @@ public final class SoftPerformer {
         List<ModelConnectionBlock> connections = new ArrayList<>();
 
         midi_ctrl_connections = new int[128][];
-        for (int i = 0; i < midi_ctrl_connections.length; i++) {
-            midi_ctrl_connections[i] = null;
-        }
         midi_connections = new int[5][];
-        for (int i = 0; i < midi_connections.length; i++) {
-            midi_connections[i] = null;
-        }
 
         int ix = 0;
         boolean mustBeOnTop = false;

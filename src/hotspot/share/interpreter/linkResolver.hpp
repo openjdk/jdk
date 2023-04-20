@@ -347,7 +347,7 @@ class LinkResolver: AllStatic {
 
   // Only resolved method known.
   static void throw_abstract_method_error(const methodHandle& resolved_method, TRAPS) {
-    throw_abstract_method_error(resolved_method, methodHandle(), NULL, CHECK);
+    throw_abstract_method_error(resolved_method, methodHandle(), nullptr, CHECK);
   }
   // Resolved method and receiver klass know.
   static void throw_abstract_method_error(const methodHandle& resolved_method, Klass *recv_klass, TRAPS) {

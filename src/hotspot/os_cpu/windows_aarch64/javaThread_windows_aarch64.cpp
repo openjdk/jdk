@@ -29,7 +29,7 @@
 
 frame JavaThread::pd_last_frame() {
   assert(has_last_Java_frame(), "must have last_Java_sp() when suspended");
-  vmassert(_anchor.last_Java_pc() != NULL, "not walkable");
+  vmassert(_anchor.last_Java_pc() != nullptr, "not walkable");
   frame f = frame(_anchor.last_Java_sp(), _anchor.last_Java_fp(), _anchor.last_Java_pc());
   f.set_sp_is_trusted();
   return f;
@@ -61,15 +61,15 @@ bool JavaThread::pd_get_top_frame(frame* fr_addr, void* ucontext, bool isInJava)
   // if we were running Java code when SIGPROF came in.
   if (isInJava) {
     frame ret_frame = os::fetch_frame_from_context(ucontext);
-    if (ret_frame.pc() == NULL || ret_frame.sp() == NULL ) {
+    if (ret_frame.pc() == nullptr || ret_frame.sp() == nullptr ) {
       // CONTEXT wasn't useful
       return false;
     }
 
     if (!ret_frame.safe_for_sender(this)) {
 #if COMPILER2_OR_JVMCI
-      // C2 and JVMCI use ebp as a general register see if NULL fp helps
-      frame ret_frame2(ret_frame.sp(), NULL, ret_frame.pc());
+      // C2 and JVMCI use ebp as a general register see if null fp helps
+      frame ret_frame2(ret_frame.sp(), nullptr, ret_frame.pc());
       if (!ret_frame2.safe_for_sender(this)) {
         // nothing else to try if the frame isn't good
         return false;

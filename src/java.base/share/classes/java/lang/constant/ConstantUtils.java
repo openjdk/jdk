@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ class ConstantUtils {
     static final Constable[] EMPTY_CONSTABLE = new Constable[0];
     static final int MAX_ARRAY_TYPE_DESC_DIMENSIONS = 255;
 
-    private static final Set<String> pointyNames = Set.of("<init>", "<clinit>");
+    private static final Set<String> pointyNames = Set.of(ConstantDescs.INIT_NAME, ConstantDescs.CLASS_INIT_NAME);
 
     /**
      * Validates the correctness of a binary class name. In particular checks for the presence of
@@ -193,7 +193,7 @@ class ConstantUtils {
         int index = start;
         while (index < end) {
             switch (descriptor.charAt(index)) {
-                case JVM_SIGNATURE_VOID: if (!voidOK) { return index; }
+                case JVM_SIGNATURE_VOID: if (!voidOK) { return 0; }
                 case JVM_SIGNATURE_BOOLEAN:
                 case JVM_SIGNATURE_BYTE:
                 case JVM_SIGNATURE_CHAR:

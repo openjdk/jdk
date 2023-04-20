@@ -42,7 +42,7 @@ static const size_t END_SIZE = 24;
 static const size_t DEFAULT_TABLE_SIZE_LOG = 8;
 // Prefer short chains of avg 2
 static const double PREF_AVG_LIST_LEN = 2.0;
-static ThreadIdTableHash* volatile _local_table = NULL;
+static ThreadIdTableHash* volatile _local_table = nullptr;
 static volatile size_t _current_size = 0;
 static volatile size_t _items_count = 0;
 
@@ -97,7 +97,7 @@ void ThreadIdTable::lazy_initialize(const ThreadsList *threads) {
     for (uint i = 0; i < threads->length(); i++) {
       JavaThread* thread = threads->thread_at(i);
       oop tobj = thread->threadObj();
-      if (tobj != NULL) {
+      if (tobj != nullptr) {
         jlong java_tid = java_lang_Thread::thread_id(tobj);
         MutexLocker ml(Threads_lock);
         if (!thread->is_exiting()) {
@@ -111,7 +111,7 @@ void ThreadIdTable::lazy_initialize(const ThreadsList *threads) {
 }
 
 void ThreadIdTable::create_table(size_t size) {
-  assert(_local_table == NULL, "Thread table is already created");
+  assert(_local_table == nullptr, "Thread table is already created");
   size_t size_log = ceil_log2(size);
   size_t start_size_log =
       size_log > DEFAULT_TABLE_SIZE_LOG ? size_log : DEFAULT_TABLE_SIZE_LOG;
@@ -200,7 +200,7 @@ class ThreadGet : public StackObj {
 private:
   JavaThread* _return;
 public:
-  ThreadGet(): _return(NULL) {}
+  ThreadGet(): _return(nullptr) {}
   void operator()(ThreadIdTableEntry** val) {
     _return = (*val)->thread();
   }

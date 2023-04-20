@@ -38,6 +38,9 @@ static bool java_thread_inclusion_predicate(JavaThread* jt, bool live_only) {
   if (live_only && jt->thread_state() == _thread_new) {
     return false;
   }
+  if (jt->is_attaching_via_jni()) {
+    return false;
+  }
   return thread_inclusion_predicate(jt);
 }
 

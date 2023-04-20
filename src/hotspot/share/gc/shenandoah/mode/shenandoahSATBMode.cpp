@@ -35,7 +35,6 @@
 
 void ShenandoahSATBMode::initialize_flags() const {
   if (ClassUnloading) {
-    FLAG_SET_DEFAULT(ShenandoahSuspendibleWorkers, true);
     FLAG_SET_DEFAULT(VerifyBeforeExit, false);
   }
 
@@ -53,7 +52,7 @@ void ShenandoahSATBMode::initialize_flags() const {
 }
 
 ShenandoahHeuristics* ShenandoahSATBMode::initialize_heuristics() const {
-  if (ShenandoahGCHeuristics == NULL) {
+  if (ShenandoahGCHeuristics == nullptr) {
     vm_exit_during_initialization("Unknown -XX:ShenandoahGCHeuristics option (null)");
   }
   if (strcmp(ShenandoahGCHeuristics, "aggressive") == 0) {
@@ -66,5 +65,5 @@ ShenandoahHeuristics* ShenandoahSATBMode::initialize_heuristics() const {
     return new ShenandoahCompactHeuristics();
   }
   vm_exit_during_initialization("Unknown -XX:ShenandoahGCHeuristics option");
-  return NULL;
+  return nullptr;
 }

@@ -58,8 +58,8 @@ static inline intptr_t derived_pointer_value(derived_pointer p) {
   return static_cast<intptr_t>(p);
 }
 
-static inline derived_pointer to_derived_pointer(oop obj) {
-  return static_cast<derived_pointer>(cast_from_oop<intptr_t>(obj));
+static inline derived_pointer to_derived_pointer(intptr_t obj) {
+  return static_cast<derived_pointer>(obj);
 }
 
 static inline intptr_t operator-(derived_pointer p, derived_pointer p1) {
@@ -392,7 +392,7 @@ class AddDerivedOop : public DerivedOopClosure {
     SkipNull = true, NeedsLock = true
   };
 
-  virtual void do_derived_oop(oop* base, derived_pointer* derived) {
+  virtual void do_derived_oop(derived_base* base, derived_pointer* derived) {
 #if COMPILER2_OR_JVMCI
     DerivedPointerTable::add(derived, base);
 #endif // COMPILER2_OR_JVMCI
@@ -410,11 +410,11 @@ public:
     SkipNull = true, NeedsLock = true
   };
 
-  virtual void do_derived_oop(oop* base, derived_pointer* derived) {
+  virtual void do_derived_oop(derived_base* base, derived_pointer* derived) {
     // All derived pointers must be processed before the base pointer of any derived pointer is processed.
     // Otherwise, if two derived pointers use the same base, the second derived pointer will get an obscured
     // offset, if the base pointer is processed in the first derived pointer.
-    derived_pointer derived_base = to_derived_pointer(*base);
+  derived_pointer derived_base = to_derived_pointer(*reinterpret_cast<intptr_t*>(base));
     intptr_t offset = *derived - derived_base;
     *derived = derived_base;
     _oop_cl->do_oop((oop*)derived);
@@ -430,7 +430,7 @@ public:
     SkipNull = true, NeedsLock = true
   };
 
-  virtual void do_derived_oop(oop* base, derived_pointer* derived) {}
+  virtual void do_derived_oop(derived_base* base, derived_pointer* derived) {}
 };
 
 void OopMapSet::oops_do(const frame* fr, const RegisterMap* reg_map, OopClosure* f, DerivedPointerIterationMode mode) {
@@ -915,15 +915,15 @@ void DerivedPointerTable::clear() {
   _active = true;
 }
 
-void DerivedPointerTable::add(derived_pointer* derived_loc, oop *base_loc) {
-  assert(Universe::heap()->is_in_or_null(*base_loc), "not an oop");
+void DerivedPointerTable::add(derived_pointer* derived_loc, derived_base* base_loc) {
+  assert(Universe::heap()->is_in_or_null((void*)*base_loc), "not an oop");
   assert(derived_loc != (void*)base_loc, "Base and derived in same location");
   derived_pointer base_loc_as_derived_pointer =
     static_cast<derived_pointer>(reinterpret_cast<intptr_t>(base_loc));
   assert(*derived_loc != base_loc_as_derived_pointer, "location already added");
   assert(Entry::_list != nullptr, "list must exist");
   assert(is_active(), "table must be active here");
-  intptr_t offset = *derived_loc - to_derived_pointer(*base_loc);
+  intptr_t offset = *derived_loc - to_derived_pointer(*reinterpret_cast<intptr_t*>(base_loc));
   // This assert is invalid because derived pointers can be
   // arbitrarily far away from their base.
   // assert(offset >= -1000000, "wrong derived pointer info");
@@ -933,7 +933,7 @@ void DerivedPointerTable::add(derived_pointer* derived_loc, oop *base_loc) {
       "Add derived pointer@" INTPTR_FORMAT
       " - Derived: " INTPTR_FORMAT
       " Base: " INTPTR_FORMAT " (@" INTPTR_FORMAT ") (Offset: " INTX_FORMAT ")",
-      p2i(derived_loc), derived_pointer_value(*derived_loc), p2i(*base_loc), p2i(base_loc), offset
+      p2i(derived_loc), derived_pointer_value(*derived_loc), intptr_t(*base_loc), p2i(base_loc), offset
     );
   }
   // Set derived oop location to point to base.
@@ -954,7 +954,7 @@ void DerivedPointerTable::update_pointers() {
     oop base = **reinterpret_cast<oop**>(derived_loc);
     assert(Universe::heap()->is_in_or_null(base), "must be an oop");
 
-    derived_pointer derived_base = to_derived_pointer(base);
+    derived_pointer derived_base = to_derived_pointer(cast_from_oop<intptr_t>(base));
     *derived_loc = derived_base + offset;
     assert(*derived_loc - derived_base == offset, "sanity check");
 
