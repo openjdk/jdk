@@ -117,8 +117,9 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
 
     private void checkLayoutsRecursive(MemoryLayout layout) {
         checkHasNaturalAlignment(layout);
-        checkByteOrder(layout);
-        if (layout instanceof StructLayout sl) {
+        if (layout instanceof ValueLayout vl) {
+            checkByteOrder(vl);
+        } else if (layout instanceof StructLayout sl) {
             long offset = 0;
             long lastUnpaddedOffset = 0;
             for (MemoryLayout member : sl.memberLayouts()) {
@@ -173,10 +174,9 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
         }
     }
 
-    private void checkByteOrder(MemoryLayout layout) {
-        if (layout instanceof ValueLayout vl
-                && vl.order() != linkerByteOrder()) {
-            throw new IllegalArgumentException("Layout does not have the right byte order: " + layout);
+    private void checkByteOrder(ValueLayout vl) {
+        if (vl.order() != linkerByteOrder()) {
+            throw new IllegalArgumentException("Layout does not have the right byte order: " + vl);
         }
     }
 }

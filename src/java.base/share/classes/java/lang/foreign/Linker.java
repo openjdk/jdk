@@ -197,16 +197,15 @@ import java.util.stream.Stream;
  * </tbody>
  * </table></blockquote>
  * <p>
- * Due to limited ABI specification coverage, all the native linker implementations limit the function
- * descriptors that they support to those that contain only so-called <em>canonical</em> layouts. These layouts
- * have the following restrictions:
+ * All the native linker implementations limit the function descriptors that they support to those that contain
+ * only so-called <em>canonical</em> layouts. A canonical layout has the following restrictions:
  * <ol>
- * <li>The layout must have its alignment constraint set to its <a href="MemoryLayout.html#layout-align">natural alignment</a></li>
- * <li>If the layout is a {@link ValueLayout}, it must have a {@linkplain ValueLayout#order() byte order} that matches
- * the {@linkplain ByteOrder#nativeOrder() native byte order}</li>
- * <li>If the layout is a {@link GroupLayout}, its size must be a multiple of its alignment constraint</li>
- * <li>If the layout is a {@link GroupLayout}, it must not contain excess padding. Padding is considered excess if it is
- * not strictly required to align a non-padding layout, or to satisfy constraint 3</li>
+ * <li>Its alignment constraint is set to its <a href="MemoryLayout.html#layout-align">natural alignment</a></li>
+ * <li>If the layout is a {@linkplain ValueLayout value layout}, its {@linkplain ValueLayout#order() byte order} must
+ * be the {@linkplain ByteOrder#nativeOrder() native byte order}.
+ * <li>If the layout is a {@linkplain GroupLayout group layout}, its size must be a multiple of its alignment constraint, and</li>
+ * <li>It must not contain padding other than what is strictly required to align the non-padding layout elements,
+ * or to satisfy constraint 3</li>
  * </ol>
  *
  * <h3 id="function-pointers">Function pointers</h3>
