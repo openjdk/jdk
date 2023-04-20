@@ -118,7 +118,8 @@ void MetaspaceHumongousArea::verify(size_t expected_word_size, bool expect_commi
 
 void MetaspaceHumongousArea::print_on(outputStream* st) const {
   if (_last != nullptr) {
-    st->print_cr("humongous area [" PTR_FORMAT "-" PTR_FORMAT "): ", p2i(_first->base()), p2i(_last->end()));
+    st->print_cr("humongous area [" PTR_FORMAT "-" PTR_FORMAT ", " SIZE_FORMAT "): ",
+                 p2i(_first->base()), p2i(_last->end()), (size_t)(_last->end() - _first->base()));
     for (const Metachunk* c = _first; c != nullptr; c = c->next()) {
       st->print_cr(METACHUNK_FULL_FORMAT, METACHUNK_FULL_FORMAT_ARGS(c));
     }

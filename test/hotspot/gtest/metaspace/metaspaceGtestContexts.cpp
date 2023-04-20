@@ -31,6 +31,17 @@
 
 using metaspace::Settings;
 
+void MetaspaceGtestContext::assert_reserved_committed(size_t expected_reserved, size_t expected_committed) const {
+  ASSERT_EQ(reserved_words(), expected_reserved);
+  ASSERT_EQ(committed_words(), expected_committed);
+}
+
+void MetaspaceGtestContext::assert_reserved_committed_range(SizeRange expected_reserved, SizeRange expected_committed) const {
+  const size_t res = reserved_words();
+  ASSERT_TRUE(expected_reserved.contains(res));
+  ASSERT_TRUE(expected_committed.contains(committed_words()));
+}
+
 void ChunkGtestContext::checked_alloc_chunk_0(Metachunk** p_return_value, chunklevel_t preferred_level, chunklevel_t max_level,
                                                       size_t min_committed_size) {
 

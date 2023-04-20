@@ -29,8 +29,13 @@
 #include "runtime/os.hpp"
 
 void zap_range(MetaWord* p, size_t word_size) {
+  const MetaWord canary = (MetaWord)NOT_LP64(0xFEFEFEFE) LP64_ONLY(0xFEFEFEFEEFEFEFEFULL);
   for (MetaWord* pzap = p; pzap < p + word_size; pzap += os::vm_page_size() / BytesPerWord) {
-    *pzap = (MetaWord)NOT_LP64(0xFEFEFEFE) LP64_ONLY(0xFEFEFEFEEFEFEFEFULL);
+    *pzap = canary;
+  }
+  // Also write directly to the buffer end
+  if (word_size > 0) {
+    p[word_size - 1] = canary;
   }
 }
 

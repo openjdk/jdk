@@ -321,6 +321,7 @@ bool ChunkManager::allocate_humongous_committed_area(size_t word_size, Metaspace
   out->prepare_for_arena(word_size);
 
   // Logging
+  stringStream ss;
   LogTarget(Debug, metaspace) lt;
   if (lt.is_enabled()) {
     LogStream ls(lt);

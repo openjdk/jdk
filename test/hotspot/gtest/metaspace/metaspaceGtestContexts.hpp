@@ -31,6 +31,7 @@
 #include "memory/metaspace/metachunk.hpp"
 #include "memory/metaspace/testHelpers.hpp"
 #include "metaspaceGtestCommon.hpp"
+#include "metaspaceGtestRangeHelpers.hpp"
 
 using metaspace::Metachunk;
 using metaspace::chunklevel_t;
@@ -41,6 +42,9 @@ public:
   MetaspaceGtestContext(size_t commit_limit = 0, size_t reserve_limit = 0) :
     metaspace::MetaspaceTestContext("gtest-metaspace-context", commit_limit, reserve_limit)
   {}
+
+  void assert_reserved_committed(size_t expected_reserved, size_t expected_committed) const;
+  void assert_reserved_committed_range(SizeRange expected_reserved, SizeRange expected_committed) const;
 };
 
 class ChunkGtestContext : public MetaspaceGtestContext {
