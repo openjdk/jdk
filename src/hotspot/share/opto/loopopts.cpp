@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,19 +61,8 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
     return NULL;
   }
 
-  // Bail out if 'n' is a Div or Mod node whose zero check was removed earlier (i.e. control is NULL) and its divisor is an induction variable
-  // phi p of a trip-counted (integer) loop whose inputs could be zero (include zero in their type range). p could have a more precise type
-  // range that does not necessarily include all values of its inputs. Since each of these inputs will be a divisor of the newly cloned nodes
-  // of 'n', we need to bail out of one of these divisors could be zero (zero in its type range).
-  if ((n->Opcode() == Op_DivI || n->Opcode() == Op_ModI) && n->in(0) == NULL
-      && region->is_CountedLoop() && n->in(2) == region->as_CountedLoop()->phi()) {
-    Node* phi = region->as_CountedLoop()->phi();
-    for (uint i = 1; i < phi->req(); i++) {
-      if (_igvn.type(phi->in(i))->filter_speculative(TypeInt::ZERO) != Type::TOP) {
-        // Zero could be a possible value but we already removed the zero check. Bail out to avoid a possible division by zero at a later point.
-        return NULL;
-      }
-    }
+  if (cannot_split_division(n, region)) {
+    return NULL;
   }
 
   int wins = 0;
@@ -223,6 +212,42 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
   }
 
   return phi;
+}
+
+// Return true if 'n' is a Div or Mod node (without zero check If node which was removed earlier) with a loop phi divisor
+// of a trip-counted (integer or long) loop with a backedge input that could be zero (include zero in its type range). In
+// this case, we cannot split the division to the backedge as it could freely float above the loop exit check resulting in
+// a division by zero. This situation is possible because the type of an increment node of an iv phi (trip-counter) could
+// include zero while the iv phi does not (see PhiNode::Value() for trip-counted loops where we improve types of iv phis).
+// We also need to check other loop phis as they could have been created in the same split-if pass when applying
+// PhaseIdealLoop::split_thru_phi() to split nodes through an iv phi.
+bool PhaseIdealLoop::cannot_split_division(const Node* n, const Node* region) const {
+  const Type* zero;
+  switch (n->Opcode()) {
+    case Op_DivI:
+    case Op_ModI:
+      zero = TypeInt::ZERO;
+      break;
+    case Op_DivL:
+    case Op_ModL:
+      zero = TypeLong::ZERO;
+      break;
+    default:
+      return false;
+  }
+
+  assert(n->in(0) == NULL, "divisions with zero check should already have bailed out earlier in split-if");
+  Node* divisor = n->in(2);
+  return is_divisor_counted_loop_phi(divisor, region) &&
+         loop_phi_backedge_type_contains_zero(divisor, zero);
+}
+
+bool PhaseIdealLoop::is_divisor_counted_loop_phi(const Node* divisor, const Node* loop) {
+  return loop->is_BaseCountedLoop() && divisor->is_Phi() && divisor->in(0) == loop;
+}
+
+bool PhaseIdealLoop::loop_phi_backedge_type_contains_zero(const Node* phi_divisor, const Type* zero) const {
+    return _igvn.type(phi_divisor->in(LoopNode::LoopBackControl))->filter_speculative(zero) != Type::TOP;
 }
 
 //------------------------------dominated_by------------------------------------
