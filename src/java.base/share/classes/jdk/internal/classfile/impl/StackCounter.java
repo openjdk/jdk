@@ -319,10 +319,12 @@ public final class StackCounter {
                     case JSR -> {
                         stack(+1);
                         jump(bcs.dest());
+                        stack(-1);
                     }
                     case JSR_W -> {
                         stack(+1);
                         jump(bcs.destW());
+                        stack(-1);
                     }
                     case RET -> {
                         local(bcs.getIndex());

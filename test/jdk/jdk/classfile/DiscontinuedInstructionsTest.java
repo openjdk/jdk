@@ -66,7 +66,7 @@ class DiscontinuedInstructionsTest {
 
         var c = Classfile.parse(bytes).methods().get(0).code().get();
         assertEquals(356, c.maxLocals());
-        assertEquals(8, c.maxStack());
+        assertEquals(6, c.maxStack());
 
 
         var list = new ArrayList<String>();
