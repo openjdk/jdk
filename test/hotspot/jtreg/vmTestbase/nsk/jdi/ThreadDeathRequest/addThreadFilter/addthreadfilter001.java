@@ -279,21 +279,18 @@ public class addthreadfilter001 extends JDIBase {
         log2("......setting up ThreadDeathRequest");
         ThreadDeathRequest tdr1 = eventRManager.createThreadDeathRequest();
 //        tdr1.addThreadFilter(mainThread);
-        tdr1.addCountFilter(1);
         tdr1.setSuspendPolicy(EventRequest.SUSPEND_ALL);
         tdr1.putProperty("number", "ThreadDeathRequest1");
         tdr1.enable();
 
         ThreadDeathRequest tdr2 = eventRManager.createThreadDeathRequest();
 //        tsr2.addThreadFilter(mainThread);
-        tdr2.addCountFilter(1);
         tdr2.setSuspendPolicy(EventRequest.SUSPEND_ALL);
         tdr2.putProperty("number", "ThreadDeathRequest2");
         tdr2.enable();
 
         ThreadDeathRequest tdr3 = eventRManager.createThreadDeathRequest();
         tdr3.addThreadFilter(testThread);
-        tdr3.addCountFilter(1);
         tdr3.setSuspendPolicy(EventRequest.SUSPEND_ALL);
         tdr3.putProperty("number", "ThreadDeathRequest3");
         tdr3.enable();
