@@ -588,11 +588,11 @@ define SetupRunMicroTestBody
   # Save output as JSON or CSV file
   ifneq ($$(MICRO_RESULTS_FORMAT), )
     $1_MICRO_BASIC_OPTIONS += -rf $$(MICRO_RESULTS_FORMAT)
-    $1_MICRO_BASIC_OPTIONS += -rff $$($1_TEST_RESULTS_DIR)/jmh-result.$(MICRO_RESULTS_FORMAT)
+    $1_MICRO_BASIC_OPTIONS += -rff $$(call FixPath, $$($1_TEST_RESULTS_DIR)/jmh-result.$(MICRO_RESULTS_FORMAT))
   endif
 
   # Set library path for native dependencies
-  $1_JMH_JVM_ARGS := -Djava.library.path=$$(TEST_IMAGE_DIR)/micro/native \
+  $1_JMH_JVM_ARGS := -Djava.library.path=$$(call FixPath, $$(TEST_IMAGE_DIR)/micro/native) \
         --add-exports java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED \
         --add-exports java.base/jdk.internal.org.objectweb.asm.tree=ALL-UNNAMED \
         --add-exports java.base/jdk.internal.classfile=ALL-UNNAMED \
@@ -601,7 +601,8 @@ define SetupRunMicroTestBody
         --add-exports java.base/jdk.internal.classfile.instruction=ALL-UNNAMED \
         --add-exports java.base/jdk.internal.classfile.java.lang.constant=ALL-UNNAMED \
         --add-exports java.base/jdk.internal.classfile.components=ALL-UNNAMED \
-        --add-exports java.base/jdk.internal.classfile.impl=ALL-UNNAMED
+        --add-exports java.base/jdk.internal.classfile.impl=ALL-UNNAMED \
+        --add-exports java.base/jdk.internal.vm=ALL-UNNAMED
 
   ifneq ($$(MICRO_VM_OPTIONS)$$(MICRO_JAVA_OPTIONS), )
     $1_JMH_JVM_ARGS += $$(MICRO_VM_OPTIONS) $$(MICRO_JAVA_OPTIONS)
@@ -630,8 +631,8 @@ define SetupRunMicroTestBody
 	$$(call LogWarn, Running test '$$($1_TEST)')
 	$$(call MakeDir, $$($1_TEST_RESULTS_DIR) $$($1_TEST_SUPPORT_DIR))
 	$$(call ExecuteWithLog, $$($1_TEST_SUPPORT_DIR)/micro, ( \
-	    $$(FIXPATH) $$($1_MICRO_TEST_JDK)/bin/java $$($1_MICRO_JAVA_OPTIONS) \
-	        -jar $$($1_MICRO_BENCHMARKS_JAR) \
+	    $$($1_MICRO_TEST_JDK)/bin/java $$($1_MICRO_JAVA_OPTIONS) \
+	        -jar $$(call FixPath, $$($1_MICRO_BENCHMARKS_JAR)) \
 	        $$($1_MICRO_ITER) $$($1_MICRO_FORK) $$($1_MICRO_TIME) \
 	        $$($1_MICRO_WARMUP_ITER) $$($1_MICRO_WARMUP_TIME) \
 	        $$($1_MICRO_VM_OPTIONS) $$($1_MICRO_BASIC_OPTIONS) $$(MICRO_OPTIONS) \

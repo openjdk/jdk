@@ -108,7 +108,6 @@ $(eval $(call SetupJavaCompilation, BUILD_JDK_MICROBENCHMARK, \
         --add-exports java.base/jdk.internal.vm=ALL-UNNAMED \
         --enable-preview, \
     JAVA_FLAGS := --add-modules jdk.unsupported --limit-modules java.management \
-        --add-exports java.base/jdk.internal.vm=ALL-UNNAMED \
         --enable-preview, \
 ))
 
