@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -219,7 +219,14 @@ final class TransportContext implements ConnectionContext {
             throw new IllegalStateException("Client/Server mode not yet set.");
         }
 
-        if (outputRecord.isClosed() || inputRecord.isClosed() || isBroken) {
+        // The threshold for allowing the method to continue processing
+        // depends on whether we are doing a key update or kickstarting
+        // a handshake.  In the former case, we only require the write-side
+        // to be open where a handshake would require a full duplex connection.
+        boolean isNotUsable = outputRecord.writeCipher.atKeyLimit() ?
+            (outputRecord.isClosed() || isBroken) :
+            (outputRecord.isClosed() || inputRecord.isClosed() || isBroken);
+        if (isNotUsable) {
             if (closeReason != null) {
                 throw new SSLException(
                         "Cannot kickstart, the connection is broken or closed",
@@ -247,7 +254,7 @@ final class TransportContext implements ConnectionContext {
         //
         // Need no kickstart message on server side unless the connection
         // has been established.
-        if(isNegotiated || sslConfig.isClientMode) {
+        if (isNegotiated || sslConfig.isClientMode) {
            handshakeContext.kickstart();
         }
     }

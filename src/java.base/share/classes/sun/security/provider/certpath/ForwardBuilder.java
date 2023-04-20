@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,7 @@ import sun.security.x509.AccessDescription;
 import sun.security.x509.AuthorityInfoAccessExtension;
 import sun.security.x509.AuthorityKeyIdentifierExtension;
 import static sun.security.x509.PKIXExtensions.*;
+import sun.security.x509.SubjectAlternativeNameExtension;
 import sun.security.x509.X500Name;
 import sun.security.x509.X509CertImpl;
 
@@ -294,9 +295,7 @@ class ForwardBuilder extends Builder {
                         "\n  Issuer: " +
                             trustedCert.getIssuerX500Principal());
                 }
-                if (caCerts.add(trustedCert) && !searchAllCertStores) {
-                    return;
-                }
+                caCerts.add(trustedCert);
             }
         }
 
@@ -675,8 +674,7 @@ class ForwardBuilder extends Builder {
      * only be executed in a reverse direction are deferred until the
      * complete path has been built.
      *
-     * Trust anchor certs are not validated, but are used to verify the
-     * signature and revocation status of the previous cert.
+     * Trust anchor certs are not validated.
      *
      * If the last certificate is being verified (the one whose subject
      * matches the target subject, then steps in 6.1.4 of the PKIX
@@ -707,17 +705,15 @@ class ForwardBuilder extends Builder {
         currState.untrustedChecker.check(cert, Collections.<String>emptySet());
 
         /*
-         * check for looping - abort a loop if we encounter the same
-         * certificate twice
+         * Abort if we encounter the same certificate or a certificate with
+         * the same public key, subject DN, and subjectAltNames as a cert
+         * that is already in path.
          */
-        if (certPathList != null) {
-            for (X509Certificate cpListCert : certPathList) {
-                if (cert.equals(cpListCert)) {
-                    if (debug != null) {
-                        debug.println("loop detected!!");
-                    }
-                    throw new CertPathValidatorException("loop detected");
-                }
+        for (X509Certificate cpListCert : certPathList) {
+            if (repeated(cpListCert, cert)) {
+                throw new CertPathValidatorException(
+                    "cert with repeated subject, public key, and " +
+                    "subjectAltNames detected");
             }
         }
 
@@ -796,21 +792,48 @@ class ForwardBuilder extends Builder {
              */
             KeyChecker.verifyCAKeyUsage(cert);
         }
+    }
 
-        /*
-         * the following checks are performed even when the cert
-         * is a trusted cert, since we are only extracting the
-         * subjectDN, and publicKey from the cert
-         * in order to verify a previous cert
-         */
+    /**
+     * Return true if two certificates are equal or have the same subject,
+     * public key, and subject alternative names.
+     */
+    private static boolean repeated(
+            X509Certificate currCert, X509Certificate nextCert) {
+        if (currCert.equals(nextCert)) {
+            return true;
+        }
+        return (currCert.getSubjectX500Principal().equals(
+            nextCert.getSubjectX500Principal()) &&
+            currCert.getPublicKey().equals(nextCert.getPublicKey()) &&
+            altNamesEqual(currCert, nextCert));
+    }
 
-        /*
-         * Check signature only if no key requiring key parameters has been
-         * encountered.
-         */
-        if (!currState.keyParamsNeeded()) {
-            (currState.cert).verify(cert.getPublicKey(),
-                                    buildParams.sigProvider());
+    /**
+     * Return true if two certificates have the same subject alternative names.
+     */
+    private static boolean altNamesEqual(
+            X509Certificate currCert, X509Certificate nextCert) {
+        X509CertImpl curr, next;
+        try {
+            curr = X509CertImpl.toImpl(currCert);
+            next = X509CertImpl.toImpl(nextCert);
+        } catch (CertificateException ce) {
+            return false;
+        }
+
+        SubjectAlternativeNameExtension currAltNameExt =
+            curr.getSubjectAlternativeNameExtension();
+        SubjectAlternativeNameExtension nextAltNameExt =
+            next.getSubjectAlternativeNameExtension();
+        if (currAltNameExt != null) {
+            if (nextAltNameExt == null) {
+                return false;
+            }
+            return Arrays.equals(currAltNameExt.getExtensionValue(),
+                nextAltNameExt.getExtensionValue());
+        } else {
+            return (nextAltNameExt == null);
         }
     }
 

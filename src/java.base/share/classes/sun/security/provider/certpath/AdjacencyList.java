@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,7 +87,7 @@ public class AdjacencyList {
     // the actual set of steps the AdjacencyList represents
     private ArrayList<BuildStep> mStepList;
 
-    // the original list, just for the toString method
+    // the original list
     private List<List<Vertex>> mOrigList;
 
     /**
@@ -112,6 +112,13 @@ public class AdjacencyList {
      */
     public Iterator<BuildStep> iterator() {
         return Collections.unmodifiableList(mStepList).iterator();
+    }
+
+    /**
+     * Returns the number of attempted paths (useful for debugging).
+     */
+    public int numAttemptedPaths() {
+        return mOrigList.size();
     }
 
     /**

@@ -203,14 +203,7 @@ void G1ParScanThreadState::do_oop_evac(T* p) {
   }
   RawAccess<IS_NOT_NULL>::oop_store(p, obj);
 
-  assert(obj != NULL, "Must be");
-  if (HeapRegion::is_in_same_region(p, obj)) {
-    return;
-  }
-  HeapRegion* from = _g1h->heap_region_containing(p);
-  if (!from->is_young()) {
-    enqueue_card_if_tracked(_g1h->region_attr(obj), p, obj);
-  }
+  write_ref_field_post(p, obj);
 }
 
 MAYBE_INLINE_EVACUATION

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -143,6 +143,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
      */
     InputStream execute(String cmd, Object ... args) throws AgentLoadException, IOException {
         assert args.length <= 3;                // includes null
+        checkNulls(args);
 
         // did we detach?
         synchronized (this) {

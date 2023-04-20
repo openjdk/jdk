@@ -283,4 +283,19 @@ public final class SwingAccessor {
             MethodHandles.lookup().ensureInitialized(c);
         } catch (IllegalAccessException e) {}
     }
+
+    private static ThreadLocal<Boolean> tlObj = new ThreadLocal<Boolean>();
+
+    public static Boolean getAllowHTMLObject() {
+        Boolean b = tlObj.get();
+        if (b == null) {
+            return Boolean.TRUE;
+        } else {
+            return b;
+        }
+    }
+
+    public static void setAllowHTMLObject(Boolean val) {
+        tlObj.set(val);
+    }
 }

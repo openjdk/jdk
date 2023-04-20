@@ -128,6 +128,12 @@ public:
 
   void push_on_queue(ScannerTask task);
 
+  // Apply the post barrier to the given reference field. Enqueues the card of p
+  // if the barrier does not filter out the reference for some reason (e.g.
+  // p and q are in the same region, p is in survivor, p is in collection set)
+  // To be called during GC if nothing particular about p and obj are known.
+  template <class T> void write_ref_field_post(T* p, oop obj);
+
   template <class T> void enqueue_card_if_tracked(G1HeapRegionAttr region_attr, T* p, oop o) {
     assert(!HeapRegion::is_in_same_region(p, o), "Should have filtered out cross-region references already.");
     assert(!_g1h->heap_region_containing(p)->is_young(), "Should have filtered out from-young references already.");
