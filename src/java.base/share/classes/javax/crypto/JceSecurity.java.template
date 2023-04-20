@@ -235,7 +235,11 @@ final class JceSecurity {
 
     // return whether this provider is properly signed and can be used by JCE
     static boolean canUseProvider(Provider p) {
-        return getVerificationResult(p) == null;
+        Exception e = getVerificationResult(p);
+        if (debug != null && e != null) {
+            debug.println("Provider verification result: " + e);
+        }
+        return e == null;
     }
 
     // dummy object to represent null
