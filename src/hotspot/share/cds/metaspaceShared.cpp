@@ -267,7 +267,7 @@ void MetaspaceShared::initialize_for_static_dump() {
   size_t symbol_rs_size = LP64_ONLY(3 * G) NOT_LP64(128 * M);
   _symbol_rs = ReservedSpace(symbol_rs_size);
   if (!_symbol_rs.is_reserved()) {
-    log_error(cds)("Unable to reserve memory for symbols: %ld bytes.", symbol_rs_size);
+    log_error(cds)("Unable to reserve memory for symbols: " SIZE_FORMAT " bytes.", symbol_rs_size);
     MetaspaceShared::unrecoverable_writing_error();
   }
   _symbol_region.init(&_symbol_rs, &_symbol_vs);
@@ -838,6 +838,7 @@ bool MetaspaceShared::try_link_class(JavaThread* current, InstanceKlass* ik) {
       SystemDictionaryShared::set_class_has_failed_verification(ik);
       _has_error_classes = true;
     }
+    ik->compute_has_loops_flag_for_methods();
     BytecodeVerificationLocal = saved;
     return true;
   } else {
