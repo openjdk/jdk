@@ -203,7 +203,7 @@ import java.util.stream.Stream;
  * <li>Its alignment constraint is set to its <a href="MemoryLayout.html#layout-align">natural alignment</a></li>
  * <li>If it is a {@linkplain ValueLayout value layout}, its {@linkplain ValueLayout#order() byte order} is
  * the {@linkplain ByteOrder#nativeOrder() native byte order}.
- * <li>If it is a {@linkplain GroupLayout group layout}, its size is be a multiple of its alignment constraint, and</li>
+ * <li>If it is a {@linkplain GroupLayout group layout}, its size is a multiple of its alignment constraint, and</li>
  * <li>It does not contain padding other than what is strictly required to align its non-padding layout elements,
  * or to satisfy constraint 3</li>
  * </ol>
