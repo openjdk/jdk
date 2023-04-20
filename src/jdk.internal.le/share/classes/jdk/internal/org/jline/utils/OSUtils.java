@@ -9,6 +9,8 @@
 package jdk.internal.org.jline.utils;
 
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 public class OSUtils {
 
@@ -93,7 +95,8 @@ public class OSUtils {
             stty = IS_OSX ? "/bin/stty" : "stty";
             sttyfopt = IS_OSX ? "-f" : "-F";
             infocmp = "infocmp";
-            test = "/bin/test";
+            test = isTestCommandValid("/usr/bin/test") ? "/usr/bin/test"
+                                                       : "/bin/test";
         }
         TTY_COMMAND = tty;
         STTY_COMMAND = stty;
@@ -102,4 +105,7 @@ public class OSUtils {
         TEST_COMMAND = test;
     }
 
+    private static boolean isTestCommandValid(String command) {
+        return Files.isExecutable(Paths.get(command));
+    }
 }

@@ -1763,11 +1763,11 @@ void LinkResolver::resolve_handle_call(CallInfo& result,
 }
 
 void LinkResolver::resolve_invokedynamic(CallInfo& result, const constantPoolHandle& pool, int indy_index, TRAPS) {
-  ConstantPoolCacheEntry* cpce = pool->invokedynamic_cp_cache_entry_at(indy_index);
-  int pool_index = cpce->constant_pool_index();
+  int index = pool->decode_invokedynamic_index(indy_index);
+  int pool_index = pool->resolved_indy_entry_at(index)->constant_pool_index();
 
   // Resolve the bootstrap specifier (BSM + optional arguments).
-  BootstrapInfo bootstrap_specifier(pool, pool_index, indy_index);
+  BootstrapInfo bootstrap_specifier(pool, pool_index, index);
 
   // Check if CallSite has been bound already or failed already, and short circuit:
   {
@@ -1779,8 +1779,8 @@ void LinkResolver::resolve_invokedynamic(CallInfo& result, const constantPoolHan
   // reference to a method handle which will be the bootstrap method for a dynamic
   // call site.  If resolution for the java.lang.invoke.MethodHandle for the bootstrap
   // method fails, then a MethodHandleInError is stored at the corresponding bootstrap
-  // method's CP index for the CONSTANT_MethodHandle_info.  So, there is no need to
-  // set the indy_rf flag since any subsequent invokedynamic instruction which shares
+  // method's CP index for the CONSTANT_MethodHandle_info.
+  // Any subsequent invokedynamic instruction which shares
   // this bootstrap method will encounter the resolution of MethodHandleInError.
 
   resolve_dynamic_call(result, bootstrap_specifier, CHECK);
@@ -1793,10 +1793,10 @@ void LinkResolver::resolve_invokedynamic(CallInfo& result, const constantPoolHan
 
   // The returned linkage result is provisional up to the moment
   // the interpreter or runtime performs a serialized check of
-  // the relevant CPCE::f1 field.  This is done by the caller
-  // of this method, via CPCE::set_dynamic_call, which uses
+  // the relevant ResolvedIndyEntry::method field.  This is done by the caller
+  // of this method, via CPC::set_dynamic_call, which uses
   // a lock to do the final serialization of updates
-  // to CPCE state, including f1.
+  // to ResolvedIndyEntry state, including method.
 
   // Log dynamic info to CDS classlist.
   ArchiveUtils::log_to_classlist(&bootstrap_specifier, CHECK);
@@ -1827,15 +1827,15 @@ void LinkResolver::resolve_dynamic_call(CallInfo& result,
     // instance of LinkageError (or a subclass), then subsequent attempts to
     // resolve the reference always fail with the same error that was thrown
     // as a result of the initial resolution attempt.
-     bool recorded_res_status = bootstrap_specifier.save_and_throw_indy_exc(CHECK);
-     if (!recorded_res_status) {
-       // Another thread got here just before we did.  So, either use the method
-       // that it resolved or throw the LinkageError exception that it threw.
-       bool is_done = bootstrap_specifier.resolve_previously_linked_invokedynamic(result, CHECK);
-       if (is_done) return;
-     }
-     assert(bootstrap_specifier.invokedynamic_cp_cache_entry()->indy_resolution_failed(),
-            "Resolution failure flag wasn't set");
+    bool recorded_res_status = bootstrap_specifier.save_and_throw_indy_exc(CHECK);
+    if (!recorded_res_status) {
+      // Another thread got here just before we did.  So, either use the method
+      // that it resolved or throw the LinkageError exception that it threw.
+      bool is_done = bootstrap_specifier.resolve_previously_linked_invokedynamic(result, CHECK);
+      if (is_done) return;
+    }
+    assert(bootstrap_specifier.pool()->resolved_indy_entry_at(bootstrap_specifier.indy_index())->resolution_failed(),
+          "Resolution should have failed");
   }
 
   bootstrap_specifier.resolve_newly_linked_invokedynamic(result, CHECK);

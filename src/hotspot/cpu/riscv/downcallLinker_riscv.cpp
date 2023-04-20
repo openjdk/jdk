@@ -73,7 +73,7 @@ public:
      _captured_state_mask(captured_state_mask),
      _frame_complete(0),
      _frame_size_slots(0),
-     _oop_maps(NULL) {
+     _oop_maps(nullptr) {
   }
 
   void generate();
@@ -265,7 +265,9 @@ void DowncallStubGenerator::generate() {
   __ sw(t0, Address(xthread, JavaThread::thread_state_offset()));
 
   // Force this write out before the read below
-  __ membar(MacroAssembler::AnyAny);
+  if (!UseSystemMemoryBarrier) {
+    __ membar(MacroAssembler::AnyAny);
+  }
 
   Label L_after_safepoint_poll;
   Label L_safepoint_poll_slow_path;

@@ -1044,7 +1044,7 @@ void nmethod::print_nmethod(bool printmethod) {
       tty->print_cr("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
     }
     if (printmethod || PrintDependencies || CompilerOracle::has_option(mh, CompileCommand::PrintDependencies)) {
-      print_dependencies();
+      print_dependencies_on(tty);
       tty->print_cr("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
     }
     if (printmethod || PrintExceptionHandlers) {
@@ -2136,7 +2136,11 @@ PcDesc* PcDescContainer::find_pc_desc_internal(address pc, bool approximate, con
 
   if (match_desc(upper, pc_offset, approximate)) {
     assert(upper == linear_search(search, pc_offset, approximate), "search ok");
-    _pc_desc_cache.add_pc_desc(upper);
+    if (!Thread::current_in_asgct()) {
+      // we don't want to modify the cache if we're in ASGCT
+      // which is typically called in a signal handler
+      _pc_desc_cache.add_pc_desc(upper);
+    }
     return upper;
   } else {
     assert(nullptr == linear_search(search, pc_offset, approximate), "search ok");
@@ -2150,7 +2154,7 @@ void nmethod::check_all_dependencies(DepChange& changes) {
   ResourceMark rm;
 
   // Turn off dependency tracing while actually testing dependencies.
-  NOT_PRODUCT( FlagSetting fs(TraceDependencies, false) );
+  NOT_PRODUCT( FlagSetting fs(Dependencies::_verify_in_progress, true));
 
   typedef ResourceHashtable<DependencySignature, int, 11027,
                             AnyObj::RESOURCE_AREA, mtInternal,
@@ -2180,7 +2184,7 @@ void nmethod::check_all_dependencies(DepChange& changes) {
             tty->print_cr("Failed dependency:");
             changes.print();
             nm->print();
-            nm->print_dependencies();
+            nm->print_dependencies_on(tty);
             assert(false, "Should have been marked for deoptimization");
           }
         }
@@ -2481,20 +2485,21 @@ void nmethod::print_code() {
 
 #ifndef PRODUCT  // called InstanceKlass methods are available only then. Declared as PRODUCT_RETURN
 
-void nmethod::print_dependencies() {
+void nmethod::print_dependencies_on(outputStream* out) {
   ResourceMark rm;
-  ttyLocker ttyl;   // keep the following output all in one block
-  tty->print_cr("Dependencies:");
+  stringStream st;
+  st.print_cr("Dependencies:");
   for (Dependencies::DepStream deps(this); deps.next(); ) {
-    deps.print_dependency();
+    deps.print_dependency(&st);
     InstanceKlass* ctxk = deps.context_type();
     if (ctxk != nullptr) {
       if (ctxk->is_dependent_nmethod(this)) {
-        tty->print_cr("   [nmethod<=klass]%s", ctxk->external_name());
+        st.print_cr("   [nmethod<=klass]%s", ctxk->external_name());
       }
     }
     deps.log_dependency();  // put it into the xml log also
   }
+  out->print_raw(st.as_string());
 }
 #endif
 

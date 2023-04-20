@@ -65,6 +65,7 @@
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
+#include "prims/jvmtiEnvBase.hpp"
 #include "prims/resolvedMethodTable.hpp"
 #include "prims/wbtestmethods/parserTests.hpp"
 #include "prims/whitebox.inline.hpp"
@@ -824,10 +825,9 @@ static bool is_excluded_for_compiler(AbstractCompiler* comp, methodHandle& mh) {
     return true;
   }
   DirectiveSet* directive = DirectivesStack::getMatchingDirective(mh, comp);
-  if (directive->ExcludeOption) {
-    return true;
-  }
-  return false;
+  bool exclude = directive->ExcludeOption;
+  DirectivesStack::release(directive);
+  return exclude;
 }
 
 static bool can_be_compiled_at_level(methodHandle& mh, jboolean is_osr, int level) {
@@ -1871,6 +1871,24 @@ WB_ENTRY(jint, WB_ConstantPoolEncodeIndyIndex(JNIEnv* env, jobject wb, jint inde
   return ConstantPool::encode_invokedynamic_index(index);
 WB_END
 
+WB_ENTRY(jint, WB_getIndyInfoLength(JNIEnv* env, jobject wb, jclass klass))
+  InstanceKlass* ik = InstanceKlass::cast(java_lang_Class::as_Klass(JNIHandles::resolve(klass)));
+  ConstantPool* cp = ik->constants();
+  if (cp->cache() == NULL) {
+      return -1;
+  }
+  return cp->resolved_indy_entries_length();
+WB_END
+
+WB_ENTRY(jint, WB_getIndyCPIndex(JNIEnv* env, jobject wb, jclass klass, jint index))
+  InstanceKlass* ik = InstanceKlass::cast(java_lang_Class::as_Klass(JNIHandles::resolve(klass)));
+  ConstantPool* cp = ik->constants();
+  if (cp->cache() == NULL) {
+      return -1;
+  }
+  return cp->resolved_indy_entry_at(index)->constant_pool_index();
+WB_END
+
 WB_ENTRY(void, WB_ClearInlineCaches(JNIEnv* env, jobject wb, jboolean preserve_static_stubs))
   VM_ClearICs clear_ics(preserve_static_stubs == JNI_TRUE);
   VMThread::execute(&clear_ics);
@@ -2520,6 +2538,22 @@ WB_ENTRY(void, WB_UnlockCritical(JNIEnv* env, jobject wb))
   GCLocker::unlock_critical(thread);
 WB_END
 
+WB_ENTRY(jboolean, WB_SetVirtualThreadsNotifyJvmtiMode(JNIEnv* env, jobject wb, jboolean enable))
+  if (!Continuations::enabled()) {
+    tty->print_cr("WB error: must be Continuations::enabled()!");
+    return JNI_FALSE;
+  }
+  jboolean result = false;
+#if INCLUDE_JVMTI
+  if (enable) {
+    result = JvmtiEnvBase::enable_virtual_threads_notify_jvmti();
+  } else {
+    result = JvmtiEnvBase::disable_virtual_threads_notify_jvmti();
+  }
+#endif
+  return result;
+WB_END
+
 #define CC (char*)
 
 static JNINativeMethod methods[] = {
@@ -2710,6 +2744,8 @@ static JNINativeMethod methods[] = {
       CC"(Ljava/lang/Class;I)I",                      (void*)&WB_ConstantPoolRemapInstructionOperandFromCache},
   {CC"encodeConstantPoolIndyIndex0",
       CC"(I)I",                      (void*)&WB_ConstantPoolEncodeIndyIndex},
+  {CC"getIndyInfoLength0", CC"(Ljava/lang/Class;)I",  (void*)&WB_getIndyInfoLength},
+  {CC"getIndyCPIndex0",    CC"(Ljava/lang/Class;I)I", (void*)&WB_getIndyCPIndex},
   {CC"getMethodBooleanOption",
       CC"(Ljava/lang/reflect/Executable;Ljava/lang/String;)Ljava/lang/Boolean;",
                                                       (void*)&WB_GetMethodBooleaneOption},
@@ -2797,6 +2833,7 @@ static JNINativeMethod methods[] = {
 
   {CC"lockCritical",    CC"()V",                      (void*)&WB_LockCritical},
   {CC"unlockCritical",  CC"()V",                      (void*)&WB_UnlockCritical},
+  {CC"setVirtualThreadsNotifyJvmtiMode", CC"(Z)Z",    (void*)&WB_SetVirtualThreadsNotifyJvmtiMode},
 };
 
 

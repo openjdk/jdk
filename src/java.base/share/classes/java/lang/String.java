@@ -2607,6 +2607,19 @@ public final class String
      * }</pre>
      * If no such value of {@code k} exists, then {@code -1} is returned.
      *
+     * @apiNote
+     * Unlike {@link #substring(int)}, for example, this method does not throw
+     * an exception when {@code fromIndex} is outside the valid range.
+     * Rather, it returns -1 when {@code fromIndex} is larger than the length of
+     * the string.
+     * This result is, by itself, indistinguishable from a genuine absence of
+     * {@code str} in the string.
+     * If stricter behavior is needed, {@link #indexOf(String, int, int)}
+     * should be considered instead.
+     * On {@link String} {@code s} and a non-empty {@code str}, for example,
+     * {@code s.indexOf(str, fromIndex, s.length())} would throw if
+     * {@code fromIndex} were larger than the string length, or were negative.
+     *
      * @param   str         the substring to search for.
      * @param   fromIndex   the index from which to start the search.
      * @return  the index of the first occurrence of the specified substring,
@@ -2618,34 +2631,62 @@ public final class String
     }
 
     /**
+     * Returns the index of the first occurrence of the specified substring
+     * within the specified index range of {@code this} string.
+     *
+     * <p>This method returns the same result as the one of the invocation
+     * <pre>{@code
+     *     s.substring(beginIndex, endIndex).indexOf(str) + beginIndex
+     * }</pre>
+     * if the index returned by {@link #indexOf(String)} is non-negative,
+     * and returns -1 otherwise.
+     * (No substring is instantiated, though.)
+     *
+     * @param   str         the substring to search for.
+     * @param   beginIndex  the index to start the search from (included).
+     * @param   endIndex    the index to stop the search at (excluded).
+     * @return  the index of the first occurrence of the specified substring
+     *          within the specified index range,
+     *          or {@code -1} if there is no such occurrence.
+     * @throws  StringIndexOutOfBoundsException if {@code beginIndex}
+     *          is negative, or {@code endIndex} is larger than the length of
+     *          this {@code String} object, or {@code beginIndex} is larger than
+     *          {@code endIndex}.
+     * @since   21
+     */
+    public int indexOf(String str, int beginIndex, int endIndex) {
+        if (str.length() == 1) {
+            /* Simple optimization, can be omitted without behavioral impact */
+            return indexOf(str.charAt(0), beginIndex, endIndex);
+        }
+        checkBoundsBeginEnd(beginIndex, endIndex, length());
+        return indexOf(value, coder(), endIndex, str, beginIndex);
+    }
+
+    /**
      * Code shared by String and AbstractStringBuilder to do searches. The
      * source is the character array being searched, and the target
      * is the string being searched for.
      *
      * @param   src       the characters being searched.
      * @param   srcCoder  the coder of the source string.
-     * @param   srcCount  length of the source string.
+     * @param   srcCount  last index (exclusive) in the source string.
      * @param   tgtStr    the characters being searched for.
      * @param   fromIndex the index to begin searching from.
      */
     static int indexOf(byte[] src, byte srcCoder, int srcCount,
                        String tgtStr, int fromIndex) {
-        byte[] tgt    = tgtStr.value;
-        byte tgtCoder = tgtStr.coder();
-        int tgtCount  = tgtStr.length();
-
-        if (fromIndex >= srcCount) {
-            return (tgtCount == 0 ? srcCount : -1);
-        }
-        if (fromIndex < 0) {
-            fromIndex = 0;
+        fromIndex = Math.clamp(fromIndex, 0, srcCount);
+        int tgtCount = tgtStr.length();
+        if (tgtCount > srcCount - fromIndex) {
+            return -1;
         }
         if (tgtCount == 0) {
             return fromIndex;
         }
-        if (tgtCount > srcCount) {
-            return -1;
-        }
+
+        byte[] tgt = tgtStr.value;
+        byte tgtCoder = tgtStr.coder();
         if (srcCoder == tgtCoder) {
             return srcCoder == LATIN1
                 ? StringLatin1.indexOf(src, srcCount, tgt, tgtCount, fromIndex)
@@ -3487,8 +3528,8 @@ public final class String
      * Converts all of the characters in this {@code String} to lower
      * case using the rules of the default locale. This method is equivalent to
      * {@code toLowerCase(Locale.getDefault())}.
-     * <p>
-     * <b>Note:</b> This method is locale sensitive, and may produce unexpected
+     *
+     * @apiNote This method is locale sensitive, and may produce unexpected
      * results if used for strings that are intended to be interpreted locale
      * independently.
      * Examples are programming language identifiers, protocol keys, and HTML
@@ -3567,8 +3608,8 @@ public final class String
      * Converts all of the characters in this {@code String} to upper
      * case using the rules of the default locale. This method is equivalent to
      * {@code toUpperCase(Locale.getDefault())}.
-     * <p>
-     * <b>Note:</b> This method is locale sensitive, and may produce unexpected
+     *
+     * @apiNote This method is locale sensitive, and may produce unexpected
      * results if used for strings that are intended to be interpreted locale
      * independently.
      * Examples are programming language identifiers, protocol keys, and HTML
@@ -4522,12 +4563,34 @@ public final class String
         final int limit = len * count;
         final byte[] multiple = new byte[limit];
         System.arraycopy(value, 0, multiple, 0, len);
-        int copied = len;
-        for (; copied < limit - copied; copied <<= 1) {
-            System.arraycopy(multiple, 0, multiple, copied, copied);
-        }
-        System.arraycopy(multiple, 0, multiple, copied, limit - copied);
+        repeatCopyRest(multiple, 0, limit, len);
         return new String(multiple, coder);
+    }
+
+    /**
+     * Used to perform copying after the initial insertion. Copying is optimized
+     * by using power of two duplication. First pass duplicates original copy,
+     * second pass then duplicates the original and the copy yielding four copies,
+     * third pass duplicates four copies yielding eight copies, and so on.
+     * Finally, the remainder is filled in with prior copies.
+     *
+     * @implNote The technique used here is significantly faster than hand-rolled
+     * loops or special casing small numbers due to the intensive optimization
+     * done by intrinsic {@code System.arraycopy}.
+     *
+     * @param buffer    destination buffer
+     * @param offset    offset in the destination buffer
+     * @param limit     total replicated including what is already in the buffer
+     * @param copied    number of bytes that have already in the buffer
+     */
+    static void repeatCopyRest(byte[] buffer, int offset, int limit, int copied) {
+        // Initial copy is in the buffer.
+        for (; copied < limit - copied; copied <<= 1) {
+            // Power of two duplicate.
+            System.arraycopy(buffer, offset, buffer, offset + copied, copied);
+        }
+        // Duplicate remainder.
+        System.arraycopy(buffer, offset, buffer, offset + copied, limit - copied);
     }
 
     ////////////////////////////////////////////////////////////////

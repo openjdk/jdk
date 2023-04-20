@@ -50,9 +50,10 @@ address UnsafeCopyMemory::_common_exit_stub_pc                  = nullptr;
 
 // Class Variables
 
-BufferBlob* StubRoutines::_code1                                = nullptr;
-BufferBlob* StubRoutines::_code2                                = nullptr;
-BufferBlob* StubRoutines::_code3                                = nullptr;
+BufferBlob* StubRoutines::_initial_stubs_code                   = nullptr;
+BufferBlob* StubRoutines::_final_stubs_code                     = nullptr;
+BufferBlob* StubRoutines::_compiler_stubs_code                  = nullptr;
+BufferBlob* StubRoutines::_continuation_stubs_code              = nullptr;
 
 address StubRoutines::_call_stub_return_address                 = nullptr;
 address StubRoutines::_call_stub_entry                          = nullptr;
@@ -187,7 +188,7 @@ JFR_ONLY(address StubRoutines::_jfr_write_checkpoint = nullptr;)
 // The first one generates stubs needed during universe init (e.g., _handle_must_compile_first_entry).
 // The second phase includes all other stubs (which may depend on universe being initialized.)
 
-extern void StubGenerator_generate(CodeBuffer* code, int phase); // only interface to generators
+extern void StubGenerator_generate(CodeBuffer* code, StubCodeGenerator::StubsKind kind); // only interface to generators
 
 void UnsafeCopyMemory::create_table(int max_size) {
   UnsafeCopyMemory::_table = new UnsafeCopyMemory[max_size];
@@ -214,22 +215,63 @@ address UnsafeCopyMemory::page_error_continue_pc(address pc) {
   return nullptr;
 }
 
-void StubRoutines::initialize1() {
-  if (_code1 == nullptr) {
-    ResourceMark rm;
-    TraceTime timer("StubRoutines generation 1", TRACETIME_LOG(Info, startuptime));
-    // Add extra space for large CodeEntryAlignment
-    int max_aligned_stubs = 10;
-    int size = code_size1 + CodeEntryAlignment * max_aligned_stubs;
-    _code1 = BufferBlob::create("StubRoutines (1)", size);
-    if (_code1 == nullptr) {
-      vm_exit_out_of_memory(code_size1, OOM_MALLOC_ERROR, "CodeCache: no room for StubRoutines (1)");
-    }
-    CodeBuffer buffer(_code1);
-    StubGenerator_generate(&buffer, 0);
-    // When new stubs added we need to make sure there is some space left
-    // to catch situation when we should increase size again.
-    assert(code_size1 == 0 || buffer.insts_remaining() > 200, "increase code_size1");
+
+static BufferBlob* initialize_stubs(StubCodeGenerator::StubsKind kind,
+                                    int code_size, int max_aligned_stubs,
+                                    const char* timer_msg,
+                                    const char* buffer_name,
+                                    const char* assert_msg) {
+  ResourceMark rm;
+  TraceTime timer(timer_msg, TRACETIME_LOG(Info, startuptime));
+  // Add extra space for large CodeEntryAlignment
+  int size = code_size + CodeEntryAlignment * max_aligned_stubs;
+  BufferBlob* stubs_code = BufferBlob::create(buffer_name, size);
+  if (stubs_code == nullptr) {
+    vm_exit_out_of_memory(code_size, OOM_MALLOC_ERROR, "CodeCache: no room for %s", buffer_name);
+  }
+  CodeBuffer buffer(stubs_code);
+  StubGenerator_generate(&buffer, kind);
+  // When new stubs added we need to make sure there is some space left
+  // to catch situation when we should increase size again.
+  assert(code_size == 0 || buffer.insts_remaining() > 200, "increase %s", assert_msg);
+
+  LogTarget(Info, stubs) lt;
+  if (lt.is_enabled()) {
+    LogStream ls(lt);
+    ls.print_cr("%s\t [" INTPTR_FORMAT ", " INTPTR_FORMAT "] used: %d, free: %d",
+                buffer_name, p2i(stubs_code->content_begin()), p2i(stubs_code->content_end()),
+                buffer.total_content_size(), buffer.insts_remaining());
+  }
+  return stubs_code;
+}
+
+void StubRoutines::initialize_initial_stubs() {
+  if (_initial_stubs_code == nullptr) {
+    _initial_stubs_code = initialize_stubs(StubCodeGenerator::Initial_stubs,
+                                           _initial_stubs_code_size, 10,
+                                           "StubRoutines generation initial stubs",
+                                           "StubRoutines (initial stubs)",
+                                           "_initial_stubs_code_size");
+  }
+}
+
+void StubRoutines::initialize_continuation_stubs() {
+  if (_continuation_stubs_code == nullptr) {
+    _continuation_stubs_code = initialize_stubs(StubCodeGenerator::Continuation_stubs,
+                                           _continuation_stubs_code_size, 10,
+                                           "StubRoutines generation continuation stubs",
+                                           "StubRoutines (continuation stubs)",
+                                           "_continuation_stubs_code_size");
+  }
+}
+
+void StubRoutines::initialize_compiler_stubs() {
+  if (_compiler_stubs_code == nullptr) {
+    _compiler_stubs_code = initialize_stubs(StubCodeGenerator::Compiler_stubs,
+                                           _compiler_stubs_code_size, 100,
+                                           "StubRoutines generation compiler stubs",
+                                           "StubRoutines (compiler stubs)",
+                                           "_compiler_stubs_code_size");
   }
 }
 
@@ -270,38 +312,13 @@ static void test_arraycopy_func(address func, int alignment) {
 }
 #endif // ASSERT
 
-void StubRoutines::initializeContinuationStubs() {
-  if (_code3 == nullptr) {
-    ResourceMark rm;
-    TraceTime timer("StubRoutines generation 3", TRACETIME_LOG(Info, startuptime));
-    _code3 = BufferBlob::create("StubRoutines (3)", code_size2);
-    if (_code3 == nullptr) {
-      vm_exit_out_of_memory(code_size2, OOM_MALLOC_ERROR, "CodeCache: no room for StubRoutines (3)");
-    }
-    CodeBuffer buffer(_code3);
-    StubGenerator_generate(&buffer, 1);
-    // When new stubs added we need to make sure there is some space left
-    // to catch situation when we should increase size again.
-    assert(code_size2 == 0 || buffer.insts_remaining() > 200, "increase code_size3");
-  }
-}
-
-void StubRoutines::initialize2() {
-  if (_code2 == nullptr) {
-    ResourceMark rm;
-    TraceTime timer("StubRoutines generation 2", TRACETIME_LOG(Info, startuptime));
-    // Add extra space for large CodeEntryAlignment
-    int max_aligned_stubs = 100;
-    int size = code_size2 + CodeEntryAlignment * max_aligned_stubs;
-    _code2 = BufferBlob::create("StubRoutines (2)", size);
-    if (_code2 == nullptr) {
-      vm_exit_out_of_memory(code_size2, OOM_MALLOC_ERROR, "CodeCache: no room for StubRoutines (2)");
-    }
-    CodeBuffer buffer(_code2);
-    StubGenerator_generate(&buffer, 2);
-    // When new stubs added we need to make sure there is some space left
-    // to catch situation when we should increase size again.
-    assert(code_size2 == 0 || buffer.insts_remaining() > 200, "increase code_size2");
+void StubRoutines::initialize_final_stubs() {
+  if (_final_stubs_code == nullptr) {
+    _final_stubs_code = initialize_stubs(StubCodeGenerator::Final_stubs,
+                                         _final_stubs_code_size, 10,
+                                         "StubRoutines generation final stubs",
+                                         "StubRoutines (final stubs)",
+                                         "_final_stubs_code_size");
   }
 
 #ifdef ASSERT
@@ -387,9 +404,24 @@ void StubRoutines::initialize2() {
 }
 
 
-void stubRoutines_init1() { StubRoutines::initialize1(); }
-void stubRoutines_init2() { StubRoutines::initialize2(); }
-void stubRoutines_initContinuationStubs() { StubRoutines::initializeContinuationStubs(); }
+void initial_stubs_init()      { StubRoutines::initialize_initial_stubs(); }
+void continuation_stubs_init() { StubRoutines::initialize_continuation_stubs(); }
+void final_stubs_init()        { StubRoutines::initialize_final_stubs(); }
+
+void compiler_stubs_init(bool in_compiler_thread) {
+  if (in_compiler_thread && DelayCompilerStubsGeneration) {
+    // Temporarily revert state of stubs generation because
+    // it is called after final_stubs_init() finished
+    // during compiler runtime initialization.
+    // It is fine because these stubs are only used by
+    // compiled code and compiler is not running yet.
+    StubCodeDesc::unfreeze();
+    StubRoutines::initialize_compiler_stubs();
+    StubCodeDesc::freeze();
+  } else if (!in_compiler_thread && !DelayCompilerStubsGeneration) {
+    StubRoutines::initialize_compiler_stubs();
+  }
+}
 
 //
 // Default versions of arraycopy functions

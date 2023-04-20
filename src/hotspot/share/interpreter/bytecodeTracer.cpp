@@ -425,9 +425,10 @@ void BytecodePrinter::print_dynamic(int orig_i, int bsm_cpindex, constantTag tag
   }
   st->print_cr("  }");
   if (tag.is_invoke_dynamic()) {
-    int indy_index = orig_i;
-    int cpc_index = constants->invokedynamic_cp_cache_index(indy_index);
-    print_cpcache_entry(cpc_index, st);
+    int indy_index = constants->decode_invokedynamic_index(orig_i);
+    ResolvedIndyEntry* indy_entry = constants->resolved_indy_entry_at(indy_index);
+    st->print("  ResolvedIndyEntry: ");
+    indy_entry->print_on(st);
   } else {
     // TODO: print info for tag.is_dynamic_constant()
   }

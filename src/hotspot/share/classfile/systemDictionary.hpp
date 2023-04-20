@@ -302,12 +302,6 @@ private:
   static Klass* resolve_array_class_or_null(Symbol* class_name,
                                             Handle class_loader,
                                             Handle protection_domain, TRAPS);
-  static InstanceKlass* handle_parallel_loading(JavaThread* current,
-                                                Symbol* name,
-                                                ClassLoaderData* loader_data,
-                                                Handle lockObject,
-                                                bool* throw_circularity_error);
-
   static void define_instance_class(InstanceKlass* k, Handle class_loader, TRAPS);
   static InstanceKlass* find_or_define_helper(Symbol* class_name,
                                               Handle class_loader,
@@ -315,6 +309,11 @@ private:
   static InstanceKlass* load_instance_class_impl(Symbol* class_name, Handle class_loader, TRAPS);
   static InstanceKlass* load_instance_class(Symbol* class_name,
                                             Handle class_loader, TRAPS);
+
+  // Class loader constraints
+  static void check_constraints(InstanceKlass* k, ClassLoaderData* loader,
+                                bool defining, TRAPS);
+  static void update_dictionary(JavaThread* current, InstanceKlass* k, ClassLoaderData* loader_data);
 
   static bool is_shared_class_visible(Symbol* class_name, InstanceKlass* ik,
                                       PackageEntry* pkg_entry,
@@ -330,6 +329,7 @@ private:
                                                Handle protection_domain, TRAPS);
   // Second part of load_shared_class
   static void load_shared_class_misc(InstanceKlass* ik, ClassLoaderData* loader_data) NOT_CDS_RETURN;
+
 protected:
   // Used by SystemDictionaryShared
 
@@ -365,21 +365,6 @@ public:
 
   // Return Symbol or throw exception if name given is can not be a valid Symbol.
   static Symbol* class_name_symbol(const char* name, Symbol* exception, TRAPS);
-
-  // Setup link to hierarchy and deoptimize
-  static void add_to_hierarchy(JavaThread* current, InstanceKlass* k);
-protected:
-
-  // Basic find on loaded classes
-  static InstanceKlass* find_class(Symbol* class_name, ClassLoaderData* loader_data);
-
-  // Basic find on classes in the midst of being loaded
-  static Symbol* find_placeholder(Symbol* name, ClassLoaderData* loader_data);
-
-  // Class loader constraints
-  static void check_constraints(InstanceKlass* k, ClassLoaderData* loader,
-                                bool defining, TRAPS);
-  static void update_dictionary(JavaThread* current, InstanceKlass* k, ClassLoaderData* loader_data);
 };
 
 #endif // SHARE_CLASSFILE_SYSTEMDICTIONARY_HPP

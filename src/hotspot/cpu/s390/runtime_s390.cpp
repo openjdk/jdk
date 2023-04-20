@@ -114,12 +114,12 @@ void OptoRuntime::generate_exception_blob() {
   // Pop the exception blob's C frame that has been pushed before.
   __ z_lgr(Z_SP, saved_sp);
 
-  // [Z_RET]!=NULL was possible in hotspot5 but not in sapjvm6.
+  // [Z_RET] isn't null was possible in hotspot5 but not in sapjvm6.
   // C2I adapter extensions are now removed by a resize in the frame manager
   // (unwind_initial_activation_pending_exception).
 #ifdef ASSERT
   __ z_ltgr(handle_exception, handle_exception);
-  __ asm_assert_ne("handler must not be NULL", 0x852);
+  __ asm_assert_ne("handler must not be null", 0x852);
 #endif
 
   // Handle_exception contains the handler address. If the associated frame
@@ -145,6 +145,6 @@ void OptoRuntime::generate_exception_blob() {
   masm->flush();
 
   // Set exception blob.
-  OopMapSet *oop_maps = NULL;
+  OopMapSet *oop_maps = nullptr;
   _exception_blob =  ExceptionBlob::create(&buffer, oop_maps, frame_size/wordSize);
 }

@@ -23,6 +23,8 @@
 # questions.
 #
 
+DISABLED_WARNINGS_java += this-escape
+
 # -parameters provides method's parameters information in class file,
 # JVMCI compilers make use of that information for various sanity checks.
 # Don't use Indy strings concatenation to have good JVMCI startup performance.
