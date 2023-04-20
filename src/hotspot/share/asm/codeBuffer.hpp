@@ -223,7 +223,10 @@ class CodeSection {
     set_end(curr);
   }
 
-  void emit_int16(uint16_t x) { put_native(end(), x); set_end(end() + sizeof x); }
+  template <typename T>
+  void emit_native(T x) { put_native(end(), x); set_end(end() + sizeof x); }
+
+  void emit_int16(uint16_t x) { emit_native(x); }
   void emit_int16(uint8_t x1, uint8_t x2) {
     address curr = end();
     *((uint8_t*)  curr++) = x1;
@@ -239,11 +242,7 @@ class CodeSection {
     set_end(curr);
   }
 
-  void emit_int32(uint32_t x) {
-    address curr = end();
-    put_native(curr, x);
-    set_end(curr + sizeof(uint32_t));
-  }
+  void emit_int32(uint32_t x) { emit_native(x); }
   void emit_int32(uint8_t x1, uint8_t x2, uint8_t x3, uint8_t x4)  {
     address curr = end();
     *((uint8_t*)  curr++) = x1;
@@ -253,10 +252,8 @@ class CodeSection {
     set_end(curr);
   }
 
-  void emit_int64(uint64_t x)  { put_native(end(), x); set_end(end() + sizeof(uint64_t)); }
-  template <typename T>
-  void emit_native(T x) { put_native(end(), x); set_end(end() + sizeof x); }
-  void emit_float(jfloat  x)  { emit_native(x); }
+  void emit_int64(uint64_t x)  { emit_native(x); }
+  void emit_float(jfloat  x)   { emit_native(x); }
   void emit_double(jdouble x)  { emit_native(x); }
   void emit_address(address x) { emit_native(x); }
 
