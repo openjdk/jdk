@@ -43,6 +43,7 @@
 #include "memory/allocation.inline.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/oop.inline.hpp"
+#include "prims/jvmtiAgentList.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/flags/jvmFlag.hpp"
@@ -84,7 +85,6 @@ char*  Arguments::_java_command                 = nullptr;
 SystemProperty* Arguments::_system_properties   = nullptr;
 size_t Arguments::_conservative_max_heap_alignment = 0;
 Arguments::Mode Arguments::_mode                = _mixed;
-bool   Arguments::_java_compiler                = false;
 bool   Arguments::_xdebug_mode                  = false;
 const char*  Arguments::_java_vendor_url_bug    = nullptr;
 const char*  Arguments::_sun_java_launcher      = DEFAULT_JAVA_LAUNCHER;
@@ -104,9 +104,6 @@ char*  Arguments::SharedArchivePath             = nullptr;
 char*  Arguments::SharedDynamicArchivePath      = nullptr;
 
 LegacyGCLogging Arguments::_legacyGCLogging     = { 0, 0 };
-
-AgentLibraryList Arguments::_libraryList;
-AgentLibraryList Arguments::_agentList;
 
 // These are not set by the JDK's built-in launchers, but they can be set by
 // programs that embed the JVM using JNI_CreateJavaVM. See comments around
@@ -217,25 +214,6 @@ SystemProperty::SystemProperty(const char* key, const char* value, bool writeabl
   _writeable = writeable;
 }
 
-AgentLibrary::AgentLibrary(const char* name, const char* options,
-               bool is_absolute_path, void* os_lib,
-               bool instrument_lib) {
-  _name = AllocateHeap(strlen(name)+1, mtArguments);
-  strcpy(_name, name);
-  if (options == nullptr) {
-    _options = nullptr;
-  } else {
-    _options = AllocateHeap(strlen(options)+1, mtArguments);
-    strcpy(_options, options);
-  }
-  _is_absolute_path = is_absolute_path;
-  _os_lib = os_lib;
-  _next = nullptr;
-  _state = agent_invalid;
-  _is_static_lib = false;
-  _is_instrument_lib = instrument_lib;
-}
-
 // Check if head of 'option' matches 'name', and sets 'tail' to the remaining
 // part of the option string.
 static bool match_option(const JavaVMOption *option, const char* name,
@@ -325,23 +303,6 @@ bool needs_module_property_warning = false;
 #define UPGRADE_PATH_LEN 12
 #define ENABLE_NATIVE_ACCESS "enable.native.access"
 #define ENABLE_NATIVE_ACCESS_LEN 20
-
-void Arguments::add_init_library(const char* name, const char* options) {
-  _libraryList.add(new AgentLibrary(name, options, false, nullptr));
-}
-
-void Arguments::add_init_agent(const char* name, const char* options, bool absolute_path) {
-  _agentList.add(new AgentLibrary(name, options, absolute_path, nullptr));
-}
-
-void Arguments::add_instrument_agent(const char* name, const char* options, bool absolute_path) {
-  _agentList.add(new AgentLibrary(name, options, absolute_path, nullptr, true));
-}
-
-// Late-binding agents not started via arguments
-void Arguments::add_loaded_agent(AgentLibrary *agentLib) {
-  _agentList.add(agentLib);
-}
 
 // Return TRUE if option matches 'property', or 'property=', or 'property.'.
 static bool matches_property_suffix(const char* option, const char* property, size_t len) {
@@ -1304,8 +1265,14 @@ bool Arguments::add_property(const char* prop, PropertyWriteable writeable, Prop
 #endif
 
   if (strcmp(key, "java.compiler") == 0) {
-    process_java_compiler_argument(value);
-    // Record value in Arguments, but let it get passed to Java.
+    // we no longer support java.compiler system property, log a warning and let it get
+    // passed to Java, like any other system property
+    if (strlen(value) == 0 || strcasecmp(value, "NONE") == 0) {
+        // for applications using NONE or empty value, log a more informative message
+        warning("The java.compiler system property is obsolete and no longer supported, use -Xint");
+    } else {
+        warning("The java.compiler system property is obsolete and no longer supported.");
+    }
   } else if (strcmp(key, "sun.java.launcher.is_altjvm") == 0) {
     // sun.java.launcher.is_altjvm property is
     // private and is processed in process_sun_java_launcher_properties();
@@ -1410,7 +1377,6 @@ void Arguments::set_mode_flags(Mode mode) {
   // Set up default values for all flags.
   // If you add a flag to any of the branches below,
   // add a default value for it here.
-  set_java_compiler(false);
   _mode                      = mode;
 
   // Ensure Agent_OnLoad has the correct initial values.
@@ -1900,16 +1866,6 @@ jint Arguments::set_aggressive_opts_flags() {
 }
 
 //===========================================================================================================
-// Parsing of java.compiler property
-
-void Arguments::process_java_compiler_argument(const char* arg) {
-  // For backwards compatibility, Djava.compiler=NONE or ""
-  // causes us to switch to -Xint mode UNLESS -Xdebug
-  // is also specified.
-  if (strlen(arg) == 0 || strcasecmp(arg, "NONE") == 0) {
-    set_java_compiler(true);    // "-Djava.compiler[=...]" most recently seen.
-  }
-}
 
 void Arguments::process_java_launcher_argument(const char* launcher, void* extra_info) {
   if (_sun_java_launcher != _default_java_launcher) {
@@ -2381,7 +2337,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
           return JNI_ERR;
         }
 #endif // !INCLUDE_JVMTI
-        add_init_library(name, options);
+        JvmtiAgentList::add_xrun(name, options, false);
         FREE_C_HEAP_ARRAY(char, name);
         FREE_C_HEAP_ARRAY(char, options);
       }
@@ -2453,7 +2409,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
           return JNI_ERR;
         }
 #endif // !INCLUDE_JVMTI
-        add_init_agent(name, options, is_absolute_path);
+        JvmtiAgentList::add(name, options, is_absolute_path);
         os::free(name);
         os::free(options);
       }
@@ -2468,8 +2424,9 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
         size_t length = strlen(tail) + 1;
         char *options = NEW_C_HEAP_ARRAY(char, length, mtArguments);
         jio_snprintf(options, length, "%s", tail);
-        add_instrument_agent("instrument", options, false);
+        JvmtiAgentList::add("instrument", options, false);
         FREE_C_HEAP_ARRAY(char, options);
+
         // java agents need module java.instrument
         if (!create_numbered_module_property("jdk.module.addmods", "java.instrument", addmods_count++)) {
           return JNI_ENOMEM;
@@ -3039,15 +2996,6 @@ jint Arguments::finalize_vm_init_args(bool patch_mod_javabase) {
     if (result != JNI_OK) {
       return result;
     }
-  }
-
-  // This must be done after all arguments have been processed.
-  // java_compiler() true means set to "NONE" or empty.
-  if (java_compiler() && !xdebug_mode()) {
-    // For backwards compatibility, we switch to interpreted mode if
-    // -Djava.compiler="NONE" or "" is specified AND "-Xdebug" was
-    // not specified.
-    set_mode_flags(_int);
   }
 
   // CompileThresholdScaling == 0.0 is same as -Xint: Disable compilation (enable interpreter-only mode),

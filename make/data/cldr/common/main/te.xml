@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2022 Unicode, Inc.
+<!-- Copyright © 1991-2023 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -217,6 +217,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="hax">దక్షిణ హైదా</language>
 			<language type="he">హిబ్రూ</language>
 			<language type="hi">హిందీ</language>
+			<language type="hi_Latn">హిందీ (లాటిన్)</language>
 			<language type="hi_Latn" alt="variant">హింగ్లీష్</language>
 			<language type="hil">హిలిగెనాన్</language>
 			<language type="hit">హిట్టిటే</language>
@@ -1007,7 +1008,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="TM">టర్క్‌మెనిస్తాన్</territory>
 			<territory type="TN">ట్యునీషియా</territory>
 			<territory type="TO">టోంగా</territory>
-			<territory type="TR">టర్కీ</territory>
+			<territory type="TR">తుర్కియె</territory>
 			<territory type="TT">ట్రినిడాడ్ మరియు టొబాగో</territory>
 			<territory type="TV">టువాలు</territory>
 			<territory type="TW">తైవాన్</territory>
@@ -1040,6 +1041,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="ZW">జింబాబ్వే</territory>
 			<territory type="ZZ">తెలియని ప్రాంతం</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">ఇంగ్లాండ్</subdivision>
+			<subdivision type="gbsct">స్కాట్లాండ్</subdivision>
+			<subdivision type="gbwls">వేల్స్</subdivision>
+		</subdivisions>
 		<variants>
 			<variant type="1901">ప్రాచీన ఙర్మన వర్ణక్రమం</variant>
 			<variant type="1996">1996 ఙర్మన వర్ణక్రమం</variant>
@@ -1501,9 +1507,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -1511,9 +1523,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -2026,9 +2044,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -2826,6 +2850,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<relativeTimePattern count="one">{0} వారం క్రితం</relativeTimePattern>
 					<relativeTimePattern count="other">{0} వారాల క్రితం</relativeTimePattern>
 				</relativeTime>
+				<relativePeriod>{0} వారం</relativePeriod>
 			</field>
 			<field type="week-narrow">
 				<displayName>వా</displayName>
@@ -3266,6 +3291,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</relativeTime>
 			</field>
 			<field type="minute-narrow">
+				<displayName>నిమి.</displayName>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} నిమి.లో</relativeTimePattern>
 					<relativeTimePattern count="other">{0} నిమి.లో</relativeTimePattern>
@@ -4120,6 +4146,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="America/Hermosillo">
 				<exemplarCity>హెర్మోసిల్లో</exemplarCity>
+			</zone>
+			<zone type="America/Ciudad_Juarez">
+				<exemplarCity>సియుదాద్ హ్వారెజ్</exemplarCity>
 			</zone>
 			<zone type="America/Mazatlan">
 				<exemplarCity>మాసట్‌లాన్</exemplarCity>
@@ -5600,6 +5629,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<native>telu</native>
 		</otherNumberingSystems>
 		<minimumGroupingDigits>1</minimumGroupingDigits>
+		<symbols numberSystem="adlm">
+			<timeSeparator draft="contributed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="bali">
+			<timeSeparator draft="contributed">:</timeSeparator>
+		</symbols>
 		<symbols numberSystem="latn">
 			<decimal>.</decimal>
 			<group>,</group>
@@ -5620,6 +5655,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<percentSign>%</percentSign>
 			<plusSign>+</plusSign>
 			<minusSign>-</minusSign>
+			<approximatelySign>~</approximatelySign>
 			<exponential>E</exponential>
 			<superscriptingExponent>×</superscriptingExponent>
 			<perMille>‰</perMille>
@@ -7097,6 +7133,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<perUnitPattern>చదరపు అంగుళానికి {0}</perUnitPattern>
 			</unit>
 			<unit type="area-dunam">
+				<displayName>డునామ్‌లు</displayName>
 				<unitPattern count="one">{0} డునామ్</unitPattern>
 				<unitPattern count="other">{0} డునామ్‌లు</unitPattern>
 			</unit>
@@ -7260,6 +7297,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} రోజులు</unitPattern>
 				<perUnitPattern>రోజుకు {0}</perUnitPattern>
 			</unit>
+			<unit type="duration-day-person">
+				<unitPattern count="one">{0} రోజు</unitPattern>
+				<unitPattern count="other">{0} రోజులు</unitPattern>
+			</unit>
 			<unit type="duration-hour">
 				<displayName>గంటలు</displayName>
 				<unitPattern count="one">{0} గంట</unitPattern>
@@ -7394,6 +7435,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} హెర్ట్‌జ్</unitPattern>
 			</unit>
 			<unit type="graphics-em">
+				<displayName>em</displayName>
 				<unitPattern count="one">{0} em</unitPattern>
 				<unitPattern count="other">{0} emలు</unitPattern>
 			</unit>
@@ -8048,6 +8090,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<compoundUnitPattern1 count="one">{0}²</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other">{0}²</compoundUnitPattern1>
 			</compoundUnit>
+			<compoundUnit type="power3">
+				<compoundUnitPattern1 count="one">{0}³</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0}³</compoundUnitPattern1>
+			</compoundUnit>
 			<compoundUnit type="times">
 				<compoundUnitPattern>{0}⋅{1}</compoundUnitPattern>
 			</compoundUnit>
@@ -8178,6 +8224,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="concentr-permyriad">
 				<displayName>పెర్మేరియాడ్</displayName>
+				<unitPattern count="one">{0}‱</unitPattern>
+				<unitPattern count="other">{0}‱</unitPattern>
 			</unit>
 			<unit type="concentr-mole">
 				<displayName>మోల్</displayName>
@@ -8384,9 +8432,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="energy-electronvolt">
 				<displayName>ఎలక్ట్రాన్‌వోల్ట్</displayName>
+				<unitPattern count="one">{0} eV</unitPattern>
+				<unitPattern count="other">{0} eV</unitPattern>
 			</unit>
 			<unit type="energy-british-thermal-unit">
 				<displayName>BTU</displayName>
+				<unitPattern count="one">{0} Btu</unitPattern>
+				<unitPattern count="other">{0} Btu</unitPattern>
 			</unit>
 			<unit type="energy-therm-us">
 				<displayName>US థెర్మ్‌</displayName>
@@ -8395,9 +8447,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="force-pound-force">
 				<displayName>పౌండ్-ఫోర్స్</displayName>
+				<unitPattern count="one">{0} lbf</unitPattern>
+				<unitPattern count="other">{0} lbf</unitPattern>
 			</unit>
 			<unit type="force-newton">
 				<displayName>న్యూటన్</displayName>
+				<unitPattern count="one">{0} N</unitPattern>
+				<unitPattern count="other">{0} N</unitPattern>
 			</unit>
 			<unit type="force-kilowatt-hour-per-100-kilometer">
 				<displayName draft="contributed">కి.వా./100కి.మీ.</displayName>
@@ -8419,8 +8475,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} కి.హె</unitPattern>
 				<unitPattern count="other">{0} కి.హె</unitPattern>
 			</unit>
+			<unit type="frequency-hertz">
+				<unitPattern count="one">{0} Hz</unitPattern>
+				<unitPattern count="other">{0} Hz</unitPattern>
+			</unit>
+			<unit type="graphics-em">
+				<unitPattern count="one">{0} em</unitPattern>
+				<unitPattern count="other">{0} em</unitPattern>
+			</unit>
 			<unit type="graphics-pixel">
 				<displayName>పిక్సెల్స్</displayName>
+				<unitPattern count="one">{0} px</unitPattern>
+				<unitPattern count="other">{0} px</unitPattern>
 			</unit>
 			<unit type="graphics-megapixel">
 				<displayName>మెగా పిక్సెల్స్</displayName>
@@ -8451,6 +8517,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>బిందువు</displayName>
 				<unitPattern count="one">{0} బిందువు</unitPattern>
 				<unitPattern count="other">{0} బిందువు</unitPattern>
+			</unit>
+			<unit type="length-earth-radius">
+				<unitPattern count="one">{0} R⊕</unitPattern>
+				<unitPattern count="other">{0} R⊕</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
 				<displayName>కి.మీ.</displayName>
@@ -8559,6 +8629,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="length-solar-radius">
 				<displayName>సౌర అర్ధవ్యాసం</displayName>
+				<unitPattern count="one">{0} R☉</unitPattern>
+				<unitPattern count="other">{0} R☉</unitPattern>
 			</unit>
 			<unit type="light-lux">
 				<displayName>లక్స్</displayName>
@@ -8577,6 +8649,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="light-solar-luminosity">
 				<displayName>సోలార్ ల్యూమినోసైటైస్</displayName>
+				<unitPattern count="one">{0} L☉</unitPattern>
+				<unitPattern count="other">{0} L☉</unitPattern>
 			</unit>
 			<unit type="mass-tonne">
 				<displayName>ట</displayName>
@@ -8644,9 +8718,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="mass-earth-mass">
 				<displayName>భూమి ద్రవ్యరాశులు</displayName>
+				<unitPattern count="one">{0} M⊕</unitPattern>
+				<unitPattern count="other">{0} M⊕</unitPattern>
 			</unit>
 			<unit type="mass-solar-mass">
 				<displayName>సౌర ద్రవ్యరాశులు</displayName>
+				<unitPattern count="one">{0} M☉</unitPattern>
+				<unitPattern count="other">{0} M☉</unitPattern>
 			</unit>
 			<unit type="mass-grain">
 				<displayName draft="contributed">ధాన్యము</displayName>
@@ -8670,6 +8748,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="power-watt">
 				<displayName>వాట్‌లు</displayName>
+				<unitPattern count="one">{0} W</unitPattern>
+				<unitPattern count="other">{0} W</unitPattern>
 			</unit>
 			<unit type="power-milliwatt">
 				<displayName>మి.వా</displayName>
@@ -8721,8 +8801,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} హె.పా</unitPattern>
 				<unitPattern count="other">{0} హె.పా</unitPattern>
 			</unit>
+			<unit type="pressure-kilopascal">
+				<unitPattern count="one">{0} kPa</unitPattern>
+				<unitPattern count="other">{0} kPa</unitPattern>
+			</unit>
 			<unit type="pressure-megapascal">
 				<displayName>MPa</displayName>
+				<unitPattern count="one">{0} MPa</unitPattern>
+				<unitPattern count="other">{0} MPa</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName>కి.మీ/గంట</displayName>
@@ -8894,6 +8980,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ద్ర.ఔ.</unitPattern>
 				<unitPattern count="other">{0} ద్ర.ఔ.</unitPattern>
 			</unit>
+			<unit type="volume-fluid-ounce-imperial">
+				<unitPattern count="one">{0} fl oz Imp.</unitPattern>
+				<unitPattern count="other">{0} fl oz Imp.</unitPattern>
+			</unit>
 			<unit type="volume-tablespoon">
 				<displayName>టే.స్పూ.</displayName>
 				<unitPattern count="one">{0} టే.స్పూ</unitPattern>
@@ -9040,28 +9130,59 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
 			</compoundUnit>
+			<compoundUnit type="power2">
+				<compoundUnitPattern1>{0}²</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one">{0}²</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0}²</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="power3">
+				<compoundUnitPattern1>{0}³</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one">{0}³</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0}³</compoundUnitPattern1>
+			</compoundUnit>
 			<compoundUnit type="times">
 				<compoundUnitPattern>{0}⋅{1}</compoundUnitPattern>
 			</compoundUnit>
 			<unit type="acceleration-g-force">
+				<displayName>గు-శక్తి</displayName>
 				<unitPattern count="one">{0} గు</unitPattern>
 				<unitPattern count="other">{0} గు</unitPattern>
 			</unit>
+			<unit type="acceleration-meter-per-square-second">
+				<displayName>మీటర్లు/సెక²</displayName>
+				<unitPattern count="one">{0} మీ/సె²</unitPattern>
+				<unitPattern count="other">{0} మీ/సె²</unitPattern>
+			</unit>
+			<unit type="angle-revolution">
+				<displayName>భ్రమ.</displayName>
+				<unitPattern count="one">{0} భ్రమ</unitPattern>
+				<unitPattern count="other">{0} భ్రమ.</unitPattern>
+			</unit>
+			<unit type="angle-radian">
+				<displayName>రేడియన్లు</displayName>
+				<unitPattern count="one">{0} రే.</unitPattern>
+				<unitPattern count="other">{0} రే.</unitPattern>
+			</unit>
 			<unit type="angle-degree">
+				<displayName>డిగ్రీలు</displayName>
 				<unitPattern count="one">{0}°</unitPattern>
 				<unitPattern count="other">{0}°</unitPattern>
 			</unit>
 			<unit type="angle-arc-minute">
+				<displayName>ఆర్క్ నిమి.</displayName>
 				<unitPattern count="one">{0}′</unitPattern>
 				<unitPattern count="other">{0}′</unitPattern>
 			</unit>
 			<unit type="angle-arc-second">
+				<displayName>ఆర్క్ సెక.</displayName>
 				<unitPattern count="one">{0}″</unitPattern>
 				<unitPattern count="other">{0}″</unitPattern>
 			</unit>
 			<unit type="area-square-kilometer">
+				<displayName>కి.మీ²</displayName>
 				<unitPattern count="one">{0} కి.మీ²</unitPattern>
 				<unitPattern count="other">{0} కి.మీ²</unitPattern>
+				<perUnitPattern>{0}/ కి.మీ²</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
 				<displayName>హెక్టారు</displayName>
@@ -9069,26 +9190,61 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} హె.</unitPattern>
 			</unit>
 			<unit type="area-square-meter">
+				<displayName>మీటర్లు²</displayName>
 				<unitPattern count="one">{0} మీ²</unitPattern>
 				<unitPattern count="other">{0} మీ²</unitPattern>
+				<perUnitPattern>{0}/మీ²</perUnitPattern>
+			</unit>
+			<unit type="area-square-centimeter">
+				<displayName>సెం.మీ²</displayName>
+				<unitPattern count="one">{0} సెం.మీ²</unitPattern>
+				<unitPattern count="other">{0} సెం.మీ²</unitPattern>
+				<perUnitPattern>{0}/సెం.మీ²</perUnitPattern>
 			</unit>
 			<unit type="area-square-mile">
+				<displayName>చద. మైళ్లు</displayName>
 				<unitPattern count="one">{0} మై²</unitPattern>
 				<unitPattern count="other">{0} మై²</unitPattern>
+				<perUnitPattern>{0}/ చద. మై²</perUnitPattern>
 			</unit>
 			<unit type="area-acre">
+				<displayName>ఎకరాలు</displayName>
 				<unitPattern count="one">{0} ఎక.</unitPattern>
 				<unitPattern count="other">{0} ఎక.</unitPattern>
 			</unit>
+			<unit type="area-square-yard">
+				<displayName>గజాలు²</displayName>
+				<unitPattern count="one">{0} గ²</unitPattern>
+				<unitPattern count="other">{0} గ²</unitPattern>
+			</unit>
 			<unit type="area-square-foot">
+				<displayName>చద. అడుగులు</displayName>
 				<unitPattern count="one">{0} అ²</unitPattern>
 				<unitPattern count="other">{0} అ²</unitPattern>
 			</unit>
+			<unit type="area-square-inch">
+				<displayName>అంగుళాలు²</displayName>
+				<unitPattern count="one">{0} అం²</unitPattern>
+				<unitPattern count="other">{0} అం²</unitPattern>
+				<perUnitPattern>{0}/అం²</perUnitPattern>
+			</unit>
+			<unit type="area-dunam">
+				<displayName>డునామ్‌లు</displayName>
+				<unitPattern count="one">{0} డునామ్</unitPattern>
+				<unitPattern count="other">{0} డునామ్</unitPattern>
+			</unit>
+			<unit type="concentr-karat">
+				<displayName>కేరట్లు</displayName>
+				<unitPattern count="one" draft="contributed">{0} కేర.</unitPattern>
+				<unitPattern count="other">{0} కేర.</unitPattern>
+			</unit>
 			<unit type="concentr-milligram-ofglucose-per-deciliter">
+				<displayName>మి.గ్రా./డె.లీ.</displayName>
 				<unitPattern count="one" draft="contributed">{0}మిగ/డెలీ</unitPattern>
 				<unitPattern count="other" draft="contributed">{0}మిగ/డెలీ</unitPattern>
 			</unit>
 			<unit type="concentr-millimole-per-liter">
+				<displayName>మిల్లీమోల్‌/లీటర్</displayName>
 				<unitPattern count="one" draft="contributed">{0}మిమో/లీ</unitPattern>
 				<unitPattern count="other" draft="contributed">{0}మిమో/లీ</unitPattern>
 			</unit>
@@ -9097,17 +9253,35 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" draft="contributed">{0} ఐటమ్</unitPattern>
 				<unitPattern count="other" draft="contributed">{0}ఐటమ్</unitPattern>
 			</unit>
+			<unit type="concentr-permillion">
+				<displayName>భాగాలు/మిలియన్</displayName>
+				<unitPattern count="one">{0} భా./మి.</unitPattern>
+				<unitPattern count="other">{0} భా./మి.</unitPattern>
+			</unit>
 			<unit type="concentr-percent">
 				<displayName>%</displayName>
 				<unitPattern count="one">{0}%</unitPattern>
 				<unitPattern count="other">{0}%</unitPattern>
 			</unit>
+			<unit type="concentr-permille">
+				<displayName>మైలుకు</displayName>
+				<unitPattern count="one">{0}‰</unitPattern>
+				<unitPattern count="other">{0}‰</unitPattern>
+			</unit>
 			<unit type="concentr-permyriad">
 				<displayName draft="contributed">‱</displayName>
+				<unitPattern count="one">{0}‱</unitPattern>
+				<unitPattern count="other">{0}‱</unitPattern>
 			</unit>
 			<unit type="concentr-mole">
+				<displayName>మోల్</displayName>
 				<unitPattern count="one">{0} మోల్</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} మోల్</unitPattern>
+			</unit>
+			<unit type="consumption-liter-per-kilometer">
+				<displayName>లీటర్లు/కి.మీ</displayName>
+				<unitPattern count="one">{0} లీ./కి.మీ</unitPattern>
+				<unitPattern count="other">{0} లీ./కి.మీ</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>లీ/100కి.మీ.</displayName>
@@ -9115,27 +9289,88 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}లీ/100కి.మీ.</unitPattern>
 			</unit>
 			<unit type="consumption-mile-per-gallon">
+				<displayName>మైళ్లు/గ్యా.</displayName>
 				<unitPattern count="one">{0}మై./గ్యా.</unitPattern>
 				<unitPattern count="other">{0}మై./గ్యా.</unitPattern>
 			</unit>
 			<unit type="consumption-mile-per-gallon-imperial">
+				<displayName>మైళ్లు/గ్యా. ఇంపీరియల్</displayName>
 				<unitPattern count="one">{0}మై/గ.ఇం</unitPattern>
 				<unitPattern count="other">{0}మై/గ.ఇం</unitPattern>
 			</unit>
+			<unit type="digital-petabyte">
+				<displayName>పె.బైట్</displayName>
+				<unitPattern count="one">{0} పీబీ</unitPattern>
+				<unitPattern count="other">{0} పీబీ</unitPattern>
+			</unit>
+			<unit type="digital-terabyte">
+				<displayName>టె.బైట్</displayName>
+				<unitPattern count="one">{0} టీబీ</unitPattern>
+				<unitPattern count="other">{0} టీబీ</unitPattern>
+			</unit>
 			<unit type="digital-terabit">
+				<displayName draft="contributed">టె.బిట్</displayName>
 				<unitPattern count="one">{0} టె.బిట్</unitPattern>
 				<unitPattern count="other" draft="contributed">{0}టె.బిట్లు</unitPattern>
 			</unit>
+			<unit type="digital-gigabyte">
+				<displayName>గి.బైట్</displayName>
+				<unitPattern count="one">{0} జీబీ</unitPattern>
+				<unitPattern count="other">{0} జీబీ</unitPattern>
+			</unit>
+			<unit type="digital-gigabit">
+				<displayName>గి.బిట్</displayName>
+				<unitPattern count="one">{0} గి.బిట్</unitPattern>
+				<unitPattern count="other">{0} గి.బిట్లు</unitPattern>
+			</unit>
+			<unit type="digital-megabyte">
+				<displayName>మె.బైట్</displayName>
+				<unitPattern count="one">{0} ఎమ్‌బి</unitPattern>
+				<unitPattern count="other">{0} ఎమ్‌బి</unitPattern>
+			</unit>
 			<unit type="digital-megabit">
+				<displayName>మె.బిట్</displayName>
 				<unitPattern count="one">{0} మె.బిట్</unitPattern>
 				<unitPattern count="other" draft="contributed">{0}మె.బి.</unitPattern>
+			</unit>
+			<unit type="digital-kilobyte">
+				<displayName>కి.బైట్</displayName>
+				<unitPattern count="one">{0} కేబీ</unitPattern>
+				<unitPattern count="other">{0} కేబీ</unitPattern>
+			</unit>
+			<unit type="digital-kilobit">
+				<displayName>కి.బిట్</displayName>
+				<unitPattern count="one">{0} కి.బిట్</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} కి.బిట్లు</unitPattern>
+			</unit>
+			<unit type="digital-byte">
+				<displayName>బైట్</displayName>
+				<unitPattern count="one">{0} బై</unitPattern>
+				<unitPattern count="other">{0} బై</unitPattern>
+			</unit>
+			<unit type="digital-bit">
+				<displayName>బిట్</displayName>
+				<unitPattern count="one">{0} బి</unitPattern>
+				<unitPattern count="other">{0} బి</unitPattern>
+			</unit>
+			<unit type="duration-century">
+				<displayName>శ</displayName>
+				<unitPattern count="one">{0} శ</unitPattern>
+				<unitPattern count="other">{0} శ</unitPattern>
+			</unit>
+			<unit type="duration-decade">
+				<displayName>దశా.</displayName>
+				<unitPattern count="one">{0} దశా.</unitPattern>
+				<unitPattern count="other">{0} ద.</unitPattern>
 			</unit>
 			<unit type="duration-year">
 				<displayName>సం</displayName>
 				<unitPattern count="one">{0}సం</unitPattern>
 				<unitPattern count="other">{0}సం</unitPattern>
+				<perUnitPattern>{0}/సం.</perUnitPattern>
 			</unit>
 			<unit type="duration-quarter">
+				<displayName>క్వా</displayName>
 				<unitPattern count="one">{0}క్వా</unitPattern>
 				<unitPattern count="other">{0}క్వా</unitPattern>
 				<perUnitPattern>{0}/క్వా</perUnitPattern>
@@ -9144,11 +9379,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>నెల</displayName>
 				<unitPattern count="one">{0}నె</unitPattern>
 				<unitPattern count="other">{0}నె</unitPattern>
+				<perUnitPattern>{0}/నె.</perUnitPattern>
 			</unit>
 			<unit type="duration-week">
 				<displayName>వా</displayName>
 				<unitPattern count="one">{0}వా</unitPattern>
 				<unitPattern count="other">{0}వా</unitPattern>
+				<perUnitPattern>{0}/వా.</perUnitPattern>
 			</unit>
 			<unit type="duration-day">
 				<displayName>రోజు</displayName>
@@ -9179,9 +9416,90 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0}మి.సె</unitPattern>
 				<unitPattern count="other">{0}మి.సె</unitPattern>
 			</unit>
+			<unit type="duration-microsecond">
+				<displayName>మై.సె.</displayName>
+				<unitPattern count="one">{0} మై.సె</unitPattern>
+				<unitPattern count="other">{0} మై.సె</unitPattern>
+			</unit>
+			<unit type="duration-nanosecond">
+				<displayName>నా.సె.</displayName>
+				<unitPattern count="one">{0} నా.సె</unitPattern>
+				<unitPattern count="other">{0} నా.సె</unitPattern>
+			</unit>
+			<unit type="electric-ampere">
+				<displayName draft="contributed">ఆంప్స్</displayName>
+				<unitPattern count="one" draft="contributed">{0} ఆం</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} ఆం</unitPattern>
+			</unit>
+			<unit type="electric-milliampere">
+				<displayName draft="contributed">మిల్లీ ఆంప్స్</displayName>
+				<unitPattern count="one" draft="contributed">{0} మి. ఆం</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} మి. ఆం</unitPattern>
+			</unit>
+			<unit type="electric-ohm">
+				<displayName draft="contributed">ఓమ్స్</displayName>
+				<unitPattern count="one" draft="contributed">{0} Ω</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} Ω</unitPattern>
+			</unit>
+			<unit type="electric-volt">
+				<displayName draft="contributed">వోల్ట్స్</displayName>
+				<unitPattern count="one" draft="contributed">{0} వో</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} వో</unitPattern>
+			</unit>
+			<unit type="energy-kilocalorie">
+				<displayName draft="contributed">కి.కే</displayName>
+				<unitPattern count="one" draft="contributed">{0} కి.కే</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} కి.కే</unitPattern>
+			</unit>
+			<unit type="energy-calorie">
+				<displayName>కే</displayName>
+				<unitPattern count="one">{0} కే.</unitPattern>
+				<unitPattern count="other">{0} కే.</unitPattern>
+			</unit>
+			<unit type="energy-foodcalorie">
+				<displayName>కే.</displayName>
+				<unitPattern count="one">{0} కే.</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} కే.</unitPattern>
+			</unit>
+			<unit type="energy-kilojoule">
+				<displayName draft="contributed">కిలోజౌల్</displayName>
+				<unitPattern count="one" draft="contributed">{0} కి.జౌ</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} కి.జౌ</unitPattern>
+			</unit>
+			<unit type="energy-joule">
+				<displayName draft="contributed">జౌల్స్</displayName>
+				<unitPattern count="one" draft="contributed">{0} జౌ.</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} జౌ.</unitPattern>
+			</unit>
+			<unit type="energy-kilowatt-hour">
+				<displayName draft="contributed">కి.వా. గంట</displayName>
+				<unitPattern count="one" draft="contributed">{0} కి.వా.గం</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} కి.వా.గం</unitPattern>
+			</unit>
+			<unit type="energy-electronvolt">
+				<displayName>ఎలక్ట్రాన్‌వోల్ట్</displayName>
+				<unitPattern count="one">{0} eV</unitPattern>
+				<unitPattern count="other">{0} eV</unitPattern>
+			</unit>
+			<unit type="energy-british-thermal-unit">
+				<displayName>BTU</displayName>
+				<unitPattern count="one">{0} Btu</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} Btu</unitPattern>
+			</unit>
 			<unit type="energy-therm-us">
+				<displayName draft="contributed">US థెర్మ్‌</displayName>
 				<unitPattern count="one" draft="contributed">{0} US థెర్మ్‌</unitPattern>
 				<unitPattern count="other" draft="contributed">{0}US థెర్మ్‌.</unitPattern>
+			</unit>
+			<unit type="force-pound-force">
+				<displayName>పౌండ్-ఫోర్స్</displayName>
+				<unitPattern count="one">{0} lbf</unitPattern>
+				<unitPattern count="other">{0} lbf</unitPattern>
+			</unit>
+			<unit type="force-newton">
+				<displayName>న్యూటన్</displayName>
+				<unitPattern count="one">{0} N</unitPattern>
+				<unitPattern count="other">{0} N</unitPattern>
 			</unit>
 			<unit type="force-kilowatt-hour-per-100-kilometer">
 				<displayName draft="contributed">కి.వా./100కి.మీ.</displayName>
@@ -9189,21 +9507,69 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" draft="contributed">{0}కి.వా/100కి.మీ</unitPattern>
 			</unit>
 			<unit type="frequency-gigahertz">
+				<displayName draft="contributed">గిగా హెడ్జ్</displayName>
 				<unitPattern count="one" draft="contributed">{0} గి. హె.</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} గి. హె.</unitPattern>
+			</unit>
+			<unit type="frequency-megahertz">
+				<displayName draft="contributed">మె.హె</displayName>
+				<unitPattern count="one" draft="contributed">{0} మె.హె</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} మె.హె</unitPattern>
+			</unit>
+			<unit type="frequency-kilohertz">
+				<displayName draft="contributed">కి.హె</displayName>
+				<unitPattern count="one" draft="contributed">{0} కి.హె</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} కి.హె</unitPattern>
 			</unit>
 			<unit type="frequency-hertz">
 				<displayName>Hz</displayName>
 				<unitPattern count="one">{0}Hz</unitPattern>
 				<unitPattern count="other">{0}Hz</unitPattern>
 			</unit>
+			<unit type="graphics-em">
+				<displayName>em</displayName>
+				<unitPattern count="one">{0} em</unitPattern>
+				<unitPattern count="other">{0} em</unitPattern>
+			</unit>
 			<unit type="graphics-pixel">
 				<displayName>px</displayName>
+				<unitPattern count="one">{0} px</unitPattern>
+				<unitPattern count="other">{0} px</unitPattern>
 			</unit>
 			<unit type="graphics-megapixel">
 				<displayName>MP</displayName>
 				<unitPattern count="one">{0}MP</unitPattern>
 				<unitPattern count="other">{0} MP</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-centimeter">
+				<displayName>పి/సె.మీ.</displayName>
+				<unitPattern count="one">{0} పి/సె.మీ.</unitPattern>
+				<unitPattern count="other">{0} పి/సె.మీ.</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-inch">
+				<displayName>పి/అం.</displayName>
+				<unitPattern count="one">{0} పి/అం.</unitPattern>
+				<unitPattern count="other">{0} పి/అం.</unitPattern>
+			</unit>
+			<unit type="graphics-dot-per-centimeter">
+				<displayName>బి/సె.మీ.</displayName>
+				<unitPattern count="one">{0} బి/సె.మీ.</unitPattern>
+				<unitPattern count="other">{0} బి/సె.మీ.</unitPattern>
+			</unit>
+			<unit type="graphics-dot-per-inch">
+				<displayName>బి/అం.</displayName>
+				<unitPattern count="one">{0} బి/అం.</unitPattern>
+				<unitPattern count="other">{0} బి/అం.</unitPattern>
+			</unit>
+			<unit type="graphics-dot">
+				<displayName>బిందువు</displayName>
+				<unitPattern count="one">{0} బిందువు</unitPattern>
+				<unitPattern count="other">{0} బిందువు</unitPattern>
+			</unit>
+			<unit type="length-earth-radius">
+				<displayName>R⊕</displayName>
+				<unitPattern count="one">{0} R⊕</unitPattern>
+				<unitPattern count="other">{0} R⊕</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
 				<displayName>కి.మీ</displayName>
@@ -9233,7 +9599,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0}మి.మీ</unitPattern>
 				<unitPattern count="other">{0}మి.మీ</unitPattern>
 			</unit>
+			<unit type="length-micrometer">
+				<displayName>మై.మీటర్లు</displayName>
+				<unitPattern count="one">{0} మై.మీ.</unitPattern>
+				<unitPattern count="other">{0} మై.మీ.</unitPattern>
+			</unit>
+			<unit type="length-nanometer">
+				<displayName>నా.మీ.</displayName>
+				<unitPattern count="one">{0} నా.మీ.</unitPattern>
+				<unitPattern count="other">{0} నా.మీ.</unitPattern>
+			</unit>
 			<unit type="length-picometer">
+				<displayName>పి.మీ.</displayName>
 				<unitPattern count="one">{0} పి.మీ</unitPattern>
 				<unitPattern count="other">{0} పి.మీ</unitPattern>
 			</unit>
@@ -9259,14 +9636,75 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}″</unitPattern>
 				<perUnitPattern>{0}/అం.</perUnitPattern>
 			</unit>
+			<unit type="length-parsec">
+				<displayName>పార్సెక్‌లు</displayName>
+				<unitPattern count="one">{0} పా.లు</unitPattern>
+				<unitPattern count="other">{0} పా.</unitPattern>
+			</unit>
 			<unit type="length-light-year">
+				<displayName>కాంతి సం.</displayName>
 				<unitPattern count="one">{0} కాం. సం</unitPattern>
 				<unitPattern count="other">{0} కాం. సం</unitPattern>
+			</unit>
+			<unit type="length-astronomical-unit">
+				<displayName>au</displayName>
+				<unitPattern count="one">au</unitPattern>
+				<unitPattern count="other">{0} au</unitPattern>
+			</unit>
+			<unit type="length-furlong">
+				<displayName>ఫర్లాంగులు</displayName>
+				<unitPattern count="one">{0} ఫర్</unitPattern>
+				<unitPattern count="other">{0} ఫర్</unitPattern>
+			</unit>
+			<unit type="length-fathom">
+				<displayName>వ్యామములు</displayName>
+				<unitPattern count="one">{0} వ్యా.</unitPattern>
+				<unitPattern count="other">{0} వ్యా.</unitPattern>
+			</unit>
+			<unit type="length-nautical-mile">
+				<displayName>నా.మై.</displayName>
+				<unitPattern count="one">{0} నా.మై.</unitPattern>
+				<unitPattern count="other">{0} నా.మై.</unitPattern>
 			</unit>
 			<unit type="length-mile-scandinavian">
 				<displayName>స్కాం.మై.</displayName>
 				<unitPattern count="one">{0} స్కాం.మై.</unitPattern>
 				<unitPattern count="other">{0} స్కాం.మై.</unitPattern>
+			</unit>
+			<unit type="length-point">
+				<displayName>పాయింట్‌లు</displayName>
+				<unitPattern count="one">{0} pt</unitPattern>
+				<unitPattern count="other">{0} pt</unitPattern>
+			</unit>
+			<unit type="length-solar-radius">
+				<displayName>సౌర అర్ధవ్యాసం</displayName>
+				<unitPattern count="one">{0} R☉</unitPattern>
+				<unitPattern count="other">{0} R☉</unitPattern>
+			</unit>
+			<unit type="light-lux">
+				<displayName>లక్స్</displayName>
+				<unitPattern count="one">{0} ల.</unitPattern>
+				<unitPattern count="other">{0} ల.</unitPattern>
+			</unit>
+			<unit type="light-candela">
+				<displayName>క్యా.</displayName>
+				<unitPattern count="one">{0} క్యా.</unitPattern>
+				<unitPattern count="other">{0} క్యా.</unitPattern>
+			</unit>
+			<unit type="light-lumen">
+				<displayName>లు.</displayName>
+				<unitPattern count="one">{0} లు.</unitPattern>
+				<unitPattern count="other">{0} లు.</unitPattern>
+			</unit>
+			<unit type="light-solar-luminosity">
+				<displayName>సోలార్ ల్యూమినోసైటైస్</displayName>
+				<unitPattern count="one">{0} L☉</unitPattern>
+				<unitPattern count="other">{0} L☉</unitPattern>
+			</unit>
+			<unit type="mass-tonne">
+				<displayName>ట</displayName>
+				<unitPattern count="one">{0} ట</unitPattern>
+				<unitPattern count="other">{0} ట</unitPattern>
 			</unit>
 			<unit type="mass-kilogram">
 				<displayName>కి.గ్రా</displayName>
@@ -9280,7 +9718,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}గ్రా</unitPattern>
 				<perUnitPattern draft="contributed">{0}/గ్రా.</perUnitPattern>
 			</unit>
+			<unit type="mass-milligram">
+				<displayName>మి.గ్రా.</displayName>
+				<unitPattern count="one">{0} మి.గ్రా.</unitPattern>
+				<unitPattern count="other">{0} మి.గ్రా.</unitPattern>
+			</unit>
+			<unit type="mass-microgram">
+				<displayName>మై.గ్రా.</displayName>
+				<unitPattern count="one">{0} మై.గ్రా.</unitPattern>
+				<unitPattern count="other">{0} మై.గ్రా.</unitPattern>
+			</unit>
 			<unit type="mass-ton">
+				<displayName>టన్నులు</displayName>
 				<unitPattern count="one" draft="contributed">{0} ట</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} ట</unitPattern>
 			</unit>
@@ -9301,11 +9750,48 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ఔ.</unitPattern>
 				<perUnitPattern draft="contributed">{0}/ ఔ.</perUnitPattern>
 			</unit>
+			<unit type="mass-ounce-troy">
+				<displayName>ట్రా.ఔ.</displayName>
+				<unitPattern count="one">{0} ట్రా.ఔ.</unitPattern>
+				<unitPattern count="other">{0} ట్రా.ఔ.</unitPattern>
+			</unit>
+			<unit type="mass-carat">
+				<displayName>క్యారెట్లు</displayName>
+				<unitPattern count="one">{0} క్యారె.</unitPattern>
+				<unitPattern count="other">{0} క్యారె.</unitPattern>
+			</unit>
+			<unit type="mass-dalton">
+				<displayName>డాల్టన్‌లు</displayName>
+				<unitPattern count="one">{0} Da</unitPattern>
+				<unitPattern count="other">{0} Da</unitPattern>
+			</unit>
+			<unit type="mass-earth-mass">
+				<displayName>భూమి ద్రవ్యరాశులు</displayName>
+				<unitPattern count="one">{0} M⊕</unitPattern>
+				<unitPattern count="other">{0} M⊕</unitPattern>
+			</unit>
+			<unit type="mass-solar-mass">
+				<displayName>సౌర ద్రవ్యరాశులు</displayName>
+				<unitPattern count="one">{0} M☉</unitPattern>
+				<unitPattern count="other">{0} M☉</unitPattern>
+			</unit>
 			<unit type="mass-grain">
+				<displayName>ధాన్యము</displayName>
 				<unitPattern count="one" draft="contributed">{0} ధాన్య.</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} ధాన్య.</unitPattern>
 			</unit>
+			<unit type="power-gigawatt">
+				<displayName draft="contributed">గి.వా</displayName>
+				<unitPattern count="one" draft="contributed">{0} గి.వా</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} గి.వా</unitPattern>
+			</unit>
+			<unit type="power-megawatt">
+				<displayName draft="contributed">మె.వా</displayName>
+				<unitPattern count="one" draft="contributed">{0} మె.వా</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} మె.వా</unitPattern>
+			</unit>
 			<unit type="power-kilowatt">
+				<displayName draft="contributed">కి.వా</displayName>
 				<unitPattern count="one">{0} కి.వా</unitPattern>
 				<unitPattern count="other">{0} కి.వా</unitPattern>
 			</unit>
@@ -9314,7 +9800,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0}W</unitPattern>
 				<unitPattern count="other">{0}W</unitPattern>
 			</unit>
+			<unit type="power-milliwatt">
+				<displayName draft="contributed">మి.వా</displayName>
+				<unitPattern count="one" draft="contributed">{0} మి.వా</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} మి.వా</unitPattern>
+			</unit>
 			<unit type="power-horsepower">
+				<displayName draft="contributed">హా.ప</displayName>
 				<unitPattern count="one">{0} హా.ప</unitPattern>
 				<unitPattern count="other">{0} హా.ప</unitPattern>
 			</unit>
@@ -9333,15 +9825,40 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} అం.పాద</unitPattern>
 				<unitPattern count="other">{0} అం.పాద</unitPattern>
 			</unit>
+			<unit type="pressure-bar">
+				<displayName draft="contributed">బార్</displayName>
+				<unitPattern count="one" draft="contributed">{0} బార్</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} బార్‌లు</unitPattern>
+			</unit>
 			<unit type="pressure-millibar">
 				<displayName draft="contributed">మి.బార్</displayName>
 				<unitPattern count="one">{0} మి.బార్</unitPattern>
 				<unitPattern count="other">{0} మి.బార్</unitPattern>
 			</unit>
+			<unit type="pressure-atmosphere">
+				<displayName draft="contributed">వాతావ</displayName>
+				<unitPattern count="one" draft="contributed">{0} వాతావ</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} వాతావ</unitPattern>
+			</unit>
+			<unit type="pressure-pascal">
+				<displayName>పా</displayName>
+				<unitPattern count="one">{0} పాస్క.</unitPattern>
+				<unitPattern count="other">{0} పాస్క.</unitPattern>
+			</unit>
 			<unit type="pressure-hectopascal">
 				<displayName draft="contributed">హె.పా</displayName>
 				<unitPattern count="one">{0} హె.పా</unitPattern>
 				<unitPattern count="other">{0} హె.పా</unitPattern>
+			</unit>
+			<unit type="pressure-kilopascal">
+				<displayName draft="contributed">kPa</displayName>
+				<unitPattern count="one">{0} kPa</unitPattern>
+				<unitPattern count="other">{0} kPa</unitPattern>
+			</unit>
+			<unit type="pressure-megapascal">
+				<displayName>MPa</displayName>
+				<unitPattern count="one">{0} MPa</unitPattern>
+				<unitPattern count="other">{0} MPa</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName>కి.మీ/గం</displayName>
@@ -9357,6 +9874,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName draft="contributed">మైళ్లు/గంట</displayName>
 				<unitPattern count="one">{0} మై/గం.</unitPattern>
 				<unitPattern count="other">{0} మై/గం.</unitPattern>
+			</unit>
+			<unit type="speed-knot">
+				<displayName>నా.</displayName>
+				<unitPattern count="one">{0} నా.</unitPattern>
+				<unitPattern count="other">{0} నా.</unitPattern>
 			</unit>
 			<unit type="temperature-generic">
 				<displayName draft="contributed">°</displayName>
@@ -9378,44 +9900,188 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" draft="contributed">{0} కె</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} కె</unitPattern>
 			</unit>
+			<unit type="torque-pound-force-foot">
+				<displayName>పౌం.ఫీ.</displayName>
+				<unitPattern count="one">{0} పౌం.ఫీ.</unitPattern>
+				<unitPattern count="other">{0} పౌం.ఫీ.</unitPattern>
+			</unit>
+			<unit type="torque-newton-meter">
+				<displayName>N⋅m</displayName>
+				<unitPattern count="one">{0} N⋅m</unitPattern>
+				<unitPattern count="other">{0} N⋅m</unitPattern>
+			</unit>
 			<unit type="volume-cubic-kilometer">
+				<displayName>కి.మీ³</displayName>
 				<unitPattern count="one">{0} కిమీ³</unitPattern>
 				<unitPattern count="other">{0} కిమీ³</unitPattern>
 			</unit>
+			<unit type="volume-cubic-meter">
+				<displayName>మీ³</displayName>
+				<unitPattern count="one">{0} మీ³</unitPattern>
+				<unitPattern count="other">{0} మీ³</unitPattern>
+				<perUnitPattern>{0}/మీ³</perUnitPattern>
+			</unit>
+			<unit type="volume-cubic-centimeter">
+				<displayName>సెం.మీ³</displayName>
+				<unitPattern count="one">{0} సెం.మీ³</unitPattern>
+				<unitPattern count="other">{0} సెం.మీ³</unitPattern>
+				<perUnitPattern>{0}/సెం.మీ³</perUnitPattern>
+			</unit>
 			<unit type="volume-cubic-mile">
+				<displayName>మై³</displayName>
 				<unitPattern count="one">{0} మై³</unitPattern>
 				<unitPattern count="other">{0} మై³</unitPattern>
+			</unit>
+			<unit type="volume-cubic-yard">
+				<displayName>గజాలు³</displayName>
+				<unitPattern count="one">{0} గ³</unitPattern>
+				<unitPattern count="other">{0} గ³</unitPattern>
+			</unit>
+			<unit type="volume-cubic-foot">
+				<displayName>అ³</displayName>
+				<unitPattern count="one">{0} అ³</unitPattern>
+				<unitPattern count="other">{0} అ³</unitPattern>
+			</unit>
+			<unit type="volume-cubic-inch">
+				<displayName>అం³</displayName>
+				<unitPattern count="one">{0} అం³</unitPattern>
+				<unitPattern count="other">{0} అం³</unitPattern>
+			</unit>
+			<unit type="volume-megaliter">
+				<displayName>మె.లీ.</displayName>
+				<unitPattern count="one">{0} మె.లీ.</unitPattern>
+				<unitPattern count="other">{0} మె.లీ.</unitPattern>
+			</unit>
+			<unit type="volume-hectoliter">
+				<displayName>హె.లీ.</displayName>
+				<unitPattern count="one">{0} హె.లీ.</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} హె.లీ.</unitPattern>
 			</unit>
 			<unit type="volume-liter">
 				<displayName>లీటరు</displayName>
 				<unitPattern count="one">{0}లీ</unitPattern>
 				<unitPattern count="other">{0}లీ</unitPattern>
+				<perUnitPattern>{0}/లీ.</perUnitPattern>
+			</unit>
+			<unit type="volume-deciliter">
+				<displayName>డె.లీ.</displayName>
+				<unitPattern count="one">{0} డె.లీ.</unitPattern>
+				<unitPattern count="other">{0} డె.లీ.</unitPattern>
+			</unit>
+			<unit type="volume-centiliter">
+				<displayName>సె.లీ.</displayName>
+				<unitPattern count="one">{0} సె.లీ.</unitPattern>
+				<unitPattern count="other">{0} సె.లీ.</unitPattern>
+			</unit>
+			<unit type="volume-milliliter">
+				<displayName>మి.లీ.</displayName>
+				<unitPattern count="one">{0} మి.లీ.</unitPattern>
+				<unitPattern count="other">{0} మి.లీ.</unitPattern>
+			</unit>
+			<unit type="volume-pint-metric">
+				<displayName>మె.పిం.</displayName>
+				<unitPattern count="one">{0} మె.పిం.</unitPattern>
+				<unitPattern count="other">{0} మె.పిం.</unitPattern>
+			</unit>
+			<unit type="volume-cup-metric">
+				<displayName>మె.కప్పు</displayName>
+				<unitPattern count="one">{0}/మె.క.</unitPattern>
+				<unitPattern count="other">{0}/మె.క.</unitPattern>
+			</unit>
+			<unit type="volume-acre-foot">
+				<displayName>ఎ.అ.</displayName>
+				<unitPattern count="one">{0} ఎ.అ.</unitPattern>
+				<unitPattern count="other">{0} ఎ.అ.</unitPattern>
+			</unit>
+			<unit type="volume-bushel">
+				<displayName>బుషెల్‌లు</displayName>
+				<unitPattern count="one">{0} బు.</unitPattern>
+				<unitPattern count="other">{0} బు.</unitPattern>
+			</unit>
+			<unit type="volume-gallon">
+				<displayName>గ్యా.</displayName>
+				<unitPattern count="one">{0} గ్యా.</unitPattern>
+				<unitPattern count="other">{0} గ్యా.</unitPattern>
+				<perUnitPattern>{0}/గ్యా.</perUnitPattern>
 			</unit>
 			<unit type="volume-gallon-imperial">
+				<displayName>ఇంపీరియల్ గ్యా.</displayName>
 				<unitPattern count="one">{0}గ్యా. ఇం.</unitPattern>
 				<unitPattern count="other">{0}గ్యా. ఇం.</unitPattern>
+				<perUnitPattern>{0}/ గ్యా. ఇంపీరియల్</perUnitPattern>
 			</unit>
 			<unit type="volume-quart">
+				<displayName>పావు వం.</displayName>
 				<unitPattern count="one">{0}పావు వం.</unitPattern>
 				<unitPattern count="other">{0}పావు వం.</unitPattern>
 			</unit>
+			<unit type="volume-pint">
+				<displayName>పింట్లు</displayName>
+				<unitPattern count="one">{0} పిం.</unitPattern>
+				<unitPattern count="other">{0} పిం.</unitPattern>
+			</unit>
+			<unit type="volume-cup">
+				<displayName>కప్పులు</displayName>
+				<unitPattern count="one">{0} క.</unitPattern>
+				<unitPattern count="other">{0} క.</unitPattern>
+			</unit>
+			<unit type="volume-fluid-ounce">
+				<displayName>ద్ర.ఔ.</displayName>
+				<unitPattern count="one">{0} ద్ర.ఔ.</unitPattern>
+				<unitPattern count="other">{0} ద్ర.ఔ.</unitPattern>
+			</unit>
 			<unit type="volume-fluid-ounce-imperial">
+				<displayName>Imp. fl oz</displayName>
 				<unitPattern count="one" draft="contributed">{0}ద.ఔ.ఇం.</unitPattern>
 				<unitPattern count="other" draft="contributed">{0}ద.ఔ.ఇం.</unitPattern>
 			</unit>
+			<unit type="volume-tablespoon">
+				<displayName>టే.స్పూ.</displayName>
+				<unitPattern count="one">{0} టే.స్పూ</unitPattern>
+				<unitPattern count="other">{0} టే.స్పూ</unitPattern>
+			</unit>
 			<unit type="volume-teaspoon">
+				<displayName>టీ.స్పూ.</displayName>
 				<unitPattern count="one">{0}టీ.స్పూ.</unitPattern>
 				<unitPattern count="other">{0}టీ.స్పూ.</unitPattern>
 			</unit>
+			<unit type="volume-barrel">
+				<displayName>బారెల్</displayName>
+				<unitPattern count="one">{0} బారెల్</unitPattern>
+				<unitPattern count="other">{0} బారెల్</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName>డె.స్పూ.</displayName>
+				<unitPattern count="one">{0} డె.స్పూ.</unitPattern>
+				<unitPattern count="other">{0} డె.స్పూ.</unitPattern>
+			</unit>
 			<unit type="volume-dessert-spoon-imperial">
+				<displayName>డె.స్పూ. ఇంపీరియల్</displayName>
 				<unitPattern count="one">{0}డె.ఇం.</unitPattern>
 				<unitPattern count="other">{0}డె.ఇం.</unitPattern>
 			</unit>
+			<unit type="volume-drop">
+				<displayName>తగ్గించు</displayName>
+				<unitPattern count="one">{0} తగ్గించు</unitPattern>
+				<unitPattern count="other">{0} తగ్గించు</unitPattern>
+			</unit>
 			<unit type="volume-dram">
+				<displayName>డ్రామ్ ఫ్లూయిడ్</displayName>
 				<unitPattern count="one">{0}డ్రా.ఫ.</unitPattern>
 				<unitPattern count="other">{0}డ్రా.ఫ.</unitPattern>
 			</unit>
+			<unit type="volume-jigger">
+				<displayName>జిగ్గర్</displayName>
+				<unitPattern count="one">{0} జిగ్గర్</unitPattern>
+				<unitPattern count="other">{0} జిగ్గర్</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<displayName>చిటిక</displayName>
+				<unitPattern count="one">{0} చిటిక</unitPattern>
+				<unitPattern count="other">{0} చిటిక</unitPattern>
+			</unit>
 			<unit type="volume-quart-imperial">
+				<displayName>చతు. ఇంపీరియల్</displayName>
 				<unitPattern count="one" draft="contributed">{0}చతు.ఇం.</unitPattern>
 				<unitPattern count="other" draft="contributed">{0}చతు.ఇం.</unitPattern>
 			</unit>
@@ -9450,10 +10116,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<listPatternPart type="end">{0} లేదా {1}</listPatternPart>
 			<listPatternPart type="2">{0} లేదా {1}</listPatternPart>
 		</listPattern>
-		<listPattern type="or-short">
+		<listPattern type="or-narrow">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
 			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0} లేదా {1}</listPatternPart>
+			<listPatternPart type="2">{0} లేదా {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="or-short">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0} లేదా {1}</listPatternPart>
+			<listPatternPart type="2">{0} లేదా {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="standard-narrow">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
 			<listPatternPart type="end">{0}, {1}</listPatternPart>
 			<listPatternPart type="2">{0}, {1}</listPatternPart>
 		</listPattern>
@@ -9666,28 +10343,32 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<initialPattern type="initial">{0}.</initialPattern>
 		<initialPattern type="initialSequence">{0} {1}</initialPattern>
 		<personName order="givenFirst" length="long" usage="referring" formality="formal">
-			<namePattern>{given} {given2} {surname} {suffix}</namePattern>
+			<namePattern>{given} {given2} {surname} {credentials}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="long" usage="referring" formality="informal">
 			<namePattern>{given-informal} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="long" usage="addressing" formality="formal">
-			<namePattern>{prefix} {surname}</namePattern>
+			<namePattern>{title} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="long" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="long" usage="monogram" formality="formal">
-			<namePattern>{given-monogram-allCaps}. {given2-monogram-allCaps}. {surname-monogram-allCaps}</namePattern>
+			<namePattern>{given-monogram-allCaps}.{given2-monogram-allCaps}.{surname-monogram-allCaps}</namePattern>
+			<namePattern alt="1">{given-monogram-allCaps}.{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="monogram" formality="informal">
+			<namePattern>{given-monogram-allCaps}.{given2-monogram-allCaps}.{surname-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="referring" formality="formal">
-			<namePattern>{given} {given2-initial} {surname} {suffix}</namePattern>
+			<namePattern>{given} {given2-initial} {surname} {credentials}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="referring" formality="informal">
 			<namePattern>{given-informal} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="addressing" formality="formal">
-			<namePattern>{prefix} {surname}</namePattern>
+			<namePattern>{title} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
@@ -9705,7 +10386,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<namePattern>{given-informal} {surname-initial}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="addressing" formality="formal">
-			<namePattern>{prefix} {surname}</namePattern>
+			<namePattern>{title} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
@@ -9717,22 +10398,28 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<namePattern>{given-informal-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="referring" formality="formal">
-			<namePattern>{surname} {given} {given2} {suffix}</namePattern>
+			<namePattern>{surname} {given} {given2} {credentials}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="referring" formality="informal">
 			<namePattern>{surname} {given-informal}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="addressing" formality="formal">
-			<namePattern>{prefix} {surname}</namePattern>
+			<namePattern>{title} {surname}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="monogram" formality="informal">
+			<namePattern>{surname-monogram-allCaps}{given-monogram-allCaps}{given2-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="referring" formality="formal">
+			<namePattern>{surname} {given} {given2} {credentials}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="referring" formality="informal">
 			<namePattern>{surname} {given-informal}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="addressing" formality="formal">
-			<namePattern>{prefix} {surname}</namePattern>
+			<namePattern>{title} {surname}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
@@ -9750,7 +10437,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<namePattern>{surname} {given-initial}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="addressing" formality="formal">
-			<namePattern>{prefix} {surname}</namePattern>
+			<namePattern>{title} {surname}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
@@ -9779,27 +10466,51 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<personName order="sorting" length="short" usage="referring" formality="informal">
 			<namePattern>{surname}, {given-informal}</namePattern>
 		</personName>
-		<sampleName item="givenOnly">
+		<sampleName item="nativeG">
 			<nameField type="given">రాజశేఖర్</nameField>
 		</sampleName>
-		<sampleName item="givenSurnameOnly">
+		<sampleName item="nativeGS">
 			<nameField type="given">రాజశేఖర్</nameField>
 			<nameField type="surname">రెడ్డి</nameField>
 		</sampleName>
-		<sampleName item="given12Surname">
+		<sampleName item="nativeGGS">
 			<nameField type="given">సూర్య</nameField>
 			<nameField type="given2">ప్రతాప్</nameField>
 			<nameField type="surname">వర్మ</nameField>
 		</sampleName>
-		<sampleName item="full">
-			<nameField type="prefix">ప్రొ. డా.</nameField>
+		<sampleName item="nativeFull">
+			<nameField type="title">మిస్టర్</nameField>
+			<nameField type="given">చంద్ర శేఖర్</nameField>
+			<nameField type="given-informal">చందు</nameField>
+			<nameField type="given2">అబ్దుల్ ఆజాద్</nameField>
+			<nameField type="surname-prefix">∅∅∅</nameField>
+			<nameField type="surname-core">ఏలేటి కుమార్</nameField>
+			<nameField type="surname2">∅∅∅</nameField>
+			<nameField type="generation">జూనియర్</nameField>
+			<nameField type="credentials">ఎం. పి.</nameField>
+		</sampleName>
+		<sampleName item="foreignG">
+			<nameField type="given">రవి</nameField>
+		</sampleName>
+		<sampleName item="foreignGS">
+			<nameField type="given">రఘు</nameField>
+			<nameField type="surname">భరత్</nameField>
+		</sampleName>
+		<sampleName item="foreignGGS">
+			<nameField type="given">శంకర్</nameField>
+			<nameField type="given2">నరేష్</nameField>
+			<nameField type="surname">ప్రసాద్</nameField>
+		</sampleName>
+		<sampleName item="foreignFull">
+			<nameField type="title">ప్రొ. డా.</nameField>
 			<nameField type="given">సూర్య ప్రతాప్</nameField>
 			<nameField type="given-informal">సంధ్య</nameField>
 			<nameField type="given2">లాస్య ప్రియ</nameField>
 			<nameField type="surname-prefix">శర్మ</nameField>
 			<nameField type="surname-core">చౌదరి</nameField>
 			<nameField type="surname2">శర్మ చౌదరి</nameField>
-			<nameField type="suffix">ఎం. డి. పిహెచ్. డి.</nameField>
+			<nameField type="generation">జూ</nameField>
+			<nameField type="credentials">ఎం. డి. పిహెచ్. డి.</nameField>
 		</sampleName>
 	</personNames>
 </ldml>

@@ -3508,8 +3508,7 @@ bool LibraryCallKit::inline_native_setScopedValueCache() {
   Node* cache_obj_handle = scopedValueCache_helper();
 
   const TypePtr *adr_type = _gvn.type(cache_obj_handle)->isa_ptr();
-  store_to_memory(control(), cache_obj_handle, arr, T_OBJECT, adr_type,
-                  MemNode::unordered);
+  access_store_at(nullptr, cache_obj_handle, adr_type, arr, _gvn.type(arr), T_OBJECT, IN_NATIVE | MO_UNORDERED);
 
   return true;
 }
