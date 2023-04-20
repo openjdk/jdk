@@ -279,7 +279,6 @@ void HeapRegion::report_region_type_change(G1HeapRegionTraceType::Type to) {
     // start of the mixed phase, we scrubbed and reset TAMS to bottom.
     assert(top_at_mark_start() == bottom(), "must be");
   }
-  log_debug(gc)("Failed evacuation region %u (%s) tams updated %d", hrm_index(), get_short_type_str(), top() != bottom()); // FIXME: debug
 }
 
 void HeapRegion::note_self_forward_chunk_done(size_t garbage_bytes) {

@@ -155,16 +155,15 @@ public:
 
 // Tracks collection set candidates, i.e. regions that should be evacuated soon.
 //
-// The regions are tracked in two lists of regions, each sorted by decreasing
+// These candidate regions are tracked in a list of regions, sorted by decreasing
 // "gc efficiency".
+//
+// Currently there is only one type of such regions:
 //
 // * marking_regions: the set of regions selected by concurrent marking to be
 //                    evacuated to keep overall heap occupancy stable.
-//                    They are guaranteed to be handled out during the mixed phase.
-//
-// * retained regions: set of regions selected for evacuation during evacuation
-//                     failure.
-//                     Any young collection will try to evacuate them.
+//                    They are guaranteed to be evacuated and cleared out during
+//                    the mixed phase.
 //
 class G1CollectionSetCandidates : public CHeapObj<mtGC> {
   friend class G1CollectionSetCandidatesIterator;
@@ -240,8 +239,6 @@ public:
   G1CollectionSetCandidatesIterator end() {
     return G1CollectionSetCandidatesIterator(this, marking_regions_length());
   }
-
-  void print(); // FIXME: debug, remove
 };
 
 #endif /* SHARE_GC_G1_G1COLLECTIONSETCANDIDATES_HPP */

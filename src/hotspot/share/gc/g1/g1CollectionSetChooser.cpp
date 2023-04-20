@@ -171,8 +171,6 @@ class G1BuildCandidateRegionsTask : public WorkerTask {
       }
       assert(_cur_chunk_idx < _cur_chunk_end, "Must be");
 
-//      log_debug(gc, ergo, cset)("Adding region %u to candidates %s pinned %d live-bytes %zu complete %d retained %d",
-//                                hr->hrm_index(), hr->get_short_type_str(), hr->is_pinned(), hr->live_bytes(), hr->rem_set()->is_complete(), hr->is_collection_set_candidate());
       _array->set(_cur_chunk_idx, hr);
 
       _cur_chunk_idx++;

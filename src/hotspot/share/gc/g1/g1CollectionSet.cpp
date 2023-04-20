@@ -354,7 +354,6 @@ void G1CollectionSet::move_candidates_to_collection_set(G1CollectionSetRegionLis
   for (HeapRegion* r : *regions) {
     _g1h->clear_region_attr(r);
     add_old_region(r);
-//    log_debug(gc, ergo, cset)("Moved region %u (%s) to collection set (from marking %u)", r->hrm_index(), r->get_short_type_str(), !candidates()->is_retained_region(r)); // FIXME: debug
   }
   candidates()->remove(regions);
 }

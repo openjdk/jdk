@@ -225,7 +225,6 @@ void G1CollectionSetCandidates::merge_candidates_from_marking(G1CollectionCandid
 
   verify();
 
-  // FIXME: remove merge() method
   _marking_regions.merge(candidate_infos, num_infos);
   for (uint i = 0; i < num_infos; i++) {
     HeapRegion* r = candidate_infos[i]._r;
@@ -330,9 +329,4 @@ const char* G1CollectionSetCandidates::get_short_type_str(const HeapRegion* r) c
 
   uint8_t kind = static_cast<std::underlying_type<CandidateOrigin>::type>(_contains_map[r->hrm_index()]);
   return type_strings[kind];
-}
-
-void G1CollectionSetCandidates::print() {
-  log_debug(gc, ergo, cset)("candidates total %u marking regions %u last merge length %u reclaimable bytes %zu",
-                            length(), marking_regions_length(), _last_merge_length, _reclaimable_bytes);
 }
