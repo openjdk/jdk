@@ -201,10 +201,10 @@ import java.util.stream.Stream;
  * only so-called <em>canonical</em> layouts. A canonical layout has the following restrictions:
  * <ol>
  * <li>Its alignment constraint is set to its <a href="MemoryLayout.html#layout-align">natural alignment</a></li>
- * <li>If the layout is a {@linkplain ValueLayout value layout}, its {@linkplain ValueLayout#order() byte order} must
- * be the {@linkplain ByteOrder#nativeOrder() native byte order}.
- * <li>If the layout is a {@linkplain GroupLayout group layout}, its size must be a multiple of its alignment constraint, and</li>
- * <li>It must not contain padding other than what is strictly required to align the non-padding layout elements,
+ * <li>If it is a {@linkplain ValueLayout value layout}, its {@linkplain ValueLayout#order() byte order} is
+ * the {@linkplain ByteOrder#nativeOrder() native byte order}.
+ * <li>If it is a {@linkplain GroupLayout group layout}, its size is be a multiple of its alignment constraint, and</li>
+ * <li>It does not contain padding other than what is strictly required to align its non-padding layout elements,
  * or to satisfy constraint 3</li>
  * </ol>
  *
