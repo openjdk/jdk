@@ -265,4 +265,50 @@ public class SwitchBootstrapsTest {
         assertTrue(enumInitialized.get());
         assertEquals(invocation.dynamicInvoker().invoke(e, 0), 0);
     }
+
+    public void testIncorrectEnumLabels() throws Throwable {
+        try {
+            testEnum(E1.B, 0, -1, "B", 1);
+            fail("Didn't get the expected exception.");
+        } catch (IllegalArgumentException ex) {
+            //OK
+        }
+        try {
+            testEnum(E1.B, 0, -1, "B", null);
+            fail("Didn't get the expected exception.");
+        } catch (IllegalArgumentException ex) {
+            //OK
+        }
+    }
+
+    public void testIncorrectEnumStartIndex() throws Throwable {
+        try {
+            testEnum(E1.B, -1, -1, "B");
+            fail("Didn't get the expected exception.");
+        } catch (IndexOutOfBoundsException ex) {
+            //OK
+        }
+        try {
+            testEnum(E1.B, 2, -1, "B");
+            fail("Didn't get the expected exception.");
+        } catch (IndexOutOfBoundsException ex) {
+            //OK
+        }
+    }
+
+    public void testIncorrectTypeStartIndex() throws Throwable {
+        try {
+            testType("", -1, -1, "");
+            fail("Didn't get the expected exception.");
+        } catch (IndexOutOfBoundsException ex) {
+            //OK
+        }
+        try {
+            testType("", 2, -1, "");
+            fail("Didn't get the expected exception.");
+        } catch (IndexOutOfBoundsException ex) {
+            //OK
+        }
+    }
+
 }

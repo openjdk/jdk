@@ -842,13 +842,6 @@ public class TreeInfo {
             return tree;
     }
 
-    /** Skip parens and return the enclosed expression
-     */
-    //XXX: remove??
-    public static JCPattern skipParens(JCPattern tree) {
-        return tree;
-    }
-
     /** Return the types of a list of trees.
      */
     public static List<Type> types(List<? extends JCTree> trees) {

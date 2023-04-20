@@ -310,7 +310,7 @@ public class TransPatterns extends TreeTranslator {
         while (components.nonEmpty()) {
             RecordComponent component = components.head;
             Type componentType = types.erasure(nestedFullComponentTypes.head);
-            JCPattern nestedPattern = TreeInfo.skipParens(nestedPatterns.head);
+            JCPattern nestedPattern = nestedPatterns.head;
             JCBindingPattern nestedBinding;
             boolean allowNull;
             if (nestedPattern instanceof JCRecordPattern nestedRecordPattern) {
@@ -433,7 +433,7 @@ public class TransPatterns extends TreeTranslator {
                 JCCase cse = c.head;
                 cse.labels = cse.labels.map(l -> {
                     if (l instanceof JCPatternCaseLabel patternLabel) {
-                        JCPattern pattern = TreeInfo.skipParens(patternLabel.pat);
+                        JCPattern pattern = patternLabel.pat;
                         if (pattern instanceof JCRecordPattern recordPattern) {
                             UnrolledRecordPattern deconstructed = unrollRecordPattern(recordPattern);
                             JCExpression guard = deconstructed.newGuard();

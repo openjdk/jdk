@@ -824,7 +824,7 @@ public class Flow {
         }
 
         private boolean exhausts(JCExpression selector, List<JCCase> cases) {
-            List<PatternDescription> patterns = List.nil();
+            Set<PatternDescription> patternSet = new HashSet<>();
             Map<Symbol, Set<Symbol>> enum2Constants = new HashMap<>();
             for (JCCase c : cases) {
                 if (!TreeInfo.unguardedCase(c))
@@ -833,7 +833,7 @@ public class Flow {
                 for (var l : c.labels) {
                     if (l instanceof JCPatternCaseLabel patternLabel) {
                         for (Type component : components(selector.type)) {
-                            patterns = patterns.prepend(PatternDescription.from(types, component, patternLabel.pat));
+                            patternSet.add(PatternDescription.from(types, component, patternLabel.pat));
                         }
                     } else if (l instanceof JCConstantCaseLabel constantLabel) {
                         Symbol s = TreeInfo.symbol(constantLabel.expr);
@@ -851,9 +851,10 @@ public class Flow {
             }
             for (Entry<Symbol, Set<Symbol>> e : enum2Constants.entrySet()) {
                 if (e.getValue().isEmpty()) {
-                    patterns = patterns.prepend(new BindingPattern(e.getKey().type));
+                    patternSet.add(new BindingPattern(e.getKey().type));
                 }
             }
+            List<PatternDescription> patterns = List.from(patternSet);
             try {
                 boolean repeat = true;
                 while (repeat) {
@@ -937,7 +938,12 @@ public class Flow {
                             }
 
                             Set<Symbol> permitted = allPermittedSubTypes(clazz, csym -> {
-                                Type instantiated = infer.instantiatePatternType(selectorType, csym);
+                                Type instantiated;
+                                if (csym.type.allparams().isEmpty()) {
+                                    instantiated = csym.type;
+                                } else {
+                                    instantiated = infer.instantiatePatternType(selectorType, csym);
+                                }
 
                                 return instantiated != null && types.isCastable(selectorType, instantiated);
                             });
@@ -962,7 +968,7 @@ public class Flow {
                                                             types.erasure(bpOther.type))) {
                                             it.remove();
                                             reduces = true;
-                                            continue PERMITTED;
+                                            continue ;
                                         }
 
                                     }
@@ -1040,13 +1046,13 @@ public class Flow {
              *    the chosen column, and then call reduceBindingPatterns and reduceNestedPatterns
              *    on patterns in the chosen column, as described above
              */
-            var grouppedPerRecordClass =
+            var groupByRecordClass =
                     patterns.stream()
                             .filter(pd -> pd instanceof RecordPattern)
                             .map(pd -> (RecordPattern) pd)
                             .collect(groupingBy(pd -> (ClassSymbol) pd.recordType.tsym));
 
-            for (var e : grouppedPerRecordClass.entrySet()) {
+            for (var e : groupByRecordClass.entrySet()) {
                 int nestedPatternsCount = e.getKey().getRecordComponents().size();
 
                 for (int mismatchingCandidate = 0;
@@ -1081,7 +1087,7 @@ public class Flow {
                                 if (rpOne.recordType.tsym == rpOther.recordType.tsym) {
                                     for (int i = 0; i < rpOne.nested.length; i++) {
                                         if (i != mismatchingCandidate &&
-                                            !exactlyMatches(rpOne.nested[i], rpOther.nested[i])) {
+                                            !rpOne.nested[i].equals(rpOther.nested[i])) {
                                             continue NEXT_PATTERN;
                                         }
                                     }
@@ -1122,22 +1128,6 @@ public class Flow {
                 }
             }
             return patterns;
-        }
-
-        private boolean exactlyMatches(PatternDescription one, PatternDescription other) {
-            if (one instanceof BindingPattern bpOne && other instanceof BindingPattern bpOther) {
-                return bpOne.type.tsym == bpOther.type.tsym;
-            } else if (one instanceof RecordPattern rpOne && other instanceof RecordPattern rpOther) {
-                if (rpOne.recordType.tsym == rpOther.recordType.tsym) {
-                    for (int i = 0; i < rpOne.nested.length; i++) {
-                        if (!exactlyMatches(rpOne.nested[i], rpOther.nested[i])) {
-                            return false;
-                        }
-                    }
-                    return true;
-                }
-            }
-            return false;
         }
 
         /* In the set of patterns, find those for which, given:

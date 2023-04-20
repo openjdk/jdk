@@ -33,6 +33,7 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.MutableCallSite;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 import static java.util.Objects.requireNonNull;
@@ -73,7 +74,7 @@ public class SwitchBootstraps {
      * Bootstrap method for linking an {@code invokedynamic} call site that
      * implements a {@code switch} on a target of a reference type.  The static
      * arguments are an array of case labels which must be non-null and of type
-     * {@code String} or {@code Integer} or {@code Class}.
+     * {@code String} or {@code Integer} or {@code Class} or {@code EnumDesc}.
      * <p>
      * The type of the returned {@code CallSite}'s method handle will have
      * a return type of {@code int}.   It has two parameters: the first argument
@@ -105,7 +106,7 @@ public class SwitchBootstraps {
      * @param invocationType The invocation type of the {@code CallSite} with two parameters,
      *                       a reference type, an {@code int}, and {@code int} as a return type.
      * @param labels case labels - {@code String} and {@code Integer} constants
-     *               and {@code Class} instances, in any combination
+     *               and {@code Class} and {@code EnumDesc} instances, in any combination
      * @return a {@code CallSite} returning the first matching element as described above
      *
      * @throws NullPointerException if any argument is {@code null}
@@ -149,6 +150,8 @@ public class SwitchBootstraps {
     }
 
     private static int doTypeSwitch(Object target, int startIndex, Object[] labels) {
+        Objects.checkIndex(startIndex, labels.length + 1);
+
         if (target == null)
             return -1;
 
@@ -268,9 +271,7 @@ public class SwitchBootstraps {
                 throw new IllegalArgumentException("the Class label: " + label +
                                                    ", expected the provided enum class: " + enumClassTemplate);
             }
-        } else if (labelClass == String.class) {
-            //OK
-        } else {
+        } else if (labelClass != String.class) {
             throw new IllegalArgumentException("label with illegal type found: " + labelClass +
                                                ", expected label of type either String or Class");
         }
@@ -318,6 +319,8 @@ public class SwitchBootstraps {
     }
 
     private static int doEnumSwitch(Enum<?> target, int startIndex, Object[] labels) {
+        Objects.checkIndex(startIndex, labels.length + 1);
+
         if (target == null)
             return -1;
 

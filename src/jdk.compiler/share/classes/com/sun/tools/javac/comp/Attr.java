@@ -198,7 +198,7 @@ public class Attr extends JCTree.Visitor {
 
     /** Are unconditional patterns in instanceof allowed
      */
-    private boolean allowUnconditionalPatternsInstanceOf;
+    private final boolean allowUnconditionalPatternsInstanceOf;
 
     /**
      * Switch: warn about use of variable before declaration?
