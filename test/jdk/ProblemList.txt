@@ -484,7 +484,6 @@ java/lang/invoke/LFCaching/LFMultiThreadCachingTest.java        8151492 generic-
 java/lang/invoke/LFCaching/LFGarbageCollectedTest.java          8078602 generic-all
 java/lang/invoke/lambda/LambdaFileEncodingSerialization.java    8249079 linux-x64
 java/lang/invoke/RicochetTest.java                              8251969 generic-all
-java/lang/invoke/lambda/LogGeneratedClassesTest.java            8305600 generic-all
 
 ############################################################################
 
@@ -539,10 +538,6 @@ java/net/ServerSocket/AcceptInheritHandle.java                  8211854 aix-ppc6
 ############################################################################
 
 # jdk_nio
-
-java/nio/channels/AsyncCloseAndInterrupt.java                   8305596 generic-all
-
-java/nio/channels/FileChannel/Transfer.java                     8305596 generic-all
 
 java/nio/channels/AsynchronousSocketChannel/StressLoopback.java 8211851 aix-ppc64
 
@@ -698,6 +693,8 @@ com/sun/jdi/RepStep.java                                        8043571 generic-
 com/sun/jdi/InvokeHangTest.java                                 8218463 linux-all
 
 com/sun/jdi/AfterThreadDeathTest.java                           8232839 linux-all
+
+com/sun/jdi/JdbLastErrorTest.java                               8305913 windows-x64
 
 ############################################################################
 
