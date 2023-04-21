@@ -618,7 +618,7 @@ public:
     return c;
   }
 
-  void analyze() {
+  void analyze(int rounds) {
     bool progress = true;
     int iterations = 0;
     int extra_rounds = 0;
@@ -693,6 +693,10 @@ public:
 //      } else {
 //        break;
 //      }
+      rounds--;
+      if (rounds <= 0) {
+        break;
+      }
     }
 
     int live_nodes = 0;
@@ -1945,7 +1949,7 @@ public:
   TypeUpdate* _prev_updates;
 };
 
-void PhaseIdealLoop::conditional_elimination(VectorSet &visited, Node_Stack &nstack, Node_List &rpo_list) {
+void PhaseIdealLoop::conditional_elimination(VectorSet& visited, Node_Stack& nstack, Node_List& rpo_list, int rounds) {
   if (!UseNewCode2 && !UseNewCode3) {
     return;
   }
@@ -1954,7 +1958,7 @@ void PhaseIdealLoop::conditional_elimination(VectorSet &visited, Node_Stack &nst
   PhaseConditionalPropagation pcp(this, visited, nstack, rpo_list);
   {
     TraceTime tt("loop conditional propagation analyze", UseNewCode);
-    pcp.analyze();
+    pcp.analyze(rounds);
   }
   {
     TraceTime tt("loop conditional propagation transform", UseNewCode);

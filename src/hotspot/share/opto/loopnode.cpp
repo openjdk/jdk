@@ -4592,7 +4592,7 @@ void PhaseIdealLoop::build_and_optimize() {
 
   if (!C->major_progress() && UseLoopConditionalPropagation && C->run_loop_conditional_propagation()) {
     visited.clear();
-    conditional_elimination(visited, nstack, worklist);
+    conditional_elimination(visited, nstack, worklist, 1);
 //    C->clear_run_loop_conditional_propagation();
   }
 

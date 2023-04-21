@@ -1741,7 +1741,7 @@ public:
   bool clone_cmp_loadklass_down(Node* n, const Node* blk1, const Node* blk2);
 
   bool at_relevant_ctrl(Node* n, const Node* blk1, const Node* blk2);
-  void conditional_elimination(VectorSet &visited, Node_Stack &nstack, Node_List &rpo_list);
+  void conditional_elimination(VectorSet& visited, Node_Stack& nstack, Node_List& rpo_list, int rounds);
 };
 
 
