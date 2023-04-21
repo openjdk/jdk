@@ -188,14 +188,15 @@ class TypeClass {
         }
     }
 
-    private static final long MAX_GROUP_BYTE_SIZE = ((long) Integer.MAX_VALUE) * 8;
-
     private static List<ArgumentClassImpl>[] groupByEightBytes(GroupLayout group) {
         long offset = 0L;
-        if (group.byteSize() > MAX_GROUP_BYTE_SIZE) {
-            throw new IllegalArgumentException("GroupLayout is too large: " + group);
+        int nEightbytes;
+        try {
+            // alignUp can overflow the value, but it's okay since toIntExact still catches it
+            nEightbytes = Math.toIntExact(Utils.alignUp(group.byteSize(), 8) / 8);
+        } catch (ArithmeticException e) {
+            throw new IllegalArgumentException("GroupLayout is too large: " + group, e);
         }
-        int nEightbytes = (int) (Utils.alignUp(group.byteSize(), 8) / 8);
         @SuppressWarnings({"unchecked", "rawtypes"})
         List<ArgumentClassImpl>[] groups = new List[nEightbytes];
         for (MemoryLayout l : group.memberLayouts()) {
