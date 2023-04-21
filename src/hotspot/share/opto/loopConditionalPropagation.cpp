@@ -23,6 +23,7 @@
  */
 
 #include "node.hpp"
+#include "phaseX.hpp"
 #include "precompiled.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/rootnode.hpp"
@@ -601,7 +602,8 @@ public:
     Node* root = _rpo_list.pop();
     assert(root == C->root(), "");
     if (UseNewCode2) {
-      _updates = new Updates((unsigned int) (_rpo_list.size() / .8));
+      _updates = new Updates(8, _rpo_list.size());
+//       _updates = new Updates((unsigned int) (_rpo_list.size() / .8));
     }
     if (UseNewCode3) {
       _visited.clear();
@@ -644,7 +646,6 @@ public:
           _types_tree_clone.map(i, PhaseTransform::_types.fast_lookup(i));
         }
       }
-
 
       for (int i = _rpo_list.size() - 1; i >= 0; i--) {
         int rpo = _rpo_list.size() - 1 - i;
@@ -989,6 +990,8 @@ public:
     }
   }
 
+  static const int load_factor = 8;
+
   void one_iteration(int iterations, int rpo, Node* c, bool& progress, bool has_infinite_loop, bool& extra, bool& extra2) {
     if (UseNewCode3) {
       for (uint i = 0; i < PhaseTransform::_types.Size(); ++i) {
@@ -1006,6 +1009,7 @@ public:
       _current_updates = _dom_updates;
       if (_current_updates != nullptr) {
         _updates->put(c, _current_updates);
+        _updates->maybe_grow(load_factor);
       }
     } else {
       assert(iterations > 1, "");
@@ -1015,6 +1019,7 @@ public:
         assert(_dom_updates != nullptr, "");
         _current_updates = _dom_updates;
         _updates->put(c, _current_updates);
+        _updates->maybe_grow(load_factor);
       } else {
         _prev_updates = _current_updates->copy();
         sync(dom);
@@ -1096,7 +1101,7 @@ public:
             const Type* current_type = find_prev_type_between(n, in, dom);
             if (iterations > 1) {
               const Type* prev_round_t = nullptr;
-              if (_prev_updates != nullptr) {
+              if (_prev_updates != nullptr && _prev_updates->control() == c) {
                 prev_round_t = _prev_updates->type_if_present(n);
               }
               if (prev_round_t != nullptr) {
@@ -1106,9 +1111,9 @@ public:
                 if (c->is_Loop() && t != prev_round_t) {
                   extra = true;
                 }
-//                t = t->filter(current_type);
               }
             }
+            t = t->filter(current_type);
 
             if (t != current_type) {
               assert(narrows_type(current_type, t), "");
@@ -1204,6 +1209,58 @@ public:
       }
     }
 
+    if (_prev_updates == nullptr) {
+      if (_current_updates != nullptr && _current_updates->length() > 0 && _current_updates->control() == c) {
+        _progress = true;
+#ifdef ASSERT
+        sync(dom);
+        for (int i = 0; i < _current_updates->length(); ++i) {
+          Node* n = _current_updates->node_at(i);
+          assert(_current_updates->prev_type_at(i) == PhaseTransform::type(n), "");
+          assert(narrows_type(PhaseTransform::type(n), _current_updates->type_at(i)), "");
+        }
+      }
+#endif
+    } else {
+#ifdef ASSERT
+      sync(dom);
+#endif
+      int j = 0;
+      assert(_current_updates->control() == c, "");
+      for (int i = 0; i < _current_updates->length(); ++i) {
+        Node* n = _current_updates->node_at(i);
+        assert(_current_updates->prev_type_at(i) == PhaseTransform::type(n), "");
+        const Type* current_t = _current_updates->type_at(i);
+        assert(narrows_type(PhaseTransform::type(n), current_t), "");
+        for (; j < _prev_updates->length() && _prev_updates->node_at(j)->_idx < n->_idx; j++) {
+          assert(narrows_type(_prev_updates->type_at(j), PhaseTransform::type(_prev_updates->node_at(j))), "");
+        }
+        if (j < _prev_updates->length() && _prev_updates->node_at(j) == n) {
+          const Type* prev_t = _prev_updates->type_at(j);
+          assert(narrows_type(prev_t, current_t), "");
+          if (prev_t != current_t) {
+#if 0 //def ASSERT
+            BasicType bt = T_ILLEGAL;
+            if (current_t->isa_int()) {
+              bt = T_INT;
+            } else if (current_t->isa_long()) {
+              bt = T_LONG;
+            }
+            assert(bt == T_ILLEGAL ||
+                   current_t->is_integer(bt)->lo_as_long() > prev_t->is_integer(bt)->lo_as_long() ||
+                   current_t->is_integer(bt)->hi_as_long() < prev_t->is_integer(bt)->hi_as_long(), "");
+#endif
+            _progress = true;
+          }
+          j++;
+        } else {
+          assert(_prev_updates->find(n) == -1, "");
+        }
+      }
+      for (; j < _prev_updates->length(); j++) {
+        assert(narrows_type(_prev_updates->type_at(j), PhaseTransform::type(_prev_updates->node_at(j))), "");
+      }
+    }
     if (UseNewCode3) {
       for (uint i = 0; i < PhaseTransform::_types.Size(); ++i) {
         _types_clone.map(i, PhaseTransform::_types.fast_lookup(i));
@@ -1315,14 +1372,13 @@ public:
     if (_current_updates == _dom_updates) {
       _current_updates = new TypeUpdate(_dom_updates, c);
       _updates->put(c, _current_updates);
+      _updates->maybe_grow(load_factor);
     }
     int i = _current_updates->find(n);
     if (i == -1) {
-      _progress = true;
       _current_updates->push_node(n, old_t, new_t);
       return true;
     } else if (_current_updates->type_at(i) != new_t) {
-      _progress = true;
       _current_updates->set_type_at(i, new_t);
       return true;
     }
@@ -1409,10 +1465,11 @@ public:
   void analyze_if(Node* c, const Node* cmp, Node* n) {
     const Type* t = IfNode::filtered_int_type(this, n, c, (cmp->Opcode() == Op_CmpI || cmp->Opcode() == Op_CmpU) ? T_INT : T_LONG);
     if (t != nullptr) {
-      const Type* n_t = type_if_present(c, n);
-      if (n_t == nullptr) {
-        n_t = PhaseTransform::type(n);
-      }
+//      const Type* n_t = type_if_present(c, n);
+//      if (n_t == nullptr) {
+//        n_t = PhaseTransform::type(n);
+//      }
+      const Type* n_t = PhaseTransform::type(n);
       const Type* new_n_t = n_t->filter(t);
       assert(narrows_type(n_t, new_n_t), "");
       if (n_t != new_n_t) {
@@ -1425,11 +1482,13 @@ public:
       }
       if (n->Opcode() == Op_ConvL2I) {
         Node* in = n->in(1);
-        const Type* in_t;
-        in_t = type_if_present(c, in);
-        if (in_t == nullptr) {
-          in_t = PhaseTransform::type(in);
-        }
+//        const Type* in_t;
+//        in_t = type_if_present(c, in);
+//        if (in_t == nullptr) {
+//          in_t = PhaseTransform::type(in);
+//        }
+        const Type* in_t = PhaseTransform::type(in);
+
         if (in_t->isa_long() && in_t->is_long()->_lo >= min_jint && in_t->is_long()->_hi <= max_jint) {
           const Type* t_as_long = t->isa_int() ? TypeLong::make(t->is_int()->_lo, t->is_int()->_hi, t->is_int()->_widen) : Type::TOP;
           const Type* new_in_t = in_t->filter(t_as_long);
@@ -1482,7 +1541,7 @@ public:
 
 //    if (new_int->hi_as_long() == old_int->hi_as_long() &&
 //        new_int->lo_as_long() == old_int->lo_as_long() &&
-//        new_int->widen_limit() > old_int->widen_limit()) {
+//        new_int->widen_limit() < old_int->widen_limit()) {
 //      return false;
 //    }
 
@@ -1578,7 +1637,7 @@ public:
           }
           assert(!UseNewCode2 || type_if_present(c, cmp)->singleton(), "");
         } else if (UseNewCode2) {
-          const Type* cmp_t = type_if_present(c, cmp);
+          const Type* cmp_t = find_type_between(cmp, cl->loopexit(), c);
           if (cmp_t == nullptr || !cmp_t->singleton()) {
             return false;
           }
@@ -1687,11 +1746,7 @@ public:
             int nb_deleted = 0;
             for (uint j = 1; j < use->req(); ++j) {
               if (use->in(j) == node && _phase->is_dominator(c, r->in(j)) &&
-                  !(0 && r->is_BaseCountedLoop() &&
-                    j == LoopNode::LoopBackControl &&
-                    use == r->as_BaseCountedLoop()->phi() &&
-                    node == r->as_BaseCountedLoop()->incr() &&
-                    !types_at_ctrl(r->as_BaseCountedLoop()->loopexit())->get_type(r->as_BaseCountedLoop()->loopexit()->cmp_node())->singleton())) {
+                  is_safe_for_replacement_at_phi(node, use, r, j)) {
                 progress = true;
                 if (con == NULL) {
                   con = makecon(t);
@@ -1749,6 +1804,18 @@ public:
       }
     }
     return false;
+  }
+
+  bool is_safe_for_replacement_at_phi(Node* node, Node* use, Node* r, uint j) const {
+    if (!(r->is_BaseCountedLoop() &&
+         j == LoopNode::LoopBackControl &&
+         use == r->as_BaseCountedLoop()->phi() &&
+         node == r->as_BaseCountedLoop()->incr())) {
+      return false;
+    }
+    const Type* cmp_type = find_type_between(r->as_BaseCountedLoop()->loopexit()->cmp_node(),
+                                             r->as_BaseCountedLoop()->loopexit(), r);
+    return cmp_type != nullptr && cmp_type->singleton();
   }
 
   bool transform_helper(Node* c) {
