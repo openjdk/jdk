@@ -150,6 +150,7 @@ class SystemDictionary : AllStatic {
                                              Handle class_loader,
                                              Handle protection_domain);
 
+ private:
   // Lookup an instance or array class that has already been loaded
   // either into the given class loader, or else into another class
   // loader that is constrained (via loader constraints) to produce
@@ -174,6 +175,13 @@ class SystemDictionary : AllStatic {
   static Klass* find_constrained_instance_or_array_klass(Thread* current,
                                                          Symbol* class_name,
                                                          Handle class_loader);
+
+ public:
+  // Called by the compiler to find a loaded class directly or referenced in the
+  // loader constraint table.
+  static Klass* find_constrained_or_local_klass(Thread* current, Symbol* sym,
+                                                Klass* accessing_klass,
+                                                bool require_local);
 
   static void classes_do(MetaspaceClosure* it);
   // Iterate over all methods in all klasses
