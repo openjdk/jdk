@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -198,54 +198,60 @@ public class EquivMapsGenerator {
         String outputStr = "";
         for (int i = 0; i < values.length; i++) {
             if (i != values.length - 1) {
-                outputStr = outputStr + "\"" + values[i] + "\", ";
+                outputStr = String.format("%s\"%s\", ", outputStr, values[i]);
             } else {
-                outputStr = outputStr + "\"" + values[i] + "\"";
+                outputStr = String.format("%s\"%s\"", outputStr, values[i]);
             }
 
         }
         return outputStr;
     }
 
-    private static final String COPYRIGHT = "/*\n"
-        + " * Copyright (c) 2012, %d, Oracle and/or its affiliates. All rights reserved.\n"
-        + " * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.\n"
-        + " *\n"
-        + " * This code is free software; you can redistribute it and/or modify it\n"
-        + " * under the terms of the GNU General Public License version 2 only, as\n"
-        + " * published by the Free Software Foundation.  Oracle designates this\n"
-        + " * particular file as subject to the \"Classpath\" exception as provided\n"
-        + " * by Oracle in the LICENSE file that accompanied this code.\n"
-        + " *\n"
-        + " * This code is distributed in the hope that it will be useful, but WITHOUT\n"
-        + " * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or\n"
-        + " * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License\n"
-        + " * version 2 for more details (a copy is included in the LICENSE file that\n"
-        + " * accompanied this code).\n"
-        + " *\n"
-        + " * You should have received a copy of the GNU General Public License version\n"
-        + " * 2 along with this work; if not, write to the Free Software Foundation,\n"
-        + " * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.\n"
-        + " *\n"
-        + " * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA\n"
-        + " * or visit www.oracle.com if you need additional information or have any\n"
-        + " * questions.\n"
-        + "*/\n\n";
+    private static final String COPYRIGHT =
+        """
+        /*
+         * Copyright (c) 2012, %d, Oracle and/or its affiliates. All rights reserved.
+         * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+         *
+         * This code is free software; you can redistribute it and/or modify it
+         * under the terms of the GNU General Public License version 2 only, as
+         * published by the Free Software Foundation.  Oracle designates this
+         * particular file as subject to the \"Classpath\" exception as provided
+         * by Oracle in the LICENSE file that accompanied this code.
+         *
+         * This code is distributed in the hope that it will be useful, but WITHOUT
+         * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+         * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+         * version 2 for more details (a copy is included in the LICENSE file that
+         * accompanied this code).
+         *
+         * You should have received a copy of the GNU General Public License version
+         * 2 along with this work; if not, write to the Free Software Foundation,
+         * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+         *
+         * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+         * or visit www.oracle.com if you need additional information or have any
+         * questions.
+        */
+        
+        """;
 
     private static final String headerText =
-        "package sun.util.locale;\n\n"
-        + "import java.util.HashMap;\n"
-        + "import java.util.Map;\n\n"
-        + "final class LocaleEquivalentMaps {\n\n"
-        + "    static final Map<String, String> singleEquivMap;\n"
-        + "    static final Map<String, String[]> multiEquivsMap;\n"
-        + "    static final Map<String, String> regionVariantEquivMap;\n\n"
-        + "    static {\n"
-        + "        singleEquivMap = new HashMap<>(";
+        """
+        package sun.util.locale;
+        
+        import java.util.HashMap;
+        import java.util.Map;
+        
+        final class LocaleEquivalentMaps {
+        
+            static final Map<String, String> singleEquivMap;
+            static final Map<String, String[]> multiEquivsMap;
+            static final Map<String, String> regionVariantEquivMap;
+        
+        """;
 
-    private static final String footerText =
-        "    }\n\n"
-        + "}";
+    private static final String footerText = "    }\n\n}";
 
     private static String getOpenJDKCopyright() {
         return String.format(Locale.US, COPYRIGHT, copyrightYear);
@@ -261,21 +267,26 @@ public class EquivMapsGenerator {
 
         try (BufferedWriter writer = Files.newBufferedWriter(
                 Paths.get(fileName))) {
+            String mapsText = """
+                            static {
+                                singleEquivMap = HashMap.newHashMap(%s);
+                                multiEquivsMap = HashMap.newHashMap(%s);
+                                regionVariantEquivMap = HashMap.newHashMap(%s);
+                        
+                                // This is an auto-generated file and should not be manually edited.
+                                //   LSR Revision: %s
+                        """.formatted(
+                    sortedLanguageMap1.size(),
+                    sortedLanguageMap2.size(),
+                    sortedRegionVariantMap.size(),
+                    LSRrevisionDate);
             writer.write(getOpenJDKCopyright());
-            writer.write(headerText
-                + (int)(sortedLanguageMap1.size() / 0.75f + 1) + ");\n"
-                + "        multiEquivsMap = new HashMap<>("
-                + (int)(sortedLanguageMap2.size() / 0.75f + 1) + ");\n"
-                + "        regionVariantEquivMap = new HashMap<>("
-                + (int)(sortedRegionVariantMap.size() / 0.75f + 1) + ");\n\n"
-                + "        // This is an auto-generated file and should not be manually edited.\n"
-                + "        //   LSR Revision: " + LSRrevisionDate);
-            writer.newLine();
-
+            writer.write(headerText+mapsText);
             for (String key : sortedLanguageMap1.keySet()) {
                 String value = sortedLanguageMap1.get(key);
-                writer.write("        singleEquivMap.put(\""
-                    + key + "\", \"" + value + "\");");
+                writer.write(String.format(
+                        "        singleEquivMap.put(\"%s\", \"%s\");"
+                        , key, value));
                 writer.newLine();
             }
 
@@ -284,9 +295,9 @@ public class EquivMapsGenerator {
                 String[] values = sortedLanguageMap2.get(key);
 
                 if (values.length >= 2) {
-                    writer.write("        multiEquivsMap.put(\""
-                        + key + "\", new String[] {"
-                        + generateValuesString(values) + "});");
+                    writer.write(String.format(
+                            "        multiEquivsMap.put(\"%s\", new String[] {%s});"
+                            , key, generateValuesString(values)));
                     writer.newLine();
                 }
             }
@@ -294,8 +305,9 @@ public class EquivMapsGenerator {
             writer.newLine();
             for (String key : sortedRegionVariantMap.keySet()) {
                 String value = sortedRegionVariantMap.get(key);
-                writer.write("        regionVariantEquivMap.put(\""
-                    + key + "\", \"" + value + "\");");
+                writer.write(String.format(
+                        "        regionVariantEquivMap.put(\"%s\", \"%s\");"
+                        , key, value));
                 writer.newLine();
             }
 
