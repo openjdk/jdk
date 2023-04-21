@@ -791,19 +791,13 @@ public class JavacParser implements Parser {
     public JCPattern parsePattern(int pos, JCModifiers mods, JCExpression parsedType,
                                   boolean allowVar, boolean checkGuard) {
         JCPattern pattern;
-        if (token.kind == LPAREN && parsedType == null) {
-            //parenthesized pattern:
-            int startPos = token.pos;
-            accept(LPAREN);
-            JCPattern p = parsePattern(token.pos, null, null, true, false);
-            accept(RPAREN);
-            pattern = toP(F.at(startPos).ParenthesizedPattern(p));
-        } else if (token.kind == UNDERSCORE) {
+        mods = mods != null ? mods : optFinal(0);
+        JCExpression e;
+        if (token.kind == UNDERSCORE) {
             nextToken();
             pattern = toP(F.at(token.pos).AnyPattern());
-        } else {
-            mods = mods != null ? mods : optFinal(0);
-            JCExpression e;
+        }
+        else {
             if (parsedType == null) {
                 boolean var = token.kind == IDENTIFIER && token.name() == names.var;
                 e = unannotatedType(allowVar, TYPE | NOLAMBDA);
@@ -829,12 +823,13 @@ public class JavacParser implements Parser {
                 accept(RPAREN);
                 pattern = toP(F.at(pos).RecordPattern(e, nested.toList()));
             } else {
-                Name name = identOrUnderscore();
+                int varPos = token.pos;
                 //type test pattern:
-                JCVariableDecl var = toP(F.at(token.pos).VarDef(mods, ident(), e, null));
+                Name name = identOrUnderscore();
                 if (e == null && name == names.underscore) {
-                    var.startPos = pos;
+                    log.error(DiagnosticFlag.SYNTAX, varPos, Errors.UnderscoreAsIdentifier);
                 }
+                JCVariableDecl var = toP(F.at(varPos).VarDef(mods, name, e, null));
                 pattern = toP(F.at(pos).BindingPattern(var));
             }
         }

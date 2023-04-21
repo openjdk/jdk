@@ -743,7 +743,7 @@ public class Flow {
         }
 
         sealed interface PatternDescription {
-            public static PatternDescription from(Types types, Type selectorType, JCPattern pattern) {
+            public static PatternDescription from(Types types, Type selectorType, JCPattern pattern, Symtab syms) {
                 if (pattern instanceof JCBindingPattern binding) {
                     Type type = types.isSubtype(selectorType, binding.type)
                             ? selectorType : binding.type;
@@ -758,9 +758,13 @@ public class Flow {
                     for (List<JCPattern> it = record.nested;
                          it.nonEmpty();
                          it = it.tail, i++) {
-                        nestedDescriptions[i] = PatternDescription.from(types, componentTypes[i], it.head);
+                        nestedDescriptions[i] = PatternDescription.from(types, types.erasure(componentTypes[i]), it.head, syms);
                     }
                     return new RecordPattern(record.type, componentTypes, nestedDescriptions);
+                } else if (pattern instanceof JCAnyPattern) {
+                    Type type = types.isSubtype(selectorType, syms.objectType)
+                            ? selectorType : syms.objectType;
+                    return new BindingPattern(type);
                 } else {
                     throw Assert.error();
                 }
@@ -833,7 +837,7 @@ public class Flow {
                 for (var l : c.labels) {
                     if (l instanceof JCPatternCaseLabel patternLabel) {
                         for (Type component : components(selector.type)) {
-                            patternSet.add(PatternDescription.from(types, component, patternLabel.pat));
+                            patternSet.add(PatternDescription.from(types, component, patternLabel.pat, syms));
                         }
                     } else if (l instanceof JCConstantCaseLabel constantLabel) {
                         Symbol s = TreeInfo.symbol(constantLabel.expr);

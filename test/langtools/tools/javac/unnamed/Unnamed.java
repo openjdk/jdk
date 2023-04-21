@@ -37,6 +37,8 @@ public class Unnamed {
         assertEquals(1, testMultiValuesStatementBlock2("BOX"));
         assertEquals(2, testMultiValuesStatementBlock2(new Box2<>(new R1())));
 //        assertEquals(2, testMultiValuesGuards(new R3(), 1));
+//        assertEquals(3, testMultiValuesGuards(new R4(), 42));
+
 //        assertEquals(3, testMultiValuesGuards(new R3(), 42));
     }
 

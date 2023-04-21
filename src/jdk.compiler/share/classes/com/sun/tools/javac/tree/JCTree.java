@@ -2393,6 +2393,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
             implements PatternCaseLabelTree {
 
         public JCPattern pat;
+        public JCExpression syntheticGuard;
 
         protected JCPatternCaseLabel(JCPattern pat) {
             this.pat = pat;
