@@ -145,7 +145,7 @@
     }
   }
 
-  void minmax_FD(FloatRegister dst,
+  void minmax_fp(FloatRegister dst,
                  FloatRegister src1, FloatRegister src2,
                  bool is_double, bool is_min);
 
@@ -185,11 +185,11 @@
                             Register tmp1, Register tmp2,
                             bool isL);
 
- void minmax_FD_v(VectorRegister dst,
+ void minmax_fp_v(VectorRegister dst,
                   VectorRegister src1, VectorRegister src2,
                   bool is_double, bool is_min, int length_in_bytes);
 
- void reduce_minmax_FD_v(FloatRegister dst,
+ void reduce_minmax_fp_v(FloatRegister dst,
                          FloatRegister src1, VectorRegister src2,
                          VectorRegister tmp1, VectorRegister tmp2,
                          bool is_double, bool is_min, int length_in_bytes);

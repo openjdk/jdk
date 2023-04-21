@@ -7384,7 +7384,7 @@ instruct maxF_reg_reg(fRegF dst, fRegF src1, fRegF src2, rFlagsReg cr) %{
   format %{ "maxF $dst, $src1, $src2" %}
 
   ins_encode %{
-    __ minmax_FD(as_FloatRegister($dst$$reg),
+    __ minmax_fp(as_FloatRegister($dst$$reg),
                  as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg),
                  false /* is_double */, false /* is_min */);
   %}
@@ -7400,7 +7400,7 @@ instruct minF_reg_reg(fRegF dst, fRegF src1, fRegF src2, rFlagsReg cr) %{
   format %{ "minF $dst, $src1, $src2" %}
 
   ins_encode %{
-    __ minmax_FD(as_FloatRegister($dst$$reg),
+    __ minmax_fp(as_FloatRegister($dst$$reg),
                  as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg),
                  false /* is_double */, true /* is_min */);
   %}
@@ -7416,7 +7416,7 @@ instruct maxD_reg_reg(fRegD dst, fRegD src1, fRegD src2, rFlagsReg cr) %{
   format %{ "maxD $dst, $src1, $src2" %}
 
   ins_encode %{
-    __ minmax_FD(as_FloatRegister($dst$$reg),
+    __ minmax_fp(as_FloatRegister($dst$$reg),
                  as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg),
                  true /* is_double */, false /* is_min */);
   %}
@@ -7432,7 +7432,7 @@ instruct minD_reg_reg(fRegD dst, fRegD src1, fRegD src2, rFlagsReg cr) %{
   format %{ "minD $dst, $src1, $src2" %}
 
   ins_encode %{
-    __ minmax_FD(as_FloatRegister($dst$$reg),
+    __ minmax_fp(as_FloatRegister($dst$$reg),
                  as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg),
                  true /* is_double */, true /* is_min */);
   %}

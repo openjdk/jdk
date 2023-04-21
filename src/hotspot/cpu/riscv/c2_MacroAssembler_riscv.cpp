@@ -1304,7 +1304,7 @@ void C2_MacroAssembler::enc_cmove(int cmpFlag, Register op1, Register op2, Regis
 }
 
 // Set dst to NaN if any NaN input.
-void C2_MacroAssembler::minmax_FD(FloatRegister dst, FloatRegister src1, FloatRegister src2,
+void C2_MacroAssembler::minmax_fp(FloatRegister dst, FloatRegister src1, FloatRegister src2,
                                   bool is_double, bool is_min) {
   assert_different_registers(dst, src1, src2);
 
@@ -1616,7 +1616,7 @@ void C2_MacroAssembler::string_indexof_char_v(Register str1, Register cnt1,
 }
 
 // Set dst to NaN if any NaN input.
-void C2_MacroAssembler::minmax_FD_v(VectorRegister dst, VectorRegister src1, VectorRegister src2,
+void C2_MacroAssembler::minmax_fp_v(VectorRegister dst, VectorRegister src1, VectorRegister src2,
                                     bool is_double, bool is_min, int length_in_bytes) {
   assert_different_registers(dst, src1, src2);
 
@@ -1632,7 +1632,7 @@ void C2_MacroAssembler::minmax_FD_v(VectorRegister dst, VectorRegister src1, Vec
 }
 
 // Set dst to NaN if any NaN input.
-void C2_MacroAssembler::reduce_minmax_FD_v(FloatRegister dst,
+void C2_MacroAssembler::reduce_minmax_fp_v(FloatRegister dst,
                                            FloatRegister src1, VectorRegister src2,
                                            VectorRegister tmp1, VectorRegister tmp2,
                                            bool is_double, bool is_min, int length_in_bytes) {
