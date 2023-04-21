@@ -2004,7 +2004,7 @@ JDWP "Java(tm) Debug Wire Protocol"
     (Command Stop=10
         "Stops the thread with an asynchronous exception. "
         "<p>"
-        "The ThreadReference.Stop command may be used to send an asynchronous "
+        "This command may be used to send an asynchronous "
         "exception to a virtual thread when it is suspended at an event. "
         "An implementation may support sending an asynchronous exception "
         "to a suspended virtual thread in other cases."
