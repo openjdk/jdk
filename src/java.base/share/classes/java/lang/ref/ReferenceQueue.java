@@ -36,7 +36,7 @@ import jdk.internal.misc.VM;
  * garbage collector after the appropriate reachability changes are detected.
  *
  * <p>Memory consistency effects: The enqueueing of a reference on a
- * queue (by the garbage collector, or by a call to {@link Reference#enqueue})
+ * queue (by the garbage collector, or by a successful call to {@link Reference#enqueue})
  * <a href="{@docRoot}/java.base/java/util/concurrent/package-summary.html#MemoryVisibility"><i>happens-before</i></a>
  * the reference is removed from the queue by {@link ReferenceQueue#poll} or
  * {@link ReferenceQueue#remove}.

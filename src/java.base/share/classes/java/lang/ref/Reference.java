@@ -543,7 +543,7 @@ public abstract sealed class Reference<T>
      * <p>Memory consistency effects: Actions in a thread prior to calling
      * reachabilityFence(x)
      * <a href="{@docRoot}/java.base/java/util/concurrent/package-summary.html#MemoryVisibility"><i>happen-before</i></a>
-     * the garbage collector enqueues any Reference to x on a ReferenceQueue.
+     * the garbage collector enqueues any Reference to {code x} on a ReferenceQueue.
      *
      * @apiNote
      * Reference processing or finalization may occur whenever the virtual machine detects that no
