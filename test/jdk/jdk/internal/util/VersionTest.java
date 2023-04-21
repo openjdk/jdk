@@ -50,9 +50,7 @@ public class VersionTest {
                 Arguments.of("1.2", new Version(1, 2, 0)),
                 Arguments.of("1.2.3", new Version(1, 2, 3)),
                 Arguments.of("1-abc", new Version(1, 0, 0)), // Ignore extra
-                Arguments.of("1.-abc", new Version(1, 0, 0)), // Ignore extra
                 Arguments.of("1.2-abc", new Version(1, 2, 0)), // Ignore extra
-                Arguments.of("1.2.-abc", new Version(1, 2, 0)), // Ignore extra
                 Arguments.of("1.2.3.4", new Version(1, 2, 3)), // Ignore extra
                 Arguments.of("1.2.3-abc", new Version(1, 2, 3)) // Ignore extra
         );
@@ -67,6 +65,10 @@ public class VersionTest {
 
     private static Stream<Arguments> illegalVersionParams() {
         return Stream.of(
+                Arguments.of("1.", IllegalArgumentException.class),     // dot without digits
+                Arguments.of("1.2.", IllegalArgumentException.class),   // dot without digits
+                Arguments.of("1.-abc", IllegalArgumentException.class), // dot without digits
+                Arguments.of("1.2.-abc", IllegalArgumentException.class), // dot without digits
                 Arguments.of("", IllegalArgumentException.class),
                 Arguments.of("xaaa", IllegalArgumentException.class),
                 Arguments.of("abc.xyz", IllegalArgumentException.class)

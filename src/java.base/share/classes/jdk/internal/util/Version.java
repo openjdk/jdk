@@ -67,35 +67,52 @@ public record Version(int major, int minor, int micro) implements Comparable<Ver
     /**
      * {@return A Version parsed from a version string split on "." characters}
      * Only major, minor, and micro version numbers are parsed, finer detail is ignored.
+     * Missing values for minor and micro are replaced with zero.
+     * The string must start with a number, if there is a '.' it must be followed by a number.
+     * <p>
+     * Parsed by hand because it is called before RegEx can be initialized safely.
+     *
      * @param str a version string
+     * @throws IllegalArgumentException if the string does not start with digits
+     *          or digits do not follow '.'
      */
     public static Version parse(String str) throws IllegalArgumentException {
         try {
+            int len = str.length();
             int majorStart = 0;
             int majorEnd = skipDigits(str, majorStart);
-            if (majorEnd == majorStart)
-                throw new IllegalArgumentException("empty or malformed version string: " + str);
-            int minorStart = (majorEnd < str.length() && str.charAt(majorEnd) == '.') ? majorEnd + 1 : majorEnd;
-            int minorEnd = skipDigits(str, minorStart);
-            int microStart = (minorEnd < str.length() && str.charAt(minorEnd) == '.') ? minorEnd + 1 : minorEnd;
-            int microEnd = skipDigits(str, microStart);
-
             int major = Integer.parseInt(str.substring(majorStart, majorEnd));
-            int minor = (minorStart < minorEnd) ? Integer.parseInt(str.substring(minorStart, minorEnd)) : 0;
-            int micro = (microStart < microEnd) ? Integer.parseInt(str.substring(microStart, microEnd)) : 0;
 
+            int minor = 0, micro = 0;
+            if (majorEnd < len && str.charAt(majorEnd) == '.') {
+                int minorStart = majorEnd + 1;
+                int minorEnd = skipDigits(str, minorStart);
+                minor = Integer.parseInt(str.substring(minorStart, minorEnd));
+
+                if (minorEnd < len && str.charAt(minorEnd) == '.') {
+                    int microStart = minorEnd + 1;
+                    int microEnd = skipDigits(str, microStart);
+                    micro = Integer.parseInt(str.substring(microStart, microEnd));
+                }
+            }
             return new Version(major, minor, micro);
-        } catch (IllegalArgumentException | IndexOutOfBoundsException ex) {
+        } catch (IllegalArgumentException ex) {
             throw new IllegalArgumentException("malformed version string: " + str);
         }
     }
 
-    // Return the index of the first non-digit from start.
+    /**
+     * {@return The index of the first non-digit from start}
+     * @throws IllegalArgumentException if there are no digits
+     */
+
     private static int skipDigits(String s, int start) {
-        int len = s.length();
-        while (start < len && Character.isDigit(s.charAt(start))) {
-            start++;
+        int index = start;
+        while (index < s.length() && Character.isDigit(s.charAt(index))) {
+            index++;
         }
-        return start;
+        if (index == start)
+            throw new IllegalArgumentException("missing digits or malformed version: " + s);
+        return index;
     }
 }
