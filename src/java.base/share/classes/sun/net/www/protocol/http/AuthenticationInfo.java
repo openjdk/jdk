@@ -28,7 +28,6 @@ package sun.net.www.protocol.http;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.net.PasswordAuthentication;
-import java.net.Authenticator;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Objects;

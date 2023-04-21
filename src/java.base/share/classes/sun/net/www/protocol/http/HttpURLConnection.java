@@ -309,11 +309,8 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
     protected HttpClient http;
     protected Handler handler;
     protected Proxy instProxy;
-    protected volatile Authenticator authenticator =
-        privGetDefaultAuthenticator();
-
-    protected volatile AuthCacheImpl authCache =
-        AuthCacheImpl.getAuthCacheFor(authenticator);
+    protected volatile Authenticator authenticator;
+    protected volatile AuthCacheImpl authCache = AuthCacheImpl.getDefault();
 
     private CookieHandler cookieHandler;
     private final ResponseCache cacheHandler;
@@ -448,12 +445,6 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
 
     public final boolean isLockHeldByCurrentThread() {
         return connectionLock.isHeldByCurrentThread();
-    }
-
-    @SuppressWarnings("removal")
-    static final Authenticator privGetDefaultAuthenticator() {
-        PrivilegedAction<Authenticator> authaction = () -> Authenticator.getDefault();
-        return java.security.AccessController.doPrivileged(authaction);
     }
 
     /*

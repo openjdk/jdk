@@ -121,8 +121,6 @@ public class HTTPSetAuthenticatorTest extends HTTPTest {
                                 ? 0 : EXPECTED_AUTH_CALLS_PER_TEST;
         int count;
         int defaultCount = AUTHENTICATOR.count.get();
-        System.out.println("XXX1 default count = " + defaultCount);
-
         // Connect to the server with a GET request, then with a
         // POST that contains "Hello World!"
         // Uses authenticator #1
@@ -190,7 +188,7 @@ public class HTTPSetAuthenticatorTest extends HTTPTest {
         }
 
         // Now tries with explicitly setting the default authenticator: it should
-        // not be invoked again.
+        // be invoked again.
         // Uncomment the code below when 8169068 is available.
         System.out.println("\nClient: Explicitly setting the default authenticator: "
             + toString(Authenticator.getDefault()));
@@ -206,10 +204,10 @@ public class HTTPSetAuthenticatorTest extends HTTPTest {
                 + " expected it to be called " + expected(expectedIncrement));
         }
         count =  AUTHENTICATOR.count.get();
-        if (count != defaultCount + expectedIncrement) {
+        if (count != defaultCount + 2 * expectedIncrement) {
             throw new AssertionError("Default Authenticator called " + count(count)
                 + " expected it to be called "
-                + expected(defaultCount + expectedIncrement));
+                + expected(defaultCount + 2 * expectedIncrement));
         }
 
         // Now tries to set an authenticator on a connected connection.
@@ -280,7 +278,7 @@ public class HTTPSetAuthenticatorTest extends HTTPTest {
         // All good!
         // return the number of times the default authenticator is supposed
         // to have been called.
-        return scheme == HttpSchemeType.NONE ? 0 : EXPECTED_AUTH_CALLS_PER_TEST;
+        return scheme == HttpSchemeType.NONE ? 0 : 2 * EXPECTED_AUTH_CALLS_PER_TEST;
     }
 
     static String toString(Authenticator a) {

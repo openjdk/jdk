@@ -114,6 +114,14 @@ public class AuthCacheImpl implements AuthCache {
         Collections.synchronizedMap(new WeakHashMap<>());
 
     /**
+     * The default cache is stored under null key which is never garbage
+     * collected.
+     */
+    public static AuthCacheImpl getDefault() {
+        return getAuthCacheFor(null);
+    }
+
+    /**
      * Atomically check if a cache exists for given Authenticator and return it
      * or create one and return it
      */

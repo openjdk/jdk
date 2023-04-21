@@ -349,7 +349,9 @@ public class HttpClient extends NetworkClient {
                 }
             }
             if (ret != null) {
-                AuthCacheImpl ak = httpuc == null ? null : httpuc.getAuthCache();
+                AuthCacheImpl ak = httpuc == null
+                    ? AuthCacheImpl.getDefault()
+                    : httpuc.getAuthCache();
                 boolean compatible = Objects.equals(ret.proxy, p)
                      && Objects.equals(ret.getAuthCache(), ak);
                 if (compatible) {
@@ -422,7 +424,7 @@ public class HttpClient extends NetworkClient {
     }
 
     public final AuthCacheImpl getAuthCache() {
-        return authcache;
+        return authcache == null ? AuthCacheImpl.getDefault() : authcache;
     }
 
     /* return it to the cache as still usable, if:
