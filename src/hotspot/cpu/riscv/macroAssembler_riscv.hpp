@@ -1300,6 +1300,21 @@ public:
     vmfle_vv(vd, vs1, vs2, vm);
   }
 
+  // Copy mask register
+  inline void vmmv_m(VectorRegister vd, VectorRegister vs) {
+    vmand_mm(vd, vs, vs);
+  }
+
+  // Clear mask register
+  inline void vmclr_m(VectorRegister vd) {
+    vmxor_mm(vd, vd, vd);
+  }
+
+  // Set mask register
+  inline void vmset_m(VectorRegister vd) {
+    vmxnor_mm(vd, vd, vd);
+  }
+
   static const int zero_words_block_size;
 
   void cast_primitive_type(BasicType type, Register Rt) {

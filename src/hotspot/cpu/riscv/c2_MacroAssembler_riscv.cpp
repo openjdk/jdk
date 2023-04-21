@@ -1726,7 +1726,7 @@ void C2_MacroAssembler::rvv_vsetvli(BasicType bt, int length_in_bytes, Register 
 void C2_MacroAssembler::compare_integral_v(VectorRegister vd, BasicType bt, int length_in_bytes,
                                            VectorRegister src1, VectorRegister src2, int cond, VectorMask vm) {
   rvv_vsetvli(bt, length_in_bytes);
-  vmxor_mm(vd, vd, vd);
+  vmclr_m(vd);
   assert(is_integral_type(bt), "unsupported element type");
   switch (cond) {
     case BoolTest::eq: vmseq_vv(vd, src1, src2, vm); break;
@@ -1745,7 +1745,7 @@ void C2_MacroAssembler::compare_floating_point_v(VectorRegister vd, BasicType bt
                                                  VectorRegister src1, VectorRegister src2,
                                                  VectorRegister tmp1, VectorRegister tmp2, int cond, VectorMask vm) {
   rvv_vsetvli(bt, length_in_bytes);
-  vmxor_mm(vd, vd, vd);
+  vmclr_m(vd);
   assert(is_floating_point_type(bt), "unsupported element type");
   // vmfeq and vmfne raise the invalid operation exception
   // only on signaling NaN inputs.

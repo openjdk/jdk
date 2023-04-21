@@ -230,10 +230,4 @@
     }
   }
 
-  // Clear vector registers independent of previous vl and vtype.
-  void clear_register_v(VectorRegister v) {
-    vsetvli(t0, x0, Assembler::e64);
-    vxor_vv(v, v, v);
-  }
-
 #endif // CPU_RISCV_C2_MACROASSEMBLER_RISCV_HPP

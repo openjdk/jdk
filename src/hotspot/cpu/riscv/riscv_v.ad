@@ -2522,7 +2522,7 @@ instruct vmask_gen_I(vRegMask dst, iRegI src) %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     Assembler::SEW sew = Assembler::elemtype_to_sew(bt);
     __ vsetvli(t0, $src$$Register, sew);
-    __ vmxnor_mm(as_VectorRegister($dst$$reg), as_VectorRegister($dst$$reg), as_VectorRegister($dst$$reg));
+    __ vmset_m(as_VectorRegister($dst$$reg));
   %}
   ins_pipe(pipe_slow);
 %}
@@ -2534,7 +2534,7 @@ instruct vmask_gen_L(vRegMask dst, iRegL src) %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     Assembler::SEW sew = Assembler::elemtype_to_sew(bt);
     __ vsetvli(t0, $src$$Register, sew);
-    __ vmxnor_mm(as_VectorRegister($dst$$reg), as_VectorRegister($dst$$reg), as_VectorRegister($dst$$reg));
+    __ vmset_m(as_VectorRegister($dst$$reg));
   %}
   ins_pipe(pipe_slow);
 %}
@@ -2545,7 +2545,7 @@ instruct vmask_gen_imm(vRegMask dst, immL con) %{
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ rvv_vsetvli(bt, (uint)($con$$constant));
-    __ vmxnor_mm(as_VectorRegister($dst$$reg), as_VectorRegister($dst$$reg), as_VectorRegister($dst$$reg));
+    __ vmset_m(as_VectorRegister($dst$$reg));
   %}
   ins_pipe(pipe_slow);
 %}
@@ -2557,7 +2557,7 @@ instruct vmaskAll_immI(vRegMask dst, immI src) %{
     int con = (int)$src$$constant;
     if (con == 0) {
       __ vsetvli(t0, x0, Assembler::e8);
-      __ vmxor_mm(as_VectorRegister($dst$$reg), as_VectorRegister($dst$$reg), as_VectorRegister($dst$$reg));
+      __ vmclr_m(as_VectorRegister($dst$$reg));
     } else {
       assert(con == -1, "invalid constant value for mask");
       __ vsetvli(t0, x0, Assembler::e8);
@@ -2589,7 +2589,7 @@ instruct vmaskAll_immL(vRegMask dst, immL src) %{
     long con = (long)$src$$constant;
     if (con == 0) {
       __ vsetvli(t0, x0, Assembler::e8);
-      __ vmxor_mm(as_VectorRegister($dst$$reg), as_VectorRegister($dst$$reg), as_VectorRegister($dst$$reg));
+      __ vmclr_m(as_VectorRegister($dst$$reg));
     } else {
       assert(con == -1, "invalid constant value for mask");
       __ vsetvli(t0, x0, Assembler::e8);
