@@ -485,7 +485,7 @@ public abstract sealed class Reference<T>
      * @apiNote
      * An unsuccessful {@code enqueue()} can occur if the GC collects the referent
      * before the {@code enqueue()} call. {@link #reachabilityFence(Object)} can
-     * prevent this, by keeping the referent strongly-reachable.
+     * prevent this, if used to keep the referent strongly-reachable.
      *
      * @return   {@code true} if this reference object was successfully
      *           enqueued; {@code false} if it was already enqueued or if
