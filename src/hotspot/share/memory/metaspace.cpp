@@ -863,10 +863,6 @@ void Metaspace::post_initialize() {
   MetaspaceGC::post_initialize();
 }
 
-size_t Metaspace::humongous_allocation_word_size() {
-  return metaspace::chunklevel::MAX_CHUNK_WORD_SIZE;
-}
-
 // This version of Metaspace::allocate does not throw OOM but simply returns null, and
 // is suitable for calling from non-Java threads.
 // Callers are responsible for checking null.

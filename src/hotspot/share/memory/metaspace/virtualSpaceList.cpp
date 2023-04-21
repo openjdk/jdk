@@ -207,7 +207,7 @@ bool VirtualSpaceList::allocate_humongous_area(size_t word_size, MetaspaceHumong
     out->add_to_tail(c);
   }
 
-  DEBUG_ONLY(out->verify(word_size, false, false);)
+  DEBUG_ONLY(out->verify(word_size, false);)
 
   return true;
 }

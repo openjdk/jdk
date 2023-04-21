@@ -49,27 +49,24 @@ TEST_VM(metaspace, misc_sizes)   {
   ASSERT_EQ(Settings::virtual_space_node_default_word_size() * BytesPerWord, NOT_LP64(16) LP64_ONLY(64) * M);
   ASSERT_EQ(Settings::virtual_space_node_reserve_alignment_words(),
             Metaspace::reserve_alignment_words());
-
 }
 
-TEST_VM(metaspace, humongous)   {
-
-  // Make sure we can allocate what we promise to allocate...
-  for (int i = 0; i < 2; i ++) {
-    const bool in_class_space = (i == 0);
-    const Metaspace::MetadataType mdType = in_class_space ? Metaspace::ClassType : Metaspace::NonClassType;
-    const size_t sz = Metaspace::humongous_allocation_word_size() + 1;
-    ClassLoaderData* cld = ClassLoaderData::the_null_class_loader_data();
-    MetaWord* p = cld->metaspace_non_null()->allocate(sz, mdType);
-    if (p == nullptr) {
-      // Have we run into the GC threshold?
-      p = cld->metaspace_non_null()->expand_and_allocate(sz, mdType);
-      ASSERT_NOT_NULL(p);
-    }
-    // And also, successfully deallocate it.
-    cld->metaspace_non_null()->deallocate(p, sz, in_class_space);
+static void test_humongous_allocation(bool in_class_space) {
+  const Metaspace::MetadataType mdType = in_class_space ? Metaspace::ClassType : Metaspace::NonClassType;
+  const size_t sz = MAX_CHUNK_WORD_SIZE + 1;
+  ClassLoaderData* cld = ClassLoaderData::the_null_class_loader_data();
+  MetaWord* p = cld->metaspace_non_null()->allocate(sz, mdType);
+  if (p == nullptr) {
+    // Have we run into the GC threshold?
+    p = cld->metaspace_non_null()->expand_and_allocate(sz, mdType);
+    ASSERT_NOT_NULL(p);
   }
+  // And also, successfully deallocate it.
+  cld->metaspace_non_null()->deallocate(p, sz, in_class_space);
 }
+
+TEST_VM(metaspace, humongous_non_class) { test_humongous_allocation(false); }
+TEST_VM(metaspace, humongous_class)     { test_humongous_allocation(true); }
 
 TEST_VM(metaspace, chunklevel_utils)   {
 

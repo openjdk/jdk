@@ -26,13 +26,6 @@
 #ifndef SHARE_MEMORY_METASPACE_METASPACEHUMONGOUSAREA_HPP
 #define SHARE_MEMORY_METASPACE_METASPACEHUMONGOUSAREA_HPP
 
-#include "memory/allocation.hpp"
-//#include "memory/metaspace/chunkManager.hpp"
-//#include "memory/metaspace/counters.hpp"
-//#include "memory/metaspace/metachunk.hpp"
-#include "memory/metaspace/metachunkList.hpp"
-#include "memory/metaspace/metaspaceCommon.hpp"
-
 class outputStream;
 
 namespace metaspace {
@@ -84,7 +77,7 @@ class Metachunk;
 // MetaspaceHumongousArea is a transient object that describes a humongous area spanning
 // multiple chunks; its main purpose is combining code for building a humongous area chunk
 // chain, and verification.
-class MetaspaceHumongousArea : public CHeapObj<mtMetaspace> {
+class MetaspaceHumongousArea {
 
   Metachunk* _first, *_last;
 
@@ -105,7 +98,7 @@ public:
   // - set them to "in-use" state
   void prepare_for_arena(size_t word_size);
 
-  DEBUG_ONLY(void verify(size_t expected_word_size, bool expect_committed, bool expect_used) const;)
+  DEBUG_ONLY(void verify(size_t expected_word_size, bool expect_prepared_for_arena) const;)
 
   void print_on(outputStream* st) const;
 };

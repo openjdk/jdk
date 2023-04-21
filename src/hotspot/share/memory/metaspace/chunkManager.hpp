@@ -137,14 +137,6 @@ public:
   // space (e.g. CompressedClassSpace) or hit a commit limit (GC threshold or MaxMetaspaceSize).
   bool allocate_humongous_committed_area(size_t word_size, MetaspaceHumongousArea* out);
 
-  // For humongous allocation:
-  // Return a series of adjacent chunks that together span an area of at least word_size words.
-  // Commit the first word_size words of this area.
-  // This is used to allocate more than would fit into a single root chunk. Returned chunks would normally
-  // be n root chunks, or n-1 root chunks and a trailing smaller chunk, but this is an implementation
-  // detail.
-  Metachunk* get_multiple_committed_chunks_spanning(size_t word_size);
-
   // Return a single chunk to the ChunkManager and adjust accounting. May merge chunk
   //  with neighbors.
   // Happens after a Classloader was unloaded and releases its metaspace chunks.

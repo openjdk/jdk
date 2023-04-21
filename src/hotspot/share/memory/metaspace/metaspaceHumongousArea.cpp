@@ -84,25 +84,24 @@ void MetaspaceHumongousArea::prepare_for_arena(size_t word_size) {
 }
 
 #ifdef ASSERT
-void MetaspaceHumongousArea::verify(size_t expected_word_size, bool expect_committed, bool expect_used) const {
+// Verify humongous area:
+// - All chunks should be adjacent root chunks
+// - If we expect this humongous area to be "ready", it must be committed for expected_word_size words, and used up as much.
+void MetaspaceHumongousArea::verify(size_t expected_word_size, bool expect_prepared_for_arena) const {
   const Metachunk* c2 = nullptr;
   size_t used_words = 0;
   size_t committed_words = 0;
   size_t total_words = 0;
   for (const Metachunk* c = _first; c != nullptr; c = c->next()) {
     assert(total_words < expected_word_size, "too many chunks?");
-    const bool is_last_chunk = (c->next() == nullptr);
-    // Chunks must be adjacent to each other
-    assert(c2 == nullptr || c2->end() == c->base(), "Not contiguous");
-    // - All but the last chunk must be root chunks. Last chunk may be shrunk by the ChunkManager
-    // to better fit the remaining size.
-    // - If we expect the area to be committed, the committed region must be contiguous, therfore
-    //   all but the last chunks must be fully committed.
-    // - The same logic applies to used.
-    if (!is_last_chunk) {
-      assert(c->is_root_chunk(), "Not root chunk");
-      assert(!expect_committed || c->is_fully_committed(), "Sanity");
-      assert(!expect_used || c->is_fully_used(), "Sanity");
+    assert(c2 == nullptr || c2->end() == c->base(), "Chunks must be adjacent");
+    assert(c->is_root_chunk(), "Not root chunk");
+    if (expect_prepared_for_arena) {
+      assert(c->is_in_use(), "Must be marked as in-use");
+      if (c->next() != nullptr) { // Not the last chunk
+        assert(c->is_fully_committed() &&
+               c->is_fully_used(), "Must be fully committed and used up");
+      }
     }
     total_words += c->word_size();
     committed_words += c->committed_words();
@@ -110,8 +109,10 @@ void MetaspaceHumongousArea::verify(size_t expected_word_size, bool expect_commi
     c2 = c;
   }
   assert(total_words >= expected_word_size, "Not enough chunks");
-  assert(!expect_committed || committed_words >= expected_word_size, "Not committed enough");
-  assert(!used_words || used_words >= expected_word_size, "Used mismatch");
+  if (expect_prepared_for_arena) {
+    assert(committed_words >= expected_word_size, "Not committed enough");
+    assert(used_words >= expected_word_size, "Used mismatch");
+  }
   assert(_last == c2, "Last chunk mismatch");
 }
 #endif // ASSERT

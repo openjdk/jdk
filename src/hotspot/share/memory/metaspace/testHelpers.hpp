@@ -97,7 +97,7 @@ public:
 
   // Accessors
   const CommitLimiter& commit_limiter() const { return _commit_limiter; }
-  VirtualSpaceList& vslist() const      { return *(_context->vslist()); }
+  VirtualSpaceList& vslist() const            { return *(_context->vslist()); }
   ChunkManager& cm()                          { return *(_context->cm()); }
 
   // Returns reserve- and commit limit we run the test with (in the real world,

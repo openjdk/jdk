@@ -106,7 +106,7 @@ public:
   static size_t commit_alignment()        { return commit_alignment_words() * BytesPerWord; }
   static size_t commit_alignment_words();
 
-  // Allocation sizes >= this size count as "humongous" and are handled specially by Metaspace.
+  // Allocation sizes larger than a root chunk can hold count as humongous; these are handled specially by Metaspace.
   static size_t humongous_allocation_word_size();
 
   static MetaWord* allocate(ClassLoaderData* loader_data, size_t word_size,

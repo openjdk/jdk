@@ -48,6 +48,8 @@
 
 namespace metaspace {
 
+using namespace chunklevel;
+
 #define LOGFMT         "Arena @" PTR_FORMAT " (%s)"
 #define LOGFMT_ARGS    p2i(this), this->_name
 
@@ -223,7 +225,7 @@ bool MetaspaceArena::attempt_enlarge_current_chunk(size_t requested_word_size) {
 MetaWord* MetaspaceArena::allocate(size_t requested_word_size) {
   MutexLocker cl(lock(), Mutex::_no_safepoint_check_flag);
 
-  const bool is_humongous_allocation = requested_word_size > chunklevel::MAX_CHUNK_WORD_SIZE;
+  const bool is_humongous_allocation = requested_word_size > MAX_CHUNK_WORD_SIZE;
   UL2(trace, "requested " SIZE_FORMAT " words%s.",
       requested_word_size, is_humongous_allocation ? " (humongous)" : "");
 
@@ -282,7 +284,7 @@ MetaWord* MetaspaceArena::allocate_humongous(size_t requested_word_size) {
     return nullptr;
   }
 
-  area.verify(raw_word_size, true, true);
+  DEBUG_ONLY(area.verify(raw_word_size, true);)
 
   Metachunk* first_chunk = area.first();
   MetaWord* result = first_chunk->base();
@@ -500,8 +502,7 @@ void MetaspaceArena::verify() const {
   verify_locked();
 }
 
-// Returns true if the pointer points into live (used) area of arena.
-// Find the containing chunk of p
+// Returns true if the pointer points into committed of this arena.
 const Metachunk* MetaspaceArena::containing_chunk(const MetaWord* p) const {
   const Metachunk* c = _chunks.first();
   while (c != nullptr && !c->is_valid_committed_pointer(p)) {
@@ -510,14 +511,18 @@ const Metachunk* MetaspaceArena::containing_chunk(const MetaWord* p) const {
   return c;
 }
 
-// Returns true if area is contained within this arena.
+// Returns true if area is contained within the committed area of this arena.
 bool MetaspaceArena::is_valid_live_area(const MetaWord* p, size_t word_size) const {
   assert(p != nullptr && word_size > 0, "Sanity");
   const Metachunk* c1 = containing_chunk(p);
   const Metachunk* c2 = containing_chunk(p + word_size - 1);
-  if (c1 != nullptr && c2 != nullptr) {
-    // Humongous areas span multiple chunks.
-    assert(chunklevel::is_humongous_word_size(word_size) || c1 == c2, "range intersects");
+  if (c1 != nullptr) {
+    assert(c2 != nullptr, "Range not completely contained within arena");
+    // Humongous areas are allowed to span multiple chunks. Normal allocations should be
+    // contained within the same chunk.
+    if (word_size <= MAX_CHUNK_WORD_SIZE) {
+      assert(c1 == c2, "range intersects multiple chunks");
+    }
     return true;
   }
   return false;

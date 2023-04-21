@@ -742,8 +742,8 @@ TEST_VM(metaspace, MetaspaceArena_growth_boot_nc_not_inplace) {
 //  do not increase metaspace usage after the initial allocation (the deallocated
 //  block should be reused by the next allocation).
 static void test_repeatedly_allocate_and_deallocate(bool is_topmost) {
-  // Test various sizes, including (important) the max. possible block size = 1 root chunk
-  for (size_t blocksize = Metaspace::humongous_allocation_word_size(); blocksize >= 1; blocksize /= 2) {
+  // Test various sizes, including humongous sizes
+  for (size_t blocksize = MAX_CHUNK_WORD_SIZE * 2; blocksize >= 1; blocksize /= 2) {
     size_t used1 = 0, used2 = 0, committed1 = 0, committed2 = 0;
     MetaWord* p = NULL, *p2 = NULL;
 
@@ -784,8 +784,7 @@ TEST_VM(metaspace, MetaspaceArena_test_repeatedly_allocate_and_deallocate_nontop
 }
 
 static size_t random_humongous_size(int min_nodes_covered) {
-  return Metaspace::humongous_allocation_word_size() +
-         os::random() % ((min_nodes_covered - 1) * Metaspace::humongous_allocation_word_size());
+  return MAX_CHUNK_WORD_SIZE + os::random() % ((min_nodes_covered - 1) * MAX_CHUNK_WORD_SIZE);
 }
 
 // Test that repeated humongous allocations don't cause a raise in committed/reserved beyond the first allocation

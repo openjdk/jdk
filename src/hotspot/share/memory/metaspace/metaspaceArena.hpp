@@ -155,11 +155,11 @@ class MetaspaceArena : public CHeapObj<mtClass> {
   // because it is not needed anymore (requires CLD lock to be active).
   void deallocate_locked(MetaWord* p, size_t word_size);
 
-  // Returns true if area is contained within this arena.
-  DEBUG_ONLY(bool is_valid_live_area(const MetaWord* p, size_t word_size) const;)
-
-  // Find the containing chunk of p
+  // Returns true if the pointer points into committed of this arena.
   DEBUG_ONLY(const Metachunk* containing_chunk(const MetaWord* p) const;)
+
+  // Returns true if area is contained within the committed area of this arena.
+  DEBUG_ONLY(bool is_valid_live_area(const MetaWord* p, size_t word_size) const;)
 
   // Allocate from the arena proper, once dictionary allocations and fencing are sorted out.
   MetaWord* allocate_inner(size_t word_size);
