@@ -83,7 +83,7 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
     _partial_objarray_chunk_size(ParGCArrayScanChunk),
     _partial_array_stepper(num_workers),
     _string_dedup_requests(),
-    _num_optional_regions(optional_cset_length),
+    _max_num_optional_regions(optional_cset_length),
     _numa(g1h->numa()),
     _obj_alloc_stat(NULL),
     EVAC_FAILURE_INJECTOR_ONLY(_evac_failure_inject_counter(0) COMMA)
@@ -106,7 +106,7 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
 
   _closures = G1EvacuationRootClosures::create_root_closures(this, _g1h);
 
-  _oops_into_optional_regions = new G1OopStarChunkedList[_num_optional_regions];
+  _oops_into_optional_regions = new G1OopStarChunkedList[_max_num_optional_regions];
 
   initialize_numa_stats();
 }

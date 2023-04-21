@@ -92,7 +92,8 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
 
   G1CardTable* ct() { return _ct; }
 
-  size_t _num_optional_regions;
+  // Maximum number of optional regions at start of gc.
+  size_t _max_num_optional_regions;
   G1OopStarChunkedList* _oops_into_optional_regions;
 
   G1NUMA* _numa;
