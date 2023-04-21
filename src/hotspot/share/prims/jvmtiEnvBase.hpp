@@ -221,6 +221,9 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
   static bool is_cthread_with_mounted_vthread(JavaThread* jt);
   static bool is_cthread_with_continuation(JavaThread* jt);
 
+  // Check if VirtualThread or BoundVirtualThread is suspended.
+  static bool is_vthread_suspended(oop vt_oop, JavaThread* jt);
+
   static JvmtiEnv* JvmtiEnv_from_jvmti_env(jvmtiEnv *env) {
     return (JvmtiEnv*)((intptr_t)env - in_bytes(jvmti_external_offset()));
   };

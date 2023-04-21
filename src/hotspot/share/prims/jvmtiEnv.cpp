@@ -1193,7 +1193,7 @@ JvmtiEnv::StopThread(jthread thread, jobject exception) {
   bool is_virtual = thread_oop != nullptr && thread_oop->is_a(vmClasses::BaseVirtualThread_klass());
 
   if (is_virtual && !is_JavaThread_current(java_thread, thread_oop)) {
-    if (!JvmtiVTSuspender::is_vthread_suspended(thread_oop)) {
+    if (!is_vthread_suspended(thread_oop, java_thread)) {
       return JVMTI_ERROR_THREAD_NOT_SUSPENDED;
     }
     if (java_thread == nullptr) { // unmounted virtual thread

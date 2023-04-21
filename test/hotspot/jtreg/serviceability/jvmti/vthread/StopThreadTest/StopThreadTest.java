@@ -30,7 +30,7 @@
  *     The test creates a new virtual thread.
  *     Its method run() invokes the following methods:
  *      - method A() that is blocked on a monitor
- *      - method B() that is stopped at a brakepoint
+ *      - method B() that is stopped at a breakpoint
  *      - method C() that forces agent to send AssertionError exception to its own thread
  *     All cases are using JVMTI StopThread to send an AssertionError object.
  *
@@ -59,12 +59,12 @@ public class StopThreadTest {
     static int status = PASSED;
 
     static void setFailed(String msg) {
-        log("\nFAILED: " + msg); 
+        log("\nFAILED: " + msg);
         status = FAILED;
     }
 
     static void throwFailed(String msg) {
-        log("\nFAILED: " + msg); 
+        log("\nFAILED: " + msg);
         throw new RuntimeException("StopThreadTest failed!");
     }
 
