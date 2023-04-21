@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ class Outer{
     }
 }
 
-class ShutdownHelper extends Thread {
+class MyShutdown extends Thread {
     public void run() {
         Outer.Inner inner = new Outer.Inner();
     }
@@ -43,7 +43,7 @@ class ShutdownHelper extends Thread {
 public class LambdaProxyDuringShutdownApp {
   public static void main(String[] args) throws Exception {
       Runtime r = Runtime.getRuntime();
-      r.addShutdownHook(new ShutdownHelper());
+      r.addShutdownHook(new MyShutdown());
       System.exit(0);
   }
 }
