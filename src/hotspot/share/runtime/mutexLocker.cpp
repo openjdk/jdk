@@ -39,7 +39,7 @@
 Mutex*   Patching_lock                = nullptr;
 Mutex*   CompiledMethod_lock          = nullptr;
 Monitor* SystemDictionary_lock        = nullptr;
-Mutex*   InvokeMethodTable_lock       = nullptr;
+Mutex*   InvokeMethodTypeTable_lock   = nullptr;
 Monitor* InvokeMethodIntrinsicTable_lock = nullptr;
 Mutex*   SharedDictionary_lock        = nullptr;
 Monitor* ClassInitError_lock          = nullptr;
@@ -255,7 +255,7 @@ void mutex_init() {
   }
 
   MUTEX_DEFN(JmethodIdCreation_lock          , PaddedMutex  , nosafepoint-2); // used for creating jmethodIDs.
-  MUTEX_DEFN(InvokeMethodTable_lock          , PaddedMutex  , safepoint);
+  MUTEX_DEFN(InvokeMethodTypeTable_lock      , PaddedMutex  , safepoint);
   MUTEX_DEFN(InvokeMethodIntrinsicTable_lock , PaddedMonitor, safepoint);
   MUTEX_DEFN(AdapterHandlerLibrary_lock      , PaddedMutex  , safepoint);
   MUTEX_DEFN(SharedDictionary_lock           , PaddedMutex  , safepoint);

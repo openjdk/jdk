@@ -1587,7 +1587,7 @@ void SystemDictionary::methods_do(void f(Method*)) {
   };
 
   {
-    MutexLocker ml(InvokeMethodTable_lock);
+    MutexLocker ml(InvokeMethodIntrinsicTable_lock);
     _invoke_method_intrinsic_table.iterate_all(doit);
   }
 
@@ -2139,7 +2139,7 @@ Handle SystemDictionary::find_method_handle_type(Symbol* signature,
   Handle empty;
   OopHandle* o;
   {
-    MutexLocker ml(THREAD, InvokeMethodTable_lock);
+    MutexLocker ml(THREAD, InvokeMethodTypeTable_lock);
     o = _invoke_method_type_table.get(signature);
   }
 
@@ -2208,7 +2208,7 @@ Handle SystemDictionary::find_method_handle_type(Symbol* signature,
 
   if (can_be_cached) {
     // We can cache this MethodType inside the JVM.
-    MutexLocker ml(THREAD, InvokeMethodTable_lock);
+    MutexLocker ml(THREAD, InvokeMethodTypeTable_lock);
     bool created = false;
     assert(method_type != nullptr, "unexpected null");
     OopHandle* h = _invoke_method_type_table.get(signature);
