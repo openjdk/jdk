@@ -93,6 +93,24 @@
  * structure, this check will add little overhead to the hashtable
  * access methods.
  *
+ * <h3>Memory Consistency Properties</h3>
+ * Certain interactions with the garbage collector and reference queues form
+ * <a href="{@docRoot}/java.base/java/util/concurrent/package-summary.html#MemoryVisibility"><i>happens-before</i></a>
+ * relationships:
+ *
+ * <ul>
+ *
+ * <li> Actions in a thread prior to calling
+ * {@link Reference#reachabilityFence Reference.reachabilityFence(x)}
+ * <i>happen-before</i> the garbage collector enqueues a reference to x on a
+ * queue.</li>
+ *
+ * <li> The enqueueing of a reference on a queue (by the garbage collector, or
+ * by a successfull {@link Reference#enqueue}) <i>happens-before</i> the reference
+ * is removed from the queue by {@link ReferenceQueue#poll} or
+ * {@link ReferenceQueue#remove}.</li>
+ * </ul>
+ *
  * <a id="reachability"></a>
  * <h3>Reachability</h3>
  *
