@@ -127,6 +127,8 @@ void LogOutputList::add_output(LogOutput* output, LogLevelType level) {
        node->_next = node->_next->_next) {
   }
 
+  //Prevent the reordering of adding node to list and setting the value of node.
+  //Such a reordering would lead to reading incorrect values.
   OrderAccess::release();
 
   // Update the _level_start index
