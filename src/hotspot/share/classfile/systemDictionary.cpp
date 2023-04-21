@@ -1583,7 +1583,9 @@ void SystemDictionary::methods_do(void f(Method*)) {
   }
 
   auto doit = [&] (InvokeMethodKey key, Method* method) {
-    f(method);
+    if (method != nullptr) {
+      f(method);
+    }
   };
 
   {
