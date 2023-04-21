@@ -39,7 +39,7 @@
  * negative, or the size is INT_MAX as the macro adds 1
  * that overflows into negative value.
  */
-#define MALLOC_MIN4(len) (len >= INT_MAX || len < 0 ? \
+#define MALLOC_MIN4(len) ((len) >= INT_MAX || (len) < 0 ? \
     NULL : \
     ((char *)malloc((len) + 1 < 4 ? 4 : (len) + 1)))
 
