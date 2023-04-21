@@ -78,10 +78,7 @@ ShenandoahHeuristics::~ShenandoahHeuristics() {
 
 size_t ShenandoahHeuristics::select_aged_regions(size_t old_available, size_t num_regions, bool* preselected_regions) {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
-  if (!heap->mode()->is_generational()) {
-    // TODO: Do we need this check, or assert is enough?
-    return 0;
-  }
+  assert(heap->mode()->is_generational(), "Only in generational mode");
 
   size_t old_consumed = 0;
   for (size_t i = 0; i < num_regions; i++) {
