@@ -527,9 +527,8 @@ public abstract sealed class Reference<T>
      * regardless of any other actions of the program that might otherwise cause
      * the object to become unreachable; thus, the object is not
      * reclaimable by garbage collection at least until after the invocation of
-     * this method. {@link Reference}s referring to the given object will not be
-     * enqueued on a {@link ReferenceQueue} by the garbage collector until after
-     * invocation of this method.
+     * this method. References to the given object will not be enqueued on a
+     * queue by the garbage collector until after invocation of this method.
      * Invocation of this method does not itself initiate reference processing,
      * garbage collection, or finalization.
      *
