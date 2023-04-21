@@ -92,17 +92,6 @@ public interface CLibrary {//extends com.sun.jna.Library {
 //            );
 //        }
 
-        public String toString() {
-            return "c_iflag: " + c_iflag + "," + "c_oflag: "
-                    + c_oflag + "," + "c_cflag: "
-                    + c_cflag + "," + "c_lflag: "
-                    + c_lflag + "," + "c_line: "
-                    + c_line + "," + "c_cc: "
-                    + java.util.Arrays.toString(c_cc) + "," + "c_ispeed: "
-                    + c_ispeed + "," + "c_ospeed: "
-                    + c_ospeed;
-        }
-
         public termios() {
         }
 

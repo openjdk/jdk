@@ -14,7 +14,7 @@ import java.util.EnumSet;
 import java.util.List;
 
 //import com.sun.jna.LastErrorException;
-//import com.sun.jna.long;
+//import com.sun.jna.NativeLong;
 //import com.sun.jna.Structure;
 import jdk.internal.org.jline.terminal.Attributes;
 import jdk.internal.org.jline.terminal.Attributes.ControlChar;
@@ -25,13 +25,13 @@ import jdk.internal.org.jline.terminal.Attributes.OutputFlag;
 import jdk.internal.org.jline.terminal.Size;
 import jdk.internal.org.jline.terminal.impl.jna.LastErrorException;
 
-public interface CLibrary { //extends com.sun.jna.Library {
+public interface CLibrary {//extends com.sun.jna.Library {
 
     void tcgetattr(int fd, termios termios) throws LastErrorException;
 
     void tcsetattr(int fd, int cmd, termios termios) throws LastErrorException;
 
-    void ioctl(int fd, long cmd, winsize data) throws LastErrorException;
+    void ioctl(int fd, NativeLong cmd, winsize data) throws LastErrorException;
 
     int isatty(int fd);
 
@@ -71,13 +71,13 @@ public interface CLibrary { //extends com.sun.jna.Library {
 
     class termios { //extends Structure {
 
-        public long c_iflag;
-        public long c_oflag;
-        public long c_cflag;
-        public long c_lflag;
+        public NativeLong c_iflag;
+        public NativeLong c_oflag;
+        public NativeLong c_cflag;
+        public NativeLong c_lflag;
         public byte[] c_cc = new byte[20];
-        public long c_ispeed;
-        public long c_ospeed;
+        public NativeLong c_ispeed;
+        public NativeLong c_ospeed;
 
 //        @Override
 //        protected List<String> getFieldOrder() {
@@ -92,76 +92,85 @@ public interface CLibrary { //extends com.sun.jna.Library {
 //            );
 //        }
 
+        {
+            c_iflag  = new NativeLong(0);
+            c_oflag  = new NativeLong(0);
+            c_cflag  = new NativeLong(0);
+            c_lflag  = new NativeLong(0);
+            c_ispeed = new NativeLong(0);
+            c_ospeed = new NativeLong(0);
+        }
+
         public termios() {
         }
 
         public termios(Attributes t) {
             // Input flags
-             c_iflag = setFlag(t.getInputFlag(InputFlag.IGNBRK),           IGNBRK,     c_iflag);
-             c_iflag = setFlag(t.getInputFlag(InputFlag.BRKINT),           BRKINT,     c_iflag);
-             c_iflag = setFlag(t.getInputFlag(InputFlag.IGNPAR),           IGNPAR,     c_iflag);
-             c_iflag = setFlag(t.getInputFlag(InputFlag.PARMRK),           PARMRK,     c_iflag);
-             c_iflag = setFlag(t.getInputFlag(InputFlag.INPCK),            INPCK,      c_iflag);
-             c_iflag = setFlag(t.getInputFlag(InputFlag.ISTRIP),           ISTRIP,     c_iflag);
-             c_iflag = setFlag(t.getInputFlag(InputFlag.INLCR),            INLCR,      c_iflag);
-             c_iflag = setFlag(t.getInputFlag(InputFlag.IGNCR),            IGNCR,      c_iflag);
-             c_iflag = setFlag(t.getInputFlag(InputFlag.ICRNL),            ICRNL,      c_iflag);
-             c_iflag = setFlag(t.getInputFlag(InputFlag.IXON),             IXON,       c_iflag);
-             c_iflag = setFlag(t.getInputFlag(InputFlag.IXOFF),            IXOFF,      c_iflag);
-             c_iflag = setFlag(t.getInputFlag(InputFlag.IXANY),            IXANY,      c_iflag);
-             c_iflag = setFlag(t.getInputFlag(InputFlag.IMAXBEL),          IMAXBEL,    c_iflag);
-             c_iflag = setFlag(t.getInputFlag(InputFlag.IUTF8),            IUTF8,      c_iflag);
-             // Outp=ut flags
-             c_oflag = setFlag(t.getOutputFlag(OutputFlag.OPOST),          OPOST,      c_oflag);
-             c_oflag = setFlag(t.getOutputFlag(OutputFlag.ONLCR),          ONLCR,      c_oflag);
-             c_oflag = setFlag(t.getOutputFlag(OutputFlag.OXTABS),         OXTABS,     c_oflag);
-             c_oflag = setFlag(t.getOutputFlag(OutputFlag.ONOEOT),         ONOEOT,     c_oflag);
-             c_oflag = setFlag(t.getOutputFlag(OutputFlag.OCRNL),          OCRNL,      c_oflag);
-             c_oflag = setFlag(t.getOutputFlag(OutputFlag.ONOCR),          ONOCR,      c_oflag);
-             c_oflag = setFlag(t.getOutputFlag(OutputFlag.ONLRET),         ONLRET,     c_oflag);
-             c_oflag = setFlag(t.getOutputFlag(OutputFlag.OFILL),          OFILL,      c_oflag);
-             c_oflag = setFlag(t.getOutputFlag(OutputFlag.NLDLY),          NLDLY,      c_oflag);
-             c_oflag = setFlag(t.getOutputFlag(OutputFlag.TABDLY),         TABDLY,     c_oflag);
-             c_oflag = setFlag(t.getOutputFlag(OutputFlag.CRDLY),          CRDLY,      c_oflag);
-             c_oflag = setFlag(t.getOutputFlag(OutputFlag.FFDLY),          FFDLY,      c_oflag);
-             c_oflag = setFlag(t.getOutputFlag(OutputFlag.BSDLY),          BSDLY,      c_oflag);
-             c_oflag = setFlag(t.getOutputFlag(OutputFlag.VTDLY),          VTDLY,      c_oflag);
-             c_oflag = setFlag(t.getOutputFlag(OutputFlag.OFDEL),          OFDEL,      c_oflag);
-             // Cont=rol flags
-             c_cflag = setFlag(t.getControlFlag(ControlFlag.CIGNORE),      CIGNORE,    c_cflag);
-             c_cflag = setFlag(t.getControlFlag(ControlFlag.CS5),          CS5,        c_cflag);
-             c_cflag = setFlag(t.getControlFlag(ControlFlag.CS6),          CS6,        c_cflag);
-             c_cflag = setFlag(t.getControlFlag(ControlFlag.CS7),          CS7,        c_cflag);
-             c_cflag = setFlag(t.getControlFlag(ControlFlag.CS8),          CS8,        c_cflag);
-             c_cflag = setFlag(t.getControlFlag(ControlFlag.CSTOPB),       CSTOPB,     c_cflag);
-             c_cflag = setFlag(t.getControlFlag(ControlFlag.CREAD),        CREAD,      c_cflag);
-             c_cflag = setFlag(t.getControlFlag(ControlFlag.PARENB),       PARENB,     c_cflag);
-             c_cflag = setFlag(t.getControlFlag(ControlFlag.PARODD),       PARODD,     c_cflag);
-             c_cflag = setFlag(t.getControlFlag(ControlFlag.HUPCL),        HUPCL,      c_cflag);
-             c_cflag = setFlag(t.getControlFlag(ControlFlag.CLOCAL),       CLOCAL,     c_cflag);
-             c_cflag = setFlag(t.getControlFlag(ControlFlag.CCTS_OFLOW),   CCTS_OFLOW, c_cflag);
-             c_cflag = setFlag(t.getControlFlag(ControlFlag.CRTS_IFLOW),   CRTS_IFLOW, c_cflag);
-             c_cflag = setFlag(t.getControlFlag(ControlFlag.CDTR_IFLOW),   CDTR_IFLOW, c_cflag);
-             c_cflag = setFlag(t.getControlFlag(ControlFlag.CDSR_OFLOW),   CDSR_OFLOW, c_cflag);
-             c_cflag = setFlag(t.getControlFlag(ControlFlag.CCAR_OFLOW),   CCAR_OFLOW, c_cflag);
-             // Loca=l flags
-             c_lflag = setFlag(t.getLocalFlag(LocalFlag.ECHOKE),           ECHOKE,     c_lflag);
-             c_lflag = setFlag(t.getLocalFlag(LocalFlag.ECHOE),            ECHOE,      c_lflag);
-             c_lflag = setFlag(t.getLocalFlag(LocalFlag.ECHOK),            ECHOK,      c_lflag);
-             c_lflag = setFlag(t.getLocalFlag(LocalFlag.ECHO),             ECHO,       c_lflag);
-             c_lflag = setFlag(t.getLocalFlag(LocalFlag.ECHONL),           ECHONL,     c_lflag);
-             c_lflag = setFlag(t.getLocalFlag(LocalFlag.ECHOPRT),          ECHOPRT,    c_lflag);
-             c_lflag = setFlag(t.getLocalFlag(LocalFlag.ECHOCTL),          ECHOCTL,    c_lflag);
-             c_lflag = setFlag(t.getLocalFlag(LocalFlag.ISIG),             ISIG,       c_lflag);
-             c_lflag = setFlag(t.getLocalFlag(LocalFlag.ICANON),           ICANON,     c_lflag);
-             c_lflag = setFlag(t.getLocalFlag(LocalFlag.ALTWERASE),        ALTWERASE,  c_lflag);
-             c_lflag = setFlag(t.getLocalFlag(LocalFlag.IEXTEN),           IEXTEN,     c_lflag);
-             c_lflag = setFlag(t.getLocalFlag(LocalFlag.EXTPROC),          EXTPROC,    c_lflag);
-             c_lflag = setFlag(t.getLocalFlag(LocalFlag.TOSTOP),           TOSTOP,     c_lflag);
-             c_lflag = setFlag(t.getLocalFlag(LocalFlag.FLUSHO),           FLUSHO,     c_lflag);
-             c_lflag = setFlag(t.getLocalFlag(LocalFlag.NOKERNINFO),       NOKERNINFO, c_lflag);
-             c_lflag = setFlag(t.getLocalFlag(LocalFlag.PENDIN),           PENDIN,     c_lflag);
-             c_lflag = setFlag(t.getLocalFlag(LocalFlag.NOFLSH),           NOFLSH,     c_lflag);
+            setFlag(t.getInputFlag(InputFlag.IGNBRK),           IGNBRK,     c_iflag);
+            setFlag(t.getInputFlag(InputFlag.BRKINT),           BRKINT,     c_iflag);
+            setFlag(t.getInputFlag(InputFlag.IGNPAR),           IGNPAR,     c_iflag);
+            setFlag(t.getInputFlag(InputFlag.PARMRK),           PARMRK,     c_iflag);
+            setFlag(t.getInputFlag(InputFlag.INPCK),            INPCK,      c_iflag);
+            setFlag(t.getInputFlag(InputFlag.ISTRIP),           ISTRIP,     c_iflag);
+            setFlag(t.getInputFlag(InputFlag.INLCR),            INLCR,      c_iflag);
+            setFlag(t.getInputFlag(InputFlag.IGNCR),            IGNCR,      c_iflag);
+            setFlag(t.getInputFlag(InputFlag.ICRNL),            ICRNL,      c_iflag);
+            setFlag(t.getInputFlag(InputFlag.IXON),             IXON,       c_iflag);
+            setFlag(t.getInputFlag(InputFlag.IXOFF),            IXOFF,      c_iflag);
+            setFlag(t.getInputFlag(InputFlag.IXANY),            IXANY,      c_iflag);
+            setFlag(t.getInputFlag(InputFlag.IMAXBEL),          IMAXBEL,    c_iflag);
+            setFlag(t.getInputFlag(InputFlag.IUTF8),            IUTF8,      c_iflag);
+            // Output flags
+            setFlag(t.getOutputFlag(OutputFlag.OPOST),          OPOST,      c_oflag);
+            setFlag(t.getOutputFlag(OutputFlag.ONLCR),          ONLCR,      c_oflag);
+            setFlag(t.getOutputFlag(OutputFlag.OXTABS),         OXTABS,     c_oflag);
+            setFlag(t.getOutputFlag(OutputFlag.ONOEOT),         ONOEOT,     c_oflag);
+            setFlag(t.getOutputFlag(OutputFlag.OCRNL),          OCRNL,      c_oflag);
+            setFlag(t.getOutputFlag(OutputFlag.ONOCR),          ONOCR,      c_oflag);
+            setFlag(t.getOutputFlag(OutputFlag.ONLRET),         ONLRET,     c_oflag);
+            setFlag(t.getOutputFlag(OutputFlag.OFILL),          OFILL,      c_oflag);
+            setFlag(t.getOutputFlag(OutputFlag.NLDLY),          NLDLY,      c_oflag);
+            setFlag(t.getOutputFlag(OutputFlag.TABDLY),         TABDLY,     c_oflag);
+            setFlag(t.getOutputFlag(OutputFlag.CRDLY),          CRDLY,      c_oflag);
+            setFlag(t.getOutputFlag(OutputFlag.FFDLY),          FFDLY,      c_oflag);
+            setFlag(t.getOutputFlag(OutputFlag.BSDLY),          BSDLY,      c_oflag);
+            setFlag(t.getOutputFlag(OutputFlag.VTDLY),          VTDLY,      c_oflag);
+            setFlag(t.getOutputFlag(OutputFlag.OFDEL),          OFDEL,      c_oflag);
+            // Control flags
+            setFlag(t.getControlFlag(ControlFlag.CIGNORE),      CIGNORE,    c_cflag);
+            setFlag(t.getControlFlag(ControlFlag.CS5),          CS5,        c_cflag);
+            setFlag(t.getControlFlag(ControlFlag.CS6),          CS6,        c_cflag);
+            setFlag(t.getControlFlag(ControlFlag.CS7),          CS7,        c_cflag);
+            setFlag(t.getControlFlag(ControlFlag.CS8),          CS8,        c_cflag);
+            setFlag(t.getControlFlag(ControlFlag.CSTOPB),       CSTOPB,     c_cflag);
+            setFlag(t.getControlFlag(ControlFlag.CREAD),        CREAD,      c_cflag);
+            setFlag(t.getControlFlag(ControlFlag.PARENB),       PARENB,     c_cflag);
+            setFlag(t.getControlFlag(ControlFlag.PARODD),       PARODD,     c_cflag);
+            setFlag(t.getControlFlag(ControlFlag.HUPCL),        HUPCL,      c_cflag);
+            setFlag(t.getControlFlag(ControlFlag.CLOCAL),       CLOCAL,     c_cflag);
+            setFlag(t.getControlFlag(ControlFlag.CCTS_OFLOW),   CCTS_OFLOW, c_cflag);
+            setFlag(t.getControlFlag(ControlFlag.CRTS_IFLOW),   CRTS_IFLOW, c_cflag);
+            setFlag(t.getControlFlag(ControlFlag.CDTR_IFLOW),   CDTR_IFLOW, c_cflag);
+            setFlag(t.getControlFlag(ControlFlag.CDSR_OFLOW),   CDSR_OFLOW, c_cflag);
+            setFlag(t.getControlFlag(ControlFlag.CCAR_OFLOW),   CCAR_OFLOW, c_cflag);
+            // Local flags
+            setFlag(t.getLocalFlag(LocalFlag.ECHOKE),           ECHOKE,     c_lflag);
+            setFlag(t.getLocalFlag(LocalFlag.ECHOE),            ECHOE,      c_lflag);
+            setFlag(t.getLocalFlag(LocalFlag.ECHOK),            ECHOK,      c_lflag);
+            setFlag(t.getLocalFlag(LocalFlag.ECHO),             ECHO,       c_lflag);
+            setFlag(t.getLocalFlag(LocalFlag.ECHONL),           ECHONL,     c_lflag);
+            setFlag(t.getLocalFlag(LocalFlag.ECHOPRT),          ECHOPRT,    c_lflag);
+            setFlag(t.getLocalFlag(LocalFlag.ECHOCTL),          ECHOCTL,    c_lflag);
+            setFlag(t.getLocalFlag(LocalFlag.ISIG),             ISIG,       c_lflag);
+            setFlag(t.getLocalFlag(LocalFlag.ICANON),           ICANON,     c_lflag);
+            setFlag(t.getLocalFlag(LocalFlag.ALTWERASE),        ALTWERASE,  c_lflag);
+            setFlag(t.getLocalFlag(LocalFlag.IEXTEN),           IEXTEN,     c_lflag);
+            setFlag(t.getLocalFlag(LocalFlag.EXTPROC),          EXTPROC,    c_lflag);
+            setFlag(t.getLocalFlag(LocalFlag.TOSTOP),           TOSTOP,     c_lflag);
+            setFlag(t.getLocalFlag(LocalFlag.FLUSHO),           FLUSHO,     c_lflag);
+            setFlag(t.getLocalFlag(LocalFlag.NOKERNINFO),       NOKERNINFO, c_lflag);
+            setFlag(t.getLocalFlag(LocalFlag.PENDIN),           PENDIN,     c_lflag);
+            setFlag(t.getLocalFlag(LocalFlag.NOFLSH),           NOFLSH,     c_lflag);
             // Control chars
             c_cc[VEOF]      = (byte) t.getControlChar(ControlChar.VEOF);
             c_cc[VEOL]      = (byte) t.getControlChar(ControlChar.VEOL);
@@ -183,82 +192,82 @@ public interface CLibrary { //extends com.sun.jna.Library {
             c_cc[VSTATUS]   = (byte) t.getControlChar(ControlChar.VSTATUS);
         }
 
-        private long setFlag(boolean flag, long value, long org) {
-            return flag ? org | value : org;
+        private void setFlag(boolean flag, long value, NativeLong org) {
+            org.setValue(flag ? org.longValue() | value : org.longValue());
         }
 
         public Attributes toAttributes() {
             Attributes attr = new Attributes();
             // Input flags
             EnumSet<InputFlag> iflag = attr.getInputFlags();
-            addFlag(c_iflag, iflag, InputFlag.IGNBRK,   IGNBRK);
-            addFlag(c_iflag, iflag, InputFlag.IGNBRK, IGNBRK);
-            addFlag(c_iflag, iflag, InputFlag.BRKINT, BRKINT);
-            addFlag(c_iflag, iflag, InputFlag.IGNPAR, IGNPAR);
-            addFlag(c_iflag, iflag, InputFlag.PARMRK, PARMRK);
-            addFlag(c_iflag, iflag, InputFlag.INPCK, INPCK);
-            addFlag(c_iflag, iflag, InputFlag.ISTRIP, ISTRIP);
-            addFlag(c_iflag, iflag, InputFlag.INLCR, INLCR);
-            addFlag(c_iflag, iflag, InputFlag.IGNCR, IGNCR);
-            addFlag(c_iflag, iflag, InputFlag.ICRNL, ICRNL);
-            addFlag(c_iflag, iflag, InputFlag.IXON, IXON);
-            addFlag(c_iflag, iflag, InputFlag.IXOFF, IXOFF);
-            addFlag(c_iflag, iflag, InputFlag.IXANY, IXANY);
-            addFlag(c_iflag, iflag, InputFlag.IMAXBEL, IMAXBEL);
-            addFlag(c_iflag, iflag, InputFlag.IUTF8, IUTF8);
+            addFlag(c_iflag.longValue(), iflag, InputFlag.IGNBRK,   IGNBRK);
+            addFlag(c_iflag.longValue(), iflag, InputFlag.IGNBRK, IGNBRK);
+            addFlag(c_iflag.longValue(), iflag, InputFlag.BRKINT, BRKINT);
+            addFlag(c_iflag.longValue(), iflag, InputFlag.IGNPAR, IGNPAR);
+            addFlag(c_iflag.longValue(), iflag, InputFlag.PARMRK, PARMRK);
+            addFlag(c_iflag.longValue(), iflag, InputFlag.INPCK, INPCK);
+            addFlag(c_iflag.longValue(), iflag, InputFlag.ISTRIP, ISTRIP);
+            addFlag(c_iflag.longValue(), iflag, InputFlag.INLCR, INLCR);
+            addFlag(c_iflag.longValue(), iflag, InputFlag.IGNCR, IGNCR);
+            addFlag(c_iflag.longValue(), iflag, InputFlag.ICRNL, ICRNL);
+            addFlag(c_iflag.longValue(), iflag, InputFlag.IXON, IXON);
+            addFlag(c_iflag.longValue(), iflag, InputFlag.IXOFF, IXOFF);
+            addFlag(c_iflag.longValue(), iflag, InputFlag.IXANY, IXANY);
+            addFlag(c_iflag.longValue(), iflag, InputFlag.IMAXBEL, IMAXBEL);
+            addFlag(c_iflag.longValue(), iflag, InputFlag.IUTF8, IUTF8);
             // Output flags
             EnumSet<OutputFlag> oflag = attr.getOutputFlags();
-            addFlag(c_oflag, oflag, OutputFlag.OPOST, OPOST);
-            addFlag(c_oflag, oflag, OutputFlag.ONLCR, ONLCR);
-            addFlag(c_oflag, oflag, OutputFlag.OXTABS, OXTABS);
-            addFlag(c_oflag, oflag, OutputFlag.ONOEOT, ONOEOT);
-            addFlag(c_oflag, oflag, OutputFlag.OCRNL, OCRNL);
-            addFlag(c_oflag, oflag, OutputFlag.ONOCR, ONOCR);
-            addFlag(c_oflag, oflag, OutputFlag.ONLRET, ONLRET);
-            addFlag(c_oflag, oflag, OutputFlag.OFILL, OFILL);
-            addFlag(c_oflag, oflag, OutputFlag.NLDLY, NLDLY);
-            addFlag(c_oflag, oflag, OutputFlag.TABDLY, TABDLY);
-            addFlag(c_oflag, oflag, OutputFlag.CRDLY, CRDLY);
-            addFlag(c_oflag, oflag, OutputFlag.FFDLY, FFDLY);
-            addFlag(c_oflag, oflag, OutputFlag.BSDLY, BSDLY);
-            addFlag(c_oflag, oflag, OutputFlag.VTDLY, VTDLY);
-            addFlag(c_oflag, oflag, OutputFlag.OFDEL, OFDEL);
+            addFlag(c_oflag.longValue(), oflag, OutputFlag.OPOST, OPOST);
+            addFlag(c_oflag.longValue(), oflag, OutputFlag.ONLCR, ONLCR);
+            addFlag(c_oflag.longValue(), oflag, OutputFlag.OXTABS, OXTABS);
+            addFlag(c_oflag.longValue(), oflag, OutputFlag.ONOEOT, ONOEOT);
+            addFlag(c_oflag.longValue(), oflag, OutputFlag.OCRNL, OCRNL);
+            addFlag(c_oflag.longValue(), oflag, OutputFlag.ONOCR, ONOCR);
+            addFlag(c_oflag.longValue(), oflag, OutputFlag.ONLRET, ONLRET);
+            addFlag(c_oflag.longValue(), oflag, OutputFlag.OFILL, OFILL);
+            addFlag(c_oflag.longValue(), oflag, OutputFlag.NLDLY, NLDLY);
+            addFlag(c_oflag.longValue(), oflag, OutputFlag.TABDLY, TABDLY);
+            addFlag(c_oflag.longValue(), oflag, OutputFlag.CRDLY, CRDLY);
+            addFlag(c_oflag.longValue(), oflag, OutputFlag.FFDLY, FFDLY);
+            addFlag(c_oflag.longValue(), oflag, OutputFlag.BSDLY, BSDLY);
+            addFlag(c_oflag.longValue(), oflag, OutputFlag.VTDLY, VTDLY);
+            addFlag(c_oflag.longValue(), oflag, OutputFlag.OFDEL, OFDEL);
             // Control flags
             EnumSet<ControlFlag> cflag = attr.getControlFlags();
-            addFlag(c_cflag, cflag, ControlFlag.CIGNORE, CIGNORE);
-            addFlag(c_cflag, cflag, ControlFlag.CS5, CS5);
-            addFlag(c_cflag, cflag, ControlFlag.CS6, CS6);
-            addFlag(c_cflag, cflag, ControlFlag.CS7, CS7);
-            addFlag(c_cflag, cflag, ControlFlag.CS8, CS8);
-            addFlag(c_cflag, cflag, ControlFlag.CSTOPB, CSTOPB);
-            addFlag(c_cflag, cflag, ControlFlag.CREAD, CREAD);
-            addFlag(c_cflag, cflag, ControlFlag.PARENB, PARENB);
-            addFlag(c_cflag, cflag, ControlFlag.PARODD, PARODD);
-            addFlag(c_cflag, cflag, ControlFlag.HUPCL, HUPCL);
-            addFlag(c_cflag, cflag, ControlFlag.CLOCAL, CLOCAL);
-            addFlag(c_cflag, cflag, ControlFlag.CCTS_OFLOW, CCTS_OFLOW);
-            addFlag(c_cflag, cflag, ControlFlag.CRTS_IFLOW, CRTS_IFLOW);
-            addFlag(c_cflag, cflag, ControlFlag.CDSR_OFLOW, CDSR_OFLOW);
-            addFlag(c_cflag, cflag, ControlFlag.CCAR_OFLOW, CCAR_OFLOW);
+            addFlag(c_cflag.longValue(), cflag, ControlFlag.CIGNORE, CIGNORE);
+            addFlag(c_cflag.longValue(), cflag, ControlFlag.CS5, CS5);
+            addFlag(c_cflag.longValue(), cflag, ControlFlag.CS6, CS6);
+            addFlag(c_cflag.longValue(), cflag, ControlFlag.CS7, CS7);
+            addFlag(c_cflag.longValue(), cflag, ControlFlag.CS8, CS8);
+            addFlag(c_cflag.longValue(), cflag, ControlFlag.CSTOPB, CSTOPB);
+            addFlag(c_cflag.longValue(), cflag, ControlFlag.CREAD, CREAD);
+            addFlag(c_cflag.longValue(), cflag, ControlFlag.PARENB, PARENB);
+            addFlag(c_cflag.longValue(), cflag, ControlFlag.PARODD, PARODD);
+            addFlag(c_cflag.longValue(), cflag, ControlFlag.HUPCL, HUPCL);
+            addFlag(c_cflag.longValue(), cflag, ControlFlag.CLOCAL, CLOCAL);
+            addFlag(c_cflag.longValue(), cflag, ControlFlag.CCTS_OFLOW, CCTS_OFLOW);
+            addFlag(c_cflag.longValue(), cflag, ControlFlag.CRTS_IFLOW, CRTS_IFLOW);
+            addFlag(c_cflag.longValue(), cflag, ControlFlag.CDSR_OFLOW, CDSR_OFLOW);
+            addFlag(c_cflag.longValue(), cflag, ControlFlag.CCAR_OFLOW, CCAR_OFLOW);
             // Local flags
             EnumSet<LocalFlag> lflag = attr.getLocalFlags();
-            addFlag(c_lflag, lflag, LocalFlag.ECHOKE, ECHOKE);
-            addFlag(c_lflag, lflag, LocalFlag.ECHOE, ECHOE);
-            addFlag(c_lflag, lflag, LocalFlag.ECHOK, ECHOK);
-            addFlag(c_lflag, lflag, LocalFlag.ECHO, ECHO);
-            addFlag(c_lflag, lflag, LocalFlag.ECHONL, ECHONL);
-            addFlag(c_lflag, lflag, LocalFlag.ECHOPRT, ECHOPRT);
-            addFlag(c_lflag, lflag, LocalFlag.ECHOCTL, ECHOCTL);
-            addFlag(c_lflag, lflag, LocalFlag.ISIG, ISIG);
-            addFlag(c_lflag, lflag, LocalFlag.ICANON, ICANON);
-            addFlag(c_lflag, lflag, LocalFlag.ALTWERASE, ALTWERASE);
-            addFlag(c_lflag, lflag, LocalFlag.IEXTEN, IEXTEN);
-            addFlag(c_lflag, lflag, LocalFlag.EXTPROC, EXTPROC);
-            addFlag(c_lflag, lflag, LocalFlag.TOSTOP, TOSTOP);
-            addFlag(c_lflag, lflag, LocalFlag.FLUSHO, FLUSHO);
-            addFlag(c_lflag, lflag, LocalFlag.NOKERNINFO, NOKERNINFO);
-            addFlag(c_lflag, lflag, LocalFlag.PENDIN, PENDIN);
-            addFlag(c_lflag, lflag, LocalFlag.NOFLSH, NOFLSH);
+            addFlag(c_lflag.longValue(), lflag, LocalFlag.ECHOKE, ECHOKE);
+            addFlag(c_lflag.longValue(), lflag, LocalFlag.ECHOE, ECHOE);
+            addFlag(c_lflag.longValue(), lflag, LocalFlag.ECHOK, ECHOK);
+            addFlag(c_lflag.longValue(), lflag, LocalFlag.ECHO, ECHO);
+            addFlag(c_lflag.longValue(), lflag, LocalFlag.ECHONL, ECHONL);
+            addFlag(c_lflag.longValue(), lflag, LocalFlag.ECHOPRT, ECHOPRT);
+            addFlag(c_lflag.longValue(), lflag, LocalFlag.ECHOCTL, ECHOCTL);
+            addFlag(c_lflag.longValue(), lflag, LocalFlag.ISIG, ISIG);
+            addFlag(c_lflag.longValue(), lflag, LocalFlag.ICANON, ICANON);
+            addFlag(c_lflag.longValue(), lflag, LocalFlag.ALTWERASE, ALTWERASE);
+            addFlag(c_lflag.longValue(), lflag, LocalFlag.IEXTEN, IEXTEN);
+            addFlag(c_lflag.longValue(), lflag, LocalFlag.EXTPROC, EXTPROC);
+            addFlag(c_lflag.longValue(), lflag, LocalFlag.TOSTOP, TOSTOP);
+            addFlag(c_lflag.longValue(), lflag, LocalFlag.FLUSHO, FLUSHO);
+            addFlag(c_lflag.longValue(), lflag, LocalFlag.NOKERNINFO, NOKERNINFO);
+            addFlag(c_lflag.longValue(), lflag, LocalFlag.PENDIN, PENDIN);
+            addFlag(c_lflag.longValue(), lflag, LocalFlag.NOFLSH, NOFLSH);
             // Control chars
             EnumMap<ControlChar, Integer> cc = attr.getControlChars();
             cc.put(ControlChar.VEOF, 	    (int) c_cc[VEOF]);

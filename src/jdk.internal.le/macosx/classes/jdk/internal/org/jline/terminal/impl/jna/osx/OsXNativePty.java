@@ -27,6 +27,7 @@ import static jdk.internal.org.jline.terminal.impl.jna.osx.CLibrary.winsize;
 
 public class OsXNativePty extends JnaNativePty {
 
+//    private static final CLibrary C_LIBRARY = Native.load(Platform.C_LIBRARY_NAME, CLibrary.class);
     private static final CLibrary C_LIBRARY = new CLibraryImpl();//Native.load(Platform.C_LIBRARY_NAME, CLibrary.class);
 
     public static OsXNativePty current(TerminalProvider.Stream consoleStream) throws IOException {
@@ -79,14 +80,14 @@ public class OsXNativePty extends JnaNativePty {
     @Override
     public Size getSize() throws IOException {
         winsize sz = new winsize();
-        C_LIBRARY.ioctl(getSlave(), TIOCGWINSZ, sz);
+        C_LIBRARY.ioctl(getSlave(), new NativeLong(TIOCGWINSZ), sz);
         return sz.toSize();
     }
 
     @Override
     public void setSize(Size size) throws IOException {
         winsize sz = new winsize(size);
-        C_LIBRARY.ioctl(getSlave(), TIOCSWINSZ, sz);
+        C_LIBRARY.ioctl(getSlave(), new NativeLong(TIOCSWINSZ), sz);
     }
 
     public static int isatty(int fd) {

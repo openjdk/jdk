@@ -48,23 +48,26 @@ static jfieldID ws_col;
 static jfieldID ws_xpixel;
 static jfieldID ws_ypixel;
 
+static jclass nativelong_j;
+static jfieldID nativelong_value;
+
 JNIEXPORT void JNICALL Java_jdk_internal_org_jline_terminal_impl_jna_osx_CLibraryImpl_initIDs
   (JNIEnv *env, jclass) {
     termios_j = env->FindClass("jdk/internal/org/jline/terminal/impl/jna/osx/CLibrary$termios");
     CHECK_NULL(termios_j);
-    c_iflag = env->GetFieldID(termios_j, "c_iflag", "J");
+    c_iflag = env->GetFieldID(termios_j, "c_iflag", "Ljdk/internal/org/jline/terminal/impl/jna/osx/NativeLong;");
     CHECK_NULL(c_iflag);
-    c_oflag = env->GetFieldID(termios_j, "c_oflag", "J");
+    c_oflag = env->GetFieldID(termios_j, "c_oflag", "Ljdk/internal/org/jline/terminal/impl/jna/osx/NativeLong;");
     CHECK_NULL(c_oflag);
-    c_cflag = env->GetFieldID(termios_j, "c_cflag", "J");
+    c_cflag = env->GetFieldID(termios_j, "c_cflag", "Ljdk/internal/org/jline/terminal/impl/jna/osx/NativeLong;");
     CHECK_NULL(c_cflag);
-    c_lflag = env->GetFieldID(termios_j, "c_lflag", "J");
+    c_lflag = env->GetFieldID(termios_j, "c_lflag", "Ljdk/internal/org/jline/terminal/impl/jna/osx/NativeLong;");
     CHECK_NULL(c_lflag);
     c_cc = env->GetFieldID(termios_j, "c_cc", "[B");
     CHECK_NULL(c_cc);
-    c_ispeed = env->GetFieldID(termios_j, "c_ispeed", "J");
+    c_ispeed = env->GetFieldID(termios_j, "c_ispeed", "Ljdk/internal/org/jline/terminal/impl/jna/osx/NativeLong;");
     CHECK_NULL(c_ispeed);
-    c_ospeed = env->GetFieldID(termios_j, "c_ospeed", "J");
+    c_ospeed = env->GetFieldID(termios_j, "c_ospeed", "Ljdk/internal/org/jline/terminal/impl/jna/osx/NativeLong;");
     CHECK_NULL(c_ospeed);
 
     winsize_j = env->FindClass("jdk/internal/org/jline/terminal/impl/jna/osx/CLibrary$winsize");
@@ -77,6 +80,11 @@ JNIEXPORT void JNICALL Java_jdk_internal_org_jline_terminal_impl_jna_osx_CLibrar
     CHECK_NULL(ws_xpixel);
     ws_ypixel= env->GetFieldID(winsize_j, "ws_ypixel", "S");
     CHECK_NULL(ws_ypixel);
+
+    nativelong_j = env->FindClass("jdk/internal/org/jline/terminal/impl/jna/osx/NativeLong");
+    CHECK_NULL(nativelong_j);
+    nativelong_value = env->GetFieldID(nativelong_j, "value", "J");
+    CHECK_NULL(nativelong_value);
 }
 
 JNIEXPORT void JNICALL Java_jdk_internal_org_jline_terminal_impl_jna_osx_CLibraryImpl_tcgetattr
@@ -85,14 +93,14 @@ JNIEXPORT void JNICALL Java_jdk_internal_org_jline_terminal_impl_jna_osx_CLibrar
 
     tcgetattr(fd, &data);
 
-    env->SetLongField(result, c_iflag, data.c_iflag);
-    env->SetLongField(result, c_oflag, data.c_oflag);
-    env->SetLongField(result, c_cflag, data.c_cflag);
-    env->SetLongField(result, c_lflag, data.c_lflag);
+    env->SetLongField(env->GetObjectField(result, c_iflag), nativelong_value, data.c_iflag);
+    env->SetLongField(env->GetObjectField(result, c_oflag), nativelong_value, data.c_oflag);
+    env->SetLongField(env->GetObjectField(result, c_cflag), nativelong_value, data.c_cflag);
+    env->SetLongField(env->GetObjectField(result, c_lflag), nativelong_value, data.c_lflag);
     jbyteArray c_ccValue = (jbyteArray) env->GetObjectField(result, c_cc);
-    env->SetByteArrayRegion(c_ccValue, 0, NCCS, (signed char *) data.c_cc);//TODO: cast?
-    env->SetLongField(result, c_ispeed, data.c_ispeed);
-    env->SetLongField(result, c_ospeed, data.c_ospeed);
+    env->SetByteArrayRegion(c_ccValue, 0, NCCS, (signed char *) data.c_cc);
+    env->SetLongField(env->GetObjectField(result, c_ispeed), nativelong_value, data.c_ispeed);
+    env->SetLongField(env->GetObjectField(result, c_ospeed), nativelong_value, data.c_ospeed);
 }
 
 /*
@@ -104,14 +112,14 @@ JNIEXPORT void JNICALL Java_jdk_internal_org_jline_terminal_impl_jna_osx_CLibrar
   (JNIEnv *env, jobject, jint fd, jint cmd, jobject input) {
     termios data;
 
-    data.c_iflag = env->GetLongField(input, c_iflag);
-    data.c_oflag = env->GetLongField(input, c_oflag);
-    data.c_cflag = env->GetLongField(input, c_cflag);
-    data.c_lflag = env->GetLongField(input, c_lflag);
+    data.c_iflag = env->GetLongField(env->GetObjectField(input, c_iflag), nativelong_value);
+    data.c_oflag = env->GetLongField(env->GetObjectField(input, c_oflag), nativelong_value);
+    data.c_cflag = env->GetLongField(env->GetObjectField(input, c_cflag), nativelong_value);
+    data.c_lflag = env->GetLongField(env->GetObjectField(input, c_lflag), nativelong_value);
     jbyteArray c_ccValue = (jbyteArray) env->GetObjectField(input, c_cc);
-    env->GetByteArrayRegion(c_ccValue, 0, NCCS, (signed char *) data.c_cc);//TODO: cast?
-    data.c_ispeed = env->GetLongField(input, c_ispeed);
-    data.c_ospeed = env->GetLongField(input, c_ospeed);
+    env->GetByteArrayRegion(c_ccValue, 0, NCCS, (signed char *) data.c_cc);
+    data.c_ispeed = env->GetLongField(env->GetObjectField(input, c_ispeed), nativelong_value);
+    data.c_ospeed = env->GetLongField(env->GetObjectField(input, c_ospeed), nativelong_value);
 
     tcsetattr(fd, cmd, &data);
 }
