@@ -1,5 +1,7 @@
 /**
- * @test
+ * @test /nodynamiccopyright/
+ * @bug 8304246
+ * @summary Compiler Implementation for Unnamed patterns and variables
  * @enablePreview
  * @compile/fail/ref=UnnamedErrors.out -XDrawDiagnostics -XDshould-stop.at=FLOW UnnamedErrors.java
  */

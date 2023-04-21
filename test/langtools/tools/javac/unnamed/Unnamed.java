@@ -1,7 +1,9 @@
 import java.util.Objects;
 
 /**
- * @test
+ * @test /nodynamiccopyright/
+ * @bug 8304246
+ * @summary Compiler Implementation for Unnamed patterns and variables
  * @enablePreview
  * @compile --enable-preview -source ${jdk.version} Unnamed.java
  * @run main Unnamed
@@ -17,23 +19,23 @@ public class Unnamed {
         assertEquals(1, testMultiValuesTopLevel2(new R1()));
         assertEquals(2, testMultiValuesTopLevel2(new R2()));
         assertEquals(2, testMultiValuesTopLevel2(new R4()));
-        assertEquals(1, testMultiValuesNested(new Box(new R1())));
-        assertEquals(1, testMultiValuesNested(new Box(new R2())));
-        assertEquals(2, testMultiValuesNested(new Box(new R3())));
-        assertEquals(3, testMultiValuesNested(new Box(new R4())));
-        assertEquals(1, testMultiValuesNestedUnnamedVarAndPattern(new Box(new R1())));
-        assertEquals(2, testMultiValuesNestedUnnamedVarAndPattern(new Box(new R4())));
-        assertEquals(1, testMultiValuesNestedMix(new Box(new R1())));
-        assertEquals(1, testMultiValuesNestedMix(new Box2(new R1())));
-        assertEquals(1, testMultiValuesNestedMix2(new Box(new R1())));
+        assertEquals(1, testMultiValuesNested(new Box<>(new R1())));
+        assertEquals(1, testMultiValuesNested(new Box<>(new R2())));
+        assertEquals(2, testMultiValuesNested(new Box<>(new R3())));
+        assertEquals(3, testMultiValuesNested(new Box<>(new R4())));
+        assertEquals(1, testMultiValuesNestedUnnamedVarAndPattern(new Box<>(new R1())));
+        assertEquals(2, testMultiValuesNestedUnnamedVarAndPattern(new Box<>(new R4())));
+        assertEquals(1, testMultiValuesNestedMix(new Box<>(new R1())));
+        assertEquals(1, testMultiValuesNestedMix(new Box2<>(new R1())));
+        assertEquals(1, testMultiValuesNestedMix2(new Box<>(new R1())));
         assertEquals(1, testMultiValuesNestedMix2("BOX"));
-        assertEquals(2, testMultiValuesNestedMix2(new Box2(new R1())));
-        assertEquals(1, testMultiValuesStatementBlock(Integer.valueOf(42)));
-        assertEquals(1, testMultiValuesStatementBlock(Float.valueOf(42.0f)));
+        assertEquals(2, testMultiValuesNestedMix2(new Box2<>(new R1())));
+        assertEquals(1, testMultiValuesStatementBlock(42));
+        assertEquals(1, testMultiValuesStatementBlock(42.0f));
         assertEquals(2, testMultiValuesStatementBlock("BOX"));
-        assertEquals(1, testMultiValuesStatementBlock2(new Box(new R1())));
+        assertEquals(1, testMultiValuesStatementBlock2(new Box<>(new R1())));
         assertEquals(1, testMultiValuesStatementBlock2("BOX"));
-        assertEquals(2, testMultiValuesStatementBlock2(new Box2(new R1())));
+        assertEquals(2, testMultiValuesStatementBlock2(new Box2<>(new R1())));
 //        assertEquals(2, testMultiValuesGuards(new R3(), 1));
 //        assertEquals(3, testMultiValuesGuards(new R3(), 42));
     }
