@@ -783,30 +783,20 @@ UNSAFE_ENTRY(void, Unsafe_Park(JNIEnv *env, jobject unsafe, jboolean isAbsolute,
 
 UNSAFE_ENTRY(void, Unsafe_Unpark(JNIEnv *env, jobject unsafe, jobject jthread)) {
   if (jthread != nullptr) {
-    // ThreadsListHandle.cv_internal_thread_to_JavaThread() would normally
-    // be used for this conversion from jthread -> JavaThread*, but we've
-    // seen performance issues with very large numbers of threads due to
-    // the ThreadsListHandle.includes() call in the conversion function.
-    //
-    // So we verify that java_lang_Thread::thread(thread_oop) != nullptr
-    // before and after creating tlh below and that lets us know that thr
-    // is protected by tlh without a tlh.includes() call.
-    //
     oop thread_oop = JNIHandles::resolve_non_null(jthread);
-    if (java_lang_Thread::thread(thread_oop) != nullptr) {
-      // Try to capture the live JavaThread in a ThreadsListHandle:
-      ThreadsListHandle tlh;
-      JavaThread* thr = nullptr;
-      if ((thr = java_lang_Thread::thread(thread_oop)) != nullptr) {
-        // The still live JavaThread is protected by the ThreadsListHandle
-        // so it is safe to access.
-        assert(tlh.includes(thr), "must be");
-        Parker* p = thr->parker();
-        HOTSPOT_THREAD_UNPARK((uintptr_t) p);
-        p->unpark();
-      }
-    } // ThreadsListHandle is destroyed here.
-  }
+    // Get the JavaThread* stored in the java.lang.Thread object _before_
+    // the embedded ThreadsListHandle is constructed so we know if the
+    // early life stage of the JavaThread* is protected.
+    FastThreadsListHandle ftlh(thread_oop, java_lang_Thread::thread(thread_oop));
+    JavaThread* thr = ftlh.protected_java_thread();
+    if (thr != nullptr) {
+      // The still live JavaThread* is protected by the FastThreadsListHandle
+      // so it is safe to access.
+      Parker* p = thr->parker();
+      HOTSPOT_THREAD_UNPARK((uintptr_t) p);
+      p->unpark();
+    }
+  } // FastThreadsListHandle is destroyed here.
 } UNSAFE_END
 
 UNSAFE_ENTRY(jint, Unsafe_GetLoadAverage0(JNIEnv *env, jobject unsafe, jdoubleArray loadavg, jint nelem)) {
