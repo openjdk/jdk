@@ -25,6 +25,7 @@ import java.awt.Color;
 import java.awt.EventQueue;
 import java.awt.Frame;
 import java.awt.Label;
+import java.awt.Point;
 import java.awt.Robot;
 
 /*
@@ -37,15 +38,19 @@ import java.awt.Robot;
 public class RepaintTest {
     private static volatile Frame frame;
     private static volatile Label label;
+    private static volatile Point frameLoc;
+
+    private static final int FRAME_DIM = 100;
 
     public static void main(String[] args) throws Exception {
         try {
             Robot robot = new Robot();
             EventQueue.invokeAndWait(() -> {
                 frame = new Frame("Repaint Tester");
-                frame.setBounds(100, 100, 100, 100);
+                frame.setSize(FRAME_DIM, FRAME_DIM);
                 label = new Label("Hi");
                 frame.add(label);
+                frame.setLocationRelativeTo(null);
                 frame.setVisible(true);
             });
             robot.waitForIdle();
@@ -54,12 +59,14 @@ public class RepaintTest {
             EventQueue.invokeAndWait(() -> {
                 label.setBackground(Color.GREEN);
                 label.repaint();
+                frameLoc = frame.getLocationOnScreen();
             });
             robot.waitForIdle();
             robot.delay(500);
 
-            Color expected = robot.getPixelColor(150, 150);
-            if (!Color.GREEN.equals(expected)) {
+            Color expectedColor = robot.getPixelColor(frameLoc.x + FRAME_DIM / 2,
+                                                      frameLoc.y + FRAME_DIM / 2);
+            if (!Color.GREEN.equals(expectedColor)) {
                 throw new RuntimeException("Test Failed! \n" +
                         "PaintEvent was not triggered: ");
             }
