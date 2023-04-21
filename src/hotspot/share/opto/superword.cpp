@@ -2611,11 +2611,6 @@ void SuperWord::schedule() {
 
   // (4) Use the memops_schedule to re-order the memops in all slices.
   schedule_reorder_memops(memops_schedule);
-
-  // // Co-locate in the memory graph the members of each memory pack
-  // for (int i = 0; i < _packset.length(); i++) {
-  //   co_locate_pack(_packset.at(i));
-  // }
 }
 
 
@@ -2700,263 +2695,6 @@ void SuperWord::schedule_reorder_memops(Node_List &memops_schedule) {
   }
 }
 
-//-------------------------------remove_and_insert-------------------
-// Remove "current" from its current position in the memory graph and insert
-// it after the appropriate insertion point (lip or uip).
-void SuperWord::remove_and_insert(MemNode *current, MemNode *prev, MemNode *lip,
-                                  Node *uip, Unique_Node_List &sched_before) {
-  Node* my_mem = current->in(MemNode::Memory);
-  bool sched_up = sched_before.member(current);
-
-  // remove current_store from its current position in the memory graph
-  for (DUIterator i = current->outs(); current->has_out(i); i++) {
-    Node* use = current->out(i);
-    if (use->is_Mem()) {
-      assert(use->in(MemNode::Memory) == current, "must be");
-      if (use == prev) { // connect prev to my_mem
-          _igvn.replace_input_of(use, MemNode::Memory, my_mem);
-          --i; //deleted this edge; rescan position
-      } else if (sched_before.member(use)) {
-        if (!sched_up) { // Will be moved together with current
-          _igvn.replace_input_of(use, MemNode::Memory, uip);
-          --i; //deleted this edge; rescan position
-        }
-      } else {
-        if (sched_up) { // Will be moved together with current
-          _igvn.replace_input_of(use, MemNode::Memory, lip);
-          --i; //deleted this edge; rescan position
-        }
-      }
-    }
-  }
-
-  Node *insert_pt =  sched_up ?  uip : lip;
-
-  // all uses of insert_pt's memory state should use current's instead
-  for (DUIterator i = insert_pt->outs(); insert_pt->has_out(i); i++) {
-    Node* use = insert_pt->out(i);
-    if (use->is_Mem()) {
-      assert(use->in(MemNode::Memory) == insert_pt, "must be");
-      _igvn.replace_input_of(use, MemNode::Memory, current);
-      --i; //deleted this edge; rescan position
-    } else if (!sched_up && use->is_Phi() && use->bottom_type() == Type::MEMORY) {
-      uint pos; //lip (lower insert point) must be the last one in the memory slice
-      for (pos=1; pos < use->req(); pos++) {
-        if (use->in(pos) == insert_pt) break;
-      }
-      _igvn.replace_input_of(use, pos, current);
-      --i;
-    }
-  }
-
-  //connect current to insert_pt
-  _igvn.replace_input_of(current, MemNode::Memory, insert_pt);
-}
-
-//------------------------------co_locate_pack----------------------------------
-// To schedule a store pack, we need to move any sandwiched memory ops either before
-// or after the pack, based upon dependence information:
-// (1) If any store in the pack depends on the sandwiched memory op, the
-//     sandwiched memory op must be scheduled BEFORE the pack;
-// (2) If a sandwiched memory op depends on any store in the pack, the
-//     sandwiched memory op must be scheduled AFTER the pack;
-// (3) If a sandwiched memory op (say, memA) depends on another sandwiched
-//     memory op (say memB), memB must be scheduled before memA. So, if memA is
-//     scheduled before the pack, memB must also be scheduled before the pack;
-// (4) If there is no dependence restriction for a sandwiched memory op, we simply
-//     schedule this store AFTER the pack
-// (5) We know there is no dependence cycle, so there in no other case;
-// (6) Finally, all memory ops in another single pack should be moved in the same direction.
-//
-// To schedule a load pack, we use the memory state of either the first or the last load in
-// the pack, based on the dependence constraint.
-void SuperWord::co_locate_pack(Node_List* pk) {
-  if (pk->at(0)->is_Store()) {
-    MemNode* first     = executed_first(pk)->as_Mem();
-    MemNode* last      = executed_last(pk)->as_Mem();
-    Unique_Node_List schedule_before_pack;
-    Unique_Node_List memops;
-
-    MemNode* current   = last->in(MemNode::Memory)->as_Mem();
-    MemNode* previous  = last;
-    while (true) {
-      assert(in_bb(current), "stay in block");
-      memops.push(previous);
-      for (DUIterator i = current->outs(); current->has_out(i); i++) {
-        Node* use = current->out(i);
-        if (use->is_Mem() && use != previous)
-          memops.push(use);
-      }
-      if (current == first) break;
-      previous = current;
-      current  = current->in(MemNode::Memory)->as_Mem();
-    }
-
-    // determine which memory operations should be scheduled before the pack
-    for (uint i = 1; i < memops.size(); i++) {
-      Node *s1 = memops.at(i);
-      if (!in_pack(s1, pk) && !schedule_before_pack.member(s1)) {
-        for (uint j = 0; j< i; j++) {
-          Node *s2 = memops.at(j);
-          if (!independent(s1, s2)) {
-            if (in_pack(s2, pk) || schedule_before_pack.member(s2)) {
-              schedule_before_pack.push(s1); // s1 must be scheduled before
-              Node_List* mem_pk = my_pack(s1);
-              if (mem_pk != nullptr) {
-                for (uint ii = 0; ii < mem_pk->size(); ii++) {
-                  Node* s = mem_pk->at(ii);  // follow partner
-                  if (memops.member(s) && !schedule_before_pack.member(s))
-                    schedule_before_pack.push(s);
-                }
-              }
-              break;
-            }
-          }
-        }
-      }
-    }
-
-    Node*    upper_insert_pt = first->in(MemNode::Memory);
-    // Following code moves loads connected to upper_insert_pt below aliased stores.
-    // Collect such loads here and reconnect them back to upper_insert_pt later.
-    memops.clear();
-    for (DUIterator i = upper_insert_pt->outs(); upper_insert_pt->has_out(i); i++) {
-      Node* use = upper_insert_pt->out(i);
-      if (use->is_Mem() && !use->is_Store()) {
-        memops.push(use);
-      }
-    }
-
-    MemNode* lower_insert_pt = last;
-    previous                 = last; //previous store in pk
-    current                  = last->in(MemNode::Memory)->as_Mem();
-
-    // start scheduling from "last" to "first"
-    while (true) {
-      assert(in_bb(current), "stay in block");
-      assert(in_pack(previous, pk), "previous stays in pack");
-      Node* my_mem = current->in(MemNode::Memory);
-
-      if (in_pack(current, pk)) {
-        // Forward users of my memory state (except "previous) to my input memory state
-        for (DUIterator i = current->outs(); current->has_out(i); i++) {
-          Node* use = current->out(i);
-          if (use->is_Mem() && use != previous) {
-            assert(use->in(MemNode::Memory) == current, "must be");
-            if (schedule_before_pack.member(use)) {
-              _igvn.replace_input_of(use, MemNode::Memory, upper_insert_pt);
-            } else {
-              _igvn.replace_input_of(use, MemNode::Memory, lower_insert_pt);
-            }
-            --i; // deleted this edge; rescan position
-          }
-        }
-        previous = current;
-      } else { // !in_pack(current, pk) ==> a sandwiched store
-        remove_and_insert(current, previous, lower_insert_pt, upper_insert_pt, schedule_before_pack);
-      }
-
-      if (current == first) break;
-      current = my_mem->as_Mem();
-    } // end while
-
-    // Reconnect loads back to upper_insert_pt.
-    for (uint i = 0; i < memops.size(); i++) {
-      Node *ld = memops.at(i);
-      if (ld->in(MemNode::Memory) != upper_insert_pt) {
-        _igvn.replace_input_of(ld, MemNode::Memory, upper_insert_pt);
-      }
-    }
-  } else if (pk->at(0)->is_Load()) { // Load pack
-    // All loads in the pack should have the same memory state. By default,
-    // we use the memory state of the last load. However, if any load could
-    // not be moved down due to the dependence constraint, we use the memory
-    // state of the first load.
-    Node* mem_input = pick_mem_state(pk);
-    _igvn.hash_delete(mem_input);
-    // Give each load the same memory state
-    for (uint i = 0; i < pk->size(); i++) {
-      LoadNode* ld = pk->at(i)->as_Load();
-      _igvn.replace_input_of(ld, MemNode::Memory, mem_input);
-    }
-  }
-}
-
-// Finds the first and last memory state and then picks either of them by checking dependence constraints.
-// If a store is dependent on an earlier load then we need to pick the memory state of the first load and cannot
-// pick the memory state of the last load.
-Node* SuperWord::pick_mem_state(Node_List* pk) {
-  Node* first_mem = find_first_mem_state(pk);
-  bool is_dependent = false;
-  Node* last_mem  = find_last_mem_state(pk, first_mem, is_dependent);
-
-  for (uint i = 0; i < pk->size(); i++) {
-    Node* ld = pk->at(i);
-    for (Node* current = last_mem; current != ld->in(MemNode::Memory); current = current->in(MemNode::Memory)) {
-      assert(current->is_Mem() && in_bb(current), "unexpected memory");
-      assert(current != first_mem, "corrupted memory graph");
-      if (!independent(current, ld)) {
-        // A later unvectorized store depends on this load, pick the memory state of the first load. This can happen,
-        // for example, if a load pack has interleaving stores that are part of a store pack which, however, is removed
-        // at the pack filtering stage. This leaves us with only a load pack for which we cannot take the memory state
-        // of the last load as the remaining unvectorized stores could interfere since they have a dependency to the loads.
-        // Some stores could be executed before the load vector resulting in a wrong result. We need to take the
-        // memory state of the first load to prevent this.
-        if (my_pack(current) != nullptr && is_dependent) {
-          // For vectorized store pack, when the load pack depends on
-          // some memory operations locating after first_mem, we still
-          // take the memory state of the last load.
-          continue;
-        }
-        return first_mem;
-      }
-    }
-  }
-  return last_mem;
-}
-
-// Walk the memory graph from the current first load until the
-// start of the loop and check if nodes on the way are memory
-// edges of loads in the pack. The last one we encounter is the
-// first load.
-Node* SuperWord::find_first_mem_state(Node_List* pk) {
-  Node* first_mem = pk->at(0)->in(MemNode::Memory);
-  for (Node* current = first_mem; in_bb(current); current = current->is_Phi() ? current->in(LoopNode::EntryControl) : current->in(MemNode::Memory)) {
-    assert(current->is_Mem() || (current->is_Phi() && current->in(0) == bb()), "unexpected memory");
-    for (uint i = 1; i < pk->size(); i++) {
-      Node* ld = pk->at(i);
-      if (ld->in(MemNode::Memory) == current) {
-        first_mem = current;
-        break;
-      }
-    }
-  }
-  return first_mem;
-}
-
-// Find the last load by going over the pack again and walking
-// the memory graph from the loads of the pack to the memory of
-// the first load. If we encounter the memory of the current last
-// load, then we started from further down in the memory graph and
-// the load we started from is the last load. At the same time, the
-// function also helps determine if some loads in the pack depend on
-// early memory operations which locate after first_mem.
-Node* SuperWord::find_last_mem_state(Node_List* pk, Node* first_mem, bool &is_dependent) {
-  Node* last_mem = pk->at(0)->in(MemNode::Memory);
-  for (uint i = 0; i < pk->size(); i++) {
-    Node* ld = pk->at(i);
-    for (Node* current = ld->in(MemNode::Memory); current != first_mem; current = current->in(MemNode::Memory)) {
-      assert(current->is_Mem() && in_bb(current), "unexpected memory");
-      // Determine if the load pack is dependent on some memory operations locating after first_mem.
-      is_dependent |= !independent(current, ld);
-      if (current->in(MemNode::Memory) == last_mem) {
-        last_mem = ld->in(MemNode::Memory);
-      }
-    }
-  }
-  return last_mem;
-}
-
 #ifndef PRODUCT
 void SuperWord::print_loop(bool whole) {
   Node_Stack stack(_arena, _phase->C->unique() >> 2);
@@ -3025,14 +2763,13 @@ bool SuperWord::output() {
   }
 
   for (int i = 0; i < _block.length(); i++) {
-    Node* n = _block.at(i);
+    Node* n = _block.at(i); // last in pack
     Node_List* p = my_pack(n);
     if (p != nullptr && n == p->at(p->size()-1)) {
       uint vlen = p->size();
       uint vlen_in_bytes = 0;
       Node* vn = nullptr;
-      Node* low_adr = p->at(0);
-      Node* first   = p->at(0);
+      Node* first = p->at(0); // first in pack
       if (cl->is_rce_post_loop()) {
         // override vlen with the main loops vector length
         vlen = cl->slp_max_unroll();
@@ -3056,7 +2793,7 @@ bool SuperWord::output() {
             break; // dependent memory
           }
         }
-        Node* adr = low_adr->in(MemNode::Address);
+        Node* adr = first->in(MemNode::Address);
         const TypePtr* atyp = n->adr_type();
         if (cl->is_rce_post_loop()) {
           assert(vmask != nullptr, "vector mask should be generated");
@@ -3079,7 +2816,7 @@ bool SuperWord::output() {
 
         Node* ctl = n->in(MemNode::Control);
         Node* mem = first->in(MemNode::Memory);
-        Node* adr = low_adr->in(MemNode::Address);
+        Node* adr = first->in(MemNode::Address);
         const TypePtr* atyp = n->adr_type();
         if (cl->is_rce_post_loop()) {
           assert(vmask != nullptr, "vector mask should be generated");
@@ -3090,8 +2827,8 @@ bool SuperWord::output() {
         }
         vlen_in_bytes = vn->as_StoreVector()->memory_size();
       } else if (VectorNode::is_scalar_rotate(n)) {
-        Node* in1 = low_adr->in(1);
-        Node* in2 = p->at(0)->in(2);
+        Node* in1 = first->in(1);
+        Node* in2 = first->in(2);
         // If rotation count is non-constant or greater than 8bit value create a vector.
         if (!in2->is_Con() || !Matcher::supports_vector_constant_rotates(in2->get_int())) {
           in2 =  vector_opd(p, 2);
@@ -3100,7 +2837,7 @@ bool SuperWord::output() {
         vlen_in_bytes = vn->as_Vector()->length_in_bytes();
       } else if (VectorNode::is_roundopD(n)) {
         Node* in1 = vector_opd(p, 1);
-        Node* in2 = low_adr->in(2);
+        Node* in2 = first->in(2);
         assert(in2->is_Con(), "Constant rounding mode expected.");
         vn = VectorNode::make(opc, in1, in2, vlen, velt_basic_type(n));
         vlen_in_bytes = vn->as_Vector()->length_in_bytes();
@@ -3123,7 +2860,7 @@ bool SuperWord::output() {
         bool node_isa_reduction = n->is_reduction();
         if (node_isa_reduction) {
           // the input to the first reduction operation is retained
-          in1 = low_adr->in(1);
+          in1 = first->in(1);
         } else {
           in1 = vector_opd(p, 1);
           if (in1 == nullptr) {
@@ -3191,7 +2928,7 @@ bool SuperWord::output() {
         Node* in = vector_opd(p, 1);
         Node* longval = VectorNode::make(opc, in, nullptr, vlen, T_LONG);
         _igvn.register_new_node_with_optimizer(longval);
-        _phase->set_ctrl(longval, _phase->get_ctrl(p->at(0)));
+        _phase->set_ctrl(longval, _phase->get_ctrl(first));
         vn = VectorCastNode::make(Op_VectorCastL2X, longval, T_INT, vlen);
         vlen_in_bytes = vn->as_Vector()->length_in_bytes();
       } else if (VectorNode::is_convert_opcode(opc)) {
@@ -3306,7 +3043,7 @@ bool SuperWord::output() {
 
       _block.at_put(i, vn);
       _igvn.register_new_node_with_optimizer(vn);
-      _phase->set_ctrl(vn, _phase->get_ctrl(p->at(0)));
+      _phase->set_ctrl(vn, _phase->get_ctrl(first));
       for (uint j = 0; j < p->size(); j++) {
         Node* pm = p->at(j);
         _igvn.replace_node(pm, vn);
@@ -4185,17 +3922,6 @@ bool SuperWord::in_packset(Node* s1, Node* s2) {
   return false;
 }
 
-//------------------------------in_pack---------------------------
-// Is s in pack p?
-Node_List* SuperWord::in_pack(Node* s, Node_List* p) {
-  for (uint i = 0; i < p->size(); i++) {
-    if (p->at(i) == s) {
-      return p;
-    }
-  }
-  return nullptr;
-}
-
 //------------------------------remove_pack_at---------------------------
 // Remove the pack at position pos in the packset
 void SuperWord::remove_pack_at(int pos) {
@@ -4226,39 +3952,6 @@ void SuperWord::packset_sort(int n) {
     if (swapped == false) break;
     n--;
   }
-}
-
-//------------------------------executed_first---------------------------
-// Return the node executed first in pack p.  Uses the RPO block list
-// to determine order.
-Node* SuperWord::executed_first(Node_List* p) {
-  Node* n = p->at(0);
-  int n_rpo = bb_idx(n);
-  for (uint i = 1; i < p->size(); i++) {
-    Node* s = p->at(i);
-    int s_rpo = bb_idx(s);
-    if (s_rpo < n_rpo) {
-      n = s;
-      n_rpo = s_rpo;
-    }
-  }
-  return n;
-}
-
-//------------------------------executed_last---------------------------
-// Return the node executed last in pack p.
-Node* SuperWord::executed_last(Node_List* p) {
-  Node* n = p->at(0);
-  int n_rpo = bb_idx(n);
-  for (uint i = 1; i < p->size(); i++) {
-    Node* s = p->at(i);
-    int s_rpo = bb_idx(s);
-    if (s_rpo > n_rpo) {
-      n = s;
-      n_rpo = s_rpo;
-    }
-  }
-  return n;
 }
 
 LoadNode::ControlDependency SuperWord::control_dependency(Node_List* p) {
@@ -4551,16 +4244,6 @@ void SuperWord::print_stmt(Node* s) {
   s->dump();
 #endif
 }
-
-//------------------------------blank---------------------------
-char* SuperWord::blank(uint depth) {
-  static char blanks[101];
-  assert(depth < 101, "too deep");
-  for (uint i = 0; i < depth; i++) blanks[i] = ' ';
-  blanks[depth] = '\0';
-  return blanks;
-}
-
 
 //==============================SWPointer===========================
 #ifndef PRODUCT

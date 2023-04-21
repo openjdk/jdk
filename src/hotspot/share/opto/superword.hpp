@@ -566,15 +566,6 @@ class SuperWord : public ResourceObj {
   void schedule();
   // Helper function for schedule, that reorders all memops, slice by slice, according to the schedule
   void schedule_reorder_memops(Node_List &memops_schedule);
-  // Remove "current" from its current position in the memory graph and insert
-  // it after the appropriate insert points (lip or uip);
-  void remove_and_insert(MemNode *current, MemNode *prev, MemNode *lip, Node *uip, Unique_Node_List &schd_before);
-  // Within a store pack, schedule stores together by moving out the sandwiched memory ops according
-  // to dependence info; and within a load pack, move loads down to the last executed load.
-  void co_locate_pack(Node_List* p);
-  Node* pick_mem_state(Node_List* pk);
-  Node* find_first_mem_state(Node_List* pk);
-  Node* find_last_mem_state(Node_List* pk, Node* first_mem, bool &is_dependent);
 
   // Convert packs into vector node operations
   bool output();
@@ -606,19 +597,11 @@ class SuperWord : public ResourceObj {
   void compute_vector_element_type();
   // Are s1 and s2 in a pack pair and ordered as s1,s2?
   bool in_packset(Node* s1, Node* s2);
-  // Is s in pack p?
-  Node_List* in_pack(Node* s, Node_List* p);
   // Remove the pack at position pos in the packset
   void remove_pack_at(int pos);
-  // Return the node executed first in pack p.
-  Node* executed_first(Node_List* p);
-  // Return the node executed last in pack p.
-  Node* executed_last(Node_List* p);
   static LoadNode::ControlDependency control_dependency(Node_List* p);
   // Alignment within a vector memory reference
   int memory_alignment(MemNode* s, int iv_adjust);
-  // (Start, end] half-open range defining which operands are vector
-  void vector_opd_range(Node* n, uint* start, uint* end);
   // Smallest type containing range of values
   const Type* container_type(Node* n);
   // Adjust pre-loop limit so that in main loop, a load/store reference
@@ -637,7 +620,6 @@ class SuperWord : public ResourceObj {
   void print_pack(Node_List* p);
   void print_bb();
   void print_stmt(Node* s);
-  char* blank(uint depth);
 
   void packset_sort(int n);
 };
