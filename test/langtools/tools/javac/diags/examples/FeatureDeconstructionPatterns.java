@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,32 +20,14 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-/*
- * @test
- * @bug 8290379
- * @summary Parse error with parenthesized pattern and guard using an array
- * @enablePreview
- */
-public class T8290379 {
-    public static void main(String... args) {
-        assertEquals(0, test("test"));
-        assertEquals(1, test(Integer.valueOf(42)));
-    }
 
-    public static int test(Object o)
-    {
-        int[] arr = {0, 1};
+// key: compiler.err.feature.not.supported.in.source.plural
+// key: compiler.misc.feature.deconstruction.patterns
+// options: -source 20 -Xlint:-options
 
-        return switch (o) {
-            case (String s) when (arr[0] == 0) -> 0;
-            case (Integer i) when arr[1] == 1 -> 1;
-            default -> 2;
-        };
-    }
+class FeatureDeconstructionPatterns {
+    Object o;
+    boolean b = o instanceof R(String s);
 
-    static void assertEquals(int expected, int actual) {
-        if (expected != actual) {
-            throw new AssertionError("Expected: " + expected + ", actual: " + actual);
-        }
-    }
+    record R(Object o) {}
 }

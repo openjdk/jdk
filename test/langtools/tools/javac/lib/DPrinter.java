@@ -720,7 +720,7 @@ public class DPrinter {
 
         @Override
         public void visitForeachLoop(JCEnhancedForLoop tree) {
-            printTree("var", tree.varOrRecordPattern);
+            printTree("var", tree.var);
             printTree("expr", tree.expr);
             printTree("body", tree.body);
         }

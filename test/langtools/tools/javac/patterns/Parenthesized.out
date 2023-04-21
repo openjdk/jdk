@@ -1,0 +1,5 @@
+Parenthesized.java:38:18: compiler.err.illegal.start.of.type
+Parenthesized.java:42:18: compiler.err.illegal.start.of.type
+Parenthesized.java:45:26: compiler.err.illegal.start.of.type
+Parenthesized.java:48:35: compiler.err.illegal.start.of.type
+4 errors

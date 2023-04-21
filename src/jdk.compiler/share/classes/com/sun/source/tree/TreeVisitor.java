@@ -25,8 +25,6 @@
 
 package com.sun.source.tree;
 
-import jdk.internal.javac.PreviewFeature;
-
 /**
  * A visitor of trees, in the style of the visitor design pattern.
  * Classes implementing this interface are used to operate
@@ -282,9 +280,8 @@ public interface TreeVisitor<R,P> {
      * @param node the node being visited
      * @param p a parameter value
      * @return a result value
-     * @since 17
+     * @since 21
      */
-    @PreviewFeature(feature=PreviewFeature.Feature.SWITCH_PATTERN_MATCHING, reflective=true)
     R visitDefaultCaseLabel(DefaultCaseLabelTree node, P p);
 
     /**
@@ -292,9 +289,8 @@ public interface TreeVisitor<R,P> {
      * @param node the node being visited
      * @param p a parameter value
      * @return a result value
-     * @since 19
+     * @since 21
      */
-    @PreviewFeature(feature=PreviewFeature.Feature.SWITCH_PATTERN_MATCHING, reflective=true)
     R visitConstantCaseLabel(ConstantCaseLabelTree node, P p);
 
     /**
@@ -302,9 +298,8 @@ public interface TreeVisitor<R,P> {
      * @param node the node being visited
      * @param p a parameter value
      * @return a result value
-     * @since 19
+     * @since 21
      */
-    @PreviewFeature(feature=PreviewFeature.Feature.SWITCH_PATTERN_MATCHING, reflective=true)
     R visitPatternCaseLabel(PatternCaseLabelTree node, P p);
 
     /**
@@ -312,9 +307,8 @@ public interface TreeVisitor<R,P> {
      * @param node the node being visited
      * @param p a parameter value
      * @return a result value
-     * @since 19
+     * @since 21
      */
-    @PreviewFeature(feature=PreviewFeature.Feature.RECORD_PATTERNS, reflective=true)
     R visitDeconstructionPattern(DeconstructionPatternTree node, P p);
 
     /**
@@ -340,16 +334,6 @@ public interface TreeVisitor<R,P> {
      * @return a result value
      */
     R visitNewArray(NewArrayTree node, P p);
-
-    /**
-     * Visits a {@code ParenthesizedPatternTree} node.
-     * @param node the node being visited
-     * @param p a parameter value
-     * @return a result value
-     * @since 17
-     */
-    @PreviewFeature(feature=PreviewFeature.Feature.SWITCH_PATTERN_MATCHING, reflective=true)
-    R visitParenthesizedPattern(ParenthesizedPatternTree node, P p);
 
     /**
      * Visits a {@code NewClassTree} node.

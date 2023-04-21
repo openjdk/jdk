@@ -190,7 +190,6 @@ public class Symtab {
     public final Type incompatibleClassChangeErrorType;
     public final Type cloneNotSupportedExceptionType;
     public final Type matchExceptionType;
-    public final Type nullPointerExceptionType;
     public final Type annotationType;
     public final TypeSymbol enumSym;
     public final Type listType;
@@ -223,8 +222,11 @@ public class Symtab {
     public final Type typeDescriptorType;
     public final Type recordType;
     public final Type switchBootstrapsType;
+    public final Type constantBootstrapsType;
     public final Type valueBasedType;
     public final Type valueBasedInternalType;
+    public final Type classDescType;
+    public final Type enumDescType;
 
     // For serialization lint checking
     public final Type objectStreamFieldType;
@@ -557,7 +559,6 @@ public class Symtab {
         incompatibleClassChangeErrorType = enterClass("java.lang.IncompatibleClassChangeError");
         cloneNotSupportedExceptionType = enterClass("java.lang.CloneNotSupportedException");
         matchExceptionType = enterClass("java.lang.MatchException");
-        nullPointerExceptionType = enterClass("java.lang.NullPointerException");
         annotationType = enterClass("java.lang.annotation.Annotation");
         classLoaderType = enterClass("java.lang.ClassLoader");
         enumSym = enterClass(java_base, names.java_lang_Enum);
@@ -601,8 +602,11 @@ public class Symtab {
         typeDescriptorType = enterClass("java.lang.invoke.TypeDescriptor");
         recordType = enterClass("java.lang.Record");
         switchBootstrapsType = enterClass("java.lang.runtime.SwitchBootstraps");
+        constantBootstrapsType = enterClass("java.lang.invoke.ConstantBootstraps");
         valueBasedType = enterClass("jdk.internal.ValueBased");
         valueBasedInternalType = enterSyntheticAnnotation("jdk.internal.ValueBased+Annotation");
+        classDescType = enterClass("java.lang.constant.ClassDesc");
+        enumDescType = enterClass("java.lang.Enum$EnumDesc");
         // For serialization lint checking
         objectStreamFieldType = enterClass("java.io.ObjectStreamField");
         objectInputStreamType = enterClass("java.io.ObjectInputStream");

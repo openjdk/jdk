@@ -79,7 +79,6 @@ public class NestedPatternVariablesBytecode extends TestRunner {
                 }""";
         Path curPath = Path.of(".");
         new JavacTask(tb)
-                .options("--enable-preview", "-source", JAVA_VERSION)
                 .sources(code)
                 .outdir(curPath)
                 .run();

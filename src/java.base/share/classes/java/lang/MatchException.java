@@ -25,8 +25,6 @@
 
 package java.lang;
 
-import jdk.internal.javac.PreviewFeature;
-
 /**
  * Thrown to indicate an unexpected failure in pattern matching.
  *
@@ -64,9 +62,8 @@ import jdk.internal.javac.PreviewFeature;
  * @jls 14.30.2 Pattern Matching
  * @jls 15.28.2 Run-Time Evaluation of switch Expressions
  *
- * @since 19
+ * @since 21
  */
-@PreviewFeature(feature=PreviewFeature.Feature.SWITCH_PATTERN_MATCHING)
 public final class MatchException extends RuntimeException {
     @java.io.Serial
     private static final long serialVersionUID = 0L;

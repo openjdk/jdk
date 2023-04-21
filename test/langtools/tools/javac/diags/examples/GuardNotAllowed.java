@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,27 +21,13 @@
  * questions.
  */
 
-package com.sun.source.tree;
+// key: compiler.err.guard.not.allowed
 
-import jdk.internal.javac.PreviewFeature;
-
-/**
- * A tree node for a parenthesized pattern.
- *
- * For example:
- * <pre>
- *   ( <em>pattern</em> )
- * </pre>
- *
- * @jls 14.30.1 Kinds of Patterns
- *
- * @since 17
- */
-@PreviewFeature(feature=PreviewFeature.Feature.SWITCH_PATTERN_MATCHING, reflective=true)
-public interface ParenthesizedPatternTree extends PatternTree {
-    /**
-     * Returns the pattern within the parentheses.
-     * @return the pattern
-     */
-    PatternTree getPattern();
+class GuardNotAllowed {
+    private void doSwitch(int i, boolean b) {
+        switch (i) {
+            case 0 when b -> {}
+            default -> {}
+        }
+    }
 }

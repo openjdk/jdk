@@ -1,4 +1,2 @@
 PatternErrorRecovery.java:11:18: compiler.err.pattern.expected
-- compiler.note.preview.filename: PatternErrorRecovery.java, DEFAULT
-- compiler.note.preview.recompile
 1 error

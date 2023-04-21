@@ -25,7 +25,7 @@
  * @test
  * @bug 8286797
  * @summary  Guards of constant value false are not permitted
- * @compile/fail/ref=T8286797.out --enable-preview -source ${jdk.version} -XDrawDiagnostics -XDshould-stop.at=FLOW T8286797.java
+ * @compile/fail/ref=T8286797.out -XDrawDiagnostics -XDshould-stop.at=FLOW T8286797.java
  */
 
 public class T8286797 {

@@ -813,7 +813,7 @@ public class Pretty extends JCTree.Visitor {
     public void visitForeachLoop(JCEnhancedForLoop tree) {
         try {
             print("for (");
-            printExpr(tree.varOrRecordPattern);
+            printExpr(tree.var);
             print(" : ");
             printExpr(tree.expr);
             print(") ");
@@ -861,6 +861,10 @@ public class Pretty extends JCTree.Visitor {
                 print("case ");
                 printExprs(tree.labels);
             }
+            if (tree.guard != null) {
+                print(" when ");
+                print(tree.guard);
+            }
             if (tree.caseKind == JCCase.STATEMENT) {
                 print(':');
                 println();
@@ -903,10 +907,6 @@ public class Pretty extends JCTree.Visitor {
     public void visitPatternCaseLabel(JCPatternCaseLabel tree) {
         try {
             print(tree.pat);
-            if (tree.guard != null) {
-                print(" when ");
-                print(tree.guard);
-            }
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -935,17 +935,6 @@ public class Pretty extends JCTree.Visitor {
     public void visitBindingPattern(JCBindingPattern patt) {
         try {
             printExpr(patt.var);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
-    @Override
-    public void visitParenthesizedPattern(JCParenthesizedPattern patt) {
-        try {
-            print('(');
-            printExpr(patt.pattern);
-            print(')');
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

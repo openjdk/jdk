@@ -26,7 +26,6 @@
 package com.sun.source.util;
 
 import com.sun.source.tree.*;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * A TreeVisitor that visits all the child tree nodes.
@@ -333,7 +332,7 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
      */
     @Override
     public R visitEnhancedForLoop(EnhancedForLoopTree node, P p) {
-        R r = scan(node.getVariableOrRecordPattern(), p);
+        R r = scan(node.getVariable(), p);
         r = scanAndReduce(node.getExpression(), p, r);
         r = scanAndReduce(node.getStatement(), p, r);
         return r;
@@ -397,6 +396,7 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
     @Override
     public R visitCase(CaseTree node, P p) {
         R r = scan(node.getLabels(), p);
+        r = scanAndReduce(node.getGuard(), p, r);
         if (node.getCaseKind() == CaseTree.CaseKind.RULE)
             r = scanAndReduce(node.getBody(), p, r);
         else
@@ -797,10 +797,9 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
      * @param node  {@inheritDoc}
      * @param p  {@inheritDoc}
      * @return the result of scanning
-     * @since 17
+     * @since 21
      */
     @Override
-    @PreviewFeature(feature=PreviewFeature.Feature.SWITCH_PATTERN_MATCHING, reflective=true)
     public R visitDefaultCaseLabel(DefaultCaseLabelTree node, P p) {
         return null;
     }
@@ -813,10 +812,9 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
      * @param node  {@inheritDoc}
      * @param p  {@inheritDoc}
      * @return the result of scanning
-     * @since 19
+     * @since 21
      */
     @Override
-    @PreviewFeature(feature=PreviewFeature.Feature.SWITCH_PATTERN_MATCHING, reflective=true)
     public R visitConstantCaseLabel(ConstantCaseLabelTree node, P p) {
         return scan(node.getConstantExpression(), p);
     }
@@ -829,14 +827,11 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
      * @param node  {@inheritDoc}
      * @param p  {@inheritDoc}
      * @return the result of scanning
-     * @since 19
+     * @since 21
      */
     @Override
-    @PreviewFeature(feature=PreviewFeature.Feature.SWITCH_PATTERN_MATCHING, reflective=true)
     public R visitPatternCaseLabel(PatternCaseLabelTree node, P p) {
-        R r = scan(node.getPattern(), p);
-        r = scanAndReduce(node.getGuard(), p, r);
-        return r;
+        return scan(node.getPattern(), p);
     }
 
     /**
@@ -847,10 +842,9 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
      * @param node  {@inheritDoc}
      * @param p  {@inheritDoc}
      * @return the result of scanning
-     * @since 19
+     * @since 21
      */
     @Override
-    @PreviewFeature(feature=PreviewFeature.Feature.RECORD_PATTERNS, reflective=true)
     public R visitDeconstructionPattern(DeconstructionPatternTree node, P p) {
         R r = scan(node.getDeconstructor(), p);
         r = scanAndReduce(node.getNestedPatterns(), p, r);
@@ -883,22 +877,6 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
     @Override
     public R visitMemberSelect(MemberSelectTree node, P p) {
         return scan(node.getExpression(), p);
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * @implSpec This implementation scans the children in left to right order.
-     *
-     * @param node  {@inheritDoc}
-     * @param p  {@inheritDoc}
-     * @return the result of scanning
-     * @since 17
-     */
-    @Override
-    @PreviewFeature(feature=PreviewFeature.Feature.SWITCH_PATTERN_MATCHING, reflective=true)
-    public R visitParenthesizedPattern(ParenthesizedPatternTree node, P p) {
-        return scan(node.getPattern(), p);
     }
 
     /**
