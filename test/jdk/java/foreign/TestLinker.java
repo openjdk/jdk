@@ -98,6 +98,8 @@ public class TestLinker extends NativeTestHelper {
                     FunctionDescriptor.ofVoid(C_POINTER.withName("x")) },
             { FunctionDescriptor.ofVoid(C_POINTER.withTargetLayout(C_INT)),
                     FunctionDescriptor.ofVoid(C_POINTER.withTargetLayout(C_INT.withName("x"))) },
+            { FunctionDescriptor.ofVoid(C_POINTER.withTargetLayout(C_INT)),
+                    FunctionDescriptor.ofVoid(C_POINTER.withName("x").withTargetLayout(C_INT.withName("x"))) },
         };
     }
 
