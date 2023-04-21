@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -248,9 +248,8 @@ public class HeapSummary extends Tool {
       long edenSpaceRegionNum = monitoringSupport.edenSpaceRegionNum();
       long survivorSpaceRegionNum = monitoringSupport.survivorSpaceRegionNum();
       HeapRegionSetBase oldSet = g1h.oldSet();
-      HeapRegionSetBase archiveSet = g1h.archiveSet();
       HeapRegionSetBase humongousSet = g1h.humongousSet();
-      long oldGenRegionNum = oldSet.length() + archiveSet.length() + humongousSet.length();
+      long oldGenRegionNum = oldSet.length() + humongousSet.length();
       printG1Space(tty, "G1 Heap:", g1h.n_regions(),
                    g1h.used(), g1h.capacity());
       tty.println("G1 Young Generation:");

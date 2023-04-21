@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -375,11 +375,10 @@ public:
 
   // During the concurrent scrubbing phase, can there be any areas with unloaded
   // classes or dead objects in this region?
-  // This set only includes old and open archive regions - humongous regions only
-  // contain a single object which is either dead or live, contents of closed archive
-  // regions never die (so is always contiguous), and young regions are never even
+  // This set only includes old regions - humongous regions only
+  // contain a single object which is either dead or live, and young regions are never even
   // considered during concurrent scrub.
-  bool needs_scrubbing() const { return is_old() || is_open_archive(); }
+  bool needs_scrubbing() const { return is_old(); }
   // Same question as above, during full gc. Full gc needs to scrub any region that
   // might be skipped for compaction. This includes young generation regions as the
   // region relabeling to old happens later than scrubbing.
@@ -403,18 +402,9 @@ public:
 
   bool is_old_or_humongous() const { return _type.is_old_or_humongous(); }
 
-  bool is_old_or_humongous_or_archive() const { return _type.is_old_or_humongous_or_archive(); }
-
   // A pinned region contains objects which are not moved by garbage collections.
-  // Humongous regions and archive regions are pinned.
+  // Humongous regions are pinned.
   bool is_pinned() const { return _type.is_pinned(); }
-
-  // An archive region is a pinned region, also tagged as old, which
-  // should not be marked during mark/sweep. This allows the address
-  // space to be shared by JVM instances.
-  bool is_archive()        const { return _type.is_archive(); }
-  bool is_open_archive()   const { return _type.is_open_archive(); }
-  bool is_closed_archive() const { return _type.is_closed_archive(); }
 
   void set_free();
 
@@ -424,9 +414,6 @@ public:
 
   void move_to_old();
   void set_old();
-
-  void set_open_archive();
-  void set_closed_archive();
 
   // For a humongous region, region in which it starts.
   HeapRegion* humongous_start_region() const {
