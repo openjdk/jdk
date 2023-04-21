@@ -840,7 +840,6 @@ static void init_adjust_stack_for_guard_pages() {
     // If the minimum stack size changed when we added the guard pages
     // then we need to perform the adjustment.
     os::Linux::AdjustStackSizeForGuardPages = (min_stack2 - min_stack > 0);
-    log_debug(os)("OS: minstack changed by " SIZE_FORMAT, min_stack2 - min_stack);
     log_info(os)("- glibc stack size guard page adjustment is %sneeded",
                  os::Linux::AdjustStackSizeForGuardPages ? "" : "not ");
   }
