@@ -123,8 +123,8 @@ package java.util;
 public interface SequencedMap<K, V> extends Map<K, V> {
     /**
      * Returns a reverse-ordered <a href="Collection.html#view">view</a> of this map.
-     * The encounter order of elements in the returned view is the inverse of the encounter
-     * order of elements in this map. The reverse ordering affects all order-sensitive operations,
+     * The encounter order of mappings in the returned view is the inverse of the encounter
+     * order of mappings in this map. The reverse ordering affects all order-sensitive operations,
      * including those on the view collections of the returned view. If the implementation permits
      * modifications to this view, the modifications "write through" to the underlying map.
      * Changes to the underlying map might or might not be visible in this reversed view,
