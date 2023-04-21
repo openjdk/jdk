@@ -390,7 +390,7 @@ var getJibProfilesCommon = function (input, data) {
         };
     };
 
-    common.boot_jdk_version = "19";
+    common.boot_jdk_version = "20";
     common.boot_jdk_build_number = "36";
     common.boot_jdk_home = input.get("boot_jdk", "install_path") + "/jdk-"
         + common.boot_jdk_version
@@ -851,7 +851,7 @@ var getJibProfilesProfiles = function (input, common, data) {
     [ "linux-aarch64", "linux-x64", "macosx-x64", "macosx-aarch64", "windows-x64" ]
         .forEach(function (name) {
             var o = artifactData[name]
-            var jdk_subdir = (o.jdk_subdir != null ? o.jdk_subdir : "jdk-" + data.version);
+            var jdk_subdir = "jdk-" + data.version;
             var jdk_suffix = (o.jdk_suffix != null ? o.jdk_suffix : "tar.gz");
             var pf = o.platform
             var jcovName = name + "-jcov";

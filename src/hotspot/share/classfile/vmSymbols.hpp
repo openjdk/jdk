@@ -412,6 +412,9 @@
   template(run_finalization_name,                     "runFinalization")                          \
   template(dispatchUncaughtException_name,            "dispatchUncaughtException")                \
   template(loadClass_name,                            "loadClass")                                \
+  template(notifyJvmtiMount_name,                     "notifyJvmtiMount")                         \
+  template(notifyJvmtiUnmount_name,                   "notifyJvmtiUnmount")                       \
+  template(notifyJvmtiHideFrames_name,                "notifyJvmtiHideFrames")                    \
   template(doYield_name,                              "doYield")                                  \
   template(enter_name,                                "enter")                                    \
   template(enterSpecial_name,                         "enterSpecial")                             \
@@ -550,6 +553,7 @@
   template(void_float_signature,                      "()F")                                      \
   template(void_double_signature,                     "()D")                                      \
   template(bool_void_signature,                       "(Z)V")                                     \
+  template(bool_bool_void_signature,                  "(ZZ)V")                                    \
   template(int_void_signature,                        "(I)V")                                     \
   template(int_int_signature,                         "(I)I")                                     \
   template(char_char_signature,                       "(C)C")                                     \
@@ -752,6 +756,8 @@
   template(encodeThrowable_name,                       "encodeThrowable")                                         \
   template(encodeThrowable_signature,                  "(Ljava/lang/Throwable;JI)I")                              \
   template(decodeAndThrowThrowable_name,               "decodeAndThrowThrowable")                                 \
+  template(encodeAnnotations_name,                     "encodeAnnotations")                                       \
+  template(encodeAnnotations_signature,                "([BLjava/lang/Class;Ljdk/internal/reflect/ConstantPool;Z[Ljava/lang/Class;)[B")\
   template(decodeAndThrowThrowable_signature,          "(JZ)V")                                                   \
   template(classRedefinedCount_name,                   "classRedefinedCount")                                     \
   template(classLoader_name,                           "classLoader")                                             \

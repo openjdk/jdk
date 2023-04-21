@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -91,7 +91,7 @@ class NativeInstruction {
       return MacroAssembler::is_tdi(long_at(0), Assembler::traptoGreaterThanUnsigned | Assembler::traptoEqual,
                                     -1, encoding);
     }
-    return MacroAssembler::is_load_from_polling_page(long_at(0), NULL);
+    return MacroAssembler::is_load_from_polling_page(long_at(0), nullptr);
   }
 
   bool is_safepoint_poll_return() {
@@ -177,7 +177,7 @@ inline NativeCall* nativeCall_at(address instr) {
 }
 
 inline NativeCall* nativeCall_before(address return_address) {
-  NativeCall* call = NULL;
+  NativeCall* call = nullptr;
   if (MacroAssembler::is_bl(*(int*)(return_address - 4)))
     call = (NativeCall*)(return_address - 4);
   call->verify();
@@ -260,7 +260,7 @@ class NativeMovConstReg: public NativeInstruction {
   void set_data(intptr_t x);
 
   // Patch narrow oop constants.
-  void set_narrow_oop(narrowOop data, CodeBlob *code = NULL);
+  void set_narrow_oop(narrowOop data, CodeBlob *code = nullptr);
 
   void verify() NOT_DEBUG_RETURN;
 };
@@ -307,7 +307,7 @@ class NativeJump: public NativeInstruction {
       return (address)((NativeMovConstReg *)this)->data();
     } else {
       ShouldNotReachHere();
-      return NULL;
+      return nullptr;
     }
   }
 
@@ -377,7 +377,7 @@ class NativeCallTrampolineStub : public NativeInstruction {
 
  public:
 
-  address destination(nmethod *nm = NULL) const;
+  address destination(nmethod *nm = nullptr) const;
   int destination_toc_offset() const;
 
   void set_destination(address new_destination);
@@ -518,7 +518,7 @@ inline NativePostCallNop* nativePostCallNop_at(address address) {
   if (nop->check()) {
     return nop;
   }
-  return NULL;
+  return nullptr;
 }
 
 class NativeDeoptInstruction: public NativeInstruction {

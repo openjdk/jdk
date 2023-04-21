@@ -66,6 +66,7 @@
 #include "oops/constMethod.hpp"
 #include "oops/constantPool.hpp"
 #include "oops/cpCache.hpp"
+#include "oops/fieldInfo.hpp"
 #include "oops/instanceClassLoaderKlass.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/instanceMirrorKlass.hpp"
@@ -220,13 +221,14 @@
   nonstatic_field(ConstantPoolCache,           _reference_map,                                Array<u2>*)                            \
   nonstatic_field(ConstantPoolCache,           _length,                                       int)                                   \
   nonstatic_field(ConstantPoolCache,           _constant_pool,                                ConstantPool*)                         \
+  nonstatic_field(ConstantPoolCache,           _resolved_indy_entries,                        Array<ResolvedIndyEntry>*)             \
+  nonstatic_field(ResolvedIndyEntry,           _cpool_index,                                  u2)                                    \
   volatile_nonstatic_field(InstanceKlass,      _array_klasses,                                ObjArrayKlass*)                        \
   nonstatic_field(InstanceKlass,               _methods,                                      Array<Method*>*)                       \
   nonstatic_field(InstanceKlass,               _default_methods,                              Array<Method*>*)                       \
   nonstatic_field(InstanceKlass,               _local_interfaces,                             Array<InstanceKlass*>*)                \
   nonstatic_field(InstanceKlass,               _transitive_interfaces,                        Array<InstanceKlass*>*)                \
-  nonstatic_field(InstanceKlass,               _fields,                                       Array<u2>*)                            \
-  nonstatic_field(InstanceKlass,               _java_fields_count,                            u2)                                    \
+  nonstatic_field(InstanceKlass,               _fieldinfo_stream,                             Array<u1>*)                            \
   nonstatic_field(InstanceKlass,               _constants,                                    ConstantPool*)                         \
   nonstatic_field(InstanceKlass,               _source_debug_extension,                       const char*)                           \
   nonstatic_field(InstanceKlass,               _inner_classes,                                Array<jushort>*)                       \
@@ -234,7 +236,6 @@
   nonstatic_field(InstanceKlass,               _static_field_size,                            int)                                   \
   nonstatic_field(InstanceKlass,               _static_oop_field_count,                       u2)                                    \
   nonstatic_field(InstanceKlass,               _nonstatic_oop_map_size,                       int)                                   \
-  nonstatic_field(InstanceKlass,               _is_marked_dependent,                          bool)                                  \
   volatile_nonstatic_field(InstanceKlass,      _init_state,                                   InstanceKlass::ClassState)             \
   volatile_nonstatic_field(InstanceKlass,      _init_thread,                                  JavaThread*)                           \
   nonstatic_field(InstanceKlass,               _itable_len,                                   int)                                   \
@@ -473,6 +474,8 @@
                                                                                                                                      \
   nonstatic_field(Array<Klass*>,               _length,                                       int)                                   \
   nonstatic_field(Array<Klass*>,               _data[0],                                      Klass*)                                \
+  nonstatic_field(Array<ResolvedIndyEntry>,    _length,                                       int)                                   \
+  nonstatic_field(Array<ResolvedIndyEntry>,    _data[0],                                      ResolvedIndyEntry)                     \
                                                                                                                                      \
   /*******************/                                                                                                              \
   /* GrowableArrays  */                                                                                                              \
@@ -1019,12 +1022,13 @@
   /* Array<T> */                                                                                                                     \
   /************/                                                                                                                     \
                                                                                                                                      \
-  nonstatic_field(Array<int>,                  _length,                                       int)                                   \
-  unchecked_nonstatic_field(Array<int>,        _data,                                         sizeof(int))                           \
-  unchecked_nonstatic_field(Array<u1>,         _data,                                         sizeof(u1))                            \
-  unchecked_nonstatic_field(Array<u2>,         _data,                                         sizeof(u2))                            \
-  unchecked_nonstatic_field(Array<Method*>,    _data,                                         sizeof(Method*))                       \
-  unchecked_nonstatic_field(Array<Klass*>,     _data,                                         sizeof(Klass*))                        \
+  nonstatic_field(Array<int>,                         _length,                                int)                                   \
+  unchecked_nonstatic_field(Array<int>,               _data,                                  sizeof(int))                           \
+  unchecked_nonstatic_field(Array<u1>,                _data,                                  sizeof(u1))                            \
+  unchecked_nonstatic_field(Array<u2>,                _data,                                  sizeof(u2))                            \
+  unchecked_nonstatic_field(Array<Method*>,           _data,                                  sizeof(Method*))                       \
+  unchecked_nonstatic_field(Array<Klass*>,            _data,                                  sizeof(Klass*))                        \
+  unchecked_nonstatic_field(Array<ResolvedIndyEntry>, _data,                                  sizeof(ResolvedIndyEntry))             \
                                                                                                                                      \
   /*********************************/                                                                                                \
   /* java_lang_Class fields        */                                                                                                \
@@ -1764,6 +1768,8 @@
   declare_c2_type(CompressVNode, VectorNode)                              \
   declare_c2_type(CompressMNode, VectorNode)                              \
   declare_c2_type(ExpandVNode, VectorNode)                                \
+  declare_c2_type(CompressBitsVNode, VectorNode)                          \
+  declare_c2_type(ExpandBitsVNode, VectorNode)                            \
   declare_c2_type(MulReductionVDNode, ReductionNode)                      \
   declare_c2_type(DivVFNode, VectorNode)                                  \
   declare_c2_type(DivVDNode, VectorNode)                                  \
@@ -1952,6 +1958,7 @@
             declare_type(Array<u2>, MetaspaceObj)                         \
             declare_type(Array<Klass*>, MetaspaceObj)                     \
             declare_type(Array<Method*>, MetaspaceObj)                    \
+            declare_type(Array<ResolvedIndyEntry>, MetaspaceObj)          \
                                                                           \
    declare_toplevel_type(BitMap)                                          \
             declare_type(BitMapView, BitMap)                              \
@@ -1968,6 +1975,7 @@
   declare_toplevel_type(RuntimeBlob*)                                     \
   declare_toplevel_type(CompressedWriteStream*)                           \
   declare_toplevel_type(ConstantPoolCacheEntry)                           \
+  declare_toplevel_type(ResolvedIndyEntry)                                \
   declare_toplevel_type(elapsedTimer)                                     \
   declare_toplevel_type(frame)                                            \
   declare_toplevel_type(intptr_t*)                                        \
@@ -2081,22 +2089,12 @@
   declare_constant(JVM_ACC_LOOPS_FLAG_INIT)                               \
   declare_constant(JVM_ACC_QUEUED)                                        \
   declare_constant(JVM_ACC_NOT_C2_OSR_COMPILABLE)                         \
-  declare_constant(JVM_ACC_HAS_LINE_NUMBER_TABLE)                         \
-  declare_constant(JVM_ACC_HAS_CHECKED_EXCEPTIONS)                        \
   declare_constant(JVM_ACC_HAS_JSRS)                                      \
   declare_constant(JVM_ACC_IS_OLD)                                        \
   declare_constant(JVM_ACC_IS_OBSOLETE)                                   \
   declare_constant(JVM_ACC_IS_PREFIXED_NATIVE)                            \
-  declare_constant(JVM_ACC_HAS_MIRANDA_METHODS)                           \
-  declare_constant(JVM_ACC_HAS_VANILLA_CONSTRUCTOR)                       \
   declare_constant(JVM_ACC_HAS_FINALIZER)                                 \
   declare_constant(JVM_ACC_IS_CLONEABLE_FAST)                             \
-  declare_constant(JVM_ACC_HAS_LOCAL_VARIABLE_TABLE)                      \
-  declare_constant(JVM_ACC_FIELD_ACCESS_WATCHED)                          \
-  declare_constant(JVM_ACC_FIELD_MODIFICATION_WATCHED)                    \
-  declare_constant(JVM_ACC_FIELD_INTERNAL)                                \
-  declare_constant(JVM_ACC_FIELD_STABLE)                                  \
-  declare_constant(JVM_ACC_FIELD_HAS_GENERIC_SIGNATURE)                   \
                                                                           \
   declare_constant(JVM_CONSTANT_Utf8)                                     \
   declare_constant(JVM_CONSTANT_Unicode)                                  \
@@ -2228,24 +2226,6 @@
   /*************************************/                                 \
                                                                           \
                                                                           \
-  /*************************************/                                 \
-  /* FieldInfo FieldOffset enum        */                                 \
-  /*************************************/                                 \
-                                                                          \
-  declare_constant(FieldInfo::access_flags_offset)                        \
-  declare_constant(FieldInfo::name_index_offset)                          \
-  declare_constant(FieldInfo::signature_index_offset)                     \
-  declare_constant(FieldInfo::initval_index_offset)                       \
-  declare_constant(FieldInfo::low_packed_offset)                          \
-  declare_constant(FieldInfo::high_packed_offset)                         \
-  declare_constant(FieldInfo::field_slots)                                \
-                                                                          \
-  /*************************************/                                 \
-  /* FieldInfo tag constants           */                                 \
-  /*************************************/                                 \
-                                                                          \
-  declare_preprocessor_constant("FIELDINFO_TAG_SIZE", FIELDINFO_TAG_SIZE) \
-  declare_preprocessor_constant("FIELDINFO_TAG_OFFSET", FIELDINFO_TAG_OFFSET) \
                                                                           \
   /************************************************/                      \
   /* InstanceKlass InnerClassAttributeOffset enum */                      \
@@ -2314,6 +2294,17 @@
   declare_constant(JavaThreadStatus::PARKED_TIMED)                        \
   declare_constant(JavaThreadStatus::BLOCKED_ON_MONITOR_ENTER)            \
   declare_constant(JavaThreadStatus::TERMINATED)                          \
+                                                                          \
+                                                                          \
+  /******************************/                                        \
+  /* FieldFlags enum            */                                        \
+  /******************************/                                        \
+                                                                          \
+  declare_constant(FieldInfo::FieldFlags::_ff_initialized)                \
+  declare_constant(FieldInfo::FieldFlags::_ff_injected)                   \
+  declare_constant(FieldInfo::FieldFlags::_ff_generic)                    \
+  declare_constant(FieldInfo::FieldFlags::_ff_stable)                     \
+  declare_constant(FieldInfo::FieldFlags::_ff_contended)                  \
                                                                           \
   /******************************/                                        \
   /* Debug info                 */                                        \

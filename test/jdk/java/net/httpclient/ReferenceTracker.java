@@ -63,6 +63,14 @@ public class ReferenceTracker {
         return diagnose(warnings, (t) -> t.getOutstandingHttpOperations() > 0);
     }
 
+    public StringBuilder diagnose(Tracker tracker) {
+        return diagnose(tracker, new StringBuilder(), (t) -> t.getOutstandingHttpOperations() > 0);
+    }
+
+    public StringBuilder diagnose(HttpClient client) {
+        return diagnose(getTracker(client));
+    }
+
     public StringBuilder diagnose(Tracker tracker, StringBuilder warnings, Predicate<Tracker> hasOutstanding) {
         checkOutstandingOperations(warnings, tracker, hasOutstanding);
         return warnings;

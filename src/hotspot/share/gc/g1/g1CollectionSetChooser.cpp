@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -192,7 +192,7 @@ class G1BuildCandidateRegionsTask : public WorkerTask {
         // sets for old regions.
         r->rem_set()->clear(true /* only_cardset */);
       } else {
-        assert(r->is_archive() || !r->is_old() || !r->rem_set()->is_tracked(),
+        assert(!r->is_old() || !r->rem_set()->is_tracked(),
                "Missed to clear unused remembered set of region %u (%s) that is %s",
                r->hrm_index(), r->get_type_str(), r->rem_set()->get_state_str());
       }
@@ -291,7 +291,7 @@ public:
 void G1CollectionSetChooser::prune(G1CollectionSetCandidates* candidates) {
   G1Policy* p = G1CollectedHeap::heap()->policy();
 
-  uint min_old_cset_length = p->calc_min_old_cset_length(candidates);
+  uint min_old_cset_length = p->calc_min_old_cset_length(candidates->num_regions());
   uint num_candidates = candidates->num_regions();
 
   if (min_old_cset_length < num_candidates) {

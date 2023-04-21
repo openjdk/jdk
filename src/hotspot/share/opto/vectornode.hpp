@@ -92,7 +92,9 @@ class VectorNode : public TypeNode {
 
   static int  opcode(int opc, BasicType bt);
   static int replicate_opcode(BasicType bt);
-  static bool vector_size_supported(BasicType bt, uint vlen);
+
+  // Limits on vector size (number of elements) for auto-vectorization.
+  static bool vector_size_supported_superword(const BasicType bt, int size);
   static bool implemented(int opc, uint vlen, BasicType bt);
   static bool is_shift(Node* n);
   static bool is_vshift_cnt(Node* n);
@@ -1286,7 +1288,7 @@ class ExtractBNode : public ExtractNode {
  public:
   ExtractBNode(Node* src, ConINode* pos) : ExtractNode(src, pos) {}
   virtual int Opcode() const;
-  virtual const Type *bottom_type() const { return TypeInt::INT; }
+  virtual const Type* bottom_type() const { return TypeInt::BYTE; }
   virtual uint ideal_reg() const { return Op_RegI; }
 };
 
@@ -1296,7 +1298,7 @@ class ExtractUBNode : public ExtractNode {
  public:
   ExtractUBNode(Node* src, ConINode* pos) : ExtractNode(src, pos) {}
   virtual int Opcode() const;
-  virtual const Type *bottom_type() const { return TypeInt::INT; }
+  virtual const Type* bottom_type() const { return TypeInt::UBYTE; }
   virtual uint ideal_reg() const { return Op_RegI; }
 };
 
@@ -1472,11 +1474,8 @@ class VectorRearrangeNode : public VectorNode {
 class VectorLoadShuffleNode : public VectorNode {
  public:
   VectorLoadShuffleNode(Node* in, const TypeVect* vt)
-    : VectorNode(in, vt) {
-    assert(in->bottom_type()->is_vect()->element_basic_type() == T_BYTE, "must be BYTE");
-  }
+    : VectorNode(in, vt) {}
 
-  int GetOutShuffleSize() const { return type2aelembytes(vect_type()->element_basic_type()); }
   virtual int Opcode() const;
 };
 
@@ -1707,14 +1706,11 @@ class VectorBoxAllocateNode : public CallStaticJavaNode {
 };
 
 class VectorUnboxNode : public VectorNode {
- private:
-  bool _shuffle_to_vector;
  protected:
   uint size_of() const { return sizeof(*this); }
  public:
-  VectorUnboxNode(Compile* C, const TypeVect* vec_type, Node* obj, Node* mem, bool shuffle_to_vector)
+  VectorUnboxNode(Compile* C, const TypeVect* vec_type, Node* obj, Node* mem)
     : VectorNode(mem, obj, vec_type) {
-    _shuffle_to_vector = shuffle_to_vector;
     init_class_id(Class_VectorUnbox);
     init_flags(Flag_is_macro);
     C->add_macro_node(this);
@@ -1725,7 +1721,6 @@ class VectorUnboxNode : public VectorNode {
   Node* mem() const { return in(1); }
   virtual Node* Identity(PhaseGVN* phase);
   Node* Ideal(PhaseGVN* phase, bool can_reshape);
-  bool is_shuffle_to_vector() { return _shuffle_to_vector; }
 };
 
 class RotateRightVNode : public VectorNode {
@@ -1799,6 +1794,20 @@ public:
   SignumVDNode(Node* in1, Node* zero, Node* one, const TypeVect* vt)
   : VectorNode(in1, zero, one, vt) {}
 
+  virtual int Opcode() const;
+};
+
+class CompressBitsVNode : public VectorNode {
+public:
+  CompressBitsVNode(Node* in, Node* mask, const TypeVect* vt)
+  : VectorNode(in, mask, vt) {}
+  virtual int Opcode() const;
+};
+
+class ExpandBitsVNode : public VectorNode {
+public:
+  ExpandBitsVNode(Node* in, Node* mask, const TypeVect* vt)
+  : VectorNode(in, mask, vt) {}
   virtual int Opcode() const;
 };
 

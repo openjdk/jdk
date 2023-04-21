@@ -89,14 +89,9 @@ inline bool G1DetermineCompactionQueueClosure::do_heap_region(HeapRegion* hr) {
       bool is_empty = !_collector->mark_bitmap()->is_marked(obj);
       if (is_empty) {
         free_pinned_region<true>(hr);
+      } else {
+        _collector->set_has_humongous();
       }
-    } else if (hr->is_open_archive()) {
-      bool is_empty = _collector->live_words(hr->hrm_index()) == 0;
-      if (is_empty) {
-        free_pinned_region<false>(hr);
-      }
-    } else if (hr->is_closed_archive()) {
-      // nothing to do with closed archive region
     } else {
       assert(MarkSweepDeadRatio > 0,
              "only skip compaction for other regions when MarkSweepDeadRatio > 0");
