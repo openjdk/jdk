@@ -210,7 +210,7 @@ public final class ProcessTools {
      * <p>
      * It is possible to wait for the process to get to a warmed-up state
      * via {@linkplain Predicate} condition on the STDOUT/STDERR and monitor the
-     * in-streams via the provided {@linkplain Consumer}*
+     * in-streams via the provided {@linkplain Consumer}
      * </p>
      *
      * @param name           The process name
