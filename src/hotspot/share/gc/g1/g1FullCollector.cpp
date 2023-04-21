@@ -39,6 +39,7 @@
 #include "gc/g1/g1OopClosures.hpp"
 #include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1RegionMarkStatsCache.inline.hpp"
+#include "gc/shared/gcForwarding.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shared/referenceProcessor.hpp"
@@ -210,6 +211,8 @@ void G1FullCollector::collect() {
   // Don't add any more derived pointers during later phases
   deactivate_derived_pointers();
 
+  GCForwarding::begin();
+
   phase2_prepare_compaction();
 
   if (has_compaction_targets()) {
@@ -221,6 +224,8 @@ void G1FullCollector::collect() {
     // The live ratio is only considered if do_maximal_compaction is false.
     log_info(gc, phases) ("No Regions selected for compaction. Skipping Phase 3: Adjust pointers and Phase 4: Compact heap");
   }
+
+  GCForwarding::end();
 
   phase5_reset_metadata();
 
@@ -349,7 +354,7 @@ void G1FullCollector::phase2_prepare_compaction() {
   // Try to avoid OOM immediately after Full GC in case there are no free regions
   // left after determining the result locations (i.e. this phase). Prepare to
   // maximally compact the tail regions of the compaction queues serially.
-  if (scope()->do_maximal_compaction() || !has_free_compaction_targets) {
+  if (!UseAltGCForwarding && (scope()->do_maximal_compaction() || !has_free_compaction_targets)) {
     phase2c_prepare_serial_compaction();
 
     if (scope()->do_maximal_compaction() &&

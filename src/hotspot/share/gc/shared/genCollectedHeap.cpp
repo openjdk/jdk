@@ -39,6 +39,7 @@
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/collectorCounters.hpp"
 #include "gc/shared/continuationGCSupport.inline.hpp"
+#include "gc/shared/gcForwarding.hpp"
 #include "gc/shared/gcId.hpp"
 #include "gc/shared/gcInitLogger.hpp"
 #include "gc/shared/gcLocker.hpp"
@@ -131,6 +132,8 @@ jint GenCollectedHeap::initialize() {
   _old_gen = _old_gen_spec->init(old_rs, rem_set());
 
   GCInitLogger::print();
+
+  GCForwarding::initialize(_reserved);
 
   return JNI_OK;
 }

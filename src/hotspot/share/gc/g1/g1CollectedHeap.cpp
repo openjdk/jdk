@@ -76,6 +76,7 @@
 #include "gc/g1/heapRegionSet.inline.hpp"
 #include "gc/shared/concurrentGCBreakpoints.hpp"
 #include "gc/shared/gcBehaviours.hpp"
+#include "gc/shared/gcForwarding.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
 #include "gc/shared/gcId.hpp"
 #include "gc/shared/gcLocker.inline.hpp"
@@ -1523,6 +1524,8 @@ jint G1CollectedHeap::initialize() {
   evac_failure_injector()->reset();
 
   G1InitLogger::print();
+
+  GCForwarding::initialize(heap_rs.region(), HeapRegion::LogOfHRGrainBytes - LogHeapWordSize);
 
   return JNI_OK;
 }
