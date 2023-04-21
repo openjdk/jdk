@@ -1957,7 +1957,7 @@ Method* SystemDictionary::find_method_handle_intrinsic(vmIntrinsicID iid,
         return *met;
       } else if (!created) {
         // Second thread waits for first to actually create the entry and returns
-        // it after notify.
+        // it after notify. Loop until method return is non-null.
         ml.wait();
       }
     }
@@ -1977,26 +1977,24 @@ Method* SystemDictionary::find_method_handle_intrinsic(vmIntrinsicID iid,
     MonitorLocker ml(THREAD, InvokeMethodIntrinsicTable_lock);
     if (throw_error) {
       // Remove the entry and let another thread try, or get the same exception.
-      _invoke_method_intrinsic_table.remove(key);
+      bool removed = _invoke_method_intrinsic_table.remove(key);
+      assert(removed, "must be the owner");
       ml.notify_all();
     } else {
       signature->make_permanent(); // The signature is never unloaded.
-      bool created = _invoke_method_intrinsic_table.put(key, m());
-      assert(!created, "must already be created when holding the lock above");
       assert(Arguments::is_interpreter_only() || (m->has_compiled_code() &&
              m->code()->entry_point() == m->from_compiled_entry()),
              "MH intrinsic invariant");
+      *met = m(); // insert the element
       ml.notify_all();
       return m();
     }
   }
 
-  if (throw_error) {
-    // Throw VirtualMachineError or else the other error is in the thread.
-    if (!HAS_PENDING_EXCEPTION) {
-      THROW_MSG_NULL(vmSymbols::java_lang_VirtualMachineError(),
-                     "Out of space in CodeCache for method handle intrinsic");
-    }
+  // Throw VirtualMachineError or the pending exception in the JavaThread
+  if (throw_error && !HAS_PENDING_EXCEPTION) {
+    THROW_MSG_NULL(vmSymbols::java_lang_VirtualMachineError(),
+                   "Out of space in CodeCache for method handle intrinsic");
   }
   return nullptr;
 }
