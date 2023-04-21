@@ -4576,8 +4576,11 @@ class StubGenerator: public StubCodeGenerator {
       Register ex_pc = R17_tos;   // nonvolatile register
       __ ld(ex_pc, _abi0(lr), R1_SP); // LR
       __ mr(nvtmp, R3_RET); // save return value containing the exception oop
+      // The thawed top frame has got a frame::java_abi. This is not sufficient for the runtime call.
+      __ push_frame_reg_args(0, tmp1);
       __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::exception_handler_for_return_address), R16_thread, ex_pc);
       __ mtlr(R3_RET); // the exception handler
+      __ pop_frame();
       // See OptoRuntime::generate_exception_blob for register arguments
       __ mr(R3_ARG1, nvtmp); // exception oop
       __ mr(R4_ARG2, ex_pc); // exception pc

@@ -245,7 +245,6 @@ JvmtiAgent* JvmtiAgentList::lookup(JvmtiEnv* env, void* f_ptr) {
     return nullptr;
   }
   assert(buffer[0] != '\0', "invariant");
-  assert(offset >= 0, "invariant");
   const void* const os_module_address = reinterpret_cast<address>(f_ptr) - offset;
 
   JvmtiAgentList::Iterator it = JvmtiAgentList::agents();
