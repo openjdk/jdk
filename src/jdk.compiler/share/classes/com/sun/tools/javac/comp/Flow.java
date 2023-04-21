@@ -968,9 +968,7 @@ public class Flow {
                                                             types.erasure(bpOther.type))) {
                                             it.remove();
                                             reduces = true;
-                                            continue ;
                                         }
-
                                     }
 
                                     if (reduces) {
