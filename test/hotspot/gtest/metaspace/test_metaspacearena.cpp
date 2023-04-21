@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2023 Red Hat. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -783,10 +784,6 @@ TEST_VM(metaspace, MetaspaceArena_test_repeatedly_allocate_and_deallocate_nontop
   test_repeatedly_allocate_and_deallocate(false);
 }
 
-static size_t random_humongous_size(int min_nodes_covered) {
-  return MAX_CHUNK_WORD_SIZE + os::random() % ((min_nodes_covered - 1) * MAX_CHUNK_WORD_SIZE);
-}
-
 // Test that repeated humongous allocations don't cause a raise in committed/reserved beyond the first allocation
 TEST_VM(metaspace, MetaspaceArena_test_humongous_allocation_reuse_chunks) {
   MetaspaceGtestContext context;
@@ -798,19 +795,26 @@ TEST_VM(metaspace, MetaspaceArena_test_humongous_allocation_reuse_chunks) {
   }
 
   // Repeatedly create an arena and allocate a humongous block from it. Then let it go out of
-  // scope again. It should give its chunks back to the ChunkManager, and the next Arena should reuse these chunks.
-  // We should not see a monotonous raise in committed/reserved memory.
-  const size_t size0 = random_humongous_size(8);
+  // scope again. It should give its chunks back to the ChunkManager, and the next humongous allocation
+  // done from the next arena in the next iteration should pick these up instead of allocating new virtual
+  // space.
+  // Note that we do the first allocation with a larger size than subsequent ones, to ensure that we have
+  // enough adjacent root chunks for the follow up allocations. This ensures that we exercise root chunk reuse
+  // (ChunkManager::allocate_humongous_committed_area_from_freelist()) and that the reserved space should
+  // not grow.
+  const size_t size0 = Settings::virtual_space_node_default_word_size() * 2; // large
   const size_t expected_reserved = align_up(size0, MAX_CHUNK_WORD_SIZE);
   const uintx num_humongous_allocs_before = InternalStats::num_humongous_allocs();
+  const int num_reps = 40;
 
   MetaWord* p_last = nullptr;
-  for (int reps = 0; reps < 100; reps++) {
+  RandSizeGenerator rgen(MAX_CHUNK_WORD_SIZE, size0);
+  for (int reps = 0; reps < num_reps; reps++) {
     // First a large allocation. That will give us n root chunks that are adjacent.
     // All followup allocations will be equal or smaller and should reuse these chunks from
     // the chunk manager. We deliberately make the second allocation equal, to check that
     // repeated allocations of the same size work.
-    const size_t size = (reps < 2) ? size0 : random_humongous_size(8);
+    const size_t size = (reps < 2) ? size0 : rgen.get();
     const size_t expected_committed = align_up(size, Settings::commit_granule_words());
     {
       MetaspaceArenaTestHelper helper(context, Metaspace::StandardMetaspaceType, false);
@@ -830,6 +834,6 @@ TEST_VM(metaspace, MetaspaceArena_test_humongous_allocation_reuse_chunks) {
     context.purge_area();
     context.assert_reserved_committed(expected_reserved, 0); // <- in particular, we never want to observe reserved going up.
   }
-  ASSERT_EQ(num_humongous_allocs_before + 100, InternalStats::num_humongous_allocs());
+  ASSERT_EQ(num_humongous_allocs_before + num_reps, InternalStats::num_humongous_allocs());
   DEBUG_ONLY(context.verify();)
 }

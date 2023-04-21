@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2023 Red Hat. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -275,6 +276,7 @@ bool ChunkManager::allocate_humongous_committed_area_from_freelist(size_t word_s
         out->add_to_tail(c);
       }
       UL2(debug, "Removed %d root chunks from freelist.", num_needed);
+      DEBUG_ONLY(out->verify(word_size, false);)
       rc = true;
     }
     FREE_C_HEAP_ARRAY(Metachunk*, sorted);
@@ -328,7 +330,8 @@ bool ChunkManager::allocate_humongous_committed_area(size_t word_size, Metaspace
     out->print_on(&ls);
   }
 
-  DEBUG_ONLY(out->verify(word_size, true, true);)
+  DEBUG_ONLY(out->verify(word_size, true);)
+
   DEBUG_ONLY(verify_locked();)
 
   return true;

@@ -75,7 +75,7 @@ public:
     MutexLocker fcl(Metaspace_lock, Mutex::_no_safepoint_check_flag);
     MetaspaceHumongousArea area;
     ASSERT_TRUE(_l->allocate_humongous_area(word_size, &area));
-    DEBUG_ONLY(area.verify(word_size, false, false);)
+    DEBUG_ONLY(area.verify(word_size, false);)
     ASSERT_0(_l->committed_words());
   }
 
