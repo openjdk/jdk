@@ -84,21 +84,21 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
         SharedUtils.checkExceptions(target);
         LinkerOptions optionSet = LinkerOptions.forUpcall(function, options);
 
-        MethodType type = function.toMethodType();
-        MethodType expectedType = type;
+        MethodType nativeType = function.toMethodType();
+        MethodType expectedJavaType = nativeType;
         if (optionSet.hasCapturedCallState()) {
-            expectedType = expectedType.insertParameterTypes(0, MemorySegment.class); // capture state segment
+            expectedJavaType = expectedJavaType.insertParameterTypes(0, MemorySegment.class); // capture state segment
         }
-        if (!expectedType.equals(target.type())) {
+        if (!expectedJavaType.equals(target.type())) {
             throw new IllegalArgumentException("Wrong method handle type: " + target.type());
         }
 
         UpcallStubFactory factory = UPCALL_CACHE.get(new LinkRequest(function, optionSet), linkRequest ->
-            arrangeUpcall(type, linkRequest.descriptor(), linkRequest.options()));
+            arrangeUpcall(nativeType, linkRequest.descriptor(), linkRequest.options()));
         return factory.makeStub(target, arena);
     }
 
-    protected abstract UpcallStubFactory arrangeUpcall(MethodType targetType, FunctionDescriptor function, LinkerOptions options);
+    protected abstract UpcallStubFactory arrangeUpcall(MethodType nativeType, FunctionDescriptor function, LinkerOptions options);
 
     @Override
     public SystemLookup defaultLookup() {

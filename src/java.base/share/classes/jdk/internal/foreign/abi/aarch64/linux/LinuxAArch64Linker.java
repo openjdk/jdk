@@ -57,7 +57,7 @@ public final class LinuxAArch64Linker extends AbstractLinker {
     }
 
     @Override
-    protected UpcallStubFactory arrangeUpcall(MethodType targetType, FunctionDescriptor function, LinkerOptions options) {
-        return CallArranger.LINUX.arrangeUpcall(targetType, function, options);
+    protected UpcallStubFactory arrangeUpcall(MethodType nativeType, FunctionDescriptor function, LinkerOptions options) {
+        return CallArranger.LINUX.arrangeUpcall(nativeType, function, options);
     }
 }

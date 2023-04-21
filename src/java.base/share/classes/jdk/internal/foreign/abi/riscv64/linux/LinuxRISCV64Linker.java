@@ -53,7 +53,7 @@ public final class LinuxRISCV64Linker extends AbstractLinker {
     }
 
     @Override
-    protected UpcallStubFactory arrangeUpcall(MethodType targetType, FunctionDescriptor function, LinkerOptions options) {
-        return LinuxRISCV64CallArranger.arrangeUpcall(targetType, function, options);
+    protected UpcallStubFactory arrangeUpcall(MethodType nativeType, FunctionDescriptor function, LinkerOptions options) {
+        return LinuxRISCV64CallArranger.arrangeUpcall(nativeType, function, options);
     }
 }

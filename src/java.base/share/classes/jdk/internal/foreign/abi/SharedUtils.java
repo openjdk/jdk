@@ -171,7 +171,8 @@ public final class SharedUtils {
         if (hasCaptureCallState) {
             assert target.type().parameterType(1) == MemorySegment.class;
             // IMR is an ABI figment, so the capture state segment which
-            // is inserted artificially by CallingSequenceBuilder should appear before it
+            // is inserted by CallingSequenceBuilder as leading parameter
+            // should appear before the IMR segment parameter
             target = swapArguments(target, 0, 1);
         }
 

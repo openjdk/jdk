@@ -106,8 +106,8 @@ public final class FallbackLinker extends AbstractLinker {
     }
 
     @Override
-    protected UpcallStubFactory arrangeUpcall(MethodType targetType, FunctionDescriptor function, LinkerOptions options) {
-        MemorySegment cif = makeCif(targetType, function, FFIABI.DEFAULT, Arena.ofAuto());
+    protected UpcallStubFactory arrangeUpcall(MethodType nativeType, FunctionDescriptor function, LinkerOptions options) {
+        MemorySegment cif = makeCif(nativeType, function, FFIABI.DEFAULT, Arena.ofAuto());
 
         int captureStateMask = options.capturedCallState()
                 .mapToInt(CapturableState::mask)

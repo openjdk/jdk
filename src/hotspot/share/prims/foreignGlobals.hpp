@@ -56,6 +56,7 @@ public:
   int data_offset(uint32_t loc) const;
 };
 
+// keep in sync with jdk.internal.foreign.abi.CapturableState
 struct CapturableState {
   enum {
     NONE = 0,

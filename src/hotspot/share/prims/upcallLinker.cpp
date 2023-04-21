@@ -155,7 +155,6 @@ void UpcallLinker::handle_uncaught_exception(oop exception) {
 
 void UpcallLinker::capture_state(int32_t* value_ptr, int captured_state_mask) {
   assert(value_ptr != nullptr || captured_state_mask == 0, "value ptr null when capturing state");
-  // keep in synch with jdk.internal.foreign.abi.PreservableValues
 #ifdef _WIN64
   if (captured_state_mask & CapturableState::LAST_ERROR) {
     SetLastError(*value_ptr);

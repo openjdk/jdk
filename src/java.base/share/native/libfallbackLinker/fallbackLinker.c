@@ -63,6 +63,7 @@ Java_jdk_internal_foreign_abi_fallback_LibFallback_ffi_1get_1struct_1offsets(JNI
   return ffi_get_struct_offsets((ffi_abi) abi, jlong_to_ptr(type), jlong_to_ptr(offsets));
 }
 
+// keep in synch with jdk.internal.foreign.abi.CapturableState
 enum CapturableState {
   CCS_NONE = 0,
   CCS_LAST_ERROR = 1,
@@ -70,8 +71,8 @@ enum CapturableState {
   CCS_ERRNO = 1 << 2
 };
 
+// keep in sync with DowncallLinker::capture_state in hotspot
 static void do_capture_state_downcall(int32_t* value_ptr, int captured_state_mask) {
-    // keep in synch with jdk.internal.foreign.abi.CapturableState
 #ifdef _WIN64
   if (captured_state_mask & CCS_LAST_ERROR) {
     *value_ptr = GetLastError();
@@ -104,7 +105,6 @@ struct UpcallUserData {
 
 // keep in sync with UpcallLinker::capture_state in hotspot
 static void do_capture_state_upcall(int32_t* value_ptr, int captured_state_mask) {
-  // keep in synch with jdk.internal.foreign.abi.CapturableState
 #ifdef _WIN64
   if (captured_state_mask & CCS_LAST_ERROR) {
     SetLastError(*value_ptr);

@@ -32,7 +32,6 @@
 #endif
 
 void DowncallLinker::capture_state(int32_t* value_ptr, int captured_state_mask) {
-  // keep in synch with jdk.internal.foreign.abi.PreservableValues
 #ifdef _WIN64
   if (captured_state_mask & CapturableState::LAST_ERROR) {
     *value_ptr = GetLastError();
