@@ -242,7 +242,9 @@ Metachunk* ChunkManager::get_chunk_locked(chunklevel_t preferred_level, chunklev
   return c;
 }
 
-static int compare_chunk_base(Metachunk* c1, Metachunk* c2) { return c1->base() > c2->base() ? 1 : -1; }
+static int compare_chunk_start_address(Metachunk* c1, Metachunk* c2) {
+  return c1->base() > c2->base() ? 1 : -1;
+}
 
 // Attempt to allocate a humongous area with chunks from the freelists.
 bool ChunkManager::allocate_humongous_committed_area_from_freelist(size_t word_size, MetaspaceHumongousArea* out) {
@@ -260,7 +262,7 @@ bool ChunkManager::allocate_humongous_committed_area_from_freelist(size_t word_s
     for (Metachunk* c = _chunks.first_at_level(ROOT_CHUNK_LEVEL); c != nullptr; c = c->next()) {
       sorted[i++] = c;
     }
-    QuickSort::sort(sorted, num_free, compare_chunk_base, false);
+    QuickSort::sort(sorted, num_free, compare_chunk_start_address, false);
     // Search for sequence of num_needed adjacent chunks
     int candidate = 0;
     for (int i = 1; i < num_free && (i - candidate) < num_needed; i++) {

@@ -51,6 +51,7 @@ class Metachunk;
 // subsequent
 //
 // Example:
+//
 // Arena allocated normal blocks (a), (b), (c), then a humongous block spanning two root
 // chunks and extending for a bit into the third chunk. Normal blocks (d) and (e) follow.
 // The third chunk happens to be the last added and is therefore the current chunk that
@@ -63,15 +64,15 @@ class Metachunk;
 //            |
 //            | _chunks
 //            |
-//        +----------+      +-------.....---+-------.....---+----------+
-//        | normal   | ---> | Root          | Root          | current  |
-//        | chunk A  |      | chunk B       | chunk C       | chunk    |
-//        +----------+      +-------.....---+-------.....---+----------+
-//        ^     ^  ^        ^                                    ^  ^
-//        a     b  c        |                                    |  e
-//                          |                                    |
-//                        Start of                           End of humongous
-//                        humongous allocation               block; start of block d
+//        +-------+      +---------------+---------------+----------+
+//        | chunk | ---> | Root          | Root          | current  |
+//        |   A   |      | chunk B       | chunk C       | chunk    |
+//        +-------+      +---------------+---------------+----------+
+//        ^   ^           ^                                    ^
+//       (a) (b)         (c)     -------- still (c) ------->  (e)
+//
+//
+//
 //
 
 // MetaspaceHumongousArea is a transient object that describes a humongous area spanning

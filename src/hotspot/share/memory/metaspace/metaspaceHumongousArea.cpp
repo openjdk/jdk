@@ -52,7 +52,7 @@ void MetaspaceHumongousArea::add_to_tail(Metachunk* c) {
 }
 
 // Called by the ChunkManager to prepare the chunks in this area for the arena:
-// - commit them as far as needed
+// - commit their space
 // - allocate from them as far as needed in order for all chunks to show the
 //   correct usage numbers
 // - set them to "in-use" state
