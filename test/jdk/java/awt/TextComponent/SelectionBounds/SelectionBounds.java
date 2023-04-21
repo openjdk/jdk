@@ -103,6 +103,5 @@ public class SelectionBounds {
         }
 
         System.out.println("\nAll tests PASSED.");
-        System.out.println("\nAll tests PASSED.");
     }
 }
