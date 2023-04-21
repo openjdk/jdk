@@ -693,8 +693,12 @@
   product(uint, GCCardSizeInBytes, 512,                                     \
           "Card table entry size (in bytes) for card based collectors")     \
           range(128, NOT_LP64(512) LP64_ONLY(1024))                         \
-          constraint(GCCardSizeInBytesConstraintFunc,AtParse)
-  // end of GC_FLAGS
+          constraint(GCCardSizeInBytesConstraintFunc,AtParse)               \
+                                                                            \
+  product(bool, UseAltGCForwarding, false, EXPERIMENTAL,                    \
+          "Use alternative GC forwarding that preserves object headers")    \
+
+// end of GC_FLAGS
 
 DECLARE_FLAGS(GC_FLAGS)
 

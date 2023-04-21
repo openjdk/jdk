@@ -36,6 +36,7 @@
 #include "gc/serial/genMarkSweep.hpp"
 #include "gc/serial/serialGcRefProcProxyTask.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
+#include "gc/shared/gcForwarding.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTrace.hpp"
@@ -87,6 +88,8 @@ void GenMarkSweep::invoke_at_safepoint(bool clear_all_softrefs) {
 
   mark_sweep_phase1(clear_all_softrefs);
 
+  GCForwarding::begin();
+
   mark_sweep_phase2();
 
   // Don't add any more derived pointers during phase3
@@ -104,6 +107,8 @@ void GenMarkSweep::invoke_at_safepoint(bool clear_all_softrefs) {
   // Set saved marks for allocation profiler (and other things? -- dld)
   // (Should this be in general part?)
   gch->save_marks();
+
+  GCForwarding::end();
 
   deallocate_stacks();
 

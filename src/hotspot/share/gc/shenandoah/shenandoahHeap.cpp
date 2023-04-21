@@ -28,6 +28,7 @@
 #include "memory/universe.hpp"
 
 #include "gc/shared/gcArguments.hpp"
+#include "gc/shared/gcForwarding.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/locationPrinter.inline.hpp"
@@ -403,6 +404,8 @@ jint ShenandoahHeap::initialize() {
   _control_thread = new ShenandoahControlThread();
 
   ShenandoahInitLogger::print();
+
+  GCForwarding::initialize(_heap_region, ShenandoahHeapRegion::region_size_words_shift());
 
   return JNI_OK;
 }

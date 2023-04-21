@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/shared/gcForwarding.inline.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shared/workerThread.hpp"
 #include "gc/shared/workerUtils.hpp"
@@ -46,8 +47,8 @@ void PreservedMarks::adjust_during_full_gc() {
     OopAndMarkWord* elem = iter.next_addr();
 
     oop obj = elem->get_oop();
-    if (obj->is_forwarded()) {
-      elem->set_oop(obj->forwardee());
+    if (GCForwarding::is_forwarded(obj)) {
+      elem->set_oop(GCForwarding::forwardee(obj));
     }
   }
 }
