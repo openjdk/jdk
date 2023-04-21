@@ -178,6 +178,7 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
   if (captured_state_mask != 0) {
     captured_state_offset = frame_bottom_offset;
     frame_bottom_offset += (sizeof(int32_t) * 3);
+    locs.set(StubLocations::CAPTURED_STATE_BUFFER, abi._scratch2);
   }
 
   int frame_size = frame_bottom_offset;
@@ -241,7 +242,7 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
   }
   if (captured_state_mask != 0) {
     assert(captured_state_offset != -1, "no capture state allocated");
-    __ lea(as_Register(locs.get(StubLocations::CAPTURED_STATE_BUFFER)), Address(rsp, captured_state_offset));
+    __ lea(as_Register(locs.get(StubLocations::CAPTURED_STATE_BUFFER)), Address(sp, captured_state_offset));
   }
   arg_shuffle.generate(_masm, as_VMStorage(shuffle_reg), abi._shadow_space_bytes, 0, locs);
   __ block_comment("} argument shuffle");
@@ -307,9 +308,9 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
   __ block_comment("{ on_exit");
   __ lea(c_rarg0, Address(sp, frame_data_offset));
     if (captured_state_mask != 0) {
-    __ lea(c_rarg1, Address(rsp, captured_state_offset));
+    __ lea(c_rarg1, Address(sp, captured_state_offset));
   } else {
-    __ ldr(c_rarg1, NULL_WORD);
+    __ mov(c_rarg1, NULL_WORD);
   }
   __ movw(c_rarg2, captured_state_mask);
   // stack already aligned
