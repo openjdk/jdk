@@ -127,7 +127,7 @@ void LogOutputList::add_output(LogOutput* output, LogLevelType level) {
        node->_next = node->_next->_next) {
   }
 
-  OrderAccess::storestore();
+  OrderAccess::release();
 
   // Update the _level_start index
   for (int l = LogLevel::Last; l >= level; l--) {
