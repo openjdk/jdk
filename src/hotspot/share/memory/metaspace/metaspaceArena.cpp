@@ -300,7 +300,7 @@ MetaWord* MetaspaceArena::allocate_humongous(size_t requested_word_size) {
   }
 
   // Logging, accounting, statistics
-  DEBUG_ONLY(InternalStats::inc_num_humongous_allocs();)
+  InternalStats::inc_num_humongous_allocs();
   DEBUG_ONLY(InternalStats::inc_num_allocs();)
   _total_used_words_counter->increment_by(raw_word_size);
 
