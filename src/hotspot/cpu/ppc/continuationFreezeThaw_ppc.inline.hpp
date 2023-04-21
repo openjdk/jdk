@@ -84,7 +84,7 @@ inline void FreezeBase::relativize_interpreted_frame_metadata(const frame& f, co
   assert(f.fp() > (intptr_t*)f.interpreter_frame_esp(), "");
 
   // There is alignment padding between vfp and f's locals array in the original
-  // frame, since we freeze the padding (see recurse_freeze_interpreted_frame)
+  // frame, because we freeze the padding (see recurse_freeze_interpreted_frame)
   // in order to keep the same relativized locals pointer, we don't need to change it here.
 
   relativize_one(vfp, hfp, ijava_idx(monitors));
@@ -264,7 +264,7 @@ frame FreezeBase::new_heap_frame(frame& f, frame& caller) {
 
   intptr_t *sp, *fp;
   if (FKind::interpreted) {
-    intptr_t offset = *f.addr_at(ijava_idx(locals));
+    intptr_t locals_offset = *f.addr_at(ijava_idx(locals));
     // If the caller.is_empty(), i.e. we're freezing into an empty chunk, then we set
     // the chunk's argsize in finalize_freeze and make room for it above the unextended_sp
     // See also comment on StackChunkFrameStream<frame_kind>::interpreter_frame_size()
@@ -272,7 +272,7 @@ frame FreezeBase::new_heap_frame(frame& f, frame& caller) {
         (caller.is_interpreted_frame() || caller.is_empty())
         ? ContinuationHelper::InterpretedFrame::stack_argsize(f) + frame::metadata_words_at_top
         : 0;
-    fp = caller.unextended_sp() - 1 - offset + overlap;
+    fp = caller.unextended_sp() - 1 - locals_offset + overlap;
     // esp points one slot below the last argument
     intptr_t* x86_64_like_unextended_sp = f.interpreter_frame_esp() + 1 - frame::metadata_words_at_top;
     sp = fp - (f.fp() - x86_64_like_unextended_sp);
@@ -286,7 +286,7 @@ frame FreezeBase::new_heap_frame(frame& f, frame& caller) {
 
     frame hf(sp, sp, fp, f.pc(), nullptr, nullptr, true /* on_heap */);
     // frame_top() and frame_bottom() read these before relativize_interpreted_frame_metadata() is called
-    *hf.addr_at(ijava_idx(locals)) = offset;
+    *hf.addr_at(ijava_idx(locals)) = locals_offset;
     *hf.addr_at(ijava_idx(esp))    = f.interpreter_frame_esp() - f.fp();
     return hf;
   } else {
@@ -545,11 +545,6 @@ inline void ThawBase::derelativize_interpreted_frame_metadata(const frame& hf, c
   derelativize_one(vfp, ijava_idx(monitors));
   derelativize_one(vfp, ijava_idx(esp));
   derelativize_one(vfp, ijava_idx(top_frame_sp));
-}
-
-inline void ThawBase::set_interpreter_frame_bottom(const frame& f, intptr_t* bottom) {
-  // Nothing to do. Just make sure the relativized locals is already set.
-  assert((*f.addr_at(ijava_idx(locals)) == (bottom - 1) - f.fp()), "");
 }
 
 inline void ThawBase::patch_pd(frame& f, const frame& caller) {

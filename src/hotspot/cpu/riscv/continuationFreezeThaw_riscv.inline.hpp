@@ -83,11 +83,11 @@ template<typename FKind> frame FreezeBase::new_heap_frame(frame& f, frame& calle
   if (FKind::interpreted) {
     assert((intptr_t*)f.at(frame::interpreter_frame_last_sp_offset) == nullptr
       || f.unextended_sp() == (intptr_t*)f.at(frame::interpreter_frame_last_sp_offset), "");
-    intptr_t offset = *f.addr_at(frame::interpreter_frame_locals_offset);
+    intptr_t locals_offset = *f.addr_at(frame::interpreter_frame_locals_offset);
     // If the caller.is_empty(), i.e. we're freezing into an empty chunk, then we set
     // the chunk's argsize in finalize_freeze and make room for it above the unextended_sp
     bool overlap_caller = caller.is_interpreted_frame() || caller.is_empty();
-    fp = caller.unextended_sp() - 1 - offset + (overlap_caller ? ContinuationHelper::InterpretedFrame::stack_argsize(f) : 0);
+    fp = caller.unextended_sp() - 1 - locals_offset + (overlap_caller ? ContinuationHelper::InterpretedFrame::stack_argsize(f) : 0);
     sp = fp - (f.fp() - f.unextended_sp());
     assert(sp <= fp, "");
     assert(fp <= caller.unextended_sp(), "");
@@ -96,7 +96,7 @@ template<typename FKind> frame FreezeBase::new_heap_frame(frame& f, frame& calle
     assert(_cont.tail()->is_in_chunk(sp), "");
 
     frame hf(sp, sp, fp, f.pc(), nullptr, nullptr, true /* on_heap */);
-    *hf.addr_at(frame::interpreter_frame_locals_offset) = offset;
+    *hf.addr_at(frame::interpreter_frame_locals_offset) = locals_offset;
     return hf;
   } else {
     // We need to re-read fp out of the frame because it may be an oop and we might have
@@ -144,7 +144,7 @@ inline void FreezeBase::relativize_interpreted_frame_metadata(const frame& f, co
 
   // On RISCV, we may insert padding between the locals and the rest of the frame
   // (see TemplateInterpreterGenerator::generate_normal_entry, and AbstractInterpreter::layout_activation)
-  // since we freeze the padding word (see recurse_freeze_interpreted_frame) in order to keep the same relativized
+  // because we freeze the padding word (see recurse_freeze_interpreted_frame) in order to keep the same relativized
   // locals value, we don't need to change the locals value here.
 
   // at(frame::interpreter_frame_last_sp_offset) can be null at safepoint preempts
@@ -295,11 +295,6 @@ inline void ThawBase::derelativize_interpreted_frame_metadata(const frame& hf, c
   derelativize_one(vfp, frame::interpreter_frame_last_sp_offset);
   derelativize_one(vfp, frame::interpreter_frame_initial_sp_offset);
   derelativize_one(vfp, frame::interpreter_frame_extended_sp_offset);
-}
-
-inline void ThawBase::set_interpreter_frame_bottom(const frame& f, intptr_t* bottom) {
-  // Nothing to do. Just make sure the relativized locals is already set.
-  assert((*f.addr_at(frame::interpreter_frame_locals_offset) == (bottom - 1) - f.fp()), "");
 }
 
 #endif // CPU_RISCV_CONTINUATIONFREEZETHAW_RISCV_INLINE_HPP
