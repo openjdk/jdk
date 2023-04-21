@@ -37,6 +37,7 @@ import java.util.Objects;
 import java.util.stream.Stream;
 
 import static java.util.Objects.requireNonNull;
+import jdk.internal.vm.annotation.Stable;
 
 /**
  * Bootstrap methods for linking {@code invokedynamic} call sites that implement
@@ -54,16 +55,14 @@ public class SwitchBootstraps {
 
     private static final MethodHandle DO_TYPE_SWITCH;
     private static final MethodHandle DO_ENUM_SWITCH;
-    private static final MethodHandle LAZY_DO_ENUM_SWITCH;
 
     static {
         try {
             DO_TYPE_SWITCH = LOOKUP.findStatic(SwitchBootstraps.class, "doTypeSwitch",
                                            MethodType.methodType(int.class, Object.class, int.class, Object[].class));
             DO_ENUM_SWITCH = LOOKUP.findStatic(SwitchBootstraps.class, "doEnumSwitch",
-                                           MethodType.methodType(int.class, Enum.class, int.class, Object[].class));
-            LAZY_DO_ENUM_SWITCH = LOOKUP.findStatic(SwitchBootstraps.class, "lazyDoEnumSwitch",
-                                                    MethodType.methodType(int.class, Enum.class, int.class, Object[].class, MethodHandles.Lookup.class, Class.class, MutableCallSite.class));
+                                           MethodType.methodType(int.class, Enum.class, int.class, Object[].class,
+                                                                 MethodHandles.Lookup.class, Class.class, ResolvedEnumLabels.class));
         }
         catch (ReflectiveOperationException e) {
             throw new ExceptionInInitializerError(e);
@@ -249,16 +248,11 @@ public class SwitchBootstraps {
 
         Class<?> enumClass = invocationType.parameterType(0);
         Stream.of(labels).forEach(l -> validateEnumLabel(enumClass, l));
-        MutableCallSite result =
-                new MutableCallSite(invocationType);
-
         MethodHandle temporary =
-                MethodHandles.insertArguments(LAZY_DO_ENUM_SWITCH, 2, labels, lookup, enumClass, result);
+                MethodHandles.insertArguments(DO_ENUM_SWITCH, 2, labels, lookup, enumClass, new ResolvedEnumLabels());
         temporary = temporary.asType(invocationType);
 
-        result.setTarget(temporary);
-
-        return result;
+        return new ConstantCallSite(temporary);
     }
 
     private static <E extends Enum<E>> void validateEnumLabel(Class<?> enumClassTemplate, Object label) {
@@ -275,22 +269,6 @@ public class SwitchBootstraps {
             throw new IllegalArgumentException("label with illegal type found: " + labelClass +
                                                ", expected label of type either String or Class");
         }
-    }
-
-    private static int lazyDoEnumSwitch(Enum<?> target, int startIndex, Object[] labels, MethodHandles.Lookup lookup, Class<?> enumClass, MutableCallSite callSite) throws Throwable {
-        if (target == null) {
-            return -1;
-        }
-
-        labels = Stream.of(labels).map(l -> convertEnumConstants(lookup, enumClass, l)).toArray();
-
-        MethodHandle optimized =
-                MethodHandles.insertArguments(DO_ENUM_SWITCH, 2, (Object) labels);
-        optimized = optimized.asType(callSite.type());
-
-        callSite.setTarget(optimized);
-
-        return (int) optimized.invoke(target, startIndex);
     }
 
     private static <E extends Enum<E>> Object convertEnumConstants(MethodHandles.Lookup lookup, Class<?> enumClassTemplate, Object label) {
@@ -318,11 +296,21 @@ public class SwitchBootstraps {
         }
     }
 
-    private static int doEnumSwitch(Enum<?> target, int startIndex, Object[] labels) {
-        Objects.checkIndex(startIndex, labels.length + 1);
+    private static int doEnumSwitch(Enum<?> target, int startIndex, Object[] unresolvedLabels,
+                                    MethodHandles.Lookup lookup, Class<?> enumClass,
+                                    ResolvedEnumLabels resolvedLabels) {
+        Objects.checkIndex(startIndex, unresolvedLabels.length + 1);
 
         if (target == null)
             return -1;
+
+        if (resolvedLabels.resolvedLabels == null) {
+            resolvedLabels.resolvedLabels = Stream.of(unresolvedLabels)
+                                                  .map(l -> convertEnumConstants(lookup, enumClass, l))
+                                                  .toArray();
+        }
+
+        Object[] labels = resolvedLabels.resolvedLabels;
 
         // Dumbest possible strategy
         Class<?> targetClass = target.getClass();
@@ -339,4 +327,8 @@ public class SwitchBootstraps {
         return labels.length;
     }
 
+    private static final class ResolvedEnumLabels {
+        @Stable
+        public Object[] resolvedLabels;
+    }
 }
