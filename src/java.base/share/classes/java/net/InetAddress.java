@@ -192,9 +192,9 @@ import static java.net.spi.InetAddressResolver.LookupPolicy.IPV6_FIRST;
  * <p> If the default behavior is not desired, then a Java security property
  * can be set to a different Time-to-live (TTL) value for positive
  * caching. Likewise, a system admin can configure a different
- * negative caching TTL value when needed.
+ * negative caching TTL value when needed or extend the usage of the stale data.
  *
- * <p> Two Java security properties control the TTL values used for
+ * <p> Three Java security properties control the TTL values used for
  *  positive and negative host name resolution caching:
  *
  * <dl style="margin-left:2em">
@@ -205,6 +205,23 @@ import static java.net.spi.InetAddressResolver.LookupPolicy.IPV6_FIRST;
  * setting is to cache for an implementation specific period of time.
  * <p>
  * A value of -1 indicates "cache forever".
+ * </dd>
+ * <dt><b>networkaddress.cache.stale.ttl</b></dt>
+ * <dd>Indicates the caching policy for stale names. The value is specified as
+ * an integer to indicate the number of seconds the stale names will be kept in
+ * the cache. The name is considered stale if it expired and attempts to refresh
+ * it were unsuccessful. This property is useful if it is preferable to use a
+ * stale name rather than result of unsuccessful name lookup. The default
+ * setting is to cache for an implementation specific period of time.
+ * <p>
+ * If the value of this property is large than "networkaddress.cache.ttl" then
+ * "networkaddress.cache.ttl" will be used as a refresh interval of the name in
+ * the cache. For example, if this property is set to 1 day and
+ * "networkaddress.cache.ttl" is set to 30 seconds, then the positive response
+ * will be cached for 1 day but an attempt to refresh it will be done every
+ * 30 seconds.
+ * <p>
+ * A value of 0 (zero) do not use stale names.
  * </dd>
  * <dt><b>networkaddress.cache.negative.ttl</b> (default: 10)</dt>
  * <dd>Indicates the caching policy for un-successful name lookups

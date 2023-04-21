@@ -66,9 +66,10 @@ public final class InetAddressCachePolicy {
      */
     private static volatile int cachePolicy = FOREVER;
 
-    /* The Java-level namelookup cache stale policy for successful lookups:
+    /* The Java-level namelookup cache stale policy:
      *
-     * any positive value: the number of seconds to cache an address for
+     * any positive value: the number of seconds to use the stale names
+     * zero: do not use stale names
      *
      * default value is never (NEVER).
      */
