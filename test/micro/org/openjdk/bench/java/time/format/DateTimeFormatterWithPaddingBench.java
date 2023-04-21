@@ -45,7 +45,13 @@ public class DateTimeFormatterWithPaddingBench {
             .append(DateTimeFormatter.ISO_DATE)
             .toFormatter();
 
-    private static final DateTimeFormatter YEAR_FORMATTER = new DateTimeFormatterBuilder()
+    private static final DateTimeFormatter FORMATTER_WITH_PADDING_ZERO = new DateTimeFormatterBuilder()
+            .appendLiteral("Year:")
+            .padNext(4)
+            .appendValue(ChronoField.YEAR)
+            .toFormatter();
+
+    private static final DateTimeFormatter FORMATTER_WITH_PADDING_ONE = new DateTimeFormatterBuilder()
             .appendLiteral("Year:")
             .padNext(5)
             .appendValue(ChronoField.YEAR)
@@ -59,8 +65,13 @@ public class DateTimeFormatterWithPaddingBench {
     }
 
     @Benchmark
-    public String formatWithZeroPadding() {
-        return YEAR_FORMATTER.format(now);
+    public String formatWithPaddingLengthZero() {
+        return FORMATTER_WITH_PADDING_ZERO.format(now);
+    }
+
+    @Benchmark
+    public String formatWithPaddingLengthOne() {
+        return FORMATTER_WITH_PADDING_ONE.format(now);
     }
 
 }
