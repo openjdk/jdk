@@ -221,6 +221,8 @@
   nonstatic_field(ConstantPoolCache,           _reference_map,                                Array<u2>*)                            \
   nonstatic_field(ConstantPoolCache,           _length,                                       int)                                   \
   nonstatic_field(ConstantPoolCache,           _constant_pool,                                ConstantPool*)                         \
+  nonstatic_field(ConstantPoolCache,           _resolved_indy_entries,                        Array<ResolvedIndyEntry>*)             \
+  nonstatic_field(ResolvedIndyEntry,           _cpool_index,                                  u2)                                    \
   volatile_nonstatic_field(InstanceKlass,      _array_klasses,                                ObjArrayKlass*)                        \
   nonstatic_field(InstanceKlass,               _methods,                                      Array<Method*>*)                       \
   nonstatic_field(InstanceKlass,               _default_methods,                              Array<Method*>*)                       \
@@ -234,7 +236,6 @@
   nonstatic_field(InstanceKlass,               _static_field_size,                            int)                                   \
   nonstatic_field(InstanceKlass,               _static_oop_field_count,                       u2)                                    \
   nonstatic_field(InstanceKlass,               _nonstatic_oop_map_size,                       int)                                   \
-  nonstatic_field(InstanceKlass,               _is_marked_dependent,                          bool)                                  \
   volatile_nonstatic_field(InstanceKlass,      _init_state,                                   InstanceKlass::ClassState)             \
   volatile_nonstatic_field(InstanceKlass,      _init_thread,                                  JavaThread*)                           \
   nonstatic_field(InstanceKlass,               _itable_len,                                   int)                                   \
@@ -473,6 +474,8 @@
                                                                                                                                      \
   nonstatic_field(Array<Klass*>,               _length,                                       int)                                   \
   nonstatic_field(Array<Klass*>,               _data[0],                                      Klass*)                                \
+  nonstatic_field(Array<ResolvedIndyEntry>,    _length,                                       int)                                   \
+  nonstatic_field(Array<ResolvedIndyEntry>,    _data[0],                                      ResolvedIndyEntry)                     \
                                                                                                                                      \
   /*******************/                                                                                                              \
   /* GrowableArrays  */                                                                                                              \
@@ -1019,12 +1022,13 @@
   /* Array<T> */                                                                                                                     \
   /************/                                                                                                                     \
                                                                                                                                      \
-  nonstatic_field(Array<int>,                  _length,                                       int)                                   \
-  unchecked_nonstatic_field(Array<int>,        _data,                                         sizeof(int))                           \
-  unchecked_nonstatic_field(Array<u1>,         _data,                                         sizeof(u1))                            \
-  unchecked_nonstatic_field(Array<u2>,         _data,                                         sizeof(u2))                            \
-  unchecked_nonstatic_field(Array<Method*>,    _data,                                         sizeof(Method*))                       \
-  unchecked_nonstatic_field(Array<Klass*>,     _data,                                         sizeof(Klass*))                        \
+  nonstatic_field(Array<int>,                         _length,                                int)                                   \
+  unchecked_nonstatic_field(Array<int>,               _data,                                  sizeof(int))                           \
+  unchecked_nonstatic_field(Array<u1>,                _data,                                  sizeof(u1))                            \
+  unchecked_nonstatic_field(Array<u2>,                _data,                                  sizeof(u2))                            \
+  unchecked_nonstatic_field(Array<Method*>,           _data,                                  sizeof(Method*))                       \
+  unchecked_nonstatic_field(Array<Klass*>,            _data,                                  sizeof(Klass*))                        \
+  unchecked_nonstatic_field(Array<ResolvedIndyEntry>, _data,                                  sizeof(ResolvedIndyEntry))             \
                                                                                                                                      \
   /*********************************/                                                                                                \
   /* java_lang_Class fields        */                                                                                                \
@@ -1954,6 +1958,7 @@
             declare_type(Array<u2>, MetaspaceObj)                         \
             declare_type(Array<Klass*>, MetaspaceObj)                     \
             declare_type(Array<Method*>, MetaspaceObj)                    \
+            declare_type(Array<ResolvedIndyEntry>, MetaspaceObj)          \
                                                                           \
    declare_toplevel_type(BitMap)                                          \
             declare_type(BitMapView, BitMap)                              \
@@ -1970,6 +1975,7 @@
   declare_toplevel_type(RuntimeBlob*)                                     \
   declare_toplevel_type(CompressedWriteStream*)                           \
   declare_toplevel_type(ConstantPoolCacheEntry)                           \
+  declare_toplevel_type(ResolvedIndyEntry)                                \
   declare_toplevel_type(elapsedTimer)                                     \
   declare_toplevel_type(frame)                                            \
   declare_toplevel_type(intptr_t*)                                        \
@@ -2083,17 +2089,12 @@
   declare_constant(JVM_ACC_LOOPS_FLAG_INIT)                               \
   declare_constant(JVM_ACC_QUEUED)                                        \
   declare_constant(JVM_ACC_NOT_C2_OSR_COMPILABLE)                         \
-  declare_constant(JVM_ACC_HAS_LINE_NUMBER_TABLE)                         \
-  declare_constant(JVM_ACC_HAS_CHECKED_EXCEPTIONS)                        \
   declare_constant(JVM_ACC_HAS_JSRS)                                      \
   declare_constant(JVM_ACC_IS_OLD)                                        \
   declare_constant(JVM_ACC_IS_OBSOLETE)                                   \
   declare_constant(JVM_ACC_IS_PREFIXED_NATIVE)                            \
-  declare_constant(JVM_ACC_HAS_MIRANDA_METHODS)                           \
-  declare_constant(JVM_ACC_HAS_VANILLA_CONSTRUCTOR)                       \
   declare_constant(JVM_ACC_HAS_FINALIZER)                                 \
   declare_constant(JVM_ACC_IS_CLONEABLE_FAST)                             \
-  declare_constant(JVM_ACC_HAS_LOCAL_VARIABLE_TABLE)                      \
                                                                           \
   declare_constant(JVM_CONSTANT_Utf8)                                     \
   declare_constant(JVM_CONSTANT_Unicode)                                  \

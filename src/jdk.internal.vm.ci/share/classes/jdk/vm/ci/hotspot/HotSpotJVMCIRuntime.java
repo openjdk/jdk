@@ -192,15 +192,6 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
                     // initialized.
                     JVMCI.getRuntime();
                 }
-                // Make sure all the primitive box caches are populated (required to properly
-                // materialize boxed primitives
-                // during deoptimization).
-                Boolean.valueOf(false);
-                Byte.valueOf((byte) 0);
-                Short.valueOf((short) 0);
-                Character.valueOf((char) 0);
-                Integer.valueOf(0);
-                Long.valueOf(0);
             }
         }
         return result;
