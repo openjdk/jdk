@@ -43,6 +43,8 @@ import com.sun.beans.finder.MethodFinder;
 
 final class MethodInfo {
 
+    // These are some common interfaces that we know a priori
+    // will not contain any bean property getters or setters.
     static final Set<Class<?>> IGNORABLE_INTERFACES = Set.of(
         AutoCloseable.class,
         Cloneable.class,
