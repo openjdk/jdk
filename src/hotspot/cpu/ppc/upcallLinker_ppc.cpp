@@ -31,7 +31,8 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
                                        BasicType* out_sig_bt, int total_out_args,
                                        BasicType ret_type,
                                        jobject jabi, jobject jconv,
-                                       bool needs_return_buffer, int ret_buf_size) {
+                                       bool needs_return_buffer, int ret_buf_size,
+                                       int captured_state_mask) {
   ShouldNotCallThis();
   return nullptr;
 }
