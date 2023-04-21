@@ -150,9 +150,8 @@ Java_jdk_internal_foreign_abi_fallback_LibFallback_createClosure(JNIEnv* env, jc
   void* code;
   void* closure = ffi_closure_alloc(sizeof(ffi_closure), &code);
 
-  jobject global_target = (*env)->NewGlobalRef(env, target);
   struct UpcallUserData* upcall_data = malloc(sizeof *upcall_data);
-  upcall_data->target = global_target;
+  upcall_data->target = (*env)->NewGlobalRef(env, target);
   upcall_data->captured_state_mask = captured_state_mask;
 
   ffi_status status = ffi_prep_closure_loc(closure, jlong_to_ptr(cif), &do_upcall, (void*) upcall_data, code);
