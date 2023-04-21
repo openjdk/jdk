@@ -77,28 +77,24 @@ public record Version(int major, int minor, int micro) implements Comparable<Ver
      *          or digits do not follow '.'
      */
     public static Version parse(String str) throws IllegalArgumentException {
-        try {
-            int len = str.length();
-            int majorStart = 0;
-            int majorEnd = skipDigits(str, majorStart);
-            int major = Integer.parseInt(str.substring(majorStart, majorEnd));
+        int len = str.length();
+        int majorStart = 0;
+        int majorEnd = skipDigits(str, majorStart);
+        int major = Integer.parseInt(str.substring(majorStart, majorEnd));
 
-            int minor = 0, micro = 0;
-            if (majorEnd < len && str.charAt(majorEnd) == '.') {
-                int minorStart = majorEnd + 1;
-                int minorEnd = skipDigits(str, minorStart);
-                minor = Integer.parseInt(str.substring(minorStart, minorEnd));
+        int minor = 0, micro = 0;
+        if (majorEnd < len && str.charAt(majorEnd) == '.') {
+            int minorStart = majorEnd + 1;
+            int minorEnd = skipDigits(str, minorStart);
+            minor = Integer.parseInt(str.substring(minorStart, minorEnd));
 
-                if (minorEnd < len && str.charAt(minorEnd) == '.') {
-                    int microStart = minorEnd + 1;
-                    int microEnd = skipDigits(str, microStart);
-                    micro = Integer.parseInt(str.substring(microStart, microEnd));
-                }
+            if (minorEnd < len && str.charAt(minorEnd) == '.') {
+                int microStart = minorEnd + 1;
+                int microEnd = skipDigits(str, microStart);
+                micro = Integer.parseInt(str.substring(microStart, microEnd));
             }
-            return new Version(major, minor, micro);
-        } catch (IllegalArgumentException ex) {
-            throw new IllegalArgumentException("malformed version string: " + str);
         }
+        return new Version(major, minor, micro);
     }
 
     /**
@@ -112,7 +108,7 @@ public record Version(int major, int minor, int micro) implements Comparable<Ver
             index++;
         }
         if (index == start)
-            throw new IllegalArgumentException("missing digits or malformed version: " + s);
+            throw new IllegalArgumentException("malformed version, missing digits: " + s);
         return index;
     }
 }
