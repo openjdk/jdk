@@ -95,6 +95,8 @@ public class EventNames {
     public static final String ReservedStackActivation = PREFIX + "ReservedStackActivation";
 
     // GC
+    public static final String GCHeapMemoryUsage = PREFIX + "GCHeapMemoryUsage";
+    public static final String GCHeapMemoryPoolUsage = PREFIX + "GCHeapMemoryPoolUsage";
     public static final String GCHeapSummary = PREFIX + "GCHeapSummary";
     public static final String MetaspaceSummary = PREFIX + "MetaspaceSummary";
     public static final String MetaspaceGCThreshold = PREFIX + "MetaspaceGCThreshold";
