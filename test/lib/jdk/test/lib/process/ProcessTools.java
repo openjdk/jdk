@@ -27,13 +27,13 @@ import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.Platform;
 import jdk.test.lib.Utils;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.lang.Thread.State;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.charset.Charset;
@@ -72,14 +72,12 @@ public final class ProcessTools {
             ps.println("[" + prefix + "] " + line);
         }
     }
-
     private ProcessTools() {
     }
 
     /**
      * <p>Starts a process from its builder.</p>
-     * <span>The process output is saved in ByteArrayOutputStream and available for
-     * analysis after process is finished. </span>
+     * <span>The default redirects of STDOUT and STDERR are started</span>
      * <p>
      * Same as
      * {@linkplain #startProcess(String, ProcessBuilder, Consumer, Predicate, long, TimeUnit) startProcess}
@@ -98,9 +96,7 @@ public final class ProcessTools {
 
     /**
      * <p>Starts a process from its builder.</p>
-     * <span>Allows to read process output with provided {@linkplain Consumer}.
-     * The process output is saved in ByteArrayOutputStream and available for
-     * analysis after process is finished. </span>
+     * <span>The default redirects of STDOUT and STDERR are started</span>
      * <p>
      * Same as
      * {@linkplain #startProcess(String, ProcessBuilder, Consumer, Predicate, long, TimeUnit) startProcess}
@@ -128,10 +124,7 @@ public final class ProcessTools {
 
     /**
      * <p>Starts a process from its builder.</p>
-     * <span>Allows to wait for process warm-up using {@linkplain Predicate}
-     * The process output is saved in ByteArrayOutputStream and available for
-     * analysis after process is finished.
-     * </span>
+     * <span>The default redirects of STDOUT and STDERR are started</span>
      * <p>
      * Same as
      * {@linkplain #startProcess(String, ProcessBuilder, Consumer, Predicate, long, TimeUnit) startProcess}
@@ -160,10 +153,60 @@ public final class ProcessTools {
         return startProcess(name, processBuilder, null, linePredicate, timeout, unit);
     }
 
+
+    /*
+        BufferOutputStream and BufferInputStream allow to re-use p.getInputStream() amd p.getOutputStream() of
+        processes started with ProcessTools.startProcess(...).
+        Implementation cashes ALL process output and allow to read it through InputStream.
+     */
+    private static class BufferOutputStream extends ByteArrayOutputStream {
+        private int current = 0;
+        final private Process p;
+
+        public BufferOutputStream(Process p) {
+            this.p = p;
+        }
+
+        synchronized  int readNext() {
+            if (current > count) {
+                throw new RuntimeException("Shouldn't ever happen.  start: " + current + " count: " + count + " buffer: " + this);
+            }
+            while (current == count) {
+                if (!p.isAlive()) {
+                    return -1;
+                }
+                try {
+                    wait(1);
+                } catch (InterruptedException ie) {
+                    return -1;
+                }
+            }
+            return this.buf[current++];
+        }
+    }
+
+    private static class BufferInputStream extends InputStream {
+
+        private final BufferOutputStream buffer;
+
+        public BufferInputStream(Process p) {
+            buffer = new BufferOutputStream(p);
+        }
+
+        OutputStream getOutputStream() {
+            return buffer;
+        }
+
+        @Override
+        public int read() throws IOException {
+            return buffer.readNext();
+        }
+    }
+
+
     /**
      * <p>Starts a process from its builder.</p>
-     * <span>The process output is saved in ByteArrayOutputStream and available for
-     * analysis after process is finished. </span>
+     * <span>The default redirects of STDOUT and STDERR are started</span>
      * <p>
      * It is possible to wait for the process to get to a warmed-up state
      * via {@linkplain Predicate} condition on the STDOUT/STDERR and monitor the
@@ -198,11 +241,11 @@ public final class ProcessTools {
 
         stdout.addPump(new LineForwarder(name, System.out));
         stderr.addPump(new LineForwarder(name, System.err));
-        ByteArrayOutputStream outBaos = new ByteArrayOutputStream();
-        ByteArrayOutputStream errBaos = new ByteArrayOutputStream();
+        BufferInputStream out = new BufferInputStream(p);
+        BufferInputStream err = new BufferInputStream(p);
 
-        stdout.addOutputStream(outBaos);
-        stderr.addOutputStream(errBaos);
+        stdout.addOutputStream(out.getOutputStream());
+        stderr.addOutputStream(err.getOutputStream());
 
         if (lineConsumer != null) {
             StreamPumper.LinePump pump = new StreamPumper.LinePump() {
@@ -273,7 +316,7 @@ public final class ProcessTools {
             throw e;
         }
 
-        return new ProcessImpl(p, stdoutTask, stderrTask, outBaos, errBaos);
+        return new ProcessImpl(p, stdoutTask, stderrTask, out, err);
     }
 
     /**
@@ -724,19 +767,19 @@ public final class ProcessTools {
 
     private static class ProcessImpl extends Process {
 
-        private final ByteArrayOutputStream outBaos;
-        private final ByteArrayOutputStream errBaos;
+        private final InputStream out;
+        private final InputStream err;
         private final Process p;
         private final Future<Void> stdoutTask;
         private final Future<Void> stderrTask;
 
         public ProcessImpl(Process p, Future<Void> stdoutTask, Future<Void> stderrTask,
-                           ByteArrayOutputStream outBaos, ByteArrayOutputStream errBaos) {
+                           InputStream out, InputStream err) {
             this.p = p;
             this.stdoutTask = stdoutTask;
             this.stderrTask = stderrTask;
-            this.outBaos = outBaos;
-            this.errBaos = errBaos;
+            this.out = out;
+            this.err = err;
         }
 
         @Override
@@ -746,20 +789,12 @@ public final class ProcessTools {
 
         @Override
         public InputStream getInputStream() {
-            try {
-                waitFor();
-            } catch (InterruptedException ie) {
-            }
-            return new ByteArrayInputStream(outBaos.toByteArray());
+            return out;
         }
 
         @Override
         public InputStream getErrorStream() {
-            try {
-                waitFor();
-            } catch (InterruptedException ie) {
-            }
-            return new ByteArrayInputStream(errBaos.toByteArray());
+            return err;
         }
 
         @Override

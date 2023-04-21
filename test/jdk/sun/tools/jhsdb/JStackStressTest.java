@@ -46,6 +46,8 @@ public class JStackStressTest {
     public static void testjstack() throws IOException {
         launchJshell();
         long jShellPID = jShellProcess.pid();
+        OutputAnalyzer jshellOutput = new OutputAnalyzer(jShellProcess);
+
         try {
             // Do 4 jstacks on the jshell process as it starts up
             for (int i = 1; i <= 4; i++) {
@@ -83,7 +85,6 @@ public class JStackStressTest {
                 jShellProcess.waitFor(); // jshell should exit quickly
             } catch (InterruptedException e) {
             }
-            OutputAnalyzer jshellOutput = new OutputAnalyzer(jShellProcess);
             System.out.println("jshell Output: " + jshellOutput.getOutput());
         }
     }
