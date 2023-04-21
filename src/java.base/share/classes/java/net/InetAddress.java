@@ -984,8 +984,10 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
         /**
          * Checks if the current cache record is expired or not. Expired records
          * are removed from the expirySet and cache.
+         *
+         * @return {@code true} if the record was removed
          */
-        public boolean expired(long now) {
+        public boolean tryRemoveExpiredAddress(long now) {
             // compare difference of time instants rather than
             // time instants directly, to avoid possible overflow.
             // (see System.nanoTime() recommendations...)
@@ -1056,13 +1058,13 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
          * contention on "expirySet".
          */
         @Override
-        public boolean expired(long now) {
+        public boolean tryRemoveExpiredAddress(long now) {
             // compare difference of time instants rather than
             // time instants directly, to avoid possible overflow.
             // (see System.nanoTime() recommendations...)
             if ((expiryTime - now) < 0L) {
                 if ((staleTime - now) < 0L) {
-                    return super.expired(now);
+                    return super.tryRemoveExpiredAddress(now);
                 }
                 // ConcurrentSkipListSet uses weakly consistent iterator,
                 // so removing while iterating is OK...
@@ -1743,7 +1745,7 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
         // by expiry time so we only need to iterate the prefix of the NavigableSet...
         long now = System.nanoTime();
         for (CachedAddresses caddrs : expirySet) {
-            if (!caddrs.expired(now)) {
+            if (!caddrs.tryRemoveExpiredAddress(now)) {
                 // we encountered 1st element that expires in future
                 break;
             }

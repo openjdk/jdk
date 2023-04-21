@@ -123,7 +123,7 @@ public final class InetAddressCachePolicy {
         if (cachePolicy > 0 && cachePolicy < max) {
             tmp = getProperty(cacheStalePolicyProp,
                               cacheStalePolicyPropFallback);
-            if (tmp != null && tmp > cachePolicy) {
+            if (tmp != null) {
                 staleCachePolicy = (int) Math.max(tmp, max);
             }
         }
