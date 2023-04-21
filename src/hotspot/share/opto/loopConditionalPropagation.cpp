@@ -697,33 +697,35 @@ public:
       if (rounds <= 0) {
         break;
       }
-    }
-
-    int live_nodes = 0;
-    if (false) {
-      ResourceMark rm;
-      Unique_Node_List wq;
-      wq.push(C->root());
-      for (uint i = 0; i < wq.size(); ++i) {
-        Node* n = wq.at(i);
-        for (uint j = 0; j < n->req(); ++j) {
-          Node* in = n->in(j);
-          if (in != nullptr) {
-            wq.push(in);
+      int live_nodes = 0;
+      if (false) {
+        tty->print_cr("XXXXXXXXXXXXXXXX");
+        ResourceMark rm;
+        Unique_Node_List wq;
+        wq.push(C->root());
+        for (uint i = 0; i < wq.size(); ++i) {
+          Node* n = wq.at(i);
+          for (uint j = 0; j < n->req(); ++j) {
+            Node* in = n->in(j);
+            if (in != nullptr) {
+              wq.push(in);
+            }
           }
         }
-      }
-      live_nodes = wq.size();
-      for (int i = 0; i < _value_calls_graph.length(); ++i) {
-        int cnt = _value_calls_graph.at(i);
-        if (cnt == 0) {
-          continue;
+        live_nodes = wq.size();
+        for (int i = 0; i < _value_calls_graph.length(); ++i) {
+          int cnt = _value_calls_graph.at(i);
+          if (cnt == 0) {
+            continue;
+          }
+          extern const char *NodeClassNames[];
+          tty->print_cr("XXX %s : %d", NodeClassNames[i], cnt);
         }
-        extern const char *NodeClassNames[];
-        tty->print_cr("XXX %s : %d", NodeClassNames[i], cnt);
+        tty->print_cr("XXX value calls %d %d %d %d", _value_calls, iterations, _rpo_list.size(), live_nodes);
+        _value_calls_graph.trunc_to(0);
       }
-      tty->print_cr("XXX value calls %d %d %d %d", _value_calls, iterations, _rpo_list.size(), live_nodes);
     }
+
 
     if (UseNewCode2 && UseNewCode3) {
       for (int i = _rpo_list.size() - 1; i >= 0; i--) {
@@ -1048,8 +1050,10 @@ public:
             _current_updates->remove_at(j);
           } else {
             _current_updates->set_prev_type_at(j, dom_t);
-            _current_updates->set_type_at(j, new_t);
-            enqueue_uses(n, c);
+            if (new_t != t) {
+              _current_updates->set_type_at(j, new_t);
+              enqueue_uses(n, c);
+            }
 //            _wq.push(n);
             j++;
           }
@@ -1482,6 +1486,9 @@ public:
 #endif
         if (record_update(c, n, n_t, new_n_t)) {
           enqueue_uses(n, c);
+          if (!n->is_Phi()) {
+            _wq.push(n);
+          }
         }
       }
       if (n->Opcode() == Op_ConvL2I) {
@@ -1503,6 +1510,9 @@ public:
 #endif
             if (record_update(c, in, in_t, new_in_t)) {
               enqueue_uses(in, c);
+              if (!in->is_Phi()) {
+                _wq.push(in);
+              }
             }
           }
         }

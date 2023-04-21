@@ -308,6 +308,7 @@ class Compile : public Phase {
 
   int                   _major_progress;        // Count of something big happening
   bool                  _run_loop_conditional_propagation;
+  int                   _loop_conditional_propagation_rounds;
   bool                  _inlining_progress;     // progress doing incremental inlining?
   bool                  _inlining_incrementally;// Are we doing incremental inlining (post parse)
   bool                  _do_cleanup;            // Cleanup is needed before proceeding with incremental inlining
@@ -592,6 +593,7 @@ private:
   void          set_fixed_slots(int n)          { _fixed_slots = n; }
   int               major_progress() const      { return _major_progress; }
   bool run_loop_conditional_propagation() const { return _run_loop_conditional_propagation; }
+  int loop_conditional_propagation_rounds() const { return _loop_conditional_propagation_rounds; }
   void          set_inlining_progress(bool z)   { _inlining_progress = z; }
   int               inlining_progress() const   { return _inlining_progress; }
   void          set_inlining_incrementally(bool z) { _inlining_incrementally = z; }
@@ -603,6 +605,7 @@ private:
   void          restore_major_progress(int progress) { _major_progress += progress; }
   void        clear_major_progress()            { _major_progress = 0; }
   void clear_run_loop_conditional_propagation() { _run_loop_conditional_propagation = false; }
+  void set_loop_conditional_propagation_rounds(int r) { _loop_conditional_propagation_rounds = r; }
   int               max_inline_size() const     { return _max_inline_size; }
   void          set_freq_inline_size(int n)     { _freq_inline_size = n; }
   int               freq_inline_size() const    { return _freq_inline_size; }
