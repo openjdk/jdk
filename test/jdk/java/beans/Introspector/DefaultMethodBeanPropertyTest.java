@@ -66,8 +66,9 @@ public class DefaultMethodBeanPropertyTest {
 
     public static void findProperty(Class<?> type, String name) {
         PropertyDescriptor pd = BeanUtils.getPropertyDescriptor(type, name);
-        if (pd == null)
+        if (pd == null) {
             throw new Error("property \"" + name + "\" not found in " + type);
+        }
     }
 
     public static void main(String[] args) throws Exception {
@@ -85,7 +86,8 @@ public class DefaultMethodBeanPropertyTest {
           Arrays.asList(BeanUtils.getPropertyDescriptors(ClassB.class)));
 
         // Verify they are the same
-        if (!actual.equals(expected))
+        if (!actual.equals(expected)) {
             throw new Error("mismatch:\n    actual: " + actual + "\n  expected: " + expected);
+        }
     }
 }
