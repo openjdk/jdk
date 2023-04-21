@@ -95,7 +95,7 @@ public interface SequencedCollection<E> extends Collection<E> {
      * this collection, and it will be the first element in encounter order.
      *
      * @implSpec
-     * The implementation in this class always throws {@code UnsupportedOperationException}.
+     * The implementation in this interface always throws {@code UnsupportedOperationException}.
      *
      * @param e the element to be added
      * @throws NullPointerException if the specified element is null and this
@@ -113,7 +113,7 @@ public interface SequencedCollection<E> extends Collection<E> {
      * this collection, and it will be the last element in encounter order.
      *
      * @implSpec
-     * The implementation in this class always throws {@code UnsupportedOperationException}.
+     * The implementation in this interface always throws {@code UnsupportedOperationException}.
      *
      * @param e the element to be added.
      * @throws NullPointerException if the specified element is null and this
@@ -129,7 +129,7 @@ public interface SequencedCollection<E> extends Collection<E> {
      * Gets the first element of this collection.
      *
      * @implSpec
-     * The implementation in this class obtains an iterator of this collection, and
+     * The implementation in this interface obtains an iterator of this collection, and
      * then it obtains an element by calling the iterator's {@code next} method. Any
      * {@code NoSuchElementException} thrown is propagated. Otherwise, it returns
      * the element.
@@ -145,7 +145,7 @@ public interface SequencedCollection<E> extends Collection<E> {
      * Gets the last element of this collection.
      *
      * @implSpec
-     * The implementation in this class obtains an iterator of the reversed view
+     * The implementation in this interface obtains an iterator of the reversed view
      * of this collection, and then it obtains an element by calling the iterator's
      * {@code next} method. Any {@code NoSuchElementException} thrown is propagated.
      * Otherwise, it returns the element.
@@ -161,7 +161,7 @@ public interface SequencedCollection<E> extends Collection<E> {
      * Removes and returns the first element of this collection (optional operation).
      *
      * @implSpec
-     * The implementation in this class obtains an iterator of this collection, and then
+     * The implementation in this interface obtains an iterator of this collection, and then
      * it obtains an element by calling the iterator's {@code next} method. Any
      * {@code NoSuchElementException} thrown is propagated. It then calls the iterator's
      * {@code remove} method. Any {@code UnsupportedOperationException} thrown is propagated.
@@ -183,7 +183,7 @@ public interface SequencedCollection<E> extends Collection<E> {
      * Removes and returns the last element of this collection (optional operation).
      *
      * @implSpec
-     * The implementation in this class obtains an iterator of the reversed view of this
+     * The implementation in this interface obtains an iterator of the reversed view of this
      * collection, and then it obtains an element by calling the iterator's {@code next} method.
      * Any {@code NoSuchElementException} thrown is propagated. It then calls the iterator's
      * {@code remove} method. Any {@code UnsupportedOperationException} thrown is propagated.

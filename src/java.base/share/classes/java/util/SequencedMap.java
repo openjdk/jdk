@@ -139,7 +139,7 @@ public interface SequencedMap<K, V> extends Map<K, V> {
      * or {@code null} if the map is empty.
      *
      * @implSpec
-     * The implementation in this class obtains the iterator of this map's entrySet.
+     * The implementation in this interface obtains the iterator of this map's entrySet.
      * If the iterator has an element, it returns an unmodifiable copy of that element.
      * Otherwise, it returns null.
      *
@@ -156,7 +156,7 @@ public interface SequencedMap<K, V> extends Map<K, V> {
      * or {@code null} if the map is empty.
      *
      * @implSpec
-     * The implementation in this class obtains the iterator of the entrySet of this map's
+     * The implementation in this interface obtains the iterator of the entrySet of this map's
      * reversed view. If the iterator has an element, it returns an unmodifiable copy of
      * that element. Otherwise, it returns null.
      *
@@ -173,7 +173,7 @@ public interface SequencedMap<K, V> extends Map<K, V> {
      * or {@code null} if the map is empty (optional operation).
      *
      * @implSpec
-     * The implementation in this class obtains the iterator of this map's entrySet.
+     * The implementation in this interface obtains the iterator of this map's entrySet.
      * If the iterator has an element, it calls {@code remove} on the iterator and
      * then returns an unmodifiable copy of that element. Otherwise, it returns null.
      *
@@ -198,7 +198,7 @@ public interface SequencedMap<K, V> extends Map<K, V> {
      * or {@code null} if the map is empty (optional operation).
      *
      * @implSpec
-     * The implementation in this class obtains the iterator of the entrySet of this map's
+     * The implementation in this interface obtains the iterator of the entrySet of this map's
      * reversed view. If the iterator has an element, it calls {@code remove} on the iterator
      * and then returns an unmodifiable copy of that element. Otherwise, it returns null.
      *
@@ -224,7 +224,7 @@ public interface SequencedMap<K, V> extends Map<K, V> {
      * completes normally, the given mapping will be present in this map, and it will be the
      * first mapping in this map's encounter order.
      *
-     * @implSpec The implementation in this class always throws
+     * @implSpec The implementation in this interface always throws
      * {@code UnsupportedOperationException}.
      *
      * @param k the key
@@ -243,7 +243,7 @@ public interface SequencedMap<K, V> extends Map<K, V> {
      * completes normally, the given mapping will be present in this map, and it will be the
      * last mapping in this map's encounter order.
      *
-     * @implSpec The implementation in this class always throws
+     * @implSpec The implementation in this interface always throws
      * {@code UnsupportedOperationException}.
      *
      * @param k the key
@@ -260,7 +260,7 @@ public interface SequencedMap<K, V> extends Map<K, V> {
      * Returns a {@link SequencedSet} view of this map's keySet.
      *
      * @implSpec
-     * The implementation of this method in this class returns a {@code SequencedSet}
+     * The implementation in this interface returns a {@code SequencedSet}
      * implementation that delegates all operations either to this map or to this map's
      * {@link #keySet}, except for its {@link SequencedSet#reversed reversed} method,
      * which instead returns the result of calling {@code sequencedKeySet} on this map's
@@ -284,7 +284,7 @@ public interface SequencedMap<K, V> extends Map<K, V> {
      * Returns a {@link SequencedCollection} view of this map's values collection.
      *
      * @implSpec
-     * The implementation of this method in this class returns a {@code SequencedCollection}
+     * The implementation in this interface returns a {@code SequencedCollection}
      * implementation that delegates all operations either to this map or to this map's
      * {@link #values} collection, except for its {@link SequencedCollection#reversed reversed}
      * method, which instead returns the result of calling {@code sequencedValues} on this map's
@@ -308,7 +308,7 @@ public interface SequencedMap<K, V> extends Map<K, V> {
      * Returns a {@link SequencedSet} view of this map's entrySet.
      *
      * @implSpec
-     * The implementation of this method in this class returns a {@code SequencedSet}
+     * The implementation in this interface returns a {@code SequencedSet}
      * implementation that delegates all operations either to this map or to this map's
      * {@link #entrySet}, except for its {@link SequencedSet#reversed reversed} method,
      * which instead returns the result of calling {@code sequencedEntrySet} on this map's

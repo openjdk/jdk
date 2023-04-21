@@ -288,7 +288,7 @@ public interface SortedMap<K,V> extends SequencedMap<K,V> {
      * is not supported.
      *
      * @implSpec
-     * The implementation in this class always throws {@code UnsupportedOperationException}.
+     * The implementation in this interface always throws {@code UnsupportedOperationException}.
      *
      * @throws UnsupportedOperationException always
      * @since 21
@@ -303,7 +303,7 @@ public interface SortedMap<K,V> extends SequencedMap<K,V> {
      * is not supported.
      *
      * @implSpec
-     * The implementation in this class always throws {@code UnsupportedOperationException}.
+     * The implementation in this interface always throws {@code UnsupportedOperationException}.
      *
      * @throws UnsupportedOperationException always
      * @since 21
@@ -316,7 +316,7 @@ public interface SortedMap<K,V> extends SequencedMap<K,V> {
      * {@inheritDoc}
      *
      * @implSpec
-     * The implementation in this class returns an instance of a reverse-ordered
+     * The implementation in this interface returns an instance of a reverse-ordered
      * SortedMap that delegates its operations to this SortedMap.
      *
      * @return a reverse-ordered view of this map, as a {@code SortedMap}

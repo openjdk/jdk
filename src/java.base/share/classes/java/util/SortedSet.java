@@ -270,7 +270,7 @@ public interface SortedSet<E> extends Set<E>, SequencedSet<E> {
      * is not supported.
      *
      * @implSpec
-     * The implementation in this class always throws {@code UnsupportedOperationException}.
+     * The implementation in this interface always throws {@code UnsupportedOperationException}.
      *
      * @throws UnsupportedOperationException always
      * @since 21
@@ -285,7 +285,7 @@ public interface SortedSet<E> extends Set<E>, SequencedSet<E> {
      * is not supported.
      *
      * @implSpec
-     * The implementation in this class always throws {@code UnsupportedOperationException}.
+     * The implementation in this interface always throws {@code UnsupportedOperationException}.
      *
      * @throws UnsupportedOperationException always
      * @since 21
@@ -298,7 +298,7 @@ public interface SortedSet<E> extends Set<E>, SequencedSet<E> {
      * {@inheritDoc}
      *
      * @implSpec
-     * The implementation in this class returns the result of calling the {@code first} method.
+     * The implementation in this interface returns the result of calling the {@code first} method.
      *
      * @throws NoSuchElementException {@inheritDoc}
      * @since 21
@@ -311,7 +311,7 @@ public interface SortedSet<E> extends Set<E>, SequencedSet<E> {
      * {@inheritDoc}
      *
      * @implSpec
-     * The implementation in this class returns the result of calling the {@code last} method.
+     * The implementation in this interface returns the result of calling the {@code last} method.
      *
      * @throws NoSuchElementException {@inheritDoc}
      * @since 21
@@ -324,7 +324,7 @@ public interface SortedSet<E> extends Set<E>, SequencedSet<E> {
      * {@inheritDoc}
      *
      * @implSpec
-     * The implementation in this class calls the {@code first} method to obtain the first
+     * The implementation in this interface calls the {@code first} method to obtain the first
      * element, then it calls {@code remove(element)} to remove the element, and then it returns
      * the element.
      *
@@ -342,7 +342,7 @@ public interface SortedSet<E> extends Set<E>, SequencedSet<E> {
      * {@inheritDoc}
      *
      * @implSpec
-     * The implementation in this class calls the {@code last} method to obtain the last
+     * The implementation in this interface calls the {@code last} method to obtain the last
      * element, then it calls {@code remove(element)} to remove the element, and then it returns
      * the element.
      *
@@ -360,7 +360,7 @@ public interface SortedSet<E> extends Set<E>, SequencedSet<E> {
      * {@inheritDoc}
      *
      * @implSpec
-     * The implementation in this class returns an instance of a reverse-ordered
+     * The implementation in this interface returns an instance of a reverse-ordered
      * SortedSet that delegates its operations to this SortedSet.
      *
      * @return a reverse-ordered view of this collection, as a {@code SortedSet}

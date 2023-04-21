@@ -617,7 +617,7 @@ public interface Deque<E> extends Queue<E>, SequencedCollection<E> {
      * {@inheritDoc}
      *
      * @implSpec
-     * The implementation in this class returns an instance of a reverse-ordered
+     * The implementation in this interface returns an instance of a reverse-ordered
      * Deque that delegates its operations to this Deque.
      *
      * @return a reverse-ordered view of this collection, as a {@code Deque}

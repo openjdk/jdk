@@ -434,7 +434,7 @@ public interface NavigableMap<K,V> extends SortedMap<K,V> {
      * {@inheritDoc}
      *
      * @implSpec
-     * The implementation in this class returns the result of calling the
+     * The implementation in this interface returns the result of calling the
      * {@link #descendingMap descendingMap} method.
      *
      * @return a reverse-ordered view of this map, as a {@code NavigableMap}

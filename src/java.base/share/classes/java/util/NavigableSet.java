@@ -325,7 +325,7 @@ public interface NavigableSet<E> extends SortedSet<E> {
      * {@inheritDoc}
      *
      * @implSpec
-     * If this set is not empty, the implementation in this class returns the result of calling
+     * If this set is not empty, the implementation in this interface returns the result of calling
      * the {@code pollFirst} method. Otherwise, it throws {@code NoSuchElementException}.
      *
      * @throws NoSuchElementException {@inheritDoc}
@@ -344,7 +344,7 @@ public interface NavigableSet<E> extends SortedSet<E> {
      * {@inheritDoc}
      *
      * @implSpec
-     * If this set is not empty, the implementation in this class returns the result of calling
+     * If this set is not empty, the implementation in this interface returns the result of calling
      * the {@code pollLast} method. Otherwise, it throws {@code NoSuchElementException}.
      *
      * @throws NoSuchElementException {@inheritDoc}
@@ -365,7 +365,7 @@ public interface NavigableSet<E> extends SortedSet<E> {
      * This method is equivalent to {@link #descendingSet descendingSet}.
      *
      * @implSpec
-     * The implementation in this class returns the result of calling the
+     * The implementation in this interface returns the result of calling the
      * {@code descendingSet} method.
      *
      * @return a reverse-ordered view of this collection, as a {@code NavigableSet}

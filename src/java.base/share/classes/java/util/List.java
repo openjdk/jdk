@@ -786,7 +786,7 @@ public interface List<E> extends SequencedCollection<E> {
      * {@inheritDoc}
      *
      * @implSpec
-     * The implementation in this class calls {@code add(0, e)}.
+     * The implementation in this interface calls {@code add(0, e)}.
      *
      * @throws NullPointerException {@inheritDoc}
      * @throws UnsupportedOperationException {@inheritDoc}
@@ -800,7 +800,7 @@ public interface List<E> extends SequencedCollection<E> {
      * {@inheritDoc}
      *
      * @implSpec
-     * The implementation in this class calls {@code add(e)}.
+     * The implementation in this interface calls {@code add(e)}.
      *
      * @throws NullPointerException {@inheritDoc}
      * @throws UnsupportedOperationException {@inheritDoc}
@@ -814,7 +814,7 @@ public interface List<E> extends SequencedCollection<E> {
      * {@inheritDoc}
      *
      * @implSpec
-     * If this List is not empty, the implementation in this class returns the result
+     * If this List is not empty, the implementation in this interface returns the result
      * of calling {@code get(0)}. Otherwise, it throws {@code NoSuchElementException}.
      *
      * @throws NoSuchElementException {@inheritDoc}
@@ -832,7 +832,7 @@ public interface List<E> extends SequencedCollection<E> {
      * {@inheritDoc}
      *
      * @implSpec
-     * If this List is not empty, the implementation in this class returns the result
+     * If this List is not empty, the implementation in this interface returns the result
      * of calling {@code get(size() - 1)}. Otherwise, it throws {@code NoSuchElementException}.
      *
      * @throws NoSuchElementException {@inheritDoc}
@@ -850,7 +850,7 @@ public interface List<E> extends SequencedCollection<E> {
      * {@inheritDoc}
      *
      * @implSpec
-     * If this List is not empty, the implementation in this class returns the result
+     * If this List is not empty, the implementation in this interface returns the result
      * of calling {@code remove(0)}. Otherwise, it throws {@code NoSuchElementException}.
      *
      * @throws NoSuchElementException {@inheritDoc}
@@ -869,7 +869,7 @@ public interface List<E> extends SequencedCollection<E> {
      * {@inheritDoc}
      *
      * @implSpec
-     * If this List is not empty, the implementation in this class returns the result
+     * If this List is not empty, the implementation in this interface returns the result
      * of calling {@code remove(size() - 1)}. Otherwise, it throws {@code NoSuchElementException}.
      *
      * @throws NoSuchElementException {@inheritDoc}
@@ -888,7 +888,7 @@ public interface List<E> extends SequencedCollection<E> {
      * {@inheritDoc}
      *
      * @implSpec
-     * The implementation in this class returns an instance of a reverse-ordered
+     * The implementation in this interface returns an instance of a reverse-ordered
      * List that delegates its operations to this List.
      *
      * @return a reverse-ordered view of this collection, as a {@code List}
