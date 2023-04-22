@@ -1896,15 +1896,18 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
           ObjID id = as.is_alias(phi);
 
           if (as.contains(id)) {
-            if (pred_as.contains(id)) {
-              // id are in both AS and PRED_AS
+            if (pred_as.is_alias(n) == id) {
+              // mergethe same object but have different allocation states.
               if (!as.get_object_state(id)->is_virtual() && pred_as.get_object_state(id)->is_virtual()) {
                 n = ensure_object_materialized(n, pred_as, newin, r, pnum);
               } else if (as.get_object_state(id)->is_virtual() && !pred_as.get_object_state(id)->is_virtual()) {
                 // TODO: materialize all.
                 assert(false, "not implement yet");
               }
-            } // else part is case #2: n is nullptr in pred_as. Do nothing.
+            } else {
+              // merge a different object, including n = nullptr
+              as.update(id, new EscapedState(phi));
+            }
           } else {
             id = pred_as.is_alias(n);
 
