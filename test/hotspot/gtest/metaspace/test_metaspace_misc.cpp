@@ -47,7 +47,7 @@ TEST_VM(metaspace, misc_sizes)   {
   ASSERT_EQ(Settings::commit_granule_bytes(), Metaspace::commit_alignment());
   ASSERT_TRUE(is_aligned(Settings::virtual_space_node_default_word_size(),
               metaspace::chunklevel::MAX_CHUNK_WORD_SIZE));
-  ASSERT_EQ(Settings::virtual_space_node_default_word_size() * BytesPerWord, NOT_LP64(16) LP64_ONLY(64) * M);
+  ASSERT_EQ(Settings::virtual_space_node_default_word_size() * BytesPerWord, 64 * M);
   ASSERT_EQ(Settings::virtual_space_node_reserve_alignment_words(),
             Metaspace::reserve_alignment_words());
 }
