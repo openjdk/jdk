@@ -105,7 +105,8 @@
   template(GTestExecuteAtSafepoint)               \
   template(GTestStopSafepoint)                    \
   template(JFROldObject)                          \
-  template(JvmtiPostObjectFree)
+  template(JvmtiPostObjectFree)                   \
+  template(NoopGC)
 
 class Thread;
 class outputStream;

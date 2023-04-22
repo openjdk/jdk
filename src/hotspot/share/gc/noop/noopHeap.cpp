@@ -96,6 +96,10 @@ jint NoopHeap::initialize() {
 
     _free_chunk_bitmap.initialize(committed_region, _fc_bitmap_region);
 
+    if (!os::commit_memory((char*)_fc_bitmap_region.start(), _fc_bitmap_region.byte_size(), false)) {
+			log_warning(gc)("Could not commit native memory for marking bitmap");
+		}
+
     //Initialize space
     //_free_list_space = new NoopFreeListSpace(&_free_chunk_bitmap);
     //_free_list_space->initialize(committed_region, /* clear_space = */ true, /* mangle_space = */ true);
@@ -168,7 +172,7 @@ HeapWord* NoopHeap::allocate_new_tlab(size_t min_size,
            "Size honors global max size: "  SIZE_FORMAT " <= " SIZE_FORMAT, size, CollectedHeap::max_tlab_size());
 
     // All prepared, let's do it!
-    HeapWord* res = allocate_work(size);
+    HeapWord* res = allocate_or_collect_work(size);
 
     if (res != NULL) {
         // Allocation successful
@@ -180,7 +184,7 @@ HeapWord* NoopHeap::allocate_new_tlab(size_t min_size,
 
 HeapWord* NoopHeap::mem_allocate(size_t size, bool *gc_overhead_limit_was_exceeded) {
     *gc_overhead_limit_was_exceeded = false;
-    return allocate_work(size);
+    return allocate_or_collect_work(size);
 }
 
 size_t NoopHeap::unsafe_max_tlab_alloc(Thread* thr) const {
@@ -195,11 +199,57 @@ size_t NoopHeap::unsafe_max_tlab_alloc(Thread* thr) const {
 //
 //
 
+class VM_NoopGC: public VM_Operation {
+	private:
+		const GCCause::Cause _cause;
+		NoopHeap* const _heap;
+	public:
+		VM_NoopGC(GCCause::Cause cause) :
+		    VM_Operation(), _cause(cause), _heap(NoopHeap::heap()) {}
+
+		VM_Operation::VMOp_Type type() const { return VMOp_NoopGC; }
+
+		const char* name() const { return "NoopGC Collection"; }
+
+	virtual bool doit_prologue() {
+		Heap_lock->lock();
+		return true;
+	}
+
+	virtual void doit() {
+		_heap->entry_collect(_cause);
+	}
+
+	virtual void doit_epilogue() {
+		Heap_lock->unlock();
+	}
+};
+
+void NoopHeap::vmentry_collect(GCCause::Cause cause) {
+    VM_NoopGC vmop(cause);
+    VMThread::execute(&vmop);
+}
+
+void NoopHeap::entry_collect(GCCause::Cause cause) {
+    prologue();
+    mark();
+    epilogue();
+}
+
+HeapWord* NoopHeap::allocate_or_collect_work(size_t size, bool verbose) {
+	HeapWord* res = allocate_work(size, verbose);
+	if (res == NULL) {
+		vmentry_collect(GCCause::_allocation_failure);
+		res = allocate_work(size);
+	}
+	return res;
+}
+
 typedef Stack<oop, mtGC> NoopMarkStack;
 
 void NoopHeap::do_roots(OopClosure* cl, bool everything) {
 	// Need to tell runtime we are about to walk the roots with 1 thread
-	StrongRootsScope scope(1);
+	StrongRootsScope scope(0);
 
 	// Need to adapt oop closure for some special root types.
 	CLDToOopClosure clds(cl, ClassLoaderData::_claim_none);
@@ -211,11 +261,7 @@ void NoopHeap::do_roots(OopClosure* cl, bool everything) {
 		MutexLocker lock(CodeCache_lock, Mutex::_no_safepoint_check_flag);
 		CodeCache::blobs_do(&blobs);
 	}
-	{
-		MutexLocker lock(ClassLoaderDataGraph_lock);
-		ClassLoaderDataGraph::roots_cld_do(&clds, NULL);
-	}
-
+	ClassLoaderDataGraph::roots_cld_do(&clds, NULL);
     OopStorageSet::strong_oops_do(cl);
 	Threads::oops_do(cl, &blobs);
 }
@@ -262,8 +308,6 @@ void NoopHeap::prologue() {
 
     //Retire all TLABS
     ensure_parsability(true);
-
-    DerivedPointerTable::clear();
 }
 
 void NoopHeap::mark() {
@@ -285,7 +329,13 @@ void NoopHeap::mark() {
 }
 
 void NoopHeap::sweep() {
+    
+}
 
+void NoopHeap::epilogue() {
+    if (!os::uncommit_memory((char*)_bitmap_region.start(), _bitmap_region.byte_size())) {
+			log_warning(gc)("Could not uncommit native memory for marking bitmap");
+		}
 }
 
 void NoopHeap::collect(GCCause::Cause cause) {

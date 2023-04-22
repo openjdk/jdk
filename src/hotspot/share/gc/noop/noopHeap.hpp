@@ -43,8 +43,6 @@ private:
     VirtualSpace _virtual_space;
     size_t _max_tlab_size;
 
-    //Free lists
-
     //Stats
     size_t _step_counter_update;
     size_t _step_heap_print;
@@ -63,6 +61,7 @@ private:
     void prologue();
     void mark();
     void sweep();
+    void epilogue();
 
 public:
     static NoopHeap* heap();
@@ -108,6 +107,7 @@ public:
 
     // Basic allocation method
     HeapWord* allocate_work(size_t size, bool verbose = true);
+    HeapWord* allocate_or_collect_work(size_t size, bool verbose = true);
     // Raw memory allocation facilities
     virtual HeapWord* mem_allocate(size_t size, bool* gc_overhead_limit_was_exceeded);
     // Create a new tlab.
@@ -124,7 +124,9 @@ public:
     virtual size_t tlab_used(Thread* thr)             const { return used();         }
     virtual size_t max_tlab_size()                    const { return _max_tlab_size; }
     virtual size_t unsafe_max_tlab_alloc(Thread* thr) const;
-
+    
+    virtual void vmentry_collect(GCCause::Cause cause);
+    virtual void entry_collect(GCCause::Cause cause);
     virtual void collect(GCCause::Cause cause);
     virtual void do_full_collection(bool clear_all_soft_refs);
 
