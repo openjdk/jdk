@@ -52,6 +52,9 @@ public class MethodTypeDescTest extends SymbolicDescTest {
 
         // Tests accessors (rType, pType, pCount, pList, pArray, descriptorString),
         // factories (ofDescriptor, of), equals
+        if (r.parameterCount() == 0) {
+            assertEquals(r, MethodTypeDesc.of(r.returnType()));
+        }
         assertEquals(r, MethodTypeDesc.ofDescriptor(r.descriptorString()));
         assertEquals(r, MethodTypeDesc.of(r.returnType(), r.parameterArray()));
         assertEquals(r, MethodTypeDesc.of(r.returnType(), r.parameterList().toArray(new ClassDesc[0])));
@@ -59,6 +62,12 @@ public class MethodTypeDescTest extends SymbolicDescTest {
         assertEquals(r, MethodTypeDesc.of(r.returnType(), IntStream.range(0, r.parameterCount())
                                                                    .mapToObj(r::parameterType)
                                                                    .toArray(ClassDesc[]::new)));
+        assertEquals(r, MethodTypeDesc.of(r.returnType(), r.parameterList()));
+        assertEquals(r, MethodTypeDesc.of(r.returnType(), List.copyOf(r.parameterList())));
+        assertEquals(r, MethodTypeDesc.of(r.returnType(), r.parameterList().stream().toList()));
+        assertEquals(r, MethodTypeDesc.of(r.returnType(), IntStream.range(0, r.parameterCount())
+                                                                   .mapToObj(r::parameterType)
+                                                                   .toList()));
     }
 
     private void testMethodTypeDesc(MethodTypeDesc r, MethodType mt) throws ReflectiveOperationException {
@@ -288,7 +297,7 @@ public class MethodTypeDescTest extends SymbolicDescTest {
         }
 
         try {
-            MethodTypeDesc r = MethodTypeDesc.of(CD_int, null);
+            MethodTypeDesc r = MethodTypeDesc.of(CD_int, (ClassDesc[]) null);
             fail("ClassDesc array should not be null");
         }
         catch (NullPointerException e) {

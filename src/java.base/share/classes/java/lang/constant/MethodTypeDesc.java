@@ -27,6 +27,7 @@ package java.lang.constant;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.TypeDescriptor;
+import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -53,6 +54,36 @@ public sealed interface MethodTypeDesc
      */
     static MethodTypeDesc ofDescriptor(String descriptor) {
         return MethodTypeDescImpl.ofDescriptor(descriptor);
+    }
+
+    /**
+     * Returns a {@linkplain MethodTypeDesc} with the given return type and no
+     * parameter types.
+     *
+     * @param returnDesc a {@linkplain ClassDesc} describing the return type
+     * @return a {@linkplain MethodTypeDesc} describing the desired method type
+     * @throws NullPointerException if {@code returnDesc} is {@code null}
+     * @since 21
+     */
+    static MethodTypeDesc of(ClassDesc returnDesc) {
+        return new MethodTypeDescImpl(returnDesc, ConstantUtils.EMPTY_CLASSDESC);
+    }
+
+    /**
+     * Returns a {@linkplain MethodTypeDesc} given the return type and parameter
+     * types.
+     *
+     * @param returnDesc a {@linkplain ClassDesc} describing the return type
+     * @param paramDescs a {@linkplain Collection} of {@linkplain ClassDesc}s
+     * describing the argument types, in its iteration order
+     * @return a {@linkplain MethodTypeDesc} describing the desired method type
+     * @throws NullPointerException if any argument or its contents are {@code null}
+     * @throws IllegalArgumentException if any element of {@code paramDescs} is a
+     * {@link ClassDesc} for {@code void}
+     * @since 21
+     */
+    static MethodTypeDesc of(ClassDesc returnDesc, Collection<ClassDesc> paramDescs) {
+        return of(returnDesc, paramDescs.toArray(ConstantUtils.EMPTY_CLASSDESC));
     }
 
     /**
