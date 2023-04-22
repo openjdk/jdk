@@ -50,6 +50,16 @@ import static java.util.stream.Collectors.joining;
  * {@linkplain ClassDesc} for the component type and then call the {@link #arrayType()}
  * or {@link #arrayType(int)} methods.
  *
+ * <h2 id="constant-class-info">The {@code CONSTANT_Class_info} Structure</h2>
+ *
+ * <p>While most appearances of {@link Class} constants are in the form of {@linkplain
+ * #descriptorString() descriptors}, in the {@code CONSTANT_Class_info} structure
+ * (JVMS {@jvms 4.4.1}), they appear as binary name encoded in internal forms,
+ * such as {@code "java/lang/String"} for {@link String} class. Such forms can be
+ * converted to ClassDesc with {@link #ofInternalName(String)} and retrieved from a
+ * {@linkplain ClassDesc} with {@link #internalName()}. In addition, primitive types
+ * cannot be encoded in the {@code CONSTANT_Class_info} structure.
+ *
  * @see ConstantDescs
  *
  * @since 12
@@ -82,28 +92,29 @@ public sealed interface ClassDesc
     }
 
     /**
-     * Returns a {@linkplain ClassDesc} for a class or interface type,
-     * given the name of the class or interface in internal form,
-     * such as {@code "java/lang/String"}.
+     * {@return a {@linkplain ClassDesc} from a string representation
+     * in a {@link ##constant-class-info CONSTANT_Class_info} structure}
      *
-     * @apiNote
-     * To create a descriptor for an array type, either use {@link #ofDescriptor(String)}
-     * or {@link #arrayType()}; to create a descriptor for a primitive type, use
-     * {@link #ofDescriptor(String)} or use the predefined constants in
-     * {@link ConstantDescs}.
-     *
-     * @param name the fully qualified class name, in internal (slash-separated) form
-     * @return a {@linkplain ClassDesc} describing the desired class
+     * @param name the class name, compliant with requirements of the
+     * {@code CONSTANT_Class_info} structure
      * @throws NullPointerException if the argument is {@code null}
      * @throws IllegalArgumentException if the name string is not in the
      * correct format
-     * @jvms 4.2.1 Binary Class and Interface Names
      * @see ClassDesc#of(String)
      * @see ClassDesc#ofDescriptor(String)
+     * @see ClassDesc#internalName()
+     * @see <a href="#constant-class-info">The {@code CONSTANT_Class_info} Structure</a>
      * @since 20
      */
     static ClassDesc ofInternalName(String name) {
-        ConstantUtils.validateInternalClassName(requireNonNull(name));
+        if (name.isEmpty()) // implicit null check
+            throw new IllegalArgumentException("Invalid class name: ");
+        // Arrays
+        if (name.charAt(0) == '[') {
+            return ofDescriptor(name);
+        }
+        // Classes or Interfaces
+        ConstantUtils.validateInternalClassName(name);
         return ClassDesc.ofDescriptor("L" + name + ";");
     }
 
@@ -153,7 +164,6 @@ public sealed interface ClassDesc
      * @throws IllegalArgumentException if the name string is not in the
      * correct format
      * @jvms 4.3.2 Field Descriptors
-     * @jvms 4.4.1 The CONSTANT_Class_info Structure
      * @see ClassDesc#of(String)
      * @see ClassDesc#ofInternalName(String)
      */
@@ -181,7 +191,6 @@ public sealed interface ClassDesc
      * @return a {@linkplain ClassDesc} describing the array type
      * @throws IllegalStateException if the resulting {@linkplain
      * ClassDesc} would have an array rank of greater than 255
-     * @jvms 4.4.1 The CONSTANT_Class_info Structure
      */
     default ClassDesc arrayType() {
         int depth = ConstantUtils.arrayDepth(descriptorString());
@@ -202,7 +211,6 @@ public sealed interface ClassDesc
      * @throws IllegalArgumentException if the rank is less than or
      * equal to zero or if the rank of the resulting array type is
      * greater than 255
-     * @jvms 4.4.1 The CONSTANT_Class_info Structure
      */
     default ClassDesc arrayType(int rank) {
         int netRank;
@@ -357,18 +365,17 @@ public sealed interface ClassDesc
 
     /**
      * {@return the string representation of this {@linkplain ClassDesc} in a
-     * {@code CONSTANT_Class_info} ({@jvms 4.4.1})} This is the binary name
-     * in internal form for classes and interfaces, and descriptors for arrays.
-     * Primitive types cannot be represented by {@code CONSTANT_Class_info}
-     * structures.
+     * {@link ##constant-class-info CONSTANT_Class_info} structure}
      *
      * @apiNote
-     * Unlike {@link #ofInternalName ofInternalName} that rejects array descriptors,
-     * this method returns the array descriptor string if this {@linkplain ClassDesc}
-     * represents an array.
+     * In a future release, this API may return a value instead of throwing
+     * an exception if this {@linkplain ClassDesc} becomes representable in a
+     * {@code CONSTANT_Class_info}.
      *
      * @throws IllegalStateException if this {@linkplain ClassDesc} describes a type
      * that cannot be represented by a {@code CONSTANT_Class_info}, such as primitive types
+     * @see ClassDesc#ofInternalName(String)
+     * @see <a href="#constant-class-info">The {@code CONSTANT_Class_info} Structure</a>
      * @since 21
      */
     String internalName();

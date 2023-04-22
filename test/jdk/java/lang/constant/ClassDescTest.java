@@ -50,6 +50,9 @@ public class ClassDescTest extends SymbolicDescTest {
 
         // Test descriptor accessor, factory, equals
         assertEquals(r, ClassDesc.ofDescriptor(r.descriptorString()));
+        if (!r.isPrimitive()) {
+            assertEquals(r, ClassDesc.ofInternalName(r.internalName()));
+        }
 
         if (!r.descriptorString().equals("V")) {
             assertEquals(r, r.arrayType().componentType());
@@ -79,7 +82,8 @@ public class ClassDescTest extends SymbolicDescTest {
         assertEquals(ClassDesc.ofDescriptor(c.descriptorString()), r);
 
         if (!c.isPrimitive()) {
-            assertEquals(c.getName(), r.internalName().replace('/', '.'));
+            assertEquals(c.getName(), r.internalName().replace('/', '.')); // may be invalid in valhalla
+            assertEquals(r, ClassDesc.ofInternalName(c.getName().replace('.', '/')));
         }
     }
 
@@ -271,7 +275,7 @@ public class ClassDescTest extends SymbolicDescTest {
             }
         }
 
-        List<String> badInternalNames = List.of("I;", "[]", "[Ljava/lang/String;",
+        List<String> badInternalNames = List.of("I;", "[]", "[Ljava.lang.String;",
                 "Ljava.lang.String;", "java.lang.String");
         for (String d : badInternalNames) {
             try {
