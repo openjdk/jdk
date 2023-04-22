@@ -687,6 +687,31 @@ void PEAState::aliases(Unique_Node_List& nodes) const {
                  });
 }
 
+Node* PEAState::get_cooked_obj(ObjID id) const{
+  if (!contains(id)) {
+    return nullptr;
+  }
+
+  ObjectState* os = get_object_state(id);
+  if (!os->is_virtual()) {
+    return static_cast<EscapedState*>(os)->get_materialized_value();
+  } else {
+    // slow-path: we don't store the cooked object for a virtual, but we can find
+    // it among its aliases. The IR is SSA, so there is only one definition.
+    // CastPP and LoadP are aliases. Only CheckCastPP or Phi are definitions.
+    //
+    Node* obj = nullptr;
+    _alias.iterate([&](Node* alias, ObjID alloc) {
+                     if (alloc == id && (alias->is_CheckCastPP() || alias->is_Phi())) {
+                       assert(obj == nullptr, "multiple definition?");
+                       obj = alias;
+                     }
+                     return true;
+                   });
+    return obj;
+  }
+}
+
 AllocationStateMerger::AllocationStateMerger(PEAState& target) : _state(target) {}
 
 void AllocationStateMerger::merge(const PEAState& newin, GraphKit* kit, RegionNode* region, int pnum) {

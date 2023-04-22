@@ -146,6 +146,8 @@ class PEAState {
     return _state.contains(id);
   }
 
+  Node* get_cooked_obj(ObjID id) const;
+
   void update(ObjID id, ObjectState* os) {
     if (contains(id)) {
       os->ref_cnt(get_object_state(id)->ref_cnt());
