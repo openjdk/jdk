@@ -44,6 +44,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ModalDialogOnNonEdt {
+
     public void start () {
         ShowModalDialog showModalDialog = new ShowModalDialog();
 

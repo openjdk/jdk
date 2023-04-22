@@ -140,6 +140,7 @@ public class DialogLocationTest extends Panel {
         int lastX, lastY;
         String message = "Failed in componentMoved() expect:[%d,%d]"
                 + " reported: [%d,%d] diff [%d,%d]";
+
         public void componentMoved(ComponentEvent e) {
             if (e.getComponent() == my_dialog) {
                 Point eventLoc = e.getComponent().getLocation();
