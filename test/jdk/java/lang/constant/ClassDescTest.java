@@ -33,12 +33,7 @@ import java.util.Map;
 
 import org.testng.annotations.Test;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertNotEquals;
-import static org.testng.Assert.assertNull;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.fail;
+import static org.testng.Assert.*;
 
 /**
  * @test
@@ -64,10 +59,15 @@ public class ClassDescTest extends SymbolicDescTest {
             assertEquals(r, Array.newInstance(r.resolveConstantDesc(LOOKUP), 0).getClass().describeConstable().orElseThrow().componentType());
         }
 
+        if (r.isClassOrInterface()) {
+            assertEquals(r.descriptorString(), "L" + r.internalName() + ";");
+        }
+
         if (r.isArray()) {
             assertEquals(r, r.componentType().arrayType());
             assertEquals(r, r.resolveConstantDesc(LOOKUP).getComponentType().describeConstable().orElseThrow().arrayType());
             assertEquals(r, Array.newInstance(r.componentType().resolveConstantDesc(LOOKUP), 0).getClass().describeConstable().orElseThrow());
+            assertEquals(r.descriptorString(), r.internalName());
         }
     }
 
@@ -77,6 +77,10 @@ public class ClassDescTest extends SymbolicDescTest {
         assertEquals(r.resolveConstantDesc(LOOKUP), c);
         assertEquals(c.describeConstable().orElseThrow(), r);
         assertEquals(ClassDesc.ofDescriptor(c.descriptorString()), r);
+
+        if (!c.isPrimitive()) {
+            assertEquals(c.getName(), r.internalName().replace('/', '.'));
+        }
     }
 
     public void testSymbolicDescsConstants() throws ReflectiveOperationException {
@@ -118,6 +122,8 @@ public class ClassDescTest extends SymbolicDescTest {
                     assertEquals(c, p.arrayClass.describeConstable().orElseThrow().componentType());
                     assertEquals(c, p.classDesc.arrayType().componentType());
                 }
+
+                assertThrows(IllegalStateException.class, c::internalName);
             }
 
             for (Primitives other : Primitives.values()) {

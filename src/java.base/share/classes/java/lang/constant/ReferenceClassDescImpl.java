@@ -56,6 +56,11 @@ final class ReferenceClassDescImpl implements ClassDesc {
     }
 
     @Override
+    public String internalName() {
+        return isArray() ? descriptorString() : descriptorString().substring(1, descriptorString().length() - 1);
+    }
+
+    @Override
     public String descriptorString() {
         return descriptor;
     }

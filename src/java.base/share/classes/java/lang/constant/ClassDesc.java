@@ -356,6 +356,24 @@ public sealed interface ClassDesc
     }
 
     /**
+     * {@return the string representation of this {@linkplain ClassDesc} in a
+     * {@code CONSTANT_Class_info} ({@jvms 4.4.1})} This is the binary name
+     * in internal form for classes and interfaces, and descriptors for arrays.
+     * Primitive types cannot be represented by {@code CONSTANT_Class_info}
+     * structures.
+     *
+     * @apiNote
+     * Unlike {@link #ofInternalName ofInternalName} that rejects array descriptors,
+     * this method returns the array descriptor string if this {@linkplain ClassDesc}
+     * represents an array.
+     *
+     * @throws IllegalStateException if this {@linkplain ClassDesc} describes a type
+     * that cannot be represented by a {@code CONSTANT_Class_info}, such as primitive types
+     * @since 21
+     */
+    String internalName();
+
+    /**
      * Returns a field type descriptor string for this type
      *
      * @return the descriptor string

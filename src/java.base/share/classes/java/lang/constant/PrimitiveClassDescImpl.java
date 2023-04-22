@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,11 @@ final class PrimitiveClassDescImpl
             || "VIJCSBFDZ".indexOf(descriptor.charAt(0)) < 0)
             throw new IllegalArgumentException(String.format("not a valid primitive type descriptor: %s", descriptor));
         this.descriptor = descriptor;
+    }
+
+    @Override
+    public String internalName() {
+        throw new IllegalStateException("primitive type " + displayName() + " cannot be encoded in CONSTANT_Class_info");
     }
 
     @Override
