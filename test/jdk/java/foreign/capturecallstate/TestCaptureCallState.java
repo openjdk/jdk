@@ -86,7 +86,7 @@ public class TestCaptureCallState extends NativeTestHelper {
         Linker.Option stl = Linker.Option.captureCallState(testCase.threadLocalName());
         FunctionDescriptor downcallDesc = testCase.retValueLayout()
                 .map(rl -> FunctionDescriptor.of(rl, JAVA_INT, rl))
-                .orElse(FunctionDescriptor.ofVoid(JAVA_INT));
+                .orElseGet(() -> FunctionDescriptor.ofVoid(JAVA_INT));
         MethodHandle handle = downcallHandle("set_" + testCase.nativeTarget(), downcallDesc, stl);
 
         StructLayout capturedStateLayout = Linker.Option.captureStateLayout();
