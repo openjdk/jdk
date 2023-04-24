@@ -89,6 +89,11 @@
  * It is also suitable for describing {@code invokedynamic} call sites in bytecode
  * reading and writing APIs.
  *
+ * <p>Another members of this package are {@link java.lang.constant.ModuleDesc}
+ * and  {@link java.lang.constant.PackageDesc}. They represent module and package
+ * info structures, suitable for describing modules and their content in bytecode
+ * reading and writing APIs.
+ *
  * @jvms 4.4 The Constant Pool
  *
  * @since 12
