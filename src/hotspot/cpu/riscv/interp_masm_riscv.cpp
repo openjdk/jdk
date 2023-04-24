@@ -1952,7 +1952,8 @@ void InterpreterMacroAssembler::profile_parameters_type(Register mdp, Register t
 
 void InterpreterMacroAssembler::load_resolved_indy_entry(Register cache, Register index) {
   // Get index out of bytecode pointer, get_cache_entry_pointer_at_bcp
-  get_cache_index_at_bcp(index, 1, sizeof(u4));
+  // cache register is trashed on next load, so use it a tmp register
+  get_cache_index_at_bcp(index, cache, 1, sizeof(u4));
   // Get address of invokedynamic array
   ld(cache, Address(xcpool, in_bytes(ConstantPoolCache::invokedynamic_entries_offset())));
   // Scale the index to be the entry index * sizeof(ResolvedInvokeDynamicInfo)
