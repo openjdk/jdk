@@ -74,6 +74,7 @@ public:
     concurrent_normal,
     stw_degenerated,
     stw_full,
+    bootstrapping_old,
     servicing_old
   } GCMode;
 

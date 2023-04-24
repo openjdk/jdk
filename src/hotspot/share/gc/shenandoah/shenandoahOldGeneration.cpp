@@ -267,11 +267,10 @@ bool ShenandoahOldGeneration::coalesce_and_fill() {
     // Remember that we're done with coalesce-and-fill.
     heap->set_prepare_for_old_mark_in_progress(false);
     old_heuristics->abandon_collection_candidates();
-    transition_to(BOOTSTRAPPING);
     return true;
   } else {
+    // Otherwise, we were preempted before the work was done.
     log_debug(gc)("Suspending coalesce-and-fill of old heap regions");
-    // Otherwise, we got preempted before the work was done.
     return false;
   }
 }
