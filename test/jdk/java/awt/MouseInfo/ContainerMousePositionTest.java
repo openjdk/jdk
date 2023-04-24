@@ -48,6 +48,9 @@ public class ContainerMousePositionTest {
     private static Point FIRST_BUTTON_LOCATION = new Point(20, 20);
     private static int DELAY = 1000;
     Robot robot;
+    int xPos = 0;
+    int yPos = 0;
+    Point pMousePosition;
 
     public static void main(String[] args) throws Exception {
         ContainerMousePositionTest containerObj = new ContainerMousePositionTest();
@@ -75,67 +78,97 @@ public class ContainerMousePositionTest {
         });
     }
 
-    public void start() {
+    public void start() throws Exception {
         try {
             robot.delay(DELAY);
             robot.waitForIdle();
 
-            Point p = button.getLocationOnScreen();
-            robot.mouseMove(p.x + button.getWidth() / 2, p.y + button.getHeight() / 2);
+            EventQueue.invokeAndWait(() -> {
+                Point p = button.getLocationOnScreen();
+                xPos = p.x + button.getWidth() / 2;
+                yPos = p.y + button.getHeight() / 2
+            });
+            robot.mouseMove(xPos,yPos);
+            robot.delay(DELAY);
+
+            EventQueue.invokeAndWait(() -> {
+                pMousePosition = frame.getMousePosition(false);
+                if (pMousePosition != null) {
+                    throw new RuntimeException("Test failed: Container is " +
+                            "overlapped by " + " child and it should be taken " +
+                            "into account");
+                }
+                System.out.println("Test stage completed: Container is " +
+                        "overlapped by " + " child and it was taken into " +
+                        "account");
+
+                pMousePosition = frame.getMousePosition(true);
+                if (pMousePosition == null) {
+                    throw new RuntimeException("Test failed: Container is " +
+                            "overlapped by " + " child and it should not be " +
+                            "taken into account");
+                }
+                System.out.println("Test stage completed: Container is " +
+                        "overlapped by " + " child and it should not be " +
+                        "taken into account");
+                xPos = panel.getLocationOnScreen().x + POINT_WITHOUT_COMPONENTS.x;
+                yPos = panel.getLocationOnScreen().y + POINT_WITHOUT_COMPONENTS.y;
+            });
+
+            robot.mouseMove(xPos, yPos);
 
             robot.delay(DELAY);
 
-            Point pMousePosition = frame.getMousePosition(false);
-            if (pMousePosition != null) {
-                throw new RuntimeException("Test failed: Container is overlapped by " + " child and it should be taken into account");
-            }
-            System.out.println("Test stage completed: Container is overlapped by " + " child and it was taken into account");
+            EventQueue.invokeAndWait(() -> {
+                pMousePosition = panel.getMousePosition(true);
+                if (pMousePosition == null) {
+                    throw new RuntimeException("Test failed: Pointer was " +
+                            "outside of " + "the component so getMousePosition()" +
+                            " should not return null");
+                }
+                System.out.println("Test stage completed: Pointer was outside of " +
+                        "the component and getMousePosition() has not returned null");
 
-            pMousePosition = frame.getMousePosition(true);
-            if (pMousePosition == null) {
-                throw new RuntimeException("Test failed: Container is overlapped by " + " child and it should not be taken into account");
-            }
-            System.out.println("Test stage completed: Container is overlapped by " + " child and it should not be taken into account");
-
-            robot.mouseMove(panel.getLocationOnScreen().x + POINT_WITHOUT_COMPONENTS.x, panel.getLocationOnScreen().y + POINT_WITHOUT_COMPONENTS.y);
-
-            robot.delay(DELAY);
-
-            pMousePosition = panel.getMousePosition(true);
-            if (pMousePosition == null) {
-                throw new RuntimeException("Test failed: Pointer was outside of " + "the component so getMousePosition() should not return null");
-            }
-            System.out.println("Test stage completed: Pointer was outside of " + "the component and getMousePosition() has not returned null");
-
-            pMousePosition = panel.getMousePosition(false);
-            if (pMousePosition == null) {
-                throw new RuntimeException("Test failed: Pointer was outside of " + "the component so getMousePosition() should not return null");
-            }
-            System.out.println("Test stage completed: Pointer was outside of " + "the component and getMousePosition() has not returned null");
-
-            robot.mouseMove(frame.getLocationOnScreen().x + frame.getWidth() + POINT_WITHOUT_COMPONENTS.x, frame.getLocationOnScreen().y + frame.getHeight() + POINT_WITHOUT_COMPONENTS.y);
+                pMousePosition = panel.getMousePosition(false);
+                if (pMousePosition == null) {
+                    throw new RuntimeException("Test failed: Pointer was outside of " +
+                            "the component so getMousePosition() should not return null");
+                }
+                System.out.println("Test stage completed: Pointer was outside of " +
+                        "the component and getMousePosition() has not returned null");
+                xPos = frame.getLocationOnScreen().x + frame.getWidth() + POINT_WITHOUT_COMPONENTS.x;
+                yPos = frame.getLocationOnScreen().y + frame.getHeight() + POINT_WITHOUT_COMPONENTS.y;
+            });
+            robot.mouseMove(xPos, yPos);
 
             robot.delay(DELAY);
 
-            pMousePosition = frame.getMousePosition(true);
-            if (pMousePosition != null) {
-                throw new RuntimeException("Test failed: Pointer was outside of " + "the Frame widow and getMousePosition() should return null");
-            }
-            System.out.println("Test stage completed: Pointer was outside of " + "the Frame widow and getMousePosition() returned null");
+            EventQueue.invokeAndWait(() -> {
+                pMousePosition = frame.getMousePosition(true);
+                if (pMousePosition != null) {
+                    throw new RuntimeException("Test failed: Pointer was outside of " +
+                            "the Frame widow and getMousePosition() should return null");
+                }
+                System.out.println("Test stage completed: Pointer was outside of " +
+                        "the Frame widow and getMousePosition() returned null");
 
-            pMousePosition = frame.getMousePosition(false);
-            if (pMousePosition != null) {
-                throw new RuntimeException("Test failed: Pointer was outside of " + "the Frame widow and getMousePosition() should return null");
-            }
-            System.out.println("Test stage completed: Pointer was outside of " + "the Frame widow and getMousePosition() returned null");
-
+                pMousePosition = frame.getMousePosition(false);
+                if (pMousePosition != null) {
+                    throw new RuntimeException("Test failed: Pointer was outside of " +
+                            "the Frame widow and getMousePosition() should return null");
+                }
+                System.out.println("Test stage completed: Pointer was outside of " +
+                        "the Frame widow and getMousePosition() returned null");
+            });
             robot.delay(DELAY);
 
             System.out.println("ComponentMousePositionTest PASSED.");
         } finally {
-            if (frame != null) {
-                frame.dispose();
-            }
+            EventQueue.invokeAndWait(() -> {
+                if (frame != null) {
+                    frame.dispose();
+                }
+            });
         }
     }
 }
