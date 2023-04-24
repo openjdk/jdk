@@ -939,7 +939,9 @@ int JVMCIRuntime::release_cleared_oop_handles() {
     // Example: to_release: 2
 
     // Bulk release the handles with a null referent
-    object_handles()->release(_oop_handles.adr_at(num_alive), to_release);
+    if (to_release != 0) {
+      object_handles()->release(_oop_handles.adr_at(num_alive), to_release);
+    }
 
     // Truncate oop handles to only those with a non-null referent
     JVMCI_event_1("compacted oop handles in JVMCI runtime %d from %d to %d", _id, _oop_handles.length(), num_alive);
