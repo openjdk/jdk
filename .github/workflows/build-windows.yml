@@ -96,7 +96,7 @@ jobs:
         run: |
           # Run Visual Studio Installer
           '/c/Program Files (x86)/Microsoft Visual Studio/Installer/vs_installer.exe' \
-            modify --quiet --installPath 'C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise' \
+            modify --quiet --installPath 'C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise' \
             --add Microsoft.VisualStudio.Component.VC.${{ inputs.msvc-toolset-version }}.${{ inputs.msvc-toolset-architecture }}
 
       - name: 'Configure'
