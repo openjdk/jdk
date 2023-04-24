@@ -131,7 +131,7 @@ inline void FreezeBase::set_top_frame_metadata_pd(const frame& hf) {
 //
 //     Caller on entry                                     New frame with resized Caller
 //
-//     | frame::abi_minframe    |                          |                        |
+//     | frame::java_abi        |                          |                        |
 //     |                        |<- FP of caller           | Caller's SP            |<- FP of caller
 //     ==========================                          ==========================
 //     | ijava_state            |                          | ijava_state            |
@@ -141,9 +141,9 @@ inline void FreezeBase::set_top_frame_metadata_pd(const frame& hf) {
 //     | :                      |                    |     | :      :               |
 //     | Pn                     |<- unext. SP        |     | :      Pn              |<- unext. SP
 //     |------------------------|   + metadata     overlap | :                      |   + metadata
-//     | frame::abi_minframe    |                    |     | Lm                     |
+//     | frame::java_abi        |                    |     | Lm                     |
 //     | (metadata_words_at_top)|<- SP == unext. SP  v     |------------------------|<- unextended SP of caller (1)
-//     ==========================   of caller      -----   | frame::abi_minframe    |
+//     ==========================   of caller      -----   | frame::java_abi        |
 //                                                         | (metadata_words_at_top)|<- new SP of caller / FP of new frame
 //      overlap = stack_argsize(f)                         ==========================       ^
 //                + frame::metadata_words_at_top           | ijava_state            |       |
@@ -154,7 +154,7 @@ inline void FreezeBase::set_top_frame_metadata_pd(const frame& hf) {
 //                                                         | :                      |       |
 //                            |  Growth  |                 | Pi                     |       v
 //                            v          v                 |------------------------|      ---
-//                                                         | frame::abi_minframe    |
+//                                                         | frame::java_abi        |
 //                                                         | (metadata_words_at_top)|<- unextended SP /
 //                                                         ==========================   SP of new frame
 // ### Compiled Caller: No Overlap
@@ -164,13 +164,13 @@ inline void FreezeBase::set_top_frame_metadata_pd(const frame& hf) {
 //
 //     Caller on entry                                     New frame with resized Caller
 //
-//     | frame::abi_minframe    |                          |                        |
+//     | frame::java_abi        |                          |                        |
 //     | (metadata_words_at_top)|<- FP of caller           | Caller's SP            |<- FP of caller
 //     ==========================                          ==========================
 //     |                        |                          |                        |
 //     |                        |                          |                        |
 //     |------------------------|                          |------------------------|
-//     | frame::abi_minframe    |                          | frame::abi_minframe    |
+//     | frame::java_abi        |                          | frame::java_abi        |
 //     | (metadata_words_at_top)|<- SP == unext. SP        | (metadata_words_at_top)|<- unext. SP of caller
 //     ==========================   of caller              |------------------------|
 //                                                         | L0 aka P0              |
@@ -178,7 +178,7 @@ inline void FreezeBase::set_top_frame_metadata_pd(const frame& hf) {
 //                                                         | :      Pn              |
 //      overlap = 0                                        | Lm                     |
 //                                                         |------------------------|
-//      f is the frame to be relocated on the heap         | frame::abi_minframe    |
+//      f is the frame to be relocated on the heap         | frame::java_abi        |
 //                                                         | (metadata_words_at_top)|<- new SP of caller / FP of new frame
 //                                                         ==========================       ^
 //                                                         | ijava_state            |       |
@@ -189,7 +189,7 @@ inline void FreezeBase::set_top_frame_metadata_pd(const frame& hf) {
 //                                                         | :                      |       |
 //                                                         | Pi                     |       v
 //                                                         |------------------------|      ---
-//                                                         | frame::abi_minframe    |
+//                                                         | frame::java_abi        |
 //                                                         | (metadata_words_at_top)|<- unextended SP /
 //                                                         ==========================   SP of new frame
 //
@@ -209,7 +209,7 @@ inline void FreezeBase::set_top_frame_metadata_pd(const frame& hf) {
 //
 //     Caller on entry                                     New frame with resized Caller
 //
-//     | frame::abi_minframe    |                          | frame::abi_minframe    |
+//     | frame::java_abi        |                          | frame::java_abi        |
 //     | (metadata_words_at_top)|<- FP of caller           | (metadata_words_at_top)|<- FP of caller
 //     ==========================                          ==========================
 //     | ijava_state            |                          | ijava_state            |
@@ -219,19 +219,19 @@ inline void FreezeBase::set_top_frame_metadata_pd(const frame& hf) {
 //     | :                      |                          | :                      |
 //     | Pn                     |<- unext. SP              | Pn                     |<- unext. SP
 //     |------------------------|   + metadata             |------------------------|   + metadata
-//     | frame::abi_minframe    |                          | frame::abi_minframe    |
+//     | frame::java_abi        |                          | frame::java_abi        |
 //     | (metadata_words_at_top)|<- SP == unext. SP        | (metadata_words_at_top)|<- unextended SP of caller (1)
 //     ==========================   of caller              |------------------------|
 //                                                         | Stack Args             |
 //      overlap = 0                                        | (if any)               |
 //                                                         |------------------------|
-//      f is the frame to be relocated on the heap         | frame::abi_minframe    |
+//      f is the frame to be relocated on the heap         | frame::java_abi        |
 //                                                         | (metadata_words_at_top)|<- new SP of caller / FP of new frame
 //                                                         ==========================
 //                                                         |                        |
 //                             |  Growth  |                |                        |
 //                             v          v                |------------------------|
-//                                                         | frame::abi_minframe    |
+//                                                         | frame::java_abi        |
 //                                                         | (metadata_words_at_top)|<- SP == unext. SP of new frame
 //                                                         ==========================
 //
@@ -239,7 +239,7 @@ inline void FreezeBase::set_top_frame_metadata_pd(const frame& hf) {
 //
 //     Caller on entry                                     New frame with resized Caller
 //
-//     | frame::abi_minframe    |                          | frame::abi_minframe    |
+//     | frame::java_abi        |                          | frame::java_abi        |
 //     | (metadata_words_at_top)|<- FP of caller           | (metadata_words_at_top)|<- FP of caller
 //     ==========================                          ==========================
 //     |                        |                          |                        |
@@ -248,13 +248,13 @@ inline void FreezeBase::set_top_frame_metadata_pd(const frame& hf) {
 //     | Stack Args             |                     ^    | Stack Args             |
 //     | (if any)               |                     |    | (if any)               |
 //     |------------------------|                  overlap |------------------------|
-//     | frame::abi_minframe    |                     |    | frame::abi_minframe    |
+//     | frame::java_abi        |                     |    | frame::java_abi        |
 //     | (metadata_words_at_top)|<- SP == unext. SP   v    | (metadata_words_at_top)|<- SP == unext. SP of caller
 //     ==========================   of caller       -----  ==========================   / FP of new frame
 //                                                         |                        |
 //      overlap = stack_argsize(f)                         |                        |
 //                + frame::metadata_words_at_top           |------------------------|
-//                                                         | frame::abi_minframe    |
+//                                                         | frame::java_abi        |
 //      Where f is the frame to be relocated on the heap.  | (metadata_words_at_top)|<- SP == unext. SP of new frame
 //      See also StackChunkFrameStream::frame_size().      ==========================
 //
@@ -346,7 +346,7 @@ inline void ThawBase::prefetch_chunk_pd(void* start, int size) {
 template <typename ConfigT>
 inline void Thaw<ConfigT>::patch_caller_links(intptr_t* sp, intptr_t* bottom) {
   for (intptr_t* callers_sp; sp < bottom; sp = callers_sp) {
-    address pc = (address)((frame::abi_minframe*) sp)->lr;
+    address pc = (address)((frame::java_abi*) sp)->lr;
     assert(pc != nullptr, "");
     // see ThawBase::patch_return() which gets called just before
     bool is_entry_frame = pc == StubRoutines::cont_returnBarrier() || pc == _cont.entryPC();
@@ -357,7 +357,7 @@ inline void Thaw<ConfigT>::patch_caller_links(intptr_t* sp, intptr_t* bottom) {
       callers_sp = sp + cb->frame_size();
     }
     // set the back link
-    ((frame::abi_minframe*) sp)->callers_sp = (intptr_t) callers_sp;
+    ((frame::java_abi*) sp)->callers_sp = (intptr_t) callers_sp;
   }
 }
 
@@ -376,29 +376,29 @@ inline frame ThawBase::new_entry_frame() {
 //
 //     |                      |                            Non-Interpreted |                      |
 //     |                      |<- bottom                   Caller          |----------------------|
-//     |----------------------|    ^                                       | frame::abi_minframe  |<- unextended SP
+//     |----------------------|    ^                                       | frame::java_abi      |<- unextended SP
 //     | L0 aka P0            |    |                                   --- ========================
 //     | :      :             |    |                                    ^  | L0 aka P0            |
 //     | :      Pn            |    |                                    |  | :      :             | Parameters do
 //     | :                    |    |                                    |  | :      Pn            | not overlap with
 //     | Lm                   |    |                                    |  | :                    | caller!
 //     |----------------------| `fsize`                                 |  | :                    |
-//     | frame::abi_minframe  |    |                                       | :                    |
+//     | frame::java_abi      |    |                                       | :                    |
 //     ========================    |                     `fsize` + padding | Lm                   |
 //     |                      |    |                                       |----------------------|
 //     | ijava_state          |    |                                    |  | Opt. Align. Padding  |
 //     |                      |    |                                    |  |----------------------|
-//     |----------------------|    |                                    |  | frame::abi_minframe  |<- new SP of caller
+//     |----------------------|    |                                    |  | frame::java_abi      |<- new SP of caller
 //     | L0 aka P0            |    |                                    |  ========================   / FP of new frame
 //     | :      :             |    |                                    |  |                      |   (aligned)
 //     | :      Pn            |<- unext. SP + metadata                  |  | ijava_state          |
 //     | :                    |    |                                    |  |                      |
 //     | Lm                   |    |                                    |  |----------------------|
 //     |----------------------|    v                                    |  | P0                   |
-//     | frame::abi_minframe  |<- SP / unextended SP                    |  | :                    |
+//     | frame::java_abi      |<- SP / unextended SP                    |  | :                    |
 //     ========================                                         |  | Pi                   |<- unextended SP + metadata
 //                                                                      |  |----------------------|
-//                                           | Growth |                 v  | frame::abi_minframe  |<- unextended SP / SP of new frame
+//                                           | Growth |                 v  | frame::java_abi      |<- unextended SP / SP of new frame
 //                                           v        v                --- ========================   (not yet aligned(1))
 //
 //
@@ -415,13 +415,13 @@ inline frame ThawBase::new_entry_frame() {
 //     | :                    |                            |            |  | :      :             |
 //     | Pn                   |<- unextended SP           overlap       |  | :      Pn            |<- unextended SP
 //     |----------------------|   + metadata_words_at_top  |            |  | :                    |   + metadata_words_at_top
-//     | frame::abi_minframe  |<- unextended SP            v            |  | :                    |   (unaligned)
+//     | frame::java_abi      |<- unextended SP            v            |  | :                    |   (unaligned)
 //     ========================   / SP of new frame       ---           |  | :                    |   of caller
 //                                (not yet aligned(1))                  |  | Lm                   |
 //                                                                `fsize`  |----------------------|
 //       overlap = stack_argsize(hf)                              + padding| Opt. Align. Padding  |
 //                 + frame::metadata_words_at_top                       |  |----------------------|
-//                                                                      |  | frame::abi_minframe  |<- new SP of caller
+//                                                                      |  | frame::java_abi      |<- new SP of caller
 //                                                                      |  ========================   / FP of new frame
 //                                                                      |  |                      |   (aligned)
 //                                  | Growth |                          |  | ijava_state          |
@@ -431,7 +431,7 @@ inline frame ThawBase::new_entry_frame() {
 //                                                                      |  | :                    |
 //                                                                      |  | Pi                   |<- unextended SP
 //                                                                      |  |----------------------|    + metadata_words_at_top
-//                                                                      v  | frame::abi_minframe  |<- unextended SP / SP of new frame
+//                                                                      v  | frame::java_abi      |<- unextended SP / SP of new frame
 //                                                                     --- ========================   (not yet aligned(1))
 //
 //
@@ -459,20 +459,20 @@ inline frame ThawBase::new_entry_frame() {
 //   g l  |----------------------|                     |                      |
 //   i e  | Stack Args           |                     |                      |
 //   n r  | (if any)             |                     |----------------------|
-//   a    |----------------------|                     | frame::abi_minframe  |
-//   l    | frame::abi_minframe  |<- unext. SP / SP    | (unused)             |<- unal.unext.SP
+//   a    |----------------------|                     | frame::java_abi      |
+//   l    | frame::java_abi      |<- unext. SP / SP    | (unused)             |<- unal.unext.SP
 //  - - - ======================== - - - - - - - - - - |----------------------|- - - - - - - - - - - - - - - - - - - - - - - - - - - -
 //    N   |                      |                     | Opt. Align. Padding  |
 //    e   |                      |                     |----------------------|
 //    w   |----------------------|                     | Stack Args           |
-//        | frame::abi_minframe  |<- unext. SP / SP    | (if any)             |
+//        | frame::java_abi      |<- unext. SP / SP    | (if any)             |
 //    F   ========================                     |----------------------|
-//    r                                                | frame::abi_minframe  |<- caller's SP
+//    r                                                | frame::java_abi      |<- caller's SP
 //    a                                                ======================== / new frame's FP
 //    m                                                |                      |   (aligned)
 //    e                                                |                      |
 //                                                     |----------------------|
-//                                                     | frame::abi_minframe  |<- unext. SP / SP
+//                                                     | frame::java_abi      |<- unext. SP / SP
 //                                                     ========================
 //
 //  If the new frame is at the bottom just above the ContinuationEntry frame then the stackargs
@@ -533,7 +533,7 @@ template<typename FKind> frame ThawBase::new_stack_frame(const frame& hf, frame&
 
 inline intptr_t* ThawBase::align(const frame& hf, intptr_t* frame_sp, frame& caller, bool bottom) {
   // Unused. Alignment is done directly in new_stack_frame() / finish_thaw().
-  return NULL;
+  return nullptr;
 }
 
 static inline void derelativize_one(intptr_t* const fp, int offset) {
@@ -582,8 +582,8 @@ inline void ThawBase::patch_pd(frame& f, const frame& caller) {
 //                                          - Note that unextended SP < SP
 //                                            is possible on ppc.
 //
-// | Minimal ABI          |                 | Minimal ABI          |                      | Minimal ABI          |
-// | (frame::abi_minframe)|                 | (frame::abi_minframe)|                      | (frame::abi_minframe)|
+// |                      |                 |                      |                      |                      |
+// | (frame::java_abi)    |                 | (frame::java_abi)    |                      | (frame::java_abi)    |
 // | 4 words              |                 | 4 words              |                      | 4 words              |
 // | Caller's SP          |<- FP of caller  | Caller's SP          |<- FP of caller       | Caller's SP          |<- FP of caller
 // ========================   (aligned)     ========================                      ========================
@@ -599,13 +599,13 @@ inline void ThawBase::patch_pd(frame& f, const frame& caller) {
 // | Reserved Expr. Stack |                 |----------------------|                      |----------------------|
 // |                      |                 | Opt. Alignm. Padding |                      | Opt. Alignm. Padding |
 // |                      |<- ConstMethod   |----------------------|                      |----------------------|
-// |----------------------|   ::_max_stack  | Minimal ABI          |                      | Minimal ABI          |
-// | Opt. Alignm. Padding |                 | (frame::abi_minframe)|                      | (frame::abi_minframe)|
+// |----------------------|   ::_max_stack  |                      |                      |                      |
+// | Opt. Alignm. Padding |                 | (frame::java_abi)    |                      | (frame::java_abi)    |
 // |----------------------|                 | 4 words              |                      | 4 words              |
 // | Large ABI            |                 | Caller's SP          |<- new SP of caller   | Caller's SP          |<- SP of caller /
 // | for C++ calls        |                 ========================   (aligned)          ========================   FP of callee
-// | (frame::abi_reg_args)|                                                               | frame::              |   (aligned)
-// |                      |                                                               | ijava_state          |
+// | (frame::             |                                                               | frame::              |   (aligned)
+// |  native_abi_reg_args)|                                                               | ijava_state          |
 // |                      |                                                               |                      |
 // |                      |                                                               |----------------------|
 // |                      |                                                               |                      |
@@ -621,8 +621,8 @@ inline void ThawBase::patch_pd(frame& f, const frame& caller) {
 //                     -------------------->              ------------------------>       |----------------------|
 //                     (ABI, expressions, locals)                                         | Large ABI            |
 //                                                                                        | for C++ calls        |
-//                                                                                        | (frame::abi_reg_args)|
-//                                                                                        |                      |
+//                                                                                        | (frame::             |
+//                                                                                        |  native_abi_reg_args)|
 //                                                |  Growth  |                            |                      |
 //                                                v          v                            |                      |
 //                                                                                        |                      |
