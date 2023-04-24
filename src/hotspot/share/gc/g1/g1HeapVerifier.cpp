@@ -410,8 +410,8 @@ public:
       _old_count++;
     } else {
       // There are no other valid region types. Check for one invalid
-      // one we can identify: pinned without old or humongous set.
-      assert(!hr->is_pinned(), "Heap region %u is pinned but not old or humongous.", hr->hrm_index());
+      // one we can identify before crashing: non-movable.
+      assert(hr->is_young_gc_movable(), "Heap region %u is non-movable.", hr->hrm_index());
       ShouldNotReachHere();
     }
     return false;

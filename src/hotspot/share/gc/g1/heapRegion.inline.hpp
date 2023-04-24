@@ -177,7 +177,7 @@ inline size_t HeapRegion::block_size(const HeapWord* p, HeapWord* const pb) cons
 
 inline void HeapRegion::reset_compacted_after_full_gc(HeapWord* new_top) {
   set_top(new_top);
-  // After a compaction the mark bitmap in a non-pinned regions is invalid.
+  // After a compaction the mark bitmap in a movable region is invalid.
   // But all objects are live, we get this by setting TAMS to bottom.
   init_top_at_mark_start();
 
@@ -546,6 +546,10 @@ inline void HeapRegion::record_surv_words_in_group(size_t words_survived) {
   assert(has_valid_age_in_surv_rate(), "pre-condition");
   int age_in_group = age_in_surv_rate_group();
   _surv_rate_group->record_surviving_words(age_in_group, words_survived);
+}
+
+inline bool is_young_gc_movable() const {
+  return G1CollectedHeap::heap()->policy()->is_young_gc_movable(this);
 }
 
 #endif // SHARE_GC_G1_HEAPREGION_INLINE_HPP

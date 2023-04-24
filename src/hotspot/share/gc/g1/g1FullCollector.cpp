@@ -257,7 +257,9 @@ void G1FullCollector::complete_collection() {
 void G1FullCollector::before_marking_update_attribute_table(HeapRegion* hr) {
   if (hr->is_free()) {
     _region_attr_table.set_free(hr->hrm_index());
-  } else if (hr->is_pinned()) {
+  } else if (!hr->is_young_gc_movable()) {
+    // In the first attempt to do a full gc we do not move anything that young gc
+    // won't move either.
     _region_attr_table.set_skip_compacting(hr->hrm_index());
   } else {
     // Everything else should be compacted.
