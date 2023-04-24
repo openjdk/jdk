@@ -786,7 +786,7 @@ public class Flow {
         record RecordPattern(Type recordType, int _hashCode, Type[] fullComponentTypes, PatternDescription... nested) implements PatternDescription {
 
             public RecordPattern(Type recordType, Type[] fullComponentTypes, PatternDescription[] nested) {
-                this(recordType, hashCode(-1, recordType, fullComponentTypes, nested), fullComponentTypes, nested);
+                this(recordType, hashCode(-1, recordType, nested), fullComponentTypes, nested);
             }
 
             @Override
@@ -802,10 +802,10 @@ public class Flow {
             }
 
             public int hashCode(int excludeComponent) {
-                return hashCode(excludeComponent, recordType, fullComponentTypes, nested);
+                return hashCode(excludeComponent, recordType, nested);
             }
 
-            public static int hashCode(int excludeComponent, Type recordType, Type[] fullComponentTypes, PatternDescription... nested) {
+            public static int hashCode(int excludeComponent, Type recordType, PatternDescription... nested) {
                 int hash = 5;
                 hash =  41 * hash + recordType.tsym.hashCode();
                 for (int  i = 0; i < nested.length; i++) {
