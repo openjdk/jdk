@@ -48,8 +48,8 @@ public class ContainerMousePositionTest {
     private static Point FIRST_BUTTON_LOCATION = new Point(20, 20);
     private static int DELAY = 1000;
     Robot robot;
-    int xPos = 0;
-    int yPos = 0;
+    transient int xPos = 0;
+    transient int yPos = 0;
     Point pMousePosition;
 
     public static void main(String[] args) throws Exception {
