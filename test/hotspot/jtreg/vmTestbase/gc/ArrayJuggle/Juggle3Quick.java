@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,21 +21,12 @@
  * questions.
  */
 
-
 /*
- * @test
- * @key stress randomness
- *
- * @summary converted from VM Testbase gc/ArrayJuggle/Juggle34.
  * VM Testbase keywords: [gc, stress, stressopt, nonconcurrent, quick]
- *
- * @library /vmTestbase
- *          /test/lib
- * @run main/othervm
- *      -XX:+HeapDumpOnOutOfMemoryError
- *      -Xlog:gc=debug:gc.log
- *      gc.ArrayJuggle.Juggle01.Juggle01
- *      -gp random(arrays)
- *      -ms high
  */
 
+/* @test id=1  @key stress randomness @library /vmTestbase /test/lib @run main/othervm -XX:+HeapDumpOnOutOfMemoryError -Xlog:gc=debug:gc.log gc.ArrayJuggle.Juggle3 -gp byteArr -ms low */
+/* @test id=14 @key stress randomness @library /vmTestbase /test/lib @run main/othervm -XX:+HeapDumpOnOutOfMemoryError -Xlog:gc=debug:gc.log gc.ArrayJuggle.Juggle3 -gp intArr -ms medium */
+/* @test id=22 @key stress randomness @library /vmTestbase /test/lib @run main/othervm -XX:+HeapDumpOnOutOfMemoryError -Xlog:gc=debug:gc.log gc.ArrayJuggle.Juggle3 -gp doubleArr -ms low */
+/* @test id=29 @key stress randomness @library /vmTestbase /test/lib @run main/othervm -XX:+HeapDumpOnOutOfMemoryError -Xlog:gc=debug:gc.log gc.ArrayJuggle.Juggle3 -gp hashed(doubleArr) -ms medium */
+/* @test id=34 @key stress randomness @library /vmTestbase /test/lib @run main/othervm -XX:+HeapDumpOnOutOfMemoryError -Xlog:gc=debug:gc.log gc.ArrayJuggle.Juggle3 -gp random(arrays) -ms high */
