@@ -928,6 +928,11 @@ reg_class vmask_reg (
     V30,
     V31
 );
+
+reg_class vmask_reg_no_v0 (
+    V30,
+    V31
+);
 %}
 
 //----------DEFINITION BLOCK---------------------------------------------------
@@ -3614,6 +3619,17 @@ operand vRegMask()
   constraint(ALLOC_IN_RC(vmask_reg));
   match(RegVectMask);
   match(vRegMask_V0);
+  match(vRegMaskNoV0);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vRegMaskNoV0()
+%{
+  constraint(ALLOC_IN_RC(vmask_reg_no_v0));
+  match(RegVectMask);
+  match(vRegMask);
   op_cost(0);
   format %{ %}
   interface(REG_INTER);
