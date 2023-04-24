@@ -1897,7 +1897,7 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
 
           if (as.contains(id)) {
             if (pred_as.is_alias(n) == id) {
-              // mergethe same object but have different allocation states.
+              // merge the same object but have different allocation states.
               if (!as.get_object_state(id)->is_virtual() && pred_as.get_object_state(id)->is_virtual()) {
                 n = ensure_object_materialized(n, pred_as, newin, r, pnum);
               } else if (as.get_object_state(id)->is_virtual() && !pred_as.get_object_state(id)->is_virtual()) {
