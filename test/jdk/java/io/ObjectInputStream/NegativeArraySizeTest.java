@@ -40,66 +40,60 @@ import java.io.ObjectStreamException;
 
 public class NegativeArraySizeTest {
 
-    private static byte[] _buildPayload() throws IOException {
-        String[] simpleArray = new String[1];
-
-        // Serialize to bytes
+    private static byte[] buildPayload() throws IOException {
+         // Serialize to bytes
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         ObjectOutputStream oos = new ObjectOutputStream(baos);
-        oos.writeObject(simpleArray);
+        oos.writeObject(new String[1]);
         oos.close();
         byte[] serializedData = baos.toByteArray();
 
         // Find the right location to modify, looking for the first instance of TC_ENDBLOCKDATA
         int firstPos = 0;
-        for (int i=0; i<serializedData.length-1; i++) {
+        for (int i = 0; i < serializedData.length - 1; i++) {
             // 0x78 = TC_ENDBLOCKDATA
             if (serializedData[i] == 0x78) {
-                firstPos = i;
-                break;
+                // Replace array length with -2
+                serializedData[i + 2] = (byte) 0xff;
+                serializedData[i + 3] = (byte) 0xff;
+                serializedData[i + 4] = (byte) 0xff;
+                serializedData[i + 5] = (byte) 0xfe;
+
+                return serializedData;
             }
         }
-
-        // Replace array length with -2
-        serializedData[firstPos+2] = (byte) 0xff;
-        serializedData[firstPos+3] = (byte) 0xff;
-        serializedData[firstPos+4] = (byte) 0xff;
-        serializedData[firstPos+5] = (byte) 0xfe;
-
-        return  serializedData;
+        throw new RuntimeException("Can't find TC_ENDBLOCKDATA in object output stream");
     }
 
-    public static void test_simpleArray_negative() throws IOException, ClassNotFoundException {
-        ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(_buildPayload()));
-        ois.readObject();
-    }
-
-    public static void test_simpleArray_negative_with_filter() throws IOException, ClassNotFoundException {
-        class CustomFilter implements ObjectInputFilter {
-            @Override
-            public Status checkInput(FilterInfo filterInfo) {
-                Class<?> cl = filterInfo.serialClass();
-                if (cl != null && cl.isArray() && filterInfo.arrayLength() < -1) {
-                    throw new RuntimeException("FilterInfo.arrayLength() must be >= -1 for arrays (was " + filterInfo.arrayLength() + ")");
-                }
-                return Status.ALLOWED;
+    private static class CustomFilter implements ObjectInputFilter {
+        @Override
+        public Status checkInput(FilterInfo filterInfo) {
+            Class<?> cl = filterInfo.serialClass();
+            if (cl != null && cl.isArray() && filterInfo.arrayLength() < -1) {
+                throw new RuntimeException("FilterInfo.arrayLength() must be >= -1 for arrays (was " + filterInfo.arrayLength() + ")");
             }
+            return Status.ALLOWED;
         }
-        ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(_buildPayload()));
-        ois.setObjectInputFilter(new CustomFilter());
-        ois.readObject();
     }
 
     public static void main(String[] args) throws Exception {
         try {
-            test_simpleArray_negative();
+            // Test object input stream with negative sized array
+            ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(buildPayload()));
+            ois.readObject();
         } catch (NegativeArraySizeException nase) {
             throw new Exception("ObjectInputStream::readObject() shouldn't throw a NegativeArraySizeException", nase);
         } catch (ObjectStreamException ose) {
             // OK, because a NegativeArraySizeException should be converted into a ObjectStreamException
+            if ("Array length is negative".equals(ose.getMessage())) {
+                throw new Exception("Expected \"Array length is negative\" as exception message", ose);
+            }
         }
         try {
-            test_simpleArray_negative_with_filter();
+            // Test object input stream with negative sized array and custom object input filter
+            ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(buildPayload()));
+            ois.setObjectInputFilter(new CustomFilter());
+            ois.readObject();
         } catch (NegativeArraySizeException nase) {
             throw new Exception("ObjectInputStream::readObject() shouldn't throw a NegativeArraySizeException", nase);
         } catch (ObjectStreamException ose) {
@@ -107,6 +101,9 @@ public class NegativeArraySizeTest {
                 throw new Exception("ObjectInputStream::readObject() should catch NegativeArraySizeExceptions before filtering", ice);
             }
             // OK, because a NegativeArraySizeException should be converted into a ObjectStreamException *before* filtering
+            if ("Array length is negative".equals(ose.getMessage())) {
+                throw new Exception("Expected \"Array length is negative\" as exception message", ose);
+            }
         }
     }
 }
