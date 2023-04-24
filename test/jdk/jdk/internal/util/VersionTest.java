@@ -63,37 +63,33 @@ public class VersionTest {
         assertEquals(actual, expected, "Parsed version mismatch");
     }
 
-    private static Stream<Arguments> illegalVersionParams() {
+    private static Stream<String> illegalVersionParams() {
         return Stream.of(
-                Arguments.of("1.", IllegalArgumentException.class),     // dot without digits
-                Arguments.of("1.2.", IllegalArgumentException.class),   // dot without digits
-                Arguments.of("1.-abc", IllegalArgumentException.class), // dot without digits
-                Arguments.of("1.2.-abc", IllegalArgumentException.class), // dot without digits
-                Arguments.of("", IllegalArgumentException.class),
-                Arguments.of("xaaa", IllegalArgumentException.class),
-                Arguments.of("abc.xyz", IllegalArgumentException.class)
+                "1.", "1.2.", "1.-abc", "1.2.-abc", // dot without digits
+                "",                                 // empty
+                "xaaa", "abc.xyz"                   // no initial digit
         );
     }
 
     @ParameterizedTest()
     @MethodSource("illegalVersionParams")
-    public void checkIllegalParse(String verName, Class<Throwable> exception) {
-        try {
-            Version.parse(verName);
-        } catch (Throwable th) {
-            System.err.printf("%s: %s%n", verName, th.getMessage());
-        }
-        assertThrows(exception, () -> Version.parse(verName));
+    public void checkIllegalParse(String verName) {
+        Throwable th = assertThrows(IllegalArgumentException.class, () -> Version.parse(verName));
+        String expectedMsg = "malformed version, missing digits: " + verName;
+        assertEquals(th.getMessage(), expectedMsg, "message mismatch");
     }
 
     private static Stream<Arguments> versionCompare() {
         return Stream.of(
                 Arguments.of(new Version(2, 1), new Version(2, 1), 0),
-                Arguments.of(new Version(2, 1), new Version(2, 0), 1),
+                Arguments.of(new Version(2, 1), new Version(2, 0), +1),
                 Arguments.of(new Version(2, 0), new Version(2, 1), -1),
                 Arguments.of(new Version(3, 3, 1), new Version(3, 3, 1), 0),
-                Arguments.of(new Version(3, 3, 1), new Version(3, 3, 0), 1),
+                Arguments.of(new Version(3, 3, 1), new Version(3, 3, 0), +1),
                 Arguments.of(new Version(3, 3, 0), new Version(3, 3, 1), -1)
+                Arguments.of(new Version(2, 1), new Version(2, 1), 0),
+                Arguments.of(new Version(2, 0), new Version(3, 0), -1),
+                Arguments.of(new Version(3, 0), new Version(2, 0), +1),
         );
     }
 

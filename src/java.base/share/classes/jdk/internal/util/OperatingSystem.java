@@ -143,18 +143,18 @@ public enum OperatingSystem {
      * {@return the operating system version with major, minor, micro}
      */
     public static Version version() {
-        return osVersion;
+        return CURRENT_VERSION;
     }
 
     // Parse and save the current version
-    private static Version osVersion = initVersion();
+    private static final Version CURRENT_VERSION = initVersion();
 
     private static Version initVersion() {
         final String osVer = StaticProperty.osVersion();
         try {
             return Version.parse(osVer);
-        } catch (IllegalArgumentException ile) {
-            throw new AssertionError("os.version malformed: " + osVer);
+        } catch (IllegalArgumentException iae) {
+            throw new InternalError("os.version malformed: " + osVer, iae);
         }
     }
 }
