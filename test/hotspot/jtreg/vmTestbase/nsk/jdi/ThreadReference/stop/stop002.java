@@ -150,9 +150,9 @@ public class stop002 {
                 thrRef.stop(objRef); // objRef is an instance of the debuggee class, not a Throwable
                 log.complain("TEST #1 FAILED: expected IllegalArgumentException was not thrown");
                 tot_res = Consts.TEST_FAILED;
-            } catch(InvalidTypeException ee) {
+            } catch (InvalidTypeException ee) {
                 log.display("TEST #1 PASSED: caught expected " + ee);
-            } catch(Exception ue) {
+            } catch (Exception ue) {
                 ue.printStackTrace();
                 log.complain("TEST #1 FAILED: caught unexpected " + ue + "instead of InvalidTypeException");
                 tot_res = Consts.TEST_FAILED;
@@ -166,7 +166,7 @@ public class stop002 {
             try {
                 thrRef.stop(throwableRef);
                 log.display("TEST #2 PASSED: stop() call succeeded.");
-            } catch(Exception ue) {
+            } catch (Exception ue) {
                 ue.printStackTrace();
                 log.complain("TEST #2 FAILED: caught unexpected " + ue);
                 tot_res = Consts.TEST_FAILED;
@@ -189,7 +189,7 @@ public class stop002 {
                 } else {
                     log.display("TEST #3 PASSED: stop() call succeeded.");
                 }
-            } catch(Exception ue) {
+            } catch (Exception ue) {
                 if (vthreadMode && ue instanceof IllegalThreadStateException) {
                     log.display("TEST #3 PASSED: stop() call threw IllegalThreadStateException"
                                 + " for virtual thread");
@@ -220,7 +220,7 @@ public class stop002 {
                 } else {
                     log.display("TEST #4 PASSED: stop() call succeeded.");
                 }
-            } catch(Throwable ue) {
+            } catch (Throwable ue) {
                 if (vthreadMode && ue instanceof OpaqueFrameException) {
                     log.display("TEST #4 PASSED: stop() call threw OpaqueFrameException for virtual thread.");
                 } else {
@@ -252,7 +252,7 @@ public class stop002 {
                 } else {
                     log.display("TEST #5 PASSED: stop() call for suspended thread succeeded");
                 }
-            } catch(Throwable ue) {
+            } catch (Throwable ue) {
                 if (vthreadMode && ue instanceof OpaqueFrameException) {
                     log.display("TEST #5 PASSED: stop() call threw OpaqueFrameException for virtual thread");
                 } else {
@@ -271,11 +271,11 @@ public class stop002 {
             tot_res = Consts.TEST_FAILED;
         } finally {
             // Force the debuggee out of both loops
-            if (objRef != null && stopLoop1 != null && stopLoop2 !=  null) {
+            if (objRef != null && stopLoop1 != null && stopLoop2 != null) {
                 try {
                     objRef.setValue(stopLoop1, vm.mirrorOf(true));
                     objRef.setValue(stopLoop2, vm.mirrorOf(true));
-                } catch(Exception sve) {
+                } catch (Exception sve) {
                     sve.printStackTrace();
                     tot_res = Consts.TEST_FAILED;
                 }
@@ -299,9 +299,9 @@ public class stop002 {
                         return (ObjectReference)
                             stackFr.getValue(locVar);
                     }
-                } catch(AbsentInformationException e) {
+                } catch (AbsentInformationException e) {
                     // this is not needed stack frame, ignoring
-                } catch(NativeMethodException ne) {
+                } catch (NativeMethodException ne) {
                     // current method is native, also ignoring
                 }
             }
