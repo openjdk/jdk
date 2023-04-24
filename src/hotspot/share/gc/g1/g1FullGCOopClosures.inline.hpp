@@ -78,7 +78,7 @@ inline void G1AdjustClosure::do_oop(oop* p)       { do_oop_work(p); }
 inline void G1AdjustClosure::do_oop(narrowOop* p) { do_oop_work(p); }
 
 inline bool G1IsAliveClosure::do_object_b(oop p) {
-  return _bitmap->is_marked(p) || _collector->is_skip_marking(p);
+  return _bitmap->is_marked(p);
 }
 
 template<typename T>
