@@ -25,46 +25,4 @@
 package java.lang.constant;
 
 record PackageDescImpl(String packageInternalName) implements PackageDesc {
-
-    /**
-     * Validates the correctness of a binary package name. In particular checks for the presence of
-     * invalid characters in the name.
-     *
-     * @param name the package name
-     * @return the package name passed if valid
-     * @throws IllegalArgumentException if the package name is invalid
-     */
-    public static String validateBinaryPackageName(String name) {
-        for (int i=0; i<name.length(); i++) {
-            char ch = name.charAt(i);
-            if (ch == ';' || ch == '[' || ch == '/')
-                throw new IllegalArgumentException("Invalid package name: " + name);
-        }
-        return name;
-    }
-
-    /**
-     * Validates the correctness of an internal package name.
-     * In particular checks for the presence of invalid characters in the name.
-     *
-     * @param name the package name
-     * @return the package name passed if valid
-     * @throws IllegalArgumentException if the package name is invalid
-     */
-    public static String validateInternalPackageName(String name) {
-        for (int i=0; i<name.length(); i++) {
-            char ch = name.charAt(i);
-            if (ch == ';' || ch == '[' || ch == '.')
-                throw new IllegalArgumentException("Invalid package name: " + name);
-        }
-        return name;
-    }
-
-    public static String internalToBinary(String name) {
-        return name.replace('/', '.');
-    }
-
-    public static String binaryToInternal(String name) {
-        return name.replace('.', '/');
-    }
 }

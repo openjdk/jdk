@@ -27,7 +27,7 @@ package java.lang.constant;
 import static java.util.Objects.requireNonNull;
 
 /**
- * A nominal descriptor for a {@code Package} constant.
+ * A nominal descriptor for a {@code Package} constant {@jvms 4.4.12}.
  *
  * <p>To create a {@linkplain PackageDesc} for a package, use {@link #of} or
  * {@link #ofInternalName(String)}.
@@ -50,8 +50,8 @@ public sealed interface PackageDesc
      * correct format
      */
     static PackageDesc of(String name) {
-        PackageDescImpl.validateBinaryPackageName(requireNonNull(name));
-        return new PackageDescImpl(PackageDescImpl.binaryToInternal(name));
+        ConstantUtils.validateBinaryPackageName(requireNonNull(name));
+        return new PackageDescImpl(ConstantUtils.binaryToInternal(name));
     }
 
     /**
@@ -70,7 +70,7 @@ public sealed interface PackageDesc
      * correct format
      */
     static PackageDesc ofInternalName(String name) {
-        PackageDescImpl.validateInternalPackageName(requireNonNull(name));
+        ConstantUtils.validateInternalPackageName(requireNonNull(name));
         return new PackageDescImpl(name);
     }
 
@@ -91,7 +91,7 @@ public sealed interface PackageDesc
      * default package
      */
     default String packageName() {
-        return PackageDescImpl.internalToBinary(packageInternalName());
+        return ConstantUtils.internalToBinary(packageInternalName());
     }
 
     /**

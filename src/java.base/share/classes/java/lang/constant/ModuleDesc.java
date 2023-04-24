@@ -27,7 +27,7 @@ package java.lang.constant;
 import static java.util.Objects.requireNonNull;
 
 /**
- * A nominal descriptor for a {@code Module} constant.
+ * A nominal descriptor for a {@code Module} constant {@jvms 4.4.11}.
  *
  * <p>To create a {@linkplain ModuleDesc} for a module, use {@link #of}.
  *
@@ -68,7 +68,7 @@ public sealed interface ModuleDesc
      * correct format
      */
     static ModuleDesc of(String name) {
-        ModuleDescImpl.validateModuleName(requireNonNull(name));
+        ConstantUtils.validateModuleName(requireNonNull(name));
         return new ModuleDescImpl(name);
     }
 

@@ -25,24 +25,4 @@
 package java.lang.constant;
 
 record ModuleDescImpl(String moduleName) implements ModuleDesc {
-
-    /**
-     * Validates the correctness of a module name. In particular checks for the presence of
-     * invalid characters in the name.
-     *
-     * {@jvms 4.2.3} Module and Package Names
-     *
-     * @param name the module name
-     * @return the module name passed if valid
-     * @throws IllegalArgumentException if the module name is invalid
-     */
-    public static String validateModuleName(String name) {
-        for (int i=name.length() - 1; i >= 0; i--) {
-            char ch = name.charAt(i);
-            if ((ch >= '\u0000' && ch <= '\u001F')
-            || ((ch == '\\' || ch == ':' || ch =='@') && (i == 0 || name.charAt(--i) != '\\')))
-                throw new IllegalArgumentException("Invalid module name: " + name);
-        }
-        return name;
-    }
 }

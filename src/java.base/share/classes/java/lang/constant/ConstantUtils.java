@@ -76,6 +76,60 @@ class ConstantUtils {
      }
 
     /**
+     * Validates the correctness of a binary package name. In particular checks for the presence of
+     * invalid characters in the name.
+     *
+     * @param name the package name
+     * @return the package name passed if valid
+     * @throws IllegalArgumentException if the package name is invalid
+     */
+    public static String validateBinaryPackageName(String name) {
+        for (int i=0; i<name.length(); i++) {
+            char ch = name.charAt(i);
+            if (ch == ';' || ch == '[' || ch == '/')
+                throw new IllegalArgumentException("Invalid package name: " + name);
+        }
+        return name;
+    }
+
+    /**
+     * Validates the correctness of an internal package name.
+     * In particular checks for the presence of invalid characters in the name.
+     *
+     * @param name the package name
+     * @return the package name passed if valid
+     * @throws IllegalArgumentException if the package name is invalid
+     */
+    public static String validateInternalPackageName(String name) {
+        for (int i=0; i<name.length(); i++) {
+            char ch = name.charAt(i);
+            if (ch == ';' || ch == '[' || ch == '.')
+                throw new IllegalArgumentException("Invalid package name: " + name);
+        }
+        return name;
+    }
+
+    /**
+     * Validates the correctness of a module name. In particular checks for the presence of
+     * invalid characters in the name.
+     *
+     * {@jvms 4.2.3} Module and Package Names
+     *
+     * @param name the module name
+     * @return the module name passed if valid
+     * @throws IllegalArgumentException if the module name is invalid
+     */
+    public static String validateModuleName(String name) {
+        for (int i=name.length() - 1; i >= 0; i--) {
+            char ch = name.charAt(i);
+            if ((ch >= '\u0000' && ch <= '\u001F')
+            || ((ch == '\\' || ch == ':' || ch =='@') && (i == 0 || name.charAt(--i) != '\\')))
+                throw new IllegalArgumentException("Invalid module name: " + name);
+        }
+        return name;
+    }
+
+    /**
      * Validates a member name
      *
      * @param name the name of the member
