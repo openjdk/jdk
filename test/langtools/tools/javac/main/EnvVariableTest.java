@@ -119,7 +119,9 @@ public class EnvVariableTest extends TestRunner {
 
     void test(String full, String... expectedArgs) throws Exception {
         task.envVar("JDK_JAVAC_OPTIONS", full);
-        task.args("--add-exports", "jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED",
+        task.args(
+                "--add-exports", "jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED",
+                "--add-exports", "jdk.internal.opt/jdk.internal.opt=ALL-UNNAMED",
                 "-cp", testClasses, "EnvVariableTest$Tester");
         Task.Result tr = task.run(Task.Expect.SUCCESS);
         String expected = Tester.arrayToString(expectedArgs);
