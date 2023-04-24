@@ -4799,7 +4799,7 @@ public class Arrays {
         StringBuilder b = new StringBuilder();
         b.append('[');
         for (int i = 0; ; i++) {
-            b.append(a[i]);
+            b.append(Integer.toString(a[i] & 255, 16));
             if (i == iMax)
                 return b.append(']').toString();
             b.append(", ");

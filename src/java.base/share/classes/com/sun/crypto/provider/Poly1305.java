@@ -239,7 +239,6 @@ final class Poly1305 {
      * be a full 16 bytes if the last block has less than 16 bytes.
      */
     private void processBlock(ByteBuffer buf, int len) {
-        var printing = ("yes".equals(BLAH));
         n.setValue(buf, len, (byte)0x01);
         if (printing) {
             System.out.println("n = " + n.asBigInteger().toString(16));
@@ -251,7 +250,6 @@ final class Poly1305 {
     private void processBlock1(byte[] block, int offset, int length) {
         Objects.checkFromIndexSize(offset, length, block.length);
         n.setValue(block, offset, length, (byte)0x01);
-        var printing = ("yes".equals(BLAH));
         if (printing) {
             System.out.println("a0 = " + a.asBigInteger().toString(16));
             System.out.println("n = " + n.asBigInteger().toString(16));
@@ -280,91 +278,99 @@ final class Poly1305 {
         a.setProduct(r);                // a = (a * r) % p
     }
 
-    boolean printing = ("yes".equals(BLAH));
+    boolean printing = (! "no".equals(BLAH));
 
     // This is an intrinsified method. The unused parameters aLimbs and rLimbs are used by the intrinsic.
     // They correspond to this.a and this.r respectively
     @ForceInline
     @IntrinsicCandidate
     private void processMultipleBlocks(byte[] input, int offset, int length, long[] aLimbs, long[] rLimbs) {
+        final int cols = 2, max_cols = 4;
+
         if (length >= BLOCK_LENGTH * 2) {
             IntegerModuloP rSquared = r.square();
-            IntegerModuloP a0 = a.mutable();
-            IntegerModuloP a1 = ipl1305.get0();
+            IntegerModuloP[] A = new IntegerModuloP[4];
+             A[0] = a.mutable();
+             A[1] = ipl1305.get0();
 
-            MutableIntegerModuloP n0 = ipl1305.get1().mutable();
-            MutableIntegerModuloP n1 = ipl1305.get1().mutable();
+            var N = new MutableIntegerModuloP[4];
+            N[0] = ipl1305.get1().mutable();
+            N[1] = ipl1305.get1().mutable();
 
             if (printing) {
-                System.out.printf("init:\n    a0 = %33.33s  r = %33.33s \n", a0, r);
+                System.out.printf("init:\n    A[0] = %33.33s  r = %33.33s \n", A[0], r);
                 System.out.printf("  r**2 = %33.33s \n", rSquared);
             }
 
             while (length >= BLOCK_LENGTH * 4) {
 
-                n0.setValue(input, offset, BLOCK_LENGTH, (byte) 0x01);
-                offset += BLOCK_LENGTH;
-                length -= BLOCK_LENGTH;
-                n1.setValue(input, offset, BLOCK_LENGTH, (byte) 0x01);
-                offset += BLOCK_LENGTH;
-                length -= BLOCK_LENGTH;
+                for (int i = 0; i < cols; i++) {
+                    N[i].setValue(input, offset, BLOCK_LENGTH, (byte) 0x01);
+                    offset += BLOCK_LENGTH;
+                    length -= BLOCK_LENGTH;
+                }
 
-                var s0 = a0.add(n0);
-                a0 = s0.multiply(rSquared);
-                var s1 = a1.add(n1);
-                a1 = s1.multiply(rSquared);
+                var S = new IntegerModuloP[max_cols];
+                for (int i = 0; i < cols; i++) {
+                    S[i] = A[i].add(N[i]);
+                    A[i] = S[i].multiply(rSquared);
+                }
                 if (printing) {
-                    System.out.printf("##  n0 = %33.33s  n1 = %33.33s\n", n0, n1);
-                    System.out.printf("##  s0 = %33.33s  s1 = %33.33s\n", s0, s1);
-                    System.out.printf("##  a0 = %33.33s  a1 = %33.33s\n", a0, a1);
+                    System.out.printf("##  N[0] = %33.33s  N[1] = %33.33s\n", N[0], N[1]);
+                    System.out.printf("##  s[0] = %33.33s  s[1] = %33.33s\n", S[0], S[1]);
+                    System.out.printf("##  A[0] = %33.33s  A[1] = %33.33s\n", A[0], A[1]);
                 }
 
             }
 
-            if ("".length() == 0) {
-                n0.setValue(input, offset, BLOCK_LENGTH, (byte) 0x01);
+            if ("".length() != 0) {
 
+                N[0].setValue(input, offset, BLOCK_LENGTH, (byte) 0x01);
                 offset += BLOCK_LENGTH;
                 length -= BLOCK_LENGTH;
 
-                var s0 = a0.add(n0);
-                a0 = s0.multiply(rSquared);
+                var S = new IntegerModuloP[4];
+                S[0] = A[0].add(N[0]);
+                A[0] = S[0].multiply(rSquared);
 
-                n1.setValue(input, offset, BLOCK_LENGTH, (byte) 0x01);
+                N[1].setValue(input, offset, BLOCK_LENGTH, (byte) 0x01);
                 offset += BLOCK_LENGTH;
                 length -= BLOCK_LENGTH;
 
-                var s1 = a1.add(n1);
-                a1 = s1.multiply(r);
+                S[1] = A[1].add(N[1]);
+                A[1] = S[1].multiply(r);
 
-                a.setValue(a0.add(a1));
+                a.setValue(A[0].add(A[1]));
                 if (printing) {
-                    System.out.printf("    n0 = %33.33s  n1 = %33.33s\n", n0, n1);
-                    System.out.printf("    s0 = %33.33s  s1 = %33.33s\n", s0, s1);
-                    System.out.printf("    a0 = %33.33s  a1 = %33.33s\n", a0, a1);
+                    System.out.printf("    N[0] = %33.33s  N[1] = %33.33s\n", N[0], N[1]);
+                    System.out.printf("    s[0] = %33.33s  s[1] = %33.33s\n", S[0], S[1]);
+                    System.out.printf("    A[0] = %33.33s  A[1] = %33.33s\n", A[0], A[1]);
                     System.out.printf("     a = %33.33s\n", a);
                     System.out.println("");
                 }
             } else {
                 var sum = ipl1305.get0();
 
-                n0.setValue(input, offset, BLOCK_LENGTH, (byte) 0x01);
-                offset += BLOCK_LENGTH;
-                length -= BLOCK_LENGTH;
+                for (int i = 0; i < cols; i++) {
 
-                sum = sum.add(a0);
-                sum = sum.add(n0);
-                sum = sum.multiply(r);
+                    N[i].setValue(input, offset, BLOCK_LENGTH, (byte) 0x01);
+                    offset += BLOCK_LENGTH;
+                    length -= BLOCK_LENGTH;
 
-                n1.setValue(input, offset, BLOCK_LENGTH, (byte) 0x01);
-                offset += BLOCK_LENGTH;
-                length -= BLOCK_LENGTH;
-
-                sum = sum.add(a1);
-                sum = sum.add(n1);
-                sum = sum.multiply(r);
+                    sum = sum.add(A[i]);
+                    sum = sum.add(N[i]);
+                    sum = sum.multiply(r);
+                    System.out.printf("    sum = %33.33s  \n", sum);
+                }
 
                 a.setValue(sum);
+
+                if (printing) {
+                    System.out.printf("    N[0] = %33.33s  N[1] = %33.33s\n", N[0], N[1]);
+                    System.out.printf("    A[0] = %33.33s  A[1] = %33.33s\n", A[0], A[1]);
+                    System.out.printf("     a = %33.33s\n", a);
+                    System.out.println("");
+                }
             }
         }
 
