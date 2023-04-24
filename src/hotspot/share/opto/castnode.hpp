@@ -76,7 +76,6 @@ public:
   // non_cast->uncast() == this.
   template <typename Callback>
   static void visit_uncasted_uses(const Node* n, Callback callback) {
-    ResourceMark rm;
     Unique_Node_List internals;
     internals.push((Node*)n); // start traversal
     for (uint j = 0; j < internals.size(); ++j) {
