@@ -515,9 +515,9 @@ void SuperWord::mark_reductions() {
       continue;
     }
     // Test that reduction nodes do not have any users in the loop besides their
-    // reduction cycle predecessors.
+    // reduction cycle successors.
     const Node* current = first;
-    const Node* pred = phi; // current's predecessor in the reduction cycle.
+    const Node* succ = phi; // current's successor in the reduction cycle.
     bool used_in_loop = false;
     for (int i = 0; i < path_nodes; i++) {
       for (DUIterator_Fast jmax, j = current->fast_outs(jmax); j < jmax; j++) {
@@ -525,7 +525,7 @@ void SuperWord::mark_reductions() {
         if (!in_bb(u)) {
           continue;
         }
-        if (u == pred) {
+        if (u == succ) {
           continue;
         }
         used_in_loop = true;
@@ -534,7 +534,7 @@ void SuperWord::mark_reductions() {
       if (used_in_loop) {
         break;
       }
-      pred = current;
+      succ = current;
       current = original_input(current, reduction_input);
     }
     if (used_in_loop) {
