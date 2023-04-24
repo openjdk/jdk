@@ -396,6 +396,10 @@ private:
       return _prev;
     }
 
+    bool below(TypeUpdate* dom_updates, PhaseIdealLoop* phase) const {
+      return this != dom_updates && (dom_updates == nullptr || !phase->is_dominator(control(), dom_updates->control()));
+    }
+
     void set_prev(TypeUpdate* prev) {
       _prev = prev;
     }
@@ -1070,7 +1074,7 @@ public:
         Node* in = c->in(i);
         TypeUpdate* updates = updates_at(in);
         int cnt = 0;
-        while(updates != nullptr && updates != _dom_updates && (_dom_updates == nullptr || !_phase->is_dominator(updates->control(), _dom_updates->control()))) {
+        while(updates != nullptr && updates->below(_dom_updates, _phase)) {
           cnt += updates->length();
           updates = updates->prev();
         }
@@ -1084,7 +1088,7 @@ public:
       Node* ctrl = in;
       TypeUpdate* updates = updates_at(ctrl);
       assert(updates != nullptr || _dom_updates == nullptr || _phase->is_dominator(c, in), "");
-      while(updates != nullptr && updates != _dom_updates && (_dom_updates == nullptr || !_phase->is_dominator(updates->control(), _dom_updates->control()))) {
+      while(updates != nullptr && updates->below(_dom_updates, _phase)) {
         for (int j = 0; j < updates->length(); ++j) {
           Node* n = updates->node_at(j);
 //          tty->print_cr("XXX %d %d %d %d", iterations, c->_idx, n->_idx, c->req());
@@ -1233,6 +1237,7 @@ public:
 #ifdef ASSERT
       sync(dom);
 #endif
+
       int j = 0;
       assert(_current_updates->control() == c, "");
       for (int i = 0; i < _current_updates->length(); ++i) {
@@ -1269,6 +1274,22 @@ public:
         assert(narrows_type(_prev_updates->type_at(j), PhaseTransform::type(_prev_updates->node_at(j))), "");
       }
     }
+#ifdef ASSERT
+    if (_current_updates != nullptr && _current_updates->control() == c) {
+      sync(C->root());
+      int last_expected = (_phase->ltree_root()->_child != nullptr || has_infinite_loop) ? 3 : 2;
+      if (iterations == last_expected) {
+        for (int i = 0; i < _current_updates->length(); ++i) {
+          Node* n = _current_updates->node_at(i);
+          if (PhaseTransform::type(n) != n->Value(&_phase->igvn()) &&
+              _current_updates->prev_type_at(i) == PhaseTransform::type(n) &&
+              _current_updates->type_at(i) == n->Value(&_phase->igvn())) {
+            extra2 = true;
+          }
+        }
+      }
+    }
+#endif
     if (UseNewCode3) {
       for (uint i = 0; i < PhaseTransform::_types.Size(); ++i) {
         _types_clone.map(i, PhaseTransform::_types.fast_lookup(i));
@@ -1337,9 +1358,8 @@ public:
     assert(_phase->is_dominator(dom, c), "");
     TypeUpdate* updates = updates_at(c);
     TypeUpdate* dom_updates = updates_at(dom);
-    while(updates != dom_updates) {
+    while(updates->below(dom_updates, _phase)) {
       assert(updates != nullptr,"");
-      assert(dom_updates == nullptr || !_phase->is_dominator(updates->control(), dom_updates->control()), "");
       int l = updates->find(n);
       if (l != -1) {
         return updates->type_at(l);
@@ -1354,9 +1374,8 @@ public:
     TypeUpdate* updates = updates_at(c);
     TypeUpdate* dom_updates = updates_at(dom);
     const Type* res = nullptr;
-    while(updates != dom_updates) {
+    while(updates->below(dom_updates, _phase)) {
       assert(updates != nullptr,"");
-      assert(dom_updates == nullptr || !_phase->is_dominator(updates->control(), dom_updates->control()), "");
       int l = updates->find(n);
       if (l != -1) {
         res = updates->prev_type_at(l);
@@ -1578,12 +1597,15 @@ public:
           continue;
         }
       } else if (UseNewCode2) {
-        const Type* t = type_if_present(c, c);
-        if (t == Type::TOP) {
-          assert(c->is_CatchProj() && c->in(0)->in(0)->in(0)->is_AllocateArray(), "");
-          replace_node(c, _phase->C->top());
-          _phase->C->set_major_progress();
-          continue;
+        if (c->is_CatchProj() && c->in(0)->in(0)->in(0)->is_AllocateArray()) {
+          const Type* t = find_type_between(c, c, C->root());
+          if (t == Type::TOP) {
+            replace_node(c, _phase->C->top());
+            _phase->C->set_major_progress();
+            continue;
+          }
+        } else {
+          assert(find_type_between(c, c, C->root()) != Type::TOP, "");
         }
       }
 
@@ -1827,9 +1849,16 @@ public:
          node == r->as_BaseCountedLoop()->incr())) {
       return false;
     }
-    const Type* cmp_type = find_type_between(r->as_BaseCountedLoop()->loopexit()->cmp_node(),
-                                             r->as_BaseCountedLoop()->loopexit(), r);
-    return cmp_type != nullptr && cmp_type->singleton();
+    if (UseNewCode2) {
+
+      const Type* cmp_type = find_type_between(r->as_BaseCountedLoop()->loopexit()->cmp_node(),
+                                               r->as_BaseCountedLoop()->loopexit(), r);
+      return cmp_type != nullptr && cmp_type->singleton();
+    }
+    if (UseNewCode3) {
+      types_at_ctrl(r->as_BaseCountedLoop()->loopexit())->get_type(r->as_BaseCountedLoop()->loopexit()->cmp_node())->singleton();
+    }
+    return false;
   }
 
   bool transform_helper(Node* c) {
@@ -1922,15 +1951,15 @@ public:
       Node* dom = _phase->idom(_current_ctrl);
       TypeUpdate* updates = updates_at(c);
       TypeUpdate* dom_updates = updates_at(dom);
-      assert(updates != nullptr || dom_updates == nullptr || _phase->is_dominator(_current_ctrl, c), "");
-      while (updates != nullptr && updates != dom_updates && (dom_updates == nullptr || !_phase->is_dominator(updates->control(), dom_updates->control()))) {
+      assert(updates != nullptr || dom_updates == nullptr || _phase->is_dominator(_current_ctrl, c) || C->has_irreducible_loop(), "");
+      while (updates != nullptr && updates->below(dom_updates, _phase)) {
         int idx = updates->find(n);
         if (idx != -1) {
           res = updates->type_at(idx);
           break;
         }
         updates = updates->prev();
-        assert(updates != nullptr || dom_updates == nullptr || _phase->is_dominator(_current_ctrl, c), "");
+        assert(updates != nullptr || dom_updates == nullptr || _phase->is_dominator(_current_ctrl, c) || C->has_irreducible_loop(), "");
       }
       if (res == nullptr) {
         res = PhaseTransform::type(n);

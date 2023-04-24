@@ -4590,11 +4590,13 @@ void PhaseIdealLoop::build_and_optimize() {
     C->set_major_progress();
   }
 
-  if (!C->major_progress() && UseLoopConditionalPropagation && C->loop_conditional_propagation_rounds() > 0) {
+  if (!C->major_progress() && C->loop_conditional_propagation_rounds() > 0) {
     visited.clear();
-    conditional_elimination(visited, nstack, worklist, MIN2(C->loop_conditional_propagation_rounds(), C->has_loops() ? 2 : 1));
-    C->set_loop_conditional_propagation_rounds(1);
-//    C->clear_run_loop_conditional_propagation();
+    int rounds = StressLoopConditionalPropagation ? max_jint : MIN2(C->loop_conditional_propagation_rounds(), C->has_loops() ? 2 : 1);
+    conditional_elimination(visited, nstack, worklist, rounds);
+    if (!StressLoopConditionalPropagation) {
+      C->set_loop_conditional_propagation_rounds(1);
+    }
   }
 
   // Perform loop predication before iteration splitting
