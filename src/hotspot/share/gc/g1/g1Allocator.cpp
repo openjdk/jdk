@@ -97,8 +97,6 @@ void G1Allocator::reuse_retained_old_region(G1EvacInfo* evacuation_info,
                                             HeapRegion** retained_old) {
   HeapRegion* retained_region = *retained_old;
   *retained_old = NULL;
-  assert(retained_region == NULL || !retained_region->is_archive(),
-         "Archive region should not be alloc region (index %u)", retained_region->hrm_index());
 
   // We will discard the current GC alloc region if:
   // a) it's in the collection set (it can happen!),
