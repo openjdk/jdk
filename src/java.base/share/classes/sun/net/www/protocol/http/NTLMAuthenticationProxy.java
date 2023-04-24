@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,21 +115,21 @@ class NTLMAuthenticationProxy {
     @SuppressWarnings("unchecked")
     private static NTLMAuthenticationProxy tryLoadNTLMAuthentication() {
         Class<? extends AuthenticationInfo> cl;
-        Constructor<? extends AuthenticationInfo> fourArg, fiveArg;
+        Constructor<? extends AuthenticationInfo> threeArg, fourArg;
         try {
             cl = (Class<? extends AuthenticationInfo>)Class.forName(clazzStr, true, null);
             if (cl != null) {
-                fourArg = cl.getConstructor(boolean.class,
+                threeArg = cl.getConstructor(boolean.class,
                                              URL.class,
                                              PasswordAuthentication.class);
-                fiveArg = cl.getConstructor(boolean.class,
+                fourArg = cl.getConstructor(boolean.class,
                                             String.class,
                                             int.class,
                                             PasswordAuthentication.class);
                 supportsTA = cl.getDeclaredMethod(supportsTAStr);
                 isTrustedSite = cl.getDeclaredMethod(isTrustedSiteStr, java.net.URL.class);
-                return new NTLMAuthenticationProxy(fourArg,
-                                                   fiveArg);
+                return new NTLMAuthenticationProxy(threeArg,
+                                                   fourArg);
             }
         } catch (ClassNotFoundException cnfe) {
             finest(cnfe);

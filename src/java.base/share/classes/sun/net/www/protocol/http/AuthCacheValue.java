@@ -41,11 +41,6 @@ public abstract class AuthCacheValue {
         Server
     };
 
-    /**
-     * The default authentication cache
-     */
-    protected static final AuthCacheImpl defCache = new AuthCacheImpl();
-
     /* Package private ctor to prevent extension outside package */
 
     AuthCacheValue() {}
