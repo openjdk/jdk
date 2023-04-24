@@ -299,11 +299,12 @@ final class Poly1305 {
             }
             IntegerModuloP[] A = new IntegerModuloP[4];
              A[0] = a.mutable();
-             A[1] = ipl1305.get0();
+            for (int i = 1; i < cols; i++)
+                A[i] = ipl1305.get0();
 
             var N = new MutableIntegerModuloP[4];
-            N[0] = ipl1305.get1().mutable();
-            N[1] = ipl1305.get1().mutable();
+            for (int i = 0; i < cols; i++)
+                N[i] = ipl1305.get1().mutable();
 
             if (printing) {
                 System.out.printf("init:\n    A[0] = %33.33s  r = %33.33s \n", A[0], r);
