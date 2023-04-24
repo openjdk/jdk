@@ -2617,7 +2617,8 @@ instruct vmask_and(vRegMask dst, vRegMask src1, vRegMask src2) %{
   match(Set dst (AndVMask src1 src2));
   format %{ "vmask_and $dst, $src1, $src2" %}
   ins_encode %{
-    __ rvv_vsetvli(T_BYTE, Matcher::vector_length_in_bytes(this));
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ rvv_vsetvli(bt, Matcher::vector_length_in_bytes(this));
     __ vmand_mm(as_VectorRegister($dst$$reg),
                 as_VectorRegister($src1$$reg),
                 as_VectorRegister($src2$$reg));
@@ -2629,7 +2630,8 @@ instruct vmask_or(vRegMask dst, vRegMask src1, vRegMask src2) %{
   match(Set dst (OrVMask src1 src2));
   format %{ "vmask_or $dst, $src1, $src2" %}
   ins_encode %{
-    __ rvv_vsetvli(T_BYTE, Matcher::vector_length_in_bytes(this));
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ rvv_vsetvli(bt, Matcher::vector_length_in_bytes(this));
     __ vmor_mm(as_VectorRegister($dst$$reg),
                as_VectorRegister($src1$$reg),
                as_VectorRegister($src2$$reg));
@@ -2641,7 +2643,8 @@ instruct vmask_xor(vRegMask dst, vRegMask src1, vRegMask src2) %{
   match(Set dst (XorVMask src1 src2));
   format %{ "vmask_xor $dst, $src1, $src2" %}
   ins_encode %{
-    __ rvv_vsetvli(T_BYTE, Matcher::vector_length_in_bytes(this));
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ rvv_vsetvli(bt, Matcher::vector_length_in_bytes(this));
     __ vmxor_mm(as_VectorRegister($dst$$reg),
                 as_VectorRegister($src1$$reg),
                 as_VectorRegister($src2$$reg));
