@@ -412,8 +412,8 @@ public class Main {
         try {
             Method findMainMethod = VM.class.getDeclaredMethod("findMainMethod", Class.class);
             return (Method)findMainMethod.invoke(VM.class, appClass);
-        } catch (Throwable ex) {
-            throw new RuntimeException(ex);
+       } catch (Throwable throwable) {
+            return null;
         }
     }
 
@@ -436,6 +436,9 @@ public class Main {
             Method main = findMainMethod(appClass);
             if (main == null) {
                 throw new Fault(Errors.CantFindMainMethod(mainClassName));
+            }
+            if (!main.getReturnType().equals(void.class)) {
+                throw new Fault(Errors.MainNotVoid);
             }
             main.setAccessible(true);
             int mods = main.getModifiers();

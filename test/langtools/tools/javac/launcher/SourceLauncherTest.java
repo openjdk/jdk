@@ -541,19 +541,11 @@ public class SourceLauncherTest extends TestRunner {
     }
 
     @Test
-    public void testMainBadParams(Path base) throws IOException {
-        tb.writeJavaFiles(base,
-                "class BadParams { public static void main() { } }");
-        testError(base.resolve("BadParams.java"), "",
-                "error: can't find main(String[]) method in class: BadParams");
-    }
-
-    @Test
     public void testMainNotVoid(Path base) throws IOException {
         tb.writeJavaFiles(base,
                 "class NotVoid { public static int main(String... args) { return 0; } }");
         testError(base.resolve("NotVoid.java"), "",
-                "error: can't find main(String[]) method in class: NotVoid");
+                "error: 'main' method is not declared with a return type of 'void'");
     }
 
     @Test

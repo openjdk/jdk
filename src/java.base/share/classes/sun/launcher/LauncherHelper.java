@@ -862,35 +862,13 @@ public final class LauncherHelper {
 
     // Check the existence and signature of main and abort if incorrect
     static void validateMainClass(Class<?> mainClass) {
+        Method mainMethod = null;
         try {
-            Method mainMethod = VM.findMainMethod(mainClass);
-            if (mainMethod == null) {
-                // invalid main or not FX application, abort with an error
-                abort(null, "java.launcher.cls.error4", mainClass.getName(),
-                        JAVAFX_APPLICATION_CLASS_NAME);
-            }
-            int mod = mainMethod.getModifiers();
-            boolean isPublic = Modifier.isStatic(mod);
-            boolean isStatic = Modifier.isStatic(mod);
-            if (isStatic && !isPublic && mainClass.getPackageName().isEmpty()) {
-                abort(null, "java.launcher.cls.error2", "static",
-                        mainMethod.getDeclaringClass().getName());
-            }
-            if (!isStatic) {
-                try {
-                    Constructor<?> constructor = mainClass.getDeclaredConstructor();
-                    if (Modifier.isPrivate(constructor.getModifiers())) {
-                        abort(null, "java.launcher.cls.error8",
-                                mainMethod.getDeclaringClass().getName());
-                    }
-                } catch (Throwable ex) {
-                    abort(null, "java.launcher.cls.error8",
-                            mainMethod.getDeclaringClass().getName());
-                }
-            }
-            boolean hasArgs = mainMethod.getParameterCount() != 0;
-            mainType = (isStatic ? 0 : MAIN_NONSTATIC) |
-                       (hasArgs ? 0 : MAIN_WITHOUT_ARGS);
+            mainMethod = VM.findMainMethod(mainClass);
+        } catch (NoSuchMethodException nsme) {
+            // invalid main or not FX application, abort with an error
+            abort(null, "java.launcher.cls.error4", mainClass.getName(),
+                    JAVAFX_APPLICATION_CLASS_NAME);
         } catch (Throwable throwable) {
             if (mainClass.getModule().isNamed()) {
                 abort(throwable, "java.launcher.module.error5",
@@ -903,6 +881,37 @@ public final class LauncherHelper {
                         throwable.getLocalizedMessage());
             }
         }
+
+        int mod = mainMethod.getModifiers();
+        boolean isPublic = Modifier.isStatic(mod);
+        boolean isStatic = Modifier.isStatic(mod);
+
+        if (isStatic && !isPublic && mainMethod.getDeclaringClass() != mainClass) {
+            abort(null, "java.launcher.cls.error2", "static",
+                    mainMethod.getDeclaringClass().getName());
+        }
+
+        if (!isStatic) {
+            try {
+                Constructor<?> constructor = mainClass.getDeclaredConstructor();
+                if (Modifier.isPrivate(constructor.getModifiers())) {
+                    abort(null, "java.launcher.cls.error8",
+                            mainMethod.getDeclaringClass().getName());
+                }
+            } catch (Throwable ex) {
+                abort(null, "java.launcher.cls.error8",
+                        mainMethod.getDeclaringClass().getName());
+            }
+        }
+
+        if (mainMethod.getReturnType() != java.lang.Void.TYPE) {
+            abort(null, "java.launcher.cls.error3",
+                    mainMethod.getDeclaringClass().getName());
+        }
+
+        boolean hasArgs = mainMethod.getParameterCount() != 0;
+        mainType = (isStatic ? 0 : MAIN_NONSTATIC) |
+                (hasArgs ? 0 : MAIN_WITHOUT_ARGS);
     }
 
     private static final String encprop = "sun.jnu.encoding";

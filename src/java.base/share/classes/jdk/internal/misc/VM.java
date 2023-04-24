@@ -502,22 +502,6 @@ public class VM {
         return BufferPoolsHolder.BUFFER_POOLS;
     }
 
-    private static Method findMethod(boolean isStatic, Class<?> cls, String name, MethodType mt) {
-        try {
-            JavaLangInvokeAccess jlia = SharedSecrets.getJavaLangInvokeAccess();
-            MethodHandle mh = isStatic ? jlia.findStatic(cls, name, mt) : jlia.findVirtual(cls, name, mt);
-
-            if (mh == null) {
-                return null;
-            }
-
-            Method method = MethodHandles.reflectAs(Method.class, mh);
-
-            return isPrivate(method) ? null : method;
-        } catch (ReflectiveOperationException e) {
-            return null;
-        }
-    }
 
     private static boolean isPrivate(Method method) {
         return method != null && Modifier.isPrivate(method.getModifiers());
@@ -527,53 +511,111 @@ public class VM {
         return method != null && Modifier.isPublic(method.getModifiers());
     }
 
-    public static Method findMainMethod(Class<?> mainClass) {
-        MethodType withArgsMT = MethodType.methodType(void.class, String[].class);
-        MethodType noArgsMT = MethodType.methodType(void.class);
+    private static boolean isStatic(Method method) {
+        return method != null && Modifier.isStatic(method.getModifiers());
+    }
 
-        Method staticWithArgs = findMethod(true, mainClass, "main", withArgsMT);
-        Method staticNoArgs = findMethod(true, mainClass, "main", noArgsMT);
-
-        if (isPublic(staticWithArgs)) {
-            if (staticWithArgs.getDeclaringClass() != mainClass) {
-                System.err.println("WARNING: static main in super class will be deprecated.");
+    /**
+     * Gather all the "main" methods in the class heirarchy.
+     *
+     * @param declc  the declaring class
+     * @param refc   the declaring class or super class
+     * @param mains  accumulated main methods
+     */
+    private static void gatherMains(Class<?> declc, Class<?> refc, List<Method> mains) {
+        if (refc != null && refc != Object.class) {
+            gatherMains(declc, refc.getSuperclass(), mains);
+            for (Method method : refc.getDeclaredMethods()) {
+                int argc = method.getParameterCount();
+                // Must be named "main", public|protected|package-private and either
+                // no arguments or one string array argument.
+                if ("main".equals(method.getName()) &&
+                    !isPrivate(method) &&
+                    (argc == 0 || argc == 1 && method.getParameterTypes()[0] == String[].class) &&
+                    // static methods must be public or in main class
+                    (declc == refc || isPublic(method) || !isStatic(method))
+                ) {
+                    mains.add(method);
+                }
             }
+        }
+    }
 
-            return staticWithArgs;
+    /**
+     * Comparator for two methods.
+     * Priority order is
+     * static < non-static,
+     * public < non-public,
+     * string arg < no arg and
+     * sub-class < super-class.
+     *
+     * @param a  first method
+     * @param b  second method
+     *
+     * @return -1, 0, 1 to represent <. == or &gt;.
+     */
+    private static int compareMethods(Method a, Method b) {
+        int aMods = a.getModifiers();
+        int bMods = b.getModifiers();
+        boolean aIsStatic = Modifier.isStatic(aMods);
+        boolean bIsStatic = Modifier.isStatic(bMods);
+        if (aIsStatic && !bIsStatic) {
+            return -1;
+        } else if (bIsStatic && !aIsStatic) {
+            return 1;
+        }
+        boolean aIsPublic = Modifier.isPublic(aMods);
+        boolean bIsPublic = Modifier.isPublic(bMods);
+        if (aIsPublic && !bIsPublic) {
+            return -1;
+        } else if (bIsPublic && !aIsPublic) {
+            return 1;
+        }
+        int aCount = a.getParameterCount();
+        int bCount = b.getParameterCount();
+        if (aCount > bCount) {
+            return -1;
+        } else if (bCount > aCount) {
+            return 1;
+        }
+        Class<?> aClass = a.getDeclaringClass();
+        Class<?> bClass = b.getDeclaringClass();
+        if (bClass.isAssignableFrom(aClass)) {
+            return -1;
+        } else if (bClass.isAssignableFrom(aClass)) {
+            return 1;
+        }
+        return 0;
+    }
+
+    /**
+     * {@return priority main method or null if none found}
+     * @param mainClass main class
+     */
+    public static Method findMainMethod(Class<?> mainClass) throws NoSuchMethodException {
+        String[] args = getRuntimeArguments();
+        boolean enablePreview = args != null &&  List.of(args).contains("--enable-preview");
+        boolean earlyAccess = Runtime.version().pre().orElse("").equals("ea");
+
+        if (!enablePreview && !earlyAccess) {
+            return mainClass.getMethod("main", String[].class);
         }
 
-        if (!Runtime.version().pre().orElse("").equals("ea")) {
-            String[] args = getRuntimeArguments();
+        List<Method> mains = new ArrayList<>();
+        gatherMains(mainClass, mainClass, mains);
 
-            if (args == null || !List.of(args).contains("--enable-preview")) {
-                return null;
-            }
+        if (mains.isEmpty()) {
+            throw new NoSuchMethodException("No main method found");
         }
 
-        if (staticWithArgs != null && staticWithArgs.getDeclaringClass() != mainClass) {
-            staticWithArgs = null;
+        mains.sort(VM::compareMethods);
+        Method mainMethod = mains.get(0);
+
+        if (isStatic(mainMethod) && mainMethod.getDeclaringClass() != mainClass) {
+            System.err.println("WARNING: static main in super class will be deprecated.");
         }
 
-        if (staticNoArgs != null && staticNoArgs.getDeclaringClass() != mainClass) {
-            staticNoArgs = null;
-        }
-
-        if (staticWithArgs != null && !isPublic(staticNoArgs)) {
-            return staticWithArgs;
-        }
-
-        if (staticNoArgs != null) {
-            return staticNoArgs;
-        }
-
-        Method virtualWithArgs = findMethod(false, mainClass, "main", withArgsMT);
-        Method virtualNoArgs = findMethod(false, mainClass, "main", noArgsMT);
-
-        if (isPublic(virtualWithArgs) || virtualWithArgs != null && !isPublic(virtualNoArgs)) {
-            return virtualWithArgs;
-        }
-
-        return virtualNoArgs;
+        return mainMethod;
     }
 
 }

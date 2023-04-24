@@ -563,19 +563,6 @@ public class Arrrghs extends TestHelper {
         if (!tr.testStatus)
             System.out.println(tr);
 
-        // incorrect method type - non-static
-         createJar(new File("some.jar"), new File("Foo"),
-                "public void main(String[] args){}");
-        tr = doExec(javaCmd, "-jar", "some.jar");
-        tr.contains("Error: Main method is not static in class Foo");
-        if (!tr.testStatus)
-            System.out.println(tr);
-        // use classpath to check
-        tr = doExec(javaCmd, "-cp", "some.jar", "Foo");
-        tr.contains("Error: Main method is not static in class Foo");
-        if (!tr.testStatus)
-            System.out.println(tr);
-
         // amongst a potpourri of kindred main methods, is the right one chosen ?
         createJar(new File("some.jar"), new File("Foo"),
             "void main(Object[] args){}",
