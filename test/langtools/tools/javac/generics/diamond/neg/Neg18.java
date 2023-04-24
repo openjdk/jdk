@@ -10,7 +10,7 @@ import pkg.Neg18_01;
 
 class Neg18 {
 
-   public static void main(String[] args) {
+   public static void meth() {
         new Neg18_01<>() {};
    }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 #include "Devices.h"
 #include "WindowsFlags.h"
 #include "DllUtil.h"
+#include <windef.h>
 
 BOOL DWMIsCompositionEnabled();
 
@@ -44,16 +45,14 @@ void initScreens(JNIEnv *env) {
 
 /**
  * This function attempts to make a Win32 API call to
- *   BOOL SetProcessDPIAware(VOID);
- * which is only present on Windows Vista, and which instructs the
- * Vista Windows Display Manager that this application is High DPI Aware
- * and does not need to be scaled by the WDM and lied about the
- * actual system dpi.
+ *   BOOL SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT);
+ * to set Process DPI Awareness to DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2
+ * to match what we have in the manifest file.
  */
 static void
 SetProcessDPIAwareProperty()
 {
-    typedef BOOL (WINAPI SetProcessDPIAwareFunc)(void);
+    typedef BOOL (WINAPI SetProcessDpiAwarenessContextFunc)(DPI_AWARENESS_CONTEXT);
     static BOOL bAlreadySet = FALSE;
 
     // setHighDPIAware is set in WindowsFlags.cpp
@@ -66,12 +65,14 @@ SetProcessDPIAwareProperty()
     HMODULE hLibUser32Dll = JDK_LoadSystemLibrary("user32.dll");
 
     if (hLibUser32Dll != NULL) {
-        SetProcessDPIAwareFunc *lpSetProcessDPIAware =
-            (SetProcessDPIAwareFunc*)GetProcAddress(hLibUser32Dll,
-                                                    "SetProcessDPIAware");
-        if (lpSetProcessDPIAware != NULL) {
-            lpSetProcessDPIAware();
+        SetProcessDpiAwarenessContextFunc *lpSetProcessDpiAwarenessContext =
+                    (SetProcessDpiAwarenessContextFunc*)GetProcAddress(hLibUser32Dll,
+                                                            "SetProcessDpiAwarenessContext");
+
+        if (lpSetProcessDpiAwarenessContext != NULL) {
+            lpSetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
         }
+
         ::FreeLibrary(hLibUser32Dll);
     }
 }

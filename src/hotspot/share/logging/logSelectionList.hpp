@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,13 +53,13 @@ class LogSelectionList : public StackObj {
     _selections[0] = selection;
   }
 
-  bool parse(const char* str, outputStream* errstream = NULL);
+  bool parse(const char* str, outputStream* errstream = nullptr);
   LogLevelType level_for(const LogTagSet& ts) const;
 
   // Verify that each selection actually selects something.
   // Returns false if some invalid selection was found. If given an outputstream,
   // this function will list all the invalid selections on the stream.
-  bool verify_selections(outputStream* out = NULL) const;
+  bool verify_selections(outputStream* out = nullptr) const;
 };
 
 #endif // SHARE_LOGGING_LOGSELECTIONLIST_HPP

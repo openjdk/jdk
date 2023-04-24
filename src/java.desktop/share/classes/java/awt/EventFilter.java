@@ -55,7 +55,7 @@ interface EventFilter {
          * @see ModalEventFilter
          */
         ACCEPT_IMMEDIATELY
-    };
+    }
 
     FilterAction acceptEvent(AWTEvent ev);
 }

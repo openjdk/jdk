@@ -86,30 +86,6 @@ public:
   virtual ReferenceIterationMode reference_iteration_mode() { return DO_FIELDS; }
 };
 
-class G1VerifyOopClosure: public BasicOopIterateClosure {
-private:
-  G1CollectedHeap* _g1h;
-  bool             _failures;
-  oop              _containing_obj;
-  VerifyOption     _verify_option;
-
-public:
-  int _cc;
-  G1VerifyOopClosure(VerifyOption option);
-
-  void set_containing_obj(oop obj) {
-    _containing_obj = obj;
-  }
-
-  bool failures() { return _failures; }
-  void print_object(outputStream* out, oop obj);
-
-  template <class T> void do_oop_work(T* p);
-
-  void do_oop(oop* p)       { do_oop_work(p); }
-  void do_oop(narrowOop* p) { do_oop_work(p); }
-};
-
 class G1FollowStackClosure: public VoidClosure {
   G1FullGCMarker* _marker;
 

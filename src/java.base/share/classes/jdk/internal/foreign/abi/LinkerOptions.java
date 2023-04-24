@@ -81,6 +81,11 @@ public class LinkerOptions {
         return stl == null ? Stream.empty() : stl.saved().stream();
     }
 
+    public boolean isVariadicFunction() {
+        FirstVariadicArg fva = getOption(FirstVariadicArg.class);
+        return fva != null;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

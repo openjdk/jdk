@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8284299 8287379
+ * @bug 8284299 8287379 8298525
  * @library /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build toolbox.ToolBox javadoc.tester.*
@@ -65,6 +65,9 @@ public class TestInheritDocWithinInappropriateTag extends JavadocTester {
                              * {@linkplain Object#hashCode() {@inheritDoc}}
                              *
                              * {@index term {@inheritDoc}}
+                             *
+                             * @see A {@inheritDoc}
+                             * @spec http://example.com {@inheritDoc}
                              */
                             @Override
                             public void x() { }
@@ -94,6 +97,16 @@ public class TestInheritDocWithinInappropriateTag extends JavadocTester {
                 """
                         warning: @inheritDoc cannot be used within this tag
                              * {@index term {@inheritDoc}}
+                               ^
+                        """,
+                """
+                        warning: @inheritDoc cannot be used within this tag
+                             * @see A {@inheritDoc}
+                               ^
+                        """,
+                """
+                        warning: @inheritDoc cannot be used within this tag
+                             * @spec http://example.com {@inheritDoc}
                                ^
                         """);
     }

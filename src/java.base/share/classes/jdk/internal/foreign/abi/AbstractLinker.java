@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@ package jdk.internal.foreign.abi;
 import jdk.internal.foreign.SystemLookup;
 import jdk.internal.foreign.abi.aarch64.linux.LinuxAArch64Linker;
 import jdk.internal.foreign.abi.aarch64.macos.MacOsAArch64Linker;
+import jdk.internal.foreign.abi.aarch64.windows.WindowsAArch64Linker;
+import jdk.internal.foreign.abi.riscv64.linux.LinuxRISCV64Linker;
 import jdk.internal.foreign.abi.x64.sysv.SysVx64Linker;
 import jdk.internal.foreign.abi.x64.windows.Windowsx64Linker;
 import jdk.internal.foreign.layout.AbstractLayout;
@@ -43,10 +45,16 @@ import java.lang.invoke.MethodType;
 import java.util.Objects;
 
 public abstract sealed class AbstractLinker implements Linker permits LinuxAArch64Linker, MacOsAArch64Linker,
-                                                                      SysVx64Linker, Windowsx64Linker {
+                                                                      SysVx64Linker, WindowsAArch64Linker,
+                                                                      Windowsx64Linker, LinuxRISCV64Linker {
+
+    public interface UpcallStubFactory {
+        MemorySegment makeStub(MethodHandle target, SegmentScope arena);
+    }
 
     private record LinkRequest(FunctionDescriptor descriptor, LinkerOptions options) {}
     private final SoftReferenceCache<LinkRequest, MethodHandle> DOWNCALL_CACHE = new SoftReferenceCache<>();
+    private final SoftReferenceCache<FunctionDescriptor, UpcallStubFactory> UPCALL_CACHE = new SoftReferenceCache<>();
 
     @Override
     public MethodHandle downcallHandle(FunctionDescriptor function, Option... options) {
@@ -77,11 +85,12 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
         if (!type.equals(target.type())) {
             throw new IllegalArgumentException("Wrong method handle type: " + target.type());
         }
-        return arrangeUpcall(target, target.type(), function, scope);
+
+        UpcallStubFactory factory = UPCALL_CACHE.get(function, f -> arrangeUpcall(type, f));
+        return factory.makeStub(target, scope);
     }
 
-    protected abstract MemorySegment arrangeUpcall(MethodHandle target, MethodType targetType,
-                                                   FunctionDescriptor function, SegmentScope scope);
+    protected abstract UpcallStubFactory arrangeUpcall(MethodType targetType, FunctionDescriptor function);
 
     @Override
     public SystemLookup defaultLookup() {

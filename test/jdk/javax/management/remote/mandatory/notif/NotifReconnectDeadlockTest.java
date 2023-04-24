@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,7 +87,10 @@ public class NotifReconnectDeadlockTest {
         JMXServiceURL addr = server.getAddress();
         JMXConnector client = JMXConnectorFactory.connect(addr, env);
 
-        Thread.sleep(100); // let pass the first client open notif if there is
+        // Sleeping here was an attempt to avoid seeing an initial notification.
+        // This does not work, but does not matter.
+        // Thread.sleep(100);
+
         client.getMBeanServerConnection().addNotificationListener(oname,
                                                                   listener,
                                                                   null,
@@ -100,12 +103,13 @@ public class NotifReconnectDeadlockTest {
 
         synchronized(lock) {
             while(clientState == null && System.currentTimeMillis() < end) {
+                System.out.println("Calling sendNotifications");
                 mbs.invoke(oname, "sendNotifications",
                            new Object[] {new Notification("MyType", "", 0)},
                            new String[] {"javax.management.Notification"});
 
                 try {
-                    lock.wait(10);
+                    lock.wait(1000); // sleep as no point in constant notifications
                 } catch (Exception e) {}
             }
         }
@@ -143,10 +147,10 @@ public class NotifReconnectDeadlockTest {
     private final static NotificationListener listener = new NotificationListener() {
             public void handleNotification(Notification n, Object hb) {
 
-                // treat the client notif to know the end
+                System.out.println("handleNotification: " + n);
                 if (n instanceof JMXConnectionNotification) {
                     if (!JMXConnectionNotification.NOTIFS_LOST.equals(n.getType())) {
-
+                        // Expected: [type=jmx.remote.connection.opened][message=Reconnected to server]
                         clientState = n.getType();
                         System.out.println(
                            ">>> The client state has been changed to: "+clientState);
@@ -159,7 +163,7 @@ public class NotifReconnectDeadlockTest {
                     return;
                 }
 
-                System.out.println(">>> Do sleep to make reconnection.");
+                System.out.println(">>> sleeping in NotificationListener to force reconnection.");
                 synchronized(lock) {
                     try {
                         lock.wait(listenerSleep);
@@ -170,9 +174,11 @@ public class NotifReconnectDeadlockTest {
             }
         };
 
-    private static final long serverTimeout = 1000;
+    // serverTimeout increased to avoid occasional problems with initial connect.
+    // Not using Utils.adjustTimeout to avoid accidentally making it too long.
+    private static final long serverTimeout = 2000;
     private static final long listenerSleep = serverTimeout*6;
 
-    private static String clientState = null;
+    private volatile static String clientState = null;
     private static final int[] lock = new int[0];
 }

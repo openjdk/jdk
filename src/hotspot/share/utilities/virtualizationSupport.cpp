@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -28,10 +28,10 @@
 #include "runtime/os.hpp"
 #include "utilities/virtualizationSupport.hpp"
 
-static void *dlHandle = NULL;
+static void *dlHandle = nullptr;
 
-static GuestLib_StatGet_t GuestLib_StatGet = NULL;
-static GuestLib_StatFree_t GuestLib_StatFree = NULL;
+static GuestLib_StatGet_t GuestLib_StatGet = nullptr;
+static GuestLib_StatFree_t GuestLib_StatFree = nullptr;
 
 static bool has_host_information = false;
 static bool has_resource_information = false;
@@ -48,22 +48,22 @@ void VirtualizationSupport::initialize() {
   dlHandle = os::dll_load("vmGuestLib", ebuf, sizeof ebuf);
 
 #ifdef LINUX
-  if (dlHandle == NULL) {
+  if (dlHandle == nullptr) {
     // the open-vm-tools have a different guest lib name
     // on some distros e.g. SLES12 the open-vm-tools are the default,
     // so use the different libname as a fallback
     dlHandle = os::dll_load("/usr/lib64/libguestlib.so.0", ebuf, sizeof ebuf);
   }
 #endif
-  if (dlHandle == NULL) {
+  if (dlHandle == nullptr) {
     return;
   }
 
   GuestLib_StatGet = CAST_TO_FN_PTR(GuestLib_StatGet_t, os::dll_lookup(dlHandle, "VMGuestLib_StatGet"));
   GuestLib_StatFree = CAST_TO_FN_PTR(GuestLib_StatFree_t, os::dll_lookup(dlHandle, "VMGuestLib_StatFree"));
 
-  if (GuestLib_StatGet != NULL && GuestLib_StatFree != NULL) {
-    char* result_info = NULL;
+  if (GuestLib_StatGet != nullptr && GuestLib_StatFree != nullptr) {
+    char* result_info = nullptr;
     size_t result_size = 0;
     VMGuestLibError sg_error = GuestLib_StatGet("text", "resources", &result_info, &result_size);
     if (sg_error == VMGUESTLIB_ERROR_SUCCESS) {
@@ -91,8 +91,8 @@ void VirtualizationSupport::print_virtualization_info(outputStream* st) {
     st->print_cr("%s", extended_resource_info_at_startup);
   }
   // current resource info
-  if (GuestLib_StatGet != NULL && GuestLib_StatFree != NULL) {
-    char* result_info = NULL;
+  if (GuestLib_StatGet != nullptr && GuestLib_StatFree != nullptr) {
+    char* result_info = nullptr;
     size_t result_size = 0;
     VMGuestLibError sg_error = GuestLib_StatGet("text", "resources", &result_info, &result_size);
     if (sg_error == VMGUESTLIB_ERROR_SUCCESS) {

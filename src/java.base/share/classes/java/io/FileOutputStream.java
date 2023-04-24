@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,19 +46,13 @@ import sun.nio.ch.FileChannelImpl;
  * {@code FileWriter}.
  *
  * @apiNote
- * To release resources used by this stream {@link #close} should be called
- * directly or by try-with-resources. Subclasses are responsible for the cleanup
- * of resources acquired by the subclass.
- * Subclasses that override {@link #finalize} in order to perform cleanup
- * should be modified to use alternative cleanup mechanisms such as
- * {@link java.lang.ref.Cleaner} and remove the overriding {@code finalize} method.
+ * The {@link #close} method should be called to release resources used by this
+ * stream, either directly, or with the {@code try}-with-resources statement.
  *
  * @implSpec
- * If this FileOutputStream has been subclassed and the {@link #close}
- * method has been overridden, the {@link #close} method will be
- * called when the FileInputStream is unreachable.
- * Otherwise, it is implementation specific how the resource cleanup described in
- * {@link #close} is performed.
+ * Subclasses are responsible for the cleanup of resources acquired by the subclass.
+ * Subclasses requiring that resource cleanup take place after a stream becomes
+ * unreachable should use {@link java.lang.ref.Cleaner} or some other mechanism.
  *
  * @author  Arthur van Hoff
  * @see     java.io.File
@@ -72,7 +66,7 @@ public class FileOutputStream extends OutputStream
     /**
      * Access to FileDescriptor internals.
      */
-    private static final JavaIOFileDescriptorAccess fdAccess =
+    private static final JavaIOFileDescriptorAccess FD_ACCESS =
         SharedSecrets.getJavaIOFileDescriptorAccess();
 
     /**
@@ -316,7 +310,7 @@ public class FileOutputStream extends OutputStream
      */
     @Override
     public void write(int b) throws IOException {
-        boolean append = fdAccess.getAppend(fd);
+        boolean append = FD_ACCESS.getAppend(fd);
         long comp = Blocker.begin();
         try {
             write(b, append);
@@ -346,7 +340,7 @@ public class FileOutputStream extends OutputStream
      */
     @Override
     public void write(byte[] b) throws IOException {
-        boolean append = fdAccess.getAppend(fd);
+        boolean append = FD_ACCESS.getAppend(fd);
         long comp = Blocker.begin();
         try {
             writeBytes(b, 0, b.length, append);
@@ -367,7 +361,7 @@ public class FileOutputStream extends OutputStream
      */
     @Override
     public void write(byte[] b, int off, int len) throws IOException {
-        boolean append = fdAccess.getAppend(fd);
+        boolean append = FD_ACCESS.getAppend(fd);
         long comp = Blocker.begin();
         try {
             writeBytes(b, off, len, append);
@@ -387,10 +381,10 @@ public class FileOutputStream extends OutputStream
      * @apiNote
      * Overriding {@link #close} to perform cleanup actions is reliable
      * only when called directly or when called by try-with-resources.
-     * Do not depend on finalization to invoke {@code close};
-     * finalization is not reliable and is deprecated.
-     * If cleanup of native resources is needed, other mechanisms such as
-     * {@linkplain java.lang.ref.Cleaner} should be used.
+     *
+     * @implSpec
+     * Subclasses requiring that resource cleanup take place after a stream becomes
+     * unreachable should use the {@link java.lang.ref.Cleaner} mechanism.
      *
      * @throws     IOException  if an I/O error occurs.
      *

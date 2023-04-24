@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -267,7 +267,7 @@ extern jclass jc_CDropTargetContextPeer;
             jformats[i] = registerFormatWithPasteboard(pbType);
     }
 
-    (*env)->ReleaseLongArrayElements(env, sDraggingFormats, jformats, JNI_COMMIT);
+    (*env)->ReleaseLongArrayElements(env, sDraggingFormats, jformats, 0);
 
     return TRUE;
 }
@@ -368,7 +368,7 @@ extern jclass jc_CDropTargetContextPeer;
 
     // Copy data to byte array and release elements:
     memcpy(jbytes, dataBytes, dataLength);
-    (*env)->ReleaseByteArrayElements(env, gbyteArray, jbytes, JNI_COMMIT);
+    (*env)->ReleaseByteArrayElements(env, gbyteArray, jbytes, 0);
 
     // In case of an error make sure to return nil:
     if ((*env)->ExceptionOccurred(env)) {

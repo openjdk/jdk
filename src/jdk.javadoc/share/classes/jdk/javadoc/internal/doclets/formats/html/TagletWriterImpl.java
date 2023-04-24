@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -222,9 +222,9 @@ public class TagletWriterImpl extends TagletWriter {
         DocTree searchTerm = tag.getSearchTerm();
         String tagText = (searchTerm instanceof TextTree tt) ? tt.getBody() : "";
         if (tagText.charAt(0) == '"' && tagText.charAt(tagText.length() - 1) == '"') {
-            tagText = tagText.substring(1, tagText.length() - 1)
-                             .replaceAll("\\s+", " ");
+            tagText = tagText.substring(1, tagText.length() - 1);
         }
+        tagText = tagText.replaceAll("\\s+", " ");
 
         Content desc = htmlWriter.commentTagsToContent(element, tag.getDescription(), context.within(tag));
         String descText = extractText(desc);
@@ -549,17 +549,17 @@ public class TagletWriterImpl extends TagletWriter {
                 if (utils.isGenericType(referencedType)) {
                     // This is a generic type link, use the TypeMirror representation.
                     return plainOrCode(isLinkPlain, htmlWriter.getLink(
-                            new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.DEFAULT, referencedType)));
+                            new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.LINK_TYPE_PARAMS_AND_BOUNDS, referencedType)));
                 }
                 labelContent = plainOrCode(isLinkPlain, Text.of(utils.getSimpleName(refClass)));
             }
-            return htmlWriter.getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.DEFAULT, refClass)
+            return htmlWriter.getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.PLAIN, refClass)
                     .label(labelContent));
         } else if (refMem == null) {
             // This is a fragment reference since refClass and refFragment are not null but refMem is null.
-            return htmlWriter.getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.SEE_TAG, refClass)
+            return htmlWriter.getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.PLAIN, refClass)
                     .label(labelContent)
-                    .where(refFragment)
+                    .fragment(refFragment)
                     .style(null));
         } else {
             // Must be a member reference since refClass is not null and refMemName is not null.
@@ -573,8 +573,9 @@ public class TagletWriterImpl extends TagletWriter {
                 VisibleMemberTable vmt = configuration.getVisibleMemberTable(containing);
                 overriddenMethod = vmt.getOverriddenMethod((ExecutableElement)refMem);
 
-                if (overriddenMethod != null)
+                if (overriddenMethod != null) {
                     containing = utils.getEnclosingTypeElement(overriddenMethod);
+                }
             }
             if (refSignature.trim().startsWith("#") &&
                     ! (utils.isPublic(containing) || utils.isLinkable(containing))) {
@@ -610,7 +611,7 @@ public class TagletWriterImpl extends TagletWriter {
                 }
             }
 
-            return htmlWriter.getDocLink(HtmlLinkInfo.Kind.SEE_TAG, containing,
+            return htmlWriter.getDocLink(HtmlLinkInfo.Kind.SHOW_PREVIEW, containing,
                     refMem, (labelContent.isEmpty()
                             ? plainOrCode(isLinkPlain, Text.of(refMemName))
                             : labelContent), null, false);
@@ -710,17 +711,19 @@ public class TagletWriterImpl extends TagletWriter {
                 code.add(c);
             }
         });
-        String copyText = resources.getText("doclet.Copy_snippet_to_clipboard");
-        String copiedText = resources.getText("doclet.Copied_snippet_to_clipboard");
+        String copyText = resources.getText("doclet.Copy_to_clipboard");
+        String copiedText = resources.getText("doclet.Copied_to_clipboard");
+        String copySnippetText = resources.getText("doclet.Copy_snippet_to_clipboard");
         var snippetContainer = HtmlTree.DIV(HtmlStyle.snippetContainer,
                 new HtmlTree(TagName.BUTTON)
                         .add(HtmlTree.SPAN(Text.of(copyText))
                                 .put(HtmlAttr.DATA_COPIED, copiedText))
                         .add(new HtmlTree(TagName.IMG)
                                 .put(HtmlAttr.SRC, htmlWriter.pathToRoot.resolve(DocPaths.CLIPBOARD_SVG).getPath())
-                                .put(HtmlAttr.ALT, copyText))
+                                .put(HtmlAttr.ALT, copySnippetText))
                         .addStyle(HtmlStyle.copy)
                         .addStyle(HtmlStyle.snippetCopy)
+                        .put(HtmlAttr.ARIA_LABEL, copySnippetText)
                         .put(HtmlAttr.ONCLICK, "copySnippet(this)"));
         return snippetContainer.add(pre.add(code));
     }
@@ -768,7 +771,8 @@ public class TagletWriterImpl extends TagletWriter {
         String specTreeURL = specTree.getURL().getBody();
         List<? extends DocTree> specTreeLabel = specTree.getTitle();
         Content label = htmlWriter.commentTagsToContent(holder, specTreeLabel, isFirstSentence);
-        return getExternalSpecContent(holder, specTree, specTreeURL, textOf(specTreeLabel), label);
+        return getExternalSpecContent(holder, specTree, specTreeURL,
+                textOf(specTreeLabel).replaceAll("\\s+", " "), label);
     }
 
     Content getExternalSpecContent(Element holder, DocTree docTree, String url, String searchText, Content title) {
@@ -816,16 +820,15 @@ public class TagletWriterImpl extends TagletWriter {
         Element exception = ch.getException(throwsTag);
         Content excName;
         if (substituteType != null) {
-            excName = htmlWriter.getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.MEMBER,
+            excName = htmlWriter.getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.PLAIN,
                    substituteType));
         } else if (exception == null) {
             excName = Text.of(throwsTag.getExceptionName().toString());
         } else if (exception.asType() == null) {
             excName = Text.of(utils.getFullyQualifiedName(exception));
         } else {
-            HtmlLinkInfo link = new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.MEMBER,
+            HtmlLinkInfo link = new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.PLAIN,
                                                  exception.asType());
-            link.excludeTypeBounds = true;
             excName = htmlWriter.getLink(link);
         }
         body.add(HtmlTree.CODE(excName));
@@ -840,8 +843,7 @@ public class TagletWriterImpl extends TagletWriter {
 
     @Override
     public Content throwsTagOutput(TypeMirror throwsType, Optional<Content> content) {
-        var linkInfo = new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.MEMBER, throwsType);
-        linkInfo.excludeTypeBounds = true;
+        var linkInfo = new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.PLAIN, throwsType);
         var link = htmlWriter.getLink(linkInfo);
         var concat = new ContentBuilder(HtmlTree.CODE(link));
         if (content.isPresent()) {
@@ -854,7 +856,7 @@ public class TagletWriterImpl extends TagletWriter {
     @Override
     public Content valueTagOutput(VariableElement field, String constantVal, boolean includeLink) {
         return includeLink
-                ? htmlWriter.getDocLink(HtmlLinkInfo.Kind.VALUE_TAG, field, constantVal)
+                ? htmlWriter.getDocLink(HtmlLinkInfo.Kind.LINK_TYPE_PARAMS_AND_BOUNDS, field, constantVal)
                 : Text.of(constantVal);
     }
 

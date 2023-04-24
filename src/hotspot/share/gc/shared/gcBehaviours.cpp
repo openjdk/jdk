@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
 #include "code/nmethod.hpp"
 #include "gc/shared/gcBehaviours.hpp"
 
-IsUnloadingBehaviour* IsUnloadingBehaviour::_current = NULL;
+IsUnloadingBehaviour* IsUnloadingBehaviour::_current = nullptr;
 
 bool IsUnloadingBehaviour::is_unloading(CompiledMethod* cm) {
   if (cm->method()->can_be_allocated_in_NonNMethod_space()) {
@@ -53,7 +53,7 @@ public:
       return;
     }
     oop obj = *p;
-    if (obj == NULL) {
+    if (obj == nullptr) {
       return;
     }
     if (!_cl->do_object_b(obj)) {

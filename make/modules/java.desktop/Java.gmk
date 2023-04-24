@@ -23,7 +23,7 @@
 # questions.
 #
 
-DISABLED_WARNINGS_java += lossy-conversions
+DISABLED_WARNINGS_java += lossy-conversions this-escape
 DOCLINT += -Xdoclint:all/protected \
     '-Xdoclint/package:java.*,javax.*'
 COPY += .gif .png .wav .txt .xml .css .pf

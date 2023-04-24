@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Arm Limited. All rights reserved.
+ * Copyright (c) 2022, 2023, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,8 +78,8 @@ public class TestEor3AArch64 {
 
     // Test for eor3 Neon and SVE2 instruction for integers
     @Test
-    @IR(counts = {"veor3_neon", "> 0"}, applyIf = {"MaxVectorSize", "16"}, applyIfCPUFeature = {"sha3", "true"})
-    @IR(counts = {"veor3_sve", "> 0"}, applyIfAnd = {"UseSVE", "2", "MaxVectorSize", "> 16"})
+    @IR(counts = {IRNode.XOR3_NEON, "> 0"}, applyIf = {"MaxVectorSize", "16"}, applyIfCPUFeature = {"sha3", "true"})
+    @IR(counts = {IRNode.XOR3_SVE, "> 0"}, applyIfAnd = {"UseSVE", "2", "MaxVectorSize", "> 16"})
     public static void testIntEor3() {
         for (int i = 0; i < LENGTH; i++) {
             ir[i] = ia[i] ^ ib[i] ^ ic[i];
@@ -96,8 +96,8 @@ public class TestEor3AArch64 {
 
     // Test for eor3 Neon and SVE2 instruction for longs
     @Test
-    @IR(counts = {"veor3_neon", "> 0"}, applyIf = {"MaxVectorSize", "16"}, applyIfCPUFeature = {"sha3", "true"})
-    @IR(counts = {"veor3_sve", "> 0"}, applyIfAnd = {"UseSVE", "2", "MaxVectorSize", "> 16"})
+    @IR(counts = {IRNode.XOR3_NEON, "> 0"}, applyIf = {"MaxVectorSize", "16"}, applyIfCPUFeature = {"sha3", "true"})
+    @IR(counts = {IRNode.XOR3_SVE, "> 0"}, applyIfAnd = {"UseSVE", "2", "MaxVectorSize", "> 16"})
     public static void testLongEor3() {
         for (int i = 0; i < LENGTH; i++) {
             lr[i] = la[i] ^ lb[i] ^ lc[i];

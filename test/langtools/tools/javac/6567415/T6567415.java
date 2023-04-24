@@ -64,13 +64,8 @@ public class T6567415 {
             com.sun.tools.javac.jvm.ClassReader.INITIAL_BUFFER_SIZE;
 
     static void createClassFile() throws IOException {
-        FileOutputStream fos = null;
-        try {
-            fos = new FileOutputStream(TEST_JAVA);
-            PrintStream ps = new PrintStream(fos);
+        try (PrintStream ps = new PrintStream(new FileOutputStream(TEST_JAVA))) {
             ps.println("public class " + TEST_FILE_NAME + " {}");
-        } finally {
-            fos.close();
         }
         String cmds[] = {TEST_JAVA};
         com.sun.tools.javac.Main.compile(cmds);
@@ -85,43 +80,23 @@ public class T6567415 {
         File tfile = new File(f.getAbsolutePath() + ".tmp");
         f.renameTo(tfile);
 
-        RandomAccessFile raf = null;
-        FileChannel wfc = null;
-
-        FileInputStream fis = null;
-        FileChannel rfc = null;
-
-        try {
-            raf =  new RandomAccessFile(f, "rw");
-            wfc = raf.getChannel();
-
-            fis = new FileInputStream(tfile);
-            rfc = fis.getChannel();
-
+        try (
+          FileChannel wfc = new RandomAccessFile(f, "rw").getChannel();
+          FileChannel rfc = new FileInputStream(tfile).getChannel()) {
             ByteBuffer bb = MappedByteBuffer.allocate(BAD_FILE_LENGTH);
             rfc.read(bb);
             bb.rewind();
             wfc.write(bb);
             wfc.truncate(BAD_FILE_LENGTH);
-        } finally {
-            wfc.close();
-            raf.close();
-            rfc.close();
-            fis.close();
         }
         System.out.println("file length = " + f.length());
     }
 
     static void createJavaFile() throws IOException {
-        FileOutputStream fos = null;
-        try {
-            fos = new FileOutputStream(TEST2_JAVA);
-            PrintStream ps = new PrintStream(fos);
+        try (PrintStream ps = new PrintStream(new FileOutputStream(TEST2_JAVA))) {
             ps.println("public class " + TEST2_FILE_NAME +
                     " {" + TEST_FILE_NAME + " b = new " +
                     TEST_FILE_NAME  + " ();}");
-        } finally {
-            fos.close();
         }
     }
 

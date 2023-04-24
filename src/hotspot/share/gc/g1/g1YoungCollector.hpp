@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,6 @@ class G1ConcurrentMark;
 class G1EvacFailureRegions;
 class G1EvacInfo;
 class G1GCPhaseTimes;
-class G1HotCardCache;
 class G1HRPrinter;
 class G1MonitoringSupport;
 class G1MonotonicArenaMemoryStats;
@@ -69,7 +68,7 @@ class G1YoungCollector {
   G1ConcurrentMark* concurrent_mark() const;
   STWGCTimer* gc_timer_stw() const;
   G1NewTracer* gc_tracer_stw() const;
-  G1HotCardCache* hot_card_cache() const;
+
   G1HRPrinter* hr_printer() const;
   G1MonitoringSupport* monitoring_support() const;
   G1GCPhaseTimes* phase_times() const;
@@ -97,10 +96,6 @@ class G1YoungCollector {
   void calculate_collection_set(G1EvacInfo* evacuation_info, double target_pause_time_ms);
 
   void set_young_collection_default_active_worker_threads();
-
-  void retire_tlabs();
-  void concatenate_dirty_card_logs_and_stats();
-  void verify_empty_dirty_card_logs() const NOT_DEBUG_RETURN;
 
   void pre_evacuate_collection_set(G1EvacInfo* evacuation_info);
   // Actually do the work of evacuating the parts of the collection set.

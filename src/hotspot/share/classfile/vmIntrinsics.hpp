@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -202,8 +202,8 @@ class methodHandle;
   do_intrinsic(_maxF_strict,              java_lang_StrictMath,   max_name,           float2_float_signature,    F_S)   \
   do_intrinsic(_minD_strict,              java_lang_StrictMath,   min_name,           double2_double_signature,  F_S)   \
   do_intrinsic(_maxD_strict,              java_lang_StrictMath,   max_name,           double2_double_signature,  F_S)   \
-  /* Special flavor of dsqrt intrinsic to handle the "native" method in StrictMath. Otherwise the same as in Math. */   \
-  do_intrinsic(_dsqrt_strict,             java_lang_StrictMath,   sqrt_name,          double_double_signature,   F_SN)  \
+  /* Additional dsqrt intrinsic to directly handle the sqrt method in StrictMath. Otherwise the same as in Math. */     \
+  do_intrinsic(_dsqrt_strict,             java_lang_StrictMath,   sqrt_name,          double_double_signature,   F_S)   \
                                                                                                                         \
   do_intrinsic(_floatIsInfinite,          java_lang_Float,        isInfinite_name,    float_bool_signature,      F_S)   \
    do_name(     isInfinite_name,                                  "isInfinite")                                         \
@@ -349,6 +349,10 @@ class methodHandle;
    do_signature(equalsC_signature,                               "([C[C)Z")                                             \
   do_intrinsic(_equalsB,                  java_util_Arrays,       equals_name,    equalsB_signature,             F_S)   \
    do_signature(equalsB_signature,                               "([B[B)Z")                                             \
+                                                                                                                        \
+  do_intrinsic(_vectorizedHashCode,       jdk_internal_util_ArraysSupport, vectorizedHashCode_name,  vectorizedHashCode_signature, F_S)   \
+   do_name(     vectorizedHashCode_name,                         "vectorizedHashCode")                                  \
+   do_signature(vectorizedHashCode_signature,                    "(Ljava/lang/Object;IIII)I")                           \
                                                                                                                         \
   do_intrinsic(_compressStringC,          java_lang_StringUTF16,  compress_name, encodeISOArray_signature,       F_S)   \
    do_name(     compress_name,                                   "compress")                                            \
@@ -578,6 +582,11 @@ class methodHandle;
   do_alias(continuationOnPinned_signature,      int_void_signature)                                                     \
   do_intrinsic(_Continuation_doYield,      jdk_internal_vm_Continuation, doYield_name,      continuationDoYield_signature, F_SN) \
    do_alias(    continuationDoYield_signature,     void_int_signature)                                                  \
+                                                                                                                        \
+  /* java/lang/VirtualThread */                                                                                         \
+  do_intrinsic(_notifyJvmtiMount, java_lang_VirtualThread, notifyJvmtiMount_name, bool_bool_void_signature, F_RN)       \
+  do_intrinsic(_notifyJvmtiUnmount, java_lang_VirtualThread, notifyJvmtiUnmount_name, bool_bool_void_signature, F_RN)   \
+  do_intrinsic(_notifyJvmtiHideFrames, java_lang_VirtualThread, notifyJvmtiHideFrames_name, bool_void_signature, F_RN)  \
                                                                                                                         \
   /* support for UnsafeConstants */                                                                                     \
   do_class(jdk_internal_misc_UnsafeConstants,      "jdk/internal/misc/UnsafeConstants")                                 \
@@ -954,24 +963,6 @@ class methodHandle;
                                                "Ljdk/internal/vm/vector/VectorSupport$VectorPayload;")                                         \
    do_name(vector_frombits_coerced_name, "fromBitsCoerced")                                                                                    \
                                                                                                                                                \
-  do_intrinsic(_VectorShuffleIota, jdk_internal_vm_vector_VectorSupport, vector_shuffle_step_iota_name, vector_shuffle_step_iota_sig, F_S)     \
-   do_signature(vector_shuffle_step_iota_sig, "(Ljava/lang/Class;"                                                                             \
-                                               "Ljava/lang/Class;"                                                                             \
-                                               "Ljdk/internal/vm/vector/VectorSupport$VectorSpecies;"                                          \
-                                               "IIII"                                                                                          \
-                                               "Ljdk/internal/vm/vector/VectorSupport$ShuffleIotaOperation;)"                                  \
-                                               "Ljdk/internal/vm/vector/VectorSupport$VectorShuffle;")                                         \
-   do_name(vector_shuffle_step_iota_name, "shuffleIota")                                                                                       \
-                                                                                                                                               \
-  do_intrinsic(_VectorShuffleToVector, jdk_internal_vm_vector_VectorSupport, vector_shuffle_to_vector_name, vector_shuffle_to_vector_sig, F_S) \
-   do_signature(vector_shuffle_to_vector_sig, "(Ljava/lang/Class;"                                                                             \
-                                               "Ljava/lang/Class;"                                                                             \
-                                               "Ljava/lang/Class;"                                                                             \
-                                               "Ljdk/internal/vm/vector/VectorSupport$VectorShuffle;"                                          \
-                                               "ILjdk/internal/vm/vector/VectorSupport$ShuffleToVectorOperation;)"                             \
-                                               "Ljdk/internal/vm/vector/VectorSupport$Vector;")                                                \
-   do_name(vector_shuffle_to_vector_name, "shuffleToVector")                                                                                   \
-                                                                                                                                               \
   do_intrinsic(_VectorLoadOp, jdk_internal_vm_vector_VectorSupport, vector_load_op_name, vector_load_op_sig, F_S)                              \
    do_signature(vector_load_op_sig, "(Ljava/lang/Class;"                                                                                       \
                                      "Ljava/lang/Class;"                                                                                       \
@@ -1207,6 +1198,16 @@ class methodHandle;
                                        "Ljdk/internal/vm/vector/VectorSupport$Vector;")                                                        \
     do_name(index_vector_op_name, "indexVector")                                                                                               \
                                                                                                                                                \
+  do_intrinsic(_IndexPartiallyInUpperRange, jdk_internal_vm_vector_VectorSupport, index_partially_in_upper_range_name, index_partially_in_upper_range_sig, F_S)\
+    do_signature(index_partially_in_upper_range_sig, "(Ljava/lang/Class;"                                                                                      \
+                                                     "Ljava/lang/Class;"                                                                                       \
+                                                     "I"                                                                                                       \
+                                                     "J"                                                                                                       \
+                                                     "J"                                                                                                       \
+                                                     "Ljdk/internal/vm/vector/VectorSupport$IndexPartiallyInUpperRangeOperation;)"                             \
+                                                     "Ljdk/internal/vm/vector/VectorSupport$VectorMask;")                                                      \
+    do_name(index_partially_in_upper_range_name, "indexPartiallyInUpperRange")                                                                                 \
+                                                                                                                               \
    /* (2) Bytecode intrinsics                                                                        */                        \
                                                                                                                                \
   do_intrinsic(_park,                     jdk_internal_misc_Unsafe,     park_name, park_signature,                     F_RN)   \
@@ -1315,7 +1316,7 @@ enum class vmIntrinsicID : int {
                    __IGNORE_CLASS, __IGNORE_NAME, __IGNORE_SIGNATURE, __IGNORE_ALIAS)
 
   ID_LIMIT,
-  LAST_COMPILER_INLINE = _IndexVector,
+  LAST_COMPILER_INLINE = _IndexPartiallyInUpperRange,
   FIRST_MH_SIG_POLY    = _invokeGeneric,
   FIRST_MH_STATIC      = _linkToVirtual,
   LAST_MH_SIG_POLY     = _linkToNative,
@@ -1510,10 +1511,7 @@ public:
   // the corresponding coarse-grained control(2) disables it.
   static bool is_disabled_by_flags(vmIntrinsics::ID id);
 
-  static bool is_disabled_by_flags(const methodHandle& method);
-  static bool is_intrinsic_available(vmIntrinsics::ID id) {
-    return !is_disabled_by_flags(id);
-  }
+  static bool is_intrinsic_available(vmIntrinsics::ID id);
 };
 
 #undef VM_INTRINSIC_ENUM

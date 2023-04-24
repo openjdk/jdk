@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #ifndef SHARE_UTILITIES_DEBUG_HPP
 #define SHARE_UTILITIES_DEBUG_HPP
 
+#include "utilities/attributeNoreturn.hpp"
 #include "utilities/breakpoint.hpp"
 #include "utilities/compilerWarnings.hpp"
 #include "utilities/macros.hpp"
@@ -46,6 +47,98 @@ bool handle_assert_poison_fault(const void* ucVoid, const void* faulting_address
 #define TOUCH_ASSERT_POISON
 #endif // CAN_SHOW_REGISTERS_ON_ASSERT
 
+// The DebuggingContext class provides a mechanism for temporarily disabling
+// asserts and various consistency checks.  Ordinarily that would be a really
+// bad idea, but it's essential for some of the debugging commands provided by
+// HotSpot.  (See the Command class in debug.cpp.) These commands are intended
+// to be invoked from the debugger while the program is otherwise stopped.
+// The commands may invoke operations while the program is in a state where
+// those operations are not normally permitted, with the state checked by an
+// assert.  We want the debugging commands to bypass those checks.
+class DebuggingContext {
+  static int _enabled;          // Nesting counter.
+
+public:
+  DebuggingContext();
+  ~DebuggingContext();
+  // Asserts and other code use this to determine whether to bypass checks
+  // that would otherwise lead to program termination.
+  static bool is_enabled() { return _enabled > 0; }
+};
+
+// VMASSERT_CHECK_PASSED(P) provides the mechanism by which DebuggingContext
+// disables asserts.  It returns true if P is true or DebuggingContext is
+// enabled.  Assertion failure is reported if it returns false, terminating
+// the program.
+//
+// The DebuggingContext check being enabled isn't placed inside the report
+// function, as that would prevent the report function from being noreturn.
+// The report function should be noreturn so there isn't a control path to the
+// assertion's continuation that has P being false.  Otherwise, the compiler
+// might logically split the continuation to include that path explicitly,
+// possibly leading to discovering (and warning about) invalid code.  For
+// example, if P := x != nullptr, and the continuation contains a dereference
+// of x, the compiler might warn because there is a control path (!P -> report
+// -> continuation) where that dereference is known to be invalid.  (Of
+// course, if execution actually took that path things would go wrong, but
+// that's the risk the DebuggingContext mechanism takes.)
+//
+// Similarly, the check for enabled DebuggingContext shouldn't follow P.
+// Having this macro expand to `P || DebuggingContext::is_enabled()` has the
+// same problem of a control path through !P to the assertion's continuation.
+//
+// But it can't be just `DebuggingContext::is_enabled() || P` either.  That
+// prevents the compiler from inferring based on P that it is true in the
+// continuation.  But it also prevents the use of assertions in constexpr
+// contexts, since that expression is not constexpr.
+//
+// We could accomodate constexpr usage with std::is_constant_evaluated() (from
+// C++20). Unfortunately, we don't currently support C++20.  However, most
+// supported compilers have implemented it, and that implementation uses a
+// compiler intrinsic that we can use directly without otherwise using C++20.
+//
+// Note that if we could use std::is_constant_evaluated() then we could just
+// use this definition for DebuggingContext::is_enabled:
+//   static constexpr bool is_enabled() {
+//     return !std::is_constant_evaluated() && _enabled;
+//   }
+// The idea being that we are definitely not executing for debugging if doing
+// constant evaluation in the compiler. We don't do something like that now,
+// because we need a fallback when we don't have any mechanism for detecting
+// constant evaluation.
+#if defined(TARGET_COMPILER_gcc) || defined(TARGET_COMPILER_xlc)
+
+// gcc10 added both __has_builtin and __builtin_is_constant_evaluated.
+// clang has had __has_builtin for a long time, so likely also in xlclang++.
+// Similarly, clang has had __builtin_is_constant_evaluated for a long time.
+
+#ifdef __has_builtin
+#if __has_builtin(__builtin_is_constant_evaluated)
+#define VMASSERT_CHECK_PASSED(p) \
+  ((! __builtin_is_constant_evaluated() && DebuggingContext::is_enabled()) || (p))
+#endif
+#endif
+
+#elif defined(TARGET_COMPILER_visCPP)
+
+// std::is_constant_evaluated() and it's associated intrinsic are available in
+// VS 2019 16.5.  The minimum supported version of VS 2019 is already past
+// that, so we can rely on the intrinsic being available.
+#define VMASSERT_CHECK_PASSED(p) \
+  ((! __builtin_is_constant_evaluated() && DebuggingContext::is_enabled()) || (p))
+
+#endif // End dispatch on TARGET_COMPILER_xxx
+
+// If we don't have a way to detect constant evaluation, then fall back to the
+// less than ideal form of the check, and hope it works.  This succeeds at
+// least for gcc.  The support needed to use the above definition was added in
+// gcc10. The problems arising from analyzing the failed P case don't seem to
+// appear until gcc12.  An alternative is to not provide DebuggingContext
+// support for such a configuration.
+#ifndef VMASSERT_CHECK_PASSED
+#define VMASSERT_CHECK_PASSED(p) ((p) || DebuggingContext::is_enabled())
+#endif
+
 // assertions
 #ifndef ASSERT
 #define vmassert(p, ...)
@@ -56,10 +149,9 @@ bool handle_assert_poison_fault(const void* ucVoid, const void* faulting_address
 // compiler can't handle an empty ellipsis in a macro without a warning.
 #define vmassert(p, ...)                                                       \
 do {                                                                           \
-  if (!(p)) {                                                                  \
+  if (! VMASSERT_CHECK_PASSED(p)) {                                            \
     TOUCH_ASSERT_POISON;                                                       \
     report_vm_error(__FILE__, __LINE__, "assert(" #p ") failed", __VA_ARGS__); \
-    BREAKPOINT;                                                                \
   }                                                                            \
 } while (0)
 #endif
@@ -82,14 +174,13 @@ do {                                                                           \
 // like "Invalid argument", "out of memory" etc
 #define vmassert_status(p, status, msg) \
 do {                                                                           \
-  if (!(p)) {                                                                  \
+  if (! VMASSERT_CHECK_PASSED(p)) {                                            \
     TOUCH_ASSERT_POISON;                                                       \
     report_vm_status_error(__FILE__, __LINE__, "assert(" #p ") failed",        \
                            status, msg);                                       \
-    BREAKPOINT;                                                                \
   }                                                                            \
 } while (0)
-#endif
+#endif // ASSERT
 
 // For backward compatibility.
 #define assert_status(p, status, msg) vmassert_status(p, status, msg)
@@ -97,12 +188,12 @@ do {                                                                           \
 // guarantee is like vmassert except it's always executed -- use it for
 // cheap tests that catch errors that would otherwise be hard to find.
 // guarantee is also used for Verify options.
+// guarantee is not subject to DebuggingContext bypass.
 #define guarantee(p, ...)                                                         \
 do {                                                                              \
   if (!(p)) {                                                                     \
     TOUCH_ASSERT_POISON;                                                          \
     report_vm_error(__FILE__, __LINE__, "guarantee(" #p ") failed", __VA_ARGS__); \
-    BREAKPOINT;                                                                   \
   }                                                                               \
 } while (0)
 
@@ -110,35 +201,30 @@ do {                                                                            
 do {                                                                              \
   TOUCH_ASSERT_POISON;                                                            \
   report_fatal(INTERNAL_ERROR, __FILE__, __LINE__, __VA_ARGS__);                  \
-  BREAKPOINT;                                                                     \
 } while (0)
 
 // out of memory
 #define vm_exit_out_of_memory(size, vm_err_type, ...)                             \
 do {                                                                              \
   report_vm_out_of_memory(__FILE__, __LINE__, size, vm_err_type, __VA_ARGS__);    \
-  BREAKPOINT;                                                                     \
 } while (0)
 
 #define ShouldNotCallThis()                                                       \
 do {                                                                              \
   TOUCH_ASSERT_POISON;                                                            \
   report_should_not_call(__FILE__, __LINE__);                                     \
-  BREAKPOINT;                                                                     \
 } while (0)
 
 #define ShouldNotReachHere()                                                      \
 do {                                                                              \
   TOUCH_ASSERT_POISON;                                                            \
   report_should_not_reach_here(__FILE__, __LINE__);                               \
-  BREAKPOINT;                                                                     \
 } while (0)
 
 #define Unimplemented()                                                           \
 do {                                                                              \
   TOUCH_ASSERT_POISON;                                                            \
   report_unimplemented(__FILE__, __LINE__);                                       \
-  BREAKPOINT;                                                                     \
 } while (0)
 
 #define Untested(msg)                                                             \
@@ -157,25 +243,37 @@ enum VMErrorType {
   OOM_JAVA_HEAP_FATAL = 0xe0000004
 };
 
-// Set to suppress secondary error reporting.
-// Really should have a qualified name or something.
-extern bool Debugging;
-
 // error reporting helper functions
+ATTRIBUTE_NORETURN
 void report_vm_error(const char* file, int line, const char* error_msg);
+
+ATTRIBUTE_NORETURN
+ATTRIBUTE_PRINTF(4, 5)
 void report_vm_error(const char* file, int line, const char* error_msg,
-                     const char* detail_fmt, ...) ATTRIBUTE_PRINTF(4, 5);
+                     const char* detail_fmt, ...);
+
+ATTRIBUTE_NORETURN
 void report_vm_status_error(const char* file, int line, const char* error_msg,
                             int status, const char* detail);
-void report_fatal(VMErrorType error_type, const char* file, int line, const char* detail_fmt, ...) ATTRIBUTE_PRINTF(4, 5);
+
+ATTRIBUTE_NORETURN
+ATTRIBUTE_PRINTF(4, 5)
+void report_fatal(VMErrorType error_type, const char* file, int line, const char* detail_fmt, ...);
+
+ATTRIBUTE_NORETURN
+ATTRIBUTE_PRINTF(5, 6)
 void report_vm_out_of_memory(const char* file, int line, size_t size, VMErrorType vm_err_type,
-                             const char* detail_fmt, ...) ATTRIBUTE_PRINTF(5, 6);
-void report_should_not_call(const char* file, int line);
-void report_should_not_reach_here(const char* file, int line);
-void report_unimplemented(const char* file, int line);
+                             const char* detail_fmt, ...);
+
+ATTRIBUTE_NORETURN void report_should_not_call(const char* file, int line);
+ATTRIBUTE_NORETURN void report_should_not_reach_here(const char* file, int line);
+ATTRIBUTE_NORETURN void report_unimplemented(const char* file, int line);
+
+// NOT ATTRIBUTE_NORETURN
 void report_untested(const char* file, int line, const char* message);
 
-void warning(const char* format, ...) ATTRIBUTE_PRINTF(1, 2);
+ATTRIBUTE_PRINTF(1, 2)
+void warning(const char* format, ...);
 
 #define STATIC_ASSERT(Cond) static_assert((Cond), #Cond)
 

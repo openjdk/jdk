@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,13 +56,13 @@ class JvmtiConstantPoolReconstituter : public StackObj {
   JvmtiConstantPoolReconstituter(InstanceKlass* ik);
 
   ~JvmtiConstantPoolReconstituter() {
-    if (_symmap != NULL) {
+    if (_symmap != nullptr) {
       delete _symmap;
-      _symmap = NULL;
+      _symmap = nullptr;
     }
-    if (_classmap != NULL) {
+    if (_classmap != nullptr) {
       delete _classmap;
-      _classmap = NULL;
+      _classmap = nullptr;
     }
   }
 
@@ -73,8 +73,8 @@ class JvmtiConstantPoolReconstituter : public StackObj {
   int cpool_size()                        { return _cpool_size; }
 
   void copy_cpool_bytes(unsigned char *cpool_bytes) {
-    if (cpool_bytes == NULL) {
-      assert(cpool_bytes != NULL, "cpool_bytes pointer must not be NULL");
+    if (cpool_bytes == nullptr) {
+      assert(cpool_bytes != nullptr, "cpool_bytes pointer must not be null");
       return;
     }
     cpool()->copy_cpool_bytes(cpool_size(), _symmap, cpool_bytes);

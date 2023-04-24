@@ -181,27 +181,23 @@ address generate_poly1305_processBlocks2() {
 
   // Last two parallel blocks
   {
-    __ poly1305_step(S0, u0, input_start);
-    __ poly1305_multiply(u0, S0, R, RR2, regs);
-    __ poly1305_reduce(u0);
-
     // Load R**1
     __ pack_26(R[0], R[1], R[2], r_start);
     __ lsl(RR2, R[2], 26);
     __ add(RR2, RR2, RR2, __ LSL, 2);
 
-    __ poly1305_step(S1, u1, input_start);
-    __ poly1305_multiply(u1, S1, R, RR2, regs);
-    __ poly1305_reduce(u1);
+    __ poly1305_step(S0, u0, input_start);
+    __ poly1305_multiply(u0, S0, R, RR2, regs);
+    __ poly1305_reduce(u0);
+
+    __ poly1305_load(S0, input_start);
+    __ poly1305_add(S0, u0);
+    __ poly1305_add(S0, u1);
+    __ poly1305_multiply(u0, S0, R, RR2, regs);
+    __ poly1305_reduce(u0);
 
     __ subw(length, length, BLOCK_LENGTH * 2);
   }
-
-  // __ add_3_reg_pairs(u0, u1);
-
-  __ add(u0[0]._lo, u0[0]._lo, u1[0]._lo);
-  __ add(u0[1]._lo, u0[1]._lo, u1[1]._lo);
-  __ add(u0[2]._lo, u0[2]._lo, u1[2]._lo);
 
   // Maybe some last blocks
   __ bind(SMALL);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3102,9 +3102,8 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * @apiNote
      * Note: this class has a natural ordering that is inconsistent with equals.
      * The behavior of comparing the result of this method for
-     * equality to 0 is analogous to checking the <a
-     * href="{@docRoot}/java.base/java/lang/Double.html#fpNumericalEq">numerical
-     * equality</a> of {@code double} values.
+     * equality to 0 is analogous to checking the {@linkplain
+     * Double##fpNumericalEq numerical equality} of {@code double} values.
      *
      * @param  val {@code BigDecimal} to which this {@code BigDecimal} is
      *         to be compared.
@@ -3197,9 +3196,9 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * HALF_UP)} which evaluates to 0.7 and <br>
      * {@code new BigDecimal("2.00").divide(BigDecimal.valueOf(3),
      * HALF_UP)} which evaluates to 0.67.
-     * The behavior of this method is analogous to checking the <a
-     * href="{@docRoot}/java.base/java/lang/Double.html#repEquivalence">representation
-     * equivalence</a> of {@code double} values.
+     * The behavior of this method is analogous to checking the
+     * {@linkplain Double##repEquivalence representation equivalence}
+     * of {@code double} values.
      *
      * @param  x {@code Object} to which this {@code BigDecimal} is
      *         to be compared.
@@ -3597,7 +3596,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      */
     private boolean fractionOnly() {
         assert this.signum() != 0;
-        return (this.precision() - this.scale) <= 0;
+        return this.precision() <= this.scale;
     }
 
     /**
@@ -3625,8 +3624,15 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         if (fractionOnly())
             throw new ArithmeticException("Rounding necessary");
 
-        // If more than 19 digits in integer part it cannot possibly fit
-        if ((precision() - scale) > 19) // [OK for negative scale too]
+        /*
+         * If more than 19 digits in integer part it cannot possibly fit.
+         * Ensure that arithmetic does not overflow, so instead of
+         *      precision() - scale > 19
+         * prefer
+         *      precision() - 19 > scale
+         * since precision() > 0, so the lhs cannot overflow.
+         */
+        if (precision() - 19 > scale) // [OK for negative scale too]
             throw new java.lang.ArithmeticException("Overflow");
 
         // round to an integer, with Exception if decimal part non-0

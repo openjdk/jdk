@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -420,14 +420,14 @@ DEF_Agent_OnAttach(JavaVM* vm, char *args, void * reserved) {
          * Create the java.lang.instrument.Instrumentation instance
          */
         success = createInstrumentationImpl(jni_env, agent);
-        jplis_assert(success);
+        jplis_assert_msg(success, "createInstrumentationImpl failed");
 
         /*
          * Setup ClassFileLoadHook handler.
          */
         if (success) {
             success = setLivePhaseEventHandlers(agent);
-            jplis_assert(success);
+            jplis_assert_msg(success, "setLivePhaseEventHandlers failed");
         }
 
         /*
@@ -439,6 +439,7 @@ DEF_Agent_OnAttach(JavaVM* vm, char *args, void * reserved) {
                                      agentClass,
                                      options,
                                      agent->mAgentmainCaller);
+            jplis_assert_msg(success, "startJavaAgent failed");
         }
 
         if (!success) {
