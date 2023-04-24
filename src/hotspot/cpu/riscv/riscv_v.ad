@@ -176,6 +176,8 @@ instruct vmaskcmp(vRegMask dst, vReg src1, vReg src2, immI cond) %{
   ins_pipe(pipe_slow);
 %}
 
+// Exclude mask register v0 for 'dst' as compare_integral_v clears 'dst'
+// register on entry before using mask value held in v0.
 instruct vmaskcmp_masked(vRegMaskNoV0 dst, vReg src1, vReg src2, immI cond, vRegMask_V0 v0) %{
   predicate(Matcher::vector_element_basic_type(n) == T_BYTE ||
             Matcher::vector_element_basic_type(n) == T_SHORT ||
@@ -211,6 +213,8 @@ instruct vmaskcmp_fp(vRegMask dst, vReg src1, vReg src2, immI cond, vReg tmp1, v
   ins_pipe(pipe_slow);
 %}
 
+// Exclude mask register v0 for 'dst' as compare_floating_point_v clears 'dst'
+// register on entry before using mask value held in v0.
 instruct vmaskcmp_fp_masked(vRegMaskNoV0 dst, vReg src1, vReg src2, immI cond, vRegMask_V0 v0, vReg tmp1, vReg tmp2) %{
   predicate(Matcher::vector_element_basic_type(n) == T_FLOAT ||
             Matcher::vector_element_basic_type(n) == T_DOUBLE);

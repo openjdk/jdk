@@ -3602,39 +3602,6 @@ operand vReg()
   interface(REG_INTER);
 %}
 
-// The mask value used to control execution of a masked
-// vector instruction is always supplied by vector register v0.
-operand vRegMask_V0()
-%{
-  constraint(ALLOC_IN_RC(vmask_reg_v0));
-  match(RegVectMask);
-  match(vRegMask);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand vRegMask()
-%{
-  constraint(ALLOC_IN_RC(vmask_reg));
-  match(RegVectMask);
-  match(vRegMask_V0);
-  match(vRegMaskNoV0);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand vRegMaskNoV0()
-%{
-  constraint(ALLOC_IN_RC(vmask_reg_no_v0));
-  match(RegVectMask);
-  match(vRegMask);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
 operand vReg_V1()
 %{
   constraint(ALLOC_IN_RC(v1_reg));
@@ -3680,6 +3647,39 @@ operand vReg_V5()
   constraint(ALLOC_IN_RC(v5_reg));
   match(VecA);
   match(vReg);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vRegMask()
+%{
+  constraint(ALLOC_IN_RC(vmask_reg));
+  match(RegVectMask);
+  match(vRegMaskNoV0);
+  match(vRegMask_V0);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vRegMaskNoV0()
+%{
+  constraint(ALLOC_IN_RC(vmask_reg_no_v0));
+  match(RegVectMask);
+  match(vRegMask);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+// The mask value used to control execution of a masked
+// vector instruction is always supplied by vector register v0.
+operand vRegMask_V0()
+%{
+  constraint(ALLOC_IN_RC(vmask_reg_v0));
+  match(RegVectMask);
+  match(vRegMask);
   op_cost(0);
   format %{ %}
   interface(REG_INTER);
