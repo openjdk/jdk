@@ -2624,7 +2624,7 @@ void TemplateTable::load_invokedynamic_entry(Register method) {
   __ load_resolved_indy_entry(cache, index);
   // Load-acquire the adapter method to match store-release in ResolvedIndyEntry::fill_in()
   __ ldr(method, Address(cache, in_bytes(ResolvedIndyEntry::method_offset())));
-  TemplateTable::volatile_barrier(MacroAssembler::LoadLoad, noreg, true);
+  TemplateTable::volatile_barrier(MacroAssembler::Membar_mask_bits(MacroAssembler::LoadLoad | MacroAssembler::LoadStore), noreg, true);
   // Compare the method to zero
   __ cbnz(method, resolved);
 
@@ -2638,7 +2638,7 @@ void TemplateTable::load_invokedynamic_entry(Register method) {
   __ load_resolved_indy_entry(cache, index);
   // Load-acquire the adapter method to match store-release in ResolvedIndyEntry::fill_in()
   __ ldr(method, Address(cache, in_bytes(ResolvedIndyEntry::method_offset())));
-  TemplateTable::volatile_barrier(MacroAssembler::LoadLoad, noreg, true);
+  TemplateTable::volatile_barrier(MacroAssembler::Membar_mask_bits(MacroAssembler::LoadLoad | MacroAssembler::LoadStore), noreg, true);
 
 #ifdef ASSERT
   __ cbnz(method, resolved);
