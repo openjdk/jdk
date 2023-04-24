@@ -31,7 +31,7 @@ import static org.testng.Assert.*;
 /*
  * @test
  * @enablePreview
- * @requires jdk.foreignLinker
+ * @requires jdk.CABI != "UNKNOWN"
  * @run testng TestStringEncoding
  */
 

@@ -24,7 +24,7 @@
 /*
  * @test
  * @enablePreview
- * @requires jdk.foreignLinker
+ * @requires jdk.CABI != "UNKNOWN"
  * @library /test/lib
  * @build TestUpcallException
  *

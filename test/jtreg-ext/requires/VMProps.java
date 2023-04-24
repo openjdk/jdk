@@ -128,8 +128,7 @@ public class VMProps implements Callable<Map<String, String>> {
         map.put("release.implementor", this::implementor);
         map.put("jdk.containerized", this::jdkContainerized);
         map.put("vm.flagless", this::isFlagless);
-        map.put("jdk.foreignLinker", this::foreignLinker);
-        map.put("jdk.fallbackLinker", this::fallbacklinker);
+        map.put("jdk.CABI", this::cabi);
         vmGC(map); // vm.gc.X = true/false
         vmGCforCDS(map); // may set vm.gc
         vmOptFinalFlags(map);
@@ -656,12 +655,8 @@ public class VMProps implements Callable<Map<String, String>> {
         return "" + result;
     }
 
-    private String foreignLinker() {
-        return String.valueOf(CABI.current() != CABI.UNSUPPORTED);
-    }
-
-    private String fallbacklinker() {
-        return String.valueOf(CABI.current() == CABI.FALLBACK);
+    private String cabi() {
+        return String.valueOf(CABI.current());
     }
 
     /**

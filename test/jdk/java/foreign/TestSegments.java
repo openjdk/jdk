@@ -24,7 +24,7 @@
 /*
  * @test
  * @enablePreview
- * @requires jdk.foreignLinker
+ * @requires jdk.CABI != "UNKNOWN"
  * @run testng/othervm -Xmx4G -XX:MaxDirectMemorySize=1M --enable-native-access=ALL-UNNAMED TestSegments
  */
 

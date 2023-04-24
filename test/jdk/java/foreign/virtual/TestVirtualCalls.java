@@ -24,7 +24,7 @@
 /*
  * @test
  * @enablePreview
- * @requires jdk.foreignLinker
+ * @requires jdk.CABI != "UNKNOWN"
  * @library ../
  * @run testng/othervm
  *   --enable-native-access=ALL-UNNAMED

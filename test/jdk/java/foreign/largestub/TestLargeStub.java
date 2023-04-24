@@ -25,7 +25,7 @@
  * @test
  * @enablePreview
  * @library ../
- * @requires jdk.foreignLinker
+ * @requires jdk.CABI != "UNKNOWN"
  * @modules java.base/jdk.internal.foreign
  * @run testng/othervm --enable-native-access=ALL-UNNAMED TestLargeStub
  */

@@ -30,7 +30,7 @@ import static org.testng.Assert.*;
 /*
  * @test
  * @enablePreview
- * @requires jdk.foreignLinker
+ * @requires jdk.CABI != "UNKNOWN"
  * @run testng/othervm TestLoaderLookupJNI
  */
 public class TestLoaderLookupJNI {
