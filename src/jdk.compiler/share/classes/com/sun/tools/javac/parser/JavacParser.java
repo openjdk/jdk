@@ -823,13 +823,16 @@ public class JavacParser implements Parser {
                 accept(RPAREN);
                 pattern = toP(F.at(pos).RecordPattern(e, nested.toList()));
             } else {
-                int varPos = token.pos;
                 //type test pattern:
+                int varPos = token.pos;
                 Name name = identOrUnderscore();
-                if (e == null && name == names.underscore) {
-                    log.error(DiagnosticFlag.SYNTAX, varPos, Errors.UnderscoreAsIdentifier);
-                }
                 JCVariableDecl var = toP(F.at(varPos).VarDef(mods, name, e, null));
+                if (e == null) {
+                    var.startPos = pos;
+                    if (name == names.underscore) {
+                        log.error(DiagnosticFlag.SYNTAX, varPos, Errors.UnderscoreAsIdentifier);
+                    }
+                }
                 pattern = toP(F.at(pos).BindingPattern(var));
             }
         }
