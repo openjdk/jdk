@@ -701,35 +701,35 @@ public:
       if (rounds <= 0) {
         break;
       }
-      int live_nodes = 0;
-      if (false) {
-        tty->print_cr("XXXXXXXXXXXXXXXX");
-        ResourceMark rm;
-        Unique_Node_List wq;
-        wq.push(C->root());
-        for (uint i = 0; i < wq.size(); ++i) {
-          Node* n = wq.at(i);
-          for (uint j = 0; j < n->req(); ++j) {
-            Node* in = n->in(j);
-            if (in != nullptr) {
-              wq.push(in);
-            }
-          }
-        }
-        live_nodes = wq.size();
-        for (int i = 0; i < _value_calls_graph.length(); ++i) {
-          int cnt = _value_calls_graph.at(i);
-          if (cnt == 0) {
-            continue;
-          }
-          extern const char *NodeClassNames[];
-          tty->print_cr("XXX %s : %d", NodeClassNames[i], cnt);
-        }
-        tty->print_cr("XXX value calls %d %d %d %d", _value_calls, iterations, _rpo_list.size(), live_nodes);
-        _value_calls_graph.trunc_to(0);
-      }
     }
 
+    if (false) {
+      int live_nodes = 0;
+      tty->print_cr("XXXXXXXXXXXXXXXX");
+      ResourceMark rm;
+      Unique_Node_List wq;
+      wq.push(C->root());
+      for (uint i = 0; i < wq.size(); ++i) {
+        Node* n = wq.at(i);
+        for (uint j = 0; j < n->req(); ++j) {
+          Node* in = n->in(j);
+          if (in != nullptr) {
+            wq.push(in);
+          }
+        }
+      }
+      live_nodes = wq.size();
+      for (int i = 0; i < _value_calls_graph.length(); ++i) {
+        int cnt = _value_calls_graph.at(i);
+        if (cnt == 0) {
+          continue;
+        }
+        extern const char *NodeClassNames[];
+        tty->print_cr("XXX %s : %d", NodeClassNames[i], cnt);
+      }
+      tty->print_cr("XXX value calls %d %d %d %d", _value_calls, iterations, _rpo_list.size(), live_nodes);
+      _value_calls_graph.trunc_to(0);
+    }
 
     if (UseNewCode2 && UseNewCode3) {
       for (int i = _rpo_list.size() - 1; i >= 0; i--) {
@@ -991,8 +991,8 @@ public:
         }
         assert(!failure, "");
       }
-#endif
     }
+#endif
     if (UseNewCode2) {
       for (uint i = 0; i < PhaseTransform::_types.Size(); ++i) {
         _types_tree_clone.map(i, PhaseTransform::_types.fast_lookup(i));
@@ -1231,8 +1231,8 @@ public:
           assert(_current_updates->prev_type_at(i) == PhaseTransform::type(n), "");
           assert(narrows_type(PhaseTransform::type(n), _current_updates->type_at(i)), "");
         }
-      }
 #endif
+      }
     } else {
 #ifdef ASSERT
       sync(dom);

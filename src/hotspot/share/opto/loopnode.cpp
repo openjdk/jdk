@@ -4597,6 +4597,7 @@ void PhaseIdealLoop::build_and_optimize() {
     if (!StressLoopConditionalPropagation) {
       C->set_loop_conditional_propagation_rounds(1);
     }
+//    C->set_loop_conditional_propagation_rounds(0);
   }
 
   // Perform loop predication before iteration splitting
