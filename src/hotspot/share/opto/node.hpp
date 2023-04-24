@@ -478,7 +478,6 @@ protected:
 
   // Strip away casting.  (It is depth-limited.)
   Node* uncast(bool keep_deps = false) const;
-
   // Return whether two Nodes are equivalent, after stripping casting.
   bool eqv_uncast(const Node* n, bool keep_deps = false) const {
     return (this->uncast(keep_deps) == n->uncast(keep_deps));
