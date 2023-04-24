@@ -290,7 +290,7 @@ final class Poly1305 {
     @ForceInline
     @IntrinsicCandidate
     private void processMultipleBlocks(byte[] input, int offset, int length, long[] aLimbs, long[] rLimbs) {
-        final int cols = 2, max_cols = 4;
+        final int cols = 4, max_cols = 4;
 
         if (length >= BLOCK_LENGTH * cols) {
             IntegerModuloP rPrime = ipl1305.get1();
