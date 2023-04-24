@@ -32,7 +32,6 @@ import java.lang.invoke.ConstantCallSite;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
-import java.lang.invoke.MutableCallSite;
 import java.util.Objects;
 import java.util.stream.Stream;
 
@@ -97,6 +96,10 @@ public class SwitchBootstraps {
      * <p>
      * If no element in the {@code labels} array matches the target, then
      * the method of the call site return the length of the {@code labels} array.
+     * <p>
+     * The value of the {@code restart} index must be between {@code 0} and
+     * the length of the {@code labels} array, of an {@link IndexOutOfBoundsException}
+     * is thrown.
      *
      * @param lookup Represents a lookup context with the accessibility
      *               privileges of the caller.  When used with {@code invokedynamic},
@@ -212,6 +215,10 @@ public class SwitchBootstraps {
      * <p>
      * If no element in the {@code labels} array matches the target, then
      * the method of the call site return the length of the {@code labels} array.
+     * <p>
+     * The value of the {@code restart} index must be between {@code 0} and
+     * the length of the {@code labels} array, of an {@link IndexOutOfBoundsException}
+     * is thrown.
      *
      * @param lookup Represents a lookup context with the accessibility
      *               privileges of the caller. When used with {@code invokedynamic},
