@@ -31,9 +31,9 @@
 
 #define ERR_MSG_SIZE 128
 
-const JmmInterface* jmm_interface = NULL;
+const JmmInterface* jmm_interface_management_ext = NULL;
 static JavaVM* jvm = NULL;
-jint jmm_version = 0;
+jint jmm_version_management_ext = 0;
 
 JNIEXPORT jint JNICALL
    DEF_JNI_OnLoad(JavaVM *vm, void *reserved) {
@@ -44,13 +44,13 @@ JNIEXPORT jint JNICALL
         return JNI_ERR;
     }
 
-    jmm_interface = (JmmInterface*) JVM_GetManagement(JMM_VERSION);
-    if (jmm_interface == NULL) {
+    jmm_interface_management_ext = (JmmInterface*) JVM_GetManagement(JMM_VERSION);
+    if (jmm_interface_management_ext == NULL) {
         JNU_ThrowInternalError(env, "Unsupported Management version");
         return JNI_ERR;
     }
 
-    jmm_version = jmm_interface->GetVersion(env);
+    jmm_version_management_ext = jmm_interface_management_ext->GetVersion(env);
     return (*env)->GetVersion(env);
 }
 
