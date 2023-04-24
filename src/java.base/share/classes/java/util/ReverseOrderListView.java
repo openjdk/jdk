@@ -25,6 +25,7 @@
 
 package java.util;
 
+import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.IntFunction;
 import java.util.function.Predicate;
@@ -164,12 +165,15 @@ class ReverseOrderListView<E> implements List<E> {
 
     public boolean addAll(Collection<? extends E> c) {
         checkModifiable();
-        boolean modified = false;
-        for (E e : c) {
-            base.add(0, e);
-            modified = true;
+
+        @SuppressWarnings("unchecked")
+        E[] adds = (E[]) c.toArray();
+        if (adds.length == 0) {
+            return false;
+        } else {
+            base.addAll(0, Arrays.asList(ArraysSupport.reverse(adds)));
+            return true;
         }
-        return modified;
     }
 
     public void clear() {
@@ -313,22 +317,29 @@ class ReverseOrderListView<E> implements List<E> {
 
     public void add(int index, E element) {
         checkModifiable();
-        base.add(base.size() - index, element);
+        int size = base.size();
+        checkClosedRange(index, size);
+        base.add(size - index, element);
     }
 
     public boolean addAll(int index, Collection<? extends E> c) {
         checkModifiable();
-        boolean modified = false;
-        int i = base.size() - index;
-        for (E e : c) {
-            base.add(i, e);
-            modified = true;
+        int size = base.size();
+        checkClosedRange(index, size);
+        @SuppressWarnings("unchecked")
+        E[] adds = (E[]) c.toArray();
+        if (adds.length == 0) {
+            return false;
+        } else {
+            base.addAll(size - index, Arrays.asList(ArraysSupport.reverse(adds)));
+            return true;
         }
-        return modified;
     }
 
     public E get(int i) {
-        return base.get(base.size() - i - 1);
+        int size = base.size();
+        Objects.checkIndex(i, size);
+        return base.get(size - i - 1);
     }
 
     public int indexOf(Object o) {
@@ -346,12 +357,16 @@ class ReverseOrderListView<E> implements List<E> {
     }
 
     public ListIterator<E> listIterator(int index) {
-        return new DescendingListIterator(base.size(), index);
+        int size = base.size();
+        checkClosedRange(index, size);
+        return new DescendingListIterator(size, index);
     }
 
     public E remove(int index) {
         checkModifiable();
-        return base.remove(base.size() - index - 1);
+        int size = base.size();
+        Objects.checkIndex(index, size);
+        return base.remove(size - index - 1);
     }
 
     public boolean removeIf(Predicate<? super E> filter) {
@@ -371,11 +386,20 @@ class ReverseOrderListView<E> implements List<E> {
 
     public E set(int index, E element) {
         checkModifiable();
-        return base.set(base.size() - index - 1, element);
+        int size = base.size();
+        Objects.checkIndex(index, size);
+        return base.set(size - index - 1, element);
     }
 
     public List<E> subList(int fromIndex, int toIndex) {
         int size = base.size();
+        Objects.checkFromToIndex(fromIndex, toIndex, size);
         return new ReverseOrderListView<>(base.subList(size - toIndex, size - fromIndex), modifiable);
+    }
+
+    static void checkClosedRange(int index, int size) {
+        if (index < 0 || index > size) {
+            throw new IndexOutOfBoundsException("Index: " + index + ", Size: " + size);
+        }
     }
 }
