@@ -1258,10 +1258,10 @@ const Type *MinINode::add_ring( const Type *t0, const Type *t1 ) const {
   return TypeInt::make( MIN2(r0->_lo,r1->_lo), MIN2(r0->_hi,r1->_hi), MAX2(r0->_widen,r1->_widen) );
 }
 
-// Collapse the "addition with overflow-protection" pattern, and the symetrical
+// Collapse the "addition with overflow-protection" pattern, and the symmetrical
 // "subtraction with underflow-protection" pattern. These are created during the
 // unrolling, when we have to adjust the limit by subtracting the stride, but want
-// to protect agains underflow: MaxL(SubL(limit, stride), min_jint).
+// to protect against underflow: MaxL(SubL(limit, stride), min_jint).
 // If we have more than one of those in a sequence:
 //
 //   x  con2
