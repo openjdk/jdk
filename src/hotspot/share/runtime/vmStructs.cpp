@@ -1312,7 +1312,7 @@
         declare_type(ServiceThread, JavaThread)                           \
         declare_type(NotificationThread, JavaThread)                      \
         declare_type(CompilerThread, JavaThread)                          \
-	declare_type(StringDedupThread, JavaThread)                       \
+        declare_type(StringDedupThread, JavaThread)                       \
   declare_toplevel_type(OSThread)                                         \
   declare_toplevel_type(JavaFrameAnchor)                                  \
                                                                           \
