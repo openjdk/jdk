@@ -178,13 +178,12 @@ instruct vmaskcmp(vRegMask dst, vReg src1, vReg src2, immI cond) %{
 
 // Exclude mask register v0 for 'dst' as compare_integral_v clears 'dst'
 // register on entry before using mask value held in v0.
-instruct vmaskcmp_masked(vRegMask dst, vReg src1, vReg src2, immI cond, vRegMask_V0 v0) %{
+instruct vmaskcmp_masked(vRegMaskNoV0 dst, vReg src1, vReg src2, immI cond, vRegMask_V0 v0) %{
   predicate(Matcher::vector_element_basic_type(n) == T_BYTE ||
             Matcher::vector_element_basic_type(n) == T_SHORT ||
             Matcher::vector_element_basic_type(n) == T_INT ||
             Matcher::vector_element_basic_type(n) == T_LONG);
   match(Set dst (VectorMaskCmp (Binary src1 src2) (Binary cond v0)));
-  effect(TEMP_DEF dst);
   format %{ "vmaskcmp_masked $dst, $src1, $src2, $cond, v0.t" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
@@ -216,11 +215,11 @@ instruct vmaskcmp_fp(vRegMask dst, vReg src1, vReg src2, immI cond, vReg tmp1, v
 
 // Exclude mask register v0 for 'dst' as compare_floating_point_v clears 'dst'
 // register on entry before using mask value held in v0.
-instruct vmaskcmp_fp_masked(vRegMask dst, vReg src1, vReg src2, immI cond, vRegMask_V0 v0, vReg tmp1, vReg tmp2) %{
+instruct vmaskcmp_fp_masked(vRegMaskNoV0 dst, vReg src1, vReg src2, immI cond, vRegMask_V0 v0, vReg tmp1, vReg tmp2) %{
   predicate(Matcher::vector_element_basic_type(n) == T_FLOAT ||
             Matcher::vector_element_basic_type(n) == T_DOUBLE);
   match(Set dst (VectorMaskCmp (Binary src1 src2) (Binary cond v0)));
-  effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2);
+  effect(TEMP tmp1, TEMP tmp2);
   format %{ "vmaskcmp_fp_masked $dst, $src1, $src2, $cond, v0.t\t# KILL $tmp1, $tmp2" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
