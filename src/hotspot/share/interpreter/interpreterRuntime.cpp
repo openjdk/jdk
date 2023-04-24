@@ -954,6 +954,7 @@ void InterpreterRuntime::resolve_invokedynamic(JavaThread* current) {
 // cpCache entry.  This doesn't safepoint, but the helper routines safepoint.
 // This function will check for redefinition!
 JRT_ENTRY(void, InterpreterRuntime::resolve_from_cache(JavaThread* current, Bytecodes::Code bytecode)) {
+  MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, JavaThread::current()));
   switch (bytecode) {
   case Bytecodes::_getstatic:
   case Bytecodes::_putstatic:

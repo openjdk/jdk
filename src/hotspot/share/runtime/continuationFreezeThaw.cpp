@@ -244,7 +244,7 @@ static JRT_LEAF(intptr_t*, thaw(JavaThread* thread, int kind))
   // vFrameStreamCommon allocates Handles in RegisterMap for continuations.
   // JRT_ENTRY instead?
   ResetNoHandleMark rnhm;
-
+  MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, thread));
   return ConfigT::thaw(thread, (Continuation::thaw_kind)kind);
 JRT_END
 
