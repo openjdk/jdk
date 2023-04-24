@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,33 +19,30 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_GC_PARALLEL_PSVMOPERATIONS_HPP
-#define SHARE_GC_PARALLEL_PSVMOPERATIONS_HPP
+/*
+ * @test
+ * @bug 4429261
+ * @summary Checks AWTKeyStroke is cached
+ * @run main CacheTest
+*/
 
-#include "gc/parallel/parallelScavengeHeap.hpp"
-#include "gc/shared/gcCause.hpp"
-#include "gc/shared/gcVMOperations.hpp"
+import java.awt.AWTKeyStroke;
+import java.awt.EventQueue;
+import java.awt.event.KeyEvent;
+import java.awt.event.InputEvent;
 
-class VM_ParallelGCFailedAllocation : public VM_CollectForAllocation {
- public:
-  VM_ParallelGCFailedAllocation(size_t word_size, uint gc_count);
+public class CacheTest {
 
-  virtual VMOp_Type type() const {
-    return VMOp_ParallelGCFailedAllocation;
-  }
-  virtual void doit();
-};
-
-class VM_ParallelGCSystemGC: public VM_GC_Operation {
-  bool _full_gc_succeeded;
- public:
-  VM_ParallelGCSystemGC(uint gc_count, uint full_gc_count, GCCause::Cause gc_cause);
-  virtual VMOp_Type type() const { return VMOp_ParallelGCSystemGC; }
-  virtual void doit();
-  bool full_gc_succeeded() const { return _full_gc_succeeded; }
-};
-
-#endif // SHARE_GC_PARALLEL_PSVMOPERATIONS_HPP
+    public static void main(String[] args) throws Exception {
+        EventQueue.invokeAndWait(() -> {
+            if (AWTKeyStroke.getAWTKeyStroke(KeyEvent.VK_X,
+                                             InputEvent.ALT_DOWN_MASK) !=
+                AWTKeyStroke.getAWTKeyStroke(KeyEvent.VK_X,
+                                             InputEvent.ALT_DOWN_MASK)) {
+                throw new RuntimeException("KeyStroke is not cached");
+            }
+        });
+    }
+}// class CacheTest

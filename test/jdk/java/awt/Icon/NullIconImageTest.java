@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,33 +19,33 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
+/*
+ * @test
+ * @bug 4633887
+ * @summary setting a null Image in setIconImage should not cause exception.
+ * @key headful
+ * @run main NullIconImageTest
+*/
 
-#ifndef SHARE_GC_PARALLEL_PSVMOPERATIONS_HPP
-#define SHARE_GC_PARALLEL_PSVMOPERATIONS_HPP
+import java.awt.EventQueue;
+import java.awt.Frame;
 
-#include "gc/parallel/parallelScavengeHeap.hpp"
-#include "gc/shared/gcCause.hpp"
-#include "gc/shared/gcVMOperations.hpp"
+public class NullIconImageTest {
+    static Frame f;
 
-class VM_ParallelGCFailedAllocation : public VM_CollectForAllocation {
- public:
-  VM_ParallelGCFailedAllocation(size_t word_size, uint gc_count);
+    public static void main(String[] args) throws Exception {
+        EventQueue.invokeAndWait(() -> {
+            try {
+                f = new Frame();
+                f.setVisible(true);
+                f.setIconImage(null); // This call should not cause an exception.
+            } finally {
+                if (f != null) {
+                    f.dispose();
+                }
+            }
+        });
+    }
 
-  virtual VMOp_Type type() const {
-    return VMOp_ParallelGCFailedAllocation;
-  }
-  virtual void doit();
-};
-
-class VM_ParallelGCSystemGC: public VM_GC_Operation {
-  bool _full_gc_succeeded;
- public:
-  VM_ParallelGCSystemGC(uint gc_count, uint full_gc_count, GCCause::Cause gc_cause);
-  virtual VMOp_Type type() const { return VMOp_ParallelGCSystemGC; }
-  virtual void doit();
-  bool full_gc_succeeded() const { return _full_gc_succeeded; }
-};
-
-#endif // SHARE_GC_PARALLEL_PSVMOPERATIONS_HPP
+ }// class NullIconImageTest

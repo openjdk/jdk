@@ -549,8 +549,26 @@ void ParallelScavengeHeap::collect(GCCause::Cause cause) {
     return;
   }
 
-  VM_ParallelGCSystemGC op(gc_count, full_gc_count, cause);
-  VMThread::execute(&op);
+  while (true) {
+    VM_ParallelGCSystemGC op(gc_count, full_gc_count, cause);
+    VMThread::execute(&op);
+
+    if (!GCCause::is_explicit_full_gc(cause) || op.full_gc_succeeded()) {
+      return;
+    }
+
+    {
+      MutexLocker ml(Heap_lock);
+      if (full_gc_count != total_full_collections()) {
+        return;
+      }
+    }
+
+    if (GCLocker::is_active_and_needs_gc()) {
+      // If GCLocker is active, wait until clear before retrying.
+      GCLocker::stall_until_clear();
+    }
+  }
 }
 
 void ParallelScavengeHeap::object_iterate(ObjectClosure* cl) {
