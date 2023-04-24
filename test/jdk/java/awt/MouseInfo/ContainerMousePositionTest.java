@@ -86,7 +86,7 @@ public class ContainerMousePositionTest {
             EventQueue.invokeAndWait(() -> {
                 Point p = button.getLocationOnScreen();
                 xPos = p.x + button.getWidth() / 2;
-                yPos = p.y + button.getHeight() / 2
+                yPos = p.y + button.getHeight() / 2;
             });
             robot.mouseMove(xPos,yPos);
             robot.delay(DELAY);
