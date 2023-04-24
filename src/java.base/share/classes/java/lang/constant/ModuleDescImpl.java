@@ -24,5 +24,9 @@
  */
 package java.lang.constant;
 
+/*
+ * Implementation of {@code ModuleDesc}
+ * @param moduleName must have been validated
+ */
 record ModuleDescImpl(String moduleName) implements ModuleDesc {
 }

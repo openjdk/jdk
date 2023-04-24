@@ -29,6 +29,7 @@
  * @run junit ModuleDescTest
  */
 import java.lang.constant.ModuleDesc;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import static org.junit.jupiter.api.Assertions.*;
@@ -41,8 +42,13 @@ class ModuleDescTest {
         assertThrows(IllegalArgumentException.class, () -> ModuleDesc.of(mdl));
     }
 
+    @Test
+    public void testNullModuleName() {
+        assertThrows(NullPointerException.class, () -> ModuleDesc.of(null));
+    }
+
     @ParameterizedTest
-    @ValueSource(strings = {"a\\\\b", "a.b/c", "a\\@b\\: c"})
+    @ValueSource(strings = {"a\\\\b", "a.b/c", "a\\@b\\: c", ""})
     public void testValidModuleNames(String mdl) {
         assertEquals(ModuleDesc.of(mdl), ModuleDesc.of(mdl));
         assertEquals(ModuleDesc.of(mdl).moduleName(), mdl);

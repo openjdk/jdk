@@ -24,5 +24,9 @@
  */
 package java.lang.constant;
 
+/*
+ * Implementation of {@code PackageDesc}
+ * @param packageInternalName must have been validated
+ */
 record PackageDescImpl(String packageInternalName) implements PackageDesc {
 }

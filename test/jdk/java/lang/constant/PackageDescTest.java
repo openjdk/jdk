@@ -49,7 +49,13 @@ class PackageDescTest {
     }
 
     @Test
+    void testNullInternalPackageNames() {
+        assertThrows(NullPointerException.class, () -> PackageDesc.ofInternalName(null));
+    }
+
+    @Test
     void testValidPackageNames() {
+        assertEquals(PackageDesc.of(""), PackageDesc.ofInternalName(""));
         assertEquals(PackageDesc.of("a"), PackageDesc.ofInternalName("a"));
         assertEquals(PackageDesc.of("a.b"), PackageDesc.ofInternalName("a/b"));
         assertEquals(PackageDesc.of("a.b.c"), PackageDesc.ofInternalName("a/b/c"));
