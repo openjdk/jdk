@@ -39,7 +39,8 @@
 Mutex*   Patching_lock                = nullptr;
 Mutex*   CompiledMethod_lock          = nullptr;
 Monitor* SystemDictionary_lock        = nullptr;
-Mutex*   InvokeMethodTable_lock       = nullptr;
+Mutex*   InvokeMethodTypeTable_lock   = nullptr;
+Monitor* InvokeMethodIntrinsicTable_lock = nullptr;
 Mutex*   SharedDictionary_lock        = nullptr;
 Monitor* ClassInitError_lock          = nullptr;
 Mutex*   Module_lock                  = nullptr;
@@ -254,7 +255,9 @@ void mutex_init() {
   }
 
   MUTEX_DEFN(JmethodIdCreation_lock          , PaddedMutex  , nosafepoint-2); // used for creating jmethodIDs.
-  MUTEX_DEFN(InvokeMethodTable_lock          , PaddedMutex  , safepoint);
+  MUTEX_DEFN(InvokeMethodTypeTable_lock      , PaddedMutex  , safepoint);
+  MUTEX_DEFN(InvokeMethodIntrinsicTable_lock , PaddedMonitor, safepoint);
+  MUTEX_DEFN(AdapterHandlerLibrary_lock      , PaddedMutex  , safepoint);
   MUTEX_DEFN(SharedDictionary_lock           , PaddedMutex  , safepoint);
   MUTEX_DEFN(VMStatistic_lock                , PaddedMutex  , safepoint);
   MUTEX_DEFN(SignatureHandlerLibrary_lock    , PaddedMutex  , safepoint);
@@ -344,7 +347,6 @@ void mutex_init() {
 
   MUTEX_DEFL(Threads_lock                   , PaddedMonitor, CompileThread_lock, true);
   MUTEX_DEFL(Compile_lock                   , PaddedMutex  , MethodCompileQueue_lock);
-  MUTEX_DEFL(AdapterHandlerLibrary_lock     , PaddedMutex  , InvokeMethodTable_lock);
   MUTEX_DEFL(Heap_lock                      , PaddedMonitor, AdapterHandlerLibrary_lock);
 
   MUTEX_DEFL(PerfDataMemAlloc_lock          , PaddedMutex  , Heap_lock);

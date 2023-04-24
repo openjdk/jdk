@@ -2133,9 +2133,9 @@ void PrintClassClosure::do_klass(Klass* k)  {
   char buf[10];
   int i = 0;
   if (k->has_finalizer()) buf[i++] = 'F';
-  if (k->has_final_method()) buf[i++] = 'f';
   if (k->is_instance_klass()) {
     InstanceKlass* ik = InstanceKlass::cast(k);
+    if (ik->has_final_method()) buf[i++] = 'f';
     if (ik->is_rewritten()) buf[i++] = 'W';
     if (ik->is_contended()) buf[i++] = 'C';
     if (ik->has_been_redefined()) buf[i++] = 'R';

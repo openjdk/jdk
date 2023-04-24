@@ -58,7 +58,7 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
                                            G1RedirtyCardsQueueSet* rdcqs,
                                            PreservedMarks* preserved_marks,
                                            uint worker_id,
-                                           uint n_workers,
+                                           uint num_workers,
                                            size_t young_cset_length,
                                            size_t optional_cset_length,
                                            G1EvacFailureRegions* evac_failure_regions)
@@ -81,9 +81,9 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
     _surviving_words_length(young_cset_length + 1),
     _old_gen_is_full(false),
     _partial_objarray_chunk_size(ParGCArrayScanChunk),
-    _partial_array_stepper(n_workers),
+    _partial_array_stepper(num_workers),
     _string_dedup_requests(),
-    _num_optional_regions(optional_cset_length),
+    _max_num_optional_regions(optional_cset_length),
     _numa(g1h->numa()),
     _obj_alloc_stat(NULL),
     EVAC_FAILURE_INJECTOR_ONLY(_evac_failure_inject_counter(0) COMMA)
@@ -106,7 +106,7 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
 
   _closures = G1EvacuationRootClosures::create_root_closures(this, _g1h);
 
-  _oops_into_optional_regions = new G1OopStarChunkedList[_num_optional_regions];
+  _oops_into_optional_regions = new G1OopStarChunkedList[_max_num_optional_regions];
 
   initialize_numa_stats();
 }
@@ -562,13 +562,15 @@ oop G1ParScanThreadState::copy_to_survivor_space(G1HeapRegionAttr region_attr,
 }
 
 G1ParScanThreadState* G1ParScanThreadStateSet::state_for_worker(uint worker_id) {
-  assert(worker_id < _n_workers, "out of bounds access");
+  assert(worker_id < _num_workers, "out of bounds access");
   if (_states[worker_id] == NULL) {
     _states[worker_id] =
       new G1ParScanThreadState(_g1h, rdcqs(),
                                _preserved_marks_set.get(worker_id),
-                               worker_id, _n_workers,
-                               _young_cset_length, _optional_cset_length,
+                               worker_id,
+                               _num_workers,
+                               _young_cset_length,
+                               _optional_cset_length,
                                _evac_failure_regions);
   }
   return _states[worker_id];
@@ -582,7 +584,7 @@ const size_t* G1ParScanThreadStateSet::surviving_young_words() const {
 void G1ParScanThreadStateSet::flush_stats() {
   assert(!_flushed, "thread local state from the per thread states should be flushed once");
 
-  for (uint worker_id = 0; worker_id < _n_workers; ++worker_id) {
+  for (uint worker_id = 0; worker_id < _num_workers; ++worker_id) {
     G1ParScanThreadState* pss = _states[worker_id];
     assert(pss != nullptr, "must be initialized");
 
@@ -592,20 +594,20 @@ void G1ParScanThreadStateSet::flush_stats() {
     // because it resets the PLAB allocator where we get this info from.
     size_t lab_waste_bytes = pss->lab_waste_words() * HeapWordSize;
     size_t lab_undo_waste_bytes = pss->lab_undo_waste_words() * HeapWordSize;
-    size_t copied_bytes = pss->flush_stats(_surviving_young_words_total, _n_workers) * HeapWordSize;
+    size_t copied_bytes = pss->flush_stats(_surviving_young_words_total, _num_workers) * HeapWordSize;
 
     p->record_or_add_thread_work_item(G1GCPhaseTimes::MergePSS, worker_id, copied_bytes, G1GCPhaseTimes::MergePSSCopiedBytes);
     p->record_or_add_thread_work_item(G1GCPhaseTimes::MergePSS, worker_id, lab_waste_bytes, G1GCPhaseTimes::MergePSSLABWasteBytes);
     p->record_or_add_thread_work_item(G1GCPhaseTimes::MergePSS, worker_id, lab_undo_waste_bytes, G1GCPhaseTimes::MergePSSLABUndoWasteBytes);
 
     delete pss;
-    _states[worker_id] = NULL;
+    _states[worker_id] = nullptr;
   }
   _flushed = true;
 }
 
 void G1ParScanThreadStateSet::record_unused_optional_region(HeapRegion* hr) {
-  for (uint worker_index = 0; worker_index < _n_workers; ++worker_index) {
+  for (uint worker_index = 0; worker_index < _num_workers; ++worker_index) {
     G1ParScanThreadState* pss = _states[worker_index];
     assert(pss != nullptr, "must be initialized");
 
@@ -687,22 +689,22 @@ void G1ParScanThreadState::update_numa_stats(uint node_index) {
 }
 
 G1ParScanThreadStateSet::G1ParScanThreadStateSet(G1CollectedHeap* g1h,
-                                                 uint n_workers,
+                                                 uint num_workers,
                                                  size_t young_cset_length,
                                                  size_t optional_cset_length,
                                                  G1EvacFailureRegions* evac_failure_regions) :
     _g1h(g1h),
     _rdcqs(G1BarrierSet::dirty_card_queue_set().allocator()),
     _preserved_marks_set(true /* in_c_heap */),
-    _states(NEW_C_HEAP_ARRAY(G1ParScanThreadState*, n_workers, mtGC)),
+    _states(NEW_C_HEAP_ARRAY(G1ParScanThreadState*, num_workers, mtGC)),
     _surviving_young_words_total(NEW_C_HEAP_ARRAY(size_t, young_cset_length + 1, mtGC)),
     _young_cset_length(young_cset_length),
     _optional_cset_length(optional_cset_length),
-    _n_workers(n_workers),
+    _num_workers(num_workers),
     _flushed(false),
     _evac_failure_regions(evac_failure_regions) {
-  _preserved_marks_set.init(n_workers);
-  for (uint i = 0; i < n_workers; ++i) {
+  _preserved_marks_set.init(num_workers);
+  for (uint i = 0; i < num_workers; ++i) {
     _states[i] = NULL;
   }
   memset(_surviving_young_words_total, 0, (young_cset_length + 1) * sizeof(size_t));
