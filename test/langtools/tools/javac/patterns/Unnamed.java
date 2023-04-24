@@ -36,10 +36,11 @@ public class Unnamed {
         assertEquals(1, testMultiValuesStatementBlock2(new Box<>(new R1())));
         assertEquals(1, testMultiValuesStatementBlock2("BOX"));
         assertEquals(2, testMultiValuesStatementBlock2(new Box2<>(new R1())));
-//        assertEquals(2, testMultiValuesGuards(new R3(), 1));
-//        assertEquals(3, testMultiValuesGuards(new R4(), 42));
-
-//        assertEquals(3, testMultiValuesGuards(new R3(), 42));
+        assertEquals(2, testMultiValuesGuards(new R3(), 1));
+        assertEquals(3, testMultiValuesGuards(new R4(), 42));
+        assertEquals(3, testMultiValuesGuards(new R3(), 42));
+        assertEquals(1, testMultiValuesNestedGuards(new Box(new R2()), 42));
+        assertEquals(2, testMultiValuesNestedGuards(new Box(new R3()), 1));
     }
 
     private void unnamedTest() {
@@ -127,21 +128,21 @@ public class Unnamed {
         }
     }
 
-//    int testMultiValuesGuards(Base b, int x) {        // TODO
-//        return switch (b) {
-//            case R1 r -> 1;
-//            case R2 _, R3 _, R4 _ when x == 1 -> 2;
-//            case R2 _, R3 _, R4 _ -> 3;
-//        };
-//    }
+    int testMultiValuesGuards(Base b, int x) {
+        return switch (b) {
+            case R1 r -> 1;
+            case R2 _, R3 _, R4 _ when x == 1 -> 2;
+            case R2 _, R3 _, R4 _ -> 3;
+        };
+    }
 
-//    int testMultiValuesNestedGuards(Box<?> b, int x) { // TODO
-//        return switch (b) {
-//            case Box(R1 _), Box(R2 _) -> 1;
-//            case Box(R3 _), Box(_) when x == 1 -> 2;
-//            case Box(R3 _), Box(_) -> 3;
-//        };
-//    }
+    int testMultiValuesNestedGuards(Box<?> b, int x) {
+        return switch (b) {
+            case Box(R1 _), Box(R2 _) -> 1;
+            case Box(R3 _), Box(_) when x == 1 -> 2;
+            case Box(_) -> 3;
+        };
+    }
 
     class Lock implements AutoCloseable {
         @Override

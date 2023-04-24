@@ -14,6 +14,4 @@ UnnamedErrors.java:40:18: compiler.err.pattern.dominated
 UnnamedErrors.java:49:29: compiler.err.flows.through.from.pattern
 UnnamedErrors.java:56:29: compiler.err.flows.through.from.pattern
 UnnamedErrors.java:63:32: compiler.err.flows.through.from.pattern
-- compiler.note.preview.filename: UnnamedErrors.java, DEFAULT
-- compiler.note.preview.recompile
 16 errors

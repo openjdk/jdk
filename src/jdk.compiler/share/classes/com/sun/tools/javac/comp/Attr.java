@@ -1774,6 +1774,9 @@ public class Attr extends JCTree.Visitor {
                             if (TreeInfo.isBooleanWithValue(guard, 0)) {
                                 log.error(guard.pos(), Errors.GuardHasConstantExpressionFalse);
                             }
+                        } else if (guard != null) {
+                            // if the label has multiple patterns and a guard (with binding from the switch environment)
+                            attribExpr(guard, switchEnv, syms.booleanType);
                         }
                         boolean unguarded = TreeInfo.unguardedCase(c) && !pat.hasTag(RECORDPATTERN);
                         boolean unconditional =

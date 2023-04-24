@@ -568,7 +568,8 @@ public class TransPatterns extends TreeTranslator {
                         }
 
                         if (c.guard != null) {
-                            test = makeBinary(Tag.AND, accTest, c.guard);
+                            test = makeBinary(Tag.AND, accTest, translate(c.guard));
+                            c.guard = null;
                         } else {
                             test = accTest;
                         }
@@ -736,7 +737,7 @@ public class TransPatterns extends TreeTranslator {
                                        "commonNestedExpression: " + commonNestedExpression +
                                        "commonNestedBinding: " + commonNestedBinding);
                     ListBuffer<JCCase> nestedCases = new ListBuffer<>();
-                    JCExpression lastGuard = null;
+                    boolean hasGuard = false;
 
                     for(List<JCCase> accList = accummulator.toList(); accList.nonEmpty(); accList = accList.tail) {
                         var accummulated = accList.head;
@@ -773,11 +774,11 @@ public class TransPatterns extends TreeTranslator {
                         } else {
                             newLabel = List.of(jcPatternCaseLabelWithGuard);
                         }
-                        nestedCases.add(make.Case(CaseKind.STATEMENT, newLabel, null,
+                        nestedCases.add(make.Case(CaseKind.STATEMENT, newLabel, accummulated.guard,
                                                   accummulated.stats, null));
-                        lastGuard = newGuard;
+                        hasGuard = newGuard != null || accummulated.guard != null;
                     }
-                    if (lastGuard != null || !hasUnconditional) {
+                    if (hasGuard || !hasUnconditional) {
                         JCContinue continueSwitch = make.Continue(null);
                         continueSwitch.target = currentSwitch;
                         nestedCases.add(make.Case(CaseKind.STATEMENT,
@@ -793,6 +794,7 @@ public class TransPatterns extends TreeTranslator {
                     newSwitch.patternSwitch = true;
                     JCPatternCaseLabel leadingTest =
                             (JCPatternCaseLabel) accummulator.first().labels.head;
+                    leadingTest.syntheticGuard = null;
                     result.add(make.Case(CaseKind.STATEMENT,
                                          List.of(leadingTest),
                                          null,
@@ -1415,6 +1417,12 @@ public class TransPatterns extends TreeTranslator {
         public void visitIdent(JCIdent tree) {
             tree.sym = fromTo.getOrDefault(tree.sym, tree.sym);
             super.visitIdent(tree);
+        }
+
+        @Override
+        public void visitPatternCaseLabel(JCPatternCaseLabel tree) {
+            super.visitPatternCaseLabel(tree);
+            scan(tree.syntheticGuard);
         }
     }
 }
