@@ -1208,7 +1208,7 @@ static bool counters_are_meaningful(int counter1, int counter2, int min) {
     return false;
   }
   // check if mature
-  return counter1 + counter2 >= min;
+  return (counter1 + counter2) >= min;
 }
 
 //--------------------------dynamic_branch_prediction--------------------------
