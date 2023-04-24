@@ -1197,7 +1197,7 @@ static bool has_injected_profile(BoolTest::mask btest, Node* test, int& taken, i
 // We also check that individual counters are positive first, otherwise the sum can become positive.
 // (check for saturation, integer overflow, and immature counts)
 static bool counters_are_meaningful(int counter1, int counter2, int min) {
-  // check for saturation, inluding "uint" values too big to fit it "int"
+  // check for saturation, including "uint" values too big to fit in "int"
   if (counter1 < 0 || counter2 < 0) {
     return false;
   }
