@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -1025,6 +1025,10 @@ const bool Matcher::vector_needs_partial_operations(Node* node, const TypeVect* 
   return false;
 }
 
+const bool Matcher::vector_needs_load_shuffle(BasicType elem_bt, int vlen) {
+  return false;
+}
+
 const RegMask* Matcher::predicate_reg_mask(void) {
   return NULL;
 }
@@ -1072,6 +1076,10 @@ const int Matcher::max_vector_size(const BasicType bt) {
 const int Matcher::min_vector_size(const BasicType bt) {
   assert(is_java_primitive(bt), "only primitive type vectors");
   return 8/type2aelembytes(bt);
+}
+
+const int Matcher::superword_max_vector_size(const BasicType bt) {
+  return Matcher::max_vector_size(bt);
 }
 
 // Is this branch offset short enough that a short branch can be used?

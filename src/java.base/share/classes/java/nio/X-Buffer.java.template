@@ -258,6 +258,15 @@ import jdk.internal.util.ArraysSupport;
  * cb.put("text/").put(subtype).put("; charset=").put(enc);</pre></blockquote>
  *
 #end[char]
+ * <h2> Optional operations </h2>
+ * Methods specified as
+ * <i>{@linkplain Buffer##read-only-buffers-heading optional
+ * operations}</i> throw a {@linkplain ReadOnlyBufferException} when invoked
+ * on a {@linkplain java.nio.Buffer#isReadOnly read-only} $Type$Buffer. The
+ * methods {@linkplain #array array} and {@linkplain #arrayOffset arrayOffset}
+ * throw an {@linkplain UnsupportedOperationException} if the $Type$Buffer is
+ * not backed by an {@linkplain Buffer#hasArray accessible $type$ array}
+ * (irrespective of whether the $Type$Buffer is read-only).
  *
  *
  * @author Mark Reinhold
@@ -1996,6 +2005,8 @@ public abstract sealed class $Type$Buffer
     public $Type$Buffer append(CharSequence csq) {
         if (csq == null)
             return put("null");
+        else if (csq instanceof CharBuffer cb)
+            return put(cb);
         else
             return put(csq.toString());
     }
@@ -2033,6 +2044,13 @@ public abstract sealed class $Type$Buffer
      * @since  1.5
      */
     public $Type$Buffer append(CharSequence csq, int start, int end) {
+        if (csq instanceof CharBuffer cb) {
+            int pos = position();
+            int length = end - start;
+            put(pos, cb, start, length);
+            position(pos + length);
+            return this;
+        }
         CharSequence cs = (csq == null ? "null" : csq);
         return put(cs.subSequence(start, end).toString());
     }

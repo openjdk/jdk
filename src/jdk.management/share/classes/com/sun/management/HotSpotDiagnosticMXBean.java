@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ package com.sun.management;
 
 import java.io.IOException;
 import java.lang.management.PlatformManagedObject;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Diagnostic management interface for the HotSpot Virtual Machine.
@@ -147,18 +146,16 @@ public interface HotSpotDiagnosticMXBean extends PlatformManagedObject {
      *         access to the file or {@link java.lang.management.ManagementPermission
      *         ManagementPermission("control")} is denied
      * @throws UnsupportedOperationException if this operation is not supported
-     * @since 19
+     * @since 21
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.VIRTUAL_THREADS, reflective = true)
     default void dumpThreads(String outputFile, ThreadDumpFormat format) throws IOException {
         throw new UnsupportedOperationException();
     }
 
     /**
      * Thread dump format.
-     * @since 19
+     * @since 21
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.VIRTUAL_THREADS, reflective = true)
     public static enum ThreadDumpFormat {
         /**
          * Plain text format.

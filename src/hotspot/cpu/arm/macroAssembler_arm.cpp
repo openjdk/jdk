@@ -37,6 +37,7 @@
 #include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/resourceArea.hpp"
+#include "metaprogramming/primitiveConversions.hpp"
 #include "oops/accessDecorators.hpp"
 #include "oops/klass.inline.hpp"
 #include "prims/methodHandles.hpp"
@@ -673,15 +674,11 @@ void MacroAssembler::mov_metadata(Register rd, Metadata* o, int metadata_index) 
 
 void MacroAssembler::mov_float(FloatRegister fd, jfloat c, AsmCondition cond) {
   Label skip_constant;
-  union {
-    jfloat f;
-    jint i;
-  } accessor;
-  accessor.f = c;
+  jint float_bits = PrimitiveConversions::cast<jint>(c);
 
   flds(fd, Address(PC), cond);
   b(skip_constant);
-  emit_int32(accessor.i);
+  emit_int32(float_bits);
   bind(skip_constant);
 }
 
@@ -1654,11 +1651,6 @@ void MacroAssembler::load_mirror(Register mirror, Register method, Register tmp)
 
 void MacroAssembler::load_klass(Register dst_klass, Register src_oop, AsmCondition cond) {
   ldr(dst_klass, Address(src_oop, oopDesc::klass_offset_in_bytes()), cond);
-}
-
-void MacroAssembler::load_klass_check_null(Register dst_klass, Register src_oop, Register tmp, AsmCondition cond) {
-  null_check(src_oop, tmp, oopDesc::klass_offset_in_bytes());
-  load_klass(dst_klass, src_oop, cond);
 }
 
 // Blows src_klass.
