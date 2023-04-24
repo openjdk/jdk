@@ -406,6 +406,7 @@ class java_lang_Thread : AllStatic {
   static void dec_VTMS_transition_disable_count(oop java_thread);
   static bool is_in_VTMS_transition(oop java_thread);
   static void set_is_in_VTMS_transition(oop java_thread, bool val);
+  static int  is_in_VTMS_transition_offset();
 
   // Clear all scoped value bindings on error
   static void clear_scopedValueBindings(oop java_thread);
@@ -474,7 +475,6 @@ class java_lang_Thread_Constants : AllStatic {
 
  public:
   static oop get_VTHREAD_GROUP();
-  static oop get_NOT_SUPPORTED_CLASSLOADER();
 
   friend class JavaClasses;
 };
@@ -510,7 +510,6 @@ class java_lang_ThreadGroup : AllStatic {
 
 class java_lang_VirtualThread : AllStatic {
  private:
-  static int static_notify_jvmti_events_offset;
   static int static_vthread_scope_offset;
   static int _carrierThread_offset;
   static int _continuation_offset;
@@ -548,9 +547,6 @@ class java_lang_VirtualThread : AllStatic {
   static oop continuation(oop vthread);
   static int state(oop vthread);
   static JavaThreadStatus map_state_to_thread_status(int state);
-  static bool notify_jvmti_events();
-  static void set_notify_jvmti_events(bool enable);
-  static void init_static_notify_jvmti_events();
 };
 
 

@@ -27,7 +27,7 @@
 #ifndef CPU_RISCV_MACROASSEMBLER_RISCV_HPP
 #define CPU_RISCV_MACROASSEMBLER_RISCV_HPP
 
-#include "asm/assembler.hpp"
+#include "asm/assembler.inline.hpp"
 #include "code/vmreg.hpp"
 #include "metaprogramming/enableIf.hpp"
 #include "nativeInst_riscv.hpp"
@@ -154,7 +154,7 @@ class MacroAssembler: public Assembler {
   virtual void call_VM_leaf_base(
     address entry_point,                // the entry point
     int     number_of_arguments,        // the number of arguments to pop after the call
-    Label*  retaddr = NULL
+    Label*  retaddr = nullptr
   );
 
   virtual void call_VM_leaf_base(
@@ -195,7 +195,6 @@ class MacroAssembler: public Assembler {
   void access_store_at(BasicType type, DecoratorSet decorators, Address dst,
                        Register val, Register tmp1, Register tmp2, Register tmp3);
   void load_klass(Register dst, Register src, Register tmp = t0);
-  void load_klass_check_null(Register dst, Register src, Register tmp = t0);
   void store_klass(Register dst, Register src, Register tmp = t0);
   void cmp_klass(Register oop, Register trial_klass, Register tmp1, Register tmp2, Label &L);
 
@@ -219,19 +218,19 @@ class MacroAssembler: public Assembler {
   void store_klass_gap(Register dst, Register src);
 
   // currently unimplemented
-  // Used for storing NULL. All other oop constants should be
+  // Used for storing null. All other oop constants should be
   // stored using routines that take a jobject.
   void store_heap_oop_null(Address dst);
 
   // This dummy is to prevent a call to store_heap_oop from
-  // converting a zero (linked NULL) into a Register by giving
+  // converting a zero (linked null) into a Register by giving
   // the compiler two choices it can't resolve
 
   void store_heap_oop(Address dst, void* dummy);
 
-  // Support for NULL-checks
+  // Support for null-checks
   //
-  // Generates code that causes a NULL OS exception if the content of reg is NULL.
+  // Generates code that causes a null OS exception if the content of reg is null.
   // If the accessed location is M[reg + offset] and the offset is known, provide the
   // offset. No explicit code generateion is needed if the offset is within a certain
   // range (0 <= offset <= page_size).
@@ -271,7 +270,7 @@ class MacroAssembler: public Assembler {
   // accesses, and these can exceed the offset range.
   Address legitimize_address(Register Rd, const Address &adr) {
     if (adr.getMode() == Address::base_plus_offset) {
-      if (!is_offset_in_range(adr.offset(), 12)) {
+      if (!is_simm12(adr.offset())) {
         return form_address(Rd, adr.base(), adr.offset());
       }
     }
@@ -292,7 +291,7 @@ class MacroAssembler: public Assembler {
   // Test sub_klass against super_klass, with fast and slow paths.
 
   // The fast path produces a tri-state answer: yes / no / maybe-slow.
-  // One of the three labels can be NULL, meaning take the fall-through.
+  // One of the three labels can be null, meaning take the fall-through.
   // If super_check_offset is -1, the value is loaded up from super_klass.
   // No registers are killed, except tmp_reg
   void check_klass_subtype_fast_path(Register sub_klass,
@@ -399,7 +398,7 @@ class MacroAssembler: public Assembler {
   // Required platform-specific helpers for Label::patch_instructions.
   // They _shadow_ the declarations in AbstractAssembler, which are undefined.
   static int pd_patch_instruction_size(address branch, address target);
-  static void pd_patch_instruction(address branch, address target, const char* file = NULL, int line = 0) {
+  static void pd_patch_instruction(address branch, address target, const char* file = nullptr, int line = 0) {
     pd_patch_instruction_size(branch, target);
   }
   static address pd_call_destination(address branch) {
@@ -594,9 +593,9 @@ class MacroAssembler: public Assembler {
 
 #define INSN(NAME)                                                                                       \
   void NAME(Register Rs1, Register Rs2, const address dest) {                                            \
-    assert_cond(dest != NULL);                                                                           \
+    assert_cond(dest != nullptr);                                                                        \
     int64_t offset = dest - pc();                                                                        \
-    guarantee(is_imm_in_range(offset, 12, 1), "offset is invalid.");                                     \
+    guarantee(is_simm13(offset) && ((offset % 2) == 0), "offset is invalid.");                           \
     Assembler::NAME(Rs1, Rs2, offset);                                                                   \
   }                                                                                                      \
   INSN_ENTRY_RELOC(void, NAME(Register Rs1, Register Rs2, address dest, relocInfo::relocType rtype))     \
@@ -784,9 +783,9 @@ public:
 
 #define INSN(NAME)                                                                                 \
   void NAME(Register Rd, address dest) {                                                           \
-    assert_cond(dest != NULL);                                                                     \
+    assert_cond(dest != nullptr);                                                                  \
     int64_t distance = dest - pc();                                                                \
-    if (is_offset_in_range(distance, 32)) {                                                        \
+    if (is_simm32(distance)) {                                                                     \
       auipc(Rd, (int32_t)distance + 0x800);                                                        \
       Assembler::NAME(Rd, Rd, ((int32_t)distance << 20) >> 20);                                    \
     } else {                                                                                       \
@@ -807,7 +806,7 @@ public:
         break;                                                                                     \
       }                                                                                            \
       case Address::base_plus_offset: {                                                            \
-        if (is_offset_in_range(adr.offset(), 12)) {                                                \
+        if (is_simm12(adr.offset())) {                                                             \
           Assembler::NAME(Rd, adr.base(), adr.offset());                                           \
         } else {                                                                                   \
           int32_t offset = ((int32_t)adr.offset() << 20) >> 20;                                    \
@@ -841,9 +840,9 @@ public:
 
 #define INSN(NAME)                                                                                 \
   void NAME(FloatRegister Rd, address dest, Register temp = t0) {                                  \
-    assert_cond(dest != NULL);                                                                     \
+    assert_cond(dest != nullptr);                                                                  \
     int64_t distance = dest - pc();                                                                \
-    if (is_offset_in_range(distance, 32)) {                                                        \
+    if (is_simm32(distance)) {                                                                     \
       auipc(temp, (int32_t)distance + 0x800);                                                      \
       Assembler::NAME(Rd, temp, ((int32_t)distance << 20) >> 20);                                  \
     } else {                                                                                       \
@@ -865,7 +864,7 @@ public:
         break;                                                                                     \
       }                                                                                            \
       case Address::base_plus_offset: {                                                            \
-        if (is_offset_in_range(adr.offset(), 12)) {                                                \
+        if (is_simm12(adr.offset())) {                                                             \
           Assembler::NAME(Rd, adr.base(), adr.offset());                                           \
         } else {                                                                                   \
           int32_t offset = ((int32_t)adr.offset() << 20) >> 20;                                    \
@@ -901,10 +900,10 @@ public:
 
 #define INSN(NAME)                                                                                 \
   void NAME(Register Rs, address dest, Register temp = t0) {                                       \
-    assert_cond(dest != NULL);                                                                     \
+    assert_cond(dest != nullptr);                                                                  \
     assert_different_registers(Rs, temp);                                                          \
     int64_t distance = dest - pc();                                                                \
-    if (is_offset_in_range(distance, 32)) {                                                        \
+    if (is_simm32(distance)) {                                                                     \
       auipc(temp, (int32_t)distance + 0x800);                                                      \
       Assembler::NAME(Rs, temp, ((int32_t)distance << 20) >> 20);                                  \
     } else {                                                                                       \
@@ -923,7 +922,7 @@ public:
         break;                                                                                     \
       }                                                                                            \
       case Address::base_plus_offset: {                                                            \
-        if (is_offset_in_range(adr.offset(), 12)) {                                                \
+        if (is_simm12(adr.offset())) {                                                             \
           Assembler::NAME(Rs, adr.base(), adr.offset());                                           \
         } else {                                                                                   \
           assert_different_registers(Rs, temp);                                                    \
@@ -947,9 +946,9 @@ public:
 
 #define INSN(NAME)                                                                                 \
   void NAME(FloatRegister Rs, address dest, Register temp = t0) {                                  \
-    assert_cond(dest != NULL);                                                                     \
+    assert_cond(dest != nullptr);                                                                  \
     int64_t distance = dest - pc();                                                                \
-    if (is_offset_in_range(distance, 32)) {                                                        \
+    if (is_simm32(distance)) {                                                                     \
       auipc(temp, (int32_t)distance + 0x800);                                                      \
       Assembler::NAME(Rs, temp, ((int32_t)distance << 20) >> 20);                                  \
     } else {                                                                                       \
@@ -967,7 +966,7 @@ public:
         break;                                                                                     \
       }                                                                                            \
       case Address::base_plus_offset: {                                                            \
-        if (is_offset_in_range(adr.offset(), 12)) {                                                \
+        if (is_simm12(adr.offset())) {                                                             \
           Assembler::NAME(Rs, adr.base(), adr.offset());                                           \
         } else {                                                                                   \
           int32_t offset = ((int32_t)adr.offset() << 20) >> 20;                                    \
@@ -1143,7 +1142,7 @@ public:
   // - relocInfo::static_call_type
   // - relocInfo::virtual_call_type
   //
-  // Return: the call PC or NULL if CodeCache is full.
+  // Return: the call PC or null if CodeCache is full.
   address trampoline_call(Address entry);
   address ic_call(address entry, jint method_index = 0);
 
@@ -1163,7 +1162,7 @@ public:
 
   void cmpptr(Register src1, Address src2, Label& equal);
 
-  void clinit_barrier(Register klass, Register tmp, Label* L_fast_path = NULL, Label* L_slow_path = NULL);
+  void clinit_barrier(Register klass, Register tmp, Label* L_fast_path = nullptr, Label* L_slow_path = nullptr);
   void load_method_holder_cld(Register result, Register method);
   void load_method_holder(Register holder, Register method);
 
@@ -1214,6 +1213,9 @@ public:
 
   // shift left by shamt and add
   void shadd(Register Rd, Register Rs1, Register Rs2, Register tmp, int shamt);
+
+  // test single bit in Rs, result is set to Rd
+  void test_bit(Register Rd, Register Rs, uint32_t bit_pos, Register tmp = t0);
 
   // Here the float instructions with safe deal with some exceptions.
   // e.g. convert from NaN, +Inf, -Inf to int, float, double
@@ -1334,7 +1336,7 @@ public:
   void rt_call(address dest, Register tmp = t0);
 
   void call(const address dest, Register temp = t0) {
-    assert_cond(dest != NULL);
+    assert_cond(dest != nullptr);
     assert(temp != noreg, "expecting a register");
     int32_t offset = 0;
     mv(temp, dest, offset);
@@ -1362,12 +1364,6 @@ public:
 private:
 
   void repne_scan(Register addr, Register value, Register count, Register tmp);
-
-  // Return true if an address is within the 48-bit RISCV64 address space.
-  bool is_valid_riscv64_address(address addr) {
-    // sv48: must have bits 63–48 all equal to bit 47
-    return ((uintptr_t)addr >> 47) == 0;
-  }
 
   void ld_constant(Register dest, const Address &const_addr) {
     if (NearCpool) {

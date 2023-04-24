@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -439,7 +439,7 @@ AWT_ASSERT_APPKIT_THREAD;
 
     NSPoint screenLocation = [NSEvent mouseLocation];
     NSPoint windowLocation = [window convertScreenToBase: screenLocation];
-    int modifierFlags = (eventType == NSMouseEntered) ? NSMouseEnteredMask : NSMouseExitedMask;
+    int modifierFlags = (eventType == NSEventTypeMouseEntered) ? NSMouseEnteredMask : NSMouseExitedMask;
 
     NSEvent *mouseEvent = [NSEvent enterExitEventWithType: eventType
                                                  location: windowLocation
@@ -467,9 +467,9 @@ AWT_ASSERT_APPKIT_THREAD;
             BOOL isUnderMouse = ([window windowNumber] == topmostWindowUnderMouseID);
             BOOL mouseIsOver = [[window contentView] mouseIsOver];
             if (isUnderMouse && !mouseIsOver) {
-                [AWTWindow synthesizeMouseEnteredExitedEvents:window withType:NSMouseEntered];
+                [AWTWindow synthesizeMouseEnteredExitedEvents:window withType:NSEventTypeMouseEntered];
             } else if (!isUnderMouse && mouseIsOver) {
-                [AWTWindow synthesizeMouseEnteredExitedEvents:window withType:NSMouseExited];
+                [AWTWindow synthesizeMouseEnteredExitedEvents:window withType:NSEventTypeMouseExited];
             }
         }
     }
@@ -999,7 +999,9 @@ AWT_ASSERT_APPKIT_THREAD;
 }
 
 - (void)sendEvent:(NSEvent *)event {
-        if ([event type] == NSLeftMouseDown || [event type] == NSRightMouseDown || [event type] == NSOtherMouseDown) {
+        if ([event type] == NSEventTypeLeftMouseDown  ||
+            [event type] == NSEventTypeRightMouseDown ||
+            [event type] == NSEventTypeOtherMouseDown) {
             if ([self isBlocked]) {
                 // Move parent windows to front and make sure that a child window is displayed
                 // in front of its nearest parent.
@@ -1602,7 +1604,7 @@ JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CPlatformWindow_nativeSynthesizeMou
 {
 JNI_COCOA_ENTER(env);
 
-    if (eventType == NSMouseEntered || eventType == NSMouseExited) {
+    if (eventType == NSEventTypeMouseEntered || eventType == NSEventTypeMouseExited) {
         NSWindow *nsWindow = OBJC(windowPtr);
 
         [ThreadUtilities performOnMainThreadWaiting:NO block:^(){

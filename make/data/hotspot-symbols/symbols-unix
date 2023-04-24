@@ -162,7 +162,6 @@ JVM_IsRecord
 JVM_IsSameClassPackage
 JVM_IsSharingEnabled
 JVM_IsSupportedJNIVersion
-JVM_IsThreadAlive
 JVM_IsVMGeneratedMethodIx
 JVM_LatestUserDefinedLoader
 JVM_LoadZipLibrary
@@ -218,10 +217,8 @@ JVM_DefineModule
 JVM_SetBootLoaderUnnamedModule
 
 # Virtual thread notifications for JVMTI
-JVM_VirtualThreadMountBegin
-JVM_VirtualThreadMountEnd
-JVM_VirtualThreadUnmountBegin
-JVM_VirtualThreadUnmountEnd
+JVM_VirtualThreadMount
+JVM_VirtualThreadUnmount
 JVM_VirtualThreadHideFrames
 
 # Scoped values

@@ -465,6 +465,8 @@ class Dependencies: public ResourceObj {
 
   void copy_to(nmethod* nm);
 
+  static bool _verify_in_progress;  // turn off logging dependencies
+
   DepType validate_dependencies(CompileTask* task, char** failure_detail = nullptr);
 
   void log_all_dependencies();
@@ -640,7 +642,7 @@ class Dependencies: public ResourceObj {
     void log_dependency(Klass* witness = nullptr);
 
     // Print the current dependency to tty.
-    void print_dependency(Klass* witness = nullptr, bool verbose = false, outputStream* st = tty);
+    void print_dependency(outputStream* st, Klass* witness = nullptr, bool verbose = false);
   };
   friend class Dependencies::DepStream;
 
@@ -701,6 +703,7 @@ class DepChange : public StackObj {
   }
 
   void print();
+  void print_on(outputStream* st);
 
  public:
   enum ChangeType {

@@ -49,46 +49,20 @@ protected:
   CardValue*      _byte_map;         // the card marking array
   CardValue*      _byte_map_base;
 
-  int _cur_covered_regions;
-
-  // The covered regions should be in address order.
-  MemRegion* _covered;
-  // The committed regions correspond one-to-one to the covered regions.
-  // They represent the card-table memory that has been committed to service
-  // the corresponding covered region.  It may be that committed region for
-  // one covered region corresponds to a larger region because of page-size
-  // roundings.  Thus, a committed region for one covered region may
-  // actually extend onto the card-table space for the next covered region.
-  MemRegion* _committed;
-
-  // The last card is a guard card; never committed.
-  MemRegion _guard_region;
-
-  inline size_t compute_byte_map_size(size_t num_bytes);
-
-  // Finds and return the index of the region, if any, to which the given
-  // region would be contiguous.  If none exists, assign a new region and
-  // returns its index.  Requires that no more than the maximum number of
-  // covered regions defined in the constructor are ever in use.
-  int find_covering_region_by_base(HeapWord* base);
-
-  // Returns the leftmost end of a committed region corresponding to a
-  // covered region before covered region "ind", or else "null" if "ind" is
-  // the first covered region.
-  HeapWord* largest_prev_committed_end(int ind) const;
-
-  // Returns the part of the region mr that doesn't intersect with
-  // any committed region other than self.  Used to prevent uncommitting
-  // regions that are also committed by other regions.  Also protects
-  // against uncommitting the guard region.
-  MemRegion committed_unique_to_self(int self, MemRegion mr) const;
-
   // Some barrier sets create tables whose elements correspond to parts of
   // the heap; the CardTableBarrierSet is an example.  Such barrier sets will
   // normally reserve space for such tables, and commit parts of the table
   // "covering" parts of the heap that are committed. At most one covered
   // region per generation is needed.
-  static const int _max_covered_regions = 2;
+  static constexpr int max_covered_regions = 2;
+
+  // The covered regions should be in address order.
+  MemRegion* _covered;
+
+  // The last card is a guard card; never committed.
+  MemRegion _guard_region;
+
+  inline size_t compute_byte_map_size(size_t num_bytes);
 
   enum CardValues {
     clean_card                  = (CardValue)-1,
@@ -108,10 +82,14 @@ protected:
   size_t last_valid_index() const {
     return cards_required(_whole_heap.word_size()) - 1;
   }
+private:
+  void initialize_covered_region(void* region0_start, void* region1_start);
+
+  MemRegion committed_for(const MemRegion mr) const;
 public:
   CardTable(MemRegion whole_heap);
   virtual ~CardTable();
-  virtual void initialize();
+  void initialize(void* region0_start, void* region1_start);
 
   // *** Barrier set functions.
 
@@ -156,7 +134,6 @@ public:
   }
 
   virtual void invalidate(MemRegion mr);
-  void clear(MemRegion mr);
 
   // Provide read-only access to the card table array.
   const CardValue* byte_for_const(const void* p) const {
@@ -197,7 +174,7 @@ public:
   }
 
   // Resize one of the regions covered by the remembered set.
-  virtual void resize_covered_region(MemRegion new_region);
+  void resize_covered_region(MemRegion new_region);
 
   // *** Card-table-RemSet-specific things.
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,8 +37,7 @@ void HeapRegionSetBase::verify_region(HeapRegion* hr) {
   assert(_checker == NULL || _checker->is_correct_type(hr), "Wrong type of region %u (%s) and set %s",
          hr->hrm_index(), hr->get_type_str(), name());
   assert(!hr->is_free() || hr->is_empty(), "Free region %u is not empty for set %s", hr->hrm_index(), name());
-  assert(!hr->is_empty() || hr->is_free() || hr->is_archive(),
-         "Empty region %u is not free or archive for set %s", hr->hrm_index(), name());
+  assert(!hr->is_empty() || hr->is_free(), "Empty region %u is not free or old for set %s", hr->hrm_index(), name());
 }
 #endif
 

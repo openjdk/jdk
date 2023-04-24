@@ -647,10 +647,15 @@ void InstanceKlass::deallocate_contents(ClassLoaderData* loader_data) {
   set_transitive_interfaces(nullptr);
   set_local_interfaces(nullptr);
 
-  if (fields() != nullptr && !fields()->is_shared()) {
-    MetadataFactory::free_array<jushort>(loader_data, fields());
+  if (fieldinfo_stream() != nullptr && !fieldinfo_stream()->is_shared()) {
+    MetadataFactory::free_array<u1>(loader_data, fieldinfo_stream());
   }
-  set_fields(nullptr, 0);
+  set_fieldinfo_stream(nullptr);
+
+  if (fields_status() != nullptr && !fields_status()->is_shared()) {
+    MetadataFactory::free_array<FieldStatus>(loader_data, fields_status());
+  }
+  set_fields_status(nullptr);
 
   // If a method from a redefined class is using this constant pool, don't
   // delete it, yet.  The new class's previous version will point to this.
@@ -1200,6 +1205,46 @@ void InstanceKlass::set_initialization_state_and_notify(ClassState state, JavaTh
   ml.notify_all();
 }
 
+// Update hierarchy. This is done before the new klass has been added to the SystemDictionary. The Compile_lock
+// is grabbed, to ensure that the compiler is not using the class hierarchy.
+void InstanceKlass::add_to_hierarchy(JavaThread* current) {
+  assert(!SafepointSynchronize::is_at_safepoint(), "must NOT be at safepoint");
+
+  // In case we are not using CHA based vtables we need to make sure the loaded
+  // deopt is completed before anyone links this class.
+  // Linking is done with _init_monitor held, by loading and deopting with it
+  // held we make sure the deopt is completed before linking.
+  if (!UseVtableBasedCHA) {
+    init_monitor()->lock();
+  }
+
+  DeoptimizationScope deopt_scope;
+  {
+    MutexLocker ml(current, Compile_lock);
+
+    set_init_state(InstanceKlass::loaded);
+    // make sure init_state store is already done.
+    // The compiler reads the hierarchy outside of the Compile_lock.
+    // Access ordering is used to add to hierarchy.
+
+    // Link into hierarchy.
+    append_to_sibling_list();                    // add to superklass/sibling list
+    process_interfaces();                        // handle all "implements" declarations
+
+    // Now mark all code that depended on old class hierarchy.
+    // Note: must be done *after* linking k into the hierarchy (was bug 12/9/97)
+    if (Universe::is_fully_initialized()) {
+      CodeCache::mark_dependents_on(&deopt_scope, this);
+    }
+  }
+  // Perform the deopt handshake outside Compile_lock.
+  deopt_scope.deoptimize_marked();
+
+  if (!UseVtableBasedCHA) {
+    init_monitor()->unlock();
+  }
+}
+
 InstanceKlass* InstanceKlass::implementor() const {
   InstanceKlass* volatile* ik = adr_implementor();
   if (ik == nullptr) {
@@ -1393,6 +1438,18 @@ instanceOop InstanceKlass::allocate_instance(TRAPS) {
   return i;
 }
 
+instanceOop InstanceKlass::allocate_instance(oop java_class, TRAPS) {
+  Klass* k = java_lang_Class::as_Klass(java_class);
+  if (k == nullptr) {
+    ResourceMark rm(THREAD);
+    THROW_(vmSymbols::java_lang_InstantiationException(), nullptr);
+  }
+  InstanceKlass* ik = cast(k);
+  ik->check_valid_for_instantiation(false, CHECK_NULL);
+  ik->initialize(CHECK_NULL);
+  return ik->allocate_instance(THREAD);
+}
+
 instanceHandle InstanceKlass::allocate_instance_handle(TRAPS) {
   return instanceHandle(THREAD, allocate_instance(THREAD));
 }
@@ -1519,6 +1576,16 @@ void InstanceKlass::mask_for(const methodHandle& method, int bci,
 bool InstanceKlass::contains_field_offset(int offset) {
   fieldDescriptor fd;
   return find_field_from_offset(offset, false, &fd);
+}
+
+FieldInfo InstanceKlass::field(int index) const {
+  for (AllFieldStream fs(this); !fs.done(); fs.next()) {
+    if (fs.index() == index) {
+      return fs.to_FieldInfo();
+    }
+  }
+  fatal("Field not found");
+  return FieldInfo();
 }
 
 bool InstanceKlass::find_local_field(Symbol* name, Symbol* sig, fieldDescriptor* fd) const {
@@ -2066,9 +2133,9 @@ void PrintClassClosure::do_klass(Klass* k)  {
   char buf[10];
   int i = 0;
   if (k->has_finalizer()) buf[i++] = 'F';
-  if (k->has_final_method()) buf[i++] = 'f';
   if (k->is_instance_klass()) {
     InstanceKlass* ik = InstanceKlass::cast(k);
+    if (ik->has_final_method()) buf[i++] = 'f';
     if (ik->is_rewritten()) buf[i++] = 'W';
     if (ik->is_contended()) buf[i++] = 'C';
     if (ik->has_been_redefined()) buf[i++] = 'R';
@@ -2437,8 +2504,9 @@ void InstanceKlass::metaspace_pointers_do(MetaspaceClosure* it) {
     it->push(&_default_vtable_indices);
   }
 
-  // _fields might be written into by Rewriter::scan_method() -> fd.set_has_initialized_final_update()
-  it->push(&_fields, MetaspaceClosure::_writable);
+  it->push(&_fieldinfo_stream);
+  // _fields_status might be written into by Rewriter::scan_method() -> fd.set_has_initialized_final_update()
+  it->push(&_fields_status, MetaspaceClosure::_writable);
 
   if (itable_length() > 0) {
     itableOffsetEntry* ioe = (itableOffsetEntry*)start_of_itable();
@@ -2484,7 +2552,7 @@ void InstanceKlass::remove_unshareable_info() {
   // Reset to the 'allocated' state to prevent any premature accessing to
   // a shared class at runtime while the class is still being loaded and
   // restored. A class' init_state is set to 'loaded' at runtime when it's
-  // being added to class hierarchy (see SystemDictionary:::add_to_hierarchy()).
+  // being added to class hierarchy (see InstanceKlass:::add_to_hierarchy()).
   _init_state = allocated;
 
   { // Otherwise this needs to take out the Compile_lock.
@@ -2556,9 +2624,19 @@ void InstanceKlass::init_shared_package_entry() {
 #endif
 }
 
+void InstanceKlass::compute_has_loops_flag_for_methods() {
+  Array<Method*>* methods = this->methods();
+  for (int index = 0; index < methods->length(); ++index) {
+    Method* m = methods->at(index);
+    if (!m->is_overpass()) { // work around JDK-8305771
+      m->compute_has_loops_flag();
+    }
+  }
+}
+
 void InstanceKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protection_domain,
                                              PackageEntry* pkg_entry, TRAPS) {
-  // SystemDictionary::add_to_hierarchy() sets the init_state to loaded
+  // InstanceKlass::add_to_hierarchy() sets the init_state to loaded
   // before the InstanceKlass is added to the SystemDictionary. Make
   // sure the current state is <loaded.
   assert(!is_loaded(), "invalid init state");

@@ -1833,3 +1833,14 @@ void InterpreterMacroAssembler::profile_parameters_type(Register mdp, Register t
     bind(profile_continue);
   }
 }
+
+void InterpreterMacroAssembler::load_resolved_indy_entry(Register cache, Register index) {
+  // Get index out of bytecode pointer, get_cache_entry_pointer_at_bcp
+  get_cache_index_at_bcp(index, 1, sizeof(u4));
+  // Get address of invokedynamic array
+  ldr(cache, Address(rcpool, in_bytes(ConstantPoolCache::invokedynamic_entries_offset())));
+  // Scale the index to be the entry index * sizeof(ResolvedInvokeDynamicInfo)
+  lsl(index, index, log2i_exact(sizeof(ResolvedIndyEntry)));
+  add(cache, cache, Array<ResolvedIndyEntry>::base_offset_in_bytes());
+  lea(cache, Address(cache, index));
+}

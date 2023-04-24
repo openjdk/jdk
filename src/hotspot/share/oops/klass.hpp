@@ -176,6 +176,7 @@ private:
   // Various attributes for shared classes. Should be zero for a non-shared class.
   u2     _shared_class_flags;
   enum CDSSharedClassFlags {
+    _is_shared_class                       = 1 << 0,  // shadows MetaspaceObj::is_shared
     _archived_lambda_proxy_is_available    = 1 << 1,
     _has_value_based_class_annotation      = 1 << 2,
     _verified_at_dump_time                 = 1 << 3,
@@ -361,6 +362,15 @@ protected:
   bool is_generated_shared_class() const {
     CDS_ONLY(return (_shared_class_flags & _is_generated_shared_class) != 0;)
     NOT_CDS(return false;)
+  }
+
+  bool is_shared() const                { // shadows MetaspaceObj::is_shared)()
+    CDS_ONLY(return (_shared_class_flags & _is_shared_class) != 0;)
+    NOT_CDS(return false;)
+  }
+
+  void set_is_shared() {
+    CDS_ONLY(_shared_class_flags |= _is_shared_class;)
   }
 
   // Obtain the module or package for this class
@@ -649,15 +659,7 @@ protected:
   bool is_synthetic() const             { return _access_flags.is_synthetic(); }
   void set_is_synthetic()               { _access_flags.set_is_synthetic(); }
   bool has_finalizer() const            { return _access_flags.has_finalizer(); }
-  bool has_final_method() const         { return _access_flags.has_final_method(); }
   void set_has_finalizer()              { _access_flags.set_has_finalizer(); }
-  void set_has_final_method()           { _access_flags.set_has_final_method(); }
-  bool has_vanilla_constructor() const  { return _access_flags.has_vanilla_constructor(); }
-  void set_has_vanilla_constructor()    { _access_flags.set_has_vanilla_constructor(); }
-  bool has_miranda_methods () const     { return access_flags().has_miranda_methods(); }
-  void set_has_miranda_methods()        { _access_flags.set_has_miranda_methods(); }
-  bool is_shared() const                { return access_flags().is_shared_class(); } // shadows MetaspaceObj::is_shared)()
-  void set_is_shared()                  { _access_flags.set_is_shared_class(); }
   bool is_hidden() const                { return access_flags().is_hidden_class(); }
   void set_is_hidden()                  { _access_flags.set_is_hidden_class(); }
   bool is_value_based()                 { return _access_flags.is_value_based_class(); }

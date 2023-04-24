@@ -97,8 +97,10 @@ runtime/os/TestTracePageSizes.java#G1 8267460 linux-aarch64
 runtime/os/TestTracePageSizes.java#Parallel 8267460 linux-aarch64
 runtime/os/TestTracePageSizes.java#Serial 8267460 linux-aarch64
 runtime/ErrorHandling/CreateCoredumpOnCrash.java 8267433 macosx-x64
-runtime/vthread/RedefineClass.java 8297286 generic-all
-runtime/vthread/TestObjectAllocationSampleEvent.java 8297286 generic-all
+runtime/CompressedOops/CompressedClassPointers.java 8305765 generic-all
+runtime/StackGuardPages/TestStackGuardPagesNative.java 8303612 linux-all
+runtime/Thread/TestAlwaysPreTouchStacks.java 8305416 generic-all
+runtime/ErrorHandling/TestDwarf.java 8305489 linux-all
 
 applications/jcstress/copy.java 8229852 linux-all
 
@@ -122,7 +124,6 @@ serviceability/sa/ClhsdbPmap.java#core 8294316,8267433 macosx-x64
 serviceability/sa/ClhsdbPstack.java#core 8294316,8267433 macosx-x64
 serviceability/sa/TestJmapCore.java 8294316,8267433 macosx-x64
 serviceability/sa/TestJmapCoreMetaspace.java 8294316,8267433 macosx-x64
-serviceability/sa/UniqueVtableTest.java 8303921 generic-all
 
 serviceability/attach/ConcAttachTest.java 8290043 linux-all
 
@@ -146,7 +147,6 @@ vmTestbase/metaspace/gc/firstGC_50m/TestDescription.java 8208250 generic-all
 vmTestbase/metaspace/gc/firstGC_99m/TestDescription.java 8208250 generic-all
 vmTestbase/metaspace/gc/firstGC_default/TestDescription.java 8208250 generic-all
 
-vmTestbase/nsk/jvmti/AttachOnDemand/attach002a/TestDescription.java 8277573 generic-all
 vmTestbase/nsk/jvmti/AttachOnDemand/attach045/TestDescription.java 8202971 generic-all
 vmTestbase/nsk/jvmti/scenarios/jni_interception/JI05/ji05t001/TestDescription.java 8219652 aix-ppc64
 vmTestbase/nsk/jvmti/scenarios/jni_interception/JI06/ji06t001/TestDescription.java 8219652 aix-ppc64
@@ -167,5 +167,4 @@ vmTestbase/vm/mlvm/indy/func/jvmti/mergeCP_indy2manySame_b/TestDescription.java 
 
 vmTestbase/nsk/jdwp/ThreadReference/ForceEarlyReturn/forceEarlyReturn001/forceEarlyReturn001.java 7199837 generic-all
 
-vmTestbase/nsk/stress/except/except012.java 8297977 generic-all
 vmTestbase/nsk/monitoring/ThreadMXBean/ThreadInfo/Multi/Multi005/TestDescription.java 8076494 windows-x64

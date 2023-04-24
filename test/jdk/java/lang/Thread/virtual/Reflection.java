@@ -26,7 +26,6 @@
  * @summary Test virtual threads using core reflection
  * @modules java.base/java.lang:+open
  * @library /test/lib
- * @enablePreview
  * @run junit Reflection
  */
 

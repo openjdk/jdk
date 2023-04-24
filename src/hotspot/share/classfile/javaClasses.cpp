@@ -50,6 +50,7 @@
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "oops/fieldInfo.hpp"
 #include "oops/fieldStreams.inline.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/instanceMirrorKlass.hpp"
@@ -861,17 +862,34 @@ void java_lang_Class::fixup_mirror(Klass* k, TRAPS) {
       // During bootstrap, java.lang.Class wasn't loaded so static field
       // offsets were computed without the size added it.  Go back and
       // update all the static field offsets to included the size.
-      for (JavaFieldStream fs(InstanceKlass::cast(k)); !fs.done(); fs.next()) {
-        if (fs.access_flags().is_static()) {
-          int real_offset = fs.offset() + InstanceMirrorKlass::offset_of_static_fields();
-          fs.set_offset(real_offset);
+
+      // Unfortunately, the FieldInfo stream is encoded with UNSIGNED5 which doesn't allow
+      // content updates. So the FieldInfo stream has to be decompressed into a temporary array,
+      // static fields offsets are updated in this array before reencoding everything into
+      // a new UNSIGNED5 stream, and substitute it to the old FieldInfo stream.
+
+      int java_fields;
+      int injected_fields;
+      InstanceKlass* ik = InstanceKlass::cast(k);
+      GrowableArray<FieldInfo>* fields =
+        FieldInfoStream::create_FieldInfoArray(ik->fieldinfo_stream(),
+                                               &java_fields, &injected_fields);
+      for (int i = 0; i < fields->length(); i++) {
+        FieldInfo* fi = fields->adr_at(i);
+        if (fi->access_flags().is_static()) {
+          fi->set_offset(fi->offset() + InstanceMirrorKlass::offset_of_static_fields());
         }
       }
+      Array<u1>* old_stream = ik->fieldinfo_stream();
+      assert(fields->length() == (java_fields + injected_fields), "Must be");
+      Array<u1>* new_fis = FieldInfoStream::create_FieldInfoStream(fields, java_fields, injected_fields, k->class_loader_data(), CHECK);
+      ik->set_fieldinfo_stream(new_fis);
+      MetadataFactory::free_array<u1>(k->class_loader_data(), old_stream);
     }
   }
 
   if (k->is_shared() && k->has_archived_mirror_index()) {
-    if (ArchiveHeapLoader::are_archived_mirrors_available()) {
+    if (ArchiveHeapLoader::is_in_use()) {
       bool present = restore_archived_mirror(k, Handle(), Handle(), Handle(), CHECK);
       assert(present, "Missing archived mirror for %s", k->external_name());
       return;
@@ -1103,9 +1121,6 @@ bool java_lang_Class::restore_archived_mirror(Klass *k,
 
   // mirror is archived, restore
   log_debug(cds, mirror)("Archived mirror is: " PTR_FORMAT, p2i(m));
-  if (ArchiveHeapLoader::is_mapped()) {
-    assert(Universe::heap()->is_archived_object(m), "must be archived mirror object");
-  }
   assert(as_Klass(m) == k, "must be");
   Handle mirror(THREAD, m);
 
@@ -1480,11 +1495,9 @@ JavaThreadStatus java_lang_Thread_FieldHolder::get_thread_status(oop holder) {
 
 
 int java_lang_Thread_Constants::_static_VTHREAD_GROUP_offset = 0;
-int java_lang_Thread_Constants::_static_NOT_SUPPORTED_CLASSLOADER_offset = 0;
 
 #define THREAD_CONSTANTS_STATIC_FIELDS_DO(macro) \
-  macro(_static_VTHREAD_GROUP_offset,             k, "VTHREAD_GROUP",             threadgroup_signature, true); \
-  macro(_static_NOT_SUPPORTED_CLASSLOADER_offset, k, "NOT_SUPPORTED_CLASSLOADER", classloader_signature, true);
+  macro(_static_VTHREAD_GROUP_offset,             k, "VTHREAD_GROUP",             threadgroup_signature, true);
 
 void java_lang_Thread_Constants::compute_offsets() {
   assert(_static_VTHREAD_GROUP_offset == 0, "offsets should be initialized only once");
@@ -1505,11 +1518,6 @@ oop java_lang_Thread_Constants::get_VTHREAD_GROUP() {
   return base->obj_field(_static_VTHREAD_GROUP_offset);
 }
 
-oop java_lang_Thread_Constants::get_NOT_SUPPORTED_CLASSLOADER() {
-  InstanceKlass* k = vmClasses::Thread_Constants_klass();
-  oop base = k->static_field_base_raw();
-  return base->obj_field(_static_NOT_SUPPORTED_CLASSLOADER_offset);
-}
 
 int java_lang_Thread::_holder_offset;
 int java_lang_Thread::_name_offset;
@@ -1592,6 +1600,10 @@ bool java_lang_Thread::is_in_VTMS_transition(oop java_thread) {
 
 void java_lang_Thread::set_is_in_VTMS_transition(oop java_thread, bool val) {
   java_thread->bool_field_put_volatile(_jvmti_is_in_VTMS_transition_offset, val);
+}
+
+int java_lang_Thread::is_in_VTMS_transition_offset() {
+  return _jvmti_is_in_VTMS_transition_offset;
 }
 
 void java_lang_Thread::clear_scopedValueBindings(oop java_thread) {
@@ -1915,32 +1927,21 @@ void java_lang_ThreadGroup::serialize_offsets(SerializeClosure* f) {
 
 // java_lang_VirtualThread
 
-int java_lang_VirtualThread::static_notify_jvmti_events_offset;
 int java_lang_VirtualThread::static_vthread_scope_offset;
 int java_lang_VirtualThread::_carrierThread_offset;
 int java_lang_VirtualThread::_continuation_offset;
 int java_lang_VirtualThread::_state_offset;
 
 #define VTHREAD_FIELDS_DO(macro) \
-  macro(static_notify_jvmti_events_offset, k, "notifyJvmtiEvents",  bool_signature,              true);  \
   macro(static_vthread_scope_offset,       k, "VTHREAD_SCOPE",      continuationscope_signature, true);  \
   macro(_carrierThread_offset,             k, "carrierThread",      thread_signature,            false); \
   macro(_continuation_offset,              k, "cont",               continuation_signature,      false); \
   macro(_state_offset,                     k, "state",              int_signature,               false)
 
-static bool vthread_notify_jvmti_events = JNI_FALSE;
 
 void java_lang_VirtualThread::compute_offsets() {
   InstanceKlass* k = vmClasses::VirtualThread_klass();
   VTHREAD_FIELDS_DO(FIELD_COMPUTE_OFFSET);
-}
-
-void java_lang_VirtualThread::init_static_notify_jvmti_events() {
-  if (vthread_notify_jvmti_events) {
-    InstanceKlass* ik = vmClasses::VirtualThread_klass();
-    oop base = ik->static_field_base_raw();
-    base->release_bool_field_put(static_notify_jvmti_events_offset, vthread_notify_jvmti_events);
-  }
 }
 
 bool java_lang_VirtualThread::is_instance(oop obj) {
@@ -1994,15 +1995,6 @@ void java_lang_VirtualThread::serialize_offsets(SerializeClosure* f) {
    VTHREAD_FIELDS_DO(FIELD_SERIALIZE_OFFSET);
 }
 #endif
-
-bool java_lang_VirtualThread::notify_jvmti_events() {
-  return vthread_notify_jvmti_events == JNI_TRUE;
-}
-
-void java_lang_VirtualThread::set_notify_jvmti_events(bool enable) {
-  vthread_notify_jvmti_events = enable;
-}
-
 
 // java_lang_Throwable
 
@@ -5345,7 +5337,7 @@ void JavaClasses::check_offsets() {
 int InjectedField::compute_offset() {
   InstanceKlass* ik = InstanceKlass::cast(klass());
   for (AllFieldStream fs(ik); !fs.done(); fs.next()) {
-    if (!may_be_java && !fs.access_flags().is_internal()) {
+    if (!may_be_java && !fs.field_flags().is_injected()) {
       // Only look at injected fields
       continue;
     }
@@ -5369,6 +5361,5 @@ int InjectedField::compute_offset() {
 void javaClasses_init() {
   JavaClasses::compute_offsets();
   JavaClasses::check_offsets();
-  java_lang_VirtualThread::init_static_notify_jvmti_events();
   FilteredFieldsMap::initialize();  // must be done after computing offsets.
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,15 +59,15 @@ public class ClassDescTest extends SymbolicDescTest {
         if (!r.descriptorString().equals("V")) {
             assertEquals(r, r.arrayType().componentType());
             // Commutativity: array -> resolve -> componentType -> toSymbolic
-            assertEquals(r, ((Class<?>) r.arrayType().resolveConstantDesc(LOOKUP)).getComponentType().describeConstable().orElseThrow());
+            assertEquals(r, r.arrayType().resolveConstantDesc(LOOKUP).getComponentType().describeConstable().orElseThrow());
             // Commutativity: resolve -> array -> toSymbolic -> component type
-            assertEquals(r, Array.newInstance(((Class<?>) r.resolveConstantDesc(LOOKUP)), 0).getClass().describeConstable().orElseThrow().componentType());
+            assertEquals(r, Array.newInstance(r.resolveConstantDesc(LOOKUP), 0).getClass().describeConstable().orElseThrow().componentType());
         }
 
         if (r.isArray()) {
             assertEquals(r, r.componentType().arrayType());
-            assertEquals(r, ((Class<?>) r.resolveConstantDesc(LOOKUP)).getComponentType().describeConstable().orElseThrow().arrayType());
-            assertEquals(r, Array.newInstance(((Class<?>) r.componentType().resolveConstantDesc(LOOKUP)), 0).getClass().describeConstable().orElseThrow());
+            assertEquals(r, r.resolveConstantDesc(LOOKUP).getComponentType().describeConstable().orElseThrow().arrayType());
+            assertEquals(r, Array.newInstance(r.componentType().resolveConstantDesc(LOOKUP), 0).getClass().describeConstable().orElseThrow());
         }
     }
 
@@ -88,7 +88,7 @@ public class ClassDescTest extends SymbolicDescTest {
                     && ((f.getModifiers() & Modifier.STATIC) != 0)
                     && ((f.getModifiers() & Modifier.PUBLIC) != 0)) {
                     ClassDesc cr = (ClassDesc) f.get(null);
-                    Class c = (Class)cr.resolveConstantDesc(MethodHandles.lookup());
+                    Class<?> c = cr.resolveConstantDesc(MethodHandles.lookup());
                     testClassDesc(cr, c);
                     ++tested;
                 }
@@ -106,7 +106,7 @@ public class ClassDescTest extends SymbolicDescTest {
         for (Primitives p : Primitives.values()) {
             List<ClassDesc> descs = List.of(ClassDesc.ofDescriptor(p.descriptor),
                                            p.classDesc,
-                                           (ClassDesc) p.clazz.describeConstable().orElseThrow());
+                                           p.clazz.describeConstable().orElseThrow());
             for (ClassDesc c : descs) {
                 testClassDesc(c, p.clazz);
                 assertTrue(c.isPrimitive());
@@ -115,7 +115,7 @@ public class ClassDescTest extends SymbolicDescTest {
                 descs.forEach(cc -> assertEquals(c, cc));
                 if (p != Primitives.VOID) {
                     testClassDesc(c.arrayType(), p.arrayClass);
-                    assertEquals(c, ((ClassDesc) p.arrayClass.describeConstable().orElseThrow()).componentType());
+                    assertEquals(c, p.arrayClass.describeConstable().orElseThrow().componentType());
                     assertEquals(c, p.classDesc.arrayType().componentType());
                 }
             }
@@ -228,9 +228,9 @@ public class ClassDescTest extends SymbolicDescTest {
 
             assertEquals(a1, ClassDesc.ofDescriptor("[" + d));
             assertEquals(a2, ClassDesc.ofDescriptor("[[" + d));
-            assertEquals(classToDescriptor((Class<?>) a0.resolveConstantDesc(LOOKUP)), a0.descriptorString());
-            assertEquals(classToDescriptor((Class<?>) a1.resolveConstantDesc(LOOKUP)), a1.descriptorString());
-            assertEquals(classToDescriptor((Class<?>) a2.resolveConstantDesc(LOOKUP)), a2.descriptorString());
+            assertEquals(classToDescriptor(a0.resolveConstantDesc(LOOKUP)), a0.descriptorString());
+            assertEquals(classToDescriptor(a1.resolveConstantDesc(LOOKUP)), a1.descriptorString());
+            assertEquals(classToDescriptor(a2.resolveConstantDesc(LOOKUP)), a2.descriptorString());
 
             testBadArrayRank(ConstantDescs.CD_int);
             testBadArrayRank(ConstantDescs.CD_String);
