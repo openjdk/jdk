@@ -357,7 +357,7 @@ public class DateFormatRegression extends IntlTest {
     public void Test4089106() {
         TimeZone def = TimeZone.getDefault();
         try {
-            TimeZone z = new SimpleTimeZone((int)(1.25 * 3600000), "FAKEZONE");
+            TimeZone z = new SimpleTimeZone((int)(8.25 * 3600000), "GMT-08:15");
             TimeZone.setDefault(z);
             SimpleDateFormat f = new SimpleDateFormat();
             if (!f.getTimeZone().equals(z))
