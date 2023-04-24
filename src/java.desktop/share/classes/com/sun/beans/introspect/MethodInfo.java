@@ -107,8 +107,9 @@ final class MethodInfo {
 
             // Add default methods inherited from interfaces
             for (Class<?> iface : type.getInterfaces()) {
-                if (IGNORABLE_INTERFACES.contains(iface))
+                if (IGNORABLE_INTERFACES.contains(iface)) {
                     continue;
+                }
                 for (Method method : iface.getMethods()) {
                     if (!Modifier.isAbstract(method.getModifiers())) {
                         (list = createIfNeeded(list)).add(method);
