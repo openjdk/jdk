@@ -2610,7 +2610,7 @@ void TemplateTable::load_field_cp_cache_entry(Register Rcache,
 
 // The rmethod register is input and overwritten to be the adapter method for the
 // indy call. Link Register (lr) is set to the return address for the adapter and
-// an appendix may be pushed to the stack. Registers r0-r3 are clobbered
+// an appendix may be pushed to the stack. Registers R1-R3, Rtemp (R12) are clobbered
 void TemplateTable::load_invokedynamic_entry(Register method) {
   // setup registers
   const Register appendix = R1;
