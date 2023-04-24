@@ -100,8 +100,13 @@ class TestStringDeduplicationTools {
             if (n.getType().equals(GarbageCollectionNotificationInfo.GARBAGE_COLLECTION_NOTIFICATION)) {
                 GarbageCollectionNotificationInfo info = GarbageCollectionNotificationInfo.from((CompositeData) n.getUserData());
                 // Shenandoah and Z GC also report GC pauses, skip them
-                if (info.getGcName().startsWith("Shenandoah") || info.getGcName().startsWith("ZGC")) {
+                if (info.getGcName().startsWith("Shenandoah")) {
                     if ("end of GC cycle".equals(info.getGcAction())) {
+                        gcCount++;
+                    }
+                } else if (info.getGcName().startsWith("ZGC")) {
+                    // Generational ZGC only triggers string deduplications from major collections
+                    if (info.getGcName().startsWith("ZGC Major") && "end of GC cycle".equals(info.getGcAction())) {
                         gcCount++;
                     }
                 } else if (info.getGcName().startsWith("G1")) {
