@@ -160,6 +160,7 @@ public:
   void enable_safe_recycle() const;
   void disable_safe_recycle() const;
 
+  bool is_alloc_stalling() const;
   bool is_alloc_stalling_for_old() const;
   void handle_alloc_stalling_for_young();
   void handle_alloc_stalling_for_old();

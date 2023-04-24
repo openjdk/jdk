@@ -931,6 +931,11 @@ static bool has_alloc_seen_old(const ZPageAllocation* allocation) {
   return allocation->old_seqnum() != ZGeneration::old()->seqnum();
 }
 
+bool ZPageAllocator::is_alloc_stalling() const {
+  ZLocker<ZLock> locker(&_lock);
+  return _stalled.first() != nullptr;
+}
+
 bool ZPageAllocator::is_alloc_stalling_for_old() const {
   ZLocker<ZLock> locker(&_lock);
 

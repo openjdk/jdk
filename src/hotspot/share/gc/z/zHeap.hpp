@@ -108,6 +108,7 @@ public:
   size_t free_empty_pages(const ZArray<ZPage*>* pages);
 
   // Object allocation
+  bool is_alloc_stalling() const;
   bool is_alloc_stalling_for_old() const;
   void handle_alloc_stalling_for_young();
   void handle_alloc_stalling_for_old();

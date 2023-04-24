@@ -674,6 +674,17 @@ enum class ZWorkerSelectionType {
 };
 
 static ZWorkerCounts select_worker_threads(const ZDirectorStats& stats, uint young_workers, ZWorkerSelectionType type) {
+  uint active_young_workers = stats._young_stats._resize._nworkers_current;
+  uint active_old_workers = stats._old_stats._resize._nworkers_current;
+
+  if (ZHeap::heap()->is_alloc_stalling()) {
+    // Boost GC threads when stalling
+    return {ZYoungGCThreads, ZOldGCThreads};
+  } else if (active_young_workers + active_old_workers > ConcGCThreads) {
+    // Threads are boosted, due to stalling recently; retain that boosting
+    return {active_young_workers, active_old_workers};
+  }
+
   const double young_to_old_ratio = calculate_young_to_old_worker_ratio(stats);
   uint old_workers = clamp(uint(young_workers * young_to_old_ratio), 1u, ZOldGCThreads);
 
