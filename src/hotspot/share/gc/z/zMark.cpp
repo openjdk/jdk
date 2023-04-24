@@ -856,7 +856,19 @@ public:
   }
 };
 
-typedef ClaimingCLDToOopClosure<ClassLoaderData::_claim_none> ZMarkYoungCLDClosure;
+class ZMarkYoungCLDClosure : public ClaimingCLDToOopClosure<ClassLoaderData::_claim_none> {
+public:
+  virtual void do_cld(ClassLoaderData* cld) {
+    if (!cld->is_alive()) {
+      // Skip marking through concurrently unloading CLDs
+      return;
+    }
+    ClaimingCLDToOopClosure<ClassLoaderData::_claim_none>::do_cld(cld);
+  }
+
+  ZMarkYoungCLDClosure(OopClosure* cl) :
+      ClaimingCLDToOopClosure<ClassLoaderData::_claim_none>(cl) {}
+};
 
 class ZMarkYoungRootsTask : public ZTask {
 private:
@@ -879,13 +891,7 @@ public:
       _cl_colored(),
       _cld_cl(&_cl_colored),
       _thread_cl(),
-      _nm_cl() {
-    ClassLoaderDataGraph_lock->lock();
-  }
-
-  ~ZMarkYoungRootsTask() {
-    ClassLoaderDataGraph_lock->unlock();
-  }
+      _nm_cl() {}
 
   virtual void work() {
     {
