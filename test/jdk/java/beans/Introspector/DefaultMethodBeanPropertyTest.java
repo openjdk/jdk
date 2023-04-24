@@ -24,7 +24,8 @@
 /*
  * @test
  * @bug 8071693
- * @summary Verify that the Introspector finds default methods inherited from interfaces
+ * @summary Verify that the Introspector finds default methods inherited
+ *          from interfaces
  */
 
 import java.beans.IntrospectionException;
@@ -157,23 +158,23 @@ public class DefaultMethodBeanPropertyTest {
         final HashSet<PropertyDescriptor> expected = new HashSet<>();
         for (String methodName : getterNames) {
             final String suffix = methodName.substring(3);
-            final String propertyName = Introspector.decapitalize(suffix);
+            final String propName = Introspector.decapitalize(suffix);
             final Method getter;
             try {
                 getter = type.getMethod(methodName);
             } catch (NoSuchMethodException e) {
                 throw new Error("unexpected error", e);
             }
-            final PropertyDescriptor propertyDescriptor;
+            final PropertyDescriptor propDesc;
             try {
-                propertyDescriptor = new PropertyDescriptor(propertyName, getter, null);
+                propDesc = new PropertyDescriptor(propName, getter, null);
             } catch (IntrospectionException e) {
                 throw new Error("unexpected error", e);
             }
-            expected.add(propertyDescriptor);
+            expected.add(propDesc);
         }
 
-        // Verify properties can be found directly by BeanUtils.getPropertyDescriptor()
+        // Verify properties can be found directly
         expected.stream()
           .map(PropertyDescriptor::getName)
           .filter(name -> BeanUtils.getPropertyDescriptor(type, name) == null)
@@ -183,15 +184,20 @@ public class DefaultMethodBeanPropertyTest {
           });
 
         // Gather actual properties
-        final Set<PropertyDescriptor> actual = Set.of(BeanUtils.getPropertyDescriptors(type));
+        final Set<PropertyDescriptor> actual = Set.of(
+            BeanUtils.getPropertyDescriptors(type));
 
         // Verify the two sets are the same
         if (!actual.equals(expected)) {
             throw new Error("mismatch: " + type
               + "\nACTUAL:\n  "
-              + actual.stream().map(Object::toString).collect(Collectors.joining("\n  "))
+              + actual.stream()
+                .map(Object::toString)
+                .collect(Collectors.joining("\n  "))
               + "\nEXPECTED:\n  "
-              + expected.stream().map(Object::toString).collect(Collectors.joining("\n  ")));
+              + expected.stream()
+                .map(Object::toString)
+                .collect(Collectors.joining("\n  ")));
         }
     }
 
