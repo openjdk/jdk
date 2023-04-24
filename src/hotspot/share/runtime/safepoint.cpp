@@ -379,7 +379,7 @@ void SafepointSynchronize::begin() {
   if (SafepointTimeout) {
     // Set the limit time, so that it can be compared to see if this has taken
     // too long to complete.
-    safepoint_limit_time = SafepointTracing::start_of_safepoint() + (jlong)SafepointTimeoutDelay * NANOSECS_PER_MILLISEC;
+    safepoint_limit_time = SafepointTracing::start_of_safepoint() + (jlong)(SafepointTimeoutDelay * NANOSECS_PER_MILLISEC);
     timeout_error_printed = false;
   }
 
