@@ -737,6 +737,8 @@ javax/rmi/ssl/SSLSocketParametersTest.sh                        8162906 generic-
 
 jdk/incubator/concurrent/ScopedValue/StressStackOverflow.java   8303498 linux-s390x
 
+jdk/incubator/vector/ShortMaxVectorTests.java                   8306592 generic-i586
+
 ############################################################################
 
 # jdk_jfr
