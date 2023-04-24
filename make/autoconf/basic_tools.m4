@@ -29,8 +29,8 @@
 RECOMMENDED_PANDOC_VERSION=2.19.2
 
 ###############################################################################
-# Setup the most fundamental tools which rely on not much else to set up,
-# but are used by much of the early bootstrap code.
+# Setup the most fundamental tools, used for setting up build platform and
+# path handling.
 AC_DEFUN_ONCE([BASIC_SETUP_FUNDAMENTAL_TOOLS],
 [
   # Bootstrapping: These tools are needed by UTIL_LOOKUP_PROGS
