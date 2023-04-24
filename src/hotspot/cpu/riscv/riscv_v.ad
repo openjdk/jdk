@@ -1566,7 +1566,6 @@ instruct vasrI_masked(vReg dst_src, vReg shift, vRegMask_V0 v0) %{
   effect(TEMP_DEF dst_src);
   format %{ "vasrI_masked $dst_src, $dst_src, $shift, v0.t" %}
   ins_encode %{
-    BasicType bt = Matcher::vector_element_basic_type(this);
     __ rvv_vsetvli(T_INT, Matcher::vector_length_in_bytes(this));
     __ vsra_vv(as_VectorRegister($dst_src$$reg), as_VectorRegister($dst_src$$reg),
                as_VectorRegister($shift$$reg), Assembler::v0_t);
@@ -1580,7 +1579,6 @@ instruct vasrL_masked(vReg dst_src, vReg shift, vRegMask_V0 v0) %{
   effect(TEMP_DEF dst_src);
   format %{ "vasrL_masked $dst_src, $dst_src, $shift, v0.t" %}
   ins_encode %{
-    BasicType bt = Matcher::vector_element_basic_type(this);
     __ rvv_vsetvli(T_LONG, Matcher::vector_length_in_bytes(this));
     __ vsra_vv(as_VectorRegister($dst_src$$reg), as_VectorRegister($dst_src$$reg),
                as_VectorRegister($shift$$reg), Assembler::v0_t);
