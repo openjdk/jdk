@@ -280,6 +280,11 @@ final class Poly1305 {
 
     boolean printing = (! "no".equals(BLAH));
 
+    static void maybePrint(int cols, String name, IntegerModuloP[] a) {
+        for (int i = 0; i < cols; i++)  System.out.printf("%s[%d] = %33.33s ", name, i, a[i]);
+        System.out.println();
+    }
+
     // This is an intrinsified method. The unused parameters aLimbs and rLimbs are used by the intrinsic.
     // They correspond to this.a and this.r respectively
     @ForceInline
@@ -287,8 +292,11 @@ final class Poly1305 {
     private void processMultipleBlocks(byte[] input, int offset, int length, long[] aLimbs, long[] rLimbs) {
         final int cols = 2, max_cols = 4;
 
-        if (length >= BLOCK_LENGTH * 2) {
-            IntegerModuloP rSquared = r.square();
+        if (length >= BLOCK_LENGTH * cols) {
+            IntegerModuloP rPrime = ipl1305.get1();
+            for (int i = 0; i < cols; i++) {
+                rPrime = rPrime.multiply(r);
+            }
             IntegerModuloP[] A = new IntegerModuloP[4];
              A[0] = a.mutable();
              A[1] = ipl1305.get0();
@@ -299,10 +307,10 @@ final class Poly1305 {
 
             if (printing) {
                 System.out.printf("init:\n    A[0] = %33.33s  r = %33.33s \n", A[0], r);
-                System.out.printf("  r**2 = %33.33s \n", rSquared);
+                System.out.printf("  r**N = %33.33s \n", rPrime);
             }
 
-            while (length >= BLOCK_LENGTH * 4) {
+            while (length >= BLOCK_LENGTH * cols * 2) {
 
                 for (int i = 0; i < cols; i++) {
                     N[i].setValue(input, offset, BLOCK_LENGTH, (byte) 0x01);
@@ -313,42 +321,16 @@ final class Poly1305 {
                 var S = new IntegerModuloP[max_cols];
                 for (int i = 0; i < cols; i++) {
                     S[i] = A[i].add(N[i]);
-                    A[i] = S[i].multiply(rSquared);
+                    A[i] = S[i].multiply(rPrime);
                 }
-                if (printing) {
-                    System.out.printf("##  N[0] = %33.33s  N[1] = %33.33s\n", N[0], N[1]);
-                    System.out.printf("##  s[0] = %33.33s  s[1] = %33.33s\n", S[0], S[1]);
-                    System.out.printf("##  A[0] = %33.33s  A[1] = %33.33s\n", A[0], A[1]);
-                }
+
+                maybePrint(cols, "N", N);
+                maybePrint(cols, "S", S);
+                maybePrint(cols, "A", A);
 
             }
 
-            if ("".length() != 0) {
-
-                N[0].setValue(input, offset, BLOCK_LENGTH, (byte) 0x01);
-                offset += BLOCK_LENGTH;
-                length -= BLOCK_LENGTH;
-
-                var S = new IntegerModuloP[4];
-                S[0] = A[0].add(N[0]);
-                A[0] = S[0].multiply(rSquared);
-
-                N[1].setValue(input, offset, BLOCK_LENGTH, (byte) 0x01);
-                offset += BLOCK_LENGTH;
-                length -= BLOCK_LENGTH;
-
-                S[1] = A[1].add(N[1]);
-                A[1] = S[1].multiply(r);
-
-                a.setValue(A[0].add(A[1]));
-                if (printing) {
-                    System.out.printf("    N[0] = %33.33s  N[1] = %33.33s\n", N[0], N[1]);
-                    System.out.printf("    s[0] = %33.33s  s[1] = %33.33s\n", S[0], S[1]);
-                    System.out.printf("    A[0] = %33.33s  A[1] = %33.33s\n", A[0], A[1]);
-                    System.out.printf("     a = %33.33s\n", a);
-                    System.out.println("");
-                }
-            } else {
+            {
                 var sum = ipl1305.get0();
 
                 for (int i = 0; i < cols; i++) {
@@ -366,9 +348,8 @@ final class Poly1305 {
                 a.setValue(sum);
 
                 if (printing) {
-                    System.out.printf("    N[0] = %33.33s  N[1] = %33.33s\n", N[0], N[1]);
-                    System.out.printf("    A[0] = %33.33s  A[1] = %33.33s\n", A[0], A[1]);
-                    System.out.printf("     a = %33.33s\n", a);
+                    maybePrint(cols, "N", N);
+                    maybePrint(cols, "A", A);
                     System.out.println("");
                 }
             }
