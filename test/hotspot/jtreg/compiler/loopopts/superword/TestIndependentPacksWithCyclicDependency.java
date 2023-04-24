@@ -27,6 +27,7 @@
  * @bug 8304042
  * @summary Test some examples with independent packs with cyclic dependency
  *          between the packs.
+ * @requires vm.bits == 64
  * @requires vm.compiler2.enabled
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
