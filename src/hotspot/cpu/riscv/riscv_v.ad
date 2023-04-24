@@ -129,8 +129,8 @@ instruct vloadmask(vRegMask dst, vReg src) %{
   match(Set dst (VectorLoadMask src));
   format %{ "vloadmask $dst, $src" %}
   ins_encode %{
-    __ rvv_vsetvli(T_BOOLEAN, Matcher::vector_length_in_bytes(this));
-    __ vmsne_vx(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg), x0);
+    __ rvv_vsetvli(T_BOOLEAN, Matcher::vector_length(this));
+    __ vmsne_vx(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg), zr);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -139,8 +139,8 @@ instruct vloadmask_masked(vRegMask dst, vReg src, vRegMask_V0 v0) %{
   match(Set dst (VectorLoadMask src v0));
   format %{ "vloadmask_masked $dst, $src, v0.t" %}
   ins_encode %{
-    __ rvv_vsetvli(T_BOOLEAN, Matcher::vector_length_in_bytes(this));
-    __ vmsne_vx(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg), x0, Assembler::v0_t);
+    __ rvv_vsetvli(T_BOOLEAN, Matcher::vector_length(this));
+    __ vmsne_vx(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg), zr, Assembler::v0_t);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -151,8 +151,8 @@ instruct vstoremask(vReg dst, vRegMask_V0 v0, immI size) %{
   match(Set dst (VectorStoreMask v0 size));
   format %{ "vstoremask $dst, V0" %}
   ins_encode %{
-    __ rvv_vsetvli(T_BOOLEAN, Matcher::vector_length_in_bytes(this));
-    __ vmv_v_x(as_VectorRegister($dst$$reg), x0);
+    __ rvv_vsetvli(T_BOOLEAN, Matcher::vector_length(this));
+    __ vmv_v_x(as_VectorRegister($dst$$reg), zr);
     __ vmerge_vim(as_VectorRegister($dst$$reg), as_VectorRegister($dst$$reg), 1);
   %}
   ins_pipe(pipe_slow);
@@ -2575,7 +2575,7 @@ instruct vmaskAllI(vRegMask dst, iRegI src) %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ rvv_vsetvli(bt, Matcher::vector_length_in_bytes(this));
     __ vmv_v_x(as_VectorRegister($dst$$reg), as_Register($src$$reg));
-    __ vmsne_vx(as_VectorRegister($dst$$reg), as_VectorRegister($dst$$reg), x0);
+    __ vmsne_vx(as_VectorRegister($dst$$reg), as_VectorRegister($dst$$reg), zr);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -2604,7 +2604,7 @@ instruct vmaskAllL(vRegMask dst, iRegL src) %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ rvv_vsetvli(bt, Matcher::vector_length_in_bytes(this));
     __ vmv_v_x(as_VectorRegister($dst$$reg), as_Register($src$$reg));
-    __ vmsne_vx(as_VectorRegister($dst$$reg), as_VectorRegister($dst$$reg), x0);
+    __ vmsne_vx(as_VectorRegister($dst$$reg), as_VectorRegister($dst$$reg), zr);
   %}
   ins_pipe(pipe_slow);
 %}
