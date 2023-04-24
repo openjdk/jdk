@@ -353,7 +353,7 @@ public:
   int max_opcode() const { return Op_MaxL; }
   int min_opcode() const { return Op_MinL; }
   virtual Node* Identity(PhaseGVN* phase);
-  virtual Node* Ideal(PhaseGVN *phase, bool can_reshape);
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
 };
 
 //------------------------------MaxFNode---------------------------------------
