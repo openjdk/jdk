@@ -33,6 +33,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.Arrays;
+import java.util.regex.Pattern;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
@@ -109,8 +110,13 @@ public class SplitWithDelimitersTest {
     void testSplit(String[] expected, String target, String regex, int limit) {
         String[] computedWith = target.splitWithDelimiters(regex, limit);
         assertArrayEquals(expected, computedWith);
+        String[] patComputedWith = Pattern.compile(regex).splitWithDelimiters(target, limit);
+        assertArrayEquals(computedWith, patComputedWith);
+
         String[] computedWithout = target.split(regex, limit);
         assertArrayEquals(dropOddIndexed(expected, limit), computedWithout);
+        String[] patComputedWithout = Pattern.compile(regex).split(target, limit);
+        assertArrayEquals(computedWithout, patComputedWithout);
     }
 
 }

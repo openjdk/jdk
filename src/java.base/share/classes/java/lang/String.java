@@ -3358,19 +3358,19 @@ public final class String
     private String[] split(char ch, int limit, boolean withDelimiters) {
         int matchCount = 0;
         int off = 0;
-        int next = 0;
+        int next;
         boolean limited = limit > 0;
         ArrayList<String> list = new ArrayList<>();
+        String del = withDelimiters ? String.valueOf(ch) : null;
         while ((next = indexOf(ch, off)) != -1) {
             if (!limited || matchCount < limit - 1) {
                 list.add(substring(off, next));
                 if (withDelimiters) {
-                    list.add(String.valueOf(ch));
+                    list.add(del);
                 }
                 off = next + 1;
                 ++matchCount;
             } else {    // last one
-                //assert (list.size() == limit - 1);
                 int last = length();
                 list.add(substring(off, last));
                 off = last;
