@@ -27,6 +27,7 @@
  * @summary Check JDK_JAVA_OPTIONS parsing behavior
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.main
+ * @modules jdk.internal.opt/jdk.internal.opt
  * @build toolbox.ToolBox toolbox.TestRunner
  * @run main EnvVariableTest
  */
@@ -41,7 +42,7 @@ import java.util.List;
 
 import toolbox.*;
 
-import com.sun.tools.javac.main.CommandLine;
+import jdk.internal.opt.CommandLine;
 
 public class EnvVariableTest extends TestRunner {
     final String testClasses;

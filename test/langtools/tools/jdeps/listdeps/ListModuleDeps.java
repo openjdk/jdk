@@ -97,6 +97,7 @@ public class ListModuleDeps {
                                 "java.base/jdk.internal.misc",
                                 "java.base/sun.reflect.annotation",
                                 "java.compiler",
+                                "jdk.internal.opt/jdk.internal.opt",
                              }
             },
         };

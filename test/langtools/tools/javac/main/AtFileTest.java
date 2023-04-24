@@ -26,6 +26,7 @@
  * @bug 8166472 8162810
  * @summary Align javac support for at-files with launcher support
  * @modules jdk.compiler/com.sun.tools.javac.main
+ * @modules jdk.internal.opt/jdk.internal.opt
  */
 
 import java.io.IOException;
@@ -34,7 +35,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import com.sun.tools.javac.main.CommandLine.Tokenizer;
+import jdk.internal.opt.CommandLine.Tokenizer;
 
 public class AtFileTest {
 
