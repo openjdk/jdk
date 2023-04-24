@@ -357,11 +357,11 @@ public class DateFormatRegression extends IntlTest {
     public void Test4089106() {
         TimeZone def = TimeZone.getDefault();
         try {
-            TimeZone z = new SimpleTimeZone((int)(8.25 * 3600000), "GMT-08:15");
-            TimeZone.setDefault(z);
+            TimeZone customTz = TimeZone.getTimeZone("GMT-08:15");
+            TimeZone.setDefault(customTz);
             SimpleDateFormat f = new SimpleDateFormat();
-            if (!f.getTimeZone().equals(z))
-                errln("Fail: SimpleTimeZone should use TimeZone.getDefault()");
+            if (!f.getTimeZone().equals(customTz))
+                errln("Fail: SimpleDateFormat should use TimeZone.getDefault()");
         }
         finally {
             TimeZone.setDefault(def);
