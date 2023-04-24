@@ -796,9 +796,28 @@ void GenCollectedHeap::collect(GCCause::Cause cause) {
                                       ? YoungGen
                                       : OldGen;
 
-  VM_GenCollectFull op(gc_count_before, full_gc_count_before,
-                       cause, max_generation);
-  VMThread::execute(&op);
+  while (true) {
+    VM_GenCollectFull op(gc_count_before, full_gc_count_before,
+                        cause, max_generation);
+    VMThread::execute(&op);
+
+    if (!GCCause::is_explicit_full_gc(cause)) {
+      return;
+    }
+
+    {
+      MutexLocker ml(Heap_lock);
+      // Read the GC count while holding the Heap_lock
+      if (full_gc_count_before != total_full_collections()) {
+        return;
+      }
+    }
+
+    if (GCLocker::is_active_and_needs_gc()) {
+      // If GCLocker is active, wait until clear before retrying.
+      GCLocker::stall_until_clear();
+    }
+  }
 }
 
 void GenCollectedHeap::do_full_collection(bool clear_all_soft_refs) {
