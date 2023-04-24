@@ -34,7 +34,6 @@
 #include "runtime/vmThread.hpp"
 
 void OSThread::pd_initialize() {
-  assert(this != nullptr, "check");
   _thread_id        = 0;
   _kernel_thread_id = 0;
   _siginfo = nullptr;

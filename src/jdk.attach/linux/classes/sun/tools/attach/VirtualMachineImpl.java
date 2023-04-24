@@ -140,6 +140,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
      */
     InputStream execute(String cmd, Object ... args) throws AgentLoadException, IOException {
         assert args.length <= 3;                // includes null
+        checkNulls(args);
 
         // did we detach?
         synchronized (this) {
