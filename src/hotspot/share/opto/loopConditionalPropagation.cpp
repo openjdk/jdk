@@ -1087,7 +1087,7 @@ public:
       Node* in = c->in(in_idx);
       Node* ctrl = in;
       TypeUpdate* updates = updates_at(ctrl);
-      assert(updates != nullptr || _dom_updates == nullptr || _phase->is_dominator(c, in), "");
+      assert(updates != nullptr || _dom_updates == nullptr || _phase->is_dominator(c, in) || C->has_irreducible_loop(), "");
       while(updates != nullptr && updates->below(_dom_updates, _phase)) {
         for (int j = 0; j < updates->length(); ++j) {
           Node* n = updates->node_at(j);
@@ -1136,7 +1136,7 @@ public:
           }
         }
         updates = updates->prev();
-        assert(updates != nullptr || _dom_updates == nullptr || _phase->is_dominator(c, in), "");
+        assert(updates != nullptr || _dom_updates == nullptr || _phase->is_dominator(c, in) || C->has_irreducible_loop(), "");
       }
     } else if (c->is_IfProj()) {
       Node* iff = c->in(0);
@@ -1358,8 +1358,7 @@ public:
     assert(_phase->is_dominator(dom, c), "");
     TypeUpdate* updates = updates_at(c);
     TypeUpdate* dom_updates = updates_at(dom);
-    while(updates->below(dom_updates, _phase)) {
-      assert(updates != nullptr,"");
+    while(updates != nullptr && updates->below(dom_updates, _phase)) {
       int l = updates->find(n);
       if (l != -1) {
         return updates->type_at(l);
