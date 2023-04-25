@@ -578,6 +578,9 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
 
     @Override
     public boolean canBeInlined() {
+        if (isForceInline()) {
+            return true;
+        }
         if (hasNeverInlineDirective()) {
             return false;
         }
