@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -505,6 +505,26 @@ public class ReplToolTesting {
             assertCommand(false, cmd, null);
         } else {
             String got = getCommandOutput();
+            check.accept(got);
+            assertCommand(true, cmd, null);
+        }
+    }
+
+    public void assertCommandUserOutputContains(boolean after, String cmd, String... hasThese) {
+        assertCommandCheckUserOutput(after, cmd, (s)
+                -> assertTrue(Arrays.stream(hasThese)
+                        .allMatch(has -> s.contains(has)),
+                "User output: \'" + s + "' does not contain: "
+                        + Arrays.stream(hasThese)
+                        .filter(has -> !s.contains(has))
+                        .collect(Collectors.joining(", "))));
+    }
+
+    public void assertCommandCheckUserOutput(boolean after, String cmd, Consumer<String> check) {
+        if (!after) {
+            assertCommand(false, cmd, null);
+        } else {
+            String got = getUserOutput();
             check.accept(got);
             assertCommand(true, cmd, null);
         }
