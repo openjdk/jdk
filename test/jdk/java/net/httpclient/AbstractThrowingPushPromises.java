@@ -340,6 +340,17 @@ public abstract class AbstractThrowingPushPromises implements HttpServerAdapters
                 assertEquals(promisedBody, promised.uri().toASCIIString());
             }
             assertEquals(3, pushPromises.size());
+            if (!sameClient) {
+                var tracker = TRACKER.getTracker(client);
+                client = null;
+                System.gc();
+                System.out.println(now() + "waiting for client to shutdown: " + tracker.getName());
+                System.err.println(now() + "waiting for client to shutdown: " + tracker.getName());
+                var error = TRACKER.check(tracker, 10000);
+                if (error != null) throw error;
+                System.out.println(now() + "client shutdown normally: " + tracker.getName());
+                System.err.println(now() + "client shutdown normally: " + tracker.getName());
+            }
         }
     }
 
@@ -424,6 +435,17 @@ public abstract class AbstractThrowingPushPromises implements HttpServerAdapters
             }
             if (response != null) {
                 finisher.finish(where, req.uri(), response, thrower, promiseMap);
+            }
+            if (!sameClient) {
+                var tracker = TRACKER.getTracker(client);
+                client = null;
+                System.gc();
+                System.out.println(now() + "waiting for client to shutdown: " + tracker.getName());
+                System.err.println(now() + "waiting for client to shutdown: " + tracker.getName());
+                var error = TRACKER.check(tracker, 10000);
+                if (error != null) throw error;
+                System.out.println(now() + "client shutdown normally: " + tracker.getName());
+                System.err.println(now() + "client shutdown normally: " + tracker.getName());
             }
         }
     }

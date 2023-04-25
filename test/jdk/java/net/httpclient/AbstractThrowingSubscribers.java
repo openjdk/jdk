@@ -314,6 +314,17 @@ public abstract class AbstractThrowingSubscribers implements HttpServerAdapters 
             HttpResponse<String> response = client.send(req, handler);
             String body = response.body();
             assertEquals(URI.create(body).getPath(), URI.create(uri2).getPath());
+            if (!sameClient) {
+                var tracker = TRACKER.getTracker(client);
+                client = null;
+                System.gc();
+                System.out.println(now() + "waiting for client to shutdown: " + tracker.getName());
+                System.err.println(now() + "waiting for client to shutdown: " + tracker.getName());
+                var error = TRACKER.check(tracker, 10000);
+                if (error != null) throw error;
+                System.out.println(now() + "client shutdown normally: " + tracker.getName());
+                System.err.println(now() + "client shutdown normally: " + tracker.getName());
+            }
         }
     }
 
@@ -460,6 +471,17 @@ public abstract class AbstractThrowingSubscribers implements HttpServerAdapters 
             }
             if (response != null) {
                 finisher.finish(where, response, thrower);
+            }
+            if (!sameClient) {
+                var tracker = TRACKER.getTracker(client);
+                client = null;
+                System.gc();
+                System.out.println(now() + "waiting for client to shutdown: " + tracker.getName());
+                System.err.println(now() + "waiting for client to shutdown: " + tracker.getName());
+                var error = TRACKER.check(tracker, 10000);
+                if (error != null) throw error;
+                System.out.println(now() + "client shutdown normally: " + tracker.getName());
+                System.err.println(now() + "client shutdown normally: " + tracker.getName());
             }
         }
     }
