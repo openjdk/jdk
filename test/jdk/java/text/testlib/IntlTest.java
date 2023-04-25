@@ -81,17 +81,18 @@ public abstract class IntlTest {
         // Run the list of tests given in the test arguments
         for (Method testMethod : testsToRun) {
             int oldCount = errorCount;
-            writeTestName(testMethod.getName());
+            String testName = testMethod.getName();
+            writeTestName(testName);
             try {
                 testMethod.invoke(this);
             } catch (IllegalAccessException e) {
-                errln("Can't access test method " + testMethod.getName());
+                errln("Can't access test method " + testName);
             } catch (InvocationTargetException e) {
                 // Log exception first, that way if -nothrow is
                 // not an arg, the original exception is still logged
                 logExc(e);
                 errln(String.format("$$$ Uncaught exception thrown in %s," +
-                        " see above for cause", testMethod.getName()));
+                        " see above for cause", testName));
             }
             writeTestResult(errorCount - oldCount);
         }
@@ -104,16 +105,14 @@ public abstract class IntlTest {
                 System.out.println("Exception: " + e.toString() + e.getMessage());
             }
         }
-        if (nothrow) {
-            if (exitCode) {
-                System.exit(errorCount);
-            }
-            if (errorCount > 0) {
-                throw new RuntimeException(String.format(
-                        "$$$ %s FAILED with %s failures%n", testName, errorCount));
-            } else {
-                log.println(String.format("\t$$$ %s PASSED%n", testName));
-            }
+        if (exitCode) {
+            System.exit(errorCount);
+        }
+        if (errorCount > 0) {
+            throw new RuntimeException(String.format(
+                    "$$$ %s FAILED with %s failures%n", testName, errorCount));
+        } else {
+            log.println(String.format("\t$$$ %s PASSED%n", testName));
         }
     }
 
@@ -209,6 +208,10 @@ public abstract class IntlTest {
         needLineFeed = true;
     }
 
+    protected int getErrorCount() {
+        return errorCount;
+    }
+
     protected void writeTestResult(int count) {
         if (!needLineFeed) {
             indent(indentLevel);
@@ -221,10 +224,6 @@ public abstract class IntlTest {
         } else {
             log.println(" Passed");
         }
-    }
-
-    protected int getErrorCount() {
-        return errorCount;
     }
 
     /*
