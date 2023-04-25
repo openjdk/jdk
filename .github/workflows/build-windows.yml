@@ -92,12 +92,26 @@ jobs:
         id: gtest
         uses: ./.github/actions/get-gtest
 
+      - name: 'Check toolchain installed'
+        id: toolchain-check
+        run: |
+          set +e
+          '/c/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/vc/auxiliary/build/vcvars64.bat' -vcvars_ver=${{ inputs.msvc-toolset-version }}
+          if [ $? -eq 0 ]; then
+            echo "Toolchain is already installed"
+            echo "toolchain-installed=true" >> $GITHUB_OUTPUT
+          else
+            echo "Toolchain is not yet installed"
+            echo "toolchain-installed=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: 'Install toolchain and dependencies'
         run: |
           # Run Visual Studio Installer
           '/c/Program Files (x86)/Microsoft Visual Studio/Installer/vs_installer.exe' \
             modify --quiet --installPath 'C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise' \
             --add Microsoft.VisualStudio.Component.VC.${{ inputs.msvc-toolset-version }}.${{ inputs.msvc-toolset-architecture }}
+        if: steps.toolchain-check.outputs.toolchain-installed != 'true'
 
       - name: 'Configure'
         run: >
