@@ -104,7 +104,7 @@ public abstract class IntlTest {
                 System.out.println("Exception: " + e.toString() + e.getMessage());
             }
         }
-        if (noThrow) {
+        if (nothrow) {
             if (exitCode) {
                 System.exit(errorCount);
             }
@@ -126,7 +126,7 @@ public abstract class IntlTest {
             switch (arg) {
                 case "-verbose" -> verbose = true;
                 case "-prompt" -> prompt = true;
-                case "-nothrow" -> noThrow = true;
+                case "-nothrow" -> nothrow = true;
                 case "-exitcode" -> exitCode = true;
                 default -> {
                     Method m = testMethods.get(arg);
@@ -197,7 +197,7 @@ public abstract class IntlTest {
         }
         log.flush();
 
-        if (!noThrow) {
+        if (!nothrow) {
             throw new RuntimeException(message);
         }
     }
@@ -221,6 +221,10 @@ public abstract class IntlTest {
         } else {
             log.println(" Passed");
         }
+    }
+
+    protected int getErrorCount() {
+        return errorCount;
     }
 
     /*
@@ -259,7 +263,7 @@ public abstract class IntlTest {
     }
     private final String testName;
     private boolean     prompt;
-    private boolean     noThrow;
+    private boolean     nothrow;
     protected boolean   verbose;
     private boolean     exitCode;
     private PrintWriter log;
