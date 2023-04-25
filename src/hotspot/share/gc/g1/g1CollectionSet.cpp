@@ -365,7 +365,6 @@ void G1CollectionSet::prepare_optional_regions(G1CollectionSetRegionList* region
     assert(!r->in_collection_set(), "should not already be in the CSet");
 
     _g1h->register_optional_region_with_region_attr(r);
-//    log_debug(gc, ergo, cset)("Register region %u (%s) as optional", r->hrm_index(), r->get_short_type_str());
 
     r->set_index_in_opt_cset(cur_index++);
   }

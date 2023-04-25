@@ -45,8 +45,6 @@ class G1CollectionSetRegionList {
   GrowableArray<HeapRegion*> _regions;
   size_t _reclaimable_bytes;
 
-  HeapRegion* at(uint index);
-
 public:
   G1CollectionSetRegionList();
 
@@ -58,6 +56,8 @@ public:
 
   // Empty contents of the list.
   void clear();
+
+  HeapRegion* at(uint index);
 
   uint length() const { return (uint)_regions.length(); }
 
@@ -156,7 +156,7 @@ public:
   bool operator!=(const G1CollectionSetCandidatesIterator& rhs);
 };
 
-// Tracks collection set candidates, i.e. regions that should be evacuated soon.
+// Tracks all collection set candidates, i.e. regions that could/should be evacuated soon.
 //
 // These candidate regions are tracked in a list of regions, sorted by decreasing
 // "gc efficiency".
@@ -211,8 +211,8 @@ public:
 
   void sort_by_efficiency();
 
-  // Remove the given regions from the candidates. All of the given regions must
-  // be part of the candidates.
+  // Remove the given regions from the candidates. All given regions must be part
+  // of the candidates.
   void remove(G1CollectionSetRegionList* other);
 
   bool contains(const HeapRegion* r) const;
@@ -231,8 +231,6 @@ public:
   void verify() PRODUCT_RETURN;
 
   uint length() const { return marking_regions_length(); }
-
-  size_t total_reclaimable_bytes() const { return _reclaimable_bytes; }
 
   // Iteration
   G1CollectionSetCandidatesIterator begin() {
