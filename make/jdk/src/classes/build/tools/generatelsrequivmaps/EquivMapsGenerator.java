@@ -226,35 +226,10 @@ public class EquivMapsGenerator {
             writer.write(headerText);
             writer.write(getMapsText());
             writer.write(getlsrText());
-            for (String key : sortedLanguageMap1.keySet()) {
-                String value = sortedLanguageMap1.get(key);
-                writer.write(String.format(
-                        "        singleEquivMap.put(\"%s\", \"%s\");"
-                        , key, value));
-                writer.newLine();
-            }
-
+            writeEquiv(writer, "singleEquivMap", sortedLanguageMap1);
+            writeMultiEquiv(writer);
+            writeEquiv(writer, "regionVariantEquivMap", sortedRegionVariantMap);
             writer.newLine();
-            for (String key : sortedLanguageMap2.keySet()) {
-                String[] values = sortedLanguageMap2.get(key);
-
-                if (values.length >= 2) {
-                    writer.write(String.format(
-                            "        multiEquivsMap.put(\"%s\", new String[] {%s});"
-                            , key, generateValuesString(values)));
-                    writer.newLine();
-                }
-            }
-
-            writer.newLine();
-            for (String key : sortedRegionVariantMap.keySet()) {
-                String value = sortedRegionVariantMap.get(key);
-                writer.write(String.format(
-                        "        regionVariantEquivMap.put(\"%s\", \"%s\");"
-                        , key, value));
-                writer.newLine();
-            }
-
             writer.write(footerText);
         } catch (IOException ex) {
             ex.printStackTrace(System.err);
@@ -311,7 +286,7 @@ public class EquivMapsGenerator {
             """;
 
     private static String getMapsText() {
-        return """
+        return  """
                     static {
                         singleEquivMap = HashMap.newHashMap(%s);
                         multiEquivsMap = HashMap.newHashMap(%s);
@@ -324,10 +299,33 @@ public class EquivMapsGenerator {
     }
 
     private static final String getlsrText(){
-        return """
+        return  """
                         // This is an auto-generated file and should not be manually edited.
                         //   LSR Revision: %s
                 """.formatted(LSRrevisionDate);
+    }
+
+    private static void writeMultiEquiv(BufferedWriter writer) throws IOException {
+        for (String key : sortedLanguageMap2.keySet()) {
+            String[] values = sortedLanguageMap2.get(key);
+            if (values.length >= 2) {
+                writer.write(String.format(
+                        "        multiEquivsMap.put(\"%s\", new String[] {%s});"
+                        , key, generateValuesString(values)));
+                writer.newLine();
+            }
+        }
+    }
+
+    // Use for writing an equivlancy map with one value
+    private static void writeEquiv(BufferedWriter writer, String name, Map<String, String> map) throws IOException {
+        for (String key : map.keySet()) {
+            String value = map.get(key);
+            writer.write(String.format(
+                    "        %s.put(\"%s\", \"%s\");"
+                    , name, key, value));
+            writer.newLine();
+        }
     }
 
     private static String generateValuesString(String[] values) {
