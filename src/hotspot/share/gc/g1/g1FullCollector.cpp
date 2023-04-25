@@ -257,9 +257,9 @@ void G1FullCollector::complete_collection() {
 void G1FullCollector::before_marking_update_attribute_table(HeapRegion* hr) {
   if (hr->is_free()) {
     _region_attr_table.set_free(hr->hrm_index());
-  } else if (!hr->is_young_gc_movable()) {
-    // In the first attempt to do a full gc we do not move anything that young gc
-    // won't move either.
+  } else if (hr->is_humongous()) {
+    // Humongous objects will never be moved in the "main" compaction phase, but
+    // afterwards in a special phase if needed.
     _region_attr_table.set_skip_compacting(hr->hrm_index());
   } else {
     // Everything else should be compacted.

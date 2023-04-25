@@ -557,7 +557,7 @@ class FreeCSetClosure : public HeapRegionClosure {
     stats()->account_failed_region(r);
 
     G1GCPhaseTimes* p = _g1h->phase_times();
-    assert(r->is_young_gc_movable(), "Unexpected non-movable region at index %u", r->hrm_index());
+    assert(_g1h->policy()->is_young_gc_movable(r), "Unexpected non-movable region at index %u", r->hrm_index());
     assert(r->in_collection_set(), "Bad collection set");
 
     p->record_or_add_thread_work_item(G1GCPhaseTimes::RestoreRetainedRegions,

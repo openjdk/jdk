@@ -42,7 +42,7 @@ void G1DetermineCompactionQueueClosure::free_empty_humongous_region(HeapRegion* 
 inline bool G1DetermineCompactionQueueClosure::should_compact(HeapRegion* hr) const {
   // There is no need to iterate and forward objects in non-movable regions ie.
   // prepare them for compaction.
-  if (!hr->is_young_gc_movable()) {
+  if (!_g1h->policy()->is_young_gc_movable(hr)) {
     return false;
   }
   size_t live_words = _collector->live_words(hr->hrm_index());

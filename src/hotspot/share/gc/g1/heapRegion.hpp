@@ -402,10 +402,6 @@ public:
 
   bool is_old_or_humongous() const { return _type.is_old_or_humongous(); }
 
-  // A movable region contains objects which contents can be moved by young garbage collections.
-  // We move everything but humongous regions during young gc.
-  bool is_young_gc_movable() const;
-
   void set_free();
 
   void set_eden();

@@ -549,8 +549,4 @@ inline void HeapRegion::record_surv_words_in_group(size_t words_survived) {
   _surv_rate_group->record_surviving_words(age_in_group, words_survived);
 }
 
-inline bool HeapRegion::is_young_gc_movable() const {
-  return G1CollectedHeap::heap()->policy()->is_young_gc_movable(this);
-}
-
 #endif // SHARE_GC_G1_HEAPREGION_INLINE_HPP
