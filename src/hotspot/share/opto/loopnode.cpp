@@ -3123,6 +3123,17 @@ void IdealLoopTree::check_safepts(VectorSet &visited, Node_List &stack) {
             // Skip to head of inner loop
             assert(_phase->is_dominator(_head, nlpt->_head), "inner head dominated by outer head");
             n = nlpt->_head;
+            if (_head == n) {
+              // this and nlpt (inner loop) have the same loop head. This should not happen because
+              // during beautify_loops we call merge_many_backedges. However, infinite loops may not
+              // have been attached to the loop-tree during build_loop_tree before beautify_loops,
+              // but then attached in the build_loop_tree afterwards, and so still have unmerged
+              // backedges. Check if we are indeed in an infinite subgraph, and terminate the scan,
+              // since we have reached the loop head of this.
+              assert(_head->as_Region()->is_in_infinite_subgraph(),
+                     "only expect unmerged backedges in infinite loops");
+              break;
+            }
           }
         }
       }
