@@ -389,6 +389,13 @@ public abstract class AbstractThrowingPublishers implements HttpServerAdapters {
             String body = response.join().body();
             assertEquals(body, Stream.of(BODY.split("\\|")).collect(Collectors.joining()));
             if (!sameClient) {
+                // Wait for the client to be garbage collected.
+                // we use the ReferenceTracker API rather than HttpClient::close here,
+                // because these tests inject faults by throwing inside callbacks, which
+                // is more likely to get HttpClient::close wedged until jtreg times out.
+                // By using the ReferenceTracker, we will get some diagnosis about what
+                // is keeping the client alive if it doesn't get GC'ed within the
+                // expected time frame.
                 var tracker = TRACKER.getTracker(client);
                 client = null;
                 System.gc();
@@ -482,6 +489,13 @@ public abstract class AbstractThrowingPublishers implements HttpServerAdapters {
                 finisher.finish(where, response, thrower);
             }
             if (!sameClient) {
+                // Wait for the client to be garbage collected.
+                // we use the ReferenceTracker API rather than HttpClient::close here,
+                // because these tests inject faults by throwing inside callbacks, which
+                // is more likely to get HttpClient::close wedged until jtreg times out.
+                // By using the ReferenceTracker, we will get some diagnosis about what
+                // is keeping the client alive if it doesn't get GC'ed within the
+                // expected time frame.
                 var tracker = TRACKER.getTracker(client);
                 client = null;
                 System.gc();
