@@ -40,7 +40,6 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/vm_version.hpp"
-#include "sanitizers/leak.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/macros.hpp"
 
@@ -50,17 +49,14 @@ Compiler::Compiler() : AbstractCompiler(compiler_c1) {
 
 void Compiler::init_c1_runtime() {
   BufferBlob* buffer_blob = CompilerThread::current()->get_buffer_blob();
-  Arena* arena = new (mtCompiler) Arena(mtCompiler);
-  // Ignore leaked arena, it is used by ValueType and Interval during initialization.
-  LSAN_IGNORE_OBJECT(arena);
   Runtime1::initialize(buffer_blob);
   FrameMap::initialize();
   // initialize data structures
-  ValueType::initialize(arena);
+  ValueType::initialize();
   GraphBuilder::initialize();
   // note: to use more than one instance of LinearScan at a time this function call has to
   //       be moved somewhere outside of this constructor:
-  Interval::initialize(arena);
+  Interval::initialize();
 }
 
 

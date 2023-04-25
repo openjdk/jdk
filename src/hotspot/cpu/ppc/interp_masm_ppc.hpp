@@ -79,7 +79,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   // Load object from cpool->resolved_references(index).
   void load_resolved_reference_at_index(Register result, Register index, Register tmp1, Register tmp2,
-                                        Label *L_handle_null = NULL);
+                                        Label *L_handle_null = nullptr);
 
   // load cpool->resolved_klass_at(index)
   void load_resolved_klass_at_offset(Register Rcpool, Register Roffset, Register Rklass);
