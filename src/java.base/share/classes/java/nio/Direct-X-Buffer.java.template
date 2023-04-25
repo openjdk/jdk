@@ -449,8 +449,6 @@ class Direct$Type$Buffer$RW$$BO$
     private static final int APPEND_BUF_SIZE = 1024;
 
     private $Type$Buffer appendChars(CharSequence csq, int start, int end) {
-        checkSession();
-
         Objects.checkFromToIndex(start, end, csq.length());
 
         int pos = position();
