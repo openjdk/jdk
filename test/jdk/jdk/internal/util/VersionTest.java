@@ -86,10 +86,9 @@ public class VersionTest {
                 Arguments.of(new Version(2, 0), new Version(2, 1), -1),
                 Arguments.of(new Version(3, 3, 1), new Version(3, 3, 1), 0),
                 Arguments.of(new Version(3, 3, 1), new Version(3, 3, 0), +1),
-                Arguments.of(new Version(3, 3, 0), new Version(3, 3, 1), -1)
-                Arguments.of(new Version(2, 1), new Version(2, 1), 0),
+                Arguments.of(new Version(3, 3, 0), new Version(3, 3, 1), -1),
                 Arguments.of(new Version(2, 0), new Version(3, 0), -1),
-                Arguments.of(new Version(3, 0), new Version(2, 0), +1),
+                Arguments.of(new Version(3, 0), new Version(2, 0), +1)
         );
     }
 
