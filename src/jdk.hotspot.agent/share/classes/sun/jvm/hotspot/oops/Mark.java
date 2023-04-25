@@ -102,11 +102,6 @@ public class Mark extends VMObject {
 
   private static long maxAge;
 
-  /* Constants in markWord used by CMS. */
-  private static long cmsShift;
-  private static long cmsMask;
-  private static long sizeShift;
-
   public Mark(Address addr) {
     super(addr);
   }
@@ -202,5 +197,5 @@ public class Mark extends VMObject {
     }
   }
 
-  public long getSize() { return (long)(value() >> sizeShift); }
+  public long getSize() { return (long)value(); }
 }

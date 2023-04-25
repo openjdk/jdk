@@ -57,7 +57,6 @@ public abstract class Generation extends VMObject {
   private static int NAME_DEF_NEW;
   private static int NAME_PAR_NEW;
   private static int NAME_MARK_SWEEP_COMPACT;
-  private static int NAME_CONCURRENT_MARK_SWEEP;
   private static int NAME_OTHER;
 
   static {
