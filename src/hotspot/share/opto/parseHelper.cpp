@@ -680,11 +680,12 @@ void PEAState::validate() const {
 }
 #endif
 
-void PEAState::aliases(Unique_Node_List& nodes) const {
+int PEAState::objects(Unique_Node_List& nodes) const {
   _alias.iterate([&](Node* alias, ObjID obj){
-                   nodes.push(alias);
+                   nodes.push(obj);
                    return true;
                  });
+  return nodes.size();
 }
 
 Node* PEAState::get_cooked_obj(ObjID id) const{
@@ -713,31 +714,25 @@ Node* PEAState::get_cooked_obj(ObjID id) const{
 }
 
 AllocationStateMerger::AllocationStateMerger(PEAState& target) : _state(target) {}
-
+bool as_virtual(ObjectState* os) {
+  return os != nullptr && os->is_virtual();
+}
 void AllocationStateMerger::merge(const PEAState& newin, GraphKit* kit, RegionNode* region, int pnum) {
   Unique_Node_List set1, set2;
 
-  _state.aliases(set1);
-  newin.aliases(set2);
+  _state.objects(set1);
+  newin.objects(set2);
 
   VectorSet intersection = set1.member_set();
   intersection &= set2.member_set();
   set1.remove_useless_nodes(intersection);
 
   for (uint i = 0; i < set1.size(); ++i) {
-    Node* var = set1.at(i);
-    VirtualState* vs1 = _state.as_virtual(var);
-    VirtualState* vs2 = newin.as_virtual(var);
-    if (vs1 != nullptr && vs2 != nullptr) {
-#ifndef PRODUCT
-      if (Verbose) {
-        tty->print("merge vs1 = ");
-        vs1->print_on(tty);
-        tty->print("and vs2 = ");
-        vs2->print_on(tty);
-      }
-#endif
-      vs1->merge(vs2, kit, region, pnum);
+    ObjID obj = static_cast<ObjID>(set1.at(i));
+    ObjectState* os1 = _state.get_object_state(obj);
+    ObjectState* os2 = newin.get_object_state(obj);
+    if (as_virtual(os1) && as_virtual(os2)) {
+      os1->merge(os2, kit, region, pnum);
     }
   }
 }
