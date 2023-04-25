@@ -3943,7 +3943,7 @@ public class Check {
         // Match this scan stack: 1=JCMethodDecl, 2=JCExpressionStatement, 3=JCMethodInvocation
         private static final int MATCH_SCAN_DEPTH = 3;
 
-        private boolean constructor;        // this this method a constructor?
+        private boolean constructor;        // is this method a constructor?
         private JCReturn earlyReturn;       // first return prior to the super()/init(), if any
         private Name initCall;              // whichever of "super" or "init" we've seen already
         private int scanDepth;              // current scan recursion depth in method body
