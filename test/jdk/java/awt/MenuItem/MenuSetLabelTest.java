@@ -26,7 +26,7 @@
   @bug 4261935
   @summary Menu display problem when changing the text of the menu(window 98)
   @key headful
-  @run main/timeout=600 MenuSetLabelTest
+  @run main MenuSetLabelTest
 */
 
 import java.awt.BorderLayout;
