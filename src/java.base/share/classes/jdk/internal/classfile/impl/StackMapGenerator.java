@@ -680,13 +680,14 @@ public final class StackMapGenerator {
 
     private void processExceptionHandlerTargets(int bci, boolean this_uninit) {
         for (var ex : rawHandlers) {
-            if (bci >= ex.start && bci < ex.end) {
+            if (bci == ex.start || (currentFrame.localsChanged && bci > ex.start && bci < ex.end)) {
                 int flags = currentFrame.flags;
                 if (this_uninit) flags |= FLAG_THIS_UNINIT;
                 Frame newFrame = currentFrame.frameInExceptionHandler(flags, ex.catchType);
                 checkJumpTarget(newFrame, ex.handler);
             }
         }
+        currentFrame.localsChanged = false;
     }
 
     private void processLdc(int index) {
@@ -984,6 +985,7 @@ public final class StackMapGenerator {
         int flags;
         int frameMaxStack = 0, frameMaxLocals = 0;
         boolean dirty = false;
+        boolean localsChanged = false;
 
         private final ClassHierarchyImpl classHierarchy;
 
@@ -1062,6 +1064,7 @@ public final class StackMapGenerator {
             for (i = 0; i < localsSize; i++) {
                 if (locals[i].equals(old_object)) {
                     locals[i] = new_object;
+                    localsChanged = true;
                 }
             }
             for (i = 0; i < stackSize; i++) {
@@ -1101,6 +1104,7 @@ public final class StackMapGenerator {
 
         private void setLocalRawInternal(int index, Type type) {
             checkLocal(index);
+            localsChanged |= !type.equals(locals[index]);
             locals[index] = type;
         }
 
@@ -1147,6 +1151,7 @@ public final class StackMapGenerator {
             checkStack(src.stackSize - 1);
             if (src.stackSize > 0) System.arraycopy(src.stack, 0, stack, 0, src.stackSize);
             flags = src.flags;
+            localsChanged = true;
         }
 
         void checkAssignableTo(Frame target) {
