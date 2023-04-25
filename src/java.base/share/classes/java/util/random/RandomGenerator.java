@@ -269,7 +269,7 @@ public interface RandomGenerator {
      * The uniformity of the distribution of the {@code double}s produced by
      * the stream depends on the quality of the underlying {@link #nextLong(long)}.
      *
-     * @implNote The default implementation first determines the &delta; above.
+     * @implSpec The default implementation first determines the &delta; above.
      * It then computes both the smallest integer <i>k</i><sub><i>l</i></sub>
      * such that <i>k</i><sub><i>l</i></sub> &delta; lies <em>inside</em>
      * the given interval, and the smallest integer <i>n</i> > 0 such that
