@@ -26,13 +26,13 @@
  * @summary Checks getGraphics doesn't throw NullPointerExcepton for invalid colors and font.
  * @run main GetGraphicsTest
 */
-import java.awt.image.BufferedImage;
+
 import java.awt.Color;
-import java.awt.EventQueue;
 import java.awt.Font;
+import java.awt.Frame;
 import java.awt.Graphics;
 
-public class GetGraphicsTest {
+public class GetGraphicsTest extends Frame {
     public Color getBackground() {
         return null;
     }
@@ -44,10 +44,7 @@ public class GetGraphicsTest {
     }
 
     public static void main(String[] args) throws Exception {
-        EventQueue.invokeAndWait(() -> {
-            BufferedImage img = new BufferedImage(100, 100,
-                                                  BufferedImage.TYPE_INT_RGB);
-            Graphics g = img.getGraphics();
-        });
+        GetGraphicsTest test = new GetGraphicsTest();
+        Graphics g = test.getGraphics();
     }
 }// class GetGraphicsTest
