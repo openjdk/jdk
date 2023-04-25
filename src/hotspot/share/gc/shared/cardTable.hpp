@@ -82,6 +82,9 @@ protected:
   size_t last_valid_index() const {
     return cards_required(_whole_heap.word_size()) - 1;
   }
+
+  ~CardTable() = default;
+
 private:
   void initialize_covered_region(void* region0_start, void* region1_start);
 
