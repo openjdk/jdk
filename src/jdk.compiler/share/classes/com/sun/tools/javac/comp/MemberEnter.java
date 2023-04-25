@@ -34,6 +34,7 @@ import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.JCDiagnostic.Error;
+import com.sun.tools.javac.code.Source.Feature;
 
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Type.*;
@@ -55,6 +56,8 @@ import static com.sun.tools.javac.code.TypeTag.TYPEVAR;
 public class MemberEnter extends JCTree.Visitor {
     protected static final Context.Key<MemberEnter> memberEnterKey = new Context.Key<>();
 
+    /** The Source language setting. */
+    private final Source source;
     private final Enter enter;
     private final Log log;
     private final Check chk;
@@ -82,6 +85,7 @@ public class MemberEnter extends JCTree.Visitor {
         syms = Symtab.instance(context);
         annotate = Annotate.instance(context);
         types = Types.instance(context);
+        source = Source.instance(context);
         names = Names.instance(context);
         deferredLintHandler = DeferredLintHandler.instance(context);
     }
@@ -299,7 +303,7 @@ public class MemberEnter extends JCTree.Visitor {
                 v.setLazyConstValue(initEnv(tree, initEnv), attr, tree);
             }
         }
-        if (tree.name != names.underscore && chk.checkUnique(tree.pos(), v, enclScope)) {
+        if ((Feature.UNDERSCORE_IDENTIFIER.allowedInSource(source) || tree.name != names.underscore) && chk.checkUnique(tree.pos(), v, enclScope)) {
             chk.checkTransparentVar(tree.pos(), v, enclScope);
             enclScope.enter(v);
         } else if (v.owner.kind == MTH || (v.flags_field & (Flags.PRIVATE | Flags.FINAL | Flags.GENERATED_MEMBER | Flags.RECORD)) != 0) {
