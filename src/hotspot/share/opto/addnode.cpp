@@ -886,6 +886,19 @@ Node* XorINode::Ideal(PhaseGVN* phase, bool can_reshape) {
       phase->record_for_igvn(this);
     }
   }
+
+  // Try to convert (c ? 1 : 0) ^ 1 into !c ? 1 : 0. This pattern can occur after expansion of Conv2B nodes.
+  if (in1->Opcode() == Op_CMoveI && phase->type(in2) == TypeInt::ONE) {
+    // Ensure the inputs to the cmove are constants 1 or 0
+    if (phase->type(in1) == TypeInt::BOOL && in1->in(2)->is_Con() && in1->in(3)->is_Con()) {
+      int cmp_op = in1->in(1)->in(1)->Opcode();
+      if (cmp_op == Op_CmpI || cmp_op == Op_CmpP) {
+        // Flip the sense of comparison in the bool and return a new cmove
+        return new CMoveINode(phase->transform(in1->in(1)->as_Bool()->negate(phase)), in1->in(2), in1->in(3),TypeInt::BOOL);
+      }
+    }
+  }
+
   return AddNode::Ideal(phase, can_reshape);
 }
 

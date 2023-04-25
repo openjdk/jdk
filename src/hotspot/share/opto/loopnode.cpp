@@ -561,7 +561,7 @@ void PhaseIdealLoop::add_empty_predicate(Deoptimization::DeoptReason reason, Nod
     Node *cont = _igvn.intcon(1);
     Node* opq = new Opaque1Node(C, cont);
     _igvn.register_new_node_with_optimizer(opq);
-    Node *bol = new Conv2BNode(Compile::current(), opq);
+    Node *bol = new Conv2BNode(opq);
     _igvn.register_new_node_with_optimizer(bol);
     set_subtree_ctrl(bol, false);
     IfNode* iff = new IfNode(inner_head->in(LoopNode::EntryControl), bol, PROB_MAX, COUNT_UNKNOWN);

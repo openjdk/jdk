@@ -33,13 +33,11 @@
 // Convert int/pointer to a Boolean.  Map zero to zero, all else to 1.
 class Conv2BNode : public Node {
   public:
-  Conv2BNode(Compile* C, Node* i) : Node(nullptr, i) {
-    init_flags(Flag_is_macro);
-    C->add_macro_node(this);
-  }
+  Conv2BNode(Node* i) : Node(nullptr, i) {}
   virtual int Opcode() const;
   virtual const Type *bottom_type() const { return TypeInt::BOOL; }
   virtual Node* Identity(PhaseGVN* phase);
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual uint  ideal_reg() const { return Op_RegI; }
 };

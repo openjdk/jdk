@@ -3999,7 +3999,7 @@ void GraphKit::add_empty_predicate_impl(Deoptimization::DeoptReason reason, int 
 
   Node *cont    = _gvn.intcon(1);
   Node* opq     = _gvn.transform(new Opaque1Node(C, cont));
-  Node *bol     = _gvn.transform(new Conv2BNode(Compile::current(), opq));
+  Node *bol     = _gvn.transform(new Conv2BNode(opq));
   IfNode* iff   = create_and_map_if(control(), bol, PROB_MAX, COUNT_UNKNOWN);
   Node* iffalse = _gvn.transform(new IfFalseNode(iff));
   C->add_predicate_opaq(opq);

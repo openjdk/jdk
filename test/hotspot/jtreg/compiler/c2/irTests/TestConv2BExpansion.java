@@ -30,10 +30,11 @@ import jdk.test.lib.Utils;
 
 /*
  * @test
- * @summary Test that patterns leading to Conv2B are correctly macro expanded.
+ * @summary Test that patterns leading to Conv2B are correctly expanded.
  * @bug 8051725
  * @library /test/lib /
  * @requires vm.compiler2.enabled
+ * @requires os.arch == "x86_64" | os.arch == "amd64" | os.arch == "aarch64"
  * @run driver compiler.c2.irTests.TestConv2BExpansion
  */
 public class TestConv2BExpansion {

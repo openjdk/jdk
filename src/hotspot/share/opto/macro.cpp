@@ -2374,7 +2374,6 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
         assert(n->Opcode() == Op_LoopLimit ||
                n->Opcode() == Op_Opaque3   ||
                n->Opcode() == Op_Opaque4   ||
-               n->Opcode() == Op_Conv2B    ||
                BarrierSet::barrier_set()->barrier_set_c2()->is_gc_barrier_node(n),
                "unknown node type in macro list");
       }
@@ -2458,41 +2457,6 @@ bool PhaseMacroExpand::expand_macro_nodes() {
       } else if (n->Opcode() == Op_OuterStripMinedLoop) {
         n->as_OuterStripMinedLoop()->adjust_strip_mined_loop(&_igvn);
         C->remove_macro_node(n);
-        success = true;
-      } else if (n->Opcode() == Op_Conv2B) {
-        // Conv2B nodes convert an integer (or pointer) to a boolean through a '== 0' or '== null' check.
-        // As this conversion is essentially a special case of a conditional move, it can be generalized before going to the backend.
-
-        // Conv2B nodes can be created with an xor of one, flipping the result. Try to detect that pattern.
-        Node* flip_xor = nullptr;
-        if (n->outcnt() == 1) {
-          Node* n_out = n->unique_out();
-          if (n_out->Opcode() == Op_XorI && _igvn.type(n_out->in(2)) == TypeInt::ONE) {
-            flip_xor = n_out;
-          }
-        }
-
-        // Get the type of comparison to make
-        const Type* t = _igvn.type(n->in(1));
-        Node* cmp = nullptr;
-        if (t->isa_int()) {
-          cmp = _igvn.transform(new CmpINode(n->in(1), _igvn.intcon(0)));
-        } else if (t->isa_ptr()) {
-          cmp = _igvn.transform(new CmpPNode(n->in(1), _igvn.zerocon(BasicType::T_OBJECT)));
-        } else {
-          assert(false, "Unrecognized comparison for Conv2B: %s", NodeClassNames[n->in(1)->Opcode()]);
-        }
-
-        Node* bol = _igvn.transform(new BoolNode(cmp, flip_xor == nullptr ? BoolTest::eq : BoolTest::ne));
-        Node* cmov = _igvn.transform(new CMoveINode(bol, _igvn.intcon(1), _igvn.intcon(0), TypeInt::BOOL));
-        // If the xor is found then replace it with the cmov, subsuming its outputs. If not, replace the Conv2B node.
-        _igvn.replace_node(flip_xor == nullptr ? n : flip_xor, cmov);
-
-        // If the xor was subsumed, the Conv2B node needs to be removed as it's now dead.
-        if (flip_xor != nullptr) {
-          _igvn.remove_dead_node(n);
-          C->remove_macro_node(n);
-        }
         success = true;
       }
       assert(!success || (C->macro_count() == (old_macro_count - 1)), "elimination must have deleted one node from macro list");
