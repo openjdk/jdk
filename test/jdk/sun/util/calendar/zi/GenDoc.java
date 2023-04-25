@@ -158,7 +158,7 @@ class GenDoc extends BackEnd {
                 mapList = new HashMap<String, LatitudeAndLongitude>();
                 FileReader fr = new FileReader(Main.getMapFile());
                 BufferedReader in = new BufferedReader(fr);
-                
+
                 if (Main.getMapFile() != null) {
                     String line;
                     while ((line = in.readLine()) != null) {
