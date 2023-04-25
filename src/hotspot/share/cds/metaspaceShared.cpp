@@ -899,7 +899,7 @@ void MetaspaceShared::unrecoverable_writing_error(const char* message) {
   if (message != nullptr) {
     log_error(cds)("%s", message);
   }
-  vm_exit(1);
+  vm_direct_exit(1);
 }
 
 // We have finished dumping the static archive. At this point, there may be pending VM
