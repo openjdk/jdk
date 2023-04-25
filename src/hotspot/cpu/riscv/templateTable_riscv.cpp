@@ -145,18 +145,6 @@ Address TemplateTable::at_bcp(int offset) {
   return Address(xbcp, offset);
 }
 
-void TemplateTable::load_unsigned_short_at_bcp(Register dst, int offset, Register tmp) {
-  if (AvoidUnalignedAccesses && (offset % 2)) {
-    // minus 30k misalligned accesses on java -version
-    __ lbu(tmp, TemplateTable::at_bcp(offset));
-    __ lbu(dst, TemplateTable::at_bcp(offset + 1));
-    __ slli(dst, dst, 8);
-    __ add(dst, tmp, dst);
-  } else {
-    __ lhu(dst, TemplateTable::at_bcp(offset));
-  }
-}
-
 void TemplateTable::patch_bytecode(Bytecodes::Code bc, Register bc_reg,
                                    Register temp_reg, bool load_bc_into_bc_reg /*=true*/,
                                    int byte_no) {
@@ -292,7 +280,14 @@ void TemplateTable::bipush() {
 
 void TemplateTable::sipush() {
   transition(vtos, itos);
-  load_unsigned_short_at_bcp(x10, 1, t1);
+  if (AvoidUnalignedAccesses) {
+    __ lbu(t1, TemplateTable::at_bcp(1));
+    __ lbu(x10, TemplateTable::at_bcp(2));
+    __ slli(x10, x10, 8);
+    __ add(x10, t1, x10);
+  } else {
+    __ load_unsigned_short(x10, at_bcp(1));
+  }
   __ revb_w_w(x10, x10);
   __ sraiw(x10, x10, 16);
 }
@@ -658,7 +653,7 @@ void TemplateTable::aload() {
 }
 
 void TemplateTable::locals_index_wide(Register reg) {
-  load_unsigned_short_at_bcp(reg, 2, t1);
+  __ lhu(reg, at_bcp(2));
   __ revb_h_h_u(reg, reg); // reverse bytes in half-word and zero-extend
   __ neg(reg, reg);
 }
@@ -671,7 +666,7 @@ void TemplateTable::wide_iload() {
 
 void TemplateTable::wide_lload() {
   transition(vtos, ltos);
-  load_unsigned_short_at_bcp(x11, 2, t1);
+  __ lhu(x11, at_bcp(2));
   __ revb_h_h_u(x11, x11); // reverse bytes in half-word and zero-extend
   __ slli(x11, x11, LogBytesPerWord);
   __ sub(x11, xlocals, x11);
@@ -686,7 +681,7 @@ void TemplateTable::wide_fload() {
 
 void TemplateTable::wide_dload() {
   transition(vtos, dtos);
-  load_unsigned_short_at_bcp(x11, 2, t1);
+  __ lhu(x11, at_bcp(2));
   __ revb_h_h_u(x11, x11); // reverse bytes in half-word and zero-extend
   __ slli(x11, x11, LogBytesPerWord);
   __ sub(x11, xlocals, x11);
@@ -1621,7 +1616,7 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
 
   // load branch displacement
   if (!is_wide) {
-    load_unsigned_short_at_bcp(x12, 1, t1);
+    __ lhu(x12, at_bcp(1));
     __ revb_h_h(x12, x12); // reverse bytes in half-word and sign-extend
   } else {
     __ lwu(x12, at_bcp(1));

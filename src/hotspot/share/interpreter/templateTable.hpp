@@ -100,9 +100,6 @@ class TemplateTable: AllStatic {
 
   // special registers
   static inline Address at_bcp(int offset);
-#ifdef RISCV64
-  static inline void load_unsigned_short_at_bcp(Register dst, int offset, Register tmp);
-#endif
 
   // helpers
   static void unimplemented_bc();
