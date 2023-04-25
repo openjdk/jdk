@@ -2662,8 +2662,6 @@ void TemplateTable::load_invokedynamic_entry(Register method) {
   // compute return type
   __ ldrb(index, Address(cache, in_bytes(ResolvedIndyEntry::result_type_offset())));
   // load return address
-  // Return address is loaded into link register(lr) and not pushed to the stack
-  // like x86
   {
     const address table_addr = (address) Interpreter::invoke_return_entry_table_for(code);
     __ mov_address(Rtemp, table_addr);
