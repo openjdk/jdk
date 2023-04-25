@@ -281,8 +281,8 @@ void TemplateTable::bipush() {
 void TemplateTable::sipush() {
   transition(vtos, itos);
   if (AvoidUnalignedAccesses) {
-    __ lbu(t1, TemplateTable::at_bcp(1));
-    __ lbu(x10, TemplateTable::at_bcp(2));
+    __ lbu(t1, at_bcp(1));
+    __ lbu(x10, at_bcp(2));
     __ slli(x10, x10, 8);
     __ add(x10, t1, x10);
   } else {
@@ -1616,7 +1616,14 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
 
   // load branch displacement
   if (!is_wide) {
-    __ lhu(x12, at_bcp(1));
+    if (AvoidUnalignedAccesses) {
+        __ lbu(t1, at_bcp(1));
+        __ lbu(x12, at_bcp(2));
+        __ slli(x12, x12, 8);
+        __ add(x12, t1, x12);
+      } else {
+        __ lhu(x12, at_bcp(1));
+      }
     __ revb_h_h(x12, x12); // reverse bytes in half-word and sign-extend
   } else {
     __ lwu(x12, at_bcp(1));
