@@ -2253,6 +2253,8 @@ public:
   }
 
   bool set_thread(oop o);
+  // sets the thread and reports the reference to it with the specified kind.
+  bool set_thread(jvmtiHeapReferenceKind kind, oop o);
 
   bool do_frame(vframe* vf);
 };
@@ -2266,7 +2268,12 @@ bool StackRootCollector::set_thread(oop o) {
   depth = 0;
   last_entry_frame = nullptr;
 
-  return CallbackInvoker::report_simple_root(JVMTI_HEAP_REFERENCE_THREAD, threadObj);
+  return true;
+}
+
+bool StackRootCollector::set_thread(jvmtiHeapReferenceKind kind, oop o) {
+  return set_thread(o)
+         && CallbackInvoker::report_simple_root(kind, threadObj);
 }
 
 bool StackRootCollector::do_frame(vframe* vf) {
@@ -2788,7 +2795,7 @@ inline bool VM_HeapWalkOperation::collect_stack_roots(JavaThread* java_thread,
     // this may be only platform thread
     assert(mounted_vt == nullptr, "must be");
 
-    if (!stack_collector.set_thread(threadObj)) {
+    if (!stack_collector.set_thread(JVMTI_HEAP_REFERENCE_THREAD, threadObj)) {
         return false;
     }
 
@@ -2811,7 +2818,8 @@ inline bool VM_HeapWalkOperation::collect_stack_roots(JavaThread* java_thread,
 
       frame f = java_thread->last_frame();
       vframe* vf = vframe::new_vframe(&f, &reg_map, java_thread);
-      if (!stack_collector.set_thread(mounted_vt)) {
+      // report virtual thread as JVMTI_HEAP_REFERENCE_OTHER.
+      if (!stack_collector.set_thread(JVMTI_HEAP_REFERENCE_OTHER, mounted_vt)) {
         return false;
       }
       // split virtual thread and carrier thread stacks by vthread entry ("enterSpecial") frame,
@@ -2834,7 +2842,7 @@ inline bool VM_HeapWalkOperation::collect_stack_roots(JavaThread* java_thread,
                         RegisterMap::WalkContinuation::skip);
 
     vframe* vf = JvmtiEnvBase::get_cthread_last_java_vframe(java_thread, &reg_map);
-    if (!stack_collector.set_thread(threadObj)) {
+    if (!stack_collector.set_thread(JVMTI_HEAP_REFERENCE_THREAD, threadObj)) {
       return false;
     }
     while (vf != nullptr) {
@@ -2898,6 +2906,7 @@ inline bool VM_HeapWalkOperation::collect_vthread_stack_roots(oop vt) {
   JNILocalRootsClosure blk;
   // JavaThread is not required for unmounted virtual threads
   StackRootCollector stack_collector(tag_map(), &blk, nullptr);
+  // reference to the vthread is already reported.
   if (!stack_collector.set_thread(vt)) {
     return false;
   }
