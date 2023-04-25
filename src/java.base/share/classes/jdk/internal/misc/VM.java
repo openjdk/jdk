@@ -517,7 +517,7 @@ public class VM {
     /**
      * Gather all the "main" methods in the class heirarchy.
      *
-     * @param declc  the declaring class
+     * @param declc  the top level declaring class
      * @param refc   the declaring class or super class
      * @param mains  accumulated main methods
      */
@@ -531,8 +531,8 @@ public class VM {
                 if ("main".equals(method.getName()) &&
                     !isPrivate(method) &&
                     (argc == 0 || argc == 1 && method.getParameterTypes()[0] == String[].class) &&
-                    // static methods must be public or in main class
-                    (declc == refc || isPublic(method) || !isStatic(method))
+                    // Only statics in the declaring class
+                    (!isStatic(method) || declc == refc)
                 ) {
                     mains.add(method);
                 }
@@ -542,7 +542,7 @@ public class VM {
 
     /**
      * Comparator for two methods.
-     * Priority order is
+     * Priority order is;
      * static < non-static,
      * public < non-public,
      * string arg < no arg and
@@ -551,7 +551,7 @@ public class VM {
      * @param a  first method
      * @param b  second method
      *
-     * @return -1, 0, 1 to represent <. == or &gt;.
+     * @return -1, 0 or 1 to represent higher priority. equals priority or lesser priority.
      */
     private static int compareMethods(Method a, Method b) {
         int aMods = a.getModifiers();
@@ -592,29 +592,34 @@ public class VM {
      * @param mainClass main class
      */
     public static Method findMainMethod(Class<?> mainClass) throws NoSuchMethodException {
-        String[] args = getRuntimeArguments();
-        boolean enablePreview = args != null &&  List.of(args).contains("--enable-preview");
-        boolean earlyAccess = Runtime.version().pre().orElse("").equals("ea");
+        try {
+            Method mainMethod = mainClass.getMethod("main", String[].class);
 
-        if (!enablePreview && !earlyAccess) {
+            if (mainMethod.getDeclaringClass() != mainClass) {
+                System.err.println("WARNING: static main in super class will be deprecated.");
+            }
+
             return mainClass.getMethod("main", String[].class);
+        } catch (NoSuchMethodException nsme) {
+            String[] args = getRuntimeArguments();
+            boolean enablePreview = args != null && List.of(args).contains("--enable-preview");
+
+            if (!enablePreview) {
+                throw nsme;
+            }
+
+            List<Method> mains = new ArrayList<>();
+            gatherMains(mainClass, mainClass, mains);
+
+            if (mains.isEmpty()) {
+                throw new NoSuchMethodException("No main method found");
+            }
+
+            mains.sort(VM::compareMethods);
+            Method mainMethod = mains.get(0);
+
+            return mainMethod;
         }
-
-        List<Method> mains = new ArrayList<>();
-        gatherMains(mainClass, mainClass, mains);
-
-        if (mains.isEmpty()) {
-            throw new NoSuchMethodException("No main method found");
-        }
-
-        mains.sort(VM::compareMethods);
-        Method mainMethod = mains.get(0);
-
-        if (isStatic(mainMethod) && mainMethod.getDeclaringClass() != mainClass) {
-            System.err.println("WARNING: static main in super class will be deprecated.");
-        }
-
-        return mainMethod;
     }
 
 }

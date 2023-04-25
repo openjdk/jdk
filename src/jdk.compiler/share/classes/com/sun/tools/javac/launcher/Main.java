@@ -442,7 +442,8 @@ public class Main {
             }
             main.setAccessible(true);
             int mods = main.getModifiers();
-            if ((mods & Modifier.STATIC) != 0) {
+            boolean isStatic = Modifier.isStatic(mods);
+            if (isStatic) {
                 if (main.getParameterCount() == 0) {
                     main.invoke(appClass);
                 } else {

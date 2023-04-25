@@ -868,28 +868,21 @@ public final class LauncherHelper {
         } catch (NoSuchMethodException nsme) {
             // invalid main or not FX application, abort with an error
             abort(null, "java.launcher.cls.error4", mainClass.getName(),
-                    JAVAFX_APPLICATION_CLASS_NAME);
+                  JAVAFX_APPLICATION_CLASS_NAME);
         } catch (Throwable throwable) {
             if (mainClass.getModule().isNamed()) {
                 abort(throwable, "java.launcher.module.error5",
-                        mainClass.getName(), mainClass.getModule().getName(),
-                        throwable.getClass().getName(),
-                        throwable.getLocalizedMessage());
+                      mainClass.getName(), mainClass.getModule().getName(),
+                      throwable.getClass().getName(), throwable.getLocalizedMessage());
             } else {
                 abort(throwable, "java.launcher.cls.error7", mainClass.getName(),
-                        throwable.getClass().getName(),
-                        throwable.getLocalizedMessage());
+                      throwable.getClass().getName(),
+                      throwable.getLocalizedMessage());
             }
         }
 
-        int mod = mainMethod.getModifiers();
-        boolean isPublic = Modifier.isStatic(mod);
-        boolean isStatic = Modifier.isStatic(mod);
-
-        if (isStatic && !isPublic && mainMethod.getDeclaringClass() != mainClass) {
-            abort(null, "java.launcher.cls.error2", "static",
-                    mainMethod.getDeclaringClass().getName());
-        }
+        int mods = mainMethod.getModifiers();
+        boolean isStatic = Modifier.isStatic(mods);
 
         if (!isStatic) {
             try {
@@ -911,7 +904,7 @@ public final class LauncherHelper {
 
         boolean hasArgs = mainMethod.getParameterCount() != 0;
         mainType = (isStatic ? 0 : MAIN_NONSTATIC) |
-                (hasArgs ? 0 : MAIN_WITHOUT_ARGS);
+                   (hasArgs ? 0 : MAIN_WITHOUT_ARGS);
     }
 
     private static final String encprop = "sun.jnu.encoding";

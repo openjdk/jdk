@@ -213,7 +213,7 @@ public class Preview {
             case PATTERN_SWITCH -> true;
             case UNCONDITIONAL_PATTERN_IN_INSTANCEOF -> true;
             case RECORD_PATTERNS -> true;
-            case ANONYMOUS_MAIN_CLASSES -> !Runtime.version().pre().orElse("").equals("ea");
+            case ANONYMOUS_MAIN_CLASSES -> true;
 
             //Note: this is a backdoor which allows to optionally treat all features as 'preview' (for testing).
             //When real preview features will be added, this method can be implemented to return 'true'
