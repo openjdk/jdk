@@ -79,7 +79,7 @@ class Menu1 extends Frame {
     MenuBar mb1 = new MenuBar();
     Menu f = new Menu(s1);
     Menu m = new Menu(s1);
-    boolean  flag = true;
+    boolean flag = true;
 
     public Menu1()
     {
