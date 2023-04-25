@@ -56,7 +56,7 @@ public sealed interface ModuleDesc
     }
 
     /**
-     * Returns the module name of this {@linkplain ModuleDesc}.
+     * Returns the module name of this {@link ModuleDesc}.
      *
      * @return the module name
      */
