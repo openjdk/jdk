@@ -30,7 +30,7 @@
 
   enum {
     nof_reg_args = 5,   // Registers Z_ARG1 - Z_ARG5 are available for parameter passing.
-    first_available_sp_in_frame = frame::z_abi_16_size,
+    first_available_sp_in_frame = frame::z_common_abi_size,
     frame_pad_in_bytes = 0
   };
 
