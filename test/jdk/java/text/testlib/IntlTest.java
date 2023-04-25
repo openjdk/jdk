@@ -223,6 +223,20 @@ public abstract class IntlTest {
         }
     }
 
+    /*
+     * Returns a space-delimited hex String.
+     */
+    protected static String toHexString(String s) {
+        StringBuilder sb = new StringBuilder(" ");
+
+        for (int i = 0; i < s.length(); i++) {
+            sb.append(Integer.toHexString(s.charAt(i)));
+            sb.append(' ');
+        }
+
+        return sb.toString();
+    }
+
     private void indent(int distance) {
         if (needLineFeed) {
             log.println(" {");
