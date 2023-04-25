@@ -172,7 +172,7 @@ public class GuaranteedAsyncDeflationIntervalTest {
             "-Xmx100M",
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:GuaranteedAsyncDeflationInterval=5000",
-            "-XX:MonitorUsedDeflationThreshold=10",
+            "-XX:MonitorUsedDeflationThreshold=1",
             "-Xlog:monitorinflation=info",
             "GuaranteedAsyncDeflationIntervalTest$Test");
 
