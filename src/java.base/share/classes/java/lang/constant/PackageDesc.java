@@ -29,26 +29,26 @@ import static java.util.Objects.requireNonNull;
 /**
  * A nominal descriptor for a {@code Package} constant {@jvms 4.4.12}.
  *
- * <p>To create a {@linkplain PackageDesc} for a package, use the {@link #of} or
+ * <p>To create a {@link PackageDesc} for a package, use the {@link #of} or
  * {@link #ofInternalName(String)} method.
  *
- * @jvms 4.4.11 The CONSTANT_Module_info Structure
+ * @jvms 4.4.12 The CONSTANT_Package_info Structure
  * @since 21
  */
 public sealed interface PackageDesc
         permits PackageDescImpl {
 
     /**
-     * Returns a {@linkplain PackageDesc} for a package,
+     * Returns a {@link PackageDesc} for a package,
      * given the name of the package, such as {@code "java.lang"}.
-     * <p>
-     * {@jls 13.1}
      *
      * @param name the fully qualified (dot-separated) package name
-     * @return a {@linkplain PackageDesc} describing the desired package
+     * @return a {@link PackageDesc} describing the desired package
      * @throws NullPointerException if the argument is {@code null}
      * @throws IllegalArgumentException if the name string is not in the
      * correct format
+     * @jls 6.7 Fully Qualified Names and Canonical Names
+     * @see PackageDesc#ofInternalName(String)
      */
     static PackageDesc of(String name) {
         ConstantUtils.validateBinaryPackageName(requireNonNull(name));
@@ -56,19 +56,18 @@ public sealed interface PackageDesc
     }
 
     /**
-     * Returns a {@linkplain PackageDesc} for a package,
+     * Returns a {@link PackageDesc} for a package,
      * given the name of the package in internal form,
      * such as {@code "java/lang"}.
-     * <p>
-     * {@jvms 4.2.1} In this internal form, the ASCII periods (.) that normally
-     * separate the identifiers
-     * which make up the binary name are replaced by ASCII forward slashes (/).
+     *
      * @param name the fully qualified package name, in internal (slash-separated) form
      * form
-     * @return a {@linkplain PackageDesc} describing the desired package
+     * @return a {@link PackageDesc} describing the desired package
      * @throws NullPointerException if the argument is {@code null}
      * @throws IllegalArgumentException if the name string is not in the
      * correct format
+     * @jvms 4.2.1 Binary Class and Interface Names
+     * @see PackageDesc#of(String)
      */
     static PackageDesc ofInternalName(String name) {
         ConstantUtils.validateInternalPackageName(requireNonNull(name));
@@ -77,19 +76,21 @@ public sealed interface PackageDesc
 
     /**
      * Returns the fully qualified (slash-separated) internal package name
-     * of this {@linkplain PackageDesc}.
+     * of this {@link PackageDesc}.
      *
      * @return the package name, or the empty string for the
      * unnamed package
+     * @see PackageDesc#packageName()
      */
     String packageInternalName();
 
     /**
      * Returns the fully qualified (dot-separated) binary package name
-     * of this {@linkplain PackageDesc}.
+     * of this {@link PackageDesc}.
      *
      * @return the package name, or the empty string for the
      * unnamed package
+     * @see PackageDesc#packageInternalName()
      */
     default String packageName() {
         return ConstantUtils.internalToBinary(packageInternalName());
