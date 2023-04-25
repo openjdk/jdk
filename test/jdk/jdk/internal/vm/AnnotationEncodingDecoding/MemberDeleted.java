@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -22,15 +20,14 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package jdk.internal.vm.test;
 
-package sun.security.util;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 
-import java.security.Permission;
-
-/**
- * A factory object that creates Permission objects.
- */
-
-public interface PermissionFactory<T extends Permission> {
-    T newPermission(String name);
+@Retention(RetentionPolicy.RUNTIME)
+public @interface MemberDeleted {
+    String value();
+    int retained();
+    int deleted();
 }

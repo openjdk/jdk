@@ -138,98 +138,6 @@ class SystemProperty : public PathString {
   SystemProperty(const char* key, const char* value, bool writeable, bool internal = false);
 };
 
-
-// For use by -agentlib, -agentpath and -Xrun
-class AgentLibrary : public CHeapObj<mtArguments> {
-  friend class AgentLibraryList;
-public:
-  // Is this library valid or not. Don't rely on os_lib == nullptr as statically
-  // linked lib could have handle of RTLD_DEFAULT which == 0 on some platforms
-  enum AgentState {
-    agent_invalid = 0,
-    agent_valid   = 1
-  };
-
- private:
-  char*           _name;
-  char*           _options;
-  void*           _os_lib;
-  bool            _is_absolute_path;
-  bool            _is_static_lib;
-  bool            _is_instrument_lib;
-  AgentState      _state;
-  AgentLibrary*   _next;
-
- public:
-  // Accessors
-  const char* name() const                  { return _name; }
-  char* options() const                     { return _options; }
-  bool is_absolute_path() const             { return _is_absolute_path; }
-  void* os_lib() const                      { return _os_lib; }
-  void set_os_lib(void* os_lib)             { _os_lib = os_lib; }
-  AgentLibrary* next() const                { return _next; }
-  bool is_static_lib() const                { return _is_static_lib; }
-  bool is_instrument_lib() const            { return _is_instrument_lib; }
-  void set_static_lib(bool is_static_lib)   { _is_static_lib = is_static_lib; }
-  bool valid()                              { return (_state == agent_valid); }
-  void set_valid()                          { _state = agent_valid; }
-
-  // Constructor
-  AgentLibrary(const char* name, const char* options, bool is_absolute_path,
-               void* os_lib, bool instrument_lib=false);
-};
-
-// maintain an order of entry list of AgentLibrary
-class AgentLibraryList {
- private:
-  AgentLibrary*   _first;
-  AgentLibrary*   _last;
- public:
-  bool is_empty() const                     { return _first == nullptr; }
-  AgentLibrary* first() const               { return _first; }
-
-  // add to the end of the list
-  void add(AgentLibrary* lib) {
-    if (is_empty()) {
-      _first = _last = lib;
-    } else {
-      _last->_next = lib;
-      _last = lib;
-    }
-    lib->_next = nullptr;
-  }
-
-  // search for and remove a library known to be in the list
-  void remove(AgentLibrary* lib) {
-    AgentLibrary* curr;
-    AgentLibrary* prev = nullptr;
-    for (curr = first(); curr != nullptr; prev = curr, curr = curr->next()) {
-      if (curr == lib) {
-        break;
-      }
-    }
-    assert(curr != nullptr, "always should be found");
-
-    if (curr != nullptr) {
-      // it was found, by-pass this library
-      if (prev == nullptr) {
-        _first = curr->_next;
-      } else {
-        prev->_next = curr->_next;
-      }
-      if (curr == _last) {
-        _last = prev;
-      }
-      curr->_next = nullptr;
-    }
-  }
-
-  AgentLibraryList() {
-    _first = nullptr;
-    _last = nullptr;
-  }
-};
-
 // Helper class for controlling the lifetime of JavaVMInitArgs objects.
 class ScopedVMInitArgs;
 
@@ -330,18 +238,6 @@ class Arguments : AllStatic {
 
   // Value of the conservative maximum heap alignment needed
   static size_t  _conservative_max_heap_alignment;
-
-  // -Xrun arguments
-  static AgentLibraryList _libraryList;
-  static void add_init_library(const char* name, const char* options);
-
-  // -agentlib and -agentpath arguments
-  static AgentLibraryList _agentList;
-  static void add_init_agent(const char* name, const char* options, bool absolute_path);
-  static void add_instrument_agent(const char* name, const char* options, bool absolute_path);
-
-  // Late-binding agents not started via arguments
-  static void add_loaded_agent(AgentLibrary *agentLib);
 
   // Operation modi
   static Mode _mode;
@@ -541,17 +437,6 @@ class Arguments : AllStatic {
   static bool created_by_java_launcher();
   // -Dsun.java.launcher.is_altjvm
   static bool sun_java_launcher_is_altjvm();
-
-  // -Xrun
-  static AgentLibrary* libraries()          { return _libraryList.first(); }
-  static bool init_libraries_at_startup()   { return !_libraryList.is_empty(); }
-  static void convert_library_to_agent(AgentLibrary* lib)
-                                            { _libraryList.remove(lib);
-                                              _agentList.add(lib); }
-
-  // -agentlib -agentpath
-  static AgentLibrary* agents()             { return _agentList.first(); }
-  static bool init_agents_at_startup()      { return !_agentList.is_empty(); }
 
   // abort, exit, vfprintf hooks
   static abort_hook_t    abort_hook()       { return _abort_hook; }
