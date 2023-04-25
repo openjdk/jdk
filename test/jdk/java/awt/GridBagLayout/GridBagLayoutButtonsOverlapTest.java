@@ -78,7 +78,7 @@ public class GridBagLayoutButtonsOverlapTest {
         b4 = makeButton("button4", gridbag, c);
 
         c.weightx = 0.0;
-        b5 =  makeButton("button5", gridbag, c);
+        b5 = makeButton("button5", gridbag, c);
 
         c.gridwidth = GridBagConstraints.RELATIVE;
         b6 = makeButton("button6", gridbag, c);
@@ -104,17 +104,17 @@ public class GridBagLayoutButtonsOverlapTest {
         frame.validate();
 
         int b1Corner = b1.getLocation().y + b1.getHeight();
-        int  b5Corner = b5.getLocation().y;
+        int b5Corner = b5.getLocation().y;
         if (b1Corner > b5Corner) { //they are equals each other in best case
             throw new RuntimeException("Buttons are overlapped when container is small enough");
         }
         System.out.println("Test passed.");
     }
 
-    protected static Button  makeButton(String name,
+    protected static Button makeButton(String name,
                                  GridBagLayout gridbag,
                                  GridBagConstraints c) {
-        Button button  = new Button(name);
+        Button button = new Button(name);
         gridbag.setConstraints(button, c);
         frame.add(button);
         return button;

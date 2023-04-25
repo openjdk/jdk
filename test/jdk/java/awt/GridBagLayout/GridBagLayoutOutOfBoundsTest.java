@@ -48,7 +48,7 @@ public class GridBagLayoutOutOfBoundsTest {
                 frame.setLayout(layout);
                 GridBagConstraints gridBagConstraints;
 
-                Button[]  mb = new Button[L];
+                Button[] mb = new Button[L];
                 for (int i = 0; i<L; i++){
                     mb[i] = new Button(""+i);
                 }
