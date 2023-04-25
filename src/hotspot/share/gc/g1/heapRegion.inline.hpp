@@ -32,6 +32,7 @@
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1ConcurrentMarkBitMap.inline.hpp"
 #include "gc/g1/g1MonotonicArena.inline.hpp"
+#include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1Predictions.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
@@ -548,7 +549,7 @@ inline void HeapRegion::record_surv_words_in_group(size_t words_survived) {
   _surv_rate_group->record_surviving_words(age_in_group, words_survived);
 }
 
-inline bool is_young_gc_movable() const {
+inline bool HeapRegion::is_young_gc_movable() const {
   return G1CollectedHeap::heap()->policy()->is_young_gc_movable(this);
 }
 
