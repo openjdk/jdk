@@ -127,7 +127,7 @@ public interface ThreadReference extends ObjectReference {
      * an instance of java.lang.Throwable in the target VM
      * @throws IllegalThreadStateException if the thread has terminated,
      * or if the thread is a virtual thread and was not suspended
-     * @throws OpaqueFrameException if the thread is a suspended 
+     * @throws OpaqueFrameException if the thread is a suspended
      * virtual thread and the implementation was unable to throw an
      * asynchronous exception from this frame
      * @throws VMCannotBeModifiedException if the VirtualMachine is read-only

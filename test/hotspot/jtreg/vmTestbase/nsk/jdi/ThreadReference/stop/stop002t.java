@@ -84,7 +84,7 @@ public class stop002t {
             // Call Thread.interrupted(). Workaround for JDK-8306324
             log.display("Debuggee: interrupted = " + Thread.interrupted());
             if (t instanceof MyThrowable) {
-                log.display("TEST #2: Caught expected exception while at breakpoint: " + t);   
+                log.display("TEST #2: Caught expected exception while at breakpoint: " + t);
             } else {
                 log.complain("TEST #2: Unexpected exception caught: " + t);
                 t.printStackTrace();
@@ -101,7 +101,7 @@ public class stop002t {
                 stopMeHere++; stopMeHere--;
             }
             if (vthreadMode) {
-                log.display("TEST #3: Correctly did not throw async exception for virtual thread");   
+                log.display("TEST #3: Correctly did not throw async exception for virtual thread");
             } else {
                 log.complain("TEST #3: Failed to throw expected exception");
                 return Consts.TEST_FAILED;
@@ -111,7 +111,7 @@ public class stop002t {
             log.display("Debuggee: interrupted = " + Thread.interrupted());
             // We don't expect the exception to be thrown when in vthread mode.
             if (!vthreadMode && t instanceof MyThrowable) {
-                log.display("TEST #3: Caught expected exception while in loop: " + t);   
+                log.display("TEST #3: Caught expected exception while in loop: " + t);
             } else {
                 log.complain("TEST #3: Unexpected exception caught: " + t);
                 t.printStackTrace();
@@ -134,7 +134,7 @@ public class stop002t {
             // Call Thread.interrupted(). Workaround for JDK-8306324
             log.display("Debuggee: interrupted = " + Thread.interrupted());
             if (t instanceof MyThrowable) {
-                log.display("TEST #4: Caught expected exception while in loop: " + t);   
+                log.display("TEST #4: Caught expected exception while in loop: " + t);
             } else {
                 log.complain("TEST #4: Unexpected exception caught: " + t);
                 t.printStackTrace();
@@ -156,7 +156,7 @@ public class stop002t {
                 return Consts.TEST_FAILED;
             }
             if (vthreadMode) {
-                log.display("TEST #5: Correctly did not throw exception while in sleep" );   
+                log.display("TEST #5: Correctly did not throw exception while in sleep");
             } else {
                 log.complain("TEST #5: Failed to throw expected exception");
                 return Consts.TEST_FAILED;
@@ -166,7 +166,7 @@ public class stop002t {
             log.display("Debuggee: interrupted = " + Thread.interrupted());
             // We don't expect the exception to be thrown when in vthread mode.
             if (!vthreadMode && t instanceof MyThrowable) {
-                log.display("TEST #5: Caught expected exception while in loop: " + t);   
+                log.display("TEST #5: Caught expected exception while in loop: " + t);
             } else {
                 log.complain("TEST #5: Unexpected exception caught: " + t);
                 t.printStackTrace();
