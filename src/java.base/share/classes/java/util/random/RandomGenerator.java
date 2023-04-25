@@ -261,14 +261,25 @@ public interface RandomGenerator {
      * {@code isLeftIncluded}; similarly, the {@code right} boundary is included
      * as indicated by {@code isRightIncluded}.
      *
-     * <p>The stream potentially produces all multiples <i>k</i>&delta;
+     * <p>The stream potentially produces all multiples <i>k</i> &delta;
      * (<i>k</i> integer) lying in the interval specified by the parameters,
      * where &delta; > 0 is the smallest number for which all these multiples
      * are exact {@code double}s.
      * They are therefore all equidistant.
+     * The uniformity of the distribution of the {@code double}s produced by
+     * the stream depends on the quality of the underlying {@link #nextLong(long)}.
      *
-     * <p>The uniformity of the distribution of the {@code double}s produced by
-     * the stream is as good as the one of {@link #nextLong(long)}.
+     * @implNote The default implementation first determines the &delta; above.
+     * It then computes both the smallest integer <i>k</i><sub><i>l</i></sub>
+     * such that <i>k</i><sub><i>l</i></sub> &delta; lies <em>inside</em>
+     * the given interval, and the smallest integer <i>n</i> > 0 such that
+     * (<i>k</i><sub><i>l</i></sub> + <i>n</i>) &delta; lies
+     * <em>outside</em> the interval.
+     * Finally, it returns a stream which generates the {@code double}s
+     * according to (<i>k</i><sub><i>l</i></sub> + {@code nextLong(}<i>n</i>{@code )})
+     * &delta;.
+     * The stream never produces {@code -0.0}, although it may produce
+     * {@code 0.0} if the specified interval contains 0.
      *
      * @param left the left boundary
      * @param right the right boundary
@@ -277,8 +288,6 @@ public interface RandomGenerator {
      *
      * @return a stream of pseudorandomly chosen {@code double} values, each
      *         between {@code left} and {@code right}, as specified above.
-     *         The stream never produces {@code -0.0}, although it may produce
-     *         {@code 0.0} if the specified interval contains 0.
      *
      * @throws IllegalArgumentException if {@code left} is not finite,
      *         or {@code right} is not finite, or if the specified interval
@@ -331,9 +340,9 @@ public interface RandomGenerator {
              * Any other positive eps < delta does not meet this property:
              * some product k eps lying in I is not an exact double.
              * On the other hand, any other eps > delta would generate more
-             * sparse products k eps, that is, less doubles in I.
+             * sparse products k eps, that is, fewer doubles in I.
              * delta is therefore the best value to ensure the largest number
-             * of equidistant doubles in I.
+             * of equidistant doubles in the interval I.
              *
              * left / delta is an exact double and an exact integer with
              *      -2^P <= left / delta <= 0
