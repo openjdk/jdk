@@ -49,6 +49,7 @@ public class MenuSetLabelTest {
         try {
             EventQueue.invokeAndWait(() -> {
                 f = new Menu1();
+                f.setTitle("MenuSetLabelTest");
                 f.setSize(300, 200);
                 f.setLocationRelativeTo(null);
                 f.setVisible(true);

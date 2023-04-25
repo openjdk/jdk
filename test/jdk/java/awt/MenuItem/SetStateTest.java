@@ -46,7 +46,7 @@ public class SetStateTest {
     public void start () throws Exception {
         try {
             EventQueue.invokeAndWait(() -> {
-                frame = new Frame();
+                frame = new Frame("SetStateTest");
                 MenuBar bar = new MenuBar();
                 Menu menu = new Menu("Menu");
                 CheckboxMenuItem checkboxMenuItem = new CheckboxMenuItem("Item");

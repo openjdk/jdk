@@ -48,7 +48,7 @@ public class EnableTest {
     public void start() throws Exception {
         try {
             EventQueue.invokeAndWait(() -> {
-                frame = new Frame();
+                frame = new Frame("EnableTest");
                 popup = new PopupMenu("Popup Menu Title");
                 MenuItem mi1 = new MenuItem("Menu Item");
                 MenuItem mi2 = new MenuItem("Menu Item");
