@@ -303,12 +303,15 @@ public class MemberEnter extends JCTree.Visitor {
                 v.setLazyConstValue(initEnv(tree, initEnv), attr, tree);
             }
         }
-        if ((Feature.UNDERSCORE_IDENTIFIER.allowedInSource(source) || tree.name != names.underscore) && chk.checkUnique(tree.pos(), v, enclScope)) {
-            chk.checkTransparentVar(tree.pos(), v, enclScope);
-            enclScope.enter(v);
-        } else if (v.owner.kind == MTH || (v.flags_field & (Flags.PRIVATE | Flags.FINAL | Flags.GENERATED_MEMBER | Flags.RECORD)) != 0) {
-            // if this is a parameter or a field obtained from a record component, enter it
-            enclScope.enter(v);
+
+        if(Feature.UNDERSCORE_IDENTIFIER.allowedInSource(source) || tree.name != names.underscore) {
+            if (chk.checkUnique(tree.pos(), v, enclScope)) {
+                chk.checkTransparentVar(tree.pos(), v, enclScope);
+                enclScope.enter(v);
+            } else if (v.owner.kind == MTH || (v.flags_field & (Flags.PRIVATE | Flags.FINAL | Flags.GENERATED_MEMBER | Flags.RECORD)) != 0) {
+                // if this is a parameter or a field obtained from a record component, enter it
+                enclScope.enter(v);
+            }
         }
 
         annotate.annotateLater(tree.mods.annotations, localEnv, v, tree.pos());

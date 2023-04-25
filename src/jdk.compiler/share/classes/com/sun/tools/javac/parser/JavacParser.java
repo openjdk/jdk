@@ -787,13 +787,12 @@ public class JavacParser implements Parser {
 
     /** parses patterns.
      */
-
     public JCPattern parsePattern(int pos, JCModifiers mods, JCExpression parsedType,
                                   boolean allowVar, boolean checkGuard) {
         JCPattern pattern;
         mods = mods != null ? mods : optFinal(0);
         JCExpression e;
-        if (token.kind == UNDERSCORE) {
+        if (token.kind == UNDERSCORE && parsedType == null) {
             nextToken();
             pattern = toP(F.at(token.pos).AnyPattern());
         }
@@ -1035,6 +1034,9 @@ public class JavacParser implements Parser {
                         checkSourceLevel(token.pos, Feature.PATTERN_MATCHING_IN_INSTANCEOF);
                         pattern = parsePattern(patternPos, mods, type, false, false);
                     } else if (token.kind == LPAREN) {
+                        pattern = parsePattern(patternPos, mods, type, false, false);
+                    } else if (token.kind == UNDERSCORE) {
+                        checkSourceLevel(token.pos, Feature.UNNAMED_VARIABLES);
                         pattern = parsePattern(patternPos, mods, type, false, false);
                     } else {
                         checkNoMods(typePos, mods.flags & ~Flags.DEPRECATED);

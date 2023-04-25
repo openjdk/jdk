@@ -61,6 +61,7 @@ public class Unnamed {
         TwoParams p1 = (_, _) -> {};
         TwoParams p2 = (var _, var _) -> {};
         R r = new R(null);
+        if (r instanceof R _) {}
         if (r instanceof R(_)) {}
         for (int _ = 0, _ = 1; ;) {}
     }
@@ -142,6 +143,19 @@ public class Unnamed {
             case Box(R3 _), Box(_) when x == 1 -> 2;
             case Box(_) -> 3;
         };
+    }
+
+    // JEP
+    record Point(int x, int y) { }
+    enum Color { RED, GREEN, BLUE }
+    record ColoredPoint(Point p, Color c) { }
+
+    void jep(ColoredPoint r) {
+        if (r instanceof ColoredPoint(Point(int x, int y), _)) { }
+        if (r instanceof ColoredPoint(_, Color c)) { }
+        if (r instanceof ColoredPoint(Point(int x, _), _)) { }
+        if (r instanceof ColoredPoint(Point(int x, int _), Color _)) { }
+        if (r instanceof ColoredPoint _) { }
     }
 
     class Lock implements AutoCloseable {
