@@ -260,19 +260,25 @@ public final class StackMapGenerator {
         return maxStack;
     }
 
-    private int getFrameIndexFromOffset(int offset) {
-        int i = 0;
-        for (; i < frames.size(); i++) {
-            if (frames.get(i).offset == offset) {
-                return i;
-            }
+    private Frame getFrame(int offset) {
+        //binary search over frames ordered by offset
+        int low = 0;
+        int high = frames.size() - 1;
+        while (low <= high) {
+            int mid = (low + high) >>> 1;
+            var f = frames.get(mid);
+            if (f.offset < offset)
+                low = mid + 1;
+            else if (f.offset > offset)
+                high = mid - 1;
+            else
+                return f;
         }
-        return i;
+        return null;
     }
 
     private void checkJumpTarget(Frame frame, int target) {
-        int index = getFrameIndexFromOffset(target);
-        frame.checkAssignableTo(frames.get(index));
+        frame.checkAssignableTo(getFrame(target));
     }
 
     private int exMin, exMax;
