@@ -318,8 +318,8 @@ public interface RandomGenerator {
          * (k integer) that lies in I is an exact double as well.
          * It turns out that delta is always a power of 2.
          *
-         * kl is the k for the leftmost product k delta in I.
-         * kr is the k for the leftmost product k delta to the right of I.
+         * kl is the smallest k such that k delta is inside I.
+         * kr > kl is the smallest k such that k delta is outside I.
          * n is kr - kl
          */
         double delta;  // captured
