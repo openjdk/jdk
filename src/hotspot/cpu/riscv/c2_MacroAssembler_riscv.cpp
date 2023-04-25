@@ -1725,9 +1725,10 @@ void C2_MacroAssembler::rvv_vsetvli(BasicType bt, int length_in_bytes, Register 
 
 void C2_MacroAssembler::compare_integral_v(VectorRegister vd, BasicType bt, int length_in_bytes,
                                            VectorRegister src1, VectorRegister src2, int cond, VectorMask vm) {
+  assert(is_integral_type(bt), "unsupported element type");
+  assert(vm == Assembler::v0_t ? vd != v0 : true, "should be different registers");
   rvv_vsetvli(bt, length_in_bytes);
   vmclr_m(vd);
-  assert(is_integral_type(bt), "unsupported element type");
   switch (cond) {
     case BoolTest::eq: vmseq_vv(vd, src1, src2, vm); break;
     case BoolTest::ne: vmsne_vv(vd, src1, src2, vm); break;
@@ -1743,29 +1744,36 @@ void C2_MacroAssembler::compare_integral_v(VectorRegister vd, BasicType bt, int 
 
 void C2_MacroAssembler::compare_floating_point_v(VectorRegister vd, BasicType bt, int length_in_bytes,
                                                  VectorRegister src1, VectorRegister src2,
-                                                 VectorRegister tmp1, VectorRegister tmp2, int cond, VectorMask vm) {
-  rvv_vsetvli(bt, length_in_bytes);
-  vmclr_m(vd);
+                                                 VectorRegister tmp1, VectorRegister tmp2,
+                                                 VectorRegister vmask, int cond, VectorMask vm) {
   assert(is_floating_point_type(bt), "unsupported element type");
-  // vmfeq and vmfne raise the invalid operation exception
-  // only on signaling NaN inputs.
-  // vmflt, vmfle, vmfgt, and vmfge raise the invalid operation
-  // exception on both signaling and quiet NaN inputs, so we should
-  // mask the signaling compares when either input is NaN
-  // to implement floating-point quiet compares.
-  if (cond == BoolTest::le || cond == BoolTest::ge || cond == BoolTest::lt || cond == BoolTest::gt) {
-    vmfeq_vv(tmp1, src1, src1);
-    vmfeq_vv(tmp2, src2, src2);
-    if (vm == Assembler::v0_t) {
-      vmand_mm(tmp2, tmp1, tmp2);
-      vmand_mm(v0, v0, tmp2);
-    } else {
-      vmand_mm(v0, tmp1, tmp2);
+  assert(vd != v0, "should be different registers");
+  assert(vm == Assembler::v0_t ? vmask != v0 : true, "vmask should not be v0");
+  rvv_vsetvli(bt, length_in_bytes);
+  // Check vector elements of src1 and src2 for quiet or signaling NaN.
+  vfclass_v(tmp1, src1);
+  vfclass_v(tmp2, src2);
+  vsrl_vi(tmp1, tmp1, 8);
+  vsrl_vi(tmp2, tmp2, 8);
+  vmseq_vx(tmp1, tmp1, zr);
+  vmseq_vx(tmp2, tmp2, zr);
+  if (vm == Assembler::v0_t) {
+    vmand_mm(tmp2, tmp1, tmp2);
+    if (cond == BoolTest::ne) {
+      vmandn_mm(tmp1, vmask, tmp2);
+    }
+    vmand_mm(v0, vmask, tmp2);
+  } else {
+    vmand_mm(v0, tmp1, tmp2);
+    if (cond == BoolTest::ne) {
+      vmnot_m(tmp1, v0);
     }
   }
+  vmclr_m(vd);
   switch (cond) {
-    case BoolTest::eq: vmfeq_vv(vd, src1, src2, vm); break;
-    case BoolTest::ne: vmfne_vv(vd, src1, src2, vm); break;
+    case BoolTest::eq: vmfeq_vv(vd, src1, src2, Assembler::v0_t); break;
+    case BoolTest::ne: vmfne_vv(vd, src1, src2, Assembler::v0_t);
+                       vmor_mm(vd, vd, tmp1); break;
     case BoolTest::le: vmfle_vv(vd, src1, src2, Assembler::v0_t); break;
     case BoolTest::ge: vmfge_vv(vd, src1, src2, Assembler::v0_t); break;
     case BoolTest::lt: vmflt_vv(vd, src1, src2, Assembler::v0_t); break;

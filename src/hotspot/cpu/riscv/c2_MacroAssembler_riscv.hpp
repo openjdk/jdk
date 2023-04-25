@@ -205,7 +205,7 @@
 
  void compare_floating_point_v(VectorRegister dst, BasicType bt, int length_in_bytes,
                                VectorRegister src1, VectorRegister src2, VectorRegister tmp1, VectorRegister tmp2,
-                               int cond, VectorMask vm = Assembler::unmasked);
+                               VectorRegister vmask, int cond, VectorMask vm = Assembler::unmasked);
 
  // In Matcher::scalable_predicate_reg_slots,
  // we assume each predicate register is one-eighth of the size of
