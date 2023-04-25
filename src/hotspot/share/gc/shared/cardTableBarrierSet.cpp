@@ -76,6 +76,10 @@ void CardTableBarrierSet::initialize() {
   initialize_deferred_card_mark_barriers();
 }
 
+CardTableBarrierSet::~CardTableBarrierSet() {
+  delete _card_table;
+}
+
 void CardTableBarrierSet::write_ref_array_work(MemRegion mr) {
   _card_table->dirty_MemRegion(mr);
 }
