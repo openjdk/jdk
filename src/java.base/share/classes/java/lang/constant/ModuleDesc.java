@@ -29,7 +29,9 @@ import static java.util.Objects.requireNonNull;
 /**
  * A nominal descriptor for a {@code Module} constant.
  *
- * <p>To create a {@link ModuleDesc} for a module, use the {@link #of} method.
+ * @apiNote
+ * To create a {@link ModuleDesc} for a module, use the {@link #of(String)}
+ * method.
  *
  * @jvms 4.4.11 The CONSTANT_Module_info Structure
  * @since 21
@@ -61,9 +63,9 @@ public sealed interface ModuleDesc
     String moduleName();
 
     /**
-     * Compare the specified object with this descriptor for equality.  Returns
-     * {@code true} if and only if the specified object is also a
-     * {@link ModuleDesc} and both describe the same module.
+     * Compare the specified object with this descriptor for equality.
+     * Returns {@code true} if and only if the specified object is
+     * also a {@link ModuleDesc} and both describe the same module.
      *
      * @param o the other object
      * @return whether this descriptor is equal to the other object
