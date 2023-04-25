@@ -201,15 +201,15 @@ public abstract class IntlTest {
         }
     }
 
+    protected int getErrorCount() {
+        return errorCount;
+    }
+
     protected void writeTestName(String testName) {
         indent(indentLevel);
         log.print(testName);
         log.flush();
         needLineFeed = true;
-    }
-
-    protected int getErrorCount() {
-        return errorCount;
     }
 
     protected void writeTestResult(int count) {
