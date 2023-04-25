@@ -203,11 +203,11 @@ public class StopThreadTest {
             } catch (AssertionError ex) {
                 log("TestTask.run: caught expected AssertionError from method A()");
                 seenExceptionFromA = true;
+                Thread.interrupted(); // work around an issue that the interrupt bit can be not cleared
             }
             if (!seenExceptionFromA) {
                 StopThreadTest.setFailed("TestTask.run: expected AssertionError from method A()");
             }
-            Thread.interrupted(); // Work around an issue that the interrupt bit can be not cleared.
             sleep(1); // to cause yield
 
             boolean seenExceptionFromB = false;
@@ -216,11 +216,11 @@ public class StopThreadTest {
             } catch (AssertionError ex) {
                 log("TestTask.run: caught expected AssertionError from method B()");
                 seenExceptionFromB = true;
+                Thread.interrupted(); // work around an issue that the interrupt bit can be not cleared
             }
             if (!seenExceptionFromB) {
                 StopThreadTest.setFailed("TestTask.run: expected AssertionError from method B()");
             }
-            Thread.interrupted(); // Work around an issue that the interrupt bit can be not cleared.
             sleep(1); // to cause yield
 
             boolean seenExceptionFromC = false;
