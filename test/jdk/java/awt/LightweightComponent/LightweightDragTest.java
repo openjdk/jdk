@@ -46,10 +46,10 @@ import java.awt.event.MouseEvent;
 public class LightweightDragTest {
     MyComponent c,c2;
     static Frame frame;
-    int x = 0;
-    int y = 0;
-    int x2 = 0;
-    int y2 = 0;
+    volatile int x = 0;
+    volatile int y = 0;
+    volatile int x2 = 0;
+    volatile int y2 = 0;
 
     public static void main(String[] args) throws Exception {
         LightweightDragTest test = new LightweightDragTest();
