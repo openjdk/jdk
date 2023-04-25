@@ -30,9 +30,11 @@
 
 typedef AbstractRegSet<FloatRegister> vRegSet;
 
-static constexpr bool use_vec = true;
+// static constexpr bool use_vec = true;
 
 address generate_poly1305_processBlocks2() {
+  static constexpr int POLY1305_BLOCK_LENGTH = 16;
+
   address consts = __ pc();
   __ emit_int64(5);
   __ emit_int64(5);
@@ -99,14 +101,22 @@ address generate_poly1305_processBlocks2() {
 
   // Just one block?
   Label SMALL;
-  __ subs(zr, length, BLOCK_LENGTH * 4);
+  __ subs(zr, length, POLY1305_BLOCK_LENGTH * 8);
   __ br(__ LE, SMALL);
 
-  // We're going to use R**2
+  // We're going to use R**4
   {
+    Register u1_lo[] = {u1[0]._lo, u1[1]._lo, u1[2]._lo};
+
     __ poly1305_multiply(u1, R, R, RR2, regs);
     __ poly1305_reduce(u1);
-    Register u1_lo[] = {u1[0]._lo, u1[1]._lo, u1[2]._lo};
+    __ copy_3_regs(R, u1_lo);
+
+    __ lsl(RR2, R[2], 26);
+    __ add(RR2, RR2, RR2, __ LSL, 2);
+
+    __ poly1305_multiply(u1, R, R, RR2, regs);
+    __ poly1305_reduce(u1);
     __ copy_3_regs(R, u1_lo);
 
     __ lsl(RR2, R[2], 26);
@@ -119,8 +129,6 @@ address generate_poly1305_processBlocks2() {
     __ mov(u1[i]._lo, 0); __ mov(u1[i]._hi, 0);
   }
 
-  static constexpr int BLOCK_LENGTH = 16;
-
   const FloatRegister v_u0[] = {*vregs++, *vregs++, *vregs++, *vregs++, *vregs++};
   const FloatRegister s_v[] = {*vregs++, *vregs++, *vregs++, *vregs++, *vregs++};
 
@@ -128,7 +136,7 @@ address generate_poly1305_processBlocks2() {
   const FloatRegister r_v[] = {*vregs++, *vregs++};
   const FloatRegister rr_v[] = {*vregs++, *vregs++};
 
-  if (use_vec) {
+  // if (use_vec) {
     __ movi(upper_bits, __ T16B, 0xff);
     __ shl(upper_bits, __ T2D, upper_bits, 26);  // upper_bits == 0xfffffffffc000000
 
@@ -145,17 +153,17 @@ address generate_poly1305_processBlocks2() {
     for (int i = 0; i < 5; i++) {
       __ movi(v_u0[i], __ T16B, 0);
     }
-    __ copy_3_to_5_regs(v_u0, u0[0]._lo, u0[1]._lo, u0[2]._lo);
-  }
+  //   __ copy_3_to_5_regs(v_u0, u0[0]._lo, u0[1]._lo, u0[2]._lo);
+  // }
 
   {
     Label DONE, LOOP;
 
     __ bind(LOOP);
-    __ subsw(rscratch1, length, BLOCK_LENGTH * 4);
+    __ subsw(rscratch1, length, POLY1305_BLOCK_LENGTH * 8);
     __ br(Assembler::LT, DONE);
 
-    if (! use_vec) {
+    // if (! use_vec) {
       __ poly1305_step(S0, u0, input_start);
       __ poly1305_multiply(u0, S0, R, RR2, regs);
       __ poly1305_reduce(u0);
@@ -163,30 +171,29 @@ address generate_poly1305_processBlocks2() {
       __ poly1305_step(S1, u1, input_start);
       __ poly1305_multiply(u1, S1, R, RR2, regs);
       __ poly1305_reduce(u1);
-    } else {
+    // } else {
       __ poly1305_step_vec(s_v, v_u0, upper_bits, input_start, vregs.remaining());
       __ poly1305_multiply_vec(v_u0, vregs.remaining(), s_v, r_v, rr_v);
       __ poly1305_reduce_vec(v_u0, upper_bits, vregs.remaining());
-    }
-    __ subw(length, length, BLOCK_LENGTH * 2);
+    // }
+
+  poo = __ pc();
+
+    __ subw(length, length, POLY1305_BLOCK_LENGTH * 4);
     __ b(LOOP);
 
     __ bind(DONE);
   }
 
-  if (use_vec) {
-    __ poly1305_transfer(u0, v_u0, 0, *vregs);
-    __ poly1305_transfer(u1, v_u0, 1, *vregs);
-  }
-
-  // Last two parallel blocks
+  // Last four parallel blocks
   {
     // Load R**1
     __ pack_26(R[0], R[1], R[2], r_start);
     __ lsl(RR2, R[2], 26);
     __ add(RR2, RR2, RR2, __ LSL, 2);
 
-    __ poly1305_step(S0, u0, input_start);
+    __ poly1305_load(S0, input_start);
+    __ poly1305_add(S0, u0);
     __ poly1305_multiply(u0, S0, R, RR2, regs);
     __ poly1305_reduce(u0);
 
@@ -196,7 +203,21 @@ address generate_poly1305_processBlocks2() {
     __ poly1305_multiply(u0, S0, R, RR2, regs);
     __ poly1305_reduce(u0);
 
-    __ subw(length, length, BLOCK_LENGTH * 2);
+    __ poly1305_load(S0, input_start);
+    __ poly1305_add(S0, u0);
+    __ poly1305_transfer(u1, v_u0, 0, *vregs);
+    __ poly1305_add(S0, u1);
+    __ poly1305_multiply(u0, S0, R, RR2, regs);
+    __ poly1305_reduce(u0);
+
+    __ poly1305_load(S0, input_start);
+    __ poly1305_add(S0, u0);
+    __ poly1305_transfer(u1, v_u0, 1, *vregs);
+    __ poly1305_add(S0, u1);
+    __ poly1305_multiply(u0, S0, R, RR2, regs);
+    __ poly1305_reduce(u0);
+
+    __ subw(length, length, POLY1305_BLOCK_LENGTH * 4);
   }
 
   // Maybe some last blocks
@@ -205,7 +226,7 @@ address generate_poly1305_processBlocks2() {
     Label DONE, LOOP;
 
     __ bind(LOOP);
-    __ subsw(length, length, BLOCK_LENGTH);
+    __ subsw(length, length, POLY1305_BLOCK_LENGTH);
     __ br(__ LT, DONE);
 
     __ poly1305_step(S0, u0, input_start);

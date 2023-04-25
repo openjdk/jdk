@@ -7028,8 +7028,6 @@ typedef uint32_t u32;
     carry = (u64)(sum >> 64);
   }
 
-  static constexpr int BLOCK_LENGTH = 16;
-
 #define PACK_26(dest0, dest1, dest2, src) do {  \
   dest0 = src[0] >> 0;    /* 26 bits */         \
   dest0 |= src[1] << 26;  /* 26 bits */         \
@@ -7047,6 +7045,8 @@ typedef uint32_t u32;
   // Private void processMultipleBlocks(byte[] input, int offset, int length, long[] aLimbs, long[] rLimbs)
   static void do_poly1305_processBlocks(char *input_start, jlong length, julong *acc_start, julong *r_start) {
     static int counter;
+
+    static constexpr int BLOCK_LENGTH = 16;
 
     DEBUG_ONLY(setbuf(stdout, NULL);)
 
