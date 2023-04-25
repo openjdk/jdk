@@ -72,7 +72,7 @@ public class NextDropActionTest {
 
         EventQueue.invokeAndWait(() -> {
             panel = new Panel();
-            frame = new Frame();
+            frame = new Frame("NextDropActionTest");
             frame.add(panel);
             frame.setBounds(300, 300, 300, 300);
             frame.setLocationRelativeTo(null);
@@ -157,7 +157,7 @@ public class NextDropActionTest {
             }
         } finally {
             if (frame != null) {
-                frame.dispose();
+                EventQueue.invokeAndWait(() -> frame.dispose());
             }
         }
 

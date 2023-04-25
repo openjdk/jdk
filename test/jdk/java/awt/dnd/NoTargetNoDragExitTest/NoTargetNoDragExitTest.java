@@ -66,7 +66,7 @@ public class NoTargetNoDragExitTest {
     }
 
     public void init() {
-        frame = new Frame();
+        frame = new Frame("NoTargetNoDragExitTest");
         panel = new Panel();
         frame.add(panel);
         frame.setSize(300, 300);
@@ -130,11 +130,9 @@ public class NoTargetNoDragExitTest {
             }
         } finally {
             if (frame != null) {
-                frame.dispose();
+                EventQueue.invokeAndWait(() -> frame.dispose());
             }
         }
-
-
 
         if (failed) {
             throw new RuntimeException("DragSourceListener.dragExit() called!");
@@ -142,7 +140,6 @@ public class NoTargetNoDragExitTest {
 
         System.err.println("test passed!");
      }
-
 }
 
 

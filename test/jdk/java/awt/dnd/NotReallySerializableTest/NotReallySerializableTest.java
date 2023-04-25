@@ -52,33 +52,31 @@ import java.util.ArrayList;
 
 public class NotReallySerializableTest {
     public static void main(String[] args) throws IOException {
-        try {
-            Toolkit tk = Toolkit.getDefaultToolkit();
+        Toolkit tk = Toolkit.getDefaultToolkit();
 
-            DragGestureRecognizer dgr = tk.createDragGestureRecognizer
-                    (java.awt.dnd.MouseDragGestureRecognizer.class,
-                            DragSource.getDefaultDragSource(), new Button(),
-                            DnDConstants.ACTION_LINK, new TrickDragGestureListener());
-            DragGestureEvent dge = new DragGestureEvent
-                    (dgr, DnDConstants.ACTION_LINK, new Point(0, 0),
-                            new TrickList());
-            DragSourceContext dsc = new DragSourceContext(dge,
-                    Cursor.getPredefinedCursor(Cursor.MOVE_CURSOR),
-                    null, null, new TrickTransferable(),
-                    new TrickDragSourceListener());
-            DropTarget dt = new DropTarget(new Button(),
-                    new TrickDropTargetListener());
+        DragGestureRecognizer dgr = tk.createDragGestureRecognizer
+                (java.awt.dnd.MouseDragGestureRecognizer.class,
+                        DragSource.getDefaultDragSource(), new Button(),
+                        DnDConstants.ACTION_LINK, new TrickDragGestureListener());
+        DragGestureEvent dge = new DragGestureEvent
+                (dgr, DnDConstants.ACTION_LINK, new Point(0, 0),
+                        new TrickList());
+        DragSourceContext dsc = new DragSourceContext(dge,
+                Cursor.getPredefinedCursor(Cursor.MOVE_CURSOR),
+                null, null, new TrickTransferable(),
+                new TrickDragSourceListener());
+        DropTarget dt = new DropTarget(new Button(),
+                new TrickDropTargetListener());
 
-            ObjectOutputStream stream = new ObjectOutputStream
-                    (new OutputStream() {
-                        public void write(int b) {}
-                    });
+        ObjectOutputStream stream = new ObjectOutputStream
+                (new OutputStream() {
+                    public void write(int b) {}
+                });
 
-            stream.writeObject(dgr);
-            stream.writeObject(dge);
-            stream.writeObject(dsc);
-            stream.writeObject(dt);
-        }
+        stream.writeObject(dgr);
+        stream.writeObject(dge);
+        stream.writeObject(dsc);
+        stream.writeObject(dt);
 
         System.out.println("test passed");
     }

@@ -87,7 +87,7 @@ public class NoFormatsDropTest implements AWTEventListener {
         dragSourcePanel = new DragSourcePanel();
         dropTargetPanel = new DropTargetPanel();
 
-        frame.setTitle("Test frame");
+        frame.setTitle("NoFormatsDropTest");
         frame.setLayout(new GridLayout(2, 1));
         frame.add(dragSourcePanel);
         frame.add(dropTargetPanel);
@@ -99,7 +99,8 @@ public class NoFormatsDropTest implements AWTEventListener {
         frame.validate();
     }
 
-    public void start() throws InterruptedException, AWTException {
+    public void start() throws InterruptedException, AWTException,
+            InvocationTargetException {
         try {
             Robot robot = new Robot();
             robot.setAutoWaitForIdle(true);
@@ -139,7 +140,7 @@ public class NoFormatsDropTest implements AWTEventListener {
             robot.delay(DROP_COMPLETION_TIMEOUT);
         } finally {
             if (frame != null) {
-                frame.dispose();
+                EventQueue.invokeAndWait(() -> frame.dispose());
             }
         }
 

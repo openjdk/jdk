@@ -79,7 +79,7 @@ public class NoFormatsDragEnterTest {
         dragSourcePanel = new DragSourcePanel();
         dropTargetPanel = new DropTargetPanel();
 
-        frame.setTitle("Test frame");
+        frame.setTitle("NoFormatsDragEnterTest");
         frame.setLayout(new GridLayout(2, 1));
         frame.add(dragSourcePanel);
         frame.add(dropTargetPanel);
@@ -89,7 +89,8 @@ public class NoFormatsDragEnterTest {
         frame.validate();
     }
 
-    public void start() throws AWTException {
+    public void start() throws AWTException, InterruptedException,
+            InvocationTargetException {
         try {
             Robot robot = new Robot();
             robot.waitForIdle();
@@ -119,7 +120,7 @@ public class NoFormatsDragEnterTest {
             robot.delay(DROP_COMPLETION_TIMEOUT);
         } finally {
             if (frame != null) {
-                frame.dispose();
+                EventQueue.invokeAndWait(() -> frame.dispose());
             }
         }
 
