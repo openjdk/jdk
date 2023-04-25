@@ -4610,7 +4610,8 @@ public class Resolve {
     }
 
     /**
-     * Specialization of {@link StaticError} for accesses in a constructor prologue.
+     * Specialization of {@link InvalidSymbolError} for illegal
+     * early accesses within a constructor prologue.
      */
     class RefBeforeCtorCalledError extends InvalidSymbolError {
 
