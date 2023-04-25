@@ -3644,49 +3644,48 @@ public class JavacParser implements Parser {
     JCVariableDecl variableDeclaratorId(JCModifiers mods, JCExpression type, boolean catchParameter, boolean lambdaParameter, boolean recordComponent) {
         int pos = token.pos;
         Name name;
-            //TODO: fix ident:
-            if (allowThisIdent ||
-                !lambdaParameter ||
-                LAX_IDENTIFIER.test(token.kind) ||
-                mods.flags != Flags.PARAMETER ||
-                mods.annotations.nonEmpty()) {
-                JCExpression pn;
-                if (token.kind == UNDERSCORE && (catchParameter || lambdaParameter)) {
-                    pn = toP(F.at(token.pos).Ident(identOrUnderscore()));
-                } else {
-                    pn = qualident(false);
-                }
-                if (pn.hasTag(Tag.IDENT) && ((JCIdent)pn).name != names._this) {
-                    name = ((JCIdent)pn).name;
-                } else if (lambdaParameter && type == null) {
-                    // we have a lambda parameter that is not an identifier this is a syntax error
-                    type = pn;
-                    name = names.empty;
-                    reportSyntaxError(pos, Errors.Expected(IDENTIFIER));
-                } else {
-                    if (allowThisIdent) {
-                        if ((mods.flags & Flags.VARARGS) != 0) {
-                            log.error(token.pos, Errors.VarargsAndReceiver);
-                        }
-                        if (token.kind == LBRACKET) {
-                            log.error(token.pos, Errors.ArrayAndReceiver);
-                        }
-                        if (pn.hasTag(Tag.SELECT) && ((JCFieldAccess)pn).name != names._this) {
-                            log.error(token.pos, Errors.WrongReceiver);
-                        }
-                    }
-                    return toP(F.at(pos).ReceiverVarDef(mods, pn, type));
-                }
+        if (allowThisIdent ||
+            !lambdaParameter ||
+            LAX_IDENTIFIER.test(token.kind) ||
+            mods.flags != Flags.PARAMETER ||
+            mods.annotations.nonEmpty()) {
+            JCExpression pn;
+            if (token.kind == UNDERSCORE && (catchParameter || lambdaParameter)) {
+                pn = toP(F.at(token.pos).Ident(identOrUnderscore()));
             } else {
-                /** if it is a lambda parameter and the token kind is not an identifier,
-                 *  and there are no modifiers or annotations, then this means that the compiler
-                 *  supposed the lambda to be explicit but it can contain a mix of implicit,
-                 *  var or explicit parameters. So we assign the error name to the parameter name
-                 *  instead of issuing an error and analyze the lambda parameters as a whole at
-                 *  a higher level.
-                 */
-                name = names.empty;
+                pn = qualident(false);
             }
+            if (pn.hasTag(Tag.IDENT) && ((JCIdent)pn).name != names._this) {
+                name = ((JCIdent)pn).name;
+            } else if (lambdaParameter && type == null) {
+                // we have a lambda parameter that is not an identifier this is a syntax error
+                type = pn;
+                name = names.empty;
+                reportSyntaxError(pos, Errors.Expected(IDENTIFIER));
+            } else {
+                if (allowThisIdent) {
+                    if ((mods.flags & Flags.VARARGS) != 0) {
+                        log.error(token.pos, Errors.VarargsAndReceiver);
+                    }
+                    if (token.kind == LBRACKET) {
+                        log.error(token.pos, Errors.ArrayAndReceiver);
+                    }
+                    if (pn.hasTag(Tag.SELECT) && ((JCFieldAccess)pn).name != names._this) {
+                        log.error(token.pos, Errors.WrongReceiver);
+                    }
+                }
+                return toP(F.at(pos).ReceiverVarDef(mods, pn, type));
+            }
+        } else {
+            /** if it is a lambda parameter and the token kind is not an identifier,
+             *  and there are no modifiers or annotations, then this means that the compiler
+             *  supposed the lambda to be explicit but it can contain a mix of implicit,
+             *  var or explicit parameters. So we assign the error name to the parameter name
+             *  instead of issuing an error and analyze the lambda parameters as a whole at
+             *  a higher level.
+             */
+            name = names.empty;
+        }
         if ((mods.flags & Flags.VARARGS) != 0 &&
                 token.kind == LBRACKET) {
             log.error(token.pos, Errors.VarargsAndOldArraySyntax);
