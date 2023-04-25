@@ -98,9 +98,9 @@ public sealed interface PackageDesc
     }
 
     /**
-     * Compare the specified object with this descriptor for equality.  Returns
-     * {@code true} if and only if the specified object is also a
-     * {@linkplain PackageDesc} and both describe the same package.
+     * Compare the specified object with this descriptor for equality.
+     * Returns {@code true} if and only if the specified object is
+     * also a {@linkp PackageDesc} and both describe the same package.
      *
      * @param o the other object
      * @return whether this descriptor is equal to the other object
