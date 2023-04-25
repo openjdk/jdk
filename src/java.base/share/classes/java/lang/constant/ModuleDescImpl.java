@@ -29,4 +29,9 @@ package java.lang.constant;
  * @param moduleName must have been validated
  */
 record ModuleDescImpl(String moduleName) implements ModuleDesc {
+
+    @Override
+    public String toString() {
+        return String.format("ModuleDesc[%s]", moduleName());
+    }
 }

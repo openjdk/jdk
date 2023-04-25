@@ -29,4 +29,9 @@ package java.lang.constant;
  * @param packageInternalName must have been validated
  */
 record PackageDescImpl(String packageInternalName) implements PackageDesc {
+
+    @Override
+    public String toString() {
+        return String.format("PackageDesc[%s]", packageName());
+    }
 }
