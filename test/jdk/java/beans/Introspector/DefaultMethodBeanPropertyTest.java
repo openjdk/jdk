@@ -176,28 +176,28 @@ public class DefaultMethodBeanPropertyTest {
 
         // Verify properties can be found directly
         expected.stream()
-          .map(PropertyDescriptor::getName)
-          .filter(name -> BeanUtils.getPropertyDescriptor(type, name) == null)
-          .findFirst()
-          .ifPresent(name -> {
-            throw new Error("property \"" + name + "\" not found in " + type);
-          });
+                .map(PropertyDescriptor::getName)
+                .filter(name -> BeanUtils.getPropertyDescriptor(type, name) == null)
+                .findFirst()
+                .ifPresent(name -> {
+                    throw new Error("property \"" + name + "\" not found in " + type);
+                });
 
         // Gather actual properties
-        final Set<PropertyDescriptor> actual = Set.of(
-            BeanUtils.getPropertyDescriptors(type));
+        final Set<PropertyDescriptor> actual =
+                Set.of(BeanUtils.getPropertyDescriptors(type));
 
         // Verify the two sets are the same
         if (!actual.equals(expected)) {
             throw new Error("mismatch: " + type
               + "\nACTUAL:\n  "
               + actual.stream()
-                .map(Object::toString)
-                .collect(Collectors.joining("\n  "))
+                      .map(Object::toString)
+                      .collect(Collectors.joining("\n  "))
               + "\nEXPECTED:\n  "
               + expected.stream()
-                .map(Object::toString)
-                .collect(Collectors.joining("\n  ")));
+                        .map(Object::toString)
+                        .collect(Collectors.joining("\n  ")));
         }
     }
 
