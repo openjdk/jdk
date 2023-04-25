@@ -1104,9 +1104,6 @@ public class HSDB implements ObjectHistogramPanel.Listener, SAListener {
                           } else if (region.isHumongous()) {
                             anno = "Humongous ";
                             bad = false;
-                          } else if (region.isPinned()) {
-                            anno = "Pinned ";
-                            bad = false;
                           } else if (region.isOld()) {
                             anno = "Old ";
                             bad = false;
