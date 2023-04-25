@@ -60,21 +60,39 @@ public class GuaranteedAsyncDeflationIntervalTest {
         // Inflate a lot of monitors, so that threshold heuristics definitely fires
         private static final int MONITORS = 10_000;
 
+        // Use a handful of threads to inflate the monitors, to eat the cost of
+        // wait(1) calls. This can be larger than available parallelism, since threads
+        // would be time-waiting.
+        private static final int THREADS = 16;
+
+        private static Thread[] threads;
         private static Object[] monitors;
         private static long sink;
 
         public static void main(String... args) throws Exception {
             monitors = new Object[MONITORS];
-            for (int i = 0; i < MONITORS; i++) {
-                Object o = new Object();
-                synchronized (o) {
-                    // Object is locked. In current Hotspot, the request for hashcode
-                    // would inflate the monitor. While this relies on implementation
-                    // detail, this is significantly quicker than doing wait(1), which
-                    // might stall for tens of milliseconds.
-                    sink += o.hashCode();
-                }
-                monitors[i] = o;
+            threads = new Thread[THREADS];
+
+            for (int t = 0; t < THREADS; t++) {
+                int monStart = t * MONITORS / THREADS;
+                int monEnd = (t + 1) * MONITORS / THREADS;
+                threads[t] = new Thread(() -> {
+                    for (int m = monStart; m < monEnd; m++) {
+                        Object o = new Object();
+                        synchronized (o) {
+                            try {
+                                o.wait(1);
+                            } catch (InterruptedException e) {
+                            }
+                        }
+                        monitors[m] = o;
+                    }
+                });
+                threads[t].start();
+            }
+
+            for (Thread t : threads) {
+                t.join();
             }
 
             try {
