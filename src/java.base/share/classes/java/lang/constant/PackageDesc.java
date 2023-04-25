@@ -27,10 +27,11 @@ package java.lang.constant;
 import static java.util.Objects.requireNonNull;
 
 /**
- * A nominal descriptor for a {@code Package} constant {@jvms 4.4.12}.
+ * A nominal descriptor for a {@code Package} constant.
  *
- * <p>To create a {@link PackageDesc} for a package, use the {@link #of} or
- * {@link #ofInternalName(String)} method.
+ * @apiNote
+ * To create a {@link PackageDesc} for a package,
+ * use the {@link #of(String)} or {@link #ofInternalName(String)} method.
  *
  * @jvms 4.4.12 The CONSTANT_Package_info Structure
  * @since 21
@@ -60,8 +61,8 @@ public sealed interface PackageDesc
      * given the name of the package in internal form,
      * such as {@code "java/lang"}.
      *
-     * @param name the fully qualified package name, in internal (slash-separated) form
-     * form
+     * @param name the fully qualified package name, in internal
+     * (slash-separated) form
      * @return a {@link PackageDesc} describing the desired package
      * @throws NullPointerException if the argument is {@code null}
      * @throws IllegalArgumentException if the name string is not in the
