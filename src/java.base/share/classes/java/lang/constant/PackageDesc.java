@@ -32,7 +32,7 @@ import static java.util.Objects.requireNonNull;
  * <p>To create a {@linkplain PackageDesc} for a package, use the {@link #of} or
  * {@link #ofInternalName(String)} method.
  *
- *  * @jvms 4.4.11 The CONSTANT_Module_info Structure
+ * @jvms 4.4.11 The CONSTANT_Module_info Structure
  * @since 21
  */
 public sealed interface PackageDesc
