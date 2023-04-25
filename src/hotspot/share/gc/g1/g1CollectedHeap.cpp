@@ -2292,7 +2292,7 @@ void G1CollectedHeap::object_iterate_parallel(ObjectClosure* cl, uint worker_id,
 }
 
 void G1CollectedHeap::keep_alive(oop obj) {
-  G1BarrierSet::enqueue(obj);
+  G1BarrierSet::enqueue_preloaded(obj);
 }
 
 void G1CollectedHeap::heap_region_iterate(HeapRegionClosure* cl) const {
