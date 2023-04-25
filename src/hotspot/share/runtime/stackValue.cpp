@@ -49,17 +49,6 @@ StackValue* StackValue::create_stack_value(const frame* fr, const RegisterMapT* 
   return create_stack_value(sv, stack_value_address(fr, reg_map, sv), reg_map);
 }
 
-template <typename OopT>
-static oop read_oop_local(OopT* p) {
-  // We can't do a native access directly from p because load barriers
-  // may self-heal. If that happens on a base pointer for compressed oops,
-  // then there will be a crash later on. Only the stack watermark API is
-  // allowed to heal oops, because it heals derived pointers before their
-  // corresponding base pointers.
-  oop obj = RawAccess<>::oop_load(p);
-  return NativeAccess<>::oop_load(&obj);
-}
-
 static oop oop_from_oop_location(stackChunkOop chunk, void* addr) {
   if (addr == nullptr) {
     return nullptr;
@@ -91,7 +80,19 @@ static oop oop_from_oop_location(stackChunkOop chunk, void* addr) {
   }
 
   // Load oop from stack
-  return read_oop_local((oop*)addr);
+  oop val = *(oop*)addr;
+
+#if INCLUDE_SHENANDOAHGC
+  if (UseShenandoahGC) {
+    // Pass the value through the barrier to avoid capturing bad oops as
+    // stack values. Note: do not heal the location, to avoid accidentally
+    // corrupting the stack. Stack watermark barriers are supposed to handle
+    // the healing.
+    val = ShenandoahBarrierSet::barrier_set()->load_reference_barrier(val);
+  }
+#endif
+
+  return val;
 }
 
 static oop oop_from_narrowOop_location(stackChunkOop chunk, void* addr, bool is_register) {
@@ -116,7 +117,19 @@ static oop oop_from_narrowOop_location(stackChunkOop chunk, void* addr, bool is_
   }
 
   // Load oop from stack
-  return read_oop_local((narrowOop*)addr);
+  oop val = CompressedOops::decode(*narrow_addr);
+
+#if INCLUDE_SHENANDOAHGC
+  if (UseShenandoahGC) {
+    // Pass the value through the barrier to avoid capturing bad oops as
+    // stack values. Note: do not heal the location, to avoid accidentally
+    // corrupting the stack. Stack watermark barriers are supposed to handle
+    // the healing.
+    val = ShenandoahBarrierSet::barrier_set()->load_reference_barrier(val);
+  }
+#endif
+
+  return val;
 }
 
 StackValue* StackValue::create_stack_value_from_oop_location(stackChunkOop chunk, void* addr) {
