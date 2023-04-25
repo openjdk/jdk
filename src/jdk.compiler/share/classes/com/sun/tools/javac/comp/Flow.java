@@ -481,10 +481,11 @@ public class Flow {
             JCClassDecl initScanClassPrev = initScanClass;
             initScanClass = classDef;
             try {
-                classDef.defs.stream()
-                  .filter(def -> !def.hasTag(METHODDEF))
-                  .filter(def -> ((TreeInfo.flags(def) & STATIC) != 0) == statik)
-                  .forEach(handler);
+                for (List<JCTree> defs = classDef.defs; defs.nonEmpty(); defs = defs.tail) {
+                    JCTree def = defs.head;
+                    if (!def.hasTag(METHODDEF) && ((TreeInfo.flags(def) & STATIC) != 0) == statik)
+                        handler.accept(def);
+                }
             } finally {
                 initScanClass = initScanClassPrev;
             }
