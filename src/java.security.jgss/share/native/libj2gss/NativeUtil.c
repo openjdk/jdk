@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -451,18 +451,12 @@ jint getJavaErrorCode(int cNonCallingErr) {
   return GSS_S_COMPLETE;
 }
 
-
-/* Throws a Java Exception by name */
-static void throwByName(JNIEnv *env, const char *name, const char *msg) {
-    jclass cls = (*env)->FindClass(env, name);
+void gssThrowOutOfMemoryError(JNIEnv *env, const char *message) {
+    jclass cls = (*env)->FindClass(env, "java/lang/OutOfMemoryError");
 
     if (cls != NULL) {
-        (*env)->ThrowNew(env, cls, msg);
+        (*env)->ThrowNew(env, cls, message);
     }
-}
-
-void gssThrowOutOfMemoryError(JNIEnv *env, const char *message) {
-    throwByName(env, "java/lang/OutOfMemoryError", message);
 }
 
 /*
