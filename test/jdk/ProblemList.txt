@@ -441,7 +441,7 @@ java/awt/TrayIcon/RightClickWhenBalloonDisplayed/RightClickWhenBalloonDisplayed.
 java/awt/PopupMenu/PopupMenuLocation.java 8238720 windows-all
 java/awt/GridLayout/ComponentPreferredSize/ComponentPreferredSize.java 8238720 windows-all
 java/awt/GridLayout/ChangeGridSize/ChangeGridSize.java   8238720 windows-all
-java/awt/event/MouseEvent/FrameMouseEventAbsoluteCoordsTest/FrameMouseEventAbsoluteCoordsTest.java windows-all
+java/awt/event/MouseEvent/FrameMouseEventAbsoluteCoordsTest/FrameMouseEventAbsoluteCoordsTest.java 8238720 windows-all
 
 # Several tests which fail sometimes on macos11
 java/awt/Window/MainKeyWindowTest/TestMainKeyWindow.java 8265985 macosx-all
