@@ -318,17 +318,17 @@ public final class StackCounter {
                         stack (1 - bcs.getU1(bcs.bci + 3));
                     case JSR -> {
                         stack(+1);
-                        jump(bcs.dest());
+                        jump(bcs.dest()); //here we lost track of the exact stack size after return from subroutine
                         stack(-1);
                     }
                     case JSR_W -> {
                         stack(+1);
-                        jump(bcs.destW());
+                        jump(bcs.destW()); //here we lost track of the exact stack size after return from subroutine
                         stack(-1);
                     }
                     case RET -> {
                         local(bcs.getIndex());
-                        rets++;
+                        rets++; //subroutines must be counted for later maxStack correction 
                         next();
                     }
                     default ->
@@ -336,7 +336,8 @@ public final class StackCounter {
                 }
             }
         }
-        //heuristic calculation of upper bounds of maxStack when subroutines are present
+        //correction of maxStack when subroutines are present by calculation of upper bounds
+        //the worst scenario is that all subroutines are chained and each subroutine also requires maxStack for its own code
         maxStack += rets * maxStack;
     }
 
