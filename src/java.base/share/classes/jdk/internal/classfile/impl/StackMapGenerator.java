@@ -999,16 +999,16 @@ public final class StackMapGenerator {
         }
 
         Frame pushStack(ClassDesc desc) {
-            return switch (desc.descriptorString()) {
-                case "J" ->
+            return switch (desc.descriptorString().charAt(0)) {
+                case 'J' ->
                     pushStack(Type.LONG_TYPE, Type.LONG2_TYPE);
-                case "D" ->
+                case 'D' ->
                     pushStack(Type.DOUBLE_TYPE, Type.DOUBLE2_TYPE);
-                case "I", "Z", "B", "C", "S" ->
+                case 'I', 'Z', 'B', 'C', 'S' ->
                     pushStack(Type.INTEGER_TYPE);
-                case "F" ->
+                case 'F' ->
                     pushStack(Type.FLOAT_TYPE);
-                case "V" ->
+                case 'V' ->
                     this;
                 default ->
                     pushStack(Type.referenceType(desc));
@@ -1105,18 +1105,18 @@ public final class StackMapGenerator {
                 var desc = methodDesc.parameterType(i);
                 if (desc.isClassOrInterface() || desc.isArray()) {
                     setLocalRawInternal(localsSize++, Type.referenceType(desc));
-                } else switch (desc.descriptorString()) {
-                    case "J" -> {
+                } else switch (desc.descriptorString().charAt(0)) {
+                    case 'J' -> {
                         setLocalRawInternal(localsSize++, Type.LONG_TYPE);
                         setLocalRawInternal(localsSize++, Type.LONG2_TYPE);
                     }
-                    case "D" -> {
+                    case 'D' -> {
                         setLocalRawInternal(localsSize++, Type.DOUBLE_TYPE);
                         setLocalRawInternal(localsSize++, Type.DOUBLE2_TYPE);
                     }
-                    case "I", "Z", "B", "C", "S" ->
+                    case 'I', 'Z', 'B', 'C', 'S' ->
                         setLocalRawInternal(localsSize++, Type.INTEGER_TYPE);
-                    case "F" ->
+                    case 'F' ->
                         setLocalRawInternal(localsSize++, Type.FLOAT_TYPE);
                     default -> throw new AssertionError("Should not reach here");
                 }

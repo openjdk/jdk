@@ -82,12 +82,12 @@ public class StackMapDecoder {
             vtis = new VerificationTypeInfo[mdesc.parameterCount()];
         }
         for(var arg : mdesc.parameterList()) {
-            vtis[i++] = switch (arg.descriptorString()) {
-                case "I", "S", "C" ,"B", "Z" ->  SimpleVerificationTypeInfo.ITEM_INTEGER;
-                case "J" -> SimpleVerificationTypeInfo.ITEM_LONG;
-                case "F" -> SimpleVerificationTypeInfo.ITEM_FLOAT;
-                case "D" -> SimpleVerificationTypeInfo.ITEM_DOUBLE;
-                case "V" -> throw new IllegalArgumentException("Illegal method argument type: " + arg);
+            vtis[i++] = switch (arg.descriptorString().charAt(0)) {
+                case 'I', 'S', 'C' ,'B', 'Z' ->  SimpleVerificationTypeInfo.ITEM_INTEGER;
+                case 'J' -> SimpleVerificationTypeInfo.ITEM_LONG;
+                case 'F' -> SimpleVerificationTypeInfo.ITEM_FLOAT;
+                case 'D' -> SimpleVerificationTypeInfo.ITEM_DOUBLE;
+                case 'V' -> throw new IllegalArgumentException("Illegal method argument type: " + arg);
                 default -> new StackMapDecoder.ObjectVerificationTypeInfoImpl(TemporaryConstantPool.INSTANCE.classEntry(arg));
             };
         }
