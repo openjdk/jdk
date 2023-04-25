@@ -276,18 +276,6 @@ class G1CardSetHashTable : public CHeapObj<mtGCCardSet> {
     G1CardSetHashTableValue* value() const { return _value; }
   };
 
-  class G1CardSetHashTableScan : public StackObj {
-    G1CardSet::ContainerPtrClosure* _scan_f;
-  public:
-    explicit G1CardSetHashTableScan(G1CardSet::ContainerPtrClosure* f) : _scan_f(f) { }
-
-    bool operator()(G1CardSetHashTableValue* value) {
-      _scan_f->do_containerptr(value->_region_idx, value->_num_occupied, value->_container);
-      return true;
-    }
-  };
-
-
 public:
   static const size_t InitialLogTableSize = 2;
 
@@ -335,14 +323,14 @@ public:
     return found.value();
   }
 
-  void iterate_safepoint(G1CardSet::ContainerPtrClosure* cl2) {
-    G1CardSetHashTableScan cl(cl2);
-    _table_scanner.do_safepoint_scan(cl);
+  template <typename SCAN_FUNC>
+  void iterate_safepoint(SCAN_FUNC& scan_f) {
+    _table_scanner.do_safepoint_scan(scan_f);
   }
 
-  void iterate(G1CardSet::ContainerPtrClosure* cl2) {
-    G1CardSetHashTableScan cl(cl2);
-    _table.do_scan(Thread::current(), cl);
+  template <typename SCAN_FUNC>
+  void iterate(SCAN_FUNC& scan_f) {
+    _table.do_scan(Thread::current(), scan_f);
   }
 
   void reset() {
@@ -924,10 +912,16 @@ void G1CardSet::iterate_cards_during_transfer(ContainerPtr const container, Card
 }
 
 void G1CardSet::iterate_containers(ContainerPtrClosure* cl, bool at_safepoint) {
+  auto do_value =
+    [&] (G1CardSetHashTableValue* value) {
+      cl->do_containerptr(value->_region_idx, value->_num_occupied, value->_container);
+      return true;
+    };
+
   if (at_safepoint) {
-    _table->iterate_safepoint(cl);
+    _table->iterate_safepoint(do_value);
   } else {
-    _table->iterate(cl);
+    _table->iterate(do_value);
   }
 }
 
