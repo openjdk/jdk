@@ -58,19 +58,21 @@ public class GuaranteedAsyncDeflationIntervalTest {
 
     public static class Test {
         // Inflate a lot of monitors, so that threshold heuristics definitely fires
-        public static final int MONITORS = 10_000;
+        private static final int MONITORS = 10_000;
 
-        public static Object[] monitors;
+        private static Object[] monitors;
+        private static long sink;
 
         public static void main(String... args) throws Exception {
             monitors = new Object[MONITORS];
             for (int i = 0; i < MONITORS; i++) {
                 Object o = new Object();
                 synchronized (o) {
-                    try {
-                        o.wait(1); // Inflate!
-                    } catch (InterruptedException ie) {
-                    }
+                    // Object is locked. In current Hotspot, the request for hashcode
+                    // would inflate the monitor. While this relies on implementation
+                    // detail, this is significantly quicker than doing wait(1), which
+                    // might stall for tens of milliseconds.
+                    sink += o.hashCode();
                 }
                 monitors[i] = o;
             }
