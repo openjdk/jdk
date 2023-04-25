@@ -39,22 +39,24 @@ class HeapRegionClosure;
 
 using G1CollectionSetRegionListIterator = GrowableArrayIterator<HeapRegion*>;
 
-// A set of HeapRegion*, elements typically sorted by decreasing gc efficiency
-// (without their gc efficiencies).
+// A set of HeapRegion*. Elements are typically sorted by decreasing gc efficiency
+// but their efficiencies are not stored.
 class G1CollectionSetRegionList {
   GrowableArray<HeapRegion*> _regions;
   size_t _reclaimable_bytes;
 
+  HeapRegion* at(uint index);
+
 public:
   G1CollectionSetRegionList();
 
-  // Append a HeapRegion at the end of this list.
+  // Append a HeapRegion to the end of this list.
   void append(HeapRegion* r);
-  // Remove the list of HeapRegion*.
+  // Remove the given list of HeapRegion* from this list. Assumes that the given
+  // list is a prefix of this list.
   void remove(G1CollectionSetRegionList* list);
 
-  HeapRegion* at(uint index);
-
+  // Empty contents of the list.
   void clear();
 
   uint length() const { return (uint)_regions.length(); }
@@ -103,11 +105,12 @@ private:
 public:
   G1CollectionCandidateList();
 
-  // Merge the given set of candidates into this list, preserving the efficiency condition.
+  // Merge the given set of candidates into this list, preserving the efficiency ordering.
   void merge(CandidateInfo* candidate_infos, uint num_infos);
   // Add the given element to this list at the end, making the list unsorted.
   void append_unsorted(HeapRegion* r);
-  // Restore sorting order by decreasing gc efficiency.
+  // Restore sorting order by decreasing gc efficiency, using the existing efficiency
+  // values.
   void sort_by_efficiency();
   // Removes any HeapRegions stored in this list also in the other list. The other
   // list may only contain regions in this list, sorted by gc efficiency. Returns

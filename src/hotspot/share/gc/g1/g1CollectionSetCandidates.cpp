@@ -153,9 +153,19 @@ void G1CollectionSetRegionList::append(HeapRegion* r) {
 }
 
 void G1CollectionSetRegionList::remove(G1CollectionSetRegionList* other) {
+#ifdef ASSERT
+  // Check that the given list is a prefix of this list.
+  int i = 0;
   for (HeapRegion* r : *other) {
-    _regions.remove(r);
+    assert(_regions.at(i) == r, "must be in order, but element %d is not", i);
+    i++;
   }
+#endif
+
+  if (other->length() == 0) {
+    return;
+  }
+  _regions.remove_till(other->length());
   _reclaimable_bytes -= other->reclaimable_bytes();
 }
 
@@ -170,12 +180,12 @@ void G1CollectionSetRegionList::clear() {
 
 #ifndef PRODUCT
 void G1CollectionSetRegionList::verify() {
-  size_t reclaimable_bytes = 0;
+  // We can't verify sorting because it is not guaranteed.
 
+  size_t reclaimable_bytes = 0;
   for (HeapRegion* r : _regions) {
     reclaimable_bytes += r->reclaimable_bytes();
   }
-
   assert(_reclaimable_bytes == reclaimable_bytes, "Mismatch between calculated and stored reclaimable bytes");
 }
 #endif
