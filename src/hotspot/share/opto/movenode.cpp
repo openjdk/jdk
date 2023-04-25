@@ -245,7 +245,7 @@ Node *CMoveINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if (PrintOpto) { tty->print_cr("CMOV to I2B"); }
   Node *n = new Conv2BNode( cmp->in(1) );
   if( flip )
-    n = new XorINode( phase->transform(n), phase->intcon(1) );
+  n = new XorINode( phase->transform(n), phase->intcon(1) );
 
   return n;
 }

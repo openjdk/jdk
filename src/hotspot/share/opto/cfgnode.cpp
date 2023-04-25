@@ -1576,7 +1576,7 @@ static Node *is_x2logic( PhaseGVN *phase, PhiNode *phi, int true_path ) {
   // Build int->bool conversion
   Node *n = new Conv2BNode(cmp->in(1));
   if( flipped )
-    n = new XorINode( phase->transform(n), phase->intcon(1) );
+  n = new XorINode( phase->transform(n), phase->intcon(1) );
 
   return n;
 }
