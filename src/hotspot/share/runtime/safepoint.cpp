@@ -603,7 +603,7 @@ void SafepointSynchronize::do_cleanup_tasks() {
   WorkerThreads* cleanup_workers = heap->safepoint_workers();
   if (cleanup_workers != nullptr) {
     // Parallel cleanup using GC provided thread pool.
-    const uint num_workers = MIN2<uint>(SAFEPOINT_CLEANUP_NUM_TASKS, cleanup_workers->max_workers());
+    const uint num_workers = MIN2<uint>(SAFEPOINT_CLEANUP_NUM_TASKS, cleanup_workers->active_workers());
     cleanup_workers->run_task(&cleanup, num_workers);
   } else {
     // Serial cleanup using VMThread.
