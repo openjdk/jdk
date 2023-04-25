@@ -177,7 +177,7 @@ void InterpreterMacroAssembler::check_and_handle_earlyret(Register java_thread) 
 
 void InterpreterMacroAssembler::get_unsigned_2_byte_index_at_bcp(Register reg, int bcp_offset) {
   assert(bcp_offset >= 0, "bcp is still pointing to start of bytecode");
-  if (AvoidUnalignedAccesses && (bcp_offset % 2)) { //-7k misalligned accesses on java -version
+  if (AvoidUnalignedAccesses && (bcp_offset % 2)) {
     lbu(t1, Address(xbcp, bcp_offset));
     lbu(reg, Address(xbcp, bcp_offset + 1));
     slli(reg, reg, 8);
@@ -203,7 +203,7 @@ void InterpreterMacroAssembler::get_cache_index_at_bcp(Register index,
                                                        size_t index_size) {
   assert(bcp_offset > 0, "bcp is still pointing to start of bytecode");
   if (index_size == sizeof(u2)) {
-    if (AvoidUnalignedAccesses)       // -87k misalligned accesses on java -version
+    if (AvoidUnalignedAccesses)
     {
       assert(index != tmp, "must use different register");
       load_unsigned_byte(index, Address(xbcp, bcp_offset));
@@ -256,7 +256,7 @@ void InterpreterMacroAssembler::get_cache_and_index_at_bcp(Register cache,
                                                            size_t index_size) {
   assert_different_registers(cache, index);
   assert_different_registers(cache, xcpool);
-  //register cache is trashed in next shadd, so lets use it as temporary register
+  //register "cache" is trashed in next shadd, so lets use it as a temporary register
   get_cache_index_at_bcp(index, cache, bcp_offset, index_size);
   assert(sizeof(ConstantPoolCacheEntry) == 4 * wordSize, "adjust code below");
   // Convert from field index to ConstantPoolCacheEntry
@@ -294,7 +294,7 @@ void InterpreterMacroAssembler::get_cache_entry_pointer_at_bcp(Register cache,
                                                                int bcp_offset,
                                                                size_t index_size) {
   assert_different_registers(cache, tmp);
-  //register cache is trashed in next ld, so lets use it as tmp register
+  //register "cache" is trashed in next ld, so lets use it as a temporary register
   get_cache_index_at_bcp(tmp, cache, bcp_offset, index_size);
   assert(sizeof(ConstantPoolCacheEntry) == 4 * wordSize, "adjust code below");
   // Convert from field index to ConstantPoolCacheEntry index
@@ -1952,7 +1952,7 @@ void InterpreterMacroAssembler::profile_parameters_type(Register mdp, Register t
 
 void InterpreterMacroAssembler::load_resolved_indy_entry(Register cache, Register index) {
   // Get index out of bytecode pointer, get_cache_entry_pointer_at_bcp
-  // cache register is trashed on next load, so use it a tmp register
+  // register "cache" is trashed in next ld, so lets use it as a temporary register
   get_cache_index_at_bcp(index, cache, 1, sizeof(u4));
   // Get address of invokedynamic array
   ld(cache, Address(xcpool, in_bytes(ConstantPoolCache::invokedynamic_entries_offset())));

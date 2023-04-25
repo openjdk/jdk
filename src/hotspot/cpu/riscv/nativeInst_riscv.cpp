@@ -231,11 +231,11 @@ void NativeMovConstReg::set_data(intptr_t x) {
     while (iter.next()) {
       if (iter.type() == relocInfo::oop_type) {
         oop* oop_addr = iter.oop_reloc()->oop_addr();
-        Bytes::put_native_u8((address)oop_addr, x);  // TODO: refactor
+        Bytes::put_native_u8((address)oop_addr, x);
         break;
       } else if (iter.type() == relocInfo::metadata_type) {
         Metadata** metadata_addr = iter.metadata_reloc()->metadata_addr();
-        Bytes::put_native_u8((address)metadata_addr, x);  // TODO: refactor
+        Bytes::put_native_u8((address)metadata_addr, x);
         break;
       }
     }
