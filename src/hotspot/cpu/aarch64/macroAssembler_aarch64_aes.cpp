@@ -270,6 +270,58 @@ public:
   virtual int length() { return 20; }
 };
 
+
+class PKernelGenerator: public KernelGenerator {
+
+
+public:
+
+  class Holder;
+  Holder *holder_list_head;
+
+  class Holder: public ResourceObj {
+    void (*_insn)(MacroAssembler *);
+    Holder *p;
+    Holder *next;
+  public:
+    Holder(PKernelGenerator *gen, void (*&insn)(MacroAssembler *)): _insn(insn) {
+      next = gen->holder_list_head;
+      gen->holder_list_head = this;
+    }
+  };
+
+  Holder *a(void (*insn)(MacroAssembler *)) {
+    return new Holder(this, insn);
+  }
+
+  int& (*fpi)(int*);
+  void (*fpi2)(MacroAssembler*);
+  int dump;
+
+  PKernelGenerator(Assembler *as, int unrolls)
+    : KernelGenerator(as, unrolls), holder_list_head(nullptr) {
+    fpi = [](int* a) -> int& { return *a; };
+    fpi2 = [](MacroAssembler *as) -> void { };
+    a([](MacroAssembler *as) -> void { as->add(r0, r0, r0); });
+    // a([](Assembler *as) { as->add(r0, r0, r0); });
+    // a([](Assembler *as) { as->add(r1, r1, r1); });
+    int n = 99;
+    dump = (*fpi)(&n);
+  }
+  virtual void generate(int index) {
+  }
+
+  virtual KernelGenerator *next() {
+    return this;
+  }
+
+  virtual int length() { return 4; }
+};
+
+void MacroAssembler::plop() {
+  PKernelGenerator barf(this, 10);
+}
+
 // Uses expanded key in v17..v31
 // Returns encrypted values in inputs.
 // If to != noreg, store value at to; likewise from

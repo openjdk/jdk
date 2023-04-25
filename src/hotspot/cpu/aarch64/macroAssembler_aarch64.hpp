@@ -1494,8 +1494,11 @@ public:
   void aesenc_loadkeys(Register key, Register keylen);
   void aesecb_encrypt(Register from, Register to, Register keylen,
                       FloatRegister data = v0, int unrolls = 1);
+
   void aesecb_decrypt(Register from, Register to, Register key, Register keylen);
   void aes_round(FloatRegister input, FloatRegister subkey);
+
+  void plop();
 
   // ChaCha20 functions support block
   void cc20_quarter_round(FloatRegister aVec, FloatRegister bVec,
