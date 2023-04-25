@@ -520,6 +520,9 @@ class methodHandle;
   do_intrinsic(_storeFence,               jdk_internal_misc_Unsafe,     storeFence_name, storeFence_signature,         F_RN)     \
    do_name(     storeFence_name,                                        "storeFence")                                            \
    do_alias(    storeFence_signature,                                   void_method_signature)                                   \
+  do_intrinsic(_storeStoreFence,          jdk_internal_misc_Unsafe,     storeStoreFence_name, storeStoreFence_signature, F_R)    \
+   do_name(     storeStoreFence_name,                                   "storeStoreFence")                                       \
+   do_alias(    storeStoreFence_signature,                              void_method_signature)                                   \
   do_intrinsic(_fullFence,                jdk_internal_misc_Unsafe,     fullFence_name, fullFence_signature,           F_RN)     \
    do_name(     fullFence_name,                                         "fullFence")                                             \
    do_alias(    fullFence_signature,                                    void_method_signature)                                   \

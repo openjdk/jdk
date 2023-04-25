@@ -6646,6 +6646,7 @@ instruct unnecessary_membar_volatile() %{
 
 instruct membar_storestore() %{
   match(MemBarStoreStore);
+  match(StoreStoreFence);
   ins_cost(0);
 
   size(0);
