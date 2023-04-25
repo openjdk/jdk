@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,7 +121,6 @@ public class HTTPSetAuthenticatorTest extends HTTPTest {
                                 ? 0 : EXPECTED_AUTH_CALLS_PER_TEST;
         int count;
         int defaultCount = AUTHENTICATOR.count.get();
-
         // Connect to the server with a GET request, then with a
         // POST that contains "Hello World!"
         // Uses authenticator #1
@@ -283,7 +282,7 @@ public class HTTPSetAuthenticatorTest extends HTTPTest {
     }
 
     static String toString(Authenticator a) {
-        return sun.net.www.protocol.http.AuthenticatorKeys.getKey(a);
+        return a == null ? "null" : a.toString();
     }
 
 }

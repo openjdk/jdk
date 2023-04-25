@@ -101,6 +101,10 @@ runtime/CompressedOops/CompressedClassPointers.java 8305765 generic-all
 runtime/StackGuardPages/TestStackGuardPagesNative.java 8303612 linux-all
 runtime/Thread/TestAlwaysPreTouchStacks.java 8305416 generic-all
 runtime/ErrorHandling/TestDwarf.java 8305489 linux-all
+runtime/Monitor/GuaranteedAsyncDeflationIntervalTest.java#allDisabled 8306774 generic-all
+runtime/Monitor/GuaranteedAsyncDeflationIntervalTest.java#guaranteedNoADI 8306774 generic-all
+runtime/Monitor/GuaranteedAsyncDeflationIntervalTest.java#allEnabled 8306774 generic-all
+runtime/Monitor/GuaranteedAsyncDeflationIntervalTest.java#guaranteedNoMUDT 8306774 generic-all
 
 applications/jcstress/copy.java 8229852 linux-all
 
