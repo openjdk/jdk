@@ -29,8 +29,9 @@ import static java.util.Objects.requireNonNull;
 /**
  * A nominal descriptor for a {@code Module} constant {@jvms 4.4.11}.
  *
- * <p>To create a {@linkplain ModuleDesc} for a module, use {@link #of}.
+ * <p>To create a {@linkplain ModuleDesc} for a module, use the {@link #of} method.
  *
+ * @jvms 4.4.11 The CONSTANT_Module_info Structure
  * @since 21
  */
 public sealed interface ModuleDesc
@@ -61,7 +62,7 @@ public sealed interface ModuleDesc
      * The ASCII character sequences \: and \@ may be used to encode a colon and
      * an at-sign in a module name.
      * </ul>
-     * @param name module name
+     * @param name the module name
      * @return a {@linkplain ModuleDesc} describing the desired module
      * @throws NullPointerException if the argument is {@code null}
      * @throws IllegalArgumentException if the name string is not in the

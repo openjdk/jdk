@@ -89,8 +89,8 @@
  * It is also suitable for describing {@code invokedynamic} call sites in bytecode
  * reading and writing APIs.
  *
- * <p>Other members of this package are {@link java.lang.constant.ModuleDesc}
- * and  {@link java.lang.constant.PackageDesc}. They represent module and package
+ * <p>Other members of this package are {@link ModuleDesc}
+ * and  {@link PackageDesc}. They represent module and package
  * info structures, suitable for describing modules and their content in bytecode
  * reading and writing APIs.
  *

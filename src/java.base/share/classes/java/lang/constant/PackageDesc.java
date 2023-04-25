@@ -29,9 +29,10 @@ import static java.util.Objects.requireNonNull;
 /**
  * A nominal descriptor for a {@code Package} constant {@jvms 4.4.12}.
  *
- * <p>To create a {@linkplain PackageDesc} for a package, use {@link #of} or
- * {@link #ofInternalName(String)}.
+ * <p>To create a {@linkplain PackageDesc} for a package, use the {@link #of} or
+ * {@link #ofInternalName(String)} method.
  *
+ *  * @jvms 4.4.11 The CONSTANT_Module_info Structure
  * @since 21
  */
 public sealed interface PackageDesc
@@ -43,7 +44,7 @@ public sealed interface PackageDesc
      * <p>
      * {@jls 13.1}
      *
-     * @param name the fully qualified (dot-separated) binary package name
+     * @param name the fully qualified (dot-separated) package name
      * @return a {@linkplain PackageDesc} describing the desired package
      * @throws NullPointerException if the argument is {@code null}
      * @throws IllegalArgumentException if the name string is not in the
@@ -62,7 +63,7 @@ public sealed interface PackageDesc
      * {@jvms 4.2.1} In this internal form, the ASCII periods (.) that normally
      * separate the identifiers
      * which make up the binary name are replaced by ASCII forward slashes (/).
-     * @param name the fully qualified class name, in internal (slash-separated)
+     * @param name the fully qualified package name, in internal (slash-separated) form
      * form
      * @return a {@linkplain PackageDesc} describing the desired package
      * @throws NullPointerException if the argument is {@code null}
@@ -79,7 +80,7 @@ public sealed interface PackageDesc
      * of this {@linkplain PackageDesc}.
      *
      * @return the package name, or the empty string for the
-     * default package
+     * unnamed package
      */
     String packageInternalName();
 
@@ -88,7 +89,7 @@ public sealed interface PackageDesc
      * of this {@linkplain PackageDesc}.
      *
      * @return the package name, or the empty string for the
-     * default package
+     * unnamed package
      */
     default String packageName() {
         return ConstantUtils.internalToBinary(packageInternalName());
