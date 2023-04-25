@@ -688,9 +688,7 @@ bool ShenandoahHeap::doing_mixed_evacuations() {
 }
 
 bool ShenandoahHeap::is_old_bitmap_stable() const {
-  ShenandoahOldGeneration::State state = _old_generation->state();
-  return state != ShenandoahOldGeneration::MARKING
-      && state != ShenandoahOldGeneration::BOOTSTRAPPING;
+  return _old_generation->is_mark_complete();
 }
 
 bool ShenandoahHeap::is_gc_generation_young() const {
