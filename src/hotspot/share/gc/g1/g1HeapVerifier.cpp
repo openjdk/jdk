@@ -233,99 +233,6 @@ public:
   size_t live_bytes() { return _live_bytes; }
 };
 
-class VerifyArchiveOopClosure: public BasicOopIterateClosure {
-  HeapRegion* _hr;
-public:
-  VerifyArchiveOopClosure(HeapRegion *hr) : _hr(hr) { }
-  void do_oop(narrowOop *p) { do_oop_work(p); }
-  void do_oop(      oop *p) { do_oop_work(p); }
-
-  template <class T> void do_oop_work(T *p) {
-    oop obj = RawAccess<>::oop_load(p);
-
-    if (_hr->is_open_archive()) {
-      guarantee(obj == NULL || G1CollectedHeap::heap()->heap_region_containing(obj)->is_archive(),
-                "Archive object at " PTR_FORMAT " references a non-archive object at " PTR_FORMAT,
-                p2i(p), p2i(obj));
-    } else {
-      assert(_hr->is_closed_archive(), "should be closed archive region");
-      guarantee(obj == NULL || G1CollectedHeap::heap()->heap_region_containing(obj)->is_closed_archive(),
-                "Archive object at " PTR_FORMAT " references a non-archive object at " PTR_FORMAT,
-                p2i(p), p2i(obj));
-    }
-  }
-};
-
-class VerifyObjectInArchiveRegionClosure: public ObjectClosure {
-  HeapRegion* _hr;
-public:
-  VerifyObjectInArchiveRegionClosure(HeapRegion *hr, bool verbose)
-    : _hr(hr) { }
-  // Verify that all object pointers are to archive regions.
-  void do_object(oop o) {
-    VerifyArchiveOopClosure checkOop(_hr);
-    assert(o != NULL, "Should not be here for NULL oops");
-    o->oop_iterate(&checkOop);
-  }
-};
-
-// Should be only used at CDS dump time
-class VerifyReadyForArchivingRegionClosure : public HeapRegionClosure {
-  bool _seen_free;
-  bool _has_holes;
-  bool _has_unexpected_holes;
-  bool _has_humongous;
-public:
-  bool has_holes() {return _has_holes;}
-  bool has_unexpected_holes() {return _has_unexpected_holes;}
-  bool has_humongous() {return _has_humongous;}
-
-  VerifyReadyForArchivingRegionClosure() : HeapRegionClosure() {
-    _seen_free = false;
-    _has_holes = false;
-    _has_unexpected_holes = false;
-    _has_humongous = false;
-  }
-  virtual bool do_heap_region(HeapRegion* hr) {
-    const char* hole = "";
-
-    if (hr->is_free()) {
-      _seen_free = true;
-    } else {
-      if (_seen_free) {
-        _has_holes = true;
-        if (hr->is_humongous()) {
-          hole = " hole";
-        } else {
-          _has_unexpected_holes = true;
-          hole = " hole **** unexpected ****";
-        }
-      }
-    }
-    if (hr->is_humongous()) {
-      _has_humongous = true;
-    }
-    log_info(gc, region, cds)("HeapRegion " PTR_FORMAT " %s%s", p2i(hr->bottom()), hr->get_type_str(), hole);
-    return false;
-  }
-};
-
-class VerifyArchivePointerRegionClosure: public HeapRegionClosure {
-  virtual bool do_heap_region(HeapRegion* r) {
-   if (r->is_archive()) {
-      VerifyObjectInArchiveRegionClosure verify_oop_pointers(r, false);
-      r->object_iterate(&verify_oop_pointers);
-    }
-    return false;
-  }
-};
-
-void G1HeapVerifier::verify_archive_regions() {
-  G1CollectedHeap*  g1h = G1CollectedHeap::heap();
-  VerifyArchivePointerRegionClosure cl;
-  g1h->heap_region_iterate(&cl);
-}
-
 class VerifyRegionClosure: public HeapRegionClosure {
 private:
   VerifyOption     _vo;
@@ -346,14 +253,7 @@ public:
     // Humongous and old regions regions might be of any state, so can't check here.
     guarantee(!r->is_free() || !r->rem_set()->is_tracked(), "Remembered set for free region %u must be untracked, is %s", r->hrm_index(), r->rem_set()->get_state_str());
 
-    // For archive regions, verify there are no heap pointers to non-pinned regions.
-    if (r->is_closed_archive()) {
-      VerifyObjectInArchiveRegionClosure verify_oop_pointers(r, false);
-      r->object_iterate(&verify_oop_pointers);
-    } else if (r->is_open_archive()) {
-      VerifyObjsInRegionClosure verify_open_archive_oop(r, _vo);
-      r->object_iterate(&verify_open_archive_oop);
-    } else if (r->is_continues_humongous()) {
+    if (r->is_continues_humongous()) {
       // Verify that the continues humongous regions' remembered set state
       // matches the one from the starts humongous region.
       if (r->rem_set()->get_state_str() != r->humongous_start_region()->rem_set()->get_state_str()) {
@@ -482,22 +382,19 @@ void G1HeapVerifier::verify(VerifyOption vo) {
 class VerifyRegionListsClosure : public HeapRegionClosure {
 private:
   HeapRegionSet*   _old_set;
-  HeapRegionSet*   _archive_set;
   HeapRegionSet*   _humongous_set;
   HeapRegionManager* _hrm;
 
 public:
   uint _old_count;
-  uint _archive_count;
   uint _humongous_count;
   uint _free_count;
 
   VerifyRegionListsClosure(HeapRegionSet* old_set,
-                           HeapRegionSet* archive_set,
                            HeapRegionSet* humongous_set,
                            HeapRegionManager* hrm) :
-    _old_set(old_set), _archive_set(archive_set), _humongous_set(humongous_set), _hrm(hrm),
-    _old_count(), _archive_count(), _humongous_count(), _free_count(){ }
+    _old_set(old_set), _humongous_set(humongous_set), _hrm(hrm),
+    _old_count(), _humongous_count(), _free_count(){ }
 
   bool do_heap_region(HeapRegion* hr) {
     if (hr->is_young()) {
@@ -508,24 +405,20 @@ public:
     } else if (hr->is_empty()) {
       assert(_hrm->is_free(hr), "Heap region %u is empty but not on the free list.", hr->hrm_index());
       _free_count++;
-    } else if (hr->is_archive()) {
-      assert(hr->containing_set() == _archive_set, "Heap region %u is archive but not in the archive set.", hr->hrm_index());
-      _archive_count++;
     } else if (hr->is_old()) {
       assert(hr->containing_set() == _old_set, "Heap region %u is old but not in the old set.", hr->hrm_index());
       _old_count++;
     } else {
       // There are no other valid region types. Check for one invalid
       // one we can identify: pinned without old or humongous set.
-      assert(!hr->is_pinned(), "Heap region %u is pinned but not old (archive) or humongous.", hr->hrm_index());
+      assert(!hr->is_pinned(), "Heap region %u is pinned but not old or humongous.", hr->hrm_index());
       ShouldNotReachHere();
     }
     return false;
   }
 
-  void verify_counts(HeapRegionSet* old_set, HeapRegionSet* archive_set, HeapRegionSet* humongous_set, HeapRegionManager* free_list) {
+  void verify_counts(HeapRegionSet* old_set, HeapRegionSet* humongous_set, HeapRegionManager* free_list) {
     guarantee(old_set->length() == _old_count, "Old set count mismatch. Expected %u, actual %u.", old_set->length(), _old_count);
-    guarantee(archive_set->length() == _archive_count, "Archive set count mismatch. Expected %u, actual %u.", archive_set->length(), _archive_count);
     guarantee(humongous_set->length() == _humongous_count, "Hum set count mismatch. Expected %u, actual %u.", humongous_set->length(), _humongous_count);
     guarantee(free_list->num_free_regions() == _free_count, "Free list count mismatch. Expected %u, actual %u.", free_list->num_free_regions(), _free_count);
   }
@@ -540,9 +433,9 @@ void G1HeapVerifier::verify_region_sets() {
   // Finally, make sure that the region accounting in the lists is
   // consistent with what we see in the heap.
 
-  VerifyRegionListsClosure cl(&_g1h->_old_set, &_g1h->_archive_set, &_g1h->_humongous_set, &_g1h->_hrm);
+  VerifyRegionListsClosure cl(&_g1h->_old_set, &_g1h->_humongous_set, &_g1h->_hrm);
   _g1h->heap_region_iterate(&cl);
-  cl.verify_counts(&_g1h->_old_set, &_g1h->_archive_set, &_g1h->_humongous_set, &_g1h->_hrm);
+  cl.verify_counts(&_g1h->_old_set, &_g1h->_humongous_set, &_g1h->_hrm);
 }
 
 void G1HeapVerifier::prepare_for_verify() {
@@ -693,11 +586,6 @@ public:
         return true;
       }
       if (region_attr.is_in_cset()) {
-        if (hr->is_archive()) {
-          log_error(gc, verify)("## is_archive in collection set for region %u", i);
-          _failures = true;
-          return true;
-        }
         if (hr->is_young() != (region_attr.is_young())) {
           log_error(gc, verify)("## is_young %d / region attr type %s inconsistency for region %u",
                                hr->is_young(), region_attr.get_type_str(), i);
