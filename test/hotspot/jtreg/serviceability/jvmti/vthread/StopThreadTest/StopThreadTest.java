@@ -22,24 +22,35 @@
  */
 
 /*
- * @test
- *
+ * @test id=default
  * @summary Verifies JVMTI StopThread support for virtual threads.
- * DESCRIPTION
+ * @requires vm.continuations
+ * @run main/othervm/native -agentlib:StopThreadTest StopThreadTest
+ */
+
+/*
+ * @test id=no-vmcontinuations
+ * @summary Verifies JVMTI StopThread support for bound virtual threads.
+ * @run main/othervm/native -agentlib:StopThreadTest -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations StopThreadTest
+ */
+
+/*
+ * @test id=platform
+ * @summary Verifies JVMTI StopThread support for platform threads.
+ * @run main/othervm/native -agentlib:StopThreadTest StopThreadTest platform
+ */
+
+import java.lang.AssertionError;
+
+/*
  *     The test exercises the JVMTI function: StopThread(jthread).
- *     The test creates a new virtual thread.
+ *     The test creates a new virtual or platform thread.
  *     Its method run() invokes the following methods:
  *      - method A() that is blocked on a monitor
  *      - method B() that is stopped at a breakpoint
  *      - method C() that forces agent to send AssertionError exception to its own thread
  *     All cases are using JVMTI StopThread to send an AssertionError object.
- *
- * @requires vm.continuations
- * @run main/othervm/native -agentlib:StopThreadTest StopThreadTest
  */
-
-import java.lang.AssertionError;
-
 public class StopThreadTest {
     private static final String agentLib = "StopThreadTest";
     static final int JVMTI_ERROR_NONE = 0;
@@ -57,6 +68,7 @@ public class StopThreadTest {
     static native int  stopThread(Thread thread);
 
     static int status = PASSED;
+    static boolean is_virtual = true;
 
     static void setFailed(String msg) {
         log("\nFAILED: " + msg);
@@ -69,6 +81,7 @@ public class StopThreadTest {
     }
 
     public static void main(String args[]) {
+        is_virtual = !(args.length > 0 && args[0].equals("platform"));
         run();
         if (status == FAILED) {
             throwFailed("StopThreadTest!");
@@ -86,15 +99,21 @@ public class StopThreadTest {
 
         log("\nMain #A: method A() must be blocked on entering a synchronized statement");
         synchronized (TestTask.lock) {
-            testTaskThread = Thread.ofVirtual().name("TestTaskThread").start(testTask);
+            if (is_virtual) {
+                testTaskThread = Thread.ofVirtual().name("TestTaskThread").start(testTask);
+            } else {
+                testTaskThread = Thread.ofPlatform().name("TestTaskThread").start(testTask);
+            }
             testTask.ensureStarted();
 
-            log("\nMain #A.1: unsuspended");
-            retCode = stopThread(testTaskThread);
-            if (retCode != THREAD_NOT_SUSPENDED) {
-                throwFailed("Main #A.1: expected THREAD_NOT_SUSPENDED instead of: " + retCode);
-            } else {
-                log("Main #A.1: got expected THREAD_NOT_SUSPENDED");
+            if (is_virtual) { // this check is for virtual target thread only
+                log("\nMain #A.1: unsuspended");
+                retCode = stopThread(testTaskThread);
+                if (retCode != THREAD_NOT_SUSPENDED) {
+                    throwFailed("Main #A.1: expected THREAD_NOT_SUSPENDED instead of: " + retCode);
+                } else {
+                    log("Main #A.1: got expected THREAD_NOT_SUSPENDED");
+                }
             }
 
             log("\nMain #A.2: suspended");
@@ -111,10 +130,12 @@ public class StopThreadTest {
         {
             ensureAtBreakpoint();
 
-            log("\nMain #B.1: unsuspended");
-            retCode = stopThread(testTaskThread);
-            if (retCode != THREAD_NOT_SUSPENDED) {
-                throwFailed("Main #B.1: expected THREAD_NOT_SUSPENDED instead of: " + retCode);
+            if (is_virtual) { // this check is for virtual target thread only
+                log("\nMain #B.1: unsuspended");
+                retCode = stopThread(testTaskThread);
+                if (retCode != THREAD_NOT_SUSPENDED) {
+                    throwFailed("Main #B.1: expected THREAD_NOT_SUSPENDED instead of: " + retCode);
+                }
             }
 
             log("\nMain #B.2: suspended");
@@ -130,7 +151,8 @@ public class StopThreadTest {
 
         log("\nMain #C: method C() sends AssertionError object to its own thread");
         {
-            // StopThread is expected to succeed.
+            // StopThread is called from the test task (own thread) and expected to succeed.
+            // No suspension of the test task thread is required or can be done in this case.
             testTask.ensureFinished();
         }
 
@@ -185,6 +207,7 @@ public class StopThreadTest {
             if (!seenExceptionFromA) {
                 StopThreadTest.setFailed("TestTask.run: expected AssertionError from method A()");
             }
+            Thread.interrupted(); // Work around an issue that the interrupt bit can be not cleared.
             sleep(1); // to cause yield
 
             boolean seenExceptionFromB = false;
@@ -197,6 +220,7 @@ public class StopThreadTest {
             if (!seenExceptionFromB) {
                 StopThreadTest.setFailed("TestTask.run: expected AssertionError from method B()");
             }
+            Thread.interrupted(); // Work around an issue that the interrupt bit can be not cleared.
             sleep(1); // to cause yield
 
             boolean seenExceptionFromC = false;
