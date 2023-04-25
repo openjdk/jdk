@@ -27,9 +27,9 @@ package java.lang.constant;
 import static java.util.Objects.requireNonNull;
 
 /**
- * A nominal descriptor for a {@code Module} constant {@jvms 4.4.11}.
+ * A nominal descriptor for a {@code Module} constant.
  *
- * <p>To create a {@linkplain ModuleDesc} for a module, use the {@link #of} method.
+ * <p>To create a {@link ModuleDesc} for a module, use the {@link #of} method.
  *
  * @jvms 4.4.11 The CONSTANT_Module_info Structure
  * @since 21
@@ -38,35 +38,15 @@ public sealed interface ModuleDesc
         permits ModuleDescImpl {
 
     /**
-     * Returns a {@linkplain ModuleDesc} for a module,
+     * Returns a {@link ModuleDesc} for a module,
      * given the name of the module.
      *
-     * <p>{@jvms 4.2.3} Module names are not encoded in "internal form" like
-     * class and interface names, that is, the ASCII periods (.) that separate
-     * the identifiers in a module name are not replaced by ASCII forward
-     * slashes (/).
-     *
-     * <p>Module names may be drawn from the entire Unicode codespace, subject
-     * to the following constraints:
-     * <ul>
-     * <li>A module name must not contain any code point in the range
-     * '&#92;u0000' to '&#92;u001F' inclusive.
-     * <li>The ASCII backslash (\) is reserved for use as an escape character in
-     * module names. It must not appear in a module name unless it is followed
-     * by an ASCII backslash, an ASCII colon (:), or an ASCII at-sign (@).
-     * The ASCII character sequence \\ may be used to encode a backslash in a
-     * module name.
-     * <li>The ASCII colon (:) and at-sign (@) are reserved for future use in
-     * module names.
-     * They must not appear in module names unless they are escaped.
-     * The ASCII character sequences \: and \@ may be used to encode a colon and
-     * an at-sign in a module name.
-     * </ul>
      * @param name the module name
-     * @return a {@linkplain ModuleDesc} describing the desired module
+     * @return a {@link ModuleDesc} describing the desired module
      * @throws NullPointerException if the argument is {@code null}
      * @throws IllegalArgumentException if the name string is not in the
      * correct format
+     * @jvms 4.2.3 Module and Package Names
      */
     static ModuleDesc of(String name) {
         ConstantUtils.validateModuleName(requireNonNull(name));
@@ -83,7 +63,7 @@ public sealed interface ModuleDesc
     /**
      * Compare the specified object with this descriptor for equality.  Returns
      * {@code true} if and only if the specified object is also a
-     * {@linkplain ModuleDesc} and both describe the same module.
+     * {@link ModuleDesc} and both describe the same module.
      *
      * @param o the other object
      * @return whether this descriptor is equal to the other object
