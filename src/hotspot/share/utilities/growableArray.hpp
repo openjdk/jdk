@@ -809,12 +809,15 @@ public:
     this->clear_and_deallocate();
   }
 
-  void* operator new(size_t size) throw() {
+  void* operator new(size_t size) {
     return AnyObj::operator new(size, F);
   }
 
   void* operator new(size_t size, const std::nothrow_t&  nothrow_constant) throw() {
     return AnyObj::operator new(size, nothrow_constant, F);
+  }
+  void operator delete(void *p) {
+    AnyObj::operator delete(p);
   }
 };
 

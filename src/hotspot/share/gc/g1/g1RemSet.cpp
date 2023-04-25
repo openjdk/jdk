@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -199,7 +199,7 @@ private:
   // collection. Subsumes common checks like filtering out everything but old and
   // humongous regions outside the collection set.
   // This is valid because we are not interested in scanning stray remembered set
-  // entries from free or archive regions.
+  // entries from free regions.
   HeapWord** _scan_top;
 
   class G1ClearCardTableTask : public G1AbstractSubTask {
@@ -327,7 +327,7 @@ public:
   // as we do not clean up remembered sets before merging heap roots.
   bool contains_cards_to_process(uint const region_idx) const {
     HeapRegion* hr = G1CollectedHeap::heap()->region_at_or_null(region_idx);
-    return (hr != NULL && !hr->in_collection_set() && hr->is_old_or_humongous_or_archive());
+    return (hr != NULL && !hr->in_collection_set() && hr->is_old_or_humongous());
   }
 
   size_t num_visited_cards() const {
@@ -426,7 +426,7 @@ public:
   void add_dirty_region(uint const region) {
 #ifdef ASSERT
    HeapRegion* hr = G1CollectedHeap::heap()->region_at(region);
-   assert(!hr->in_collection_set() && hr->is_old_or_humongous_or_archive(),
+   assert(!hr->in_collection_set() && hr->is_old_or_humongous(),
           "Region %u is not suitable for scanning, is %sin collection set or %s",
           hr->hrm_index(), hr->in_collection_set() ? "" : "not ", hr->get_short_type_str());
 #endif
@@ -714,7 +714,7 @@ public:
   }
 
   bool do_heap_region(HeapRegion* r) {
-    assert(!r->in_collection_set() && r->is_old_or_humongous_or_archive(),
+    assert(!r->in_collection_set() && r->is_old_or_humongous(),
            "Should only be called on old gen non-collection set regions but region %u is not.",
            r->hrm_index());
     uint const region_idx = r->hrm_index();
@@ -883,7 +883,7 @@ void G1RemSet::prepare_region_for_scan(HeapRegion* r) {
   // to NULL (don't scan) in the initialization.
   if (r->in_collection_set()) {
     assert_scan_top_is_null(hrm_index);
-  } else if (r->is_old_or_humongous_or_archive()) {
+  } else if (r->is_old_or_humongous()) {
     _scan_state->set_scan_top(hrm_index, r->top());
   } else {
     assert_scan_top_is_null(hrm_index);
@@ -1476,7 +1476,7 @@ bool G1RemSet::clean_card_before_refine(CardValue** const card_ptr_addr) {
   // In the normal (non-stale) case, the synchronization between the
   // enqueueing of the card and processing it here will have ensured
   // we see the up-to-date region type here.
-  if (!r->is_old_or_humongous_or_archive()) {
+  if (!r->is_old_or_humongous()) {
     return false;
   }
 
@@ -1485,9 +1485,8 @@ bool G1RemSet::clean_card_before_refine(CardValue** const card_ptr_addr) {
   // (part of) an object at the end of the allocated space and extend
   // beyond the end of allocation.
 
-  // Non-humongous objects are either allocated in the old regions during GC,
-  // or mapped in archive regions during startup. So if region is old or
-  // archive then top is stable.
+  // Non-humongous objects are either allocated in the old regions during GC.
+  // So if region is old then top is stable.
   // Humongous object allocation sets top last; if top has not yet been set,
   // this is a stale card and we'll end up with an empty intersection.
   // If this is not a stale card, the synchronization between the
@@ -1518,7 +1517,7 @@ void G1RemSet::refine_card_concurrently(CardValue* const card_ptr,
   // And find the region containing it.
   HeapRegion* r = _g1h->heap_region_containing(start);
   // This reload of the top is safe even though it happens after the full
-  // fence, because top is stable for old, archive and unfiltered humongous
+  // fence, because top is stable for old and unfiltered humongous
   // regions, so it must return the same value as the previous load when
   // cleaning the card. Also cleaning the card and refinement of the card
   // cannot span across safepoint, so we don't need to worry about top being
