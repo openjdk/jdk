@@ -328,7 +328,7 @@ public final class StackCounter {
                     }
                     case RET -> {
                         local(bcs.getIndex());
-                        rets++; //subroutines must be counted for later maxStack correction 
+                        rets++; //subroutines must be counted for later maxStack correction
                         next();
                     }
                     default ->
