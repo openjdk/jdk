@@ -2716,7 +2716,7 @@ static jbyteArray get_encoded_annotation_data(InstanceKlass* holder, AnnotationA
   InstanceKlass** filter = filter_length == 1 ?
       (InstanceKlass**) &filter_klass_pointers:
       (InstanceKlass**) filter_klass_pointers;
-  objArrayOop filter_oop = oopFactory::new_objectArray(filter_length, CHECK_NULL);
+  objArrayOop filter_oop = oopFactory::new_objArray(vmClasses::Class_klass(), filter_length, CHECK_NULL);
   objArrayHandle filter_classes(THREAD, filter_oop);
   for (int i = 0; i < filter_length; i++) {
     filter_classes->obj_at_put(i, filter[i]->java_mirror());
