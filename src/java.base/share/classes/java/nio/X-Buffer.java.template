@@ -2046,8 +2046,8 @@ public abstract sealed class $Type$Buffer
     public $Type$Buffer append(CharSequence csq, int start, int end) {
         if (csq instanceof CharBuffer cb) {
             //
-            // pre-emptively check for overflow as put(int,CharBuffer,int,int)
-            // would throw IndexOutOfBoundsException instead
+            // the append method throws BufferOverflowException when
+            // there is insufficient space in the buffer
             //
             int length = end - start;
             int pos = position();

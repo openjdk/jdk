@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 5067405 8306623
+ * @bug 5067405
  * @summary Basic test for classes which implement Appendable.
  */
 
@@ -39,12 +39,11 @@ import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.Writer;
-import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 
 interface BasicRunnable extends Runnable {
-    void init(Appendable a, CharSequence csq, String exp);
+    void init(Appendable a, String csq, String exp);
     Appendable reset(Appendable csq);
 }
 
@@ -108,13 +107,13 @@ public class Basic {
     private static BasicRunnable testBufferedWriter =
         new BasicRunnable() {
             private String csn, exp;
-            public void init(Appendable bw, CharSequence csq, String exp) {
+            public void init(Appendable bw, String csn, String exp) {
                 try {
                     ((BufferedWriter)bw).flush();
                 } catch (IOException x) {
                     fail(x);
                 }
-                this.csn = csq != null ? csq.getClass().getName() : "null";
+                this.csn = csn;
                 this.exp = exp;
             }
             public void run() {
@@ -129,9 +128,9 @@ public class Basic {
         new BasicRunnable() {
             private String csn, exp;
             private CharArrayWriter cw;
-            public void init(Appendable cw, CharSequence csq, String exp) {
+            public void init(Appendable cw, String csn, String exp) {
                 this.cw = (CharArrayWriter)cw;
-                this.csn = csq != null ? csq.getClass().getName() : "null";
+                this.csn = csn;
                 this.exp = exp;
             }
             public void run() {
@@ -145,13 +144,13 @@ public class Basic {
     private static BasicRunnable testFileWriter =
         new BasicRunnable() {
             private String csn, exp;
-            public void init(Appendable fw, CharSequence csq, String exp) {
+            public void init(Appendable fw, String csn, String exp) {
                 try {
                     ((FileWriter)fw).flush();
                 } catch (IOException x) {
                     fail(x);
                 }
-                this.csn = csq != null ? csq.getClass().getName() : "null";
+                this.csn = csn;
                 this.exp = exp;
             }
             public void run() {
@@ -181,13 +180,13 @@ public class Basic {
     private static BasicRunnable testOutputStreamWriter =
         new BasicRunnable() {
             private String csn, exp;
-            public void init(Appendable osw, CharSequence csq, String exp) {
+            public void init(Appendable osw, String csn, String exp) {
                 try {
                     ((OutputStreamWriter)osw).flush();
                 } catch (IOException x) {
                     fail(x);
                 }
-                this.csn = csq != null ? csq.getClass().getName() : "null";
+                this.csn = csn;
                 this.exp = exp;
             }
             public void run() {
@@ -201,9 +200,9 @@ public class Basic {
     private static BasicRunnable testPrintWriter =
         new BasicRunnable() {
             private String csn, exp;
-            public void init(Appendable pw, CharSequence csq, String exp) {
+            public void init(Appendable pw, String csn, String exp) {
                 ((PrintWriter)pw).flush();
-                this.csn = csq != null ? csq.getClass().getName() : "null";
+                this.csn = csn;
                 this.exp = exp;
             }
             public void run() {
@@ -218,9 +217,9 @@ public class Basic {
         new BasicRunnable() {
             private String csn, exp;
             private StringWriter sw;
-            public void init(Appendable sw, CharSequence csq, String exp) {
+            public void init(Appendable sw, String csn, String exp) {
                 this.sw = (StringWriter)sw;
-                this.csn = csq != null ? csq.getClass().getName() : "null";
+                this.csn = csn;
                 this.exp = exp;
             }
             public void run() {
@@ -233,9 +232,9 @@ public class Basic {
     private static BasicRunnable testPrintStream =
         new BasicRunnable() {
             private String csn, exp;
-            public void init(Appendable ps, CharSequence csq, String exp) {
+            public void init(Appendable ps, String csn, String exp) {
                 ((PrintStream)ps).flush();
-                this.csn = csq != null ? csq.getClass().getName() : "null";
+                this.csn = csn;
                 this.exp = exp;
             }
             public void run() {
@@ -250,43 +249,14 @@ public class Basic {
         new BasicRunnable() {
             private String csn, exp;
             private CharBuffer cb;
-            private CharSequence csq;
-            public void init(Appendable cb, CharSequence csq, String exp) {
+            public void init(Appendable cb, String csn, String exp) {
                 this.cb = (CharBuffer)cb;
-                this.csq = csq;
-                this.csn = csq != null ? csq.getClass().getName() : "null";
+                this.csn = csn;
                 this.exp = exp;
             }
             public void run() {
                 cb.limit(cb.position()).rewind();
                 ck("CharBuffer.append(" + csn + ")", exp, cb.toString());
-
-                // append() should throw BufferOverflowException
-                int alen = csq != null ? csq.length() : 0;
-                try {
-                    CharBuffer.allocate(alen/8).append(csq, alen/4, alen/2);
-                } catch (BufferOverflowException expected) {
-                    // ignore the BufferOverflowException
-                } catch (Throwable ex) {
-                    fail(ex);
-                }
-
-                // append() should throw IndexOutOfBoundsException
-                int[][] bounds = new int[][] {
-                    {-1, alen},         // negative start
-                    {0, -1},            // negative end
-                    {1, 0},             // start > end
-                    {alen/2, alen + 1}  // end > alen
-                };
-                for (int[] b : bounds) {
-                    try {
-                        CharBuffer.allocate(alen + 1).append(csq, b[0], b[1]);
-                    } catch (IndexOutOfBoundsException expected) {
-                        // ignore the IndexOutOfBoundsException
-                    } catch (Throwable ex) {
-                        fail(ex);
-                    }
-                }
             }
             public Appendable reset(Appendable cb) {
                 ((CharBuffer)cb).clear();
@@ -297,9 +267,9 @@ public class Basic {
         new BasicRunnable() {
             private String csn, exp;
             private StringBuffer sb;
-            public void init(Appendable sb, CharSequence csq, String exp) {
+            public void init(Appendable sb, String csn, String exp) {
                 this.sb = (StringBuffer)sb;
-                this.csn = csq != null ? csq.getClass().getName() : "null";
+                this.csn = csn;
                 this.exp = exp;
             }
             public void run() {
@@ -313,9 +283,9 @@ public class Basic {
         new BasicRunnable() {
             private String csn, exp;
             private StringBuilder sb;
-            public void init(Appendable sb, CharSequence csq, String exp) {
+            public void init(Appendable sb, String csn, String exp) {
                 this.sb = (StringBuilder)sb;
-                this.csn = csq != null ? csq.getClass().getName() : "null";
+                this.csn = csn;
                 this.exp = exp;
             }
             public void run() {
@@ -335,7 +305,7 @@ public class Basic {
             int end = sp[j][1];
             try {
                 thunk.init(a.append(csq, start, end),
-                           csq,
+                           csq.getClass().getName(),
                            s.subSequence(start, end).toString());
                 thunk.run();
                 a = thunk.reset(a);
@@ -367,7 +337,7 @@ public class Basic {
         int start = 1;
         int end = 2;
         try {
-            thunk.init(a.append(null, start, end), (CharSequence)null,
+            thunk.init(a.append(null, start, end), "null",
                        "null".subSequence(start, end).toString());
             thunk.run();
             a = thunk.reset(a);
