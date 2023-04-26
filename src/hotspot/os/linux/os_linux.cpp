@@ -761,22 +761,13 @@ static void *thread_native_entry(Thread *thread) {
 // __pthread_get_minstack() to obtain the minstack size and derive the
 // static TLS size from it. We then increase the user requested stack
 // size by this TLS size. The same function is used to determine whether
-// AdjustStackSizeForGuardPages needs to be true.
+// adjustStackSizeForGuardPages() needs to be true.
 //
 // Due to compatibility concerns, this size adjustment is opt-in and
 // controlled via AdjustStackSizeForTLS.
 typedef size_t (*GetMinStack)(const pthread_attr_t *attr);
 
-GetMinStack _get_minstack_func = nullptr;
-
-static void get_minstack_init() {
-  if (_get_minstack_func == nullptr) {
-    _get_minstack_func =
-      (GetMinStack)dlsym(RTLD_DEFAULT, "__pthread_get_minstack");
-    log_info(os, thread)("Lookup of __pthread_get_minstack %s",
-                         _get_minstack_func == nullptr ? "failed" : "succeeded");
-  }
-}
+GetMinStack _get_minstack_func = nullptr;  // Initialized via os::init_2()
 
 // Returns the size of the static TLS area glibc puts on thread stacks.
 // The value is cached on first use, which occurs when the first thread
@@ -789,7 +780,7 @@ static size_t get_static_tls_area_size(const pthread_attr_t *attr) {
 
     // Remove non-TLS area size included in minstack size returned
     // by __pthread_get_minstack() to get the static TLS size.
-    // If AdjustStackSizeForGuardPages is true, minstack size includes
+    // If adjustStackSizeForGuardPages() is true, minstack size includes
     // guard_size. Otherwise guard_size is automatically added
     // to the stack size by pthread_create and is no longer included
     // in minstack size. In both cases, the guard_size is taken into
@@ -820,30 +811,40 @@ static size_t get_static_tls_area_size(const pthread_attr_t *attr) {
 }
 
 // In glibc versions prior to 2.27 the guard size mechanism
-// was not implemented properly. The posix standard requires adding
+// was not implemented properly. The POSIX standard requires adding
 // the size of the guard pages to the stack size, instead glibc
 // took the space out of 'stacksize'. Thus we need to adapt the requested
 // stack_size by the size of the guard pages to mimic proper behaviour.
 // The fix in glibc 2.27 has now been backported to numerous earlier
 // glibc versions so we need to do a dynamic runtime check.
-bool os::Linux::AdjustStackSizeForGuardPages = true;
+static bool _adjustStackSizeForGuardPages = true;
+bool os::Linux::adjustStackSizeForGuardPages() {
+  return _adjustStackSizeForGuardPages;
+}
 
-static void init_adjust_stack_for_guard_pages() {
-  get_minstack_init();
+#ifdef __GLIBC__
+static void init_adjust_stacksize_for_guard_pages() {
+  assert(_get_minstack_func == nullptr, "initialization error");
+  _get_minstack_func =(GetMinStack)dlsym(RTLD_DEFAULT, "__pthread_get_minstack");
+  log_info(os, thread)("Lookup of __pthread_get_minstack %s",
+                       _get_minstack_func == nullptr ? "failed" : "succeeded");
+
   if (_get_minstack_func != nullptr) {
     pthread_attr_t attr;
     pthread_attr_init(&attr);
     size_t min_stack = _get_minstack_func(&attr);
-    pthread_attr_setguardsize(&attr, 16*K );
+    size_t guard = 16 * K; // Actual value doesn't matter as it is not examined
+    pthread_attr_setguardsize(&attr, guard);
     size_t min_stack2 = _get_minstack_func(&attr);
     pthread_attr_destroy(&attr);
-    // If the minimum stack size changed when we added the guard pages
+    // If the minimum stack size changed when we added the guard page space
     // then we need to perform the adjustment.
-    os::Linux::AdjustStackSizeForGuardPages = (min_stack2 - min_stack > 0);
-    log_info(os)("- glibc stack size guard page adjustment is %sneeded",
-                 os::Linux::AdjustStackSizeForGuardPages ? "" : "not ");
+    _adjustStackSizeForGuardPages = (min_stack2 != min_stack);
+    log_info(os)("Glibc stack size guard page adjustment is %sneeded",
+                 _adjustStackSizeForGuardPages ? "" : "not ");
   }
 }
+#endif // GLIBC
 
 bool os::create_thread(Thread* thread, ThreadType thr_type,
                        size_t req_stack_size) {
@@ -881,7 +882,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
   if (AdjustStackSizeForTLS) {
     // Adjust the stack_size for on-stack TLS - see get_static_tls_area_size().
     stack_adjust_size += get_static_tls_area_size(&attr);
-  } else if (os::Linux::AdjustStackSizeForGuardPages) {
+  } else if (os::Linux::adjustStackSizeForGuardPages()) {
     stack_adjust_size += guard_size;
   }
 
@@ -1350,7 +1351,7 @@ void os::Linux::fast_thread_clock_init() {
   // Note, that some kernels may support the current thread
   // clock (CLOCK_THREAD_CPUTIME_ID) but not the clocks
   // returned by the pthread_getcpuclockid().
-  // If the fast Posix clocks are supported then the clock_getres()
+  // If the fast POSIX clocks are supported then the clock_getres()
   // must return at least tp.tv_sec == 0 which means a resolution
   // better than 1 sec. This is extra check for reliability.
 
@@ -4545,8 +4546,10 @@ jint os::init_2(void) {
   log_info(os)("HotSpot is running with %s, %s",
                Linux::libc_version(), Linux::libpthread_version());
 
+#ifdef __GLIBC__
   // Check if we need to adjust the stack size for glibc guard pages.
-  init_adjust_stack_for_guard_pages();
+  init_adjust_stacksize_for_guard_pages();
+#endif
 
   if (UseNUMA || UseNUMAInterleaving) {
     Linux::numa_init();
@@ -5267,7 +5270,7 @@ bool os::start_debugging(char *buf, int buflen) {
 //
 // ** P1 (aka bottom) and size (P2 = P1 - size) are the address and stack size
 //    returned from pthread_attr_getstack().
-// ** If AdjustStackSizeForGuardPages is true the guard pages have been taken
+// ** If adjustStackSizeForGuardPages() is true the guard pages have been taken
 //    out of the stack size given in pthread_attr. We work around this for
 //    threads created by the VM. We adjust bottom to be P1 and size accordingly.
 //
@@ -5296,7 +5299,7 @@ static void current_stack_region(address * bottom, size_t * size) {
       fatal("Cannot locate current stack attributes!");
     }
 
-    if (os::Linux::AdjustStackSizeForGuardPages) {
+    if (os::Linux::adjustStackSizeForGuardPages()) {
       size_t guard_size = 0;
       rslt = pthread_attr_getguardsize(&attr, &guard_size);
       if (rslt != 0) {

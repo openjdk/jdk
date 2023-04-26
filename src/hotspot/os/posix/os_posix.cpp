@@ -906,7 +906,7 @@ char* os::Posix::describe_pthread_attr(char* buf, size_t buflen, const pthread_a
   pthread_attr_getstacksize(attr, &stack_size);
   pthread_attr_getguardsize(attr, &guard_size);
   // Work around glibc stack guard issue, see os::create_thread() in os_linux.cpp.
-  LINUX_ONLY(if (os::Linux::AdjustStackSizeForGuardPages) stack_size -= guard_size;)
+  LINUX_ONLY(if (os::Linux::adjustStackSizeForGuardPages()) stack_size -= guard_size;)
   pthread_attr_getdetachstate(attr, &detachstate);
   jio_snprintf(buf, buflen, "stacksize: " SIZE_FORMAT "k, guardsize: " SIZE_FORMAT "k, %s",
     stack_size / K, guard_size / K,
