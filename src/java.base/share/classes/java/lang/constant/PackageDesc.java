@@ -48,7 +48,7 @@ public sealed interface PackageDesc
      * @throws NullPointerException if the argument is {@code null}
      * @throws IllegalArgumentException if the name string is not in the
      * correct format
-     * @jls 6.7 Fully Qualified Names and Canonical Names
+     * @jls 6.5.3 Module Names and Package Names
      * @see PackageDesc#ofInternalName(String)
      */
     static PackageDesc of(String name) {
@@ -76,17 +76,17 @@ public sealed interface PackageDesc
     }
 
     /**
-     * Returns the fully qualified (slash-separated) internal package name
+     * Returns the fully qualified (slash-separated) package name in internal form
      * of this {@link PackageDesc}.
      *
-     * @return the package name, or the empty string for the
+     * @return the package name in internal form, or the empty string for the
      * unnamed package
      * @see PackageDesc#packageName()
      */
     String packageInternalName();
 
     /**
-     * Returns the fully qualified (dot-separated) binary package name
+     * Returns the fully qualified (dot-separated) package name
      * of this {@link PackageDesc}.
      *
      * @return the package name, or the empty string for the
