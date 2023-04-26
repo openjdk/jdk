@@ -120,12 +120,7 @@ ifeq ($(call isTargetOs, windows), true)
   LIBAWT_VERSIONINFO_RESOURCE := $(TOPDIR)/src/$(MODULE)/windows/native/libawt/windows/awt.rc
 endif
 
-# Turn off all warnings for debug_mem.c This is needed because the specific warning
-# about initializing a declared 'extern' cannot be turned off individually. Only
-# applies to debug builds. This limitation in gcc is tracked in
-# https://gcc.gnu.org/bugzilla/show_bug.cgi?id=45977
 ifeq ($(TOOLCHAIN_TYPE), gcc)
-  BUILD_LIBAWT_debug_mem.c_CFLAGS := -w
   # This option improves performance of MaskFill in Java2D by 20% for some gcc
   LIBAWT_CFLAGS += -fgcse-after-reload
 endif
@@ -138,24 +133,18 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBAWT, \
     OPTIMIZATION := HIGHEST, \
     CFLAGS := $(CFLAGS_JDKLIB) $(LIBAWT_CFLAGS), \
     EXTRA_HEADER_DIRS := $(LIBAWT_EXTRA_HEADER_DIRS), \
-    DISABLED_WARNINGS_gcc_awt_ImagingLib.c := unused-function sign-compare, \
     DISABLED_WARNINGS_gcc_awt_LoadLibrary.c := unused-result, \
-    DISABLED_WARNINGS_gcc_awt_Mlib.c := unused-function, \
-    DISABLED_WARNINGS_gcc_awt_parseImage.c := sign-compare unused-function, \
-    DISABLED_WARNINGS_gcc_debug_trace.c := unused-function, \
+    DISABLED_WARNINGS_gcc_debug_mem.c := format-nonliteral, \
     DISABLED_WARNINGS_gcc_ProcessPath.c := maybe-uninitialized, \
     DISABLED_WARNINGS_gcc_Region.c := maybe-uninitialized, \
     DISABLED_WARNINGS_gcc_SurfaceData.c := unused-value, \
     DISABLED_WARNINGS_gcc_TransformHelper.c := sign-compare, \
-    DISABLED_WARNINGS_clang_awt_ImagingLib.c := sign-compare deprecated-non-prototype, \
-    DISABLED_WARNINGS_clang_awt_parseImage.c := sign-compare, \
-    DISABLED_WARNINGS_clang_debug_mem.c := extern-initializer format-nonliteral, \
+    DISABLED_WARNINGS_clang_awt_ImagingLib.c := deprecated-non-prototype, \
     DISABLED_WARNINGS_clang_debug_trace.c := format-nonliteral, \
     DISABLED_WARNINGS_clang_Trace.c := format-nonliteral, \
     DISABLED_WARNINGS_clang_TransformHelper.c := sign-compare, \
     DISABLED_WARNINGS_microsoft := 4244 4996, \
     DISABLED_WARNINGS_microsoft_awt_Toolkit.cpp := 4267, \
-    DISABLED_WARNINGS_microsoft_OGLContext.c := 4267, \
     LDFLAGS := $(LDFLAGS_JDKLIB) $(call SET_SHARED_LIBRARY_ORIGIN), \
     LDFLAGS_macosx := -L$(INSTALL_LIBRARIES_HERE), \
     LDFLAGS_windows := -delayload:user32.dll -delayload:gdi32.dll \
