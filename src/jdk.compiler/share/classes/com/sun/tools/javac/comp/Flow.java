@@ -2840,21 +2840,25 @@ public class Flow {
             scanExpr(tree.meth);
             scanExprs(tree.args);
 
-            // If super(): at this point all initialization blocks will execute
-            Name name = TreeInfo.name(tree.meth);
-            if (isConstructor && name == names._super) {
-                forEachInitializer(classDef, false, def -> {
-                    scan(def);
-                    clearPendingExits(false);
-                });
-            }
+            // Handle superclass constructor invocations
+            if (isConstructor) {
 
-            // If this(): at this point all final uninitialized fields will get initialized
-            if (isConstructor && name == names._this) {
-                for (int address = firstadr; address < nextadr; address++) {
-                    VarSymbol sym = vardecls[address].sym;
-                    if (isFinalUninitializedField(sym) && !sym.isStatic())
-                        letInit(tree.pos(), sym);
+                // If super(): at this point all initialization blocks will execute
+                Name name = TreeInfo.name(tree.meth);
+                if (name == names._super) {
+                    forEachInitializer(classDef, false, def -> {
+                        scan(def);
+                        clearPendingExits(false);
+                    });
+                }
+
+                // If this(): at this point all final uninitialized fields will get initialized
+                else if (name == names._this) {
+                    for (int address = firstadr; address < nextadr; address++) {
+                        VarSymbol sym = vardecls[address].sym;
+                        if (isFinalUninitializedField(sym) && !sym.isStatic())
+                            letInit(tree.pos(), sym);
+                    }
                 }
             }
         }
