@@ -29,16 +29,8 @@
 #include "awt_Toolkit.h"
 
 #include "math.h"
-#include<stdio.h>
 
-
-
-#include <winuser.h>
 #include <uxtheme.h>
-#include <shellscalingapi.h>
-
-#include <windows.h>
-
 
 #define ALPHA_MASK 0xff000000
 #define RED_MASK 0xff0000
@@ -97,8 +89,6 @@ typedef HRESULT (__stdcall *PFNGETTHEMETRANSITIONDURATION)
                 (HTHEME hTheme, int iPartId, int iStateIdFrom, int iStateIdTo,
                  int iPropId, DWORD *pdwDuration);
 
-
-
 static PFNOPENTHEMEDATAFORDPI OpenThemeDataFuncForDpi = NULL;
 static PFNDRAWTHEMEBACKGROUND DrawThemeBackgroundFunc = NULL;
 static PFNCLOSETHEMEDATA CloseThemeDataFunc = NULL;
@@ -125,8 +115,8 @@ BOOL InitThemes() {
     DTRACE_PRINTLN1("InitThemes hModThemes = %x\n", hModThemes);
     if(hModThemes) {
         DTRACE_PRINTLN("Loaded UxTheme.dll\n");
-        OpenThemeDataFuncForDpi = (PFNOPENTHEMEDATAFORDPI)GetProcAddress(hModThemes,
-                                                                         "OpenThemeDataForDpi");
+        OpenThemeDataFuncForDpi = (PFNOPENTHEMEDATAFORDPI)GetProcAddress(
+                                   hModThemes, "OpenThemeDataForDpi");
         DrawThemeBackgroundFunc = (PFNDRAWTHEMEBACKGROUND)GetProcAddress(
                                         hModThemes, "DrawThemeBackground");
         CloseThemeDataFunc = (PFNCLOSETHEMEDATA)GetProcAddress(
@@ -181,8 +171,11 @@ BOOL InitThemes() {
           ) {
               DTRACE_PRINTLN("Loaded function pointers.\n");
               // We need to make sure we can load the Theme.
+              // Use the default DPI value of 96 on windows.
               unsigned int dpi =96;
-              HTHEME hTheme = OpenThemeDataFuncForDpi (AwtToolkit::GetInstance().GetHWnd(), L"Button", dpi);
+              HTHEME hTheme = OpenThemeDataFuncForDpi (
+                              AwtToolkit::GetInstance().GetHWnd(),
+                              L"Button", dpi);
               if(hTheme) {
                   DTRACE_PRINTLN("Loaded Theme data.\n");
                   CloseThemeDataFunc(hTheme);
@@ -254,10 +247,11 @@ JNIEXPORT jlong JNICALL Java_sun_awt_windows_ThemeReader_openTheme
     }
     // We need to open the Theme on a Window that will stick around.
     // The best one for that purpose is the Toolkit window.
-    HTHEME htheme = OpenThemeDataFuncForDpi(AwtToolkit::GetInstance().GetHWnd(), str, dpi);
+    HTHEME htheme = OpenThemeDataFuncForDpi(
+                    AwtToolkit::GetInstance().GetHWnd(),
+                    str, dpi);
     JNU_ReleaseStringPlatformChars(env, widget, str);
     return (jlong)htheme;
-
 }
 
 /*
@@ -435,7 +429,7 @@ JNIEXPORT void JNICALL Java_sun_awt_windows_ThemeReader_paintBackground
     rect.left = 0;
     rect.top = 0;
     rect.bottom = rectBottom ;
-    rect.right = rectRight;
+    rect.right  = rectRight;
 
 
     ZeroMemory(pSrcBits,(BITS_PER_PIXEL>>3)*w*h);

@@ -115,32 +115,12 @@ public abstract class CachedPainter {
         }
     }
 
-    private double correctScale(double val)
-    {
-        double baseVal = Math.floor(val);
-        double decPart = val - baseVal;
-        if(decPart >0 && decPart <=0.25)
-        {
-            val = baseVal + 0.25;
-        }
-        else if (decPart > 0.25 && decPart <=0.5)
-        {
-            val = baseVal + 0.5;
-        }
-        else if (decPart > 0.5 && decPart <=0.75)
-        {
-            val = baseVal + 0.75;
-        }
-
-        return val;
-    }
-
     private Image getImage(Object key, Component c,
                            int baseWidth, int baseHeight,
                            int w, int h, Object... args) {
         GraphicsConfiguration config = getGraphicsConfiguration(c);
         ImageCache cache = getCache(key);
-        Image image =cache.getImage(key, config, w, h, args);
+        Image image = cache.getImage(key, config, w, h, args);
         int attempts = 0;
         VolatileImage volatileImage = (image instanceof VolatileImage)
                 ? (VolatileImage) image
@@ -189,12 +169,8 @@ public abstract class CachedPainter {
                 Graphics2D g2 = (Graphics2D) image.getGraphics();
                 if (volatileImage == null) {
                     if ((w != baseWidth || h != baseHeight)) {
-
-                        double scaleX = ((double)w / baseWidth);
-                        double scaleY = ((double)h / baseHeight);
-
-                        g2.scale(scaleX, scaleY);
-                      // g2.scale(correctScale(scaleX), correctScale(scaleY));
+                        g2.scale((double) w / baseWidth,
+                                (double) h / baseHeight);
                     }
                     paintToImage(c, image, g2, baseWidth, baseHeight, args);
                 } else {
@@ -220,7 +196,6 @@ public abstract class CachedPainter {
 
         return image;
     }
-
 
     private void paint0(Component c, Graphics g, int x,
                         int y, int w, int h, Object... args) {
@@ -339,7 +314,6 @@ public abstract class CachedPainter {
 
         @Override
         public Image getResolutionVariant(double destWidth, double destHeight) {
-
             int w = (int) Math.floor(destWidth + 0.5);
             int h = (int) Math.floor(destHeight + 0.5);
 

@@ -663,11 +663,9 @@ class XPStyle {
         public void flush() {
             super.flush();
         }
-        
+
         protected void paintToImage(Component c, Image image, Graphics g,
                                     int w, int h, Object[] args) {
-
-
             Skin skin = (Skin)args[0];
             Part part = skin.part;
             State state = (State)args[1];
@@ -681,10 +679,9 @@ class XPStyle {
             w = bi.getWidth();
             h = bi.getHeight();
 
-
+            // Get DPI to pass further to ThemeReader.paintBackground()
             Graphics2D g2d = (Graphics2D) g;
             AffineTransform  at = g2d.getTransform();
-
             int dpi = (int)(at.getScaleX() * 96);
 
             WritableRaster raster = bi.getRaster();
@@ -697,7 +694,6 @@ class XPStyle {
                                         0, 0, w, h, w, dpi);
 
             SunWritableRaster.markDirty(dbi);
-
         }
 
         protected Image createImage(Component c, int w, int h,
