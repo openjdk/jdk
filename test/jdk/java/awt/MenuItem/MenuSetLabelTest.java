@@ -84,10 +84,12 @@ class Menu1 extends Frame {
 
     public Menu1()
     {
-        for (int i=0;i<5;i++)
+        for (int i = 0; i < 5; i++) {
             m.add(new MenuItem(s3));
-        for (int i=0;i<10;i++)
+        }
+        for (int i = 0; i < 10; i++) {
             f.add(new MenuItem(s3));
+        }
         mb1.add(f);
         mb1.add(m);
         setMenuBar(mb1);
