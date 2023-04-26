@@ -27,8 +27,6 @@ package jdk.internal.misc;
 
 import static java.lang.Thread.State.*;
 
-import java.lang.invoke.MethodHandle;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -497,5 +495,4 @@ public class VM {
     public static List<BufferPool> getBufferPools() {
         return BufferPoolsHolder.BUFFER_POOLS;
     }
-
 }
