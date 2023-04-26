@@ -41,14 +41,10 @@ import javax.net.ssl.StandardConstants;
  * @summary verifies that if the server rejects session resumption due to SNI mismatch,
  *          during TLS handshake, then the subsequent communication between the server and the
  *          client happens correctly without any errors
- * @run main/othervm -Djavax.net.ssl.keyStore=${test.src}/../etc/keystore
- *                   -Djavax.net.ssl.keyStorePassword=passphrase
- *                   -Djavax.net.ssl.trustStore=${test.src}/../etc/truststore
- *                   -Djavax.net.ssl.trustStorePassword=passphrase
- *                   -Djavax.net.debug=all
- *                   ServerNameRejectedTLSSessionResumption
+ * @library /javax/net/ssl/templates
+ * @run main/othervm -Djavax.net.debug=all ServerNameRejectedTLSSessionResumption
  */
-public class ServerNameRejectedTLSSessionResumption {
+public class ServerNameRejectedTLSSessionResumption extends SSLContextTemplate {
 
     private static final String CLIENT_REQUESTED_SNI = "client.local";
     // dummy host, no connection is attempted in this test
@@ -57,26 +53,31 @@ public class ServerNameRejectedTLSSessionResumption {
     private static final int PEER_PORT = 12345;
 
     public static void main(final String[] args) throws Exception {
-        final SSLContext sslContext = SSLContext.getDefault();
-        // create client and server SSLEngine(s) using the same SSLContext
-        final SSLEngine clientEngine = createClientSSLEngine(sslContext);
+        new ServerNameRejectedTLSSessionResumption().runTest();
+    }
+
+    private void runTest() throws Exception {
+        final SSLContext clientSSLContext = createClientSSLContext();
+        final SSLContext serverSSLContext = createServerSSLContext();
+        // create client and server SSLEngine(s)
+        final SSLEngine clientEngine = createClientSSLEngine(clientSSLContext);
         // use a SNIMatcher on the server's SSLEngine which accepts the SNI name presented
         // by the client SSLEngine
-        final SSLEngine serverEngine = createServerSSLEngine(sslContext,
+        final SSLEngine serverEngine = createServerSSLEngine(serverSSLContext,
                 new TestSNIMatcher(CLIENT_REQUESTED_SNI));
         // establish communication, which involves TLS handshake, between the client
         // and server engines. this communication expected to be successful.
         communicate(clientEngine, serverEngine);
-        // now that the communication has been successful, we expect the SSLContext's (internal)
-        // cache to have created and cached a SSLSession against the peer host:port
+        // now that the communication has been successful, we expect the client SSLContext's
+        // (internal) cache to have created and cached a SSLSession against the peer host:port
 
-        // now create the SSLEngine(s) again with the same SSLContext instance as before,
+        // now create the SSLEngine(s) again with the same SSLContext instances as before,
         // so that the SSLContext instance attempts to reuse the cached SSLSession against the
         // peer host:port
-        final SSLEngine secondClientEngine = createClientSSLEngine(sslContext);
+        final SSLEngine secondClientEngine = createClientSSLEngine(clientSSLContext);
         // the newly created SSLEngine for the server will not use any SNIMatcher so as to reject
         // the session resumption (of the cached SSLSession)
-        final SSLEngine secondServerEngine = createServerSSLEngine(sslContext, null);
+        final SSLEngine secondServerEngine = createServerSSLEngine(serverSSLContext, null);
         // attempt communication, which again involves TLS handshake since these are
         // new engine instances. The session resumption should be rejected and a fresh session
         // should get created and communication should succeed without any errors
