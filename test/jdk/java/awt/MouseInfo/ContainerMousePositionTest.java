@@ -36,8 +36,6 @@ import java.awt.Panel;
 import java.awt.Point;
 import java.awt.Robot;
 
-import java.lang.reflect.InvocationTargetException;
-
 public class ContainerMousePositionTest {
     private Button button;
     private Frame frame;
