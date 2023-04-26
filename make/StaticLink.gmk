@@ -1,0 +1,85 @@
+#
+# Copyright (c) 2021 Google Inc. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+default: all
+
+include $(SPEC)
+include $(TOPDIR)/make/common/MakeBase.gmk
+include $(TOPDIR)/make/common/Modules.gmk
+
+$(eval $(call IncludeCustomExtension, StaticLink.gmk))
+
+################################################################################
+
+JAVASTATIC := javastatic$(EXE_SUFFIX)
+
+ORIGIN_ARG := $(call SET_EXECUTABLE_ORIGIN,/.)
+
+JAVASTATIC_OUTPUT_DIR := $(JDK_OUTPUTDIR)/bin
+JAVASTATIC_OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/java.base/java
+STATIC_LIBS_DIR := $(STATIC_LIBS_IMAGE_DIR)/lib
+
+ALL_STATIC_LIBS := $(call FindFiles, $(STATIC_LIBS_IMAGE_DIR)/lib)
+# Currently we are supporting headless only.
+EXCLUDED_STATIC_LIBS := \
+  $(STATIC_LIBS_IMAGE_DIR)/lib/$(LIBRARY_PREFIX)jsound$(STATIC_LIBRARY_SUFFIX) \
+  $(STATIC_LIBS_IMAGE_DIR)/lib/$(LIBRARY_PREFIX)saproc$(STATIC_LIBRARY_SUFFIX) \
+  $(STATIC_LIBS_IMAGE_DIR)/lib/$(LIBRARY_PREFIX)jawt$(STATIC_LIBRARY_SUFFIX) \
+  $(STATIC_LIBS_IMAGE_DIR)/lib/$(LIBRARY_PREFIX)awt_xawt$(STATIC_LIBRARY_SUFFIX) \
+  $(STATIC_LIBS_IMAGE_DIR)/lib/$(LIBRARY_PREFIX)splashscreen$(STATIC_LIBRARY_SUFFIX) \
+  $(STATIC_LIBS_IMAGE_DIR)/lib/$(LIBRARY_PREFIX)jpackageapplauncher$(STATIC_LIBRARY_SUFFIX) \
+  $(STATIC_LIBS_IMAGE_DIR)/lib/$(LIBRARY_PREFIX)jpackageapplauncheraux$(STATIC_LIBRARY_SUFFIX)
+
+JAVASTATIC_LINK_LIBS := $(filter-out $(EXCLUDED_STATIC_LIBS), $(ALL_STATIC_LIBS)) \
+   $(HOTSPOT_OUTPUTDIR)/variant-server/libjvm/objs/static/$(LIBRARY_PREFIX)jvm$(STATIC_LIBRARY_SUFFIX)
+
+JAVASTATIC_LOG_PREFIX := $(JAVASTATIC_OBJECT_DIR)/BUILD_LAUNCHER_javastatic$(EXE_SUFFIX)_static_link
+
+JAVASTATIC_TARGET := $(JAVASTATIC_OUTPUT_DIR)/$(JAVASTATIC)
+JAVASTATIC_TARGET_IMAGE := $(JDK_IMAGE_DIR)/bin/$(JAVASTATIC)
+
+JAVASTATIC_LDFLAGS := $(JVM_LDFLAGS) $(ORIGIN_ARG) -Wl$(COMMA)--export-dynamic
+JAVASTATIC_LD_OBJ_ARG := $(JAVASTATIC_OBJECT_DIR)/main.o
+
+# Link with headless native only for now.
+JAVASTATIC_LIBS := -Wl$(COMMA)--whole-archive $(JAVASTATIC_LINK_LIBS)
+JAVASTATIC_EXTRA_LIBS := -Wl$(COMMA)--no-whole-archive -lpthread $(LIBDL) $(LIBM) $(LDFLAGS_CXX_STATIC_JDK) 
+
+$(JAVASTATIC_TARGET_IMAGE): $(JAVASTATIC_LINK_LIBS)
+        ifeq ($(call isTargetOs, linux), true)
+	  $(ECHO) "Creating '$(JAVASTATIC_TARGET_IMAGE)'"
+	  $(call ExecuteWithLog, $(JAVASTATIC_LOG_PREFIX), \
+	      $(LD) $(JAVASTATIC_LDFLAGS) $(LD_OUT_OPTION)$(JAVASTATIC_TARGET) \
+	          $(JAVASTATIC_LD_OBJ_ARG) $(JAVASTATIC_LIBS) $(JAVASTATIC_EXTRA_LIBS))
+	  $(CP) -f $(JAVASTATIC_TARGET) $@
+        else
+	  $(error Not supported on non-linux platform currently)
+        endif
+
+TARGETS += $(JAVASTATIC_TARGET_IMAGE)
+
+all: $(TARGETS)
+
+.PHONY: all
