@@ -40,7 +40,7 @@ public class BodyOutputStream extends OutputStream {
     final int streamid;
     int window;
     volatile boolean closed;
-    volatile boolean sendResetNoError;
+    volatile BodyInputStream bis;
     volatile int resetErrorCode;
     boolean goodToGo = false; // not allowed to send until headers sent
     final Http2TestServerConnection conn;
@@ -134,11 +134,10 @@ public class BodyOutputStream extends OutputStream {
         }
         try {
             sendEndStream();
-            if (sendResetNoError) {
-                sendReset(EMPTY_BARRAY, 0, 0, resetErrorCode);
+            if (resetNeeded()) {
+                sendReset(EMPTY_BARRAY, 0, 0, ResetFrame.NO_ERROR);
             }
         } catch (IOException ex) {
-            System.err.println("TestServer: OutputStream.close exception: " + ex);
             ex.printStackTrace();
         }
     }
@@ -156,9 +155,7 @@ public class BodyOutputStream extends OutputStream {
         outputQ.put(rf);
     }
 
-    // Called before close() when used
-    public void sendResetOnClose(int error) {
-        this.sendResetNoError = true;
-        this.resetErrorCode = error;
+    private boolean resetNeeded() throws IOException {
+        return (bis != null && (!bis.isEof() || bis.q.size() > 0));
     }
 }

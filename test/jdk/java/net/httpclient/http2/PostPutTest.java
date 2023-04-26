@@ -54,7 +54,7 @@ import static java.net.http.HttpRequest.BodyPublishers.ofByteArray;
 public class PostPutTest {
 
     Http2TestServer http2TestServer;
-    URI uri;
+    URI warmupURI, testHandlerBasicURI, testHandlerCloseBosURI, testHandleNegativeContentLengthURI;
     static PrintStream testLog = System.err;
 
     // As per jdk.internal.net.http.WindowController.DEFAULT_INITIAL_WINDOW_SIZE
@@ -65,10 +65,20 @@ public class PostPutTest {
     @BeforeTest
     public void setup() throws Exception {
         http2TestServer = new Http2TestServer(false, 0);
-        http2TestServer.addHandler(new TestHandler(), "/");
+        http2TestServer.addHandler(new WarmupHandler(), "/Warmup");
+        http2TestServer.addHandler(new TestHandlerBasic(), "/TestHandlerBasic");
+        http2TestServer.addHandler(new TestHandlerCloseBos(), "/TestHandlerCloseBos");
+        http2TestServer.addHandler(new TestHandleNegativeContentLength(), "/TestHandleNegativeContentLength");
         http2TestServer.start();
-        uri = new URI("http://" + http2TestServer.serverAuthority() + "/");
-        testLog.println("PostPutTest.setup(): Test Server URI: " + uri);
+        testLog.println("PostPutTest.setup(): Starting server");
+        warmupURI = new URI("http://" + http2TestServer.serverAuthority() + "/Warmup");
+        testHandlerBasicURI = new URI("http://" + http2TestServer.serverAuthority() + "/TestHandlerBasic");
+        testHandlerCloseBosURI = new URI("http://" + http2TestServer.serverAuthority() + "/TestHandlerCloseBos");
+        testHandleNegativeContentLengthURI = new URI("http://" + http2TestServer.serverAuthority() + "/TestHandleNegativeContentLength");
+        testLog.println("PostPutTest.setup(): warmupURI: " + warmupURI);
+        testLog.println("PostPutTest.setup(): testHandlerBasicURI: " + testHandlerBasicURI);
+        testLog.println("PostPutTest.setup(): testHandlerCloseBosURI: " + testHandlerCloseBosURI);
+        testLog.println("PostPutTest.setup(): testHandleNegativeContentLengthURI: " + testHandleNegativeContentLengthURI);
     }
 
     @AfterTest
@@ -80,19 +90,30 @@ public class PostPutTest {
 
     @DataProvider(name = "variants")
     public Object[][] variants() {
-        HttpRequest over64kPost = HttpRequest.newBuilder().version(HTTP_2).POST(ofByteArray(data)).uri(uri).build();
-        HttpRequest over64kPut = HttpRequest.newBuilder().version(HTTP_2).PUT(ofByteArray(data)).uri(uri).build();
+        HttpRequest over64kPost, over64kPut, over64kPostCloseBos, over64kPutCloseBos, over64kPostNegativeContentLength, over64kPutNegativeContentLength;
+        over64kPost = HttpRequest.newBuilder().version(HTTP_2).POST(ofByteArray(data)).uri(testHandlerBasicURI).build();
+        over64kPut = HttpRequest.newBuilder().version(HTTP_2).PUT(ofByteArray(data)).uri(testHandlerBasicURI).build();
+
+        over64kPostCloseBos = HttpRequest.newBuilder().version(HTTP_2).POST(ofByteArray(data)).uri(testHandlerCloseBosURI).build();
+        over64kPutCloseBos = HttpRequest.newBuilder().version(HTTP_2).PUT(ofByteArray(data)).uri(testHandlerCloseBosURI).build();
+
+        over64kPostNegativeContentLength = HttpRequest.newBuilder().version(HTTP_2).POST(ofByteArray(data)).uri(testHandleNegativeContentLengthURI).build();
+        over64kPutNegativeContentLength = HttpRequest.newBuilder().version(HTTP_2).PUT(ofByteArray(data)).uri(testHandleNegativeContentLengthURI).build();
 
         return new Object[][] {
                 { over64kPost, "POST data over 64k bytes" },
-                { over64kPut, "PUT data over 64k bytes" }
+                { over64kPut, "PUT data over 64k bytes" },
+                { over64kPostCloseBos, "POST data over 64k bytes with close bos" },
+                { over64kPutCloseBos, "PUT data over 64k bytes with close bos" },
+                { over64kPostNegativeContentLength, "POST data over 64k bytes with negative content length" },
+                { over64kPutNegativeContentLength, "PUT data over 64k bytes with negative content length" }
         };
     }
 
     public HttpRequest getWarmupReq() {
         return HttpRequest.newBuilder()
                 .GET()
-                .uri(uri)
+                .uri(warmupURI)
                 .build();
     }
 
@@ -111,12 +132,39 @@ public class PostPutTest {
         */
     }
 
-    private static class TestHandler implements Http2Handler {
+    private static class TestHandlerBasic implements Http2Handler {
 
         @Override
         public void handle(Http2TestExchange exchange) throws IOException {
             // The input stream is not read in this bug as this will trigger window updates for the server. This bug
             // concerns the case where no updates are sent and the server instead tells the client to abort the transmission.
+            exchange.sendResponseHeaders(200, 0);
+        }
+    }
+
+    private static class TestHandlerCloseBos implements Http2Handler {
+
+        @Override
+        public void handle(Http2TestExchange exchange) throws IOException {
+            // This case does actually cause the test to hang due to the body input stream being closed before it can send
+            // the RST_STREAM frame.
+            exchange.sendResponseHeaders(200, 0);
+            exchange.getResponseBody().close();
+        }
+    }
+
+    private static class TestHandleNegativeContentLength implements Http2Handler {
+
+        @Override
+        public void handle(Http2TestExchange exchange) throws IOException {
+            exchange.sendResponseHeaders(200, -1);
+        }
+    }
+
+    private static class WarmupHandler implements Http2Handler {
+
+        @Override
+        public void handle(Http2TestExchange exchange) throws IOException {
             exchange.sendResponseHeaders(200, 0);
         }
     }

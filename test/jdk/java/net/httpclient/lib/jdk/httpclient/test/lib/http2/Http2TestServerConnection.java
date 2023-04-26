@@ -718,6 +718,11 @@ public class Http2TestServerConnection {
 
             // give to user
             Http2Handler handler = server.getHandlerFor(uri.getPath());
+
+            // Need to pass the BodyInputStream reference to the BodyOutputStream, so it can determine if the stream
+            // must be reset due to the BodyInputStream not being consumed by the handler when invoked.
+            if (bis instanceof BodyInputStream bodyInputStream) bos.bis = bodyInputStream;
+
             try {
                 handler.handle(exchange);
             } catch (IOException closed) {
@@ -729,13 +734,6 @@ public class Http2TestServerConnection {
                     }
                 }
                 throw closed;
-            } finally {
-                // If the handler reads the exchange's InputStream, this code will have no effect. If the handler does not
-                // read the exchange's InputStream and the send window has been exceeded, then a RST_STREAM frame with
-                // the error code NO_ERROR will be sent to the client before closing.
-                if (bis instanceof BodyInputStream inputStream && (!inputStream.isEof() || inputStream.q.size() > 0)) {
-                    bos.sendResetOnClose(ResetFrame.NO_ERROR);
-                }
             }
 
             // everything happens in the exchange from here. Hopefully will
