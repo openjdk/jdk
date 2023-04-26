@@ -476,8 +476,8 @@ public abstract sealed class Reference<T>
      * <p> This method is invoked only by Java code; when the garbage collector
      * enqueues references it does so directly, without invoking this method.
      *
-     * <p>Memory consistency effects: Actions in a thread prior to <b><i>successfully</i></b>
-     * enqueueing a reference on a queue
+     * <p>Memory consistency effects: Actions in a thread prior to a reference
+     * being <b><i>successfully</i></b> enqueued
      * <a href="{@docRoot}/java.base/java/util/concurrent/package-summary.html#MemoryVisibility"><i>happen-before</i></a>
      * the reference is removed from the queue by {@link ReferenceQueue#poll}
      * or {@link ReferenceQueue#remove}.
@@ -542,7 +542,7 @@ public abstract sealed class Reference<T>
      * <p>Memory consistency effects: Actions in a thread prior to calling
      * {@code reachabilityFence(x)}
      * <a href="{@docRoot}/java.base/java/util/concurrent/package-summary.html#MemoryVisibility"><i>happen-before</i></a>
-     * the garbage collector enqueues any reference to {code x} on a queue.
+     * the garbage collector enqueues any reference to {code x}.
      *
      * @apiNote
      * Reference processing or finalization may occur whenever the virtual machine detects that no
