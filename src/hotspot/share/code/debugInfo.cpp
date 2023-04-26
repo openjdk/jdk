@@ -195,7 +195,7 @@ void ObjectValue::write_on(DebugInfoWriteStream* stream) {
 }
 
 void ObjectValue::print_on(outputStream* st) const {
-  st->print("%s: ID=%d, is_merge_candidate=%d, skip_field_assignment=%d, N.Fields=%d",
+  st->print("%s: ID=%d, only_merge_candidate=%d, skip_field_assignment=%d, N.Fields=%d",
             is_auto_box() ? "box_obj" : "obj", _id,
             _only_merge_candidate, _skip_rematerialization, _field_values.length());
   st->print_cr(", klass: %s ", java_lang_Class::as_Klass(_klass->as_ConstantOopReadValue()->value()())->external_name());
@@ -250,26 +250,15 @@ ObjectValue* ObjectMergeValue::select(frame* fr, RegisterMap* reg_map) {
     // No need to allocate the object or do field reassignment since
     // the object wasn't really scalar replaced.
     _selected->set_skip_rematerialization();
-
-    return _selected;
   } else {
     assert(selector < _possible_objects.length(), "sanity");
     _selected = (ObjectValue*) _possible_objects.at(selector);
 
-    // Exchange the id of the selected object and the merge object.
-    // I.e., the candidate essentially becomes the real deal.
-    int tmp = _selected->id();
-    _selected->set_id(id());
-    _id = tmp;
-
-    // Candidate is not candidate anymore, it's the real object
-    _selected->set_merge_candidate(false);
-
-    // Returns null and that should indicate to the caller that
-    // one of the candidate objects, inside this merge, became
-    // a real object.
-    return nullptr;
+    // Candidate is not candidate anymore.
+    _selected->set_only_merge_candidate(false);
   }
+
+  return _selected;
 }
 
 void ObjectMergeValue::read_object(DebugInfoReadStream* stream) {
@@ -280,7 +269,6 @@ void ObjectMergeValue::read_object(DebugInfoReadStream* stream) {
     ScopeValue* result = read_from(stream);
     assert(result->is_object(), "Candidate is not an object!");
     ObjectValue* obj = result->as_ObjectValue();
-    obj->set_merge_candidate(true);
     _possible_objects.append(obj);
   }
 }

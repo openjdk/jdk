@@ -590,13 +590,13 @@ private:
   // -------------------------------------------
   // Methods related to Reduce Allocation Merges
 
-  bool can_reduce_this_phi(PhiNode* ophi) const;
-  bool can_reduce_this_phi_check_users(PhiNode* ophi) const;
-  bool can_reduce_this_phi_check_inputs(PhiNode* ophi) const;
+  bool can_reduce_phi(PhiNode* ophi) const;
+  bool can_reduce_phi_check_users(PhiNode* ophi) const;
+  bool can_reduce_phi_check_inputs(PhiNode* ophi) const;
 
-  void reduce_this_phi_on_field_access(PhiNode* ophi, GrowableArray<Node *>  &alloc_worklist);
-  void reduce_this_phi_on_safepoints(PhiNode* ophi, Unique_Node_List* safepoints);
-  void reduce_this_phi(PhiNode* ophi);
+  void reduce_phi_on_field_access(PhiNode* ophi, GrowableArray<Node *>  &alloc_worklist);
+  void reduce_phi_on_safepoints(PhiNode* ophi, Unique_Node_List* safepoints);
+  void reduce_phi(PhiNode* ophi);
 
   void set_not_scalar_replaceable(PointsToNode* ptn NOT_PRODUCT(COMMA const char* reason)) const {
 #ifndef PRODUCT

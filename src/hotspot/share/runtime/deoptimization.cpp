@@ -306,7 +306,7 @@ static void print_objects(JavaThread* deoptee_thread,
       ObjectMergeValue* merged = objects->at(i)->as_ObjectMergeValue();
       sv = merged->select(frame, reg_map);
       // Klass may be null if the object was actually a NSR input of a merge.
-      k = (sv != nullptr && sv->klass() != nullptr) ? java_lang_Class::as_Klass(sv->klass()->as_ConstantOopReadValue()->value()()) : nullptr;
+      k = (sv->klass() != nullptr) ? java_lang_Class::as_Klass(sv->klass()->as_ConstantOopReadValue()->value()()) : nullptr;
     } else if (objects->at(i)->is_object()) {
       sv = objects->at(i)->as_ObjectValue();
       // This object is only a candidate inside an ObjectMergeValue
@@ -1236,22 +1236,22 @@ bool Deoptimization::realloc_objects(JavaThread* thread, frame* fr, RegisterMap*
       ObjectMergeValue* merged = objects->at(i)->as_ObjectMergeValue();
       sv = merged->select(fr, reg_map);
 
-      // If this is true it means that a candidate object became a
-      // real object and we are going to reach that object in a later
-      // iteration of the outer loop.
-      if (sv == nullptr) {
-        continue;
-      }
-
-      // Will be true whenever the object was a NSR input of an allocation merge
-      if (sv->skip_rematerialization()) {
+      // 'skip_rematerialization' will be true whenever the object was a NSR
+      // input of an allocation merge.
+      // 'value' will be not null if the object selected in the merge was a
+      // 'not_only_candidate' and it was visited by this loop before the current
+      // iteration.
+      if (sv->skip_rematerialization() || sv->value().not_null()) {
         continue;
       }
     } else if (objects->at(i)->is_object()) {
       sv = objects->at(i)->as_ObjectValue();
 
-      // This object is only a candidate inside an ObjectMergeValue
-      if (sv->is_only_merge_candidate()) {
+      // We skip allocation if the object is only a candidate inside an
+      // ObjectMergeValue or if it already has an allocation. The object may
+      // already be allocated if it was the result of a 'select' on an
+      // ObjectMergeValue.
+      if (sv->is_only_merge_candidate() || sv->value().not_null()) {
         continue;
       }
     } else {

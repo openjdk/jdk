@@ -769,9 +769,9 @@ void PhaseOutput::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
     return;
   } else if (local->is_SafePointScalarMerge()) {
     SafePointScalarMergeNode* smerge = local->as_SafePointScalarMerge();
-    ObjectMergeValue* sv = (ObjectMergeValue*) sv_for_node_id(objs, smerge->_idx);
+    ObjectMergeValue* mv = (ObjectMergeValue*) sv_for_node_id(objs, smerge->_idx);
 
-    if (sv == NULL) {
+    if (mv == NULL) {
       GrowableArray<ScopeValue*> deps;
 
       int merge_pointer_idx = smerge->merge_pointer_idx(sfpt->jvms());
@@ -782,15 +782,15 @@ void PhaseOutput::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
       (void)FillLocArray(1, NULL, sfpt->in(selector_idx), &deps, NULL);
       assert(deps.length() == 2, "missing value");
 
-      sv = new ObjectMergeValue(smerge->_idx, deps.at(0), deps.at(1));
-      set_sv_for_object_node(objs, sv);
+      mv = new ObjectMergeValue(smerge->_idx, deps.at(0), deps.at(1));
+      set_sv_for_object_node(objs, mv);
 
       for (uint i = 1; i < smerge->req(); i++) {
         Node* obj_node = smerge->in(i);
-        (void)FillLocArray(sv->possible_objects()->length(), sfpt, obj_node, sv->possible_objects(), objs);
+        (void)FillLocArray(mv->possible_objects()->length(), sfpt, obj_node, mv->possible_objects(), objs);
       }
     }
-    array->append(sv);
+    array->append(mv);
     return;
   }
 

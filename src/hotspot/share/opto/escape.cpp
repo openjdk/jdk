@@ -403,7 +403,7 @@ bool ConnectionGraph::compute_escape() {
     _igvn->set_delay_transform(true);
     for (uint i = 0; i < reducible_merges.size(); i++ ) {
       Node* n = reducible_merges.at(i);
-      reduce_this_phi(n->as_Phi());
+      reduce_phi(n->as_Phi());
       if (C->failing()) {
         NOT_PRODUCT(escape_state_statistics(java_objects_worklist);)
         return false;
@@ -437,7 +437,7 @@ bool ConnectionGraph::compute_escape() {
 // Check if it's profitable to reduce the Phi passed as parameter.  Returns true
 // if at least one scalar replaceable allocation participates in the merge and
 // no input to the Phi is nullable.
-bool ConnectionGraph::can_reduce_this_phi_check_inputs(PhiNode* ophi) const {
+bool ConnectionGraph::can_reduce_phi_check_inputs(PhiNode* ophi) const {
   // Check if there is a scalar replaceable allocate in the Phi
   bool found_sr_allocate = false;
 
@@ -469,7 +469,7 @@ bool ConnectionGraph::can_reduce_this_phi_check_inputs(PhiNode* ophi) const {
 
 // Check if we are able to untangle the merge. Right now we only reduce Phis
 // which are only used as debug information.
-bool ConnectionGraph::can_reduce_this_phi_check_users(PhiNode* ophi) const {
+bool ConnectionGraph::can_reduce_phi_check_users(PhiNode* ophi) const {
   for (DUIterator_Fast imax, i = ophi->fast_outs(imax); i < imax; i++) {
     Node* use = ophi->fast_out(i);
 
@@ -498,9 +498,9 @@ bool ConnectionGraph::can_reduce_this_phi_check_users(PhiNode* ophi) const {
 
 // Returns true if: 1) It's profitable to reduce the merge, and 2) The Phi is
 // only used in some certain code shapes. Check comments in
-// 'can_reduce_this_phi_inputs' and 'can_reduce_this_phi_users' for more
+// 'can_reduce_phi_inputs' and 'can_reduce_phi_users' for more
 // details.
-bool ConnectionGraph::can_reduce_this_phi(PhiNode* ophi) const {
+bool ConnectionGraph::can_reduce_phi(PhiNode* ophi) const {
   // If there was an error attempting to reduce allocation merges for this
   // method we might have disabled the compilation and be retrying
   // with RAM disabled.
@@ -515,7 +515,7 @@ bool ConnectionGraph::can_reduce_this_phi(PhiNode* ophi) const {
     return false;
   }
 
-  if (!can_reduce_this_phi_check_inputs(ophi) || !can_reduce_this_phi_check_users(ophi)) {
+  if (!can_reduce_phi_check_inputs(ophi) || !can_reduce_phi_check_users(ophi)) {
     return false;
   }
 
@@ -523,7 +523,7 @@ bool ConnectionGraph::can_reduce_this_phi(PhiNode* ophi) const {
   return true;
 }
 
-void ConnectionGraph::reduce_this_phi_on_field_access(PhiNode* ophi, GrowableArray<Node *>  &alloc_worklist) {
+void ConnectionGraph::reduce_phi_on_field_access(PhiNode* ophi, GrowableArray<Node *>  &alloc_worklist) {
   // We'll pass this to 'split_through_phi' so that it'll do the split even
   // though the load doesn't have an unique instance type.
   bool ignore_missing_instance_id = true;
@@ -605,7 +605,7 @@ void ConnectionGraph::reduce_this_phi_on_field_access(PhiNode* ophi, GrowableArr
 // class header.
 //
 // This method will set entries in the Phi that are scalar replaceable to 'null'.
-void ConnectionGraph::reduce_this_phi_on_safepoints(PhiNode* ophi, Unique_Node_List* safepoints) {
+void ConnectionGraph::reduce_phi_on_safepoints(PhiNode* ophi, Unique_Node_List* safepoints) {
   Node* minus_one           = _igvn->register_new_node_with_optimizer(ConINode::make(-1));
   Node* selector            = _igvn->register_new_node_with_optimizer(PhiNode::make(ophi->region(), minus_one, TypeInt::INT));
   Node* null_ptr            = _igvn->makecon(TypePtr::NULL_PTR);
@@ -716,7 +716,7 @@ void ConnectionGraph::reduce_this_phi_on_safepoints(PhiNode* ophi, Unique_Node_L
   _igvn->_worklist.push(ophi);
 }
 
-void ConnectionGraph::reduce_this_phi(PhiNode* ophi) {
+void ConnectionGraph::reduce_phi(PhiNode* ophi) {
   Unique_Node_List safepoints;
 
   for (uint i = 0; i < ophi->outcnt(); i++) {
@@ -734,7 +734,7 @@ void ConnectionGraph::reduce_this_phi(PhiNode* ophi) {
   }
 
   if (safepoints.size() > 0) {
-    reduce_this_phi_on_safepoints(ophi, &safepoints);
+    reduce_phi_on_safepoints(ophi, &safepoints);
   }
 }
 
@@ -2207,7 +2207,7 @@ int ConnectionGraph::find_init_values_null(JavaObjectNode* pta, PhaseTransform* 
 
 // Adjust scalar_replaceable state after Connection Graph is built.
 void ConnectionGraph::adjust_scalar_replaceable_state(JavaObjectNode* jobj, Unique_Node_List &reducible_merges) {
-  // A Phi 'x' is a _candidate_ to be reducible if 'can_reduce_this_phi(x)'
+  // A Phi 'x' is a _candidate_ to be reducible if 'can_reduce_phi(x)'
   // returns true. If one of the constraints in this method set 'jobj' to NSR
   // then the candidate Phi is discarded. If the Phi has another SR 'jobj' as
   // input, 'adjust_scalar_replaceable_state' will eventually be called with
@@ -2263,7 +2263,7 @@ void ConnectionGraph::adjust_scalar_replaceable_state(JavaObjectNode* jobj, Uniq
           continue;
         }
 
-        if (ReduceAllocationMerges && use_n->is_Phi() && can_reduce_this_phi(use_n->as_Phi())) {
+        if (ReduceAllocationMerges && use_n->is_Phi() && can_reduce_phi(use_n->as_Phi())) {
           candidates.push(use_n);
         } else {
           // Mark all objects as NSR if we can't remove the merge
@@ -3740,7 +3740,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
       // Reducible Phi's will be removed from the graph after split_unique_types finishes
       if (reducible_merges.member(n)) {
         // Split loads through phi
-        reduce_this_phi_on_field_access(n->as_Phi(), alloc_worklist);
+        reduce_phi_on_field_access(n->as_Phi(), alloc_worklist);
         continue;
       }
       JavaObjectNode* jobj = unique_java_object(n);

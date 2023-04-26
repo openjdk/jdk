@@ -175,7 +175,7 @@ class ObjectValue: public ScopeValue {
   void                        set_id(int id)                      { _id = id; }
   void                        set_value(oop value);
   void                        set_visited(bool visited)           { _visited = visited; }
-  void                        set_merge_candidate(bool cnd)       { _only_merge_candidate = cnd; }
+  void                        set_only_merge_candidate(bool cnd)  { _only_merge_candidate = cnd; }
   void                        set_skip_rematerialization()        { _skip_rematerialization = true; }
 
   // Serialization of debugging information
@@ -239,7 +239,7 @@ public:
   bool                       is_auto_box() const        { return true; }
   bool                       is_cached() const          { return _cached; }
   void                       set_cached(bool cached)    { _cached = cached; }
-  AutoBoxObjectValue(int id, ScopeValue* klass, bool only_merge_candidate = false) : ObjectValue(id, klass, only_merge_candidate), _cached(false) { }
+  AutoBoxObjectValue(int id, ScopeValue* klass) : ObjectValue(id, klass), _cached(false) { }
   AutoBoxObjectValue(int id) : ObjectValue(id), _cached(false) { }
 };
 
