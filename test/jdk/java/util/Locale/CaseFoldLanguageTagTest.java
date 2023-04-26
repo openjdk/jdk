@@ -134,7 +134,8 @@ public class caseFoldLanguageTagTest {
 
                 // Special JDK Cases
                 Arguments.of("de-POSIX-x-URP-lvariant-Abc-Def", "de-POSIX-x-urp-lvariant-Abc-Def"),
-                Arguments.of("ja-JP-x-lvariant-JP", "ja-JP-x-lvariant-JP"),
+                Arguments.of("JA-JPAN-JP-U-CA-JAPANESE-x-RANDOM-lvariant-JP",
+                        "ja-Jpan-JP-u-ca-japanese-x-random-lvariant-JP"),
                 Arguments.of("ja-JP-u-ca-japanese-x-lvariant-JP", "ja-JP-u-ca-japanese-x-lvariant-JP"),
                 Arguments.of("en-US-x-lvariant-POSIX", "en-US-x-lvariant-POSIX")
         );
