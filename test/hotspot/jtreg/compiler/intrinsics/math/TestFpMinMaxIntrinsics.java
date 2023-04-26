@@ -32,11 +32,11 @@
  * @run main/othervm -Xint compiler.intrinsics.math.TestFpMinMaxIntrinsics sanityTests 1
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions
  *                   -Xcomp -XX:TieredStopAtLevel=1
- *                   -XX:CompileOnly=java/lang/Math
+ *                   -XX:CompileOnly=java.lang.Math::*
  *                   compiler.intrinsics.math.TestFpMinMaxIntrinsics sanityTests 1
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions
  *                   -Xcomp -XX:-TieredCompilation
- *                   -XX:CompileOnly=java/lang/Math
+ *                   -XX:CompileOnly=java.lang.Math::*
  *                   compiler.intrinsics.math.TestFpMinMaxIntrinsics sanityTests 1
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
  *                   -XX:-TieredCompilation -XX:CompileThresholdScaling=0.1

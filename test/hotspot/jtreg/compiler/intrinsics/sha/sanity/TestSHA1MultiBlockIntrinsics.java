@@ -36,8 +36,8 @@
  *                   -XX:+WhiteBoxAPI -Xbatch -XX:CompileThreshold=500
  *                   -XX:Tier4InvocationThreshold=500
  *                   -XX:+LogCompilation -XX:LogFile=positive.log
- *                   -XX:CompileOnly=sun/security/provider/DigestBase
- *                   -XX:CompileOnly=sun/security/provider/SHA
+ *                   -XX:CompileOnly=sun.security.provider.DigestBase::*
+ *                   -XX:CompileOnly=sun.security.provider.SHA::*
  *                   -XX:+UseSHA1Intrinsics -XX:-UseMD5Intrinsics
  *                   -XX:-UseSHA256Intrinsics -XX:-UseSHA512Intrinsics
  *                   -Dalgorithm=SHA-1
@@ -46,16 +46,16 @@
  *                   -XX:+WhiteBoxAPI -Xbatch -XX:CompileThreshold=500
  *                   -XX:Tier4InvocationThreshold=500
  *                   -XX:+LogCompilation -XX:LogFile=positive_def.log
- *                   -XX:CompileOnly=sun/security/provider/DigestBase
- *                   -XX:CompileOnly=sun/security/provider/SHA
+ *                   -XX:CompileOnly=sun.security.provider.DigestBase::*
+ *                   -XX:CompileOnly=sun.security.provider.SHA::*
  *                   -XX:+UseSHA1Intrinsics -Dalgorithm=SHA-1
  *                   compiler.intrinsics.sha.sanity.TestSHA1MultiBlockIntrinsics
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -Xbatch -XX:CompileThreshold=500
  *                   -XX:Tier4InvocationThreshold=500
  *                   -XX:+LogCompilation -XX:LogFile=negative.log
- *                   -XX:CompileOnly=sun/security/provider/DigestBase
- *                   -XX:CompileOnly=sun/security/provider/SHA -XX:-UseSHA
+ *                   -XX:CompileOnly=sun.security.provider.DigestBase::*
+ *                   -XX:CompileOnly=sun.security.provider.SHA::* -XX:-UseSHA
  *                   -Dalgorithm=SHA-1
  *                   compiler.intrinsics.sha.sanity.TestSHA1MultiBlockIntrinsics
  * @run main/othervm -DverificationStrategy=VERIFY_INTRINSIC_USAGE

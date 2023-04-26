@@ -26,7 +26,7 @@
  * @bug 8247763
  * @summary assert(outer->outcnt() == 2) failed: 'only phis' failure in LoopNode::verify_strip_mined()
  *
- * @run main/othervm -Xcomp -XX:CompileOnly=TestStoreSunkToOuterLoop TestStoreSunkToOuterLoop
+ * @run main/othervm -Xcomp -XX:CompileOnly=TestStoreSunkToOuterLoop::* TestStoreSunkToOuterLoop
  *
  */
 

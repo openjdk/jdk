@@ -26,7 +26,7 @@
  * @bug 8295788
  * @summary C2 compilation hits "assert((mode == ControlAroundStripMined && use == sfpt) || !use->is_reachable_from_root()) failed: missed a node"
  *
- * @run main/othervm -Xcomp -XX:CompileOnly=TestUseFromInnerInOuterUnusedBySfpt TestUseFromInnerInOuterUnusedBySfpt
+ * @run main/othervm -Xcomp -XX:CompileOnly=TestUseFromInnerInOuterUnusedBySfpt::* TestUseFromInnerInOuterUnusedBySfpt
  *
  */
 

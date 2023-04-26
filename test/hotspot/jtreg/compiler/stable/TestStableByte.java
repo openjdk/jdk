@@ -30,23 +30,23 @@
  * @build jdk.test.whitebox.WhiteBox
  *
  * @run main/bootclasspath/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
- *                                 -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
+ *                                 -XX:CompileOnly=*TestStableByte*::get,*TestStableByte*::get1,*TestStableByte*::get2,*TestStableByte*::get3,*TestStableByte*::get4
  *                                 -XX:-TieredCompilation
  *                                 -XX:+FoldStableValues
  *                                 compiler.stable.TestStableByte
  * @run main/bootclasspath/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
- *                                 -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
+ *                                 -XX:CompileOnly=*TestStableByte*::get,*TestStableByte*::get1,*TestStableByte*::get2,*TestStableByte*::get3,*TestStableByte*::get4
  *                                 -XX:-TieredCompilation
  *                                 -XX:-FoldStableValues
  *                                 compiler.stable.TestStableByte
  *
  * @run main/bootclasspath/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
- *                                 -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
+ *                                 -XX:CompileOnly=*TestStableByte*::get,*TestStableByte*::get1,*TestStableByte*::get2,*TestStableByte*::get3,*TestStableByte*::get4
  *                                 -XX:+TieredCompilation -XX:TieredStopAtLevel=1
  *                                 -XX:+FoldStableValues
  *                                 compiler.stable.TestStableByte
  * @run main/bootclasspath/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
- *                                 -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
+ *                                 -XX:CompileOnly=*TestStableByte*::get,*TestStableByte*::get1,*TestStableByte*::get2,*TestStableByte*::get3,*TestStableByte*::get4
  *                                 -XX:+TieredCompilation -XX:TieredStopAtLevel=1
  *                                 -XX:-FoldStableValues
  *                                 compiler.stable.TestStableByte

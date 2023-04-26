@@ -27,7 +27,7 @@
  * @summary tests memory barrier correctly inserted for stable fields
  * @modules java.base/jdk.internal.vm.annotation
  *
- * @run main/bootclasspath/othervm -Xcomp -XX:CompileOnly=::testCompile
+ * @run main/bootclasspath/othervm -Xcomp -XX:CompileOnly=*NotDominate::testCompile
  *                                 compiler.stable.TestStableMemoryBarrier
  *
  * @author hui.shi@linaro.org

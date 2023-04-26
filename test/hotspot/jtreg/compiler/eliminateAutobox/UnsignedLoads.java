@@ -27,7 +27,7 @@
  * @library /test/lib
  *
  * @run main/othervm -Xbatch -XX:+IgnoreUnrecognizedVMOptions -XX:+EliminateAutoBox
- *                   -XX:CompileOnly=::valueOf,::byteValue,::shortValue,::testUnsignedByte,::testUnsignedShort
+ *                   -XX:CompileOnly=*::valueOf,*::byteValue,*::shortValue,*::testUnsignedByte,*::testUnsignedShort
  *                   compiler.eliminateAutobox.UnsignedLoads
  */
 

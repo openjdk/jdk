@@ -27,7 +27,7 @@
  * @summary C2: Assert failed in PhaseCFG::verify() after JDK-8183390
  *
  * @run main/othervm -Xcomp -Xbatch
- *      -XX:CompileOnly=compiler/loopopts/TestUnreachableInnerLoop
+ *      -XX:CompileOnly=compiler.loopopts.TestUnreachableInnerLoop::*
  *      compiler.loopopts.TestUnreachableInnerLoop
  */
 

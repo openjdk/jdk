@@ -30,23 +30,23 @@
  * @build jdk.test.whitebox.WhiteBox
  *
  * @run main/bootclasspath/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
- *                                 -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
+ *                                 -XX:CompileOnly=*TestStableFloat*::get,*TestStableFloat*::get1,*TestStableFloat*::get2,*TestStableFloat*::get3,*TestStableFloat*::get4
  *                                 -XX:-TieredCompilation
  *                                 -XX:+FoldStableValues
  *                                 compiler.stable.TestStableFloat
  * @run main/bootclasspath/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
- *                                 -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
+ *                                 -XX:CompileOnly=*TestStableFloat*::get,*TestStableFloat*::get1,*TestStableFloat*::get2,*TestStableFloat*::get3,*TestStableFloat*::get4
  *                                 -XX:-TieredCompilation
  *                                 -XX:-FoldStableValues
  *                                 compiler.stable.TestStableFloat
  *
  * @run main/bootclasspath/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
- *                                 -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
+ *                                 -XX:CompileOnly=*TestStableFloat*::get,*TestStableFloat*::get1,*TestStableFloat*::get2,*TestStableFloat*::get3,*TestStableFloat*::get4
  *                                 -XX:+TieredCompilation -XX:TieredStopAtLevel=1
  *                                 -XX:+FoldStableValues
  *                                 compiler.stable.TestStableFloat
  * @run main/bootclasspath/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
- *                                 -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
+ *                                 -XX:CompileOnly=*TestStableFloat*::get,*TestStableFloat*::get1,*TestStableFloat*::get2,*TestStableFloat*::get3,*TestStableFloat*::get4
  *                                 -XX:+TieredCompilation -XX:TieredStopAtLevel=1
  *                                 -XX:-FoldStableValues
  *                                 compiler.stable.TestStableFloat

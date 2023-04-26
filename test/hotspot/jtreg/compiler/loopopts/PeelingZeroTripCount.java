@@ -26,7 +26,7 @@
  * @bug 8215044
  * @summary C2 crash in loopTransform.cpp with assert(cl->trip_count() > 0) failed: peeling a fully unrolled loop
  *
- * @run main/othervm -XX:CompileOnly=PeelingZeroTripCount.test PeelingZeroTripCount
+ * @run main/othervm -XX:CompileOnly=PeelingZeroTripCount::test PeelingZeroTripCount
  *
  */
 

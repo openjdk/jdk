@@ -26,7 +26,7 @@
  * @bug 8202950
  * @summary C2: assert(found_sfpt) failed: no node in loop that's not input to safepoint
  *
- * @run main/othervm -Xcomp -Xbatch -XX:CompileOnly=UnexpectedPinnedNodeInOuterLoop -XX:-TieredCompilation UnexpectedPinnedNodeInOuterLoop
+ * @run main/othervm -Xcomp -Xbatch -XX:CompileOnly=UnexpectedPinnedNodeInOuterLoop::* -XX:-TieredCompilation UnexpectedPinnedNodeInOuterLoop
  *
  */
 

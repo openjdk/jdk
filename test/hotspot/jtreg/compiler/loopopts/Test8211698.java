@@ -26,7 +26,7 @@
  * @bug 8211698
  * @summary Crash in C2 compiled code during execution of double array heavy processing code
  *
- * @run main/othervm -XX:CompileOnly=Test8211698.test Test8211698
+ * @run main/othervm -XX:CompileOnly=Test8211698::test Test8211698
  *
  */
 

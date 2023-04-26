@@ -26,7 +26,7 @@
  * @bug 8261308
  * @summary C2: assert(inner->is_valid_counted_loop(T_INT) && inner->is_strip_mined()) failed: OuterStripMinedLoop should have been removed
  *
- * @run main/othervm -Xcomp -XX:CompileOnly=TestCountedLoopZeroIter TestCountedLoopZeroIter
+ * @run main/othervm -Xcomp -XX:CompileOnly=TestCountedLoopZeroIter::* TestCountedLoopZeroIter
  *
  */
 

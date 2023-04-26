@@ -26,7 +26,7 @@
  * @bug 8275330
  * @summary C2: assert(n->is_Root() || n->is_Region() || n->is_Phi() || n->is_MachMerge() || def_block->dominates(block)) failed: uses must be dominated by definitions
  *
- * @run main/othervm -Xmx512m -XX:+UnlockDiagnosticVMOptions -Xcomp -XX:CompileOnly=TestDeadPostLoopBecausePredicate TestDeadPostLoopBecausePredicate
+ * @run main/othervm -Xmx512m -XX:+UnlockDiagnosticVMOptions -Xcomp -XX:CompileOnly=TestDeadPostLoopBecausePredicate::* TestDeadPostLoopBecausePredicate
  *
  */
 

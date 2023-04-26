@@ -26,7 +26,7 @@
  * @bug 8273115
  * @summary CountedLoopEndNode::stride_con crash in debug build with -XX:+TraceLoopOpts
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+TraceLoopOpts -Xcomp -XX:-TieredCompilation
- *                   -XX:CompileOnly=TestBadlyFormedCountedLoop.main TestBadlyFormedCountedLoop
+ *                   -XX:CompileOnly=TestBadlyFormedCountedLoop::main TestBadlyFormedCountedLoop
  */
 
 public class TestBadlyFormedCountedLoop {

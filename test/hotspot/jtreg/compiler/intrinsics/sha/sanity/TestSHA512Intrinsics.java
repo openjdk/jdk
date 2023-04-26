@@ -36,8 +36,8 @@
  *                   -XX:+WhiteBoxAPI -Xbatch -XX:CompileThreshold=500
  *                   -XX:Tier4InvocationThreshold=500
  *                   -XX:+LogCompilation -XX:LogFile=positive_384.log
- *                   -XX:CompileOnly=sun/security/provider/DigestBase
- *                   -XX:CompileOnly=sun/security/provider/SHA5
+ *                   -XX:CompileOnly=sun.security.provider.DigestBase::*
+ *                   -XX:CompileOnly=sun.security.provider.SHA5::*
  *                   -XX:+UseSHA512Intrinsics
  *                   -Dalgorithm=SHA-384
  *                   compiler.intrinsics.sha.sanity.TestSHA512Intrinsics
@@ -45,8 +45,8 @@
  *                   -XX:+WhiteBoxAPI -Xbatch -XX:CompileThreshold=500
  *                   -XX:Tier4InvocationThreshold=500
  *                   -XX:+LogCompilation -XX:LogFile=negative_384.log
- *                   -XX:CompileOnly=sun/security/provider/DigestBase
- *                   -XX:CompileOnly=sun/security/provider/SHA5
+ *                   -XX:CompileOnly=sun.security.provider.DigestBase::*
+ *                   -XX:CompileOnly=sun.security.provider.SHA5::*
  *                   -XX:-UseSHA512Intrinsics
  *                   -Dalgorithm=SHA-384
  *                   compiler.intrinsics.sha.sanity.TestSHA512Intrinsics
@@ -54,8 +54,8 @@
  *                   -XX:+WhiteBoxAPI -Xbatch -XX:CompileThreshold=500
  *                   -XX:Tier4InvocationThreshold=500
  *                   -XX:+LogCompilation -XX:LogFile=positive_512.log
- *                   -XX:CompileOnly=sun/security/provider/DigestBase
- *                   -XX:CompileOnly=sun/security/provider/SHA5
+ *                   -XX:CompileOnly=sun.security.provider.DigestBase::*
+ *                   -XX:CompileOnly=sun.security.provider.SHA5::*
  *                   -XX:+UseSHA512Intrinsics
  *                   -Dalgorithm=SHA-512
  *                   compiler.intrinsics.sha.sanity.TestSHA512Intrinsics
@@ -63,8 +63,8 @@
  *                   -XX:+WhiteBoxAPI -Xbatch -XX:CompileThreshold=500
  *                   -XX:Tier4InvocationThreshold=500
  *                   -XX:+LogCompilation -XX:LogFile=negative_512.log
- *                   -XX:CompileOnly=sun/security/provider/DigestBase
- *                   -XX:CompileOnly=sun/security/provider/SHA5
+ *                   -XX:CompileOnly=sun.security.provider.DigestBase::*
+ *                   -XX:CompileOnly=sun.security.provider.SHA5::*
  *                   -XX:-UseSHA512Intrinsics
  *                   -Dalgorithm=SHA-512
  *                   compiler.intrinsics.sha.sanity.TestSHA512Intrinsics

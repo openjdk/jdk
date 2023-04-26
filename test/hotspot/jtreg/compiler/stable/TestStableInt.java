@@ -30,23 +30,23 @@
  * @build jdk.test.whitebox.WhiteBox
  *
  * @run main/bootclasspath/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
- *                                 -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
+ *                                 -XX:CompileOnly=*TestStableInt*::get,*TestStableInt*::get1,*TestStableInt*::get2,*TestStableInt*::get3,*TestStableInt*::get4
  *                                 -XX:-TieredCompilation
  *                                 -XX:+FoldStableValues
  *                                 compiler.stable.TestStableInt
  * @run main/bootclasspath/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
- *                                 -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
+ *                                 -XX:CompileOnly=*TestStableInt*::get,*TestStableInt*::get1,*TestStableInt*::get2,*TestStableInt*::get3,*TestStableInt*::get4
  *                                 -XX:-TieredCompilation
  *                                 -XX:-FoldStableValues
  *                                 compiler.stable.TestStableInt
  *
  * @run main/bootclasspath/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
- *                                 -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
+ *                                 -XX:CompileOnly=*TestStableInt*::get,*TestStableInt*::get1,*TestStableInt*::get2,*TestStableInt*::get3,*TestStableInt*::get4
  *                                 -XX:+TieredCompilation -XX:TieredStopAtLevel=1
  *                                 -XX:+FoldStableValues
  *                                 compiler.stable.TestStableInt
  * @run main/bootclasspath/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
- *                                 -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
+ *                                 -XX:CompileOnly=*TestStableInt*::get,*TestStableInt*::get1,*TestStableInt*::get2,*TestStableInt*::get3,*TestStableInt*::get4
  *                                 -XX:+TieredCompilation -XX:TieredStopAtLevel=1
  *                                 -XX:-FoldStableValues
  *                                 compiler.stable.TestStableInt

@@ -26,7 +26,7 @@
  * @bug 8269752
  * @summary C2: assert(false) failed: Bad graph detected in build_loop_late
  *
- * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:CompileOnly=TestMainBodyExecutedOnce TestMainBodyExecutedOnce
+ * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:CompileOnly=TestMainBodyExecutedOnce::* TestMainBodyExecutedOnce
  *
  */
 

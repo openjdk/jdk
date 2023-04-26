@@ -26,7 +26,7 @@
  * @bug 8269575
  * @summary C2: assert(false) failed: graph should be schedulable after JDK-8252372
  *
- * @run main/othervm -Xcomp -XX:CompileOnly=TestSunkNodeDueToBrokenAntiDependency TestSunkNodeDueToBrokenAntiDependency
+ * @run main/othervm -Xcomp -XX:CompileOnly=TestSunkNodeDueToBrokenAntiDependency::* TestSunkNodeDueToBrokenAntiDependency
  *
  */
 

@@ -32,11 +32,11 @@ import jdk.test.lib.Asserts;
  *          compilations, reducible and irreducible CFGs).
  * @library /test/lib /
  * @run main/othervm -Xbatch compiler.codegen.TestGCMStorePlacement regularReducible1
- * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:CompileOnly=compiler.codegen.TestGCMStorePlacement:: compiler.codegen.TestGCMStorePlacement regularReducible2
- * @run main/othervm -Xcomp -XX:CompileOnly=compiler.codegen.TestGCMStorePlacement:: compiler.codegen.TestGCMStorePlacement regularReducible3
- * @run main/othervm -Xcomp -XX:CompileOnly=compiler.codegen.TestGCMStorePlacement:: compiler.codegen.TestGCMStorePlacement regularReducible4
- * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:CompileOnly=compiler.codegen.TestGCMStorePlacement:: compiler.codegen.TestGCMStorePlacement osrReducible1
- * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:CompileOnly=compiler.codegen.TestGCMStorePlacement:: compiler.codegen.TestGCMStorePlacement osrReducible2
+ * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:CompileOnly=compiler.codegen.TestGCMStorePlacement::* compiler.codegen.TestGCMStorePlacement regularReducible2
+ * @run main/othervm -Xcomp -XX:CompileOnly=compiler.codegen.TestGCMStorePlacement::* compiler.codegen.TestGCMStorePlacement regularReducible3
+ * @run main/othervm -Xcomp -XX:CompileOnly=compiler.codegen.TestGCMStorePlacement::* compiler.codegen.TestGCMStorePlacement regularReducible4
+ * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:CompileOnly=compiler.codegen.TestGCMStorePlacement::* compiler.codegen.TestGCMStorePlacement osrReducible1
+ * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:CompileOnly=compiler.codegen.TestGCMStorePlacement::* compiler.codegen.TestGCMStorePlacement osrReducible2
  * @run main/othervm -Xbatch compiler.codegen.TestGCMStorePlacement osrIrreducible1
  */
 

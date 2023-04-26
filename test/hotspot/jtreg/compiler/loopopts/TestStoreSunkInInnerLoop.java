@@ -27,7 +27,7 @@
  * @summary C2 fails with assert(!n->is_Store() && !n->is_LoadStore()) failed: no node with a side effect
  *
  * @requires vm.gc.Serial
- * @run main/othervm -Xcomp -XX:CompileOnly=TestStoreSunkInInnerLoop -XX:CompileCommand=quiet -XX:+UseSerialGC -Xmx256m TestStoreSunkInInnerLoop
+ * @run main/othervm -Xcomp -XX:CompileOnly=TestStoreSunkInInnerLoop::* -XX:CompileCommand=quiet -XX:+UseSerialGC -Xmx256m TestStoreSunkInInnerLoop
  *
  */
 

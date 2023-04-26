@@ -26,7 +26,7 @@
  * @bug 8202952
  * @summary C2: Unexpected dead nodes after matching
  *
- * @run main/othervm -XX:-TieredCompilation -Xcomp -XX:CompileOnly=::test
+ * @run main/othervm -XX:-TieredCompilation -Xcomp -XX:CompileOnly=*TestMatcherLargeOffset::test
  *      compiler.c2.TestMatcherLargeOffset
  */
 package compiler.c2;

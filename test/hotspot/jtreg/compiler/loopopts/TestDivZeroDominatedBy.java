@@ -28,9 +28,9 @@
  * @bug 8259227
  * @summary Verify that zero check is executed before division/modulo operation.
  * @requires vm.compiler2.enabled
- * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:CompileOnly=compiler/loopopts/TestDivZeroDominatedBy::test
+ * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:CompileOnly=compiler.loopopts.TestDivZeroDominatedBy::test
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+StressGCM -XX:StressSeed=917280111 compiler.loopopts.TestDivZeroDominatedBy
- * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:CompileOnly=compiler/loopopts/TestDivZeroDominatedBy::test
+ * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:CompileOnly=compiler.loopopts.TestDivZeroDominatedBy::test
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+StressGCM compiler.loopopts.TestDivZeroDominatedBy
  */
 

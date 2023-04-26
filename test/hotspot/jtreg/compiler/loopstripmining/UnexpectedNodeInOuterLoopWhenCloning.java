@@ -26,7 +26,7 @@
  * @bug 8202747
  * @summary C2: assert(mode == ControlAroundStripMined && use == sfpt) failed: missed a node
  *
- * @run main/othervm -Xcomp -Xbatch -XX:CompileOnly=UnexpectedNodeInOuterLoopWhenCloning -XX:-TieredCompilation UnexpectedNodeInOuterLoopWhenCloning
+ * @run main/othervm -Xcomp -Xbatch -XX:CompileOnly=UnexpectedNodeInOuterLoopWhenCloning::* -XX:-TieredCompilation UnexpectedNodeInOuterLoopWhenCloning
  *
  */
 

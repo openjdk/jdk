@@ -25,7 +25,7 @@
  * @test
  * bug 8280600
  * @summary C2: assert(!had_error) failed: bad dominance
- * @run main/othervm -Xcomp -XX:CompileOnly=TestCastIIMakesMainLoopPhiDead TestCastIIMakesMainLoopPhiDead
+ * @run main/othervm -Xcomp -XX:CompileOnly=TestCastIIMakesMainLoopPhiDead::* TestCastIIMakesMainLoopPhiDead
  */
 
 public class TestCastIIMakesMainLoopPhiDead {

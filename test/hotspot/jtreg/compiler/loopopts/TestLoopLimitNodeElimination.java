@@ -28,7 +28,7 @@
  *
  * @run main/othervm
  *      -Xcomp
- *      -XX:CompileOnly=compiler/loopopts/TestLoopLimitNodeElimination
+ *      -XX:CompileOnly=compiler.loopopts.TestLoopLimitNodeElimination::*
  *      compiler.loopopts.TestLoopLimitNodeElimination
  */
 

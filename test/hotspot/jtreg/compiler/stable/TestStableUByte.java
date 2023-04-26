@@ -33,26 +33,26 @@
  *                                 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
  *                                 -XX:-TieredCompilation
  *                                 -XX:+FoldStableValues
- *                                 -XX:CompileOnly=::get,::get1
+ *                                 -XX:CompileOnly=*TestStableUByte*::get,*TestStableUByte*::get1
  *                                 compiler.stable.TestStableUByte
  * @run main/bootclasspath/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+AlwaysIncrementalInline
  *                                 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
  *                                 -XX:-TieredCompilation
  *                                 -XX:-FoldStableValues
- *                                 -XX:CompileOnly=::get,::get1
+ *                                 -XX:CompileOnly=*TestStableUByte*::get,*TestStableUByte*::get1
  *                                 compiler.stable.TestStableUByte
  *
  * @run main/bootclasspath/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+AlwaysIncrementalInline
  *                                 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
  *                                 -XX:+TieredCompilation -XX:TieredStopAtLevel=1
  *                                 -XX:+FoldStableValues
- *                                 -XX:CompileOnly=::get,::get1
+ *                                 -XX:CompileOnly=*TestStableUByte*::get,*TestStableUByte*::get1
  *                                 compiler.stable.TestStableUByte
  * @run main/bootclasspath/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+AlwaysIncrementalInline
  *                                 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
  *                                 -XX:+TieredCompilation -XX:TieredStopAtLevel=1
  *                                 -XX:-FoldStableValues
- *                                 -XX:CompileOnly=::get,::get1
+ *                                 -XX:CompileOnly=*TestStableUByte*::get,*TestStableUByte*::get1
  *                                 compiler.stable.TestStableUByte
  */
 

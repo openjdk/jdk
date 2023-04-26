@@ -36,8 +36,8 @@
  *                   -XX:+WhiteBoxAPI -Xbatch -XX:CompileThreshold=500
  *                   -XX:Tier4InvocationThreshold=500
  *                   -XX:+LogCompilation -XX:LogFile=positive.log
- *                   -XX:CompileOnly=sun/security/provider/DigestBase
- *                   -XX:CompileOnly=sun/security/provider/SHA
+ *                   -XX:CompileOnly=sun.security.provider.DigestBase::*
+ *                   -XX:CompileOnly=sun.security.provider.SHA::*
  *                   -XX:+UseSHA1Intrinsics
  *                   -Dalgorithm=SHA-1
  *                   compiler.intrinsics.sha.sanity.TestSHA1Intrinsics
@@ -45,8 +45,8 @@
  *                   -XX:+WhiteBoxAPI -Xbatch -XX:CompileThreshold=500
  *                   -XX:Tier4InvocationThreshold=500
  *                   -XX:+LogCompilation -XX:LogFile=negative.log
- *                   -XX:CompileOnly=sun/security/provider/DigestBase
- *                   -XX:CompileOnly=sun/security/provider/SHA
+ *                   -XX:CompileOnly=sun.security.provider.DigestBase::*
+ *                   -XX:CompileOnly=sun.security.provider.SHA::*
  *                   -XX:-UseSHA1Intrinsics
  *                   -Dalgorithm=SHA-1
  *                   compiler.intrinsics.sha.sanity.TestSHA1Intrinsics

@@ -30,23 +30,23 @@
  * @build jdk.test.whitebox.WhiteBox
  *
  * @run main/bootclasspath/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
- *                                 -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
+ *                                 -XX:CompileOnly=*TestStableShort*::get,*TestStableShort*::get1,*TestStableShort*::get2,*TestStableShort*::get3,*TestStableShort*::get4
  *                                 -XX:-TieredCompilation
  *                                 -XX:+FoldStableValues
  *                                 compiler.stable.TestStableShort
  * @run main/bootclasspath/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
- *                                 -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
+ *                                 -XX:CompileOnly=*TestStableShort*::get,*TestStableShort*::get1,*TestStableShort*::get2,*TestStableShort*::get3,*TestStableShort*::get4
  *                                 -XX:-TieredCompilation
  *                                 -XX:-FoldStableValues
  *                                 compiler.stable.TestStableShort
  *
  * @run main/bootclasspath/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
- *                                 -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
+ *                                 -XX:CompileOnly=*TestStableShort*::get,*TestStableShort*::get1,*TestStableShort*::get2,*TestStableShort*::get3,*TestStableShort*::get4
  *                                 -XX:+TieredCompilation -XX:TieredStopAtLevel=1
  *                                 -XX:+FoldStableValues
  *                                 compiler.stable.TestStableShort
  * @run main/bootclasspath/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
- *                                 -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
+ *                                 -XX:CompileOnly=*TestStableShort*::get,*TestStableShort*::get1,*TestStableShort*::get2,*TestStableShort*::get3,*TestStableShort*::get4
  *                                 -XX:+TieredCompilation -XX:TieredStopAtLevel=1
  *                                 -XX:-FoldStableValues
  *                                 compiler.stable.TestStableShort

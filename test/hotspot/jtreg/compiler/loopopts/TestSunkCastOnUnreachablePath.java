@@ -26,7 +26,7 @@
  * @bug 8272562
  * @summary C2: assert(false) failed: Bad graph detected in build_loop_late
  *
- * @run main/othervm -XX:CompileOnly=TestSunkCastOnUnreachablePath -XX:-TieredCompilation -Xbatch TestSunkCastOnUnreachablePath
+ * @run main/othervm -XX:CompileOnly=TestSunkCastOnUnreachablePath::* -XX:-TieredCompilation -Xbatch TestSunkCastOnUnreachablePath
  *
  */
 

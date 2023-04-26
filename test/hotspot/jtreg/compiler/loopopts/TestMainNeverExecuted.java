@@ -26,7 +26,7 @@
  * @bug 8271272
  * @summary C2: assert(!had_error) failed: bad dominance
  *
- * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:CompileOnly=TestMainNeverExecuted TestMainNeverExecuted
+ * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:CompileOnly=TestMainNeverExecuted::* TestMainNeverExecuted
  *
  */
 

@@ -27,7 +27,7 @@
  * @bug 8260284
  * @summary Fix "assert(_base == Int) failed: Not an Int" due to a top divisor not handled correctly in no_dependent_zero_check().
  * @requires vm.compiler2.enabled
- * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:CompileOnly=compiler/loopopts/TestDivWithTopDivisor compiler.loopopts.TestDivWithTopDivisor
+ * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:CompileOnly=compiler.loopopts.TestDivWithTopDivisor::* compiler.loopopts.TestDivWithTopDivisor
  */
 
 package compiler.loopopts;

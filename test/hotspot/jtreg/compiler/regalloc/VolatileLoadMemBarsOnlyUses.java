@@ -26,7 +26,7 @@
  * @bug 8210389
  * @summary C2: assert(n->outcnt() != 0 || C->top() == n || n->is_Proj()) failed: No dead instructions after post-alloc
  *
- * @run main/othervm -Xcomp -XX:CompileOnly=VolatileLoadMemBarsOnlyUses VolatileLoadMemBarsOnlyUses
+ * @run main/othervm -Xcomp -XX:CompileOnly=*VolatileLoadMemBarsOnlyUses*::* VolatileLoadMemBarsOnlyUses
  *
  */
 

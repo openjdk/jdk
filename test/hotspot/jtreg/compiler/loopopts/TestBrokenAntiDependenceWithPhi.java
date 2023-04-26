@@ -26,7 +26,7 @@
  * @bug 8259641
  * @summary C2: assert(early->dominates(LCA)) failed: early is high enough
  *
- * @run main/othervm -Xcomp -XX:CompileOnly=TestBrokenAntiDependenceWithPhi TestBrokenAntiDependenceWithPhi
+ * @run main/othervm -Xcomp -XX:CompileOnly=TestBrokenAntiDependenceWithPhi::* TestBrokenAntiDependenceWithPhi
  *
  */
 
