@@ -172,6 +172,12 @@ AC_DEFUN_ONCE([LIB_SETUP_ZLIB],
     DEFAULT_ZLIB=bundled
   fi
 
+  # Always bundle the library if we are building static java.
+  if test "x${STATIC_JAVA}" = "xtrue"; then
+    DEFAULT_ZLIB=bundled
+    ZLIB_FOUND=no
+  fi
+
   if test "x${ZLIB_FOUND}" != "xyes"; then
     # If we don't find any system...set default to bundled
     DEFAULT_ZLIB=bundled
@@ -186,6 +192,9 @@ AC_DEFUN_ONCE([LIB_SETUP_ZLIB],
     USE_EXTERNAL_LIBZ=false
     AC_MSG_RESULT([bundled])
   elif test "x${with_zlib}" = "xsystem"; then
+    if test "x${STATIC_JAVA}" = "xtrue"; then
+      AC_MSG_ERROR([--with-zlib=system does not work with --with-static-java=yes]) 
+    fi
     if test "x${ZLIB_FOUND}" = "xyes"; then
       USE_EXTERNAL_LIBZ=true
       AC_MSG_RESULT([system])

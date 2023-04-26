@@ -54,6 +54,7 @@ m4_include([boot-jdk.m4])
 m4_include([build-performance.m4])
 m4_include([flags.m4])
 m4_include([help.m4])
+m4_include([static-java.m4])
 m4_include([hotspot.m4])
 m4_include([jdk-options.m4])
 m4_include([jdk-version.m4])
@@ -91,6 +92,8 @@ BASIC_SETUP_BUILD_ENV
 
 # Check if it's a pure open build or if custom sources are to be used.
 JDKOPT_SETUP_OPEN_OR_CUSTOM
+
+STATIC_JAVA_SETUP
 
 # These are needed to be able to create a configuration name (and thus the output directory)
 JDKOPT_SETUP_DEBUG_LEVEL

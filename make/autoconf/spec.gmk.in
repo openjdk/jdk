@@ -569,6 +569,9 @@ JDKEXE_LIBS:=@JDKEXE_LIBS@
 # LDFLAGS specific to C++ linking.
 LDFLAGS_CXX_JDK:=@LDFLAGS_CXX_JDK@
 
+# LDFLAGS specific to C++ static linking.
+LDFLAGS_CXX_STATIC_JDK=@LDFLAGS_CXX_STATIC_JDK@
+
 # Sometimes a different linker is needed for c++ libs
 LDCXX := @LDCXX@
 # The flags for linking libstdc++ linker.
@@ -924,6 +927,10 @@ DOCS_OUTPUTDIR := $(DOCS_JDK_IMAGE_DIR)
 # Static libs image
 STATIC_LIBS_IMAGE_SUBDIR := static-libs
 STATIC_LIBS_IMAGE_DIR := $(IMAGES_OUTPUTDIR)/$(STATIC_LIBS_IMAGE_SUBDIR)
+
+# Static launcher image
+STATIC_LAUNCHER_IMAGE_SUBDIR := static-bin
+STATIC_LAUNCHER_IMAGE_DIR := $(IMAGES_OUTPUTDIR)/$(STATIC_LAUNCHER_IMAGE_SUBDIR)
 
 # Graal builder image
 GRAAL_BUILDER_IMAGE_SUBDIR := graal-builder-jdk

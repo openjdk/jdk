@@ -148,6 +148,16 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_HELPER],
   # Export some intermediate variables for compatibility
   LDFLAGS_CXX_JDK="$BASIC_LDFLAGS_ONLYCXX $BASIC_LDFLAGS_ONLYCXX_JDK_ONLY $DEBUGLEVEL_LDFLAGS_JDK_ONLY"
   AC_SUBST(LDFLAGS_CXX_JDK)
+
+  # Setup static linking flags.
+  if test "x$OPENJDK_TARGET_OS" = xlinux; then
+    if test "x$TOOLCHAIN_TYPE" = xgcc; then
+      LDFLAGS_CXX_STATIC_JDK="-l:libstdc++.a"
+    elif test "x$TOOLCHAIN_TYPE" = xclang; then
+      LDFLAGS_CXX_STATIC_JDK="-l:libc++.a"
+    fi
+  fi
+  AC_SUBST(LDFLAGS_CXX_STATIC_JDK)
 ])
 
 ################################################################################

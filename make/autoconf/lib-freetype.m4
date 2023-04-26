@@ -35,6 +35,10 @@ AC_DEFUN([LIB_CHECK_POTENTIAL_FREETYPE],
   # Let's start with an optimistic view of the world :-)
   FOUND_FREETYPE=yes
 
+  if test "x${STATIC_JAVA}" = "xtrue"; then
+    FOUND_FREETYPE=no
+  fi
+
   # First look for the canonical freetype main include file ft2build.h.
   if ! test -s "$POTENTIAL_FREETYPE_INCLUDE_PATH/ft2build.h"; then
     # Oh no! Let's try in the freetype2 directory.
@@ -103,11 +107,15 @@ AC_DEFUN_ONCE([LIB_SETUP_FREETYPE],
   FREETYPE_TO_USE=bundled
   if test "x$OPENJDK_TARGET_OS" != "xwindows" && \
       test "x$OPENJDK_TARGET_OS" != "xmacosx" && \
-      test "x$OPENJDK_TARGET_OS" != "xaix"; then
+      test "x$OPENJDK_TARGET_OS" != "xaix" && \
+      test "x${STATIC_JAVA}" != "xtrue"; then
     FREETYPE_TO_USE=system
   fi
   if test "x$with_freetype" != "x" ; then
     if test "x$with_freetype" = "xsystem" ; then
+      if test "x${STATIC_JAVA}" = "xtrue"; then
+        AC_MSG_ERROR([--with-freetype=system does not work with --with-static-java=yes])
+      fi
       FREETYPE_TO_USE=system
     elif test "x$with_freetype" = "xbundled" ; then
       FREETYPE_TO_USE=bundled
