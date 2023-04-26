@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -22,24 +20,32 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+/*
+ * @test
+ * @bug 4746122
+ * @key headful
+ * @summary Checks getGraphics doesn't throw NullPointerExcepton for invalid colors and font.
+ * @run main GetGraphicsTest
+*/
 
-package sun.security.x509;
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.Frame;
+import java.awt.Graphics;
 
-/**
- * CertException indicates one of a variety of certificate problems.
- * @deprecated use one of the Exceptions defined in the
- * java.security.cert package.
- *
- * @author David Brownell
- */
-@Deprecated
-class CertParseError extends CertException
-{
-    @java.io.Serial
-    private static final long serialVersionUID = -4559645519017017804L;
-
-    CertParseError (String where)
-    {
-        super (CertException.verf_PARSE_ERROR, where);
+public class GetGraphicsTest extends Frame {
+    public Color getBackground() {
+        return null;
     }
-}
+    public Color getForeground() {
+        return null;
+    }
+    public Font getFont() {
+        return null;
+    }
+
+    public static void main(String[] args) throws Exception {
+        GetGraphicsTest test = new GetGraphicsTest();
+        Graphics g = test.getGraphics();
+    }
+}// class GetGraphicsTest
