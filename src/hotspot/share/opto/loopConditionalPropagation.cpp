@@ -654,7 +654,7 @@ public:
       for (int i = _rpo_list.size() - 1; i >= 0; i--) {
         int rpo = _rpo_list.size() - 1 - i;
         Node* c = _rpo_list.at(i);
-        has_infinite_loop = has_infinite_loop || (c->Opcode() == Op_NeverBranch);
+        has_infinite_loop = has_infinite_loop || (c->in(0)->Opcode() == Op_NeverBranch);
 
         if (UseNewCode2) {
           _old_version = false;
