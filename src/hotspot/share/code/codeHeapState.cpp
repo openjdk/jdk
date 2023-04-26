@@ -25,6 +25,7 @@
 
 #include "precompiled.hpp"
 #include "code/codeHeapState.hpp"
+#include "code/codeBlob.hpp"
 #include "compiler/compileBroker.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/sweeper.hpp"
@@ -1152,10 +1153,9 @@ void CodeHeapState::aggregate(outputStream* out, CodeHeap* heap, size_t granular
       ast->cr();
 
       int             reset_val = NMethodSweeper::hotness_counter_reset_val();
-      double reverse_free_ratio = (res_size > size) ? (double)res_size/(double)(res_size-size) : (double)res_size;
       printBox(ast, '-', "Method hotness information at time of this analysis", NULL);
       ast->print_cr("Highest possible method temperature:          %12d", reset_val);
-      ast->print_cr("Threshold for method to be considered 'cold': %12.3f", -reset_val + reverse_free_ratio * NmethodSweepActivity);
+      ast->print_cr("Threshold for method to be considered 'cold': %12.3f", -reset_val + (CodeCache::reverse_free_ratio() * NmethodSweepActivity));
       if (n_methods > 0) {
         avgTemp = hotnessAccumulator/n_methods;
         ast->print_cr("min. hotness = %6d", minTemp);
