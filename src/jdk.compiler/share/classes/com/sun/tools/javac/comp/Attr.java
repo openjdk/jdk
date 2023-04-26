@@ -5588,7 +5588,7 @@ public class Attr extends JCTree.Visitor {
             }
         }
 
-        // Check for proper placement of super()/init() calls.
+        // Check for proper placement of super()/this() calls.
         chk.checkSuperInitCalls(tree);
 
         // Check for cycles among non-initial constructors.
