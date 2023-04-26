@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2022 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -506,11 +506,11 @@ void trace_method_handle_stub(const char* adaptername,
     ResourceMark rm;
     LogStream ls(lt);
     ls.print_cr("Registers:");
-    const int abi_offset = frame::abi_reg_args_size / 8;
+    const int abi_offset = frame::native_abi_reg_args_size / 8;
     for (int i = R3->encoding(); i <= R12->encoding(); i++) {
       Register r = as_Register(i);
       int count = i - R3->encoding();
-      // The registers are stored in reverse order on the stack (by save_volatile_gprs(R1_SP, abi_reg_args_size)).
+      // The registers are stored in reverse order on the stack (by save_volatile_gprs(R1_SP, native_abi_reg_args_size)).
       ls.print("%3s=" PTR_FORMAT, r->name(), saved_regs[abi_offset + count]);
       if ((count + 1) % 4 == 0) {
         ls.cr();

@@ -76,7 +76,7 @@ inline void ThawBase::derelativize_interpreted_frame_metadata(const frame& hf, c
 
 inline intptr_t* ThawBase::align(const frame& hf, intptr_t* frame_sp, frame& caller, bool bottom) {
   Unimplemented();
-  return NULL;
+  return nullptr;
 }
 
 inline void ThawBase::patch_pd(frame& f, const frame& caller) {
