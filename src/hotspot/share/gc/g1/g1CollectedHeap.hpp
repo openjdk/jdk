@@ -283,6 +283,9 @@ private:
                                 uint gc_counter,
                                 uint old_marking_started_before);
 
+  bool try_collect_fullgc(GCCause::Cause cause,
+                          const G1GCCounters& counters_before);
+
   // indicates whether we are in young or mixed GC mode
   G1CollectorState _collector_state;
 
@@ -476,16 +479,13 @@ private:
   void retire_gc_alloc_region(HeapRegion* alloc_region,
                               size_t allocated_bytes, G1HeapRegionAttr dest);
 
-  // - if explicit_gc is true, the GC is for a System.gc() etc,
-  //   otherwise it's for a failed allocation.
   // - if clear_all_soft_refs is true, all soft references should be
   //   cleared during the GC.
   // - if do_maximal_compaction is true, full gc will do a maximally
   //   compacting collection, leaving no dead wood.
   // - it returns false if it is unable to do the collection due to the
   //   GC locker being active, true otherwise.
-  bool do_full_collection(bool explicit_gc,
-                          bool clear_all_soft_refs,
+  bool do_full_collection(bool clear_all_soft_refs,
                           bool do_maximal_compaction);
 
   // Callback from VM_G1CollectFull operation, or collect_as_vm_thread.
@@ -502,7 +502,7 @@ private:
   // Internal helpers used during full GC to split it up to
   // increase readability.
   bool abort_concurrent_cycle();
-  void verify_before_full_collection(bool explicit_gc);
+  void verify_before_full_collection();
   void prepare_heap_for_full_collection();
   void prepare_for_mutator_after_full_collection();
   void abort_refinement();

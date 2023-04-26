@@ -841,8 +841,7 @@ void G1CollectedHeap::prepare_heap_for_full_collection() {
   _hrm.remove_all_free_regions();
 }
 
-void G1CollectedHeap::verify_before_full_collection(bool explicit_gc) {
-  assert(!GCCause::is_user_requested_gc(gc_cause()) || explicit_gc, "invariant");
+void G1CollectedHeap::verify_before_full_collection() {
   assert_used_and_recalculate_used_equal(this);
   if (!VerifyBeforeGC) {
     return;
@@ -913,8 +912,7 @@ void G1CollectedHeap::verify_after_full_collection() {
   _ref_processor_cm->verify_no_references_recorded();
 }
 
-bool G1CollectedHeap::do_full_collection(bool explicit_gc,
-                                         bool clear_all_soft_refs,
+bool G1CollectedHeap::do_full_collection(bool clear_all_soft_refs,
                                          bool do_maximal_compaction) {
   assert_at_safepoint_on_vm_thread();
 
@@ -928,7 +926,7 @@ bool G1CollectedHeap::do_full_collection(bool explicit_gc,
 
   G1FullGCMark gc_mark;
   GCTraceTime(Info, gc) tm("Pause Full", NULL, gc_cause(), true);
-  G1FullCollector collector(this, explicit_gc, do_clear_all_soft_refs, do_maximal_compaction, gc_mark.tracer());
+  G1FullCollector collector(this, do_clear_all_soft_refs, do_maximal_compaction, gc_mark.tracer());
 
   collector.prepare_collection();
   collector.collect();
@@ -943,16 +941,14 @@ void G1CollectedHeap::do_full_collection(bool clear_all_soft_refs) {
   // the caller that the collection did not succeed (e.g., because it was locked
   // out by the GC locker). So, right now, we'll ignore the return value.
 
-  do_full_collection(false,                /* explicit_gc */
-                     clear_all_soft_refs,
+  do_full_collection(clear_all_soft_refs,
                      false /* do_maximal_compaction */);
 }
 
 bool G1CollectedHeap::upgrade_to_full_collection() {
   GCCauseSetter compaction(this, GCCause::_g1_compaction_pause);
   log_info(gc, ergo)("Attempting full compaction clearing soft references");
-  bool success = do_full_collection(false /* explicit gc */,
-                                    true  /* clear_all_soft_refs */,
+  bool success = do_full_collection(true  /* clear_all_soft_refs */,
                                     false /* do_maximal_compaction */);
   // do_full_collection only fails if blocked by GC locker and that can't
   // be the case here since we only call this when already completed one gc.
@@ -1008,8 +1004,7 @@ HeapWord* G1CollectedHeap::satisfy_failed_allocation_helper(size_t word_size,
     } else {
       log_info(gc, ergo)("Attempting full compaction");
     }
-    *gc_succeeded = do_full_collection(false, /* explicit_gc */
-                                       maximal_compaction /* clear_all_soft_refs */ ,
+    *gc_succeeded = do_full_collection(maximal_compaction /* clear_all_soft_refs */ ,
                                        maximal_compaction /* do_maximal_compaction */);
   }
 
@@ -1383,7 +1378,6 @@ jint G1CollectedHeap::initialize() {
 
   // Create the barrier set for the entire reserved region.
   G1CardTable* ct = new G1CardTable(heap_rs.region());
-  ct->initialize();
   G1BarrierSet* bs = new G1BarrierSet(ct);
   bs->initialize();
   assert(bs->is_a(BarrierSet::G1BarrierSet), "sanity");
@@ -1928,6 +1922,35 @@ bool G1CollectedHeap::try_collect_concurrently(GCCause::Cause cause,
   }
 }
 
+bool G1CollectedHeap::try_collect_fullgc(GCCause::Cause cause,
+                                         const G1GCCounters& counters_before) {
+  assert_heap_not_locked();
+
+  while(true) {
+    VM_G1CollectFull op(counters_before.total_collections(),
+                        counters_before.total_full_collections(),
+                        cause);
+    VMThread::execute(&op);
+
+    // Request is trivially finished.
+    if (!GCCause::is_explicit_full_gc(cause) || op.gc_succeeded()) {
+      return op.gc_succeeded();
+    }
+
+    {
+      MutexLocker ml(Heap_lock);
+      if (counters_before.total_full_collections() != total_full_collections()) {
+        return true;
+      }
+    }
+
+    if (GCLocker::is_active_and_needs_gc()) {
+      // If GCLocker is active, wait until clear before retrying.
+      GCLocker::stall_until_clear();
+    }
+  }
+}
+
 bool G1CollectedHeap::try_collect(GCCause::Cause cause,
                                   const G1GCCounters& counters_before) {
   if (should_do_concurrent_full_gc(cause)) {
@@ -1951,11 +1974,7 @@ bool G1CollectedHeap::try_collect(GCCause::Cause cause,
     return op.gc_succeeded();
   } else {
     // Schedule a Full GC.
-    VM_G1CollectFull op(counters_before.total_collections(),
-                        counters_before.total_full_collections(),
-                        cause);
-    VMThread::execute(&op);
-    return op.gc_succeeded();
+    return try_collect_fullgc(cause, counters_before);
   }
 }
 
