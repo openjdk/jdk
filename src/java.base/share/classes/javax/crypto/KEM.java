@@ -222,7 +222,7 @@ public final class KEM {
          *          {@code SecretKey} containing the bytes of the secret
          *          ranging from {@code from} to {@code to}, exclusive,
          *          and an algorithm name as specified.
-         * @throws ArrayIndexOutOfBoundsException if {@code from < 0},
+         * @throws IndexOutOfBoundsException if {@code from < 0},
          *     {@code from > to}, or {@code to > secretSize()}
          * @throws NullPointerException if {@code algorithm} is {@code null}
          * @throws UnsupportedOperationException if the combination of
@@ -339,7 +339,7 @@ public final class KEM {
          *          the specified algorithm
          * @throws DecapsulateException if an error occurs during the
          *          decapsulation process
-         * @throws ArrayIndexOutOfBoundsException if {@code from < 0},
+         * @throws IndexOutOfBoundsException if {@code from < 0},
          *          {@code from > to}, or {@code to > secretSize()}
          * @throws NullPointerException if {@code encapsulation} or
          *          {@code algorithm} is {@code null}
@@ -397,10 +397,10 @@ public final class KEM {
             this.list = list;
         }
 
-        private Encapsulator newEncapsulator(PublicKey pk,
+        private Encapsulator newEncapsulator(PublicKey publicKey,
                 AlgorithmParameterSpec spec, SecureRandom secureRandom)
                 throws InvalidAlgorithmParameterException, InvalidKeyException {
-            if (pk == null) {
+            if (publicKey == null) {
                 throw new InvalidKeyException("input key is null");
             }
             RuntimeException re = null;
@@ -408,13 +408,13 @@ public final class KEM {
             InvalidKeyException ike = null;
             NoSuchAlgorithmException nsae = null;
             for (Provider.Service service : list) {
-                if (!service.supportsParameter(pk)) {
+                if (!service.supportsParameter(publicKey)) {
                     continue;
                 }
                 try {
                     KEMSpi spi = (KEMSpi) service.newInstance(null);
                     return new Encapsulator(
-                            spi.engineNewEncapsulator(pk, spec, secureRandom),
+                            spi.engineNewEncapsulator(publicKey, spec, secureRandom),
                             service.getProvider());
                 } catch (NoSuchAlgorithmException e) {
                     nsae = merge(nsae, e);
@@ -432,7 +432,7 @@ public final class KEM {
                 throw new InvalidKeyException("No installed provider found", nsae);
             }
             throw new InvalidKeyException("No installed provider supports this key: "
-                            + pk.getClass().getName(), re);
+                            + publicKey.getClass().getName(), re);
         }
 
         private static <T extends Exception> T merge(T e1, T e2) {
@@ -444,9 +444,9 @@ public final class KEM {
             }
         }
 
-        private Decapsulator newDecapsulator(PrivateKey sk, AlgorithmParameterSpec spec)
+        private Decapsulator newDecapsulator(PrivateKey privateKey, AlgorithmParameterSpec spec)
                 throws InvalidAlgorithmParameterException, InvalidKeyException {
-            if (sk == null) {
+            if (privateKey == null) {
                 throw new InvalidKeyException("input key is null");
             }
             RuntimeException re = null;
@@ -454,13 +454,13 @@ public final class KEM {
             InvalidKeyException ike = null;
             NoSuchAlgorithmException nsae = null;
             for (Provider.Service service : list) {
-                if (!service.supportsParameter(sk)) {
+                if (!service.supportsParameter(privateKey)) {
                     continue;
                 }
                 try {
                     KEMSpi spi = (KEMSpi) service.newInstance(null);
                     return new Decapsulator(
-                            spi.engineNewDecapsulator(sk, spec),
+                            spi.engineNewDecapsulator(privateKey, spec),
                             service.getProvider());
                 } catch (NoSuchAlgorithmException e) {
                     nsae = merge(nsae, e);
@@ -478,7 +478,7 @@ public final class KEM {
                 throw new InvalidKeyException("No installed provider found", nsae);
             }
             throw new InvalidKeyException("No installed provider supports this key: "
-                    + sk.getClass().getName(), re);
+                    + privateKey.getClass().getName(), re);
         }
     }
 
@@ -599,18 +599,18 @@ public final class KEM {
     /**
      * Creates a KEM encapsulator on the KEM sender side.
      * <p>
-     * This method is equivalent to {@code newEncapsulator(pk, null, null)}.
+     * This method is equivalent to {@code newEncapsulator(publicKey, null, null)}.
      *
-     * @param pk the receiver's public key, must not be {@code null}
+     * @param publicKey the receiver's public key, must not be {@code null}
      * @return the encapsulator for this key
-     * @throws InvalidKeyException if {@code pk} is invalid
+     * @throws InvalidKeyException if {@code publicKey} is invalid
      * @throws UnsupportedOperationException if this method is not supported
      *          because an {@code AlgorithmParameterSpec} must be provided
      */
-    public Encapsulator newEncapsulator(PublicKey pk)
+    public Encapsulator newEncapsulator(PublicKey publicKey)
             throws InvalidKeyException {
         try {
-            return newEncapsulator(pk, null, null);
+            return newEncapsulator(publicKey, null, null);
         } catch (InvalidAlgorithmParameterException e) {
             throw new UnsupportedOperationException(
                     "AlgorithmParameterSpec must be provided", e);
@@ -620,21 +620,21 @@ public final class KEM {
     /**
      * Creates a KEM encapsulator on the KEM sender side.
      * <p>
-     * This method is equivalent to {@code newEncapsulator(pk, null, secureRandom)}.
+     * This method is equivalent to {@code newEncapsulator(publicKey, null, secureRandom)}.
      *
-     * @param pk the receiver's public key, must not be {@code null}
+     * @param publicKey the receiver's public key, must not be {@code null}
      * @param secureRandom the source of randomness for encapsulation.
      *                     If {@code} null, a default one from the
      *                     implementation will be used.
      * @return the encapsulator for this key
-     * @throws InvalidKeyException if {@code pk} is invalid
+     * @throws InvalidKeyException if {@code publicKey} is invalid
      * @throws UnsupportedOperationException if this method is not supported
      *          because an {@code AlgorithmParameterSpec} must be provided
      */
-    public Encapsulator newEncapsulator(PublicKey pk, SecureRandom secureRandom)
+    public Encapsulator newEncapsulator(PublicKey publicKey, SecureRandom secureRandom)
             throws InvalidKeyException {
         try {
-            return newEncapsulator(pk, null, secureRandom);
+            return newEncapsulator(publicKey, null, secureRandom);
         } catch (InvalidAlgorithmParameterException e) {
             throw new UnsupportedOperationException(
                     "AlgorithmParameterSpec must be provided", e);
@@ -658,7 +658,7 @@ public final class KEM {
      * an {@code AlgorithmParameterSpec} object to be used in its
      * {@link #newDecapsulator(PrivateKey, AlgorithmParameterSpec)} call.
      *
-     * @param pk the receiver's public key, must not be {@code null}
+     * @param publicKey the receiver's public key, must not be {@code null}
      * @param spec the optional parameter, can be {@code null}
      * @param secureRandom the source of randomness for encapsulation.
      *                     If {@code} null, a default one from the
@@ -666,31 +666,31 @@ public final class KEM {
      * @return the encapsulator for this key
      * @throws InvalidAlgorithmParameterException if {@code spec} is invalid
      *          or one is required but {@code spec} is {@code null}
-     * @throws InvalidKeyException if {@code pk} is invalid
+     * @throws InvalidKeyException if {@code publicKey} is invalid
      */
-    public Encapsulator newEncapsulator(PublicKey pk,
+    public Encapsulator newEncapsulator(PublicKey publicKey,
             AlgorithmParameterSpec spec, SecureRandom secureRandom)
             throws InvalidAlgorithmParameterException, InvalidKeyException {
         return delayed != null
-                ? delayed.newEncapsulator(pk, spec, secureRandom)
-                : new Encapsulator(spi.engineNewEncapsulator(pk, spec, secureRandom), provider);
+                ? delayed.newEncapsulator(publicKey, spec, secureRandom)
+                : new Encapsulator(spi.engineNewEncapsulator(publicKey, spec, secureRandom), provider);
     }
 
     /**
      * Creates a KEM decapsulator on the KEM receiver side.
      * <p>
-     * This method is equivalent to {@code newDecapsulator(sk, null)}.
+     * This method is equivalent to {@code newDecapsulator(privateKey, null)}.
      *
-     * @param sk the receiver's private key, must not be {@code null}
+     * @param privateKey the receiver's private key, must not be {@code null}
      * @return the decapsulator for this key
-     * @throws InvalidKeyException if {@code sk} is invalid
+     * @throws InvalidKeyException if {@code privateKey} is invalid
      * @throws UnsupportedOperationException if this method is not supported
      *          because an {@code AlgorithmParameterSpec} must be provided
      */
-    public Decapsulator newDecapsulator(PrivateKey sk)
+    public Decapsulator newDecapsulator(PrivateKey privateKey)
             throws InvalidKeyException {
         try {
-            return newDecapsulator(sk, null);
+            return newDecapsulator(privateKey, null);
         } catch (InvalidAlgorithmParameterException e) {
             throw new UnsupportedOperationException(e);
         }
@@ -699,18 +699,18 @@ public final class KEM {
     /**
      * Creates a KEM decapsulator on the KEM receiver side.
      *
-     * @param sk the receiver's private key, must not be {@code null}
+     * @param privateKey the receiver's private key, must not be {@code null}
      * @param spec the parameter, can be {@code null}
      * @return the decapsulator for this key
      * @throws InvalidAlgorithmParameterException if {@code spec} is invalid
      *          or one is required but {@code spec} is {@code null}
-     * @throws InvalidKeyException if {@code sk} is invalid
+     * @throws InvalidKeyException if {@code privateKey} is invalid
      */
-    public Decapsulator newDecapsulator(PrivateKey sk, AlgorithmParameterSpec spec)
+    public Decapsulator newDecapsulator(PrivateKey privateKey, AlgorithmParameterSpec spec)
             throws InvalidAlgorithmParameterException, InvalidKeyException {
         return delayed != null
-                ? delayed.newDecapsulator(sk, spec)
-                : new Decapsulator(spi.engineNewDecapsulator(sk, spec), provider);
+                ? delayed.newDecapsulator(privateKey, spec)
+                : new Decapsulator(spi.engineNewDecapsulator(privateKey, spec), provider);
     }
 
     /**

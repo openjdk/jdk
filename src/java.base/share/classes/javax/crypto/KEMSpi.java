@@ -62,23 +62,26 @@ import java.security.spec.AlgorithmParameterSpec;
  * public static class MyKEMImpl implements KEMSpi {
  *
  *     @Override
- *     public KEMSpi.EncapsulatorSpi engineNewEncapsulator(PublicKey pk,
+ *     public KEMSpi.EncapsulatorSpi engineNewEncapsulator(PublicKey publicKey,
  *             AlgorithmParameterSpec spec, SecureRandom secureRandom)
  *             throws InvalidAlgorithmParameterException, InvalidKeyException {
- *         if (!checkPublicKey(pk)) {
+ *         if (!checkPublicKey(publicKey)) {
  *             throw new InvalidKeyException("unsupported key");
  *         }
  *         if (!checkParameters(spec)) {
  *             throw new InvalidAlgorithmParameterException("unsupported params");
  *         }
- *         return new MyEncapsulator(pk, spec, secureRandom);
+ *         return new MyEncapsulator(publicKey, spec, secureRandom);
  *     }
  *
  *     class MyEncapsulator implements KEMSpi.EncapsulatorSpi {
- *         MyEncapsulator(PublicKey pk, AlgorithmParameterSpec spec, SecureRandom secureRandom){
+ *         MyEncapsulator(PublicKey publicKey, AlgorithmParameterSpec spec,
+ *                 SecureRandom secureRandom){
  *             this.spec = spec != null ? spec : getDefaultParameters();
- *             this.secureRandom = secureRandom != null ? secureRandom : getDefaultSecureRandom();
- *             this.pk = pk;
+ *             this.secureRandom = secureRandom != null
+ *                     ? secureRandom
+ *                     : getDefaultSecureRandom();
+ *             this.publicKey = publicKey;
  *         }
  *
  *         @Override
@@ -108,11 +111,11 @@ public interface KEMSpi {
         /**
          * The key encapsulation function.
          * <p>
-         * Each invocation of this method must generates a new secret key and key
+         * Each invocation of this method must generate a new secret key and key
          * encapsulation message that is returned in an {@link KEM.Encapsulated} object.
          * <p>
          * An implementation must support the case where {@code from} is 0,
-         * {@code from} is the same as the output of {@code secretSize()},
+         * {@code to} is the same as the return value of {@code secretSize()},
          * and {@code algorithm} is "Generic".
          *
          * @param from the initial index of the shared secret byte array
@@ -122,8 +125,8 @@ public interface KEMSpi {
          * @param algorithm the algorithm name for the secret key that is returned
          * @return an {@link KEM.Encapsulated} object containing a portion of
          *          the shared secret as a key with the specified algorithm,
-         *          the key encapsulation message, and optional parameters.
-         * @throws ArrayIndexOutOfBoundsException if {@code from < 0},
+         *          key encapsulation message, and optional parameters.
+         * @throws IndexOutOfBoundsException if {@code from < 0},
          *     {@code from > to}, or {@code to > secretSize()}
          * @throws NullPointerException if {@code algorithm} is {@code null}
          * @throws UnsupportedOperationException if the combination of
@@ -165,7 +168,7 @@ public interface KEMSpi {
          * encapsulation message.
          * <p>
          * An implementation must support the case where {@code from} is 0,
-         * {@code from} is the same as the output of {@code secretSize()},
+         * {@code to} is the same as the return value of {@code secretSize()},
          * and {@code algorithm} is "Generic".
          *
          * @param encapsulation the key encapsulation message from the sender.
@@ -181,7 +184,7 @@ public interface KEMSpi {
          *          the specified algorithm
          * @throws DecapsulateException if an error occurs during the
          *          decapsulation process
-         * @throws ArrayIndexOutOfBoundsException if {@code from < 0},
+         * @throws IndexOutOfBoundsException if {@code from < 0},
          *          {@code from > to}, or {@code to > secretSize()}
          * @throws NullPointerException if {@code encapsulation} or
          *          {@code algorithm} is {@code null}
@@ -213,7 +216,7 @@ public interface KEMSpi {
     /**
      * Creates a KEM encapsulator on the KEM sender side.
      *
-     * @param pk the receiver's public key, must not be {@code null}
+     * @param publicKey the receiver's public key, must not be {@code null}
      * @param spec the optional parameter, can be {@code null}
      * @param secureRandom the source of randomness for encapsulation.
      *                     If {@code null}, the implementation must provide
@@ -221,24 +224,24 @@ public interface KEMSpi {
      * @return the encapsulator for this key
      * @throws InvalidAlgorithmParameterException if {@code spec} is invalid
      *          or one is required but {@code spec} is {@code null}
-     * @throws InvalidKeyException if {@code pk} is invalid
+     * @throws InvalidKeyException if {@code publicKey} is invalid
      * @see KEM#newEncapsulator(PublicKey, AlgorithmParameterSpec, SecureRandom)
      */
-    EncapsulatorSpi engineNewEncapsulator(PublicKey pk,
+    EncapsulatorSpi engineNewEncapsulator(PublicKey publicKey,
             AlgorithmParameterSpec spec, SecureRandom secureRandom)
             throws InvalidAlgorithmParameterException, InvalidKeyException;
 
     /**
      * Creates a KEM decapsulator on the KEM receiver side.
      *
-     * @param sk the receiver's private key, must not be {@code null}
-     * @param spec the parameter, can be {@code null}
+     * @param privateKey the receiver's private key, must not be {@code null}
+     * @param spec the optional parameter, can be {@code null}
      * @return the decapsulator for this key
      * @throws InvalidAlgorithmParameterException if {@code spec} is invalid
      *          or one is required but {@code spec} is {@code null}
-     * @throws InvalidKeyException if {@code sk} is invalid
+     * @throws InvalidKeyException if {@code privateKey} is invalid
      * @see KEM#newDecapsulator(PrivateKey, AlgorithmParameterSpec)
      */
-    DecapsulatorSpi engineNewDecapsulator(PrivateKey sk, AlgorithmParameterSpec spec)
+    DecapsulatorSpi engineNewDecapsulator(PrivateKey privateKey, AlgorithmParameterSpec spec)
             throws InvalidAlgorithmParameterException, InvalidKeyException;
 }
