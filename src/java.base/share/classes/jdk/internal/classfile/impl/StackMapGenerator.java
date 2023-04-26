@@ -180,8 +180,6 @@ public final class StackMapGenerator {
         Type.BOOLEAN_ARRAY_TYPE, Type.CHAR_ARRAY_TYPE, Type.FLOAT_ARRAY_TYPE, Type.DOUBLE_ARRAY_TYPE,
         Type.BYTE_ARRAY_TYPE, Type.SHORT_ARRAY_TYPE, Type.INT_ARRAY_TYPE, Type.LONG_ARRAY_TYPE};
 
-    record RawExceptionCatch(int start, int end, int handler, Type catchType) {}
-
     private final Type thisType;
     private final String methodName;
     private final MethodTypeDesc methodDesc;
@@ -189,8 +187,7 @@ public final class StackMapGenerator {
     private final SplitConstantPool cp;
     private final boolean isStatic;
     private final LabelContext labelContext;
-    private final List<AbstractPseudoInstruction.ExceptionCatchImpl> handlers;
-    private final List<RawExceptionCatch> rawHandlers;
+    private final List<AbstractPseudoInstruction.ExceptionCatchImpl> exceptionTable;
     private final ClassHierarchyImpl classHierarchy;
     private final boolean patchDeadCode;
     private List<Frame> frames;
@@ -228,8 +225,7 @@ public final class StackMapGenerator {
         this.bytecode = bytecode;
         this.cp = cp;
         this.labelContext = labelContext;
-        this.handlers = handlers;
-        this.rawHandlers = new ArrayList<>(handlers.size());
+        this.exceptionTable = handlers;
         this.classHierarchy = new ClassHierarchyImpl(cp.options().classHierarchyResolver);
         this.patchDeadCode = cp.options().patchCode;
         this.currentFrame = new Frame(classHierarchy);
@@ -252,15 +248,19 @@ public final class StackMapGenerator {
         return maxStack;
     }
 
-    private Frame getFrame(int offset) {
-        for (var f : frames) {
-            if (f.offset == offset) return f;
+    private int getFrameIndexFromOffset(int offset) {
+        int i = 0;
+        for (; i < frames.size(); i++) {
+            if (frames.get(i).offset == offset) {
+                return i;
+            }
         }
-        return null;
+        return i;
     }
 
     private void checkJumpTarget(Frame frame, int target) {
-        frame.checkAssignableTo(getFrame(target));
+        int index = getFrameIndexFromOffset(target);
+        frame.checkAssignableTo(frames.get(index));
     }
 
     private int exMin, exMax;
@@ -275,18 +275,11 @@ public final class StackMapGenerator {
     private void generate() {
         exMin = bytecode.capacity();
         exMax = -1;
-        for (var exhandler : handlers) {
+        for (var exhandler : exceptionTable) {
             int start_pc = labelContext.labelToBci(exhandler.tryStart());
             int end_pc = labelContext.labelToBci(exhandler.tryEnd());
-            int handler_pc = labelContext.labelToBci(exhandler.handler());
-            if (start_pc >= 0 && end_pc >= 0 && end_pc > start_pc && handler_pc >= 0) {
-                if (start_pc < exMin) exMin = start_pc;
-                if (end_pc > exMax) exMax = end_pc;
-                var catchType = exhandler.catchType();
-                rawHandlers.add(new RawExceptionCatch(start_pc, end_pc, handler_pc,
-                        catchType.isPresent() ? cpIndexToType(catchType.get().index(), cp)
-                                              : Type.THROWABLE_TYPE));
-            }
+            if (start_pc < exMin) exMin = start_pc;
+            if (end_pc > exMax) exMax = end_pc;
         }
         BitSet frameOffsets = detectFrameOffsets();
         int framesCount = frameOffsets.cardinality();
@@ -324,7 +317,7 @@ public final class StackMapGenerator {
     }
 
     private void removeRangeFromExcTable(int rangeStart, int rangeEnd) {
-        var it = handlers.listIterator();
+        var it = exceptionTable.listIterator();
         while (it.hasNext()) {
             var e = it.next();
             int handlerStart = labelContext.labelToBci(e.tryStart());
@@ -655,15 +648,17 @@ public final class StackMapGenerator {
     }
 
     private void processExceptionHandlerTargets(int bci, boolean this_uninit) {
-        for (var ex : rawHandlers) {
-            if (bci == ex.start || (currentFrame.localsChanged && bci > ex.start && bci < ex.end)) {
+        for (var exhandler : exceptionTable) {
+            if (bci >= labelContext.labelToBci(exhandler.tryStart()) && bci < labelContext.labelToBci(exhandler.tryEnd())) {
                 int flags = currentFrame.flags;
                 if (this_uninit) flags |= FLAG_THIS_UNINIT;
-                Frame newFrame = currentFrame.frameInExceptionHandler(flags, ex.catchType);
-                checkJumpTarget(newFrame, ex.handler);
+                Frame newFrame = currentFrame.frameInExceptionHandler(flags);
+                var catchType = exhandler.catchType();
+                newFrame.pushStack(catchType.isPresent() ? cpIndexToType(catchType.get().index(), cp) : Type.THROWABLE_TYPE);
+                int handler = labelContext.labelToBci(exhandler.handler());
+                if (handler != -1) checkJumpTarget(newFrame, handler);
             }
         }
-        currentFrame.localsChanged = false;
     }
 
     private void processLdc(int index) {
@@ -945,8 +940,8 @@ public final class StackMapGenerator {
         } catch (IllegalArgumentException iae) {
             generatorError("Detected branch target out of bytecode range", bci);
         }
-        for (var exhandler : rawHandlers) try {
-            offsets.set(exhandler.handler());
+        for (var exhandler : exceptionTable) try {
+            offsets.set(labelContext.labelToBci(exhandler.handler()));
         } catch (IllegalArgumentException iae) {
             if (!cp.options().filterDeadLabels)
                 generatorError("Detected exception handler out of bytecode range");
@@ -961,7 +956,6 @@ public final class StackMapGenerator {
         int flags;
         int frameMaxStack = 0, frameMaxLocals = 0;
         boolean dirty = false;
-        boolean localsChanged = true;
 
         private final ClassHierarchyImpl classHierarchy;
 
@@ -1031,8 +1025,8 @@ public final class StackMapGenerator {
             return this;
         }
 
-        Frame frameInExceptionHandler(int flags, Type excType) {
-            return new Frame(offset, flags, localsSize, 1, locals, new Type[] {excType}, classHierarchy);
+        Frame frameInExceptionHandler(int flags) {
+            return new Frame(offset, flags, localsSize, 0, locals, new Type[] {Type.TOP_TYPE}, classHierarchy);
         }
 
         void initializeObject(Type old_object, Type new_object) {
@@ -1040,7 +1034,6 @@ public final class StackMapGenerator {
             for (i = 0; i < localsSize; i++) {
                 if (locals[i].equals(old_object)) {
                     locals[i] = new_object;
-                    localsChanged = true;
                 }
             }
             for (i = 0; i < stackSize; i++) {
@@ -1058,12 +1051,10 @@ public final class StackMapGenerator {
             if (locals == null) {
                 locals = new Type[index + FRAME_DEFAULT_CAPACITY];
                 Arrays.fill(locals, Type.TOP_TYPE);
-                localsChanged = true;
             } else if (index >= locals.length) {
                 int current = locals.length;
                 locals = Arrays.copyOf(locals, index + FRAME_DEFAULT_CAPACITY);
                 Arrays.fill(locals, current, locals.length, Type.TOP_TYPE);
-                localsChanged = true;
             }
             return this;
         }
@@ -1083,7 +1074,6 @@ public final class StackMapGenerator {
         private void setLocalRawInternal(int index, Type type) {
             checkLocal(index);
             locals[index] = type;
-            localsChanged = true;
         }
 
         void setLocalsFromArg(String name, MethodTypeDesc methodDesc, boolean isStatic, Type thisKlass) {
@@ -1129,7 +1119,6 @@ public final class StackMapGenerator {
             checkStack(src.stackSize - 1);
             if (src.stackSize > 0) System.arraycopy(src.stack, 0, stack, 0, src.stackSize);
             flags = src.flags;
-            localsChanged = true;
         }
 
         void checkAssignableTo(Frame target) {
