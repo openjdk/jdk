@@ -36,13 +36,10 @@ import java.util.LinkedList;
 import java.util.List;
 import jdk.internal.classfile.Classfile;
 import jdk.internal.classfile.ClassReader;
-import jdk.internal.classfile.constantpool.ClassEntry;
 import jdk.internal.classfile.constantpool.ConstantPoolBuilder;
-import jdk.internal.classfile.constantpool.Utf8Entry;
 import jdk.internal.classfile.impl.AbstractPseudoInstruction;
 import jdk.internal.classfile.impl.CodeImpl;
 import jdk.internal.classfile.impl.LabelContext;
-import jdk.internal.classfile.impl.MethodInfo;
 import jdk.internal.classfile.impl.SplitConstantPool;
 import jdk.internal.classfile.impl.StackMapGenerator;
 import org.openjdk.jmh.annotations.Benchmark;
@@ -64,18 +61,13 @@ import org.openjdk.jmh.annotations.Warmup;
 public class GenerateStackMaps {
 
     record GenData(LabelContext labelContext,
-                    ClassEntry thisClass,
-                    Utf8Entry methodName,
-                    Utf8Entry methodType,
-                    int methodFlags,
+                    ClassDesc thisClass,
+                    String methodName,
+                    MethodTypeDesc methodDesc,
+                    boolean isStatic,
                     ByteBuffer bytecode,
                     ConstantPoolBuilder constantPool,
-                    List<AbstractPseudoInstruction.ExceptionCatchImpl> handlers) implements MethodInfo {
-
-        public int parameterSlot(int paramNo) {
-            throw new UnsupportedOperationException();
-        }
-    }
+                    List<AbstractPseudoInstruction.ExceptionCatchImpl> handlers) {}
 
     List<GenData> data;
     Iterator<GenData> it;
@@ -87,7 +79,7 @@ public class GenerateStackMaps {
         Files.walk(FileSystems.getFileSystem(URI.create("jrt:/")).getPath("modules/java.base/java")).forEach(p ->  {
             if (Files.isRegularFile(p) && p.toString().endsWith(".class")) try {
                 var clm = Classfile.parse(p);
-                var thisCls = clm.thisClass();
+                var thisCls = clm.thisClass().asSymbol();
                 var cp = new SplitConstantPool((ClassReader)clm.constantPool());
                 for (var m : clm.methods()) {
                     m.code().ifPresent(com -> {
@@ -95,9 +87,9 @@ public class GenerateStackMaps {
                         data.add(new GenData(
                                 (LabelContext)com,
                                 thisCls,
-                                m.methodName(),
-                                m.methodType(),
-                                m.flags().flagsMask(),
+                                m.methodName().stringValue(),
+                                m.methodTypeSymbol(),
+                                (m.flags().flagsMask() & Classfile.ACC_STATIC) != 0,
                                 bb.slice(8, bb.getInt(4)),
                                 cp,
                                 com.exceptionHandlers().stream().map(eh -> (AbstractPseudoInstruction.ExceptionCatchImpl)eh).toList()));
@@ -117,7 +109,9 @@ public class GenerateStackMaps {
         new StackMapGenerator(
                 d.labelContext(),
                 d.thisClass(),
-                d,
+                d.methodName(),
+                d.methodDesc(),
+                d.isStatic(),
                 d.bytecode().rewind(),
                 (SplitConstantPool)d.constantPool(),
                 d.handlers());
