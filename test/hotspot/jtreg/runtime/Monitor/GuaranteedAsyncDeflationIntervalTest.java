@@ -67,7 +67,6 @@ public class GuaranteedAsyncDeflationIntervalTest {
 
         private static Thread[] threads;
         private static Object[] monitors;
-        private static long sink;
 
         public static void main(String... args) throws Exception {
             monitors = new Object[MONITORS];
