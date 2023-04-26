@@ -1548,7 +1548,7 @@ public:
     Copy::zero_to_bytes(_nodes, _max * sizeof(Node*));
   }
 
-  uint Size() const { return _max; }
+  uint max() const { return _max; }
   void dump() const;
 };
 

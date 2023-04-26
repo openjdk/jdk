@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -187,7 +187,6 @@ private:
   RegionTypeCounter _humongous;
   RegionTypeCounter _free;
   RegionTypeCounter _old;
-  RegionTypeCounter _archive;
   RegionTypeCounter _all;
 
   size_t _max_rs_mem_sz;
@@ -211,7 +210,7 @@ private:
 
 public:
   HRRSStatsIter() : _young("Young"), _humongous("Humongous"),
-    _free("Free"), _old("Old"), _archive("Archive"), _all("All"),
+    _free("Free"), _old("Old"), _all("All"),
     _max_rs_mem_sz(0), _max_rs_mem_sz_region(NULL),
     _max_code_root_mem_sz(0), _max_code_root_mem_sz_region(NULL)
   {}
@@ -244,8 +243,6 @@ public:
       current = &_humongous;
     } else if (r->is_old()) {
       current = &_old;
-    } else if (r->is_archive()) {
-      current = &_archive;
     } else {
       ShouldNotReachHere();
     }
@@ -258,7 +255,7 @@ public:
   }
 
   void print_summary_on(outputStream* out) {
-    RegionTypeCounter* counters[] = { &_young, &_humongous, &_free, &_old, &_archive, NULL };
+    RegionTypeCounter* counters[] = { &_young, &_humongous, &_free, &_old, NULL };
 
     out->print_cr(" Current rem set statistics");
     out->print_cr("  Total per region rem sets sizes = " SIZE_FORMAT

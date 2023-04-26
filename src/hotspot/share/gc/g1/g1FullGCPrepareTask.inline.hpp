@@ -33,13 +33,8 @@
 #include "gc/g1/g1FullGCScope.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
 
-template<bool is_humongous>
-void G1DetermineCompactionQueueClosure::free_pinned_region(HeapRegion* hr) {
-  if (is_humongous) {
-    _g1h->free_humongous_region(hr, nullptr);
-  } else {
-    _g1h->free_region(hr, nullptr);
-  }
+void G1DetermineCompactionQueueClosure::free_empty_humongous_region(HeapRegion* hr) {
+  _g1h->free_humongous_region(hr, nullptr);
   _collector->set_free(hr->hrm_index());
   add_to_compaction_queue(hr);
 }
@@ -88,17 +83,10 @@ inline bool G1DetermineCompactionQueueClosure::do_heap_region(HeapRegion* hr) {
       oop obj = cast_to_oop(hr->humongous_start_region()->bottom());
       bool is_empty = !_collector->mark_bitmap()->is_marked(obj);
       if (is_empty) {
-        free_pinned_region<true>(hr);
+        free_empty_humongous_region(hr);
       } else {
         _collector->set_has_humongous();
       }
-    } else if (hr->is_open_archive()) {
-      bool is_empty = _collector->live_words(hr->hrm_index()) == 0;
-      if (is_empty) {
-        free_pinned_region<false>(hr);
-      }
-    } else if (hr->is_closed_archive()) {
-      // nothing to do with closed archive region
     } else {
       assert(MarkSweepDeadRatio > 0,
              "only skip compaction for other regions when MarkSweepDeadRatio > 0");
