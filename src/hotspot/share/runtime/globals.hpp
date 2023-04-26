@@ -1978,7 +1978,7 @@ const int ObjectAlignmentInBytes = 8;
   product(int, LockingMode, LM_LEGACY, EXPERIMENTAL,                        \
           "Select locking mode: "                                           \
           "0: monitors only, "                                              \
-          "1: monitors & traditional stack-locking (default), "             \
+          "1: monitors & legacy stack-locking (default), "                  \
           "2: monitors & new lightweight locking")                          \
           range(0, 2)                                                       \
 

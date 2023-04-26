@@ -9691,10 +9691,10 @@ void MacroAssembler::fast_lock_impl(Register obj, Register hdr, Register thread,
   jcc(Assembler::greater, slow);
 
   // Now we attempt to take the fast-lock.
-  // Clear lowest two header bits (locked state).
+  // Clear lock_mask bits (locked state).
   andptr(hdr, ~(int32_t)markWord::lock_mask_in_place);
   movptr(tmp, hdr);
-  // Set lowest bit (unlocked state).
+  // Set unlocked_value bit.
   orptr(hdr, markWord::unlocked_value);
   lock();
   cmpxchgptr(tmp, Address(obj, oopDesc::mark_offset_in_bytes()));
@@ -9718,7 +9718,7 @@ void MacroAssembler::fast_unlock_impl(Register obj, Register hdr, Register tmp, 
   assert(hdr == rax, "header must be in rax for cmpxchg");
   assert_different_registers(obj, hdr, tmp);
 
-  // Mark-word must be 00 now, try to swing it back to 01 (unlocked)
+  // Mark-word must be lock_mask now, try to swing it back to unlocked_value.
   movptr(tmp, hdr); // The expected old value
   orptr(tmp, markWord::unlocked_value);
   lock();

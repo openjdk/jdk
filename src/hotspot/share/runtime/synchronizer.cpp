@@ -503,7 +503,7 @@ void ObjectSynchronizer::enter(Handle obj, BasicLock* lock, JavaThread* current)
 
   if (!useHeavyMonitors()) {
     if (LockingMode == LM_LIGHTWEIGHT) {
-      // Fast-locking does not use the 'lock' argument..
+      // Fast-locking does not use the 'lock' argument.
       LockStack& lock_stack = current->lock_stack();
       if (lock_stack.can_push()) {
         markWord mark = obj()->mark_acquire();
@@ -1046,7 +1046,7 @@ bool ObjectSynchronizer::current_thread_holds_lock(JavaThread* current,
   }
 
   if (mark.has_monitor()) {
-    // inflated monitor so header points to ObjectMonitor (tagged pointer).
+    // Inflated monitor so header points to ObjectMonitor (tagged pointer).
     // The first stage of async deflation does not affect any field
     // used by this comparison so the ObjectMonitor* is usable here.
     ObjectMonitor* monitor = mark.monitor();
@@ -1074,7 +1074,7 @@ JavaThread* ObjectSynchronizer::get_lock_owner(ThreadsList * t_list, Handle h_ob
   }
 
   if (mark.has_monitor()) {
-    // inflated monitor so header points to ObjectMonitor (tagged pointer).
+    // Inflated monitor so header points to ObjectMonitor (tagged pointer).
     // The first stage of async deflation does not affect any field
     // used by this comparison so the ObjectMonitor* is usable here.
     ObjectMonitor* monitor = mark.monitor();
@@ -1082,6 +1082,11 @@ JavaThread* ObjectSynchronizer::get_lock_owner(ThreadsList * t_list, Handle h_ob
     // owning_thread_from_monitor() may also return null here:
     return Threads::owning_thread_from_monitor(t_list, monitor);
   }
+
+  // Unlocked case, header in place
+  // Cannot have assertion since this object may have been
+  // locked by another thread when reaching here.
+  // assert(mark.is_neutral(), "sanity check");
 
   return nullptr;
 }

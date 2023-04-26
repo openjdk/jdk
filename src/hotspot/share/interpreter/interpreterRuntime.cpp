@@ -756,7 +756,7 @@ JRT_END
 // but we are using that register to hold the thread. We don't have enough registers to
 // also keep the BasicObjectLock, but we don't really need it anyway, we only need
 // the object. See also InterpreterMacroAssembler::lock_object().
-// As soon as traditional stack-locking goes away we could remove the other monitorenter() entry
+// As soon as legacy stack-locking goes away we could remove the other monitorenter() entry
 // point, and only use oop-accepting entries (same for monitorexit() below).
 JRT_ENTRY_NO_ASYNC(void, InterpreterRuntime::monitorenter_obj(JavaThread* current, oopDesc* obj))
   assert(LockingMode == LM_LIGHTWEIGHT, "Should call monitorenter() when not using the new lightweight locking");

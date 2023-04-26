@@ -890,15 +890,10 @@ void InterpreterMacroAssembler::lock_object(Register Rlock) {
     }
 
     if (LockingMode == LM_LIGHTWEIGHT) {
-
-      log_trace(fastlock2)("InterpreterMacroAssembler lock fast");
-
+      log_trace(fastlock)("InterpreterMacroAssembler lock fast");
       fast_lock_2(Robj, R0 /* t1 */, Rmark /* t2 */, Rtemp /* t3 */, 0 /* savemask */, slow_case);
-
       b(done);
-
     } else if (LockingMode == LM_LEGACY) {
-
       // On MP platforms the next load could return a 'stale' value if the memory location has been modified by another thread.
       // That would be acceptable as ether CAS or slow case path is taken in that case.
       // Exception to that is if the object is locked by the calling thread, then the recursive test will pass (guaranteed as
@@ -1010,7 +1005,7 @@ void InterpreterMacroAssembler::unlock_object(Register Rlock) {
 
     if (LockingMode == LM_LIGHTWEIGHT) {
 
-      log_trace(fastlock2)("InterpreterMacroAssembler unlock fast");
+      log_trace(fastlock)("InterpreterMacroAssembler unlock fast");
 
       // Check for non-symmetric locking. This is allowed by the spec and the interpreter
       // must handle it.
@@ -1021,8 +1016,7 @@ void InterpreterMacroAssembler::unlock_object(Register Rlock) {
       b(slow_case, ne);
 
       fast_unlock_2(Robj /* obj */, Rlock /* t1 */, Rmark /* t2 */, Rtemp /* t3 */,
-                      1 /* savemask (save t1) */,
-                      slow_case);
+                    1 /* savemask (save t1) */, slow_case);
 
       b(done);
 

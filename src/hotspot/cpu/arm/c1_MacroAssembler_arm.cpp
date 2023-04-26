@@ -215,7 +215,7 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
   assert(oopDesc::mark_offset_in_bytes() == 0, "Required by atomic instructions");
 
   if (LockingMode == LM_LIGHTWEIGHT) {
-    log_trace(fastlock2)("C1_MacroAssembler::lock fast");
+    log_trace(fastlock)("C1_MacroAssembler::lock fast");
 
     Register t1 = disp_hdr; // Needs saving, probably
     Register t2 = hdr;      // blow
@@ -277,7 +277,7 @@ void C1_MacroAssembler::unlock_object(Register hdr, Register obj, Register disp_
   assert(oopDesc::mark_offset_in_bytes() == 0, "Required by atomic instructions");
 
   if (LockingMode == LM_LIGHTWEIGHT) {
-    log_trace(fastlock2)("C1_MacroAssembler::unlock fast");
+    log_trace(fastlock)("C1_MacroAssembler::unlock fast");
 
     ldr(obj, Address(disp_hdr, obj_offset));
 

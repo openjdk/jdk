@@ -3872,7 +3872,7 @@ encode %{
       __ str(tmp/*==0, perhaps*/, Address(box, BasicLock::displaced_header_offset_in_bytes()));
       __ b(cont);
     } else {
-      assert(LockingMode == LM_LIGHTWEIGHT, "");
+      assert(LockingMode == LM_LIGHTWEIGHT, "must be");
       __ fast_lock(oop, disp_hdr, tmp, rscratch1, no_count);
       __ b(count);
     }
@@ -3953,7 +3953,7 @@ encode %{
                  /*release*/ true, /*weak*/ false, tmp);
       __ b(cont);
     } else {
-      assert(LockingMode == LM_LIGHTWEIGHT, "");
+      assert(LockingMode == LM_LIGHTWEIGHT, "must be");
       __ fast_unlock(oop, tmp, box, disp_hdr, no_count);
       __ b(count);
     }

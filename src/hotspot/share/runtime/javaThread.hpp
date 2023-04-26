@@ -1158,7 +1158,6 @@ public:
   static ByteSize lock_stack_top_offset()  { return lock_stack_offset() + LockStack::top_offset(); }
   static ByteSize lock_stack_base_offset() { return lock_stack_offset() + LockStack::base_offset(); }
 
-
   static OopStorage* thread_oop_storage();
 
   static void verify_cross_modify_fence_failure(JavaThread *thread) PRODUCT_RETURN;

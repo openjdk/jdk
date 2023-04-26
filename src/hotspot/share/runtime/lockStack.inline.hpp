@@ -71,14 +71,14 @@ inline oop LockStack::pop() {
 #ifdef ASSERT
   _base[to_index(_top)] = nullptr;
 #endif
-  assert(!contains(o), "entries must be unique");
+  assert(!contains(o), "entries must be unique: " PTR_FORMAT, p2i(o));
   verify("post-pop");
   return o;
 }
 
 inline void LockStack::remove(oop o) {
   verify("pre-remove");
-  assert(contains(o), "entry must be present");
+  assert(contains(o), "entry must be present: " PTR_FORMAT, p2i(o));
   int end = to_index(_top);
   for (int i = 0; i < end; i++) {
     if (_base[i] == o) {

@@ -1020,7 +1020,7 @@ public:
 
   // Attempt to fast-unlock an object
   // Registers:
-  //  - obj: the object to be locked
+  //  - obj: the object to be unlocked
   //  - t1, t2, t3: temp registers. If corresponding bit in savemask is set, they get saved, otherwise blown.
   // Result:
   //  - Success: fallthrough

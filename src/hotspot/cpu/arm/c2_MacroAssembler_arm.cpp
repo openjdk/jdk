@@ -93,11 +93,10 @@ void C2_MacroAssembler::fast_lock(Register Roop, Register Rbox, Register Rscratc
   }
 
   if (LockingMode == LM_LIGHTWEIGHT) {
-    log_trace(fastlock2)("C2_MacroAssembler::lock fast");
+    log_trace(fastlock)("C2_MacroAssembler::lock fast");
 
     fast_lock_2(Roop /* obj */, Rbox /* t1 */, Rscratch /* t2 */, Rscratch2 /* t3 */,
-                  1 /* savemask (save t1) */,
-                  done);
+                1 /* savemask (save t1) */, done);
 
     // Success: set Z
     cmp(Roop, Roop);
@@ -145,11 +144,10 @@ void C2_MacroAssembler::fast_unlock(Register Roop, Register Rbox, Register Rscra
   Label done;
 
   if (LockingMode == LM_LIGHTWEIGHT) {
-    log_trace(fastlock2)("C2_MacroAssembler::unlock fast");
+    log_trace(fastlock)("C2_MacroAssembler::unlock fast");
 
     fast_unlock_2(Roop /* obj */, Rbox /* t1 */, Rscratch /* t2 */, Rscratch2 /* t3 */,
-                    1 /* savemask (save t1) */,
-                    done);
+                  1 /* savemask (save t1) */, done);
 
     cmp(Roop, Roop); // Success: Set Z
     // Fall through

@@ -1810,7 +1810,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
       __ str(swap_reg, Address(lock_reg, mark_word_offset));
       __ br(Assembler::NE, slow_path_lock);
     } else {
-      assert(LockingMode == LM_LIGHTWEIGHT, "");
+      assert(LockingMode == LM_LIGHTWEIGHT, "must be");
       __ ldr(swap_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
       __ fast_lock(obj_reg, swap_reg, tmp, rscratch1, slow_path_lock);
     }

@@ -2184,7 +2184,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
       __ movptr(Address(lock_reg, mark_word_offset), swap_reg);
       __ jcc(Assembler::notEqual, slow_path_lock);
     } else {
-      assert(LockingMode == LM_LIGHTWEIGHT, "");
+      assert(LockingMode == LM_LIGHTWEIGHT, "must be");
       // Load object header
       __ movptr(swap_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
       __ fast_lock_impl(obj_reg, swap_reg, r15_thread, rscratch1, slow_path_lock);
@@ -2328,7 +2328,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
       __ jcc(Assembler::notEqual, slow_path_unlock);
       __ dec_held_monitor_count();
     } else {
-      assert(LockingMode == LM_LIGHTWEIGHT, "");
+      assert(LockingMode == LM_LIGHTWEIGHT, "must be");
       __ movptr(swap_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
       __ andptr(swap_reg, ~(int32_t)markWord::lock_mask_in_place);
       __ fast_unlock_impl(obj_reg, swap_reg, lock_reg, slow_path_unlock);

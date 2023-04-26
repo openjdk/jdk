@@ -37,8 +37,7 @@ const int LockStack::lock_stack_top_offset =  in_bytes(JavaThread::lock_stack_to
 const int LockStack::lock_stack_base_offset = in_bytes(JavaThread::lock_stack_base_offset());
 
 LockStack::LockStack(JavaThread* jt) :
-  _top(lock_stack_base_offset), _base()
-{
+  _top(lock_stack_base_offset), _base() {
 #ifdef ASSERT
   for (int i = 0; i < CAPACITY; i++) {
     _base[i] = nullptr;
@@ -60,9 +59,9 @@ uint32_t LockStack::end_offset() {
 
 #ifndef PRODUCT
 void LockStack::verify(const char* msg) const {
-  assert(LockingMode == LM_LIGHTWEIGHT, "never use lock-stack when fast-locking is disabled");
-  assert((_top <=  end_offset()), "lockstack overflow: _top %d end_offset %d", _top, end_offset());
-  assert((_top >= start_offset()), "lockstack underflow: _topt %d end_offset %d", _top, start_offset());
+  assert(LockingMode == LM_LIGHTWEIGHT, "never use lock-stack when light weight locking is disabled");
+  assert((_top <= end_offset()), "lockstack overflow: _top %d end_offset %d", _top, end_offset());
+  assert((_top >= start_offset()), "lockstack underflow: _top %d end_offset %d", _top, start_offset());
   int top = to_index(_top);
   for (int i = 0; i < top; i++) {
     assert(_base[i] != nullptr, "no zapped before top");

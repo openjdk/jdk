@@ -172,7 +172,7 @@ class markWord {
     return markWord(value() | unlocked_value);
   }
   bool has_locker() const {
-    assert(LockingMode == LM_LEGACY, "should only be called with traditional stack locking");
+    assert(LockingMode == LM_LEGACY, "should only be called with legacy stack locking");
     return (value() & lock_mask_in_place) == locked_value;
   }
   BasicLock* locker() const {
