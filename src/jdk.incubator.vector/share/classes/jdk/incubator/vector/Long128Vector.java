@@ -806,13 +806,31 @@ final class Long128Vector extends LongVector {
         @Override
         @ForceInline
         public void intoArray(int[] a, int offset) {
-            VectorSpecies<Integer> species = VectorSpecies.of(
-                    int.class,
-                    VectorShape.forBitSize(length() * Integer.SIZE));
-            Vector<Long> v = toBitsVector();
-            v.convertShape(VectorOperators.L2I, species, 0)
-                    .reinterpretAsInts()
-                    .intoArray(a, offset);
+            switch (length()) {
+                case 1 -> a[offset] = laneSource(0);
+                case 2 -> toBitsVector()
+                        .convertShape(VectorOperators.L2I, IntVector.SPECIES_64, 0)
+                        .reinterpretAsInts()
+                        .intoArray(a, offset);
+                case 4 -> toBitsVector()
+                        .convertShape(VectorOperators.L2I, IntVector.SPECIES_128, 0)
+                        .reinterpretAsInts()
+                        .intoArray(a, offset);
+                case 8 -> toBitsVector()
+                        .convertShape(VectorOperators.L2I, IntVector.SPECIES_256, 0)
+                        .reinterpretAsInts()
+                        .intoArray(a, offset);
+                case 16 -> toBitsVector()
+                        .convertShape(VectorOperators.L2I, IntVector.SPECIES_512, 0)
+                        .reinterpretAsInts()
+                        .intoArray(a, offset);
+                default -> {
+                    VectorIntrinsics.checkFromIndexSize(offset, length(), a.length);
+                    for (int i = 0; i < length(); i++) {
+                        a[offset + i] = laneSource(i);
+                    }
+                }
+            }
         }
 
         private static long[] prepare(int[] indices, int offset) {

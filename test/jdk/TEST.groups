@@ -171,6 +171,7 @@ jdk_collections_core = \
     java/util/Map \
     java/util/NavigableMap \
     java/util/PriorityQueue \
+    java/util/SequencedCollection \
     java/util/TimSort \
     java/util/TreeMap \
     java/util/Vector \
