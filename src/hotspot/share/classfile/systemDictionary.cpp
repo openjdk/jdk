@@ -1950,14 +1950,16 @@ Method* SystemDictionary::find_method_handle_intrinsic(vmIntrinsicID iid,
   // Method has been added as the value.
   {
     MonitorLocker ml(THREAD, InvokeMethodIntrinsicTable_lock);
-    while (met == nullptr) {
+    while (true) {
       bool created;
       met = _invoke_method_intrinsic_table.put_if_absent(key, &created);
-      if (met != nullptr && *met != nullptr) {
-        return *met;
-      } else if (!created) {
+      if (met != nullptr && Atomic::load_acquire(met) != nullptr) {
+        return Atomic::load_acquire(met);
+      } else if (created) {
+        break;  // This thread gets to create the entry.
+      } else {
         // Second thread waits for first to actually create the entry and returns
-        // it after notify. Loop until method return is non-null.
+        // it after notify. Loop until method returned from hashtable is non-null.
         ml.wait();
       }
     }
@@ -1985,7 +1987,7 @@ Method* SystemDictionary::find_method_handle_intrinsic(vmIntrinsicID iid,
       assert(Arguments::is_interpreter_only() || (m->has_compiled_code() &&
              m->code()->entry_point() == m->from_compiled_entry()),
              "MH intrinsic invariant");
-      *met = m(); // insert the element
+      Atomic::release_store(met, m()); // insert the element
       ml.notify_all();
       return m();
     }
