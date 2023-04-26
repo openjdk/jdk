@@ -223,15 +223,11 @@ class InstanceKlass: public Klass {
 
   volatile u2     _idnum_allocated_count;   // JNI/JVMTI: increments with the addition of methods, old ids don't change
 
-  // _is_marked_dependent can be set concurrently, thus cannot be part of the
-  // _misc_flags right now.
-  bool            _is_marked_dependent;     // used for marking during flushing and deoptimization
-
   volatile ClassState _init_state;          // state of class
 
   u1              _reference_type;          // reference type
 
-  // State is set while executing, eventually atomically to not disturb other state
+  // State is set either at parse time or while executing, atomically to not disturb other state
   InstanceKlassFlags _misc_flags;
 
   Monitor*             _init_monitor;       // mutual exclusion to _init_state and _init_thread.
@@ -531,8 +527,8 @@ public:
   void set_should_verify_class(bool value) { _misc_flags.set_should_verify_class(value); }
 
   // marking
-  bool is_marked_dependent() const         { return _is_marked_dependent; }
-  void set_is_marked_dependent(bool value) { _is_marked_dependent = value; }
+  bool is_marked_dependent() const         { return _misc_flags.is_marked_dependent(); }
+  void set_is_marked_dependent(bool value) { _misc_flags.set_is_marked_dependent(value); }
 
   // initialization (virtuals from Klass)
   bool should_be_initialized() const;  // means that initialize should be called
@@ -681,16 +677,8 @@ public:
   // Redefinition locking.  Class can only be redefined by one thread at a time.
   // The flag is in access_flags so that it can be set and reset using atomic
   // operations, and not be reset by other misc_flag settings.
-  bool is_being_redefined() const          {
-    return _access_flags.is_being_redefined();
-  }
-  void set_is_being_redefined(bool value)  {
-    if (value) {
-      _access_flags.set_is_being_redefined();
-    } else {
-      _access_flags.clear_is_being_redefined();
-    }
-  }
+  bool is_being_redefined() const          { return _misc_flags.is_being_redefined(); }
+  void set_is_being_redefined(bool value)  { _misc_flags.set_is_being_redefined(value); }
 
   // RedefineClasses() support for previous versions:
   void add_previous_version(InstanceKlass* ik, int emcp_method_count);
@@ -716,13 +704,8 @@ public:
   bool is_scratch_class() const { return _misc_flags.is_scratch_class(); }
   void set_is_scratch_class() { _misc_flags.set_is_scratch_class(true); }
 
-  bool has_resolved_methods() const {
-    return _access_flags.has_resolved_methods();
-  }
-
-  void set_has_resolved_methods() {
-    _access_flags.set_has_resolved_methods();
-  }
+  bool has_resolved_methods() const { return _misc_flags.has_resolved_methods(); }
+  void set_has_resolved_methods()   { _misc_flags.set_has_resolved_methods(true); }
 
 public:
 #if INCLUDE_JVMTI
@@ -775,6 +758,13 @@ public:
 
   bool declares_nonstatic_concrete_methods() const { return _misc_flags.declares_nonstatic_concrete_methods(); }
   void set_declares_nonstatic_concrete_methods(bool b) { _misc_flags.set_declares_nonstatic_concrete_methods(b); }
+
+  bool has_vanilla_constructor() const  { return _misc_flags.has_vanilla_constructor(); }
+  void set_has_vanilla_constructor()    { _misc_flags.set_has_vanilla_constructor(true); }
+  bool has_miranda_methods () const     { return _misc_flags.has_miranda_methods(); }
+  void set_has_miranda_methods()        { _misc_flags.set_has_miranda_methods(true); }
+  bool has_final_method() const         { return _misc_flags.has_final_method(); }
+  void set_has_final_method()           { _misc_flags.set_has_final_method(true); }
 
   // for adding methods, ConstMethod::UNSET_IDNUM means no more ids available
   inline u2 next_method_idnum();
@@ -1141,6 +1131,7 @@ public:
   void init_shared_package_entry();
   bool can_be_verified_at_dumptime() const;
   bool methods_contain_jsr_bytecode() const;
+  void compute_has_loops_flag_for_methods();
 #endif
 
   jint compute_modifier_flags() const;
