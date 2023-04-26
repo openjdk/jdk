@@ -324,13 +324,14 @@ public abstract sealed class Executable extends AccessibleObject
      * no generic information or if the generic parameter types is invalid.
      */
     Type[] getAllGenericParameterTypes() {
-        if (!hasGenericInformation()) {
-            return getSharedParameterTypes();
+        if (hasGenericInformation()) {
+            var genericParameterTypes = getGenericInfo().getParameterTypes();
+            if (genericParameterTypes.length == matchedParameterCount()) {
+                return matchParameters(genericParameterTypes, e -> e, false);
+            }
         }
-        var genericParameterTypes = getGenericInfo().getParameterTypes();
-        var attempt = mapParameters(genericParameterTypes, e -> e, false);
-        // attempt == null -> MethodParameters and Signature disagreement, happens on old compiler
-        return attempt != null ? attempt : getSharedParameterTypes();
+
+        return getSharedParameterTypes();
     }
 
     /**
@@ -426,91 +427,49 @@ public abstract sealed class Executable extends AccessibleObject
     private transient @Stable ParameterData parameterData;
 
     private record ParameterData(@Stable Parameter[] parameters, @Stable int[] mappings) {
+        // mappings is declaration in source index -> formal index
+        // empty if there's no mandated/synthetic params, i.e. 1-on-1 mapping
         private static final int[] TRIVIAL_MAPPINGS = new int[0];
         private static final int[] NO_REAL_DATA = new int[0];
     }
 
-    private static final Type[] INVALID_ANNOTATED_TYPE_BASE = new Type[0];
-    private transient @Stable Type[] annotatedTypeBase;
-
     /**
-     * Return an array of explicit-only parameter types that type annotations can build on.
+     * Returns the number of explicit parameters we anticipate from MethodParameters
+     * attribute.
      */
-    private Type[] sharedAnnotatedTypeBase() {
-        var annotatedTypeBase = this.annotatedTypeBase;
-        if (annotatedTypeBase != null) {
-            return annotatedTypeBase;
-        }
-
-        if (!hasGenericInformation()) {
-            return this.annotatedTypeBase = computeExplicitParameterTypes();
-        }
-
-        if (getAllGenericParameterTypes() == getSharedParameterTypes()) {
-            // Signature and MethodParameters information in disagreement
-            return this.annotatedTypeBase = INVALID_ANNOTATED_TYPE_BASE;
-        }
-
-        return this.annotatedTypeBase = getGenericInfo().getParameterTypes();
-    }
-
-    // Computes the explicit parameter types. Useful when there is no Signature
-    // but synthetic or mandated parameters are present in MethodParameters
-    private Class<?>[] computeExplicitParameterTypes() {
-        int[] mappings = parameterData().mappings;
-        var sharedParamTypes = getSharedParameterTypes();
-        if (mappings.length == 0) {
-            return sharedParamTypes;
-        }
-
-        var explicitParameterTypes = new Class<?>[mappings.length];
-        for (int i = 0; i < mappings.length; i++) {
-            explicitParameterTypes[i] = sharedParamTypes[mappings[i]];
-        }
-
-        return explicitParameterTypes;
+    int matchedParameterCount() {
+        final int[] mappings = parameterData().mappings;
+        return mappings.length == 0 ? getParameterCount() : mappings.length;
     }
 
     /**
      * Converts information from explicit parameters to information about all parameters,
-     * using information from MethodParameters attribute. Returns null if parameter
-     * mapping failed due to lack of MethodParameters or conflict with MethodParameters.
+     * using information from MethodParameters attribute. Guard calls checks to
+     * {@code matchedParameterCount() == explicit.length}.
      *
      * @param <T> the type of information
      * @param explicit information from explicit parameters
      * @param implicitMapper generates information for implicit parameters
      * @param freshCopy if true, will copy explicit information on return to avoid leaks
-     * @return information about all parameters, null if parameter mapping failed.
+     * @return information about all parameters
      */
-    <T> T[] mapParameters(final T[] explicit, Function<Class<?>, T> implicitMapper, boolean freshCopy) {
-        // declaration in source index -> formal index
-        // empty if there's no mandated/synthetic params, i.e. 1-on-1 mapping
-        final int[] mappings = parameterData().mappings;
-        final Class<?>[] allParams = getSharedParameterTypes();
-        final int totalLength = allParams.length;
-
-        if (!hasRealParameterData()) {
-            // no real parameter data, but can still safely return if length is compatible
-            return explicit.length == totalLength ? (freshCopy ? explicit.clone() : explicit) : null;
-        }
-
-        final int mappingsLength = mappings == ParameterData.TRIVIAL_MAPPINGS ? totalLength : mappings.length;
-
-        if (explicit.length != mappingsLength) {
-            // Parameter mapping invalid, no way to match up the indexes.
-            return null;
-        }
-
-        // Parameter mapping is valid
-        if (mappingsLength == totalLength) {
+    <T> T[] matchParameters(final T[] explicit, Function<Class<?>, T> implicitMapper, boolean freshCopy) {
+        final int matchedCount = matchedParameterCount();
+        assert matchedCount == explicit.length;
+        if (matchedCount == getParameterCount()) {
             // trivial case
             return freshCopy ? explicit.clone() : explicit;
         }
 
+        // perform shifting
+        final int[] mappings = parameterData().mappings;
+        final Class<?>[] allParams = getSharedParameterTypes();
+        final int fullCount = allParams.length;
+
         @SuppressWarnings("unchecked")
-        final T[] out = (T[]) Array.newInstance(explicit.getClass().componentType(), totalLength);
+        final T[] out = (T[]) Array.newInstance(explicit.getClass().componentType(), fullCount);
         int j = 0;
-        for (int i = 0; i < mappingsLength; i++) {
+        for (int i = 0; i < matchedCount; i++) {
             final int t = mappings[i];
             while (j < t) {
                 out[j] = implicitMapper.apply(allParams[j]);
@@ -520,7 +479,7 @@ public abstract sealed class Executable extends AccessibleObject
             j++;
         }
 
-        while (j < totalLength) {
+        while (j < fullCount) {
             out[j] = implicitMapper.apply(allParams[j]);
             j++;
         }
@@ -650,9 +609,8 @@ public abstract sealed class Executable extends AccessibleObject
 
         Annotation[][] result = parseParameterAnnotations(parameterAnnotations);
 
-        var attempt = mapParameters(result, e -> AnnotationParser.getEmptyAnnotationArray(), false);
-        if (attempt != null) {
-            return attempt;
+        if (result.length == matchedParameterCount()) {
+            return matchParameters(result, e -> AnnotationParser.getEmptyAnnotationArray(), false);
         }
 
         // Old routine, used for class files without MethodParameters attribute
@@ -835,8 +793,9 @@ public abstract sealed class Executable extends AccessibleObject
      * {@code Executable}
      */
     public AnnotatedType[] getAnnotatedParameterTypes() {
-        var annotatedTypeBase = sharedAnnotatedTypeBase();
+        var annotatedTypeBase = annotatedParameterTypesBase();
         if (annotatedTypeBase != INVALID_ANNOTATED_TYPE_BASE) {
+            assert annotatedTypeBase.length == matchedParameterCount();
             var unmapped = TypeAnnotationParser.buildAnnotatedTypes(getTypeAnnotationBytes0(),
                     SharedSecrets.getJavaLangAccess().
                             getConstantPool(getDeclaringClass()),
@@ -845,11 +804,7 @@ public abstract sealed class Executable extends AccessibleObject
                     annotatedTypeBase,
                     TypeAnnotation.TypeAnnotationTarget.METHOD_FORMAL_PARAMETER);
 
-            var attempt = mapParameters(unmapped, AnnotatedTypeFactory::simple, false);
-            if (attempt != null)
-                return attempt;
-            assert false : "annotated type base should have been validated";
-            // Fallback to old routine
+            return matchParameters(unmapped, AnnotatedTypeFactory::simple, false);
         }
         return TypeAnnotationParser.buildAnnotatedTypesWithHeuristics(getTypeAnnotationBytes0(),
                 SharedSecrets.getJavaLangAccess().
@@ -859,6 +814,51 @@ public abstract sealed class Executable extends AccessibleObject
                 getAllGenericParameterTypes(),
                 TypeAnnotation.TypeAnnotationTarget.METHOD_FORMAL_PARAMETER,
                 true);
+    }
+
+    private static final Type[] INVALID_ANNOTATED_TYPE_BASE = new Type[0];
+    private transient @Stable Type[] annotatedParameterTypesBase;
+
+    /**
+     * Return an array of explicit-only parameter types that type annotations can build on.
+     */
+    private Type[] annotatedParameterTypesBase() {
+        var annotatedTypeBase = this.annotatedParameterTypesBase;
+        if (annotatedTypeBase != null) {
+            return annotatedTypeBase;
+        }
+
+        if (!hasRealParameterData()) {
+            // Cannot assume anything without MethodParameters
+            return this.annotatedParameterTypesBase = INVALID_ANNOTATED_TYPE_BASE;
+        }
+
+        if (!hasGenericInformation()) {
+            return this.annotatedParameterTypesBase = computeExplicitParameterTypes();
+        }
+
+        var genericInfoParams = getGenericInfo().getParameterTypes();
+        return this.annotatedParameterTypesBase = genericInfoParams.length == matchedParameterCount()
+                ? genericInfoParams : INVALID_ANNOTATED_TYPE_BASE;
+    }
+
+    /**
+     * Computes the explicit parameter types. Useful when there is no Signature
+     * but synthetic or mandated parameters are present in MethodParameters.
+     */
+    private Class<?>[] computeExplicitParameterTypes() {
+        int[] mappings = parameterData().mappings;
+        var sharedParamTypes = getSharedParameterTypes();
+        if (mappings.length == 0) {
+            return sharedParamTypes;
+        }
+
+        var explicitParameterTypes = new Class<?>[mappings.length];
+        for (int i = 0; i < mappings.length; i++) {
+            explicitParameterTypes[i] = sharedParamTypes[mappings[i]];
+        }
+
+        return explicitParameterTypes;
     }
 
     /**
