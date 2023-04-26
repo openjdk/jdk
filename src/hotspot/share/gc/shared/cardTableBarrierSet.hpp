@@ -60,10 +60,9 @@ protected:
                       CardTable* card_table,
                       const BarrierSet::FakeRtti& fake_rtti);
 
-  ~CardTableBarrierSet();
-
 public:
   CardTableBarrierSet(CardTable* card_table);
+  virtual ~CardTableBarrierSet();
 
   CardTable* card_table() const { return _card_table; }
 

@@ -49,10 +49,9 @@ class G1BarrierSet: public CardTableBarrierSet {
 
   void invalidate(JavaThread* thread, MemRegion mr);
 
-  ~G1BarrierSet() = default;
-
  public:
   G1BarrierSet(G1CardTable* table);
+  ~G1BarrierSet() { }
 
   virtual bool card_mark_must_follow_store() const {
     return true;
