@@ -446,6 +446,7 @@ class Direct$Type$Buffer$RW$$BO$
 
     // --- Methods to support CharSequence ---
 
+#if[rw] 
     private static final int APPEND_BUF_SIZE = 1024;
 
     private $Type$Buffer appendChars(CharSequence csq, int start, int end) {
@@ -483,6 +484,7 @@ class Direct$Type$Buffer$RW$$BO$
 
         return this;
     }
+#end[rw] 
 
     public $Type$Buffer append(CharSequence csq) {
 #if[rw] 
