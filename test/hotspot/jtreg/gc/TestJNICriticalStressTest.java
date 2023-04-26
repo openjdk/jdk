@@ -30,7 +30,7 @@
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xms3g -Xmx3g -Xmn2g -Xlog:gc TestJNICriticalStressTest 30 4 4 G1
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xms1g -Xmx1g -Xlog:gc TestJNICriticalStressTest 30 4 4 G1
  */
 
  /*
@@ -41,7 +41,7 @@
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseParallelGC -Xms3g -Xmx3g -Xmn2g -Xlog:gc TestJNICriticalStressTest 30 4 4 Parallel
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseParallelGC -Xms1g -Xmx1g -Xlog:gc TestJNICriticalStressTest 30 4 4 Parallel
  */
 
 /*
@@ -52,7 +52,7 @@
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseSerialGC -Xms3g -Xmx3g -Xmn2g -Xlog:gc TestJNICriticalStressTest 30 4 4 Serial
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseSerialGC -Xms1g -Xmx1g -Xlog:gc TestJNICriticalStressTest 30 4 4 Serial
  */
 
 import jdk.test.lib.Asserts;

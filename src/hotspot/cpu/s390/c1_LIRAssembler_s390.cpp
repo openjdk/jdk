@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2019 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -238,7 +238,7 @@ int LIR_Assembler::emit_unwind_handler() {
 
   // Remove the activation and dispatch to the unwind handler.
   __ pop_frame();
-  __ z_lg(Z_EXC_PC, _z_abi16(return_pc), Z_SP);
+  __ z_lg(Z_EXC_PC, _z_common_abi(return_pc), Z_SP);
 
   // Z_EXC_OOP: exception oop
   // Z_EXC_PC: exception pc

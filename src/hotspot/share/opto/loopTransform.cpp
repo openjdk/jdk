@@ -2288,74 +2288,32 @@ void PhaseIdealLoop::do_unroll(IdealLoopTree *loop, Node_List &old_new, bool adj
       new_limit = _igvn.intcon(limit->get_int() - stride_con);
       set_ctrl(new_limit, C->root());
     } else {
-      // Limit is not constant.
-      assert(loop_head->unrolled_count() != 1 || has_ctrl(opaq), "should have opaque for first unroll");
-      if ((stride_con > 0 && (java_subtract(limit_type->_lo, stride_con) < limit_type->_lo)) ||
-          (stride_con < 0 && (java_subtract(limit_type->_hi, stride_con) > limit_type->_hi))) {
-        // No underflow.
-        new_limit = new SubINode(limit, stride);
+      // Limit is not constant. Int subtraction could lead to underflow.
+      // (1) Convert to long.
+      Node* limit_l = new ConvI2LNode(limit);
+      register_new_node(limit_l, get_ctrl(limit));
+      Node* stride_l = _igvn.longcon(stride_con);
+      set_ctrl(stride_l, C->root());
+
+      // (2) Subtract: compute in long, to prevent underflow.
+      Node* new_limit_l = new SubLNode(limit_l, stride_l);
+      register_new_node(new_limit_l, ctrl);
+
+      // (3) Clamp to int range, in case we had subtraction underflow.
+      Node* underflow_clamp_l = _igvn.longcon((stride_con > 0) ? min_jint : max_jint);
+      set_ctrl(underflow_clamp_l, C->root());
+      Node* new_limit_no_underflow_l = nullptr;
+      if (stride_con > 0) {
+        // limit = MaxL(limit - stride, min_jint)
+        new_limit_no_underflow_l = new MaxLNode(C, new_limit_l, underflow_clamp_l);
       } else {
-        // (limit - stride) may underflow.
-        // Clamp the adjustment value with MININT or MAXINT:
-        //
-        //   new_limit = limit-stride
-        //   if (stride > 0)
-        //     new_limit = (limit < new_limit) ? MININT : new_limit;
-        //   else
-        //     new_limit = (limit > new_limit) ? MAXINT : new_limit;
-        //
-        BoolTest::mask bt = loop_end->test_trip();
-        assert(bt == BoolTest::lt || bt == BoolTest::gt, "canonical test is expected");
-        Node* underflow_clamp = _igvn.intcon((stride_con > 0) ? min_jint : max_jint);
-        set_ctrl(underflow_clamp, C->root());
-        Node* limit_before_underflow = nullptr;
-        Node* prev_limit = nullptr;
-        Node* bol = limit->is_CMove() ? limit->in(CMoveNode::Condition) : nullptr;
-        if (loop_head->unrolled_count() > 1 &&
-            limit->is_CMove() && limit->Opcode() == Op_CMoveI &&
-            limit->in(CMoveNode::IfTrue) == underflow_clamp &&
-            bol->as_Bool()->_test._test == bt &&
-            bol->in(1)->Opcode() == Op_CmpI &&
-            bol->in(1)->in(2) == limit->in(CMoveNode::IfFalse)) {
-          // Loop was unrolled before, and had an unrolling protection CMoveI.
-          // Use inputs to previous CMoveI for the new one:
-          prev_limit = limit->in(CMoveNode::IfFalse); // unpack previous limit with underflow
-          limit_before_underflow = bol->in(1)->in(1); // CMoveI -> Bool -> CmpI -> limit_before_underflow
-        } else {
-          // Loop was not unrolled before, or the limit did not underflow in a previous unrolling.
-          prev_limit = limit;
-          limit_before_underflow = limit;
-        }
-        //                           prev_limit   stride
-        //                                |         |
-        // limit_before_underflow  new_limit_with_underflow (SubI)
-        //                   |        |           |
-        //                 underflow_cmp          |
-        //                   |                    |
-        //                 underflow_bool [lt/gt] |
-        //                   |                    |
-        //                   +----+  +------------+
-        //                        |  |
-        //                        |  | underflow_clamp (min_jint/max_jint)
-        //                        |  |  |
-        //                       CMoveINode ([min_jint..hi] / [lo..max_jing])
-        //
-        assert(limit_before_underflow != nullptr && prev_limit != nullptr, "must find them");
-        Node* new_limit_with_underflow = new SubINode(prev_limit, stride);
-        register_new_node(new_limit_with_underflow, ctrl);
-        // We must compare with limit_before_underflow, prev_limit may already have underflowed.
-        Node* underflow_cmp = new CmpINode(limit_before_underflow, new_limit_with_underflow);
-        register_new_node(underflow_cmp, ctrl);
-        Node* underflow_bool = new BoolNode(underflow_cmp, bt);
-        register_new_node(underflow_bool, ctrl);
-        // Prevent type from becoming too pessimistic due to type underflow. The new limit
-        // may be arbitrarily decreased by unrolling, but still in [min_jint..hi] / [lo..max_jint]
-        const TypeInt* limit_before_underflow_t = _igvn.type(limit_before_underflow)->is_int();
-        const TypeInt* no_underflow_t = TypeInt::make(stride_con > 0 ? min_jint : limit_before_underflow_t->_lo,
-                                                      stride_con > 0 ? limit_before_underflow_t->_hi : max_jint,
-                                                      Type::WidenMax);
-        new_limit = new CMoveINode(underflow_bool, new_limit_with_underflow, underflow_clamp, no_underflow_t);
+        // limit = MinL(limit - stride, max_jint)
+        new_limit_no_underflow_l = new MinLNode(C, new_limit_l, underflow_clamp_l);
       }
+      register_new_node(new_limit_no_underflow_l, ctrl);
+
+      // (4) Convert back to int.
+      new_limit = new ConvL2INode(new_limit_no_underflow_l);
       register_new_node(new_limit, ctrl);
     }
 
@@ -2564,6 +2522,9 @@ void PhaseIdealLoop::mark_reductions(IdealLoopTree *loop) {
 //------------------------------adjust_limit-----------------------------------
 // Helper function that computes new loop limit as (rc_limit-offset)/scale
 Node* PhaseIdealLoop::adjust_limit(bool is_positive_stride, Node* scale, Node* offset, Node* rc_limit, Node* old_limit, Node* pre_ctrl, bool round) {
+  Node* old_limit_long = new ConvI2LNode(old_limit);
+  register_new_node(old_limit_long, pre_ctrl);
+
   Node* sub = new SubLNode(rc_limit, offset);
   register_new_node(sub, pre_ctrl);
   Node* limit = new DivLNode(nullptr, sub, scale);
@@ -2589,27 +2550,19 @@ Node* PhaseIdealLoop::adjust_limit(bool is_positive_stride, Node* scale, Node* o
   //   - integer underflow of limit: MAXL chooses old_limit (>= MIN_INT > limit)
   // INT() is finally converting the limit back to an integer value.
 
-  // We use CMove nodes to implement long versions of min/max (MINL/MAXL).
-  // We use helper methods for inner MINL/MAXL which return CMoveL nodes to keep a long value for the outer MINL/MAXL comparison:
-  Node* inner_result_long;
+  Node* inner_result_long = nullptr;
+  Node* outer_result_long = nullptr;
   if (is_positive_stride) {
-    inner_result_long = MaxNode::signed_max(limit, _igvn.longcon(min_jint), TypeLong::LONG, _igvn);
+    inner_result_long = new MaxLNode(C, limit, _igvn.longcon(min_jint));
+    outer_result_long = new MinLNode(C, inner_result_long, old_limit_long);
   } else {
-    inner_result_long = MaxNode::signed_min(limit, _igvn.longcon(max_jint), TypeLong::LONG, _igvn);
+    inner_result_long = new MinLNode(C, limit, _igvn.longcon(max_jint));
+    outer_result_long = new MaxLNode(C, inner_result_long, old_limit_long);
   }
-  set_subtree_ctrl(inner_result_long, false);
+  register_new_node(inner_result_long, pre_ctrl);
+  register_new_node(outer_result_long, pre_ctrl);
 
-  // Outer MINL/MAXL:
-  // The comparison is done with long values but the result is the converted back to int by using CmovI.
-  Node* old_limit_long = new ConvI2LNode(old_limit);
-  register_new_node(old_limit_long, pre_ctrl);
-  Node* cmp = new CmpLNode(old_limit_long, limit);
-  register_new_node(cmp, pre_ctrl);
-  Node* bol = new BoolNode(cmp, is_positive_stride ? BoolTest::gt : BoolTest::lt);
-  register_new_node(bol, pre_ctrl);
-  Node* inner_result_int = new ConvL2INode(inner_result_long); // Could under-/overflow but that's fine as comparison was done with CmpL
-  register_new_node(inner_result_int, pre_ctrl);
-  limit = new CMoveINode(bol, old_limit, inner_result_int, TypeInt::INT);
+  limit = new ConvL2INode(outer_result_long);
   register_new_node(limit, pre_ctrl);
   return limit;
 }
