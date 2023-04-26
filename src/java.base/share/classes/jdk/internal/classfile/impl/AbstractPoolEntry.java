@@ -556,29 +556,18 @@ public abstract sealed class AbstractPoolEntry {
 
     public static final class ClassEntryImpl extends AbstractNamedEntry implements ClassEntry {
 
-        public ClassDesc sym = null;
-
         ClassEntryImpl(ConstantPool cpm, int index, Utf8EntryImpl name) {
             super(cpm, Classfile.TAG_CLASS, index, name);
         }
 
         @Override
         public ClassEntry clone(ConstantPoolBuilder cp) {
-            if (cp.canWriteDirect(constantPool)) {
-                return this;
-            } else {
-                ClassEntryImpl ret = (ClassEntryImpl)cp.classEntry(ref1);
-                ret.sym = sym;
-                return ret;
-            }
+            return cp.canWriteDirect(constantPool) ? this : cp.classEntry(ref1);
         }
 
         @Override
         public ClassDesc asSymbol() {
-            if (sym == null) {
-                sym = Util.toClassDesc(asInternalName());
-            }
-            return sym;
+            return Util.toClassDesc(asInternalName());
         }
 
         @Override
