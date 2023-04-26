@@ -661,11 +661,26 @@ public class BasicChar
                 tryCatch(cbBOE, BufferOverflowException.class, () ->
                     cbBOE.append(csq, cslen/4, cslen/2));
 
+                CharBuffer cb = f.apply(7);
+                tryCatch(cbBOE, BufferOverflowException.class, () ->
+                    cb.append("12345678", 0, 8));
+
                 // append() should throw IndexOutOfBoundsException
                 final CharBuffer cbIOOBE = f.apply(cslen + 1);
                 for (int[] bds : bounds)
                     tryCatch(cbIOOBE, IndexOutOfBoundsException.class, () ->
                         cbIOOBE.append(csq, bds[0], bds[1]));
+
+                tryCatch(cb, IndexOutOfBoundsException.class, () ->
+                    cb.append("12345678", 4, 12));
+
+                // should append nothing
+                int rem = cb.remaining();
+                ck(cb, cb.append(csq, 0, 0).remaining(), rem);
+
+                // should fill the buffer
+                int start = (csq.length() - rem)/2;
+                ck(cb, cb.append(csq, start, start + rem).remaining(), 0);
             }
         }
         // end 8306623
