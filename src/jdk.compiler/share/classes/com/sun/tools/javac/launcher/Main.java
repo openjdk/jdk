@@ -461,7 +461,7 @@ public class Main {
             throw new Fault(Errors.CantFindClass(mainClassName));
         } catch (NoSuchMethodException e) {
             throw new Fault(Errors.CantFindMainMethod(mainClassName));
-        } catch (IllegalAccessException | InstantiationException e) {
+        } catch (IllegalAccessException e) {
             throw new Fault(Errors.CantAccessMainMethod(mainClassName));
         } catch (InvocationTargetException e) {
             // remove stack frames for source launcher

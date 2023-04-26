@@ -57,7 +57,6 @@ import static com.sun.tools.javac.parser.Tokens.TokenKind.EQ;
 import static com.sun.tools.javac.parser.Tokens.TokenKind.GT;
 import static com.sun.tools.javac.parser.Tokens.TokenKind.IMPORT;
 import static com.sun.tools.javac.parser.Tokens.TokenKind.LT;
-import static com.sun.tools.javac.resources.CompilerProperties.Fragments.FeatureAnonymousMainClasses;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
 import static com.sun.tools.javac.resources.CompilerProperties.Fragments.ImplicitAndExplicitNotAllowed;
 import static com.sun.tools.javac.resources.CompilerProperties.Fragments.VarAndExplicitNotAllowed;
@@ -3963,36 +3962,6 @@ public class JavacParser implements Parser {
         this.endPosTable.setParser(null); // remove reference to parser
         toplevel.endPositions = this.endPosTable;
         return toplevel;
-    }
-
-    boolean isSimpleIdentifier() {
-        if (token.kind != IDENTIFIER ) {
-            return false;
-        }
-
-        Name name = token.name();
-
-        return token.kind == IDENTIFIER &&
-                name != names.record &&
-                name != names.sealed &&
-                name != names._super &&
-                name != names._this &&
-                name != names.var &&
-                name != names.exports &&
-                name != names.opens &&
-                name != names.module &&
-                name != names.provides &&
-                name != names.requires &&
-                name != names.to &&
-                name != names.transitive &&
-                name != names.uses &&
-                name != names.open &&
-                name != names.when &&
-                name != names.with &&
-                name != names.yield &&
-                !(name == names.non && peekToken(1, TokenKind.SUB, TokenKind.IDENTIFIER) && S.token(3).name() == names.sealed) &&
-                !(S.token(1).kind == IDENTIFIER && S.token(1).name() == names.module) &&
-                !(S.token(2).kind == IDENTIFIER && S.token(2).name() == names.module);
     }
 
     JCModuleDecl moduleDecl(JCModifiers mods, ModuleKind kind, Comment dc) {
