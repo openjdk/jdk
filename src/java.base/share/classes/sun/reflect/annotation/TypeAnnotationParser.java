@@ -78,8 +78,7 @@ public final class TypeAnnotationParser {
         return AnnotatedTypeFactory.buildAnnotatedType(type,
                 AnnotatedTypeFactory.nestingForType(type, LocationInfo.BASE_LOCATION),
                 typeAnnotations,
-                typeAnnotations,
-                decl);
+                typeAnnotations);
     }
 
     /**
@@ -170,8 +169,7 @@ public final class TypeAnnotationParser {
             result[i] = AnnotatedTypeFactory.buildAnnotatedType(types[i],
                     AnnotatedTypeFactory.nestingForType(types[i], LocationInfo.BASE_LOCATION),
                     typeAnnotations,
-                    typeAnnotations,
-                    decl);
+                    typeAnnotations);
 
         }
         return result;
@@ -317,8 +315,7 @@ public final class TypeAnnotationParser {
                 res[i] = AnnotatedTypeFactory.buildAnnotatedType(bounds[i],
                         AnnotatedTypeFactory.nestingForType(bounds[i], loc),
                         typeAnnotations,
-                        typeAnnotations,
-                        decl);
+                        typeAnnotations);
             }
             return res;
         }

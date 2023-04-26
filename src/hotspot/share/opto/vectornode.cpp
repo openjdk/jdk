@@ -182,11 +182,9 @@ int VectorNode::opcode(int sopc, BasicType bt) {
   case Op_ReverseBytesL:
     return (bt == T_LONG ? Op_ReverseBytesV : 0);
   case Op_CompressBits:
-    // Not implemented. Returning 0 temporarily
-    return 0;
+    return (bt == T_INT || bt == T_LONG ? Op_CompressBitsV : 0);
   case Op_ExpandBits:
-    // Not implemented. Returning 0 temporarily
-    return 0;
+    return (bt == T_INT || bt == T_LONG ? Op_ExpandBitsV : 0);
   case Op_LShiftI:
     switch (bt) {
     case T_BOOLEAN:
@@ -703,6 +701,8 @@ VectorNode* VectorNode::make(int vopc, Node* n1, Node* n2, const TypeVect* vt, b
   case Op_ExpandV: return new ExpandVNode(n1, n2, vt);
   case Op_CompressV: return new CompressVNode(n1, n2, vt);
   case Op_CompressM: assert(n1 == nullptr, ""); return new CompressMNode(n2, vt);
+  case Op_CompressBitsV: return new CompressBitsVNode(n1, n2, vt);
+  case Op_ExpandBitsV: return new ExpandBitsVNode(n1, n2, vt);
   case Op_CountLeadingZerosV: return new CountLeadingZerosVNode(n1, vt);
   case Op_CountTrailingZerosV: return new CountTrailingZerosVNode(n1, vt);
   default:
@@ -1644,19 +1644,13 @@ Node* VectorUnboxNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       if (in_vt->length() == out_vt->length()) {
         Node* value = vbox->in(VectorBoxNode::Value);
 
-        bool is_vector_mask    = vbox_klass->is_subclass_of(ciEnv::current()->vector_VectorMask_klass());
-        bool is_vector_shuffle = vbox_klass->is_subclass_of(ciEnv::current()->vector_VectorShuffle_klass());
+        bool is_vector_mask = vbox_klass->is_subclass_of(ciEnv::current()->vector_VectorMask_klass());
         if (is_vector_mask) {
           // VectorUnbox (VectorBox vmask) ==> VectorMaskCast vmask
           const TypeVect* vmask_type = TypeVect::makemask(out_vt->element_basic_type(), out_vt->length());
           return new VectorMaskCastNode(value, vmask_type);
-        } else if (is_vector_shuffle) {
-          if (!is_shuffle_to_vector()) {
-            // VectorUnbox (VectorBox vshuffle) ==> VectorLoadShuffle vshuffle
-            return new VectorLoadShuffleNode(value, out_vt);
-          }
         } else {
-          // Vector type mismatch is only supported for masks and shuffles, but sometimes it happens in pathological cases.
+          // Vector type mismatch is only supported for masks, but sometimes it happens in pathological cases.
         }
       } else {
         // Vector length mismatch.

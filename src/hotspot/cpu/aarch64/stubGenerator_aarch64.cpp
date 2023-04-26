@@ -791,7 +791,7 @@ class StubGenerator: public StubCodeGenerator {
       t4 = r7, t5 = r11, t6 = r12, t7 = r13;
     const Register stride = r14;
     const Register gct1 = rscratch1, gct2 = rscratch2, gct3 = r10;
-    const FloatRegister gcvt1 = v6, gcvt2 = v7, gcvt3 = v8;
+    const FloatRegister gcvt1 = v6, gcvt2 = v7, gcvt3 = v16; // Note that v8-v15 are callee saved
     ArrayCopyBarrierSetHelper bs(_masm, decorators, type, gct1, gct2, gct3, gcvt1, gcvt2, gcvt3);
 
     assert_different_registers(rscratch1, rscratch2, t0, t1, t2, t3, t4, t5, t6, t7);
@@ -1185,7 +1185,7 @@ class StubGenerator: public StubCodeGenerator {
     const Register t6 = r12, t7 = r13, t8 = r14, t9 = r15;
     const Register send = r17, dend = r16;
     const Register gct1 = rscratch1, gct2 = rscratch2, gct3 = r10;
-    const FloatRegister gcvt1 = v6, gcvt2 = v7, gcvt3 = v8;
+    const FloatRegister gcvt1 = v6, gcvt2 = v7, gcvt3 = v16; // Note that v8-v15 are callee saved
     ArrayCopyBarrierSetHelper bs(_masm, decorators, type, gct1, gct2, gct3, gcvt1, gcvt2, gcvt3);
 
     if (PrefetchCopyIntervalInBytes > 0)

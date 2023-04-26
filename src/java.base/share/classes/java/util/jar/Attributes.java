@@ -55,6 +55,7 @@ import sun.util.logging.PlatformLogger;
  * <p>This map and its views have a predictable iteration order, namely the
  * order that keys were inserted into the map, as with {@link LinkedHashMap}.
  *
+ * @spec jar/jar.html JAR File Specification
  * @author  David Connelly
  * @see     Manifest
  * @since   1.2
@@ -446,6 +447,8 @@ public class Attributes implements Map<Object,Object>, Cloneable {
      * and will be UTF8-encoded when written to the output stream.  See the
      * <a href="{@docRoot}/../specs/jar/jar.html">JAR File Specification</a>
      * for more information about valid attribute names and values.
+     *
+     * @spec jar/jar.html JAR File Specification
      */
     public static class Name {
         private final String name;

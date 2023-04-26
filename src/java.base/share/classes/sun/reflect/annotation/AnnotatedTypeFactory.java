@@ -47,7 +47,7 @@ public final class AnnotatedTypeFactory {
      */
     public static AnnotatedType simple(Class<?> type) {
         return new AnnotatedTypeBaseImpl(type, LocationInfo.BASE_LOCATION, EMPTY_TYPE_ANNOTATION_ARRAY,
-                EMPTY_TYPE_ANNOTATION_ARRAY, null);
+                EMPTY_TYPE_ANNOTATION_ARRAY);
     }
 
     /**
@@ -58,14 +58,11 @@ public final class AnnotatedTypeFactory {
      * @param actualTypeAnnos the type annotations this AnnotatedType has
      * @param allOnSameTarget all type annotation on the same TypeAnnotationTarget
      *                          as the AnnotatedType being built
-     * @param decl the declaration having the type use this AnnotatedType
-     *                          corresponds to
      */
     public static AnnotatedType buildAnnotatedType(Type type,
             LocationInfo currentLoc,
             TypeAnnotation[] actualTypeAnnos,
-            TypeAnnotation[] allOnSameTarget,
-            AnnotatedElement decl) {
+            TypeAnnotation[] allOnSameTarget) {
         if (type == null) {
             return EMPTY_ANNOTATED_TYPE;
         }
@@ -73,32 +70,27 @@ public final class AnnotatedTypeFactory {
             return new AnnotatedArrayTypeImpl(type,
                     currentLoc,
                     actualTypeAnnos,
-                    allOnSameTarget,
-                    decl);
+                    allOnSameTarget);
         if (type instanceof Class) {
             return new AnnotatedTypeBaseImpl(type,
                     currentLoc,
                     actualTypeAnnos,
-                    allOnSameTarget,
-                    decl);
+                    allOnSameTarget);
         } else if (type instanceof TypeVariable<?> typeVariable) {
             return new AnnotatedTypeVariableImpl(typeVariable,
                     currentLoc,
                     actualTypeAnnos,
-                    allOnSameTarget,
-                    decl);
+                    allOnSameTarget);
         } else if (type instanceof ParameterizedType paramType) {
             return new AnnotatedParameterizedTypeImpl(paramType,
                     currentLoc,
                     actualTypeAnnos,
-                    allOnSameTarget,
-                    decl);
+                    allOnSameTarget);
         } else if (type instanceof WildcardType wildType) {
             return new AnnotatedWildcardTypeImpl(wildType,
                     currentLoc,
                     actualTypeAnnos,
-                    allOnSameTarget,
-                    decl);
+                    allOnSameTarget);
         }
         throw new AssertionError("Unknown instance of Type: " + type + "\nThis should not happen.");
     }
@@ -145,16 +137,13 @@ public final class AnnotatedTypeFactory {
 
     private static class AnnotatedTypeBaseImpl implements AnnotatedType {
         private final Type type;
-        private final AnnotatedElement decl;
         private final LocationInfo location;
         private final TypeAnnotation[] allOnSameTargetTypeAnnotations;
         private final Map<Class <? extends Annotation>, Annotation> annotations;
 
         AnnotatedTypeBaseImpl(Type type, LocationInfo location,
-                TypeAnnotation[] actualTypeAnnotations, TypeAnnotation[] allOnSameTargetTypeAnnotations,
-                AnnotatedElement decl) {
+                TypeAnnotation[] actualTypeAnnotations, TypeAnnotation[] allOnSameTargetTypeAnnotations) {
             this.type = type;
-            this.decl = decl;
             this.location = location;
             this.allOnSameTargetTypeAnnotations = allOnSameTargetTypeAnnotations;
             this.annotations = TypeAnnotationParser.mapTypeAnnotations(location.filter(actualTypeAnnotations));
@@ -221,7 +210,7 @@ public final class AnnotatedTypeFactory {
                 if (t.getLocationInfo().isSameLocationInfo(outerLoc))
                     l.add(t);
 
-            return buildAnnotatedType(owner, outerLoc, l.toArray(EMPTY_TYPE_ANNOTATION_ARRAY), all, getDecl());
+            return buildAnnotatedType(owner, outerLoc, l.toArray(EMPTY_TYPE_ANNOTATION_ARRAY), all);
 
         }
 
@@ -295,16 +284,12 @@ public final class AnnotatedTypeFactory {
         final TypeAnnotation[] getTypeAnnotations() {
             return allOnSameTargetTypeAnnotations;
         }
-        final AnnotatedElement getDecl() {
-            return decl;
-        }
     }
 
     private static final class AnnotatedArrayTypeImpl extends AnnotatedTypeBaseImpl implements AnnotatedArrayType {
         AnnotatedArrayTypeImpl(Type type, LocationInfo location,
-                TypeAnnotation[] actualTypeAnnotations, TypeAnnotation[] allOnSameTargetTypeAnnotations,
-                AnnotatedElement decl) {
-            super(type, location, actualTypeAnnotations, allOnSameTargetTypeAnnotations, decl);
+                TypeAnnotation[] actualTypeAnnotations, TypeAnnotation[] allOnSameTargetTypeAnnotations) {
+            super(type, location, actualTypeAnnotations, allOnSameTargetTypeAnnotations);
         }
 
         @Override
@@ -313,8 +298,7 @@ public final class AnnotatedTypeFactory {
             return AnnotatedTypeFactory.buildAnnotatedType(t,
                     nestingForType(t, getLocation().pushArray()),
                     getTypeAnnotations(),
-                    getTypeAnnotations(),
-                    getDecl());
+                    getTypeAnnotations());
         }
 
         @Override
@@ -377,9 +361,8 @@ public final class AnnotatedTypeFactory {
 
     private static final class AnnotatedTypeVariableImpl extends AnnotatedTypeBaseImpl implements AnnotatedTypeVariable {
         AnnotatedTypeVariableImpl(TypeVariable<?> type, LocationInfo location,
-                TypeAnnotation[] actualTypeAnnotations, TypeAnnotation[] allOnSameTargetTypeAnnotations,
-                AnnotatedElement decl) {
-            super(type, location, actualTypeAnnotations, allOnSameTargetTypeAnnotations, decl);
+                TypeAnnotation[] actualTypeAnnotations, TypeAnnotation[] allOnSameTargetTypeAnnotations) {
+            super(type, location, actualTypeAnnotations, allOnSameTargetTypeAnnotations);
         }
 
         @Override
@@ -416,9 +399,8 @@ public final class AnnotatedTypeFactory {
     private static final class AnnotatedParameterizedTypeImpl extends AnnotatedTypeBaseImpl
             implements AnnotatedParameterizedType {
         AnnotatedParameterizedTypeImpl(ParameterizedType type, LocationInfo location,
-                TypeAnnotation[] actualTypeAnnotations, TypeAnnotation[] allOnSameTargetTypeAnnotations,
-                AnnotatedElement decl) {
-            super(type, location, actualTypeAnnotations, allOnSameTargetTypeAnnotations, decl);
+                TypeAnnotation[] actualTypeAnnotations, TypeAnnotation[] allOnSameTargetTypeAnnotations) {
+            super(type, location, actualTypeAnnotations, allOnSameTargetTypeAnnotations);
         }
 
         @Override
@@ -436,8 +418,7 @@ public final class AnnotatedTypeFactory {
                 res[i] = buildAnnotatedType(arguments[i],
                         newLoc,
                         l.toArray(EMPTY_TYPE_ANNOTATION_ARRAY),
-                        getTypeAnnotations(),
-                        getDecl());
+                        getTypeAnnotations());
             }
             return res;
         }
@@ -451,7 +432,7 @@ public final class AnnotatedTypeFactory {
             LocationInfo outerLoc = getLocation().popLocation((byte)1);
             if (outerLoc == null) {
               return buildAnnotatedType(owner, LocationInfo.BASE_LOCATION,
-                      EMPTY_TYPE_ANNOTATION_ARRAY, EMPTY_TYPE_ANNOTATION_ARRAY, getDecl());
+                      EMPTY_TYPE_ANNOTATION_ARRAY, EMPTY_TYPE_ANNOTATION_ARRAY);
             }
             TypeAnnotation[]all = getTypeAnnotations();
             List<TypeAnnotation> l = new ArrayList<>(all.length);
@@ -460,7 +441,7 @@ public final class AnnotatedTypeFactory {
                 if (t.getLocationInfo().isSameLocationInfo(outerLoc))
                     l.add(t);
 
-            return buildAnnotatedType(owner, outerLoc, l.toArray(EMPTY_TYPE_ANNOTATION_ARRAY), all, getDecl());
+            return buildAnnotatedType(owner, outerLoc, l.toArray(EMPTY_TYPE_ANNOTATION_ARRAY), all);
         }
 
         private ParameterizedType getParameterizedType() {
@@ -504,9 +485,8 @@ public final class AnnotatedTypeFactory {
     private static final class AnnotatedWildcardTypeImpl extends AnnotatedTypeBaseImpl implements AnnotatedWildcardType {
         private final boolean hasUpperBounds;
         AnnotatedWildcardTypeImpl(WildcardType type, LocationInfo location,
-                TypeAnnotation[] actualTypeAnnotations, TypeAnnotation[] allOnSameTargetTypeAnnotations,
-                AnnotatedElement decl) {
-            super(type, location, actualTypeAnnotations, allOnSameTargetTypeAnnotations, decl);
+                TypeAnnotation[] actualTypeAnnotations, TypeAnnotation[] allOnSameTargetTypeAnnotations) {
+            super(type, location, actualTypeAnnotations, allOnSameTargetTypeAnnotations);
             hasUpperBounds = (type.getLowerBounds().length == 0);
         }
 
@@ -543,8 +523,7 @@ public final class AnnotatedTypeFactory {
                 res[i] = buildAnnotatedType(bounds[i],
                         newLoc,
                         l.toArray(EMPTY_TYPE_ANNOTATION_ARRAY),
-                        getTypeAnnotations(),
-                        getDecl());
+                        getTypeAnnotations());
             }
             return res;
         }

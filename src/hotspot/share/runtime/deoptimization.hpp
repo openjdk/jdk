@@ -185,7 +185,7 @@ class Deoptimization : AllStatic {
 
 #if INCLUDE_JVMCI
   static address deoptimize_for_missing_exception_handler(CompiledMethod* cm);
-  static oop get_cached_box(AutoBoxObjectValue* bv, frame* fr, RegisterMap* reg_map, TRAPS);
+  static oop get_cached_box(AutoBoxObjectValue* bv, frame* fr, RegisterMap* reg_map, bool& cache_init_error, TRAPS);
 #endif
 
   private:

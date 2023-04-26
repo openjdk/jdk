@@ -222,9 +222,9 @@ public class TagletWriterImpl extends TagletWriter {
         DocTree searchTerm = tag.getSearchTerm();
         String tagText = (searchTerm instanceof TextTree tt) ? tt.getBody() : "";
         if (tagText.charAt(0) == '"' && tagText.charAt(tagText.length() - 1) == '"') {
-            tagText = tagText.substring(1, tagText.length() - 1)
-                             .replaceAll("\\s+", " ");
+            tagText = tagText.substring(1, tagText.length() - 1);
         }
+        tagText = tagText.replaceAll("\\s+", " ");
 
         Content desc = htmlWriter.commentTagsToContent(element, tag.getDescription(), context.within(tag));
         String descText = extractText(desc);
@@ -711,17 +711,19 @@ public class TagletWriterImpl extends TagletWriter {
                 code.add(c);
             }
         });
-        String copyText = resources.getText("doclet.Copy_snippet_to_clipboard");
-        String copiedText = resources.getText("doclet.Copied_snippet_to_clipboard");
+        String copyText = resources.getText("doclet.Copy_to_clipboard");
+        String copiedText = resources.getText("doclet.Copied_to_clipboard");
+        String copySnippetText = resources.getText("doclet.Copy_snippet_to_clipboard");
         var snippetContainer = HtmlTree.DIV(HtmlStyle.snippetContainer,
                 new HtmlTree(TagName.BUTTON)
                         .add(HtmlTree.SPAN(Text.of(copyText))
                                 .put(HtmlAttr.DATA_COPIED, copiedText))
                         .add(new HtmlTree(TagName.IMG)
                                 .put(HtmlAttr.SRC, htmlWriter.pathToRoot.resolve(DocPaths.CLIPBOARD_SVG).getPath())
-                                .put(HtmlAttr.ALT, copyText))
+                                .put(HtmlAttr.ALT, copySnippetText))
                         .addStyle(HtmlStyle.copy)
                         .addStyle(HtmlStyle.snippetCopy)
+                        .put(HtmlAttr.ARIA_LABEL, copySnippetText)
                         .put(HtmlAttr.ONCLICK, "copySnippet(this)"));
         return snippetContainer.add(pre.add(code));
     }
@@ -769,7 +771,8 @@ public class TagletWriterImpl extends TagletWriter {
         String specTreeURL = specTree.getURL().getBody();
         List<? extends DocTree> specTreeLabel = specTree.getTitle();
         Content label = htmlWriter.commentTagsToContent(holder, specTreeLabel, isFirstSentence);
-        return getExternalSpecContent(holder, specTree, specTreeURL, textOf(specTreeLabel), label);
+        return getExternalSpecContent(holder, specTree, specTreeURL,
+                textOf(specTreeLabel).replaceAll("\\s+", " "), label);
     }
 
     Content getExternalSpecContent(Element holder, DocTree docTree, String url, String searchText, Content title) {

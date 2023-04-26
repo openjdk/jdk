@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -28,17 +28,19 @@ grant {
     permission java.io.FilePermission "${test.classes}${/}-", "read,write,delete";
     permission java.lang.RuntimePermission "modifyThread";
     permission java.util.logging.LoggingPermission "control", "";
-    permission java.net.SocketPermission "localhost:1024-", "accept,listen";
+    permission java.net.SocketPermission "127.0.0.1:1024-", "accept,listen";
+    permission java.net.SocketPermission "[::1]:1024-", "accept,listen";
     permission java.io.FilePermission "${test.src}${/}docs${/}-", "read";
     permission java.lang.RuntimePermission "createClassLoader";
 
 
     // permissions specific to this test
-    permission java.net.URLPermission "http://localhost:*/files/foo.txt", "GET:X-Foo1,X-Foo,X-Bar";
+    permission java.net.URLPermission "http://127.0.0.1:*/files/foo.txt", "GET:X-Foo1,X-Foo,X-Bar";
+    permission java.net.URLPermission "http://[::1]:*/files/foo.txt", "GET:X-Foo1,X-Foo,X-Bar";
 };
 
 // For proxy only. Not being tested
 grant codebase "file:${test.classes}/proxydir/-" {
-    permission java.net.SocketPermission "localhost:1024-", "accept,listen,connect";
-    permission java.net.SocketPermission "localhost:1024-", "connect,resolve";
+    permission java.net.SocketPermission "127.0.0.1:1024-", "accept,listen,connect,resolve";
+    permission java.net.SocketPermission "[::1]:1024-", "accept,listen,connect,resolve";
 };
