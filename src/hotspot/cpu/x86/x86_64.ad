@@ -13732,6 +13732,13 @@ instruct leaL_rReg_immI2_peep(rRegL dst, rRegL src, immI2 shift)
   ins_pipe(ialu_reg_reg);
 %}
 
+// These peephole rules replace mov + I pairs (where I is one of {add, inc, dec,
+// sal}) with lea instructions. The {add, sal} rules are beneficial in
+// processors with at least partial ALU support for lea
+// (supports_fast_2op_lea()), whereas the {inc, dec} rules are only generally
+// beneficial for processors with full ALU support
+// (VM_Version::supports_fast_3op_lea()) and Intel Cascade Lake.
+
 peephole
 %{
   peeppredicate(VM_Version::supports_fast_2op_lea());
@@ -13750,7 +13757,8 @@ peephole
 
 peephole
 %{
-  peeppredicate(VM_Version::supports_fast_2op_lea());
+  peeppredicate(VM_Version::supports_fast_3op_lea() ||
+                VM_Version::is_intel_cascade_lake());
   peepmatch (incI_rReg);
   peepprocedure (lea_coalesce_imm);
   peepreplace (leaI_rReg_immI_peep());
@@ -13758,7 +13766,8 @@ peephole
 
 peephole
 %{
-  peeppredicate(VM_Version::supports_fast_2op_lea());
+  peeppredicate(VM_Version::supports_fast_3op_lea() ||
+                VM_Version::is_intel_cascade_lake());
   peepmatch (decI_rReg);
   peepprocedure (lea_coalesce_imm);
   peepreplace (leaI_rReg_immI_peep());
@@ -13790,7 +13799,8 @@ peephole
 
 peephole
 %{
-  peeppredicate(VM_Version::supports_fast_2op_lea());
+  peeppredicate(VM_Version::supports_fast_3op_lea() ||
+                VM_Version::is_intel_cascade_lake());
   peepmatch (incL_rReg);
   peepprocedure (lea_coalesce_imm);
   peepreplace (leaL_rReg_immL32_peep());
@@ -13798,7 +13808,8 @@ peephole
 
 peephole
 %{
-  peeppredicate(VM_Version::supports_fast_2op_lea());
+  peeppredicate(VM_Version::supports_fast_3op_lea() ||
+                VM_Version::is_intel_cascade_lake());
   peepmatch (decL_rReg);
   peepprocedure (lea_coalesce_imm);
   peepreplace (leaL_rReg_immL32_peep());
