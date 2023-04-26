@@ -2478,7 +2478,7 @@ static void push_skeleton_frames(MacroAssembler* masm, bool deopt,
 
   // Make sure that there is at least one entry in the array.
   DEBUG_ONLY(__ z_ltgr(number_of_frames_reg, number_of_frames_reg));
-  __ asm_assert_ne("array_size must be > 0", 0x205);
+  __ asm_assert(Assembler::bcondNotZero, "array_size must be > 0", 0x205);
 
   __ z_bru(loop_entry);
 
@@ -2788,7 +2788,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
   } else {
     __ z_cliy(unpack_kind_byte_offset, unroll_block_reg, Deoptimization::Unpack_uncommon_trap);
   }
-  __ asm_assert_eq("SharedRuntime::generate_deopt_blob: expected Unpack_uncommon_trap", 0);
+  __ asm_assert(Assembler::bcondEqual, "SharedRuntime::generate_deopt_blob: expected Unpack_uncommon_trap", 0);
 #endif
 
   __ zap_from_to(Z_SP, Z_SP, Z_R0_scratch, Z_R1, 500, -1);
