@@ -29,7 +29,7 @@ import static java.util.Objects.requireNonNull;
 /**
  * A nominal descriptor for a {@code Package} constant.
  *
- * @apiNote
+ * <p>
  * To create a {@link PackageDesc} for a package,
  * use the {@link #of(String)} or {@link #ofInternalName(String)} method.
  *
@@ -68,6 +68,7 @@ public sealed interface PackageDesc
      * @throws IllegalArgumentException if the name string is not in the
      * correct format
      * @jvms 4.2.1 Binary Class and Interface Names
+     * @jvm 4.2.3 Module and Package Names
      * @see PackageDesc#of(String)
      */
     static PackageDesc ofInternalName(String name) {
