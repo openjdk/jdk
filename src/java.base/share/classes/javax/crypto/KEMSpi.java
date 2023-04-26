@@ -44,9 +44,8 @@ import java.security.spec.AlgorithmParameterSpec;
  * an encapsulator or decapsulator. The result of calling
  * {@link #engineNewEncapsulator} or {@link #engineNewDecapsulator} must return
  * an encapsulator or decapsulator that maps to a single configuration,
- * where its {@link EncapsulatorSpi#engineSecretSize()} and
- * {@link EncapsulatorSpi#engineEncapsulationSize()} methods return constant
- * values.
+ * where its {@code engineSecretSize()} and {@code engineEncapsulationSize()}
+ * methods return constant values.
  * <p>
  * A {@code KEMSpi} implementation must be immutable. It must be safe to
  * call multiple {@code engineNewEncapsulator} and {@code engineNewDecapsulator}
