@@ -36,6 +36,7 @@
 #include "gc/shared/plab.hpp"
 #include "gc/shared/tlab_globals.hpp"
 
+#include "gc/shenandoah/shenandoahAllocRequest.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
 #include "gc/shenandoah/shenandoahCardTable.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
@@ -77,6 +78,7 @@
 #include "gc/shenandoah/mode/shenandoahIUMode.hpp"
 #include "gc/shenandoah/mode/shenandoahPassiveMode.hpp"
 #include "gc/shenandoah/mode/shenandoahSATBMode.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 #if INCLUDE_JFR
 #include "gc/shenandoah/shenandoahJfrSupport.hpp"
@@ -539,7 +541,6 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   _gc_generation(nullptr),
   _prepare_for_old_mark(false),
   _initial_size(0),
-  _used(0),
   _committed(0),
   _max_workers(MAX3(ConcGCThreads, ParallelGCThreads, 1U)),
   _workers(nullptr),
@@ -696,7 +697,7 @@ bool ShenandoahHeap::is_gc_generation_young() const {
 }
 
 size_t ShenandoahHeap::used() const {
-  return Atomic::load(&_used);
+  return global_generation()->used();
 }
 
 size_t ShenandoahHeap::committed() const {
@@ -713,29 +714,84 @@ void ShenandoahHeap::decrease_committed(size_t bytes) {
   _committed -= bytes;
 }
 
-void ShenandoahHeap::increase_used(size_t bytes) {
-  Atomic::add(&_used, bytes, memory_order_relaxed);
-}
+// For tracking usage based on allocations, it should be the case that:
+// * The sum of regions::used == heap::used
+// * The sum of a generation's regions::used == generation::used
+// * The sum of a generation's humongous regions::free == generation::humongous_waste
+// These invariants are checked by the verifier on GC safepoints.
+//
+// Additional notes:
+// * When a mutator's allocation request causes a region to be retired, the
+//   free memory left in that region is considered waste. It does not contribute
+//   to the usage, but it _does_ contribute to allocation rate.
+// * The bottom of a PLAB must be aligned on card size. In some cases this will
+//   require padding in front of the PLAB (a filler object). Because this padding
+//   is included in the region's used memory we include the padding in the usage
+//   accounting as waste.
+// * Mutator allocations are used to compute an allocation rate. They are also
+//   sent to the Pacer for those purposes.
+// * There are three sources of waste:
+//  1. The padding used to align a PLAB on card size
+//  2. Region's free is less than minimum TLAB size and is retired
+//  3. The unused portion of memory in the last region of a humongous object
+void ShenandoahHeap::increase_used(const ShenandoahAllocRequest& req) {
+  size_t actual_bytes = req.actual_size() * HeapWordSize;
+  size_t wasted_bytes = req.waste() * HeapWordSize;
+  ShenandoahGeneration* generation = generation_for(req.affiliation());
 
-void ShenandoahHeap::set_used(size_t bytes) {
-  Atomic::store(&_used, bytes);
-}
+  if (req.is_gc_alloc()) {
+    assert(wasted_bytes == 0 || req.type() == ShenandoahAllocRequest::_alloc_plab, "Only PLABs have waste");
+    increase_used(generation, actual_bytes + wasted_bytes);
+  } else {
+    assert(req.is_mutator_alloc(), "Expected mutator alloc here");
+    // padding and actual size both count towards allocation counter
+    generation->increase_allocated(actual_bytes + wasted_bytes);
 
-void ShenandoahHeap::decrease_used(size_t bytes) {
-  assert(used() >= bytes, "never decrease heap size by more than we've left");
-  Atomic::sub(&_used, bytes, memory_order_relaxed);
-}
+    // only actual size counts toward usage for mutator allocations
+    increase_used(generation, actual_bytes);
 
-void ShenandoahHeap::notify_mutator_alloc_words(size_t words, bool waste) {
-  size_t bytes = words * HeapWordSize;
-  if (!waste) {
-    increase_used(bytes);
+    // notify pacer of both actual size and waste
+    notify_mutator_alloc_words(req.actual_size(), req.waste());
+
+    if (wasted_bytes > 0 && req.actual_size() > ShenandoahHeapRegion::humongous_threshold_words()) {
+      increase_humongous_waste(generation,wasted_bytes);
+    }
   }
+}
 
+void ShenandoahHeap::increase_humongous_waste(ShenandoahGeneration* generation, size_t bytes) {
+  generation->increase_humongous_waste(bytes);
+  if (!generation->is_global()) {
+    global_generation()->increase_humongous_waste(bytes);
+  }
+}
+
+void ShenandoahHeap::decrease_humongous_waste(ShenandoahGeneration* generation, size_t bytes) {
+  generation->decrease_humongous_waste(bytes);
+  if (!generation->is_global()) {
+    global_generation()->decrease_humongous_waste(bytes);
+  }
+}
+
+void ShenandoahHeap::increase_used(ShenandoahGeneration* generation, size_t bytes) {
+  generation->increase_used(bytes);
+  if (!generation->is_global()) {
+    global_generation()->increase_used(bytes);
+  }
+}
+
+void ShenandoahHeap::decrease_used(ShenandoahGeneration* generation, size_t bytes) {
+  generation->decrease_used(bytes);
+  if (!generation->is_global()) {
+    global_generation()->decrease_used(bytes);
+  }
+}
+
+void ShenandoahHeap::notify_mutator_alloc_words(size_t words, size_t waste) {
   if (ShenandoahPacing) {
     control_thread()->pacing_notify_alloc(words);
-    if (waste) {
-      pacer()->claim_for_alloc(words, true);
+    if (waste > 0) {
+      pacer()->claim_for_alloc(waste, true);
     }
   }
 }
@@ -1196,28 +1252,29 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req, bool is_p
     regulator_thread()->notify_heap_changed();
   }
 
+  if (result == nullptr) {
+    req.set_actual_size(0);
+  }
+
+  // This is called regardless of the outcome of the allocation to account
+  // for any waste created by retiring regions with this request.
+  increase_used(req);
+
   if (result != nullptr) {
-    ShenandoahGeneration* alloc_generation = generation_for(req.affiliation());
     size_t requested = req.size();
     size_t actual = req.actual_size();
-    size_t actual_bytes = actual * HeapWordSize;
 
     assert (req.is_lab_alloc() || (requested == actual),
             "Only LAB allocations are elastic: %s, requested = " SIZE_FORMAT ", actual = " SIZE_FORMAT,
             ShenandoahAllocRequest::alloc_type_to_string(req.type()), requested, actual);
 
     if (req.is_mutator_alloc()) {
-      notify_mutator_alloc_words(actual, false);
-      alloc_generation->increase_allocated(actual_bytes);
-
       // If we requested more than we were granted, give the rest back to pacer.
       // This only matters if we are in the same pacing epoch: do not try to unpace
       // over the budget for the other phase.
       if (ShenandoahPacing && (pacer_epoch > 0) && (requested > actual)) {
         pacer()->unpace_for_alloc(pacer_epoch, requested - actual);
       }
-    } else {
-      increase_used(actual_bytes);
     }
   }
 

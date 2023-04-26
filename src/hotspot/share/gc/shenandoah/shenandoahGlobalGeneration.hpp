@@ -42,7 +42,6 @@ public:
   virtual size_t soft_max_capacity() const override;
   virtual size_t used_regions() const override;
   virtual size_t used_regions_size() const override;
-  virtual size_t used() const override;
   virtual size_t available() const override;
 
   virtual void set_concurrent_mark_in_progress(bool in_progress) override;

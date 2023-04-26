@@ -274,7 +274,8 @@
           " 4 = previous level, plus all marked objects")                   \
                                                                             \
   product(bool, ShenandoahElasticTLAB, true, DIAGNOSTIC,                    \
-          "Use Elastic TLABs with Shenandoah")                              \
+          "Use Elastic TLABs with Shenandoah. This allows Shenandoah to "   \
+          "decrease the size of a TLAB to fit in a region's remaining space") \
                                                                             \
   product(uintx, ShenandoahEvacReserve, 5, EXPERIMENTAL,                    \
           "How much of (young-generation) heap to reserve for "             \

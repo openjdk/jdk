@@ -287,9 +287,7 @@ void ShenandoahHeapRegion::make_trash() {
     {
       // Reclaiming humongous regions and reclaim humongous waste.  When this region is eventually recycled, we'll reclaim
       // its used memory.  At recycle time, we no longer recognize this as a humongous region.
-      if (ShenandoahHeap::heap()->mode()->is_generational()) {
-        decrement_humongous_waste();
-      }
+      decrement_humongous_waste();
     }
     case _cset:
       // Reclaiming cset regions
@@ -658,12 +656,10 @@ ShenandoahHeapRegion* ShenandoahHeapRegion::humongous_start_region() const {
 }
 
 void ShenandoahHeapRegion::recycle() {
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
   shenandoah_assert_heaplocked();
-
-  if (ShenandoahHeap::heap()->mode()->is_generational()) {
-    heap->generation_for(affiliation())->decrease_used(used());
-  }
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
+  ShenandoahGeneration* generation = heap->generation_for(affiliation());
+  heap->decrease_used(generation, used());
 
   set_top(bottom());
   clear_live_data();
@@ -1093,7 +1089,8 @@ void ShenandoahHeapRegion::decrement_humongous_waste() const {
   assert(is_humongous(), "Should only use this for humongous regions");
   size_t waste_bytes = free();
   if (waste_bytes > 0) {
-    ShenandoahHeap::heap()->generation_for(affiliation())->decrease_humongous_waste(waste_bytes);
-    ShenandoahHeap::heap()->global_generation()->decrease_humongous_waste(waste_bytes);
+    ShenandoahHeap* heap = ShenandoahHeap::heap();
+    ShenandoahGeneration* generation = heap->generation_for(affiliation());
+    heap->decrease_humongous_waste(generation, waste_bytes);
   }
 }

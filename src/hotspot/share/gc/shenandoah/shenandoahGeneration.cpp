@@ -137,7 +137,7 @@ ShenandoahHeuristics* ShenandoahGeneration::initialize_heuristics(ShenandoahMode
 }
 
 size_t ShenandoahGeneration::bytes_allocated_since_gc_start() {
-  return Atomic::load(&_bytes_allocated_since_gc_start);;
+  return Atomic::load(&_bytes_allocated_since_gc_start);
 }
 
 void ShenandoahGeneration::reset_bytes_allocated_since_gc_start() {
@@ -405,7 +405,7 @@ void ShenandoahGeneration::compute_evacuation_budgets(ShenandoahHeap* heap, bool
   collection_set->establish_preselected(preselected_regions);
 }
 
-// Having chosen the collection set, adjust the budgets for generatioal mode based on its composition.  Note
+// Having chosen the collection set, adjust the budgets for generational mode based on its composition.  Note
 // that young_generation->available() now knows about recently discovered immediate garbage.
 
 void ShenandoahGeneration::adjust_evacuation_budgets(ShenandoahHeap* heap, ShenandoahCollectionSet* collection_set,
@@ -956,18 +956,10 @@ size_t ShenandoahGeneration::decrement_affiliated_region_count() {
 }
 
 void ShenandoahGeneration::establish_usage(size_t num_regions, size_t num_bytes, size_t humongous_waste) {
-  assert(ShenandoahHeap::heap()->mode()->is_generational(), "Only generational mode accounts for generational usage");
   assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "must be at a safepoint");
   _affiliated_region_count = num_regions;
   _used = num_bytes;
   _humongous_waste = humongous_waste;
-}
-
-void ShenandoahGeneration::clear_used() {
-  assert(ShenandoahHeap::heap()->mode()->is_generational(), "Only generational mode accounts for generational usage");
-  assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "must be at a safepoint");
-  // Do this atomically to assure visibility to other threads, even though these other threads may be idle "right now"..
-  Atomic::store(&_used, (size_t)0);
 }
 
 void ShenandoahGeneration::increase_used(size_t bytes) {
@@ -981,18 +973,16 @@ void ShenandoahGeneration::decrease_used(size_t bytes) {
 
 void ShenandoahGeneration::increase_humongous_waste(size_t bytes) {
   if (bytes > 0) {
-    shenandoah_assert_heaplocked_or_fullgc_safepoint();
-    _humongous_waste += bytes;
+    Atomic::add(&_humongous_waste, bytes);
   }
 }
 
 void ShenandoahGeneration::decrease_humongous_waste(size_t bytes) {
   if (bytes > 0) {
-    shenandoah_assert_heaplocked_or_fullgc_safepoint();
     assert(_humongous_waste >= bytes, "Waste cannot be negative");
     assert(ShenandoahHeap::heap()->is_full_gc_in_progress() || (_humongous_waste >= bytes),
            "Waste (" SIZE_FORMAT ") cannot be negative (after subtracting " SIZE_FORMAT ")", _humongous_waste, bytes);
-    _humongous_waste -= bytes;
+    Atomic::sub(&_humongous_waste, bytes);
   }
 }
 

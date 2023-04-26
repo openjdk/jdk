@@ -38,6 +38,7 @@ class ShenandoahHeap;
 class ShenandoahMode;
 
 class ShenandoahGeneration : public CHeapObj<mtGC> {
+  friend class VMStructs;
 private:
   ShenandoahGenerationType const _type;
 
@@ -200,7 +201,6 @@ private:
 
   void establish_usage(size_t num_regions, size_t num_bytes, size_t humongous_waste);
 
-  void clear_used();
   void increase_used(size_t bytes);
   void decrease_used(size_t bytes);
 

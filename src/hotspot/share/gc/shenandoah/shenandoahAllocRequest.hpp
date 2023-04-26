@@ -59,18 +59,35 @@ public:
   }
 
 private:
+  // When ShenandoahElasticTLAB is enabled, the request cannot be made smaller than _min_size.
   size_t _min_size;
+
+  // The size of the request in words.
   size_t _requested_size;
+
+  // The allocation may be increased for padding or decreased to fit in the remaining space of a region.
   size_t _actual_size;
+
+  // For a humongous object, the _waste is the amount of free memory in the last region.
+  // For other requests, the _waste will be non-zero if the request enountered one or more regions
+  // with less memory than _min_size. This waste does not contribute to the used memory for
+  // the heap, but it does contribute to the allocation rate for heuristics.
+  size_t _waste;
+
+  // This is the type of the request.
   Type _alloc_type;
+
+  // This is the generation which the request is targeting.
   ShenandoahAffiliation const _affiliation;
+
 #ifdef ASSERT
+  // Check that this is set before being read.
   bool _actual_size_set;
 #endif
 
   ShenandoahAllocRequest(size_t _min_size, size_t _requested_size, Type _alloc_type, ShenandoahAffiliation affiliation) :
           _min_size(_min_size), _requested_size(_requested_size),
-          _actual_size(0), _alloc_type(_alloc_type), _affiliation(affiliation)
+          _actual_size(0), _waste(0), _alloc_type(_alloc_type), _affiliation(affiliation)
 #ifdef ASSERT
           , _actual_size_set(false)
 #endif
@@ -97,24 +114,24 @@ public:
     return ShenandoahAllocRequest(0, requested_size, _alloc_shared, ShenandoahAffiliation::YOUNG_GENERATION);
   }
 
-  inline size_t size() {
+  inline size_t size() const {
     return _requested_size;
   }
 
-  inline Type type() {
+  inline Type type() const {
     return _alloc_type;
   }
 
-  inline const char* type_string() {
+  inline const char* type_string() const {
     return alloc_type_to_string(_alloc_type);
   }
 
-  inline size_t min_size() {
+  inline size_t min_size() const {
     assert (is_lab_alloc(), "Only access for LAB allocs");
     return _min_size;
   }
 
-  inline size_t actual_size() {
+  inline size_t actual_size() const {
     assert (_actual_size_set, "Should be set");
     return _actual_size;
   }
@@ -127,7 +144,15 @@ public:
     _actual_size = v;
   }
 
-  inline bool is_mutator_alloc() {
+  inline size_t waste() const {
+    return _waste;
+  }
+
+  inline void set_waste(size_t v) {
+    _waste = v;
+  }
+
+  inline bool is_mutator_alloc() const {
     switch (_alloc_type) {
       case _alloc_tlab:
       case _alloc_shared:
@@ -142,7 +167,7 @@ public:
     }
   }
 
-  inline bool is_gc_alloc() {
+  inline bool is_gc_alloc() const {
     switch (_alloc_type) {
       case _alloc_tlab:
       case _alloc_shared:
@@ -157,7 +182,7 @@ public:
     }
   }
 
-  inline bool is_lab_alloc() {
+  inline bool is_lab_alloc() const {
     switch (_alloc_type) {
       case _alloc_tlab:
       case _alloc_gclab:
@@ -172,11 +197,11 @@ public:
     }
   }
 
-  bool is_old() {
+  bool is_old() const {
     return _affiliation == OLD_GENERATION;
   }
 
-  bool is_young() {
+  bool is_young() const {
     return _affiliation == YOUNG_GENERATION;
   }
 

@@ -53,10 +53,6 @@ size_t ShenandoahGlobalGeneration::soft_max_capacity() const {
   return ShenandoahHeap::heap()->soft_max_capacity();
 }
 
-size_t ShenandoahGlobalGeneration::used() const {
-  return ShenandoahHeap::heap()->used();
-}
-
 size_t ShenandoahGlobalGeneration::available() const {
   return ShenandoahHeap::heap()->free_set()->available();
 }

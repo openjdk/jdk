@@ -217,14 +217,16 @@ private:
            size_t _minimum_size;
   volatile size_t _soft_max_size;
   shenandoah_padding(0);
-  volatile size_t _used;
   volatile size_t _committed;
   shenandoah_padding(1);
 
+  void increase_used(const ShenandoahAllocRequest& req);
+
 public:
-  void increase_used(size_t bytes);
-  void decrease_used(size_t bytes);
-  void set_used(size_t bytes);
+  void increase_used(ShenandoahGeneration* generation, size_t bytes);
+  void decrease_used(ShenandoahGeneration* generation, size_t bytes);
+  void increase_humongous_waste(ShenandoahGeneration* generation, size_t bytes);
+  void decrease_humongous_waste(ShenandoahGeneration* generation, size_t bytes);
 
   void increase_committed(size_t bytes);
   void decrease_committed(size_t bytes);
@@ -703,7 +705,7 @@ public:
                                                size_t size,
                                                Metaspace::MetadataType mdtype) override;
 
-  void notify_mutator_alloc_words(size_t words, bool waste);
+  void notify_mutator_alloc_words(size_t words, size_t waste);
 
   HeapWord* allocate_new_tlab(size_t min_size, size_t requested_size, size_t* actual_size) override;
   size_t tlab_capacity(Thread *thr) const override;
