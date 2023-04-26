@@ -34,7 +34,7 @@
 #include "p11_md.h"
 
 
-void *findFunction(JNIEnv *env, jlong jHandle, const char *functionName);
+void *p11FindFunction(JNIEnv *env, jlong jHandle, const char *functionName);
 
 #ifdef SECMOD_DEBUG
 #define dprintf(s) printf(s)

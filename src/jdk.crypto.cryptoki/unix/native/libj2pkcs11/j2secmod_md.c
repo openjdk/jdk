@@ -34,7 +34,7 @@
 #include "j2secmod.h"
 #include "pkcs11wrapper.h"
 
-void *findFunction(JNIEnv *env, jlong jHandle, const char *functionName) {
+void *p11FindFunction(JNIEnv *env, jlong jHandle, const char *functionName) {
     void *hModule = (void*)jlong_to_ptr(jHandle);
     void *fAddress = dlsym(hModule, functionName);
     if (fAddress == NULL) {
