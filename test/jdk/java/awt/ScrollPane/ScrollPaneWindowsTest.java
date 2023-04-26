@@ -44,8 +44,6 @@ import java.awt.event.AdjustmentEvent;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 
-import java.util.Properties;
-
 public class ScrollPaneWindowsTest implements AdjustmentListener {
     ScrollPane sp;
     Panel p;
@@ -58,16 +56,11 @@ public class ScrollPaneWindowsTest implements AdjustmentListener {
     boolean notifyReceived = false;
 
     public static void main(String[] args) throws Exception {
-        Properties prop = System.getProperties();
-        String os = prop.getProperty("os.name", "").toUpperCase();
-        System.out.println("OS= " + os);
-        if (!os.equals("WINDOWS 2000") && !os.equals("WINDOWS 2003") &&
-                !os.equals("WINDOWS XP")) {
-            System.out.println("This test is for Windows 2000/2003/XP only.");
+        if (Double.valueOf(System.getProperty("os.version")) < 5.0) {
+            System.out.println("This test is for Windows 2000 and above.");
             return;
         }
         ScrollPaneWindowsTest scrollTest = new ScrollPaneWindowsTest();
-
         scrollTest.init();
         scrollTest.start();
     }
@@ -86,40 +79,53 @@ public class ScrollPaneWindowsTest implements AdjustmentListener {
         hScroll = (ScrollPaneAdjustable) sp.getHAdjustable();
         vScroll.addAdjustmentListener(this);
         hScroll.addAdjustmentListener(this);
-
     }
 
     public void start() throws Exception {
-        EventQueue.invokeAndWait(() -> {
-            sp.add(p);
-            frame.add(sp);
+        try {
+            EventQueue.invokeAndWait(() -> {
+                sp.add(p);
+                frame.add(sp);
 
-            frame.pack();
-            frame.setLocationRelativeTo(null);
-            frame.setVisible(true);
+                frame.pack();
+                frame.setSize(400, 400);
+                frame.setLocationRelativeTo(null);
+                frame.setVisible(true);
 
-            paneInsets = sp.getInsets();
-            System.out.println("Insets: right = " + paneInsets.right + " bottom =  " + paneInsets.bottom);
-        });
-        robot.wait(100);
-        robot.waitForIdle();
+                paneInsets = sp.getInsets();
+                System.out.println("Insets: right = " + paneInsets.right + " bottom =  " + paneInsets.bottom);
+            });
 
-        robot.mouseMove(sp.getLocationOnScreen().x + sp.getWidth() - paneInsets.right / 2,
-                sp.getLocationOnScreen().y + sp.getHeight() / 2);
-        testOneScrollbar(vScroll);
-        robot.mouseMove(sp.getLocationOnScreen().x + sp.getWidth() / 2,
-                sp.getLocationOnScreen().y + sp.getHeight() - paneInsets.bottom / 2);
-        testOneScrollbar(hScroll);
+            robot.delay(100);
+            robot.waitForIdle();
 
+            robot.mouseMove(sp.getLocationOnScreen().x + sp.getWidth() - paneInsets.right / 2,
+                    sp.getLocationOnScreen().y + sp.getHeight() / 2);
+            testOneScrollbar(vScroll);
+
+            robot.delay(100);
+            robot.waitForIdle();
+
+            robot.mouseMove(sp.getLocationOnScreen().x + sp.getWidth() / 2,
+                    sp.getLocationOnScreen().y + sp.getHeight() - paneInsets.bottom / 2);
+            testOneScrollbar(hScroll);
+        } finally{
+            EventQueue.invokeAndWait(() -> {
+                if (frame != null) {
+                    frame.dispose();
+                }
+            });
+        }
         System.out.println("Test passed. ");
     }
 
-    public void testOneScrollbar(ScrollPaneAdjustable scroll) throws Exception{
+    public void testOneScrollbar(ScrollPaneAdjustable scroll) throws Exception {
         try {
             //to Bottom  - right
             robot.mousePress(InputEvent.BUTTON3_DOWN_MASK);
             robot.mouseRelease(InputEvent.BUTTON3_DOWN_MASK);
             robot.delay(2000);
+            robot.waitForIdle();
 
             notifyReceived = false;
             synchronized (LOCK) {
@@ -134,20 +140,21 @@ public class ScrollPaneWindowsTest implements AdjustmentListener {
                     LOCK.wait(2000);
                 }
                 if (scroll.getValue() + scroll.getVisibleAmount() != scroll.getMaximum()) {
-                    System.out.println(" scroll.getValue() = " + scroll.getValue());
-                    System.out.println(" scroll.getVisibleAmount() =  " + scroll.getVisibleAmount());
-                    System.out.println(" scroll.getMaximum() = " + scroll.getMaximum());
+                    System.out.println("scroll.getValue() = " + scroll.getValue());
+                    System.out.println("scroll.getVisibleAmount() = " + scroll.getVisibleAmount());
+                    System.out.println("scroll.getMaximum() = " + scroll.getMaximum());
                     throw new RuntimeException("Test Failed. Position of scrollbar is incorrect.");
                 } else {
                     System.out.println("Test stage 1 passed.");
                 }
             }
 
-            //top-left
+            //to top-left
             notifyReceived = false;
             robot.mousePress(InputEvent.BUTTON3_DOWN_MASK);
             robot.mouseRelease(InputEvent.BUTTON3_DOWN_MASK);
             robot.delay(2000);
+            robot.waitForIdle();
 
             synchronized (LOCK) {
                 for (int i = 0; i < 2; i++) {
@@ -169,12 +176,6 @@ public class ScrollPaneWindowsTest implements AdjustmentListener {
             }
         } catch (InterruptedException e) {
             throw new RuntimeException("Test interrupted while keys being pressed.", e);
-        } finally {
-            EventQueue.invokeAndWait(() -> {
-                if (frame != null) {
-                    frame.dispose();
-                }
-            });
         }
     }
 
