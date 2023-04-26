@@ -56,7 +56,6 @@ void StubRoutines::zarch::generate_load_absolute_address(MacroAssembler* masm, R
     __ z_cgr(table, Z_R0);  // safety net
     __ z_bre(L);
     __ stop("crc_table: external word relocation required for load_absolute_address", 0x33);
-    __ z_illtrap();
     __ bind(L);
   }
   {
@@ -65,8 +64,7 @@ void StubRoutines::zarch::generate_load_absolute_address(MacroAssembler* masm, R
     __ z_cl(Z_R0, Address(table, 4));  // safety net
     __ z_bre(L);
     __ z_l(Z_R0, Address(table, 4));   // Load data from memory, we know the constant we compared against.
-    __ asm_assert(Assembler::bcondEqual, "crc_table: address or contents seems to be messed up", 0x22);
-    __ z_illtrap();
+    __ stop("crc_table: address or contents seems to be messed up", 0x22);
     __ bind(L);
   }
 #endif
@@ -101,7 +99,6 @@ void StubRoutines::zarch::generate_load_trot_table_addr(MacroAssembler* masm, Re
       __ z_cgr(table, Z_R0);  // safety net
       __ z_bre(L);
       __ stop("crc_table: external word relocation does not work for load_absolute_address", 0x33);
-      __ z_illtrap();
       __ bind(L);
     }
     {
@@ -110,8 +107,7 @@ void StubRoutines::zarch::generate_load_trot_table_addr(MacroAssembler* masm, Re
       __ z_clg(Z_R0, Address(table, 8));  // safety net
       __ z_bre(L);
       __ z_lg(Z_R0, Address(table, 8));   // Load data from memory, we know the constant we compared against.
-      __ asm_assert(Assembler::bcondEqual, "trot_table: address or contents seems to be messed up", 0x22);
-      __ z_illtrap();
+      __ stop("trot_table: address or contents seems to be messed up", 0x22);
       __ bind(L);
     }
 #endif
