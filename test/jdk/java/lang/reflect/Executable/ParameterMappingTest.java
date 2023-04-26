@@ -23,8 +23,7 @@
 
 /*
  * @test
- * @comment Bug ID pending
- * @bug 8284333
+ * @bug 8180892 8284333 8292275
  * @modules java.base/jdk.internal.classfile
  *          java.base/jdk.internal.classfile.attribute
  *          java.base/jdk.internal.classfile.components
@@ -32,16 +31,21 @@
  *          java.base/jdk.internal.classfile.instruction
  * @compile -parameters ParameterMappingTest.java
  * @run junit ParameterMappingTest
- * @summary Core reflection should handle parameters correctly
+ * @summary Core reflection should handle parameters correctly with or without certain attributes
  */
 
+import jdk.internal.classfile.Attributes;
 import jdk.internal.classfile.ClassModel;
 import jdk.internal.classfile.ClassTransform;
 import jdk.internal.classfile.Classfile;
 import jdk.internal.classfile.MethodTransform;
+import jdk.internal.classfile.attribute.InnerClassInfo;
+import jdk.internal.classfile.attribute.InnerClassesAttribute;
 import jdk.internal.classfile.attribute.MethodParametersAttribute;
 import jdk.internal.classfile.attribute.SignatureAttribute;
 import jdk.internal.classfile.components.ClassRemapper;
+import jdk.internal.classfile.constantpool.ConstantPoolBuilder;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -56,15 +60,86 @@ import java.lang.reflect.AnnotatedArrayType;
 import java.lang.reflect.AnnotatedParameterizedType;
 import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.Parameter;
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static jdk.internal.classfile.Classfile.*;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * Checks that parameter info (generics, parameter annotations, type annotations) are
+ * applied correctly in the presence/absence of MethodParameters/Signature attributes.
+ * <p>
+ * Note that this test does not take care of local or anonymous classes in initializers
+ * (yet). They have an outer instance parameter in non-static initializer statements
+ * and no outer instance parameter in static initializer statements, but their
+ * InnerClasses flags do not indicate such static information, nor do their
+ * EnclosingMethod indicate which type of initializer they are in.
+ */
 public class ParameterMappingTest {
+    /**
+     * Loads Outer class that knows the patched inner classes, to prevent other
+     * classloaders from loading the class file and fail on InnerClasses attribute
+     * mismatch.
+     */
+    @BeforeAll
+    public static void beforeTests() {
+        load("Outer", false, false);
+    }
+
+    /**
+     * Checks when both MethodParameters and Signature are present.
+     * This is what javac generates after JDK-8292275.
+     */
+    @Test
+    public void testFull() {
+        checkFullParams("Outer$1Local", ACC_MANDATED, 0, 0, 0, ACC_SYNTHETIC);
+        checkFullParams("Outer$Inner", ACC_MANDATED, 0, 0, 0);
+        checkFullParams("Outer$1Local$LocalInner", ACC_MANDATED, 0, 0);
+        checkFullParams("Outer$1Local$1Sub", ACC_MANDATED, 0, 0, 0, ACC_SYNTHETIC, ACC_SYNTHETIC);
+        checkFullParams("MyEnum", ACC_SYNTHETIC, ACC_SYNTHETIC, 0, 0);
+        checkFullParams("MyEnumNoGeneric", ACC_SYNTHETIC, ACC_SYNTHETIC, 0, 0);
+    }
+
+    /**
+     * Checks when MethodParameters is present but Signature is absent.
+     */
+    @Test
+    public void testNoSignature() {
+        checkNoSignatureParams("Outer$1Local", ACC_MANDATED, 0, 0, 0, ACC_SYNTHETIC);
+        checkNoSignatureParams("Outer$Inner", ACC_MANDATED, 0, 0, 0);
+        checkNoSignatureParams("Outer$1Local$LocalInner", ACC_MANDATED, 0, 0);
+        checkNoSignatureParams("Outer$1Local$1Sub", ACC_MANDATED, 0, 0, 0, ACC_SYNTHETIC, ACC_SYNTHETIC);
+        checkNoSignatureParams("MyEnum", ACC_SYNTHETIC, ACC_SYNTHETIC, 0, 0);
+        checkNoSignatureParams("MyEnumNoGeneric", ACC_SYNTHETIC, ACC_SYNTHETIC, 0, 0);
+    }
+
+    /**
+     * Checks when MethodParameters is absent but Signature is present.
+     * This is what javac generates by default before JDK-8292275.
+     * Core reflection will fall back to the default heuristics, preserving the old behaviors.
+     */
+    @Test
+    public void testNoParams() {
+        // Generic (parameterization) fails for any generics for everything
+        // (Executable::getAllGenericParameterTypes)
+        // Parameter annotations succeeds for enum, inner classes, fails for anonymous/local classes
+        // (Constructor::handleParameterNumberMismatch)
+        // Parameter type annotations succeeds for inner classes, fails for anything else
+        // (TypeAnnotationParser::buildAnnotatedTypesWithHeuristics)
+        checkNoParams("Outer$1Local", 5, false, false, false); // local
+        checkNoParams("Outer$Inner", 4, false, true, true); // inner
+        checkNoParams("Outer$1Local$LocalInner", 3, false, true, true); // inner
+        checkNoParams("Outer$1Local$1Sub", 6, false, false, false); // local
+        checkNoParams("MyEnum", 4, false, true, false); // enum
+        checkNoParams("MyEnumNoGeneric", 4, true, true, false); // no-generic, enum
+    }
+
     private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
 
     private static void assertHidden(Parameter param, int access) {
@@ -130,27 +205,45 @@ public class ParameterMappingTest {
         }
     }
 
-    @Test
-    public void testFull() {
-        checkFullParams("Outer$1Local", ACC_MANDATED, 0, 0, 0, ACC_SYNTHETIC);
-        checkFullParams("Outer$Inner", ACC_MANDATED, 0, 0, 0);
-        checkFullParams("Outer$1Local$LocalInner", ACC_MANDATED, 0, 0);
-        checkFullParams("Outer$1Local$1Sub", ACC_MANDATED, 0, 0, 0, ACC_SYNTHETIC, ACC_SYNTHETIC);
-        checkFullParams("MyEnum", ACC_SYNTHETIC, ACC_SYNTHETIC, 0, 0);
-        checkFullParams("MyEnumNoGeneric", ACC_SYNTHETIC, ACC_SYNTHETIC, 0, 0);
+    private static void checkNoParams(String name, int length, boolean genericSuccess, boolean paramAnnoSuccess, boolean paramTypeAnnoSuccess) {
+        var modelParams = load(name, false, false).getDeclaredConstructors()[0].getParameters();
+        var params = load(name, true, false).getDeclaredConstructors()[0].getParameters();
+        assertEquals(length, params.length);
+        for (int i = 0; i < length; i++) {
+            var modelParam = modelParams[i];
+            var param = params[i];
+            assertFalse(param.isNamePresent());
+            if (genericSuccess) {
+                assertEquals(modelParam.getParameterizedType(), param.getParameterizedType());
+            } else {
+                // core reflection cannot apply generics when there's count mismatch
+                // without MethodParameters attribute
+                assertEquals(param.getType(), param.getParameterizedType());
+            }
+
+            if (paramAnnoSuccess) {
+                assertArrayEquals(modelParam.getAnnotations(), param.getAnnotations());
+            }
+
+            if (paramTypeAnnoSuccess) {
+                if (genericSuccess) {
+                    assertEquals(modelParam.getAnnotatedType(), param.getAnnotatedType());
+                } else {
+                    // Since generics are erased, only top-level type annotations are guaranteed to be present
+                    assertArrayEquals(modelParam.getAnnotatedType().getAnnotations(), param.getAnnotatedType().getAnnotations());
+                }
+            }
+        }
     }
 
-    //@Test // TODO: Classfile API BufferedFieldBuilder.Model broke, needs fixing
-    public void testNoSignature() {
-        checkNoSignatureParams("Outer$1Local", ACC_MANDATED, 0, 0, 0, ACC_SYNTHETIC);
-        checkNoSignatureParams("Outer$Inner", ACC_MANDATED, 0, 0, 0);
-        checkNoSignatureParams("Outer$1Local$LocalInner", ACC_MANDATED, 0, 0);
-        checkNoSignatureParams("Outer$1Local$1Sub", ACC_MANDATED, 0, 0, 0, ACC_SYNTHETIC, ACC_SYNTHETIC);
-        checkNoSignatureParams("MyEnum", ACC_SYNTHETIC, ACC_SYNTHETIC, 0, 0);
-        checkNoSignatureParams("MyEnumNoGeneric", ACC_SYNTHETIC, ACC_SYNTHETIC, 0, 0);
-    }
+    private static final Map<String, Class<?>> defined = new ConcurrentHashMap<>(6 * 4);
 
     private static Class<?> load(String name, boolean dropParams, boolean dropSigs) {
+        String cn = name + (dropParams ? "$DropParams" : "") + (dropSigs ? "$DropSigs" : "");
+        Class<?> cr;
+        if ((cr = defined.get(cn)) != null)
+            return cr;
+
         ClassModel cm;
         try (var in = ParameterMappingTest.class.getResourceAsStream("/" + name + ".class")) {
             Objects.requireNonNull(in);
@@ -159,19 +252,55 @@ public class ParameterMappingTest {
             throw new UncheckedIOException(ex);
         }
 
-        ClassTransform transform = ClassRemapper.of(Map.of(cm.thisClass().asSymbol(), ClassDesc.of(name
-                + (dropParams ? "$DropParams" : "") + (dropSigs ? "$DropSigs" : ""))));
-        if (dropParams) transform = transform.andThen(ClassTransform.transformingMethods(MethodTransform.dropping(me
+        var pipedBytes = ClassRemapper.of(Map.of(cm.thisClass().asSymbol(), ClassDesc.of(cn))).remapClass(cm);
+        if (dropParams) pipedBytes = Classfile.parse(pipedBytes)
+                .transform(ClassTransform.transformingMethods(MethodTransform.dropping(me
                 -> me instanceof MethodParametersAttribute)));
-        if (dropSigs) transform = transform.andThen(ClassTransform.transformingMethods(MethodTransform.dropping(me
+        if (dropSigs) pipedBytes = Classfile.parse(pipedBytes)
+                .transform(ClassTransform.transformingMethods(MethodTransform.dropping(me
                 -> me instanceof SignatureAttribute)));
+        if (!dropParams && !dropSigs) {
+            // insert InnerClasses to prevent reflection glitches
+            cm = parse(pipedBytes);
+            var cp = ConstantPoolBuilder.of(cm);
+            var innerClassOpt = cm.findAttribute(Attributes.INNER_CLASSES);
+            if (innerClassOpt.isPresent()) {
+                var inners = innerClassOpt.get();
+                var list = new ArrayList<>(inners.classes());
+                for (var inner : inners.classes()) {
+                    var innerName = inner.innerClass().asInternalName();
+                    if (checks.contains(innerName)) {
+                        dupInner(list, innerName + "$DropParams", cp, inner);
+                        dupInner(list, innerName + "$DropSigs", cp, inner);
+                        dupInner(list, innerName + "$DropParams$DropSigs", cp, inner);
+                    }
+                }
+                final var currentModel = cm;
+                pipedBytes = Classfile.build(cm.thisClass(), cp, cb -> {
+                    for (var e : currentModel.elements()) {
+                        if (!(e instanceof InnerClassesAttribute)) {
+                            cb.with(e);
+                        }
+                    }
+                    cb.with(InnerClassesAttribute.of(list));
+                });
+            }
+        }
 
         try {
-            return LOOKUP.defineClass(cm.transform(transform));
+            cr = LOOKUP.defineClass(pipedBytes);
+            defined.put(cn, cr);
+            return cr;
         } catch (IllegalAccessException iae) {
             throw new RuntimeException(iae);
         }
     }
+
+    private static void dupInner(List<InnerClassInfo> list, String name, ConstantPoolBuilder cp, InnerClassInfo original) {
+        list.add(InnerClassInfo.of(cp.classEntry(cp.utf8Entry(name)), original.outerClass(), original.innerName(), original.flagsMask()));
+    }
+
+    static final Set<String> checks = Set.of("Outer$Inner", "Outer$1Local", "Outer$1Local$LocalInner", "Outer$1Local$1Sub");
 }
 
 class Outer {
