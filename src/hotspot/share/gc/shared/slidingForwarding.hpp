@@ -28,7 +28,10 @@
 
 #include "memory/allocation.hpp"
 #include "memory/memRegion.hpp"
+#include "oops/markWord.hpp"
 #include "oops/oopsHierarchy.hpp"
+
+class FallbackTable;
 
 /**
  * SlidingForwarding is a method to store forwarding information in a compressed form into the object header,
@@ -63,27 +66,26 @@
  *   for the region of the original object.
  * - Decode the target address by using the target base address and the compressed address bits.
  */
-
 class SlidingForwarding : public CHeapObj<mtGC> {
 #ifdef _LP64
 private:
-  static const uintptr_t MARK_UPPER_HALF_MASK = 0xffffffff00000000;
-
-  static const int NUM_REGION_BITS = 1;
-
-  static const uintptr_t ONE = 1ULL;
-
-  static const size_t NUM_REGIONS = ONE << NUM_REGION_BITS;
+  static const uintptr_t MARK_LOWER_HALF_MASK = 0xffffffff;
 
   // We need the lowest three bits to indicate a forwarded object and self-forwarding.
-  static const int BASE_SHIFT = 3;
+  static const int FALLBACK_SHIFT = markWord::lock_bits;
+  static const int FALLBACK_BITS = 1;
+  static const int FALLBACK_MASK = right_n_bits(FALLBACK_BITS) << FALLBACK_SHIFT;
+  static const int REGION_SHIFT = FALLBACK_SHIFT + FALLBACK_BITS;
+  static const int REGION_BITS = 1;
 
   // The compressed address bits start here.
-  static const int COMPRESSED_BITS_SHIFT = BASE_SHIFT + NUM_REGION_BITS;
+  static const int COMPRESSED_BITS_SHIFT = REGION_SHIFT + REGION_BITS;
 
   // How many bits we use for the compressed pointer (we are going to need one more bit to indicate target region, and
   // two lowest bits to mark objects as forwarded)
-  static const int NUM_COMPRESSED_BITS = 32 - BASE_SHIFT - NUM_REGION_BITS;
+  static const int NUM_COMPRESSED_BITS = 32 - COMPRESSED_BITS_SHIFT;
+
+  static const size_t NUM_REGIONS = 1 << REGION_BITS;
 
   // Indicates an usused base address in the target base table. We cannot use 0, because that may already be
   // a valid base address in zero-based heaps. 0x1 is safe because heap base addresses must be aligned by 2^X.
@@ -94,6 +96,8 @@ private:
   size_t     const _region_size_words_shift;
   HeapWord** const _target_base_table;
 
+  FallbackTable* _fallback_table;
+
   inline size_t region_index_containing(HeapWord* addr) const;
   inline bool region_contains(HeapWord* region_base, HeapWord* addr) const;
 
@@ -101,6 +105,9 @@ private:
   inline HeapWord* decode_forwarding(HeapWord* original, uintptr_t encoded) const;
 
 #endif
+
+  void fallback_forward_to(HeapWord* from, HeapWord* to);
+  HeapWord* fallback_forwardee(HeapWord* from) const;
 
 public:
   SlidingForwarding(MemRegion heap);
@@ -110,6 +117,39 @@ public:
   void clear();
   inline void forward_to(oop original, oop target);
   inline oop forwardee(oop original) const;
+};
+
+/*
+ * A simple hash-table that acts as fallback for the sliding forwarding.
+ * This is used in the case of G1 serial compactio, which violates the
+ * assumption of sliding forwarding that each object of any region is only
+ * ever forwarded to one of two target regions. At this point, the GC is
+ * scrambling to free up more Java heap memory, and therefore performance
+ * is not the major concern.
+ *
+ * The implementation is a straightforward open hashtable.
+ * It is a single-threaded (not thread-safe) implementation, and that
+ * is sufficient because G1 serial compaction is single-threaded.
+ */
+class FallbackTable : public CHeapObj<mtGC>{
+private:
+  struct FallbackTableEntry {
+    FallbackTableEntry* _next;
+    HeapWord* _from;
+    HeapWord* _to;
+  };
+
+  static const size_t TABLE_SIZE = 128;
+  FallbackTableEntry _table[TABLE_SIZE];
+
+  static size_t home_index(HeapWord* from);
+
+public:
+  FallbackTable();
+  ~FallbackTable();
+
+  void forward_to(HeapWord* from, HeapWord* to);
+  HeapWord* forwardee(HeapWord* from) const;
 };
 
 #endif // SHARE_GC_SHARED_SLIDINGFORWARDING_HPP
