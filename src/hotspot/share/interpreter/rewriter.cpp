@@ -473,7 +473,7 @@ void Rewriter::scan_method(Thread* thread, Method* method, bool reverse, bool* i
     }
   }
 
-  // Update flags (if not already set by previous pass)
+  // Update flags
   if (has_monitor_bytecodes) {
     method->set_has_monitor_bytecodes();
   }
