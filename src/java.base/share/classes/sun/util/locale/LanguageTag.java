@@ -417,8 +417,6 @@ public class LanguageTag {
         return found;
     }
 
-    // The algorithm can be defined as the following
-    // If no singleton or private is found
     public static String caseFoldTag(String tag) {
         // Illegal tags
         if (!parse(tag, null).wellFormed) {
