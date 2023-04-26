@@ -43,7 +43,7 @@ public sealed interface InvokeDynamicEntry
     default DynamicCallSiteDesc asSymbol() {
         return DynamicCallSiteDesc.of(bootstrap().bootstrapMethod().asSymbol(),
                                       name().stringValue(),
-                                      MethodTypeDesc.ofDescriptor(type().stringValue()),
+                                      ((AbstractPoolEntry.NameAndTypeEntryImpl)nameAndType()).methodTypeSymbol(),
                                       bootstrap().arguments().stream()
                                                  .map(LoadableConstantEntry::constantValue)
                                                  .toArray(ConstantDesc[]::new));

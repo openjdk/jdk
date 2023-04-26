@@ -305,7 +305,7 @@ public final class StackCounter {
                     case INVOKEVIRTUAL, INVOKESPECIAL, INVOKESTATIC, INVOKEINTERFACE, INVOKEDYNAMIC -> {
                         var cpe = cp.entryByIndex(bcs.getIndexU2());
                         var nameAndType = opcode == INVOKEDYNAMIC ? ((DynamicConstantPoolEntry)cpe).nameAndType() : ((MemberRefEntry)cpe).nameAndType();
-                        var mDesc = MethodTypeDesc.ofDescriptor(nameAndType.type().stringValue());
+                        var mDesc = ((AbstractPoolEntry.NameAndTypeEntryImpl)nameAndType).methodTypeSymbol();
                         for (var arg : mDesc.parameterList()) {
                             stack(-TypeKind.fromDescriptor(arg.descriptorString()).slotSize());
                         }

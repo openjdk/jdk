@@ -758,7 +758,7 @@ public final class StackMapGenerator {
     }
 
     private void processFieldInstructions(RawBytecodeHelper bcs) {
-        var desc = ClassDesc.ofDescriptor(((MemberRefEntry)cp.entryByIndex(bcs.getIndexU2())).nameAndType().type().stringValue());
+        var desc = ((AbstractPoolEntry.NameAndTypeEntryImpl)((MemberRefEntry)cp.entryByIndex(bcs.getIndexU2())).nameAndType()).fieldTypeSymbol();
         switch (bcs.rawCode) {
             case GETSTATIC ->
                 currentFrame.pushStack(desc);

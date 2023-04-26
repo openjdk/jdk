@@ -33,6 +33,7 @@ import jdk.internal.classfile.ClassElement;
 import jdk.internal.classfile.constantpool.ClassEntry;
 import jdk.internal.classfile.constantpool.NameAndTypeEntry;
 import jdk.internal.classfile.constantpool.Utf8Entry;
+import jdk.internal.classfile.impl.AbstractPoolEntry;
 import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
 import jdk.internal.classfile.impl.UnboundAttribute;
@@ -81,7 +82,7 @@ public sealed interface EnclosingMethodAttribute
      * immediately enclosed by a method or constructor}
      */
     default Optional<MethodTypeDesc> enclosingMethodTypeSymbol() {
-        return enclosingMethodType().map(n -> MethodTypeDesc.ofDescriptor(n.stringValue()));
+        return enclosingMethod().map(n -> ((AbstractPoolEntry.NameAndTypeEntryImpl)n).methodTypeSymbol());
     }
 
     /**
