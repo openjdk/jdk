@@ -85,7 +85,7 @@ public class NegativeArraySizeTest {
             throw new Exception("ObjectInputStream::readObject() shouldn't throw a NegativeArraySizeException", nase);
         } catch (ObjectStreamException ose) {
             // OK, because a NegativeArraySizeException should be converted into a ObjectStreamException
-            if ("Array length is negative".equals(ose.getMessage())) {
+            if (!"Array length is negative".equals(ose.getMessage())) {
                 throw new Exception("Expected \"Array length is negative\" as exception message", ose);
             }
         }
@@ -101,7 +101,7 @@ public class NegativeArraySizeTest {
                 throw new Exception("ObjectInputStream::readObject() should catch NegativeArraySizeExceptions before filtering", ice);
             }
             // OK, because a NegativeArraySizeException should be converted into a ObjectStreamException *before* filtering
-            if ("Array length is negative".equals(ose.getMessage())) {
+            if (!"Array length is negative".equals(ose.getMessage())) {
                 throw new Exception("Expected \"Array length is negative\" as exception message", ose);
             }
         }

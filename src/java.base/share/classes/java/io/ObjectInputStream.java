@@ -2139,7 +2139,7 @@ public class ObjectInputStream
         ObjectStreamClass desc = readClassDesc(false);
         int len = bin.readInt();
         if (len < 0) {
-            throw new InvalidClassException(desc.getName(), "Array length is negative");
+            throw new InvalidClassException("Array length is negative");
         }
         filterCheck(desc.forClass(), len);
 
