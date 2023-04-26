@@ -28,10 +28,7 @@ package jdk.internal.misc;
 import static java.lang.Thread.State.*;
 
 import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -499,127 +496,6 @@ public class VM {
      */
     public static List<BufferPool> getBufferPools() {
         return BufferPoolsHolder.BUFFER_POOLS;
-    }
-
-
-    private static boolean isPrivate(Method method) {
-        return method != null && Modifier.isPrivate(method.getModifiers());
-    }
-
-    private static boolean isPublic(Method method) {
-        return method != null && Modifier.isPublic(method.getModifiers());
-    }
-
-    private static boolean isStatic(Method method) {
-        return method != null && Modifier.isStatic(method.getModifiers());
-    }
-
-    /**
-     * Gather all the "main" methods in the class heirarchy.
-     *
-     * @param declc  the top level declaring class
-     * @param refc   the declaring class or super class
-     * @param mains  accumulated main methods
-     */
-    private static void gatherMains(Class<?> declc, Class<?> refc, List<Method> mains) {
-        if (refc != null && refc != Object.class) {
-            gatherMains(declc, refc.getSuperclass(), mains);
-            for (Method method : refc.getDeclaredMethods()) {
-                int argc = method.getParameterCount();
-                // Must be named "main", public|protected|package-private and either
-                // no arguments or one string array argument.
-                if ("main".equals(method.getName()) &&
-                    !isPrivate(method) &&
-                    (argc == 0 || argc == 1 && method.getParameterTypes()[0] == String[].class) &&
-                    // Only statics in the declaring class
-                    (!isStatic(method) || declc == refc)
-                ) {
-                    mains.add(method);
-                }
-            }
-        }
-    }
-
-    /**
-     * Comparator for two methods.
-     * Priority order is;
-     * static < non-static,
-     * public < non-public,
-     * string arg < no arg and
-     * sub-class < super-class.
-     *
-     * @param a  first method
-     * @param b  second method
-     *
-     * @return -1, 0 or 1 to represent higher priority. equals priority or lesser priority.
-     */
-    private static int compareMethods(Method a, Method b) {
-        int aMods = a.getModifiers();
-        int bMods = b.getModifiers();
-        boolean aIsStatic = Modifier.isStatic(aMods);
-        boolean bIsStatic = Modifier.isStatic(bMods);
-        if (aIsStatic && !bIsStatic) {
-            return -1;
-        } else if (bIsStatic && !aIsStatic) {
-            return 1;
-        }
-        boolean aIsPublic = Modifier.isPublic(aMods);
-        boolean bIsPublic = Modifier.isPublic(bMods);
-        if (aIsPublic && !bIsPublic) {
-            return -1;
-        } else if (bIsPublic && !aIsPublic) {
-            return 1;
-        }
-        int aCount = a.getParameterCount();
-        int bCount = b.getParameterCount();
-        if (aCount > bCount) {
-            return -1;
-        } else if (bCount > aCount) {
-            return 1;
-        }
-        Class<?> aClass = a.getDeclaringClass();
-        Class<?> bClass = b.getDeclaringClass();
-        if (bClass.isAssignableFrom(aClass)) {
-            return -1;
-        } else if (bClass.isAssignableFrom(aClass)) {
-            return 1;
-        }
-        return 0;
-    }
-
-    /**
-     * {@return priority main method or null if none found}
-     * @param mainClass main class
-     */
-    public static Method findMainMethod(Class<?> mainClass) throws NoSuchMethodException {
-        try {
-            Method mainMethod = mainClass.getMethod("main", String[].class);
-
-            if (mainMethod.getDeclaringClass() != mainClass) {
-                System.err.println("WARNING: static main in super class will be deprecated.");
-            }
-
-            return mainClass.getMethod("main", String[].class);
-        } catch (NoSuchMethodException nsme) {
-            String[] args = getRuntimeArguments();
-            boolean enablePreview = args != null && List.of(args).contains("--enable-preview");
-
-            if (!enablePreview) {
-                throw nsme;
-            }
-
-            List<Method> mains = new ArrayList<>();
-            gatherMains(mainClass, mainClass, mains);
-
-            if (mains.isEmpty()) {
-                throw new NoSuchMethodException("No main method found");
-            }
-
-            mains.sort(VM::compareMethods);
-            Method mainMethod = mains.get(0);
-
-            return mainMethod;
-        }
     }
 
 }

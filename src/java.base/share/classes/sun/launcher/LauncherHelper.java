@@ -84,6 +84,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import jdk.internal.util.OperatingSystem;
+import jdk.internal.misc.MainMethodFinder;
 import jdk.internal.misc.VM;
 import jdk.internal.module.ModuleBootstrap;
 import jdk.internal.module.Modules;
@@ -864,45 +865,57 @@ public final class LauncherHelper {
     static void validateMainClass(Class<?> mainClass) {
         Method mainMethod = null;
         try {
-            mainMethod = VM.findMainMethod(mainClass);
+            mainMethod = MainMethodFinder.findMainMethod(mainClass);
         } catch (NoSuchMethodException nsme) {
             // invalid main or not FX application, abort with an error
             abort(null, "java.launcher.cls.error4", mainClass.getName(),
                   JAVAFX_APPLICATION_CLASS_NAME);
-        } catch (Throwable throwable) {
+        } catch (Throwable e) {
             if (mainClass.getModule().isNamed()) {
-                abort(throwable, "java.launcher.module.error5",
-                      mainClass.getName(), mainClass.getModule().getName(),
-                      throwable.getClass().getName(), throwable.getLocalizedMessage());
+                abort(e, "java.launcher.module.error5",
+                        mainClass.getName(), mainClass.getModule().getName(),
+                        e.getClass().getName(), e.getLocalizedMessage());
             } else {
-                abort(throwable, "java.launcher.cls.error7", mainClass.getName(),
-                      throwable.getClass().getName(),
-                      throwable.getLocalizedMessage());
+                abort(e, "java.launcher.cls.error7", mainClass.getName(),
+                        e.getClass().getName(), e.getLocalizedMessage());
             }
         }
 
+        /*
+         * getMethod (above) will choose the correct method, based
+         * on its name and parameter type, however, we still have to
+         * ensure that the method is static (non-preview) and returns a void.
+         */
         int mods = mainMethod.getModifiers();
         boolean isStatic = Modifier.isStatic(mods);
+        boolean isPublic = Modifier.isPublic(mods);
+        boolean hasArgs = mainMethod.getParameterCount() != 0;
+
+        if (!MainMethodFinder.isPreview()) {
+            if (!isStatic || !isPublic || !hasArgs) {
+                abort(null, "java.launcher.cls.error2", "static",
+                      mainMethod.getDeclaringClass().getName());
+            }
+        }
 
         if (!isStatic) {
             try {
                 Constructor<?> constructor = mainClass.getDeclaredConstructor();
                 if (Modifier.isPrivate(constructor.getModifiers())) {
                     abort(null, "java.launcher.cls.error8",
-                            mainMethod.getDeclaringClass().getName());
+                          mainMethod.getDeclaringClass().getName());
                 }
             } catch (Throwable ex) {
                 abort(null, "java.launcher.cls.error8",
-                        mainMethod.getDeclaringClass().getName());
+                      mainMethod.getDeclaringClass().getName());
             }
         }
 
         if (mainMethod.getReturnType() != java.lang.Void.TYPE) {
             abort(null, "java.launcher.cls.error3",
-                    mainMethod.getDeclaringClass().getName());
+                  mainMethod.getDeclaringClass().getName());
         }
 
-        boolean hasArgs = mainMethod.getParameterCount() != 0;
         mainType = (isStatic ? 0 : MAIN_NONSTATIC) |
                    (hasArgs ? 0 : MAIN_WITHOUT_ARGS);
     }

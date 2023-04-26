@@ -85,6 +85,7 @@ import com.sun.tools.javac.code.Source;
 import com.sun.tools.javac.resources.LauncherProperties.Errors;
 import com.sun.tools.javac.util.JCDiagnostic.Error;
 
+import jdk.internal.misc.MainMethodFinder;
 import jdk.internal.misc.VM;
 
 import static javax.tools.JavaFileObject.Kind.SOURCE;
@@ -408,13 +409,12 @@ public class Main {
         return mainClassName;
     }
 
-    private static Method findMainMethod(Class<?> appClass) {
-        try {
-            Method findMainMethod = VM.class.getDeclaredMethod("findMainMethod", Class.class);
-            return (Method)findMainMethod.invoke(VM.class, appClass);
-       } catch (Throwable throwable) {
-            return null;
-        }
+    private static boolean isPublic(Method method) {
+        return method != null && Modifier.isPublic(method.getModifiers());
+    }
+
+    private static boolean isStatic(Method method) {
+        return method != null && Modifier.isStatic(method.getModifiers());
     }
 
     /**
@@ -433,17 +433,15 @@ public class Main {
         ClassLoader cl = context.getClassLoader(ClassLoader.getSystemClassLoader());
         try {
             Class<?> appClass = Class.forName(mainClassName, true, cl);
-            Method main = findMainMethod(appClass);
-            if (main == null) {
-                throw new Fault(Errors.CantFindMainMethod(mainClassName));
+            Method main = MainMethodFinder.findMainMethod(appClass);
+            if (!MainMethodFinder.isPreview() && (!isStatic(main) || !isPublic(main))) {
+                throw new Fault(Errors.MainNotPublicStatic);
             }
             if (!main.getReturnType().equals(void.class)) {
                 throw new Fault(Errors.MainNotVoid);
             }
             main.setAccessible(true);
-            int mods = main.getModifiers();
-            boolean isStatic = Modifier.isStatic(mods);
-            if (isStatic) {
+            if (isStatic(main)) {
                 if (main.getParameterCount() == 0) {
                     main.invoke(appClass);
                 } else {

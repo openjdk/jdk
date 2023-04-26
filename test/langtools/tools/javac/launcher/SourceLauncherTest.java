@@ -541,6 +541,30 @@ public class SourceLauncherTest extends TestRunner {
     }
 
     @Test
+    public void testMainBadParams(Path base) throws IOException {
+        tb.writeJavaFiles(base,
+                "class BadParams { public static void main() { } }");
+        testError(base.resolve("BadParams.java"), "",
+                "error: can't find main(String[]) method in class: BadParams");
+    }
+
+    @Test
+    public void testMainNotPublic(Path base) throws IOException {
+        tb.writeJavaFiles(base,
+                "class NotPublic { static void main(String... args) { } }");
+        testError(base.resolve("NotPublic.java"), "",
+                "error: can't find main(String[]) method in class: NotPublic");
+    }
+
+    @Test
+    public void testMainNotStatic(Path base) throws IOException {
+        tb.writeJavaFiles(base,
+                "class NotStatic { public void main(String... args) { } }");
+        testError(base.resolve("NotStatic.java"), "",
+                "error: 'main' method is not declared 'public static'");
+    }
+
+    @Test
     public void testMainNotVoid(Path base) throws IOException {
         tb.writeJavaFiles(base,
                 "class NotVoid { public static int main(String... args) { return 0; } }");
