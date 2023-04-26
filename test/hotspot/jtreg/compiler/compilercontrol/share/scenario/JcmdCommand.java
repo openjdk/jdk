@@ -29,21 +29,23 @@ public class JcmdCommand extends CompileCommand {
     public final Scenario.JcmdType jcmdType;
 
     public JcmdCommand(Command command,
+                       boolean isValid,
                        MethodDescriptor methodDescriptor,
                        Scenario.Compiler compiler,
                        Scenario.Type type,
                        Scenario.JcmdType jcmdType) {
-        super(command, methodDescriptor, compiler, type);
+        super(command, isValid, methodDescriptor, compiler, type);
         this.jcmdType = jcmdType;
     }
 
     public JcmdCommand(Command command,
+                       boolean isValid,
                        MethodDescriptor methodDescriptor,
                        Scenario.Compiler compiler,
                        Scenario.Type type,
                        Scenario.JcmdType jcmdType,
                        String argument) {
-        super(command, methodDescriptor, compiler, type, argument);
+        super(command, isValid, methodDescriptor, compiler, type, argument);
         this.jcmdType = jcmdType;
     }
 

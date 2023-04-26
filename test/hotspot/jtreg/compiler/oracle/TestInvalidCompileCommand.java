@@ -90,7 +90,7 @@ public class TestInvalidCompileCommand {
         }
 
         out.shouldContain("CompileCommand: An error occurred during parsing");
-        out.shouldHaveExitValue(0);
+        out.shouldHaveExitValue(1);
     }
 
     public static void main(String[] args) throws Exception {

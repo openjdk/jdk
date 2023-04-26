@@ -81,9 +81,9 @@ public class MultiCommand extends AbstractTestBase {
             }
             CompileCommand cc;
             if (cmd == Command.INTRINSIC) {
-                cc = cmdGen.generateCompileCommand(cmd, md, null, argument);
+                cc = cmdGen.generateCompileCommand(cmd, true, md, null, argument);
             } else {
-                cc = cmdGen.generateCompileCommand(cmd, md, null);
+                cc = cmdGen.generateCompileCommand(cmd, true, md, null);
             }
             testCases.add(cc);
         }

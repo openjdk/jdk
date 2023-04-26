@@ -69,7 +69,7 @@ public class DirectiveBuilder implements StateBuilder<CompileCommand> {
     public List<CompileCommand> getCompileCommands() {
         return matchBlocks.keySet().stream()
                 // only method descriptor is required to check print_directives
-                .map(md -> new CompileCommand(null, md, null, null))
+                .map(md -> new CompileCommand(null, true, md, null, null))
                 .collect(Collectors.toList());
     }
 
@@ -124,7 +124,7 @@ public class DirectiveBuilder implements StateBuilder<CompileCommand> {
                 Pair<Executable, Callable<?>> pair = METHODS.get(0);
                 MethodDescriptor md = MethodGenerator.anyMatchDescriptor(
                         pair.first);
-                CompileCommand cc = new CompileCommand(Command.QUIET, md,
+                CompileCommand cc = new CompileCommand(Command.QUIET, true, md,
                         null, Scenario.Type.DIRECTIVE);
                 List<CompileCommand> commands = new ArrayList<>();
 

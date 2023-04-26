@@ -46,11 +46,11 @@ public class ControlIntrinsicTest {
         ids[0] = new IntrinsicId("_newArray", true);
         ids[1] = new IntrinsicId("_minF", false);
         ids[2] = new IntrinsicId("_copyOf", true);
-        new IntrinsicCommand(Scenario.Type.OPTION, ids).test();
+        new IntrinsicCommand(Scenario.Type.OPTION, ids, true).test();
 
-        // even though intrinsic ids are invalid, hotspot returns 0
+        // invalid compileCommands, hotspot exits with non-zero retval
         ids[0] = new IntrinsicId("brokenIntrinsic", true);
         ids[1] = new IntrinsicId("invalidIntrinsic", false);
-        new IntrinsicCommand(Scenario.Type.OPTION, ids).test();
+        new IntrinsicCommand(Scenario.Type.OPTION, ids, false).test();
     }
 }

@@ -63,16 +63,16 @@ public class ClearDirectivesStackTest extends AbstractTestBase {
             Executable exec = Utils.getRandomElement(METHODS).first;
             MethodDescriptor methodDescriptor = getValidMethodDescriptor(exec);
             CompileCommand compileCommand = new JcmdCommand(
-                    cmdGen.generateCommand(), methodDescriptor,
+                    cmdGen.generateCommand(), true, methodDescriptor,
                     cmdGen.generateCompiler(), Scenario.Type.JCMD,
                     Scenario.JcmdType.ADD);
             builder.add(compileCommand);
         }
         // clear the stack
-        builder.add(new JcmdCommand(Command.NONEXISTENT, null, null,
+        builder.add(new JcmdCommand(Command.NONEXISTENT, true, null, null,
                 Scenario.Type.JCMD, Scenario.JcmdType.CLEAR));
         // print all directives after the clear
-        builder.add(new JcmdCommand(Command.NONEXISTENT, null, null,
+        builder.add(new JcmdCommand(Command.NONEXISTENT, true, null, null,
                 Scenario.Type.JCMD, Scenario.JcmdType.PRINT));
         Scenario scenario = builder.build();
         scenario.execute();

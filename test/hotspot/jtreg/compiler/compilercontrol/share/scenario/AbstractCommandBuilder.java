@@ -122,6 +122,7 @@ public abstract class AbstractCommandBuilder
                     // Create a copy without compiler set
                     CompileCommand cc = new CompileCommand(
                             compileCommand.command,
+                            compileCommand.isValid,
                             compileCommand.methodDescriptor,
                             /* CompileCommand option and file doesn't support
                                compiler setting */

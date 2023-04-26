@@ -61,7 +61,7 @@ public class AddAndRemoveTest extends AbstractTestBase {
         for (int i = 0; i < AMOUNT; i++) {
             Executable exec = Utils.getRandomElement(METHODS).first;
             MethodDescriptor md = getValidMethodDescriptor(exec);
-            CompileCommand compileCommand = new JcmdCommand(Command.COMPILEONLY,
+            CompileCommand compileCommand = new JcmdCommand(Command.COMPILEONLY, true,
                     md, null, Scenario.Type.JCMD, Scenario.JcmdType.ADD);
             builder.add(compileCommand);
         }
@@ -69,7 +69,7 @@ public class AddAndRemoveTest extends AbstractTestBase {
         for (int i = 0; i < AMOUNT / 2; i++) {
             /* remove jcmd command doesn't need method, compiler etc.
                command will be ignored */
-            builder.add(new JcmdCommand(Command.NONEXISTENT, null, null,
+            builder.add(new JcmdCommand(Command.NONEXISTENT, true, null, null,
                     Scenario.Type.JCMD, Scenario.JcmdType.REMOVE));
         }
         Scenario scenario = builder.build();
