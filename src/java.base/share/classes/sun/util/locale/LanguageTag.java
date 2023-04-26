@@ -31,13 +31,7 @@
  */
 package sun.util.locale;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.StringJoiner;
+import java.util.*;
 
 public class LanguageTag {
     //
@@ -59,7 +53,7 @@ public class LanguageTag {
     private List<String> extlangs = Collections.emptyList();   // extlang subtags
     private List<String> variants = Collections.emptyList();   // variant subtags
     private List<String> extensions = Collections.emptyList(); // extensions
-
+    private boolean wellFormed;
     // Map contains legacy language tags and its preferred mappings from
     // http://www.ietf.org/rfc/rfc5646.txt
     // Keys are lower-case strings.
@@ -208,8 +202,8 @@ public class LanguageTag {
             tag.parseExtensions(itr, sts);
         }
         tag.parsePrivateuse(itr, sts);
-
         if (!itr.isDone() && !sts.isError()) {
+            tag.wellFormed = false;
             String s = itr.current();
             sts.errorIndex = itr.currentStart();
             if (s.isEmpty()) {
@@ -217,10 +211,12 @@ public class LanguageTag {
             } else {
                 sts.errorMsg = "Invalid subtag: " + s;
             }
+        } else {
+            tag.wellFormed = true;
         }
-
         return tag;
     }
+
 
     //
     // Language subtag parsers
@@ -412,6 +408,46 @@ public class LanguageTag {
         }
 
         return found;
+    }
+
+    // The algorithm can be defined as the following
+    // If no singleton or private is found
+    public static String caseFoldTag(String tag) {
+        // Illegal tags
+        if (!parse(tag, null).wellFormed) {
+            throw new IllegalArgumentException("Ill formed tag");
+        }
+        // Legacy tags
+        if (LEGACY.containsKey(tag.toLowerCase(Locale.ROOT))) {
+            return LEGACY.get(tag.toLowerCase(Locale.ROOT))[0];
+        }
+        // Non-legacy tags
+        StringBuilder bldr = new StringBuilder();
+        String[] subtags = tag.split("-");
+        boolean privateFound = false;
+        boolean singletonFound = false;
+        for (int i = 0; i < subtags.length; i++) {
+            // Variant subtag should not be case folded
+            // Ensure current subtag isn't a singleton / private extension
+            if (i > 0 && isVariant(subtags[i]) && !singletonFound && !privateFound) {
+                bldr.append(subtags[i]);
+            } else if (i > 0 && isRegion(subtags[i]) && !singletonFound && !privateFound) {
+                bldr.append(canonicalizeRegion(subtags[i]));
+            } else if (i > 0 && isScript(subtags[i]) && !singletonFound && !privateFound) {
+                bldr.append(canonicalizeScript(subtags[i]));
+            // If subtag is not 2 letter, 4 letter, or variant
+            // under the right conditions, then it should be lower-case
+            } else {
+                if (isPrivateusePrefix(subtags[i])) {
+                    privateFound = true;
+                } else if (isExtensionSingleton(subtags[i])) {
+                    singletonFound = true;
+                }
+                bldr.append(subtags[i].toLowerCase(Locale.ROOT));
+            }
+            bldr.append("-");
+        }
+        return bldr.substring(0, bldr.length()-1);
     }
 
     public static LanguageTag parseLocale(BaseLocale baseLocale, LocaleExtensions localeExtensions) {
