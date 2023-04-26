@@ -72,5 +72,4 @@ public class ComponentResizedTest extends Frame {
                     "Paint called.");
         }
     }
-
 }
