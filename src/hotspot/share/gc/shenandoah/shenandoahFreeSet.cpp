@@ -549,18 +549,7 @@ HeapWord* ShenandoahFreeSet::allocate_contiguous(ShenandoahAllocRequest& req) {
 
     r->set_affiliation(req.affiliation());
     r->set_update_watermark(r->bottom());
-    r->set_top(r->bottom());    // Set top to bottom so we can capture TAMS
-    ctx->capture_top_at_mark_start(r);
-    r->set_top(r->bottom() + used_words); // Then change top to reflect allocation of humongous object.
-    assert(ctx->top_at_mark_start(r) == r->bottom(), "Newly established allocation region starts with TAMS equal to bottom");
-    assert(ctx->is_bitmap_clear_range(ctx->top_bitmap(r), r->end()), "Bitmap above top_bitmap() must be clear");
-
-    // Leave top_bitmap alone.  The first time a heap region is put into service, top_bitmap should equal end.
-    // Thereafter, it should represent the upper bound on parts of the bitmap that need to be cleared.
-    // ctx->clear_bitmap(r);
-    log_debug(gc, free)("NOT clearing bitmap for Humongous region [" PTR_FORMAT ", " PTR_FORMAT "], top_bitmap: "
-                        PTR_FORMAT " at transition from FREE to %s",
-                        p2i(r->bottom()), p2i(r->end()), p2i(ctx->top_bitmap(r)), req.affiliation_name());
+    r->set_top(r->bottom() + used_words);
 
     // While individual regions report their true use, all humongous regions are marked used in the free set.
     _mutator_free_bitmap.clear_bit(r->index());
