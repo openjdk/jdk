@@ -2147,9 +2147,11 @@ NOINLINE void ThawBase::recurse_thaw_interpreted_frame(const frame& hf, frame& c
   assert(hf.is_heap_frame(), "should be");
   assert(!f.is_heap_frame(), "should not be");
 
+  const int fsize = heap_frame_bottom - heap_frame_top;
+  assert((stack_frame_bottom == stack_frame_top + fsize), "");
+
   // Some architectures (like AArch64/PPC64/RISC-V) add padding between the locals and the fixed_frame to keep the fp 16-byte-aligned.
   // On those architectures we freeze the padding in order to keep the same fp-relative offsets in the fixed_frame.
-  const int fsize = heap_frame_bottom - heap_frame_top;
   copy_from_chunk(heap_frame_top, stack_frame_top, fsize);
 
   // Make sure the relativized locals is already set.
