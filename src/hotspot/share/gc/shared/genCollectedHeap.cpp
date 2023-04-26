@@ -133,7 +133,7 @@ jint GenCollectedHeap::initialize() {
 
   GCInitLogger::print();
 
-  GCForwarding::initialize(_reserved);
+  GCForwarding::initialize(_reserved, SpaceAlignment);
 
   return JNI_OK;
 }

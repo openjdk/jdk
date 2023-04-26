@@ -405,7 +405,7 @@ jint ShenandoahHeap::initialize() {
 
   ShenandoahInitLogger::print();
 
-  GCForwarding::initialize(_heap_region, ShenandoahHeapRegion::region_size_words_shift());
+  GCForwarding::initialize(_heap_region, ShenandoahHeapRegion::region_size_words());
 
   return JNI_OK;
 }

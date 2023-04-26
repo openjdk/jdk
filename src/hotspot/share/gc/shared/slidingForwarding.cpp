@@ -23,64 +23,59 @@
  *
  */
 
+#ifdef _LP64
+
 #include "precompiled.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/slidingForwarding.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/powerOfTwo.hpp"
 
-#ifdef _LP64
 HeapWord* const SlidingForwarding::UNUSED_BASE = reinterpret_cast<HeapWord*>(0x1);
-#endif
 
-SlidingForwarding::SlidingForwarding(MemRegion heap)
-#ifdef _LP64
+SlidingForwarding::SlidingForwarding(MemRegion heap, size_t region_size_words)
   : _heap_start(heap.start()),
-    _num_regions(((heap.end() - heap.start()) >> NUM_COMPRESSED_BITS) + 1),
-    _region_size_words_shift(NUM_COMPRESSED_BITS),
-    _target_base_table(NEW_C_HEAP_ARRAY(HeapWord*, _num_regions * 2, mtGC)),
-    _fallback_table(nullptr) {
-  assert(_region_size_words_shift <= NUM_COMPRESSED_BITS, "regions must not be larger than maximum addressing bits allow");
-#else
-  {
-#endif
-}
-
-SlidingForwarding::SlidingForwarding(MemRegion heap, size_t region_size_words_shift)
-#ifdef _LP64
-  : _heap_start(heap.start()),
-  _num_regions(((heap.end() - heap.start()) >> region_size_words_shift) + 1),
-  _region_size_words_shift(region_size_words_shift),
-  _target_base_table(NEW_C_HEAP_ARRAY(HeapWord*, _num_regions * NUM_REGIONS, mtGC)),
+    _num_regions(((heap.end() - heap.start()) / region_size_words) + 1),
+    _region_size_words_shift(log2i_exact(region_size_words)),
+  _target_base_table(nullptr),
   _fallback_table(nullptr) {
-  assert(region_size_words_shift <= NUM_COMPRESSED_BITS, "regions must not be larger than maximum addressing bits allow");
-#else
-  {
-#endif
+  assert(_region_size_words_shift <= NUM_COMPRESSED_BITS, "regions must not be larger than maximum addressing bits allow");
+  size_t heap_size_words = heap.end() - heap.start();
+  if (UseSerialGC && heap_size_words <= (1 << NUM_COMPRESSED_BITS)) {
+    // In this case we can treat the whole heap as a single region and
+    // make the encoding very simple.
+    _num_regions = 1;
+    _region_size_words_shift = log2i_exact(round_up_power_of_2(heap_size_words));
+  }
 }
 
 SlidingForwarding::~SlidingForwarding() {
-#ifdef _LP64
-  FREE_C_HEAP_ARRAY(HeapWord*, _target_base_table);
+  if (_target_base_table != nullptr) {
+    FREE_C_HEAP_ARRAY(HeapWord*, _target_base_table);
+  }
   if (_fallback_table != nullptr) {
     delete _fallback_table;
-    _fallback_table = nullptr;
-    //FREE_C_HEAP_OBJ(_fallback_table);
   }
-#endif
 }
 
-void SlidingForwarding::clear() {
-#ifdef _LP64
-  size_t max = _num_regions * NUM_REGIONS;
+void SlidingForwarding::begin() {
+  assert(_target_base_table == nullptr, "Should be uninitialized");
+  _target_base_table = NEW_C_HEAP_ARRAY(HeapWord*, _num_regions * NUM_TARGET_REGIONS, mtGC);
+  size_t max = _num_regions * NUM_TARGET_REGIONS;
   for (size_t i = 0; i < max; i++) {
     _target_base_table[i] = UNUSED_BASE;
   }
+}
+
+void SlidingForwarding::end() {
+  if (_target_base_table != nullptr) {
+    FREE_C_HEAP_ARRAY(HeapWord*, _target_base_table);
+    _target_base_table = nullptr;
+  }
   if (_fallback_table != nullptr) {
     delete _fallback_table;
     _fallback_table = nullptr;
-    //FREE_C_HEAP_OBJ(_fallback_table);
   }
-#endif
 }
 
 void SlidingForwarding::fallback_forward_to(HeapWord* from, HeapWord* to) {
@@ -155,3 +150,5 @@ HeapWord* FallbackTable::forwardee(HeapWord* from) const {
   }
   return nullptr;
 }
+
+#endif // _LP64

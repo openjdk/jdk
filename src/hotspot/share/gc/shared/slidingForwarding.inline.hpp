@@ -25,11 +25,12 @@
 #ifndef SHARE_GC_SHARED_SLIDINGFORWARDING_INLINE_HPP
 #define SHARE_GC_SHARED_SLIDINGFORWARDING_INLINE_HPP
 
+#ifdef _LP64
+
 #include "gc/shared/slidingForwarding.hpp"
 #include "oops/markWord.hpp"
 #include "oops/oop.inline.hpp"
 
-#ifdef _LP64
 size_t SlidingForwarding::region_index_containing(HeapWord* addr) const {
   assert(addr >= _heap_start, "sanity: addr: " PTR_FORMAT " heap base: " PTR_FORMAT, p2i(addr), p2i(_heap_start));
   size_t index = ((size_t) (addr - _heap_start)) >> _region_size_words_shift;
@@ -48,7 +49,7 @@ uintptr_t SlidingForwarding::encode_forwarding(HeapWord* original, HeapWord* tar
   size_t target_idx = region_index_containing(target);
   HeapWord* encode_base;
   uintptr_t region_idx;
-  for (region_idx = 0; region_idx < NUM_REGIONS; region_idx++) {
+  for (region_idx = 0; region_idx < NUM_TARGET_REGIONS; region_idx++) {
     encode_base = _target_base_table[base_table_idx + region_idx];
     if (encode_base == UNUSED_BASE) {
       encode_base = _heap_start + target_idx * (1 << _region_size_words_shift);
@@ -58,11 +59,11 @@ uintptr_t SlidingForwarding::encode_forwarding(HeapWord* original, HeapWord* tar
       break;
     }
   }
-  if (region_idx >= NUM_REGIONS) {
+  if (region_idx >= NUM_TARGET_REGIONS) {
     assert(UseG1GC, "Only happens with G1 serial compaction");
     return 1 << FALLBACK_SHIFT | markWord::marked_value;
   }
-  assert(region_idx < NUM_REGIONS, "need to have found an encoding base");
+  assert(region_idx < NUM_TARGET_REGIONS, "need to have found an encoding base");
   assert(target >= encode_base, "target must be above encode base, target:" PTR_FORMAT ", encoded_base: " PTR_FORMAT ",  target_idx: " SIZE_FORMAT ", heap start: " PTR_FORMAT ", region_idx: " INTPTR_FORMAT,
          p2i(target), p2i(encode_base), target_idx, p2i(_heap_start), region_idx);
   assert(region_contains(encode_base, target), "region must contain target: original: " PTR_FORMAT ", target: " PTR_FORMAT ", encode_base: " PTR_FORMAT ", region_idx: " INTPTR_FORMAT, p2i(original), p2i(target), p2i(encode_base), region_idx);
@@ -81,10 +82,8 @@ HeapWord* SlidingForwarding::decode_forwarding(HeapWord* original, uintptr_t enc
   assert(decoded >= _heap_start, "must be above heap start, encoded: " INTPTR_FORMAT ", region_idx: " SIZE_FORMAT ", base: " PTR_FORMAT, encoded, region_idx, p2i(_target_base_table[base_table_idx]));
   return decoded;
 }
-#endif
 
 void SlidingForwarding::forward_to(oop original, oop target) {
-#ifdef _LP64
   markWord header = original->mark();
   if (header.has_displaced_mark_helper()) {
     header = header.displaced_mark_helper();
@@ -99,13 +98,9 @@ void SlidingForwarding::forward_to(oop original, oop target) {
     fallback_forward_to(from, to);
     return;
   }
-#else
-  original->forward_to(target);
-#endif
 }
 
 oop SlidingForwarding::forwardee(oop original) const {
-#ifdef _LP64
   markWord header = original->mark();
   if ((header.value() & FALLBACK_MASK) != 0) {
     //tty->print_cr("fallback forwardee mark: " INTPTR_FORMAT, header.value());
@@ -117,9 +112,7 @@ oop SlidingForwarding::forwardee(oop original) const {
   uintptr_t encoded = header.value() & MARK_LOWER_HALF_MASK;
   HeapWord* forwardee = decode_forwarding(cast_from_oop<HeapWord*>(original), encoded);
   return cast_to_oop(forwardee);
-#else
-  return original->forwardee();
-#endif
 }
 
+#endif // _LP64
 #endif // SHARE_GC_SHARED_SLIDINGFORWARDING_INLINE_HPP

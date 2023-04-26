@@ -26,6 +26,8 @@
 #ifndef SHARE_GC_SHARED_SLIDINGFORWARDING_HPP
 #define SHARE_GC_SHARED_SLIDINGFORWARDING_HPP
 
+#ifdef _LP64
+
 #include "memory/allocation.hpp"
 #include "memory/memRegion.hpp"
 #include "oops/markWord.hpp"
@@ -67,7 +69,6 @@ class FallbackTable;
  * - Decode the target address by using the target base address and the compressed address bits.
  */
 class SlidingForwarding : public CHeapObj<mtGC> {
-#ifdef _LP64
 private:
   static const uintptr_t MARK_LOWER_HALF_MASK = 0xffffffff;
 
@@ -85,16 +86,16 @@ private:
   // two lowest bits to mark objects as forwarded)
   static const int NUM_COMPRESSED_BITS = 32 - COMPRESSED_BITS_SHIFT;
 
-  static const size_t NUM_REGIONS = 1 << REGION_BITS;
+  static const size_t NUM_TARGET_REGIONS = 1 << REGION_BITS;
 
   // Indicates an usused base address in the target base table. We cannot use 0, because that may already be
   // a valid base address in zero-based heaps. 0x1 is safe because heap base addresses must be aligned by 2^X.
   static HeapWord* const UNUSED_BASE;
 
   HeapWord*  const _heap_start;
-  size_t     const _num_regions;
-  size_t     const _region_size_words_shift;
-  HeapWord** const _target_base_table;
+  size_t           _num_regions;
+  size_t           _region_size_words_shift;
+  HeapWord**       _target_base_table;
 
   FallbackTable* _fallback_table;
 
@@ -104,17 +105,16 @@ private:
   inline uintptr_t encode_forwarding(HeapWord* original, HeapWord* target);
   inline HeapWord* decode_forwarding(HeapWord* original, uintptr_t encoded) const;
 
-#endif
-
   void fallback_forward_to(HeapWord* from, HeapWord* to);
   HeapWord* fallback_forwardee(HeapWord* from) const;
 
 public:
-  SlidingForwarding(MemRegion heap);
-  SlidingForwarding(MemRegion heap, size_t num_regions);
+  SlidingForwarding(MemRegion heap, size_t region_size_words);
   ~SlidingForwarding();
 
-  void clear();
+  void begin();
+  void end();
+
   inline void forward_to(oop original, oop target);
   inline oop forwardee(oop original) const;
 };
@@ -152,4 +152,5 @@ public:
   HeapWord* forwardee(HeapWord* from) const;
 };
 
+#endif // _LP64
 #endif // SHARE_GC_SHARED_SLIDINGFORWARDING_HPP
