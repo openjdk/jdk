@@ -130,7 +130,13 @@ public class caseFoldLanguageTagTest {
                 // regular
                 Arguments.of("NO-BOK", "no-bok"),
                 Arguments.of("CEL-GAULISH", "cel-gaulish"),
-                Arguments.of("ZH-MIN-NAN", "zh-min-nan")
+                Arguments.of("ZH-MIN-NAN", "zh-min-nan"),
+
+                // Special JDK Cases
+                Arguments.of("de-POSIX-x-URP-lvariant-Abc-Def", "de-POSIX-x-urp-lvariant-Abc-Def"),
+                Arguments.of("ja-JP-x-lvariant-JP", "ja-JP-x-lvariant-JP"),
+                Arguments.of("ja-JP-u-ca-japanese-x-lvariant-JP", "ja-JP-u-ca-japanese-x-lvariant-JP"),
+                Arguments.of("en-US-x-lvariant-POSIX", "en-US-x-lvariant-POSIX")
         );
     }
 

@@ -432,10 +432,11 @@ public class LanguageTag {
         String[] subtags = tag.split("-");
         boolean privateFound = false;
         boolean singletonFound = false;
+        boolean privUseVarFound = false;
         for (int i = 0; i < subtags.length; i++) {
-            // Variant subtag should not be case folded
-            // Ensure current subtag isn't a singleton / private extension
-            if (i > 0 && isVariant(subtags[i]) && !singletonFound && !privateFound) {
+            if (privUseVarFound) {
+                bldr.append(subtags[i]);
+            } else if (i > 0 && isVariant(subtags[i]) && !singletonFound && !privateFound) {
                 bldr.append(subtags[i]);
             } else if (i > 0 && isRegion(subtags[i]) && !singletonFound && !privateFound) {
                 bldr.append(canonicalizeRegion(subtags[i]));
@@ -448,6 +449,8 @@ public class LanguageTag {
                     privateFound = true;
                 } else if (isExtensionSingleton(subtags[i])) {
                     singletonFound = true;
+                } else if (subtags[i].equals(PRIVUSE_VARIANT_PREFIX)) {
+                    privUseVarFound = true;
                 }
                 bldr.append(subtags[i].toLowerCase(Locale.ROOT));
             }

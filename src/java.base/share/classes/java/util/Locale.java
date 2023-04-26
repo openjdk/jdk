@@ -1697,7 +1697,7 @@ public final class Locale implements Cloneable, Serializable {
      * of the tag "aZ-laTN-X-LATN" is "az-Latn-x-latn". Excluding case folding,
      * this method makes no modifications to the tag itself. Similar to
      * {@link #forLanguageTag(String)}, this method will not normalize case
-     * for variant tags.
+     * for variant tags and the portion of a private use subtag prefixed by "lvariant".
      *
      * <p>Case convention of language tags does not carry meaning, and is simply
      * recommended as it corresponds with various ISO standards, including:
