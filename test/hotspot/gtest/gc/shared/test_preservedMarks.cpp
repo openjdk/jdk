@@ -55,6 +55,8 @@ TEST_VM(PreservedMarks, iterate_and_restore) {
   FakeOop o3;
   FakeOop o4;
 
+  FlagSetting fs(UseAltGCForwarding, false);
+
   // Make sure initial marks are correct.
   ASSERT_MARK_WORD_EQ(o1.mark(), FakeOop::originalMark());
   ASSERT_MARK_WORD_EQ(o2.mark(), FakeOop::originalMark());
