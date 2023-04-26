@@ -406,36 +406,7 @@ public class Exhaustiveness extends TestRunner {
     }
 
     @Test
-    public void testExhaustiveStatement3(Path base) throws Exception {
-        doTest(base,
-               new String[]{"""
-                            package lib;
-                            public sealed interface S permits A, B {}
-                            """,
-                            """
-                            package lib;
-                            public final class A implements S {}
-                            """,
-                            """
-                            package lib;
-                            public final class B implements S {}
-                            """},
-               """
-               package test;
-               import lib.*;
-               public class Test {
-                   private int test(S obj) {
-                       return switch (obj) {
-                           case A a -> 0;
-                           case S s -> 1;
-                       };
-                   }
-               }
-               """);
-    }
-
-    @Test
-    public void testExhaustiveStatement4(Path base) throws Exception {
+    public void testExhaustiveExpression1(Path base) throws Exception {
         doTest(base,
                new String[]{"""
                             package lib;
@@ -465,7 +436,7 @@ public class Exhaustiveness extends TestRunner {
     }
 
     @Test
-    public void testExhaustiveStatement5(Path base) throws Exception {
+    public void testExhaustiveExpression2(Path base) throws Exception {
         doTest(base,
                new String[]{"""
                             package lib;
@@ -573,102 +544,72 @@ public class Exhaustiveness extends TestRunner {
     }
 
     @Test
-    public void testExhaustiveIntersection(Path base) throws Exception {
-        doTest(base,
-               new String[]{"""
-                            package lib;
-                            public sealed interface S permits A, B {}
-                            """,
-                            """
-                            package lib;
-                            public abstract class Base {}
-                            """,
-                            """
-                            package lib;
-                            public interface Marker {}
-                            """,
-                            """
-                            package lib;
-                            public final class A extends Base implements S, Marker {}
-                            """,
-                            """
-                            package lib;
-                            public abstract sealed class B extends Base implements S permits C, D {}
-                            """,
-                            """
-                            package lib;
-                            public final class C extends B implements Marker {}
-                            """,
-                            """
-                            package lib;
-                            public final class D extends B implements Marker {}
-                            """},
-               """
-               package test;
-               import lib.*;
-               public class Test {
-                   private <T extends Base & S & Marker> int test(T obj, boolean b) {
-                       return switch (obj) {
-                           case A a -> 0;
-                           case C c when b -> 0;
-                           case C c -> 0;
-                           case D d -> 0;
-                       };
+    public void testIntersection(Path base) throws Exception {
+        record TestCase(String snippet, String... expected){}
+        TestCase[] testCases = new TestCase[] {
+            new TestCase("""
+                         return switch (obj) {
+                             case A a -> 0;
+                             case C c when b -> 0;
+                             case C c -> 0;
+                             case D d -> 0;
+                         };
+                         """),
+            new TestCase("""
+                         return switch (obj) {
+                             case A a -> 0;
+                             case C c -> 0;
+                             case D d when b -> 0;
+                         };
+                         """,
+                         "Test.java:5:16: compiler.err.not.exhaustive",
+                         "1 error")
+        };
+        for (TestCase tc : testCases) {
+            doTest(base,
+                   new String[]{"""
+                                package lib;
+                                public sealed interface S permits A, B {}
+                                """,
+                                """
+                                package lib;
+                                public abstract class Base {}
+                                """,
+                                """
+                                package lib;
+                                public interface Marker {}
+                                """,
+                                """
+                                package lib;
+                                public final class A extends Base implements S, Marker {}
+                                """,
+                                """
+                                package lib;
+                                public abstract sealed class B extends Base implements S permits C, D {}
+                                """,
+                                """
+                                package lib;
+                                public final class C extends B implements Marker {}
+                                """,
+                                """
+                                package lib;
+                                public final class D extends B implements Marker {}
+                                """},
+                   """
+                   package test;
+                   import lib.*;
+                   public class Test {
+                       private <T extends Base & S & Marker> int test(T obj, boolean b) {
+                           ${tc.snippet()}
+                       }
                    }
-               }
-               """);
+                   """.replace("${tc.snippet()}", tc.snippet()),
+                   tc.expected());
+        }
     }
 
     @Test
-    public void testNotExhaustiveIntersection(Path base) throws Exception {
-        doTest(base,
-               new String[]{"""
-                            package lib;
-                            public sealed interface S permits A, B {}
-                            """,
-                            """
-                            package lib;
-                            public abstract class Base {}
-                            """,
-                            """
-                            package lib;
-                            public interface Marker {}
-                            """,
-                            """
-                            package lib;
-                            public final class A extends Base implements S, Marker {}
-                            """,
-                            """
-                            package lib;
-                            public abstract sealed class B extends Base implements S permits C, D {}
-                            """,
-                            """
-                            package lib;
-                            public final class C extends B implements Marker {}
-                            """,
-                            """
-                            package lib;
-                            public final class D extends B implements Marker {}
-                            """},
-               """
-               package test;
-               import lib.*;
-               public class Test {
-                   private <T extends Base & S & Marker> int test(T obj, boolean b) {
-                       return switch (obj) {
-                           case A a -> 0;
-                           case C c -> 0;
-                           case D d when b -> 0;
-                       };
-                   }
-               }
-               """,
-               "Test.java:5:16: compiler.err.not.exhaustive",
-               "1 error");
-    }
-
-    @Test
-    public void testX(Path base) throws Exception {
+    public void testRecordPatterns(Path base) throws Exception {
         doTest(base,
                new String[]{"""
                             package lib;
