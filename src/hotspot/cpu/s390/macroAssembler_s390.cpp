@@ -2125,7 +2125,7 @@ void MacroAssembler::pop_frame() {
 // Pop current C frame and restore return PC register (Z_R14).
 void MacroAssembler::pop_frame_restore_retPC(int frame_size_in_bytes) {
   BLOCK_COMMENT("pop_frame_restore_retPC:");
-  int retPC_offset = _z_abi16(return_pc) + frame_size_in_bytes;
+  int retPC_offset = _z_common_abi(return_pc) + frame_size_in_bytes;
   // If possible, pop frame by add instead of load (a penny saved is a penny got :-).
   if (Displacement::is_validDisp(retPC_offset)) {
     z_lg(Z_R14, retPC_offset, Z_SP);
