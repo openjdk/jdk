@@ -60,7 +60,7 @@ public sealed interface ModuleDesc
      *
      * @return the module name
      */
-    String moduleName();
+    String name();
 
     /**
      * Compare the specified object with this descriptor for equality.

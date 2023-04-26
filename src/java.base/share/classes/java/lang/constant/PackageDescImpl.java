@@ -26,12 +26,12 @@ package java.lang.constant;
 
 /*
  * Implementation of {@code PackageDesc}
- * @param packageInternalName must have been validated
+ * @param internalName must have been validated
  */
-record PackageDescImpl(String packageInternalName) implements PackageDesc {
+record PackageDescImpl(String internalName) implements PackageDesc {
 
     @Override
     public String toString() {
-        return String.format("PackageDesc[%s]", packageName());
+        return String.format("PackageDesc[%s]", name());
     }
 }

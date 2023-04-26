@@ -26,12 +26,12 @@ package java.lang.constant;
 
 /*
  * Implementation of {@code ModuleDesc}
- * @param moduleName must have been validated
+ * @param name must have been validated
  */
-record ModuleDescImpl(String moduleName) implements ModuleDesc {
+record ModuleDescImpl(String name) implements ModuleDesc {
 
     @Override
     public String toString() {
-        return String.format("ModuleDesc[%s]", moduleName());
+        return String.format("ModuleDesc[%s]", name());
     }
 }

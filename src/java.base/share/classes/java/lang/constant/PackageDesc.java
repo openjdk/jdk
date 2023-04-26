@@ -82,9 +82,9 @@ public sealed interface PackageDesc
      *
      * @return the package name in internal form, or the empty string for the
      * unnamed package
-     * @see PackageDesc#packageName()
+     * @see PackageDesc#name()
      */
-    String packageInternalName();
+    String internalName();
 
     /**
      * Returns the fully qualified (dot-separated) package name
@@ -92,10 +92,10 @@ public sealed interface PackageDesc
      *
      * @return the package name, or the empty string for the
      * unnamed package
-     * @see PackageDesc#packageInternalName()
+     * @see PackageDesc#internalName()
      */
-    default String packageName() {
-        return ConstantUtils.internalToBinary(packageInternalName());
+    default String name() {
+        return ConstantUtils.internalToBinary(internalName());
     }
 
     /**
