@@ -254,7 +254,7 @@ void InterpreterMacroAssembler::get_cache_and_index_at_bcp(Register cache,
                                                            size_t index_size) {
   assert_different_registers(cache, index);
   assert_different_registers(cache, xcpool);
-  //register "cache" is trashed in next shadd, so lets use it as a temporary register
+  // register "cache" is trashed in next shadd, so lets use it as a temporary register
   get_cache_index_at_bcp(index, cache, bcp_offset, index_size);
   assert(sizeof(ConstantPoolCacheEntry) == 4 * wordSize, "adjust code below");
   // Convert from field index to ConstantPoolCacheEntry
@@ -292,7 +292,7 @@ void InterpreterMacroAssembler::get_cache_entry_pointer_at_bcp(Register cache,
                                                                int bcp_offset,
                                                                size_t index_size) {
   assert_different_registers(cache, tmp);
-  //register "cache" is trashed in next ld, so lets use it as a temporary register
+  // register "cache" is trashed in next ld, so lets use it as a temporary register
   get_cache_index_at_bcp(tmp, cache, bcp_offset, index_size);
   assert(sizeof(ConstantPoolCacheEntry) == 4 * wordSize, "adjust code below");
   // Convert from field index to ConstantPoolCacheEntry index

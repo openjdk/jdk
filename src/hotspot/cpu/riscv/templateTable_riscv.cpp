@@ -375,7 +375,7 @@ void TemplateTable::fast_aldc(LdcType type) {
   // We are resolved if the resolved reference cache entry contains a
   // non-null object (String, MethodType, etc.)
   assert_different_registers(result, tmp);
-  //register result is trashed by next load, let's use it as temporary register
+  // register result is trashed by next load, let's use it as temporary register
   __ get_cache_index_at_bcp(tmp, result, 1, index_size);
   __ load_resolved_reference_at_index(result, tmp);
   __ bnez(result, resolved);
