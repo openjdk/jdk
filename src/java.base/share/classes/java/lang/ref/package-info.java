@@ -102,10 +102,9 @@
  *
  * <li> Actions in a thread prior to calling
  * {@link Reference#reachabilityFence Reference.reachabilityFence(x)}
- * <i>happen-before</i> the garbage collector enqueues any reference to {@code x}
- * on a queue.</li>
+ * <i>happen-before</i> the garbage collector enqueues any reference to {@code x}.</li>
  *
- * <li> The enqueueing of a reference on a queue (by the garbage collector, or
+ * <li> The enqueueing of a reference (by the garbage collector, or
  * by a successful call to {@link Reference#enqueue}) <i>happens-before</i>
  * the reference is removed from the queue by {@link ReferenceQueue#poll} or
  * {@link ReferenceQueue#remove}.</li>
