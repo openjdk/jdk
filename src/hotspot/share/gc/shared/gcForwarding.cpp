@@ -29,29 +29,23 @@
 
 SlidingForwarding* GCForwarding::_sliding_forwarding = nullptr;
 
-void GCForwarding::initialize(MemRegion heap) {
+void GCForwarding::initialize(MemRegion heap, size_t region_size_words) {
   if (UseAltGCForwarding) {
     assert(_sliding_forwarding == nullptr, "only call this once");
-    _sliding_forwarding = new SlidingForwarding(heap);
-  }
-}
-
-void GCForwarding::initialize(MemRegion heap, size_t region_size_words_shift) {
-  if (UseAltGCForwarding) {
-    assert(_sliding_forwarding == nullptr, "only call this once");
-    _sliding_forwarding = new SlidingForwarding(heap, region_size_words_shift);
+    _sliding_forwarding = new SlidingForwarding(heap, region_size_words);
   }
 }
 
 void GCForwarding::begin() {
   if (UseAltGCForwarding) {
     assert(_sliding_forwarding != nullptr, "expect sliding forwarding initialized");
-    _sliding_forwarding->clear();
+    _sliding_forwarding->begin();
   }
 }
 
 void GCForwarding::end() {
   if (UseAltGCForwarding) {
     assert(_sliding_forwarding != nullptr, "expect sliding forwarding initialized");
+    _sliding_forwarding->end();
   }
 }

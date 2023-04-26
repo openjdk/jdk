@@ -1525,7 +1525,7 @@ jint G1CollectedHeap::initialize() {
 
   G1InitLogger::print();
 
-  GCForwarding::initialize(heap_rs.region(), HeapRegion::LogOfHRGrainBytes - LogHeapWordSize);
+  GCForwarding::initialize(heap_rs.region(), HeapRegion::GrainWords);
 
   return JNI_OK;
 }
