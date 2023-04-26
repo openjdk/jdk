@@ -167,9 +167,10 @@ public final class ProcessTools {
             this.p = p;
         }
 
-        synchronized  int readNext() {
+        synchronized int readNext() {
             if (current > count) {
-                throw new RuntimeException("Shouldn't ever happen.  start: " + current + " count: " + count + " buffer: " + this);
+                throw new RuntimeException("Shouldn't ever happen.  start: "
+                        + current + " count: " + count + " buffer: " + this);
             }
             while (current == count) {
                 if (!p.isAlive()) {
@@ -210,7 +211,7 @@ public final class ProcessTools {
      * <p>
      * It is possible to wait for the process to get to a warmed-up state
      * via {@linkplain Predicate} condition on the STDOUT/STDERR and monitor the
-     * in-streams via the provided {@linkplain Consumer}
+     * in-streams via the provided {@linkplain Consumer}*
      * </p>
      *
      * @param name           The process name
@@ -241,11 +242,11 @@ public final class ProcessTools {
 
         stdout.addPump(new LineForwarder(name, System.out));
         stderr.addPump(new LineForwarder(name, System.err));
-        BufferInputStream out = new BufferInputStream(p);
-        BufferInputStream err = new BufferInputStream(p);
+        BufferInputStream stdOut = new BufferInputStream(p);
+        BufferInputStream stdErr = new BufferInputStream(p);
 
-        stdout.addOutputStream(out.getOutputStream());
-        stderr.addOutputStream(err.getOutputStream());
+        stdout.addOutputStream(stdOut.getOutputStream());
+        stderr.addOutputStream(stdErr.getOutputStream());
 
         if (lineConsumer != null) {
             StreamPumper.LinePump pump = new StreamPumper.LinePump() {
@@ -316,7 +317,7 @@ public final class ProcessTools {
             throw e;
         }
 
-        return new ProcessImpl(p, stdoutTask, stderrTask, out, err);
+        return new ProcessImpl(p, stdoutTask, stderrTask, stdOut, stdErr);
     }
 
     /**
@@ -767,19 +768,19 @@ public final class ProcessTools {
 
     private static class ProcessImpl extends Process {
 
-        private final InputStream out;
-        private final InputStream err;
+        private final InputStream stdOut;
+        private final InputStream stdErr;
         private final Process p;
         private final Future<Void> stdoutTask;
         private final Future<Void> stderrTask;
 
         public ProcessImpl(Process p, Future<Void> stdoutTask, Future<Void> stderrTask,
-                           InputStream out, InputStream err) {
+                           InputStream stdOut, InputStream etdErr) {
             this.p = p;
             this.stdoutTask = stdoutTask;
             this.stderrTask = stderrTask;
-            this.out = out;
-            this.err = err;
+            this.stdOut = stdOut;
+            this.stdErr = etdErr;
         }
 
         @Override
@@ -789,12 +790,12 @@ public final class ProcessTools {
 
         @Override
         public InputStream getInputStream() {
-            return out;
+            return stdOut;
         }
 
         @Override
         public InputStream getErrorStream() {
-            return err;
+            return stdErr;
         }
 
         @Override
