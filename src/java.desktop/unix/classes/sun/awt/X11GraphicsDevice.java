@@ -30,6 +30,7 @@ import java.awt.DisplayMode;
 import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
+import java.awt.Insets;
 import java.awt.Rectangle;
 import java.awt.Window;
 import java.security.AccessController;
@@ -37,6 +38,7 @@ import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Objects;
 
 import sun.awt.util.ThreadGroupUtils;
 import sun.java2d.SunGraphicsEnvironment;
@@ -67,6 +69,7 @@ public final class X11GraphicsDevice extends GraphicsDevice
     private SunDisplayChanger topLevels = new SunDisplayChanger();
     private DisplayMode origDisplayMode;
     private Rectangle bounds;
+    private Insets    insets;
     private boolean shutdownHookRegistered;
     private int scale;
 
@@ -134,6 +137,25 @@ public final class X11GraphicsDevice extends GraphicsDevice
     public Rectangle getBounds() {
         synchronized (this) {
             return bounds.getBounds();
+        }
+    }
+
+    public Insets getInsets() {
+        synchronized (this) {
+            return insets;
+        }
+    }
+
+    public void setInsets(Insets newInsets) {
+        Objects.requireNonNull(newInsets);
+        synchronized (this) {
+            insets = newInsets;
+        }
+    }
+
+    public void resetInsets() {
+        synchronized (this) {
+            insets = null;
         }
     }
 
@@ -525,6 +547,7 @@ public final class X11GraphicsDevice extends GraphicsDevice
     public synchronized void displayChanged() {
         scale = initScaleFactor();
         bounds = getBoundsImpl();
+        insets = null;
         // On X11 the visuals do not change, and therefore we don't need
         // to reset the defaultConfig, config, doubleBufferVisuals,
         // neither do we need to reset the native data.

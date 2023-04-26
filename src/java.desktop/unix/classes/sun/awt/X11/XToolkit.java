@@ -356,7 +356,6 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
                         try {
                             ((X11GraphicsEnvironment)GraphicsEnvironment.
                              getLocalGraphicsEnvironment()).rebuildDevices();
-                            resetScreenInsetsCache();
                         } finally {
                             awtLock();
                         }
@@ -878,14 +877,26 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
         }
     }
 
-    private final Hashtable<GraphicsConfiguration, Insets> cachedInsets = new Hashtable<>();
     private void resetScreenInsetsCache() {
-        cachedInsets.clear();
+        final GraphicsDevice[] devices = ((X11GraphicsEnvironment)GraphicsEnvironment.
+                getLocalGraphicsEnvironment()).getScreenDevices();
+        for (var gd : devices) {
+            ((X11GraphicsDevice)gd).resetInsets();
+        }
     }
 
     @Override
     public Insets getScreenInsets(final GraphicsConfiguration gc) {
-        return (Insets)cachedInsets.computeIfAbsent(gc, this::getScreenInsetsImpl).clone();
+        final X11GraphicsDevice device = (X11GraphicsDevice) gc.getDevice();
+        synchronized (device) {
+            Insets insets = device.getInsets();
+            if (insets == null) {
+                insets = getScreenInsetsImpl(gc);
+                device.setInsets(insets);
+            }
+
+            return (Insets)insets.clone();
+        }
     }
 
     /*
