@@ -99,8 +99,10 @@ public class LightweightDragTest {
        int yt = y;
        rb.mouseMove(xt, yt);
        rb.mousePress(InputEvent.BUTTON1_MASK);
-       c.isInside = true;
-       c2.isInside = false;
+       EventQueue.invokeAndWait(() -> {
+           c.isInside = true;
+           c2.isInside = false;
+       });
        // drag
        while (xt != x2 || yt != y2) {
            if (x2 > xt) ++xt;
@@ -110,9 +112,11 @@ public class LightweightDragTest {
            rb.mouseMove(xt, yt);
        }
        rb.mouseRelease(InputEvent.BUTTON1_MASK);
-       if (c.isInside || !c2.isInside) {
-           throw new Error("Test failed: mouse events did not arrive");
-       }
+       EventQueue.invokeAndWait(() -> {
+           if (c.isInside || !c2.isInside) {
+               throw new Error("Test failed: mouse events did not arrive");
+           }
+       });
    }
 }
 

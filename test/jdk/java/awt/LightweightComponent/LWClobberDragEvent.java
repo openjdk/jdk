@@ -57,8 +57,8 @@ public class LWClobberDragEvent implements MouseListener, MouseMotionListener {
     public static void main(String[] args) throws Exception {
         LWClobberDragEvent test = new LWClobberDragEvent();
         try {
-                test.init();
-                test.start();
+            test.init();
+            test.start();
         } finally {
             EventQueue.invokeAndWait(() -> {
                 if (frame != null) {
