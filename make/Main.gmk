@@ -574,16 +574,18 @@ $(eval $(call SetupTarget, update-x11wrappers, \
 ))
 
 ifneq ($(HSDIS_BACKEND), none)
-  $(eval $(call SetupTarget, build-hsdis, \
-      MAKEFILE := Hsdis, \
-      TARGET := build, \
-  ))
+  ifneq ($(CREATING_BUILDJDK), true)
+    $(eval $(call SetupTarget, build-hsdis, \
+        MAKEFILE := Hsdis, \
+        TARGET := build, \
+    ))
 
-  $(eval $(call SetupTarget, install-hsdis, \
-      MAKEFILE := Hsdis, \
-      TARGET := install, \
-      DEPS := jdk-image, \
-  ))
+    $(eval $(call SetupTarget, install-hsdis, \
+        MAKEFILE := Hsdis, \
+        TARGET := install, \
+        DEPS := jdk-image, \
+    ))
+  endif
 endif
 
 ################################################################################
@@ -910,7 +912,9 @@ else
       $(eval $t: java.base-libs))
 
   ifeq ($(ENABLE_HSDIS_BUNDLING), true)
-    java.base-copy: build-hsdis
+    ifneq ($(CREATING_BUILDJDK), true)
+        java.base-copy: build-hsdis
+    endif
   endif
 
   # jdk.accessibility depends on java.desktop
