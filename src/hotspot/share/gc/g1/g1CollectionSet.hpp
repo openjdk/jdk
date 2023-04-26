@@ -172,7 +172,7 @@ class G1CollectionSet {
   // Update the incremental collection set information when adding a region.
   void add_young_region_common(HeapRegion* hr);
 
-  // Add the give old region to the head of the current collection set.
+  // Add the given old region to the head of the current collection set.
   void add_old_region(HeapRegion* hr);
 
   void move_candidates_to_collection_set(G1CollectionSetRegionList* regions);
