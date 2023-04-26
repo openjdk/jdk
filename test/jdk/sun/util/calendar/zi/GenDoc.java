@@ -154,27 +154,24 @@ class GenDoc extends BackEnd {
             outD.mkdirs();
 
             /* If mapfile is available, add a link to the appropriate map */
-            if (mapList == null) {
+            if (mapList == null && Main.getMapFile() != null) {
                 mapList = new HashMap<String, LatitudeAndLongitude>();
                 FileReader fr = new FileReader(Main.getMapFile());
                 BufferedReader in = new BufferedReader(fr);
-
-                if (Main.getMapFile() != null) {
-                    String line;
-                    while ((line = in.readLine()) != null) {
-                        // skip blank and comment lines
-                        if (line.length() == 0 || line.charAt(0) == '#') {
-                            continue;
-                        }
-                        StringTokenizer tokens = new StringTokenizer(line);
-                        String token = tokens.nextToken();  /* We don't use the first token. */
-                        token = tokens.nextToken();
-                        LatitudeAndLongitude location = new LatitudeAndLongitude(token);
-                        token = tokens.nextToken();
-                        mapList.put(token, location);
+                String line;
+                while ((line = in.readLine()) != null) {
+                    // skip blank and comment lines
+                    if (line.length() == 0 || line.charAt(0) == '#') {
+                        continue;
                     }
-                    in.close();
+                    StringTokenizer tokens = new StringTokenizer(line);
+                    String token = tokens.nextToken();  /* We don't use the first token. */
+                    token = tokens.nextToken();
+                    LatitudeAndLongitude location = new LatitudeAndLongitude(token);
+                    token = tokens.nextToken();
+                    mapList.put(token, location);
                 }
+                in.close();
             }
 
             /* Open zoneinfo file to write. */
@@ -183,7 +180,7 @@ class GenDoc extends BackEnd {
 
             out.write(header1 + new Date() + header3 + zonename + header4);
             out.write(body1 + "<FONT size=\"+2\"><B>" + zonename + "</B></FONT>");
-            LatitudeAndLongitude location = mapList.get(zonename);
+            LatitudeAndLongitude location = (mapList != null ? mapList.get(zonename) : null);
             if (location != null) {
                 int deg, min, sec;
 
