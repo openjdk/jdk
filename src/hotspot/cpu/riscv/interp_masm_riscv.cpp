@@ -203,28 +203,26 @@ void InterpreterMacroAssembler::get_cache_index_at_bcp(Register index,
                                                        size_t index_size) {
   assert(bcp_offset > 0, "bcp is still pointing to start of bytecode");
   if (index_size == sizeof(u2)) {
-    if (AvoidUnalignedAccesses)
-    {
-      assert(index != tmp, "must use different register");
+    if (AvoidUnalignedAccesses) {
+      assert_different_registers(index, tmp);
       load_unsigned_byte(index, Address(xbcp, bcp_offset));
-      load_unsigned_byte(tmp, Address(xbcp, bcp_offset+1));
+      load_unsigned_byte(tmp, Address(xbcp, bcp_offset + 1));
       slli(tmp, tmp, 8);
       add(index, index, tmp);
     } else {
       load_unsigned_short(index, Address(xbcp, bcp_offset));
     }
   } else if (index_size == sizeof(u4)) {
-    if (AvoidUnalignedAccesses)
-    {
-      assert(index != tmp, "must use different register");
+    if (AvoidUnalignedAccesses) {
+      assert_different_registers(index, tmp);
       load_unsigned_byte(index, Address(xbcp, bcp_offset));
-      load_unsigned_byte(tmp, Address(xbcp, bcp_offset+1));
+      load_unsigned_byte(tmp, Address(xbcp, bcp_offset + 1));
       slli(tmp, tmp, 8);
       add(index, index, tmp);
-      load_unsigned_byte(tmp, Address(xbcp, bcp_offset+2));
+      load_unsigned_byte(tmp, Address(xbcp, bcp_offset + 2));
       slli(tmp, tmp, 16);
       add(index, index, tmp);
-      load_unsigned_byte(tmp, Address(xbcp, bcp_offset+3));
+      load_unsigned_byte(tmp, Address(xbcp, bcp_offset + 3));
       slli(tmp, tmp, 24);
       add(index, index, tmp);
     } else {

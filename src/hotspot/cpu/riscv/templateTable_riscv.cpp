@@ -1617,13 +1617,13 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
   // load branch displacement
   if (!is_wide) {
     if (AvoidUnalignedAccesses) {
-        __ lbu(t1, at_bcp(1));
-        __ lbu(x12, at_bcp(2));
-        __ slli(x12, x12, 8);
-        __ add(x12, t1, x12);
-      } else {
-        __ lhu(x12, at_bcp(1));
-      }
+      __ lbu(t1, at_bcp(1));
+      __ lbu(x12, at_bcp(2));
+      __ slli(x12, x12, 8);
+      __ add(x12, t1, x12);
+    } else {
+      __ lhu(x12, at_bcp(1));
+    }
     __ revb_h_h(x12, x12); // reverse bytes in half-word and sign-extend
   } else {
     __ lwu(x12, at_bcp(1));
@@ -2023,15 +2023,13 @@ void TemplateTable::fast_binaryswitch() {
     // else [i = h]
     // Convert array[h].match to native byte-ordering before compare
     __ shadd(temp, h, array, temp, 3);
-    if (AvoidUnalignedAccesses)
-    {
-      //array is BytesPerInt (aka 4) alligned
+    if (AvoidUnalignedAccesses) {
+      // array is BytesPerInt (aka 4) aligned
       __ lwu(t1, Address(temp,4));
       __ slli(t1, t1, 32);
       __ lwu(temp, Address(temp, 0));
       __ add(temp, temp, t1);
-    } else
-    {
+    } else {
       __ ld(temp, Address(temp, 0));
     }
     __ revb_w_w(temp, temp); // reverse bytes in word (32bit) and sign-extend
@@ -2056,9 +2054,8 @@ void TemplateTable::fast_binaryswitch() {
   Label default_case;
   // Convert array[i].match to native byte-ordering before compare
   __ shadd(temp, i, array, temp, 3);
-  if (AvoidUnalignedAccesses)
-  {
-    //array is BytesPerInt (aka 4) alligned
+  if (AvoidUnalignedAccesses) {
+    // array is BytesPerInt (aka 4) aligned
     __ lwu(t1, Address(temp,4));
     __ slli(t1, t1, 32);
     __ lwu(temp, Address(temp, 0));

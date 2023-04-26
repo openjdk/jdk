@@ -1098,8 +1098,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     __ ld(x28, Address(xmethod, Method::native_function_offset()));
     address unsatisfied = (SharedRuntime::native_method_throw_unsatisfied_link_error_entry());
     __ mv(t1, unsatisfied);
-    if (AvoidUnalignedAccesses)
-    {
+    if (AvoidUnalignedAccesses) {
       __ mv(t, t1);
       __ lhu(t1, Address(t1, 0));
       __ lhu(t0, Address(t, 2));
@@ -1112,7 +1111,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
       __ slli(t0, t0, 48);
       __ add(t1, t1, t0);
     } else {
-      __ ld(t1, Address(t1, 0)); //2 bytes alligned, but not 4 or 8
+      __ ld(t1, Address(t1, 0)); // 2 bytes aligned, but not 4 or 8
     }
     __ bne(x28, t1, L);
     __ call_VM(noreg,
