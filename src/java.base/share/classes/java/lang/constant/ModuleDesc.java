@@ -29,7 +29,7 @@ import static java.util.Objects.requireNonNull;
 /**
  * A nominal descriptor for a {@code Module} constant.
  *
- * @apiNote
+ * <p>
  * To create a {@link ModuleDesc} for a module, use the {@link #of(String)}
  * method.
  *
