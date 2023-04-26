@@ -55,7 +55,7 @@ void StubRoutines::zarch::generate_load_absolute_address(MacroAssembler* masm, R
     __ load_const_optimized(Z_R0, table_addr);
     __ z_cgr(table, Z_R0);  // safety net
     __ z_bre(L);
-    __ asm_assert(Assembler::bcondEqual, "crc_table: external word relocation required for load_absolute_address", 0x33);
+    __ stop("crc_table: external word relocation required for load_absolute_address", 0x33);
     __ z_illtrap();
     __ bind(L);
   }
@@ -100,7 +100,7 @@ void StubRoutines::zarch::generate_load_trot_table_addr(MacroAssembler* masm, Re
       __ load_const_optimized(Z_R0, StubRoutines::zarch::_trot_table_addr);
       __ z_cgr(table, Z_R0);  // safety net
       __ z_bre(L);
-      __ asm_assert(Assembler::bcondEqual, "crc_table: external word relocation does not work for load_absolute_address", 0x33);
+      __ stop("crc_table: external word relocation does not work for load_absolute_address", 0x33);
       __ z_illtrap();
       __ bind(L);
     }
