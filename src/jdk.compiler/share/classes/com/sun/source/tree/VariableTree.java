@@ -51,7 +51,8 @@ public interface VariableTree extends StatementTree {
     ModifiersTree getModifiers();
 
     /**
-     * Returns the name of the variable being declared.
+     * Returns the name of the variable being declared or `_` if the variable
+     * is unnamed.
      * @return the name
      */
     Name getName();

@@ -291,7 +291,13 @@ public class MemberEnter extends JCTree.Visitor {
         Type vartype = tree.isImplicitlyTyped()
                 ? env.info.scope.owner.kind == MTH ? Type.noType : syms.errType
                 : tree.vartype.type;
-        VarSymbol v = new VarSymbol(0, tree.name, vartype, enclScope.owner);
+        Name name;
+        if (Feature.UNNAMED_VARIABLES.allowedInSource(source) && (tree.mods.flags & UNNAMED) != 0) {
+            name = names.empty;
+        } else {
+            name = tree.name;
+        }
+        VarSymbol v = new VarSymbol(0, name , vartype, enclScope.owner);
         v.flags_field = chk.checkFlags(tree.pos(), tree.mods.flags, v, tree);
         tree.sym = v;
         if (tree.init != null) {
@@ -304,7 +310,7 @@ public class MemberEnter extends JCTree.Visitor {
             }
         }
 
-        if(Feature.UNDERSCORE_IDENTIFIER.allowedInSource(source) || tree.name != names.underscore) {
+        if(!(Feature.UNNAMED_VARIABLES.allowedInSource(source) && tree.sym.isUnnamed())) {
             if (chk.checkUnique(tree.pos(), v, enclScope)) {
                 chk.checkTransparentVar(tree.pos(), v, enclScope);
                 enclScope.enter(v);

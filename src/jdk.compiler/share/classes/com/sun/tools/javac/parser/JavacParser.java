@@ -62,7 +62,6 @@ import static com.sun.tools.javac.resources.CompilerProperties.Fragments.Implici
 import static com.sun.tools.javac.resources.CompilerProperties.Fragments.VarAndExplicitNotAllowed;
 import static com.sun.tools.javac.resources.CompilerProperties.Fragments.VarAndImplicitNotAllowed;
 import com.sun.tools.javac.util.JCDiagnostic.SimpleDiagnosticPosition;
-import java.util.function.BiFunction;
 
 /**
  * The parser maps a token sequence into an abstract syntax tree.
@@ -823,19 +822,31 @@ public class JavacParser implements Parser {
                 pattern = toP(F.at(pos).RecordPattern(e, nested.toList()));
             } else {
                 //type test pattern:
-                int varPos = token.pos;
-                Name name = identOrUnderscore();
-                JCVariableDecl var = toP(F.at(varPos).VarDef(mods, name, e, null));
+                UnnamedDetails result = identOrFlagUnderscore(mods);
+                JCVariableDecl var = toP(F.at(result.varPos()).VarDef(mods, result.name(), e, null));
                 if (e == null) {
                     var.startPos = pos;
-                    if (name == names.underscore) {
-                        log.error(DiagnosticFlag.SYNTAX, varPos, Errors.UnderscoreAsIdentifier);
+                    if (result.name() == names.underscore) {
+                        log.error(DiagnosticFlag.SYNTAX, result.varPos(), Errors.UnderscoreAsIdentifier);
                     }
                 }
                 pattern = toP(F.at(pos).BindingPattern(var));
             }
         }
         return pattern;
+    }
+
+    private UnnamedDetails identOrFlagUnderscore(JCModifiers mods) {
+        int varPos = token.pos;
+        Name name = identOrUnderscore();
+        if (name == names.underscore) {
+            mods.flags |= Flags.UNNAMED;
+        }
+        UnnamedDetails result = new UnnamedDetails(varPos, name);
+        return result;
+    }
+
+    private record UnnamedDetails(int varPos, Name name) {
     }
 
 
@@ -3507,7 +3518,8 @@ public class JavacParser implements Parser {
                                                                          T vdefs,
                                                                          boolean localDecl)
     {
-        return variableDeclaratorsRest(token.pos, mods, type, identOrUnderscore(), false, null, vdefs, localDecl);
+        UnnamedDetails result = identOrFlagUnderscore(mods);
+        return variableDeclaratorsRest(result.varPos(), mods, type, result.name(), false, null, vdefs, localDecl);
     }
 
     /** VariableDeclaratorsRest = VariableDeclaratorRest { "," VariableDeclarator }
@@ -3540,7 +3552,8 @@ public class JavacParser implements Parser {
      *  ConstantDeclarator = Ident ConstantDeclaratorRest
      */
     JCVariableDecl variableDeclarator(JCModifiers mods, JCExpression type, boolean reqInit, Comment dc, boolean localDecl) {
-        return variableDeclaratorRest(token.pos, mods, type, identOrUnderscore(), reqInit, dc, localDecl, true);
+        UnnamedDetails result = identOrFlagUnderscore(mods);
+        return variableDeclaratorRest(result.varPos(), mods, type, result.name(), reqInit, dc, localDecl, true);
     }
 
     /** VariableDeclaratorRest = BracketsOpt ["=" VariableInitializer]
@@ -3651,6 +3664,7 @@ public class JavacParser implements Parser {
             mods.annotations.nonEmpty()) {
             JCExpression pn;
             if (token.kind == UNDERSCORE && (catchParameter || lambdaParameter)) {
+                mods.flags |= Flags.UNNAMED;
                 pn = toP(F.at(token.pos).Ident(identOrUnderscore()));
             } else {
                 pn = qualident(false);
@@ -3695,6 +3709,10 @@ public class JavacParser implements Parser {
         }
         type = bracketsOpt(type);
 
+        if ((mods.flags & Flags.UNNAMED) != 0 && Feature.UNNAMED_VARIABLES.allowedInSource(source)) {
+            name = names.empty;
+        }
+
         return toP(F.at(pos).VarDef(mods, name, type, null,
                 type != null && type.hasTag(IDENT) && ((JCIdent)type).name == names.var));
     }
@@ -3730,7 +3748,8 @@ public class JavacParser implements Parser {
         JCExpression t = term(EXPR | TYPE);
         if (wasTypeMode() && LAX_IDENTIFIER.test(token.kind)) {
             JCModifiers mods = F.Modifiers(0);
-            return variableDeclaratorRest(token.pos, mods, t, identOrUnderscore(), true, null, true, false);
+            UnnamedDetails result = identOrFlagUnderscore(mods);
+            return variableDeclaratorRest(result.varPos(), mods, t, result.name(), true, null, true, false);
         } else {
             checkSourceLevel(Feature.EFFECTIVELY_FINAL_VARIABLES_IN_TRY_WITH_RESOURCES);
             if (!t.hasTag(IDENT) && !t.hasTag(SELECT)) {

@@ -81,6 +81,9 @@ public interface VariableElement extends Element {
      * parameters of the same executable.  If the original source
      * names are not available, an implementation may synthesize names
      * subject to the distinctness requirement above.
+     *
+     * <p>For variables, the name of each variable is returned or an empty name
+     * if the variable is unnamed.
      */
     @Override
     Name getSimpleName();

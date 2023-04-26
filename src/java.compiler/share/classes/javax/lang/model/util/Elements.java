@@ -708,6 +708,16 @@ public interface Elements {
     Name getName(CharSequence cs);
 
     /**
+     * {@return {@code true} if the element has an empty name, {@code false} otherwise}
+     *
+     * @param element the element being examined
+     * @since 21
+     */
+    default boolean hasEmptyName(Element element) {
+        return element.getSimpleName().isEmpty();
+    }
+
+    /**
      * {@return {@code true} if the type element is a functional
      * interface, {@code false} otherwise}
      *
