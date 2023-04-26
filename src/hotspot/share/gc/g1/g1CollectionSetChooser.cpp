@@ -249,7 +249,7 @@ public:
 
     uint num_pruned;
     size_t pruned_wasted_bytes;
-    
+
     _result.prune(_num_regions_added, num_pruned, pruned_wasted_bytes);
     candidates->merge_candidates_from_marking(_result.array(),
                                               _num_regions_added - num_pruned,

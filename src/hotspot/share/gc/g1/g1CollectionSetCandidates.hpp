@@ -188,7 +188,7 @@ class G1CollectionSetCandidates : public CHeapObj<mtGC> {
   size_t _reclaimable_bytes;
 
   bool is_from_marking(HeapRegion* r) const;
-  
+
 public:
   G1CollectionSetCandidates();
   ~G1CollectionSetCandidates();
