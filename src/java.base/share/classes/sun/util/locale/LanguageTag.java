@@ -423,8 +423,9 @@ public class LanguageTag {
             throw new IllegalArgumentException("Ill formed tag");
         }
         // Legacy tags
-        if (LEGACY.containsKey(tag.toLowerCase(Locale.ROOT))) {
-            return LEGACY.get(tag.toLowerCase(Locale.ROOT))[0];
+        String potentialLegacy = tag.toLowerCase(Locale.ROOT);
+        if (LEGACY.containsKey(potentialLegacy)) {
+            return LEGACY.get(potentialLegacy)[0];
         }
         // Non-legacy tags
         StringBuilder bldr = new StringBuilder();
