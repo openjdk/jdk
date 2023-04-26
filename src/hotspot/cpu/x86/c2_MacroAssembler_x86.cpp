@@ -773,23 +773,27 @@ void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register t
   if (LockingMode != LM_MONITOR) {
     testptr(tmpReg, markWord::monitor_value);                         // Inflated?
     jcc(Assembler::zero, Stacked);
-    if (LockingMode == LM_LIGHTWEIGHT) {
-      // If the owner is ANONYMOUS, we need to fix it -  in an outline stub.
-      testb(Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)), (int32_t) ObjectMonitor::ANONYMOUS_OWNER);
+  }
+
+  // It's inflated.
+  if (LockingMode == LM_LIGHTWEIGHT) {
+    // If the owner is ANONYMOUS, we need to fix it -  in an outline stub.
+    testb(Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)), (int32_t) ObjectMonitor::ANONYMOUS_OWNER);
 #ifdef _LP64
+    if (!Compile::current()->output()->in_scratch_emit_size()) {
       C2HandleAnonOMOwnerStub* stub = new (Compile::current()->comp_arena()) C2HandleAnonOMOwnerStub(tmpReg, boxReg);
       Compile::current()->output()->add_stub(stub);
       jcc(Assembler::notEqual, stub->entry());
       bind(stub->continuation());
-#else
+    } else
+#endif
+    {
       // We can't easily implement this optimization on 32 bit because we don't have a thread register.
       // Call the slow-path instead.
       jcc(Assembler::notEqual, NO_COUNT);
-#endif
     }
   }
 
-  // It's inflated.
 #if INCLUDE_RTM_OPT
   if (use_rtm) {
     Label L_regular_inflated_unlock;
