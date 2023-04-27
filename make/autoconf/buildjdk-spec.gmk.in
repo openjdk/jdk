@@ -105,5 +105,5 @@ override EXTRA_CXXFLAGS :=
 override EXTRA_LDFLAGS :=
 
 # hsdis is not needed
-override HSDIS_BACKEND := none
-override ENABLE_HSDIS_BUNDLING := false
+HSDIS_BACKEND := none
+ENABLE_HSDIS_BUNDLING := false
