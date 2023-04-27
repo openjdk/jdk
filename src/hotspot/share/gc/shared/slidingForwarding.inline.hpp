@@ -94,7 +94,6 @@ void SlidingForwarding::forward_to(oop original, oop target) {
   header = markWord((header.value() & ~MARK_LOWER_HALF_MASK) | encoded);
   original->set_mark(header);
   if ((encoded & FALLBACK_MASK) != 0) {
-    //tty->print_cr("fallback forward: " PTR_FORMAT " to: " PTR_FORMAT, p2i(from), p2i(to));
     fallback_forward_to(from, to);
     return;
   }
@@ -103,10 +102,8 @@ void SlidingForwarding::forward_to(oop original, oop target) {
 oop SlidingForwarding::forwardee(oop original) const {
   markWord header = original->mark();
   if ((header.value() & FALLBACK_MASK) != 0) {
-    //tty->print_cr("fallback forwardee mark: " INTPTR_FORMAT, header.value());
     HeapWord* from = cast_from_oop<HeapWord*>(original);
     HeapWord* to = fallback_forwardee(from);
-    //tty->print_cr("fallback forwardee, from: " PTR_FORMAT " to: " PTR_FORMAT, p2i(from), p2i(to));
     return cast_to_oop(to);
   }
   uintptr_t encoded = header.value() & MARK_LOWER_HALF_MASK;

@@ -87,7 +87,6 @@ void SlidingForwarding::fallback_forward_to(HeapWord* from, HeapWord* to) {
 
 HeapWord* SlidingForwarding::fallback_forwardee(HeapWord* from) const {
   if (_fallback_table == nullptr) {
-    //tty->print_cr("_fallback_table is null");
     return nullptr;
   } else {
     return _fallback_table->forwardee(from);
@@ -125,7 +124,6 @@ size_t FallbackTable::home_index(HeapWord* from) {
 
 void FallbackTable::forward_to(HeapWord* from, HeapWord* to) {
   size_t idx = home_index(from);
-  //tty->print_cr("index for: " PTR_FORMAT ": " SIZE_FORMAT, p2i(from), idx);
   if (_table[idx]._from != nullptr) {
     FallbackTableEntry* entry = NEW_C_HEAP_OBJ(FallbackTableEntry, mtGC);
     entry->_next = _table[idx]._next;
@@ -139,10 +137,8 @@ void FallbackTable::forward_to(HeapWord* from, HeapWord* to) {
 
 HeapWord* FallbackTable::forwardee(HeapWord* from) const {
   size_t idx = home_index(from);
-  //tty->print_cr("forwardee index for: " PTR_FORMAT ": " SIZE_FORMAT, p2i(from), idx);
   const FallbackTableEntry* entry = &_table[idx];
   while (entry != nullptr) {
-    //tty->print_cr("checking entry: " PTR_FORMAT, p2i(entry));
     if (entry->_from == from) {
       return entry->_to;
     }
