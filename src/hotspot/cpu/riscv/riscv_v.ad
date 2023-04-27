@@ -2684,11 +2684,11 @@ instruct vcvtBtoX(vReg dst, vReg src) %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     if (is_floating_point_type(bt)) {
       __ vector_integer_extend(as_VectorRegister($dst$$reg), bt == T_FLOAT ? T_INT : T_LONG,
-                               as_VectorRegister($src$$reg), T_BYTE);
+                               Matcher::vector_length_in_bytes(this), as_VectorRegister($src$$reg), T_BYTE);
       __ vfcvt_f_x_v(as_VectorRegister($dst$$reg), as_VectorRegister($dst$$reg));
     } else {
-      __ vector_integer_extend(as_VectorRegister($dst$$reg), bt,
-                               as_VectorRegister($src$$reg), T_BYTE);
+      __ vector_integer_extend(as_VectorRegister($dst$$reg), bt, 
+                               Matcher::vector_length_in_bytes(this), as_VectorRegister($src$$reg), T_BYTE);
     }
   %}
   ins_pipe(pipe_slow);
@@ -2717,11 +2717,11 @@ instruct vcvtStoX_extend(vReg dst, vReg src) %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     if (is_floating_point_type(bt)) {
       __ vector_integer_extend(as_VectorRegister($dst$$reg), bt == T_FLOAT ? T_INT : T_LONG,
-                               as_VectorRegister($src$$reg), T_SHORT);
+                               Matcher::vector_length_in_bytes(this), as_VectorRegister($src$$reg), T_SHORT);
       __ vfcvt_f_x_v(as_VectorRegister($dst$$reg), as_VectorRegister($dst$$reg));
     } else {
       __ vector_integer_extend(as_VectorRegister($dst$$reg), bt,
-                               as_VectorRegister($src$$reg), T_SHORT);
+                               Matcher::vector_length_in_bytes(this), as_VectorRegister($src$$reg), T_SHORT);
     }
   %}
   ins_pipe(pipe_slow);
@@ -2751,11 +2751,11 @@ instruct vcvtItoX(vReg dst, vReg src) %{
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     if (bt == T_FLOAT) {
-      __ vsetvli(t0, x0, Assembler::e32);
+      __ rvv_vsetvli(bt, Matcher::vector_length_in_bytes(this));
       __ vfcvt_f_x_v(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg));
     } else {
       __ vector_integer_extend(as_VectorRegister($dst$$reg), T_LONG,
-                               as_VectorRegister($src$$reg), T_INT);
+                               Matcher::vector_length_in_bytes(this), as_VectorRegister($src$$reg), T_INT);
       if (bt == T_DOUBLE) {
         __ vfcvt_f_x_v(as_VectorRegister($dst$$reg), as_VectorRegister($dst$$reg));
       }
@@ -2799,7 +2799,7 @@ instruct vcvtLtoD(vReg dst, vReg src) %{
   match(Set dst (VectorCastL2X src));
   format %{ "vcvtLtoD $dst, $src" %}
   ins_encode %{
-    __ vsetvli(t0, x0, Assembler::e64);
+    __ rvv_vsetvli(T_DOUBLE, Matcher::vector_length_in_bytes(this));
     __ vfcvt_f_x_v(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg));
   %}
   ins_pipe(pipe_slow);
@@ -2814,7 +2814,7 @@ instruct vcvtFtoX_narrow(vReg dst, vReg src, vReg tmp) %{
   effect(TEMP_DEF dst,TEMP tmp);
   format %{ "vcvtFtoX_narrow $dst, $src\t# KILL $tmp" %}
   ins_encode %{
-    __ vsetvli(t0, x0, Assembler::e32);
+    __ rvv_vsetvli(T_FLOAT, Matcher::vector_length_in_bytes(this, $src));
     __ vfcvt_x_f_v(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg));
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ vector_integer_narrow(as_VectorRegister($dst$$reg), bt, Matcher::vector_length_in_bytes(this),
@@ -2829,12 +2829,12 @@ instruct vcvtFtoI(vReg dst, vReg src) %{
   match(Set dst (VectorCastF2X src));
   format %{ "vcvtFtoX $dst, $src" %}
   ins_encode %{
-    __ vsetvli(t0, x0, Assembler::e32);
+    __ rvv_vsetvli(T_FLOAT, Matcher::vector_length_in_bytes(this, $src));
     __ vfcvt_x_f_v(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg));
     BasicType bt = Matcher::vector_element_basic_type(this);
     if (bt == T_LONG) {
       __ vector_integer_extend(as_VectorRegister($dst$$reg), T_LONG,
-                               as_VectorRegister($dst$$reg), T_INT);
+                               Matcher::vector_length_in_bytes(this), as_VectorRegister($dst$$reg), T_INT);
     }
   %}
   ins_pipe(pipe_slow);
@@ -2846,7 +2846,7 @@ instruct vcvtFtoD(vReg dst, vReg src) %{
   effect(TEMP_DEF dst);
   format %{ "vcvtFtoD $dst, $src" %}
   ins_encode %{
-    __ vsetvli(t0, x0, Assembler::e32, Assembler::mf2);
+    __ rvv_vsetvli(T_FLOAT, Matcher::vector_length_in_bytes(this, $src), Assembler::mf2);
     __ vfwcvt_f_f_v(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg));
   %}
   ins_pipe(pipe_slow);
@@ -2862,7 +2862,7 @@ instruct vcvtDtoI(vReg dst, vReg src, vReg tmp) %{
   effect(TEMP_DEF dst,TEMP tmp);
   format %{ "vcvtDtoI $dst, $src\t# KILL $tmp" %}
   ins_encode %{
-    __ vsetvli(t0, x0, Assembler::e64);
+    __ rvv_vsetvli(T_DOUBLE, Matcher::vector_length_in_bytes(this, $src));
     __ vfcvt_x_f_v(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg));
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ vector_integer_narrow(as_VectorRegister($dst$$reg), bt, Matcher::vector_length_in_bytes(this),
@@ -2876,7 +2876,7 @@ instruct vcvtDtoL(vReg dst, vReg src) %{
   match(Set dst (VectorCastD2X src));
   format %{ "vcvtDtoL $dst, $src" %}
   ins_encode %{
-    __ vsetvli(t0, x0, Assembler::e64);
+    __ rvv_vsetvli(T_LONG, Matcher::vector_length_in_bytes(this));
     __ vfcvt_x_f_v(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg));
   %}
   ins_pipe(pipe_slow);
@@ -2888,7 +2888,7 @@ instruct vcvtDtoF(vReg dst_src1, vReg tmp) %{
   effect(TEMP tmp);
   format %{ "vcvtDtoF $dst_src1" %}
   ins_encode %{
-    __ vsetvli(t0, x0, Assembler::e32, Assembler::mf2);
+    __ rvv_vsetvli(T_FLOAT, Matcher::vector_length_in_bytes(this), Assembler::mf2);
     __ vfncvt_f_f_w(as_VectorRegister($tmp$$reg), as_VectorRegister($dst_src1$$reg));
     __ vmv1r_v(as_VectorRegister($dst_src1$$reg), as_VectorRegister($tmp$$reg));
   %}

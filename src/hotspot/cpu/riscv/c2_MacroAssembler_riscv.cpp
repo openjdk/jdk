@@ -1708,17 +1708,17 @@ void C2_MacroAssembler::rvv_reduce_integral(Register dst, VectorRegister tmp,
 
 // Set vl and vtype for full and partial vector operations.
 // (vlmul = m1, vma = mu, vta = tu, vill = false)
-void C2_MacroAssembler::rvv_vsetvli(BasicType bt, int length_in_bytes, Register tmp) {
+void C2_MacroAssembler::rvv_vsetvli(BasicType bt, int length_in_bytes, LMUL vlmul, Register tmp) {
   Assembler::SEW sew = Assembler::elemtype_to_sew(bt);
   if (length_in_bytes == MaxVectorSize) {
-    vsetvli(tmp, x0, sew);
+    vsetvli(tmp, x0, sew, vlmul);
   } else {
     int num_elements = length_in_bytes / type2aelembytes(bt);
     if (num_elements <= 31) {
-      vsetivli(tmp, num_elements, sew);
+      vsetivli(tmp, num_elements, sew, vlmul);
     } else {
       mv(tmp, num_elements);
-      vsetvli(tmp, tmp, sew);
+      vsetvli(tmp, tmp, sew, vlmul);
     }
   }
 }
@@ -1784,7 +1784,7 @@ void C2_MacroAssembler::compare_floating_point_v(VectorRegister vd, BasicType bt
   }
 }
 
-void C2_MacroAssembler::vector_integer_extend(VectorRegister dst, BasicType dst_bt,
+void C2_MacroAssembler::vector_integer_extend(VectorRegister dst, BasicType dst_bt, int length_in_bytes,
                                               VectorRegister src, BasicType src_bt) {
   assert(type2aelembytes(dst_bt) > type2aelembytes(src_bt) && type2aelembytes(dst_bt) <= 8 && type2aelembytes(src_bt) <= 4, "invalid element size");
   assert(dst_bt != T_FLOAT && dst_bt != T_DOUBLE && src_bt != T_FLOAT && src_bt != T_DOUBLE, "should be integer element");
@@ -1794,8 +1794,7 @@ void C2_MacroAssembler::vector_integer_extend(VectorRegister dst, BasicType dst_
   // Since LMUL=1, vd and vs cannot be the same.
   assert_different_registers(dst, src);
 
-  Assembler::SEW sew = Assembler::elemtype_to_sew(dst_bt);
-  vsetvli(t0, x0, sew);
+  rvv_vsetvli(dst_bt, length_in_bytes);
   if (src_bt == T_BYTE) {
     switch (dst_bt) {
     case T_SHORT:

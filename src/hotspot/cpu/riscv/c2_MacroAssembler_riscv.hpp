@@ -198,7 +198,7 @@
                           Register src1, VectorRegister src2,
                           BasicType bt, int opc, int length_in_bytes);
 
- void rvv_vsetvli(BasicType bt, int length_in_bytes, Register tmp = t0);
+ void rvv_vsetvli(BasicType bt, int length_in_bytes, LMUL vlmul = Assembler::m1, Register tmp = t0);
 
  void compare_integral_v(VectorRegister dst, BasicType bt, int length_in_bytes,
                          VectorRegister src1, VectorRegister src2, int cond, VectorMask vm = Assembler::unmasked);
@@ -230,7 +230,7 @@
     }
   }
 
-  void vector_integer_extend(VectorRegister dst, BasicType dst_bt,
+  void vector_integer_extend(VectorRegister dst, BasicType dst_bt, int length_in_bytes,
                              VectorRegister src, BasicType src_bt);
 
   void vector_integer_narrow(VectorRegister dst, BasicType dst_bt, int length_in_bytes,
