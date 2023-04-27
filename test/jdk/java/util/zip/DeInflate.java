@@ -118,39 +118,44 @@ public class DeInflate {
         } catch (ReadOnlyBufferException robe) {}
     }
 
+    /*
+     * This method checks if a given Deflater and Inflater pair can correctly compress and decompress data.
+     * checks were performed for this functionality using various input scenarios and ByteBuffer instances.
+     */
     static void check(Deflater def, byte[] in, int len, boolean nowrap)
         throws Throwable
     {
         byte[] tempBuffer = new byte[len];
+        byte[] out1, out2;
+        int m = 0, n = 0;
+        Inflater inf = new Inflater(nowrap);
         def.setInput(in, 0, len);
         def.finish();
-        int m = 0;
 
-        ByteArrayOutputStream baos = new ByteArrayOutputStream(len);
-        while (!def.finished()) {
-            int temp_counter = def.deflate(tempBuffer);
-            m += temp_counter;
-            baos.write(tempBuffer, 0, temp_counter);
-        }
-        byte[] out1 = baos.toByteArray();
-        baos.reset();
-        Inflater inf = new Inflater(nowrap);
-        inf.setInput(out1, 0, m);
-        int n = 0;
+        try(ByteArrayOutputStream baos = new ByteArrayOutputStream(len)) {
+            while (!def.finished()) {
+                int temp_counter = def.deflate(tempBuffer);
+                m += temp_counter;
+                baos.write(tempBuffer, 0, temp_counter);
+            }
+            out1 = baos.toByteArray();
+            baos.reset();
 
-        while (!inf.finished()) {
-            int temp_counter = inf.inflate(tempBuffer);
-            n += temp_counter;
-            baos.write(tempBuffer, 0,  temp_counter);
-        }
-        byte[] out2 = baos.toByteArray();
-        baos.close();
-        if (n != len ||
-            !Arrays.equals(Arrays.copyOf(in, len), Arrays.copyOf(out2, len)) ||
-            inf.inflate(out2) != 0) {
-            System.out.printf("m=%d, n=%d, len=%d, eq=%b%n",
-                              m, n, len, Arrays.equals(in, out2));
-            throw new RuntimeException("De/inflater failed:" + def);
+            inf.setInput(out1, 0, m);
+
+            while (!inf.finished()) {
+                int temp_counter = inf.inflate(tempBuffer);
+                n += temp_counter;
+                baos.write(tempBuffer, 0, temp_counter);
+            }
+            out2 = baos.toByteArray();
+            if (n != len ||
+                !Arrays.equals(Arrays.copyOf(in, len), Arrays.copyOf(out2, len)) ||
+                inf.inflate(out2) != 0) {
+                System.out.printf("m=%d, n=%d, len=%d, eq=%b%n",
+                                  m, n, len, Arrays.equals(in, out2));
+                throw new RuntimeException("De/inflater failed:" + def);
+            }
         }
 
         // readable
