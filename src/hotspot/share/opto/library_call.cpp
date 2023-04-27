@@ -1288,10 +1288,13 @@ bool LibraryCallKit::inline_string_copy(bool compress) {
   AllocateArrayNode* alloc = tightly_coupled_allocation(dst);
 
   // Figure out the size and type of the elements we will be copying.
-  const Type* src_type = src->Value(&_gvn);
-  const Type* dst_type = dst->Value(&_gvn);
-  BasicType src_elem = src_type->isa_aryptr()->klass()->as_array_klass()->element_type()->basic_type();
-  BasicType dst_elem = dst_type->isa_aryptr()->klass()->as_array_klass()->element_type()->basic_type();
+  const TypeAryPtr* src_type = src->Value(&_gvn)->isa_aryptr();
+  const TypeAryPtr* dst_type = dst->Value(&_gvn)->isa_aryptr();
+  if (src_type == nullptr || dst_type == nullptr) {
+    return false;
+  }
+  BasicType src_elem = src_type->klass()->as_array_klass()->element_type()->basic_type();
+  BasicType dst_elem = dst_type->klass()->as_array_klass()->element_type()->basic_type();
   assert((compress && dst_elem == T_BYTE && (src_elem == T_BYTE || src_elem == T_CHAR)) ||
          (!compress && src_elem == T_BYTE && (dst_elem == T_BYTE || dst_elem == T_CHAR)),
          "Unsupported array types for inline_string_copy");
@@ -4943,8 +4946,8 @@ bool LibraryCallKit::inline_encodeISOArray(bool ascii) {
   }
 
   // Figure out the size and type of the elements we will be copying.
-  BasicType src_elem = src_type->isa_aryptr()->klass()->as_array_klass()->element_type()->basic_type();
-  BasicType dst_elem = dst_type->isa_aryptr()->klass()->as_array_klass()->element_type()->basic_type();
+  BasicType src_elem = top_src->klass()->as_array_klass()->element_type()->basic_type();
+  BasicType dst_elem = top_dest->klass()->as_array_klass()->element_type()->basic_type();
   if (!((src_elem == T_CHAR) || (src_elem== T_BYTE)) || dst_elem != T_BYTE) {
     return false;
   }
@@ -4997,8 +5000,8 @@ bool LibraryCallKit::inline_multiplyToLen() {
     return false;
   }
 
-  BasicType x_elem = x_type->isa_aryptr()->klass()->as_array_klass()->element_type()->basic_type();
-  BasicType y_elem = y_type->isa_aryptr()->klass()->as_array_klass()->element_type()->basic_type();
+  BasicType x_elem = top_x->klass()->as_array_klass()->element_type()->basic_type();
+  BasicType y_elem = top_y->klass()->as_array_klass()->element_type()->basic_type();
   if (x_elem != T_INT || y_elem != T_INT) {
     return false;
   }
@@ -5105,8 +5108,8 @@ bool LibraryCallKit::inline_squareToLen() {
     return false;
   }
 
-  BasicType x_elem = x_type->isa_aryptr()->klass()->as_array_klass()->element_type()->basic_type();
-  BasicType z_elem = z_type->isa_aryptr()->klass()->as_array_klass()->element_type()->basic_type();
+  BasicType x_elem = top_x->klass()->as_array_klass()->element_type()->basic_type();
+  BasicType z_elem = top_z->klass()->as_array_klass()->element_type()->basic_type();
   if (x_elem != T_INT || z_elem != T_INT) {
     return false;
   }
@@ -5154,8 +5157,8 @@ bool LibraryCallKit::inline_mulAdd() {
     return false;
   }
 
-  BasicType out_elem = out_type->isa_aryptr()->klass()->as_array_klass()->element_type()->basic_type();
-  BasicType in_elem = in_type->isa_aryptr()->klass()->as_array_klass()->element_type()->basic_type();
+  BasicType out_elem = top_out->klass()->as_array_klass()->element_type()->basic_type();
+  BasicType in_elem = top_in->klass()->as_array_klass()->element_type()->basic_type();
   if (out_elem != T_INT || in_elem != T_INT) {
     return false;
   }
@@ -5209,10 +5212,10 @@ bool LibraryCallKit::inline_montgomeryMultiply() {
     return false;
   }
 
-  BasicType a_elem = a_type->isa_aryptr()->klass()->as_array_klass()->element_type()->basic_type();
-  BasicType b_elem = b_type->isa_aryptr()->klass()->as_array_klass()->element_type()->basic_type();
-  BasicType n_elem = n_type->isa_aryptr()->klass()->as_array_klass()->element_type()->basic_type();
-  BasicType m_elem = m_type->isa_aryptr()->klass()->as_array_klass()->element_type()->basic_type();
+  BasicType a_elem = top_a->klass()->as_array_klass()->element_type()->basic_type();
+  BasicType b_elem = top_b->klass()->as_array_klass()->element_type()->basic_type();
+  BasicType n_elem = top_n->klass()->as_array_klass()->element_type()->basic_type();
+  BasicType m_elem = top_m->klass()->as_array_klass()->element_type()->basic_type();
   if (a_elem != T_INT || b_elem != T_INT || n_elem != T_INT || m_elem != T_INT) {
     return false;
   }
@@ -5265,9 +5268,9 @@ bool LibraryCallKit::inline_montgomerySquare() {
     return false;
   }
 
-  BasicType a_elem = a_type->isa_aryptr()->klass()->as_array_klass()->element_type()->basic_type();
-  BasicType n_elem = n_type->isa_aryptr()->klass()->as_array_klass()->element_type()->basic_type();
-  BasicType m_elem = m_type->isa_aryptr()->klass()->as_array_klass()->element_type()->basic_type();
+  BasicType a_elem = top_a->klass()->as_array_klass()->element_type()->basic_type();
+  BasicType n_elem = top_n->klass()->as_array_klass()->element_type()->basic_type();
+  BasicType m_elem = top_m->klass()->as_array_klass()->element_type()->basic_type();
   if (a_elem != T_INT || n_elem != T_INT || m_elem != T_INT) {
     return false;
   }
@@ -5317,8 +5320,8 @@ bool LibraryCallKit::inline_bigIntegerShift(bool isRightShift) {
     return false;
   }
 
-  BasicType newArr_elem = newArr_type->isa_aryptr()->klass()->as_array_klass()->element_type()->basic_type();
-  BasicType oldArr_elem = oldArr_type->isa_aryptr()->klass()->as_array_klass()->element_type()->basic_type();
+  BasicType newArr_elem = top_newArr->klass()->as_array_klass()->element_type()->basic_type();
+  BasicType oldArr_elem = top_oldArr->klass()->as_array_klass()->element_type()->basic_type();
   if (newArr_elem != T_INT || oldArr_elem != T_INT) {
     return false;
   }
@@ -5531,7 +5534,7 @@ bool LibraryCallKit::inline_updateBytesCRC32() {
   }
 
   // Figure out the size and type of the elements we will be copying.
-  BasicType src_elem = src_type->isa_aryptr()->klass()->as_array_klass()->element_type()->basic_type();
+  BasicType src_elem = top_src->klass()->as_array_klass()->element_type()->basic_type();
   if (src_elem != T_BYTE) {
     return false;
   }
@@ -5620,7 +5623,7 @@ bool LibraryCallKit::inline_updateBytesCRC32C() {
   }
 
   // Figure out the size and type of the elements we will be copying.
-  BasicType src_elem = src_type->isa_aryptr()->klass()->as_array_klass()->element_type()->basic_type();
+  BasicType src_elem = top_src->klass()->as_array_klass()->element_type()->basic_type();
   if (src_elem != T_BYTE) {
     return false;
   }
@@ -5713,7 +5716,7 @@ bool LibraryCallKit::inline_updateBytesAdler32() {
   }
 
   // Figure out the size and type of the elements we will be copying.
-  BasicType src_elem = src_type->isa_aryptr()->klass()->as_array_klass()->element_type()->basic_type();
+  BasicType src_elem = top_src->klass()->as_array_klass()->element_type()->basic_type();
   if (src_elem != T_BYTE) {
     return false;
   }
@@ -6550,7 +6553,7 @@ bool LibraryCallKit::inline_digestBase_implCompress(vmIntrinsics::ID id) {
     return false;
   }
   // Figure out the size and type of the elements we will be copying.
-  BasicType src_elem = src_type->isa_aryptr()->klass()->as_array_klass()->element_type()->basic_type();
+  BasicType src_elem = top_src->klass()->as_array_klass()->element_type()->basic_type();
   if (src_elem != T_BYTE) {
     return false;
   }
@@ -6642,7 +6645,7 @@ bool LibraryCallKit::inline_digestBase_implCompressMB(int predicate) {
     return false;
   }
   // Figure out the size and type of the elements we will be copying.
-  BasicType src_elem = src_type->isa_aryptr()->klass()->as_array_klass()->element_type()->basic_type();
+  BasicType src_elem = top_src->klass()->as_array_klass()->element_type()->basic_type();
   if (src_elem != T_BYTE) {
     return false;
   }
