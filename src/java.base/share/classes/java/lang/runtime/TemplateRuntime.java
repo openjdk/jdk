@@ -43,19 +43,55 @@ import jdk.internal.access.SharedSecrets;
 import jdk.internal.javac.PreviewFeature;
 
 /**
- * Manages string template bootstrapping and creation. These methods may be used, for example,
- * by Java compiler implementations to implement the bodies of methods for {@link StringTemplate}
- * objects.
- * <p>
- * The {@link TemplateRuntime#newLargeStringTemplate} bootstrap method is used to create
- * {@link StringTemplate StringTemplates} that have more than
- * {@link java.lang.invoke.StringConcatFactory#MAX_INDY_CONCAT_ARG_SLOTS} values.
- * <p>
- * The {@link TemplateRuntime#newStringTemplate} bootstrap method is used to create
- * optimized {@link StringTemplate StringTemplates}.
- * <p>
- * The {@link TemplateRuntime#newLargeStringTemplate} bootstrap method is used
- * to bind to specialized processors that implement {@link Linkage}.
+ * Manages string template bootstrap methods. These methods may be used, for example,
+ * by Java compiler implementations to create {@link StringTemplate} instances. For example,
+ * the java compiler will translate the following code;
+ * {@snippet :
+ * int x = 10;
+ * int y = 20;
+ * StringTemplate st = RAW."\{x} + \{y} = \{x + y}";
+ * }
+ * to byte code that invokes the {@link java.lang.runtime.TemplateRuntime#newStringTemplate}
+ * bootstrap method to construct a {@link CallSite} that accepts two integers and produces a new
+ * {@link StringTemplate} instance.
+ * {@snippet :
+ * MethodHandles.Lookup lookup = MethodHandles.lookup();
+ * MethodType mt = MethodType.methodType(StringTemplate.class, int.class, int.class);
+ * CallSite cs = TemplateRuntime.newStringTemplate(lookup, "", mt, "", " + ", " = ", "");
+ * ...
+ * int x = 10;
+ * int y = 20;
+ * StringTemplate st = (StringTemplate)cs.getTarget().invokeExact(x, y);
+ * }
+ * If the string template requires more than
+ * {@link java.lang.invoke.StringConcatFactory#MAX_INDY_CONCAT_ARG_SLOTS} value slots,
+ * then the java compiler will use the
+ * {@link java.lang.runtime.TemplateRuntime#newLargeStringTemplate} bootstrap method
+ * instead. For example, the java compiler will translate the following code;
+ * {@snippet :
+ * int[] a = new int[1000], b = new int[1000];
+ * ...
+ * StringTemplate st = """
+ *      \{a[0]} - \{b[0]}
+ *      \{a[1]} - \{b[1]}
+ *      ...
+ *      \{a[999]} - \{b[999]}
+ *      """;
+ * }
+ * to byte code that invokes the {@link java.lang.runtime.TemplateRuntime#newLargeStringTemplate}
+ * bootstrap method to construct a {@link CallSite} that accepts an array of integers and produces a new
+ * {@link StringTemplate} instance.
+ * {@snippet :
+ * MethodType mt = MethodType.methodType(StringTemplate.class, String[].class, Object[].class);
+ * CallSite cs = TemplateRuntime.newStringTemplate(lookup, "", mt);
+ * ...
+ * int[] a = new int[1000], b = new int[1000];
+ * ...
+ * StringTemplate st = (StringTemplate)cs.getTarget().invokeExact(
+ *         new String[] { "", " - ", "\n", " - ", "\n", ... " - ", "\n" },
+ *         new Object[] { a[0], b[0], a[1], b[1], ..., a[999], b[999]}
+ *         );
+ * }
  *
  * @since 21
  */
@@ -101,37 +137,11 @@ public final class TemplateRuntime {
     }
 
     /**
-     * String template bootstrap method for creating large string templates,
-     * i.e., when the number of value slots exceeds
-     * {@link java.lang.invoke.StringConcatFactory#MAX_INDY_CONCAT_ARG_SLOTS}.
-     * The non-static arguments are the fragments array and values array.
-     *
-     * @param lookup          method lookup
-     * @param name            method name - not used
-     * @param type            method type
-     *                        (String[], Object[]) -> StringTemplate
-     *
-     * @return {@link CallSite} to handle create large string template
-     *
-     * @throws NullPointerException if any of the arguments is null
-     * @throws Throwable            if linkage fails
-     */
-    public static CallSite newLargeStringTemplate(MethodHandles.Lookup lookup,
-                                                  String name,
-                                                  MethodType type) throws Throwable {
-        Objects.requireNonNull(lookup, "lookup is null");
-        Objects.requireNonNull(name, "name is null");
-        Objects.requireNonNull(type, "type is null");
-
-        return new ConstantCallSite(NEW_TRUSTED_STRING_TEMPLATE.asType(type));
-    }
-
-    /**
      * String template bootstrap method for creating string templates.
      * The static arguments include the fragments list.
      * The non-static arguments are the values.
      *
-     * @param lookup          method lookup
+     * @param lookup          method lookup from call site
      * @param name            method name - not used
      * @param type            method type
      *                        (ptypes...) -> StringTemplate
@@ -158,12 +168,38 @@ public final class TemplateRuntime {
     }
 
     /**
+     * String template bootstrap method for creating large string templates,
+     * i.e., when the number of value slots exceeds
+     * {@link java.lang.invoke.StringConcatFactory#MAX_INDY_CONCAT_ARG_SLOTS}.
+     * The non-static arguments are the fragments array and values array.
+     *
+     * @param lookup          method lookup from call site
+     * @param name            method name - not used
+     * @param type            method type
+     *                        (String[], Object[]) -> StringTemplate
+     *
+     * @return {@link CallSite} to handle create large string template
+     *
+     * @throws NullPointerException if any of the arguments is null
+     * @throws Throwable            if linkage fails
+     */
+    public static CallSite newLargeStringTemplate(MethodHandles.Lookup lookup,
+                                                  String name,
+                                                  MethodType type) throws Throwable {
+        Objects.requireNonNull(lookup, "lookup is null");
+        Objects.requireNonNull(name, "name is null");
+        Objects.requireNonNull(type, "type is null");
+
+        return new ConstantCallSite(NEW_TRUSTED_STRING_TEMPLATE.asType(type));
+    }
+
+    /**
      * String template bootstrap method for static final processors.
      * The static arguments include the fragments array  and a {@link MethodHandle}
      * to retrieve the value of the static final processor.
      * The non-static arguments are the values.
      *
-     * @param lookup          method lookup
+     * @param lookup          method lookup from call site
      * @param name            method name - not used
      * @param type            method type
      *                        (ptypes...) -> Object
@@ -174,6 +210,8 @@ public final class TemplateRuntime {
      *
      * @throws NullPointerException if any of the arguments is null
      * @throws Throwable            if linkage fails
+     *
+     * @implNote this method is likely to be revamped before exiting preview.
      */
     public static CallSite processStringTemplate(MethodHandles.Lookup lookup,
                                                  String name,

@@ -1053,6 +1053,7 @@ public final class StringConcatFactory {
      *
      * @throws StringConcatException If any of the linkage invariants are violated.
      * @throws NullPointerException If any of the incoming arguments is null.
+     * @throws IllegalArgumentException If the number of value slots exceed {@link #MAX_INDY_CONCAT_ARG_SLOTS}.
      *
      * @since 21
      */
@@ -1183,6 +1184,7 @@ public final class StringConcatFactory {
      *                                  MAX_INDY_CONCAT_ARG_SLOTS.
      * @throws StringConcatException If any of the linkage invariants are violated.
      * @throws NullPointerException If any of the incoming arguments is null.
+     * @throws IllegalArgumentException If the number of value slots exceed {@link #MAX_INDY_CONCAT_ARG_SLOTS}.
      *
      * @since 21
      */
@@ -1259,6 +1261,7 @@ public final class StringConcatFactory {
      *                                  getters don't use the same argument type
      * @throws StringConcatException If any of the linkage invariants are violated
      * @throws NullPointerException If any of the incoming arguments is null
+     * @throws IllegalArgumentException If the number of value slots exceed {@link #MAX_INDY_CONCAT_ARG_SLOTS}.
      *
      * @since 21
      */

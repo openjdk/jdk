@@ -25,7 +25,6 @@
 
 package java.lang;
 
-import java.lang.invoke.CallSite;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 import java.util.FormatProcessor;
@@ -133,6 +132,8 @@ public interface StringTemplate {
      * {@code List.of("The student ", " is in ", "'s classroom.")}
      *
      * @return list of string fragments
+     *
+     * @implSpec the list returned is immutable
      */
     List<String> fragments();
 
@@ -148,6 +149,8 @@ public interface StringTemplate {
      * {@code values} will be equivalent to {@code List.of(student, teacher)}
      *
      * @return list of expression values
+     *
+     * @implSpec the list returned is immutable
      */
     List<Object> values();
 
@@ -571,9 +574,9 @@ public interface StringTemplate {
          *
          * @return a {@link Processor}
          *
-         * @param <R>  Processor's process result type
+         * @param <T>  Processor's process result type
          */
-        static <R> Processor<R, RuntimeException> of(Function<? super StringTemplate, ? extends R> process) {
+        static <T> Processor<T, RuntimeException> of(Function<? super StringTemplate, ? extends T> process) {
             return process::apply;
         }
 
