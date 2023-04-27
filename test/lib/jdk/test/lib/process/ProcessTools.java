@@ -163,8 +163,11 @@ public final class ProcessTools {
         private int current = 0;
         final private Process p;
 
-        public BufferOutputStream(Process p) {
+        final private Future<Void> task;
+
+        public BufferOutputStream(Process p, Future<Void> task) {
             this.p = p;
+            this.task = task;
         }
 
         synchronized int readNext() {
@@ -174,7 +177,16 @@ public final class ProcessTools {
             }
             while (current == count) {
                 if (!p.isAlive()) {
-                    return -1;
+                    try {
+                        // It is needed to wait until stream is flushed after
+                        // process is completed.
+                        task.get();
+                        if (current == count) {
+                            return -1;
+                        }
+                    } catch (Exception e) {
+                        return -1;
+                    }
                 }
                 try {
                     wait(1);
@@ -190,8 +202,8 @@ public final class ProcessTools {
 
         private final BufferOutputStream buffer;
 
-        public BufferInputStream(Process p) {
-            buffer = new BufferOutputStream(p);
+        public BufferInputStream(Process p, Future<Void> task) {
+            buffer = new BufferOutputStream(p, task);
         }
 
         OutputStream getOutputStream() {
@@ -242,11 +254,7 @@ public final class ProcessTools {
 
         stdout.addPump(new LineForwarder(name, System.out));
         stderr.addPump(new LineForwarder(name, System.err));
-        BufferInputStream stdOut = new BufferInputStream(p);
-        BufferInputStream stdErr = new BufferInputStream(p);
 
-        stdout.addOutputStream(stdOut.getOutputStream());
-        stderr.addOutputStream(stdErr.getOutputStream());
 
         if (lineConsumer != null) {
             StreamPumper.LinePump pump = new StreamPumper.LinePump() {
@@ -279,8 +287,15 @@ public final class ProcessTools {
         } else {
             latch.countDown();
         }
+
         final Future<Void> stdoutTask = stdout.process();
         final Future<Void> stderrTask = stderr.process();
+
+        BufferInputStream stdOut = new BufferInputStream(p, stdoutTask);
+        BufferInputStream stdErr = new BufferInputStream(p, stderrTask);
+
+        stdout.addOutputStream(stdOut.getOutputStream());
+        stderr.addOutputStream(stdErr.getOutputStream());
 
         try {
             if (timeout > -1) {
