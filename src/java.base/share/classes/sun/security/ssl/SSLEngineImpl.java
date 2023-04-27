@@ -372,7 +372,7 @@ final class SSLEngineImpl extends SSLEngine implements SSLTransport {
             } else if (conContext.isPostHandshakeContext()) {
                 // unlikely, but just in case.
                 hsStatus = conContext.finishPostHandshake();
-            } else if (conContext.handshakeContext.handshakeFinished) {
+            } else if (conContext.isHandshakeFinished()) {
                 hsStatus = conContext.finishHandshake();
             }
         }   // Otherwise, the followed call to getHSStatus() will help.
@@ -760,11 +760,12 @@ final class SSLEngineImpl extends SSLEngine implements SSLTransport {
     @Override
     public Runnable getDelegatedTask() {
         engineLock.lock();
+        HandshakeContext context = conContext.handshakeContext;
         try {
-            if (conContext.handshakeContext != null && // PRE or POST handshake
+            if (context != null && // PRE or POST handshake
                     !conContext.handshakeContext.taskDelegated &&
                     !conContext.handshakeContext.delegatedActions.isEmpty()) {
-                conContext.handshakeContext.taskDelegated = true;
+                context.taskDelegated = true;
                 return new DelegatedTask(this);
             }
         } finally {
@@ -911,13 +912,7 @@ final class SSLEngineImpl extends SSLEngine implements SSLTransport {
 
     @Override
     public SSLSession getHandshakeSession() {
-        engineLock.lock();
-        try {
-            return conContext.handshakeContext == null ?
-                    null : conContext.handshakeContext.handshakeSession;
-        } finally {
-            engineLock.unlock();
-        }
+        return conContext.getHandshakeSession();
     }
 
     @Override
