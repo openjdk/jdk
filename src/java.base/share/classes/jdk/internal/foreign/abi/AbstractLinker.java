@@ -47,17 +47,15 @@ import java.lang.invoke.MethodType;
 import java.util.Objects;
 
 public abstract sealed class AbstractLinker implements Linker permits LinuxAArch64Linker, MacOsAArch64Linker,
-        SysVx64Linker, WindowsAArch64Linker,
-        Windowsx64Linker, LinuxPPC64leLinker,
-        LinuxRISCV64Linker, FallbackLinker {
+                                                                      SysVx64Linker, WindowsAArch64Linker,
+                                                                      Windowsx64Linker, LinuxPPC64leLinker,
+                                                                      LinuxRISCV64Linker, FallbackLinker {
 
     public interface UpcallStubFactory {
         MemorySegment makeStub(MethodHandle target, Arena arena);
     }
 
-    private record LinkRequest(FunctionDescriptor descriptor, LinkerOptions options) {
-    }
-
+    private record LinkRequest(FunctionDescriptor descriptor, LinkerOptions options) {}
     private final SoftReferenceCache<LinkRequest, MethodHandle> DOWNCALL_CACHE = new SoftReferenceCache<>();
     private final SoftReferenceCache<LinkRequest, UpcallStubFactory> UPCALL_CACHE = new SoftReferenceCache<>();
 
@@ -68,7 +66,7 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
         checkHasNaturalAlignment(function);
         LinkerOptions optionSet = LinkerOptions.forDowncall(function, options);
 
-        return DOWNCALL_CACHE.get(new LinkRequest(function, optionSet), linkRequest -> {
+        return DOWNCALL_CACHE.get(new LinkRequest(function, optionSet), linkRequest ->  {
             FunctionDescriptor fd = linkRequest.descriptor();
             MethodType type = fd.toMethodType();
             MethodHandle handle = arrangeDowncall(type, fd, linkRequest.options());
@@ -76,13 +74,10 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
             return handle;
         });
     }
-
-    protected abstract MethodHandle arrangeDowncall(MethodType inferredMethodType, FunctionDescriptor function,
-            LinkerOptions options);
+    protected abstract MethodHandle arrangeDowncall(MethodType inferredMethodType, FunctionDescriptor function, LinkerOptions options);
 
     @Override
-    public MemorySegment upcallStub(MethodHandle target, FunctionDescriptor function, Arena arena,
-            Linker.Option... options) {
+    public MemorySegment upcallStub(MethodHandle target, FunctionDescriptor function, Arena arena, Linker.Option... options) {
         Objects.requireNonNull(arena);
         Objects.requireNonNull(target);
         Objects.requireNonNull(function);
@@ -95,13 +90,12 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
             throw new IllegalArgumentException("Wrong method handle type: " + target.type());
         }
 
-        UpcallStubFactory factory = UPCALL_CACHE.get(new LinkRequest(function, optionSet),
-                linkRequest -> arrangeUpcall(type, linkRequest.descriptor(), linkRequest.options()));
+        UpcallStubFactory factory = UPCALL_CACHE.get(new LinkRequest(function, optionSet), linkRequest ->
+            arrangeUpcall(type, linkRequest.descriptor(), linkRequest.options()));
         return factory.makeStub(target, arena);
     }
 
-    protected abstract UpcallStubFactory arrangeUpcall(MethodType targetType, FunctionDescriptor function,
-            LinkerOptions options);
+    protected abstract UpcallStubFactory arrangeUpcall(MethodType targetType, FunctionDescriptor function, LinkerOptions options);
 
     @Override
     public SystemLookup defaultLookup() {

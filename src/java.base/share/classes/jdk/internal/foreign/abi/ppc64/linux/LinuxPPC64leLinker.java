@@ -44,14 +44,12 @@ public final class LinuxPPC64leLinker extends AbstractLinker {
     }
 
     @Override
-    protected MethodHandle arrangeDowncall(MethodType inferredMethodType, FunctionDescriptor function,
-            LinkerOptions options) {
+    protected MethodHandle arrangeDowncall(MethodType inferredMethodType, FunctionDescriptor function, LinkerOptions options) {
         return CallArranger.ABIv2.arrangeDowncall(inferredMethodType, function, options);
     }
 
     @Override
-    protected UpcallStubFactory arrangeUpcall(MethodType targetType, FunctionDescriptor function,
-            LinkerOptions options) {
+    protected UpcallStubFactory arrangeUpcall(MethodType targetType, FunctionDescriptor function, LinkerOptions options) {
         return CallArranger.ABIv2.arrangeUpcall(targetType, function, options);
     }
 }

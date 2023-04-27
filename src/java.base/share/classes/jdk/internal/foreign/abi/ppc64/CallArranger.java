@@ -55,16 +55,13 @@ import static jdk.internal.foreign.abi.ppc64.PPC64Architecture.Regs.*;
 
 /**
  * For the PPC64 C ABI specifically, this class uses CallingSequenceBuilder
- * to translate a C FunctionDescriptor into a CallingSequence, which can then be
- * turned into a MethodHandle.
+ * to translate a C FunctionDescriptor into a CallingSequence, which can then be turned into a MethodHandle.
  *
- * This includes taking care of synthetic arguments like pointers to return
- * buffers for 'in-memory' returns.
+ * This includes taking care of synthetic arguments like pointers to return buffers for 'in-memory' returns.
  *
  * There are minor differences between the ABIs implemented on Linux and AIX
- * which are handled in sub-classes. Clients should access these through the
- * provided
- * public constants CallArranger.LINUX.
+ * which are handled in sub-classes. Clients should access these through the provided
+ * public constants CallArranger.ABIv1/2.
  */
 public abstract class CallArranger {
     protected abstract boolean useABIv2();
@@ -76,26 +73,23 @@ public abstract class CallArranger {
     // This is derived from the 64-Bit ELF V2 ABI spec, restricted to what's
     // possible when calling to/from C code.
     private final ABIDescriptor C = abiFor(
-            new VMStorage[] { r3, r4, r5, r6, r7, r8, r9, r10 }, // GP input
-            new VMStorage[] { f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13 }, // FP intput
-            new VMStorage[] { r3, r4 }, // GP output
-            new VMStorage[] { f1, f2, f3, f4, f5, f6, f7, f8 }, // FP output
-            new VMStorage[] { r0, r2, r11, r12 }, // volatile GP (excluding argument registers)
-            new VMStorage[] { f0 }, // volatile FP (excluding argument registers)
-            16, // Stack is always 16 byte aligned on PPC64
-            useABIv2() ? 32 : 48, // ABI header (excluding argument register spill slots)
-            r11, // scratch reg
-            r12 // target addr reg, otherwise used as scratch reg
+        new VMStorage[] { r3, r4, r5, r6, r7, r8, r9, r10 }, // GP input
+        new VMStorage[] { f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13 }, // FP intput
+        new VMStorage[] { r3, r4 }, // GP output
+        new VMStorage[] { f1, f2, f3, f4, f5, f6, f7, f8 }, // FP output
+        new VMStorage[] { r0, r2, r11, r12 }, // volatile GP (excluding argument registers)
+        new VMStorage[] { f0 }, // volatile FP (excluding argument registers)
+        16, // Stack is always 16 byte aligned on PPC64
+        useABIv2() ? 32 : 48, // ABI header (excluding argument register spill slots)
+        r11, // scratch reg
+        r12  // target addr reg, otherwise used as scratch reg
     );
 
-    public record Bindings(CallingSequence callingSequence, boolean isInMemoryReturn) {
-    }
+    public record Bindings(CallingSequence callingSequence, boolean isInMemoryReturn) {}
 
-    private record HfaRegs(VMStorage[] first, VMStorage[] second) {
-    }
+    private record HfaRegs(VMStorage[] first, VMStorage[] second) {}
 
-    protected CallArranger() {
-    }
+    protected CallArranger() {}
 
     public static final CallArranger ABIv2 = new ABIv2CallArranger();
 
@@ -144,8 +138,7 @@ public abstract class CallArranger {
         return handle;
     }
 
-    public UpcallStubFactory arrangeUpcall(MethodType mt, FunctionDescriptor cDesc,
-            LinkerOptions options) {
+    public UpcallStubFactory arrangeUpcall(MethodType mt, FunctionDescriptor cDesc, LinkerOptions options) {
         Bindings bindings = getBindings(mt, cDesc, true, options);
 
         final boolean dropReturn = true; /* drop return, since we don't have bindings for it */
@@ -155,9 +148,9 @@ public abstract class CallArranger {
 
     private boolean isInMemoryReturn(Optional<MemoryLayout> returnLayout) {
         return returnLayout
-                .filter(GroupLayout.class::isInstance)
-                .filter(layout -> !TypeClass.isStructHFAorReturnRegisterAggregate(layout, useABIv2()))
-                .isPresent();
+            .filter(GroupLayout.class::isInstance)
+            .filter(layout -> !TypeClass.isStructHFAorReturnRegisterAggregate(layout, useABIv2()))
+            .isPresent();
     }
 
     class StorageCalculator {
@@ -191,8 +184,7 @@ public abstract class CallArranger {
             if (type == StorageType.FLOAT && nRegs[StorageType.FLOAT] + fpRegCnt > MAX_FLOAT_REGISTER_ARGUMENTS) {
                 type = StorageType.INTEGER; // Try gp reg.
             }
-            if (type == StorageType.INTEGER && nRegs[StorageType.INTEGER] + gpRegCnt > MAX_REGISTER_ARGUMENTS)
-                return null;
+            if (type == StorageType.INTEGER && nRegs[StorageType.INTEGER] + gpRegCnt > MAX_REGISTER_ARGUMENTS) return null;
 
             VMStorage[] source = (forArguments ? C.inputStorage : C.outputStorage)[type];
             VMStorage result = source[nRegs[type]];
@@ -203,8 +195,7 @@ public abstract class CallArranger {
         }
 
         // Integers need size for int to long conversion (required by ABI).
-        // FP loads and stores must use the correct IEEE 754 precision format (32/64
-        // bit).
+        // FP loads and stores must use the correct IEEE 754 precision format (32/64 bit).
         // Note: Can return a GP reg for a float!
         VMStorage nextStorage(int type, boolean is32Bit) {
             VMStorage reg = regAlloc(type);
@@ -215,8 +206,7 @@ public abstract class CallArranger {
             } else {
                 stack = stackAlloc(is32Bit ? 4 : 8, STACK_SLOT_SIZE);
             }
-            if (reg == null)
-                return stack;
+            if (reg == null) return stack;
             if (is32Bit) {
                 reg = new VMStorage(reg.type(), PPC64Architecture.REG32_MASK, reg.indexOrOffset());
             }
@@ -226,10 +216,9 @@ public abstract class CallArranger {
         // Regular struct, no HFA.
         VMStorage[] structAlloc(MemoryLayout layout) {
             // TODO: Big Endian can't pass partially used slots correctly.
-            if (!useABIv2() && layout.byteSize() % 8 != 0)
-                throw new UnsupportedOperationException(
-                        "Only MemoryLayouts with size multiple of 8 supported. This layout has size " +
-                                layout.byteSize() + ".");
+            if (!useABIv2() && layout.byteSize() % 8 != 0) throw new UnsupportedOperationException(
+                "Only MemoryLayouts with size multiple of 8 supported. This layout has size " +
+                layout.byteSize() + ".");
 
             // Allocate individual fields as gp slots (regs and stack).
             int nFields = (int) ((layout.byteSize() + 7) / 8);
@@ -268,14 +257,14 @@ public abstract class CallArranger {
             }
 
             VMStorage[] source = (forArguments ? C.inputStorage : C.outputStorage)[StorageType.FLOAT];
-            VMStorage[] result = new VMStorage[fpRegCnt + structSlots],
-                    result2 = new VMStorage[fpRegCnt + structSlots]; // For overlapping.
+            VMStorage[] result  = new VMStorage[fpRegCnt + structSlots],
+                        result2 = new VMStorage[fpRegCnt + structSlots]; // For overlapping.
             if (elementCarrier == float.class) {
                 // Mark elements as single precision (32 bit).
                 for (int i = 0; i < fpRegCnt; i++) {
                     VMStorage sourceReg = source[nRegs[StorageType.FLOAT] + i];
                     result[i] = new VMStorage(StorageType.FLOAT, PPC64Architecture.REG32_MASK,
-                            sourceReg.indexOrOffset());
+                                              sourceReg.indexOrOffset());
                 }
             } else {
                 for (int i = 0; i < fpRegCnt; i++) {
@@ -284,10 +273,9 @@ public abstract class CallArranger {
             }
 
             nRegs[StorageType.FLOAT] += fpRegCnt;
-            // Reserve GP regs and stack slots for the packed HFA (when using single
-            // precision).
+            // Reserve GP regs and stack slots for the packed HFA (when using single precision).
             int gpRegCnt = (elementCarrier == float.class) ? ((fpRegCnt + 1) / 2)
-                    : fpRegCnt;
+                                                           : fpRegCnt;
             nRegs[StorageType.INTEGER] += gpRegCnt;
             stackAlloc(fpRegCnt * elementSize, STACK_SLOT_SIZE);
 
@@ -298,10 +286,10 @@ public abstract class CallArranger {
                 if (nRegs[StorageType.INTEGER] <= MAX_REGISTER_ARGUMENTS) {
                     VMStorage allocatedGpReg = C.inputStorage[StorageType.INTEGER][nRegs[StorageType.INTEGER] - 1];
                     overlappingReg = new VMStorage(StorageType.INTEGER,
-                            PPC64Architecture.REG64_MASK, allocatedGpReg.indexOrOffset());
+                                                   PPC64Architecture.REG64_MASK, allocatedGpReg.indexOrOffset());
                 } else {
                     overlappingReg = new VMStorage(StorageType.STACK,
-                            (short) STACK_SLOT_SIZE, (int) stackOffset - 4);
+                                                   (short) STACK_SLOT_SIZE, (int) stackOffset - 4);
                     stackOffset += 4; // We now have a 64 bit slot, but reserved only 32 bit before.
                 }
                 result2[fpRegCnt - 1] = overlappingReg;
@@ -367,10 +355,9 @@ public abstract class CallArranger {
                     long offset = 0;
                     for (int index = 0; index < regs.first().length; index++) {
                         VMStorage storage = regs.first()[index];
-                        // Floats are 4 Bytes, Double, GP reg and stack slots 8 Bytes (except maybe last
-                        // slot).
+                        // Floats are 4 Bytes, Double, GP reg and stack slots 8 Bytes (except maybe last slot).
                         long size = (baseSize == 4 &&
-                                (storage.type() == StorageType.FLOAT || layout.byteSize() - offset < 8)) ? 4 : 8;
+                                     (storage.type() == StorageType.FLOAT || layout.byteSize() - offset < 8)) ? 4 : 8;
                         Class<?> type = SharedUtils.primitiveCarrierForSize(size, storage.type() == StorageType.FLOAT);
                         if (offset + size < layout.byteSize()) {
                             bindings.dup();
@@ -446,10 +433,9 @@ public abstract class CallArranger {
                     for (int index = 0; index < regs.first().length; index++) {
                         // Use second if available since first one only contains one 32 bit value.
                         VMStorage storage = regs.second()[index] == null ? regs.first()[index] : regs.second()[index];
-                        // Floats are 4 Bytes, Double, GP reg and stack slots 8 Bytes (except maybe last
-                        // slot).
+                        // Floats are 4 Bytes, Double, GP reg and stack slots 8 Bytes (except maybe last slot).
                         final long size = (baseSize == 4 &&
-                                (storage.type() == StorageType.FLOAT || layout.byteSize() - offset < 8)) ? 4 : 8;
+                                           (storage.type() == StorageType.FLOAT || layout.byteSize() - offset < 8)) ? 4 : 8;
                         Class<?> type = SharedUtils.primitiveCarrierForSize(size, storage.type() == StorageType.FLOAT);
                         bindings.dup()
                                 .vmLoad(storage, type)
@@ -464,8 +450,7 @@ public abstract class CallArranger {
                             .boxAddressRaw(Utils.pointeeByteSize(addressLayout), Utils.pointeeByteAlign(addressLayout));
                 }
                 case INTEGER -> {
-                    // We could use carrier != long.class for BoxBindingCalculator, but C always
-                    // uses 64 bit slots.
+                    // We could use carrier != long.class for BoxBindingCalculator, but C always uses 64 bit slots.
                     VMStorage storage = storageCalculator.nextStorage(StorageType.INTEGER, false);
                     bindings.vmLoad(storage, carrier);
                 }

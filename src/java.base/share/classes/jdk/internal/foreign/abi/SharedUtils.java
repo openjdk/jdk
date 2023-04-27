@@ -126,25 +126,18 @@ public final class SharedUtils {
     }
 
     /**
-     * Takes a MethodHandle that takes an input buffer as a first argument (a
-     * MemorySegment), and returns nothing,
-     * and adapts it to return a MemorySegment, by allocating a MemorySegment for
-     * the input
-     * buffer, calling the target MethodHandle, and then returning the allocated
-     * MemorySegment.
+     * Takes a MethodHandle that takes an input buffer as a first argument (a MemorySegment), and returns nothing,
+     * and adapts it to return a MemorySegment, by allocating a MemorySegment for the input
+     * buffer, calling the target MethodHandle, and then returning the allocated MemorySegment.
      *
-     * This allows viewing a MethodHandle that makes use of in memory return (IMR)
-     * as a MethodHandle that just returns
-     * a MemorySegment without requiring a pre-allocated buffer as an explicit
-     * input.
+     * This allows viewing a MethodHandle that makes use of in memory return (IMR) as a MethodHandle that just returns
+     * a MemorySegment without requiring a pre-allocated buffer as an explicit input.
      *
      * @param handle the target handle to adapt
-     * @param cDesc  the function descriptor of the native function (with actual
-     *               return layout)
+     * @param cDesc the function descriptor of the native function (with actual return layout)
      * @return the adapted handle
      */
-    public static MethodHandle adaptDowncallForIMR(MethodHandle handle, FunctionDescriptor cDesc,
-            CallingSequence sequence) {
+    public static MethodHandle adaptDowncallForIMR(MethodHandle handle, FunctionDescriptor cDesc, CallingSequence sequence) {
         if (handle.type().returnType() != void.class)
             throw new IllegalArgumentException("return expected to be void for in memory returns: " + handle.type());
         int imrAddrIdx = sequence.numLeadingParams();
@@ -154,25 +147,17 @@ public final class SharedUtils {
             throw new IllegalArgumentException("Return layout needed: " + cDesc);
 
         MethodHandle ret = identity(MemorySegment.class); // (MemorySegment) MemorySegment
-        handle = collectArguments(ret, 1, handle); // (MemorySegment, MemorySegment, SegmentAllocator, MemorySegment,
-                                                   // ...) MemorySegment
-        handle = mergeArguments(handle, 0, 1 + imrAddrIdx); // (MemorySegment, MemorySegment, SegmentAllocator, ...)
-                                                            // MemorySegment
-        handle = collectArguments(handle, 0, insertArguments(MH_ALLOC_BUFFER, 1, cDesc.returnLayout().get())); // (SegmentAllocator,
-                                                                                                               // MemorySegment,
-                                                                                                               // SegmentAllocator,
-                                                                                                               // ...)
-                                                                                                               // MemorySegment
-        handle = mergeArguments(handle, 0, 2); // (SegmentAllocator, MemorySegment, ...) MemorySegment
+        handle = collectArguments(ret, 1, handle); // (MemorySegment, MemorySegment, SegmentAllocator, MemorySegment, ...) MemorySegment
+        handle = mergeArguments(handle, 0, 1 + imrAddrIdx);  // (MemorySegment, MemorySegment, SegmentAllocator, ...) MemorySegment
+        handle = collectArguments(handle, 0, insertArguments(MH_ALLOC_BUFFER, 1, cDesc.returnLayout().get())); // (SegmentAllocator, MemorySegment, SegmentAllocator, ...) MemorySegment
+        handle = mergeArguments(handle, 0, 2);  // (SegmentAllocator, MemorySegment, ...) MemorySegment
         handle = swapArguments(handle, 0, 1); // (MemorySegment, SegmentAllocator, ...) MemorySegment
         return handle;
     }
 
     /**
-     * Takes a MethodHandle that returns a MemorySegment, and adapts it to take an
-     * input buffer as a first argument
-     * (a MemorySegment), and upon invocation, copies the contents of the returned
-     * MemorySegment into the input buffer
+     * Takes a MethodHandle that returns a MemorySegment, and adapts it to take an input buffer as a first argument
+     * (a MemorySegment), and upon invocation, copies the contents of the returned MemorySegment into the input buffer
      * passed as the first argument.
      *
      * @param target the target handle to adapt
@@ -195,9 +180,8 @@ public final class SharedUtils {
         return target;
     }
 
-    public static UpcallStubFactory arrangeUpcallHelper(MethodType targetType, boolean isInMemoryReturn,
-            boolean dropReturn,
-            ABIDescriptor abi, CallingSequence callingSequence) {
+    public static UpcallStubFactory arrangeUpcallHelper(MethodType targetType, boolean isInMemoryReturn, boolean dropReturn,
+                                                        ABIDescriptor abi, CallingSequence callingSequence) {
         if (isInMemoryReturn) {
             // simulate the adaptation to get the type
             MethodHandle fakeTarget = MethodHandles.empty(targetType);
@@ -269,8 +253,7 @@ public final class SharedUtils {
     }
 
     private static int strlen(MemorySegment segment, long start) {
-        // iterate until overflow (String can only hold a byte[], whose length can be
-        // expressed as an int)
+        // iterate until overflow (String can only hold a byte[], whose length can be expressed as an int)
         for (int offset = 0; offset >= 0; offset++) {
             byte curr = segment.get(JAVA_BYTE, start + offset);
             if (curr == 0) {
@@ -282,8 +265,8 @@ public final class SharedUtils {
 
     static Map<VMStorage, Integer> indexMap(Binding.Move[] moves) {
         return IntStream.range(0, moves.length)
-                .boxed()
-                .collect(Collectors.toMap(i -> moves[i].storage(), i -> i));
+                        .boxed()
+                        .collect(Collectors.toMap(i -> moves[i].storage(), i -> i));
     }
 
     static MethodHandle mergeArguments(MethodHandle mh, int sourceIndex, int destIndex) {
@@ -309,16 +292,15 @@ public final class SharedUtils {
         return permuteArguments(mh, newType, reorder);
     }
 
+
     public static MethodHandle swapArguments(MethodHandle mh, int firstArg, int secondArg) {
         MethodType mtype = mh.type();
         int[] perms = new int[mtype.parameterCount()];
         MethodType swappedType = MethodType.methodType(mtype.returnType());
-        for (int i = 0; i < perms.length; i++) {
+        for (int i = 0 ; i < perms.length ; i++) {
             int dst = i;
-            if (i == firstArg)
-                dst = secondArg;
-            if (i == secondArg)
-                dst = firstArg;
+            if (i == firstArg) dst = secondArg;
+            if (i == secondArg) dst = firstArg;
             perms[i] = dst;
             swappedType = swappedType.appendParameterTypes(mtype.parameterType(dst));
         }
@@ -460,8 +442,8 @@ public final class SharedUtils {
         } else if (type == double.class) {
             ptr.set(JAVA_DOUBLE_UNALIGNED, 0, (double) o);
         } else if (type == boolean.class) {
-            boolean b = (boolean) o;
-            ptr.set(JAVA_LONG_UNALIGNED, 0, b ? (long) 1 : (long) 0);
+            boolean b = (boolean)o;
+            ptr.set(JAVA_LONG_UNALIGNED, 0, b ? (long)1 : (long)0);
         } else {
             throw new IllegalArgumentException("Unsupported carrier: " + type);
         }

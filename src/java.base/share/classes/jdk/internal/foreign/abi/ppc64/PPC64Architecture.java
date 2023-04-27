@@ -53,10 +53,8 @@ public final class PPC64Architecture implements Architecture {
     @Override
     public int typeSize(int cls) {
         switch (cls) {
-            case StorageType.INTEGER:
-                return INTEGER_REG_SIZE;
-            case StorageType.FLOAT:
-                return FLOAT_REG_SIZE;
+            case StorageType.INTEGER: return INTEGER_REG_SIZE;
+            case StorageType.FLOAT: return FLOAT_REG_SIZE;
             // STACK is deliberately omitted
         }
 
@@ -71,16 +69,16 @@ public final class PPC64Architecture implements Architecture {
     }
 
     public static class Regs { // break circular dependency
-        public static final VMStorage r0 = integerRegister(0);
-        public static final VMStorage r1 = integerRegister(1);
-        public static final VMStorage r2 = integerRegister(2);
-        public static final VMStorage r3 = integerRegister(3);
-        public static final VMStorage r4 = integerRegister(4);
-        public static final VMStorage r5 = integerRegister(5);
-        public static final VMStorage r6 = integerRegister(6);
-        public static final VMStorage r7 = integerRegister(7);
-        public static final VMStorage r8 = integerRegister(8);
-        public static final VMStorage r9 = integerRegister(9);
+        public static final VMStorage r0  = integerRegister(0);
+        public static final VMStorage r1  = integerRegister(1);
+        public static final VMStorage r2  = integerRegister(2);
+        public static final VMStorage r3  = integerRegister(3);
+        public static final VMStorage r4  = integerRegister(4);
+        public static final VMStorage r5  = integerRegister(5);
+        public static final VMStorage r6  = integerRegister(6);
+        public static final VMStorage r7  = integerRegister(7);
+        public static final VMStorage r8  = integerRegister(8);
+        public static final VMStorage r9  = integerRegister(9);
         public static final VMStorage r10 = integerRegister(10);
         public static final VMStorage r11 = integerRegister(11);
         public static final VMStorage r12 = integerRegister(12);
@@ -104,16 +102,16 @@ public final class PPC64Architecture implements Architecture {
         public static final VMStorage r30 = integerRegister(30);
         public static final VMStorage r31 = integerRegister(31);
 
-        public static final VMStorage f0 = floatRegister(0);
-        public static final VMStorage f1 = floatRegister(1);
-        public static final VMStorage f2 = floatRegister(2);
-        public static final VMStorage f3 = floatRegister(3);
-        public static final VMStorage f4 = floatRegister(4);
-        public static final VMStorage f5 = floatRegister(5);
-        public static final VMStorage f6 = floatRegister(6);
-        public static final VMStorage f7 = floatRegister(7);
-        public static final VMStorage f8 = floatRegister(8);
-        public static final VMStorage f9 = floatRegister(9);
+        public static final VMStorage f0  = floatRegister(0);
+        public static final VMStorage f1  = floatRegister(1);
+        public static final VMStorage f2  = floatRegister(2);
+        public static final VMStorage f3  = floatRegister(3);
+        public static final VMStorage f4  = floatRegister(4);
+        public static final VMStorage f5  = floatRegister(5);
+        public static final VMStorage f6  = floatRegister(6);
+        public static final VMStorage f7  = floatRegister(7);
+        public static final VMStorage f8  = floatRegister(8);
+        public static final VMStorage f9  = floatRegister(9);
         public static final VMStorage f10 = floatRegister(10);
         public static final VMStorage f11 = floatRegister(11);
         public static final VMStorage f12 = floatRegister(12);
@@ -151,33 +149,33 @@ public final class PPC64Architecture implements Architecture {
     }
 
     public static ABIDescriptor abiFor(VMStorage[] inputIntRegs,
-            VMStorage[] inputFloatRegs,
-            VMStorage[] outputIntRegs,
-            VMStorage[] outputFloatRegs,
-            VMStorage[] volatileIntRegs,
-            VMStorage[] volatileFloatRegs,
-            int stackAlignment,
-            int shadowSpace,
-            VMStorage scratch1, VMStorage scratch2) {
+                                       VMStorage[] inputFloatRegs,
+                                       VMStorage[] outputIntRegs,
+                                       VMStorage[] outputFloatRegs,
+                                       VMStorage[] volatileIntRegs,
+                                       VMStorage[] volatileFloatRegs,
+                                       int stackAlignment,
+                                       int shadowSpace,
+                                       VMStorage scratch1, VMStorage scratch2) {
         return new ABIDescriptor(
-                INSTANCE,
-                new VMStorage[][] {
-                        inputIntRegs,
-                        inputFloatRegs,
-                },
-                new VMStorage[][] {
-                        outputIntRegs,
-                        outputFloatRegs,
-                },
-                new VMStorage[][] {
-                        volatileIntRegs,
-                        volatileFloatRegs,
-                },
-                stackAlignment,
-                shadowSpace,
-                scratch1, scratch2,
-                StubLocations.TARGET_ADDRESS.storage(StorageType.PLACEHOLDER),
-                StubLocations.RETURN_BUFFER.storage(StorageType.PLACEHOLDER),
-                StubLocations.CAPTURED_STATE_BUFFER.storage(StorageType.PLACEHOLDER));
+            INSTANCE,
+            new VMStorage[][] {
+                inputIntRegs,
+                inputFloatRegs,
+            },
+            new VMStorage[][] {
+                outputIntRegs,
+                outputFloatRegs,
+            },
+            new VMStorage[][] {
+                volatileIntRegs,
+                volatileFloatRegs,
+            },
+            stackAlignment,
+            shadowSpace,
+            scratch1, scratch2,
+            StubLocations.TARGET_ADDRESS.storage(StorageType.PLACEHOLDER),
+            StubLocations.RETURN_BUFFER.storage(StorageType.PLACEHOLDER),
+            StubLocations.CAPTURED_STATE_BUFFER.storage(StorageType.PLACEHOLDER));
     }
 }
