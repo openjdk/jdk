@@ -59,11 +59,11 @@ class PackageDescTest {
         assertEquals(PackageDesc.of("a"), PackageDesc.ofInternalName("a"));
         assertEquals(PackageDesc.of("a.b"), PackageDesc.ofInternalName("a/b"));
         assertEquals(PackageDesc.of("a.b.c"), PackageDesc.ofInternalName("a/b/c"));
-        assertEquals(PackageDesc.of("a").packageName(), PackageDesc.ofInternalName("a").packageName());
-        assertEquals(PackageDesc.of("a.b").packageName(), PackageDesc.ofInternalName("a/b").packageName());
-        assertEquals(PackageDesc.of("a.b.c").packageName(), PackageDesc.ofInternalName("a/b/c").packageName());
-        assertEquals(PackageDesc.of("a").packageInternalName(), PackageDesc.ofInternalName("a").packageInternalName());
-        assertEquals(PackageDesc.of("a.b").packageInternalName(), PackageDesc.ofInternalName("a/b").packageInternalName());
-        assertEquals(PackageDesc.of("a.b.c").packageInternalName(), PackageDesc.ofInternalName("a/b/c").packageInternalName());
+        assertEquals(PackageDesc.of("a").name(), PackageDesc.ofInternalName("a").name());
+        assertEquals(PackageDesc.of("a.b").name(), PackageDesc.ofInternalName("a/b").name());
+        assertEquals(PackageDesc.of("a.b.c").name(), PackageDesc.ofInternalName("a/b/c").name());
+        assertEquals(PackageDesc.of("a").internalName(), PackageDesc.ofInternalName("a").internalName());
+        assertEquals(PackageDesc.of("a.b").internalName(), PackageDesc.ofInternalName("a/b").internalName());
+        assertEquals(PackageDesc.of("a.b.c").internalName(), PackageDesc.ofInternalName("a/b/c").internalName());
     }
 }

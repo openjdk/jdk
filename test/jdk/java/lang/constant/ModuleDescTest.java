@@ -37,7 +37,13 @@ import static org.junit.jupiter.api.Assertions.*;
 class ModuleDescTest {
 
     @ParameterizedTest
-    @ValueSource(strings = {"abc\\", "ab\\c", "\u0000", "\u0001", "\u001e", "\u001f"})
+    @ValueSource(strings = {
+        "abc\\", "ab\\c", "\u0001", "\u001e",
+        ":", ":foo", "foo:", "foo:bar",
+        "@", "@foo", "foo@", "foo@bar",
+        "\\", "\\foo", "foo\\", "foo\\bar",
+        "\u0000", "\u0000foo", "foo\u0000", "foo\u0000bar",
+        "\u001f", "\u001ffoo", "foo\u001f", "foo\u001fbar"})
     public void testInvalidModuleNames(String mdl) {
         assertThrows(IllegalArgumentException.class, () -> ModuleDesc.of(mdl));
     }
@@ -48,9 +54,20 @@ class ModuleDescTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"a\\\\b", "a.b/c", "a\\@b\\: c", ""})
+    @ValueSource(strings = {
+        "", "a\\\\b", "a.b/c", "a\\@b\\: c",
+        ".", ".foo", "foo.", "foo.bar",
+        "..", "..foo", "foo..", "foo..bar",
+        "[", "[foo", "foo[", "foo[bar",
+        ";", ";foo", "foo;", "foo;bar",
+        "\\\\", "\\\\foo", "foo\\\\", "foo\\\\bar",
+        "\\\\\\\\", "\\\\\\\\foo", "foo\\\\\\\\", "foo\\\\\\\\bar",
+        "\\:", "\\:foo", "foo\\:", "foo\\:bar",
+        "\\:\\:", "\\:\\:foo", "foo\\:\\:", "foo\\:\\:bar",
+        "\\@", "\\@foo", "foo\\@", "foo\\@bar",
+        "\\@\\@", "\\@\\@foo", "foo\\@\\@", "foo\\@\\@bar"})
     public void testValidModuleNames(String mdl) {
         assertEquals(ModuleDesc.of(mdl), ModuleDesc.of(mdl));
-        assertEquals(ModuleDesc.of(mdl).moduleName(), mdl);
+        assertEquals(ModuleDesc.of(mdl).name(), mdl);
     }
 }
