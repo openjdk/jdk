@@ -171,15 +171,13 @@ public class DeflationIntervalsTest {
                 test(Disabled.YES, Guaranteed.NO, Threshold.NO,
                     "-XX:GuaranteedAsyncDeflationInterval=0",
                     "-XX:AsyncDeflationInterval=0",
-                    "-XX:MonitorUsedDeflationThreshold=0",
                     "-XX:GuaranteedSafepointInterval=0"
                 );
                 break;
 
             case "allThresholdsZero":
                 // Try with all heuristics thresholds at zero
-                test(Disabled.NO, Guaranteed.NO, Threshold.NO,
-                    "-XX:GuaranteedAsyncDeflationInterval=0",
+                test(Disabled.NO, Guaranteed.MAYBE, Threshold.NO,
                     "-XX:MonitorUsedDeflationThreshold=0"
                 );
                 break;
