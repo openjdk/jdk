@@ -41,7 +41,7 @@ JAVASTATIC_OUTPUT_DIR := $(JDK_OUTPUTDIR)/bin
 JAVASTATIC_OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/java.base/java
 STATIC_LIBS_DIR := $(STATIC_LIBS_IMAGE_DIR)/lib
 
-ALL_STATIC_LIBS := $(call FindFiles, $(STATIC_LIBS_IMAGE_DIR)/lib)
+JDK_STATIC_LIBS := $(call FindFiles, $(STATIC_LIBS_IMAGE_DIR)/lib)
 # Currently we are supporting headless only.
 EXCLUDED_STATIC_LIBS := \
   $(STATIC_LIBS_IMAGE_DIR)/lib/$(LIBRARY_PREFIX)jsound$(STATIC_LIBRARY_SUFFIX) \
@@ -52,8 +52,9 @@ EXCLUDED_STATIC_LIBS := \
   $(STATIC_LIBS_IMAGE_DIR)/lib/$(LIBRARY_PREFIX)jpackageapplauncher$(STATIC_LIBRARY_SUFFIX) \
   $(STATIC_LIBS_IMAGE_DIR)/lib/$(LIBRARY_PREFIX)jpackageapplauncheraux$(STATIC_LIBRARY_SUFFIX)
 
-JAVASTATIC_LINK_LIBS := $(filter-out $(EXCLUDED_STATIC_LIBS), $(ALL_STATIC_LIBS)) \
-   $(HOTSPOT_OUTPUTDIR)/variant-server/libjvm/objs/static/$(LIBRARY_PREFIX)jvm$(STATIC_LIBRARY_SUFFIX)
+JVM_STATIC_LIB := $(STATIC_LIBS_IMAGE_DIR)/lib/$(LIBRARY_PREFIX)jvm$(STATIC_LIBRARY_SUFFIX)
+
+JAVASTATIC_LINK_LIBS := $(filter-out $(EXCLUDED_STATIC_LIBS), $(JDK_STATIC_LIBS)) $(JVM_STATIC_LIB)
 
 JAVASTATIC_LOG_PREFIX := $(JAVASTATIC_OBJECT_DIR)/BUILD_LAUNCHER_javastatic$(EXE_SUFFIX)_static_link
 
@@ -65,7 +66,10 @@ JAVASTATIC_LD_OBJ_ARG := $(JAVASTATIC_OBJECT_DIR)/main.o
 
 # Link with headless native only for now.
 JAVASTATIC_LIBS := -Wl$(COMMA)--whole-archive $(JAVASTATIC_LINK_LIBS)
-JAVASTATIC_EXTRA_LIBS := -Wl$(COMMA)--no-whole-archive -lpthread $(LIBDL) $(LIBM) $(LDFLAGS_CXX_STATIC_JDK) 
+JAVASTATIC_EXTRA_LIBS := -Wl$(COMMA)--no-whole-archive -lpthread $(LIBDL) $(LIBM) $(LDFLAGS_CXX_STATIC_JDK)
+
+$(JVM_STATIC_LIB) : $(HOTSPOT_OUTPUTDIR)/variant-server/libjvm/objs/static/$(LIBRARY_PREFIX)jvm$(STATIC_LIBRARY_SUFFIX)
+	$(CP) $< $@
 
 $(JAVASTATIC_TARGET_IMAGE): $(JAVASTATIC_LINK_LIBS)
         ifeq ($(call isTargetOs, linux), true)
@@ -78,7 +82,7 @@ $(JAVASTATIC_TARGET_IMAGE): $(JAVASTATIC_LINK_LIBS)
 	  $(error Not supported on non-linux platform currently)
         endif
 
-TARGETS += $(JAVASTATIC_TARGET_IMAGE)
+TARGETS += $(JVM_STATIC_LIB) $(JAVASTATIC_TARGET_IMAGE)
 
 all: $(TARGETS)
 
