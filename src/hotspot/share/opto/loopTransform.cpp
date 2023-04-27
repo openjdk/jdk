@@ -2149,8 +2149,8 @@ void PhaseIdealLoop::do_unroll(IdealLoopTree *loop, Node_List &old_new, bool adj
 
     // Verify that policy_unroll result is still valid.
     const TypeInt* limit_type = _igvn.type(limit)->is_int();
-    assert(stride_con > 0 && ((limit_type->_hi - stride_con) < limit_type->_hi) ||
-           stride_con < 0 && ((limit_type->_lo - stride_con) > limit_type->_lo),
+    assert((stride_con > 0 && ((min_jint + stride_con) <= limit_type->_hi)) ||
+           (stride_con < 0 && ((max_jint + stride_con) >= limit_type->_lo)),
            "sanity");
 
     if (limit->is_Con()) {
