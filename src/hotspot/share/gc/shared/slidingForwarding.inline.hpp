@@ -84,6 +84,7 @@ HeapWord* SlidingForwarding::decode_forwarding(HeapWord* original, uintptr_t enc
 }
 
 void SlidingForwarding::forward_to(oop original, oop target) {
+  assert(_target_base_table != nullptr, "call begin() before forwarding");
   markWord header = original->mark();
   if (header.has_displaced_mark_helper()) {
     header = header.displaced_mark_helper();
@@ -100,6 +101,7 @@ void SlidingForwarding::forward_to(oop original, oop target) {
 }
 
 oop SlidingForwarding::forwardee(oop original) const {
+  assert(_target_base_table != nullptr, "call begin() before forwarding");
   markWord header = original->mark();
   if ((header.value() & FALLBACK_MASK) != 0) {
     HeapWord* from = cast_from_oop<HeapWord*>(original);

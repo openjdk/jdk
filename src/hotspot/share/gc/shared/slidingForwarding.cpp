@@ -68,10 +68,10 @@ void SlidingForwarding::begin() {
 }
 
 void SlidingForwarding::end() {
-  if (_target_base_table != nullptr) {
-    FREE_C_HEAP_ARRAY(HeapWord*, _target_base_table);
-    _target_base_table = nullptr;
-  }
+  assert(_target_base_table != nullptr, "Should be initialized");
+  FREE_C_HEAP_ARRAY(HeapWord*, _target_base_table);
+  _target_base_table = nullptr;
+
   if (_fallback_table != nullptr) {
     delete _fallback_table;
     _fallback_table = nullptr;
