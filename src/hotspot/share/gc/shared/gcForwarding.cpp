@@ -30,22 +30,28 @@
 SlidingForwarding* GCForwarding::_sliding_forwarding = nullptr;
 
 void GCForwarding::initialize(MemRegion heap, size_t region_size_words) {
+#ifdef _LP64
   if (UseAltGCForwarding) {
     assert(_sliding_forwarding == nullptr, "only call this once");
     _sliding_forwarding = new SlidingForwarding(heap, region_size_words);
   }
+#endif
 }
 
 void GCForwarding::begin() {
+#ifdef _LP64
   if (UseAltGCForwarding) {
     assert(_sliding_forwarding != nullptr, "expect sliding forwarding initialized");
     _sliding_forwarding->begin();
   }
+#endif
 }
 
 void GCForwarding::end() {
+#ifdef _LP64
   if (UseAltGCForwarding) {
     assert(_sliding_forwarding != nullptr, "expect sliding forwarding initialized");
     _sliding_forwarding->end();
   }
+#endif
 }
