@@ -223,7 +223,7 @@ jobs:
     uses: ./.github/workflows/build-windows.yml
     with:
       platform: windows-x64
-      msvc-toolset-version: '14.25'
+      msvc-toolset-version: '14.29'
       msvc-toolset-architecture: 'x86.x64'
     if: needs.select.outputs.windows-x64 == 'true'
 
