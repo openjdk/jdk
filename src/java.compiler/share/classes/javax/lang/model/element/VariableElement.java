@@ -25,6 +25,8 @@
 
 package javax.lang.model.element;
 
+import jdk.internal.javac.PreviewFeature;
+
 import javax.lang.model.util.Elements;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.TypeKind;
@@ -96,4 +98,14 @@ public interface VariableElement extends Element {
      */
     @Override
     Element getEnclosingElement();
+
+    /**
+     * {@return {@code true} if this is an unnamed variable and {@code
+     * false} otherwise}
+     *
+     * @jls 6.1 Declarations
+     * @jls 14.4 Local Variable Declarations
+     */
+    @PreviewFeature(feature=PreviewFeature.Feature.UNNAMED, reflective = true)
+    default boolean isUnnamed() { return false; }
 }

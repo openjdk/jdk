@@ -25,6 +25,8 @@
 
 package javax.lang.model.util;
 
+import jdk.internal.javac.PreviewFeature;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -713,7 +715,8 @@ public interface Elements {
      * @param element the element being examined
      * @since 21
      */
-    default boolean hasEmptyName(Element element) {
+    @PreviewFeature(feature=PreviewFeature.Feature.UNNAMED, reflective = true)
+    default boolean isUnnamed(Element element) {
         return element.getSimpleName().isEmpty();
     }
 

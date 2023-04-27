@@ -28,6 +28,7 @@
  * @library /tools/javac/lib
  * @modules jdk.compiler
  * @build   JavacTestingAbstractProcessor
+ * @enablePreview
  * @compile TestUnnamedVariableElement.java
  * @compile --enable-preview -source ${jdk.version} -processor TestUnnamedVariableElement -proc:only TestUnnamedVariableElementData.java
  */
@@ -81,7 +82,7 @@ public class TestUnnamedVariableElement extends JavacTestingAbstractProcessor im
                 throw new RuntimeException("Expected a local variable, but got: " +
                         element.getKind());
             }
-            if (!elements.hasEmptyName(element)) {
+            if (!elements.isUnnamed(element)) {
                 throw new RuntimeException("Expected empty name for simple name of an unnamed variable, but got: " +
                         element.getSimpleName());
             }

@@ -68,6 +68,8 @@ public @interface PreviewFeature {
         VIRTUAL_THREADS,
         @JEP(number=434, title="Foreign Function & Memory API", status="Second Preview")
         FOREIGN,
+        @JEP(number=443, title="Unnamed Patterns and Variables")
+        UNNAMED,
         /**
          * A key for testing.
          */

@@ -84,7 +84,7 @@ public class TestNames extends JavacTestingAbstractProcessor {
                 Name stringName2 = stringMirror2.getQualifiedName();
 
                 if (stringStringAsName != stringName ||
-                    stringName != stringName2 || eltUtils.hasEmptyName(stringMirror2))
+                    stringName != stringName2)
                     failed = true;
                 break;
 
