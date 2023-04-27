@@ -333,10 +333,12 @@ public class HtmlDoclet extends AbstractDoclet {
     private void copyLegalFiles(boolean includeJQuery) throws DocletException {
         Path legalNoticesDir;
         String legalNotices = configuration.getOptions().legalNotices();
+        boolean isDefault = false;
         switch (legalNotices) {
             case "", "default" -> {
                 Path javaHome = Path.of(System.getProperty("java.home"));
                 legalNoticesDir = javaHome.resolve("legal").resolve(getClass().getModule().getName());
+                isDefault = true;
             }
 
             case "none" -> {
@@ -360,12 +362,17 @@ public class HtmlDoclet extends AbstractDoclet {
                     if (!Files.isRegularFile(entry)) {
                         continue;
                     }
-                    if (entry.getFileName().toString().startsWith("jquery") && !includeJQuery) {
+                    String fileName = entry.getFileName().toString();
+                    if (fileName.startsWith("jquery") && !includeJQuery) {
                         continue;
                     }
-                    DocPath filePath = DocPaths.LEGAL.resolve(entry.getFileName().toString());
+                    DocPath filePath = DocPaths.LEGAL.resolve(fileName);
                     DocFile df = DocFile.createFileForOutput(configuration, filePath);
-                    df.copyFile(DocFile.createFileForInput(configuration, entry));
+                    if (isDefault && ("LICENSE".equals(fileName) || "ASSEMBLY_EXCEPTION".equals(fileName) || "ADDITIONAL_LICENSE_INFO".equals(fileName))) {
+                        df.copyFile(DocFile.createFileForInput(configuration, entry.resolve("..").resolve("..").resolve("java.base").resolve(fileName)));
+                    } else {
+                        df.copyFile(DocFile.createFileForInput(configuration, entry));
+                    }
                 }
             } catch (IOException e) {
                 messages.error("doclet.Error_copying_legal_notices", e);

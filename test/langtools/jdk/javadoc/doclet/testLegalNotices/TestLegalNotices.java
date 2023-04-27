@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8259530
+ * @bug 8259530 8306980
  * @summary Generated docs contain MIT/GPL-licenced works without reproducing the licence
  * @library  /tools/lib ../../lib
  * @modules  jdk.javadoc/jdk.javadoc.internal.tool
@@ -32,10 +32,12 @@
  */
 
 import java.io.IOException;
+import java.io.File;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -103,27 +105,47 @@ public class TestLegalNotices extends JavadocTester {
         }
         javadoc(args.toArray(new String[0]));
 
-        Set<Path> expectFiles = getExpectFiles(optionKind, indexKind, legal);
-        Set<Path> foundFiles = listFiles(out.resolve("legal"));
+        Set<File> expectFiles = getExpectFiles(optionKind, indexKind, legal);
+        Set<File> foundFiles = listFiles(out.resolve("legal"));
 
         checking("Checking legal notice files");
         super.out.println("Expected: " + expectFiles);
         super.out.println("   Found: " + foundFiles);
-        if (foundFiles.equals(expectFiles)) {
+        boolean passed = true;
+        for (File expectFile : expectFiles) {
+            boolean matched = false;
+            for (File foundFile : foundFiles) {
+                if (!expectFile.getName().equals(foundFile.getName())) {
+                    continue;
+                }
+                matched = Arrays.equals(Files.readAllBytes(expectFile.toPath()), Files.readAllBytes(foundFile.toPath()));
+                break;
+            }
+            if (!matched) {
+                super.out.println("Not Matched: " + expectFile.getName());
+                passed = false;
+            }
+        }
+        if (passed) {
             passed("Found all expected files");
         }
     }
 
-    Set<Path> getExpectFiles(OptionKind optionKind, IndexKind indexKind, Path legal) throws IOException {
+    Set<File> getExpectFiles(OptionKind optionKind, IndexKind indexKind, Path legal) throws IOException {
         switch (optionKind) {
             case UNSET, DEFAULT -> {
+                String reg = "LICENSE|ASSEMBLY_EXCEPTION|ADDITIONAL_LICENSE_INFO";
+                Set<File> files = new TreeSet<>();
                 Path javaHome = Path.of(System.getProperty("java.home"));
-                Path legal_javadoc = javaHome.resolve("legal").resolve("jdk.javadoc");
-                return listFiles(legal_javadoc, p ->
-                        switch (indexKind) {
-                            case INDEX -> true;
-                            case NO_INDEX -> !p.getFileName().toString().contains("jquery");
-                        });
+                Path legal_javadoc = javaHome.resolve("legal").resolve("java.base");
+                files = listFiles(legal_javadoc, p -> p.getFileName().toString().matches(reg));
+                legal_javadoc = javaHome.resolve("legal").resolve("jdk.javadoc");
+                files.addAll(listFiles(legal_javadoc, p ->
+                              switch (indexKind) {
+                                  case INDEX -> !p.getFileName().toString().matches(reg);
+                                  case NO_INDEX -> !p.getFileName().toString().matches(reg + "|.*jquery.*");
+                              }));
+                return files;
             }
 
             case NONE -> {
@@ -137,20 +159,20 @@ public class TestLegalNotices extends JavadocTester {
         throw new IllegalStateException();
     }
 
-    Set<Path> listFiles(Path dir) throws IOException {
+    Set<File> listFiles(Path dir) throws IOException {
         return listFiles(dir, p -> true);
     }
 
-    Set<Path> listFiles(Path dir, Predicate<Path> filter) throws IOException {
+    Set<File> listFiles(Path dir, Predicate<Path> filter) throws IOException {
         if (!Files.exists(dir)) {
             return Collections.emptySet();
         }
 
         try (DirectoryStream<Path> ds = Files.newDirectoryStream(dir)) {
-            Set<Path> files = new TreeSet<>();
+            Set<File> files = new TreeSet<>();
             for (Path p : ds) {
                 if (!Files.isDirectory(p) && filter.test(p)) {
-                    files.add(p.getFileName());
+                    files.add(p.toFile());
                 }
             }
             return files;
