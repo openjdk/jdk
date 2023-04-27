@@ -169,7 +169,7 @@ class PEAState {
   void add_new_allocation(Node* obj);
   EscapedState* materialize(GraphKit* kit, Node* var);
 
-  void aliases(Unique_Node_List& nodes) const;
+  int objects(Unique_Node_List& nodes) const;
 
   VirtualState* as_virtual(Node* var) const {
     ObjID id = is_alias(var);
