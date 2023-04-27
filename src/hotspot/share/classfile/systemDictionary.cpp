@@ -1953,14 +1953,17 @@ Method* SystemDictionary::find_method_handle_intrinsic(vmIntrinsicID iid,
     while (true) {
       bool created;
       met = _invoke_method_intrinsic_table.put_if_absent(key, &created);
-      if (met != nullptr && Atomic::load_acquire(met) != nullptr) {
-        return Atomic::load_acquire(met);
+      if (met != nullptr && *met != nullptr) {
+        return *met;
       } else if (created) {
-        break;  // This thread gets to create the entry.
+        // The current thread won the race and will try to create the full entry.
+        break;
       } else {
-        // Second thread waits for first to actually create the entry and returns
-        // it after notify. Loop until method returned from hashtable is non-null.
+        // Another thread beat us to it, so wait for them to complete
+        // and return *met; or if they hit an error we get another try.
         ml.wait();
+        // Note it is not safe to read *met here as that entry could have
+        // been deleted, so we must loop and try put_if_absent again.
       }
     }
   }
@@ -1987,7 +1990,7 @@ Method* SystemDictionary::find_method_handle_intrinsic(vmIntrinsicID iid,
       assert(Arguments::is_interpreter_only() || (m->has_compiled_code() &&
              m->code()->entry_point() == m->from_compiled_entry()),
              "MH intrinsic invariant");
-      Atomic::release_store(met, m()); // insert the element
+      *met = m(); // insert the element
       ml.notify_all();
       return m();
     }
