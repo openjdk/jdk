@@ -39,22 +39,24 @@ inline bool GCForwarding::is_not_forwarded(oop obj) {
 }
 
 inline oop GCForwarding::forwardee(oop obj) {
+#ifdef _LP64
   if (UseAltGCForwarding) {
     assert(_sliding_forwarding != nullptr, "expect sliding forwarding initialized");
     return _sliding_forwarding->forwardee(obj);
-  } else {
+  } else
+#endif
     return obj->forwardee();
-  }
 }
 
 inline void GCForwarding::forward_to(oop obj, oop fwd) {
+#ifdef _LP64
   if (UseAltGCForwarding) {
     assert(_sliding_forwarding != nullptr, "expect sliding forwarding initialized");
     _sliding_forwarding->forward_to(obj, fwd);
     assert(forwardee(obj) == fwd, "must be forwarded to correct forwardee");
-  } else {
+  } else
+#endif
     obj->forward_to(fwd);
-  }
 }
 
 #endif // SHARE_GC_SHARED_GCFORWARDING_INLINE_HPP
