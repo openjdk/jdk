@@ -61,8 +61,6 @@ public class MainMethodFinder {
             gatherMains(declc, refc.getSuperclass(), mains);
 
             for (Method method : refc.getDeclaredMethods()) {
-                int argc = method.getParameterCount();
-
                 // Must be named "main", public|protected|package-private and either
                 // no arguments or one string array argument.
                 if ("main".equals(method.getName()) &&
@@ -144,7 +142,7 @@ public class MainMethodFinder {
                 System.err.println("WARNING: static main in super class will be deprecated.");
             }
 
-            return mainClass.getMethod("main", String[].class);
+            return mainMethod;
         } catch (NoSuchMethodException nsme) {
             if (!PreviewFeatures.isEnabled()) {
                 throw nsme;

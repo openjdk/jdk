@@ -204,8 +204,8 @@ public class Main {
         Context context = new Context(file.toAbsolutePath());
         String mainClassName = compile(file, getJavacOpts(runtimeArgs), context);
 
-        String[] appArgs = Arrays.copyOfRange(args, 1, args.length);
-        execute(mainClassName, appArgs, context);
+        String[] mainArgs = Arrays.copyOfRange(args, 1, args.length);
+        execute(mainClassName, mainArgs, context);
     }
 
     /**
@@ -423,39 +423,50 @@ public class Main {
      * will load recently compiled classes from memory.
      *
      * @param mainClassName the class to be executed
-     * @param appArgs the arguments for the {@code main} method
+     * @param mainArgs the arguments for the {@code main} method
      * @param context the context for the class to be executed
      * @throws Fault if there is a problem finding or invoking the {@code main} method
      * @throws InvocationTargetException if the {@code main} method throws an exception
      */
-    private void execute(String mainClassName, String[] appArgs, Context context)
+    private void execute(String mainClassName, String[] mainArgs, Context context)
             throws Fault, InvocationTargetException {
         System.setProperty("jdk.launcher.sourcefile", context.file.toString());
         ClassLoader cl = context.getClassLoader(ClassLoader.getSystemClassLoader());
         try {
             Class<?> appClass = Class.forName(mainClassName, true, cl);
-            Method main = MainMethodFinder.findMainMethod(appClass);
-            if (!PreviewFeatures.isEnabled() && (!isStatic(main) || !isPublic(main))) {
+            Method mainMethod = MainMethodFinder.findMainMethod(appClass);
+            int mods = mainMethod.getModifiers();
+            boolean isStatic = Modifier.isStatic(mods);
+            boolean isPublic = Modifier.isStatic(mods);
+            boolean noArgs = mainMethod.getParameterCount() == 0;
+
+            if (!PreviewFeatures.isEnabled() && (!isStatic || !isPublic)) {
                 throw new Fault(Errors.MainNotPublicStatic);
             }
-            if (!main.getReturnType().equals(void.class)) {
+
+            if (!mainMethod.getReturnType().equals(void.class)) {
                 throw new Fault(Errors.MainNotVoid);
             }
-            main.setAccessible(true);
-            if (isStatic(main)) {
-                if (main.getParameterCount() == 0) {
-                    main.invoke(appClass);
+
+            // Similar to sun.launcher.LauncherHelper#executeMainClass
+            // but duplicated here to prevent additional launcher frames
+            mainMethod.setAccessible(true);
+
+            if (isStatic) {
+                if (noArgs) {
+                    mainMethod.invoke(appClass);
                 } else {
-                    main.invoke(appClass, (Object)appArgs);
+                    mainMethod.invoke(appClass, (Object)mainArgs);
                 }
             } else {
                 Constructor<?> constructor = appClass.getDeclaredConstructor();
                 constructor.setAccessible(true);
                 Object instance = constructor.newInstance();
-                 if (main.getParameterCount() == 0) {
-                    main.invoke(instance);
+
+                if (noArgs) {
+                    mainMethod.invoke(instance);
                 } else {
-                    main.invoke(instance, (Object)appArgs);
+                    mainMethod.invoke(instance, (Object)mainArgs);
                 }
             }
         } catch (ClassNotFoundException e) {

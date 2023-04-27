@@ -173,37 +173,4 @@ public class VirtualParser extends JavacParser {
             return false;
         }
     }
-
-    /**
-     * WARNING: do not use until the TODO is scoped out
-     *
-     * Attempts a parse action and optionally returns the result of that action. The result
-     * will be empty of the action fails.
-     *
-     * @param parser           parent parser
-     * @param parserAction     function that takes a parser and invokes a method on that parser
-     * @param commitOnSuccess  if true updates the active parser scanner to reflect the effects
-     *                         of the action
-     * @return {@link Optional} result of the action
-     *
-     * @param <E> return type of parserAction
-     */
-    public static <E> Optional<E> speculativeParse(JavacParser parser,
-                                                   Function<JavacParser, E> parserAction,
-                                                   boolean commitOnSuccess) {
-        VirtualParser virtualParser = new VirtualParser(parser);
-        try {
-            E result = parserAction.apply(virtualParser);
-
-            if (commitOnSuccess) {
-                // TODO - additional data needs to be propagated
-                ((VirtualScanner)virtualParser.S).commit();
-                parser.nextToken();
-            }
-
-            return Optional.of(result);
-        } catch (AssertionError ex) {
-            return Optional.empty();
-        }
-    }
 }

@@ -3928,9 +3928,7 @@ public class JavacParser implements Parser {
                 // it is parsed. Otherwise, parsing continues as though
                 // anonymous main classes did not exist and error reporting
                 // is the same as in the past.
-                if (Feature.ANONYMOUS_MAIN_CLASSES.allowedInSource(source) &&
-                        !isDeclaration() &&
-                        (token.kind == VOID || token.kind == IDENTIFIER)) {
+                if (Feature.ANONYMOUS_MAIN_CLASSES.allowedInSource(source) && !isDeclaration()) {
                     final JCModifiers finalMods = mods;
                     isTopLevelMethodOrField =
                             VirtualParser.tryParse(this,

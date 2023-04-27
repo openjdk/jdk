@@ -391,7 +391,7 @@ public class Enter extends JCTree.Visitor {
                 tree.packge.package_info = c;
                 tree.packge.sourcefile = tree.sourcefile;
             }
-            if (tree.isAnonymousMainClass() && tree.getAnonymousMainClass() == null) {
+            if (isAnonymousMainClass(tree)) {
                 constructAnonymousMainClass(tree, source, preview, make, log, names);
             }
             classEnter(tree.defs, topEnv);
@@ -402,7 +402,9 @@ public class Enter extends JCTree.Visitor {
         log.useSource(prev);
         result = null;
     }
-        //where:
+
+
+    //where:
         //set package Symbols to the package expression:
         private final TreeScanner setPackageSymbols = new TreeScanner() {
             Symbol currentPackage;
@@ -428,6 +430,15 @@ public class Enter extends JCTree.Visitor {
             }
         };
 
+        private static boolean isAnonymousMainClass(JCCompilationUnit tree) {
+            for (JCTree def : tree.defs) {
+                if (def.hasTag(Tag.METHODDEF) || def.hasTag(Tag.VARDEF)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
     // Restructure top level to be an top level anonymous class.
     public static void constructAnonymousMainClass(JCCompilationUnit tree,
                                                    Source source, Preview preview,
@@ -450,7 +461,7 @@ public class Enter extends JCTree.Visitor {
             simplename = simplename.substring(0, simplename.length() - ".java".length());
         }
         if (!SourceVersion.isIdentifier(simplename) || SourceVersion.isKeyword(simplename)) {
-            log.error(null, Errors.BadFileName(simplename));
+            log.error(tree.pos, Errors.BadFileName(simplename));
         }
         Name name = names.fromString(simplename);
 
@@ -459,7 +470,7 @@ public class Enter extends JCTree.Visitor {
 
         for (JCTree def : tree.defs) {
             if (def.hasTag(Tag.PACKAGEDEF)) {
-                log.error(null, Errors.AnonymousMainClassShouldNotHavePackageDeclaration);
+                log.error(def.pos(), Errors.AnonymousMainClassShouldNotHavePackageDeclaration);
             } else if (def.hasTag(Tag.IMPORT)) {
                 topDefs.append(def);
             } else {

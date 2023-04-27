@@ -39,10 +39,7 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandleInfo;
 import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodHandles.Lookup;
-import java.lang.invoke.MethodType;
 import java.lang.module.Configuration;
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleDescriptor.Exports;
@@ -66,6 +63,7 @@ import java.nio.file.Path;
 import java.text.MessageFormat;
 import java.text.Normalizer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -91,6 +89,7 @@ import jdk.internal.module.ModuleBootstrap;
 import jdk.internal.module.Modules;
 import jdk.internal.platform.Container;
 import jdk.internal.platform.Metrics;
+import jdk.internal.vm.annotation.Hidden;
 
 /**
  * A utility package for the java(1), javaw(1) launchers.
@@ -848,22 +847,8 @@ public final class LauncherHelper {
         return false;
     }
 
-    /*
-     * main type flags
-     */
-    private static final int MAIN_WITHOUT_ARGS = 1;
-    private static final int MAIN_NONSTATIC = 2;
-    private static int mainType = 0;
-
-    /*
-     * Return type so that launcher invokes the correct main
-     */
-    public static int getMainType() {
-        return mainType;
-    }
-
     // Check the existence and signature of main and abort if incorrect
-    static void validateMainClass(Class<?> mainClass) {
+    static Method validateMainClass(Class<?> mainClass) {
         Method mainMethod = null;
         try {
             mainMethod = MainMethodFinder.findMainMethod(mainClass);
@@ -883,17 +868,17 @@ public final class LauncherHelper {
         }
 
         /*
-         * getMethod (above) will choose the correct method, based
+         * findMainMethod (above) will choose the correct method, based
          * on its name and parameter type, however, we still have to
          * ensure that the method is static (non-preview) and returns a void.
          */
         int mods = mainMethod.getModifiers();
         boolean isStatic = Modifier.isStatic(mods);
         boolean isPublic = Modifier.isPublic(mods);
-        boolean hasArgs = mainMethod.getParameterCount() != 0;
+        boolean noArgs = mainMethod.getParameterCount() == 0;
 
         if (!PreviewFeatures.isEnabled()) {
-            if (!isStatic || !isPublic || !hasArgs) {
+            if (!isStatic || !isPublic || noArgs) {
                 abort(null, "java.launcher.cls.error2", "static",
                       mainMethod.getDeclaringClass().getName());
             }
@@ -917,8 +902,40 @@ public final class LauncherHelper {
                   mainMethod.getDeclaringClass().getName());
         }
 
-        mainType = (isStatic ? 0 : MAIN_NONSTATIC) |
-                   (hasArgs ? 0 : MAIN_WITHOUT_ARGS);
+        return mainMethod;
+    }
+
+    // Check the existence and signature of main, abort if incorrect otherwise execute.
+    @Hidden
+    static void executeMainClass(Class<?> mainClass, String[] mainArgs) throws Throwable {
+        Method mainMethod = validateMainClass(mainClass);
+        int mods = mainMethod.getModifiers();
+        boolean isStatic = Modifier.isStatic(mods);
+        boolean noArgs = mainMethod.getParameterCount() == 0;
+
+        // Similar to com.sun.tools.javac.launcher#execute
+        // but duplicated here to prevent additional launcher frames
+        mainMethod.setAccessible(true);
+        MethodHandles.Lookup lookup = MethodHandles.lookup();
+        MethodHandle mh = lookup.unreflect(mainMethod);
+
+        if (isStatic) {
+            if (noArgs) {
+                mh.invokeExact();
+            } else {
+                mh.invokeExact(mainArgs);
+            }
+        } else {
+            Constructor<?> constructor = appClass.getDeclaredConstructor();
+            constructor.setAccessible(true);
+            Object instance = constructor.newInstance();
+
+            if (noArgs) {
+                mh.invokeExact(instance);
+            } else {
+                mh.invokeExact(instance, mainArgs);
+            }
+        }
     }
 
     private static final String encprop = "sun.jnu.encoding";

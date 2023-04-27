@@ -624,29 +624,6 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
             return TOPLEVEL;
         }
 
-        public boolean isAnonymousMainClass() {
-            // Detect anonymous main class.
-            for (JCTree def : defs) {
-                if (def.hasTag(Tag.METHODDEF) || def.hasTag(Tag.VARDEF)) {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        public JCClassDecl getAnonymousMainClass() {
-            // Find anonymous main class.
-            for (JCTree def : defs) {
-                if (def.hasTag(CLASSDEF)) {
-                    JCClassDecl cls = (JCClassDecl)def;
-                    if ((cls.getModifiers().flags & Flags.ANONYMOUS_MAIN_CLASS) != 0) {
-                        return cls;
-                    }
-                }
-            }
-            return null;
-        }
-
     }
 
     /**
