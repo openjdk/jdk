@@ -39,7 +39,7 @@ size_t SlidingForwarding::region_index_containing(HeapWord* addr) const {
 }
 
 bool SlidingForwarding::region_contains(HeapWord* region_base, HeapWord* addr) const {
-  return uintptr_t(addr - region_base) < (1u << _region_size_words_shift);
+  return uintptr_t(addr - region_base) < (1ull << _region_size_words_shift);
 }
 
 
@@ -52,7 +52,7 @@ uintptr_t SlidingForwarding::encode_forwarding(HeapWord* original, HeapWord* tar
   for (region_idx = 0; region_idx < NUM_TARGET_REGIONS; region_idx++) {
     encode_base = _target_base_table[base_table_idx + region_idx];
     if (encode_base == UNUSED_BASE) {
-      encode_base = _heap_start + target_idx * (1 << _region_size_words_shift);
+      encode_base = _heap_start + target_idx * (1ull << _region_size_words_shift);
       _target_base_table[base_table_idx + region_idx] = encode_base;
       break;
     } else if (region_contains(encode_base, target)) {

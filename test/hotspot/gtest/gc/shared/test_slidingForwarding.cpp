@@ -21,14 +21,14 @@
  * questions.
  */
 
-#ifdef _LP64
-
 #include "precompiled.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/slidingForwarding.inline.hpp"
 #include "oops/markWord.hpp"
 #include "oops/oop.inline.hpp"
 #include "unittest.hpp"
+
+#ifdef _LP64
 
 // Test simple forwarding within the same region.
 TEST_VM(SlidingForwarding, simple) {
