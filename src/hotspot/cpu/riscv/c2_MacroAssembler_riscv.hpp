@@ -230,4 +230,10 @@
     }
   }
 
+  void vector_integer_extend(VectorRegister dst, BasicType dst_bt,
+                             VectorRegister src, BasicType src_bt);
+
+  void vector_integer_narrow(VectorRegister dst, BasicType dst_bt, int length_in_bytes,
+                             VectorRegister src, BasicType src_bt, VectorRegister tmp);
+
 #endif // CPU_RISCV_C2_MACROASSEMBLER_RISCV_HPP

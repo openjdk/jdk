@@ -1230,12 +1230,31 @@ enum VectorMask {
   INSN(viota_m,   0b1010111, 0b010, 0b10000, 0b010100);
 
   // Vector Single-Width Floating-Point/Integer Type-Convert Instructions
-  INSN(vfcvt_xu_f_v, 0b1010111, 0b001, 0b00000, 0b010010);
-  INSN(vfcvt_x_f_v,  0b1010111, 0b001, 0b00001, 0b010010);
-  INSN(vfcvt_f_xu_v, 0b1010111, 0b001, 0b00010, 0b010010);
-  INSN(vfcvt_f_x_v,  0b1010111, 0b001, 0b00011, 0b010010);
+  INSN(vfcvt_xu_f_v,     0b1010111, 0b001, 0b00000, 0b010010);
+  INSN(vfcvt_x_f_v,      0b1010111, 0b001, 0b00001, 0b010010);
+  INSN(vfcvt_f_xu_v,     0b1010111, 0b001, 0b00010, 0b010010);
+  INSN(vfcvt_f_x_v,      0b1010111, 0b001, 0b00011, 0b010010);
   INSN(vfcvt_rtz_xu_f_v, 0b1010111, 0b001, 0b00110, 0b010010);
   INSN(vfcvt_rtz_x_f_v,  0b1010111, 0b001, 0b00111, 0b010010);
+
+  // Vector Widening Floating-Point/Integer Type-Convert Instructions
+  INSN(vfwcvt_xu_f_v,     0b1010111, 0b001, 0b01000, 0b010010);
+  INSN(vfwcvt_x_f_v,      0b1010111, 0b001, 0b01001, 0b010010);
+  INSN(vfwcvt_f_xu_v,     0b1010111, 0b001, 0b01010, 0b010010);
+  INSN(vfwcvt_f_x_v,      0b1010111, 0b001, 0b01011, 0b010010);
+  INSN(vfwcvt_f_f_v,      0b1010111, 0b001, 0b01100, 0b010010);
+  INSN(vfwcvt_rtz_xu_f_v, 0b1010111, 0b001, 0b01110, 0b010010);
+  INSN(vfwcvt_rtz_x_f_v,  0b1010111, 0b001, 0b01111, 0b010010);
+
+  // Vector Narrowing Floating-Point/Integer Type-Convert Instructions
+  INSN(vfncvt_xu_f_w,     0b1010111, 0b001, 0b10000, 0b010010);
+  INSN(vfncvt_x_f_w,      0b1010111, 0b001, 0b10001, 0b010010);
+  INSN(vfncvt_f_xu_w,     0b1010111, 0b001, 0b10010, 0b010010);
+  INSN(vfncvt_f_x_w,      0b1010111, 0b001, 0b10011, 0b010010);
+  INSN(vfncvt_f_f_w,      0b1010111, 0b001, 0b10100, 0b010010);
+  INSN(vfncvt_rod_f_f_w,  0b1010111, 0b001, 0b10101, 0b010010);
+  INSN(vfncvt_rtz_xu_f_w, 0b1010111, 0b001, 0b10110, 0b010010);
+  INSN(vfncvt_rtz_x_f_w,  0b1010111, 0b001, 0b10111, 0b010010);
 
   // Vector Floating-Point Instruction
   INSN(vfsqrt_v,  0b1010111, 0b001, 0b00000, 0b010011);
@@ -1431,6 +1450,10 @@ enum VectorMask {
   INSN(vsub_vv, 0b1010111, 0b000, 0b000010);
   INSN(vadd_vv, 0b1010111, 0b000, 0b000000);
 
+  // Vector Register Gather Instructions
+  INSN(vrgather_vv,     0b1010111, 0b000, 0b001100);
+  INSN(vrgatherei16_vv, 0b1010111, 0b000, 0b001110);
+
 #undef INSN
 
 
@@ -1485,6 +1508,9 @@ enum VectorMask {
   INSN(vsub_vx,  0b1010111, 0b100, 0b000010);
   INSN(vadd_vx,  0b1010111, 0b100, 0b000000);
   INSN(vrsub_vx, 0b1010111, 0b100, 0b000011);
+
+  // Vector Register Gather Instructions
+  INSN(vrgather_vx, 0b1010111, 0b100, 0b001100);
 
 #undef INSN
 
@@ -1549,6 +1575,9 @@ enum VectorMask {
   INSN(vand_vi,   0b1010111, 0b011, 0b001001);
   INSN(vadd_vi,   0b1010111, 0b011, 0b000000);
   INSN(vrsub_vi,  0b1010111, 0b011, 0b000011);
+
+  // Vector Register Gather Instructions
+  INSN(vrgather_vi, 0b1010111, 0b011, 0b001100);
 
 #undef INSN
 
