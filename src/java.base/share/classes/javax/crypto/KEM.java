@@ -87,7 +87,7 @@ import java.util.Objects;
 public final class KEM {
 
     /**
-     * This class specifies the returned value of the encapsulate method of
+     * This class specifies the return value of the encapsulate method of
      * a Key Encapsulation Mechanism (KEM), which includes the shared secret
      * (as a {@code SecretKey}), the key encapsulation message,
      * and optional parameters.
@@ -96,6 +96,8 @@ public final class KEM {
      *
      * @see #newEncapsulator(PublicKey, AlgorithmParameterSpec, SecureRandom)
      * @see Encapsulator#encapsulate(int, int, String)
+     *
+     * @since 21
      */
     public static final class Encapsulated {
         private final SecretKey key;
@@ -145,8 +147,8 @@ public final class KEM {
         /**
          * Returns the optional parameters in a byte array.
          *
-         * @return the optional parameters in a byte array. A new copy of the
-         *      byte array is returned.
+         * @return the optional parameters in a byte array or {@code null}
+         *      if not specified. A new copy of the byte array is returned.
          */
         public byte[] params() {
             return params == null ? null : params.clone();
@@ -161,6 +163,8 @@ public final class KEM {
      * Each invocation of the {@code encapsulate} method generates a
      * new secret key and key encapsulation message that is returned
      * in an {@link Encapsulated} object.
+     *
+     * @since 21
      */
     public static final class Encapsulator {
 
@@ -236,7 +240,7 @@ public final class KEM {
         /**
          * Returns the size of the shared secret.
          * <p>
-         * This method can be called to find out the length of the share secret
+         * This method can be called to find out the length of the shared secret
          * before {@code encapsulate} is called or if the obtained
          * {@code SecretKey} is not extractable.
          *
@@ -272,6 +276,8 @@ public final class KEM {
      * This class represents the key decapsulation function of a KEM.
      * An invocation of the {@code decapsulate} method recovers the
      * secret key from the key encapsulation message.
+     *
+     * @since 21
      */
     public static final class Decapsulator {
         private final KEMSpi.DecapsulatorSpi d;
@@ -359,7 +365,7 @@ public final class KEM {
         /**
          * Returns the size of the shared secret.
          * <p>
-         * This method can be called to find out the length of the share secret
+         * This method can be called to find out the length of the shared secret
          * before {@code decapsulate} is called or if the obtained
          * {@code SecretKey} is not extractable.
          *
@@ -603,7 +609,7 @@ public final class KEM {
      *
      * @param publicKey the receiver's public key, must not be {@code null}
      * @return the encapsulator for this key
-     * @throws InvalidKeyException if {@code publicKey} is invalid
+     * @throws InvalidKeyException if {@code publicKey} is {@code null} or invalid
      * @throws UnsupportedOperationException if this method is not supported
      *          because an {@code AlgorithmParameterSpec} must be provided
      */
@@ -627,7 +633,7 @@ public final class KEM {
      *                     If {@code} null, a default one from the
      *                     implementation will be used.
      * @return the encapsulator for this key
-     * @throws InvalidKeyException if {@code publicKey} is invalid
+     * @throws InvalidKeyException if {@code publicKey} is {@code null} or invalid
      * @throws UnsupportedOperationException if this method is not supported
      *          because an {@code AlgorithmParameterSpec} must be provided
      */
@@ -666,7 +672,7 @@ public final class KEM {
      * @return the encapsulator for this key
      * @throws InvalidAlgorithmParameterException if {@code spec} is invalid
      *          or one is required but {@code spec} is {@code null}
-     * @throws InvalidKeyException if {@code publicKey} is invalid
+     * @throws InvalidKeyException if {@code publicKey} is {@code null} or invalid
      */
     public Encapsulator newEncapsulator(PublicKey publicKey,
             AlgorithmParameterSpec spec, SecureRandom secureRandom)
@@ -683,7 +689,7 @@ public final class KEM {
      *
      * @param privateKey the receiver's private key, must not be {@code null}
      * @return the decapsulator for this key
-     * @throws InvalidKeyException if {@code privateKey} is invalid
+     * @throws InvalidKeyException if {@code privateKey} is {@code null} or invalid
      * @throws UnsupportedOperationException if this method is not supported
      *          because an {@code AlgorithmParameterSpec} must be provided
      */
@@ -704,7 +710,7 @@ public final class KEM {
      * @return the decapsulator for this key
      * @throws InvalidAlgorithmParameterException if {@code spec} is invalid
      *          or one is required but {@code spec} is {@code null}
-     * @throws InvalidKeyException if {@code privateKey} is invalid
+     * @throws InvalidKeyException if {@code privateKey} is {@code null} or invalid
      */
     public Decapsulator newDecapsulator(PrivateKey privateKey, AlgorithmParameterSpec spec)
             throws InvalidAlgorithmParameterException, InvalidKeyException {

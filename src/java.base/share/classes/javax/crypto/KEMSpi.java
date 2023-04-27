@@ -106,6 +106,8 @@ public interface KEMSpi {
      * {@link #engineNewEncapsulator} on the KEM sender side.
      *
      * @see KEM.Encapsulator
+     *
+     * @since 21
      */
     interface EncapsulatorSpi {
         /**
@@ -159,6 +161,8 @@ public interface KEMSpi {
      * {@link #engineNewDecapsulator} on the KEM receiver side.
      *
      * @see KEM.Decapsulator
+     *
+     * @since 21
      */
     interface DecapsulatorSpi {
         /**
@@ -224,7 +228,7 @@ public interface KEMSpi {
      * @return the encapsulator for this key
      * @throws InvalidAlgorithmParameterException if {@code spec} is invalid
      *          or one is required but {@code spec} is {@code null}
-     * @throws InvalidKeyException if {@code publicKey} is invalid
+     * @throws InvalidKeyException if {@code publicKey} is {@code null} or invalid
      * @see KEM#newEncapsulator(PublicKey, AlgorithmParameterSpec, SecureRandom)
      */
     EncapsulatorSpi engineNewEncapsulator(PublicKey publicKey,
@@ -239,7 +243,7 @@ public interface KEMSpi {
      * @return the decapsulator for this key
      * @throws InvalidAlgorithmParameterException if {@code spec} is invalid
      *          or one is required but {@code spec} is {@code null}
-     * @throws InvalidKeyException if {@code privateKey} is invalid
+     * @throws InvalidKeyException if {@code privateKey} is {@code null} or invalid
      * @see KEM#newDecapsulator(PrivateKey, AlgorithmParameterSpec)
      */
     DecapsulatorSpi engineNewDecapsulator(PrivateKey privateKey, AlgorithmParameterSpec spec)
