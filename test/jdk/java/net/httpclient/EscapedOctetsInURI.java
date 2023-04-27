@@ -276,7 +276,7 @@ public class EscapedOctetsInURI implements HttpServerAdapters {
         @Override
         public void handle(HttpTestExchange t) throws IOException {
             String asciiUriString = t.getRequestURI().toASCIIString();
-            out.println("Http2ASCIIUriString received, asciiUriString: " + asciiUriString);
+            out.println("HttpASCIIUriString received, asciiUriString: " + asciiUriString);
             try (InputStream is = t.getRequestBody();
                  OutputStream os = t.getResponseBody()) {
                 is.readAllBytes();
