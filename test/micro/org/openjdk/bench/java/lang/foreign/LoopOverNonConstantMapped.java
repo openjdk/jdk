@@ -95,8 +95,8 @@ public class LoopOverNonConstantMapped extends JavaLayouts {
             ((MappedByteBuffer)byteBuffer).force();
         }
         fileChannel = FileChannel.open(tempPath, StandardOpenOption.READ, StandardOpenOption.WRITE);
-        arena = Arena.openConfined();
-        segment = fileChannel.map(FileChannel.MapMode.READ_WRITE, 0L, ALLOC_SIZE, arena.scope());
+        arena = Arena.ofConfined();
+        segment = fileChannel.map(FileChannel.MapMode.READ_WRITE, 0L, ALLOC_SIZE, arena);
         unsafe_addr = segment.address();
     }
 

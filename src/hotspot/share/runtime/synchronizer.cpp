@@ -245,15 +245,26 @@ int dtrace_waited_probe(ObjectMonitor* monitor, Handle obj, JavaThread* thr) {
   return 0;
 }
 
-static const int NINFLATIONLOCKS = 256;
-static PlatformMutex* gInflationLocks[NINFLATIONLOCKS];
+static constexpr size_t inflation_lock_count() {
+  return 256;
+}
+
+// Static storage for an array of PlatformMutex.
+alignas(PlatformMutex) static uint8_t _inflation_locks[inflation_lock_count()][sizeof(PlatformMutex)];
+
+static inline PlatformMutex* inflation_lock(size_t index) {
+  return reinterpret_cast<PlatformMutex*>(_inflation_locks[index]);
+}
 
 void ObjectSynchronizer::initialize() {
-  for (int i = 0; i < NINFLATIONLOCKS; i++) {
-    gInflationLocks[i] = new PlatformMutex();
+  for (size_t i = 0; i < inflation_lock_count(); i++) {
+    ::new(static_cast<void*>(inflation_lock(i))) PlatformMutex();
   }
   // Start the ceiling with the estimate for one thread.
   set_in_use_list_ceiling(AvgMonitorsPerThreadEstimate);
+
+  // Start the timer for deflations, so it does not trigger immediately.
+  _last_async_deflation_time_ns = os::javaTimeNanos();
 }
 
 MonitorList ObjectSynchronizer::_in_use_list;
@@ -282,6 +293,7 @@ bool volatile ObjectSynchronizer::_is_async_deflation_requested = false;
 bool volatile ObjectSynchronizer::_is_final_audit = false;
 jlong ObjectSynchronizer::_last_async_deflation_time_ns = 0;
 static uintx _no_progress_cnt = 0;
+static bool _no_progress_skip_increment = false;
 
 // =====================> Quick functions
 
@@ -740,11 +752,11 @@ static markWord read_stable_mark(oop obj) {
         // then for each thread on the list, set the flag and unpark() the thread.
 
         // Index into the lock array based on the current object address.
-        static_assert(is_power_of_2(NINFLATIONLOCKS), "must be");
-        int ix = (cast_from_oop<intptr_t>(obj) >> 5) & (NINFLATIONLOCKS-1);
+        static_assert(is_power_of_2(inflation_lock_count()), "must be");
+        size_t ix = (cast_from_oop<intptr_t>(obj) >> 5) & (inflation_lock_count() - 1);
         int YieldThenBlock = 0;
-        assert(ix >= 0 && ix < NINFLATIONLOCKS, "invariant");
-        gInflationLocks[ix]->lock();
+        assert(ix < inflation_lock_count(), "invariant");
+        inflation_lock(ix)->lock();
         while (obj->mark_acquire() == markWord::INFLATING()) {
           // Beware: naked_yield() is advisory and has almost no effect on some platforms
           // so we periodically call current->_ParkEvent->park(1).
@@ -755,7 +767,7 @@ static markWord read_stable_mark(oop obj) {
             os::naked_yield();
           }
         }
-        gInflationLocks[ix]->unlock();
+        inflation_lock(ix)->unlock();
       }
     } else {
       SpinPause();       // SMP-polite spinning
@@ -1072,7 +1084,14 @@ static bool monitors_used_above_threshold(MonitorList* list) {
 
   // Check if our monitor usage is above the threshold:
   size_t monitor_usage = (monitors_used * 100LL) / ceiling;
-  return int(monitor_usage) > MonitorUsedDeflationThreshold;
+  if (int(monitor_usage) > MonitorUsedDeflationThreshold) {
+    log_info(monitorinflation)("monitors_used=" SIZE_FORMAT ", ceiling=" SIZE_FORMAT
+                               ", monitor_usage=" SIZE_FORMAT ", threshold=" INTX_FORMAT,
+                               monitors_used, ceiling, monitor_usage, MonitorUsedDeflationThreshold);
+    return true;
+  }
+
+  return false;
 }
 
 size_t ObjectSynchronizer::in_use_list_ceiling() {
@@ -1094,17 +1113,49 @@ void ObjectSynchronizer::set_in_use_list_ceiling(size_t new_value) {
 bool ObjectSynchronizer::is_async_deflation_needed() {
   if (is_async_deflation_requested()) {
     // Async deflation request.
+    log_info(monitorinflation)("Async deflation needed: explicit request");
     return true;
   }
+
+  jlong time_since_last = time_since_last_async_deflation_ms();
+
   if (AsyncDeflationInterval > 0 &&
-      time_since_last_async_deflation_ms() > AsyncDeflationInterval &&
+      time_since_last > AsyncDeflationInterval &&
       monitors_used_above_threshold(&_in_use_list)) {
     // It's been longer than our specified deflate interval and there
     // are too many monitors in use. We don't deflate more frequently
     // than AsyncDeflationInterval (unless is_async_deflation_requested)
     // in order to not swamp the MonitorDeflationThread.
+    log_info(monitorinflation)("Async deflation needed: monitors used are above the threshold");
     return true;
   }
+
+  if (GuaranteedAsyncDeflationInterval > 0 &&
+      time_since_last > GuaranteedAsyncDeflationInterval) {
+    // It's been longer than our specified guaranteed deflate interval.
+    // We need to clean up the used monitors even if the threshold is
+    // not reached, to keep the memory utilization at bay when many threads
+    // touched many monitors.
+    log_info(monitorinflation)("Async deflation needed: guaranteed interval (" INTX_FORMAT " ms) "
+                               "is greater than time since last deflation (" JLONG_FORMAT " ms)",
+                               GuaranteedAsyncDeflationInterval, time_since_last);
+
+    // If this deflation has no progress, then it should not affect the no-progress
+    // tracking, otherwise threshold heuristics would think it was triggered, experienced
+    // no progress, and needs to backoff more aggressively. In this "no progress" case,
+    // the generic code would bump the no-progress counter, and we compensate for that
+    // by telling it to skip the update.
+    //
+    // If this deflation has progress, then it should let non-progress tracking
+    // know about this, otherwise the threshold heuristics would kick in, potentially
+    // experience no-progress due to aggressive cleanup by this deflation, and think
+    // it is still in no-progress stride. In this "progress" case, the generic code would
+    // zero the counter, and we allow it to happen.
+    _no_progress_skip_increment = true;
+
+    return true;
+  }
+
   return false;
 }
 
@@ -1522,6 +1573,8 @@ size_t ObjectSynchronizer::deflate_idle_monitors(ObjectMonitorsHashtable* table)
 
   if (deflated_count != 0) {
     _no_progress_cnt = 0;
+  } else if (_no_progress_skip_increment) {
+    _no_progress_skip_increment = false;
   } else {
     _no_progress_cnt++;
   }

@@ -55,6 +55,8 @@ import sun.security.util.SecurityConstants;
  * href="http://www.ietf.org/rfc/rfc2616.txt"><i>RFC&nbsp;2616: Hypertext
  * Transfer Protocol -- HTTP/1.1</i></a>
  *
+ * @spec https://www.rfc-editor.org/info/rfc2616
+ *      RFC 2616: Hypertext Transfer Protocol -- HTTP/1.1
  * @author Yingxian Wang
  * @since 1.5
  */
