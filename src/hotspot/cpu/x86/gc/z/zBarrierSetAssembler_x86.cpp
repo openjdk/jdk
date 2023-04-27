@@ -281,17 +281,15 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
 
   __ bind(uncolor);
 
+  __ movptr(scratch, rcx); // Save rcx because shrq needs shift in rcx
+  __ movptr(rcx, ExternalAddress((address)&ZPointerLoadShift));
   if (dst == rcx) {
-    __ movptr(scratch, dst);
-    __ movptr(rcx, ExternalAddress((address)&ZPointerLoadShift));
+    // Dst was rcx which is saved in scratch because shrq needs rcx for shift
     __ shrq(scratch);
-    __ movptr(dst, scratch);
   } else {
-    __ push(rcx);
-    __ movptr(rcx, ExternalAddress((address)&ZPointerLoadShift));
     __ shrq(dst);
-    __ pop(rcx);
   }
+  __ movptr(rcx, scratch); // restore rcx
 
   __ bind(done);
 
