@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -109,7 +109,9 @@ define SetupInterimModule
           $$(INTERIM_LANGTOOLS_ADD_EXPORTS) \
           --patch-module java.base=$(BUILDTOOLS_OUTPUTDIR)/gensrc/java.base.interim \
           --add-exports java.base/jdk.internal.javac=java.compiler.interim \
-          --add-exports java.base/jdk.internal.javac=jdk.compiler.interim, \
+          --add-exports java.base/jdk.internal.javac=jdk.compiler.interim \
+          --add-exports jdk.internal.opt/jdk.internal.opt=jdk.compiler.interim \
+          --add-exports jdk.internal.opt/jdk.internal.opt=jdk.javadoc.interim, \
   ))
 
   $1_DEPS_INTERIM := $$(addsuffix .interim, $$(filter \

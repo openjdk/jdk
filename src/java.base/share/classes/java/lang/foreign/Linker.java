@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -34,8 +34,10 @@ import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
 
 import java.lang.invoke.MethodHandle;
-import java.util.Arrays;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -54,46 +56,340 @@ import java.util.stream.Stream;
  * <li>A linker allows Java code to link against foreign functions, via
  * {@linkplain #downcallHandle(MemorySegment, FunctionDescriptor, Option...) downcall method handles}; and</li>
  * <li>A linker allows foreign functions to call Java method handles,
- * via the generation of {@linkplain #upcallStub(MethodHandle, FunctionDescriptor, SegmentScope) upcall stubs}.</li>
+ * via the generation of {@linkplain #upcallStub(MethodHandle, FunctionDescriptor, Arena, Option...) upcall stubs}.</li>
  * </ul>
  * In addition, a linker provides a way to look up foreign functions in libraries that conform to the ABI. Each linker
  * chooses a set of libraries that are commonly used on the OS and processor combination associated with the ABI.
  * For example, a linker for Linux/x64 might choose two libraries: {@code libc} and {@code libm}. The functions in these
  * libraries are exposed via a {@linkplain #defaultLookup() symbol lookup}.
- * <p>
- * The {@link #nativeLinker()} method provides a linker for the ABI associated with the OS and processor where the Java runtime
- * is currently executing. This linker also provides access, via its {@linkplain #defaultLookup() default lookup},
- * to the native libraries loaded with the Java runtime.
  *
- * <h2 id="downcall-method-handles">Downcall method handles</h2>
+ * <h2 id="native-linker">Calling native functions</h2>
  *
- * {@linkplain #downcallHandle(FunctionDescriptor, Option...) Linking a foreign function} is a process which requires a function descriptor,
- * a set of memory layouts which, together, specify the signature of the foreign function to be linked, and returns,
- * when complete, a downcall method handle, that is, a method handle that can be used to invoke the target foreign function.
- * <p>
- * The Java {@linkplain java.lang.invoke.MethodType method type} associated with the returned method handle is
- * {@linkplain FunctionDescriptor#toMethodType() derived} from the argument and return layouts in the function descriptor.
- * The downcall method handle type, might then be decorated by additional leading parameters, in the given order if both are present:
- * <ul>
- * <li>If the downcall method handle is created {@linkplain #downcallHandle(FunctionDescriptor, Option...) without specifying a target address},
- * the downcall method handle type features a leading parameter of type {@link MemorySegment}, from which the
- * address of the target foreign function can be derived.</li>
- * <li>If the function descriptor's return layout is a group layout, the resulting downcall method handle accepts
- * an additional leading parameter of type {@link SegmentAllocator}, which is used by the linker runtime to allocate the
- * memory region associated with the struct returned by the downcall method handle.</li>
- * </ul>
+ * The {@linkplain #nativeLinker() native linker} can be used to link against functions
+ * defined in C libraries (native functions). Suppose we wish to downcall from Java to the {@code strlen} function
+ * defined in the standard C library:
+ * {@snippet lang = c:
+ * size_t strlen(const char *s);
+ * }
+ * A downcall method handle that exposes {@code strlen} is obtained, using the native linker, as follows:
  *
- * <h2 id="upcall-stubs">Upcall stubs</h2>
+ * {@snippet lang = java:
+ * Linker linker = Linker.nativeLinker();
+ * MethodHandle strlen = linker.downcallHandle(
+ *     linker.defaultLookup().find("strlen").get(),
+ *     FunctionDescriptor.of(JAVA_LONG, ADDRESS)
+ * );
+ * }
  *
- * {@linkplain #upcallStub(MethodHandle, FunctionDescriptor, SegmentScope) Creating an upcall stub} requires a method
- * handle and a function descriptor; in this case, the set of memory layouts in the function descriptor
- * specify the signature of the function pointer associated with the upcall stub.
+ * Note how the native linker also provides access, via its {@linkplain #defaultLookup() default lookup},
+ * to the native functions defined by the C libraries loaded with the Java runtime. Above, the default lookup
+ * is used to search the address of the {@code strlen} native function. That address is then passed, along with
+ * a <em>platform-dependent description</em> of the signature of the function expressed as a
+ * {@link FunctionDescriptor} (more on that below) to the native linker's
+ * {@link #downcallHandle(MemorySegment, FunctionDescriptor, Option...)} method.
+ * The obtained downcall method handle is then invoked as follows:
+ *
+ * {@snippet lang = java:
+ * try (Arena arena = Arena.openConfined()) {
+ *     MemorySegment str = arena.allocateUtf8String("Hello");
+ *     long len          = strlen.invoke(str);  // 5
+ * }
+ * }
+ * <h3 id="describing-c-sigs">Describing C signatures</h3>
+ *
+ * When interacting with the native linker, clients must provide a platform-dependent description of the signature
+ * of the C function they wish to link against. This description, a {@link FunctionDescriptor function descriptor},
+ * defines the layouts associated with the parameter types and return type (if any) of the C function.
  * <p>
- * The type of the provided method handle's type has to match the method type associated with the upcall stub,
- * which is {@linkplain FunctionDescriptor#toMethodType() derived} from the provided function descriptor.
+ * Scalar C types such as {@code bool}, {@code int} are modelled as {@linkplain ValueLayout value layouts}
+ * of a suitable carrier. The mapping between a scalar type and its corresponding layout is dependent on the ABI
+ * implemented by the native linker. For instance, the C type {@code long} maps to the layout constant
+ * {@link ValueLayout#JAVA_LONG} on Linux/x64, but maps to the layout constant {@link ValueLayout#JAVA_INT} on
+ * Windows/x64. Similarly, the C type {@code size_t} maps to the layout constant {@link ValueLayout#JAVA_LONG}
+ * on 64-bit platforms, but maps to the layout constant {@link ValueLayout#JAVA_INT} on 32-bit platforms.
  * <p>
- * Upcall stubs are modelled by instances of type {@link MemorySegment}; upcall stubs can be passed by reference to other
- * downcall method handles and, they are released via their associated {@linkplain SegmentScope scope}.
+ * Composite types are modelled as {@linkplain GroupLayout group layouts}. More specifically, a C {@code struct} type
+ * maps to a {@linkplain StructLayout struct layout}, whereas a C {@code union} type maps to a {@link UnionLayout union
+ * layout}. When defining a struct or union layout, clients must pay attention to the size and alignment constraint
+ * of the corresponding composite type definition in C. For instance, padding between two struct fields
+ * must be modelled explicitly, by adding an adequately sized {@linkplain PaddingLayout padding layout} member
+ * to the resulting struct layout.
+ * <p>
+ * Finally, pointer types such as {@code int**} and {@code int(*)(size_t*, size_t*)} are modelled as
+ * {@linkplain AddressLayout address layouts}. When the spatial bounds of the pointer type are known statically,
+ * the address layout can be associated with a {@linkplain AddressLayout#targetLayout() target layout}. For instance,
+ * a pointer that is known to point to a C {@code int[2]} array can be modelled as an address layout whose
+ * target layout is a sequence layout whose element count is 2, and whose element type is {@link ValueLayout#JAVA_INT}.
+ * <p>
+ * The following table shows some examples of how C types are modelled in Linux/x64:
+ *
+ * <blockquote><table class="plain">
+ * <caption style="display:none">Mapping C types</caption>
+ * <thead>
+ * <tr>
+ *     <th scope="col">C type</th>
+ *     <th scope="col">Layout</th>
+ *     <th scope="col">Java type</th>
+ * </tr>
+ * </thead>
+ * <tbody>
+ * <tr><th scope="row" style="font-weight:normal">{@code bool}</th>
+ *     <td style="text-align:center;">{@link ValueLayout#JAVA_BOOLEAN}</td>
+ *     <td style="text-align:center;">{@code boolean}</td>
+ * <tr><th scope="row" style="font-weight:normal">{@code char}</th>
+ *     <td style="text-align:center;">{@link ValueLayout#JAVA_BYTE}</td>
+ *     <td style="text-align:center;">{@code byte}</td>
+ * <tr><th scope="row" style="font-weight:normal">{@code short}</th>
+ *     <td style="text-align:center;">{@link ValueLayout#JAVA_SHORT}</td>
+ *     <td style="text-align:center;">{@code short}</td>
+ * <tr><th scope="row" style="font-weight:normal">{@code int}</th>
+ *     <td style="text-align:center;">{@link ValueLayout#JAVA_INT}</td>
+ *     <td style="text-align:center;">{@code int}</td>
+ * <tr><th scope="row" style="font-weight:normal">{@code long}</th>
+ *     <td style="text-align:center;">{@link ValueLayout#JAVA_LONG}</td>
+ *     <td style="text-align:center;">{@code long}</td>
+ * <tr><th scope="row" style="font-weight:normal">{@code long long}</th>
+ *     <td style="text-align:center;">{@link ValueLayout#JAVA_LONG}</td>
+ *     <td style="text-align:center;">{@code long}</td>
+ * <tr><th scope="row" style="font-weight:normal">{@code float}</th>
+ *     <td style="text-align:center;">{@link ValueLayout#JAVA_FLOAT}</td>
+ *     <td style="text-align:center;">{@code float}</td>
+ * <tr><th scope="row" style="font-weight:normal">{@code double}</th>
+ *     <td style="text-align:center;">{@link ValueLayout#JAVA_DOUBLE}</td>
+ *     <td style="text-align:center;">{@code double}</td>
+ <tr><th scope="row" style="font-weight:normal">{@code size_t}</th>
+ *     <td style="text-align:center;">{@link ValueLayout#JAVA_LONG}</td>
+ *     <td style="text-align:center;">{@code long}</td>
+ * <tr><th scope="row" style="font-weight:normal">{@code char*}, {@code int**}, {@code struct Point*}</th>
+ *     <td style="text-align:center;">{@link ValueLayout#ADDRESS}</td>
+ *     <td style="text-align:center;">{@link MemorySegment}</td>
+ * <tr><th scope="row" style="font-weight:normal">{@code int (*ptr)[10]}</th>
+ *     <td style="text-align:left;">
+ * <pre>
+ * ValueLayout.ADDRESS.withTargetLayout(
+ *     MemoryLayout.sequenceLayout(10,
+ *         ValueLayout.JAVA_INT)
+ * );
+ * </pre>
+ *     <td style="text-align:center;">{@link MemorySegment}</td>
+ * <tr><th scope="row" style="font-weight:normal"><code>struct Point { int x; long y; };</code></th>
+ *     <td style="text-align:left;">
+ * <pre>
+ * MemoryLayout.structLayout(
+ *     ValueLayout.JAVA_INT.withName("x"),
+ *     MemoryLayout.paddingLayout(32),
+ *     ValueLayout.JAVA_LONG.withName("y")
+ * );
+ * </pre>
+ *     </td>
+ *     <td style="text-align:center;">{@link MemorySegment}</td>
+ * <tr><th scope="row" style="font-weight:normal"><code>union Choice { float a; int b; }</code></th>
+ *     <td style="text-align:left;">
+ * <pre>
+ * MemoryLayout.unionLayout(
+ *     ValueLayout.JAVA_FLOAT.withName("a"),
+ *     ValueLayout.JAVA_INT.withName("b")
+ * );
+ * </pre>
+ *     </td>
+ *     <td style="text-align:center;">{@link MemorySegment}</td>
+ * </tbody>
+ * </table></blockquote>
+ *
+ * <h3 id="function-pointers">Function pointers</h3>
+ *
+ * Sometimes, it is useful to pass Java code as a function pointer to some native function; this is achieved by using
+ * an {@linkplain #upcallStub(MethodHandle, FunctionDescriptor, Arena, Option...) upcall stub}. To demonstrate this,
+ * let's consider the following function from the C standard library:
+ *
+ * {@snippet lang = c:
+ * void qsort(void *base, size_t nmemb, size_t size,
+ *            int (*compar)(const void *, const void *));
+ * }
+ *
+ * The {@code qsort} function can be used to sort the contents of an array, using a custom comparator function which is
+ * passed as a function pointer (the {@code compar} parameter). To be able to call the {@code qsort} function from Java,
+ * we must first create a downcall method handle for it, as follows:
+ *
+ * {@snippet lang = java:
+ * Linker linker = Linker.nativeLinker();
+ * MethodHandle qsort = linker.downcallHandle(
+ *     linker.defaultLookup().find("qsort").get(),
+ *         FunctionDescriptor.ofVoid(ADDRESS, JAVA_LONG, JAVA_LONG, ADDRESS)
+ * );
+ * }
+ *
+ * As before, we use {@link ValueLayout#JAVA_LONG} to map the C type {@code size_t} type, and {@link ValueLayout#ADDRESS}
+ * for both the first pointer parameter (the array pointer) and the last parameter (the function pointer).
+ * <p>
+ * To invoke the {@code qsort} downcall handle obtained above, we need a function pointer to be passed as the last
+ * parameter. That is, we need to create a function pointer out of an existing method handle. First, let's write a
+ * Java method that can compare two int elements passed as pointers (i.e. as {@linkplain MemorySegment memory segments}):
+ *
+ * {@snippet lang = java:
+ * class Qsort {
+ *     static int qsortCompare(MemorySegment elem1, MemorySegmet elem2) {
+ *         return Integer.compare(elem1.get(JAVA_INT, 0), elem2.get(JAVA_INT, 0));
+ *     }
+ * }
+ * }
+ *
+ * Now let's create a method handle for the comparator method defined above:
+ *
+ * {@snippet lang = java:
+ * FunctionDescriptor comparDesc = FunctionDescriptor.of(JAVA_INT,
+ *                                                       ADDRESS.withTargetLayout(JAVA_INT),
+ *                                                       ADDRESS.withTargetLayout(JAVA_INT));
+ * MethodHandle comparHandle = MethodHandles.lookup()
+ *                                          .findStatic(Qsort.class, "qsortCompare",
+ *                                                      comparDesc.toMethodType());
+ * }
+ *
+ * First, we create a function descriptor for the function pointer type. Since we know that the parameters passed to
+ * the comparator method will be pointers to elements of a C {@code int[]} array, we can specify {@link ValueLayout#JAVA_INT}
+ * as the target layout for the address layouts of both parameters. This will allow the comparator method to access
+ * the contents of the array elements to be compared. We then {@linkplain FunctionDescriptor#toMethodType() turn}
+ * that function descriptor into a suitable {@linkplain java.lang.invoke.MethodType method type} which we then use to look up
+ * the comparator method handle. We can now create an upcall stub which points to that method, and pass it, as a function
+ * pointer, to the {@code qsort} downcall handle, as follows:
+ *
+ * {@snippet lang = java:
+ * try (Arena arena = Arena.ofConfined()) {
+ *     MemorySegment comparFunc = linker.upcallStub(comparHandle, comparDesc, arena);
+ *     MemorySegment array = session.allocateArray(0, 9, 3, 4, 6, 5, 1, 8, 2, 7);
+ *     qsort.invokeExact(array, 10L, 4L, comparFunc);
+ *     int[] sorted = array.toArray(JAVA_INT); // [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ]
+ * }
+ * }
+ *
+ * This code creates an off-heap array, copies the contents of a Java array into it, and then passes the array to the
+ * {@code qsort} method handle along with the comparator function we obtained from the native linker. After the invocation, the contents
+ * of the off-heap array will be sorted according to our comparator function, written in Java. We then extract a
+ * new Java array from the segment, which contains the sorted elements.
+ *
+ * <h3 id="by-ref">Functions returning pointers</h3>
+ *
+ * When interacting with native functions, it is common for those functions to allocate a region of memory and return
+ * a pointer to that region. Let's consider the following function from the C standard library:
+ *
+ * {@snippet lang = c:
+ * void *malloc(size_t size);
+ * }
+ *
+ * The {@code malloc} function allocates a region of memory of given size,
+ * and returns a pointer to that region of memory, which is later deallocated using another function from
+ * the C standard library:
+ *
+ * {@snippet lang = c:
+ * void free(void *ptr);
+ * }
+ *
+ * The {@code free} function takes a pointer to a region of memory and deallocates that region. In this section we
+ * will show how to interact with these native functions, with the aim of providing a <em>safe</em> allocation
+ * API (the approach outlined below can of course be generalized to allocation functions other than {@code malloc}
+ * and {@code free}).
+ * <p>
+ * First, we need to create the downcall method handles for {@code malloc} and {@code free}, as follows:
+ *
+ * {@snippet lang = java:
+ * Linker linker = Linker.nativeLinker();
+ *
+ * MethodHandle malloc = linker.downcallHandle(
+ *     linker.defaultLookup().find("malloc").get(),
+ *     FunctionDescriptor.of(ADDRESS, JAVA_LONG)
+ * );
+ *
+ * MethodHandle free = linker.downcallHandle(
+ *     linker.defaultLookup().find("free").get(),
+ *     FunctionDescriptor.ofVoid(ADDRESS)
+ * );
+ * }
+ *
+ * When interacting with a native functions returning a pointer (such as {@code malloc}), the Java runtime has no insight
+ * into the size or the lifetime of the returned pointer. Consider the following code:
+ *
+ * {@snippet lang = java:
+ * MemorySegment segment = (MemorySegment)malloc.invokeExact(100);
+ * }
+ *
+ * The size of the segment returned by the {@code malloc} downcall method handle is
+ * <a href="MemorySegment.html#wrapping-addresses">zero</a>. Moreover, the scope of the
+ * returned segment is a fresh scope that is always alive. To provide safe access to the segment, we must,
+ * unsafely, resize the segment to the desired size (100, in this case). It might also be desirable to
+ * attach the segment to some existing {@linkplain Arena arena}, so that the lifetime of the region of memory
+ * backing the segment can be managed automatically, as for any other native segment created directly from Java code.
+ * Both these operations are accomplished using the restricted {@link MemorySegment#reinterpret(long, Arena, Consumer)}
+ * method, as follows:
+ *
+ * {@snippet lang = java:
+ * MemorySegment allocateMemory(long byteSize, Arena arena) {
+ *     MemorySegment segment = (MemorySegment)malloc.invokeExact(byteSize);    // size = 0, scope = always alive
+ *     return segment.reinterpret(byteSize, arena, s -> free.invokeExact(s));  // size = byteSize, scope = arena.scope()
+ * }
+ * }
+ *
+ * The {@code allocateMemory} method defined above accepts two parameters: a size and an arena. The method calls the
+ * {@code malloc} downcall method handle, and unsafely reinterprets the returned segment, by giving it a new size
+ * (the size passed to the {@code allocateMemory} method) and a new scope (the scope of the provided arena).
+ * The method also specifies a <em>cleanup action</em> to be executed when the provided arena is closed. Unsurprisingly,
+ * the cleanup action passes the segment to the {@code free} downcall method handle, to deallocate the underlying
+ * region of memory. We can use the {@code allocateMemory} method as follows:
+ *
+ * {@snippet lang = java:
+ * try (Arena arena = Arena.ofConfined()) {
+ *     MemorySegment segment = allocateMemory(100, arena);
+ * } // 'free' called here
+ * }
+ *
+ * Note how the segment obtained from {@code allocateMemory} acts as any other segment managed by the confined arena. More
+ * specifically, the obtained segment has the desired size, can only be accessed by a single thread (the thread which created
+ * the confined arena), and its lifetime is tied to the surrounding <em>try-with-resources</em> block.
+ *
+ * <h3 id="variadic-funcs">Variadic functions</h3>
+ *
+ * Variadic functions (e.g. a C function declared with a trailing ellipses {@code ...} at the end of the formal parameter
+ * list or with an empty formal parameter list) are not supported directly by the native linker. However, it is still possible
+ * to link a variadic function by using a <em>specialized</em> function descriptor, together with a
+ * {@linkplain Linker.Option#firstVariadicArg(int) a linker option} which indicates the position of the first variadic argument
+ * in that specialized descriptor.
+ * <p>
+ * A well-known variadic function is the {@code printf} function, defined in the C standard library:
+ *
+ * {@snippet lang = c:
+ * int printf(const char *format, ...);
+ * }
+ *
+ * This function takes a format string, and a number of additional arguments (the number of such arguments is
+ * dictated by the format string). Consider the following variadic call:
+ *
+ * {@snippet lang = c:
+ * printf("%d plus %d equals %d", 2, 2, 4);
+ * }
+ *
+ * To perform an equivalent call using a downcall method handle we must create a function descriptor which
+ * describes the specialized signature of the C function we want to call. This descriptor must include layouts for any
+ * additional variadic argument we intend to provide. In this case, the specialized signature of the C
+ * function is {@code (char*, int, int, int)} as the format string accepts three integer parameters. Then, we need to use
+ * a linker option to specify the position of the first variadic layout in the provided function descriptor (starting from 0).
+ * In this case, since the first parameter is the format string (a non-variadic argument), the first variadic index
+ * needs to be set to 1, as follows:
+ *
+ * {@snippet lang = java:
+ * Linker linker = Linker.nativeLinker();
+ * MethodHandle printf = linker.downcallHandle(
+ *     linker.defaultLookup().lookup("printf").get(),
+ *         FunctionDescriptor.of(JAVA_INT, ADDRESS, JAVA_INT, JAVA_INT, JAVA_INT),
+ *         Linker.Option.firstVariadicArg(1) // first int is variadic
+ * );
+ * }
+ *
+ * We can then call the specialized downcall handle as usual:
+ *
+ * {@snippet lang = java:
+ * try (Arena arena = Arena.ofConfined()) {
+ *     int res = (int)printf.invokeExact(arena.allocateUtf8String("%d plus %d equals %d"), 2, 2, 4); //prints "2 plus 2 equals 4"
+ * }
+ * }
  *
  * <h2 id="safety">Safety considerations</h2>
  *
@@ -101,21 +397,7 @@ import java.util.stream.Stream;
  * contain enough signature information (e.g. arity and types of foreign function parameters). As a consequence,
  * the linker runtime cannot validate linkage requests. When a client interacts with a downcall method handle obtained
  * through an invalid linkage request (e.g. by specifying a function descriptor featuring too many argument layouts),
- * the result of such interaction is unspecified and can lead to JVM crashes. On downcall handle invocation,
- * the linker runtime guarantees the following for any argument {@code A} of type {@link MemorySegment} whose corresponding
- * layout is {@link ValueLayout#ADDRESS}:
- * <ul>
- *     <li>The scope of {@code A} is {@linkplain SegmentScope#isAlive() alive}. Otherwise, the invocation throws
- *     {@link IllegalStateException};</li>
- *     <li>The invocation occurs in a thread {@code T} such that {@code A.scope().isAccessibleBy(T) == true}.
- *     Otherwise, the invocation throws {@link WrongThreadException}; and</li>
- *     <li>The scope of {@code A} is {@linkplain SegmentScope#whileAlive(Runnable) kept alive} during the invocation.</li>
- *</ul>
- * A downcall method handle created from a function descriptor whose return layout is an
- * {@linkplain ValueLayout.OfAddress address layout} returns a native segment associated with
- * the {@linkplain SegmentScope#global() global scope}. Under normal conditions, the size of the returned segment is {@code 0}.
- * However, if the return layout is an {@linkplain ValueLayout.OfAddress#asUnbounded() unbounded} address layout,
- * then the size of the returned segment is {@code Long.MAX_VALUE}.
+ * the result of such interaction is unspecified and can lead to JVM crashes.
  * <p>
  * When creating upcall stubs the linker runtime validates the type of the target method handle against the provided
  * function descriptor and report an error if any mismatch is detected. As for downcalls, JVM crashes might occur,
@@ -124,12 +406,6 @@ import java.util.stream.Stream;
  * handle associated with an upcall stub returns a {@linkplain MemorySegment memory segment}, clients must ensure
  * that this address cannot become invalid after the upcall completes. This can lead to unspecified behavior,
  * and even JVM crashes, since an upcall is typically executed in the context of a downcall method handle invocation.
- * <p>
- * An upcall stub argument whose corresponding layout is an {@linkplain ValueLayout.OfAddress address layout}
- * is a native segment associated with the {@linkplain SegmentScope#global() global scope}.
- * Under normal conditions, the size of this segment argument is {@code 0}. However, if the layout associated with
- * the upcall stub argument is an {@linkplain ValueLayout.OfAddress#asUnbounded() unbounded} address layout,
- * then the size of the segment argument is {@code Long.MAX_VALUE}.
  *
  * @implSpec
  * Implementations of this interface are immutable, thread-safe and <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
@@ -143,31 +419,6 @@ public sealed interface Linker permits AbstractLinker {
      * Returns a linker for the ABI associated with the underlying native platform. The underlying native platform
      * is the combination of OS and processor where the Java runtime is currently executing.
      * <p>
-     * When interacting with the returned linker, clients must describe the signature of a foreign function using a
-     * {@link FunctionDescriptor function descriptor} whose argument and return layouts are specified as follows:
-     * <ul>
-     *     <li>Scalar types are modelled by a {@linkplain ValueLayout value layout} instance of a suitable carrier. Example
-     *     of scalar types in C are {@code int}, {@code long}, {@code size_t}, etc. The mapping between a scalar type
-     *     and its corresponding layout is dependent on the ABI of the returned linker;
-     *     <li>Composite types are modelled by a {@linkplain GroupLayout group layout}. Depending on the ABI of the
-     *     returned linker, additional {@linkplain MemoryLayout#paddingLayout(long) padding} member layouts might be required to conform
-     *     to the size and alignment constraint of a composite type definition in C (e.g. using {@code struct} or {@code union}); and</li>
-     *     <li>Pointer types are modelled by a {@linkplain ValueLayout value layout} instance with carrier {@link MemorySegment}.
-     *     Examples of pointer types in C are {@code int**} and {@code int(*)(size_t*, size_t*)};</li>
-     * </ul>
-     * <p>
-     * Any layout not listed above is <em>unsupported</em>; function descriptors containing unsupported layouts
-     * will cause an {@link IllegalArgumentException} to be thrown, when used to create a
-     * {@link #downcallHandle(MemorySegment, FunctionDescriptor, Option...) downcall method handle} or an
-     * {@linkplain #upcallStub(MethodHandle, FunctionDescriptor, SegmentScope) upcall stub}.
-     * <p>
-     * Variadic functions (e.g. a C function declared with a trailing ellipses {@code ...} at the end of the formal parameter
-     * list or with an empty formal parameter list) are not supported directly. However, it is possible to link a
-     * variadic function by using {@linkplain Linker.Option#firstVariadicArg(int) a linker option} to indicate
-     * the start of the list of variadic arguments, together with a specialized function descriptor describing a
-     * given variable arity callsite. Alternatively, where the foreign library allows it, clients might be able to
-     * interact with variadic functions by passing a trailing parameter of type {@link VaList} (e.g. as in {@code vsprintf}).
-     * <p>
      * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
      * Restricted methods are unsafe, and, if used incorrectly, their use might crash
      * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
@@ -178,7 +429,7 @@ public sealed interface Linker permits AbstractLinker {
      * linker are the native libraries loaded in the process where the Java runtime is currently executing. For example,
      * on Linux, these libraries typically include {@code libc}, {@code libm} and {@code libdl}.
      *
-     * @return a linker for the ABI associated with the OS and processor where the Java runtime is currently executing.
+     * @return a linker for the ABI associated with the underlying native platform.
      * @throws UnsupportedOperationException if the underlying native platform is not supported.
      * @throws IllegalCallerException If the caller is in a module that does not have native access enabled.
      */
@@ -189,11 +440,7 @@ public sealed interface Linker permits AbstractLinker {
     }
 
     /**
-     * Creates a method handle which can be used to call a foreign function with the given signature and address.
-     * <p>
-     * If the provided method type's return type is {@code MemorySegment}, then the resulting method handle features
-     * an additional prefix parameter, of type {@link SegmentAllocator}, which will be used by the linker to allocate
-     * structs returned by-value.
+     * Creates a method handle which is used to call a foreign function with the given signature and address.
      * <p>
      * Calling this method is equivalent to the following code:
      * {@snippet lang=java :
@@ -214,17 +461,35 @@ public sealed interface Linker permits AbstractLinker {
     }
 
     /**
-     * Creates a method handle which can be used to call a foreign function with the given signature.
-     * The resulting method handle features a prefix parameter (as the first parameter) corresponding to the foreign function
-     * entry point, of type {@link MemorySegment}, which is used to specify the address of the target function
-     * to be called.
+     * Creates a method handle which is used to call a foreign function with the given signature.
      * <p>
-     * If the provided function descriptor's return layout is a {@link GroupLayout}, then the resulting method handle features an
-     * additional prefix parameter (inserted immediately after the address parameter), of type {@link SegmentAllocator}),
-     * which will be used by the linker to allocate structs returned by-value.
+     * The Java {@linkplain java.lang.invoke.MethodType method type} associated with the returned method handle is
+     * {@linkplain FunctionDescriptor#toMethodType() derived} from the argument and return layouts in the function descriptor,
+     * but features an additional leading parameter of type {@link MemorySegment}, from which the address of the target
+     * foreign function is derived. Moreover, if the function descriptor's return layout is a group layout, the resulting
+     * downcall method handle accepts an additional leading parameter of type {@link SegmentAllocator}, which is used by
+     * the linker runtime to allocate the memory region associated with the struct returned by the downcall method handle.
      * <p>
-     * The returned method handle will throw an {@link IllegalArgumentException} if the {@link MemorySegment} parameter passed to it is
-     * associated with the {@link MemorySegment#NULL} address, or a {@link NullPointerException} if that parameter is {@code null}.
+     * Upon invoking a downcall method handle, the linker runtime will guarantee the following for any argument
+     * {@code A} of type {@link MemorySegment} whose corresponding layout is an {@linkplain AddressLayout address layout}:
+     * <ul>
+     *     <li>{@code A.scope().isAlive() == true}. Otherwise, the invocation throws {@link IllegalStateException};</li>
+     *     <li>The invocation occurs in a thread {@code T} such that {@code A.isAccessibleBy(T) == true}.
+     *     Otherwise, the invocation throws {@link WrongThreadException}; and</li>
+     *     <li>{@code A} is kept alive during the invocation. For instance, if {@code A} has been obtained using a
+     *     {@linkplain Arena#ofShared()} shared arena}, any attempt to {@linkplain Arena#close() close}
+     *     the shared arena while the downcall method handle is executing will result in an {@link IllegalStateException}.</li>
+     *</ul>
+     * <p>
+     * Moreover, if the provided function descriptor's return layout is an {@linkplain AddressLayout address layout},
+     * invoking the returned method handle will return a native segment associated with
+     * a fresh scope that is always alive. Under normal conditions, the size of the returned segment is {@code 0}.
+     * However, if the function descriptor's return layout has a {@linkplain AddressLayout#targetLayout()} {@code T},
+     * then the size of the returned segment is set to {@code T.byteSize()}.
+     * <p>
+     * The returned method handle will throw an {@link IllegalArgumentException} if the {@link MemorySegment}
+     * representing the target address of the foreign function is the {@link MemorySegment#NULL} address.
+     * The returned method handle will additionally throw {@link NullPointerException} if any argument passed to it is {@code null}.
      *
      * @param function the function descriptor of the target function.
      * @param options  any linker options.
@@ -237,12 +502,19 @@ public sealed interface Linker permits AbstractLinker {
 
     /**
      * Creates a stub which can be passed to other foreign functions as a function pointer, associated with the given
-     * scope. Calling such a function pointer from foreign code will result in the execution of the provided
+     * arena. Calling such a function pointer from foreign code will result in the execution of the provided
      * method handle.
      * <p>
      * The returned memory segment's address points to the newly allocated upcall stub, and is associated with
-     * the provided scope. As such, the corresponding upcall stub will be deallocated
-     * when the scope becomes not {@linkplain SegmentScope#isAlive() alive}.
+     * the provided arena. As such, the lifetime of the returned upcall stub segment is controlled by the
+     * provided arena. For instance, if the provided arena is a confined arena, the returned
+     * upcall stub segment will be deallocated when the provided confined arena is {@linkplain Arena#close() closed}.
+     * <p>
+     * An upcall stub argument whose corresponding layout is an {@linkplain AddressLayout address layout}
+     * is a native segment associated with a fresh scope that is always alive.
+     * Under normal conditions, the size of this segment argument is {@code 0}.
+     * However, if the address layout has a {@linkplain AddressLayout#targetLayout()} {@code T}, then the size of the
+     * segment argument is set to {@code T.byteSize()}.
      * <p>
      * The target method handle should not throw any exceptions. If the target method handle does throw an exception,
      * the VM will exit with a non-zero exit code. To avoid the VM aborting due to an uncaught exception, clients
@@ -252,16 +524,17 @@ public sealed interface Linker permits AbstractLinker {
      *
      * @param target the target method handle.
      * @param function the upcall stub function descriptor.
-     * @param scope the scope associated with the returned upcall stub segment.
+     * @param arena the arena associated with the returned upcall stub segment.
+     * @param options  any linker options.
      * @return a zero-length segment whose address is the address of the upcall stub.
      * @throws IllegalArgumentException if the provided function descriptor is not supported by this linker.
      * @throws IllegalArgumentException if it is determined that the target method handle can throw an exception, or if the target method handle
      * has a type that does not match the upcall stub <a href="Linker.html#upcall-stubs"><em>inferred type</em></a>.
-     * @throws IllegalStateException if {@code scope} is not {@linkplain SegmentScope#isAlive() alive}.
-     * @throws WrongThreadException if this method is called from a thread {@code T},
-     * such that {@code scope.isAccessibleBy(T) == false}.
+     * @throws IllegalStateException if {@code arena.scope().isAlive() == false}
+     * @throws WrongThreadException if {@code arena} is a confined arena, and this method is called from a
+     * thread {@code T}, other than the arena's owner thread.
      */
-    MemorySegment upcallStub(MethodHandle target, FunctionDescriptor function, SegmentScope scope);
+    MemorySegment upcallStub(MethodHandle target, FunctionDescriptor function, Arena arena, Linker.Option... options);
 
     /**
      * Returns a symbol lookup for symbols in a set of commonly used libraries.
@@ -285,8 +558,7 @@ public sealed interface Linker permits AbstractLinker {
      */
     @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
     sealed interface Option
-            permits LinkerOptions.LinkerOptionImpl,
-                    Option.CaptureCallState {
+            permits LinkerOptions.LinkerOptionImpl {
 
         /**
          * {@return a linker option used to denote the index of the first variadic argument layout in a
@@ -302,70 +574,91 @@ public sealed interface Linker permits AbstractLinker {
          *          calling a foreign function associated with a downcall method handle,
          *          before it can be overwritten by the Java runtime, or read through conventional means}
          * <p>
-         * A downcall method handle linked with this option will feature an additional {@link MemorySegment}
-         * parameter directly following the target address, and optional {@link SegmentAllocator} parameters.
-         * This memory segment must be a native segment into which the captured state is written.
-         *
-         * @param capturedState the names of the values to save.
-         * @see CaptureCallState#supported()
-         */
-        static CaptureCallState captureCallState(String... capturedState) {
-            Set<CapturableState> set = Stream.of(capturedState)
-                    .map(CapturableState::forName)
-                    .collect(Collectors.toSet());
-            return new LinkerOptions.CaptureCallStateImpl(set);
-        }
-
-        /**
-         * A linker option for saving portions of the execution state immediately
-         * after calling a foreign function associated with a downcall method handle,
-         * before it can be overwritten by the runtime, or read through conventional means.
-         * <p>
          * Execution state is captured by a downcall method handle on invocation, by writing it
          * to a native segment provided by the user to the downcall method handle.
-         * For this purpose, a downcall method handle linked with the {@link #captureCallState(String[])}
+         * For this purpose, a downcall method handle linked with this
          * option will feature an additional {@link MemorySegment} parameter directly
          * following the target address, and optional {@link SegmentAllocator} parameters.
-         * This parameter represents the native segment into which the captured state is written.
+         * This parameter, called the 'capture state segment', represents the native segment into which
+         * the captured state is written.
          * <p>
-         * The native segment should have the layout {@linkplain CaptureCallState#layout associated}
-         * with the particular {@code CaptureCallState} instance used to link the downcall handle.
+         * The capture state segment should have the layout returned by {@linkplain #captureStateLayout}.
+         * This layout is a struct layout which has a named field for each captured value.
          * <p>
-         * Captured state can be retrieved from this native segment by constructing var handles
-         * from the {@linkplain #layout layout} associated with the {@code CaptureCallState} instance.
+         * Captured state can be retrieved from the capture state segment by constructing var handles
+         * from the {@linkplain #captureStateLayout capture state layout}.
          * <p>
          * The following example demonstrates the use of this linker option:
          * {@snippet lang = "java":
          * MemorySegment targetAddress = ...
-         * CaptureCallState ccs = Linker.Option.captureCallState("errno");
+         * Linker.Option ccs = Linker.Option.captureCallState("errno");
          * MethodHandle handle = Linker.nativeLinker().downcallHandle(targetAddress, FunctionDescriptor.ofVoid(), ccs);
          *
-         * VarHandle errnoHandle = ccs.layout().varHandle(PathElement.groupElement("errno"));
-         * try (Arena arena = Arena.openConfined()) {
-         *     MemorySegment capturedState = arena.allocate(ccs.layout());
+         * StructLayout capturedStateLayout = Linker.Option.capturedStateLayout();
+         * VarHandle errnoHandle = capturedStateLayout.varHandle(PathElement.groupElement("errno"));
+         * try (Arena arena = Arena.ofConfined()) {
+         *     MemorySegment capturedState = arena.allocate(capturedStateLayout);
          *     handle.invoke(capturedState);
          *     int errno = errnoHandle.get(capturedState);
          *     // use errno
          * }
          * }
+         *
+         * @param capturedState the names of the values to save.
+         * @throws IllegalArgumentException if at least one of the provided {@code capturedState} names
+         *                                  is unsupported on the current platform.
+         * @see #captureStateLayout()
          */
-        @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
-        sealed interface CaptureCallState extends Option
-                                          permits LinkerOptions.CaptureCallStateImpl {
-            /**
-             * {@return A struct layout that represents the layout of the native segment passed
-             *          to a downcall handle linked with this {@code CapturedCallState} instance}
-             */
-            StructLayout layout();
+        static Option captureCallState(String... capturedState) {
+            Set<CapturableState> set = Stream.of(Objects.requireNonNull(capturedState))
+                    .map(Objects::requireNonNull)
+                    .map(CapturableState::forName)
+                    .collect(Collectors.toSet());
+            return new LinkerOptions.CaptureCallState(set);
+        }
 
-            /**
-             * {@return the names of the state that can be capture by this implementation}
-             */
-            static Set<String> supported() {
-                return Arrays.stream(CapturableState.values())
-                             .map(CapturableState::stateName)
-                             .collect(Collectors.toSet());
-            }
+         /**
+         * {@return A struct layout that represents the layout of the capture state segment that is passed
+         *          to a downcall handle linked with {@link #captureCallState(String...)}}.
+         * <p>
+         * The capture state layout is <em>platform dependent</em> but is guaranteed to be
+         * a {@linkplain StructLayout struct layout} containing only {@linkplain ValueLayout value layouts}
+         * and possibly {@linkplain PaddingLayout padding layouts}.
+         * As an example, on Windows, the returned layout might contain three value layouts named:
+         * <ul>
+         *     <li>GetLastError</li>
+         *     <li>WSAGetLastError</li>
+         *     <li>errno</li>
+         * </ul>
+         * The following snipet shows how to obtain the names of the supported captured value layouts:
+         * {@snippet lang = java:
+         *    String capturedNames = Linker.Option.captureStateLayout().memberLayouts().stream()
+         *        .map(MemoryLayout::name)
+         *        .flatMap(Optional::stream)
+         *        .map(Objects::toString)
+         *        .collect(Collectors.joining(", "));
+         * }
+         *
+         * @see #captureCallState(String...)
+         */
+        static StructLayout captureStateLayout() {
+            return CapturableState.LAYOUT;
+        }
+
+        /**
+         * {@return A linker option used to mark a foreign function as <em>trivial</em>}
+         * <p>
+         * A trivial function is a function that has an extremely short running time
+         * in all cases (similar to calling an empty function), and does not call back into Java (e.g. using an upcall stub).
+         * <p>
+         * Using this linker option is a hint which some implementations may use to apply
+         * optimizations that are only valid for trivial functions.
+         * <p>
+         * Using this linker option when linking non trivial functions is likely to have adverse effects,
+         * such as loss of performance, or JVM crashes.
+         */
+        static Option isTrivial() {
+            return LinkerOptions.IsTrivial.INSTANCE;
         }
     }
 }
