@@ -1954,6 +1954,7 @@ Method* SystemDictionary::find_method_handle_intrinsic(vmIntrinsicID iid,
     // Loop until the current thread won the race and will try to create the full entry.
     while (!created) {
       met = _invoke_method_intrinsic_table.put_if_absent(key, &created);
+      assert(met != nullptr, "either created or found");
       if (*met != nullptr) {
         return *met;
       } else if (!created) {
