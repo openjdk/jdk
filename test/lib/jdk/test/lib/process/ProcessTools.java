@@ -178,13 +178,16 @@ public final class ProcessTools {
             while (current == count) {
                 if (!p.isAlive()) {
                     try {
-                        // It is needed to wait until stream is flushed after
+                        // It is needed to  ensure that stream is flushed after
                         // process is completed.
-                        task.get();
+                        task.get(10, TimeUnit.MILLISECONDS);
                         if (current == count) {
                             return -1;
                         }
-                    } catch (Exception e) {
+                    } catch (TimeoutException e) {
+                        // continue execution, so wait(1) give a chance to write
+                        // in this buffer by unlocking this synchronized method
+                    } catch (InterruptedException | ExecutionException e) {
                         return -1;
                     }
                 }

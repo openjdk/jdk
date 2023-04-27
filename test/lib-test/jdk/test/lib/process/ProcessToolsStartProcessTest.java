@@ -76,7 +76,7 @@ public class ProcessToolsStartProcessTest {
             if (numLines != numOfLines) {
                 System.out.print("FAILED: wrong number of lines in Consumer output\n");
                 success = false;
-                System.out.print(out.getStdout());
+                System.out.print(output);
             }
         }
 
@@ -92,7 +92,8 @@ public class ProcessToolsStartProcessTest {
 
     public static void main(String[] args) throws Exception {
         if (args.length > 0) {
-            for (int i = 0; i < Integer.parseInt(args[0]); i++) {
+            int iter = Integer.parseInt(args[0]);
+            for (int i = 0; i < iter; i++) {
                 System.out.println("A line on stdout: " + i + " " + ".".repeat(i));
             }
         } else {
