@@ -158,35 +158,35 @@ public final class ProcessTools {
         BufferOutputStream and BufferInputStream allow to re-use p.getInputStream() amd p.getOutputStream() of
         processes started with ProcessTools.startProcess(...).
         Implementation cashes ALL process output and allow to read it through InputStream.
+        The stream uses  Future<Void> task from StreamPumper.process() to check if output is complete.
      */
     private static class BufferOutputStream extends ByteArrayOutputStream {
         private int current = 0;
         final private Process p;
 
-        final private Future<Void> task;
+        private Future<Void> task;
 
-        public BufferOutputStream(Process p, Future<Void> task) {
+        public BufferOutputStream(Process p) {
             this.p = p;
-            this.task = task;
         }
 
+        synchronized void setTask(Future<Void> task) {
+            this.task = task;
+        }
         synchronized int readNext() {
             if (current > count) {
                 throw new RuntimeException("Shouldn't ever happen.  start: "
                         + current + " count: " + count + " buffer: " + this);
             }
             while (current == count) {
-                if (!p.isAlive()) {
+                if (!p.isAlive() && (task != null)) {
                     try {
-                        // It is needed to  ensure that stream is flushed after
-                        // process is completed.
                         task.get(10, TimeUnit.MILLISECONDS);
                         if (current == count) {
                             return -1;
                         }
                     } catch (TimeoutException e) {
-                        // continue execution, so wait(1) give a chance to write
-                        // in this buffer by unlocking this synchronized method
+                        // continue execution, so wait() give a chance to write
                     } catch (InterruptedException | ExecutionException e) {
                         return -1;
                     }
@@ -205,11 +205,11 @@ public final class ProcessTools {
 
         private final BufferOutputStream buffer;
 
-        public BufferInputStream(Process p, Future<Void> task) {
-            buffer = new BufferOutputStream(p, task);
+        public BufferInputStream(Process p) {
+            buffer = new BufferOutputStream(p);
         }
 
-        OutputStream getOutputStream() {
+        BufferOutputStream getOutputStream() {
             return buffer;
         }
 
@@ -259,6 +259,12 @@ public final class ProcessTools {
         stderr.addPump(new LineForwarder(name, System.err));
 
 
+        BufferInputStream stdOut = new BufferInputStream(p);
+        BufferInputStream stdErr = new BufferInputStream(p);
+
+        stdout.addOutputStream(stdOut.getOutputStream());
+        stderr.addOutputStream(stdErr.getOutputStream());
+
         if (lineConsumer != null) {
             StreamPumper.LinePump pump = new StreamPumper.LinePump() {
                 @Override
@@ -269,7 +275,6 @@ public final class ProcessTools {
             stdout.addPump(pump);
             stderr.addPump(pump);
         }
-
 
         CountDownLatch latch = new CountDownLatch(1);
         if (linePredicate != null) {
@@ -290,15 +295,11 @@ public final class ProcessTools {
         } else {
             latch.countDown();
         }
-
         final Future<Void> stdoutTask = stdout.process();
         final Future<Void> stderrTask = stderr.process();
 
-        BufferInputStream stdOut = new BufferInputStream(p, stdoutTask);
-        BufferInputStream stdErr = new BufferInputStream(p, stderrTask);
-
-        stdout.addOutputStream(stdOut.getOutputStream());
-        stderr.addOutputStream(stdErr.getOutputStream());
+        stdOut.getOutputStream().setTask(stdoutTask);
+        stdErr.getOutputStream().setTask(stderrTask);
 
         try {
             if (timeout > -1) {
