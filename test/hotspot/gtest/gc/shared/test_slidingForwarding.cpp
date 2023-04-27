@@ -21,6 +21,8 @@
  * questions.
  */
 
+#ifdef _LP64
+
 #include "precompiled.hpp"
 #include "gc/shared/slidingForwarding.inline.hpp"
 #include "oops/markWord.hpp"
@@ -94,3 +96,5 @@ TEST_VM(SlidingForwarding, fallback) {
 
   sf.end();
 }
+
+#endif // _LP64
