@@ -1331,7 +1331,9 @@ void Threads::print_on_error(outputStream* st, Thread* current, char* buf,
   st->cr();
 
   st->print_cr("Other Threads:");
-  unsigned num_other = (VMThread::vm_thread() ? 1 : 0) + (WatcherThread::watcher_thread() ? 1 : 0) + (AsyncLogWriter::instance() ? 1 : 0);
+  unsigned num_other = ((VMThread::vm_thread() != nullptr) ? 1 : 0) +
+      ((WatcherThread::watcher_thread() != nullptr) ? 1 : 0) +
+      ((AsyncLogWriter::instance() != nullptr)  ? 1 : 0);
   print_on_error(VMThread::vm_thread(), st, current, buf, buflen, &found_current);
   print_on_error(WatcherThread::watcher_thread(), st, current, buf, buflen, &found_current);
   print_on_error(AsyncLogWriter::instance(), st, current, buf, buflen, &found_current);

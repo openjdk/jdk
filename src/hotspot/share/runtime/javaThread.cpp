@@ -1531,7 +1531,7 @@ void JavaThread::print_on_error(outputStream* st, char *buf, int buflen) const {
   }
   st->print(", stack(" PTR_FORMAT "," PTR_FORMAT ") (" PROPERFMT ")",
             p2i(stack_end()), p2i(stack_base()),
-            PROPERFMTARGS((size_t)(stack_base() - stack_end())));
+            PROPERFMTARGS(stack_size()));
   st->print("]");
 
   ThreadsSMRSupport::print_info_on(this, st);
