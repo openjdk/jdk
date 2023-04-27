@@ -1541,8 +1541,8 @@ public class BufferedImage extends java.awt.Image
    * Adds a tile observer.  If the observer is already present,
    * it receives multiple notifications.
    * <p>
-   * The default implementation ignores its parameters and does
-   * nothing, since {@code BufferedImage} is always checked out
+   * This method ignores its parameters and does nothing,
+   * since {@code BufferedImage} is always checked out
    * for writing and cannot be made read-only,
    * so there can never be events to dispatch.
    *
@@ -1556,7 +1556,7 @@ public class BufferedImage extends java.awt.Image
    * nothing happens.  If the observer was registered for multiple
    * notifications, it is now registered for one fewer notification.
    * <p>
-   * The default implementation ignores the given observer,
+   * This method ignores the given observer,
    * since {@link #addTileObserver(TileObserver)} adds none.
    *
    * @param to the specified {@code TileObserver}.
@@ -1566,6 +1566,10 @@ public class BufferedImage extends java.awt.Image
 
     /**
      * Returns whether or not a tile is currently checked out for writing.
+     * The only tile in a {@code BufferedImage} is at (0,0) and it is always
+     * writable, so calling this method with (0,0) will always return
+     * {@code true}, and any other coordinate will cause an exception
+     * to be thrown.
      *
      * @param tileX the x index of the tile.
      * @param tileY the y index of the tile.
@@ -1589,8 +1593,8 @@ public class BufferedImage extends java.awt.Image
      * checked out.
      * <p>
      * Since a {@code BufferedImage} consists of a single tile,
-     * and that tile is always checked out for writing, the
-     * default implementation returns an array of one point.
+     * and that tile is always checked out for writing,
+     * this method returns an array of one point.
      * Further, the offset shall be consistent with
      * {@link #getMinTileX()} and {@link #getMinTileY()},
      * which are always (0,0) in {@code BufferedImage}.
@@ -1626,7 +1630,7 @@ public class BufferedImage extends java.awt.Image
    * {@code TileObservers} are notified when a tile goes from having
    * no writers to having one writer.
    * <p>
-   * The default implementation unconditionally returns the
+   * This method unconditionally returns the
    * {@linkplain #getRaster() single tile} without checking
    * the passed values. No listeners are notified since the
    * returned tile is always checked out for writing.
@@ -1649,10 +1653,9 @@ public class BufferedImage extends java.awt.Image
    * are notified when a tile goes from having one writer to having no
    * writers.
    * <p>
-   * The default implementation is a no-op and immediately returns
-   * without checking the passed values. No listeners are notified
-   * since the {@linkplain #getRaster() single tile} is always
-   * checked out for writing.
+   * This method immediately returns without checking the passed values.
+   * No listeners are notified since the {@linkplain #getRaster() single tile}
+   * is always checked out for writing.
    *
    * @param tileX the x index of the tile
    * @param tileY the y index of the tile
