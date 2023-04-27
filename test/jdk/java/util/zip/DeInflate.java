@@ -118,9 +118,20 @@ public class DeInflate {
         } catch (ReadOnlyBufferException robe) {}
     }
 
-    /*
-     * This method checks if a given Deflater and Inflater pair can correctly compress and decompress data.
-     * checks were performed for this functionality using various input scenarios and ByteBuffer instances.
+    /**
+     * Uses the {@code def} deflater to deflate the input data {@code in} of length {@code len}.
+     * A new {@link Inflater} is then created within this method to inflate the deflated data. The
+     * inflated data is then compared with the {@code in} to assert that it matches the original
+     * input data.
+     * This method repeats these checks for the different overloaded methods of
+     * {@code Deflater.deflate(...)} and {@code Inflater.inflate(...)}
+     *
+     * @param def    the deflater to use for deflating the contents in {@code in}
+     * @param in     the input content
+     * @param len    the length of the input content to use
+     * @param nowrap will be passed to the constructor of the {@code Inflater} used in this
+     *               method
+     * @throws Throwable if any error occurs during the check
      */
     static void check(Deflater def, byte[] in, int len, boolean nowrap)
         throws Throwable
