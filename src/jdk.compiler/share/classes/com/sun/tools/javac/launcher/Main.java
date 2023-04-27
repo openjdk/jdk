@@ -86,6 +86,7 @@ import com.sun.tools.javac.resources.LauncherProperties.Errors;
 import com.sun.tools.javac.util.JCDiagnostic.Error;
 
 import jdk.internal.misc.MainMethodFinder;
+import jdk.internal.misc.PreviewFeatures;
 import jdk.internal.misc.VM;
 
 import static javax.tools.JavaFileObject.Kind.SOURCE;
@@ -434,7 +435,7 @@ public class Main {
         try {
             Class<?> appClass = Class.forName(mainClassName, true, cl);
             Method main = MainMethodFinder.findMainMethod(appClass);
-            if (!MainMethodFinder.isPreview() && (!isStatic(main) || !isPublic(main))) {
+            if (!PreviewFeatures.isEnabled() && (!isStatic(main) || !isPublic(main))) {
                 throw new Fault(Errors.MainNotPublicStatic);
             }
             if (!main.getReturnType().equals(void.class)) {

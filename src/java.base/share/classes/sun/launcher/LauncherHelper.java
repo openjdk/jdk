@@ -85,6 +85,7 @@ import java.util.stream.Stream;
 
 import jdk.internal.util.OperatingSystem;
 import jdk.internal.misc.MainMethodFinder;
+import jdk.internal.misc.PreviewFeatures;
 import jdk.internal.misc.VM;
 import jdk.internal.module.ModuleBootstrap;
 import jdk.internal.module.Modules;
@@ -891,7 +892,7 @@ public final class LauncherHelper {
         boolean isPublic = Modifier.isPublic(mods);
         boolean hasArgs = mainMethod.getParameterCount() != 0;
 
-        if (!MainMethodFinder.isPreview()) {
+        if (!PreviewFeatures.isEnabled()) {
             if (!isStatic || !isPublic || !hasArgs) {
                 abort(null, "java.launcher.cls.error2", "static",
                       mainMethod.getDeclaringClass().getName());

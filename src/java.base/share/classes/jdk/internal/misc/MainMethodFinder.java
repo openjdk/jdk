@@ -31,33 +31,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MainMethodFinder {
-    private static final boolean IS_PREVIEW = getIsPreview();
-
-    /**
-     * { @return true if vm is in preview mode }
-     */
-    public static boolean isPreview() {
-        return IS_PREVIEW;
-    }
-
-    /*
-     * TODO: not perfect, if user adds "--enable-preview" after class argument then will get false positive.
-     */
-    private static boolean getIsPreview() {
-        String[] args = VM.getRuntimeArguments();
-
-        if (args != null) {
-            for (String arg : args) {
-                if ("--enable-preview".equals(arg)) {
-                    return true;
-                }
-            }
-        }
-
-        return false;
-    }
-
-
     private static boolean isPrivate(Method method) {
         return method != null && Modifier.isPrivate(method.getModifiers());
     }
@@ -173,7 +146,7 @@ public class MainMethodFinder {
 
             return mainClass.getMethod("main", String[].class);
         } catch (NoSuchMethodException nsme) {
-            if (!isPreview()) {
+            if (!PreviewFeatures.isEnabled()) {
                 throw nsme;
             }
 
