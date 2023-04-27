@@ -6556,11 +6556,27 @@ void MacroAssembler::poly1305_add(const Register dest[], const RegPair src[]) {
   add(dest[2], dest[2], src[2]._lo);
 }
 
+#define __ pkGen->
+
 class Poly1305KernelGenerator: public KernelGenerator {
 public:
 
   class Holder;
   Holder *_holder_list_head;
+
+#define ARGS                                    \
+  const Register input_start,                   \
+  const Register r[],                           \
+  const Register s[],                           \
+  const RegPair u[],                            \
+  const Register rr2
+
+#define ARGS_PASS                               \
+   __ _input_start,                             \
+   __ _r,                                       \
+   __ _s,                                       \
+   __ _u,                                       \
+   __ _rr2
 
   const Register _input_start;
   const Register *_r;
@@ -6568,7 +6584,12 @@ public:
   const RegPair *_u;
   const Register _rr2;
 
-  typedef void (*insns_t)(Poly1305KernelGenerator *);
+  typedef void (*insns_t)(Poly1305KernelGenerator *, ARGS);
+
+  Poly1305KernelGenerator(Assembler *as, ARGS)
+    : KernelGenerator(as, 0), _holder_list_head(nullptr),
+      _input_start(input_start),
+      _r(r), _s(s), _u(u), _rr2(rr2) { }
 
   Holder *last() {
     Holder *prev = nullptr;
@@ -6592,8 +6613,8 @@ public:
         gen->_holder_list_head = this;
       next = nullptr;
     }
-    void squirt(Poly1305KernelGenerator* as) {
-      _insn(as);
+    void squirt(Poly1305KernelGenerator* pkGen) {
+      _insn(pkGen, ARGS_PASS);
     }
  };
 
@@ -6609,17 +6630,10 @@ public:
     return a(insn);
   }
 
-  Poly1305KernelGenerator(Assembler *as, const Register input_start,
-                          const Register r[], const Register s[], const RegPair u[],
-                          const Register rr2)
-    : KernelGenerator(as, 0), _holder_list_head(nullptr),
-      _input_start(input_start),
-      _r(r), _s(s), _u(u), _rr2(rr2)
-  {
-  }
   virtual void generate(int n) {
+    auto pkGen = this;
     for (Holder *it = _holder_list_head; it; it = it->next) {
-      it->_insn(this);
+      it->_insn(pkGen, ARGS_PASS);
     }
   }
 
@@ -6630,19 +6644,16 @@ public:
   virtual int length() { return 4; }
 };
 
-#undef __
-
-#define emit gen << [](Poly1305KernelGenerator *pkGen)
-#define __ pkGen->
+#define par gen << [](Poly1305KernelGenerator *pkGen, ARGS)
 
 void MacroAssembler::plop(const Register input_start,
                           const Register r[], const Register s[], const RegPair u[],
                           const Register rr2) {
   Poly1305KernelGenerator gen(this, input_start, r, s, u, rr2);
 
-  emit { __ poly1305_load(__ _s, __ _input_start); };
-  emit { __ poly1305_add(__ _s, __ _u); };
-  emit { __ poly1305_reduce(__ _u); };
+  par { __ poly1305_load(s, input_start); };
+  par { __ poly1305_add(s, u); };
+  par { __ poly1305_reduce(u); };
 
   gen.generate(0);
 }
