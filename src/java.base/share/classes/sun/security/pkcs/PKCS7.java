@@ -37,6 +37,7 @@ import java.security.cert.CertificateFactory;
 import java.security.*;
 import java.util.function.Function;
 
+import sun.security.jca.JCAUtil;
 import sun.security.provider.SHAKE256;
 import sun.security.timestamp.*;
 import sun.security.util.*;
@@ -66,23 +67,6 @@ public class PKCS7 {
     private boolean oldStyle = false; // Is this JDK1.1.x-style?
 
     private Principal[] certIssuerNames;
-
-    /*
-     * Random number generator for creating nonce values
-     * (Lazy initialization)
-     */
-    private static class SecureRandomHolder {
-        static final SecureRandom RANDOM;
-        static {
-            SecureRandom tmp = null;
-            try {
-                tmp = SecureRandom.getInstance("SHA1PRNG");
-            } catch (NoSuchAlgorithmException e) {
-                // should not happen
-            }
-            RANDOM = tmp;
-        }
-    }
 
     /**
      * Unmarshals a PKCS7 block from its encoded form, parsing the
@@ -1027,11 +1011,9 @@ public class PKCS7 {
         }
 
         // Generate a nonce
-        BigInteger nonce = null;
-        if (SecureRandomHolder.RANDOM != null) {
-            nonce = new BigInteger(64, SecureRandomHolder.RANDOM);
-            tsQuery.setNonce(nonce);
-        }
+        BigInteger nonce = new BigInteger(64, JCAUtil.getDefSecureRandom());
+        tsQuery.setNonce(nonce);
+
         tsQuery.requestCertificate(true);
 
         TSResponse tsReply = tsa.generateTimestamp(tsQuery);
