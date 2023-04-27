@@ -50,15 +50,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class HttpURLConnectionExpectContinueTest {
 
     class Control {
-        ServerSocket serverSocket = null;
-        boolean stop = false;
-        boolean respondWith100Continue = false;
-        boolean write100ContinueTwice = false;
-        String response = null;
+        volatile ServerSocket serverSocket = null;
+        volatile boolean stop = false;
+        volatile boolean respondWith100Continue = false;
+        volatile boolean write100ContinueTwice = false;
+        volatile String response = null;
     }
 
     private Thread serverThread = null;
-    private volatile Control control = null;
+    private Control control = null;
     static final Logger logger;
 
     static {
