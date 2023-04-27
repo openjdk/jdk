@@ -102,7 +102,7 @@ public class interrupt001a {
 
             } else if (instruction.equals("newcheck")) {
 
-                synchronized (interrupt001aThread.lockingObject) {
+                synchronized (interrupt001aTask.lockingObject) {
                     thread2 = threadStart("Thread02");
                     thread3 = threadStart("Thread03");
 
@@ -143,7 +143,7 @@ public class interrupt001a {
     }
 
     private static Thread threadStart(String threadName) {
-        interrupt001aThread resultRunnable = new interrupt001aThread(threadName);
+        interrupt001aTask resultRunnable = new interrupt001aTask(threadName);
         Thread resultThread = JDIThreadFactory.newThread(resultRunnable, threadName);
         synchronized (resultRunnable.waitnotifyObj) {
             resultThread.start();
@@ -206,13 +206,13 @@ public class interrupt001a {
     }
 }
 
-class interrupt001aThread implements Runnable {
+class interrupt001aTask implements Runnable {
 
-    public interrupt001aThread(String threadName) {
-        this.threadName = threadName;
+    public interrupt001aTask(String taskName) {
+        this.taskName = taskName;
     }
 
-    public String threadName;
+    public String taskName;
 
     public boolean ready;
 
@@ -238,6 +238,6 @@ class interrupt001aThread implements Runnable {
     }
 
     void log(String str) {
-        interrupt001a.log2(threadName + " : " + str);
+        interrupt001a.log2(taskName + " : " + str);
     }
 }
