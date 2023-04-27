@@ -42,48 +42,59 @@ class FallbackTable;
  * be lost. SlidingForwarding requires only small side tables and guarantees constant-time access and modification.
  *
  * The idea is to use a pointer compression scheme very similar to the one that is used for compressed oops.
- * We divide the heap into number of logical regions. Each region spans maximum of 2^NUM_BITS words.
+ * We divide the heap into number of logical regions. Each region spans maximum of 2^NUM_COMPRESSED_BITS words.
  * We take advantage of the fact that sliding compaction can forward objects from one region to a maximum of
  * two regions (including itself, but that does not really matter). We need 1 bit to indicate which region is forwarded
- * into. We also currently require the two lowest header bits to indicate that the object is forwarded.
+ * into. We also currently require the two lowest header bits to indicate that the object is forwarded. In addition to that,
+ * we use 1 more bit to indicate that we should use a fallback-lookup-table instead of using the sliding encoding.
  *
  * For addressing, we need a table with N*2 entries, for N logical regions. For each region, it gives the base
  * address of the two target regions, or a special placeholder if not used.
  *
  * Adding a forwarding then works as follows:
  * Given an original address 'orig', and a 'target' address:
- * - Look-up first target base of region of orig. If not yet used,
- *   establish it to be the base of region of target address. Use that base in step 3.
+ * - Look-up first target base of region of orig. If it is already established and the region
+ *   that 'target' is in, then use it in step 3. If not yet used, establish it to be the base of region of target
+     address. Use that base in step 3.
  * - Else, if first target base is already used, check second target base. This must either be unused, or the
  *   base of the region of our target address. If unused, establish it to be the base of the region of our target
  *   address. Use that base for next step.
- * - Now we found a base address. Encode the target address with that base into lowest NUM_BITS bits, and shift
- *   that up by 3 bits. Set the 3rd bit if we used the secondary target base, otherwise leave it at 0. Set the
- *   lowest two bits to indicate that the object has been forwarded. Store that in the lowest NUM_BITS+3 bits of the
+ * - Now we found a base address. Encode the target address with that base into lowest NUM_COMPRESSED_BITS bits, and shift
+ *   that up by 4 bits. Set the 3rd bit if we used the secondary target base, otherwise leave it at 0. Set the
+ *   lowest two bits to indicate that the object has been forwarded. Store that in the lowest 32 bits of the
  *   original object's header.
  *
  * Similarily, looking up the target address, given an original object address works as follows:
- * - Load lowest NUM_BITS + 3 from original object header. Extract target region bit and compressed address bits.
+ * - Load lowest 32 from original object header. Extract target region bit and compressed address bits.
  * - Depending on target region bit, load base address from the target base table by looking up the corresponding entry
  *   for the region of the original object.
  * - Decode the target address by using the target base address and the compressed address bits.
+ *
+ * One complication is that G1 serial compaction breaks the assumption that we only forward
+ * to two target regions. When that happens, we initialize a fallback-hashtable for storing those extra
+ * forwardings, and set the 4th bit in the header to indicate that the forwardee is not encoded but
+ * should be looked-up in the hashtable. G1 serial compaction is not very common -  it is the last-last-ditch
+ * GC that is used when the JVM is scrambling to squeeze more space out of the heap, and at that
+ * point, ultimate performance is no longer the main concern.
  */
 class SlidingForwarding : public CHeapObj<mtGC> {
 private:
   static const uintptr_t MARK_LOWER_HALF_MASK = 0xffffffff;
 
-  // We need the lowest three bits to indicate a forwarded object and self-forwarding.
+  // We need the lowest two bits to indicate a forwarded object.
+  // The 3rd bit (fallback-bit) indicates that the forwardee should be
+  // looked-up in a fallback-table.
   static const int FALLBACK_SHIFT = markWord::lock_bits;
   static const int FALLBACK_BITS = 1;
   static const int FALLBACK_MASK = right_n_bits(FALLBACK_BITS) << FALLBACK_SHIFT;
+  // The 4th bit selects the target region.
   static const int REGION_SHIFT = FALLBACK_SHIFT + FALLBACK_BITS;
   static const int REGION_BITS = 1;
 
   // The compressed address bits start here.
   static const int COMPRESSED_BITS_SHIFT = REGION_SHIFT + REGION_BITS;
 
-  // How many bits we use for the compressed pointer (we are going to need one more bit to indicate target region, and
-  // two lowest bits to mark objects as forwarded)
+  // How many bits we use for the compressed pointer
   static const int NUM_COMPRESSED_BITS = 32 - COMPRESSED_BITS_SHIFT;
 
   static const size_t NUM_TARGET_REGIONS = 1 << REGION_BITS;
