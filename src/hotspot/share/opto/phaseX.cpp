@@ -664,7 +664,7 @@ void PhaseTransform::dump_old2new_map() const {
 }
 
 void PhaseTransform::dump_new( uint nidx ) const {
-  for( uint i=0; i<_nodes.Size(); i++ )
+  for( uint i=0; i<_nodes.max(); i++ )
     if( _nodes[i] && _nodes[i]->_idx == nidx ) {
       _nodes[i]->dump();
       tty->cr();

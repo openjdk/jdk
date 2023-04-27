@@ -58,21 +58,40 @@ public class GuaranteedAsyncDeflationIntervalTest {
 
     public static class Test {
         // Inflate a lot of monitors, so that threshold heuristics definitely fires
-        public static final int MONITORS = 10_000;
+        private static final int MONITORS = 10_000;
 
-        public static Object[] monitors;
+        // Use a handful of threads to inflate the monitors, to eat the cost of
+        // wait(1) calls. This can be larger than available parallelism, since threads
+        // would be time-waiting.
+        private static final int THREADS = 16;
+
+        private static Thread[] threads;
+        private static Object[] monitors;
 
         public static void main(String... args) throws Exception {
             monitors = new Object[MONITORS];
-            for (int i = 0; i < MONITORS; i++) {
-                Object o = new Object();
-                synchronized (o) {
-                    try {
-                        o.wait(1); // Inflate!
-                    } catch (InterruptedException ie) {
+            threads = new Thread[THREADS];
+
+            for (int t = 0; t < THREADS; t++) {
+                int monStart = t * MONITORS / THREADS;
+                int monEnd = (t + 1) * MONITORS / THREADS;
+                threads[t] = new Thread(() -> {
+                    for (int m = monStart; m < monEnd; m++) {
+                        Object o = new Object();
+                        synchronized (o) {
+                            try {
+                                o.wait(1);
+                            } catch (InterruptedException e) {
+                            }
+                        }
+                        monitors[m] = o;
                     }
-                }
-                monitors[i] = o;
+                });
+                threads[t].start();
+            }
+
+            for (Thread t : threads) {
+                t.join();
             }
 
             try {
@@ -170,7 +189,7 @@ public class GuaranteedAsyncDeflationIntervalTest {
             "-Xmx100M",
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:GuaranteedAsyncDeflationInterval=5000",
-            "-XX:MonitorUsedDeflationThreshold=10",
+            "-XX:MonitorUsedDeflationThreshold=1",
             "-Xlog:monitorinflation=info",
             "GuaranteedAsyncDeflationIntervalTest$Test");
 

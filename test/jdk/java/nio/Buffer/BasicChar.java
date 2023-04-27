@@ -42,6 +42,9 @@ import java.nio.*;
 
 
 
+import java.util.function.IntFunction;
+
+
 
 public class BasicChar
     extends Basic
@@ -646,15 +649,24 @@ public class BasicChar
             {cslen/2, cslen + 1} // end > cslen
         };
 
-        for (CharSequence csq : csqs) {
-            // append() should throw BufferOverflowException
-            tryCatch(b, BufferOverflowException.class, () ->
-                CharBuffer.allocate(cslen/8).append(csq, cslen/4, cslen/2));
+        IntFunction<CharBuffer>[] producers = new IntFunction[] {
+            (i) -> CharBuffer.allocate(i),
+            (i) -> ByteBuffer.allocateDirect(2*i).asCharBuffer()
+        };
 
-            // append() should throw IndexOutOfBoundsException
-            for (int[] bds : bounds)
-                tryCatch(b, IndexOutOfBoundsException.class, () ->
-                    CharBuffer.allocate(cslen + 1).append(csq, bds[0], bds[1]));
+        for (IntFunction<CharBuffer> f : producers) {
+            for (CharSequence csq : csqs) {
+                // append() should throw BufferOverflowException
+                final CharBuffer cbBOE = f.apply(cslen/8);
+                tryCatch(cbBOE, BufferOverflowException.class, () ->
+                    cbBOE.append(csq, cslen/4, cslen/2));
+
+                // append() should throw IndexOutOfBoundsException
+                final CharBuffer cbIOOBE = f.apply(cslen + 1);
+                for (int[] bds : bounds)
+                    tryCatch(cbIOOBE, IndexOutOfBoundsException.class, () ->
+                        cbIOOBE.append(csq, bds[0], bds[1]));
+            }
         }
         // end 8306623
 

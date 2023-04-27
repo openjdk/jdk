@@ -1319,7 +1319,7 @@ public abstract sealed class $Type$Buffer
         return put(index, src, 0, src.length);
     }
 
-    private $Type$Buffer putArray(int index, $type$[] src, int offset, int length) {
+    $Type$Buffer putArray(int index, $type$[] src, int offset, int length) {
 #if[rw]
         if (
 #if[char]
