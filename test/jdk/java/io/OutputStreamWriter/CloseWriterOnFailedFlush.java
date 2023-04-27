@@ -46,7 +46,7 @@ public class CloseWriterOnFailedFlush {
             try (Writer writer = new OutputStreamWriter(stream,
                      StandardCharsets.UTF_8.newEncoder())) {
                 writer.write(s);
-            } catch(IOException ex) {
+            } catch (IOException ex) {
                 Class exClass = ex.getClass();
                 if (s.equals(STR_IOE) && exClass != IOException.class ||
                     s.equals(STR_MIE) && exClass != MalformedInputException.class)
