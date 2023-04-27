@@ -2532,8 +2532,8 @@ instruct vmaskAllI_masked(vRegMask dst, iRegI src, vRegMask_V0 v0, vReg tmp) %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ rvv_vsetvli(bt, Matcher::vector_length_in_bytes(this));
     __ vmv_v_x(as_VectorRegister($tmp$$reg), as_Register($src$$reg));
-    __ vmxor_mm(as_VectorRegister($dst$$reg), as_VectorRegister($dst$$reg), as_VectorRegister($dst$$reg));
-    __ vmsne_vx(as_VectorRegister($dst$$reg), as_VectorRegister($tmp$$reg), x0, Assembler::v0_t);
+    __ vmclr_m(as_VectorRegister($dst$$reg));
+    __ vmsne_vx(as_VectorRegister($dst$$reg), as_VectorRegister($tmp$$reg), zr, Assembler::v0_t);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -2575,8 +2575,8 @@ instruct vmaskAllL_masked(vRegMask dst, iRegL src, vRegMask_V0 v0, vReg tmp) %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ rvv_vsetvli(bt, Matcher::vector_length_in_bytes(this));
     __ vmv_v_x(as_VectorRegister($tmp$$reg), as_Register($src$$reg));
-    __ vmxor_mm(as_VectorRegister($dst$$reg), as_VectorRegister($dst$$reg), as_VectorRegister($dst$$reg));
-    __ vmsne_vx(as_VectorRegister($dst$$reg), as_VectorRegister($tmp$$reg), x0, Assembler::v0_t);
+    __ vmclr_m(as_VectorRegister($dst$$reg));
+    __ vmsne_vx(as_VectorRegister($dst$$reg), as_VectorRegister($tmp$$reg), zr, Assembler::v0_t);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -2949,7 +2949,7 @@ instruct vmask_reinterpret_diff_esize(vRegMask dst, vRegMask_V0 src, vReg tmp) %
   ins_encode %{
     BasicType from_bt = Matcher::vector_element_basic_type(this, $src);
     __ rvv_vsetvli(from_bt, Matcher::vector_length_in_bytes(this, $src));
-    __ vmv_v_x(as_VectorRegister($tmp$$reg), x0);
+    __ vmv_v_x(as_VectorRegister($tmp$$reg), zr);
     __ vmerge_vim(as_VectorRegister($tmp$$reg), as_VectorRegister($tmp$$reg), -1);
     BasicType to_bt = Matcher::vector_element_basic_type(this);
     __ rvv_vsetvli(to_bt, Matcher::vector_length_in_bytes(this));
