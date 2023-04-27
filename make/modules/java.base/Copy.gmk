@@ -250,19 +250,17 @@ endif
 # Optionally copy hsdis into the image
 
 ifeq ($(ENABLE_HSDIS_BUNDLING), true)
-  ifneq ($(CREATING_BUILDJDK), true)
-    HSDIS_NAME := hsdis-$(OPENJDK_TARGET_CPU_LEGACY_LIB)$(SHARED_LIBRARY_SUFFIX)
-    HSDIS_PATH := $(SUPPORT_OUTPUTDIR)/hsdis/$(HSDIS_NAME)
+  HSDIS_NAME := hsdis-$(OPENJDK_TARGET_CPU_LEGACY_LIB)$(SHARED_LIBRARY_SUFFIX)
+  HSDIS_PATH := $(SUPPORT_OUTPUTDIR)/hsdis/$(HSDIS_NAME)
 
-    $(eval $(call SetupCopyFiles, COPY_HSDIS, \
-        FILES := $(HSDIS_PATH), \
-        DEST := $(call FindLibDirForModule, $(MODULE)), \
-        FLATTEN := true, \
-        MACRO := install-file-nolink, \
-    ))
+  $(eval $(call SetupCopyFiles, COPY_HSDIS, \
+      FILES := $(HSDIS_PATH), \
+      DEST := $(call FindLibDirForModule, $(MODULE)), \
+      FLATTEN := true, \
+      MACRO := install-file-nolink, \
+  ))
 
-    TARGETS += $(COPY_HSDIS)
-  endif
+  TARGETS += $(COPY_HSDIS)
 endif
 
 ################################################################################
