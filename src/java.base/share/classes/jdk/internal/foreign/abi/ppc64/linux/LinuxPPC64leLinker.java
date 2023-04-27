@@ -29,11 +29,9 @@ import jdk.internal.foreign.abi.AbstractLinker;
 import jdk.internal.foreign.abi.LinkerOptions;
 import jdk.internal.foreign.abi.ppc64.CallArranger;
 
-import java.lang.foreign.SegmentScope;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
-import java.util.function.Consumer;
 
 public final class LinuxPPC64leLinker extends AbstractLinker {
     private static LinuxPPC64leLinker instance;
@@ -46,12 +44,14 @@ public final class LinuxPPC64leLinker extends AbstractLinker {
     }
 
     @Override
-    protected MethodHandle arrangeDowncall(MethodType inferredMethodType, FunctionDescriptor function, LinkerOptions options) {
+    protected MethodHandle arrangeDowncall(MethodType inferredMethodType, FunctionDescriptor function,
+            LinkerOptions options) {
         return CallArranger.ABIv2.arrangeDowncall(inferredMethodType, function, options);
     }
 
     @Override
-    protected UpcallStubFactory arrangeUpcall(MethodType targetType, FunctionDescriptor function) {
-        return CallArranger.ABIv2.arrangeUpcall(targetType, function);
+    protected UpcallStubFactory arrangeUpcall(MethodType targetType, FunctionDescriptor function,
+            LinkerOptions options) {
+        return CallArranger.ABIv2.arrangeUpcall(targetType, function, options);
     }
 }

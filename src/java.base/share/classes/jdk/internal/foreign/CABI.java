@@ -73,6 +73,10 @@ public enum CABI {
                     // The Linux ABI follows the standard AAPCS ABI
                     return LINUX_AARCH_64;
                 }
+            } else if (arch.equals("ppc64le")) {
+                if (OperatingSystem.isLinux()) {
+                    return LINUX_PPC_64_LE;
+                }
             } else if (arch.equals("riscv64")) {
                 if (OperatingSystem.isLinux()) {
                     return LINUX_RISCV_64;

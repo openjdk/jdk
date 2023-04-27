@@ -106,8 +106,8 @@ public class TestHFA {
     public static void testAddFloatStructs() {
         float p0 = 0.0f, p1 = 0.0f, p2 = 0.0f, p3 = 0.0f, p4 = 0.0f, p5 = 0.0f, p6 = 0.0f;
         try {
-            Arena arena = Arena.openConfined();
-            MemorySegment s = MemorySegment.allocateNative(S_FFFFFFFLayout, arena.scope());
+            Arena arena = Arena.ofConfined();
+            MemorySegment s = arena.allocate(S_FFFFFFFLayout);
             s.set(FLOAT, 0, 1.0f);
             s.set(FLOAT, 4, 2.0f);
             s.set(FLOAT, 8, 3.0f);
@@ -135,8 +135,8 @@ public class TestHFA {
     public static void testAddFloatToStructAfterFloats() {
         float p0 = 0.0f, p1 = 0.0f;
         try {
-            Arena arena = Arena.openConfined();
-            MemorySegment s = MemorySegment.allocateNative(S_FFLayout, arena.scope());
+            Arena arena = Arena.ofConfined();
+            MemorySegment s = arena.allocate(S_FFLayout);
             s.set(FLOAT, 0, 1.0f);
             s.set(FLOAT, 4, 1.0f);
             s = (MemorySegment)mhadd_float_to_struct_after_floats.invokeExact((SegmentAllocator)arena,
@@ -156,8 +156,8 @@ public class TestHFA {
     public static void testAddFloatToStructAfterStructs() {
         float p0 = 0.0f, p1 = 0.0f;
         try {
-            Arena arena = Arena.openConfined();
-            MemorySegment s = MemorySegment.allocateNative(S_FFLayout, arena.scope());
+            Arena arena = Arena.ofConfined();
+            MemorySegment s = arena.allocate(S_FFLayout);
             s.set(FLOAT, 0, 1.0f);
             s.set(FLOAT, 4, 1.0f);
             s = (MemorySegment)mhadd_float_to_struct_after_structs.invokeExact((SegmentAllocator)arena,
@@ -176,8 +176,8 @@ public class TestHFA {
     public static void testAddFloatToLargeStructAfterStructs() {
         float p0 = 0.0f, p1 = 0.0f, p2 = 0.0f, p3 = 0.0f, p4 = 0.0f, p5 = 0.0f, p6 = 0.0f;
         try {
-            Arena arena = Arena.openConfined();
-            MemorySegment s = MemorySegment.allocateNative(S_FFFFFFFLayout, arena.scope());
+            Arena arena = Arena.ofConfined();
+            MemorySegment s = arena.allocate(S_FFFFFFFLayout);
             s.set(FLOAT, 0, 1.0f);
             s.set(FLOAT, 4, 2.0f);
             s.set(FLOAT, 8, 3.0f);
@@ -244,8 +244,8 @@ public class TestHFA {
     public static void testAddFloatStructsUpcall() {
         float p0 = 0.0f, p1 = 0.0f, p2 = 0.0f, p3 = 0.0f, p4 = 0.0f, p5 = 0.0f, p6 = 0.0f;
         try {
-            Arena arena = Arena.openConfined();
-            MemorySegment s = MemorySegment.allocateNative(S_FFFFFFFLayout, arena.scope());
+            Arena arena = Arena.ofConfined();
+            MemorySegment s = arena.allocate(S_FFFFFFFLayout);
             s.set(FLOAT,  0, 1.0f);
             s.set(FLOAT,  4, 2.0f);
             s.set(FLOAT,  8, 3.0f);
@@ -256,7 +256,7 @@ public class TestHFA {
             MethodType mt = MethodType.methodType(MemorySegment.class,
                                                   MemorySegment.class, MemorySegment.class);
             MemorySegment stub = abi.upcallStub(MethodHandles.lookup().findStatic(TestHFA.class, "addFloatStructs", mt),
-                                                fdadd_float_structs, SegmentScope.global());
+                                                fdadd_float_structs, arena);
             s = (MemorySegment)mhpass_two_large_structs.invokeExact((SegmentAllocator)arena, stub, s, s);
             p0 = s.get(FLOAT,  0);
             p1 = s.get(FLOAT,  4);
@@ -277,8 +277,8 @@ public class TestHFA {
     public static void testAddFloatToStructAfterFloatsUpcall() {
         float p0 = 0.0f, p1 = 0.0f;
         try {
-            Arena arena = Arena.openConfined();
-            MemorySegment s = MemorySegment.allocateNative(S_FFLayout, arena.scope());
+            Arena arena = Arena.ofConfined();
+            MemorySegment s = arena.allocate(S_FFLayout);
             s.set(FLOAT, 0, 1.0f);
             s.set(FLOAT, 4, 1.0f);
             MethodType mt = MethodType.methodType(MemorySegment.class,
@@ -287,7 +287,7 @@ public class TestHFA {
                                                   float.class, float.class, float.class, float.class,
                                                   MemorySegment.class, float.class);
             MemorySegment stub = abi.upcallStub(MethodHandles.lookup().findStatic(TestHFA.class, "addFloatToStructAfterFloats", mt),
-                                                fdadd_float_to_struct_after_floats, SegmentScope.global());
+                                                fdadd_float_to_struct_after_floats, arena);
             s = (MemorySegment)mhpass_struct_after_floats.invokeExact((SegmentAllocator)arena, stub, s, 1.0f);
             p0 = s.get(FLOAT, 0);
             p1 = s.get(FLOAT, 4);
@@ -302,8 +302,8 @@ public class TestHFA {
     public static void testAddFloatToStructAfterStructsUpcall() {
         float p0 = 0.0f, p1 = 0.0f;
         try {
-            Arena arena = Arena.openConfined();
-            MemorySegment s = MemorySegment.allocateNative(S_FFLayout, arena.scope());
+            Arena arena = Arena.ofConfined();
+            MemorySegment s = arena.allocate(S_FFLayout);
             s.set(FLOAT, 0, 1.0f);
             s.set(FLOAT, 4, 1.0f);
             MethodType mt = MethodType.methodType(MemorySegment.class,
@@ -311,7 +311,7 @@ public class TestHFA {
                                                   MemorySegment.class, MemorySegment.class, MemorySegment.class,
                                                   MemorySegment.class, float.class);
             MemorySegment stub = abi.upcallStub(MethodHandles.lookup().findStatic(TestHFA.class, "addFloatToStructAfterStructs", mt),
-                                                fdadd_float_to_struct_after_structs, SegmentScope.global());
+                                                fdadd_float_to_struct_after_structs, arena);
             s = (MemorySegment)mhpass_struct_after_structs.invokeExact((SegmentAllocator)arena, stub, s, 1.0f);
             p0 = s.get(FLOAT, 0);
             p1 = s.get(FLOAT, 4);
@@ -326,8 +326,8 @@ public class TestHFA {
     public static void testAddFloatToLargeStructAfterStructsUpcall() {
         float p0 = 0.0f, p1 = 0.0f, p2 = 0.0f, p3 = 0.0f, p4 = 0.0f, p5 = 0.0f, p6 = 0.0f;
         try {
-            Arena arena = Arena.openConfined();
-            MemorySegment s = MemorySegment.allocateNative(S_FFFFFFFLayout, arena.scope());
+            Arena arena = Arena.ofConfined();
+            MemorySegment s = arena.allocate(S_FFFFFFFLayout);
             s.set(FLOAT,  0, 1.0f);
             s.set(FLOAT,  4, 2.0f);
             s.set(FLOAT,  8, 3.0f);
@@ -340,7 +340,7 @@ public class TestHFA {
                                                   MemorySegment.class, MemorySegment.class, MemorySegment.class,
                                                   MemorySegment.class, float.class);
             MemorySegment stub = abi.upcallStub(MethodHandles.lookup().findStatic(TestHFA.class, "addFloatToStructAfterStructs", mt),
-                                                fdadd_float_to_large_struct_after_structs, SegmentScope.global());
+                                                fdadd_float_to_large_struct_after_structs, arena);
             s = (MemorySegment)mhpass_large_struct_after_structs.invokeExact((SegmentAllocator)arena, stub, s, 1.0f);
             p0 = s.get(FLOAT,  0);
             p1 = s.get(FLOAT,  4);
