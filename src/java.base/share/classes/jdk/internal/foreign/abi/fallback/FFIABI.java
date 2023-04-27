@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -20,22 +22,21 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package jdk.internal.foreign.abi.fallback;
 
-#include <stdarg.h>
+/**
+ * enum which maps the {@code ffi_abi} enum
+ */
+enum FFIABI {
+    DEFAULT(LibFallback.defaultABI());
 
-#ifdef _WIN64
-#define EXPORT __declspec(dllexport)
-#else
-#define EXPORT
-#endif
+    private final int value;
 
-EXPORT void vaList(int argCount, va_list list) {
-    //...
-}
+    FFIABI(int abi) {
+        this.value = abi;
+    }
 
-EXPORT void ellipsis(int argCount, ...) {
-    va_list list;
-    va_start(list, argCount);
-    vaList(argCount, list);
-    va_end(list);
+    int value() {
+        return value;
+    }
 }
