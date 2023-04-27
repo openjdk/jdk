@@ -575,6 +575,8 @@ TRACE_REQUEST_FUNC(StringTableStatistics) {
 
 TRACE_REQUEST_FUNC(CompilerStatistics) {
   EventCompilerStatistics event;
+  event.set_c1ThreadCount(CompileBroker::get_c1_thread_count());
+  event.set_c2ThreadCount(CompileBroker::get_c2_thread_count());
   event.set_compileCount(CompileBroker::get_total_compile_count());
   event.set_bailoutCount(CompileBroker::get_total_bailout_count());
   event.set_invalidatedCount(CompileBroker::get_total_invalidated_count());
@@ -592,6 +594,8 @@ TRACE_REQUEST_FUNC(CompilerStatistics) {
 TRACE_REQUEST_FUNC(CompilerConfiguration) {
   EventCompilerConfiguration event;
   event.set_threadCount(CICompilerCount);
+  event.set_c1ThreadCount(CompileBroker::get_c1_thread_count());
+  event.set_c2ThreadCount(CompileBroker::get_c2_thread_count());
   event.set_tieredCompilation(TieredCompilation);
   event.set_dynamicCompilerThreadCount(UseDynamicNumberOfCompilerThreads);
   event.commit();

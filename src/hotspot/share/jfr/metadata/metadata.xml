@@ -835,6 +835,7 @@
     <Field type="long" contentType="count" name="removed" label="Removed" description="Removed requests"/>
     <Field type="long" contentType="count" name="totalAdded" label="Total Added" description="Total requests"/>
     <Field type="long" contentType="count" name="totalRemoved" label="Total Removed" description="Total removed requests"/>
+    <Field type="int" name="compilerThreadCount" label="Number of Compiler Threads for this queue" />
   </Event>
 
   <Event name="NetworkUtilization" category="Operating System, Network" label="Network Utilization" period="everyChunk">
@@ -945,6 +946,8 @@
     <Field type="int" name="invalidatedCount" label="Invalidated Compilations" />
     <Field type="int" name="osrCompileCount" label="OSR Compilations" />
     <Field type="int" name="standardCompileCount" label="Standard Compilations" />
+    <Field type="int" name="c1ThreadCount" label="Number of C1 Threads" />
+    <Field type="int" name="c2ThreadCount" label="Number of C2 Threads" />
     <Field type="ulong" contentType="bytes" name="osrBytesCompiled" label="OSR Bytes Compiled" />
     <Field type="ulong" contentType="bytes" name="standardBytesCompiled" label="Standard Bytes Compiled" />
     <Field type="ulong" contentType="bytes" name="nmethodsSize" label="Compilation Resulting Size" />
@@ -955,6 +958,8 @@
 
   <Event name="CompilerConfiguration" category="Java Virtual Machine, Compiler" label="Compiler Configuration" thread="false" period="endChunk" startTime="false">
     <Field type="int" name="threadCount" label="Thread Count" />
+    <Field type="int" name="c1ThreadCount" label="Number of C1 Threads" />
+    <Field type="int" name="c2ThreadCount" label="Number of C2 Threads" />
     <Field type="boolean" name="tieredCompilation" label="Tiered Compilation" />
     <Field type="boolean" name="dynamicCompilerThreadCount" label="Uses Dynamic Number of Compiler Threads" />
   </Event>

@@ -926,6 +926,29 @@ const int ObjectAlignmentInBytes = 8;
           range(0, max_jint)                                                \
           constraint(CICompilerCountConstraintFunc, AfterErgo)              \
                                                                             \
+  /* notice: the max range value here is max_jint, not max_intx  */         \
+  /* because of overflow issue                                   */         \
+  product(intx, CIMinC1CompilerCount, 1,             \
+          "Minimum number of C1 compiler threads to run")                    \
+          range(0, max_jint)                                            \
+                                                                            \
+  /* notice: the max range value here is max_jint, not max_intx  */         \
+  /* because of overflow issue                                   */         \
+  product(intx, CIMinC2CompilerCount, 1,             \
+          "Minimum number of C2 compiler threads to run")                    \
+          range(0, max_jint)                                            \
+                                                                            \
+  /* notice: the max range value here is max_jint, not max_intx  */         \
+  /* because of overflow issue                                   */         \
+  product(intx, CIC1CompilerRatio, 1,             \
+          "C1 part of the C1:C2 ratio for determining thread counts")                    \
+          range(0, max_jint)                                            \
+                                                                            \
+  /* because of overflow issue                                   */         \
+  product(intx, CIC2CompilerRatio, 2,             \
+          "C2 part of the C1:C2 ratio for determining thread counts")                    \
+          range(0, max_jint)                                            \
+                                                                        \
   product(bool, UseDynamicNumberOfCompilerThreads, true,                    \
           "Dynamically choose the number of parallel compiler threads")     \
                                                                             \

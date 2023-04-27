@@ -70,6 +70,7 @@ void JfrCompilerQueueUtilization::send_events() {
 
       EventCompilerQueueUtilization event;
       event.set_compiler(entry->compiler);
+      event.set_compilerThreadCount((i == 0) ? CompileBroker::get_c1_thread_count() : CompileBroker::get_c2_thread_count());
       event.set_ingress(ingress);
       event.set_egress(egress);
       event.set_size(entry->compilerQueue->size());

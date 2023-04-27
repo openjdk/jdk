@@ -410,6 +410,8 @@ public:
 
   static CompileLog* get_log(CompilerThread* ct);
 
+  static int get_c1_thread_count() {                return _c1_count; }
+  static int get_c2_thread_count() {                return _c2_count; }
   static int get_total_compile_count() {            return _total_compile_count; }
   static int get_total_bailout_count() {            return _total_bailout_count; }
   static int get_total_invalidated_count() {        return _total_invalidated_count; }
