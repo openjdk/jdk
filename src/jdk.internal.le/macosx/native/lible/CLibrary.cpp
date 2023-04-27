@@ -28,10 +28,14 @@
 #include "jvm.h"
 #include "jdk_internal_org_jline_terminal_impl_jna_osx_CLibraryImpl.h"
 
+#include <errno.h>
 #include <stdlib.h>
 #include <termios.h>
 #include <unistd.h>
 #include <sys/ioctl.h>
+
+static jclass lastErrorExceptionClass;
+static jmethodID lastErrorExceptionConstructor;
 
 static jclass termios_j;
 static jfieldID c_iflag;
@@ -53,7 +57,16 @@ static jfieldID nativelong_value;
 
 JNIEXPORT void JNICALL Java_jdk_internal_org_jline_terminal_impl_jna_osx_CLibraryImpl_initIDs
   (JNIEnv *env, jclass) {
-    termios_j = env->FindClass("jdk/internal/org/jline/terminal/impl/jna/osx/CLibrary$termios");
+    jclass cls;
+    cls = env->FindClass("jdk/internal/org/jline/terminal/impl/jna/LastErrorException");
+    CHECK_NULL(cls);
+    lastErrorExceptionClass = (jclass) env->NewGlobalRef(cls);
+    lastErrorExceptionConstructor = env->GetMethodID(lastErrorExceptionClass, "<init>", "(J)V");
+    CHECK_NULL(lastErrorExceptionConstructor);
+
+    cls = env->FindClass("jdk/internal/org/jline/terminal/impl/jna/osx/CLibrary$termios");
+    CHECK_NULL(cls);
+    termios_j = (jclass) env->NewGlobalRef(cls);
     CHECK_NULL(termios_j);
     c_iflag = env->GetFieldID(termios_j, "c_iflag", "Ljdk/internal/org/jline/terminal/impl/jna/osx/NativeLong;");
     CHECK_NULL(c_iflag);
@@ -70,8 +83,9 @@ JNIEXPORT void JNICALL Java_jdk_internal_org_jline_terminal_impl_jna_osx_CLibrar
     c_ospeed = env->GetFieldID(termios_j, "c_ospeed", "Ljdk/internal/org/jline/terminal/impl/jna/osx/NativeLong;");
     CHECK_NULL(c_ospeed);
 
-    winsize_j = env->FindClass("jdk/internal/org/jline/terminal/impl/jna/osx/CLibrary$winsize");
-    CHECK_NULL(winsize_j);
+    cls = env->FindClass("jdk/internal/org/jline/terminal/impl/jna/osx/CLibrary$winsize");
+    CHECK_NULL(cls);
+    winsize_j = (jclass) env->NewGlobalRef(cls);
     ws_row = env->GetFieldID(winsize_j, "ws_row", "S");
     CHECK_NULL(ws_row);
     ws_col = env->GetFieldID(winsize_j, "ws_col", "S");
@@ -91,7 +105,13 @@ JNIEXPORT void JNICALL Java_jdk_internal_org_jline_terminal_impl_jna_osx_CLibrar
   (JNIEnv *env, jobject, jint fd, jobject result) {
     termios data;
 
-    tcgetattr(fd, &data);
+    if (tcgetattr(fd, &data) != 0) {
+        jobject exc = env->NewObject(lastErrorExceptionClass,
+                                     lastErrorExceptionConstructor,
+                                     errno);
+        env->Throw((jthrowable) exc);
+        return ;
+    }
 
     env->SetLongField(env->GetObjectField(result, c_iflag), nativelong_value, data.c_iflag);
     env->SetLongField(env->GetObjectField(result, c_oflag), nativelong_value, data.c_oflag);
@@ -121,7 +141,12 @@ JNIEXPORT void JNICALL Java_jdk_internal_org_jline_terminal_impl_jna_osx_CLibrar
     data.c_ispeed = env->GetLongField(env->GetObjectField(input, c_ispeed), nativelong_value);
     data.c_ospeed = env->GetLongField(env->GetObjectField(input, c_ospeed), nativelong_value);
 
-    tcsetattr(fd, cmd, &data);
+    if (tcsetattr(fd, cmd, &data) != 0) {
+        jobject exc = env->NewObject(lastErrorExceptionClass,
+                                     lastErrorExceptionConstructor,
+                                     errno);
+        env->Throw((jthrowable) exc);
+    }
 }
 
 /*
@@ -138,7 +163,13 @@ JNIEXPORT void JNICALL Java_jdk_internal_org_jline_terminal_impl_jna_osx_CLibrar
     ws.ws_xpixel = env->GetIntField(data, ws_xpixel);
     ws.ws_ypixel = env->GetIntField(data, ws_ypixel);
 
-    ioctl(fd, cmd, &ws);
+    if (ioctl(fd, cmd, &ws) != 0) {
+        jobject exc = env->NewObject(lastErrorExceptionClass,
+                                     lastErrorExceptionConstructor,
+                                     errno);
+        env->Throw((jthrowable) exc);
+        return ;
+    }
 
     env->SetIntField(data, ws_row, ws.ws_row);
     env->SetIntField(data, ws_col, ws.ws_col);
@@ -164,7 +195,15 @@ JNIEXPORT jint JNICALL Java_jdk_internal_org_jline_terminal_impl_jna_osx_CLibrar
 JNIEXPORT void JNICALL Java_jdk_internal_org_jline_terminal_impl_jna_osx_CLibraryImpl_ttyname_1r
   (JNIEnv *env, jobject, jint fd, jbyteArray buf, jint len) {
     char *data = new char[len];
-    int ignored = ttyname_r(fd, data, len);
+    int error = ttyname_r(fd, data, len);
+
+    if (error != 0) {
+        jobject exc = env->NewObject(lastErrorExceptionClass,
+                                     lastErrorExceptionConstructor,
+                                     error);
+        env->Throw((jthrowable) exc);
+        return ;
+    }
 
     env->SetByteArrayRegion(buf, 0, len, (signed char *) data);
     delete[] data;
