@@ -1498,7 +1498,9 @@ public:
   void aesecb_decrypt(Register from, Register to, Register key, Register keylen);
   void aes_round(FloatRegister input, FloatRegister subkey);
 
-  void plop();
+  void plop(const Register input_start,
+            const Register r[], const Register s[], const RegPair u[],
+            const Register rr2);
 
   // ChaCha20 functions support block
   void cc20_quarter_round(FloatRegister aVec, FloatRegister bVec,
@@ -1626,7 +1628,7 @@ public:
                            const FloatRegister rr_v[]);
   void poly1305_reduce_vec(const FloatRegister u[], const FloatRegister upper_bits,
                            AbstractRegSet<FloatRegister> scratch);
-  void poly1305_load(Register s[], Register input_start);
+  void poly1305_load(const Register s[], const Register input_start);
   void poly1305_step(Register s[], const RegPair u[], Register input_start);
   void poly1305_add(const Register dest[], const RegPair src[]);
 

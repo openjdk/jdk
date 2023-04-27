@@ -8527,7 +8527,6 @@ typedef uint32_t u32;
     StubRoutines::_data_cache_writeback_sync = generate_data_cache_writeback_sync();
 
     if (UseAESIntrinsics) {
-      _masm->plop();
       StubRoutines::_aescrypt_encryptBlock = generate_aescrypt_encryptBlock();
       StubRoutines::_aescrypt_decryptBlock = generate_aescrypt_decryptBlock();
       StubRoutines::_cipherBlockChaining_encryptAESCrypt = generate_cipherBlockChaining_encryptAESCrypt();

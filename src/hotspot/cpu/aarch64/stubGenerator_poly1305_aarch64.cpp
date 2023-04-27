@@ -164,7 +164,8 @@ address generate_poly1305_processBlocks2() {
     __ br(Assembler::LT, DONE);
 
     // if (! use_vec) {
-      __ poly1305_step(S0, u0, input_start);
+      // __ poly1305_step(S0, u0, input_start);
+      __ plop(input_start, R, S0, u0, RR2);
       __ poly1305_multiply(u0, S0, R, RR2, regs);
       __ poly1305_reduce(u0);
 

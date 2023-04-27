@@ -34,13 +34,14 @@
 #include "compiler/oopMap.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
-#include "gc/shared/cardTableBarrierSet.hpp"
 #include "gc/shared/cardTable.hpp"
+#include "gc/shared/cardTableBarrierSet.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/interpreter.hpp"
 #include "jvm.h"
+#include "kernelGenerator_aarch64.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "nativeInst_aarch64.hpp"
@@ -6522,7 +6523,7 @@ void MacroAssembler::poly1305_fully_reduce(Register dest[], const RegPair u[]) {
   csel(dest[2], dest[2], u[2]._lo, HS);
 }
 
-void MacroAssembler::poly1305_load(Register s[], Register input_start) {
+void MacroAssembler::poly1305_load(const Register s[], const Register input_start) {
   ldp(rscratch1, rscratch2, post(input_start, 2 * wordSize));
   ubfx(s[0], rscratch1, 0, 52);
   extr(s[1], rscratch2, rscratch1, 52);
@@ -6554,3 +6555,98 @@ void MacroAssembler::poly1305_add(const Register dest[], const RegPair src[]) {
   add(dest[1], dest[1], src[1]._lo);
   add(dest[2], dest[2], src[2]._lo);
 }
+
+class Poly1305KernelGenerator: public KernelGenerator {
+public:
+
+  class Holder;
+  Holder *_holder_list_head;
+
+  const Register _input_start;
+  const Register *_r;
+  const Register *_s;
+  const RegPair *_u;
+  const Register _rr2;
+
+  typedef void (*insns_t)(Poly1305KernelGenerator *);
+
+  Holder *last() {
+    Holder *prev = nullptr;
+    for (Holder *it = _holder_list_head; it; it = it->next) {
+      prev = it;
+    }
+    return prev;
+  }
+
+  class Holder: public ResourceObj {
+    friend class Poly1305KernelGenerator;
+
+    insns_t _insn;
+    Holder *p;
+    Holder *next;
+  public:
+    Holder(Poly1305KernelGenerator *gen, insns_t insn): _insn(insn) {
+      if (gen->last())
+        gen->last()->next = this;
+      else
+        gen->_holder_list_head = this;
+      next = nullptr;
+    }
+    void squirt(Poly1305KernelGenerator* as) {
+      _insn(as);
+    }
+ };
+
+  Holder *a(insns_t insn) {
+    return new Holder(this, insn);
+  }
+
+  int& (*fpi)(int*);
+  void (*fpi2)(MacroAssembler*);
+  int dump;
+
+  Holder * operator<<(insns_t insn) {
+    return a(insn);
+  }
+
+  Poly1305KernelGenerator(Assembler *as, const Register input_start,
+                          const Register r[], const Register s[], const RegPair u[],
+                          const Register rr2)
+    : KernelGenerator(as, 0), _holder_list_head(nullptr),
+      _input_start(input_start),
+      _r(r), _s(s), _u(u), _rr2(rr2)
+  {
+  }
+  virtual void generate(int n) {
+    for (Holder *it = _holder_list_head; it; it = it->next) {
+      it->_insn(this);
+    }
+  }
+
+  virtual KernelGenerator *next() {
+    return this;
+  }
+
+  virtual int length() { return 4; }
+};
+
+#undef __
+
+#define emit gen << [](Poly1305KernelGenerator *pkGen)
+#define __ pkGen->
+
+void MacroAssembler::plop(const Register input_start,
+                          const Register r[], const Register s[], const RegPair u[],
+                          const Register rr2) {
+  Poly1305KernelGenerator gen(this, input_start, r, s, u, rr2);
+
+  emit { __ poly1305_load(__ _s, __ _input_start); };
+  emit { __ poly1305_add(__ _s, __ _u); };
+  emit { __ poly1305_reduce(__ _u); };
+
+  gen.generate(0);
+}
+
+#undef gen
+#undef __
+
