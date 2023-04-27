@@ -227,7 +227,7 @@ public:
   // Create getters and setters for the flag values.
 #define CM_FLAGS_GET_SET(name, ignore)          \
   bool name() const       { return _flags.name(); } \
-  void set_##name()       { _flags.set_##name(true); }
+  void set_##name()       { _flags.set_##name(); }
   CM_FLAGS_DO(CM_FLAGS_GET_SET)
 #undef CM_FLAGS_GET_SET
 
@@ -237,7 +237,7 @@ public:
 
   void set_method_type(MethodType mt) {
     if (mt != NORMAL) {
-      _flags.set_is_overpass(true);
+      set_is_overpass();
     }
   }
 

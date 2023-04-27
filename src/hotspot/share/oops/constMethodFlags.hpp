@@ -73,16 +73,11 @@ class ConstMethodFlags {
 
   ConstMethodFlags() : _flags(0) {}
 
-  void assert_is_safe(bool set, bool value) {
-    assert(!set || set == value, "only set once");
-  }
-
   // Create getters and setters for the flag values.
 #define CM_FLAGS_GET_SET(name, ignore)          \
   bool name() const { return (_flags & _misc_##name) != 0; } \
-  void set_##name(bool b) {         \
-    assert_is_safe(name(), b);      \
-    if (b) _flags |= _misc_##name;  \
+  void set_##name() {         \
+    _flags |= _misc_##name;  \
   }
   CM_FLAGS_DO(CM_FLAGS_GET_SET)
 #undef CM_FLAGS_GET_SET
