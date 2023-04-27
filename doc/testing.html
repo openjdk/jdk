@@ -242,14 +242,39 @@ $ make test JTREG=&quot;VM_OPTIONS=-Duser.language=en -Duser.country=US&quot; TE
     JTREG=&quot;JAVA_OPTIONS=-Dtest.nss.lib.paths=/path/to/your/latest/NSS-libs&quot;</code></pre>
 <p>For more notes about the PKCS11 tests, please refer to test/jdk/sun/security/pkcs11/README.</p>
 <h3 id="client-ui-tests">Client UI Tests</h3>
+<h4 id="system-key-shortcuts">System key shortcuts</h4>
 <p>Some Client UI tests use key sequences which may be reserved by the operating system. Usually that causes the test failure. So it is highly recommended to disable system key shortcuts prior testing. The steps to access and disable system key shortcuts for various platforms are provided below.</p>
-<h4 id="macos">MacOS</h4>
+<h5 id="macos">MacOS</h5>
 <p>Choose Apple menu; System Preferences, click Keyboard, then click Shortcuts; select or deselect desired shortcut.</p>
 <p>For example, test/jdk/javax/swing/TooltipManager/JMenuItemToolTipKeyBindingsTest/JMenuItemToolTipKeyBindingsTest.java fails on MacOS because it uses <code>CTRL + F1</code> key sequence to show or hide tooltip message but the key combination is reserved by the operating system. To run the test correctly the default global key shortcut should be disabled using the steps described above, and then deselect &quot;Turn keyboard access on or off&quot; option which is responsible for <code>CTRL + F1</code> combination.</p>
-<h4 id="linux">Linux</h4>
+<h5 id="linux">Linux</h5>
 <p>Open the Activities overview and start typing Settings; Choose Settings, click Devices, then click Keyboard; set or override desired shortcut.</p>
-<h4 id="windows">Windows</h4>
+<h5 id="windows">Windows</h5>
 <p>Type <code>gpedit</code> in the Search and then click Edit group policy; navigate to User Configuration -&gt; Administrative Templates -&gt; Windows Components -&gt; File Explorer; in the right-side pane look for &quot;Turn off Windows key hotkeys&quot; and double click on it; enable or disable hotkeys.</p>
 <p>Note: restart is required to make the settings take effect.</p>
+<h4 id="robot-api">Robot API</h4>
+<p>Most automated Client UI tests use <code>Robot</code> API to control
+the UI. Usually, the default operating system settings need to be
+adjusted for Robot to work correctly. The detailed steps how to access
+and update these settings for different platforms are provided
+below.</p>
+<h5 id="macos-1">macOS</h5>
+<p><code>Robot</code> is not permitted to control your Mac by default
+since macOS 10.15. To allow it, choose Apple menu -&gt; System Settings,
+click Privacy &amp; Security; then click Accessibility and ensure the
+following apps are allowed to control your computer: <em>Java</em> and
+<em>Terminal</em>. If the tests are run from an IDE, the IDE should be
+granted this permission too.</p>
+<h5 id="windows-1">Windows</h5>
+<p>On Windows if Cygwin terminal is used to run the tests, there is a
+delay in focus transfer. Usually it causes automated UI test failure. To
+disable the delay, type <code>regedit</code> in the Search and then
+select Registry Editor; navigate to the following key:
+<code>HKEY_CURRENT_USER\Control Panel\Desktop</code>; make sure the
+<code>ForegroundLockTimeout</code> value is set to 0.</p>
+<p>Additional information about Client UI tests configuration for
+various operating systems can be obtained at <a
+href="https://wiki.openjdk.org/display/ClientLibs/Automated+client+GUI+testing+system+set+up+requirements">Automated
+client GUI testing system set up requirements</a></p>
 </body>
 </html>

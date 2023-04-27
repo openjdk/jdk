@@ -546,12 +546,14 @@ test/jdk/sun/security/pkcs11/README.
 
 ### Client UI Tests
 
+#### System key shortcuts
+
 Some Client UI tests use key sequences which may be reserved by the operating
 system. Usually that causes the test failure. So it is highly recommended to
 disable system key shortcuts prior testing. The steps to access and disable
 system key shortcuts for various platforms are provided below.
 
-#### MacOS
+##### macOS
 
 Choose Apple menu; System Preferences, click Keyboard, then click Shortcuts;
 select or deselect desired shortcut.
@@ -564,12 +566,12 @@ test correctly the default global key shortcut should be disabled using the
 steps described above, and then deselect "Turn keyboard access on or off"
 option which is responsible for `CTRL + F1` combination.
 
-#### Linux
+##### Linux
 
 Open the Activities overview and start typing Settings; Choose Settings, click
 Devices, then click Keyboard; set or override desired shortcut.
 
-#### Windows
+##### Windows
 
 Type `gpedit` in the Search and then click Edit group policy; navigate to User
 Configuration -> Administrative Templates -> Windows Components -> File
@@ -577,6 +579,33 @@ Explorer; in the right-side pane look for "Turn off Windows key hotkeys" and
 double click on it; enable or disable hotkeys.
 
 Note: restart is required to make the settings take effect.
+
+#### Robot API
+
+Most automated Client UI tests use `Robot` API to control the UI. Usually,
+the default operating system settings need to be adjusted for Robot
+to work correctly. The detailed steps how to access and update these settings
+for different platforms are provided below.
+
+##### macOS
+
+`Robot` is not permitted to control your Mac by default since
+macOS 10.15. To allow it, choose Apple menu -> System Settings, click
+Privacy & Security; then click Accessibility and ensure the following apps are
+allowed to control your computer: *Java* and *Terminal*. If the tests are run
+from an IDE, the IDE should be granted this permission too.
+
+##### Windows
+
+On Windows if Cygwin terminal is used to run the tests, there is a delay in
+focus transfer. Usually it causes automated UI test failure. To disable the
+delay, type `regedit` in the Search and then select Registry Editor; navigate
+to the following key: `HKEY_CURRENT_USER\Control Panel\Desktop`; make sure
+the `ForegroundLockTimeout` value is set to 0.
+
+Additional information about Client UI tests configuration for various operating
+systems can be obtained at [Automated client GUI testing system set up
+requirements](https://wiki.openjdk.org/display/ClientLibs/Automated+client+GUI+testing+system+set+up+requirements)
 
 ---
 # Override some definitions in the global css file that are not optimal for
