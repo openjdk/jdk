@@ -195,16 +195,3 @@ TEST(Align, alignments) {
 
   test_alignments<int8_t, int8_t>();
 }
-
-struct alignas(64) A {
-  char X;
-  char Y;
-  char Z;
-};
-
-TEST(Align, offset_of) {
-  ASSERT_EQ(offset_of(A, X), (size_t)0);
-  ASSERT_EQ(offset_of(A, Y), (size_t)1);
-  ASSERT_EQ(offset_of(A, Z), (size_t)2);
-}
-
