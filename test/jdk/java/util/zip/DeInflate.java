@@ -143,7 +143,7 @@ public class DeInflate {
         def.setInput(in, 0, len);
         def.finish();
 
-        try(ByteArrayOutputStream baos = new ByteArrayOutputStream(len)) {
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream(len)) {
             while (!def.finished()) {
                 int temp_counter = def.deflate(tempBuffer);
                 m += temp_counter;
