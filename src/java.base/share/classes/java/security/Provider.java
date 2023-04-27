@@ -25,6 +25,8 @@
 
 package java.security;
 
+import jdk.internal.event.SecurityProviderServiceEvent;
+
 import java.io.*;
 import java.util.*;
 import static java.util.Locale.ENGLISH;
@@ -1234,19 +1236,28 @@ public abstract class Provider extends Properties {
             key = new ServiceKey(type, algorithm, false);
             previousKey = key;
         }
+        Service s = null;
         if (!serviceMap.isEmpty()) {
-            Service s = serviceMap.get(key);
-            if (s != null) {
-                return s;
+            s = serviceMap.get(key);
+        }
+        if (s == null) {
+            synchronized (this) {
+                ensureLegacyParsed();
+                if (legacyMap != null && !legacyMap.isEmpty()) {
+                    s = legacyMap.get(key);
+                }
             }
         }
-        synchronized (this) {
-            ensureLegacyParsed();
-            if (legacyMap != null && !legacyMap.isEmpty()) {
-                return legacyMap.get(key);
-            }
+
+        if (s != null && SecurityProviderServiceEvent.isTurnedOn()) {
+            var e  = new SecurityProviderServiceEvent();
+            e.provider = getName();
+            e.type = type;
+            e.algorithm = algorithm;
+            e.commit();
         }
-        return null;
+
+        return s;
     }
 
     // ServiceKey from previous getService() call

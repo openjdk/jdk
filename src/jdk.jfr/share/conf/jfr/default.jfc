@@ -715,6 +715,11 @@
        <setting name="stackTrace">true</setting>
     </event>
 
+    <event name="jdk.SecurityProviderService">
+       <setting name="enabled">false</setting>
+       <setting name="stackTrace">true</setting>
+    </event>
+
     <event name="jdk.TLSHandshake">
       <setting name="enabled">false</setting>
       <setting name="stackTrace">true</setting>
