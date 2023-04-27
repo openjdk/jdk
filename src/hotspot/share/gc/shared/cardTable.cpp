@@ -74,15 +74,10 @@ CardTable::CardTable(MemRegion whole_heap) :
   _byte_map_size(0),
   _byte_map(nullptr),
   _byte_map_base(nullptr),
-  _covered(MemRegion::create_array(max_covered_regions, mtGC)),
   _guard_region()
 {
   assert((uintptr_t(_whole_heap.start())  & (_card_size - 1))  == 0, "heap must start at card boundary");
   assert((uintptr_t(_whole_heap.end()) & (_card_size - 1))  == 0, "heap must end at card boundary");
-}
-
-CardTable::~CardTable() {
-  MemRegion::destroy_array(_covered, max_covered_regions);
 }
 
 void CardTable::initialize(void* region0_start, void* region1_start) {
