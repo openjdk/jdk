@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,5 @@
 // statically linking.
 extern const JmmInterface* jmm_interface_management_ext;
 extern jint jmm_version_management_ext;
-extern void throw_internal_error(JNIEnv* env, const char* msg);
 
 #endif
