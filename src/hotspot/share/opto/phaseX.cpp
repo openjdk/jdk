@@ -1951,7 +1951,7 @@ void PhaseCCP::analyze() {
   }
 
   // Push root onto worklist
-  Unique_Node_List worklist;
+  Unique_Node_List worklist(C->comp_arena());
   worklist.push(C->root());
   DEBUG_ONLY(Unique_Node_List worklist_verify;)
 
