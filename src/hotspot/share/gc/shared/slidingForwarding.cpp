@@ -119,7 +119,7 @@ size_t FallbackTable::home_index(HeapWord* from) {
   val *= 0x94d049bb133111ebull;
   val = (val * 11400714819323198485llu) >> (64 - log2i_exact(TABLE_SIZE));
   assert(val < TABLE_SIZE, "must fit in table: val: " UINT64_FORMAT ", table-size: " UINTX_FORMAT ", table-size-bits: %d", val, TABLE_SIZE, log2i_exact(TABLE_SIZE));
-  return reinterpret_cast<uintx>(val);
+  return reinterpret_cast<size_t>(val);
 }
 
 void FallbackTable::forward_to(HeapWord* from, HeapWord* to) {
