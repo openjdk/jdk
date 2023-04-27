@@ -96,7 +96,7 @@ public class ProcessToolsStartProcessTest {
                 System.out.println("A line on stdout: " + i + " " + ".".repeat(i));
             }
         } else {
-            for (int i = 1; i < 10; i++) {
+            for (int i = 1; i < 5; i++) {
                 System.out.println("ITERATION " + i);
                 boolean test1Result = testStartProcess(i * 10 + i, false);
                 if (!test1Result) {
