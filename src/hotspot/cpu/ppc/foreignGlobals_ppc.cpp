@@ -1,6 +1,6 @@
 /*
+ * Copyright (c) 2020, 2023, SAP SE. All rights reserved.
  * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,15 @@ bool ABIDescriptor::is_volatile_reg(FloatRegister reg) const {
         || _float_additional_volatile_registers.contains(reg);
 }
 
+bool ForeignGlobals::is_foreign_linker_supported() {
+#ifdef ABI_ELFv2
+  return true;
+#else
+  return false;
+#endif
+}
+
+// Stubbed out, implement later
 const ABIDescriptor ForeignGlobals::parse_abi_descriptor(jobject jabi) {
   oop abi_oop = JNIHandles::resolve_non_null(jabi);
   ABIDescriptor abi;

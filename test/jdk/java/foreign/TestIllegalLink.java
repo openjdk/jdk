@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -29,10 +29,15 @@
  * @run testng/othervm --enable-native-access=ALL-UNNAMED TestIllegalLink
  */
 
+import java.lang.foreign.Arena;
 import java.lang.foreign.Linker;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.ValueLayout;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.nio.ByteOrder;
 
 import org.testng.annotations.DataProvider;
@@ -44,10 +49,11 @@ import static org.testng.Assert.fail;
 public class TestIllegalLink extends NativeTestHelper {
 
     private static final MemorySegment DUMMY_TARGET = MemorySegment.ofAddress(1);
+    private static final MethodHandle DUMMY_TARGET_MH = MethodHandles.empty(MethodType.methodType(void.class));
     private static final Linker ABI = Linker.nativeLinker();
 
     @Test(dataProvider = "types")
-    public void testTypeMismatch(FunctionDescriptor desc, String expectedExceptionMessage) {
+    public void testIllegalLayouts(FunctionDescriptor desc, String expectedExceptionMessage) {
         try {
             ABI.downcallHandle(DUMMY_TARGET, desc);
             fail("Expected IllegalArgumentException was not thrown");
@@ -55,6 +61,42 @@ public class TestIllegalLink extends NativeTestHelper {
             assertTrue(e.getMessage().contains(expectedExceptionMessage),
                     e.getMessage() + " != " + expectedExceptionMessage);
         }
+    }
+
+    @Test(dataProvider = "downcallOnlyOptions",
+          expectedExceptions = IllegalArgumentException.class,
+          expectedExceptionsMessageRegExp = ".*Not supported for upcall.*")
+    public void testIllegalUpcallOptions(Linker.Option downcallOnlyOption) {
+        ABI.upcallStub(DUMMY_TARGET_MH, FunctionDescriptor.ofVoid(), Arena.ofAuto(), downcallOnlyOption);
+    }
+
+    @Test(dataProvider = "illegalCaptureState",
+          expectedExceptions = IllegalArgumentException.class,
+          expectedExceptionsMessageRegExp = ".*Unknown name.*")
+    public void testIllegalCaptureState(String name) {
+        Linker.Option.captureCallState(name);
+    }
+
+    // where
+
+    @DataProvider
+    public static Object[][] illegalCaptureState() {
+        if (!IS_WINDOWS) {
+            return new Object[][]{
+                { "GetLastError" },
+                { "WSAGetLastError" },
+            };
+        }
+        return new Object[][]{};
+    }
+
+    @DataProvider
+    public static Object[][] downcallOnlyOptions() {
+        return new Object[][]{
+            { Linker.Option.firstVariadicArg(0) },
+            { Linker.Option.captureCallState("errno") },
+            { Linker.Option.isTrivial() },
+        };
     }
 
     @DataProvider
@@ -85,7 +127,7 @@ public class TestIllegalLink extends NativeTestHelper {
                     "Layout bit alignment must be natural alignment"
             },
             {
-                    FunctionDescriptor.ofVoid(MemoryLayout.valueLayout(char.class, ByteOrder.nativeOrder()).withBitAlignment(32)),
+                    FunctionDescriptor.ofVoid(ValueLayout.JAVA_CHAR.withBitAlignment(32)),
                     "Layout bit alignment must be natural alignment"
             },
             {

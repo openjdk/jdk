@@ -77,7 +77,7 @@ public class TestArrayStructs extends NativeTestHelper {
         FunctionDescriptor downcallDesc = baseDesc.insertArgumentLayouts(0, C_POINTER); // CB
         MemoryLayout[] elementLayouts = Collections.nCopies(numElements, C_CHAR).toArray(MemoryLayout[]::new);
         FunctionDescriptor upcallDesc = baseDesc.appendArgumentLayouts(elementLayouts);
-        try (Arena arena = Arena.openConfined()) {
+        try (Arena arena = Arena.ofConfined()) {
             TestValue[] testArgs = genTestArgs(baseDesc, arena);
 
             MethodHandle downcallHandle = downcallHandle(functionName, downcallDesc);

@@ -2133,9 +2133,9 @@ void PrintClassClosure::do_klass(Klass* k)  {
   char buf[10];
   int i = 0;
   if (k->has_finalizer()) buf[i++] = 'F';
-  if (k->has_final_method()) buf[i++] = 'f';
   if (k->is_instance_klass()) {
     InstanceKlass* ik = InstanceKlass::cast(k);
+    if (ik->has_final_method()) buf[i++] = 'f';
     if (ik->is_rewritten()) buf[i++] = 'W';
     if (ik->is_contended()) buf[i++] = 'C';
     if (ik->has_been_redefined()) buf[i++] = 'R';
@@ -2622,6 +2622,16 @@ void InstanceKlass::init_shared_package_entry() {
   }
   ArchivePtrMarker::mark_pointer((address**)&_package_entry);
 #endif
+}
+
+void InstanceKlass::compute_has_loops_flag_for_methods() {
+  Array<Method*>* methods = this->methods();
+  for (int index = 0; index < methods->length(); ++index) {
+    Method* m = methods->at(index);
+    if (!m->is_overpass()) { // work around JDK-8305771
+      m->compute_has_loops_flag();
+    }
+  }
 }
 
 void InstanceKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protection_domain,

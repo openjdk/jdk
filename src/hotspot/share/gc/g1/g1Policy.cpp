@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -722,8 +722,15 @@ double G1Policy::logged_cards_processing_time() const {
   size_t logged_dirty_cards = phase_times()->sum_thread_work_items(G1GCPhaseTimes::MergeLB, G1GCPhaseTimes::MergeLBDirtyCards);
   size_t scan_heap_roots_cards = phase_times()->sum_thread_work_items(G1GCPhaseTimes::ScanHR, G1GCPhaseTimes::ScanHRScannedCards) +
                                  phase_times()->sum_thread_work_items(G1GCPhaseTimes::OptScanHR, G1GCPhaseTimes::ScanHRScannedCards);
-  // This may happen if there are duplicate cards in different log buffers.
-  if (logged_dirty_cards > scan_heap_roots_cards) {
+  // Approximate the time spent processing cards from log buffers by scaling
+  // the total processing time by the ratio of logged cards to total cards
+  // processed.  There might be duplicate cards in different log buffers,
+  // leading to an overestimate.  That effect should be relatively small
+  // unless there are few cards to process, because cards in buffers are
+  // dirtied to limit duplication.  Also need to avoid scaling when both
+  // counts are zero, which happens especially during early GCs.  So ascribe
+  // all of the time to the logged cards unless there are more total cards.
+  if (logged_dirty_cards >= scan_heap_roots_cards) {
     return all_cards_processing_time + average_time_ms(G1GCPhaseTimes::MergeLB);
   }
   return (all_cards_processing_time * logged_dirty_cards / scan_heap_roots_cards) + average_time_ms(G1GCPhaseTimes::MergeLB);

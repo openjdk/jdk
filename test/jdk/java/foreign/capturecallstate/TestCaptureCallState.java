@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,13 +66,14 @@ public class TestCaptureCallState extends NativeTestHelper {
 
     @Test(dataProvider = "cases")
     public void testSavedThreadLocal(SaveValuesCase testCase) throws Throwable {
-        Linker.Option.CaptureCallState stl = Linker.Option.captureCallState(testCase.threadLocalName());
+        Linker.Option stl = Linker.Option.captureCallState(testCase.threadLocalName());
         MethodHandle handle = downcallHandle(testCase.nativeTarget(), testCase.nativeDesc(), stl);
 
-        VarHandle errnoHandle = stl.layout().varHandle(groupElement(testCase.threadLocalName()));
+        StructLayout capturedStateLayout = Linker.Option.captureStateLayout();
+        VarHandle errnoHandle = capturedStateLayout.varHandle(groupElement(testCase.threadLocalName()));
 
-        try (Arena arena = Arena.openConfined()) {
-            MemorySegment saveSeg = arena.allocate(stl.layout());
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment saveSeg = arena.allocate(capturedStateLayout);
             int testValue = 42;
             boolean needsAllocator = testCase.nativeDesc().returnLayout().map(StructLayout.class::isInstance).orElse(false);
             Object result = needsAllocator
