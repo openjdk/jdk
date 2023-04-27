@@ -1890,14 +1890,15 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
         if (DoPartialEscapeAnalysis) {
           ObjID id = as.is_alias(phi);
 
-          if (as.contains(id)) {
+          if (id != nullptr) {
             if (pred_as.is_alias(n) == id) {
               // merge the same object but have different allocation states.
               if (!as.get_object_state(id)->is_virtual() && pred_as.get_object_state(id)->is_virtual()) {
                 n = ensure_object_materialized(n, pred_as, newin, r, pnum);
               } else if (as.get_object_state(id)->is_virtual() && !pred_as.get_object_state(id)->is_virtual()) {
-                // TODO: materialize all.
-                assert(false, "not implement yet");
+                // we should do passive materialization for all distinct inputs of phi.
+                // skip it for the time being.
+                as.update(id, new EscapedState(phi));
               }
             } else {
               // merge a different object, including n = nullptr
