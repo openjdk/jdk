@@ -1077,7 +1077,16 @@ bool os::dll_address_to_library_name(address addr, char* buf,
     return false;
   }
 
-  return AixSymbols::get_module_name(addr, buf, buflen);
+  address  base = nullptr;
+  if ( false == AixSymbols::get_module_name_and_base(addr, buf, buflen, &base)
+       || base == nullptr ) {
+    return false;
+  }
+  if (offset != nullptr) {
+    *offset = addr - base;
+  }
+
+  return true;
 }
 
 // Loads .dll/.so and in case of error it checks if .dll/.so was built
