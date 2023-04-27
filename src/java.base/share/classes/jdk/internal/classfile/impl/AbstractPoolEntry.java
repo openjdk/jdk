@@ -580,10 +580,11 @@ public abstract sealed class AbstractPoolEntry {
 
         @Override
         public ClassDesc asSymbol() {
-            if (sym == null) {
-                sym = Util.toClassDesc(asInternalName());
+            var sym = this.sym;
+            if (sym != null) {
+                return sym;
             }
-            return sym;
+            return this.sym = Util.toClassDesc(asInternalName());
         }
 
         @Override
@@ -982,10 +983,11 @@ public abstract sealed class AbstractPoolEntry {
 
         @Override
         public MethodTypeDesc asSymbol() {
-            if (sym == null) {
-                sym = MethodTypeDesc.ofDescriptor(descriptor().stringValue());
+            var sym = this.sym;
+            if (sym != null) {
+                return sym;
             }
-            return sym;
+            return this.sym = MethodTypeDesc.ofDescriptor(descriptor().stringValue());
         }
 
         @Override
