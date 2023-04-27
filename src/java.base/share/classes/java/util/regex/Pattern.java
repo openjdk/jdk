@@ -638,6 +638,12 @@ import jdk.internal.util.regex.Grapheme;
  *   <li> Join_Control
  *   <li> Noncharacter_Code_Point
  *   <li> Assigned
+ *   <li> Emoji
+ *   <li> Emoji_Presentation
+ *   <li> Emoji_Modifier
+ *   <li> Emoji_Modifier_Base
+ *   <li> Emoji_Component
+ *   <li> Extended_Pictographic
  * </ul>
  * <p>
  * The following <b>Predefined Character classes</b> and <b>POSIX character classes</b>

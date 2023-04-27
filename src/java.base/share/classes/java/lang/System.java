@@ -89,7 +89,6 @@ import jdk.internal.vm.ThreadContainer;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.vm.annotation.Stable;
-import jdk.internal.vm.annotation.ChangesCurrentThread;
 import sun.nio.fs.DefaultFileSystemProvider;
 import sun.reflect.annotation.AnnotationType;
 import sun.nio.ch.Interruptible;
@@ -761,8 +760,6 @@ public final class System {
      *     <td>List of paths to search when loading libraries</td></tr>
      * <tr><th scope="row">{@systemProperty java.io.tmpdir}</th>
      *     <td>Default temp file path</td></tr>
-     * <tr><th scope="row">{@systemProperty java.compiler}</th>
-     *     <td>Name of JIT compiler to use</td></tr>
      * <tr><th scope="row">{@systemProperty os.name}</th>
      *     <td>Operating system name</td></tr>
      * <tr><th scope="row">{@systemProperty os.arch}</th>
@@ -2567,17 +2564,9 @@ public final class System {
                 return Thread.currentCarrierThread();
             }
 
-            @ChangesCurrentThread
             public <V> V executeOnCarrierThread(Callable<V> task) throws Exception {
-                Thread thread = Thread.currentThread();
-                if (thread.isVirtual()) {
-                    Thread carrier = Thread.currentCarrierThread();
-                    carrier.setCurrentThread(carrier);
-                    try {
-                        return task.call();
-                    } finally {
-                        carrier.setCurrentThread(thread);
-                    }
+                if (Thread.currentThread() instanceof VirtualThread vthread) {
+                    return vthread.executeOnCarrierThread(task);
                 } else {
                     return task.call();
                 }

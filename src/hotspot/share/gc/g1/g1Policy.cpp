@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -508,7 +508,7 @@ double G1Policy::predict_survivor_regions_evac_time() const {
   for (GrowableArrayIterator<HeapRegion*> it = survivor_regions->begin();
        it != survivor_regions->end();
        ++it) {
-    survivor_regions_evac_time += predict_region_copy_time_ms(*it);
+    survivor_regions_evac_time += predict_region_copy_time_ms(*it, _g1h->collector_state()->in_young_only_phase());
   }
 
   return survivor_regions_evac_time;
@@ -722,8 +722,15 @@ double G1Policy::logged_cards_processing_time() const {
   size_t logged_dirty_cards = phase_times()->sum_thread_work_items(G1GCPhaseTimes::MergeLB, G1GCPhaseTimes::MergeLBDirtyCards);
   size_t scan_heap_roots_cards = phase_times()->sum_thread_work_items(G1GCPhaseTimes::ScanHR, G1GCPhaseTimes::ScanHRScannedCards) +
                                  phase_times()->sum_thread_work_items(G1GCPhaseTimes::OptScanHR, G1GCPhaseTimes::ScanHRScannedCards);
-  // This may happen if there are duplicate cards in different log buffers.
-  if (logged_dirty_cards > scan_heap_roots_cards) {
+  // Approximate the time spent processing cards from log buffers by scaling
+  // the total processing time by the ratio of logged cards to total cards
+  // processed.  There might be duplicate cards in different log buffers,
+  // leading to an overestimate.  That effect should be relatively small
+  // unless there are few cards to process, because cards in buffers are
+  // dirtied to limit duplication.  Also need to avoid scaling when both
+  // counts are zero, which happens especially during early GCs.  So ascribe
+  // all of the time to the logged cards unless there are more total cards.
+  if (logged_dirty_cards >= scan_heap_roots_cards) {
     return all_cards_processing_time + average_time_ms(G1GCPhaseTimes::MergeLB);
   }
   return (all_cards_processing_time * logged_dirty_cards / scan_heap_roots_cards) + average_time_ms(G1GCPhaseTimes::MergeLB);
@@ -1034,9 +1041,9 @@ double G1Policy::predict_eden_copy_time_ms(uint count, size_t* bytes_to_copy) co
   return _analytics->predict_object_copy_time_ms(expected_bytes, collector_state()->in_young_only_phase());
 }
 
-double G1Policy::predict_region_copy_time_ms(HeapRegion* hr) const {
+double G1Policy::predict_region_copy_time_ms(HeapRegion* hr, bool for_young_only_phase) const {
   size_t const bytes_to_copy = predict_bytes_to_copy(hr);
-  return _analytics->predict_object_copy_time_ms(bytes_to_copy, collector_state()->in_young_only_phase());
+  return _analytics->predict_object_copy_time_ms(bytes_to_copy, for_young_only_phase);
 }
 
 double G1Policy::predict_region_merge_scan_time(HeapRegion* hr, bool for_young_only_phase) const {
@@ -1044,8 +1051,8 @@ double G1Policy::predict_region_merge_scan_time(HeapRegion* hr, bool for_young_o
   size_t scan_card_num = _analytics->predict_scan_card_num(rs_length, for_young_only_phase);
 
   return
-    _analytics->predict_card_merge_time_ms(rs_length, collector_state()->in_young_only_phase()) +
-    _analytics->predict_card_scan_time_ms(scan_card_num, collector_state()->in_young_only_phase());
+    _analytics->predict_card_merge_time_ms(rs_length, for_young_only_phase) +
+    _analytics->predict_card_scan_time_ms(scan_card_num, for_young_only_phase);
 }
 
 double G1Policy::predict_region_non_copy_time_ms(HeapRegion* hr,
@@ -1063,7 +1070,9 @@ double G1Policy::predict_region_non_copy_time_ms(HeapRegion* hr,
 }
 
 double G1Policy::predict_region_total_time_ms(HeapRegion* hr, bool for_young_only_phase) const {
-  return predict_region_non_copy_time_ms(hr, for_young_only_phase) + predict_region_copy_time_ms(hr);
+  return
+    predict_region_non_copy_time_ms(hr, for_young_only_phase) +
+    predict_region_copy_time_ms(hr, for_young_only_phase);
 }
 
 bool G1Policy::should_allocate_mutator_region() const {
