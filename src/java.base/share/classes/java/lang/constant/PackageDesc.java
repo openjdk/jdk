@@ -68,7 +68,7 @@ public sealed interface PackageDesc
      * @throws IllegalArgumentException if the name string is not in the
      * correct format
      * @jvms 4.2.1 Binary Class and Interface Names
-     * @jvm 4.2.3 Module and Package Names
+     * @jvms 4.2.3 Module and Package Names
      * @see PackageDesc#of(String)
      */
     static PackageDesc ofInternalName(String name) {
@@ -101,7 +101,7 @@ public sealed interface PackageDesc
     /**
      * Compare the specified object with this descriptor for equality.
      * Returns {@code true} if and only if the specified object is
-     * also a {@linkp PackageDesc} and both describe the same package.
+     * also a {@link PackageDesc} and both describe the same package.
      *
      * @param o the other object
      * @return whether this descriptor is equal to the other object
