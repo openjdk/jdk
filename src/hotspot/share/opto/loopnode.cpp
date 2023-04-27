@@ -4631,7 +4631,7 @@ void PhaseIdealLoop::build_and_optimize() {
   }
 
   // Move UnorderedReduction out of counted loop. Can be introduced by SuperWord.
-  if (C->has_loops()) {
+  if (C->has_loops() && !C->major_progress()) {
     for (LoopTreeIterator iter(_ltree_root); !iter.done(); iter.next()) {
       IdealLoopTree* lpt = iter.current();
       if (lpt->_head->is_CountedLoop()) {
