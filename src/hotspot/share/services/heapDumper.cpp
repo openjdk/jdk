@@ -1204,10 +1204,10 @@ void VM_HeapDumper::doit() {
   set_global_writer();
 
   WorkerThreads* workers = ch->safepoint_workers();
-  uint  num_active_workers = workers->active_workers();
+  uint  num_active_workers = workers != nullptr ? workers->active_workers() : 0;
   uint requested_num_dump_thread = _num_dumper_threads;
 
-  if (workers == nullptr || num_active_workers <= 1 || requested_num_dump_thread <= 1) {
+  if (num_active_workers <= 1 || requested_num_dump_thread <= 1) {
     // Use serial dump, set dumper threads and writer threads number to 1.
     _num_dumper_threads = 1;
     work(0);
