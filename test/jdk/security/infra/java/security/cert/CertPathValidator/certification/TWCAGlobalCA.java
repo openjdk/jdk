@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8270377
+ * @bug 8305975
  * @summary Interoperability tests with TWCA Global Root CA from TAIWAN-CA
  * @build ValidatePathWithParams
  * @run main/othervm -Djava.security.debug=certpath TWCAGlobalCA OCSP
@@ -81,109 +81,106 @@ public class TWCAGlobalCA {
     // Owner: OID.2.5.4.17=100, STREET="10F.,NO.85,Yanping S. Rd.,Taipei City 100,Taiwan (R.O.C)",
     // SERIALNUMBER=70759028, OID.1.3.6.1.4.1.311.60.2.1.3=TW, OID.1.3.6.1.4.1.311.60.2.1.2=Taiwan,
     // OID.1.3.6.1.4.1.311.60.2.1.1=Taipei, OID.2.5.4.15=Private Organization,
-    // CN=evssldemo6.twca.com.tw, OU=System, O=TAIWAN-CA INC., L=Taipei, ST=Taiwan, C=TW
+    // CN=evssldemo6.twca.com.tw, O=TAIWAN-CA INC., L=Taipei, ST=Taiwan, C=TW
     // Issuer: CN=TWCA Global EVSSL Certification Authority, OU=Global EVSSL Sub-CA,
     // O=TAIWAN-CA, C=TW
-    // Serial number: 47e60000000f72367af31bd4f5e1ff68
-    // Valid from: Mon Mar 14 00:56:49 PDT 2022 until: Fri Mar 31 08:59:59 PDT 2023
+    // Serial number: 47e70000001258ff71d89af7f0353fef
+    // Valid from: Thu Mar 02 00:49:56 PST 2023 until: Sun Mar 31 08:59:59 PDT 2024
     private static final String VALID = "-----BEGIN CERTIFICATE-----\n" +
-            "MIIIATCCBumgAwIBAgIQR+YAAAAPcjZ68xvU9eH/aDANBgkqhkiG9w0BAQsFADBz\n" +
+            "MIIH7zCCBtegAwIBAgIQR+cAAAASWP9x2Jr38DU/7zANBgkqhkiG9w0BAQsFADBz\n" +
             "MQswCQYDVQQGEwJUVzESMBAGA1UEChMJVEFJV0FOLUNBMRwwGgYDVQQLExNHbG9i\n" +
             "YWwgRVZTU0wgU3ViLUNBMTIwMAYDVQQDEylUV0NBIEdsb2JhbCBFVlNTTCBDZXJ0\n" +
-            "aWZpY2F0aW9uIEF1dGhvcml0eTAeFw0yMjAzMTQwNzU2NDlaFw0yMzAzMzExNTU5\n" +
-            "NTlaMIIBRDELMAkGA1UEBhMCVFcxDzANBgNVBAgTBlRhaXdhbjEPMA0GA1UEBxMG\n" +
-            "VGFpcGVpMRcwFQYDVQQKEw5UQUlXQU4tQ0EgSU5DLjEPMA0GA1UECxMGU3lzdGVt\n" +
-            "MR8wHQYDVQQDExZldnNzbGRlbW82LnR3Y2EuY29tLnR3MR0wGwYDVQQPExRQcml2\n" +
-            "YXRlIE9yZ2FuaXphdGlvbjEXMBUGCysGAQQBgjc8AgEBEwZUYWlwZWkxFzAVBgsr\n" +
-            "BgEEAYI3PAIBAhMGVGFpd2FuMRMwEQYLKwYBBAGCNzwCAQMTAlRXMREwDwYDVQQF\n" +
-            "Ewg3MDc1OTAyODFBMD8GA1UECRM4MTBGLixOTy44NSxZYW5waW5nIFMuIFJkLixU\n" +
-            "YWlwZWkgQ2l0eSAxMDAsVGFpd2FuIChSLk8uQykxDDAKBgNVBBETAzEwMDCCASIw\n" +
-            "DQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBANKX5Bg7Dv9JYtc0PFv1oXHK+8Ke\n" +
-            "6DeARAPMckrXiH4oSnft3N8wtld3ARsRBrVYCfY525kfYNy22p5BUinHBlfveZnB\n" +
-            "UikTXjsbbe1SXlVs9K0SReTruL02g873NAWGD5XMZlQN+3UTb4VYXD6aVudr7MEu\n" +
-            "AAHWv68gsskTokCyiykSmZLvhJkhNIcMJCCsI1EoDNI2/WHkMtFbaKQb/Mi9RptD\n" +
-            "gIhApP4jeoa9VEDumCrtwFPrKW0WS63tBVuJq97BVbvJNzD+PoOuaPTdyLbYWMLm\n" +
-            "GQbValrXmD3TOlElo+MP2MRvKYet7mnvTwY1eL8DIGL4XsHEzDAnCSQK64UCAwEA\n" +
-            "AaOCA7wwggO4MB8GA1UdIwQYMBaAFG69oSvO5MLVKHRcvdmMbwRyKgbeMB0GA1Ud\n" +
-            "DgQWBBT1FKhICxXKpIWqKAcwCHEV19+vTTBTBgNVHR8ETDBKMEigRqBEhkJodHRw\n" +
-            "Oi8vc3Nsc2VydmVyLnR3Y2EuY29tLnR3L3NzbHNlcnZlci9HbG9iYWxFVlNTTF9S\n" +
-            "ZXZva2VfMjAxMi5jcmwwIQYDVR0RBBowGIIWZXZzc2xkZW1vNi50d2NhLmNvbS50\n" +
-            "dzB/BggrBgEFBQcBAQRzMHEwRAYIKwYBBQUHMAKGOGh0dHA6Ly9zc2xzZXJ2ZXIu\n" +
-            "dHdjYS5jb20udHcvY2FjZXJ0L0dsb2JhbEV2c3NsXzIwMTIucDdiMCkGCCsGAQUF\n" +
-            "BzABhh1odHRwOi8vZXZzc2xvY3NwLnR3Y2EuY29tLnR3LzBIBgNVHSAEQTA/MDQG\n" +
-            "DCsGAQQBgr8lAQEWAzAkMCIGCCsGAQUFBwIBFhZodHRwOi8vd3d3LnR3Y2EuY29t\n" +
-            "LnR3MAcGBWeBDAEBMAkGA1UdEwQCMAAwDgYDVR0PAQH/BAQDAgWgMB0GA1UdJQQW\n" +
-            "MBQGCCsGAQUFBwMBBggrBgEFBQcDAjCCAfcGCisGAQQB1nkCBAIEggHnBIIB4wHh\n" +
-            "AHUAVYHUwhaQNgFK6gubVzxT8MDkOHhwJQgXL6OqHQcT0wwAAAF/h24NZQAABAMA\n" +
-            "RjBEAiAP+MPmaeL6ZZ8HoivEmDyJ3laerZiyWZetyom4dT2BaAIgWI3+BZyBDtjd\n" +
-            "dwJBAf232wFdCLGHw/7A+ikVwNqPfAgAdwDoPtDaPvUGNTLnVyi8iWvJA9PL0RFr\n" +
-            "7Otp4Xd9bQa9bgAAAX+HbhAMAAAEAwBIMEYCIQCoTYKgiAZRZLwryWvlO7lRlBAO\n" +
-            "bdQEQLjUyDqZCWDZPAIhAP//fV1aV7zNmpAHlzLO1oifmz65YvsIGM+mAIRRHyUN\n" +
-            "AHcAb1N2rDHwMRnYmQCkURX/dxUcEdkCwQApBo2yCJo32RMAAAF/h24NcwAABAMA\n" +
-            "SDBGAiEA5lTjsJik7023HfPdK65GYmU2U+l0sSr4M/OeQRsSWPACIQDivFeHgyo7\n" +
-            "PUh52Zw+O696YpTtPsh2nXvluvvqbulk8AB2AHoyjFTYty22IOo44FIe6YQWcDIT\n" +
-            "hU070ivBOlejUutSAAABf4duDbcAAAQDAEcwRQIgUGzB4Lp3qAQXmRPmeYLXEId6\n" +
-            "lmNxAT2a45MGJk2XqJYCIQDPEESFZw7PSLOVv22GQNrAeSinpmblxd5msFyQwvBw\n" +
-            "UzANBgkqhkiG9w0BAQsFAAOCAQEAk80iquNSqmC8bGx+hLZSbW/YP4cpvzfMKu52\n" +
-            "ojx2RzLKI291h0Q5osUdIOTmkWhFSEdaRzzho11eOFwNoPhPejakX9HecYRCHtSY\n" +
-            "AsqOJbeawGZmbDRbOfmcXAscOIOjiAZTkVQFT6TIR1l1R60gamhXYPMuLuCof836\n" +
-            "xz+yFkP3nzTq3GriVCw0McsJmKZQwjYXgDvPeaHXwjFbTbRHMwzvLa7a1t1f/osQ\n" +
-            "sLvVUJxxdG0Sm4/jWibWnqFe4PLImLFLfFl9TSPLEn/46O2HUPf2ZdW6skU+NfKY\n" +
-            "tP2SVww5y+faBNfbgC0ZVCe1VJC4KEGj8cwvBy0xmlmjpiCnDg==\n" +
+            "aWZpY2F0aW9uIEF1dGhvcml0eTAeFw0yMzAzMDIwODQ5NTZaFw0yNDAzMzExNTU5\n" +
+            "NTlaMIIBMzELMAkGA1UEBhMCVFcxDzANBgNVBAgTBlRhaXdhbjEPMA0GA1UEBxMG\n" +
+            "VGFpcGVpMRcwFQYDVQQKEw5UQUlXQU4tQ0EgSU5DLjEfMB0GA1UEAxMWZXZzc2xk\n" +
+            "ZW1vNi50d2NhLmNvbS50dzEdMBsGA1UEDxMUUHJpdmF0ZSBPcmdhbml6YXRpb24x\n" +
+            "FzAVBgsrBgEEAYI3PAIBARMGVGFpcGVpMRcwFQYLKwYBBAGCNzwCAQITBlRhaXdh\n" +
+            "bjETMBEGCysGAQQBgjc8AgEDEwJUVzERMA8GA1UEBRMINzA3NTkwMjgxQTA/BgNV\n" +
+            "BAkTODEwRi4sTk8uODUsWWFucGluZyBTLiBSZC4sVGFpcGVpIENpdHkgMTAwLFRh\n" +
+            "aXdhbiAoUi5PLkMpMQwwCgYDVQQREwMxMDAwggEiMA0GCSqGSIb3DQEBAQUAA4IB\n" +
+            "DwAwggEKAoIBAQDEgj/jtcAtGPkiBilLajzHIqfiAxpwwnKhdHwyOnqfcqur1p2R\n" +
+            "Cxl0Q8jYGmY8ZUq7716XnIGN3bn3Wu10BvmHi07h8f54/G/K7xBKjkasAh44zW1P\n" +
+            "hgdaxH0huRvoQOoSRCitew8YpMN4B++uOQ8yu2pWDGDdQHW4VaWt/e+QtZbQtp/b\n" +
+            "7vUWgcuhxDStj97B8Dcb5PY+sbLy6dfDiXnTaSpuWhjKmEcpknagGyn4uCFBSppZ\n" +
+            "/PYcTsg+Nk8Ae/SDMpc7XWBCjmxMG2GI0IVW4un9UOuElYgWVjMWnBAiGMDkVMEQ\n" +
+            "jLRxEYOh+NJ3izMyD/ufLrA/YwJMI1LgFcOJAgMBAAGjggO7MIIDtzAfBgNVHSME\n" +
+            "GDAWgBRuvaErzuTC1Sh0XL3ZjG8EcioG3jAdBgNVHQ4EFgQUg4msPcTFvDjwluRf\n" +
+            "inEn9qMC7OYwUwYDVR0fBEwwSjBIoEagRIZCaHR0cDovL3NzbHNlcnZlci50d2Nh\n" +
+            "LmNvbS50dy9zc2xzZXJ2ZXIvR2xvYmFsRVZTU0xfUmV2b2tlXzIwMTIuY3JsMCEG\n" +
+            "A1UdEQQaMBiCFmV2c3NsZGVtbzYudHdjYS5jb20udHcwfwYIKwYBBQUHAQEEczBx\n" +
+            "MEQGCCsGAQUFBzAChjhodHRwOi8vc3Nsc2VydmVyLnR3Y2EuY29tLnR3L2NhY2Vy\n" +
+            "dC9HbG9iYWxFdnNzbF8yMDEyLnA3YjApBggrBgEFBQcwAYYdaHR0cDovL2V2c3Ns\n" +
+            "b2NzcC50d2NhLmNvbS50dy8wSAYDVR0gBEEwPzA0BgwrBgEEAYK/JQEBFgMwJDAi\n" +
+            "BggrBgEFBQcCARYWaHR0cDovL3d3dy50d2NhLmNvbS50dzAHBgVngQwBATAJBgNV\n" +
+            "HRMEAjAAMA4GA1UdDwEB/wQEAwIFoDAdBgNVHSUEFjAUBggrBgEFBQcDAQYIKwYB\n" +
+            "BQUHAwIwggH2BgorBgEEAdZ5AgQCBIIB5gSCAeIB4AB2AEiw42vapkc0D+VqAvqd\n" +
+            "MOscUgHLVt0sgdm7v6s52IRzAAABhqGDiCYAAAQDAEcwRQIgd7uqvHdSTSXqNPWs\n" +
+            "OQeCeT2vuKY3vj8jRcoJ9IIohqgCIQCtQfZ0lfZ1Y1GmwCTDc5NM++5mgp+ZpNWu\n" +
+            "F9OKsWoCPQB2AFWB1MIWkDYBSuoLm1c8U/DA5Dh4cCUIFy+jqh0HE9MMAAABhqGD\n" +
+            "iJYAAAQDAEcwRQIgIHKa+XeYyDURUq9AVYEntGS5oJitKyWZjSOlpD+udZgCIQC/\n" +
+            "oVPtjJpcXP4OScYFsNWMPKUtZOO5mY5y7V65S84DrQB2ADtTd3U+LbmAToswWwb+\n" +
+            "QDtn2E/D9Me9AA0tcm/h+tQXAAABhqGDh8YAAAQDAEcwRQIgYT7aPr9YCtF5TCTp\n" +
+            "NICK9c5eiL6Ku/y9wM6ARgG2k1UCIQDomqlwGur+AMI4YIc1SNqyNVCyxgP1DxXP\n" +
+            "FYkX6BX17gB2AO7N0GTV2xrOxVy3nbTNE6Iyh0Z8vOzew1FIWUZxH7WbAAABhqGD\n" +
+            "iKkAAAQDAEcwRQIhAKTMliyTn48vvP9hN8jucD6rGZwRCqQI6suE6ADpN7bNAiB3\n" +
+            "zFZFdH8eJRn3RXjD/mzbmF201sNLitp9SOYAazubljANBgkqhkiG9w0BAQsFAAOC\n" +
+            "AQEAOOtzqtRFvxlJro61O0dEkDottToFh88vib3N3AofS5uW0nDpoS0L27XR8IDd\n" +
+            "2NfN+2XKAQXdz2BqHnjW1nAMXUx4TAMi4jG8XpOkvpSDXbjghD5EB10FyAzCuGmv\n" +
+            "mKxkVOU1DzL0kSLLQjLaJ57WUYsoE97f5O6rY9jlJpid32o1WgM1oZsBjPhO8Kiy\n" +
+            "KJ5zZHppolGPtuFYMUcatiqv//pH/5piwtlYSkbwMj5nYidSrSBciBzO53HFk1pE\n" +
+            "TABXFcoK3gmhWM04lysmJMwAzRUbNQVizpGDICbRjCOVnwCbutnSnka8pDHkq4Zy\n" +
+            "BrUeZe2xJe8jWvukwqvNzIIvwg==\n" +
             "-----END CERTIFICATE-----";
 
     // Owner: OID.2.5.4.17=100, STREET="10F.,NO.85,Yanping S. Rd.,Taipei City 100,Taiwan (R.O.C)",
     // SERIALNUMBER=70759028, OID.1.3.6.1.4.1.311.60.2.1.3=TW, OID.1.3.6.1.4.1.311.60.2.1.2=Taiwan,
     // OID.1.3.6.1.4.1.311.60.2.1.1=Taipei, OID.2.5.4.15=Private Organization,
-    // CN=evssldemo7.twca.com.tw, OU=System, O=TAIWAN-CA INC., L=Taipei, ST=Taiwan, C=TW
+    // CN=evssldemo7.twca.com.tw, O=TAIWAN-CA INC., L=Taipei, ST=Taiwan, C=TW
     // Issuer: CN=TWCA Global EVSSL Certification Authority, OU=Global EVSSL Sub-CA,
     // O=TAIWAN-CA, C=TW
-    // Serial number: 47e60000000f723876b42e5ce57c1e7e
-    // Valid from: Mon Mar 14 01:05:17 PDT 2022 until: Fri Mar 31 08:59:59 PDT 2023
+    // Serial number: 47e70000001258f036a5b513091ccb2e
+    // Valid from: Tue Feb 07 02:03:08 PST 2023 until: Thu Mar 07 07:59:59 PST 2024
     private static final String REVOKED = "-----BEGIN CERTIFICATE-----\n" +
-            "MIIIAzCCBuugAwIBAgIQR+YAAAAPcjh2tC5c5XwefjANBgkqhkiG9w0BAQsFADBz\n" +
+            "MIIHdjCCBl6gAwIBAgIQR+cAAAASWPA2pbUTCRzLLjANBgkqhkiG9w0BAQsFADBz\n" +
             "MQswCQYDVQQGEwJUVzESMBAGA1UEChMJVEFJV0FOLUNBMRwwGgYDVQQLExNHbG9i\n" +
             "YWwgRVZTU0wgU3ViLUNBMTIwMAYDVQQDEylUV0NBIEdsb2JhbCBFVlNTTCBDZXJ0\n" +
-            "aWZpY2F0aW9uIEF1dGhvcml0eTAeFw0yMjAzMTQwODA1MTdaFw0yMzAzMzExNTU5\n" +
-            "NTlaMIIBRDELMAkGA1UEBhMCVFcxDzANBgNVBAgTBlRhaXdhbjEPMA0GA1UEBxMG\n" +
-            "VGFpcGVpMRcwFQYDVQQKEw5UQUlXQU4tQ0EgSU5DLjEPMA0GA1UECxMGU3lzdGVt\n" +
-            "MR8wHQYDVQQDExZldnNzbGRlbW83LnR3Y2EuY29tLnR3MR0wGwYDVQQPExRQcml2\n" +
-            "YXRlIE9yZ2FuaXphdGlvbjEXMBUGCysGAQQBgjc8AgEBEwZUYWlwZWkxFzAVBgsr\n" +
-            "BgEEAYI3PAIBAhMGVGFpd2FuMRMwEQYLKwYBBAGCNzwCAQMTAlRXMREwDwYDVQQF\n" +
-            "Ewg3MDc1OTAyODFBMD8GA1UECRM4MTBGLixOTy44NSxZYW5waW5nIFMuIFJkLixU\n" +
-            "YWlwZWkgQ2l0eSAxMDAsVGFpd2FuIChSLk8uQykxDDAKBgNVBBETAzEwMDCCASIw\n" +
-            "DQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBANfU7CMw3cQgjT1A184pQzz1ID6o\n" +
-            "JzaDmSTdb7FwxYCMPjKyDTWa+Mq0bRlYDeArsc/Ow+bhobPAzZ/6PH0wp+42QrkU\n" +
-            "9nmKOWUhbfUpxQlLvVbddRMgVlEMRyXO8tc8WnKqXvkBt4xWA1BThAGu9S1e1LIQ\n" +
-            "PjhJexfqfmjbvl73RZdPZeFXjI2Se8zGjad1cSmyJXb2yccc/qK39zMQ/Bd11c6W\n" +
-            "c6/ICU7cXqkSzMWdXGpQT+jvlEwhaymPpcpIK6EvpeMEo9nzGvuXD3E4b0rRRdN8\n" +
-            "ngtZCOCX9DpcHi1aG0mdCVY0i+oiX0Rucj54IlOaAr+aGF71tbYBJvs6rkUCAwEA\n" +
-            "AaOCA74wggO6MB8GA1UdIwQYMBaAFG69oSvO5MLVKHRcvdmMbwRyKgbeMB0GA1Ud\n" +
-            "DgQWBBR+DcOTcur7/M6SSzyalRINdSJGjDBTBgNVHR8ETDBKMEigRqBEhkJodHRw\n" +
-            "Oi8vc3Nsc2VydmVyLnR3Y2EuY29tLnR3L3NzbHNlcnZlci9HbG9iYWxFVlNTTF9S\n" +
-            "ZXZva2VfMjAxMi5jcmwwIQYDVR0RBBowGIIWZXZzc2xkZW1vNy50d2NhLmNvbS50\n" +
-            "dzB/BggrBgEFBQcBAQRzMHEwRAYIKwYBBQUHMAKGOGh0dHA6Ly9zc2xzZXJ2ZXIu\n" +
-            "dHdjYS5jb20udHcvY2FjZXJ0L0dsb2JhbEV2c3NsXzIwMTIucDdiMCkGCCsGAQUF\n" +
-            "BzABhh1odHRwOi8vZXZzc2xvY3NwLnR3Y2EuY29tLnR3LzBIBgNVHSAEQTA/MDQG\n" +
-            "DCsGAQQBgr8lAQEWAzAkMCIGCCsGAQUFBwIBFhZodHRwOi8vd3d3LnR3Y2EuY29t\n" +
-            "LnR3MAcGBWeBDAEBMAkGA1UdEwQCMAAwDgYDVR0PAQH/BAQDAgWgMB0GA1UdJQQW\n" +
-            "MBQGCCsGAQUFBwMBBggrBgEFBQcDAjCCAfkGCisGAQQB1nkCBAIEggHpBIIB5QHj\n" +
-            "AHcA6D7Q2j71BjUy51covIlryQPTy9ERa+zraeF3fW0GvW4AAAF/h3XNCQAABAMA\n" +
-            "SDBGAiEA2rhyp8eqM/ZYawrvRqcto7JgdRIj/34AOf2uNzrmf44CIQDhzigDJEsD\n" +
-            "n+rlusMFDaB4P9h2alWOF2TKX28fo9ri0AB3AFWB1MIWkDYBSuoLm1c8U/DA5Dh4\n" +
-            "cCUIFy+jqh0HE9MMAAABf4d1za8AAAQDAEgwRgIhAP/rmf4AUO3HlDRxduKAC/UH\n" +
-            "skuc6Fwx8DsmqTF6dBBFAiEAwZl5x2yJy8jXhjwZSF6x4lBDk7OqRcrfp2uerCZg\n" +
-            "GrQAdgBvU3asMfAxGdiZAKRRFf93FRwR2QLBACkGjbIImjfZEwAAAX+Hdc3QAAAE\n" +
-            "AwBHMEUCIDBLlx4UshvohU7bIHGb/fdhkMvdijPXK0kuTK5h5fQQAiEA4Pb0+d8Q\n" +
-            "KSjqILxTkDHfUY4YVRC/9bdLsO1lLEpKqtoAdwB6MoxU2LcttiDqOOBSHumEFnAy\n" +
-            "E4VNO9IrwTpXo1LrUgAAAX+Hdcq6AAAEAwBIMEYCIQCJC2lYS+M8xIvJd2mTlp+1\n" +
-            "gZX9yEjWtQFbRqBLLcJHmwIhAMsXNTv4fYe3w2uq4feY5kjYVCMLoO/pHX96FILM\n" +
-            "DV6qMA0GCSqGSIb3DQEBCwUAA4IBAQCps3c4qJaRh7XQ4CO30XA/JaLWeyVmQfyM\n" +
-            "hzrRyIL64HtmbY0YLwNoulD8AKCyc5wnkyZiT8UDAvmpKdT7OUjncrtQk1cGlZwR\n" +
-            "cIxg6JDlpVFggv3h0an1ZYeWjU/Dxp6T2P991Rp1Tidrnlelt4TNirekqtVhaGJw\n" +
-            "RZH0fLS8swIlghsAO7Da94JHQB2gRpTgsyMEuWktfxE1QbdiywclmN6MUvTYjVeb\n" +
-            "eDYPlPmpBQrVHuBa1fK+b6zCpx9QY53AFzo5P6I0L965QQU11K9AA6EeW6myTzVh\n" +
-            "4me7onSYouqT/+96KO5D3s/pW4jz+lqrLYMcz01OsXgpFlftJuuI\n" +
+            "aWZpY2F0aW9uIEF1dGhvcml0eTAeFw0yMzAyMDcxMDAzMDhaFw0yNDAzMDcxNTU5\n" +
+            "NTlaMIIBMzELMAkGA1UEBhMCVFcxDzANBgNVBAgTBlRhaXdhbjEPMA0GA1UEBxMG\n" +
+            "VGFpcGVpMRcwFQYDVQQKEw5UQUlXQU4tQ0EgSU5DLjEfMB0GA1UEAxMWZXZzc2xk\n" +
+            "ZW1vNy50d2NhLmNvbS50dzEdMBsGA1UEDxMUUHJpdmF0ZSBPcmdhbml6YXRpb24x\n" +
+            "FzAVBgsrBgEEAYI3PAIBARMGVGFpcGVpMRcwFQYLKwYBBAGCNzwCAQITBlRhaXdh\n" +
+            "bjETMBEGCysGAQQBgjc8AgEDEwJUVzERMA8GA1UEBRMINzA3NTkwMjgxQTA/BgNV\n" +
+            "BAkTODEwRi4sTk8uODUsWWFucGluZyBTLiBSZC4sVGFpcGVpIENpdHkgMTAwLFRh\n" +
+            "aXdhbiAoUi5PLkMpMQwwCgYDVQQREwMxMDAwggEiMA0GCSqGSIb3DQEBAQUAA4IB\n" +
+            "DwAwggEKAoIBAQDSX3co7XUdwxv8OEj7Mipq0Ot+1w+VYTFlPvdnryrv9st7ERLb\n" +
+            "+xJPJo7swgqbHeHKWlwYu4lkzJq6s3nAOkuYIP/O3uVmGDiilLSAVkukz9MooyjB\n" +
+            "466eArXY1VT9vpXVNmSLunAp5RU8H+2WWOUMmtJx/oYojqEbtWqnltlErvEjb2TM\n" +
+            "vR16d/vXI6QtMc+IV3nZ0SVdetH2E7ZvpP5mZqVSHNnOnVjqdd69hAJ4SJgG9lCM\n" +
+            "87ysm6UaJxQbEGxc6YkwrUNVet1tx2hBWltTyRw3oOBCBUwrPUTx7/pFh7yhci6p\n" +
+            "AhHp1j0OzAmZHOFTM+qO1L1vlmguO8zW0zWtAgMBAAGjggNCMIIDPjAfBgNVHSME\n" +
+            "GDAWgBRuvaErzuTC1Sh0XL3ZjG8EcioG3jAdBgNVHQ4EFgQUvvbgZHRNPdmGlxQS\n" +
+            "fcTzM2A14EkwUwYDVR0fBEwwSjBIoEagRIZCaHR0cDovL3NzbHNlcnZlci50d2Nh\n" +
+            "LmNvbS50dy9zc2xzZXJ2ZXIvR2xvYmFsRVZTU0xfUmV2b2tlXzIwMTIuY3JsMCEG\n" +
+            "A1UdEQQaMBiCFmV2c3NsZGVtbzcudHdjYS5jb20udHcwfwYIKwYBBQUHAQEEczBx\n" +
+            "MEQGCCsGAQUFBzAChjhodHRwOi8vc3Nsc2VydmVyLnR3Y2EuY29tLnR3L2NhY2Vy\n" +
+            "dC9HbG9iYWxFdnNzbF8yMDEyLnA3YjApBggrBgEFBQcwAYYdaHR0cDovL2V2c3Ns\n" +
+            "b2NzcC50d2NhLmNvbS50dy8wSAYDVR0gBEEwPzA0BgwrBgEEAYK/JQEBFgMwJDAi\n" +
+            "BggrBgEFBQcCARYWaHR0cDovL3d3dy50d2NhLmNvbS50dzAHBgVngQwBATAJBgNV\n" +
+            "HRMEAjAAMA4GA1UdDwEB/wQEAwIFoDAdBgNVHSUEFjAUBggrBgEFBQcDAQYIKwYB\n" +
+            "BQUHAwIwggF9BgorBgEEAdZ5AgQCBIIBbQSCAWkBZwB2AFWB1MIWkDYBSuoLm1c8\n" +
+            "U/DA5Dh4cCUIFy+jqh0HE9MMAAABhitUR1YAAAQDAEcwRQIhANv7DhQm67R1Ilmg\n" +
+            "k5StrFQ1dqyELzZTAT3on84g0G/vAiAttP+EWWmztK2luQ7SxvQsmExDh/qGiZHq\n" +
+            "NAd2a8dUIgB1AO7N0GTV2xrOxVy3nbTNE6Iyh0Z8vOzew1FIWUZxH7WbAAABhitU\n" +
+            "RycAAAQDAEYwRAIgcU5n4DJaGWvTr3wZug59ItynMgCZ5z0ZVrZr2KwV70wCIHEv\n" +
+            "DAwNBLGsdj5IX/4E5hnzJvS7WroSLnRB6OW931JbAHYAdv+IPwq2+5VRwmHM9Ye6\n" +
+            "NLSkzbsp3GhCCp/mZ0xaOnQAAAGGK1RKDwAABAMARzBFAiBvlIvOnE8PhYJQueMh\n" +
+            "AOCwgREvnAsk3Edt59lcuqPrrQIhAOSRb3UmBYkHQ6k5pUJva0Mgk0GmnLR0de0s\n" +
+            "VxW3TTASMA0GCSqGSIb3DQEBCwUAA4IBAQAQB7oaouXBI6VpLzL+kzOZXSTbSClv\n" +
+            "LS33DTEBI3A8LTXHbFq6c4/ZdqieUzy42Kd0i9e3hI1hwQYPgEwxpROOcldX72r0\n" +
+            "EUTh0L+XrxN3YEgod6aCsjIiJlWYy6J2ZXVURnk/iWYAwYLa0JmmBGuWFjEnq4lO\n" +
+            "xL1C3M2mYAEC+Beb7Xyq1rcu97p4P8igJYM+VfwXNwYYRCXUr9f4ESD7t5vXlYoE\n" +
+            "c4m5KiBQD9XtZS77QRon9JCQklxTvMkxuLwWvSdzicEUzWeFp+kN/fcXL2SVsb17\n" +
+            "xDPMMsMMh7L/f+uMWDYZ+wH17LYQxOLi7VXT3fv8nl2X2iD3d4CCh0Tu\n" +
             "-----END CERTIFICATE-----";
 
     public static void main(String[] args) throws Exception {
@@ -204,6 +201,6 @@ public class TWCAGlobalCA {
         // Validate Revoked
         pathValidator.validate(new String[]{REVOKED, INT},
                 ValidatePathWithParams.Status.REVOKED,
-                "Mon Mar 14 02:12:14 PDT 2022", System.out);
+                "Thu Mar 23 17:30:19 PDT 2023", System.out);
     }
 }
