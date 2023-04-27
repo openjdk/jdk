@@ -276,7 +276,6 @@ ctw_3 = \
 tier1_gc = \
   :tier1_gc_1 \
   :tier1_gc_2 \
-  :tier1_gc_gcold \
   :tier1_gc_gcbasher \
   :tier1_gc_epsilon \
   :tier1_gc_shenandoah
@@ -307,7 +306,7 @@ tier1_gc_epsilon = \
 
 tier2_gc_epsilon =
 
-tier1_gc_gcold = \
+tier3_gc_gcold = \
   gc/stress/gcold/TestGCOldWithG1.java \
   gc/stress/gcold/TestGCOldWithSerial.java \
   gc/stress/gcold/TestGCOldWithParallel.java
@@ -560,6 +559,7 @@ tier2 = \
 tier3 = \
   :hotspot_tier3_runtime \
   :tier3_compiler \
+  :tier3_gc_gcold \
   :tier3_gc_shenandoah
 
 # Everything that is not in other tiers, but not apps

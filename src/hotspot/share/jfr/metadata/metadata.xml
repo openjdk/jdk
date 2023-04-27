@@ -1172,6 +1172,25 @@
     <Field type="ulong" name="totalFinalizersRun" label="Finalizers Run" description="Total number of finalizers run since JVM start" />
   </Event>
 
+  <Event name="JavaAgent" category="Java Virtual Machine, Diagnostics" label="Java Agent" description="A Java programming language agent making use of the java.lang.instrument package for instrumenting programs running on the JVM"
+    thread="false" startTime="false" period="endChunk" stackTrace="false">
+    <Field type="string" name="name" label="Name" />
+    <Field type="string" name="options" label="Options" />
+    <Field type="boolean" name="dynamic" label="Dynamic" description="If the agent attached to the JVM dynamically during runtime, i.e. not at startup" />
+    <Field type="Ticks" name="initializationTime" label="Initialization Time" description="The time the JVM initialized the agent" />
+    <Field type="Tickspan" name="initializationDuration" label="Initialization Duration" description="The duration of executing the initialization method, either premain or agentmain" />
+  </Event>
+
+  <Event name="NativeAgent" category="Java Virtual Machine, Diagnostics" label="Native Agent" description="A native programming language agent making use of the JVMTI interface used by development, profiling and monitoring tools"
+    thread="false" startTime="false" period="endChunk" stackTrace="false">
+    <Field type="string" name="name" label="Name" />
+    <Field type="string" name="options" label="Options" />
+    <Field type="boolean" name="dynamic" label="Dynamic" description="If the library attached to the JVM dynamically during runtime, i.e. not at startup" />
+    <Field type="Ticks" name="initializationTime" label="Initialization Time" description="The time the JVM initialized the agent" />
+    <Field type="Tickspan" name="initializationDuration" label="Initialization Duration" description="The duration of executing the JVMTI VMInit event callback. If no VMInit callback is specified, the duration is 0. For a dynamically loaded agent, it is the duration of executing the call to Agent_OnAttach." />
+    <Field type="string" name="path" label="Path" description="The path of the library" />
+  </Event>
+
   <Type name="DeoptimizationReason" label="Deoptimization Reason">
     <Field type="string" name="reason" label="Reason" />
   </Type>

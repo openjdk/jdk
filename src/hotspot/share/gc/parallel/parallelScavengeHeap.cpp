@@ -69,21 +69,17 @@ jint ParallelScavengeHeap::initialize() {
   trace_actual_reserved_page_size(reserved_heap_size, heap_rs);
 
   initialize_reserved_region(heap_rs);
-
-  PSCardTable* card_table = new PSCardTable(heap_rs.region());
-  card_table->initialize();
-  CardTableBarrierSet* const barrier_set = new CardTableBarrierSet(card_table);
-  barrier_set->initialize();
-  BarrierSet::set_barrier_set(barrier_set);
-
-  // Make up the generations
-  assert(MinOldSize <= OldSize && OldSize <= MaxOldSize, "Parameter check");
-  assert(MinNewSize <= NewSize && NewSize <= MaxNewSize, "Parameter check");
-
   // Layout the reserved space for the generations.
   ReservedSpace old_rs   = heap_rs.first_part(MaxOldSize);
   ReservedSpace young_rs = heap_rs.last_part(MaxOldSize);
   assert(young_rs.size() == MaxNewSize, "Didn't reserve all of the heap");
+
+  PSCardTable* card_table = new PSCardTable(heap_rs.region());
+  card_table->initialize(old_rs.base(), young_rs.base());
+
+  CardTableBarrierSet* const barrier_set = new CardTableBarrierSet(card_table);
+  barrier_set->initialize();
+  BarrierSet::set_barrier_set(barrier_set);
 
   // Set up WorkerThreads
   _workers.initialize_workers();
@@ -549,8 +545,26 @@ void ParallelScavengeHeap::collect(GCCause::Cause cause) {
     return;
   }
 
-  VM_ParallelGCSystemGC op(gc_count, full_gc_count, cause);
-  VMThread::execute(&op);
+  while (true) {
+    VM_ParallelGCSystemGC op(gc_count, full_gc_count, cause);
+    VMThread::execute(&op);
+
+    if (!GCCause::is_explicit_full_gc(cause) || op.full_gc_succeeded()) {
+      return;
+    }
+
+    {
+      MutexLocker ml(Heap_lock);
+      if (full_gc_count != total_full_collections()) {
+        return;
+      }
+    }
+
+    if (GCLocker::is_active_and_needs_gc()) {
+      // If GCLocker is active, wait until clear before retrying.
+      GCLocker::stall_until_clear();
+    }
+  }
 }
 
 void ParallelScavengeHeap::object_iterate(ObjectClosure* cl) {

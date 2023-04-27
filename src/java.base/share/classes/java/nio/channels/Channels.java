@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -490,7 +490,7 @@ public final class Channels {
      * behaves in exactly the same way as the expression
      *
      * <pre> {@code
-     *     Channels.newReader(ch, Charset.forName(csName).newDecoder(), -1)
+     *     Channels.newReader(ch, charset.newDecoder(), -1)
      * } </pre>
      *
      * <p> The reader's default action for malformed-input and unmappable-character
@@ -590,7 +590,7 @@ public final class Channels {
      * behaves in exactly the same way as the expression
      *
      * <pre> {@code
-     *     Channels.newWriter(ch, Charset.forName(csName).newEncoder(), -1)
+     *     Channels.newWriter(ch, charset.newEncoder(), -1)
      * } </pre>
      *
      * <p> The writer's default action for malformed-input and unmappable-character
