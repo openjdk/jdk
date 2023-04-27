@@ -31,13 +31,32 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MainMethodFinder {
+    private static final boolean IS_PREVIEW = getIsPreview();
+
     /**
      * { @return true if vm is in preview mode }
      */
     public static boolean isPreview() {
-        String[] args = VM.getRuntimeArguments();
-        return args != null && List.of(args).contains("--enable-preview");
+        return IS_PREVIEW;
     }
+
+    /*
+     * TODO: not perfect, if user adds "--enable-preview" after class argument then will get false positive.
+     */
+    private static boolean getIsPreview() {
+        String[] args = VM.getRuntimeArguments();
+
+        if (args != null) {
+            for (String arg : args) {
+                if ("--enable-preview".equals(arg)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
 
     private static boolean isPrivate(Method method) {
         return method != null && Modifier.isPrivate(method.getModifiers());
@@ -67,8 +86,10 @@ public class MainMethodFinder {
     private static void gatherMains(Class<?> declc, Class<?> refc, List<Method> mains) {
         if (refc != null && refc != Object.class) {
             gatherMains(declc, refc.getSuperclass(), mains);
+
             for (Method method : refc.getDeclaredMethods()) {
                 int argc = method.getParameterCount();
+
                 // Must be named "main", public|protected|package-private and either
                 // no arguments or one string array argument.
                 if ("main".equals(method.getName()) &&
@@ -101,32 +122,40 @@ public class MainMethodFinder {
         int bMods = b.getModifiers();
         boolean aIsStatic = Modifier.isStatic(aMods);
         boolean bIsStatic = Modifier.isStatic(bMods);
+
         if (aIsStatic && !bIsStatic) {
             return -1;
         } else if (bIsStatic && !aIsStatic) {
             return 1;
         }
+
         boolean aIsPublic = Modifier.isPublic(aMods);
         boolean bIsPublic = Modifier.isPublic(bMods);
+
         if (aIsPublic && !bIsPublic) {
             return -1;
         } else if (bIsPublic && !aIsPublic) {
             return 1;
         }
+
         int aCount = a.getParameterCount();
         int bCount = b.getParameterCount();
+
         if (aCount > bCount) {
             return -1;
         } else if (bCount > aCount) {
             return 1;
         }
+
         Class<?> aClass = a.getDeclaringClass();
         Class<?> bClass = b.getDeclaringClass();
+
         if (bClass.isAssignableFrom(aClass)) {
             return -1;
         } else if (bClass.isAssignableFrom(aClass)) {
             return 1;
         }
+
         return 0;
     }
 
