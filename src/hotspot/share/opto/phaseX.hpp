@@ -238,6 +238,11 @@ public:
     assert(t != NULL, "type must not be null");
     _types.map(n->_idx, t);
   }
+  void    clear_type(const Node* n) {
+    if (n->_idx < _types.Size()) {
+      _types.map(n->_idx, NULL);
+    }
+  }
   // Record an initial type for a node, the node's bottom type.
   void    set_type_bottom(const Node* n) {
     // Use this for initialization when bottom_type() (or better) is not handy.

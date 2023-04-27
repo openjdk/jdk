@@ -868,7 +868,7 @@ bool LibraryCallKit::inline_vector_mem_operation(bool is_store) {
     set_result(box);
   }
 
-  old_map->destruct(&_gvn);
+  destruct_map_clone(old_map);
 
   if (can_access_non_heap) {
     insert_mem_bar(Op_MemBarCPUOrder);
@@ -1006,7 +1006,7 @@ bool LibraryCallKit::inline_vector_gather_scatter(bool is_scatter) {
     set_result(box);
   }
 
-  old_map->destruct(&_gvn);
+  destruct_map_clone(old_map);
 
   C->set_max_vector_size(MAX2(C->max_vector_size(), (uint)(num_elem * type2aelembytes(elem_bt))));
   return true;

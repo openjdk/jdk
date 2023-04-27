@@ -921,7 +921,8 @@ class Compile : public Phase {
   // Parsing, optimization
   PhaseGVN*         initial_gvn()               { return _initial_gvn; }
   Unique_Node_List* for_igvn()                  { return _for_igvn; }
-  inline void       record_for_igvn(Node* n);   // Body is after class Unique_Node_List.
+  inline void       record_for_igvn(Node* n);   // Body is after class Unique_Node_List in node.hpp.
+  inline void       remove_for_igvn(Node* n);   // Body is after class Unique_Node_List in node.hpp.
   void          set_initial_gvn(PhaseGVN *gvn)           { _initial_gvn = gvn; }
   void          set_for_igvn(Unique_Node_List *for_igvn) { _for_igvn = for_igvn; }
 

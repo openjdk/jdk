@@ -1647,6 +1647,11 @@ inline void Compile::record_for_igvn(Node* n) {
   _for_igvn->push(n);
 }
 
+// Inline definition of Compile::remove_for_igvn must be deferred to this point.
+inline void Compile::remove_for_igvn(Node* n) {
+  _for_igvn->remove(n);
+}
+
 //------------------------------Node_Stack-------------------------------------
 class Node_Stack {
   friend class VMStructs;
