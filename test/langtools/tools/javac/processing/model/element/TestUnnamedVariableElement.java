@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8302344
+ * @bug 8302344 8307007
  * @summary Compiler Implementation for Unnamed patterns and variables
  * @library /tools/javac/lib
  * @modules jdk.compiler
