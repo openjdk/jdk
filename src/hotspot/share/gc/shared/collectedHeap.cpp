@@ -638,10 +638,6 @@ void CollectedHeap::reset_promotion_should_fail() {
 
 #endif  // #ifndef PRODUCT
 
-bool CollectedHeap::is_archived_object(oop object) const {
-  return false;
-}
-
 // It's the caller's responsibility to ensure glitch-freedom
 // (if required).
 void CollectedHeap::update_capacity_and_used_at_gc() {
