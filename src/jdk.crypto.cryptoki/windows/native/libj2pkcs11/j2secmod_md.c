@@ -34,7 +34,7 @@
 extern void p11ThrowNullPointerException(JNIEnv *env, const char *message);
 extern void p11ThrowIOException(JNIEnv *env, const char *message);
 
-void *findFunction(JNIEnv *env, jlong jHandle, const char *functionName) {
+void *p11FindFunction(JNIEnv *env, jlong jHandle, const char *functionName) {
     HINSTANCE hModule = (HINSTANCE)jHandle;
     void *fAddress = GetProcAddress(hModule, functionName);
     if (fAddress == NULL) {

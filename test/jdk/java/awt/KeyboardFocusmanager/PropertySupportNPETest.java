@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,21 +21,27 @@
  * questions.
  */
 
-#include <stdarg.h>
+/*
+  @test
+  @bug 4458016
+  @summary KeyboardFocusManager.get[Property|Vetoable]ChangeListeners throw NPE
+  @key headful
+  @run main PropertySupportNPETest
+*/
 
-#ifdef _WIN64
-#define EXPORT __declspec(dllexport)
-#else
-#define EXPORT
-#endif
+import java.awt.BorderLayout;
+import java.awt.EventQueue;
+import java.awt.KeyboardFocusManager;
 
-EXPORT void vaList(int argCount, va_list list) {
-    //...
-}
-
-EXPORT void ellipsis(int argCount, ...) {
-    va_list list;
-    va_start(list, argCount);
-    vaList(argCount, list);
-    va_end(list);
-}
+public class PropertySupportNPETest {
+     public static void main(String[] args) throws Exception {
+         EventQueue.invokeAndWait(() -> {
+             KeyboardFocusManager kfm =
+                     KeyboardFocusManager.getCurrentKeyboardFocusManager();
+             kfm.getVetoableChangeListeners();
+             kfm.getVetoableChangeListeners("");
+             kfm.getPropertyChangeListeners();
+             kfm.getPropertyChangeListeners("");
+         });
+     }
+ }
