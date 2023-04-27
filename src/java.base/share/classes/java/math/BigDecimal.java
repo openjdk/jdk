@@ -3774,8 +3774,8 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         if (intCompact == 0) {
             return 0.0f;
         }
-        BigInteger d = unscaledValue().abs();
-        long qb = d.bitLength() - (long) Math.ceil(scale * L);
+        BigInteger w = unscaledValue().abs();
+        long qb = w.bitLength() - (long) Math.ceil(scale * L);
         if (qb < Q_MIN_F - 2) {  // qb < -151
             return signum() * 0.0f;
         }
@@ -3783,19 +3783,19 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             return signum() * Float.POSITIVE_INFINITY;
         }
         if (scale < 0) {
-            return signum() * d.multiply(bigTenToThe(-scale)).floatValue();
+            return signum() * w.multiply(bigTenToThe(-scale)).floatValue();
         }
         if (scale == 0) {
-            return signum() * d.floatValue();
+            return signum() * w.floatValue();
         }
         int ql = (int) qb - (P_F + 3);
         BigInteger pow10 = bigTenToThe(scale);
         BigInteger m, n;
         if (ql <= 0) {
-            m = d.shiftLeft(-ql);
+            m = w.shiftLeft(-ql);
             n = pow10;
         } else {
-            m = d;
+            m = w;
             n = pow10.shiftLeft(ql);
         }
         BigInteger[] qr = m.divideAndRemainder(n);
@@ -3884,22 +3884,22 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
 
         /*
          * Let
-         *      d = |unscaledValue()|
+         *      w = |unscaledValue()|
          *      s = scale
-         *      bl = d.bitLength()
+         *      bl = w.bitLength()
          *      P = Double.PRECISION  // 53
          *      Q_MIN = Double.MIN_EXPONENT - (P - 1)  // -1_074
          *      Q_MAX = Double.MAX_EXPONENT - (P - 1)  // 971
          * Thus
-         *      |this| = d 10^{-s}
+         *      |this| = w 10^{-s}
          *      Double.MIN_VALUE = 2^Q_MIN
          *      Double.MAX_VALUE = (2^P - 1) 2^Q_MAX
-         * Here d > 0, so 2^{bl-1} <= d < 2^bl, hence
-         *      bl = floor(log_2(d)) + 1
+         * Here w > 0, so 2^{bl-1} <= w < 2^bl, hence
+         *      bl = floor(log_2(w)) + 1
          *
          * To determine the return value, it helps to define real beta
          * and integer q meeting
-         *      d 10^{-s} = beta 2^q such that 2^{P+1} <= beta < 2^{P+2}
+         *      w 10^{-s} = beta 2^q such that 2^{P+1} <= beta < 2^{P+2}
          * Note that floor(log_2(beta)) = P + 1.
          * The reason for having beta meet these inequalities rather than the
          * more "natural" 2^{P-1} <= beta < 2^P will become clearer below.
@@ -3912,12 +3912,12 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
          * to a finite, non-zero double.
          *
          * To this end, let l = log_2(10). Then
-         *      log_2(d) - s l = log_2(d 10^{-s}) = log_2(beta) + q
+         *      log_2(w) - s l = log_2(w 10^{-s}) = log_2(beta) + q
          * Mathematically, for any real x, y:
          *      floor(x) + floor(y) <= floor(x + y) <= floor(x) + floor(y) + 1
          *      floor(-x) = -ceil(x)
          * Therefore, remembering that
-         *      floor(log_2(d)) = bl - 1 and floor(log_2(beta)) = P + 1
+         *      floor(log_2(w)) = bl - 1 and floor(log_2(beta)) = P + 1
          * the above leads to
          *      bl - ceil(s l) - P - 2 <= q <= bl - ceil(s l) - P - 1
          *
@@ -3965,8 +3965,8 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
          *      (long) ceil(s * L) = ceil(s * L)
          * since all integers <= 2^P are exact doubles.
          */
-        BigInteger d = unscaledValue().abs();
-        long qb = d.bitLength() - (long) Math.ceil(scale * L);
+        BigInteger w = unscaledValue().abs();
+        long qb = w.bitLength() - (long) Math.ceil(scale * L);
         if (qb < Q_MIN_D - 2) {  // qb < -1_076
             return signum() * 0.0;
         }
@@ -3982,20 +3982,20 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
          */
         if (scale < 0) {
             /*
-             * Here -309 < s < 0, so d 10^{-s} is an integer: delegate to
+             * Here -309 < s < 0, so w 10^{-s} is an integer: delegate to
              * BigInteger.doubleValue() without further ado.
              * Also, |this| < 10^309, so the integers involved are manageable.
              */
-            return signum() * d.multiply(bigTenToThe(-scale)).doubleValue();
+            return signum() * w.multiply(bigTenToThe(-scale)).doubleValue();
         }
         if (scale == 0) {
-            return signum() * d.doubleValue();
+            return signum() * w.doubleValue();
         }
 
         /*
          * This last case has s > 0 and sometimes unmanageable large integers.
          * It is expected that these computations might exhaust memory or
-         * consume an unreasonable amount of cpu when both d and s are huge.
+         * consume an unreasonable amount of cpu when both w and s are huge.
          *
          * Assume a number eta >= 2^{P+1} and split it into i = floor(eta)
          * and f = eta - i. Thus i >= 2^{P+1} and 0 <= f < 1.
@@ -4012,9 +4012,9 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
          *      roundTiesToEven(eta) = roundTiesToEven(j)
          *
          * To apply the above, define
-         *      eta = (d/10^s) 2^{-ql}
+         *      eta = (w/10^s) 2^{-ql}
          * which meets
-         *      eta = (d/10^s) 2^{-q} 2^{q-ql} = beta 2^{q-ql} = beta 2^dq
+         *      eta = (w/10^s) 2^{-q} 2^{q-ql} = beta 2^{q-ql} = beta 2^dq
          * where dq = q - ql. Therefore, since ql <= q <= qh = ql + 3
          *      2^{P+1} <= eta < 2^{P+2}    iff q = ql
          *      2^{P+2} <= eta < 2^{P+3}    iff q = ql + 1
@@ -4028,7 +4028,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
          *      2^{P+4} <= i < 2^{P+5}      iff q = ql + 3
          * This shows dq = bitLength(i) - (P + 2).
          *
-         * Let integer m = d 2^{-ql} if ql <= 0, or m = d if ql > 0 and
+         * Let integer m = w 2^{-ql} if ql <= 0, or m = w if ql > 0 and
          * let integer n = 10^s if ql <= 0, or n = 10^s 2^ql if ql > 0.
          * It follows that eta = m/n, i = m // n, (// is integer division)
          * and f = (m \\ n) / n (\\ is binary "mod" (remainder)).
@@ -4060,10 +4060,10 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         BigInteger pow10 = bigTenToThe(scale);
         BigInteger m, n;
         if (ql <= 0) {
-            m = d.shiftLeft(-ql);
+            m = w.shiftLeft(-ql);
             n = pow10;
         } else {
-            m = d;
+            m = w;
             n = pow10.shiftLeft(ql);
         }
 
