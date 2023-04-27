@@ -1886,18 +1886,17 @@ public final class System {
     }
 
     /**
-     * Initiates the <a href="Runtime.html#shutdown">shutdown sequence</a> of the
-     * Java Virtual Machine. This method always blocks indefinitely. The argument
-     * serves as a status code; by convention, a nonzero status code indicates
-     * abnormal termination.
-     * <p>
-     * This method calls the {@code exit} method in class {@code Runtime}. This
-     * method never returns normally.
+     * Initiates the <a href="#shutdown">shutdown sequence</a> of the Java Virtual Machine.
+     * If a security manager is present and its {@link SecurityManager#checkExit checkExit}
+     * method disallows exiting with the specified status, throws {@link SecurityException}.
+     * Otherwise, this method blocks indefinitely; it neither returns nor throws an exception
+     * (that is, it does not complete either normally or abruptly). The argument serves as a
+     * status code. By convention, a nonzero status code indicates abnormal termination.
      * <p>
      * The call {@code System.exit(n)} is effectively equivalent to the call:
-     * <blockquote><pre>
-     * Runtime.getRuntime().exit(n)
-     * </pre></blockquote>
+     * {@snippet :
+     *     Runtime.getRuntime().exit(n)
+     * }
      *
      * @implNote
      * The initiation of the shutdown sequence is logged by {@link Runtime#exit(int)}.

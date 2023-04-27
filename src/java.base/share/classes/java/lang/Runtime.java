@@ -141,18 +141,19 @@ public class Runtime {
 
     /**
      * Initiates the <a href="#shutdown">shutdown sequence</a> of the Java Virtual Machine.
-     * This method blocks indefinitely; it never returns or throws an exception (that is, it
-     * does not complete either normally or abruptly). The argument serves as a status code;
-     * by convention, a nonzero status code indicates abnormal termination.
+     * If a security manager is present and its {@link SecurityManager#checkExit checkExit}
+     * method disallows exiting with the specified status, throws {@link SecurityException}.
+     * Otherwise, this method blocks indefinitely; it neither returns nor throws an exception
+     * (that is, it does not complete either normally or abruptly). The argument serves as a
+     * status code. By convention, a nonzero status code indicates abnormal termination.
      *
-     * <p> Invocations of this method are serialized such that only one
-     * invocation will actually proceed with the shutdown sequence and
-     * terminate the VM with the given status code. All other invocations
-     * simply block indefinitely.
+     * <p> Successful invocations of this method are serialized such that only one invocation
+     * will proceed with the shutdown sequence and terminate the VM with the given status code.
+     * All other invocations will perform no action and block indefinitely.
      *
-     * <p> Because this method always blocks indefinitely, if it is invoked from
-     * a shutdown hook, it will prevent that shutdown hook from terminating.
-     * Consequently, this will prevent the shutdown sequence from finishing.
+     * <p> Because a successful invocation of this method blocks indefinitely, if it is invoked
+     * from a shutdown hook, it will prevent that shutdown hook from terminating. Consequently,
+     * this will prevent the shutdown sequence from finishing.
      *
      * <p> The {@link System#exit(int) System.exit} method is the
      * conventional and convenient means of invoking this method.
@@ -280,10 +281,13 @@ public class Runtime {
     }
 
     /**
-     * Immediately <a href="#termination">terminates</a> the Java Virtual Machine. Termination
-     * is unconditional and immediate. This method does not initiate the
-     * <a href="#shutdown">shutdown sequence</a>, nor does it wait for the shutdown sequence
-     * to finish if it is already in progress. This method never returns normally.
+     * Immediately <a href="#termination">terminates</a> the Java Virtual Machine.
+     * If a security manager is present and its {@link SecurityManager#checkExit checkExit}
+     * method disallows exiting with the specified status, throws {@link SecurityException}.
+     * Otherwise, termination of the Java Virtual Machine is unconditional and immediate.
+     * This method does not initiate the <a href="#shutdown">shutdown sequence</a>, nor does
+     * it wait for the shutdown sequence to finish if it is already in progress. An
+     * invocation of this method never returns normally.
      *
      * @apiNote
      * This method should be used with extreme caution. Using it may circumvent or disrupt
