@@ -187,7 +187,7 @@ public class Util {
     public static List<ClassEntry> entryList(List<? extends ClassDesc> list) {
         var result = new Object[list.size()]; // null check
         for (int i = 0; i < result.length; i++) {
-            result[i] = TemporaryConstantPool.INSTANCE.classEntry(TemporaryConstantPool.INSTANCE.utf8Entry(toInternalName(list.get(i))));
+            result[i] = TemporaryConstantPool.INSTANCE.classEntry(list.get(i));
         }
         return SharedSecrets.getJavaUtilCollectionAccess().listFromTrustedArrayNullsAllowed(result);
     }
