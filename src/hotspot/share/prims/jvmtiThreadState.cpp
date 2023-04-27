@@ -519,30 +519,6 @@ void JvmtiVTMSTransitionDisabler::set_is_in_VTMS_transition(JavaThread* thread, 
 }
 
 void
-JvmtiVTMSTransitionDisabler::VTMS_vthread_mount(jobject vthread, bool hide) {
-  if (hide) {
-    VTMS_mount_begin(vthread);
-  } else {
-    VTMS_mount_end(vthread);
-    if (JvmtiExport::should_post_vthread_mount()) {
-      JvmtiExport::post_vthread_mount(vthread);
-    }
-  }
-}
-
-void
-JvmtiVTMSTransitionDisabler::VTMS_vthread_unmount(jobject vthread, bool hide) {
-  if (hide) {
-    if (JvmtiExport::should_post_vthread_unmount()) {
-      JvmtiExport::post_vthread_unmount(vthread);
-    }
-    VTMS_unmount_begin(vthread);
-  } else {
-    VTMS_unmount_end(vthread);
-  }
-}
-
-void
 JvmtiVTMSTransitionDisabler::VTMS_vthread_start(jobject vthread) {
   VTMS_mount_end(vthread);
   JavaThread* thread = JavaThread::current();
@@ -596,6 +572,30 @@ JvmtiVTMSTransitionDisabler::VTMS_vthread_end(jobject vthread) {
     java_lang_Thread::set_jvmti_thread_state(vt, nullptr);
   }
   VTMS_unmount_begin(vthread);
+}
+
+void
+JvmtiVTMSTransitionDisabler::VTMS_vthread_mount(jobject vthread, bool hide) {
+  if (hide) {
+    VTMS_mount_begin(vthread);
+  } else {
+    VTMS_mount_end(vthread);
+    if (JvmtiExport::should_post_vthread_mount()) {
+      JvmtiExport::post_vthread_mount(vthread);
+    }
+  }
+}
+
+void
+JvmtiVTMSTransitionDisabler::VTMS_vthread_unmount(jobject vthread, bool hide) {
+  if (hide) {
+    if (JvmtiExport::should_post_vthread_unmount()) {
+      JvmtiExport::post_vthread_unmount(vthread);
+    }
+    VTMS_unmount_begin(vthread);
+  } else {
+    VTMS_unmount_end(vthread);
+  }
 }
 
 void

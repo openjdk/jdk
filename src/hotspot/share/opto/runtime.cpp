@@ -157,10 +157,10 @@ bool OptoRuntime::generate(ciEnv* env) {
   gen(env, _multianewarrayN_Java           , multianewarrayN_Type         , multianewarrayN_C               ,    0 , true, false);
 #if INCLUDE_JVMTI
   gen(env, _notify_jvmti_object_alloc      , notify_jvmti_object_alloc_Type, SharedRuntime::notify_jvmti_object_alloc, 0, true, false);
-  gen(env, _notify_jvmti_vthread_start     , notify_jvmti_vthread_Type, SharedRuntime::notify_jvmti_vthread_start,   0, true, false);
-  gen(env, _notify_jvmti_vthread_end       , notify_jvmti_vthread_Type, SharedRuntime::notify_jvmti_vthread_end,     0, true, false);
-  gen(env, _notify_jvmti_vthread_mount     , notify_jvmti_vthread_Type, SharedRuntime::notify_jvmti_vthread_mount,   0, true, false);
-  gen(env, _notify_jvmti_vthread_unmount   , notify_jvmti_vthread_Type, SharedRuntime::notify_jvmti_vthread_unmount, 0, true, false);
+  gen(env, _notify_jvmti_vthread_start     , notify_jvmti_vthread_Type    , SharedRuntime::notify_jvmti_vthread_start, 0, true, false);
+  gen(env, _notify_jvmti_vthread_end       , notify_jvmti_vthread_Type    , SharedRuntime::notify_jvmti_vthread_end,   0, true, false);
+  gen(env, _notify_jvmti_vthread_mount     , notify_jvmti_vthread_Type    , SharedRuntime::notify_jvmti_vthread_mount, 0, true, false);
+  gen(env, _notify_jvmti_vthread_unmount   , notify_jvmti_vthread_Type    , SharedRuntime::notify_jvmti_vthread_unmount, 0, true, false);
 #endif
   gen(env, _complete_monitor_locking_Java  , complete_monitor_enter_Type  , SharedRuntime::complete_monitor_locking_C, 0, false, false);
   gen(env, _monitor_notify_Java            , monitor_notify_Type          , monitor_notify_C                ,    0 , false, false);
