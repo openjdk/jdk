@@ -86,6 +86,7 @@ PLATFORM_SETUP_OPENJDK_BUILD_AND_TARGET
 
 # Continue setting up basic stuff. Most remaining code require fundamental tools.
 BASIC_SETUP_PATHS
+BASIC_SETUP_TOOLS
 BASIC_SETUP_BUILD_ENV
 
 # Check if it's a pure open build or if custom sources are to be used.
@@ -253,6 +254,7 @@ HOTSPOT_SETUP_MISC
 ###############################################################################
 
 LIB_TESTS_ENABLE_DISABLE_FAILURE_HANDLER
+LIB_TESTS_ENABLE_DISABLE_JTREG_TEST_THREAD_FACTORY
 
 JDKOPT_ENABLE_DISABLE_GENERATE_CLASSLIST
 JDKOPT_EXCLUDE_TRANSLATIONS

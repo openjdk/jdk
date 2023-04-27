@@ -487,7 +487,7 @@ FreezeBase::FreezeBase(JavaThread* thread, ContinuationWrapper& cont, intptr_t* 
 #if !defined(PPC64) || defined(ZERO)
   static const int doYield_stub_frame_size = frame::metadata_words;
 #else
-  static const int doYield_stub_frame_size = frame::abi_reg_args_size >> LogBytesPerWord;
+  static const int doYield_stub_frame_size = frame::native_abi_reg_args_size >> LogBytesPerWord;
 #endif
   assert(SharedRuntime::cont_doYield_stub()->frame_size() == doYield_stub_frame_size, "");
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1329,7 +1329,6 @@ class G1ReclaimEmptyRegionsTask : public WorkerTask {
     size_t _freed_bytes;
     FreeRegionList* _local_cleanup_list;
     uint _old_regions_removed;
-    uint _archive_regions_removed;
     uint _humongous_regions_removed;
 
   public:
@@ -1339,16 +1338,14 @@ class G1ReclaimEmptyRegionsTask : public WorkerTask {
       _freed_bytes(0),
       _local_cleanup_list(local_cleanup_list),
       _old_regions_removed(0),
-      _archive_regions_removed(0),
       _humongous_regions_removed(0) { }
 
     size_t freed_bytes() { return _freed_bytes; }
     const uint old_regions_removed() { return _old_regions_removed; }
-    const uint archive_regions_removed() { return _archive_regions_removed; }
     const uint humongous_regions_removed() { return _humongous_regions_removed; }
 
     bool do_heap_region(HeapRegion *hr) {
-      if (hr->used() > 0 && hr->live_bytes() == 0 && !hr->is_young() && !hr->is_closed_archive()) {
+      if (hr->used() > 0 && hr->live_bytes() == 0 && !hr->is_young()) {
         log_trace(gc)("Reclaimed empty old gen region %u (%s) bot " PTR_FORMAT,
                       hr->hrm_index(), hr->get_short_type_str(), p2i(hr->bottom()));
         _freed_bytes += hr->used();
@@ -1356,9 +1353,6 @@ class G1ReclaimEmptyRegionsTask : public WorkerTask {
         if (hr->is_humongous()) {
           _humongous_regions_removed++;
           _g1h->free_humongous_region(hr, _local_cleanup_list);
-        } else if (hr->is_open_archive()) {
-          _archive_regions_removed++;
-          _g1h->free_region(hr, _local_cleanup_list);
         } else {
           _old_regions_removed++;
           _g1h->free_region(hr, _local_cleanup_list);
@@ -1389,9 +1383,8 @@ public:
     _g1h->heap_region_par_iterate_from_worker_offset(&cl, &_hrclaimer, worker_id);
     assert(cl.is_complete(), "Shouldn't have aborted!");
 
-    // Now update the old/archive/humongous region sets
+    // Now update the old/humongous region sets
     _g1h->remove_from_old_gen_sets(cl.old_regions_removed(),
-                                   cl.archive_regions_removed(),
                                    cl.humongous_regions_removed());
     {
       MutexLocker x(G1RareEvent_lock, Mutex::_no_safepoint_check_flag);
@@ -1890,7 +1883,6 @@ HeapRegion* G1ConcurrentMark::claim_region(uint worker_id) {
       assert(_finger >= end, "the finger should have moved forward");
 
       if (limit > bottom) {
-        assert(!curr_region->is_closed_archive(), "CA regions should be skipped");
         return curr_region;
       } else {
         assert(limit == bottom,

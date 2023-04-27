@@ -182,9 +182,8 @@ private:
 
   static size_t _humongous_object_threshold_in_words;
 
-  // These sets keep track of old, archive and humongous regions respectively.
+  // These sets keep track of old and humongous regions respectively.
   HeapRegionSet _old_set;
-  HeapRegionSet _archive_set;
   HeapRegionSet _humongous_set;
 
   // Young gen memory statistics before GC.
@@ -283,6 +282,9 @@ private:
   bool try_collect_concurrently(GCCause::Cause cause,
                                 uint gc_counter,
                                 uint old_marking_started_before);
+
+  bool try_collect_fullgc(GCCause::Cause cause,
+                          const G1GCCounters& counters_before);
 
   // indicates whether we are in young or mixed GC mode
   G1CollectorState _collector_state;
@@ -477,16 +479,13 @@ private:
   void retire_gc_alloc_region(HeapRegion* alloc_region,
                               size_t allocated_bytes, G1HeapRegionAttr dest);
 
-  // - if explicit_gc is true, the GC is for a System.gc() etc,
-  //   otherwise it's for a failed allocation.
   // - if clear_all_soft_refs is true, all soft references should be
   //   cleared during the GC.
   // - if do_maximal_compaction is true, full gc will do a maximally
   //   compacting collection, leaving no dead wood.
   // - it returns false if it is unable to do the collection due to the
   //   GC locker being active, true otherwise.
-  bool do_full_collection(bool explicit_gc,
-                          bool clear_all_soft_refs,
+  bool do_full_collection(bool clear_all_soft_refs,
                           bool do_maximal_compaction);
 
   // Callback from VM_G1CollectFull operation, or collect_as_vm_thread.
@@ -503,7 +502,7 @@ private:
   // Internal helpers used during full GC to split it up to
   // increase readability.
   bool abort_concurrent_cycle();
-  void verify_before_full_collection(bool explicit_gc);
+  void verify_before_full_collection();
   void prepare_heap_for_full_collection();
   void prepare_for_mutator_after_full_collection();
   void abort_refinement();
@@ -702,31 +701,30 @@ public:
                              FreeRegionList* free_list);
 
   // Facility for allocating a fixed range within the heap and marking
-  // the containing regions as 'archive'. For use at JVM init time, when the
-  // caller may mmap archived heap data at the specified range(s).
-  // Verify that the MemRegions specified in the argument array are within the
-  // reserved heap.
-  bool check_archive_addresses(MemRegion* range, size_t count);
+  // the containing regions as 'old'. For use at JVM init time, when the
+  // caller may mmap archived heap data at the specified range.
 
-  // Commit the appropriate G1 regions containing the specified MemRegions
-  // and mark them as 'archive' regions. The regions in the array must be
-  // non-overlapping and in order of ascending address.
-  bool alloc_archive_regions(MemRegion* range, size_t count, bool open);
+  // Verify that the range is within the reserved heap.
+  bool check_archive_addresses(MemRegion range);
 
-  // Insert any required filler objects in the G1 regions around the specified
-  // ranges to make the regions parseable. This must be called after
-  // alloc_archive_regions, and after class loading has occurred.
-  void fill_archive_regions(MemRegion* range, size_t count);
+  // Execute func(HeapRegion* r, bool is_last) on every region covered by the
+  // given range.
+  template <typename Func>
+  void iterate_regions_in_range(MemRegion range, const Func& func);
+
+  // Commit the appropriate G1 region(s) containing the specified range
+  // and mark them as 'old' region(s).
+  bool alloc_archive_regions(MemRegion range);
 
   // Populate the G1BlockOffsetTablePart for archived regions with the given
-  // memory ranges.
-  void populate_archive_regions_bot_part(MemRegion* range, size_t count);
+  // memory range.
+  void populate_archive_regions_bot_part(MemRegion range);
 
-  // For each of the specified MemRegions, uncommit the containing G1 regions
+  // For the specified range, uncommit the containing G1 regions
   // which had been allocated by alloc_archive_regions. This should be called
-  // rather than fill_archive_regions at JVM init time if the archive file
-  // mapping failed, with the same non-overlapping and sorted MemRegion array.
-  void dealloc_archive_regions(MemRegion* range, size_t count);
+  // at JVM init time if the archive heap's contents cannot be used (e.g., if
+  // CRC check fails).
+  void dealloc_archive_regions(MemRegion range);
 
 private:
 
@@ -1003,10 +1001,8 @@ public:
   inline void old_set_add(HeapRegion* hr);
   inline void old_set_remove(HeapRegion* hr);
 
-  inline void archive_set_add(HeapRegion* hr);
-
   size_t non_young_capacity_bytes() {
-    return (old_regions_count() + _archive_set.length() + humongous_regions_count()) * HeapRegion::GrainBytes;
+    return (old_regions_count() + humongous_regions_count()) * HeapRegion::GrainBytes;
   }
 
   // Determine whether the given region is one that we are using as an
@@ -1025,7 +1021,6 @@ public:
   void start_concurrent_gc_for_metadata_allocation(GCCause::Cause gc_cause);
 
   void remove_from_old_gen_sets(const uint old_regions_removed,
-                                const uint archive_regions_removed,
                                 const uint humongous_regions_removed);
   void prepend_to_freelist(FreeRegionList* list);
   void decrement_summary_bytes(size_t bytes);
@@ -1215,7 +1210,6 @@ public:
   size_t survivor_regions_used_bytes() const { return _survivor.used_bytes(); }
   uint young_regions_count() const { return _eden.length() + _survivor.length(); }
   uint old_regions_count() const { return _old_set.length(); }
-  uint archive_regions_count() const { return _archive_set.length(); }
   uint humongous_regions_count() const { return _humongous_set.length(); }
 
 #ifdef ASSERT
@@ -1281,8 +1275,6 @@ public:
   bool supports_concurrent_gc_breakpoints() const override;
 
   WorkerThreads* safepoint_workers() override { return _workers; }
-
-  bool is_archived_object(oop object) const override;
 
   // The methods below are here for convenience and dispatch the
   // appropriate method depending on value of the given VerifyOption

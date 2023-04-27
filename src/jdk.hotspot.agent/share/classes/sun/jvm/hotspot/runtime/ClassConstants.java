@@ -118,24 +118,15 @@ public interface ClassConstants
     // invocation counter machinery.  Until it is, we will keep track of methods which
     // cannot be on stack replaced in the access flags.
     public static final long JVM_ACC_NOT_OSR_COMPILABLE     = 0x08000000;
-    public static final long JVM_ACC_HAS_LINE_NUMBER_TABLE  = 0x00100000;
-    public static final long JVM_ACC_HAS_CHECKED_EXCEPTIONS = 0x00400000;
     public static final long JVM_ACC_HAS_JSRS               = 0x00800000;
     // RedefineClasses() has made method obsolete
     public static final long JVM_ACC_IS_OBSOLETE            = 0x00010000;
 
     // Klass* flags
-    // True if this class has miranda methods in it's vtable
-    public static final long JVM_ACC_HAS_MIRANDA_METHODS      = 0x10000000;
-    // True if klass has a vanilla default constructor
-    public static final long JVM_ACC_HAS_VANILLA_CONSTRUCTOR  = 0x20000000;
     // True if klass has a non-empty finalize() method
     public static final long JVM_ACC_HAS_FINALIZER            = 0x40000000;
     // True if klass supports the Clonable interface
     public static final long JVM_ACC_IS_CLONEABLE             = 0x80000000;
-
-    // Method* flags
-    public static final long JVM_ACC_HAS_LOCAL_VARIABLE_TABLE = 0x00200000;
 
     // flags accepted by set_field_flags
     public static final long JVM_ACC_FIELD_FLAGS = 0x00008000 | JVM_ACC_WRITTEN_FLAGS;

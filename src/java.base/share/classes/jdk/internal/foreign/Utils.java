@@ -124,9 +124,10 @@ public final class Utils {
             handle = MethodHandles.filterValue(handle, BOOL_TO_BYTE, BYTE_TO_BOOL);
         } else if (layout instanceof AddressLayout addressLayout) {
             handle = MethodHandles.filterValue(handle,
-                    ADDRESS_TO_LONG,
-                    MethodHandles.insertArguments(LONG_TO_ADDRESS, 1,
-                            pointeeByteSize(addressLayout), pointeeByteAlign(addressLayout)));
+                    MethodHandles.explicitCastArguments(ADDRESS_TO_LONG, MethodType.methodType(baseCarrier, MemorySegment.class)),
+                    MethodHandles.explicitCastArguments(MethodHandles.insertArguments(LONG_TO_ADDRESS, 1,
+                            pointeeByteSize(addressLayout), pointeeByteAlign(addressLayout)),
+                            MethodType.methodType(MemorySegment.class, baseCarrier)));
         }
         return VarHandleCache.put(layout, handle);
     }
