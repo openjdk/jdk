@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,9 +65,9 @@ public class interrupt001a {
     // scaffold objects
     private static volatile ArgumentHandler argumentHandler = null;
 
-    private static interrupt001aThread thread2 = null;
+    private static Thread thread2 = null;
 
-    private static interrupt001aThread thread3 = null;
+    private static Thread thread3 = null;
 
     private static IOPipe pipe;
 
@@ -142,14 +142,15 @@ public class interrupt001a {
         System.exit(exitCode + PASS_BASE);
     }
 
-    private static interrupt001aThread threadStart(String threadName) {
-        interrupt001aThread resultThread = new interrupt001aThread(threadName);
-        synchronized (resultThread.waitnotifyObj) {
+    private static Thread threadStart(String threadName) {
+        interrupt001aThread resultRunnable = new interrupt001aThread(threadName);
+        Thread resultThread = JDIThreadFactory.newThread(resultRunnable, threadName);
+        synchronized (resultRunnable.waitnotifyObj) {
             resultThread.start();
             try {
                 log1("       before:   waitnotifyObj.wait();");
-                while (!resultThread.ready)
-                    resultThread.waitnotifyObj.wait();
+                while (!resultRunnable.ready)
+                    resultRunnable.waitnotifyObj.wait();
                 log1("       after:    waitnotifyObj.wait();");
             } catch (InterruptedException e) {
                 logErr("Unexpected InterruptedException while waiting for start of : " + threadName);
@@ -205,11 +206,13 @@ public class interrupt001a {
     }
 }
 
-class interrupt001aThread extends Thread {
+class interrupt001aThread implements Runnable {
 
     public interrupt001aThread(String threadName) {
-        super(threadName);
+        this.threadName = threadName;
     }
+
+    public String threadName;
 
     public boolean ready;
 
@@ -235,6 +238,6 @@ class interrupt001aThread extends Thread {
     }
 
     void log(String str) {
-        interrupt001a.log2(Thread.currentThread().getName() + " : " + str);
+        interrupt001a.log2(threadName + " : " + str);
     }
 }
