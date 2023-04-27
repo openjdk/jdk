@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3839,16 +3839,32 @@ public class JavacParser implements Parser {
             defs.append(pd);
         }
 
-        boolean checkForImports = true;
-        boolean firstTypeDecl = true;
+        boolean firstTypeDecl = true;   // have we see a class, enum, or interface declaration yet?
         while (token.kind != EOF) {
             if (token.pos <= endPosTable.errorEndPos) {
                 // error recovery
-                skip(checkForImports, false, false, false);
+                skip(firstTypeDecl, false, false, false);
                 if (token.kind == EOF)
                     break;
             }
-            if (checkForImports && mods == null && token.kind == IMPORT) {
+            // JLS 7.3 doesn't allow extra semicolons after package or import declarations,
+            // but here we try to provide a more helpful error message if we encounter any.
+            // Do that by slurping in as many semicolons as possible, and then seeing what
+            // comes after before deciding how best to handle them.
+            ListBuffer<JCTree> semiList = new ListBuffer<>();
+            while (firstTypeDecl && mods == null && token.kind == SEMI) {
+                semiList.append(toP(F.at(token.pos).Skip()));
+                nextToken();
+                if (token.kind == EOF)
+                    break;
+            }
+            if (firstTypeDecl && mods == null && token.kind == IMPORT) {
+                if (!semiList.isEmpty()) {
+                    if (source.compareTo(Source.JDK21) >= 0)
+                        reportSyntaxError(semiList.first().pos, Errors.ExtraneousSemicolon);
+                    else
+                        log.warning(semiList.first().pos, Warnings.ExtraneousSemicolon);
+                }
                 seenImport = true;
                 defs.append(importDeclaration());
             } else {
@@ -3860,6 +3876,12 @@ public class JavacParser implements Parser {
                 if (mods != null || token.kind != SEMI)
                     mods = modifiersOpt(mods);
                 if (firstTypeDecl && token.kind == IDENTIFIER) {
+                    if (!semiList.isEmpty()) {
+                        if (source.compareTo(Source.JDK21) >= 0)
+                            reportSyntaxError(semiList.first().pos, Errors.ExtraneousSemicolon);
+                        else
+                            log.warning(semiList.first().pos, Warnings.ExtraneousSemicolon);
+                    }
                     ModuleKind kind = ModuleKind.STRONG;
                     if (token.name() == names.open) {
                         kind = ModuleKind.OPEN;
@@ -3876,12 +3898,11 @@ public class JavacParser implements Parser {
                         reportSyntaxError(token.pos, Errors.ExpectedModule);
                     }
                 }
+                defs.appendList(semiList.toList());
                 JCTree def = typeDeclaration(mods, docComment);
                 if (def instanceof JCExpressionStatement statement)
                     def = statement.expr;
                 defs.append(def);
-                if (def instanceof JCClassDecl)
-                    checkForImports = false;
                 mods = null;
                 firstTypeDecl = false;
             }
@@ -4303,10 +4324,13 @@ public class JavacParser implements Parser {
         return defs.toList();
     }
 
+    @SuppressWarnings("fallthrough")
     private EnumeratorEstimate estimateEnumeratorOrMember(Name enumName) {
         // if we are seeing a record declaration inside of an enum we want the same error message as expected for a
         // let's say an interface declaration inside an enum
-        if (token.kind == TokenKind.IDENTIFIER && token.name() != enumName &&
+        boolean ident = token.kind == TokenKind.IDENTIFIER ||
+                        token.kind == TokenKind.UNDERSCORE;
+        if (ident && token.name() != enumName &&
                 (!allowRecords || !isRecordStart())) {
             Token next = S.token(1);
             switch (next.kind) {
@@ -4315,12 +4339,11 @@ public class JavacParser implements Parser {
             }
         }
         switch (token.kind) {
-            case IDENTIFIER: case MONKEYS_AT: case LT:
-                if (token.kind == IDENTIFIER) {
-                    if (allowRecords && isRecordStart()) {
-                        return EnumeratorEstimate.MEMBER;
-                    }
+            case IDENTIFIER:
+                if (allowRecords && isRecordStart()) {
+                    return EnumeratorEstimate.MEMBER;
                 }
+            case MONKEYS_AT: case LT: case UNDERSCORE:
                 return EnumeratorEstimate.UNKNOWN;
             default:
                 return EnumeratorEstimate.MEMBER;

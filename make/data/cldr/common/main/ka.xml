@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2022 Unicode, Inc.
+<!-- Copyright © 1991-2023 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -1021,6 +1021,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="ZW">ზიმბაბვე</territory>
 			<territory type="ZZ">უცნობი რეგიონი</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">ინგლისი</subdivision>
+			<subdivision type="gbsct">შოტლანდია</subdivision>
+			<subdivision type="gbwls">უელსი</subdivision>
+		</subdivisions>
 		<variants>
 			<variant type="1901" draft="unconfirmed">ტრადიციული გერმანული ორთოგრაფია</variant>
 			<variant type="1994" draft="unconfirmed">სტანდარტული რეზიანული ორთოგრაფია</variant>
@@ -1256,9 +1261,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern draft="contributed">{1} {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -1266,9 +1277,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateTimeFormat>
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -1787,14 +1804,23 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateTimeFormat>
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="medium">
 						<dateTimeFormat>
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -3688,6 +3714,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="America/Hermosillo">
 				<exemplarCity>ჰერმოსილო</exemplarCity>
+			</zone>
+			<zone type="America/Ciudad_Juarez">
+				<exemplarCity>სიუდად-ხუარესი</exemplarCity>
 			</zone>
 			<zone type="America/Mazatlan">
 				<exemplarCity>მაზატლანი</exemplarCity>
@@ -6665,6 +6694,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<compoundUnitPattern1 count="one">კუბური {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other">კუბური {0}</compoundUnitPattern1>
 			</compoundUnit>
+			<compoundUnit type="times">
+				<compoundUnitPattern>{0}⋅{1}</compoundUnitPattern>
+			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<displayName>ინერციის ძალა</displayName>
 				<unitPattern count="one">{0} ინერციის ძალა</unitPattern>
@@ -6789,6 +6821,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>პრომილე</displayName>
 				<unitPattern count="one">{0} პრომილე</unitPattern>
 				<unitPattern count="other">{0} პრომილე</unitPattern>
+			</unit>
+			<unit type="concentr-permyriad">
+				<displayName>‱</displayName>
+				<unitPattern count="one">{0}‱</unitPattern>
+				<unitPattern count="other">{0}‱</unitPattern>
+			</unit>
+			<unit type="concentr-mole">
+				<displayName>mol</displayName>
+				<unitPattern count="one">{0} mol</unitPattern>
+				<unitPattern count="other">{0} mol</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>ლიტრი კილომეტრზე</displayName>
@@ -7002,6 +7044,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>აშშ თერმი</displayName>
 				<unitPattern count="one">{0} აშშ თერმი</unitPattern>
 				<unitPattern count="other">{0} აშშ თერმი</unitPattern>
+			</unit>
+			<unit type="force-pound-force">
+				<displayName>lbf</displayName>
+				<unitPattern count="one">{0} lbf</unitPattern>
+				<unitPattern count="other">{0} lbf</unitPattern>
+			</unit>
+			<unit type="force-newton">
+				<displayName>N</displayName>
+				<unitPattern count="one">{0} N</unitPattern>
+				<unitPattern count="other">{0} N</unitPattern>
 			</unit>
 			<unit type="force-kilowatt-hour-per-100-kilometer">
 				<displayName>კვტსთ/100კმ</displayName>
@@ -7818,6 +7870,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0}‰</unitPattern>
 				<unitPattern count="other">{0}‰</unitPattern>
 			</unit>
+			<unit type="concentr-permyriad">
+				<unitPattern count="one">{0}‱</unitPattern>
+				<unitPattern count="other">{0}‱</unitPattern>
+			</unit>
+			<unit type="concentr-mole">
+				<unitPattern count="one">{0} mol</unitPattern>
+				<unitPattern count="other">{0} mol</unitPattern>
+			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>ლიტრი/კმ</displayName>
 				<unitPattern count="one">{0} ლ/კმ</unitPattern>
@@ -8030,6 +8090,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>აშშ თერმი</displayName>
 				<unitPattern count="one">{0} აშშ თერმი</unitPattern>
 				<unitPattern count="other">{0} აშშ თერმი</unitPattern>
+			</unit>
+			<unit type="force-pound-force">
+				<unitPattern count="one">{0} lbf</unitPattern>
+				<unitPattern count="other">{0} lbf</unitPattern>
+			</unit>
+			<unit type="force-newton">
+				<unitPattern count="one">{0} N</unitPattern>
+				<unitPattern count="other">{0} N</unitPattern>
 			</unit>
 			<unit type="force-kilowatt-hour-per-100-kilometer">
 				<displayName>კვტსთ/100კმ</displayName>
@@ -8294,6 +8362,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>დალტონი</displayName>
 				<unitPattern count="one">{0} დალტ.</unitPattern>
 				<unitPattern count="other">{0} დალტ.</unitPattern>
+			</unit>
+			<unit type="mass-earth-mass">
+				<unitPattern count="one">{0} M⊕</unitPattern>
+				<unitPattern count="other">{0} M⊕</unitPattern>
+			</unit>
+			<unit type="mass-solar-mass">
+				<unitPattern count="one">{0} M☉</unitPattern>
+				<unitPattern count="other">{0} M☉</unitPattern>
 			</unit>
 			<unit type="mass-grain">
 				<displayName>გრანი</displayName>
@@ -8711,6 +8787,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<compoundUnitPattern1 count="one">{0}³</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other">{0}³</compoundUnitPattern1>
 			</compoundUnit>
+			<compoundUnit type="times">
+				<compoundUnitPattern>{0}⋅{1}</compoundUnitPattern>
+			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<unitPattern count="one">{0} ინ. ძ.</unitPattern>
 				<unitPattern count="other">{0} ინ. ძ.</unitPattern>
@@ -8752,6 +8831,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ფტ²</unitPattern>
 			</unit>
 			<unit type="concentr-item">
+				<displayName>ერთეული</displayName>
 				<unitPattern count="one">{0} ერთე.</unitPattern>
 				<unitPattern count="other">{0} ერთე.</unitPattern>
 			</unit>
@@ -8765,10 +8845,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0}ლ/100კმ</unitPattern>
 				<unitPattern count="other">{0}ლ/100კმ</unitPattern>
 			</unit>
+			<unit type="duration-century">
+				<displayName>ს.</displayName>
+				<unitPattern count="one">{0} ს.</unitPattern>
+				<unitPattern count="other">{0} ს.</unitPattern>
+			</unit>
+			<unit type="duration-decade">
+				<displayName draft="contributed">დეკადა</displayName>
+				<unitPattern count="one">{0} დეკადა</unitPattern>
+				<unitPattern count="other">{0} დეკადა</unitPattern>
+			</unit>
 			<unit type="duration-year">
 				<displayName>წ</displayName>
 				<unitPattern count="one">{0} წ</unitPattern>
 				<unitPattern count="other">{0} წ</unitPattern>
+				<perUnitPattern>{0}/წ</perUnitPattern>
 			</unit>
 			<unit type="duration-quarter">
 				<displayName>კვარტ</displayName>
@@ -8786,33 +8877,49 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>კვრ</displayName>
 				<unitPattern count="one">{0} კვრ</unitPattern>
 				<unitPattern count="other">{0} კვრ</unitPattern>
+				<perUnitPattern>{0}/კვრ</perUnitPattern>
 			</unit>
 			<unit type="duration-day">
 				<displayName>დღე</displayName>
 				<unitPattern count="one">{0} დღე</unitPattern>
 				<unitPattern count="other">{0} დღე</unitPattern>
+				<perUnitPattern>{0}/დღე</perUnitPattern>
 			</unit>
 			<unit type="duration-hour">
 				<displayName>საათი</displayName>
 				<unitPattern count="one">{0}სთ</unitPattern>
 				<unitPattern count="other">{0}სთ</unitPattern>
+				<perUnitPattern>{0}/სთ</perUnitPattern>
 			</unit>
 			<unit type="duration-minute">
 				<displayName>წთ</displayName>
 				<unitPattern count="one">{0}წთ</unitPattern>
 				<unitPattern count="other">{0}წთ</unitPattern>
+				<perUnitPattern>{0}/წთ</perUnitPattern>
 			</unit>
 			<unit type="duration-second">
 				<displayName>წმ</displayName>
 				<unitPattern count="one">{0}წმ</unitPattern>
 				<unitPattern count="other">{0}წმ</unitPattern>
+				<perUnitPattern>{0}/წმ</perUnitPattern>
 			</unit>
 			<unit type="duration-millisecond">
 				<displayName>მწმ</displayName>
 				<unitPattern count="one">{0} მწმ</unitPattern>
 				<unitPattern count="other">{0} მწმ</unitPattern>
 			</unit>
+			<unit type="duration-microsecond">
+				<displayName>მკწმ</displayName>
+				<unitPattern count="one">{0} მკწმ</unitPattern>
+				<unitPattern count="other">{0} მკწმ</unitPattern>
+			</unit>
+			<unit type="duration-nanosecond">
+				<displayName>ნწმ</displayName>
+				<unitPattern count="one">{0} ნწმ</unitPattern>
+				<unitPattern count="other">{0} ნწმ</unitPattern>
+			</unit>
 			<unit type="force-kilowatt-hour-per-100-kilometer">
+				<displayName>კვტსთ/100კმ</displayName>
 				<unitPattern count="one">{0} კვტსთ/100კმ</unitPattern>
 				<unitPattern count="other">{0} კვტსთ/100კმ</unitPattern>
 			</unit>
@@ -8860,6 +8967,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} სწ</unitPattern>
 				<unitPattern count="other">{0} სწ</unitPattern>
 			</unit>
+			<unit type="light-lux">
+				<displayName>ლუქსი</displayName>
+				<unitPattern count="one">{0} ლუქსი</unitPattern>
+				<unitPattern count="other">{0} ლუქსი</unitPattern>
+			</unit>
 			<unit type="mass-kilogram">
 				<displayName>კგ</displayName>
 				<unitPattern count="one">{0}კგ</unitPattern>
@@ -8869,6 +8981,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>გრამი</displayName>
 				<unitPattern count="one">{0}გ</unitPattern>
 				<unitPattern count="other">{0}გ</unitPattern>
+			</unit>
+			<unit type="mass-milligram">
+				<unitPattern count="one">{0}მგ</unitPattern>
+				<unitPattern count="other">{0}მგ</unitPattern>
+			</unit>
+			<unit type="mass-microgram">
+				<displayName>მკგ</displayName>
+				<unitPattern count="one">{0}მკგ</unitPattern>
+				<unitPattern count="other">{0}მკგ</unitPattern>
+			</unit>
+			<unit type="mass-ton">
+				<unitPattern count="one">{0}ტ</unitPattern>
+				<unitPattern count="other">{0}ტ</unitPattern>
 			</unit>
 			<unit type="mass-pound">
 				<unitPattern count="one">{0} ფნტ</unitPattern>
@@ -8967,6 +9092,24 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<listPatternPart type="middle">{0}, {1}</listPatternPart>
 			<listPatternPart type="end">{0} ან {1}</listPatternPart>
 			<listPatternPart type="2">{0} ან {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="or-narrow">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0} ან {1}</listPatternPart>
+			<listPatternPart type="2">{0} ან {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="or-short">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0} ან {1}</listPatternPart>
+			<listPatternPart type="2">{0} ან {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="standard-narrow">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0} და {1}</listPatternPart>
+			<listPatternPart type="2">{0} და {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="standard-short">
 			<listPatternPart type="start">{0}, {1}</listPatternPart>
@@ -9173,5 +9316,168 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	<personNames>
 		<nameOrderLocales order="givenFirst">und ka</nameOrderLocales>
 		<nameOrderLocales order="surnameFirst">ko vi yue zh</nameOrderLocales>
+		<personName order="givenFirst" length="long" usage="referring" formality="informal">
+			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="addressing" formality="formal">
+			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="addressing" formality="informal">
+			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="monogram" formality="formal">
+			<namePattern>{given-monogram}{given2-monogram}{surname-monogram}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="monogram" formality="informal">
+			<namePattern>{given-informal-monogram}{surname-monogram}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="referring" formality="formal">
+			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="referring" formality="informal">
+			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="addressing" formality="formal">
+			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="addressing" formality="informal">
+			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="monogram" formality="formal">
+			<namePattern>{given-monogram}{given2-monogram}{surname-monogram}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="monogram" formality="informal">
+			<namePattern>{given-monogram}{given2-monogram}{surname-monogram}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="referring" formality="formal">
+			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="referring" formality="informal">
+			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="addressing" formality="formal">
+			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="addressing" formality="informal">
+			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="monogram" formality="formal">
+			<namePattern>{given-monogram}{given2-monogram}{surname-monogram}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="monogram" formality="informal">
+			<namePattern>{given-monogram}{given2-monogram}{surname-monogram}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="referring" formality="informal">
+			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="addressing" formality="formal">
+			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="addressing" formality="informal">
+			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram}{given-monogram}{given2-monogram}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="monogram" formality="informal">
+			<namePattern>{surname-monogram}{given-monogram}{given2-monogram}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="referring" formality="formal">
+			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="referring" formality="informal">
+			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="addressing" formality="formal">
+			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="addressing" formality="informal">
+			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram}{given-monogram}{given2-monogram}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="monogram" formality="informal">
+			<namePattern>{surname-monogram}{given-monogram}{given2-monogram}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="referring" formality="formal">
+			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="referring" formality="informal">
+			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="addressing" formality="formal">
+			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="addressing" formality="informal">
+			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram}{given-monogram}{given2-monogram}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="monogram" formality="informal">
+			<namePattern>{surname-monogram}{given-monogram}{given2-monogram}</namePattern>
+		</personName>
+		<personName order="sorting" length="long" usage="referring" formality="informal">
+			<namePattern>{surname} {surname2}, {title} {given} {given2} {credentials}</namePattern>
+		</personName>
+		<personName order="sorting" length="medium" usage="referring" formality="formal">
+			<namePattern>{surname} {surname2}, {title} {given} {given2} {credentials}</namePattern>
+		</personName>
+		<personName order="sorting" length="medium" usage="referring" formality="informal">
+			<namePattern>{surname} {surname2}, {title} {given} {given2} {credentials}</namePattern>
+		</personName>
+		<personName order="sorting" length="short" usage="referring" formality="formal">
+			<namePattern>{surname} {surname2}, {title} {given} {given2} {credentials}</namePattern>
+		</personName>
+		<personName order="sorting" length="short" usage="referring" formality="informal">
+			<namePattern>{surname} {surname2}, {title} {given} {given2} {credentials}</namePattern>
+		</personName>
+		<sampleName item="nativeG">
+			<nameField type="given">ნინო</nameField>
+		</sampleName>
+		<sampleName item="nativeGS">
+			<nameField type="given">გიორგი</nameField>
+			<nameField type="surname">თავაძე</nameField>
+		</sampleName>
+		<sampleName item="nativeGGS">
+			<nameField type="given">თეკლა</nameField>
+			<nameField type="given2">მარიამ</nameField>
+			<nameField type="surname">ნაკაშიძე</nameField>
+		</sampleName>
+		<sampleName item="nativeFull">
+			<nameField type="title">∅∅∅</nameField>
+			<nameField type="given">მარიამ</nameField>
+			<nameField type="given-informal">მარი</nameField>
+			<nameField type="given2">მართა</nameField>
+			<nameField type="surname-prefix">∅∅∅</nameField>
+			<nameField type="surname-core">აბაშიძე</nameField>
+			<nameField type="surname2">∅∅∅</nameField>
+			<nameField type="generation">უმც.</nameField>
+			<nameField type="credentials">∅∅∅</nameField>
+		</sampleName>
+		<sampleName item="foreignG">
+			<nameField type="given">სინდბად</nameField>
+		</sampleName>
+		<sampleName item="foreignGS">
+			<nameField type="given">მონიკა</nameField>
+			<nameField type="surname">ბელუჩი</nameField>
+		</sampleName>
+		<sampleName item="foreignGGS">
+			<nameField type="given">ცეცილია</nameField>
+			<nameField type="given2">ჰეიმიშ</nameField>
+			<nameField type="surname">შტიობერი</nameField>
+		</sampleName>
+		<sampleName item="foreignFull">
+			<nameField type="title">პროფ. დოქტ.</nameField>
+			<nameField type="given">ადა კორნელია</nameField>
+			<nameField type="given-informal">ნილე</nameField>
+			<nameField type="given2">სეზარ მარტინ</nameField>
+			<nameField type="surname-prefix">ფონ</nameField>
+			<nameField type="surname-core">ბრიული</nameField>
+			<nameField type="surname2">გონსალეს დომინგო</nameField>
+			<nameField type="generation">უმც.</nameField>
+			<nameField type="credentials">მეცნ. დოქტ.</nameField>
+		</sampleName>
 	</personNames>
 </ldml>

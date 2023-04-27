@@ -228,42 +228,6 @@ public class VectorSupport {
     }
 
     /* ============================================================================ */
-    public interface ShuffleIotaOperation<S extends VectorSpecies<?>,
-                                          SH extends VectorShuffle<?>> {
-        SH apply(int length, int start, int step, S s);
-    }
-
-    @IntrinsicCandidate
-    public static
-    <E,
-     S extends VectorSpecies<E>,
-     SH extends VectorShuffle<E>>
-    SH shuffleIota(Class<E> eClass, Class<? extends SH> shClass, S s,
-                   int length,
-                   int start, int step, int wrap,
-                   ShuffleIotaOperation<S, SH> defaultImpl) {
-       assert isNonCapturingLambda(defaultImpl) : defaultImpl;
-       return defaultImpl.apply(length, start, step, s);
-    }
-
-    public interface ShuffleToVectorOperation<V extends Vector<?>,
-                                              SH extends VectorShuffle<?>> {
-       V apply(SH sh);
-    }
-
-    @IntrinsicCandidate
-    public static
-    <V extends Vector<E>,
-     SH extends VectorShuffle<E>,
-     E>
-    V shuffleToVector(Class<? extends Vector<E>> vClass, Class<E> eClass, Class<? extends SH> shClass, SH sh,
-                      int length,
-                      ShuffleToVectorOperation<V, SH> defaultImpl) {
-      assert isNonCapturingLambda(defaultImpl) : defaultImpl;
-      return defaultImpl.apply(sh);
-    }
-
-    /* ============================================================================ */
     public interface IndexOperation<V extends Vector<?>,
                                     S extends VectorSpecies<?>> {
         V index(V v, int step, S s);

@@ -26,8 +26,30 @@
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "oops/instanceKlassFlags.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/safepoint.hpp"
 #include "utilities/macros.hpp"
+
+// This can be removed for the atomic bitset functions, when available.
+void InstanceKlassFlags::atomic_set_bits(u1 bits) {
+  // Atomically update the status with the bits given
+  u1 old_status, new_status, f;
+  do {
+    old_status = _status;
+    new_status = old_status | bits;
+    f = Atomic::cmpxchg(&_status, old_status, new_status);
+  } while(f != old_status);
+}
+
+void InstanceKlassFlags::atomic_clear_bits(u1 bits) {
+  // Atomically update the status with the bits given
+  u1 old_status, new_status, f;
+  do {
+    old_status = _status;
+    new_status = old_status & ~bits;
+    f = Atomic::cmpxchg(&_status, old_status, new_status);
+  } while(f != old_status);
+}
 
 #if INCLUDE_CDS
 void InstanceKlassFlags::set_shared_class_loader_type(s2 loader_type) {

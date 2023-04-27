@@ -406,6 +406,7 @@ class java_lang_Thread : AllStatic {
   static void dec_VTMS_transition_disable_count(oop java_thread);
   static bool is_in_VTMS_transition(oop java_thread);
   static void set_is_in_VTMS_transition(oop java_thread, bool val);
+  static int  is_in_VTMS_transition_offset();
 
   // Clear all scoped value bindings on error
   static void clear_scopedValueBindings(oop java_thread);
@@ -474,7 +475,6 @@ class java_lang_Thread_Constants : AllStatic {
 
  public:
   static oop get_VTHREAD_GROUP();
-  static oop get_NOT_SUPPORTED_CLASSLOADER();
 
   friend class JavaClasses;
 };

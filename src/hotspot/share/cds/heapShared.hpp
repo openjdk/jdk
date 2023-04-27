@@ -47,6 +47,7 @@ class KlassToOopHandleTable;
 class ResourceBitMap;
 
 struct ArchivableStaticFieldInfo;
+class ArchiveHeapInfo;
 
 // A dump time sub-graph info for Klass _k. It includes the entry points
 // (static fields in _k's mirror) of the archived sub-graphs reachable
@@ -61,8 +62,7 @@ class KlassSubGraphInfo: public CHeapObj<mtClass> {
   // object sub-graphs can be accessed at runtime.
   GrowableArray<Klass*>* _subgraph_object_klasses;
   // A list of _k's static fields as the entry points of archived sub-graphs.
-  // For each entry field, it is a tuple of field_offset, field_value and
-  // is_closed_archive flag.
+  // For each entry field, it is a tuple of field_offset, field_value
   GrowableArray<int>* _subgraph_entry_fields;
 
   // Does this KlassSubGraphInfo belong to the archived full module graph
@@ -97,8 +97,7 @@ class KlassSubGraphInfo: public CHeapObj<mtClass> {
   GrowableArray<int>* subgraph_entry_fields() {
     return _subgraph_entry_fields;
   }
-  void add_subgraph_entry_field(int static_field_offset, oop v,
-                                bool is_closed_archive);
+  void add_subgraph_entry_field(int static_field_offset, oop v);
   void add_subgraph_object_klass(Klass *orig_k);
   int num_subgraph_object_klasses() {
     return _subgraph_object_klasses == nullptr ? 0 :
@@ -141,7 +140,7 @@ class HeapShared: AllStatic {
   friend class VerifySharedOopClosure;
 
 public:
-  // Can this VM write heap regions into the CDS archive? Currently only G1+compressed{oops,cp}
+  // Can this VM write a heap region into the CDS archive? Currently only G1+compressed{oops,cp}
   static bool can_write() {
     CDS_JAVA_HEAP_ONLY(
       if (_disable_writing) {
@@ -165,7 +164,6 @@ public:
 private:
 #if INCLUDE_CDS_JAVA_HEAP
   static bool _disable_writing;
-  static bool _copying_open_region_objects;
   static DumpedInternedStrings *_dumped_interned_strings;
 
   // statistics
@@ -189,22 +187,18 @@ public:
 
     // The location of this object inside ArchiveHeapWriter::_buffer
     size_t _buffer_offset;
-    bool _in_open_region;
   public:
-    CachedOopInfo(oop orig_referrer, bool in_open_region)
+    CachedOopInfo(oop orig_referrer)
       : _orig_referrer(orig_referrer),
-        _buffer_offset(0), _in_open_region(in_open_region) {}
+        _buffer_offset(0) {}
     oop orig_referrer()             const { return _orig_referrer;   }
-    bool in_open_region()           const { return _in_open_region;  }
     void set_buffer_offset(size_t offset) { _buffer_offset = offset; }
     size_t buffer_offset()          const { return _buffer_offset;   }
   };
 
 private:
-  static void check_enum_obj(int level,
-                             KlassSubGraphInfo* subgraph_info,
-                             oop orig_obj,
-                             bool is_closed_archive);
+  static void check_enum_obj(int level, KlassSubGraphInfo* subgraph_info,
+                             oop orig_obj);
 
   typedef ResourceHashtable<oop, CachedOopInfo,
       36137, // prime number
@@ -239,18 +233,15 @@ private:
   static DumpTimeKlassSubGraphInfoTable* _dump_time_subgraph_info_table;
   static RunTimeKlassSubGraphInfoTable _run_time_subgraph_info_table;
 
-  static void check_closed_region_object(InstanceKlass* k);
   static CachedOopInfo make_cached_oop_info();
   static void archive_object_subgraphs(ArchivableStaticFieldInfo fields[],
-                                       bool is_closed_archive,
                                        bool is_full_module_graph);
 
   // Archive object sub-graph starting from the given static field
   // in Klass k's mirror.
   static void archive_reachable_objects_from_static_field(
     InstanceKlass* k, const char* klass_name,
-    int field_offset, const char* field_name,
-    bool is_closed_archive);
+    int field_offset, const char* field_name);
 
   static void verify_subgraph_from_static_field(
     InstanceKlass* k, int field_offset) PRODUCT_RETURN;
@@ -344,6 +335,7 @@ private:
   static void mark_native_pointers(oop orig_obj);
   static bool has_been_archived(oop orig_obj);
   static void archive_java_mirrors();
+  static void archive_strings();
  public:
   static void reset_archived_object_states(TRAPS);
   static void create_archived_object_cache() {
@@ -358,17 +350,13 @@ private:
     return _archived_object_cache;
   }
 
-  static void archive_objects(GrowableArray<MemRegion>* closed_regions,
-                              GrowableArray<MemRegion>* open_regions,
-                              GrowableArray<ArchiveHeapBitmapInfo>* closed_bitmaps,
-                              GrowableArray<ArchiveHeapBitmapInfo>* open_bitmaps);
-  static void copy_closed_objects();
-  static void copy_open_objects();
+  static void archive_objects(ArchiveHeapInfo* heap_info);
+  static void copy_objects();
+  static void copy_special_objects();
 
   static bool archive_reachable_objects_from(int level,
                                              KlassSubGraphInfo* subgraph_info,
-                                             oop orig_obj,
-                                             bool is_closed_archive);
+                                             oop orig_obj);
 
   static ResourceBitMap calculate_oopmap(MemRegion region); // marks all the oop pointers
   static void add_to_dumped_interned_strings(oop string);
@@ -378,7 +366,7 @@ private:
   static void remove_scratch_objects(Klass* k);
 
   // We use the HeapShared::roots() array to make sure that objects stored in the
-  // archived heap regions are not prematurely collected. These roots include:
+  // archived heap region are not prematurely collected. These roots include:
   //
   //    - mirrors of classes that have not yet been loaded.
   //    - ConstantPool::resolved_references() of classes that have not yet been loaded.
@@ -408,8 +396,7 @@ private:
  public:
   static void init_scratch_objects(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
   static bool is_heap_region(int idx) {
-    CDS_JAVA_HEAP_ONLY(return (idx >= MetaspaceShared::first_closed_heap_region &&
-                               idx <= MetaspaceShared::last_open_heap_region);)
+    CDS_JAVA_HEAP_ONLY(return (idx == MetaspaceShared::hp);)
     NOT_CDS_JAVA_HEAP_RETURN_(false);
   }
 
