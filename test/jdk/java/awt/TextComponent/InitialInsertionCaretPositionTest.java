@@ -36,39 +36,33 @@ import java.awt.TextArea;
 public class InitialInsertionCaretPositionTest {
     static TextField textField;
     static TextArea textArea;
-    static Frame frame;
+    static String failureMessage = "";
 
     public static void main(String[] args) throws Exception {
-        try {
-            EventQueue.invokeAndWait(() -> {
-                frame = new Frame("Caret Initial Position");
-                textArea = new TextArea("abcdefghij\nabcdefghij");
-                textField = new TextField("abcdefghij");
-                frame.add(textField);
-                frame.setSize(200, 200);
-                frame.pack();
-                frame.setVisible(true);
+        EventQueue.invokeAndWait(() -> {
+            textArea = new TextArea("abcdefghij\nabcdefghij");
+            textField = new TextField("abcdefghij");
 
-                if (textField.getCaretPosition() != 0) {
-                    throw new RuntimeException("The text insertion caret for " +
-                            "the text field is not " +
-                            "initially set before the first character");
-                }
+            boolean textFieldPassed = (textField.getCaretPosition() == 0);
+            boolean textAreaPassed = (textArea.getCaretPosition() == 0);
 
-                if (textArea.getCaretPosition() != 0) {
-                    throw new RuntimeException("The text insertion caret for" +
-                            " the text area is not initially set before the " +
-                            "first character");
-                }
-
+            if (!textFieldPassed) {
+                failureMessage += "   The text insertion caret for the text field is not\n";
+                failureMessage += "   initially set before the first character.\n";
+            }
+            if (!textAreaPassed) {
+                failureMessage += "   The text insertion caret for the text area is not\n";
+                failureMessage += "   initially set before the first character.\n";
+            }
+            if (textAreaPassed && textFieldPassed) {
                 System.out.println("The test passed.");
-            });
-        } finally {
-            EventQueue.invokeAndWait(() -> {
-                if (frame != null) {
-                    frame.dispose();
-                }
-            });
-        }
+            } else {
+                System.out.println("The test failed:");
+                System.out.println(failureMessage);
+            }
+            if (!textAreaPassed || !textFieldPassed) {
+                throw new RuntimeException(failureMessage);
+            }
+        });
     }
 }
