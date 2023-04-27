@@ -206,13 +206,11 @@ public class interrupt001a {
     }
 }
 
-class interrupt001aTask implements Runnable {
+class interrupt001aTask extends NamedTask {
 
     public interrupt001aTask(String taskName) {
-        this.taskName = taskName;
+        super(taskName);
     }
-
-    public String taskName;
 
     public boolean ready;
 
@@ -238,6 +236,6 @@ class interrupt001aTask implements Runnable {
     }
 
     void log(String str) {
-        interrupt001a.log2(taskName + " : " + str);
+        interrupt001a.log2(getName() + " : " + str);
     }
 }
