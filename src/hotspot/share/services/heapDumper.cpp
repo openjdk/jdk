@@ -895,13 +895,10 @@ class VM_HeapDumper : public VM_GC_Operation, public WorkerTask {
   uint                    _num_dumper_threads;
   DumperController*       _dumper_controller;
   ParallelObjectIterator* _poi;
-
   // worker id of VMDumper thread.
   static const size_t VMDumperWorkerId = 0;
-
   // VM dumper dumps both heap and non-heap data, other dumpers dump heap-only data.
-  bool is_vm_dumper(uint worker_id) { return worker_id == VMDumperWorkerId; }
-
+  static bool is_vm_dumper(uint worker_id) { return worker_id == VMDumperWorkerId; }
   static DumpWriter* create_dump_writer();
 
   // accessors and setters
@@ -980,6 +977,14 @@ class VM_HeapDumper : public VM_GC_Operation, public WorkerTask {
     delete _klass_map;
   }
   bool is_parallel_dump()  { return _num_dumper_threads > 1; }
+  bool can_parallel_dump() {
+    const char* base_path = writer()->get_file_path();
+    if ((strlen(base_path) + 7/*.p\d\d\d\d\0*/) >= JVM_MAXPATHLEN) {
+      // no extra path room for separate heap dump files
+      return false;
+    }
+    return true;
+  }
   VMOp_Type type() const { return VMOp_HeapDumper; }
   void doit();
   void work(uint worker_id);
@@ -1207,7 +1212,9 @@ void VM_HeapDumper::doit() {
   uint  num_active_workers = workers != nullptr ? workers->active_workers() : 0;
   uint requested_num_dump_thread = _num_dumper_threads;
 
-  if (num_active_workers <= 1 || requested_num_dump_thread <= 1) {
+  if (num_active_workers <= 1 ||         // serial gc?
+      requested_num_dump_thread <= 1 ||  // request serial dump?
+     !can_parallel_dump()) {             // can not dump in parallel?
     // Use serial dump, set dumper threads and writer threads number to 1.
     _num_dumper_threads = 1;
     work(0);
@@ -1288,7 +1295,7 @@ error:
 }
 
 // prepare DumpWriter for every parallel dump thread
-DumpWriter* VM_HeapDumper::create_dump_writer(){
+DumpWriter* VM_HeapDumper::create_dump_writer() {
   char* path = NEW_RESOURCE_ARRAY(char, JVM_MAXPATHLEN);
   memset(path, 0, JVM_MAXPATHLEN);
   const char* base_path = writer()->get_file_path();
@@ -1346,8 +1353,6 @@ void VM_HeapDumper::work(uint worker_id) {
     // if !ClassUnloading
     StickyClassDumper class_dumper(writer());
     ClassLoaderData::the_null_class_loader_data()->classes_do(&class_dumper);
-
-    writer()->finish_dump_segment();
   }
 
   // Heap iteration.
@@ -1358,10 +1363,12 @@ void VM_HeapDumper::work(uint worker_id) {
   // The HPROF_GC_CLASS_DUMP and HPROF_GC_INSTANCE_DUMP are the vast bulk
   // of the heap dump.
   if (!is_parallel_dump()) {
+    assert(worker_id == 0, "must be");
     // == Serial dump
     TraceTime timer("Dump heap objects", TRACETIME_LOG(Info, heapdump));
     HeapObjectDumper obj_dumper(writer());
     Universe::heap()->object_iterate(&obj_dumper);
+    writer()->finish_dump_segment();
     // Writes the HPROF_HEAP_DUMP_END record because merge does not happen in serial dump
     DumperSupport::end_of_dump(writer());
     writer()->flush();
