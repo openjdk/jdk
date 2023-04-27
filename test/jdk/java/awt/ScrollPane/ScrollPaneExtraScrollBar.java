@@ -44,6 +44,7 @@ public class ScrollPaneExtraScrollBar {
     ScrollPane sp;
     Frame f;
     Robot robot;
+    volatile Rectangle r;
 
     public static void main(String[] args) throws Exception {
         ScrollPaneExtraScrollBar scrollTest = new ScrollPaneExtraScrollBar();
@@ -54,7 +55,7 @@ public class ScrollPaneExtraScrollBar {
     public void init() throws Exception {
         robot = new Robot();
         EventQueue.invokeAndWait(() -> {
-            f = new Frame();
+            f = new Frame("ScrollPaneExtraScrollBar");
             sp = new ScrollPane(ScrollPane.SCROLLBARS_AS_NEEDED);
             sp.add(new Button("TEST"));
             f.add("Center", sp);
@@ -68,13 +69,16 @@ public class ScrollPaneExtraScrollBar {
         try {
             robot.delay(100);
             robot.waitForIdle();
-            Rectangle r = f.getBounds();
+            EventQueue.invokeAndWait(() -> {
+                r = f.getBounds();
+            });
             robot.mouseMove(r.x + r.width - 1, r.y + r.height - 1);
             robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
             robot.mouseMove(r.x + r.width + 50, r.y + r.height + 50);
             robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
 
-            Thread.sleep(1000);
+            robot.delay(1000);
+            robot.waitForIdle();
 
             EventQueue.invokeAndWait(() -> {
                 Insets insets = sp.getInsets();

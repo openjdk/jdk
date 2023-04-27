@@ -48,6 +48,8 @@ public class ScrollPaneRemoveAdd {
     Semaphore actionSema;
     Frame frame;
     Robot robot;
+    volatile Point buttonLoc;
+    volatile Dimension buttonSize;
 
     public static void main(String[] args) throws Exception {
         ScrollPaneRemoveAdd scrollTest = new ScrollPaneRemoveAdd();
@@ -81,10 +83,10 @@ public class ScrollPaneRemoveAdd {
                 frame.setVisible(true);
                 pane.remove(0);
                 pane.add(button);
+                buttonLoc = button.getLocationOnScreen();
+                buttonSize = button.getSize();
             });
 
-            Point buttonLoc = button.getLocationOnScreen();
-            Dimension buttonSize = button.getSize();
             robot.mouseMove(buttonLoc.x + buttonSize.width / 2,
                     buttonLoc.y + buttonSize.height / 2);
             robot.delay(50);
@@ -92,7 +94,6 @@ public class ScrollPaneRemoveAdd {
             robot.delay(50);
             robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
 
-   //         Toolkit.getDefaultToolkit().sync();
             robot.delay(50);
             robot.waitForIdle();
             try {
@@ -117,7 +118,7 @@ public class ScrollPaneRemoveAdd {
 
     private static class Semaphore {
         volatile boolean state = false;
-        Object lock = new Object();
+        final Object lock = new Object();
         volatile int waiting = 0;
 
         public Semaphore() {
@@ -164,5 +165,4 @@ public class ScrollPaneRemoveAdd {
             return state;
         }
     }
-
 }

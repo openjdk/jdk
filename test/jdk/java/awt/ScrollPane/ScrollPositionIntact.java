@@ -28,10 +28,15 @@
  @run main ScrollPositionIntact
 */
 
-import java.awt.*;
-
 import java.awt.Color;
-import java.lang.reflect.InvocationTargetException;
+import java.awt.Dimension;
+import java.awt.EventQueue;
+import java.awt.Frame;
+import java.awt.GridLayout;
+import java.awt.Label;
+import java.awt.Panel;
+import java.awt.Robot;
+import java.awt.ScrollPane;
 
 public class ScrollPositionIntact {
     Frame frame;
@@ -58,7 +63,7 @@ public class ScrollPositionIntact {
                 pa.add("West", new Label());
                 pa.add("East", new Label("East", Label.RIGHT));
                 sp.add(pa);
-                frame = new Frame();
+                frame = new Frame("ScrollPositionIntact");
                 frame.setSize(200, 100);
                 frame.add(sp);
                 frame.setVisible(true);
@@ -75,7 +80,6 @@ public class ScrollPositionIntact {
                 // Now, before the fix, in Windows XP, Windows XP theme and on Vista,
                 // scrollposition would be reset to zero..
                 sp.validate();
-
 
                 int i;
                 i = (int) (sp.getScrollPosition().getX());

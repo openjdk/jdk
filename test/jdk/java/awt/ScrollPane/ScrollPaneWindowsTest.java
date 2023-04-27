@@ -50,16 +50,12 @@ public class ScrollPaneWindowsTest implements AdjustmentListener {
     Robot robot;
     Frame frame;
     Insets paneInsets;
-    public static Object LOCK = new Object();
+    public static final Object LOCK = new Object();
     ScrollPaneAdjustable vScroll;
     ScrollPaneAdjustable hScroll;
     boolean notifyReceived = false;
 
     public static void main(String[] args) throws Exception {
-        if (Double.valueOf(System.getProperty("os.version")) < 5.0) {
-            System.out.println("This test is for Windows 2000 and above.");
-            return;
-        }
         ScrollPaneWindowsTest scrollTest = new ScrollPaneWindowsTest();
         scrollTest.init();
         scrollTest.start();
@@ -67,14 +63,14 @@ public class ScrollPaneWindowsTest implements AdjustmentListener {
 
     public void init() throws Exception {
         EventQueue.invokeAndWait(() -> {
-            frame = new Frame();
+            frame = new Frame("ScrollPaneWindowsTest");
             frame.setLayout(new BorderLayout(1, 1));
             p = new Panel();
             p.setLayout(null);
             p.setSize(new Dimension(800, 800));
+            sp = new ScrollPane(ScrollPane.SCROLLBARS_ALWAYS);
         });
         robot = new Robot();
-        sp = new ScrollPane(ScrollPane.SCROLLBARS_ALWAYS);
         vScroll = (ScrollPaneAdjustable) sp.getVAdjustable();
         hScroll = (ScrollPaneAdjustable) sp.getHAdjustable();
         vScroll.addAdjustmentListener(this);
@@ -86,12 +82,10 @@ public class ScrollPaneWindowsTest implements AdjustmentListener {
             EventQueue.invokeAndWait(() -> {
                 sp.add(p);
                 frame.add(sp);
-
                 frame.pack();
                 frame.setSize(400, 400);
                 frame.setLocationRelativeTo(null);
                 frame.setVisible(true);
-
                 paneInsets = sp.getInsets();
                 System.out.println("Insets: right = " + paneInsets.right + " bottom =  " + paneInsets.bottom);
             });

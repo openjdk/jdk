@@ -41,48 +41,55 @@ import java.awt.event.AdjustmentListener;
 
 import java.lang.reflect.InvocationTargetException;
 
-public class ComponentScrollTest implements AdjustmentListener {
+public class ComponentScrollTest {
     public ScrollPane scrollpane;
     public Frame frame;
     public int count = 0;
-    public static void main(String[] args) throws InterruptedException, InvocationTargetException {
+
+    public static void main(String[] args) throws Exception {
         ComponentScrollTest cst = new ComponentScrollTest();
         cst.init();
         cst.start();
     }
 
-    public void init() throws InterruptedException, InvocationTargetException {
+    public void init() throws Exception {
         EventQueue.invokeAndWait(() -> {
-                scrollpane = new ScrollPane();
-                frame = new Frame("Component Scroll Test");
-                scrollpane.add(new Component() {
-                    public Dimension getPreferredSize() {
-                        return new Dimension(500, 500);
-                    }
-                    public void paint(Graphics g) {
-                        g.drawLine(0, 0, 500, 500);
-                    }
-                });
-                frame.add(scrollpane);
+            scrollpane = new ScrollPane();
+            frame = new Frame("Component Scroll Test");
+            scrollpane.add(new Component() {
+                public Dimension getPreferredSize() {
+                    return new Dimension(500, 500);
+                }
+
+                public void paint(Graphics g) {
+                    g.drawLine(0, 0, 500, 500);
+                }
+            });
+            frame.add(scrollpane);
+            scrollpane.getVAdjustable().addAdjustmentListener(new AdjustmentListener() {
+                @Override
+                public void adjustmentValueChanged(AdjustmentEvent adjustmentEvent) {
+                    count++;
+                    scrollpane.getVAdjustable().setValue(20);
+                }
+            });
         });
-        scrollpane.getVAdjustable().addAdjustmentListener(this);
     }
 
-    public void start() throws InterruptedException, InvocationTargetException {
+    public void start() throws Exception {
         try {
             EventQueue.invokeAndWait(() -> {
                 frame.pack();
                 frame.setVisible(true);
                 scrollpane.getVAdjustable().setValue(20);
-                try {
-                    Thread.sleep(5000);
-                } catch (InterruptedException ie) {
-                }
-                System.out.println("Count = " + count);
-                if (count > 50) {
-                    throw new RuntimeException();
-                }
             });
+
+            Thread.sleep(5000);
+
+            System.out.println("Count = " + count);
+            if (count > 50) {
+                throw new RuntimeException();
+            }
         } finally {
             EventQueue.invokeAndWait(() -> {
                 if (frame != null) {
@@ -90,10 +97,5 @@ public class ComponentScrollTest implements AdjustmentListener {
                 }
             });
         }
-    }
-
-    public void adjustmentValueChanged(AdjustmentEvent ae) {
-        count++;
-        scrollpane.getVAdjustable().setValue(20);
     }
 }
