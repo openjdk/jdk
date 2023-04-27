@@ -830,7 +830,8 @@ reg_class double_reg(
     F31, F31_H
 );
 
-// Class for all RVV vector registers
+// Class for RVV vector registers
+// Note: v0, v30 and v31 are used as mask registers.
 reg_class vectora_reg(
     V1, V1_H, V1_J, V1_K,
     V2, V2_H, V2_J, V2_K,
@@ -860,9 +861,7 @@ reg_class vectora_reg(
     V26, V26_H, V26_J, V26_K,
     V27, V27_H, V27_J, V27_K,
     V28, V28_H, V28_J, V28_K,
-    V29, V29_H, V29_J, V29_K,
-    V30, V30_H, V30_J, V30_K,
-    V31, V31_H, V31_J, V31_K
+    V29, V29_H, V29_J, V29_K
 );
 
 // Class for 64 bit register f0
@@ -912,6 +911,23 @@ reg_class v5_reg(
 
 // class for condition codes
 reg_class reg_flags(RFLAGS);
+
+// Class for RVV v0 mask register
+// https://github.com/riscv/riscv-v-spec/blob/master/v-spec.adoc#53-vector-masking
+// The mask value used to control execution of a masked vector
+// instruction is always supplied by vector register v0.
+reg_class vmask_reg_v0 (
+    V0
+);
+
+// Class for RVV mask registers
+// We need two more vmask registers to do the vector mask logical ops,
+// so define v30, v31 as mask register too.
+reg_class vmask_reg (
+    V0,
+    V30,
+    V31
+);
 %}
 
 //----------DEFINITION BLOCK---------------------------------------------------
@@ -1522,7 +1538,7 @@ uint MachSpillCopyNode::implementation(CodeBuffer *cbuf, PhaseRegAlloc *ra_, boo
 
   assert(src_lo != OptoReg::Bad && dst_lo != OptoReg::Bad, "must move at least 1 register");
 
-  if (src_hi != OptoReg::Bad) {
+  if (src_hi != OptoReg::Bad && !bottom_type()->isa_vectmask()) {
     assert((src_lo & 1) == 0 && src_lo + 1 == src_hi &&
            (dst_lo & 1) == 0 && dst_lo + 1 == dst_hi,
            "expected aligned-adjacent pairs");
@@ -1554,6 +1570,25 @@ uint MachSpillCopyNode::implementation(CodeBuffer *cbuf, PhaseRegAlloc *ra_, boo
         __ unspill(as_VectorRegister(Matcher::_regEncode[dst_lo]), ra_->reg2offset(src_lo));
       } else if (src_lo_rc == rc_vector && dst_lo_rc == rc_vector) {
         // vpr to vpr
+        __ vmv1r_v(as_VectorRegister(Matcher::_regEncode[dst_lo]), as_VectorRegister(Matcher::_regEncode[src_lo]));
+      } else {
+        ShouldNotReachHere();
+      }
+    } else if (bottom_type()->isa_vectmask() && cbuf) {
+      C2_MacroAssembler _masm(cbuf);
+      int vmask_size_in_bytes = Matcher::scalable_predicate_reg_slots() * 32 / 8;
+      if (src_lo_rc == rc_stack && dst_lo_rc == rc_stack) {
+        // stack to stack
+        __ spill_copy_vmask_stack_to_stack(src_offset, dst_offset,
+                                           vmask_size_in_bytes);
+      } else if (src_lo_rc == rc_vector && dst_lo_rc == rc_stack) {
+        // vmask to stack
+        __ spill_vmask(as_VectorRegister(Matcher::_regEncode[src_lo]), ra_->reg2offset(dst_lo));
+      } else if (src_lo_rc == rc_stack && dst_lo_rc == rc_vector) {
+        // stack to vmask
+        __ unspill_vmask(as_VectorRegister(Matcher::_regEncode[dst_lo]), ra_->reg2offset(src_lo));
+      } else if (src_lo_rc == rc_vector && dst_lo_rc == rc_vector) {
+        // vmask to vmask
         __ vmv1r_v(as_VectorRegister(Matcher::_regEncode[dst_lo]), as_VectorRegister(Matcher::_regEncode[src_lo]));
       } else {
         ShouldNotReachHere();
@@ -1642,7 +1677,7 @@ uint MachSpillCopyNode::implementation(CodeBuffer *cbuf, PhaseRegAlloc *ra_, boo
     } else {
       st->print("%s", Matcher::regName[dst_lo]);
     }
-    if (bottom_type()->isa_vect() != NULL) {
+    if (bottom_type()->isa_vect() && !bottom_type()->isa_vectmask()) {
       int vsize = 0;
       if (ideal_reg() == Op_VecA) {
         vsize = Matcher::scalable_vector_reg_size(T_BYTE) * 8;
@@ -1650,6 +1685,10 @@ uint MachSpillCopyNode::implementation(CodeBuffer *cbuf, PhaseRegAlloc *ra_, boo
         ShouldNotReachHere();
       }
       st->print("\t# vector spill size = %d", vsize);
+    } else if (ideal_reg() == Op_RegVectMask) {
+      assert(Matcher::supports_scalable_vector(), "bad register type for spill");
+      int vsize = Matcher::scalable_predicate_reg_slots() * 32;
+      st->print("\t# vmask spill size = %d", vsize);
     } else {
       st->print("\t# spill size = %d", is64 ? 64 : 32);
     }
@@ -1863,7 +1902,59 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
 }
 
 const bool Matcher::match_rule_supported_vector_masked(int opcode, int vlen, BasicType bt) {
-  return false;
+  if (!UseRVV) {
+    return false;
+  }
+  switch (opcode) {
+    case Op_AddVB:
+    case Op_AddVS:
+    case Op_AddVI:
+    case Op_AddVL:
+    case Op_AddVF:
+    case Op_AddVD:
+    case Op_SubVB:
+    case Op_SubVS:
+    case Op_SubVI:
+    case Op_SubVL:
+    case Op_SubVF:
+    case Op_SubVD:
+    case Op_MulVB:
+    case Op_MulVS:
+    case Op_MulVI:
+    case Op_MulVL:
+    case Op_MulVF:
+    case Op_MulVD:
+    case Op_DivVF:
+    case Op_DivVD:
+    case Op_VectorLoadMask:
+    case Op_VectorMaskCmp:
+    case Op_AndVMask:
+    case Op_XorVMask:
+    case Op_OrVMask:
+    case Op_RShiftVB:
+    case Op_RShiftVS:
+    case Op_RShiftVI:
+    case Op_RShiftVL:
+    case Op_LShiftVB:
+    case Op_LShiftVS:
+    case Op_LShiftVI:
+    case Op_LShiftVL:
+    case Op_URShiftVB:
+    case Op_URShiftVS:
+    case Op_URShiftVI:
+    case Op_URShiftVL:
+    case Op_VectorBlend:
+      break;
+    case Op_LoadVector:
+      opcode = Op_LoadVectorMasked;
+      break;
+    case Op_StoreVector:
+      opcode = Op_StoreVectorMasked;
+      break;
+    default:
+      return false;
+  }
+  return match_rule_supported_vector(opcode, vlen, bt);
 }
 
 const bool Matcher::vector_needs_partial_operations(Node* node, const TypeVect* vt) {
@@ -1875,11 +1966,11 @@ const bool Matcher::vector_needs_load_shuffle(BasicType elem_bt, int vlen) {
 }
 
 const RegMask* Matcher::predicate_reg_mask(void) {
-  return NULL;
+  return &_VMASK_REG_mask;
 }
 
 const TypeVectMask* Matcher::predicate_reg_type(const Type* elemTy, int length) {
-  return NULL;
+  return new TypeVectMask(elemTy, length);
 }
 
 // Vector calling convention not yet implemented.
@@ -3551,6 +3642,28 @@ operand vReg_V5()
   constraint(ALLOC_IN_RC(v5_reg));
   match(VecA);
   match(vReg);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vRegMask()
+%{
+  constraint(ALLOC_IN_RC(vmask_reg));
+  match(RegVectMask);
+  match(vRegMask_V0);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+// The mask value used to control execution of a masked
+// vector instruction is always supplied by vector register v0.
+operand vRegMask_V0()
+%{
+  constraint(ALLOC_IN_RC(vmask_reg_v0));
+  match(RegVectMask);
+  match(vRegMask);
   op_cost(0);
   format %{ %}
   interface(REG_INTER);
@@ -7271,7 +7384,7 @@ instruct maxF_reg_reg(fRegF dst, fRegF src1, fRegF src2, rFlagsReg cr) %{
   format %{ "maxF $dst, $src1, $src2" %}
 
   ins_encode %{
-    __ minmax_FD(as_FloatRegister($dst$$reg),
+    __ minmax_fp(as_FloatRegister($dst$$reg),
                  as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg),
                  false /* is_double */, false /* is_min */);
   %}
@@ -7287,7 +7400,7 @@ instruct minF_reg_reg(fRegF dst, fRegF src1, fRegF src2, rFlagsReg cr) %{
   format %{ "minF $dst, $src1, $src2" %}
 
   ins_encode %{
-    __ minmax_FD(as_FloatRegister($dst$$reg),
+    __ minmax_fp(as_FloatRegister($dst$$reg),
                  as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg),
                  false /* is_double */, true /* is_min */);
   %}
@@ -7303,7 +7416,7 @@ instruct maxD_reg_reg(fRegD dst, fRegD src1, fRegD src2, rFlagsReg cr) %{
   format %{ "maxD $dst, $src1, $src2" %}
 
   ins_encode %{
-    __ minmax_FD(as_FloatRegister($dst$$reg),
+    __ minmax_fp(as_FloatRegister($dst$$reg),
                  as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg),
                  true /* is_double */, false /* is_min */);
   %}
@@ -7319,7 +7432,7 @@ instruct minD_reg_reg(fRegD dst, fRegD src1, fRegD src2, rFlagsReg cr) %{
   format %{ "minD $dst, $src1, $src2" %}
 
   ins_encode %{
-    __ minmax_FD(as_FloatRegister($dst$$reg),
+    __ minmax_fp(as_FloatRegister($dst$$reg),
                  as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg),
                  true /* is_double */, true /* is_min */);
   %}

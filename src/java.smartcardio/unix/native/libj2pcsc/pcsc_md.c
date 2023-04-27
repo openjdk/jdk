@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ FPTR_SCardControl scardControl;
 /*
  * Throws a Java Exception by name
  */
-void throwByName(JNIEnv *env, const char *name, const char *msg)
+static void throwByName(JNIEnv *env, const char *name, const char *msg)
 {
     jclass cls = (*env)->FindClass(env, name);
 
@@ -62,7 +62,7 @@ void throwByName(JNIEnv *env, const char *name, const char *msg)
 /*
  * Throws java.lang.NullPointerException
  */
-void throwNullPointerException(JNIEnv *env, const char *msg)
+static void throwNullPointerException(JNIEnv *env, const char *msg)
 {
     throwByName(env, "java/lang/NullPointerException", msg);
 }
@@ -70,7 +70,7 @@ void throwNullPointerException(JNIEnv *env, const char *msg)
 /*
  * Throws java.io.IOException
  */
-void throwIOException(JNIEnv *env, const char *msg)
+static void throwIOException(JNIEnv *env, const char *msg)
 {
     throwByName(env, "java/io/IOException", msg);
 }

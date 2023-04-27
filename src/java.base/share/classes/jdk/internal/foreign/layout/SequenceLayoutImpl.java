@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -68,7 +68,6 @@ public final class SequenceLayoutImpl extends AbstractLayout<SequenceLayoutImpl>
      * @throws IllegalArgumentException if {@code elementCount < 0}.
      */
     public SequenceLayout withElementCount(long elementCount) {
-        MemoryLayoutUtil.checkSize(elementCount, true);
         return new SequenceLayoutImpl(elementCount, elementLayout, bitAlignment(), name());
     }
 
@@ -177,21 +176,18 @@ public final class SequenceLayoutImpl extends AbstractLayout<SequenceLayoutImpl>
 
     @Override
     public String toString() {
+        boolean max = (Long.MAX_VALUE / elementLayout.bitSize()) == elemCount;
         return decorateLayoutString(String.format("[%s:%s]",
-                elemCount, elementLayout));
+                max ? "*" : elemCount, elementLayout));
     }
 
     @Override
     public boolean equals(Object other) {
-        if (this == other) {
-            return true;
-        }
-        if (!super.equals(other)) {
-            return false;
-        }
-        return other instanceof SequenceLayoutImpl otherSeq &&
-                elemCount == otherSeq.elemCount &&
-                elementLayout.equals(otherSeq.elementLayout);
+        return this == other ||
+                other instanceof SequenceLayoutImpl otherSeq &&
+                        super.equals(other) &&
+                        elemCount == otherSeq.elemCount &&
+                        elementLayout.equals(otherSeq.elementLayout);
     }
 
     @Override
@@ -202,6 +198,14 @@ public final class SequenceLayoutImpl extends AbstractLayout<SequenceLayoutImpl>
     @Override
     SequenceLayoutImpl dup(long bitAlignment, Optional<String> name) {
         return new SequenceLayoutImpl(elementCount(), elementLayout, bitAlignment, name);
+    }
+
+    @Override
+    public SequenceLayoutImpl withBitAlignment(long bitAlignment) {
+        if (bitAlignment < elementLayout.bitAlignment()) {
+            throw new IllegalArgumentException("Invalid alignment constraint");
+        }
+        return super.withBitAlignment(bitAlignment);
     }
 
     @Override
