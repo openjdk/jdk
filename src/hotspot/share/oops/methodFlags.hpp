@@ -49,9 +49,9 @@ class MethodFlags {
    status(is_prefixed_native          , 1 << 5) /* JVMTI has prefixed this native method */ \
    status(monitor_matching            , 1 << 6) /* True if we know that monitorenter/monitorexit bytecodes match */ \
    status(queued_for_compilation      , 1 << 7) \
-   status(not_c2_compilable           , 1 << 8) \
-   status(not_c1_compilable           , 1 << 9) \
-   status(not_c2_osr_compilable       , 1 << 10) \
+   status(is_not_c2_compilable        , 1 << 8) \
+   status(is_not_c1_compilable        , 1 << 9) \
+   status(is_not_c2_osr_compilable    , 1 << 10) \
    status(force_inline                , 1 << 11) /* Annotations but also set/reset at runtime */ \
    status(dont_inline                 , 1 << 12) \
    status(has_loops_flag              , 1 << 13) /* Method has loops */ \

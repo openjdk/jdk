@@ -805,7 +805,7 @@ public:
   void set_jvmti_mount_transition() { constMethod()->set_jvmti_mount_transition(); }
 
   bool is_hidden() const { return constMethod()->is_hidden(); }
-  void set_hidden() { constMethod()->set_is_hidden(); }
+  void set_is_hidden() { constMethod()->set_is_hidden(); }
 
   bool is_scoped() const { return constMethod()->is_scoped(); }
   void set_scoped() { constMethod()->set_is_scoped(); }
@@ -865,13 +865,14 @@ public:
     return _method_counters;
   }
 
-  void clear_not_c1_compilable()              {       set_not_c1_compilable(false); }
-  void clear_not_c2_compilable()              {       set_not_c2_compilable(false); }
+  void clear_is_not_c1_compilable()           { set_is_not_c1_compilable(false); }
+  void clear_is_not_c2_compilable()           { set_is_not_c2_compilable(false); }
+  void clear_is_not_c2_osr_compilable()       { set_is_not_c2_osr_compilable(false); }
 
-  bool    is_not_c1_osr_compilable() const    { return not_c1_compilable(); }  // don't waste a flags bit
-  void   set_not_c1_osr_compilable()          {       set_not_c1_compilable(); }  // don't waste a flags bit
-  void clear_not_c1_osr_compilable()          {     clear_not_c1_compilable(); }  // don't waste a flags bit
-  void clear_not_c2_osr_compilable()          {       set_not_c2_osr_compilable(false); }
+  // not_c1_osr_compilable == not_c1_compilable
+  bool    is_not_c1_osr_compilable() const    { return is_not_c1_compilable(); }
+  void   set_is_not_c1_osr_compilable()       {       set_is_not_c1_compilable(); }
+  void clear_is_not_c1_osr_compilable()       {     clear_is_not_c1_compilable(); }
 
   // Background compilation support
   void clear_queued_for_compilation()  { set_queued_for_compilation(false);   }

@@ -1992,7 +1992,7 @@ void MethodAnnotationCollector::apply_to(const methodHandle& m) {
   if (has_annotation(_method_LambdaForm_Compiled) && m->intrinsic_id() == vmIntrinsics::_none)
     m->set_intrinsic_id(vmIntrinsics::_compiledLambdaForm);
   if (has_annotation(_method_Hidden))
-    m->set_hidden();
+    m->set_is_hidden();
   if (has_annotation(_method_Scoped))
     m->set_scoped();
   if (has_annotation(_method_IntrinsicCandidate) && !m->is_synthetic())
@@ -2738,8 +2738,8 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
   if (parsed_annotations.has_any_annotations())
     parsed_annotations.apply_to(methodHandle(THREAD, m));
 
-  if (is_hidden() && !m->is_hidden()) { // Mark methods in hidden classes as 'hidden'.
-    m->set_hidden();
+  if (is_hidden()) { // Mark methods in hidden classes as 'hidden'.
+    m->set_is_hidden();
   }
 
   // Copy annotations

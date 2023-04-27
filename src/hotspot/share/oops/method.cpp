@@ -1077,8 +1077,8 @@ void Method::print_made_not_compilable(int comp_level, bool is_osr, bool report,
 bool Method::is_always_compilable() const {
   // Generated adapters must be compiled
   if (is_special_native_intrinsic() && is_synthetic()) {
-    assert(!not_c1_compilable(), "sanity check");
-    assert(!not_c2_compilable(), "sanity check");
+    assert(!is_not_c1_compilable(), "sanity check");
+    assert(!is_not_c2_compilable(), "sanity check");
     return true;
   }
 
@@ -1091,11 +1091,11 @@ bool Method::is_not_compilable(int comp_level) const {
   if (is_always_compilable())
     return false;
   if (comp_level == CompLevel_any)
-    return not_c1_compilable() && not_c2_compilable();
+    return is_not_c1_compilable() && is_not_c2_compilable();
   if (is_c1_compile(comp_level))
-    return not_c1_compilable();
+    return is_not_c1_compilable();
   if (is_c2_compile(comp_level))
-    return not_c2_compilable();
+    return is_not_c2_compilable();
   return false;
 }
 
@@ -1107,13 +1107,13 @@ void Method::set_not_compilable(const char* reason, int comp_level, bool report)
   }
   print_made_not_compilable(comp_level, /*is_osr*/ false, report, reason);
   if (comp_level == CompLevel_all) {
-    set_not_c1_compilable();
-    set_not_c2_compilable();
+    set_is_not_c1_compilable();
+    set_is_not_c2_compilable();
   } else {
     if (is_c1_compile(comp_level))
-      set_not_c1_compilable();
+      set_is_not_c1_compilable();
     if (is_c2_compile(comp_level))
-      set_not_c2_compilable();
+      set_is_not_c2_compilable();
   }
   assert(!CompilationPolicy::can_be_compiled(methodHandle(Thread::current(), this), comp_level), "sanity check");
 }
@@ -1122,24 +1122,24 @@ bool Method::is_not_osr_compilable(int comp_level) const {
   if (is_not_compilable(comp_level))
     return true;
   if (comp_level == CompLevel_any)
-    return is_not_c1_osr_compilable() && not_c2_osr_compilable();
+    return is_not_c1_osr_compilable() && is_not_c2_osr_compilable();
   if (is_c1_compile(comp_level))
     return is_not_c1_osr_compilable();
   if (is_c2_compile(comp_level))
-    return not_c2_osr_compilable();
+    return is_not_c2_osr_compilable();
   return false;
 }
 
 void Method::set_not_osr_compilable(const char* reason, int comp_level, bool report) {
   print_made_not_compilable(comp_level, /*is_osr*/ true, report, reason);
   if (comp_level == CompLevel_all) {
-    set_not_c1_osr_compilable();
-    set_not_c2_osr_compilable();
+    set_is_not_c1_osr_compilable();
+    set_is_not_c2_osr_compilable();
   } else {
     if (is_c1_compile(comp_level))
-      set_not_c1_osr_compilable();
+      set_is_not_c1_osr_compilable();
     if (is_c2_compile(comp_level))
-      set_not_c2_osr_compilable();
+      set_is_not_c2_osr_compilable();
   }
   assert(!CompilationPolicy::can_be_osr_compiled(methodHandle(Thread::current(), this), comp_level), "sanity check");
 }

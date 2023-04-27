@@ -31,7 +31,7 @@
 class outputStream;
 
 // The ConstMethodFlags class contains the parse-time flags associated with
-// an Method, and their associated accessors.
+// a Method, and its associated accessors.
 // These flags are JVM internal and not part of the AccessFlags classfile specification.
 
 class ConstMethodFlags {
