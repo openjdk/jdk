@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2022 Unicode, Inc.
+<!-- Copyright © 1991-2023 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -278,6 +278,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="YT">Mayote</territory>
 			<territory type="ZZ">Eneo Lisilojulikana</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbwls">Wales</subdivision>
+		</subdivisions>
 		<keys>
 			<key type="hc">Kipindi cha saa (12 dhidi ya 24)</key>
 			<key type="va">Tofauti ya Lugha</key>
@@ -1480,9 +1483,45 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 		</unitLength>
 		<unitLength type="narrow">
+			<unit type="area-square-centimeter">
+				<displayName>cm²</displayName>
+			</unit>
+			<unit type="consumption-mile-per-gallon-imperial">
+				<displayName>maili/gal Imp</displayName>
+			</unit>
+			<unit type="duration-decade">
+				<displayName>mwongo</displayName>
+			</unit>
+			<unit type="graphics-pixel">
+				<unitPattern count="one">pikseli {0}</unitPattern>
+				<unitPattern count="other">pikseli {0}</unitPattern>
+			</unit>
+			<unit type="graphics-megapixel">
+				<displayName>megapikseli</displayName>
+			</unit>
 			<unit type="length-millimeter">
 				<unitPattern count="one">mm{0}</unitPattern>
 				<unitPattern count="other">mm{0}</unitPattern>
+			</unit>
+			<unit type="length-micrometer">
+				<displayName>maikromita</displayName>
+				<unitPattern count="one">maikromita {0}</unitPattern>
+				<unitPattern count="other">maikromita {0}</unitPattern>
+			</unit>
+			<unit type="length-parsec">
+				<unitPattern count="one">pc {0}</unitPattern>
+				<unitPattern count="other">kila sekunde {0}</unitPattern>
+			</unit>
+			<unit type="length-astronomical-unit">
+				<displayName>kipimo cha astronomia</displayName>
+			</unit>
+			<unit type="pressure-millimeter-ofhg">
+				<unitPattern count="other">mm Hg {0}</unitPattern>
+			</unit>
+			<unit type="pressure-bar">
+				<displayName>baa</displayName>
+				<unitPattern count="one">baa {0}</unitPattern>
+				<unitPattern count="other">baa {0}</unitPattern>
 			</unit>
 		</unitLength>
 	</units>

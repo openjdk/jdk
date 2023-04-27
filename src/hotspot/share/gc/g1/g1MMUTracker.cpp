@@ -115,13 +115,13 @@ void G1MMUTracker::add_pause(double start, double end) {
 //                       GC events               /  pause_time
 //                 /     |     \     \          | /  /
 // -------------[----]-[---]--[--]---[---]------|[--]-----> Time
-//              |         |                     |
-//              |         |                     |
-//              |<- limit |                     |
-//              |         |<- balance_timestamp |
-//              |         ^                     |
-//              |                               |
-//              |<--------  _time_slice  ------>|
+//              |         |                         |
+//              |         |                         |
+//              |<- limit |                         |
+//              |         |<- balance_timestamp     |
+//              |         ^                         |
+//              |                                   |
+//              |<--------  _time_slice   --------->|
 //
 // The MMU constraint requires that we can spend up to `max_gc_time()` on GC
 // pauses inside a window of `_time_slice` length. Therefore, we have a GC
@@ -134,7 +134,7 @@ void G1MMUTracker::add_pause(double start, double end) {
 // time inside [balance_timestamp, current_timestamp] is equal to the budget.
 // Next, return `balance_timestamp - limit`.
 //
-// When there are no enough GC events, i.e. we have a surplus buget, a new GC
+// When there are not enough GC events, i.e. we have a surplus budget, a new GC
 // pause can start right away, so return 0.
 double G1MMUTracker::when_sec(double current_timestamp, double pause_time) {
   assert(pause_time > 0.0, "precondition");
