@@ -54,10 +54,10 @@ void MonitorDeflationThread::monitor_deflation_thread_entry(JavaThread* jt, TRAP
   //      the old behavior when deflation also happened at safepoints. Users who set this
   //      option to get more/less frequent deflations would be served with this option.
   //  - AsyncDeflationInterval
-  //      Normal threshold-based deflation heuristics checks the conditions at this interval.
+  //      Normal threshold-based deflation heuristic checks the conditions at this interval.
   //      See is_async_deflation_needed().
   //  - GuaranteedAsyncDeflationInterval
-  //      Backup deflation heuristics checks the conditions at this interval.
+  //      Backup deflation heuristic checks the conditions at this interval.
   //      See is_async_deflation_needed().
   //
   intx wait_time = max_intx;
