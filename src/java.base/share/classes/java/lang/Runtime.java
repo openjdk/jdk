@@ -140,7 +140,7 @@ public class Runtime {
     private Runtime() {}
 
     /**
-     * Initiates the <a href="#shutdown">shutdown sequence</a> of the Java Virtual Machine.
+     * Initiates the {@linkplain ##shutdown shutdown sequence} of the Java Virtual Machine.
      * If a security manager is present and its {@link SecurityManager#checkExit checkExit}
      * method disallows exiting with the specified status, throws {@link SecurityException}.
      * Otherwise, this method blocks indefinitely; it neither returns nor throws an exception
@@ -191,7 +191,7 @@ public class Runtime {
      * Registers a new virtual-machine shutdown hook.
      *
      * <p> A <i>shutdown hook</i> is simply an initialized but unstarted thread. Shutdown hooks
-     * are started at the beginning of the <a href="#shutdown">shutdown sequence</a>.
+     * are started at the beginning of the {@linkplain ##shutdown shutdown sequence}.
      * Registration and de-registration of shutdown hooks is disallowed once the shutdown
      * sequence has begun.
      * <p>
@@ -281,18 +281,18 @@ public class Runtime {
     }
 
     /**
-     * Immediately <a href="#termination">terminates</a> the Java Virtual Machine.
+     * Immediately {@linkplain ##termination terminates} the Java Virtual Machine.
      * If a security manager is present and its {@link SecurityManager#checkExit checkExit}
      * method disallows exiting with the specified status, throws {@link SecurityException}.
      * Otherwise, termination of the Java Virtual Machine is unconditional and immediate.
-     * This method does not initiate the <a href="#shutdown">shutdown sequence</a>, nor does
+     * This method does not initiate the {@linkplain ##shutdown shutdown sequence}, nor does
      * it wait for the shutdown sequence to finish if it is already in progress. An
      * invocation of this method never returns normally.
      *
      * @apiNote
      * This method should be used with extreme caution. Using it may circumvent or disrupt
      * any cleanup actions intended to be performed by shutdown hooks, possibly leading to
-     * data corruption. See the <a href="#termination">termination</a> section above
+     * data corruption. See the {@linkplain ##termination termination} section above
      * for other possible consequences of halting the Java Virtual Machine.
      *
      * @param  status

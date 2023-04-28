@@ -1886,7 +1886,7 @@ public final class System {
     }
 
     /**
-     * Initiates the <a href="#shutdown">shutdown sequence</a> of the Java Virtual Machine.
+     * Initiates the {@linkplain Runtime##shutdown shutdown sequence} of the Java Virtual Machine.
      * If a security manager is present and its {@link SecurityManager#checkExit checkExit}
      * method disallows exiting with the specified status, throws {@link SecurityException}.
      * Otherwise, this method blocks indefinitely; it neither returns nor throws an exception
