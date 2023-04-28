@@ -25,6 +25,7 @@
 package jdk.internal.classfile.impl;
 
 import java.lang.constant.ClassDesc;
+import java.lang.constant.MethodTypeDesc;
 import java.util.AbstractList;
 import java.util.BitSet;
 import java.util.Collection;
@@ -35,7 +36,9 @@ import java.util.function.Function;
 import jdk.internal.classfile.Opcode;
 import jdk.internal.classfile.constantpool.ClassEntry;
 import jdk.internal.classfile.constantpool.ModuleEntry;
+import jdk.internal.classfile.constantpool.NameAndTypeEntry;
 import jdk.internal.classfile.java.lang.constant.ModuleDesc;
+import jdk.internal.classfile.impl.AbstractPoolEntry;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
 import java.lang.reflect.AccessFlag;
 
@@ -230,5 +233,13 @@ public class Util {
 
     public static boolean has(AccessFlag.Location location, int flagsMask, AccessFlag flag) {
         return (flag.mask() & flagsMask) == flag.mask() && flag.locations().contains(location);
+    }
+
+    public static ClassDesc fieldTypeSymbol(NameAndTypeEntry nat) {
+        return ((AbstractPoolEntry.NameAndTypeEntryImpl)nat).fieldTypeSymbol();
+    }
+
+    public static MethodTypeDesc methodTypeSymbol(NameAndTypeEntry nat) {
+        return ((AbstractPoolEntry.NameAndTypeEntryImpl)nat).methodTypeSymbol();
     }
 }
