@@ -30,6 +30,7 @@
 #include "gc/shared/slidingForwarding.hpp"
 #include "oops/markWord.hpp"
 #include "oops/oop.inline.hpp"
+#include "utilities/macros.hpp"
 
 size_t SlidingForwarding::region_index_containing(HeapWord* addr) const {
   assert(addr >= _heap_start, "sanity: addr: " PTR_FORMAT " heap base: " PTR_FORMAT, p2i(addr), p2i(_heap_start));
@@ -60,7 +61,7 @@ uintptr_t SlidingForwarding::encode_forwarding(HeapWord* original, HeapWord* tar
     }
   }
   if (region_idx >= NUM_TARGET_REGIONS) {
-    assert(UseG1GC, "Only happens with G1 serial compaction");
+    assert(G1GC_ONLY(UseG1GC) NOT_G1GC(false), "Only happens with G1 serial compaction");
     return 1 << FALLBACK_SHIFT | markWord::marked_value;
   }
   assert(region_idx < NUM_TARGET_REGIONS, "need to have found an encoding base");
