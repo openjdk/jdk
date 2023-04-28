@@ -654,6 +654,11 @@ public class IRNode {
         beforeMatchingNameRegex(MAX_I, "MaxI");
     }
 
+    public static final String MAX_L = PREFIX + "MAX_L" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(MAX_L, "MaxL");
+    }
+
     public static final String MAX_V = PREFIX + "MAX_V" + POSTFIX;
     static {
         beforeMatchingNameRegex(MAX_V, "MaxV");
@@ -677,6 +682,11 @@ public class IRNode {
     public static final String MIN_I = PREFIX + "MIN_I" + POSTFIX;
     static {
         beforeMatchingNameRegex(MIN_I, "MinI");
+    }
+
+    public static final String MIN_L = PREFIX + "MIN_L" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(MIN_L, "MinL");
     }
 
     public static final String MIN_V = PREFIX + "MIN_V" + POSTFIX;
