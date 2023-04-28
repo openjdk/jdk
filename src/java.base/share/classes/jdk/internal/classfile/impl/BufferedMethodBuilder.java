@@ -24,6 +24,7 @@
  */
 package jdk.internal.classfile.impl;
 
+import java.lang.constant.MethodTypeDesc;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -51,6 +52,7 @@ public final class BufferedMethodBuilder
     private AccessFlags flags;
     private final MethodModel original;
     private int[] parameterSlots;
+    MethodTypeDesc mDesc;
 
     public BufferedMethodBuilder(SplitConstantPool constantPool,
                                  Utf8Entry nameInfo,
@@ -92,6 +94,18 @@ public final class BufferedMethodBuilder
     }
 
     @Override
+    public MethodTypeDesc methodTypeSymbol() {
+        if (mDesc == null) {
+            if (original instanceof MethodInfo mi) {
+                mDesc = mi.methodTypeSymbol();
+            } else {
+                mDesc = MethodTypeDesc.ofDescriptor(methodType().stringValue());
+            }
+        }
+        return mDesc;
+    }
+
+    @Override
     public int methodFlags() {
         return flags.flagsMask();
     }
@@ -99,7 +113,7 @@ public final class BufferedMethodBuilder
     @Override
     public int parameterSlot(int paramNo) {
         if (parameterSlots == null)
-            parameterSlots = Util.parseParameterSlots(methodFlags(), methodType().stringValue());
+            parameterSlots = Util.parseParameterSlots(methodFlags(), methodTypeSymbol());
         return parameterSlots[paramNo];
     }
 
@@ -156,6 +170,11 @@ public final class BufferedMethodBuilder
         @Override
         public Utf8Entry methodType() {
             return desc;
+        }
+
+        @Override
+        public MethodTypeDesc methodTypeSymbol() {
+            return BufferedMethodBuilder.this.methodTypeSymbol();
         }
 
         @Override

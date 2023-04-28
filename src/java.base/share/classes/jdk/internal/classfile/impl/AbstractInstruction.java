@@ -424,7 +424,7 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public int count() {
-            return Util.parameterSlots(type().stringValue());
+            return Util.parameterSlots(Util.methodTypeSymbol(method().nameAndType()));
         }
 
         @Override
@@ -1059,7 +1059,7 @@ public abstract sealed class AbstractInstruction
         @Override
         public int count() {
             return op == Opcode.INVOKEINTERFACE
-                   ? Util.parameterSlots(methodEntry.nameAndType().type().stringValue()) + 1
+                   ? Util.parameterSlots(Util.methodTypeSymbol(methodEntry.nameAndType())) + 1
                    : 0;
         }
 

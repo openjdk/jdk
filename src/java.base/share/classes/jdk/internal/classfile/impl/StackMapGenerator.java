@@ -407,10 +407,6 @@ public final class StackMapGenerator {
         return Type.referenceType(((ClassEntry)cp.entryByIndex(index)).asSymbol());
     }
 
-    private static boolean isDoubleSlot(ClassDesc desc) {
-        return CD_double.equals(desc) || CD_long.equals(desc);
-    }
-
     private void processMethod() {
         currentFrame.setLocalsFromArg(methodName, methodDesc, isStatic, thisType);
         currentFrame.stackSize = 0;
@@ -764,7 +760,7 @@ public final class StackMapGenerator {
                 currentFrame.pushStack(desc);
             case PUTSTATIC -> {
                 currentFrame.popStack();
-                if (isDoubleSlot(desc)) currentFrame.popStack();
+                if (Util.isDoubleSlot(desc)) currentFrame.popStack();
             }
             case GETFIELD -> {
                 currentFrame.popStack();
@@ -773,7 +769,7 @@ public final class StackMapGenerator {
             case PUTFIELD -> {
                 currentFrame.popStack();
                 currentFrame.popStack();
-                if (isDoubleSlot(desc)) currentFrame.popStack();
+                if (Util.isDoubleSlot(desc)) currentFrame.popStack();
             }
             default -> throw new AssertionError("Should not reach here");
         }

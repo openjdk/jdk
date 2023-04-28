@@ -38,8 +38,6 @@ import jdk.internal.classfile.constantpool.ClassEntry;
 import jdk.internal.classfile.constantpool.ModuleEntry;
 import jdk.internal.classfile.constantpool.NameAndTypeEntry;
 import jdk.internal.classfile.java.lang.constant.ModuleDesc;
-import jdk.internal.classfile.impl.AbstractPoolEntry;
-import jdk.internal.classfile.impl.TemporaryConstantPool;
 import java.lang.reflect.AccessFlag;
 
 import static jdk.internal.classfile.Classfile.ACC_STATIC;
@@ -59,61 +57,29 @@ public class Util {
         return "[" + s;
     }
 
-    public static BitSet findParams(String type) {
-        BitSet bs = new BitSet();
-        if (type.charAt(0) != '(')
-            throw new IllegalArgumentException();
-        loop: for (int i = 1; i < type.length(); ++i) {
-            switch (type.charAt(i)) {
-                case '[':
-                    bs.set(i);
-                    while (type.charAt(++i) == '[')
-                        ;
-                    if (type.charAt(i) == 'L') {
-                        while (type.charAt(++i) != ';')
-                            ;
-                    }
-                    break;
-                case ')':
-                    break loop;
-                default:
-                    bs.set(i);
-                    if (type.charAt(i) == 'L') {
-                        while (type.charAt(++i) != ';')
-                            ;
-                    }
-            }
-        }
-        return bs;
-    }
-
-    @SuppressWarnings("fallthrough")
-    public static int parameterSlots(String type) {
-        BitSet bs = findParams(type);
+    public static int parameterSlots(MethodTypeDesc mDesc) {
         int count = 0;
-        for (int i = bs.nextSetBit(0); i >= 0; i = bs.nextSetBit(i+1)) {
-            count += (type.charAt(i) == 'J' || type.charAt(i) == 'D') ? 2 : 1;
+        for (int i = 0; i < mDesc.parameterCount(); i++) {
+            count += isDoubleSlot(mDesc.parameterType(i)) ? 2 : 1;
         }
         return count;
     }
 
-    public static int[] parseParameterSlots(int flags, String type) {
-        BitSet bs = findParams(type);
-        int[] result = new int[bs.cardinality()];
-        int index = 0;
+    public static int[] parseParameterSlots(int flags, MethodTypeDesc mDesc) {
+        int[] result = new int[mDesc.parameterCount()];
         int count = ((flags & ACC_STATIC) != 0) ? 0 : 1;
-        for (int i = bs.nextSetBit(0); i >= 0; i = bs.nextSetBit(i+1)) {
-            result[index++] = count;
-            count += (type.charAt(i) == 'J' || type.charAt(i) == 'D') ? 2 : 1;
+        for (int i = 0; i < result.length; i++) {
+            result[i] = count;
+            count += isDoubleSlot(mDesc.parameterType(i)) ? 2 : 1;
         }
         return result;
     }
 
-    public static int maxLocals(int flags, String type) {
-        BitSet bs = findParams(type);
+    public static int maxLocals(int flags, MethodTypeDesc mDesc) {
         int count = ((flags & ACC_STATIC) != 0) ? 0 : 1;
-        for (int i = bs.nextSetBit(0); i >= 0; i = bs.nextSetBit(i+1))
-            count += (type.charAt(i) == 'J' || type.charAt(i) == 'D') ? 2 : 1;
+        for (int i = 0; i < mDesc.parameterCount(); i++) {
+            count += isDoubleSlot(mDesc.parameterType(i)) ? 2 : 1;
+        }
         return count;
     }
 
@@ -241,5 +207,10 @@ public class Util {
 
     public static MethodTypeDesc methodTypeSymbol(NameAndTypeEntry nat) {
         return ((AbstractPoolEntry.NameAndTypeEntryImpl)nat).methodTypeSymbol();
+    }
+
+    public static boolean isDoubleSlot(ClassDesc desc) {
+        char ch = desc.descriptorString().charAt(0);
+        return ch == 'D' || ch == 'J';
     }
 }
