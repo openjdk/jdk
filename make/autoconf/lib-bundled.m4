@@ -193,7 +193,7 @@ AC_DEFUN_ONCE([LIB_SETUP_ZLIB],
     AC_MSG_RESULT([bundled])
   elif test "x${with_zlib}" = "xsystem"; then
     if test "x${STATIC_JAVA}" = "xtrue"; then
-      AC_MSG_ERROR([--with-zlib=system does not work with --with-static-java=yes]) 
+      AC_MSG_ERROR([--with-zlib=system does not work with --with-static-java=yes])
     fi
     if test "x${ZLIB_FOUND}" = "xyes"; then
       USE_EXTERNAL_LIBZ=true
