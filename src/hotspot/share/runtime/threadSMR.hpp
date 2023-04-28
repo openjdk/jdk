@@ -343,9 +343,9 @@ class FastThreadsListHandle : public StackObj {
 
 public:
   // The 'java_thread' parameter to the constructor must be provided
-  // by a java_lang_Thread::thread(thread_oop) call which gets us the
-  // JavaThread* stored in the java.lang.Thread object _before_ the
-  // embedded ThreadsListHandle is constructed.
+  // by a java_lang_Thread::thread_acquire(thread_oop) call which gets
+  // us the JavaThread* stored in the java.lang.Thread object _before_
+  // the embedded ThreadsListHandle is constructed.
   //
   FastThreadsListHandle(oop thread_oop, JavaThread* java_thread);
 

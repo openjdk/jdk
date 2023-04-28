@@ -787,7 +787,7 @@ UNSAFE_ENTRY(void, Unsafe_Unpark(JNIEnv *env, jobject unsafe, jobject jthread)) 
     // Get the JavaThread* stored in the java.lang.Thread object _before_
     // the embedded ThreadsListHandle is constructed so we know if the
     // early life stage of the JavaThread* is protected.
-    FastThreadsListHandle ftlh(thread_oop, java_lang_Thread::thread(thread_oop));
+    FastThreadsListHandle ftlh(thread_oop, java_lang_Thread::thread_acquire(thread_oop));
     JavaThread* thr = ftlh.protected_java_thread();
     if (thr != nullptr) {
       // The still live JavaThread* is protected by the FastThreadsListHandle
