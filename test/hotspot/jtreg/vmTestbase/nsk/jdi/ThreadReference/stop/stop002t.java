@@ -83,7 +83,7 @@ public class stop002t {
             return Consts.TEST_FAILED;
         } catch (Throwable t) {
             // Call Thread.interrupted(). Workaround for JDK-8306324
-            log.display("Debuggee: interrupted = " + Thread.interrupted());
+            log.display("TEST #2: interrupted = " + Thread.interrupted());
             if (t instanceof MyThrowable) {
                 log.display("TEST #2: Caught expected exception while at breakpoint: " + t);
             } else {
@@ -92,11 +92,12 @@ public class stop002t {
                 return Consts.TEST_FAILED;
             }
         }
+        log.display("TEST #2: all done");
 
         /*
          * TEST #3: async exception while not suspended in a loop.
          */
-        log.display("Debuggee: going to loop ...");
+        log.display("TEST #3: going to loop ...");
         try {
             while (!stopLooping1) { // looping
                 testNumReady = 3; // signal debugger side of test that we are ready
@@ -110,7 +111,7 @@ public class stop002t {
             }
         } catch (Throwable t) {
             // Call Thread.interrupted(). Workaround for JDK-8306324
-            log.display("Debuggee: interrupted = " + Thread.interrupted());
+            log.display("TEST #3: interrupted = " + Thread.interrupted());
             // We don't expect the exception to be thrown when in vthread mode.
             if (!vthreadMode && t instanceof MyThrowable) {
                 log.display("TEST #3: Caught expected exception while in loop: " + t);
@@ -120,12 +121,12 @@ public class stop002t {
                 return Consts.TEST_FAILED;
             }
         }
-        log.display("Debuggee: looping done");
+        log.display("TEST #3: all done");
 
         /*
          * TEST #4: async exception while suspended in a loop.
          */
-        log.display("Debuggee: going to loop ...");
+        log.display("TEST #4: going to loop ...");
         try {
             while (!stopLooping2) { // looping
                 testNumReady = 4; // signal debugger side of test that we are ready
@@ -135,7 +136,7 @@ public class stop002t {
             return Consts.TEST_FAILED;
         } catch (Throwable t) {
             // Call Thread.interrupted(). Workaround for JDK-8306324
-            log.display("Debuggee: interrupted = " + Thread.interrupted());
+            log.display("TEST #4: interrupted = " + Thread.interrupted());
             if (t instanceof MyThrowable) {
                 log.display("TEST #4: Caught expected exception while in loop: " + t);
             } else {
@@ -144,20 +145,20 @@ public class stop002t {
                 return Consts.TEST_FAILED;
             }
         }
-        log.display("Debuggee: looping done");
+        log.display("TEST #4: all done");
 
         /*
          * TEST #5: async exception while suspended doing Thread.sleep().
          */
-        log.display("Debuggee: going to sleep ...");
         try {
             try {
                 // Signal debugger side of test that we are "almost" ready. The
                 // debugger will still need to check that we are in the sleep state.
                 testNumReady = 5;
+                log.display("TEST #5: going to sleep ...");
                 Thread.sleep(10000);
             } catch (InterruptedException e) {
-                log.display("Debuggee: Unexpected InterruptedException");
+                log.complain("TEST #5: Unexpected InterruptedException");
                 e.printStackTrace();
                 return Consts.TEST_FAILED;
             }
@@ -169,7 +170,7 @@ public class stop002t {
             }
         } catch (Throwable t) {
             // Call Thread.interrupted(). Workaround for JDK-8306324
-            log.display("Debuggee: interrupted = " + Thread.interrupted());
+            log.display("TEST #5: interrupted = " + Thread.interrupted());
             // We don't expect the exception to be thrown when in vthread mode.
             if (!vthreadMode && t instanceof MyThrowable) {
                 log.display("TEST #5: Caught expected exception while in loop: " + t);
@@ -179,6 +180,7 @@ public class stop002t {
                 return Consts.TEST_FAILED;
             }
         }
+        log.display("TEST #5: all done");
 
         /*
          * Test shutdown.

@@ -215,6 +215,7 @@ public class stop002 {
             waitForTestReady(4);
             try {
                 thrRef.suspend();
+                log.display("TEST #4: thread is suspended.");
                 thrRef.stop(throwableRef);
                 log.display("TEST #4 PASSED: stop() call succeeded.");
             } catch (Throwable ue) {
@@ -238,7 +239,7 @@ public class stop002 {
             log.display("\nTEST #5: Trying to stop debuggee thread while suspended in Thread.sleep().");
             waitForTestReady(5);
             // Allow debuggee to reach Thread.sleep() first.
-            log.display("TEST #5: waiting for debuggee to sleep.");
+            log.display("TEST #5: waiting for debuggee to sleep...");
             while (true) {
                 int status = thrRef.status();
                 if (status == ThreadReference.THREAD_STATUS_SLEEPING ||
@@ -248,8 +249,10 @@ public class stop002 {
                 }
                 Thread.sleep(50);
             }
+            log.display("TEST #5: debuggee is sleeping.");
             try {
                 thrRef.suspend();
+                log.display("TEST #5: thread is suspended.");
                 thrRef.stop(throwableRef);
                 if (vthreadMode) {
                     log.complain("TEST #5 FAILED: expected OpaqueFrameException was not thrown");
@@ -291,11 +294,12 @@ public class stop002 {
     }
 
     private void waitForTestReady(int testNum) {
-        log.display("TEST #" + testNum + ": waiting for test ready.");
+        log.display("TEST #" + testNum + ": waiting for test ready...");
         IntegerValue ival;
         do {
             ival = (IntegerValue)mainClass.getValue(mainClass.fieldByName("testNumReady"));
         } while (ival.value() != testNum);
+        log.display("TEST #" + testNum + ": test ready.");
     }
 
     private ObjectReference findObjRef(ThreadReference thrRef, String varName) {
