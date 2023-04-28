@@ -2067,8 +2067,7 @@ void JavaThread::verify_cross_modify_fence_failure(JavaThread *thread) {
 // Helper function to create the java.lang.Thread object for a
 // VM-internal thread. The thread will have the given name, and be
 // a member of the "system" ThreadGroup.
-Handle JavaThread::create_system_thread_object(const char* name,
-                                               bool is_visible, TRAPS) {
+Handle JavaThread::create_system_thread_object(const char* name, TRAPS) {
   Handle string = java_lang_String::create_from_str(name, CHECK_NH);
 
   // Initialize thread_oop to put it into the system threadGroup.

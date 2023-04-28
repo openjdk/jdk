@@ -29,16 +29,18 @@
 #define EXPORT
 #endif
 
+#include <stddef.h>
+
 EXPORT long long id_long_long(long long value) {
   return value;
 }
 
 EXPORT long long id_ptr_long(void* ptr) {
-  return (long long)ptr;
+  return (long long)(size_t)ptr;
 }
 
 EXPORT void* id_long_ptr(long long value) {
-  return (void*)value;
+  return (void*)(size_t)value;
 }
 
 EXPORT void* id_ptr_ptr(void* ptr) {

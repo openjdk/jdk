@@ -390,7 +390,7 @@ var getJibProfilesCommon = function (input, data) {
         };
     };
 
-    common.boot_jdk_version = "19";
+    common.boot_jdk_version = "20";
     common.boot_jdk_build_number = "36";
     common.boot_jdk_home = input.get("boot_jdk", "install_path") + "/jdk-"
         + common.boot_jdk_version
@@ -1185,9 +1185,9 @@ var getJibProfilesDependencies = function (input, common) {
         jtreg: {
             server: "jpg",
             product: "jtreg",
-            version: "7.1.1",
+            version: "7.2",
             build_number: "1",
-            file: "bundles/jtreg-7.1.1+1.zip",
+            file: "bundles/jtreg-7.2+1.zip",
             environment_name: "JT_HOME",
             environment_path: input.get("jtreg", "home_path") + "/bin",
             configure_args: "--with-jtreg=" + input.get("jtreg", "home_path"),

@@ -322,6 +322,20 @@ const Type* ConvI2LNode::Value(PhaseGVN* phase) const {
   return this_type;
 }
 
+Node* ConvI2LNode::Identity(PhaseGVN* phase) {
+  // If type is in "int" sub-range, we can
+  // convert I2L(L2I(x)) => x
+  // since the conversions have no effect.
+  if (in(1)->Opcode() == Op_ConvL2I) {
+    Node* x = in(1)->in(1);
+    const TypeLong* t = phase->type(x)->isa_long();
+    if (t != nullptr && t->_lo >= min_jint && t->_hi <= max_jint) {
+      return x;
+    }
+  }
+  return this;
+}
+
 #ifdef ASSERT
 static inline bool long_ranges_overlap(jlong lo1, jlong hi1,
                                        jlong lo2, jlong hi2) {

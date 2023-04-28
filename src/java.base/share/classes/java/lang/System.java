@@ -760,8 +760,6 @@ public final class System {
      *     <td>List of paths to search when loading libraries</td></tr>
      * <tr><th scope="row">{@systemProperty java.io.tmpdir}</th>
      *     <td>Default temp file path</td></tr>
-     * <tr><th scope="row">{@systemProperty java.compiler}</th>
-     *     <td>Name of JIT compiler to use</td></tr>
      * <tr><th scope="row">{@systemProperty os.name}</th>
      *     <td>Operating system name</td></tr>
      * <tr><th scope="row">{@systemProperty os.arch}</th>
