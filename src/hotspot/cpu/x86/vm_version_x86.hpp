@@ -716,6 +716,8 @@ public:
   static bool is_default_intel_cascade_lake();
 #endif
 
+  static bool is_intel_cascade_lake();
+
   static int avx3_threshold();
 
   static bool is_intel_tsc_synched_at_init();

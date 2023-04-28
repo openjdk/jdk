@@ -3072,7 +3072,7 @@ void Scheduling::garbage_collect_pinch_nodes() {
   if (_cfg->C->trace_opto_output()) tty->print("Reclaimed pinch nodes:");
 #endif
   int trace_cnt = 0;
-  for (uint k = 0; k < _reg_node.Size(); k++) {
+  for (uint k = 0; k < _reg_node.max(); k++) {
     Node* pinch = _reg_node[k];
     if ((pinch != nullptr) && pinch->Opcode() == Op_Node &&
         // no predecence input edges

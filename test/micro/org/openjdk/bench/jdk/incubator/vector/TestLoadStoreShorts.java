@@ -89,12 +89,8 @@ public class TestLoadStoreShorts {
     srcSegmentHeap = MemorySegment.ofArray(new byte[size]);
     dstSegmentHeap = MemorySegment.ofArray(new byte[size]);
 
-      long byteAlignment1 = SPECIES.vectorByteSize();
-      Arena scope1 = Arena.ofAuto();
-      srcSegment = scope1.allocate(size, byteAlignment1);
-      long byteAlignment = SPECIES.vectorByteSize();
-      Arena scope = Arena.ofAuto();
-      dstSegment = scope.allocate(size, byteAlignment);
+    srcSegment = Arena.ofAuto().allocate(size, SPECIES.vectorByteSize());
+    dstSegment = Arena.ofAuto().allocate(size, SPECIES.vectorByteSize());
 
     this.longSize = longSize;
 

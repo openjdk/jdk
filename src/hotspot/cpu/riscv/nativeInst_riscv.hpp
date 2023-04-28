@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2018, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -68,21 +68,21 @@ class NativeInstruction {
   bool is_call()                            const { return is_call_at(addr_at(0));        }
   bool is_jump()                            const { return is_jump_at(addr_at(0));        }
 
-  static bool is_jal_at(address instr)        { assert_cond(instr != NULL); return extract_opcode(instr) == 0b1101111; }
-  static bool is_jalr_at(address instr)       { assert_cond(instr != NULL); return extract_opcode(instr) == 0b1100111 && extract_funct3(instr) == 0b000; }
-  static bool is_branch_at(address instr)     { assert_cond(instr != NULL); return extract_opcode(instr) == 0b1100011; }
-  static bool is_ld_at(address instr)         { assert_cond(instr != NULL); return is_load_at(instr) && extract_funct3(instr) == 0b011; }
-  static bool is_load_at(address instr)       { assert_cond(instr != NULL); return extract_opcode(instr) == 0b0000011; }
-  static bool is_float_load_at(address instr) { assert_cond(instr != NULL); return extract_opcode(instr) == 0b0000111; }
-  static bool is_auipc_at(address instr)      { assert_cond(instr != NULL); return extract_opcode(instr) == 0b0010111; }
-  static bool is_jump_at(address instr)       { assert_cond(instr != NULL); return is_branch_at(instr) || is_jal_at(instr) || is_jalr_at(instr); }
-  static bool is_addi_at(address instr)       { assert_cond(instr != NULL); return extract_opcode(instr) == 0b0010011 && extract_funct3(instr) == 0b000; }
-  static bool is_addiw_at(address instr)      { assert_cond(instr != NULL); return extract_opcode(instr) == 0b0011011 && extract_funct3(instr) == 0b000; }
-  static bool is_addiw_to_zr_at(address instr) { assert_cond(instr != NULL); return is_addiw_at(instr) && extract_rd(instr) == zr; }
-  static bool is_lui_at(address instr)        { assert_cond(instr != NULL); return extract_opcode(instr) == 0b0110111; }
-  static bool is_lui_to_zr_at(address instr)  { assert_cond(instr != NULL); return is_lui_at(instr) && extract_rd(instr) == zr; }
+  static bool is_jal_at(address instr)        { assert_cond(instr != nullptr); return extract_opcode(instr) == 0b1101111; }
+  static bool is_jalr_at(address instr)       { assert_cond(instr != nullptr); return extract_opcode(instr) == 0b1100111 && extract_funct3(instr) == 0b000; }
+  static bool is_branch_at(address instr)     { assert_cond(instr != nullptr); return extract_opcode(instr) == 0b1100011; }
+  static bool is_ld_at(address instr)         { assert_cond(instr != nullptr); return is_load_at(instr) && extract_funct3(instr) == 0b011; }
+  static bool is_load_at(address instr)       { assert_cond(instr != nullptr); return extract_opcode(instr) == 0b0000011; }
+  static bool is_float_load_at(address instr) { assert_cond(instr != nullptr); return extract_opcode(instr) == 0b0000111; }
+  static bool is_auipc_at(address instr)      { assert_cond(instr != nullptr); return extract_opcode(instr) == 0b0010111; }
+  static bool is_jump_at(address instr)       { assert_cond(instr != nullptr); return is_branch_at(instr) || is_jal_at(instr) || is_jalr_at(instr); }
+  static bool is_addi_at(address instr)       { assert_cond(instr != nullptr); return extract_opcode(instr) == 0b0010011 && extract_funct3(instr) == 0b000; }
+  static bool is_addiw_at(address instr)      { assert_cond(instr != nullptr); return extract_opcode(instr) == 0b0011011 && extract_funct3(instr) == 0b000; }
+  static bool is_addiw_to_zr_at(address instr) { assert_cond(instr != nullptr); return is_addiw_at(instr) && extract_rd(instr) == zr; }
+  static bool is_lui_at(address instr)        { assert_cond(instr != nullptr); return extract_opcode(instr) == 0b0110111; }
+  static bool is_lui_to_zr_at(address instr)  { assert_cond(instr != nullptr); return is_lui_at(instr) && extract_rd(instr) == zr; }
   static bool is_slli_shift_at(address instr, uint32_t shift) {
-    assert_cond(instr != NULL);
+    assert_cond(instr != nullptr);
     return (extract_opcode(instr) == 0b0010011 && // opcode field
             extract_funct3(instr) == 0b001 &&     // funct3 field, select the type of operation
             Assembler::extract(((unsigned*)instr)[0], 25, 20) == shift);    // shamt field
@@ -313,14 +313,14 @@ class NativeCall: public NativeInstruction {
 };
 
 inline NativeCall* nativeCall_at(address addr) {
-  assert_cond(addr != NULL);
+  assert_cond(addr != nullptr);
   NativeCall* call = (NativeCall*)(addr - NativeCall::instruction_offset);
   DEBUG_ONLY(call->verify());
   return call;
 }
 
 inline NativeCall* nativeCall_before(address return_address) {
-  assert_cond(return_address != NULL);
+  assert_cond(return_address != nullptr);
   NativeCall* call = (NativeCall*)(return_address - NativeCall::return_address_offset);
   DEBUG_ONLY(call->verify());
   return call;
@@ -357,7 +357,7 @@ class NativeMovConstReg: public NativeInstruction {
       return addr_at(load_pc_relative_instruction_size);
     }
     guarantee(false, "Unknown instruction in NativeMovConstReg");
-    return NULL;
+    return nullptr;
   }
 
   intptr_t data() const;
@@ -378,14 +378,14 @@ class NativeMovConstReg: public NativeInstruction {
 };
 
 inline NativeMovConstReg* nativeMovConstReg_at(address addr) {
-  assert_cond(addr != NULL);
+  assert_cond(addr != nullptr);
   NativeMovConstReg* test = (NativeMovConstReg*)(addr - NativeMovConstReg::instruction_offset);
   DEBUG_ONLY(test->verify());
   return test;
 }
 
 inline NativeMovConstReg* nativeMovConstReg_before(address addr) {
-  assert_cond(addr != NULL);
+  assert_cond(addr != nullptr);
   NativeMovConstReg* test = (NativeMovConstReg*)(addr - NativeMovConstReg::instruction_size - NativeMovConstReg::instruction_offset);
   DEBUG_ONLY(test->verify());
   return test;
@@ -477,7 +477,7 @@ public:
 };
 
 inline NativeGeneralJump* nativeGeneralJump_at(address addr) {
-  assert_cond(addr != NULL);
+  assert_cond(addr != nullptr);
   NativeGeneralJump* jump = (NativeGeneralJump*)(addr);
   debug_only(jump->verify();)
   return jump;
@@ -508,7 +508,7 @@ class NativeCallTrampolineStub : public NativeInstruction {
     data_offset      = 3 * NativeInstruction::instruction_size,            // auipc + ld + jr
   };
 
-  address destination(nmethod *nm = NULL) const;
+  address destination(nmethod *nm = nullptr) const;
   void set_destination(address new_destination);
   ptrdiff_t destination_offset() const;
 };
@@ -523,7 +523,7 @@ inline bool is_NativeCallTrampolineStub_at(address addr) {
   // 1). check the instructions: auipc + ld + jalr
   // 2). check if auipc[11:7] == t0 and ld[11:7] == t0 and ld[19:15] == t0 && jr[19:15] == t0
   // 3). check if the offset in ld[31:20] equals the data_offset
-  assert_cond(addr != NULL);
+  assert_cond(addr != nullptr);
   const int instr_size = NativeInstruction::instruction_size;
   if (NativeInstruction::is_auipc_at(addr) &&
       NativeInstruction::is_ld_at(addr + instr_size) &&
@@ -539,7 +539,7 @@ inline bool is_NativeCallTrampolineStub_at(address addr) {
 }
 
 inline NativeCallTrampolineStub* nativeCallTrampolineStub_at(address addr) {
-  assert_cond(addr != NULL);
+  assert_cond(addr != nullptr);
   assert(is_NativeCallTrampolineStub_at(addr), "no call trampoline found");
   return (NativeCallTrampolineStub*)addr;
 }
@@ -551,7 +551,7 @@ public:
 };
 
 inline NativeMembar *NativeMembar_at(address addr) {
-  assert_cond(addr != NULL);
+  assert_cond(addr != nullptr);
   assert(nativeInstruction_at(addr)->is_membar(), "no membar found");
   return (NativeMembar*)addr;
 }
@@ -581,7 +581,7 @@ inline NativePostCallNop* nativePostCallNop_at(address address) {
   if (nop->check()) {
     return nop;
   }
-  return NULL;
+  return nullptr;
 }
 
 inline NativePostCallNop* nativePostCallNop_unsafe_at(address address) {
@@ -603,7 +603,7 @@ class NativeDeoptInstruction: public NativeInstruction {
   void verify();
 
   static bool is_deopt_at(address instr) {
-    assert(instr != NULL, "");
+    assert(instr != nullptr, "");
     uint32_t value = *(uint32_t *) instr;
     // 0xc0201073 encodes CSRRW x0, instret, x0
     return value == 0xc0201073;

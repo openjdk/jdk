@@ -551,16 +551,16 @@ void C2_MacroAssembler::string_indexof(Register haystack, Register needle,
   sub(t0, needle_len, 16); // small patterns still should be handled by simple algorithm
   bltz(t0, LINEARSEARCH);
   mv(result, zr);
-  RuntimeAddress stub = NULL;
+  RuntimeAddress stub = nullptr;
   if (isLL) {
     stub = RuntimeAddress(StubRoutines::riscv::string_indexof_linear_ll());
-    assert(stub.target() != NULL, "string_indexof_linear_ll stub has not been generated");
+    assert(stub.target() != nullptr, "string_indexof_linear_ll stub has not been generated");
   } else if (needle_isL) {
     stub = RuntimeAddress(StubRoutines::riscv::string_indexof_linear_ul());
-    assert(stub.target() != NULL, "string_indexof_linear_ul stub has not been generated");
+    assert(stub.target() != nullptr, "string_indexof_linear_ul stub has not been generated");
   } else {
     stub = RuntimeAddress(StubRoutines::riscv::string_indexof_linear_uu());
-    assert(stub.target() != NULL, "string_indexof_linear_uu stub has not been generated");
+    assert(stub.target() != nullptr, "string_indexof_linear_uu stub has not been generated");
   }
   address call = trampoline_call(stub);
   if (call == nullptr) {
@@ -952,7 +952,7 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
   }
 
   bind(STUB);
-  RuntimeAddress stub = NULL;
+  RuntimeAddress stub = nullptr;
   switch (ae) {
     case StrIntrinsicNode::LL:
       stub = RuntimeAddress(StubRoutines::riscv::compare_long_string_LL());
@@ -969,7 +969,7 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
     default:
       ShouldNotReachHere();
   }
-  assert(stub.target() != NULL, "compare_long_string stub has not been generated");
+  assert(stub.target() != nullptr, "compare_long_string stub has not been generated");
   address call = trampoline_call(stub);
   if (call == nullptr) {
     DEBUG_ONLY(reset_labels(DONE, SHORT_LOOP, SHORT_STRING, SHORT_LAST, SHORT_LOOP_TAIL, SHORT_LAST2, SHORT_LAST_INIT, SHORT_LOOP_START));
@@ -1211,21 +1211,21 @@ static conditional_branch_insn conditional_branches[] =
   /* SHORT branches */
   (conditional_branch_insn)&MacroAssembler::beq,
   (conditional_branch_insn)&MacroAssembler::bgt,
-  NULL, // BoolTest::overflow
+  nullptr, // BoolTest::overflow
   (conditional_branch_insn)&MacroAssembler::blt,
   (conditional_branch_insn)&MacroAssembler::bne,
   (conditional_branch_insn)&MacroAssembler::ble,
-  NULL, // BoolTest::no_overflow
+  nullptr, // BoolTest::no_overflow
   (conditional_branch_insn)&MacroAssembler::bge,
 
   /* UNSIGNED branches */
   (conditional_branch_insn)&MacroAssembler::beq,
   (conditional_branch_insn)&MacroAssembler::bgtu,
-  NULL,
+  nullptr,
   (conditional_branch_insn)&MacroAssembler::bltu,
   (conditional_branch_insn)&MacroAssembler::bne,
   (conditional_branch_insn)&MacroAssembler::bleu,
-  NULL,
+  nullptr,
   (conditional_branch_insn)&MacroAssembler::bgeu
 };
 
@@ -1234,21 +1234,21 @@ static float_conditional_branch_insn float_conditional_branches[] =
   /* FLOAT SHORT branches */
   (float_conditional_branch_insn)&MacroAssembler::float_beq,
   (float_conditional_branch_insn)&MacroAssembler::float_bgt,
-  NULL,  // BoolTest::overflow
+  nullptr,  // BoolTest::overflow
   (float_conditional_branch_insn)&MacroAssembler::float_blt,
   (float_conditional_branch_insn)&MacroAssembler::float_bne,
   (float_conditional_branch_insn)&MacroAssembler::float_ble,
-  NULL, // BoolTest::no_overflow
+  nullptr, // BoolTest::no_overflow
   (float_conditional_branch_insn)&MacroAssembler::float_bge,
 
   /* DOUBLE SHORT branches */
   (float_conditional_branch_insn)&MacroAssembler::double_beq,
   (float_conditional_branch_insn)&MacroAssembler::double_bgt,
-  NULL,
+  nullptr,
   (float_conditional_branch_insn)&MacroAssembler::double_blt,
   (float_conditional_branch_insn)&MacroAssembler::double_bne,
   (float_conditional_branch_insn)&MacroAssembler::double_ble,
-  NULL,
+  nullptr,
   (float_conditional_branch_insn)&MacroAssembler::double_bge
 };
 
@@ -1304,7 +1304,7 @@ void C2_MacroAssembler::enc_cmove(int cmpFlag, Register op1, Register op2, Regis
 }
 
 // Set dst to NaN if any NaN input.
-void C2_MacroAssembler::minmax_FD(FloatRegister dst, FloatRegister src1, FloatRegister src2,
+void C2_MacroAssembler::minmax_fp(FloatRegister dst, FloatRegister src1, FloatRegister src2,
                                   bool is_double, bool is_min) {
   assert_different_registers(dst, src1, src2);
 
@@ -1616,7 +1616,7 @@ void C2_MacroAssembler::string_indexof_char_v(Register str1, Register cnt1,
 }
 
 // Set dst to NaN if any NaN input.
-void C2_MacroAssembler::minmax_FD_v(VectorRegister dst, VectorRegister src1, VectorRegister src2,
+void C2_MacroAssembler::minmax_fp_v(VectorRegister dst, VectorRegister src1, VectorRegister src2,
                                     bool is_double, bool is_min, int length_in_bytes) {
   assert_different_registers(dst, src1, src2);
 
@@ -1632,7 +1632,7 @@ void C2_MacroAssembler::minmax_FD_v(VectorRegister dst, VectorRegister src1, Vec
 }
 
 // Set dst to NaN if any NaN input.
-void C2_MacroAssembler::reduce_minmax_FD_v(FloatRegister dst,
+void C2_MacroAssembler::reduce_minmax_fp_v(FloatRegister dst,
                                            FloatRegister src1, VectorRegister src2,
                                            VectorRegister tmp1, VectorRegister tmp2,
                                            bool is_double, bool is_min, int length_in_bytes) {
@@ -1661,9 +1661,9 @@ void C2_MacroAssembler::reduce_minmax_FD_v(FloatRegister dst,
 }
 
 bool C2_MacroAssembler::in_scratch_emit_size() {
-  if (ciEnv::current()->task() != NULL) {
+  if (ciEnv::current()->task() != nullptr) {
     PhaseOutput* phase_output = Compile::current()->output();
-    if (phase_output != NULL && phase_output->in_scratch_emit_size()) {
+    if (phase_output != nullptr && phase_output->in_scratch_emit_size()) {
       return true;
     }
   }
@@ -1720,5 +1720,66 @@ void C2_MacroAssembler::rvv_vsetvli(BasicType bt, int length_in_bytes, Register 
       mv(tmp, num_elements);
       vsetvli(tmp, tmp, sew);
     }
+  }
+}
+
+void C2_MacroAssembler::compare_integral_v(VectorRegister vd, BasicType bt, int length_in_bytes,
+                                           VectorRegister src1, VectorRegister src2, int cond, VectorMask vm) {
+  assert(is_integral_type(bt), "unsupported element type");
+  assert(vm == Assembler::v0_t ? vd != v0 : true, "should be different registers");
+  rvv_vsetvli(bt, length_in_bytes);
+  vmclr_m(vd);
+  switch (cond) {
+    case BoolTest::eq: vmseq_vv(vd, src1, src2, vm); break;
+    case BoolTest::ne: vmsne_vv(vd, src1, src2, vm); break;
+    case BoolTest::le: vmsle_vv(vd, src1, src2, vm); break;
+    case BoolTest::ge: vmsge_vv(vd, src1, src2, vm); break;
+    case BoolTest::lt: vmslt_vv(vd, src1, src2, vm); break;
+    case BoolTest::gt: vmsgt_vv(vd, src1, src2, vm); break;
+    default:
+      assert(false, "unsupported compare condition");
+      ShouldNotReachHere();
+  }
+}
+
+void C2_MacroAssembler::compare_floating_point_v(VectorRegister vd, BasicType bt, int length_in_bytes,
+                                                 VectorRegister src1, VectorRegister src2,
+                                                 VectorRegister tmp1, VectorRegister tmp2,
+                                                 VectorRegister vmask, int cond, VectorMask vm) {
+  assert(is_floating_point_type(bt), "unsupported element type");
+  assert(vd != v0, "should be different registers");
+  assert(vm == Assembler::v0_t ? vmask != v0 : true, "vmask should not be v0");
+  rvv_vsetvli(bt, length_in_bytes);
+  // Check vector elements of src1 and src2 for quiet or signaling NaN.
+  vfclass_v(tmp1, src1);
+  vfclass_v(tmp2, src2);
+  vsrl_vi(tmp1, tmp1, 8);
+  vsrl_vi(tmp2, tmp2, 8);
+  vmseq_vx(tmp1, tmp1, zr);
+  vmseq_vx(tmp2, tmp2, zr);
+  if (vm == Assembler::v0_t) {
+    vmand_mm(tmp2, tmp1, tmp2);
+    if (cond == BoolTest::ne) {
+      vmandn_mm(tmp1, vmask, tmp2);
+    }
+    vmand_mm(v0, vmask, tmp2);
+  } else {
+    vmand_mm(v0, tmp1, tmp2);
+    if (cond == BoolTest::ne) {
+      vmnot_m(tmp1, v0);
+    }
+  }
+  vmclr_m(vd);
+  switch (cond) {
+    case BoolTest::eq: vmfeq_vv(vd, src1, src2, Assembler::v0_t); break;
+    case BoolTest::ne: vmfne_vv(vd, src1, src2, Assembler::v0_t);
+                       vmor_mm(vd, vd, tmp1); break;
+    case BoolTest::le: vmfle_vv(vd, src1, src2, Assembler::v0_t); break;
+    case BoolTest::ge: vmfge_vv(vd, src1, src2, Assembler::v0_t); break;
+    case BoolTest::lt: vmflt_vv(vd, src1, src2, Assembler::v0_t); break;
+    case BoolTest::gt: vmfgt_vv(vd, src1, src2, Assembler::v0_t); break;
+    default:
+      assert(false, "unsupported compare condition");
+      ShouldNotReachHere();
   }
 }
