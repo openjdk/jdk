@@ -68,8 +68,10 @@ public class RemoveParentChildDropTargetTest {
             label.setDropTarget(null);
         });
 
-        if (frame != null) {
-            frame.dispose();
-        }
+        EventQueue.invokeAndWait(() -> {
+            if (frame != null) {
+                frame.dispose();
+            }
+        });
     }
 }

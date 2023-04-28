@@ -79,9 +79,9 @@ public class SourceFrame extends Frame
 
     public void dragDropEnd(DragSourceDropEvent dsde) { }
 
-    public void dragGestureRecognized(DragGestureEvent dge)  {
-
+    public void dragGestureRecognized(DragGestureEvent dge) {
         transferableObject = new TransferableObject(textArea.getText());
-            dragSource.startDrag(dge,DragSource.DefaultCopyDrop,transferableObject,this);
-        }
+        dragSource.startDrag(dge, DragSource.DefaultCopyDrop,
+                transferableObject, this);
+    }
 }

@@ -53,7 +53,7 @@ public class SkipDropCompleteTest {
 
     public void init() {
         sourceFrame = new SourceFrame();
-        targetFrame  = new TargetFrame();
+        targetFrame = new TargetFrame();
 
         sourceLoc = sourceFrame.getLocation();
         Dimension sourceSize = sourceFrame.getSize();
@@ -66,7 +66,8 @@ public class SkipDropCompleteTest {
         targetLoc.y += targetSize.height / 2;
     }
 
-    public void start() throws AWTException, InterruptedException {
+    public void start() throws AWTException, InterruptedException,
+            InvocationTargetException {
         try {
             Robot robot = new Robot();
             robot.setAutoWaitForIdle(true);
@@ -81,12 +82,14 @@ public class SkipDropCompleteTest {
             }
             robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
         } finally {
-            if (sourceFrame != null) {
-                sourceFrame.dispose();
-            }
-            if (targetFrame != null) {
-                targetFrame.dispose();
-            }
+            EventQueue.invokeAndWait(() -> {
+                if (sourceFrame != null) {
+                    sourceFrame.dispose();
+                }
+                if (targetFrame != null) {
+                    targetFrame.dispose();
+                }
+            });
         }
 
         System.out.println("test passed");

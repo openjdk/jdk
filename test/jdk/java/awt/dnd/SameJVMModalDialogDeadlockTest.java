@@ -110,7 +110,8 @@ public class SameJVMModalDialogDeadlockTest implements AWTEventListener {
         frame.setVisible(true);
     }
 
-    public void start() throws AWTException, InterruptedException {
+    public void start() throws AWTException, InterruptedException,
+            InvocationTargetException {
         try {
             final Robot robot = new Robot();
             robot.waitForIdle();
@@ -141,9 +142,11 @@ public class SameJVMModalDialogDeadlockTest implements AWTEventListener {
 
             robot.delay(DROP_COMPLETION_TIMEOUT);
         } finally {
-            if (frame != null) {
-                frame.dispose();
-            }
+            EventQueue.invokeAndWait(() -> {
+                if (frame != null) {
+                    frame.dispose();
+                }
+            });
         }
 
         if (!finished) {

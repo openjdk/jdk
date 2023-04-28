@@ -50,7 +50,7 @@ public class TargetFrame extends Frame implements DropTargetListener{
         });
 
         setSize(250,250);
-                setLocation(350,50);
+        setLocation(350,50);
         this.setVisible(true);
 
         dropTarget = new DropTarget(textArea,this);

@@ -51,7 +51,7 @@ import java.lang.reflect.InvocationTargetException;
 
 public class RejectDragDropActionTest {
 
-    private static boolean incorrectActionDetected = false;
+    private static volatile boolean incorrectActionDetected = false;
 
     private static final int FRAME_ACTIVATION_TIMEOUT = 3000;
 
@@ -106,9 +106,11 @@ public class RejectDragDropActionTest {
 
             robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
         } finally {
-            if (frame != null) {
-                frame.dispose();
-            }
+            EventQueue.invokeAndWait(() -> {
+                if (frame != null) {
+                    frame.dispose();
+                }
+            });
         }
 
         if (incorrectActionDetected) {
