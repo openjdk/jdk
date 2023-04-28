@@ -3553,6 +3553,9 @@ public class JavacParser implements Parser {
      */
     JCVariableDecl variableDeclarator(JCModifiers mods, JCExpression type, boolean reqInit, Comment dc, boolean localDecl) {
         UnnamedDetails result = identOrFlagUnderscore(mods);
+        if (!localDecl && result.name() == names.underscore) {
+            log.error(DiagnosticFlag.SYNTAX, result.varPos(), Errors.UnderscoreAsIdentifier);
+        }
         return variableDeclaratorRest(result.varPos(), mods, type, result.name(), reqInit, dc, localDecl, true);
     }
 

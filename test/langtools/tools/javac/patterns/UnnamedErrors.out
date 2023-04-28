@@ -1,19 +1,26 @@
 UnnamedErrors.java:9:17: compiler.err.underscore.as.identifier
-UnnamedErrors.java:10:18: compiler.err.underscore.as.identifier
-UnnamedErrors.java:11:23: compiler.err.underscore.as.identifier
-UnnamedErrors.java:12:19: compiler.err.underscore.as.identifier
-UnnamedErrors.java:17:26: compiler.err.underscore.as.identifier
-UnnamedErrors.java:19:26: compiler.err.underscore.as.identifier
-UnnamedErrors.java:22:18: compiler.err.underscore.as.identifier
-UnnamedErrors.java:29:18: compiler.err.restricted.type.not.allowed.here: var
-UnnamedErrors.java:29:22: compiler.err.underscore.as.identifier
-UnnamedErrors.java:72:18: compiler.err.underscore.as.identifier
-UnnamedErrors.java:72:19: compiler.err.expected: token.identifier
-UnnamedErrors.java:31:13: compiler.err.unconditional.pattern.and.default
-UnnamedErrors.java:40:18: compiler.err.pattern.dominated
-UnnamedErrors.java:49:29: compiler.err.flows.through.from.pattern
-UnnamedErrors.java:56:29: compiler.err.flows.through.from.pattern
-UnnamedErrors.java:63:32: compiler.err.flows.through.from.pattern
+UnnamedErrors.java:10:17: compiler.err.underscore.as.identifier
+UnnamedErrors.java:11:20: compiler.err.underscore.as.identifier
+UnnamedErrors.java:11:26: compiler.err.underscore.as.identifier
+UnnamedErrors.java:11:32: compiler.err.underscore.as.identifier
+UnnamedErrors.java:12:17: compiler.err.underscore.as.identifier
+UnnamedErrors.java:12:24: compiler.err.underscore.as.identifier
+UnnamedErrors.java:13:24: compiler.err.underscore.as.identifier
+UnnamedErrors.java:15:18: compiler.err.underscore.as.identifier
+UnnamedErrors.java:16:23: compiler.err.underscore.as.identifier
+UnnamedErrors.java:17:19: compiler.err.underscore.as.identifier
+UnnamedErrors.java:22:26: compiler.err.underscore.as.identifier
+UnnamedErrors.java:24:26: compiler.err.underscore.as.identifier
+UnnamedErrors.java:27:18: compiler.err.underscore.as.identifier
+UnnamedErrors.java:34:18: compiler.err.restricted.type.not.allowed.here: var
+UnnamedErrors.java:34:22: compiler.err.underscore.as.identifier
+UnnamedErrors.java:77:18: compiler.err.underscore.as.identifier
+UnnamedErrors.java:77:19: compiler.err.expected: token.identifier
+UnnamedErrors.java:36:13: compiler.err.unconditional.pattern.and.default
+UnnamedErrors.java:45:18: compiler.err.pattern.dominated
+UnnamedErrors.java:54:29: compiler.err.flows.through.from.pattern
+UnnamedErrors.java:61:29: compiler.err.flows.through.from.pattern
+UnnamedErrors.java:68:32: compiler.err.flows.through.from.pattern
 - compiler.note.preview.filename: UnnamedErrors.java, DEFAULT
 - compiler.note.preview.recompile
-16 errors
+23 errors

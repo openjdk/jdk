@@ -6,7 +6,12 @@
  * @compile/fail/ref=UnnamedErrors.out -XDrawDiagnostics -XDshould-stop.at=FLOW UnnamedErrors.java
  */
 public class UnnamedErrors {
-    private int _; //no fields
+    private int _; // error
+    private int _, x;  // error
+    private int x, _, y, _, z, _;  // error
+    private int _ = 0, _ = 1; // error
+    private int a = 0, _ = 1; // error
+
     record R(int _) {} //no record components
     UnnamedErrors(int _) {} //no constructor parameters
     void test(int _) {} //no method parameters
