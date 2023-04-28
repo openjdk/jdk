@@ -68,55 +68,18 @@ class FallbackTable;
  *                              ^----------------------- compressed class pointer (not handled, but also *not touched* by this code)
  *
  * Adding a forwarding then generally works as follows:
- *
- *   void forward_to(oop* from, oop* to) {
- *     // Identifying the offset in the target region is easy:
- *     intptr_t to_region_addr = oop_to_region_addr(to);
- *     u4 mark_offset = encode_offset(to_region_addr, to);
- *
- *     // Now we need to record the target region address in the bases table.
- *     // There are two entries per region: primary and alternative.
- *     int reg_prim = oop_to_region_idx(from);
- *     int reg_alt = reg_prim + 1;
- *
- *     bool alt_region = false;
- *     if (bases_table[reg_prim] == UNUSED) {
- *       // Primary entry is free, take it.
- *       bases_table[reg_prim] = to_region_addr;
- *     } else if (bases_table[reg_prim] != to_region_addr) {
- *       // Primary entry is taken by incompatible "to" address, use the alternate.
- *       if (bases_table[reg_alt] == UNUSED) {
- *         // Alternate is unused, take it.
- *         bases_table[reg_alt] = to_region_addr;
- *       } else {
- *         // Since we see two "to" regions only, we know alternate entry has the
- *         // correct "to" address for this mapping.
- *       }
- *       alt_region = true;
- *     }
- *
- *     // All done, we only need to record which mapping to use
- *     u1 mark_region_select = encode_region_select(alt_region);
- *
- *     // Store everything in the object header
- *     from->update_mark(FORWARDED | mark_region_select | mark_offset);
- *   }
+ *   1. Compute the "to" offset in the "to" region, this gives "offset".
+ *   2. Check if the primary "from" offset at base table contains "to" region base, use it.
+ *      If not usable, continue to next step. If usable, set "alternate" = "false" and jump to (4).
+ *   3. Check if the alternate "from" offset at base table contains "to" region base, use it.
+ *      This gives us "alternate" = "true". This should always complete for sliding forwarding.
+ *   4. Compute the mark word from "offset" and "alternate", write it out
  *
  * Similarily, looking up the target address, given an original object address generally works as follows:
- *
- *   oop* forwardee(oop* obj) {
- *     // Load and decode the forwarding
- *     mark m = obj->mark();
- *     u1 region_select = decode_region_select(m);
- *     u4 offset = decode_offset(m);
- *
- *     // Figure out which region the original region is forwarded to:
- *     int reg_idx = oop_to_region_idx(obj) + region_select;
- *     intptr_t fwd_base = bases_table[reg_idx];
- *
- *     // Compute the forwarding address
- *     return fwd_base + offset;
- *   }
+ *   1. Load the mark from object, and decode "offset" and "alternate" from there
+ *   2. Compute the "from" base offset from the object
+ *   3. Look up "to" region base from the base table either at primary or alternate indices, using "alternate" flag
+ *   4. Compute the "to" address from "to" region base and "offset"
  *
  * This algorithm is broken by G1 last-ditch serial compaction: there, object from a single region can be
  * forwarded to multiple, more than two regions. To deal with that, we initialize a fallback-hashtable for
@@ -130,39 +93,39 @@ private:
   static const uintptr_t MARK_LOWER_HALF_MASK = 0xffffffff;
 
   // We need the lowest two bits to indicate a forwarded object.
-  // The 3rd bit (fallback-bit) indicates that the forwardee should be
-  // looked-up in a fallback-table.
+  // The next bit indicates that the forwardee should be looked-up in a fallback-table.
   static const int FALLBACK_SHIFT = markWord::lock_bits;
   static const int FALLBACK_BITS = 1;
   static const int FALLBACK_MASK = right_n_bits(FALLBACK_BITS) << FALLBACK_SHIFT;
-  // The 4th bit selects the target region.
-  static const int REGION_SHIFT = FALLBACK_SHIFT + FALLBACK_BITS;
-  static const int REGION_BITS = 1;
 
-  // The compressed address bits start here.
-  static const int COMPRESSED_BITS_SHIFT = REGION_SHIFT + REGION_BITS;
+  // Next bit selects the target region
+  static const int ALT_REGION_SHIFT = FALLBACK_SHIFT + FALLBACK_BITS;
+  static const int ALT_REGION_BITS = 1;
+  // This will be "2" always, but expose it as named constant for clarity
+  static const size_t NUM_TARGET_REGIONS = 1 << ALT_REGION_BITS;
+
+  // The offset bits start then
+  static const int OFFSET_BITS_SHIFT = ALT_REGION_SHIFT + ALT_REGION_BITS;
 
   // How many bits we use for the compressed pointer
-  static const int NUM_COMPRESSED_BITS = 32 - COMPRESSED_BITS_SHIFT;
+  static const int NUM_COMPRESSED_BITS = 32 - OFFSET_BITS_SHIFT;
 
-  static const size_t NUM_TARGET_REGIONS = 1 << REGION_BITS;
-
-  // Indicates an usused base address in the target base table. We cannot use 0, because that may already be
-  // a valid base address in zero-based heaps. 0x1 is safe because heap base addresses must be aligned by 2^X.
+  // Indicates an unused base address in the target base table.
   static HeapWord* const UNUSED_BASE;
 
   HeapWord*  const _heap_start;
   size_t           _num_regions;
+  size_t           _region_size_words;
   size_t           _region_size_words_shift;
-  HeapWord**       _target_base_table;
+  HeapWord**       _bases_table;
 
   FallbackTable*   _fallback_table;
 
   inline size_t region_index_containing(HeapWord* addr) const;
   inline bool region_contains(HeapWord* region_base, HeapWord* addr) const;
 
-  inline uintptr_t encode_forwarding(HeapWord* original, HeapWord* target);
-  inline HeapWord* decode_forwarding(HeapWord* original, uintptr_t encoded) const;
+  inline uintptr_t encode_forwarding(HeapWord* from, HeapWord* to);
+  inline HeapWord* decode_forwarding(HeapWord* from, uintptr_t encoded) const;
 
   void fallback_forward_to(HeapWord* from, HeapWord* to);
   HeapWord* fallback_forwardee(HeapWord* from) const;
@@ -174,8 +137,8 @@ public:
   void begin();
   void end();
 
-  inline void forward_to(oop original, oop target);
-  inline oop forwardee(oop original) const;
+  inline void forward_to(oop from, oop to);
+  inline oop forwardee(oop from) const;
 };
 
 /*
