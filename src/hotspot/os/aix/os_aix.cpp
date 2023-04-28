@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1078,10 +1078,11 @@ bool os::dll_address_to_library_name(address addr, char* buf,
   }
 
   address  base = nullptr;
-  if ( false == AixSymbols::get_module_name_and_base(addr, buf, buflen, &base)
-       || base == nullptr ) {
+  if (!AixSymbols::get_module_name_and_base(addr, buf, buflen, &base)
+      || base == nullptr) {
     return false;
   }
+  assert(addr >= base && addr <= base + INT_MAX, "address not in library text range");
   if (offset != nullptr) {
     *offset = addr - base;
   }
