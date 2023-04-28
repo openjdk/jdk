@@ -228,13 +228,13 @@ void Rewriter::maybe_rewrite_invokehandle(address opc, int cp_index, int cache_i
       if (status == 0) {
         if (_pool->klass_ref_at_noresolve(cp_index) == vmSymbols::java_lang_invoke_MethodHandle() &&
             MethodHandles::is_signature_polymorphic_name(vmClasses::MethodHandle_klass(),
-                                                         _pool->name_ref_at(cp_index))) {
+                                                         _pool->name_ref_at(cp_index, (Bytecodes::Code)(*opc)))) {
           // we may need a resolved_refs entry for the appendix
           add_invokedynamic_resolved_references_entry(cp_index, cache_index);
           status = +1;
         } else if (_pool->klass_ref_at_noresolve(cp_index) == vmSymbols::java_lang_invoke_VarHandle() &&
                    MethodHandles::is_signature_polymorphic_name(vmClasses::VarHandle_klass(),
-                                                                _pool->name_ref_at(cp_index))) {
+                                                                _pool->name_ref_at(cp_index, (Bytecodes::Code)(*opc)))) {
           // we may need a resolved_refs entry for the appendix
           add_invokedynamic_resolved_references_entry(cp_index, cache_index);
           status = +1;
@@ -424,8 +424,8 @@ void Rewriter::scan_method(Thread* thread, Method* method, bool reverse, bool* i
           Symbol* ref_class_name = cp->klass_name_at(cp->klass_ref_index_at(bc_index));
 
           if (klass->name() == ref_class_name) {
-            Symbol* field_name = cp->name_ref_at(bc_index);
-            Symbol* field_sig = cp->signature_ref_at(bc_index);
+            Symbol* field_name = cp->name_ref_at(bc_index, c);
+            Symbol* field_sig = cp->signature_ref_at(bc_index, c);
 
             fieldDescriptor fd;
             if (klass->find_field(field_name, field_sig, &fd) != nullptr) {

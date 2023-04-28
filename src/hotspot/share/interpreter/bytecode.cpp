@@ -136,12 +136,12 @@ Symbol* Bytecode_member_ref::klass() const {
 
 
 Symbol* Bytecode_member_ref::name() const {
-  return constants()->name_ref_at(index());
+  return constants()->name_ref_at(index(), _code);
 }
 
 
 Symbol* Bytecode_member_ref::signature() const {
-  return constants()->signature_ref_at(index());
+  return constants()->signature_ref_at(index(), _code);
 }
 
 

@@ -675,29 +675,50 @@ bool ConstantPool::has_local_signature_at_if_loaded(const constantPoolHandle& cp
   }
 }
 
-Symbol* ConstantPool::impl_name_ref_at(int which, bool uncached) {
-  int name_index = name_ref_index_at(impl_name_and_type_ref_index_at(which, uncached));
+Symbol* ConstantPool::impl_name_ref_at(int which, Bytecodes::Code code, bool uncached) {
+  int name_index = name_ref_index_at(impl_name_and_type_ref_index_at(which, code, uncached));
   return symbol_at(name_index);
 }
 
 
-Symbol* ConstantPool::impl_signature_ref_at(int which, bool uncached) {
-  int signature_index = signature_ref_index_at(impl_name_and_type_ref_index_at(which, uncached));
+Symbol* ConstantPool::impl_signature_ref_at(int which, Bytecodes::Code code, bool uncached) {
+  int signature_index = signature_ref_index_at(impl_name_and_type_ref_index_at(which, code, uncached));
   return symbol_at(signature_index);
 }
 
-int ConstantPool::impl_name_and_type_ref_index_at(int which, bool uncached) {
+int ConstantPool::cp_index_helper(int which, Bytecodes::Code code) {
+  assert(code != Bytecodes::_invokedynamic, "invokedynamic must be handled differently");
+  switch(code) {
+    case Bytecodes::_getfield:
+    case Bytecodes::_getstatic:
+    case Bytecodes::_putfield:
+    case Bytecodes::_putstatic:
+      // TODO: handle resolved field entries with new structure
+      // i = ....
+    case Bytecodes::_invokeinterface:
+    case Bytecodes::_invokehandle:
+    case Bytecodes::_invokespecial:
+    case Bytecodes::_invokestatic:
+    case Bytecodes::_invokevirtual:
+    default:
+      // change byte-ordering and go via cache
+      return remap_instruction_operand_from_cache(which);
+  }
+}
+
+int ConstantPool::impl_name_and_type_ref_index_at(int which, Bytecodes::Code code, bool uncached) {
   int i = which;
   if (!uncached && cache() != nullptr) {
-    if (ConstantPool::is_invokedynamic_index(which)) {
+    if (code == Bytecodes::_invokedynamic) {
+    //if (ConstantPool::is_invokedynamic_index(which)) {
       // Invokedynamic index is index into the resolved indy array in the constant pool cache
+      assert(ConstantPool::is_invokedynamic_index(which), "Should be indy index");
       int pool_index = invokedynamic_bootstrap_ref_index_at(which);
       pool_index = bootstrap_name_and_type_ref_index_at(pool_index);
       assert(tag_at(pool_index).is_name_and_type(), "");
       return pool_index;
     }
-    // change byte-ordering and go via cache
-    i = remap_instruction_operand_from_cache(which);
+    i = cp_index_helper(which, code);
   } else {
     if (tag_at(which).has_bootstrap()) {
       int pool_index = bootstrap_name_and_type_ref_index_at(which);
@@ -711,27 +732,27 @@ int ConstantPool::impl_name_and_type_ref_index_at(int which, bool uncached) {
   return extract_high_short_from_int(ref_index);
 }
 
-constantTag ConstantPool::impl_tag_ref_at(int which, bool uncached) {
+constantTag ConstantPool::impl_tag_ref_at(int which, Bytecodes::Code code, bool uncached) {
   int pool_index = which;
   if (!uncached && cache() != nullptr) {
-    if (ConstantPool::is_invokedynamic_index(which)) {
-      // Invokedynamic index is index into resolved_references
+    if (code == Bytecodes::_invokedynamic) {
+      assert(ConstantPool::is_invokedynamic_index(which), "Must be indy index");
       pool_index = invokedynamic_bootstrap_ref_index_at(which);
     } else {
-      // change byte-ordering and go via cache
-      pool_index = remap_instruction_operand_from_cache(which);
+      pool_index = cp_index_helper(which, code);
     }
   }
   return tag_at(pool_index);
 }
 
-int ConstantPool::impl_klass_ref_index_at(int which, bool uncached) {
+int ConstantPool::impl_klass_ref_index_at(int which, Bytecodes::Code code, bool uncached) {
   guarantee(!ConstantPool::is_invokedynamic_index(which),
+            "an invokedynamic instruction does not have a klass");
+  assert(code != Bytecodes::_invokedynamic,
             "an invokedynamic instruction does not have a klass");
   int i = which;
   if (!uncached && cache() != nullptr) {
-    // change byte-ordering and go via cache
-    i = remap_instruction_operand_from_cache(which);
+    i = cp_index_helper(which, code);
   }
   assert(tag_at(i).is_field_or_method(), "Corrupted constant pool");
   jint ref_index = *int_at_addr(i);

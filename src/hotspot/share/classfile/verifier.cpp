@@ -2310,8 +2310,8 @@ void ClassVerifier::verify_field_instructions(RawBytecodeStream* bcs,
       1 << JVM_CONSTANT_Fieldref, CHECK_VERIFY(this));
 
   // Get field name and signature
-  Symbol* field_name = cp->name_ref_at(index);
-  Symbol* field_sig = cp->signature_ref_at(index);
+  Symbol* field_name = cp->name_ref_at(index, bcs->raw_code());
+  Symbol* field_sig = cp->signature_ref_at(index, bcs->raw_code());
   bool is_getfield = false;
 
   // Field signature was checked in ClassFileParser.
@@ -2401,7 +2401,7 @@ void ClassVerifier::verify_field_instructions(RawBytecodeStream* bcs,
         return;
       }
       Symbol* ref_class_name =
-        cp->klass_name_at(cp->klass_ref_index_at(index));
+        cp->klass_name_at(cp->klass_ref_index_at(index, bcs->raw_code()));
       if (!name_in_supers(ref_class_name, current_class()))
         // stack_object_type must be assignable to _current_class_type since:
         // 1. stack_object_type must be assignable to ref_class.
@@ -2804,8 +2804,8 @@ void ClassVerifier::verify_invoke_instructions(
   verify_cp_type(bcs->bci(), index, cp, types, CHECK_VERIFY(this));
 
   // Get method name and signature
-  Symbol* method_name = cp->name_ref_at(index);
-  Symbol* method_sig = cp->signature_ref_at(index);
+  Symbol* method_name = cp->name_ref_at(index, opcode);
+  Symbol* method_sig = cp->signature_ref_at(index, opcode);
 
   // Method signature was checked in ClassFileParser.
   assert(SignatureVerifier::is_valid_method_signature(method_sig),
@@ -2934,7 +2934,7 @@ void ClassVerifier::verify_invoke_instructions(
           if (was_recursively_verified()) return;
           assert(cp->cache() == nullptr, "not rewritten yet");
           Symbol* ref_class_name =
-            cp->klass_name_at(cp->klass_ref_index_at(index));
+            cp->klass_name_at(cp->klass_ref_index_at(index, opcode));
           // See the comments in verify_field_instructions() for
           // the rationale behind this.
           if (name_in_supers(ref_class_name, current_class())) {
