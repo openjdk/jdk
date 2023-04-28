@@ -870,9 +870,13 @@ class VM_HeapDumpMerge : public VM_Operation {
 private:
   DumpWriter* _writer;
   const char* _path;
+  bool _has_error;
+
+  void merge_file(char* path);
+  void merge_done();
 public:
   VM_HeapDumpMerge(const char* path, DumpWriter* writer)
-    : _writer(writer), _path(path) {}
+    : _writer(writer), _path(path), _has_error(_writer->has_error()) {}
   VMOp_Type type() const { return VMOp_HeapDumpMerge; }
   // heap dump merge could happen outside safepoint
   virtual bool evaluate_at_safepoint() const { return false; }
@@ -1236,62 +1240,66 @@ void VM_HeapDumper::doit() {
 
 static int volatile dump_seq = 0;
 
-void VM_HeapDumpMerge::doit(){
+void VM_HeapDumpMerge::merge_done() {
+  // Writes the HPROF_HEAP_DUMP_END record.
+  if (!_has_error) {
+    DumperSupport::end_of_dump(_writer);
+    _writer->flush();
+  }
+  dump_seq = 0; //reset
+}
+
+void VM_HeapDumpMerge::merge_file(char* path) {
+  assert(!SafepointSynchronize::is_at_safepoint(), "merging happens outside safepoint");
+  TraceTime timer("Merge segmented heap file", TRACETIME_LOG(Info, heapdump));
+
+  fileStream part_fs(path, "r");
+  if (!part_fs.is_open()) {
+    log_error(heapdump)("Can not open segmented heap file %s during merging", path);
+    _writer->set_error("Can not open segmented heap file during merging");
+    _has_error = true;
+    return;
+  }
+
+  jlong total = 0;
+  int cnt = 0;
+  char read_buf[4096];
+  while ((cnt = part_fs.read(read_buf, 1, 4096)) != 0) {
+    _writer->write_raw(read_buf, cnt);
+    total += cnt;
+  }
+
+  _writer->flush();
+  if (part_fs.fileSize() != total) {
+    log_error(heapdump)("Merged heap dump %s is incomplete", path);
+    _writer->set_error("Merged heap dump is incomplete");
+    _has_error = true;
+  }
+}
+
+void VM_HeapDumpMerge::doit() {
   assert(!SafepointSynchronize::is_at_safepoint(), "merging happens outside safepoint");
   TraceTime timer("Merge heap files complete", TRACETIME_LOG(Info, heapdump));
-  char path[JVM_MAXPATHLEN];
-  bool has_error = _writer->has_error();
 
   // Since contents in segmented heap file were already zipped, we don't need to zip
   // them again during merging.
   AbstractCompressor* saved_compressor = _writer->compressor();
   _writer->set_compressor(nullptr);
 
+  // merge segmented heap file and remove it anyway
+  char path[JVM_MAXPATHLEN];
   for (int i = 0; i < dump_seq; i++) {
     memset(path, 0, JVM_MAXPATHLEN);
     os::snprintf(path, JVM_MAXPATHLEN, "%s.p%d", _path, i);
-
-    if (!has_error) {
-      TraceTime timer1("Merge segmented heap file", TRACETIME_LOG(Info, heapdump));
-      fileStream part_fs(path, "r");
-      jlong total = 0;
-      int cnt = 0;
-      char read_buf[4096];
-
-      if (!part_fs.is_open()) {
-          log_error(heapdump)("Failed to open %s during merging",  path);
-          _writer->set_error("Failed to merge heap dump: Can not open");
-          has_error = true;
-          goto error;
-      }
-      while ((cnt = part_fs.read(read_buf, 1, 1024)) != 0) {
-        _writer->write_raw(read_buf, cnt);
-        total += cnt;
-      }
-      _writer->flush();
-      if (part_fs.fileSize() != total) {
-        log_error(heapdump)("Merge heap dump incomplete %s", path);
-        _writer->set_error("Failed to merge heap dump: Incomplete");
-        has_error = true;
-        goto error;
-      }
+    if (!_has_error) {
+      merge_file(path);
     }
-error:
     remove(path);
   }
 
   // restore compressor for further use
   _writer->set_compressor(saved_compressor);
-
-  if (!has_error) {
-    // Writes the HPROF_HEAP_DUMP_END record.
-    DumperSupport::end_of_dump(_writer);
-
-    // We are actually done here.
-    _writer->flush();
-  }
-
-  dump_seq = 0; //reset
+  merge_done();
 }
 
 // prepare DumpWriter for every parallel dump thread
