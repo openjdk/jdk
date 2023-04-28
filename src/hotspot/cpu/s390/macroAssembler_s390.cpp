@@ -2074,7 +2074,7 @@ void MacroAssembler::push_frame(Register bytes, Register old_sp, bool copy_sp, b
   assert_different_registers(bytes, old_sp, Z_SP);
   if (!copy_sp) {
     z_cgr(old_sp, Z_SP);
-    asm_assert_eq("[old_sp]!=[Z_SP]", 0x211);
+    asm_assert(bcondEqual, "[old_sp]!=[Z_SP]", 0x211);
   }
 #endif
   if (copy_sp) { z_lgr(old_sp, Z_SP); }
@@ -2125,7 +2125,7 @@ void MacroAssembler::pop_frame() {
 // Pop current C frame and restore return PC register (Z_R14).
 void MacroAssembler::pop_frame_restore_retPC(int frame_size_in_bytes) {
   BLOCK_COMMENT("pop_frame_restore_retPC:");
-  int retPC_offset = _z_abi16(return_pc) + frame_size_in_bytes;
+  int retPC_offset = _z_common_abi(return_pc) + frame_size_in_bytes;
   // If possible, pop frame by add instead of load (a penny saved is a penny got :-).
   if (Displacement::is_validDisp(retPC_offset)) {
     z_lg(Z_R14, retPC_offset, Z_SP);
@@ -5326,47 +5326,25 @@ void MacroAssembler::multiply_to_len(Register x, Register xlen,
   z_lmg(Z_R7, Z_R13, _z_abi(gpr7), Z_SP);
 }
 
-#ifndef PRODUCT
+void MacroAssembler::asm_assert(branch_condition cond, const char* msg, int id, bool is_static) {
+#ifdef ASSERT
+  Label ok;
+  z_brc(cond, ok);
+  is_static ? stop_static(msg, id) : stop(msg, id);
+  bind(ok);
+#endif // ASSERT
+}
+
 // Assert if CC indicates "not equal" (check_equal==true) or "equal" (check_equal==false).
 void MacroAssembler::asm_assert(bool check_equal, const char *msg, int id) {
-  Label ok;
-  if (check_equal) {
-    z_bre(ok);
-  } else {
-    z_brne(ok);
-  }
-  stop(msg, id);
-  bind(ok);
-}
-
-// Assert if CC indicates "low".
-void MacroAssembler::asm_assert_low(const char *msg, int id) {
-  Label ok;
-  z_brnl(ok);
-  stop(msg, id);
-  bind(ok);
-}
-
-// Assert if CC indicates "high".
-void MacroAssembler::asm_assert_high(const char *msg, int id) {
-  Label ok;
-  z_brnh(ok);
-  stop(msg, id);
-  bind(ok);
-}
-
-// Assert if CC indicates "not equal" (check_equal==true) or "equal" (check_equal==false)
-// generate non-relocatable code.
-void MacroAssembler::asm_assert_static(bool check_equal, const char *msg, int id) {
-  Label ok;
-  if (check_equal) { z_bre(ok); }
-  else             { z_brne(ok); }
-  stop_static(msg, id);
-  bind(ok);
+#ifdef ASSERT
+  asm_assert(check_equal ? bcondEqual : bcondNotEqual, msg, id);
+#endif // ASSERT
 }
 
 void MacroAssembler::asm_assert_mems_zero(bool check_equal, bool allow_relocation, int size, int64_t mem_offset,
                                           Register mem_base, const char* msg, int id) {
+#ifdef ASSERT
   switch (size) {
     case 4:
       load_and_test_int(Z_R0, Address(mem_base, mem_offset));
@@ -5377,8 +5355,9 @@ void MacroAssembler::asm_assert_mems_zero(bool check_equal, bool allow_relocatio
     default:
       ShouldNotReachHere();
   }
-  if (allow_relocation) { asm_assert(check_equal, msg, id); }
-  else                  { asm_assert_static(check_equal, msg, id); }
+  // if relocation is not allowed then stop_static() will be called otherwise call stop()
+  asm_assert(check_equal ? bcondEqual : bcondNotEqual, msg, id, !allow_relocation);
+#endif // ASSERT
 }
 
 // Check the condition
@@ -5387,18 +5366,13 @@ void MacroAssembler::asm_assert_mems_zero(bool check_equal, bool allow_relocatio
 //   expected_size - FP + SP == 0
 // Destroys Register expected_size if no tmp register is passed.
 void MacroAssembler::asm_assert_frame_size(Register expected_size, Register tmp, const char* msg, int id) {
-  if (tmp == noreg) {
-    tmp = expected_size;
-  } else {
-    if (tmp != expected_size) {
-      z_lgr(tmp, expected_size);
-    }
-    z_algr(tmp, Z_SP);
-    z_slg(tmp, 0, Z_R0, Z_SP);
-    asm_assert_eq(msg, id);
-  }
+#ifdef ASSERT
+  lgr_if_needed(tmp, expected_size);
+  z_algr(tmp, Z_SP);
+  z_slg(tmp, 0, Z_R0, Z_SP);
+  asm_assert(bcondEqual, msg, id);
+#endif // ASSERT
 }
-#endif // !PRODUCT
 
 // Save and restore functions: Exclude Z_R0.
 void MacroAssembler::save_volatile_regs(Register dst, int offset, bool include_fp, bool include_flags) {
@@ -5519,8 +5493,8 @@ void MacroAssembler::stop(int type, const char* msg, int id) {
   // The plain disassembler does not recognize illtrap. It instead displays
   // a 32-bit value. Issuing two illtraps assures the disassembler finds
   // the proper beginning of the next instruction.
-  z_illtrap(); // Illegal instruction.
-  z_illtrap(); // Illegal instruction.
+  z_illtrap(id); // Illegal instruction.
+  z_illtrap(id); // Illegal instruction.
 
   BLOCK_COMMENT(" } stop");
 }
@@ -5559,7 +5533,7 @@ address MacroAssembler::stop_chain(address reentry, int type, const char* msg, i
     } else {
       call_VM_leaf_static(CAST_FROM_FN_PTR(address, stop_on_request), Z_ARG1, Z_ARG2);
     }
-    z_illtrap(); // Illegal instruction as emergency stop, should the above call return.
+    z_illtrap(id); // Illegal instruction as emergency stop, should the above call return.
   }
   BLOCK_COMMENT(" } stop_chain");
 

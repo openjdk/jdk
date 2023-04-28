@@ -426,6 +426,14 @@ GB/2</em>.</p>
 <p>Sets the argument <code>-timeoutHandlerTimeout</code> for JTReg. The
 default value is 0. This is only valid if the failure handler is
 built.</p>
+<h4 id="jtreg_test_thread_factory">JTREG_TEST_THREAD_FACTORY</h4>
+<p>Sets the <code>-testThreadFactory</code> for JTReg. It should be the
+fully qualified classname of a class which implements
+<code>java.util.concurrent.ThreadFactory</code>. One such implementation
+class, named Virtual, is currently part of the JDK build in the
+<code>test/jtreg_test_thread_factory/</code> directory. This class gets
+compiled during the test image build. The implementation of the Virtual
+class creates a new virtual thread for executing each test class.</p>
 <h4 id="test_mode">TEST_MODE</h4>
 <p>The test mode (<code>agentvm</code> or <code>othervm</code>).</p>
 <p>Defaults to <code>agentvm</code>.</p>
