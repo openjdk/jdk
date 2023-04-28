@@ -81,8 +81,7 @@ public class ScrollPositionIntact {
                 // scrollposition would be reset to zero..
                 sp.validate();
 
-                int i;
-                i = (int) (sp.getScrollPosition().getX());
+                int i = (int) (sp.getScrollPosition().getX());
                 if (i == 0) {
                     // actual position MAY be not equal to X_POS; still, it must be > 0.
                     throw new RuntimeException("Test failure: zero scroll position.\n\n");

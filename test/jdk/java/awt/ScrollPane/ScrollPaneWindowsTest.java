@@ -69,10 +69,11 @@ public class ScrollPaneWindowsTest implements AdjustmentListener {
             p.setLayout(null);
             p.setSize(new Dimension(800, 800));
             sp = new ScrollPane(ScrollPane.SCROLLBARS_ALWAYS);
+            vScroll = (ScrollPaneAdjustable) sp.getVAdjustable();
+            hScroll = (ScrollPaneAdjustable) sp.getHAdjustable();
         });
         robot = new Robot();
-        vScroll = (ScrollPaneAdjustable) sp.getVAdjustable();
-        hScroll = (ScrollPaneAdjustable) sp.getHAdjustable();
+
         vScroll.addAdjustmentListener(this);
         hScroll.addAdjustmentListener(this);
     }
@@ -103,7 +104,7 @@ public class ScrollPaneWindowsTest implements AdjustmentListener {
             robot.mouseMove(sp.getLocationOnScreen().x + sp.getWidth() / 2,
                     sp.getLocationOnScreen().y + sp.getHeight() - paneInsets.bottom / 2);
             testOneScrollbar(hScroll);
-        } finally{
+        } finally {
             EventQueue.invokeAndWait(() -> {
                 if (frame != null) {
                     frame.dispose();

@@ -44,7 +44,7 @@ import java.lang.reflect.InvocationTargetException;
 public class ComponentScrollTest {
     public ScrollPane scrollpane;
     public Frame frame;
-    public int count = 0;
+    public volatile int count = 0;
 
     public static void main(String[] args) throws Exception {
         ComponentScrollTest cst = new ComponentScrollTest();

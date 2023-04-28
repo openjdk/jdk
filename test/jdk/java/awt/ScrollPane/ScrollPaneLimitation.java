@@ -45,12 +45,15 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseAdapter;
 
 import java.util.Properties;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 public class ScrollPaneLimitation {
     final static int SCROLL_POS = 50000;
     public static boolean mouseWasPressed = false;
     public static Component child = null;
-    private Object lock = new Object();
+    private final Object lock = new Object();
+    static CountDownLatch go = new CountDownLatch(1);
     public Frame frame;
     Robot robot;
     Point p;
@@ -78,13 +81,12 @@ public class ScrollPaneLimitation {
                 child = new MyPanel();
                 child.addMouseListener(new MouseAdapter() {
                     public void mousePressed(MouseEvent e) {
-                        if (e.getID() == MouseEvent.MOUSE_PRESSED) {
-                            if (e.getSource() == ScrollPaneLimitation.child
-                                    && e.getY() > SCROLL_POS) {
-                                mouseWasPressed = true;
-                                synchronized (lock) {
-                                    lock.notify();
-                                }
+                        if (e.getID() == MouseEvent.MOUSE_PRESSED &&
+                                e.getSource() == ScrollPaneLimitation.child
+                                && e.getY() > SCROLL_POS) {
+                            mouseWasPressed = true;
+                            synchronized (lock) {
+                                lock.notify();
                             }
                         }
                     }
@@ -136,13 +138,7 @@ public class ScrollPaneLimitation {
             robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
             robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
             robot.waitForIdle();
-            synchronized (lock) {
-                try {
-                    lock.wait(3000);
-                } catch (InterruptedException e) {
-                    throw new RuntimeException("test was interrupted");
-                }
-            }
+            go.await(3, TimeUnit.SECONDS);
             if (!mouseWasPressed) {
                 throw new RuntimeException("mouse was not pressed");
             }

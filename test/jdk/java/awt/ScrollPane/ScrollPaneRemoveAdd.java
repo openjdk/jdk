@@ -87,6 +87,9 @@ public class ScrollPaneRemoveAdd {
                 buttonSize = button.getSize();
             });
 
+            robot.delay(1000);
+            robot.waitForIdle();
+            
             robot.mouseMove(buttonLoc.x + buttonSize.width / 2,
                     buttonLoc.y + buttonSize.height / 2);
             robot.delay(50);
@@ -122,19 +125,6 @@ public class ScrollPaneRemoveAdd {
         volatile int waiting = 0;
 
         public Semaphore() {
-        }
-
-        public void doWait() throws InterruptedException {
-            synchronized (lock) {
-                if (state) {
-                    return;
-                }
-                waiting++;
-                synchronized (this) {
-                    wait();
-                }
-                waiting--;
-            }
         }
 
         public void doWait(int timeout) throws InterruptedException {
