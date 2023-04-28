@@ -770,7 +770,9 @@ uint ZGenerationYoung::compute_tenuring_threshold(ZRelocationSetSelectorStats st
   log_debug(gc, reloc)("Life Decay Factor: %.1f", young_life_decay_factor);
 
   // Round to an integer as we can't have non-integral tenuring threshold.
-  uint tenuring_threshold = clamp((uint)round(tenuring_threshold_raw), 1u, MIN2(last_populated_age + 1u, (uint)MaxTenuringThreshold));
+  const uint upper_bound = MIN2(last_populated_age + 1u, (uint)MaxTenuringThreshold);
+  const uint lower_bound = MIN2(1u, upper_bound);
+  const uint tenuring_threshold = clamp((uint)round(tenuring_threshold_raw), lower_bound, upper_bound);
 
   return tenuring_threshold;
 }
