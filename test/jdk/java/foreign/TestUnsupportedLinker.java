@@ -24,14 +24,11 @@
 /*
  * @test
  * @enablePreview
- * @summary test with unknown architecture override
- * @run testng/othervm -Dos.arch=unknown --enable-native-access=ALL-UNNAMED TestUnsupportedLinker
+ *
+ * @run testng/othervm -Djdk.internal.foreign.CABI=UNSUPPORTED --enable-native-access=ALL-UNNAMED TestUnsupportedLinker
  */
 
 import java.lang.foreign.Linker;
-import java.lang.foreign.SegmentScope;
-import java.lang.foreign.VaList;
-import java.lang.foreign.ValueLayout;
 
 import org.testng.annotations.Test;
 
@@ -40,20 +37,5 @@ public class TestUnsupportedLinker {
     @Test(expectedExceptions = UnsupportedOperationException.class)
     public void testLinker() {
         Linker.nativeLinker();
-    }
-
-    @Test(expectedExceptions = UnsupportedOperationException.class)
-    public void testEmptyVaList() {
-        VaList.empty();
-    }
-
-    @Test(expectedExceptions = UnsupportedOperationException.class)
-    public void testNonEmptyVaList() {
-        VaList.make(builder -> builder.addVarg(ValueLayout.JAVA_INT, 42), SegmentScope.auto());
-    }
-
-    @Test(expectedExceptions = UnsupportedOperationException.class)
-    public void testUnsafeVaList() {
-        VaList.ofAddress(0L, SegmentScope.auto());
     }
 }

@@ -64,7 +64,7 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
-#include "runtime/jniHandles.hpp"
+#include "runtime/jniHandles.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stackWatermarkSet.hpp"
 #include "runtime/stubRoutines.hpp"
@@ -644,6 +644,8 @@ JRT_ENTRY(void, SharedRuntime::notify_jvmti_mount(oopDesc* vt, jboolean hide, jb
   } else {
     JvmtiVTMSTransitionDisabler::VTMS_mount_end(vthread, first_mount);
   }
+
+  JNIHandles::destroy_local(vthread);
 JRT_END
 
 JRT_ENTRY(void, SharedRuntime::notify_jvmti_unmount(oopDesc* vt, jboolean hide, jboolean last_unmount, JavaThread* current))
@@ -654,6 +656,8 @@ JRT_ENTRY(void, SharedRuntime::notify_jvmti_unmount(oopDesc* vt, jboolean hide, 
   } else {
     JvmtiVTMSTransitionDisabler::VTMS_unmount_end(vthread, last_unmount);
   }
+
+  JNIHandles::destroy_local(vthread);
 JRT_END
 #endif // INCLUDE_JVMTI
 
