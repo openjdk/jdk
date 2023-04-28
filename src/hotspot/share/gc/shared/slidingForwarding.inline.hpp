@@ -39,7 +39,7 @@ size_t SlidingForwarding::region_index_containing(HeapWord* addr) const {
 }
 
 bool SlidingForwarding::region_contains(HeapWord* region_base, HeapWord* addr) const {
-  return pointer_delta(addr, region_base) < (1ull << _region_size_words_shift);
+  return addr >= region_base && pointer_delta(addr, region_base) < (1ull << _region_size_words_shift);
 }
 
 uintptr_t SlidingForwarding::encode_forwarding(HeapWord* original, HeapWord* target) {
@@ -68,8 +68,8 @@ uintptr_t SlidingForwarding::encode_forwarding(HeapWord* original, HeapWord* tar
          ",  target_idx: " SIZE_FORMAT ", heap start: " PTR_FORMAT ", region_idx: " INTPTR_FORMAT,
          p2i(target), p2i(encode_base), target_idx, p2i(_heap_start), region_idx);
   assert(region_contains(encode_base, target), "region must contain target: original: " PTR_FORMAT
-         ", target: " PTR_FORMAT ", encode_base: " PTR_FORMAT ", region_idx: " INTPTR_FORMAT,
-         p2i(original), p2i(target), p2i(encode_base), region_idx);
+         ", target: " PTR_FORMAT ", encode_base: " PTR_FORMAT ", region_idx: " INTPTR_FORMAT ", region_size: " INTPTR_FORMAT,
+         p2i(original), p2i(target), p2i(encode_base), region_idx, uintptr_t(1) << _region_size_words_shift);
   uintptr_t encoded = (pointer_delta(target, encode_base) << COMPRESSED_BITS_SHIFT) |
                       (region_idx << REGION_SHIFT) | markWord::marked_value;
   assert(target == decode_forwarding(original, encoded), "must be reversible");
