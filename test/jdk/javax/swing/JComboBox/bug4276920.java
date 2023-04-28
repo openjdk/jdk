@@ -37,7 +37,7 @@ public class bug4276920 {
     static volatile JFrame frame;
 
     public static void main(String[] args) throws Exception {
-        try {        
+        try {
             SwingUtilities.invokeAndWait(bug4276920::createUI);
             Thread.sleep(2000);
             int before = combo.getRepaintCount();

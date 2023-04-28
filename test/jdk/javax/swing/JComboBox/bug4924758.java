@@ -105,7 +105,7 @@ public class bug4924758 {
         Dimension size = comboBox.getSize();
         p.x += size.width / 2;
         p.y += size.height / 2;
-        robot.mouseMove(p.x, p.y); 
+        robot.mouseMove(p.x, p.y);
         robot.keyPress(KeyEvent.VK_DOWN);
         robot.keyRelease(KeyEvent.VK_DOWN);
         robot.keyPress(KeyEvent.VK_SPACE);
