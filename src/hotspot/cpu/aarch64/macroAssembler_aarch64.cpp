@@ -6231,23 +6231,32 @@ void MacroAssembler::wide_madd(RegPair sum, Register n, Register m) {
   adc(sum._hi, sum._hi, rscratch2);
 }
 
+#define gen acc << [=]()
 // Widening multiply s * r -> u
-void  MacroAssembler::poly1305_multiply(const RegPair u[], const Register s[], const Register r[],
-                       Register RR2, RegSetIterator<Register> scratch) {
-  // Compute (S2 << 26) * 5.
+void MacroAssembler::poly1305_multiply(LambdaAccumulator &acc,
+                                       const RegPair u[], const Register s[], const Register r[],
+                                       Register RR2, RegSetIterator<Register> scratch) {
+  gen { wide_mul(u[0], s[0], r[0]); };
+  gen { wide_madd(u[0], s[1], RR2); };
   Register RS2 = *++scratch;
-  lsl(RS2, s[2], 26);
-  add(RS2, RS2, RS2, LSL, 2);
-
-  wide_mul(u[0], s[0], r[0]); wide_madd(u[0], s[1], RR2);  wide_madd(u[0], RS2, r[1]);
-  wide_mul(u[1], s[0], r[1]); wide_madd(u[1], s[1], r[0]); wide_madd(u[1], RS2, r[2]);
-  wide_mul(u[2], s[0], r[2]); wide_madd(u[2], s[1], r[1]); wide_madd(u[2], s[2], r[0]);
+  gen {
+    // Compute (S2 << 26) * 5.
+    lsl(RS2, s[2], 26);
+    add(RS2, RS2, RS2, LSL, 2);
+    wide_madd(u[0], RS2, r[1]);
+    wide_madd(u[1], RS2, r[2]); };
+  gen { wide_mul(u[1], s[0], r[1]); };
+  gen { wide_madd(u[1], s[1], r[0]); };
+  gen { wide_mul(u[2], s[0], r[2]); };
+  gen { wide_madd(u[2], s[1], r[1]); };
+  gen { wide_madd(u[2], s[2], r[0]); };
 }
 
 // Widening multiply s * r -> u
-void MacroAssembler::poly1305_multiply_vec(const FloatRegister u[],
-                     const FloatRegister m[],
-                     const FloatRegister r[], const FloatRegister rr[]) {
+void MacroAssembler::poly1305_multiply_vec(LambdaAccumulator &acc,
+                                           const FloatRegister u[],
+                                           const FloatRegister m[],
+                                           const FloatRegister r[], const FloatRegister rr[]) {
 
   // Five limbs of r and rr (5·r) are packed as 32-bit integers into
   // two 128-bit vectors.
@@ -6259,35 +6268,37 @@ void MacroAssembler::poly1305_multiply_vec(const FloatRegister u[],
   // u64 u3 = r0*m3 +   r1*m2 +   r2*m1 +   r3*m0 + 5·r4*m4
   // u64 u4 = r0*m4 +   r1*m3 +   r2*m2 +   r3*m1 +   r4*m0
 
-  umull(u[0], T2D, m[0], r[0], 0);
-  umull(u[1], T2D, m[1], r[0], 0);
-  umull(u[2], T2D, m[2], r[0], 0);
-  umull(u[3], T2D, m[3], r[0], 0);
-  umull(u[4], T2D, m[4], r[0], 0);
+  gen { umull(u[0], T2D, m[0], r[0], 0); };
+  gen { umull(u[1], T2D, m[1], r[0], 0); };
+  gen { umull(u[2], T2D, m[2], r[0], 0); };
+  gen { umull(u[3], T2D, m[3], r[0], 0); };
+  gen { umull(u[4], T2D, m[4], r[0], 0); };
 
-  umlal(u[0], T2D, m[4], rr[0], 1);
-  umlal(u[1], T2D, m[0],  r[0], 1);
-  umlal(u[2], T2D, m[1],  r[0], 1);
-  umlal(u[3], T2D, m[2],  r[0], 1);
-  umlal(u[4], T2D, m[3],  r[0], 1);
+  gen { umlal(u[0], T2D, m[4], rr[0], 1); };
+  gen { umlal(u[1], T2D, m[0],  r[0], 1); };
+  gen { umlal(u[2], T2D, m[1],  r[0], 1); };
+  gen { umlal(u[3], T2D, m[2],  r[0], 1); };
+  gen { umlal(u[4], T2D, m[3],  r[0], 1); };
 
-  umlal(u[0], T2D, m[3], rr[0], 2);
-  umlal(u[1], T2D, m[4], rr[0], 2);
-  umlal(u[2], T2D, m[0],  r[0], 2);
-  umlal(u[3], T2D, m[1],  r[0], 2);
-  umlal(u[4], T2D, m[2],  r[0], 2);
+  gen {
+    umlal(u[0], T2D, m[3], rr[0], 2);
+  };
+  gen { umlal(u[1], T2D, m[4], rr[0], 2); };
+  gen { umlal(u[2], T2D, m[0],  r[0], 2); };
+  gen { umlal(u[3], T2D, m[1],  r[0], 2); };
+  gen { umlal(u[4], T2D, m[2],  r[0], 2); };
 
-  umlal(u[0], T2D, m[2], rr[0], 3);
-  umlal(u[1], T2D, m[3], rr[0], 3);
-  umlal(u[2], T2D, m[4], rr[0], 3);
-  umlal(u[3], T2D, m[0],  r[0], 3);
-  umlal(u[4], T2D, m[1],  r[0], 3);
+  gen { umlal(u[0], T2D, m[2], rr[0], 3); };
+  gen { umlal(u[1], T2D, m[3], rr[0], 3); };
+  gen { umlal(u[2], T2D, m[4], rr[0], 3); };
+  gen { umlal(u[3], T2D, m[0],  r[0], 3); };
+  gen { umlal(u[4], T2D, m[1],  r[0], 3); };
 
-  umlal(u[0], T2D, m[1], rr[1], 0);
-  umlal(u[1], T2D, m[2], rr[1], 0);
-  umlal(u[2], T2D, m[3], rr[1], 0);
-  umlal(u[3], T2D, m[4], rr[1], 0);
-  umlal(u[4], T2D, m[0],  r[1], 0);
+  gen { umlal(u[0], T2D, m[1], rr[1], 0); };
+  gen { umlal(u[1], T2D, m[2], rr[1], 0); };
+  gen { umlal(u[2], T2D, m[3], rr[1], 0); };
+  gen { umlal(u[3], T2D, m[4], rr[1], 0); };
+  gen { umlal(u[4], T2D, m[0],  r[1], 0); };
 
 }
 
@@ -6324,38 +6335,39 @@ void MacroAssembler::copy_3_regs_to_5_elements(const FloatRegister d[],
   mov(d[1], D, 0, s2);
 }
 
-void MacroAssembler::poly1305_step_vec(const FloatRegister s[], const FloatRegister u[],
+void MacroAssembler::poly1305_step_vec(LambdaAccumulator &acc,
+                                       const FloatRegister s[], const FloatRegister u[],
                                        const FloatRegister upper_bits, Register input_start,
                                        AbstractRegSet<FloatRegister> scratch) {
   auto vregs = scratch.begin();
   FloatRegister scratch1 = *vregs++, scratch2 = *vregs++;
-  // ldpd(scratch1, scratch2, post(input_start, 2 * wordSize));
-  ld2(scratch1, scratch2, D, 0, post(input_start, 2 * wordSize));
-  ld2(scratch1, scratch2, D, 1, post(input_start, 2 * wordSize));
+  gen {
+    ld2(scratch1, scratch2, D, 0, post(input_start, 2 * wordSize));
+    ld2(scratch1, scratch2, D, 1, post(input_start, 2 * wordSize)); };
 
-  orr(s[0], T16B, scratch1, scratch1);
-  bic(s[0], T16B, s[0], upper_bits);
+  gen { orr(s[0], T16B, scratch1, scratch1); };
+  gen { bic(s[0], T16B, s[0], upper_bits); };
 
-  ushr(s[1], T2D, scratch1, 26);
-  bic(s[1], T16B, s[1], upper_bits);
+  gen { ushr(s[1], T2D, scratch1, 26); };
+  gen { bic(s[1], T16B, s[1], upper_bits); };
 
-  ushr(s[2], T2D, scratch1, 52);
-  shl(scratch1, T2D, scratch2, 64-14);
-  ushr(scratch1, T2D, scratch1, 64-26);
-  addv(s[2], T2D, s[2], scratch1);
+  gen { ushr(s[2], T2D, scratch1, 52); };
+  gen { shl(scratch1, T2D, scratch2, 64-14); };
+  gen { ushr(scratch1, T2D, scratch1, 64-26); };
+  gen { addv(s[2], T2D, s[2], scratch1); };
 
-  ushr(s[3], T2D, scratch2, 14);
-  bic(s[3], T16B, s[3], upper_bits);
+  gen { ushr(s[3], T2D, scratch2, 14); };
+  gen { bic(s[3], T16B, s[3], upper_bits); };
 
-  ushr(s[4], T2D, scratch2, 14+26);
+  gen { ushr(s[4], T2D, scratch2, 14+26); };
 
-  for (int i = 0; i < 5; i++) {
-    addv(s[i], T2D, u[i], s[i]);
-    uzp1(s[i], T4S, s[i], s[i]);
-  }
+    for (int i = 0; i < 5; i++) {
+      gen {   addv(s[i], T2D, u[i], s[i]); };
+      gen {   uzp1(s[i], T4S, s[i], s[i]); };
+    }
 
-  mov(scratch1, T4S, 1 << 24);
-  addv(s[4], T4S, s[4], scratch1);
+  gen { mov(scratch1, T4S, 1 << 24); };
+  gen { addv(s[4], T4S, s[4], scratch1); };
 }
 
 // void MacroAssembler::poly1305_multiply_vec(const FloatRegister u_v[],
@@ -6383,7 +6395,8 @@ void MacroAssembler::poly1305_step_vec(const FloatRegister s[], const FloatRegis
 //   nop();
 // }
 
-void MacroAssembler::poly1305_multiply_vec(const FloatRegister u_v[],
+void MacroAssembler::poly1305_multiply_vec(LambdaAccumulator &acc,
+                                           const FloatRegister u_v[],
                                            AbstractRegSet<FloatRegister> remaining,
                                            const FloatRegister s_v[],
                                            const FloatRegister r_v[],
@@ -6398,9 +6411,7 @@ void MacroAssembler::poly1305_multiply_vec(const FloatRegister u_v[],
 
   // copy_3_to_5_regs(s_v, s[0], s[1], s[2]);
   // 5·r -> rr
-  poly1305_multiply_vec(u_v, s_v, r_v, rr_v);
-
-  nop();
+  poly1305_multiply_vec(acc, u_v, s_v, r_v, rr_v);
 }
 
 void MacroAssembler::poly1305_reduce_step(FloatRegister d, FloatRegister s,
@@ -6409,7 +6420,8 @@ void MacroAssembler::poly1305_reduce_step(FloatRegister d, FloatRegister s,
   Assembler::add(d, T2D, d, scratch);
   bic(s, T16B, s, upper_bits);
 }
-void MacroAssembler::poly1305_reduce_vec(const FloatRegister u[],
+void MacroAssembler::poly1305_reduce_vec(LambdaAccumulator &acc,
+                                         const FloatRegister u[],
                                          const FloatRegister upper_bits,
                                          AbstractRegSet<FloatRegister> scratch) {
 
@@ -6417,21 +6429,23 @@ void MacroAssembler::poly1305_reduce_vec(const FloatRegister u[],
   // Partial reduction mod 2**130 - 5
 
   FloatRegister vtmp2 = *r++;
-  // Goll-Guerin reduction
-  poly1305_reduce_step(u[1], u[0], upper_bits, vtmp2);
-  poly1305_reduce_step(u[4], u[3], upper_bits, vtmp2);
-  poly1305_reduce_step(u[2], u[1], upper_bits, vtmp2);
-  {
-    ushr(vtmp2, T2D, u[4], 26);
-    FloatRegister vtmp3 = *r++;
-    shl(vtmp3, T2D, vtmp2, 2);
-    Assembler::add(vtmp2, T2D, vtmp2, vtmp3); // vtmp2 == 5 * (u[4] >> 26)
-    Assembler::add(u[0], T2D, u[0], vtmp2);
-    bic(u[4], T16B, u[4], upper_bits);
-  }
-  poly1305_reduce_step(u[3], u[2], upper_bits, vtmp2);
-  poly1305_reduce_step(u[1], u[0], upper_bits, vtmp2);
-  poly1305_reduce_step(u[4], u[3], upper_bits, vtmp2);
+  FloatRegister vtmp3 = *r++;
+  gen {
+    // Goll-Guerin reduction
+    poly1305_reduce_step(u[1], u[0], upper_bits, vtmp2);
+    poly1305_reduce_step(u[4], u[3], upper_bits, vtmp2);
+    poly1305_reduce_step(u[2], u[1], upper_bits, vtmp2);
+    {
+      ushr(vtmp2, T2D, u[4], 26);
+      shl(vtmp3, T2D, vtmp2, 2);
+      Assembler::add(vtmp2, T2D, vtmp2, vtmp3); // vtmp2 == 5 * (u[4] >> 26)
+      Assembler::add(u[0], T2D, u[0], vtmp2);
+      bic(u[4], T16B, u[4], upper_bits);
+    }
+    poly1305_reduce_step(u[3], u[2], upper_bits, vtmp2);
+    poly1305_reduce_step(u[1], u[0], upper_bits, vtmp2);
+    poly1305_reduce_step(u[4], u[3], upper_bits, vtmp2);
+  };
 }
 
 void MacroAssembler::poly1305_transfer(const RegPair u0[],
@@ -6462,7 +6476,8 @@ void MacroAssembler::clear_above(const RegPair d, int shift) {
   mov(d._hi, 0);
 }
 
-void MacroAssembler::poly1305_reduce(const RegPair u[]) {
+void MacroAssembler::poly1305_reduce(LambdaAccumulator &acc, const RegPair u[]) {
+#define gen acc << [=]()
   // Partial reduction mod 2**130 - 5
 
   // Assume:
@@ -6474,34 +6489,34 @@ void MacroAssembler::poly1305_reduce(const RegPair u[]) {
   // < 54 bits long.
 
   // Add the high part (i.e. everything from bits 52 up) of u1 to u2
-  shifted_add128(u[2], u[1], 52);
-  clear_above(u[1], 52);                             // u[1] < 0x10000000000000 (i.e. 52 bits)
+  gen { shifted_add128(u[2], u[1], 52); };
+  gen { clear_above(u[1], 52); };                             // u[1] < 0x10000000000000 (i.e. 52 bits)
 
   // Add the high part of u0 to u1
-  shifted_add128(u[1], u[0], 52);
-  clear_above(u[0], 52);                             // u[0] < 0x10000000000000 (i.e. 52 bits)
+  gen { shifted_add128(u[1], u[0], 52); };
+  gen { clear_above(u[0], 52); };                             // u[0] < 0x10000000000000 (i.e. 52 bits)
                                                      // u[1] < 0x200000000000000 (i.e. 57 bits)
 
   // Then multiply the high part of u2 by 5 and add it back to u1:u0
-  extr(rscratch1, u[2]._hi, u[2]._lo, 26);
-  ubfx(rscratch1, rscratch1, 0, 52);
-  add(rscratch1, rscratch1, rscratch1, LSL, 2);      // rscratch1 *= 5
-  add(u[0]._lo, u[0]._lo, rscratch1);
+  gen { extr(rscratch1, u[2]._hi, u[2]._lo, 26);
+        ubfx(rscratch1, rscratch1, 0, 52);
+        add(rscratch1, rscratch1, rscratch1, LSL, 2);         // rscratch1 *= 5
+        add(u[0]._lo, u[0]._lo, rscratch1); };
 
-  lsr(rscratch1, u[2]._hi, (26+52) % 64);
-  add(rscratch1, rscratch1, rscratch1, LSL, 2);      // rscratch1 *= 5
-  add(u[1]._lo, u[1]._lo, rscratch1);
-  clear_above(u[2], 26);                             // u[2] < 0x4000000 (i.e. 26 bits)
+  gen { lsr(rscratch1, u[2]._hi, (26+52) % 64);
+        add(rscratch1, rscratch1, rscratch1, LSL, 2);         // rscratch1 *= 5
+        add(u[1]._lo, u[1]._lo, rscratch1);
+        clear_above(u[2], 26); };                             // u[2] < 0x4000000 (i.e. 26 bits)
                                                      // u[1] < 0x200000000000000 (i.e. 57 bits)
                                                      // u[0] < 0x20000000000000 (i.e. 53 bits)
 
   // u[1] -> u[2]
-  add(u[2]._lo, u[2]._lo, u[1]._lo, LSR, 52);        // u[2] < 0x8000000 (i.e. 27 bits)
-  bfc(u[1]._lo, 52, 64-52);                          // u[1] < 0x10000000000000 (i.e. 52 bits)
+  gen { add(u[2]._lo, u[2]._lo, u[1]._lo, LSR, 52); };        // u[2] < 0x8000000 (i.e. 27 bits)
+  gen { bfc(u[1]._lo, 52, 64-52); };                          // u[1] < 0x10000000000000 (i.e. 52 bits)
 
   // u[0] -> u1
-  add(u[1]._lo, u[1]._lo, u[0]._lo, LSR, 52);
-  bfc(u[0]._lo, 52, 64-52);                          // u[0] < 0x10000000000000 (i.e. 52 bits)
+  gen { add(u[1]._lo, u[1]._lo, u[0]._lo, LSR, 52); };
+  gen { bfc(u[0]._lo, 52, 64-52); };                          // u[0] < 0x10000000000000 (i.e. 52 bits)
                                                      // u[1] < 0x20000000000000 (i.e. 53 bits)
                                                      // u[2] < 0x4000000 (i.e. 27 bits)
 }
@@ -6525,18 +6540,22 @@ void MacroAssembler::poly1305_fully_reduce(Register dest[], const RegPair u[]) {
   csel(dest[2], dest[2], u[2]._lo, HS);
 }
 
-void MacroAssembler::poly1305_load(const Register s[], const Register input_start) {
-  ldp(rscratch1, rscratch2, post(input_start, 2 * wordSize));
-  ubfx(s[0], rscratch1, 0, 52);
-  extr(s[1], rscratch2, rscratch1, 52);
-  ubfx(s[1], s[1], 0, 52);
-  ubfx(s[2], rscratch2, 40, 24);
-  orr(s[2], s[2], 1 << 24);
+void MacroAssembler::poly1305_load(LambdaAccumulator &acc,
+                                   const Register s[], const Register input_start) {
+  gen {
+    ldp(rscratch1, rscratch2, post(input_start, 2 * wordSize));
+    ubfx(s[0], rscratch1, 0, 52);
+    extr(s[1], rscratch2, rscratch1, 52);
+    ubfx(s[1], s[1], 0, 52);
+    ubfx(s[2], rscratch2, 40, 24);
+    orr(s[2], s[2], 1 << 24);
+  };
 }
 
-void MacroAssembler::poly1305_step(Register s[], const RegPair u[], Register input_start) {
-  poly1305_load(s, input_start);
-  poly1305_add(s, u);
+void MacroAssembler::poly1305_step(LambdaAccumulator &acc,
+                                   const Register s[], const RegPair u[], Register input_start) {
+  poly1305_load(acc, s, input_start);
+  gen { poly1305_add(s, u); };
 }
 
 void MacroAssembler::copy_3_regs(const Register dest[], const Register src[]) {
@@ -6558,96 +6577,3 @@ void MacroAssembler::poly1305_add(const Register dest[], const RegPair src[]) {
   add(dest[2], dest[2], src[2]._lo);
 }
 
-#define __ pkGen->
-
-class LambdaAccumulator {
-public:
-
-  class WrapperNode: public ResourceObj {
-  public:
-    WrapperNode *_next;
-    virtual void operator()() = 0;
-  };
-
-  template <typename T>
-  class LambdaWrapper : public WrapperNode {
-  public:
-    T _t;
-    LambdaWrapper(T t): _t(t) {}
-    virtual void operator()() {
-      _t();
-    }
-  };
-
-  WrapperNode *_holder_list_head, *_last;
-  int _count;
-
-  LambdaAccumulator(Assembler *as)
-    : _holder_list_head(nullptr), _last(nullptr), _count(0) {}
-
-  WrapperNode *last() {
-    return _last;
-  }
-
-  template<typename T>
-  WrapperNode *operator<<(T t) {
-    auto vv = new LambdaWrapper<decltype(t)>(t);
-    if (_count > 0)
-      last()->_next = vv;
-    else
-      _holder_list_head = vv;
-    vv->_next = nullptr;
-    _count++;
-    _last = vv;
-    return vv;
-  }
-
-  virtual int length() { return _count; }
-
-  struct Iterator {
-    WrapperNode *_next;
-    Iterator(LambdaAccumulator *gen): _next(gen->_holder_list_head) { }
-
-    Iterator& operator++() {
-      if (_next)
-        _next = _next->_next;
-      return *this;
-    }
-
-    Iterator operator++(int) {
-      auto result(*this);
-      operator++();
-      return result;
-    }
-
-    WrapperNode *operator*() { return _next; }
-
-    void operator()() {
-      if (_next)
-        (*_next)();
-    }
-  };
-
-  Iterator iterator() {
-    return Iterator(this);
-  }
-};
-
-#define bra gen << [=]()
-
-
-void MacroAssembler::plop(const Register input_start,
-                          const Register r[], const Register s[], const RegPair u[],
-                          const Register rr2) {
-  LambdaAccumulator gen(this);
-
-  bra { poly1305_load(s, input_start); };
-  bra { poly1305_add(s, u); };
-  bra { poly1305_reduce(u); };
-
-  for (auto it = gen.iterator(); *it; it++) {
-    it();
-  }
-}
-
-#undef bra

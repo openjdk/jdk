@@ -33,6 +33,85 @@
 #include "runtime/vm_version.hpp"
 #include "utilities/powerOfTwo.hpp"
 
+class LambdaAccumulator {
+public:
+
+  class WrapperNode: public ResourceObj {
+  public:
+    WrapperNode *_next;
+    virtual void operator()() = 0;
+  };
+
+  template <typename T>
+  class LambdaWrapper : public WrapperNode {
+  public:
+    T _t;
+    LambdaWrapper(T t): _t(t) {}
+    virtual void operator()() {
+      _t();
+    }
+  };
+
+  WrapperNode *_holder_list_head, *_last;
+  int _count;
+
+  LambdaAccumulator()
+    : _holder_list_head(nullptr), _last(nullptr), _count(0) {}
+
+  WrapperNode *last() {
+    return _last;
+  }
+
+  template<typename T>
+  WrapperNode *operator<<(T t) {
+    auto vv = new LambdaWrapper<decltype(t)>(t);
+    if (_count > 0)
+      last()->_next = vv;
+    else
+      _holder_list_head = vv;
+    vv->_next = nullptr;
+    _count++;
+    _last = vv;
+    return vv;
+  }
+
+  virtual int length() { return _count; }
+
+  struct Iterator {
+    WrapperNode *_next;
+    Iterator(LambdaAccumulator *gen): _next(gen->_holder_list_head) { }
+
+    Iterator& operator++() {
+      if (_next)
+        _next = _next->_next;
+      return *this;
+    }
+
+    Iterator operator++(int) {
+      auto result(*this);
+      operator++();
+      return result;
+    }
+
+    WrapperNode *operator*() { return _next; }
+
+    void operator()() {
+      if (_next)
+        (*_next)();
+    }
+  };
+
+  Iterator iterator() {
+    return Iterator(this);
+  }
+
+  void gen() {
+    for (auto it = iterator(); *it; it++) {
+      it();
+    }
+  }
+};
+
 class OopMap;
 
 struct RegPair {
@@ -1613,23 +1692,50 @@ public:
   void shifted_add128(const RegPair d, const RegPair s, unsigned int shift,
                       Register scratch = rscratch1);
   // Widening multiply s * r -> u
-  void poly1305_multiply(const RegPair u[], const Register s[], const Register r[],
+  void poly1305_multiply(LambdaAccumulator &acc,
+                         const RegPair u[], const Register s[], const Register r[],
                          Register RR2, RegSetIterator<Register> scratch);
-  void poly1305_multiply_vec(const FloatRegister u[], const FloatRegister m[],
+  void poly1305_multiply_vec(LambdaAccumulator &acc,
+                             const FloatRegister u[], const FloatRegister m[],
                              const FloatRegister r[], const FloatRegister rr[]);
+  void poly1305_multiply(const RegPair u[], const Register s[], const Register r[],
+                         Register RR2, RegSetIterator<Register> scratch) {
+    LambdaAccumulator acc;
+    poly1305_multiply(acc, u, s, r, RR2, scratch);
+    acc.gen();
+  }
+  void poly1305_multiply_vec(const FloatRegister u[], const FloatRegister m[],
+                             const FloatRegister r[], const FloatRegister rr[]) {
+    LambdaAccumulator acc;
+    poly1305_multiply_vec(acc, u, m, r, rr);
+    acc.gen();
+  }
 
-  void poly1305_step_vec(const FloatRegister s[], const FloatRegister u[],
+  void poly1305_step_vec(LambdaAccumulator &acc,
+                         const FloatRegister s[], const FloatRegister u[],
                          const FloatRegister upper_bits, Register input_start,
                          AbstractRegSet<FloatRegister> scratch);
-  void poly1305_multiply_vec(const FloatRegister u_v[],
+  void poly1305_multiply_vec(LambdaAccumulator &acc,
+                           const FloatRegister u_v[],
                            AbstractRegSet<FloatRegister> remaining,
                            const FloatRegister s_v[],
                            const FloatRegister r_v[],
                            const FloatRegister rr_v[]);
-  void poly1305_reduce_vec(const FloatRegister u[], const FloatRegister upper_bits,
+  void poly1305_reduce_vec(LambdaAccumulator &acc,
+                           const FloatRegister u[], const FloatRegister upper_bits,
                            AbstractRegSet<FloatRegister> scratch);
-  void poly1305_load(const Register s[], const Register input_start);
-  void poly1305_step(Register s[], const RegPair u[], Register input_start);
+  void poly1305_load(LambdaAccumulator &acc, const Register s[], const Register input_start);
+  void poly1305_load(const Register s[], const Register input_start) {
+    LambdaAccumulator acc;
+    poly1305_load(acc, s, input_start);
+    acc.gen();
+  }
+  void poly1305_step(LambdaAccumulator &acc, const Register s[], const RegPair u[], const Register input_start);
+  void poly1305_step(const Register s[], const RegPair u[], const Register input_start) {
+    LambdaAccumulator acc;
+    poly1305_step(acc, s, u, input_start);
+    acc.gen();
+  }
   void poly1305_add(const Register dest[], const RegPair src[]);
 
   void mov26(FloatRegister d, Register s, int lsb);
@@ -1640,7 +1746,12 @@ public:
   void copy_3_regs_to_5_elements(const FloatRegister d[],
                                  const Register s0, const Register s1, const Register s2);
 
-  void poly1305_reduce(const RegPair u[]);
+  void poly1305_reduce(LambdaAccumulator &acc, const RegPair u[]);
+  void poly1305_reduce(const RegPair u[]) {
+    LambdaAccumulator acc;
+    poly1305_reduce(acc, u);
+    acc.gen();
+  }
   void poly1305_reduce_step(FloatRegister d, FloatRegister s, FloatRegister upper_bits, FloatRegister scratch);
   void poly1305_fully_reduce(Register dest[], const RegPair u[]);
   void poly1305_transfer(const RegPair d[], const FloatRegister s[],

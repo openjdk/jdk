@@ -163,21 +163,32 @@ address generate_poly1305_processBlocks2() {
     __ subsw(rscratch1, length, POLY1305_BLOCK_LENGTH * 8);
     __ br(Assembler::LT, DONE);
 
-    // if (! use_vec) {
-      __ poly1305_step(S0, u0, input_start);
-      __ poly1305_multiply(u0, S0, R, RR2, regs);
-      __ poly1305_reduce(u0);
+    {
+      LambdaAccumulator gen0, gen1, gen2;
 
-      __ poly1305_step(S1, u1, input_start);
-      __ poly1305_multiply(u1, S1, R, RR2, regs);
-      __ poly1305_reduce(u1);
-    // } else {
-      __ poly1305_step_vec(s_v, v_u0, upper_bits, input_start, vregs.remaining());
-      __ poly1305_multiply_vec(v_u0, vregs.remaining(), s_v, r_v, rr_v);
-      __ poly1305_reduce_vec(v_u0, upper_bits, vregs.remaining());
-    // }
 
-  poo = __ pc();
+      __ poly1305_step(gen0, S0, u0, input_start);
+      __ poly1305_multiply(gen0, u0, S0, R, RR2, regs);
+      __ poly1305_reduce(gen0, u0);
+
+      __ poly1305_step(gen1, S1, u1, input_start);
+      __ poly1305_multiply(gen1, u1, S1, R, RR2, regs);
+      __ poly1305_reduce(gen1, u1);
+
+      __ poly1305_step_vec(gen2, s_v, v_u0, upper_bits, input_start, vregs.remaining());
+      __ poly1305_multiply_vec(gen2, v_u0, vregs.remaining(), s_v, r_v, rr_v);
+      __ poly1305_reduce_vec(gen2, v_u0, upper_bits, vregs.remaining());
+
+      auto it0 = gen0.iterator(),
+        it1 = gen1.iterator(),
+        it2 = gen2.iterator();
+      const int len = MAX3(gen0.length(), gen1.length(), gen2.length());
+      for (int i = 0; i < len; i++) {
+        (it0++)();
+        (it1++)();
+        (it2++)();
+      }
+    }
 
     __ subw(length, length, POLY1305_BLOCK_LENGTH * 4);
     __ b(LOOP);
