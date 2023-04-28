@@ -143,6 +143,7 @@ public:
   virtual uint ideal_reg() const { return Op_RegFlags; }
 
   static CmpNode *make(Node *in1, Node *in2, BasicType bt, bool unsigned_comp = false);
+  PhiNode* countedloop_phi(const Node* n) const;
 };
 
 //------------------------------CmpINode---------------------------------------

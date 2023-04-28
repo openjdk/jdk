@@ -38,6 +38,7 @@
 #include "opto/movenode.hpp"
 #include "opto/narrowptrnode.hpp"
 #include "opto/mulnode.hpp"
+#include "opto/opaquenode.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/regalloc.hpp"
 #include "opto/regmask.hpp"
@@ -1198,6 +1199,9 @@ const Type* PhiNode::Value(PhaseGVN* phase) const {
       const Node* limit = l->limit();
       const Node* stride = l->stride();
       if (init != nullptr && limit != nullptr && stride != nullptr) {
+        if (limit->is_Opaque1() && limit->as_Opaque1()->original_loop_limit() != nullptr) {
+          limit = limit->as_Opaque1()->original_loop_limit();
+        }
         const Type* init_t = phase->type(init, r->in(1));
         if (init_t == Type::TOP) {
           return Type::TOP;

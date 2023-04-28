@@ -639,6 +639,27 @@ CmpNode *CmpNode::make(Node *in1, Node *in2, BasicType bt, bool unsigned_comp) {
   return nullptr;
 }
 
+// Return counted loop Phi if as a counted loop exit condition, cmp
+// compares the induction variable with n
+PhiNode* CmpNode::countedloop_phi(const Node* n) const {
+  for (DUIterator_Fast imax, i = fast_outs(imax); i < imax; i++) {
+    Node* bol = fast_out(i);
+    for (DUIterator_Fast i2max, i2 = bol->fast_outs(i2max); i2 < i2max; i2++) {
+      Node* iff = bol->fast_out(i2);
+      if (iff->is_BaseCountedLoopEnd()) {
+        BaseCountedLoopEndNode* cle = iff->as_BaseCountedLoopEnd();
+        if (cle->limit() == n) {
+          PhiNode* phi = cle->phi();
+          if (phi != nullptr) {
+            return phi;
+          }
+        }
+      }
+    }
+  }
+  return nullptr;
+}
+
 //=============================================================================
 //------------------------------cmp--------------------------------------------
 // Simplify a CmpI (compare 2 integers) node, based on local information.

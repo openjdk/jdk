@@ -29,6 +29,7 @@
 #include "opto/rootnode.hpp"
 #include "opto/callnode.hpp"
 #include "opto/castnode.hpp"
+#include "opto/opaquenode.hpp"
 #include "runtime/globals.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -421,7 +422,7 @@ private:
   using Updates = ResizeableResourceHashtable<Node*, TypeUpdate*, AnyObj::RESOURCE_AREA, mtInternal>;
   Updates* _updates;
 
-  bool valid_use(Node* u, Node* c, const Node* n) {
+  bool valid_use(Node* u, Node* c) {
 //    if (u->is_CFG()) {
 //      return false;
 //    }
@@ -454,12 +455,12 @@ private:
     assert(_phase->has_node(const_cast<Node*>(n)) && (!UseNewCode3 || _visited.test(n->_idx)), "");
     for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
       Node* u = n->fast_out(i);
-      if (valid_use(u, c, n)) {
+      if (valid_use(u, c)) {
         _wq.push(u);
         if (u->Opcode() == Op_AddI || u->Opcode() == Op_SubI) {
           for (DUIterator_Fast i2max, i2 = u->fast_outs(i2max); i2 < i2max; i2++) {
             Node* uu = u->fast_out(i2);
-            if (uu->Opcode() == Op_CmpU && valid_use(uu, c, u)) {
+            if (uu->Opcode() == Op_CmpU && valid_use(uu, c)) {
               _wq.push(uu);
             }
           }
@@ -477,12 +478,32 @@ private:
         }
         if (u->Opcode() == Op_OpaqueZeroTripGuard) {
           Node* cmp = u->unique_out();
-          _wq.push(cmp);
+          if (valid_use(cmp, c)) {
+            _wq.push(cmp);
+          }
         }
+        if (u->is_Opaque1() && u->as_Opaque1()->original_loop_limit() == n) {
+          for (DUIterator_Fast i2max, i2 = u->fast_outs(i2max); i2 < i2max; i2++) {
+            Node* uu = u->fast_out(i2);
+            if (uu->Opcode() == Op_CmpI || uu->Opcode() == Op_CmpL) {
+              Node* phi = uu->as_Cmp()->countedloop_phi(u);
+              if (phi != nullptr && valid_use(phi, c)) {
+                _wq.push(phi);
+              }
+            }
+          }
+        }
+        if (u->Opcode() == Op_CmpI || u->Opcode() == Op_CmpL) {
+          Node* phi = u->as_Cmp()->countedloop_phi(n);
+          if (phi != nullptr && valid_use(phi, c)) {
+            _wq.push(phi);
+          }
+        }
+
         if (u->is_Region()) {
           for (DUIterator_Fast jmax, j = u->fast_outs(jmax); j < jmax; j++) {
             Node* uu = u->fast_out(j);
-            if (uu->is_Phi() && valid_use(uu, c, n)) {
+            if (uu->is_Phi() && valid_use(uu, c)) {
               _wq.push(uu);
             }
           }
