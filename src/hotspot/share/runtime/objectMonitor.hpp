@@ -322,7 +322,10 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   // Use the following at your own risk
   intx      complete_exit(JavaThread* current);
 
- private:
+  // Deflate monitor in dead object if necessary.
+  static void maybe_deflate_dead(oop* p);
+
+private:
   void      AddWaiter(ObjectWaiter* waiter);
   void      INotify(JavaThread* current);
   ObjectWaiter* DequeueWaiter();

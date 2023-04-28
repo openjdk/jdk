@@ -34,6 +34,7 @@
 #include "gc/shared/weakProcessorTimes.hpp"
 #include "gc/shared/workerThread.hpp"
 #include "prims/resolvedMethodTable.hpp"
+#include "runtime/objectMonitor.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/enumIterator.hpp"
 
@@ -65,6 +66,7 @@ public:
       _keep_alive->do_oop(p);
       ++_live;
     } else {
+      ObjectMonitor::maybe_deflate_dead(p);
       *p = nullptr;
       ++_new_dead;
     }
