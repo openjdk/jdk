@@ -1,3 +1,5 @@
+#include <utility>
+
 /*
  * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2021, Red Hat Inc. All rights reserved.
@@ -6558,11 +6560,32 @@ void MacroAssembler::poly1305_add(const Register dest[], const RegPair src[]) {
 
 #define __ pkGen->
 
+class InsnBase: public ResourceObj {
+public:
+  InsnBase *_next;
+  virtual void operator()() = 0;
+};
+
+template <typename T>
+class InsnHolder : public InsnBase {
+public:
+  T _t;
+  InsnHolder(T t): _t(t) {}
+  virtual void operator()() {
+    _t();
+  }
+};
+
+template <typename T>
+struct Stru {
+  T _t;
+  Stru(T t) : _t(t) { }
+};
+
 class Poly1305KernelGenerator: public KernelGenerator {
 public:
 
-  class Holder;
-  Holder *_holder_list_head;
+  InsnBase *_holder_list_head;
 
 #define ARGS                                    \
   const Register input_start,                   \
@@ -6571,69 +6594,39 @@ public:
   const RegPair u[],                            \
   const Register rr2
 
-#define ARGS_PASS                               \
-   __ _input_start,                             \
-   __ _r,                                       \
-   __ _s,                                       \
-   __ _u,                                       \
-   __ _rr2
-
   const Register _input_start;
   const Register *_r;
   const Register *_s;
   const RegPair *_u;
   const Register _rr2;
 
-  typedef void (*insns_t)(Poly1305KernelGenerator *, ARGS);
-
   Poly1305KernelGenerator(Assembler *as, ARGS)
     : KernelGenerator(as, 0), _holder_list_head(nullptr),
       _input_start(input_start),
       _r(r), _s(s), _u(u), _rr2(rr2) { }
 
-  Holder *last() {
-    Holder *prev = nullptr;
-    for (Holder *it = _holder_list_head; it; it = it->next) {
+  InsnBase *last() {
+    InsnBase *prev = nullptr;
+    for (InsnBase *it = _holder_list_head; it; it = it->_next) {
       prev = it;
     }
     return prev;
   }
 
-  class Holder: public ResourceObj {
-    friend class Poly1305KernelGenerator;
-
-    insns_t _insn;
-    Holder *p;
-    Holder *next;
-  public:
-    Holder(Poly1305KernelGenerator *gen, insns_t insn): _insn(insn) {
-      if (gen->last())
-        gen->last()->next = this;
-      else
-        gen->_holder_list_head = this;
-      next = nullptr;
-    }
-    void squirt(Poly1305KernelGenerator* pkGen) {
-      _insn(pkGen, ARGS_PASS);
-    }
- };
-
-  Holder *a(insns_t insn) {
-    return new Holder(this, insn);
-  }
-
-  int& (*fpi)(int*);
-  void (*fpi2)(MacroAssembler*);
-  int dump;
-
-  Holder * operator<<(insns_t insn) {
-    return a(insn);
+  template<typename T>
+  InsnBase *operator<<(T t) {
+    auto vv = new InsnHolder<decltype(t)>(t);
+    if (last())
+      last()->_next = vv;
+    else
+      _holder_list_head = vv;
+    vv->_next = nullptr;
+    return vv;
   }
 
   virtual void generate(int n) {
-    auto pkGen = this;
-    for (Holder *it = _holder_list_head; it; it = it->next) {
-      it->_insn(pkGen, ARGS_PASS);
+    for (InsnBase *it = _holder_list_head; it; it = it->_next) {
+      (*it)();
     }
   }
 
@@ -6642,20 +6635,59 @@ public:
   }
 
   virtual int length() { return 4; }
+
+  struct Iterator {
+    InsnBase *_next;
+    Iterator(Poly1305KernelGenerator *gen): _next(gen->_holder_list_head) { }
+
+    Iterator& operator++() {
+      if (_next)
+        _next = _next->_next;
+      return *this;
+    }
+
+    Iterator operator++(int) {
+      auto result(*this);
+      operator++();
+      return result;
+    }
+
+    InsnBase *operator*() { return _next; }
+
+    void operator()() {
+      if (_next)
+        (*_next)();
+    }
+  };
+
+  Iterator iterator() {
+    return Iterator(this);
+  }
+
+#define par (*this) << [this]()
+
+  void arse() {
+    par { poly1305_load(_s, _input_start); };
+    par { poly1305_add(_s, _u); };
+    par { poly1305_reduce(_u); };
+  }
 };
 
-#define par gen << [](Poly1305KernelGenerator *pkGen, ARGS)
+
+template<typename T> InsnBase *fooFactory(T t) {
+  InsnBase *vv = new InsnHolder<decltype(t)>(t);
+  return vv;
+}
 
 void MacroAssembler::plop(const Register input_start,
                           const Register r[], const Register s[], const RegPair u[],
                           const Register rr2) {
   Poly1305KernelGenerator gen(this, input_start, r, s, u, rr2);
 
-  par { __ poly1305_load(s, input_start); };
-  par { __ poly1305_add(s, u); };
-  par { __ poly1305_reduce(u); };
-
-  gen.generate(0);
+  gen.arse();
+  for (auto it = gen.iterator(); *it; it++) {
+    it();
+  }
 }
 
 #undef gen
