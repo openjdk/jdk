@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8305714
+ * @bug 8292755
  * @summary make sure JShell not crashing while throwing undefined exception
  * @modules
  *     jdk.compiler/com.sun.tools.javac.api
