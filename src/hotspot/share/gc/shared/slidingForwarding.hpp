@@ -108,7 +108,7 @@ private:
   size_t           _region_size_words_shift;
   HeapWord**       _target_base_table;
 
-  FallbackTable* _fallback_table;
+  FallbackTable*   _fallback_table;
 
   inline size_t region_index_containing(HeapWord* addr) const;
   inline bool region_contains(HeapWord* region_base, HeapWord* addr) const;
@@ -132,7 +132,7 @@ public:
 
 /*
  * A simple hash-table that acts as fallback for the sliding forwarding.
- * This is used in the case of G1 serial compactio, which violates the
+ * This is used in the case of G1 serial compaction, which violates the
  * assumption of sliding forwarding that each object of any region is only
  * ever forwarded to one of two target regions. At this point, the GC is
  * scrambling to free up more Java heap memory, and therefore performance

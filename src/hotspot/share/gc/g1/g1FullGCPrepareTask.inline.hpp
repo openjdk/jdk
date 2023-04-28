@@ -32,7 +32,7 @@
 #include "gc/g1/g1FullGCCompactionPoint.hpp"
 #include "gc/g1/g1FullGCScope.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
-#include "gc/shared/gcForwarding.hpp"
+#include "gc/shared/gcForwarding.inline.hpp"
 
 void G1DetermineCompactionQueueClosure::free_empty_humongous_region(HeapRegion* hr) {
   _g1h->free_humongous_region(hr, nullptr);

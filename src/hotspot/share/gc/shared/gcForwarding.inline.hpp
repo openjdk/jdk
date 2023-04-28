@@ -45,7 +45,9 @@ inline oop GCForwarding::forwardee(oop obj) {
     return _sliding_forwarding->forwardee(obj);
   } else
 #endif
+  {
     return obj->forwardee();
+  }
 }
 
 inline void GCForwarding::forward_to(oop obj, oop fwd) {
@@ -56,7 +58,9 @@ inline void GCForwarding::forward_to(oop obj, oop fwd) {
     assert(forwardee(obj) == fwd, "must be forwarded to correct forwardee");
   } else
 #endif
+  {
     obj->forward_to(fwd);
+  }
 }
 
 #endif // SHARE_GC_SHARED_GCFORWARDING_INLINE_HPP
