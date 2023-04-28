@@ -1950,14 +1950,16 @@ Method* SystemDictionary::find_method_handle_intrinsic(vmIntrinsicID iid,
   // Method has been added as the value.
   {
     MonitorLocker ml(THREAD, InvokeMethodIntrinsicTable_lock);
-    bool created = false;
-    // Loop until the current thread won the race and will try to create the full entry.
-    while (!created) {
+    while (true) {
+      bool created;
       met = _invoke_method_intrinsic_table.put_if_absent(key, &created);
       assert(met != nullptr, "either created or found");
       if (*met != nullptr) {
         return *met;
-      } else if (!created) {
+      } else if (created) {
+        // The current thread won the race and will try to create the full entry.
+        break;
+      } else {
         // Another thread beat us to it, so wait for them to complete
         // and return *met; or if they hit an error we get another try.
         ml.wait();
