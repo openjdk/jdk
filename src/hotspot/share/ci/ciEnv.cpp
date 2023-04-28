@@ -917,7 +917,7 @@ ciMethod* ciEnv::get_method_by_index_impl(const constantPoolHandle& cpool,
     }
 
     if (holder_is_accessible) {  // Our declared holder is loaded.
-      constantTag tag = cpool->tag_ref_at(index);
+      constantTag tag = cpool->tag_ref_at(index, bc);
       assert(accessor->get_instanceKlass() == cpool->pool_holder(), "not the pool holder?");
       Method* m = lookup_method(accessor, holder, name_sym, sig_sym, bc, tag);
       if (m != nullptr &&

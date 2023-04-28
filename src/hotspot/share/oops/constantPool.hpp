@@ -675,7 +675,7 @@ class ConstantPool : public Metadata {
 
   int remap_instruction_operand_from_cache(int operand);  // operand must be biased by CPCACHE_INDEX_TAG
 
-  constantTag tag_ref_at(int cp_cache_index, Bytecodes::Code code = Bytecodes::_illegal) {
+  constantTag tag_ref_at(int cp_cache_index, Bytecodes::Code code) {
     return impl_tag_ref_at(cp_cache_index, code, false);
   }
 
