@@ -795,7 +795,7 @@ void SafepointSynchronize::print_safepoint_timeout() {
         os::naked_sleep(3000);
       }
     }
-    fatal("Safepoint sync time longer than " JDOUBLE_FORMAT_P(6) "ms detected when executing %s.",
+    fatal("Safepoint sync time longer than %.6f ms detected when executing %s.",
           SafepointTimeoutDelay, VMThread::vm_operation()->name());
   }
 }
