@@ -430,14 +430,14 @@ void ConstMethod::print_on(outputStream* st) const {
   ResourceMark rm;
   st->print_cr("%s", internal_name());
   Method* m = method();
-  st->print(" - method:       " PTR_FORMAT " ", p2i(m));
+  st->print(" - method:           " PTR_FORMAT " ", p2i(m));
   if (m != nullptr) {
     m->print_value_on(st);
   }
   st->cr();
-  st->print(" - flags:             "); _flags.print_on(st);               st->cr();
+  st->print(" - flags:            0x%x  ", _flags.as_int()); _flags.print_on(st); st->cr();
   if (has_stackmap_table()) {
-    st->print(" - stackmap data:       ");
+    st->print(" - stackmap data:    ");
     stackmap_data()->print_value_on(st);
     st->cr();
   }

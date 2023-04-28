@@ -82,7 +82,8 @@ class ConstMethodFlags {
   CM_FLAGS_DO(CM_FLAGS_GET_SET)
 #undef CM_FLAGS_GET_SET
 
-void print_on(outputStream* st) const;
+  int as_int() const { return _flags; }
+  void print_on(outputStream* st) const;
 };
 
 #endif // SHARE_OOPS_CONSTMETHODFLAGS_HPP
