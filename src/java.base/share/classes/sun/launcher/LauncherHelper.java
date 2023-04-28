@@ -931,9 +931,9 @@ public final class LauncherHelper {
             Object instance = constructor.newInstance();
 
             if (noArgs) {
-                mh.invokeExact(instance);
+                mh.invoke(instance);
             } else {
-                mh.invokeExact(instance, mainArgs);
+                mh.invoke(instance, mainArgs);
             }
         }
     }
