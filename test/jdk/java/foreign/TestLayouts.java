@@ -272,11 +272,35 @@ public class TestLayouts {
     public void testAlignmentString(MemoryLayout layout, long bitAlign) {
         long[] alignments = { 8, 16, 32, 64, 128 };
         for (long a : alignments) {
-            if (layout.bitAlignment() == layout.bitSize()) {
+            if (layout.bitAlignment() == bitAlign) {
                 assertFalse(layout.toString().contains("%"));
-                assertEquals(layout.withBitAlignment(a).toString().contains("%"), a != bitAlign);
+                if (a >= layout.bitAlignment()) {
+                    assertEquals(layout.withBitAlignment(a).toString().contains("%"), a != bitAlign);
+                }
             }
         }
+    }
+
+    @Test(dataProvider="layoutsAndAlignments")
+    public void testBadBitAlignment(MemoryLayout layout, long bitAlign) {
+        long[] alignments = { 8, 16, 32, 64, 128 };
+        for (long a : alignments) {
+            if (a < bitAlign && !(layout instanceof ValueLayout)) {
+                assertThrows(IllegalArgumentException.class, () -> layout.withBitAlignment(a));
+            }
+        }
+    }
+
+    @Test(dataProvider="layoutsAndAlignments", expectedExceptions = IllegalArgumentException.class)
+    public void testBadSequence(MemoryLayout layout, long bitAlign) {
+        layout = layout.withBitAlignment(layout.bitSize() * 2); // hyper-align
+        MemoryLayout.sequenceLayout(layout);
+    }
+
+    @Test(dataProvider="layoutsAndAlignments", expectedExceptions = IllegalArgumentException.class)
+    public void testBadStruct(MemoryLayout layout, long bitAlign) {
+        layout = layout.withBitAlignment(layout.bitSize() * 2); // hyper-align
+        MemoryLayout.structLayout(layout, layout);
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
@@ -417,7 +441,7 @@ public class TestLayouts {
         return Stream.of(
                 MemoryLayout.sequenceLayout(10, JAVA_INT),
                 MemoryLayout.sequenceLayout(JAVA_INT),
-                MemoryLayout.structLayout(JAVA_INT, JAVA_LONG),
+                MemoryLayout.structLayout(JAVA_INT, MemoryLayout.paddingLayout(32), JAVA_LONG),
                 MemoryLayout.unionLayout(JAVA_LONG, JAVA_DOUBLE)
         );
     }

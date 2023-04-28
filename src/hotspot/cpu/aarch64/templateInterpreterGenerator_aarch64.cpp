@@ -479,12 +479,21 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
     __ profile_return_type(mdp, obj, tmp);
   }
 
-  // Pop N words from the stack
-  __ get_cache_and_index_at_bcp(r1, r2, 1, index_size);
-  __ ldr(r1, Address(r1, ConstantPoolCache::base_offset() + ConstantPoolCacheEntry::flags_offset()));
-  __ andr(r1, r1, ConstantPoolCacheEntry::parameter_size_mask);
+  const Register cache = r1;
+  const Register index = r2;
 
-  __ add(esp, esp, r1, Assembler::LSL, 3);
+  if (index_size == sizeof(u4)) {
+    __ load_resolved_indy_entry(cache, index);
+    __ load_unsigned_short(cache, Address(cache, in_bytes(ResolvedIndyEntry::num_parameters_offset())));
+    __ add(esp, esp, cache, Assembler::LSL, 3);
+  } else {
+    // Pop N words from the stack
+    __ get_cache_and_index_at_bcp(cache, index, 1, index_size);
+    __ ldr(cache, Address(cache, ConstantPoolCache::base_offset() + ConstantPoolCacheEntry::flags_offset()));
+    __ andr(cache, cache, ConstantPoolCacheEntry::parameter_size_mask);
+
+    __ add(esp, esp, cache, Assembler::LSL, 3);
+  }
 
   // Restore machine SP
   __ restore_sp_after_call();

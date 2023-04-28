@@ -127,7 +127,7 @@ public final class FallbackLinker extends AbstractLinker {
 
         MemorySegment returnType = methodType.returnType() != void.class
                 ? FFIType.toFFIType(function.returnLayout().orElseThrow(), abi, scope)
-                : LibFallback.VOID_TYPE;
+                : LibFallback.voidType();
         return LibFallback.prepCif(returnType, argLayouts.size(), argTypes, abi, scope);
     }
 

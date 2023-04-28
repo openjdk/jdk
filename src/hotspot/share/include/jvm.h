@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -268,9 +268,6 @@ JVM_SetStackWalkContinuation(JNIEnv *env, jobject stackStream, jlong anchor, job
  */
 JNIEXPORT void JNICALL
 JVM_StartThread(JNIEnv *env, jobject thread);
-
-JNIEXPORT jboolean JNICALL
-JVM_IsThreadAlive(JNIEnv *env, jobject thread);
 
 JNIEXPORT void JNICALL
 JVM_SetThreadPriority(JNIEnv *env, jobject thread, jint prio);

@@ -93,22 +93,22 @@ public:
 
   AbstractAtomicCounter() : _c(0) {}
 
-  T get() const               { return _c; }
+  T get() const               { return Atomic::load(&_c); }
 
   void increment() {
-    Atomic::inc(&_c);
+    Atomic::inc(&_c, memory_order_relaxed);
   }
 
   void decrement() {
-    Atomic::dec(&_c);
+    Atomic::dec(&_c, memory_order_relaxed);
   }
 
   void increment_by(T v) {
-    Atomic::add(&_c, v);
+    Atomic::add(&_c, v, memory_order_relaxed);
   }
 
   void decrement_by(T v) {
-    Atomic::sub(&_c, v);
+    Atomic::sub(&_c, v, memory_order_relaxed);
   }
 
 #ifdef ASSERT

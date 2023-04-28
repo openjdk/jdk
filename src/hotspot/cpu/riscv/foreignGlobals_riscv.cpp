@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -44,7 +44,7 @@ bool ABIDescriptor::is_volatile_reg(FloatRegister reg) const {
          || _float_additional_volatile_registers.contains(reg);
 }
 
-bool ForeignGlobals::has_port() {
+bool ForeignGlobals::is_foreign_linker_supported() {
   return true;
 }
 

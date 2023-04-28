@@ -163,7 +163,7 @@ import java.util.stream.Stream;
  * <tr><th scope="row" style="font-weight:normal">{@code char*}, {@code int**}, {@code struct Point*}</th>
  *     <td style="text-align:center;">{@link ValueLayout#ADDRESS}</td>
  *     <td style="text-align:center;">{@link MemorySegment}</td>
- * <tr><th scope="row" style="font-weight:normal">{@code int (*foo)[10]}</th>
+ * <tr><th scope="row" style="font-weight:normal">{@code int (*ptr)[10]}</th>
  *     <td style="text-align:left;">
  * <pre>
  * ValueLayout.ADDRESS.withTargetLayout(
@@ -323,8 +323,8 @@ import java.util.stream.Stream;
  *
  * {@snippet lang = java:
  * MemorySegment allocateMemory(long byteSize, Arena arena) {
- *     MemorySegment segment = (MemorySegment)malloc.invokeExact(byteSize);   // size = 0, scope = always alive
- *     return segment.reinterpret(size, arena, s -> free.invokeExact(s));     // size = byteSize, scope = arena.scope()
+ *     MemorySegment segment = (MemorySegment)malloc.invokeExact(byteSize);    // size = 0, scope = always alive
+ *     return segment.reinterpret(byteSize, arena, s -> free.invokeExact(s));  // size = byteSize, scope = arena.scope()
  * }
  * }
  *
@@ -634,8 +634,7 @@ public sealed interface Linker permits AbstractLinker {
          * {@snippet lang = java:
          *    String capturedNames = Linker.Option.captureStateLayout().memberLayouts().stream()
          *        .map(MemoryLayout::name)
-         *        .filter(Optional::isPresent)
-         *        .map(Optional::get)
+         *        .flatMap(Optional::stream)
          *        .map(Objects::toString)
          *        .collect(Collectors.joining(", "));
          * }

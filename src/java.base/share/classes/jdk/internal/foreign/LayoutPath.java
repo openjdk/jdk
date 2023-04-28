@@ -192,7 +192,6 @@ public class LayoutPath {
         if (!(layout instanceof ValueLayout valueLayout)) {
             throw new IllegalArgumentException("Path does not select a value layout");
         }
-        checkAlignment(this);
 
         VarHandle handle = Utils.makeSegmentViewVarHandle(valueLayout);
         for (int i = strides.length - 1; i >= 0; i--) {
@@ -279,26 +278,6 @@ public class LayoutPath {
 
     private static IllegalArgumentException badLayoutPath(String cause) {
         return new IllegalArgumentException("Bad layout path: " + cause);
-    }
-
-    private static void checkAlignment(LayoutPath path) {
-        MemoryLayout layout = path.layout;
-        long alignment = layout.bitAlignment();
-        if (!Utils.isAligned(path.offset, alignment)) {
-            throw new UnsupportedOperationException("Invalid alignment requirements for layout " + layout);
-        }
-        for (long stride : path.strides) {
-            if (!Utils.isAligned(stride, alignment)) {
-                throw new UnsupportedOperationException("Alignment requirements for layout " + layout + " do not match stride " + stride);
-            }
-        }
-        LayoutPath encl = path.enclosing;
-        if (encl != null) {
-            if (encl.layout.bitAlignment() < alignment) {
-                throw new UnsupportedOperationException("Alignment requirements for layout " + layout + " do not match those for enclosing layout " + encl.layout);
-            }
-            checkAlignment(encl);
-        }
     }
 
     private long[] addStride(long stride) {

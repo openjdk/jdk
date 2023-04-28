@@ -161,8 +161,7 @@ ArchiveBuilder::ArchiveBuilder() :
   _ro_src_objs(),
   _src_obj_table(INITIAL_TABLE_SIZE, MAX_TABLE_SIZE),
   _buffered_to_src_table(INITIAL_TABLE_SIZE, MAX_TABLE_SIZE),
-  _total_closed_heap_region_size(0),
-  _total_open_heap_region_size(0),
+  _total_heap_region_size(0),
   _estimated_metaspaceobj_bytes(0),
   _estimated_hashtable_bytes(0)
 {
@@ -331,7 +330,7 @@ address ArchiveBuilder::reserve_buffer() {
   ReservedSpace rs(buffer_size, MetaspaceShared::core_region_alignment(), os::vm_page_size());
   if (!rs.is_reserved()) {
     log_error(cds)("Failed to reserve " SIZE_FORMAT " bytes of output buffer.", buffer_size);
-    os::_exit(0);
+    MetaspaceShared::unrecoverable_writing_error();
   }
 
   // buffer_bottom is the lowest address of the 2 core regions (rw, ro) when
@@ -381,7 +380,7 @@ address ArchiveBuilder::reserve_buffer() {
     log_error(cds)("my_archive_requested_top    = " INTPTR_FORMAT, p2i(my_archive_requested_top));
     log_error(cds)("SharedBaseAddress (" INTPTR_FORMAT ") is too high. "
                    "Please rerun java -Xshare:dump with a lower value", p2i(_requested_static_archive_bottom));
-    os::_exit(0);
+    MetaspaceShared::unrecoverable_writing_error();
   }
 
   if (DumpSharedSpaces) {
@@ -1051,42 +1050,40 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
   }
 
 #if INCLUDE_CDS_JAVA_HEAP
-  // open and closed archive regions
-  static void log_heap_regions(const char* which, GrowableArray<MemRegion> *regions) {
-    for (int i = 0; i < regions->length(); i++) {
-      address start = address(regions->at(i).start());
-      address end = address(regions->at(i).end());
-      log_region(which, start, end, to_requested(start));
+  static void log_heap_region(ArchiveHeapInfo* heap_info) {
+    MemRegion r = heap_info->memregion();
+    address start = address(r.start());
+    address end = address(r.end());
+    log_region("heap", start, end, to_requested(start));
 
-      while (start < end) {
-        size_t byte_size;
-        oop original_oop = ArchiveHeapWriter::buffered_addr_to_source_obj(start);
-        if (original_oop != nullptr) {
-          ResourceMark rm;
-          log_info(cds, map)(PTR_FORMAT ": @@ Object %s",
-                             p2i(to_requested(start)), original_oop->klass()->external_name());
-          byte_size = original_oop->size() * BytesPerWord;
-        } else if (start == ArchiveHeapWriter::buffered_heap_roots_addr()) {
-          // HeapShared::roots() is copied specially so it doesn't exist in
-          // HeapShared::OriginalObjectTable. See HeapShared::copy_roots().
-          log_info(cds, map)(PTR_FORMAT ": @@ Object HeapShared::roots (ObjArray)",
-                             p2i(to_requested(start)));
-          byte_size = ArchiveHeapWriter::heap_roots_word_size() * BytesPerWord;
-        } else {
-          // We have reached the end of the region
-          break;
-        }
-        address oop_end = start + byte_size;
-        log_data(start, oop_end, to_requested(start), /*is_heap=*/true);
-        start = oop_end;
-      }
-      if (start < end) {
+    while (start < end) {
+      size_t byte_size;
+      oop original_oop = ArchiveHeapWriter::buffered_addr_to_source_obj(start);
+      if (original_oop != nullptr) {
+        ResourceMark rm;
+        log_info(cds, map)(PTR_FORMAT ": @@ Object %s",
+                           p2i(to_requested(start)), original_oop->klass()->external_name());
+        byte_size = original_oop->size() * BytesPerWord;
+      } else if (start == ArchiveHeapWriter::buffered_heap_roots_addr()) {
+        // HeapShared::roots() is copied specially so it doesn't exist in
+        // HeapShared::OriginalObjectTable. See HeapShared::copy_roots().
+        log_info(cds, map)(PTR_FORMAT ": @@ Object HeapShared::roots (ObjArray)",
+                           p2i(to_requested(start)));
+        byte_size = ArchiveHeapWriter::heap_roots_word_size() * BytesPerWord;
+      } else {
+        // We have reached the end of the region, but have some unused space
+        // at the end.
         log_info(cds, map)(PTR_FORMAT ": @@ Unused heap space " SIZE_FORMAT " bytes",
                            p2i(to_requested(start)), size_t(end - start));
         log_data(start, end, to_requested(start), /*is_heap=*/true);
+        break;
       }
+      address oop_end = start + byte_size;
+      log_data(start, oop_end, to_requested(start), /*is_heap=*/true);
+      start = oop_end;
     }
   }
+
   static address to_requested(address p) {
     return ArchiveHeapWriter::buffered_addr_to_requested_addr(p);
   }
@@ -1118,8 +1115,7 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
 
 public:
   static void log(ArchiveBuilder* builder, FileMapInfo* mapinfo,
-                  GrowableArray<MemRegion> *closed_heap_regions,
-                  GrowableArray<MemRegion> *open_heap_regions,
+                  ArchiveHeapInfo* heap_info,
                   char* bitmap, size_t bitmap_size_in_bytes) {
     log_info(cds, map)("%s CDS archive map for %s", DumpSharedSpaces ? "Static" : "Dynamic", mapinfo->full_path());
 
@@ -1140,11 +1136,8 @@ public:
     log_data((address)bitmap, bitmap_end, 0);
 
 #if INCLUDE_CDS_JAVA_HEAP
-    if (closed_heap_regions != nullptr) {
-      log_heap_regions("closed heap region", closed_heap_regions);
-    }
-    if (open_heap_regions != nullptr) {
-      log_heap_regions("open heap region", open_heap_regions);
+    if (heap_info->is_used()) {
+      log_heap_region(heap_info);
     }
 #endif
 
@@ -1161,11 +1154,7 @@ void ArchiveBuilder::clean_up_src_obj_table() {
   _src_obj_table.iterate(&cleaner);
 }
 
-void ArchiveBuilder::write_archive(FileMapInfo* mapinfo,
-                                   GrowableArray<MemRegion>* closed_heap_regions,
-                                   GrowableArray<MemRegion>* open_heap_regions,
-                                   GrowableArray<ArchiveHeapBitmapInfo>* closed_heap_bitmaps,
-                                   GrowableArray<ArchiveHeapBitmapInfo>* open_heap_bitmaps) {
+void ArchiveBuilder::write_archive(FileMapInfo* mapinfo, ArchiveHeapInfo* heap_info) {
   // Make sure NUM_CDS_REGIONS (exported in cds.h) agrees with
   // MetaspaceShared::n_regions (internal to hotspot).
   assert(NUM_CDS_REGIONS == MetaspaceShared::n_regions, "sanity");
@@ -1174,23 +1163,14 @@ void ArchiveBuilder::write_archive(FileMapInfo* mapinfo,
   write_region(mapinfo, MetaspaceShared::ro, &_ro_region, /*read_only=*/true, /*allow_exec=*/false);
 
   size_t bitmap_size_in_bytes;
-  char* bitmap = mapinfo->write_bitmap_region(ArchivePtrMarker::ptrmap(), closed_heap_bitmaps, open_heap_bitmaps,
+  char* bitmap = mapinfo->write_bitmap_region(ArchivePtrMarker::ptrmap(), heap_info,
                                               bitmap_size_in_bytes);
 
-  if (closed_heap_regions != nullptr) {
-    _total_closed_heap_region_size = mapinfo->write_heap_regions(
-                                        closed_heap_regions,
-                                        closed_heap_bitmaps,
-                                        MetaspaceShared::first_closed_heap_region,
-                                        MetaspaceShared::max_num_closed_heap_regions);
-    _total_open_heap_region_size = mapinfo->write_heap_regions(
-                                        open_heap_regions,
-                                        open_heap_bitmaps,
-                                        MetaspaceShared::first_open_heap_region,
-                                        MetaspaceShared::max_num_open_heap_regions);
+  if (heap_info->is_used()) {
+    _total_heap_region_size = mapinfo->write_heap_region(heap_info);
   }
 
-  print_region_stats(mapinfo, closed_heap_regions, open_heap_regions);
+  print_region_stats(mapinfo, heap_info);
 
   mapinfo->set_requested_base((char*)MetaspaceShared::requested_base_address());
   mapinfo->set_header_crc(mapinfo->compute_header_crc());
@@ -1204,7 +1184,7 @@ void ArchiveBuilder::write_archive(FileMapInfo* mapinfo,
   }
 
   if (log_is_enabled(Info, cds, map)) {
-    CDSMapLogger::log(this, mapinfo, closed_heap_regions, open_heap_regions,
+    CDSMapLogger::log(this, mapinfo, heap_info,
                       bitmap, bitmap_size_in_bytes);
   }
   CDS_JAVA_HEAP_ONLY(HeapShared::destroy_archived_object_cache());
@@ -1215,20 +1195,16 @@ void ArchiveBuilder::write_region(FileMapInfo* mapinfo, int region_idx, DumpRegi
   mapinfo->write_region(region_idx, dump_region->base(), dump_region->used(), read_only, allow_exec);
 }
 
-void ArchiveBuilder::print_region_stats(FileMapInfo *mapinfo,
-                                        GrowableArray<MemRegion>* closed_heap_regions,
-                                        GrowableArray<MemRegion>* open_heap_regions) {
+void ArchiveBuilder::print_region_stats(FileMapInfo *mapinfo, ArchiveHeapInfo* heap_info) {
   // Print statistics of all the regions
   const size_t bitmap_used = mapinfo->region_at(MetaspaceShared::bm)->used();
   const size_t bitmap_reserved = mapinfo->region_at(MetaspaceShared::bm)->used_aligned();
   const size_t total_reserved = _ro_region.reserved()  + _rw_region.reserved() +
                                 bitmap_reserved +
-                                _total_closed_heap_region_size +
-                                _total_open_heap_region_size;
+                                _total_heap_region_size;
   const size_t total_bytes = _ro_region.used()  + _rw_region.used() +
                              bitmap_used +
-                             _total_closed_heap_region_size +
-                             _total_open_heap_region_size;
+                             _total_heap_region_size;
   const double total_u_perc = percent_of(total_bytes, total_reserved);
 
   _rw_region.print(total_reserved);
@@ -1236,30 +1212,25 @@ void ArchiveBuilder::print_region_stats(FileMapInfo *mapinfo,
 
   print_bitmap_region_stats(bitmap_used, total_reserved);
 
-  if (closed_heap_regions != nullptr) {
-    print_heap_region_stats(closed_heap_regions, "ca", total_reserved);
-    print_heap_region_stats(open_heap_regions, "oa", total_reserved);
+  if (heap_info->is_used()) {
+    print_heap_region_stats(heap_info, total_reserved);
   }
 
-  log_debug(cds)("total    : " SIZE_FORMAT_W(9) " [100.0%% of total] out of " SIZE_FORMAT_W(9) " bytes [%5.1f%% used]",
+  log_debug(cds)("total   : " SIZE_FORMAT_W(9) " [100.0%% of total] out of " SIZE_FORMAT_W(9) " bytes [%5.1f%% used]",
                  total_bytes, total_reserved, total_u_perc);
 }
 
 void ArchiveBuilder::print_bitmap_region_stats(size_t size, size_t total_size) {
-  log_debug(cds)("bm  space: " SIZE_FORMAT_W(9) " [ %4.1f%% of total] out of " SIZE_FORMAT_W(9) " bytes [100.0%% used]",
+  log_debug(cds)("bm space: " SIZE_FORMAT_W(9) " [ %4.1f%% of total] out of " SIZE_FORMAT_W(9) " bytes [100.0%% used]",
                  size, size/double(total_size)*100.0, size);
 }
 
-void ArchiveBuilder::print_heap_region_stats(GrowableArray<MemRegion>* regions,
-                                             const char *name, size_t total_size) {
-  int arr_len = regions == nullptr ? 0 : regions->length();
-  for (int i = 0; i < arr_len; i++) {
-      char* start = (char*)regions->at(i).start();
-      size_t size = regions->at(i).byte_size();
-      char* top = start + size;
-      log_debug(cds)("%s%d space: " SIZE_FORMAT_W(9) " [ %4.1f%% of total] out of " SIZE_FORMAT_W(9) " bytes [100.0%% used] at " INTPTR_FORMAT,
-                     name, i, size, size/double(total_size)*100.0, size, p2i(start));
-  }
+void ArchiveBuilder::print_heap_region_stats(ArchiveHeapInfo *info, size_t total_size) {
+  char* start = info->start();
+  size_t size = info->byte_size();
+  char* top = start + size;
+  log_debug(cds)("hp space: " SIZE_FORMAT_W(9) " [ %4.1f%% of total] out of " SIZE_FORMAT_W(9) " bytes [100.0%% used] at " INTPTR_FORMAT,
+                     size, size/double(total_size)*100.0, size, p2i(start));
 }
 
 void ArchiveBuilder::report_out_of_space(const char* name, size_t needed_bytes) {
@@ -1269,8 +1240,8 @@ void ArchiveBuilder::report_out_of_space(const char* name, size_t needed_bytes) 
   _rw_region.print_out_of_space_msg(name, needed_bytes);
   _ro_region.print_out_of_space_msg(name, needed_bytes);
 
-  vm_exit_during_initialization(err_msg("Unable to allocate from '%s' region", name),
-                                "Please reduce the number of shared classes.");
+  log_error(cds)("Unable to allocate from '%s' region: Please reduce the number of shared classes.", name);
+  MetaspaceShared::unrecoverable_writing_error();
 }
 
 

@@ -850,7 +850,6 @@ public:
 
   // oop manipulations
   void load_klass(Register dst, Register src);
-  void load_klass_check_null(Register dst, Register src);
   void store_klass(Register dst, Register src);
   void cmp_klass(Register oop, Register trial_klass, Register tmp);
 

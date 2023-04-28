@@ -480,10 +480,12 @@ public abstract class CallArranger {
                     StorageCalculator.StructStorage[] structStorages
                             = storageCalculator.structStorages((GroupLayout) layout, forHFA);
 
-                    for (StorageCalculator.StructStorage structStorage : structStorages) {
+                    for (StorageCalculator.StructStorage(
+                            long offset, Class<?> ca, int byteWidth, VMStorage storage
+                    ) : structStorages) {
                         bindings.dup();
-                        bindings.vmLoad(structStorage.storage(), structStorage.carrier())
-                                .bufferStore(structStorage.offset(), structStorage.carrier(), structStorage.byteWidth());
+                        bindings.vmLoad(storage, ca)
+                                .bufferStore(offset, ca, byteWidth);
                     }
                 }
                 case STRUCT_REFERENCE -> {

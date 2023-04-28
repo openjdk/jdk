@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 SAP SE. All rights reserved.
+ * Copyright (c) 2020, 2023, SAP SE. All rights reserved.
  * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -29,7 +29,7 @@
 
 class MacroAssembler;
 
-bool ForeignGlobals::has_port() {
+bool ForeignGlobals::is_foreign_linker_supported() {
   return false;
 }
 

@@ -633,10 +633,10 @@ public abstract class FileChannel
      * bytes free in its output buffer.
      *
      * <p> This method does not modify this channel's position.  If the given
-     * position is greater than or equal to the file's current size then no bytes are
-     * transferred.  If the target channel has a position then bytes are
-     * written starting at that position and then the position is incremented
-     * by the number of bytes written.
+     * position is greater than or equal to the file's current size then no
+     * bytes are transferred.  If the target channel has a position then bytes
+     * are written starting at that position and then the position
+     * is incremented by the number of bytes written.
      *
      * <p> This method is potentially much more efficient than a simple loop
      * that reads from this channel and writes to the target channel.  Many
@@ -701,8 +701,10 @@ public abstract class FileChannel
      * source has reached end-of-stream.
      *
      * <p> This method does not modify this channel's position.  If the given
-     * position is greater than the file's current size then no bytes are
-     * transferred.  If the source channel has a position then bytes are read
+     * position is greater than or equal to the file's current size then the
+     * file will be grown to accommodate the new bytes; the values of any bytes
+     * between the previous end-of-file and the newly-written bytes are
+     * unspecified.  If the source channel has a position then bytes are read
      * starting at that position and then the position is incremented by the
      * number of bytes read.
      *
@@ -715,7 +717,7 @@ public abstract class FileChannel
      *         The source channel
      *
      * @param  position
-     *         The position within the file at which the transfer is to begin;
+     *         The file position at which the transfer is to begin;
      *         must be non-negative
      *
      * @param  count
@@ -761,7 +763,8 @@ public abstract class FileChannel
      * #read(ByteBuffer)} method, except that bytes are read starting at the
      * given file position rather than at the channel's current position.  This
      * method does not modify this channel's position.  If the given position
-     * is greater than or equal to the file's current size then no bytes are read.  </p>
+     * is greater than or equal to the file's current size then no bytes are
+     * read.  </p>
      *
      * @param  dst
      *         The buffer into which bytes are to be transferred
@@ -806,9 +809,10 @@ public abstract class FileChannel
      * #write(ByteBuffer)} method, except that bytes are written starting at
      * the given file position rather than at the channel's current position.
      * This method does not modify this channel's position.  If the given
-     * position is greater than or equal to the file's current size then the file will be
-     * grown to accommodate the new bytes; the values of any bytes between the
-     * previous end-of-file and the newly-written bytes are unspecified.  </p>
+     * position is greater than or equal to the file's current size then the
+     * file will be grown to accommodate the new bytes; the values of any bytes
+     * between the previous end-of-file and the newly-written bytes are
+     * unspecified.  </p>
      *
      * <p> If the file is open in <a href="#append-mode">append mode</a>, then
      * the effect of invoking this method is unspecified.
