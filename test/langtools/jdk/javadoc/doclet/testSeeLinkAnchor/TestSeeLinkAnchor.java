@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8200337
+ * @bug 8200337 8306578
  * @summary Generalize see and link tags for user-defined anchors
  * @library /tools/lib ../../lib
  * @modules
@@ -140,14 +140,14 @@ public class TestSeeLinkAnchor extends JavadocTester {
                 "--no-platform-links",
                 "nolabel");
 
-        checkExit(Exit.OK);
+        checkExit(Exit.ERROR);
         checkOutput(Output.OUT, true, """
-                    warning: missing reference label
+                    error: missing reference label
                     Link with missing label: {@link ##main}.
                                              ^
                     """,
             """
-                    Class1.java:5: warning: missing reference label
+                    Class1.java:5: error: missing reference label
                     @see ##main
                     ^
                     """);
