@@ -6560,85 +6560,53 @@ void MacroAssembler::poly1305_add(const Register dest[], const RegPair src[]) {
 
 #define __ pkGen->
 
-class InsnBase: public ResourceObj {
-public:
-  InsnBase *_next;
-  virtual void operator()() = 0;
-};
-
-template <typename T>
-class InsnHolder : public InsnBase {
-public:
-  T _t;
-  InsnHolder(T t): _t(t) {}
-  virtual void operator()() {
-    _t();
-  }
-};
-
-template <typename T>
-struct Stru {
-  T _t;
-  Stru(T t) : _t(t) { }
-};
-
-class Poly1305KernelGenerator: public KernelGenerator {
+class LambdaAccumulator {
 public:
 
-  InsnBase *_holder_list_head;
+  class WrapperNode: public ResourceObj {
+  public:
+    WrapperNode *_next;
+    virtual void operator()() = 0;
+  };
 
-#define ARGS                                    \
-  const Register input_start,                   \
-  const Register r[],                           \
-  const Register s[],                           \
-  const RegPair u[],                            \
-  const Register rr2
-
-  const Register _input_start;
-  const Register *_r;
-  const Register *_s;
-  const RegPair *_u;
-  const Register _rr2;
-
-  Poly1305KernelGenerator(Assembler *as, ARGS)
-    : KernelGenerator(as, 0), _holder_list_head(nullptr),
-      _input_start(input_start),
-      _r(r), _s(s), _u(u), _rr2(rr2) { }
-
-  InsnBase *last() {
-    InsnBase *prev = nullptr;
-    for (InsnBase *it = _holder_list_head; it; it = it->_next) {
-      prev = it;
+  template <typename T>
+  class LambdaWrapper : public WrapperNode {
+  public:
+    T _t;
+    LambdaWrapper(T t): _t(t) {}
+    virtual void operator()() {
+      _t();
     }
-    return prev;
+  };
+
+  WrapperNode *_holder_list_head, *_last;
+  int _count;
+
+  LambdaAccumulator(Assembler *as)
+    : _holder_list_head(nullptr), _last(nullptr), _count(0) {}
+
+  WrapperNode *last() {
+    return _last;
   }
 
   template<typename T>
-  InsnBase *operator<<(T t) {
-    auto vv = new InsnHolder<decltype(t)>(t);
-    if (last())
+  WrapperNode *operator<<(T t) {
+    auto vv = new LambdaWrapper<decltype(t)>(t);
+    if (_count > 0)
       last()->_next = vv;
     else
       _holder_list_head = vv;
     vv->_next = nullptr;
+    _count++;
+    _last = vv;
     return vv;
   }
 
-  virtual void generate(int n) {
-    for (InsnBase *it = _holder_list_head; it; it = it->_next) {
-      (*it)();
-    }
-  }
-
-  virtual KernelGenerator *next() {
-    return this;
-  }
-
-  virtual int length() { return 4; }
+  virtual int length() { return _count; }
 
   struct Iterator {
-    InsnBase *_next;
-    Iterator(Poly1305KernelGenerator *gen): _next(gen->_holder_list_head) { }
+    WrapperNode *_next;
+    Iterator(LambdaAccumulator *gen): _next(gen->_holder_list_head) { }
 
     Iterator& operator++() {
       if (_next)
@@ -6652,7 +6620,7 @@ public:
       return result;
     }
 
-    InsnBase *operator*() { return _next; }
+    WrapperNode *operator*() { return _next; }
 
     void operator()() {
       if (_next)
@@ -6663,33 +6631,23 @@ public:
   Iterator iterator() {
     return Iterator(this);
   }
-
-#define par (*this) << [this]()
-
-  void arse() {
-    par { poly1305_load(_s, _input_start); };
-    par { poly1305_add(_s, _u); };
-    par { poly1305_reduce(_u); };
-  }
 };
 
+#define bra gen << [=]()
 
-template<typename T> InsnBase *fooFactory(T t) {
-  InsnBase *vv = new InsnHolder<decltype(t)>(t);
-  return vv;
-}
 
 void MacroAssembler::plop(const Register input_start,
                           const Register r[], const Register s[], const RegPair u[],
                           const Register rr2) {
-  Poly1305KernelGenerator gen(this, input_start, r, s, u, rr2);
+  LambdaAccumulator gen(this);
 
-  gen.arse();
+  bra { poly1305_load(s, input_start); };
+  bra { poly1305_add(s, u); };
+  bra { poly1305_reduce(u); };
+
   for (auto it = gen.iterator(); *it; it++) {
     it();
   }
 }
 
-#undef gen
-#undef __
-
+#undef bra
