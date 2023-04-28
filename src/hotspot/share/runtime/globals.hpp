@@ -1422,9 +1422,6 @@ const int ObjectAlignmentInBytes = 8;
           "Force the class space to be allocated at this address or "       \
           "fails VM initialization (requires -Xshare=off.")                 \
                                                                             \
-  product(ccstr, MetaspaceReclaimPolicy, "balanced", DIAGNOSTIC,            \
-          "options: balanced, aggressive")                                  \
-                                                                            \
   product(bool, PrintMetaspaceStatisticsAtExit, false, DIAGNOSTIC,          \
           "Print metaspace statistics upon VM exit.")                       \
                                                                             \

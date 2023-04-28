@@ -58,24 +58,6 @@
  */
 
 /*
- * @test id=debug-aggressive
- * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management
- * @build jdk.test.whitebox.WhiteBox
- * @key randomness
- * @requires (vm.debug == true)
- *
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- *
- * @run main/othervm/timeout=400
- *      -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *      -XX:VerifyMetaspaceInterval=10
- *      -XX:MetaspaceReclaimPolicy=aggressive
- *      TestMetaspaceAllocationMT1
- */
-
-/*
  * @test id=debug-guard
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
@@ -106,23 +88,6 @@
  *
  * @run main/othervm/timeout=400
  *      -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *      TestMetaspaceAllocationMT1
- */
-
-/*
- * @test id=ndebug-aggressive
- * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management
- * @build jdk.test.whitebox.WhiteBox
- * @key randomness
- * @requires (vm.debug == false)
- *
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- *
- * @run main/othervm/timeout=400
- *      -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *      -XX:MetaspaceReclaimPolicy=aggressive
  *      TestMetaspaceAllocationMT1
  */
 
