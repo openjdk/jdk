@@ -738,11 +738,10 @@ static void ensure_join(JavaThread* thread) {
   ObjectLocker lock(threadObj, thread);
   // Thread is exiting. So set thread_status field in  java.lang.Thread class to TERMINATED.
   java_lang_Thread::set_thread_status(threadObj(), JavaThreadStatus::TERMINATED);
-  // Clear the native thread instance - this makes isAlive return false and
-  // allows the join() to complete once we've done the notify_all() below.
-  // Needs a release() to obey Java Memory Model requirements (which is done
-  // in set_thread()).
-  java_lang_Thread::set_thread(threadObj(), nullptr);
+  // Clear the native thread instance - this makes isAlive return false and allows the join()
+  // to complete once we've done the notify_all below. Needs a release() to obey Java Memory Model
+  // requirements.
+  java_lang_Thread::release_set_thread(threadObj(), nullptr);
   lock.notify_all(thread);
   // Ignore pending exception, since we are exiting anyway
   thread->clear_pending_exception();
@@ -1672,8 +1671,9 @@ void JavaThread::prepare(jobject jni_thread, ThreadPriority prio) {
   // will not be visited by GC.
   Threads::add(this);
   // Publish the JavaThread* in java.lang.Thread after the JavaThread* is
-  // on a ThreadsList.
-  java_lang_Thread::set_thread(thread_oop(), this);
+  // on a ThreadsList. There will be a release when the Theads_lock is
+  // dropped somewhere in the caller, but let's be more proactive.
+  java_lang_Thread::release_set_thread(thread_oop(), this);
 }
 
 oop JavaThread::current_park_blocker() {
