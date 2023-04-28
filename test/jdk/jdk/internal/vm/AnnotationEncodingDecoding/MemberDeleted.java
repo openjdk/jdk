@@ -22,41 +22,6 @@
  */
 package jdk.internal.vm.test;
 
-<<<<<<<< HEAD:test/jdk/java/foreign/trivial/libTrivial.c
-#include <errno.h>
-
-#ifdef _WIN64
-#define EXPORT __declspec(dllexport)
-#else
-#define EXPORT
-#endif
-
-EXPORT void empty() {}
-
-EXPORT int identity(int value) {
-    return value;
-}
-
-// 128 bit struct returned in buffer on SysV
-struct Big {
-    long long x;
-    long long y;
-};
-
-EXPORT struct Big with_return_buffer() {
-    struct Big b;
-    b.x = 10;
-    b.y = 11;
-    return b;
-}
-
-EXPORT void capture_errno(int value) {
-    errno = value;
-}
-
-EXPORT void do_upcall(void(*f)(void)) {
-    f();
-========
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
@@ -65,5 +30,4 @@ public @interface MemberDeleted {
     String value();
     int retained();
     int deleted();
->>>>>>>> master:test/jdk/jdk/internal/vm/AnnotationEncodingDecoding/MemberDeleted.java
 }
