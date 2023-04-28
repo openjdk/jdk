@@ -781,36 +781,9 @@ public final class StackMapGenerator {
         var cpe = cp.entryByIndex(index);
         var nameAndType = opcode == INVOKEDYNAMIC ? ((DynamicConstantPoolEntry)cpe).nameAndType() : ((MemberRefEntry)cpe).nameAndType();
         String invokeMethodName = nameAndType.name().stringValue();
-
-        var mDesc = nameAndType.type().stringValue();
-        //faster counting of method descriptor argument slots instead of full parsing
-        int nargs = 0, pos = 0, descLen = mDesc.length();
-        if (descLen < 3 || mDesc.charAt(0) != '(')
-            throw new IllegalArgumentException("Bad method descriptor: " + mDesc);
-        char ch;
-        while (++pos < descLen && (ch = mDesc.charAt(pos)) != ')') {
-            switch (ch) {
-                case '[' -> {
-                    nargs++;
-                    while (++pos < descLen && mDesc.charAt(pos) == '[');
-                    if (mDesc.charAt(pos) == 'L')
-                        while (++pos < descLen && mDesc.charAt(pos) != ';');
-                }
-                case 'D', 'J' -> nargs += 2;
-                case 'B', 'C', 'F', 'I', 'S', 'Z' -> nargs++;
-                case 'L' -> {
-                    nargs++;
-                    while (++pos < descLen && mDesc.charAt(pos) != ';');
-                }
-                default ->
-                    throw new IllegalArgumentException("Bad method descriptor: " + mDesc);
-            }
-        }
-        if (++pos >= descLen)
-            throw new IllegalArgumentException("Bad method descriptor: " + mDesc);
-
+        var mDesc = Util.methodTypeSymbol(nameAndType);
         int bci = bcs.bci;
-        currentFrame.decStack(nargs);
+        currentFrame.decStack(Util.parameterSlots(mDesc));
         if (opcode != INVOKESTATIC && opcode != INVOKEDYNAMIC) {
             if (OBJECT_INITIALIZER_NAME.equals(invokeMethodName)) {
                 Type type = currentFrame.popStack();
@@ -835,7 +808,7 @@ public final class StackMapGenerator {
                 currentFrame.popStack();
             }
         }
-        currentFrame.pushStack(ClassDesc.ofDescriptor(mDesc.substring(pos)));
+        currentFrame.pushStack(mDesc.returnType());
         return thisUninit;
     }
 
