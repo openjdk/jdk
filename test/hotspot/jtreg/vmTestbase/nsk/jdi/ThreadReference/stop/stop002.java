@@ -41,7 +41,7 @@ import nsk.share.jdi.*;
  * TEST #1: Tests that stop() properly throws <i>InvalidTypeException</i> if
  * specified throwable is not an instance of java.lang.Throwable in the target VM.<p>
  *
- * TEST #2: Verifies that stop() works when suspended at a breakpoint.
+ * TEST #2: Verify that stop() works when suspended at a breakpoint.
  *
  * TEST #3: Verify that stop() works when not suspended in a loop. For virtual threads
  * we expect an IncompatibleThreadStateException.
@@ -176,7 +176,8 @@ public class stop002 {
             log.display("TEST #2: all done.");
 
             /*
-             * Test #3: verify that stop() works when not suspended in a loop.
+             * Test #3: verify that stop() works when not suspended in a loop. Expect
+             * IllegalThreadStateException for virtual threads.
              */
             Thread.sleep(1000); // Allow debuggee to get into loop first
             log.display("\nTEST #3: Trying to stop debuggee thread while not suspended in a loop");
@@ -214,20 +215,11 @@ public class stop002 {
             try {
                 thrRef.suspend();
                 thrRef.stop(throwableRef);
-                if (vthreadMode && objRef == null) {
-                    log.complain("TEST #4 FAILED: expected OpaqueFrameException was not thrown");
-                    tot_res = Consts.TEST_FAILED;
-                } else {
-                    log.display("TEST #4 PASSED: stop() call succeeded.");
-                }
+                log.display("TEST #4 PASSED: stop() call succeeded.");
             } catch (Throwable ue) {
-                if (vthreadMode && ue instanceof OpaqueFrameException) {
-                    log.display("TEST #4 PASSED: stop() call threw OpaqueFrameException for virtual thread.");
-                } else {
-                    ue.printStackTrace();
-                    log.complain("TEST #4 FAILED: caught unexpected " + ue);
-                    tot_res = Consts.TEST_FAILED;
-                }
+                ue.printStackTrace();
+                log.complain("TEST #4 FAILED: caught unexpected " + ue);
+                tot_res = Consts.TEST_FAILED;
             } finally {
                 log.display("TEST #4: resuming thread.");
                 thrRef.resume();
@@ -239,7 +231,8 @@ public class stop002 {
             log.display("TEST #4: all done.");
 
             /*
-             * Test #5: verify that stop() works when suspended in Thread.sleep()
+             * Test #5: verify that stop() works when suspended in Thread.sleep(). Expect
+             * OpaqueFrameException for virtual threads.
              */
             Thread.sleep(1000); // Allow debuggee to reach Thread.sleep() first.
             log.display("\nTEST #5: Trying to stop debuggee thread while suspended in Thread.sleep()");
