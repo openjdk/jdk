@@ -31,13 +31,16 @@
 
 #ifdef _LP64
 
+// We cannot use 0, because that may already be a valid base address in zero-based heaps.
+// 0x1 is safe because heap base addresses must be aligned by much larger alginemnt
 HeapWord* const SlidingForwarding::UNUSED_BASE = reinterpret_cast<HeapWord*>(0x1);
 
 SlidingForwarding::SlidingForwarding(MemRegion heap, size_t region_size_words)
   : _heap_start(heap.start()),
     _num_regions(((heap.end() - heap.start()) / region_size_words) + 1),
+    _region_size_words(region_size_words),
     _region_size_words_shift(log2i_exact(region_size_words)),
-  _target_base_table(nullptr),
+  _bases_table(nullptr),
   _fallback_table(nullptr) {
   assert(_region_size_words_shift <= NUM_COMPRESSED_BITS, "regions must not be larger than maximum addressing bits allow");
   size_t heap_size_words = heap.end() - heap.start();
@@ -45,14 +48,15 @@ SlidingForwarding::SlidingForwarding(MemRegion heap, size_t region_size_words)
     // In this case we can treat the whole heap as a single region and
     // make the encoding very simple.
     _num_regions = 1;
-    _region_size_words_shift = log2i_exact(round_up_power_of_2(heap_size_words));
+    _region_size_words = round_up_power_of_2(heap_size_words);
+    _region_size_words_shift = log2i_exact(_region_size_words);
   }
 }
 
 SlidingForwarding::~SlidingForwarding() {
-  if (_target_base_table != nullptr) {
-    FREE_C_HEAP_ARRAY(HeapWord*, _target_base_table);
-    _target_base_table = nullptr;
+  if (_bases_table != nullptr) {
+    FREE_C_HEAP_ARRAY(HeapWord*, _bases_table);
+    _bases_table = nullptr;
   }
   if (_fallback_table != nullptr) {
     delete _fallback_table;
@@ -61,18 +65,18 @@ SlidingForwarding::~SlidingForwarding() {
 }
 
 void SlidingForwarding::begin() {
-  assert(_target_base_table == nullptr, "Should be uninitialized");
+  assert(_bases_table == nullptr, "Should be uninitialized");
   size_t max = _num_regions * NUM_TARGET_REGIONS;
-  _target_base_table = NEW_C_HEAP_ARRAY(HeapWord*, max, mtGC);
+  _bases_table = NEW_C_HEAP_ARRAY(HeapWord*, max, mtGC);
   for (size_t i = 0; i < max; i++) {
-    _target_base_table[i] = UNUSED_BASE;
+    _bases_table[i] = UNUSED_BASE;
   }
 }
 
 void SlidingForwarding::end() {
-  assert(_target_base_table != nullptr, "Should be initialized");
-  FREE_C_HEAP_ARRAY(HeapWord*, _target_base_table);
-  _target_base_table = nullptr;
+  assert(_bases_table != nullptr, "Should be initialized");
+  FREE_C_HEAP_ARRAY(HeapWord*, _bases_table);
+  _bases_table = nullptr;
 
   if (_fallback_table != nullptr) {
     delete _fallback_table;
