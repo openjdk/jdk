@@ -410,7 +410,7 @@ inline void StackChunkFrameStream<frame_kind>::iterate_derived_pointers(DerivedO
     assert(is_in_oops(base_loc, map), "not found: " INTPTR_FORMAT, p2i(base_loc));
     assert(!is_in_oops(derived_loc, map), "found: " INTPTR_FORMAT, p2i(derived_loc));
 
-    Devirtualizer::do_derived_oop(closure, (oop*)base_loc, (derived_pointer*)derived_loc);
+    Devirtualizer::do_derived_oop(closure, (derived_base*)base_loc, (derived_pointer*)derived_loc);
   }
 }
 

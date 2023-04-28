@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8303393
+ * @bug 8304760
  * @summary Interoperability tests with Microsoft TLS root CAs
  * @build ValidatePathWithParams
  * @run main/othervm -Djava.security.debug=certpath MicrosoftTLS OCSP

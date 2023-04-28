@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -29,11 +29,7 @@
  */
 
 import java.lang.foreign.Arena;
-import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.SegmentScope;
-import java.lang.foreign.SegmentAllocator;
-import java.lang.foreign.VaList;
 import java.lang.foreign.ValueLayout;
 
 import org.testng.annotations.DataProvider;
@@ -51,8 +47,6 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
-import static java.lang.foreign.ValueLayout.JAVA_INT;
-import static java.lang.foreign.ValueLayout.JAVA_LONG;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
@@ -74,8 +68,8 @@ public class TestScopedOperations {
 
     @Test(dataProvider = "scopedOperations")
     public <Z> void testOpAfterClose(String name, ScopedOperation<Z> scopedOperation) {
-        Arena arena = Arena.openConfined();
-        Z obj = scopedOperation.apply(arena.scope());
+        Arena arena = Arena.ofConfined();
+        Z obj = scopedOperation.apply(arena);
         arena.close();
         try {
             scopedOperation.accept(obj);
@@ -87,8 +81,8 @@ public class TestScopedOperations {
 
     @Test(dataProvider = "scopedOperations")
     public <Z> void testOpOutsideConfinement(String name, ScopedOperation<Z> scopedOperation) {
-        try (Arena arena = Arena.openConfined()) {
-            Z obj = scopedOperation.apply(arena.scope());
+        try (Arena arena = Arena.ofConfined()) {
+            Z obj = scopedOperation.apply(arena);
             AtomicReference<Throwable> failed = new AtomicReference<>();
             Thread t = new Thread(() -> {
                 try {
@@ -111,7 +105,7 @@ public class TestScopedOperations {
 
     static {
         // session operations
-        ScopedOperation.ofScope(session -> MemorySegment.allocateNative(100, session), "MemorySession::allocate");;
+        ScopedOperation.ofScope(session -> session.allocate(100, 1), "MemorySession::allocate");
         ScopedOperation.ofScope(session -> {
             try (FileChannel fileChannel = FileChannel.open(tempPath, StandardOpenOption.READ, StandardOpenOption.WRITE)) {
                 fileChannel.map(FileChannel.MapMode.READ_WRITE, 0L, 10L, session);
@@ -119,41 +113,30 @@ public class TestScopedOperations {
                 fail();
             }
         }, "FileChannel::map");
-        ScopedOperation.ofScope(session -> VaList.make(b -> b.addVarg(JAVA_INT, 42), session), "VaList::make");
-        ScopedOperation.ofScope(session -> VaList.ofAddress(42, session), "VaList::make");
         // segment operations
         ScopedOperation.ofSegment(s -> s.toArray(JAVA_BYTE), "MemorySegment::toArray(BYTE)");
         ScopedOperation.ofSegment(s -> s.copyFrom(s), "MemorySegment::copyFrom");
         ScopedOperation.ofSegment(s -> s.mismatch(s), "MemorySegment::mismatch");
         ScopedOperation.ofSegment(s -> s.fill((byte) 0), "MemorySegment::fill");
-        // valist operations
-        ScopedOperation.ofVaList(VaList::copy, "VaList::copy");
-        ScopedOperation.ofVaList(list -> list.nextVarg(ValueLayout.ADDRESS), "VaList::nextVarg/address");
-        ScopedOperation.ofVaList(list -> list.nextVarg(ValueLayout.JAVA_INT), "VaList::nextVarg/int");
-        ScopedOperation.ofVaList(list -> list.nextVarg(ValueLayout.JAVA_LONG), "VaList::nextVarg/long");
-        ScopedOperation.ofVaList(list -> list.nextVarg(ValueLayout.JAVA_DOUBLE), "VaList::nextVarg/double");
-        ScopedOperation.ofVaList(VaList::skip, "VaList::skip");
-        ScopedOperation.ofVaList(list -> list.nextVarg(MemoryLayout.structLayout(ValueLayout.JAVA_INT),
-                SegmentAllocator.prefixAllocator(MemorySegment.ofArray(new byte[4]))), "VaList::nextVargs/segment");
         // allocator operations
-        ScopedOperation.ofAllocator(a -> a.allocate(1), "NativeAllocator::allocate/size");
-        ScopedOperation.ofAllocator(a -> a.allocate(1, 1), "NativeAllocator::allocate/size/align");
-        ScopedOperation.ofAllocator(a -> a.allocate(JAVA_BYTE), "NativeAllocator::allocate/layout");
-        ScopedOperation.ofAllocator(a -> a.allocate(JAVA_BYTE, (byte) 0), "NativeAllocator::allocate/byte");
-        ScopedOperation.ofAllocator(a -> a.allocate(ValueLayout.JAVA_CHAR, (char) 0), "NativeAllocator::allocate/char");
-        ScopedOperation.ofAllocator(a -> a.allocate(ValueLayout.JAVA_SHORT, (short) 0), "NativeAllocator::allocate/short");
-        ScopedOperation.ofAllocator(a -> a.allocate(ValueLayout.JAVA_INT, 0), "NativeAllocator::allocate/int");
-        ScopedOperation.ofAllocator(a -> a.allocate(ValueLayout.JAVA_FLOAT, 0f), "NativeAllocator::allocate/float");
-        ScopedOperation.ofAllocator(a -> a.allocate(ValueLayout.JAVA_LONG, 0L), "NativeAllocator::allocate/long");
-        ScopedOperation.ofAllocator(a -> a.allocate(ValueLayout.JAVA_DOUBLE, 0d), "NativeAllocator::allocate/double");
-        ScopedOperation.ofAllocator(a -> a.allocateArray(JAVA_BYTE, 1L), "NativeAllocator::allocateArray/size");
-        ScopedOperation.ofAllocator(a -> a.allocateArray(JAVA_BYTE, new byte[]{0}), "NativeAllocator::allocateArray/byte");
-        ScopedOperation.ofAllocator(a -> a.allocateArray(ValueLayout.JAVA_CHAR, new char[]{0}), "NativeAllocator::allocateArray/char");
-        ScopedOperation.ofAllocator(a -> a.allocateArray(ValueLayout.JAVA_SHORT, new short[]{0}), "NativeAllocator::allocateArray/short");
-        ScopedOperation.ofAllocator(a -> a.allocateArray(ValueLayout.JAVA_INT, new int[]{0}), "NativeAllocator::allocateArray/int");
-        ScopedOperation.ofAllocator(a -> a.allocateArray(ValueLayout.JAVA_FLOAT, new float[]{0}), "NativeAllocator::allocateArray/float");
-        ScopedOperation.ofAllocator(a -> a.allocateArray(ValueLayout.JAVA_LONG, new long[]{0}), "NativeAllocator::allocateArray/long");
-        ScopedOperation.ofAllocator(a -> a.allocateArray(ValueLayout.JAVA_DOUBLE, new double[]{0}), "NativeAllocator::allocateArray/double");
+        ScopedOperation.ofScope(a -> a.allocate(1), "Arena::allocate/size");
+        ScopedOperation.ofScope(a -> a.allocate(1, 1), "Arena::allocate/size/align");
+        ScopedOperation.ofScope(a -> a.allocate(JAVA_BYTE), "Arena::allocate/layout");
+        ScopedOperation.ofScope(a -> a.allocate(JAVA_BYTE, (byte) 0), "Arena::allocate/byte");
+        ScopedOperation.ofScope(a -> a.allocate(ValueLayout.JAVA_CHAR, (char) 0), "Arena::allocate/char");
+        ScopedOperation.ofScope(a -> a.allocate(ValueLayout.JAVA_SHORT, (short) 0), "Arena::allocate/short");
+        ScopedOperation.ofScope(a -> a.allocate(ValueLayout.JAVA_INT, 0), "Arena::allocate/int");
+        ScopedOperation.ofScope(a -> a.allocate(ValueLayout.JAVA_FLOAT, 0f), "Arena::allocate/float");
+        ScopedOperation.ofScope(a -> a.allocate(ValueLayout.JAVA_LONG, 0L), "Arena::allocate/long");
+        ScopedOperation.ofScope(a -> a.allocate(ValueLayout.JAVA_DOUBLE, 0d), "Arena::allocate/double");
+        ScopedOperation.ofScope(a -> a.allocateArray(JAVA_BYTE, 1L), "Arena::allocateArray/size");
+        ScopedOperation.ofScope(a -> a.allocateArray(JAVA_BYTE, new byte[]{0}), "Arena::allocateArray/byte");
+        ScopedOperation.ofScope(a -> a.allocateArray(ValueLayout.JAVA_CHAR, new char[]{0}), "Arena::allocateArray/char");
+        ScopedOperation.ofScope(a -> a.allocateArray(ValueLayout.JAVA_SHORT, new short[]{0}), "Arena::allocateArray/short");
+        ScopedOperation.ofScope(a -> a.allocateArray(ValueLayout.JAVA_INT, new int[]{0}), "Arena::allocateArray/int");
+        ScopedOperation.ofScope(a -> a.allocateArray(ValueLayout.JAVA_FLOAT, new float[]{0}), "Arena::allocateArray/float");
+        ScopedOperation.ofScope(a -> a.allocateArray(ValueLayout.JAVA_LONG, new long[]{0}), "Arena::allocateArray/long");
+        ScopedOperation.ofScope(a -> a.allocateArray(ValueLayout.JAVA_DOUBLE, new double[]{0}), "Arena::allocateArray/double");
     };
 
     @DataProvider(name = "scopedOperations")
@@ -161,13 +144,13 @@ public class TestScopedOperations {
         return scopedOperations.stream().map(op -> new Object[] { op.name, op }).toArray(Object[][]::new);
     }
 
-    static class ScopedOperation<X> implements Consumer<X>, Function<SegmentScope, X> {
+    static class ScopedOperation<X> implements Consumer<X>, Function<Arena, X> {
 
-        final Function<SegmentScope, X> factory;
+        final Function<Arena, X> factory;
         final Consumer<X> operation;
         final String name;
 
-        private ScopedOperation(Function<SegmentScope, X> factory, Consumer<X> operation, String name) {
+        private ScopedOperation(Function<Arena, X> factory, Consumer<X> operation, String name) {
             this.factory = factory;
             this.operation = operation;
             this.name = name;
@@ -179,21 +162,16 @@ public class TestScopedOperations {
         }
 
         @Override
-        public X apply(SegmentScope session) {
+        public X apply(Arena session) {
             return factory.apply(session);
         }
 
-        static <Z> void of(Function<SegmentScope, Z> factory, Consumer<Z> consumer, String name) {
+        static <Z> void of(Function<Arena, Z> factory, Consumer<Z> consumer, String name) {
             scopedOperations.add(new ScopedOperation<>(factory, consumer, name));
         }
 
-        static void ofScope(Consumer<SegmentScope> scopeConsumer, String name) {
+        static void ofScope(Consumer<Arena> scopeConsumer, String name) {
             scopedOperations.add(new ScopedOperation<>(Function.identity(), scopeConsumer, name));
-        }
-
-        static void ofVaList(Consumer<VaList> vaListConsumer, String name) {
-            scopedOperations.add(new ScopedOperation<>(session -> VaList.make(builder -> builder.addVarg(JAVA_LONG, 42), session),
-                    vaListConsumer, name));
         }
 
         static void ofSegment(Consumer<MemorySegment> segmentConsumer, String name) {
@@ -205,18 +183,9 @@ public class TestScopedOperations {
             }
         }
 
-        static void ofAllocator(Consumer<SegmentAllocator> allocatorConsumer, String name) {
-            for (AllocatorFactory allocatorFactory : AllocatorFactory.values()) {
-                scopedOperations.add(new ScopedOperation<>(
-                        allocatorFactory.allocatorFactory,
-                        allocatorConsumer,
-                        allocatorFactory.name() + "/" + name));
-            }
-        }
-
         enum SegmentFactory {
 
-            NATIVE(session -> MemorySegment.allocateNative(10, session)),
+            NATIVE(session -> session.allocate(10, 1)),
             MAPPED(session -> {
                 try (FileChannel fileChannel = FileChannel.open(Path.of("foo.txt"), StandardOpenOption.READ, StandardOpenOption.WRITE)) {
                     return fileChannel.map(FileChannel.MapMode.READ_WRITE, 0L, 10L, session);
@@ -224,7 +193,7 @@ public class TestScopedOperations {
                     throw new AssertionError(ex);
                 }
             }),
-            UNSAFE(session -> MemorySegment.ofAddress(0, 10, session));
+            UNSAFE(session -> MemorySegment.NULL.reinterpret(10, session, null));
 
             static {
                 try {
@@ -236,20 +205,10 @@ public class TestScopedOperations {
                 }
             }
 
-            final Function<SegmentScope, MemorySegment> segmentFactory;
+            final Function<Arena, MemorySegment> segmentFactory;
 
-            SegmentFactory(Function<SegmentScope, MemorySegment> segmentFactory) {
+            SegmentFactory(Function<Arena, MemorySegment> segmentFactory) {
                 this.segmentFactory = segmentFactory;
-            }
-        }
-
-        enum AllocatorFactory {
-            NATIVE_ALLOCATOR(SegmentAllocator::nativeAllocator);
-
-            final Function<SegmentScope, SegmentAllocator> allocatorFactory;
-
-            AllocatorFactory(Function<SegmentScope, SegmentAllocator> allocatorFactory) {
-                this.allocatorFactory = allocatorFactory;
             }
         }
     }

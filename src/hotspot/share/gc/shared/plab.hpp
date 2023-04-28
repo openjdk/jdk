@@ -138,6 +138,10 @@ public:
   // Fills in the unallocated portion of the buffer with a garbage object and updates
   // statistics. To be called during GC.
   void retire();
+
+  HeapWord* top() const {
+    return _top;
+  }
 };
 
 // PLAB book-keeping.

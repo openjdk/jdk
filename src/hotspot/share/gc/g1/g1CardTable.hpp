@@ -103,7 +103,7 @@ public:
   inline void mark_range_dirty(size_t start_card_index, size_t num_cards);
 
   // Change the given range of dirty cards to "which". All of these cards must be Dirty.
-  inline void change_dirty_cards_to(size_t start_card_index, size_t num_cards, CardValue which);
+  inline void change_dirty_cards_to(CardValue* start_card, CardValue* end_card, CardValue which);
 
   inline uint region_idx_for(CardValue* p);
 
@@ -115,10 +115,7 @@ public:
   // Returns how many bytes of the heap a single byte of the Card Table corresponds to.
   static size_t heap_map_factor() { return _card_size; }
 
-  void initialize() override {}
   void initialize(G1RegionToSpaceMapper* mapper);
-
-  void resize_covered_region(MemRegion new_region) override { ShouldNotReachHere(); }
 
   bool is_in_young(const void* p) const override;
 };
