@@ -951,7 +951,7 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
 
     // CachedAddresses that have to expire are kept ordered in this NavigableSet
     // which is scanned on each access
-    private static final NavigableSet<CachedAddresses> expirySet =
+    private static final NavigableSet<CachedLookup> expirySet =
         new ConcurrentSkipListSet<>();
 
     // common interface
@@ -959,8 +959,11 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
         InetAddress[] get() throws UnknownHostException;
     }
 
-    // a holder for cached addresses with required metadata
-    private static class CachedAddresses  implements Addresses, Comparable<CachedAddresses> {
+    /**
+     * A cached result of a name service lookup. The result can be either valid
+     * addresses or invalid (ie a failed lookup) containing no addresses.
+     */
+    private static class CachedLookup implements Addresses, Comparable<CachedLookup> {
         private static final AtomicLong seq = new AtomicLong();
         final String host;
         volatile InetAddress[] inetAddresses;
@@ -971,7 +974,7 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
         volatile long expiryTime;
         final long id = seq.incrementAndGet(); // each instance is unique
 
-        CachedAddresses(String host, InetAddress[] inetAddresses, long expiryTime) {
+        CachedLookup(String host, InetAddress[] inetAddresses, long expiryTime) {
             this.host = host;
             this.inetAddresses = inetAddresses;
             this.expiryTime = expiryTime;
@@ -986,7 +989,7 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
         }
 
         @Override
-        public int compareTo(CachedAddresses other) {
+        public int compareTo(CachedLookup other) {
             // natural order is expiry time -
             // compare difference of expiry times rather than
             // expiry times directly, to avoid possible overflow.
@@ -1021,7 +1024,12 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
         }
     }
 
-    private static final class ValidAddresses extends CachedAddresses {
+    /**
+     * A cached valid lookup containing addresses whose validity may be
+     * temporarily extended by an additional stale period pending the mapping
+     * being refreshed or updated.
+     */
+    private static final class ValidCachedLookup extends CachedLookup {
         /**
          * Time to refresh (in terms of System.nanoTime()).
          */
@@ -1039,8 +1047,8 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
          */
         private final Lock lookupLock = new ReentrantLock();
 
-        ValidAddresses(String host, InetAddress[] inetAddresses,
-                       long staleTime, long refreshTime)
+        ValidCachedLookup(String host, InetAddress[] inetAddresses,
+                          long staleTime, long refreshTime)
         {
             super(host, inetAddresses, staleTime);
             this.refreshTime = refreshTime;
@@ -1144,7 +1152,7 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
                                 0L
                                 // cachePolicy is in [s] - we need [ns]
                                 : now + 1000_000_000L * cachePolicy;
-                        CachedAddresses cachedAddresses;
+                        CachedLookup cachedLookup;
                         if (InetAddressCachePolicy.getStale() > 0 &&
                                 ex == null && expiryTime > 0)
                         {
@@ -1152,19 +1160,19 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
                             //  staleCachePolicy is in [s] - we need [ns]
                             expiryTime = refreshTime + 1000_000_000L *
                                     InetAddressCachePolicy.getStale();
-                            cachedAddresses = new ValidAddresses(host,
+                            cachedLookup = new ValidCachedLookup(host,
                                                                  inetAddresses,
                                                                  expiryTime,
                                                                  refreshTime);
                         } else {
-                            cachedAddresses = new CachedAddresses(host,
-                                                                  inetAddresses,
-                                                                  expiryTime);
+                            cachedLookup = new CachedLookup(host,
+                                                            inetAddresses,
+                                                            expiryTime);
                         }
-                        if (cache.replace(host, this, cachedAddresses) &&
+                        if (cache.replace(host, this, cachedLookup) &&
                             cachePolicy != InetAddressCachePolicy.FOREVER) {
                             // schedule expiry
-                            expirySet.add(cachedAddresses);
+                            expirySet.add(cachedLookup);
                         }
                     }
                     if (inetAddresses == null || inetAddresses.length == 0) {
@@ -1770,7 +1778,7 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
         // remove expired addresses from cache - expirySet keeps them ordered
         // by expiry time so we only need to iterate the prefix of the NavigableSet...
         long now = System.nanoTime();
-        for (CachedAddresses caddrs : expirySet) {
+        for (CachedLookup caddrs : expirySet) {
             if (!caddrs.tryRemoveExpiredAddress(now)) {
                 // we encountered 1st element that expires in future
                 break;
@@ -1784,7 +1792,7 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
         } else {
             addrs = cache.remove(host);
             if (addrs != null) {
-                if (addrs instanceof CachedAddresses) {
+                if (addrs instanceof CachedLookup) {
                     // try removing from expirySet too if CachedAddresses
                     expirySet.remove(addrs);
                 }
