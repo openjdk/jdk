@@ -1761,7 +1761,7 @@ void MacroAssembler::fast_lock_2(Register obj, Register t1, Register t2, Registe
 
 #ifdef ASSERT
   // Poison scratch regs
-  POISON_REGS((~savemask), t1, t2, t3, 0x20000002);
+  POISON_REGS((~savemask), t1, t2, t3, 0x10000001);
 #endif
 
   PUSH_REGS(savemask, t1, t2, t3);
@@ -1800,7 +1800,7 @@ void MacroAssembler::fast_lock_2(Register obj, Register t1, Register t2, Registe
 
 #ifdef ASSERT
   // Poison scratch regs
-  POISON_REGS((~savemask), t1, t2, t3, 0x10000001);
+  POISON_REGS((~savemask), t1, t2, t3, 0x20000002);
 #endif
 
   // Success: fall through
