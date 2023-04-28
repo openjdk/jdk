@@ -52,7 +52,7 @@ import jdk.internal.reflect.Reflection;
  * As part of its initialization, the {@code DriverManager} class will
  * attempt to load available JDBC drivers by using:
  * <ul>
- * <li>The {@code jdbc.drivers} system property which contains a
+ * <li>The {@systemProperty jdbc.drivers} system property which contains a
  * colon separated list of fully qualified class names of JDBC drivers. Each
  * driver is loaded using the {@linkplain ClassLoader#getSystemClassLoader
  * system class loader}:
