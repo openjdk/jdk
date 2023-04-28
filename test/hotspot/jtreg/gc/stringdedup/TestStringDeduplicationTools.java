@@ -109,6 +109,12 @@ class TestStringDeduplicationTools {
                     if (info.getGcName().startsWith("ZGC Major") && "end of GC cycle".equals(info.getGcAction())) {
                         gcCount++;
                     }
+
+                    // Single-gen ZGC
+                    if (!info.getGcName().startsWith("ZGC Major") && !info.getGcName().startsWith("ZGC Minor") &&
+                            "end of GC cycle".equals(info.getGcAction())) {
+                        gcCount++;
+                    }
                 } else if (info.getGcName().startsWith("G1")) {
                     if ("end of minor GC".equals(info.getGcAction())) {
                         gcCount++;
