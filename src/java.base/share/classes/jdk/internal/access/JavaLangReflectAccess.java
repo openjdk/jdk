@@ -76,6 +76,9 @@ public interface JavaLangReflectAccess {
     /** Gets the shared array of parameter types of an Executable. */
     public Class<?>[] getExecutableSharedParameterTypes(Executable ex);
 
+    /** Gets the shared array of exception types of an Executable. */
+    public Class<?>[] getExecutableSharedExceptionTypes(Executable ex);
+
     //
     // Copying routines, needed to quickly fabricate new Field,
     // Method, and Constructor objects from templates

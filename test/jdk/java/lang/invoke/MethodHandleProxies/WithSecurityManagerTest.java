@@ -35,7 +35,9 @@ import java.lang.invoke.MethodHandles;
 public class WithSecurityManagerTest {
     public static void main(String... args) {
         var originalMh = MethodHandles.zero(void.class);
-        var untrustedTarget = MethodHandleProxies.wrapperInstanceTarget(MethodHandleProxies.asInterfaceInstance(Untrusted.class, originalMh));
+        Object o = MethodHandleProxies.asInterfaceInstance(Untrusted.class, originalMh);
+        System.out.println(o);
+        var untrustedTarget = MethodHandleProxies.wrapperInstanceTarget(o);
         assert originalMh == untrustedTarget : "Got " + untrustedTarget;
 
         var runnableTarget = MethodHandleProxies.wrapperInstanceTarget(MethodHandleProxies.asInterfaceInstance(Runnable.class, originalMh));

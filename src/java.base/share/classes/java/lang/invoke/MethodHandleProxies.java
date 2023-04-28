@@ -29,21 +29,26 @@ import java.lang.constant.ClassDesc;
 import java.lang.constant.DynamicConstantDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.lang.invoke.MethodHandles.Lookup;
+import java.lang.module.ModuleDescriptor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.nio.file.Path;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
+import jdk.internal.access.JavaLangReflectAccess;
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.classfile.Classfile;
 import jdk.internal.classfile.CodeBuilder;
 import jdk.internal.classfile.TypeKind;
+import jdk.internal.module.Modules;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
 import jdk.internal.util.ClassFileDumper;
@@ -52,6 +57,7 @@ import sun.reflect.misc.ReflectUtil;
 import static java.lang.constant.ConstantDescs.*;
 import static java.lang.invoke.MethodHandleStatics.*;
 import static java.lang.invoke.MethodType.methodType;
+import static java.lang.module.ModuleDescriptor.Modifier.SYNTHETIC;
 import static jdk.internal.classfile.Classfile.*;
 
 /**
@@ -191,22 +197,32 @@ public class MethodHandleProxies {
             mh = target;
         }
 
-        // Interface-specific setup
-        InterfaceInfo info = INTERFACE_INFOS.get(intfc); // throws IllegalArgumentException
-        List<Object> classData = new ArrayList<>(info.types.length + 2);
-        classData.add(info);
+        /*
+         * For each interface I and each MH, define a new hidden class with
+         * the target MH in the class data.
+         *
+         * The bytecode is generated only once.  One hidden class is defined
+         * for each invocation of MethodHandleProxies::asInterfaceInstance(I, MH).
+         * Therefore, one or more hidden classes may be defined for I.
+         *
+         * All the hidden classes defined for I are defined in a dynamic module M
+         * which has access to the types referenced by the members of I including
+         * the parameter types, return type and exception types.
+         */
+        ProxyClassDefiner pcd = PROXY_CLASS_DEFINERS.get(intfc); // throws IllegalArgumentException
+        List<Object> classData = new ArrayList<>(pcd.types.length + 2);
+        classData.add(intfc);
         classData.add(target);
-        for (var methodType : info.types) {
+        for (var methodType : pcd.types) {
             classData.add(mh.asType(methodType)); // throws WrongMethodTypeException
         }
 
-        // Define the class under the interface
         Object proxy;
         try {
-            var lookup = info.lookup.makeHiddenClassDefiner(info.template, DUMPER)
-                    .defineClassAsLookup(true, classData);
+            var lookup = pcd.definer().defineClassAsLookup(true, classData);
             proxy = lookup.findConstructor(lookup.lookupClass(), methodType(void.class, Lookup.class))
-                    .invoke(lookup);
+                          .invoke(lookup);
+            assert proxy.getClass().getModule().isNamed() : proxy.getClass() + " " + proxy.getClass().getModule();
         } catch (Error e) {
             throw e;
         } catch (Throwable e) {
@@ -216,20 +232,27 @@ public class MethodHandleProxies {
         return intfc.cast(proxy);
     }
 
+
+
     private record LocalMethodInfo(MethodTypeDesc desc, List<ClassDesc> thrown) {}
 
-    private record InterfaceInfo(MethodType[] types, Lookup lookup, byte[] template) {}
+    private record ProxyClassDefiner(Lookup.ClassDefiner definer, MethodType[] types, Class<?> intf, byte[] template) {}
 
     private record WrapperInfo(Class<?> type, MethodHandle target) {
         private static final WrapperInfo INVALID = new WrapperInfo(null, null);
     }
 
     private static final ClassFileDumper DUMPER = ClassFileDumper.getInstance(
-            "jdk.invoke.MethodHandleProxies.dumpInterfaceInstances", Path.of("DUMP_INTERFACE_INSTANCES"));
+            "jdk.invoke.MethodHandleProxies.dumpClassFiles", Path.of("DUMP_MH_PROXY_CLASSFILES"));
 
-    private static final ClassValue<InterfaceInfo> INTERFACE_INFOS = new ClassValue<>() {
+    /*
+     * A map from a given interface to the ProxyClassDefiner.
+     * This creates a dynamic module for each interface.
+     */
+    private static final ClassValue<ProxyClassDefiner> PROXY_CLASS_DEFINERS = new ClassValue<>() {
         @Override
-        protected InterfaceInfo computeValue(Class<?> intfc) {
+        protected ProxyClassDefiner computeValue(Class<?> intfc) {
+
             final List<Method> methods = getSingleNameMethods(intfc);
             if (methods == null)
                 throw newIllegalArgumentException("not a single-method interface", intfc.getName());
@@ -237,30 +260,34 @@ public class MethodHandleProxies {
             List<LocalMethodInfo> infos = new ArrayList<>(methods.size());
             MethodType[] types = new MethodType[methods.size()];
             for (int i = 0; i < methods.size(); i++) {
-                Method sm = methods.get(i);
-                MethodType mt = methodType(sm.getReturnType(), sm.getParameterTypes());
+                Method m = methods.get(i);
+                MethodType mt = methodType(m.getReturnType(), m.getParameterTypes());
+                MethodTypeDesc mtDesc = desc(mt);
                 types[i] = mt;
-                var thrown = sm.getExceptionTypes();
+                var thrown = m.getExceptionTypes();
                 if (thrown.length == 0) {
-                    infos.add(new LocalMethodInfo(desc(mt), DEFAULT_RETHROWS));
+                    infos.add(new LocalMethodInfo(mtDesc, DEFAULT_RETHROWS));
                 } else {
-                    infos.add(new LocalMethodInfo(desc(mt), Stream.concat(DEFAULT_RETHROWS.stream(),
-                            Arrays.stream(thrown).map(MethodHandleProxies::desc)).distinct().toList()));
+                    infos.add(new LocalMethodInfo(mtDesc,
+                                                  Stream.concat(DEFAULT_RETHROWS.stream(),
+                                                                Arrays.stream(thrown)
+                                                                      .map(MethodHandleProxies::desc))
+                                                                      .distinct().toList()));
                 }
             }
 
-            // default class hierarchy resolver accesses system resources
-            @SuppressWarnings("removal")
-            var sm = System.getSecurityManager();
-            @SuppressWarnings("removal")
-            byte[] template = sm != null ? AccessController.doPrivileged(new PrivilegedAction<byte[]>() {
-                @Override
-                public byte[] run() {
-                    return createTemplate(desc(intfc), methods.get(0).getName(), infos);
-                }
-            }) : createTemplate(desc(intfc), methods.get(0).getName(), infos);
+            Set<Class<?>> referencedTypes = referencedTypes(intfc);
+            Module targetModule = newDynamicModule(intfc.getClassLoader(), referencedTypes);
 
-            return new InterfaceInfo(types, new Lookup(intfc), template);
+            // generate a class file in the package of the dynamic module
+            String pn = targetModule.getName();
+            String n = intfc.getName() + "$MHProxy";
+            int i = n.lastIndexOf('.');
+            String cn = i > 0 ? pn + "." + n.substring(i+1) : pn + "." + n;
+            ClassDesc proxyDesc = ClassDesc.of(cn);
+            byte[] template = createTemplate(proxyDesc, desc(intfc), methods.get(0).getName(), infos);
+            var definer = new Lookup(intfc).makeHiddenClassDefiner(cn, template, Set.of(), DUMPER);
+            return new ProxyClassDefiner(definer, types, intfc, template);
         }
     };
 
@@ -269,19 +296,17 @@ public class MethodHandleProxies {
         protected WrapperInfo computeValue(Class<?> type) {
             if ((MethodHandles.classData(type) instanceof List<?> l)
                     && l.size() > 2
-                    && l.get(0) instanceof InterfaceInfo info
-                    && l.size() == info.types.length + 2
+                    && l.get(0) instanceof Class<?> intfc
                     && l.get(1) instanceof MethodHandle mh) {
-                return new WrapperInfo(info.lookup.lookupClass(), mh);
+                return new WrapperInfo(intfc, mh);
             }
-
             return WrapperInfo.INVALID;
         }
     };
 
     private static final List<ClassDesc> DEFAULT_RETHROWS = List.of(desc(RuntimeException.class), desc(Error.class));
     private static final ClassDesc CD_UndeclaredThrowableException = desc(UndeclaredThrowableException.class);
-    private static final ClassDesc CD_IllegalAccessError = desc(IllegalAccessError.class);
+    private static final ClassDesc CD_IllegalAccessException = desc(IllegalAccessException.class);
     private static final MethodTypeDesc MTD_void_Throwable = MethodTypeDesc.of(CD_void, CD_Throwable);
     private static final MethodTypeDesc MTD_void_Lookup = MethodTypeDesc.of(CD_void, CD_MethodHandles_Lookup);
     private static final MethodTypeDesc MTD_Class = MethodTypeDesc.of(CD_Class);
@@ -299,8 +324,7 @@ public class MethodHandleProxies {
      * @param methods the information for implementation methods
      * @return the bytes of the implementation classes
      */
-    private static byte[] createTemplate(ClassDesc ifaceDesc, String methodName, List<LocalMethodInfo> methods) {
-        ClassDesc proxyDesc = ifaceDesc.nested("$MethodHandleProxy");
+    private static byte[] createTemplate(ClassDesc proxyDesc, ClassDesc ifaceDesc, String methodName, List<LocalMethodInfo> methods) {
         return Classfile.build(proxyDesc, clb -> {
             clb.withSuperclass(CD_Object);
             clb.withFlags(ACC_FINAL | ACC_SYNTHETIC);
@@ -326,16 +350,16 @@ public class MethodHandleProxies {
                 cob.return_();
                 // throw exception
                 cob.labelBinding(failLabel);
-                cob.new_(CD_IllegalAccessError);
+                cob.new_(CD_IllegalAccessException);
                 cob.dup();
                 cob.aload(1); // lookup
                 cob.invokevirtual(CD_Object, "toString", MTD_String);
-                cob.invokespecial(CD_IllegalAccessError, INIT_NAME, MTD_void_String);
+                cob.invokespecial(CD_IllegalAccessException, INIT_NAME, MTD_void_String);
                 cob.athrow();
             });
 
             // actual implementations
-            int classDataIndex = 2; // 0 is interfaceInfo, 1 is reserved for wrapper instance target
+            int classDataIndex = 2; // 0 is the interface, 1 is reserved for wrapper instance target
             for (LocalMethodInfo mi : methods) {
                 var condy = DynamicConstantDesc.ofNamed(BSM_CLASS_DATA_AT, DEFAULT_NAME, CD_MethodHandle, classDataIndex++);
                 // we don't need to generate thrown exception attribute
@@ -446,5 +470,94 @@ public class MethodHandleProxies {
         }
         if (uniqueName == null)  return null;
         return methods;
+    }
+
+    private static final JavaLangReflectAccess JLRA = SharedSecrets.getJavaLangReflectAccess();
+    private static final AtomicInteger counter = new AtomicInteger();
+
+    private static String nextModuleName() {
+        return "jdk.MHProxy" + counter.incrementAndGet();
+    }
+
+    /**
+     * Create a dynamic module defined to the given class loader and has
+     * access to the given types.
+     * <p>
+     * The dynamic module contains only one single package named the same as
+     * the name of the dynamic module.  It's not exported or open.
+     */
+    private static Module newDynamicModule(ClassLoader ld, Set<Class<?>> types) {
+        Objects.requireNonNull(types);
+
+        // create a dynamic module and setup module access
+        String mn = nextModuleName();
+        ModuleDescriptor descriptor = ModuleDescriptor.newModule(mn, Set.of(SYNTHETIC))
+                .packages(Set.of(mn))
+                .build();
+
+        Module dynModule = Modules.defineModule(ld, descriptor, null);
+        Module javaBase = Object.class.getModule();
+
+        Modules.addReads(dynModule, javaBase);
+        Modules.addOpens(dynModule, mn, javaBase);
+
+        for (Class<?> c : types) {
+            ensureAccess(dynModule, c);
+        }
+        return dynModule;
+    }
+
+    /**
+     * Returns a set of types that are referenced by the instance methods of the given
+     * interface.
+     *
+     * @param intfc an interface
+     */
+    private static Set<Class<?>> referencedTypes(Class<?> intfc) {
+        if (!intfc.isInterface()) {
+            throw new IllegalArgumentException(intfc + " not an inteface");
+        }
+        var types = new HashSet<Class<?>>();
+        types.add(intfc);
+        for (Method m : intfc.getMethods()) {
+            if (!Modifier.isStatic(m.getModifiers())) {
+                addElementType(types, m.getReturnType());
+                addElementTypes(types, JLRA.getExecutableSharedParameterTypes(m));
+                addElementTypes(types, JLRA.getExecutableSharedExceptionTypes(m));
+            }
+        }
+        return types;
+    }
+
+    /*
+     * Ensure the given module can access the given class.
+     */
+    private static void ensureAccess(Module target, Class<?> c) {
+        Module m = c.getModule();
+        // add read edge and qualified export for the target module to access
+        if (!target.canRead(m)) {
+            Modules.addReads(target, m);
+        }
+        String pn = c.getPackageName();
+        if (!m.isExported(pn, target)) {
+            Modules.addExports(m, pn, target);
+        }
+    }
+
+    private static void addElementTypes(Set<Class<?>> types, Class<?>... classes) {
+        for (var cls : classes) {
+            addElementType(types, cls);
+        }
+    }
+
+    private static void addElementType(Set<Class<?>> types, Class<?> cls) {
+        Class<?> e = cls;
+        while (e.isArray()) {
+            e = e.getComponentType();
+        }
+
+        if (!e.isPrimitive()) {
+            types.add(e);
+        }
     }
 }

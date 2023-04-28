@@ -29,17 +29,17 @@
  *          java.base/jdk.internal.classfile.constantpool
  * @summary Basic sanity tests for MethodHandleProxies
  * @build BasicTest Untrusted
- * @run junit/othervm -Djdk.invoke.MethodHandleProxies.dumpInterfaceInstances BasicTest
+ * @run junit BasicTest
  */
 
 import jdk.internal.classfile.ClassHierarchyResolver;
 import jdk.internal.classfile.Classfile;
-import org.junit.jupiter.api.Test;
 
 import java.io.Closeable;
 import java.io.IOException;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
+import java.lang.invoke.MethodHandleProxies;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.WrongMethodTypeException;
@@ -61,7 +61,10 @@ import static java.lang.invoke.MethodHandleProxies.*;
 import static java.lang.invoke.MethodType.genericMethodType;
 import static java.lang.invoke.MethodType.methodType;
 import static jdk.internal.classfile.Classfile.*;
+
+import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
+
 
 public class BasicTest {
 
@@ -109,7 +112,9 @@ public class BasicTest {
     private static long mul(int i) {
         return (long) i * i;
     }
-
+    private static long mul2(int i) {
+        return (long) i * i *2;
+    }
     @Test
     public void testConversion() throws Throwable {
         var mh = MethodHandles.lookup().findStatic(BasicTest.class, "mul", methodType(long.class, int.class));
@@ -122,6 +127,29 @@ public class BasicTest {
         @SuppressWarnings("unchecked")
         IntFunction<Long> func2 = (IntFunction<Long>) asInterfaceInstance(IntFunction.class, mh);
         assertEquals(32423432L * 32423432L, func2.apply(32423432));
+    }
+
+    @Test
+    public void testSameModule() throws Throwable {
+        var mh = MethodHandles.lookup().findStatic(BasicTest.class, "mul", methodType(long.class, int.class));
+        var mh2 = MethodHandles.lookup().findStatic(BasicTest.class, "mul2", methodType(long.class, int.class));
+
+        Function<Integer, Long> func1 = (Function<Integer, Long>) asInterfaceInstance(Function.class, mh);
+        assertEquals(32423432L * 32423432L, func1.apply(32423432));
+        Class<?> c1 = func1.getClass();
+        Module m1 = c1.getModule();
+
+        Function<Integer, Long> func2 = (Function<Integer, Long>) asInterfaceInstance(Function.class, mh2);
+        assertEquals(32423432L * 32423432L * 2, func2.apply(32423432));
+        Class<?> c2 = func2.getClass();
+        Module m2 = c2.getModule();
+        assertTrue(c1 != c2);
+        assertEquals(c1.getPackageName(), c2.getPackageName());
+        assertTrue(m1 == m2);
+
+        String pn = c1.getPackageName();
+        assertFalse(m1.isExported(pn));
+        assertTrue(m1.isExported(pn, MethodHandleProxies.class.getModule()));
     }
 
     @Test
@@ -158,17 +186,12 @@ public class BasicTest {
     }
 
     @Test
-    public void testNoInstantiation() throws IllegalAccessException, NoSuchMethodException {
+    public void testNoInstantiation() throws IllegalAccessException {
         Untrusted untrusted = asInterfaceInstance(Untrusted.class, MethodHandles.zero(void.class));
         var instanceClass = untrusted.getClass();
         var leakLookup = Untrusted.leakLookup();
         assertEquals(Lookup.ORIGINAL, leakLookup.lookupModes() & Lookup.ORIGINAL, "Leaked lookup original flag");
-        var intfLookup = MethodHandles.privateLookupIn(instanceClass, Untrusted.leakLookup());
-        assertSame(instanceClass, intfLookup.lookupClass());
-        assertTrue(intfLookup.hasFullPrivilegeAccess());
-        assertEquals(0, intfLookup.lookupModes() & Lookup.ORIGINAL, "reflected lookup original flag");
-        var ctor = intfLookup.findConstructor(instanceClass, methodType(void.class, Lookup.class));
-        assertThrows(IllegalAccessError.class, () -> ctor.invoke(intfLookup));
+        assertThrows(IllegalAccessException.class, () -> MethodHandles.privateLookupIn(instanceClass, Untrusted.leakLookup()));
     }
 
     void checkMethods(Method[] methods) {

@@ -26,6 +26,8 @@ package jdk.internal.classfile;
 
 import java.io.InputStream;
 import java.lang.constant.ClassDesc;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.Collection;
 import java.util.Map;
 import java.util.function.Function;
@@ -49,8 +51,16 @@ public interface ClassHierarchyResolver {
             = new ClassHierarchyImpl.CachedClassHierarchyResolver(
             new Function<ClassDesc, InputStream>() {
                 @Override
-                public InputStream apply(ClassDesc classDesc) {
-                    return ClassLoader.getSystemResourceAsStream(Util.toInternalName(classDesc) + ".class");
+                @SuppressWarnings("removal")
+                public InputStream apply(final ClassDesc classDesc) {
+                    var sm = System.getSecurityManager();
+                    if (sm == null) {
+                        return ClassLoader.getSystemResourceAsStream(Util.toInternalName(classDesc) + ".class");
+                    } else {
+                        PrivilegedAction<InputStream> pa =
+                                () -> ClassLoader.getSystemResourceAsStream(Util.toInternalName(classDesc) + ".class");
+                        return AccessController.doPrivileged(pa);
+                    }
                 }
             });
 
