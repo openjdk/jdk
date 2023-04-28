@@ -37,6 +37,7 @@ public class stop002t {
     private IOPipe pipe;
     volatile boolean stopLooping1 = false;
     volatile boolean stopLooping2 = false;
+    volatile static int testNumReady = 0;
     static final boolean vthreadMode = "Virtual".equals(System.getProperty("main.wrapper"));
 
     public static void main(String args[]) {
@@ -98,6 +99,7 @@ public class stop002t {
         log.display("Debuggee: going to loop ...");
         try {
             while (!stopLooping1) { // looping
+                testNumReady = 3; // signal debugger side of test that we are ready
                 stopMeHere++; stopMeHere--;
             }
             if (vthreadMode) {
@@ -126,6 +128,7 @@ public class stop002t {
         log.display("Debuggee: going to loop ...");
         try {
             while (!stopLooping2) { // looping
+                testNumReady = 4; // signal debugger side of test that we are ready
                 stopMeHere++; stopMeHere--;
             }
             log.complain("TEST #4: Failed to throw expected exception");
@@ -149,6 +152,9 @@ public class stop002t {
         log.display("Debuggee: going to sleep ...");
         try {
             try {
+                // Signal debugger side of test that we are "almost" ready. The
+                // debugger will still need to check that we are in the sleep state.
+                testNumReady = 5;
                 Thread.sleep(10000);
             } catch (InterruptedException e) {
                 log.display("Debuggee: Unexpected InterruptedException");

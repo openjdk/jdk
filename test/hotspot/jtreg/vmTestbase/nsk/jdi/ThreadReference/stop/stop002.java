@@ -67,7 +67,7 @@ public class stop002 {
     static final String DEBUGGEE_STOP_LOOP2_FIELD = "stopLooping2";
 
     // debuggee source line where it should be stopped
-    static final int DEBUGGEE_STOPATLINE = 80;
+    static final int DEBUGGEE_STOPATLINE = 81;
 
     static final int DELAY = 500; // in milliseconds
 
@@ -83,6 +83,7 @@ public class stop002 {
     private Debugee debuggee;
     private VirtualMachine vm;
     private BreakpointRequest BPreq;
+    private ReferenceType mainClass;
     private volatile int tot_res = Consts.TEST_PASSED;
     private volatile boolean gotEvent = false;
 
@@ -125,15 +126,15 @@ public class stop002 {
         ObjectReference throwableRef = null;
         try {
             // debuggee main class
-            ReferenceType rType = debuggee.classByName(DEBUGGEE_CLASS);
+            mainClass = debuggee.classByName(DEBUGGEE_CLASS);
 
-            suspendAtBP(rType, DEBUGGEE_STOPATLINE);
+            suspendAtBP(mainClass, DEBUGGEE_STOPATLINE);
             objRef = findObjRef(thrRef, DEBUGGEE_NON_THROWABLE_VAR);
             throwableRef = findObjRef(thrRef, DEBUGGEE_THROWABLE_VAR);
 
             // These fields are used to indicate that debuggee has to stop looping
-            stopLoop1 = rType.fieldByName(DEBUGGEE_STOP_LOOP1_FIELD);
-            stopLoop2 = rType.fieldByName(DEBUGGEE_STOP_LOOP2_FIELD);
+            stopLoop1 = mainClass.fieldByName(DEBUGGEE_STOP_LOOP1_FIELD);
+            stopLoop2 = mainClass.fieldByName(DEBUGGEE_STOP_LOOP2_FIELD);
             if (stopLoop1 == null || stopLoop2 == null) {
                 throw new RuntimeException("Failed to find a \"stop loop\" field");
             }
@@ -145,7 +146,7 @@ public class stop002 {
             /*
              * Test #1: verify using a non-throwable object with stop() fails appropriately.
              */
-            log.display("\nTEST #1: Trying to stop debuggee thread using non-throwable object");
+            log.display("\nTEST #1: Trying to stop debuggee thread using non-throwable object.");
             try {
                 thrRef.stop(objRef); // objRef is an instance of the debuggee class, not a Throwable
                 log.complain("TEST #1 FAILED: expected IllegalArgumentException was not thrown");
@@ -162,7 +163,7 @@ public class stop002 {
             /*
              * Test #2: verify that stop() works when suspended at a breakpoint.
              */
-            log.display("\nTEST #2: Trying to stop debuggee thread while suspended at a breakpoint");
+            log.display("\nTEST #2: Trying to stop debuggee thread while suspended at a breakpoint.");
             try {
                 thrRef.stop(throwableRef);
                 log.display("TEST #2 PASSED: stop() call succeeded.");
@@ -179,8 +180,8 @@ public class stop002 {
              * Test #3: verify that stop() works when not suspended in a loop. Expect
              * IllegalThreadStateException for virtual threads.
              */
-            Thread.sleep(1000); // Allow debuggee to get into loop first
-            log.display("\nTEST #3: Trying to stop debuggee thread while not suspended in a loop");
+            log.display("\nTEST #3: Trying to stop debuggee thread while not suspended in a loop.");
+            waitForTestReady(3);
             try {
                 thrRef.stop(throwableRef);
                 if (vthreadMode) {
@@ -210,8 +211,8 @@ public class stop002 {
             /*
              * Test #4: verify that stop() works when suspended in a loop
              */
-            Thread.sleep(1000); // Allow debuggee to get into loop first.
-            log.display("\nTEST #4: Trying to stop debuggee thread while suspended in a loop");
+            log.display("\nTEST #4: Trying to stop debuggee thread while suspended in a loop.");
+            waitForTestReady(4);
             try {
                 thrRef.suspend();
                 thrRef.stop(throwableRef);
@@ -234,8 +235,19 @@ public class stop002 {
              * Test #5: verify that stop() works when suspended in Thread.sleep(). Expect
              * OpaqueFrameException for virtual threads.
              */
-            Thread.sleep(1000); // Allow debuggee to reach Thread.sleep() first.
-            log.display("\nTEST #5: Trying to stop debuggee thread while suspended in Thread.sleep()");
+            log.display("\nTEST #5: Trying to stop debuggee thread while suspended in Thread.sleep().");
+            waitForTestReady(5);
+            // Allow debuggee to reach Thread.sleep() first.
+            log.display("TEST #5: waiting for debuggee to sleep.");
+            while (true) {
+                int status = thrRef.status();
+                if (status == ThreadReference.THREAD_STATUS_SLEEPING ||
+                    status == ThreadReference.THREAD_STATUS_WAIT)
+                {
+                    break;
+                }
+                Thread.sleep(50);
+            }
             try {
                 thrRef.suspend();
                 thrRef.stop(throwableRef);
@@ -276,6 +288,14 @@ public class stop002 {
         }
 
         return quitDebuggee();
+    }
+
+    private void waitForTestReady(int testNum) {
+        log.display("TEST #" + testNum + ": waiting for test ready.");
+        IntegerValue ival;
+        do {
+            ival = (IntegerValue)mainClass.getValue(mainClass.fieldByName("testNumReady"));
+        } while (ival.value() != testNum);
     }
 
     private ObjectReference findObjRef(ThreadReference thrRef, String varName) {
