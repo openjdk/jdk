@@ -544,7 +544,6 @@ JavaMain(void* _args)
                                                       "(Ljava/lang/Class;[Ljava/lang/String;)V");
     CHECK_EXCEPTION_NULL_LEAVE(executeMainClass);
     (*env)->CallStaticVoidMethod(env, helperClass, executeMainClass, appClass, mainArgs);
-    CHECK_EXCEPTION_LEAVE(1);
 
     /*
      * The launcher's exit code (in the absence of calls to
