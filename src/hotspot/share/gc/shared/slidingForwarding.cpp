@@ -113,14 +113,15 @@ FallbackTable::~FallbackTable() {
 
 size_t FallbackTable::home_index(HeapWord* from) {
   uint64_t val = reinterpret_cast<uint64_t>(from);
-  // This is the mxm mixer (a variant of split mixer) from:
-  // https://jonkagstrom.com/bit-mixer-construction/
-  val *= 0xbf58476d1ce4e5b9ull;
-  val ^= val >> 56;
-  val *= 0x94d049bb133111ebull;
-  // Finally put this through a 'fibonacci hash' to clamp to width.
-  // https://probablydance.com/2018/06/16/fibonacci-hashing-the-optimization-that-the-world-forgot-or-a-better-alternative-to-integer-modulo/
-  val = (val * 11400714819323198485llu) >> (64 - log2i_exact(TABLE_SIZE));
+  // This is the mixer stage of the murmur3 hashing:
+  // https://github.com/aappleby/smhasher/blob/master/src/MurmurHash3.cpp
+  val ^= val >> 33;
+  val *= 0xff51afd7ed558ccdULL;
+  val ^= val >> 33;
+  val *= 0xc4ceb9fe1a85ec53ULL;
+  val ^= val >> 33;
+  // Shift to table-size.
+  val = val >> (64 - log2i_exact(TABLE_SIZE));
   assert(val < TABLE_SIZE, "must fit in table: val: " UINT64_FORMAT ", table-size: " UINTX_FORMAT ", table-size-bits: %d",
          val, TABLE_SIZE, log2i_exact(TABLE_SIZE));
   return static_cast<size_t>(val);
