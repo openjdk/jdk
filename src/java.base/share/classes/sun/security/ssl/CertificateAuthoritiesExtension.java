@@ -281,7 +281,8 @@ final class CertificateAuthoritiesExtension {
             try {
                 shc.peerSupportedAuthorities = spec.getAuthorities();
             } catch (IllegalArgumentException iae) {
-                throw new SSLException(iae);
+                throw shc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
+                        "Certificate authority distinguished name is not valid");
             }
             shc.handshakeExtensions.put(
                     SSLExtension.CH_CERTIFICATE_AUTHORITIES, spec);
