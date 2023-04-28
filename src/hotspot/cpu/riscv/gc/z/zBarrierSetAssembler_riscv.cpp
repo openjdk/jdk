@@ -255,10 +255,6 @@ static void store_barrier_buffer_add(MacroAssembler* masm,
   // Load and log the prev value
   __ ld(tmp1, tmp1);
   __ sd(tmp1, Address(tmp2, in_bytes(ZStoreBarrierEntry::prev_offset())));
-
-  // Log pc for debugging
-  __ auipc(tmp1, 0);
-  __ sd(tmp1, Address(tmp2, in_bytes(ZStoreBarrierEntry::pc_offset())));
 }
 
 void ZBarrierSetAssembler::store_barrier_medium(MacroAssembler* masm,

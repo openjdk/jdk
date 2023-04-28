@@ -40,7 +40,7 @@ inline void ZStoreBarrierBuffer::add(volatile zpointer* p, zpointer prev) {
     flush();
   }
   _current -= sizeof(ZStoreBarrierEntry);
-  _buffer[current()] = {p, prev, (void*)0x1 /* fake pc value */, nullptr};
+  _buffer[current()] = {p, prev};
 }
 
 inline ZStoreBarrierBuffer* ZStoreBarrierBuffer::buffer_for_store(bool heal) {

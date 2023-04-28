@@ -41,10 +41,6 @@ ByteSize ZStoreBarrierEntry::prev_offset() {
   return byte_offset_of(ZStoreBarrierEntry, _prev);
 }
 
-ByteSize ZStoreBarrierEntry::pc_offset() {
-  return byte_offset_of(ZStoreBarrierEntry, _pc);
-}
-
 ByteSize ZStoreBarrierBuffer::buffer_offset() {
   return byte_offset_of(ZStoreBarrierBuffer, _buffer);
 }
@@ -160,9 +156,6 @@ void ZStoreBarrierBuffer::on_new_phase_relocate(int i) {
   }
 
   ZStoreBarrierEntry& entry = _buffer[i];
-
-  // Save original _p for debugging
-  entry._p_original = entry._p;
 
   // Relocate the base object and calculate the remapped p
   entry._p = make_load_good(entry._p, p_base, _last_processed_color);
@@ -290,13 +283,11 @@ void ZStoreBarrierBuffer::on_error(outputStream* st) {
   };
 
   for (int i = current(); i < (int)_buffer_length; ++i) {
-    st->print_cr(" [%2d]: base: " PTR_FORMAT " p_original: " PTR_FORMAT " p: " PTR_FORMAT " prev: " PTR_FORMAT " pc: %s",
+    st->print_cr(" [%2d]: base: " PTR_FORMAT " p: " PTR_FORMAT " prev: " PTR_FORMAT,
         i,
         untype(_base_pointers[i]),
-        p2i(_buffer[i]._p_original),
         p2i(_buffer[i]._p),
-        untype(_buffer[i]._prev),
-        description(_buffer[i]._pc));
+        untype(_buffer[i]._prev));
   }
 }
 
