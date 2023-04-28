@@ -2045,6 +2045,8 @@ public abstract sealed class $Type$Buffer
      */
     public $Type$Buffer append(CharSequence csq, int start, int end) {
         if (csq instanceof CharBuffer cb) {
+            Objects.checkFromToIndex(start, end, csq.length());
+
             //
             // the append method throws BufferOverflowException when
             // there is insufficient space in the buffer
