@@ -42,8 +42,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpClient.Redirect;
@@ -62,18 +60,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Function;
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
-import jdk.httpclient.test.lib.http2.Http2TestServer;
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLHandshakeException;
 
-import com.sun.net.httpserver.HttpServer;
-import com.sun.net.httpserver.HttpsConfigurator;
-import com.sun.net.httpserver.HttpsServer;
 import jdk.test.lib.RandomFactory;
 import jdk.test.lib.net.SimpleSSLContext;
 import org.testng.annotations.AfterTest;
@@ -99,6 +90,7 @@ public class AsyncShutdownNow implements HttpServerAdapters {
     }
     static final Random RANDOM = RandomFactory.getRandom();
 
+    ExecutorService readerService;
     SSLContext sslContext;
     HttpTestServer httpTestServer;        // HTTP/1.1    [ 4 servers ]
     HttpTestServer httpsTestServer;       // HTTPS/1.1
@@ -123,7 +115,7 @@ public class AsyncShutdownNow implements HttpServerAdapters {
     }
 
     static final AtomicLong requestCounter = new AtomicLong();
-    final ReferenceTracker TRACKER = ReferenceTracker.INSTANCE;
+    static final ReferenceTracker TRACKER = ReferenceTracker.INSTANCE;
 
     static Throwable getCause(Throwable t) {
         while (t instanceof CompletionException || t instanceof ExecutionException) {
@@ -175,8 +167,7 @@ public class AsyncShutdownNow implements HttpServerAdapters {
 
     @Test(dataProvider = "positive")
     void testConcurrent(String uriString) throws Exception {
-        out.printf("%n---- starting (%s) ----%n", uriString);
-        ExecutorService readerService = Executors.newCachedThreadPool();
+        out.printf("%n---- starting concurrent (%s) ----%n%n", uriString);
         HttpClient client = HttpClient.newBuilder()
                 .proxy(NO_PROXY)
                 .followRedirects(Redirect.ALWAYS)
@@ -186,8 +177,8 @@ public class AsyncShutdownNow implements HttpServerAdapters {
 
         int step = RANDOM.nextInt(ITERATIONS);
         Throwable failed = null;
+        List<CompletableFuture<String>> bodies = new ArrayList<>();
         try {
-            List<CompletableFuture<String>> bodies = new ArrayList<>();
             for (int i = 0; i < ITERATIONS; i++) {
                 URI uri = URI.create(uriString + "/concurrent/iteration-" + i);
                 HttpRequest request = HttpRequest.newBuilder(uri)
@@ -232,31 +223,31 @@ public class AsyncShutdownNow implements HttpServerAdapters {
                 });
                 bodies.add(cf);
             }
-            CompletableFuture.allOf(bodies.toArray(new CompletableFuture<?>[0])).get();
         } catch (Throwable throwable) {
             failed = throwable;
         } finally {
-            failed = cleanup(client, readerService, failed);
+            failed = cleanup(client, failed);
         }
         if (failed instanceof Exception ex) throw ex;
         if (failed instanceof Error e) throw e;
         assertTrue(client.isTerminated());
+        // ensure that all operations are eventually terminated
+        CompletableFuture.allOf(bodies.toArray(new CompletableFuture<?>[0])).get();
     }
 
-    static Throwable cleanup(HttpClient client, ExecutorService readerService, Throwable failed) {
+    static Throwable cleanup(HttpClient client, Throwable failed) {
         try {
-            try {
-                if (client.awaitTermination(Duration.ofMillis(2000))) {
-                    out.println("Client terminated within expected delay");
-                } else {
-                    AssertionError error = new AssertionError("client still running");
-                    if (failed != null) {
-                        failed.addSuppressed(error);
-                    } else failed = error;
-                }
-            } finally {
-                readerService.shutdown();
-                readerService.awaitTermination(2000, TimeUnit.MILLISECONDS);
+            if (client.awaitTermination(Duration.ofMillis(2000))) {
+                out.println("Client terminated within expected delay");
+            } else {
+                String msg = "Client %s still running: %s".formatted(
+                        client,
+                        TRACKER.diagnose(client));
+                out.println(msg);
+                AssertionError error = new AssertionError(msg);
+                if (failed != null) {
+                    failed.addSuppressed(error);
+                } else failed = error;
             }
         } catch (InterruptedException ie) {
             if (failed != null) {
@@ -268,8 +259,7 @@ public class AsyncShutdownNow implements HttpServerAdapters {
 
     @Test(dataProvider = "positive")
     void testSequential(String uriString) throws Exception {
-        out.printf("%n---- starting (%s) ----%n", uriString);
-        ExecutorService readerService = Executors.newCachedThreadPool();
+        out.printf("%n---- starting sequential (%s) ----%n%n", uriString);
         HttpClient client = HttpClient.newBuilder()
                 .proxy(NO_PROXY)
                 .followRedirects(Redirect.ALWAYS)
@@ -339,7 +329,7 @@ public class AsyncShutdownNow implements HttpServerAdapters {
         } catch (Throwable throwable) {
             failed = throwable;
         } finally {
-            failed = cleanup(client, readerService, failed);
+            failed = cleanup(client, failed);
         }
         if (failed instanceof Exception ex) throw ex;
         if (failed instanceof Error e) throw e;
@@ -354,6 +344,7 @@ public class AsyncShutdownNow implements HttpServerAdapters {
         sslContext = new SimpleSSLContext().get();
         if (sslContext == null)
             throw new AssertionError("Unexpected null sslContext");
+        readerService = Executors.newCachedThreadPool();
 
         httpTestServer = HttpTestServer.create(HTTP_1_1);
         httpTestServer.addHandler(new ServerRequestHandler(), "/http1/exec/");
@@ -380,12 +371,22 @@ public class AsyncShutdownNow implements HttpServerAdapters {
         Thread.sleep(100);
         AssertionError fail = TRACKER.checkShutdown(5000);
         try {
+            shutdown(readerService);
             httpTestServer.stop();
             httpsTestServer.stop();
             http2TestServer.stop();
             https2TestServer.stop();
         } finally {
             if (fail != null) throw fail;
+        }
+    }
+
+    static void shutdown(ExecutorService executorService) {
+        try {
+            executorService.shutdown();
+            executorService.awaitTermination(2000, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException ie) {
+            executorService.shutdownNow();
         }
     }
 

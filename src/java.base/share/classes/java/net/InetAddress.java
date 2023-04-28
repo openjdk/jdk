@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1062,6 +1062,7 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
                 throws UnknownHostException {
             Objects.requireNonNull(host);
             Objects.requireNonNull(policy);
+            validate(host);
             InetAddress[] addrs;
             long comp = Blocker.begin();
             try {
@@ -1475,6 +1476,7 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
             return ret;
         }
 
+        validate(host);
         boolean ipv6Expected = false;
         if (host.charAt(0) == '[') {
             // This is supposed to be an IPv6 literal
@@ -1482,44 +1484,45 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
                 host = host.substring(1, host.length() -1);
                 ipv6Expected = true;
             } else {
-                // This was supposed to be a IPv6 address, but it's not!
-                throw new UnknownHostException(host + ": invalid IPv6 address");
+                // This was supposed to be a IPv6 literal, but it's not
+                throw invalidIPv6LiteralException(host, false);
             }
         }
 
-        // if host is an IP address, we won't do further lookup
+        // Check and try to parse host string as an IP address literal
         if (IPAddressUtil.digit(host.charAt(0), 16) != -1
             || (host.charAt(0) == ':')) {
-            byte[] addr;
+            byte[] addr = null;
             int numericZone = -1;
             String ifname = null;
-            // see if it is IPv4 address
-            try {
-                addr = IPAddressUtil.validateNumericFormatV4(host);
-            } catch (IllegalArgumentException iae) {
-                var uhe = new UnknownHostException(host);
-                uhe.initCause(iae);
-                throw uhe;
+
+            if (!ipv6Expected) {
+                // check if it is IPv4 address only if host is not wrapped in '[]'
+                try {
+                    addr = IPAddressUtil.validateNumericFormatV4(host);
+                } catch (IllegalArgumentException iae) {
+                    var uhe = new UnknownHostException(host);
+                    uhe.initCause(iae);
+                    throw uhe;
+                }
             }
             if (addr == null) {
-                // This is supposed to be an IPv6 literal
-                // Check if a numeric or string zone id is present
+                // Try to parse host string as an IPv6 literal
+                // Check if a numeric or string zone id is present first
                 int pos;
-                if ((pos=host.indexOf ('%')) != -1) {
-                    numericZone = checkNumericZone (host);
+                if ((pos = host.indexOf('%')) != -1) {
+                    numericZone = checkNumericZone(host);
                     if (numericZone == -1) { /* remainder of string must be an ifname */
-                        ifname = host.substring (pos+1);
+                        ifname = host.substring(pos + 1);
                     }
                 }
-                if ((addr = IPAddressUtil.textToNumericFormatV6(host)) == null && host.contains(":")) {
-                    throw new UnknownHostException(host + ": invalid IPv6 address");
+                if ((addr = IPAddressUtil.textToNumericFormatV6(host)) == null &&
+                        (host.contains(":") || ipv6Expected)) {
+                    throw invalidIPv6LiteralException(host, ipv6Expected);
                 }
-            } else if (ipv6Expected) {
-                // Means an IPv4 literal between brackets!
-                throw new UnknownHostException("["+host+"]");
             }
-            InetAddress[] ret = new InetAddress[1];
             if(addr != null) {
+                InetAddress[] ret = new InetAddress[1];
                 if (addr.length == Inet4Address.INADDRSZ) {
                     if (numericZone != -1 || ifname != null) {
                         // IPv4-mapped address must not contain zone-id
@@ -1536,10 +1539,16 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
                 return ret;
             }
         } else if (ipv6Expected) {
-            // We were expecting an IPv6 Literal, but got something else
-            throw new UnknownHostException("["+host+"]");
+            // We were expecting an IPv6 Literal since host string starts
+            // and ends with square brackets, but we got something else.
+            throw invalidIPv6LiteralException(host, true);
         }
         return getAllByName0(host, true, true);
+    }
+
+    private static UnknownHostException invalidIPv6LiteralException(String host, boolean wrapInBrackets) {
+        String hostString = wrapInBrackets ? "[" + host + "]" : host;
+        return new UnknownHostException(hostString + ": invalid IPv6 address literal");
     }
 
     /**
@@ -1872,5 +1881,11 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
         pf.put("address", holder().getAddress());
         pf.put("family", holder().getFamily());
         s.writeFields();
+    }
+
+    private static void validate(String host) throws UnknownHostException {
+        if (host.indexOf(0) != -1) {
+            throw new UnknownHostException("NUL character not allowed in hostname");
+        }
     }
 }
