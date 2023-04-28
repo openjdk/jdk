@@ -37,45 +37,93 @@ class FallbackTable;
 
 /**
  * SlidingForwarding is a method to store forwarding information in a compressed form into the object header,
- * that has been specifically designed for sliding compaction GCs.
- * It avoids overriding the compressed class pointer in the upper bits of the header, which would otherwise
- * be lost. SlidingForwarding requires only small side tables and guarantees constant-time access and modification.
+ * that has been specifically designed for sliding compaction GCs and compact object headers. With compact object
+ * headers, we store the compressed class pointer in the header, which would be overwritten by full forwarding
+ * pointer, if we allow the legacy forwarding code to act. This would lose the class information for the object,
+ * which is required later in GC cycle to iterate the reference fields and get the object size for copying.
+ *
+ * SlidingForwarding requires only small side tables and guarantees constant-time access and modification.
  *
  * The idea is to use a pointer compression scheme very similar to the one that is used for compressed oops.
  * We divide the heap into number of logical regions. Each region spans maximum of 2^NUM_COMPRESSED_BITS words.
- * We take advantage of the fact that sliding compaction can forward objects from one region to a maximum of
- * two regions (including itself, but that does not really matter). We need 1 bit to indicate which region is forwarded
- * into. We also currently require the two lowest header bits to indicate that the object is forwarded. In addition to that,
- * we use 1 more bit to indicate that we should use a fallback-lookup-table instead of using the sliding encoding.
  *
- * For addressing, we need a table with N*2 entries, for N logical regions. For each region, it gives the base
- * address of the two target regions, or a special placeholder if not used.
+ * The key advantage of sliding compaction for encoding efficiency: it can forward objects from one region to a
+ * maximum of two regions. This is an intuitive property: when we slide the compact region full of data, it can
+ * only span two adjacent regions. This property allows us to use the off-side table to record the addresses of
+ * two target regions. The table table holds N*2 entries for N logical regions. For each region, it gives the base
+ * address of the two target regions, or a special placeholder if not used. A single bit in forwarding would
+ * indicate to which of the two "to" regions the object is forwarded into.
  *
- * Adding a forwarding then works as follows:
- * Given an original address 'orig', and a 'target' address:
- * - Look-up first target base of region of orig. If it is already established and the region
- *   that 'target' is in, then use it in step 3. If not yet used, establish it to be the base of region of target
-     address. Use that base in step 3.
- * - Else, if first target base is already used, check second target base. This must either be unused, or the
- *   base of the region of our target address. If unused, establish it to be the base of the region of our target
- *   address. Use that base for next step.
- * - Now we found a base address. Encode the target address with that base into lowest NUM_COMPRESSED_BITS bits, and shift
- *   that up by 4 bits. Set the 3rd bit if we used the secondary target base, otherwise leave it at 0. Set the
- *   lowest two bits to indicate that the object has been forwarded. Store that in the lowest 32 bits of the
- *   original object's header.
+ * This encoding efficiency allows to store the forwarding information in the object header _together_ with the
+ * compressed class pointer.
  *
- * Similarily, looking up the target address, given an original object address works as follows:
- * - Load lowest 32 from original object header. Extract target region bit and compressed address bits.
- * - Depending on target region bit, load base address from the target base table by looking up the corresponding entry
- *   for the region of the original object.
- * - Decode the target address by using the target base address and the compressed address bits.
+ * When recording the sliding forwarding, the mark word would look roughly like this:
  *
- * One complication is that G1 serial compaction breaks the assumption that we only forward
- * to two target regions. When that happens, we initialize a fallback-hashtable for storing those extra
- * forwardings, and set the 4th bit in the header to indicate that the forwardee is not encoded but
- * should be looked-up in the hashtable. G1 serial compaction is not very common -  it is the last-last-ditch
- * GC that is used when the JVM is scrambling to squeeze more space out of the heap, and at that
- * point, ultimate performance is no longer the main concern.
+ *    0                        32                     64
+ *    [TT|F|A|OOOOOOOOOOOOOOOOO|......................]
+ *      ^----------------------------------------------- normal lock bits, would record "object is forwarded"
+ *        ^--------------------------------------------- fallback bit (explained below)
+ *          ^------------------------------------------- alternate region select
+ *            ^----------------------------------------- in-region offset
+ *                              ^----------------------- compressed class pointer (not handled, but also *not touched* by this code)
+ *
+ * Adding a forwarding then generally works as follows:
+ *
+ *   void forward_to(oop* from, oop* to) {
+ *     // Identifying the offset in the target region is easy:
+ *     intptr_t to_region_addr = oop_to_region_addr(to);
+ *     u4 mark_offset = encode_offset(to_region_addr, to);
+ *
+ *     // Now we need to record the target region address in the bases table.
+ *     // There are two entries per region: primary and alternative.
+ *     int reg_prim = oop_to_region_idx(from);
+ *     int reg_alt = reg_prim + 1;
+ *
+ *     bool alt_region = false;
+ *     if (bases_table[reg_prim] == UNUSED) {
+ *       // Primary entry is free, take it.
+ *       bases_table[reg_prim] = to_region_addr;
+ *     } else if (bases_table[reg_prim] != to_region_addr) {
+ *       // Primary entry is taken by incompatible "to" address, use the alternate.
+ *       if (bases_table[reg_alt] == UNUSED) {
+ *         // Alternate is unused, take it.
+ *         bases_table[reg_alt] = to_region_addr;
+ *       } else {
+ *         // Since we see two "to" regions only, we know alternate entry has the
+ *         // correct "to" address for this mapping.
+ *       }
+ *       alt_region = true;
+ *     }
+ *
+ *     // All done, we only need to record which mapping to use
+ *     u1 mark_region_select = encode_region_select(alt_region);
+ *
+ *     // Store everything in the object header
+ *     from->update_mark(FORWARDED | mark_region_select | mark_offset);
+ *   }
+ *
+ * Similarily, looking up the target address, given an original object address generally works as follows:
+ *
+ *   oop* forwardee(oop* obj) {
+ *     // Load and decode the forwarding
+ *     mark m = obj->mark();
+ *     u1 region_select = decode_region_select(m);
+ *     u4 offset = decode_offset(m);
+ *
+ *     // Figure out which region the original region is forwarded to:
+ *     int reg_idx = oop_to_region_idx(obj) + region_select;
+ *     intptr_t fwd_base = bases_table[reg_idx];
+ *
+ *     // Compute the forwarding address
+ *     return fwd_base + offset;
+ *   }
+ *
+ * This algorithm is broken by G1 last-ditch serial compaction: there, object from a single region can be
+ * forwarded to multiple, more than two regions. To deal with that, we initialize a fallback-hashtable for
+ * storing those extra forwardings, and set another bit in the header to indicate that the forwardee is not
+ * encoded but should be looked-up in the hashtable. G1 serial compaction is not very common - it is the
+ * last-last-ditch GC that is used when the JVM is scrambling to squeeze more space out of the heap, and at
+ * that point, ultimate performance is no longer the main concern.
  */
 class SlidingForwarding : public CHeapObj<mtGC> {
 private:
