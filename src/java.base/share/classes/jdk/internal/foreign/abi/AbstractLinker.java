@@ -144,7 +144,7 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
             case SequenceLayout sl -> MemoryLayout.sequenceLayout(sl.elementCount(), stripNames(sl.elementLayout()));
             case AddressLayout al -> al.targetLayout()
                     .map(tl -> al.withoutName().withTargetLayout(stripNames(tl)))
-                    .orElse(al.withoutName());
+                    .orElseGet(al::withoutName);
             default -> ml.withoutName(); // ValueLayout and PaddingLayout
         };
     }
