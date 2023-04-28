@@ -308,7 +308,7 @@ int ciBytecodeStream::get_field_index() {
 // If this bytecode is one of get_field, get_static, put_field,
 // or put_static, get the referenced field.
 ciField* ciBytecodeStream::get_field(bool& will_link) {
-  ciField* f = CURRENT_ENV->get_field_by_index(_holder, get_field_index());
+  ciField* f = CURRENT_ENV->get_field_by_index(_holder, get_field_index(), _bc);
   will_link = f->will_link(_method, _bc);
   return f;
 }
@@ -343,7 +343,7 @@ ciInstanceKlass* ciBytecodeStream::get_declared_field_holder() {
 int ciBytecodeStream::get_field_holder_index() {
   GUARDED_VM_ENTRY(
     ConstantPool* cpool = _holder->get_instanceKlass()->constants();
-    return cpool->klass_ref_index_at(get_field_index());
+    return cpool->klass_ref_index_at(get_field_index(), _bc);
   )
 }
 
@@ -527,7 +527,7 @@ ciKlass* ciBytecodeStream::get_declared_method_holder() {
 // deoptimization information.
 int ciBytecodeStream::get_method_holder_index() {
   ConstantPool* cpool = _method->get_Method()->constants();
-  return cpool->klass_ref_index_at(get_method_index());
+  return cpool->klass_ref_index_at(get_method_index(), _bc);
 }
 
 // ------------------------------------------------------------------
@@ -539,7 +539,7 @@ int ciBytecodeStream::get_method_holder_index() {
 int ciBytecodeStream::get_method_signature_index(const constantPoolHandle& cpool) {
   GUARDED_VM_ENTRY(
     const int method_index = get_method_index();
-    const int name_and_type_index = cpool->name_and_type_ref_index_at(method_index);
+    const int name_and_type_index = cpool->name_and_type_ref_index_at(method_index, _bc);
     return cpool->signature_ref_index_at(name_and_type_index);
   )
 }

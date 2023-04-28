@@ -657,19 +657,19 @@ class ConstantPool : public Metadata {
   // FIXME: Remove the dynamic check, and adjust all callers to specify the correct mode.
 
   // Lookup for entries consisting of (klass_index, name_and_type index)
-  Klass* klass_ref_at(int which, TRAPS);
-  Symbol* klass_ref_at_noresolve(int which);
-  Symbol* name_ref_at(int which, Bytecodes::Code code = Bytecodes::_illegal) {
+  Klass* klass_ref_at(int which, Bytecodes::Code code, TRAPS);
+  Symbol* klass_ref_at_noresolve(int which, Bytecodes::Code code);
+  Symbol* name_ref_at(int which, Bytecodes::Code code) {
     return impl_name_ref_at(which, code, false);
   }
-  Symbol* signature_ref_at(int which, Bytecodes::Code code = Bytecodes::_illegal) {
+  Symbol* signature_ref_at(int which, Bytecodes::Code code) {
     return impl_signature_ref_at(which, code, false);
   }
 
-  int klass_ref_index_at(int which, Bytecodes::Code code = Bytecodes::_illegal) {
+  int klass_ref_index_at(int which, Bytecodes::Code code) {
     return impl_klass_ref_index_at(which, code, false);
   }
-  int name_and_type_ref_index_at(int which, Bytecodes::Code code = Bytecodes::_illegal) {
+  int name_and_type_ref_index_at(int which, Bytecodes::Code code) {
     return impl_name_and_type_ref_index_at(which, code, false);
   }
 

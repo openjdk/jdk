@@ -131,7 +131,7 @@ int Bytecode_invoke::size_of_parameters() const {
 
 
 Symbol* Bytecode_member_ref::klass() const {
-  return constants()->klass_ref_at_noresolve(index());
+  return constants()->klass_ref_at_noresolve(index(), _code);
 }
 
 

@@ -688,6 +688,7 @@ Symbol* ConstantPool::impl_signature_ref_at(int which, Bytecodes::Code code, boo
 
 int ConstantPool::cp_index_helper(int which, Bytecodes::Code code) {
   assert(code != Bytecodes::_invokedynamic, "invokedynamic must be handled differently");
+  //assert(code != Bytecodes::_illegal, "Should have defined bytecode here");
   switch(code) {
     case Bytecodes::_getfield:
     case Bytecodes::_getstatic:
@@ -708,7 +709,7 @@ int ConstantPool::cp_index_helper(int which, Bytecodes::Code code) {
 
 int ConstantPool::impl_name_and_type_ref_index_at(int which, Bytecodes::Code code, bool uncached) {
   int i = which;
-  if (!uncached && cache() != nullptr) {
+  if (code != Bytecodes::_illegal && cache() != nullptr) {
     if (code == Bytecodes::_invokedynamic) {
     //if (ConstantPool::is_invokedynamic_index(which)) {
       // Invokedynamic index is index into the resolved indy array in the constant pool cache
@@ -791,16 +792,16 @@ int ConstantPool::signature_ref_index_at(int which_nt) {
 }
 
 
-Klass* ConstantPool::klass_ref_at(int which, TRAPS) {
-  return klass_at(klass_ref_index_at(which), THREAD);
+Klass* ConstantPool::klass_ref_at(int which, Bytecodes::Code code, TRAPS) {
+  return klass_at(klass_ref_index_at(which, code), THREAD);
 }
 
 Symbol* ConstantPool::klass_name_at(int which) const {
   return symbol_at(klass_slot_at(which).name_index());
 }
 
-Symbol* ConstantPool::klass_ref_at_noresolve(int which) {
-  jint ref_index = klass_ref_index_at(which);
+Symbol* ConstantPool::klass_ref_at_noresolve(int which, Bytecodes::Code code) {
+  jint ref_index = klass_ref_index_at(which, code);
   return klass_at_noresolve(ref_index);
 }
 

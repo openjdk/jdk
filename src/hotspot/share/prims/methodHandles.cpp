@@ -1282,14 +1282,14 @@ JVM_ENTRY(void, MHN_copyOutBootstrapArguments(JNIEnv* env, jobject igcls,
           }
         case -3:  // name
           {
-            Symbol* name = caller->constants()->name_ref_at(bss_index_in_pool);
+            Symbol* name = caller->constants()->name_ref_at(bss_index_in_pool, Bytecodes::_invokedynamic);
             Handle str = java_lang_String::create_from_symbol(name, CHECK);
             pseudo_arg = str();
             break;
           }
         case -2:  // type
           {
-            Symbol* type = caller->constants()->signature_ref_at(bss_index_in_pool);
+            Symbol* type = caller->constants()->signature_ref_at(bss_index_in_pool, Bytecodes::_invokedynamic);
             Handle th;
             if (type->char_at(0) == JVM_SIGNATURE_FUNC) {
               th = SystemDictionary::find_method_handle_type(type, caller, CHECK);

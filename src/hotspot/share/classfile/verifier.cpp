@@ -2320,7 +2320,7 @@ void ClassVerifier::verify_field_instructions(RawBytecodeStream* bcs,
 
   // Get referenced class type
   VerificationType ref_class_type = cp_ref_index_to_type(
-    index, cp, CHECK_VERIFY(this));
+    index, cp, bcs->raw_code(), CHECK_VERIFY(this));
   if (!ref_class_type.is_object() &&
     (!allow_arrays || !ref_class_type.is_array())) {
     verify_error(ErrorContext::bad_type(bcs->bci(),
@@ -2725,7 +2725,7 @@ void ClassVerifier::verify_invoke_init(
       if (was_recursively_verified()) return;
       Method* m = InstanceKlass::cast(ref_klass)->uncached_lookup_method(
         vmSymbols::object_initializer_name(),
-        cp->signature_ref_at(bcs->get_index_u2()),
+        cp->signature_ref_at(bcs->get_index_u2(), bcs->raw_code()),
         Klass::OverpassLookupMode::find);
       // Do nothing if method is not found.  Let resolution detect the error.
       if (m != nullptr) {
@@ -2821,14 +2821,14 @@ void ClassVerifier::verify_invoke_instructions(
       return;
     }
   } else {
-    ref_class_type = cp_ref_index_to_type(index, cp, CHECK_VERIFY(this));
+    ref_class_type = cp_ref_index_to_type(index, cp, opcode, CHECK_VERIFY(this));
   }
 
   assert(sizeof(VerificationType) == sizeof(uintptr_t),
         "buffer type must match VerificationType size");
 
   // Get the UTF8 index for this signature.
-  int sig_index = cp->signature_ref_index_at(cp->name_and_type_ref_index_at(index));
+  int sig_index = cp->signature_ref_index_at(cp->name_and_type_ref_index_at(index, opcode));
 
   // Get the signature's verification types.
   sig_as_verification_types* mth_sig_verif_types;

@@ -96,7 +96,7 @@ bool MethodComparator::args_same(Bytecodes::Code const c_old,  Bytecodes::Code c
     // Check if the names of classes, field/method names and signatures at these indexes
     // are the same. Indices which are really into constantpool cache (rather than constant
     // pool itself) are accepted by the constantpool query routines below.
-    if ((old_cp->klass_ref_at_noresolve(cpci_old) != new_cp->klass_ref_at_noresolve(cpci_new)) ||
+    if ((old_cp->klass_ref_at_noresolve(cpci_old, c_old) != new_cp->klass_ref_at_noresolve(cpci_new, c_old)) ||
         (old_cp->name_ref_at(cpci_old, c_old) != new_cp->name_ref_at(cpci_new, c_old)) ||
         (old_cp->signature_ref_at(cpci_old, c_old) != new_cp->signature_ref_at(cpci_new, c_old)))
       return false;

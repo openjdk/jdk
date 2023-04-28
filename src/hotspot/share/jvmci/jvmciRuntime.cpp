@@ -1795,14 +1795,14 @@ void JVMCIRuntime::get_field_by_index_impl(InstanceKlass* klass, fieldDescriptor
   constantPoolHandle cpool(thread, klass->constants());
 
   // Get the field's name, signature, and type.
-  Symbol* name  = cpool->name_ref_at(index);
+  Symbol* name  = cpool->name_ref_at(index, Bytecodes::_getfield /*We know it's a field*/);
 
-  int nt_index = cpool->name_and_type_ref_index_at(index);
+  int nt_index = cpool->name_and_type_ref_index_at(index, Bytecodes::_getfield);
   int sig_index = cpool->signature_ref_index_at(nt_index);
   Symbol* signature = cpool->symbol_at(sig_index);
 
   // Get the field's declared holder.
-  int holder_index = cpool->klass_ref_index_at(index);
+  int holder_index = cpool->klass_ref_index_at(index, Bytecodes::_getfield);
   bool holder_is_accessible;
   Klass* declared_holder = get_klass_by_index(cpool, holder_index,
                                                holder_is_accessible,
@@ -1877,13 +1877,13 @@ Method* JVMCIRuntime::get_method_by_index_impl(const constantPoolHandle& cpool,
     return nullptr;
   }
 
-  int holder_index = cpool->klass_ref_index_at(index);
+  int holder_index = cpool->klass_ref_index_at(index, bc);
   bool holder_is_accessible;
   Klass* holder = get_klass_by_index_impl(cpool, holder_index, holder_is_accessible, accessor);
 
   // Get the method's name and signature.
-  Symbol* name_sym = cpool->name_ref_at(index);
-  Symbol* sig_sym  = cpool->signature_ref_at(index);
+  Symbol* name_sym = cpool->name_ref_at(index, bc);
+  Symbol* sig_sym  = cpool->signature_ref_at(index, bc);
 
   if (cpool->has_preresolution()
       || ((holder == vmClasses::MethodHandle_klass() || holder == vmClasses::VarHandle_klass()) &&
@@ -1909,7 +1909,7 @@ Method* JVMCIRuntime::get_method_by_index_impl(const constantPoolHandle& cpool,
   }
 
   if (holder_is_accessible) { // Our declared holder is loaded.
-    constantTag tag = cpool->tag_ref_at(index);
+    constantTag tag = cpool->tag_ref_at(index, bc);
     Method* m = lookup_method(accessor, holder, name_sym, sig_sym, bc, tag);
     if (m != nullptr) {
       // We found the method.
