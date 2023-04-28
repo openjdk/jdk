@@ -161,7 +161,7 @@ public class DeInflate {
             }
             out2 = baos.toByteArray();
             if (n != len ||
-                !Arrays.equals(in, 0, len, out2, 0, len)) ||
+                !Arrays.equals(in, 0, len, out2, 0, len) ||
                 inf.inflate(out2) != 0) {
                 System.out.printf("m=%d, n=%d, len=%d, eq=%b%n",
                                   m, n, len, Arrays.equals(in, out2));
