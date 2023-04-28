@@ -401,10 +401,7 @@ JavaMain(void* _args)
     JNIEnv *env = 0;
     jclass mainClass = NULL;
     jclass appClass = NULL; // actual application class being launched
-    jmethodID mainID;
-    jmethodID constructor;
     jobjectArray mainArgs;
-    jobject mainObject;
     int ret = 0;
     jlong start = 0, end = 0;
 
