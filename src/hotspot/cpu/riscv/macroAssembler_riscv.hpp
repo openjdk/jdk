@@ -344,10 +344,6 @@ class MacroAssembler: public Assembler {
 #define verify_method_ptr(reg) _verify_method_ptr(reg, "broken method " #reg, __FILE__, __LINE__)
 #define verify_klass_ptr(reg) _verify_method_ptr(reg, "broken klass " #reg, __FILE__, __LINE__)
 
-#define assert_addr_alignment_cond(cond, addr)       assert(!(cond) || is_aligned(addr, 4), "bad addr alignment: " INTPTR_FORMAT, p2i(addr))
-#define assert_addr_alignment(addr)                  assert_addr_alignment_cond(true, addr)
-#define assert_offset_alignment_cond(cond, offset)   assert(!(cond) || ((offset) % 4) == 0, "bad offset alignment: %d", offset)
-
   // A more convenient access to fence for our purposes
   // We used four bit to indicate the read and write bits in the predecessors and successors,
   // and extended i for r, o for w if UseConservativeFence enabled.
