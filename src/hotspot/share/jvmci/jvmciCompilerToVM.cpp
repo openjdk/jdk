@@ -450,12 +450,7 @@ C2V_VMENTRY_NULL(jobject, getImplementor, (JNIEnv* env, jobject, ARGUMENT_PAIR(k
         err_msg("Expected interface type, got %s", klass->external_name()));
   }
   InstanceKlass* iklass = InstanceKlass::cast(klass);
-  JVMCIKlassHandle handle(THREAD);
-  {
-    // Need Compile_lock around implementor()
-    MutexLocker locker(Compile_lock);
-    handle = iklass->implementor();
-  }
+  JVMCIKlassHandle handle(THREAD, iklass->implementor());
   JVMCIObject implementor = JVMCIENV->get_jvmci_type(handle, JVMCI_CHECK_NULL);
   return JVMCIENV->get_jobject(implementor);
 C2V_END
@@ -2055,14 +2050,14 @@ static jobject read_field_value(Handle obj, long displacement, jchar type_char, 
   // folding Unsafe.get* methods with volatile semantics.
 
   switch (basic_type) {
-    case T_BOOLEAN: value = obj->bool_field_acquire(displacement);  break;
-    case T_BYTE:    value = obj->byte_field_acquire(displacement);  break;
-    case T_SHORT:   value = obj->short_field_acquire(displacement); break;
-    case T_CHAR:    value = obj->char_field_acquire(displacement);  break;
+    case T_BOOLEAN: value = HeapAccess<MO_SEQ_CST>::load(obj->field_addr<jboolean>(displacement)); break;
+    case T_BYTE:    value = HeapAccess<MO_SEQ_CST>::load(obj->field_addr<jbyte>(displacement));    break;
+    case T_SHORT:   value = HeapAccess<MO_SEQ_CST>::load(obj->field_addr<jshort>(displacement));   break;
+    case T_CHAR:    value = HeapAccess<MO_SEQ_CST>::load(obj->field_addr<jchar>(displacement));    break;
     case T_FLOAT:
-    case T_INT:     value = obj->int_field_acquire(displacement);   break;
+    case T_INT:     value = HeapAccess<MO_SEQ_CST>::load(obj->field_addr<jint>(displacement));     break;
     case T_DOUBLE:
-    case T_LONG:    value = obj->long_field_acquire(displacement);  break;
+    case T_LONG:    value = HeapAccess<MO_SEQ_CST>::load(obj->field_addr<jlong>(displacement));    break;
 
     case T_OBJECT: {
       if (displacement == java_lang_Class::component_mirror_offset() && java_lang_Class::is_instance(obj()) &&
@@ -2072,7 +2067,9 @@ static jobject read_field_value(Handle obj, long displacement, jchar type_char, 
         return JVMCIENV->get_jobject(JVMCIENV->get_JavaConstant_NULL_POINTER());
       }
 
-      oop value = obj->obj_field_acquire(displacement);
+      // Perform the read including any barriers required to make the reference strongly reachable
+      // since it will be wrapped as a JavaConstant.
+      oop value = obj->obj_field_access<MO_SEQ_CST | ON_UNKNOWN_OOP_REF>(displacement);
 
       if (value == nullptr) {
         return JVMCIENV->get_jobject(JVMCIENV->get_JavaConstant_NULL_POINTER());
@@ -2675,9 +2672,7 @@ C2V_VMENTRY_NULL(jobject, asReflectionExecutable, (JNIEnv* env, jobject, ARGUMEN
   return JNIHandles::make_local(THREAD, executable);
 }
 
-C2V_VMENTRY_NULL(jobject, asReflectionField, (JNIEnv* env, jobject, ARGUMENT_PAIR(klass), jint index))
-  requireInHotSpot("asReflectionField", JVMCI_CHECK_NULL);
-  Klass* klass = UNPACK_PAIR(Klass, klass);
+static InstanceKlass* check_field(Klass* klass, jint index, JVMCI_TRAPS) {
   if (!klass->is_instance_klass()) {
     JVMCI_THROW_MSG_NULL(IllegalArgumentException,
         err_msg("Expected non-primitive type, got %s", klass->external_name()));
@@ -2687,10 +2682,99 @@ C2V_VMENTRY_NULL(jobject, asReflectionField, (JNIEnv* env, jobject, ARGUMENT_PAI
     JVMCI_THROW_MSG_NULL(IllegalArgumentException,
         err_msg("Field index %d out of bounds for %s", index, klass->external_name()));
   }
+  return iklass;
+}
+
+C2V_VMENTRY_NULL(jobject, asReflectionField, (JNIEnv* env, jobject, ARGUMENT_PAIR(klass), jint index))
+  requireInHotSpot("asReflectionField", JVMCI_CHECK_NULL);
+  Klass* klass = UNPACK_PAIR(Klass, klass);
+  InstanceKlass* iklass = check_field(klass, index, JVMCIENV);
   fieldDescriptor fd(iklass, index);
   oop reflected = Reflection::new_field(&fd, CHECK_NULL);
   return JNIHandles::make_local(THREAD, reflected);
 }
+
+static jbyteArray get_encoded_annotation_data(InstanceKlass* holder, AnnotationArray* annotations_array, bool for_class,
+                                              jint filter_length, jlong filter_klass_pointers,
+                                              JavaThread* THREAD, JVMCIEnv* JVMCIENV) {
+  // Get a ConstantPool object for annotation parsing
+  Handle jcp = reflect_ConstantPool::create(CHECK_NULL);
+  reflect_ConstantPool::set_cp(jcp(), holder->constants());
+
+  // load VMSupport
+  Symbol* klass = vmSymbols::jdk_internal_vm_VMSupport();
+  Klass* k = SystemDictionary::resolve_or_fail(klass, true, CHECK_NULL);
+
+  InstanceKlass* vm_support = InstanceKlass::cast(k);
+  if (vm_support->should_be_initialized()) {
+    vm_support->initialize(CHECK_NULL);
+  }
+
+  typeArrayOop annotations_oop = Annotations::make_java_array(annotations_array, CHECK_NULL);
+  typeArrayHandle annotations = typeArrayHandle(THREAD, annotations_oop);
+
+  InstanceKlass** filter = filter_length == 1 ?
+      (InstanceKlass**) &filter_klass_pointers:
+      (InstanceKlass**) filter_klass_pointers;
+  objArrayOop filter_oop = oopFactory::new_objArray(vmClasses::Class_klass(), filter_length, CHECK_NULL);
+  objArrayHandle filter_classes(THREAD, filter_oop);
+  for (int i = 0; i < filter_length; i++) {
+    filter_classes->obj_at_put(i, filter[i]->java_mirror());
+  }
+
+  // invoke VMSupport.encodeAnnotations
+  JavaValue result(T_OBJECT);
+  JavaCallArguments args;
+  args.push_oop(annotations);
+  args.push_oop(Handle(THREAD, holder->java_mirror()));
+  args.push_oop(jcp);
+  args.push_int(for_class);
+  args.push_oop(filter_classes);
+  Symbol* signature = vmSymbols::encodeAnnotations_signature();
+  JavaCalls::call_static(&result,
+                         vm_support,
+                         vmSymbols::encodeAnnotations_name(),
+                         signature,
+                         &args,
+                         CHECK_NULL);
+
+  oop res = result.get_oop();
+  if (JVMCIENV->is_hotspot()) {
+    return (jbyteArray) JNIHandles::make_local(THREAD, res);
+  }
+
+  typeArrayOop ba = typeArrayOop(res);
+  int ba_len = ba->length();
+  jbyte* ba_buf = NEW_RESOURCE_ARRAY_IN_THREAD_RETURN_NULL(THREAD, jbyte, ba_len);
+  if (ba_buf == nullptr) {
+    JVMCI_THROW_MSG_NULL(InternalError,
+              err_msg("could not allocate %d bytes", ba_len));
+
+  }
+  memcpy(ba_buf, ba->byte_at_addr(0), ba_len);
+  JVMCIPrimitiveArray ba_dest = JVMCIENV->new_byteArray(ba_len, JVMCI_CHECK_NULL);
+  JVMCIENV->copy_bytes_from(ba_buf, ba_dest, 0, ba_len);
+  return JVMCIENV->get_jbyteArray(ba_dest);
+}
+
+C2V_VMENTRY_NULL(jbyteArray, getEncodedClassAnnotationData, (JNIEnv* env, jobject, ARGUMENT_PAIR(klass),
+                 jobject filter, jint filter_length, jlong filter_klass_pointers))
+  InstanceKlass* holder = InstanceKlass::cast(UNPACK_PAIR(Klass, klass));
+  return get_encoded_annotation_data(holder, holder->class_annotations(), true, filter_length, filter_klass_pointers, THREAD, JVMCIENV);
+C2V_END
+
+C2V_VMENTRY_NULL(jbyteArray, getEncodedExecutableAnnotationData, (JNIEnv* env, jobject, ARGUMENT_PAIR(method),
+                 jobject filter, jint filter_length, jlong filter_klass_pointers))
+  methodHandle method(THREAD, UNPACK_PAIR(Method, method));
+  return get_encoded_annotation_data(method->method_holder(), method->annotations(), false, filter_length, filter_klass_pointers, THREAD, JVMCIENV);
+C2V_END
+
+C2V_VMENTRY_NULL(jbyteArray, getEncodedFieldAnnotationData, (JNIEnv* env, jobject, ARGUMENT_PAIR(klass), jint index,
+                 jobject filter, jint filter_length, jlong filter_klass_pointers))
+  InstanceKlass* holder = check_field(InstanceKlass::cast(UNPACK_PAIR(Klass, klass)), index, JVMCIENV);
+  fieldDescriptor fd(holder, index);
+  return get_encoded_annotation_data(holder, fd.annotations(), false, filter_length, filter_klass_pointers, THREAD, JVMCIENV);
+C2V_END
 
 C2V_VMENTRY_NULL(jobjectArray, getFailedSpeculations, (JNIEnv* env, jobject, jlong failed_speculations_address, jobjectArray current))
   FailedSpeculation* head = *((FailedSpeculation**)(address) failed_speculations_address);
@@ -2972,6 +3056,9 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "getCode",                                      CC "(" HS_INSTALLED_CODE ")[B",                                                       FN_PTR(getCode)},
   {CC "asReflectionExecutable",                       CC "(" HS_METHOD2 ")" REFLECTION_EXECUTABLE,                                          FN_PTR(asReflectionExecutable)},
   {CC "asReflectionField",                            CC "(" HS_KLASS2 "I)" REFLECTION_FIELD,                                               FN_PTR(asReflectionField)},
+  {CC "getEncodedClassAnnotationData",                CC "(" HS_KLASS2 OBJECT "IJ)[B",                                                      FN_PTR(getEncodedClassAnnotationData)},
+  {CC "getEncodedExecutableAnnotationData",           CC "(" HS_METHOD2 OBJECT "IJ)[B",                                                     FN_PTR(getEncodedExecutableAnnotationData)},
+  {CC "getEncodedFieldAnnotationData",                CC "(" HS_KLASS2 "I" OBJECT "IJ)[B",                                                  FN_PTR(getEncodedFieldAnnotationData)},
   {CC "getFailedSpeculations",                        CC "(J[[B)[[B",                                                                       FN_PTR(getFailedSpeculations)},
   {CC "getFailedSpeculationsAddress",                 CC "(" HS_METHOD2 ")J",                                                               FN_PTR(getFailedSpeculationsAddress)},
   {CC "releaseFailedSpeculations",                    CC "(J)V",                                                                            FN_PTR(releaseFailedSpeculations)},

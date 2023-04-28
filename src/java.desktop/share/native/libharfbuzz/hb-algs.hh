@@ -875,7 +875,8 @@ hb_in_ranges (T u, T lo1, T hi1, Ts... ds)
 static inline bool
 hb_unsigned_mul_overflows (unsigned int count, unsigned int size, unsigned *result = nullptr)
 {
-#if (defined(__GNUC__) && (__GNUC__ >= 4)) || (defined(__clang__) && (__clang_major__ >= 8))
+/* avoid with xlc16 clang on AIX; it sets the gcc macros */
+#if (defined(__GNUC__) && !defined(AIX) && (__GNUC__ >= 4)) || (defined(__clang__) && (__clang_major__ >= 8))
   unsigned stack_result;
   if (!result)
     result = &stack_result;

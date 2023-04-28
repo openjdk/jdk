@@ -31,11 +31,8 @@ import jdk.internal.foreign.abi.LinkerOptions;
 import jdk.internal.foreign.abi.aarch64.CallArranger;
 
 import java.lang.foreign.FunctionDescriptor;
-import java.lang.foreign.SegmentScope;
-import java.lang.foreign.VaList;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
-import java.util.function.Consumer;
 
 /**
  * ABI implementation for Windows/AArch64. Based on AAPCS with
@@ -57,22 +54,7 @@ public final class WindowsAArch64Linker extends AbstractLinker {
     }
 
     @Override
-    protected UpcallStubFactory arrangeUpcall(MethodType targetType, FunctionDescriptor function) {
-        return CallArranger.WINDOWS.arrangeUpcall(targetType, function);
+    protected UpcallStubFactory arrangeUpcall(MethodType targetType, FunctionDescriptor function, LinkerOptions options) {
+        return CallArranger.WINDOWS.arrangeUpcall(targetType, function, options);
     }
-
-    public static VaList newVaList(Consumer<VaList.Builder> actions, SegmentScope scope) {
-        WindowsAArch64VaList.Builder builder = WindowsAArch64VaList.builder(scope);
-        actions.accept(builder);
-        return builder.build();
-    }
-
-    public static VaList newVaListOfAddress(long address, SegmentScope scope) {
-        return WindowsAArch64VaList.ofAddress(address, scope);
-    }
-
-    public static VaList emptyVaList() {
-        return WindowsAArch64VaList.empty();
-    }
-
 }
