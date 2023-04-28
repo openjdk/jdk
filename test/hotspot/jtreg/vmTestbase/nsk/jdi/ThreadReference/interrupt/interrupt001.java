@@ -47,11 +47,9 @@ import java.io.*;
  * The test is passed if both 'interrupted status" are equal,           <BR>
  * otherwise the test failed.                                           <BR>
  *                                                                      <BR>
- * The test consists of two cases as follows:                           <BR>
+ * The test consists of one test case as follows:                       <BR>
  * - both debuggee's threads are locked up at synchronized block and    <BR>
  *   are not suspended;                                                 <BR>
- * - both debuggee's threads are locked up at synchronized block and    <BR>
- *   are suspended by java.lang.Thread.suspend() method;                <BR>
  */
 
 public class interrupt001 {
