@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -377,10 +377,10 @@ public class ClassWriter implements /* imports */ ClassConstants
             short accessFlags    = klass.getFieldAccessFlags(index);
             dos.writeShort(accessFlags & (short) JVM_RECOGNIZED_FIELD_MODIFIERS);
 
-            short nameIndex    = klass.getFieldNameIndex(index);
+            int nameIndex = klass.getFieldNameIndex(index);
             dos.writeShort(nameIndex);
 
-            short signatureIndex = klass.getFieldSignatureIndex(index);
+            int signatureIndex = klass.getFieldSignatureIndex(index);
             dos.writeShort(signatureIndex);
             if (DEBUG) debugMessage("\tfield name = " + nameIndex + ", signature = " + signatureIndex);
 
@@ -389,11 +389,11 @@ public class ClassWriter implements /* imports */ ClassConstants
             if (hasSyn)
                 fieldAttributeCount++;
 
-            short initvalIndex = klass.getFieldInitialValueIndex(index);
+            int initvalIndex = klass.getFieldInitialValueIndex(index);
             if (initvalIndex != 0)
                 fieldAttributeCount++;
 
-            short genSigIndex = klass.getFieldGenericSignatureIndex(index);
+            int genSigIndex = klass.getFieldGenericSignatureIndex(index);
             if (genSigIndex != 0)
                 fieldAttributeCount++;
 
@@ -438,8 +438,8 @@ public class ClassWriter implements /* imports */ ClassConstants
         ArrayList<Method> valid_methods = new ArrayList<Method>();
         for (int i = 0; i < methods.length(); i++) {
             Method m = methods.at(i);
-            long accessFlags = m.getAccessFlags();
-            // overpass method
+            long accessFlags = m.getAccessFlags() & JVM_RECOGNIZED_METHOD_MODIFIERS;
+            // skip overpass methods
             if (accessFlags == (JVM_ACC_PUBLIC | JVM_ACC_SYNTHETIC | JVM_ACC_BRIDGE)) {
                 continue;
             }

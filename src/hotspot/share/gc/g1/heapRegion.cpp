@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,9 +116,7 @@ void HeapRegion::unlink_from_list() {
 }
 
 void HeapRegion::hr_clear(bool clear_space) {
-  assert(_humongous_start_region == NULL,
-         "we should have already filtered out humongous regions");
-
+  set_top(bottom());
   clear_young_index_in_cset();
   clear_index_in_opt_cset();
   uninstall_surv_rate_group();
@@ -179,16 +177,6 @@ void HeapRegion::move_to_old() {
 void HeapRegion::set_old() {
   report_region_type_change(G1HeapRegionTraceType::Old);
   _type.set_old();
-}
-
-void HeapRegion::set_open_archive() {
-  report_region_type_change(G1HeapRegionTraceType::OpenArchive);
-  _type.set_open_archive();
-}
-
-void HeapRegion::set_closed_archive() {
-  report_region_type_change(G1HeapRegionTraceType::ClosedArchive);
-  _type.set_closed_archive();
 }
 
 void HeapRegion::set_starts_humongous(HeapWord* obj_top, size_t fill_size) {
@@ -618,6 +606,10 @@ class G1VerifyLiveAndRemSetClosure : public BasicOopIterateClosure {
   void do_oop_work(T* p) {
     assert(_containing_obj != nullptr, "must be");
     assert(!G1CollectedHeap::heap()->is_obj_dead_cond(_containing_obj, _vo), "Precondition");
+
+    if (num_failures() >= G1MaxVerifyFailures) {
+      return;
+    }
 
     T heap_oop = RawAccess<>::oop_load(p);
     if (CompressedOops::is_null(heap_oop)) {

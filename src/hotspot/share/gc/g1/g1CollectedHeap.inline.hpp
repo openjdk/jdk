@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,8 +107,15 @@ inline HeapRegion* G1CollectedHeap::region_at(uint index) const { return _hrm.at
 // Return the region with the given index, or NULL if unmapped. It assumes the index is valid.
 inline HeapRegion* G1CollectedHeap::region_at_or_null(uint index) const { return _hrm.at_or_null(index); }
 
-inline HeapRegion* G1CollectedHeap::next_region_in_humongous(HeapRegion* hr) const {
-  return _hrm.next_region_in_humongous(hr);
+template <typename Func>
+inline void G1CollectedHeap::humongous_obj_regions_iterate(HeapRegion* start, const Func& f) {
+  assert(start->is_starts_humongous(), "must be");
+
+  do {
+    HeapRegion* next = _hrm.next_region_in_humongous(start);
+    f(start);
+    start = next;
+  } while (start != nullptr);
 }
 
 inline uint G1CollectedHeap::addr_to_region(const void* addr) const {
@@ -139,10 +146,6 @@ inline void G1CollectedHeap::old_set_add(HeapRegion* hr) {
 
 inline void G1CollectedHeap::old_set_remove(HeapRegion* hr) {
   _old_set.remove(hr);
-}
-
-inline void G1CollectedHeap::archive_set_add(HeapRegion* hr) {
-  _archive_set.add(hr);
 }
 
 // It dirties the cards that cover the block so that the post
@@ -255,7 +258,7 @@ inline bool G1CollectedHeap::is_obj_dead(const oop obj) const {
 }
 
 inline bool G1CollectedHeap::is_obj_dead_full(const oop obj, const HeapRegion* hr) const {
-   return !is_marked(obj) && !hr->is_closed_archive();
+   return !is_marked(obj);
 }
 
 inline bool G1CollectedHeap::is_obj_dead_full(const oop obj) const {

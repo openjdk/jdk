@@ -50,7 +50,7 @@ class ClassHierarchyInfoTest {
 
     @Test
     public void testProduceInvalidStackMaps() throws Exception {
-        assertThrows(VerifyError.class, () -> transformAndVerify(className -> null));
+        assertThrows(IllegalArgumentException.class, () -> transformAndVerify(className -> null));
     }
 
     @Test
@@ -60,6 +60,7 @@ class ClassHierarchyInfoTest {
                        ConstantDescs.CD_Collection),
                 Map.of(ClassDesc.of("java.util.HashMap$TreeNode"), ClassDesc.of("java.util.HashMap$Node"),
                         ClassDesc.of("java.util.HashMap$Node"), ConstantDescs.CD_Object,
+                        ClassDesc.of("java.util.HashMap$EntrySet"), ClassDesc.of("java.util.AbstractSet"),
                         ClassDesc.of("java.util.HashMap$Values"), ConstantDescs.CD_Object)));
     }
 

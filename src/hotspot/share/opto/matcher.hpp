@@ -338,6 +338,8 @@ public:
 
   static const bool vector_needs_partial_operations(Node* node, const TypeVect* vt);
 
+  static const bool vector_needs_load_shuffle(BasicType elem_bt, int vlen);
+
   static const RegMask* predicate_reg_mask(void);
   static const TypeVectMask* predicate_reg_type(const Type* elemTy, int length);
 
@@ -351,6 +353,8 @@ public:
     return (Matcher::max_vector_size(bt) >= size &&
             Matcher::min_vector_size(bt) <= size);
   }
+  // Limits on max vector size (number of elements) for auto-vectorization.
+  static const int superword_max_vector_size(const BasicType bt);
 
   // Actual max scalable vector register length.
   static const int scalable_vector_reg_size(const BasicType bt);

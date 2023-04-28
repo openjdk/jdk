@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,12 @@
 
 #include "oops/cpCache.inline.hpp"
 
-inline bool Bytecode_invoke::has_appendix() { return cpcache_entry()->has_appendix(); }
+inline bool Bytecode_invoke::has_appendix() {
+  if (invoke_code() == Bytecodes::_invokedynamic) {
+    return resolved_indy_entry()->has_appendix();
+  } else {
+    return cpcache_entry()->has_appendix();
+  }
+}
 
 #endif // SHARE_INTERPRETER_BYTECODE_INLINE_HPP
