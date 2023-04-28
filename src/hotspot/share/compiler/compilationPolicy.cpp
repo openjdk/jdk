@@ -491,13 +491,13 @@ void CompilationPolicy::initialize() {
       } else
 #endif
       {
-        if (CIC1CompilerRatio == 1 && CIC2CompilerRatio == 2)
+        if (CISupportOld12Ratio && CIC1CompilerRatio == 1 && CIC2CompilerRatio == 2)
         {
           // backwards compatible
           set_c1_count(MAX2(count / 3, (int)CIMinC1CompilerCount));
           set_c2_count(MAX2(count - c1_count(), (int)CIMinC2CompilerCount));
         }
-        else if (CIC1CompilerRatio == 2 && CIC2CompilerRatio == 1)
+        else if (CISupportOld12Ratio && CIC1CompilerRatio == 2 && CIC2CompilerRatio == 1)
         {
           // while a new ratio, it needs to be the inverse of the old mechanism
           set_c2_count(MAX2(count / 3, (int)CIMinC2CompilerCount));

@@ -949,6 +949,9 @@ const int ObjectAlignmentInBytes = 8;
           "C2 part of the C1:C2 ratio for determining thread counts")                    \
           range(0, max_jint)                                            \
                                                                         \
+  product(bool, CISupportOld12Ratio, true,                                       \
+          "use the old integer method for 1:2 ratios for backwards compatibility")     \
+                                                                                \
   product(bool, UseDynamicNumberOfCompilerThreads, true,                    \
           "Dynamically choose the number of parallel compiler threads")     \
                                                                             \
