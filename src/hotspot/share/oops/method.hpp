@@ -603,7 +603,12 @@ public:
   };
 
   bool compute_has_loops_flag();
-  bool set_has_loops() { set_has_loops_flag(); set_has_loops_flag_init(); return true; }
+  bool set_has_loops() {
+    // set both the flags and that it's been initialized.
+    set_has_loops_flag();
+    set_has_loops_flag_init();
+    return true;
+  }
 
   // returns true if the method has any monitors.
   bool has_monitors() const                      { return is_synchronized() || has_monitor_bytecodes(); }
@@ -870,9 +875,9 @@ public:
   void clear_is_not_c2_osr_compilable()       { set_is_not_c2_osr_compilable(false); }
 
   // not_c1_osr_compilable == not_c1_compilable
-  bool    is_not_c1_osr_compilable() const    { return is_not_c1_compilable(); }
-  void   set_is_not_c1_osr_compilable()       {       set_is_not_c1_compilable(); }
-  void clear_is_not_c1_osr_compilable()       {     clear_is_not_c1_compilable(); }
+  bool is_not_c1_osr_compilable() const       { return is_not_c1_compilable(); }
+  void set_is_not_c1_osr_compilable()         { set_is_not_c1_compilable(); }
+  void clear_is_not_c1_osr_compilable()       { clear_is_not_c1_compilable(); }
 
   // Background compilation support
   void clear_queued_for_compilation()  { set_queued_for_compilation(false);   }
