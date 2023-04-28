@@ -657,7 +657,7 @@ int PEAState::objects(Unique_Node_List& nodes) const {
   return nodes.size();
 }
 
-Node* PEAState::get_cooked_obj(ObjID id) const{
+Node* PEAState::get_cooked_oop(ObjID id) const {
   if (!contains(id)) {
     return nullptr;
   }
@@ -683,9 +683,11 @@ Node* PEAState::get_cooked_obj(ObjID id) const{
 }
 
 AllocationStateMerger::AllocationStateMerger(PEAState& target) : _state(target) {}
-bool as_virtual(ObjectState* os) {
+
+static bool as_virtual(ObjectState* os) {
   return os != nullptr && os->is_virtual();
 }
+
 void AllocationStateMerger::merge(const PEAState& newin, GraphKit* kit, RegionNode* region, int pnum) {
   Unique_Node_List set1, set2;
 
@@ -702,8 +704,31 @@ void AllocationStateMerger::merge(const PEAState& newin, GraphKit* kit, RegionNo
     ObjectState* os2 = newin.get_object_state(obj);
     if (as_virtual(os1) && as_virtual(os2)) {
       os1->merge(os2, kit, region, pnum);
+    } else {
+      assert(os1 != nullptr && os2 != nullptr, "sanity check");
+      Node* m = _state.get_cooked_oop(obj);
+      Node* n = newin.get_cooked_oop(obj);
+      if (m->is_Phi() && m->in(0) == region) {
+        assert(m->in(pnum) == nullptr || m->in(pnum) == n, "wrong value is found at phi->pnum");
+        if (m->in(pnum) == nullptr) {
+          m->set_req(pnum, n);
+        }
+      } else {
+        const Type* type = obj->oop_type(kit->gvn());
+        Node* phi = PhiNode::make(region, m, type);
+        phi->set_req(pnum, n);
+        _state.remove_alias(obj, m);
+        if (os1->is_virtual()) {
+          _state.update(obj, new EscapedState(phi));
+        } else {
+          static_cast<EscapedState*>(os1)->set_materialized_value(phi);
+        }
+      }
     }
   }
+#ifdef ASSERT
+  _state.validate();
+#endif
 }
 
 AllocationStateMerger::~AllocationStateMerger() {

@@ -1051,7 +1051,7 @@ void Parse::do_exits() {
     } else if (alloc_with_final() != nullptr) {
       PEAState& as = jvms()->alloc_state();
       // in PEA, alloc_with_final stores ObjID
-      Node* obj = as.get_cooked_obj((ObjID)alloc_with_final());
+      Node* obj = as.get_cooked_oop((ObjID)alloc_with_final());
       emit_trailing_barrier(obj);
     }
     if (PrintOpto && (Verbose || WizardMode)) {
@@ -1823,6 +1823,8 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
     bool check_elide_phi = target->is_SEL_backedge(save_block);
     PEAState& pred_as = newin->jvms()->alloc_state();
     PEAState& as = block()->state();
+    AllocationStateMerger as_merger(as);
+
     for (uint j = 1; j < newin->req(); ++j) {
       Node* m = map()->in(j);   // Current state of target.
       Node* n = newin->in(j);   // Incoming change to target state.
@@ -1933,7 +1935,7 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
       }
     } // End of for all values to be merged
 
-    AllocationStateMerger as_merger(as);
+
     if (DoPartialEscapeAnalysis) {
       as_merger.merge(pred_as, this, r, pnum);
     }
