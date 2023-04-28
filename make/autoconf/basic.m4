@@ -55,6 +55,7 @@ AC_DEFUN([BASIC_CHECK_LEFTOVER_OVERRIDDEN],
 
 ###############################################################################
 # Setup basic configuration paths, and platform-specific stuff related to PATHs.
+# Make sure to only use tools set up in BASIC_SETUP_FUNDAMENTAL_TOOLS.
 AC_DEFUN_ONCE([BASIC_SETUP_PATHS],
 [
   # Save the current directory this script was started from
