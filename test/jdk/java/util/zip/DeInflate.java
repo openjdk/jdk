@@ -47,7 +47,7 @@ public class DeInflate {
         Arrays.fill(out1, (byte)0);
         Arrays.fill(out2, (byte)0);
 
-        try(ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
             try (DeflaterOutputStream defos = new DeflaterOutputStream(baos, def)) {
                 defos.write(in, 0, len);
             }
