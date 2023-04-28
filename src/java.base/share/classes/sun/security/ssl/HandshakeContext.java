@@ -454,7 +454,8 @@ abstract class HandshakeContext implements ConnectionContext {
         if (handshakeType == SSLHandshake.HELLO_REQUEST.id) {
             // For TLS 1.2 and prior versions, the HelloRequest message MAY
             // be sent by the server at any time.
-            consumer = SSLHandshake.HELLO_REQUEST;
+            consumer = conContext.sslConfig.isClientMode ?
+                    SSLHandshake.HELLO_REQUEST : null;
         } else {
             consumer = handshakeConsumers.get(handshakeType);
         }
