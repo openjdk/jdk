@@ -409,6 +409,9 @@ TEST_JOBS?=@TEST_JOBS@
 DEFAULT_MAKE_TARGET:=@DEFAULT_MAKE_TARGET@
 DEFAULT_LOG:=@DEFAULT_LOG@
 
+# Fallback linker
+ENABLE_FALLBACK_LINKER:=@ENABLE_FALLBACK_LINKER@
+
 FREETYPE_TO_USE:=@FREETYPE_TO_USE@
 FREETYPE_LIBS:=@FREETYPE_LIBS@
 FREETYPE_CFLAGS:=@FREETYPE_CFLAGS@
@@ -692,6 +695,8 @@ INTERIM_LANGTOOLS_ADD_EXPORTS := \
     --add-exports java.base/sun.invoke.util=jdk.compiler.interim \
     --add-exports java.base/jdk.internal.javac=java.compiler.interim \
     --add-exports java.base/jdk.internal.javac=jdk.compiler.interim \
+    --add-exports jdk.internal.opt/jdk.internal.opt=jdk.compiler.interim \
+    --add-exports jdk.internal.opt/jdk.internal.opt=jdk.javadoc.interim \
     #
 INTERIM_LANGTOOLS_MODULES_COMMA := $(strip $(subst $(SPACE),$(COMMA),$(strip \
     $(INTERIM_LANGTOOLS_MODULES))))
