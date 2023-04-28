@@ -29,10 +29,7 @@ import sun.security.util.*;
 import sun.security.x509.AlgorithmId;
 import sun.security.x509.X509Key;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.Serial;
-import java.io.Serializable;
+import java.io.*;
 import java.security.*;
 import java.security.spec.*;
 import java.util.Arrays;
@@ -40,7 +37,7 @@ import java.util.Objects;
 
 public class HSS extends SignatureSpi {
     private HSSPublicKey pubKey;
-    private byte[] message;
+    private ByteArrayOutputStream messageStream;
 
     @Deprecated
     protected void engineSetParameter(String param, Object value) {
@@ -52,8 +49,8 @@ public class HSS extends SignatureSpi {
         throw new UnsupportedOperationException();
     }
 
-    protected void engineInitSign(PrivateKey publicKey) {
-        throw new UnsupportedOperationException();
+    protected void engineInitSign(PrivateKey privateKey) throws InvalidKeyException {
+        throw new InvalidKeyException("Signing is not supported");
     }
 
     protected byte[] engineSign() throws SignatureException {
@@ -65,28 +62,20 @@ public class HSS extends SignatureSpi {
             throw new InvalidKeyException("Not an HSS public key: ");
         }
         pubKey = pub;
-        message = new byte[0];
+        messageStream = new ByteArrayOutputStream();
     }
 
     protected void engineUpdate(byte data) {
-        int mLen = message.length;
-        byte[] newMessage = new byte[mLen + 1];
-        System.arraycopy(message, 0, newMessage, 0, mLen);
-        newMessage[mLen] = data;
-        message = newMessage;
+        messageStream.write(data);
     }
 
     protected void engineUpdate(byte[] data, int off, int len) {
-        int mLen = message.length;
-        byte[] newMessage = new byte[mLen + len];
-        System.arraycopy(message, 0, newMessage, 0, mLen);
-        System.arraycopy(data, 0, newMessage, mLen, len);
-        message = newMessage;
+        messageStream.write(data, off, len);
     }
 
     protected boolean engineVerify(byte[] signature) throws SignatureException {
         try {
-            HSSSignature sig = new HSSSignature(signature, pubKey.L);
+            HSSSignature sig = new HSSSignature(signature, pubKey.L, pubKey.getDigestAlgorithm());
             LMSPublicKey lmsPubKey = pubKey.lmsPublicKey;
             boolean result = true;
             for (int i = 0; i < sig.Nspk; i++) {
@@ -94,7 +83,7 @@ public class HSS extends SignatureSpi {
                 result &= lmsVerify(lmsPubKey, sig.siglist[i], keyArr);
                 lmsPubKey = sig.pubList[i];
             }
-            return result & lmsVerify(lmsPubKey, sig.siglist[sig.Nspk], message);
+            return result & lmsVerify(lmsPubKey, sig.siglist[sig.Nspk], messageStream.toByteArray());
         } catch (Exception e) {
             return false;
         }
@@ -176,12 +165,12 @@ public class HSS extends SignatureSpi {
                 throw new InvalidKeyException("Invalid LMS public key");
             type = LMSUtils.fourBytesToInt(keyArray, offset);
             otsType = LMSUtils.fourBytesToInt(keyArray, offset + 4);
-            // ??? do these have to have the same hash alg ???
 
             lmParams = new LMParams(type);
 
             int m = lmParams.m;
-            if ((inLen < (24 + m)) || (checkExactLength && (inLen != (24 + m)))) {
+            if ((inLen < (24 + m)) || (checkExactLength && (inLen != (24 + m))) ||
+                    !LMOTSParams.of(otsType).hashAlgName.equals(lmParams.hashAlgStr)) {
                 throw new InvalidKeyException("Invalid LMS public Key");
             }
 
@@ -738,7 +727,7 @@ public class HSS extends SignatureSpi {
 
         @Override
         protected PrivateKey engineGeneratePrivate(KeySpec keySpec) throws InvalidKeySpecException {
-            throw new InvalidKeySpecException();
+            throw new InvalidKeySpecException("Private key generation is not supported");
         }
 
         @Override
@@ -793,7 +782,7 @@ public class HSS extends SignatureSpi {
         final LMSignature[] siglist;
         final LMSPublicKey[] pubList;
 
-        HSSSignature(byte[] sigArr, int pubKeyL) throws SignatureException {
+        HSSSignature(byte[] sigArr, int pubKeyL, String pubKeyHashAlg) throws SignatureException {
             if (sigArr.length < 4) {
                 throw new SignatureException("Bad HSS signature");
             }
@@ -809,6 +798,9 @@ public class HSS extends SignatureSpi {
                     siglist[i] = new LMSignature(sigArr, index, false);
                     index += siglist[i].sigArrayLength();
                     pubList[i] = new LMSPublicKey(sigArr, index, false);
+                    if (!pubList[i].getDigestAlgorithm().equals(pubKeyHashAlg)) {
+                        throw new SignatureException("Bad HSS signature");
+                    }
                     index += pubList[i].keyArrayLength();
                 }
                 siglist[Nspk] = new LMSignature(sigArr, index, true);

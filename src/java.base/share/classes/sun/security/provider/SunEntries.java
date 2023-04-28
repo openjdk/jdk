@@ -186,8 +186,9 @@ public final class SunEntries {
         add(p, "Signature", "SHA3-512withDSAinP1363Format",
                 "sun.security.provider.DSA$SHA3_512withDSAinP1363Format");
 
-        add(p, "Signature", "HSS/LMS", "sun.security.provider.HSS");
-        add(p, "KeyFactory", "HSS/LMS", "sun.security.provider.HSS$KeyFactoryImpl");
+        attrs.clear();
+        attrs.put("ImplementedIn", "Software");
+        addWithAlias(p, "Signature", "HSS/LMS", "sun.security.provider.HSS", attrs);
         /*
          *  Key Pair Generator engines
          */
@@ -217,6 +218,7 @@ public final class SunEntries {
          */
         addWithAlias(p, "KeyFactory", "DSA",
                 "sun.security.provider.DSAKeyFactory", attrs);
+        addWithAlias(p, "KeyFactory", "HSS/LMS", "sun.security.provider.HSS$KeyFactoryImpl", attrs);
 
         /*
          * Digest engines

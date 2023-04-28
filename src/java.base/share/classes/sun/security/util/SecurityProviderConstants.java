@@ -271,6 +271,8 @@ public final class SecurityProviderConstants {
 
         store("DSA", KnownOIDs.DSA, KnownOIDs.OIW_DSA.value());
 
+        store("HSS/LMS", KnownOIDs.HSSLMS, KnownOIDs.HSSLMS.value());
+
         store("SHA1withRSA", KnownOIDs.SHA1withRSA,
                 KnownOIDs.OIW_SHA1withRSA.value());
 
