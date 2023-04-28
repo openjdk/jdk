@@ -30,6 +30,14 @@
 
 #ifdef _LP64
 
+static uintptr_t make_mark(uintptr_t target_region, uintptr_t offset) {
+  return (target_region) << 3 | (offset << 4) | 3 /* forwarded */;
+}
+
+static uintptr_t make_fallback() {
+  return ((uintptr_t(1) << 2) /* fallback */ | 3 /* forwarded */);
+}
+
 // Test simple forwarding within the same region.
 TEST_VM(SlidingForwarding, simple) {
   HeapWord heap[16];
@@ -40,7 +48,7 @@ TEST_VM(SlidingForwarding, simple) {
   sf.begin();
 
   sf.forward_to(obj1, obj2);
-  ASSERT_EQ(obj1->mark().value(), uintptr_t(3));
+  ASSERT_EQ(obj1->mark().value(), make_mark(0 /* target_region */, 0 /* offset */));
   ASSERT_EQ(sf.forwardee(obj1), obj2);
 
   sf.end();
@@ -57,11 +65,11 @@ TEST_VM(SlidingForwarding, tworegions) {
   sf.begin();
 
   sf.forward_to(obj1, obj2);
-  ASSERT_EQ(obj1->mark().value(), uintptr_t((2 << 4) | 3));
+  ASSERT_EQ(obj1->mark().value(), make_mark(0 /* target_region */, 2 /* offset */));
   ASSERT_EQ(sf.forwardee(obj1), obj2);
 
   sf.forward_to(obj1, obj3);
-  ASSERT_EQ(obj1->mark().value(), uintptr_t((2 << 4) | (1 << 3) | 3));
+  ASSERT_EQ(obj1->mark().value(), make_mark(1 /* target_region */, 2 /* offset */));
   ASSERT_EQ(sf.forwardee(obj1), obj3);
 
   sf.end();
@@ -80,19 +88,19 @@ TEST_VM(SlidingForwarding, fallback) {
   sf.begin();
 
   sf.forward_to(obj1, obj2);
-  ASSERT_EQ(obj1->mark().value(), uintptr_t((2 << 4) | 3));
+  ASSERT_EQ(obj1->mark().value(), make_mark(0 /* target_region */, 2 /* offset */));
   ASSERT_EQ(sf.forwardee(obj1), obj2);
 
   sf.forward_to(obj1, obj3);
-  ASSERT_EQ(obj1->mark().value(), uintptr_t((1 << 3) | 3));
+  ASSERT_EQ(obj1->mark().value(), make_mark(1 /* target_region */, 0 /* offset */));
   ASSERT_EQ(sf.forwardee(obj1), obj3);
 
   sf.forward_to(obj1, obj4);
-  ASSERT_EQ(obj1->mark().value(), uintptr_t((1 << 2) | 3));
+  ASSERT_EQ(obj1->mark().value(), make_fallback());
   ASSERT_EQ(sf.forwardee(obj1), obj4);
 
   sf.forward_to(obj1, obj5);
-  ASSERT_EQ(obj1->mark().value(), uintptr_t((1 << 2) | 3));
+  ASSERT_EQ(obj1->mark().value(), make_fallback());
   ASSERT_EQ(sf.forwardee(obj1), obj5);
 
   sf.end();

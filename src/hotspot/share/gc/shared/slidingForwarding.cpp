@@ -52,16 +52,18 @@ SlidingForwarding::SlidingForwarding(MemRegion heap, size_t region_size_words)
 SlidingForwarding::~SlidingForwarding() {
   if (_target_base_table != nullptr) {
     FREE_C_HEAP_ARRAY(HeapWord*, _target_base_table);
+    _target_base_table = nullptr;
   }
   if (_fallback_table != nullptr) {
     delete _fallback_table;
+    _fallback_table = nullptr;
   }
 }
 
 void SlidingForwarding::begin() {
   assert(_target_base_table == nullptr, "Should be uninitialized");
-  _target_base_table = NEW_C_HEAP_ARRAY(HeapWord*, _num_regions * NUM_TARGET_REGIONS, mtGC);
   size_t max = _num_regions * NUM_TARGET_REGIONS;
+  _target_base_table = NEW_C_HEAP_ARRAY(HeapWord*, max, mtGC);
   for (size_t i = 0; i < max; i++) {
     _target_base_table[i] = UNUSED_BASE;
   }
@@ -86,11 +88,8 @@ void SlidingForwarding::fallback_forward_to(HeapWord* from, HeapWord* to) {
 }
 
 HeapWord* SlidingForwarding::fallback_forwardee(HeapWord* from) const {
-  if (_fallback_table == nullptr) {
-    return nullptr;
-  } else {
-    return _fallback_table->forwardee(from);
-  }
+  assert(_fallback_table != nullptr, "fallback table must be present");
+  return _fallback_table->forwardee(from);
 }
 
 FallbackTable::FallbackTable() {
@@ -114,11 +113,16 @@ FallbackTable::~FallbackTable() {
 
 size_t FallbackTable::home_index(HeapWord* from) {
   uint64_t val = reinterpret_cast<uint64_t>(from);
+  // This is the mxm mixer (a variant of split mixer) from:
+  // https://jonkagstrom.com/bit-mixer-construction/
   val *= 0xbf58476d1ce4e5b9ull;
   val ^= val >> 56;
   val *= 0x94d049bb133111ebull;
+  // Finally put this through a 'fibonacci hash' to clamp to width.
+  // https://probablydance.com/2018/06/16/fibonacci-hashing-the-optimization-that-the-world-forgot-or-a-better-alternative-to-integer-modulo/
   val = (val * 11400714819323198485llu) >> (64 - log2i_exact(TABLE_SIZE));
-  assert(val < TABLE_SIZE, "must fit in table: val: " UINT64_FORMAT ", table-size: " UINTX_FORMAT ", table-size-bits: %d", val, TABLE_SIZE, log2i_exact(TABLE_SIZE));
+  assert(val < TABLE_SIZE, "must fit in table: val: " UINT64_FORMAT ", table-size: " UINTX_FORMAT ", table-size-bits: %d",
+         val, TABLE_SIZE, log2i_exact(TABLE_SIZE));
   return static_cast<size_t>(val);
 }
 
@@ -130,6 +134,8 @@ void FallbackTable::forward_to(HeapWord* from, HeapWord* to) {
     entry->_from = _table[idx]._from;
     entry->_to = _table[idx]._to;
     _table[idx]._next = entry;
+  } else {
+    assert(_table[idx]._next == nullptr, "next-link should be null here");
   }
   _table[idx]._from = from;
   _table[idx]._to   = to;
