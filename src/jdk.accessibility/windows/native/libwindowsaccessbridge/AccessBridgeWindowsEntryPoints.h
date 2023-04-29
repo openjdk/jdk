@@ -40,6 +40,11 @@
 extern "C" {
 #endif
 
+    void addJavaEventNotification(jlong type);
+    void removeJavaEventNotification(jlong type);
+    void addAccessibilityEventNotification(jlong type);
+    void removeAccessibilityEventNotification(jlong type);
+
     void Windows_run();
 
     void releaseJavaObject(long vmID, JOBJECT64 object);
