@@ -36,6 +36,7 @@ import com.sun.source.tree.ModuleTree.ModuleKind;
 
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Source.Feature;
+import com.sun.tools.javac.file.PathFileObject;
 import com.sun.tools.javac.parser.Tokens.*;
 import com.sun.tools.javac.parser.Tokens.Comment.CommentStyle;
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
@@ -63,6 +64,7 @@ import static com.sun.tools.javac.resources.CompilerProperties.Fragments.VarAndE
 import static com.sun.tools.javac.resources.CompilerProperties.Fragments.VarAndImplicitNotAllowed;
 import com.sun.tools.javac.util.JCDiagnostic.SimpleDiagnosticPosition;
 import java.util.function.BiFunction;
+import javax.lang.model.SourceVersion;
 
 /**
  * The parser maps a token sequence into an abstract syntax tree.
@@ -3860,6 +3862,7 @@ public class JavacParser implements Parser {
         }
 
         boolean firstTypeDecl = true;   // have we see a class, enum, or interface declaration yet?
+        boolean isAnonymousClass = false;
         while (token.kind != EOF) {
             if (token.pos <= endPosTable.errorEndPos) {
                 // error recovery
@@ -3937,6 +3940,7 @@ public class JavacParser implements Parser {
 
                 if (isTopLevelMethodOrField) {
                     defs.appendList(topLevelMethodOrFieldDeclaration(mods));
+                    isAnonymousClass = true;
                 } else {
                     JCTree def = typeDeclaration(mods, docComment);
                     if (def instanceof JCExpressionStatement statement)
@@ -3948,7 +3952,8 @@ public class JavacParser implements Parser {
                 firstTypeDecl = false;
             }
         }
-        JCTree.JCCompilationUnit toplevel = F.at(firstToken.pos).TopLevel(defs.toList());
+        List<JCTree> topLevelDefs = isAnonymousClass ?  constructAnonymousMainClass(defs.toList()) : defs.toList();
+        JCTree.JCCompilationUnit toplevel = F.at(firstToken.pos).TopLevel(topLevelDefs);
         if (!consumedToplevelDoc)
             attach(toplevel, firstToken.comment(CommentStyle.JAVADOC));
         if (defs.isEmpty())
@@ -3960,6 +3965,43 @@ public class JavacParser implements Parser {
         this.endPosTable.setParser(null); // remove reference to parser
         toplevel.endPositions = this.endPosTable;
         return toplevel;
+    }
+
+    // Restructure top level to be an top level anonymous class.
+    private List<JCTree> constructAnonymousMainClass(List<JCTree> origDefs) {
+        checkSourceLevel(Feature.ANONYMOUS_MAIN_CLASSES);
+
+        ListBuffer<JCTree> topDefs = new ListBuffer<>();
+        ListBuffer<JCTree> defs = new ListBuffer<>();
+
+        for (JCTree def : origDefs) {
+            if (def.hasTag(Tag.PACKAGEDEF)) {
+                log.error(def.pos(), Errors.AnonymousMainClassShouldNotHavePackageDeclaration);
+            } else if (def.hasTag(Tag.IMPORT)) {
+                topDefs.append(def);
+            } else {
+                defs.append(def);
+            }
+        }
+
+        int primaryPos = defs.first().pos;
+        String simplename = PathFileObject.getSimpleName(log.currentSourceFile());
+
+        if (simplename.endsWith(".java")) {
+            simplename = simplename.substring(0, simplename.length() - ".java".length());
+        }
+        if (!SourceVersion.isIdentifier(simplename) || SourceVersion.isKeyword(simplename)) {
+            log.error(primaryPos, Errors.BadFileName(simplename));
+        }
+
+        Name name = names.fromString(simplename);
+        JCModifiers anonMods = F.at(primaryPos)
+                .Modifiers(Flags.FINAL|Flags.MANDATED|Flags.SYNTHETIC|Flags.ANONYMOUS_MAIN_CLASS, List.nil());
+        JCClassDecl anon = F.at(primaryPos).ClassDef(
+                anonMods, name, List.nil(), null, List.nil(), List.nil(),
+                defs.toList());
+        topDefs.append(anon);
+        return topDefs.toList();
     }
 
     JCModuleDecl moduleDecl(JCModifiers mods, ModuleKind kind, Comment dc) {

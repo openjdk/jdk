@@ -28,7 +28,6 @@ package com.sun.tools.javac.comp;
 import java.util.Map;
 import java.util.Optional;
 
-import javax.lang.model.SourceVersion;
 import javax.tools.JavaFileObject;
 import javax.tools.JavaFileManager;
 
@@ -36,17 +35,14 @@ import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Kinds.KindName;
 import com.sun.tools.javac.code.Kinds.KindSelector;
 import com.sun.tools.javac.code.Scope.*;
-import com.sun.tools.javac.code.Source.Feature;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Type.*;
-import com.sun.tools.javac.file.PathFileObject;
 import com.sun.tools.javac.main.Option.PkgInfo;
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.resources.CompilerProperties.Warnings;
 import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.util.*;
-import com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.List;
 
@@ -108,8 +104,6 @@ public class Enter extends JCTree.Visitor {
     TypeEnvs typeEnvs;
     Modules modules;
     JCDiagnostic.Factory diags;
-    Source source;
-    Preview preview;
 
     private final Todo todo;
 
@@ -135,8 +129,6 @@ public class Enter extends JCTree.Visitor {
         names = Names.instance(context);
         modules = Modules.instance(context);
         diags = JCDiagnostic.Factory.instance(context);
-        source = Source.instance(context);
-        preview = Preview.instance(context);
 
         predefClassDef = make.ClassDef(
             make.Modifiers(PUBLIC),
@@ -391,9 +383,6 @@ public class Enter extends JCTree.Visitor {
                 tree.packge.package_info = c;
                 tree.packge.sourcefile = tree.sourcefile;
             }
-            if (isAnonymousMainClass(tree)) {
-                constructAnonymousMainClass(tree, source, preview, make, log, names);
-            }
             classEnter(tree.defs, topEnv);
             if (addEnv) {
                 todo.append(packageEnv);
@@ -402,9 +391,7 @@ public class Enter extends JCTree.Visitor {
         log.useSource(prev);
         result = null;
     }
-
-
-    //where:
+        //where:
         //set package Symbols to the package expression:
         private final TreeScanner setPackageSymbols = new TreeScanner() {
             Symbol currentPackage;
@@ -429,63 +416,6 @@ public class Enter extends JCTree.Visitor {
                 scan(tree.pid);
             }
         };
-
-        private static boolean isAnonymousMainClass(JCCompilationUnit tree) {
-            for (JCTree def : tree.defs) {
-                if (def.hasTag(Tag.METHODDEF) || def.hasTag(Tag.VARDEF)) {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-    // Restructure top level to be an top level anonymous class.
-    public static void constructAnonymousMainClass(JCCompilationUnit tree,
-                                                   Source source, Preview preview,
-                                                   TreeMaker make, Log log, Names names) {
-        Feature feature = Feature.ANONYMOUS_MAIN_CLASSES;
-        if (preview.isPreview(feature) && !preview.isEnabled()) {
-            //preview feature without --preview flag, error
-            log.error(DiagnosticFlag.SOURCE_LEVEL, tree.pos, preview.disabledError(feature));
-        } else if (!feature.allowedInSource(source)) {
-            //incompatible source level, error
-            log.error(DiagnosticFlag.SOURCE_LEVEL, tree.pos, feature.error(source.name));
-        } else if (preview.isPreview(feature)) {
-            //use of preview feature, warn
-            preview.warnPreview(tree.pos, feature);
-        }
-
-        make.at(tree.pos);
-        String simplename = PathFileObject.getSimpleName(tree.sourcefile);
-        if (simplename.endsWith(".java")) {
-            simplename = simplename.substring(0, simplename.length() - ".java".length());
-        }
-        if (!SourceVersion.isIdentifier(simplename) || SourceVersion.isKeyword(simplename)) {
-            log.error(tree.pos, Errors.BadFileName(simplename));
-        }
-        Name name = names.fromString(simplename);
-
-        ListBuffer<JCTree> topDefs = new ListBuffer<>();
-        ListBuffer<JCTree> defs = new ListBuffer<>();
-
-        for (JCTree def : tree.defs) {
-            if (def.hasTag(Tag.PACKAGEDEF)) {
-                log.error(def.pos(), Errors.AnonymousMainClassShouldNotHavePackageDeclaration);
-            } else if (def.hasTag(Tag.IMPORT)) {
-                topDefs.append(def);
-            } else {
-                defs.append(def);
-            }
-        }
-
-        JCModifiers anonMods = make.at(tree.pos)
-                .Modifiers(FINAL|MANDATED|SYNTHETIC|ANONYMOUS_MAIN_CLASS, List.nil());
-        JCClassDecl anon = make.at(tree.pos).ClassDef(
-                anonMods, name, List.nil(), null, List.nil(), List.nil(),
-                defs.toList());
-        topDefs.append(anon);
-        tree.defs = topDefs.toList();
-    }
 
     @Override
     public void visitClassDef(JCClassDecl tree) {
