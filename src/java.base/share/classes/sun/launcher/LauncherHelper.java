@@ -38,8 +38,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
 import java.lang.module.Configuration;
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleDescriptor.Exports;
@@ -89,7 +87,6 @@ import jdk.internal.module.ModuleBootstrap;
 import jdk.internal.module.Modules;
 import jdk.internal.platform.Container;
 import jdk.internal.platform.Metrics;
-import jdk.internal.vm.annotation.Hidden;
 
 /**
  * A utility package for the java(1), javaw(1) launchers.
@@ -847,8 +844,29 @@ public final class LauncherHelper {
         return false;
     }
 
+    /*
+     * main type flags
+     */
+    private static final int MAIN_WITHOUT_ARGS = 1;
+    private static final int MAIN_NONSTATIC = 2;
+    private static int mainType = 0;
+
+    /*
+     * Return type so that launcher invokes the correct main
+     */
+    public static int getMainType() {
+        return mainType;
+    }
+
+    private static void setMainType(Method mainMethod) {
+        int mods = mainMethod.getModifiers();
+        boolean isStatic = Modifier.isStatic(mods);
+        boolean noArgs = mainMethod.getParameterCount() == 0;
+        mainType = (isStatic ? 0 : MAIN_NONSTATIC) | (noArgs ? MAIN_WITHOUT_ARGS : 0);
+    }
+
     // Check the existence and signature of main and abort if incorrect
-    static Method validateMainClass(Class<?> mainClass) {
+    public static void validateMainClass(Class<?> mainClass) {
         Method mainMethod = null;
         try {
             mainMethod = MainMethodFinder.findMainMethod(mainClass);
@@ -866,6 +884,8 @@ public final class LauncherHelper {
                         e.getClass().getName(), e.getLocalizedMessage());
             }
         }
+
+        setMainType(mainMethod);
 
         /*
          * findMainMethod (above) will choose the correct method, based
@@ -900,41 +920,6 @@ public final class LauncherHelper {
         if (mainMethod.getReturnType() != java.lang.Void.TYPE) {
             abort(null, "java.launcher.cls.error3",
                   mainMethod.getDeclaringClass().getName());
-        }
-
-        return mainMethod;
-    }
-
-    // Check the existence and signature of main, abort if incorrect otherwise execute.
-    @Hidden
-    static void executeMainClass(Class<?> mainClass, String[] mainArgs) throws Throwable {
-        Method mainMethod = validateMainClass(mainClass);
-        int mods = mainMethod.getModifiers();
-        boolean isStatic = Modifier.isStatic(mods);
-        boolean noArgs = mainMethod.getParameterCount() == 0;
-
-        // Similar to com.sun.tools.javac.launcher#execute
-        // but duplicated here to prevent additional launcher frames
-        mainMethod.setAccessible(true);
-        MethodHandles.Lookup lookup = MethodHandles.lookup();
-        MethodHandle mh = lookup.unreflect(mainMethod);
-
-        if (isStatic) {
-            if (noArgs) {
-                mh.invokeExact();
-            } else {
-                mh.invokeExact(mainArgs);
-            }
-        } else {
-            Constructor<?> constructor = appClass.getDeclaredConstructor();
-            constructor.setAccessible(true);
-            Object instance = constructor.newInstance();
-
-            if (noArgs) {
-                mh.invoke(instance);
-            } else {
-                mh.invoke(instance, mainArgs);
-            }
         }
     }
 
