@@ -85,6 +85,7 @@ import static com.sun.tools.javac.tree.JCTree.Tag.*;
  * risk.  This code and its internal interfaces are subject to change
  * or deletion without notice.</b></p>
  */
+@SuppressWarnings("preview")
 public class JavacElements implements Elements {
 
     private final JavaCompiler javaCompiler;
@@ -717,6 +718,12 @@ public class JavacElements implements Elements {
             TypeSymbol tsym = cast(TypeSymbol.class, element);
             return types.isFunctionalInterface(tsym);
         }
+    }
+
+    @Override @DefinedBy(Api.LANGUAGE_MODEL)
+    public boolean isUnnamed(Element element) {
+        Symbol sym = (Symbol) element;
+        return (sym.flags() & Flags.UNNAMED) != 0;
     }
 
     @Override @DefinedBy(Api.LANGUAGE_MODEL)

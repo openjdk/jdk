@@ -103,6 +103,10 @@ public interface VariableElement extends Element {
      * {@return {@code true} if this is an unnamed variable and {@code
      * false} otherwise}
      *
+     * @implSpec
+     * The default implementation of this method returns {@code
+     * false}.
+     *
      * @jls 6.1 Declarations
      * @jls 14.4 Local Variable Declarations
      */
