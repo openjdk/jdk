@@ -903,7 +903,6 @@ public class TransPatterns extends TreeTranslator {
     }
 
     private LoadableConstant createEnumDesc(DiagnosticPosition pos, ClassSymbol enumClass, Name constant) {
-        //ConstantBootstrap.invoke(..., EnumDesc.of(ConstantBootstrap.invoke(..., ClassDesc.of(enumClass)), constant))
         MethodSymbol classDesc = rs.resolveInternalMethod(pos, env, syms.classDescType, names.of, List.of(syms.stringType), List.nil());
         MethodSymbol enumDesc = rs.resolveInternalMethod(pos, env, syms.enumDescType, names.of, List.of(syms.classDescType, syms.stringType), List.nil());
         return invokeMethodWrapper(pos,

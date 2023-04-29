@@ -3211,11 +3211,6 @@ public class Flow {
             initParam(tree.var);
         }
 
-        @Override
-        public void visitCase(JCCase tree) {
-            super.visitCase(tree); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/OverriddenMethodBody
-        }
-
         void referenced(Symbol sym) {
             unrefdResources.remove(sym);
         }
