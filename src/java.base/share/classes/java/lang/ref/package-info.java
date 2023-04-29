@@ -94,7 +94,8 @@
  * access methods.
  *
  * <h3>Memory Consistency Properties</h3>
- * Certain interactions with the garbage collector and reference queues form
+ * Certain interactions between the garbage collector, references, and reference
+ * queues form
  * <a href="{@docRoot}/java.base/java/util/concurrent/package-summary.html#MemoryVisibility"><i>happens-before</i></a>
  * relationships:
  *
@@ -102,7 +103,10 @@
  *
  * <li> Actions in a thread prior to calling
  * {@link Reference#reachabilityFence Reference.reachabilityFence(x)}
- * <i>happen-before</i> the garbage collector enqueues any reference to {@code x}.</li>
+ * <i>happen-before</i> the garbage collector clears any reference to {@code x}.</li>
+ *
+ * <li>The clearing of a reference by the garbage collector <i>happens-before</i>
+ * the garbage collector enqueues the reference.</li>
  *
  * <li> The enqueueing of a reference (by the garbage collector, or
  * by a successful call to {@link Reference#enqueue}) <i>happens-before</i>
