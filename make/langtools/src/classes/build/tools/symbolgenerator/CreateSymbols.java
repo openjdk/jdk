@@ -2384,10 +2384,8 @@ public class CreateSymbols {
                 MethodDescription method = (MethodDescription) feature;
                 method.methodParameters = new ArrayList<>();
                 for (MethodParameters_attribute.Entry e : params.method_parameter_table) {
-                    String name = null;
-                    if (e.name_index != 0) {
-                        name = cf.constant_pool.getUTF8Value(e.name_index);
-                    }
+                    String name = e.name_index == 0 ? null
+                            : cf.constant_pool.getUTF8Value(e.name_index);
                     MethodDescription.MethodParam param =
                             new MethodDescription.MethodParam(e.flags, name);
                     method.methodParameters.add(param);
