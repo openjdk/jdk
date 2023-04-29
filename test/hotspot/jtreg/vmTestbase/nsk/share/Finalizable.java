@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,11 +33,18 @@ package nsk.share;
 public interface Finalizable {
 
     /**
-     * This method will be invoked by <tt>Finalizer</tt> when virtual mashine
+     * This method will be invoked by <tt>Finalizer</tt> when virtual machine
      * shuts down.
      *
      * @throws Throwable if any throwable exception thrown during finalization
      */
     public void finalizeAtExit() throws Throwable;
+
+    /*
+     * This method will register a cleanup method and creates an instance of Finalizer
+     * to register the object for finalization at VM exit.
+     * It is implemented in FinalizableObject.
+     */
+    public void registerCleanup();
 
 }

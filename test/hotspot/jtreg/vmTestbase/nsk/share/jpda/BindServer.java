@@ -96,11 +96,6 @@ public class BindServer implements Finalizable {
     private int unauthorizedRequests = 0;
     private int busyRequests = 0;
 
-    public BindServer() {
-        // The Cleaner alternative to deprecated finalize() method
-        // that is called when the instance becomes unreachable.
-        Cleaner.create().register(this, () -> cleanup());
-    }
 
     /**
      * Start <code>BindServer</code> utility from command line.
@@ -126,7 +121,15 @@ public class BindServer implements Finalizable {
     public static int run(String argv[], PrintStream out) {
         return new BindServer().runIt(argv, out);
     }
+    @Override
+    public void registerCleanup() {
+        // install finalizer to print errors summary at exit
+        Finalizer finalizer = new Finalizer(this);
+        finalizer.activate();
 
+        // register the cleanup method to be called when this Log instance becomes unreachable.
+        Cleaner.create().register(this, () -> cleanup());
+     }
     /**
      * Perform execution of <code>BindServer</code>.
      * This method handles command line arguments, starts seperate
@@ -159,8 +162,8 @@ public class BindServer implements Finalizable {
         log.enableVerboseOnError(false);
         logger = new Log.Logger(log, "");
 
-        Finalizer bindFinalizer = new Finalizer(this);
-        bindFinalizer.activate();
+        registerCleanup();
+
 
         logger.trace(TRACE_LEVEL_THREADS, "BindServer: starting main thread");
 

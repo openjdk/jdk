@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,10 +43,8 @@ public final class MainWrapper {
 
         // It is needed to register finalizer thread in default thread group
         // So FinalizerThread thread can't be in virtual threads group
-        Finalizer finalizer = new Finalizer(new FinalizableObject());
-        finalizer.activate();
-
-
+        FinalizableObject finalizableObject = new FinalizableObject();
+        finalizableObject.registerCleanup();
 
         Runnable task = () -> {
             try {

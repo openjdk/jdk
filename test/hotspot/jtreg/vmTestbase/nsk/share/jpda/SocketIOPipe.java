@@ -83,7 +83,15 @@ public class SocketIOPipe extends Log.Logger implements Finalizable {
     protected ServerSocket serverSocket;
 
     protected String name;
+    @Override
+    public void registerCleanup() {
+        // install finalizer to print errors summary at exit
+        Finalizer finalizer = new Finalizer(this);
+        finalizer.activate();
 
+        // register the cleanup method to be called when this Log instance becomes unreachable.
+        Cleaner.create().register(this, () -> cleanup());
+     }
     /**
      * Make general <code>IOPipe</code> object with specified parameters.
      */
@@ -95,9 +103,7 @@ public class SocketIOPipe extends Log.Logger implements Finalizable {
         this.listening = listening;
         this.name = name;
 
-        // As an alternative to finalize() call, register cleanup() method to be called
-        // when this instance becomes unreachable.
-        Cleaner.create().register(this, () -> cleanup());
+        registerCleanup();
     }
 
     /**
@@ -110,9 +116,7 @@ public class SocketIOPipe extends Log.Logger implements Finalizable {
         this.timeout = timeout;
         this.listening = listening;
 
-        // As an alternative to finalize() call, register cleanup() method to be called
-        // when this instance becomes unreachable.
-        Cleaner.create().register(this, () -> cleanup());
+        registerCleanup();
     }
 
     /**

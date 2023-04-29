@@ -29,7 +29,6 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringReader;
-import java.lang.ref.Cleaner;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
@@ -190,15 +189,11 @@ public class Log extends FinalizableObject {
     @Deprecated
     protected Log() {
         // install finalizer to print errors summary at exit
-        Finalizer finalizer = new Finalizer(this);
-        finalizer.activate();
-
-        // register the clenup method to be called when this Log instance becomes unreachable.
-        Cleaner.create().register(this, () -> cleanup());
-
+        registerCleanup();
         // Don't log exceptions from this method. It would just add unnecessary logs.
         loggedExceptions.add("nsk.share.jdi.SerialExecutionDebugger.executeTests");
     }
+
 
     /**
      * Incarnate new Log for the given <code>stream</code> and
@@ -614,6 +609,7 @@ public class Log extends FinalizableObject {
      * Log instance becomes unreachable.
      *
      */
+    @Override
     public void cleanup() {
         if (verbose() && isErrorsSummaryEnabled()) {
             printErrorsSummary();

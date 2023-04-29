@@ -22,6 +22,8 @@
  */
 
 package nsk.share;
+import java.lang.ref.Cleaner;
+
 
 /**
  * This class is an simple exalmple of finalizable object, that implements interface
@@ -32,6 +34,17 @@ package nsk.share;
  */
 public class FinalizableObject implements Finalizable {
 
+
+    /**
+     * This method will be invoked by <tt>Finalizer</tt> when virtual mashine
+     * shuts down.
+     *
+     * @throws Throwable if any throwable exception thrown during finalization
+     *
+     * @see Finalizer
+     */
+
+    public void cleanup() {}
     /**
      * This method will be invoked by <tt>Finalizer</tt> when virtual mashine
      * shuts down.
@@ -41,6 +54,15 @@ public class FinalizableObject implements Finalizable {
      * @see Finalizer
      */
     public void finalizeAtExit() throws Throwable {
+        cleanup();
+    }
 
+    public void registerCleanup() {
+       // install finalizer to print errors summary at exit
+       Finalizer finalizer = new Finalizer(this);
+       finalizer.activate();
+
+       // register the cleanup method to be called when this Log instance becomes unreachable.
+       Cleaner.create().register(this, () -> cleanup());
     }
 }
