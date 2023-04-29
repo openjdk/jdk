@@ -23,6 +23,7 @@
 
 /*
   @test
+  @key headful
   @bug 4187912
   @summary Test that some incorrectly written DnD code cannot hang the app
   @run main NotReallySerializableTest
