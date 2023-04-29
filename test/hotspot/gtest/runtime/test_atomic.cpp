@@ -282,14 +282,16 @@ TEST(AtomicBitopsTest, int32) {
   AtomicBitopsTestSupport<int32_t>()();
 }
 
-TEST(AtomicBitopsTest, int64) {
-  AtomicBitopsTestSupport<int64_t>()();
-}
-
 TEST(AtomicBitopsTest, uint32) {
   AtomicBitopsTestSupport<uint32_t>()();
+}
+
+#ifdef _LP64
+TEST(AtomicBitopsTest, int64) {
+  AtomicBitopsTestSupport<int64_t>()();
 }
 
 TEST(AtomicBitopsTest, uint64) {
   AtomicBitopsTestSupport<uint64_t>()();
 }
+#endif // _LP64
