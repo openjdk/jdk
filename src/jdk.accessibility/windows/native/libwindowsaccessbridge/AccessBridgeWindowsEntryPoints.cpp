@@ -43,6 +43,30 @@ extern HWND theDialogWindow;
 extern "C" {
 #endif
 
+    void addJavaEventNotification(jlong type) {
+        if (theWindowsAccessBridge != nullptr) {
+            theWindowsAccessBridge->addJavaEventNotification(type);
+        }
+    }
+
+    void removeJavaEventNotification(jlong type) {
+        if (theWindowsAccessBridge != nullptr) {
+            theWindowsAccessBridge->removeJavaEventNotification(type);
+        }
+    }
+
+    void addAccessibilityEventNotification(jlong type) {
+        if (theWindowsAccessBridge != nullptr) {
+            theWindowsAccessBridge->addAccessibilityEventNotification(type);
+        }
+    }
+
+    void removeAccessibilityEventNotification(jlong type) {
+        if (theWindowsAccessBridge != nullptr) {
+            theWindowsAccessBridge->removeAccessibilityEventNotification(type);
+        }
+    }
+
     /**
      * Windows_run - where Windows executables will load/unload us
      *
