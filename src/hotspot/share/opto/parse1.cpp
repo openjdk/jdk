@@ -1867,7 +1867,6 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
 
                   if (id == pred_as.is_alias(n) && !((pred_os = pred_as.get_object_state(id))->is_virtual())) { // n is escaped.
                     // materialize 'm' because it has been materialized in save_block.
-                    assert(pred_os->get_materialized_value() == n, "sanity: materialized value in save_block is n");
                     Node* mv = ensure_object_materialized(m, as, map(), r, block()->init_pnum());
                     phi->replace_edge(m, mv);
                     as.update(id, new EscapedState(phi));

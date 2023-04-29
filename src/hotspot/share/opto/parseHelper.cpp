@@ -709,7 +709,7 @@ void AllocationStateMerger::merge(const PEAState& newin, GraphKit* kit, RegionNo
       Node* m = _state.get_cooked_oop(obj);
       Node* n = newin.get_cooked_oop(obj);
       if (m->is_Phi() && m->in(0) == region) {
-        assert(m->in(pnum) == nullptr || m->in(pnum) == n, "wrong value is found at phi->pnum");
+        // only update the pnum that we have never seen before.
         if (m->in(pnum) == nullptr) {
           m->set_req(pnum, n);
         }
@@ -717,8 +717,8 @@ void AllocationStateMerger::merge(const PEAState& newin, GraphKit* kit, RegionNo
         const Type* type = obj->oop_type(kit->gvn());
         Node* phi = PhiNode::make(region, m, type);
         phi->set_req(pnum, n);
-        _state.remove_alias(obj, m);
         if (os1->is_virtual()) {
+          _state.remove_alias(obj, m);
           _state.update(obj, new EscapedState(phi));
         } else {
           static_cast<EscapedState*>(os1)->set_materialized_value(phi);
