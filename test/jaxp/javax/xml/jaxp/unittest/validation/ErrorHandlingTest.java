@@ -27,8 +27,6 @@ import java.io.StringReader;
 import java.util.ArrayList;
 import static java.util.Collections.unmodifiableList;
 import java.util.List;
-import java.util.Locale;
-import static java.util.Locale.ENGLISH;
 import javax.xml.XMLConstants;
 import javax.xml.transform.Source;
 import javax.xml.transform.stream.StreamSource;
@@ -83,7 +81,6 @@ public class ErrorHandlingTest {
      */
     @Test
     public void test() throws Exception {
-        Locale.setDefault(ENGLISH);
         List<SAXParseException> ex = validateXMLWithSchema(new StreamSource(new StringReader(xsd)),
                 new StreamSource(new StringReader(xml)));
         Assert.assertEquals(ex.size(), 1);
