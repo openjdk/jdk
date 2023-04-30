@@ -90,11 +90,11 @@ public class MethodHandlesArrayConstructorCall {
 
     @Benchmark
     public Object constantFoldNonInvocableConstruct() throws Throwable {
-        return (String[]) MH_NON_INVOCABLE.invoke(8);
+        return (MethodHandlesArrayConstructorCall[]) MH_NON_INVOCABLE.invoke(8);
     }
 
     @Benchmark
     public Object instanceNonInvocableConstruct() throws Throwable {
-        return (String[]) mhNonInvocable.invoke(8);
+        return (MethodHandlesArrayConstructorCall[]) mhNonInvocable.invoke(8);
     }
 }
