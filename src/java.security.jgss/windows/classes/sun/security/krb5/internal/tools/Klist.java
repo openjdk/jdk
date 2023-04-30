@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,8 +86,9 @@ public class Klist {
         switch (klist.action) {
         case 'c':
             if (klist.name == null) {
-                klist.target = CredentialsCache.getInstance();
-                klist.name = CredentialsCache.cacheName();
+                CredentialsCache cc = CredentialsCache.getInstance();
+                klist.target = cc;
+                klist.name = cc.cacheName();
             } else
                 klist.target = CredentialsCache.getInstance(klist.name);
 
@@ -117,8 +118,9 @@ public class Klist {
                 klist.printHelp();
                 System.exit(-1);
             } else {
-                klist.target = CredentialsCache.getInstance();
-                klist.name = CredentialsCache.cacheName();
+                CredentialsCache cc = CredentialsCache.getInstance();
+                klist.target = cc;
+                klist.name = cc.cacheName();
                 if (klist.target != null) {
                     klist.displayCache();
                 } else {
@@ -359,7 +361,7 @@ public class Klist {
      * the day, mm is the minute within the hour,
      * ss is the second within the minute, zzz is the time zone,
      * and yyyy is the year.
-     * @param date the string form of Date object.
+     * @param kt the string form of Date object.
      */
     private String format(KerberosTime kt) {
         String date = kt.toDate().toString();
