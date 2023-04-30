@@ -3238,7 +3238,7 @@ public class SAX2DTM2 extends SAX2DTM
     /**
      * Return the next namespace node following the given base node.
      *
-     * @baseID The node identity of the base node, which can be an
+     * @param baseID The node identity of the base node, which can be an
      * element, attribute or namespace node.
      * @return The namespace node immediately following the base node.
      */

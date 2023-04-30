@@ -170,7 +170,7 @@ public final class AiffFileReader extends SunFileReader {
     /**
      * read_ieee_extended
      * Extended precision IEEE floating-point conversion routine.
-     * @argument DataInputStream
+     * @param dis
      * @return double
      * @throws IOException
      */

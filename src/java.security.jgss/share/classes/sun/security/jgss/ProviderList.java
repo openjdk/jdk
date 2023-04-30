@@ -259,7 +259,7 @@ public final class ProviderList {
      * implementation.
      * @param p the provider whose classloader must be used for
      * instantiating the desired MechanismFactory
-     * @ param className the name of the MechanismFactory class
+     * @param className the name of the MechanismFactory class
      * @throws GSSException If some error occurs when trying to
      * instantiate this MechanismFactory.
      */

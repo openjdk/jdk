@@ -79,7 +79,7 @@ public class ManifestDigester {
      * @param offset should point to the starting offset with in the
      * raw bytes of the next section.
      *
-     * @pos set by
+     * @param pos set by
      *
      * @return false if end of bytes has been reached, otherwise returns
      *          true

@@ -119,7 +119,7 @@ abstract class AbstractMidiDevice implements MidiDevice, ReferenceCountingDevice
      * these objects is necessary to be able to decide later (when it comes to closing) if
      * R/T's are ones that opened the device implicitly.
      *
-     * @object The Receiver or Transmitter instance that triggered this implicit open.
+     * @param object The Receiver or Transmitter instance that triggered this implicit open.
      */
     private void openInternal(Object object) throws MidiUnavailableException {
         synchronized(this) {

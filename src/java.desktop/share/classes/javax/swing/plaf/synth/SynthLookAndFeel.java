@@ -1009,7 +1009,7 @@ public class SynthLookAndFeel extends BasicLookAndFeel {
          * the specified component differ between focused and unfocused states.
          * If the color differ the component will then repaint itself.
          *
-         * @comp the component to check
+         * @param comp the component to check
          */
         private void repaintIfBackgroundsDiffer(JComponent comp) {
             ComponentUI ui = comp.getUI();

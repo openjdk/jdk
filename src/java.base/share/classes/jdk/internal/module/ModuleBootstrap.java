@@ -829,7 +829,7 @@ public final class ModuleBootstrap {
      * --patch-modules options that are encoded in system properties.
      *
      * @param prefix the system property prefix
-     * @praam regex the regex for splitting the RHS of the option value
+     * @param regex the regex for splitting the RHS of the option value
      */
     private static Map<String, List<String>> decode(String prefix,
                                                     String regex,

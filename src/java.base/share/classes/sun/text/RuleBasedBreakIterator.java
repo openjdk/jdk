@@ -734,7 +734,7 @@ public class RuleBasedBreakIterator extends BreakIterator {
     /**
      * Sets the iterator to refer to the first boundary position following
      * the specified position.
-     * @offset The position from which to begin searching for a break position.
+     * @param offset The position from which to begin searching for a break position.
      * @return The position of the first break after the current position.
      */
     @Override
@@ -778,7 +778,7 @@ public class RuleBasedBreakIterator extends BreakIterator {
     /**
      * Sets the iterator to refer to the last boundary position before the
      * specified position.
-     * @offset The position to begin searching for a break from.
+     * @param offset The position to begin searching for a break from.
      * @return The position of the last boundary before the starting position.
      */
     @Override

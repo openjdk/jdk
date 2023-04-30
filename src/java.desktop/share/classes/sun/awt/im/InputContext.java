@@ -444,7 +444,7 @@ public class InputContext extends java.awt.im.InputContext
      * input method window.
      *
      * @param source the component losing the focus
-     * @isTemporary whether the focus change is temporary
+     * @param isTemporary whether the focus change is temporary
      */
     private void focusLost(Component source, boolean isTemporary) {
 

@@ -101,7 +101,7 @@ class CharacterIteratorFieldDelegate implements Format.FieldDelegate {
      * Returns an {@code AttributedCharacterIterator} that can be used
      * to iterate over the resulting formatted String.
      *
-     * @pararm string Result of formatting.
+     * @param string Result of formatting.
      */
     public AttributedCharacterIterator getIterator(String string) {
         // Add the last AttributedCharacterIterator if necessary

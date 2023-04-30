@@ -1614,7 +1614,7 @@ final class DOM3TreeWalker {
      * appropriate well-formedness error.
      *
      * @param data The contents of the comment node
-     * @parent The parent of the EntityReference Node
+     * @param parent The parent of the EntityReference Node
      */
     protected void isEntityReferneceWellFormed(EntityReference node) {
         // Is the EntityReference name a valid XML name

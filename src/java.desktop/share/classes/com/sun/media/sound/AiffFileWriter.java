@@ -390,8 +390,8 @@ public final class AiffFileWriter extends SunFileWriter {
 
     /**
      * Extended precision IEEE floating-point conversion routine.
-     * @argument DataOutputStream
-     * @argument double
+     * @param dos 
+     * @param f
      * @throws IOException
      */
     private void write_ieee_extended(DataOutputStream dos, float f) throws IOException {

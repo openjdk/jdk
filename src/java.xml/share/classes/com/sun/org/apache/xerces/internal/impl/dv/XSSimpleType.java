@@ -176,7 +176,7 @@ public interface XSSimpleType extends XSSimpleTypeDefinition {
      *          But Andy thinks XPATH potentially needs this compare() method.
      *
      * @param value1  the first value
-     * @prarm value2  the second value
+     * @param value2  the second value
      * @return        > 0 if value1 > value2
      *                = 0 if value1 == value2
      *                < = if value1 < value2

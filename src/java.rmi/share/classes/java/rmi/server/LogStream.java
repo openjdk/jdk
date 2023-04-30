@@ -63,7 +63,7 @@ public class LogStream extends PrintStream {
      * private, users must have a LogStream created through the "log"
      * method.
      * @param name string identifying messages from this log
-     * @out output stream that log messages will be sent to
+     * @param out output stream that log messages will be sent to
      * @since 1.1
      * @deprecated no replacement
      */

@@ -466,8 +466,8 @@ public class ReliableLog {
      * Generates a version filename prepended with the stable storage
      * directory path with the version number as a suffix.
      *
-     * @param name version file name
-     * @thisversion a version number
+     * @param prefix version file name prefix
+     * @param ver a version number
      */
     private String versionName(String prefix, int ver) {
         ver = (ver == 0) ? version : ver;
