@@ -25,13 +25,10 @@ package org.openjdk.bench.java.lang.invoke;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
-import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Scope;
-import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
-import org.openjdk.jmh.annotations.Warmup;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -64,6 +61,6 @@ public class MethodHandlesArrayConstructorColdStart {
 
     @Benchmark
     public MethodHandle testCreateNonInvocable() {
-        return MethodHandles.arrayConstructor(MethodHandlesArrayConstructor[].class);
+        return MethodHandles.arrayConstructor(MethodHandlesArrayConstructorColdStart[].class);
     }
 }

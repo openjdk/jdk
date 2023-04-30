@@ -28,7 +28,6 @@ import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
-import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
@@ -47,8 +46,8 @@ import java.util.concurrent.TimeUnit;
 @State(Scope.Thread)
 @Warmup(iterations = 5, time = 1, timeUnit = TimeUnit.SECONDS)
 @Measurement(iterations = 5, time = 1, timeUnit = TimeUnit.SECONDS)
-@Fork(3)
-public class MethodHandlesArrayConstructor {
+@Fork(1)
+public class MethodHandlesArrayConstructorCall {
 
     /*
      * Implementation notes:
@@ -58,16 +57,20 @@ public class MethodHandlesArrayConstructor {
      *     invocable, non-statically invocable, and they may present different
      */
 
-    private static final MethodHandle MH;
-    private static MethodHandle mh;
+    private static final MethodHandle MH_STRING;
+    private static final MethodHandle MH_NON_INVOCABLE;
+    private MethodHandle mh;
+    private MethodHandle mhNonInvocable;
 
     static {
-        MH = MethodHandles.arrayConstructor(String[].class);
+        MH_STRING = MethodHandles.arrayConstructor(String[].class);
+        MH_NON_INVOCABLE = MethodHandles.arrayConstructor(MethodHandlesArrayConstructorCall[].class);
     }
 
     @Setup
     public void setup() {
         mh = MethodHandles.arrayConstructor(String[].class);
+        mhNonInvocable = MethodHandles.arrayConstructor(MethodHandlesArrayConstructorCall[].class);
     }
 
     @Benchmark
@@ -77,11 +80,21 @@ public class MethodHandlesArrayConstructor {
 
     @Benchmark
     public Object constantFoldConstruct() throws Throwable {
-        return (String[]) MH.invoke(8);
+        return (String[]) MH_STRING.invoke(8);
     }
 
     @Benchmark
     public Object instanceConstruct() throws Throwable {
         return (String[]) mh.invoke(8);
+    }
+
+    @Benchmark
+    public Object constantFoldNonInvocableConstruct() throws Throwable {
+        return (String[]) MH_NON_INVOCABLE.invoke(8);
+    }
+
+    @Benchmark
+    public Object instanceNonInvocableConstruct() throws Throwable {
+        return (String[]) mhNonInvocable.invoke(8);
     }
 }
