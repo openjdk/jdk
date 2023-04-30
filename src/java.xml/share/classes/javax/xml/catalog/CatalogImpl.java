@@ -227,7 +227,7 @@ class CatalogImpl extends GroupEntry implements Catalog {
     /**
      * Gets the parent of this catalog.
      *
-     * @returns The parent catalog
+     * @return The parent catalog
      */
     public Catalog getParent() {
         return this.parent;

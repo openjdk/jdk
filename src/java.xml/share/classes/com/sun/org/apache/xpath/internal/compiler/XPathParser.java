@@ -834,8 +834,7 @@ public class XPathParser
   }
 
   /**
-   *
-   * @returns an Object which is either a String, a Number, a Boolean, or a vector
+   * Returns an Object which is either a String, a Number, a Boolean, or a vector
    * of nodes.
    *
    * EqualityExpr  ::=  RelationalExpr
@@ -891,8 +890,7 @@ public class XPathParser
   }
 
   /**
-   * .
-   * @returns an Object which is either a String, a Number, a Boolean, or a vector
+   * Returns an Object which is either a String, a Number, a Boolean, or a vector
    * of nodes.
    *
    * RelationalExpr  ::=  AdditiveExpr
@@ -1614,7 +1612,7 @@ public class XPathParser
    * | RelativeLocationPath '/' Step
    * | AbbreviatedRelativeLocationPath
    *
-   * @returns true if, and only if, a RelativeLocationPath was matched
+   * @return true if, and only if, a RelativeLocationPath was matched
    *
    * @throws TransformerException
    */
@@ -1646,7 +1644,7 @@ public class XPathParser
    * Step    ::=    Basis Predicate
    * | AbbreviatedStep
    *
-   * @returns false if step was empty (or only a '/'); true, otherwise
+   * @return false if step was empty (or only a '/'); true, otherwise
    *
    * @throws TransformerException
    */

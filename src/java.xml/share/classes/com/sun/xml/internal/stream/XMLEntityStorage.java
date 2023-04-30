@@ -249,7 +249,7 @@ public class XMLEntityStorage {
      * Checks whether an entity given by name is external.
      *
      * @param entityName The name of the entity to check.
-     * @returns True if the entity is external, false otherwise
+     * @return true if the entity is external; false otherwise
      *           (including when the entity is not declared).
      */
     public boolean isExternalEntity(String entityName) {
@@ -266,7 +266,7 @@ public class XMLEntityStorage {
      * // in the external subset.
      *
      * @param entityName The name of the entity to check.
-     * @returns True if the entity was declared in the external subset, false otherwise
+     * @return true if the entity was declared in the external subset; false otherwise
      *           (including when the entity is not declared).
      */
     public boolean isEntityDeclInExternalSubset(String entityName) {
@@ -319,7 +319,7 @@ public class XMLEntityStorage {
      * Checks whether an entity given by name is unparsed.
      *
      * @param entityName The name of the entity to check.
-     * @returns True if the entity is unparsed, false otherwise
+     * @return true if the entity is unparsed; false otherwise
      *          (including when the entity is not declared).
      */
     public boolean isUnparsedEntity(String entityName) {
@@ -335,7 +335,7 @@ public class XMLEntityStorage {
      * Checks whether an entity given by name is declared.
      *
      * @param entityName The name of the entity to check.
-     * @returns True if the entity is declared, false otherwise.
+     * @return true if the entity is declared; false otherwise.
      */
     public boolean isDeclaredEntity(String entityName) {
 

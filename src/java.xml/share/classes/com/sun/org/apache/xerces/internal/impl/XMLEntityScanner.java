@@ -1675,7 +1675,7 @@ public class XMLEntityScanner implements XMLLocator  {
      * @param notify       Determine whether to notify listeners of
      *                     the event
      *
-     * @returns Returns true if the entity changed as a result of this
+     * @return Returns true if the entity changed as a result of this
      *          load operation.
      */
     final boolean load(int offset, boolean changeEntity, boolean notify)
@@ -2124,7 +2124,7 @@ public class XMLEntityScanner implements XMLLocator  {
      * Further, it may put them in a cache for later process as needed, for example
      * as specified in 3.3.3 Attribute-Value Normalization.
      *
-     * @ImplNote this method does not limit to processing external parsed entities
+     * @implNote this method does not limit to processing external parsed entities
      * as 2.11 required. It handles all cases where newlines need to be processed.
      *
      * @param buffer the current content buffer
