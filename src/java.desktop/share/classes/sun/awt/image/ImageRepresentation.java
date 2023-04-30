@@ -109,8 +109,7 @@ public class ImageRepresentation extends ImageWatched implements ImageConsumer
             src.checkSecurity(null, false);
         }
         int missinginfo = flags & ~availinfo;
-        if ((availinfo & (ImageObserver.ERROR)) == 0
-            && missinginfo != 0) {
+        if ((availinfo & (ImageObserver.ERROR)) == 0 && missinginfo != 0) {
             numWaiters++;
             try {
                 startProduction();
