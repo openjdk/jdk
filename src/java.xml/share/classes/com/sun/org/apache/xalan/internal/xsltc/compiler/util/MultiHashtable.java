@@ -46,7 +46,7 @@ public final class MultiHashtable<K,V> {
      * @param key key with which the specified value is to be associated
      * @param value value to be added to a set that is associated with the specified key
      * @return the set that is associated with the specified key.
-     * @throw UnsupportedOperationException is the MultiHashtable is not modifiable.
+     * @throws UnsupportedOperationException is the MultiHashtable is not modifiable.
      */
     public Set<V> put(K key, V value) {
         if (modifiable) {

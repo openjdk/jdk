@@ -85,7 +85,7 @@ public final class Graph<T> {
      * Returns a new Graph after transitive reduction.  All edges in
      * the given g takes precedence over this graph.
      *
-     * @throw IllegalArgumentException g must be a subgraph this graph
+     * @throws IllegalArgumentException g must be a subgraph this graph
      */
     public Graph<T> reduce(Graph<T> g) {
         boolean subgraph = nodes.containsAll(g.nodes) &&

@@ -286,7 +286,7 @@ public final class BytecodeFrame extends BytecodePosition {
      *
      * @param i the local variable to query
      * @return the kind of local variable {@code i}
-     * @throw {@link IndexOutOfBoundsException} if {@code i < 0 || i >= this.numLocals}
+     * @throws {@link IndexOutOfBoundsException} if {@code i < 0 || i >= this.numLocals}
      */
     public JavaKind getLocalValueKind(int i) {
         Objects.checkIndex(i, numLocals);
@@ -298,7 +298,7 @@ public final class BytecodeFrame extends BytecodePosition {
      *
      * @param i the local variable to query
      * @return the kind of stack slot {@code i}
-     * @throw {@link IndexOutOfBoundsException} if {@code i < 0 || i >= this.numStack}
+     * @throws {@link IndexOutOfBoundsException} if {@code i < 0 || i >= this.numStack}
      */
     public JavaKind getStackValueKind(int i) {
         Objects.checkIndex(i, numStack);
@@ -310,7 +310,7 @@ public final class BytecodeFrame extends BytecodePosition {
      *
      * @param i the local variable index
      * @return the value that can be used to reconstruct the local's current value
-     * @throw {@link IndexOutOfBoundsException} if {@code i < 0 || i >= this.numLocals}
+     * @throws {@link IndexOutOfBoundsException} if {@code i < 0 || i >= this.numLocals}
      */
     public JavaValue getLocalValue(int i) {
         Objects.checkIndex(i, numLocals);
@@ -322,7 +322,7 @@ public final class BytecodeFrame extends BytecodePosition {
      *
      * @param i the stack index
      * @return the value that can be used to reconstruct the stack slot's current value
-     * @throw {@link IndexOutOfBoundsException} if {@code i < 0 || i >= this.numStack}
+     * @throws {@link IndexOutOfBoundsException} if {@code i < 0 || i >= this.numStack}
      */
     public JavaValue getStackValue(int i) {
         Objects.checkIndex(i, numStack);
@@ -334,7 +334,7 @@ public final class BytecodeFrame extends BytecodePosition {
      *
      * @param i the lock index
      * @return the value that can be used to reconstruct the lock's current value
-     * @throw {@link IndexOutOfBoundsException} if {@code i < 0 || i >= this.numLocks}
+     * @throws {@link IndexOutOfBoundsException} if {@code i < 0 || i >= this.numLocks}
      */
     public JavaValue getLockValue(int i) {
         Objects.checkIndex(i, numLocks);
