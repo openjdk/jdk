@@ -141,7 +141,7 @@ public abstract class LightweightFrame extends Frame {
      *
      * @return the scale factor
      * @see #notifyDisplayChanged(int)
-     * @Deprecated replaced by {@link #getScaleFactorX()} and
+     * @deprecated replaced by {@link #getScaleFactorX()} and
      * {@link #getScaleFactorY}
      */
     @Deprecated(since = "9")
@@ -171,7 +171,7 @@ public abstract class LightweightFrame extends Frame {
      * Called when display of the hosted frame is changed.
      *
      * @param scaleFactor the scale factor
-     * @Deprecated replaced by {@link #notifyDisplayChanged(double, double)}
+     * @deprecated replaced by {@link #notifyDisplayChanged(double, double)}
      */
     @Deprecated(since = "9")
     public abstract void notifyDisplayChanged(int scaleFactor);

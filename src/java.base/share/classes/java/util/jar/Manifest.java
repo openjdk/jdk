@@ -217,7 +217,7 @@ public class Manifest implements Cloneable {
     /**
      * Adds line breaks to enforce a maximum of 72 bytes per line.
      *
-     * @deprecation Replaced with {@link #println72}.
+     * @deprecated Replaced with {@link #println72}.
      */
     @Deprecated(since = "13")
     static void make72Safe(StringBuffer line) {

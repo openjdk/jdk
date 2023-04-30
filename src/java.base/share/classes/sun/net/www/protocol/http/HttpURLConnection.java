@@ -940,7 +940,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
     }
 
     /**
-     * @deprecated.  Use java.net.Authenticator.setDefault() instead.
+     * @deprecated  Use java.net.Authenticator.setDefault() instead.
      */
     @Deprecated
     public static void setDefaultAuthenticator(HttpAuthenticator a) {
