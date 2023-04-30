@@ -1359,7 +1359,7 @@ public final class Unsafe {
      * by writing it to a <em>volatile</em> field, or storing it into a <em>final</em> field in constructor,
      * or issuing a {@link #storeFence} before publishing the reference.
      * <p>
-     * @implnote This method can only allocate primitive arrays, to avoid garbage reference
+     * @implNote This method can only allocate primitive arrays, to avoid garbage reference
      * elements that could break heap integrity.
      *
      * @param componentType array component type to allocate

@@ -1162,7 +1162,7 @@ abstract class ChaCha20Cipher extends CipherSpi {
      * @param dLen the length of the application data.
      * @param buf the buffer to write the two lengths into.
      *
-     * @note it is the caller's responsibility to provide an array large
+     * @implNote it is the caller's responsibility to provide an array large
      *      enough to hold the two longs.
      */
     private void authWriteLengths(long aLen, long dLen, byte[] buf) {

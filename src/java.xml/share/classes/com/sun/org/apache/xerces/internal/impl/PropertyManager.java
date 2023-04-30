@@ -111,7 +111,7 @@ public class PropertyManager {
     /**
      * Initializes reader properties.
      *
-     * @implNote: StAX defined namespace rather than Xerces' should be used.
+     * @implNote StAX defined namespace rather than Xerces' should be used.
      */
     private void initConfigurableReaderProperties() {
         //spec default values
