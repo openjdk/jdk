@@ -84,15 +84,21 @@ abstract class MethodHandleImpl {
         mh = ArrayAccessor.getAccessor(arrayClass, access);
         MethodType correctType = ArrayAccessor.correctType(arrayClass, access);
         if (mh.type() != correctType) {
-            assert(mh.type().parameterType(0) == Object[].class);
+            assert !arrayClass.componentType().isPrimitive() : arrayClass.getName();
+            /* if access != CONSTRUCT */ assert(access == ArrayAccess.CONSTRUCT || mh.type().parameterType(0) == Object[].class);
             /* if access == SET */ assert(access != ArrayAccess.SET || mh.type().parameterType(2) == Object.class);
             /* if access == GET */ assert(access != ArrayAccess.GET ||
                     (mh.type().returnType() == Object.class &&
                      correctType.parameterType(0).getComponentType() == correctType.returnType()));
+            /* if access == CONSTRUCT */ assert access != ArrayAccess.CONSTRUCT || mh.type().returnType() == Object.class;
+
             // safe to view non-strictly, because element type follows from array type
             mh = mh.viewAsType(correctType, false);
         }
-        mh = makeIntrinsic(mh, ArrayAccess.intrinsic(access));
+
+        var intrinsic = ArrayAccess.intrinsic(arrayClass, access);
+        if (intrinsic != Intrinsic.NONE)
+            mh = makeIntrinsic(mh, intrinsic);
         // Atomically update accessor cache.
         synchronized(cache) {
             if (cache[cacheIndex] == null) {
@@ -106,7 +112,7 @@ abstract class MethodHandleImpl {
     }
 
     enum ArrayAccess {
-        GET, SET, LENGTH;
+        GET, SET, LENGTH, CONSTRUCT;
 
         // As ArrayAccess and ArrayAccessor have a circular dependency, the ArrayAccess properties cannot be stored in
         // final fields.
@@ -116,6 +122,7 @@ abstract class MethodHandleImpl {
                 case GET    -> "getElement";
                 case SET    -> "setElement";
                 case LENGTH -> "length";
+                case CONSTRUCT -> "createArray";
                 default -> throw unmatchedArrayAccess(a);
             };
         }
@@ -125,6 +132,7 @@ abstract class MethodHandleImpl {
                 case GET    -> ArrayAccessor.OBJECT_ARRAY_GETTER;
                 case SET    -> ArrayAccessor.OBJECT_ARRAY_SETTER;
                 case LENGTH -> ArrayAccessor.OBJECT_ARRAY_LENGTH;
+                case CONSTRUCT -> ArrayAccessor.OBJECT_ARRAY_CONSTRUCTOR;
                 default -> throw unmatchedArrayAccess(a);
             };
         }
@@ -134,15 +142,18 @@ abstract class MethodHandleImpl {
                 case GET    -> ArrayAccessor.GETTER_INDEX;
                 case SET    -> ArrayAccessor.SETTER_INDEX;
                 case LENGTH -> ArrayAccessor.LENGTH_INDEX;
+                case CONSTRUCT -> ArrayAccessor.CONSTRUCTOR_INDEX;
                 default -> throw unmatchedArrayAccess(a);
             };
         }
 
-        static Intrinsic intrinsic(ArrayAccess a) {
+        static Intrinsic intrinsic(Class<?> arrayClass, ArrayAccess a) {
             return switch (a) {
                 case GET    -> Intrinsic.ARRAY_LOAD;
                 case SET    -> Intrinsic.ARRAY_STORE;
                 case LENGTH -> Intrinsic.ARRAY_LENGTH;
+                case CONSTRUCT -> InvokerBytecodeGenerator.isStaticallyNameable(arrayClass)
+                        ? Intrinsic.ARRAY_CONSTRUCTOR : Intrinsic.NONE;
                 default -> throw unmatchedArrayAccess(a);
             };
         }
@@ -154,7 +165,7 @@ abstract class MethodHandleImpl {
 
     static final class ArrayAccessor {
         /// Support for array element and length access
-        static final int GETTER_INDEX = 0, SETTER_INDEX = 1, LENGTH_INDEX = 2, INDEX_LIMIT = 3;
+        static final int GETTER_INDEX = 0, SETTER_INDEX = 1, LENGTH_INDEX = 2, CONSTRUCTOR_INDEX = 3, INDEX_LIMIT = 4;
         static final ClassValue<MethodHandle[]> TYPED_ACCESSORS
                 = new ClassValue<MethodHandle[]>() {
                     @Override
@@ -162,16 +173,18 @@ abstract class MethodHandleImpl {
                         return new MethodHandle[INDEX_LIMIT];
                     }
                 };
-        static final MethodHandle OBJECT_ARRAY_GETTER, OBJECT_ARRAY_SETTER, OBJECT_ARRAY_LENGTH;
+        static final MethodHandle OBJECT_ARRAY_GETTER, OBJECT_ARRAY_SETTER, OBJECT_ARRAY_LENGTH, OBJECT_ARRAY_CONSTRUCTOR;
         static {
             MethodHandle[] cache = TYPED_ACCESSORS.get(Object[].class);
             cache[GETTER_INDEX] = OBJECT_ARRAY_GETTER = makeIntrinsic(getAccessor(Object[].class, ArrayAccess.GET),    Intrinsic.ARRAY_LOAD);
             cache[SETTER_INDEX] = OBJECT_ARRAY_SETTER = makeIntrinsic(getAccessor(Object[].class, ArrayAccess.SET),    Intrinsic.ARRAY_STORE);
             cache[LENGTH_INDEX] = OBJECT_ARRAY_LENGTH = makeIntrinsic(getAccessor(Object[].class, ArrayAccess.LENGTH), Intrinsic.ARRAY_LENGTH);
+            cache[CONSTRUCTOR_INDEX] = OBJECT_ARRAY_CONSTRUCTOR = makeIntrinsic(getAccessor(Object[].class, ArrayAccess.CONSTRUCT), Intrinsic.ARRAY_CONSTRUCTOR);
 
             assert(InvokerBytecodeGenerator.isStaticallyInvocable(ArrayAccessor.OBJECT_ARRAY_GETTER.internalMemberName()));
             assert(InvokerBytecodeGenerator.isStaticallyInvocable(ArrayAccessor.OBJECT_ARRAY_SETTER.internalMemberName()));
             assert(InvokerBytecodeGenerator.isStaticallyInvocable(ArrayAccessor.OBJECT_ARRAY_LENGTH.internalMemberName()));
+            assert(InvokerBytecodeGenerator.isStaticallyInvocable(ArrayAccessor.OBJECT_ARRAY_CONSTRUCTOR.internalMemberName()));
         }
 
         static int     getElementI(int[]     a, int i)            { return              a[i]; }
@@ -204,15 +217,25 @@ abstract class MethodHandleImpl {
         static int     lengthC(char[]    a)                       { return a.length; }
         static int     lengthL(Object[]  a)                       { return a.length; }
 
-        static String name(Class<?> arrayClass, ArrayAccess access) {
-            Class<?> elemClass = arrayClass.getComponentType();
-            if (elemClass == null)  throw newIllegalArgumentException("not an array", arrayClass);
+        static int[]     createArrayI(int len)                    { return new int[len]; }
+        static long[]    createArrayJ(int len)                    { return new long[len]; }
+        static float[]   createArrayF(int len)                    { return new float[len]; }
+        static double[]  createArrayD(int len)                    { return new double[len]; }
+        static boolean[] createArrayZ(int len)                    { return new boolean[len]; }
+        static byte[]    createArrayB(int len)                    { return new byte[len]; }
+        static short[]   createArrayS(int len)                    { return new short[len]; }
+        static char[]    createArrayC(int len)                    { return new char[len]; }
+        static Object[]  createArrayL(int len)                    { return new Object[len]; }
+
+        private static String name(Class<?> elemClass, ArrayAccess access) {
+            assert access != ArrayAccess.CONSTRUCT || elemClass.isPrimitive() || elemClass == Object.class;
             return ArrayAccess.opName(access) + Wrapper.basicTypeChar(elemClass);
         }
-        static MethodType type(Class<?> arrayClass, ArrayAccess access) {
-            Class<?> elemClass = arrayClass.getComponentType();
+
+        private static MethodType type(Class<?> elemClass, Class<?> arrayClass, ArrayAccess access) {
             Class<?> arrayArgClass = arrayClass;
             if (!elemClass.isPrimitive()) {
+                assert access != ArrayAccess.CONSTRUCT || arrayArgClass == Object[].class;
                 arrayArgClass = Object[].class;
                 elemClass = Object.class;
             }
@@ -220,6 +243,7 @@ abstract class MethodHandleImpl {
                 case GET    -> MethodType.methodType(elemClass, arrayArgClass, int.class);
                 case SET    -> MethodType.methodType(void.class, arrayArgClass, int.class, elemClass);
                 case LENGTH -> MethodType.methodType(int.class, arrayArgClass);
+                case CONSTRUCT -> MethodType.methodType(arrayArgClass, int.class);
                 default -> throw unmatchedArrayAccess(access);
             };
         }
@@ -229,17 +253,33 @@ abstract class MethodHandleImpl {
                 case GET    -> MethodType.methodType(elemClass, arrayClass, int.class);
                 case SET    -> MethodType.methodType(void.class, arrayClass, int.class, elemClass);
                 case LENGTH -> MethodType.methodType(int.class, arrayClass);
+                case CONSTRUCT -> MethodType.methodType(arrayClass, int.class);
                 default -> throw unmatchedArrayAccess(access);
             };
         }
         static MethodHandle getAccessor(Class<?> arrayClass, ArrayAccess access) {
-            String     name = name(arrayClass, access);
-            MethodType type = type(arrayClass, access);
+            var componentType = arrayClass.componentType();
+            if (componentType == null)
+                throw newIllegalArgumentException("not an array", arrayClass);
+
+            if (access == ArrayAccess.CONSTRUCT && !componentType.isPrimitive() && componentType != Object.class) {
+                return getReferenceArrayConstructor(componentType);
+            }
+
+            String     name = name(componentType, access);
+            MethodType type = type(componentType, arrayClass, access);
             try {
                 return IMPL_LOOKUP.findStatic(ArrayAccessor.class, name, type);
             } catch (ReflectiveOperationException ex) {
                 throw uncaughtException(ex);
             }
+        }
+
+        static MethodHandle getReferenceArrayConstructor(Class<?> componentType) {
+            // Better alternative to spinning methods with componentType as constants
+            // and avoids hidden class issue
+            return MethodHandleImpl.getConstantHandle(MethodHandleImpl.MH_Array_newInstance).
+                    bindTo(componentType);
         }
     }
 
@@ -1357,6 +1397,7 @@ abstract class MethodHandleImpl {
         ARRAY_LOAD,
         ARRAY_STORE,
         ARRAY_LENGTH,
+        ARRAY_CONSTRUCTOR, // requires component type to be in boot class loader
         IDENTITY,
         ZERO,
         NONE // no intrinsic associated

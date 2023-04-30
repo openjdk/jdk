@@ -4326,12 +4326,7 @@ return mh1;
      * @since 9
      */
     public static MethodHandle arrayConstructor(Class<?> arrayClass) throws IllegalArgumentException {
-        if (!arrayClass.isArray()) {
-            throw newIllegalArgumentException("not an array class: " + arrayClass.getName());
-        }
-        MethodHandle ani = MethodHandleImpl.getConstantHandle(MethodHandleImpl.MH_Array_newInstance).
-                bindTo(arrayClass.getComponentType());
-        return ani.asType(ani.type().changeReturnType(arrayClass));
+        return MethodHandleImpl.makeArrayElementAccessor(arrayClass, MethodHandleImpl.ArrayAccess.CONSTRUCT);
     }
 
     /**

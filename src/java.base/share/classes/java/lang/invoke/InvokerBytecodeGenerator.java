@@ -841,6 +841,9 @@ class InvokerBytecodeGenerator {
                 case ARRAY_LENGTH:
                     emitArrayLength(name);
                     continue;
+                case ARRAY_CONSTRUCTOR:
+                    emitArrayConstructor(name);
+                    continue;
                 case IDENTITY:
                     assert(name.arguments.length == 1);
                     emitPushArguments(name, 0);
@@ -889,6 +892,17 @@ class InvokerBytecodeGenerator {
     static final class BytecodeGenerationException extends RuntimeException {
         BytecodeGenerationException(Exception cause) {
             super(cause);
+        }
+    }
+
+    void emitArrayConstructor(Name name) {
+        var componentType = name.function.methodType().returnType().componentType();
+        var wrapper = Wrapper.forBasicType(componentType);
+        if (wrapper != Wrapper.OBJECT) {
+            mv.visitIntInsn(Opcodes.NEWARRAY, arrayTypeCode(wrapper));
+        } else {
+            assert isStaticallyNameable(componentType);
+            mv.visitTypeInsn(Opcodes.ANEWARRAY, getInternalName(componentType));
         }
     }
 
