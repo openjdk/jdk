@@ -1944,7 +1944,6 @@ const bool Matcher::match_rule_supported_vector_masked(int opcode, int vlen, Bas
     case Op_URShiftVI:
     case Op_URShiftVL:
     case Op_VectorBlend:
-    case Op_MaskAll:
     case Op_VectorReinterpret:
       break;
     case Op_LoadVector:

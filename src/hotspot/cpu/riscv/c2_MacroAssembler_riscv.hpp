@@ -187,23 +187,23 @@
 
  void minmax_fp_v(VectorRegister dst,
                   VectorRegister src1, VectorRegister src2,
-                  bool is_double, bool is_min, int length_in_bytes);
+                  bool is_double, bool is_min, int vector_length);
 
  void reduce_minmax_fp_v(FloatRegister dst,
                          FloatRegister src1, VectorRegister src2,
                          VectorRegister tmp1, VectorRegister tmp2,
-                         bool is_double, bool is_min, int length_in_bytes);
+                         bool is_double, bool is_min, int vector_length);
 
  void rvv_reduce_integral(Register dst, VectorRegister tmp,
                           Register src1, VectorRegister src2,
-                          BasicType bt, int opc, int length_in_bytes);
+                          BasicType bt, int opc, int vector_length);
 
- void rvv_vsetvli(BasicType bt, int length_in_bytes, LMUL vlmul = Assembler::m1, Register tmp = t0);
+ void rvv_vsetvli(BasicType bt, int vector_length, LMUL vlmul = Assembler::m1, Register tmp = t0);
 
- void compare_integral_v(VectorRegister dst, BasicType bt, int length_in_bytes,
+ void compare_integral_v(VectorRegister dst, BasicType bt, int vector_length,
                          VectorRegister src1, VectorRegister src2, int cond, VectorMask vm = Assembler::unmasked);
 
- void compare_floating_point_v(VectorRegister dst, BasicType bt, int length_in_bytes,
+ void compare_floating_point_v(VectorRegister dst, BasicType bt, int vector_length,
                                VectorRegister src1, VectorRegister src2, VectorRegister tmp1, VectorRegister tmp2,
                                VectorRegister vmask, int cond, VectorMask vm = Assembler::unmasked);
 
@@ -230,10 +230,10 @@
     }
   }
 
-  void vector_integer_extend(VectorRegister dst, BasicType dst_bt, int length_in_bytes,
+  void vector_integer_extend(VectorRegister dst, BasicType dst_bt, int vector_length,
                              VectorRegister src, BasicType src_bt);
 
-  void vector_integer_narrow(VectorRegister dst, BasicType dst_bt, int length_in_bytes,
+  void vector_integer_narrow(VectorRegister dst, BasicType dst_bt, int vector_length,
                              VectorRegister src, BasicType src_bt, VectorRegister tmp);
 
 #endif // CPU_RISCV_C2_MACROASSEMBLER_RISCV_HPP
