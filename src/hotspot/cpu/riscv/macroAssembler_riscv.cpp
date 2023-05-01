@@ -4061,24 +4061,24 @@ void MacroAssembler::zero_dcache_blocks(Register base, Register cnt, Register tm
   bge(cnt, tmp1, loop);
 }
 
-#define FCVT_SAFE(FLOATCVT, FLOATEQ)                                                             \
-void MacroAssembler:: FLOATCVT##_safe(Register dst, FloatRegister src, Register tmp) {           \
-  Label L_Okay;                                                                                  \
-  fscsr(zr);                                                                                     \
-  FLOATCVT(dst, src);                                                                            \
-  frcsr(tmp);                                                                                    \
-  andi(tmp, tmp, 0x1E);                                                                          \
-  beqz(tmp, L_Okay);                                                                             \
-  FLOATEQ(tmp, src, src);                                                                        \
-  bnez(tmp, L_Okay);                                                                             \
-  mv(dst, zr);                                                                                   \
-  bind(L_Okay);                                                                                  \
+#define FCVT_SAFE(FLOATCVT, IS_DOUBLE)                                                    \
+void MacroAssembler::FLOATCVT##_safe(Register dst, FloatRegister src, Register tmp) {     \
+  Label do_convert, done;                                                                 \
+  IS_DOUBLE ? fclass_d(tmp, src) : fclass_s(tmp, src);                                    \
+  /* check if src is NaN */                                                               \
+  andi(tmp, tmp, 0b1100000000);                                                           \
+  beqz(tmp, do_convert);                                                                  \
+  mv(dst, zr);                                                                            \
+  j(done);                                                                                \
+  bind(do_convert);                                                                       \
+  FLOATCVT(dst, src);                                                                     \
+  bind(done);                                                                             \
 }
 
-FCVT_SAFE(fcvt_w_s, feq_s)
-FCVT_SAFE(fcvt_l_s, feq_s)
-FCVT_SAFE(fcvt_w_d, feq_d)
-FCVT_SAFE(fcvt_l_d, feq_d)
+FCVT_SAFE(fcvt_w_s, false);
+FCVT_SAFE(fcvt_l_s, false);
+FCVT_SAFE(fcvt_w_d, true);
+FCVT_SAFE(fcvt_l_d, true);
 
 #undef FCVT_SAFE
 
