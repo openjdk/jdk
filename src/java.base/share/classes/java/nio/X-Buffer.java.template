@@ -59,8 +59,13 @@ import jdk.internal.util.ArraysSupport;
  *
  *   <li><p> Absolute and relative {@link #put($type$[]) <i>bulk put</i>}
  *   methods that transfer contiguous sequences of $type$s from $a$
- *   $type$ array{#if[char]?, a string,} or some other $type$
- *   buffer into this buffer;</p></li>
+ *   $type$ array{#if[char]?, a string, a <code>CharSequence</code>,}
+ *   or some other $type$ buffer into this buffer{#if[char]?,}{#if[!char]?;}
+#if[char]
+ *   with relative bulk put capability for {@linkplain CharSequence} sources
+ *   provided in the form of the
+ *   {@linkplain #append(CharSequence,int,int) <i>append</i>} methods;
+#end[char]
  *
 #if[byte]
  *
@@ -1445,6 +1450,97 @@ public abstract sealed class $Type$Buffer
      */
     public final $Type$Buffer put(String src) {
         return put(src, 0, src.length());
+    }
+
+    /**
+     * Absolute bulk <i>put</i> method&nbsp;&nbsp;<i>(optional operation)</i>.
+     *
+     * <p> This method transfers $type$s from the given
+     * {@linkplain CharSequence} into this buffer.  If there are more $type$s
+     * to be copied from the {@code CharSequence} than remain in this buffer,
+     * that is, if
+     * <code>end&nbsp;-&nbsp;start</code>&nbsp;{@code >}&nbsp;
+     * {@code limit()}&nbsp;-&nbsp;{@code index},
+     * then no $type$s are transferred and a {@link BufferOverflowException}
+     * is thrown.
+     *
+     * <p> Otherwise, this method copies
+     * <i>n</i>&nbsp;=&nbsp;{@code end}&nbsp;-&nbsp;{@code start} $type$s
+     * from the given {@code CharSequence} into this buffer, starting at the
+     * given {@code start} index and at the given {@code index} in this buffer.
+     * The position of this buffer is unchanged.
+     *
+     * <p> In other words, an invocation of this method of the form
+     * <code>dst.put(index,&nbsp;csq,&nbsp;start,&nbsp;end)</code>
+     * has exactly the same effect as the loop
+     *
+     * <pre>{@code
+     *     for (int i = start, j = index; i < end; i++, j++)
+     *         dst.put(j, csq.charAt(i));
+     * }</pre>
+     *
+     * except that it first checks that there is sufficient space in this
+     * buffer and it is potentially much more efficient.
+     *
+     * @apiNote
+     * Unlike the other four-parameter absolute bulk put methods in this class,
+     * this method:
+     * <ul>
+     * <li>defines the range of characters to be read from the source in terms
+     * of the half-open interval {@code [start,}&nbsp;{@code  end)} instead of
+     * an {@code offset} and a {@code length};</li>
+     * <li>throws a {@code BufferOverflowException} instead of an
+     * {@code IndexOutOfBoundsException} for the condition
+     * {@code index}&nbsp;{@code +}&nbsp;{@code end}&nbsp;{@code -}&nbsp;
+     * {@code start}&nbsp;{@code >}&nbsp;{@code limit()}.</li>
+     * </ul>
+     *
+     * @param  index
+     *         The index in this buffer at which the first char will be written;
+     *         must be non-negative and less than {@code limit()}
+     *
+     * @param  csq
+     *         The {@code CharSequence} from which $type$s are to be read
+     *
+     * @param  start
+     *         The offset within the {@code CharSequence} of the first $type$
+     *         to be read; must be non-negative and no larger than
+     *         {@code csq.length()}
+     *
+     * @param  end
+     *         The offset within the {@code CharSequence} of the last $type$
+     *         to be read, plus one; must be non-negative and no larger than
+     *         {@code csq.length()}
+     *
+     * @return  This buffer
+     *
+     * @throws  BufferOverflowException
+     *          If there is insufficient space in this buffer
+     *
+     * @throws  IndexOutOfBoundsException
+     *          If the preconditions on the {@code index}, {@code start},
+     *          and {@code end} parameters do not hold
+     *
+     * @throws  ReadOnlyBufferException
+     *          If this buffer is read-only
+     *
+     * @see #append(CharSequence,int,int)
+     * @see #put(int,$type$[],int,int)
+     * @see #put(int,$Type$Buffer,int,int)
+     * @since 21
+     */
+    public $Type$Buffer put(int index, CharSequence csq, int start, int end) {
+        Objects.checkFromToIndex(start, end, csq.length());
+        Objects.checkIndex(index, limit());
+        if (end - start > limit() - index)
+            throw new BufferOverflowException();
+        if (isReadOnly())
+            throw new ReadOnlyBufferException();
+
+        for (int i = start; i < end; i++)
+            this.put(index++, csq.charAt(i));
+
+        return this;
     }
 
 #end[char]
