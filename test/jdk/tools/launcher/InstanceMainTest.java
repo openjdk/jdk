@@ -26,9 +26,9 @@ import java.nio.file.Path;
 /**
  * @test
  * @summary test execution priority of main methods
- * @run main OnrampMainTest
+ * @run main InstanceMainTest
  */
-public class OnrampMainTest extends TestHelper {
+public class InstanceMainTest extends TestHelper {
 
     @Test
     public void testStaticMainArgs() throws Exception {
@@ -120,9 +120,25 @@ public class OnrampMainTest extends TestHelper {
             """);
     }
 
+    @Test
+    public void testSuperMain() throws Exception {
+        test("""
+           class MainClass extends SuperClass {
+                void main() {
+                   throw new AssertionError();
+               }
+           }
+           class SuperClass {
+               void main(String[] args) {
+               }
+           }
+           """);
+    }
+
     void test(String source) throws Exception {
         Files.writeString(Path.of("MainClass.java"), source);
-        var tr = doExec(javaCmd, "--enable-preview", "--source", "21", "MainClass.java");
+        var version = System.getProperty("java.specification.version");
+        var tr = doExec(javaCmd, "--enable-preview", "--source", version, "MainClass.java");
         if (!tr.isOK()) {
             System.out.println(tr);
             throw new AssertionError();
@@ -130,6 +146,6 @@ public class OnrampMainTest extends TestHelper {
     }
 
     public static void main(String... args) throws Exception {
-        new OnrampMainTest().run(args);
+        new InstanceMainTest().run(args);
     }
 }
