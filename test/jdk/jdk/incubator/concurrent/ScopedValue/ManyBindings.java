@@ -24,7 +24,6 @@
 /*
  * @test
  * @summary Stress test ScopedValue with many bindings and rebinings
- * @enablePreview
  * @modules jdk.incubator.concurrent
  * @library /test/lib
  * @key randomness

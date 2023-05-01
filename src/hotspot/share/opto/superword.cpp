@@ -36,6 +36,7 @@
 #include "opto/mulnode.hpp"
 #include "opto/opcodes.hpp"
 #include "opto/opaquenode.hpp"
+#include "opto/rootnode.hpp"
 #include "opto/superword.hpp"
 #include "opto/vectornode.hpp"
 #include "opto/movenode.hpp"
@@ -71,6 +72,7 @@ SuperWord::SuperWord(PhaseIdealLoop* phase) :
   _lpt(nullptr),                                            // loop tree node
   _lp(nullptr),                                             // CountedLoopNode
   _pre_loop_end(nullptr),                                   // Pre loop CountedLoopEndNode
+  _loop_reductions(arena()),                                // reduction nodes in the current loop
   _bb(nullptr),                                             // basic block
   _iv(nullptr),                                             // induction var
   _race_possible(false),                                    // cases where SDMU is true
@@ -110,7 +112,17 @@ bool SuperWord::transform_loop(IdealLoopTree* lpt, bool do_optimization) {
     return false; // skip malformed counted loop
   }
 
-  if (cl->is_rce_post_loop() && cl->is_reduction_loop()) {
+  // Initialize simple data used by reduction marking early.
+  set_lpt(lpt);
+  set_lp(cl);
+  // For now, define one block which is the entire loop body.
+  set_bb(cl);
+
+  if (SuperWordReductions) {
+    mark_reductions();
+  }
+
+  if (cl->is_rce_post_loop() && is_marked_reduction_loop()) {
     // Post loop vectorization doesn't support reductions
     return false;
   }
@@ -166,18 +178,12 @@ bool SuperWord::transform_loop(IdealLoopTree* lpt, bool do_optimization) {
 
   init(); // initialize data structures
 
-  set_lpt(lpt);
-  set_lp(cl);
-
-  // For now, define one block which is the entire loop body
-  set_bb(cl);
-
   bool success = true;
   if (do_optimization) {
     assert(_packset.length() == 0, "packset must be empty");
     success = SLP_extract();
     if (PostLoopMultiversioning) {
-      if (cl->is_vectorized_loop() && cl->is_main_loop() && !cl->is_reduction_loop()) {
+      if (cl->is_vectorized_loop() && cl->is_main_loop() && !is_marked_reduction_loop()) {
         IdealLoopTree *lpt_next = cl->is_strip_mined() ? lpt->_parent->_next : lpt->_next;
         CountedLoopNode *cl_next = lpt_next->_head->as_CountedLoop();
         // Main loop SLP works well for manually unrolled loops. But post loop
@@ -201,7 +207,6 @@ bool SuperWord::transform_loop(IdealLoopTree* lpt, bool do_optimization) {
 //------------------------------early unrolling analysis------------------------------
 void SuperWord::unrolling_analysis(int &local_loop_unroll_factor) {
   bool is_slp = true;
-  ResourceMark rm;
   size_t ignored_size = lpt()->_body.size();
   int *ignored_loop_nodes = NEW_RESOURCE_ARRAY(int, ignored_size);
   Node_Stack nstack((int)ignored_size);
@@ -223,7 +228,7 @@ void SuperWord::unrolling_analysis(int &local_loop_unroll_factor) {
   for (uint i = 0; i < lpt()->_body.size(); i++) {
     Node* n = lpt()->_body.at(i);
     if (n == cl->incr() ||
-      n->is_reduction() ||
+      is_marked_reduction(n) ||
       n->is_AddP() ||
       n->is_Cmp() ||
       n->is_Bool() ||
@@ -407,6 +412,139 @@ void SuperWord::unrolling_analysis(int &local_loop_unroll_factor) {
     cl->mark_was_slp();
     if (cl->is_main_loop() || cl->is_rce_post_loop()) {
       cl->set_slp_max_unroll(local_loop_unroll_factor);
+    }
+  }
+}
+
+bool SuperWord::is_reduction(const Node* n) {
+  if (!is_reduction_operator(n)) {
+    return false;
+  }
+  // Test whether there is a reduction cycle via every edge index
+  // (typically indices 1 and 2).
+  for (uint input = 1; input < n->req(); input++) {
+    if (in_reduction_cycle(n, input)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool SuperWord::is_reduction_operator(const Node* n) {
+  int opc = n->Opcode();
+  return (opc != ReductionNode::opcode(opc, n->bottom_type()->basic_type()));
+}
+
+bool SuperWord::in_reduction_cycle(const Node* n, uint input) {
+  // First find input reduction path to phi node.
+  auto has_my_opcode = [&](const Node* m){ return m->Opcode() == n->Opcode(); };
+  PathEnd path_to_phi = find_in_path(n, input, LoopMaxUnroll, has_my_opcode,
+                                     [&](const Node* m) { return m->is_Phi(); });
+  const Node* phi = path_to_phi.first;
+  if (phi == nullptr) {
+    return false;
+  }
+  // If there is an input reduction path from the phi's loop-back to n, then n
+  // is part of a reduction cycle.
+  const Node* first = phi->in(LoopNode::LoopBackControl);
+  PathEnd path_from_phi = find_in_path(first, input, LoopMaxUnroll, has_my_opcode,
+                                       [&](const Node* m) { return m == n; });
+  return path_from_phi.first != nullptr;
+}
+
+Node* SuperWord::original_input(const Node* n, uint i) {
+  if (n->has_swapped_edges()) {
+    assert(n->is_Add() || n->is_Mul(), "n should be commutative");
+    if (i == 1) {
+      return n->in(2);
+    } else if (i == 2) {
+      return n->in(1);
+    }
+  }
+  return n->in(i);
+}
+
+void SuperWord::mark_reductions() {
+
+  _loop_reductions.clear();
+
+  // Iterate through all phi nodes associated to the loop and search for
+  // reduction cycles in the basic block.
+  for (DUIterator_Fast imax, i = lp()->fast_outs(imax); i < imax; i++) {
+    const Node* phi = lp()->fast_out(i);
+    if (!phi->is_Phi()) {
+      continue;
+    }
+    if (phi->outcnt() == 0) {
+      continue;
+    }
+    if (phi == iv()) {
+      continue;
+    }
+    // The phi's loop-back is considered the first node in the reduction cycle.
+    const Node* first = phi->in(LoopNode::LoopBackControl);
+    if (first == nullptr) {
+      continue;
+    }
+    // Test that the node fits the standard pattern for a reduction operator.
+    if (!is_reduction_operator(first)) {
+      continue;
+    }
+    // Test that 'first' is the beginning of a reduction cycle ending in 'phi'.
+    // To contain the number of searched paths, assume that all nodes in a
+    // reduction cycle are connected via the same edge index, modulo swapped
+    // inputs. This assumption is realistic because reduction cycles usually
+    // consist of nodes cloned by loop unrolling.
+    int reduction_input = -1;
+    int path_nodes = -1;
+    for (uint input = 1; input < first->req(); input++) {
+      // Test whether there is a reduction path in the basic block from 'first'
+      // to the phi node following edge index 'input'.
+      PathEnd path =
+        find_in_path(
+          first, input, lpt()->_body.size(),
+          [&](const Node* n) { return n->Opcode() == first->Opcode() && in_bb(n); },
+          [&](const Node* n) { return n == phi; });
+      if (path.first != nullptr) {
+        reduction_input = input;
+        path_nodes = path.second;
+        break;
+      }
+    }
+    if (reduction_input == -1) {
+      continue;
+    }
+    // Test that reduction nodes do not have any users in the loop besides their
+    // reduction cycle successors.
+    const Node* current = first;
+    const Node* succ = phi; // current's successor in the reduction cycle.
+    bool used_in_loop = false;
+    for (int i = 0; i < path_nodes; i++) {
+      for (DUIterator_Fast jmax, j = current->fast_outs(jmax); j < jmax; j++) {
+        Node* u = current->fast_out(j);
+        if (!in_bb(u)) {
+          continue;
+        }
+        if (u == succ) {
+          continue;
+        }
+        used_in_loop = true;
+        break;
+      }
+      if (used_in_loop) {
+        break;
+      }
+      succ = current;
+      current = original_input(current, reduction_input);
+    }
+    if (used_in_loop) {
+      continue;
+    }
+    // Reduction cycle found. Mark all nodes in the found path as reductions.
+    current = first;
+    for (int i = 0; i < path_nodes; i++) {
+      _loop_reductions.set(current->_idx);
+      current = original_input(current, reduction_input);
     }
   }
 }
@@ -1378,7 +1516,7 @@ bool SuperWord::independent(Node* s1, Node* s2) {
 // those nodes, and have not found another node from the pack, we know
 // that all nodes in the pack are independent.
 Node* SuperWord::find_dependence(Node_List* p) {
-  if (p->at(0)->is_reduction()) {
+  if (is_marked_reduction(p->at(0))) {
     return nullptr; // ignore reductions
   }
   ResourceMark rm;
@@ -1436,7 +1574,7 @@ bool SuperWord::reduction(Node* s1, Node* s2) {
   int d1 = depth(s1);
   int d2 = depth(s2);
   if (d2 > d1) {
-    if (s1->is_reduction() && s2->is_reduction()) {
+    if (is_marked_reduction(s1) && is_marked_reduction(s2)) {
       // This is an ordered set, so s1 should define s2
       for (DUIterator_Fast imax, i = s1->fast_outs(imax); i < imax; i++) {
         Node* t1 = s1->fast_out(i);
@@ -1653,7 +1791,7 @@ void SuperWord::order_def_uses(Node_List* p) {
   if (s1->is_Store()) return;
 
   // reductions are always managed beforehand
-  if (s1->is_reduction()) return;
+  if (is_marked_reduction(s1)) return;
 
   for (DUIterator_Fast imax, i = s1->fast_outs(imax); i < imax; i++) {
     Node* t1 = s1->fast_out(i);
@@ -1689,15 +1827,15 @@ void SuperWord::order_def_uses(Node_List* p) {
 bool SuperWord::opnd_positions_match(Node* d1, Node* u1, Node* d2, Node* u2) {
   // check reductions to see if they are marshalled to represent the reduction
   // operator in a specified opnd
-  if (u1->is_reduction() && u2->is_reduction()) {
+  if (is_marked_reduction(u1) && is_marked_reduction(u2)) {
     // ensure reductions have phis and reduction definitions feeding the 1st operand
     Node* first = u1->in(2);
-    if (first->is_Phi() || first->is_reduction()) {
+    if (first->is_Phi() || is_marked_reduction(first)) {
       u1->swap_edges(1, 2);
     }
     // ensure reductions have phis and reduction definitions feeding the 1st operand
     first = u2->in(2);
-    if (first->is_Phi() || first->is_reduction()) {
+    if (first->is_Phi() || is_marked_reduction(first)) {
       u2->swap_edges(1, 2);
     }
     return true;
@@ -1920,7 +2058,7 @@ void SuperWord::filter_packs() {
       remove_pack_at(i);
     }
     Node *n = pk->at(0);
-    if (n->is_reduction()) {
+    if (is_marked_reduction(n)) {
       _num_reductions++;
     } else {
       _num_work_vecs++;
@@ -2171,7 +2309,7 @@ bool SuperWord::implemented(Node_List* p) {
   if (p0 != nullptr) {
     int opc = p0->Opcode();
     uint size = p->size();
-    if (p0->is_reduction()) {
+    if (is_marked_reduction(p0)) {
       const Type *arith_type = p0->bottom_type();
       // Length 2 reductions of INT/LONG do not offer performance benefits
       if (((arith_type->basic_type() == T_INT) || (arith_type->basic_type() == T_LONG)) && (size == 2)) {
@@ -2261,13 +2399,13 @@ bool SuperWord::profitable(Node_List* p) {
     }
   }
   // Check if reductions are connected
-  if (p0->is_reduction()) {
+  if (is_marked_reduction(p0)) {
     Node* second_in = p0->in(2);
     Node_List* second_pk = my_pack(second_in);
     if ((second_pk == nullptr) || (_num_work_vecs == _num_reductions)) {
-      // Remove reduction flag if no parent pack or if not enough work
+      // Unmark reduction if no parent pack or if not enough work
       // to cover reduction expansion overhead
-      p0->remove_flag(Node::Flag_is_reduction);
+      _loop_reductions.remove(p0->_idx);
       return false;
     } else if (second_pk->size() != p->size()) {
       return false;
@@ -2299,7 +2437,7 @@ bool SuperWord::profitable(Node_List* p) {
           if (def == n) {
             // Reductions should only have a Phi use at the loop head or a non-phi use
             // outside of the loop if it is the last element of the pack (e.g. SafePoint).
-            if (def->is_reduction() &&
+            if (is_marked_reduction(def) &&
                 ((use->is_Phi() && use->in(0) == _lpt->_head) ||
                  (!_lpt->is_member(_phase->get_loop(_phase->ctrl_or_self(use))) && i == p->size()-1))) {
               continue;
@@ -2442,7 +2580,7 @@ public:
         for (DepPreds preds(n, dg); !preds.done(); preds.next()) {
           Node* pred = preds.current();
           int pred_pid = get_pid_or_zero(pred);
-          if (pred_pid == pid && n->is_reduction()) {
+          if (pred_pid == pid && _slp->is_marked_reduction(n)) {
             continue; // reduction -> self-cycle is not a cyclic dependency
           }
           // Only add edges once, and only for mapped nodes (in block)
@@ -2992,7 +3130,7 @@ bool SuperWord::output() {
       } else if (n->req() == 3 && !is_cmov_pack(p)) {
         // Promote operands to vector
         Node* in1 = nullptr;
-        bool node_isa_reduction = n->is_reduction();
+        bool node_isa_reduction = is_marked_reduction(n);
         if (node_isa_reduction) {
           // the input to the first reduction operation is retained
           in1 = low_adr->in(1);
@@ -3246,7 +3384,7 @@ bool SuperWord::output() {
 Node* SuperWord::create_post_loop_vmask() {
   CountedLoopNode *cl = lpt()->_head->as_CountedLoop();
   assert(cl->is_rce_post_loop(), "Must be an rce post loop");
-  assert(!cl->is_reduction_loop(), "no vector reduction in post loop");
+  assert(!is_marked_reduction_loop(), "no vector reduction in post loop");
   assert(abs(cl->stride_con()) == 1, "post loop stride can only be +/-1");
 
   // Collect vector element types of all post loop packs. Also collect
@@ -3524,7 +3662,7 @@ void SuperWord::insert_extracts(Node_List* p) {
     _n_idx_list.pop();
     Node* def = use->in(idx);
 
-    if (def->is_reduction()) continue;
+    if (is_marked_reduction(def)) continue;
 
     // Insert extract operation
     _igvn.hash_delete(def);
@@ -3547,7 +3685,7 @@ void SuperWord::insert_extracts(Node_List* p) {
 bool SuperWord::is_vector_use(Node* use, int u_idx) {
   Node_List* u_pk = my_pack(use);
   if (u_pk == nullptr) return false;
-  if (use->is_reduction()) return true;
+  if (is_marked_reduction(use)) return true;
   Node* def = use->in(u_idx);
   Node_List* d_pk = my_pack(def);
   if (d_pk == nullptr) {
@@ -3708,7 +3846,7 @@ bool SuperWord::construct_bb() {
         if (in_bb(use) && !visited_test(use) &&
             // Don't go around backedge
             (!use->is_Phi() || n == entry)) {
-          if (use->is_reduction()) {
+          if (is_marked_reduction(use)) {
             // First see if we can map the reduction on the given system we are on, then
             // make a data entry operation for each reduction we see.
             BasicType bt = use->bottom_type()->basic_type();
@@ -3934,14 +4072,15 @@ void SuperWord::compute_vector_element_type() {
           }
           if (same_type) {
             // In any Java arithmetic operation, operands of small integer types
-            // (boolean, byte, char & short) should be promoted to int first. As
-            // vector elements of small types don't have upper bits of int, for
-            // RShiftI or AbsI operations, the compiler has to know the precise
-            // signedness info of the 1st operand. These operations shouldn't be
-            // vectorized if the signedness info is imprecise.
+            // (boolean, byte, char & short) should be promoted to int first.
+            // During narrowed integer type backward propagation, for some operations
+            // like RShiftI, Abs, and ReverseBytesI,
+            // the compiler has to know the higher order bits of the 1st operand,
+            // which will be lost in the narrowed type. These operations shouldn't
+            // be vectorized if the higher order bits info is imprecise.
             const Type* vt = vtn;
             int op = in->Opcode();
-            if (VectorNode::is_shift_opcode(op) || op == Op_AbsI) {
+            if (VectorNode::is_shift_opcode(op) || op == Op_AbsI || op == Op_ReverseBytesI) {
               Node* load = in->in(1);
               if (load->is_Load() && in_bb(load) && (velt_type(load)->basic_type() == T_INT)) {
                 // Only Load nodes distinguish signed (LoadS/LoadB) and unsigned
@@ -4248,19 +4387,7 @@ void SuperWord::align_initial_loop_index(MemNode* align_to_ref) {
       invar = new ConvL2INode(invar);
       _igvn.register_new_node_with_optimizer(invar);
     }
-    Node* invar_scale = align_to_ref_p.invar_scale();
-    if (invar_scale != nullptr) {
-      invar = new LShiftINode(invar, invar_scale);
-      _igvn.register_new_node_with_optimizer(invar);
-    }
-    Node* aref = new URShiftINode(invar, log2_elt);
-    _igvn.register_new_node_with_optimizer(aref);
-    _phase->set_ctrl(aref, pre_ctrl);
-    if (align_to_ref_p.negate_invar()) {
-      e = new SubINode(e, aref);
-    } else {
-      e = new AddINode(e, aref);
-    }
+    e = new URShiftINode(invar, log2_elt);
     _igvn.register_new_node_with_optimizer(e);
     _phase->set_ctrl(e, pre_ctrl);
   }
@@ -4356,10 +4483,6 @@ void SuperWord::init() {
   _iteration_last.clear();
   _node_info.clear();
   _align_to_ref = nullptr;
-  _lpt = nullptr;
-  _lp = nullptr;
-  _bb = nullptr;
-  _iv = nullptr;
   _race_possible = 0;
   _early_return = false;
   _num_work_vecs = 0;
@@ -4440,9 +4563,11 @@ int SWPointer::Tracer::_depth = 0;
 #endif
 //----------------------------SWPointer------------------------
 SWPointer::SWPointer(MemNode* mem, SuperWord* slp, Node_Stack *nstack, bool analyze_only) :
-  _mem(mem), _slp(slp),  _base(nullptr),  _adr(nullptr),
-  _scale(0), _offset(0), _invar(nullptr), _negate_invar(false),
-  _invar_scale(nullptr),
+  _mem(mem), _slp(slp), _base(nullptr), _adr(nullptr),
+  _scale(0), _offset(0), _invar(nullptr),
+#ifdef ASSERT
+  _debug_invar(nullptr), _debug_negate_invar(false), _debug_invar_scale(nullptr),
+#endif
   _nstack(nstack), _analyze_only(analyze_only),
   _stack_idx(0)
 #ifndef PRODUCT
@@ -4473,7 +4598,7 @@ SWPointer::SWPointer(MemNode* mem, SuperWord* slp, Node_Stack *nstack, bool anal
   NOT_PRODUCT(_tracer.ctor_2(adr);)
 
   int i;
-  for (i = 0; i < 3; i++) {
+  for (i = 0; ; i++) {
     NOT_PRODUCT(_tracer.ctor_3(adr, i);)
 
     if (!scaled_iv_plus_offset(adr->in(AddPNode::Offset))) {
@@ -4509,9 +4634,11 @@ SWPointer::SWPointer(MemNode* mem, SuperWord* slp, Node_Stack *nstack, bool anal
 // Following is used to create a temporary object during
 // the pattern match of an address expression.
 SWPointer::SWPointer(SWPointer* p) :
-  _mem(p->_mem), _slp(p->_slp),  _base(nullptr),  _adr(nullptr),
-  _scale(0), _offset(0), _invar(nullptr), _negate_invar(false),
-  _invar_scale(nullptr),
+  _mem(p->_mem), _slp(p->_slp), _base(nullptr), _adr(nullptr),
+  _scale(0), _offset(0), _invar(nullptr),
+#ifdef ASSERT
+  _debug_invar(nullptr), _debug_negate_invar(false), _debug_invar_scale(nullptr),
+#endif
   _nstack(p->_nstack), _analyze_only(p->_analyze_only),
   _stack_idx(p->_stack_idx)
   #ifndef PRODUCT
@@ -4625,7 +4752,7 @@ bool SWPointer::scaled_iv(Node* n) {
       return true;
     }
   } else if (opc == Op_LShiftL && n->in(2)->is_Con()) {
-    if (!has_iv() && _invar == nullptr) {
+    if (!has_iv()) {
       // Need to preserve the current _offset value, so
       // create a temporary object for this expression subtree.
       // Hacky, so should re-engineer the address pattern match.
@@ -4637,12 +4764,15 @@ bool SWPointer::scaled_iv(Node* n) {
         int scale = n->in(2)->get_int();
         _scale   = tmp._scale  << scale;
         _offset += tmp._offset << scale;
-        _invar = tmp._invar;
-        if (_invar != nullptr) {
-          _negate_invar = tmp._negate_invar;
-          _invar_scale = n->in(2);
+        if (tmp._invar != nullptr) {
+          BasicType bt = tmp._invar->bottom_type()->basic_type();
+          assert(bt == T_INT || bt == T_LONG, "");
+          maybe_add_to_invar(register_if_new(LShiftNode::make(tmp._invar, n->in(2), bt)), false);
+#ifdef ASSERT
+          _debug_invar_scale = n->in(2);
+#endif
         }
-        NOT_PRODUCT(_tracer.scaled_iv_9(n, _scale, _offset, _invar, _negate_invar);)
+        NOT_PRODUCT(_tracer.scaled_iv_9(n, _scale, _offset, _invar);)
         return true;
       }
     }
@@ -4676,41 +4806,34 @@ bool SWPointer::offset_plus_k(Node* n, bool negate) {
     NOT_PRODUCT(_tracer.offset_plus_k_4(n);)
     return false;
   }
-  if (_invar != nullptr) { // already has an invariant
-    NOT_PRODUCT(_tracer.offset_plus_k_5(n, _invar);)
-    return false;
-  }
+  assert((_debug_invar == nullptr) == (_invar == nullptr), "");
 
   if (_analyze_only && is_loop_member(n)) {
     _nstack->push(n, _stack_idx++);
   }
   if (opc == Op_AddI) {
     if (n->in(2)->is_Con() && invariant(n->in(1))) {
-      _negate_invar = negate;
-      _invar = n->in(1);
+      maybe_add_to_invar(n->in(1), negate);
       _offset += negate ? -(n->in(2)->get_int()) : n->in(2)->get_int();
-      NOT_PRODUCT(_tracer.offset_plus_k_6(n, _invar, _negate_invar, _offset);)
+      NOT_PRODUCT(_tracer.offset_plus_k_6(n, _invar, negate, _offset);)
       return true;
     } else if (n->in(1)->is_Con() && invariant(n->in(2))) {
       _offset += negate ? -(n->in(1)->get_int()) : n->in(1)->get_int();
-      _negate_invar = negate;
-      _invar = n->in(2);
-      NOT_PRODUCT(_tracer.offset_plus_k_7(n, _invar, _negate_invar, _offset);)
+      maybe_add_to_invar(n->in(2), negate);
+      NOT_PRODUCT(_tracer.offset_plus_k_7(n, _invar, negate, _offset);)
       return true;
     }
   }
   if (opc == Op_SubI) {
     if (n->in(2)->is_Con() && invariant(n->in(1))) {
-      _negate_invar = negate;
-      _invar = n->in(1);
+      maybe_add_to_invar(n->in(1), negate);
       _offset += !negate ? -(n->in(2)->get_int()) : n->in(2)->get_int();
-      NOT_PRODUCT(_tracer.offset_plus_k_8(n, _invar, _negate_invar, _offset);)
+      NOT_PRODUCT(_tracer.offset_plus_k_8(n, _invar, negate, _offset);)
       return true;
     } else if (n->in(1)->is_Con() && invariant(n->in(2))) {
       _offset += negate ? -(n->in(1)->get_int()) : n->in(1)->get_int();
-      _negate_invar = !negate;
-      _invar = n->in(2);
-      NOT_PRODUCT(_tracer.offset_plus_k_9(n, _invar, _negate_invar, _offset);)
+      maybe_add_to_invar(n->in(2), !negate);
+      NOT_PRODUCT(_tracer.offset_plus_k_9(n, _invar, !negate, _offset);)
       return true;
     }
   }
@@ -4727,15 +4850,75 @@ bool SWPointer::offset_plus_k(Node* n, bool negate) {
     }
     // Check if 'n' can really be used as invariant (not in main loop and dominating the pre loop).
     if (invariant(n)) {
-      _negate_invar = negate;
-      _invar = n;
-      NOT_PRODUCT(_tracer.offset_plus_k_10(n, _invar, _negate_invar, _offset);)
+      maybe_add_to_invar(n, negate);
+      NOT_PRODUCT(_tracer.offset_plus_k_10(n, _invar, negate, _offset);)
       return true;
     }
   }
 
   NOT_PRODUCT(_tracer.offset_plus_k_11(n);)
   return false;
+}
+
+Node* SWPointer::maybe_negate_invar(bool negate, Node* invar) {
+#ifdef ASSERT
+  _debug_negate_invar = negate;
+#endif
+  if (negate) {
+    BasicType bt = invar->bottom_type()->basic_type();
+    assert(bt == T_INT || bt == T_LONG, "");
+    PhaseIterGVN& igvn = phase()->igvn();
+    Node* zero = igvn.zerocon(bt);
+    phase()->set_ctrl(zero, phase()->C->root());
+    Node* sub = SubNode::make(zero, invar, bt);
+    invar = register_if_new(sub);
+  }
+  return invar;
+}
+
+Node* SWPointer::register_if_new(Node* n) const {
+  PhaseIterGVN& igvn = phase()->igvn();
+  Node* prev = igvn.hash_find_insert(n);
+  if (prev != nullptr) {
+    n->destruct(&igvn);
+    n = prev;
+  } else {
+    Node* c = phase()->get_early_ctrl(n);
+    phase()->register_new_node(n, c);
+  }
+  return n;
+}
+
+void SWPointer::maybe_add_to_invar(Node* new_invar, bool negate) {
+  new_invar = maybe_negate_invar(negate, new_invar);
+  if (_invar == nullptr) {
+    _invar = new_invar;
+#ifdef ASSERT
+    _debug_invar = new_invar;
+#endif
+    return;
+  }
+#ifdef ASSERT
+  _debug_invar = NodeSentinel;
+#endif
+  BasicType new_invar_bt = new_invar->bottom_type()->basic_type();
+  assert(new_invar_bt == T_INT || new_invar_bt == T_LONG, "");
+  BasicType invar_bt = _invar->bottom_type()->basic_type();
+  assert(invar_bt == T_INT || invar_bt == T_LONG, "");
+
+  BasicType bt = (new_invar_bt == T_LONG || invar_bt == T_LONG) ? T_LONG : T_INT;
+  Node* current_invar = _invar;
+  if (invar_bt != bt) {
+    assert(bt == T_LONG && invar_bt == T_INT, "");
+    assert(new_invar_bt == bt, "");
+    current_invar = register_if_new(new ConvI2LNode(current_invar));
+  } else if (new_invar_bt != bt) {
+    assert(bt == T_LONG && new_invar_bt == T_INT, "");
+    assert(invar_bt == bt, "");
+    new_invar = register_if_new(new ConvI2LNode(new_invar));
+  }
+  Node* add = AddNode::make(current_invar, new_invar, bt);
+  _invar = register_if_new(add);
 }
 
 //-----------------has_potential_dependence-----------------
@@ -4774,7 +4957,7 @@ void SWPointer::print() {
              _adr  != nullptr ? _adr->_idx  : 0,
              _scale, _offset);
   if (_invar != nullptr) {
-    tty->print("  invar: %c[%d] << [%d]", _negate_invar?'-':'+', _invar->_idx, _invar_scale->_idx);
+    tty->print("  invar: [%d]", _invar->_idx);
   }
   tty->cr();
 #endif
@@ -4964,13 +5147,13 @@ void SWPointer::Tracer::scaled_iv_8(Node* n, SWPointer* tmp) {
   }
 }
 
-void SWPointer::Tracer::scaled_iv_9(Node* n, int scale, int offset, Node* invar, bool negate_invar) {
+void SWPointer::Tracer::scaled_iv_9(Node* n, int scale, int offset, Node* invar) {
   if(_slp->is_trace_alignment()) {
     print_depth(); tty->print_cr(" %d SWPointer::scaled_iv: Op_LShiftL PASSED, setting _scale = %d, _offset = %d", n->_idx, scale, offset);
     print_depth(); tty->print_cr("  \\ SWPointer::scaled_iv: in(1) [%d] is scaled_iv_plus_offset, in(2) [%d] used to scale: _scale = %d, _offset = %d",
     n->in(1)->_idx, n->in(2)->_idx, scale, offset);
     if (invar != nullptr) {
-      print_depth(); tty->print_cr("  \\ SWPointer::scaled_iv: scaled invariant: %c[%d]", (negate_invar?'-':'+'), invar->_idx);
+      print_depth(); tty->print_cr("  \\ SWPointer::scaled_iv: scaled invariant: [%d]", invar->_idx);
     }
     inc_depth(); inc_depth();
     print_depth(); n->in(1)->dump();
@@ -5022,7 +5205,7 @@ void SWPointer::Tracer::offset_plus_k_5(Node* n, Node* _invar) {
 
 void SWPointer::Tracer::offset_plus_k_6(Node* n, Node* _invar, bool _negate_invar, int _offset) {
   if(_slp->is_trace_alignment()) {
-    print_depth(); tty->print_cr(" %d SWPointer::offset_plus_k: Op_AddI PASSED, setting _negate_invar = %d, _invar = %d, _offset = %d",
+    print_depth(); tty->print_cr(" %d SWPointer::offset_plus_k: Op_AddI PASSED, setting _debug_negate_invar = %d, _invar = %d, _offset = %d",
     n->_idx, _negate_invar, _invar->_idx, _offset);
     print_depth(); tty->print("  \\ %d SWPointer::offset_plus_k: in(2) is Con: ", n->in(2)->_idx); n->in(2)->dump();
     print_depth(); tty->print("  \\ %d SWPointer::offset_plus_k: in(1) is invariant: ", _invar->_idx); _invar->dump();
@@ -5031,7 +5214,7 @@ void SWPointer::Tracer::offset_plus_k_6(Node* n, Node* _invar, bool _negate_inva
 
 void SWPointer::Tracer::offset_plus_k_7(Node* n, Node* _invar, bool _negate_invar, int _offset) {
   if(_slp->is_trace_alignment()) {
-    print_depth(); tty->print_cr(" %d SWPointer::offset_plus_k: Op_AddI PASSED, setting _negate_invar = %d, _invar = %d, _offset = %d",
+    print_depth(); tty->print_cr(" %d SWPointer::offset_plus_k: Op_AddI PASSED, setting _debug_negate_invar = %d, _invar = %d, _offset = %d",
     n->_idx, _negate_invar, _invar->_idx, _offset);
     print_depth(); tty->print("  \\ %d SWPointer::offset_plus_k: in(1) is Con: ", n->in(1)->_idx); n->in(1)->dump();
     print_depth(); tty->print("  \\ %d SWPointer::offset_plus_k: in(2) is invariant: ", _invar->_idx); _invar->dump();
@@ -5040,7 +5223,7 @@ void SWPointer::Tracer::offset_plus_k_7(Node* n, Node* _invar, bool _negate_inva
 
 void SWPointer::Tracer::offset_plus_k_8(Node* n, Node* _invar, bool _negate_invar, int _offset) {
   if(_slp->is_trace_alignment()) {
-    print_depth(); tty->print_cr(" %d SWPointer::offset_plus_k: Op_SubI is PASSED, setting _negate_invar = %d, _invar = %d, _offset = %d",
+    print_depth(); tty->print_cr(" %d SWPointer::offset_plus_k: Op_SubI is PASSED, setting _debug_negate_invar = %d, _invar = %d, _offset = %d",
     n->_idx, _negate_invar, _invar->_idx, _offset);
     print_depth(); tty->print("  \\ %d SWPointer::offset_plus_k: in(2) is Con: ", n->in(2)->_idx); n->in(2)->dump();
     print_depth(); tty->print("  \\ %d SWPointer::offset_plus_k: in(1) is invariant: ", _invar->_idx); _invar->dump();
@@ -5049,7 +5232,7 @@ void SWPointer::Tracer::offset_plus_k_8(Node* n, Node* _invar, bool _negate_inva
 
 void SWPointer::Tracer::offset_plus_k_9(Node* n, Node* _invar, bool _negate_invar, int _offset) {
   if(_slp->is_trace_alignment()) {
-    print_depth(); tty->print_cr(" %d SWPointer::offset_plus_k: Op_SubI PASSED, setting _negate_invar = %d, _invar = %d, _offset = %d", n->_idx, _negate_invar, _invar->_idx, _offset);
+    print_depth(); tty->print_cr(" %d SWPointer::offset_plus_k: Op_SubI PASSED, setting _debug_negate_invar = %d, _invar = %d, _offset = %d", n->_idx, _negate_invar, _invar->_idx, _offset);
     print_depth(); tty->print("  \\ %d SWPointer::offset_plus_k: in(1) is Con: ", n->in(1)->_idx); n->in(1)->dump();
     print_depth(); tty->print("  \\ %d SWPointer::offset_plus_k: in(2) is invariant: ", _invar->_idx); _invar->dump();
   }
@@ -5057,7 +5240,7 @@ void SWPointer::Tracer::offset_plus_k_9(Node* n, Node* _invar, bool _negate_inva
 
 void SWPointer::Tracer::offset_plus_k_10(Node* n, Node* _invar, bool _negate_invar, int _offset) {
   if(_slp->is_trace_alignment()) {
-    print_depth(); tty->print_cr(" %d SWPointer::offset_plus_k: PASSED, setting _negate_invar = %d, _invar = %d, _offset = %d", n->_idx, _negate_invar, _invar->_idx, _offset);
+    print_depth(); tty->print_cr(" %d SWPointer::offset_plus_k: PASSED, setting _debug_negate_invar = %d, _invar = %d, _offset = %d", n->_idx, _negate_invar, _invar->_idx, _offset);
     print_depth(); tty->print_cr("  \\ %d SWPointer::offset_plus_k: is invariant", n->_idx);
   }
 }

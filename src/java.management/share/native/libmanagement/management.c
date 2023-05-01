@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@
 #define ERR_MSG_SIZE 128
 
 const JmmInterface* jmm_interface = NULL;
-JavaVM* jvm = NULL;
+static JavaVM* jvm = NULL;
 jint jmm_version = 0;
 
 JNIEXPORT jint JNICALL
@@ -52,11 +52,4 @@ JNIEXPORT jint JNICALL
 
     jmm_version = jmm_interface->GetVersion(env);
     return (*env)->GetVersion(env);
-}
-
-void throw_internal_error(JNIEnv* env, const char* msg) {
-    char errmsg[128];
-
-    snprintf(errmsg, sizeof(errmsg), "errno: %d error: %s\n", errno, msg);
-    JNU_ThrowInternalError(env, errmsg);
 }
