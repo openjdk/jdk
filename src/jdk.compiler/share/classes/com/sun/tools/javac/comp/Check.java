@@ -2272,7 +2272,7 @@ public class Check {
         }
 
         if (!found) {
-            log.error(pos, Errors.AnonymousMainClassDoesNotHaveMainMethod);
+            log.error(pos, Errors.UnnamedClassDoesNotHaveMainMethod);
         }
     }
 

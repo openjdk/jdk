@@ -3862,7 +3862,7 @@ public class JavacParser implements Parser {
         }
 
         boolean firstTypeDecl = true;   // have we see a class, enum, or interface declaration yet?
-        boolean isAnonymousClass = false;
+        boolean isUnnamedClass = false;
         while (token.kind != EOF) {
             if (token.pos <= endPosTable.errorEndPos) {
                 // error recovery
@@ -3929,9 +3929,9 @@ public class JavacParser implements Parser {
                 // this code speculatively tests to see if a top level method
                 // or field can parse. If the method or field can parse then
                 // it is parsed. Otherwise, parsing continues as though
-                // anonymous main classes did not exist and error reporting
+                // unnamed classes did not exist and error reporting
                 // is the same as in the past.
-                if (Feature.ANONYMOUS_MAIN_CLASSES.allowedInSource(source) && !isDeclaration()) {
+                if (Feature.UNNAMED_CLASSES.allowedInSource(source) && !isDeclaration()) {
                     final JCModifiers finalMods = mods;
                     isTopLevelMethodOrField =
                             VirtualParser.tryParse(this,
@@ -3940,7 +3940,7 @@ public class JavacParser implements Parser {
 
                 if (isTopLevelMethodOrField) {
                     defs.appendList(topLevelMethodOrFieldDeclaration(mods));
-                    isAnonymousClass = true;
+                    isUnnamedClass = true;
                 } else {
                     JCTree def = typeDeclaration(mods, docComment);
                     if (def instanceof JCExpressionStatement statement)
@@ -3952,7 +3952,7 @@ public class JavacParser implements Parser {
                 firstTypeDecl = false;
             }
         }
-        List<JCTree> topLevelDefs = isAnonymousClass ?  constructAnonymousMainClass(defs.toList()) : defs.toList();
+        List<JCTree> topLevelDefs = isUnnamedClass ?  constructUnnamedClass(defs.toList()) : defs.toList();
         JCTree.JCCompilationUnit toplevel = F.at(firstToken.pos).TopLevel(topLevelDefs);
         if (!consumedToplevelDoc)
             attach(toplevel, firstToken.comment(CommentStyle.JAVADOC));
@@ -3967,16 +3967,16 @@ public class JavacParser implements Parser {
         return toplevel;
     }
 
-    // Restructure top level to be an top level anonymous class.
-    private List<JCTree> constructAnonymousMainClass(List<JCTree> origDefs) {
-        checkSourceLevel(Feature.ANONYMOUS_MAIN_CLASSES);
+    // Restructure top level to be an unnamed class.
+    private List<JCTree> constructUnnamedClass(List<JCTree> origDefs) {
+        checkSourceLevel(Feature.UNNAMED_CLASSES);
 
         ListBuffer<JCTree> topDefs = new ListBuffer<>();
         ListBuffer<JCTree> defs = new ListBuffer<>();
 
         for (JCTree def : origDefs) {
             if (def.hasTag(Tag.PACKAGEDEF)) {
-                log.error(def.pos(), Errors.AnonymousMainClassShouldNotHavePackageDeclaration);
+                log.error(def.pos(), Errors.UnnamedClassShouldNotHavePackageDeclaration);
             } else if (def.hasTag(Tag.IMPORT)) {
                 topDefs.append(def);
             } else {
@@ -3996,7 +3996,7 @@ public class JavacParser implements Parser {
 
         Name name = names.fromString(simplename);
         JCModifiers anonMods = F.at(primaryPos)
-                .Modifiers(Flags.FINAL|Flags.MANDATED|Flags.SYNTHETIC|Flags.ANONYMOUS_MAIN_CLASS, List.nil());
+                .Modifiers(Flags.FINAL|Flags.MANDATED|Flags.SYNTHETIC|Flags.UNNAMED_CLASS, List.nil());
         JCClassDecl anon = F.at(primaryPos).ClassDef(
                 anonMods, name, List.nil(), null, List.nil(), List.nil(),
                 defs.toList());

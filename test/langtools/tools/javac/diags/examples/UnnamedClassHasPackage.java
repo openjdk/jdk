@@ -21,12 +21,12 @@
  * questions.
  */
 
- // key: compiler.err.anonymous.main.class.should.not.have.package.declaration
+ // key: compiler.err.unnamed.class.should.not.have.package.declaration
  // key: compiler.note.preview.filename
  // key: compiler.note.preview.recompile
  // options: -source ${jdk.version} --enable-preview
 
-package anonymous.main.classes;
+package unnamed.classes;
 
 public static void main(String... args) {
 }

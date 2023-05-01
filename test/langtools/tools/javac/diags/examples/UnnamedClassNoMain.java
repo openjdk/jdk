@@ -21,7 +21,7 @@
  * questions.
  */
 
- // key: compiler.err.anonymous.main.class.does.not.have.main.method
+ // key: compiler.err.unnamed.class.does.not.have.main.method
  // key: compiler.note.preview.filename
  // key: compiler.note.preview.recompile
  // options: -source ${jdk.version} --enable-preview
