@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,29 +23,34 @@
  */
 
 #include "precompiled.hpp"
-#include "oops/oop.inline.hpp"
+#include "oops/methodFlags.hpp"
 #include "runtime/atomic.hpp"
-#include "utilities/accessFlags.hpp"
+#include "utilities/ostream.hpp"
 
-#if !defined(PRODUCT) || INCLUDE_JVMTI
-
-void AccessFlags::print_on(outputStream* st) const {
-  if (is_public      ()) st->print("public "      );
-  if (is_private     ()) st->print("private "     );
-  if (is_protected   ()) st->print("protected "   );
-  if (is_static      ()) st->print("static "      );
-  if (is_final       ()) st->print("final "       );
-  if (is_synchronized()) st->print("synchronized ");
-  if (is_volatile    ()) st->print("volatile "    );
-  if (is_transient   ()) st->print("transient "   );
-  if (is_native      ()) st->print("native "      );
-  if (is_interface   ()) st->print("interface "   );
-  if (is_abstract    ()) st->print("abstract "    );
-  if (is_synthetic   ()) st->print("synthetic "   );
+// This can be removed for the atomic bitset functions, when available.
+void MethodFlags::atomic_set_bits(u4 bits) {
+  // Atomically update the status with the bits given
+  u4 old_status, new_status, f;
+  do {
+    old_status = _status;
+    new_status = old_status | bits;
+    f = Atomic::cmpxchg(&_status, old_status, new_status);
+  } while(f != old_status);
 }
 
-#endif // !PRODUCT || INCLUDE_JVMTI
+void MethodFlags::atomic_clear_bits(u4 bits) {
+  // Atomically update the status with the bits given
+  u4 old_status, new_status, f;
+  do {
+    old_status = _status;
+    new_status = old_status & ~bits;
+    f = Atomic::cmpxchg(&_status, old_status, new_status);
+  } while(f != old_status);
+}
 
-void accessFlags_init() {
-  assert(sizeof(AccessFlags) == sizeof(jint), "just checking size of flags");
+void MethodFlags::print_on(outputStream* st) const {
+#define M_PRINT(name, ignore)          \
+  if (name()) st->print(" " #name " ");
+  M_STATUS_DO(M_PRINT)
+#undef M_PRINT
 }
