@@ -50,10 +50,9 @@ public:
   ~HdrSeq();
 
   virtual void add(double val);
+  void add(const HdrSeq& other);
   double percentile(double level) const;
-
-  // Merge this HdrSeq into hdr2, optionally clearing this HdrSeq
-  void merge(HdrSeq& hdr2, bool clear_this = true);
+  void clear();
 };
 
 // Binary magnitude sequence stores the power-of-two histogram.

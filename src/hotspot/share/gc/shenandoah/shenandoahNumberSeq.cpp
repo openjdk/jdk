@@ -121,40 +121,68 @@ double HdrSeq::percentile(double level) const {
   return maximum();
 }
 
-// Merge this HdrSeq into hdr2: clear optional and on-by-default
-// Note: this method isn't intrinsically MT-safe; callers must take care
-// of any mutual exclusion as necessary.
-void HdrSeq::merge(HdrSeq& hdr2, bool clear_this) {
+void HdrSeq::add(const HdrSeq& other) {
+  if (other.num() == 0) {
+    // Other sequence is empty, return
+    return;
+  }
+
   for (int mag = 0; mag < MagBuckets; mag++) {
-    if (_hdr[mag] != nullptr) {
-      int* that_bucket = hdr2._hdr[mag];
-      if (that_bucket == nullptr) {
-        if (clear_this) {
-          // the target doesn't have any values, swap in ours.
-          // Could this cause native memory fragmentation?
-          hdr2._hdr[mag] = _hdr[mag];
-          _hdr[mag] = nullptr;
-        } else {
-          // We can't clear this, so we create the entries & add in below
-          that_bucket = NEW_C_HEAP_ARRAY(int, ValBuckets, mtInternal);
-          for (int val = 0; val < ValBuckets; val++) {
-            that_bucket[val] = _hdr[mag][val];
-          }
-          hdr2._hdr[mag] = that_bucket;
-        }
-      } else {
-        // Add in our values into target
-        for (int val = 0; val < ValBuckets; val++) {
-          that_bucket[val] += _hdr[mag][val];
-          if (clear_this) {
-            _hdr[mag][val] = 0;
-          }
-        }
+    int* other_bucket = other._hdr[mag];
+    if (other_bucket == nullptr) {
+      // Nothing to do
+      continue;
+    }
+    int* bucket = _hdr[mag];
+    if (bucket != nullptr) {
+      // Add into our bucket
+      for (int val = 0; val < ValBuckets; val++) {
+        bucket[val] += other_bucket[val];
+      }
+    } else {
+      // Create our bucket and copy the contents over
+      bucket = NEW_C_HEAP_ARRAY(int, ValBuckets, mtInternal);
+      for (int val = 0; val < ValBuckets; val++) {
+        bucket[val] = other_bucket[val];
+      }
+      _hdr[mag] = bucket;
+    }
+  }
+
+  // This is a hacky way to only update the fields we want.
+  // This inlines NumberSeq code without going into AbsSeq and
+  // dealing with decayed average/variance, which we do not
+  // know how to compute yet.
+  _last = other._last;
+  _maximum = MAX2(_maximum, other._maximum);
+  _sum += other._sum;
+  _sum_of_squares += other._sum_of_squares;
+  _num += other._num;
+
+  // Until JDK-8298902 is fixed, we taint the decaying statistics
+  _davg = NAN;
+  _dvariance = NAN;
+}
+
+void HdrSeq::clear() {
+  // Clear the storage
+  for (int mag = 0; mag < MagBuckets; mag++) {
+    int* bucket = _hdr[mag];
+    if (bucket != nullptr) {
+      for (int c = 0; c < ValBuckets; c++) {
+        bucket[c] = 0;
       }
     }
   }
-  // Merge up the class hierarchy
-  NumberSeq::merge(hdr2, clear_this);
+
+  // Clear other fields too
+  _last = 0;
+  _maximum = 0;
+  _sum = 0;
+  _sum_of_squares = 0;
+  _num = 0;
+  _davg = 0;
+  _dvariance = 0;
 }
 
 BinaryMagnitudeSeq::BinaryMagnitudeSeq() {

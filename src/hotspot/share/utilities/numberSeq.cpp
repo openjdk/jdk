@@ -110,32 +110,6 @@ double AbsSeq::dsd() const {
   return sqrt(var);
 }
 
-void AbsSeq::merge(AbsSeq& abs2, bool clear_this) {
-
-  if (num() == 0) return;  // nothing to do
-
-  abs2._num += _num;
-  abs2._sum += _sum;
-  abs2._sum_of_squares += _sum_of_squares;
-
-  // Decaying stats need a bit more thought
-  assert(abs2._alpha == _alpha, "Caution: merge incompatible?");
-  // Until JDK-8298902 is fixed, we taint the decaying statistics
-  if (abs2._davg != NAN) {
-    abs2._davg = NAN;
-    abs2._dvariance = NAN;
-  }
-
-  if (clear_this) {
-    _num = 0;
-    _sum = 0;
-    _sum_of_squares = 0;
-    _davg = 0;
-    _dvariance = 0;
-  }
-}
-
-
 NumberSeq::NumberSeq(double alpha) :
   AbsSeq(alpha), _last(0.0), _maximum(0.0) {
 }
@@ -161,22 +135,6 @@ void NumberSeq::add(double val) {
   _sum += val;
   _sum_of_squares += val * val;
   ++_num;
-}
-
-void NumberSeq::merge(NumberSeq& nseq2, bool clear_this) {
-
-  if (num() == 0) return;  // nothing to do
-
-  nseq2._last = _last;   // this is newer than that
-  nseq2._maximum = MAX2(_maximum, nseq2._maximum);
-
-  AbsSeq::merge(nseq2, clear_this);
-
-  if (clear_this) {
-    _last = 0;
-    _maximum = 0;
-    assert(num() == 0, "Not cleared");
-  }
 }
 
 

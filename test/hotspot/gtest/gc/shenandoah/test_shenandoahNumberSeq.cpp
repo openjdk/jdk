@@ -109,30 +109,55 @@ TEST_VM_F(BasicShenandoahNumberSeqTest, percentile_test) {
   EXPECT_NEAR(100, seq1.percentile(100), err);
 }
 
+TEST_VM_F(BasicShenandoahNumberSeqTest, clear_test) {
+  HdrSeq test;
+  test.add(1);
+
+  EXPECT_NE(test.num(), 0);
+  EXPECT_NE(test.sum(), 0);
+  EXPECT_NE(test.maximum(), 0);
+  EXPECT_NE(test.avg(), 0);
+  EXPECT_EQ(test.sd(), 0);
+  EXPECT_NE(test.davg(), 0);
+  EXPECT_EQ(test.dvariance(), 0);
+  for (int i = 0; i <= 100; i += 10) {
+    EXPECT_NE(test.percentile(i), 0);
+  }
+
+  test.clear();
+
+  EXPECT_EQ(test.num(), 0);
+  EXPECT_EQ(test.sum(), 0);
+  EXPECT_EQ(test.maximum(), 0);
+  EXPECT_EQ(test.avg(), 0);
+  EXPECT_EQ(test.sd(), 0);
+  EXPECT_EQ(test.davg(), 0);
+  EXPECT_EQ(test.dvariance(), 0);
+  for (int i = 0; i <= 100; i += 10) {
+    EXPECT_EQ(test.percentile(i), 0);
+  }
+}
+
 TEST_VM_F(ShenandoahNumberSeqMergeTest, merge_test) {
   EXPECT_EQ(seq1.num(), 80);
   EXPECT_EQ(seq2.num(), 20);
-  EXPECT_FALSE(isnan(seq2.davg()));  // Exercise the path; not a nan
-  EXPECT_FALSE(isnan(seq2.dsd()));
-  EXPECT_FALSE(isnan(seq2.dvariance()));
+  EXPECT_EQ(seq3.num(), 100);
 
-  std::cout << "Pre-merge: \n";
-  print();
-  seq1.merge(seq2);    // clears seq1, after merging into seq2
-  std::cout << "Post-merge: \n";
-  print();
+  HdrSeq merged;
+  merged.add(seq1);
+  merged.add(seq2);
 
-  EXPECT_EQ(seq1.num(), 0);
-  EXPECT_EQ(seq2.num(), 100);
-  EXPECT_EQ(seq2.num(), seq3.num());
-  EXPECT_TRUE(isnan(seq2.davg()));  // until we fix decayed stats
-  EXPECT_TRUE(isnan(seq2.dvariance()));
+  EXPECT_EQ(merged.num(), seq3.num());
 
-  EXPECT_EQ(seq2.maximum(), seq3.maximum());
-  EXPECT_EQ(seq2.percentile(0), seq3.percentile(0));
+  EXPECT_EQ(merged.maximum(), seq3.maximum());
+  EXPECT_EQ(merged.percentile(0), seq3.percentile(0));
   for (int i = 0; i <= 100; i += 10) {
-    EXPECT_NEAR(seq2.percentile(i), seq3.percentile(i), err);
+    EXPECT_NEAR(merged.percentile(i), seq3.percentile(i), err);
   }
-  EXPECT_NEAR(seq2.avg(), seq3.avg(), err);
-  EXPECT_NEAR(seq2.sd(),  seq3.sd(),  err);
+  EXPECT_NEAR(merged.avg(), seq3.avg(), err);
+  EXPECT_NEAR(merged.sd(),  seq3.sd(),  err);
+
+  // These are not implemented
+  EXPECT_TRUE(isnan(merged.davg()));
+  EXPECT_TRUE(isnan(merged.dvariance()));
 }

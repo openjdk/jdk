@@ -936,37 +936,38 @@ inline void ShenandoahScanRemembered<RememberedSet>::log_card_stats(HdrSeq* stat
 template<typename RememberedSet>
 void ShenandoahScanRemembered<RememberedSet>::log_card_stats(uint nworkers, CardStatLogType t) {
   assert(ShenandoahEnableCardStats, "Do not call");
-  HdrSeq* cum_stats = card_stats_for_phase(t);
+  HdrSeq* sum_stats = card_stats_for_phase(t);
   log_info(gc, remset)("%s", _card_stat_log_type[t]);
   for (uint i = 0; i < nworkers; i++) {
-    log_worker_card_stats(i, cum_stats);
+    log_worker_card_stats(i, sum_stats);
   }
 
   // Every so often, log the cumulative global stats
   if (++_card_stats_log_counter[t] >= ShenandoahCardStatsLogInterval) {
     _card_stats_log_counter[t] = 0;
     log_info(gc, remset)("Cumulative stats");
-    log_card_stats(cum_stats);
+    log_card_stats(sum_stats);
   }
 }
 
 // Log card stats for given worker_id, & clear them after merging into given cumulative stats
 template<typename RememberedSet>
-void ShenandoahScanRemembered<RememberedSet>::log_worker_card_stats(uint worker_id, HdrSeq* cum_stats) {
+void ShenandoahScanRemembered<RememberedSet>::log_worker_card_stats(uint worker_id, HdrSeq* sum_stats) {
   assert(ShenandoahEnableCardStats, "Do not call");
 
   HdrSeq* worker_card_stats = card_stats(worker_id);
   log_info(gc, remset)("Worker %u Card Stats: ", worker_id);
   log_card_stats(worker_card_stats);
   // Merge worker stats into the cumulative stats & clear worker stats
-  merge_worker_card_stats_cumulative(worker_card_stats, cum_stats);
+  merge_worker_card_stats_cumulative(worker_card_stats, sum_stats);
 }
 
 template<typename RememberedSet>
 void ShenandoahScanRemembered<RememberedSet>::merge_worker_card_stats_cumulative(
-  HdrSeq* worker_stats, HdrSeq* cum_stats) {
+  HdrSeq* worker_stats, HdrSeq* sum_stats) {
   for (int i = 0; i < MAX_CARD_STAT_TYPE; i++) {
-    worker_stats[i].merge(cum_stats[i]);
+    sum_stats[i].add(worker_stats[i]);
+    worker_stats[i].clear();
   }
 }
 #endif

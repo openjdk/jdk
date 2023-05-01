@@ -927,14 +927,14 @@ public:
   // Log stats related to card/RS stats for given phase t
   void log_card_stats(uint nworkers, CardStatLogType t) PRODUCT_RETURN;
 private:
-  // Log stats for given worker id related into given cumulative card/RS stats
-  void log_worker_card_stats(uint worker_id, HdrSeq* cum_stats) PRODUCT_RETURN;
+  // Log stats for given worker id related into given summary card/RS stats
+  void log_worker_card_stats(uint worker_id, HdrSeq* sum_stats) PRODUCT_RETURN;
 
   // Log given stats
   inline void log_card_stats(HdrSeq* stats) PRODUCT_RETURN;
 
   // Merge the stats from worked_id into the given summary stats, and clear the worker_id's stats.
-  void merge_worker_card_stats_cumulative(HdrSeq* worker_stats, HdrSeq* cum_stats) PRODUCT_RETURN;
+  void merge_worker_card_stats_cumulative(HdrSeq* worker_stats, HdrSeq* sum_stats) PRODUCT_RETURN;
 };
 
 
