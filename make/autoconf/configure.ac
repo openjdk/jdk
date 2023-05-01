@@ -86,6 +86,7 @@ PLATFORM_SETUP_OPENJDK_BUILD_AND_TARGET
 
 # Continue setting up basic stuff. Most remaining code require fundamental tools.
 BASIC_SETUP_PATHS
+BASIC_SETUP_TOOLS
 BASIC_SETUP_BUILD_ENV
 
 # Check if it's a pure open build or if custom sources are to be used.
@@ -221,6 +222,10 @@ JDKOPT_SETUP_UNDEFINED_BEHAVIOR_SANITIZER
 
 # LeakSanitizer
 JDKOPT_SETUP_LEAK_SANITIZER
+
+# Fallback linker
+# This needs to go before 'LIB_DETERMINE_DEPENDENCIES'
+JDKOPT_SETUP_FALLBACK_LINKER
 
 ###############################################################################
 #

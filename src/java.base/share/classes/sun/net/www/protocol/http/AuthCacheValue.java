@@ -25,7 +25,6 @@
 
 package sun.net.www.protocol.http;
 
-import java.io.Serializable;
 import java.net.PasswordAuthentication;
 
 /**
@@ -35,24 +34,12 @@ import java.net.PasswordAuthentication;
  * @author Michael McMahon
  */
 
-public abstract class AuthCacheValue implements Serializable {
-
-    @java.io.Serial
-    static final long serialVersionUID = 735249334068211611L;
+public abstract class AuthCacheValue {
 
     public enum Type {
         Proxy,
         Server
     };
-
-    /**
-     * Caches authentication info entered by user.  See cacheKey()
-     */
-    protected static AuthCache cache = new AuthCacheImpl();
-
-    public static void setAuthCache (AuthCache map) {
-        cache = map;
-    }
 
     /* Package private ctor to prevent extension outside package */
 
