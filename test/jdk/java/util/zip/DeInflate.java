@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,11 +47,12 @@ public class DeInflate {
         Arrays.fill(out1, (byte)0);
         Arrays.fill(out2, (byte)0);
 
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try (DeflaterOutputStream defos = new DeflaterOutputStream(baos, def)) {
-            defos.write(in, 0, len);
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+            try (DeflaterOutputStream defos = new DeflaterOutputStream(baos, def)) {
+                defos.write(in, 0, len);
+            }
+            out1 = baos.toByteArray();
         }
-        out1 = baos.toByteArray();
         int m = out1.length;
 
         Inflater inf = new Inflater(nowrap);
@@ -118,27 +119,55 @@ public class DeInflate {
         } catch (ReadOnlyBufferException robe) {}
     }
 
-    static void check(Deflater def, byte[] in, int len,
-                      byte[] out1, byte[] out2, boolean nowrap)
+    /**
+     * Uses the {@code def} deflater to deflate the input data {@code in} of length {@code len}.
+     * A new {@link Inflater} is then created within this method to inflate the deflated data. The
+     * inflated data is then compared with the {@code in} to assert that it matches the original
+     * input data.
+     * This method repeats these checks for the different overloaded methods of
+     * {@code Deflater.deflate(...)} and {@code Inflater.inflate(...)}
+     *
+     * @param def    the deflater to use for deflating the contents in {@code in}
+     * @param in     the input content
+     * @param len    the length of the input content to use
+     * @param nowrap will be passed to the constructor of the {@code Inflater} used in this
+     *               method
+     * @throws Throwable if any error occurs during the check
+     */
+    static void check(Deflater def, byte[] in, int len, boolean nowrap)
         throws Throwable
     {
-        Arrays.fill(out1, (byte)0);
-        Arrays.fill(out2, (byte)0);
-
+        byte[] tempBuffer = new byte[len];
+        byte[] out1, out2;
+        int m = 0, n = 0;
+        Inflater inf = new Inflater(nowrap);
         def.setInput(in, 0, len);
         def.finish();
-        int m = def.deflate(out1);
 
-        Inflater inf = new Inflater(nowrap);
-        inf.setInput(out1, 0, m);
-        int n = inf.inflate(out2);
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream(len)) {
+            while (!def.finished()) {
+                int temp_counter = def.deflate(tempBuffer);
+                m += temp_counter;
+                baos.write(tempBuffer, 0, temp_counter);
+            }
+            out1 = baos.toByteArray();
+            baos.reset();
 
-        if (n != len ||
-            !Arrays.equals(Arrays.copyOf(in, len), Arrays.copyOf(out2, len)) ||
-            inf.inflate(out2) != 0) {
-            System.out.printf("m=%d, n=%d, len=%d, eq=%b%n",
-                              m, n, len, Arrays.equals(in, out2));
-            throw new RuntimeException("De/inflater failed:" + def);
+            inf.setInput(out1, 0, m);
+
+            while (!inf.finished()) {
+                int temp_counter = inf.inflate(tempBuffer);
+                n += temp_counter;
+                baos.write(tempBuffer, 0, temp_counter);
+            }
+            out2 = baos.toByteArray();
+            if (n != len ||
+                !Arrays.equals(in, 0, len, out2, 0, len) ||
+                inf.inflate(out2) != 0) {
+                System.out.printf("m=%d, n=%d, len=%d, eq=%b%n",
+                                  m, n, len, Arrays.equals(in, out2));
+                throw new RuntimeException("De/inflater failed:" + def);
+            }
         }
 
         // readable
@@ -287,7 +316,7 @@ public class DeInflate {
                                           : new Random().nextInt(dataIn.length);
                         // use a new deflater
                         Deflater def = newDeflater(level, strategy, dowrap, dataOut2);
-                        check(def, dataIn, len, dataOut1, dataOut2, dowrap);
+                        check(def, dataIn, len, dowrap);
                         def.end();
 
                         // reuse the deflater (with reset) and test on stream, which
