@@ -58,7 +58,8 @@ public class TestUpcallStructScope extends NativeTestHelper {
     static final MemoryLayout S_PDI_LAYOUT = MemoryLayout.structLayout(
         C_POINTER.withName("p0"),
         C_DOUBLE.withName("p1"),
-        C_INT.withName("p2")
+        C_INT.withName("p2"),
+        MemoryLayout.paddingLayout(32)
     );
 
     static {

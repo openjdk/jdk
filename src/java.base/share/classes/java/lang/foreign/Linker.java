@@ -34,6 +34,7 @@ import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
 
 import java.lang.invoke.MethodHandle;
+import java.nio.ByteOrder;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -195,6 +196,17 @@ import java.util.stream.Stream;
  *     <td style="text-align:center;">{@link MemorySegment}</td>
  * </tbody>
  * </table></blockquote>
+ * <p>
+ * All the native linker implementations limit the function descriptors that they support to those that contain
+ * only so-called <em>canonical</em> layouts. A canonical layout has the following characteristics:
+ * <ol>
+ * <li>Its alignment constraint is set to its <a href="MemoryLayout.html#layout-align">natural alignment</a></li>
+ * <li>If it is a {@linkplain ValueLayout value layout}, its {@linkplain ValueLayout#order() byte order} is
+ * the {@linkplain ByteOrder#nativeOrder() native byte order}.
+ * <li>If it is a {@linkplain GroupLayout group layout}, its size is a multiple of its alignment constraint, and</li>
+ * <li>It does not contain padding other than what is strictly required to align its non-padding layout elements,
+ * or to satisfy constraint 3</li>
+ * </ol>
  *
  * <h3 id="function-pointers">Function pointers</h3>
  *
