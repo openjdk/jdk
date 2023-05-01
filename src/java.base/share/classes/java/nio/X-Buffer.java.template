@@ -1319,7 +1319,7 @@ public abstract sealed class $Type$Buffer
         return put(index, src, 0, src.length);
     }
 
-    private $Type$Buffer putArray(int index, $type$[] src, int offset, int length) {
+    $Type$Buffer putArray(int index, $type$[] src, int offset, int length) {
 #if[rw]
         if (
 #if[char]
@@ -2045,8 +2045,19 @@ public abstract sealed class $Type$Buffer
      */
     public $Type$Buffer append(CharSequence csq, int start, int end) {
         if (csq instanceof CharBuffer cb) {
-            int pos = position();
+            Objects.checkFromToIndex(start, end, csq.length());
+
+            //
+            // the append method throws BufferOverflowException when
+            // there is insufficient space in the buffer
+            //
             int length = end - start;
+            int pos = position();
+            int lim = limit();
+            int rem = (pos <= lim) ? lim - pos : 0;
+            if (length > rem)
+                throw new BufferOverflowException();
+
             put(pos, cb, start, length);
             position(pos + length);
             return this;
