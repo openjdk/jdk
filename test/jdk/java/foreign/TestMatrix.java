@@ -33,7 +33,7 @@
 
 /* @test id=UpcallHighArity-FF
  * @enablePreview
- * @requires jdk.CABI != "UNKNOWN"
+ * @requires jdk.CABI != "UNSUPPORTED"
  * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcallHighArity
  *
@@ -46,7 +46,7 @@
 
 /* @test id=UpcallHighArity-TF
  * @enablePreview
- * @requires jdk.CABI != "UNKNOWN"
+ * @requires jdk.CABI != "UNSUPPORTED"
  * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcallHighArity
  *
@@ -59,7 +59,7 @@
 
 /* @test id=UpcallHighArity-FT
  * @enablePreview
- * @requires jdk.CABI != "UNKNOWN"
+ * @requires jdk.CABI != "UNSUPPORTED"
  * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcallHighArity
  *
@@ -72,7 +72,7 @@
 
 /* @test id=UpcallHighArity-TT
  * @enablePreview
- * @requires jdk.CABI != "UNKNOWN"
+ * @requires jdk.CABI != "UNSUPPORTED"
  * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcallHighArity
  *
@@ -85,7 +85,7 @@
 
 /* @test id=DowncallScope-F
  * @enablePreview
- * @requires jdk.CABI != "UNKNOWN"
+ * @requires jdk.CABI != "UNSUPPORTED"
  * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestDowncallBase
  *
@@ -97,7 +97,7 @@
 
 /* @test id=DowncallScope-T
  * @enablePreview
- * @requires jdk.CABI != "UNKNOWN"
+ * @requires jdk.CABI != "UNSUPPORTED"
  * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestDowncallBase
  *
@@ -109,7 +109,7 @@
 
 /* @test id=DowncallStack-F
  * @enablePreview
- * @requires jdk.CABI != "UNKNOWN"
+ * @requires jdk.CABI != "UNSUPPORTED"
  * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestDowncallBase
  *
@@ -121,7 +121,7 @@
 
 /* @test id=DowncallStack-T
  * @enablePreview
- * @requires jdk.CABI != "UNKNOWN"
+ * @requires jdk.CABI != "UNSUPPORTED"
  * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestDowncallBase
  *
@@ -133,7 +133,7 @@
 
 /* @test id=UpcallScope-FF
  * @enablePreview
- * @requires jdk.CABI != "UNKNOWN"
+ * @requires jdk.CABI != "UNSUPPORTED"
  * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcallBase
  *
@@ -146,7 +146,7 @@
 
 /* @test id=UpcallScope-TF
  * @enablePreview
- * @requires jdk.CABI != "UNKNOWN"
+ * @requires jdk.CABI != "UNSUPPORTED"
  * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcallBase
  *
@@ -159,7 +159,7 @@
 
 /* @test id=UpcallScope-FT
  * @enablePreview
- * @requires jdk.CABI != "UNKNOWN"
+ * @requires jdk.CABI != "UNSUPPORTED"
  * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcallBase
  *
@@ -172,7 +172,7 @@
 
 /* @test id=UpcallScope-TT
  * @enablePreview
- * @requires jdk.CABI != "UNKNOWN"
+ * @requires jdk.CABI != "UNSUPPORTED"
  * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcallBase
  *
@@ -185,7 +185,7 @@
 
 /* @test id=UpcallAsync-FF
  * @enablePreview
- * @requires jdk.CABI != "UNKNOWN"
+ * @requires jdk.CABI != "UNSUPPORTED"
  * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcallBase
  *
@@ -198,7 +198,7 @@
 
 /* @test id=UpcallAsync-TF
  * @enablePreview
- * @requires jdk.CABI != "UNKNOWN"
+ * @requires jdk.CABI != "UNSUPPORTED"
  * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcallBase
  *
@@ -211,7 +211,7 @@
 
 /* @test id=UpcallAsync-FT
  * @enablePreview
- * @requires jdk.CABI != "UNKNOWN"
+ * @requires jdk.CABI != "UNSUPPORTED"
  * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcallBase
  *
@@ -224,7 +224,7 @@
 
 /* @test id=UpcallAsync-TT
  * @enablePreview
- * @requires jdk.CABI != "UNKNOWN"
+ * @requires jdk.CABI != "UNSUPPORTED"
  * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcallBase
  *
@@ -237,7 +237,7 @@
 
 /* @test id=UpcallStack-FF
  * @enablePreview
- * @requires jdk.CABI != "UNKNOWN"
+ * @requires jdk.CABI != "UNSUPPORTED"
  * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcallBase
  *
@@ -250,7 +250,7 @@
 
 /* @test id=UpcallStack-TF
  * @enablePreview
- * @requires jdk.CABI != "UNKNOWN"
+ * @requires jdk.CABI != "UNSUPPORTED"
  * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcallBase
  *
@@ -263,7 +263,7 @@
 
 /* @test id=UpcallStack-FT
  * @enablePreview
- * @requires jdk.CABI != "UNKNOWN"
+ * @requires jdk.CABI != "UNSUPPORTED"
  * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcallBase
  *
@@ -276,7 +276,7 @@
 
 /* @test id=UpcallStack-TT
  * @enablePreview
- * @requires jdk.CABI != "UNKNOWN"
+ * @requires jdk.CABI != "UNSUPPORTED"
  * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcallBase
  *
@@ -290,7 +290,7 @@
 /*
  * @test id=VarArgs
  * @enablePreview
- * @requires jdk.CABI != "UNKNOWN"
+ * @requires jdk.CABI != "UNSUPPORTED"
  * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper
  *

@@ -25,7 +25,7 @@
  * @test id=specialized
  * @enablePreview
  * @library ../
- * @requires jdk.CABI != "UNKNOWN"
+ * @requires jdk.CABI != "UNSUPPORTED"
  * @modules java.base/jdk.internal.foreign
  * @run testng/othervm
  *   --enable-native-access=ALL-UNNAMED
@@ -38,7 +38,7 @@
  * @test id=interpreted
  * @enablePreview
  * @library ../
- * @requires jdk.CABI != "UNKNOWN"
+ * @requires jdk.CABI != "UNSUPPORTED"
  * @modules java.base/jdk.internal.foreign
  * @run testng/othervm
  *   --enable-native-access=ALL-UNNAMED

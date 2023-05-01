@@ -24,7 +24,7 @@
 /*
  * @test
  * @enablePreview
- * @requires jdk.CABI != "UNKNOWN"
+ * @requires jdk.CABI != "UNSUPPORTED"
  * @run testng/othervm -Dos.name=Windows --enable-native-access=ALL-UNNAMED TestFallbackLookup
  */
 

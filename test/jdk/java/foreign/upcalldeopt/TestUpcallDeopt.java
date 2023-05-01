@@ -25,7 +25,7 @@
  * @test id=default_gc
  * @enablePreview
  * @bug 8277602
- * @requires jdk.CABI != "UNKNOWN"
+ * @requires jdk.CABI != "UNSUPPORTED"
  * @library /test/lib
  * @library ../
  * @build jdk.test.whitebox.WhiteBox

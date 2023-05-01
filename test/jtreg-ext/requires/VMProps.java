@@ -655,6 +655,13 @@ public class VMProps implements Callable<Map<String, String>> {
         return "" + result;
     }
 
+    /*
+     * A string indicating the current C ABI of the foreign linker that is currently being used.
+     * "FALLBACK" and "UNSUPPORTED" are special values. The former indicates the fallback linker is
+     * being used. The latter indicates an unsupported platform.
+     *
+     * See jdk.internal.foreign.CABI
+     */
     private String cabi() {
         return String.valueOf(CABI.current());
     }

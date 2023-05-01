@@ -31,7 +31,7 @@ import static org.testng.Assert.*;
 /*
  * @test
  * @enablePreview
- * @requires jdk.CABI != "UNKNOWN"
+ * @requires jdk.CABI != "UNSUPPORTED"
  * @run testng TestStringEncoding
  */
 

@@ -24,7 +24,7 @@
 /*
  * @test
  * @enablePreview
- * @requires jdk.CABI != "UNKNOWN"
+ * @requires jdk.CABI != "UNSUPPORTED"
  * @library /test/lib
  * @library ../
  * @build jdk.test.whitebox.WhiteBox

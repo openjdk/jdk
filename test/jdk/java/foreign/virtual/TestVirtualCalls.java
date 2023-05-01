@@ -24,7 +24,7 @@
 /*
  * @test
  * @enablePreview
- * @requires jdk.CABI != "UNKNOWN"
+ * @requires jdk.CABI != "UNSUPPORTED"
  * @library ../
  * @run testng/othervm
  *   --enable-native-access=ALL-UNNAMED
