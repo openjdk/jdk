@@ -22,7 +22,7 @@
  */
 
 /**
- * @test
+ * @test id=default
  * @requires vm.jvmti
  * @requires vm.continuations
  * @enablePreview
@@ -30,6 +30,17 @@
  *      -Djdk.virtualThreadScheduler.parallelism=1
  *      -agentlib:VThreadStackRefTest
  *      VThreadStackRefTest
+ */
+
+/**
+ * @test id=no-vmcontinuations
+ * @requires vm.jvmti
+ * @enablePreview
+ * @run main/othervm/native
+ *      -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations
+ *      -Djdk.virtualThreadScheduler.parallelism=1
+ *      -agentlib:VThreadStackRefTest
+ *      VThreadStackRefTest NoMountCheck
  */
 
 import java.lang.ref.Reference;
@@ -60,6 +71,8 @@ public class VThreadStackRefTest {
     static volatile boolean mountedVthreadReady = false;
 
     public static void main(String[] args) throws InterruptedException {
+        boolean noMountCheck = args.length > 0
+                               && args[0].equalsIgnoreCase("NoMountCheck");
         CountDownLatch dumpedLatch = new CountDownLatch(1);
 
         CountDownLatch unmountedThreadReady = new CountDownLatch(1);
@@ -118,6 +131,12 @@ public class VThreadStackRefTest {
         // Wait until platform thread is ready.
         pThreadReady.await();
 
+        System.out.println("threads:");
+        System.out.println("  - vthreadUnmounted: " + vthreadUnmounted);
+        System.out.println("  - vthreadEnded: " + vthreadEnded);
+        System.out.println("  - vthreadMounted: " + vthreadMounted);
+        System.out.println("  - pthread: " + pthread);
+
         TestCase[] testCases = new TestCase[] {
             new TestCase(VThreadUnmountedReferenced.class, 1, vthreadUnmounted.getId()),
             new TestCase(VThreadUnmountedJNIReferenced.class,
@@ -137,8 +156,12 @@ public class VThreadStackRefTest {
         }
 
         try {
-            verifyVthreadMounted(vthreadUnmounted, false);
-            verifyVthreadMounted(vthreadMounted, true);
+            if (noMountCheck) {
+                System.out.println("INFO: No mount/unmount checks");
+            } else {
+                verifyVthreadMounted(vthreadUnmounted, false);
+                verifyVthreadMounted(vthreadMounted, true);
+            }
 
             test(testClasses);
         } finally {
