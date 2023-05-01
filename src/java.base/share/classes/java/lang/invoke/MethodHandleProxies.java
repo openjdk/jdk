@@ -232,8 +232,6 @@ public class MethodHandleProxies {
         return intfc.cast(proxy);
     }
 
-
-
     private record LocalMethodInfo(MethodTypeDesc desc, List<ClassDesc> thrown) {}
 
     private record ProxyClassDefiner(Lookup.ClassDefiner definer, MethodType[] types, Class<?> intf, byte[] template) {}
@@ -253,15 +251,15 @@ public class MethodHandleProxies {
         @Override
         protected ProxyClassDefiner computeValue(Class<?> intfc) {
 
-            final List<Method> methods = getSingleNameMethods(intfc);
-            if (methods == null)
+            final InterfaceStats stats = getStats(intfc);
+            if (stats == null)
                 throw newIllegalArgumentException("not a single-method interface", intfc.getName());
 
-            List<LocalMethodInfo> infos = new ArrayList<>(methods.size());
-            MethodType[] types = new MethodType[methods.size()];
-            for (int i = 0; i < methods.size(); i++) {
-                Method m = methods.get(i);
-                MethodType mt = methodType(m.getReturnType(), m.getParameterTypes());
+            List<LocalMethodInfo> infos = new ArrayList<>(stats.singleNameMethods.size());
+            MethodType[] types = new MethodType[stats.singleNameMethods.size()];
+            for (int i = 0; i < stats.singleNameMethods.size(); i++) {
+                Method m = stats.singleNameMethods.get(i);
+                MethodType mt = methodType(m.getReturnType(), JLRA.getExecutableSharedParameterTypes(m));
                 MethodTypeDesc mtDesc = desc(mt);
                 types[i] = mt;
                 var thrown = m.getExceptionTypes();
@@ -276,7 +274,7 @@ public class MethodHandleProxies {
                 }
             }
 
-            Set<Class<?>> referencedTypes = referencedTypes(intfc);
+            Set<Class<?>> referencedTypes = stats.referencedTypes;
             Module targetModule = newDynamicModule(intfc.getClassLoader(), referencedTypes);
 
             // generate a class file in the package of the dynamic module
@@ -285,7 +283,7 @@ public class MethodHandleProxies {
             int i = n.lastIndexOf('.');
             String cn = i > 0 ? pn + "." + n.substring(i+1) : pn + "." + n;
             ClassDesc proxyDesc = ClassDesc.of(cn);
-            byte[] template = createTemplate(proxyDesc, desc(intfc), methods.get(0).getName(), infos);
+            byte[] template = createTemplate(proxyDesc, desc(intfc), stats.uniqueName, infos);
             var definer = new Lookup(intfc).makeHiddenClassDefiner(cn, template, Set.of(), DUMPER);
             return new ProxyClassDefiner(definer, types, intfc, template);
         }
@@ -442,36 +440,6 @@ public class MethodHandleProxies {
                 + mt + " to a constant"));
     }
 
-    private static boolean isObjectMethod(Method m) {
-        return switch (m.getName()) {
-            case "toString" -> m.getReturnType() == String.class
-                               && m.getParameterCount() == 0;
-            case "hashCode" -> m.getReturnType() == int.class
-                               && m.getParameterCount() == 0;
-            case "equals"   -> m.getReturnType() == boolean.class
-                               && m.getParameterCount() == 1
-                               && m.getParameterTypes()[0] == Object.class;
-            default -> false;
-        };
-    }
-
-    private static List<Method> getSingleNameMethods(Class<?> intfc) {
-        ArrayList<Method> methods = new ArrayList<>();
-        String uniqueName = null;
-        for (Method m : intfc.getMethods()) {
-            if (isObjectMethod(m))  continue;
-            if (!Modifier.isAbstract(m.getModifiers()))  continue;
-            String mname = m.getName();
-            if (uniqueName == null)
-                uniqueName = mname;
-            else if (!uniqueName.equals(mname))
-                return null;  // too many abstract methods
-            methods.add(m);
-        }
-        if (uniqueName == null)  return null;
-        return methods;
-    }
-
     private static final JavaLangReflectAccess JLRA = SharedSecrets.getJavaLangReflectAccess();
     private static final AtomicInteger counter = new AtomicInteger();
 
@@ -507,26 +475,62 @@ public class MethodHandleProxies {
         return dynModule;
     }
 
+    private static boolean isObjectMethod(Method m) {
+        return switch (m.getName()) {
+            case "toString" -> m.getReturnType() == String.class
+                    && m.getParameterCount() == 0;
+            case "hashCode" -> m.getReturnType() == int.class
+                    && m.getParameterCount() == 0;
+            case "equals"   -> m.getReturnType() == boolean.class
+                    && m.getParameterCount() == 1
+                    && JLRA.getExecutableSharedParameterTypes(m)[0] == Object.class;
+            default -> false;
+        };
+    }
+
     /**
-     * Returns a set of types that are referenced by the instance methods of the given
-     * interface.
+     * Stores the result of iteration over methods in a given interface.
      *
-     * @param intfc an interface
+     * @param uniqueName the single abstract method's name in the given interface
+     * @param singleNameMethods the abstract methods to implement in the given interface
+     * @param referencedTypes a set of types that are referenced by the instance methods of the given interface
      */
-    private static Set<Class<?>> referencedTypes(Class<?> intfc) {
+    private record InterfaceStats(String uniqueName, List<Method> singleNameMethods, Set<Class<?>> referencedTypes) {
+    }
+
+    private static InterfaceStats getStats(Class<?> intfc) {
         if (!intfc.isInterface()) {
             throw new IllegalArgumentException(intfc + " not an inteface");
         }
+
+        ArrayList<Method> methods = new ArrayList<>();
         var types = new HashSet<Class<?>>();
         types.add(intfc);
+        String uniqueName = null;
         for (Method m : intfc.getMethods()) {
-            if (!Modifier.isStatic(m.getModifiers())) {
-                addElementType(types, m.getReturnType());
-                addElementTypes(types, JLRA.getExecutableSharedParameterTypes(m));
-                addElementTypes(types, JLRA.getExecutableSharedExceptionTypes(m));
-            }
+            if (Modifier.isStatic(m.getModifiers()))
+                continue;
+
+            addElementType(types, m.getReturnType());
+            addElementTypes(types, JLRA.getExecutableSharedParameterTypes(m));
+            addElementTypes(types, JLRA.getExecutableSharedExceptionTypes(m));
+
+            if (isObjectMethod(m))
+                continue;
+            if (!Modifier.isAbstract(m.getModifiers()))
+                continue;
+            String mname = m.getName();
+            if (uniqueName == null)
+                uniqueName = mname;
+            else if (!uniqueName.equals(mname))
+                return null;  // too many abstract methods
+            methods.add(m);
         }
-        return types;
+
+        if (uniqueName == null)
+            return null;
+
+        return new InterfaceStats(uniqueName, methods, types);
     }
 
     /*
