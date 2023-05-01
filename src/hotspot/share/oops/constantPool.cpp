@@ -707,7 +707,7 @@ int ConstantPool::cp_index_helper(int which, Bytecodes::Code code) {
   }
 }
 
-int ConstantPool::impl_name_and_type_ref_index_at(int which, Bytecodes::Code code) {
+int ConstantPool::name_and_type_ref_index_at(int which, Bytecodes::Code code) {
   int i = which;
   if (code != Bytecodes::_illegal && cache() != nullptr) {
     if (code == Bytecodes::_invokedynamic) {

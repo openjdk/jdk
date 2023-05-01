@@ -660,28 +660,20 @@ class ConstantPool : public Metadata {
   Klass* klass_ref_at(int which, Bytecodes::Code code, TRAPS);
   Symbol* klass_ref_at_noresolve(int which, Bytecodes::Code code);
   Symbol* name_ref_at(int which, Bytecodes::Code code) {
-    int name_index = name_ref_index_at(impl_name_and_type_ref_index_at(which, code));
+    int name_index = name_ref_index_at(name_and_type_ref_index_at(which, code));
     return symbol_at(name_index);
-    //return impl_name_ref_at(which, code);
   }
   Symbol* signature_ref_at(int which, Bytecodes::Code code) {
-    int signature_index = signature_ref_index_at(impl_name_and_type_ref_index_at(which, code));
+    int signature_index = signature_ref_index_at(name_and_type_ref_index_at(which, code));
     return symbol_at(signature_index);
-    //return impl_signature_ref_at(which, code);
   }
 
-  int klass_ref_index_at(int which, Bytecodes::Code code); /*{
-    return impl_klass_ref_index_at(which, code);
-  }*/
-  int name_and_type_ref_index_at(int which, Bytecodes::Code code) {
-    return impl_name_and_type_ref_index_at(which, code);
-  }
+  int klass_ref_index_at(int which, Bytecodes::Code code);
+  int name_and_type_ref_index_at(int which, Bytecodes::Code code);
 
   int remap_instruction_operand_from_cache(int operand);  // operand must be biased by CPCACHE_INDEX_TAG
 
-  constantTag tag_ref_at(int cp_cache_index, Bytecodes::Code code); /*{
-    return impl_tag_ref_at(cp_cache_index, code);
-  }*/
+  constantTag tag_ref_at(int cp_cache_index, Bytecodes::Code code);
 
   int cp_index_helper(int which, Bytecodes::Code code);
 
@@ -789,7 +781,7 @@ class ConstantPool : public Metadata {
   Symbol* uncached_name_ref_at(int which)                 { return name_ref_at(which, Bytecodes::_illegal); }
   Symbol* uncached_signature_ref_at(int which)            { return signature_ref_at(which, Bytecodes::_illegal); }
   int       uncached_klass_ref_index_at(int which)          { return klass_ref_index_at(which, Bytecodes::_illegal); }
-  int       uncached_name_and_type_ref_index_at(int which)  { return impl_name_and_type_ref_index_at(which, Bytecodes::_illegal); }
+  int       uncached_name_and_type_ref_index_at(int which)  { return name_and_type_ref_index_at(which, Bytecodes::_illegal); }
 
   // Sharing
   int pre_resolve_shared_klasses(TRAPS);
@@ -815,13 +807,6 @@ class ConstantPool : public Metadata {
   void set_resolved_references(OopHandle s) { _cache->set_resolved_references(s); }
   Array<u2>* reference_map() const        {  return (_cache == nullptr) ? nullptr :  _cache->reference_map(); }
   void set_reference_map(Array<u2>* o)    { _cache->set_reference_map(o); }
-
-  //Symbol* impl_name_ref_at(int which, Bytecodes::Code code);
-  //Symbol* impl_signature_ref_at(int which, Bytecodes::Code code);
-
-  //int       impl_klass_ref_index_at(int which, Bytecodes::Code code);
-  int       impl_name_and_type_ref_index_at(int which, Bytecodes::Code code);
-  //constantTag impl_tag_ref_at(int which, Bytecodes::Code code);
 
   // Used while constructing constant pool (only by ClassFileParser)
   jint klass_index_at(int which) {
