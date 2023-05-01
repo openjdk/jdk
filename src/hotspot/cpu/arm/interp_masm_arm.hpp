@@ -69,7 +69,6 @@ class InterpreterMacroAssembler: public MacroAssembler {
   inline void check_extended_sp(Register tmp) {}
   inline void check_no_cached_stack_top(Register tmp) {}
 
-
   void save_bcp()                                          { str(Rbcp, Address(FP, frame::interpreter_frame_bcp_offset * wordSize)); }
   void restore_bcp()                                       { ldr(Rbcp, Address(FP, frame::interpreter_frame_bcp_offset * wordSize)); }
   void restore_locals() {
@@ -102,6 +101,8 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   // load cpool->resolved_klass_at(index); Rtemp is corrupted upon return
   void load_resolved_klass_at_offset(Register Rcpool, Register Rindex, Register Rklass);
+
+  void load_resolved_indy_entry(Register cache, Register index);
 
   void pop_ptr(Register r);
   void pop_i(Register r = R0_tos);

@@ -42,8 +42,10 @@ import java.io.Serializable;
  * or set of key-value mappings.  The <i>order</i> of a map is defined as
  * the order in which the iterators on the map's collection views return their
  * elements.  Some map implementations, like the {@code TreeMap} class, make
- * specific guarantees as to their order; others, like the {@code HashMap}
- * class, do not.
+ * specific guarantees as to their encounter order; others, like the
+ * {@code HashMap} class, do not. Maps with a defined
+ * <a href="SequencedCollection.html#encounter">encounter order</a>
+ * are generally subtypes of the {@link SequencedMap} interface.
  *
  * <p>Note: great care must be exercised if mutable objects are used as map
  * keys.  The behavior of a map is not specified if the value of an object is
@@ -304,8 +306,10 @@ public interface Map<K, V> {
      * (optional operation).  The effect of this call is equivalent to that
      * of calling {@link #put(Object,Object) put(k, v)} on this map once
      * for each mapping from key {@code k} to value {@code v} in the
-     * specified map.  The behavior of this operation is undefined if the
-     * specified map is modified while the operation is in progress.
+     * specified map.  The behavior of this operation is undefined if the specified map
+     * is modified while the operation is in progress. If the specified map has a defined
+     * <a href="SequencedCollection.html#encounter">encounter order</a>,
+     * processing of its mappings generally occurs in that order.
      *
      * @param m mappings to be stored in this map
      * @throws UnsupportedOperationException if the {@code putAll} operation
