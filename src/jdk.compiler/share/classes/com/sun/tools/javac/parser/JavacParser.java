@@ -822,12 +822,16 @@ public class JavacParser implements Parser {
                 pattern = toP(F.at(pos).RecordPattern(e, nested.toList()));
             } else {
                 //type test pattern:
-                UnnamedDetails result = identOrFlagUnderscore(mods);
-                JCVariableDecl var = toP(F.at(result.varPos()).VarDef(mods, result.name(), e, null));
+                int varPos = token.pos;
+                Name name = identOrUnderscore();
+                if (name == names.underscore) {
+                    mods.flags |= Flags.UNNAMED;
+                }
+                JCVariableDecl var = toP(F.at(varPos).VarDef(mods, name, e, null));
                 if (e == null) {
                     var.startPos = pos;
-                    if (result.name() == names.underscore) {
-                        log.error(DiagnosticFlag.SYNTAX, result.varPos(), Errors.UnderscoreAsIdentifier);
+                    if (name == names.underscore) {
+                        log.error(DiagnosticFlag.SYNTAX, varPos, Errors.UnderscoreAsIdentifier);
                     }
                 }
                 pattern = toP(F.at(pos).BindingPattern(var));
@@ -835,20 +839,6 @@ public class JavacParser implements Parser {
         }
         return pattern;
     }
-
-    private UnnamedDetails identOrFlagUnderscore(JCModifiers mods) {
-        int varPos = token.pos;
-        Name name = identOrUnderscore();
-        if (name == names.underscore) {
-            mods.flags |= Flags.UNNAMED;
-        }
-        UnnamedDetails result = new UnnamedDetails(varPos, name);
-        return result;
-    }
-
-    private record UnnamedDetails(int varPos, Name name) {
-    }
-
 
     /**
      * parses (optional) type annotations followed by a type. If the
@@ -3518,8 +3508,7 @@ public class JavacParser implements Parser {
                                                                          T vdefs,
                                                                          boolean localDecl)
     {
-        UnnamedDetails result = identOrFlagUnderscore(mods);
-        return variableDeclaratorsRest(result.varPos(), mods, type, result.name(), false, null, vdefs, localDecl);
+        return variableDeclaratorsRest(token.pos, mods, type, identOrUnderscore(), false, null, vdefs, localDecl);
     }
 
     /** VariableDeclaratorsRest = VariableDeclaratorRest { "," VariableDeclarator }
@@ -3552,11 +3541,7 @@ public class JavacParser implements Parser {
      *  ConstantDeclarator = Ident ConstantDeclaratorRest
      */
     JCVariableDecl variableDeclarator(JCModifiers mods, JCExpression type, boolean reqInit, Comment dc, boolean localDecl) {
-        UnnamedDetails result = identOrFlagUnderscore(mods);
-        if (!localDecl && result.name() == names.underscore) {
-            log.error(DiagnosticFlag.SYNTAX, result.varPos(), Errors.UnderscoreAsIdentifier);
-        }
-        return variableDeclaratorRest(result.varPos(), mods, type, result.name(), reqInit, dc, localDecl, true);
+        return variableDeclaratorRest(token.pos, mods, type, identOrUnderscore(), reqInit, dc, localDecl, true);
     }
 
     /** VariableDeclaratorRest = BracketsOpt ["=" VariableInitializer]
@@ -3570,6 +3555,14 @@ public class JavacParser implements Parser {
         boolean declaredUsingVar = false;
         type = bracketsOpt(type);
         JCExpression init = null;
+
+        if (Feature.UNNAMED_VARIABLES.allowedInSource(source) && name == names.underscore) {
+            mods.flags |= Flags.UNNAMED;
+            if (!localDecl) {
+                log.error(DiagnosticFlag.SYNTAX, pos, Errors.UnderscoreAsIdentifier);
+            }
+        }
+
         if (token.kind == EQ) {
             nextToken();
             init = variableInitializer();
@@ -3751,8 +3744,7 @@ public class JavacParser implements Parser {
         JCExpression t = term(EXPR | TYPE);
         if (wasTypeMode() && LAX_IDENTIFIER.test(token.kind)) {
             JCModifiers mods = F.Modifiers(0);
-            UnnamedDetails result = identOrFlagUnderscore(mods);
-            return variableDeclaratorRest(result.varPos(), mods, t, result.name(), true, null, true, false);
+            return variableDeclaratorRest(token.pos, mods, t, identOrUnderscore(), true, null, true, false);
         } else {
             checkSourceLevel(Feature.EFFECTIVELY_FINAL_VARIABLES_IN_TRY_WITH_RESOURCES);
             if (!t.hasTag(IDENT) && !t.hasTag(SELECT)) {
