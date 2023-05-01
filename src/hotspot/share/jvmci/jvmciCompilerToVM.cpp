@@ -1769,7 +1769,7 @@ C2V_VMENTRY_0(jint, methodDataExceptionSeen, (JNIEnv* env, jobject, jlong method
   MethodData* mdo = (MethodData*) method_data_pointer;
   MutexLocker mu(mdo->extra_data_lock());
   DataLayout* data    = mdo->extra_data_base();
-  DataLayout* end   = mdo->extra_data_limit();
+  DataLayout* end   = mdo->args_data_limit();
   for (;; data = mdo->next_extra(data)) {
     assert(data < end, "moved past end of extra data");
     int tag = data->tag();
@@ -1782,11 +1782,13 @@ C2V_VMENTRY_0(jint, methodDataExceptionSeen, (JNIEnv* env, jobject, jlong method
         break;
       }
     case DataLayout::no_tag:
-    case DataLayout::arg_info_data_tag:
-      // An empty slot or ArgInfoData entry marks the end of the trap data
-      return -1;
+      // There is a free slot so return false since a BitData would have been allocated to record
+      // true if it had been seen.
+      return 0;
     }
   }
+  // The bci wasn't found and there are no free slots to record a trap for this location, so always
+  // return unknown.
   return -1;
 C2V_END
 
