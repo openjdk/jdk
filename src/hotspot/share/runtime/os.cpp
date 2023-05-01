@@ -1378,6 +1378,22 @@ bool os::file_exists(const char* filename) {
   return os::stat(filename, &statbuf) == 0;
 }
 
+ssize_t os::write(int fd, const void *buf, unsigned int nBytes) {
+  ssize_t res;
+  size_t len = nBytes;
+  while (len > 0) {
+    res = pd_write(fd, buf, (unsigned int)len);
+    if (res < 0) {
+      return res;
+    }
+    buf = (void *)((char *)buf + len);
+    len -= res;
+  }
+
+  return res;
+}
+
+
 // Splits a path, based on its separator, the number of
 // elements is returned back in "elements".
 // file_name_length is used as a modifier for each path's

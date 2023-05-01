@@ -104,20 +104,14 @@ static void save_memory_to_file(char* addr, size_t size) {
   } else {
     ssize_t result;
 
-    for (size_t remaining = size; remaining > 0;) {
-
-      result = os::write(fd, addr, remaining);
-      if (result == OS_ERR) {
-        if (PrintMiscellaneous && Verbose) {
-          warning("Could not write Perfdata save file: %s: %s\n",
-                  destfile, os::strerror(errno));
-        }
-        break;
+    result = os::write(fd, addr, size);
+    if (result == OS_ERR) {
+      if (PrintMiscellaneous && Verbose) {
+        warning("Could not write Perfdata save file: %s: %s\n",
+                destfile, os::strerror(errno));
       }
-
-      remaining -= (size_t)result;
-      addr += result;
     }
+
 
     result = ::close(fd);
     if (PrintMiscellaneous && Verbose) {

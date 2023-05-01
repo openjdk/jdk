@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -372,20 +372,26 @@ static void write_repository_files(const RepositoryIterator& iterator, char* con
     assert(fqn != NULL, "invariant");
     current_fd = open_exclusivly(fqn);
     if (current_fd != invalid_fd) {
-      const int64_t size = file_size(current_fd);
+      const size_t size = (size_t)file_size(current_fd);
       assert(size > 0, "invariant");
-      int64_t bytes_read = 0;
-      int64_t bytes_written = 0;
+      unsigned int bytes_read = 0;
+      unsigned int bytes_written = 0;
       while (bytes_read < size) {
         const ssize_t read_result = os::read_at(current_fd, copy_block, (int)block_size, bytes_read);
         if (-1 == read_result) {
           log_info(jfr)( // For user, should not be "jfr, system"
-              "Unable to recover JFR data");
+              "Unable to recover JFR data, read failed.");
           break;
         }
-        bytes_read += (int64_t)read_result;
-        assert(bytes_read - bytes_written <= (int64_t)block_size, "invariant");
-        bytes_written += (int64_t)os::write(emergency_fd, copy_block, bytes_read - bytes_written);
+        bytes_read += read_result;
+        assert(bytes_read - bytes_written <= block_size, "invariant");
+        const ssize_t write_result = os::write(emergency_fd, copy_block, bytes_read - bytes_written);
+        if (-1 == write_result) {
+          log_info(jfr)( // For user, should not be "jfr, system"
+              "Unable to recover JFR data, write failed.");
+          break;
+        }
+        bytes_written += write_result;
         assert(bytes_read == bytes_written, "invariant");
       }
       ::close(current_fd);

@@ -229,6 +229,7 @@ class os: AllStatic {
   // Get summary strings for system information in buffer provided
   static void  get_summary_cpu_info(char* buf, size_t buflen);
   static void  get_summary_os_info(char* buf, size_t buflen);
+  static ssize_t pd_write(int fd, const void *buf, unsigned int nBytes);
 
   static void initialize_initial_active_processor_count();
 
