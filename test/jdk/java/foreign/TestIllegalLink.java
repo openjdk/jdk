@@ -25,6 +25,7 @@
 /*
  * @test
  * @enablePreview
+ * @modules java.base/jdk.internal.foreign
  * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64" | os.arch == "riscv64"
  * @run testng/othervm --enable-native-access=ALL-UNNAMED TestIllegalLink
  */
@@ -39,7 +40,11 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.nio.ByteOrder;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
+import jdk.internal.foreign.CABI;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
@@ -47,6 +52,8 @@ import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 
 public class TestIllegalLink extends NativeTestHelper {
+
+    private static final boolean IS_SYSV = CABI.current() == CABI.SYS_V;
 
     private static final MemorySegment DUMMY_TARGET = MemorySegment.ofAddress(1);
     private static final MethodHandle DUMMY_TARGET_MH = MethodHandles.empty(MethodType.methodType(void.class));
@@ -101,7 +108,7 @@ public class TestIllegalLink extends NativeTestHelper {
 
     @DataProvider
     public static Object[][] types() {
-        return new Object[][]{
+        List<Object[]> cases = new ArrayList<>(Arrays.asList(new Object[][]{
             {
                     FunctionDescriptor.of(MemoryLayout.paddingLayout(64)),
                     "Unsupported layout: x64"
@@ -185,7 +192,18 @@ public class TestIllegalLink extends NativeTestHelper {
                             MemoryLayout.paddingLayout(32))), // too much trailing padding
                     "has unexpected size"
             },
-        };
+        }));
+
+        if (IS_SYSV) {
+            cases.add(new Object[] {
+                    FunctionDescriptor.ofVoid(MemoryLayout.structLayout(
+                            MemoryLayout.sequenceLayout(
+                                C_INT
+                            ))),
+                    "GroupLayout is too large"
+            });
+        }
+        return cases.toArray(Object[][]::new);
     }
 
     private static ByteOrder nonNativeOrder() {
