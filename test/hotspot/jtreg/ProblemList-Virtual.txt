@@ -130,6 +130,25 @@ vmTestbase/nsk/jdi/stress/serial/forceEarlyReturn002/TestDescription.java 828541
 
 vmTestbase/nsk/jdi/VMOutOfMemoryException/VMOutOfMemoryException001/VMOutOfMemoryException001.java 8285417 windows-all
 
+####
+## Unsupported functionality
+
+vmTestbase/nsk/monitoring/ThreadMXBean/GetThreadAllocatedBytes/baseBehaviorTest_server_default/TestDescription.java 8285419 generic-all
+vmTestbase/nsk/monitoring/ThreadMXBean/GetThreadAllocatedBytes/baseBehaviorTest_server_custom/TestDescription.java 8285419 generic-all
+vmTestbase/nsk/monitoring/ThreadMXBean/GetThreadAllocatedBytes/baseBehaviorTest_directly/TestDescription.java 8285419 generic-all
+vmTestbase/nsk/monitoring/ThreadMXBean/GetThreadAllocatedBytes/baseBehaviorTest_proxy_custom/TestDescription.java 8285419 generic-all
+vmTestbase/nsk/monitoring/ThreadMXBean/GetThreadAllocatedBytes/baseBehaviorTest_proxy_default/TestDescription.java 8285419 generic-all
+
+
+####
+## No ThreadInfo for vthreads
+
+vmTestbase/nsk/monitoring/ThreadInfo/isInNative/isinnative001/TestDescription.java 8285420 generic-all
+vmTestbase/nsk/monitoring/ThreadInfo/getLockOwnerName/getlockownername001/TestDescription.java 8285420 generic-all
+vmTestbase/nsk/monitoring/ThreadInfo/getLockName/getlockname001/TestDescription.java 8285420 generic-all
+vmTestbase/nsk/monitoring/ThreadInfo/from_c/from_c001/TestDescription.java 8285420 generic-all
+vmTestbase/nsk/monitoring/MemoryUsage/from/from001/TestDescription.java 8285420 generic-all
+
 
 
 ##########
@@ -138,6 +157,7 @@ vmTestbase/nsk/jdi/VMOutOfMemoryException/VMOutOfMemoryException001/VMOutOfMemor
 
 ####
 # OOME in unexpected thread
+
 gc/g1/ihop/TestIHOPStatic.java 0000000 generic-all
 
 ####
@@ -162,31 +182,26 @@ serviceability/dcmd/thread/PrintConcurrentLocksTest.java 0000000 generic-all
 
 ####
 # Does not support JVMTI StopThread
+
 runtime/Thread/StopAtExit.java 0000000 generic-all
 runtime/Thread/AsyncExceptionOnMonitorEnter.java 0000000 generic-all
 
 ####
-# Something wrong with test.jdk/test.src properties
-
-
-
-####
 # Don't work with ProcessTools wrapper because of permissions or classpath
+
+compiler/ciReplay/TestVMNoCompLevel.java 0000000 generic-all
+runtime/BootstrapMethod/TestLambdaExceptionInInitializer.java 0000000 generic-all
 runtime/cds/appcds/jigsaw/classpathtests/EmptyClassInBootClassPath.java 0000000 generic-all
 runtime/cds/appcds/jigsaw/modulepath/OptimizeModuleHandlingTest.java 0000000 generic-all
 runtime/classFileParserBug/TestEmptyBootstrapMethodsAttr.java 0000000 generic-all
-
-runtime/BootstrapMethod/TestLambdaExceptionInInitializer.java 0000000 generic-all
 runtime/logging/VtablesTest.java 0000000 generic-all
-serviceability/sa/TestCpoolForInvokeDynamic.java 0000000 generic-all
-compiler/ciReplay/TestVMNoCompLevel.java 0000000 generic-all
 runtime/logging/LoaderConstraintsTest.javaruntime/logging/LoaderConstraintsTest.java 0000000 generic-all
 runtime/jni/checked/TestCheckedEnsureLocalCapacity.java 0000000 generic-all
+serviceability/sa/TestCpoolForInvokeDynamic.java 0000000 generic-all
 
 
 ####
 # GC tests failing because test expected results differ with vthread
-
 gc/TestAgeOutput.java#id1 0000000 generic-all
 gc/TestAgeOutput.java#id0 0000000 generic-all
 gc/arguments/TestNewSizeThreadIncrease.java 0000000 generic-all
@@ -204,30 +219,7 @@ gc/g1/plab/TestPLABResize.java 0000000 generic-all
 
 ####
 ## Expected exception is ignored
-
 runtime/condy/BadBSMUseTest.java 0000000 generic-all
-
-####
-## NSK JMX Tests
-
-####
-## Unsupported functionality
-
-vmTestbase/nsk/monitoring/ThreadMXBean/GetThreadAllocatedBytes/baseBehaviorTest_server_default/TestDescription.java 8285419 generic-all
-vmTestbase/nsk/monitoring/ThreadMXBean/GetThreadAllocatedBytes/baseBehaviorTest_server_custom/TestDescription.java 8285419 generic-all
-vmTestbase/nsk/monitoring/ThreadMXBean/GetThreadAllocatedBytes/baseBehaviorTest_directly/TestDescription.java 8285419 generic-all
-vmTestbase/nsk/monitoring/ThreadMXBean/GetThreadAllocatedBytes/baseBehaviorTest_proxy_custom/TestDescription.java 8285419 generic-all
-vmTestbase/nsk/monitoring/ThreadMXBean/GetThreadAllocatedBytes/baseBehaviorTest_proxy_default/TestDescription.java 8285419 generic-all
-
-
-####
-## No ThreadInfo for vthreads
-
-vmTestbase/nsk/monitoring/ThreadInfo/isInNative/isinnative001/TestDescription.java 8285420 generic-all
-vmTestbase/nsk/monitoring/ThreadInfo/getLockOwnerName/getlockownername001/TestDescription.java 8285420 generic-all
-vmTestbase/nsk/monitoring/ThreadInfo/getLockName/getlockname001/TestDescription.java 8285420 generic-all
-vmTestbase/nsk/monitoring/ThreadInfo/from_c/from_c001/TestDescription.java 8285420 generic-all
-vmTestbase/nsk/monitoring/MemoryUsage/from/from001/TestDescription.java 8285420 generic-all
 
 ####
 ## different number of frames
