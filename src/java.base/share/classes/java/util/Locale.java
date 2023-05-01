@@ -1693,15 +1693,29 @@ public final class Locale implements Cloneable, Serializable {
      * This format is defined as: <i>All subtags, including extension and private
      * use subtags, use lowercase letters with two exceptions: two-letter
      * and four-letter subtags that neither appear at the start of the tag
-     * nor occur after singletons</i>. For example, the recommended case convention
-     * of the tag "aZ-laTN-X-LATN" is "az-Latn-x-latn". Excluding case folding,
-     * this method makes no modifications to the tag itself. Similar to
-     * {@link #forLanguageTag(String)}, this method will not normalize case
-     * for variant tags and the portion of a private use subtag prefixed by "lvariant".
-     * If the tag is a grandfathered tag, it will be case folded to match the
-     * exact case definition defined in the subtag registry.
+     * nor occur after singletons. Such two-letter subtags are all
+     * uppercase (as in the tags "en-CA-x-ca" or "sgn-BE-FR") and four-
+     * letter subtags are titlecase (as in the tag "az-Latn-x-latn").</i> As
+     * legacy tags are not always well-formed, this method
+     * will simply case fold a legacy tag to match the exact case convention
+     * for the particular tag specified in the respective
+     * {@link ##legacy_tags_replacement Legacy tags} table.
      *
-     * <p>Case convention of language tags does not carry meaning, and is simply
+     * <p><b>Special Exceptions</b>
+     * <p>To maintain consistency with {@link ##def_variant variant}
+     * which is case-sensitive, this method will neither case fold variant
+     * subtags nor case fold private use subtags prefixed by {@code lvariant}.
+     *
+     * <p>For example,
+     * {@snippet lang=java :
+     * String tag = "ja-kana-jp-x-lvariant-Oracle-JDK-Standard-Edition";
+     * Locale.caseFoldLanguageTag(tag); // returns "ja-Kana-JP-x-lvariant-Oracle-JDK-Standard-Edition"
+     * String tag2 = "ja-kana-jp-x-Oracle-JDK-Standard-Edition";
+     * Locale.caseFoldLanguageTag(tag2); // returns "ja-Kana-JP-x-oracle-jdk-standard-edition"
+     * }
+     *
+     * <p>Excluding case folding, this method makes no modifications to the tag itself.
+     * Case convention of language tags does not carry meaning, and is simply
      * recommended as it corresponds with various ISO standards, including:
      * ISO639-1, ISO15924, and ISO3166-1.
      *
@@ -1792,7 +1806,7 @@ public final class Locale implements Cloneable, Serializable {
      *
      * <p>Legacy tags with canonical replacements are as follows:
      *
-     * <table class="striped">
+     * <table class="striped" id="legacy_tags_replacement">
      * <caption style="display:none">Legacy tags with canonical replacements</caption>
      * <thead style="text-align:center">
      * <tr><th scope="col" style="padding: 0 2px">legacy tag</th><th scope="col" style="padding: 0 2px">modern replacement</th></tr>
@@ -1824,7 +1838,7 @@ public final class Locale implements Cloneable, Serializable {
      * <p>Legacy tags with no modern replacement will be
      * converted as follows:
      *
-     * <table class="striped">
+     * <table class="striped" id="legacy_tags_no_replacement">
      * <caption style="display:none">Legacy tags with no modern replacement</caption>
      * <thead style="text-align:center">
      * <tr><th scope="col" style="padding: 0 2px">legacy tag</th><th scope="col" style="padding: 0 2px">converts to</th></tr>

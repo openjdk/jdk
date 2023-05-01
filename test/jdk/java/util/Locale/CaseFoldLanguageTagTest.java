@@ -122,7 +122,7 @@ public class caseFoldLanguageTagTest {
                 Arguments.of("X-A-ABC", "x-a-abc"), // private w/ extended (incl. 1)
                 Arguments.of("X-A-AB-Abcd", "x-a-ab-abcd"), // private w/ extended (incl. 1, 2, 4)
 
-                // grandfathered tests
+                // Legacy tests
                 // irregular
                 Arguments.of("I-AMI", "i-ami"),
                 Arguments.of("EN-gb-OED", "en-GB-oed"),
@@ -132,12 +132,17 @@ public class caseFoldLanguageTagTest {
                 Arguments.of("CEL-GAULISH", "cel-gaulish"),
                 Arguments.of("ZH-MIN-NAN", "zh-min-nan"),
 
-                // Special JDK Cases
+                // Special JDK Cases (Variant and x-lvariant)
                 Arguments.of("de-POSIX-x-URP-lvariant-Abc-Def", "de-POSIX-x-urp-lvariant-Abc-Def"),
                 Arguments.of("JA-JPAN-JP-U-CA-JAPANESE-x-RANDOM-lvariant-JP",
                         "ja-Jpan-JP-u-ca-japanese-x-random-lvariant-JP"),
                 Arguments.of("ja-JP-u-ca-japanese-x-lvariant-JP", "ja-JP-u-ca-japanese-x-lvariant-JP"),
-                Arguments.of("en-US-x-lvariant-POSIX", "en-US-x-lvariant-POSIX")
+                Arguments.of("XX-ABCD-yy-VARIANT-x-TEST-lvariant-JDK",
+                        "xx-Abcd-YY-VARIANT-x-test-lvariant-JDK"),
+                Arguments.of("ja-kana-jp-x-lvariant-Oracle-JDK-Standard-Edition",
+                        "ja-Kana-JP-x-lvariant-Oracle-JDK-Standard-Edition"),
+                Arguments.of("ja-kana-jp-x-Oracle-JDK-Standard-Edition",
+                        "ja-Kana-JP-x-oracle-jdk-standard-edition")
         );
     }
 
