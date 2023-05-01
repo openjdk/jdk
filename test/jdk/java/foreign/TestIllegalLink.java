@@ -59,7 +59,7 @@ public class TestIllegalLink extends NativeTestHelper {
             fail("Expected IllegalArgumentException was not thrown");
         } catch (IllegalArgumentException e) {
             assertTrue(e.getMessage().contains(expectedExceptionMessage),
-                    e.getMessage() + " != " + expectedExceptionMessage);
+                    e.getMessage() + " does not contain " + expectedExceptionMessage);
         }
     }
 
@@ -154,7 +154,44 @@ public class TestIllegalLink extends NativeTestHelper {
                             ))),
                     "Layout bit alignment must be natural alignment"
             },
+            {
+                    FunctionDescriptor.ofVoid(MemoryLayout.structLayout(
+                            ValueLayout.JAVA_INT,
+                            MemoryLayout.paddingLayout(32), // no excess padding
+                            ValueLayout.JAVA_INT)),
+                    "unexpected offset"
+            },
+            {
+                    FunctionDescriptor.of(C_INT.withOrder(nonNativeOrder())),
+                    "Layout does not have the right byte order"
+            },
+            {
+                    FunctionDescriptor.of(MemoryLayout.structLayout(C_INT.withOrder(nonNativeOrder()))),
+                    "Layout does not have the right byte order"
+            },
+            {
+                    FunctionDescriptor.of(MemoryLayout.structLayout(MemoryLayout.sequenceLayout(C_INT.withOrder(nonNativeOrder())))),
+                    "Layout does not have the right byte order"
+            },
+            {
+                    FunctionDescriptor.ofVoid(MemoryLayout.structLayout(
+                            ValueLayout.JAVA_LONG,
+                            ValueLayout.JAVA_INT)), // missing trailing padding
+                    "has unexpected size"
+            },
+            {
+                    FunctionDescriptor.ofVoid(MemoryLayout.structLayout(
+                            ValueLayout.JAVA_INT,
+                            MemoryLayout.paddingLayout(32))), // too much trailing padding
+                    "has unexpected size"
+            },
         };
+    }
+
+    private static ByteOrder nonNativeOrder() {
+        return ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN
+                ? ByteOrder.BIG_ENDIAN
+                : ByteOrder.LITTLE_ENDIAN;
     }
 
 }

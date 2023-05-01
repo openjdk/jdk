@@ -476,7 +476,7 @@ ExceptionMessageBuilder::ExceptionMessageBuilder(Method* method, int bci) :
   _stacks->at_put(0, new SimulatedOperandStack());
 
   // And initialize the start of all exception handlers.
-  if (const_method->has_exception_handler()) {
+  if (const_method->has_exception_table()) {
     ExceptionTableElement *et = const_method->exception_table_start();
     for (int i = 0; i < const_method->exception_table_length(); ++i) {
       u2 index = et[i].handler_pc;
