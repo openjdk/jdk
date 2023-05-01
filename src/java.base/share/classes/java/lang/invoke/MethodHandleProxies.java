@@ -251,14 +251,14 @@ public class MethodHandleProxies {
         @Override
         protected ProxyClassDefiner computeValue(Class<?> intfc) {
 
-            final InterfaceStats stats = getStats(intfc);
+            final SamInfo stats = getStats(intfc);
             if (stats == null)
                 throw newIllegalArgumentException("not a single-method interface", intfc.getName());
 
-            List<LocalMethodInfo> infos = new ArrayList<>(stats.singleNameMethods.size());
-            MethodType[] types = new MethodType[stats.singleNameMethods.size()];
-            for (int i = 0; i < stats.singleNameMethods.size(); i++) {
-                Method m = stats.singleNameMethods.get(i);
+            List<LocalMethodInfo> infos = new ArrayList<>(stats.methods.size());
+            MethodType[] types = new MethodType[stats.methods.size()];
+            for (int i = 0; i < stats.methods.size(); i++) {
+                Method m = stats.methods.get(i);
                 MethodType mt = methodType(m.getReturnType(), JLRA.getExecutableSharedParameterTypes(m));
                 MethodTypeDesc mtDesc = desc(mt);
                 types[i] = mt;
@@ -283,7 +283,7 @@ public class MethodHandleProxies {
             int i = n.lastIndexOf('.');
             String cn = i > 0 ? pn + "." + n.substring(i+1) : pn + "." + n;
             ClassDesc proxyDesc = ClassDesc.of(cn);
-            byte[] template = createTemplate(proxyDesc, desc(intfc), stats.uniqueName, infos);
+            byte[] template = createTemplate(proxyDesc, desc(intfc), stats.singleName, infos);
             var definer = new Lookup(intfc).makeHiddenClassDefiner(cn, template, Set.of(), DUMPER);
             return new ProxyClassDefiner(definer, types, intfc, template);
         }
@@ -489,16 +489,19 @@ public class MethodHandleProxies {
     }
 
     /**
-     * Stores the result of iteration over methods in a given interface.
+     * Stores the result of iteration over methods in a given single-abstract-method interface.
      *
-     * @param uniqueName the single abstract method's name in the given interface
-     * @param singleNameMethods the abstract methods to implement in the given interface
+     * @param singleName the single abstract method's name in the given interface
+     * @param methods the abstract methods to implement in the given interface
      * @param referencedTypes a set of types that are referenced by the instance methods of the given interface
      */
-    private record InterfaceStats(String uniqueName, List<Method> singleNameMethods, Set<Class<?>> referencedTypes) {
+    private record SamInfo(String singleName, List<Method> methods, Set<Class<?>> referencedTypes) {
     }
 
-    private static InterfaceStats getStats(Class<?> intfc) {
+    /*
+     * Returns null if given interface is not SAM
+     */
+    private static SamInfo getStats(Class<?> intfc) {
         if (!intfc.isInterface()) {
             throw new IllegalArgumentException(intfc + " not an inteface");
         }
@@ -511,12 +514,13 @@ public class MethodHandleProxies {
             if (Modifier.isStatic(m.getModifiers()))
                 continue;
 
+            if (isObjectMethod(m))
+                continue; // covered by java.base reads
+
             addElementType(types, m.getReturnType());
             addElementTypes(types, JLRA.getExecutableSharedParameterTypes(m));
             addElementTypes(types, JLRA.getExecutableSharedExceptionTypes(m));
 
-            if (isObjectMethod(m))
-                continue;
             if (!Modifier.isAbstract(m.getModifiers()))
                 continue;
             String mname = m.getName();
@@ -530,7 +534,7 @@ public class MethodHandleProxies {
         if (uniqueName == null)
             return null;
 
-        return new InterfaceStats(uniqueName, methods, types);
+        return new SamInfo(uniqueName, methods, types);
     }
 
     /*
