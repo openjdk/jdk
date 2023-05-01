@@ -541,6 +541,13 @@ tier1_serviceability = \
   -serviceability/sa/TestJmapCore.java \
   -serviceability/sa/TestJmapCoreMetaspace.java
 
+serviceability_ttf = \
+  serviceability/ \
+  -serviceability/jvmti/vthread \
+  -serviceability/jvmti/thread  \
+  -serviceability/jvmti/events  \
+  -serviceability/jvmti/negative
+
 tier1 = \
   :tier1_common \
   :tier1_compiler \

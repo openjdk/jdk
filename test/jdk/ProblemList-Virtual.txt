@@ -1,0 +1,164 @@
+#
+# Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+java/lang/instrument/NativeMethodPrefixAgent.java               8307169 generic-all
+com/sun/jdi/EATests.java#id0                                    8264699 generic-all
+
+com/sun/jdi/DeferredStepTest.java 8285422 generic-all
+com/sun/jdi/EarlyReturnTest.java 8285422 generic-all
+com/sun/jdi/ExceptionEvents.java 8285422 generic-all
+com/sun/jdi/JdbMethodExitTest.java 8285422 generic-all
+com/sun/jdi/JdbStepTest.java 8285422 generic-all
+com/sun/jdi/JdbStopThreadTest.java 8285422 generic-all
+com/sun/jdi/JdbStopThreadidTest.java 8285422 generic-all
+com/sun/jdi/MethodEntryExitEvents.java 8285422 generic-all
+com/sun/jdi/MultiBreakpointsTest.java 8285422 generic-all
+com/sun/jdi/PopAndStepTest.java 8285422 generic-all
+com/sun/jdi/PopAsynchronousTest.java 8285422 generic-all
+com/sun/jdi/PopSynchronousTest.java 8285422 generic-all
+com/sun/jdi/RedefineCrossStart.java 8285422 generic-all
+com/sun/jdi/RedefineG.java 8285422 generic-all
+com/sun/jdi/RedefineNestmateAttr/TestNestmateAttr.java 8285422 generic-all
+com/sun/jdi/RedefineTTYLineNumber.java 8285422 generic-all
+com/sun/jdi/ReferrersTest.java 8285422 generic-all
+com/sun/jdi/SetLocalWhileThreadInNative.java 8285422 generic-all
+com/sun/jdi/StepTest.java 8285422 generic-all
+com/sun/jdi/PopAndInvokeTest.java 8305632 generic-all
+
+
+##########
+## Tests incompatible with  with virtual test thread factory
+## There is no goal to run/analyze all test with virtual test thread factory
+## So any test migth be added as incompatbile even without known reason
+
+###
+# Thread-sensitive threads
+
+# Incorrect stackwalking expectations for main thread stack trace
+java/lang/StackWalker/StackWalkTest.java 0000000 generic-all
+java/lang/StackWalker/DumpStackTest.java 0000000 generic-all
+
+jdk/internal/vm/Continuation/Scoped.java 0000000 generic-all
+jdk/internal/vm/Continuation/Fuzz.java 0000000 generic-all
+
+jdk/incubator/concurrent/ScopedValue/StressStackOverflow.java 0000000 generic-all
+
+# No unmounted thread in the thread dump
+sun/tools/jstack/BasicJStackTest.java 0000000 generic-all
+sun/tools/jcmd/JcmdOutputEncodingTest.java 0000000 generic-all
+
+
+# Test assumes main thread is named "main"
+java/lang/Thread/UncaughtExceptionsTest.java 0000000 generic-all
+
+# Handler thread has daemon status set because it inherited from virtual thread
+com/sun/net/httpserver/bugs/B6431193.java 0000000 generic-all
+
+# Test limits default scheduler to 1 carrier thread, can't run with wrapper
+java/lang/Thread/virtual/GetStackTraceWhenRunnable.java 0000000 generic-all
+
+# Test requires the main thread to be in a thread group
+java/lang/Thread/MainThreadTest.java 0000000 generic-all
+
+# Test don't expect FJ pool creating thread on demand
+java/lang/management/ThreadMXBean/ThreadLists.java 0000000 generic-all
+
+# Thread MainThread is not supposed to be hold any lock.
+java/lang/management/ThreadMXBean/Locks.java 0000000 generic-all
+
+java/lang/ScopedValue/StressStackOverflow.java 0000000 generic-all
+
+####
+# JFR tests check events for test main thread only or expect to find MainThread
+jdk/jfr/event/compiler/TestAllocInNewTLAB.java 0000000 generic-all
+jdk/jfr/event/runtime/TestThreadStartEvent.java 0000000 generic-all
+
+# test expects to find virtual thread frames in thread dump
+jdk/jfr/event/runtime/TestThreadDumpEvent.java 0000000 generic-all
+
+# the VirtualThreadStartEvent is loaded before main() in wrapper
+jdk/jfr/jvm/TestGetAllEventClasses.java 0000000 generic-all
+
+# Virtual threads don't generate jdk.ThreadPark event when they park
+jdk/jfr/event/runtime/TestThreadParkEvent.java 0000000 generic-all
+
+# no expected events
+jdk/jfr/event/gc/detailed/TestPromotionFailedEventWithParallelScavenge.java 0000000 generic-all
+
+java/rmi/server/Unmarshal/checkUnmarshalOnStopThread/CheckUnmarshalOnStopThread.java 0000000 generic-all
+
+####
+# OOME in unexpected thread
+
+java/lang/ref/OOMEInReferenceHandler.java 0000000 generic-all
+
+####
+# Makes use of methods that are not supported on virtual threads
+java/lang/management/ManagementFactory/ProxyTypeMapping.java 0000000 generic-all
+java/lang/management/ManagementFactory/ValidateOpenTypes.java 0000000 generic-all
+java/lang/management/ThreadMXBean/ThreadUserTime.java 0000000 generic-all
+java/lang/management/ThreadMXBean/ThreadCpuTime.java 0000000 generic-all
+java/lang/management/ThreadMXBean/ResetPeakThreadCount.java 0000000 generic-all
+com/sun/management/ThreadMXBean/ThreadAllocatedMemory.java 0000000 generic-all
+javax/management/remote/mandatory/connection/BrokenConnectionTest.java 0000000 generic-all
+javax/management/remote/mandatory/loading/MissingClassTest.java 0000000 generic-all
+
+####
+# Tests failing while setting custom Permissions
+
+java/util/PluggableLocale/PermissionTest.java 0000000 generic-all
+java/util/Properties/StoreReproducibilityTest.java 0000000 generic-all
+java/io/FilePermission/MergeName.java 0000000 generic-all
+
+runtime/Dictionary/ProtectionDomainCacheTest.java 0000000 generic-all
+jdk/jfr/api/consumer/security/TestStreamingRemote.java 0000000 generic-all
+jdk/jfr/startupargs/TestDumpOnExit.java 0000000 generic-all
+sun/security/util/Resources/early/EarlyResources.java 0000000 generic-all
+javax/management/remote/mandatory/subjectDelegation/SubjectDelegation1Test.java 0000000 generic-all
+
+#####
+# Tests failing because of ProcessTools wrapper
+
+java/foreign/enablenativeaccess/TestEnableNativeAccessDynamic.java 0000000 generic-all
+java/security/AccessController/LimitedDoPrivileged.java 0000000 generic-all
+tools/jimage/JImageToolTest.java 0000000 generic-all
+jdk/security/JavaDotSecurity/MakeJavaSecurityTest.java 0000000 generic-all
+
+####
+# No expected StackOverflow
+
+java/lang/invoke/condy/CondyNestedResolutionTest.java 0000000 generic-all
+
+####
+# Legacy socket I/O is interruptible in the context of virtual threads
+
+java/net/DatagramSocket/InterruptibleDatagramSocket.java 0000000 generic-all
+java/nio/channels/DatagramChannel/InterruptibleOrNot.java 0000000 generic-all
+
+
+####
+# Tests behavior that differs when underlying socket is non-blocking
+java/nio/channels/SocketChannel/ShortWrite.java 0000000 generic-all
+
+# Tests using Thread.stop(), not supported on virtual threads
+jdk/jshell/PasteAndMeasurementsUITest.java 0000000 generic-all

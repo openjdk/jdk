@@ -25,6 +25,7 @@
 # Bugs
 
 serviceability/jvmti/Heap/IterateHeapWithEscapeAnalysisEnabled.java 8264699 generic-all
+compiler/jvmci/compilerToVM/MaterializeVirtualObjectTest.java       8307125 generic-all
 
 ####
 ## Classes not unloaded as expected (TODO, need to check if FJ keeps a reference)
@@ -50,6 +51,7 @@ vmTestbase/nsk/jvmti/unit/GetLocalVariable/getlocal003/TestDescription.java 8300
 ####
 ## Test fails because it expects to find vthreads in GetAllThreads
 vmTestbase/nsk/jvmti/scenarios/allocation/AP11/ap11t001/TestDescription.java 8300712 generic-all
+serviceability/jvmti/GetThreadListStackTraces/OneGetThreadListStackTraces.java 8300712 generic-all
 
 ####
 ## assert in src/hotspot/share/oops/instanceStackChunkKlass.cpp:1042
@@ -127,3 +129,106 @@ vmTestbase/nsk/jdi/stress/serial/forceEarlyReturn002/TestDescription.java 828541
 # of this no vthreads can complete their reads, and the test times out as a result.
 
 vmTestbase/nsk/jdi/VMOutOfMemoryException/VMOutOfMemoryException001/VMOutOfMemoryException001.java 8285417 windows-all
+
+
+
+##########
+## Tests failing when virtual thread factory is enabled
+## They are not compatible with virtual thread factory mode and not going to be fixed
+
+####
+# OOME in unexpected thread
+gc/g1/ihop/TestIHOPStatic.java 0000000 generic-all
+
+####
+# Test failing because of incorrect stacktrace or thread properties for main thread
+
+runtime/condy/staticInit/TestInitException.java 0000000 generic-all
+runtime/handshake/HandshakeWalkStackTest.java 0000000 generic-all
+runtime/handshake/HandshakeWalkStackFallbackTest.java 0000000 generic-all
+runtime/ErrorHandling/TestCrashOnOutOfMemoryError.java 0000000 generic-all
+runtime/ErrorHandling/TestExitOnOutOfMemoryError.java 0000000 generic-all
+runtime/ErrorHandling/TestHeapDumpPath.java 0000000 generic-all
+runtime/ErrorHandling/TestOnOutOfMemoryError.java 0000000 generic-all
+runtime/ErrorHandling/MachCodeFramesInErrorFile.java 0000000 generic-all
+runtime/Thread/ThreadPriorities.java 0000000 generic-all
+runtime/Throwable/StackTraceLogging.java 0000000 generic-all
+runtime/Throwable/TestMaxJavaStackTraceDepth.java 0000000 generic-all
+runtime/Throwable/TestThrowable.java 0000000 generic-all
+serviceability/tmtools/jstack/DaemonThreadTest.java 0000000 generic-all
+serviceability/dcmd/thread/ThreadDumpToFileTest.java 0000000 generic-all
+serviceability/dcmd/thread/PrintTest.java 0000000 generic-all
+serviceability/dcmd/thread/PrintConcurrentLocksTest.java 0000000 generic-all
+
+####
+# Does not support JVMTI StopThread
+runtime/Thread/StopAtExit.java 0000000 generic-all
+runtime/Thread/AsyncExceptionOnMonitorEnter.java 0000000 generic-all
+
+####
+# Something wrong with test.jdk/test.src properties
+
+
+
+####
+# Don't work with ProcessTools wrapper because of permissions or classpath
+runtime/cds/appcds/jigsaw/classpathtests/EmptyClassInBootClassPath.java 0000000 generic-all
+runtime/cds/appcds/jigsaw/modulepath/OptimizeModuleHandlingTest.java 0000000 generic-all
+runtime/classFileParserBug/TestEmptyBootstrapMethodsAttr.java 0000000 generic-all
+
+runtime/BootstrapMethod/TestLambdaExceptionInInitializer.java 0000000 generic-all
+runtime/logging/VtablesTest.java 0000000 generic-all
+serviceability/sa/TestCpoolForInvokeDynamic.java 0000000 generic-all
+compiler/ciReplay/TestVMNoCompLevel.java 0000000 generic-all
+runtime/logging/LoaderConstraintsTest.javaruntime/logging/LoaderConstraintsTest.java 0000000 generic-all
+runtime/jni/checked/TestCheckedEnsureLocalCapacity.java 0000000 generic-all
+
+
+####
+# GC tests failing because test expected results differ with vthread
+
+gc/TestAgeOutput.java#id1 0000000 generic-all
+gc/TestAgeOutput.java#id0 0000000 generic-all
+gc/arguments/TestNewSizeThreadIncrease.java 0000000 generic-all
+gc/g1/TestSkipRebuildRemsetPhase.java 0000000 generic-all
+gc/g1/TestStringDeduplicationYoungGC.java 0000000 generic-all
+gc/g1/TestStringDeduplicationTableRehash.java 0000000 generic-all
+gc/g1/TestStringDeduplicationTableResize.java 0000000 generic-all
+gc/g1/TestStringDeduplicationPrintOptions.java 0000000 generic-all
+gc/g1/TestStringDeduplicationFullGC.java 0000000 generic-all
+gc/g1/TestStringDeduplicationAgeThreshold.java 0000000 generic-all
+gc/g1/TestRemsetLoggingPerRegion.java 0000000 generic-all
+gc/g1/TestRemsetLogging.java 0000000 generic-all
+gc/g1/TestMixedGCLiveThreshold.java#25percent 0000000 generic-all
+gc/g1/plab/TestPLABResize.java 0000000 generic-all
+
+####
+## Expected exception is ignored
+
+runtime/condy/BadBSMUseTest.java 0000000 generic-all
+
+####
+## NSK JMX Tests
+
+####
+## Unsupported functionality
+
+vmTestbase/nsk/monitoring/ThreadMXBean/GetThreadAllocatedBytes/baseBehaviorTest_server_default/TestDescription.java 8285419 generic-all
+vmTestbase/nsk/monitoring/ThreadMXBean/GetThreadAllocatedBytes/baseBehaviorTest_server_custom/TestDescription.java 8285419 generic-all
+vmTestbase/nsk/monitoring/ThreadMXBean/GetThreadAllocatedBytes/baseBehaviorTest_directly/TestDescription.java 8285419 generic-all
+vmTestbase/nsk/monitoring/ThreadMXBean/GetThreadAllocatedBytes/baseBehaviorTest_proxy_custom/TestDescription.java 8285419 generic-all
+vmTestbase/nsk/monitoring/ThreadMXBean/GetThreadAllocatedBytes/baseBehaviorTest_proxy_default/TestDescription.java 8285419 generic-all
+
+
+####
+## No ThreadInfo for vthreads
+
+vmTestbase/nsk/monitoring/ThreadInfo/isInNative/isinnative001/TestDescription.java 8285420 generic-all
+vmTestbase/nsk/monitoring/ThreadInfo/getLockOwnerName/getlockownername001/TestDescription.java 8285420 generic-all
+vmTestbase/nsk/monitoring/ThreadInfo/getLockName/getlockname001/TestDescription.java 8285420 generic-all
+vmTestbase/nsk/monitoring/ThreadInfo/from_c/from_c001/TestDescription.java 8285420 generic-all
+vmTestbase/nsk/monitoring/MemoryUsage/from/from001/TestDescription.java 8285420 generic-all
+
+####
+## different number of frames
+serviceability/AsyncGetCallTrace/MyPackage/ASGCTBaseTest.java 0000000 generic-all
