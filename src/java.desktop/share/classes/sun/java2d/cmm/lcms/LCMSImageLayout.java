@@ -97,7 +97,7 @@ final class LCMSImageLayout {
         width = length / nc;
         height = 1;
         nextPixelOffset = nc * type;
-        nextRowOffset = dataArrayLength;
+        nextRowOffset = dataArrayLength; // outside of data since height is 1
         verify();
     }
 
