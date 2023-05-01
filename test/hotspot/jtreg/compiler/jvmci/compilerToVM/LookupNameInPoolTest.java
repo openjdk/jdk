@@ -103,7 +103,7 @@ public class LookupNameInPoolTest {
             index = cpci;
             cached = "cached ";
         }
-        String nameToVerify = CompilerToVMHelper.lookupNameInPool(constantPoolCTVM, index);
+        String nameToVerify = CompilerToVMHelper.lookupNameInPool(constantPoolCTVM, cpi);
         String nameToRefer = entry.name;
         String msg = String.format("Wrong name accessed by %sconstant pool index %d", cached, index);
         Asserts.assertEQ(nameToVerify, nameToRefer, msg);

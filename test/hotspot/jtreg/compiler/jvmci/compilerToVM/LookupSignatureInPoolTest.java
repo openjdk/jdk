@@ -103,7 +103,7 @@ public class LookupSignatureInPoolTest {
             index = cpci;
             cached = "cached ";
         }
-        String sigToVerify = CompilerToVMHelper.lookupSignatureInPool(constantPoolCTVM, index);
+        String sigToVerify = CompilerToVMHelper.lookupSignatureInPool(constantPoolCTVM, cpi);
         String sigToRefer = entry.type;
         String msg = String.format("Wrong signature accessed by %sconstant pool index %d",
                                    cached,

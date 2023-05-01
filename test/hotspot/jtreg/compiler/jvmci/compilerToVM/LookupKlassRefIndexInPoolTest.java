@@ -100,7 +100,7 @@ public class LookupKlassRefIndexInPoolTest {
             index = cpci;
             cached = "cached ";
         }
-        int indexToVerify = CompilerToVMHelper.lookupKlassRefIndexInPool(constantPoolCTVM, index);
+        int indexToVerify = CompilerToVMHelper.lookupKlassRefIndexInPool(constantPoolCTVM, cpi);
         int indexToRefer = dummyClass.constantPoolSS.getClassRefIndexAt(cpi);
         String msg = String.format("Wrong class index returned by lookupKlassRefIndexInPool method "
                                            + "applied to %sconstant pool index %d",

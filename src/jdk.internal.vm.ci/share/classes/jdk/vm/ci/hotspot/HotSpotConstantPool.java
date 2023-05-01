@@ -435,6 +435,7 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
      * another entry denoted by {@code which}.
      *
      * @param which constant pool index or constant pool cache index
+     * @param opcode bytecode
      * @return signature as {@link String}
      */
     private String getSignatureOf(int which) {
@@ -720,8 +721,8 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
             return method;
         } else {
             // Get the method's name and signature.
-            String name = getNameOf(index);
-            HotSpotSignature signature = new HotSpotSignature(runtime(), getSignatureOf(index));
+            String name = getNameOf(cpi);
+            HotSpotSignature signature = new HotSpotSignature(runtime(), getSignatureOf(cpi));
             if (opcode == Bytecodes.INVOKEDYNAMIC) {
                 return new UnresolvedJavaMethod(name, signature, runtime().getMethodHandleClass());
             } else {
@@ -770,7 +771,7 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
             case Bytecodes.INVOKESTATIC:
             case Bytecodes.INVOKEINTERFACE: {
                 index = rawIndexToConstantPoolCacheIndex(cpi, opcode);
-                index = getKlassRefIndexAt(index);
+                index = getKlassRefIndexAt(cpi);
                 break;
             }
             default:
@@ -783,12 +784,12 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
     @Override
     public JavaField lookupField(int cpi, ResolvedJavaMethod method, int opcode) {
         final int index = rawIndexToConstantPoolCacheIndex(cpi, opcode);
-        final int nameAndTypeIndex = getNameAndTypeRefIndexAt(index);
+        final int nameAndTypeIndex = getNameAndTypeRefIndexAt(cpi);
         final int typeIndex = getSignatureRefIndexAt(nameAndTypeIndex);
         String typeName = lookupUtf8(typeIndex);
         JavaType type = runtime().lookupType(typeName, getHolder(), false);
 
-        final int holderIndex = getKlassRefIndexAt(index);
+        final int holderIndex = getKlassRefIndexAt(cpi);
         JavaType fieldHolder = lookupType(holderIndex, opcode);
 
         if (fieldHolder instanceof HotSpotResolvedObjectTypeImpl) {

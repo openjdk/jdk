@@ -102,7 +102,7 @@ public class LookupNameAndTypeRefIndexInPoolTest {
             index = cpci;
             cached = "cached ";
         }
-        int indexToVerify = CompilerToVMHelper.lookupNameAndTypeRefIndexInPool(constantPoolCTVM, index);
+        int indexToVerify = CompilerToVMHelper.lookupNameAndTypeRefIndexInPool(constantPoolCTVM, cpi);
         int indexToRefer = dummyClass.constantPoolSS.getNameAndTypeRefIndexAt(cpi);
         String msg = String.format("Wrong nameAndType index returned by lookupNameAndTypeRefIndexInPool"
                                            + " method applied to %sconstant pool index %d",
