@@ -31,14 +31,7 @@
  */
 package sun.util.locale;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.StringJoiner;
-import java.util.Locale;
+import java.util.*;
 
 public class LanguageTag {
     //
@@ -419,7 +412,7 @@ public class LanguageTag {
     public static String caseFoldTag(String tag) {
         // Illegal tags
         if (!parse(tag, null).wellFormed) {
-            throw new IllegalArgumentException("Ill formed tag");
+            throw new IllformedLocaleException("Ill formed tag");
         }
         // Legacy tags
         String potentialLegacy = tag.toLowerCase(Locale.ROOT);
