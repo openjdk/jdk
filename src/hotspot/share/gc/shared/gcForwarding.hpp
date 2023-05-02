@@ -36,7 +36,7 @@ private:
   static SlidingForwarding* _sliding_forwarding;
 
 public:
-  static void initialize(MemRegion heap, size_t region_size_words_shift);
+  static void initialize(MemRegion heap, size_t region_size_words);
   static void begin();
   static void end();
 

@@ -59,13 +59,14 @@ class FallbackTable;
  *
  * When recording the sliding forwarding, the mark word would look roughly like this:
  *
- *    0                        32                     64
- *    [TT|F|A|OOOOOOOOOOOOOOOOO|......................]
- *      ^----------------------------------------------- normal lock bits, would record "object is forwarded"
- *        ^--------------------------------------------- fallback bit (explained below)
- *          ^------------------------------------------- alternate region select
- *            ^----------------------------------------- in-region offset
- *                              ^----------------------- compressed class pointer (not handled, but also *not touched* by this code)
+ *    64                       32                     0
+ *    [........................|OOOOOOOOOOOOOOO|A|F|TT]
+ *                                                  ^--- normal lock bits, would record "object is forwarded"
+ *                                                ^----- fallback bit (explained below)
+ *                                              ^------- alternate region select
+ *                              ^----------------------- in-region offset
+ *     ^------------------------------------------------ protected area, *not touched* by this code, useful for
+ *                                                       compressed class pointer with compact object headers
  *
  * Adding a forwarding then generally works as follows:
  *   1. Compute the "to" offset in the "to" region, this gives "offset".
@@ -90,7 +91,7 @@ class FallbackTable;
  */
 class SlidingForwarding : public CHeapObj<mtGC> {
 private:
-  static const uintptr_t MARK_LOWER_HALF_MASK = 0xffffffff;
+  static const uintptr_t MARK_LOWER_HALF_MASK = right_n_bits(32);
 
   // We need the lowest two bits to indicate a forwarded object.
   // The next bit indicates that the forwardee should be looked-up in a fallback-table.
