@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,8 +115,9 @@ public class CertificateBuilder {
      * @param name An {@link X500Principal} to be used as the subject name
      * on this certificate.
      */
-    public void setSubjectName(X500Principal name) {
+    public CertificateBuilder setSubjectName(X500Principal name) {
         subjectName = name;
+        return this;
     }
 
     /**
@@ -124,8 +125,9 @@ public class CertificateBuilder {
      *
      * @param name The subject name in RFC 2253 format
      */
-    public void setSubjectName(String name) {
+    public CertificateBuilder setSubjectName(String name) {
         subjectName = new X500Principal(name);
+        return this;
     }
 
     /**
@@ -133,8 +135,9 @@ public class CertificateBuilder {
      *
      * @param pubKey The {@link PublicKey} to be used on this certificate.
      */
-    public void setPublicKey(PublicKey pubKey) {
+    public CertificateBuilder setPublicKey(PublicKey pubKey) {
         publicKey = Objects.requireNonNull(pubKey, "Caught null public key");
+        return this;
     }
 
     /**
@@ -143,9 +146,10 @@ public class CertificateBuilder {
      * @param nbDate A {@link Date} object specifying the start of the
      * certificate validity period.
      */
-    public void setNotBefore(Date nbDate) {
+    public CertificateBuilder setNotBefore(Date nbDate) {
         Objects.requireNonNull(nbDate, "Caught null notBefore date");
         notBefore = (Date)nbDate.clone();
+        return this;
     }
 
     /**
@@ -154,9 +158,10 @@ public class CertificateBuilder {
      * @param naDate A {@link Date} object specifying the end of the
      * certificate validity period.
      */
-    public void setNotAfter(Date naDate) {
+    public CertificateBuilder setNotAfter(Date naDate) {
         Objects.requireNonNull(naDate, "Caught null notAfter date");
         notAfter = (Date)naDate.clone();
+        return this;
     }
 
     /**
@@ -167,9 +172,8 @@ public class CertificateBuilder {
      * @param naDate A {@link Date} object specifying the end of the
      * certificate validity period.
      */
-    public void setValidity(Date nbDate, Date naDate) {
-        setNotBefore(nbDate);
-        setNotAfter(naDate);
+    public CertificateBuilder setValidity(Date nbDate, Date naDate) {
+        return setNotBefore(nbDate).setNotAfter(naDate);
     }
 
     /**
@@ -177,9 +181,10 @@ public class CertificateBuilder {
      *
      * @param serial A serial number in {@link BigInteger} form.
      */
-    public void setSerialNumber(BigInteger serial) {
+    public CertificateBuilder setSerialNumber(BigInteger serial) {
         Objects.requireNonNull(serial, "Caught null serial number");
         serialNumber = serial;
+        return this;
     }
 
 
@@ -188,9 +193,10 @@ public class CertificateBuilder {
      *
      * @param ext The extension to be added.
      */
-    public void addExtension(Extension ext) {
+    public CertificateBuilder addExtension(Extension ext) {
         Objects.requireNonNull(ext, "Caught null extension");
         extensions.put(ext.getId(), ext);
+        return this;
     }
 
     /**
@@ -199,11 +205,12 @@ public class CertificateBuilder {
      * @param extList The {@link List} of extensions to be added to
      * the certificate.
      */
-    public void addExtensions(List<Extension> extList) {
+    public CertificateBuilder addExtensions(List<Extension> extList) {
         Objects.requireNonNull(extList, "Caught null extension list");
         for (Extension ext : extList) {
             extensions.put(ext.getId(), ext);
         }
+        return this;
     }
 
     /**
@@ -213,7 +220,8 @@ public class CertificateBuilder {
      *
      * @throws IOException if an encoding error occurs.
      */
-    public void addSubjectAltNameDNSExt(List<String> dnsNames) throws IOException {
+    public CertificateBuilder addSubjectAltNameDNSExt(List<String> dnsNames)
+            throws IOException {
         if (!dnsNames.isEmpty()) {
             GeneralNames gNames = new GeneralNames();
             for (String name : dnsNames) {
@@ -222,28 +230,56 @@ public class CertificateBuilder {
             addExtension(new SubjectAlternativeNameExtension(false,
                     gNames));
         }
+        return this;
     }
 
     /**
      * Helper method to add one or more OCSP URIs to the Authority Info Access
-     * certificate extension.
+     * certificate extension.  Location strings can be in two forms:
+     * 1) Just a URI by itself: This will be treated as using the OCSP
+     *    access description (legacy behavior).
+     * 2) An access description name (case-insensitive) followed by a
+     *    pipe (|) and the URI (e.g. OCSP|http://ocsp.company.com/revcheck).
+     * Current description names are OCSP and CAISSUER. Others may be
+     * added later.
      *
-     * @param locations A list of one or more OCSP responder URIs as strings
+     * @param locations A list of one or more access descriptor URIs as strings
      *
      * @throws IOException if an encoding error occurs.
      */
-    public void addAIAExt(List<String> locations)
+    public CertificateBuilder addAIAExt(List<String> locations)
             throws IOException {
         if (!locations.isEmpty()) {
             List<AccessDescription> acDescList = new ArrayList<>();
-            for (String ocspUri : locations) {
-                acDescList.add(new AccessDescription(
-                        AccessDescription.Ad_OCSP_Id,
-                        new GeneralName(new URIName(ocspUri))));
+            for (String loc : locations) {
+                String[] tokens = loc.split("\\|", 2);
+                ObjectIdentifier adObj;
+                String uriLoc;
+                if (tokens.length == 1) {
+                    // Legacy form, assume OCSP
+                    adObj = AccessDescription.Ad_OCSP_Id;
+                    uriLoc = tokens[0];
+                } else {
+                    switch (tokens[0].toUpperCase()) {
+                        case "OCSP":
+                            adObj = AccessDescription.Ad_OCSP_Id;
+                            break;
+                        case "CAISSUER":
+                            adObj = AccessDescription.Ad_CAISSUERS_Id;
+                            break;
+                        default:
+                            throw new IOException("Unknown AD: " + tokens[0]);
+                    }
+                    uriLoc = tokens[1];
+                }
+                acDescList.add(new AccessDescription(adObj,
+                        new GeneralName(new URIName(uriLoc))));
             }
             addExtension(new AuthorityInfoAccessExtension(acDescList));
         }
+        return this;
     }
+
 
     /**
      * Set a Key Usage extension for the certificate.  The extension will
@@ -254,8 +290,9 @@ public class CertificateBuilder {
      *
      * @throws IOException if an encoding error occurs.
      */
-    public void addKeyUsageExt(boolean[] bitSettings) throws IOException {
-        addExtension(new KeyUsageExtension(bitSettings));
+    public CertificateBuilder addKeyUsageExt(boolean[] bitSettings)
+            throws IOException {
+        return addExtension(new KeyUsageExtension(bitSettings));
     }
 
     /**
@@ -270,9 +307,10 @@ public class CertificateBuilder {
      *
      * @throws IOException if an encoding error occurs.
      */
-    public void addBasicConstraintsExt(boolean crit, boolean isCA,
+    public CertificateBuilder addBasicConstraintsExt(boolean crit, boolean isCA,
             int maxPathLen) throws IOException {
-        addExtension(new BasicConstraintsExtension(crit, isCA, maxPathLen));
+        return addExtension(new BasicConstraintsExtension(crit, isCA,
+                maxPathLen));
     }
 
     /**
@@ -282,9 +320,9 @@ public class CertificateBuilder {
      *
      * @throws IOException if an encoding error occurs.
      */
-    public void addAuthorityKeyIdExt(X509Certificate authorityCert)
+    public CertificateBuilder addAuthorityKeyIdExt(X509Certificate authorityCert)
             throws IOException {
-        addAuthorityKeyIdExt(authorityCert.getPublicKey());
+        return addAuthorityKeyIdExt(authorityCert.getPublicKey());
     }
 
     /**
@@ -294,9 +332,11 @@ public class CertificateBuilder {
      *
      * @throws IOException if an encoding error occurs.
      */
-    public void addAuthorityKeyIdExt(PublicKey authorityKey) throws IOException {
+    public CertificateBuilder addAuthorityKeyIdExt(PublicKey authorityKey)
+            throws IOException {
         KeyIdentifier kid = new KeyIdentifier(authorityKey);
-        addExtension(new AuthorityKeyIdentifierExtension(kid, null, null));
+        return addExtension(new AuthorityKeyIdentifierExtension(kid,
+                null, null));
     }
 
     /**
@@ -306,9 +346,10 @@ public class CertificateBuilder {
      *
      * @throws IOException if an encoding error occurs.
      */
-    public void addSubjectKeyIdExt(PublicKey subjectKey) throws IOException {
+    public CertificateBuilder addSubjectKeyIdExt(PublicKey subjectKey)
+            throws IOException {
         byte[] keyIdBytes = new KeyIdentifier(subjectKey).getIdentifier();
-        addExtension(new SubjectKeyIdentifierExtension(keyIdBytes));
+        return addExtension(new SubjectKeyIdentifierExtension(keyIdBytes));
     }
 
     /**
@@ -318,7 +359,7 @@ public class CertificateBuilder {
      *
      * @throws IOException if an encoding error occurs.
      */
-    public void addExtendedKeyUsageExt(List<String> ekuOids)
+    public CertificateBuilder addExtendedKeyUsageExt(List<String> ekuOids)
             throws IOException {
         if (!ekuOids.isEmpty()) {
             Vector<ObjectIdentifier> oidVector = new Vector<>();
@@ -327,13 +368,14 @@ public class CertificateBuilder {
             }
             addExtension(new ExtendedKeyUsageExtension(oidVector));
         }
+        return this;
     }
 
     /**
      * Clear all settings and return the {@code CertificateBuilder} to
      * its default state.
      */
-    public void reset() {
+    public CertificateBuilder reset() {
         extensions.clear();
         subjectName = null;
         notBefore = null;
@@ -342,6 +384,7 @@ public class CertificateBuilder {
         publicKey = null;
         signatureBytes = null;
         tbsCertBytes = null;
+        return this;
     }
 
     /**
@@ -383,7 +426,7 @@ public class CertificateBuilder {
      * @param issuerCert The certificate of the issuing authority, or
      * {@code null} if the resulting certificate is self-signed.
      * @param issuerKey The private key of the issuing authority
-     * @param signAlg The signature algorithm object
+     * @param algName The signature algorithm object
      *
      * @return The DER-encoded X.509 certificate
      *
@@ -449,10 +492,13 @@ public class CertificateBuilder {
         DerOutputStream tbsCertSeq = new DerOutputStream();
         DerOutputStream tbsCertItems = new DerOutputStream();
 
-        // Hardcode to V3
-        byte[] v3int = {0x02, 0x01, 0x02};
-        tbsCertItems.write(DerValue.createTag(DerValue.TAG_CONTEXT, true,
-                (byte)0), v3int);
+        // If extensions exist then it needs to be v3, otherwise
+        // we can make it v1 and omit the version field as v1 is the default.
+        if (!extensions.isEmpty()) {
+            byte[] v3int = {0x02, 0x01, 0x02};
+            tbsCertItems.write(DerValue.createTag(DerValue.TAG_CONTEXT, true,
+                    (byte) 0), v3int);
+        }
 
         // Serial Number
         SerialNumber sn = new SerialNumber(serialNumber);
@@ -482,7 +528,7 @@ public class CertificateBuilder {
         // SubjectPublicKeyInfo
         tbsCertItems.write(publicKey.getEncoded());
 
-        // TODO: Extensions!
+        // Encode any extensions in the builder
         encodeExtensions(tbsCertItems);
 
         // Wrap it all up in a SEQUENCE and return the bytes
@@ -523,5 +569,4 @@ public class CertificateBuilder {
         tbsStream.write(DerValue.createTag(DerValue.TAG_CONTEXT, true,
                 (byte)3), extSequence);
     }
-
 }

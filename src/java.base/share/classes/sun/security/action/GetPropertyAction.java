@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package sun.security.action;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Properties;
+import java.util.regex.Pattern;
 
 /**
  * A convenience class for retrieving the string value of a system
@@ -158,6 +159,47 @@ public class GetPropertyAction implements PrivilegedAction<String> {
                         }
                     }
             );
+        }
+    }
+
+    /**
+     * Convenience method for fetching System property values that are timeouts.
+     * Accepted timeout values will be either purely numeric (interpreted as
+     * seconds) or a numeric value followed by "ms" (interpreted as
+     * milliseconds).
+     *
+     * @param prop the name of the System property
+     * @param def a default value (in milliseconds)
+     *
+     * @return an integer value corresponding to the timeout value in the System
+     *      property in milliseconds.  If the property value is empty, negative,
+     *      or contains non-numeric characters (besides a trailing "ms") then
+     *      the default value will be returned.  If a negative value for the
+     *      "def" parameter is supplied and the property value does not conform
+     *      to the allowed syntax, zero will be returned.
+     */
+    public static int privilegedGetTimeoutProp(String prop, int def) {
+        if (def < 0) {
+            def = 0;
+        }
+
+        String propVal = System.getProperty(prop, "").trim();
+        if (propVal.length() == 0) {
+            return def;
+        }
+
+        // Determine if "ms" is on the end of the string
+        boolean isMillis = propVal.toLowerCase().endsWith("ms");
+        if (isMillis) {
+            propVal = propVal.substring(0, propVal.length() - 2);
+        }
+
+        // Next check to make sure the string is built only from digits
+        if (propVal.matches("^\\d+$")) {
+            int timeout = Integer.parseInt(propVal);
+            return isMillis ? timeout : timeout * 1000;
+        } else {
+            return def;
         }
     }
 }
