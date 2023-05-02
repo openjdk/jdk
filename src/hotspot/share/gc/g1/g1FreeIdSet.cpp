@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@
 
 G1FreeIdSet::G1FreeIdSet(uint start, uint size) :
   _sem(size),          // counting semaphore for available ids
-  _next(NULL),         // array of "next" indices
+  _next(nullptr),      // array of "next" indices
   _start(start),       // first id value
   _size(size),         // number of available ids
   _head_index_mask(0), // mask for extracting index from a _head value.
