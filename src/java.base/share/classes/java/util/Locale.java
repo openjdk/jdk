@@ -1699,7 +1699,7 @@ public final class Locale implements Cloneable, Serializable {
      * legacy tags, (defined as "grandfathered" in RFC5646) are not always well-formed, this method
      * will simply case fold a legacy tag to match the exact case convention
      * for the particular tag specified in the respective
-     * {@link ##legacy_tags_replacement Legacy tags} table.
+     * {@link ##legacy_tags Legacy tags} table.
      *
      * <p><b>Special Exceptions</b>
      * <p>To maintain consistency with {@link ##def_variant variant}
@@ -1796,7 +1796,7 @@ public final class Locale implements Cloneable, Serializable {
      *    // returns "th-TH-u-nu-thai-x-lvariant-TH"
      * </pre></ul>
      *
-     * <p>This implements the 'Language-Tag' production of BCP47, and
+     * <p id="legacy_tags">This implements the 'Language-Tag' production of BCP47, and
      * so supports legacy (regular and irregular, referred to as
      * "Type: grandfathered" in BCP47) as well as
      * private use language tags.  Stand alone private use tags are
@@ -1806,7 +1806,7 @@ public final class Locale implements Cloneable, Serializable {
      *
      * <p>Legacy tags with canonical replacements are as follows:
      *
-     * <table class="striped" id="legacy_tags_replacement">
+     * <table class="striped">
      * <caption style="display:none">Legacy tags with canonical replacements</caption>
      * <thead style="text-align:center">
      * <tr><th scope="col" style="padding: 0 2px">legacy tag</th><th scope="col" style="padding: 0 2px">modern replacement</th></tr>
@@ -1838,7 +1838,7 @@ public final class Locale implements Cloneable, Serializable {
      * <p>Legacy tags with no modern replacement will be
      * converted as follows:
      *
-     * <table class="striped" id="legacy_tags_no_replacement">
+     * <table class="striped">
      * <caption style="display:none">Legacy tags with no modern replacement</caption>
      * <thead style="text-align:center">
      * <tr><th scope="col" style="padding: 0 2px">legacy tag</th><th scope="col" style="padding: 0 2px">converts to</th></tr>
