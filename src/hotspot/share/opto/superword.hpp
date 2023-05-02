@@ -202,24 +202,6 @@ class SWNodeInfo {
 };
 
 class SuperWord;
-class CMoveKit {
- friend class SuperWord;
- private:
-  SuperWord* _sw;
-  Dict* _dict;
-  CMoveKit(Arena* a, SuperWord* sw) : _sw(sw)  {_dict = new Dict(cmpkey, hashkey, a);}
-  void*     _2p(Node* key)        const  { return (void*)(intptr_t)key; } // 2 conversion functions to make gcc happy
-  Dict*     dict()                const  { return _dict; }
-  void map(Node* key, Node_List* val)    { assert(_dict->operator[](_2p(key)) == nullptr, "key existed"); _dict->Insert(_2p(key), (void*)val); }
-  void unmap(Node* key)                  { _dict->Delete(_2p(key)); }
-  Node_List* pack(Node* key)      const  { return (Node_List*)_dict->operator[](_2p(key)); }
-  Node* is_Bool_candidate(Node* nd) const; // if it is the right candidate return corresponding CMove* ,
-  Node* is_Cmp_candidate(Node* nd) const; // otherwise return null
-  // Determine if the current pack is a cmove candidate that can be vectorized.
-  bool can_merge_cmove_pack(Node_List* cmove_pk);
-  void make_cmove_pack(Node_List* cmove_pk);
-  bool test_cmp_pack(Node_List* cmp_pk, Node_List* cmove_pk);
-};//class CMoveKit
 
 // JVMCI: OrderedPair is moved up to deal with compilation issues on Windows
 //------------------------------OrderedPair---------------------------
@@ -310,7 +292,6 @@ class SuperWord : public ResourceObj {
   GrowableArray<Node*> _iteration_last;  // nodes in the generation that has deps to   phi
   GrowableArray<SWNodeInfo> _node_info;  // Info needed per node
   CloneMap&            _clone_map;       // map of nodes created in cloning
-  CMoveKit             _cmovev_kit;      // support for vectorization of CMov
   MemNode* _align_to_ref;                // Memory reference that pre-loop will align to
 
   GrowableArray<OrderedPair> _disjoint_ptrs; // runtime disambiguated pointer pairs
@@ -459,9 +440,6 @@ class SuperWord : public ResourceObj {
   Node_List* my_pack(Node* n)                 { return !in_bb(n) ? nullptr : _node_info.adr_at(bb_idx(n))->_my_pack; }
   void set_my_pack(Node* n, Node_List* p)     { int i = bb_idx(n); grow_node_info(i); _node_info.adr_at(i)->_my_pack = p; }
   // is pack good for converting into one vector node replacing bunches of Cmp, Bool, CMov nodes.
-  bool is_cmov_pack(Node_List* p);
-  bool is_cmov_pack_internal_node(Node_List* p, Node* nd) { return is_cmov_pack(p) && !nd->is_CMove(); }
-  static bool is_cmove_fp_opcode(int opc) { return (opc == Op_CMoveF || opc == Op_CMoveD); }
   static bool requires_long_to_int_conversion(int opc);
   // For pack p, are all idx operands the same?
   bool same_inputs(Node_List* p, int idx);
@@ -556,8 +534,6 @@ class SuperWord : public ResourceObj {
   void construct_my_pack_map();
   // Remove packs that are not implemented or not profitable.
   void filter_packs();
-  // Merge CMove into new vector-nodes
-  void merge_packs_to_cmove();
   // Verify that for every pack, all nodes are mutually independent.
   // Also verify that packset and my_pack are consistent.
   DEBUG_ONLY(void verify_packs();)
