@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2022 Unicode, Inc.
+<!-- Copyright © 1991-2023 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -997,6 +997,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="ZW">Simbabve</territory>
 			<territory type="ZZ">Óþekkt svæði</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">England</subdivision>
+			<subdivision type="gbsct">Skotland</subdivision>
+			<subdivision type="gbwls">Wales</subdivision>
+		</subdivisions>
 		<variants>
 			<variant type="MONOTON" draft="unconfirmed">monotonísk</variant>
 			<variant type="PINYIN" draft="unconfirmed">pinyin</variant>
@@ -1276,8 +1281,55 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</availableFormats>
 					<intervalFormats>
 						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
+						<intervalFormatItem id="Bh">
+							<greatestDifference id="B">h B – h B</greatestDifference>
+							<greatestDifference id="h">h–h B</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Bhm">
+							<greatestDifference id="B">h:mm B – h:mm B</greatestDifference>
+							<greatestDifference id="h">h:mm–h:mm B</greatestDifference>
+							<greatestDifference id="m">h:mm–h:mm B</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="d">
 							<greatestDifference id="d">d.–d.</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Gy">
+							<greatestDifference id="G">y G – y G</greatestDifference>
+							<greatestDifference id="y">y–y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyM">
+							<greatestDifference id="G">MM.y GGGGG – MM.y GGGGG</greatestDifference>
+							<greatestDifference id="M">MM.y – MM.y GGGGG</greatestDifference>
+							<greatestDifference id="y">MM.y – MM.y GGGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMd">
+							<greatestDifference id="d">dd.MM.y – dd.MM.y GGGGG</greatestDifference>
+							<greatestDifference id="G">dd.MM.y GGGGG – dd.MM.y GGGGG</greatestDifference>
+							<greatestDifference id="M">dd.MM.y – dd.MM.y GGGGG</greatestDifference>
+							<greatestDifference id="y">dd.MM.y – dd.MM.y GGGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMEd">
+							<greatestDifference id="d">E, dd.MM.y – E, dd.MM.y GGGGG</greatestDifference>
+							<greatestDifference id="G">E, dd.MM.y GGGGG – E, dd.MM.y GGGGG</greatestDifference>
+							<greatestDifference id="M">E, dd.MM.y – E, dd.MM.y GGGGG</greatestDifference>
+							<greatestDifference id="y">E, dd.MM.y – E, dd.MM.y GGGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMM">
+							<greatestDifference id="G">MMM y G – MMM y G</greatestDifference>
+							<greatestDifference id="M">MMM–MMM y G</greatestDifference>
+							<greatestDifference id="y">MMM y – MMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMd">
+							<greatestDifference id="d">d.–d. MMM y G</greatestDifference>
+							<greatestDifference id="G">d. MMM y G – d. MMM y G</greatestDifference>
+							<greatestDifference id="M">d. MMM – d MMM y G</greatestDifference>
+							<greatestDifference id="y">d. MMM y – d. MMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMEd">
+							<greatestDifference id="d">E, d. MMM – E, d. MMM y G</greatestDifference>
+							<greatestDifference id="G">E, d. MMM y G – E, d. MMM y G</greatestDifference>
+							<greatestDifference id="M">E, d. MMM – E, d. MMM y G</greatestDifference>
+							<greatestDifference id="y">E, d. MMM y – E, d. MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
 							<greatestDifference id="a">h a – h a</greatestDifference>
@@ -1319,8 +1371,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="M">d.M.–d.M.</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
-							<greatestDifference id="d">E, d. – E, d.M.</greatestDifference>
-							<greatestDifference id="M">E, d.M. – E, d.M.</greatestDifference>
+							<greatestDifference id="d">E, d. – E, d.M.</greatestDifference>
+							<greatestDifference id="M">E, d.M. – E, d.M.</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMM">
 							<greatestDifference id="M">MMM–MMM</greatestDifference>
@@ -1330,7 +1382,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="M">d. MMM – d. MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMEd">
-							<greatestDifference id="d">E, d. – E, d. MMM</greatestDifference>
+							<greatestDifference id="d">E, d. – E, d. MMM</greatestDifference>
 							<greatestDifference id="M">E, d. MMM – E, d. MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMM">
@@ -1349,8 +1401,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="y">d.M.y–d.M.y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMEd">
-							<greatestDifference id="d">E, d. – E, d.M.y G</greatestDifference>
-							<greatestDifference id="M">E, d.M. – E, d.M.y G</greatestDifference>
+							<greatestDifference id="d">E, d. – E, d.M.y G</greatestDifference>
+							<greatestDifference id="M">E, d.M. – E, d.M.y G</greatestDifference>
 							<greatestDifference id="y">E, d.M.y – E, d.M.y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMM">
@@ -1363,7 +1415,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="y">d. MMM y – d. MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
-							<greatestDifference id="d">E, d. – E, d. MMM y G</greatestDifference>
+							<greatestDifference id="d">E, d. – E, d. MMM y G</greatestDifference>
 							<greatestDifference id="M">E, d. MMM – E, d. MMM y G</greatestDifference>
 							<greatestDifference id="y">E, d. MMM y – E, d. MMM y G</greatestDifference>
 						</intervalFormatItem>
@@ -1611,8 +1663,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="M">d.M.–d.M.</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
-							<greatestDifference id="d">E, d. – E, d.M.</greatestDifference>
-							<greatestDifference id="M">E, d.M. – E, d.M.</greatestDifference>
+							<greatestDifference id="d">E, d. – E, d.M.</greatestDifference>
+							<greatestDifference id="M">E, d.M. – E, d.M.</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMM">
 							<greatestDifference id="M">MMM–MMM</greatestDifference>
@@ -1622,7 +1674,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="M">d. MMM – d. MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMEd">
-							<greatestDifference id="d">E, d. – E, d. MMM</greatestDifference>
+							<greatestDifference id="d">E, d. – E, d. MMM</greatestDifference>
 							<greatestDifference id="M">E, d. MMM – E, d. MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMM">
@@ -1641,8 +1693,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="y">d.M.y–d.M.y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMEd">
-							<greatestDifference id="d">E, d. – E, d.M.y G</greatestDifference>
-							<greatestDifference id="M">E, d.M. – E, d.M.y G</greatestDifference>
+							<greatestDifference id="d">E, d. – E, d.M.y G</greatestDifference>
+							<greatestDifference id="M">E, d.M. – E, d.M.y G</greatestDifference>
 							<greatestDifference id="y">E, d.M.y – E, d.M.y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMM">
@@ -1655,7 +1707,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="y">d. MMM y – d. MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
-							<greatestDifference id="d">E, d. – E, d. MMM y G</greatestDifference>
+							<greatestDifference id="d">E, d. – E, d. MMM y G</greatestDifference>
 							<greatestDifference id="M">E, d. MMM – E, d. MMM y G</greatestDifference>
 							<greatestDifference id="y">E, d. MMM y – E, d. MMM y G</greatestDifference>
 						</intervalFormatItem>
@@ -1903,8 +1955,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="M">d.M.–d.M.</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
-							<greatestDifference id="d">E, d. – E, d.M.</greatestDifference>
-							<greatestDifference id="M">E, d.M. – E, d.M.</greatestDifference>
+							<greatestDifference id="d">E, d. – E, d.M.</greatestDifference>
+							<greatestDifference id="M">E, d.M. – E, d.M.</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMM">
 							<greatestDifference id="M">MMM–MMM</greatestDifference>
@@ -1914,7 +1966,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="M">d. MMM – d. MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMEd">
-							<greatestDifference id="d">E, d. – E, d. MMM</greatestDifference>
+							<greatestDifference id="d">E, d. – E, d. MMM</greatestDifference>
 							<greatestDifference id="M">E, d. MMM – E, d. MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMM">
@@ -1933,8 +1985,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="y">d.M.y–d.M.y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMEd">
-							<greatestDifference id="d">E, d. – E, d.M.y G</greatestDifference>
-							<greatestDifference id="M">E, d.M. – E, d.M.y G</greatestDifference>
+							<greatestDifference id="d">E, d. – E, d.M.y G</greatestDifference>
+							<greatestDifference id="M">E, d.M. – E, d.M.y G</greatestDifference>
 							<greatestDifference id="y">E, d.M.y – E, d.M.y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMM">
@@ -1947,7 +1999,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="y">d. MMM y – d. MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
-							<greatestDifference id="d">E, d. – E, d. MMM y G</greatestDifference>
+							<greatestDifference id="d">E, d. – E, d. MMM y G</greatestDifference>
 							<greatestDifference id="M">E, d. MMM – E, d. MMM y G</greatestDifference>
 							<greatestDifference id="y">E, d. MMM y – E, d. MMM y G</greatestDifference>
 						</intervalFormatItem>
@@ -2019,9 +2071,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateTimeFormat>
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -2153,8 +2211,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="M">d.M.–d.M.</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
-							<greatestDifference id="d">E, d. – E, d.M.</greatestDifference>
-							<greatestDifference id="M">E, d.M. – E, d.M.</greatestDifference>
+							<greatestDifference id="d">E, d. – E, d.M.</greatestDifference>
+							<greatestDifference id="M">E, d.M. – E, d.M.</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMM">
 							<greatestDifference id="M">MMM–MMM</greatestDifference>
@@ -2164,7 +2222,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="M">d. MMM – d. MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMEd">
-							<greatestDifference id="d">E, d. – E, d. MMM</greatestDifference>
+							<greatestDifference id="d">E, d. – E, d. MMM</greatestDifference>
 							<greatestDifference id="M">E, d. MMM – E, d. MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMM">
@@ -2183,8 +2241,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="y">d.M.y–d.M.y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMEd">
-							<greatestDifference id="d">E, d. – E, d.M.y G</greatestDifference>
-							<greatestDifference id="M">E, d.M. – E, d.M.y G</greatestDifference>
+							<greatestDifference id="d">E, d. – E, d.M.y G</greatestDifference>
+							<greatestDifference id="M">E, d.M. – E, d.M.y G</greatestDifference>
 							<greatestDifference id="y">E, d.M.y – E, d.M.y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMM">
@@ -2197,7 +2255,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="y">d. MMM y – d. MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
-							<greatestDifference id="d">E, d. – E, d. MMM y G</greatestDifference>
+							<greatestDifference id="d">E, d. – E, d. MMM y G</greatestDifference>
 							<greatestDifference id="M">E, d. MMM – E, d. MMM y G</greatestDifference>
 							<greatestDifference id="y">E, d. MMM y – E, d. MMM y G</greatestDifference>
 						</intervalFormatItem>
@@ -2578,9 +2636,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateTimeFormat>
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -2722,8 +2786,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="M">d.M.–d.M.</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
-							<greatestDifference id="d">E, d.M. – E, d.M.</greatestDifference>
-							<greatestDifference id="M">E, d.M. – E, d.M.</greatestDifference>
+							<greatestDifference id="d">E, d.M. – E, d.M.</greatestDifference>
+							<greatestDifference id="M">E, d.M. – E, d.M.</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMM">
 							<greatestDifference id="M">MMM–MMM</greatestDifference>
@@ -2733,7 +2797,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="M">d. MMM – d. MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMEd">
-							<greatestDifference id="d">E, d. – E, d. MMM</greatestDifference>
+							<greatestDifference id="d">E, d. – E, d. MMM</greatestDifference>
 							<greatestDifference id="M">E, d. MMM – E, d. MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMM">
@@ -2766,7 +2830,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="y">d. MMM y – d. MMM y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
-							<greatestDifference id="d">E, d. – E, d. MMM y</greatestDifference>
+							<greatestDifference id="d">E, d. – E, d. MMM y</greatestDifference>
 							<greatestDifference id="M">E, d. MMM – E, d. MMM y</greatestDifference>
 							<greatestDifference id="y">E, d. MMM y – E, d. MMM y</greatestDifference>
 						</intervalFormatItem>
@@ -3017,8 +3081,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="M">d.M.–d.M.</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
-							<greatestDifference id="d">E, d. – E, d.M.</greatestDifference>
-							<greatestDifference id="M">E, d.M. – E, d.M.</greatestDifference>
+							<greatestDifference id="d">E, d. – E, d.M.</greatestDifference>
+							<greatestDifference id="M">E, d.M. – E, d.M.</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMM">
 							<greatestDifference id="M">MMM–MMM</greatestDifference>
@@ -3028,7 +3092,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="M">d. MMM – d. MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMEd">
-							<greatestDifference id="d">E, d. – E, d. MMM</greatestDifference>
+							<greatestDifference id="d">E, d. – E, d. MMM</greatestDifference>
 							<greatestDifference id="M">E, d. MMM – E, d. MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMM">
@@ -3047,8 +3111,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="y">d.M.y–d.M.y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMEd">
-							<greatestDifference id="d">E, d. – E, d.M.y G</greatestDifference>
-							<greatestDifference id="M">E, d.M. – E, d.M.y G</greatestDifference>
+							<greatestDifference id="d">E, d. – E, d.M.y G</greatestDifference>
+							<greatestDifference id="M">E, d.M. – E, d.M.y G</greatestDifference>
 							<greatestDifference id="y">E, d.M.y – E, d.M.y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMM">
@@ -3061,7 +3125,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="y">d. MMM y – d. MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
-							<greatestDifference id="d">E, d. – E, d. MMM y G</greatestDifference>
+							<greatestDifference id="d">E, d. – E, d. MMM y G</greatestDifference>
 							<greatestDifference id="M">E, d. MMM – E, d. MMM y G</greatestDifference>
 							<greatestDifference id="y">E, d. MMM y – E, d. MMM y G</greatestDifference>
 						</intervalFormatItem>
@@ -3300,8 +3364,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="M">d.M.–d.M.</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
-							<greatestDifference id="d">E, d. – E, d.M.</greatestDifference>
-							<greatestDifference id="M">E, d.M. – E, d.M.</greatestDifference>
+							<greatestDifference id="d">E, d. – E, d.M.</greatestDifference>
+							<greatestDifference id="M">E, d.M. – E, d.M.</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMM">
 							<greatestDifference id="M">MMM–MMM</greatestDifference>
@@ -3311,7 +3375,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="M">d. MMM – d. MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMEd">
-							<greatestDifference id="d">E, d. – E, d. MMM</greatestDifference>
+							<greatestDifference id="d">E, d. – E, d. MMM</greatestDifference>
 							<greatestDifference id="M">E, d. MMM – E, d. MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMM">
@@ -3330,8 +3394,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="y">d.M.y–d.M.y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMEd">
-							<greatestDifference id="d">E, d. – E, d.M.y G</greatestDifference>
-							<greatestDifference id="M">E, d.M. – E, d.M.y G</greatestDifference>
+							<greatestDifference id="d">E, d. – E, d.M.y G</greatestDifference>
+							<greatestDifference id="M">E, d.M. – E, d.M.y G</greatestDifference>
 							<greatestDifference id="y">E, d.M.y – E, d.M.y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMM">
@@ -3344,7 +3408,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="y">d. MMM y – d. MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
-							<greatestDifference id="d">E, d. – E, d. MMM y G</greatestDifference>
+							<greatestDifference id="d">E, d. – E, d. MMM y G</greatestDifference>
 							<greatestDifference id="M">E, d. MMM – E, d. MMM y G</greatestDifference>
 							<greatestDifference id="y">E, d. MMM y – E, d. MMM y G</greatestDifference>
 						</intervalFormatItem>
@@ -3583,8 +3647,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="M">d.M.–d.M.</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
-							<greatestDifference id="d">E, d. – E, d.M.</greatestDifference>
-							<greatestDifference id="M">E, d.M. – E, d.M.</greatestDifference>
+							<greatestDifference id="d">E, d. – E, d.M.</greatestDifference>
+							<greatestDifference id="M">E, d.M. – E, d.M.</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMM">
 							<greatestDifference id="M">MMM–MMM</greatestDifference>
@@ -3594,7 +3658,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="M">d. MMM – d. MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMEd">
-							<greatestDifference id="d">E, d. – E, d. MMM</greatestDifference>
+							<greatestDifference id="d">E, d. – E, d. MMM</greatestDifference>
 							<greatestDifference id="M">E, d. MMM – E, d. MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMM">
@@ -3613,8 +3677,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="y">d.M.y–d.M.y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMEd">
-							<greatestDifference id="d">E, d. – E, d.M.y G</greatestDifference>
-							<greatestDifference id="M">E, d.M. – E, d.M.y G</greatestDifference>
+							<greatestDifference id="d">E, d. – E, d.M.y G</greatestDifference>
+							<greatestDifference id="M">E, d.M. – E, d.M.y G</greatestDifference>
 							<greatestDifference id="y">E, d.M.y – E, d.M.y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMM">
@@ -3627,7 +3691,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="y">d. MMM y – d. MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
-							<greatestDifference id="d">E, d. – E, d. MMM y G</greatestDifference>
+							<greatestDifference id="d">E, d. – E, d. MMM y G</greatestDifference>
 							<greatestDifference id="M">E, d. MMM – E, d. MMM y G</greatestDifference>
 							<greatestDifference id="y">E, d. MMM y – E, d. MMM y G</greatestDifference>
 						</intervalFormatItem>
@@ -3765,8 +3829,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="M">d.M.–d.M.</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
-							<greatestDifference id="d">E, d. – E, d.M.</greatestDifference>
-							<greatestDifference id="M">E, d.M. – E, d.M.</greatestDifference>
+							<greatestDifference id="d">E, d. – E, d.M.</greatestDifference>
+							<greatestDifference id="M">E, d.M. – E, d.M.</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMM">
 							<greatestDifference id="M">MMM–MMM</greatestDifference>
@@ -3776,7 +3840,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="M">d. MMM – d. MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMEd">
-							<greatestDifference id="d">E, d. – E, d. MMM</greatestDifference>
+							<greatestDifference id="d">E, d. – E, d. MMM</greatestDifference>
 							<greatestDifference id="M">E, d. MMM – E, d. MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMM">
@@ -3795,8 +3859,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="y">d.M.y–d.M.y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMEd">
-							<greatestDifference id="d">E, d. – E, d.M.y G</greatestDifference>
-							<greatestDifference id="M">E, d.M. – E, d.M.y G</greatestDifference>
+							<greatestDifference id="d">E, d. – E, d.M.y G</greatestDifference>
+							<greatestDifference id="M">E, d.M. – E, d.M.y G</greatestDifference>
 							<greatestDifference id="y">E, d.M.y – E, d.M.y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMM">
@@ -3809,7 +3873,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="y">d. MMM y – d. MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
-							<greatestDifference id="d">E, d. – E, d. MMM y G</greatestDifference>
+							<greatestDifference id="d">E, d. – E, d. MMM y G</greatestDifference>
 							<greatestDifference id="M">E, d. MMM – E, d. MMM y G</greatestDifference>
 							<greatestDifference id="y">E, d. MMM y – E, d. MMM y G</greatestDifference>
 						</intervalFormatItem>
@@ -4048,8 +4112,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="M">d.M.–d.M.</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
-							<greatestDifference id="d">E, d. – E, d.M.</greatestDifference>
-							<greatestDifference id="M">E, d.M. – E, d.M.</greatestDifference>
+							<greatestDifference id="d">E, d. – E, d.M.</greatestDifference>
+							<greatestDifference id="M">E, d.M. – E, d.M.</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMM">
 							<greatestDifference id="M">MMM–MMM</greatestDifference>
@@ -4059,7 +4123,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="M">d. MMM – d. MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMEd">
-							<greatestDifference id="d">E, d. – E, d. MMM</greatestDifference>
+							<greatestDifference id="d">E, d. – E, d. MMM</greatestDifference>
 							<greatestDifference id="M">E, d. MMM – E, d. MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMM">
@@ -4078,8 +4142,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="y">d.M.y–d.M.y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMEd">
-							<greatestDifference id="d">E, d. – E, d.M.y G</greatestDifference>
-							<greatestDifference id="M">E, d.M. – E, d.M.y G</greatestDifference>
+							<greatestDifference id="d">E, d. – E, d.M.y G</greatestDifference>
+							<greatestDifference id="M">E, d.M. – E, d.M.y G</greatestDifference>
 							<greatestDifference id="y">E, d.M.y – E, d.M.y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMM">
@@ -4092,7 +4156,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="y">d. MMM y – d. MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
-							<greatestDifference id="d">E, d. – E, d. MMM y G</greatestDifference>
+							<greatestDifference id="d">E, d. – E, d. MMM y G</greatestDifference>
 							<greatestDifference id="M">E, d. MMM – E, d. MMM y G</greatestDifference>
 							<greatestDifference id="y">E, d. MMM y – E, d. MMM y G</greatestDifference>
 						</intervalFormatItem>
@@ -4244,8 +4308,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="M">d.M.–d.M.</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
-							<greatestDifference id="d">E, d. – E, d.M.</greatestDifference>
-							<greatestDifference id="M">E, d.M. – E, d.M.</greatestDifference>
+							<greatestDifference id="d">E, d. – E, d.M.</greatestDifference>
+							<greatestDifference id="M">E, d.M. – E, d.M.</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMM">
 							<greatestDifference id="M">MMM–MMM</greatestDifference>
@@ -4255,7 +4319,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="M">d. MMM – d. MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMEd">
-							<greatestDifference id="d">E, d. – E, d. MMM</greatestDifference>
+							<greatestDifference id="d">E, d. – E, d. MMM</greatestDifference>
 							<greatestDifference id="M">E, d. MMM – E, d. MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMM">
@@ -4274,8 +4338,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="y">d.M.y–d.M.y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMEd">
-							<greatestDifference id="d">E, d. – E, d.M.y G</greatestDifference>
-							<greatestDifference id="M">E, d.M. – E, d.M.y G</greatestDifference>
+							<greatestDifference id="d">E, d. – E, d.M.y G</greatestDifference>
+							<greatestDifference id="M">E, d.M. – E, d.M.y G</greatestDifference>
 							<greatestDifference id="y">E, d.M.y – E, d.M.y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMM">
@@ -4288,7 +4352,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="y">d. MMM y – d. MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
-							<greatestDifference id="d">E, d. – E, d. MMM y G</greatestDifference>
+							<greatestDifference id="d">E, d. – E, d. MMM y G</greatestDifference>
 							<greatestDifference id="M">E, d. MMM – E, d. MMM y G</greatestDifference>
 							<greatestDifference id="y">E, d. MMM y – E, d. MMM y G</greatestDifference>
 						</intervalFormatItem>
@@ -4471,6 +4535,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<relative type="-1">í síðustu viku</relative>
 				<relative type="0">í þessari viku</relative>
 				<relative type="1">í næstu viku</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">eftir {0} viku</relativeTimePattern>
+					<relativeTimePattern count="other">eftir {0} vikur</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">fyrir {0} viku</relativeTimePattern>
+					<relativeTimePattern count="other">fyrir {0} vikum</relativeTimePattern>
+				</relativeTime>
+				<relativePeriod>vika {0}</relativePeriod>
 			</field>
 			<field type="weekOfMonth">
 				<displayName>vika í mánuði</displayName>
@@ -4520,6 +4593,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<relative type="0">í dag</relative>
 				<relative type="1">á morgun</relative>
 				<relative type="2">eftir tvo daga</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">eftir {0} dag</relativeTimePattern>
+					<relativeTimePattern count="other">eftir {0} daga</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">fyrir {0} degi</relativeTimePattern>
+					<relativeTimePattern count="other">fyrir {0} dögum</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="dayOfYear">
 				<displayName>dagur í ári</displayName>
@@ -7348,6 +7429,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="ARP">
 				<displayName>Argentískur pesi (1983–1985)</displayName>
+				<displayName count="one">Argentískur pesi (1983–1985)</displayName>
+				<displayName count="other">Argentískur pesi (1983–1985)</displayName>
 			</currency>
 			<currency type="ARS">
 				<displayName>argentínskur pesi</displayName>
@@ -7444,6 +7527,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="BOP">
 				<displayName>Bólivískur pesi</displayName>
+				<displayName count="one">Bólivískur pesi</displayName>
+				<displayName count="other">Bólivískur pesi</displayName>
 			</currency>
 			<currency type="BOV">
 				<displayName>Bolivian Mvdol</displayName>
@@ -8040,6 +8125,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="MXP">
 				<displayName>Mexíkóskur silfurpesi (1861–1992)</displayName>
+				<displayName count="one">Mexíkóskur silfurpesi (1861–1992)</displayName>
+				<displayName count="other">Mexíkóskur silfurpesi (1861–1992)</displayName>
 			</currency>
 			<currency type="MXV">
 				<displayName>Mexíkóskur pesi, UDI</displayName>
@@ -8417,9 +8504,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="USN">
 				<displayName>Bandaríkjadalur (næsta dag)</displayName>
+				<displayName count="one">Bandaríkjadalur (næsta dag)</displayName>
+				<displayName count="other">Bandaríkjadalur (næsta dag)</displayName>
 			</currency>
 			<currency type="USS">
 				<displayName>Bandaríkjadalur (sama dag)</displayName>
+				<displayName count="one">Bandaríkjadalur (sama dag)</displayName>
+				<displayName count="other">Bandaríkjadalur (sama dag)</displayName>
 			</currency>
 			<currency type="UYU">
 				<displayName>úrúgvæskur pesi</displayName>
@@ -8719,6 +8810,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<compoundUnitPattern1 count="other" gender="masculine" case="accusative">rúm{0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other" gender="masculine" case="dative">rúm{0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other" gender="masculine" case="genitive">rúm{0}</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="times">
+				<compoundUnitPattern>{0}⋅{1}</compoundUnitPattern>
 			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<gender>feminine</gender>
@@ -9206,6 +9300,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="duration-month">
 				<gender>masculine</gender>
+				<displayName>mánuðir</displayName>
 				<unitPattern count="one">{0} mánuður</unitPattern>
 				<unitPattern count="one" case="accusative">{0} mánuð</unitPattern>
 				<unitPattern count="one" case="dative">{0} mánuði</unitPattern>
@@ -9468,6 +9563,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="force-kilowatt-hour-per-100-kilometer">
 				<gender>neuter</gender>
+				<displayName>kWh/100km</displayName>
 				<unitPattern count="one">{0} kílóvatt á 100 kílómetra</unitPattern>
 				<unitPattern count="one" case="accusative">{0} kílóvatt á 100 kílómetra</unitPattern>
 				<unitPattern count="one" case="dative">{0} kílóvatti á 100 kílómetra</unitPattern>
@@ -9527,6 +9623,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="graphics-em">
 				<gender>neuter</gender>
+				<displayName>em</displayName>
+				<unitPattern count="one">{0} em</unitPattern>
+				<unitPattern count="one" case="accusative">{0} em</unitPattern>
+				<unitPattern count="one" case="dative">{0} em</unitPattern>
+				<unitPattern count="one" case="genitive">{0} em</unitPattern>
+				<unitPattern count="other">{0} em</unitPattern>
+				<unitPattern count="other" case="accusative">{0} em</unitPattern>
+				<unitPattern count="other" case="dative">{0} em</unitPattern>
+				<unitPattern count="other" case="genitive">{0} em</unitPattern>
 			</unit>
 			<unit type="graphics-pixel">
 				<gender>masculine</gender>
@@ -9799,6 +9904,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="genitive">{0} lúmena</unitPattern>
 			</unit>
 			<unit type="light-solar-luminosity">
+				<displayName>ljósafl sólar</displayName>
 				<unitPattern count="one">{0} ljósafl sólar</unitPattern>
 				<unitPattern count="other">{0} ljósafl sólar</unitPattern>
 			</unit>
@@ -10340,6 +10446,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ekrufet</unitPattern>
 			</unit>
 			<unit type="volume-bushel">
+				<displayName>skeppur</displayName>
 				<unitPattern count="one">{0} skeppa</unitPattern>
 				<unitPattern count="other">{0} skeppur</unitPattern>
 			</unit>
@@ -10444,6 +10551,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
+			</compoundUnit>
+			<compoundUnit type="power2">
+				<compoundUnitPattern1 count="one">{0}²</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0}²</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="power3">
+				<compoundUnitPattern1 count="one">{0}³</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0}³</compoundUnitPattern1>
 			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<displayName>g-hröðun</displayName>
@@ -10572,6 +10687,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="concentr-permyriad">
 				<displayName>permyriad</displayName>
+				<unitPattern count="one">{0}‱</unitPattern>
+				<unitPattern count="other">{0}‱</unitPattern>
 			</unit>
 			<unit type="concentr-mole">
 				<displayName>mól</displayName>
@@ -10778,9 +10895,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="energy-electronvolt">
 				<displayName>rafeindarvolt</displayName>
+				<unitPattern count="one">{0} eV</unitPattern>
+				<unitPattern count="other">{0} eV</unitPattern>
 			</unit>
 			<unit type="energy-british-thermal-unit">
 				<displayName>BTU</displayName>
+				<unitPattern count="one">{0} Btu</unitPattern>
+				<unitPattern count="other">{0} Btu</unitPattern>
 			</unit>
 			<unit type="energy-therm-us">
 				<displayName>bandarísk varmaeining</displayName>
@@ -10789,9 +10910,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="force-pound-force">
 				<displayName>kraftur punds</displayName>
+				<unitPattern count="one">{0} lbf</unitPattern>
+				<unitPattern count="other">{0} lbf</unitPattern>
 			</unit>
 			<unit type="force-newton">
 				<displayName>njúton</displayName>
+				<unitPattern count="one">{0} N</unitPattern>
+				<unitPattern count="other">{0} N</unitPattern>
+			</unit>
+			<unit type="force-kilowatt-hour-per-100-kilometer">
+				<unitPattern count="one">{0} kWh/100km</unitPattern>
+				<unitPattern count="other">{0} kWh/100km</unitPattern>
 			</unit>
 			<unit type="frequency-gigahertz">
 				<displayName>GHz</displayName>
@@ -10812,6 +10941,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Hz</displayName>
 				<unitPattern count="one">{0} Hz</unitPattern>
 				<unitPattern count="other">{0} Hz</unitPattern>
+			</unit>
+			<unit type="graphics-em">
+				<unitPattern count="one">{0} em</unitPattern>
+				<unitPattern count="other">{0} em</unitPattern>
 			</unit>
 			<unit type="graphics-pixel">
 				<displayName>pixlar</displayName>
@@ -10842,6 +10975,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>dpi</displayName>
 				<unitPattern count="one">{0} dpi</unitPattern>
 				<unitPattern count="other">{0} dpi</unitPattern>
+			</unit>
+			<unit type="graphics-dot">
+				<displayName>pixlar</displayName>
+				<unitPattern count="one">{0} px</unitPattern>
+				<unitPattern count="other">{0} px</unitPattern>
+			</unit>
+			<unit type="length-earth-radius">
+				<unitPattern count="one">{0} R⊕</unitPattern>
+				<unitPattern count="other">{0} R⊕</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
 				<displayName>km</displayName>
@@ -10963,6 +11105,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} kerti</unitPattern>
 				<unitPattern count="other">{0} kerti</unitPattern>
 			</unit>
+			<unit type="light-lumen">
+				<unitPattern count="one">{0} lm</unitPattern>
+				<unitPattern count="other">{0} lm</unitPattern>
+			</unit>
 			<unit type="light-solar-luminosity">
 				<displayName>ljósafl sólar</displayName>
 				<unitPattern count="one">{0} Lsól</unitPattern>
@@ -11029,9 +11175,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="mass-dalton">
 				<displayName>dalton</displayName>
+				<unitPattern count="one">{0} Da</unitPattern>
+				<unitPattern count="other">{0} Da</unitPattern>
 			</unit>
 			<unit type="mass-earth-mass">
 				<displayName>jarðmassar</displayName>
+				<unitPattern count="one">{0} M⊕</unitPattern>
+				<unitPattern count="other">{0} M⊕</unitPattern>
 			</unit>
 			<unit type="mass-solar-mass">
 				<displayName>sólmassar</displayName>
@@ -11112,6 +11262,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} hPa</unitPattern>
 				<unitPattern count="other">{0} hPa</unitPattern>
 			</unit>
+			<unit type="pressure-kilopascal">
+				<unitPattern count="one">{0} kPa</unitPattern>
+				<unitPattern count="other">{0} kPa</unitPattern>
+			</unit>
+			<unit type="pressure-megapascal">
+				<unitPattern count="one">{0} MPa</unitPattern>
+				<unitPattern count="other">{0} MPa</unitPattern>
+			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName>kílómetrar á klukkustund</displayName>
 				<unitPattern count="one">{0} km/klst.</unitPattern>
@@ -11151,6 +11309,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>K</displayName>
 				<unitPattern count="one">{0} K</unitPattern>
 				<unitPattern count="other">{0} K</unitPattern>
+			</unit>
+			<unit type="torque-pound-force-foot">
+				<unitPattern count="one">{0} lbf⋅ft</unitPattern>
+				<unitPattern count="other">{0} lbf⋅ft</unitPattern>
+			</unit>
+			<unit type="torque-newton-meter">
+				<unitPattern count="one">{0} N⋅m</unitPattern>
+				<unitPattern count="other">{0} N⋅m</unitPattern>
 			</unit>
 			<unit type="volume-cubic-kilometer">
 				<displayName>km³</displayName>
@@ -11336,14 +11502,105 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="narrow">
+			<compoundUnit type="10p-1">
+				<unitPrefixPattern>d{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-2">
+				<unitPrefixPattern>c{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-3">
+				<unitPrefixPattern>m{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-6">
+				<unitPrefixPattern>μ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-9">
+				<unitPrefixPattern>n{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-12">
+				<unitPrefixPattern>p{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-15">
+				<unitPrefixPattern>f{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-18">
+				<unitPrefixPattern>a{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-21">
+				<unitPrefixPattern>z{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-24">
+				<unitPrefixPattern>y{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p1">
+				<unitPrefixPattern>da{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p2">
+				<unitPrefixPattern>h{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p3">
+				<unitPrefixPattern>k{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p6">
+				<unitPrefixPattern>M{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p9">
+				<unitPrefixPattern>G{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p12">
+				<unitPrefixPattern>T{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p15">
+				<unitPrefixPattern>P{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p18">
+				<unitPrefixPattern>E{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p21">
+				<unitPrefixPattern>Z{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p24">
+				<unitPrefixPattern>Y{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="1024p1">
 				<unitPrefixPattern>Ki{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="1024p2">
 				<unitPrefixPattern>Mi{0}</unitPrefixPattern>
 			</compoundUnit>
+			<compoundUnit type="1024p3">
+				<unitPrefixPattern>Gi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p4">
+				<unitPrefixPattern>Ti{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p5">
+				<unitPrefixPattern>Pi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p6">
+				<unitPrefixPattern>Ei{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p7">
+				<unitPrefixPattern>Zi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p8">
+				<unitPrefixPattern>Yi{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
+			</compoundUnit>
+			<compoundUnit type="power2">
+				<compoundUnitPattern1>{0}²</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one">{0}²</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0}²</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="power3">
+				<compoundUnitPattern1>{0}³</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one">{0}³</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0}³</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="times">
+				<compoundUnitPattern>{0}⋅{1}</compoundUnitPattern>
 			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<displayName>g-hröðun</displayName>
@@ -11355,21 +11612,36 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0}m/s²</unitPattern>
 				<unitPattern count="other">{0}m/s²</unitPattern>
 			</unit>
+			<unit type="angle-revolution">
+				<displayName>sn.</displayName>
+				<unitPattern count="one">{0} sn.</unitPattern>
+				<unitPattern count="other">{0} sn.</unitPattern>
+			</unit>
+			<unit type="angle-radian">
+				<displayName>rad</displayName>
+				<unitPattern count="one">{0} rad</unitPattern>
+				<unitPattern count="other">{0} rad</unitPattern>
+			</unit>
 			<unit type="angle-degree">
+				<displayName>gráður</displayName>
 				<unitPattern count="one">{0}°</unitPattern>
 				<unitPattern count="other">{0}°</unitPattern>
 			</unit>
 			<unit type="angle-arc-minute">
+				<displayName>bogamín.</displayName>
 				<unitPattern count="one">{0}′</unitPattern>
 				<unitPattern count="other">{0}′</unitPattern>
 			</unit>
 			<unit type="angle-arc-second">
+				<displayName>bogasek.</displayName>
 				<unitPattern count="one">{0}″</unitPattern>
 				<unitPattern count="other">{0}″</unitPattern>
 			</unit>
 			<unit type="area-square-kilometer">
+				<displayName>km²</displayName>
 				<unitPattern count="one">{0} km²</unitPattern>
 				<unitPattern count="other">{0} km²</unitPattern>
+				<perUnitPattern>{0}/km²</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
 				<displayName>hektari</displayName>
@@ -11377,16 +11649,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ha</unitPattern>
 			</unit>
 			<unit type="area-square-meter">
+				<displayName>fermetrar</displayName>
 				<unitPattern count="one">{0} m²</unitPattern>
 				<unitPattern count="other">{0} m²</unitPattern>
 				<perUnitPattern>{0}/m²</perUnitPattern>
 			</unit>
 			<unit type="area-square-centimeter">
+				<displayName>cm²</displayName>
+				<unitPattern count="one">{0} cm²</unitPattern>
+				<unitPattern count="other">{0} cm²</unitPattern>
 				<perUnitPattern>{0}/cm²</perUnitPattern>
 			</unit>
 			<unit type="area-square-mile">
+				<displayName>fermílur</displayName>
 				<unitPattern count="one">{0}mí²</unitPattern>
 				<unitPattern count="other">{0}mí²</unitPattern>
+				<perUnitPattern>{0}/mi²</perUnitPattern>
 			</unit>
 			<unit type="area-acre">
 				<displayName>ekra</displayName>
@@ -11395,16 +11673,32 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="area-square-yard">
 				<displayName>yd²</displayName>
+				<unitPattern count="one">{0} yd²</unitPattern>
+				<unitPattern count="other">{0} yd²</unitPattern>
 			</unit>
 			<unit type="area-square-foot">
 				<displayName>ft²</displayName>
 				<unitPattern count="one">{0}ft²</unitPattern>
 				<unitPattern count="other">{0}ft²</unitPattern>
 			</unit>
+			<unit type="area-square-inch">
+				<displayName>tommur²</displayName>
+				<unitPattern count="one">{0} t²</unitPattern>
+				<unitPattern count="other">{0} t²</unitPattern>
+				<perUnitPattern>{0}/t²</perUnitPattern>
+			</unit>
 			<unit type="area-dunam">
 				<displayName>dúnam</displayName>
+				<unitPattern count="one">{0} dúnam</unitPattern>
+				<unitPattern count="other">{0} dúnam</unitPattern>
+			</unit>
+			<unit type="concentr-karat">
+				<displayName>kt</displayName>
+				<unitPattern count="one">{0} kt</unitPattern>
+				<unitPattern count="other">{0} kt</unitPattern>
 			</unit>
 			<unit type="concentr-milligram-ofglucose-per-deciliter">
+				<displayName>mg/dl</displayName>
 				<unitPattern count="one">{0}mg/dl</unitPattern>
 				<unitPattern count="other">{0}mg/dl</unitPattern>
 			</unit>
@@ -11414,6 +11708,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}mmól/l</unitPattern>
 			</unit>
 			<unit type="concentr-item">
+				<displayName>atriði</displayName>
 				<unitPattern count="one">{0} atriði</unitPattern>
 				<unitPattern count="other">{0} atriði</unitPattern>
 			</unit>
@@ -11427,26 +11722,105 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0}%</unitPattern>
 				<unitPattern count="other">{0}%</unitPattern>
 			</unit>
+			<unit type="concentr-permille">
+				<displayName>prómill</displayName>
+				<unitPattern count="one">{0}‰</unitPattern>
+				<unitPattern count="other">{0}‰</unitPattern>
+			</unit>
 			<unit type="concentr-permyriad">
 				<displayName>‱</displayName>
+				<unitPattern count="one">{0}‱</unitPattern>
+				<unitPattern count="other">{0}‱</unitPattern>
 			</unit>
 			<unit type="concentr-mole">
 				<displayName>mól</displayName>
+				<unitPattern count="one">{0} mól</unitPattern>
+				<unitPattern count="other">{0} mól</unitPattern>
+			</unit>
+			<unit type="consumption-liter-per-kilometer">
+				<displayName>lítrar/km</displayName>
+				<unitPattern count="one">{0} l/km</unitPattern>
+				<unitPattern count="other">{0} l/km</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>l/100km</displayName>
 				<unitPattern count="one">{0}l/100km</unitPattern>
 				<unitPattern count="other">{0}l/100km</unitPattern>
 			</unit>
+			<unit type="consumption-mile-per-gallon">
+				<displayName>mílur/gallon</displayName>
+				<unitPattern count="one">{0} mí./gal.</unitPattern>
+				<unitPattern count="other">{0} mí./gal.</unitPattern>
+			</unit>
+			<unit type="consumption-mile-per-gallon-imperial">
+				<displayName>mílur/breskt gal.</displayName>
+				<unitPattern count="one">{0} mí./br.g.</unitPattern>
+				<unitPattern count="other">{0} mí./br.g.</unitPattern>
+			</unit>
 			<unit type="digital-petabyte">
 				<displayName>PB</displayName>
 				<unitPattern count="one">{0}PB</unitPattern>
 				<unitPattern count="other">{0}PB</unitPattern>
 			</unit>
+			<unit type="digital-terabyte">
+				<displayName>TB</displayName>
+				<unitPattern count="one">{0} TB</unitPattern>
+				<unitPattern count="other">{0} TB</unitPattern>
+			</unit>
+			<unit type="digital-terabit">
+				<displayName>Tb</displayName>
+				<unitPattern count="one">{0} Tb</unitPattern>
+				<unitPattern count="other">{0} Tb</unitPattern>
+			</unit>
+			<unit type="digital-gigabyte">
+				<displayName>GB</displayName>
+				<unitPattern count="one">{0} GB</unitPattern>
+				<unitPattern count="other">{0} GB</unitPattern>
+			</unit>
+			<unit type="digital-gigabit">
+				<displayName>Gb</displayName>
+				<unitPattern count="one">{0} Gb</unitPattern>
+				<unitPattern count="other">{0} Gb</unitPattern>
+			</unit>
+			<unit type="digital-megabyte">
+				<displayName>MB</displayName>
+				<unitPattern count="one">{0} MB</unitPattern>
+				<unitPattern count="other">{0} MB</unitPattern>
+			</unit>
+			<unit type="digital-megabit">
+				<displayName>Mb</displayName>
+				<unitPattern count="one">{0} Mb</unitPattern>
+				<unitPattern count="other">{0} Mb</unitPattern>
+			</unit>
+			<unit type="digital-kilobyte">
+				<displayName>kB</displayName>
+				<unitPattern count="one">{0} kB</unitPattern>
+				<unitPattern count="other">{0} kB</unitPattern>
+			</unit>
+			<unit type="digital-kilobit">
+				<displayName>kb</displayName>
+				<unitPattern count="one">{0} kb</unitPattern>
+				<unitPattern count="other">{0} kb</unitPattern>
+			</unit>
+			<unit type="digital-byte">
+				<displayName>bæti</displayName>
+				<unitPattern count="one">{0} bæti</unitPattern>
+				<unitPattern count="other">{0} bæti</unitPattern>
+			</unit>
+			<unit type="digital-bit">
+				<displayName>biti</displayName>
+				<unitPattern count="one">{0} biti</unitPattern>
+				<unitPattern count="other">{0} bitar</unitPattern>
+			</unit>
 			<unit type="duration-century">
 				<displayName>árh</displayName>
 				<unitPattern count="one">{0}árh</unitPattern>
 				<unitPattern count="other">{0}árh</unitPattern>
+			</unit>
+			<unit type="duration-decade">
+				<displayName>árat.</displayName>
+				<unitPattern count="one">{0} árat.</unitPattern>
+				<unitPattern count="other">{0} árat.</unitPattern>
 			</unit>
 			<unit type="duration-year">
 				<displayName>ár</displayName>
@@ -11488,6 +11862,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>mín.</displayName>
 				<unitPattern count="one">{0} mín.</unitPattern>
 				<unitPattern count="other">{0} mín.</unitPattern>
+				<perUnitPattern>{0}/mín.</perUnitPattern>
 			</unit>
 			<unit type="duration-second">
 				<displayName>sek.</displayName>
@@ -11510,21 +11885,150 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ns</unitPattern>
 				<unitPattern count="other">{0} ns</unitPattern>
 			</unit>
+			<unit type="electric-ampere">
+				<displayName>A</displayName>
+				<unitPattern count="one">{0} A</unitPattern>
+				<unitPattern count="other">{0} A</unitPattern>
+			</unit>
+			<unit type="electric-milliampere">
+				<displayName>mA</displayName>
+				<unitPattern count="one">{0} mA</unitPattern>
+				<unitPattern count="other">{0} mA</unitPattern>
+			</unit>
 			<unit type="electric-ohm">
 				<displayName>óm</displayName>
+				<unitPattern count="one">{0} Ω</unitPattern>
+				<unitPattern count="other">{0} Ω</unitPattern>
+			</unit>
+			<unit type="electric-volt">
+				<displayName>volt</displayName>
+				<unitPattern count="one">{0} V</unitPattern>
+				<unitPattern count="other">{0} V</unitPattern>
+			</unit>
+			<unit type="energy-kilocalorie">
+				<displayName>kcal</displayName>
+				<unitPattern count="one">{0} kcal</unitPattern>
+				<unitPattern count="other">{0} kcal</unitPattern>
+			</unit>
+			<unit type="energy-calorie">
+				<displayName>cal</displayName>
+				<unitPattern count="one">{0} cal</unitPattern>
+				<unitPattern count="other">{0} cal</unitPattern>
+			</unit>
+			<unit type="energy-foodcalorie">
+				<displayName>kal</displayName>
+				<unitPattern count="one">{0} kal</unitPattern>
+				<unitPattern count="other">{0} kal</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>kJ</displayName>
+				<unitPattern count="one">{0} kJ</unitPattern>
+				<unitPattern count="other">{0} kJ</unitPattern>
+			</unit>
+			<unit type="energy-joule">
+				<displayName>júl</displayName>
+				<unitPattern count="one">{0} J</unitPattern>
+				<unitPattern count="other">{0} J</unitPattern>
+			</unit>
+			<unit type="energy-kilowatt-hour">
+				<displayName>kWh</displayName>
+				<unitPattern count="one">{0} kWh</unitPattern>
+				<unitPattern count="other">{0} kWh</unitPattern>
 			</unit>
 			<unit type="energy-electronvolt">
 				<displayName>eV</displayName>
+				<unitPattern count="one">{0} eV</unitPattern>
+				<unitPattern count="other">{0} eV</unitPattern>
+			</unit>
+			<unit type="energy-british-thermal-unit">
+				<displayName>BTU</displayName>
+				<unitPattern count="one">{0} Btu</unitPattern>
+				<unitPattern count="other">{0} Btu</unitPattern>
+			</unit>
+			<unit type="energy-therm-us">
+				<displayName>bandarísk varmaeining</displayName>
+				<unitPattern count="one">{0} bna varmaeining</unitPattern>
+				<unitPattern count="other">{0} bna varmaeiningar</unitPattern>
+			</unit>
+			<unit type="force-pound-force">
+				<displayName>kraftur punds</displayName>
+				<unitPattern count="one">{0} lbf</unitPattern>
+				<unitPattern count="other">{0} lbf</unitPattern>
+			</unit>
+			<unit type="force-newton">
+				<displayName>njúton</displayName>
+				<unitPattern count="one">{0} N</unitPattern>
+				<unitPattern count="other">{0} N</unitPattern>
 			</unit>
 			<unit type="force-kilowatt-hour-per-100-kilometer">
+				<displayName>kWh/100km</displayName>
 				<unitPattern count="one">{0} kWh/100km</unitPattern>
 				<unitPattern count="other">{0}kWh/100km</unitPattern>
 			</unit>
+			<unit type="frequency-gigahertz">
+				<displayName>GHz</displayName>
+				<unitPattern count="one">{0} GHz</unitPattern>
+				<unitPattern count="other">{0} GHz</unitPattern>
+			</unit>
+			<unit type="frequency-megahertz">
+				<displayName>MHz</displayName>
+				<unitPattern count="one">{0} MHz</unitPattern>
+				<unitPattern count="other">{0} MHz</unitPattern>
+			</unit>
+			<unit type="frequency-kilohertz">
+				<displayName>kHz</displayName>
+				<unitPattern count="one">{0} kHz</unitPattern>
+				<unitPattern count="other">{0} kHz</unitPattern>
+			</unit>
+			<unit type="frequency-hertz">
+				<displayName>Hz</displayName>
+				<unitPattern count="one">{0} Hz</unitPattern>
+				<unitPattern count="other">{0} Hz</unitPattern>
+			</unit>
+			<unit type="graphics-em">
+				<displayName>em</displayName>
+				<unitPattern count="one">{0} em</unitPattern>
+				<unitPattern count="other">{0} em</unitPattern>
+			</unit>
 			<unit type="graphics-pixel">
 				<displayName>px</displayName>
+				<unitPattern count="one">{0} px</unitPattern>
+				<unitPattern count="other">{0} px</unitPattern>
+			</unit>
+			<unit type="graphics-megapixel">
+				<displayName>megapixlar</displayName>
+				<unitPattern count="one">{0} MP</unitPattern>
+				<unitPattern count="other">{0} MP</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-centimeter">
+				<displayName>ppcm</displayName>
+				<unitPattern count="one">{0} ppcm</unitPattern>
+				<unitPattern count="other">{0} ppcm</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-inch">
+				<displayName>ppi</displayName>
+				<unitPattern count="one">{0} ppi</unitPattern>
+				<unitPattern count="other">{0} ppi</unitPattern>
+			</unit>
+			<unit type="graphics-dot-per-centimeter">
+				<displayName>dpcm</displayName>
+				<unitPattern count="one">{0} dpcm</unitPattern>
+				<unitPattern count="other">{0} dpcm</unitPattern>
+			</unit>
+			<unit type="graphics-dot-per-inch">
+				<displayName>dpi</displayName>
+				<unitPattern count="one">{0} dpi</unitPattern>
+				<unitPattern count="other">{0} dpi</unitPattern>
+			</unit>
+			<unit type="graphics-dot">
+				<displayName>pixlar</displayName>
+				<unitPattern count="one">{0} px</unitPattern>
+				<unitPattern count="other">{0} px</unitPattern>
+			</unit>
+			<unit type="length-earth-radius">
+				<displayName>R⊕</displayName>
+				<unitPattern count="one">{0} R⊕</unitPattern>
+				<unitPattern count="other">{0} R⊕</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
 				<displayName>km</displayName>
@@ -11622,6 +12126,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} sml</unitPattern>
 			</unit>
 			<unit type="length-mile-scandinavian">
+				<displayName>sæ. míl.</displayName>
 				<unitPattern count="one">{0} sæ. míl</unitPattern>
 				<unitPattern count="other">{0} sæ. míl</unitPattern>
 			</unit>
@@ -11629,6 +12134,31 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>stig</displayName>
 				<unitPattern count="one">{0} stig</unitPattern>
 				<unitPattern count="other">{0} stig</unitPattern>
+			</unit>
+			<unit type="length-solar-radius">
+				<displayName>sólarradíusar</displayName>
+				<unitPattern count="one">{0} Rsól</unitPattern>
+				<unitPattern count="other">{0} Rsól</unitPattern>
+			</unit>
+			<unit type="light-lux">
+				<displayName>lúx</displayName>
+				<unitPattern count="one">{0} lx</unitPattern>
+				<unitPattern count="other">{0} lx</unitPattern>
+			</unit>
+			<unit type="light-candela">
+				<displayName>kerti</displayName>
+				<unitPattern count="one">{0} kerti</unitPattern>
+				<unitPattern count="other">{0} kerti</unitPattern>
+			</unit>
+			<unit type="light-lumen">
+				<displayName>lm</displayName>
+				<unitPattern count="one">{0} lm</unitPattern>
+				<unitPattern count="other">{0} lm</unitPattern>
+			</unit>
+			<unit type="light-solar-luminosity">
+				<displayName>ljósafl sólar</displayName>
+				<unitPattern count="one">{0} Lsól</unitPattern>
+				<unitPattern count="other">{0} Lsól</unitPattern>
 			</unit>
 			<unit type="mass-tonne">
 				<displayName>t</displayName>
@@ -11689,13 +12219,55 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} kt.</unitPattern>
 				<unitPattern count="other">{0} kt.</unitPattern>
 			</unit>
+			<unit type="mass-dalton">
+				<displayName>dalton</displayName>
+				<unitPattern count="one">{0} Da</unitPattern>
+				<unitPattern count="other">{0} Da</unitPattern>
+			</unit>
+			<unit type="mass-earth-mass">
+				<displayName>jarðmassar</displayName>
+				<unitPattern count="one">{0} M⊕</unitPattern>
+				<unitPattern count="other">{0} M⊕</unitPattern>
+			</unit>
+			<unit type="mass-solar-mass">
+				<displayName>sólmassar</displayName>
+				<unitPattern count="one">{0} Msól</unitPattern>
+				<unitPattern count="other">{0} Msól</unitPattern>
+			</unit>
+			<unit type="mass-grain">
+				<displayName>ögn</displayName>
+				<unitPattern count="one">{0} ögn</unitPattern>
+				<unitPattern count="other">{0} agnir</unitPattern>
+			</unit>
+			<unit type="power-gigawatt">
+				<displayName>GW</displayName>
+				<unitPattern count="one">{0} GW</unitPattern>
+				<unitPattern count="other">{0} GW</unitPattern>
+			</unit>
+			<unit type="power-megawatt">
+				<displayName>MW</displayName>
+				<unitPattern count="one">{0} MW</unitPattern>
+				<unitPattern count="other">{0} MW</unitPattern>
+			</unit>
 			<unit type="power-kilowatt">
+				<displayName>kW</displayName>
 				<unitPattern count="one">{0} kW</unitPattern>
 				<unitPattern count="other">{0} kW</unitPattern>
 			</unit>
 			<unit type="power-watt">
+				<displayName>vött</displayName>
 				<unitPattern count="one">{0} W</unitPattern>
 				<unitPattern count="other">{0} W</unitPattern>
+			</unit>
+			<unit type="power-milliwatt">
+				<displayName>mW</displayName>
+				<unitPattern count="one">{0} mW</unitPattern>
+				<unitPattern count="other">{0} mW</unitPattern>
+			</unit>
+			<unit type="power-horsepower">
+				<displayName>hö</displayName>
+				<unitPattern count="one">{0} hö</unitPattern>
+				<unitPattern count="other">{0} hö</unitPattern>
 			</unit>
 			<unit type="pressure-millimeter-ofhg">
 				<displayName>mm Hg</displayName>
@@ -11713,6 +12285,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}&quot; Hg</unitPattern>
 			</unit>
 			<unit type="pressure-bar">
+				<displayName>bar</displayName>
 				<unitPattern count="one">{0} bar</unitPattern>
 				<unitPattern count="other">{0} bör</unitPattern>
 			</unit>
@@ -11721,10 +12294,30 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} mbar</unitPattern>
 				<unitPattern count="other">{0} mbör</unitPattern>
 			</unit>
+			<unit type="pressure-atmosphere">
+				<displayName>atm</displayName>
+				<unitPattern count="one">{0} atm</unitPattern>
+				<unitPattern count="other">{0} atm</unitPattern>
+			</unit>
+			<unit type="pressure-pascal">
+				<displayName>Pa</displayName>
+				<unitPattern count="one">{0} Pa</unitPattern>
+				<unitPattern count="other">{0} Pa</unitPattern>
+			</unit>
 			<unit type="pressure-hectopascal">
 				<displayName>hPa</displayName>
 				<unitPattern count="one">{0} hPa</unitPattern>
 				<unitPattern count="other">{0} hPa</unitPattern>
+			</unit>
+			<unit type="pressure-kilopascal">
+				<displayName>kPa</displayName>
+				<unitPattern count="one">{0} kPa</unitPattern>
+				<unitPattern count="other">{0} kPa</unitPattern>
+			</unit>
+			<unit type="pressure-megapascal">
+				<displayName>MPa</displayName>
+				<unitPattern count="one">{0} MPa</unitPattern>
+				<unitPattern count="other">{0} MPa</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName>km/klst.</displayName>
@@ -11767,36 +12360,154 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} K</unitPattern>
 			</unit>
 			<unit type="torque-pound-force-foot">
+				<displayName>lbf⋅ft</displayName>
 				<unitPattern count="one">{0}lbf⋅ft</unitPattern>
 				<unitPattern count="other">{0}lbf⋅ft</unitPattern>
 			</unit>
+			<unit type="torque-newton-meter">
+				<displayName>N⋅m</displayName>
+				<unitPattern count="one">{0} N⋅m</unitPattern>
+				<unitPattern count="other">{0} N⋅m</unitPattern>
+			</unit>
 			<unit type="volume-cubic-kilometer">
+				<displayName>km³</displayName>
 				<unitPattern count="one">{0} km³</unitPattern>
 				<unitPattern count="other">{0} km³</unitPattern>
 			</unit>
 			<unit type="volume-cubic-meter">
+				<displayName>m³</displayName>
+				<unitPattern count="one">{0} m³</unitPattern>
+				<unitPattern count="other">{0} m³</unitPattern>
 				<perUnitPattern>{0}/m³</perUnitPattern>
 			</unit>
 			<unit type="volume-cubic-centimeter">
+				<displayName>cm³</displayName>
+				<unitPattern count="one">{0} cm³</unitPattern>
+				<unitPattern count="other">{0} cm³</unitPattern>
 				<perUnitPattern>{0}/cm³</perUnitPattern>
 			</unit>
 			<unit type="volume-cubic-mile">
+				<displayName>mí³</displayName>
 				<unitPattern count="one">{0}mi³</unitPattern>
 				<unitPattern count="other">{0}mi³</unitPattern>
+			</unit>
+			<unit type="volume-cubic-yard">
+				<displayName>yardar³</displayName>
+				<unitPattern count="one">{0} yd³</unitPattern>
+				<unitPattern count="other">{0} yd³</unitPattern>
+			</unit>
+			<unit type="volume-cubic-foot">
+				<displayName>fet³</displayName>
+				<unitPattern count="one">{0} fet³</unitPattern>
+				<unitPattern count="other">{0} fet³</unitPattern>
+			</unit>
+			<unit type="volume-cubic-inch">
+				<displayName>tommur³</displayName>
+				<unitPattern count="one">{0} t³</unitPattern>
+				<unitPattern count="other">{0} t³</unitPattern>
+			</unit>
+			<unit type="volume-megaliter">
+				<displayName>Ml</displayName>
+				<unitPattern count="one">{0} Ml</unitPattern>
+				<unitPattern count="other">{0} Ml</unitPattern>
+			</unit>
+			<unit type="volume-hectoliter">
+				<displayName>hl</displayName>
+				<unitPattern count="one">{0} hl</unitPattern>
+				<unitPattern count="other">{0} hl</unitPattern>
 			</unit>
 			<unit type="volume-liter">
 				<displayName>lítri</displayName>
 				<unitPattern count="one">{0} l</unitPattern>
 				<unitPattern count="other">{0} l</unitPattern>
+				<perUnitPattern>{0}/l</perUnitPattern>
+			</unit>
+			<unit type="volume-deciliter">
+				<displayName>dl</displayName>
+				<unitPattern count="one">{0} dl</unitPattern>
+				<unitPattern count="other">{0} dl</unitPattern>
+			</unit>
+			<unit type="volume-centiliter">
+				<displayName>cl</displayName>
+				<unitPattern count="one">{0} cl</unitPattern>
+				<unitPattern count="other">{0} cl</unitPattern>
+			</unit>
+			<unit type="volume-milliliter">
+				<displayName>ml</displayName>
+				<unitPattern count="one">{0} ml</unitPattern>
+				<unitPattern count="other">{0} ml</unitPattern>
+			</unit>
+			<unit type="volume-pint-metric">
+				<displayName>mpt</displayName>
+				<unitPattern count="one">{0} mpt</unitPattern>
+				<unitPattern count="other">{0} mpt</unitPattern>
+			</unit>
+			<unit type="volume-cup-metric">
+				<displayName>ástr. bolli</displayName>
+				<unitPattern count="one">{0} ástr. bolli</unitPattern>
+				<unitPattern count="other">{0} ástr. bollar</unitPattern>
+			</unit>
+			<unit type="volume-acre-foot">
+				<displayName>ekrufet</displayName>
+				<unitPattern count="one">{0} ekrufet</unitPattern>
+				<unitPattern count="other">{0} ekrufet</unitPattern>
 			</unit>
 			<unit type="volume-bushel">
 				<displayName>skeppa</displayName>
+				<unitPattern count="one">{0} skeppa</unitPattern>
+				<unitPattern count="other">{0} skeppur</unitPattern>
+			</unit>
+			<unit type="volume-gallon">
+				<displayName>gal</displayName>
+				<unitPattern count="one">{0} gal</unitPattern>
+				<unitPattern count="other">{0} gal</unitPattern>
+				<perUnitPattern>{0}/gal</perUnitPattern>
+			</unit>
+			<unit type="volume-gallon-imperial">
+				<displayName>breskt gal.</displayName>
+				<unitPattern count="one">{0} breskt gal.</unitPattern>
+				<unitPattern count="other">{0} breskt gal.</unitPattern>
+				<perUnitPattern>{0} breskt gal.</perUnitPattern>
 			</unit>
 			<unit type="volume-quart">
 				<displayName>qt</displayName>
+				<unitPattern count="one">{0} qt</unitPattern>
+				<unitPattern count="other">{0} qt</unitPattern>
+			</unit>
+			<unit type="volume-pint">
+				<displayName>hálfp.</displayName>
+				<unitPattern count="one">{0} hálfp.</unitPattern>
+				<unitPattern count="other">{0} hálfp.</unitPattern>
 			</unit>
 			<unit type="volume-cup">
 				<displayName>bolli</displayName>
+				<unitPattern count="one">{0} bolli</unitPattern>
+				<unitPattern count="other">{0} bollar</unitPattern>
+			</unit>
+			<unit type="volume-fluid-ounce">
+				<displayName>fl oz</displayName>
+				<unitPattern count="one">{0} fl oz</unitPattern>
+				<unitPattern count="other">{0} fl oz</unitPattern>
+			</unit>
+			<unit type="volume-fluid-ounce-imperial">
+				<displayName>breskar fl oz</displayName>
+				<unitPattern count="one">{0} bresk fl oz</unitPattern>
+				<unitPattern count="other">{0} breskar fl oz</unitPattern>
+			</unit>
+			<unit type="volume-tablespoon">
+				<displayName>msk</displayName>
+				<unitPattern count="one">{0} msk</unitPattern>
+				<unitPattern count="other">{0} msk</unitPattern>
+			</unit>
+			<unit type="volume-teaspoon">
+				<displayName>tsk</displayName>
+				<unitPattern count="one">{0} tsk</unitPattern>
+				<unitPattern count="other">{0} tsk</unitPattern>
+			</unit>
+			<unit type="volume-barrel">
+				<displayName>tunna</displayName>
+				<unitPattern count="one">{0} tunna</unitPattern>
+				<unitPattern count="other">{0} tunnur</unitPattern>
 			</unit>
 			<unit type="volume-dessert-spoon">
 				<displayName>áb.skeið</displayName>
@@ -11808,7 +12519,28 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} br áb.sk</unitPattern>
 				<unitPattern count="other">{0} br áb.sk</unitPattern>
 			</unit>
+			<unit type="volume-drop">
+				<displayName>dropi</displayName>
+				<unitPattern count="one">{0} dropi</unitPattern>
+				<unitPattern count="other">{0} dropar</unitPattern>
+			</unit>
+			<unit type="volume-dram">
+				<displayName>dramm</displayName>
+				<unitPattern count="one">{0} dramm</unitPattern>
+				<unitPattern count="other">{0} drömm</unitPattern>
+			</unit>
+			<unit type="volume-jigger">
+				<displayName>sjúss</displayName>
+				<unitPattern count="one">{0} sjúss</unitPattern>
+				<unitPattern count="other">{0} sjússar</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<displayName>klípa</displayName>
+				<unitPattern count="one">{0} klípa</unitPattern>
+				<unitPattern count="other">{0} klípur</unitPattern>
+			</unit>
 			<unit type="volume-quart-imperial">
+				<displayName>lagarmál</displayName>
 				<unitPattern count="one">{0} l.mál</unitPattern>
 				<unitPattern count="other">{0} l.mál</unitPattern>
 			</unit>
@@ -11843,8 +12575,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<listPatternPart type="end">{0} eða {1}</listPatternPart>
 			<listPatternPart type="2">{0} eða {1}</listPatternPart>
 		</listPattern>
+		<listPattern type="or-narrow">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0} eða {1}</listPatternPart>
+			<listPatternPart type="2">{0} eða {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="or-short">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0} eða {1}</listPatternPart>
+			<listPatternPart type="2">{0} eða {1}</listPatternPart>
+		</listPattern>
 		<listPattern type="standard-narrow">
 			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
 			<listPatternPart type="end">{0}, {1}</listPatternPart>
 			<listPatternPart type="2">{0}, {1}</listPatternPart>
 		</listPattern>
@@ -12054,13 +12799,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<nameOrderLocales order="givenFirst">und is</nameOrderLocales>
 		<nameOrderLocales order="surnameFirst">ko vi yue zh</nameOrderLocales>
 		<personName order="givenFirst" length="long" usage="referring" formality="formal">
-			<namePattern>{given} {given2} {surname}, {suffix}</namePattern>
+			<namePattern draft="contributed">{given} {given2} {surname}, {credentials}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="long" usage="referring" formality="informal">
 			<namePattern>{given-informal} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="long" usage="addressing" formality="formal">
-			<namePattern>{prefix} {given} {given2} {surname}</namePattern>
+			<namePattern draft="contributed">{title} {given} {given2} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="long" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
@@ -12069,13 +12814,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<namePattern>{given-informal-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="referring" formality="formal">
-			<namePattern>{given} {given2-initial} {surname}, {suffix}</namePattern>
+			<namePattern>{given} {given2-initial} {surname} {generation}, {credentials}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="referring" formality="informal">
 			<namePattern>{given-informal} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="addressing" formality="formal">
-			<namePattern>{prefix} {surname}</namePattern>
+			<namePattern>{title} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
@@ -12093,7 +12838,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<namePattern>{given-informal} {surname-initial}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="addressing" formality="formal">
-			<namePattern>{prefix} {given-initial} {surname}</namePattern>
+			<namePattern>{title} {given-initial} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
@@ -12105,98 +12850,119 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<namePattern>{given-informal-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="referring" formality="formal">
-			<namePattern>{surname}, {given} {given2}, {suffix}</namePattern>
+			<namePattern>{surname} {title} {given} {given2} {generation}, {credentials}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="referring" formality="informal">
-			<namePattern>{surname}, {given-informal}</namePattern>
+			<namePattern draft="contributed">{surname}, {given-informal}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="addressing" formality="formal">
-			<namePattern>{surname}, {prefix} {given} {given2}</namePattern>
+			<namePattern>{title} {surname}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="addressing" formality="informal">
-			<namePattern>{given-informal}</namePattern>
-		</personName>
-		<personName order="surnameFirst" length="long" usage="monogram" formality="formal">
-			<namePattern>{surname-monogram-allCaps}{given-monogram-allCaps}{given2-monogram-allCaps}</namePattern>
+			<namePattern draft="contributed">{given-informal}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="monogram" formality="informal">
-			<namePattern>{surname-monogram-allCaps}{given-informal-monogram-allCaps}</namePattern>
+			<namePattern draft="contributed">{surname-monogram-allCaps}{given-informal-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="referring" formality="formal">
-			<namePattern>{surname}, {given} {given2-initial}, {suffix}</namePattern>
+			<namePattern draft="contributed">{surname}, {given} {given2-initial}, {credentials}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="referring" formality="informal">
-			<namePattern>{surname}, {given-informal}</namePattern>
+			<namePattern draft="contributed">{surname}, {given-informal}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="addressing" formality="formal">
-			<namePattern>{surname}, {prefix} {given} {given2-initial}</namePattern>
+			<namePattern>{title} {surname}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="addressing" formality="informal">
-			<namePattern>{given-informal}</namePattern>
+			<namePattern draft="contributed">{given-informal}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="monogram" formality="formal">
-			<namePattern>{surname-monogram-allCaps}</namePattern>
+			<namePattern draft="contributed">{surname-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="monogram" formality="informal">
-			<namePattern>{given-informal-monogram-allCaps}</namePattern>
+			<namePattern draft="contributed">{given-informal-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="referring" formality="formal">
-			<namePattern>{surname}, {given-initial} {given2-initial}</namePattern>
+			<namePattern draft="contributed">{surname}, {given-initial} {given2-initial}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="referring" formality="informal">
 			<namePattern>{surname}, {given-initial}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="addressing" formality="formal">
-			<namePattern>{surname}, {prefix} {given-initial} {given2-initial}</namePattern>
+			<namePattern draft="contributed">{surname}, {title} {given-initial} {given2-initial}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="addressing" formality="informal">
-			<namePattern>{given-informal}</namePattern>
+			<namePattern draft="contributed">{given-informal}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="monogram" formality="formal">
-			<namePattern>{surname-monogram-allCaps}</namePattern>
+			<namePattern draft="contributed">{surname-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="monogram" formality="informal">
-			<namePattern>{given-informal-monogram-allCaps}</namePattern>
+			<namePattern draft="contributed">{given-informal-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="sorting" length="long" usage="referring" formality="formal">
-			<namePattern>{given} {given2} {surname-prefix} {surname-core}</namePattern>
+			<namePattern draft="contributed">{given} {given2} {surname-prefix} {surname-core}</namePattern>
 		</personName>
 		<personName order="sorting" length="long" usage="referring" formality="informal">
-			<namePattern>{given} {surname-prefix} {surname-core}</namePattern>
+			<namePattern draft="contributed">{given} {surname-prefix} {surname-core}</namePattern>
 		</personName>
 		<personName order="sorting" length="medium" usage="referring" formality="formal">
-			<namePattern>{given} {given2-initial} {surname-prefix} {surname-core}</namePattern>
+			<namePattern draft="contributed">{given} {given2-initial} {surname-prefix} {surname-core}</namePattern>
 		</personName>
 		<personName order="sorting" length="medium" usage="referring" formality="informal">
 			<namePattern>{given-informal} {surname}</namePattern>
 		</personName>
 		<personName order="sorting" length="short" usage="referring" formality="formal">
-			<namePattern>{given} {given2-initial} {surname-prefix} {surname-core}</namePattern>
+			<namePattern draft="contributed">{given} {given2-initial} {surname-prefix} {surname-core}</namePattern>
 		</personName>
 		<personName order="sorting" length="short" usage="referring" formality="informal">
 			<namePattern>{given-informal} {surname}</namePattern>
 		</personName>
-		<sampleName item="givenOnly">
-			<nameField type="given">Sigurður</nameField>
+		<sampleName item="nativeG">
+			<nameField type="given" draft="contributed">Sigurður</nameField>
 		</sampleName>
-		<sampleName item="givenSurnameOnly">
-			<nameField type="given">Íris</nameField>
-			<nameField type="surname">Adólfsdóttir</nameField>
+		<sampleName item="nativeGS">
+			<nameField type="given" draft="contributed">Íris</nameField>
+			<nameField type="surname" draft="contributed">Adólfsdóttir</nameField>
 		</sampleName>
-		<sampleName item="given12Surname">
-			<nameField type="given">Jón</nameField>
-			<nameField type="given2">Hannes</nameField>
-			<nameField type="surname">Valdimarsson</nameField>
+		<sampleName item="nativeGGS">
+			<nameField type="given" draft="contributed">Jón</nameField>
+			<nameField type="given2" draft="contributed">Hannes</nameField>
+			<nameField type="surname" draft="contributed">Valdimarsson</nameField>
 		</sampleName>
-		<sampleName item="full">
-			<nameField type="prefix">dr.</nameField>
-			<nameField type="given">Sigríður Jóna</nameField>
-			<nameField type="given-informal">Sigga</nameField>
-			<nameField type="given2">Valgerður Fanndís</nameField>
-			<nameField type="surname-prefix">van den</nameField>
-			<nameField type="surname-core">Bjarnadóttir</nameField>
-			<nameField type="surname2">Jónsdóttir Möller</nameField>
-			<nameField type="suffix">M.A. í bókmenntafræði</nameField>
+		<sampleName item="nativeFull">
+			<nameField type="title">Hr.</nameField>
+			<nameField type="given">Geir Jón</nameField>
+			<nameField type="given-informal">Geiri</nameField>
+			<nameField type="given2">Magnús Brynjar</nameField>
+			<nameField type="surname-prefix">∅∅∅</nameField>
+			<nameField type="surname-core">Skeggjason</nameField>
+			<nameField type="surname2">∅∅∅</nameField>
+			<nameField type="generation">yngri</nameField>
+			<nameField type="credentials">þingmaður</nameField>
+		</sampleName>
+		<sampleName item="foreignG">
+			<nameField type="given">Sinbad</nameField>
+		</sampleName>
+		<sampleName item="foreignGS">
+			<nameField type="given">Käthe</nameField>
+			<nameField type="surname">Müller</nameField>
+		</sampleName>
+		<sampleName item="foreignGGS">
+			<nameField type="given">Zäzilia</nameField>
+			<nameField type="given2">Hamish</nameField>
+			<nameField type="surname">Stöber</nameField>
+		</sampleName>
+		<sampleName item="foreignFull">
+			<nameField type="title" draft="contributed">dr.</nameField>
+			<nameField type="given" draft="contributed">Sigríður Jóna</nameField>
+			<nameField type="given-informal" draft="contributed">Sigga</nameField>
+			<nameField type="given2" draft="contributed">Valgerður Fanndís</nameField>
+			<nameField type="surname-prefix" draft="contributed">van den</nameField>
+			<nameField type="surname-core" draft="contributed">Bjarnadóttir</nameField>
+			<nameField type="surname2" draft="contributed">Jónsdóttir Möller</nameField>
+			<nameField type="generation">yngri</nameField>
+			<nameField type="credentials" draft="contributed">M.A. í bókmenntafræði</nameField>
 		</sampleName>
 	</personNames>
 </ldml>

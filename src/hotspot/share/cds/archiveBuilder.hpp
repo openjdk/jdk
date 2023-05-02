@@ -36,7 +36,7 @@
 #include "utilities/resizeableResourceHash.hpp"
 #include "utilities/resourceHash.hpp"
 
-struct ArchiveHeapBitmapInfo;
+class ArchiveHeapInfo;
 class CHeapBitMap;
 class FileMapInfo;
 class Klass;
@@ -234,15 +234,11 @@ private:
 
   // statistics
   DumpAllocStats _alloc_stats;
-  size_t _total_closed_heap_region_size;
-  size_t _total_open_heap_region_size;
+  size_t _total_heap_region_size;
 
-  void print_region_stats(FileMapInfo *map_info,
-                          GrowableArray<MemRegion>* closed_heap_regions,
-                          GrowableArray<MemRegion>* open_heap_regions);
+  void print_region_stats(FileMapInfo *map_info, ArchiveHeapInfo* heap_info);
   void print_bitmap_region_stats(size_t size, size_t total_size);
-  void print_heap_region_stats(GrowableArray<MemRegion>* regions,
-                               const char *name, size_t total_size);
+  void print_heap_region_stats(ArchiveHeapInfo* heap_info, size_t total_size);
 
   // For global access.
   static ArchiveBuilder* _current;
@@ -403,11 +399,7 @@ public:
   void relocate_vm_classes();
   void make_klasses_shareable();
   void relocate_to_requested();
-  void write_archive(FileMapInfo* mapinfo,
-                     GrowableArray<MemRegion>* closed_heap_regions,
-                     GrowableArray<MemRegion>* open_heap_regions,
-                     GrowableArray<ArchiveHeapBitmapInfo>* closed_heap_oopmaps,
-                     GrowableArray<ArchiveHeapBitmapInfo>* open_heap_oopmaps);
+  void write_archive(FileMapInfo* mapinfo, ArchiveHeapInfo* heap_info);
   void write_region(FileMapInfo* mapinfo, int region_idx, DumpRegion* dump_region,
                     bool read_only,  bool allow_exec);
 
