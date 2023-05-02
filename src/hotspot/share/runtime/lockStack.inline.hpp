@@ -100,6 +100,10 @@ inline void LockStack::remove(oop o) {
 inline bool LockStack::contains(oop o) const {
   verify("pre-contains");
   if (!SafepointSynchronize::is_at_safepoint() && !is_self()) {
+    // When a foreign thread inspects this thread's lock-stack, it may see
+    // bad references here when a concurrent collector has not gotten
+    // to processing the lock-stack, yet. Call StackWaterMark::start_processing()
+    // to ensure that all references are valid.
     StackWatermark* watermark = StackWatermarkSet::get(get_thread(), StackWatermarkKind::gc);
     if (watermark != nullptr) {
       watermark->start_processing();
