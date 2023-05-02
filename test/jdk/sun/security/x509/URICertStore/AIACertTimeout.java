@@ -63,12 +63,12 @@ public class AIACertTimeout {
     private static final boolean logging = true;
 
     // PKI and server components we will need for this test
-    private static KeyPair			rootKp;     // Root CA keys
-	private static X509Certificate	rootCert;
+    private static KeyPair          rootKp;     // Root CA keys
+	private static X509Certificate  rootCert;
     private static KeyPair          intKp;      // Intermediate CA keys
-	private static X509Certificate  intCert;
+    private static X509Certificate  intCert;
     private static KeyPair          eeKp;       // End-entity keys
-	private static X509Certificate  eeCert;
+    private static X509Certificate  eeCert;
 
     public static void main(String[] args) throws Exception {
         int servTimeoutMsec = (args != null && args.length >= 1) ?
