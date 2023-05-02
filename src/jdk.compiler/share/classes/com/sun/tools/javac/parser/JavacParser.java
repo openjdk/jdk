@@ -823,14 +823,10 @@ public class JavacParser implements Parser {
             } else {
                 //type test pattern:
                 int varPos = token.pos;
-                Name name = identOrUnderscore();
-                if (name == names.underscore) {
-                    mods.flags |= Flags.UNNAMED;
-                }
-                JCVariableDecl var = toP(F.at(varPos).VarDef(mods, name, e, null));
+                JCVariableDecl var = variableDeclaratorRest(varPos, mods, e, identOrUnderscore(), false, null, false, false, true);
                 if (e == null) {
                     var.startPos = pos;
-                    if (name == names.underscore) {
+                    if (var.name == names.underscore) {
                         log.error(DiagnosticFlag.SYNTAX, varPos, Errors.UnderscoreAsIdentifier);
                     }
                 }
@@ -3526,7 +3522,7 @@ public class JavacParser implements Parser {
                                                                      T vdefs,
                                                                      boolean localDecl)
     {
-        JCVariableDecl head = variableDeclaratorRest(pos, mods, type, name, reqInit, dc, localDecl, false);
+        JCVariableDecl head = variableDeclaratorRest(pos, mods, type, name, reqInit, dc, localDecl, false, false);
         vdefs.append(head);
         while (token.kind == COMMA) {
             // All but last of multiple declarators subsume a comma
@@ -3541,7 +3537,7 @@ public class JavacParser implements Parser {
      *  ConstantDeclarator = Ident ConstantDeclaratorRest
      */
     JCVariableDecl variableDeclarator(JCModifiers mods, JCExpression type, boolean reqInit, Comment dc, boolean localDecl) {
-        return variableDeclaratorRest(token.pos, mods, type, identOrUnderscore(), reqInit, dc, localDecl, true);
+        return variableDeclaratorRest(token.pos, mods, type, identOrUnderscore(), reqInit, dc, localDecl, true, false);
     }
 
     /** VariableDeclaratorRest = BracketsOpt ["=" VariableInitializer]
@@ -3551,14 +3547,14 @@ public class JavacParser implements Parser {
      *  @param dc       The documentation comment for the variable declarations, or null.
      */
     JCVariableDecl variableDeclaratorRest(int pos, JCModifiers mods, JCExpression type, Name name,
-                                  boolean reqInit, Comment dc, boolean localDecl, boolean compound) {
+                                  boolean reqInit, Comment dc, boolean localDecl, boolean compound, boolean isTypePattern) {
         boolean declaredUsingVar = false;
         type = bracketsOpt(type);
         JCExpression init = null;
 
         if (Feature.UNNAMED_VARIABLES.allowedInSource(source) && name == names.underscore) {
             mods.flags |= Flags.UNNAMED;
-            if (!localDecl) {
+            if (!localDecl && !isTypePattern) {
                 log.error(DiagnosticFlag.SYNTAX, pos, Errors.UnderscoreAsIdentifier);
             }
         }
@@ -3568,33 +3564,38 @@ public class JavacParser implements Parser {
             init = variableInitializer();
         }
         else if (reqInit) syntaxError(token.pos, Errors.Expected(EQ));
-        JCTree elemType = TreeInfo.innermostType(type, true);
-        int startPos = Position.NOPOS;
-        if (elemType.hasTag(IDENT)) {
-            Name typeName = ((JCIdent)elemType).name;
-            if (restrictedTypeNameStartingAtSource(typeName, pos, !compound && localDecl) != null) {
-                if (typeName != names.var) {
-                    reportSyntaxError(elemType.pos, Errors.RestrictedTypeNotAllowedHere(typeName));
-                } else if (type.hasTag(TYPEARRAY) && !compound) {
-                    //error - 'var' and arrays
-                    reportSyntaxError(elemType.pos, Errors.RestrictedTypeNotAllowedArray(typeName));
-                } else {
-                    declaredUsingVar = true;
-                    if(compound)
-                        //error - 'var' in compound local var decl
-                        reportSyntaxError(elemType.pos, Errors.RestrictedTypeNotAllowedCompound(typeName));
-                    startPos = TreeInfo.getStartPos(mods);
-                    if (startPos == Position.NOPOS)
-                        startPos = TreeInfo.getStartPos(type);
-                    //implicit type
-                    type = null;
+        JCVariableDecl result;
+        if (!isTypePattern) {
+            int startPos = Position.NOPOS;
+            JCTree elemType = TreeInfo.innermostType(type, true);
+            if (elemType.hasTag(IDENT)) {
+                Name typeName = ((JCIdent) elemType).name;
+                if (restrictedTypeNameStartingAtSource(typeName, pos, !compound && localDecl) != null) {
+                    if (typeName != names.var) {
+                        reportSyntaxError(elemType.pos, Errors.RestrictedTypeNotAllowedHere(typeName));
+                    } else if (type.hasTag(TYPEARRAY) && !compound) {
+                        //error - 'var' and arrays
+                        reportSyntaxError(elemType.pos, Errors.RestrictedTypeNotAllowedArray(typeName));
+                    } else {
+                        declaredUsingVar = true;
+                        if (compound)
+                            //error - 'var' in compound local var decl
+                            reportSyntaxError(elemType.pos, Errors.RestrictedTypeNotAllowedCompound(typeName));
+                        startPos = TreeInfo.getStartPos(mods);
+                        if (startPos == Position.NOPOS)
+                            startPos = TreeInfo.getStartPos(type);
+                        //implicit type
+                        type = null;
+                    }
                 }
             }
+            result = toP(F.at(pos).VarDef(mods, name, type, init, declaredUsingVar));
+            attach(result, dc);
+            result.startPos = startPos;
+        } else {
+            result = toP(F.at(pos).VarDef(mods, name, type, null));
         }
-        JCVariableDecl result =
-            toP(F.at(pos).VarDef(mods, name, type, init, declaredUsingVar));
-        attach(result, dc);
-        result.startPos = startPos;
+
         return result;
     }
 
@@ -3739,12 +3740,12 @@ public class JavacParser implements Parser {
         if (token.kind == FINAL || token.kind == MONKEYS_AT) {
             JCModifiers mods = optFinal(0);
             JCExpression t = parseType(true);
-            return variableDeclaratorRest(token.pos, mods, t, ident(), true, null, true, false);
+            return variableDeclaratorRest(token.pos, mods, t, ident(), true, null, true, false, false);
         }
         JCExpression t = term(EXPR | TYPE);
         if (wasTypeMode() && LAX_IDENTIFIER.test(token.kind)) {
             JCModifiers mods = F.Modifiers(0);
-            return variableDeclaratorRest(token.pos, mods, t, identOrUnderscore(), true, null, true, false);
+            return variableDeclaratorRest(token.pos, mods, t, identOrUnderscore(), true, null, true, false, false);
         } else {
             checkSourceLevel(Feature.EFFECTIVELY_FINAL_VARIABLES_IN_TRY_WITH_RESOURCES);
             if (!t.hasTag(IDENT) && !t.hasTag(SELECT)) {
