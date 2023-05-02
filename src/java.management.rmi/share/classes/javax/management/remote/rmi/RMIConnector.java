@@ -181,12 +181,7 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
      * service:jmx:rmi://<em>[host[:port]]</em>/jndi/<em>jndi-name</em>
      * </pre>
      *
-     * <p>An implementation may also recognize additional address
-     * syntaxes, for example:</p>
-     *
-     * <pre>
-     * service:jmx:iiop://<em>[host[:port]]</em>/stub/<em>encoded-stub</em>
-     * </pre>
+     * <p>An implementation may also recognize additional address syntaxes.</p>
      *
      * @param url the address of the RMI connector server.
      *
