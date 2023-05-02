@@ -290,6 +290,27 @@ void InterpreterMacroAssembler::load_resolved_klass_at_offset(
   ldr(Rklass, Address(Rklass, Array<Klass*>::base_offset_in_bytes()));
 }
 
+void InterpreterMacroAssembler::load_resolved_indy_entry(Register cache, Register index) {
+  // Get index out of bytecode pointer, get_cache_entry_pointer_at_bcp
+  assert_different_registers(cache, index, Rtemp);
+
+  get_index_at_bcp(index, 1, Rtemp, sizeof(u4));
+
+  // load constant pool cache pointer
+  ldr(cache, Address(FP, frame::interpreter_frame_cache_offset * wordSize));
+
+  // Get address of invokedynamic array
+  ldr(cache, Address(cache, in_bytes(ConstantPoolCache::invokedynamic_entries_offset())));
+
+  // Scale the index to be the entry index * sizeof(ResolvedInvokeDynamicInfo)
+  // On ARM32 sizeof(ResolvedIndyEntry) is 12, use mul instead of lsl
+  mov(Rtemp, sizeof(ResolvedIndyEntry));
+  mul(index, index, Rtemp);
+
+  add(cache, cache, Array<ResolvedIndyEntry>::base_offset_in_bytes());
+  add(cache, cache, index);
+}
+
 // Generate a subtype check: branch to not_subtype if sub_klass is
 // not a subtype of super_klass.
 // Profiling code for the subtype check failure (profile_typecheck_failed)
