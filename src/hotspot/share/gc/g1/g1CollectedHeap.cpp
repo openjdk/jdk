@@ -279,7 +279,7 @@ HeapWord*
 G1CollectedHeap::humongous_obj_allocate_initialize_regions(HeapRegion* first_hr,
                                                            uint num_regions,
                                                            size_t word_size) {
-  assert(first_hr != NULL, "pre-condition");
+  assert(first_hr != nullptr, "pre-condition");
   assert(is_humongous(word_size), "word_size should be humongous");
   assert(num_regions * HeapRegion::GrainWords >= word_size, "pre-condition");
 
