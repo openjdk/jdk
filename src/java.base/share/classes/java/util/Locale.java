@@ -1696,7 +1696,7 @@ public final class Locale implements Cloneable, Serializable {
      * nor occur after singletons. Such two-letter subtags are all
      * uppercase (as in the tags "en-CA-x-ca" or "sgn-BE-FR") and four-
      * letter subtags are titlecase (as in the tag "az-Latn-x-latn").</i> As
-     * legacy tags are not always well-formed, this method
+     * legacy tags, (defined as "grandfathered" in RFC5646) are not always well-formed, this method
      * will simply case fold a legacy tag to match the exact case convention
      * for the particular tag specified in the respective
      * {@link ##legacy_tags_replacement Legacy tags} table.
