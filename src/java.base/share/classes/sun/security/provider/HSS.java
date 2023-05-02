@@ -58,8 +58,13 @@ public class HSS extends SignatureSpi {
     }
 
     protected void engineInitVerify(PublicKey publicKey) throws InvalidKeyException {
-        if (!(publicKey instanceof HSSPublicKey pub)) {
-            throw new InvalidKeyException("Not an HSS public key: ");
+        HSSPublicKey pub;
+        if (publicKey instanceof HSSPublicKey p) {
+            pub = p;
+        } else {
+            KeyFactoryImpl factory = new HSS.KeyFactoryImpl();
+            Key pk = factory.engineTranslateKey(publicKey);
+            pub = (HSSPublicKey) pk;
         }
         pubKey = pub;
         messageStream = new ByteArrayOutputStream();
@@ -85,11 +90,11 @@ public class HSS extends SignatureSpi {
             }
 
             result &= lmsVerify(lmsPubKey, sig.siglist[sig.Nspk], messageStream.toByteArray());
-            messageStream.reset();
             return result;
         } catch (Exception e) {
-            messageStream.reset();
             return false;
+        } finally {
+            messageStream.reset();
         }
     }
 
@@ -582,6 +587,7 @@ public class HSS extends SignatureSpi {
                 case LMSUtils.LMOTS_SHA256_N32_W8:
                     params = new LMOTSParams(lmotsType, 32, 8, 0, 34, "SHA-256");
                     break;
+/*
                 case LMSUtils.LMOTS_SHA256_N24_W1:
                     params = new LMOTSParams(lmotsType, 24, 1, 8, 200, "SHA-256");
                     break;
@@ -595,7 +601,6 @@ public class HSS extends SignatureSpi {
                     params = new LMOTSParams(lmotsType, 24, 8, 0, 26, "SHA-256");
                     break;
 
-/*
                 case LMSUtils.LMOTS_SHAKE_N32_W1:
                     params = new LMOTSParams(lmotsType, 32, 1, 7, 265, "SHAKE256");
                     break;
