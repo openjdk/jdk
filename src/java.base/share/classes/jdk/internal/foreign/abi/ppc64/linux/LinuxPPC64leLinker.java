@@ -32,6 +32,7 @@ import jdk.internal.foreign.abi.ppc64.CallArranger;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
+import java.nio.ByteOrder;
 
 public final class LinuxPPC64leLinker extends AbstractLinker {
     private static LinuxPPC64leLinker instance;
@@ -51,5 +52,10 @@ public final class LinuxPPC64leLinker extends AbstractLinker {
     @Override
     protected UpcallStubFactory arrangeUpcall(MethodType targetType, FunctionDescriptor function, LinkerOptions options) {
         return CallArranger.ABIv2.arrangeUpcall(targetType, function, options);
+    }
+
+    @Override
+    protected ByteOrder linkerByteOrder() {
+        return ByteOrder.LITTLE_ENDIAN;
     }
 }
