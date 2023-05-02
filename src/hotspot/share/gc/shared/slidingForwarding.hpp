@@ -45,7 +45,7 @@ class FallbackTable;
  * SlidingForwarding requires only small side tables and guarantees constant-time access and modification.
  *
  * The idea is to use a pointer compression scheme very similar to the one that is used for compressed oops.
- * We divide the heap into number of logical regions. Each region spans maximum of 2^NUM_COMPRESSED_BITS words.
+ * We divide the heap into number of logical regions. Each region spans maximum of 2^NUM_OFFSET_BITS words.
  *
  * The key advantage of sliding compaction for encoding efficiency: it can forward objects from one region to a
  * maximum of two regions. This is an intuitive property: when we slide the compact region full of data, it can
@@ -108,8 +108,8 @@ private:
   // The offset bits start then
   static const int OFFSET_BITS_SHIFT = ALT_REGION_SHIFT + ALT_REGION_BITS;
 
-  // How many bits we use for the compressed pointer
-  static const int NUM_COMPRESSED_BITS = 32 - OFFSET_BITS_SHIFT;
+  // How many bits we use for the offset
+  static const int NUM_OFFSET_BITS = 32 - OFFSET_BITS_SHIFT;
 
   // Indicates an unused base address in the target base table.
   static HeapWord* const UNUSED_BASE;
@@ -162,7 +162,7 @@ private:
     HeapWord* _to;
   };
 
-  static const size_t TABLE_SIZE = 128;
+  static const size_t TABLE_SIZE = 1024;
   FallbackTableEntry _table[TABLE_SIZE];
 
   static size_t home_index(HeapWord* from);
