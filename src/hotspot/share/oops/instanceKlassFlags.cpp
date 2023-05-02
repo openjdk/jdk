@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "runtime/atomic.hpp"
 #include "runtime/safepoint.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/ostream.hpp"
 
 // This can be removed for the atomic bitset functions, when available.
 void InstanceKlassFlags::atomic_set_bits(u1 bits) {
@@ -49,6 +50,15 @@ void InstanceKlassFlags::atomic_clear_bits(u1 bits) {
     new_status = old_status & ~bits;
     f = Atomic::cmpxchg(&_status, old_status, new_status);
   } while(f != old_status);
+}
+
+void InstanceKlassFlags::print_on(outputStream* st) const {
+#define IK_FLAGS_PRINT(name, ignore)          \
+  if (name()) st->print(" ##name ");
+  IK_FLAGS_DO(IK_FLAGS_PRINT)
+  IK_STATUS_DO(IK_FLAGS_PRINT)
+#undef IK_FLAGS_PRINT
+  st->cr();
 }
 
 #if INCLUDE_CDS
