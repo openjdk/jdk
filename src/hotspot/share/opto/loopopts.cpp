@@ -4200,10 +4200,8 @@ void PhaseIdealLoop::move_unordered_reduction_out_of_loop(IdealLoopTree* loop) {
       // Expect no ctrl and a vector_input from within the loop.
       Node* ctrl = current->in(0);
       Node* vector_input = current->in(2);
-      if (ctrl != nullptr ||
-          !vector_input->is_Vector() ||
-          get_ctrl(vector_input) != cl) {
-        DEBUG_ONLY( current->dump(-1); )
+      if (ctrl != nullptr || get_ctrl(vector_input) != cl) {
+        DEBUG_ONLY( current->dump(1); )
         assert(false, "reduction has ctrl or bad vector_input");
         break; // Chain traversal fails.
       }
@@ -4239,7 +4237,7 @@ void PhaseIdealLoop::move_unordered_reduction_out_of_loop(IdealLoopTree* loop) {
         current = nullptr;
         break; // Success.
       } else {
-        DEBUG_ONLY( current->dump(-1); )
+        DEBUG_ONLY( current->dump(1); )
         assert(false, "scalar_input is neither phi nor a matchin reduction");
         break; // Chain traversal fails.
       }
