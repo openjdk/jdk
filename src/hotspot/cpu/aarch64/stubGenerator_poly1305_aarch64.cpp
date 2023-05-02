@@ -167,7 +167,6 @@ address generate_poly1305_processBlocks2() {
 
     {
       LambdaAccumulator gen0, gen1, gen2;
-
       __ poly1305_step(gen0, S0, u0, input_start);
       __ poly1305_multiply(gen0, u0, S0, R, RR2, regs);
       __ poly1305_reduce(gen0, u0);
@@ -183,25 +182,12 @@ address generate_poly1305_processBlocks2() {
       auto it0 = gen0.iterator(),
         it1 = gen1.iterator(),
         it2 = gen2.iterator();
-
-      for (int i = 0; i < gen0.length(); i++) {
+      const int len = MAX3(gen0.length(), gen1.length(), gen2.length());
+      for (int i = 0; i < len; i++) {
         (it0++)();
-      }
-
-      for (int i = 0; i < gen1.length(); i++) {
         (it1++)();
-      }
-
-      for (int i = 0; i < gen2.length(); i++) {
         (it2++)();
       }
-
-      // const int len = MAX3(gen0.length(), gen1.length(), gen2.length());
-      // for (int i = 0; i < len; i++) {
-      //   (it0++)();
-      //   (it1++)();
-      //   (it2++)();
-      // }
     }
 
     __ subw(length, length, POLY1305_BLOCK_LENGTH * 4);
