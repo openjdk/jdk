@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,10 +80,8 @@ class ForwardState implements State {
     /* The list of user-defined checkers that support forward checking */
     ArrayList<PKIXCertPathChecker> forwardCheckers;
 
-    /* Flag indicating if key needing to inherit key parameters has been
-     * encountered.
-     */
-    boolean keyParamsNeededFlag = false;
+    /* Flag indicating if last cert in path is self-issued */
+    boolean selfIssued;
 
     /**
      * Returns a boolean flag indicating if the state is initial
@@ -97,18 +95,6 @@ class ForwardState implements State {
     }
 
     /**
-     * Return boolean flag indicating whether a public key that needs to inherit
-     * key parameters has been encountered.
-     *
-     * @return boolean true if key needing to inherit parameters has been
-     * encountered; false otherwise.
-     */
-    @Override
-    public boolean keyParamsNeeded() {
-        return keyParamsNeededFlag;
-    }
-
-    /**
      * Display state for debugging purposes
      */
     @Override
@@ -117,9 +103,9 @@ class ForwardState implements State {
                 "\n  issuerDN of last cert: " + issuerDN +
                 "\n  traversedCACerts: " + traversedCACerts +
                 "\n  init: " + init +
-                "\n  keyParamsNeeded: " + keyParamsNeededFlag +
                 "\n  subjectNamesTraversed: \n" +
                 subjectNamesTraversed +
+                "\n  selfIssued: " + selfIssued + "\n" +
                 "]\n";
     }
 
@@ -163,18 +149,14 @@ class ForwardState implements State {
 
         X509CertImpl icert = X509CertImpl.toImpl(cert);
 
-        /* see if certificate key has null parameters */
-        if (PKIX.isDSAPublicKeyWithoutParams(icert.getPublicKey())) {
-            keyParamsNeededFlag = true;
-        }
-
         /* update certificate */
         this.cert = icert;
 
         /* update issuer DN */
         issuerDN = cert.getIssuerX500Principal();
 
-        if (!X509CertImpl.isSelfIssued(cert)) {
+        selfIssued = X509CertImpl.isSelfIssued(cert);
+        if (!selfIssued) {
 
             /*
              * update traversedCACerts only if this is a non-self-issued
@@ -187,7 +169,7 @@ class ForwardState implements State {
 
         /* update subjectNamesTraversed only if this is the EE cert or if
            this cert is not self-issued */
-        if (init || !X509CertImpl.isSelfIssued(cert)) {
+        if (init || !selfIssued) {
             X500Principal subjName = cert.getSubjectX500Principal();
             subjectNamesTraversed.add(X500Name.asX500Name(subjName));
 

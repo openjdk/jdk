@@ -115,10 +115,7 @@ public:
   // Returns how many bytes of the heap a single byte of the Card Table corresponds to.
   static size_t heap_map_factor() { return _card_size; }
 
-  void initialize() override {}
   void initialize(G1RegionToSpaceMapper* mapper);
-
-  void resize_covered_region(MemRegion new_region) override { ShouldNotReachHere(); }
 
   bool is_in_young(const void* p) const override;
 };

@@ -179,16 +179,6 @@ void HeapRegion::set_old() {
   _type.set_old();
 }
 
-void HeapRegion::set_open_archive() {
-  report_region_type_change(G1HeapRegionTraceType::OpenArchive);
-  _type.set_open_archive();
-}
-
-void HeapRegion::set_closed_archive() {
-  report_region_type_change(G1HeapRegionTraceType::ClosedArchive);
-  _type.set_closed_archive();
-}
-
 void HeapRegion::set_starts_humongous(HeapWord* obj_top, size_t fill_size) {
   assert(!is_humongous(), "sanity / pre-condition");
   assert(top() == bottom(), "should be empty");

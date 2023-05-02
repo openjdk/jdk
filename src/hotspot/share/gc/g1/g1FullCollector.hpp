@@ -130,7 +130,6 @@ public:
 
   inline bool is_compacting(oop obj) const;
   inline bool is_skip_compacting(uint region_index) const;
-  inline bool is_skip_marking(oop obj) const;
 
   // Are we (potentially) going to compact into this region?
   inline bool is_compaction_target(uint region_index) const;
