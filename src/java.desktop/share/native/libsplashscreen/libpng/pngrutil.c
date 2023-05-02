@@ -24,11 +24,6 @@
 
 /* pngrutil.c - utilities to read a PNG file
  *
- * This file is available under and governed by the GNU General Public
- * License version 2 only, as published by the Free Software Foundation.
- * However, the following notice accompanied the original version of this
- * file and, per its terms, should not be removed:
- *
  * Copyright (c) 2018-2022 Cosmin Truta
  * Copyright (c) 1998-2002,2004,2006-2018 Glenn Randers-Pehrson
  * Copyright (c) 1996-1997 Andreas Dilger
@@ -3214,7 +3209,7 @@ png_check_chunk_length(png_const_structrp png_ptr, png_uint_32 length)
    {
       png_debug2(0," length = %lu, limit = %lu",
          (unsigned long)length,(unsigned long)limit);
-      png_chunk_error(png_ptr, "chunk data is too large");
+      png_benign_error(png_ptr, "chunk data is too large");
    }
 }
 
