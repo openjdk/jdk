@@ -1887,11 +1887,12 @@ public final class System {
 
     /**
      * Initiates the {@linkplain Runtime##shutdown shutdown sequence} of the Java Virtual Machine.
-     * If a security manager is present and its {@link SecurityManager#checkExit checkExit}
-     * method disallows exiting with the specified status, throws {@link SecurityException}.
-     * Otherwise, this method blocks indefinitely; it neither returns nor throws an exception
-     * (that is, it does not complete either normally or abruptly). The argument serves as a
-     * status code. By convention, a nonzero status code indicates abnormal termination.
+     * Unless the security manager denies exiting, this method initiates the shutdown sequence
+     * (if it is not already initiated) and then blocks indefinitely. This method neither returns
+     * nor throws an exception; that is, it does not complete either normally or abruptly.
+     * <p>
+     * The argument serves as a status code. By convention, a nonzero status code
+     * indicates abnormal termination.
      * <p>
      * The call {@code System.exit(n)} is effectively equivalent to the call:
      * {@snippet :

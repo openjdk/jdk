@@ -141,14 +141,15 @@ public class Runtime {
 
     /**
      * Initiates the {@linkplain ##shutdown shutdown sequence} of the Java Virtual Machine.
-     * If a security manager is present and its {@link SecurityManager#checkExit checkExit}
-     * method disallows exiting with the specified status, throws {@link SecurityException}.
-     * Otherwise, this method blocks indefinitely; it neither returns nor throws an exception
-     * (that is, it does not complete either normally or abruptly). The argument serves as a
-     * status code. By convention, a nonzero status code indicates abnormal termination.
+     * Unless the security manager denies exiting, this method initiates the shutdown sequence
+     * (if it is not already initiated) and then blocks indefinitely. This method neither returns
+     * nor throws an exception; that is, it does not complete either normally or abruptly.
+     *
+     * <p> The argument serves as a status code. By convention, a nonzero status code
+     * indicates abnormal termination.
      *
      * <p> Successful invocations of this method are serialized such that only one invocation
-     * will proceed with the shutdown sequence and terminate the VM with the given status code.
+     * initiates the shutdown sequence and terminates the VM with the given status code.
      * All other invocations will perform no action and block indefinitely.
      *
      * <p> Because a successful invocation of this method blocks indefinitely, if it is invoked
