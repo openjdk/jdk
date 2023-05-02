@@ -27,7 +27,7 @@
  * @summary JDI memory leak when creating and destroying many threads
  *
  * @comment Don't allow -Xcomp or -Xint as they impact memory useage and number of iterations
- * @requires (vm.compMode == "Xmixed")
+ * @requires (vm.compMode == "Xmixed") & !(vm.gc.Z & vm.opt.final.ZGenerational)
  * @run build TestScaffold VMConnection TargetListener TargetAdapter
  * @run compile -g ThreadMemoryLeakTest.java
  * @comment run with -Xmx7m so any leak will quickly produce OOME
