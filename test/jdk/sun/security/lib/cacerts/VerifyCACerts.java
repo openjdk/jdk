@@ -52,7 +52,7 @@ public class VerifyCACerts {
     // SHA-256 of cacerts, can be generated with
     // shasum -a 256 cacerts | sed -e 's/../&:/g' | tr '[:lower:]' '[:upper:]' | cut -c1-95
     private static final String CHECKSUM
-            = "23:6E:7A:1C:37:AD:82:31:FD:32:E8:31:63:4B:1A:88:BA:1A:4D:F6:D3:91:CD:0F:B4:09:EC:55:9A:B2:01:51";
+            = "72:03:89:C2:7B:BF:87:87:E1:65:44:6E:43:5C:65:FF:B5:E8:F9:4C:8A:D1:63:6D:D1:91:4C:AD:1C:9A:CB:3B";
 
     // Hex formatter to upper case with ":" delimiter
     private static final HexFormat HEX = HexFormat.ofDelimiter(":").withUpperCase();
@@ -212,7 +212,7 @@ public class VerifyCACerts {
             put("globalsigneccrootcar5 [jdk]",
                     "17:9F:BC:14:8A:3D:D0:0F:D2:4E:A1:34:58:CC:43:BF:A7:F5:9C:81:82:D7:83:A5:13:F6:EB:EC:10:0C:89:24");
             put("globalsigneccrootcar4 [jdk]",
-                    "B0:85:D7:0B:96:4F:19:1A:73:E4:AF:0D:54:AE:7A:0E:07:AA:FD:AF:9B:71:DD:08:62:13:8A:B7:32:5A:24:A2");
+                    "BE:C9:49:11:C2:95:56:76:DB:6C:0A:55:09:86:D7:6E:3B:A0:05:66:7C:44:2C:97:62:B4:FB:B7:73:DE:22:8C");
             put("teliasonerarootcav1 [jdk]",
                     "DD:69:36:FE:21:F8:F0:77:C1:23:A1:A5:21:C1:22:24:F7:22:55:B7:3E:03:A7:26:06:93:E8:A2:4B:0F:A3:89");
             put("globalsignrootcar6 [jdk]",
