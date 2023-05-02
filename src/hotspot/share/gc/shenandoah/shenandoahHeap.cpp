@@ -58,7 +58,6 @@
 #include "gc/shenandoah/shenandoahParallelCleaning.inline.hpp"
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.inline.hpp"
-#include "gc/shenandoah/shenandoahStringDedup.hpp"
 #include "gc/shenandoah/shenandoahSTWMark.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahVerifier.hpp"
@@ -1186,9 +1185,6 @@ void ShenandoahHeap::gc_threads_do(ThreadClosure* tcl) const {
   if (_safepoint_workers != nullptr) {
     _safepoint_workers->threads_do(tcl);
   }
-  if (ShenandoahStringDedup::is_enabled()) {
-    ShenandoahStringDedup::threads_do(tcl);
-  }
 }
 
 void ShenandoahHeap::print_tracing_info() const {
@@ -1740,20 +1736,8 @@ size_t ShenandoahHeap::tlab_used(Thread* thread) const {
 }
 
 bool ShenandoahHeap::try_cancel_gc() {
-  while (true) {
-    jbyte prev = _cancelled_gc.cmpxchg(CANCELLED, CANCELLABLE);
-    if (prev == CANCELLABLE) return true;
-    else if (prev == CANCELLED) return false;
-    assert(ShenandoahSuspendibleWorkers, "should not get here when not using suspendible workers");
-    assert(prev == NOT_CANCELLED, "must be NOT_CANCELLED");
-    Thread* thread = Thread::current();
-    if (thread->is_Java_thread()) {
-      // We need to provide a safepoint here, otherwise we might
-      // spin forever if a SP is pending.
-      ThreadBlockInVM sp(JavaThread::cast(thread));
-      SpinPause();
-    }
-  }
+  jbyte prev = _cancelled_gc.cmpxchg(CANCELLED, CANCELLABLE);
+  return prev == CANCELLABLE;
 }
 
 void ShenandoahHeap::cancel_gc(GCCause::Cause cause) {
@@ -2205,13 +2189,13 @@ bool ShenandoahHeap::uncommit_bitmap_slice(ShenandoahHeapRegion *r) {
 }
 
 void ShenandoahHeap::safepoint_synchronize_begin() {
-  if (ShenandoahSuspendibleWorkers || UseStringDeduplication) {
+  if (ShenandoahSuspendibleWorkers) {
     SuspendibleThreadSet::synchronize();
   }
 }
 
 void ShenandoahHeap::safepoint_synchronize_end() {
-  if (ShenandoahSuspendibleWorkers || UseStringDeduplication) {
+  if (ShenandoahSuspendibleWorkers) {
     SuspendibleThreadSet::desynchronize();
   }
 }

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2022 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -272,7 +272,7 @@ OopMap* RegisterSaver::push_frame_reg_args_and_save_live_registers(MacroAssemble
                                                 : 0;
   const int register_save_size   = regstosave_num * reg_size + vsregstosave_num * vs_reg_size;
   const int frame_size_in_bytes  = align_up(register_save_size, frame::alignment_in_bytes)
-                                   + frame::abi_reg_args_size;
+                                   + frame::native_abi_reg_args_size;
 
   *out_frame_size_in_bytes       = frame_size_in_bytes;
   const int frame_size_in_slots  = frame_size_in_bytes / sizeof(jint);
@@ -790,7 +790,7 @@ int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
   int i;
   VMReg reg;
   // Leave room for C-compatible ABI_REG_ARGS.
-  int stk = (frame::abi_reg_args_size - frame::jit_out_preserve_size) / VMRegImpl::stack_slot_size;
+  int stk = (frame::native_abi_reg_args_size - frame::jit_out_preserve_size) / VMRegImpl::stack_slot_size;
   int arg = 0;
   int freg = 0;
 
@@ -1951,7 +1951,7 @@ static void gen_continuation_yield(MacroAssembler* masm,
                                    int& compiled_entry_offset) {
   Register tmp = R10_ARG8;
 
-  const int framesize_bytes = (int)align_up((int)frame::abi_reg_args_size, frame::alignment_in_bytes);
+  const int framesize_bytes = (int)align_up((int)frame::native_abi_reg_args_size, frame::alignment_in_bytes);
   framesize_words = framesize_bytes / wordSize;
 
   address start = __ pc();
@@ -2480,7 +2480,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     // disallows any pending_exception.
 
     // Save argument registers and leave room for C-compatible ABI_REG_ARGS.
-    int frame_size = frame::abi_reg_args_size + align_up(total_c_args * wordSize, frame::alignment_in_bytes);
+    int frame_size = frame::native_abi_reg_args_size + align_up(total_c_args * wordSize, frame::alignment_in_bytes);
     __ mr(R11_scratch1, R1_SP);
     RegisterSaver::push_frame_and_save_argument_registers(masm, R12_scratch2, frame_size, total_c_args, out_regs, out_regs2);
 
@@ -2950,7 +2950,7 @@ void SharedRuntime::generate_deopt_blob() {
   OopMapSet *oop_maps = new OopMapSet();
 
   // size of ABI112 plus spill slots for R3_RET and F1_RET.
-  const int frame_size_in_bytes = frame::abi_reg_args_spill_size;
+  const int frame_size_in_bytes = frame::native_abi_reg_args_spill_size;
   const int frame_size_in_slots = frame_size_in_bytes / sizeof(jint);
   int first_frame_size_in_bytes = 0; // frame size of "unpack frame" for call to fetch_unroll_info.
 
@@ -3119,8 +3119,8 @@ void SharedRuntime::generate_deopt_blob() {
   // ...).
 
   // Spill live volatile registers since we'll do a call.
-  __ std( R3_RET, _abi_reg_args_spill(spill_ret),  R1_SP);
-  __ stfd(F1_RET, _abi_reg_args_spill(spill_fret), R1_SP);
+  __ std( R3_RET, _native_abi_reg_args_spill(spill_ret),  R1_SP);
+  __ stfd(F1_RET, _native_abi_reg_args_spill(spill_fret), R1_SP);
 
   // Let the unpacker layout information in the skeletal frames just
   // allocated.
@@ -3132,8 +3132,8 @@ void SharedRuntime::generate_deopt_blob() {
   __ reset_last_Java_frame();
 
   // Restore the volatiles saved above.
-  __ ld( R3_RET, _abi_reg_args_spill(spill_ret),  R1_SP);
-  __ lfd(F1_RET, _abi_reg_args_spill(spill_fret), R1_SP);
+  __ ld( R3_RET, _native_abi_reg_args_spill(spill_ret),  R1_SP);
+  __ lfd(F1_RET, _native_abi_reg_args_spill(spill_fret), R1_SP);
 
   // Pop the unpack frame.
   __ pop_frame();
@@ -3179,7 +3179,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
   Register r_return_pc      = R27_tmp7;
 
   OopMapSet* oop_maps = new OopMapSet();
-  int frame_size_in_bytes = frame::abi_reg_args_size;
+  int frame_size_in_bytes = frame::native_abi_reg_args_size;
   OopMap* map = new OopMap(frame_size_in_bytes / sizeof(jint), 0);
 
   // stack: (deoptee, optional i2c, caller_of_deoptee, ...).

@@ -34,7 +34,7 @@
 
 define_pd_global(bool,  ImplicitNullChecks,          true);  // Generate code for implicit null checks.
 define_pd_global(bool,  TrapBasedNullChecks,         true);
-define_pd_global(bool,  UncommonNullCast,            true);  // Uncommon-trap NULLs passed to check cast.
+define_pd_global(bool,  UncommonNullCast,            true);  // Uncommon-trap nulls passed to check cast.
 
 define_pd_global(bool,  DelayCompilerStubsGeneration, COMPILER2_OR_JVMCI);
 
