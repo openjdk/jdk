@@ -52,16 +52,22 @@ final class LCMSImageLayout {
     static int CHANNELS_SH(int x) {
         return x << 3;
     }
+
+    static int PREMUL_SH(int x) {
+        return x << 23;
+    }
     private static final int SWAPFIRST  = 1 << 14;
     private static final int DOSWAP     = 1 << 10;
-    private static final int PT_GRAY_8  = CHANNELS_SH(1) | BYTES_SH(1);
-    private static final int PT_GRAY_16 = CHANNELS_SH(1) | BYTES_SH(2);
-    private static final int PT_RGB_8   = CHANNELS_SH(3) | BYTES_SH(1);
-    private static final int PT_RGBA_8  = PT_RGB_8  | EXTRA_SH(1);
-    private static final int PT_ARGB_8  = PT_RGBA_8 | SWAPFIRST;
-    private static final int PT_BGR_8   = PT_RGB_8  | DOSWAP;
-    private static final int PT_ABGR_8  = PT_BGR_8  | EXTRA_SH(1);
-//  private static final int PT_BGRA_8  = PT_ABGR_8 | SWAPFIRST;
+    private static final int PT_GRAY_8        = CHANNELS_SH(1) | BYTES_SH(1);
+    private static final int PT_GRAY_16       = CHANNELS_SH(1) | BYTES_SH(2);
+    private static final int PT_RGB_8         = CHANNELS_SH(3) | BYTES_SH(1);
+    private static final int PT_RGBA_8        = PT_RGB_8  | EXTRA_SH(1);
+    private static final int PT_ARGB_8        = PT_RGBA_8 | SWAPFIRST;
+    private static final int PT_ARGB_8_PREMUL = PT_ARGB_8 | PREMUL_SH(1);
+    private static final int PT_BGR_8         = PT_RGB_8  | DOSWAP;
+    private static final int PT_ABGR_8        = PT_BGR_8  | EXTRA_SH(1);
+    private static final int PT_ABGR_8_PREMUL = PT_ABGR_8 | PREMUL_SH(1);
+//  private static final int PT_BGRA_8        = PT_ABGR_8 | SWAPFIRST;
     private static final int SWAP_ENDIAN =
             ByteOrder.nativeOrder() == LITTLE_ENDIAN ? DOSWAP : 0;
     private static final int DT_BYTE = 0;
@@ -148,6 +154,9 @@ final class LCMSImageLayout {
             case BufferedImage.TYPE_INT_RGB:
                 l.pixelType = PT_ARGB_8 ^ SWAP_ENDIAN;
                 break;
+            case BufferedImage.TYPE_INT_ARGB_PRE:
+                l.pixelType = PT_ARGB_8_PREMUL ^ SWAP_ENDIAN;
+                break;
             case BufferedImage.TYPE_INT_ARGB:
                 l.pixelType = PT_ARGB_8 ^ SWAP_ENDIAN;
                 break;
@@ -159,6 +168,9 @@ final class LCMSImageLayout {
                 break;
             case BufferedImage.TYPE_4BYTE_ABGR:
                 l.pixelType = PT_ABGR_8;
+                break;
+            case BufferedImage.TYPE_4BYTE_ABGR_PRE:
+                l.pixelType = PT_ABGR_8_PREMUL;
                 break;
             case BufferedImage.TYPE_BYTE_GRAY:
                 l.pixelType = PT_GRAY_8;
@@ -172,10 +184,7 @@ final class LCMSImageLayout {
                  * has to be supported.
                  */
                 ColorModel cm = image.getColorModel();
-                // lcms as of now does not support pre-alpha
-                if (!cm.isAlphaPremultiplied()
-                        && cm instanceof ComponentColorModel ccm)
-                {
+                if (cm instanceof ComponentColorModel ccm) {
                     // verify whether the component size is fine
                     int[] cs = ccm.getComponentSize();
                     for (int s : cs) {
@@ -183,7 +192,7 @@ final class LCMSImageLayout {
                             return null;
                         }
                     }
-                    return createImageLayout(image.getRaster(), cm.hasAlpha());
+                    return createImageLayout(image.getRaster(), cm);
                 }
                 return null;
         }
@@ -194,6 +203,7 @@ final class LCMSImageLayout {
         switch (image.getType()) {
             case BufferedImage.TYPE_INT_RGB:
             case BufferedImage.TYPE_INT_ARGB:
+            case BufferedImage.TYPE_INT_ARGB_PRE:
             case BufferedImage.TYPE_INT_BGR:
                 do {
                     IntegerComponentRaster intRaster = (IntegerComponentRaster)
@@ -209,13 +219,14 @@ final class LCMSImageLayout {
 
             case BufferedImage.TYPE_3BYTE_BGR:
             case BufferedImage.TYPE_4BYTE_ABGR:
+            case BufferedImage.TYPE_4BYTE_ABGR_PRE:
                 do {
                     ByteComponentRaster byteRaster = (ByteComponentRaster)
                             image.getRaster();
                     l.nextRowOffset = byteRaster.getScanlineStride();
                     l.nextPixelOffset = byteRaster.getPixelStride();
 
-                    int firstBand = image.getSampleModel().getNumBands() - 1;
+                    int firstBand = byteRaster.getSampleModel().getNumBands() - 1;
                     l.offset = byteRaster.getDataOffset(firstBand);
                     l.dataArray = byteRaster.getDataStorage();
                     l.dataArrayLength = byteRaster.getDataStorage().length;
@@ -320,7 +331,7 @@ final class LCMSImageLayout {
         return checkIndex(res, Integer.MAX_VALUE);
     }
 
-    static LCMSImageLayout createImageLayout(Raster r, boolean hasAlpha) {
+    static LCMSImageLayout createImageLayout(Raster r, ColorModel cm) {
         LCMSImageLayout l = new LCMSImageLayout();
         if (r instanceof ByteComponentRaster &&
                 r.getSampleModel() instanceof ComponentSampleModel) {
@@ -329,8 +340,12 @@ final class LCMSImageLayout {
             ComponentSampleModel csm = (ComponentSampleModel)r.getSampleModel();
 
             int numBands = br.getNumBands();
+            boolean hasAlpha = cm != null && cm.hasAlpha();
             l.pixelType = (hasAlpha ? CHANNELS_SH(numBands - 1) | EXTRA_SH(1)
                                     : CHANNELS_SH(numBands)) | BYTES_SH(1);
+            if (hasAlpha && cm.isAlphaPremultiplied()) {
+                l.pixelType |= PREMUL_SH(1);
+            }
 
             int[] bandOffsets = csm.getBandOffsets();
             BandOrder order = BandOrder.getBandOrder(bandOffsets);

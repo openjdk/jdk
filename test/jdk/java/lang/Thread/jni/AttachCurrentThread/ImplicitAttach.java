@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ import java.util.concurrent.CountDownLatch;
  */
 public class ImplicitAttach {
     private static final ValueLayout.OfInt C_INT = ValueLayout.JAVA_INT.withBitAlignment(32);
-    private static final ValueLayout.OfAddress C_POINTER = ValueLayout.ADDRESS.withBitAlignment(64);
+    private static final AddressLayout C_POINTER = ValueLayout.ADDRESS.withBitAlignment(64);
 
     private static volatile CountDownLatch latch;
 
@@ -58,7 +58,7 @@ public class ImplicitAttach {
                 .findStatic(ImplicitAttach.class, "callback", MethodType.methodType(void.class));
         MemorySegment upcallStub = abi.upcallStub(callback,
                 FunctionDescriptor.ofVoid(),
-                SegmentScope.global());
+                Arena.global());
 
         // void start_threads(int count, void *(*f)(void *))
         SymbolLookup symbolLookup = SymbolLookup.loaderLookup();

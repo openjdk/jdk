@@ -1978,27 +1978,27 @@ ClassFileParser::FieldAnnotationCollector::~FieldAnnotationCollector() {
 
 void MethodAnnotationCollector::apply_to(const methodHandle& m) {
   if (has_annotation(_method_CallerSensitive))
-    m->set_caller_sensitive(true);
+    m->set_caller_sensitive();
   if (has_annotation(_method_ForceInline))
-    m->set_force_inline(true);
+    m->set_force_inline();
   if (has_annotation(_method_DontInline))
-    m->set_dont_inline(true);
+    m->set_dont_inline();
   if (has_annotation(_method_ChangesCurrentThread))
-    m->set_changes_current_thread(true);
+    m->set_changes_current_thread();
   if (has_annotation(_method_JvmtiMountTransition))
-    m->set_jvmti_mount_transition(true);
+    m->set_jvmti_mount_transition();
   if (has_annotation(_method_InjectedProfile))
-    m->set_has_injected_profile(true);
+    m->set_has_injected_profile();
   if (has_annotation(_method_LambdaForm_Compiled) && m->intrinsic_id() == vmIntrinsics::_none)
     m->set_intrinsic_id(vmIntrinsics::_compiledLambdaForm);
   if (has_annotation(_method_Hidden))
-    m->set_hidden(true);
+    m->set_is_hidden();
   if (has_annotation(_method_Scoped))
-    m->set_scoped(true);
+    m->set_scoped();
   if (has_annotation(_method_IntrinsicCandidate) && !m->is_synthetic())
-    m->set_intrinsic_candidate(true);
+    m->set_intrinsic_candidate();
   if (has_annotation(_jdk_internal_vm_annotation_ReservedStackAccess))
-    m->set_has_reserved_stack_access(true);
+    m->set_has_reserved_stack_access();
 }
 
 void ClassFileParser::ClassAnnotationCollector::apply_to(InstanceKlass* ik) {
@@ -2739,7 +2739,7 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
     parsed_annotations.apply_to(methodHandle(THREAD, m));
 
   if (is_hidden()) { // Mark methods in hidden classes as 'hidden'.
-    m->set_hidden(true);
+    m->set_is_hidden();
   }
 
   // Copy annotations
@@ -4070,7 +4070,7 @@ void OopMapBlocksBuilder::print_value_on(outputStream* st) const {
 void ClassFileParser::set_precomputed_flags(InstanceKlass* ik) {
   assert(ik != nullptr, "invariant");
 
-  const Klass* const super = ik->super();
+  const InstanceKlass* const super = ik->java_super();
 
   // Check if this klass has an empty finalize method (i.e. one with return bytecode only),
   // in which case we don't have to register objects as finalizable
@@ -4349,7 +4349,7 @@ static void check_final_method_override(const InstanceKlass* this_klass, TRAPS) 
 
       const Symbol* const name = m->name();
       const Symbol* const signature = m->signature();
-      const Klass* k = this_klass->super();
+      const InstanceKlass* k = this_klass->java_super();
       const Method* super_m = nullptr;
       while (k != nullptr) {
         // skip supers that don't have final methods.
@@ -4381,11 +4381,11 @@ static void check_final_method_override(const InstanceKlass* this_klass, TRAPS) 
           }
 
           // continue to look from super_m's holder's super.
-          k = super_m->method_holder()->super();
+          k = super_m->method_holder()->java_super();
           continue;
         }
 
-        k = k->super();
+        k = k->java_super();
       }
     }
   }

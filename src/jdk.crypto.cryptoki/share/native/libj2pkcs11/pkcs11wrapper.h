@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -231,7 +231,7 @@
 #endif
 
 /* debug output */
-extern jboolean debug;
+extern jboolean debug_j2pkcs11;
 void printDebug(const char *format, ...);
 
 #define CK_ASSERT_OK 0L
@@ -314,11 +314,10 @@ CK_MECHANISM_PTR updateGCMParams(JNIEnv *env, CK_MECHANISM_PTR mechPtr);
 
 jlong ckAssertReturnValueOK(JNIEnv *env, CK_RV returnValue);
 jlong ckAssertReturnValueOK2(JNIEnv *env, CK_RV returnValue, const char *msg);
-void throwOutOfMemoryError(JNIEnv *env, const char *message);
-void throwNullPointerException(JNIEnv *env, const char *message);
-void throwIOException(JNIEnv *env, const char *message);
-void throwPKCS11RuntimeException(JNIEnv *env, const char *message);
-void throwDisconnectedRuntimeException(JNIEnv *env);
+void p11ThrowOutOfMemoryError(JNIEnv *env, const char *message);
+void p11ThrowNullPointerException(JNIEnv *env, const char *message);
+void p11ThrowIOException(JNIEnv *env, const char *message);
+void p11ThrowPKCS11RuntimeException(JNIEnv *env, const char *message);
 
 /* functions to free CK structures and pointers
  */
