@@ -36,7 +36,7 @@ import nsk.share.jdi.*;
 
 /**
  * The test checks that the JDI method:<br><code>com.sun.jdi.ThreadReference.stop()</code><br>
- * behaves properly in various situations. I consists of 5 subtests.
+ * behaves properly in various situations. It consists of 5 subtests.
  *
  * TEST #1: Tests that stop() properly throws <i>InvalidTypeException</i> if
  * specified throwable is not an instance of java.lang.Throwable in the target VM.<p>
