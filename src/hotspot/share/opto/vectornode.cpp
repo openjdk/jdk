@@ -574,10 +574,6 @@ void VectorNode::vector_operands(Node* n, uint* start, uint* end) {
     *start = 1;
     *end   = 3; // 2 vector operands
     break;
-  case Op_CMoveI:  case Op_CMoveL:  case Op_CMoveF:  case Op_CMoveD:
-    *start = 2;
-    *end   = n->req();
-    break;
   case Op_FmaD:
   case Op_FmaF:
     *start = 1;
