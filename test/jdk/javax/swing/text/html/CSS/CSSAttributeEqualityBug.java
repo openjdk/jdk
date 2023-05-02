@@ -20,12 +20,14 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 /*
  * @test
  * @bug 7083187
  * @summary  Verifies if CSS.FontSize attribute is same
- * @run main CSSBug
+ * @run main CSSAttributeEqualityBug
  */
+
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.html.CSS;
 import javax.swing.text.html.StyleSheet;
