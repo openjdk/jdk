@@ -48,6 +48,7 @@ import jdk.internal.access.SharedSecrets;
 import jdk.internal.classfile.Classfile;
 import jdk.internal.classfile.CodeBuilder;
 import jdk.internal.classfile.TypeKind;
+import jdk.internal.misc.VM;
 import jdk.internal.module.Modules;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
@@ -186,6 +187,8 @@ public class MethodHandleProxies {
             throw newIllegalArgumentException("a sealed interface", intfc.getName());
         if (intfc.isHidden())
             throw newIllegalArgumentException("a hidden interface", intfc.getName());
+        if (!VM.isModuleSystemInited())
+            throw newInternalError("asInterfaceInstance is not supported until module system is initialized");
         Objects.requireNonNull(target);
         final MethodHandle mh;
         if (System.getSecurityManager() != null) {
@@ -220,13 +223,12 @@ public class MethodHandleProxies {
         Object proxy;
         try {
             var lookup = pcd.definer().defineClassAsLookup(true, classData);
-            proxy = lookup.findConstructor(lookup.lookupClass(), methodType(void.class, Lookup.class))
+            proxy = lookup.findConstructor(lookup.lookupClass(), MT_void_Lookup)
                           .invoke(lookup);
+
             assert proxy.getClass().getModule().isNamed() : proxy.getClass() + " " + proxy.getClass().getModule();
-        } catch (Error e) {
-            throw e;
         } catch (Throwable e) {
-            throw new InternalError("Cannot create interface instance", e);
+            throw uncaughtException(e);
         }
 
         return intfc.cast(proxy);
@@ -262,7 +264,7 @@ public class MethodHandleProxies {
                 MethodType mt = methodType(m.getReturnType(), JLRA.getExecutableSharedParameterTypes(m));
                 MethodTypeDesc mtDesc = desc(mt);
                 types[i] = mt;
-                var thrown = m.getExceptionTypes();
+                var thrown = JLRA.getExecutableSharedExceptionTypes(m);
                 if (thrown.length == 0) {
                     infos.add(new LocalMethodInfo(mtDesc, DEFAULT_RETHROWS));
                 } else {
@@ -306,7 +308,8 @@ public class MethodHandleProxies {
     private static final ClassDesc CD_UndeclaredThrowableException = desc(UndeclaredThrowableException.class);
     private static final ClassDesc CD_IllegalAccessException = desc(IllegalAccessException.class);
     private static final MethodTypeDesc MTD_void_Throwable = MethodTypeDesc.of(CD_void, CD_Throwable);
-    private static final MethodTypeDesc MTD_void_Lookup = MethodTypeDesc.of(CD_void, CD_MethodHandles_Lookup);
+    private static final MethodType MT_void_Lookup = methodType(void.class, Lookup.class);
+    private static final MethodTypeDesc MTD_void_Lookup = desc(MT_void_Lookup);
     private static final MethodTypeDesc MTD_Class = MethodTypeDesc.of(CD_Class);
     private static final MethodTypeDesc MTD_String = MethodTypeDesc.of(CD_String);
     private static final MethodTypeDesc MTD_void_String = MethodTypeDesc.of(CD_void, CD_String);
@@ -431,12 +434,12 @@ public class MethodHandleProxies {
     }
 
     private static ClassDesc desc(Class<?> cl) {
-        return cl.describeConstable().orElseThrow(() -> new InternalError("Cannot convert class "
+        return cl.describeConstable().orElseThrow(() -> newInternalError("Cannot convert class "
                 + cl.getName() + " to a constant"));
     }
 
     private static MethodTypeDesc desc(MethodType mt) {
-        return mt.describeConstable().orElseThrow(() -> new InternalError("Cannot convert method type "
+        return mt.describeConstable().orElseThrow(() -> newInternalError("Cannot convert method type "
                 + mt + " to a constant"));
     }
 
