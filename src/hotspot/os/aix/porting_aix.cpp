@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -271,6 +271,24 @@ bool AixSymbols::get_module_name(address pc,
     if (LoadedLibraries::find_for_text_address(pc, &lm)) {
       strncpy(p_name, lm.shortname, namelen);
       p_name[namelen - 1] = '\0';
+      return true;
+    }
+  }
+
+  return false;
+}
+
+bool AixSymbols::get_module_name_and_base(address pc,
+                         char* p_name, size_t namelen,
+                         address* p_base) {
+
+  if (p_base && p_name && namelen > 0) {
+    p_name[0] = '\0';
+    loaded_module_t lm;
+    if (LoadedLibraries::find_for_text_address(pc, &lm)) {
+      strncpy(p_name, lm.shortname, namelen);
+      p_name[namelen - 1] = '\0';
+      *p_base = (address) lm.text;
       return true;
     }
   }
