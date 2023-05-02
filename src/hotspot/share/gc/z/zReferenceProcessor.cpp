@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -140,9 +140,11 @@ bool ZReferenceProcessor::is_inactive(zaddress reference, oop referent, Referenc
     // call enqueue() or clear() on a FinalReference.
     return !is_null(reference_next(reference));
   } else {
+    // Verification
+    (void)to_zaddress(referent);
+
     // A non-FinalReference is inactive if the referent is null. The referent can only
     // be null if the application called Reference.enqueue() or Reference.clear().
-    (void)to_zaddress(referent); // Verifications
     return referent == nullptr;
   }
 }

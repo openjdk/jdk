@@ -1080,6 +1080,7 @@ class metadata_Relocation : public DataRelocation {
   // Note:  metadata_value transparently converts Universe::non_metadata_word to nullptr.
 };
 
+
 class barrier_Relocation : public DataRelocation {
 
  public:

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,12 +45,12 @@ public:
   void reset(uint nworkers);
   void leave();
 
-  bool saturated();
+  bool saturated() const;
 
   void wake_up();
   bool try_terminate(ZMarkStripeSet* stripes, size_t used_nstripes);
   void set_resurrected(bool value);
-  bool resurrected();
+  bool resurrected() const;
 };
 
 #endif // SHARE_GC_Z_ZMARKTERMINATE_HPP

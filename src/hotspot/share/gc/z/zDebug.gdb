@@ -169,9 +169,9 @@ end
 define zph
     printf "Heap\n"
     printf "     Young Phase:       %u\n", ZHeap::_heap->_young->_phase
-    printf "     Old Phase:       %u\n", ZHeap::_heap->_old->_phase
+    printf "     Old Phase:         %u\n", ZHeap::_heap->_old->_phase
     printf "     Young SeqNum:      %u\n", ZHeap::_heap->_young->_seqnum
-    printf "     Old SeqNum:      %u\n", ZHeap::_heap->_old->_seqnum
+    printf "     Old SeqNum:        %u\n", ZHeap::_heap->_old->_seqnum
     printf "     Offset Max:        %-15llu (0x%llx)\n", ZAddressOffsetMax, ZAddressOffsetMax
     printf "     Page Size Small:   %-15llu (0x%llx)\n", ZPageSizeSmall, ZPageSizeSmall
     printf "     Page Size Medium:  %-15llu (0x%llx)\n", ZPageSizeMedium, ZPageSizeMedium

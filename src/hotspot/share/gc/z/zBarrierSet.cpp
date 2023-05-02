@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,13 +111,13 @@ static void deoptimize_allocation(JavaThread* thread) {
                       RegisterMap::WalkContinuation::skip);
   const frame runtime_frame = thread->last_frame();
   assert(runtime_frame.is_runtime_frame(), "must be runtime frame");
+
   const frame caller_frame = runtime_frame.sender(&reg_map);
   assert(caller_frame.is_compiled_frame(), "must be compiled");
+
   const nmethod* const nm = caller_frame.cb()->as_nmethod();
-  if (nm->is_compiled_by_c2()) {
-    if (!caller_frame.is_deoptimized_frame()) {
-      Deoptimization::deoptimize_frame(thread, caller_frame.id());
-    }
+  if (nm->is_compiled_by_c2() && !caller_frame.is_deoptimized_frame()) {
+    Deoptimization::deoptimize_frame(thread, caller_frame.id());
   }
 }
 

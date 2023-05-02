@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,10 +72,10 @@ bool ZMarkStripeSet::is_empty() const {
 }
 
 ZMarkStripe* ZMarkStripeSet::stripe_for_worker(uint nworkers, uint worker_id) {
-  size_t mask = Atomic::load(&_nstripes_mask);
-  size_t stripes = mask + 1;
+  const size_t mask = Atomic::load(&_nstripes_mask);
+  const size_t nstripes = mask + 1;
 
-  const size_t spillover_limit = (nworkers / stripes) * stripes;
+  const size_t spillover_limit = (nworkers / nstripes) * nstripes;
   size_t index;
 
   if (worker_id < spillover_limit) {
@@ -85,11 +85,11 @@ ZMarkStripe* ZMarkStripeSet::stripe_for_worker(uint nworkers, uint worker_id) {
     // Distribute spillover workers evenly across stripes
     const size_t spillover_nworkers = nworkers - spillover_limit;
     const size_t spillover_worker_id = worker_id - spillover_limit;
-    const double spillover_chunk = (double)stripes / (double)spillover_nworkers;
+    const double spillover_chunk = (double)nstripes / (double)spillover_nworkers;
     index = spillover_worker_id * spillover_chunk;
   }
 
-  assert(index < stripes, "Invalid index");
+  assert(index < nstripes, "Invalid index");
   return &_stripes[index];
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,11 @@
  */
 
 #include "precompiled.hpp"
-#include "code/nmethod.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
+#include "code/nmethod.hpp"
 #include "gc/shared/gcLocker.hpp"
-#include "gc/shared/isGCActiveMark.hpp"
 #include "gc/shared/gcVMOperations.hpp"
+#include "gc/shared/isGCActiveMark.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/z/zAllocator.inline.hpp"
 #include "gc/z/zBarrierSet.hpp"
@@ -574,6 +574,7 @@ public:
     ZCollectedHeap::heap()->increment_total_collections(true /* full */);
     ZGeneration::young()->mark_start();
     ZGeneration::old()->mark_start();
+
     return true;
   }
 };
@@ -594,6 +595,7 @@ public:
 
     ZCollectedHeap::heap()->increment_total_collections(false /* full */);
     ZGeneration::young()->mark_start();
+
     return true;
   }
 };
@@ -634,6 +636,7 @@ public:
   virtual bool do_operation() {
     ZStatTimerYoung timer(ZPhasePauseMarkEndYoung);
     ZServiceabilityPauseTracer tracer;
+
     return ZGeneration::young()->mark_end();
   }
 };
@@ -796,7 +799,9 @@ public:
   virtual bool do_operation() {
     ZStatTimerYoung timer(ZPhasePauseRelocateStartYoung);
     ZServiceabilityPauseTracer tracer;
+
     ZGeneration::young()->relocate_start();
+
     return true;
   }
 };
@@ -1050,6 +1055,7 @@ public:
   virtual bool do_operation() {
     ZStatTimerOld timer(ZPhasePauseMarkEndOld);
     ZServiceabilityPauseTracer tracer;
+
     return ZGeneration::old()->mark_end();
   }
 };
@@ -1131,7 +1137,9 @@ public:
   virtual bool do_operation() {
     ZStatTimerOld timer(ZPhasePauseRelocateStartOld);
     ZServiceabilityPauseTracer tracer;
+
     ZGeneration::old()->relocate_start();
+
     return true;
   }
 };
@@ -1241,7 +1249,7 @@ void ZGenerationOld::set_soft_reference_policy(bool clear) {
 class ZRendezvousHandshakeClosure : public HandshakeClosure {
 public:
   ZRendezvousHandshakeClosure() :
-    HandshakeClosure("ZRendezvous") {}
+      HandshakeClosure("ZRendezvous") {}
 
   void do_thread(Thread* thread) {
     // Does nothing

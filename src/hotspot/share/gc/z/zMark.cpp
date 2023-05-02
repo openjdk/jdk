@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -465,13 +465,13 @@ void ZMark::mark_and_follow(ZMarkContext* context, ZMarkStackEntry entry) {
 // This function returns true if we need to stop working to resize threads or
 // abort marking
 bool ZMark::rebalance_work(ZMarkContext* context) {
-  size_t assumed_nstripes = context->nstripes();
-  size_t nstripes = _stripes.nstripes();
+  const size_t assumed_nstripes = context->nstripes();
+  const size_t nstripes = _stripes.nstripes();
 
   if (assumed_nstripes != nstripes) {
     context->set_nstripes(nstripes);
   } else if (nstripes < calculate_nstripes(_nworkers) && _allocator.clear_and_get_expanded_recently()) {
-    size_t new_nstripes = nstripes << 1;
+    const size_t new_nstripes = nstripes << 1;
     _stripes.set_nstripes(new_nstripes);
     context->set_nstripes(new_nstripes);
   }
@@ -485,7 +485,9 @@ bool ZMark::rebalance_work(ZMarkContext* context) {
     // Work imbalance detected; striped marking is likely going to be in the way
     flush_and_free();
   }
+
   SuspendibleThreadSet::yield();
+
   return ZAbort::should_abort() || _generation->should_worker_resize();
 }
 

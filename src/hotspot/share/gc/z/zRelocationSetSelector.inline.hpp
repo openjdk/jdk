@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,7 +74,7 @@ inline void ZRelocationSetSelectorGroup::register_live_page(ZPage* page) {
   const size_t live = page->live_bytes();
   const size_t garbage = size - live;
 
-  // check against fragmentation limit
+  // Pre-filter out pages that are guaranteed to not be selected
   if (!page->is_large() && garbage > _page_fragmentation_limit) {
     _live_pages.append(page);
   } else if (page->is_young()) {
@@ -155,30 +155,30 @@ inline void ZRelocationSetSelector::clear_empty_pages() {
 }
 
 inline size_t ZRelocationSetSelector::total() const {
-  size_t total = 0;
+  size_t sum = 0;
   for (uint i = 0; i <= ZPageAgeMax; ++i) {
     const ZPageAge age = static_cast<ZPageAge>(i);
-    total += _small.stats(age).total() + _medium.stats(age).total() + _large.stats(age).total();
+    sum += _small.stats(age).total() + _medium.stats(age).total() + _large.stats(age).total();
   }
-  return total;
+  return sum;
 }
 
 inline size_t ZRelocationSetSelector::empty() const {
-  size_t total = 0;
+  size_t sum = 0;
   for (uint i = 0; i <= ZPageAgeMax; ++i) {
     const ZPageAge age = static_cast<ZPageAge>(i);
-    total += _small.stats(age).empty() + _medium.stats(age).empty() + _large.stats(age).empty();
+    sum += _small.stats(age).empty() + _medium.stats(age).empty() + _large.stats(age).empty();
   }
-  return total;
+  return sum;
 }
 
 inline size_t ZRelocationSetSelector::relocate() const {
-  size_t total = 0;
+  size_t sum = 0;
   for (uint i = 0; i <= ZPageAgeMax; ++i) {
     const ZPageAge age = static_cast<ZPageAge>(i);
-    total += _small.stats(age).relocate() + _medium.stats(age).relocate() + _large.stats(age).relocate();
+    sum += _small.stats(age).relocate() + _medium.stats(age).relocate() + _large.stats(age).relocate();
   }
-  return total;
+  return sum;
 }
 
 inline const ZArray<ZPage*>* ZRelocationSetSelector::selected_small() const {

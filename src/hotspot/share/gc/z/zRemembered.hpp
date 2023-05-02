@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 #include "gc/z/zAddress.hpp"
 #include "utilities/bitMap.hpp"
 
+template <typename T> class GrowableArrayView;
 class OopClosure;
 class ZForwarding;
 class ZForwardingTable;
@@ -35,16 +36,15 @@ class ZPage;
 class ZPageAllocator;
 class ZPageTable;
 struct ZRememberedSetContaining;
-template <typename T> class GrowableArrayView;
 
 class ZRemembered {
   friend class ZRememberedScanMarkFollowTask;
   friend class ZRemsetTableIterator;
 
 private:
-  ZPageTable* const _page_table;
+  ZPageTable* const             _page_table;
   const ZForwardingTable* const _old_forwarding_table;
-  ZPageAllocator* const _page_allocator;
+  ZPageAllocator* const         _page_allocator;
 
   // Optimization aid for faster old pages iteration
   struct FoundOld {

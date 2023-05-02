@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,8 +39,8 @@
 #include "gc/z/zRelocate.hpp"
 #include "gc/z/zRelocationSet.inline.hpp"
 #include "gc/z/zRootsIterator.hpp"
-#include "gc/z/zStat.hpp"
 #include "gc/z/zStackWatermark.hpp"
+#include "gc/z/zStat.hpp"
 #include "gc/z/zTask.hpp"
 #include "gc/z/zUncoloredRoot.inline.hpp"
 #include "gc/z/zVerify.hpp"
@@ -63,11 +63,11 @@ static zaddress forwarding_find(ZForwarding* forwarding, zoffset from_offset, ZF
 }
 
 static zaddress forwarding_find(ZForwarding* forwarding, zaddress_unsafe from_addr, ZForwardingCursor* cursor) {
-   return forwarding_find(forwarding, ZAddress::offset(from_addr), cursor);
+  return forwarding_find(forwarding, ZAddress::offset(from_addr), cursor);
 }
 
 static zaddress forwarding_find(ZForwarding* forwarding, zaddress from_addr, ZForwardingCursor* cursor) {
-   return forwarding_find(forwarding, ZAddress::offset(from_addr), cursor);
+  return forwarding_find(forwarding, ZAddress::offset(from_addr), cursor);
 }
 
 static zaddress forwarding_insert(ZForwarding* forwarding, zoffset from_offset, zaddress to_addr, ZForwardingCursor* cursor) {
@@ -127,6 +127,7 @@ void ZRelocateQueue::resize_workers(uint nworkers) {
 void ZRelocateQueue::leave() {
   ZLocker<ZConditionLock> locker(&_lock);
   _nworkers--;
+
   assert(_nsynchronized <= _nworkers, "_nsynchronized: %u _nworkers: %u", _nsynchronized, _nworkers);
 
   log_debug(gc, reloc)("Leaving workers: left: %u _synchronize: %d _nsynchronized: %u", _nworkers, _synchronize, _nsynchronized);
@@ -211,6 +212,7 @@ public:
       _queue(queue) {
     _queue->synchronize_thread();
   }
+
   ~ZRelocateQueueSynchronizeThread() {
     _queue->desynchronize_thread();
   }
@@ -218,6 +220,7 @@ public:
 
 void ZRelocateQueue::synchronize_thread() {
   _nsynchronized++;
+
   log_debug(gc, reloc)("Synchronize worker _nsynchronized %u", _nsynchronized);
 
   assert(_nsynchronized <= _nworkers, "_nsynchronized: %u _nworkers: %u", _nsynchronized, _nworkers);
@@ -229,7 +232,9 @@ void ZRelocateQueue::synchronize_thread() {
 
 void ZRelocateQueue::desynchronize_thread() {
   _nsynchronized--;
+
   log_debug(gc, reloc)("Desynchronize worker _nsynchronized %u", _nsynchronized);
+
   assert(_nsynchronized < _nworkers, "_nsynchronized: %u _nworkers: %u", _nsynchronized, _nworkers);
 }
 
@@ -270,21 +275,28 @@ ZForwarding* ZRelocateQueue::synchronize_poll() {
 
 void ZRelocateQueue::clear() {
   assert(_nworkers == 0, "Invalid state");
-  if (!_queue.is_empty()) {
-    ZArrayIterator<ZForwarding*> iter(&_queue);
-    for (ZForwarding* forwarding; iter.next(&forwarding);) {
-      assert(forwarding->is_done(), "All should be done");
-    }
-    assert(false, "Clear was not empty");
-    _queue.clear();
-    dec_needs_attention();
+
+  if (_queue.is_empty()) {
+    return;
   }
+
+  ZArrayIterator<ZForwarding*> iter(&_queue);
+  for (ZForwarding* forwarding; iter.next(&forwarding);) {
+    assert(forwarding->is_done(), "All should be done");
+  }
+
+  assert(false, "Clear was not empty");
+
+  _queue.clear();
+  dec_needs_attention();
 }
 
 void ZRelocateQueue::synchronize() {
   ZLocker<ZConditionLock> locker(&_lock);
   _synchronize = true;
+
   inc_needs_attention();
+
   log_debug(gc, reloc)("Synchronize all workers 1 _nworkers: %u _nsynchronized: %u", _nworkers, _nsynchronized);
 
   while (_nworkers != _nsynchronized) {
@@ -296,9 +308,13 @@ void ZRelocateQueue::synchronize() {
 void ZRelocateQueue::desynchronize() {
   ZLocker<ZConditionLock> locker(&_lock);
   _synchronize = false;
+
   log_debug(gc, reloc)("Desynchronize all workers _nworkers: %u _nsynchronized: %u", _nworkers, _nsynchronized);
+
   assert(_nsynchronized <= _nworkers, "_nsynchronized: %u _nworkers: %u", _nsynchronized, _nworkers);
+
   dec_needs_attention();
+
   _lock.notify_all();
 }
 
@@ -1080,7 +1096,6 @@ public:
 
     const auto do_forwarding = [&](ZForwarding* forwarding) {
       ZPage* const page = forwarding->page();
-      const ZPageAge to_age = forwarding->to_age();
       if (page->is_small()) {
         small.do_forwarding(forwarding);
       } else {
@@ -1224,13 +1239,14 @@ void ZRelocate::relocate(ZRelocationSet* relocation_set) {
 ZPageAge ZRelocate::compute_to_age(ZPageAge from_age) {
   if (from_age == ZPageAge::old) {
     return ZPageAge::old;
-  } else {
-    const uint age = static_cast<uint>(from_age);
-    if (age >= ZGeneration::young()->tenuring_threshold()) {
-      return ZPageAge::old;
-    }
-    return static_cast<ZPageAge>(age + 1);
   }
+
+  const uint age = static_cast<uint>(from_age);
+  if (age >= ZGeneration::young()->tenuring_threshold()) {
+    return ZPageAge::old;
+  }
+
+  return static_cast<ZPageAge>(age + 1);
 }
 
 class ZFlipAgePagesTask : public ZTask {

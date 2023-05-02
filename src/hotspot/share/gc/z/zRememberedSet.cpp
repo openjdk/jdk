@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "memory/allocation.hpp"
 #include "precompiled.hpp"
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zBitMap.inline.hpp"
@@ -29,6 +28,7 @@
 #include "gc/z/zPage.inline.hpp"
 #include "gc/z/zRememberedSet.hpp"
 #include "logging/log.hpp"
+#include "memory/allocation.hpp"
 #include "memory/iterator.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -91,7 +91,6 @@ void ZRememberedSet::clear_previous() {
 }
 
 void ZRememberedSet::swap_remset_bitmaps() {
-  log_debug(gc, remset)("Swap remset bitmaps current: " PTR_FORMAT " previous: " PTR_FORMAT, p2i(current()), p2i(previous()));
   assert(previous()->is_empty(), "Previous remset bits should be empty when swapping");
   current()->iterate([&](BitMap::idx_t index) {
     previous()->set_bit(index);

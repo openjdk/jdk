@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -248,7 +248,7 @@ private:
 
 public:
   OnError(ZStoreBarrierBuffer* buffer) :
-    _buffer(buffer) {}
+      _buffer(buffer) {}
 
   virtual void call(outputStream* st) {
     _buffer->on_error(st);
@@ -259,28 +259,6 @@ void ZStoreBarrierBuffer::on_error(outputStream* st) {
   st->print_cr("ZStoreBarrierBuffer: error when flushing");
   st->print_cr(" _last_processed_color: " PTR_FORMAT, _last_processed_color);
   st->print_cr(" _last_installed_color: " PTR_FORMAT, _last_installed_color);
-
-  ResourceMark rm;
-  stringStream ss;
-
-  auto description = [&](void* pc) -> const char* {
-    if ((uintptr_t)pc == 1) {
-      // pc is set to 1 when entries are added from the runtime code
-      return "Runtime";
-    }
-
-    ss.reset();
-
-    const CodeBlob* const b = CodeCache::find_blob(pc);
-    if (b != nullptr) {
-      b->dump_for_addr((address)pc, &ss, false);
-    } else {
-      ss.print(PTR_FORMAT " Unknown", p2i(pc));
-    }
-
-    assert(ss.count() != 0, "Sanity");
-    return ss.as_string();
-  };
 
   for (int i = current(); i < (int)_buffer_length; ++i) {
     st->print_cr(" [%2d]: base: " PTR_FORMAT " p: " PTR_FORMAT " prev: " PTR_FORMAT,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,10 +40,10 @@ bool ZBarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
   ZLocker<ZReentrantLock> locker(ZNMethod::lock_for_nmethod(nm));
   log_trace(nmethod, barrier)("Entered critical zone for %p", nm);
 
-  log_trace(gc, nmethod)("nmethod: " PTR_FORMAT " visited by entry (try)", p2i(nm));
+  log_develop_trace(gc, nmethod)("nmethod: " PTR_FORMAT " visited by entry (try)", p2i(nm));
 
   if (!is_armed(nm)) {
-    log_trace(gc, nmethod)("nmethod: " PTR_FORMAT " visited by entry (disarmed)", p2i(nm));
+    log_develop_trace(gc, nmethod)("nmethod: " PTR_FORMAT " visited by entry (disarmed)", p2i(nm));
     // Some other thread got here first and healed the oops
     // and disarmed the nmethod.
     return true;
@@ -52,7 +52,7 @@ bool ZBarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
   MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, Thread::current()));
 
   if (nm->is_unloading()) {
-    log_trace(gc, nmethod)("nmethod: " PTR_FORMAT " visited by entry (unloading)", p2i(nm));
+    log_develop_trace(gc, nmethod)("nmethod: " PTR_FORMAT " visited by entry (unloading)", p2i(nm));
     // We don't need to take the lock when unlinking nmethods from
     // the Method, because it is only concurrently unlinked by
     // the entry barrier, which acquires the per nmethod lock.
@@ -73,8 +73,7 @@ bool ZBarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
 
   const uintptr_t prev_color = ZNMethod::color(nm);
   const uintptr_t new_color = *(int*)ZPointerStoreGoodMaskLowOrderBitsAddr;
-  log_trace(gc, nmethod)("nmethod: " PTR_FORMAT " visited by entry (complete) [" PTR_FORMAT " -> " PTR_FORMAT "]", p2i(nm), prev_color, new_color);
-
+  log_develop_trace(gc, nmethod)("nmethod: " PTR_FORMAT " visited by entry (complete) [" PTR_FORMAT " -> " PTR_FORMAT "]", p2i(nm), prev_color, new_color);
 
   // CodeCache unloading support
   nm->mark_as_maybe_on_stack();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,8 +40,9 @@ struct ZStoreBarrierEntry {
 
 class ZStoreBarrierBuffer : public CHeapObj<mtGC> {
   friend class ZVerify;
+
 private:
-  static const size_t _buffer_length = 32;
+  static const size_t _buffer_length     = 32;
   static const size_t _buffer_size_bytes = _buffer_length * sizeof(ZStoreBarrierEntry);
 
   ZStoreBarrierEntry _buffer[_buffer_length];

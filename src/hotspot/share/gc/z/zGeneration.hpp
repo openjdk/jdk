@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,11 +41,11 @@
 class ThreadClosure;
 class ZForwardingTable;
 class ZGenerationOld;
+class ZGenerationYoung;
 class ZPage;
 class ZPageAllocator;
 class ZPageTable;
 class ZRelocationSetSelector;
-class ZGenerationYoung;
 
 class ZGeneration {
   friend class ZForwardingTest;
@@ -188,9 +188,9 @@ public:
 };
 
 class ZGenerationYoung : public ZGeneration {
-  friend class VM_ZMarkStartYoungAndOld;
-  friend class VM_ZMarkStartYoung;
   friend class VM_ZMarkEndYoung;
+  friend class VM_ZMarkStartYoung;
+  friend class VM_ZMarkStartYoungAndOld;
   friend class VM_ZRelocateStartYoung;
   friend class ZYoungTypeSetter;
 
@@ -261,8 +261,8 @@ public:
 };
 
 class ZGenerationOld : public ZGeneration {
-  friend class VM_ZMarkStartYoungAndOld;
   friend class VM_ZMarkEndOld;
+  friend class VM_ZMarkStartYoungAndOld;
   friend class VM_ZRelocateStartOld;
 
 private:

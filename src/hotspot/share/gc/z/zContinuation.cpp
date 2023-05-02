@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,8 +82,8 @@ oop ZContinuation::load_oop(stackChunkOop chunk, void* addr) {
   return to_oop(ZBarrier::load_barrier_on_oop_field_preloaded(nullptr /* p */, zptr));
 }
 
-ZContinuation::ZColorStackOopClosure::ZColorStackOopClosure(stackChunkOop chunk)
-    : _color(ZStackChunkGCData::color(chunk)) {
+ZContinuation::ZColorStackOopClosure::ZColorStackOopClosure(stackChunkOop chunk) :
+    _color(ZStackChunkGCData::color(chunk)) {
 }
 
 void ZContinuation::ZColorStackOopClosure::do_oop(oop* p) {
@@ -92,7 +92,6 @@ void ZContinuation::ZColorStackOopClosure::do_oop(oop* p) {
   zaddress_unsafe* const p_zaddress_unsafe = (zaddress_unsafe*)p;
   zpointer* const p_zpointer = (zpointer*)p;
   *p_zpointer = ZAddress::color(*p_zaddress_unsafe, _color);
-
 }
 
 void ZContinuation::ZColorStackOopClosure::do_oop(narrowOop* p) {

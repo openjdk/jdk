@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@
 // The load barriers of ZGC check if a loaded value is safe to expose or not, and
 // then shifts the pointer to remove metadata bits, such that it points to mapped
 // memory.
+//
 // A pointer is safe to expose if it does not have any load-bad bits set in its
 // metadata bits. In the C++ code and non-nmethod generated code, that is checked
 // by testing the pointer value against a load-bad mask, checking that no bad bit
@@ -50,13 +51,16 @@
 // CF == 0 implies it was not a good pointer, and ZF == 0 implies the resulting address
 // was not a null value. Then we decide that the pointer is bad. This optimization
 // is necessary to get satisfactory performance, but does come with a few constraints:
+//
 // 1) The load barrier can only recognize 4 different good patterns across all GC phases.
 //    The reason is that when a load barrier applies the currently good shift, then
 //    the value of said shift may differ only by 3, until we risk shifting away more
 //    than the low order three zeroes of an address, given a bad pointer, which would
 //    yield spurious false positives.
+//
 // 2) Those bit patterns must have only a single bit set. We achieve that by moving
 //    non-relocation work to store barriers.
+//
 // Another consequence of this speculative optimization, is that when the compiled code
 // takes a slow path, it needs to reload the oop, because the shifted oop is now
 // broken after being shifted with a different shift to what was used when the oop

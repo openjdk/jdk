@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ void ZGCIdPrinter::initialize() {
 
 int ZGCIdPrinter::print_gc_id_unchecked(uint gc_id, char* buf, size_t len) {
   if (gc_id == _minor_gc_id) {
-    // Minor collections are always tagged with 'y'.
+    // Minor collections are always tagged with 'y'
     return jio_snprintf(buf, len, "GC(%u) y: ", gc_id);
   }
 

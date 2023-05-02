@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,27 +47,27 @@ struct ZWorkerResizeStats {
 struct ZDirectorHeapStats {
   size_t _soft_max_heap_size;
   size_t _used;
-  uint _total_collections;
+  uint   _total_collections;
 };
 
 struct ZDirectorGenerationGeneralStats {
   size_t _used;
-  uint _total_collections_at_start;
+  uint   _total_collections_at_start;
 };
 
 struct ZDirectorGenerationStats {
-  ZStatCycleStats _cycle;
-  ZStatWorkersStats _workers;
-  ZWorkerResizeStats _resize;
-  ZStatHeapStats _stat_heap;
+  ZStatCycleStats                 _cycle;
+  ZStatWorkersStats               _workers;
+  ZWorkerResizeStats              _resize;
+  ZStatHeapStats                  _stat_heap;
   ZDirectorGenerationGeneralStats _general;
 };
 
 struct ZDirectorStats {
   ZStatMutatorAllocRateStats _mutator_alloc_rate;
-  ZDirectorHeapStats _heap;
-  ZDirectorGenerationStats _young_stats;
-  ZDirectorGenerationStats _old_stats;
+  ZDirectorHeapStats         _heap;
+  ZDirectorGenerationStats   _young_stats;
+  ZDirectorGenerationStats   _old_stats;
 };
 
 ZDirector::ZDirector() :
@@ -348,15 +348,17 @@ static bool rule_minor_allocation_rate(const ZDirectorStats& stats) {
                                                 0.0 /* parallel_gc_time_passed */).cause() != GCCause::_no_gc) {
       return true;
     }
+
     if (rule_hard_minor_allocation_rate_dynamic(stats,
                                                 0.0 /* serial_gc_time_passed */,
                                                 0.0 /* parallel_gc_time_passed */).cause() != GCCause::_no_gc) {
       return true;
     }
+
     return false;
-  } else {
-    return rule_minor_allocation_rate_static(stats);
   }
+
+  return rule_minor_allocation_rate_static(stats);
 }
 
 static bool rule_minor_high_usage(const ZDirectorStats& stats) {
@@ -512,11 +514,11 @@ static bool rule_major_allocation_rate(const ZDirectorStats& stats) {
   // In other words, the cost for minor collections of not doing a major collection
   // will seemingly be greater than the cost of doing a major collection and getting
   // cheaper minor collections for a time to come.
-  bool can_amortize_time_cost = extra_young_gc_time_for_lookahead > old_gc_time;
+  const bool can_amortize_time_cost = extra_young_gc_time_for_lookahead > old_gc_time;
 
   // If the garbage is cheaper to reap in the old generation, then it makes sense
   // to upgrade minor collections to major collections.
-  bool old_garbage_is_cheaper = current_old_gc_time_per_bytes_freed < current_young_gc_time_per_bytes_freed;
+  const bool old_garbage_is_cheaper = current_old_gc_time_per_bytes_freed < current_young_gc_time_per_bytes_freed;
 
   return can_amortize_time_cost || old_garbage_is_cheaper || is_major_urgent(stats);
 }
@@ -674,8 +676,8 @@ enum class ZWorkerSelectionType {
 };
 
 static ZWorkerCounts select_worker_threads(const ZDirectorStats& stats, uint young_workers, ZWorkerSelectionType type) {
-  uint active_young_workers = stats._young_stats._resize._nworkers_current;
-  uint active_old_workers = stats._old_stats._resize._nworkers_current;
+  const uint active_young_workers = stats._young_stats._resize._nworkers_current;
+  const uint active_old_workers = stats._old_stats._resize._nworkers_current;
 
   if (ZHeap::heap()->is_alloc_stalling()) {
     // Boost GC threads when stalling
@@ -742,21 +744,21 @@ static void adjust_gc(const ZDirectorStats& stats) {
 
   if (desired_young_workers > young_resize_stats._nworkers_current) {
     // We need to increase workers
-    uint needed_young_increase = desired_young_workers - young_resize_stats._nworkers_current;
+    const uint needed_young_increase = desired_young_workers - young_resize_stats._nworkers_current;
     // We want to increase by more than the minimum amount to ensure that
     // there are enough margins, but also to avoid too frequent resizing.
-    uint desired_young_increase = needed_young_increase * 2;
+    const uint desired_young_increase = needed_young_increase * 2;
     desired_young_workers = MIN2(young_resize_stats._nworkers_current + desired_young_increase, ZYoungGCThreads);
   }
 
-  uint young_current_workers = young_resize_stats._nworkers_current;
-  uint old_current_workers = old_resize_stats._nworkers_current;
+  const uint young_current_workers = young_resize_stats._nworkers_current;
+  const uint old_current_workers = old_resize_stats._nworkers_current;
 
-  bool minor_during_old = old_resize_stats._is_active;
+  const bool minor_during_old = old_resize_stats._is_active;
   ZWorkerSelectionType type = minor_during_old ? ZWorkerSelectionType::minor_during_old
                                                : ZWorkerSelectionType::normal;
 
-  ZWorkerCounts selection = select_worker_threads(stats, desired_young_workers, type);
+  const ZWorkerCounts selection = select_worker_threads(stats, desired_young_workers, type);
 
   if (old_resize_stats._is_active && old_current_workers != selection._old_workers) {
     ZGeneration::old()->workers()->request_resize_workers(selection._old_workers);
@@ -785,8 +787,9 @@ static void start_major_gc(const ZDirectorStats& stats, GCCause::Cause cause) {
 }
 
 static void start_minor_gc(const ZDirectorStats& stats, GCCause::Cause cause) {
-  ZWorkerSelectionType type = ZDriver::major()->is_busy() ? ZWorkerSelectionType::minor_during_old
-                                                          : ZWorkerSelectionType::normal;
+  const ZWorkerSelectionType type = ZDriver::major()->is_busy()
+      ? ZWorkerSelectionType::minor_during_old
+      : ZWorkerSelectionType::normal;
   const ZWorkerCounts selection = initial_workers(stats, type);
 
   if (UseDynamicNumberOfGCThreads && ZDriver::major()->is_busy()) {

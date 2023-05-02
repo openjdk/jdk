@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -309,6 +309,8 @@ inline bool ZPage::is_object_marked(zaddress addr, bool finalizable) const {
 inline bool ZPage::mark_object(zaddress addr, bool finalizable, bool& inc_live) {
   assert(is_relocatable(), "Invalid page state");
   assert(is_in(addr), "Invalid address");
+
+  // Verify oop
   (void)to_oop(addr);
 
   // Set mark bit
@@ -412,20 +414,7 @@ inline zaddress_unsafe ZPage::find_base_unsafe(volatile zpointer* p) {
 inline zaddress_unsafe ZPage::find_base(volatile zpointer* p) {
   assert_zpage_mark_state();
 
-  if (is_large()) {
-    return ZOffset::address_unsafe(start());
-  }
-
-  // Note: when thinking about excluding looking at the index corresponding to
-  // the field address p, it's important to note that for medium pages both p
-  // and it's associated base could map to the same index.
-  const BitMap::idx_t index = bit_index(zaddress(uintptr_t(p)));
-  const BitMap::idx_t base_index = _livemap.find_base_bit(index);
-  if (base_index == BitMap::idx_t(-1)) {
-    return zaddress_unsafe::null;
-  } else {
-    return ZOffset::address_unsafe(offset_from_bit_index(base_index));
-  }
+  return find_base_unsafe(p);
 }
 
 template <typename Function>
@@ -493,10 +482,12 @@ inline zaddress ZPage::alloc_object_atomic(size_t size) {
 
   for (;;) {
     zoffset_end new_top;
+
     if (!to_zoffset_end(&new_top, addr, aligned_size)) {
       // Next top would be outside of the heap - bail
       return zaddress::null;
     }
+
     if (new_top > end()) {
       // Not enough space left
       return zaddress::null;

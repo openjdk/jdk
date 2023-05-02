@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,7 @@ private:
   void decode_versioned_pointer(const T* vstack, T** stack, uint32_t* version) const;
 
 public:
-  ZStackList(uintptr_t base);
+  explicit ZStackList(uintptr_t base);
 
   bool is_empty() const;
 
@@ -85,7 +85,7 @@ private:
   ZCACHE_ALIGNED ZMarkStackList _overflowed;
 
 public:
-  ZMarkStripe(uintptr_t base = 0);
+  explicit ZMarkStripe(uintptr_t base = 0);
 
   bool is_empty() const;
 
@@ -99,7 +99,7 @@ private:
   ZMarkStripe _stripes[ZMarkStripesMax];
 
 public:
-  ZMarkStripeSet(uintptr_t base);
+  explicit ZMarkStripeSet(uintptr_t base);
 
   void set_nstripes(size_t nstripes);
   size_t nstripes() const;

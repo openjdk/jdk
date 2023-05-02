@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -169,11 +169,12 @@ struct ZRememberedScanForwardingContext {
   GrowableArrayCHeap<ZRememberedSetContaining, mtGC> _containing_array;
 
   struct Where {
-    static const int                                   NumRecords = 10;
-    Tickspan                                           _duration;
-    int                                                _count;
-    Tickspan                                           _max_durations[NumRecords];
-    int                                                _max_count;
+    static const int NumRecords = 10;
+
+    Tickspan _duration;
+    int      _count;
+    Tickspan _max_durations[NumRecords];
+    int      _max_count;
 
     Where() :
         _duration(),
@@ -184,9 +185,9 @@ struct ZRememberedScanForwardingContext {
     void report(const Tickspan& duration) {
       _duration += duration;
       _count++;
+
       // Install into max array
-      int i = 0;
-      for (; i < NumRecords; i++) {
+      for (int i = 0; i < NumRecords; i++) {
         if (duration > _max_durations[i]) {
           // Slid to the side
           for (int j = _max_count - 1; i < j; j--) {
@@ -239,10 +240,12 @@ struct ZRememberedScanForwardingContext {
 struct ZRememberedScanForwardingMeasureRetained {
   ZRememberedScanForwardingContext* _context;
   Ticks                             _start;
+
   ZRememberedScanForwardingMeasureRetained(ZRememberedScanForwardingContext* context) :
       _context(context),
       _start(Ticks::now()) {
   }
+
   ~ZRememberedScanForwardingMeasureRetained() {
     const Ticks end = Ticks::now();
     const Tickspan duration = end - _start;
@@ -253,10 +256,12 @@ struct ZRememberedScanForwardingMeasureRetained {
 struct ZRememberedScanForwardingMeasureReleased {
   ZRememberedScanForwardingContext* _context;
   Ticks                             _start;
+
   ZRememberedScanForwardingMeasureReleased(ZRememberedScanForwardingContext* context) :
       _context(context),
       _start(Ticks::now()) {
   }
+
   ~ZRememberedScanForwardingMeasureReleased() {
     const Ticks end = Ticks::now();
     const Tickspan duration = end - _start;

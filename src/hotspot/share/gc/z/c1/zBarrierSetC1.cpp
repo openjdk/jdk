@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -183,9 +183,9 @@ public:
 
 class LIR_OpZLoadBarrier : public LIR_Op {
 private:
-  LIR_Opr                    _opr;
-  ZLoadBarrierStubC1* const  _stub;
-  const bool                 _on_non_strong;
+  LIR_Opr                   _opr;
+  ZLoadBarrierStubC1* const _stub;
+  const bool                _on_non_strong;
 
 public:
   LIR_OpZLoadBarrier(LIR_Opr opr, ZLoadBarrierStubC1* stub, bool on_non_strong) :
@@ -256,8 +256,8 @@ private:
 
 public:
   LIR_OpZColor(LIR_Opr opr) :
-    LIR_Op(lir_none, opr, nullptr /* info */),
-    _opr(opr) {}
+      LIR_Op(lir_none, opr, nullptr /* info */),
+      _opr(opr) {}
 
   virtual void visit(LIR_OpVisitState* state) {
     state->do_input(_opr);
@@ -295,12 +295,12 @@ public:
                       LIR_Opr new_zpointer,
                       CodeStub* stub,
                       CodeEmitInfo* info) :
-    LIR_Op(lir_none, new_zpointer, nullptr /* info */),
-    _addr(addr),
-    _new_zaddress(new_zaddress),
-    _new_zpointer(new_zpointer),
-    _stub(stub),
-    _info(info) {}
+      LIR_Op(lir_none, new_zpointer, nullptr /* info */),
+      _addr(addr),
+      _new_zaddress(new_zaddress),
+      _new_zpointer(new_zpointer),
+      _stub(stub),
+      _info(info) {}
 
   virtual void visit(LIR_OpVisitState* state) {
     state->do_input(_new_zaddress);
@@ -519,7 +519,7 @@ private:
 
 public:
   ZStoreBarrierRuntimeStubCodeGenClosure(bool self_healing) :
-    _self_healing(self_healing) {}
+      _self_healing(self_healing) {}
 
   virtual OopMapSet* generate_code(StubAssembler* sasm) {
     ZBarrierSet::assembler()->generate_c1_store_barrier_runtime_stub(sasm, _self_healing);

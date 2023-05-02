@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -169,6 +169,7 @@ static void destroy_and_clear(ZPageAllocator* page_allocator, ZArray<ZPage*>* ar
     ZPage* const page = array->at(i);
     page_allocator->safe_destroy_page(page);
   }
+
   array->clear();
 }
 void ZRelocationSet::reset(ZPageAllocator* page_allocator) {

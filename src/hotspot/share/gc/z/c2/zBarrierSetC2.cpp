@@ -67,9 +67,9 @@ public:
 
   public:
     Iterator(ZArenaHashtable* table) :
-      _table(table),
-      _current_entry(table->_table[0]),
-      _current_index(0) {
+        _table(table),
+        _current_entry(table->_table[0]),
+        _current_index(0) {
       if (_current_entry == nullptr) {
         next();
       }
@@ -128,10 +128,10 @@ private:
 
 public:
   ZBarrierSetC2State(Arena* arena) :
-    _stubs(new (arena) GrowableArray<ZBarrierStubC2*>(arena, 8,  0, nullptr)),
-    _live(arena),
-    _trampoline_stubs_count(0),
-    _stubs_start_offset(0) {}
+      _stubs(new (arena) GrowableArray<ZBarrierStubC2*>(arena, 8,  0, nullptr)),
+      _live(arena),
+      _trampoline_stubs_count(0),
+      _stubs_start_offset(0) {}
 
   GrowableArray<ZBarrierStubC2*>* stubs() {
     return _stubs;

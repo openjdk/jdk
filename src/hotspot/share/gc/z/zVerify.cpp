@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -232,7 +232,8 @@ private:
   const bool _verify_weaks;
 
 public:
-  ZVerifyYoungOopClosure(bool verify_weaks) : _verify_weaks(verify_weaks) {}
+  ZVerifyYoungOopClosure(bool verify_weaks) :
+      _verify_weaks(verify_weaks) {}
 
   virtual void do_oop(oop* p_) {
     zpointer* const p = (zpointer*)p_;
@@ -460,7 +461,9 @@ void ZVerify::after_weak_processing() {
   }
 }
 
-// ============ Remembered set verification =============
+//
+// Remembered set verification
+//
 
 typedef ResourceHashtable<volatile zpointer*, bool, 1009, AnyObj::C_HEAP, mtGC> ZStoreBarrierBufferTable;
 
@@ -578,9 +581,9 @@ void ZVerify::before_relocation(ZForwarding* forwarding) {
 
 class ZVerifyRemsetAfterOopClosure : public BasicOopIterateClosure {
 private:
-  ZForwarding*    _forwarding;
-  zaddress_unsafe _from_addr;
-  zaddress        _to_addr;
+  ZForwarding* const _forwarding;
+  zaddress_unsafe    _from_addr;
+  zaddress           _to_addr;
 
 public:
   ZVerifyRemsetAfterOopClosure(ZForwarding* forwarding) :

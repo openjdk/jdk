@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,8 @@
 #include "gc/shared/accessBarrierSupport.inline.hpp"
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zBarrier.inline.hpp"
-#include "gc/z/zNMethod.hpp"
 #include "gc/z/zIterator.inline.hpp"
+#include "gc/z/zNMethod.hpp"
 #include "memory/iterator.inline.hpp"
 #include "utilities/debug.hpp"
 
@@ -210,7 +210,7 @@ inline bool is_store_barrier_no_keep_alive(oop base, ptrdiff_t offset) {
   }
 
   const DecoratorSet decorators_known_strength =
-    AccessBarrierSupport::resolve_possibly_unknown_oop_ref_strength<decorators>(base, offset);
+      AccessBarrierSupport::resolve_possibly_unknown_oop_ref_strength<decorators>(base, offset);
 
   if ((decorators_known_strength & ON_STRONG_OOP_REF) != 0) {
     return (decorators & AS_NO_KEEPALIVE) != 0;

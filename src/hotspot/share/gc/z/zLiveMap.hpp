@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,7 +75,7 @@ private:
 
 public:
   ZLiveMap(uint32_t size);
-  ZLiveMap(const ZLiveMap& other);
+  ZLiveMap(const ZLiveMap& other) = delete;
 
   void reset();
   void resize(uint32_t size);
