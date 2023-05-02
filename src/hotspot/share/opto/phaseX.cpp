@@ -1955,10 +1955,10 @@ void PhaseCCP::analyze() {
   // Compile is over. The local arena gets de-allocated at the end of its scope.
   ResourceArea local_arena(mtCompiler);
   Unique_Node_List worklist(&local_arena);
+  DEBUG_ONLY(Unique_Node_List worklist_verify(&local_arena);)
 
   // Push root onto worklist
   worklist.push(C->root());
-  DEBUG_ONLY(Unique_Node_List worklist_verify;)
 
   assert(_root_and_safepoints.size() == 0, "must be empty (unused)");
   _root_and_safepoints.push(C->root());
