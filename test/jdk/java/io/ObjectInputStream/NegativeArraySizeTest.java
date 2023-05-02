@@ -42,7 +42,7 @@ import java.io.ObjectStreamException;
 public class NegativeArraySizeTest {
 
     private static byte[] buildArrayPayload() throws IOException {
-         // Serialize to bytes
+        // Serialize to bytes
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         ObjectOutputStream oos = new ObjectOutputStream(baos);
         oos.writeObject(new String[1]);
@@ -68,27 +68,27 @@ public class NegativeArraySizeTest {
 
     private static byte[] buildPriorityQueuePayload() throws IOException {
         // Serialize to bytes
-       ByteArrayOutputStream baos = new ByteArrayOutputStream();
-       ObjectOutputStream oos = new ObjectOutputStream(baos);
-       oos.writeObject(new PriorityQueue<>());
-       oos.close();
-       byte[] serializedData = baos.toByteArray();
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ObjectOutputStream oos = new ObjectOutputStream(baos);
+        oos.writeObject(new PriorityQueue<>());
+        oos.close();
+        byte[] serializedData = baos.toByteArray();
 
-       // Find the right location to modify, looking for the first instance of TC_BLOCKDATA
-       int firstPos = 0;
-       for (int i = 0; i < serializedData.length - 1; i++) {
-           // 0x77 = TC_BLOCKDATA
-           if (serializedData[i] == 0x77) {
-               // Replace array length with -3
-               serializedData[i - 5] = (byte) 0xff;
-               serializedData[i - 4] = (byte) 0xff;
-               serializedData[i - 3] = (byte) 0xff;
-               serializedData[i - 2] = (byte) 0xfd;
+        // Find the right location to modify, looking for the first instance of TC_BLOCKDATA
+        int firstPos = 0;
+        for (int i = 0; i < serializedData.length - 1; i++) {
+            // 0x77 = TC_BLOCKDATA
+            if (serializedData[i] == 0x77) {
+                // Replace array length with -3
+                serializedData[i - 5] = (byte) 0xff;
+                serializedData[i - 4] = (byte) 0xff;
+                serializedData[i - 3] = (byte) 0xff;
+                serializedData[i - 2] = (byte) 0xfd;
 
-               return serializedData;
-           }
-       }
-       throw new RuntimeException("Can't find TC_BLOCKDATA in object output stream");
+                return serializedData;
+            }
+        }
+        throw new RuntimeException("Can't find TC_BLOCKDATA in object output stream");
     }
 
     private static class CustomFilter implements ObjectInputFilter {
@@ -103,21 +103,21 @@ public class NegativeArraySizeTest {
     }
 
     public static void main(String[] args) throws Exception {
-        try {
-            // Test object input stream with negative sized array
-            ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(buildArrayPayload()));
+        // Test object input stream with negative sized array
+        try (ByteArrayInputStream bais = new ByteArrayInputStream(buildArrayPayload());
+             ObjectInputStream ois = new ObjectInputStream(bais)) {
             ois.readObject();
         } catch (NegativeArraySizeException nase) {
             throw new Exception("ObjectInputStream::readObject() shouldn't throw a NegativeArraySizeException", nase);
         } catch (ObjectStreamException ose) {
-            // OK, because a NegativeArraySizeException should be converted into a ObjectStreamException
+            // OK, because a NegativeArraySizeException should be converted into an ObjectStreamException
             if (!"Array length is negative".equals(ose.getMessage())) {
                 throw new Exception("Expected \"Array length is negative\" as exception message", ose);
             }
         }
-        try {
-            // Test object input stream with negative sized array and custom object input filter
-            ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(buildArrayPayload()));
+        // Test object input stream with negative sized array and custom object input filter
+        try (ByteArrayInputStream bais = new ByteArrayInputStream(buildArrayPayload());
+             ObjectInputStream ois = new ObjectInputStream(bais)) {
             ois.setObjectInputFilter(new CustomFilter());
             ois.readObject();
         } catch (NegativeArraySizeException nase) {
@@ -126,19 +126,19 @@ public class NegativeArraySizeTest {
             if (ose instanceof InvalidClassException ice && ice.getMessage().contains("filter status: REJECTED")) {
                 throw new Exception("ObjectInputStream::readObject() should catch NegativeArraySizeExceptions before filtering", ice);
             }
-            // OK, because a NegativeArraySizeException should be converted into a ObjectStreamException *before* filtering
+            // OK, because a NegativeArraySizeException should be converted into an ObjectStreamException *before* filtering
             if (!"Array length is negative".equals(ose.getMessage())) {
                 throw new Exception("Expected \"Array length is negative\" as exception message", ose);
             }
         }
-        try {
-            // Test object input stream with negative sized PriorityQueue
-            ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(buildPriorityQueuePayload()));
+        // Test object input stream with negative sized PriorityQueue
+        try (ByteArrayInputStream bais = new ByteArrayInputStream(buildPriorityQueuePayload());
+             ObjectInputStream ois = new ObjectInputStream(bais)) {
             ois.readObject();
         } catch (NegativeArraySizeException nase) {
             throw new Exception("ObjectInputStream::readObject() shouldn't throw a NegativeArraySizeException", nase);
         } catch (ObjectStreamException ose) {
-            // OK, because a NegativeArraySizeException should be converted into a ObjectStreamException
+            // OK, because a NegativeArraySizeException should be converted into an ObjectStreamException
             if (!"Array length is negative".equals(ose.getMessage())) {
                 throw new Exception("Expected \"Array length is negative\" as exception message", ose);
             }
