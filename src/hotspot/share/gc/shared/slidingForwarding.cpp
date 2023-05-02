@@ -37,14 +37,14 @@ HeapWord* const SlidingForwarding::UNUSED_BASE = reinterpret_cast<HeapWord*>(0x1
 
 SlidingForwarding::SlidingForwarding(MemRegion heap, size_t region_size_words)
   : _heap_start(heap.start()),
-    _num_regions(((heap.end() - heap.start()) / region_size_words) + 1),
+    _num_regions(align_up(pointer_delta(heap.end(), heap.start()), region_size_words) / region_size_words),
     _region_size_words(region_size_words),
     _region_size_words_shift(log2i_exact(region_size_words)),
   _bases_table(nullptr),
   _fallback_table(nullptr) {
-  assert(_region_size_words_shift <= NUM_COMPRESSED_BITS, "regions must not be larger than maximum addressing bits allow");
+  assert(_region_size_words_shift <= NUM_OFFSET_BITS, "regions must not be larger than maximum addressing bits allow");
   size_t heap_size_words = heap.end() - heap.start();
-  if (UseSerialGC && heap_size_words <= (1 << NUM_COMPRESSED_BITS)) {
+  if (UseSerialGC && heap_size_words <= (1 << NUM_OFFSET_BITS)) {
     // In this case we can treat the whole heap as a single region and
     // make the encoding very simple.
     _num_regions = 1;
