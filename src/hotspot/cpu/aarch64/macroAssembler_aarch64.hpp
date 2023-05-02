@@ -1737,6 +1737,8 @@ public:
     acc.gen();
   }
   void poly1305_add(const Register dest[], const RegPair src[]);
+  void poly1305_add(LambdaAccumulator &acc,
+                    const Register dest[], const RegPair src[]);
 
   void mov26(FloatRegister d, Register s, int lsb);
   void expand26(Register d, Register r);

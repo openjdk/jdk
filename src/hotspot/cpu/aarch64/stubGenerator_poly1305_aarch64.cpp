@@ -32,6 +32,9 @@ typedef AbstractRegSet<FloatRegister> vRegSet;
 
 // static constexpr bool use_vec = true;
 
+
+
+
 address generate_poly1305_processBlocks2() {
   static constexpr int POLY1305_BLOCK_LENGTH = 16;
 
@@ -166,12 +169,15 @@ address generate_poly1305_processBlocks2() {
     __ br(Assembler::LT, DONE);
 
     {
+      __ poly1305_load(S0, input_start);
+      __ poly1305_load(S1, input_start);
+
       LambdaAccumulator gen0, gen1, gen2;
-      __ poly1305_step(gen0, S0, u0, input_start);
+      __ poly1305_add(gen0, S0, u0);
       __ poly1305_multiply(gen0, u0, S0, R, RR2, regs);
       __ poly1305_reduce(gen0, u0);
 
-      __ poly1305_step(gen1, S1, u1, input_start);
+      __ poly1305_add(gen1, S1, u1);
       __ poly1305_multiply(gen1, u1, S1, R, RR2, regs);
       __ poly1305_reduce(gen1, u1);
 
@@ -182,12 +188,29 @@ address generate_poly1305_processBlocks2() {
       auto it0 = gen0.iterator(),
         it1 = gen1.iterator(),
         it2 = gen2.iterator();
-      const int len = MAX3(gen0.length(), gen1.length(), gen2.length());
-      for (int i = 0; i < len; i++) {
-        (it0++)();
-        (it1++)();
-        (it2++)();
+
+      int len0 = gen0.length(), len1 = gen1.length(), len2 = gen2.length();
+      const int l_max = MAX3(len0, len1, len2);
+      int e0 = l_max/2;
+      int e1 = e0, e2 = e0;
+
+      for (int i = 0; i < l_max; i++) {
+        e0 -= len0; if (e0 < 0) {
+          e0 += l_max; (it0++)();
+        }
+        e1 -= len1; if (e1 < 0) {
+          e1 += l_max; (it1++)();
+          if (* it1 == nullptr) {
+            asm("nop");
+          }
+        }
+        e2 -= len2; if (e2 < 0) {
+          e2 += l_max; (it2++)();
+         }
       }
+
+      assert(*it0 == nullptr && *it1 == nullptr && *it2 == nullptr,
+             "Make sure all generators are exhausted");
     }
 
     __ subw(length, length, POLY1305_BLOCK_LENGTH * 4);
