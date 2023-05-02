@@ -22,7 +22,7 @@
  */
 
 /**
- * JDK 8 serialization bytes for XMLGregorianCalendar and Duration data type.
+ * JDK 8 serialization bytes for XMLGregorianCalendar and Duration data type generated using JDK 1.8.0 version.
  */
 public class JDK8GregorianCalendarAndDurationSerData extends GregorianCalendarAndDurationSerData {
     private final String gregorianCalendarBase64 =
