@@ -3147,7 +3147,7 @@ bool SuperWord::output() {
           assert(cmp->in(1) == n->in(CMoveNode::IfTrue), "cmpnode and cmovenode don't share the same inputs.");
           cond = boltest.negate();
         }
-        Node* cc  = _igvn.intcon((int)cond);
+        ConINode* cc  = _igvn.intcon((int)cond);
         NOT_PRODUCT(if(is_trace_cmov()) {tty->print("SWPointer::output: created intcon in_cc node %d", cc->_idx); cc->dump();})
 
         Node* src1 = vector_opd(p, 2); //2=CMoveNode::IfFalse
@@ -3169,12 +3169,12 @@ bool SuperWord::output() {
         BasicType bt = velt_basic_type(n);
         const TypeVect* vt = TypeVect::make(bt, vlen);
         assert(bt == T_FLOAT || bt == T_DOUBLE, "Only vectorization for FP cmovs is supported");
-        if (bt == T_FLOAT) {
-          vn = new CMoveVFNode(cc, src1, src2, vt);
-        } else {
-          assert(bt == T_DOUBLE, "Expected double");
-          vn = new CMoveVDNode(cc, src1, src2, vt);
-        }
+
+        Node* vcmp = new VectorMaskCmpNode(cond, src1, src2, cc, vt);
+        _igvn.register_new_node_with_optimizer(vcmp);
+        _phase->set_ctrl(vcmp, _phase->get_ctrl(p->at(0)));
+        vn = new VectorBlendNode(src1, src2, vcmp);
+
         NOT_PRODUCT(if(is_trace_cmov()) {tty->print("SWPointer::output: created new CMove node %d: ", vn->_idx); vn->dump();})
       } else if (opc == Op_FmaD || opc == Op_FmaF) {
         // Promote operands to vector
