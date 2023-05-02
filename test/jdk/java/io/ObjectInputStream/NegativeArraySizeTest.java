@@ -74,7 +74,7 @@ public class NegativeArraySizeTest {
        oos.close();
        byte[] serializedData = baos.toByteArray();
 
-       // Find the right location to modify, looking for the first instance of TC_ENDBLOCKDATA
+       // Find the right location to modify, looking for the first instance of TC_BLOCKDATA
        int firstPos = 0;
        for (int i = 0; i < serializedData.length - 1; i++) {
            // 0x77 = TC_BLOCKDATA
