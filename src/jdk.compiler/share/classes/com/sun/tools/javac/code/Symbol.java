@@ -436,7 +436,7 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
     }
 
     public boolean isUnnamed() {
-        return (flags_field & UNNAMED) != 0;
+        return name.isEmpty();
     }
 
    /** Is this symbol declared (directly or indirectly) local

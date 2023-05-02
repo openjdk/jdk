@@ -16,6 +16,7 @@ UnnamedErrors.java:34:18: compiler.err.restricted.type.not.allowed.here: var
 UnnamedErrors.java:34:22: compiler.err.underscore.as.identifier
 UnnamedErrors.java:77:18: compiler.err.underscore.as.identifier
 UnnamedErrors.java:77:19: compiler.err.expected: token.identifier
+UnnamedErrors.java:11:17: compiler.err.already.defined: kindname.variable, x, kindname.class, UnnamedErrors
 UnnamedErrors.java:36:13: compiler.err.unconditional.pattern.and.default
 UnnamedErrors.java:45:18: compiler.err.pattern.dominated
 UnnamedErrors.java:54:29: compiler.err.flows.through.from.pattern
@@ -23,4 +24,4 @@ UnnamedErrors.java:61:29: compiler.err.flows.through.from.pattern
 UnnamedErrors.java:68:32: compiler.err.flows.through.from.pattern
 - compiler.note.preview.filename: UnnamedErrors.java, DEFAULT
 - compiler.note.preview.recompile
-23 errors
+24 errors

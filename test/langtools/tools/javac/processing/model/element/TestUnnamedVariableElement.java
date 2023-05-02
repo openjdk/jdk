@@ -75,6 +75,11 @@ public class TestUnnamedVariableElement extends JavacTestingAbstractProcessor im
         @Override
         public Void visitVariable(VariableTree node, Void unused) {
             handleTreeAsLocalVar(getCurrentPath());
+
+            if(!node.getName().toString().equals("_")) {
+                throw new RuntimeException("Expected the underscore as the name of the Tree API but got: " + node.getName());
+            }
+
             return super.visitVariable(node, unused);
         }
 
@@ -87,7 +92,7 @@ public class TestUnnamedVariableElement extends JavacTestingAbstractProcessor im
                 throw new RuntimeException("Expected a local variable, but got: " +
                         element.getKind());
             }
-            if (!elements.isUnnamed(element)) {
+            if (!elements.isUnnamed(element) || !element.getSimpleName().isEmpty()) {
                 throw new RuntimeException("Expected empty name for simple name of an unnamed variable, but got: " +
                         element.getSimpleName());
             }

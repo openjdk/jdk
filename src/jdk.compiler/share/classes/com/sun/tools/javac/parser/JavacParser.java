@@ -3553,7 +3553,6 @@ public class JavacParser implements Parser {
         JCExpression init = null;
 
         if (Feature.UNNAMED_VARIABLES.allowedInSource(source) && name == names.underscore) {
-            mods.flags |= Flags.UNNAMED;
             if (!localDecl && !isTypePattern) {
                 log.error(DiagnosticFlag.SYNTAX, pos, Errors.UnderscoreAsIdentifier);
             }
@@ -3661,7 +3660,6 @@ public class JavacParser implements Parser {
             mods.annotations.nonEmpty()) {
             JCExpression pn;
             if (token.kind == UNDERSCORE && (catchParameter || lambdaParameter)) {
-                mods.flags |= Flags.UNNAMED;
                 pn = toP(F.at(token.pos).Ident(identOrUnderscore()));
             } else {
                 pn = qualident(false);
@@ -3706,7 +3704,7 @@ public class JavacParser implements Parser {
         }
         type = bracketsOpt(type);
 
-        if ((mods.flags & Flags.UNNAMED) != 0 && Feature.UNNAMED_VARIABLES.allowedInSource(source)) {
+        if (Feature.UNNAMED_VARIABLES.allowedInSource(source) && name == names.underscore) {
             name = names.empty;
         }
 

@@ -291,13 +291,9 @@ public class MemberEnter extends JCTree.Visitor {
         Type vartype = tree.isImplicitlyTyped()
                 ? env.info.scope.owner.kind == MTH ? Type.noType : syms.errType
                 : tree.vartype.type;
-        Name name;
-        if (Feature.UNNAMED_VARIABLES.allowedInSource(source) && (tree.mods.flags & UNNAMED) != 0) {
-            name = names.empty;
-        } else {
-            name = tree.name;
-        }
-        VarSymbol v = new VarSymbol(0, name , vartype, enclScope.owner);
+        Name name = tree.name;
+        if (Feature.UNNAMED_VARIABLES.allowedInSource(source) && name == names.underscore) name = names.empty;
+        VarSymbol v = new VarSymbol(0, name, vartype, enclScope.owner);
         v.flags_field = chk.checkFlags(tree.pos(), tree.mods.flags, v, tree);
         tree.sym = v;
         if (tree.init != null) {

@@ -275,9 +275,8 @@ public class Flags {
     public static final long THROWS = 1L<<47;
 
     /**
-     * Flag that indicates that a local variable, a lambda parameter, or an unnamed pattern variable is unnamed.
+     * Currently available: Bit 48.
      */
-    public static final long UNNAMED = 1L<<48;
 
     /**
      * Flag that marks a synthetic method body for a lambda expression
@@ -518,7 +517,6 @@ public class Flags {
         BAD_OVERRIDE(Flags.BAD_OVERRIDE),
         SIGNATURE_POLYMORPHIC(Flags.SIGNATURE_POLYMORPHIC),
         THROWS(Flags.THROWS),
-        UNNAMED(Flags.UNNAMED),
         LAMBDA_METHOD(Flags.LAMBDA_METHOD),
         TYPE_TRANSLATED(Flags.TYPE_TRANSLATED),
         MODULE(Flags.MODULE),

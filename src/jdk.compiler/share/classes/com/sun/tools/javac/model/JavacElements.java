@@ -723,7 +723,7 @@ public class JavacElements implements Elements {
     @Override @DefinedBy(Api.LANGUAGE_MODEL)
     public boolean isUnnamed(Element element) {
         Symbol sym = (Symbol) element;
-        return (sym.flags() & Flags.UNNAMED) != 0;
+        return sym.isUnnamed();
     }
 
     @Override @DefinedBy(Api.LANGUAGE_MODEL)
