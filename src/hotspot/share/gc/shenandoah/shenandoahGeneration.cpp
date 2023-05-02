@@ -833,12 +833,15 @@ void ShenandoahGeneration::prepare_regions_and_collection_set(bool concurrent) {
     }
   }
 
+  // Freeset construction uses reserve quantities if they are valid
+  heap->set_evacuation_reserve_quantities(true);
   {
     ShenandoahGCPhase phase(concurrent ? ShenandoahPhaseTimings::final_rebuild_freeset :
                             ShenandoahPhaseTimings::degen_gc_final_rebuild_freeset);
     ShenandoahHeapLocker locker(heap->lock());
     heap->free_set()->rebuild();
   }
+  heap->set_evacuation_reserve_quantities(false);
 }
 
 bool ShenandoahGeneration::is_bitmap_clear() {

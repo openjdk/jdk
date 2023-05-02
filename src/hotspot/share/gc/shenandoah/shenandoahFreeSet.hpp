@@ -29,30 +29,136 @@
 #include "gc/shenandoah/shenandoahHeapRegionSet.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 
+enum ShenandoahFreeMemoryType : uint8_t {
+  NotFree,
+  Mutator,
+  Collector,
+  OldCollector,
+  NumFreeSets
+};
+
+class ShenandoahSetsOfFree {
+
+private:
+  size_t _max;                  // The maximum number of heap regions
+  ShenandoahFreeSet* _free_set;
+  size_t _region_size_bytes;
+  ShenandoahFreeMemoryType* _membership;
+  size_t _leftmosts[NumFreeSets];
+  size_t _rightmosts[NumFreeSets];
+  size_t _leftmosts_empty[NumFreeSets];
+  size_t _rightmosts_empty[NumFreeSets];
+  size_t _capacity_of[NumFreeSets];
+  size_t _used_by[NumFreeSets];
+  bool _left_to_right_bias[NumFreeSets];
+  size_t _region_counts[NumFreeSets];
+
+  inline void shrink_bounds_if_touched(ShenandoahFreeMemoryType set, size_t idx);
+  inline void expand_bounds_maybe(ShenandoahFreeMemoryType set, size_t idx, size_t capacity);
+
+  // Restore all state variables to initial default state.
+  void clear_internal();
+
+public:
+  ShenandoahSetsOfFree(size_t max_regions, ShenandoahFreeSet* free_set);
+  ~ShenandoahSetsOfFree();
+
+  // Make all regions NotFree and reset all bounds
+  void clear_all();
+
+  // Remove or retire region idx from all free sets.  Requires that idx is in a free set.  This does not affect capacity.
+  void remove_from_free_sets(size_t idx);
+
+  // Place region idx into free set which_set.  Requires that idx is currently NotFree.
+  void make_free(size_t idx, ShenandoahFreeMemoryType which_set, size_t region_capacity);
+
+  // Place region idx into free set new_set.  Requires that idx is currently not NotFRee.
+  void move_to_set(size_t idx, ShenandoahFreeMemoryType new_set, size_t region_capacity);
+
+  // Returns the ShenandoahFreeMemoryType affiliation of region idx, or NotFree if this region is not currently free.  This does
+  // not enforce that free_set membership implies allocation capacity.
+  inline ShenandoahFreeMemoryType membership(size_t idx) const;
+
+  // Returns true iff region idx is in the test_set free_set.  Before returning true, asserts that the free
+  // set is not empty.  Requires that test_set != NotFree or NumFreeSets.
+  inline bool in_free_set(size_t idx, ShenandoahFreeMemoryType which_set) const;
+
+  // The following four methods return the left-most and right-most bounds on ranges of regions representing
+  // the requested set.  The _empty variants represent bounds on the range that holds completely empty
+  // regions, which are required for humongous allocations and desired for "very large" allocations.  A
+  // return value of -1 from leftmost() or leftmost_empty() denotes that the corresponding set is empty.
+  // In other words:
+  //   if the requested which_set is empty:
+  //     leftmost() and leftmost_empty() return _max, rightmost() and rightmost_empty() return 0
+  //   otherwise, expect the following:
+  //     0 <= leftmost <= leftmost_empty <= rightmost_empty <= rightmost < _max
+  inline size_t leftmost(ShenandoahFreeMemoryType which_set) const;
+  inline size_t rightmost(ShenandoahFreeMemoryType which_set) const;
+  size_t leftmost_empty(ShenandoahFreeMemoryType which_set);
+  size_t rightmost_empty(ShenandoahFreeMemoryType which_set);
+
+  inline void increase_used(ShenandoahFreeMemoryType which_set, size_t bytes);
+
+  inline size_t capacity_of(ShenandoahFreeMemoryType which_set) const {
+    assert (which_set > NotFree && which_set < NumFreeSets, "selected free set must be valid");
+    return _capacity_of[which_set];
+  }
+
+  inline size_t used_by(ShenandoahFreeMemoryType which_set) const {
+    assert (which_set > NotFree && which_set < NumFreeSets, "selected free set must be valid");
+    return _used_by[which_set];
+  }
+
+  inline size_t max() const { return _max; }
+
+  inline size_t count(ShenandoahFreeMemoryType which_set) const { return _region_counts[which_set]; }
+
+  // Return true iff regions for allocation from this set should be peformed left to right.  Otherwise, allocate
+  // from right to left.
+  inline bool alloc_from_left_bias(ShenandoahFreeMemoryType which_set);
+
+  // Determine whether we prefer to allocate from left to right or from right to left for this free-set.
+  void establish_alloc_bias(ShenandoahFreeMemoryType which_set);
+
+  // Assure leftmost, rightmost, leftmost_empty, and rightmost_empty bounds are valid for all free sets.
+  // Valid bounds honor all of the following (where max is the number of heap regions):
+  //   if the set is empty, leftmost equals max and rightmost equals 0
+  //   Otherwise (the set is not empty):
+  //     0 <= leftmost < max and 0 <= rightmost < max
+  //     the region at leftmost is in the set
+  //     the region at rightmost is in the set
+  //     rightmost >= leftmost
+  //     for every idx that is in the set {
+  //       idx >= leftmost &&
+  //       idx <= rightmost
+  //     }
+  //   if the set has no empty regions, leftmost_empty equals max and rightmost_empty equals 0
+  //   Otherwise (the region has empty regions):
+  //     0 <= lefmost_empty < max and 0 <= rightmost_empty < max
+  //     rightmost_empty >= leftmost_empty
+  //     for every idx that is in the set and is empty {
+  //       idx >= leftmost &&
+  //       idx <= rightmost
+  //     }
+  void assert_bounds() NOT_DEBUG_RETURN;
+};
+
 class ShenandoahFreeSet : public CHeapObj<mtGC> {
 private:
   ShenandoahHeap* const _heap;
-  CHeapBitMap _mutator_free_bitmap;
-  CHeapBitMap _collector_free_bitmap;
-  size_t _max;
-
-  // Left-most and right-most region indexes. There are no free regions outside
-  // of [left-most; right-most] index intervals
-  size_t _mutator_leftmost, _mutator_rightmost;
-  size_t _collector_leftmost, _collector_rightmost;
-
-  size_t _capacity;
-  size_t _used;
-
-  void assert_bounds() const NOT_DEBUG_RETURN;
-
-  bool is_mutator_free(size_t idx) const;
-  bool is_collector_free(size_t idx) const;
+  ShenandoahSetsOfFree _free_sets;
 
   HeapWord* try_allocate_in(ShenandoahHeapRegion* region, ShenandoahAllocRequest& req, bool& in_new_region);
+
   HeapWord* allocate_aligned_plab(size_t size, ShenandoahAllocRequest& req, ShenandoahHeapRegion* r);
+
+  // Satisfy young-generation or single-generation collector allocation request req by finding memory that matches
+  // affiliation, which either equals req.affiliation or FREE.  We know req.is_young().
   HeapWord* allocate_with_affiliation(ShenandoahAffiliation affiliation, ShenandoahAllocRequest& req, bool& in_new_region);
-  HeapWord* allocate_with_old_affiliation(ShenandoahAllocRequest& req, bool& in_new_region);
+
+  // Satisfy allocation request req by finding memory that matches affiliation, which either equals req.affiliation
+  // or FREE. We know req.is_old().
+  HeapWord* allocate_old_with_affiliation(ShenandoahAffiliation affiliation, ShenandoahAllocRequest& req, bool& in_new_region);
 
   // While holding the heap lock, allocate memory for a single object which is to be entirely contained
   // within a single HeapRegion as characterized by req.  The req.size() value is known to be less than or
@@ -64,29 +170,22 @@ private:
   HeapWord* allocate_contiguous(ShenandoahAllocRequest& req);
 
   void flip_to_gc(ShenandoahHeapRegion* r);
+  void flip_to_old_gc(ShenandoahHeapRegion* r);
 
-  void recompute_bounds();
-  void adjust_bounds();
-  bool touches_bounds(size_t num) const;
-
-  // Used of free set represents the amount of is_mutator_free set that has been consumed since most recent rebuild.
-  void increase_used(size_t amount);
   void clear_internal();
 
   void try_recycle_trashed(ShenandoahHeapRegion *r);
 
-  bool can_allocate_from(ShenandoahHeapRegion *r);
-  size_t alloc_capacity(ShenandoahHeapRegion *r);
-  bool has_no_alloc_capacity(ShenandoahHeapRegion *r);
+  bool can_allocate_from(ShenandoahHeapRegion *r) const;
+  bool has_alloc_capacity(size_t idx) const;
+  bool has_alloc_capacity(ShenandoahHeapRegion *r) const;
+  bool has_no_alloc_capacity(ShenandoahHeapRegion *r) const;
 
 public:
   ShenandoahFreeSet(ShenandoahHeap* heap, size_t max_regions);
 
-  // Number of regions dedicated to GC allocations (for evacuation or promotion) that are currently free
-  size_t collector_count() const { return _collector_free_bitmap.count_one_bits(); }
-
-  // Number of regions dedicated to mutator allocations that are currently free
-  size_t mutator_count()   const { return _mutator_free_bitmap.count_one_bits();   }
+  size_t alloc_capacity(ShenandoahHeapRegion *r) const;
+  size_t alloc_capacity(size_t idx) const;
 
   void clear();
   void rebuild();
@@ -95,11 +194,11 @@ public:
 
   void log_status();
 
-  size_t capacity()  const { return _capacity; }
-  size_t used()      const { return _used;     }
-  size_t available() const {
-    assert(_used <= _capacity, "must use less than capacity");
-    return _capacity - _used;
+  inline size_t capacity()  const { return _free_sets.capacity_of(Mutator); }
+  inline size_t used()      const { return _free_sets.used_by(Mutator);     }
+  inline size_t available() const {
+    assert(used() <= capacity(), "must use less than capacity");
+    return capacity() - used();
   }
 
   HeapWord* allocate(ShenandoahAllocRequest& req, bool& in_new_region);
@@ -110,7 +209,8 @@ public:
 
   void print_on(outputStream* out) const;
 
-  void reserve_regions(size_t to_reserve);
+  void find_regions_with_alloc_capacity();
+  void reserve_regions(size_t young_reserve, size_t old_reserve);
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHFREESET_HPP

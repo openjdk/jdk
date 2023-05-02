@@ -1199,8 +1199,8 @@ void ShenandoahConcurrentGC::op_final_updaterefs() {
     Universe::verify();
   }
 
-  heap->rebuild_free_set(true /*concurrent*/);
   heap->adjust_generation_sizes();
+  heap->rebuild_free_set(true /*concurrent*/);
 }
 
 void ShenandoahConcurrentGC::op_final_roots() {
