@@ -270,12 +270,15 @@
  * </ul>
  *
  * <h2 id="PP">Property Precedence</h2>
- * Properties in this module can be set in multiple ways, including using
- * the API properties, system properties,
- * <a href="#ConfigurationFile">XML Library (java.xml) Configuration File</a>,
- * the {@link javax.xml.XMLConstants#FEATURE_SECURE_PROCESSING FEATURE_SECURE_PROCESSING}
- * (hereafter referred to FSP), and the default values. The order of precedence
- * for the configuration sources is defined as follows, with earlier ones overriding the later:
+ * Properties in this module can be set in multiple ways, including via the APIs,
+ * system properties (on the command line or through the System API), and the
+ * <a href="#ConfigurationFile">XML Library (java.xml) Configuration File</a>.
+ * When not explicitly set, they will be initialized with the default values or
+ * the restrictive values specified by the
+ * {@link javax.xml.XMLConstants#FEATURE_SECURE_PROCESSING FEATURE_SECURE_PROCESSING}
+ * (hereafter referred to FSP) if it is true.
+ * The order of precedence for the configuration sources is defined as follows,
+ * with earlier ones overriding the later:
  *
  * <ul>
  * <li><p>
