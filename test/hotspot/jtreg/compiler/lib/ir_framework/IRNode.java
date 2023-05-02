@@ -304,16 +304,6 @@ public class IRNode {
         beforeMatchingNameRegex(CMOVE_I, "CMoveI");
     }
 
-    public static final String CMOVE_VD = PREFIX + "CMOVE_VD" + POSTFIX;
-    static {
-        superWordNodes(CMOVE_VD, "CMoveVD");
-    }
-
-    public static final String CMOVE_VF = PREFIX + "CMOVE_VF" + POSTFIX;
-    static {
-        superWordNodes(CMOVE_VF, "CMoveVF");
-    }
-
     public static final String CMP_I = PREFIX + "CMP_I" + POSTFIX;
     static {
         beforeMatchingNameRegex(CMP_I, "CmpI");

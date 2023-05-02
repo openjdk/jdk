@@ -33,7 +33,6 @@ import jdk.test.lib.Utils;
  * @bug 8289422
  * @key randomness
  * @summary Auto-vectorization enhancement to support vector conditional move.
- * @requires os.arch == "aarch64" | vm.simpleArch == "x64"
  * @library /test/lib /
  * @run driver compiler.c2.irTests.TestVectorConditionalMove vanilla
  */
@@ -43,7 +42,6 @@ import jdk.test.lib.Utils;
  * @bug 8289422 8306088
  * @key randomness
  * @summary Change vector size to MaxVectorSize=32
- * @requires os.arch == "aarch64" | vm.simpleArch == "x64"
  * @library /test/lib /
  * @run driver compiler.c2.irTests.TestVectorConditionalMove vec-32
  */
@@ -53,7 +51,6 @@ import jdk.test.lib.Utils;
  * @bug 8289422 8306088
  * @key randomness
  * @summary Change vector size to MaxVectorSize=32
- * @requires os.arch == "aarch64" | vm.simpleArch == "x64"
  * @library /test/lib /
  * @run driver compiler.c2.irTests.TestVectorConditionalMove vec-16
  */
@@ -226,7 +223,7 @@ public class TestVectorConditionalMove {
     }
 
     @Test
-    @IR(failOn = {IRNode.CMOVE_VD})
+    @IR(failOn = {IRNode.VECTOR_MASK_CMP, IRNode.VECTOR_BLEND})
     private static void testCMoveVDUnsupported() {
         int seed = 1001;
         for (int i = 0; i < doublec.length; i++) {
