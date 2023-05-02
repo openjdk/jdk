@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 7083187
- * @summary  Verifies if CSS.FontSize attribute is same
+ * @summary  Verifies if CSS.FontSize,CSS.FontFamily,CSS.FontWeight attribute is same
  * @run main CSSAttributeEqualityBug
  */
 
