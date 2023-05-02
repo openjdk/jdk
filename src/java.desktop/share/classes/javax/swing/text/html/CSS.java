@@ -2023,6 +2023,7 @@ public class CSS implements Serializable {
         boolean isSup() {
             return (svalue.contains("sup"));
         }
+
     }
 
     /**
@@ -2200,17 +2201,13 @@ public class CSS implements Serializable {
             return Integer.valueOf(getValue(null, null));
         }
 
+        @Override
         public int hashCode() {
             return Float.hashCode(value);
         }
+        @Override
         public boolean equals(Object val) {
-            if (val instanceof CSS.FontSize size) {
-                if (value == size.value) {
-                    return true;
-                }
-                return false;
-            }
-            return false;
+            return val instanceof CSS.FontSize size && value == size.value;
         }
 
         float value;
@@ -2313,6 +2310,19 @@ public class CSS implements Serializable {
             return family;
         }
 
+        @Override
+        public int hashCode() {
+            if (family != null) {
+                return family.hashCode();
+            } else {
+                return 0;
+            }
+        }
+        @Override
+        public boolean equals(Object val) {
+            return val instanceof CSS.FontFamily font && family == font.family;
+        }
+
         String family;
     }
 
@@ -2374,6 +2384,15 @@ public class CSS implements Serializable {
 
         boolean isBold() {
             return (weight > 500);
+        }
+
+        @Override
+        public int hashCode() {
+            return Integer.hashCode(weight);
+        }
+        @Override
+        public boolean equals(Object val) {
+            return val instanceof CSS.FontWeight fontWeight && weight == fontWeight.weight;
         }
 
         int weight;
@@ -3004,6 +3023,7 @@ public class CSS implements Serializable {
         short type;
         float value;
         String units = null;
+
 
         static final short UNINITIALIZED_LENGTH = (short)10;
     }

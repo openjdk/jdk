@@ -22,7 +22,6 @@
  */
 /*
  * @test
- * @key headful
  * @bug 7083187
  * @summary  Verifies if CSS.FontSize attribute is same
  * @run main CSSBug
@@ -31,9 +30,15 @@ import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.html.CSS;
 import javax.swing.text.html.StyleSheet;
 
-public class CSSBug {
+public class CSSAttributeEqualityBug {
 
     public static void main(String[] args) {
+        testFontSize();
+        testFontFamily();
+        testFontWeight();
+    }
+
+    private static void testFontSize() {
         StyleSheet ss = new StyleSheet();
         String fontSize = "42";
 
@@ -43,12 +48,51 @@ public class CSSBug {
         SimpleAttributeSet b = new SimpleAttributeSet();
         ss.addCSSAttribute( b, CSS.Attribute.FONT_SIZE, fontSize);
 
-        if (a.isEqual( b) ) {
+        if (a.isEqual(b)) {
             System.out.println( "a equals b");
         } else {
             System.out.println("a = " + a);
             System.out.println("b = " + b);
-            throw new RuntimeException("Attribute a is not equal to b");
+            throw new RuntimeException("CSS.Attribute.FontSize a is not equal to b");
+        }
+    }
+
+    private static void testFontFamily() {
+        StyleSheet ss = new StyleSheet();
+        String fontFamily = "Sans-Serif";
+
+        SimpleAttributeSet a = new SimpleAttributeSet();
+        ss.addCSSAttribute( a, CSS.Attribute.FONT_FAMILY, fontFamily);
+
+        SimpleAttributeSet b = new SimpleAttributeSet();
+        ss.addCSSAttribute( b, CSS.Attribute.FONT_FAMILY, fontFamily);
+
+        if (a.isEqual(b)) {
+            System.out.println( "a equals b");
+        } else {
+            System.out.println("a = " + a);
+            System.out.println("b = " + b);
+            throw new RuntimeException("CSS.Attribute.FontFamily a is not equal to b");
+        }
+    }
+
+    private static void testFontWeight() {
+        StyleSheet ss = new StyleSheet();
+        String fontWeight = "bold";
+
+        SimpleAttributeSet a = new SimpleAttributeSet();
+        ss.addCSSAttribute( a, CSS.Attribute.FONT_WEIGHT, fontWeight);
+
+        SimpleAttributeSet b = new SimpleAttributeSet();
+        ss.addCSSAttribute( b, CSS.Attribute.FONT_WEIGHT, fontWeight);
+
+        if (a.isEqual(b)) {
+            System.out.println( "a equals b");
+        } else {
+            System.out.println("a = " + a);
+            System.out.println("b = " + b);
+            throw new RuntimeException("CSS.Attribute.FontWeight a is not equal to b");
         }
     }
 }
+
