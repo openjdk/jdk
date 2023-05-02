@@ -103,7 +103,7 @@ public class NoFormatsDropTest implements AWTEventListener {
             InvocationTargetException {
         try {
             Robot robot = new Robot();
-            robot.setAutoWaitForIdle(true);
+            robot.waitForIdle();
             robot.delay(FRAME_ACTIVATION_TIMEOUT);
 
             final Point srcPoint = dragSourcePanel.getLocationOnScreen();
