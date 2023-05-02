@@ -162,10 +162,10 @@ private:
     HeapWord* _to;
   };
 
-  static const size_t TABLE_SIZE = 1024;
+  static const uint TABLE_SIZE = 1024;
   FallbackTableEntry _table[TABLE_SIZE];
 
-  static size_t home_index(HeapWord* from);
+  static uint home_index(HeapWord* from);
 
 public:
   FallbackTable();

@@ -53,14 +53,14 @@ uintptr_t SlidingForwarding::encode_forwarding(HeapWord* from, HeapWord* to) {
   if (_bases_table[base_idx] == UNUSED_BASE) {
     // Primary is free
     _bases_table[base_idx] = to_region_base;
-  } else if (region_contains(_bases_table[base_idx], to)) {
+  } else if (_bases_table[base_idx] == to_region_base) {
     // Primary is good
   } else {
     size_t base_idx_alt = base_idx + 1;
     if (_bases_table[base_idx_alt] == UNUSED_BASE) {
       // Alternate is free
       _bases_table[base_idx_alt] = to_region_base;
-    } else if (region_contains(_bases_table[base_idx_alt], to)) {
+    } else if (_bases_table[base_idx_alt] == to_region_base) {
       // Alternate is good
     } else {
       // Both primary and alternate are not fitting
@@ -85,6 +85,7 @@ uintptr_t SlidingForwarding::encode_forwarding(HeapWord* from, HeapWord* to) {
 
 HeapWord* SlidingForwarding::decode_forwarding(HeapWord* from, uintptr_t encoded) const {
   assert((encoded & markWord::marked_value) == markWord::marked_value, "must be marked as forwarded");
+  assert((encoded & FALLBACK_MASK) == 0, "must not be fallback-forwarded");
   size_t alt_region = (encoded >> ALT_REGION_SHIFT) & right_n_bits(ALT_REGION_BITS);
   assert(alt_region < NUM_TARGET_REGIONS, "Sanity");
   uintptr_t offset = (encoded >> OFFSET_BITS_SHIFT);
@@ -92,10 +93,12 @@ HeapWord* SlidingForwarding::decode_forwarding(HeapWord* from, uintptr_t encoded
   size_t from_idx = region_index_containing(from) * NUM_TARGET_REGIONS;
   size_t base_idx = from_idx + alt_region;
 
-  HeapWord* decoded = _bases_table[base_idx] + offset;
+  HeapWord* base = _bases_table[base_idx];
+  assert(base != UNUSED_BASE, "must not be unused base");
+  HeapWord* decoded = base + offset;
   assert(decoded >= _heap_start,
          "Address must be above heap start. encoded: " INTPTR_FORMAT ", alt_region: " SIZE_FORMAT ", base: " PTR_FORMAT,
-         encoded, alt_region, p2i(_bases_table[base_idx]));
+         encoded, alt_region, p2i(base));
 
   return decoded;
 }

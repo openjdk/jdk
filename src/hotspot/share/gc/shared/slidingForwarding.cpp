@@ -32,7 +32,7 @@
 #ifdef _LP64
 
 // We cannot use 0, because that may already be a valid base address in zero-based heaps.
-// 0x1 is safe because heap base addresses must be aligned by much larger alginemnt
+// 0x1 is safe because heap base addresses must be aligned by much larger alignment
 HeapWord* const SlidingForwarding::UNUSED_BASE = reinterpret_cast<HeapWord*>(0x1);
 
 SlidingForwarding::SlidingForwarding(MemRegion heap, size_t region_size_words)
@@ -42,6 +42,8 @@ SlidingForwarding::SlidingForwarding(MemRegion heap, size_t region_size_words)
     _region_size_words_shift(log2i_exact(region_size_words)),
   _bases_table(nullptr),
   _fallback_table(nullptr) {
+  assert(_region_size_words >= 1, "regions must be at least a word large");
+  assert(_region_size_words <= pointer_delta(heap.end(), heap.start()), "");
   assert(_region_size_words_shift <= NUM_OFFSET_BITS, "regions must not be larger than maximum addressing bits allow");
   size_t heap_size_words = heap.end() - heap.start();
   if (UseSerialGC && heap_size_words <= (1 << NUM_OFFSET_BITS)) {
@@ -54,14 +56,10 @@ SlidingForwarding::SlidingForwarding(MemRegion heap, size_t region_size_words)
 }
 
 SlidingForwarding::~SlidingForwarding() {
-  if (_bases_table != nullptr) {
-    FREE_C_HEAP_ARRAY(HeapWord*, _bases_table);
-    _bases_table = nullptr;
-  }
-  if (_fallback_table != nullptr) {
-    delete _fallback_table;
-    _fallback_table = nullptr;
-  }
+  FREE_C_HEAP_ARRAY(region_bases, _bases_table);
+  _bases_table = nullptr;
+  delete _fallback_table;
+  _fallback_table = nullptr;
 }
 
 void SlidingForwarding::begin() {
@@ -78,10 +76,8 @@ void SlidingForwarding::end() {
   FREE_C_HEAP_ARRAY(HeapWord*, _bases_table);
   _bases_table = nullptr;
 
-  if (_fallback_table != nullptr) {
-    delete _fallback_table;
-    _fallback_table = nullptr;
-  }
+  delete _fallback_table;
+  _fallback_table = nullptr;
 }
 
 void SlidingForwarding::fallback_forward_to(HeapWord* from, HeapWord* to) {
@@ -115,7 +111,7 @@ FallbackTable::~FallbackTable() {
   }
 }
 
-size_t FallbackTable::home_index(HeapWord* from) {
+uint FallbackTable::home_index(HeapWord* from) {
   uint64_t val = reinterpret_cast<uint64_t>(from);
   // This is the mixer stage of the murmur3 hashing:
   // https://github.com/aappleby/smhasher/blob/master/src/MurmurHash3.cpp
@@ -126,20 +122,23 @@ size_t FallbackTable::home_index(HeapWord* from) {
   val ^= val >> 33;
   // Shift to table-size.
   val = val >> (64 - log2i_exact(TABLE_SIZE));
-  size_t idx = static_cast<size_t>(val);
-  assert(idx < TABLE_SIZE, "must fit in table: idx: " SIZE_FORMAT ", table-size: " SIZE_FORMAT ", table-size-bits: %d",
+  uint idx = static_cast<uint>(val);
+  assert(idx < TABLE_SIZE, "must fit in table: idx: %u, table-size: %u, table-size-bits: %d",
          idx, TABLE_SIZE, log2i_exact(TABLE_SIZE));
   return idx;
 }
 
 void FallbackTable::forward_to(HeapWord* from, HeapWord* to) {
-  size_t idx = home_index(from);
-  if (_table[idx]._from != nullptr) {
-    FallbackTableEntry* entry = NEW_C_HEAP_OBJ(FallbackTableEntry, mtGC);
-    entry->_next = _table[idx]._next;
-    entry->_from = _table[idx]._from;
-    entry->_to = _table[idx]._to;
-    _table[idx]._next = entry;
+  uint idx = home_index(from);
+  HeapWord* found = _table[idx]._from;
+  if (found != nullptr) {
+    if (found != from) {
+      FallbackTableEntry* entry = NEW_C_HEAP_OBJ(FallbackTableEntry, mtGC);
+      entry->_next = _table[idx]._next;
+      entry->_from = _table[idx]._from;
+      entry->_to = _table[idx]._to;
+      _table[idx]._next = entry;
+    } // Else fall-through and update entry below.
   } else {
     assert(_table[idx]._next == nullptr, "next-link should be null here");
   }
@@ -148,7 +147,7 @@ void FallbackTable::forward_to(HeapWord* from, HeapWord* to) {
 }
 
 HeapWord* FallbackTable::forwardee(HeapWord* from) const {
-  size_t idx = home_index(from);
+  uint idx = home_index(from);
   const FallbackTableEntry* entry = &_table[idx];
   while (entry != nullptr) {
     if (entry->_from == from) {
