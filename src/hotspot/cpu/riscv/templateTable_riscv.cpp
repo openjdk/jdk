@@ -2023,15 +2023,7 @@ void TemplateTable::fast_binaryswitch() {
     // else [i = h]
     // Convert array[h].match to native byte-ordering before compare
     __ shadd(temp, h, array, temp, 3);
-    if (AvoidUnalignedAccesses) {
-      // array is BytesPerInt (aka 4) aligned
-      __ lwu(t1, Address(temp,4));
-      __ slli(t1, t1, 32);
-      __ lwu(temp, Address(temp, 0));
-      __ add(temp, temp, t1);
-    } else {
-      __ ld(temp, Address(temp, 0));
-    }
+    __ lwu(temp, Address(temp, 0));
     __ revb_w_w(temp, temp); // reverse bytes in word (32bit) and sign-extend
 
     Label L_done, L_greater;
@@ -2054,15 +2046,7 @@ void TemplateTable::fast_binaryswitch() {
   Label default_case;
   // Convert array[i].match to native byte-ordering before compare
   __ shadd(temp, i, array, temp, 3);
-  if (AvoidUnalignedAccesses) {
-    // array is BytesPerInt (aka 4) aligned
-    __ lwu(t1, Address(temp,4));
-    __ slli(t1, t1, 32);
-    __ lwu(temp, Address(temp, 0));
-    __ add(temp, temp, t1);
-  } else {
-    __ ld(temp, Address(temp, 0));
-  }
+  __ lwu(temp, Address(temp, 0));
   __ revb_w_w(temp, temp); // reverse bytes in word (32bit) and sign-extend
   __ bne(key, temp, default_case);
 
