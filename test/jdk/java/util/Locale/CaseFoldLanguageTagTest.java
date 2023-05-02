@@ -31,11 +31,13 @@
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import java.util.IllformedLocaleException;
 import java.util.Locale;
 import java.util.stream.Stream;
 
@@ -45,7 +47,7 @@ import java.util.stream.Stream;
  * language, extlang, script, region, variant, extension, singleton, privateuse,
  * grandfathered, and irregular. For more info, see the following,
  * <a href="https://www.rfc-editor.org/rfc/rfc5646.html#section-2.1">Tag Syntax</a>).
- * In addition, the method is tested to ensure that IllegalArgumentException and
+ * In addition, the method is tested to ensure that IllformedLocaleException and
  * NullPointerException are thrown given the right circumstances.
  */
 public class caseFoldLanguageTagTest {
@@ -59,18 +61,14 @@ public class caseFoldLanguageTagTest {
     @ParameterizedTest
     @MethodSource("illFormedTags")
     public void TestIllFormedTags(String tag) {
-        try {
-            Locale.caseFoldLanguageTag(tag);
-            throw new RuntimeException("$$$ Failure: ill formed tags should throw IAE");
-        } catch (IllegalArgumentException ignored) {}
+        assertThrows(IllformedLocaleException.class, () ->
+                Locale.caseFoldLanguageTag(tag));
     }
 
     @Test
     public void TestNPE() {
-        try {
-            Locale.caseFoldLanguageTag(null);
-            throw new RuntimeException("$$$ Failure: NPE should be thrown when tag is null");
-        } catch (NullPointerException ignored) {}
+        assertThrows(NullPointerException.class, () ->
+                Locale.caseFoldLanguageTag(null));
     }
 
     private static Stream<Arguments> wellFormedTags() {
