@@ -3910,24 +3910,53 @@ JVM_LEAF(jint, JVM_FindSignal(const char *name))
   return os::get_signal_number(name);
 JVM_END
 
-// If notifications are disabled then just update the VTMS transition bit and return.
-// Otherwise, the bit is updated in the given jvmtiVTMSTransitionDisabler function call.
-JVM_ENTRY(void, JVM_VirtualThreadMount(JNIEnv* env, jobject vthread, jboolean hide, jboolean first_mount))
+JVM_ENTRY(void, JVM_VirtualThreadStart(JNIEnv* env, jobject vthread))
 #if INCLUDE_JVMTI
   if (!DoJVMTIVirtualThreadTransitions) {
     assert(!JvmtiExport::can_support_virtual_threads(), "sanity check");
     return;
   }
-  if (!JvmtiVTMSTransitionDisabler::VTMS_notify_jvmti_events()) {
-    thread->set_is_in_VTMS_transition(hide);
-    oop vt = JNIHandles::resolve_external_guard(vthread);
-    java_lang_Thread::set_is_in_VTMS_transition(vt, hide);
+  if (JvmtiVTMSTransitionDisabler::VTMS_notify_jvmti_events()) {
+    JvmtiVTMSTransitionDisabler::VTMS_vthread_start(vthread);
+  } else {
+    // set VTMS transition bit value in JavaThread and java.lang.VirtualThread object
+    JvmtiVTMSTransitionDisabler::set_is_in_VTMS_transition(thread, vthread, false);
+  }
+#else
+  fatal("Should only be called with JVMTI enabled");
+#endif
+JVM_END
+
+JVM_ENTRY(void, JVM_VirtualThreadEnd(JNIEnv* env, jobject vthread))
+#if INCLUDE_JVMTI
+  if (!DoJVMTIVirtualThreadTransitions) {
+    assert(!JvmtiExport::can_support_virtual_threads(), "sanity check");
     return;
   }
-  if (hide) {
-   JvmtiVTMSTransitionDisabler::VTMS_mount_begin(vthread, first_mount);
+  if (JvmtiVTMSTransitionDisabler::VTMS_notify_jvmti_events()) {
+    JvmtiVTMSTransitionDisabler::VTMS_vthread_end(vthread);
   } else {
-   JvmtiVTMSTransitionDisabler::VTMS_mount_end(vthread, first_mount);
+    // set VTMS transition bit value in JavaThread and java.lang.VirtualThread object
+    JvmtiVTMSTransitionDisabler::set_is_in_VTMS_transition(thread, vthread, true);
+  }
+#else
+  fatal("Should only be called with JVMTI enabled");
+#endif
+JVM_END
+
+// If notifications are disabled then just update the VTMS transition bit and return.
+// Otherwise, the bit is updated in the given jvmtiVTMSTransitionDisabler function call.
+JVM_ENTRY(void, JVM_VirtualThreadMount(JNIEnv* env, jobject vthread, jboolean hide))
+#if INCLUDE_JVMTI
+  if (!DoJVMTIVirtualThreadTransitions) {
+    assert(!JvmtiExport::can_support_virtual_threads(), "sanity check");
+    return;
+  }
+  if (JvmtiVTMSTransitionDisabler::VTMS_notify_jvmti_events()) {
+    JvmtiVTMSTransitionDisabler::VTMS_vthread_mount(vthread, hide);
+  } else {
+    // set VTMS transition bit value in JavaThread and java.lang.VirtualThread object
+    JvmtiVTMSTransitionDisabler::set_is_in_VTMS_transition(thread, vthread, hide);
   }
 #else
   fatal("Should only be called with JVMTI enabled");
@@ -3936,22 +3965,17 @@ JVM_END
 
 // If notifications are disabled then just update the VTMS transition bit and return.
 // Otherwise, the bit is updated in the given jvmtiVTMSTransitionDisabler function call below.
-JVM_ENTRY(void, JVM_VirtualThreadUnmount(JNIEnv* env, jobject vthread, jboolean hide, jboolean last_unmount))
+JVM_ENTRY(void, JVM_VirtualThreadUnmount(JNIEnv* env, jobject vthread, jboolean hide))
 #if INCLUDE_JVMTI
   if (!DoJVMTIVirtualThreadTransitions) {
     assert(!JvmtiExport::can_support_virtual_threads(), "sanity check");
     return;
   }
-  if (!JvmtiVTMSTransitionDisabler::VTMS_notify_jvmti_events()) {
-    thread->set_is_in_VTMS_transition(hide);
-    oop vt = JNIHandles::resolve_external_guard(vthread);
-    java_lang_Thread::set_is_in_VTMS_transition(vt, hide);
-    return;
-  }
-  if (hide) {
-   JvmtiVTMSTransitionDisabler::VTMS_unmount_begin(vthread, last_unmount);
+  if (JvmtiVTMSTransitionDisabler::VTMS_notify_jvmti_events()) {
+    JvmtiVTMSTransitionDisabler::VTMS_vthread_unmount(vthread, hide);
   } else {
-   JvmtiVTMSTransitionDisabler::VTMS_unmount_end(vthread, last_unmount);
+    // set VTMS transition bit value in JavaThread and java.lang.VirtualThread object
+    JvmtiVTMSTransitionDisabler::set_is_in_VTMS_transition(thread, vthread, hide);
   }
 #else
   fatal("Should only be called with JVMTI enabled");
