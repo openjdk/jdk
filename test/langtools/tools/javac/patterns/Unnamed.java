@@ -145,12 +145,12 @@ public class Unnamed {
         };
     }
 
-    // JEP
+    // JEP 443 examples
     record Point(int x, int y) { }
     enum Color { RED, GREEN, BLUE }
     record ColoredPoint(Point p, Color c) { }
 
-    void jep(ColoredPoint r) {
+    void jep443examples(ColoredPoint r) {
         if (r instanceof ColoredPoint(Point(int x, int y), _)) { }
         if (r instanceof ColoredPoint(_, Color c)) { }
         if (r instanceof ColoredPoint(Point(int x, _), _)) { }
