@@ -102,6 +102,7 @@ public class IntraJVMGetDropSuccessTest implements AWTEventListener {
     volatile Canvas canvas3;
     volatile Point p;
     volatile Dimension d;
+    volatile Component c;
 
     volatile DragSourceDropListener dragSourceListener;
     volatile DragSource dragSource;
@@ -262,7 +263,7 @@ public class IntraJVMGetDropSuccessTest implements AWTEventListener {
     }
 
     boolean pointInComponent(Robot robot, Point p, Component comp)
-      throws InterruptedException {
+      throws Exception {
         robot.waitForIdle();
         reset();
         robot.mouseMove(p.x, p.y);
@@ -272,11 +273,13 @@ public class IntraJVMGetDropSuccessTest implements AWTEventListener {
             SYNC_LOCK.wait(MOUSE_RELEASE_TIMEOUT);
         }
 
-        Component c = clickedComponent;
+        EventQueue.invokeAndWait(() -> {
+            c = clickedComponent;
 
-        while (c != null && c != comp) {
-            c = c.getParent();
-        }
+            while (c != null && c != comp) {
+                c = c.getParent();
+            }
+        });
 
         return c == comp;
     }
