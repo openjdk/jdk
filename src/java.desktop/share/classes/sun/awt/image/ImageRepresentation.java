@@ -114,9 +114,8 @@ public class ImageRepresentation extends ImageWatched implements ImageConsumer
             try {
                 startProduction();
                 missinginfo = flags & ~availinfo;
-                while ((availinfo &
-                        (ImageObserver.ERROR | ImageObserver.FRAMEBITS)) == 0 &&
-                       missinginfo != 0)
+                while ((availinfo & (ImageObserver.ERROR | ImageObserver.FRAMEBITS)) == 0
+                       && missinginfo != 0) 
                 {
                     try {
                         wait();
