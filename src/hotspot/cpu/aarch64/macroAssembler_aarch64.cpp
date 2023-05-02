@@ -6244,8 +6244,8 @@ void MacroAssembler::poly1305_multiply(LambdaAccumulator &acc,
     lsl(RS2, s[2], 26);
     add(RS2, RS2, RS2, LSL, 2);
     wide_madd(u[0], RS2, r[1]);
-    wide_madd(u[1], RS2, r[2]); };
-  gen { wide_mul(u[1], s[0], r[1]); };
+    wide_mul(u[1], RS2, r[2]); };
+  gen { wide_madd(u[1], s[0], r[1]); };
   gen { wide_madd(u[1], s[1], r[0]); };
   gen { wide_mul(u[2], s[0], r[2]); };
   gen { wide_madd(u[2], s[1], r[1]); };
