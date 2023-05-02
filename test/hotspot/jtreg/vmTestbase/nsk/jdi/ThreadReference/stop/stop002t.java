@@ -74,6 +74,13 @@ public class stop002t {
         }
 
         /*
+         * TEST #1: Tests that stop() properly throws InvalidTypeException if
+         * the specified throwable is not an instance of java.lang.Throwable
+         * in the debuggee. It does not involve the debuggee at all, so there
+         * is no code here for it.
+         */
+
+        /*
          * TEST #2: async exception while suspended at a breakpoint.
          */
         int stopMeHere = 0;
