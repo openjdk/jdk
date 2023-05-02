@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -4133,8 +4133,10 @@ Range::Range(int from, int to, Range* next) :
 
 // initialize sentinel
 Range* Range::_end = NULL;
-void Range::initialize(Arena* arena) {
-  _end = new (arena) Range(max_jint, max_jint, NULL);
+void Range::initialize() {
+  assert(_end == nullptr, "Range initialized more than once");
+  alignas(Range) static uint8_t end_storage[sizeof(Range)];
+  _end = ::new(static_cast<void*>(end_storage)) Range(max_jint, max_jint, NULL);
 }
 
 int Range::intersects_at(Range* r2) const {
@@ -4180,9 +4182,11 @@ void Range::print(outputStream* out) const {
 
 // initialize sentinel
 Interval* Interval::_end = NULL;
-void Interval::initialize(Arena* arena) {
-  Range::initialize(arena);
-  _end = new (arena) Interval(-1);
+void Interval::initialize() {
+  Range::initialize();
+  assert(_end == nullptr, "Interval initialized more than once");
+  alignas(Interval) static uint8_t end_storage[sizeof(Interval)];
+  _end = ::new(static_cast<void*>(end_storage)) Interval(-1);
 }
 
 Interval::Interval(int reg_num) :
@@ -6731,6 +6735,8 @@ void LinearScanStatistic::collect(LinearScan* allocator) {
         case lir_rem:
         case lir_sqrt:
         case lir_abs:
+        case lir_f2hf:
+        case lir_hf2f:
         case lir_log10:
         case lir_logic_and:
         case lir_logic_or:

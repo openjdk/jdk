@@ -27,10 +27,8 @@
  * @summary Test primitive box caches integrity in various scenarios (IntegerCache etc)
  * @requires vm.cds.write.archived.java.heap
  * @library /test/jdk/lib/testlibrary /test/lib /test/hotspot/jtreg/runtime/cds/appcds
- * @build jdk.test.whitebox.WhiteBox
  * @compile CheckIntegerCacheApp.java
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar boxCache.jar CheckIntegerCacheApp
- * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar WhiteBox.jar jdk.test.whitebox.WhiteBox
  * @run driver ArchivedIntegerCacheTest
  */
 
@@ -44,8 +42,6 @@ import jdk.test.lib.helpers.ClassFileInstaller;
 public class ArchivedIntegerCacheTest {
 
     public static void main(String[] args) throws Exception {
-        String wbJar = ClassFileInstaller.getJarPath("WhiteBox.jar");
-        String use_whitebox_jar = "-Xbootclasspath/a:" + wbJar;
         String appJar = ClassFileInstaller.getJarPath("boxCache.jar");
 
         Path userDir = Paths.get(CDSTestUtils.getOutputDir());
@@ -55,32 +51,25 @@ public class ArchivedIntegerCacheTest {
         // Dump default archive
         //
         OutputAnalyzer output = TestCommon.dump(appJar,
-                TestCommon.list("CheckIntegerCacheApp"),
-                use_whitebox_jar);
+                TestCommon.list("CheckIntegerCacheApp"));
         TestCommon.checkDump(output);
 
         // Test case 1)
         // - Default options
         System.out.println("----------------------- Test case 1 ----------------------");
-        output = TestCommon.exec(appJar, use_whitebox_jar,
-                "-XX:+UnlockDiagnosticVMOptions",
-                "-XX:+WhiteBoxAPI",
+        output = TestCommon.exec(appJar,
                 "CheckIntegerCacheApp",
-                "127",
-                "true");
+                "127");
         TestCommon.checkExec(output);
 
         // Test case 2)
         // - Default archive
         // - Larger -XX:AutoBoxCacheMax
         System.out.println("----------------------- Test case 2 ----------------------");
-        output = TestCommon.exec(appJar, use_whitebox_jar,
-                "-XX:+UnlockDiagnosticVMOptions",
-                "-XX:+WhiteBoxAPI",
+        output = TestCommon.exec(appJar,
                 "-XX:AutoBoxCacheMax=20000",
                 "CheckIntegerCacheApp",
-                "20000",
-                "false");
+                "20000");
         TestCommon.checkExec(output);
 
         //
@@ -88,22 +77,18 @@ public class ArchivedIntegerCacheTest {
         //
         output = TestCommon.dump(appJar,
                 TestCommon.list("CheckIntegerCacheApp"),
-                "-XX:AutoBoxCacheMax=20000",
-                use_whitebox_jar);
+                "-XX:AutoBoxCacheMax=20000");
         TestCommon.checkDump(output);
 
         // Test case 3)
         // - Large archived cache
         // - Default options
         System.out.println("----------------------- Test case 3 ----------------------");
-        output = TestCommon.exec(appJar, use_whitebox_jar,
+        output = TestCommon.exec(appJar,
                 "--module-path",
                 moduleDir.toString(),
-                "-XX:+UnlockDiagnosticVMOptions",
-                "-XX:+WhiteBoxAPI",
                 "CheckIntegerCacheApp",
-                "127",
-                "true");
+                "127");
         TestCommon.checkExec(output);
 
 
@@ -111,30 +96,24 @@ public class ArchivedIntegerCacheTest {
         // - Large archived cache
         // - Matching options
         System.out.println("----------------------- Test case 4 ----------------------");
-        output = TestCommon.exec(appJar, use_whitebox_jar,
+        output = TestCommon.exec(appJar,
                 "--module-path",
                 moduleDir.toString(),
-                "-XX:+UnlockDiagnosticVMOptions",
-                "-XX:+WhiteBoxAPI",
                 "-XX:AutoBoxCacheMax=20000",
                 "CheckIntegerCacheApp",
-                "20000",
-                "true");
+                "20000");
         TestCommon.checkExec(output);
 
         // Test case 5)
         // - Large archived cache
         // - Larger requested cache
         System.out.println("----------------------- Test case 5 ----------------------");
-        output = TestCommon.exec(appJar, use_whitebox_jar,
+        output = TestCommon.exec(appJar,
                 "--module-path",
                 moduleDir.toString(),
-                "-XX:+UnlockDiagnosticVMOptions",
-                "-XX:+WhiteBoxAPI",
                 "-XX:AutoBoxCacheMax=30000",
                 "CheckIntegerCacheApp",
-                "30000",
-                "false");
+                "30000");
         TestCommon.checkExec(output);
 
         // Test case 6)
@@ -146,8 +125,7 @@ public class ArchivedIntegerCacheTest {
                 "-XX:NewSize=1g",
                 "-Xlog:cds+heap=info",
                 "-Xlog:gc+region+cds",
-                "-Xlog:gc+region=trace",
-                use_whitebox_jar);
+                "-Xlog:gc+region=trace");
         TestCommon.checkDump(output,
             "Cannot archive the sub-graph referenced from [Ljava.lang.Integer; object");
     }

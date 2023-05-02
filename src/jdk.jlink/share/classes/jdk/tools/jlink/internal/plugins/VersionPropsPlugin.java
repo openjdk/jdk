@@ -26,12 +26,13 @@
 package jdk.tools.jlink.internal.plugins;
 
 import java.util.Map;
+import jdk.internal.classfile.ClassTransform;
+import jdk.internal.classfile.CodeBuilder;
+import jdk.internal.classfile.CodeElement;
+import jdk.internal.classfile.Instruction;
+import jdk.internal.classfile.instruction.FieldInstruction;
+import jdk.internal.classfile.CodeTransform;
 
-import jdk.internal.org.objectweb.asm.ClassReader;
-import jdk.internal.org.objectweb.asm.ClassVisitor;
-import jdk.internal.org.objectweb.asm.ClassWriter;
-import jdk.internal.org.objectweb.asm.MethodVisitor;
-import jdk.internal.org.objectweb.asm.Opcodes;
 import jdk.tools.jlink.plugin.ResourcePool;
 import jdk.tools.jlink.plugin.ResourcePoolBuilder;
 import jdk.tools.jlink.plugin.ResourcePoolEntry;
@@ -96,63 +97,38 @@ abstract class VersionPropsPlugin extends AbstractPlugin {
 
     private boolean redefined = false;
 
+    @SuppressWarnings("deprecation")
     private byte[] redefine(String path, byte[] classFile) {
+        return newClassReader(path, classFile).transform(ClassTransform.transformingMethodBodies(
+                mm -> mm.methodName().equalsString("<clinit>"),
+                new CodeTransform() {
+                    private CodeElement pendingLDC = null;
 
-        var cr = newClassReader(path, classFile);
-        var cw = new ClassWriter(0);
+                    private void flushPendingLDC(CodeBuilder cob) {
+                        if (pendingLDC != null) {
+                            cob.accept(pendingLDC);
+                            pendingLDC = null;
+                        }
+                    }
 
-        cr.accept(new ClassVisitor(Opcodes.ASM7, cw) {
-
-                @Override
-                public MethodVisitor visitMethod(int access,
-                                                 String name,
-                                                 String desc,
-                                                 String sig,
-                                                 String[] xs)
-                {
-                    if (name.equals("<clinit>"))
-                        return new MethodVisitor(Opcodes.ASM7,
-                                                 super.visitMethod(access,
-                                                                   name,
-                                                                   desc,
-                                                                   sig,
-                                                                   xs))
-                            {
-                                private Object pendingLDC = null;
-
-                                private void flushPendingLDC() {
-                                    if (pendingLDC != null) {
-                                        super.visitLdcInsn(pendingLDC);
-                                        pendingLDC = null;
-                                    }
+                    @Override
+                    public void accept(CodeBuilder cob, CodeElement coe) {
+                        if (coe instanceof Instruction ins) {
+                            switch (ins.opcode()) {
+                                case LDC, LDC_W, LDC2_W -> {
+                                    flushPendingLDC(cob);
+                                    pendingLDC = coe;
                                 }
-
-                                @Override
-                                public void visitLdcInsn(Object value) {
-                                    flushPendingLDC();
-                                    pendingLDC = value;
+                                case INVOKEVIRTUAL, INVOKESPECIAL, INVOKESTATIC, INVOKEINTERFACE -> {
+                                    flushPendingLDC(cob);
+                                    cob.accept(coe);
                                 }
-
-                                @Override
-                                public void visitMethodInsn(int opcode,
-                                                            String owner,
-                                                            String name,
-                                                            String descriptor,
-                                                            boolean isInterface) {
-                                    flushPendingLDC();
-                                    super.visitMethodInsn(opcode, owner, name,
-                                                          descriptor, isInterface);
+                                case GETSTATIC, GETFIELD, PUTFIELD -> {
+                                    flushPendingLDC(cob);
+                                    cob.accept(coe);
                                 }
-
-                                @Override
-                                public void visitFieldInsn(int opcode,
-                                                           String owner,
-                                                           String name,
-                                                           String desc)
-                                {
-                                    if (opcode == Opcodes.PUTSTATIC
-                                        && name.equals(field))
-                                    {
+                                case PUTSTATIC -> {
+                                    if (((FieldInstruction)coe).name().equalsString(field)) {
                                         // assert that there is a pending ldc
                                         // for the old value
                                         if (pendingLDC == null) {
@@ -164,24 +140,20 @@ abstract class VersionPropsPlugin extends AbstractPlugin {
                                         // forget about it
                                         pendingLDC = null;
                                         // and add an ldc for the new value
-                                        super.visitLdcInsn(value);
+                                        cob.constantInstruction(value);
                                         redefined = true;
                                     } else {
-                                        flushPendingLDC();
+                                        flushPendingLDC(cob);
                                     }
-                                    super.visitFieldInsn(opcode, owner,
-                                                         name, desc);
+                                    cob.accept(coe);
                                 }
-
-                        };
-                    else
-                        return super.visitMethod(access, name, desc, sig, xs);
-                }
-
-            }, 0);
-
-        return cw.toByteArray();
-
+                                default -> cob.accept(coe);
+                            }
+                        } else {
+                            cob.accept(coe);
+                        }
+                    }
+                }));
     }
 
     @Override
@@ -198,5 +170,4 @@ abstract class VersionPropsPlugin extends AbstractPlugin {
             throw new AssertionError(field);
         return out.build();
     }
-
 }

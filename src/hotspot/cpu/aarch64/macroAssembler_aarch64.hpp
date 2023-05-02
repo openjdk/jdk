@@ -513,8 +513,15 @@ public:
     orr(Vd, T, Vn, Vn);
   }
 
+  void flt_to_flt16(Register dst, FloatRegister src, FloatRegister tmp) {
+    fcvtsh(tmp, src);
+    smov(dst, tmp, H, 0);
+  }
 
-public:
+  void flt16_to_flt(FloatRegister dst, Register src, FloatRegister tmp) {
+    mov(tmp, H, 0, src);
+    fcvths(dst, tmp);
+  }
 
   // Generalized Test Bit And Branch, including a "far" variety which
   // spans more than 32KiB.
@@ -843,7 +850,6 @@ public:
 
   // oop manipulations
   void load_klass(Register dst, Register src);
-  void load_klass_check_null(Register dst, Register src);
   void store_klass(Register dst, Register src);
   void cmp_klass(Register oop, Register trial_klass, Register tmp);
 

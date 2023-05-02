@@ -206,7 +206,12 @@ public class DefaultBoundedRangeModel implements BoundedRangeModel, Serializable
     public void setMinimum(int n) {
         int newMax = Math.max(n, max);
         int newValue = Math.max(n, value);
-        int newExtent = Math.min(newMax - newValue, extent);
+        int newExtent = 0;
+        if (((long)newMax - (long)newValue) > (long)newMax) {
+            newExtent = extent;
+        } else {
+            newExtent = Math.min(newMax - newValue, extent);
+        }
         setRangeProperties(newValue, newExtent, n, newMax, isAdjusting);
     }
 

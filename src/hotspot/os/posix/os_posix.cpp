@@ -824,10 +824,6 @@ int os::connect(int fd, struct sockaddr* him, socklen_t len) {
   RESTARTABLE_RETURN_INT(::connect(fd, him, len));
 }
 
-struct hostent* os::get_host_by_name(char* name) {
-  return ::gethostbyname(name);
-}
-
 void os::exit(int num) {
   ALLOW_C_FUNCTION(::exit, ::exit(num);)
 }
@@ -909,8 +905,8 @@ char* os::Posix::describe_pthread_attr(char* buf, size_t buflen, const pthread_a
   int detachstate = 0;
   pthread_attr_getstacksize(attr, &stack_size);
   pthread_attr_getguardsize(attr, &guard_size);
-  // Work around linux NPTL implementation error, see also os::create_thread() in os_linux.cpp.
-  LINUX_ONLY(stack_size -= guard_size);
+  // Work around glibc stack guard issue, see os::create_thread() in os_linux.cpp.
+  LINUX_ONLY(if (os::Linux::adjustStackSizeForGuardPages()) stack_size -= guard_size;)
   pthread_attr_getdetachstate(attr, &detachstate);
   jio_snprintf(buf, buflen, "stacksize: " SIZE_FORMAT "k, guardsize: " SIZE_FORMAT "k, %s",
     stack_size / K, guard_size / K,

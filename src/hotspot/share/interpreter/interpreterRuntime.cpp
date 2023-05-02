@@ -947,8 +947,7 @@ void InterpreterRuntime::resolve_invokedynamic(JavaThread* current) {
                                  index, bytecode, CHECK);
   } // end JvmtiHideSingleStepping
 
-  ConstantPoolCacheEntry* cp_cache_entry = pool->invokedynamic_cp_cache_entry_at(index);
-  cp_cache_entry->set_dynamic_call(pool, info);
+  pool->cache()->set_dynamic_call(info, pool->decode_invokedynamic_index(index));
 }
 
 // This function is the interface to the assembly code. It returns the resolved
@@ -1155,7 +1154,7 @@ JRT_ENTRY(void, InterpreterRuntime::post_field_access(JavaThread* current, oopDe
 
   InstanceKlass* ik = InstanceKlass::cast(cp_entry->f1_as_klass());
   int index = cp_entry->field_index();
-  if ((ik->field_access_flags(index) & JVM_ACC_FIELD_ACCESS_WATCHED) == 0) return;
+  if (!ik->field_status(index).is_access_watched()) return;
 
   bool is_static = (obj == nullptr);
   HandleMark hm(current);
@@ -1180,7 +1179,7 @@ JRT_ENTRY(void, InterpreterRuntime::post_field_modification(JavaThread* current,
   InstanceKlass* ik = InstanceKlass::cast(k);
   int index = cp_entry->field_index();
   // bail out if field modifications are not watched
-  if ((ik->field_access_flags(index) & JVM_ACC_FIELD_MODIFICATION_WATCHED) == 0) return;
+  if (!ik->field_status(index).is_modification_watched()) return;
 
   char sig_type = '\0';
 
