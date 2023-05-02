@@ -450,10 +450,6 @@ public:
   void print_age_table();
 
   void update_survivors_policy();
-
-  // Indicates whether the (live) contents of the given region may be moved during
-  // young collection. The region contents may still be reclaimed.
-  bool is_young_gc_movable(HeapRegion* r) const;
 };
 
 #endif // SHARE_GC_G1_G1POLICY_HPP

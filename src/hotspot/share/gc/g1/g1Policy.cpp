@@ -1550,7 +1550,3 @@ void G1Policy::transfer_survivors_to_cset(const G1SurvivorRegions* survivors) {
   // the survivor regions from this evacuation pause as 'young'
   // at the start of the next.
 }
-
-bool G1Policy::is_young_gc_movable(HeapRegion* r) const {
-  return !r->is_humongous();
-}

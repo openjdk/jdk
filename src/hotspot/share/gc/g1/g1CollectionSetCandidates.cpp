@@ -82,10 +82,10 @@ void G1CollectionSetCandidates::verify() const {
   HeapRegion *prev = nullptr;
   for (; idx < _num_regions; idx++) {
     HeapRegion *cur = _regions[idx];
-    guarantee(cur != NULL, "Regions after _front_idx %u cannot be NULL but %u is", _front_idx, idx);
-    // Currently the decision whether young gc moves region is determined at region
-    // allocation time. It is not possible that a region becomes non-movable at a
-    // later point, which means below condition always holds true.
+    guarantee(cur != nullptr, "Regions after _front_idx %u cannot be NULL but %u is", _front_idx, idx);
+    // Currently the decision whether young gc moves region contents is determined
+    // at region allocation time. It is not possible that a region becomes non-movable
+    // at a later point, which means below condition always holds true.
     guarantee(G1CollectionSetChooser::should_add(cur),
               "Region %u should be eligible for addition.", cur->hrm_index());
     if (prev != nullptr) {
