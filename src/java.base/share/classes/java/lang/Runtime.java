@@ -283,8 +283,7 @@ public class Runtime {
 
     /**
      * Immediately {@linkplain ##termination terminates} the Java Virtual Machine.
-     * If a security manager is present and its {@link SecurityManager#checkExit checkExit}
-     * method disallows exiting with the specified status, throws {@link SecurityException}.
+     * If the security manager denies exiting, throws {@link SecurityException}.
      * Otherwise, termination of the Java Virtual Machine is unconditional and immediate.
      * This method does not initiate the {@linkplain ##shutdown shutdown sequence}, nor does
      * it wait for the shutdown sequence to finish if it is already in progress. An
