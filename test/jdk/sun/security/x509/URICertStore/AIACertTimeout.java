@@ -64,7 +64,7 @@ public class AIACertTimeout {
 
     // PKI and server components we will need for this test
     private static KeyPair          rootKp;     // Root CA keys
-	private static X509Certificate  rootCert;
+    private static X509Certificate  rootCert;
     private static KeyPair          intKp;      // Intermediate CA keys
     private static X509Certificate  intCert;
     private static KeyPair          eeKp;       // End-entity keys
