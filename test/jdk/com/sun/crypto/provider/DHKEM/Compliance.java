@@ -217,8 +217,8 @@ public class Compliance {
 
         KEM.Encapsulator eodd = kem.newEncapsulator(odd);
         KEM.Encapsulator eeven = kem.newEncapsulator(even);
-        Asserts.assertEQ(eodd.provider().getName(), "SunJCE");
-        Asserts.assertEQ(eeven.provider().getName(), "XP");
+        Asserts.assertEQ(eodd.providerName(), "SunJCE");
+        Asserts.assertEQ(eeven.providerName(), "XP");
     }
 
     static ECPublicKey badECKey() {

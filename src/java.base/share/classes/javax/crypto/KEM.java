@@ -53,9 +53,10 @@ import java.util.Objects;
  * from different providers. The provider selected is based on the parameters
  * passed to the {@code newEncapsulator} or {@code newDecapsulator} methods:
  * the private or public key and the optional {@code AlgorithmParameterSpec}.
- * The {@link Encapsulator#provider} and {@link Decapsulator#provider} methods
- * return the selected provider.
+ * The {@link Encapsulator#providerName} and {@link Decapsulator#providerName}
+ * methods return the name of the selected provider.
  * <p>
+ * {@code Encapsulator} and {@code Decapsulator} objects are also immutable.
  * It is safe to invoke multiple {@code encapsulate} and {@code decapsulate}
  * methods on the same {@code Encapsulator} or {@code Decapsulator} object
  * at the same time. Each invocation of {@code encapsulate} will generate a
@@ -179,12 +180,12 @@ public final class KEM {
         }
 
         /**
-         * Returns the provider.
+         * Returns the name of the provider.
          *
-         * @return the provider
+         * @return the name of the provider
          */
-        public Provider provider() {
-            return p;
+        public String providerName() {
+            return p.getName();
         }
 
         /**
@@ -291,12 +292,12 @@ public final class KEM {
         }
 
         /**
-         * Returns the provider.
+         * Returns the name of the provider.
          *
-         * @return the provider
+         * @return the name of the provider
          */
-        public Provider provider() {
-            return p;
+        public String providerName() {
+            return p.getName();
         }
 
         /**
