@@ -220,7 +220,7 @@ void Assembler::init_attributes(void) {
 void Assembler::set_attributes(InstructionAttr* attributes) {
   // Record the assembler in the attributes, so the attributes destructor can
   // clear the assembler's attributes, cleaning up the otherwise dangling
-  // pointer.  gcc13 has a false positive warning, as it doesn't tie that
+  // pointer.  gcc13 has a false positive warning, because it doesn't tie that
   // cleanup to the assignment of _attributes here.
   attributes->set_current_assembler(this);
   PRAGMA_DIAG_PUSH
