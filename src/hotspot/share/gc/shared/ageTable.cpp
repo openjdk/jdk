@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,7 +115,7 @@ void AgeTable::print_age_table(uint tenuring_threshold) {
 
 void AgeTable::print_on(outputStream* st, uint tenuring_threshold) {
   st->print_cr("Age table with threshold %u (max threshold " UINTX_FORMAT ")",
-           tenuring_threshold, MaxTenuringThreshold);
+               tenuring_threshold, MaxTenuringThreshold);
 
   size_t total = 0;
   uint age = 1;

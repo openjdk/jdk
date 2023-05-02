@@ -3528,8 +3528,8 @@ public final class String
      * Converts all of the characters in this {@code String} to lower
      * case using the rules of the default locale. This method is equivalent to
      * {@code toLowerCase(Locale.getDefault())}.
-     * <p>
-     * <b>Note:</b> This method is locale sensitive, and may produce unexpected
+     *
+     * @apiNote This method is locale sensitive, and may produce unexpected
      * results if used for strings that are intended to be interpreted locale
      * independently.
      * Examples are programming language identifiers, protocol keys, and HTML
@@ -3608,8 +3608,8 @@ public final class String
      * Converts all of the characters in this {@code String} to upper
      * case using the rules of the default locale. This method is equivalent to
      * {@code toUpperCase(Locale.getDefault())}.
-     * <p>
-     * <b>Note:</b> This method is locale sensitive, and may produce unexpected
+     *
+     * @apiNote This method is locale sensitive, and may produce unexpected
      * results if used for strings that are intended to be interpreted locale
      * independently.
      * Examples are programming language identifiers, protocol keys, and HTML

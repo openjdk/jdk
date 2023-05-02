@@ -62,7 +62,7 @@ public:
 
   virtual bool is_in_young(const void* obj) const;
 
-  bool is_dirty(MemRegion mr);
+  CardValue* read_byte_for(const void* p);
 
   size_t last_valid_index();
 
@@ -86,6 +86,9 @@ public:
   CardValue* write_byte_map_base() {
     return _write_byte_map_base;
   }
+
+private:
+  void initialize(const ReservedSpace& card_table);
 };
 
 #endif // SHARE_VM_GC_SHENANDOAH_SHENANDOAHCARDTABLE_HPP

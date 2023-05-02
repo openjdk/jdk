@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,14 +54,14 @@ inline frame StackChunkFrameStream<frame_kind>::to_frame() const {
 template <ChunkFrames frame_kind>
 inline address StackChunkFrameStream<frame_kind>::get_pc() const {
   assert(!is_done(), "");
-  return (address)((frame::abi_minframe*) _sp)->lr;
+  return (address)((frame::common_abi*) _sp)->lr;
 }
 
 template <ChunkFrames frame_kind>
 inline intptr_t* StackChunkFrameStream<frame_kind>::fp() const {
   // See FreezeBase::patch_pd() and frame::setup()
   assert((frame_kind == ChunkFrames::Mixed && is_interpreted()), "");
-  intptr_t* fp_addr = (intptr_t*)&((frame::abi_minframe*)_sp)->callers_sp;
+  intptr_t* fp_addr = (intptr_t*)&((frame::common_abi*)_sp)->callers_sp;
   assert(*(intptr_t**)fp_addr != nullptr, "");
   // derelativize
   return fp_addr + *fp_addr;
