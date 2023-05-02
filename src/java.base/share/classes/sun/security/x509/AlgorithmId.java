@@ -647,8 +647,6 @@ public class AlgorithmId implements Serializable, DerEncoder {
     public static final ObjectIdentifier MGF1_oid =
             ObjectIdentifier.of(KnownOIDs.MGF1);
 
-    public static final ObjectIdentifier hsslms_oid =
-            ObjectIdentifier.of(KnownOIDs.HSSLMS);
     public static final ObjectIdentifier SHA1withRSA_oid =
             ObjectIdentifier.of(KnownOIDs.SHA1withRSA);
     public static final ObjectIdentifier SHA224withRSA_oid =

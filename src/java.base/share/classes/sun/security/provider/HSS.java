@@ -83,8 +83,12 @@ public class HSS extends SignatureSpi {
                 result &= lmsVerify(lmsPubKey, sig.siglist[i], keyArr);
                 lmsPubKey = sig.pubList[i];
             }
-            return result & lmsVerify(lmsPubKey, sig.siglist[sig.Nspk], messageStream.toByteArray());
+
+            result &= lmsVerify(lmsPubKey, sig.siglist[sig.Nspk], messageStream.toByteArray());
+            messageStream.reset();
+            return result;
         } catch (Exception e) {
+            messageStream.reset();
             return false;
         }
     }
@@ -165,12 +169,19 @@ public class HSS extends SignatureSpi {
                 throw new InvalidKeyException("Invalid LMS public key");
             type = LMSUtils.fourBytesToInt(keyArray, offset);
             otsType = LMSUtils.fourBytesToInt(keyArray, offset + 4);
+            LMOTSParams lmotsParams;
 
-            lmParams = new LMParams(type);
+            try {
+                lmParams = new LMParams(type);
+                lmotsParams = LMOTSParams.of(otsType);
+            } catch (IllegalArgumentException e) {
+                throw new InvalidKeyException(e.getMessage());
+            }
 
             int m = lmParams.m;
             if ((inLen < (24 + m)) || (checkExactLength && (inLen != (24 + m))) ||
-                    !LMOTSParams.of(otsType).hashAlgName.equals(lmParams.hashAlgStr)) {
+                    !lmotsParams.hashAlgName.equals(lmParams.hashAlgStr) ||
+                    (lmParams.m != lmotsParams.n)) {
                 throw new InvalidKeyException("Invalid LMS public Key");
             }
 
@@ -364,7 +375,6 @@ public class HSS extends SignatureSpi {
                     h = 25;
                     hashAlgStr = "SHAKE256";
                     break;
- */
 
                 case LMSUtils.LMS_SHA256_M24_H5:
                     m = 24;
@@ -391,7 +401,7 @@ public class HSS extends SignatureSpi {
                     h = 25;
                     hashAlgStr = "SHA-256";
                     break;
-/*
+
                 case LMSUtils.LMS_SHAKE_M24_H5:
                     m = 24;
                     h = 5;
@@ -440,10 +450,6 @@ public class HSS extends SignatureSpi {
         final int h; // height of the Merkle tree
         final byte[][] path;
         final byte[] sigArr;
-
-        public static LMSignature of(byte[] sigArray) throws InvalidParameterException {
-            return new LMSignature(sigArray, 0, true);
-        }
 
         public LMSignature(byte[] sigArray, int offset, boolean checkExactLen) throws InvalidParameterException {
             int inLen = sigArray.length - offset;
@@ -732,9 +738,9 @@ public class HSS extends SignatureSpi {
 
         @Override
         protected <T extends KeySpec> T engineGetKeySpec(Key key, Class<T> keySpec) throws InvalidKeySpecException {
-            if (key instanceof HSSPublicKey p) {
+            if (key.getFormat().equals("X.509") && key.getAlgorithm().equals("HSS/LMS")) {
                 if (keySpec.isAssignableFrom(X509EncodedKeySpec.class)) {
-                    return keySpec.cast(new X509EncodedKeySpec(p.getEncoded()));
+                    return keySpec.cast(new X509EncodedKeySpec(key.getEncoded()));
                 }
             }
             throw new InvalidKeySpecException();
@@ -742,10 +748,21 @@ public class HSS extends SignatureSpi {
 
         @Override
         protected Key engineTranslateKey(Key key) throws InvalidKeyException {
-            if (key instanceof HSSPublicKey) {
-                return key;
+            PublicKey pKey;
+            try {
+                // Check if key originates from this factory
+                if (key instanceof HSSPublicKey) {
+                    return key;
+                }
+                // Convert key to spec
+                X509EncodedKeySpec x509EncodedKeySpec
+                        = engineGetKeySpec(key, X509EncodedKeySpec.class);
+                // Create key from spec, and return it
+                pKey = engineGeneratePublic(x509EncodedKeySpec);
+            } catch (Exception e) {
+                throw new InvalidKeyException();
             }
-            throw new InvalidKeyException();
+            return pKey;
         }
     }
 
