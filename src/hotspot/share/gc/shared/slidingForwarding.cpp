@@ -126,9 +126,10 @@ size_t FallbackTable::home_index(HeapWord* from) {
   val ^= val >> 33;
   // Shift to table-size.
   val = val >> (64 - log2i_exact(TABLE_SIZE));
-  assert(val < TABLE_SIZE, "must fit in table: val: " UINT64_FORMAT ", table-size: " UINTX_FORMAT ", table-size-bits: %d",
-         val, TABLE_SIZE, log2i_exact(TABLE_SIZE));
-  return static_cast<size_t>(val);
+  size_t idx = static_cast<size_t>(val);
+  assert(idx < TABLE_SIZE, "must fit in table: idx: " SIZE_FORMAT ", table-size: " SIZE_FORMAT ", table-size-bits: %d",
+         idx, TABLE_SIZE, log2i_exact(TABLE_SIZE));
+  return idx;
 }
 
 void FallbackTable::forward_to(HeapWord* from, HeapWord* to) {
