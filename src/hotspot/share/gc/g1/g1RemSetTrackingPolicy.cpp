@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,12 +30,11 @@
 #include "runtime/safepoint.hpp"
 
 bool G1RemSetTrackingPolicy::needs_scan_for_rebuild(HeapRegion* r) const {
-  // All non-free, non-young, non-closed archive regions need to be scanned for references;
-  // At every gc we gather references to other regions in young, and closed archive
-  // regions by definition do not have references going outside the closed archive.
+  // All non-free and non-young regions need to be scanned for references;
+  // At every gc we gather references to other regions in young.
   // Free regions trivially do not need scanning because they do not contain live
   // objects.
-  return !(r->is_young() || r->is_closed_archive() || r->is_free());
+  return !(r->is_young() || r->is_free());
 }
 
 void G1RemSetTrackingPolicy::update_at_allocate(HeapRegion* r) {
@@ -45,12 +44,9 @@ void G1RemSetTrackingPolicy::update_at_allocate(HeapRegion* r) {
   } else if (r->is_humongous()) {
     // Collect remembered sets for humongous regions by default to allow eager reclaim.
     r->rem_set()->set_state_complete();
-  } else if (r->is_archive()) {
-    // Archive regions never move ever. So never build remembered sets for them.
-    r->rem_set()->set_state_empty();
   } else if (r->is_old()) {
     // By default, do not create remembered set for new old regions.
-    r->rem_set()->set_state_empty();
+    r->rem_set()->set_state_untracked();
   } else {
     guarantee(false, "Unhandled region %u with heap region type %s", r->hrm_index(), r->get_type_str());
   }
@@ -79,10 +75,6 @@ bool G1RemSetTrackingPolicy::update_humongous_before_rebuild(HeapRegion* r, bool
   assert(SafepointSynchronize::is_at_safepoint(), "should be at safepoint");
   assert(r->is_humongous(), "Region %u should be humongous", r->hrm_index());
 
-  if (r->is_archive()) {
-    return false;
-  }
-
   assert(!r->rem_set()->is_updating(), "Remembered set of region %u is updating before rebuild", r->hrm_index());
 
   bool selected_for_rebuild = false;
@@ -104,9 +96,8 @@ bool G1RemSetTrackingPolicy::update_before_rebuild(HeapRegion* r, size_t live_by
   assert(SafepointSynchronize::is_at_safepoint(), "should be at safepoint");
   assert(!r->is_humongous(), "Region %u is humongous", r->hrm_index());
 
-  // Only consider updating the remembered set for old gen regions - excluding archive regions
-  // which never move (but are "Old" regions).
-  if (!r->is_old() || r->is_archive()) {
+  // Only consider updating the remembered set for old gen regions.
+  if (!r->is_old()) {
     return false;
   }
 
@@ -137,9 +128,8 @@ bool G1RemSetTrackingPolicy::update_before_rebuild(HeapRegion* r, size_t live_by
 void G1RemSetTrackingPolicy::update_after_rebuild(HeapRegion* r) {
   assert(SafepointSynchronize::is_at_safepoint(), "should be at safepoint");
 
-  if (r->is_old_or_humongous_or_archive()) {
+  if (r->is_old_or_humongous()) {
     if (r->rem_set()->is_updating()) {
-      assert(!r->is_archive(), "Archive region %u with remembered set", r->hrm_index());
       r->rem_set()->set_state_complete();
     }
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
@@ -148,14 +138,12 @@ void G1RemSetTrackingPolicy::update_after_rebuild(HeapRegion* r) {
     // cycle as e.g. remembered set entries will always be added.
     if (r->is_starts_humongous() && !g1h->is_potential_eager_reclaim_candidate(r)) {
       // Handle HC regions with the HS region.
-      uint const size_in_regions = (uint)g1h->humongous_obj_size_in_regions(cast_to_oop(r->bottom())->size());
-      uint const region_idx = r->hrm_index();
-      for (uint j = region_idx; j < (region_idx + size_in_regions); j++) {
-        HeapRegion* const cur = g1h->region_at(j);
-        assert(!cur->is_continues_humongous() || cur->rem_set()->is_empty(),
-               "Continues humongous region %u remset should be empty", j);
-        cur->rem_set()->clear_locked(true /* only_cardset */);
-      }
+      g1h->humongous_obj_regions_iterate(r,
+                                         [&] (HeapRegion* r) {
+                                           assert(!r->is_continues_humongous() || r->rem_set()->is_empty(),
+                                                  "Continues humongous region %u remset should be empty", r->hrm_index());
+                                           r->rem_set()->clear_locked(true /* only_cardset */);
+                                         });
     }
     G1ConcurrentMark* cm = G1CollectedHeap::heap()->concurrent_mark();
     log_trace(gc, remset, tracking)("After rebuild region %u "

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ import jdk.test.lib.process.ProcessTools;
  * @summary Test verifies that virtual threads can be executed in premain()
  * @requires vm.jvmti
  * @library /test/lib
- * @compile --enable-preview -source ${jdk.version} AgentWithVThread.java AgentWithVThreadTest.java
+ * @compile AgentWithVThread.java AgentWithVThreadTest.java
  * @run driver jdk.test.lib.util.JavaAgentBuilder AgentWithVThread agent.jar
  * @run driver jdk.test.lib.helpers.ClassFileInstaller AgentWithVThread
  * @run driver AgentWithVThreadTest
@@ -37,7 +37,7 @@ import jdk.test.lib.process.ProcessTools;
 public class AgentWithVThreadTest {
     public static void main(String[] args) throws Exception  {
 
-        ProcessBuilder pb = ProcessTools.createTestJvm("--enable-preview", "-javaagent:agent.jar",  "-version");
+        ProcessBuilder pb = ProcessTools.createTestJvm("-javaagent:agent.jar",  "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.stdoutShouldContain("passed");
     }

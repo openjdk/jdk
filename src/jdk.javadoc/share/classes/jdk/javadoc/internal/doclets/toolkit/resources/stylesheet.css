@@ -915,16 +915,21 @@ main a[href*="://"]:focus::after {
  * Styles for copy-to-clipboard buttons
  */
 button.copy {
-    opacity: 80%;
+    opacity: 70%;
     border: none;
     border-radius: 3px;
     position: relative;
     background:none;
-    transition: opacity 0.2s;
+    transition: opacity 0.3s;
     cursor: pointer;
 }
+:hover > button.copy {
+    opacity: 80%;
+}
 button.copy:hover,
-button.copy:active {
+button.copy:active,
+button.copy:focus-visible,
+button.copy.visible {
     opacity: 100%;
 }
 button.copy img {
@@ -942,12 +947,19 @@ button.copy span {
     transition: all 0.1s;
     font-size: 0.76rem;
     line-height: 1.2em;
+    opacity: 0;
+}
+button.copy:hover span,
+button.copy:focus-visible span,
+button.copy.visible span {
+    opacity: 100%;
 }
 /* header/section copy button */
 button.copy-header {
     margin: 0 0.2em;
     padding: 0 4px;
     height: 1.16em;
+    opacity: 0;
 }
 button.copy-header img {
     height: 0.88em;
@@ -967,15 +979,12 @@ button#page-search-copy img {
 }
 button#page-search-copy span {
     color: var(--body-text-color);
-    content: attr(aria-label);
     line-height: 1.2em;
     padding: 0.2em;
     top: -0.18em;
-    opacity: 0;
 }
-div.page-search-info:hover button#page-search-copy,
 div.page-search-info:hover button#page-search-copy span {
-    opacity: 90%;
+    opacity: 100%;
 }
 /* snippet copy button */
 button.snippet-copy {
@@ -983,7 +992,6 @@ button.snippet-copy {
     top: 6px;
     right: 6px;
     height: 1.7em;
-    opacity: 50%;
     padding: 2px;
 }
 button.snippet-copy img {
@@ -992,20 +1000,12 @@ button.snippet-copy img {
     padding: 0.05em 0;
 }
 button.snippet-copy span {
-    content: attr(aria-label);
     line-height: 1.2em;
     padding: 0.2em;
     position: relative;
     top: -0.5em;
-    display: none;
 }
 div.snippet-container:hover button.snippet-copy span {
-    display: inline;
-}
-div.snippet-container:hover button.snippet-copy {
-    opacity: 80%;
-}
-div.snippet-container button.snippet-copy:hover {
     opacity: 100%;
 }
 /*

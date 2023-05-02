@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,10 +66,10 @@ public:
   uint cur_idx() const { return _front_idx; }
 
   HeapRegion* at(uint idx) const {
-    HeapRegion* res = NULL;
+    HeapRegion* res = nullptr;
     if (idx < _num_regions) {
       res = _regions[idx];
-      assert(res != NULL, "Unexpected NULL HeapRegion at index %u", idx);
+      assert(res != nullptr, "Unexpected null HeapRegion at index %u", idx);
     }
     return res;
   }

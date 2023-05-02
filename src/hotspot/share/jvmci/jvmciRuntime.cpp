@@ -939,7 +939,9 @@ int JVMCIRuntime::release_cleared_oop_handles() {
     // Example: to_release: 2
 
     // Bulk release the handles with a null referent
-    object_handles()->release(_oop_handles.adr_at(num_alive), to_release);
+    if (to_release != 0) {
+      object_handles()->release(_oop_handles.adr_at(num_alive), to_release);
+    }
 
     // Truncate oop handles to only those with a non-null referent
     JVMCI_event_1("compacted oop handles in JVMCI runtime %d from %d to %d", _id, _oop_handles.length(), num_alive);
@@ -1671,16 +1673,9 @@ Klass* JVMCIRuntime::get_klass_by_name_impl(Klass*& accessing_klass,
     domain = Handle(THREAD, accessing_klass->protection_domain());
   }
 
-  Klass* found_klass;
-  {
-    ttyUnlocker ttyul;  // release tty lock to avoid ordering problems
-    MutexLocker ml(THREAD, Compile_lock);
-    if (!require_local) {
-      found_klass = SystemDictionary::find_constrained_instance_or_array_klass(THREAD, sym, loader);
-    } else {
-      found_klass = SystemDictionary::find_instance_or_array_klass(THREAD, sym, loader, domain);
-    }
-  }
+  Klass* found_klass = require_local ?
+                         SystemDictionary::find_instance_or_array_klass(THREAD, sym, loader, domain) :
+                         SystemDictionary::find_constrained_instance_or_array_klass(THREAD, sym, loader);
 
   // If we fail to find an array klass, look again for its element type.
   // The element type may be available either locally or via constraints.
@@ -1874,13 +1869,9 @@ Method* JVMCIRuntime::get_method_by_index_impl(const constantPoolHandle& cpool,
                                                int index, Bytecodes::Code bc,
                                                InstanceKlass* accessor) {
   if (bc == Bytecodes::_invokedynamic) {
-    ConstantPoolCacheEntry* cpce = cpool->invokedynamic_cp_cache_entry_at(index);
-    bool is_resolved = !cpce->is_f1_null();
-    if (is_resolved) {
-      // Get the invoker Method* from the constant pool.
-      // (The appendix argument, if any, will be noted in the method's signature.)
-      Method* adapter = cpce->f1_as_method();
-      return adapter;
+    int indy_index = cpool->decode_invokedynamic_index(index);
+    if (cpool->resolved_indy_entry_at(indy_index)->is_resolved()) {
+      return cpool->resolved_indy_entry_at(indy_index)->method();
     }
 
     return nullptr;
@@ -2120,7 +2111,7 @@ JVMCI::CodeInstallResult JVMCIRuntime::register_method(JVMCIEnv* JVMCIENV,
     // To prevent compile queue updates.
     MutexLocker locker(THREAD, MethodCompileQueue_lock);
 
-    // Prevent SystemDictionary::add_to_hierarchy from running
+    // Prevent InstanceKlass::add_to_hierarchy from running
     // and invalidating our dependencies until we install this method.
     MutexLocker ml(Compile_lock);
 
