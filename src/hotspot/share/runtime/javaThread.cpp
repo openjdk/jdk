@@ -1671,8 +1671,9 @@ void JavaThread::prepare(jobject jni_thread, ThreadPriority prio) {
   // will not be visited by GC.
   Threads::add(this);
   // Publish the JavaThread* in java.lang.Thread after the JavaThread* is
-  // on a ThreadsList. There will be a release when the Theads_lock is
-  // dropped somewhere in the caller, but let's be more proactive.
+  // on a ThreadsList. We don't want to wait for the release when the
+  // Theads_lock is dropped somewhere in the caller since the JavaThread*
+  // is already visible to JVM/TI via the ThreadsList.
   java_lang_Thread::release_set_thread(thread_oop(), this);
 }
 
@@ -2109,8 +2110,10 @@ void JavaThread::start_internal_daemon(JavaThread* current, JavaThread* target,
 
   Threads::add(target); // target is now visible for safepoint/handshake
   // Publish the JavaThread* in java.lang.Thread after the JavaThread* is
-  // on a ThreadsList.
-  java_lang_Thread::set_thread(thread_oop(), target); // isAlive == true now
+  // on a ThreadsList. We don't want to wait for the release when the
+  // Theads_lock is dropped when the 'mu' destructor is run since the
+  // JavaThread* is already visible to JVM/TI via the ThreadsList.
+  java_lang_Thread::release_set_thread(thread_oop(), target); // isAlive == true now
   Thread::start(target);
 }
 

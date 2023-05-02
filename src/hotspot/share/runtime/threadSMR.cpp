@@ -826,7 +826,7 @@ bool ThreadsListHandle::cv_internal_thread_to_JavaThread(jobject jthread,
 
   if (java_thread != JavaThread::current()) {
     // java_thread is not the current JavaThread so we have to verify it
-    // against the ThreadsList:
+    // against the ThreadsList.
     if (!includes(java_thread)) {
       // Not on this ThreadsList so it is not protected.
       return false;
