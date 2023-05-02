@@ -35,10 +35,10 @@ namespace metaspace {
 class Settings : public AllStatic {
 
   // Granularity, in bytes, metaspace is committed with.
-  static size_t _commit_granule_bytes;
+  static constexpr size_t _commit_granule_bytes = 64 * K;
 
   // Granularity, in words, metaspace is committed with.
-  static size_t _commit_granule_words;
+  static constexpr size_t _commit_granule_words = _commit_granule_bytes / BytesPerWord;
 
   // The default size of a VirtualSpaceNode, unless created with an explicitly specified size.
   //  Must be a multiple of the root chunk size.

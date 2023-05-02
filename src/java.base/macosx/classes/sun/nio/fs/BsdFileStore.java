@@ -30,9 +30,6 @@ import java.nio.file.attribute.UserDefinedFileAttributeView;
 import java.io.IOException;
 import java.util.Arrays;
 
-import jdk.internal.util.OperatingSystem;
-import jdk.internal.util.Version;
-
 /**
  * Bsd implementation of FileStore
  */
@@ -95,12 +92,8 @@ class BsdFileStore
 
             // typical macOS file system types that are known to support xattr
             String fstype = entry().fstype();
-            if ("hfs".equals(fstype))
+            if ("hfs".equals(fstype) || "apfs".equals(fstype)) {
                 return true;
-            if ("apfs".equals(fstype)) {
-                // fgetxattr broken on APFS prior to 10.14
-                return OperatingSystem.version()
-                        .compareTo(new Version(10, 14)) >= 0;
             }
 
             // probe file system capabilities

@@ -77,7 +77,8 @@ public enum Architecture {
     }
 
     /**
-     * {@return {@code true} if the current architecture is PPC64LE}
+     * {@return {@code true} if the current architecture is PPC64}
+     * Use {@link #isLittleEndian()} to determine big or little endian.
      */
     @ForceInline
     public static boolean isPPC64() {
