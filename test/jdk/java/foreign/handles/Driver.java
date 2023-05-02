@@ -24,7 +24,7 @@
 /*
  * @test
  * @enablePreview
- * @requires jdk.CABI != "UNSUPPORTED"
+ * @requires jdk.foreign.linker != "UNSUPPORTED"
  * @build invoker_module/* lookup_module/*
  * @run testng/othervm --enable-native-access=invoker_module
  *                     lookup_module/handle.lookup.MethodHandleLookup

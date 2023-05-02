@@ -24,7 +24,7 @@
 /*
  * @test id=default_gc
  * @enablePreview
- * @requires jdk.CABI != "UNSUPPORTED"
+ * @requires jdk.foreign.linker != "UNSUPPORTED"
  * @library /test/lib
  * @library ../
  * @build jdk.test.whitebox.WhiteBox
@@ -42,7 +42,7 @@
 /*
  * @test id=zgc
  * @enablePreview
- * @requires jdk.CABI != "UNSUPPORTED"
+ * @requires jdk.foreign.linker != "UNSUPPORTED"
  * @requires vm.gc.Z
  * @library /test/lib
  * @library ../
@@ -61,7 +61,7 @@
 /*
  * @test id=shenandoah
  * @enablePreview
- * @requires jdk.CABI != "UNSUPPORTED"
+ * @requires jdk.foreign.linker != "UNSUPPORTED"
  * @requires vm.gc.Shenandoah
  * @library /test/lib
  * @library ../

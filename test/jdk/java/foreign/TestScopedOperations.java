@@ -24,7 +24,7 @@
 /*
  * @test
  * @enablePreview
- * @requires jdk.CABI != "UNSUPPORTED"
+ * @requires jdk.foreign.linker != "UNSUPPORTED"
  * @run testng/othervm --enable-native-access=ALL-UNNAMED TestScopedOperations
  */
 

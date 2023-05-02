@@ -128,7 +128,7 @@ public class VMProps implements Callable<Map<String, String>> {
         map.put("release.implementor", this::implementor);
         map.put("jdk.containerized", this::jdkContainerized);
         map.put("vm.flagless", this::isFlagless);
-        map.put("jdk.CABI", this::cabi);
+        map.put("jdk.foreign.linker", this::jdkForeignLinker);
         vmGC(map); // vm.gc.X = true/false
         vmGCforCDS(map); // may set vm.gc
         vmOptFinalFlags(map);
@@ -656,13 +656,13 @@ public class VMProps implements Callable<Map<String, String>> {
     }
 
     /*
-     * A string indicating the current C ABI of the foreign linker that is currently being used.
+     * A string indicating the foreign linker that is currently being used. See jdk.internal.foreign.CABI
+     * for valid values.
+     *
      * "FALLBACK" and "UNSUPPORTED" are special values. The former indicates the fallback linker is
      * being used. The latter indicates an unsupported platform.
-     *
-     * See jdk.internal.foreign.CABI
      */
-    private String cabi() {
+    private String jdkForeignLinker() {
         return String.valueOf(CABI.current());
     }
 

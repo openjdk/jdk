@@ -24,7 +24,7 @@
 /*
  * @test
  * @enablePreview
- * @requires jdk.CABI != "UNSUPPORTED"
+ * @requires jdk.foreign.linker != "UNSUPPORTED"
  * @run testng/othervm
  *   -Djdk.internal.foreign.DowncallLinker.USE_SPEC=true
  *   --enable-native-access=ALL-UNNAMED

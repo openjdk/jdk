@@ -73,7 +73,7 @@ requires.properties= \
     docker.support \
     release.implementor \
     jdk.containerized \
-    jdk.CABI
+    jdk.foreign.linker
 
 # Minimum jtreg version
 requiredVersion=7.2+1
