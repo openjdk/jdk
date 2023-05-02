@@ -40,7 +40,7 @@ import jdk.test.whitebox.WhiteBox;
 /**
  * @test
  * @key jfr
- * @requires vm.hasJFR & vm.gc.Z
+ * @requires vm.hasJFR & vm.gc.Z & vm.opt.final.ZGenerational
  * @key jfr
  * @library /test/lib /test/jdk
  * @build jdk.test.whitebox.WhiteBox

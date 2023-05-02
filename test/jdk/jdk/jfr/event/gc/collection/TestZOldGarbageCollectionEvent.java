@@ -35,7 +35,7 @@ import jdk.test.lib.jfr.Events;
 
 /**
  * @test
- * @requires vm.hasJFR & vm.gc.Z
+ * @requires vm.hasJFR & vm.gc.Z & vm.opt.final.ZGenerational
  * @key jfr
  * @library /test/lib /test/jdk
  * @run main/othervm -Xmx50m -XX:+UseZGC -XX:+UnlockExperimentalVMOptions -XX:-UseFastUnorderedTimeStamps -Xlog:gc* jdk.jfr.event.gc.collection.TestZOldGarbageCollectionEvent

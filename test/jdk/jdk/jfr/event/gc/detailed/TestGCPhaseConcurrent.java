@@ -34,8 +34,16 @@ import jdk.test.lib.jfr.Events;
  * @test TestGCPhaseConcurrent
  * @key jfr
  * @library /test/lib /test/jdk /test/hotspot/jtreg
- * @requires vm.hasJFR & vm.gc.Z
+ * @requires vm.hasJFR & vm.gc.Z & vm.opt.final.ZGenerational
  * @run main/othervm -XX:+UseZGC -Xmx32M jdk.jfr.event.gc.detailed.TestGCPhaseConcurrent Z
+ */
+
+/**
+ * @test TestGCPhaseConcurrent
+ * @key jfr
+ * @library /test/lib /test/jdk /test/hotspot/jtreg
+ * @requires vm.hasJFR & vm.gc.Z & !vm.opt.final.ZGenerational
+ * @run main/othervm -XX:+UseZGC -Xmx32M jdk.jfr.event.gc.detailed.TestGCPhaseConcurrent X
  */
 
 /**
