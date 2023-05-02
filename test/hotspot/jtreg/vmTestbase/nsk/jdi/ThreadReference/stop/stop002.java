@@ -60,7 +60,7 @@ public class stop002 {
 
     // debuggee local var used to find needed non-throwable object
     static final String DEBUGGEE_NON_THROWABLE_VAR= "stop002tNonThrowable";
-    // debuggee local var used to find needed non-throwable object
+    // debuggee local var used to find needed throwable object
     static final String DEBUGGEE_THROWABLE_VAR = "stop002tThrowable";
     // debuggee fields used to indicate to exit infinite loops
     static final String DEBUGGEE_STOP_LOOP1_FIELD = "stopLooping1";
