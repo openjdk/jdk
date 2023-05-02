@@ -292,6 +292,8 @@ public interface RandomGenerator {
      * @throws IllegalArgumentException if {@code left} is not finite,
      *         or {@code right} is not finite, or if the specified interval
      *         is empty.
+     *
+     * @since 21
      */
     default DoubleStream equiDoubles(double left, double right,
         boolean isLeftIncluded, boolean isRightIncluded) {
