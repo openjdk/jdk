@@ -126,8 +126,7 @@ public abstract class LocaleProviderAdapter {
             for (String type : types) {
                 type = type.trim().toUpperCase(Locale.ROOT);
                 if (type.equals("COMPAT") || type.equals("JRE")) {
-                    compatWarningMessage = "COMPAT locale provider will be removed in a future release";
-                    type = "JRE";
+                    compatWarningMessage = "COMPAT locale provider has been removed";
                 }
                 try {
                     Type aType = Type.valueOf(type.trim().toUpperCase(Locale.ROOT));
@@ -143,7 +142,7 @@ public abstract class LocaleProviderAdapter {
 
         if (!typeList.isEmpty()) {
             // bona fide preference exists
-            if (!(typeList.contains(Type.CLDR) || typeList.contains(Type.JRE))) {
+            if (!typeList.contains(Type.CLDR)) {
                 // Append FALLBACK as the last resort when no ResourceBundleBasedAdapter is available.
                 typeList.add(Type.FALLBACK);
             }
