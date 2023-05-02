@@ -54,19 +54,19 @@ public class caseFoldLanguageTagTest {
 
     @ParameterizedTest
     @MethodSource("wellFormedTags")
-    public void TestWellFormedTags(String tag, String foldedTag) {
+    public void wellFormedTags(String tag, String foldedTag) {
         assertEquals(foldedTag, Locale.caseFoldLanguageTag(tag), String.format("Folded %s", tag));
     }
 
     @ParameterizedTest
     @MethodSource("illFormedTags")
-    public void TestIllFormedTags(String tag) {
+    public void illFormedTags(String tag) {
         assertThrows(IllformedLocaleException.class, () ->
                 Locale.caseFoldLanguageTag(tag));
     }
 
     @Test
-    public void TestNPE() {
+    public void throwNPE() {
         assertThrows(NullPointerException.class, () ->
                 Locale.caseFoldLanguageTag(null));
     }
