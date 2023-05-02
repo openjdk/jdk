@@ -58,11 +58,6 @@ public class SecuritySupport {
      */
     static volatile boolean firstTime = true;
 
-    /**
-     * Flag indicating whether a custom config has been read
-     */
-    static volatile boolean firstTimeCustom = true;
-
     private SecuritySupport() {}
 
     public static String getErrorMessage(Locale locale, String bundle, String key,
@@ -202,8 +197,13 @@ public class SecuritySupport {
         if (firstTime) {
             synchronized (cacheProps) {
                 if (firstTime) {
-                    boolean found = false;
-                    if (stax) {
+                    boolean found = loadProperties(
+                            Paths.get(SecuritySupport.getSystemProperty("java.home"),
+                                "conf", "jaxp.properties")
+                                .toAbsolutePath().normalize().toString());
+
+                    // attempts to find stax.properties only if jaxp.properties is not available
+                    if (stax && !found) {
                         found = loadProperties(
                             Paths.get(SecuritySupport.getSystemProperty("java.home"),
                                     "conf", "stax.properties")
@@ -211,26 +211,13 @@ public class SecuritySupport {
                         );
                     }
 
-                    if (!found) {
-                        loadProperties(
-                            Paths.get(SecuritySupport.getSystemProperty("java.home"),
-                                "conf", "jaxp.properties")
-                                .toAbsolutePath().normalize().toString());
-                    }
-                    firstTime = false;
-                }
-            }
-        }
-
-        // load the custom configure on top of the default if any
-        if (firstTimeCustom) {
-            synchronized (cacheProps) {
-                if (firstTimeCustom) {
+                    // load the custom configure on top of the default if any
                     String configFile = SecuritySupport.getSystemProperty(JdkConstants.CONFIG_FILE);
                     if (configFile != null) {
                         loadProperties(configFile);
                     }
-                    firstTimeCustom = false;
+
+                    firstTime = false;
                 }
             }
         }
@@ -250,7 +237,7 @@ public class SecuritySupport {
                 cacheProps.load(in);
                 return true;
             } catch (IOException e) {
-                // ignore file not found error
+                // shouldn't happen, but required by method getFileInputStream
             }
         }
         return false;

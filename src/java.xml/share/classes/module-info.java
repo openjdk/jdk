@@ -24,10 +24,28 @@
  */
 
 /**
- * Defines the Java API for XML Processing (JAXP), the Streaming API for XML (StAX),
- * the Simple API for XML (SAX), and the W3C Document Object Model (DOM) API.
+ * Defines the Java API for XML Processing (JAXP) that constitutes the java.xml
+ * XML library. Factories and processors in this module are generally referred
+ * to as XML factories and processors.
  *
- * <h2 id="ConfigurationFile">JAXP Configuration File</h2>
+ * <h2 id="PropertiesAndSP">Properties and System Properties</h2>
+ * Properties, defining the behavior and features of XML factories and processors
+ * on which they are set, may have defined corresponding System Properties. When
+ * they do, the system properties allow them to be set through the System API,
+ * on the command line and/or in the
+ * <a href="#ConfigurationFile">XML Library (java.xml) Configuration File</a>,
+ * without changing code in the later two options.
+ * <p>
+ * The {@link javax.xml.catalog.CatalogFeatures CatalogFeatures}' RESOLVE
+ * property for example has defined a corresponding System Property
+ * {@code javax.xml.catalog.resolve} as listed in the table
+ * {@link javax.xml.catalog.CatalogFeatures Catalog Features} that gives it the
+ * flexibility to be set through the System API, or without making code changes,
+ * be initialized on the command line, or in the XML Library (java.xml)
+ * Configuration File as illustrated in the <a href="#PP">Property Precedence</a>
+ * section.
+ *
+ * <h2 id="ConfigurationFile">XML Library (java.xml) Configuration File</h2>
  * JAXP supports the use of a configuration file for the
  * <a href="#LookupMechanism">Factory Lookup Mechanism</a> and
  * setting properties that have defined corresponding system properties.
@@ -57,9 +75,9 @@
  *
  * <h3 id="CF_Default">{@code jaxp.properties}</h3>
  * By default, the <a href="#Factories">JAXP Factories</a> will look for a
- * configuration file called {@code jaxp.properties} in the {@code conf} directory
- * of the Java installation and use the entries if any to customize the behavior
- * of the factories.
+ * configuration file called {@code jaxp.properties} in the ${java.home}/conf
+ * directory and use the entries if any to customize the behavior of the XML
+ * factories and processors.
  *
  * <p>
  * {@code jaxp.properties} will be read only once during the initialization of
@@ -70,14 +88,16 @@
  *
  *
  * <h3 id="CF_SP">User-defined Configuration File</h3>
- * A user-defined configuration file can be set outside of the JDK by using the
- * system property {@code java.xml.config.file}.
+ * A system property {@systemProperty java.xml.config.file} can be set on the
+ * command line or through the System API (e.g. System.setProperty method) to
+ * specify the location of a configuration file on the file system.
  *
  * <p>
  * When the system property is specified, the configuration file it points to
  * will be read and the property entries in it used to override those in
- * {@code jaxp.properties}. If the system property does not exist when a factory
- * is instantiated, no further attempt will be made to check for its existence.
+ * {@code jaxp.properties}. If the system property does not exist when the JAXP
+ * implementation is initialized, no further attempt will be made to check for
+ * its existence.
  * <p>
  * The value of the property shall be a valid file path to a configuration file.
  * If the file path is not absolute, it will be considered relative to the working
@@ -251,7 +271,8 @@
  *
  * <h2 id="PP">Property Precedence</h2>
  * Properties in this module can be set in multiple ways, including using
- * the API properties, system properties, <a href="#ConfigurationFile">JAXP Configuration File</a>,
+ * the API properties, system properties,
+ * <a href="#ConfigurationFile">XML Library (java.xml) Configuration File</a>,
  * the {@link javax.xml.XMLConstants#FEATURE_SECURE_PROCESSING FEATURE_SECURE_PROCESSING}
  * (hereafter referred to FSP), and the default values. The order of precedence
  * for the configuration sources is defined as follows, with earlier ones overriding the later:
@@ -261,14 +282,15 @@
  *      Properties specified through factories or processors API;
  * </li>
  * <li><p>
- *      Properties set using the corresponding System properties;
+ *      Properties set via the corresponding System properties on the command line
+ * with -Dkey=value or by using the System API (e.g. System.setProperty(key, value));
  * </li>
  * <li><p>
  *      Properties set in a user-defined <a href="#ConfigurationFile">Configuration File</a>
  * pointed to by the system property {@code java.xml.config.file};
  * </li>
  * <li><p>
- *      Properties set in the default JAXP Configuration File
+ *      Properties set in the default XML Library (java.xml) Configuration File
  * <a href="#CF_Default">{@code jaxp.properties}</a>;
  * </li>
  * <li><p>
@@ -328,26 +350,17 @@
  * </ul>
  *
  * @implNote
- *
- * <h2 id="ConfigurationFile">JAXP Configuration File</h2>
- * The <a href="#ConfigurationFile">JAXP Configuration File</a> defined by the XML
- * processing API may be used to set the JDK implementation specific properties
- * and features. A configuration file may contain any of the properties listed in
- * the table <a href="#Properties">Implementation Specific Properties</a> and
- * <a href="#Features">Features</a>. See also
- * <a href="#PP">Property Precedence</a> for the use of the configuration
- * file in setting properties.
- *
- *
  * <h2>Implementation Specific Features and Properties</h2>
  *
  * In addition to the standard features and properties described within the public
  * APIs of this module, the JDK implementation supports a further number of
  * implementation specific features and properties. This section describes the
- * naming convention, System Properties, precedence order, and processors to which
- * a property applies. A table listing the implementation specific features and
- * properties that the implementation currently supports can be found at the end
- * of this note.
+ * naming convention, System Properties, precedence order, and processors for which
+ * a property is applies.
+ * <p>
+ * Properties and features currently supported by the JDK implementation are listed
+ * in the table <a href="#Properties">Implementation Specific Properties</a>
+ * and <a href="#Features">Features</a>.
  *
  * <h3 id="NamingConvention">Naming Convention</h3>
  * The names of the features and properties are fully qualified, composed of a
@@ -376,15 +389,19 @@
  * </pre>
  *
  * <h3>System Properties</h3>
- * A property may have a corresponding System Property with the same name.
- * A System Property should be set prior to the creation of a processor and
- * may be cleared afterwards.
+ * A property may have a corresponding System Property with the same name as
+ * shown in the table <a href="#Properties">Implementation Specific Properties</a>
+ * and <a href="#Features">Features</a>.
+ * As described in the <a href="#PropertiesAndSP">Properties and System Properties</a>
+ * section, a System Property can be set through the System API, on the command line
+ * and/or in the configuration file.
  *
  * <h3>Configuration File</h3>
- * A system property can be specified in the <a href="#ConfigurationFile">JAXP Configuration File</a>
- * to set the behavior for the JAXP factories. The format is
- * {@code key=value}, where the key is the property name as listed in the column
- * {@code Full Name} and value in the column {@code Value} in the table
+ * A system property can be specified in the
+ * <a href="#ConfigurationFile">XML Library (java.xml) Configuration File</a>
+ * to customize the behavior of the XML factories and processors. The format is
+ * {@code key=value}, where the key is the system property name as listed in the
+ * column {@code Full Name} and value in the column {@code Value} in the table
  * <a href="#Properties">Implementation Specific Properties</a> and
  * <a href="#Features">Features</a>. For example:
  * <pre>
@@ -520,7 +537,7 @@
  * </tbody>
  * </table>
  *
- * <h3>Implementation Specific Features and Properties</h3>
+ * <h3>List of Implementation Specific Features and Properties</h3>
  * The Implementation Specific Features and Properties reflect JDK's choice to
  * manage the limitations on resources while complying with the API specification,
  * or allow applications to alter behaviors beyond those required by the standards.
