@@ -412,6 +412,8 @@
   template(run_finalization_name,                     "runFinalization")                          \
   template(dispatchUncaughtException_name,            "dispatchUncaughtException")                \
   template(loadClass_name,                            "loadClass")                                \
+  template(notifyJvmtiStart_name,                     "notifyJvmtiStart")                         \
+  template(notifyJvmtiEnd_name,                       "notifyJvmtiEnd")                           \
   template(notifyJvmtiMount_name,                     "notifyJvmtiMount")                         \
   template(notifyJvmtiUnmount_name,                   "notifyJvmtiUnmount")                       \
   template(notifyJvmtiHideFrames_name,                "notifyJvmtiHideFrames")                    \

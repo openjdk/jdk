@@ -22,7 +22,7 @@
  */
 package jdk.internal.util;
 
-import jdk.internal.util.OperatingSystemProps;
+import jdk.internal.util.PlatformProps;
 import jdk.internal.vm.annotation.ForceInline;
 
 /**
@@ -80,15 +80,14 @@ public enum OperatingSystem {
     AIX,
     ;
 
-    // Cache a copy of the array for lightweight indexing
-    private static final OperatingSystem[] osValues = OperatingSystem.values();
+    private static final OperatingSystem CURRENT_OS = initOS(PlatformProps.CURRENT_OS_STRING);
 
     /**
      * {@return {@code true} if built for the Linux operating system}
      */
     @ForceInline
     public static boolean isLinux() {
-        return OperatingSystemProps.TARGET_OS_IS_LINUX;
+        return PlatformProps.TARGET_OS_IS_LINUX;
     }
 
     /**
@@ -96,7 +95,7 @@ public enum OperatingSystem {
      */
     @ForceInline
     public static boolean isMacOS() {
-        return OperatingSystemProps.TARGET_OS_IS_MACOSX;
+        return PlatformProps.TARGET_OS_IS_MACOS;
     }
 
     /**
@@ -104,7 +103,7 @@ public enum OperatingSystem {
      */
     @ForceInline
     public static boolean isWindows() {
-        return OperatingSystemProps.TARGET_OS_IS_WINDOWS;
+        return PlatformProps.TARGET_OS_IS_WINDOWS;
     }
 
     /**
@@ -112,13 +111,50 @@ public enum OperatingSystem {
      */
     @ForceInline
     public static boolean isAix() {
-        return OperatingSystemProps.TARGET_OS_IS_AIX;
+        return PlatformProps.TARGET_OS_IS_AIX;
     }
 
     /**
      * {@return the current operating system}
      */
     public static OperatingSystem current() {
-        return osValues[OperatingSystemProps.CURRENT_OS_ORDINAL];
+        return CURRENT_OS;
+    }
+
+    /**
+     * Returns the OperatingSystem of the build.
+     * Build time names are mapped to respective uppercase enum values.
+     * Names not recognized throw ExceptionInInitializerError with IllegalArgumentException.
+     */
+    private static OperatingSystem initOS(String osName) {
+        // Too early to use Locale conversions, manually do uppercase
+        StringBuilder sb = new StringBuilder(osName);
+        for (int i = 0; i < sb.length(); i++) {
+            char ch = sb.charAt(i);
+            if (ch >= 'a' && ch <= 'z') {
+                sb.setCharAt(i, (char)(ch - ('a' - 'A')));  // Map lower case down to uppercase
+            }
+        }
+        osName = sb.toString();
+        return OperatingSystem.valueOf(osName);
+    }
+
+    /**
+     * {@return the operating system version with major, minor, micro}
+     */
+    public static Version version() {
+        return CURRENT_VERSION;
+    }
+
+    // Parse and save the current version
+    private static final Version CURRENT_VERSION = initVersion();
+
+    private static Version initVersion() {
+        final String osVer = StaticProperty.osVersion();
+        try {
+            return Version.parse(osVer);
+        } catch (IllegalArgumentException iae) {
+            throw new InternalError("os.version malformed: " + osVer, iae);
+        }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,7 +72,7 @@ public:
 G1EvacuationRootClosures* G1EvacuationRootClosures::create_root_closures(G1CollectedHeap* g1h,
                                                                          G1ParScanThreadState* pss,
                                                                          bool process_only_dirty_klasses) {
-  G1EvacuationRootClosures* res = NULL;
+  G1EvacuationRootClosures* res = nullptr;
   if (g1h->collector_state()->in_concurrent_start_gc()) {
     if (ClassUnloadingWithConcurrentMark) {
       res = new G1ConcurrentStartMarkClosures<false>(g1h, pss);

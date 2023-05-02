@@ -110,7 +110,7 @@ void G1CollectionCandidateList::print(const char* prefix) {
 }
 
 int G1CollectionCandidateList::order_regions(CandidateInfo* ci1, CandidateInfo* ci2) {
-  // Make sure that NULL entries are moved to the end.
+  // Make sure that null entries are moved to the end.
   if (ci1->_r == nullptr) {
     if (ci2->_r == nullptr) {
       return 0;

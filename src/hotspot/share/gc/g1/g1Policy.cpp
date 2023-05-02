@@ -516,7 +516,7 @@ double G1Policy::predict_survivor_regions_evac_time() const {
 G1GCPhaseTimes* G1Policy::phase_times() const {
   // Lazy allocation because it must follow initialization of all the
   // OopStorage objects by various other subsystems.
-  if (_phase_times == NULL) {
+  if (_phase_times == nullptr) {
     _phase_times = new G1GCPhaseTimes(_phase_times_timer, ParallelGCThreads);
   }
   return _phase_times;
@@ -1040,7 +1040,7 @@ double G1Policy::predict_eden_copy_time_ms(uint count, size_t* bytes_to_copy) co
     return 0.0;
   }
   size_t const expected_bytes = _eden_surv_rate_group->accum_surv_rate_pred(count) * HeapRegion::GrainBytes;
-  if (bytes_to_copy != NULL) {
+  if (bytes_to_copy != nullptr) {
     *bytes_to_copy = expected_bytes;
   }
   return _analytics->predict_object_copy_time_ms(expected_bytes, collector_state()->in_young_only_phase());

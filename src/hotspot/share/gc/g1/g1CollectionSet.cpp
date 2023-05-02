@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,7 +82,7 @@ void G1CollectionSet::init_region_lengths(uint eden_cset_region_length,
 }
 
 void G1CollectionSet::initialize(uint max_region_length) {
-  guarantee(_collection_set_regions == NULL, "Must only initialize once.");
+  guarantee(_collection_set_regions == nullptr, "Must only initialize once.");
   _collection_set_max_length = max_region_length;
   _collection_set_regions = NEW_C_HEAP_ARRAY(uint, max_region_length, mtGC);
 

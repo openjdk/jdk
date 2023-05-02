@@ -45,7 +45,7 @@ class G1BuildCandidateRegionsTask : public WorkerTask {
   // Work area for building the set of collection set candidates. Contains references
   // to heap regions with their GC efficiencies calculated. To reduce contention
   // on claiming array elements, worker threads claim parts of this array in chunks;
-  // Array elements may be NULL as threads might not get enough regions to fill
+  // Array elements may be null as threads might not get enough regions to fill
   // up their chunks completely.
   // Final sorting will remove them.
   class G1BuildCandidateArray : public StackObj {
