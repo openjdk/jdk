@@ -55,7 +55,7 @@ public class TestNested extends NativeTestHelper {
 
     @Test(dataProvider = "nestedLayouts")
     public void testNested(GroupLayout layout) throws Throwable {
-        try (Arena arena = Arena.openConfined()) {
+        try (Arena arena = Arena.ofConfined()) {
             Random random = new Random(0);
             TestValue testValue = genTestValue(random, layout, arena);
 
