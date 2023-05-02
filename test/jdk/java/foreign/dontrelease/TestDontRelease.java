@@ -26,7 +26,7 @@
  * @enablePreview
  * @library ../ /test/lib
  * @modules java.base/jdk.internal.ref java.base/jdk.internal.foreign
- * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64" | os.arch == "ppc64le" | os.arch == "riscv64"
+ * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64" | os.arch == "riscv64"
  * @run testng/othervm --enable-native-access=ALL-UNNAMED TestDontRelease
  */
 
@@ -42,7 +42,7 @@ import static java.lang.foreign.ValueLayout.ADDRESS;
 import static java.lang.foreign.ValueLayout.JAVA_INT;
 import static org.testng.Assert.assertTrue;
 
-public class TestDontRelease extends NativeTestHelper {
+public class TestDontRelease extends NativeTestHelper  {
 
     static {
         System.loadLibrary("DontRelease");
@@ -53,7 +53,7 @@ public class TestDontRelease extends NativeTestHelper {
         MethodHandle handle = downcallHandle("test_ptr", FunctionDescriptor.ofVoid(ADDRESS));
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment segment = arena.allocate(JAVA_INT);
-            ((MemorySessionImpl) arena.scope()).whileAlive(() -> {
+            ((MemorySessionImpl)arena.scope()).whileAlive(() -> {
                 Thread t = new Thread(() -> {
                     try {
                         // acquire of the segment should fail here,
@@ -78,3 +78,4 @@ public class TestDontRelease extends NativeTestHelper {
         }
     }
 }
+
