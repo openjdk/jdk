@@ -42,14 +42,14 @@ public class SimpleIO {
         System.setIn(instream);
     }
 
-    static void testInput() {
+    static void testinput() {
         provideInput("Joan");
         String i1 = input("Name >> ");
         println(1, i1);
 
         provideInput("Pelham");
         print("Address >> ");
-        String i2 = input();
+        String i2 = input("");
         println(2, i2);
     }
 
@@ -107,6 +107,37 @@ public class SimpleIO {
         print(read(path));
     }
 
+    static void testScanner() {
+        String input = """
+                The first line
+                Some tokens
+                11 23 4.5 6.7 true
+                377 ABCD
+                """;
+        var scanner = scanner(input);
+        println(scanner.hasNextLine());
+        println(scanner.nextLine());
+        println(scanner.hasNext());
+        println(scanner.next());
+        println(scanner.hasNext());
+        println(scanner.next());
+        println(scanner.hasNextInt());
+        println(scanner.nextInt());
+        println(scanner.hasNextLong());
+        println(scanner.nextLong());
+        println(scanner.hasNextFloat());
+        println(scanner.nextFloat());
+        println(scanner.hasNextDouble());
+        println(scanner.nextDouble());
+        println(scanner.hasNextBoolean());
+        println(scanner.nextBoolean());
+        println(scanner.hasNextInt(8));
+        println(scanner.nextInt(8));
+        println(scanner.hasNextInt(16));
+        println(scanner.nextInt(16));
+        println(scanner.hasNext());
+    }
+
     static void testThrown(String test, Consumer<String> consumer) {
         try {
             consumer.accept(test);
@@ -142,8 +173,7 @@ public class SimpleIO {
     }
 
     public static void main(String[] args) throws IOException {
-        testInput();
-
+        testinput();
 
         PrintStream out = System.out;
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -156,6 +186,7 @@ public class SimpleIO {
         testReadWriteFilename();
         testReadWritePath();
         testForExceptions();
+        testScanner();
 
         String expected = """
 Hello Joan
@@ -196,6 +227,27 @@ writeLines bad filename UncheckedIOException thrown
 writeLines bad filename UncheckedIOException thrown
 writeLines null path NullPointerException thrown
 writeLines path null lines NullPointerException thrown
+true
+The first line
+true
+Some
+true
+tokens
+true
+11
+true
+23
+true
+4.5
+true
+6.7
+true
+true
+true
+255
+true
+43981
+false
 """;
         String output = baos.toString(UTF_8);
 

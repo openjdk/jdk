@@ -31,8 +31,12 @@ import java.lang.invoke.MethodType;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.InputMismatchException;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
+import java.util.NoSuchElementException;
 import java.util.Scanner;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -603,6 +607,391 @@ public final class SimpleIO {
             lines.forEach(out::println);
         } catch (IOException ex) {
             throw new UncheckedIOException(ex);
+        }
+    }
+
+    /**
+     * This method returns a simple string scanner for reading white space delimited
+     * tokens as well as reading ints of various radices, longs also of various radices,
+     * floats, doubles, booleans and lines delimited by line terminators.
+     * For example;
+     * {@snippet :
+     * var input = input("Enter a name, age and weight>> ");
+     * var scanner = scanner(input);
+     * var name = scanner.next();
+     * var age = scanner.nextInt();
+     * var weight = scanner.nextFloat();
+     * }
+     * @param string string to be scanned
+     * @return a {@link StringScanner} object
+     */
+    public static StringScanner scanner(String string) {
+        Objects.requireNonNull(string, "string must not be null");
+        return new StringScanner(string);
+    }
+
+    /**
+     * This simple string scanner provides methods for reading white space delimited
+     * tokens as well as reading ints of various radices, longs also of various radices,
+     * floats, doubles, booleans and lines delimited by line terminators.
+     * For example;
+     * {@snippet :
+     * var input = input("Enter a name, age and weight>> ");
+     * var scanner = scanner(input);
+     * var name = scanner.next();
+     * var age = scanner.nextInt();
+     * var weight = scanner.nextFloat();
+     * }
+     */
+    public static class StringScanner implements Iterator<String>, Iterable<String> {
+        private final Scanner scanner;
+
+        private StringScanner(String string) {
+            this.scanner = new Scanner(string);
+            this.scanner.useLocale(Locale.ROOT);
+            this.scanner.useRadix(10);
+        }
+
+        @Override
+        public Iterator<String> iterator() {
+            return this;
+        }
+
+        /**
+         * Returns true if this scanner has another token in its input.
+         * @return true if and only if this scanner has another token
+         * @see java.util.Iterator
+         */
+        @Override
+        public boolean hasNext() {
+            return scanner.hasNext();
+        }
+
+        /**
+         * Finds and returns the next complete token from this scanner.
+         * A complete token is preceded and followed by input that matches
+         * the delimiter pattern. This method may block while waiting for input
+         * to scan, even if a previous invocation of {@link #hasNext} returned
+         * {@code true}.
+         *
+         * @return the next token
+         * @throws NoSuchElementException if no more tokens are available
+         * @see java.util.Iterator
+         */
+        @Override
+        public String next() {
+            return scanner.next();
+        }
+
+        /**
+         * The remove operation is not supported by this implementation of
+         * {@code Iterator}.
+         *
+         * @throws UnsupportedOperationException if this method is invoked.
+         * @see java.util.Iterator
+         */
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException();
+        }
+        /**
+         * Returns true if there is another line in the input of this scanner.
+         *
+         * @return true if there is a line separator in the remaining input
+         * or if the input has other remaining characters
+         */
+        public boolean hasNextLine() {
+            return scanner.hasNextLine();
+        }
+
+        /**
+         * Advances this scanner past the current line and returns the input
+         * that was skipped.
+         * <p>
+         * This method returns the rest of the current line, excluding any line
+         * separator at the end. The position is set to the beginning of the next
+         * line.
+         *
+         * @return the line that was skipped
+         * @throws NoSuchElementException if no line was found
+         */
+        public String nextLine() {
+            return scanner.nextLine();
+        }
+
+        /**
+         * Returns true if the next token in this scanner's input can be
+         * interpreted as a boolean value using a case insensitive pattern
+         * created from the string "true|false".  The scanner does not
+         * advance past the input that matched.
+         *
+         * @return true if and only if this scanner's next token is a valid
+         *         boolean value
+         */
+        public boolean hasNextBoolean()  {
+            return scanner.hasNextBoolean();
+        }
+
+        /**
+         * Scans the next token of the input into a boolean value and returns
+         * that value. This method will throw {@code InputMismatchException}
+         * if the next token cannot be translated into a valid boolean value.
+         * If the match is successful, the scanner advances past the input that
+         * matched.
+         *
+         * @return the boolean scanned from the input
+         * @throws InputMismatchException if the next token is not a valid boolean
+         * @throws NoSuchElementException if input is exhausted
+         */
+        public boolean nextBoolean()  {
+            return scanner.nextBoolean();
+        }
+        /**
+         * Returns true if the next token in this scanner's input can be
+         * interpreted as an int value in the default radix using the
+         * {@link #nextInt} method. The scanner does not advance past any input.
+         *
+         * @return true if and only if this scanner's next token is a valid
+         *         int value
+         */
+        public boolean hasNextInt() {
+            return scanner.hasNextInt();
+        }
+
+        /**
+         * Returns true if the next token in this scanner's input can be
+         * interpreted as an int value in the specified radix using the
+         * {@link #nextInt} method. The scanner does not advance past any input.
+         *
+         * <p>If the radix is less than {@link Character#MIN_RADIX Character.MIN_RADIX}
+         * or greater than {@link Character#MAX_RADIX Character.MAX_RADIX}, then an
+         * {@code IllegalArgumentException} is thrown.
+         *
+         * @param radix the radix used to interpret the token as an int value
+         * @return true if and only if this scanner's next token is a valid
+         *         int value
+         * @throws IllegalArgumentException if the radix is out of range
+         */
+        public boolean hasNextInt(int radix) {
+            return scanner.hasNextInt(radix);
+        }
+
+        /**
+         * Scans the next token of the input as an {@code int}.
+         *
+         * <p> An invocation of this method of the form
+         * {@code nextInt()} behaves in exactly the same way as the
+         * invocation {@code nextInt(radix)}, where {@code radix}
+         * is the default radix of this scanner.
+         *
+         * @return the {@code int} scanned from the input
+         * @throws InputMismatchException
+         *         if the next token does not match the <i>Integer</i>
+         *         regular expression, or is out of range
+         * @throws NoSuchElementException if input is exhausted
+         */
+        public int nextInt() {
+            return scanner.nextInt();
+        }
+
+        /**
+         * Scans the next token of the input as an {@code int}.
+         * This method will throw {@code InputMismatchException}
+         * if the next token cannot be translated into a valid int value as
+         * described below. If the translation is successful, the scanner advances
+         * past the input that matched.
+         *
+         * <p> If the next token matches the <a
+         * href="#Integer-regex"><i>Integer</i></a> regular expression defined
+         * above then the token is converted into an {@code int} value as if by
+         * removing all locale specific prefixes, group separators, and locale
+         * specific suffixes, then mapping non-ASCII digits into ASCII
+         * digits via {@link Character#digit Character.digit}, prepending a
+         * negative sign (-) if the locale specific negative prefixes and suffixes
+         * were present, and passing the resulting string to
+         * {@link Integer#parseInt(String, int) Integer.parseInt} with the
+         * specified radix.
+         *
+         * <p>If the radix is less than {@link Character#MIN_RADIX Character.MIN_RADIX}
+         * or greater than {@link Character#MAX_RADIX Character.MAX_RADIX}, then an
+         * {@code IllegalArgumentException} is thrown.
+         *
+         * @param radix the radix used to interpret the token as an int value
+         * @return the {@code int} scanned from the input
+         * @throws InputMismatchException
+         *         if the next token does not match the <i>Integer</i>
+         *         regular expression, or is out of range
+         * @throws NoSuchElementException if input is exhausted
+         * @throws IllegalArgumentException if the radix is out of range
+         */
+        public int nextInt(int radix) {
+            return scanner.nextInt(radix);
+        }
+
+        /**
+         * Returns true if the next token in this scanner's input can be
+         * interpreted as a long value in the default radix using the
+         * {@link #nextLong} method. The scanner does not advance past any input.
+         *
+         * @return true if and only if this scanner's next token is a valid
+         *         long value
+         */
+        public boolean hasNextLong() {
+            return scanner.hasNextLong();
+        }
+
+        /**
+         * Returns true if the next token in this scanner's input can be
+         * interpreted as a long value in the specified radix using the
+         * {@link #nextLong} method. The scanner does not advance past any input.
+         *
+         * <p>If the radix is less than {@link Character#MIN_RADIX Character.MIN_RADIX}
+         * or greater than {@link Character#MAX_RADIX Character.MAX_RADIX}, then an
+         * {@code IllegalArgumentException} is thrown.
+         *
+         * @param radix the radix used to interpret the token as a long value
+         * @return true if and only if this scanner's next token is a valid
+         *         long value
+         * @throws IllegalArgumentException if the radix is out of range
+         */
+        public boolean hasNextLong(int radix) {
+            return scanner.hasNextLong(radix);
+        }
+
+        /**
+         * Scans the next token of the input as a {@code long}.
+         *
+         * <p> An invocation of this method of the form
+         * {@code nextLong()} behaves in exactly the same way as the
+         * invocation {@code nextLong(radix)}, where {@code radix}
+         * is the default radix of this scanner.
+         *
+         * @return the {@code long} scanned from the input
+         * @throws InputMismatchException
+         *         if the next token does not match the <i>Integer</i>
+         *         regular expression, or is out of range
+         * @throws NoSuchElementException if input is exhausted
+         */
+        public long nextLong() {
+            return scanner.nextLong();
+        }
+
+        /**
+         * Scans the next token of the input as a {@code long}.
+         * This method will throw {@code InputMismatchException}
+         * if the next token cannot be translated into a valid long value as
+         * described below. If the translation is successful, the scanner advances
+         * past the input that matched.
+         *
+         * <p> If the next token matches the <a
+         * href="#Integer-regex"><i>Integer</i></a> regular expression defined
+         * above then the token is converted into a {@code long} value as if by
+         * removing all locale specific prefixes, group separators, and locale
+         * specific suffixes, then mapping non-ASCII digits into ASCII
+         * digits via {@link Character#digit Character.digit}, prepending a
+         * negative sign (-) if the locale specific negative prefixes and suffixes
+         * were present, and passing the resulting string to
+         * {@link Long#parseLong(String, int) Long.parseLong} with the
+         * specified radix.
+         *
+         * <p>If the radix is less than {@link Character#MIN_RADIX Character.MIN_RADIX}
+         * or greater than {@link Character#MAX_RADIX Character.MAX_RADIX}, then an
+         * {@code IllegalArgumentException} is thrown.
+         *
+         * @param radix the radix used to interpret the token as an int value
+         * @return the {@code long} scanned from the input
+         * @throws InputMismatchException
+         *         if the next token does not match the <i>Integer</i>
+         *         regular expression, or is out of range
+         * @throws NoSuchElementException if input is exhausted
+         * @throws IllegalArgumentException if the radix is out of range
+         */
+        public long nextLong(int radix) {
+            return scanner.nextLong();
+        }
+
+        /**
+         * Returns true if the next token in this scanner's input can be
+         * interpreted as a float value using the {@link #nextFloat}
+         * method. The scanner does not advance past any input.
+         *
+         * @return true if and only if this scanner's next token is a valid
+         *         float value
+         */
+        public boolean hasNextFloat() {
+            return scanner.hasNextFloat();
+        }
+
+        /**
+         * Scans the next token of the input as a {@code float}.
+         * This method will throw {@code InputMismatchException}
+         * if the next token cannot be translated into a valid float value as
+         * described below. If the translation is successful, the scanner advances
+         * past the input that matched.
+         *
+         * <p> If the next token matches the <a
+         * href="#Float-regex"><i>Float</i></a> regular expression defined above
+         * then the token is converted into a {@code float} value as if by
+         * removing all locale specific prefixes, group separators, and locale
+         * specific suffixes, then mapping non-ASCII digits into ASCII
+         * digits via {@link Character#digit Character.digit}, prepending a
+         * negative sign (-) if the locale specific negative prefixes and suffixes
+         * were present, and passing the resulting string to
+         * {@link Float#parseFloat Float.parseFloat}. If the token matches
+         * the localized NaN or infinity strings, then either "Nan" or "Infinity"
+         * is passed to {@link Float#parseFloat(String) Float.parseFloat} as
+         * appropriate.
+         *
+         * @return the {@code float} scanned from the input
+         * @throws InputMismatchException
+         *         if the next token does not match the <i>Float</i>
+         *         regular expression, or is out of range
+         * @throws NoSuchElementException if input is exhausted
+         */
+        public float nextFloat() {
+            return scanner.nextFloat();
+        }
+
+        /**
+         * Returns true if the next token in this scanner's input can be
+         * interpreted as a double value using the {@link #nextDouble}
+         * method. The scanner does not advance past any input.
+         *
+         * @return true if and only if this scanner's next token is a valid
+         *         double value
+         */
+        public boolean hasNextDouble() {
+            return scanner.hasNextDouble();
+        }
+
+        /**
+         * Scans the next token of the input as a {@code double}.
+         * This method will throw {@code InputMismatchException}
+         * if the next token cannot be translated into a valid double value.
+         * If the translation is successful, the scanner advances past the input
+         * that matched.
+         *
+         * <p> If the next token matches the <a
+         * href="#Float-regex"><i>Float</i></a> regular expression defined above
+         * then the token is converted into a {@code double} value as if by
+         * removing all locale specific prefixes, group separators, and locale
+         * specific suffixes, then mapping non-ASCII digits into ASCII
+         * digits via {@link Character#digit Character.digit}, prepending a
+         * negative sign (-) if the locale specific negative prefixes and suffixes
+         * were present, and passing the resulting string to
+         * {@link Double#parseDouble Double.parseDouble}. If the token matches
+         * the localized NaN or infinity strings, then either "Nan" or "Infinity"
+         * is passed to {@link Double#parseDouble(String) Double.parseDouble} as
+         * appropriate.
+         *
+         * @return the {@code double} scanned from the input
+         * @throws InputMismatchException
+         *         if the next token does not match the <i>Float</i>
+         *         regular expression, or is out of range
+         * @throws NoSuchElementException if the input is exhausted
+         */
+        public double nextDouble() {
+            return scanner.nextDouble();
         }
     }
 
