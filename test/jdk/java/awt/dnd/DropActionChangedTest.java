@@ -76,7 +76,7 @@ public class DropActionChangedTest {
             test.start();
         } finally {
             EventQueue.invokeAndWait(() -> {
-                if(test.frame != null) {
+                if (test.frame != null) {
                     test.frame.dispose();
                 }
             });

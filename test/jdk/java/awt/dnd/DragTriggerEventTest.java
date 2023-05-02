@@ -51,6 +51,10 @@ public class DragTriggerEventTest {
     volatile JFrame frame;
     volatile JList list;
     volatile DropTargetPanel panel;
+    volatile Point srcPoint;
+    volatile Rectangle cellBounds;
+    volatile Point dstPoint;
+    volatile Dimension d;
     static final int FRAME_ACTIVATION_TIMEOUT = 3000;
     volatile boolean mouse1Pressed = false;
     volatile boolean ctrlPressed = false;
@@ -97,13 +101,18 @@ public class DragTriggerEventTest {
             robot.waitForIdle();
 
         try {
-            Point srcPoint = list.getLocationOnScreen();
-            Rectangle cellBounds = list.getCellBounds(0, 0);
+            EventQueue.invokeAndWait(() -> {
+                srcPoint = list.getLocationOnScreen();
+                cellBounds = list.getCellBounds(0, 0);
+            });
+
             srcPoint.translate(cellBounds.x + cellBounds.width / 2,
                                cellBounds.y + cellBounds.height / 2);
 
-            Point dstPoint = panel.getLocationOnScreen();
-            Dimension d = panel.getSize();
+            EventQueue.invokeAndWait(() -> {
+                dstPoint = panel.getLocationOnScreen();
+                d = panel.getSize();
+            });
             dstPoint.translate(d.width / 2, d.height / 2);
 
             for (int delay = 8; delay < 10000 && !panel.getResult(); delay *= 2) {
