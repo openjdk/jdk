@@ -82,7 +82,7 @@ AC_DEFUN_ONCE([LIB_DETERMINE_DEPENDENCIES],
   fi
 
   # Check if ffi is needed
-  if HOTSPOT_CHECK_JVM_VARIANT(zero); then
+  if HOTSPOT_CHECK_JVM_VARIANT(zero) || test "x$ENABLE_FALLBACK_LINKER" = "xtrue"; then
     NEEDS_LIB_FFI=true
   else
     NEEDS_LIB_FFI=false

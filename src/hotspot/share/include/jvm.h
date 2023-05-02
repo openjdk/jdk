@@ -174,6 +174,9 @@ JVM_IsPreviewEnabled(void);
 JNIEXPORT jboolean JNICALL
 JVM_IsContinuationsSupported(void);
 
+JNIEXPORT jboolean JNICALL
+JVM_IsForeignLinkerSupported(void);
+
 JNIEXPORT void JNICALL
 JVM_InitializeFromArchive(JNIEnv* env, jclass cls);
 

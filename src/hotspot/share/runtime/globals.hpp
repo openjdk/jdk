@@ -734,8 +734,9 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   product(intx, MonitorUsedDeflationThreshold, 90, DIAGNOSTIC,              \
           "Percentage of used monitors before triggering deflation (0 is "  \
-          "off). The check is performed on GuaranteedSafepointInterval "    \
-          "or AsyncDeflationInterval.")                                     \
+          "off). The check is performed on GuaranteedSafepointInterval, "   \
+          "AsyncDeflationInterval or GuaranteedAsyncDeflationInterval, "    \
+          "whichever is lower.")                                            \
           range(0, 100)                                                     \
                                                                             \
   product(uintx, NoAsyncDeflationProgressMax, 3, DIAGNOSTIC,                \
@@ -1421,9 +1422,6 @@ const int ObjectAlignmentInBytes = 8;
   develop(size_t, CompressedClassSpaceBaseAddress, 0,                       \
           "Force the class space to be allocated at this address or "       \
           "fails VM initialization (requires -Xshare=off.")                 \
-                                                                            \
-  product(ccstr, MetaspaceReclaimPolicy, "balanced", DIAGNOSTIC,            \
-          "options: balanced, aggressive")                                  \
                                                                             \
   product(bool, PrintMetaspaceStatisticsAtExit, false, DIAGNOSTIC,          \
           "Print metaspace statistics upon VM exit.")                       \
