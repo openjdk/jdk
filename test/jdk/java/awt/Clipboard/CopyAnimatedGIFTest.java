@@ -21,7 +21,6 @@
  * questions.
  */
 
-import java.awt.AWTException;
 import java.awt.Canvas;
 import java.awt.Color;
 import java.awt.EventQueue;
@@ -34,7 +33,6 @@ import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
-import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.CountDownLatch;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -51,9 +49,9 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 public class CopyAnimatedGIFTest {
     private static final long TIMEOUT = 10000;
-    private static final CountDownLatch latch = new CountDownLatch(1);
-    private Image img;
-    private static final CopyAnimatedGIFTest test = new CopyAnimatedGIFTest();
+
+    private final CountDownLatch latch = new CountDownLatch(1);
+    private final Image img = Toolkit.getDefaultToolkit().createImage(imageData);
 
     private static final byte[] imageData = {
             (byte) 0x47, (byte) 0x49, (byte) 0x46, (byte) 0x38, (byte) 0x39,
@@ -82,13 +80,7 @@ public class CopyAnimatedGIFTest {
             (byte) 0x8f, (byte) 0x19, (byte) 0x05, (byte) 0x00, (byte) 0x3b
     };
 
-    private void getImage() {
-        img = Toolkit.getDefaultToolkit().createImage(imageData);
-    }
-
     private void createGUI() {
-        img = Toolkit.getDefaultToolkit().createImage(imageData);
-
         ImageCanvas canvas = new ImageCanvas(img);
         canvas.setBackground(Color.BLUE);
 
@@ -103,21 +95,18 @@ public class CopyAnimatedGIFTest {
         sys.setContents(new MyTransferable(img), null);
     }
 
-    private void runTest(boolean isImageDisplayed) throws AWTException, InterruptedException, InvocationTargetException {
+    private void runTest(boolean isImageDisplayed) throws Exception {
         Robot robot = new Robot();
 
         if (isImageDisplayed) {
-            EventQueue.invokeAndWait(test::createGUI);
-        }
-        else {
-            EventQueue.invokeAndWait(test::getImage);
+            EventQueue.invokeAndWait(this::createGUI);
         }
 
         robot.waitForIdle();
         robot.delay(1000);
 
         EventQueue.invokeLater(() -> {
-            test.copyImage();
+            copyImage();
             latch.countDown();
         });
 
@@ -126,15 +115,14 @@ public class CopyAnimatedGIFTest {
             throw new RuntimeException("Image copying taking too long for image"
                                        + str + " case");
         }
-
     }
 
     public static void main(String[] args) throws Exception {
         // run test with Image showing up on screen
-        test.runTest(true);
+        new CopyAnimatedGIFTest().runTest(true);
 
         // run test without Image showing up
-        test.runTest(false);
+        new CopyAnimatedGIFTest().runTest(false);
     }
 
     private static class ImageCanvas extends Canvas {
@@ -145,7 +133,7 @@ public class CopyAnimatedGIFTest {
 
         @Override
         public void paint(Graphics g) {
-            g.drawImage(img, 0, 0, getSize().width, getSize().height, this);
+            g.drawImage(img, 0, 0, getWidth(), getHeight(), this);
         }
     }
 
