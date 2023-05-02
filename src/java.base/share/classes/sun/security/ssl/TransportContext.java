@@ -457,8 +457,11 @@ final class TransportContext implements ConnectionContext {
 
     private void terminateHandshakeContext() {
         handshakeCtxLock.lock();
-        handshakeContext = null;
-        handshakeCtxLock.unlock();
+        try {
+            handshakeContext = null;
+        } finally {
+            handshakeCtxLock.unlock();
+        }
     }
 
     void setUseClientMode(boolean useClientMode) {

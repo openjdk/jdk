@@ -763,8 +763,8 @@ final class SSLEngineImpl extends SSLEngine implements SSLTransport {
         HandshakeContext context = conContext.handshakeContext;
         try {
             if (context != null && // PRE or POST handshake
-                    !conContext.handshakeContext.taskDelegated &&
-                    !conContext.handshakeContext.delegatedActions.isEmpty()) {
+                    !context.taskDelegated &&
+                    !context.delegatedActions.isEmpty()) {
                 context.taskDelegated = true;
                 return new DelegatedTask(this);
             }
