@@ -53,7 +53,7 @@ public class LanguageTag {
     private List<String> extlangs = Collections.emptyList();   // extlang subtags
     private List<String> variants = Collections.emptyList();   // variant subtags
     private List<String> extensions = Collections.emptyList(); // extensions
-    private boolean wellFormed;
+    private ParseStatus parseSts;
     // Map contains legacy language tags and its preferred mappings from
     // http://www.ietf.org/rfc/rfc5646.txt
     // Keys are lower-case strings.
@@ -203,7 +203,6 @@ public class LanguageTag {
         }
         tag.parsePrivateuse(itr, sts);
         if (!itr.isDone() && !sts.isError()) {
-            tag.wellFormed = false;
             String s = itr.current();
             sts.errorIndex = itr.currentStart();
             if (s.isEmpty()) {
@@ -211,9 +210,8 @@ public class LanguageTag {
             } else {
                 sts.errorMsg = "Invalid subtag: " + s;
             }
-        } else {
-            tag.wellFormed = true;
         }
+        tag.parseSts = sts;
         return tag;
     }
 
@@ -410,9 +408,11 @@ public class LanguageTag {
     }
 
     public static String caseFoldTag(String tag) {
+        LanguageTag parsedTag = parse(tag, null);
         // Illegal tags
-        if (!parse(tag, null).wellFormed) {
-            throw new IllformedLocaleException("Ill formed tag");
+        if (parsedTag.parseSts.errorMsg != null) {
+            throw new IllformedLocaleException(String.format("Ill formed tag:" +
+                    " %s", parsedTag.parseSts.errorMsg));
         }
         // Legacy tags
         String potentialLegacy = tag.toLowerCase(Locale.ROOT);
