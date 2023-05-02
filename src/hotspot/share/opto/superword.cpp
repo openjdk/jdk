@@ -2185,12 +2185,15 @@ bool SuperWord::implemented(Node_List* p) {
       // integer subword types with superword vectorization.
       // See JDK-8294816 for miscompilation issues with shorts.
       return false;
-    } else if (is_cmove_fp_opcode(opc)) {
-      retValue = is_cmov_pack(p) && VectorNode::implemented(opc, size, velt_basic_type(p0));
-      NOT_PRODUCT(if(retValue && is_trace_cmov()) {tty->print_cr("SWPointer::implemented: found cmove pack"); print_pack(p);})
-    } else if (is_cmov_pack(p)) {
-      // Accept internal CMove nodes that are later hacked away, see SuperWord::output.
-      assert(p0->Opcode() == Op_CmpF || p0->Opcode() == Op_CmpD || p0->Opcode() == Op_Bool, "cmov nodes only");
+    ////} else if (is_cmove_fp_opcode(opc)) {
+    ////  retValue = is_cmov_pack(p) && VectorNode::implemented(opc, size, velt_basic_type(p0));
+    ////  NOT_PRODUCT(if(retValue && is_trace_cmov()) {tty->print_cr("SWPointer::implemented: found cmove pack"); print_pack(p);})
+    ////} else if (is_cmov_pack(p)) {
+    ////  // Accept internal CMove nodes that are later hacked away, see SuperWord::output.
+    ////  assert(p0->Opcode() == Op_CmpF || p0->Opcode() == Op_CmpD || p0->Opcode() == Op_Bool, "cmov nodes only");
+    ////  retValue = true;
+    } else if (p0->is_Cmp()) {
+      // Assume we have a Bool below, which will use this node.
       retValue = true;
     } else if (requires_long_to_int_conversion(opc)) {
       // Java API for Long.bitCount/numberOfLeadingZeros/numberOfTrailingZeros
@@ -3013,6 +3016,28 @@ bool SuperWord::output() {
         Node* one = vector_opd(p, 3);
         vn = VectorNode::make(opc, in, zero, one, vlen, velt_basic_type(n));
         vlen_in_bytes = vn->as_Vector()->length_in_bytes();
+      } else if (n->is_Cmp()) {
+        // Bool + Cmp -> VectorMaskCmp
+        continue;
+      } else if (n->is_Bool()) {
+        // Bool + Cmp -> VectorMaskCmp
+        BoolNode* bol = n->as_Bool();
+        BoolTest::mask bol_test = bol->_test._test;
+        CmpNode* cmp = bol->in(1)->as_Cmp();
+        Node_List* p_cmp = my_pack(cmp);
+        assert(p_cmp != nullptr, "Bool must have matching Cmp pack");
+        Node* in1 = vector_opd(p_cmp, 1);
+        Node* in2 = vector_opd(p_cmp, 2);
+        ConINode* bol_test_node  = _igvn.intcon((int)bol_test);
+        BasicType bt = velt_basic_type(n);
+        const TypeVect* vt = TypeVect::make(bt, vlen);
+        vn = new VectorMaskCmpNode(bol_test, in1, in2, bol_test_node, vt);
+      } else if (n->is_CMove()) {
+        // CMove -> VectorBlend
+        Node* in_cmp = vector_opd(p, 1);
+        Node* in1 = vector_opd(p, 2);
+        Node* in2 = vector_opd(p, 3);
+        vn = new VectorBlendNode(in1, in2, in_cmp);
       } else if (n->req() == 3 && !is_cmov_pack(p)) {
         // Promote operands to vector
         Node* in1 = nullptr;
@@ -3982,6 +4007,18 @@ void SuperWord::compute_vector_element_type() {
           }
         }
       }
+    }
+  }
+  for (int i = 0; i < _block.length(); i++) {
+    Node* n = _block.at(i);
+    Node* nn = n;
+    if (nn->is_Bool() && nn->in(0) == nullptr) {
+      nn = nn->in(1);
+      assert(nn->is_Cmp(), "always have Cmp above Bool");
+    }
+    if (nn->is_Cmp() && nn->in(0) == nullptr) {
+      nn = nn->in(1);
+      set_velt_type(n, velt_type(nn));
     }
   }
 #ifndef PRODUCT
