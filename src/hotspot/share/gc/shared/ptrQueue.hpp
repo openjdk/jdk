@@ -40,7 +40,7 @@
 
 class BufferNode;
 class PtrQueueSet;
-class PtrQueue : public CHeapObj<mtGC> {
+class PtrQueue {
   friend class VMStructs;
 
   NONCOPYABLE(PtrQueue);

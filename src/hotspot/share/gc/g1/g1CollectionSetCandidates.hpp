@@ -107,11 +107,6 @@ public:
 
   // Merge the given set of candidates into this list, preserving the efficiency ordering.
   void merge(CandidateInfo* candidate_infos, uint num_infos);
-  // Add the given element to this list at the end, making the list unsorted.
-  void append_unsorted(HeapRegion* r);
-  // Restore sorting order by decreasing gc efficiency, using the existing efficiency
-  // values.
-  void sort_by_efficiency();
   // Removes any HeapRegions stored in this list also in the other list. The other
   // list may only contain regions in this list, sorted by gc efficiency. Returns
   // the number of regions removed.
@@ -208,8 +203,6 @@ public:
   // merge_candidates_from_marking(). Used for calculating minimum collection set
   // regions.
   uint last_merge_length() const { return _last_merge_length; }
-
-  void sort_by_efficiency();
 
   // Remove the given regions from the candidates. All given regions must be part
   // of the candidates.

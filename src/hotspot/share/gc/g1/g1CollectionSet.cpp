@@ -325,12 +325,10 @@ void G1CollectionSet::finalize_old_part(double time_remaining_ms) {
     assert(_initial_old_regions.length() == 0, "must be");
     assert(_optional_old_regions.length() == 0, "must be");
 
-    if (collector_state()->in_mixed_phase()) {
-      time_remaining_ms = _policy->select_candidates_from_marking(&candidates()->marking_regions(),
-                                                                  time_remaining_ms,
-                                                                  &_initial_old_regions,
-                                                                  &_optional_old_regions);
-    }
+    _policy->select_candidates_from_marking(&candidates()->marking_regions(),
+                                            time_remaining_ms,
+                                            &_initial_old_regions,
+                                            &_optional_old_regions);
 
     // Move initially selected old regions to collection set directly.
     move_candidates_to_collection_set(&_initial_old_regions);

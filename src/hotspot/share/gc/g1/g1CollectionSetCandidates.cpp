@@ -44,15 +44,6 @@ void G1CollectionCandidateList::merge(G1CollectionCandidateList::CandidateInfo* 
   }
 }
 
-void G1CollectionCandidateList::append_unsorted(HeapRegion* r) {
-  CandidateInfo c(r, r->calc_gc_efficiency());
-  _candidates.append(c);
-}
-
-void G1CollectionCandidateList::sort_by_efficiency() {
-  _candidates.sort(order_regions);
-}
-
 size_t G1CollectionCandidateList::remove(G1CollectionSetRegionList* other) {
   guarantee((uint)_candidates.length() >= other->length(), "must be");
 
@@ -245,11 +236,6 @@ void G1CollectionSetCandidates::merge_candidates_from_marking(G1CollectionCandid
   _reclaimable_bytes += reclaimable_bytes;
 
   verify();
-}
-
-void G1CollectionSetCandidates::sort_by_efficiency() {
-  // From marking regions must always be sorted.
-  _marking_regions.verify();
 }
 
 void G1CollectionSetCandidates::remove(G1CollectionSetRegionList* other) {
