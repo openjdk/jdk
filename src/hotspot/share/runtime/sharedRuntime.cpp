@@ -637,14 +637,14 @@ JRT_ENTRY(void, SharedRuntime::notify_jvmti_object_alloc(oopDesc* o, JavaThread*
 JRT_END
 
 JRT_ENTRY(void, SharedRuntime::notify_jvmti_vthread_start(oopDesc* vt, jboolean hide, JavaThread* current))
-  assert(hide == false, "must be VTMS transition finish");
+  assert(hide == JNI_FALSE, "must be VTMS transition finish");
   jobject vthread = JNIHandles::make_local(const_cast<oopDesc*>(vt));
   JvmtiVTMSTransitionDisabler::VTMS_vthread_start(vthread);
   JNIHandles::destroy_local(vthread);
 JRT_END
 
 JRT_ENTRY(void, SharedRuntime::notify_jvmti_vthread_end(oopDesc* vt, jboolean hide, JavaThread* current))
-  assert(hide == true, "must be VTMS transition start");
+  assert(hide == JNI_TRUE, "must be VTMS transition start");
   jobject vthread = JNIHandles::make_local(const_cast<oopDesc*>(vt));
   JvmtiVTMSTransitionDisabler::VTMS_vthread_end(vthread);
   JNIHandles::destroy_local(vthread);
