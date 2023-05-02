@@ -11981,7 +11981,7 @@ myInit() {
     </errorid>
     <errorid id="JVMTI_ERROR_OPAQUE_FRAME" num="32">
       Information about the frame is not available (e.g. for native frames),
-      or the frame is not suitable for the requested operation.
+      or the function cannot be performed on the thread's current frame.
     </errorid>
     <errorid id="JVMTI_ERROR_DUPLICATE" num="40">
       Item already set.
