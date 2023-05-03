@@ -26,8 +26,8 @@
 #include "gc/shenandoah/shenandoahCardTable.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
-#include "services/memTracker.hpp"
 #include "runtime/init.hpp"
+#include "services/memTracker.hpp"
 
 void ShenandoahCardTable::initialize() {
   size_t num_cards = cards_required(_whole_heap.word_size());
