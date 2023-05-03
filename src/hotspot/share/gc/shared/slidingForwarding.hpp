@@ -26,8 +26,6 @@
 #ifndef SHARE_GC_SHARED_SLIDINGFORWARDING_HPP
 #define SHARE_GC_SHARED_SLIDINGFORWARDING_HPP
 
-#ifdef _LP64
-
 #include "memory/allocation.hpp"
 #include "memory/memRegion.hpp"
 #include "oops/markWord.hpp"
@@ -186,5 +184,4 @@ public:
   HeapWord* forwardee(HeapWord* from) const;
 };
 
-#endif // _LP64
 #endif // SHARE_GC_SHARED_SLIDINGFORWARDING_HPP

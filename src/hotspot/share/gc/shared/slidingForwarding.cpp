@@ -29,8 +29,6 @@
 #include "utilities/ostream.hpp"
 #include "utilities/powerOfTwo.hpp"
 
-#ifdef _LP64
-
 // We cannot use 0, because that may already be a valid base address in zero-based heaps.
 // 0x1 is safe because heap base addresses must be aligned by much larger alignment
 HeapWord* const SlidingForwarding::UNUSED_BASE = reinterpret_cast<HeapWord*>(0x1);
@@ -191,5 +189,3 @@ HeapWord* FallbackTable::forwardee(HeapWord* from) const {
   }
   return nullptr;
 }
-
-#endif // _LP64
