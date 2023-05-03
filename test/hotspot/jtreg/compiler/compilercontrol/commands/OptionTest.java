@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8257800
- * @summary Tests CompileCommand=option,package/class,ccstrlist,ControlIntrinsic,+_id
+ * @summary Tests CompileCommand=option,package/class,ccstrlist,ControlIntrinsic,+_getClass
  * @library /test/lib /
  *
  * @run driver compiler.compilercontrol.commands.OptionTest
@@ -36,26 +36,27 @@ import jdk.test.lib.process.ProcessTools;
 
 public class OptionTest {
     public static void main(String[] args) throws Exception {
-        ProcessTools.executeTestJvm("-XX:CompileCommand=option,package/class,ccstrlist,ControlIntrinsic,+_id", "-version")
-                    .shouldHaveExitValue(0)
+        ProcessTools.executeTestJvm("-XX:CompileCommand=option,package/class,ccstrlist,ControlIntrinsic,+_getClass", "-version")
+                    .shouldHaveExitValue(1)
                     .shouldContain("CompileCommand: An error occurred during parsing")
                     .shouldContain("Error: Did not specify any method name")
                     .shouldNotContain("# A fatal error has been detected by the Java Runtime Environment");
 
-        ProcessTools.executeTestJvm("-XX:CompileCommand=option,*,ccstrlist,ControlIntrinsic,+_id", "-version")
-                    .shouldHaveExitValue(0)
+        ProcessTools.executeTestJvm("-XX:CompileCommand=option,*,ccstrlist,ControlIntrinsic,+_getClass", "-version")
+                    .shouldHaveExitValue(1)
                     .shouldContain("CompileCommand: An error occurred during parsing")
                     .shouldContain("Error: Did not specify any method name")
                     .shouldNotContain("# A fatal error has been detected by the Java Runtime Environment");
 
         // corner case:
         // ccstrlist could be a valid method name, so it is accepted in the well-formed case.
-        ProcessTools.executeTestJvm("-XX:CompileCommand=option,*.ccstrlist,ccstrlist,ControlIntrinsic,+_id", "-version")
+        ProcessTools.executeTestJvm("-XX:CompileCommand=option,*.ccstrlist,ccstrlist,ControlIntrinsic,+_getClass", "-version")
                     .shouldContain("CompileCommand: ControlIntrinsic *.ccstrlist const char* ControlIntrinsic")
                     .shouldHaveExitValue(0)
                     .shouldNotContain("# A fatal error has been detected by the Java Runtime Environment");
 
-        ProcessTools.executeTestJvm("-XX:CompileCommand=option,*.*,ccstrlist,ControlIntrinsic,+_id", "-version")
+
+        ProcessTools.executeTestJvm("-XX:CompileCommand=option,*.*,ccstrlist,ControlIntrinsic,+_getClass", "-version")
                     .shouldContain("CompileCommand: ControlIntrinsic *.* const char* ControlIntrinsic")
                     .shouldHaveExitValue(0)
                     .shouldNotContain("# A fatal error has been detected by the Java Runtime Environment");
