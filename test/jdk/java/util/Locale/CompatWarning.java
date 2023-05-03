@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8304982
+ * @bug 8304982 8174269
  * @summary Check if a warning is logged with COMPAT locale provider
  * @run main/othervm -Djava.locale.providers=COMPAT CompatWarning
  * @run main/othervm -Djava.locale.providers=JRE CompatWarning
@@ -38,7 +38,7 @@ import java.util.logging.LogRecord;
 
 public class CompatWarning {
     private static final String WARNING =
-            "COMPAT locale provider will be removed in a future release";
+            "COMPAT locale provider has been removed";
     private static boolean logged;
 
     public static void main(String[] args) throws Throwable {

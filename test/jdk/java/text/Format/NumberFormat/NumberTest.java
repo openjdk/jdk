@@ -23,12 +23,12 @@
 
 /**
  * @test
- * @bug 4122840 4135202 4408066 4838107 8008577
+ * @bug 4122840 4135202 4408066 4838107 8008577 8174269
  * @summary test NumberFormat
  * @modules java.base/sun.util.resources
  *          jdk.localedata
  * @compile -XDignore.symbol.file NumberTest.java
- * @run junit/othervm -Djava.locale.providers=COMPAT,SPI NumberTest
+ * @run junit NumberTest
  */
 
 import java.util.*;
@@ -228,20 +228,20 @@ public class NumberTest
                 NumberFormat.getCurrencyInstance(Locale.CANADA_FRENCH);
         String s = currencyFmt.format(1.50);
         System.out.println("Un pauvre ici a..........." + s);
-        if (!s.equals("1,50 $")) {
-            fail("FAIL: Expected 1,50 $; got " + s + "; "+ dumpFmt(currencyFmt));
+        if (!s.equals("1,50\u00a0$")) {
+            fail("FAIL: Expected 1,50\u00a0$; got " + s + "; "+ dumpFmt(currencyFmt));
         }
         currencyFmt = NumberFormat.getCurrencyInstance(Locale.GERMANY);
         s = currencyFmt.format(1.50);
         System.out.println("Un pauvre en Allemagne a.." + s);
-        if (!s.equals("1,50 \u20AC")) {
-            fail("FAIL: Expected 1,50 \u20AC; got " + s + "; " + dumpFmt(currencyFmt));
+        if (!s.equals("1,50\u00a0\u20AC")) {
+            fail("FAIL: Expected 1,50\u00a0\u20AC; got " + s + "; " + dumpFmt(currencyFmt));
         }
         currencyFmt = NumberFormat.getCurrencyInstance(Locale.FRANCE);
         s = currencyFmt.format(1.50);
         System.out.println("Un pauvre en France a....." + s);
-        if (!s.equals("1,50 \u20AC")) {
-            fail("FAIL: Expected 1,50 \u20AC; got " + s + "; " + dumpFmt(currencyFmt));
+        if (!s.equals("1,50\u00a0\u20AC")) {
+            fail("FAIL: Expected 1,50\u00a0\u20AC; got " + s + "; " + dumpFmt(currencyFmt));
         }
     }
 

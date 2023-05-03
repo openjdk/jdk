@@ -24,10 +24,10 @@
 /*
  * @test
  * @bug 4290801 4942982 5102005 8008577 8021121 8210153 8227313 8301991
+ *      8174269
  * @summary Basic tests for currency formatting.
  *          Tests both COMPAT and CLDR data.
  * @modules jdk.localedata
- * @run junit/othervm -Djava.locale.providers=COMPAT CurrencyFormat
  * @run junit/othervm -Djava.locale.providers=CLDR CurrencyFormat
  */
 

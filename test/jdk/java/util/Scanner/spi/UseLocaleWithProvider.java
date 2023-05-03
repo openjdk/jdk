@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 /*
  * @test
- * @bug 8190278
+ * @bug 8190278 8174269
  * @summary checks the Scanner.useLocale() with java.locale.providers=SPI,
  *          COMPAT. It should not throw ClassCastException if any SPI is
  *          used and NumberFormat.getInstance() does not return a
@@ -32,7 +32,7 @@
  * @library provider
  * @build provider/module-info provider/test.NumberFormatProviderImpl
  *        provider/test.NumberFormatImpl
- * @run main/othervm -Djava.locale.providers=SPI,COMPAT UseLocaleWithProvider
+ * @run main/othervm -Djava.locale.providers=SPI,CLDR UseLocaleWithProvider
  */
 
 import java.util.Locale;
