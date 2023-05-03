@@ -97,27 +97,21 @@ static void save_memory_to_file(char* addr, size_t size) {
 
   RESTARTABLE(os::open(destfile, O_CREAT|O_WRONLY|O_TRUNC, S_IRUSR|S_IWUSR), fd);
   if (fd == OS_ERR) {
-    if (PrintMiscellaneous && Verbose) {
-      warning("Could not create Perfdata save file: %s: %s\n",
-              destfile, os::strerror(errno));
-    }
+    warning("Could not create Perfdata save file: %s: %s\n",
+            destfile, os::strerror(errno));
   } else {
     ssize_t result;
 
     result = os::write(fd, addr, size);
     if (result == OS_ERR) {
-      if (PrintMiscellaneous && Verbose) {
-        warning("Could not write Perfdata save file: %s: %s\n",
-                destfile, os::strerror(errno));
-      }
+      warning("Could not write Perfdata save file: %s: %s\n",
+              destfile, os::strerror(errno));
     }
 
 
     result = ::close(fd);
-    if (PrintMiscellaneous && Verbose) {
-      if (result == OS_ERR) {
-        warning("Could not close %s: %s\n", destfile, os::strerror(errno));
-      }
+    if (result == OS_ERR) {
+      warning("Could not close %s: %s\n", destfile, os::strerror(errno));
     }
   }
   FREE_C_HEAP_ARRAY(char, destfile);
