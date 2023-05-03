@@ -92,11 +92,6 @@ public class Compliance {
                 () -> KEM.getInstance("DHKEM", "SunRsaSign"),
                 NoSuchAlgorithmException.class);
 
-        // Cannot detect invalid params before provider selection
-//        Utils.runAndCheckException(
-//                () -> KEM.getInstance("DHKEM", new KEMParameterSpec() {}),
-//                InvalidAlgorithmParameterException.class);
-
         Utils.runAndCheckException(
                 () -> kem.newEncapsulator(null),
                 InvalidKeyException.class);
@@ -109,7 +104,8 @@ public class Compliance {
                 () -> kem.newEncapsulator(badECKey()),
                 ExChecker.of(InvalidKeyException.class).by(DHKEM.class));
 
-        // Not an EC key at all, rejected by framework coz SupportedClasses
+        // Not an EC key at all, rejected by framework coz it's not
+        // listed in "SupportedKeyClasses" in SunJCE.java.
         Utils.runAndCheckException(
                 () -> kem.newEncapsulator(kpRSA.getPublic()),
                 ExChecker.of(InvalidKeyException.class).by(KEM.class.getName() + "$DelayedKEM"));
