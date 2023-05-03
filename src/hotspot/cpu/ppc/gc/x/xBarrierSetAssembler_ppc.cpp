@@ -411,7 +411,7 @@ class XSaveLiveRegisters {
 
     const int register_save_size = iterate_over_register_mask(ACTION_COUNT_ONLY) * BytesPerWord;
     _frame_size = align_up(register_save_size, frame::alignment_in_bytes)
-                  + frame::abi_reg_args_size;
+                  + frame::native_abi_reg_args_size;
 
     __ save_LR_CR(R0);
     __ push_frame(_frame_size, R0);
