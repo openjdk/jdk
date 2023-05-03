@@ -1,6 +1,5 @@
-
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +23,9 @@
 
 /*
  * @test
- * @bug 8193660
- * @summary Check SOURCE line in "release" file for closedjdk
- * @run main CheckSource
+ * @bug 8193660 8303476
+ * @summary Check SOURCE line and JAVA_RUNTIME_VERSION in "release" file
+ * @run main CheckReleaseFile
  */
 
 import java.io.BufferedReader;
@@ -37,18 +36,21 @@ import java.io.IOException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class CheckSource {
+public class CheckReleaseFile {
 
     public static final String SRC_HASH_REGEXP = ":((hg)|(git)):[a-z0-9]*\\+?";
 
-    CheckSource(String dataFile, boolean isOpenJDK) {
+    private final boolean isOpenJDK;
+    CheckReleaseFile(String dataFile, boolean isOpenJDK) {
+        this.isOpenJDK = isOpenJDK;
         // Read data files
-        readFile(dataFile, isOpenJDK);
+        readFile(dataFile);
     }
 
-    private void readFile(String fileName, boolean isOpenJDK) {
+    private void readFile(String fileName) {
         String fishForSOURCE = null;
         String implementor = null;
+        String runtimeVersion = null;
 
         File file = new File(fileName);
 
@@ -78,6 +80,12 @@ public class CheckSource {
                     implementor = readIn;
                     continue;
                 }
+
+                // grab JAVA_RUNTIME_VERSION line
+                if (readIn.startsWith("JAVA_RUNTIME_VERSION=")) {
+                    runtimeVersion = readIn;
+                    continue;
+                }
             }
         } catch (FileNotFoundException fileExcept) {
             throw new RuntimeException("File " + fileName +
@@ -91,6 +99,23 @@ public class CheckSource {
         if (fishForSOURCE == null) {
             throw new RuntimeException("SOURCE line was not found!");
         }
+
+        // Check if implementor is Oracle
+        boolean isOracle = (implementor != null) && implementor.contains("Oracle Corporation");
+        checkSource(fishForSOURCE, isOracle);
+
+        if (runtimeVersion == null) {
+            throw new RuntimeException("JAVA_RUNTIME_VERSION line was not found!");
+        }
+        String expected = "JAVA_RUNTIME_VERSION=\"" + Runtime.version() + "\"";
+        if (!expected.equals(runtimeVersion)) {
+            throw new RuntimeException("Mismatched runtime version: " +
+                    runtimeVersion + " expected: " + expected);
+        }
+    }
+
+    private void checkSource(String fishForSOURCE, boolean isOracle) {
+
         System.out.println("The source string found: " + fishForSOURCE);
 
         // Extract the value of SOURCE=
@@ -101,8 +126,6 @@ public class CheckSource {
         }
         String valueString = valueMatcher.group(1);
 
-        // Check if implementor is Oracle
-        boolean isOracle = (implementor != null) && implementor.contains("Oracle Corporation");
 
         String[] values = valueString.split(" ");
 
@@ -144,6 +167,6 @@ public class CheckSource {
         System.out.println("JDK Path : " + jdkPath);
         System.out.println("Runtime Name : " + runtime);
 
-        new CheckSource(jdkPath + "/release", runtime.contains("OpenJDK"));
+        new CheckReleaseFile(jdkPath + "/release", runtime.contains("OpenJDK"));
     }
 }
