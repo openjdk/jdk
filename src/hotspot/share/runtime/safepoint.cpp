@@ -547,6 +547,20 @@ public:
     _do_lazy_roots(!VMThread::vm_operation()->skip_thread_oop_barriers() &&
                    Universe::heap()->uses_stack_watermark_barrier()) {}
 
+  uint expected_num_workers() const {
+    uint workers = 0;
+
+    workers += SymbolTable::rehash_table_expected_workers();
+    workers += StringTable::rehash_table_expected_workers();
+    workers += InlineCacheBuffer::update_inline_caches_expected_workers();
+
+    if (_do_lazy_roots) {
+      workers++;
+    }
+
+    return MAX2<uint>(1, workers);
+  }
+
   void work(uint worker_id) {
     // These tasks are ordered by relative length of time to execute so that potentially longer tasks start first.
     if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_SYMBOL_TABLE_REHASH)) {
@@ -601,9 +615,10 @@ void SafepointSynchronize::do_cleanup_tasks() {
   assert(heap != nullptr, "heap not initialized yet?");
   ParallelCleanupTask cleanup;
   WorkerThreads* cleanup_workers = heap->safepoint_workers();
-  if (cleanup_workers != nullptr) {
+  const uint expected_num_workers = cleanup.expected_num_workers();
+  if (cleanup_workers != nullptr && expected_num_workers > 1) {
     // Parallel cleanup using GC provided thread pool.
-    const uint num_workers = MIN2<uint>(SAFEPOINT_CLEANUP_NUM_TASKS, cleanup_workers->active_workers());
+    const uint num_workers = MIN2(expected_num_workers, cleanup_workers->active_workers());
     cleanup_workers->run_task(&cleanup, num_workers);
   } else {
     // Serial cleanup using VMThread.

@@ -103,6 +103,7 @@ static THREAD_LOCAL bool _lookup_shared_first = false;
 // Static arena for symbols that are not deallocated
 Arena* SymbolTable::_arena = nullptr;
 
+static bool _rehashed = false;
 static uint64_t _alt_hash_seed = 0;
 
 static inline void log_trace_symboltable_helper(Symbol* sym, const char* msg) {
@@ -805,13 +806,19 @@ bool SymbolTable::do_rehash() {
   return true;
 }
 
+bool SymbolTable::should_grow() {
+  return get_load_factor() > PREF_AVG_LIST_LEN && !_local_table->is_max_size_reached();
+}
+
+uint SymbolTable::rehash_table_expected_workers() {
+  return (!_needs_rehashing || should_grow() || _rehashed || !_local_table->is_safepoint_safe()) ? 0 : 1;
+}
+
 void SymbolTable::rehash_table() {
-  static bool rehashed = false;
   log_debug(symboltable)("Table imbalanced, rehashing called.");
 
   // Grow instead of rehash.
-  if (get_load_factor() > PREF_AVG_LIST_LEN &&
-      !_local_table->is_max_size_reached()) {
+  if (should_grow()) {
     log_debug(symboltable)("Choosing growing over rehashing.");
     trigger_cleanup();
     _needs_rehashing = false;
@@ -819,7 +826,7 @@ void SymbolTable::rehash_table() {
   }
 
   // Already rehashed.
-  if (rehashed) {
+  if (_rehashed) {
     log_warning(symboltable)("Rehashing already done, still long lists.");
     trigger_cleanup();
     _needs_rehashing = false;
@@ -829,7 +836,7 @@ void SymbolTable::rehash_table() {
   _alt_hash_seed = AltHashing::compute_seed();
 
   if (do_rehash()) {
-    rehashed = true;
+    _rehashed = true;
   } else {
     log_info(symboltable)("Resizes in progress rehashing skipped.");
   }

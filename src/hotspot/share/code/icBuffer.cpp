@@ -161,6 +161,10 @@ void InlineCacheBuffer::refill_ic_stubs() {
   VMThread::execute(&ibf);
 }
 
+uint InlineCacheBuffer::update_inline_caches_expected_workers() {
+  return (buffer()->number_of_stubs() > 0 || pending_icholder_count() > 0) ? 1 : 0;
+}
+
 void InlineCacheBuffer::update_inline_caches() {
   if (buffer()->number_of_stubs() > 0) {
     if (TraceICBuffer) {

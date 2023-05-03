@@ -116,6 +116,8 @@ static size_t _current_size = 0;
 static volatile size_t _items_count = 0;
 
 volatile bool _alt_hash = false;
+
+static bool _rehashed = false;
 static uint64_t _alt_hash_seed = 0;
 
 uintx hash_string(const jchar* s, int len, bool useAlt) {
@@ -529,20 +531,26 @@ bool StringTable::do_rehash() {
   return true;
 }
 
+bool StringTable::should_grow() {
+  return get_load_factor() > PREF_AVG_LIST_LEN && !_local_table->is_max_size_reached();
+}
+
+uint StringTable::rehash_table_expected_workers() {
+  return (!_needs_rehashing || should_grow() || _rehashed || !_local_table->is_safepoint_safe()) ? 0 : 1;
+}
+
 void StringTable::rehash_table() {
-  static bool rehashed = false;
   log_debug(stringtable)("Table imbalanced, rehashing called.");
 
   // Grow instead of rehash.
-  if (get_load_factor() > PREF_AVG_LIST_LEN &&
-      !_local_table->is_max_size_reached()) {
+  if (should_grow()) {
     log_debug(stringtable)("Choosing growing over rehashing.");
     trigger_concurrent_work();
     _needs_rehashing = false;
     return;
   }
   // Already rehashed.
-  if (rehashed) {
+  if (_rehashed) {
     log_warning(stringtable)("Rehashing already done, still long lists.");
     trigger_concurrent_work();
     _needs_rehashing = false;
@@ -552,7 +560,7 @@ void StringTable::rehash_table() {
   _alt_hash_seed = AltHashing::compute_seed();
   {
     if (do_rehash()) {
-      rehashed = true;
+      _rehashed = true;
     } else {
       log_info(stringtable)("Resizes in progress rehashing skipped.");
     }

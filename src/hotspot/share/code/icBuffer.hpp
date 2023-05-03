@@ -167,6 +167,7 @@ class InlineCacheBuffer: public AllStatic {
   static bool contains(address instruction_address);
 
     // removes the ICStubs after backpatching
+  static uint update_inline_caches_expected_workers();
   static void update_inline_caches();
   static void refill_ic_stubs();
 
