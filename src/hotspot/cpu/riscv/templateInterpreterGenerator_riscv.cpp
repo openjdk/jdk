@@ -789,7 +789,7 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
     // an exception (see TemplateInterpreterGenerator::generate_throw_exception())
     __ sub(t0, sp, 2 * wordSize);
     __ sd(t0, Address(sp, 5 * wordSize));
-    __ sd(zr, Address(sp, 4 * wordSize));
+    __ sd(t2, Address(sp, 4 * wordSize));
     __ mv(sp, t0);
   }
 }
