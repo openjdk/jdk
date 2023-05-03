@@ -427,7 +427,7 @@ public class LanguageTag {
             return LEGACY.get(potentialLegacy)[0];
         }
         // Non-legacy tags
-        StringBuilder bldr = new StringBuilder();
+        StringBuilder bldr = new StringBuilder(tag.length());
         String[] subtags = tag.split("-");
         boolean privateFound = false;
         boolean singletonFound = false;
@@ -454,9 +454,11 @@ public class LanguageTag {
                 }
                 bldr.append(subtag.toLowerCase(Locale.ROOT));
             }
-            bldr.append("-");
+            if (i != subtags.length-1) {
+                bldr.append("-");
+            }
         }
-        return bldr.substring(0, bldr.length()-1);
+        return bldr.substring(0);
     }
 
     public static LanguageTag parseLocale(BaseLocale baseLocale, LocaleExtensions localeExtensions) {
