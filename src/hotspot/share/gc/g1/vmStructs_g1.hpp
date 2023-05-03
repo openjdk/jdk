@@ -78,7 +78,6 @@
   declare_constant(HeapRegionType::EdenTag)                                   \
   declare_constant(HeapRegionType::SurvTag)                                   \
   declare_constant(HeapRegionType::HumongousMask)                             \
-  declare_constant(HeapRegionType::PinnedMask)                                \
   declare_constant(HeapRegionType::StartsHumongousTag)                        \
   declare_constant(HeapRegionType::ContinuesHumongousTag)                     \
   declare_constant(HeapRegionType::OldMask)                                   \
