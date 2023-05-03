@@ -438,6 +438,10 @@ public:
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;
 #endif
+
+  static const Type*
+  filtered_int_type_helper(const PhaseTransform* phase, const Node* val, const Node* if_proj, BasicType& bt,
+                           const BoolNode* bol, bool taken);
 };
 
 class RangeCheckNode : public IfNode {

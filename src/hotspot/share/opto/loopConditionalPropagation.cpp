@@ -508,6 +508,19 @@ private:
             }
           }
         }
+        if (u->is_Cmp()) {
+          for (DUIterator_Fast jmax, j = u->fast_outs(jmax); j < jmax; j++) {
+            Node* u2 = u->fast_out(j);
+            if (u2->is_Bool()) {
+              for (DUIterator_Fast kmax, k = u2->fast_outs(kmax); k < kmax; k++) {
+                Node* u3 = u2->fast_out(k);
+                if (u3->is_CMove()) {
+                  _wq.push(u3);
+                }
+              }
+            }
+          }
+        }
       }
     }
   }
@@ -1230,6 +1243,45 @@ public:
         }
         if (c->is_Loop() && t != prev_type) {
           extra = true;
+        }
+      } else if (n->is_CMove()) {
+        Node* bol = n->in(1);
+        if (bol->is_Bool()) {
+          Node* cmp = bol->in(1);
+          if (cmp->Opcode() == Op_CmpI || cmp->Opcode() == Op_CmpU ||
+              cmp->Opcode() == Op_CmpL || cmp->Opcode() == Op_CmpUL) {
+            TypeUpdate updates(_current_updates, c);
+            _current_updates = &updates;
+            Node* cmp1 = cmp->in(1);
+            Node* cmp2 = cmp->in(2);
+            BasicType bt = (cmp->Opcode() == Op_CmpI || cmp->Opcode() == Op_CmpU) ? T_INT : T_LONG;
+            const Type* t1 = bol->as_Bool()->filtered_int_type(this, cmp1, bt, true);
+            if (t1 != nullptr) {
+              const Type* cmp1_t = PhaseTransform::type(cmp1);
+              t1 = cmp1_t->filter(t1);
+              assert(narrows_type(cmp1_t, t1), "");
+              set_type(n, t1, cmp1_t, rpo);
+              t1->dump(); tty->cr();
+            }
+            const Type* t2 = bol->as_Bool()->filtered_int_type(this, cmp2, bt, true);
+            if (t2 != nullptr) {
+              const Type* cmp2_t = PhaseTransform::type(cmp2);
+              t2 = cmp2_t->filter(t2);
+              assert(narrows_type(cmp2_t, t2), "");
+              set_type(n, t2, cmp2_t, rpo);
+              t2->dump(); tty->cr();
+            }
+//            if (t1 != nullptr || t2 != nullptr) {
+//
+//            }
+
+            for (int i = 0; i < updates.length(); ++i) {
+              Node* n = updates.node_at(i);
+              const Type* t = updates.prev_type_at(i);
+              PhaseTransform::set_type(n, t);
+            }
+            _current_updates = _current_updates->prev();
+          }
         }
       }
       t = t->filter(current_type);
@@ -1963,6 +2015,7 @@ public:
 
     return progress;
   }
+
   const Type* type(const Node* n, Node* c) const {
     assert(c->is_CFG(), "");
     const Type* res = nullptr;

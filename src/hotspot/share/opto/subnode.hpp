@@ -354,6 +354,8 @@ public:
   virtual uint ideal_reg() const { return Op_RegI; }
 
   bool is_counted_loop_exit_test();
+  const Type* filtered_int_type(const PhaseTransform* phase, const Node* val, BasicType bt, bool taken) const;
+
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;
 #endif
