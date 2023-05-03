@@ -109,7 +109,12 @@ void GCTracer::report_object_count_after_gc(BoolObjectClosure* is_alive_cl) {
     KlassInfoTable cit(false);
     if (!cit.allocation_failed()) {
       HeapInspection hi;
-      hi.populate_table(&cit, is_alive_cl);
+      uint parallel_threads = 1;
+      WorkerThreads* workers = Universe::heap()->safepoint_workers();
+      if (workers != nullptr) {
+        parallel_threads = workers->active_workers();
+      }
+      hi.populate_table(&cit, is_alive_cl, parallel_threads);
       ObjectCountEventSenderClosure event_sender(cit.size_of_instances_in_words(), Ticks::now());
       cit.iterate(&event_sender);
     }
