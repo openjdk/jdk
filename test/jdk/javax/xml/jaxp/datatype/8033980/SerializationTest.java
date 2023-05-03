@@ -66,106 +66,28 @@ public class SerializationTest {
      * @throws ClassNotFoundException
      */
     @BeforeClass
-    public void setup() throws DatatypeConfigurationException, IOException, ClassNotFoundException {
+    public void setup() throws DatatypeConfigurationException, IOException {
         DatatypeFactory dtf = DatatypeFactory.newInstance();
         XMLGregorianCalendar xmlGregorianCalendar = dtf.newXMLGregorianCalendar(EXPECTED_CAL);
-
         //Serialize the given xmlGregorianCalendar
-
         final ByteArrayOutputStream baos = new ByteArrayOutputStream();
         final ObjectOutputStream oos = new ObjectOutputStream(baos);
         oos.writeObject(xmlGregorianCalendar);
         oos.flush();
         oos.close();
-
         // Now get a Base64 string representation of the serialized bytes.
         final String base64 = Base64.getEncoder().encodeToString(baos.toByteArray());
 
-        // Generates the Java Pseudo code for base64 encoded string that can be cut & pasted into the test
-        final StringBuilder sb = new StringBuilder();
-        sb.append("    /**").append('\n');
-        sb.append("     * Base64 encoded string for XMLGregorianCalendar object.").append('\n');
-        sb.append("     * Java version: ").append(System.getProperty("java.version")).append('\n');
-        sb.append("     **/").append('\n');
-        sb.append("    private final String gregorianCalendarBase64 = ").append("\n          ");
-        final int last = base64.length() - 1;
-        for (int i=0; i<base64.length();i++) {
-            if (i%64 == 0) sb.append("\"");
-            sb.append(base64.charAt(i));
-            if (i%64 == 63 || i == last) {
-                sb.append("\"");
-                if (i == last) sb.append(";\n");
-                else sb.append("\n        + ");
-            }
-        }
-        System.out.println(sb);
-
-        // Generates the Java Pseudo code for byte array that can be cut & pasted into the test
-        byte [] bytes = baos.toByteArray();
-        StringBuilder sb2 = new StringBuilder(bytes.length * 5);
-        Formatter fmt = new Formatter(sb2);
-        fmt.format("    private final byte[] %s = {", "gregorianCalendarBytes");
-        final int linelen = 8;
-        for (int i = 0; i <bytes.length; i++) {
-            if (i % linelen == 0) {
-                fmt.format("%n        ");
-            }
-            fmt.format(" (byte) 0x%x,", bytes[i] & 0xff);
-        }
-        fmt.format("%n    };%n");
-
-        System.out.println(sb2);
-
+       //Create the Duration instance
         Duration duration = dtf.newDuration(EXPECTED_DURATION);
-
         //Serialize the given xml Duration
-
         final ByteArrayOutputStream baos2 = new ByteArrayOutputStream();
         final ObjectOutputStream oos2 = new ObjectOutputStream(baos2);
         oos2.writeObject(duration);
         oos2.flush();
         oos2.close();
-
         // Now get a Base64 string representation of the serialized bytes.
         final String base64dur = Base64.getEncoder().encodeToString(baos2.toByteArray());
-
-        // Generates the Java Pseudo code for Duration serialized bytes  Base64 encoded string  that can be cut &
-        // pasted into the test
-
-        final StringBuilder sbdur = new StringBuilder();
-        sbdur.append("    /**").append('\n');
-        sbdur.append("     * Base64 encoded string for Duration object.").append('\n');
-        sbdur.append("     * Java version: ").append(System.getProperty("java.version")).append('\n');
-        sbdur.append("     **/").append('\n');
-        sbdur.append("    private final String durationBase64 = ").append("\n          ");
-        final int lastdur = base64dur.length() - 1;
-        for (int i=0; i<base64dur.length();i++) {
-            if (i%64 == 0) sbdur.append("\"");
-            sbdur.append(base64dur.charAt(i));
-            if (i%64 == 63 || i == lastdur) {
-                sbdur.append("\"");
-                if (i == lastdur) sbdur.append(";\n");
-                else sbdur.append("\n        + ");
-            }
-        }
-
-        System.out.println(sbdur);
-
-        // Generates the Java Pseudo code for Duration serialized byte array that can be cut & pasted into the test
-        byte [] bytesdur = baos2.toByteArray();
-        StringBuilder sbdur2 = new StringBuilder(bytesdur.length * 5);
-        Formatter fmt2 = new Formatter(sbdur2);
-        fmt2.format("    private final byte[] %s = {", "durationBytes");
-        final int linelen2 = 8;
-        for (int i = 0; i <bytesdur.length; i++) {
-            if (i % linelen2 == 0) {
-                fmt2.format("%n        ");
-            }
-            fmt2.format(" (byte) 0x%x,", bytesdur[i] & 0xff);
-        }
-        fmt2.format("%n    };%n");
-
-        System.out.println(sbdur2);
 
         // Create the Data for JDK under test.
         gregorianCalendarAndDurationSerData[0] = new GregorianCalendarAndDurationSerData() {
@@ -301,5 +223,97 @@ public class SerializationTest {
         final ObjectInputStream ois = new ObjectInputStream(bais);
         final Duration d1 = (Duration) ois.readObject();
         Assert.assertEquals(d1.toString().toUpperCase(), duration);
+    }
+
+    /**
+     * Generates the Java Pseudo code for serialized Gregorian Calendar byte array that can be cut & pasted into the
+     * JDK<version>GregorianCalendarAndDurationSerData.java files.
+     * @param baos
+     */
+    public void generatePseudoCodeForGregCalSerBytes(ByteArrayOutputStream baos) {
+        byte [] bytes = baos.toByteArray();
+        StringBuilder sb2 = new StringBuilder(bytes.length * 5);
+        Formatter fmt = new Formatter(sb2);
+        fmt.format("    private final byte[] %s = {", "gregorianCalendarBytes");
+        final int linelen = 8;
+        for (int i = 0; i <bytes.length; i++) {
+            if (i % linelen == 0) {
+                fmt.format("%n        ");
+            }
+            fmt.format(" (byte) 0x%x,", bytes[i] & 0xff);
+        }
+        fmt.format("%n    };%n");
+        System.out.println(sb2);
+    }
+
+    /**
+     * Generates the Java Pseudo code for Duration byte array that can be cut & pasted into the
+     * JDK<version>GregorianCalendarAndDurationSerData.java files.
+     * @param baos
+     */
+    public void generatePseudoCodeForDurationSerBytes(ByteArrayOutputStream baos) {
+        byte [] bytesdur = baos.toByteArray();
+        StringBuilder sb = new StringBuilder(bytesdur.length * 5);
+        Formatter fmt = new Formatter(sb);
+        fmt.format("    private final byte[] %s = {", "durationBytes");
+        final int linelen2 = 8;
+        for (int i = 0; i <bytesdur.length; i++) {
+            if (i % linelen2 == 0) {
+                fmt.format("%n        ");
+            }
+            fmt.format(" (byte) 0x%x,", bytesdur[i] & 0xff);
+        }
+        fmt.format("%n    };%n");
+        System.out.println(sb);
+    }
+
+    /**
+     * Generates the Java Pseudo code for Gregorian Calendar serialized byte array as Base64 string that
+     * can be cut & pasted into the JDK<version>GregorianCalendarAndDurationSerData.java files.
+     * @param base64
+     */
+    public void generatePseudoCodeForGregCalSerBytesAsBase64(String base64) {
+        final StringBuilder sb = new StringBuilder();
+        sb.append("    /**").append('\n');
+        sb.append("     * Base64 encoded string for XMLGregorianCalendar object.").append('\n');
+        sb.append("     * Java version: ").append(System.getProperty("java.version")).append('\n');
+        sb.append("     **/").append('\n');
+        sb.append("    private final String gregorianCalendarBase64 = ").append("\n          ");
+        final int last = base64.length() - 1;
+        for (int i=0; i<base64.length();i++) {
+            if (i%64 == 0) sb.append("\"");
+            sb.append(base64.charAt(i));
+            if (i%64 == 63 || i == last) {
+                sb.append("\"");
+                if (i == last) sb.append(";\n");
+                else sb.append("\n        + ");
+            }
+        }
+        System.out.println(sb);
+    }
+
+    /**
+     * Generates the Java Pseudo code for Duration serialized byte array as Base64 string that
+     * can be cut & pasted into the JDK<version>GregorianCalendarAndDurationSerData.java files.
+     * @param base64
+     */
+    public void generatePseudoCodeForDurationSerBytesAsBase64(String base64) {
+        final StringBuilder sbdur = new StringBuilder();
+        sbdur.append("    /**").append('\n');
+        sbdur.append("     * Base64 encoded string for Duration object.").append('\n');
+        sbdur.append("     * Java version: ").append(System.getProperty("java.version")).append('\n');
+        sbdur.append("     **/").append('\n');
+        sbdur.append("    private final String durationBase64 = ").append("\n          ");
+        final int lastdur = base64.length() - 1;
+        for (int i=0; i<base64.length();i++) {
+            if (i%64 == 0) sbdur.append("\"");
+            sbdur.append(base64.charAt(i));
+            if (i%64 == 63 || i == lastdur) {
+                sbdur.append("\"");
+                if (i == lastdur) sbdur.append(";\n");
+                else sbdur.append("\n        + ");
+            }
+        }
+        System.out.println(sbdur);
     }
 }
