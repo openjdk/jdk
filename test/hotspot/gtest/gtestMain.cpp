@@ -244,7 +244,7 @@ static void runUnitTestsInner(int argc, char** argv) {
 
   char* java_home = get_java_home_arg(argc, argv);
   if (java_home == NULL) {
-    fprintf(stderr, "ERROR: You must specify a JDK to use for running the unit tests.\n");
+    fprintf(stderr, "ERROR: You must specify a JDK (-jdk <image>, --jdk=<image> or -jdk:<image>) to use for running the unit tests.\n");
     exit(1);
   }
 #ifndef _WIN32
