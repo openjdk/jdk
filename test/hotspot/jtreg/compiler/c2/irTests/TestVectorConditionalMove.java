@@ -30,7 +30,7 @@ import jdk.test.lib.Utils;
 
 /*
  * @test id=vanilla
- * @bug 8289422
+ * @bug 8289422 8306088
  * @key randomness
  * @summary Auto-vectorization enhancement to support vector conditional move.
  * @library /test/lib /
@@ -92,6 +92,7 @@ public class TestVectorConditionalMove {
         framework.start();
     }
 
+    // Compare 2 values, and pick one of them
     private float cmoveFloatGT(float a, float b) {
         return (a > b) ? a : b;
     }
@@ -132,6 +133,56 @@ public class TestVectorConditionalMove {
         return (a != b) ? a : b;
     }
 
+    // Extensions: compare 2 values, and pick from 2 consts
+    private float cmoveFGTforFConst(float a, float b) {
+        return (a > b) ? 0.1f : -0.1f;
+    }
+
+    private float cmoveFGEforFConst(float a, float b) {
+        return (a >= b) ? 0.1f : -0.1f;
+    }
+
+    private float cmoveFLTforFConst(float a, float b) {
+        return (a < b) ? 0.1f : -0.1f;
+    }
+
+    private float cmoveFLEforFConst(float a, float b) {
+        return (a <= b) ? 0.1f : -0.1f;
+    }
+
+    private float cmoveFEQforFConst(float a, float b) {
+        return (a == b) ? 0.1f : -0.1f;
+    }
+
+    private float cmoveFNEQforFConst(float a, float b) {
+        return (a != b) ? 0.1f : -0.1f;
+    }
+
+    private double cmoveDGTforDConst(double a, double b) {
+        return (a > b) ? 0.1 : -0.1;
+    }
+
+    private double cmoveDGEforDConst(double a, double b) {
+        return (a >= b) ? 0.1 : -0.1;
+    }
+
+    private double cmoveDLTforDConst(double a, double b) {
+        return (a < b) ? 0.1 : -0.1;
+    }
+
+    private double cmoveDLEforDConst(double a, double b) {
+        return (a <= b) ? 0.1 : -0.1;
+    }
+
+    private double cmoveDEQforDConst(double a, double b) {
+        return (a == b) ? 0.1 : -0.1;
+    }
+
+    private double cmoveDNEQforDConst(double a, double b) {
+        return (a != b) ? 0.1 : -0.1;
+    }
+
+    // Compare 2 values, and pick one of them
     @Test
     @IR(counts = {IRNode.LOAD_VECTOR, ">0", IRNode.VECTOR_MASK_CMP, ">0", IRNode.VECTOR_BLEND, ">0", IRNode.STORE_VECTOR, ">0"},
         applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
@@ -222,6 +273,116 @@ public class TestVectorConditionalMove {
         }
     }
 
+    // Extensions: compare 2 values, and pick from 2 consts
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR, ">0", IRNode.VECTOR_MASK_CMP, ">0", IRNode.VECTOR_BLEND, ">0", IRNode.STORE_VECTOR, ">0"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+    private static void testCMoveFGTforFConst(float[] a, float[] b, float[] c) {
+        for (int i = 0; i < a.length; i++) {
+            c[i] = (a[i] > b[i]) ? 0.1f : -0.1f;
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR, ">0", IRNode.VECTOR_MASK_CMP, ">0", IRNode.VECTOR_BLEND, ">0", IRNode.STORE_VECTOR, ">0"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+    private static void testCMoveFGEforFConst(float[] a, float[] b, float[] c) {
+        for (int i = 0; i < a.length; i++) {
+            c[i] = (a[i] >= b[i]) ? 0.1f : -0.1f;
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR, ">0", IRNode.VECTOR_MASK_CMP, ">0", IRNode.VECTOR_BLEND, ">0", IRNode.STORE_VECTOR, ">0"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+    private static void testCMoveFLTforFConst(float[] a, float[] b, float[] c) {
+        for (int i = 0; i < a.length; i++) {
+            c[i] = (a[i] < b[i]) ? 0.1f : -0.1f;
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR, ">0", IRNode.VECTOR_MASK_CMP, ">0", IRNode.VECTOR_BLEND, ">0", IRNode.STORE_VECTOR, ">0"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+    private static void testCMoveFLEforFConst(float[] a, float[] b, float[] c) {
+        for (int i = 0; i < a.length; i++) {
+            c[i] = (a[i] <= b[i]) ? 0.1f : -0.1f;
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR, ">0", IRNode.VECTOR_MASK_CMP, ">0", IRNode.VECTOR_BLEND, ">0", IRNode.STORE_VECTOR, ">0"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+    private static void testCMoveFEQforFConst(float[] a, float[] b, float[] c) {
+        for (int i = 0; i < a.length; i++) {
+            c[i] = (a[i] == b[i]) ? 0.1f : -0.1f;
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR, ">0", IRNode.VECTOR_MASK_CMP, ">0", IRNode.VECTOR_BLEND, ">0", IRNode.STORE_VECTOR, ">0"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+    private static void testCMoveFNEQforFConst(float[] a, float[] b, float[] c) {
+        for (int i = 0; i < a.length; i++) {
+            c[i] = (a[i] != b[i]) ? 0.1f : -0.1f;
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR, ">0", IRNode.VECTOR_MASK_CMP, ">0", IRNode.VECTOR_BLEND, ">0", IRNode.STORE_VECTOR, ">0"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+    private static void testCMoveDGTforDConst(double[] a, double[] b, double[] c) {
+        for (int i = 0; i < a.length; i++) {
+            c[i] = (a[i] > b[i]) ? 0.1 : -0.1;
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR, ">0", IRNode.VECTOR_MASK_CMP, ">0", IRNode.VECTOR_BLEND, ">0", IRNode.STORE_VECTOR, ">0"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+    private static void testCMoveDGEforDConst(double[] a, double[] b, double[] c) {
+        for (int i = 0; i < a.length; i++) {
+            c[i] = (a[i] >= b[i]) ? 0.1 : -0.1;
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR, ">0", IRNode.VECTOR_MASK_CMP, ">0", IRNode.VECTOR_BLEND, ">0", IRNode.STORE_VECTOR, ">0"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+    private static void testCMoveDLTforDConst(double[] a, double[] b, double[] c) {
+        for (int i = 0; i < a.length; i++) {
+            c[i] = (a[i] < b[i]) ? 0.1 : -0.1;
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR, ">0", IRNode.VECTOR_MASK_CMP, ">0", IRNode.VECTOR_BLEND, ">0", IRNode.STORE_VECTOR, ">0"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+    private static void testCMoveDLEforDConst(double[] a, double[] b, double[] c) {
+        for (int i = 0; i < a.length; i++) {
+            c[i] = (a[i] <= b[i]) ? 0.1 : -0.1;
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR, ">0", IRNode.VECTOR_MASK_CMP, ">0", IRNode.VECTOR_BLEND, ">0", IRNode.STORE_VECTOR, ">0"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+    private static void testCMoveDEQforDConst(double[] a, double[] b, double[] c) {
+        for (int i = 0; i < a.length; i++) {
+            c[i] = (a[i] == b[i]) ? 0.1 : -0.1;
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR, ">0", IRNode.VECTOR_MASK_CMP, ">0", IRNode.VECTOR_BLEND, ">0", IRNode.STORE_VECTOR, ">0"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+    private static void testCMoveDNEQforDConst(double[] a, double[] b, double[] c) {
+        for (int i = 0; i < a.length; i++) {
+            c[i] = (a[i] != b[i]) ? 0.1 : -0.1;
+        }
+    }
+
+
     @Test
     @IR(failOn = {IRNode.VECTOR_MASK_CMP, IRNode.VECTOR_BLEND})
     private static void testCMoveVDUnsupported() {
@@ -233,7 +394,11 @@ public class TestVectorConditionalMove {
 
     @Warmup(0)
     @Run(test = {"testCMoveVFGT", "testCMoveVFLT","testCMoveVDLE", "testCMoveVDGE", "testCMoveVFEQ", "testCMoveVDNE",
-                 "testCMoveVFGTSwap", "testCMoveVFLTSwap","testCMoveVDLESwap", "testCMoveVDGESwap"})
+                 "testCMoveVFGTSwap", "testCMoveVFLTSwap","testCMoveVDLESwap", "testCMoveVDGESwap",
+                 "testCMoveFGTforFConst", "testCMoveFGEforFConst", "testCMoveFLTforFConst",
+                 "testCMoveFLEforFConst", "testCMoveFEQforFConst", "testCMoveFNEQforFConst",
+                 "testCMoveDGTforDConst", "testCMoveDGEforDConst", "testCMoveDLTforDConst",
+                 "testCMoveDLEforDConst", "testCMoveDEQforDConst", "testCMoveDNEQforDConst"})
     private void testCMove_runner() {
         for (int i = 0; i < SIZE; i++) {
             floata[i] = RANDOM.nextFloat();
@@ -256,6 +421,7 @@ public class TestVectorConditionalMove {
             Asserts.assertEquals(doublec[i], cmoveDoubleGE(doublea[i], doubleb[i]));
         }
 
+        // Ensure we frequently have equals
         for (int i = 0; i < SIZE; i++) {
             if (i % 3 == 0) {
                 floatb[i] = floata[i];
@@ -282,6 +448,49 @@ public class TestVectorConditionalMove {
         for (int i = 0; i < SIZE; i++) {
             Asserts.assertEquals(floatc[i], cmoveFloatLTSwap(floata[i], floatb[i]));
             Asserts.assertEquals(doublec[i], cmoveDoubleGESwap(doublea[i], doubleb[i]));
+        }
+
+        // Extensions: compare 2 values, and pick from 2 consts
+        testCMoveFGTforFConst(floata, floatb, floatc);
+        testCMoveDGTforDConst(doublea, doubleb, doublec);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(floatc[i], cmoveFGTforFConst(floata[i], floatb[i]));
+            Asserts.assertEquals(doublec[i], cmoveDGTforDConst(doublea[i], doubleb[i]));
+        }
+
+        testCMoveFGEforFConst(floata, floatb, floatc);
+        testCMoveDGEforDConst(doublea, doubleb, doublec);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(floatc[i], cmoveFGEforFConst(floata[i], floatb[i]));
+            Asserts.assertEquals(doublec[i], cmoveDGEforDConst(doublea[i], doubleb[i]));
+        }
+
+        testCMoveFLTforFConst(floata, floatb, floatc);
+        testCMoveDLTforDConst(doublea, doubleb, doublec);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(floatc[i], cmoveFLTforFConst(floata[i], floatb[i]));
+            Asserts.assertEquals(doublec[i], cmoveDLTforDConst(doublea[i], doubleb[i]));
+        }
+
+        testCMoveFLEforFConst(floata, floatb, floatc);
+        testCMoveDLEforDConst(doublea, doubleb, doublec);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(floatc[i], cmoveFLEforFConst(floata[i], floatb[i]));
+            Asserts.assertEquals(doublec[i], cmoveDLEforDConst(doublea[i], doubleb[i]));
+        }
+
+        testCMoveFEQforFConst(floata, floatb, floatc);
+        testCMoveDEQforDConst(doublea, doubleb, doublec);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(floatc[i], cmoveFEQforFConst(floata[i], floatb[i]));
+            Asserts.assertEquals(doublec[i], cmoveDEQforDConst(doublea[i], doubleb[i]));
+        }
+
+        testCMoveFNEQforFConst(floata, floatb, floatc);
+        testCMoveDNEQforDConst(doublea, doubleb, doublec);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(floatc[i], cmoveFNEQforFConst(floata[i], floatb[i]));
+            Asserts.assertEquals(doublec[i], cmoveDNEQforDConst(doublea[i], doubleb[i]));
         }
     }
 }
