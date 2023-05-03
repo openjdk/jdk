@@ -226,15 +226,15 @@ void Rewriter::maybe_rewrite_invokehandle(address opc, int cp_index, int cache_i
       int status = _method_handle_invokers.at(cp_index);
       assert(status >= -1 && status <= 1, "oob tri-state");
       if (status == 0) {
-        if (_pool->klass_ref_at_noresolve(cp_index) == vmSymbols::java_lang_invoke_MethodHandle() &&
+        if (_pool->uncached_klass_ref_at_noresolve(cp_index) == vmSymbols::java_lang_invoke_MethodHandle() &&
             MethodHandles::is_signature_polymorphic_name(vmClasses::MethodHandle_klass(),
-                                                         _pool->name_ref_at(cp_index))) {
+                                                         _pool->uncached_name_ref_at(cp_index))) {
           // we may need a resolved_refs entry for the appendix
           add_invokedynamic_resolved_references_entry(cp_index, cache_index);
           status = +1;
-        } else if (_pool->klass_ref_at_noresolve(cp_index) == vmSymbols::java_lang_invoke_VarHandle() &&
+        } else if (_pool->uncached_klass_ref_at_noresolve(cp_index) == vmSymbols::java_lang_invoke_VarHandle() &&
                    MethodHandles::is_signature_polymorphic_name(vmClasses::VarHandle_klass(),
-                                                                _pool->name_ref_at(cp_index))) {
+                                                                _pool->uncached_name_ref_at(cp_index))) {
           // we may need a resolved_refs entry for the appendix
           add_invokedynamic_resolved_references_entry(cp_index, cache_index);
           status = +1;
@@ -421,11 +421,11 @@ void Rewriter::scan_method(Thread* thread, Method* method, bool reverse, bool* i
           InstanceKlass* klass = method->method_holder();
           u2 bc_index = Bytes::get_Java_u2(bcp + prefix_length + 1);
           constantPoolHandle cp(thread, method->constants());
-          Symbol* ref_class_name = cp->klass_name_at(cp->klass_ref_index_at(bc_index));
+          Symbol* ref_class_name = cp->klass_name_at(cp->uncached_klass_ref_index_at(bc_index));
 
           if (klass->name() == ref_class_name) {
-            Symbol* field_name = cp->name_ref_at(bc_index);
-            Symbol* field_sig = cp->signature_ref_at(bc_index);
+            Symbol* field_name = cp->uncached_name_ref_at(bc_index);
+            Symbol* field_sig = cp->uncached_signature_ref_at(bc_index);
 
             fieldDescriptor fd;
             if (klass->find_field(field_name, field_sig, &fd) != nullptr) {
