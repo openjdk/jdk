@@ -25,7 +25,6 @@
   @test
   @bug 4343344
   @summary Tests key modifiers when ALT_GRAPH key is pressed by Robot.
-           This test is for UNIX only.
   @key headful
   @requires (os.family != "mac")
   @run main AltGraphModifier
@@ -80,7 +79,7 @@ public class AltGraphModifier {
                         for (int i=0; i < modifierKeys.length; i++) {
                             if (modifierPress[i] == true) {
                                 if ((kp.getModifiersEx() & inputMasks[i]) == inputMasks[i]) {
-                                }  else {
+                                } else {
                                     failed = true;
                                 }
                             }

@@ -111,7 +111,7 @@ public class CancelKeyTyped {
             }
 
             protected void printKey(KeyEvent evt) {
-                switch(evt.getID()) {
+                switch (evt.getID()) {
                     case KeyEvent.KEY_TYPED:
                     case KeyEvent.KEY_PRESSED:
                     case KeyEvent.KEY_RELEASED:

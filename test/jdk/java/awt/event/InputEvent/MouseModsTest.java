@@ -142,7 +142,7 @@ public class MouseModsTest {
     }
 
     static int getKeycode(int ctrl) {
-        switch(ctrl) {
+        switch (ctrl) {
         case 1: return KeyEvent.VK_SHIFT;
         case 2: return KeyEvent.VK_CONTROL;
         case 3: return KeyEvent.VK_ALT;
@@ -151,7 +151,7 @@ public class MouseModsTest {
     }
 
     static int getKeyModifier(int ctrl) {
-        switch(ctrl) {
+        switch (ctrl) {
         case 1: return InputEvent.SHIFT_MASK;
         case 2: return InputEvent.CTRL_MASK;
         case 3: return InputEvent.ALT_MASK;
@@ -160,7 +160,7 @@ public class MouseModsTest {
     }
 
     static int getMouseModifier(int btn) {
-        switch(btn) {
+        switch (btn) {
         case 1: return InputEvent.BUTTON1_MASK;
         case 2: return InputEvent.BUTTON2_MASK;
         case 3: return InputEvent.BUTTON3_MASK;
