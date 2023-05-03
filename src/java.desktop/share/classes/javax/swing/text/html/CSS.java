@@ -2023,6 +2023,17 @@ public class CSS implements Serializable {
         boolean isSup() {
             return (svalue.contains("sup"));
         }
+
+        @Override
+        public int hashCode() {
+            return this.svalue.hashCode();
+        }
+
+        @Override
+        public boolean equals(Object val) {
+            return val instanceof CSS.StringValue strVal && this.svalue == strVal.svalue;
+        }
+
     }
 
     /**
@@ -2387,6 +2398,7 @@ public class CSS implements Serializable {
         public int hashCode() {
             return Integer.hashCode(weight);
         }
+
         @Override
         public boolean equals(Object val) {
             return val instanceof CSS.FontWeight fontWeight && weight == fontWeight.weight;
@@ -2452,6 +2464,15 @@ public class CSS implements Serializable {
             return c;
         }
 
+        @Override
+        public int hashCode() {
+            return (c != null) ? c.hashCode() : 0;
+        }
+
+        @Override
+        public boolean equals(Object val) {
+            return val instanceof CSS.ColorValue color && c.equals(color.c);
+        }
         Color c;
     }
 
@@ -2506,6 +2527,15 @@ public class CSS implements Serializable {
             }
         }
 
+        @Override
+        public int hashCode() {
+            return style.hashCode();
+        }
+
+        @Override
+        public boolean equals(Object val) {
+            return val instanceof CSS.BorderStyle border && style.equals(border.style);
+        }
         // CSS.Values are static, don't archive it.
         private transient CSS.Value style;
     }
@@ -2633,6 +2663,15 @@ public class CSS implements Serializable {
             return Float.valueOf(getValue(false));
         }
 
+        @Override
+        public int hashCode() {
+            return Float.hashCode(span);
+        }
+
+        @Override
+        public boolean equals(Object val) {
+            return val instanceof CSS.LengthValue lu && span == lu.span;
+        }
         /** If true, span is a percentage value, and that to determine
          * the length another value needs to be passed in. */
         boolean percentage;
@@ -2851,6 +2890,18 @@ public class CSS implements Serializable {
 
         float getVerticalPosition() {
             return verticalPosition;
+        }
+
+        @Override
+        public int hashCode() {
+            return Float.hashCode(horizontalPosition);
+        }
+
+        @Override
+        public boolean equals(Object val) {
+            return val instanceof CSS.BackgroundPosition bp
+                    && horizontalPosition == bp.horizontalPosition
+                    && verticalPosition == bp.verticalPosition;
         }
     }
 

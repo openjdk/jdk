@@ -20,14 +20,12 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
 /*
  * @test
  * @bug 7083187
- * @summary  Verifies if CSS.FontSize,CSS.FontFamily,CSS.FontWeight attribute is same
+ * @summary  Verifies if CSS.CSSValue attribute is same
  * @run main CSSAttributeEqualityBug
  */
-
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.html.CSS;
 import javax.swing.text.html.StyleSheet;
@@ -38,6 +36,11 @@ public class CSSAttributeEqualityBug {
         testFontSize();
         testFontFamily();
         testFontWeight();
+        testColor();
+        testBorderStyle();
+        testCSSLengthValue();
+        testBackgroundPosition();
+        testCSSStringValue();
     }
 
     private static void testFontSize() {
@@ -64,10 +67,10 @@ public class CSSAttributeEqualityBug {
         String fontFamily = "Sans-Serif";
 
         SimpleAttributeSet a = new SimpleAttributeSet();
-        ss.addCSSAttribute(a, CSS.Attribute.FONT_FAMILY, fontFamily);
+        ss.addCSSAttribute(a, CSS.Attribute.FONT_FAMILY, "Sans-Serif");
 
         SimpleAttributeSet b = new SimpleAttributeSet();
-        ss.addCSSAttribute(b, CSS.Attribute.FONT_FAMILY, fontFamily);
+        ss.addCSSAttribute(b, CSS.Attribute.FONT_FAMILY, "Sans-Serif");
 
         if (a.isEqual(b)) {
             System.out.println( "a equals b");
@@ -94,6 +97,101 @@ public class CSSAttributeEqualityBug {
             System.out.println("a = " + a);
             System.out.println("b = " + b);
             throw new RuntimeException("CSS.Attribute.FontWeight a is not equal to b");
+        }
+    }
+
+    private static void testColor() {
+        StyleSheet ss = new StyleSheet();
+        String fontColor = "red";
+
+        SimpleAttributeSet a = new SimpleAttributeSet();
+        ss.addCSSAttribute(a, CSS.Attribute.COLOR, fontColor);
+
+        SimpleAttributeSet b = new SimpleAttributeSet();
+        ss.addCSSAttribute(b, CSS.Attribute.COLOR, fontColor);
+
+        if (a.isEqual(b)) {
+            System.out.println( "a equals b");
+        } else {
+            System.out.println("a = " + a);
+            System.out.println("b = " + b);
+            throw new RuntimeException("CSS.Attribute.Color a is not equal to b");
+        }
+    }
+
+    private static void testBorderStyle() {
+        StyleSheet ss = new StyleSheet();
+        String borderStyle = "DASHED";
+
+        SimpleAttributeSet a = new SimpleAttributeSet();
+        ss.addCSSAttribute(a, CSS.Attribute.BORDER_STYLE, borderStyle);
+
+        SimpleAttributeSet b = new SimpleAttributeSet();
+        ss.addCSSAttribute(b, CSS.Attribute.BORDER_STYLE, borderStyle);
+
+        if (a.isEqual(b)) {
+            System.out.println( "a equals b");
+        } else {
+            System.out.println("a = " + a);
+            System.out.println("b = " + b);
+            throw new RuntimeException("CSS.Attribute.BorderStyle a is not equal to b");
+        }
+    }
+
+    private static void testCSSLengthValue() {
+        StyleSheet ss = new StyleSheet();
+        String lengthUnit = "42";
+
+        SimpleAttributeSet a = new SimpleAttributeSet();
+        ss.addCSSAttribute(a, CSS.Attribute.MARGIN_TOP, lengthUnit);
+
+        SimpleAttributeSet b = new SimpleAttributeSet();
+        ss.addCSSAttribute(b, CSS.Attribute.MARGIN_TOP, lengthUnit);
+
+        if (a.isEqual(b)) {
+            System.out.println("a equals b");
+        } else {
+            System.out.println("a = " + a);
+            System.out.println("b = " + b);
+            throw new RuntimeException("CSS LengthValue a is not equal to b");
+        }
+    }
+
+    private static void testBackgroundPosition() {
+        StyleSheet ss = new StyleSheet();
+        String bgPosition = "top";
+
+        SimpleAttributeSet a = new SimpleAttributeSet();
+        ss.addCSSAttribute(a, CSS.Attribute.BACKGROUND_POSITION, bgPosition);
+
+        SimpleAttributeSet b = new SimpleAttributeSet();
+        ss.addCSSAttribute(b, CSS.Attribute.BACKGROUND_POSITION, bgPosition);
+
+        if (a.isEqual(b)) {
+            System.out.println("a equals b");
+        } else {
+            System.out.println("a = " + a);
+            System.out.println("b = " + b);
+            throw new RuntimeException("CSS.Attribute.BACKGROUND_POSITION a is not equal to b");
+        }
+    }
+
+    private static void testCSSStringValue() {
+        StyleSheet ss = new StyleSheet();
+        String strVal = "underline";
+
+        SimpleAttributeSet a = new SimpleAttributeSet();
+        ss.addCSSAttribute(a, CSS.Attribute.TEXT_DECORATION, strVal);
+
+        SimpleAttributeSet b = new SimpleAttributeSet();
+        ss.addCSSAttribute(b, CSS.Attribute.TEXT_DECORATION, strVal);
+
+        if (a.isEqual(b)) {
+            System.out.println("a equals b");
+        } else {
+            System.out.println("a = " + a);
+            System.out.println("b = " + b);
+            throw new RuntimeException("CSS.Attribute.TEXT_DECORATION a is not equal to b");
         }
     }
 }
