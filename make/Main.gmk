@@ -247,7 +247,7 @@ $(foreach v, $(JVM_VARIANTS), $(eval $(call DeclareHotspotGensrcRecipe,$v)))
 define DeclareHotspotLibsRecipe
   hotspot-$1-libs:
 	+($(CD) $(TOPDIR)/make/hotspot && $(MAKE) $(MAKE_ARGS) -f lib/CompileLibraries.gmk \
-	    JVM_VARIANT=$1 $$($1_EXTRA_ARGS))
+	    JVM_VARIANT=$1)
 endef
 
 $(foreach v, $(JVM_VARIANTS), $(eval $(call DeclareHotspotLibsRecipe,$v)))
