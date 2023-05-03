@@ -87,7 +87,7 @@ class FallbackTable;
  * last-last-ditch GC that is used when the JVM is scrambling to squeeze more space out of the heap, and at
  * that point, ultimate performance is no longer the main concern.
  */
-class SlidingForwarding : public CHeapObj<mtGC> {
+class SlidingForwarding : public AllStatic {
 private:
   static const uintptr_t MARK_LOWER_HALF_MASK = right_n_bits(32);
 
@@ -112,34 +112,27 @@ private:
   // Indicates an unused base address in the target base table.
   static HeapWord* const UNUSED_BASE;
 
-  // The singleton instance.
-  static SlidingForwarding* _sliding_forwarding;
+  static HeapWord*      _heap_start;
+  static uint           _num_regions;
+  static uint           _region_size_words;
+  static uint           _region_size_words_shift;
 
-  HeapWord*  const _heap_start;
-  size_t           _num_regions;
-  size_t           _region_size_words;
-  size_t           _region_size_words_shift;
-  HeapWord**       _bases_table;
+  static HeapWord**     _bases_table;
+  static FallbackTable* _fallback_table;
 
-  FallbackTable*   _fallback_table;
+  static inline uint region_index_containing(HeapWord* addr);
 
-  inline size_t region_index_containing(HeapWord* addr) const;
+  static inline uintptr_t encode_forwarding(HeapWord* from, HeapWord* to);
+  static inline HeapWord* decode_forwarding(HeapWord* from, uintptr_t encoded);
 
-  inline uintptr_t encode_forwarding(HeapWord* from, HeapWord* to);
-  inline HeapWord* decode_forwarding(HeapWord* from, uintptr_t encoded) const;
+  static void fallback_forward_to(HeapWord* from, HeapWord* to);
+  static HeapWord* fallback_forwardee(HeapWord* from);
 
-  void fallback_forward_to(HeapWord* from, HeapWord* to);
-  HeapWord* fallback_forwardee(HeapWord* from) const;
-
-  SlidingForwarding(MemRegion heap, size_t region_size_words);
-  ~SlidingForwarding();
-  void begin_impl();
-  void end_impl();
-  inline void forward_to_impl(oop from, oop to);
-  inline oop forwardee_impl(oop from) const;
+  static inline void forward_to_impl(oop from, oop to);
+  static inline oop forwardee_impl(oop from);
 
 public:
-  static void initialize(MemRegion heap, size_t region_size_words);
+  static void initialize(MemRegion heap, uint region_size_words);
 
   static void begin();
   static void end();
