@@ -104,7 +104,7 @@ public class PrintIdealPhaseTest {
              Asserts.assertTrue(loggedPhases.isEmpty(), "Expect no other phases");
         } else {
             // Check that we don't pass even though bad phase names where given
-            oa.shouldHaveExitValue(0)
+            oa.shouldHaveExitValue(1)
             .shouldContain("CompileCommand: An error occurred during parsing")
             .shouldContain("Error: Unrecognized phase name in PrintIdealPhase:");
         }
