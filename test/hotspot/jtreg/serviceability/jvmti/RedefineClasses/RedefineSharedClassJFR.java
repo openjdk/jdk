@@ -34,6 +34,9 @@
  * @run driver RedefineSharedClassJFR xshare-off
  * @run driver RedefineSharedClassJFR xshare-on
  */
+import java.util.ArrayList;
+import java.util.List;
+
 import jdk.test.lib.Platform;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
@@ -41,6 +44,11 @@ import jdk.test.lib.process.OutputAnalyzer;
 import jtreg.SkippedException;
 
 public class RedefineSharedClassJFR {
+
+    private static final String SHOULD_CLEAN_TRUE = "Class unloading: should_clean_previous_versions = true";
+    private static final String SHOULD_CLEAN_FALSE = "Class unloading: should_clean_previous_versions = false";
+    private static final String SCRATCH_CLASS_ADDED_SHARED = "scratch class added; class is shared";
+    private static final String SCRATCH_CLASS_ADDED_ON_STACK = "scratch class added; one of its methods is on_stack.";
 
     public static void main(String[] args) throws Exception {
         // Skip test if default archive is supported.
@@ -53,43 +61,46 @@ public class RedefineSharedClassJFR {
         // due to the fact that shared classes can never be cleaned out after retranform.
         if (args.length > 0) {
             // When run with an argument the class is used as driver and should parse
-            // the output.
+            // the output to verify it is correct given the command line.
+            List<String> baseCommand = List.of(
+                "-XX:StartFlightRecording",
+                "-Xlog:redefine+class+iklass+add=trace,redefine+class+iklass+purge=trace",
+                "RedefineSharedClassJFR");
+
             if (args[0].equals("xshare-off")) {
                 // First case is with -Xshare:off. In this case no classes are shared
                 // and we should be able to clean out the retransformed classes. Verify
                 // that the cleaning is done when the GC is triggered.
-                ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-                    "-XX:StartFlightRecording",
-                    "-Xshare:off",
-                    "-Xlog:redefine+class+iklass+add=trace,redefine+class+iklass+purge=trace",
-                    "RedefineSharedClassJFR");
+                List<String> offCommand = new ArrayList<>();
+                offCommand.add("-Xshare:off");
+                offCommand.addAll(baseCommand);
+                ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(offCommand);
                 new OutputAnalyzer(pb.start())
-                    .shouldContain("Class unloading: should_clean_previous_versions = true")
-                    .shouldNotContain("Class unloading: should_clean_previous_versions = false")
+                    .shouldContain(SHOULD_CLEAN_TRUE)
+                    .shouldNotContain(SHOULD_CLEAN_FALSE)
                     // We expect at least one of the transformed classes to be in use, if
-                    // not the above check that clean_previous should be true will also
+                    // not the above check that should_clean_previous should be true will also
                     // fail. This check is to show what is expected.
-                    .shouldContain("scratch class added; one of its methods is on_stack.")
-                    .shouldNotContain("scratch class added; class is shared")
+                    .shouldContain(SCRATCH_CLASS_ADDED_ON_STACK)
+                    .shouldNotContain(SCRATCH_CLASS_ADDED_SHARED)
                     .shouldHaveExitValue(0);
                 return;
             } else if (args[0].equals("xshare-on")) {
                 // With -Xshare:on, the shared classes can never be cleaned out. Check the
                 // logs to verify we don't try to clean when we know it is not needed.
-                ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-                    "-XX:StartFlightRecording",
-                    "-Xshare:on",
-                    "-Xlog:redefine+class+iklass+add=trace,redefine+class+iklass+purge=trace",
-                    "RedefineSharedClassJFR");
+                List<String> onCommand = new ArrayList<>();
+                onCommand.add("-Xshare:on");
+                onCommand.addAll(baseCommand);
+                ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(onCommand);
                 new OutputAnalyzer(pb.start())
-                    .shouldContain("Class unloading: should_clean_previous_versions = false")
-                    .shouldNotContain("Class unloading: should_clean_previous_versions = true")
-                    .shouldContain("scratch class added; class is shared")
-                    // If the below line occurs, then clean_previous_versions will be
+                    .shouldContain(SHOULD_CLEAN_FALSE)
+                    .shouldNotContain(SHOULD_CLEAN_TRUE)
+                    .shouldContain(SCRATCH_CLASS_ADDED_SHARED)
+                    // If the below line occurs, then should_clean_previous_versions will be
                     // true and the above shouldContain will trigger. This check is to
                     // show the intention that we don't expect any non-shared transformed
                     // classes to be in use.
-                    .shouldNotContain("scratch class added; one of its methods is on_stack.")
+                    .shouldNotContain(SCRATCH_CLASS_ADDED_ON_STACK)
                     .shouldHaveExitValue(0);
                 return;
             }
