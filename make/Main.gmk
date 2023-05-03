@@ -253,12 +253,12 @@ endef
 $(foreach v, $(JVM_VARIANTS), $(eval $(call DeclareHotspotLibsRecipe,$v)))
 
 define DeclareHotspotStaticLibsRecipe
-  hotspot-$1-static-libs:
+  hotspot-$(JVM_VARIANT_MAIN)-static-libs:
 	+($(CD) $(TOPDIR)/make/hotspot && $(MAKE) $(MAKE_ARGS) -f lib/CompileLibraries.gmk \
-	    JVM_VARIANT=$1 STATIC_LIBS=true)
+	    JVM_VARIANT=$(JVM_VARIANT_MAIN) STATIC_LIBS=true)
 endef
 
-$(foreach v, $(JVM_VARIANTS), $(eval $(call DeclareHotspotStaticLibsRecipe,$v)))
+$(eval $(call DeclareHotspotStaticLibsRecipe))
 
 $(eval $(call SetupTarget, hotspot-ide-project, \
     MAKEFILE := ide/visualstudio/hotspot/CreateVSProject, \
@@ -1106,9 +1106,10 @@ hotspot: $(HOTSPOT_VARIANT_TARGETS)
 # Create targets hotspot-libs and hotspot-gensrc.
 $(foreach v, $(JVM_VARIANTS), \
   $(eval hotspot-libs: hotspot-$v-libs) \
-  $(eval hotspot-static-libs: hotspot-$v-static-libs) \
   $(eval hotspot-gensrc: hotspot-$v-gensrc) \
 )
+
+$(eval hotspot-static-libs: hotspot-$(JVM_VARIANT_MAIN)-static-libs)
 
 gensrc: $(GENSRC_TARGETS)
 
