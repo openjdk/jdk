@@ -195,8 +195,6 @@ class BlockingSocketOps {
                     if (!Platform.isAix()) {
                         fail("read " + n);
                     } else {
-                        // TODO: AIX does not throw as expected
-                        // bug: FIXME!
                         assertTrue(n == -1);
                     }
                 } catch (IOException ioe) {
