@@ -23,17 +23,16 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/copyFailedInfo.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
 #include "gc/shared/gcId.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTrace.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/objectCountEventSender.hpp"
 #include "gc/shared/referenceProcessorStats.hpp"
 #include "memory/heapInspection.hpp"
 #include "memory/resourceArea.hpp"
-#include "memory/universe.hpp"
 #include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
@@ -111,12 +110,7 @@ void GCTracer::report_object_count_after_gc(BoolObjectClosure* is_alive_cl) {
     KlassInfoTable cit(false);
     if (!cit.allocation_failed()) {
       HeapInspection hi;
-      uint parallel_threads = 1;
-      WorkerThreads* workers = Universe::heap()->safepoint_workers();
-      if (workers != nullptr) {
-        parallel_threads = workers->active_workers();
-      }
-      hi.populate_table(&cit, is_alive_cl, parallel_threads);
+      hi.populate_table(&cit, is_alive_cl, ParallelGCThreads);
       ObjectCountEventSenderClosure event_sender(cit.size_of_instances_in_words(), Ticks::now());
       cit.iterate(&event_sender);
     }
