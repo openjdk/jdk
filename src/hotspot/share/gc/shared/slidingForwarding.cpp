@@ -130,20 +130,27 @@ uint FallbackTable::home_index(HeapWord* from) {
 
 void FallbackTable::forward_to(HeapWord* from, HeapWord* to) {
   uint idx = home_index(from);
-  HeapWord* found = _table[idx]._from;
-  if (found != nullptr) {
-    if (found != from) {
-      FallbackTableEntry* entry = NEW_C_HEAP_OBJ(FallbackTableEntry, mtGC);
-      entry->_next = _table[idx]._next;
-      entry->_from = _table[idx]._from;
-      entry->_to = _table[idx]._to;
-      _table[idx]._next = entry;
-    } // Else fall-through and update entry below.
-  } else {
-    assert(_table[idx]._next == nullptr, "next-link should be null here");
+  FallbackTableEntry* head = &_table[idx];
+  FallbackTableEntry* entry = head;
+  // Search existing entry in chain starting at idx.
+  while (entry != nullptr) {
+    if (entry->_from == from) {
+      break;
+    }
+    entry = entry->_next;
   }
-  _table[idx]._from = from;
-  _table[idx]._to   = to;
+  if (entry == nullptr) {
+    // No entry found, create new one and insert after head.
+    FallbackTableEntry* new_entry = NEW_C_HEAP_OBJ(FallbackTableEntry, mtGC);
+    new_entry->_next = head->_next;
+    new_entry->_from = head->_from;
+    new_entry->_to   = head->_to;
+    head->_next = new_entry;
+    entry = head; // Set from and to fields below.
+  }
+  // Set from and to in new or found entry.
+  entry->_from = from;
+  entry->_to   = to;
 }
 
 HeapWord* FallbackTable::forwardee(HeapWord* from) const {

@@ -38,10 +38,6 @@ size_t SlidingForwarding::region_index_containing(HeapWord* addr) const {
   return index;
 }
 
-bool SlidingForwarding::region_contains(HeapWord* region_base, HeapWord* addr) const {
-  return (region_base <= addr) && (addr < (region_base + _region_size_words));
-}
-
 uintptr_t SlidingForwarding::encode_forwarding(HeapWord* from, HeapWord* to) {
   size_t from_reg_idx = region_index_containing(from);
   size_t to_reg_idx = region_index_containing(to);
