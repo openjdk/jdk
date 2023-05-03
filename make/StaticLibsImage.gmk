@@ -54,7 +54,7 @@ $(eval $(call SetupCopyFiles, COPY_STATIC_LIBS_libjvm, \
     DEST := $(STATIC_LIBS_IMAGE_DIR)/lib, \
     FILES := $(filter %$(STATIC_LIBRARY_SUFFIX), \
         $(call FindFiles, $(HOTSPOT_OUTPUTDIR)/variant-$(JVM_VARIANT_MAIN)/libjvm/objs/static))))
-$(eval TARGETS += $$(COPY_STATIC_LIBS_libjvm))
+TARGETS += $(COPY_STATIC_LIBS_libjvm)
 
 ################################################################################
 
