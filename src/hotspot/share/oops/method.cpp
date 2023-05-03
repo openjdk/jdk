@@ -1194,7 +1194,21 @@ void Method::unlink_method() {
 
   set_method_data(nullptr);
   clear_method_counters();
-  clear_queued_for_compilation();
+  remove_unshareable_flags();
+}
+
+void Method::remove_unshareable_flags() {
+  // clear all the flags that shouldn't be in the archived version
+  assert(!is_old(), "must be");
+  assert(!is_obsolete(), "must be");
+  assert(!is_deleted(), "must be");
+
+  set_is_prefixed_native(false);
+  set_queued_for_compilation(false);
+  set_is_not_c2_compilable(false);
+  set_is_not_c1_compilable(false);
+  set_is_not_c2_osr_compilable(false);
+  set_on_stack_flag(false);
 }
 #endif
 

@@ -2592,6 +2592,16 @@ void InstanceKlass::remove_unshareable_info() {
   init_shared_package_entry();
   _dep_context_last_cleaned = 0;
   _init_monitor = nullptr;
+
+  remove_unshareable_flags();
+}
+
+void InstanceKlass::remove_unshareable_flags() {
+  // clear all the flags/stats that shouldn't be in the archived version
+#if INCLUDE_JVMTI
+  set_is_being_redefined(false);
+#endif
+  set_has_resolved_methods(false);
 }
 
 void InstanceKlass::remove_java_mirror() {
