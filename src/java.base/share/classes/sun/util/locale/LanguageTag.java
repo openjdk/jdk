@@ -31,7 +31,15 @@
  */
 package sun.util.locale;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.IllformedLocaleException;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+import java.util.StringJoiner;
 
 public class LanguageTag {
     //
@@ -425,25 +433,26 @@ public class LanguageTag {
         boolean singletonFound = false;
         boolean privUseVarFound = false;
         for (int i = 0; i < subtags.length; i++) {
+            String subtag = subtags[i];
             if (privUseVarFound) {
-                bldr.append(subtags[i]);
-            } else if (i > 0 && isVariant(subtags[i]) && !singletonFound && !privateFound) {
-                bldr.append(subtags[i]);
-            } else if (i > 0 && isRegion(subtags[i]) && !singletonFound && !privateFound) {
-                bldr.append(canonicalizeRegion(subtags[i]));
-            } else if (i > 0 && isScript(subtags[i]) && !singletonFound && !privateFound) {
-                bldr.append(canonicalizeScript(subtags[i]));
+                bldr.append(subtag);
+            } else if (i > 0 && isVariant(subtag) && !singletonFound && !privateFound) {
+                bldr.append(subtag);
+            } else if (i > 0 && isRegion(subtag) && !singletonFound && !privateFound) {
+                bldr.append(canonicalizeRegion(subtag));
+            } else if (i > 0 && isScript(subtag) && !singletonFound && !privateFound) {
+                bldr.append(canonicalizeScript(subtag));
             // If subtag is not 2 letter, 4 letter, or variant
             // under the right conditions, then it should be lower-case
             } else {
-                if (isPrivateusePrefix(subtags[i])) {
+                if (isPrivateusePrefix(subtag)) {
                     privateFound = true;
-                } else if (isExtensionSingleton(subtags[i])) {
+                } else if (isExtensionSingleton(subtag)) {
                     singletonFound = true;
-                } else if (subtags[i].equals(PRIVUSE_VARIANT_PREFIX)) {
+                } else if (subtag.equals(PRIVUSE_VARIANT_PREFIX)) {
                     privUseVarFound = true;
                 }
-                bldr.append(subtags[i].toLowerCase(Locale.ROOT));
+                bldr.append(subtag.toLowerCase(Locale.ROOT));
             }
             bldr.append("-");
         }
