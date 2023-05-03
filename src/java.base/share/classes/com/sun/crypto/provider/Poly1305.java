@@ -278,11 +278,13 @@ final class Poly1305 {
         a.setProduct(r);                // a = (a * r) % p
     }
 
-    boolean printing = (! "no".equals(BLAH));
+    static final boolean printing = ("yes".equals(BLAH));
 
     static void maybePrint(int cols, String name, IntegerModuloP[] a) {
-        for (int i = 0; i < cols; i++)  System.out.printf("%s[%d] = %33.33s ", name, i, a[i]);
-        System.out.println();
+        if (printing) {
+            for (int i = 0; i < cols; i++)  System.out.printf("%s[%d] = %33.33s ", name, i, a[i]);
+            System.out.println();
+        }
     }
 
     // This is an intrinsified method. The unused parameters aLimbs and rLimbs are used by the intrinsic.
@@ -343,7 +345,8 @@ final class Poly1305 {
                     sum = sum.add(A[i]);
                     sum = sum.add(N[i]);
                     sum = sum.multiply(r);
-                    System.out.printf("    sum = %33.33s  \n", sum);
+                    if (printing)
+                        System.out.printf("    sum = %33.33s  \n", sum);
                 }
 
                 a.setValue(sum);

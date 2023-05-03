@@ -367,7 +367,7 @@ class Address {
       : _base(base), _index(index), _offset(offset), _ext(ext) {}
     Register _base;
     Register _index;
-    int64_t _offset;
+    jlong _offset;
     extend _ext;
   };
 
@@ -490,7 +490,7 @@ class Address {
     return _nonliteral._base;
   }
 
-  int64_t offset() const {
+  jlong offset() const {
     assert_is_nonliteral();
     return _nonliteral._offset;
   }
