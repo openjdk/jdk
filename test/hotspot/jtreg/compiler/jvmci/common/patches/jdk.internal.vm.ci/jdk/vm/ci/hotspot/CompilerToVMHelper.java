@@ -277,11 +277,6 @@ public class CompilerToVMHelper {
         return CTVM.iterateFrames(initialMethods, matchingMethods, initialSkip, visitor);
     }
 
-    public static void materializeVirtualObjects(
-            HotSpotStackFrameReference stackFrame, boolean invalidate) {
-        CTVM.materializeVirtualObjects(stackFrame, invalidate);
-    }
-
     public static int getVtableIndexForInterfaceMethod(HotSpotResolvedObjectType type,
             HotSpotResolvedJavaMethod method) {
         return CTVM.getVtableIndexForInterfaceMethod((HotSpotResolvedObjectTypeImpl) type, (HotSpotResolvedJavaMethodImpl) method);
