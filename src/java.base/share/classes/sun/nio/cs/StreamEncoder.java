@@ -436,16 +436,9 @@ public final class StreamEncoder extends Writer {
             ioe = x;
         }
 
-        try {
-            if (ch != null)
-                ch.close();
-            else {
-                try {
-                    out.flush();
-                } finally {
-                    out.close();
-                }
-            }
+        try (ch; out) {
+            if (out != null)
+                out.flush();
         } catch (IOException e) {
             if (ioe != null)
                 ioe.addSuppressed(e);
