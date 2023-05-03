@@ -73,7 +73,7 @@ uintptr_t SlidingForwarding::encode_forwarding(HeapWord* from, HeapWord* to) {
     alt_region = true;
   }
 
-  uint offset = pointer_delta(to, to_region_base);
+  uint offset = static_cast<uint>(pointer_delta(to, to_region_base));
   assert(offset < _region_size_words, "Offset should be within the region. from: " PTR_FORMAT
          ", to: " PTR_FORMAT ", to_region_base: " PTR_FORMAT ", offset: %u",
          p2i(from), p2i(to), p2i(to_region_base), offset);
