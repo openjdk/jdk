@@ -171,9 +171,7 @@ void FallbackTable::forward_to(HeapWord* from, HeapWord* to) {
   if (entry == nullptr) {
     // No entry found, create new one and insert after head.
     FallbackTableEntry* new_entry = NEW_C_HEAP_OBJ(FallbackTableEntry, mtGC);
-    new_entry->_next = head->_next;
-    new_entry->_from = head->_from;
-    new_entry->_to   = head->_to;
+    *new_entry = *head;
     head->_next = new_entry;
     entry = head; // Set from and to fields below.
   }
