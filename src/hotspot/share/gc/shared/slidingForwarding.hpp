@@ -114,6 +114,9 @@ private:
   // Indicates an unused base address in the target base table.
   static HeapWord* const UNUSED_BASE;
 
+  // The singleton instance.
+  static SlidingForwarding* _sliding_forwarding;
+
   HeapWord*  const _heap_start;
   size_t           _num_regions;
   size_t           _region_size_words;
@@ -130,15 +133,24 @@ private:
   void fallback_forward_to(HeapWord* from, HeapWord* to);
   HeapWord* fallback_forwardee(HeapWord* from) const;
 
-public:
   SlidingForwarding(MemRegion heap, size_t region_size_words);
   ~SlidingForwarding();
+  void begin_impl();
+  void end_impl();
+  inline void forward_to_impl(oop from, oop to);
+  inline oop forwardee_impl(oop from) const;
+public:
 
-  void begin();
-  void end();
+  static void initialize(MemRegion heap, size_t region_size_words);
 
-  inline void forward_to(oop from, oop to);
-  inline oop forwardee(oop from) const;
+  static void begin();
+  static void end();
+
+  static inline bool is_forwarded(oop obj);
+  static inline bool is_not_forwarded(oop obj);
+
+  static inline void forward_to(oop from, oop to);
+  static inline oop forwardee(oop from);
 };
 
 /*

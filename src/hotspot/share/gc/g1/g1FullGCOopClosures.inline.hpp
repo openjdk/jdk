@@ -32,7 +32,7 @@
 #include "gc/g1/g1ConcurrentMarkBitMap.inline.hpp"
 #include "gc/g1/g1FullGCMarker.inline.hpp"
 #include "gc/g1/heapRegionRemSet.inline.hpp"
-#include "gc/shared/gcForwarding.inline.hpp"
+#include "gc/shared/slidingForwarding.inline.hpp"
 #include "memory/iterator.inline.hpp"
 #include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
@@ -66,8 +66,8 @@ template <class T> inline void G1AdjustClosure::adjust_pointer(T* p) {
     return;
   }
 
-  if (GCForwarding::is_forwarded(obj)) {
-    oop forwardee = GCForwarding::forwardee(obj);
+  if (SlidingForwarding::is_forwarded(obj)) {
+    oop forwardee = SlidingForwarding::forwardee(obj);
     // Forwarded, just update.
     assert(G1CollectedHeap::heap()->is_in_reserved(forwardee), "should be in object space");
     RawAccess<IS_NOT_NULL>::oop_store(p, forwardee);

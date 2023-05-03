@@ -76,7 +76,6 @@
 #include "gc/g1/heapRegionSet.inline.hpp"
 #include "gc/shared/concurrentGCBreakpoints.hpp"
 #include "gc/shared/gcBehaviours.hpp"
-#include "gc/shared/gcForwarding.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
 #include "gc/shared/gcId.hpp"
 #include "gc/shared/gcLocker.inline.hpp"
@@ -88,6 +87,7 @@
 #include "gc/shared/oopStorageParState.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shared/referenceProcessor.inline.hpp"
+#include "gc/shared/slidingForwarding.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
 #include "gc/shared/taskTerminator.hpp"
@@ -1525,7 +1525,7 @@ jint G1CollectedHeap::initialize() {
 
   G1InitLogger::print();
 
-  GCForwarding::initialize(heap_rs.region(), HeapRegion::GrainWords);
+  SlidingForwarding::initialize(heap_rs.region(), HeapRegion::GrainWords);
 
   return JNI_OK;
 }

@@ -43,15 +43,15 @@ TEST_VM(SlidingForwarding, simple) {
   HeapWord heap[16] = { nullptr };
   oop obj1 = cast_to_oop(&heap[2]);
   oop obj2 = cast_to_oop(&heap[0]);
-  SlidingForwarding sf(MemRegion(&heap[0], &heap[16]), 8);
+  SlidingForwarding::initialize(MemRegion(&heap[0], &heap[16]), 8);
   obj1->set_mark(markWord::prototype());
-  sf.begin();
+  SlidingForwarding::begin();
 
-  sf.forward_to(obj1, obj2);
+  SlidingForwarding::forward_to(obj1, obj2);
   ASSERT_EQ(obj1->mark().value(), make_mark(0 /* target_region */, 0 /* offset */));
-  ASSERT_EQ(sf.forwardee(obj1), obj2);
+  ASSERT_EQ(SlidingForwarding::forwardee(obj1), obj2);
 
-  sf.end();
+  SlidingForwarding::end();
 }
 
 // Test forwardings crossing 2 regions.
@@ -60,19 +60,19 @@ TEST_VM(SlidingForwarding, tworegions) {
   oop obj1 = cast_to_oop(&heap[14]);
   oop obj2 = cast_to_oop(&heap[2]);
   oop obj3 = cast_to_oop(&heap[10]);
-  SlidingForwarding sf(MemRegion(&heap[0], &heap[16]), 8);
+  SlidingForwarding::initialize(MemRegion(&heap[0], &heap[16]), 8);
   obj1->set_mark(markWord::prototype());
-  sf.begin();
+  SlidingForwarding::begin();
 
-  sf.forward_to(obj1, obj2);
+  SlidingForwarding::forward_to(obj1, obj2);
   ASSERT_EQ(obj1->mark().value(), make_mark(0 /* target_region */, 2 /* offset */));
-  ASSERT_EQ(sf.forwardee(obj1), obj2);
+  ASSERT_EQ(SlidingForwarding::forwardee(obj1), obj2);
 
-  sf.forward_to(obj1, obj3);
+  SlidingForwarding::forward_to(obj1, obj3);
   ASSERT_EQ(obj1->mark().value(), make_mark(1 /* target_region */, 2 /* offset */));
-  ASSERT_EQ(sf.forwardee(obj1), obj3);
+  ASSERT_EQ(SlidingForwarding::forwardee(obj1), obj3);
 
-  sf.end();
+  SlidingForwarding::end();
 }
 
 // Test fallback forwardings crossing 4 regions.
@@ -83,27 +83,27 @@ TEST_VM(SlidingForwarding, fallback) {
   oop obj3 = cast_to_oop(&heap[4]);
   oop obj4 = cast_to_oop(&heap[10]);
   oop obj5 = cast_to_oop(&heap[12]);
-  SlidingForwarding sf(MemRegion(&heap[0], &heap[16]), 4);
+  SlidingForwarding::initialize(MemRegion(&heap[0], &heap[16]), 4);
   obj1->set_mark(markWord::prototype());
-  sf.begin();
+  SlidingForwarding::begin();
 
-  sf.forward_to(obj1, obj2);
+  SlidingForwarding::forward_to(obj1, obj2);
   ASSERT_EQ(obj1->mark().value(), make_mark(0 /* target_region */, 2 /* offset */));
-  ASSERT_EQ(sf.forwardee(obj1), obj2);
+  ASSERT_EQ(SlidingForwarding::forwardee(obj1), obj2);
 
-  sf.forward_to(obj1, obj3);
+  SlidingForwarding::forward_to(obj1, obj3);
   ASSERT_EQ(obj1->mark().value(), make_mark(1 /* target_region */, 0 /* offset */));
-  ASSERT_EQ(sf.forwardee(obj1), obj3);
+  ASSERT_EQ(SlidingForwarding::forwardee(obj1), obj3);
 
-  sf.forward_to(obj1, obj4);
+  SlidingForwarding::forward_to(obj1, obj4);
   ASSERT_EQ(obj1->mark().value(), make_fallback());
-  ASSERT_EQ(sf.forwardee(obj1), obj4);
+  ASSERT_EQ(SlidingForwarding::forwardee(obj1), obj4);
 
-  sf.forward_to(obj1, obj5);
+  SlidingForwarding::forward_to(obj1, obj5);
   ASSERT_EQ(obj1->mark().value(), make_fallback());
-  ASSERT_EQ(sf.forwardee(obj1), obj5);
+  ASSERT_EQ(SlidingForwarding::forwardee(obj1), obj5);
 
-  sf.end();
+  SlidingForwarding::end();
 }
 
 #endif // _LP64
