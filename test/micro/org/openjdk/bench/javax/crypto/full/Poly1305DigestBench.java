@@ -106,7 +106,7 @@ public class Poly1305DigestBench extends CryptoBase {
     public void updateBytes() {
         try {
             byte[] d = data[index];
-            index = (index +1) % SET_SIZE;
+            // index = (index +1) % SET_SIZE;
             polyEngineUpdate.invoke(polyObj, d, 0, d.length);
         } catch (Throwable ex) {
             throw new RuntimeException(ex);

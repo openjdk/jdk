@@ -164,10 +164,10 @@ address generate_poly1305_processBlocks2() {
   {
     Label DONE, LOOP;
 
-    __ bind(LOOP);
     __ subsw(rscratch1, length, POLY1305_BLOCK_LENGTH * 8);
     __ br(Assembler::LT, DONE);
 
+    __ bind(LOOP);
     {
       __ poly1305_load(S0, input_start);
       __ poly1305_load(S1, input_start);
@@ -195,18 +195,18 @@ address generate_poly1305_processBlocks2() {
       int e1 = e0, e2 = e0;
 
       for (int i = 0; i < l_max; i++) {
-        e0 -= len0; if (e0 < 0) {
+        e0 -= len0;
+        if (e0 < 0) {
           e0 += l_max; (it0++)();
         }
-        e1 -= len1; if (e1 < 0) {
+        e1 -= len1;
+        if (e1 < 0) {
           e1 += l_max; (it1++)();
-          if (* it1 == nullptr) {
-            asm("nop");
-          }
         }
-        e2 -= len2; if (e2 < 0) {
+        e2 -= len2;
+        if (e2 < 0) {
           e2 += l_max; (it2++)();
-         }
+        }
       }
 
       assert(*it0 == nullptr && *it1 == nullptr && *it2 == nullptr,
@@ -214,7 +214,8 @@ address generate_poly1305_processBlocks2() {
     }
 
     __ subw(length, length, POLY1305_BLOCK_LENGTH * 4);
-    __ b(LOOP);
+    __ subsw(rscratch1, length, POLY1305_BLOCK_LENGTH * 8);
+    __ br(Assembler::GE, LOOP);
 
     __ bind(DONE);
   }
