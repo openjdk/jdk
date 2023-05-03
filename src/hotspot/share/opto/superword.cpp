@@ -3827,25 +3827,6 @@ void SuperWord::remove_pack_at(int pos) {
   _packset.remove_at(pos);
 }
 
-// Remove pack in packlist
-void SuperWord::remove_pack(Node_List* p) {
-  for (uint i = 0; i < p->size(); i++) {
-    Node* s = p->at(i);
-    set_my_pack(s, nullptr);
-  }
-  _packset.remove(p);
-}
-
-// Add pack to packlist, and set my_pack
-void SuperWord::add_pack_and_set_my_pack(Node_List* p) {
-  for (uint i = 0; i < p->size(); i++) {
-    Node* s = p->at(i);
-    assert(my_pack(s) == nullptr, "only add to one pack");
-    set_my_pack(s, p);
-  }
-  _packset.append(p);
-}
-
 void SuperWord::packset_sort(int n) {
   // simple bubble sort so that we capitalize with O(n) when its already sorted
   while (n != 0) {
