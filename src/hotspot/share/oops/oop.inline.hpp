@@ -268,7 +268,7 @@ bool oopDesc::is_forwarded() const {
 // Used by scavengers
 void oopDesc::forward_to(oop p) {
   markWord m = markWord::encode_pointer_as_mark(p);
-  assert(m.decode_pointer() == p, "encoding must be reversible");
+  assert(forwardee(m) == p, "encoding must be reversable");
   set_mark(m);
 }
 

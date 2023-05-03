@@ -63,9 +63,7 @@ class oopDesc {
   // make use of the C++ copy/assign incorrect.
   NONCOPYABLE(oopDesc);
 
-  inline oop forwardee(markWord header) const;
-
-public:
+ public:
   // Must be trivial; see verifying static assert after the class.
   oopDesc() = default;
 
@@ -270,6 +268,7 @@ public:
   inline oop forward_to_self_atomic(markWord compare, atomic_memory_order order = memory_order_conservative);
 
   inline oop forwardee() const;
+  inline oop forwardee(markWord header) const;
 
   // Age of object during scavenge
   inline uint age() const;
