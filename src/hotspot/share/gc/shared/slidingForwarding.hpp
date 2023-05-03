@@ -123,7 +123,6 @@ private:
   FallbackTable*   _fallback_table;
 
   inline size_t region_index_containing(HeapWord* addr) const;
-  inline bool region_contains(HeapWord* region_base, HeapWord* addr) const;
 
   inline uintptr_t encode_forwarding(HeapWord* from, HeapWord* to);
   inline HeapWord* decode_forwarding(HeapWord* from, uintptr_t encoded) const;
