@@ -45,5 +45,5 @@ public:
 
   void relocate(XRelocationSet* relocation_set);
 };
-  
+
 #endif // SHARE_GC_X_XRELOCATE_HPP

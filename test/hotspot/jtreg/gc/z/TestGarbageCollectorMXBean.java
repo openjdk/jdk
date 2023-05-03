@@ -146,7 +146,7 @@ public class TestGarbageCollectorMXBean {
                     log("ERROR: Old MemoryUsageBeforeGC.max");
                     errors.incrementAndGet();
                 }
-	    } else if (name.equals("ZGC Minor Cycles")) {
+            } else if (name.equals("ZGC Minor Cycles")) {
                 cycles.incrementAndGet();
 
                 if (!action.equals("end of GC cycle")) {
