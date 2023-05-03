@@ -40,6 +40,7 @@ static uintptr_t make_fallback() {
 
 // Test simple forwarding within the same region.
 TEST_VM(SlidingForwarding, simple) {
+  FlagSetting fs(UseAltGCForwarding, true);
   HeapWord heap[16] = { nullptr };
   oop obj1 = cast_to_oop(&heap[2]);
   oop obj2 = cast_to_oop(&heap[0]);
@@ -56,6 +57,7 @@ TEST_VM(SlidingForwarding, simple) {
 
 // Test forwardings crossing 2 regions.
 TEST_VM(SlidingForwarding, tworegions) {
+  FlagSetting fs(UseAltGCForwarding, true);
   HeapWord heap[16] = { nullptr };
   oop obj1 = cast_to_oop(&heap[14]);
   oop obj2 = cast_to_oop(&heap[2]);
@@ -77,6 +79,7 @@ TEST_VM(SlidingForwarding, tworegions) {
 
 // Test fallback forwardings crossing 4 regions.
 TEST_VM(SlidingForwarding, fallback) {
+  FlagSetting fs(UseAltGCForwarding, true);
   HeapWord heap[16] = { nullptr };
   oop obj1 = cast_to_oop(&heap[14]);
   oop obj2 = cast_to_oop(&heap[2]);
