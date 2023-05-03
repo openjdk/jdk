@@ -400,7 +400,7 @@ public abstract class DCTree implements DocTree {
         }
     }
 
-    public abstract static class DCInlineTag extends DCEndPosTree<DCInlineTag> implements InlineTagTree {
+    public abstract static class DCInlineTag<T extends DCEndPosTree<T>> extends DCEndPosTree<T> implements InlineTagTree {
         @Override @DefinedBy(Api.COMPILER_TREE)
         public String getTagName() {
             return getKind().tagName;
@@ -514,7 +514,7 @@ public abstract class DCTree implements DocTree {
         }
     }
 
-    public static class DCDocRoot extends DCInlineTag implements DocRootTree {
+    public static class DCDocRoot extends DCInlineTag<DCDocRoot> implements DocRootTree {
 
         @Override @DefinedBy(Api.COMPILER_TREE)
         public Kind getKind() {
@@ -717,7 +717,7 @@ public abstract class DCTree implements DocTree {
         }
     }
 
-    public static class DCIndex extends DCInlineTag implements IndexTree {
+    public static class DCIndex extends DCInlineTag<DCIndex> implements IndexTree {
         public final DCTree term;
         public final List<DCTree> description;
 
@@ -747,7 +747,7 @@ public abstract class DCTree implements DocTree {
         }
     }
 
-    public static class DCInheritDoc extends DCInlineTag implements InheritDocTree {
+    public static class DCInheritDoc extends DCInlineTag<DCInheritDoc> implements InheritDocTree {
         @Override @DefinedBy(Api.COMPILER_TREE)
         public Kind getKind() {
             return Kind.INHERIT_DOC;
@@ -759,7 +759,7 @@ public abstract class DCTree implements DocTree {
         }
     }
 
-    public static class DCLink extends DCInlineTag implements LinkTree {
+    public static class DCLink extends DCInlineTag<DCLink> implements LinkTree {
         public final Kind kind;
         public final DCReference ref;
         public final List<DCTree> label;
@@ -792,7 +792,7 @@ public abstract class DCTree implements DocTree {
         }
     }
 
-    public static class DCLiteral extends DCInlineTag implements LiteralTree {
+    public static class DCLiteral extends DCInlineTag<DCLiteral> implements LiteralTree {
         public final Kind kind;
         public final DCText body;
 
@@ -1084,7 +1084,7 @@ public abstract class DCTree implements DocTree {
         }
     }
 
-    public static class DCSnippet extends DCInlineTag implements SnippetTree {
+    public static class DCSnippet extends DCInlineTag<DCSnippet> implements SnippetTree {
         public final List<? extends DocTree> attributes;
         public final DCText body;
 
@@ -1186,7 +1186,7 @@ public abstract class DCTree implements DocTree {
         }
     }
 
-    public static class DCSummary extends DCInlineTag implements SummaryTree {
+    public static class DCSummary extends DCInlineTag<DCSummary> implements SummaryTree {
         public final List<DCTree> summary;
 
         DCSummary(List<DCTree> summary) {
@@ -1209,7 +1209,7 @@ public abstract class DCTree implements DocTree {
         }
     }
 
-    public static class DCSystemProperty extends DCInlineTag implements SystemPropertyTree {
+    public static class DCSystemProperty extends DCInlineTag<DCSystemProperty> implements SystemPropertyTree {
         public final Name propertyName;
 
         DCSystemProperty(Name propertyName) {
@@ -1323,7 +1323,7 @@ public abstract class DCTree implements DocTree {
         }
     }
 
-    public static class DCUnknownInlineTag extends DCInlineTag implements UnknownInlineTagTree {
+    public static class DCUnknownInlineTag extends DCInlineTag<DCUnknownInlineTag> implements UnknownInlineTagTree {
         public final Name name;
         public final List<DCTree> content;
 
@@ -1383,7 +1383,7 @@ public abstract class DCTree implements DocTree {
         }
     }
 
-    public static class DCValue extends DCInlineTag implements ValueTree {
+    public static class DCValue extends DCInlineTag<DCValue> implements ValueTree {
         public final DCText format;
         public final DCReference ref;
 

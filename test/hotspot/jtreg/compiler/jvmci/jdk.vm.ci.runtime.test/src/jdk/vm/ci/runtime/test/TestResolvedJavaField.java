@@ -25,10 +25,20 @@
  * @test
  * @requires vm.jvmci
  * @library ../../../../../
+ * @compile ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/AnnotationTestInput.java
+ *          ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/MemberDeleted.java
+ *          ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/MemberTypeChanged.java
+ *          TestResolvedJavaType.java
+ * @clean jdk.internal.vm.test.AnnotationTestInput$Missing
+ * @compile ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/alt/MemberDeleted.java
+ *          ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/alt/MemberTypeChanged.java
  * @modules jdk.internal.vm.ci/jdk.vm.ci.meta
  *          jdk.internal.vm.ci/jdk.vm.ci.runtime
  *          jdk.internal.vm.ci/jdk.vm.ci.common
+ *          java.base/jdk.internal.reflect
  *          java.base/jdk.internal.misc
+ *          java.base/jdk.internal.vm
+ *          java.base/sun.reflect.annotation
  * @run junit/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -XX:-UseJVMCICompiler jdk.vm.ci.runtime.test.TestResolvedJavaField
  */
 
@@ -57,6 +67,7 @@ import java.util.Set;
 import org.junit.Assert;
 import org.junit.Test;
 
+import jdk.internal.vm.test.AnnotationTestInput;
 import jdk.vm.ci.common.JVMCIError;
 import jdk.vm.ci.meta.ConstantReflectionProvider;
 import jdk.vm.ci.meta.JavaConstant;
@@ -179,6 +190,14 @@ public class TestResolvedJavaField extends FieldUniverse {
             }
         }
         return null;
+    }
+
+    @Test
+    public void getAnnotationDataTest() throws Exception {
+        TestResolvedJavaType.getAnnotationDataTest(AnnotationTestInput.class.getDeclaredField("annotatedField"));
+        for (Field f : fields.keySet()) {
+            TestResolvedJavaType.getAnnotationDataTest(f);
+        }
     }
 
     // @formatter:off

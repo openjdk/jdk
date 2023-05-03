@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,9 +21,6 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- */
-
-/*
  */
 
 /*
@@ -55,7 +52,6 @@ public class CollationData_sv extends ListResourceBundle {
                 "< \u00e6 , \u00c6 " +                   //  ae ligature
                 "< o\u0308 , O\u0308 " +   // o-umlaut
                 "< o\u030b , O\u030b ; \u00f8 , \u00d8 " +   // o-double-acute < o-stroke
-                "& V ; w , W" +
                 "& Y, u\u0308 , U\u0308" + // u-double-acute
                 "; u\u030b, U\u030b "
             }
