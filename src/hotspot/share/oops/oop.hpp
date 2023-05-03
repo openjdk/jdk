@@ -63,7 +63,9 @@ class oopDesc {
   // make use of the C++ copy/assign incorrect.
   NONCOPYABLE(oopDesc);
 
- public:
+  inline oop forwardee(markWord header) const;
+
+public:
   // Must be trivial; see verifying static assert after the class.
   oopDesc() = default;
 
@@ -258,12 +260,14 @@ class oopDesc {
   inline bool is_forwarded() const;
 
   inline void forward_to(oop p);
+  inline void forward_to_self();
 
   // Like "forward_to", but inserts the forwarding pointer atomically.
   // Exactly one thread succeeds in inserting the forwarding pointer, and
   // this call returns null for that thread; any other thread has the
   // value of the forwarding pointer returned and does not modify "this".
   inline oop forward_to_atomic(oop p, markWord compare, atomic_memory_order order = memory_order_conservative);
+  inline oop forward_to_self_atomic(markWord compare, atomic_memory_order order = memory_order_conservative);
 
   inline oop forwardee() const;
 

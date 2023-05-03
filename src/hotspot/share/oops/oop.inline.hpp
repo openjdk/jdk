@@ -38,6 +38,7 @@
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"
+#include "runtime/safepoint.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
@@ -271,6 +272,23 @@ void oopDesc::forward_to(oop p) {
   set_mark(m);
 }
 
+void oopDesc::forward_to_self() {
+  if (UseAltGCForwarding) {
+    markWord m = mark();
+    // If mark is displaced, we need to preserve real header during GC.
+    // It will be restored to the displaced header after GC.
+    assert(SafepointSynchronize::is_at_safepoint(), "we can only safely fetch the displaced header at safepoint");
+    if (m.has_displaced_mark_helper()) {
+      m = m.displaced_mark_helper();
+    }
+    m = m.set_self_forwarded();
+    assert(forwardee(m) == cast_to_oop(this), "encoding must be reversable");
+    set_mark(m);
+  } else {
+    forward_to(oop(this));
+  }
+}
+
 oop oopDesc::forward_to_atomic(oop p, markWord compare, atomic_memory_order order) {
   markWord m = markWord::encode_pointer_as_mark(p);
   assert(m.decode_pointer() == p, "encoding must be reversible");
@@ -282,12 +300,44 @@ oop oopDesc::forward_to_atomic(oop p, markWord compare, atomic_memory_order orde
   }
 }
 
+oop oopDesc::forward_to_self_atomic(markWord compare, atomic_memory_order order) {
+  if (UseAltGCForwarding) {
+    markWord m = compare;
+    // If mark is displaced, we need to preserve real header during GC.
+    // It will be restored to the displaced header after GC.
+    assert(SafepointSynchronize::is_at_safepoint(), "we can only safely fetch the displaced header at safepoint");
+    if (m.has_displaced_mark_helper()) {
+      m = m.displaced_mark_helper();
+    }
+    m = m.set_self_forwarded();
+    assert(forwardee(m) == cast_to_oop(this), "encoding must be reversable");
+    markWord old_mark = cas_set_mark(m, compare, order);
+    if (old_mark == compare) {
+      return nullptr;
+    } else {
+      assert(old_mark.is_marked(), "must be marked here");
+      return forwardee(old_mark);
+    }
+  } else {
+    return forward_to_atomic(oop(this), compare, order);
+  }
+}
+
+oop oopDesc::forwardee(markWord header) const {
+  assert(header.is_marked(), "only decode when actually forwarded");
+  if (header.self_forwarded()) {
+    assert(UseAltGCForwarding, "Only use self-fwd bits when using alt GC forwarding");
+    return cast_to_oop(this);
+  } else {
+    return cast_to_oop(header.decode_pointer());
+  }
+}
+
 // Note that the forwardee is not the same thing as the displaced_mark.
 // The forwardee is used when copying during scavenge and mark-sweep.
 // It does need to clear the low two locking- and GC-related bits.
 oop oopDesc::forwardee() const {
-  assert(is_forwarded(), "only decode when actually forwarded");
-  return cast_to_oop(mark().decode_pointer());
+  return forwardee(mark());
 }
 
 // The following method needs to be MT safe.
