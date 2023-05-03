@@ -115,6 +115,10 @@ public class caseFoldLanguageTagTest {
                 Arguments.of("AB-ABC-ABCD-ab-abCDe12-A-AB-B-ABCD-X-AB-ABCD",
                         "ab-abc-Abcd-AB-abCDe12-a-ab-b-abcd-x-ab-abcd"),
 
+                // Multiple singleton extensions
+                Arguments.of("AB-ABC-ABCD-ab-ABCDE-A-ABCD-GGG-ZZZ-B-EFGHI",
+                        "ab-abc-Abcd-AB-ABCDE-a-abcd-ggg-zzz-b-efghi"),
+
                 // private use tests
                 Arguments.of("X-Abc", "x-abc"), // regular private
                 Arguments.of("X-A-ABC", "x-a-abc"), // private w/ extended (incl. 1)
@@ -140,7 +144,9 @@ public class caseFoldLanguageTagTest {
                 Arguments.of("ja-kana-jp-x-lvariant-Oracle-JDK-Standard-Edition",
                         "ja-Kana-JP-x-lvariant-Oracle-JDK-Standard-Edition"),
                 Arguments.of("ja-kana-jp-x-Oracle-JDK-Standard-Edition",
-                        "ja-Kana-JP-x-oracle-jdk-standard-edition")
+                        "ja-Kana-JP-x-oracle-jdk-standard-edition"),
+                Arguments.of("ja-kana-jp-a-ABC-EFG-ZZZ-b-aaa-x-Oracle-JDK-Standard-Edition",
+                        "ja-Kana-JP-a-abc-efg-zzz-b-aaa-x-oracle-jdk-standard-edition")
         );
     }
 
