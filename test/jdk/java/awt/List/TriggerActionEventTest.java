@@ -49,8 +49,8 @@ public class TriggerActionEventTest implements ActionListener {
 
     List list;
     Frame frame;
-    Point loc;
-    private boolean passed = false;
+    volatile Point loc;
+    private volatile boolean passed = false;
 
     public static void main(String[] args) throws Exception {
         TriggerActionEventTest TrgrActnEvntTest = new TriggerActionEventTest();

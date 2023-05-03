@@ -44,7 +44,7 @@ public class ListEnterExitTest {
     final List list = new List();
     final MouseEnterExitListener mouseEnterExitListener = new MouseEnterExitListener();
     Frame frame;
-    Point p;
+    volatile Point p;
 
     public static void main(String[] args) throws Exception {
         ListEnterExitTest test = new ListEnterExitTest();
@@ -73,7 +73,11 @@ public class ListEnterExitTest {
                 p = list.getLocationOnScreen();
             });
             robot.mouseMove(p.x + 10, p.y + 10);
+            robot.delay(100);
+            robot.waitForIdle();
             robot.mouseMove(p.x - 10, p.y - 10);
+            robot.delay(100);
+            robot.waitForIdle();
             robot.mouseMove(p.x + 10, p.y + 10);
 
             robot.mousePress(InputEvent.BUTTON1_MASK);
@@ -99,14 +103,15 @@ public class ListEnterExitTest {
 
 class MouseEnterExitListener extends MouseAdapter {
 
-    boolean passed = false;
+    volatile boolean passed_1 = false;
+    volatile boolean passed_2 = false;
 
     public void mouseEntered(MouseEvent e) {
-        passed = true;
+        passed_1 = true;
     }
 
     public void mouseExited(MouseEvent e) {
-        passed = true;
+        passed_2 = true;
     }
 
     public void mousePressed(MouseEvent e) {
@@ -117,6 +122,6 @@ class MouseEnterExitListener extends MouseAdapter {
     }
 
     public boolean isPassed() {
-        return passed;
+        return passed_1 & passed_2;
     }
 }

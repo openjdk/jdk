@@ -47,7 +47,7 @@ import java.awt.event.MouseEvent;
 public class ISCAfterRemoveAllTest implements ItemListener {
     List list;
     Frame frame;
-    boolean passed = true;
+    volatile boolean passed = true;
 
     public static void main(String[] args) throws Exception {
         ISCAfterRemoveAllTest test = new ISCAfterRemoveAllTest();
@@ -105,10 +105,10 @@ public class ISCAfterRemoveAllTest implements ItemListener {
 
             // The interesting events are generated after removing
             list.addItemListener(this);
-            r.delay(1000);
+            r.delay(100);
 
             list.requestFocusInWindow();
-            r.delay(1000);
+            r.delay(100);
             if (KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusOwner() != list) {
                 throw new RuntimeException("Test failed - list isn't focus owner.");
             }
@@ -118,14 +118,14 @@ public class ISCAfterRemoveAllTest implements ItemListener {
         r.keyPress(KeyEvent.VK_UP);
         r.delay(10);
         r.keyRelease(KeyEvent.VK_UP);
-        r.delay(1000);
+        r.delay(100);
 
         // This is the test case for the 6299853 issue
         r.delay(10);
         r.keyPress(KeyEvent.VK_SPACE);
         r.delay(10);
         r.keyRelease(KeyEvent.VK_SPACE);
-        r.delay(1000);
+        r.delay(100);
 
         r.waitForIdle();
 
