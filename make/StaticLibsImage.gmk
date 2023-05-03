@@ -52,8 +52,8 @@ $(foreach m, $(ALL_MODULES), \
 $(eval $(call SetupCopyFiles, COPY_STATIC_LIBS_libjvm, \
     SRC := $(HOTSPOT_OUTPUTDIR)/variant-$(JVM_VARIANT_MAIN)/libjvm/objs/static, \
     DEST := $(STATIC_LIBS_IMAGE_DIR)/lib, \
-    FILES := $(filter %$(STATIC_LIBRARY_SUFFIX), \
-        $(call FindFiles, $(HOTSPOT_OUTPUTDIR)/variant-$(JVM_VARIANT_MAIN)/libjvm/objs/static))))
+    FILES := $(wildcard $(HOTSPOT_OUTPUTDIR)/variant-$(JVM_VARIANT_MAIN)/libjvm/objs/static/*$(STATIC_LIBRARY_SUFFIX)), \
+))
 TARGETS += $(COPY_STATIC_LIBS_libjvm)
 
 ################################################################################
