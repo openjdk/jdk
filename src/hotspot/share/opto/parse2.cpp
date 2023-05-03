@@ -734,7 +734,7 @@ void Parse::linear_search_switch_ranges(Node* key_val, SwitchRange*& lo, SwitchR
     // It pays off: emit the test for the most common range
     assert(most_freq.cnt() > 0, "must be taken");
     Node* val = _gvn.transform(new SubINode(key_val, _gvn.intcon(most_freq.lo())));
-    Node* cmp = _gvn.transform(new CmpUNode(val, _gvn.intcon(most_freq.hi() - most_freq.lo())));
+    Node* cmp = _gvn.transform(new CmpUNode(val, _gvn.intcon(java_subtract(most_freq.hi(), most_freq.lo()))));
     Node* tst = _gvn.transform(new BoolNode(cmp, BoolTest::le));
     IfNode* iff = create_and_map_if(control(), tst, if_prob(most_freq.cnt(), total_cnt), if_cnt(most_freq.cnt()));
     jump_if_true_fork(iff, most_freq.dest(), false);

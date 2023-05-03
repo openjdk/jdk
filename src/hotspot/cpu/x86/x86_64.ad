@@ -3235,7 +3235,7 @@ operand immL_32bits()
 operand immI_Pow2M1()
 %{
   predicate((n->get_int() > 0)
-            && is_power_of_2(n->get_int() + 1));
+            && is_power_of_2((juint)n->get_int() + 1));
   match(ConI);
 
   op_cost(20);

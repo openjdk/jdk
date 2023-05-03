@@ -270,10 +270,11 @@ void RangeCheckEliminator::Visitor::do_ArithmeticOp(ArithmeticOp *ao) {
 
         Bound * bound = _rce->get_bound(y);
         if (bound->has_upper() && bound->has_lower()) {
-          int new_lower = bound->lower() + const_value;
+          // TODO: consider using __builtin_add_overflow
           jlong new_lowerl = ((jlong)bound->lower()) + const_value;
-          int new_upper = bound->upper() + const_value;
+          jint new_lower = low(new_lowerl);
           jlong new_upperl = ((jlong)bound->upper()) + const_value;
+          jint new_upper = low(new_upperl);
 
           if (((jlong)new_lower) == new_lowerl && ((jlong)new_upper == new_upperl)) {
             Bound *newBound = new Bound(new_lower, bound->lower_instr(), new_upper, bound->upper_instr());

@@ -1175,7 +1175,7 @@ Node* PhaseStringOpts::int_stringSize(GraphKit& kit, Node* arg) {
       if (arg_val > p) {
         return __ intcon(i + d);
       }
-      p = 10 * p;
+      p = java_multiply(10, p);
     }
     return __ intcon(10 + d);
   }

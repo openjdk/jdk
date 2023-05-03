@@ -175,7 +175,7 @@ Node *SubINode::Ideal(PhaseGVN *phase, bool can_reshape){
   if( t2->base() == Type::Int ){        // Might be bottom or top...
     const TypeInt *i = t2->is_int();
     if( i->is_con() )
-      return new AddINode(in1, phase->intcon(-i->get_con()));
+      return new AddINode(in1, phase->intcon(java_negate(i->get_con())));
   }
 
   // Convert "(x+c0) - y" into (x-y) + c0"
@@ -205,7 +205,7 @@ Node *SubINode::Ideal(PhaseGVN *phase, bool can_reshape){
     } else {
       // Match x
       Node* sub2 = phase->transform(new SubINode(in1, in21));
-      Node* neg_c0 = phase->intcon(-c0);
+      Node* neg_c0 = phase->intcon(java_negate(c0));
       return new AddINode(sub2, neg_c0);
     }
   }
