@@ -54,38 +54,35 @@ public class bug4159300 {
     }
 
     static void createUI() {
-        try {
-            frame = new JFrame("bug4159300");
-            Container c = frame.getContentPane();
-            c.setLayout(new BorderLayout());
-            // create table
-            Object[] columnNames = {"only column"};
-            DefaultTableModel model = new DefaultTableModel(columnNames, 0);
-            Object[] row = makeRow(model.getRowCount());
-            model.addRow(row);
+        frame = new JFrame("bug4159300");
+        Container c = frame.getContentPane();
+        c.setLayout(new BorderLayout());
+        // create table
+        Object[] columnNames = {"only column"};
+        DefaultTableModel model = new DefaultTableModel(columnNames, 0);
+        Object[] row = makeRow(model.getRowCount());
+        model.addRow(row);
 
-            JTable table = new JTable(model);
-            c.add(new JScrollPane(table), BorderLayout.CENTER);
+        JTable table = new JTable(model);
+        c.add(new JScrollPane(table), BorderLayout.CENTER);
 
-            // create button
-            JButton immediateButton = new JButton("Add row");
-            immediateButton.addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    int rowCount = model.getRowCount();
-                    Object[] row = makeRow(rowCount);
-                    model.addRow(row);
-                    int rows = model.getRowCount();
-                    int lastRow = rows - 1;
-                    table.setRowSelectionInterval(lastRow, lastRow);
-                    Rectangle r = table.getCellRect(lastRow, 0, false);
-                    table.scrollRectToVisible(r);
-                }
-            });
-            c.add(immediateButton, BorderLayout.SOUTH);
-            frame.pack();
-            frame.setVisible(true);
-        } finally {
-        }
+        // create button
+        JButton immediateButton = new JButton("Add row");
+        immediateButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                int rowCount = model.getRowCount();
+                Object[] row = makeRow(rowCount);
+                model.addRow(row);
+                int rows = model.getRowCount();
+                int lastRow = rows - 1;
+                table.setRowSelectionInterval(lastRow, lastRow);
+                Rectangle r = table.getCellRect(lastRow, 0, false);
+                table.scrollRectToVisible(r);
+            }
+        });
+        c.add(immediateButton, BorderLayout.SOUTH);
+        frame.pack();
+        frame.setVisible(true);
     }
 
     static Object[] makeRow(int rowNumber) {
