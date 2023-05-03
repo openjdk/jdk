@@ -499,15 +499,15 @@ class ConstantPool : public Metadata {
   }
 
   // Derived queries:
-  Symbol* method_handle_name_ref_at(int which, Bytecodes::Code code = Bytecodes::_illegal) {
+  Symbol* method_handle_name_ref_at(int which) {
     int member = method_handle_index_at(which);
     return uncached_name_ref_at(member);
   }
-  Symbol* method_handle_signature_ref_at(int which, Bytecodes::Code code = Bytecodes::_illegal) {
+  Symbol* method_handle_signature_ref_at(int which) {
     int member = method_handle_index_at(which);
     return uncached_signature_ref_at(member);
   }
-  int method_handle_klass_index_at(int which, Bytecodes::Code code = Bytecodes::_illegal) {
+  int method_handle_klass_index_at(int which) {
     int member = method_handle_index_at(which);
     return uncached_klass_ref_index_at(member);
   }
