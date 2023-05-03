@@ -88,7 +88,7 @@ final class TransportContext implements ConnectionContext {
 
     // handshake context
     HandshakeContext                handshakeContext = null;
-    Lock                            handshakeCtxLock = new ReentrantLock();
+    final Lock                      handshakeCtxLock = new ReentrantLock();
 
     // connection reserved status for handshake.
     boolean                         secureRenegotiation = false;
