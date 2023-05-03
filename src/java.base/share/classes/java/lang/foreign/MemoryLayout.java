@@ -739,7 +739,7 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      * @return a struct layout with the given member layouts.
      * @throws IllegalArgumentException if the sum of the {@linkplain #bitSize() bit sizes} of the member layouts
      * overflows.
-     * @throws IllegalArgumentException if a member layouts in {@code elements} occurs at an offset (relative to the start
+     * @throws IllegalArgumentException if a member layout in {@code elements} occurs at an offset (relative to the start
      * of the struct layout) which is not compatible with its alignment constraint.
      *
      * @apiNote This factory does not automatically align element layouts, by inserting additional {@linkplain PaddingLayout
