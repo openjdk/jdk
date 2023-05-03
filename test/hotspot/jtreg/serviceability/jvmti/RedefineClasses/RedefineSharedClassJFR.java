@@ -64,8 +64,8 @@ public class RedefineSharedClassJFR {
                     "-Xlog:redefine+class+iklass+add=trace,redefine+class+iklass+purge=trace",
                     "RedefineSharedClassJFR");
                 new OutputAnalyzer(pb.start())
-                    .shouldContain("Class unloading: clean_previous_versions = true")
-                    .shouldNotContain("Class unloading: clean_previous_versions = false")
+                    .shouldContain("Class unloading: should_clean_previous_versions = true")
+                    .shouldNotContain("Class unloading: should_clean_previous_versions = false")
                     // We expect at least one of the transformed classes to be in use, if
                     // not the above check that clean_previous should be true will also
                     // fail. This check is to show what is expected.
@@ -82,8 +82,8 @@ public class RedefineSharedClassJFR {
                     "-Xlog:redefine+class+iklass+add=trace,redefine+class+iklass+purge=trace",
                     "RedefineSharedClassJFR");
                 new OutputAnalyzer(pb.start())
-                    .shouldContain("Class unloading: clean_previous_versions = false")
-                    .shouldNotContain("Class unloading: clean_previous_versions = true")
+                    .shouldContain("Class unloading: should_clean_previous_versions = false")
+                    .shouldNotContain("Class unloading: should_clean_previous_versions = true")
                     .shouldContain("scratch class added; class is shared")
                     // If the below line occurs, then clean_previous_versions will be
                     // true and the above shouldContain will trigger. This check is to

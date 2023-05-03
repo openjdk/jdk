@@ -88,8 +88,8 @@ public class RedefinePreviousVersions {
                "-Xlog:redefine+class+iklass+add=trace,redefine+class+iklass+purge=trace",
                "RedefinePreviousVersions");
             new OutputAnalyzer(pb.start())
-              .shouldContain("Class unloading: clean_previous_versions = false")
-              .shouldContain("Class unloading: clean_previous_versions = true")
+              .shouldContain("Class unloading: should_clean_previous_versions = false")
+              .shouldContain("Class unloading: should_clean_previous_versions = true")
               .shouldHaveExitValue(0);
             return;
         }
@@ -99,7 +99,7 @@ public class RedefinePreviousVersions {
 
         // Redefine a class and create some garbage
         // Since there are no methods running, the previous version is never added to the
-        // previous_version_list and the flag _clean_previous_versions should stay false
+        // previous_version_list and the flag _should_clean_previous_versions should stay false
         RedefineClassHelper.redefineClass(RedefinePreviousVersions_B.class, newB);
 
         for (int i = 0; i < 10 ; i++) {
@@ -119,7 +119,7 @@ public class RedefinePreviousVersions {
         }
 
         // Since a method of newRunning is running, this class should be added to the previous_version_list
-        // of Running, and _clean_previous_versions should return true at class unloading.
+        // of Running, and _should_clean_previous_versions should return true at class unloading.
         RedefineClassHelper.redefineClass(RedefinePreviousVersions_Running.class, newRunning);
 
         for (int i = 0; i < 10 ; i++) {

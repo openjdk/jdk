@@ -4021,7 +4021,7 @@ void InstanceKlass::set_init_state(ClassState state) {
 // Globally, there is at least one previous version of a class to walk
 // during class unloading, which is saved because old methods in the class
 // are still running.   Otherwise the previous version list is cleaned up.
-bool InstanceKlass::_clean_previous_versions = false;
+bool InstanceKlass::_should_clean_previous_versions = false;
 
 // Returns true if there are previous versions of a class for class
 // unloading only. Also resets the flag to false. purge_previous_version
@@ -4029,10 +4029,10 @@ bool InstanceKlass::_clean_previous_versions = false;
 // work to do for next time. This is to avoid the expensive code cache
 // walk in CLDG::clean_deallocate_lists().
 bool InstanceKlass::should_clean_previous_versions_and_reset() {
-  bool ret = _clean_previous_versions;
-  log_trace(redefine, class, iklass, purge)("Class unloading: clean_previous_versions = %s",
+  bool ret = _should_clean_previous_versions;
+  log_trace(redefine, class, iklass, purge)("Class unloading: should_clean_previous_versions = %s",
      ret ? "true" : "false");
-  _clean_previous_versions = false;
+  _should_clean_previous_versions = false;
   return ret;
 }
 
@@ -4097,7 +4097,7 @@ void InstanceKlass::purge_previous_version_list() {
         log_trace(redefine, class, iklass, purge)("previous version " PTR_FORMAT " is shared", p2i(pv_node));
       } else {
         // Previous version alive, set that clean is needed for next time.
-        _clean_previous_versions = true;
+        _should_clean_previous_versions = true;
         log_trace(redefine, class, iklass, purge)("previous version " PTR_FORMAT " is alive", p2i(pv_node));
       }
     }
@@ -4209,7 +4209,7 @@ void InstanceKlass::add_previous_version(InstanceKlass* scratch_class,
   } else {
     //  We only set clean_previous_versions flag for processing during class
     // unloading for non-shared classes.
-    _clean_previous_versions = true;
+    _should_clean_previous_versions = true;
     log_trace(redefine, class, iklass, add) ("scratch class added; one of its methods is on_stack.");
   }
 } // end add_previous_version()
