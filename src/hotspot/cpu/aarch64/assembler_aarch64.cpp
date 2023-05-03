@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020 Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -29,6 +29,7 @@
 #include "compiler/disassembler.hpp"
 #include "immediate_aarch64.hpp"
 #include "memory/resourceArea.hpp"
+#include "metaprogramming/primitiveConversions.hpp"
 
 #ifndef PRODUCT
 const uintptr_t Assembler::asm_bp = 0x0000ffffac221240;
@@ -499,12 +500,8 @@ unsigned Assembler::pack(double value) {
 // Packed operands for  Floating-point Move (immediate)
 
 static float unpack(unsigned value) {
-  union {
-    unsigned ival;
-    float val;
-  };
-  ival = fp_immediate_for_encoding(value, 0);
-  return val;
+  unsigned ival = fp_immediate_for_encoding(value, 0);
+  return PrimitiveConversions::cast<float>(ival);
 }
 
 address Assembler::locate_next_instruction(address inst) {

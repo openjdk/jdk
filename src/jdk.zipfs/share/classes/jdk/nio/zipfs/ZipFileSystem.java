@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -860,7 +860,7 @@ class ZipFileSystem extends FileSystem {
             if (e == null)
                 throw new NoSuchFileException(getString(path));
             if (e.isDir())
-                throw new FileSystemException(getString(path), "is a directory", null);
+                throw new FileSystemException(getString(path), null, "is a directory");
             return getInputStream(e);
         } finally {
             endRead();
@@ -1333,8 +1333,8 @@ class ZipFileSystem extends FileSystem {
             }
             // parent exists
             lookup = lookup.as(node.name, off);
-            if (inodes.containsKey(lookup)) {
-                parent = inodes.get(lookup);
+            parent = inodes.get(lookup);
+            if (parent != null) {
                 node.sibling = parent.child;
                 parent.child = node;
                 break;

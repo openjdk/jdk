@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -30,7 +30,7 @@ import jdk.internal.foreign.abi.Architecture;
 import jdk.internal.foreign.abi.StubLocations;
 import jdk.internal.foreign.abi.VMStorage;
 
-public class AArch64Architecture implements Architecture {
+public final class AArch64Architecture implements Architecture {
     public static final Architecture INSTANCE = new AArch64Architecture();
 
     private static final short REG64_MASK = 0b0000_0000_0000_0001;
@@ -39,6 +39,9 @@ public class AArch64Architecture implements Architecture {
     private static final int INTEGER_REG_SIZE = 8;
     private static final int VECTOR_REG_SIZE = 16;
 
+    // Suppresses default constructor, ensuring non-instantiability.
+    private AArch64Architecture() {}
+
     @Override
     public boolean isStackType(int cls) {
         return cls == StorageType.STACK;
@@ -46,13 +49,12 @@ public class AArch64Architecture implements Architecture {
 
     @Override
     public int typeSize(int cls) {
-        switch (cls) {
-            case StorageType.INTEGER: return INTEGER_REG_SIZE;
-            case StorageType.VECTOR: return VECTOR_REG_SIZE;
+        return switch (cls) {
+            case StorageType.INTEGER -> INTEGER_REG_SIZE;
+            case StorageType.VECTOR -> VECTOR_REG_SIZE;
             // STACK is deliberately omitted
-        }
-
-        throw new IllegalArgumentException("Invalid Storage Class: " + cls);
+            default -> throw new IllegalArgumentException("Invalid Storage Class: " + cls);
+        };
     }
 
     public interface StorageType {

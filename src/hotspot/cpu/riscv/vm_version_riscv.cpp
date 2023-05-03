@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -35,6 +35,12 @@ const char* VM_Version::_vm_mode = "";
 uint32_t VM_Version::_initial_vector_length = 0;
 
 void VM_Version::initialize() {
+  _supports_cx8 = true;
+  _supports_atomic_getset4 = true;
+  _supports_atomic_getadd4 = true;
+  _supports_atomic_getset8 = true;
+  _supports_atomic_getadd8 = true;
+
   get_os_cpu_info();
 
   // check if satp.mode is supported, currently supports up to SV48(RV64)
@@ -204,7 +210,7 @@ void VM_Version::initialize() {
 
   char buf[512];
   buf[0] = '\0';
-  if (_uarch != NULL && strcmp(_uarch, "") != 0) snprintf(buf, sizeof(buf), "%s,", _uarch);
+  if (_uarch != nullptr && strcmp(_uarch, "") != 0) snprintf(buf, sizeof(buf), "%s,", _uarch);
   strcat(buf, "rv64");
 #define ADD_FEATURE_IF_SUPPORTED(id, name, bit) if (_features & CPU_##id) strcat(buf, name);
   CPU_FEATURE_FLAGS(ADD_FEATURE_IF_SUPPORTED)

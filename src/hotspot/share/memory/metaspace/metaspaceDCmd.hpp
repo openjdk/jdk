@@ -57,7 +57,7 @@ public:
                         "monitor", nullptr};
     return p;
   }
-  static int num_arguments();
+  static int num_arguments() { return 8; }
   virtual void execute(DCmdSource source, TRAPS);
 };
 

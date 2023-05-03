@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.runtime;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
 
+import jdk.internal.misc.Unsafe;
 import jdk.vm.ci.code.BytecodeFrame;
 import jdk.vm.ci.code.InstalledCode;
 import jdk.vm.ci.code.InvalidInstalledCodeException;
@@ -48,6 +49,12 @@ import jdk.vm.ci.meta.ResolvedJavaType;
  * Calls from Java into HotSpot. The behavior of all the methods in this class that take a native
  * pointer as an argument (e.g., {@link #getSymbol(long)}) is undefined if the argument does not
  * denote a valid native object.
+ *
+ * Note also that some calls pass a raw VM value to avoid a JNI upcall. For example,
+ * {@link #getBytecode(HotSpotResolvedJavaMethodImpl, long)} needs the raw {@code Method*} value
+ * (stored in {@link HotSpotResolvedJavaMethodImpl#methodHandle}) in the C++ implementation. The
+ * {@link HotSpotResolvedJavaMethodImpl} wrapper is still passed as well as it may be the last
+ * reference keeping the raw value alive.
  */
 final class CompilerToVM {
     /**
@@ -376,14 +383,14 @@ final class CompilerToVM {
      * Ensures that the type referenced by the specified {@code JVM_CONSTANT_InvokeDynamic} entry at
      * index {@code cpi} in {@code constantPool} is loaded and initialized.
      *
-     * The behavior of this method is undefined if {@code cpi} does not denote a
-     * {@code JVM_CONSTANT_InvokeDynamic} entry.
+     * @throws IllegalArgumentException if {@code cpi} is not an invokedynamic index
+     * @return the invokedynamic index
      */
-    void resolveInvokeDynamicInPool(HotSpotConstantPool constantPool, int cpi) {
-        resolveInvokeDynamicInPool(constantPool, constantPool.getConstantPoolPointer(), cpi);
+    int resolveInvokeDynamicInPool(HotSpotConstantPool constantPool, int cpi) {
+        return resolveInvokeDynamicInPool(constantPool, constantPool.getConstantPoolPointer(), cpi);
     }
 
-    private native void resolveInvokeDynamicInPool(HotSpotConstantPool constantPool, long constantPoolPointer, int cpi);
+    private native int resolveInvokeDynamicInPool(HotSpotConstantPool constantPool, long constantPoolPointer, int cpi);
 
     /**
      * Resolves the details for invoking the bootstrap method associated with the
@@ -463,9 +470,10 @@ final class CompilerToVM {
      * {@code info} are:
      *
      * <pre>
-     *     [ flags,  // fieldDescriptor::access_flags()
-     *       offset, // fieldDescriptor::offset()
-     *       index   // fieldDescriptor::index()
+     *     [ aflags,  // fieldDescriptor::access_flags()
+     *       offset,  // fieldDescriptor::offset()
+     *       index,   // fieldDescriptor::index()
+     *       fflags   // fieldDescriptor::field_flags()
      *     ]
      * </pre>
      *
@@ -1043,6 +1051,12 @@ final class CompilerToVM {
 
     native ResolvedJavaMethod[] getDeclaredMethods(HotSpotResolvedObjectTypeImpl klass, long klassPointer);
 
+    HotSpotResolvedObjectTypeImpl.FieldInfo[] getDeclaredFieldsInfo(HotSpotResolvedObjectTypeImpl klass) {
+        return getDeclaredFieldsInfo(klass, klass.getKlassPointer());
+    }
+
+    native HotSpotResolvedObjectTypeImpl.FieldInfo[] getDeclaredFieldsInfo(HotSpotResolvedObjectTypeImpl klass, long klassPointer);
+
     /**
      * Reads the current value of a static field of {@code declaringKlass}. Extra sanity checking is
      * performed on the offset and kind of the read being performed.
@@ -1296,4 +1310,89 @@ final class CompilerToVM {
 
     native void notifyCompilerInliningEvent(int compileId, HotSpotResolvedJavaMethodImpl caller, long callerPointer,
                     HotSpotResolvedJavaMethodImpl callee, long calleePointer, boolean succeeded, String message, int bci);
+
+    /**
+     * Gets the serialized annotation info for {@code type} by calling
+     * {@code VMSupport.encodeAnnotations} in the HotSpot heap.
+     */
+    byte[] getEncodedClassAnnotationData(HotSpotResolvedObjectTypeImpl type, ResolvedJavaType[] filter) {
+        try (KlassPointers a = new KlassPointers(filter)) {
+            return getEncodedClassAnnotationData(type, type.getKlassPointer(),
+                            a.types, a.types.length, a.buffer());
+        }
+    }
+
+    native byte[] getEncodedClassAnnotationData(HotSpotResolvedObjectTypeImpl type, long klassPointer,
+                    Object filter, int filterLength, long filterKlassPointers);
+
+    /**
+     * Gets the serialized annotation info for {@code method} by calling
+     * {@code VMSupport.encodeAnnotations} in the HotSpot heap.
+     */
+    byte[] getEncodedExecutableAnnotationData(HotSpotResolvedJavaMethodImpl method, ResolvedJavaType[] filter) {
+        try (KlassPointers a = new KlassPointers(filter)) {
+            return getEncodedExecutableAnnotationData(method, method.getMethodPointer(),
+                            a.types, a.types.length, a.buffer());
+        }
+    }
+
+    native byte[] getEncodedExecutableAnnotationData(HotSpotResolvedJavaMethodImpl method, long methodPointer,
+                    Object filter, int filterLength, long filterKlassPointers);
+
+    /**
+     * Gets the serialized annotation info for the field denoted by {@code holder} and
+     * {@code fieldIndex} by calling {@code VMSupport.encodeAnnotations} in the HotSpot heap.
+     */
+    byte[] getEncodedFieldAnnotationData(HotSpotResolvedObjectTypeImpl holder, int fieldIndex, ResolvedJavaType[] filter) {
+        try (KlassPointers a = new KlassPointers(filter)) {
+            return getEncodedFieldAnnotationData(holder, holder.getKlassPointer(), fieldIndex,
+                            a.types, a.types.length, a.buffer());
+        }
+    }
+
+    native byte[] getEncodedFieldAnnotationData(HotSpotResolvedObjectTypeImpl holder, long klassPointer, int fieldIndex,
+                    Object filterTypes, int filterLength, long filterKlassPointers);
+
+    /**
+     * Helper for passing {@Klass*} values to native code.
+     */
+    static final class KlassPointers implements AutoCloseable {
+        final ResolvedJavaType[] types;
+        long pointersArray;
+        final Unsafe unsafe = UnsafeAccess.UNSAFE;
+
+        KlassPointers(ResolvedJavaType[] types) {
+            this.types = types;
+        }
+
+        /**
+         * Gets the buffer in which to pass the {@Klass*} values to JNI.
+         *
+         * @return a {@Klass*} value if {@code types.length == 1} otherwise the address of a native
+         *         buffer holding an array of {@Klass*} values
+         */
+        long buffer() {
+            int length = types.length;
+            if (length == 1) {
+                return ((HotSpotResolvedObjectTypeImpl) types[0]).getKlassPointer();
+            } else {
+                pointersArray = unsafe.allocateMemory(length * Long.BYTES);
+                long pos = pointersArray;
+                for (int i = 0; i < types.length; i++) {
+                    HotSpotResolvedObjectTypeImpl hsType = (HotSpotResolvedObjectTypeImpl) types[i];
+                    unsafe.putLong(pos, hsType.getKlassPointer());
+                    pos += Long.BYTES;
+                }
+            }
+            return pointersArray;
+        }
+
+        @Override
+        public void close() {
+            if (types.length != 1 && pointersArray != 0) {
+                unsafe.freeMemory(pointersArray);
+                pointersArray = 0;
+            }
+        }
+    }
 }

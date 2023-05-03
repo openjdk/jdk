@@ -286,6 +286,11 @@ void Compilation::emit_code_epilog(LIR_Assembler* assembler) {
 
   CodeOffsets* code_offsets = assembler->offsets();
 
+  if (!code()->finalize_stubs()) {
+    bailout("CodeCache is full");
+    return;
+  }
+
   // generate code or slow cases
   assembler->emit_slow_case_stubs();
   CHECK_BAILOUT();
@@ -313,9 +318,6 @@ void Compilation::emit_code_epilog(LIR_Assembler* assembler) {
   // Emit the handler to remove the activation from the stack and
   // dispatch to the caller.
   offsets()->set_value(CodeOffsets::UnwindHandler, assembler->emit_unwind_handler());
-
-  // done
-  masm()->flush();
 }
 
 
