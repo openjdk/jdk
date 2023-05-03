@@ -167,7 +167,7 @@ public:
                   bool recordAccumulatedGCTime);
   void   gc_end(bool recordPostGCUsage, bool recordAccumulatedGCTime,
                 bool recordGCEndTime, bool countCollection, GCCause::Cause cause,
-                bool allMemoryPoolsAffected);
+                bool allMemoryPoolsAffected, const char* notificationMessage = nullptr);
 
   void        reset_gc_stat()   { _num_collections = 0; _accumulated_timer.reset(); }
 

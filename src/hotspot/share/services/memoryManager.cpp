@@ -243,7 +243,7 @@ void GCMemoryManager::gc_end(bool recordPostGCUsage,
                              bool recordAccumulatedGCTime,
                              bool recordGCEndTime, bool countCollection,
                              GCCause::Cause cause,
-                             bool allMemoryPoolsAffected) {
+                             bool allMemoryPoolsAffected, const char* notificationMessage) {
   if (recordAccumulatedGCTime) {
     _accumulated_timer.stop();
   }
@@ -293,7 +293,8 @@ void GCMemoryManager::gc_end(bool recordPostGCUsage,
     }
 
     if (is_notification_enabled()) {
-      GCNotifier::pushNotification(this, _gc_end_message, GCCause::to_string(cause));
+      const char* message = notificationMessage != nullptr ? notificationMessage : _gc_end_message;
+      GCNotifier::pushNotification(this, message, GCCause::to_string(cause));
     }
   }
 }
