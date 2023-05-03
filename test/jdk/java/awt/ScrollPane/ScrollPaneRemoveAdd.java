@@ -89,7 +89,6 @@ public class ScrollPaneRemoveAdd {
 
             robot.delay(1000);
             robot.waitForIdle();
-            
             robot.mouseMove(buttonLoc.x + buttonSize.width / 2,
                     buttonLoc.y + buttonSize.height / 2);
             robot.delay(50);
