@@ -29,30 +29,12 @@ import jdk.test.lib.Asserts;
 import jdk.test.lib.Utils;
 
 /*
- * @test id=vanilla
+ * @test
  * @bug 8289422 8306088
  * @key randomness
  * @summary Auto-vectorization enhancement to support vector conditional move.
  * @library /test/lib /
- * @run driver compiler.c2.irTests.TestVectorConditionalMove vanilla
- */
-
-/*
- * @test id=vec-32
- * @bug 8289422 8306088
- * @key randomness
- * @summary Change vector size to MaxVectorSize=32
- * @library /test/lib /
- * @run driver compiler.c2.irTests.TestVectorConditionalMove vec-32
- */
-
-/*
- * @test id=vec-16
- * @bug 8289422 8306088
- * @key randomness
- * @summary Change vector size to MaxVectorSize=32
- * @library /test/lib /
- * @run driver compiler.c2.irTests.TestVectorConditionalMove vec-16
+ * @run driver compiler.c2.irTests.TestVectorConditionalMove
  */
 
 public class TestVectorConditionalMove {
@@ -67,29 +49,10 @@ public class TestVectorConditionalMove {
     private static double[] doublec = new double[SIZE];
 
     public static void main(String[] args) {
-        TestFramework framework = new TestFramework(TestVectorConditionalMove.class);
-        framework.addFlags("-XX:-TieredCompilation",
-                           "-XX:+UseCMoveUnconditionally",
-                           "-XX:+UseVectorCmov",
-                           "-XX:CompileCommand=compileonly,*.TestVectorConditionalMove.test*");
-
-        if (args.length != 1) {
-            throw new RuntimeException("Test requires exactly one argument!");
-        }
-
-        switch (args[0]) {
-        case "vanilla":
-            break;
-        case "vec-32":
-            framework.addFlags("-XX:MaxVectorSize=32");
-            break;
-        case "vec-16":
-            framework.addFlags("-XX:MaxVectorSize=16");
-            break;
-        default:
-            throw new RuntimeException("Test argument not recognized: " + args[0]);
-        }
-        framework.start();
+        TestFramework.runWithFlags("-XX:-TieredCompilation",
+                                   "-XX:+UseCMoveUnconditionally",
+                                   "-XX:+UseVectorCmov",
+                                   "-XX:CompileCommand=compileonly,*.TestVectorConditionalMove.test*");
     }
 
     // Compare 2 values, and pick one of them
