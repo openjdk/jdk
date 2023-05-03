@@ -76,7 +76,7 @@ ShenandoahGCSession::~ShenandoahGCSession() {
 
 }
 
-ShenandoahGCPauseMark::ShenandoahGCPauseMark(uint gc_id, SvcGCMarker::reason_type type) :
+ShenandoahGCPauseMark::ShenandoahGCPauseMark(uint gc_id, const char* notification_message, SvcGCMarker::reason_type type) :
   _heap(ShenandoahHeap::heap()), _gc_id_mark(gc_id), _svc_gc_mark(type), _is_gc_active_mark() {
   _trace_pause.initialize(_heap->stw_memory_manager(), _heap->gc_cause(),
           /* allMemoryPoolsAffected */    true,
@@ -86,7 +86,8 @@ ShenandoahGCPauseMark::ShenandoahGCPauseMark(uint gc_id, SvcGCMarker::reason_typ
           /* recordPostGCUsage = */       false,
           /* recordAccumulatedGCTime = */ true,
           /* recordGCEndTime = */         true,
-          /* countCollection = */         true
+          /* countCollection = */         true,
+          /* notificationMessage = */     notification_message
   );
 }
 

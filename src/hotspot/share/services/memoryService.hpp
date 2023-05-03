@@ -104,7 +104,7 @@ public:
                      bool recordAccumulatedGCTime,
                      bool recordGCEndTime, bool countCollection,
                      GCCause::Cause cause,
-                     bool allMemoryPoolsAffected);
+                     bool allMemoryPoolsAffected, const char* notificationMessage = nullptr);
 
   static bool get_verbose() { return log_is_enabled(Info, gc); }
   static bool set_verbose(bool verbose);
@@ -125,6 +125,7 @@ private:
   bool         _recordGCEndTime;
   bool         _countCollection;
   GCCause::Cause _cause;
+  const char*  _notificationMessage;
 public:
   TraceMemoryManagerStats() {}
   TraceMemoryManagerStats(GCMemoryManager* gc_memory_manager,
@@ -136,7 +137,8 @@ public:
                           bool recordPostGCUsage = true,
                           bool recordAccumulatedGCTime = true,
                           bool recordGCEndTime = true,
-                          bool countCollection = true);
+                          bool countCollection = true,
+                          const char* notificationMessage = nullptr);
 
   void initialize(GCMemoryManager* gc_memory_manager,
                   GCCause::Cause cause,
@@ -147,7 +149,8 @@ public:
                   bool recordPostGCUsage,
                   bool recordAccumulatedGCTime,
                   bool recordGCEndTime,
-                  bool countCollection);
+                  bool countCollection,
+                  const char* notificationMessage = nullptr);
 
   ~TraceMemoryManagerStats();
 };

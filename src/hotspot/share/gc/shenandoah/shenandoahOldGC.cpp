@@ -144,7 +144,7 @@ bool ShenandoahOldGC::collect(GCCause::Cause cause) {
   // return from here with weak roots in progress. This is not a valid gc state
   // for any young collections (or allocation failures) that interrupt the old
   // collection.
-  vmop_entry_final_roots(false);
+  vmop_entry_final_roots();
 
   return true;
 }

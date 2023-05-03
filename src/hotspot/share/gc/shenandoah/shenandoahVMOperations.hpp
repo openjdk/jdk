@@ -133,12 +133,10 @@ public:
 
 class VM_ShenandoahFinalRoots: public VM_ShenandoahOperation {
   ShenandoahConcurrentGC* const _gc;
-  const bool _incr_region_ages;
 public:
-  VM_ShenandoahFinalRoots(ShenandoahConcurrentGC* gc, bool incr_region_ages) :
+  VM_ShenandoahFinalRoots(ShenandoahConcurrentGC* gc) :
     VM_ShenandoahOperation(),
-    _gc(gc),
-    _incr_region_ages(incr_region_ages) {};
+    _gc(gc) {};
   VM_Operation::VMOp_Type type() const { return VMOp_ShenandoahFinalRoots; }
   const char* name()             const { return "Shenandoah Final Roots"; }
   virtual void doit();
