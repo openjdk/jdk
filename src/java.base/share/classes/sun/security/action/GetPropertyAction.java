@@ -164,19 +164,19 @@ public class GetPropertyAction implements PrivilegedAction<String> {
 
     /**
      * Convenience method for fetching System property values that are timeouts.
-     * Accepted timeout values will be either purely numeric (interpreted as
-     * seconds) or a numeric value followed by "ms" (interpreted as
-     * milliseconds).
+     * Accepted timeout values may be purely numeric, a numeric value
+     * followed by "s" (both interpreted as seconds), or a numeric value
+     * followed by "ms" (interpreted as milliseconds).
      *
      * @param prop the name of the System property
      * @param def a default value (in milliseconds)
      *
      * @return an integer value corresponding to the timeout value in the System
      *      property in milliseconds.  If the property value is empty, negative,
-     *      or contains non-numeric characters (besides a trailing "ms") then
-     *      the default value will be returned.  If a negative value for the
-     *      "def" parameter is supplied and the property value does not conform
-     *      to the allowed syntax, zero will be returned.
+     *      or contains non-numeric characters (besides a trailing "s" or "ms")
+     *      then the default value will be returned.  If a negative value for
+     *      the "def" parameter is supplied, zero will be returned if the
+     *      property's value does not conform to the allowed syntax.
      */
     public static int privilegedGetTimeoutProp(String prop, int def) {
         if (def < 0) {
@@ -188,10 +188,13 @@ public class GetPropertyAction implements PrivilegedAction<String> {
             return def;
         }
 
-        // Determine if "ms" is on the end of the string
-        boolean isMillis = propVal.toLowerCase().endsWith("ms");
-        if (isMillis) {
+        // Determine if "ms" or just "s" is on the end of the string
+        boolean isMillis = false;
+        if (propVal.toLowerCase().endsWith("ms")) {
             propVal = propVal.substring(0, propVal.length() - 2);
+            isMillis = true;
+        } else if (propVal.toLowerCase().endsWith("s")) {
+            propVal = propVal.substring(0, propVal.length() - 1);
         }
 
         // Next check to make sure the string is built only from digits

@@ -29,6 +29,7 @@
  *          java.base/sun.security.util
  * @library /test/lib
  * @run main/othervm -Dcom.sun.security.crl.readtimeout=1 CRLReadTimeout 2000 false
+ * @run main/othervm -Dcom.sun.security.crl.readtimeout=1s CRLReadTimeout 2000 false
  * @run main/othervm -Dcom.sun.security.crl.readtimeout=4 CRLReadTimeout 2000 true
  * @run main/othervm -Dcom.sun.security.crl.readtimeout=1500ms CRLReadTimeout 2000 false
  * @run main/othervm -Dcom.sun.security.crl.readtimeout=2750ms CRLReadTimeout 2000 true

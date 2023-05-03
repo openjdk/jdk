@@ -39,6 +39,7 @@
  * @run main/othervm OCSPTimeout 1000 true
  * @run main/othervm -Dcom.sun.security.ocsp.timeout=2 OCSPTimeout 1000 true
  * @run main/othervm -Dcom.sun.security.ocsp.timeout=1 OCSPTimeout 2000 false
+ * @run main/othervm -Dcom.sun.security.ocsp.timeout=1s OCSPTimeout 2000 false
  * @run main/othervm -Dcom.sun.security.ocsp.timeout=1500ms OCSPTimeout 2000 false
  * @run main/othervm -Dcom.sun.security.ocsp.timeout=2750ms OCSPTimeout 2000 true
  */
