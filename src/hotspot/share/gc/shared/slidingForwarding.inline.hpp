@@ -25,8 +25,7 @@
 #ifndef SHARE_GC_SHARED_SLIDINGFORWARDING_INLINE_HPP
 #define SHARE_GC_SHARED_SLIDINGFORWARDING_INLINE_HPP
 
-#ifdef _LP64
-
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/slidingForwarding.hpp"
 #include "oops/markWord.hpp"
 #include "oops/oop.inline.hpp"
@@ -130,7 +129,7 @@ inline void SlidingForwarding::forward_to(oop obj, oop fwd) {
 #ifdef _LP64
   if (UseAltGCForwarding) {
     assert(_sliding_forwarding != nullptr, "expect sliding forwarding initialized");
-    _sliding_forwarding->forward_to(obj, fwd);
+    _sliding_forwarding->forward_to_impl(obj, fwd);
     assert(forwardee(obj) == fwd, "must be forwarded to correct forwardee");
   } else
 #endif
@@ -157,7 +156,7 @@ inline oop SlidingForwarding::forwardee(oop obj) {
 #ifdef _LP64
   if (UseAltGCForwarding) {
     assert(_sliding_forwarding != nullptr, "expect sliding forwarding initialized");
-    return _sliding_forwarding->forwardee(obj);
+    return _sliding_forwarding->forwardee_impl(obj);
   } else
 #endif
   {
@@ -165,6 +164,4 @@ inline oop SlidingForwarding::forwardee(oop obj) {
   }
 }
 
-
-#endif // _LP64
 #endif // SHARE_GC_SHARED_SLIDINGFORWARDING_INLINE_HPP
