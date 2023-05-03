@@ -49,15 +49,12 @@ $(foreach m, $(ALL_MODULES), \
   $(eval TARGETS += $$(COPY_STATIC_LIBS_$m)) \
 )
 
-$(foreach v, $(JVM_VARIANTS), \
-  $(eval $(call SetupCopyFiles, COPY_STATIC_LIBS_libjvm, \
-      SRC := $(HOTSPOT_OUTPUTDIR)/variant-$v/libjvm/objs/static, \
-      DEST := $(STATIC_LIBS_IMAGE_DIR)/lib, \
-      FILES := $(filter %$(STATIC_LIBRARY_SUFFIX), \
-          $(call FindFiles, $(HOTSPOT_OUTPUTDIR)/variant-$v/libjvm/objs/static)), \
-  )) \
-  $(eval TARGETS += $$(COPY_STATIC_LIBS_libjvm)) \
-)
+$(eval $(call SetupCopyFiles, COPY_STATIC_LIBS_libjvm, \
+    SRC := $(HOTSPOT_OUTPUTDIR)/variant-$(JVM_VARIANT_MAIN)/libjvm/objs/static, \
+    DEST := $(STATIC_LIBS_IMAGE_DIR)/lib, \
+    FILES := $(filter %$(STATIC_LIBRARY_SUFFIX), \
+        $(call FindFiles, $(HOTSPOT_OUTPUTDIR)/variant-$(JVM_VARIANT_MAIN)/libjvm/objs/static))))
+$(eval TARGETS += $$(COPY_STATIC_LIBS_libjvm))
 
 ################################################################################
 

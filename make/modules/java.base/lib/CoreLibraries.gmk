@@ -165,7 +165,7 @@ ifneq ($(USE_EXTERNAL_LIBZ), true)
   # static libraries, we use the --whole-archive linker option.
   # The duplicate objects in different static libraries cause linking
   # errors due to duplicate symbols.
-  LIBJLI_STATIC_EXCLUDE_OBJS := $(subst .c,.o,$(LIBJLI_EXTRA_FILE_LIST))
+  LIBJLI_STATIC_EXCLUDE_OBJS := $(subst .c,$(OBJ_SUFFIX),$(LIBJLI_EXTRA_FILE_LIST))
 endif
 
 $(eval $(call SetupJdkLibrary, BUILD_LIBJLI, \
