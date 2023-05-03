@@ -47,7 +47,7 @@ void G1CollectionCandidateList::merge(G1CollectionCandidateList::CandidateInfo* 
 size_t G1CollectionCandidateList::remove(G1CollectionSetRegionList* other) {
   guarantee((uint)_candidates.length() >= other->length(), "must be");
 
-  if ((other->length() == 0) || (_candidates.length() == 0)) {
+  if (other->length() == 0) {
     // Nothing to remove or nothing in the original set.
     return 0;
   }

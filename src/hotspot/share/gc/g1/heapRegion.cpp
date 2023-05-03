@@ -28,6 +28,7 @@
 #include "gc/g1/g1BlockOffsetTable.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectionSet.hpp"
+#include "gc/g1/g1CollectionSetCandidates.inline.hpp"
 #include "gc/g1/g1HeapRegionTraceType.hpp"
 #include "gc/g1/g1NUMA.hpp"
 #include "gc/g1/g1OopClosures.inline.hpp"
@@ -428,8 +429,9 @@ void HeapRegion::print_on(outputStream* st) const {
   st->print("|%2s", get_short_type_str());
   if (in_collection_set()) {
     st->print("|CS");
-  } else if (in_collection_set_candidates()) {
-    st->print("|%s", collection_set_candidate_short_type_str());
+  } else if (is_collection_set_candidate()) {
+    G1CollectionSetCandidates* candidates = G1CollectedHeap::heap()->collection_set()->candidates();
+    st->print("|%s", candidates->get_short_type_str(this));
   } else {
     st->print("|  ");
   }

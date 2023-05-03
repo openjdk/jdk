@@ -199,7 +199,7 @@ public:
 // A PtrQueueSet represents resources common to a set of pointer queues.
 // In particular, the individual queues allocate buffers from this shared
 // set, and return completed buffers to the set.
-class PtrQueueSet : public CHeapObj<mtGC> {
+class PtrQueueSet {
   BufferNode::Allocator* _allocator;
 
   NONCOPYABLE(PtrQueueSet);

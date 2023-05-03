@@ -441,7 +441,7 @@ public:
   }
 
   inline bool in_collection_set() const;
-  inline bool in_collection_set_candidates() const;
+
   inline const char* collection_set_candidate_short_type_str() const;
 
   void prepare_remset_for_scan();

@@ -151,9 +151,7 @@ class G1CollectionSet {
 
   G1CollectionSetRegionList _initial_old_regions;
   // When doing mixed collections we can add old regions to the collection set, which
-  // will be collected only if there is enough time. We call these optional regions.
-  // This member records the current number of regions that are of that type that
-  // correspond to the first x entries in the collection set candidates.
+  // will be collected only if there is enough time. We call these optional (old) regions.
   G1CollectionSetRegionList _optional_old_regions;
 
   enum CSetBuildType {

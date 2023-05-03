@@ -341,14 +341,6 @@ inline bool HeapRegion::in_collection_set() const {
   return G1CollectedHeap::heap()->is_in_cset(this);
 }
 
-inline bool HeapRegion::in_collection_set_candidates() const {
-  return G1CollectedHeap::heap()->is_collection_set_candidate(this);
-}
-
-inline const char* HeapRegion::collection_set_candidate_short_type_str() const {
-  return G1CollectedHeap::heap()->collection_set()->candidates()->get_short_type_str(this);
-}
-
 template <class Closure, bool in_gc_pause>
 HeapWord* HeapRegion::do_oops_on_memregion_in_humongous(MemRegion mr,
                                                         Closure* cl) {
