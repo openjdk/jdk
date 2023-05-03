@@ -211,7 +211,7 @@ void GenMarkSweep::mark_sweep_phase1(bool clear_all_softrefs) {
   }
 
   {
-    GCTraceTime(Debug, gc, phases) debug("Report Object Count", gc_timer());
+    GCTraceTime(Debug, gc, phases) tm_m("Report Object Count", gc_timer());
     gc_tracer()->report_object_count_after_gc(&is_alive);
   }
 }

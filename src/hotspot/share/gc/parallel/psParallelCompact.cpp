@@ -2068,7 +2068,7 @@ void PSParallelCompact::marking_phase(ParallelOldTracer *gc_tracer) {
   }
 
   {
-    GCTraceTime(Debug, gc, phases) debug("Report Object Count", &_gc_timer);
+    GCTraceTime(Debug, gc, phases) tm("Report Object Count", &_gc_timer);
     _gc_tracer.report_object_count_after_gc(is_alive_closure());
   }
 #if TASKQUEUE_STATS
