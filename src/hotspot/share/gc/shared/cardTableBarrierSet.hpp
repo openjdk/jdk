@@ -66,7 +66,7 @@ public:
 
   CardTable* card_table() const { return _card_table; }
 
-  virtual void initialize();
+  void initialize();
 
   void write_region(JavaThread* thread, MemRegion mr) {
     invalidate(mr);

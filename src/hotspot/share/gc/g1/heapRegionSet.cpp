@@ -34,7 +34,7 @@ uint FreeRegionList::_unrealistically_long_length = 0;
 void HeapRegionSetBase::verify_region(HeapRegion* hr) {
   assert(hr->containing_set() == this, "Inconsistent containing set for %u", hr->hrm_index());
   assert(!hr->is_young(), "Adding young region %u", hr->hrm_index()); // currently we don't use these sets for young regions
-  assert(_checker == NULL || _checker->is_correct_type(hr), "Wrong type of region %u (%s) and set %s",
+  assert(_checker == nullptr || _checker->is_correct_type(hr), "Wrong type of region %u (%s) and set %s",
          hr->hrm_index(), hr->get_type_str(), name());
   assert(!hr->is_free() || hr->is_empty(), "Free region %u is not empty for set %s", hr->hrm_index(), name());
   assert(!hr->is_empty() || hr->is_free(), "Empty region %u is not free or old for set %s", hr->hrm_index(), name());
@@ -100,13 +100,13 @@ void FreeRegionList::remove_all() {
   verify_optional();
 
   HeapRegion* curr = _head;
-  while (curr != NULL) {
+  while (curr != nullptr) {
     verify_region(curr);
 
     HeapRegion* next = curr->next();
-    curr->set_next(NULL);
-    curr->set_prev(NULL);
-    curr->set_containing_set(NULL);
+    curr->set_next(nullptr);
+    curr->set_prev(nullptr);
+    curr->set_containing_set(nullptr);
 
     decrease_length(curr->node_index());
 
@@ -127,7 +127,7 @@ void FreeRegionList::add_list_common_start(FreeRegionList* from_list) {
     return;
   }
 
-  if (_node_info != NULL && from_list->_node_info != NULL) {
+  if (_node_info != nullptr && from_list->_node_info != nullptr) {
     _node_info->add(from_list->_node_info);
   }
 
@@ -136,9 +136,9 @@ void FreeRegionList::add_list_common_start(FreeRegionList* from_list) {
   while (iter.more_available()) {
     HeapRegion* hr = iter.get_next();
     // In set_containing_set() we check that we either set the value
-    // from NULL to non-NULL or vice versa to catch bugs. So, we have
-    // to NULL it first before setting it to the value.
-    hr->set_containing_set(NULL);
+    // from null to non-null or vice versa to catch bugs. So, we have
+    // to null it first before setting it to the value.
+    hr->set_containing_set(nullptr);
     hr->set_containing_set(this);
   }
   #endif // ASSERT
@@ -161,7 +161,7 @@ void FreeRegionList::append_ordered(FreeRegionList* from_list) {
 
   if (is_empty()) {
     // Make from_list the current list.
-    assert_free_region_list(length() == 0 && _tail == NULL, "invariant");
+    assert_free_region_list(length() == 0 && _tail == nullptr, "invariant");
     _head = from_list->_head;
     _tail = from_list->_tail;
   } else {
@@ -185,29 +185,29 @@ void FreeRegionList::add_ordered(FreeRegionList* from_list) {
   }
 
   if (is_empty()) {
-    assert_free_region_list(length() == 0 && _tail == NULL, "invariant");
+    assert_free_region_list(length() == 0 && _tail == nullptr, "invariant");
     _head = from_list->_head;
     _tail = from_list->_tail;
   } else {
     HeapRegion* curr_to = _head;
     HeapRegion* curr_from = from_list->_head;
 
-    while (curr_from != NULL) {
-      while (curr_to != NULL && curr_to->hrm_index() < curr_from->hrm_index()) {
+    while (curr_from != nullptr) {
+      while (curr_to != nullptr && curr_to->hrm_index() < curr_from->hrm_index()) {
         curr_to = curr_to->next();
       }
 
-      if (curr_to == NULL) {
+      if (curr_to == nullptr) {
         // The rest of the from list should be added as tail
         _tail->set_next(curr_from);
         curr_from->set_prev(_tail);
-        curr_from = NULL;
+        curr_from = nullptr;
       } else {
         HeapRegion* next_from = curr_from->next();
 
         curr_from->set_next(curr_to);
         curr_from->set_prev(curr_to->prev());
-        if (curr_to->prev() == NULL) {
+        if (curr_to->prev() == nullptr) {
           _head = curr_from;
         } else {
           curr_to->prev()->set_next(curr_from);
@@ -229,14 +229,14 @@ void FreeRegionList::add_ordered(FreeRegionList* from_list) {
 #ifdef ASSERT
 void FreeRegionList::verify_region_to_remove(HeapRegion* curr, HeapRegion* next) {
   assert_free_region_list(_head != next, "invariant");
-  if (next != NULL) {
+  if (next != nullptr) {
     assert_free_region_list(next->prev() == curr, "invariant");
     assert_free_region_list(_tail != curr, "invariant");
   } else {
     assert_free_region_list(_tail == curr, "invariant");
   }
   HeapRegion* prev = curr->prev();
-  if (prev == NULL) {
+  if (prev == nullptr) {
     assert_free_region_list(_head == curr, "invariant");
   } else {
     assert_free_region_list(_head != curr, "invariant");
@@ -268,11 +268,11 @@ void FreeRegionList::remove_starting_at(HeapRegion* first, uint num_regions) {
     verify_region_to_remove(curr, next);
 
     if (_last == curr) {
-      _last = NULL;
+      _last = nullptr;
     }
 
-    curr->set_next(NULL);
-    curr->set_prev(NULL);
+    curr->set_next(nullptr);
+    curr->set_prev(nullptr);
     remove(curr);
 
     count++;
@@ -282,12 +282,12 @@ void FreeRegionList::remove_starting_at(HeapRegion* first, uint num_regions) {
     curr = next;
   }
 
-  if (prev == NULL) {
+  if (prev == nullptr) {
     _head = next;
   } else {
     prev->set_next(next);
   }
-  if (next == NULL) {
+  if (next == nullptr) {
     _tail = prev;
   } else {
     next->set_prev(prev);
@@ -319,25 +319,25 @@ void FreeRegionList::verify() {
 
 void FreeRegionList::clear() {
   _length = 0;
-  _head = NULL;
-  _tail = NULL;
-  _last = NULL;
+  _head = nullptr;
+  _tail = nullptr;
+  _last = nullptr;
 
-  if (_node_info!= NULL) {
+  if (_node_info!= nullptr) {
     _node_info->clear();
   }
 }
 
 void FreeRegionList::verify_list() {
   HeapRegion* curr = _head;
-  HeapRegion* prev1 = NULL;
-  HeapRegion* prev0 = NULL;
+  HeapRegion* prev1 = nullptr;
+  HeapRegion* prev0 = nullptr;
   uint count = 0;
   size_t capacity = 0;
   uint last_index = 0;
 
-  guarantee(_head == NULL || _head->prev() == NULL, "_head should not have a prev");
-  while (curr != NULL) {
+  guarantee(_head == nullptr || _head->prev() == nullptr, "_head should not have a prev");
+  while (curr != nullptr) {
     verify_region(curr);
 
     count++;
@@ -345,7 +345,7 @@ void FreeRegionList::verify_list() {
               "[%s] the calculated length: %u seems very long, is there maybe a cycle? curr: " PTR_FORMAT " prev0: " PTR_FORMAT " " "prev1: " PTR_FORMAT " length: %u",
               name(), count, p2i(curr), p2i(prev0), p2i(prev1), length());
 
-    if (curr->next() != NULL) {
+    if (curr->next() != nullptr) {
       guarantee(curr->next()->prev() == curr, "Next or prev pointers messed up");
     }
     guarantee(curr->hrm_index() == 0 || curr->hrm_index() > last_index, "List should be sorted");
@@ -359,25 +359,25 @@ void FreeRegionList::verify_list() {
   }
 
   guarantee(_tail == prev0, "Expected %s to end with %u but it ended with %u.", name(), _tail->hrm_index(), prev0->hrm_index());
-  guarantee(_tail == NULL || _tail->next() == NULL, "_tail should not have a next");
+  guarantee(_tail == nullptr || _tail->next() == nullptr, "_tail should not have a next");
   guarantee(length() == count, "%s count mismatch. Expected %u, actual %u.", name(), length(), count);
 }
 
 
 FreeRegionList::FreeRegionList(const char* name, HeapRegionSetChecker* checker):
   HeapRegionSetBase(name, checker),
-  _node_info(G1NUMA::numa()->is_enabled() ? new NodeInfo() : NULL) {
+  _node_info(G1NUMA::numa()->is_enabled() ? new NodeInfo() : nullptr) {
 
   clear();
 }
 
 FreeRegionList::~FreeRegionList() {
-  if (_node_info != NULL) {
+  if (_node_info != nullptr) {
     delete _node_info;
   }
 }
 
-FreeRegionList::NodeInfo::NodeInfo() : _numa(G1NUMA::numa()), _length_of_node(NULL),
+FreeRegionList::NodeInfo::NodeInfo() : _numa(G1NUMA::numa()), _length_of_node(nullptr),
                                        _num_nodes(_numa->num_active_nodes()) {
   assert(UseNUMA, "Invariant");
 

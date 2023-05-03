@@ -25,8 +25,6 @@ package jdk.internal.util;
 import jdk.internal.util.PlatformProps;
 import jdk.internal.vm.annotation.ForceInline;
 
-import java.util.Locale;
-
 /**
  * Enumeration of operating system types and testing for the current OS.
  * The enumeration can be used to dispatch to OS specific code or values.
@@ -129,7 +127,34 @@ public enum OperatingSystem {
      * Names not recognized throw ExceptionInInitializerError with IllegalArgumentException.
      */
     private static OperatingSystem initOS(String osName) {
-        return OperatingSystem.valueOf(osName.toUpperCase(Locale.ROOT));
+        // Too early to use Locale conversions, manually do uppercase
+        StringBuilder sb = new StringBuilder(osName);
+        for (int i = 0; i < sb.length(); i++) {
+            char ch = sb.charAt(i);
+            if (ch >= 'a' && ch <= 'z') {
+                sb.setCharAt(i, (char)(ch - ('a' - 'A')));  // Map lower case down to uppercase
+            }
+        }
+        osName = sb.toString();
+        return OperatingSystem.valueOf(osName);
     }
 
+    /**
+     * {@return the operating system version with major, minor, micro}
+     */
+    public static Version version() {
+        return CURRENT_VERSION;
+    }
+
+    // Parse and save the current version
+    private static final Version CURRENT_VERSION = initVersion();
+
+    private static Version initVersion() {
+        final String osVer = StaticProperty.osVersion();
+        try {
+            return Version.parse(osVer);
+        } catch (IllegalArgumentException iae) {
+            throw new InternalError("os.version malformed: " + osVer, iae);
+        }
+    }
 }
