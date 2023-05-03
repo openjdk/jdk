@@ -321,6 +321,18 @@ public class TestLayouts {
         }
     }
 
+    @Test(dataProvider="layoutsAndAlignments")
+    public void testBadElementsElementSizeNotMultipleOfAlignment(MemoryLayout layout, long bitAlign) {
+        boolean shouldFail = layout.byteSize() % layout.byteAlignment() != 0;
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment segment = arena.allocate(layout);
+            segment.elements(layout);
+            assertFalse(shouldFail);
+        } catch (IllegalArgumentException ex) {
+            assertTrue(shouldFail);
+        }
+    }
+
     @Test(dataProvider="layoutsAndAlignments", expectedExceptions = IllegalArgumentException.class)
     public void testBadStruct(MemoryLayout layout, long bitAlign) {
         layout = layout.withBitAlignment(layout.bitSize() * 2); // hyper-align
