@@ -32,6 +32,14 @@
 #include "oops/oop.inline.hpp"
 #include "utilities/macros.hpp"
 
+inline bool SlidingForwarding::is_forwarded(oop obj) {
+  return obj->is_forwarded();
+}
+
+inline bool SlidingForwarding::is_not_forwarded(oop obj) {
+  return !obj->is_forwarded();
+}
+
 size_t SlidingForwarding::region_index_containing(HeapWord* addr) const {
   size_t index = pointer_delta(addr, _heap_start) >> _region_size_words_shift;
   assert(index < _num_regions, "Region index is in bounds: " PTR_FORMAT, p2i(addr));
@@ -99,7 +107,7 @@ HeapWord* SlidingForwarding::decode_forwarding(HeapWord* from, uintptr_t encoded
   return decoded;
 }
 
-void SlidingForwarding::forward_to(oop from, oop to) {
+inline void SlidingForwarding::forward_to_impl(oop from, oop to) {
   assert(_bases_table != nullptr, "call begin() before forwarding");
 
   markWord from_header = from->mark();
@@ -118,7 +126,20 @@ void SlidingForwarding::forward_to(oop from, oop to) {
   }
 }
 
-oop SlidingForwarding::forwardee(oop from) const {
+inline void SlidingForwarding::forward_to(oop obj, oop fwd) {
+#ifdef _LP64
+  if (UseAltGCForwarding) {
+    assert(_sliding_forwarding != nullptr, "expect sliding forwarding initialized");
+    _sliding_forwarding->forward_to(obj, fwd);
+    assert(forwardee(obj) == fwd, "must be forwarded to correct forwardee");
+  } else
+#endif
+  {
+    obj->forward_to(fwd);
+  }
+}
+
+inline oop SlidingForwarding::forwardee_impl(oop from) const {
   assert(_bases_table != nullptr, "call begin() before asking for forwarding");
 
   markWord header = from->mark();
@@ -131,6 +152,19 @@ oop SlidingForwarding::forwardee(oop from) const {
   HeapWord* to = decode_forwarding(from_hw, encoded);
   return cast_to_oop(to);
 }
+
+inline oop SlidingForwarding::forwardee(oop obj) {
+#ifdef _LP64
+  if (UseAltGCForwarding) {
+    assert(_sliding_forwarding != nullptr, "expect sliding forwarding initialized");
+    return _sliding_forwarding->forwardee(obj);
+  } else
+#endif
+  {
+    return obj->forwardee();
+  }
+}
+
 
 #endif // _LP64
 #endif // SHARE_GC_SHARED_SLIDINGFORWARDING_INLINE_HPP

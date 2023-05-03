@@ -26,8 +26,8 @@
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
-#include "gc/shared/gcForwarding.inline.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
+#include "gc/shared/slidingForwarding.inline.hpp"
 #include "gc/shared/space.hpp"
 #include "gc/shared/space.inline.hpp"
 #include "gc/shared/spaceDecorator.inline.hpp"
@@ -270,13 +270,13 @@ HeapWord* ContiguousSpace::forward(oop q, size_t size,
 
   // store the forwarding pointer into the mark word
   if (cast_from_oop<HeapWord*>(q) != compact_top) {
-    GCForwarding::forward_to(q, cast_to_oop(compact_top));
+    SlidingForwarding::forward_to(q, cast_to_oop(compact_top));
     assert(q->is_gc_marked(), "encoding the pointer should preserve the mark");
   } else {
     // if the object isn't moving we can just set the mark to the default
     // mark and handle it specially later on.
     q->init_mark();
-    assert(GCForwarding::is_not_forwarded(q), "should not be forwarded");
+    assert(SlidingForwarding::is_not_forwarded(q), "should not be forwarded");
   }
 
   compact_top += size;
@@ -436,7 +436,7 @@ void ContiguousSpace::compact() {
 
   debug_only(HeapWord* prev_obj = nullptr);
   while (cur_obj < end_of_live) {
-    if (GCForwarding::is_not_forwarded(cast_to_oop(cur_obj))) {
+    if (SlidingForwarding::is_not_forwarded(cast_to_oop(cur_obj))) {
       debug_only(prev_obj = cur_obj);
       // The first word of the dead object contains a pointer to the next live object or end of space.
       cur_obj = *(HeapWord**)cur_obj;
@@ -447,7 +447,7 @@ void ContiguousSpace::compact() {
 
       // size and destination
       size_t size = cast_to_oop(cur_obj)->size();
-      HeapWord* compaction_top = cast_from_oop<HeapWord*>(GCForwarding::forwardee(cast_to_oop(cur_obj)));
+      HeapWord* compaction_top = cast_from_oop<HeapWord*>(SlidingForwarding::forwardee(cast_to_oop(cur_obj)));
 
       // prefetch beyond compaction_top
       Prefetch::write(compaction_top, copy_interval);

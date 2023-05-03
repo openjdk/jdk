@@ -36,7 +36,6 @@
 #include "gc/serial/genMarkSweep.hpp"
 #include "gc/serial/serialGcRefProcProxyTask.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
-#include "gc/shared/gcForwarding.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTrace.hpp"
@@ -46,6 +45,7 @@
 #include "gc/shared/modRefBarrierSet.hpp"
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/referenceProcessorPhaseTimes.hpp"
+#include "gc/shared/slidingForwarding.hpp"
 #include "gc/shared/space.hpp"
 #include "gc/shared/strongRootsScope.hpp"
 #include "gc/shared/weakProcessor.hpp"
@@ -88,7 +88,7 @@ void GenMarkSweep::invoke_at_safepoint(bool clear_all_softrefs) {
 
   mark_sweep_phase1(clear_all_softrefs);
 
-  GCForwarding::begin();
+  SlidingForwarding::begin();
 
   mark_sweep_phase2();
 
@@ -108,7 +108,7 @@ void GenMarkSweep::invoke_at_safepoint(bool clear_all_softrefs) {
   // (Should this be in general part?)
   gch->save_marks();
 
-  GCForwarding::end();
+  SlidingForwarding::end();
 
   deallocate_stacks();
 
