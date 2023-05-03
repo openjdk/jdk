@@ -16,12 +16,18 @@ UnnamedErrors.java:34:18: compiler.err.restricted.type.not.allowed.here: var
 UnnamedErrors.java:34:22: compiler.err.underscore.as.identifier
 UnnamedErrors.java:77:18: compiler.err.underscore.as.identifier
 UnnamedErrors.java:77:19: compiler.err.expected: token.identifier
+UnnamedErrors.java:82:40: compiler.err.expected2: :, ->
+UnnamedErrors.java:82:50: compiler.err.expected: ';'
+UnnamedErrors.java:82:58: compiler.err.expected: ';'
 UnnamedErrors.java:11:17: compiler.err.already.defined: kindname.variable, x, kindname.class, UnnamedErrors
 UnnamedErrors.java:36:13: compiler.err.unconditional.pattern.and.default
 UnnamedErrors.java:45:18: compiler.err.pattern.dominated
 UnnamedErrors.java:54:29: compiler.err.flows.through.from.pattern
 UnnamedErrors.java:61:29: compiler.err.flows.through.from.pattern
 UnnamedErrors.java:68:32: compiler.err.flows.through.from.pattern
+UnnamedErrors.java:82:51: compiler.err.cant.resolve.location: kindname.class, when, , , (compiler.misc.location: kindname.class, UnnamedErrors, null)
+UnnamedErrors.java:82:56: compiler.err.already.defined: kindname.variable, x2, kindname.method, guard_errors(java.lang.Object,int,int)
+UnnamedErrors.java:83:13: compiler.err.switch.mixing.case.types
 - compiler.note.preview.filename: UnnamedErrors.java, DEFAULT
 - compiler.note.preview.recompile
-24 errors
+30 errors

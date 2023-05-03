@@ -76,6 +76,14 @@ public class UnnamedErrors {
         try (Lock _ = null) {
         } catch (_) { }
     }
+
+    int guard_errors(Object o, int x1, int x2) {
+        return switch (o) {
+            case Integer _ when x1 == 2, String _ when x2 == 1 -> 1;
+            default -> 2;
+        };
+    }
+
     class Lock implements AutoCloseable {
         @Override
         public void close() {}
