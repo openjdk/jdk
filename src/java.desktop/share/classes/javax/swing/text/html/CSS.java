@@ -2023,7 +2023,6 @@ public class CSS implements Serializable {
         boolean isSup() {
             return (svalue.contains("sup"));
         }
-
     }
 
     /**
@@ -2205,6 +2204,7 @@ public class CSS implements Serializable {
         public int hashCode() {
             return Float.hashCode(value);
         }
+
         @Override
         public boolean equals(Object val) {
             return val instanceof CSS.FontSize size && value == size.value;
@@ -2312,12 +2312,9 @@ public class CSS implements Serializable {
 
         @Override
         public int hashCode() {
-            if (family != null) {
-                return family.hashCode();
-            } else {
-                return 0;
-            }
+            return (family != null) ? family.hashCode() : 0;
         }
+
         @Override
         public boolean equals(Object val) {
             return val instanceof CSS.FontFamily font && family == font.family;
