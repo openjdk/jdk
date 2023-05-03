@@ -1784,7 +1784,7 @@ void C2_MacroAssembler::compare_floating_point_v(VectorRegister vd, BasicType bt
 void C2_MacroAssembler::vector_integer_extend(VectorRegister dst, BasicType dst_bt, int vector_length,
                                               VectorRegister src, BasicType src_bt) {
   assert(type2aelembytes(dst_bt) > type2aelembytes(src_bt) && type2aelembytes(dst_bt) <= 8 && type2aelembytes(src_bt) <= 4, "invalid element size");
-  assert(dst_bt != T_FLOAT && dst_bt != T_DOUBLE && src_bt != T_FLOAT && src_bt != T_DOUBLE, "should be integer element");
+  assert(dst_bt != T_FLOAT && dst_bt != T_DOUBLE && src_bt != T_FLOAT && src_bt != T_DOUBLE, "unsupported element type");
   // https://github.com/riscv/riscv-v-spec/blob/master/v-spec.adoc#52-vector-operands
   // The destination EEW is greater than the source EEW, the source EMUL is at least 1,
   // and the overlap is in the highest-numbered part of the destination register group.
@@ -1822,7 +1822,7 @@ void C2_MacroAssembler::vector_integer_extend(VectorRegister dst, BasicType dst_
 void C2_MacroAssembler::vector_integer_narrow(VectorRegister dst, BasicType dst_bt, int vector_length,
                                               VectorRegister src, BasicType src_bt, VectorRegister tmp) {
   assert(type2aelembytes(dst_bt) < type2aelembytes(src_bt) && type2aelembytes(dst_bt) <= 4 && type2aelembytes(src_bt) <= 8, "invalid element size");
-  assert(dst_bt != T_FLOAT && dst_bt != T_DOUBLE && src_bt != T_FLOAT && src_bt != T_DOUBLE, "should be integer element");
+  assert(dst_bt != T_FLOAT && dst_bt != T_DOUBLE && src_bt != T_FLOAT && src_bt != T_DOUBLE, "unsupported element type");
   vmv1r_v(tmp, src);
   mv(t0, vector_length);
   if (src_bt == T_LONG) {
@@ -1853,3 +1853,22 @@ void C2_MacroAssembler::vector_integer_narrow(VectorRegister dst, BasicType dst_
   }
   vmv_v_v(dst, tmp);
 }
+
+#define VFCVT_SAFE(VFLOATCVT)                                                      \
+void C2_MacroAssembler::VFLOATCVT##_safe(VectorRegister dst, VectorRegister src) { \
+  assert_different_registers(dst, src);                                            \
+  vfclass_v(v0, src);                                                              \
+  vxor_vv(dst, dst, dst);                                                          \
+  vsrl_vi(v0, v0, 8);                                                              \
+  vmseq_vx(v0, v0, zr);                                                            \
+  VFLOATCVT(dst, src, Assembler::v0_t);                                            \
+}
+
+VFCVT_SAFE(vfcvt_rtz_xu_f_v);
+VFCVT_SAFE(vfcvt_rtz_x_f_v);
+VFCVT_SAFE(vfwcvt_rtz_xu_f_v);
+VFCVT_SAFE(vfwcvt_rtz_x_f_v);
+VFCVT_SAFE(vfncvt_rtz_xu_f_w);
+VFCVT_SAFE(vfncvt_rtz_x_f_w);
+
+#undef VFCVT_SAFE
