@@ -1922,7 +1922,7 @@ jvmtiEnv *jvmti;
         </error>
         <error id="JVMTI_ERROR_OPAQUE_FRAME">
           The thread is a suspended virtual thread and the implementation was unable
-          to throw an asynchronous exception from this frame.
+          to throw an asynchronous exception from the current frame.
         </error>
       </errors>
     </function>
