@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2022 Unicode, Inc.
+<!-- Copyright © 1991-2023 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -262,6 +262,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</relativeTime>
 			</field>
 			<field type="month-narrow">
+				<displayName>mjes.</displayName>
 				<relative type="-1">prošlog mjes.</relative>
 				<relative type="0">ovog mjes.</relative>
 				<relative type="1">sljedećeg m.</relative>
@@ -306,6 +307,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relativePeriod>sedmica koja počinje {0}.</relativePeriod>
 			</field>
 			<field type="week-narrow">
+				<displayName>sedm.</displayName>
 				<relative type="-1">prošle s.</relative>
 				<relative type="0">ove s.</relative>
 				<relative type="1">sljedeće s.</relative>
@@ -1693,20 +1695,38 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>vijekovi</displayName>
 				<unitPattern count="one">{0} vijek</unitPattern>
 				<unitPattern count="few">{0} vijeka</unitPattern>
+				<unitPattern count="few" case="accusative">{0} vijeka</unitPattern>
+				<unitPattern count="few" case="genitive">{0} vijeka</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} vijeka</unitPattern>
 				<unitPattern count="other">{0} vijekova</unitPattern>
+				<unitPattern count="other" case="accusative">{0} vijekova</unitPattern>
+				<unitPattern count="other" case="genitive">{0} vijekova</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} vijekova</unitPattern>
 			</unit>
 			<unit type="duration-month">
 				<displayName>mjeseci</displayName>
 				<unitPattern count="one">{0} mjesec</unitPattern>
 				<unitPattern count="few">{0} mjeseca</unitPattern>
+				<unitPattern count="few" case="accusative">{0} mjeseca</unitPattern>
+				<unitPattern count="few" case="genitive">{0} mjeseca</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} mjeseca</unitPattern>
 				<unitPattern count="other">{0} mjeseci</unitPattern>
+				<unitPattern count="other" case="accusative">{0} mjeseci</unitPattern>
+				<unitPattern count="other" case="genitive">{0} mjeseci</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} mjeseci</unitPattern>
 				<perUnitPattern>{0} mjesečno</perUnitPattern>
 			</unit>
 			<unit type="duration-week">
 				<displayName>nedjelje</displayName>
 				<unitPattern count="one">{0} nedjelja</unitPattern>
 				<unitPattern count="few">{0} nedjelje</unitPattern>
+				<unitPattern count="few" case="accusative">{0} nedjelje</unitPattern>
+				<unitPattern count="few" case="genitive">{0} nedjelje</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} nedjelje</unitPattern>
 				<unitPattern count="other">{0} nedjelja</unitPattern>
+				<unitPattern count="other" case="accusative">{0} nedjelja</unitPattern>
+				<unitPattern count="other" case="genitive">{0} nedjelja</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} nedjelja</unitPattern>
 				<perUnitPattern>{0} nedjeljno</perUnitPattern>
 			</unit>
 			<unit type="length-light-year">
@@ -1746,8 +1766,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 		</unitLength>
 		<unitLength type="narrow">
+			<unit type="length-light-year">
+				<displayName>svjetlosne god.</displayName>
+			</unit>
+			<unit type="mass-grain">
+				<displayName>gran</displayName>
+				<unitPattern count="one">{0} gran</unitPattern>
+				<unitPattern count="few">{0} grana</unitPattern>
+				<unitPattern count="other">{0} granova</unitPattern>
+			</unit>
 			<unit type="volume-barrel">
-				<displayName>bbl</displayName>
 				<unitPattern count="one">{0}bbl</unitPattern>
 				<unitPattern count="few">{0} bbl</unitPattern>
 				<unitPattern count="other">{0}bbl</unitPattern>

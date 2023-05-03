@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@
 //                              this address (live) objects need to be scanned for references
 //                              that might need to be added to the remembered sets.
 //
-// Note that bottom <= parsable_bottom <= tars; if there is no tars (i.e. NULL),
+// Note that bottom <= parsable_bottom <= tars; if there is no tars (i.e. null),
 // obviously there can not be a parsable_bottom.
 //
 // We need to scrub and scan objects to rebuild remembered sets until parsable_bottom;
@@ -99,7 +99,7 @@ class G1RebuildRSAndScrubTask : public WorkerTask {
     // that there is some rebuild or scrubbing work.
     //
     // Based on the results of G1RemSetTrackingPolicy::needs_scan_for_rebuild(),
-    // the value may be changed to nullptr during rebuilding if the region has either:
+    // the value may be changed to null during rebuilding if the region has either:
     //  - been allocated after rebuild start, or
     //  - been eagerly reclaimed by a young collection (only humongous)
     bool should_rebuild_or_scrub(HeapRegion* hr) const {
