@@ -33,76 +33,59 @@
 // 0x1 is safe because heap base addresses must be aligned by much larger alignment
 HeapWord* const SlidingForwarding::UNUSED_BASE = reinterpret_cast<HeapWord*>(0x1);
 
-SlidingForwarding* SlidingForwarding::_sliding_forwarding = nullptr;
+HeapWord* SlidingForwarding::_heap_start = nullptr;
+uint SlidingForwarding::_num_regions = 0;
+uint SlidingForwarding::_region_size_words = 0;
+uint SlidingForwarding::_region_size_words_shift = 0;
+HeapWord** SlidingForwarding::_bases_table = nullptr;
+FallbackTable* SlidingForwarding::_fallback_table = nullptr;
 
-SlidingForwarding::SlidingForwarding(MemRegion heap, size_t region_size_words)
-  : _heap_start(heap.start()),
-    _num_regions(align_up(pointer_delta(heap.end(), heap.start()), region_size_words) / region_size_words),
-    _region_size_words(region_size_words),
-    _region_size_words_shift(log2i_exact(region_size_words)),
-  _bases_table(nullptr),
-  _fallback_table(nullptr) {
-  assert(_region_size_words >= 1, "regions must be at least a word large");
-  assert(_region_size_words <= pointer_delta(heap.end(), heap.start()), "");
-  assert(_region_size_words_shift <= NUM_OFFSET_BITS, "regions must not be larger than maximum addressing bits allow");
-  size_t heap_size_words = heap.end() - heap.start();
-  if (UseSerialGC && heap_size_words <= (1 << NUM_OFFSET_BITS)) {
-    // In this case we can treat the whole heap as a single region and
-    // make the encoding very simple.
-    _num_regions = 1;
-    _region_size_words = round_up_power_of_2(heap_size_words);
-    _region_size_words_shift = log2i_exact(_region_size_words);
-  }
-}
-
-SlidingForwarding::~SlidingForwarding() {
-  FREE_C_HEAP_ARRAY(region_bases, _bases_table);
-  _bases_table = nullptr;
-  delete _fallback_table;
-  _fallback_table = nullptr;
-}
-
-void SlidingForwarding::initialize(MemRegion heap, size_t region_size_words) {
+void SlidingForwarding::initialize(MemRegion heap, uint region_size_words) {
 #ifdef _LP64
   if (UseAltGCForwarding) {
-    assert(_sliding_forwarding == nullptr, "only call this once");
-    _sliding_forwarding = new SlidingForwarding(heap, region_size_words);
+    _heap_start = heap.start();
+    _num_regions = align_up(pointer_delta(heap.end(), heap.start()), region_size_words) / region_size_words;
+    _region_size_words = region_size_words;
+    _region_size_words_shift = log2i_exact(region_size_words);
+    if (UseSerialGC && heap.word_size() <= (1 << NUM_OFFSET_BITS)) {
+      // In this case we can treat the whole heap as a single region and
+      // make the encoding very simple.
+      _num_regions = 1;
+      _region_size_words = round_up_power_of_2(heap.word_size());
+      _region_size_words_shift = log2i_exact(_region_size_words);
+    }
+
+    assert(_region_size_words >= 1, "regions must be at least a word large");
+    assert(_region_size_words_shift <= NUM_OFFSET_BITS, "regions must not be larger than maximum addressing bits allow");
+    assert(_bases_table == nullptr, "should not be initialized yet");
+    assert(_fallback_table == nullptr, "should not be initialized yet");
   }
 #endif
-}
-
-void SlidingForwarding::begin_impl() {
-  assert(_bases_table == nullptr, "Should be uninitialized");
-  size_t max = _num_regions * NUM_TARGET_REGIONS;
-  _bases_table = NEW_C_HEAP_ARRAY(HeapWord*, max, mtGC);
-  for (size_t i = 0; i < max; i++) {
-    _bases_table[i] = UNUSED_BASE;
-  }
 }
 
 void SlidingForwarding::begin() {
 #ifdef _LP64
   if (UseAltGCForwarding) {
-    assert(_sliding_forwarding != nullptr, "expect sliding forwarding initialized");
-    _sliding_forwarding->begin_impl();
+    assert(_bases_table == nullptr, "should not be initialized yet");
+    assert(_fallback_table == nullptr, "should not be initialized yet");
+
+    uint max = _num_regions * NUM_TARGET_REGIONS;
+    _bases_table = NEW_C_HEAP_ARRAY(HeapWord*, max, mtGC);
+    for (uint i = 0; i < max; i++) {
+      _bases_table[i] = UNUSED_BASE;
+    }
   }
 #endif
-}
-
-void SlidingForwarding::end_impl() {
-  assert(_bases_table != nullptr, "Should be initialized");
-  FREE_C_HEAP_ARRAY(HeapWord*, _bases_table);
-  _bases_table = nullptr;
-
-  delete _fallback_table;
-  _fallback_table = nullptr;
 }
 
 void SlidingForwarding::end() {
 #ifdef _LP64
   if (UseAltGCForwarding) {
-    assert(_sliding_forwarding != nullptr, "expect sliding forwarding initialized");
-    _sliding_forwarding->end_impl();
+    assert(_bases_table != nullptr, "should be initialized");
+    FREE_C_HEAP_ARRAY(HeapWord*, _bases_table);
+    _bases_table = nullptr;
+    delete _fallback_table;
+    _fallback_table = nullptr;
   }
 #endif
 }
@@ -114,13 +97,13 @@ void SlidingForwarding::fallback_forward_to(HeapWord* from, HeapWord* to) {
   _fallback_table->forward_to(from, to);
 }
 
-HeapWord* SlidingForwarding::fallback_forwardee(HeapWord* from) const {
+HeapWord* SlidingForwarding::fallback_forwardee(HeapWord* from) {
   assert(_fallback_table != nullptr, "fallback table must be present");
   return _fallback_table->forwardee(from);
 }
 
 FallbackTable::FallbackTable() {
-  for (size_t i = 0; i < TABLE_SIZE; i++) {
+  for (uint i = 0; i < TABLE_SIZE; i++) {
     _table[i]._next = nullptr;
     _table[i]._from = nullptr;
     _table[i]._to   = nullptr;
@@ -128,7 +111,7 @@ FallbackTable::FallbackTable() {
 }
 
 FallbackTable::~FallbackTable() {
-  for (size_t i = 0; i < TABLE_SIZE; i++) {
+  for (uint i = 0; i < TABLE_SIZE; i++) {
     FallbackTableEntry* entry = _table[i]._next;
     while (entry != nullptr) {
       FallbackTableEntry* next = entry->_next;
@@ -161,7 +144,7 @@ void FallbackTable::forward_to(HeapWord* from, HeapWord* to) {
   FallbackTableEntry* entry = head;
   // Search existing entry in chain starting at idx.
   while (entry != nullptr) {
-    if (entry->_from == from) {
+    if (entry->_from == from || entry->_from == nullptr) {
       break;
     }
     entry = entry->_next;

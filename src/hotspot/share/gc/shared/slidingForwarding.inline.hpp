@@ -39,18 +39,18 @@ inline bool SlidingForwarding::is_not_forwarded(oop obj) {
   return !obj->is_forwarded();
 }
 
-size_t SlidingForwarding::region_index_containing(HeapWord* addr) const {
-  size_t index = pointer_delta(addr, _heap_start) >> _region_size_words_shift;
+uint SlidingForwarding::region_index_containing(HeapWord* addr) {
+  uint index = static_cast<uint>(pointer_delta(addr, _heap_start) >> _region_size_words_shift);
   assert(index < _num_regions, "Region index is in bounds: " PTR_FORMAT, p2i(addr));
   return index;
 }
 
 uintptr_t SlidingForwarding::encode_forwarding(HeapWord* from, HeapWord* to) {
-  size_t from_reg_idx = region_index_containing(from);
-  size_t to_reg_idx = region_index_containing(to);
+  uint from_reg_idx = region_index_containing(from);
+  uint to_reg_idx = region_index_containing(to);
 
   HeapWord* to_region_base = _heap_start + to_reg_idx * _region_size_words;
-  size_t base_idx = from_reg_idx * NUM_TARGET_REGIONS;
+  uint base_idx = from_reg_idx * NUM_TARGET_REGIONS;
 
   bool alt_region = false;
   if (_bases_table[base_idx] == UNUSED_BASE) {
@@ -59,7 +59,7 @@ uintptr_t SlidingForwarding::encode_forwarding(HeapWord* from, HeapWord* to) {
   } else if (_bases_table[base_idx] == to_region_base) {
     // Primary is good
   } else {
-    size_t base_idx_alt = base_idx + 1;
+    uint base_idx_alt = base_idx + 1;
     if (_bases_table[base_idx_alt] == UNUSED_BASE) {
       // Alternate is free
       _bases_table[base_idx_alt] = to_region_base;
@@ -73,9 +73,9 @@ uintptr_t SlidingForwarding::encode_forwarding(HeapWord* from, HeapWord* to) {
     alt_region = true;
   }
 
-  size_t offset = pointer_delta(to, to_region_base);
+  uint offset = static_cast<uint>(pointer_delta(to, to_region_base));
   assert(offset < _region_size_words, "Offset should be within the region. from: " PTR_FORMAT
-         ", to: " PTR_FORMAT ", to_region_base: " PTR_FORMAT ", offset: " SIZE_FORMAT,
+         ", to: " PTR_FORMAT ", to_region_base: " PTR_FORMAT ", offset: %u",
          p2i(from), p2i(to), p2i(to_region_base), offset);
 
   uintptr_t encoded = (offset << OFFSET_BITS_SHIFT) |
@@ -86,21 +86,21 @@ uintptr_t SlidingForwarding::encode_forwarding(HeapWord* from, HeapWord* to) {
   return encoded;
 }
 
-HeapWord* SlidingForwarding::decode_forwarding(HeapWord* from, uintptr_t encoded) const {
+HeapWord* SlidingForwarding::decode_forwarding(HeapWord* from, uintptr_t encoded) {
   assert((encoded & markWord::marked_value) == markWord::marked_value, "must be marked as forwarded");
   assert((encoded & FALLBACK_MASK) == 0, "must not be fallback-forwarded");
-  size_t alt_region = (encoded >> ALT_REGION_SHIFT) & right_n_bits(ALT_REGION_BITS);
+  uint alt_region = static_cast<uint>((encoded >> ALT_REGION_SHIFT) & right_n_bits(ALT_REGION_BITS));
   assert(alt_region < NUM_TARGET_REGIONS, "Sanity");
   uintptr_t offset = (encoded >> OFFSET_BITS_SHIFT);
 
-  size_t from_idx = region_index_containing(from) * NUM_TARGET_REGIONS;
-  size_t base_idx = from_idx + alt_region;
+  uint from_idx = region_index_containing(from) * NUM_TARGET_REGIONS;
+  uint base_idx = from_idx + alt_region;
 
   HeapWord* base = _bases_table[base_idx];
   assert(base != UNUSED_BASE, "must not be unused base");
   HeapWord* decoded = base + offset;
   assert(decoded >= _heap_start,
-         "Address must be above heap start. encoded: " INTPTR_FORMAT ", alt_region: " SIZE_FORMAT ", base: " PTR_FORMAT,
+         "Address must be above heap start. encoded: " INTPTR_FORMAT ", alt_region: %u, base: " PTR_FORMAT,
          encoded, alt_region, p2i(base));
 
   return decoded;
@@ -128,8 +128,8 @@ inline void SlidingForwarding::forward_to_impl(oop from, oop to) {
 inline void SlidingForwarding::forward_to(oop obj, oop fwd) {
 #ifdef _LP64
   if (UseAltGCForwarding) {
-    assert(_sliding_forwarding != nullptr, "expect sliding forwarding initialized");
-    _sliding_forwarding->forward_to_impl(obj, fwd);
+    assert(_bases_table != nullptr, "expect sliding forwarding initialized");
+    forward_to_impl(obj, fwd);
     assert(forwardee(obj) == fwd, "must be forwarded to correct forwardee");
   } else
 #endif
@@ -138,7 +138,7 @@ inline void SlidingForwarding::forward_to(oop obj, oop fwd) {
   }
 }
 
-inline oop SlidingForwarding::forwardee_impl(oop from) const {
+inline oop SlidingForwarding::forwardee_impl(oop from) {
   assert(_bases_table != nullptr, "call begin() before asking for forwarding");
 
   markWord header = from->mark();
@@ -155,8 +155,8 @@ inline oop SlidingForwarding::forwardee_impl(oop from) const {
 inline oop SlidingForwarding::forwardee(oop obj) {
 #ifdef _LP64
   if (UseAltGCForwarding) {
-    assert(_sliding_forwarding != nullptr, "expect sliding forwarding initialized");
-    return _sliding_forwarding->forwardee_impl(obj);
+    assert(_bases_table != nullptr, "expect sliding forwarding initialized");
+    return forwardee_impl(obj);
   } else
 #endif
   {
