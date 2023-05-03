@@ -51,11 +51,16 @@ private:
   uint32_t _top;
   oop _base[CAPACITY];
 
+  // Get the owning thread of this lock-stack.
   inline JavaThread* get_thread() const;
 
-  bool is_self() const;
+  // Tests if the calling thread is the thread that owns this lock-stack.
+  bool is_owning_thread() const;
+
+  // Verifies consistency of the lock-stack.
   void verify(const char* msg) const PRODUCT_RETURN;
 
+  // Given an offset (in bytes) calculate the index into the lock-stack.
   static inline int to_index(uint32_t offset);
 
 public:
@@ -64,13 +69,23 @@ public:
 
   LockStack(JavaThread* jt);
 
+  // The boundary indicies of the lock-stack.
   static uint32_t start_offset();
   static uint32_t end_offset();
+
+  // Return true if we have room to push onto this lock-stack, false otherwise.
   inline bool can_push() const;
+
+  // Pushes an oop on this lock-stack.
   inline void push(oop o);
+
+  // Pops an oop from this lock-stack.
   inline oop pop();
+
+  // Removes an oop from an arbitrary location of this lock-stack.
   inline void remove(oop o);
 
+  // Tests whether the object is on this lock-stack.
   inline bool contains(oop o) const;
 
   // GC support

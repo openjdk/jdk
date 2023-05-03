@@ -1153,6 +1153,9 @@ public:
   LockStack& lock_stack() { return _lock_stack; }
 
   static ByteSize lock_stack_offset()      { return byte_offset_of(JavaThread, _lock_stack); }
+  // Those offsets are used in code generators to access the LockStack that is embedded in this
+  // JavaThread structure. Those accesses are relative to the current thread, which
+  // is typically in a dedicated register.
   static ByteSize lock_stack_top_offset()  { return lock_stack_offset() + LockStack::top_offset(); }
   static ByteSize lock_stack_base_offset() { return lock_stack_offset() + LockStack::base_offset(); }
 

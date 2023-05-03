@@ -1981,9 +1981,9 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   product(int, LockingMode, LM_LEGACY, EXPERIMENTAL,                        \
           "Select locking mode: "                                           \
-          "0: monitors only, "                                              \
-          "1: monitors & legacy stack-locking (default), "                  \
-          "2: monitors & new lightweight locking")                          \
+          "0: monitors only (LM_MONITOR), "                                 \
+          "1: monitors & legacy stack-locking (LM_LEGACY, default), "       \
+          "2: monitors & new lightweight locking (LM_LIGHTWEIGHT)")         \
           range(0, 2)                                                       \
 
 // end of RUNTIME_FLAGS

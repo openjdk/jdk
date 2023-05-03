@@ -651,12 +651,19 @@ void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmp
   movptr(scrReg, boxReg);
   movptr(boxReg, tmpReg);                   // consider: LEA box, [tmp-2]
 
-  xorptr(tmpReg, tmpReg);
+  // Optimistic form: consider XORL tmpReg,tmpReg
+  movptr(tmpReg, NULL_WORD);
 
-  // Appears unlocked - try to swing _owner from null to current thread.
+  // Appears unlocked - try to swing _owner from null to non-null.
+  // Ideally, I'd manifest "Self" with get_thread and then attempt
+  // to CAS the register containing Self into m->Owner.
+  // But we don't have enough registers, so instead we can either try to CAS
+  // rsp or the address of the box (in scr) into &m->owner.  If the CAS succeeds
+  // we later store "Self" into m->Owner.  Transiently storing a stack address
+  // (rsp or the address of the box) into  m->owner is harmless.
   // Invariant: tmpReg == 0.  tmpReg is EAX which is the implicit cmpxchg comparand.
   lock();
-  cmpxchgptr(thread, Address(boxReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
+  cmpxchgptr(scrReg, Address(boxReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
   movptr(Address(scrReg, 0), 3);          // box->_displaced_header = 3
   // If we weren't able to swing _owner from null to the BasicLock
   // then take the slow path.

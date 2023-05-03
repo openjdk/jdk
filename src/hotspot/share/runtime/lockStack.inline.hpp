@@ -46,11 +46,11 @@ inline bool LockStack::can_push() const {
   return to_index(_top) < CAPACITY;
 }
 
-inline bool LockStack::is_self() const {
-  Thread* thread = Thread::current();
-  bool is_self = &JavaThread::cast(thread)->lock_stack() == this;
-  assert(is_self == (get_thread() == thread), "is_self sanity");
-  return is_self;
+inline bool LockStack::is_owning_thread() const {
+  JavaThread* thread = JavaThread::current();
+  bool is_owning = &JavaThread::cast(thread)->lock_stack() == this;
+  assert(is_owning == (get_thread() == thread), "is_owning sanity");
+  return is_owning;
 }
 
 inline void LockStack::push(oop o) {
@@ -100,7 +100,7 @@ inline void LockStack::remove(oop o) {
 
 inline bool LockStack::contains(oop o) const {
   verify("pre-contains");
-  if (!SafepointSynchronize::is_at_safepoint() && !is_self()) {
+  if (!SafepointSynchronize::is_at_safepoint() && !is_owning_thread()) {
     // When a foreign thread inspects this thread's lock-stack, it may see
     // bad references here when a concurrent collector has not gotten
     // to processing the lock-stack, yet. Call StackWaterMark::start_processing()
