@@ -381,6 +381,35 @@ errOut:
 
 #define ADDNULL(list) (*env)->CallBooleanMethod(env, list, jm_listAdd, NULL)
 
+
+static void addTrustSettingsToInputTrust(JNIEnv *env, jmethodID jm_listAdd, CFArrayRef trustSettings, jobject inputTrust)
+{
+    CFIndex count = CFArrayGetCount(trustSettings);
+    for (int i = 0; i < count; i++) {
+        CFDictionaryRef oneTrust = (CFDictionaryRef) CFArrayGetValueAtIndex(trustSettings, i);
+        CFIndex size = CFDictionaryGetCount(oneTrust);
+        const void * keys [size];
+        const void * values [size];
+        CFDictionaryGetKeysAndValues(oneTrust, keys, values);
+        for (int j = 0; j < size; j++) {
+            NSString* s = [NSString stringWithFormat:@"%@", keys[j]];
+            ADD(inputTrust, s);
+            s = [NSString stringWithFormat:@"%@", values[j]];
+            ADD(inputTrust, s);
+        }
+        SecPolicyRef certPolicy;
+        certPolicy = (SecPolicyRef)CFDictionaryGetValue(oneTrust, kSecTrustSettingsPolicy);
+        if (certPolicy != NULL) {
+            CFDictionaryRef policyDict = SecPolicyCopyProperties(certPolicy);
+            ADD(inputTrust, @"SecPolicyOid");
+            NSString* s = [NSString stringWithFormat:@"%@", CFDictionaryGetValue(policyDict, @"SecPolicyOid")];
+            ADD(inputTrust, s);
+            CFRelease(policyDict);
+        }
+        ADDNULL(inputTrust);
+    }
+}
+
 static void addCertificatesToKeystore(JNIEnv *env, jobject keyStore)
 {
     // Search the user keychain list for all X509 certificates.
@@ -435,46 +464,35 @@ static void addCertificatesToKeystore(JNIEnv *env, jobject keyStore)
                 goto errOut;
             }
 
-            // Only add certificates with trusted settings
-            CFArrayRef trustSettings;
-            if (SecTrustSettingsCopyTrustSettings(certRef, kSecTrustSettingsDomainUser, &trustSettings)
-                    == errSecItemNotFound) {
-                continue;
-            }
-
             // See KeychainStore::createTrustedCertEntry for content of inputTrust
-            jobject inputTrust = (*env)->NewObject(env, jc_arrayListClass, jm_arrayListCons);
-            if (inputTrust == NULL) {
-                CFRelease(trustSettings);
-                goto errOut;
-            }
+            // When inputTrust object is NULL, no trust settings were found for the cert
+            jobject inputTrust = NULL;
+            CFArrayRef trustSettings;
 
-            // Dump everything inside trustSettings into inputTrust
-            CFIndex count = CFArrayGetCount(trustSettings);
-            for (int i = 0; i < count; i++) {
-                CFDictionaryRef oneTrust = (CFDictionaryRef) CFArrayGetValueAtIndex(trustSettings, i);
-                CFIndex size = CFDictionaryGetCount(oneTrust);
-                const void * keys [size];
-                const void * values [size];
-                CFDictionaryGetKeysAndValues(oneTrust, keys, values);
-                for (int j = 0; j < size; j++) {
-                    NSString* s = [NSString stringWithFormat:@"%@", keys[j]];
-                    ADD(inputTrust, s);
-                    s = [NSString stringWithFormat:@"%@", values[j]];
-                    ADD(inputTrust, s);
+            // Dump everything inside user trustSettings into inputTrust
+            SecTrustSettingsCopyTrustSettings(certRef, kSecTrustSettingsDomainUser, &trustSettings);
+            if (trustSettings != NULL) {
+                inputTrust = (*env)->NewObject(env, jc_arrayListClass, jm_arrayListCons);
+                if (inputTrust == NULL) {
+                    CFRelease(trustSettings);
+                    goto errOut;
                 }
-                SecPolicyRef certPolicy;
-                certPolicy = (SecPolicyRef)CFDictionaryGetValue(oneTrust, kSecTrustSettingsPolicy);
-                if (certPolicy != NULL) {
-                    CFDictionaryRef policyDict = SecPolicyCopyProperties(certPolicy);
-                    ADD(inputTrust, @"SecPolicyOid");
-                    NSString* s = [NSString stringWithFormat:@"%@", CFDictionaryGetValue(policyDict, @"SecPolicyOid")];
-                    ADD(inputTrust, s);
-                    CFRelease(policyDict);
-                }
-                ADDNULL(inputTrust);
+                addTrustSettingsToInputTrust(env, jm_listAdd, trustSettings, inputTrust);
+                CFRelease(trustSettings);
             }
-            CFRelease(trustSettings);
+            // Dump everything inside admin trustSettings into inputTrust
+            SecTrustSettingsCopyTrustSettings(certRef, kSecTrustSettingsDomainAdmin, &trustSettings);
+            if (trustSettings != NULL) {
+                if (inputTrust == NULL) {
+                    inputTrust = (*env)->NewObject(env, jc_arrayListClass, jm_arrayListCons);
+                }
+                if (inputTrust == NULL) {
+                    CFRelease(trustSettings);
+                    goto errOut;
+                }
+                addTrustSettingsToInputTrust(env, jm_listAdd, trustSettings, inputTrust);
+                CFRelease(trustSettings);
+            }
 
             // Find the creation date.
             jlong creationDate = getModDateFromItem(env, theItem);

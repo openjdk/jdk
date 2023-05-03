@@ -69,7 +69,7 @@ public final class KeychainStore extends KeyStoreSpi {
         Certificate cert;
         long certRef;  // SecCertificateRef for this key
 
-        // Each KeyStore.TrustedCertificateEntry have 2 attributes:
+        // Each KeyStore.TrustedCertificateEntry has 2 attributes:
         // 1. "trustSettings" -> trustSettings.toString()
         // 2. "2.16.840.1.113894.746875.1.1" -> trustedKeyUsageValue
         // The 1st one is mainly for debugging use. The 2nd one is similar
@@ -80,6 +80,8 @@ public final class KeychainStore extends KeyStoreSpi {
         // structure with values dumped as strings. For each trust, an extra
         // entry "SecPolicyOid" is added whose value is the OID for this trust.
         // The extra entries are used to construct trustedKeyUsageValue.
+        // trustSettings can be null, if no trust settings for the certificate
+        // exist.
         List<Map<String, String>> trustSettings;
 
         // One or more OIDs defined in http://oidref.com/1.2.840.113635.100.1.
@@ -340,9 +342,12 @@ public final class KeychainStore extends KeyStoreSpi {
             Object entry = entries.get(alias.toLowerCase());
             if (entry instanceof TrustedCertEntry tEntry) {
                 return new KeyStore.TrustedCertificateEntry(
-                        tEntry.cert, Set.of(
-                                new LocalAttr(KnownOIDs.ORACLE_TrustedKeyUsage.value(), tEntry.trustedKeyUsageValue),
-                                new LocalAttr("trustSettings", tEntry.trustSettings.toString())));
+                        tEntry.cert, tEntry.trustSettings == null ?
+                                Set.of(
+                                        new LocalAttr(KnownOIDs.ORACLE_TrustedKeyUsage.value(), tEntry.trustedKeyUsageValue)) :
+                                Set.of(
+                                        new LocalAttr(KnownOIDs.ORACLE_TrustedKeyUsage.value(), tEntry.trustedKeyUsageValue),
+                                        new LocalAttr("trustSettings", tEntry.trustSettings.toString())));
             }
         }
         return super.engineGetEntry(alias, protParam);
@@ -791,6 +796,8 @@ public final class KeychainStore extends KeyStoreSpi {
      * null (end of trust2)
      * ...
      * null (end if trust_n)
+     *
+     * If inputTrust is null, no explicit trust settings for the certificate are found
      */
     private void createTrustedCertEntry(String alias, List<String> inputTrust,
             long keychainItemRef, long creationDate, byte[] derStream) {
@@ -804,33 +811,59 @@ public final class KeychainStore extends KeyStoreSpi {
             tce.cert = cert;
             tce.certRef = keychainItemRef;
 
-            tce.trustSettings = new ArrayList<>();
-            Map<String,String> tmpMap = new LinkedHashMap<>();
-            for (int i = 0; i < inputTrust.size(); i++) {
-                if (inputTrust.get(i) == null) {
-                    tce.trustSettings.add(tmpMap);
-                    if (i < inputTrust.size() - 1) {
-                        // Prepare an empty map for the next trust setting.
-                        // Do not just clear(), must be a new object.
-                        // Only create if not at end of list.
-                        tmpMap = new LinkedHashMap<>();
+            // Check whether a certificate with same alias already exists and is the same
+            // If yes, we can return here - the existing entry must have the same
+            // properties and trust settings
+            if (entries.contains(alias.toLowerCase())) {
+                int uniqueVal = 1;
+                String originalAlias = alias;
+                var co = entries.get(alias.toLowerCase());
+                while (co != null) {
+                    if (co instanceof TrustedCertEntry tco) {
+                        if (tco.cert.equals(tce.cert)) {
+                            return;
+                        }
                     }
-                } else {
-                    tmpMap.put(inputTrust.get(i), inputTrust.get(i+1));
-                    i++;
+                    alias = originalAlias + " " + uniqueVal++;
+                    co = entries.get(alias.toLowerCase());
                 }
             }
 
-            boolean isSelfSigned;
+            // inputTrust data is optional, so is tce.trustSettings
+            if (inputTrust != null) {
+                tce.trustSettings = new ArrayList<>();
+                Map<String, String> tmpMap = new LinkedHashMap<>();
+                for (int i = 0; i < inputTrust.size(); i++) {
+                    if (inputTrust.get(i) == null) {
+                        tce.trustSettings.add(tmpMap);
+                        if (i < inputTrust.size() - 1) {
+                            // Prepare an empty map for the next trust setting.
+                            // Do not just clear(), must be a new object.
+                            // Only create if not at end of list.
+                            tmpMap = new LinkedHashMap<>();
+                        }
+                    } else {
+                        tmpMap.put(inputTrust.get(i), inputTrust.get(i+1));
+                        i++;
+                    }
+                }
+            }
+
+            // Find out if cert is self signed and no root CA
+            boolean isSelfSigned = false;
             try {
                 cert.verify(cert.getPublicKey());
-                isSelfSigned = true;
+                var usage = cert.getKeyUsage();
+                if ((usage == null) || (!usage[5] && !usage[6])) {
+                    isSelfSigned = true;
+                }
             } catch (Exception e) {
-                isSelfSigned = false;
+                // ignore silently, cert is not self signed then
             }
-            if (tce.trustSettings.isEmpty()) {
+
+            if (tce.trustSettings == null) {
                 if (isSelfSigned) {
-                    // If a self-signed certificate has an empty trust settings,
+                    // If a self-signed certificate has no trust settings,
                     // trust it for all purposes
                     tce.trustedKeyUsageValue = KnownOIDs.anyExtendedKeyUsage.value();
                 } else {
@@ -840,16 +873,26 @@ public final class KeychainStore extends KeyStoreSpi {
                 }
             } else {
                 List<String> values = new ArrayList<>();
-                for (var oneTrust : tce.trustSettings) {
+                if (tce.trustSettings.isEmpty()) {
+                    // a trust dictionary with no entries means full/default trust
+                    values.add(KnownOIDs.anyExtendedKeyUsage.value());
+                } else for (var oneTrust : tce.trustSettings) {
                     var result = oneTrust.get("kSecTrustSettingsResult");
                     // https://developer.apple.com/documentation/security/sectrustsettingsresult?language=objc
-                    // 1 = kSecTrustSettingsResultTrustRoot, 2 = kSecTrustSettingsResultTrustAsRoot
+                    // 1 = kSecTrustSettingsResultTrustRoot, 2 = kSecTrustSettingsResultTrustAsRoot,
+                    // 3 = kSecTrustSettingsResultDeny
                     // If missing, a default value of kSecTrustSettingsResultTrustRoot is assumed
-                    // for self-signed certificates (see doc for SecTrustSettingsCopyTrustSettings).
+                    // (see doc for SecTrustSettingsCopyTrustSettings).
                     // Note that the same SecPolicyOid can appear in multiple trust settings
                     // for different kSecTrustSettingsAllowedError and/or kSecTrustSettingsPolicyString.
-                    if ((result == null && isSelfSigned)
-                            || "1".equals(result) || "2".equals(result)) {
+
+                    // If we find explicit distrust in some record, we ignore the certificate
+                    if ("3".equals(result)) {
+                        return;
+                    }
+
+                    // Trust, if explicitly trusted
+                    if (result == null || "1".equals(result) || "2".equals(result)) {
                         // When no kSecTrustSettingsPolicy, it means everything
                         String oid = oneTrust.getOrDefault("SecPolicyOid",
                                 KnownOIDs.anyExtendedKeyUsage.value());
@@ -867,19 +910,12 @@ public final class KeychainStore extends KeyStoreSpi {
                     tce.trustedKeyUsageValue = values.toString();
                 }
             }
+
             // Make a creation date.
             if (creationDate != 0)
                 tce.date = new Date(creationDate);
             else
                 tce.date = new Date();
-
-            int uniqueVal = 1;
-            String originalAlias = alias;
-
-            while (entries.containsKey(alias.toLowerCase())) {
-                alias = originalAlias + " " + uniqueVal;
-                uniqueVal++;
-            }
 
             entries.put(alias.toLowerCase(), tce);
         } catch (Exception e) {
