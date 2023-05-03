@@ -270,24 +270,24 @@ public interface CLibrary {//extends com.sun.jna.Library {
             addFlag(c_lflag.longValue(), lflag, LocalFlag.NOFLSH, NOFLSH);
             // Control chars
             EnumMap<ControlChar, Integer> cc = attr.getControlChars();
-            cc.put(ControlChar.VEOF, 	    (int) c_cc[VEOF]);
-            cc.put(ControlChar.VEOL, 	    (int) c_cc[VEOL]);
-            cc.put(ControlChar.VEOL2, 	    (int) c_cc[VEOL2]);
-            cc.put(ControlChar.VERASE, 	    (int) c_cc[VERASE]);
+            cc.put(ControlChar.VEOF,        (int) c_cc[VEOF]);
+            cc.put(ControlChar.VEOL,        (int) c_cc[VEOL]);
+            cc.put(ControlChar.VEOL2,       (int) c_cc[VEOL2]);
+            cc.put(ControlChar.VERASE,      (int) c_cc[VERASE]);
             cc.put(ControlChar.VWERASE,     (int) c_cc[VWERASE]);
-            cc.put(ControlChar.VKILL, 	    (int) c_cc[VKILL]);
-            cc.put(ControlChar.VREPRINT, 	(int) c_cc[VREPRINT]);
-            cc.put(ControlChar.VINTR, 	    (int) c_cc[VINTR]);
-            cc.put(ControlChar.VQUIT, 	    (int) c_cc[VQUIT]);
-            cc.put(ControlChar.VSUSP, 	    (int) c_cc[VSUSP]);
-            cc.put(ControlChar.VDSUSP, 	    (int) c_cc[VDSUSP]);
-            cc.put(ControlChar.VSTART, 	    (int) c_cc[VSTART]);
-            cc.put(ControlChar.VSTOP, 	    (int) c_cc[VSTOP]);
-            cc.put(ControlChar.VLNEXT, 	    (int) c_cc[VLNEXT]);
+            cc.put(ControlChar.VKILL,       (int) c_cc[VKILL]);
+            cc.put(ControlChar.VREPRINT,    (int) c_cc[VREPRINT]);
+            cc.put(ControlChar.VINTR,       (int) c_cc[VINTR]);
+            cc.put(ControlChar.VQUIT,       (int) c_cc[VQUIT]);
+            cc.put(ControlChar.VSUSP,       (int) c_cc[VSUSP]);
+            cc.put(ControlChar.VDSUSP,      (int) c_cc[VDSUSP]);
+            cc.put(ControlChar.VSTART,      (int) c_cc[VSTART]);
+            cc.put(ControlChar.VSTOP,       (int) c_cc[VSTOP]);
+            cc.put(ControlChar.VLNEXT,      (int) c_cc[VLNEXT]);
             cc.put(ControlChar.VDISCARD,    (int) c_cc[VDISCARD]);
-            cc.put(ControlChar.VMIN, 	    (int) c_cc[VMIN]);
-            cc.put(ControlChar.VTIME, 	    (int) c_cc[VTIME]);
-            cc.put(ControlChar.VSTATUS, 	(int) c_cc[VSTATUS]);
+            cc.put(ControlChar.VMIN,        (int) c_cc[VMIN]);
+            cc.put(ControlChar.VTIME,       (int) c_cc[VTIME]);
+            cc.put(ControlChar.VSTATUS,     (int) c_cc[VSTATUS]);
             // Return
             return attr;
         }
