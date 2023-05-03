@@ -60,7 +60,7 @@ chunklevel_t MetaspaceArena::next_chunk_level() const {
 void MetaspaceArena::salvage_chunk(Metachunk* c) {
   assert_lock_strong(lock());
   size_t remaining_words = c->free_below_committed_words();
-  if (remaining_words > FreeBlocks::MinWordSize) {
+  if (remaining_words > 0) {
 
     UL2(trace, "salvaging chunk " METACHUNK_FULL_FORMAT ".", METACHUNK_FULL_FORMAT_ARGS(c));
 
@@ -101,6 +101,10 @@ Metachunk* MetaspaceArena::allocate_new_chunk(size_t requested_word_size) {
 }
 
 void MetaspaceArena::add_allocation_to_fbl(MetaWord* p, size_t word_size) {
+  assert(p != nullptr, "p is null");
+  assert_is_aligned_metaspace_pointer(p);
+  assert(word_size > 0, "zero sized");
+
   if (_fbl == nullptr) {
     _fbl = new FreeBlocks(); // Create only on demand
   }
@@ -231,8 +235,9 @@ MetaWord* MetaspaceArena::allocate(size_t requested_word_size) {
     p = _fbl->remove_block(raw_word_size);
     if (p != nullptr) {
       DEBUG_ONLY(InternalStats::inc_num_allocs_from_deallocated_blocks();)
-      UL2(trace, "taken from fbl (now: %d, " SIZE_FORMAT ").",
-          _fbl->count(), _fbl->total_size());
+      UL2(trace, "returning " PTR_FORMAT " - taken from fbl (now: %d, " SIZE_FORMAT ").",
+          p2i(p), _fbl->count(), _fbl->total_size());
+      assert_is_aligned_metaspace_pointer(p);
       // Note: free blocks in freeblock dictionary still count as "used" as far as statistics go;
       // therefore we have no need to adjust any usage counters (see epilogue of allocate_inner())
       // and can just return here.
@@ -241,7 +246,7 @@ MetaWord* MetaspaceArena::allocate(size_t requested_word_size) {
   }
 
   // Primary allocation
-  p = allocate_inner(requested_word_size);
+  p = allocate_inner(raw_word_size);
 
 #ifdef ASSERT
   // Fence allocation
@@ -349,6 +354,9 @@ MetaWord* MetaspaceArena::allocate_inner(size_t requested_word_size) {
         _chunks.count(), METACHUNK_FULL_FORMAT_ARGS(current_chunk()));
     UL2(trace, "returning " PTR_FORMAT ".", p2i(p));
   }
+
+  assert_is_aligned_metaspace_pointer(p);
+
   return p;
 }
 
@@ -365,7 +373,13 @@ void MetaspaceArena::deallocate_locked(MetaWord* p, size_t word_size) {
   UL2(trace, "deallocating " PTR_FORMAT ", word size: " SIZE_FORMAT ".",
       p2i(p), word_size);
 
+  // Only blocks that had been allocated via MetaspaceArena::allocate(size) must be handed in
+  // to MetaspaceArena::deallocate(), and only with the same size that had been original used for allocation.
+  // Therefore the pointer must be aligned correctly, and size can be alignment-adjusted (the latter
+  // only matters on 32-bit):
+  assert_is_aligned_metaspace_pointer(p);
   size_t raw_word_size = get_raw_word_size_for_requested_word_size(word_size);
+
   add_allocation_to_fbl(p, raw_word_size);
 
   DEBUG_ONLY(verify_locked();)

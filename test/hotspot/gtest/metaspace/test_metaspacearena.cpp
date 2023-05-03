@@ -41,6 +41,7 @@
 #include "metaspaceGtestContexts.hpp"
 #include "metaspaceGtestRangeHelpers.hpp"
 
+using metaspace::AllocationAlignmentByteSize;
 using metaspace::ArenaGrowthPolicy;
 using metaspace::CommitLimiter;
 using metaspace::InternalStats;
@@ -49,11 +50,6 @@ using metaspace::MetaspaceArena;
 using metaspace::SizeAtomicCounter;
 using metaspace::Settings;
 using metaspace::ArenaStats;
-
-// See metaspaceArena.cpp : needed for predicting commit sizes.
-namespace metaspace {
-  extern size_t get_raw_word_size_for_requested_word_size(size_t net_word_size);
-}
 
 class MetaspaceArenaTestHelper {
 
@@ -179,7 +175,7 @@ public:
       ASSERT_EQ(capacity, capacity2);
     } else {
       // Allocation succeeded. Should be correctly aligned.
-      ASSERT_TRUE(is_aligned(p, sizeof(MetaWord)));
+      ASSERT_TRUE(is_aligned(p, AllocationAlignmentByteSize));
       // used: may go up or may not (since our request may have been satisfied from the freeblocklist
       //   whose content already counts as used).
       // committed: may go up, may not
