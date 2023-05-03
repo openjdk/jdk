@@ -1966,7 +1966,7 @@ bool SuperWord::implemented(Node_List* p) {
       return false;
     } else if (p0->is_Cmp()) {
       // Cmp -> Bool -> Cmove
-      retValue = true; // UseVectorCmov; TODO ok?
+      retValue = UseVectorCmov;
     } else if (requires_long_to_int_conversion(opc)) {
       // Java API for Long.bitCount/numberOfLeadingZeros/numberOfTrailingZeros
       // returns int type, but Vector API for them returns long type. To unify
