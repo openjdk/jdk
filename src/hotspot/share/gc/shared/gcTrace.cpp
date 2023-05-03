@@ -32,6 +32,7 @@
 #include "gc/shared/referenceProcessorStats.hpp"
 #include "memory/heapInspection.hpp"
 #include "memory/resourceArea.hpp"
+#include "memory/universe.hpp"
 #include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
