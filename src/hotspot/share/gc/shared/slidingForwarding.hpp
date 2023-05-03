@@ -139,8 +139,8 @@ private:
   void end_impl();
   inline void forward_to_impl(oop from, oop to);
   inline oop forwardee_impl(oop from) const;
-public:
 
+public:
   static void initialize(MemRegion heap, size_t region_size_words);
 
   static void begin();
