@@ -2230,25 +2230,27 @@ class JNILocalRootsClosure : public OopClosure {
 // Helper class to collect/report stack roots.
 class StackRootCollector {
 private:
-  JvmtiTagMap* tag_map;
-  JNILocalRootsClosure* blk;
+  JvmtiTagMap* _tag_map;
+  JNILocalRootsClosure* _blk;
   // java_thread is needed only to report JNI local on top native frame;
   // I.e. it's required only for platform/carrier threads or mounted virtual threads.
-  JavaThread* java_thread;
+  JavaThread* _java_thread;
 
-  oop threadObj;
-  jlong thread_tag;
-  jlong tid;
+  oop _threadObj;
+  jlong _thread_tag;
+  jlong _tid;
 
-  bool is_top_frame;
-  int depth;
-  frame* last_entry_frame;
+  bool _is_top_frame;
+  int _depth;
+  frame* _last_entry_frame;
+
+  bool report_stack_refs(StackValueCollection* values, jmethodID method, jlocation bci, jint slot_offset);
 
 public:
   StackRootCollector(JvmtiTagMap* tag_map, JNILocalRootsClosure* blk, JavaThread* java_thread)
-    : tag_map(tag_map), blk(blk), java_thread(java_thread),
-      threadObj(nullptr), thread_tag(0), tid(0),
-      is_top_frame(true), depth(0), last_entry_frame(nullptr)
+    : _tag_map(tag_map), _blk(blk), _java_thread(java_thread),
+      _threadObj(nullptr), _thread_tag(0), _tid(0),
+      _is_top_frame(true), _depth(0), _last_entry_frame(nullptr)
   {
   }
 
@@ -2260,20 +2262,38 @@ public:
 };
 
 bool StackRootCollector::set_thread(oop o) {
-  threadObj = o;
-  thread_tag = tag_for(tag_map, threadObj);
-  tid = java_lang_Thread::thread_id(threadObj);
+  _threadObj = o;
+  _thread_tag = tag_for(_tag_map, _threadObj);
+  _tid = java_lang_Thread::thread_id(_threadObj);
 
-  is_top_frame = true;
-  depth = 0;
-  last_entry_frame = nullptr;
+  _is_top_frame = true;
+  _depth = 0;
+  _last_entry_frame = nullptr;
 
   return true;
 }
 
 bool StackRootCollector::set_thread(jvmtiHeapReferenceKind kind, oop o) {
   return set_thread(o)
-         && CallbackInvoker::report_simple_root(kind, threadObj);
+         && CallbackInvoker::report_simple_root(kind, _threadObj);
+}
+
+bool StackRootCollector::report_stack_refs(StackValueCollection* values, jmethodID method, jlocation bci, jint slot_offset) {
+  for (int index = 0; index < values->size(); index++) {
+    if (values->at(index)->type() == T_OBJECT) {
+      oop o = values->obj_at(index)();
+      if (o == nullptr) {
+        continue;
+      }
+
+      // stack reference
+      if (!CallbackInvoker::report_stack_ref_root(_thread_tag, _tid, _depth, method,
+                                                  bci, slot_offset + index, o)) {
+        return false;
+      }
+    }
+  }
+  return true;
 }
 
 bool StackRootCollector::do_frame(vframe* vf) {
@@ -2287,79 +2307,55 @@ bool StackRootCollector::do_frame(vframe* vf) {
     if (!(jvf->method()->is_native())) {
       jlocation bci = (jlocation)jvf->bci();
       StackValueCollection* locals = jvf->locals();
-      for (int slot = 0; slot < locals->size(); slot++) {
-        if (locals->at(slot)->type() == T_OBJECT) {
-          oop o = locals->obj_at(slot)();
-          if (o == nullptr) {
-            continue;
-          }
-
-          // stack reference
-          if (!CallbackInvoker::report_stack_ref_root(thread_tag, tid, depth, method,
-                                                      bci, slot, o)) {
-            return false;
-          }
-        }
+      if (!report_stack_refs(locals, method, bci, 0)) {
+        return false;
       }
-
-      StackValueCollection* exprs = jvf->expressions();
-      for (int index = 0; index < exprs->size(); index++) {
-        if (exprs->at(index)->type() == T_OBJECT) {
-          oop o = exprs->obj_at(index)();
-          if (o == nullptr) {
-            continue;
-          }
-
-          // stack reference
-          if (!CallbackInvoker::report_stack_ref_root(thread_tag, tid, depth, method,
-                                                      bci, locals->size() + index, o)) {
-            return false;
-          }
-        }
+      if (!report_stack_refs(jvf->expressions(), method, bci, locals->size())) {
+        return false;
       }
 
       // Follow oops from compiled nmethod
       if (jvf->cb() != nullptr && jvf->cb()->is_nmethod()) {
-        blk->set_context(thread_tag, tid, depth, method);
-        jvf->cb()->as_nmethod()->oops_do(blk);
-        if (blk->stopped()) {
+        _blk->set_context(_thread_tag, _tid, _depth, method);
+        jvf->cb()->as_nmethod()->oops_do(_blk);
+        if (_blk->stopped()) {
           return false;
         }
       }
     } else {
       // native frame
-      blk->set_context(thread_tag, tid, depth, method);
-      if (is_top_frame) {
+      _blk->set_context(_thread_tag, _tid, _depth, method);
+      if (_is_top_frame) {
         // JNI locals for the top frame.
-        assert(java_thread != nullptr, "sanity");
-        java_thread->active_handles()->oops_do(blk);
-        if (blk->stopped()) {
+        assert(_java_thread != nullptr, "sanity");
+        _java_thread->active_handles()->oops_do(_blk);
+        if (_blk->stopped()) {
           return false;
         }
       } else {
-        if (last_entry_frame != nullptr) {
+        if (_last_entry_frame != nullptr) {
           // JNI locals for the entry frame
-          assert(last_entry_frame->is_entry_frame(), "checking");
-          last_entry_frame->entry_frame_call_wrapper()->handles()->oops_do(blk);
-          if (blk->stopped()) {
+          assert(_last_entry_frame->is_entry_frame(), "checking");
+          _last_entry_frame->entry_frame_call_wrapper()->handles()->oops_do(_blk);
+          if (_blk->stopped()) {
             return false;
           }
         }
       }
     }
-    last_entry_frame = nullptr;
-    depth++;
+    _last_entry_frame = nullptr;
+    _depth++;
   } else {
     // externalVFrame - for an entry frame then we report the JNI locals
     // when we find the corresponding javaVFrame
     frame* fr = vf->frame_pointer();
     assert(fr != nullptr, "sanity check");
     if (fr->is_entry_frame()) {
-      last_entry_frame = fr;
+      _last_entry_frame = fr;
     }
   }
 
-  is_top_frame = false;
+  _is_top_frame = false;
 
   return true;
 }
@@ -2792,8 +2788,6 @@ inline bool VM_HeapWalkOperation::collect_stack_roots(JavaThread* java_thread,
   StackRootCollector stack_collector(tag_map(), blk, java_thread);
 
   if (!java_thread->has_last_Java_frame()) {
-    // this may be only platform thread
-    assert(mounted_vt == nullptr, "must be");
 
     if (!stack_collector.set_thread(JVMTI_HEAP_REFERENCE_THREAD, threadObj)) {
         return false;
