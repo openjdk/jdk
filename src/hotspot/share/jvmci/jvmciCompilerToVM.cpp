@@ -1785,10 +1785,13 @@ C2V_VMENTRY_0(jint, methodDataExceptionSeen, (JNIEnv* env, jobject, jlong method
       // There is a free slot so return false since a BitData would have been allocated to record
       // true if it had been seen.
       return 0;
+    case DataLayout::arg_info_data_tag:
+      // The bci wasn't found and there are no free slots to record a trap for this location, so always
+      // return unknown.
+      return -1;
     }
   }
-  // The bci wasn't found and there are no free slots to record a trap for this location, so always
-  // return unknown.
+  ShouldNotReachHere();
   return -1;
 C2V_END
 

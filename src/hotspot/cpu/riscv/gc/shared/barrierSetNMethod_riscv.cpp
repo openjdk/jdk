@@ -78,11 +78,15 @@ class NativeNMethodBarrier {
 
 public:
   NativeNMethodBarrier(nmethod* nm): _nm(nm) {
-    address barrier_address;
 #if INCLUDE_JVMCI
     if (nm->is_compiled_by_jvmci()) {
-      _instruction_address = nm->code_begin() + nm->frame_complete_offset();
-      _guard_addr = reinterpret_cast<int*>(nm->consts_begin() + nm->jvmci_nmethod_data()->nmethod_entry_patch_offset());
+      address pc = nm->code_begin() + nm->jvmci_nmethod_data()->nmethod_entry_patch_offset();
+      RelocIterator iter(nm, pc, pc + 4);
+      guarantee(iter.next(), "missing relocs");
+      guarantee(iter.type() == relocInfo::section_word_type, "unexpected reloc");
+
+      _guard_addr = (int*) iter.section_word_reloc()->target();
+      _instruction_address = pc;
     } else
 #endif
       {
