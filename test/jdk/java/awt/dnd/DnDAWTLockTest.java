@@ -67,8 +67,8 @@ public class DnDAWTLockTest implements ClipboardOwner {
     static final Clipboard clipboard =
             Toolkit.getDefaultToolkit().getSystemClipboard();
 
-    Process process = null;
-    Point sourcePoint = null;
+    volatile Process process = null;
+    volatile Point sourcePoint = null;
 
     public static void main(String[] args) throws Exception {
         DnDAWTLockTest test = new DnDAWTLockTest();

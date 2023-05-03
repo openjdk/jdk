@@ -60,8 +60,8 @@ import java.io.Serializable;
 public class DragOverDropTargetPerformanceTest {
 
     Frame frame;
-    DragSourceButton dragSourceButton;
-    DropTargetPanel dropTargetPanel;
+    volatile DragSourceButton dragSourceButton;
+    volatile DropTargetPanel dropTargetPanel;
 
     static final int FRAME_ACTIVATION_TIMEOUT = 1000;
     static final int DROP_COMPLETION_TIMEOUT = 1000;
@@ -145,8 +145,8 @@ class DragSourceButton extends Button implements Serializable,
                                                  DragSourceListener {
     private final DataFlavor dataflavor =
         new DataFlavor(Button.class, "DragSourceButton");
-    private long dsTime = 0;
-    private long dtTime = 0;
+    private volatile long dsTime = 0;
+    private volatile long dtTime = 0;
 
     public DragSourceButton() {
         this("DragSourceButton");
