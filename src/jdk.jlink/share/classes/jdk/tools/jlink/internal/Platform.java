@@ -44,7 +44,7 @@ public record Platform(OperatingSystem os, Architecture arch) {
         String archName;
         int index = platformString.indexOf("-");
         if (index < 0) {
-            throw new IllegalArgumentException("platformString missing delimiter");
+            throw new IllegalArgumentException("platformString missing delimiter: " + platformString);
         }
         osName = platformString.substring(0, index);
         OperatingSystem os = OperatingSystem.valueOf(osName.toUpperCase(Locale.ROOT));

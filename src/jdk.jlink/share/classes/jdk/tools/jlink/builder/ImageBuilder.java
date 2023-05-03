@@ -80,6 +80,7 @@ public interface ImageBuilder {
      * Gets the platform of the image.
      *
      * @return {@code Platform} object representing the platform of the image
+     * @throws UnsupportedOperationException if this method is not implemented by the ImageBuilder
      */
     public default Platform getTargetPlatform() {
         throw new UnsupportedOperationException("Builder does not define getTargetPlatform");
