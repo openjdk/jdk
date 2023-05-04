@@ -77,7 +77,6 @@ class PollsetPoller extends Poller {
     @Override
     int poll(int timeout) throws IOException {
         int n;
-        Instant end = Instant.now().plusMillis(timeout);
         switch (timeout) {
             case 0:
                 n = pollInner(0);
@@ -86,6 +85,7 @@ class PollsetPoller extends Poller {
                 do { n = pollInner(100); } while (n == 0);
                 break;
             default:
+                Instant end = Instant.now().plusMillis(timeout);
                 do { n = pollInner(100); } while (n == 0 && Instant.now().isBefore(end));
                 break;
         }
@@ -93,17 +93,18 @@ class PollsetPoller extends Poller {
     }
 
     int pollInner(int subInterval) throws IOException {
-        long buffer = PollsetProvider.allocatePollArray(setsize);
+        // The poll loop may start polling before any fds have been registered. But, if we use set
+        // size 0 to allocatePollArray, it will return the null address and pollsetPoll will complain.
+        // We avoid that by just passing set size 1, and letting poll block for subInterval.
+        long buffer = PollsetProvider.allocatePollArray(setsize > 0 ? setsize : 1);
         int n = PollsetProvider.pollsetPoll(setid, buffer, setsize, subInterval);
-        int polledFds = 0;
         for(int i=0; i<n; i++) {
             long eventAddress = PollsetProvider.getEvent(buffer, i);
             int fd = PollsetProvider.getDescriptor(eventAddress);
             polled(fd);
-            polledFds++;
         }
         PollsetProvider.freePollArray(buffer);
-        return n < 0 ? n : polledFds;
+        return n;
     }
 }
 
