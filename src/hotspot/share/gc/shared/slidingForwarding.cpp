@@ -26,6 +26,7 @@
 #include "precompiled.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/slidingForwarding.hpp"
+#include "utilities/fastHash.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/powerOfTwo.hpp"
 
@@ -123,19 +124,7 @@ FallbackTable::~FallbackTable() {
 
 size_t FallbackTable::home_index(HeapWord* from) {
   uint64_t val = reinterpret_cast<uint64_t>(from);
-  // This is the mixer stage of the murmur3 hashing:
-  // https://github.com/aappleby/smhasher/blob/master/src/MurmurHash3.cpp
-  val ^= val >> 33;
-  val *= 0xff51afd7ed558ccdULL;
-  val ^= val >> 33;
-  val *= 0xc4ceb9fe1a85ec53ULL;
-  val ^= val >> 33;
-  // Shift to table-size.
-  val = val >> (64 - log2i_exact(TABLE_SIZE));
-  size_t idx = static_cast<size_t>(val);
-  assert(idx < TABLE_SIZE, "must fit in table: idx: " SIZE_FORMAT ", table-size: %u, table-size-bits: %d",
-         idx, TABLE_SIZE, log2i_exact(TABLE_SIZE));
-  return idx;
+  return FastHash::get_hash64(val, 0xAAAAAAAAAAAAAAAA);
 }
 
 void FallbackTable::forward_to(HeapWord* from, HeapWord* to) {
