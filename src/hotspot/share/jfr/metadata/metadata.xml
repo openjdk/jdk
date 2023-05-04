@@ -830,7 +830,7 @@
     <Field type="long" contentType="hertz" name="ingress" label="Ingress" description="Number of added requests per second"/>
     <Field type="long" contentType="hertz" name="egress" label="Egress" description="Number of removed requests per second"/>
     <Field type="long" contentType="count" name="size" label="Size" description="Current queue size"/>
-    <Field type="long" contentType="count" name="peek" label="Peek Size" description="Peek queue size"/>
+    <Field type="long" contentType="count" name="peak" label="Peak Size" description="Peak queue size"/>
     <Field type="long" contentType="count" name="added" label="Added" description="Added requests"/>
     <Field type="long" contentType="count" name="removed" label="Removed" description="Removed requests"/>
     <Field type="long" contentType="count" name="totalAdded" label="Total Added" description="Total requests"/>
