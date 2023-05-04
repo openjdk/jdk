@@ -928,28 +928,28 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   /* notice: the max range value here is max_jint, not max_intx  */         \
   /* because of overflow issue                                   */         \
-  product(intx, CIMinC1CompilerCount, 1,             \
+  product(intx, CIMinC1CompilerCount, 1,    EXPERIMENTAL,           \
           "Minimum number of C1 compiler threads to run")                    \
           range(0, max_jint)                                            \
                                                                             \
   /* notice: the max range value here is max_jint, not max_intx  */         \
   /* because of overflow issue                                   */         \
-  product(intx, CIMinC2CompilerCount, 1,             \
+  product(intx, CIMinC2CompilerCount, 1,   EXPERIMENTAL,            \
           "Minimum number of C2 compiler threads to run")                    \
           range(0, max_jint)                                            \
                                                                             \
   /* notice: the max range value here is max_jint, not max_intx  */         \
   /* because of overflow issue                                   */         \
-  product(intx, CIC1CompilerRatio, 1,             \
+  product(intx, CIC1CompilerRatio, 1,    EXPERIMENTAL,           \
           "C1 part of the C1:C2 ratio for determining thread counts")                    \
           range(0, max_jint)                                            \
                                                                             \
   /* because of overflow issue                                   */         \
-  product(intx, CIC2CompilerRatio, 2,             \
+  product(intx, CIC2CompilerRatio, 2,   EXPERIMENTAL,            \
           "C2 part of the C1:C2 ratio for determining thread counts")                    \
           range(0, max_jint)                                            \
                                                                         \
-  product(bool, CISupportOld12Ratio, true,                                       \
+  product(bool, CISupportOld12Ratio, true,   EXPERIMENTAL,                                    \
           "use the old integer method for 1:2 ratios for backwards compatibility")     \
                                                                                 \
   product(bool, UseDynamicNumberOfCompilerThreads, true,                    \

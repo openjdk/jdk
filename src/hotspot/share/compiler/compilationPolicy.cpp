@@ -503,14 +503,23 @@ void CompilationPolicy::initialize() {
           set_c2_count(MAX2(count / 3, (int)CIMinC2CompilerCount));
           set_c1_count(MAX2(count - c2_count(), (int)CIMinC1CompilerCount));
         }
-        else
+        else if (CIC1CompilerRatio <= CIC2CompilerRatio)
         {
           float numerator = (float)CIC1CompilerRatio;
           float denominator = (float)(CIC1CompilerRatio + CIC2CompilerRatio);
           float c1_part = ((float)count) * (numerator / denominator);
           int c1_count = (int)(c1_part + 0.5f);
           set_c1_count(MAX2(c1_count, (int)CIMinC1CompilerCount));
-          set_c2_count(MAX2(count - c1_count, (int)CIMinC1CompilerCount));
+          set_c2_count(MAX2(count - c1_count, (int)CIMinC2CompilerCount));
+        }
+        else// if (CIC1CompilerRatio < CIC2CompilerRatio)
+        {
+          float numerator = (float)CIC2CompilerRatio;
+          float denominator = (float)(CIC2CompilerRatio + CIC1CompilerRatio);
+          float c2_part = ((float)count) * (numerator / denominator);
+          int c2_count = (int)(c2_part + 0.5f);
+          set_c2_count(MAX2(c2_count, (int)CIMinC2CompilerCount));
+          set_c1_count(MAX2(count - c2_count, (int)CIMinC1CompilerCount));
         }
       }
     }
