@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 JVM_FLAGS="-XX:+PrintEscapeAnalysis -XX:+PrintEliminateAllocations -XX:+PrintOptoAssembly -Xlog:gc -XX:+DoPartialEscapeAnalysis"
-PROBLEM_LIST = ["run1_generic.sh", "run_badgraph_volatile.sh"]
+PROBLEM_LIST = ["run1_generic.sh"]
 
 if $0 == __FILE__
   puts  "using #{%x|which java|}"
