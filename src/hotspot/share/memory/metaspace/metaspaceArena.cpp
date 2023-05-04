@@ -60,7 +60,7 @@ chunklevel_t MetaspaceArena::next_chunk_level() const {
 void MetaspaceArena::salvage_chunk(Metachunk* c) {
   assert_lock_strong(lock());
   size_t remaining_words = c->free_below_committed_words();
-  if (remaining_words > 0) {
+  if (remaining_words >= FreeBlocks::MinWordSize) {
 
     UL2(trace, "salvaging chunk " METACHUNK_FULL_FORMAT ".", METACHUNK_FULL_FORMAT_ARGS(c));
 

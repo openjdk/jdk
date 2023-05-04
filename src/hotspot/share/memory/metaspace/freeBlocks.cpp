@@ -50,7 +50,7 @@ MetaWord* FreeBlocks::remove_block(size_t requested_word_size) {
     // Blocks which are larger than a certain threshold are split and
     //  the remainder is handed back to the manager.
     const size_t waste = real_size - requested_word_size;
-    if (waste > 0) {
+    if (waste >= MinWordSize) {
       add_block(p + requested_word_size, waste);
     }
   }

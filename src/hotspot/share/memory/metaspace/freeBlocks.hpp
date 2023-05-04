@@ -79,6 +79,9 @@ class FreeBlocks : public CHeapObj<mtMetaspace> {
 
 public:
 
+  // Smallest blocks we can keep in this structure.
+  const static size_t MinWordSize = BinList32::MinWordSize;
+
   // Add a block to the deallocation management.
   void add_block(MetaWord* p, size_t word_size);
 

@@ -91,6 +91,9 @@ class BinListImpl {
 
 public:
 
+  // Minimal word size a block must have to be manageable by this structure.
+  const static size_t MinWordSize = 1;
+
   // Maximal (incl) word size a block can have to be manageable by this structure.
   const static size_t MaxWordSize = num_lists;
 
@@ -101,14 +104,14 @@ private:
   MemRangeCounter _counter;
 
   static int index_for_word_size(size_t word_size) {
-    int index = (int)(word_size - 1);
+    int index = (int)(word_size - MinWordSize);
     assert(index >= 0 && index < num_lists, "Invalid index %d", index);
     return index;
   }
 
   static size_t word_size_for_index(int index) {
     assert(index >= 0 && index < num_lists, "Invalid index %d", index);
-    return index + 1;
+    return index + MinWordSize;
   }
 
   // Search the range [index, _num_lists) for the smallest non-empty list. Returns -1 on fail.
@@ -130,7 +133,7 @@ public:
   }
 
   void add_block(MetaWord* p, size_t word_size) {
-    assert(word_size >= 1 &&
+    assert(word_size >= MinWordSize &&
            word_size <= MaxWordSize, "bad block size");
     DEBUG_ONLY(p[word_size - 1] = 0;) // canary
     const int index = index_for_word_size(word_size);
@@ -143,7 +146,7 @@ public:
   // Given a word_size, searches and returns a block of at least that size.
   // Block may be larger. Real block size is returned in *p_real_word_size.
   MetaWord* remove_block(size_t word_size, size_t* p_real_word_size) {
-    assert(word_size >= 1 &&
+    assert(word_size >= MinWordSize &&
            word_size <= MaxWordSize, "bad block size " SIZE_FORMAT ".", word_size);
     int index = index_for_word_size(word_size);
     index = index_for_next_non_empty_list(index);
