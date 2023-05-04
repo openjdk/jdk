@@ -27,7 +27,7 @@
 
 #include "classfile/javaClasses.hpp"
 #include "jvmci/jvmciJavaClasses.hpp"
-#include "oops/klass.inline.hpp"
+#include "oops/klass.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.hpp"
 

@@ -26,11 +26,9 @@
 #define SHARE_GC_SHARED_BARRIERSETNMETHOD_HPP
 
 #include "memory/allocation.hpp"
+#include "utilities/formatBuffer.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/sizes.hpp"
-#if INCLUDE_JVMCI
-#include "utilities/formatBuffer.hpp"
-#endif
 
 class nmethod;
 

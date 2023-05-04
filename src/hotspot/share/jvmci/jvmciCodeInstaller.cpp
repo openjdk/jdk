@@ -773,7 +773,7 @@ JVMCI::CodeInstallResult CodeInstaller::install(JVMCICompiler* compiler,
 
       if (nm != nullptr) {
         if (_nmethod_entry_patch_offset != -1) {
-          FormatBuffer<> msg("%s", "");
+          err_msg msg("");
           BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
 
           if (!bs_nm->verify_barrier(nm, msg)) {

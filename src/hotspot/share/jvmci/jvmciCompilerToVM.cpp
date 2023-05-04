@@ -33,19 +33,19 @@
 #include "compiler/compilerEvent.hpp"
 #include "compiler/disassembler.hpp"
 #include "compiler/oopMap.hpp"
-#include "interpreter/linkResolver.hpp"
 #include "interpreter/bytecodeStream.hpp"
+#include "interpreter/linkResolver.hpp"
 #include "jfr/jfrEvents.hpp"
-#include "jvmci/jvmciCompilerToVM.hpp"
 #include "jvmci/jvmciCodeInstaller.hpp"
+#include "jvmci/jvmciCompilerToVM.hpp"
 #include "jvmci/jvmciRuntime.hpp"
 #include "logging/log.hpp"
 #include "logging/logTag.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/universe.hpp"
 #include "oops/constantPool.inline.hpp"
-#include "oops/instanceMirrorKlass.hpp"
 #include "oops/instanceKlass.inline.hpp"
+#include "oops/instanceMirrorKlass.hpp"
 #include "oops/method.inline.hpp"
 #include "oops/objArrayKlass.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
@@ -62,8 +62,8 @@
 #include "runtime/reflectionUtils.hpp"
 #include "runtime/stackFrameStream.inline.hpp"
 #include "runtime/timerTrace.hpp"
-#include "runtime/vframe_hp.hpp"
 #include "runtime/vframe.inline.hpp"
+#include "runtime/vframe_hp.hpp"
 #if INCLUDE_JFR
 #include "jfr/jfr.hpp"
 #endif
@@ -102,6 +102,54 @@ class JVMCITraceMark : public StackObj {
   }
 };
 
+class JavaArgumentUnboxer : public SignatureIterator {
+ protected:
+  JavaCallArguments*  _jca;
+  arrayOop _args;
+  int _index;
+
+  Handle next_arg(BasicType expectedType);
+
+ public:
+  JavaArgumentUnboxer(Symbol* signature,
+                      JavaCallArguments* jca,
+                      arrayOop args,
+                      bool is_static)
+    : SignatureIterator(signature)
+  {
+    this->_return_type = T_ILLEGAL;
+    _jca = jca;
+    _index = 0;
+    _args = args;
+    if (!is_static) {
+      _jca->push_oop(next_arg(T_OBJECT));
+    }
+    do_parameters_on(this);
+    assert(_index == args->length(), "arg count mismatch with signature");
+  }
+
+ private:
+  friend class SignatureIterator;  // so do_parameters_on can call do_type
+  void do_type(BasicType type) {
+    if (is_reference_type(type)) {
+      _jca->push_oop(next_arg(T_OBJECT));
+      return;
+    }
+    Handle arg = next_arg(type);
+    int box_offset = java_lang_boxing_object::value_offset(type);
+    switch (type) {
+    case T_BOOLEAN:     _jca->push_int(arg->bool_field(box_offset));    break;
+    case T_CHAR:        _jca->push_int(arg->char_field(box_offset));    break;
+    case T_SHORT:       _jca->push_int(arg->short_field(box_offset));   break;
+    case T_BYTE:        _jca->push_int(arg->byte_field(box_offset));    break;
+    case T_INT:         _jca->push_int(arg->int_field(box_offset));     break;
+    case T_LONG:        _jca->push_long(arg->long_field(box_offset));   break;
+    case T_FLOAT:       _jca->push_float(arg->float_field(box_offset));    break;
+    case T_DOUBLE:      _jca->push_double(arg->double_field(box_offset));  break;
+    default:            ShouldNotReachHere();
+    }
+  }
+};
 
 Handle JavaArgumentUnboxer::next_arg(BasicType expectedType) {
   assert(_index < _args->length(), "out of bounds");

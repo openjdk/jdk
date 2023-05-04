@@ -116,9 +116,9 @@ public:
     Atomic::release_store(guard_addr(), value);
   }
 
-  bool check_barrier(FormatBuffer<>& msg) const;
+  bool check_barrier(err_msg& msg) const;
   void verify() const {
-    FormatBuffer<> msg("%s", "");
+    err_msg msg("%s", "");
     assert(check_barrier(msg), "%s", msg.buffer());
   }
 };
@@ -142,7 +142,7 @@ static const struct CheckInsn barrierInsn[] = {
 // The encodings must match the instructions emitted by
 // BarrierSetAssembler::nmethod_entry_barrier. The matching ignores the specific
 // register numbers and immediate values in the encoding.
-bool NativeNMethodBarrier::check_barrier(FormatBuffer<>& msg) const {
+bool NativeNMethodBarrier::check_barrier(err_msg& msg) const {
   intptr_t addr = (intptr_t) instruction_address();
   for(unsigned int i = 0; i < sizeof(barrierInsn)/sizeof(struct CheckInsn); i++ ) {
     uint32_t inst = *((uint32_t*) addr);
@@ -225,7 +225,7 @@ int BarrierSetNMethod::guard_value(nmethod* nm) {
 }
 
 #if INCLUDE_JVMCI
-bool BarrierSetNMethod::verify_barrier(nmethod* nm, FormatBuffer<>& msg) {
+bool BarrierSetNMethod::verify_barrier(nmethod* nm, err_msg& msg) {
   NativeNMethodBarrier barrier(nm);
   return barrier.check_barrier(msg);
 }

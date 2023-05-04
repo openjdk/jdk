@@ -32,11 +32,11 @@
 #include "memory/resourceArea.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/javaThread.hpp"
-#include "runtime/sharedRuntime.hpp"
 #include "runtime/registerMap.hpp"
+#include "runtime/sharedRuntime.hpp"
 #include "utilities/align.hpp"
-#include "utilities/formatBuffer.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/formatBuffer.hpp"
 #if INCLUDE_JVMCI
 #include "jvmci/jvmciRuntime.hpp"
 #endif
@@ -122,9 +122,9 @@ public:
     Atomic::release_store(guard_addr(), value);
   }
 
-  bool check_barrier(FormatBuffer<>& msg) const;
+  bool check_barrier(err_msg& msg) const;
   void verify() const {
-    FormatBuffer<> msg("%s", "");
+    err_msg msg("%s", "");
     assert(check_barrier(msg), "%s", msg.buffer());
   }
 };
@@ -138,7 +138,7 @@ struct CheckInsn {
 
 // The first instruction of the nmethod entry barrier is an ldr (literal)
 // instruction. Verify that it's really there, so the offsets are not skewed.
-bool NativeNMethodBarrier::check_barrier(FormatBuffer<>& msg) const {
+bool NativeNMethodBarrier::check_barrier(err_msg& msg) const {
   uint32_t* addr = (uint32_t*) instruction_address();
   uint32_t inst = *addr;
   if ((inst & 0xff000000) != 0x18000000) {
@@ -218,7 +218,7 @@ int BarrierSetNMethod::guard_value(nmethod* nm) {
 }
 
 #if INCLUDE_JVMCI
-bool BarrierSetNMethod::verify_barrier(nmethod* nm, FormatBuffer<>& msg) {
+bool BarrierSetNMethod::verify_barrier(nmethod* nm, err_msg& msg) {
   NativeNMethodBarrier barrier(nm);
   return barrier.check_barrier(msg);
 }

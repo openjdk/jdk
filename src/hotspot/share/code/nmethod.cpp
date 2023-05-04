@@ -858,7 +858,7 @@ nmethod::nmethod(
 #if INCLUDE_JVMCI
     _speculations_offset     = _nul_chk_table_offset + align_up(nul_chk_table->size_in_bytes(), oopSize);
     _jvmci_data_offset       = _speculations_offset  + align_up(speculations_len, oopSize);
-    int jvmci_data_size = compiler->is_jvmci() ? jvmci_data->size() : 0;
+    int jvmci_data_size      = compiler->is_jvmci() ? jvmci_data->size() : 0;
     _nmethod_end_offset      = _jvmci_data_offset    + align_up(jvmci_data_size, oopSize);
 #else
     _nmethod_end_offset      = _nul_chk_table_offset + align_up(nul_chk_table->size_in_bytes(), oopSize);
