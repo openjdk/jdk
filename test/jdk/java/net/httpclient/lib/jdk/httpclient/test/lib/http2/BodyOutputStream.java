@@ -135,6 +135,7 @@ public class BodyOutputStream extends OutputStream {
         try {
             sendEndStream();
             if (resetNeeded()) {
+                // Send a reset if there is still unconsumed data in the input stream
                 sendReset(EMPTY_BARRAY, 0, 0, ResetFrame.NO_ERROR);
             }
         } catch (IOException ex) {
