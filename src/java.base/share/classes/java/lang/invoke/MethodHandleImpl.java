@@ -71,7 +71,7 @@ abstract class MethodHandleImpl {
 
     /// Factory methods to create method handles:
 
-    static MethodHandle makeArrayElementAccessor(Class<?> arrayClass, ArrayAccess access) {
+    static MethodHandle makeArrayAccessor(Class<?> arrayClass, ArrayAccess access) {
         if (arrayClass == Object[].class) {
             return ArrayAccess.objectAccessor(access);
         }
@@ -84,7 +84,9 @@ abstract class MethodHandleImpl {
         mh = ArrayAccessor.getAccessor(arrayClass, access);
         MethodType correctType = ArrayAccessor.correctType(arrayClass, access);
         if (mh.type() != correctType) {
-            assert(mh.type().parameterType(0) == Object[].class);
+            // two assertions only applicable to non-construct access
+            assert(access == ArrayAccess.CONSTRUCT || arrayClass.isPrimitive());
+            assert(access == ArrayAccess.CONSTRUCT || mh.type().parameterType(0) == Object[].class);
             /* if access == SET */ assert(access != ArrayAccess.SET || mh.type().parameterType(2) == Object.class);
             /* if access == GET */ assert(access != ArrayAccess.GET ||
                     (mh.type().returnType() == Object.class &&
@@ -92,7 +94,10 @@ abstract class MethodHandleImpl {
             // safe to view non-strictly, because element type follows from array type
             mh = mh.viewAsType(correctType, false);
         }
-        mh = makeIntrinsic(mh, ArrayAccess.intrinsic(access));
+        var intrinsic = ArrayAccess.intrinsic(access);
+        if (intrinsic != Intrinsic.NONE) {
+            mh = makeIntrinsic(mh, intrinsic);
+        }
         // Atomically update accessor cache.
         synchronized(cache) {
             if (cache[cacheIndex] == null) {
@@ -106,7 +111,7 @@ abstract class MethodHandleImpl {
     }
 
     enum ArrayAccess {
-        GET, SET, LENGTH;
+        GET, SET, LENGTH, CONSTRUCT;
 
         // As ArrayAccess and ArrayAccessor have a circular dependency, the ArrayAccess properties cannot be stored in
         // final fields.
@@ -116,6 +121,7 @@ abstract class MethodHandleImpl {
                 case GET    -> "getElement";
                 case SET    -> "setElement";
                 case LENGTH -> "length";
+                case CONSTRUCT -> throw wrongArrayAccessPath(a);
                 default -> throw unmatchedArrayAccess(a);
             };
         }
@@ -125,6 +131,7 @@ abstract class MethodHandleImpl {
                 case GET    -> ArrayAccessor.OBJECT_ARRAY_GETTER;
                 case SET    -> ArrayAccessor.OBJECT_ARRAY_SETTER;
                 case LENGTH -> ArrayAccessor.OBJECT_ARRAY_LENGTH;
+                case CONSTRUCT -> ArrayAccessor.OBJECT_ARRAY_CONSTRUCT;
                 default -> throw unmatchedArrayAccess(a);
             };
         }
@@ -134,6 +141,7 @@ abstract class MethodHandleImpl {
                 case GET    -> ArrayAccessor.GETTER_INDEX;
                 case SET    -> ArrayAccessor.SETTER_INDEX;
                 case LENGTH -> ArrayAccessor.LENGTH_INDEX;
+                case CONSTRUCT -> ArrayAccessor.CONSTRUCTOR_INDEX;
                 default -> throw unmatchedArrayAccess(a);
             };
         }
@@ -143,9 +151,16 @@ abstract class MethodHandleImpl {
                 case GET    -> Intrinsic.ARRAY_LOAD;
                 case SET    -> Intrinsic.ARRAY_STORE;
                 case LENGTH -> Intrinsic.ARRAY_LENGTH;
+                // Array.newInstance with constant class argument
+                // is already constant-foldable
+                case CONSTRUCT -> Intrinsic.NONE;
                 default -> throw unmatchedArrayAccess(a);
             };
         }
+    }
+
+    static InternalError wrongArrayAccessPath(ArrayAccess a) {
+        throw newInternalError("should not reach here (not on code path of ArrayAccess: " + a + ")");
     }
 
     static InternalError unmatchedArrayAccess(ArrayAccess a) {
@@ -154,7 +169,8 @@ abstract class MethodHandleImpl {
 
     static final class ArrayAccessor {
         /// Support for array element and length access
-        static final int GETTER_INDEX = 0, SETTER_INDEX = 1, LENGTH_INDEX = 2, INDEX_LIMIT = 3;
+        static final int GETTER_INDEX = 0, SETTER_INDEX = 1, LENGTH_INDEX = 2,
+                CONSTRUCTOR_INDEX = 3, INDEX_LIMIT = 4;
         static final ClassValue<MethodHandle[]> TYPED_ACCESSORS
                 = new ClassValue<MethodHandle[]>() {
                     @Override
@@ -162,12 +178,15 @@ abstract class MethodHandleImpl {
                         return new MethodHandle[INDEX_LIMIT];
                     }
                 };
-        static final MethodHandle OBJECT_ARRAY_GETTER, OBJECT_ARRAY_SETTER, OBJECT_ARRAY_LENGTH;
+        static final MethodHandle OBJECT_ARRAY_GETTER, OBJECT_ARRAY_SETTER,
+                OBJECT_ARRAY_LENGTH, OBJECT_ARRAY_CONSTRUCT;
         static {
             MethodHandle[] cache = TYPED_ACCESSORS.get(Object[].class);
             cache[GETTER_INDEX] = OBJECT_ARRAY_GETTER = makeIntrinsic(getAccessor(Object[].class, ArrayAccess.GET),    Intrinsic.ARRAY_LOAD);
             cache[SETTER_INDEX] = OBJECT_ARRAY_SETTER = makeIntrinsic(getAccessor(Object[].class, ArrayAccess.SET),    Intrinsic.ARRAY_STORE);
             cache[LENGTH_INDEX] = OBJECT_ARRAY_LENGTH = makeIntrinsic(getAccessor(Object[].class, ArrayAccess.LENGTH), Intrinsic.ARRAY_LENGTH);
+            cache[CONSTRUCTOR_INDEX] = OBJECT_ARRAY_CONSTRUCT = getAccessor(Object[].class, ArrayAccess.CONSTRUCT)
+                    .viewAsType(MethodType.methodType(Object[].class, int.class), false);
 
             assert(InvokerBytecodeGenerator.isStaticallyInvocable(ArrayAccessor.OBJECT_ARRAY_GETTER.internalMemberName()));
             assert(InvokerBytecodeGenerator.isStaticallyInvocable(ArrayAccessor.OBJECT_ARRAY_SETTER.internalMemberName()));
@@ -220,6 +239,7 @@ abstract class MethodHandleImpl {
                 case GET    -> MethodType.methodType(elemClass, arrayArgClass, int.class);
                 case SET    -> MethodType.methodType(void.class, arrayArgClass, int.class, elemClass);
                 case LENGTH -> MethodType.methodType(int.class, arrayArgClass);
+                case CONSTRUCT -> throw wrongArrayAccessPath(access);
                 default -> throw unmatchedArrayAccess(access);
             };
         }
@@ -229,10 +249,14 @@ abstract class MethodHandleImpl {
                 case GET    -> MethodType.methodType(elemClass, arrayClass, int.class);
                 case SET    -> MethodType.methodType(void.class, arrayClass, int.class, elemClass);
                 case LENGTH -> MethodType.methodType(int.class, arrayClass);
+                case CONSTRUCT -> MethodType.methodType(arrayClass, int.class);
                 default -> throw unmatchedArrayAccess(access);
             };
         }
         static MethodHandle getAccessor(Class<?> arrayClass, ArrayAccess access) {
+            if (access == ArrayAccess.CONSTRUCT)
+                return getConstantHandle(MH_Array_newInstance).bindTo(arrayClass);
+
             String     name = name(arrayClass, access);
             MethodType type = type(arrayClass, access);
             try {
@@ -2091,7 +2115,7 @@ abstract class MethodHandleImpl {
         // use erased accessor for reference types
         MethodHandle storeFunc = isReferenceType
                 ? ArrayAccessor.OBJECT_ARRAY_SETTER
-                : makeArrayElementAccessor(arrayType, ArrayAccess.SET);
+                : makeArrayAccessor(arrayType, ArrayAccess.SET);
 
         final int THIS_MH      = 0;  // the BMH_L
         final int ARG_BASE     = 1;  // start of incoming arguments

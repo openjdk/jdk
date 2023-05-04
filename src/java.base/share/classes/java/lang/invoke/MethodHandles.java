@@ -4326,12 +4326,7 @@ return mh1;
      * @since 9
      */
     public static MethodHandle arrayConstructor(Class<?> arrayClass) throws IllegalArgumentException {
-        if (!arrayClass.isArray()) {
-            throw newIllegalArgumentException("not an array class: " + arrayClass.getName());
-        }
-        MethodHandle ani = MethodHandleImpl.getConstantHandle(MethodHandleImpl.MH_Array_newInstance).
-                bindTo(arrayClass.getComponentType());
-        return ani.asType(ani.type().changeReturnType(arrayClass));
+        return MethodHandleImpl.makeArrayAccessor(arrayClass, MethodHandleImpl.ArrayAccess.CONSTRUCT);
     }
 
     /**
@@ -4351,7 +4346,7 @@ return mh1;
      * @since 9
      */
     public static MethodHandle arrayLength(Class<?> arrayClass) throws IllegalArgumentException {
-        return MethodHandleImpl.makeArrayElementAccessor(arrayClass, MethodHandleImpl.ArrayAccess.LENGTH);
+        return MethodHandleImpl.makeArrayAccessor(arrayClass, MethodHandleImpl.ArrayAccess.LENGTH);
     }
 
     /**
@@ -4375,7 +4370,7 @@ return mh1;
      * @jvms 6.5 {@code aaload} Instruction
      */
     public static MethodHandle arrayElementGetter(Class<?> arrayClass) throws IllegalArgumentException {
-        return MethodHandleImpl.makeArrayElementAccessor(arrayClass, MethodHandleImpl.ArrayAccess.GET);
+        return MethodHandleImpl.makeArrayAccessor(arrayClass, MethodHandleImpl.ArrayAccess.GET);
     }
 
     /**
@@ -4399,7 +4394,7 @@ return mh1;
      * @jvms 6.5 {@code aastore} Instruction
      */
     public static MethodHandle arrayElementSetter(Class<?> arrayClass) throws IllegalArgumentException {
-        return MethodHandleImpl.makeArrayElementAccessor(arrayClass, MethodHandleImpl.ArrayAccess.SET);
+        return MethodHandleImpl.makeArrayAccessor(arrayClass, MethodHandleImpl.ArrayAccess.SET);
     }
 
     /**
