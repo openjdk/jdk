@@ -43,6 +43,10 @@ import sun.awt.AWTAccessor;
  * (e.g., you add it to a {@code MenuBar}), then you <b>cannot</b>
  * call {@code show} on that {@code PopupMenu}.
  *
+ * @implNote On Linux systems using Wayland, the popup menu may not be dismissed
+ * by clicking on the decorations of its own parent window
+ * and on some system panels.
+ *
  * @author      Amy Fowler
  */
 public class PopupMenu extends Menu {

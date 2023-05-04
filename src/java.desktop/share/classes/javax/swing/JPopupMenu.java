@@ -101,6 +101,10 @@ import sun.awt.UngrabEvent;
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *
+ * @implNote On Linux systems using Wayland, the popup menu may not be dismissed
+ * by clicking on the decorations of its own parent window
+ * and on some system panels.
+ *
  * @author Georges Saab
  * @author David Karlton
  * @author Arnaud Weber
