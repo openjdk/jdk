@@ -216,10 +216,10 @@ class NativeInstruction {
   oop  oop_at (int offset) const       { return cast_to_oop(Bytes::get_native_u8(addr_at(offset))); }
 
 
-  void set_int_at(int offset, jint  i)        { Bytes::put_native_u4(addr_at(offset), i); }
-  void set_uint_at(int offset, jint  i)       { Bytes::put_native_u4(addr_at(offset), i); }
-  void set_ptr_at (int offset, address  ptr)  { Bytes::put_native_u8(addr_at(offset), (u8)ptr); }
-  void set_oop_at (int offset, oop  o)        { Bytes::put_native_u8(addr_at(offset), cast_from_oop<u8>(o)); }
+  void set_int_at(int offset, jint i)        { Bytes::put_native_u4(addr_at(offset), i); }
+  void set_uint_at(int offset, jint i)       { Bytes::put_native_u4(addr_at(offset), i); }
+  void set_ptr_at (int offset, address ptr)  { Bytes::put_native_u8(addr_at(offset), (u8)ptr); }
+  void set_oop_at (int offset, oop o)        { Bytes::put_native_u8(addr_at(offset), cast_from_oop<u8>(o)); }
 
  public:
 
