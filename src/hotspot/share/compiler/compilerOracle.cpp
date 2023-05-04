@@ -308,6 +308,8 @@ static void register_command(TypedMethodOptionMatcher* matcher,
 
   if (option == CompileCommand::Blackhole && !UnlockExperimentalVMOptions) {
     warning("Blackhole compile option is experimental and must be enabled via -XX:+UnlockExperimentalVMOptions");
+    // Delete matcher as we don't keep it
+    delete matcher;
     return;
   }
 
