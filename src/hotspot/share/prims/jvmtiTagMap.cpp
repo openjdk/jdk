@@ -61,7 +61,6 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/reflectionUtils.hpp"
 #include "runtime/safepoint.hpp"
-#include "runtime/stackChunkFrameStream.inline.hpp"
 #include "runtime/timerTrace.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vframe.hpp"
@@ -2227,8 +2226,8 @@ class JNILocalRootsClosure : public OopClosure {
   virtual void do_oop(narrowOop* obj_p) { ShouldNotReachHere(); }
 };
 
-// Helper class to collect/report stack roots.
-class StackRootCollector {
+// Helper class to collect/report stack references.
+class StackRefCollector {
 private:
   JvmtiTagMap* _tag_map;
   JNILocalRootsClosure* _blk;
@@ -2247,7 +2246,7 @@ private:
   bool report_stack_refs(StackValueCollection* values, jmethodID method, jlocation bci, jint slot_offset);
 
 public:
-  StackRootCollector(JvmtiTagMap* tag_map, JNILocalRootsClosure* blk, JavaThread* java_thread)
+  StackRefCollector(JvmtiTagMap* tag_map, JNILocalRootsClosure* blk, JavaThread* java_thread)
     : _tag_map(tag_map), _blk(blk), _java_thread(java_thread),
       _threadObj(nullptr), _thread_tag(0), _tid(0),
       _is_top_frame(true), _depth(0), _last_entry_frame(nullptr)
@@ -2261,7 +2260,7 @@ public:
   bool do_frame(vframe* vf);
 };
 
-bool StackRootCollector::set_thread(oop o) {
+bool StackRefCollector::set_thread(oop o) {
   _threadObj = o;
   _thread_tag = tag_for(_tag_map, _threadObj);
   _tid = java_lang_Thread::thread_id(_threadObj);
@@ -2273,22 +2272,22 @@ bool StackRootCollector::set_thread(oop o) {
   return true;
 }
 
-bool StackRootCollector::set_thread(jvmtiHeapReferenceKind kind, oop o) {
+bool StackRefCollector::set_thread(jvmtiHeapReferenceKind kind, oop o) {
   return set_thread(o)
          && CallbackInvoker::report_simple_root(kind, _threadObj);
 }
 
-bool StackRootCollector::report_stack_refs(StackValueCollection* values, jmethodID method, jlocation bci, jint slot_offset) {
+bool StackRefCollector::report_stack_refs(StackValueCollection* values, jmethodID method, jlocation bci, jint slot_offset) {
   for (int index = 0; index < values->size(); index++) {
     if (values->at(index)->type() == T_OBJECT) {
-      oop o = values->obj_at(index)();
-      if (o == nullptr) {
+      oop obj = values->obj_at(index)();
+      if (obj == nullptr) {
         continue;
       }
 
       // stack reference
       if (!CallbackInvoker::report_stack_ref_root(_thread_tag, _tid, _depth, method,
-                                                  bci, slot_offset + index, o)) {
+                                                  bci, slot_offset + index, obj)) {
         return false;
       }
     }
@@ -2296,7 +2295,7 @@ bool StackRootCollector::report_stack_refs(StackValueCollection* values, jmethod
   return true;
 }
 
-bool StackRootCollector::do_frame(vframe* vf) {
+bool StackRefCollector::do_frame(vframe* vf) {
   if (vf->is_java_frame()) {
     // java frame (interpreted, compiled, ...)
     javaVFrame* jvf = javaVFrame::cast(vf);
@@ -2422,8 +2421,8 @@ class VM_HeapWalkOperation: public VM_Operation {
   // root collection
   inline bool collect_simple_roots();
   inline bool collect_stack_roots();
-  inline bool collect_stack_roots(JavaThread* java_thread, JNILocalRootsClosure* blk);
-  inline bool collect_vthread_stack_roots(oop vt);
+  inline bool collect_stack_refs(JavaThread* java_thread, JNILocalRootsClosure* blk);
+  inline bool collect_vthread_stack_refs(oop vt);
 
   // visit an object
   inline bool visit(oop o);
@@ -2775,8 +2774,8 @@ inline bool VM_HeapWalkOperation::collect_simple_roots() {
 // Reports the thread as JVMTI_HEAP_REFERENCE_THREAD,
 // walks the stack of the thread, finds all references (locals
 // and JNI calls) and reports these as stack references
-inline bool VM_HeapWalkOperation::collect_stack_roots(JavaThread* java_thread,
-                                                      JNILocalRootsClosure* blk)
+inline bool VM_HeapWalkOperation::collect_stack_refs(JavaThread* java_thread,
+                                                     JNILocalRootsClosure* blk)
 {
   oop threadObj = java_thread->threadObj();
   oop mounted_vt = java_thread->is_vthread_mounted() ? java_thread->vthread() : nullptr;
@@ -2785,7 +2784,7 @@ inline bool VM_HeapWalkOperation::collect_stack_roots(JavaThread* java_thread,
   }
   assert(threadObj != nullptr, "sanity check");
 
-  StackRootCollector stack_collector(tag_map(), blk, java_thread);
+  StackRefCollector stack_collector(tag_map(), blk, java_thread);
 
   if (!java_thread->has_last_Java_frame()) {
 
@@ -2859,7 +2858,7 @@ inline bool VM_HeapWalkOperation::collect_stack_roots() {
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread *thread = jtiwh.next(); ) {
     oop threadObj = thread->threadObj();
     if (threadObj != nullptr && !thread->is_exiting() && !thread->is_hidden_from_external_view()) {
-      if (!collect_stack_roots(thread, &blk)) {
+      if (!collect_stack_refs(thread, &blk)) {
         return false;
       }
     }
@@ -2867,20 +2866,18 @@ inline bool VM_HeapWalkOperation::collect_stack_roots() {
   return true;
 }
 
-// Reports the unmounted virtual thread as JVMTI_HEAP_REFERENCE_THREAD,
-// walks the stack of the thread, finds all references (locals
-// and JNI calls) and reports these as stack references.
-inline bool VM_HeapWalkOperation::collect_vthread_stack_roots(oop vt) {
+// Reports stack references for the unmounted virtual thread.
+inline bool VM_HeapWalkOperation::collect_vthread_stack_refs(oop vt) {
   if (!JvmtiEnvBase::is_vthread_alive(vt)) {
     return true;
   }
-  ContinuationWrapper c(java_lang_VirtualThread::continuation(vt));
-  if (c.is_empty()) {
+  ContinuationWrapper cont(java_lang_VirtualThread::continuation(vt));
+  if (cont.is_empty()) {
     return true;
   }
-  assert(!c.is_mounted(), "sanity check");
+  assert(!cont.is_mounted(), "sanity check");
 
-  stackChunkOop chunk = c.last_nonempty_chunk();
+  stackChunkOop chunk = cont.last_nonempty_chunk();
   if (chunk == nullptr || chunk->is_empty()) {
     return true;
   }
@@ -2890,27 +2887,23 @@ inline bool VM_HeapWalkOperation::collect_vthread_stack_roots(oop vt) {
   ResourceMark rm(current_thread);
   HandleMark hm(current_thread);
 
-  StackChunkFrameStream<ChunkFrames::Mixed> fs(chunk);
-  RegisterMap reg_map(nullptr,
-                      RegisterMap::UpdateMap::include,
-                      RegisterMap::ProcessFrames::include,
-                      RegisterMap::WalkContinuation::include);
-  fs.initialize_register_map(&reg_map);
+  RegisterMap reg_map(cont.continuation(), RegisterMap::UpdateMap::include);
 
   JNILocalRootsClosure blk;
   // JavaThread is not required for unmounted virtual threads
-  StackRootCollector stack_collector(tag_map(), &blk, nullptr);
+  StackRefCollector stack_collector(tag_map(), &blk, nullptr);
   // reference to the vthread is already reported.
   if (!stack_collector.set_thread(vt)) {
     return false;
   }
 
-  for (; !fs.is_done(); fs.next(&reg_map)) {
-    frame fr = fs.to_frame();
-    vframe* vf = vframe::new_vframe(&fr, &reg_map, nullptr);
+  frame fr = chunk->top_frame(&reg_map);
+  vframe* vf = vframe::new_vframe(&fr, &reg_map, nullptr);
+  while (vf != nullptr) {
     if (!stack_collector.do_frame(vf)) {
       return false;
     }
+    vf = vf->sender();
   }
   return true;
 }
@@ -2934,7 +2927,7 @@ bool VM_HeapWalkOperation::visit(oop o) {
       }
     } else {
       if (is_advanced_heap_walk() && java_lang_VirtualThread::is_subclass(o->klass())) {
-        if (!collect_vthread_stack_roots(o)) {
+        if (!collect_vthread_stack_refs(o)) {
           return false;
         }
       }
