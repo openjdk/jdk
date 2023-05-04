@@ -421,4 +421,35 @@ public abstract class UNIXToolkit extends SunToolkit
         return AccessController.doPrivileged((PrivilegedAction<Boolean>)()
                 -> Boolean.getBoolean("jdk.gtk.verbose"));
     }
+
+    private static volatile Boolean isOnWayland = null;
+
+    @SuppressWarnings("removal")
+    public static boolean isOnWayland() {
+        Boolean result = isOnWayland;
+        if (result == null) {
+            synchronized (GTK_LOCK) {
+                result = isOnWayland;
+                if (result == null) {
+                    isOnWayland
+                            = result
+                            = AccessController.doPrivileged(
+                            (PrivilegedAction<Boolean>) () -> {
+                                final String display =
+                                        System.getenv("WAYLAND_DISPLAY");
+
+                                return display != null
+                                        && !display.trim().isEmpty();
+                            }
+                    );
+                }
+            }
+        }
+        return result;
+    }
+
+    @Override
+    public boolean isRunningOnWayland() {
+        return isOnWayland();
+    }
 }

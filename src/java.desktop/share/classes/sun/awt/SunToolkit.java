@@ -1883,6 +1883,10 @@ public abstract class SunToolkit extends Toolkit
         return false;
     }
 
+    public boolean isRunningOnWayland() {
+        return false;
+    }
+
     private static final Object DEACTIVATION_TIMES_MAP_KEY = new Object();
 
     public synchronized void setWindowDeactivationTime(Window w, long time) {
