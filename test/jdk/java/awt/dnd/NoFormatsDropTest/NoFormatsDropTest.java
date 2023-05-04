@@ -94,13 +94,16 @@ public class NoFormatsDropTest implements AWTEventListener {
 
         frame.getToolkit().addAWTEventListener(this, AWTEvent.MOUSE_EVENT_MASK);
         frame.pack();
+        frame.setLocationRelativeTo(null);
         frame.setVisible(true);
+        frame.validate();
     }
 
     public void start() throws InterruptedException, AWTException,
             InvocationTargetException {
         try {
             Robot robot = new Robot();
+            robot.waitForIdle();
             Thread.sleep(FRAME_ACTIVATION_TIMEOUT);
 
             final Point srcPoint = dragSourcePanel.getLocationOnScreen();
@@ -241,7 +244,7 @@ class TestTransferable implements Transferable {
 class DropTargetPanel extends Panel implements DropTargetListener {
 
     final Dimension preferredDimension = new Dimension(200, 100);
-    boolean passed = false;
+    volatile boolean passed = false;
 
     public DropTargetPanel() {
         setDropTarget(new DropTarget(this, this));
