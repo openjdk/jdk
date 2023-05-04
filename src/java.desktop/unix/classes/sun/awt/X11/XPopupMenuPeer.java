@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,10 +24,21 @@
  */
 package sun.awt.X11;
 
-import java.awt.*;
-import java.awt.peer.*;
-import java.awt.event.*;
+import java.awt.AWTEvent;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.Event;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Graphics;
+import java.awt.MenuItem;
+import java.awt.Point;
+import java.awt.PopupMenu;
+import java.awt.Rectangle;
+import java.awt.event.KeyEvent;
+import java.awt.event.MouseEvent;
 
+import java.awt.peer.PopupMenuPeer;
 import java.util.Vector;
 import sun.awt.AWTAccessor;
 import sun.util.logging.PlatformLogger;
@@ -125,6 +136,7 @@ public class XPopupMenuPeer extends XMenuWindow implements PopupMenuPeer {
             //near the periphery of the screen, XToolkit
             Rectangle bounds = getWindowBounds(pt, dim);
             reshape(bounds);
+            waylandDismissOnWindowFocusLostAdd();
             xSetVisible(true);
             toFront();
             selectItem(null, false);
