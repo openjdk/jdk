@@ -74,7 +74,7 @@ void JfrCompilerQueueUtilization::send_events() {
       event.set_ingress(ingress);
       event.set_egress(egress);
       event.set_size(entry->compilerQueue->size());
-      event.set_peek(entry->compilerQueue->get_peek_size());
+      event.set_peak(entry->compilerQueue->get_peak_size());
       event.set_added(current_added - entry->added);
       event.set_removed(current_removed - entry->removed);
       event.set_totalAdded(current_added);

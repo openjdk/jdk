@@ -331,9 +331,9 @@ void CompileQueue::add(CompileTask* task) {
   }
   ++_size;
   ++_total_added;
-  if (_size > _peek_size)
+  if (_size > _peak_size)
   {
-    _peek_size = _size;
+    _peak_size = _size;
   }
 
   // Mark the method as being in the compile queue.

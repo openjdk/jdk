@@ -90,7 +90,7 @@ class CompileQueue : public CHeapObj<mtCompiler> {
   int _size;
   int _total_added;
   int _total_removed;
-  int _peek_size;
+  int _peak_size;
 
   void purge_stale_tasks();
  public:
@@ -101,7 +101,7 @@ class CompileQueue : public CHeapObj<mtCompiler> {
     _size = 0;
     _total_added = 0;
     _total_removed = 0;
-    _peek_size = 0;
+    _peak_size = 0;
     _first_stale = nullptr;
   }
 
@@ -118,7 +118,7 @@ class CompileQueue : public CHeapObj<mtCompiler> {
   bool         is_empty() const                  { return _first == nullptr; }
   int          size()     const                  { return _size;          }
 
-  int         get_peek_size()                      { return _peek_size; }
+  int         get_peak_size()                      { return _peak_size; }
   int         get_total_added()                    { return _total_added; }
   int         get_total_removed()                  { return _total_removed; }
 
