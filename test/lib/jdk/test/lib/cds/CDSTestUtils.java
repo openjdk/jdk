@@ -692,6 +692,9 @@ public class CDSTestUtils {
         if (copyChildStdoutToMainStdout)
             System.out.println("[STDOUT]\n" + output.getStdout());
 
+        if (output.getExitValue() != 0 && output.getStdout().contains("A fatal error has been detected")) {
+          throw new RuntimeException("Hotspot crashed");
+        }
         return output;
     }
 
