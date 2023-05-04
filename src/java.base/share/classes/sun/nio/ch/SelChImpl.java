@@ -28,6 +28,7 @@ package sun.nio.ch;
 import java.nio.channels.Channel;
 import java.io.FileDescriptor;
 import java.io.IOException;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 /**
