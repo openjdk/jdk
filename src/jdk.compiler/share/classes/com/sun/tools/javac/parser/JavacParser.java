@@ -826,7 +826,7 @@ public class JavacParser implements Parser {
                 JCVariableDecl var = variableDeclaratorRest(varPos, mods, e, identOrUnderscore(), false, null, false, false, true);
                 if (e == null) {
                     var.startPos = pos;
-                    if (var.name == names.underscore) {
+                    if (var.name == names.underscore && !allowVar) {
                         log.error(DiagnosticFlag.SYNTAX, varPos, Errors.UnderscoreAsIdentifier);
                     }
                 }

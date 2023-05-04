@@ -26,8 +26,9 @@ UnnamedErrors.java:54:29: compiler.err.flows.through.from.pattern
 UnnamedErrors.java:61:29: compiler.err.flows.through.from.pattern
 UnnamedErrors.java:68:32: compiler.err.flows.through.from.pattern
 UnnamedErrors.java:82:51: compiler.err.cant.resolve.location: kindname.class, when, , , (compiler.misc.location: kindname.class, UnnamedErrors, null)
-UnnamedErrors.java:82:56: compiler.err.already.defined: kindname.variable, x2, kindname.method, guard_errors(java.lang.Object,int,int)
+UnnamedErrors.java:82:56: compiler.err.already.defined: kindname.variable, x2, kindname.method, guardErrors(java.lang.Object,int,int)
 UnnamedErrors.java:83:13: compiler.err.switch.mixing.case.types
+UnnamedErrors.java:90:30: compiler.err.pattern.dominated
 - compiler.note.preview.filename: UnnamedErrors.java, DEFAULT
 - compiler.note.preview.recompile
-30 errors
+31 errors
