@@ -68,17 +68,17 @@ extern int nodes_created;
 // Set a breakpoint here to identify where a particular node index is built.
 void Node::verify_construction() {
   _debug_orig = nullptr;
-  // The decimal digits of _debug_idx are <compile_id> followed by 5 digits of <_idx>
+  // The decimal digits of _debug_idx are <compile_id> followed by 10 digits of <_idx>
   Compile* C = Compile::current();
   assert(C->unique() < (INT_MAX - 1), "Node limit exceeded INT_MAX");
-  uintx new_debug_idx = (uintx)C->compile_id() * 100000 + _idx;
+  uint64_t new_debug_idx = (uint64_t)C->compile_id() * 10000000000 + _idx;
   set_debug_idx(new_debug_idx);
   if (!C->phase_optimize_finished()) {
     // Only check assert during parsing and optimization phase. Skip it while generating code.
     assert(C->live_nodes() <= C->max_node_limit(), "Live Node limit exceeded limit");
   }
-  if (BreakAtNode != 0 && (_debug_idx == BreakAtNode || (uintx)_idx == BreakAtNode)) {
-    tty->print_cr("BreakAtNode: _idx=%d _debug_idx=" UINTX_FORMAT, _idx, _debug_idx);
+  if (BreakAtNode != 0 && (_debug_idx == BreakAtNode || (uint64_t)_idx == BreakAtNode)) {
+    tty->print_cr("BreakAtNode: _idx=%d _debug_idx=" UINT64_FORMAT, _idx, _debug_idx);
     BREAKPOINT;
   }
 #if OPTO_DU_ITERATOR_ASSERT
@@ -2485,7 +2485,7 @@ void Node::set_debug_orig(Node* orig) {
   int trip = 10;
   while (orig != nullptr) {
     if (orig->debug_idx() == BreakAtNode || (uintx)orig->_idx == BreakAtNode) {
-      tty->print_cr("BreakAtNode: _idx=%d _debug_idx=" UINTX_FORMAT " orig._idx=%d orig._debug_idx=" UINTX_FORMAT,
+      tty->print_cr("BreakAtNode: _idx=%d _debug_idx=" UINT64_FORMAT " orig._idx=%d orig._debug_idx=" UINT64_FORMAT,
                     this->_idx, this->debug_idx(), orig->_idx, orig->debug_idx());
       BREAKPOINT;
     }
@@ -2517,7 +2517,7 @@ void Node::dump(const char* suffix, bool mark, outputStream* st, DumpConfig* dc)
 
   if (is_disconnected(this)) {
 #ifdef ASSERT
-    st->print("  [" UINTX_FORMAT "]", debug_idx());
+    st->print("  [" UINT64_FORMAT "]", debug_idx());
     dump_orig(st);
 #endif
     st->cr();
@@ -2533,7 +2533,7 @@ void Node::dump(const char* suffix, bool mark, outputStream* st, DumpConfig* dc)
 #ifdef ASSERT
   // Dump the non-reset _debug_idx
   if (Verbose && WizardMode) {
-    st->print("  [" UINTX_FORMAT "]", debug_idx());
+    st->print("  [" UINT64_FORMAT "]", debug_idx());
   }
 #endif
 
