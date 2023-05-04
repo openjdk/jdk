@@ -29,6 +29,17 @@
 #include "gc/z/zThread.hpp"
 #include "gc/z/zTracer.hpp"
 
+// glibc <sys/sysmacros.h> which may get brought in via <sys/types.h>
+// defines the macros minor and major. These keywords are central to
+// the GC algorithm. These macros are undefined here so the code may
+// use minor and major.
+#ifdef minor
+#undef minor
+#endif
+#ifdef major
+#undef major
+#endif
+
 class VM_ZOperation;
 class ZDriverMinor;
 class ZDriverMajor;
