@@ -458,11 +458,6 @@ struct NUMASwitcher {
 #ifndef _AIX // JDK-8257041
 TEST_VM(os, release_multi_mappings) {
 
-  // With NMT enabled, this will trigger JDK-8263464. For now disable the test if NMT=on.
-  if (MemTracker::tracking_level() > NMT_off) {
-    return;
-  }
-
   // Test that we can release an area created with multiple reservation calls
   // What we do:
   // A) we reserve 6 small segments (stripes) adjacent to each other. We commit

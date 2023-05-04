@@ -523,28 +523,46 @@ bool VirtualMemoryTracker::remove_released_region(address addr, size_t size) {
     }
   }
 
-  VirtualMemorySummary::record_released_memory(size, reserved_rgn->flag());
-
-  assert(reserved_rgn->contain_region(addr, size), "Not completely contained");
-  if (reserved_rgn->base() == addr ||
-      reserved_rgn->end() == addr + size) {
+  if (size <= reserved_rgn->size()) {
+    VirtualMemorySummary::record_released_memory(size, reserved_rgn->flag());
+    assert(reserved_rgn->contain_region(addr, size), "Not completely contained");
+    if (reserved_rgn->base() == addr ||
+        reserved_rgn->end() == addr + size) {
       reserved_rgn->exclude_region(addr, size);
-    return true;
-  } else {
-    address top = reserved_rgn->end();
-    address high_base = addr + size;
-    ReservedMemoryRegion high_rgn(high_base, top - high_base,
-      *reserved_rgn->call_stack(), reserved_rgn->flag());
-
-    // use original region for lower region
-    reserved_rgn->exclude_region(addr, top - addr);
-    LinkedListNode<ReservedMemoryRegion>* new_rgn = _reserved_regions->add(high_rgn);
-    if (new_rgn == nullptr) {
-      return false;
-    } else {
-      reserved_rgn->move_committed_regions(addr, *new_rgn->data());
       return true;
+    } else {
+      address top = reserved_rgn->end();
+      address high_base = addr + size;
+      ReservedMemoryRegion high_rgn(high_base, top - high_base,
+                                    *reserved_rgn->call_stack(), reserved_rgn->flag());
+
+      // use original region for lower region
+      reserved_rgn->exclude_region(addr, top - addr);
+      LinkedListNode<ReservedMemoryRegion>* new_rgn = _reserved_regions->add(high_rgn);
+      if (new_rgn == nullptr) {
+        return false;
+      } else {
+        reserved_rgn->move_committed_regions(addr, *new_rgn->data());
+        return true;
+      }
     }
+  } else {
+    address end = addr+size;
+    size_t remaining = size;
+    LinkedListNode<ReservedMemoryRegion>* node_rgn = _reserved_regions->find_node(rgn);
+    while ((node_rgn != nullptr) && (remaining > 0))
+    {
+      ReservedMemoryRegion* remove_rgn = node_rgn->data();
+      assert(remove_rgn!=nullptr, "NULL region");
+      assert(remove_rgn->base()+remove_rgn->size()<=end, "not contained");
+
+      remaining -= remove_rgn->size();
+      node_rgn = node_rgn->next();
+
+      assert(remove_released_region(remove_rgn), "error in remove_released_region");
+    }
+
+    return true;
   }
 }
 
