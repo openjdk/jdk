@@ -106,7 +106,7 @@ public final class StackCounter {
         for (var h : handlers) map.put(labelContext.labelToBci(h.handler), 1);
         maxLocals = isStatic ? 0 : 1;
         for (var cd : methodDesc.parameterList()) {
-            maxLocals += TypeKind.fromDescriptor(cd.descriptorString()).slotSize();
+            maxLocals += TypeKind.from(cd).slotSize();
         }
         bcs = new RawBytecodeHelper(bytecode);
         visited = new BitSet(bcs.endBci);
@@ -307,12 +307,12 @@ public final class StackCounter {
                         var nameAndType = opcode == INVOKEDYNAMIC ? ((DynamicConstantPoolEntry)cpe).nameAndType() : ((MemberRefEntry)cpe).nameAndType();
                         var mDesc = MethodTypeDesc.ofDescriptor(nameAndType.type().stringValue());
                         for (var arg : mDesc.parameterList()) {
-                            stack(-TypeKind.fromDescriptor(arg.descriptorString()).slotSize());
+                            stack(-TypeKind.from(arg).slotSize());
                         }
                         if (opcode != INVOKESTATIC && opcode != INVOKEDYNAMIC) {
                             stack(-1);
                         }
-                        stack(TypeKind.fromDescriptor(mDesc.returnType().descriptorString()).slotSize());
+                        stack(TypeKind.from(mDesc.returnType()).slotSize());
                     }
                     case MULTIANEWARRAY ->
                         stack (1 - bcs.getU1(bcs.bci + 3));
@@ -375,6 +375,6 @@ public final class StackCounter {
                 msg,
                 bcs.bci,
                 methodName,
-                methodDesc.parameterList().stream().map(ClassDesc::displayName).collect(Collectors.joining(","))));
+                methodDesc.displayDescriptor());
     }
 }
