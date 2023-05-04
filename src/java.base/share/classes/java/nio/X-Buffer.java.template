@@ -1524,9 +1524,9 @@ public abstract sealed class $Type$Buffer
      * @throws  ReadOnlyBufferException
      *          If this buffer is read-only
      *
-     * @see #append(CharSequence,int,int)
-     * @see #put(int,$type$[],int,int)
-     * @see #put(int,$Type$Buffer,int,int)
+     * @see #append(CharSequence, int, int)
+     * @see #put(int, $type$[], int, int)
+     * @see #put(int, $Type$Buffer, int, int)
      * @since 21
      */
     public $Type$Buffer put(int index, CharSequence csq, int start, int end) {
