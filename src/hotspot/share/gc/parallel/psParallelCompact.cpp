@@ -2067,7 +2067,10 @@ void PSParallelCompact::marking_phase(ParallelOldTracer *gc_tracer) {
     JVMCI_ONLY(JVMCI::do_unloading(purged_class));
   }
 
-  _gc_tracer.report_object_count_after_gc(is_alive_closure());
+  {
+    GCTraceTime(Debug, gc, phases) tm("Report Object Count", &_gc_timer);
+    _gc_tracer.report_object_count_after_gc(is_alive_closure());
+  }
 #if TASKQUEUE_STATS
   ParCompactionManager::oop_task_queues()->print_and_reset_taskqueue_stats("Oop Queue");
   ParCompactionManager::_objarray_task_queues->print_and_reset_taskqueue_stats("ObjArrayOop Queue");
