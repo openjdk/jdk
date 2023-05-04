@@ -104,7 +104,7 @@ public class NoFormatsDropTest implements AWTEventListener {
         try {
             Robot robot = new Robot();
             robot.waitForIdle();
-            Thread.sleep(FRAME_ACTIVATION_TIMEOUT);
+            robot.delay(FRAME_ACTIVATION_TIMEOUT);
 
             final Point srcPoint = dragSourcePanel.getLocationOnScreen();
             Dimension d = dragSourcePanel.getSize();
@@ -132,12 +132,12 @@ public class NoFormatsDropTest implements AWTEventListener {
                  curPoint.translate(sign(dstPoint.x - curPoint.x),
                                     sign(dstPoint.y - curPoint.y))) {
                 robot.mouseMove(curPoint.x, curPoint.y);
-                Thread.sleep(20);
+                robot.delay(100);
             }
             robot.keyRelease(KeyEvent.VK_CONTROL);
             robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
 
-            Thread.sleep(DROP_COMPLETION_TIMEOUT);
+            robot.delay(DROP_COMPLETION_TIMEOUT);
         } finally {
             if (frame != null) {
                 EventQueue.invokeAndWait(() -> frame.dispose());
