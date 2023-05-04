@@ -182,6 +182,11 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
                 millis = -1;
             } else {
                 millis = NANOSECONDS.toMillis(nanos);
+                if (nanos > MILLISECONDS.toNanos(millis)) {
+                    // Round *up*, so we never (ask to) wait less than requested.
+                    // Especially important between 0 and 1ms to avoid a tight loop.
+                    millis++;
+                }
             }
             Net.poll(fd, event, millis);
         }
