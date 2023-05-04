@@ -57,6 +57,7 @@ public class UndefinedClassTest extends UITesting {
                 " return () -> { throw new NotExist(); };\n" +
                 " }\n" +
                 "}";
+        
         doRunTest((inputSink, out) -> {
             inputSink.write(code + "\n");
             waitOutput(out, "NotExist");
