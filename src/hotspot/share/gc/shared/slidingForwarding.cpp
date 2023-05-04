@@ -34,13 +34,13 @@
 HeapWord* const SlidingForwarding::UNUSED_BASE = reinterpret_cast<HeapWord*>(0x1);
 
 HeapWord* SlidingForwarding::_heap_start = nullptr;
-uint SlidingForwarding::_num_regions = 0;
-uint SlidingForwarding::_region_size_words = 0;
+size_t SlidingForwarding::_num_regions = 0;
+size_t SlidingForwarding::_region_size_words = 0;
 uint SlidingForwarding::_region_size_words_shift = 0;
 HeapWord** SlidingForwarding::_bases_table = nullptr;
 FallbackTable* SlidingForwarding::_fallback_table = nullptr;
 
-void SlidingForwarding::initialize(MemRegion heap, uint region_size_words) {
+void SlidingForwarding::initialize(MemRegion heap, size_t region_size_words) {
 #ifdef _LP64
   if (UseAltGCForwarding) {
     _heap_start = heap.start();
@@ -69,9 +69,9 @@ void SlidingForwarding::begin() {
     assert(_bases_table == nullptr, "should not be initialized yet");
     assert(_fallback_table == nullptr, "should not be initialized yet");
 
-    uint max = _num_regions * NUM_TARGET_REGIONS;
+    size_t max = _num_regions * NUM_TARGET_REGIONS;
     _bases_table = NEW_C_HEAP_ARRAY(HeapWord*, max, mtGC);
-    for (uint i = 0; i < max; i++) {
+    for (size_t i = 0; i < max; i++) {
       _bases_table[i] = UNUSED_BASE;
     }
   }
@@ -121,7 +121,7 @@ FallbackTable::~FallbackTable() {
   }
 }
 
-uint FallbackTable::home_index(HeapWord* from) {
+size_t FallbackTable::home_index(HeapWord* from) {
   uint64_t val = reinterpret_cast<uint64_t>(from);
   // This is the mixer stage of the murmur3 hashing:
   // https://github.com/aappleby/smhasher/blob/master/src/MurmurHash3.cpp
@@ -132,14 +132,14 @@ uint FallbackTable::home_index(HeapWord* from) {
   val ^= val >> 33;
   // Shift to table-size.
   val = val >> (64 - log2i_exact(TABLE_SIZE));
-  uint idx = static_cast<uint>(val);
-  assert(idx < TABLE_SIZE, "must fit in table: idx: %u, table-size: %u, table-size-bits: %d",
+  size_t idx = static_cast<size_t>(val);
+  assert(idx < TABLE_SIZE, "must fit in table: idx: " SIZE_FORMAT ", table-size: %u, table-size-bits: %d",
          idx, TABLE_SIZE, log2i_exact(TABLE_SIZE));
   return idx;
 }
 
 void FallbackTable::forward_to(HeapWord* from, HeapWord* to) {
-  uint idx = home_index(from);
+  size_t idx = home_index(from);
   FallbackTableEntry* head = &_table[idx];
   FallbackTableEntry* entry = head;
   // Search existing entry in chain starting at idx.
@@ -162,7 +162,7 @@ void FallbackTable::forward_to(HeapWord* from, HeapWord* to) {
 }
 
 HeapWord* FallbackTable::forwardee(HeapWord* from) const {
-  uint idx = home_index(from);
+  size_t idx = home_index(from);
   const FallbackTableEntry* entry = &_table[idx];
   while (entry != nullptr) {
     if (entry->_from == from) {

@@ -39,18 +39,18 @@ inline bool SlidingForwarding::is_not_forwarded(oop obj) {
   return !obj->is_forwarded();
 }
 
-uint SlidingForwarding::region_index_containing(HeapWord* addr) {
-  uint index = static_cast<uint>(pointer_delta(addr, _heap_start) >> _region_size_words_shift);
+size_t SlidingForwarding::region_index_containing(HeapWord* addr) {
+  size_t index = pointer_delta(addr, _heap_start) >> _region_size_words_shift;
   assert(index < _num_regions, "Region index is in bounds: " PTR_FORMAT, p2i(addr));
   return index;
 }
 
 uintptr_t SlidingForwarding::encode_forwarding(HeapWord* from, HeapWord* to) {
-  uint from_reg_idx = region_index_containing(from);
-  uint to_reg_idx = region_index_containing(to);
+  size_t from_reg_idx = region_index_containing(from);
+  size_t to_reg_idx = region_index_containing(to);
 
   HeapWord* to_region_base = _heap_start + to_reg_idx * _region_size_words;
-  uint base_idx = from_reg_idx * NUM_TARGET_REGIONS;
+  size_t base_idx = from_reg_idx * NUM_TARGET_REGIONS;
 
   uintptr_t alt_region = 0;
   if (_bases_table[base_idx] == to_region_base) {
@@ -59,7 +59,7 @@ uintptr_t SlidingForwarding::encode_forwarding(HeapWord* from, HeapWord* to) {
     // Primary is free
     _bases_table[base_idx] = to_region_base;
   } else {
-    uint base_idx_alt = base_idx + 1;
+    size_t base_idx_alt = base_idx + 1;
     if (_bases_table[base_idx_alt] == to_region_base) {
       // Alternate is good
     } else if (_bases_table[base_idx_alt] == UNUSED_BASE) {
@@ -89,18 +89,18 @@ uintptr_t SlidingForwarding::encode_forwarding(HeapWord* from, HeapWord* to) {
 HeapWord* SlidingForwarding::decode_forwarding(HeapWord* from, uintptr_t encoded) {
   assert((encoded & markWord::marked_value) == markWord::marked_value, "must be marked as forwarded");
   assert((encoded & FALLBACK_MASK) == 0, "must not be fallback-forwarded");
-  uint alt_region = static_cast<uint>((encoded >> ALT_REGION_SHIFT) & right_n_bits(ALT_REGION_BITS));
+  size_t alt_region = (encoded >> ALT_REGION_SHIFT) & right_n_bits(ALT_REGION_BITS);
   assert(alt_region < NUM_TARGET_REGIONS, "Sanity");
   uintptr_t offset = (encoded >> OFFSET_BITS_SHIFT);
 
-  uint from_idx = region_index_containing(from) * NUM_TARGET_REGIONS;
-  uint base_idx = from_idx + alt_region;
+  size_t from_idx = region_index_containing(from) * NUM_TARGET_REGIONS;
+  size_t base_idx = from_idx + alt_region;
 
   HeapWord* base = _bases_table[base_idx];
   assert(base != UNUSED_BASE, "must not be unused base");
   HeapWord* decoded = base + offset;
   assert(decoded >= _heap_start,
-         "Address must be above heap start. encoded: " INTPTR_FORMAT ", alt_region: %u, base: " PTR_FORMAT,
+         "Address must be above heap start. encoded: " INTPTR_FORMAT ", alt_region: " SIZE_FORMAT ", base: " PTR_FORMAT,
          encoded, alt_region, p2i(base));
 
   return decoded;
