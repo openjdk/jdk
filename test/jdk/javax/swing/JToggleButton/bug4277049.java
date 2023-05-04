@@ -32,7 +32,7 @@ import java.awt.event.ItemListener;
  * @summary Tests that ToggleButtonModel doesn't fire extra ChangeEvents
  */
 
-public class bug4277049  implements ItemListener {
+public class bug4277049 implements ItemListener {
 
     public static void main(String[] args) throws Exception {
         JCheckBox box = new JCheckBox();
