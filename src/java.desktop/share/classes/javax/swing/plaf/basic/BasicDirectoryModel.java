@@ -384,7 +384,7 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
 
                         if (start >= 0 && end > start) {
                             List<File> listEnd_OldSize = new Vector<>(fileCache.subList(end, oldSize));
-                            if(listEnd_OldSize.equals(newFileCache.subList(start, newSize))) {
+                            if (listEnd_OldSize.equals(newFileCache.subList(start, newSize))) {
                                 if (loadThread.isInterrupted()) {
                                     return null;
                                 }
