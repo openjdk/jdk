@@ -124,7 +124,7 @@ FallbackTable::~FallbackTable() {
 
 size_t FallbackTable::home_index(HeapWord* from) {
   uint64_t val = reinterpret_cast<uint64_t>(from);
-  uint64_t hash = FastHash::get_hash64(val, 0xAAAAAAAAAAAAAAAA);
+  uint64_t hash = FastHash::get_hash64(val, UCONST64(0xAAAAAAAAAAAAAAAA));
   return hash >> (64 - log2i_exact(TABLE_SIZE));
 }
 
