@@ -296,7 +296,7 @@ oop oopDesc::forward_to_atomic(oop p, markWord compare, atomic_memory_order orde
   if (old_mark == compare) {
     return nullptr;
   } else {
-    return cast_to_oop(old_mark.decode_pointer());
+    return forwardee(old_mark);
   }
 }
 
