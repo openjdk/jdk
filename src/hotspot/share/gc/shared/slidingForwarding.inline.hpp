@@ -52,30 +52,30 @@ uintptr_t SlidingForwarding::encode_forwarding(HeapWord* from, HeapWord* to) {
   HeapWord* to_region_base = _heap_start + to_reg_idx * _region_size_words;
   uint base_idx = from_reg_idx * NUM_TARGET_REGIONS;
 
-  bool alt_region = false;
-  if (_bases_table[base_idx] == UNUSED_BASE) {
+  uintptr_t alt_region = 0;
+  if (_bases_table[base_idx] == to_region_base) {
+    // Primary is good
+  } else if (_bases_table[base_idx] == UNUSED_BASE) {
     // Primary is free
     _bases_table[base_idx] = to_region_base;
-  } else if (_bases_table[base_idx] == to_region_base) {
-    // Primary is good
   } else {
     uint base_idx_alt = base_idx + 1;
-    if (_bases_table[base_idx_alt] == UNUSED_BASE) {
+    if (_bases_table[base_idx_alt] == to_region_base) {
+      // Alternate is good
+    } else if (_bases_table[base_idx_alt] == UNUSED_BASE) {
       // Alternate is free
       _bases_table[base_idx_alt] = to_region_base;
-    } else if (_bases_table[base_idx_alt] == to_region_base) {
-      // Alternate is good
     } else {
       // Both primary and alternate are not fitting
       assert(UseG1GC, "Only happens with G1 serial compaction");
       return (1 << FALLBACK_SHIFT) | markWord::marked_value;
     }
-    alt_region = true;
+    alt_region = 1;
   }
 
-  uint offset = static_cast<uint>(pointer_delta(to, to_region_base));
+  size_t offset = pointer_delta(to, to_region_base);
   assert(offset < _region_size_words, "Offset should be within the region. from: " PTR_FORMAT
-         ", to: " PTR_FORMAT ", to_region_base: " PTR_FORMAT ", offset: %u",
+         ", to: " PTR_FORMAT ", to_region_base: " PTR_FORMAT ", offset: " SIZE_FORMAT,
          p2i(from), p2i(to), p2i(to_region_base), offset);
 
   uintptr_t encoded = (offset << OFFSET_BITS_SHIFT) |
