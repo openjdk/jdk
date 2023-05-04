@@ -157,6 +157,11 @@ class ResourceHashtableBase : public STORAGE {
     return true;
   }
 
+ /**
+  * Inserts or replaces a value in the table.
+  * @return: true:  if a new item is added
+  *          false: if the item already existed and the value is updated
+  */
   bool put(K const& key, V const& value) {
     unsigned hv = HASH(key);
     Node** ptr = lookup_node(hv, key);
