@@ -2935,29 +2935,6 @@ operand legVecZ() %{
   interface(REG_INTER);
 %}
 
-// Comparison Code for FP conditional move
-operand cmpOp_vcmppd() %{
-  match(Bool);
-
-  predicate(n->as_Bool()->_test._test != BoolTest::overflow &&
-            n->as_Bool()->_test._test != BoolTest::no_overflow);
-  format %{ "" %}
-  interface(COND_INTER) %{
-    equal        (0x0, "eq");
-    less         (0x1, "lt");
-    less_equal   (0x2, "le");
-    not_equal    (0xC, "ne");
-    greater_equal(0xD, "ge");
-    greater      (0xE, "gt");
-    //TODO cannot compile (adlc breaks) without two next lines with error:
-    // x86_64.ad(13987) Syntax Error: :In operand cmpOp_vcmppd: Do not support this encode constant: ' %{
-    // equal' for overflow.
-    overflow     (0x20, "o");  // not really supported by the instruction
-    no_overflow  (0x21, "no"); // not really supported by the instruction
-  %}
-%}
-
-
 // INSTRUCTIONS -- Platform independent definitions (same for 32- and 64-bit)
 
 // ============================================================================
