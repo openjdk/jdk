@@ -113,14 +113,14 @@ private:
   static HeapWord* const UNUSED_BASE;
 
   static HeapWord*      _heap_start;
-  static uint           _num_regions;
-  static uint           _region_size_words;
+  static size_t         _num_regions;
+  static size_t         _region_size_words;
   static uint           _region_size_words_shift;
 
   static HeapWord**     _bases_table;
   static FallbackTable* _fallback_table;
 
-  static inline uint region_index_containing(HeapWord* addr);
+  static inline size_t region_index_containing(HeapWord* addr);
 
   static inline uintptr_t encode_forwarding(HeapWord* from, HeapWord* to);
   static inline HeapWord* decode_forwarding(HeapWord* from, uintptr_t encoded);
@@ -132,7 +132,7 @@ private:
   static inline oop forwardee_impl(oop from);
 
 public:
-  static void initialize(MemRegion heap, uint region_size_words);
+  static void initialize(MemRegion heap, size_t region_size_words);
 
   static void begin();
   static void end();
@@ -167,7 +167,7 @@ private:
   static const uint TABLE_SIZE = 1024;
   FallbackTableEntry _table[TABLE_SIZE];
 
-  static uint home_index(HeapWord* from);
+  static size_t home_index(HeapWord* from);
 
 public:
   FallbackTable();
