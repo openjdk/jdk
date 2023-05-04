@@ -25,7 +25,6 @@
  * @test id=default
  * @requires vm.jvmti
  * @requires vm.continuations
- * @enablePreview
  * @run main/othervm/native
  *      -Djdk.virtualThreadScheduler.parallelism=1
  *      -agentlib:VThreadStackRefTest
@@ -35,10 +34,8 @@
 /**
  * @test id=no-vmcontinuations
  * @requires vm.jvmti
- * @enablePreview
  * @run main/othervm/native
  *      -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations
- *      -Djdk.virtualThreadScheduler.parallelism=1
  *      -agentlib:VThreadStackRefTest
  *      VThreadStackRefTest NoMountCheck
  */
@@ -205,7 +202,7 @@ public class VThreadStackRefTest {
     }
 
     private static void verifyVthreadMounted(Thread t, boolean expectedMounted) {
-        // Hucky, but simple.
+        // Hacky, but simple.
         // If virtual thread is mounted, its toString() contains
         // info about carrier thread, something like
         // VirtualThread[#27]/runnable@ForkJoinPool-1-worker-1
