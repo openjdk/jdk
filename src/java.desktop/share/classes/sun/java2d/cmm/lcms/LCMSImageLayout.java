@@ -72,11 +72,11 @@ final class LCMSImageLayout {
     private static final int SWAP_ENDIAN =
             ByteOrder.nativeOrder() == LITTLE_ENDIAN ? DOSWAP : 0;
     @Native
-    private static final int DT_BYTE = Byte.BYTES;
+    private static final int DT_BYTE = 0;
     @Native
-    private static final int DT_SHORT = Short.BYTES;
+    private static final int DT_SHORT = 1;
     @Native
-    private static final int DT_INT = Integer.BYTES;
+    private static final int DT_INT = 2;
     int pixelType;
     int dataType;
     int width;
@@ -89,24 +89,33 @@ final class LCMSImageLayout {
 
     private int dataArrayLength; /* in bytes */
 
-    private LCMSImageLayout(Object data, int length, int nc, int type) {
+    /**
+     * Creates a layout object for given parameters.
+     *
+     * @param  data the storage of pixels: {@code byte[], short[] or int[]}
+     * @param  length the length of the data array
+     * @param  nc the number of color components
+     * @param  dt the type of data array: DT_BYTE, DT_SHORT or DT_INT
+     * @param  size the size of one color component in bytes
+     */
+    private LCMSImageLayout(Object data, int length, int nc, int dt, int size) {
         dataArray = data;
-        dataType = type;
-        dataArrayLength = length * type;
-        pixelType = CHANNELS_SH(nc) | BYTES_SH(type);
+        dataType = dt;
+        dataArrayLength = length * size;
+        pixelType = CHANNELS_SH(nc) | BYTES_SH(size);
         width = length / nc;
         height = 1;
-        nextPixelOffset = nc * type;
+        nextPixelOffset = nc * size;
         nextRowOffset = dataArrayLength; // outside of data since height is 1
         verify();
     }
 
     LCMSImageLayout(byte[] data, int nc) {
-        this(data, data.length, nc, DT_BYTE);
+        this(data, data.length, nc, DT_BYTE, Byte.BYTES);
     }
 
     LCMSImageLayout(short[] data, int nc) {
-        this(data, data.length, nc, DT_SHORT);
+        this(data, data.length, nc, DT_SHORT, Short.BYTES);
     }
 
     private LCMSImageLayout() {
