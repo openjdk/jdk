@@ -176,8 +176,8 @@ void GCStatInfo::clear() {
 }
 
 
-GCMemoryManager::GCMemoryManager(const char* name, const char* gc_end_message) :
-  MemoryManager(name), _gc_end_message(gc_end_message) {
+GCMemoryManager::GCMemoryManager(const char* name) :
+  MemoryManager(name) {
   _num_collections = 0;
   _last_gc_stat = nullptr;
   _last_gc_lock = new Mutex(Mutex::nosafepoint, "GCMemoryManager_lock");
@@ -241,9 +241,11 @@ void GCMemoryManager::gc_begin(bool recordGCBeginTime, bool recordPreGCUsage,
 // to ensure the current gc stat is placed in _last_gc_stat.
 void GCMemoryManager::gc_end(bool recordPostGCUsage,
                              bool recordAccumulatedGCTime,
-                             bool recordGCEndTime, bool countCollection,
+                             bool recordGCEndTime,
+                             bool countCollection,
                              GCCause::Cause cause,
-                             bool allMemoryPoolsAffected, const char* notificationMessage) {
+                             bool allMemoryPoolsAffected,
+                             const char* message) {
   if (recordAccumulatedGCTime) {
     _accumulated_timer.stop();
   }
@@ -293,7 +295,6 @@ void GCMemoryManager::gc_end(bool recordPostGCUsage,
     }
 
     if (is_notification_enabled()) {
-      const char* message = notificationMessage != nullptr ? notificationMessage : _gc_end_message;
       GCNotifier::pushNotification(this, message, GCCause::to_string(cause));
     }
   }

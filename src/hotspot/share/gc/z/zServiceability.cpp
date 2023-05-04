@@ -120,8 +120,8 @@ ZServiceability::ZServiceability(size_t min_capacity, size_t max_capacity) :
     _min_capacity(min_capacity),
     _max_capacity(max_capacity),
     _memory_pool(_min_capacity, _max_capacity),
-    _cycle_memory_manager("ZGC Cycles", "end of GC cycle", &_memory_pool),
-    _pause_memory_manager("ZGC Pauses", "end of GC pause", &_memory_pool),
+    _cycle_memory_manager("ZGC Cycles", &_memory_pool),
+    _pause_memory_manager("ZGC Pauses", &_memory_pool),
     _counters(NULL) {}
 
 void ZServiceability::initialize() {
@@ -147,6 +147,7 @@ ZServiceabilityCounters* ZServiceability::counters() {
 ZServiceabilityCycleTracer::ZServiceabilityCycleTracer() :
     _memory_manager_stats(ZHeap::heap()->serviceability_cycle_memory_manager(),
                           ZCollectedHeap::heap()->gc_cause(),
+                          "end of GC cycle", 
                           true  /* allMemoryPoolsAffected */,
                           true  /* recordGCBeginTime */,
                           true  /* recordPreGCUsage */,
@@ -161,6 +162,7 @@ ZServiceabilityPauseTracer::ZServiceabilityPauseTracer() :
     _counters_stats(ZHeap::heap()->serviceability_counters()->collector_counters()),
     _memory_manager_stats(ZHeap::heap()->serviceability_pause_memory_manager(),
                           ZCollectedHeap::heap()->gc_cause(),
+                          "end of GC pause", 
                           true  /* allMemoryPoolsAffected */,
                           true  /* recordGCBeginTime */,
                           false /* recordPreGCUsage */,
