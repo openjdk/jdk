@@ -68,8 +68,8 @@ public final class X11GraphicsDevice extends GraphicsDevice
     private static Boolean xrandrExtSupported;
     private SunDisplayChanger topLevels = new SunDisplayChanger();
     private DisplayMode origDisplayMode;
-    private Rectangle bounds;
-    private Insets    insets;
+    private volatile Rectangle bounds;
+    private volatile Insets insets;
     private boolean shutdownHookRegistered;
     private int scale;
 
@@ -135,28 +135,20 @@ public final class X11GraphicsDevice extends GraphicsDevice
     }
 
     public Rectangle getBounds() {
-        synchronized (this) {
-            return bounds.getBounds();
-        }
+        return bounds.getBounds();
     }
 
     public Insets getInsets() {
-        synchronized (this) {
-            return insets;
-        }
+        return insets;
     }
 
     public void setInsets(Insets newInsets) {
         Objects.requireNonNull(newInsets);
-        synchronized (this) {
-            insets = newInsets;
-        }
+        insets = newInsets;
     }
 
     public void resetInsets() {
-        synchronized (this) {
-            insets = null;
-        }
+        insets = null;
     }
 
     /**
