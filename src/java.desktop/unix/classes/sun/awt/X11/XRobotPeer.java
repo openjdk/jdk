@@ -35,19 +35,31 @@ import sun.awt.SunToolkit;
 import sun.awt.UNIXToolkit;
 import sun.awt.X11GraphicsConfig;
 import sun.awt.X11GraphicsDevice;
+import sun.awt.screencast.ScreencastHelper;
 import sun.security.action.GetPropertyAction;
 
 @SuppressWarnings("removal")
 final class XRobotPeer implements RobotPeer {
 
     private static final boolean tryGtk;
+    private static final boolean useScreencast;
+
     static {
         loadNativeLibraries();
+
         tryGtk = Boolean.parseBoolean(
-                            AccessController.doPrivileged(
-                                    new GetPropertyAction("awt.robot.gtk", "true")
-                            ));
+                AccessController.doPrivileged(
+                        new GetPropertyAction("awt.robot.gtk",
+                                "true")
+                ));
+
+        useScreencast = Boolean.parseBoolean(
+                AccessController.doPrivileged(
+                        new GetPropertyAction(
+                                "awt.robot.screencastEnabled", "false"
+                        )));
     }
+
     private static volatile boolean useGtk;
     private final X11GraphicsConfig  xgc;
 
@@ -100,16 +112,39 @@ final class XRobotPeer implements RobotPeer {
     @Override
     public int getRGBPixel(int x, int y) {
         int[] pixelArray = new int[1];
-        getRGBPixelsImpl(xgc, x, y, 1, 1, pixelArray, useGtk);
+        if (useScreencast && ScreencastHelper.isAvailable()) {
+            ScreencastHelper.getRGBPixels(x, y, 1, 1, pixelArray);
+        } else {
+            getRGBPixelsImpl(xgc, x, y, 1, 1, pixelArray, useGtk);
+        }
         return pixelArray[0];
     }
 
     @Override
     public int [] getRGBPixels(Rectangle bounds) {
-        int[] pixelArray = new int[bounds.width*bounds.height];
-        getRGBPixelsImpl(xgc, bounds.x, bounds.y, bounds.width, bounds.height,
-                            pixelArray, useGtk);
+        int[] pixelArray = new int[bounds.width * bounds.height];
+        if (useScreencast && ScreencastHelper.isAvailable()) {
+            ScreencastHelper.getRGBPixels(
+                    bounds.x, bounds.y,
+                    bounds.width, bounds.height,
+                    pixelArray
+            );
+        } else {
+            getRGBPixelsImpl(
+                    xgc,
+                    bounds.x, bounds.y,
+                    bounds.width, bounds.height,
+                    pixelArray, useGtk
+            );
+        }
         return pixelArray;
+    }
+
+    @Override
+    public void resetScreenCapturePermission() {
+        if (useScreencast && ScreencastHelper.isAvailable()) {
+            ScreencastHelper.resetToken();
+        }
     }
 
     private static synchronized native void setup(int numberOfButtons, int[] buttonDownMasks);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,13 +85,6 @@ typedef struct {
   gushort   events;
   gushort   revents;
 } GPollFD;
-
-typedef struct {
-  gint x;
-  gint y;
-  gint width;
-  gint height;
-} GdkRectangle;
 
 typedef struct {
   gint x;
