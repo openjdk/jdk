@@ -105,7 +105,7 @@ public class PollsetProvider {
 
     public static boolean isReventsError(long eventAddress) {
         char revents = getRevents(eventAddress);
-        return (revents & PS_POLLNVAL) > 0 || (revents & PS_POLLERR) > 0;
+        return (revents & PS_POLLNVAL) != 0 || (revents & PS_POLLERR) != 0;
     }
 
     // -- Native methods --
