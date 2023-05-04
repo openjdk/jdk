@@ -129,7 +129,8 @@ public interface RobotPeer
     }
 
     /**
-     * placeholder
+     * Resets the stored screen data capture permission for a set of screens.
+     * Is a no-op if not supported by the platform.
      */
     default void resetScreenCapturePermission() {}
 }

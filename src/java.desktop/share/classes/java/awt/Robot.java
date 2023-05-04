@@ -69,6 +69,14 @@ import static sun.java2d.SunGraphicsEnvironment.toDeviceSpaceAbs;
  * Applications that use Robot for purposes other than self-testing should
  * handle these error conditions gracefully.
  *
+ * @implNote on Linux systems using Wayland, the robot runs in
+ * so-called X11 compatibility mode. This means that generated mouse and
+ * keyboard events can only be delivered within the X11 server and between
+ * their clients.<br>
+ * Trying to interact with the Wayland area of responsibility may have no effect
+ * (e.g. interacting with window decorations, trying to change the
+ * window stacking order with the mouse or keyboard shortcuts)
+ *
  * @author      Robi Khan
  * @since       1.3
  */
@@ -189,6 +197,10 @@ public class Robot {
 
     /**
      * Moves mouse pointer to given screen coordinates.
+     * @implNote the mouse pointer may not visually move on Linux systems
+     *           using Wayland, while the subsequent mousePress and mouseRelease
+     *           can be delivered to the correct location
+     *
      * @param x         X position
      * @param y         Y position
      */
@@ -383,8 +395,24 @@ public class Robot {
 
     /**
      * Returns the color of a pixel at the given screen coordinates.
+     *
+     * @implNote On Linux systems using Wayland, permission may be requested
+     * from a user to capture the screens via system dialog.
+     * When selected in this dialog, the permission to capture a set of screens
+     * can be saved for later reuse.<br>
+     * Use the {@link #resetScreenCapturePermission()} to reset the stored
+     * permission.
+     * <br>
+     * The pixel color may be black if permission to capture a particular screen
+     * has not been granted.
+     * <br>
+     * It is not recommended to call this method on EDT, as it may block the UI
+     * update until the user confirms his choice in the system dialog.
+     *
      * @param   x       X position of pixel
      * @param   y       Y position of pixel
+     * @throws  SecurityException if {@code readDisplayPixels} permission
+     *          is not granted, or user has denied screen capturing
      * @return  Color of the pixel
      */
     public synchronized Color getPixelColor(int x, int y) {
@@ -397,10 +425,26 @@ public class Robot {
     /**
      * Creates an image containing pixels read from the screen.  This image does
      * not include the mouse cursor.
+     *
+     * @implNote On Linux systems using Wayland, permission may be requested
+     * from a user to capture the screens via system dialog.
+     * When selected in this dialog, the permission to capture a set of screens
+     * can be saved for later reuse.<br>
+     * Use the {@link #resetScreenCapturePermission()} to reset the stored
+     * permission.
+     * <br>
+     * The image may be black if permission to capture a particular screen
+     * has not been granted.
+     * <br>
+     * It is not recommended to call this method on EDT, as it may block the UI
+     * update until the user confirms his choice in the system dialog.
+     *
      * @param   screenRect      Rect to capture in screen coordinates
      * @return  The captured image
-     * @throws  IllegalArgumentException if {@code screenRect} width and height are not greater than zero
-     * @throws  SecurityException if {@code readDisplayPixels} permission is not granted
+     * @throws  IllegalArgumentException if {@code screenRect} width and height
+     *          are not greater than zero
+     * @throws  SecurityException if {@code readDisplayPixels} permission
+     *          is not granted, or user has denied screen capturing
      * @see     SecurityManager#checkPermission
      * @see     AWTPermission
      */
@@ -586,7 +630,8 @@ public class Robot {
     }
 
     /**
-     * placeholder
+     * Resets the stored screen data capture permission for a set of screens.
+     * Is a no-op if not supported by the platform.
      */
     public void resetScreenCapturePermission() {
         peer.resetScreenCapturePermission();
