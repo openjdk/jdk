@@ -47,7 +47,6 @@ public class ThreadAllocatedMemoryArray {
             return;
         }
 
-
         // start threads, wait for them to block
         long[] ids = new long[NUM_THREADS];
 
@@ -58,7 +57,6 @@ public class ThreadAllocatedMemoryArray {
         }
 
         waitUntilThreadBlocked();
-
 
         // disable allocated memory measurement
         if (mbean.isThreadAllocatedMemoryEnabled()) {
@@ -118,18 +116,8 @@ public class ThreadAllocatedMemoryArray {
         goSleep(400);
 
         long[] sizes1 = mbean.getThreadAllocatedBytes(ids);
-
         for (int i = 0; i < NUM_THREADS; i++) {
-            long newSize = sizes1[i];
-            if (sizes[i] > newSize) {
-                throw new RuntimeException("TEST FAILED: " +
-                    threads[i].getName() +
-                    " previous allocated bytes = " + sizes[i] +
-                    " > current allocated bytes = " + newSize);
-            }
-            System.out.println(threads[i].getName() +
-                " Previous allocated bytes = " + sizes[i] +
-                " Current allocated bytes = " + newSize);
+            checkResult(threads[i], sizes[i], sizes1[i]);
         }
 
         try {
@@ -147,7 +135,6 @@ public class ThreadAllocatedMemoryArray {
                 "Caught expected IllegalArgumentException: " + e.getMessage());
         }
 
-
         // let threads exit
         synchronized (obj) {
             done1 = true;
@@ -158,7 +145,7 @@ public class ThreadAllocatedMemoryArray {
             try {
                 threads[i].join();
             } catch (InterruptedException e) {
-                System.out.println("Unexpected exception is thrown.");
+                System.out.println("Unexpected exception thrown.");
                 e.printStackTrace(System.out);
                 testFailed = true;
                 break;
@@ -173,11 +160,25 @@ public class ThreadAllocatedMemoryArray {
     }
 
 
+    private static void checkResult(Thread curThread,
+                                    long prev_size, long curr_size) {
+        if (curr_size < prev_size) {
+            throw new RuntimeException("TEST FAILED: " +
+                                       curThread.getName() +
+                                       " previous allocated bytes = " + prev_size +
+                                       " > current allocated bytes = " + curr_size);
+
+        }
+        System.out.println(curThread.getName() +
+                           " Previous allocated bytes = " + prev_size +
+                           " Current allocated bytes = " + curr_size);
+    }
+
     private static void goSleep(long ms) throws Exception {
         try {
             Thread.sleep(ms);
         } catch (InterruptedException e) {
-            System.out.println("Unexpected exception is thrown.");
+            System.out.println("Unexpected exception thrown.");
             throw e;
         }
     }
@@ -221,7 +222,7 @@ public class ThreadAllocatedMemoryArray {
                     try {
                         obj.wait();
                     } catch (InterruptedException e) {
-                        System.out.println("Unexpected exception is thrown.");
+                        System.out.println("Unexpected exception thrown.");
                         e.printStackTrace(System.out);
                         testFailed = true;
                         break;
@@ -236,7 +237,7 @@ public class ThreadAllocatedMemoryArray {
                     try {
                         obj.wait();
                     } catch (InterruptedException e) {
-                        System.out.println("Unexpected exception is thrown.");
+                        System.out.println("Unexpected exception thrown.");
                         e.printStackTrace(System.out);
                         testFailed = true;
                         break;

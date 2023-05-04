@@ -45,6 +45,7 @@
 #include "runtime/init.hpp"
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/objectMonitor.inline.hpp"
+#include "runtime/thread.inline.hpp"
 #include "runtime/threads.hpp"
 #include "runtime/threadSMR.inline.hpp"
 #include "runtime/vframe.hpp"
@@ -69,6 +70,8 @@ PerfVariable* ThreadService::_peak_threads_count = nullptr;
 PerfVariable* ThreadService::_daemon_threads_count = nullptr;
 volatile int ThreadService::_atomic_threads_count = 0;
 volatile int ThreadService::_atomic_daemon_threads_count = 0;
+
+volatile jlong ThreadService::_exited_allocated_bytes = 0;
 
 ThreadDumpResult* ThreadService::_threaddump_list = nullptr;
 
@@ -167,6 +170,7 @@ void ThreadService::remove_thread(JavaThread* thread, bool daemon) {
     // We did not get here via JavaThread::exit() so current_thread_exiting()
     // was not called, e.g., JavaThread::cleanup_failed_attach_current_thread().
     decrement_thread_counts(thread, daemon);
+    ThreadService::incr_exited_allocated_bytes(thread->cooked_allocated_bytes());
   }
 
   int daemon_count = _atomic_daemon_threads_count;
@@ -217,6 +221,7 @@ void ThreadService::current_thread_exiting(JavaThread* jt, bool daemon) {
   assert(!jt->is_terminated() && jt->is_exiting(), "must be exiting");
 
   decrement_thread_counts(jt, daemon);
+  ThreadService::incr_exited_allocated_bytes(jt->cooked_allocated_bytes());
 }
 
 // FIXME: JVMTI should call this function

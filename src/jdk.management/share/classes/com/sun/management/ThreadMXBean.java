@@ -107,6 +107,41 @@ public interface ThreadMXBean extends java.lang.management.ThreadMXBean {
 
     /**
      * Returns an approximation of the total amount of memory, in bytes,
+     * allocated in heap memory since the Java virtual machine was launched,
+     * including the amount allocated by terminated threads.
+     * The returned value is an approximation because some Java virtual machine
+     * implementations may use object allocation mechanisms that result in a
+     * delay between the time an object is allocated and the time its size is
+     * recorded. An implementation that walks an active Java thread list will
+     * necessarily also deliver an approximate result.
+     *
+     * @return an approximation of the total memory allocated, in bytes, in
+     * heap memory since the Java virtual machine was launched,
+     * if thread memory allocation measurement is enabled;
+     * {@code -1} otherwise.
+     *
+     * @throws UnsupportedOperationException if the Java virtual
+     *         machine implementation does not support thread memory allocation
+     *         measurement.
+     *
+     * @see #isThreadAllocatedMemorySupported
+     * @see #isThreadAllocatedMemoryEnabled
+     * @see #setThreadAllocatedMemoryEnabled
+     *
+     * @since 21
+     */
+    public default long getAllThreadAllocatedBytes() {
+        if (!isThreadAllocatedMemorySupported()) {
+            throw new UnsupportedOperationException(
+                "Thread allocated memory measurement is not supported.");
+        }
+        // Since we do not have an implementation, return -1 whether or not
+        // thread allocated memory measurement is enabled.
+        return -1;
+    }
+
+    /**
+     * Returns an approximation of the total amount of memory, in bytes,
      * allocated in heap memory for the current thread.
      * The returned value is an approximation because some Java virtual machine
      * implementations may use object allocation mechanisms that result in a
@@ -121,7 +156,7 @@ public interface ThreadMXBean extends java.lang.management.ThreadMXBean {
      * </pre></blockquote>
      *
      * @return an approximation of the total memory allocated, in bytes, in
-     * heap memory for the current thread
+     * heap memory for the current thread,
      * if thread memory allocation measurement is enabled;
      * {@code -1} otherwise.
      *
@@ -159,7 +194,7 @@ public interface ThreadMXBean extends java.lang.management.ThreadMXBean {
      *
      * @param id the thread ID of a thread
      * @return an approximation of the total memory allocated, in bytes, in
-     * heap memory for the thread with the specified ID if the thread with the
+     * heap memory for the thread with the specified ID, if the thread with the
      * specified ID is a platform thread, the thread is alive, and thread memory
      * allocation measurement is enabled; {@code -1} otherwise.
      *

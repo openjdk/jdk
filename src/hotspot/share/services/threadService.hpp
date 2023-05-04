@@ -61,6 +61,10 @@ private:
   static PerfVariable* _peak_threads_count;
   static PerfVariable* _daemon_threads_count;
 
+  // As could this...
+  // Number of heap bytes allocated by termianted threads.
+  static volatile jlong _exited_allocated_bytes;
+
   // These 2 counters are like the above thread counts, but are
   // atomically decremented in ThreadService::current_thread_exiting instead of
   // ThreadService::remove_thread, so that the thread count is updated before
@@ -101,6 +105,11 @@ public:
   static jlong get_peak_thread_count()        { return _peak_threads_count->get_value(); }
   static jlong get_live_thread_count()        { return _atomic_threads_count; }
   static jlong get_daemon_thread_count()      { return _atomic_daemon_threads_count; }
+
+  static jlong exited_allocated_bytes()       { return _exited_allocated_bytes; }
+  static void incr_exited_allocated_bytes(jlong size) {
+    Atomic::add(&_exited_allocated_bytes, size);
+  }
 
   // Support for thread dump
   static void   add_thread_dump(ThreadDumpResult* dump);

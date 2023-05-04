@@ -52,7 +52,9 @@ enum {
   JMM_VERSION_1_2_2 = 0x20010202,
   JMM_VERSION_2   = 0x20020000, // JDK 10
   JMM_VERSION_3   = 0x20030000, // JDK 14
-  JMM_VERSION     = JMM_VERSION_3
+  JMM_VERSION_3_0 = 0x20030000,
+  JMM_VERSION_4   = 0x20040000, // JDK 21
+  JMM_VERSION     = JMM_VERSION_4
 };
 
 typedef struct {
@@ -316,7 +318,8 @@ typedef struct jmmInterface_1_ {
   void         (JNICALL *SetVMGlobal)            (JNIEnv *env,
                                                   jstring flag_name,
                                                   jvalue  new_value);
-  void*        reserved6;
+  jlong        (JNICALL *GetAllThreadAllocatedMemory)
+                                                 (JNIEnv *env);
   jobjectArray (JNICALL *DumpThreads)            (JNIEnv *env,
                                                   jlongArray ids,
                                                   jboolean lockedMonitors,

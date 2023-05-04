@@ -2095,7 +2095,25 @@ jlong Management::ticks_to_ms(jlong ticks) {
   return (jlong)(((double)ticks / (double)os::elapsed_frequency())
                  * (double)1000.0);
 }
-#endif // INCLUDE_MANAGEMENT
+
+// Gets the amount of memory allocated on the Java heap since JVM launch.
+JVM_ENTRY(jlong, jmm_GetAllThreadAllocatedMemory(JNIEnv *env))
+    // There is a race between threads that exit during the loop and calling
+    // exited_allocated_bytes. If the  result is initialized with exited_allocated_bytes,
+    // the final result may be "too small" because a thread might be retired before
+    // the loop gets to it and thus not be counted. If, on the other hand and done
+    // here, exited_allocated_bytes is added after the loop, the final result might be
+    // "too large" because a thread might be counted twice, once in the loop and agsin
+    // in exited_allocated_bytes if it's retired after it's encountered in the loop but
+    // before the call to exited_allocated_bytes. A user might use this method to
+    // trigger some sort of alarm, so it was felt best to err on the high side.
+    jlong result = 0;
+    for (JavaThreadIteratorWithHandle jtiwh; JavaThread *thread = jtiwh.next();) {
+      jlong size = thread->cooked_allocated_bytes();
+      result += size;
+    }
+    return result + ThreadService::exited_allocated_bytes();;
+JVM_END
 
 // Gets the amount of memory allocated on the Java heap for a single thread.
 // Returns -1 if the thread does not exist or has terminated.
@@ -2228,9 +2246,6 @@ JVM_ENTRY(void, jmm_GetThreadCpuTimesWithKind(JNIEnv *env, jlongArray ids,
   }
 JVM_END
 
-
-
-#if INCLUDE_MANAGEMENT
 const struct jmmInterface_1_ jmm_interface = {
   nullptr,
   nullptr,
@@ -2264,7 +2279,7 @@ const struct jmmInterface_1_ jmm_interface = {
   jmm_DumpHeap0,
   jmm_FindDeadlockedThreads,
   jmm_SetVMGlobal,
-  nullptr,
+  jmm_GetAllThreadAllocatedMemory,
   jmm_DumpThreads,
   jmm_SetGCNotificationEnabled,
   jmm_GetDiagnosticCommands,
