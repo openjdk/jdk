@@ -667,6 +667,7 @@ java/awt/dnd/MissingDragExitEventTest/MissingDragExitEventTest.java 8288839 wind
 
 sanity/client/SwingSet/src/ToolTipDemoTest.java 8293001 linux-all
 sanity/client/SwingSet/src/ButtonDemoScreenshotTest.java 8265770 macosx-all
+sanity/client/SwingSet/src/EditorPaneDemoTest.java 8212240 linux-x64
 
 ############################################################################
 
