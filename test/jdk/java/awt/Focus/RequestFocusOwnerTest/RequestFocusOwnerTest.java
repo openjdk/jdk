@@ -25,6 +25,7 @@ import java.awt.AWTException;
 import java.awt.Button;
 import java.awt.Checkbox;
 import java.awt.Choice;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.FlowLayout;
@@ -59,15 +60,15 @@ public class RequestFocusOwnerTest {
     private volatile static Dimension buttonSize;
     private volatile static boolean focusGained = false;
     private volatile static boolean requestStatus;
-    private volatile static int waitDelay = 500;
-    private static final CountDownLatch butonFocusLatch = new CountDownLatch(1);
+    private static final int waitDelay = 500;
+    private static final CountDownLatch buttonFocusLatch =
+        new CountDownLatch(1);
     private static final CountDownLatch checkboxFocusLatch =
         new CountDownLatch(1);
     private static final CountDownLatch choiceFocusLatch =
         new CountDownLatch(1);
 
     private volatile static FocusListener listener = new FocusListener() {
-
         @Override
         public void focusLost(FocusEvent e) {
             System.out.println(e.getSource() + ": lost focus.");
@@ -81,7 +82,6 @@ public class RequestFocusOwnerTest {
     };
 
     private volatile static FocusListener choiceListener = new FocusListener() {
-
         @Override
         public void focusLost(FocusEvent e) {
             System.out.println(e.getSource() + ": lost focus.");
@@ -95,7 +95,6 @@ public class RequestFocusOwnerTest {
     };
 
     private volatile static FocusListener butonListener = new FocusListener() {
-
         @Override
         public void focusLost(FocusEvent e) {
             System.out.println(e.getSource() + ": lost focus.");
@@ -104,13 +103,12 @@ public class RequestFocusOwnerTest {
         @Override
         public void focusGained(FocusEvent e) {
             System.out.println(e.getSource() + ": gained focus.");
-            butonFocusLatch.countDown();
+            buttonFocusLatch.countDown();
         }
     };
 
     private volatile static FocusListener checkboxListener =
         new FocusListener() {
-
             @Override
             public void focusLost(FocusEvent e) {
                 System.out.println(e.getSource() + ": lost focus.");
@@ -170,60 +168,29 @@ public class RequestFocusOwnerTest {
             });
 
             if (!button.isFocusOwner()) {
-                focusGained = false;
 
                 robot.mouseMove(buttonAt.x + buttonSize.width / 2,
                     buttonAt.y + buttonSize.height / 2);
                 robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
                 robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
 
-                if (!butonFocusLatch.await(waitDelay, TimeUnit.MILLISECONDS)) {
+                if (!buttonFocusLatch.await(waitDelay, TimeUnit.MILLISECONDS)) {
                     throw new RuntimeException(
                         "FAIL: Button did not gain focus when clicked!");
                 }
             }
 
             EventQueue.invokeAndWait(() -> {
-                requestStatus = checkbox.requestFocusInWindow();
+                checkbox.requestFocusInWindow();
             });
 
-            if (!requestStatus) {
-                throw new RuntimeException(
-                    "FAIL: Checkbox.requestFocusInWindow returned false");
-            }
+            checkComponentGainFocus(checkboxFocusLatch, checkbox);
 
-            if (!checkboxFocusLatch.await(waitDelay, TimeUnit.MILLISECONDS)) {
-                throw new RuntimeException(
-                    "FAIL: Checkbox.requestFocusInWindow did not transfer "
-                        + "the focus to Checkbox");
-            }
-
-            if (!checkbox.isFocusOwner()) {
-                throw new RuntimeException(
-                    "FAIL: CheckBox.isFocusOwner for Checkbox returns false "
-                        + "after calling Checkbox.requestFocusInWindow");
-            }
             EventQueue.invokeAndWait(() -> {
-                requestStatus = choice.requestFocusInWindow();
+                choice.requestFocusInWindow();
             });
 
-            if (!requestStatus) {
-                throw new RuntimeException(
-                    "FAIL: Choice.requestFocusInWindow for a disabled Choice"
-                        + " returned false");
-            }
-
-            if (!choiceFocusLatch.await(waitDelay, TimeUnit.MILLISECONDS)) {
-                throw new RuntimeException(
-                    "FAIL: Choice.requestFocusInWindow did not transfer the"
-                        + " focus to disabled Choice");
-            }
-
-            if (!choice.isFocusOwner()) {
-                throw new RuntimeException(
-                    "FAIL: Choice.isFocusOwner for disabled Choice returns false"
-                        + " after calling Choice.requestFocusInWindow");
-            }
+            checkComponentGainFocus(choiceFocusLatch, choice);
 
             focusGained = false;
             EventQueue.invokeAndWait(() -> {
@@ -236,44 +203,50 @@ public class RequestFocusOwnerTest {
                     "FAIL: TextField.requestFocusInWindow returned true for"
                         + " hidden TextField");
             }
-
-            if (focusGained) {
-                throw new RuntimeException(
-                    "FAIL: Wrong component gained focus: textField.requestFocusInWindow()");
-            }
-            if (textField.isFocusOwner()) {
-                throw new RuntimeException(
-                    "FAIL: TextField.isFocusOwner for hidden TextField returns true"
-                        + " after calling TextField.requestFocusInWindow");
-            }
+            checkFocusOwner(textField, focusGained);
 
             focusGained = false;
             EventQueue.invokeAndWait(() -> {
                 requestStatus = list.requestFocusInWindow();
             });
 
-            robot.waitForIdle();
-
             if (requestStatus) {
                 throw new RuntimeException(
                     "FAIL: List.requestFocusInWindow returned true for"
                         + " non-focusable List");
             }
-
-            if (focusGained) {
-                throw new RuntimeException(
-                    "FAIL: Wrong component gained focus: list.requestFocusInWindow()");
-            }
-            if (list.isFocusOwner()) {
-                throw new RuntimeException(
-                    "FAIL: List.isFocusOwner for non-focusable List returns true"
-                        + " after calling List.requestFocusInWindow");
-            }
+            checkFocusOwner(list, focusGained);
 
             System.out.println("Test passed!");
 
         } finally {
             EventQueue.invokeAndWait(RequestFocusOwnerTest::disposeFrame);
+        }
+    }
+
+    private static void checkComponentGainFocus(CountDownLatch latch,
+        Component comp) throws InterruptedException {
+        if (!latch.await(waitDelay, TimeUnit.MILLISECONDS)) {
+            throw new RuntimeException(
+                "FAIL: requestFocusInWindow did not transfer the focus to"
+                    + comp);
+        }
+        if (!comp.isFocusOwner()) {
+            throw new RuntimeException("FAIL: isFocusOwner returns false for "
+                + comp + " after calling requestFocusInWindow");
+        }
+    }
+
+    private static void checkFocusOwner(Component comp, boolean focusGained) {
+        if (focusGained) {
+            throw new RuntimeException(
+                "FAIL: Wrong component gained focus while calling requestFocusInWindow for "
+                    + comp);
+        }
+        if (comp.isFocusOwner()) {
+            throw new RuntimeException(
+                "FAIL: isFocusOwner for non-focusable component returns true"
+                    + " after calling requestFocusInWindow for " + comp);
         }
     }
 
