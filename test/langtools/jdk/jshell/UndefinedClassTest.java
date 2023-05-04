@@ -47,13 +47,27 @@ public class UndefinedClassTest extends UITesting {
         super(true);
     }
 
-    public void testUndefinedClass() throws Exception{
+    public void testUndefinedClassWithStaticAccess() throws Exception{
         String code = "@FunctionalInterface\n" +
                 "interface RunnableWithThrowable {\n" +
                 " void run() throws Throwable;\n" +
                 "\n" +
-                " // You can also replace `static` with `default` and test again\n" +
                 " static RunnableWithThrowable getInstance() {\n" +
+                " return () -> { throw new NotExist(); };\n" +
+                " }\n" +
+                "}";
+        doRunTest((inputSink, out) -> {
+            inputSink.write(code + "\n");
+            waitOutput(out, "NotExist");
+        });
+    }
+
+    public void testUndefinedClassWithDefaultAccess() throws Exception{
+        String code = "@FunctionalInterface\n" +
+                "interface RunnableWithThrowable {\n" +
+                " void run() throws Throwable;\n" +
+                "\n" +
+                " default RunnableWithThrowable getInstance() {\n" +
                 " return () -> { throw new NotExist(); };\n" +
                 " }\n" +
                 "}";
