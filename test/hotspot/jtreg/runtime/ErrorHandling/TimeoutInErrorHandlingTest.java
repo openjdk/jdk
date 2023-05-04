@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Red Hat, Inc. and/or its affiliates.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +26,9 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.regex.Pattern;
 
 import jdk.test.lib.process.OutputAnalyzer;
@@ -32,7 +36,7 @@ import jdk.test.lib.Platform;
 import jdk.test.lib.process.ProcessTools;
 
 /*
- * @test
+ * @test id=default
  * @bug 8166944
  * @summary Hanging Error Reporting steps may lead to torn error logs
  * @modules java.base/jdk.internal.misc
@@ -40,6 +44,16 @@ import jdk.test.lib.process.ProcessTools;
  * @requires (vm.debug == true) & (os.family != "windows")
  * @run driver TimeoutInErrorHandlingTest
  * @author Thomas Stuefe (SAP)
+ */
+
+/*
+ * @test id=with-on-error
+ * @bug 8303861
+ * @summary Error handling step timeouts should never be blocked by OnError etc.
+ * @modules java.base/jdk.internal.misc
+ * @library /test/lib
+ * @requires (vm.debug == true) & (os.family != "windows")
+ * @run driver TimeoutInErrorHandlingTest with-on-error
  */
 
 public class TimeoutInErrorHandlingTest {
@@ -70,14 +84,28 @@ public class TimeoutInErrorHandlingTest {
          * little timeout messages to see that repeated timeout handling is basically working.
          */
 
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-            "-XX:+UnlockDiagnosticVMOptions",
-            "-Xmx100M",
-            "-XX:ErrorHandlerTest=14",
-            "-XX:+TestUnresponsiveErrorHandler",
-            "-XX:ErrorLogTimeout=" + ERROR_LOG_TIMEOUT,
-            "-XX:-CreateCoredumpOnCrash",
-            "-version");
+        boolean withOnError = false;
+
+        if (args.length > 0) {
+            switch (args[0]) {
+                case "with-on-error": withOnError = true; break;
+                default: throw new RuntimeException("Invalid argument " + args[1]);
+            }
+        }
+
+        List<String> arguments = new ArrayList<>();
+        Collections.addAll(arguments,
+                "-XX:+UnlockDiagnosticVMOptions",
+                "-Xmx100M",
+                "-XX:ErrorHandlerTest=14",
+                "-XX:+TestUnresponsiveErrorHandler",
+                "-XX:ErrorLogTimeout=" + ERROR_LOG_TIMEOUT,
+                "-XX:-CreateCoredumpOnCrash");
+        if (withOnError) {
+            arguments.add("-XX:OnError=echo hi");
+        }
+        arguments.add("-version");
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(arguments);
 
         OutputAnalyzer output_detail = new OutputAnalyzer(pb.start());
 
@@ -91,8 +119,10 @@ public class TimeoutInErrorHandlingTest {
         output_detail.shouldMatch("# A fatal error has been detected by the Java Runtime Environment:.*");
         output_detail.shouldMatch("# +(?:SIGSEGV|SIGBUS|EXCEPTION_ACCESS_VIOLATION).*");
 
-        // VM should have been aborted by WatcherThread
-        output_detail.shouldMatch(".*timer expired, abort.*");
+        // Unless we specified OnError, VM should have been aborted by WatcherThread
+        if (!withOnError) {
+            output_detail.shouldMatch(".*timer expired, abort.*");
+        }
 
         // extract hs-err file
         String hs_err_file = output_detail.firstMatch("# *(\\S*hs_err_pid\\d+\\.log)", 1);
