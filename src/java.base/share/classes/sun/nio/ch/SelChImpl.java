@@ -90,6 +90,11 @@ public interface SelChImpl extends Channel {
                 millis = -1;
             } else {
                 millis = NANOSECONDS.toMillis(nanos);
+                if (nanos > MILLISECONDS.toNanos(millis)) {
+                    // Round *up*, so we never (ask to) wait less than requested.
+                    // Especially important between 0 and 1ms to avoid a tight loop.
+                    millis++;
+                }
             }
             Net.poll(getFD(), event, millis);
         }
