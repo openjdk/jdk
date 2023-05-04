@@ -61,7 +61,7 @@ public record Platform(OperatingSystem os, Architecture arch) {
      * @return true is it's a 64-bit platform
      */
     public boolean is64Bit() {
-        return (Architecture.is64bit());
+        return Architecture.is64bit();
     }
 
     /**

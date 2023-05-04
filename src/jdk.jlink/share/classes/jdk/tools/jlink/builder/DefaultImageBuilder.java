@@ -568,37 +568,6 @@ public final class DefaultImageBuilder implements ImageBuilder {
         }
     }
 
-    public static ExecutableImage getExecutableImage(Path root) {
-        Path binDir = root.resolve(BIN_DIRNAME);
-        if (Files.exists(binDir.resolve("java")) ||
-            Files.exists(binDir.resolve("java.exe"))) {
-            return new DefaultExecutableImage(root, retrieveModules(root), Platform.runtime());
-        }
-        return null;
-    }
-
-    private static Set<String> retrieveModules(Path root) {
-        Path releaseFile = root.resolve("release");
-        Set<String> modules = new HashSet<>();
-        if (Files.exists(releaseFile)) {
-            Properties release = new Properties();
-            try (FileInputStream fi = new FileInputStream(releaseFile.toFile())) {
-                release.load(fi);
-            } catch (IOException ex) {
-                System.err.println("Can't read release file " + ex);
-            }
-            String mods = release.getProperty("MODULES");
-            if (mods != null) {
-                String[] arr = mods.substring(1, mods.length() - 1).split(" ");
-                for (String m : arr) {
-                    modules.add(m.trim());
-                }
-
-            }
-        }
-        return modules;
-    }
-
     // finds subpaths matching the given criteria (up to 2 levels deep) and applies the given lambda
     private static void forEachPath(Path dir, BiPredicate<Path, BasicFileAttributes> matcher, Consumer<Path> consumer) throws IOException {
         try (Stream<Path> stream = Files.find(dir, 2, matcher)) {
