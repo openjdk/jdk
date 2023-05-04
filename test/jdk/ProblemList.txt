@@ -740,7 +740,6 @@ jdk/incubator/concurrent/ScopedValue/StressStackOverflow.java   8303498 linux-s3
 jdk/incubator/vector/ShortMaxVectorTests.java                   8306592 generic-i586
 jdk/incubator/vector/LoadJsvmlTest.java                         8305390 windows-x64
 
-
 ############################################################################
 
 # jdk_jfr
