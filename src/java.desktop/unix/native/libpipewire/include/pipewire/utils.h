@@ -52,25 +52,25 @@ char *
 pw_strip(char *str, const char *whitespace);
 
 #if !defined(strndupa)
-# define strndupa(s, n)								      \
-	({									      \
-		const char *__old = (s);					      \
-		size_t __len = strnlen(__old, (n));				      \
-		char *__new = (char *) __builtin_alloca(__len + 1);		      \
-		memcpy(__new, __old, __len);					      \
-		__new[__len] = '\0';						      \
-		__new;								      \
-	})
+# define strndupa(s, n)                                      \
+    ({                                          \
+        const char *__old = (s);                          \
+        size_t __len = strnlen(__old, (n));                      \
+        char *__new = (char *) __builtin_alloca(__len + 1);              \
+        memcpy(__new, __old, __len);                          \
+        __new[__len] = '\0';                              \
+        __new;                                      \
+    })
 #endif
 
 #if !defined(strdupa)
-# define strdupa(s)								      \
-	({									      \
-		const char *__old = (s);					      \
-		size_t __len = strlen(__old) + 1;				      \
-		char *__new = (char *) alloca(__len);				      \
-		(char *) memcpy(__new, __old, __len);				      \
-	})
+# define strdupa(s)                                      \
+    ({                                          \
+        const char *__old = (s);                          \
+        size_t __len = strlen(__old) + 1;                      \
+        char *__new = (char *) alloca(__len);                      \
+        (char *) memcpy(__new, __old, __len);                      \
+    })
 #endif
 
 SPA_WARN_UNUSED_RESULT
@@ -85,7 +85,7 @@ void* pw_reallocarray(void *ptr, size_t nmemb, size_t size);
 #ifdef PW_ENABLE_DEPRECATED
 #define PW_DEPRECATED(v)        (v)
 #else
-#define PW_DEPRECATED(v)	({ __typeof__(v) _v SPA_DEPRECATED = (v); (void)_v; (v); })
+#define PW_DEPRECATED(v)    ({ __typeof__(v) _v SPA_DEPRECATED = (v); (void)_v; (v); })
 #endif /* PW_ENABLE_DEPRECATED */
 
 /**

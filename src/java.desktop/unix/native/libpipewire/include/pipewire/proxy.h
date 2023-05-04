@@ -89,23 +89,23 @@ struct pw_proxy;
 
 /** Proxy events, use \ref pw_proxy_add_listener */
 struct pw_proxy_events {
-#define PW_VERSION_PROXY_EVENTS		1
+#define PW_VERSION_PROXY_EVENTS        1
         uint32_t version;
 
-	/** The proxy is destroyed */
+    /** The proxy is destroyed */
         void (*destroy) (void *data);
 
-	/** a proxy is bound to a global id */
+    /** a proxy is bound to a global id */
         void (*bound) (void *data, uint32_t global_id);
 
-	/** a proxy is removed from the server. Use pw_proxy_destroy to
-	 * free the proxy. */
+    /** a proxy is removed from the server. Use pw_proxy_destroy to
+     * free the proxy. */
         void (*removed) (void *data);
 
-	/** a reply to a sync method completed */
+    /** a reply to a sync method completed */
         void (*done) (void *data, int seq);
 
-	/** an error occurred on the proxy */
+    /** an error occurred on the proxy */
         void (*error) (void *data, int seq, int res, const char *message);
 
         void (*bound_props) (void *data, uint32_t global_id, const struct spa_dict *props);
@@ -115,22 +115,22 @@ struct pw_proxy_events {
  * can be retrieved with \ref pw_proxy_get_id . */
 struct pw_proxy *
 pw_proxy_new(struct pw_proxy *factory,
-	     const char *type,		/* interface type */
-	     uint32_t version,		/* interface version */
-	     size_t user_data_size	/* size of user data */);
+         const char *type,        /* interface type */
+         uint32_t version,        /* interface version */
+         size_t user_data_size    /* size of user data */);
 
 /** Add an event listener to proxy */
 void pw_proxy_add_listener(struct pw_proxy *proxy,
-			   struct spa_hook *listener,
-			   const struct pw_proxy_events *events,
-			   void *data);
+               struct spa_hook *listener,
+               const struct pw_proxy_events *events,
+               void *data);
 
 /** Add a listener for the events received from the remote object. The
   * events depend on the type of the remote object type. */
-void pw_proxy_add_object_listener(struct pw_proxy *proxy,	/**< the proxy */
-				 struct spa_hook *listener,	/**< listener */
-				 const void *funcs,		/**< proxied functions */
-				 void *data			/**< data passed to events */);
+void pw_proxy_add_object_listener(struct pw_proxy *proxy,    /**< the proxy */
+                 struct spa_hook *listener,    /**< listener */
+                 const void *funcs,        /**< proxied functions */
+                 void *data            /**< data passed to events */);
 
 /** destroy a proxy */
 void pw_proxy_destroy(struct pw_proxy *proxy);
@@ -174,20 +174,20 @@ const struct pw_protocol_marshal *pw_proxy_get_marshal(struct pw_proxy *proxy);
 /** Install a marshal function on a proxy */
 int pw_proxy_install_marshal(struct pw_proxy *proxy, bool implementor);
 
-#define pw_proxy_notify(p,type,event,version,...)			\
-	spa_hook_list_call(pw_proxy_get_object_listeners(p),		\
-			type, event, version, ## __VA_ARGS__)
+#define pw_proxy_notify(p,type,event,version,...)            \
+    spa_hook_list_call(pw_proxy_get_object_listeners(p),        \
+            type, event, version, ## __VA_ARGS__)
 
-#define pw_proxy_call(p,type,method,version,...)			\
-	spa_interface_call((struct spa_interface*)p,			\
-			type, method, version, ##__VA_ARGS__)
+#define pw_proxy_call(p,type,method,version,...)            \
+    spa_interface_call((struct spa_interface*)p,            \
+            type, method, version, ##__VA_ARGS__)
 
-#define pw_proxy_call_res(p,type,method,version,...)			\
-({									\
-	int _res = -ENOTSUP;						\
-	spa_interface_call_res((struct spa_interface*)p,		\
-			type, _res, method, version, ##__VA_ARGS__);	\
-	_res;								\
+#define pw_proxy_call_res(p,type,method,version,...)            \
+({                                    \
+    int _res = -ENOTSUP;                        \
+    spa_interface_call_res((struct spa_interface*)p,        \
+            type, _res, method, version, ##__VA_ARGS__);    \
+    _res;                                \
 })
 
 /**
