@@ -1196,6 +1196,112 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
   }
 }
 
+// Look up the method for a megamorphic invokeinterface call in a single pass over itable:
+// - check recv_klass (actual object class) is a subtype of resolved_klass from CompiledICHolder
+// - find a holder_klass (class that implements the method) vtable offset and get the method from vtable by index
+// The target method is determined by <holder_klass, itable_index>.
+// The receiver klass is in recv_klass.
+// On success, the result will be in method_result, and execution falls through.
+// On failure, execution transfers to the given label.
+void MacroAssembler::lookup_interface_method_stub(Register recv_klass,
+                                                  Register holder_klass,
+                                                  Register resolved_klass,
+                                                  Register method_result,
+                                                  Register temp_itbl_klass,
+                                                  Register scan_temp,
+                                                  Register holder_offset,
+                                                  int itable_index,
+                                                  Label& L_no_such_interface) {
+  assert_different_registers(resolved_klass, recv_klass, holder_klass, temp_itbl_klass, scan_temp, holder_offset);
+  assert_different_registers(method_result, recv_klass, holder_klass, temp_itbl_klass, scan_temp, holder_offset);
+
+  int vtable_base = in_bytes(Klass::vtable_start_offset());
+  int itentry_off = in_bytes(itableMethodEntry::method_offset());
+  int scan_step = itableOffsetEntry::size() * wordSize;
+  int vte_size = vtableEntry::size_in_bytes();
+  int ioffset = in_bytes(itableOffsetEntry::interface_offset());
+  int ooffset = in_bytes(itableOffsetEntry::offset_offset());
+  assert(vte_size == wordSize, "else adjust times_vte_scale");
+
+  Label L_loop_scan_resolved_entry, L_resolved_found, L_holder_found;
+
+  // temp_itbl_klass = recv_klass.itable[0]
+  // scan_temp = &recv_klass.itable[0]
+  ldrw(scan_temp, Address(recv_klass, Klass::vtable_length_offset()));
+  add(recv_klass, recv_klass, vtable_base + ioffset);
+  ldr(temp_itbl_klass, Address(recv_klass, scan_temp, Address::lsl(3)));
+  mov(holder_offset, zr);
+  lea(scan_temp, Address(recv_klass, scan_temp, Address::lsl(3)));
+
+  // Initial checks:
+  //   - if (holder_klass != resolved_klass), go to "scan for resolved"
+  //   - if (itable[0] == holder_klass), shortcut to "holder found"
+  //   - if (itable[0] == 0), no such interface
+  cmp(resolved_klass, holder_klass);
+  br(Assembler::NE, L_loop_scan_resolved_entry);
+  cmp(holder_klass, temp_itbl_klass);
+  br(Assembler::EQ, L_holder_found);
+  cbz(temp_itbl_klass, L_no_such_interface);
+
+  // Loop: Look for holder_klass record in itable
+  //   do {
+  //     temp_itbl_klass = *(scan_temp += scan_step);
+  //     if (temp_itbl_klass == holder_klass) {
+  //       goto L_holder_found; // Found!
+  //     }
+  //   } while (temp_itbl_klass != 0);
+  //   goto L_no_such_interface // Not found.
+  Label L_scan_holder;
+  bind(L_scan_holder);
+    ldr(temp_itbl_klass, Address(pre(scan_temp, scan_step)));
+    cmp(holder_klass, temp_itbl_klass);
+    br(Assembler::EQ, L_holder_found);
+    cbnz(temp_itbl_klass, L_scan_holder);
+
+  b(L_no_such_interface);
+
+  // Loop: Look for resolved_class record in itable
+  //   L_save_holder_offset:
+  //     holder_offset = index;
+  //   do {
+  //     temp_itbl_klass = *(scan_temp += scan_step);
+  //     if (temp_itbl_klass == holder_klass) {
+  //        goto L_save_holder_offset;
+  //     }
+  //     if (temp_itbl_klass == resolved_klass) {
+  //        goto L_resolved_found;  // Found!
+  //     }
+  //   } while (temp_itbl_klass != 0);
+  //   goto L_no_such_interface // Not found.
+  //
+  Label L_save_holder_offset;
+  bind(L_save_holder_offset);
+    mov(holder_offset, scan_temp);
+    // continue searching for resolved_found (checked above: resolved found != resolved class)
+  Label L_loop_scan_resolved;
+  bind(L_loop_scan_resolved);
+    ldr(temp_itbl_klass, Address(pre(scan_temp, scan_step)));
+    bind(L_loop_scan_resolved_entry);
+    cmp(holder_klass, temp_itbl_klass);
+    br(Assembler::EQ, L_save_holder_offset);
+    cmp(resolved_klass, temp_itbl_klass);
+    br(Assembler::EQ, L_resolved_found);
+    cbnz(temp_itbl_klass, L_loop_scan_resolved);
+
+  b(L_no_such_interface);
+
+  // See if we already have a holder klass. If not, go and scan for it.
+  bind(L_resolved_found);
+  cbz(holder_offset, L_scan_holder);
+  mov(scan_temp, holder_offset);
+
+  // Finally, scan_temp contains holder_klass vtable offset
+  bind(L_holder_found);
+  ldrw(method_result, Address(scan_temp, ooffset - ioffset));
+  add(recv_klass, recv_klass, (itable_index << 3) + itentry_off - (vtable_base + ioffset));
+  ldr(method_result, Address(recv_klass, method_result, Address::uxtw(0)));
+}
+
 // virtual method calling
 void MacroAssembler::lookup_virtual_method(Register recv_klass,
                                            RegisterOrConstant vtable_index,
