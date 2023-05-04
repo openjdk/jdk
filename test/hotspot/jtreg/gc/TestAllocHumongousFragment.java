@@ -177,6 +177,19 @@
  *      TestAllocHumongousFragment
  */
 
+ /*
+ * @test id=g1-alt-forwarding
+ * @summary Make sure G1 can recover from humongous allocation fragmentation, with alt GC forwarding
+ * @key randomness
+ * @requires vm.gc.G1
+ * @requires vm.debug
+ * @library /test/lib
+ *
+ * @run main/othervm -Xlog:gc+region=trace -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xmx1g -Xms1g
+ *      -XX:VerifyGCType=full -XX:+VerifyDuringGC -XX:+VerifyAfterGC -XX:+UseAltGCForwarding
+ *      TestAllocHumongousFragment
+ */
+
 import java.util.*;
 import jdk.test.lib.Utils;
 
