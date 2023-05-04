@@ -968,7 +968,7 @@ void MacroAssembler::emit_static_call_stub() {
   // exact layout of this stub.
 
   isb();
-  mov_metadata(rmethod, (Metadata*)nullptr);
+  mov_metadata(rmethod, nullptr);
 
   // Jump to the entry point of the c2i stub.
   movptr(rscratch1, 0);
@@ -1639,13 +1639,13 @@ void MacroAssembler::super_call_VM_leaf(address entry_point, Register arg_0, Reg
 
 void MacroAssembler::null_check(Register reg, int offset) {
   if (needs_explicit_null_check(offset)) {
-    // provoke OS null exception if reg = null by
+    // provoke OS null exception if reg is null by
     // accessing M[reg] w/o changing any registers
     // NOTE: this is plenty to provoke a segv
     ldr(zr, Address(reg));
   } else {
     // nothing to do, (later) access of M[reg + offset]
-    // will provoke OS null exception if reg = null
+    // will provoke OS null exception if reg is null
   }
 }
 

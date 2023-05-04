@@ -29,7 +29,7 @@
 void ICacheStubGenerator::generate_icache_flush(
                 ICache::flush_icache_stub_t* flush_icache_stub) {
   // Give anyone who calls this a surprise
-  *flush_icache_stub = (ICache::flush_icache_stub_t)nullptr;
+  *flush_icache_stub = nullptr;
 }
 
 void ICache::initialize() {}
