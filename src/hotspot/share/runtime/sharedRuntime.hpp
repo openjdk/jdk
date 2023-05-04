@@ -267,8 +267,10 @@ class SharedRuntime: AllStatic {
 #if INCLUDE_JVMTI
   static void notify_jvmti_object_alloc(oopDesc* o, JavaThread* current);
   // Functions for JVMTI notifications
-  static void notify_jvmti_mount(oopDesc* vt, jboolean hide, jboolean first_mount, JavaThread* current);
-  static void notify_jvmti_unmount(oopDesc* vt, jboolean hide, jboolean last_unmount, JavaThread* current);
+  static void notify_jvmti_vthread_start(oopDesc* vt, jboolean hide, JavaThread* current);
+  static void notify_jvmti_vthread_end(oopDesc* vt, jboolean hide, JavaThread* current);
+  static void notify_jvmti_vthread_mount(oopDesc* vt, jboolean hide, JavaThread* current);
+  static void notify_jvmti_vthread_unmount(oopDesc* vt, jboolean hide, JavaThread* current);
 #endif
 
   // RedefineClasses() tracing support for obsolete method entry
