@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -127,4 +127,10 @@ public interface RobotPeer
     default boolean useAbsoluteCoordinates() {
         return false;
     }
+
+    /**
+     * Resets the stored screen data capture permission for a set of screens.
+     * Is a no-op if not supported by the platform.
+     */
+    default void resetScreenCapturePermission() {}
 }
