@@ -41,6 +41,9 @@ public class Unnamed {
         assertEquals(3, testMultiValuesGuards(new R3(), 42));
         assertEquals(1, testMultiValuesNestedGuards(new Box(new R2()), 42));
         assertEquals(2, testMultiValuesNestedGuards(new Box(new R3()), 1));
+        assertEquals(1, testMixUnconditionalAndConditional(new R1()));
+        assertEquals(2, testMixUnconditionalAndConditional(new R2()));
+        assertEquals(2, testMixUnconditionalAndConditional(new R3()));
     }
 
     private void unnamedTest() {
@@ -145,6 +148,13 @@ public class Unnamed {
         };
     }
 
+    int testMixUnconditionalAndConditional(Base t) {
+        return switch(t) {
+            case R1 _ -> 1;
+            case R2 _, Base _-> 2;
+        };
+    }
+
     // JEP 443 examples
     record Point(int x, int y) { }
     enum Color { RED, GREEN, BLUE }
@@ -174,7 +184,6 @@ public class Unnamed {
     final  class R4  extends Base { }
     record Box<T extends Base>(T content) { }
     record Box2<T extends Base>(T content) { }
-
     void assertEquals(Object expected, Object actual) {
         if (!Objects.equals(expected, actual)) {
             throw new AssertionError("Expected: " + expected + ", but got: " + actual);

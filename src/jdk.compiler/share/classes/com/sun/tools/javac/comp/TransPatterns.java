@@ -544,6 +544,7 @@ public class TransPatterns extends TreeTranslator {
                         JCExpression accTest = null;
                         boolean first = true;
 
+                        // if all patterns are the same we do not need an extra test for the first (it is covered by the BSM)
                         boolean multiplePatternsAndDifferent = labels.size() > 1 &&
                                 !labels.stream().map(l -> l.pat.type.tsym).allMatch(labels.get(0).pat.type.tsym::equals);
 
@@ -595,16 +596,20 @@ public class TransPatterns extends TreeTranslator {
                 fixupContinue(tree, c, index, i);
 
                 ListBuffer<JCCaseLabel> translatedLabels = new ListBuffer<>();
-                for (var p : c.labels) {
+                List<JCCaseLabel> labels = c.labels;
+                boolean defaultAdded = false;
+                for (int j = 0; j < labels.size() && !defaultAdded; j++) {
+                    var p = labels.get(j);
                     if (p.hasTag(Tag.DEFAULTCASELABEL)) {
                         translatedLabels.add(p);
                         hasDefault = true;
                     } else if (hasUnconditionalPattern && !hasDefault &&
-                               c == lastCase && p.hasTag(Tag.PATTERNCASELABEL)) {
+                            c == lastCase && p.hasTag(Tag.PATTERNCASELABEL)) {
                         //If the switch has unconditional pattern,
                         //the last case will contain it.
                         //Convert the unconditional pattern to default:
                         translatedLabels.add(make.DefaultCaseLabel());
+                        defaultAdded = true;
                     } else {
                         int value;
                         if (TreeInfo.isNullCaseLabel(p)) {
