@@ -557,8 +557,7 @@ class FreeCSetClosure : public HeapRegionClosure {
     stats()->account_failed_region(r);
 
     G1GCPhaseTimes* p = _g1h->phase_times();
-    assert(!r->is_pinned(), "Unexpected pinned region at index %u", r->hrm_index());
-    assert(r->in_collection_set(), "bad CS");
+    assert(r->in_collection_set(), "Failed evacuation of region %u not in collection set", r->hrm_index());
 
     p->record_or_add_thread_work_item(G1GCPhaseTimes::RestoreRetainedRegions,
                                       _worker_id,

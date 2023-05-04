@@ -37,28 +37,13 @@ class outputStream;
 enum {
   // See jvm.h for shared JVM_ACC_XXX access flags
 
-  // HotSpot-specific access flags
-
   // flags actually put in .class file
   JVM_ACC_WRITTEN_FLAGS           = 0x00007FFF,
 
-  // Method* flags
-  JVM_ACC_MONITOR_MATCH           = 0x10000000,     // True if we know that monitorenter/monitorexit bytecodes match
-  JVM_ACC_HAS_MONITOR_BYTECODES   = 0x20000000,     // Method contains monitorenter/monitorexit bytecodes
-  JVM_ACC_HAS_LOOPS               = 0x40000000,     // Method has loops
-  JVM_ACC_LOOPS_FLAG_INIT         = (int)0x80000000,// The loop flag has been initialized
-  JVM_ACC_QUEUED                  = 0x01000000,     // Queued for compilation
-  JVM_ACC_NOT_C2_COMPILABLE       = 0x02000000,
-  JVM_ACC_NOT_C1_COMPILABLE       = 0x04000000,
-  JVM_ACC_NOT_C2_OSR_COMPILABLE   = 0x08000000,
-  JVM_ACC_HAS_JSRS                = 0x00800000,
-  JVM_ACC_IS_OLD                  = 0x00010000,     // RedefineClasses() has replaced this method
-  JVM_ACC_IS_OBSOLETE             = 0x00020000,     // RedefineClasses() has made method obsolete
-  JVM_ACC_IS_PREFIXED_NATIVE      = 0x00040000,     // JVMTI has prefixed this native method
-  JVM_ACC_ON_STACK                = 0x00080000,     // RedefineClasses() was used on the stack
-  JVM_ACC_IS_DELETED              = 0x00008000,     // RedefineClasses() has deleted this method
-
-  // Klass* flags
+  // HotSpot-specific access flags
+  // These Klass flags should be migrated, to a field such as InstanceKlass::_misc_flags,
+  // or to a similar flags field in Klass itself.
+  // Do not add new ACC flags here.
   JVM_ACC_HAS_FINALIZER           = 0x40000000,     // True if klass has a non-empty finalize() method
   JVM_ACC_IS_CLONEABLE_FAST       = (int)0x80000000,// True if klass implements the Cloneable interface and can be optimized in generated code
   JVM_ACC_IS_HIDDEN_CLASS         = 0x04000000,     // True if klass is hidden
@@ -69,7 +54,7 @@ enum {
 class AccessFlags {
   friend class VMStructs;
  private:
-  jint _flags;
+  jint _flags;  // TODO: move 4 access flags above to Klass and change to u2
 
  public:
   AccessFlags() : _flags(0) {}
@@ -92,28 +77,11 @@ class AccessFlags {
   // Attribute flags
   bool is_synthetic   () const         { return (_flags & JVM_ACC_SYNTHETIC   ) != 0; }
 
-  // Method* flags
-  bool is_monitor_matching     () const { return (_flags & JVM_ACC_MONITOR_MATCH          ) != 0; }
-  bool has_monitor_bytecodes   () const { return (_flags & JVM_ACC_HAS_MONITOR_BYTECODES  ) != 0; }
-  bool has_loops               () const { return (_flags & JVM_ACC_HAS_LOOPS              ) != 0; }
-  bool loops_flag_init         () const { return (_flags & JVM_ACC_LOOPS_FLAG_INIT        ) != 0; }
-  bool queued_for_compilation  () const { return (_flags & JVM_ACC_QUEUED                 ) != 0; }
-  bool is_not_c1_compilable    () const { return (_flags & JVM_ACC_NOT_C1_COMPILABLE      ) != 0; }
-  bool is_not_c2_compilable    () const { return (_flags & JVM_ACC_NOT_C2_COMPILABLE      ) != 0; }
-  bool is_not_c2_osr_compilable() const { return (_flags & JVM_ACC_NOT_C2_OSR_COMPILABLE  ) != 0; }
-  bool has_jsrs                () const { return (_flags & JVM_ACC_HAS_JSRS               ) != 0; }
-  bool is_old                  () const { return (_flags & JVM_ACC_IS_OLD                 ) != 0; }
-  bool is_obsolete             () const { return (_flags & JVM_ACC_IS_OBSOLETE            ) != 0; }
-  bool is_deleted              () const { return (_flags & JVM_ACC_IS_DELETED             ) != 0; }
-  bool is_prefixed_native      () const { return (_flags & JVM_ACC_IS_PREFIXED_NATIVE     ) != 0; }
-
   // Klass* flags
   bool has_finalizer           () const { return (_flags & JVM_ACC_HAS_FINALIZER          ) != 0; }
   bool is_cloneable_fast       () const { return (_flags & JVM_ACC_IS_CLONEABLE_FAST      ) != 0; }
   bool is_hidden_class         () const { return (_flags & JVM_ACC_IS_HIDDEN_CLASS        ) != 0; }
   bool is_value_based_class    () const { return (_flags & JVM_ACC_IS_VALUE_BASED_CLASS   ) != 0; }
-
-  bool on_stack() const                 { return (_flags & JVM_ACC_ON_STACK) != 0; }
 
   // get .class file flags
   jint get_flags               () const { return (_flags & JVM_ACC_WRITTEN_FLAGS); }
@@ -125,55 +93,23 @@ class AccessFlags {
   }
   void set_flags(jint flags)            { _flags = (flags & JVM_ACC_WRITTEN_FLAGS); }
 
-  void set_queued_for_compilation()    { atomic_set_bits(JVM_ACC_QUEUED); }
-  void clear_queued_for_compilation()  { atomic_clear_bits(JVM_ACC_QUEUED); }
-
-  // Atomic update of flags
-  void atomic_set_bits(jint bits);
-  void atomic_clear_bits(jint bits);
-
  private:
-  friend class Method;
   friend class Klass;
   friend class ClassFileParser;
   // the functions below should only be called on the _access_flags inst var directly,
   // otherwise they are just changing a copy of the flags
 
   // attribute flags
-  void set_is_synthetic()              { atomic_set_bits(JVM_ACC_SYNTHETIC);               }
+  void set_is_synthetic()              { _flags |= JVM_ACC_SYNTHETIC; }
 
-  // Method* flags
-  void set_monitor_matching()          { atomic_set_bits(JVM_ACC_MONITOR_MATCH);           }
-  void set_has_monitor_bytecodes()     { atomic_set_bits(JVM_ACC_HAS_MONITOR_BYTECODES);   }
-  void set_has_loops()                 { atomic_set_bits(JVM_ACC_HAS_LOOPS);               }
-  void set_loops_flag_init()           { atomic_set_bits(JVM_ACC_LOOPS_FLAG_INIT);         }
-  void set_not_c1_compilable()         { atomic_set_bits(JVM_ACC_NOT_C1_COMPILABLE);       }
-  void set_not_c2_compilable()         { atomic_set_bits(JVM_ACC_NOT_C2_COMPILABLE);       }
-  void set_not_c2_osr_compilable()     { atomic_set_bits(JVM_ACC_NOT_C2_OSR_COMPILABLE);   }
-  void set_has_jsrs()                  { atomic_set_bits(JVM_ACC_HAS_JSRS);                }
-  void set_is_old()                    { atomic_set_bits(JVM_ACC_IS_OLD);                  }
-  void set_is_obsolete()               { atomic_set_bits(JVM_ACC_IS_OBSOLETE);             }
-  void set_is_deleted()                { atomic_set_bits(JVM_ACC_IS_DELETED);              }
-  void set_is_prefixed_native()        { atomic_set_bits(JVM_ACC_IS_PREFIXED_NATIVE);      }
-
-  void clear_not_c1_compilable()       { atomic_clear_bits(JVM_ACC_NOT_C1_COMPILABLE);       }
-  void clear_not_c2_compilable()       { atomic_clear_bits(JVM_ACC_NOT_C2_COMPILABLE);       }
-  void clear_not_c2_osr_compilable()   { atomic_clear_bits(JVM_ACC_NOT_C2_OSR_COMPILABLE);   }
   // Klass* flags
-  void set_has_finalizer()             { atomic_set_bits(JVM_ACC_HAS_FINALIZER);           }
-  void set_is_cloneable_fast()         { atomic_set_bits(JVM_ACC_IS_CLONEABLE_FAST);       }
-  void set_is_hidden_class()           { atomic_set_bits(JVM_ACC_IS_HIDDEN_CLASS);         }
-  void set_is_value_based_class()      { atomic_set_bits(JVM_ACC_IS_VALUE_BASED_CLASS);    }
+  // These are set at classfile parsing time so do not require atomic access.
+  void set_has_finalizer()             { _flags |= JVM_ACC_HAS_FINALIZER; }
+  void set_is_cloneable_fast()         { _flags |= JVM_ACC_IS_CLONEABLE_FAST; }
+  void set_is_hidden_class()           { _flags |= JVM_ACC_IS_HIDDEN_CLASS; }
+  void set_is_value_based_class()      { _flags |= JVM_ACC_IS_VALUE_BASED_CLASS; }
 
  public:
-  void set_on_stack(const bool value)
-                                       {
-                                         if (value) {
-                                           atomic_set_bits(JVM_ACC_ON_STACK);
-                                         } else {
-                                           atomic_clear_bits(JVM_ACC_ON_STACK);
-                                         }
-                                       }
   // Conversion
   jshort as_short() const              { return (jshort)_flags; }
   jint   as_int() const                { return _flags; }
