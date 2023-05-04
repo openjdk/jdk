@@ -22,6 +22,9 @@
  *
  */
 
+#ifndef SHARE_UTILITIES_FASTHASH_HPP
+#define SHARE_UTILITIES_FASTHASH_HPP
+
 #include "memory/allStatic.hpp"
 
 class FastHash : public AllStatic {
@@ -90,3 +93,5 @@ public:
     return V1 ^ L2;
   }
 };
+
+#endif// SHARE_UTILITIES_FASTHASH_HPP
