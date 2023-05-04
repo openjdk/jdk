@@ -1525,7 +1525,7 @@ size_t ObjectSynchronizer::deflate_idle_monitors(ObjectMonitorsHashtable* table)
     ResourceMark rm;
     GrowableArray<ObjectMonitor*> delete_list((int)deflated_count);
     unlinked_count = _in_use_list.unlink_deflated(current, ls, &timer, &delete_list);
-    if (current->is_Java_thread()) {
+    if (current->is_monitor_deflation_thread()) {
       if (ls != nullptr) {
         timer.stop();
         ls->print_cr("before handshaking: unlinked_count=" SIZE_FORMAT
@@ -1551,6 +1551,8 @@ size_t ObjectSynchronizer::deflate_idle_monitors(ObjectMonitorsHashtable* table)
                      in_use_list_ceiling(), _in_use_list.count(), _in_use_list.max());
         timer.start();
       }
+    } else {
+      assert(current->is_VM_thread(), "only VM thread may get here");
     }
 
     // After the handshake, safely free the ObjectMonitors that were
