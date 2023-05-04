@@ -1552,7 +1552,9 @@ size_t ObjectSynchronizer::deflate_idle_monitors(ObjectMonitorsHashtable* table)
         timer.start();
       }
     } else {
-      assert(current->is_VM_thread(), "only VM thread may get here");
+      // This is not a monitor deflation thread.
+      // No handshake or rendezvous is needed when we are already at safepoint.
+      assert_at_safepoint();
     }
 
     // After the handshake, safely free the ObjectMonitors that were
