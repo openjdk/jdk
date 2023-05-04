@@ -75,7 +75,7 @@ public class BenchmarkMath {
     public double  expDouble() {
         return  Math.exp(double4Dot1);
     }
-    
+
     @Benchmark
     public double  expDoubleStrict() {
         return  StrictMath.exp(double4Dot1);
