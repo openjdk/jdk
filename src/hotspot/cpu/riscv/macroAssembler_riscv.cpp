@@ -1689,6 +1689,23 @@ void MacroAssembler::store_sized_value(Address dst, Register src, size_t size_in
   }
 }
 
+void MacroAssembler::load_word_misaligned(Register dst, Address src, Register tmp, bool is_signed) {
+  if (AvoidUnalignedAccesses) {
+    lbu(dst, src);
+    lbu(tmp, Address(src.base(), src.offset() + 1));
+    slli(tmp, tmp, 8);
+    add(dst, dst, tmp);
+    lbu(tmp, Address(src.base(), src.offset() + 2));
+    slli(tmp, tmp, 16);
+    add(dst, dst, tmp);
+    is_signed ? lb(tmp, Address(src.base(), src.offset() + 3)) : lbu(tmp, Address(src.base(), src.offset() + 3));
+    slli(tmp, tmp, 24);
+    add(dst, dst, tmp);
+  } else {
+    is_signed ? lw(dst, src) : lwu(dst, src);
+  }
+}
+
 // reverse bytes in halfword in lower 16 bits and sign-extend
 // Rd[15:0] = Rs[7:0] Rs[15:8] (sign-extend to 64 bits)
 void MacroAssembler::revb_h_h(Register Rd, Register Rs, Register tmp) {

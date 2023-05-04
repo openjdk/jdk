@@ -213,21 +213,8 @@ void InterpreterMacroAssembler::get_cache_index_at_bcp(Register index,
       load_unsigned_short(index, Address(xbcp, bcp_offset));
     }
   } else if (index_size == sizeof(u4)) {
-    if (AvoidUnalignedAccesses) {
-      assert_different_registers(index, tmp);
-      load_unsigned_byte(index, Address(xbcp, bcp_offset));
-      load_unsigned_byte(tmp, Address(xbcp, bcp_offset + 1));
-      slli(tmp, tmp, 8);
-      add(index, index, tmp);
-      load_unsigned_byte(tmp, Address(xbcp, bcp_offset + 2));
-      slli(tmp, tmp, 16);
-      add(index, index, tmp);
-      load_unsigned_byte(tmp, Address(xbcp, bcp_offset + 3));
-      slli(tmp, tmp, 24);
-      add(index, index, tmp);
-    } else {
-      lwu(index, Address(xbcp, bcp_offset));
-    }
+    load_word_misaligned(index, Address(xbcp, bcp_offset), tmp, false);
+
     // Check if the secondary index definition is still ~x, otherwise
     // we have to change the following assembler code to calculate the
     // plain index.
