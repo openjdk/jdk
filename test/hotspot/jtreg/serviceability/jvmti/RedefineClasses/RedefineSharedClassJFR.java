@@ -76,12 +76,9 @@ public class RedefineSharedClassJFR {
                 offCommand.addAll(baseCommand);
                 ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(offCommand);
                 new OutputAnalyzer(pb.start())
-                    .shouldContain(SHOULD_CLEAN_TRUE)
-                    .shouldNotContain(SHOULD_CLEAN_FALSE)
-                    // We expect at least one of the transformed classes to be in use, if
-                    // not the above check that should_clean_previous should be true will also
-                    // fail. This check is to show what is expected.
-                    .shouldContain(SCRATCH_CLASS_ADDED_ON_STACK)
+                    // We can't expect any of the transformed classes to be in use
+                    // so the only thing we can verify is that no scratch classes
+                    // are added because they are shared.
                     .shouldNotContain(SCRATCH_CLASS_ADDED_SHARED)
                     .shouldHaveExitValue(0);
                 return;
