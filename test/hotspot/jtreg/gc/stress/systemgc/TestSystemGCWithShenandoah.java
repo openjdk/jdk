@@ -40,6 +40,23 @@ package gc.stress.systemgc;
  *      -XX:+UseShenandoahGC
  *      gc.stress.systemgc.TestSystemGCWithShenandoah 270
  */
+/*
+ * @test id=alt-forwarding
+ * @key stress
+ * @library /
+ * @requires vm.gc.Shenandoah
+ * @requires vm.debug
+ * @summary Stress the Shenandoah GC full GC by allocating objects of different lifetimes concurrently with System.gc().
+ *
+ * @run main/othervm/timeout=300 -Xlog:gc*=info -Xmx512m -XX:+UnlockExperimentalVMOptions -XX:+UnlockDiagnosticVMOptions
+ *      -XX:+UseShenandoahGC -XX:+UseAltGCForwarding
+ *      -XX:+ShenandoahVerify
+ *      gc.stress.systemgc.TestSystemGCWithShenandoah 270
+ *
+ * @run main/othervm/timeout=300 -Xlog:gc*=info -Xmx512m -XX:+UnlockExperimentalVMOptions -XX:+UnlockDiagnosticVMOptions
+ *      -XX:+UseShenandoahGC
+ *      gc.stress.systemgc.TestSystemGCWithShenandoah 270
+ */
 
 /*
  * @test id=iu
