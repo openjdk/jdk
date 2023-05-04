@@ -85,7 +85,7 @@ abstract class MethodHandleImpl {
         MethodType correctType = ArrayAccessor.correctType(arrayClass, access);
         if (mh.type() != correctType) {
             // two assertions only applicable to non-construct access
-            assert(access == ArrayAccess.CONSTRUCT || arrayClass.isPrimitive());
+            assert(access == ArrayAccess.CONSTRUCT || !arrayClass.isPrimitive());
             assert(access == ArrayAccess.CONSTRUCT || mh.type().parameterType(0) == Object[].class);
             /* if access == SET */ assert(access != ArrayAccess.SET || mh.type().parameterType(2) == Object.class);
             /* if access == GET */ assert(access != ArrayAccess.GET ||
@@ -172,7 +172,7 @@ abstract class MethodHandleImpl {
         static final int GETTER_INDEX = 0, SETTER_INDEX = 1, LENGTH_INDEX = 2,
                 CONSTRUCTOR_INDEX = 3, INDEX_LIMIT = 4;
         static final ClassValue<MethodHandle[]> TYPED_ACCESSORS
-                = new ClassValue<MethodHandle[]>() {
+                = new ClassValue<>() {
                     @Override
                     protected MethodHandle[] computeValue(Class<?> type) {
                         return new MethodHandle[INDEX_LIMIT];
@@ -255,7 +255,7 @@ abstract class MethodHandleImpl {
         }
         static MethodHandle getAccessor(Class<?> arrayClass, ArrayAccess access) {
             if (access == ArrayAccess.CONSTRUCT)
-                return getConstantHandle(MH_Array_newInstance).bindTo(arrayClass);
+                return getConstantHandle(MH_Array_newInstance).bindTo(arrayClass.componentType());
 
             String     name = name(arrayClass, access);
             MethodType type = type(arrayClass, access);
@@ -1490,7 +1490,7 @@ abstract class MethodHandleImpl {
         if (elemType == Object.class)
             return varargsArray(nargs);
         // other cases:  primitive arrays, subtypes of Object[]
-        MethodHandle cache[] = Makers.TYPED_COLLECTORS.get(elemType);
+        MethodHandle[] cache = Makers.TYPED_COLLECTORS.get(elemType);
         MethodHandle mh = nargs < cache.length ? cache[nargs] : null;
         if (mh != null)  return mh;
         mh = makeCollector(arrayType, nargs);
