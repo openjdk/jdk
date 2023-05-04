@@ -46,7 +46,6 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * image displayed on screen and second with it not displayed.
  * @run main CopyAnimatedGIFTest
  */
-
 public class CopyAnimatedGIFTest {
     private static final long TIMEOUT = 10000;
 
@@ -96,14 +95,13 @@ public class CopyAnimatedGIFTest {
     }
 
     private void runTest(boolean isImageDisplayed) throws Exception {
-        Robot robot = new Robot();
 
         if (isImageDisplayed) {
+            Robot robot = new Robot();
             EventQueue.invokeAndWait(this::createGUI);
+            robot.waitForIdle();
+            robot.delay(1000);
         }
-
-        robot.waitForIdle();
-        robot.delay(1000);
 
         EventQueue.invokeLater(() -> {
             copyImage();
