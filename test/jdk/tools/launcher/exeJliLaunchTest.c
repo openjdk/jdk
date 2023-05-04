@@ -33,8 +33,14 @@
 #include "java.h"
 
 int
-main(int argc, char **argv)
+main(int argc, char **args)
 {
+    //avoid null-terminated array of arguments to test JDK-8303669
+    char *argv[argc];
+    for (int i = 0; i < argc; i++) {
+        argv[i] = args[i];
+    }
+
     return JLI_Launch(argc, argv,
                    0, NULL,
                    0, NULL,
