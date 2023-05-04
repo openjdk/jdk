@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -92,7 +92,7 @@ CK_C_INITIALIZE_ARGS_PTR makeCKInitArgsAdapter(JNIEnv *env, jobject jInitArgs)
     /* convert the Java InitArgs object to a pointer to a CK_C_INITIALIZE_ARGS structure */
     ckpInitArgs = (CK_C_INITIALIZE_ARGS_PTR) malloc(sizeof(CK_C_INITIALIZE_ARGS));
     if (ckpInitArgs == NULL) {
-        throwOutOfMemoryError(env, 0);
+        p11ThrowOutOfMemoryError(env, 0);
         return NULL_PTR;
     }
     ckpInitArgs->flags = (CK_FLAGS)0;
@@ -155,7 +155,7 @@ CK_C_INITIALIZE_ARGS_PTR makeCKInitArgsAdapter(JNIEnv *env, jobject jInitArgs)
         ckpGlobalInitArgs = (CK_C_INITIALIZE_ARGS_PTR) malloc(sizeof(CK_C_INITIALIZE_ARGS));
         if (ckpGlobalInitArgs == NULL) {
             free(ckpInitArgs);
-            throwOutOfMemoryError(env, 0);
+            p11ThrowOutOfMemoryError(env, 0);
             return NULL_PTR;
         }
 
@@ -198,7 +198,7 @@ CK_C_INITIALIZE_ARGS_PTR makeCKInitArgsAdapter(JNIEnv *env, jobject jInitArgs)
  */
 CK_RV callJCreateMutex(CK_VOID_PTR_PTR ppMutex)
 {
-    extern JavaVM *jvm;
+    extern JavaVM *jvm_j2pkcs11;
     JNIEnv *env;
     jint returnValue;
     jthrowable pkcs11Exception;
@@ -215,21 +215,21 @@ CK_RV callJCreateMutex(CK_VOID_PTR_PTR ppMutex)
 
 
     /* Get the currently running Java VM */
-    if (jvm == NULL) { return rv ;} /* there is no VM running */
+    if (jvm_j2pkcs11 == NULL) { return rv ;} /* there is no VM running */
 
     /* Determine, if current thread is already attached */
-    returnValue = (*jvm)->GetEnv(jvm, (void **) &env, JNI_VERSION_1_2);
+    returnValue = (*jvm_j2pkcs11)->GetEnv(jvm_j2pkcs11, (void **) &env, JNI_VERSION_1_2);
     if (returnValue == JNI_EDETACHED) {
         /* thread detached, so attach it */
         wasAttached = 0;
-        returnValue = (*jvm)->AttachCurrentThread(jvm, (void **) &env, NULL);
+        returnValue = (*jvm_j2pkcs11)->AttachCurrentThread(jvm_j2pkcs11, (void **) &env, NULL);
     } else if (returnValue == JNI_EVERSION) {
         /* this version of JNI is not supported, so just try to attach */
         /* we assume it was attached to ensure that this thread is not detached
          * afterwards even though it should not
          */
         wasAttached = 1;
-        returnValue = (*jvm)->AttachCurrentThread(jvm, (void **) &env, NULL);
+        returnValue = (*jvm_j2pkcs11)->AttachCurrentThread(jvm_j2pkcs11, (void **) &env, NULL);
     } else {
         /* attached */
         wasAttached = 1;
@@ -275,7 +275,7 @@ CK_RV callJCreateMutex(CK_VOID_PTR_PTR ppMutex)
 
     /* if we attached this thread to the VM just for callback, we detach it now */
     if (wasAttached) {
-        returnValue = (*jvm)->DetachCurrentThread(jvm);
+        returnValue = (*jvm_j2pkcs11)->DetachCurrentThread(jvm_j2pkcs11);
     }
 
     return rv ;
@@ -291,7 +291,7 @@ CK_RV callJCreateMutex(CK_VOID_PTR_PTR ppMutex)
  */
 CK_RV callJDestroyMutex(CK_VOID_PTR pMutex)
 {
-    extern JavaVM *jvm;
+    extern JavaVM *jvm_j2pkcs11;
     JNIEnv *env;
     jint returnValue;
     jthrowable pkcs11Exception;
@@ -308,21 +308,21 @@ CK_RV callJDestroyMutex(CK_VOID_PTR pMutex)
 
 
     /* Get the currently running Java VM */
-    if (jvm == NULL) { return rv ; } /* there is no VM running */
+    if (jvm_j2pkcs11 == NULL) { return rv ; } /* there is no VM running */
 
     /* Determine, if current thread is already attached */
-    returnValue = (*jvm)->GetEnv(jvm, (void **) &env, JNI_VERSION_1_2);
+    returnValue = (*jvm_j2pkcs11)->GetEnv(jvm_j2pkcs11, (void **) &env, JNI_VERSION_1_2);
     if (returnValue == JNI_EDETACHED) {
         /* thread detached, so attach it */
         wasAttached = 0;
-        returnValue = (*jvm)->AttachCurrentThread(jvm, (void **) &env, NULL);
+        returnValue = (*jvm_j2pkcs11)->AttachCurrentThread(jvm_j2pkcs11, (void **) &env, NULL);
     } else if (returnValue == JNI_EVERSION) {
         /* this version of JNI is not supported, so just try to attach */
         /* we assume it was attached to ensure that this thread is not detached
          * afterwards even though it should not
          */
         wasAttached = 1;
-        returnValue = (*jvm)->AttachCurrentThread(jvm, (void **) &env, NULL);
+        returnValue = (*jvm_j2pkcs11)->AttachCurrentThread(jvm_j2pkcs11, (void **) &env, NULL);
     } else {
         /* attached */
         wasAttached = 1;
@@ -367,7 +367,7 @@ CK_RV callJDestroyMutex(CK_VOID_PTR pMutex)
 
     /* if we attached this thread to the VM just for callback, we detach it now */
     if (wasAttached) {
-        returnValue = (*jvm)->DetachCurrentThread(jvm);
+        returnValue = (*jvm_j2pkcs11)->DetachCurrentThread(jvm_j2pkcs11);
     }
 
     return rv ;
@@ -383,7 +383,7 @@ CK_RV callJDestroyMutex(CK_VOID_PTR pMutex)
  */
 CK_RV callJLockMutex(CK_VOID_PTR pMutex)
 {
-    extern JavaVM *jvm;
+    extern JavaVM *jvm_j2pkcs11;
     JNIEnv *env;
     jint returnValue;
     jthrowable pkcs11Exception;
@@ -400,21 +400,21 @@ CK_RV callJLockMutex(CK_VOID_PTR pMutex)
 
 
     /* Get the currently running Java VM */
-    if (jvm == NULL) { return rv ; } /* there is no VM running */
+    if (jvm_j2pkcs11 == NULL) { return rv ; } /* there is no VM running */
 
     /* Determine, if current thread is already attached */
-    returnValue = (*jvm)->GetEnv(jvm, (void **) &env, JNI_VERSION_1_2);
+    returnValue = (*jvm_j2pkcs11)->GetEnv(jvm_j2pkcs11, (void **) &env, JNI_VERSION_1_2);
     if (returnValue == JNI_EDETACHED) {
         /* thread detached, so attach it */
         wasAttached = 0;
-        returnValue = (*jvm)->AttachCurrentThread(jvm, (void **) &env, NULL);
+        returnValue = (*jvm_j2pkcs11)->AttachCurrentThread(jvm_j2pkcs11, (void **) &env, NULL);
     } else if (returnValue == JNI_EVERSION) {
         /* this version of JNI is not supported, so just try to attach */
         /* we assume it was attached to ensure that this thread is not detached
          * afterwards even though it should not
          */
         wasAttached = 1;
-        returnValue = (*jvm)->AttachCurrentThread(jvm, (void **) &env, NULL);
+        returnValue = (*jvm_j2pkcs11)->AttachCurrentThread(jvm_j2pkcs11, (void **) &env, NULL);
     } else {
         /* attached */
         wasAttached = 1;
@@ -455,7 +455,7 @@ CK_RV callJLockMutex(CK_VOID_PTR pMutex)
 
     /* if we attached this thread to the VM just for callback, we detach it now */
     if (wasAttached) {
-        returnValue = (*jvm)->DetachCurrentThread(jvm);
+        returnValue = (*jvm_j2pkcs11)->DetachCurrentThread(jvm_j2pkcs11);
     }
 
     return rv ;
@@ -471,7 +471,7 @@ CK_RV callJLockMutex(CK_VOID_PTR pMutex)
  */
 CK_RV callJUnlockMutex(CK_VOID_PTR pMutex)
 {
-    extern JavaVM *jvm;
+    extern JavaVM *jvm_j2pkcs11;
     JNIEnv *env;
     jint returnValue;
     jthrowable pkcs11Exception;
@@ -488,21 +488,21 @@ CK_RV callJUnlockMutex(CK_VOID_PTR pMutex)
 
 
     /* Get the currently running Java VM */
-    if (jvm == NULL) { return rv ; } /* there is no VM running */
+    if (jvm_j2pkcs11 == NULL) { return rv ; } /* there is no VM running */
 
     /* Determine, if current thread is already attached */
-    returnValue = (*jvm)->GetEnv(jvm, (void **) &env, JNI_VERSION_1_2);
+    returnValue = (*jvm_j2pkcs11)->GetEnv(jvm_j2pkcs11, (void **) &env, JNI_VERSION_1_2);
     if (returnValue == JNI_EDETACHED) {
         /* thread detached, so attach it */
         wasAttached = 0;
-        returnValue = (*jvm)->AttachCurrentThread(jvm, (void **) &env, NULL);
+        returnValue = (*jvm_j2pkcs11)->AttachCurrentThread(jvm_j2pkcs11, (void **) &env, NULL);
     } else if (returnValue == JNI_EVERSION) {
         /* this version of JNI is not supported, so just try to attach */
         /* we assume it was attached to ensure that this thread is not detached
          * afterwards even though it should not
          */
         wasAttached = 1;
-        returnValue = (*jvm)->AttachCurrentThread(jvm, (void **) &env, NULL);
+        returnValue = (*jvm_j2pkcs11)->AttachCurrentThread(jvm_j2pkcs11, (void **) &env, NULL);
     } else {
         /* attached */
         wasAttached = 1;
@@ -543,7 +543,7 @@ CK_RV callJUnlockMutex(CK_VOID_PTR pMutex)
 
     /* if we attached this thread to the VM just for callback, we detach it now */
     if (wasAttached) {
-        returnValue = (*jvm)->DetachCurrentThread(jvm);
+        returnValue = (*jvm_j2pkcs11)->DetachCurrentThread(jvm_j2pkcs11);
     }
 
     return rv ;

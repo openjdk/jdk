@@ -342,7 +342,6 @@ public final class Instant
      *
      * @param epochMilli  the number of milliseconds from 1970-01-01T00:00:00Z
      * @return an instant, not null
-     * @throws DateTimeException if the instant exceeds the maximum or minimum instant
      */
     public static Instant ofEpochMilli(long epochMilli) {
         long secs = Math.floorDiv(epochMilli, 1000);

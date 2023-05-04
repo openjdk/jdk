@@ -31,7 +31,7 @@ import jdk.internal.foreign.abi.VMStorage;
 
 import java.util.stream.IntStream;
 
-public class X86_64Architecture implements Architecture {
+public final class X86_64Architecture implements Architecture {
     public static final Architecture INSTANCE = new X86_64Architecture();
 
     private static final short REG8_H_MASK = 0b0000_0000_0000_0010;
@@ -47,6 +47,9 @@ public class X86_64Architecture implements Architecture {
     private static final int INTEGER_REG_SIZE = 8; // bytes
     private static final int VECTOR_REG_SIZE = 16; // size of XMM register
     private static final int X87_REG_SIZE = 16;
+
+    // Suppresses default constructor, ensuring non-instantiability.
+    private X86_64Architecture() {}
 
     @Override
     public boolean isStackType(int cls) {
@@ -154,7 +157,9 @@ public class X86_64Architecture implements Architecture {
             new VMStorage[][] {
                 outputIntRegs,
                 outputVectorRegs,
-                IntStream.range(0, numX87Outputs).mapToObj(X86_64Architecture::x87Storage).toArray(VMStorage[]::new)
+                IntStream.range(0, numX87Outputs)
+                         .mapToObj(X86_64Architecture::x87Storage)
+                         .toArray(VMStorage[]::new)
             },
             new VMStorage[][] {
                 volatileIntRegs,

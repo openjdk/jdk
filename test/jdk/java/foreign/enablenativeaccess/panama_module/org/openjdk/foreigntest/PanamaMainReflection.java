@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 package org.openjdk.foreigntest;
 
 import java.lang.foreign.*;
-import java.lang.foreign.SegmentScope;
+import java.lang.foreign.Arena;
 import java.lang.reflect.Method;
 
 public class PanamaMainReflection {
@@ -42,8 +42,8 @@ public class PanamaMainReflection {
 
     public static void testReflectionMemorySegment() throws Throwable {
         System.out.println("Trying to get MemorySegment");
-        Method method = MemorySegment.class.getDeclaredMethod("ofAddress", long.class, long.class, SegmentScope.class);
-        method.invoke(null, 0L, 4000L, SegmentScope.global());
+        Method method = MemorySegment.class.getDeclaredMethod("reinterpret", long.class);
+        method.invoke(MemorySegment.NULL, 10L);
         System.out.println("Got MemorySegment");
     }
 }
