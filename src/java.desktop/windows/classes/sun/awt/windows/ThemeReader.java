@@ -44,9 +44,8 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  */
 public final class ThemeReader {
     private static final int defaultDPI = 96;
-
     private static final Map<Integer, Map<String, Long>> dpiAwareWidgetToTheme
-                         = new HashMap<Integer, Map<String, Long>>();
+            = new HashMap<Integer, Map<String, Long>>();
 
     // lock for the cache
     // reading should be done with readLock
@@ -86,8 +85,7 @@ public final class ThemeReader {
     private static Long getThemeImpl(String widget, int dpi) {
         Long theme = null;
 
-        if(dpiAwareWidgetToTheme.containsKey(dpi))
-        {
+        if(dpiAwareWidgetToTheme.containsKey(dpi)) {
             theme = dpiAwareWidgetToTheme.get(dpi).get(widget);
         }
 
@@ -103,15 +101,11 @@ public final class ThemeReader {
                 theme = openTheme(widget, dpi);
             }
 
-            if(dpiAwareWidgetToTheme.containsKey(dpi))
-            {
-                if (!dpiAwareWidgetToTheme.get(dpi).isEmpty())
-                {
+            if(dpiAwareWidgetToTheme.containsKey(dpi)) {
+                if (!dpiAwareWidgetToTheme.get(dpi).isEmpty()) {
                     dpiAwareWidgetToTheme.get(dpi).put(widget, theme);
                 }
-            }
-            else
-            {
+            } else {
                 dpiAwareWidgetToTheme.put(dpi, new HashMap<>());
                 dpiAwareWidgetToTheme.get(dpi).put(widget, theme);
             }
@@ -176,13 +170,11 @@ public final class ThemeReader {
         readLock.lock();
         try {
 
-            /* We get the part size vased on the theme for current screen DPI and pass it to paintBackground */
+            /* We get the part size based on the theme for current screen DPI
+            and pass it to paintBackground */
             Dimension d = getPartSize(getTheme(widget, dpi), part, state);
-            paintBackground(buffer,
-                            getTheme(widget, dpi),
-                            part, state,
-                            (int)d.getWidth(),
-                            (int)d.getHeight() , w, h, stride);
+            paintBackground(buffer, getTheme(widget, dpi), part, state,
+                            d.width, d.height , w, h, stride);
         } finally {
             readLock.unlock();
         }
@@ -336,8 +328,7 @@ public final class ThemeReader {
                     int part, int state, int boundingWidth, int boundingHeight) {
         readLock.lock();
         try {
-            return getThemeBackgroundContentMargins(getTheme(widget,
-                                                             defaultDPI),
+            return getThemeBackgroundContentMargins(getTheme(widget, defaultDPI),
                                                     part, state, boundingWidth,
                                                     boundingHeight);
         } finally {
