@@ -8090,7 +8090,7 @@ class StubGenerator: public StubCodeGenerator {
     generate_arraycopy_stubs();
 
     BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
-    if (bs_nm != NULL) {
+    if (bs_nm != nullptr) {
       StubRoutines::aarch64::_method_entry_barrier = generate_method_entry_barrier();
     }
 
