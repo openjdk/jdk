@@ -2789,7 +2789,7 @@ inline bool VM_HeapWalkOperation::collect_stack_refs(JavaThread* java_thread,
   if (!java_thread->has_last_Java_frame()) {
 
     if (!stack_collector.set_thread(JVMTI_HEAP_REFERENCE_THREAD, threadObj)) {
-        return false;
+      return false;
     }
 
     // no last java frame but there may be JNI locals
