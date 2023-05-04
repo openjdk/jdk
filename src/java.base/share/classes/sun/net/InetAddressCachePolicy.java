@@ -120,12 +120,11 @@ public final class InetAddressCachePolicy {
             negativeCachePolicy = tmp < 0 ? FOREVER : tmp;
             propertyNegativeSet = true;
         }
-        long max = TimeUnit.DAYS.toSeconds(7);
-        if (cachePolicy > 0 && cachePolicy < max) {
+        if (cachePolicy > 0) {
             tmp = getProperty(cacheStalePolicyProp,
                               cacheStalePolicyPropFallback);
             if (tmp != null) {
-                staleCachePolicy = (int) Math.max(tmp, max);
+                staleCachePolicy = tmp;
             }
         }
     }
