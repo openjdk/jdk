@@ -24,7 +24,7 @@
 /**
  * @test
  * @bug 8292755
- * @summary make sure JShell not crashing while throwing undefined exception
+ * @summary InternalError seen while throwing undefined exception
  * @modules
  *     jdk.compiler/com.sun.tools.javac.api
  *     jdk.compiler/com.sun.tools.javac.main
@@ -57,8 +57,6 @@ public class UndefinedClassTest extends UITesting {
                 " return () -> { throw new NotExist(); };\n" +
                 " }\n" +
                 "}";
-        // set terminal height so that help output won't hit page breaks
-        System.setProperty("test.terminal.height", "1000000");
         doRunTest((inputSink, out) -> {
             inputSink.write(code + "\n");
             waitOutput(out, "NotExist");
