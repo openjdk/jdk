@@ -44,6 +44,10 @@ public class Unnamed {
         assertEquals(1, testMixUnconditionalAndConditional(new R1()));
         assertEquals(2, testMixUnconditionalAndConditional(new R2()));
         assertEquals(2, testMixUnconditionalAndConditional(new R3()));
+        assertEquals(1, test_multiple_expr(new Box<>(new R1())));
+        assertEquals(1, test_unrolled_expr(new Box<>(new R1())));
+        assertEquals(1, test_multiple_stat(new Box<>(new R1())));
+        assertEquals(1, test_unrolled_stat(new Box<>(new R1())));
     }
 
     private void unnamedTest() {
@@ -153,6 +157,48 @@ public class Unnamed {
             case R1 _ -> 1;
             case R2 _, Base _-> 2;
         };
+    }
+
+    int test_multiple_expr(Box<?> t) {
+        return switch(t) {
+            case Box(R1 _), Box(R2 _) -> 1;
+            default -> -2;
+        };
+    }
+
+    int test_unrolled_expr(Box<?> t) {
+        return switch(t) {
+            case Box(R1 _) -> 1;
+            case Box(R2 _) -> 0;
+            default -> -2;
+        };
+    }
+
+    int test_multiple_stat(Box<?> t) {
+        int ret = -1;
+        switch(t) {
+            case Box(R1 _), Box(R2 _):
+                ret = 1;
+                break;
+            default:
+                ret = -2;
+        }
+        return ret;
+    }
+
+    int test_unrolled_stat(Box<?> t) {
+        int ret = -1;
+        switch(t) {
+            case Box(R1 _):
+                ret = 1;
+                break;
+            case Box(R2 _):
+                ret = 0;
+                break;
+            default:
+                ret = -2;
+        }
+        return ret;
     }
 
     // JEP 443 examples
