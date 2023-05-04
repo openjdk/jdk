@@ -48,7 +48,7 @@ inline bool LockStack::can_push() const {
 
 inline bool LockStack::is_owning_thread() const {
   JavaThread* thread = JavaThread::current();
-  bool is_owning = &JavaThread::cast(thread)->lock_stack() == this;
+  bool is_owning = &thread->lock_stack() == this;
   assert(is_owning == (get_thread() == thread), "is_owning sanity");
   return is_owning;
 }

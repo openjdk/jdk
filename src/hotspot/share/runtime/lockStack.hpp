@@ -85,7 +85,7 @@ public:
   // Removes an oop from an arbitrary location of this lock-stack.
   inline void remove(oop o);
 
-  // Tests whether the object is on this lock-stack.
+  // Tests whether the oop is on this lock-stack.
   inline bool contains(oop o) const;
 
   // GC support
