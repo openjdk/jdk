@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -755,9 +755,11 @@ public class SecureRandom extends java.util.Random {
      * Generates a user-specified number of random bytes.
      *
      * @param bytes the array to be filled in with random bytes.
+     * @throws NullPointerException if {@code bytes} is {@code null}
      */
     @Override
     public void nextBytes(byte[] bytes) {
+        Objects.requireNonNull(bytes);
         if (threadSafe) {
             secureRandomSpi.engineNextBytes(bytes);
         } else {
@@ -773,7 +775,7 @@ public class SecureRandom extends java.util.Random {
      *
      * @param bytes the array to be filled in with random bytes
      * @param params additional parameters
-     * @throws NullPointerException if {@code bytes} is null
+     * @throws NullPointerException if {@code bytes} is {@code null}
      * @throws UnsupportedOperationException if the underlying provider
      *         implementation has not overridden this method
      * @throws IllegalArgumentException if {@code params} is {@code null},
@@ -785,13 +787,12 @@ public class SecureRandom extends java.util.Random {
         if (params == null) {
             throw new IllegalArgumentException("params cannot be null");
         }
+        Objects.requireNonNull(bytes);
         if (threadSafe) {
-            secureRandomSpi.engineNextBytes(
-                    Objects.requireNonNull(bytes), params);
+            secureRandomSpi.engineNextBytes(bytes, params);
         } else {
             synchronized (this) {
-                secureRandomSpi.engineNextBytes(
-                        Objects.requireNonNull(bytes), params);
+                secureRandomSpi.engineNextBytes(bytes, params);
             }
         }
     }
