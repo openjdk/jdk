@@ -110,9 +110,8 @@ MemoryUsage ZServiceabilityMemoryPool::get_memory_usage() {
 }
 
 ZServiceabilityMemoryManager::ZServiceabilityMemoryManager(const char* name,
-                                                           const char* end_message,
                                                            ZServiceabilityMemoryPool* pool) :
-    GCMemoryManager(name, end_message) {
+    GCMemoryManager(name) {
   add_pool(pool);
 }
 
