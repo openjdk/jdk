@@ -194,7 +194,7 @@ void ClassLoaderDataGraph::walk_metadata_and_clean_metaspaces() {
   // on the stack or in the code cache, so we only have to repeat the full walk if
   // they were found at that time.
   // TODO: have redefinition clean old methods out of the code cache.  They still exist in some places.
-  bool walk_all_metadata = InstanceKlass::has_previous_versions_and_reset();
+  bool walk_all_metadata = InstanceKlass::should_clean_previous_versions_and_reset();
 
   MetadataOnStackMark md_on_stack(walk_all_metadata, /*redefinition_walk*/false);
   clean_deallocate_lists(walk_all_metadata);
