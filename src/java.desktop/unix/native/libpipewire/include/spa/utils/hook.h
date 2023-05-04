@@ -108,8 +108,8 @@ extern "C" {
  * to the functions.  The structure should also contain a version field that
  * is checked. */
 struct spa_callbacks {
-	const void *funcs;
-	void *data;
+    const void *funcs;
+    void *data;
 };
 
 /** Check if a callback \a c is of at least version \a v */
@@ -127,9 +127,9 @@ struct spa_callbacks {
 /** \struct spa_interface
  */
 struct spa_interface {
-	const char *type;
-	uint32_t version;
-	struct spa_callbacks cb;
+    const char *type;
+    uint32_t version;
+    struct spa_callbacks cb;
 };
 
 /**
@@ -146,39 +146,39 @@ struct spa_interface {
  *
  */
 #define SPA_INTERFACE_INIT(_type,_version,_funcs,_data) \
-	((struct spa_interface){ (_type), (_version), SPA_CALLBACKS_INIT(_funcs,_data), })
+    ((struct spa_interface){ (_type), (_version), SPA_CALLBACKS_INIT(_funcs,_data), })
 
 /**
  * Invoke method named \a method in the \a callbacks.
  * The \a method_type defines the type of the method struct.
  * Returns true if the method could be called, false otherwise.
  */
-#define spa_callbacks_call(callbacks,type,method,vers,...)			\
-({										\
-	const type *_f = (const type *) (callbacks)->funcs;			\
-	bool _res = SPA_CALLBACK_CHECK(_f,method,vers);				\
-	if (SPA_LIKELY(_res))							\
-		_f->method((callbacks)->data, ## __VA_ARGS__);			\
-	_res;									\
+#define spa_callbacks_call(callbacks,type,method,vers,...)            \
+({                                        \
+    const type *_f = (const type *) (callbacks)->funcs;            \
+    bool _res = SPA_CALLBACK_CHECK(_f,method,vers);                \
+    if (SPA_LIKELY(_res))                            \
+        _f->method((callbacks)->data, ## __VA_ARGS__);            \
+    _res;                                    \
 })
 
 /**
  * True if the \a callbacks are of version \a vers, false otherwise
  */
-#define spa_callback_version_min(callbacks,type,vers)				\
-({										\
-	const type *_f = (const type *) (callbacks)->funcs;			\
-	SPA_CALLBACK_VERSION_MIN(_f,vers);					\
+#define spa_callback_version_min(callbacks,type,vers)                \
+({                                        \
+    const type *_f = (const type *) (callbacks)->funcs;            \
+    SPA_CALLBACK_VERSION_MIN(_f,vers);                    \
 })
 
 /**
  * True if the \a callbacks contains \a method of version
  * \a vers, false otherwise
  */
-#define spa_callback_check(callbacks,type,method,vers)				\
-({										\
-	const type *_f = (const type *) (callbacks)->funcs;			\
-	SPA_CALLBACK_CHECK(_f,method,vers);					\
+#define spa_callback_check(callbacks,type,method,vers)                \
+({                                        \
+    const type *_f = (const type *) (callbacks)->funcs;            \
+    SPA_CALLBACK_CHECK(_f,method,vers);                    \
 })
 
 /**
@@ -187,25 +187,25 @@ struct spa_interface {
  *
  * The return value is stored in \a res.
  */
-#define spa_callbacks_call_res(callbacks,type,res,method,vers,...)		\
-({										\
-	const type *_f = (const type *) (callbacks)->funcs;			\
-	if (SPA_LIKELY(SPA_CALLBACK_CHECK(_f,method,vers)))			\
-		res = _f->method((callbacks)->data, ## __VA_ARGS__);		\
-	res;									\
+#define spa_callbacks_call_res(callbacks,type,res,method,vers,...)        \
+({                                        \
+    const type *_f = (const type *) (callbacks)->funcs;            \
+    if (SPA_LIKELY(SPA_CALLBACK_CHECK(_f,method,vers)))            \
+        res = _f->method((callbacks)->data, ## __VA_ARGS__);        \
+    res;                                    \
 })
 
 /**
  * True if the \a iface's callbacks are of version \a vers, false otherwise
  */
-#define spa_interface_callback_version_min(iface,method_type,vers)		\
+#define spa_interface_callback_version_min(iface,method_type,vers)        \
    spa_callback_version_min(&(iface)->cb, method_type, vers)
 
 /**
  * True if the \a iface's callback \a method is of version \a vers
  * and exists, false otherwise
  */
-#define spa_interface_callback_check(iface,method_type,method,vers)		\
+#define spa_interface_callback_check(iface,method_type,method,vers)        \
    spa_callback_check(&(iface)->cb, method_type, method, vers)
 
 /**
@@ -213,8 +213,8 @@ struct spa_interface {
  * The \a method_type defines the type of the method struct, not the interface
  * itself.
  */
-#define spa_interface_call(iface,method_type,method,vers,...)			\
-	spa_callbacks_call(&(iface)->cb,method_type,method,vers,##__VA_ARGS__)
+#define spa_interface_call(iface,method_type,method,vers,...)            \
+    spa_callbacks_call(&(iface)->cb,method_type,method,vers,##__VA_ARGS__)
 
 /**
  * Invoke method named \a method in the callbacks on the given interface object.
@@ -223,8 +223,8 @@ struct spa_interface {
  *
  * The return value is stored in \a res.
  */
-#define spa_interface_call_res(iface,method_type,res,method,vers,...)			\
-	spa_callbacks_call_res(&(iface)->cb,method_type,res,method,vers,##__VA_ARGS__)
+#define spa_interface_call_res(iface,method_type,res,method,vers,...)            \
+    spa_callbacks_call_res(&(iface)->cb,method_type,res,method,vers,##__VA_ARGS__)
 
 /**
  * \}
@@ -309,7 +309,7 @@ struct spa_interface {
  * A list of hooks. This struct is primarily used by
  * implementation that use multiple caller-provided \ref spa_hook. */
 struct spa_hook_list {
-	struct spa_list list;
+    struct spa_list list;
 };
 
 
@@ -320,126 +320,126 @@ struct spa_hook_list {
  * A hook should be treated as opaque by the caller.
  */
 struct spa_hook {
-	struct spa_list link;
-	struct spa_callbacks cb;
-	/** callback and data for the hook list, private to the
-	  * hook_list implementor */
-	void (*removed) (struct spa_hook *hook);
-	void *priv;
+    struct spa_list link;
+    struct spa_callbacks cb;
+    /** callback and data for the hook list, private to the
+      * hook_list implementor */
+    void (*removed) (struct spa_hook *hook);
+    void *priv;
 };
 
 /** Initialize a hook list to the empty list*/
 static inline void spa_hook_list_init(struct spa_hook_list *list)
 {
-	spa_list_init(&list->list);
+    spa_list_init(&list->list);
 }
 
 static inline bool spa_hook_list_is_empty(struct spa_hook_list *list)
 {
-	return spa_list_is_empty(&list->list);
+    return spa_list_is_empty(&list->list);
 }
 
 /** Append a hook. */
 static inline void spa_hook_list_append(struct spa_hook_list *list,
-					struct spa_hook *hook,
-					const void *funcs, void *data)
+                    struct spa_hook *hook,
+                    const void *funcs, void *data)
 {
-	spa_zero(*hook);
-	hook->cb = SPA_CALLBACKS_INIT(funcs, data);
-	spa_list_append(&list->list, &hook->link);
+    spa_zero(*hook);
+    hook->cb = SPA_CALLBACKS_INIT(funcs, data);
+    spa_list_append(&list->list, &hook->link);
 }
 
 /** Prepend a hook */
 static inline void spa_hook_list_prepend(struct spa_hook_list *list,
-					 struct spa_hook *hook,
-					 const void *funcs, void *data)
+                     struct spa_hook *hook,
+                     const void *funcs, void *data)
 {
-	spa_zero(*hook);
-	hook->cb = SPA_CALLBACKS_INIT(funcs, data);
-	spa_list_prepend(&list->list, &hook->link);
+    spa_zero(*hook);
+    hook->cb = SPA_CALLBACKS_INIT(funcs, data);
+    spa_list_prepend(&list->list, &hook->link);
 }
 
 /** Remove a hook */
 static inline void spa_hook_remove(struct spa_hook *hook)
 {
-	if (spa_list_is_initialized(&hook->link))
-		spa_list_remove(&hook->link);
-	if (hook->removed)
-		hook->removed(hook);
+    if (spa_list_is_initialized(&hook->link))
+        spa_list_remove(&hook->link);
+    if (hook->removed)
+        hook->removed(hook);
 }
 
 /** Remove all hooks from the list */
 static inline void spa_hook_list_clean(struct spa_hook_list *list)
 {
-	struct spa_hook *h;
-	spa_list_consume(h, &list->list, link)
-		spa_hook_remove(h);
+    struct spa_hook *h;
+    spa_list_consume(h, &list->list, link)
+        spa_hook_remove(h);
 }
 
 static inline void
 spa_hook_list_isolate(struct spa_hook_list *list,
-		struct spa_hook_list *save,
-		struct spa_hook *hook,
-		const void *funcs, void *data)
+        struct spa_hook_list *save,
+        struct spa_hook *hook,
+        const void *funcs, void *data)
 {
-	/* init save list and move hooks to it */
-	spa_hook_list_init(save);
-	spa_list_insert_list(&save->list, &list->list);
-	/* init hooks and add single hook */
-	spa_hook_list_init(list);
-	spa_hook_list_append(list, hook, funcs, data);
+    /* init save list and move hooks to it */
+    spa_hook_list_init(save);
+    spa_list_insert_list(&save->list, &list->list);
+    /* init hooks and add single hook */
+    spa_hook_list_init(list);
+    spa_hook_list_append(list, hook, funcs, data);
 }
 
 static inline void
 spa_hook_list_join(struct spa_hook_list *list,
-		struct spa_hook_list *save)
+        struct spa_hook_list *save)
 {
-	spa_list_insert_list(&list->list, &save->list);
+    spa_list_insert_list(&list->list, &save->list);
 }
 
-#define spa_hook_list_call_simple(l,type,method,vers,...)			\
-({										\
-	struct spa_hook_list *_l = l;						\
-	struct spa_hook *_h, *_t;						\
-	spa_list_for_each_safe(_h, _t, &_l->list, link)				\
-		spa_callbacks_call(&_h->cb,type,method,vers, ## __VA_ARGS__);	\
+#define spa_hook_list_call_simple(l,type,method,vers,...)            \
+({                                        \
+    struct spa_hook_list *_l = l;                        \
+    struct spa_hook *_h, *_t;                        \
+    spa_list_for_each_safe(_h, _t, &_l->list, link)                \
+        spa_callbacks_call(&_h->cb,type,method,vers, ## __VA_ARGS__);    \
 })
 
 /** Call all hooks in a list, starting from the given one and optionally stopping
  * after calling the first non-NULL function, returns the number of methods
  * called */
-#define spa_hook_list_do_call(l,start,type,method,vers,once,...)		\
-({										\
-	struct spa_hook_list *_list = l;					\
-	struct spa_list *_s = start ? (struct spa_list *)start : &_list->list;	\
-	struct spa_hook _cursor = { 0 }, *_ci;					\
-	int _count = 0;								\
-	spa_list_cursor_start(_cursor, _s, link);				\
-	spa_list_for_each_cursor(_ci, _cursor, &_list->list, link) {		\
-		if (spa_callbacks_call(&_ci->cb,type,method,vers, ## __VA_ARGS__)) {		\
-			_count++;						\
-			if (once)						\
-				break;						\
-		}								\
-	}									\
-	spa_list_cursor_end(_cursor, link);					\
-	_count;									\
+#define spa_hook_list_do_call(l,start,type,method,vers,once,...)        \
+({                                        \
+    struct spa_hook_list *_list = l;                    \
+    struct spa_list *_s = start ? (struct spa_list *)start : &_list->list;    \
+    struct spa_hook _cursor = { 0 }, *_ci;                    \
+    int _count = 0;                                \
+    spa_list_cursor_start(_cursor, _s, link);                \
+    spa_list_for_each_cursor(_ci, _cursor, &_list->list, link) {        \
+        if (spa_callbacks_call(&_ci->cb,type,method,vers, ## __VA_ARGS__)) {        \
+            _count++;                        \
+            if (once)                        \
+                break;                        \
+        }                                \
+    }                                    \
+    spa_list_cursor_end(_cursor, link);                    \
+    _count;                                    \
 })
 
 /**
  * Call the method named \a m for each element in list \a l.
  * \a t specifies the type of the callback struct.
  */
-#define spa_hook_list_call(l,t,m,v,...)			spa_hook_list_do_call(l,NULL,t,m,v,false,##__VA_ARGS__)
+#define spa_hook_list_call(l,t,m,v,...)            spa_hook_list_do_call(l,NULL,t,m,v,false,##__VA_ARGS__)
 /**
  * Call the method named \a m for each element in list \a l, stopping after
  * the first invocation.
  * \a t specifies the type of the callback struct.
  */
-#define spa_hook_list_call_once(l,t,m,v,...)		spa_hook_list_do_call(l,NULL,t,m,v,true,##__VA_ARGS__)
+#define spa_hook_list_call_once(l,t,m,v,...)        spa_hook_list_do_call(l,NULL,t,m,v,true,##__VA_ARGS__)
 
-#define spa_hook_list_call_start(l,s,t,m,v,...)		spa_hook_list_do_call(l,s,t,m,v,false,##__VA_ARGS__)
-#define spa_hook_list_call_once_start(l,s,t,m,v,...)	spa_hook_list_do_call(l,s,t,m,v,true,##__VA_ARGS__)
+#define spa_hook_list_call_start(l,s,t,m,v,...)        spa_hook_list_do_call(l,s,t,m,v,false,##__VA_ARGS__)
+#define spa_hook_list_call_once_start(l,s,t,m,v,...)    spa_hook_list_do_call(l,s,t,m,v,true,##__VA_ARGS__)
 
 /**
  * \}

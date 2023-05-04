@@ -17,9 +17,9 @@ extern "C" {
 #include <spa/param/format.h>
 
 struct spa_video_info_mjpg {
-	struct spa_rectangle size;
-	struct spa_fraction framerate;
-	struct spa_fraction max_framerate;
+    struct spa_rectangle size;
+    struct spa_fraction framerate;
+    struct spa_fraction max_framerate;
 };
 
 /**

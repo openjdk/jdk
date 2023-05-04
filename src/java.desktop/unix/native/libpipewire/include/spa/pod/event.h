@@ -17,25 +17,25 @@ extern "C" {
  */
 
 struct spa_event_body {
-	struct spa_pod_object_body body;
+    struct spa_pod_object_body body;
 };
 
 struct spa_event {
-	struct spa_pod pod;
-	struct spa_event_body body;
+    struct spa_pod pod;
+    struct spa_event_body body;
 };
 
-#define SPA_EVENT_TYPE(ev)	((ev)->body.body.type)
-#define SPA_EVENT_ID(ev,type)	(SPA_EVENT_TYPE(ev) == (type) ? \
-					(ev)->body.body.id : SPA_ID_INVALID)
+#define SPA_EVENT_TYPE(ev)    ((ev)->body.body.type)
+#define SPA_EVENT_ID(ev,type)    (SPA_EVENT_TYPE(ev) == (type) ? \
+                    (ev)->body.body.id : SPA_ID_INVALID)
 
-#define SPA_EVENT_INIT_FULL(t,size,type,id,...) ((t)			\
-	{ { (size), SPA_TYPE_OBJECT },					\
-	  { { (type), (id) }, ##__VA_ARGS__ } })			\
+#define SPA_EVENT_INIT_FULL(t,size,type,id,...) ((t)            \
+    { { (size), SPA_TYPE_OBJECT },                    \
+      { { (type), (id) }, ##__VA_ARGS__ } })            \
 
-#define SPA_EVENT_INIT(type,id)						\
-	SPA_EVENT_INIT_FULL(struct spa_event,				\
-			sizeof(struct spa_event_body), type, id)
+#define SPA_EVENT_INIT(type,id)                        \
+    SPA_EVENT_INIT_FULL(struct spa_event,                \
+            sizeof(struct spa_event_body), type, id)
 
 /**
  * \}

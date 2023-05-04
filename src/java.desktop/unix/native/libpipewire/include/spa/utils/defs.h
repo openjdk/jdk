@@ -18,7 +18,7 @@ extern "C" {
 #endif
 #ifndef SPA_STATIC_ASSERT_IMPL
 #define SPA_STATIC_ASSERT_IMPL(expr, ...) \
-	((void)sizeof(struct { int spa_static_assertion_failed : 2 * !!(expr) - 1; }))
+    ((void)sizeof(struct { int spa_static_assertion_failed : 2 * !!(expr) - 1; }))
 #endif
 
 #define SPA_STATIC_ASSERT(expr, ...) SPA_STATIC_ASSERT_IMPL(expr, ## __VA_ARGS__, "`" #expr "` evaluated to false")
@@ -64,50 +64,50 @@ extern "C" {
 #  define SPA_FALLTHROUGH /* FALLTHROUGH */
 #endif
 
-#define SPA_FLAG_MASK(field,mask,flag)	(((field) & (mask)) == (flag))
-#define SPA_FLAG_IS_SET(field,flag)	SPA_FLAG_MASK(field, flag, flag)
+#define SPA_FLAG_MASK(field,mask,flag)    (((field) & (mask)) == (flag))
+#define SPA_FLAG_IS_SET(field,flag)    SPA_FLAG_MASK(field, flag, flag)
 
-#define SPA_FLAG_SET(field,flag)	((field) |= (flag))
-#define SPA_FLAG_CLEAR(field, flag)					\
-({									\
-	SPA_STATIC_ASSERT(__builtin_constant_p(flag) ?			\
-	              (__typeof__(flag))(__typeof__(field))(__typeof__(flag))(flag) == (flag) : \
-		      sizeof(field) >= sizeof(flag),			\
-			"truncation problem when masking " #field	\
-			" with ~" #flag);				\
-	((field) &= ~(__typeof__(field))(flag));			\
+#define SPA_FLAG_SET(field,flag)    ((field) |= (flag))
+#define SPA_FLAG_CLEAR(field, flag)                    \
+({                                    \
+    SPA_STATIC_ASSERT(__builtin_constant_p(flag) ?            \
+                  (__typeof__(flag))(__typeof__(field))(__typeof__(flag))(flag) == (flag) : \
+              sizeof(field) >= sizeof(flag),            \
+            "truncation problem when masking " #field    \
+            " with ~" #flag);                \
+    ((field) &= ~(__typeof__(field))(flag));            \
 })
-#define SPA_FLAG_UPDATE(field,flag,val)	((val) ? SPA_FLAG_SET((field),(flag)) : SPA_FLAG_CLEAR((field),(flag)))
+#define SPA_FLAG_UPDATE(field,flag,val)    ((val) ? SPA_FLAG_SET((field),(flag)) : SPA_FLAG_CLEAR((field),(flag)))
 
 enum spa_direction {
-	SPA_DIRECTION_INPUT = 0,
-	SPA_DIRECTION_OUTPUT = 1,
+    SPA_DIRECTION_INPUT = 0,
+    SPA_DIRECTION_OUTPUT = 1,
 };
 
-#define SPA_DIRECTION_REVERSE(d)	((d) ^ 1)
+#define SPA_DIRECTION_REVERSE(d)    ((d) ^ 1)
 
 #define SPA_RECTANGLE(width,height) ((struct spa_rectangle){ (width), (height) })
 struct spa_rectangle {
-	uint32_t width;
-	uint32_t height;
+    uint32_t width;
+    uint32_t height;
 };
 
 #define SPA_POINT(x,y) ((struct spa_point){ (x), (y) })
 struct spa_point {
-	int32_t x;
-	int32_t y;
+    int32_t x;
+    int32_t y;
 };
 
 #define SPA_REGION(x,y,width,height) ((struct spa_region){ SPA_POINT(x,y), SPA_RECTANGLE(width,height) })
 struct spa_region {
-	struct spa_point position;
-	struct spa_rectangle size;
+    struct spa_point position;
+    struct spa_rectangle size;
 };
 
 #define SPA_FRACTION(num,denom) ((struct spa_fraction){ (num), (denom) })
 struct spa_fraction {
-	uint32_t num;
-	uint32_t denom;
+    uint32_t num;
+    uint32_t denom;
 };
 
 #define SPA_N_ELEMENTS(arr)  (sizeof(arr) / sizeof((arr)[0]))
@@ -117,58 +117,58 @@ struct spa_fraction {
  * struct foo array[16];
  * struct foo *f;
  * SPA_FOR_EACH_ELEMENT(array, f) {
- *	f->bar = baz;
+ *    f->bar = baz;
  * }
  * ```
  */
 #define SPA_FOR_EACH_ELEMENT(arr, ptr) \
-	for ((ptr) = arr; (void*)(ptr) < SPA_PTROFF(arr, sizeof(arr), void); (ptr)++)
+    for ((ptr) = arr; (void*)(ptr) < SPA_PTROFF(arr, sizeof(arr), void); (ptr)++)
 
 #define SPA_FOR_EACH_ELEMENT_VAR(arr, var) \
-	for (__typeof__((arr)[0])* var = arr; (void*)(var) < SPA_PTROFF(arr, sizeof(arr), void); (var)++)
+    for (__typeof__((arr)[0])* var = arr; (void*)(var) < SPA_PTROFF(arr, sizeof(arr), void); (var)++)
 
-#define SPA_ABS(a)			\
-({					\
-	__typeof__(a) _a = (a);		\
-	SPA_LIKELY(_a >= 0) ? _a : -_a;	\
+#define SPA_ABS(a)            \
+({                    \
+    __typeof__(a) _a = (a);        \
+    SPA_LIKELY(_a >= 0) ? _a : -_a;    \
 })
-#define SPA_MIN(a,b)					\
-({							\
-	__typeof__(a) _min_a = (a);			\
-	__typeof__(b) _min_b = (b);			\
-	SPA_LIKELY(_min_a <= _min_b) ? _min_a : _min_b;	\
+#define SPA_MIN(a,b)                    \
+({                            \
+    __typeof__(a) _min_a = (a);            \
+    __typeof__(b) _min_b = (b);            \
+    SPA_LIKELY(_min_a <= _min_b) ? _min_a : _min_b;    \
 })
-#define SPA_MAX(a,b)					\
-({							\
-	__typeof__(a) _max_a = (a);			\
-	__typeof__(b) _max_b = (b);			\
-	SPA_LIKELY(_max_a >= _max_b) ? _max_a : _max_b;	\
+#define SPA_MAX(a,b)                    \
+({                            \
+    __typeof__(a) _max_a = (a);            \
+    __typeof__(b) _max_b = (b);            \
+    SPA_LIKELY(_max_a >= _max_b) ? _max_a : _max_b;    \
 })
-#define SPA_CLAMP(v,low,high)				\
-({							\
-	__typeof__(v) _v = (v);				\
-	__typeof__(low) _low = (low);			\
-	__typeof__(high) _high = (high);		\
-	SPA_MIN(SPA_MAX(_v, _low), _high);		\
-})
-
-#define SPA_CLAMPF(v,low,high)				\
-({							\
-	fminf(fmaxf(v, low), high);			\
+#define SPA_CLAMP(v,low,high)                \
+({                            \
+    __typeof__(v) _v = (v);                \
+    __typeof__(low) _low = (low);            \
+    __typeof__(high) _high = (high);        \
+    SPA_MIN(SPA_MAX(_v, _low), _high);        \
 })
 
-
-#define SPA_SWAP(a,b)					\
-({							\
-	__typeof__(a) _t = (a);				\
-	(a) = b; (b) = _t;				\
+#define SPA_CLAMPF(v,low,high)                \
+({                            \
+    fminf(fmaxf(v, low), high);            \
 })
 
-#define SPA_TYPECHECK(type,x)		\
-({	type _dummy;			\
-	typeof(x) _dummy2;		\
-	(void)(&_dummy == &_dummy2);	\
-	x;				\
+
+#define SPA_SWAP(a,b)                    \
+({                            \
+    __typeof__(a) _t = (a);                \
+    (a) = b; (b) = _t;                \
+})
+
+#define SPA_TYPECHECK(type,x)        \
+({    type _dummy;            \
+    typeof(x) _dummy2;        \
+    (void)(&_dummy == &_dummy2);    \
+    x;                \
 })
 
 /**
@@ -241,33 +241,33 @@ struct spa_fraction {
 #define SPA_RESTRICT
 #endif
 
-#define SPA_ROUND_DOWN(num,value)		\
-({						\
-	__typeof__(num) _num = (num);		\
-	((_num) - ((_num) % (value)));		\
+#define SPA_ROUND_DOWN(num,value)        \
+({                        \
+    __typeof__(num) _num = (num);        \
+    ((_num) - ((_num) % (value)));        \
 })
-#define SPA_ROUND_UP(num,value)			\
-({						\
-	__typeof__(value) _v = (value);		\
-	((((num) + (_v) - 1) / (_v)) * (_v));	\
-})
-
-#define SPA_ROUND_MASK(num,mask)	((__typeof__(num))((mask)-1))
-
-#define SPA_ROUND_DOWN_N(num,align)	((num) & ~SPA_ROUND_MASK(num, align))
-#define SPA_ROUND_UP_N(num,align)	((((num)-1) | SPA_ROUND_MASK(num, align))+1)
-
-#define SPA_SCALE32_UP(val,num,denom)				\
-({								\
-	uint64_t _val = (val);					\
-	uint64_t _denom = (denom);				\
-	(uint32_t)(((_val) * (num) + (_denom)-1) / (_denom));	\
+#define SPA_ROUND_UP(num,value)            \
+({                        \
+    __typeof__(value) _v = (value);        \
+    ((((num) + (_v) - 1) / (_v)) * (_v));    \
 })
 
+#define SPA_ROUND_MASK(num,mask)    ((__typeof__(num))((mask)-1))
 
-#define SPA_PTR_ALIGNMENT(p,align)	((intptr_t)(p) & ((align)-1))
-#define SPA_IS_ALIGNED(p,align)		(SPA_PTR_ALIGNMENT(p,align) == 0)
-#define SPA_PTR_ALIGN(p,align,type)	((type*)SPA_ROUND_UP_N((intptr_t)(p), (intptr_t)(align)))
+#define SPA_ROUND_DOWN_N(num,align)    ((num) & ~SPA_ROUND_MASK(num, align))
+#define SPA_ROUND_UP_N(num,align)    ((((num)-1) | SPA_ROUND_MASK(num, align))+1)
+
+#define SPA_SCALE32_UP(val,num,denom)                \
+({                                \
+    uint64_t _val = (val);                    \
+    uint64_t _denom = (denom);                \
+    (uint32_t)(((_val) * (num) + (_denom)-1) / (_denom));    \
+})
+
+
+#define SPA_PTR_ALIGNMENT(p,align)    ((intptr_t)(p) & ((align)-1))
+#define SPA_IS_ALIGNED(p,align)        (SPA_PTR_ALIGNMENT(p,align) == 0)
+#define SPA_PTR_ALIGN(p,align,type)    ((type*)SPA_ROUND_UP_N((intptr_t)(p), (intptr_t)(align)))
 
 #ifndef SPA_LIKELY
 #ifdef __GNUC__
@@ -279,45 +279,45 @@ struct spa_fraction {
 #endif
 #endif
 
-#define SPA_STRINGIFY_1(...)	#__VA_ARGS__
-#define SPA_STRINGIFY(...)	SPA_STRINGIFY_1(__VA_ARGS__)
+#define SPA_STRINGIFY_1(...)    #__VA_ARGS__
+#define SPA_STRINGIFY(...)    SPA_STRINGIFY_1(__VA_ARGS__)
 
-#define spa_return_if_fail(expr)					\
-	do {								\
-		if (SPA_UNLIKELY(!(expr))) {				\
-			fprintf(stderr, "'%s' failed at %s:%u %s()\n",	\
-				#expr , __FILE__, __LINE__, __func__);	\
-			return;						\
-		}							\
-	} while(false)
+#define spa_return_if_fail(expr)                    \
+    do {                                \
+        if (SPA_UNLIKELY(!(expr))) {                \
+            fprintf(stderr, "'%s' failed at %s:%u %s()\n",    \
+                #expr , __FILE__, __LINE__, __func__);    \
+            return;                        \
+        }                            \
+    } while(false)
 
-#define spa_return_val_if_fail(expr, val)				\
-	do {								\
-		if (SPA_UNLIKELY(!(expr))) {				\
-			fprintf(stderr, "'%s' failed at %s:%u %s()\n",	\
-				#expr , __FILE__, __LINE__, __func__);	\
-			return (val);					\
-		}							\
-	} while(false)
+#define spa_return_val_if_fail(expr, val)                \
+    do {                                \
+        if (SPA_UNLIKELY(!(expr))) {                \
+            fprintf(stderr, "'%s' failed at %s:%u %s()\n",    \
+                #expr , __FILE__, __LINE__, __func__);    \
+            return (val);                    \
+        }                            \
+    } while(false)
 
 /* spa_assert_se() is an assert which guarantees side effects of x,
  * i.e. is never optimized away, regardless of NDEBUG or FASTPATH. */
 #ifndef __COVERITY__
-#define spa_assert_se(expr)						\
-	do {								\
-		if (SPA_UNLIKELY(!(expr))) {				\
-			fprintf(stderr, "'%s' failed at %s:%u %s()\n",	\
-				#expr , __FILE__, __LINE__, __func__);	\
-			abort();					\
-		}							\
-	} while (false)
+#define spa_assert_se(expr)                        \
+    do {                                \
+        if (SPA_UNLIKELY(!(expr))) {                \
+            fprintf(stderr, "'%s' failed at %s:%u %s()\n",    \
+                #expr , __FILE__, __LINE__, __func__);    \
+            abort();                    \
+        }                            \
+    } while (false)
 #else
-#define spa_assert_se(expr)						\
-	do {								\
-		int _unique_var = (expr);				\
-		if (!_unique_var)					\
-			abort();					\
-		} while (false)
+#define spa_assert_se(expr)                        \
+    do {                                \
+        int _unique_var = (expr);                \
+        if (!_unique_var)                    \
+            abort();                    \
+        } while (false)
 #endif
 
 /* Does exactly nothing */
@@ -334,41 +334,41 @@ struct spa_fraction {
 #ifdef NDEBUG
 #define spa_assert_not_reached() abort()
 #else
-#define spa_assert_not_reached()						\
-	do {									\
-		fprintf(stderr, "Code should not be reached at %s:%u %s()\n",	\
-				__FILE__, __LINE__, __func__);			\
-		abort();							\
-	} while (false)
+#define spa_assert_not_reached()                        \
+    do {                                    \
+        fprintf(stderr, "Code should not be reached at %s:%u %s()\n",    \
+                __FILE__, __LINE__, __func__);            \
+        abort();                            \
+    } while (false)
 #endif
 
 #define spa_memzero(x,l) (memset((x), 0, (l)))
 #define spa_zero(x) (spa_memzero(&(x), sizeof(x)))
 
 #ifdef SPA_DEBUG_MEMCPY
-#define spa_memcpy(d,s,n)						\
-({									\
-	fprintf(stderr, "%s:%u %s() memcpy(%p, %p, %zd)\n",		\
-		__FILE__, __LINE__, __func__, (d), (s), (size_t)(n));	\
-	memcpy(d,s,n);							\
+#define spa_memcpy(d,s,n)                        \
+({                                    \
+    fprintf(stderr, "%s:%u %s() memcpy(%p, %p, %zd)\n",        \
+        __FILE__, __LINE__, __func__, (d), (s), (size_t)(n));    \
+    memcpy(d,s,n);                            \
 })
-#define spa_memmove(d,s,n)						\
-({									\
-	fprintf(stderr, "%s:%u %s() memmove(%p, %p, %zd)\n",		\
-		__FILE__, __LINE__, __func__, (d), (s), (size_t)(n));	\
-	memmove(d,s,n);							\
+#define spa_memmove(d,s,n)                        \
+({                                    \
+    fprintf(stderr, "%s:%u %s() memmove(%p, %p, %zd)\n",        \
+        __FILE__, __LINE__, __func__, (d), (s), (size_t)(n));    \
+    memmove(d,s,n);                            \
 })
 #else
-#define spa_memcpy(d,s,n)	memcpy(d,s,n)
-#define spa_memmove(d,s,n)	memmove(d,s,n)
+#define spa_memcpy(d,s,n)    memcpy(d,s,n)
+#define spa_memmove(d,s,n)    memmove(d,s,n)
 #endif
 
-#define spa_aprintf(_fmt, ...)						\
-({									\
-	char *_strp;							\
-	if (asprintf(&(_strp), (_fmt), ## __VA_ARGS__ ) == -1)		\
-		_strp = NULL;						\
-	_strp;								\
+#define spa_aprintf(_fmt, ...)                        \
+({                                    \
+    char *_strp;                            \
+    if (asprintf(&(_strp), (_fmt), ## __VA_ARGS__ ) == -1)        \
+        _strp = NULL;                        \
+    _strp;                                \
 })
 
 /**

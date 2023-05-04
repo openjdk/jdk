@@ -174,38 +174,38 @@ struct pw_stream;
 
 /** \enum pw_stream_state The state of a stream */
 enum pw_stream_state {
-	PW_STREAM_STATE_ERROR = -1,		/**< the stream is in error */
-	PW_STREAM_STATE_UNCONNECTED = 0,	/**< unconnected */
-	PW_STREAM_STATE_CONNECTING = 1,		/**< connection is in progress */
-	PW_STREAM_STATE_PAUSED = 2,		/**< paused */
-	PW_STREAM_STATE_STREAMING = 3		/**< streaming */
+    PW_STREAM_STATE_ERROR = -1,        /**< the stream is in error */
+    PW_STREAM_STATE_UNCONNECTED = 0,    /**< unconnected */
+    PW_STREAM_STATE_CONNECTING = 1,        /**< connection is in progress */
+    PW_STREAM_STATE_PAUSED = 2,        /**< paused */
+    PW_STREAM_STATE_STREAMING = 3        /**< streaming */
 };
 
 /** a buffer structure obtained from pw_stream_dequeue_buffer(). The size of this
   * structure can grow as more field are added in the future */
 struct pw_buffer {
-	struct spa_buffer *buffer;	/**< the spa buffer */
-	void *user_data;		/**< user data attached to the buffer */
-	uint64_t size;			/**< This field is set by the user and the sum of
-					  *  all queued buffer is returned in the time info.
-					  *  For audio, it is advised to use the number of
-					  *  samples in the buffer for this field. */
-	uint64_t requested;		/**< For playback streams, this field contains the
-					  *  suggested amount of data to provide. For audio
-					  *  streams this will be the amount of samples
-					  *  required by the resampler. This field is 0
-					  *  when no suggestion is provided. Since 0.3.49 */
+    struct spa_buffer *buffer;    /**< the spa buffer */
+    void *user_data;        /**< user data attached to the buffer */
+    uint64_t size;            /**< This field is set by the user and the sum of
+                      *  all queued buffer is returned in the time info.
+                      *  For audio, it is advised to use the number of
+                      *  samples in the buffer for this field. */
+    uint64_t requested;        /**< For playback streams, this field contains the
+                      *  suggested amount of data to provide. For audio
+                      *  streams this will be the amount of samples
+                      *  required by the resampler. This field is 0
+                      *  when no suggestion is provided. Since 0.3.49 */
 };
 
 struct pw_stream_control {
-	const char *name;		/**< name of the control */
-	uint32_t flags;			/**< extra flags (unused) */
-	float def;			/**< default value */
-	float min;			/**< min value */
-	float max;			/**< max value */
-	float *values;			/**< array of values */
-	uint32_t n_values;		/**< number of values in array */
-	uint32_t max_values;		/**< max values that can be set on this control */
+    const char *name;        /**< name of the control */
+    uint32_t flags;            /**< extra flags (unused) */
+    float def;            /**< default value */
+    float min;            /**< min value */
+    float max;            /**< max value */
+    float *values;            /**< array of values */
+    uint32_t n_values;        /**< number of values in array */
+    uint32_t max_values;        /**< max values that can be set on this control */
 };
 
 /** A time structure.
@@ -274,34 +274,34 @@ struct pw_stream_control {
  *           queued      buffered            delay
  */
 struct pw_time {
-	int64_t now;			/**< the monotonic time in nanoseconds. This is the time
-					  *  when this time report was updated. It is usually
-					  *  updated every graph cycle. You can use the current
-					  *  monotonic time to calculate the elapsed time between
-					  *  this report and the current state and calculate
-					  *  updated ticks and delay values. */
-	struct spa_fraction rate;	/**< the rate of \a ticks and delay. This is usually
-					  *  expressed in 1/<samplerate>. */
-	uint64_t ticks;			/**< the ticks at \a now. This is the current time that
-					  *  the remote end is reading/writing. This is monotonicaly
-					  *  increasing. */
-	int64_t delay;			/**< delay to device. This is the time it will take for
-					  *  the next output sample of the stream to be presented by
-					  *  the playback device or the time a sample traveled
-					  *  from the capture device. This delay includes the
-					  *  delay introduced by all filters on the path between
-					  *  the stream and the device. The delay is normally
-					  *  constant in a graph and can change when the topology
-					  *  of the graph or the quantum changes. This delay does
-					  *  not include the delay caused by queued buffers. */
-	uint64_t queued;		/**< data queued in the stream, this is the sum
-					  *  of the size fields in the pw_buffer that are
-					  *  currently queued */
-	uint64_t buffered;		/**< for audio/raw streams, this contains the extra
-					  *  number of samples buffered in the resampler.
-					  *  Since 0.3.50. */
-	uint32_t queued_buffers;	/**< The number of buffers that are queued. Since 0.3.50 */
-	uint32_t avail_buffers;		/**< The number of buffers that can be dequeued. Since 0.3.50 */
+    int64_t now;            /**< the monotonic time in nanoseconds. This is the time
+                      *  when this time report was updated. It is usually
+                      *  updated every graph cycle. You can use the current
+                      *  monotonic time to calculate the elapsed time between
+                      *  this report and the current state and calculate
+                      *  updated ticks and delay values. */
+    struct spa_fraction rate;    /**< the rate of \a ticks and delay. This is usually
+                      *  expressed in 1/<samplerate>. */
+    uint64_t ticks;            /**< the ticks at \a now. This is the current time that
+                      *  the remote end is reading/writing. This is monotonicaly
+                      *  increasing. */
+    int64_t delay;            /**< delay to device. This is the time it will take for
+                      *  the next output sample of the stream to be presented by
+                      *  the playback device or the time a sample traveled
+                      *  from the capture device. This delay includes the
+                      *  delay introduced by all filters on the path between
+                      *  the stream and the device. The delay is normally
+                      *  constant in a graph and can change when the topology
+                      *  of the graph or the quantum changes. This delay does
+                      *  not include the delay caused by queued buffers. */
+    uint64_t queued;        /**< data queued in the stream, this is the sum
+                      *  of the size fields in the pw_buffer that are
+                      *  currently queued */
+    uint64_t buffered;        /**< for audio/raw streams, this contains the extra
+                      *  number of samples buffered in the resampler.
+                      *  Since 0.3.50. */
+    uint32_t queued_buffers;    /**< The number of buffers that are queued. Since 0.3.50 */
+    uint32_t avail_buffers;        /**< The number of buffers that can be dequeued. Since 0.3.50 */
 };
 
 #include <pipewire/port.h>
@@ -309,21 +309,21 @@ struct pw_time {
 /** Events for a stream. These events are always called from the mainloop
  * unless explicitly documented otherwise. */
 struct pw_stream_events {
-#define PW_VERSION_STREAM_EVENTS	2
-	uint32_t version;
+#define PW_VERSION_STREAM_EVENTS    2
+    uint32_t version;
 
-	void (*destroy) (void *data);
-	/** when the stream state changes */
-	void (*state_changed) (void *data, enum pw_stream_state old,
-				enum pw_stream_state state, const char *error);
+    void (*destroy) (void *data);
+    /** when the stream state changes */
+    void (*state_changed) (void *data, enum pw_stream_state old,
+                enum pw_stream_state state, const char *error);
 
-	/** Notify information about a control.  */
-	void (*control_info) (void *data, uint32_t id, const struct pw_stream_control *control);
+    /** Notify information about a control.  */
+    void (*control_info) (void *data, uint32_t id, const struct pw_stream_control *control);
 
-	/** when io changed on the stream. */
-	void (*io_changed) (void *data, uint32_t id, void *area, uint32_t size);
-	/** when a parameter changed */
-	void (*param_changed) (void *data, uint32_t id, const struct spa_pod *param);
+    /** when io changed on the stream. */
+    void (*io_changed) (void *data, uint32_t id, void *area, uint32_t size);
+    /** when a parameter changed */
+    void (*param_changed) (void *data, uint32_t id, const struct spa_pod *param);
 
         /** when a new buffer was created for this stream */
         void (*add_buffer) (void *data, struct pw_buffer *buffer);
@@ -332,18 +332,18 @@ struct pw_stream_events {
 
         /** when a buffer can be queued (for playback streams) or
          *  dequeued (for capture streams). This is normally called from the
-	 *  mainloop but can also be called directly from the realtime data
-	 *  thread if the user is prepared to deal with this. */
+     *  mainloop but can also be called directly from the realtime data
+     *  thread if the user is prepared to deal with this. */
         void (*process) (void *data);
 
-	/** The stream is drained */
+    /** The stream is drained */
         void (*drained) (void *data);
 
-	/** A command notify, Since 0.3.39:1 */
-	void (*command) (void *data, const struct spa_command *command);
+    /** A command notify, Since 0.3.39:1 */
+    void (*command) (void *data, const struct spa_command *command);
 
-	/** a trigger_process completed. Since version 0.3.40:2 */
-	void (*trigger_done) (void *data);
+    /** a trigger_process completed. Since version 0.3.40:2 */
+    void (*trigger_done) (void *data);
 };
 
 /** Convert a stream state to a readable string */
@@ -351,53 +351,53 @@ const char * pw_stream_state_as_string(enum pw_stream_state state);
 
 /** \enum pw_stream_flags Extra flags that can be used in \ref pw_stream_connect() */
 enum pw_stream_flags {
-	PW_STREAM_FLAG_NONE = 0,			/**< no flags */
-	PW_STREAM_FLAG_AUTOCONNECT	= (1 << 0),	/**< try to automatically connect
-							  *  this stream */
-	PW_STREAM_FLAG_INACTIVE		= (1 << 1),	/**< start the stream inactive,
-							  *  pw_stream_set_active() needs to be
-							  *  called explicitly */
-	PW_STREAM_FLAG_MAP_BUFFERS	= (1 << 2),	/**< mmap the buffers except DmaBuf */
-	PW_STREAM_FLAG_DRIVER		= (1 << 3),	/**< be a driver */
-	PW_STREAM_FLAG_RT_PROCESS	= (1 << 4),	/**< call process from the realtime
-							  *  thread. You MUST use RT safe functions
-							  *  in the process callback. */
-	PW_STREAM_FLAG_NO_CONVERT	= (1 << 5),	/**< don't convert format */
-	PW_STREAM_FLAG_EXCLUSIVE	= (1 << 6),	/**< require exclusive access to the
-							  *  device */
-	PW_STREAM_FLAG_DONT_RECONNECT	= (1 << 7),	/**< don't try to reconnect this stream
-							  *  when the sink/source is removed */
-	PW_STREAM_FLAG_ALLOC_BUFFERS	= (1 << 8),	/**< the application will allocate buffer
-							  *  memory. In the add_buffer event, the
-							  *  data of the buffer should be set */
-	PW_STREAM_FLAG_TRIGGER		= (1 << 9),	/**< the output stream will not be scheduled
-							  *  automatically but _trigger_process()
-							  *  needs to be called. This can be used
-							  *  when the output of the stream depends
-							  *  on input from other streams. */
+    PW_STREAM_FLAG_NONE = 0,            /**< no flags */
+    PW_STREAM_FLAG_AUTOCONNECT    = (1 << 0),    /**< try to automatically connect
+                              *  this stream */
+    PW_STREAM_FLAG_INACTIVE        = (1 << 1),    /**< start the stream inactive,
+                              *  pw_stream_set_active() needs to be
+                              *  called explicitly */
+    PW_STREAM_FLAG_MAP_BUFFERS    = (1 << 2),    /**< mmap the buffers except DmaBuf */
+    PW_STREAM_FLAG_DRIVER        = (1 << 3),    /**< be a driver */
+    PW_STREAM_FLAG_RT_PROCESS    = (1 << 4),    /**< call process from the realtime
+                              *  thread. You MUST use RT safe functions
+                              *  in the process callback. */
+    PW_STREAM_FLAG_NO_CONVERT    = (1 << 5),    /**< don't convert format */
+    PW_STREAM_FLAG_EXCLUSIVE    = (1 << 6),    /**< require exclusive access to the
+                              *  device */
+    PW_STREAM_FLAG_DONT_RECONNECT    = (1 << 7),    /**< don't try to reconnect this stream
+                              *  when the sink/source is removed */
+    PW_STREAM_FLAG_ALLOC_BUFFERS    = (1 << 8),    /**< the application will allocate buffer
+                              *  memory. In the add_buffer event, the
+                              *  data of the buffer should be set */
+    PW_STREAM_FLAG_TRIGGER        = (1 << 9),    /**< the output stream will not be scheduled
+                              *  automatically but _trigger_process()
+                              *  needs to be called. This can be used
+                              *  when the output of the stream depends
+                              *  on input from other streams. */
 };
 
 /** Create a new unconneced \ref pw_stream
  * \return a newly allocated \ref pw_stream */
 struct pw_stream *
-pw_stream_new(struct pw_core *core,		/**< a \ref pw_core */
-	      const char *name,			/**< a stream media name */
-	      struct pw_properties *props	/**< stream properties, ownership is taken */);
+pw_stream_new(struct pw_core *core,        /**< a \ref pw_core */
+          const char *name,            /**< a stream media name */
+          struct pw_properties *props    /**< stream properties, ownership is taken */);
 
 struct pw_stream *
-pw_stream_new_simple(struct pw_loop *loop,	/**< a \ref pw_loop to use */
-		     const char *name,		/**< a stream media name */
-		     struct pw_properties *props,/**< stream properties, ownership is taken */
-		     const struct pw_stream_events *events,	/**< stream events */
-		     void *data					/**< data passed to events */);
+pw_stream_new_simple(struct pw_loop *loop,    /**< a \ref pw_loop to use */
+             const char *name,        /**< a stream media name */
+             struct pw_properties *props,/**< stream properties, ownership is taken */
+             const struct pw_stream_events *events,    /**< stream events */
+             void *data                    /**< data passed to events */);
 
 /** Destroy a stream */
 void pw_stream_destroy(struct pw_stream *stream);
 
 void pw_stream_add_listener(struct pw_stream *stream,
-			    struct spa_hook *listener,
-			    const struct pw_stream_events *events,
-			    void *data);
+                struct spa_hook *listener,
+                const struct pw_stream_events *events,
+                void *data);
 
 enum pw_stream_state pw_stream_get_state(struct pw_stream *stream, const char **error);
 
@@ -415,23 +415,23 @@ int pw_stream_update_properties(struct pw_stream *stream, const struct spa_dict 
  * You should connect to the process event and use pw_stream_dequeue_buffer()
  * to get the latest metadata and data. */
 int
-pw_stream_connect(struct pw_stream *stream,		/**< a \ref pw_stream */
-		  enum pw_direction direction,		/**< the stream direction */
-		  uint32_t target_id,			/**< should have the value PW_ID_ANY.
-							  * To select a specific target
-							  * node, specify the
-							  * PW_KEY_OBJECT_SERIAL or the
-							  * PW_KEY_NODE_NAME value of the target
-							  * node in the PW_KEY_TARGET_OBJECT
-							  * property of the stream.
-							  * Specifying target nodes by
-							  * their id is deprecated.
-							  */
-		  enum pw_stream_flags flags,		/**< stream flags */
-		  const struct spa_pod **params,	/**< an array with params. The params
-							  *  should ideally contain supported
-							  *  formats. */
-		  uint32_t n_params			/**< number of items in \a params */);
+pw_stream_connect(struct pw_stream *stream,        /**< a \ref pw_stream */
+          enum pw_direction direction,        /**< the stream direction */
+          uint32_t target_id,            /**< should have the value PW_ID_ANY.
+                              * To select a specific target
+                              * node, specify the
+                              * PW_KEY_OBJECT_SERIAL or the
+                              * PW_KEY_NODE_NAME value of the target
+                              * node in the PW_KEY_TARGET_OBJECT
+                              * property of the stream.
+                              * Specifying target nodes by
+                              * their id is deprecated.
+                              */
+          enum pw_stream_flags flags,        /**< stream flags */
+          const struct spa_pod **params,    /**< an array with params. The params
+                              *  should ideally contain supported
+                              *  formats. */
+          uint32_t n_params            /**< number of items in \a params */);
 
 /** Get the node ID of the stream.
  * \return node ID. */
@@ -442,10 +442,10 @@ pw_stream_get_node_id(struct pw_stream *stream);
 int pw_stream_disconnect(struct pw_stream *stream);
 
 /** Set the stream in error state */
-int pw_stream_set_error(struct pw_stream *stream,	/**< a \ref pw_stream */
-			int res,			/**< a result code */
-			const char *error,		/**< an error message */
-			...) SPA_PRINTF_FUNC(3, 4);
+int pw_stream_set_error(struct pw_stream *stream,    /**< a \ref pw_stream */
+            int res,            /**< a result code */
+            const char *error,        /**< an error message */
+            ...) SPA_PRINTF_FUNC(3, 4);
 
 /** Complete the negotiation process with result code \a res
  *
@@ -454,11 +454,11 @@ int pw_stream_set_error(struct pw_stream *stream,	/**< a \ref pw_stream */
  * When \a res indicates success, \a params contain the parameters for the
  * allocation state.  */
 int
-pw_stream_update_params(struct pw_stream *stream,	/**< a \ref pw_stream */
-			const struct spa_pod **params,	/**< an array of params. The params should
-							  *  ideally contain parameters for doing
-							  *  buffer allocation. */
-			uint32_t n_params		/**< number of elements in \a params */);
+pw_stream_update_params(struct pw_stream *stream,    /**< a \ref pw_stream */
+            const struct spa_pod **params,    /**< an array of params. The params should
+                              *  ideally contain parameters for doing
+                              *  buffer allocation. */
+            uint32_t n_params        /**< number of elements in \a params */);
 
 /** Get control values */
 const struct pw_stream_control *pw_stream_get_control(struct pw_stream *stream, uint32_t id);
