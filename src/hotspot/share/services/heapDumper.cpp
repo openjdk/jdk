@@ -983,6 +983,7 @@ class VM_HeapDumper : public VM_GC_Operation, public WorkerTask {
   bool is_parallel_dump()  { return _num_dumper_threads > 1; }
   bool can_parallel_dump() {
     const char* base_path = writer()->get_file_path();
+    assert(base_path != nullptr, "sanity check");
     if ((strlen(base_path) + 7/*.p\d\d\d\d\0*/) >= JVM_MAXPATHLEN) {
       // no extra path room for separate heap dump files
       return false;
@@ -1385,10 +1386,8 @@ void VM_HeapDumper::work(uint worker_id) {
     ResourceMark rm;
     TraceTime timer("Dump heap objects in parallel", TRACETIME_LOG(Info, heapdump));
     DumpWriter* dw = is_vm_dumper(worker_id) ? writer() : create_dump_writer();
-    {
-      HeapObjectDumper obj_dumper(dw);
-      _poi->object_iterate(&obj_dumper, worker_id);
-    }
+    HeapObjectDumper obj_dumper(dw);
+    _poi->object_iterate(&obj_dumper, worker_id);
     dw->finish_dump_segment();
     dw->flush();
     if (is_vm_dumper(worker_id)) {
