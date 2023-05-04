@@ -1620,7 +1620,7 @@ void C2_MacroAssembler::minmax_fp_v(VectorRegister dst, VectorRegister src1, Vec
                                     bool is_double, bool is_min, int vector_length) {
   assert_different_registers(dst, src1, src2);
 
-  rvv_vsetvli(is_double ? T_DOUBLE : T_FLOAT, vector_length);
+  vsetvli_helper(is_double ? T_DOUBLE : T_FLOAT, vector_length);
 
   is_min ? vfmin_vv(dst, src1, src2)
          : vfmax_vv(dst, src1, src2);
@@ -1639,7 +1639,7 @@ void C2_MacroAssembler::reduce_minmax_fp_v(FloatRegister dst,
   assert_different_registers(src2, tmp1, tmp2);
 
   Label L_done, L_NaN;
-  rvv_vsetvli(is_double ? T_DOUBLE : T_FLOAT, vector_length);
+  vsetvli_helper(is_double ? T_DOUBLE : T_FLOAT, vector_length);
   vfmv_s_f(tmp2, src1);
 
   is_min ? vfredmin_vs(tmp1, src2, tmp2)
@@ -1670,12 +1670,12 @@ bool C2_MacroAssembler::in_scratch_emit_size() {
   return MacroAssembler::in_scratch_emit_size();
 }
 
-void C2_MacroAssembler::rvv_reduce_integral(Register dst, VectorRegister tmp,
-                                            Register src1, VectorRegister src2,
-                                            BasicType bt, int opc, int vector_length) {
+void C2_MacroAssembler::reduce_integral_v(Register dst, VectorRegister tmp,
+                                          Register src1, VectorRegister src2,
+                                          BasicType bt, int opc, int vector_length) {
   assert(bt == T_BYTE || bt == T_SHORT || bt == T_INT || bt == T_LONG, "unsupported element type");
 
-  rvv_vsetvli(bt, vector_length);
+  vsetvli_helper(bt, vector_length);
 
   vmv_s_x(tmp, src1);
 
@@ -1708,7 +1708,7 @@ void C2_MacroAssembler::rvv_reduce_integral(Register dst, VectorRegister tmp,
 
 // Set vl and vtype for full and partial vector operations.
 // (vma = mu, vta = tu, vill = false)
-void C2_MacroAssembler::rvv_vsetvli(BasicType bt, int vector_length, LMUL vlmul, Register tmp) {
+void C2_MacroAssembler::vsetvli_helper(BasicType bt, int vector_length, LMUL vlmul, Register tmp) {
   Assembler::SEW sew = Assembler::elemtype_to_sew(bt);
   if (vector_length <= 31) {
     vsetivli(tmp, vector_length, sew, vlmul);
@@ -1724,7 +1724,7 @@ void C2_MacroAssembler::compare_integral_v(VectorRegister vd, BasicType bt, int 
                                            VectorRegister src1, VectorRegister src2, int cond, VectorMask vm) {
   assert(is_integral_type(bt), "unsupported element type");
   assert(vm == Assembler::v0_t ? vd != v0 : true, "should be different registers");
-  rvv_vsetvli(bt, vector_length);
+  vsetvli_helper(bt, vector_length);
   vmclr_m(vd);
   switch (cond) {
     case BoolTest::eq: vmseq_vv(vd, src1, src2, vm); break;
@@ -1746,7 +1746,7 @@ void C2_MacroAssembler::compare_floating_point_v(VectorRegister vd, BasicType bt
   assert(is_floating_point_type(bt), "unsupported element type");
   assert(vd != v0, "should be different registers");
   assert(vm == Assembler::v0_t ? vmask != v0 : true, "vmask should not be v0");
-  rvv_vsetvli(bt, vector_length);
+  vsetvli_helper(bt, vector_length);
   // Check vector elements of src1 and src2 for quiet and signaling NaN.
   vfclass_v(tmp1, src1);
   vfclass_v(tmp2, src2);
@@ -1781,8 +1781,8 @@ void C2_MacroAssembler::compare_floating_point_v(VectorRegister vd, BasicType bt
   }
 }
 
-void C2_MacroAssembler::vector_integer_extend(VectorRegister dst, BasicType dst_bt, int vector_length,
-                                              VectorRegister src, BasicType src_bt) {
+void C2_MacroAssembler::integer_extend_v(VectorRegister dst, BasicType dst_bt, int vector_length,
+                                         VectorRegister src, BasicType src_bt) {
   assert(type2aelembytes(dst_bt) > type2aelembytes(src_bt) && type2aelembytes(dst_bt) <= 8 && type2aelembytes(src_bt) <= 4, "invalid element size");
   assert(dst_bt != T_FLOAT && dst_bt != T_DOUBLE && src_bt != T_FLOAT && src_bt != T_DOUBLE, "unsupported element type");
   // https://github.com/riscv/riscv-v-spec/blob/master/v-spec.adoc#52-vector-operands
@@ -1791,7 +1791,7 @@ void C2_MacroAssembler::vector_integer_extend(VectorRegister dst, BasicType dst_
   // Since LMUL=1, vd and vs cannot be the same.
   assert_different_registers(dst, src);
 
-  rvv_vsetvli(dst_bt, vector_length);
+  vsetvli_helper(dst_bt, vector_length);
   if (src_bt == T_BYTE) {
     switch (dst_bt) {
     case T_SHORT:
@@ -1819,8 +1819,8 @@ void C2_MacroAssembler::vector_integer_extend(VectorRegister dst, BasicType dst_
 
 // Vector narrow from src to dst with specified element sizes.
 // High part of dst vector will be filled with zero.
-void C2_MacroAssembler::vector_integer_narrow(VectorRegister dst, BasicType dst_bt, int vector_length,
-                                              VectorRegister src, BasicType src_bt, VectorRegister tmp) {
+void C2_MacroAssembler::integer_narrow_v(VectorRegister dst, BasicType dst_bt, int vector_length,
+                                         VectorRegister src, BasicType src_bt, VectorRegister tmp) {
   assert(type2aelembytes(dst_bt) < type2aelembytes(src_bt) && type2aelembytes(dst_bt) <= 4 && type2aelembytes(src_bt) <= 8, "invalid element size");
   assert(dst_bt != T_FLOAT && dst_bt != T_DOUBLE && src_bt != T_FLOAT && src_bt != T_DOUBLE, "unsupported element type");
   vmv1r_v(tmp, src);

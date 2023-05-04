@@ -194,11 +194,11 @@
                          VectorRegister tmp1, VectorRegister tmp2,
                          bool is_double, bool is_min, int vector_length);
 
- void rvv_reduce_integral(Register dst, VectorRegister tmp,
-                          Register src1, VectorRegister src2,
-                          BasicType bt, int opc, int vector_length);
+ void reduce_integral_v(Register dst, VectorRegister tmp,
+                        Register src1, VectorRegister src2,
+                        BasicType bt, int opc, int vector_length);
 
- void rvv_vsetvli(BasicType bt, int vector_length, LMUL vlmul = Assembler::m1, Register tmp = t0);
+ void vsetvli_helper(BasicType bt, int vector_length, LMUL vlmul = Assembler::m1, Register tmp = t0);
 
  void compare_integral_v(VectorRegister dst, BasicType bt, int vector_length,
                          VectorRegister src1, VectorRegister src2, int cond, VectorMask vm = Assembler::unmasked);
@@ -211,13 +211,13 @@
  // we assume each predicate register is one-eighth of the size of
  // scalable vector register, one mask bit per vector byte.
  void spill_vmask(VectorRegister v, int offset){
-   rvv_vsetvli(T_BYTE, MaxVectorSize >> 3);
+   vsetvli_helper(T_BYTE, MaxVectorSize >> 3);
    add(t0, sp, offset);
    vse8_v(v, t0);
  }
 
  void unspill_vmask(VectorRegister v, int offset){
-   rvv_vsetvli(T_BYTE, MaxVectorSize >> 3);
+   vsetvli_helper(T_BYTE, MaxVectorSize >> 3);
    add(t0, sp, offset);
    vle8_v(v, t0);
  }
@@ -230,11 +230,11 @@
     }
   }
 
-  void vector_integer_extend(VectorRegister dst, BasicType dst_bt, int vector_length,
-                             VectorRegister src, BasicType src_bt);
+  void integer_extend_v(VectorRegister dst, BasicType dst_bt, int vector_length,
+                        VectorRegister src, BasicType src_bt);
 
-  void vector_integer_narrow(VectorRegister dst, BasicType dst_bt, int vector_length,
-                             VectorRegister src, BasicType src_bt, VectorRegister tmp);
+  void integer_narrow_v(VectorRegister dst, BasicType dst_bt, int vector_length,
+                        VectorRegister src, BasicType src_bt, VectorRegister tmp);
 
   void vfcvt_rtz_xu_f_v_safe(VectorRegister dst, VectorRegister src);
   void vfcvt_rtz_x_f_v_safe(VectorRegister dst, VectorRegister src);
