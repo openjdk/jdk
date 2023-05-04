@@ -146,7 +146,7 @@ ZServiceabilityCounters* ZServiceability::counters() {
 ZServiceabilityCycleTracer::ZServiceabilityCycleTracer() :
     _memory_manager_stats(ZHeap::heap()->serviceability_cycle_memory_manager(),
                           ZCollectedHeap::heap()->gc_cause(),
-                          "end of GC cycle", 
+                          "end of GC cycle",
                           true  /* allMemoryPoolsAffected */,
                           true  /* recordGCBeginTime */,
                           true  /* recordPreGCUsage */,
@@ -161,7 +161,7 @@ ZServiceabilityPauseTracer::ZServiceabilityPauseTracer() :
     _counters_stats(ZHeap::heap()->serviceability_counters()->collector_counters()),
     _memory_manager_stats(ZHeap::heap()->serviceability_pause_memory_manager(),
                           ZCollectedHeap::heap()->gc_cause(),
-                          "end of GC pause", 
+                          "end of GC pause",
                           true  /* allMemoryPoolsAffected */,
                           true  /* recordGCBeginTime */,
                           false /* recordPreGCUsage */,
