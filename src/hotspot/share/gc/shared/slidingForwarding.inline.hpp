@@ -83,14 +83,14 @@ uintptr_t SlidingForwarding::encode_forwarding(HeapWord* from, HeapWord* to) {
                       markWord::marked_value;
 
   assert(to == decode_forwarding(from, encoded), "must be reversible");
-  assert((encoded & MARK_LOWER_HALF_MASK) == 0, "must encode to lowest 32 bits");
+  assert((encoded & ~MARK_LOWER_HALF_MASK) == 0, "must encode to lowest 32 bits");
   return encoded;
 }
 
 HeapWord* SlidingForwarding::decode_forwarding(HeapWord* from, uintptr_t encoded) {
   assert((encoded & markWord::lock_mask_in_place) == markWord::marked_value, "must be marked as forwarded");
   assert((encoded & FALLBACK_MASK) == 0, "must not be fallback-forwarded");
-  assert((encoded & MARK_LOWER_HALF_MASK) == 0, "must decode from lowest 32 bits");
+  assert((encoded & ~MARK_LOWER_HALF_MASK) == 0, "must decode from lowest 32 bits");
   size_t alt_region = (encoded >> ALT_REGION_SHIFT) & right_n_bits(ALT_REGION_BITS);
   assert(alt_region < NUM_TARGET_REGIONS, "Sanity");
   uintptr_t offset = (encoded >> OFFSET_BITS_SHIFT);
