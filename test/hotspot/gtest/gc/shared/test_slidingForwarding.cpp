@@ -29,6 +29,7 @@
 #include "unittest.hpp"
 
 #ifdef _LP64
+#ifndef PRODUCT
 
 static uintptr_t make_mark(uintptr_t target_region, uintptr_t offset) {
   return (target_region) << 3 | (offset << 4) | 3 /* forwarded */;
@@ -109,4 +110,5 @@ TEST_VM(SlidingForwarding, fallback) {
   SlidingForwarding::end();
 }
 
+#endif // PRODUCT
 #endif // _LP64
