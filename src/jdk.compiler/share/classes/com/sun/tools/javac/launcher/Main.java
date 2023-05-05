@@ -410,14 +410,6 @@ public class Main {
         return mainClassName;
     }
 
-    private static boolean isPublic(Method method) {
-        return method != null && Modifier.isPublic(method.getModifiers());
-    }
-
-    private static boolean isStatic(Method method) {
-        return method != null && Modifier.isStatic(method.getModifiers());
-    }
-
     /**
      * Invokes the {@code main} method of a specified class, using a class loader that
      * will load recently compiled classes from memory.
@@ -437,7 +429,7 @@ public class Main {
             Method mainMethod = MainMethodFinder.findMainMethod(appClass);
             int mods = mainMethod.getModifiers();
             boolean isStatic = Modifier.isStatic(mods);
-            boolean isPublic = Modifier.isStatic(mods);
+            boolean isPublic = Modifier.isPublic(mods);
             boolean noArgs = mainMethod.getParameterCount() == 0;
 
             if (!PreviewFeatures.isEnabled() && (!isStatic || !isPublic)) {

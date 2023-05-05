@@ -58,8 +58,6 @@ public class MainMethodFinder {
      */
     private static void gatherMains(Class<?> declc, Class<?> refc, List<Method> mains) {
         if (refc != null && refc != Object.class) {
-            gatherMains(declc, refc.getSuperclass(), mains);
-
             for (Method method : refc.getDeclaredMethods()) {
                 // Must be named "main", public|protected|package-private and either
                 // no arguments or one string array argument.
@@ -72,6 +70,8 @@ public class MainMethodFinder {
                     mains.add(method);
                 }
             }
+
+            gatherMains(declc, refc.getSuperclass(), mains);
         }
     }
 
@@ -132,13 +132,17 @@ public class MainMethodFinder {
 
     /**
      * {@return priority main method or null if none found}
+     *
      * @param mainClass main class
+     *
+     * @throws NoSuchMethodException when not and preview and no method found
      */
     public static Method findMainMethod(Class<?> mainClass) throws NoSuchMethodException {
         try {
             Method mainMethod = mainClass.getMethod("main", String[].class);
+            int mods = mainMethod.getModifiers();
 
-            if (mainMethod.getDeclaringClass() != mainClass) {
+            if (Modifier.isStatic(mods) && mainMethod.getDeclaringClass() != mainClass) {
                 System.err.println("WARNING: static main in super class will be deprecated.");
             }
 
@@ -155,7 +159,10 @@ public class MainMethodFinder {
                 throw new NoSuchMethodException("No main method found");
             }
 
-            mains.sort(MainMethodFinder::compareMethods);
+            if (1 < mains.size()) {
+                mains.sort(MainMethodFinder::compareMethods);
+            }
+
             Method mainMethod = mains.get(0);
 
             return mainMethod;
