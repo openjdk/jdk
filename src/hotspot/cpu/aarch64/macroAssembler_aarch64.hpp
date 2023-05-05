@@ -38,7 +38,7 @@ public:
 
   class WrapperNode: public ResourceObj {
   public:
-    WrapperNode *_next;
+    WrapperNode * _next;
     virtual void operator()() = 0;
   };
 
@@ -80,6 +80,7 @@ public:
   struct Iterator {
     WrapperNode *_next;
     Iterator(LambdaAccumulator *gen): _next(gen->_holder_list_head) { }
+    Iterator(): _next(nullptr) { }
 
     Iterator& operator++() {
       if (_next)
@@ -1754,7 +1755,8 @@ public:
     poly1305_reduce(acc, u);
     acc.gen();
   }
-  void poly1305_reduce_step(FloatRegister d, FloatRegister s, FloatRegister upper_bits, FloatRegister scratch);
+  void poly1305_reduce_step(LambdaAccumulator &acc,
+                            FloatRegister d, FloatRegister s, FloatRegister upper_bits, FloatRegister scratch);
   void poly1305_fully_reduce(Register dest[], const RegPair u[]);
   void poly1305_transfer(const RegPair d[], const FloatRegister s[],
                          int lane, FloatRegister vscratch);

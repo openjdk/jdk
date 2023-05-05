@@ -167,50 +167,55 @@ address generate_poly1305_processBlocks2() {
     __ subsw(rscratch1, length, POLY1305_BLOCK_LENGTH * 8);
     __ br(Assembler::LT, DONE);
 
+    __ align(OptoLoopAlignment);
     __ bind(LOOP);
     {
       __ poly1305_load(S0, input_start);
       __ poly1305_load(S1, input_start);
 
-      LambdaAccumulator gen0, gen1, gen2;
-      __ poly1305_add(gen0, S0, u0);
-      __ poly1305_multiply(gen0, u0, S0, R, RR2, regs);
-      __ poly1305_reduce(gen0, u0);
+      constexpr int COLS = 3;
+      LambdaAccumulator gen[COLS];
 
-      __ poly1305_add(gen1, S1, u1);
-      __ poly1305_multiply(gen1, u1, S1, R, RR2, regs);
-      __ poly1305_reduce(gen1, u1);
+      __ poly1305_add(gen[0], S0, u0);
+      __ poly1305_multiply(gen[0], u0, S0, R, RR2, regs);
+      __ poly1305_reduce(gen[0], u0);
 
-      __ poly1305_step_vec(gen2, s_v, v_u0, upper_bits, input_start, vregs.remaining());
-      __ poly1305_multiply_vec(gen2, v_u0, vregs.remaining(), s_v, r_v, rr_v);
-      __ poly1305_reduce_vec(gen2, v_u0, upper_bits, vregs.remaining());
+      __ poly1305_add(gen[1], S1, u1);
+      __ poly1305_multiply(gen[1], u1, S1, R, RR2, regs);
+      __ poly1305_reduce(gen[1], u1);
 
-      auto it0 = gen0.iterator(),
-        it1 = gen1.iterator(),
-        it2 = gen2.iterator();
+      __ poly1305_step_vec(gen[2], s_v, v_u0, upper_bits, input_start, vregs.remaining());
+      __ poly1305_multiply_vec(gen[2], v_u0, vregs.remaining(), s_v, r_v, rr_v);
+      __ poly1305_reduce_vec(gen[2], v_u0, upper_bits, vregs.remaining());
 
-      int len0 = gen0.length(), len1 = gen1.length(), len2 = gen2.length();
-      const int l_max = MAX3(len0, len1, len2);
-      int e0 = l_max/2;
-      int e1 = e0, e2 = e0;
+      LambdaAccumulator::Iterator it[COLS];
+      int len[COLS];
+
+      int l_max = INT_MIN;
+      for (int col = 0; col < COLS; col++) {
+        it[col] = gen[col].iterator();
+        len[col] = gen[col].length();
+        l_max = MAX2(l_max, len[col]);
+      }
+
+      int err[COLS];
+      for (int col = 0; col < COLS; col++) {
+        err[col] = l_max / 2;
+      }
 
       for (int i = 0; i < l_max; i++) {
-        e0 -= len0;
-        if (e0 < 0) {
-          e0 += l_max; (it0++)();
-        }
-        e1 -= len1;
-        if (e1 < 0) {
-          e1 += l_max; (it1++)();
-        }
-        e2 -= len2;
-        if (e2 < 0) {
-          e2 += l_max; (it2++)();
+        for (int col = 0; col < COLS; col++) {
+          err[col] -= len[col];
+          if (err[col] < 0) {
+            err[col] += l_max;
+            (it[col]++)();
+          }
         }
       }
 
-      assert(*it0 == nullptr && *it1 == nullptr && *it2 == nullptr,
-             "Make sure all generators are exhausted");
+      for (int col = 0; col < COLS; col++) {
+        assert(*(it[col]) == nullptr, "Make sure all generators are exhausted");
+      }
     }
 
     __ subw(length, length, POLY1305_BLOCK_LENGTH * 4);
