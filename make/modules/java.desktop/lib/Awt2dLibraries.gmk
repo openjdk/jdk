@@ -191,7 +191,7 @@ ifeq ($(call isTargetOs, windows macosx), false)
 
     LIBAWT_XAWT_EXCLUDES := medialib debug
 
-    BUILD_LIBPIPEWIRE_HEADER_DIRS := \
+    LIBPIPEWIRE_HEADER_DIRS := \
     	$(TOPDIR)/src/$(MODULE)/unix/native/libpipewire/include
 
     LIBAWT_XAWT_EXTRA_HEADER_DIRS := \
@@ -203,7 +203,7 @@ ifeq ($(call isTargetOs, windows macosx), false)
         common/font \
         common/java2d/opengl \
         common/java2d/x11 \
-        $(BUILD_LIBPIPEWIRE_HEADER_DIRS)
+        $(LIBPIPEWIRE_HEADER_DIRS)
 
     LIBAWT_XAWT_CFLAGS += -DXAWT -DXAWT_HACK \
         $(FONTCONFIG_CFLAGS) \
