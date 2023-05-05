@@ -114,10 +114,20 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  * against other {@code CollationKey}s. A {@code CollationKey} is
  * created by a {@code Collator} object for a given {@code String}.
  * <br>
- * <strong>Note:</strong> {@code CollationKey}s from different
+ * @apiNote {@code CollationKey}s from different
  * {@code Collator}s can not be compared. See the class description
  * for {@link CollationKey}
  * for an example using {@code CollationKey}s.
+ * @implNote Implementations of {@code Collator} class may produce
+ * different instances based on the "{@code co}"
+ * <a href="http://www.unicode.org/reports/tr35/#UnicodeCollationIdentifier">
+ * Unicode collation identifier</a> in the specified {@code Locale}.
+ * For example:
+ * {@snippet lang = java:
+ * Collator.getInstance(Locale.forLanguageTag("sv-u-co-trad"));
+ * }
+ * may return a {@code Collator} instance with the traditional sorting, which
+ * gives 'v' and 'w' the same sorting order.
  *
  * @see         RuleBasedCollator
  * @see         CollationKey
