@@ -34,6 +34,18 @@ struct LigatureSet
     ;
   }
 
+  bool intersects_lig_glyph (const hb_set_t *glyphs) const
+  {
+    return
+    + hb_iter (ligature)
+    | hb_map (hb_add (this))
+    | hb_map ([glyphs] (const Ligature<Types> &_) {
+      return _.intersects_lig_glyph (glyphs) && _.intersects (glyphs);
+    })
+    | hb_any
+    ;
+  }
+
   void closure (hb_closure_context_t *c) const
   {
     + hb_iter (ligature)
