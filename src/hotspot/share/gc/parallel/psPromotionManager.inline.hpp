@@ -163,7 +163,7 @@ inline oop PSPromotionManager::copy_unmarked_to_survivor_space(oop o,
 
   oop new_obj = nullptr;
   bool new_obj_is_tenured = false;
-  size_t new_obj_size = o->size();
+  size_t new_obj_size = o->forward_safe_size();
 
   // Find the objects age, MT safe.
   uint age = (test_mark.has_displaced_mark_helper() /* o->has_displaced_mark() */) ?
@@ -247,9 +247,11 @@ inline oop PSPromotionManager::copy_unmarked_to_survivor_space(oop o,
   // Copy obj
   Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(o), cast_from_oop<HeapWord*>(new_obj), new_obj_size);
 
-  // Parallel GC claims with a release - so other threads might access this object
-  // after claiming and they should see the "completed" object.
-  ContinuationGCSupport::transform_stack_chunk(new_obj);
+  if (!new_obj->mark().is_marked()) {
+    // Parallel GC claims with a release - so other threads might access this object
+    // after claiming and they should see the "completed" object.
+    ContinuationGCSupport::transform_stack_chunk(new_obj);
+  }
 
   // Now we have to CAS in the header.
   // Make copy visible to threads reading the forwardee.

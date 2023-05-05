@@ -7254,7 +7254,7 @@ instruct loadKlass(iRegPNoSp dst, memory8 mem)
 instruct loadNKlass(iRegNNoSp dst, memory4 mem)
 %{
   match(Set dst (LoadNKlass mem));
-  predicate(!needs_acquiring_load(n));
+  predicate(!needs_acquiring_load(n) && !UseCompactObjectHeaders);
 
   ins_cost(4 * INSN_COST);
   format %{ "ldrw  $dst, $mem\t# compressed class ptr" %}
@@ -7262,6 +7262,32 @@ instruct loadNKlass(iRegNNoSp dst, memory4 mem)
   ins_encode(aarch64_enc_ldrw(dst, mem));
 
   ins_pipe(iload_reg_mem);
+%}
+
+instruct loadNKlassCompactHeaders(iRegNNoSp dst, memory4 mem, rFlagsReg cr)
+%{
+  match(Set dst (LoadNKlass mem));
+  effect(TEMP_DEF dst, KILL cr);
+  predicate(!needs_acquiring_load(n) && UseCompactObjectHeaders);
+
+  ins_cost(4 * INSN_COST);
+  format %{ "ldrw  $dst, $mem\t# compressed class ptr" %}
+  ins_encode %{
+    assert($mem$$disp == oopDesc::klass_offset_in_bytes(), "expect correct offset");
+    assert($mem$$index$$Register == noreg, "expect no index");
+    Register dst = $dst$$Register;
+    Register obj = $mem$$base$$Register;
+    C2LoadNKlassStub* stub = new (Compile::current()->comp_arena()) C2LoadNKlassStub(dst);
+    Compile::current()->output()->add_stub(stub);
+    __ ldr(dst, Address(obj, oopDesc::mark_offset_in_bytes()));
+    // NOTE: We can't use tbnz here, because the target is sometimes too far away
+    // and cannot be encoded.
+    __ tst(dst, markWord::monitor_value);
+    __ br(Assembler::NE, stub->entry());
+    __ bind(stub->continuation());
+    __ lsr(dst, dst, markWord::klass_shift);
+  %}
+  ins_pipe(pipe_slow);
 %}
 
 // Load Float

@@ -4314,9 +4314,37 @@ void MacroAssembler::load_method_holder(Register holder, Register method) {
   ldr(holder, Address(holder, ConstantPool::pool_holder_offset_in_bytes())); // InstanceKlass*
 }
 
+// Loads the obj's Klass* into dst.
+// Preserves all registers (incl src, rscratch1 and rscratch2).
+void MacroAssembler::load_nklass(Register dst, Register src) {
+  assert(UseCompressedClassPointers, "expects UseCompressedClassPointers");
+
+  if (!UseCompactObjectHeaders) {
+    ldrw(dst, Address(src, oopDesc::klass_offset_in_bytes()));
+    return;
+  }
+
+  Label fast;
+
+  // Check if we can take the (common) fast path, if obj is unlocked.
+  ldr(dst, Address(src, oopDesc::mark_offset_in_bytes()));
+  tbz(dst, exact_log2(markWord::monitor_value), fast);
+
+  // Fetch displaced header
+  ldr(dst, Address(dst, OM_OFFSET_NO_MONITOR_VALUE_TAG(header)));
+
+  // Fast-path: shift and decode Klass*.
+  bind(fast);
+  lsr(dst, dst, markWord::klass_shift);
+}
+
 void MacroAssembler::load_klass(Register dst, Register src) {
   if (UseCompressedClassPointers) {
-    ldrw(dst, Address(src, oopDesc::klass_offset_in_bytes()));
+    if (UseCompactObjectHeaders) {
+      load_nklass(dst, src);
+    } else {
+      ldrw(dst, Address(src, oopDesc::klass_offset_in_bytes()));
+    }
     decode_klass_not_null(dst);
   } else {
     ldr(dst, Address(src, oopDesc::klass_offset_in_bytes()));
@@ -4354,8 +4382,13 @@ void MacroAssembler::load_mirror(Register dst, Register method, Register tmp1, R
 }
 
 void MacroAssembler::cmp_klass(Register oop, Register trial_klass, Register tmp) {
+  assert_different_registers(oop, trial_klass, tmp);
   if (UseCompressedClassPointers) {
-    ldrw(tmp, Address(oop, oopDesc::klass_offset_in_bytes()));
+    if (UseCompactObjectHeaders) {
+      load_nklass(tmp, oop);
+    } else {
+      ldrw(tmp, Address(oop, oopDesc::klass_offset_in_bytes()));
+    }
     if (CompressedKlassPointers::base() == NULL) {
       cmp(trial_klass, tmp, LSL, CompressedKlassPointers::shift());
       return;

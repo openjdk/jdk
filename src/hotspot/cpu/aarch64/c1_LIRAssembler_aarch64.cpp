@@ -2352,12 +2352,12 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
     if (basic_type != T_OBJECT) {
       // Simple test for basic type arrays
       if (UseCompressedClassPointers) {
-        __ ldrw(tmp, src_klass_addr);
-        __ ldrw(rscratch1, dst_klass_addr);
+        __ load_nklass(tmp, src);
+        __ load_nklass(rscratch1, dst);
         __ cmpw(tmp, rscratch1);
       } else {
-        __ ldr(tmp, src_klass_addr);
-        __ ldr(rscratch1, dst_klass_addr);
+        __ ldr(tmp, Address(src, oopDesc::klass_offset_in_bytes()));
+        __ ldr(rscratch1, Address(dst, oopDesc::klass_offset_in_bytes()));
         __ cmp(tmp, rscratch1);
       }
       __ br(Assembler::NE, *stub->entry());
@@ -2481,36 +2481,14 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
     // but not necessarily exactly of type default_type.
     Label known_ok, halt;
     __ mov_metadata(tmp, default_type->constant_encoding());
-    if (UseCompressedClassPointers) {
-      __ encode_klass_not_null(tmp);
-    }
 
     if (basic_type != T_OBJECT) {
-
-      if (UseCompressedClassPointers) {
-        __ ldrw(rscratch1, dst_klass_addr);
-        __ cmpw(tmp, rscratch1);
-      } else {
-        __ ldr(rscratch1, dst_klass_addr);
-        __ cmp(tmp, rscratch1);
-      }
+      __ cmp_klass(dst, tmp, rscratch1);
       __ br(Assembler::NE, halt);
-      if (UseCompressedClassPointers) {
-        __ ldrw(rscratch1, src_klass_addr);
-        __ cmpw(tmp, rscratch1);
-      } else {
-        __ ldr(rscratch1, src_klass_addr);
-        __ cmp(tmp, rscratch1);
-      }
+      __ cmp_klass(src, tmp, rscratch1);
       __ br(Assembler::EQ, known_ok);
     } else {
-      if (UseCompressedClassPointers) {
-        __ ldrw(rscratch1, dst_klass_addr);
-        __ cmpw(tmp, rscratch1);
-      } else {
-        __ ldr(rscratch1, dst_klass_addr);
-        __ cmp(tmp, rscratch1);
-      }
+      __ cmp_klass(dst, tmp, rscratch1);
       __ br(Assembler::EQ, known_ok);
       __ cmp(src, dst);
       __ br(Assembler::EQ, known_ok);
@@ -2591,7 +2569,18 @@ void LIR_Assembler::emit_load_klass(LIR_OpLoadKlass* op) {
   }
 
   if (UseCompressedClassPointers) {
-    __ ldrw(result, Address (obj, oopDesc::klass_offset_in_bytes()));
+    if (UseCompactObjectHeaders) {
+      // Check if we can take the (common) fast path, if obj is unlocked.
+      __ ldr(result, Address(obj, oopDesc::mark_offset_in_bytes()));
+      __ tst(result, markWord::monitor_value);
+      __ br(Assembler::NE, *op->stub()->entry());
+      __ bind(*op->stub()->continuation());
+
+      // Shift to get proper narrow Klass*.
+      __ lsr(result, result, markWord::klass_shift);
+    } else {
+      __ ldrw(result, Address (obj, oopDesc::klass_offset_in_bytes()));
+    }
     __ decode_klass_not_null(result);
   } else {
     __ ldr(result, Address (obj, oopDesc::klass_offset_in_bytes()));

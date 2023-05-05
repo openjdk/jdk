@@ -220,7 +220,7 @@ void G1ParScanThreadState::do_partial_array(PartialArrayScanTask task) {
   oop from_obj = task.to_source_array();
 
   assert(_g1h->is_in_reserved(from_obj), "must be in heap.");
-  assert(from_obj->is_objArray(), "must be obj array");
+  assert(from_obj->forward_safe_klass()->is_objArray_klass(), "must be obj array");
   assert(from_obj->is_forwarded(), "must be forwarded");
 
   oop to_obj = from_obj->forwardee();
@@ -250,7 +250,7 @@ MAYBE_INLINE_EVACUATION
 void G1ParScanThreadState::start_partial_objarray(G1HeapRegionAttr dest_attr,
                                                   oop from_obj,
                                                   oop to_obj) {
-  assert(from_obj->is_objArray(), "precondition");
+  assert(from_obj->forward_safe_klass()->is_objArray_klass(), "precondition");
   assert(from_obj->is_forwarded(), "precondition");
   assert(from_obj->forwardee() == to_obj, "precondition");
   assert(from_obj != to_obj, "should not be scanning self-forwarded objects");
@@ -452,7 +452,7 @@ oop G1ParScanThreadState::do_copy_to_survivor_space(G1HeapRegionAttr const regio
 
   // Get the klass once.  We'll need it again later, and this avoids
   // re-decoding when it's compressed.
-  Klass* klass = old->klass();
+  Klass* klass = old->forward_safe_klass();
   const size_t word_sz = old->size_given_klass(klass);
 
   uint age = 0;

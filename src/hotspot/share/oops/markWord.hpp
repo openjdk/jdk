@@ -44,6 +44,10 @@
 //  --------
 //  unused:25 hash:31 -->| unused_gap:1  age:4  unused_gap:1  lock:2 (normal object)
 //
+//  64 bits (with compact headers):
+//  -------------------------------
+//  nklass:32 hash:25 -->| unused_gap:1  age:4  self-fwded:1  lock:2 (normal object)
+//
 //  - hash contains the identity hash value: largest value is
 //    31 bits, see os::random().  Also, 64-bit vm's require
 //    a hash value no bigger than 32 bits because they will not
@@ -106,12 +110,23 @@ class markWord {
   static const int self_forwarded_bits            = 1;
   static const int max_hash_bits                  = BitsPerWord - age_bits - lock_bits - self_forwarded_bits;
   static const int hash_bits                      = max_hash_bits > 31 ? 31 : max_hash_bits;
+  static const int hash_bits_compact              = max_hash_bits > 25 ? 25 : max_hash_bits;
+  // Used only without compact headers.
   static const int unused_gap_bits                = LP64_ONLY(1) NOT_LP64(0);
+#ifdef _LP64
+  // Used only with compact headers.
+  static const int klass_bits                     = 32;
+#endif
 
   static const int lock_shift                     = 0;
   static const int self_forwarded_shift           = lock_shift + lock_bits;
   static const int age_shift                      = self_forwarded_shift + self_forwarded_bits;
   static const int hash_shift                     = age_shift + age_bits + unused_gap_bits;
+  static const int hash_shift_compact             = age_shift + age_bits;
+#ifdef _LP64
+  // Used only with compact headers.
+  static const int klass_shift                    = hash_shift_compact + hash_bits_compact;
+#endif
 
   static const uintptr_t lock_mask                = right_n_bits(lock_bits);
   static const uintptr_t lock_mask_in_place       = lock_mask << lock_shift;
@@ -121,6 +136,14 @@ class markWord {
   static const uintptr_t age_mask_in_place        = age_mask << age_shift;
   static const uintptr_t hash_mask                = right_n_bits(hash_bits);
   static const uintptr_t hash_mask_in_place       = hash_mask << hash_shift;
+  static const uintptr_t hash_mask_compact        = right_n_bits(hash_bits_compact);
+  static const uintptr_t hash_mask_in_place_compact = hash_mask_compact << hash_shift_compact;
+#ifdef _LP64
+  // Used only with compact headers.
+  static const uintptr_t klass_mask               = right_n_bits(klass_bits);
+  static const uintptr_t klass_mask_in_place      = klass_mask << klass_shift;
+#endif
+
 
   static const uintptr_t locked_value             = 0;
   static const uintptr_t unlocked_value           = 1;
@@ -194,8 +217,11 @@ class markWord {
   markWord displaced_mark_helper() const;
   void set_displaced_mark_helper(markWord m) const;
   markWord copy_set_hash(intptr_t hash) const {
-    uintptr_t tmp = value() & (~hash_mask_in_place);
-    tmp |= ((hash & hash_mask) << hash_shift);
+    uintptr_t mask_in_place = UseCompactObjectHeaders ? hash_mask_in_place_compact : hash_mask_in_place;
+    uintptr_t mask          = UseCompactObjectHeaders ? hash_mask_compact          : hash_mask;
+    int shift               = UseCompactObjectHeaders ? hash_shift_compact         : hash_shift;
+    uintptr_t tmp = value() & ~mask_in_place;
+    tmp |= ((hash & mask) << shift);
     return markWord(tmp);
   }
   // it is only used to be stored into BasicLock as the
@@ -229,12 +255,23 @@ class markWord {
 
   // hash operations
   intptr_t hash() const {
-    return mask_bits(value() >> hash_shift, hash_mask);
+    uintptr_t mask = UseCompactObjectHeaders ? hash_mask_compact  : hash_mask;
+    int shift      = UseCompactObjectHeaders ? hash_shift_compact : hash_shift;
+    return mask_bits(value() >> shift, mask);
   }
 
   bool has_no_hash() const {
     return hash() == no_hash;
   }
+
+#ifdef _LP64
+  inline markWord actual_mark() const;
+  inline Klass* klass() const;
+  inline Klass* klass_or_null() const;
+  inline narrowKlass narrow_klass() const;
+  inline markWord set_narrow_klass(narrowKlass nklass) const;
+  inline markWord set_klass(Klass* klass) const;
+#endif
 
   // Prototype mark for initialization
   static markWord prototype() {

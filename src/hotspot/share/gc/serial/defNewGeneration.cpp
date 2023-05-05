@@ -882,7 +882,7 @@ void DefNewGeneration::remove_forwarding_pointers() {
   struct ResetForwardedMarkWord : ObjectClosure {
     void do_object(oop obj) override {
       if (obj->is_forwarded()) {
-        obj->init_mark();
+        obj->forward_safe_init_mark();
       }
     }
   } cl;

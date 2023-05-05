@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "opto/c2_MacroAssembler.hpp"
 #include "opto/c2_CodeStubs.hpp"
+#include "runtime/objectMonitor.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 
@@ -61,6 +62,17 @@ void C2EntryBarrierStub::emit(C2_MacroAssembler& masm) {
   __ bind(guard());
   __ relocate(entry_guard_Relocation::spec());
   __ emit_int32(0);   // nmethod guard value
+}
+
+int C2LoadNKlassStub::max_size() const {
+  return 8;
+}
+
+void C2LoadNKlassStub::emit(C2_MacroAssembler& masm) {
+  __ bind(entry());
+  Register d = dst();
+  __ ldr(d, Address(d, OM_OFFSET_NO_MONITOR_VALUE_TAG(header)));
+  __ b(continuation());
 }
 
 #undef __

@@ -3093,6 +3093,28 @@ jint Arguments::finalize_vm_init_args(bool patch_mod_javabase) {
   UNSUPPORTED_OPTION(ShowRegistersOnAssert);
 #endif // CAN_SHOW_REGISTERS_ON_ASSERT
 
+#ifdef _LP64
+  if (UseCompactObjectHeaders && FLAG_IS_CMDLINE(UseCompressedClassPointers) && !UseCompressedClassPointers) {
+    // If user specifies -UseCompressedClassPointers, disable compact headers with a warning.
+    warning("Compact object headers require compressed class pointers. Disabling compact object headers.");
+    FLAG_SET_DEFAULT(UseCompactObjectHeaders, false);
+  }
+
+  if (UseCompactObjectHeaders && !UseHeavyMonitors) {
+    FLAG_SET_DEFAULT(UseHeavyMonitors, true);
+  }
+  if (UseCompactObjectHeaders && !UseAltGCForwarding) {
+    FLAG_SET_DEFAULT(UseAltGCForwarding, true);
+  }
+  if (UseCompactObjectHeaders && !UseCompressedClassPointers) {
+    FLAG_SET_DEFAULT(UseCompressedClassPointers, true);
+  }
+
+  if (UseCompactObjectHeaders) {
+    FLAG_SET_DEFAULT(UseSharedSpaces, false);
+  }
+#endif
+
   return JNI_OK;
 }
 
