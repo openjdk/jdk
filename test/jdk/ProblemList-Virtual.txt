@@ -51,9 +51,9 @@ com/sun/jdi/PopAndInvokeTest.java 8305632 generic-all
 java/foreign/enablenativeaccess/TestEnableNativeAccessDynamic.java 8307486 generic-all
 
 ##########
-## Tests incompatible with  with virtual test thread factory
-## There is no goal to run all test with virtual test thread factory
-## So any test migth be added as incompatible, the
+## Tests incompatible with  with virtual test thread factory.
+## There is no goal to run all test with virtual test thread factory.
+## So any test migth be added as incompatible, the bug is not required.
 
 # Incorrect stack/threadgroup/exception expectations for main thread
 java/lang/StackWalker/DumpStackTest.java 0000000 generic-all
