@@ -2926,7 +2926,9 @@ bool VM_HeapWalkOperation::visit(oop o) {
         return iterate_over_class(o);
       }
     } else {
-      if (is_advanced_heap_walk() && java_lang_VirtualThread::is_subclass(o->klass())) {
+      // we report stack references only when initial object is not specified
+      // (in the case we start from heap roots which include platform thread stack references)
+      if (initial_object().is_null() && java_lang_VirtualThread::is_subclass(o->klass())) {
         if (!collect_vthread_stack_refs(o)) {
           return false;
         }
