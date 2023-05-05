@@ -135,7 +135,7 @@ public class MainMethodFinder {
      *
      * @param mainClass main class
      *
-     * @throws NoSuchMethodException when not and preview and no method found
+     * @throws NoSuchMethodException when not preview and no method found
      */
     public static Method findMainMethod(Class<?> mainClass) throws NoSuchMethodException {
         try {
