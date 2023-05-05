@@ -54,11 +54,12 @@ size_t SlidingForwarding::region_index_containing(HeapWord* addr) {
 }
 
 uintptr_t SlidingForwarding::encode_forwarding(HeapWord* from, HeapWord* to) {
-  size_t from_reg_idx = region_index_containing(from) * NUM_TARGET_REGIONS;
+  size_t from_reg_idx = region_index_containing(from) /* * NUM_TARGET_REGIONS */;
 
   HeapWord* to_region_base = (HeapWord*) ((uintptr_t)to & _region_mask);
 
-  HeapWord** cell = &_biased_bases_table[from_reg_idx];
+  //HeapWord** cell = &_biased_bases_table[from_reg_idx];
+  HeapWord** cell = &_biased_bases[0][from_reg_idx];
 
   uintptr_t alt_region = 0;
   if (*cell == to_region_base) {
@@ -67,7 +68,7 @@ uintptr_t SlidingForwarding::encode_forwarding(HeapWord* from, HeapWord* to) {
     // Primary is free
     *cell = to_region_base;
   } else {
-    cell++;
+    cell = &_biased_bases[1][from_reg_idx];
     if (*cell == to_region_base) {
       // Alternate is good
     } else if (*cell == UNUSED_BASE) {
@@ -103,8 +104,8 @@ HeapWord* SlidingForwarding::decode_forwarding(HeapWord* from, uintptr_t encoded
   assert(alt_region < NUM_TARGET_REGIONS, "Sanity");
   uintptr_t offset = (encoded >> OFFSET_BITS_SHIFT);
 
-  size_t from_idx = region_index_containing(from) * NUM_TARGET_REGIONS;
-  HeapWord* base = _biased_bases_table[from_idx + alt_region];
+  size_t from_idx = region_index_containing(from) /* * NUM_TARGET_REGIONS */;
+  HeapWord* base = _biased_bases[alt_region][from_idx];
   assert(base != UNUSED_BASE, "must not be unused base");
   HeapWord* decoded = base + offset;
   assert(decoded >= _heap_start,

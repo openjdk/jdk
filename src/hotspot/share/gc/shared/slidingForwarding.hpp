@@ -122,6 +122,7 @@ private:
 
   static HeapWord**     _bases_table;
   static HeapWord**     _biased_bases_table;
+  static HeapWord**     _biased_bases[2];
   static FallbackTable* _fallback_table;
 
   static inline size_t region_index_containing(HeapWord* addr);

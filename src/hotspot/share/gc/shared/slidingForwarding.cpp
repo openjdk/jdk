@@ -43,6 +43,7 @@ size_t SlidingForwarding::_region_size_words = 0;
 uint SlidingForwarding::_region_size_words_shift = 0;
 uint SlidingForwarding::_region_size_bytes_shift = 0;
 uintptr_t SlidingForwarding::_region_mask = 0;
+HeapWord** SlidingForwarding::_biased_bases[2] = { nullptr, nullptr };
 HeapWord** SlidingForwarding::_bases_table = nullptr;
 HeapWord** SlidingForwarding::_biased_bases_table = nullptr;
 FallbackTable* SlidingForwarding::_fallback_table = nullptr;
@@ -88,6 +89,8 @@ void SlidingForwarding::begin() {
     size_t max = _num_regions * NUM_TARGET_REGIONS;
     _bases_table = NEW_C_HEAP_ARRAY(HeapWord*, max, mtGC);
     _biased_bases_table = _bases_table - 2 * _heap_start_base_idx;
+    _biased_bases[0] = _bases_table - _heap_start_base_idx;
+    _biased_bases[1] = _bases_table + _num_regions - _heap_start_base_idx;
     for (size_t i = 0; i < max; i++) {
       _bases_table[i] = UNUSED_BASE;
     }
