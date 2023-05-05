@@ -177,8 +177,8 @@ public final class DefaultImageBuilder implements ImageBuilder {
             }
             try {
                 this.platform = Platform.parsePlatform(value);
-            } catch (IllegalArgumentException ile) {
-                throw new PluginException("ModuleTarget is malformed: " + ile.getMessage());
+            } catch (IllegalArgumentException iae) {
+                throw new PluginException("ModuleTarget is malformed: " + iae.getMessage());
             }
 
             checkResourcePool(files);

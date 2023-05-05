@@ -250,10 +250,10 @@ public final class ExcludeVMPlugin extends AbstractPlugin {
             Platform platform = Platform.parsePlatform(targetPlatform);
             return switch (platform.os()) {
                 case WINDOWS -> new String[]{"jvm.dll"};
-                case MACOS -> new String[]{"libjvm.dylib", "libjvm.a"};
-                default -> new String[]{"libjvm.so", "libjvm.a"};
+                case MACOS   -> new String[]{"libjvm.dylib", "libjvm.a"};
+                default      -> new String[]{"libjvm.so", "libjvm.a"};
             };
-        } catch (IllegalArgumentException ile) {
+        } catch (IllegalArgumentException iae) {
             // For unknown or malformed targetPlatform
             return new String[]{"libjvm.so", "libjvm.a"};
         }
