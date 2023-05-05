@@ -34,11 +34,11 @@ jvmtiEnv *jvmti = nullptr;
 const int TAG_START = 100;
 
 struct RefCounters {
-  jint testClassCount;
+  jint test_class_count;
   jint *count;
-  jlong *threadId;
+  jlong *thread_id;
 
-  RefCounters(): testClassCount(0), count(nullptr) {}
+  RefCounters(): test_class_count(0), count(nullptr) {}
 
   void* alloc(JNIEnv* env, jlong size) {
     unsigned char* ptr;
@@ -50,10 +50,10 @@ struct RefCounters {
     return ptr;
   }
 
-  void init(JNIEnv* env, jint testClassCount) {
-    this->testClassCount = testClassCount;
-    count = (jint*)alloc(env, sizeof(count[0]) *  testClassCount);
-    threadId = (jlong*)alloc(env, sizeof(threadId[0]) *  testClassCount);
+  void init(JNIEnv* env, jint test_class_count) {
+    this->test_class_count = test_class_count;
+    count = (jint*)alloc(env, sizeof(count[0]) *  test_class_count);
+    thread_id = (jlong*)alloc(env, sizeof(thread_id[0]) *  test_class_count);
   }
 } refCounters;
 
@@ -73,8 +73,8 @@ HeapReferenceCallback(jvmtiHeapReferenceKind reference_kind,
     case JVMTI_HEAP_REFERENCE_STACK_LOCAL: {
       jvmtiHeapReferenceInfoStackLocal *stackInfo = (jvmtiHeapReferenceInfoStackLocal *)reference_info;
       refCounters.count[index]++;
-      refCounters.threadId[index] = stackInfo->thread_id;
-      LOG("Stack local: index = %d, threadId = %d\n",
+      refCounters.thread_id[index] = stackInfo->thread_id;
+      LOG("Stack local: index = %d, thread_id = %d\n",
           (int)index, (int)stackInfo->thread_id);
       if (refCounters.count[index] > 1) {
         LOG("ERROR: count > 1: %d\n", (int)refCounters.count[index]);
@@ -84,8 +84,8 @@ HeapReferenceCallback(jvmtiHeapReferenceKind reference_kind,
     case JVMTI_HEAP_REFERENCE_JNI_LOCAL: {
       jvmtiHeapReferenceInfoJniLocal *jniInfo = (jvmtiHeapReferenceInfoJniLocal *)reference_info;
       refCounters.count[index]++;
-      refCounters.threadId[index] = jniInfo->thread_id;
-      LOG("JNI local: index = %d, threadId = %d\n",
+      refCounters.thread_id[index] = jniInfo->thread_id;
+      LOG("JNI local: index = %d, thread_id = %d\n",
           (int)index, (int)jniInfo->thread_id);
       if (refCounters.count[index] > 1) {
         LOG("ERROR: count > 1: %d\n", (int)refCounters.count[index]);
@@ -103,14 +103,13 @@ HeapReferenceCallback(jvmtiHeapReferenceKind reference_kind,
 
 extern "C" JNIEXPORT jint JNICALL
 Agent_OnLoad(JavaVM *vm, char *options, void *reserved) {
-  if (vm->GetEnv(reinterpret_cast<void **>(&jvmti), JVMTI_VERSION) != JNI_OK || jvmti == nullptr) {
+  if (vm->GetEnv((void **)&jvmti, JVMTI_VERSION) != JNI_OK) {
     LOG("Could not initialize JVMTI\n");
     return JNI_ERR;
   }
   jvmtiCapabilities capabilities;
   memset(&capabilities, 0, sizeof(capabilities));
   capabilities.can_tag_objects = 1;
-  //capabilities.can_support_virtual_threads = 1;
   jvmtiError err = jvmti->AddCapabilities(&capabilities);
   if (err != JVMTI_ERROR_NONE) {
     LOG("JVMTI AddCapabilities error: %d\n", err);
@@ -127,7 +126,7 @@ Agent_OnLoad(JavaVM *vm, char *options, void *reserved) {
 extern "C" JNIEXPORT void JNICALL
 Java_VThreadStackRefTest_test(JNIEnv* env, jclass clazz, jobjectArray classes) {
   jsize classesCount = env->GetArrayLength(classes);
-  for (int i=0; i<classesCount; i++) {
+  for (int i = 0; i < classesCount; i++) {
     jvmti->SetTag(env->GetObjectArrayElement(classes, i), TAG_START + i);
   }
   refCounters.init(env, classesCount);
@@ -148,10 +147,10 @@ Java_VThreadStackRefTest_getRefCount(JNIEnv* env, jclass clazz, jint index) {
 
 extern "C" JNIEXPORT jlong JNICALL
 Java_VThreadStackRefTest_getRefThreadID(JNIEnv* env, jclass clazz, jint index) {
-  return refCounters.threadId[index];
+  return refCounters.thread_id[index];
 }
 
-static void printtCreatedClass(JNIEnv* env, jclass cls) {
+static void printCreatedClass(JNIEnv* env, jclass cls) {
   jmethodID mid = env->GetMethodID(cls, "toString", "()Ljava/lang/String;");
   if (mid == nullptr) {
     env->FatalError("failed to get toString method");
@@ -163,10 +162,12 @@ static void printtCreatedClass(JNIEnv* env, jclass cls) {
   env->ReleaseStringUTFChars(jstr, str);
 }
 
+// Creates object of the the specified class (local JNI)
+// and calls the provided callback.
 extern "C" JNIEXPORT void JNICALL
 Java_VThreadStackRefTest_createObjAndCallback(JNIEnv* env, jclass clazz, jclass cls, jobject callback) {
   jobject jobj = env->AllocObject(cls);
-  printtCreatedClass(env, cls);
+  printCreatedClass(env, cls);
 
   jclass callbackClass = env->GetObjectClass(callback);
   jmethodID mid = env->GetMethodID(callbackClass, "run", "()V");
@@ -179,10 +180,13 @@ Java_VThreadStackRefTest_createObjAndCallback(JNIEnv* env, jclass clazz, jclass 
 
 static std::atomic<bool> timeToExit(false);
 
+// Creates object of the the specified class (local JNI),
+// sets mountedVthreadReady static field,
+// and then waits until endWait() method is called.
 extern "C" JNIEXPORT void JNICALL
 Java_VThreadStackRefTest_createObjAndWait(JNIEnv* env, jclass clazz, jclass cls) {
   jobject jobj = env->AllocObject(cls);
-  printtCreatedClass(env, cls);
+  printCreatedClass(env, cls);
 
   // Notify main thread that we are ready
   jfieldID fid = env->GetStaticFieldID(clazz, "mountedVthreadReady", "Z");
@@ -197,6 +201,7 @@ Java_VThreadStackRefTest_createObjAndWait(JNIEnv* env, jclass clazz, jclass cls)
   }
 }
 
+// Signals createObjAndWait() to exit.
 extern "C" JNIEXPORT void JNICALL
 Java_VThreadStackRefTest_endWait(JNIEnv* env, jclass clazz) {
   timeToExit = true;
