@@ -307,7 +307,6 @@ private:
 
   JFR_ONLY(static const TypeFunc* class_id_load_barrier_Type();)
 #if INCLUDE_JVMTI
-  static const TypeFunc* notify_jvmti_object_alloc_Type();
   static const TypeFunc* notify_jvmti_vthread_Type();
 #endif
 
