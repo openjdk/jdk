@@ -391,8 +391,7 @@ static void write_repository_files(const RepositoryIterator& iterator, char* con
               "Unable to recover JFR data, write failed.");
           break;
         }
-        bytes_written += write_result;
-        assert(bytes_read == bytes_written, "invariant");
+        bytes_written = bytes_read;
       }
       ::close(current_fd);
     }

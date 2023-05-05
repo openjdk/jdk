@@ -4771,8 +4771,8 @@ FILE* os::fdopen(int fd, const char* mode) {
   return ::_fdopen(fd, mode);
 }
 
-ssize_t os::pd_write(int fd, const void *buf, unsigned int nBytes) {
-  return ::write(fd, buf, (size_t)nBytes);
+ssize_t os::pd_write(int fd, const void *buf, size_t nBytes) {
+  return ::write(fd, buf, nBytes);
 }
 
 void os::exit(int num) {

@@ -1378,19 +1378,19 @@ bool os::file_exists(const char* filename) {
   return os::stat(filename, &statbuf) == 0;
 }
 
-ssize_t os::write(int fd, const void *buf, unsigned int nBytes) {
+ssize_t os::write(int fd, const void *buf, size_t nBytes) {
   ssize_t res;
-  size_t len = nBytes;
-  while (len > 0) {
-    res = pd_write(fd, buf, (unsigned int)len);
+
+  while (nBytes > 0) {
+    res = pd_write(fd, buf, nBytes);
     if (res < 0) {
-      return res;
+      return -1;
     }
-    buf = (void *)((char *)buf + len);
-    len -= res;
+    buf = (void *)((char *)buf + nBytes);
+    nBytes -= res;
   }
 
-  return res;
+  return 0;
 }
 
 
