@@ -400,11 +400,11 @@ public class Robot {
      * from a user to capture the screens via system dialog.
      * When selected in this dialog, the permission to capture a set of screens
      * can be saved for later reuse.<br>
-     * Use the {@link #resetScreenCapturePermission()} to reset the stored
+     * Use the {@link #revokeScreenCapturePermission()} to reset the stored
      * permission.
      * <br>
-     * The pixel color may be black if permission to capture a particular screen
-     * has not been granted.
+     * The pixel color may be black for screens for which no capture permission
+     * has been granted.
      * <br>
      * It is not recommended to call this method on EDT, as it may block the UI
      * update until the user confirms his choice in the system dialog.
@@ -412,7 +412,8 @@ public class Robot {
      * @param   x       X position of pixel
      * @param   y       Y position of pixel
      * @throws  SecurityException if {@code readDisplayPixels} permission
-     *          is not granted, or user has denied screen capturing
+     *          is not granted, or user has denied screen capture for all
+     *          screens
      * @return  Color of the pixel
      */
     public synchronized Color getPixelColor(int x, int y) {
@@ -430,7 +431,7 @@ public class Robot {
      * from a user to capture the screens via system dialog.
      * When selected in this dialog, the permission to capture a set of screens
      * can be saved for later reuse.<br>
-     * Use the {@link #resetScreenCapturePermission()} to reset the stored
+     * Use the {@link #revokeScreenCapturePermission()} to reset the stored
      * permission.
      * <br>
      * The image may be black if permission to capture a particular screen
@@ -630,11 +631,13 @@ public class Robot {
     }
 
     /**
-     * Resets the stored screen data capture permission for a set of screens.
-     * Is a no-op if not supported by the platform.
+     * Revokes the stored permission to capture screen data.
+     * Subsequent calls to {@link #getPixelColor(int, int)}
+     * and {@link #createScreenCapture(Rectangle)} may request
+     * a new permission from the user on applicable platforms.
      */
-    public void resetScreenCapturePermission() {
-        peer.resetScreenCapturePermission();
+    public void revokeScreenCapturePermission() {
+        peer.revokeScreenCapturePermission();
     }
 
     /*

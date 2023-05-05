@@ -129,8 +129,10 @@ public interface RobotPeer
     }
 
     /**
-     * Resets the stored screen data capture permission for a set of screens.
-     * Is a no-op if not supported by the platform.
+     * Revokes the stored permission to capture screen data.
+     * Subsequent calls to {@link Robot#getPixelColor(int, int)}
+     * and {@link Robot#createScreenCapture(Rectangle)} may request
+     * a new permission from the user on applicable platforms.
      */
-    default void resetScreenCapturePermission() {}
+    default void revokeScreenCapturePermission() {}
 }
