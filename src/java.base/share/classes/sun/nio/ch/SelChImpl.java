@@ -28,6 +28,7 @@ package sun.nio.ch;
 import java.nio.channels.Channel;
 import java.io.FileDescriptor;
 import java.io.IOException;
+
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
@@ -92,9 +93,8 @@ public interface SelChImpl extends Channel {
             } else {
                 millis = NANOSECONDS.toMillis(nanos);
                 if (nanos > MILLISECONDS.toNanos(millis)) {
-                    // Round up any excess nanos to the nearest millisecond. Avoids
-                    // parking for less than requested, especially when poll is
-                    // called with zero millis, which would return immediately.
+                    // Round up any excess nanos to the nearest millisecond to
+                    // avoid parking for less than requested.
                     millis++;
                 }
             }
