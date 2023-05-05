@@ -400,7 +400,7 @@ public class Robot {
      * from a user to capture the screens via system dialog.
      * When selected in this dialog, the permission to capture a set of screens
      * can be saved for later reuse.<br>
-     * Use the {@link #revokeScreenCapturePermission()} to reset the stored
+     * Use the {@link #revokeScreenCapturePermission()} to revoke the stored
      * permission.
      * <br>
      * The pixel color may be black for screens for which no capture permission
@@ -431,7 +431,7 @@ public class Robot {
      * from a user to capture the screens via system dialog.
      * When selected in this dialog, the permission to capture a set of screens
      * can be saved for later reuse.<br>
-     * Use the {@link #revokeScreenCapturePermission()} to reset the stored
+     * Use the {@link #revokeScreenCapturePermission()} to revoke the stored
      * permission.
      * <br>
      * The image may be black for screens for which no capture permission
