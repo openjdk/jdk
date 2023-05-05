@@ -68,7 +68,7 @@ public:
   constexpr Register(int encoding = -1) : _encoding(encoding) {}
   bool operator==(const Register rhs) const { return _encoding == rhs._encoding; }
   bool operator!=(const Register rhs) const { return _encoding != rhs._encoding; }
-  const Register* operator->() const { return this; }
+  const Register* operator->()        const { return this; }
 
   // general construction
   inline constexpr friend Register as_Register(int encoding);
@@ -131,11 +131,11 @@ public:
   constexpr ConditionRegister(int encoding = -1) : _encoding(encoding) {}
   bool operator==(const ConditionRegister rhs) const { return _encoding == rhs._encoding; }
   bool operator!=(const ConditionRegister rhs) const { return _encoding != rhs._encoding; }
-  const ConditionRegister* operator->() const { return this; }
+  const ConditionRegister* operator->()        const { return this; }
 
   // accessors
   constexpr int encoding() const { assert(is_valid(), "invalid register"); return _encoding; }
-  inline VMReg as_VMReg() const;
+  inline VMReg  as_VMReg() const;
 
   // testers
   constexpr bool is_valid()       const { return (0 <= _encoding && _encoding < number_of_registers); }
@@ -172,18 +172,18 @@ public:
   constexpr FloatRegister(int encoding = -1) : _encoding(encoding) {}
   bool operator==(const FloatRegister rhs) const { return _encoding == rhs._encoding; }
   bool operator!=(const FloatRegister rhs) const { return _encoding != rhs._encoding; }
-  const FloatRegister* operator->() const { return this; }
+  const FloatRegister* operator->()        const { return this; }
 
   // construction
   inline constexpr friend FloatRegister as_FloatRegister(int encoding);
 
   // accessors
-  constexpr int encoding() const { assert(is_valid(), "invalid register"); return _encoding; }
-  inline VMReg as_VMReg() const;
+  constexpr int encoding()  const { assert(is_valid(), "invalid register"); return _encoding; }
+  inline VMReg  as_VMReg()  const;
   FloatRegister successor() const { return FloatRegister(encoding() + 1); }
 
   // tester
-  constexpr bool  is_valid()      const { return 0 <= _encoding && _encoding < number_of_registers; }
+  constexpr bool is_valid()       const { return 0 <= _encoding && _encoding < number_of_registers; }
   constexpr bool is_volatile()    const { return (0 <= _encoding && _encoding <= 7); }
   constexpr bool is_nonvolatile() const { return (8 <= _encoding && _encoding <= 15); }
 
@@ -286,7 +286,7 @@ public:
   constexpr VectorRegister(int encoding = -1) : _encoding(encoding) {}
   bool operator==(const VectorRegister rhs) const { return _encoding == rhs._encoding; }
   bool operator!=(const VectorRegister rhs) const { return _encoding != rhs._encoding; }
-  const VectorRegister* operator->() const { return this; }
+  const VectorRegister* operator->()        const { return this; }
 
   // construction
   inline constexpr friend VectorRegister as_VectorRegister(int encoding);
@@ -430,7 +430,7 @@ constexpr Register      Z_bcp          = Z_R13;
 constexpr Register      Z_bytecode     = Z_R14;
 
 // Temporary registers to be used within frame manager. We can use
-// the nonvolatile because the call stub has saved them.
+// the nonvolatile ones because the call stub has saved them.
 // Use only non-volatile registers in order to keep values across C-calls.
 constexpr Register Z_tmp_1 =  Z_R10;
 constexpr Register Z_tmp_2 =  Z_R11;
