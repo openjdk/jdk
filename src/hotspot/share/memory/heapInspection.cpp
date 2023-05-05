@@ -566,9 +566,8 @@ void ParHeapInspectTask::work(uint worker_id) {
 
 uintx HeapInspection::populate_table(KlassInfoTable* cit, BoolObjectClosure *filter, WorkerThreads* workers) {
   // Try parallel first.
-  ResourceMark rm;
-
   if (workers != nullptr) {
+    ResourceMark rm;
     ParallelObjectIterator poi(workers->active_workers());
     ParHeapInspectTask task(&poi, cit, filter);
     // Run task with the active workers.
@@ -578,6 +577,7 @@ uintx HeapInspection::populate_table(KlassInfoTable* cit, BoolObjectClosure *fil
     }
   }
 
+  ResourceMark rm;
   // If no parallel iteration available, run serially.
   RecordInstanceClosure ric(cit, filter);
   Universe::heap()->object_iterate(&ric);
