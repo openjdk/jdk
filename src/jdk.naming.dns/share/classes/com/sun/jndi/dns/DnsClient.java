@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,7 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.concurrent.locks.ReentrantLock;
 
+import jdk.internal.ref.CleanerFactory;
 import sun.security.jca.JCAUtil;
 
 // Some of this code began life as part of sun.javaos.net.DnsClient
@@ -158,6 +159,16 @@ public class DnsClient {
             ne.setRootCause(e);
             throw ne;
         }
+        // register a cleaning action to close the channel
+        // selector when this DNS client becomes phantom reachable
+        Selector sel = udpChannelSelector;
+        CleanerFactory.cleaner().register(this, () -> {
+            try {
+                sel.close();
+            } catch (IOException ignore) {
+            }
+        });
+
         reqs = Collections.synchronizedMap(
             new HashMap<Integer, ResourceRecord>());
         resps = Collections.synchronizedMap(new HashMap<Integer, byte[]>());
@@ -171,11 +182,6 @@ public class DnsClient {
             ne.setRootCause(e);
             throw ne;
         }
-    }
-
-    @SuppressWarnings("removal")
-    protected void finalize() {
-        close();
     }
 
     // A lock to access the request and response queues in tandem.
