@@ -434,8 +434,8 @@ public class Robot {
      * Use the {@link #revokeScreenCapturePermission()} to reset the stored
      * permission.
      * <br>
-     * The image may be black if permission to capture a particular screen
-     * has not been granted.
+     * The image may be black for screens for which no capture permission
+     * has been granted.
      * <br>
      * It is not recommended to call this method on EDT, as it may block the UI
      * update until the user confirms his choice in the system dialog.
@@ -445,7 +445,8 @@ public class Robot {
      * @throws  IllegalArgumentException if {@code screenRect} width and height
      *          are not greater than zero
      * @throws  SecurityException if {@code readDisplayPixels} permission
-     *          is not granted, or user has denied screen capturing
+     *          is not granted, or user has denied screen capture for all
+     *          screens
      * @see     SecurityManager#checkPermission
      * @see     AWTPermission
      */
