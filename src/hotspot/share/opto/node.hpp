@@ -1533,8 +1533,11 @@ public:
     _nodes = NEW_ARENA_ARRAY(a, Node*, max);
     clear();
   }
+  Node_Array() : Node_Array(Thread::current()->resource_area()) {}
 
-  Node_Array(Node_Array* na) : _a(na->_a), _max(na->_max), _nodes(na->_nodes) {}
+  // Allow move constructor for && (eg. capture return of function)
+  Node_Array(Node_Array&&) = default;
+
   Node *operator[] ( uint i ) const // Lookup, or null for not mapped
   { return (i<_max) ? _nodes[i] : (Node*)nullptr; }
   Node* at(uint i) const { assert(i<_max,"oob"); return _nodes[i]; }
@@ -1550,6 +1553,8 @@ public:
 
   uint Size() const { return _max; }
   void dump() const;
+
+  NONCOPYABLE(Node_Array);
 };
 
 class Node_List : public Node_Array {
@@ -1558,6 +1563,10 @@ class Node_List : public Node_Array {
 public:
   Node_List(uint max = OptoNodeListSize) : Node_Array(Thread::current()->resource_area(), max), _cnt(0) {}
   Node_List(Arena *a, uint max = OptoNodeListSize) : Node_Array(a, max), _cnt(0) {}
+
+  // Allow move constructor for && (eg. capture return of function)
+  Node_List(Node_List&&) = default;
+
   bool contains(const Node* n) const {
     for (uint e = 0; e < size(); e++) {
       if (at(e) == n) return true;
@@ -1581,6 +1590,8 @@ public:
   uint size() const { return _cnt; }
   void dump() const;
   void dump_simple() const;
+
+  NONCOPYABLE(Node_List);
 };
 
 //------------------------------Unique_Node_List-------------------------------
@@ -1591,6 +1602,9 @@ class Unique_Node_List : public Node_List {
 public:
   Unique_Node_List() : Node_List(), _clock_index(0) {}
   Unique_Node_List(Arena *a) : Node_List(a), _in_worklist(a), _clock_index(0) {}
+
+  // Allow move constructor for && (eg. capture return of function)
+  Unique_Node_List(Unique_Node_List&&) = default;
 
   void remove( Node *n );
   bool member( Node *n ) { return _in_worklist.test(n->_idx) != 0; }
@@ -1627,6 +1641,27 @@ public:
   // Used after parsing to remove useless nodes before Iterative GVN
   void remove_useless_nodes(VectorSet& useful);
 
+  // If the idx of the Nodes change, we must recompute the VectorSet
+  void recompute_idx_set() {
+    _in_worklist.clear();
+    for (uint i = 0; i < size(); i++) {
+      Node* n = at(i);
+      _in_worklist.set(n->_idx);
+    }
+  }
+
+#ifndef PRODUCT
+  bool is_subset_of(Unique_Node_List &other) {
+    for (uint i = 0; i < size(); i++) {
+      Node* n = at(i);
+      if (!other.member(n)) {
+        return false;
+      }
+    }
+    return true;
+  }
+#endif
+
   bool contains(const Node* n) const {
     fatal("use faster member() instead");
     return false;
@@ -1635,6 +1670,7 @@ public:
 #ifndef PRODUCT
   void print_set() const { _in_worklist.print(); }
 #endif
+  NONCOPYABLE(Unique_Node_List);
 };
 
 // Unique_Mixed_Node_List
@@ -1669,12 +1705,12 @@ private:
 
 // Inline definition of Compile::record_for_igvn must be deferred to this point.
 inline void Compile::record_for_igvn(Node* n) {
-  _for_igvn->push(n);
+  _igvn_worklist->push(n);
 }
 
 // Inline definition of Compile::remove_for_igvn must be deferred to this point.
 inline void Compile::remove_for_igvn(Node* n) {
-  _for_igvn->remove(n);
+  _igvn_worklist->remove(n);
 }
 
 //------------------------------Node_Stack-------------------------------------
@@ -1745,6 +1781,8 @@ public:
 
   // Node_Stack is used to map nodes.
   Node* find(uint idx) const;
+
+  NONCOPYABLE(Node_Stack);
 };
 
 

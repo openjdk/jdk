@@ -1093,7 +1093,7 @@ PhiNode* PhiNode::split_out_instance(const TypePtr* at, PhaseIterGVN *igvn) cons
   }
   Compile *C = igvn->C;
   Arena *a = Thread::current()->resource_area();
-  Node_Array node_map = new Node_Array(a);
+  Node_Array node_map;
   Node_Stack stack(a, C->live_nodes() >> 4);
   PhiNode *nphi = slice_memory(at);
   igvn->register_new_node_with_optimizer( nphi );
@@ -1461,7 +1461,7 @@ Node* PhiNode::Identity(PhaseGVN* phase) {
 //-----------------------------unique_input------------------------------------
 // Find the unique value, discounting top, self-loops, and casts.
 // Return top if there are no inputs, and self if there are multiple.
-Node* PhiNode::unique_input(PhaseTransform* phase, bool uncast) {
+Node* PhiNode::unique_input(PhaseGVN* phase, bool uncast) {
   //  1) One unique direct input,
   // or if uncast is true:
   //  2) some of the inputs have an intervening ConstraintCast

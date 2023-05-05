@@ -43,22 +43,6 @@
 
 //=============================================================================
 #define NODE_HASH_MINIMUM_SIZE    255
-//------------------------------NodeHash---------------------------------------
-NodeHash::NodeHash(uint est_max_size) :
-  _a(Thread::current()->resource_area()),
-  _max( round_up(est_max_size < NODE_HASH_MINIMUM_SIZE ? NODE_HASH_MINIMUM_SIZE : est_max_size) ),
-  _inserts(0), _insert_limit( insert_limit() ),
-  _table( NEW_ARENA_ARRAY( _a , Node* , _max ) ) // (Node**)_a->Amalloc(_max * sizeof(Node*)) ),
-#ifndef PRODUCT
-  , _grows(0),_look_probes(0), _lookup_hits(0), _lookup_misses(0),
-  _insert_probes(0), _delete_probes(0), _delete_hits(0), _delete_misses(0),
-   _total_inserts(0), _total_insert_probes(0)
-#endif
-{
-  // _sentinel must be in the current node space
-  _sentinel = new ProjNode(nullptr, TypeFunc::Control);
-  memset(_table,0,sizeof(Node*)*_max);
-}
 
 //------------------------------NodeHash---------------------------------------
 NodeHash::NodeHash(Arena *arena, uint est_max_size) :
@@ -75,21 +59,6 @@ NodeHash::NodeHash(Arena *arena, uint est_max_size) :
   // _sentinel must be in the current node space
   _sentinel = new ProjNode(nullptr, TypeFunc::Control);
   memset(_table,0,sizeof(Node*)*_max);
-}
-
-//------------------------------NodeHash---------------------------------------
-NodeHash::NodeHash(NodeHash *nh) {
-  debug_only(_table = (Node**)badAddress);   // interact correctly w/ operator=
-  // just copy in all the fields
-  *this = *nh;
-  // nh->_sentinel must be in the current node space
-}
-
-void NodeHash::replace_with(NodeHash *nh) {
-  debug_only(_table = (Node**)badAddress);   // interact correctly w/ operator=
-  // just copy in all the fields
-  *this = *nh;
-  // nh->_sentinel must be in the current node space
 }
 
 //------------------------------hash_find--------------------------------------
@@ -295,7 +264,7 @@ void  NodeHash::grow() {
 
 //------------------------------clear------------------------------------------
 // Clear all entries in _table to null but keep storage
-void  NodeHash::clear() {
+void  NodeHash::clear_xx() {
 #ifdef ASSERT
   // Unlock all nodes upon removal from table.
   for (uint i = 0; i < _max; i++) {
@@ -351,7 +320,7 @@ void NodeHash::check_no_speculative_types() {
 #ifndef PRODUCT
 //------------------------------dump-------------------------------------------
 // Dump statistics for the hash table
-void NodeHash::dump() {
+void NodeHash::dump_xx() {
   _total_inserts       += _inserts;
   _total_insert_probes += _insert_probes;
   if (PrintCompilation && PrintOptoStatistics && Verbose && (_inserts > 0)) {
@@ -383,30 +352,10 @@ Node *NodeHash::find_index(uint idx) { // For debugging
 }
 #endif
 
-#ifdef ASSERT
-NodeHash::~NodeHash() {
-  // Unlock all nodes upon destruction of table.
-  if (_table != (Node**)badAddress)  clear();
-}
-
-void NodeHash::operator=(const NodeHash& nh) {
-  // Unlock all nodes upon replacement of table.
-  if (&nh == this)  return;
-  if (_table != (Node**)badAddress)  clear();
-  memcpy((void*)this, (void*)&nh, sizeof(*this));
-  // Do not increment hash_lock counts again.
-  // Instead, be sure we never again use the source table.
-  ((NodeHash*)&nh)->_table = (Node**)badAddress;
-}
-
-
-#endif
-
-
 //=============================================================================
 //------------------------------PhaseRemoveUseless-----------------------------
 // 1) Use a breadthfirst walk to collect useful nodes reachable from root.
-PhaseRemoveUseless::PhaseRemoveUseless(PhaseGVN* gvn, Unique_Node_List* worklist, PhaseNumber phase_num) : Phase(phase_num) {
+PhaseRemoveUseless::PhaseRemoveUseless(PhaseGVN* gvn, Unique_Node_List &worklist, PhaseNumber phase_num) : Phase(phase_num) {
   // Implementation requires an edge from root to each SafePointNode
   // at a backward branch. Inserted in add_safepoint().
 
@@ -420,7 +369,7 @@ PhaseRemoveUseless::PhaseRemoveUseless(PhaseGVN* gvn, Unique_Node_List* worklist
   gvn->remove_useless_nodes(_useful.member_set());
 
   // Remove all useless nodes from future worklist
-  worklist->remove_useless_nodes(_useful.member_set());
+  worklist.remove_useless_nodes(_useful.member_set());
 
   // Disconnect 'useless' nodes that are adjacent to useful nodes
   C->disconnect_useless_nodes(_useful, worklist);
@@ -440,21 +389,17 @@ PhaseRemoveUseless::PhaseRemoveUseless(PhaseGVN* gvn, Unique_Node_List* worklist
 // updated to 'x' and the list of dead nodes is reset (as there are no dead nodes).
 //
 // The PhaseRenumberLive phase updates two data structures with the new node IDs.
-// (1) The worklist is used by the PhaseIterGVN phase to identify nodes that must be
-// processed. A new worklist (with the updated node IDs) is returned in 'new_worklist'.
-// 'worklist' is cleared upon returning.
+// (1) The "worklist" is "C->igvn_worklist()", which is to collect which nodes need to
+//     be processed by IGVN after removal of the useless nodes.
 // (2) Type information (the field PhaseGVN::_types) maps type information to each
-// node ID. The mapping is updated to use the new node IDs as well. Updated type
-// information is returned in PhaseGVN::_types.
-//
-// The PhaseRenumberLive phase does not preserve the order of elements in the worklist.
+//     node ID. The mapping is updated to use the new node IDs as well. Updated type
+//     information is returned in PhaseGVN::_types.
 //
 // Other data structures used by the compiler are not updated. The hash table for value
 // numbering (the field PhaseGVN::_table) is not updated because computing the hash
-// values is not based on node IDs. The field PhaseGVN::_nodes is not updated either
-// because it is empty wherever PhaseRenumberLive is used.
+// values is not based on node IDs.
 PhaseRenumberLive::PhaseRenumberLive(PhaseGVN* gvn,
-                                     Unique_Node_List* worklist, Unique_Node_List* new_worklist,
+                                     Unique_Node_List &worklist,
                                      PhaseNumber phase_num) :
   PhaseRemoveUseless(gvn, worklist, Remove_Useless_And_Renumber_Live),
   _new_type_array(C->comp_arena()),
@@ -464,10 +409,9 @@ PhaseRenumberLive::PhaseRenumberLive(PhaseGVN* gvn,
 {
   assert(RenumberLiveNodes, "RenumberLiveNodes must be set to true for node renumbering to take place");
   assert(C->live_nodes() == _useful.size(), "the number of live nodes must match the number of useful nodes");
-  assert(gvn->nodes_size() == 0, "GVN must not contain any nodes at this point");
   assert(_delayed.size() == 0, "should be empty");
-
-  uint worklist_size = worklist->size();
+  assert(&worklist == &C->igvn_worklist(), "sanity");
+  assert(&gvn->types() == &C->gvn_types(), "sanity");
 
   GrowableArray<Node_Notes*>* old_node_note_array = C->node_note_array();
   if (old_node_note_array != nullptr) {
@@ -477,14 +421,11 @@ PhaseRenumberLive::PhaseRenumberLive(PhaseGVN* gvn,
     C->grow_node_notes(C->node_note_array(), new_size);
   }
 
+  assert(worklist.is_subset_of(_useful), "sanity");
+
   // Iterate over the set of live nodes.
   for (uint current_idx = 0; current_idx < _useful.size(); current_idx++) {
     Node* n = _useful.at(current_idx);
-
-    bool in_worklist = false;
-    if (worklist->member(n)) {
-      in_worklist = true;
-    }
 
     const Type* type = gvn->type_or_null(n);
     _new_type_array.map(current_idx, type);
@@ -499,16 +440,14 @@ PhaseRenumberLive::PhaseRenumberLive(PhaseGVN* gvn,
 
     n->set_idx(current_idx); // Update node ID.
 
-    if (in_worklist) {
-      new_worklist->push(n);
-    }
-
     if (update_embedded_ids(n) < 0) {
       _delayed.push(n); // has embedded IDs; handle later
     }
   }
 
-  assert(worklist_size == new_worklist->size(), "the new worklist must have the same size as the original worklist");
+  // VectorSet in Unique_Node_Set must be recomputed, since ID's have changed.
+  worklist.recompute_idx_set();
+
   assert(_live_node_count == _useful.size(), "all live nodes must be processed");
 
   _is_pass_finished = true; // pass finished; safe to process delayed updates
@@ -520,16 +459,13 @@ PhaseRenumberLive::PhaseRenumberLive(PhaseGVN* gvn,
   }
 
   // Replace the compiler's type information with the updated type information.
-  gvn->replace_types(_new_type_array);
+  gvn->types().swap(_new_type_array);
 
   // Update the unique node count of the compilation to the number of currently live nodes.
   C->set_unique(_live_node_count);
 
   // Set the dead node count to 0 and reset dead node list.
   C->reset_dead_node_list();
-
-  // Clear the original worklist
-  worklist->clear();
 }
 
 int PhaseRenumberLive::new_index(int old_idx) {
@@ -581,63 +517,14 @@ int PhaseRenumberLive::update_embedded_ids(Node* n) {
   return no_of_updates;
 }
 
-//=============================================================================
-//------------------------------PhaseTransform---------------------------------
-PhaseTransform::PhaseTransform( PhaseNumber pnum ) : Phase(pnum),
-  _arena(Thread::current()->resource_area()),
-  _nodes(_arena),
-  _types(_arena)
-{
-  init_con_caches();
-#ifndef PRODUCT
-  clear_progress();
-  clear_transforms();
-  set_allow_progress(true);
-#endif
-  // Force allocation for currently existing nodes
-  _types.map(C->unique(), nullptr);
-}
-
-//------------------------------PhaseTransform---------------------------------
-PhaseTransform::PhaseTransform( Arena *arena, PhaseNumber pnum ) : Phase(pnum),
-  _arena(arena),
-  _nodes(arena),
-  _types(arena)
-{
-  init_con_caches();
-#ifndef PRODUCT
-  clear_progress();
-  clear_transforms();
-  set_allow_progress(true);
-#endif
-  // Force allocation for currently existing nodes
-  _types.map(C->unique(), nullptr);
-}
-
-//------------------------------PhaseTransform---------------------------------
-// Initialize with previously generated type information
-PhaseTransform::PhaseTransform( PhaseTransform *pt, PhaseNumber pnum ) : Phase(pnum),
-  _arena(pt->_arena),
-  _nodes(pt->_nodes),
-  _types(pt->_types)
-{
-  init_con_caches();
-#ifndef PRODUCT
-  clear_progress();
-  clear_transforms();
-  set_allow_progress(true);
-#endif
-}
-
-void PhaseTransform::init_con_caches() {
+void PhaseGVN::init_con_caches() {
   memset(_icons,0,sizeof(_icons));
   memset(_lcons,0,sizeof(_lcons));
   memset(_zcons,0,sizeof(_zcons));
 }
 
-
 //--------------------------------find_int_type--------------------------------
-const TypeInt* PhaseTransform::find_int_type(Node* n) {
+const TypeInt* PhaseGVN::find_int_type(Node* n) {
   if (n == nullptr)  return nullptr;
   // Call type_or_null(n) to determine node's type since we might be in
   // parse phase and call n->Value() may return wrong type.
@@ -649,7 +536,7 @@ const TypeInt* PhaseTransform::find_int_type(Node* n) {
 
 
 //-------------------------------find_long_type--------------------------------
-const TypeLong* PhaseTransform::find_long_type(Node* n) {
+const TypeLong* PhaseGVN::find_long_type(Node* n) {
   if (n == nullptr)  return nullptr;
   // (See comment above on type_or_null.)
   const Type* t = type_or_null(n);
@@ -657,72 +544,9 @@ const TypeLong* PhaseTransform::find_long_type(Node* n) {
   return t->isa_long();
 }
 
-
-#ifndef PRODUCT
-void PhaseTransform::dump_old2new_map() const {
-  _nodes.dump();
-}
-
-void PhaseTransform::dump_new( uint nidx ) const {
-  for( uint i=0; i<_nodes.Size(); i++ )
-    if( _nodes[i] && _nodes[i]->_idx == nidx ) {
-      _nodes[i]->dump();
-      tty->cr();
-      tty->print_cr("Old index= %d",i);
-      return;
-    }
-  tty->print_cr("Node %d not found in the new indices", nidx);
-}
-
-//------------------------------dump_types-------------------------------------
-void PhaseTransform::dump_types( ) const {
-  _types.dump();
-}
-
-//------------------------------dump_nodes_and_types---------------------------
-void PhaseTransform::dump_nodes_and_types(const Node* root, uint depth, bool only_ctrl) {
-  VectorSet visited;
-  dump_nodes_and_types_recur(root, depth, only_ctrl, visited);
-}
-
-//------------------------------dump_nodes_and_types_recur---------------------
-void PhaseTransform::dump_nodes_and_types_recur( const Node *n, uint depth, bool only_ctrl, VectorSet &visited) {
-  if( !n ) return;
-  if( depth == 0 ) return;
-  if( visited.test_set(n->_idx) ) return;
-  for( uint i=0; i<n->len(); i++ ) {
-    if( only_ctrl && !(n->is_Region()) && i != TypeFunc::Control ) continue;
-    dump_nodes_and_types_recur( n->in(i), depth-1, only_ctrl, visited );
-  }
-  n->dump();
-  if (type_or_null(n) != nullptr) {
-    tty->print("      "); type(n)->dump(); tty->cr();
-  }
-}
-
-#endif
-
-
-//=============================================================================
-//------------------------------PhaseValues------------------------------------
-// Set minimum table size to "255"
-PhaseValues::PhaseValues( Arena *arena, uint est_max_size )
-  : PhaseTransform(arena, GVN), _table(arena, est_max_size), _iterGVN(false) {
-  NOT_PRODUCT( clear_new_values(); )
-}
-
-//------------------------------PhaseValues------------------------------------
-// Set minimum table size to "255"
-PhaseValues::PhaseValues(PhaseValues* ptv)
-  : PhaseTransform(ptv, GVN), _table(&ptv->_table), _iterGVN(false) {
-  NOT_PRODUCT( clear_new_values(); )
-}
-
 //------------------------------~PhaseValues-----------------------------------
 #ifndef PRODUCT
 PhaseValues::~PhaseValues() {
-  _table.dump();
-
   // Statistics for value progress and efficiency
   if( PrintCompilation && Verbose && WizardMode ) {
     tty->print("\n%sValues: %d nodes ---> %d/%d (%d)",
@@ -737,7 +561,7 @@ PhaseValues::~PhaseValues() {
 #endif
 
 //------------------------------makecon----------------------------------------
-ConNode* PhaseTransform::makecon(const Type *t) {
+ConNode* PhaseGVN::makecon(const Type *t) {
   assert(t->singleton(), "must be a constant");
   assert(!t->empty() || t == Type::TOP, "must not be vacuous range");
   switch (t->base()) {  // fast paths
@@ -754,7 +578,7 @@ ConNode* PhaseTransform::makecon(const Type *t) {
 
 //--------------------------uncached_makecon-----------------------------------
 // Make an idealized constant - one of ConINode, ConPNode, etc.
-ConNode* PhaseValues::uncached_makecon(const Type *t) {
+ConNode* PhaseGVN::uncached_makecon(const Type *t) {
   assert(t->singleton(), "must be a constant");
   ConNode* x = ConNode::make(t);
   ConNode* k = (ConNode*)hash_find_insert(x); // Value numbering
@@ -774,7 +598,7 @@ ConNode* PhaseValues::uncached_makecon(const Type *t) {
 
 //------------------------------intcon-----------------------------------------
 // Fast integer constant.  Same as "transform(new ConINode(TypeInt::make(i)))"
-ConINode* PhaseTransform::intcon(jint i) {
+ConINode* PhaseGVN::intcon(jint i) {
   // Small integer?  Check cache! Check that cached node is not dead
   if (i >= _icon_min && i <= _icon_max) {
     ConINode* icon = _icons[i-_icon_min];
@@ -790,7 +614,7 @@ ConINode* PhaseTransform::intcon(jint i) {
 
 //------------------------------longcon----------------------------------------
 // Fast long constant.
-ConLNode* PhaseTransform::longcon(jlong l) {
+ConLNode* PhaseGVN::longcon(jlong l) {
   // Small integer?  Check cache! Check that cached node is not dead
   if (l >= _lcon_min && l <= _lcon_max) {
     ConLNode* lcon = _lcons[l-_lcon_min];
@@ -803,7 +627,7 @@ ConLNode* PhaseTransform::longcon(jlong l) {
     _lcons[l-_lcon_min] = lcon;      // Cache small integers
   return lcon;
 }
-ConNode* PhaseTransform::integercon(jlong l, BasicType bt) {
+ConNode* PhaseGVN::integercon(jlong l, BasicType bt) {
   if (bt == T_INT) {
     return intcon(checked_cast<jint>(l));
   }
@@ -814,7 +638,7 @@ ConNode* PhaseTransform::integercon(jlong l, BasicType bt) {
 
 //------------------------------zerocon-----------------------------------------
 // Fast zero or null constant. Same as "transform(ConNode::make(Type::get_zero_type(bt)))"
-ConNode* PhaseTransform::zerocon(BasicType bt) {
+ConNode* PhaseGVN::zerocon(BasicType bt) {
   assert((uint)bt <= _zcon_max, "domain check");
   ConNode* zcon = _zcons[bt];
   if (zcon != nullptr && zcon->in(TypeFunc::Control) != nullptr)
@@ -973,22 +797,17 @@ void PhaseGVN::dump_infinite_loop_info(Node* n, const char* where) {
 // Initialize with previous PhaseIterGVN info; used by PhaseCCP
 PhaseIterGVN::PhaseIterGVN(PhaseIterGVN* igvn) : PhaseGVN(igvn),
                                                  _delay_transform(igvn->_delay_transform),
-                                                 _stack(igvn->_stack ),
                                                  _worklist(igvn->_worklist)
 {
   _iterGVN = true;
+  assert(&_worklist == &C->igvn_worklist(), "sanity");
 }
 
 //------------------------------PhaseIterGVN-----------------------------------
 // Initialize with previous PhaseGVN info from Parser
 PhaseIterGVN::PhaseIterGVN(PhaseGVN* gvn) : PhaseGVN(gvn),
                                             _delay_transform(false),
-// TODO: Before incremental inlining it was allocated only once and it was fine. Now that
-//       the constructor is used in incremental inlining, this consumes too much memory:
-//                                            _stack(C->live_nodes() >> 1),
-//       So, as a band-aid, we replace this by:
-                                            _stack(C->comp_arena(), 32),
-                                            _worklist(*C->for_igvn())
+                                            _worklist(C->igvn_worklist())
 {
   _iterGVN = true;
   uint max;
@@ -1136,7 +955,7 @@ void PhaseIterGVN::verify_PhaseIterGVN() {
     Node* n = modified_list->pop();
     if (!n->is_Con()) { // skip Con nodes
       n->dump();
-      fatal("modified node was not processed by IGVN.transform_old()");
+      fatal("modified node was not processed by IGVN.transform_igvn()");
     }
   }
 #endif
@@ -1215,7 +1034,7 @@ void PhaseIterGVN::optimize() {
     if (n->outcnt() != 0) {
       NOT_PRODUCT(const Type* oldtype = type_or_null(n));
       // Do the transformation
-      Node* nn = transform_old(n);
+      Node* nn = transform_igvn(n);
       NOT_PRODUCT(trace_PhaseIterGVN(n, nn, oldtype);)
     } else if (!n->is_top()) {
       remove_dead_node(n);
@@ -1343,10 +1162,10 @@ Node *PhaseIterGVN::transform( Node *n ) {
     set_type_bottom(n);
   }
 
-  return transform_old(n);
+  return transform_igvn(n);
 }
 
-Node *PhaseIterGVN::transform_old(Node* n) {
+Node* PhaseIterGVN::transform_igvn(Node* n) {
   NOT_PRODUCT(set_transforms());
   // Remove 'n' from hash table in case it gets modified
   _table.hash_delete(n);
@@ -1376,7 +1195,7 @@ Node *PhaseIterGVN::transform_old(Node* n) {
   while (i != nullptr) {
 #ifdef ASSERT
     if (loop_count >= K + C->live_nodes()) {
-      dump_infinite_loop_info(i, "PhaseIterGVN::transform_old");
+      dump_infinite_loop_info(i, "PhaseIterGVN::transform_igvn");
     }
 #endif
     assert((i->_idx >= k->_idx) || i->is_top(), "Idealize should return new nodes, use Identity to return old nodes");
@@ -1468,21 +1287,23 @@ void PhaseIterGVN::remove_globally_dead_node( Node *dead ) {
     PROCESS_INPUTS,
     PROCESS_OUTPUTS
   };
-  assert(_stack.is_empty(), "not empty");
-  _stack.push(dead, PROCESS_INPUTS);
+  ResourceMark rm;
+  Node_Stack stack(32);
+  assert(stack.is_empty(), "not empty");
+  stack.push(dead, PROCESS_INPUTS);
 
-  while (_stack.is_nonempty()) {
-    dead = _stack.node();
+  while (stack.is_nonempty()) {
+    dead = stack.node();
     if (dead->Opcode() == Op_SafePoint) {
       dead->as_SafePoint()->disconnect_from_root(this);
     }
-    uint progress_state = _stack.index();
+    uint progress_state = stack.index();
     assert(dead != C->root(), "killing root, eh?");
     assert(!dead->is_top(), "add check for top when pushing");
     NOT_PRODUCT( set_progress(); )
     if (progress_state == PROCESS_INPUTS) {
       // After following inputs, continue to outputs
-      _stack.set_index(PROCESS_OUTPUTS);
+      stack.set_index(PROCESS_OUTPUTS);
       if (!dead->is_Con()) { // Don't kill cons but uses
         bool recurse = false;
         // Remove from hash table
@@ -1494,7 +1315,7 @@ void PhaseIterGVN::remove_globally_dead_node( Node *dead ) {
             int nrep = dead->replace_edge(in, nullptr, this);  // Kill edges
             assert((nrep > 0), "sanity");
             if (in->outcnt() == 0) { // Made input go dead?
-              _stack.push(in, PROCESS_INPUTS); // Recursively remove
+              stack.push(in, PROCESS_INPUTS); // Recursively remove
               recurse = true;
             } else if (in->outcnt() == 1 &&
                        in->has_special_unique_user()) {
@@ -1541,15 +1362,15 @@ void PhaseIterGVN::remove_globally_dead_node( Node *dead ) {
     // of edge deletions per loop trip.)
     if (dead->outcnt() > 0) {
       // Recursively remove output edges
-      _stack.push(dead->raw_out(0), PROCESS_INPUTS);
+      stack.push(dead->raw_out(0), PROCESS_INPUTS);
     } else {
       // Finished disconnecting all input and output edges.
-      _stack.pop();
+      stack.pop();
       // Remove dead node from iterative worklist
       _worklist.remove(dead);
       C->remove_useless_node(dead);
     }
-  } // while (_stack.is_nonempty())
+  } // while (stack.is_nonempty())
 }
 
 //------------------------------subsume_node-----------------------------------
@@ -1927,8 +1748,6 @@ uint PhaseCCP::_total_constants = 0;
 PhaseCCP::PhaseCCP( PhaseIterGVN *igvn ) : PhaseIterGVN(igvn) {
   NOT_PRODUCT( clear_constants(); )
   assert( _worklist.size() == 0, "" );
-  // Clear out _nodes from IterGVN.  Must be clear to transform call.
-  _nodes.clear();               // Clear out from IterGVN
   analyze();
 }
 
@@ -2186,29 +2005,18 @@ void PhaseCCP::push_opaque_zero_trip_guard(Unique_Node_List& worklist, const Nod
   }
 }
 
-//------------------------------do_transform-----------------------------------
-// Top level driver for the recursive transformer
-void PhaseCCP::do_transform() {
-  // Correct leaves of new-space Nodes; they point to old-space.
-  C->set_root( transform(C->root())->as_Root() );
-  assert( C->top(),  "missing TOP node" );
-  assert( C->root(), "missing root" );
-}
+void PhaseCCP::do_transform_ccp() {
+  RootNode* root = C->root();
+  assert(root != nullptr, "must have root");
+  assert(_root_and_safepoints.member(root), "root must be in list");
 
-//------------------------------transform--------------------------------------
-// Given a Node in old-space, clone him into new-space.
-// Convert any of his old-space children into new-space children.
-Node *PhaseCCP::transform( Node *n ) {
-  Node *new_node = _nodes[n->_idx]; // Check for transformed node
-  if( new_node != nullptr )
-    return new_node;                // Been there, done that, return old answer
-
-  assert(n->is_Root(), "traversal must start at root");
-  assert(_root_and_safepoints.member(n), "root (n) must be in list");
-
-  // Allocate stack of size _nodes.Size()/2 to avoid frequent realloc
+  ResourceMark rm;
+  // Map: old node idx -> node after CCP (or nullptr if not yet transformed or useless).
+  Node_List node_map;
+  // Pre-allocate to avoid frequent realloc
   GrowableArray <Node *> transform_stack(C->live_nodes() >> 1);
-  Unique_Node_List useful; // track all visited nodes, so that we can remove the complement
+  // track all visited nodes, so that we can remove the complement
+  Unique_Node_List useful;
 
   // Initialize the traversal.
   // This CCP pass may prove that no exit test for a loop ever succeeds (i.e. the loop is infinite). In that case,
@@ -2220,10 +2028,10 @@ Node *PhaseCCP::transform( Node *n ) {
   // and all safepoints.
   for (uint i = 0; i < _root_and_safepoints.size(); ++i) {
     Node* nn = _root_and_safepoints.at(i);
-    Node* new_node = _nodes[nn->_idx];
+    Node* new_node = node_map[nn->_idx];
     assert(new_node == nullptr, "");
-    new_node = transform_once(nn);  // Check for constant
-    _nodes.map(nn->_idx, new_node); // Flag as having been cloned
+    new_node = transform_ccp(nn);  // Check for constant
+    node_map.map(nn->_idx, new_node); // Flag as having been cloned
     transform_stack.push(new_node); // Process children of cloned node
     useful.push(new_node);
   }
@@ -2234,10 +2042,10 @@ Node *PhaseCCP::transform( Node *n ) {
     for( uint i = 0; i < cnt; i++ ) {          // For all inputs do
       Node *input = clone->in(i);
       if( input != nullptr ) {                 // Ignore nulls
-        Node *new_input = _nodes[input->_idx]; // Check for cloned input node
+        Node *new_input = node_map[input->_idx]; // Check for cloned input node
         if( new_input == nullptr ) {
-          new_input = transform_once(input);   // Check for constant
-          _nodes.map( input->_idx, new_input );// Flag as having been cloned
+          new_input = transform_ccp(input);   // Check for constant
+          node_map.map( input->_idx, new_input );// Flag as having been cloned
           transform_stack.push(new_input);     // Process children of cloned node
           useful.push(new_input);
         }
@@ -2260,17 +2068,19 @@ Node *PhaseCCP::transform( Node *n ) {
   C->update_dead_node_list(useful);
   remove_useless_nodes(useful.member_set());
   _worklist.remove_useless_nodes(useful.member_set());
-  C->disconnect_useless_nodes(useful, &_worklist);
+  C->disconnect_useless_nodes(useful, _worklist);
 
-  Node* new_root = _nodes[n->_idx];
+  Node* new_root = node_map[root->_idx];
   assert(new_root->is_Root(), "transformed root node must be a root node");
-  return new_root;
+
+  C->set_root(new_root->as_Root());
+  assert(C->top(),  "missing TOP node");
+  assert(C->root(), "missing root");
 }
 
 
-//------------------------------transform_once---------------------------------
 // For PhaseCCP, transformation is IDENTITY unless Node computed a constant.
-Node *PhaseCCP::transform_once( Node *n ) {
+Node* PhaseCCP::transform_ccp(Node* n) {
   const Type *t = type(n);
   // Constant?  Use constant Node instead
   if( t->singleton() ) {
@@ -2379,12 +2189,6 @@ PhasePeephole::~PhasePeephole() {
   _total_peepholes += count_peepholes();
 }
 #endif
-
-//------------------------------transform--------------------------------------
-Node *PhasePeephole::transform( Node *n ) {
-  ShouldNotCallThis();
-  return nullptr;
-}
 
 //------------------------------do_transform-----------------------------------
 void PhasePeephole::do_transform() {

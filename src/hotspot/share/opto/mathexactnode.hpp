@@ -32,7 +32,6 @@
 #include "opto/type.hpp"
 
 class PhaseGVN;
-class PhaseTransform;
 
 class OverflowNode : public CmpNode {
 public:

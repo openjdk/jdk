@@ -53,7 +53,9 @@ private:
 public:
   VectorSet();
   VectorSet(Arena* arena);
-  ~VectorSet() {}
+
+  // Allow move constructor for && (eg. capture return of function)
+  VectorSet(VectorSet&&) = default;
 
   void insert(uint elem);
   bool is_empty() const;
@@ -110,6 +112,8 @@ public:
     uint32_t mask = 1U << (elem & bit_mask);
     _data[word] |= mask;
   }
+
+  NONCOPYABLE(VectorSet);
 };
 
 #endif // SHARE_LIBADT_VECTSET_HPP

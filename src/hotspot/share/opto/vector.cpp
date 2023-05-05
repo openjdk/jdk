@@ -48,8 +48,8 @@ void PhaseVector::optimize_vector_boxes() {
   assert(C->inlining_incrementally() == false, "sanity");
   C->set_inlining_incrementally(true);
 
-  C->for_igvn()->clear();
-  C->initial_gvn()->replace_with(&_igvn);
+  assert(C->igvn_worklist().size() == 0, "not sure about this in vector.cpp");
+  C->igvn_worklist().clear();
 
   expand_vunbox_nodes();
   scalarize_vbox_nodes();
@@ -69,12 +69,12 @@ void PhaseVector::do_cleanup() {
   {
     Compile::TracePhase tp("vector_pru", &timers[_t_vector_pru]);
     ResourceMark rm;
-    PhaseRemoveUseless pru(C->initial_gvn(), C->for_igvn());
+    PhaseRemoveUseless pru(C->initial_gvn(), C->igvn_worklist());
     if (C->failing())  return;
   }
   {
     Compile::TracePhase tp("incrementalInline_igvn", &timers[_t_vector_igvn]);
-    _igvn = PhaseIterGVN(C->initial_gvn());
+    _igvn.reset(C->initial_gvn());
     _igvn.optimize();
     if (C->failing())  return;
   }

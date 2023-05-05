@@ -59,7 +59,8 @@ class Dict : public AnyObj { // Dictionary structure
   Dict(CmpKey cmp, Hash hash);
   Dict(CmpKey cmp, Hash hash, Arena* arena, int size = 16);
   Dict(const Dict &base, Arena* arena); // Deep-copy
-  ~Dict();
+
+  Dict(Dict&&) = default;
 
   // Return # of key-value pairs in dict
   uint32_t Size(void) const { return _cnt; }
@@ -75,6 +76,8 @@ class Dict : public AnyObj { // Dictionary structure
 
   // Print out the dictionary contents as key-value pairs
   void print();
+
+  NONCOPYABLE(Dict);
 };
 
 // Hashing functions

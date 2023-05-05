@@ -145,6 +145,7 @@ protected:
 public:
   Compile * C;
   Phase( PhaseNumber pnum );
+  NONCOPYABLE(Phase);
 
   static void print_timers();
 };
