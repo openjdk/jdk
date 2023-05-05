@@ -472,7 +472,8 @@ import static java.lang.invoke.MethodHandleStatics.UNSAFE;
  * @since 9
  */
 public abstract sealed class VarHandle implements Constable
-     permits IndirectVarHandle, VarHandleSegmentViewBase,
+     permits IndirectVarHandle, LazyStaticVarHandle,
+             VarHandleSegmentViewBase,
              VarHandleByteArrayAsChars.ByteArrayViewVarHandle,
              VarHandleByteArrayAsDoubles.ByteArrayViewVarHandle,
              VarHandleByteArrayAsFloats.ByteArrayViewVarHandle,
@@ -522,11 +523,15 @@ public abstract sealed class VarHandle implements Constable
         return new UnsupportedOperationException();
     }
 
+    /**
+     * The backing var handle for indirect var handles. The var handle guards invokes
+     * with getMethodHandle on asDirect result.
+     * @see #getMethodHandle(int)
+     * @see #checkAccessModeThenIsDirect(AccessDescriptor)
+     */
     VarHandle asDirect() {
         return this;
     }
-
-    VarHandle target() { return null; }
 
     /**
      * Returns {@code true} if this VarHandle has <a href="#invoke-exact-behavior"><em>invoke-exact behavior</em></a>.
@@ -2071,6 +2076,7 @@ public abstract sealed class VarHandle implements Constable
      * @return true if this is a direct VarHandle, false if it's an indirect
      *         VarHandle.
      * @throws WrongMethodTypeException if there's an access type mismatch
+     * @see #asDirect()
      */
     @ForceInline
     boolean checkAccessModeThenIsDirect(VarHandle.AccessDescriptor ad) {
@@ -2120,7 +2126,7 @@ public abstract sealed class VarHandle implements Constable
      * @return {@code true} if the given access mode is supported, otherwise
      * {@code false}.
      */
-    public final boolean isAccessModeSupported(AccessMode accessMode) {
+    public boolean isAccessModeSupported(AccessMode accessMode) {
         return vform.getMemberNameOrNull(accessMode.ordinal()) != null;
     }
 
@@ -2146,7 +2152,7 @@ public abstract sealed class VarHandle implements Constable
     public MethodHandle toMethodHandle(AccessMode accessMode) {
         if (isAccessModeSupported(accessMode)) {
             MethodHandle mh = getMethodHandle(accessMode.ordinal());
-            return mh.bindTo(this);
+            return mh.bindTo(asDirect());
         }
         else {
             // Ensure an UnsupportedOperationException is thrown
@@ -2175,6 +2181,11 @@ public abstract sealed class VarHandle implements Constable
     @Stable
     MethodHandle[] methodHandleTable;
 
+    /**
+     * Returns a method handle that can invoke the {@linkplain #asDirect() direct}
+     * var handle of this var handle with the given access mode. Argument or
+     * return value filtering should be done by the returned method handle.
+     */
     @ForceInline
     MethodHandle getMethodHandle(int mode) {
         MethodHandle[] mhTable = methodHandleTable;
@@ -2403,13 +2414,13 @@ public abstract sealed class VarHandle implements Constable
         public VarHandle resolveConstantDesc(MethodHandles.Lookup lookup)
                 throws ReflectiveOperationException {
             return switch (kind) {
-                case FIELD        -> lookup.findVarHandle((Class<?>) declaringClass.resolveConstantDesc(lookup),
+                case FIELD        -> lookup.findVarHandle(declaringClass.resolveConstantDesc(lookup),
                                                           constantName(),
-                                                          (Class<?>) varType.resolveConstantDesc(lookup));
-                case STATIC_FIELD -> lookup.findStaticVarHandle((Class<?>) declaringClass.resolveConstantDesc(lookup),
+                                                          varType.resolveConstantDesc(lookup));
+                case STATIC_FIELD -> lookup.findStaticVarHandle(declaringClass.resolveConstantDesc(lookup),
                                                           constantName(),
-                                                          (Class<?>) varType.resolveConstantDesc(lookup));
-                case ARRAY        -> MethodHandles.arrayElementVarHandle((Class<?>) declaringClass.resolveConstantDesc(lookup));
+                                                          varType.resolveConstantDesc(lookup));
+                case ARRAY        -> MethodHandles.arrayElementVarHandle(declaringClass.resolveConstantDesc(lookup));
                 default -> throw new InternalError("Cannot reach here");
             };
         }

@@ -46,7 +46,7 @@ import java.util.function.BiFunction;
 
     @Stable
     private final MethodHandle[] handleMap = new MethodHandle[AccessMode.COUNT];
-    private final VarHandle directTarget; // cache, for performance reasons
+    private @Stable VarHandle directTarget; // cache, for performance reasons
     private final VarHandle target;
     private final BiFunction<AccessMode, MethodHandle, MethodHandle> handleFactory;
     private final Class<?> value;
@@ -61,7 +61,6 @@ import java.util.function.BiFunction;
         super(form, exact);
         this.handleFactory = handleFactory;
         this.target = target;
-        this.directTarget = target.asDirect();
         this.value = value;
         this.coordinates = coordinates;
     }
@@ -82,12 +81,21 @@ import java.util.function.BiFunction;
     }
 
     @Override
-    VarHandle asDirect() {
-        return directTarget;
+    public boolean isAccessModeSupported(AccessMode accessMode) {
+        var directTarget = this.directTarget;
+        if (directTarget != null)
+            return directTarget.isAccessModeSupported(accessMode);
+
+        return target.isAccessModeSupported(accessMode);
     }
 
-    VarHandle target() {
-        return target;
+    @Override
+    VarHandle asDirect() {
+        var directTarget = this.directTarget;
+        if (directTarget != null)
+            return directTarget;
+
+        return this.directTarget = target.asDirect(); // may be a lazy method
     }
 
     @Override
@@ -120,10 +128,5 @@ import java.util.function.BiFunction;
             handle = handleMap[mode] = handleFactory.apply(AccessMode.values()[mode], targetHandle);
         }
         return handle;
-    }
-
-    @Override
-    public MethodHandle toMethodHandle(AccessMode accessMode) {
-        return getMethodHandle(accessMode.ordinal()).bindTo(directTarget);
     }
 }
