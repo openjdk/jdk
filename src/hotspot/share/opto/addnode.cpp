@@ -1098,23 +1098,21 @@ Node* MaxNode::IdealI(PhaseGVN* phase, bool can_reshape, int opcode) {
   Node* y = constant_add_input(r, &y_off);
   if (y == nullptr) return nullptr;
   Node* out;
-  if (l->Opcode() == opcode) {
-    if (optimize_max_of_max(phase, opcode, /*left=*/true, x, y, l, x_off, y_off, &out)) {
-      return out;
-    }
-  } else if (r->Opcode() == opcode) {
-    if (optimize_max_of_max(phase, opcode, /*left=*/false, x, y, r, x_off, y_off, &out)) {
-      return out;
-    }
-  } else {
-    // Transform MIN2/MAX2(x + c0, y + c1) into x + MIN2/MAX2(c0, c1)
-    // if x == y and the additions can't overflow.
-    const TypeInt* tx = phase->type(x)->isa_int();
-    if (x == y && tx != nullptr &&
-        !can_overflow(tx, x_off) &&
-        !can_overflow(tx, y_off)) {
-      return new AddINode(x, phase->intcon(extreme(x_off, y_off, opcode)));
-    }
+  if (l->Opcode() == opcode &&
+      optimize_max_of_max(phase, opcode, /*left=*/true, x, y, l, x_off, y_off, &out)) {
+    return out;
+  }
+  if (r->Opcode() == opcode &&
+      optimize_max_of_max(phase, opcode, /*left=*/false, x, y, r, x_off, y_off, &out)) {
+    return out;
+  }
+  // Transform MIN2/MAX2(x + c0, y + c1) into x + MIN2/MAX2(c0, c1)
+  // if x == y and the additions can't overflow.
+  const TypeInt* tx = phase->type(x)->isa_int();
+  if (x == y && tx != nullptr &&
+      !can_overflow(tx, x_off) &&
+      !can_overflow(tx, y_off)) {
+    return new AddINode(x, phase->intcon(extreme(x_off, y_off, opcode)));
   }
   return nullptr;
 }
