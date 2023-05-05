@@ -2559,7 +2559,7 @@ void LIR_Assembler::emit_lock(LIR_OpLock* op) {
   Register hdr = op->hdr_opr()->as_register();
   Register lock = op->lock_opr()->as_register();
   if (LockingMode == LM_MONITOR) {
-    if (op->info() != null) {
+    if (op->info() != nullptr) {
       add_debug_info_for_null_check_here(op->info());
       __ null_check(obj, -1);
     }
