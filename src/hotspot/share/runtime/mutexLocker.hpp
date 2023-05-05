@@ -181,11 +181,9 @@ void print_lock_ranks(outputStream* st);
 // for debugging: check that we're already owning this lock (or are at a safepoint / handshake)
 #ifdef ASSERT
 void assert_locked_or_safepoint(const Mutex* lock);
-void assert_locked_or_safepoint_weak(const Mutex* lock);
 void assert_lock_strong(const Mutex* lock);
 #else
 #define assert_locked_or_safepoint(lock)
-#define assert_locked_or_safepoint_weak(lock)
 #define assert_lock_strong(lock)
 #endif
 

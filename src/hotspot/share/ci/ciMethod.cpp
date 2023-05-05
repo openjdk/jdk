@@ -84,8 +84,8 @@ ciMethod::ciMethod(const methodHandle& h_m, ciInstanceKlass* holder) :
   _code_size          = h_m->code_size();
   _handler_count      = h_m->exception_table_length();
   _size_of_parameters = h_m->size_of_parameters();
-  _uses_monitors      = h_m->access_flags().has_monitor_bytecodes();
-  _balanced_monitors  = !_uses_monitors || h_m->access_flags().is_monitor_matching();
+  _uses_monitors      = h_m->has_monitor_bytecodes();
+  _balanced_monitors  = !_uses_monitors || h_m->guaranteed_monitor_matching();
   _is_c1_compilable   = !h_m->is_not_c1_compilable();
   _is_c2_compilable   = !h_m->is_not_c2_compilable();
   _can_be_parsed      = true;

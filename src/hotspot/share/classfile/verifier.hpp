@@ -296,8 +296,8 @@ class ClassVerifier : public StackObj {
   void verify_local_variable_table(u4 code_length, char* code_data, TRAPS);
 
   VerificationType cp_ref_index_to_type(
-      int index, const constantPoolHandle& cp, Bytecodes::Code bc, TRAPS) {
-    return cp_index_to_type(cp->klass_ref_index_at(index, bc), cp, THREAD);
+      int index, const constantPoolHandle& cp, TRAPS) {
+    return cp_index_to_type(cp->uncached_klass_ref_index_at(index), cp, THREAD);
   }
 
   bool is_protected_access(

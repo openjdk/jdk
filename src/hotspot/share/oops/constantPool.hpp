@@ -676,6 +676,7 @@ class ConstantPool : public Metadata {
   constantTag tag_ref_at(int cp_cache_index, Bytecodes::Code code);
 
   int cp_index_helper(int which, Bytecodes::Code code);
+  int cp_index_helper(FieldTypeIndex index);
 
   // Lookup for entries consisting of (name_index, signature_index)
   int name_ref_index_at(int which_nt);            // ==  low-order jshort of name_and_type_at(which_nt)
@@ -777,11 +778,17 @@ class ConstantPool : public Metadata {
   // Routines currently used for annotations (only called by jvm.cpp) but which might be used in the
   // future by other Java code. These take constant pool indices rather than
   // constant pool cache indices as do the peer methods above.
-  Symbol* uncached_klass_ref_at_noresolve(int which);
-  Symbol* uncached_name_ref_at(int which)                 { return name_ref_at(which, Bytecodes::_illegal); }
-  Symbol* uncached_signature_ref_at(int which)            { return signature_ref_at(which, Bytecodes::_illegal); }
-  int       uncached_klass_ref_index_at(int which)          { return klass_ref_index_at(which, Bytecodes::_illegal); }
-  int       uncached_name_and_type_ref_index_at(int which)  { return name_and_type_ref_index_at(which, Bytecodes::_illegal); }
+  Symbol* uncached_klass_ref_at_noresolve(int cp_index);
+  Symbol* uncached_name_ref_at(int cp_index) {
+    int name_index = name_ref_index_at(uncached_name_and_type_ref_index_at(cp_index));
+    return symbol_at(name_index);
+  }
+  Symbol* uncached_signature_ref_at(int cp_index) {
+    int signature_index = signature_ref_index_at(uncached_name_and_type_ref_index_at(cp_index));
+    return symbol_at(signature_index);
+  }
+  int       uncached_klass_ref_index_at(int cp_index);
+  int       uncached_name_and_type_ref_index_at(int cp_index);
 
   // Sharing
   int pre_resolve_shared_klasses(TRAPS);

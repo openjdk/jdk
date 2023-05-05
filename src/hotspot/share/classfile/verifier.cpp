@@ -2310,8 +2310,8 @@ void ClassVerifier::verify_field_instructions(RawBytecodeStream* bcs,
       1 << JVM_CONSTANT_Fieldref, CHECK_VERIFY(this));
 
   // Get field name and signature
-  Symbol* field_name = cp->name_ref_at(index, bcs->raw_code());
-  Symbol* field_sig = cp->signature_ref_at(index, bcs->raw_code());
+  Symbol* field_name = cp->uncached_name_ref_at(index);
+  Symbol* field_sig = cp->uncached_signature_ref_at(index);
   bool is_getfield = false;
 
   // Field signature was checked in ClassFileParser.
@@ -2320,7 +2320,7 @@ void ClassVerifier::verify_field_instructions(RawBytecodeStream* bcs,
 
   // Get referenced class type
   VerificationType ref_class_type = cp_ref_index_to_type(
-    index, cp, bcs->raw_code(), CHECK_VERIFY(this));
+    index, cp, CHECK_VERIFY(this));
   if (!ref_class_type.is_object() &&
     (!allow_arrays || !ref_class_type.is_array())) {
     verify_error(ErrorContext::bad_type(bcs->bci(),
@@ -2401,7 +2401,7 @@ void ClassVerifier::verify_field_instructions(RawBytecodeStream* bcs,
         return;
       }
       Symbol* ref_class_name =
-        cp->klass_name_at(cp->klass_ref_index_at(index, bcs->raw_code()));
+        cp->klass_name_at(cp->uncached_klass_ref_index_at(index));
       if (!name_in_supers(ref_class_name, current_class()))
         // stack_object_type must be assignable to _current_class_type since:
         // 1. stack_object_type must be assignable to ref_class.
@@ -2725,7 +2725,7 @@ void ClassVerifier::verify_invoke_init(
       if (was_recursively_verified()) return;
       Method* m = InstanceKlass::cast(ref_klass)->uncached_lookup_method(
         vmSymbols::object_initializer_name(),
-        cp->signature_ref_at(bcs->get_index_u2(), bcs->raw_code()),
+        cp->uncached_signature_ref_at(bcs->get_index_u2()),
         Klass::OverpassLookupMode::find);
       // Do nothing if method is not found.  Let resolution detect the error.
       if (m != nullptr) {
@@ -2804,8 +2804,8 @@ void ClassVerifier::verify_invoke_instructions(
   verify_cp_type(bcs->bci(), index, cp, types, CHECK_VERIFY(this));
 
   // Get method name and signature
-  Symbol* method_name = cp->name_ref_at(index, opcode);
-  Symbol* method_sig = cp->signature_ref_at(index, opcode);
+  Symbol* method_name = cp->uncached_name_ref_at(index);
+  Symbol* method_sig = cp->uncached_signature_ref_at(index);
 
   // Method signature was checked in ClassFileParser.
   assert(SignatureVerifier::is_valid_method_signature(method_sig),
@@ -2821,14 +2821,14 @@ void ClassVerifier::verify_invoke_instructions(
       return;
     }
   } else {
-    ref_class_type = cp_ref_index_to_type(index, cp, opcode, CHECK_VERIFY(this));
+    ref_class_type = cp_ref_index_to_type(index, cp, CHECK_VERIFY(this));
   }
 
   assert(sizeof(VerificationType) == sizeof(uintptr_t),
         "buffer type must match VerificationType size");
 
   // Get the UTF8 index for this signature.
-  int sig_index = cp->signature_ref_index_at(cp->name_and_type_ref_index_at(index, opcode));
+  int sig_index = cp->signature_ref_index_at(cp->uncached_name_and_type_ref_index_at(index));
 
   // Get the signature's verification types.
   sig_as_verification_types* mth_sig_verif_types;
@@ -2934,7 +2934,7 @@ void ClassVerifier::verify_invoke_instructions(
           if (was_recursively_verified()) return;
           assert(cp->cache() == nullptr, "not rewritten yet");
           Symbol* ref_class_name =
-            cp->klass_name_at(cp->klass_ref_index_at(index, opcode));
+            cp->klass_name_at(cp->uncached_klass_ref_index_at(index));
           // See the comments in verify_field_instructions() for
           // the rationale behind this.
           if (name_in_supers(ref_class_name, current_class())) {
