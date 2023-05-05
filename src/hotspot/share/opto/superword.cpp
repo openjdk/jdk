@@ -2220,6 +2220,24 @@ bool SuperWord::profitable(Node_List* p) {
       }
     }
   }
+  if (p0->is_Cmp()) {
+    // Verify that Cmp pack only has Bool pack uses
+    for (DUIterator_Fast jmax, j = p0->fast_outs(jmax); j < jmax; j++) {
+      Node* bol = p0->fast_out(j);
+      if (!bol->is_Bool() || bol->in(0) != nullptr || !is_vector_use(bol, 1)) {
+        return false;
+      }
+    }
+  }
+  if (p0->is_Bool()) {
+    // Verify that Bool pack only has CMove pack uses
+    for (DUIterator_Fast jmax, j = p0->fast_outs(jmax); j < jmax; j++) {
+      Node* cmove = p0->fast_out(j);
+      if (!cmove->is_CMove() || cmove->in(0) != nullptr || !is_vector_use(cmove, 1)) {
+        return false;
+      }
+    }
+  }
   return true;
 }
 
