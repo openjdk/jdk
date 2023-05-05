@@ -226,7 +226,6 @@ public class MemoryHandler extends Handler {
                 push0();
             }
         }
-
     }
 
     private void push0() {
@@ -273,7 +272,21 @@ public class MemoryHandler extends Handler {
      * @throws  SecurityException  if a security manager exists and if
      *             the caller does not have {@code LoggingPermission("control")}.
      */
-    public synchronized void setPushLevel(Level newLevel) throws SecurityException {
+    public void setPushLevel(Level newLevel) throws SecurityException {
+        if (tryUseLock()) {
+            try {
+                setPushLevel0(newLevel);
+            } finally {
+                unlock();
+            }
+        } else {
+            synchronized (this) {
+                setPushLevel0(newLevel);
+            }
+        }
+    }
+
+    private void setPushLevel0(Level newLevel) throws SecurityException {
         if (newLevel == null) {
             throw new NullPointerException();
         }

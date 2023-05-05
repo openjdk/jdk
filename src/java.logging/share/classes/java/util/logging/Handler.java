@@ -189,7 +189,21 @@ public abstract class Handler {
      * @throws  SecurityException  if a security manager exists and if
      *             the caller does not have {@code LoggingPermission("control")}.
      */
-    public synchronized void setFormatter(Formatter newFormatter) throws SecurityException {
+    public void setFormatter(Formatter newFormatter) throws SecurityException {
+        if (tryUseLock()) {
+            try {
+                setFormatter0(newFormatter);
+            } finally {
+                unlock();
+            }
+        } else {
+            synchronized (this) {
+                setFormatter0(newFormatter);
+            }
+        }
+    }
+
+    private void setFormatter0(Formatter newFormatter) throws SecurityException {
         checkPermission();
         formatter = Objects.requireNonNull(newFormatter);
     }
@@ -215,7 +229,22 @@ public abstract class Handler {
      * @throws  UnsupportedEncodingException if the named encoding is
      *          not supported.
      */
-    public synchronized void setEncoding(String encoding)
+    public void setEncoding(String encoding)
+            throws SecurityException, java.io.UnsupportedEncodingException {
+        if (tryUseLock()) {
+            try {
+                setEncoding0(encoding);
+            } finally {
+                unlock();
+            }
+        } else {
+            synchronized (this) {
+                setEncoding0(encoding);
+            }
+        }
+    }
+
+    private void setEncoding0(String encoding)
                         throws SecurityException, java.io.UnsupportedEncodingException {
         checkPermission();
         if (encoding != null) {
@@ -251,7 +280,21 @@ public abstract class Handler {
      * @throws  SecurityException  if a security manager exists and if
      *             the caller does not have {@code LoggingPermission("control")}.
      */
-    public synchronized void setFilter(Filter newFilter) throws SecurityException {
+    public void setFilter(Filter newFilter) throws SecurityException {
+        if (tryUseLock()) {
+            try {
+                setFilter0(newFilter);
+            } finally {
+                unlock();
+            }
+        } else {
+            synchronized (this) {
+                setFilter0(newFilter);
+            }
+        }
+    }
+
+    private void setFilter0(Filter newFilter) throws SecurityException {
         checkPermission();
         filter = newFilter;
     }
@@ -275,7 +318,21 @@ public abstract class Handler {
      * @throws  SecurityException  if a security manager exists and if
      *             the caller does not have {@code LoggingPermission("control")}.
      */
-    public synchronized void setErrorManager(ErrorManager em) {
+    public void setErrorManager(ErrorManager em) {
+        if (tryUseLock()) {
+            try {
+                setErrorManager0(em);
+            } finally {
+                unlock();
+            }
+        } else {
+            synchronized (this) {
+                setErrorManager0(em);
+            }
+        }
+    }
+
+    private void setErrorManager0(ErrorManager em) {
         checkPermission();
         if (em == null) {
            throw new NullPointerException();
@@ -327,13 +384,29 @@ public abstract class Handler {
      * @throws  SecurityException  if a security manager exists and if
      *             the caller does not have {@code LoggingPermission("control")}.
      */
-    public synchronized void setLevel(Level newLevel) throws SecurityException {
+    public void setLevel(Level newLevel) throws SecurityException {
+        if (tryUseLock()) {
+            try {
+                setLevel0(newLevel);
+            } finally {
+                unlock();
+            }
+        } else {
+            synchronized (this) {
+                setLevel0(newLevel);
+            }
+        }
+    }
+
+    private void setLevel0(Level newLevel) throws SecurityException {
         if (newLevel == null) {
             throw new NullPointerException();
         }
         checkPermission();
         logLevel = newLevel;
     }
+
+
 
     /**
      * Get the log level specifying which messages will be
