@@ -194,7 +194,7 @@ public interface ThreadMXBean extends java.lang.management.ThreadMXBean {
      *
      * @param id the thread ID of a thread
      * @return an approximation of the total memory allocated, in bytes, in
-     * heap memory for the thread with the specified ID, if the thread with the
+     * heap memory for the thread with the specified ID if the thread with the
      * specified ID is a platform thread, the thread is alive, and thread memory
      * allocation measurement is enabled; {@code -1} otherwise.
      *
