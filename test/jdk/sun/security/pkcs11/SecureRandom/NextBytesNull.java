@@ -24,7 +24,8 @@
 /*
  * @test
  * @bug 8155191
- * @summary check PKCS#11 SecureRandom throws NPE for null output
+ * @summary check NPE is thrown for nextBytes(byte[]) and setSeed(byte[])
+ *     when using the SecureRandom impl from the SunPKCS11 provider
  * @library /test/lib ..
  * @modules jdk.crypto.cryptoki
  * @run main/othervm NextBytesNull
@@ -47,8 +48,18 @@ public class NextBytesNull extends PKCS11Test {
             e.printStackTrace();
             return;
         }
+
+        // check NPE for nextBytes(byte[])
         try {
             random.nextBytes(null);
+            throw new RuntimeException("Fail: expected NPE not thrown");
+        } catch (NullPointerException npe) {
+            System.out.println("OK, expected NPE thrown");
+        }
+
+        // check NPE for setSeed(byte[])
+        try {
+            random.setSeed(null);
             throw new RuntimeException("Fail: expected NPE not thrown");
         } catch (NullPointerException npe) {
             System.out.println("OK, expected NPE thrown");

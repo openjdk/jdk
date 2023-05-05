@@ -88,9 +88,6 @@ final class P11SecureRandom extends SecureRandomSpi {
     // see JCA spec
     @Override
     protected synchronized void engineSetSeed(byte[] seed) {
-        if (seed == null) {
-            throw new NullPointerException("seed must not be null");
-        }
         Session session = null;
         try {
             session = token.getOpSession();

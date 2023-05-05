@@ -24,8 +24,8 @@
 /*
  * @test
  * @bug 8155191
- * @summary check nextBytes() for NPE using various JDK SecureRandom impls
- *     from SUN provider
+ * @summary check NPE is thrown for nextBytes(byte[]) and setSeed(byte[])
+ *     when using the SecureRandom impls from the SUN provider
  * @run main/othervm NextBytesNull
  */
 
@@ -37,10 +37,18 @@ public class NextBytesNull {
 
     private static String[] SECURE_RANDOM_ALGOS = {
         "NativePRNG", "NativePRNGBlocking", "NativePRNGNonBlocking",
-        "DRBG", "SHA1PRNG", "NativePRNG"
+        "DRBG", "SHA1PRNG"
     };
 
     public static void main(String[] args) throws Exception {
+        // check NPE for SecureRandom(byte[])
+        try {
+            new SecureRandom(null);
+            System.out.print("new SecureRandom(null) passed");
+        } catch (NullPointerException e) {
+            System.out.println("NPE thrown for new SecureRandom(null)");
+        }
+
         for (String srAlg : SECURE_RANDOM_ALGOS) {
             System.out.print("Testing " + srAlg);
             SecureRandom random;
@@ -52,8 +60,17 @@ public class NextBytesNull {
                 e.printStackTrace();
                 continue;
             }
+            // check NPE for nextBytes(byte[])
             try {
                 random.nextBytes(null);
+                throw new RuntimeException("Fail: should throw NPE");
+            } catch (NullPointerException npe) {
+                System.out.println(" OK, expected NPE thrown");
+            }
+
+            // check NPE for setSeed(byte[])
+            try {
+                random.setSeed(null);
                 throw new RuntimeException("Fail: should throw NPE");
             } catch (NullPointerException npe) {
                 System.out.println(" OK, expected NPE thrown");

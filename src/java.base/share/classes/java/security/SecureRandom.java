@@ -257,9 +257,11 @@ public class SecureRandom extends java.util.Random {
      * for information about standard RNG algorithm names.
      *
      * @param seed the seed.
+     * @throws NullPointerException if {@code seed} is {@code null}
      */
     public SecureRandom(byte[] seed) {
         super(0);
+        Objects.requireNonNull(seed);
         getDefaultPRNG(true, seed);
         this.threadSafe = getThreadSafe();
     }
@@ -706,10 +708,12 @@ public class SecureRandom extends java.util.Random {
      * contains enough entropy for the security of this {@code SecureRandom}.
      *
      * @param seed the seed.
+     * @throws NullPointerException if {@code seed} is {@code null}
      *
      * @see #getSeed
      */
     public void setSeed(byte[] seed) {
+        Objects.requireNonNull(seed);
         if (threadSafe) {
             secureRandomSpi.engineSetSeed(seed);
         } else {
