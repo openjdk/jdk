@@ -1689,8 +1689,9 @@ void MacroAssembler::store_sized_value(Address dst, Register src, size_t size_in
   }
 }
 
-void MacroAssembler::load_word_misaligned(Register dst, Address src, Register tmp, bool is_signed) {
+void MacroAssembler::load_int_misaligned(Register dst, Address src, Register tmp, bool is_signed) {
   if (AvoidUnalignedAccesses) {
+    assert_different_registers(dst, tmp);
     lbu(dst, src);
     lbu(tmp, Address(src.base(), src.offset() + 1));
     slli(tmp, tmp, 8);
