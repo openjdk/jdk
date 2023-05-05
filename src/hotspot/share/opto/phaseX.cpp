@@ -1289,7 +1289,6 @@ void PhaseIterGVN::remove_globally_dead_node( Node *dead ) {
   };
   ResourceMark rm;
   Node_Stack stack(32);
-  assert(stack.is_empty(), "not empty");
   stack.push(dead, PROCESS_INPUTS);
 
   while (stack.is_nonempty()) {

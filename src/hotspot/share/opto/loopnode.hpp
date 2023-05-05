@@ -832,7 +832,6 @@ class PhaseIdealLoop : public PhaseTransform {
   friend class AutoNodeBudget;
 
   // Map loop membership for CFG nodes, and ctrl for non-CFG nodes.
-  // TODO: rename?
   Node_List _loop_ctrl;
 
   // Pre-computed def-use info
