@@ -108,6 +108,7 @@ class EscapedState: public ObjectState {
     return new EscapedState(_materialized);
   }
   ObjectState& merge(ObjectState* newin, GraphKit* kit, RegionNode* region, int pnum) override {
+    assert(0, "not implemented");
     return *this;
   }
 };
@@ -146,7 +147,7 @@ class PEAState {
     return _state.contains(id);
   }
 
-  Node* get_cooked_obj(ObjID id) const;
+  Node* get_cooked_oop(ObjID id) const;
 
   void update(ObjID id, ObjectState* os) {
     if (contains(id)) {

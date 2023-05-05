@@ -1580,6 +1580,16 @@ Node *AllocateNode::make_ideal_mark(PhaseGVN *phase, Node* obj, Node* control, N
   return mark_node;
 }
 
+// This is a precise notnull oop of the klass.
+// (Actually, it need not be precise if this is a reflective allocation.)
+// It's what we cast the result to.
+const TypeOopPtr* AllocateNode::oop_type(const PhaseTransform& phase) const {
+  Node* klass_node = in(KlassNode);
+  const TypeKlassPtr* tklass = phase.type(klass_node)->isa_klassptr();
+  if (!tklass) tklass = TypeInstKlassPtr::OBJECT;
+  return tklass->as_instance_type();
+}
+
 // Retrieve the length from the AllocateArrayNode. Narrow the type with a
 // CastII, if appropriate.  If we are not allowed to create new nodes, and
 // a CastII is appropriate, return null.

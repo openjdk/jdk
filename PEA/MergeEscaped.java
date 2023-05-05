@@ -105,6 +105,32 @@ class MergeEscaped {
         }
     }
 
+    private static void test4(MergeEscaped obj, int cond) {
+        if (cond == 0) {
+            obj.a = 1;
+        } else if (cond == 1) {
+            obj.a = 2;
+        } else {
+            blackhole(obj);
+        }
+    }
+
+    public static MergeEscaped escaped4(boolean cond1, boolean cond2) {
+        MergeEscaped obj = new MergeEscaped();
+
+        int cond = 0;
+        if (cond1) {
+            cond = 2;  // cond1 << 1
+        }
+        if (cond2) {
+            cond = cond + 1;
+        }
+
+        test4(obj,  cond);
+        blackhole(obj);
+        return obj;
+    }
+
     public static void main(String[] args) {
         long iterations = 0;
 
@@ -121,6 +147,8 @@ class MergeEscaped {
 
                 sum = MergeEscaped.escaped3(cond, cond2).sum();
                 check_result3(cond, cond2, sum);
+
+                escaped4(cond, cond2);
                 iterations++;
             }
         } finally {

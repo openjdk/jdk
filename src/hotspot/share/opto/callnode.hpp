@@ -975,6 +975,8 @@ public:
   bool is_allocation_MemBar_redundant() { return _is_allocation_MemBar_redundant; }
 
   Node* make_ideal_mark(PhaseGVN *phase, Node* obj, Node* control, Node* mem);
+
+  const TypeOopPtr* oop_type(const PhaseTransform& phase) const;
 };
 
 //------------------------------AllocateArray---------------------------------
