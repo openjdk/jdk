@@ -23,23 +23,42 @@
 
 /*
  * @test
- * @bug 8306927
+ * @bug 8306927 8307547
  * @modules jdk.localedata
  * @summary Tests Swedish collation involving 'v' and 'w'.
+ * @run junit SwedishTest
  */
 
 import java.text.Collator;
 import java.util.Arrays;
 import java.util.Locale;
+import java.util.stream.Stream;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 
 public class SwedishTest {
     private static final String[] src = {"wb", "va", "vc"};
     private static final String[] expected = {"va", "vc", "wb"};
+    private static final String[] expectedTraditional = {"va", "wb", "vc"};
 
-    public static void main (String[] args) {
-        Arrays.sort(src, Collator.getInstance(Locale.of("sv")));
-        if (!Arrays.equals(src, expected)) {
-            throw new RuntimeException("Swedish collation failed");
-        }
+    @ParameterizedTest
+    @MethodSource("swedishData")
+    public void testSwedishCollation(String[] expected, Locale locale) {
+        Arrays.sort(src, Collator.getInstance(locale));
+        assertArrayEquals(expected, src);
+    }
+
+    private static Stream<Arguments> swedishData() {
+        return Stream.of(
+            Arguments.of(expected, Locale.forLanguageTag("sv")),
+            Arguments.of(expected, Locale.forLanguageTag("sv-u-co-standard")),
+            Arguments.of(expected, Locale.forLanguageTag("sv-u-co-foo")),
+            Arguments.of(expected, Locale.forLanguageTag("sv-u-co-traditional")),
+            Arguments.of(expectedTraditional, Locale.forLanguageTag("sv-u-co-trad"))
+        );
     }
 }
