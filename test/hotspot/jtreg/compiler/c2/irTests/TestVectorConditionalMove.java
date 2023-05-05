@@ -615,12 +615,10 @@ public class TestVectorConditionalMove {
         double[] doubleb = new double[SIZE];
         double[] doublec = new double[SIZE];
 
-        for (int i = 0; i < SIZE; i++) {
-            floata[i] = RANDOM.nextFloat();
-            floatb[i] = RANDOM.nextFloat();
-            doublea[i] = RANDOM.nextDouble();
-            doubleb[i] = RANDOM.nextDouble();
-        }
+	init(floata);
+	init(floatb);
+	init(doublea);
+	init(doubleb);
 
         testCMoveVFGT(floata, floatb, floatc);
         testCMoveVDLE(doublea, doubleb, doublec);
@@ -861,12 +859,18 @@ public class TestVectorConditionalMove {
     private static void init(float[] a) {
         for (int i = 0; i < SIZE; i++) {
             a[i] = RANDOM.nextFloat();
+            if (RANDOM.nextInt() % 20 == 0) {
+                a[i] = Float.NaN;
+            }
         }
     }
 
     private static void init(double[] a) {
         for (int i = 0; i < SIZE; i++) {
             a[i] = RANDOM.nextDouble();
+            if (RANDOM.nextInt() % 20 == 0) {
+                a[i] = Double.NaN;
+            }
         }
     }
 }
