@@ -1607,16 +1607,6 @@ enum VectorMask {
 
 #undef INSN
 
-#define INSN(NAME, op, funct3, vm, funct6)                                   \
-  void NAME(VectorRegister Vd, VectorRegister Vs2, VectorRegister Vs1) {     \
-    patch_VArith(op, Vd, funct3, Vs1->raw_encoding(), Vs2, vm, funct6);      \
-  }
-
-  // Vector Integer Merge Instructions
-  INSN(vmerge_vvm,  0b1010111, 0b000, 0b0, 0b010111);
-
-#undef INSN
-
 #define INSN(NAME, op, funct3, Vs2, vm, funct6)                            \
   void NAME(VectorRegister Vd, int32_t imm) {                              \
     guarantee(is_simm5(imm), "imm is invalid");                            \
