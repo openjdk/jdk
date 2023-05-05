@@ -77,7 +77,7 @@ public class PrintDirectivesTest extends AbstractTestBase {
             if (command == Command.INTRINSIC) {
                 argument = Utils.getRandomElement(VALID_INTRINSIC_SAMPLES);
             }
-            CompileCommand compileCommand = new CompileCommand(command, true, 
+            CompileCommand compileCommand = new CompileCommand(command, true,
                     methodDescriptor, cmdGen.generateCompiler(),
                     Scenario.Type.DIRECTIVE, argument);
             builder.add(compileCommand);

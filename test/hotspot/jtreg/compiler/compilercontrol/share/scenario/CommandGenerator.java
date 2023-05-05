@@ -81,7 +81,7 @@ public class CommandGenerator {
      * @param type    a type of the command, or null to generate any
      * @return the generated compile command
      */
-    public CompileCommand generateCompileCommand(Command command, boolean isValid, 
+    public CompileCommand generateCompileCommand(Command command, boolean isValid,
             MethodDescriptor md, Scenario.Type type) {
         if (type == null) {
             type = Utils.getRandomElement(Scenario.Type.values());
@@ -89,7 +89,7 @@ public class CommandGenerator {
         return type.createCompileCommand(command, isValid, md, generateCompiler());
     }
 
-    public CompileCommand generateCompileCommand(Command command, boolean isValid, 
+    public CompileCommand generateCompileCommand(Command command, boolean isValid,
             MethodDescriptor md, Scenario.Type type, String argument) {
         if (type == null) {
             type = Utils.getRandomElement(Scenario.Type.values());

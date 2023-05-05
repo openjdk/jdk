@@ -73,7 +73,7 @@ public class CompileCommand {
     public boolean isValid() {
         if (!isValid) {
             return false;
-        } 
+        }
         if (command == Command.NONEXISTENT) {
             return false;
         }

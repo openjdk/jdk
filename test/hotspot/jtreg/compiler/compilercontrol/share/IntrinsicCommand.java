@@ -73,7 +73,7 @@ public class IntrinsicCommand extends AbstractTestBase {
         MethodDescriptor md = getValidMethodDescriptor(exec);
         CommandGenerator cmdGen = new CommandGenerator();
 
-        CompileCommand compileCommand = cmdGen.generateCompileCommand(command, isValid, 
+        CompileCommand compileCommand = cmdGen.generateCompileCommand(command, isValid,
                 md, type, intrinsic_ids);
 
         System.out.println("XXXXXXXXXXXXXXXX compileCommand.isValid " + compileCommand.isValid());
