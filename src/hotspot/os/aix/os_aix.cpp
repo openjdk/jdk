@@ -245,6 +245,10 @@ static bool is_close_to_brk(address a) {
   return false;
 }
 
+julong os::free_memory() {
+  return Aix::available_memory();
+}
+
 julong os::available_memory() {
   return Aix::available_memory();
 }

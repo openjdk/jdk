@@ -57,6 +57,7 @@ class os::Linux {
   static pthread_t _main_thread;
 
   static julong available_memory();
+  static julong free_memory();
   static int active_processor_count();
 
   static void initialize_system_info();

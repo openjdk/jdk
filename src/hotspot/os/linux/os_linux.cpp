@@ -249,13 +249,38 @@ julong os::Linux::available_memory() {
     fclose(fp);
   }
   if (avail_mem == 0UL) {
-    // values in struct sysinfo are "unsigned long"
-    struct sysinfo si;
-    sysinfo(&si);
-    avail_mem = (julong)si.freeram * si.mem_unit;
+    avail_mem = free_memory();
   }
   log_trace(os)("available memory: " JULONG_FORMAT, avail_mem);
   return avail_mem;
+}
+
+julong os::free_memory() {
+  return Linux::free_memory();
+}
+
+julong os::Linux::free_memory() {
+  // values in struct sysinfo are "unsigned long"
+  struct sysinfo si;
+  julong free_mem;
+
+  if (OSContainer::is_containerized()) {
+    jlong mem_limit = OSContainer::memory_limit_in_bytes();
+    jlong mem_usage;
+    if (mem_limit > 0 && (mem_usage = OSContainer::memory_usage_in_bytes()) < 1) {
+      log_debug(os, container)("container memory usage failed: " JLONG_FORMAT ", using host value", mem_usage);
+    }
+    if (mem_limit > 0 && mem_usage > 0) {
+      free_mem = mem_limit > mem_usage ? (julong)mem_limit - (julong)mem_usage : 0;
+      log_trace(os)("free container memory: " JULONG_FORMAT, free_mem);
+      return free_mem;
+    }
+  }
+
+  sysinfo(&si);
+  free_mem = (julong)si.freeram * si.mem_unit;
+  log_trace(os)("free memory: " JULONG_FORMAT, free_mem);
+  return free_mem;
 }
 
 julong os::physical_memory() {
