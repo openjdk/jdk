@@ -39,6 +39,7 @@ import javax.lang.model.util.Elements;
 import java.util.*;
 import com.sun.source.tree.*;
 import com.sun.source.util.*;
+import java.io.StringWriter;
 
 public class TestUnnamedVariableElement extends JavacTestingAbstractProcessor implements AutoCloseable {
 
@@ -46,7 +47,7 @@ public class TestUnnamedVariableElement extends JavacTestingAbstractProcessor im
                            RoundEnvironment roundEnv) {
         if (!roundEnv.processingOver()) {
             Elements vacuousElements = new VacuousElements();
-            expectFalse( () -> vacuousElements.isUnnamed(null));
+            expectNpe( () -> vacuousElements.isUnnamed(null));
             expectNpe( () -> elements.isUnnamed(null));
 
             Trees trees = Trees.instance(processingEnv);
@@ -54,7 +55,7 @@ public class TestUnnamedVariableElement extends JavacTestingAbstractProcessor im
             for(Element rootElement : roundEnv.getRootElements()) {
                 TreePath treePath = trees.getPath(rootElement);
 
-                (new UnnamedVariableScanner(trees)).
+                (new UnnamedVariableScanner(processingEnv.getElementUtils(), trees)).
                         scan(treePath.getCompilationUnit(), null);
             }
         }
@@ -65,10 +66,13 @@ public class TestUnnamedVariableElement extends JavacTestingAbstractProcessor im
     public void close() {}
 
     class UnnamedVariableScanner extends TreePathScanner<Void, Void> {
+
+        private final Elements elements;
         private Trees trees;
 
-        public UnnamedVariableScanner(Trees trees) {
+        public UnnamedVariableScanner(Elements elements, Trees trees) {
             super();
+            this.elements = elements;
             this.trees = trees;
         }
 
@@ -76,15 +80,15 @@ public class TestUnnamedVariableElement extends JavacTestingAbstractProcessor im
         public Void visitVariable(VariableTree node, Void unused) {
             handleTreeAsLocalVar(getCurrentPath());
 
-            if(!node.getName().toString().equals("_")) {
-                throw new RuntimeException("Expected the underscore as the name of the Tree API but got: " + node.getName());
+            if(!node.getName().isEmpty()) {
+                throw new RuntimeException("Expected empty name as the name of the Tree API but got: " + node.getName());
             }
 
             return super.visitVariable(node, unused);
         }
 
         private void handleTreeAsLocalVar(TreePath tp) {
-            Element element = trees.getElement(tp);
+            VariableElement element = (VariableElement) trees.getElement(tp);
 
             System.out.println("Name: " + element.getSimpleName() +
                     "\tKind: " + element.getKind());
@@ -92,9 +96,15 @@ public class TestUnnamedVariableElement extends JavacTestingAbstractProcessor im
                 throw new RuntimeException("Expected a local variable, but got: " +
                         element.getKind());
             }
-            if (!elements.isUnnamed(element) || !element.getSimpleName().isEmpty()) {
+            if (!elements.isUnnamed(element)) {
                 throw new RuntimeException("Expected empty name for simple name of an unnamed variable, but got: " +
                         element.getSimpleName());
+            }
+            StringWriter out = new StringWriter();
+            String expected = "int _;";
+            elements.printElements(out, element);
+            if (!expected.equals(out.toString().trim())) {
+                throw new RuntimeException("Expected: " + expected + ", but got: " + out.toString());
             }
             testUnnamedVariable(element);
         }

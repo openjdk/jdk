@@ -1,13 +1,37 @@
-import java.util.Objects;
+/*
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
 
 /**
- * @test /nodynamiccopyright/
+ * @test
  * @bug 8304246
  * @summary Compiler Implementation for Unnamed patterns and variables
  * @enablePreview
- * @compile --enable-preview -source ${jdk.version} Unnamed.java
+ * @compile Unnamed.java
  * @run main Unnamed
  */
+
+import java.util.Objects;
+
 public class Unnamed {
     public static void main(String[] args) throws Throwable {
         new Unnamed().run();
@@ -49,6 +73,8 @@ public class Unnamed {
         assertEquals(1, testMultipleStat(new Box<>(new R1())));
         assertEquals(1, testUnrolledStat(new Box<>(new R1())));
         assertEquals(2, testMixVarWithExplicit(new Box<>(new R2())));
+        assertEquals("binding", unnamedGuardAddsBindings("match1", "binding"));
+        assertEquals("any", unnamedGuardAddsBindings(42, 42));
     }
 
     private void unnamedTest() {
@@ -216,6 +242,13 @@ public class Unnamed {
             }
         };
         return success;
+    }
+
+    String unnamedGuardAddsBindings(Object o1, Object o2) {
+        return switch (o1) {
+            case String _, Object _ when o2 instanceof String s: yield s;
+            case Object _: yield "any";
+        };
     }
 
     // JEP 443 examples

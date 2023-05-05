@@ -1688,7 +1688,7 @@ public class Attr extends JCTree.Visitor {
                     wasError = true;
                 }
                 MatchBindings currentBindings = null;
-                boolean wasUnconditionalPattern = hasUnconditionalPattern;
+                MatchBindings guardBindings = null;
                 for (List<JCCaseLabel> labels = c.labels; labels.nonEmpty(); labels = labels.tail) {
                     JCCaseLabel label = labels.head;
                     if (label instanceof JCConstantCaseLabel constLabel) {
@@ -1761,7 +1761,7 @@ public class Attr extends JCTree.Visitor {
                         checkCastablePattern(pat.pos(), seltype, primaryType);
                         Type patternType = types.erasure(primaryType);
                         JCExpression guard = c.guard;
-                        if (labels.tail.isEmpty() && guard != null) {
+                        if (guardBindings == null && guard != null) {
                             MatchBindings afterPattern = matchBindings;
                             Env<AttrContext> bodyEnv = bindingEnv(switchEnv, matchBindings.bindingsWhenTrue);
                             try {
@@ -1769,14 +1769,13 @@ public class Attr extends JCTree.Visitor {
                             } finally {
                                 bodyEnv.info.scope.leave();
                             }
-                            matchBindings = matchBindingsComputer.caseGuard(c, afterPattern, matchBindings);
+
+                            guardBindings = matchBindings;
+                            matchBindings = afterPattern;
 
                             if (TreeInfo.isBooleanWithValue(guard, 0)) {
                                 log.error(guard.pos(), Errors.GuardHasConstantExpressionFalse);
                             }
-                        } else if (guard != null) {
-                            // if the label has multiple patterns and a guard (with binding from the switch environment)
-                            attribExpr(guard, switchEnv, syms.booleanType);
                         }
                         boolean unguarded = TreeInfo.unguardedCase(c) && !pat.hasTag(RECORDPATTERN);
                         boolean unconditional =
@@ -1797,6 +1796,10 @@ public class Attr extends JCTree.Visitor {
                         Assert.error();
                     }
                     currentBindings = matchBindingsComputer.switchCase(label, currentBindings, matchBindings);
+                }
+
+                if (guardBindings != null) {
+                    currentBindings = matchBindingsComputer.caseGuard(c, currentBindings, guardBindings);
                 }
 
                 Env<AttrContext> caseEnv =
@@ -4161,9 +4164,7 @@ public class Attr extends JCTree.Visitor {
             type = resultInfo.pt;
         }
         tree.type = tree.var.type = type;
-        Name name = tree.var.name;
-        if (name == names.underscore) name = names.empty;
-        BindingSymbol v = new BindingSymbol(tree.var.mods.flags, name, type, env.info.scope.owner);
+        BindingSymbol v = new BindingSymbol(tree.var.mods.flags, tree.var.name, type, env.info.scope.owner);
         v.pos = tree.pos;
         tree.var.sym = v;
         if (chk.checkUnique(tree.var.pos(), v, env.info.scope)) {

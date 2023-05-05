@@ -292,7 +292,6 @@ public class MemberEnter extends JCTree.Visitor {
                 ? env.info.scope.owner.kind == MTH ? Type.noType : syms.errType
                 : tree.vartype.type;
         Name name = tree.name;
-        if (Feature.UNNAMED_VARIABLES.allowedInSource(source) && name == names.underscore) name = names.empty;
         VarSymbol v = new VarSymbol(0, name, vartype, enclScope.owner);
         v.flags_field = chk.checkFlags(tree.pos(), tree.mods.flags, v, tree);
         tree.sym = v;

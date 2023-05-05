@@ -25,6 +25,8 @@
 
 package com.sun.source.tree;
 
+import jdk.internal.javac.PreviewFeature;
+
 /**
  * Common interface for all nodes in an abstract syntax tree.
  *
@@ -224,6 +226,7 @@ public interface Tree {
          *
          * @since 21
          */
+        @PreviewFeature(feature=PreviewFeature.Feature.UNNAMED)
         ANY_PATTERN(AnyPatternTree.class),
 
         /**

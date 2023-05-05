@@ -3556,6 +3556,7 @@ public class JavacParser implements Parser {
             if (!localDecl && !isTypePattern) {
                 log.error(DiagnosticFlag.SYNTAX, pos, Errors.UnderscoreAsIdentifier);
             }
+            name = names.empty;
         }
 
         if (token.kind == EQ) {

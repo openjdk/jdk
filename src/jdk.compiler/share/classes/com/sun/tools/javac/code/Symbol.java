@@ -435,10 +435,6 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
         return (flags_field & FINAL) != 0;
     }
 
-    public boolean isUnnamed() {
-        return name.isEmpty();
-    }
-
    /** Is this symbol declared (directly or indirectly) local
      *  to a method or variable initializer?
      *  Also includes fields of inner classes which are in
@@ -1645,6 +1641,7 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
 
     /** A class for variable symbols
      */
+    @SuppressWarnings("preview")
     public static class VarSymbol extends Symbol implements VariableElement {
 
         /** The variable's declaration position.
@@ -1786,6 +1783,11 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
 
         public <R, P> R accept(Symbol.Visitor<R, P> v, P p) {
             return v.visitVarSymbol(this, p);
+        }
+
+        @Override @DefinedBy(Api.LANGUAGE_MODEL)
+        public boolean isUnnamed() {
+            return name.isEmpty();
         }
     }
 

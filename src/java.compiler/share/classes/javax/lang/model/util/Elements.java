@@ -713,15 +713,15 @@ public interface Elements {
      * {@return {@code true} if the element has an empty name, {@code false} otherwise}
      *
      * @implSpec
-     * The default implementation of this method returns {@code
-     * false}.
+     * The default implementation of this method examines whether {@code
+     * getSimpleName()} returns an empty name.
      *
      * @param element the element being examined
      * @since 21
      */
     @PreviewFeature(feature=PreviewFeature.Feature.UNNAMED, reflective = true)
-    default boolean isUnnamed(Element element) {
-        return false;
+    default boolean isUnnamed(VariableElement element) {
+        return element.getSimpleName().isEmpty();
     }
 
     /**

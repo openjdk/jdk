@@ -66,8 +66,13 @@ import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Name;
 import com.sun.tools.javac.util.Names;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.HashMap;
+import java.util.IdentityHashMap;
+import java.util.LinkedHashMap;
+import java.util.Set;
 
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Symbol.RecordComponent;
@@ -326,9 +331,9 @@ public class TransPatterns extends TreeTranslator {
                 }
                 nestedBinding = nestedDesugared.primaryPattern();
                 allowNull = false;
-            } else if (nestedPattern instanceof JCAnyPattern nestedRecordPattern) {
+            } else if (nestedPattern instanceof JCAnyPattern nestedAnyPattern) {
                 allowNull = true;
-                nestedBinding = nestedRecordPattern;
+                nestedBinding = nestedAnyPattern;
             }
             else {
                 nestedBinding = (JCBindingPattern) nestedPattern;
@@ -532,7 +537,9 @@ public class TransPatterns extends TreeTranslator {
                 boolean validCaseLabelList;
                 if (clearedPatterns.size() > 1) {
                     validCaseLabelList = clearedPatterns.stream().allMatch(cP -> cP.hasTag(Tag.PATTERNCASELABEL));
-                } else validCaseLabelList = clearedPatterns.size() == 1 && clearedPatterns.head.hasTag(Tag.PATTERNCASELABEL);
+                } else {
+                    validCaseLabelList = clearedPatterns.head.hasTag(Tag.PATTERNCASELABEL);
+                }
 
                 if (validCaseLabelList && !previousCompletesNormally) {
                     List<JCPatternCaseLabel> labels = clearedPatterns.stream().map(cp -> (JCPatternCaseLabel)cp).collect(List.collector());

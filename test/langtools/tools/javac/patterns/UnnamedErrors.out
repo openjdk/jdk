@@ -13,7 +13,6 @@ UnnamedErrors.java:22:26: compiler.err.underscore.as.identifier
 UnnamedErrors.java:24:26: compiler.err.underscore.as.identifier
 UnnamedErrors.java:27:18: compiler.err.underscore.as.identifier
 UnnamedErrors.java:34:18: compiler.err.restricted.type.not.allowed.here: var
-UnnamedErrors.java:34:22: compiler.err.underscore.as.identifier
 UnnamedErrors.java:77:18: compiler.err.underscore.as.identifier
 UnnamedErrors.java:77:19: compiler.err.expected: token.identifier
 UnnamedErrors.java:82:40: compiler.err.expected2: :, ->
@@ -31,4 +30,4 @@ UnnamedErrors.java:83:13: compiler.err.switch.mixing.case.types
 UnnamedErrors.java:90:30: compiler.err.pattern.dominated
 - compiler.note.preview.filename: UnnamedErrors.java, DEFAULT
 - compiler.note.preview.recompile
-31 errors
+30 errors

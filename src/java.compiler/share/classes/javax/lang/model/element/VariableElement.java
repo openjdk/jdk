@@ -104,12 +104,12 @@ public interface VariableElement extends Element {
      * false} otherwise}
      *
      * @implSpec
-     * The default implementation of this method returns {@code
-     * false}.
+     * The default implementation of this method examines whether {@code
+     * getSimpleName()} returns an empty name.
      *
      * @jls 6.1 Declarations
      * @jls 14.4 Local Variable Declarations
      */
     @PreviewFeature(feature=PreviewFeature.Feature.UNNAMED, reflective = true)
-    default boolean isUnnamed() { return false; }
+    default boolean isUnnamed() { return getSimpleName().isEmpty(); }
 }

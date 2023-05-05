@@ -22,9 +22,7 @@
  */
 
 public class TestUnnamedVariableElementData {
-
     private void test() {
         int _ = 0;
     }
-
 }
