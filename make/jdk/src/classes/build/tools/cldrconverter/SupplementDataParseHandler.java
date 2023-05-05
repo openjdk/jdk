@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,6 +69,9 @@ class SupplementDataParseHandler extends AbstractLDMLHandler<Object> {
     // Input Skeleton map for "preferred" and "allowed"
     // Map<"preferred"/"allowed", Map<"skeleton", SortedSet<"regions">>>
     private final Map<String, Map<String, SortedSet<String>>> inputSkeletonMap;
+
+    // "component" specific to this parent locale chain
+    private String currentParentLocaleComponent;
 
     SupplementDataParseHandler() {
         firstDayMap = new HashMap<>();
@@ -163,11 +166,19 @@ class SupplementDataParseHandler extends AbstractLDMLHandler<Object> {
                 minDaysMap.put(attributes.getValue("territories"), attributes.getValue("count"));
             }
             break;
+        case "parentLocales":
+            currentParentLocaleComponent = attributes.getValue("component");
+            pushContainer(qName, attributes);
+            break;
         case "parentLocale":
             if (!isIgnored(attributes)) {
-                parentLocalesMap.put(
-                    attributes.getValue("parent").replaceAll("_", "-"),
-                    attributes.getValue("locales").replaceAll("_", "-"));
+                // Ignore component for now, otherwise "zh-Hant" falling back to "zh" would happen
+                // https://github.com/unicode-org/cldr/pull/2664
+                if (currentParentLocaleComponent == null) {
+                    parentLocalesMap.put(
+                        attributes.getValue("parent").replaceAll("_", "-"),
+                        attributes.getValue("locales").replaceAll("_", "-"));
+                }
             }
             break;
         case "hours":

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,9 +118,7 @@ public class MetalLookAndFeel extends BasicLookAndFeel
      */
     static boolean isWindows() {
         if (!checkedWindows) {
-            @SuppressWarnings("removal")
-            OSInfo.OSType osType = AccessController.doPrivileged(OSInfo.getOSTypeAction());
-            if (osType == OSInfo.OSType.WINDOWS) {
+            if (OSInfo.getOSType() == OSInfo.OSType.WINDOWS) {
                 isWindows = true;
                 @SuppressWarnings("removal")
                 String systemFonts = AccessController.doPrivileged(

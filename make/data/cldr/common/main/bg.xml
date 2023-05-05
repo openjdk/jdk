@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2022 Unicode, Inc.
+<!-- Copyright © 1991-2023 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -296,6 +296,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="li">лимбургски</language>
 			<language type="lil">лилоует</language>
 			<language type="lkt">лакота</language>
+			<language type="lmo" draft="contributed">ломбардски</language>
 			<language type="ln">лингала</language>
 			<language type="lo">лаоски</language>
 			<language type="lol">монго</language>
@@ -1010,6 +1011,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="ZW">Зимбабве</territory>
 			<territory type="ZZ">непознат регион</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">Англия</subdivision>
+			<subdivision type="gbsct">Шотландия</subdivision>
+			<subdivision type="gbwls">Уелс</subdivision>
+		</subdivisions>
 		<variants>
 			<variant type="1901">Традиционен немски правопис</variant>
 			<variant type="1994">Стандартен резиански правопис</variant>
@@ -1257,9 +1263,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateTimeFormat>
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -2781,6 +2793,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</relativeTime>
 			</field>
 			<field type="second-narrow">
+				<displayName>сек</displayName>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">сл. {0} сек</relativeTimePattern>
 					<relativeTimePattern count="other">сл. {0} сек</relativeTimePattern>
@@ -3601,6 +3614,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="America/Hermosillo">
 				<exemplarCity>Ермосильо</exemplarCity>
+			</zone>
+			<zone type="America/Ciudad_Juarez">
+				<exemplarCity>Сиудад Хуарес</exemplarCity>
 			</zone>
 			<zone type="America/Mazatlan">
 				<exemplarCity>Масатлан</exemplarCity>
@@ -6811,6 +6827,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<compoundUnitPattern1 count="one">кубичен {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other">кубични {0}</compoundUnitPattern1>
 			</compoundUnit>
+			<compoundUnit type="times">
+				<compoundUnitPattern>{0}⋅{1}</compoundUnitPattern>
+			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<displayName>G</displayName>
 				<unitPattern count="one">{0} G</unitPattern>
@@ -7196,6 +7215,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="graphics-em">
 				<displayName>типографски ем</displayName>
+				<unitPattern count="one">{0} em</unitPattern>
+				<unitPattern count="other">{0} em</unitPattern>
 			</unit>
 			<unit type="graphics-pixel">
 				<displayName>пиксели</displayName>
@@ -7723,6 +7744,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="volume-dessert-spoon-imperial">
 				<displayName>брит. дес. лъжици</displayName>
+				<unitPattern count="one">{0} брит. дес. лъжица</unitPattern>
+				<unitPattern count="other">{0} брит. дес. лъжици</unitPattern>
 			</unit>
 			<unit type="volume-drop">
 				<displayName>капки</displayName>
@@ -7852,6 +7875,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</compoundUnit>
 			<compoundUnit type="power3">
 				<compoundUnitPattern1>{0}³</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one">{0}³</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0}³</compoundUnitPattern1>
 			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<displayName>G</displayName>
@@ -8229,6 +8254,34 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="graphics-em">
 				<displayName>ем</displayName>
+				<unitPattern count="one">{0} em</unitPattern>
+				<unitPattern count="other">{0} em</unitPattern>
+			</unit>
+			<unit type="graphics-pixel">
+				<unitPattern count="one">{0} px</unitPattern>
+				<unitPattern count="other">{0} px</unitPattern>
+			</unit>
+			<unit type="graphics-megapixel">
+				<unitPattern count="one">{0} MP</unitPattern>
+				<unitPattern count="other">{0} MP</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-centimeter">
+				<unitPattern count="one">{0} ppcm</unitPattern>
+				<unitPattern count="other">{0} ppcm</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-inch">
+				<unitPattern count="one">{0} ppi</unitPattern>
+				<unitPattern count="other">{0} ppi</unitPattern>
+			</unit>
+			<unit type="graphics-dot-per-centimeter">
+				<displayName>ppcm</displayName>
+				<unitPattern count="one">{0} ppcm</unitPattern>
+				<unitPattern count="other">{0} ppcm</unitPattern>
+			</unit>
+			<unit type="graphics-dot-per-inch">
+				<displayName>ppi</displayName>
+				<unitPattern count="one">{0} ppi</unitPattern>
+				<unitPattern count="other">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
 				<displayName>точка</displayName>
@@ -8479,6 +8532,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} inHg</unitPattern>
 				<unitPattern count="other">{0} inHg</unitPattern>
 			</unit>
+			<unit type="pressure-bar">
+				<unitPattern count="one">{0} bar</unitPattern>
+				<unitPattern count="other">{0} bar</unitPattern>
+			</unit>
 			<unit type="pressure-millibar">
 				<displayName>mbar</displayName>
 				<unitPattern count="one">{0} mbar</unitPattern>
@@ -8488,6 +8545,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>atm</displayName>
 				<unitPattern count="one">{0} atm</unitPattern>
 				<unitPattern count="other">{0} atm</unitPattern>
+			</unit>
+			<unit type="pressure-pascal">
+				<unitPattern count="one">{0} Pa</unitPattern>
+				<unitPattern count="other">{0} Pa</unitPattern>
 			</unit>
 			<unit type="pressure-hectopascal">
 				<displayName>hPa</displayName>
@@ -8817,19 +8878,44 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</compoundUnit>
 			<compoundUnit type="power2">
 				<compoundUnitPattern1>{0}²</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one">{0}²</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0}²</compoundUnitPattern1>
 			</compoundUnit>
 			<compoundUnit type="power3">
 				<compoundUnitPattern1>{0}³</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one">{0}³</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0}³</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="times">
+				<compoundUnitPattern>{0}⋅{1}</compoundUnitPattern>
 			</compoundUnit>
 			<unit type="acceleration-g-force">
+				<displayName draft="contributed">G</displayName>
 				<unitPattern count="one">{0} G</unitPattern>
 				<unitPattern count="other">{0} G</unitPattern>
 			</unit>
+			<unit type="acceleration-meter-per-square-second">
+				<displayName draft="contributed">m/s²</displayName>
+				<unitPattern count="one" draft="contributed">{0} m/s²</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} m/s²</unitPattern>
+			</unit>
+			<unit type="angle-revolution">
+				<displayName draft="contributed">об.</displayName>
+				<unitPattern count="one" draft="contributed">{0} об.</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} об.</unitPattern>
+			</unit>
+			<unit type="angle-radian">
+				<displayName draft="contributed">rad</displayName>
+				<unitPattern count="one" draft="contributed">{0} rad</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} rad</unitPattern>
+			</unit>
 			<unit type="angle-degree">
+				<displayName draft="contributed">°</displayName>
 				<unitPattern count="one">{0}°</unitPattern>
 				<unitPattern count="other">{0}°</unitPattern>
 			</unit>
 			<unit type="angle-arc-minute">
+				<displayName draft="contributed">дъгови мин.</displayName>
 				<unitPattern count="one">{0}′</unitPattern>
 				<unitPattern count="other">{0}′</unitPattern>
 			</unit>
@@ -8839,43 +8925,195 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}″</unitPattern>
 			</unit>
 			<unit type="area-square-kilometer">
+				<displayName draft="contributed">km²</displayName>
 				<unitPattern count="one">{0} km²</unitPattern>
 				<unitPattern count="other">{0} km²</unitPattern>
+				<perUnitPattern draft="contributed">{0}/km²</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
+				<displayName draft="contributed">ha</displayName>
 				<unitPattern count="one">{0} ha</unitPattern>
 				<unitPattern count="other">{0} ha</unitPattern>
 			</unit>
 			<unit type="area-square-meter">
+				<displayName draft="contributed">m²</displayName>
 				<unitPattern count="one">{0} m²</unitPattern>
 				<unitPattern count="other">{0} m²</unitPattern>
+				<perUnitPattern draft="contributed">{0}/m²</perUnitPattern>
+			</unit>
+			<unit type="area-square-centimeter">
+				<displayName draft="contributed">cm²</displayName>
+				<unitPattern count="one" draft="contributed">{0} cm²</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} cm²</unitPattern>
+				<perUnitPattern draft="contributed">{0}/cm²</perUnitPattern>
 			</unit>
 			<unit type="area-square-mile">
+				<displayName draft="contributed">mi²</displayName>
 				<unitPattern count="one">{0} кв. миля</unitPattern>
 				<unitPattern count="other">{0} кв. мили</unitPattern>
+				<perUnitPattern draft="contributed">{0}/mi²</perUnitPattern>
 			</unit>
 			<unit type="area-acre">
+				<displayName draft="contributed">акри</displayName>
 				<unitPattern count="one">{0} акър</unitPattern>
 				<unitPattern count="other">{0} акра</unitPattern>
 			</unit>
+			<unit type="area-square-yard">
+				<displayName draft="contributed">yd²</displayName>
+				<unitPattern count="one" draft="contributed">{0} yd²</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} yd²</unitPattern>
+			</unit>
 			<unit type="area-square-foot">
+				<displayName draft="contributed">ft²</displayName>
 				<unitPattern count="one">{0} кв. фут</unitPattern>
 				<unitPattern count="other">{0} кв. фута</unitPattern>
+			</unit>
+			<unit type="area-square-inch">
+				<displayName draft="contributed">in²</displayName>
+				<unitPattern count="one" draft="contributed">{0} in²</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} in²</unitPattern>
+				<perUnitPattern draft="contributed">{0}/in²</perUnitPattern>
+			</unit>
+			<unit type="area-dunam">
+				<displayName draft="contributed">дюнюми</displayName>
+				<unitPattern count="one" draft="contributed">{0} дюнюм</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} дюнюма</unitPattern>
+			</unit>
+			<unit type="concentr-karat">
+				<displayName draft="contributed">kt</displayName>
+				<unitPattern count="one" draft="contributed">{0} kt</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} kt</unitPattern>
+			</unit>
+			<unit type="concentr-milligram-ofglucose-per-deciliter">
+				<displayName draft="contributed">mg/dL</displayName>
+				<unitPattern count="one" draft="contributed">{0} mg/dl</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} mg/dl</unitPattern>
+			</unit>
+			<unit type="concentr-millimole-per-liter">
+				<displayName draft="contributed">mmol/L</displayName>
+				<unitPattern count="one" draft="contributed">{0} mmol/L</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} mmol/L</unitPattern>
+			</unit>
+			<unit type="concentr-item">
+				<displayName draft="contributed">единица</displayName>
+				<unitPattern count="one" draft="contributed">{0} ед.</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} ед.</unitPattern>
+			</unit>
+			<unit type="concentr-permillion">
+				<displayName draft="contributed">ppm</displayName>
+				<unitPattern count="one" draft="contributed">{0} ppm</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} ppm</unitPattern>
 			</unit>
 			<unit type="concentr-percent">
 				<displayName>%</displayName>
 				<unitPattern count="one">{0}%</unitPattern>
 				<unitPattern count="other">{0}%</unitPattern>
 			</unit>
+			<unit type="concentr-permille">
+				<displayName draft="contributed">‰</displayName>
+				<unitPattern count="one" draft="contributed">{0}‰</unitPattern>
+				<unitPattern count="other" draft="contributed">{0}‰</unitPattern>
+			</unit>
+			<unit type="concentr-permyriad">
+				<displayName draft="contributed">базисен пункт</displayName>
+				<unitPattern count="one" draft="contributed">{0}‱</unitPattern>
+				<unitPattern count="other" draft="contributed">{0}‱</unitPattern>
+			</unit>
+			<unit type="concentr-mole">
+				<displayName draft="contributed">мол</displayName>
+				<unitPattern count="one" draft="contributed">{0} мол</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} мол</unitPattern>
+			</unit>
+			<unit type="consumption-liter-per-kilometer">
+				<displayName draft="contributed">l/km</displayName>
+				<unitPattern count="one" draft="contributed">{0} l/km</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} l/km</unitPattern>
+			</unit>
 			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>l/100 km</displayName>
 				<unitPattern count="one">{0} l/100 km</unitPattern>
 				<unitPattern count="other">{0} l/100 km</unitPattern>
 			</unit>
+			<unit type="consumption-mile-per-gallon">
+				<displayName draft="contributed">mpg</displayName>
+				<unitPattern count="one" draft="contributed">{0} mpg</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} mpg</unitPattern>
+			</unit>
+			<unit type="consumption-mile-per-gallon-imperial">
+				<displayName draft="contributed">мили/имп. гал.</displayName>
+				<unitPattern count="one" draft="contributed">{0} mpg Imp.</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} mpg Imp.</unitPattern>
+			</unit>
+			<unit type="digital-petabyte">
+				<displayName draft="contributed">PByte</displayName>
+				<unitPattern count="one" draft="contributed">{0} PB</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} PB</unitPattern>
+			</unit>
+			<unit type="digital-terabyte">
+				<displayName draft="contributed">TB</displayName>
+				<unitPattern count="one" draft="contributed">{0} TB</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} TB</unitPattern>
+			</unit>
+			<unit type="digital-terabit">
+				<displayName draft="contributed">Tb</displayName>
+				<unitPattern count="one" draft="contributed">{0} Tb</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} Tb</unitPattern>
+			</unit>
+			<unit type="digital-gigabyte">
+				<displayName draft="contributed">GB</displayName>
+				<unitPattern count="one" draft="contributed">{0} GB</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} GB</unitPattern>
+			</unit>
+			<unit type="digital-gigabit">
+				<displayName draft="contributed">Gb</displayName>
+				<unitPattern count="one" draft="contributed">{0} Gb</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} Gb</unitPattern>
+			</unit>
+			<unit type="digital-megabyte">
+				<displayName draft="contributed">MB</displayName>
+				<unitPattern count="one" draft="contributed">{0} MB</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} MB</unitPattern>
+			</unit>
+			<unit type="digital-megabit">
+				<displayName draft="contributed">Mb</displayName>
+				<unitPattern count="one" draft="contributed">{0} Mb</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} Mb</unitPattern>
+			</unit>
+			<unit type="digital-kilobyte">
+				<displayName draft="contributed">kB</displayName>
+				<unitPattern count="one" draft="contributed">{0} kB</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} kB</unitPattern>
+			</unit>
+			<unit type="digital-kilobit">
+				<displayName draft="contributed">kb</displayName>
+				<unitPattern count="one" draft="contributed">{0} kb</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} kb</unitPattern>
+			</unit>
+			<unit type="digital-byte">
+				<displayName draft="contributed">B</displayName>
+				<unitPattern count="one" draft="contributed">{0} B</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} B</unitPattern>
+			</unit>
+			<unit type="digital-bit">
+				<displayName draft="contributed">b</displayName>
+				<unitPattern count="one" draft="contributed">{0} b</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} b</unitPattern>
+			</unit>
+			<unit type="duration-century">
+				<displayName draft="contributed">в.</displayName>
+				<unitPattern count="one" draft="contributed">{0} в.</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} в.</unitPattern>
+			</unit>
+			<unit type="duration-decade">
+				<displayName draft="contributed">декада</displayName>
+				<unitPattern count="one" draft="contributed">{0} декада</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} декади</unitPattern>
+			</unit>
 			<unit type="duration-year">
 				<displayName>г.</displayName>
 				<unitPattern count="one">{0} г.</unitPattern>
 				<unitPattern count="other">{0} г.</unitPattern>
+				<perUnitPattern draft="contributed">{0}/год.</perUnitPattern>
 			</unit>
 			<unit type="duration-quarter">
 				<displayName>тримес.</displayName>
@@ -8899,118 +9137,474 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>д</displayName>
 				<unitPattern count="one">{0} д</unitPattern>
 				<unitPattern count="other">{0} д</unitPattern>
+				<perUnitPattern draft="contributed">{0}/д</perUnitPattern>
 			</unit>
 			<unit type="duration-hour">
 				<displayName>ч</displayName>
 				<unitPattern count="one">{0} ч</unitPattern>
 				<unitPattern count="other">{0} ч</unitPattern>
+				<perUnitPattern draft="contributed">{0}/ч</perUnitPattern>
 			</unit>
 			<unit type="duration-minute">
 				<displayName>мин</displayName>
 				<unitPattern count="one">{0} мин</unitPattern>
 				<unitPattern count="other">{0} мин</unitPattern>
+				<perUnitPattern draft="contributed">{0}/мин</perUnitPattern>
 			</unit>
 			<unit type="duration-second">
 				<displayName>сек</displayName>
 				<unitPattern count="one">{0} с</unitPattern>
 				<unitPattern count="other">{0} с</unitPattern>
+				<perUnitPattern>{0}/сек</perUnitPattern>
 			</unit>
 			<unit type="duration-millisecond">
 				<displayName>мсек</displayName>
 				<unitPattern count="one">{0} мсек</unitPattern>
 				<unitPattern count="other">{0} мсек</unitPattern>
 			</unit>
+			<unit type="duration-microsecond">
+				<displayName draft="contributed">μs</displayName>
+				<unitPattern count="one" draft="contributed">{0} μs</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} μs</unitPattern>
+			</unit>
+			<unit type="duration-nanosecond">
+				<displayName draft="contributed">ns</displayName>
+				<unitPattern count="one" draft="contributed">{0} ns</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} ns</unitPattern>
+			</unit>
+			<unit type="electric-ampere">
+				<displayName draft="contributed">A</displayName>
+				<unitPattern count="one" draft="contributed">{0} A</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} A</unitPattern>
+			</unit>
+			<unit type="electric-milliampere">
+				<displayName draft="contributed">mA</displayName>
+				<unitPattern count="one" draft="contributed">{0} mA</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} mA</unitPattern>
+			</unit>
+			<unit type="electric-ohm">
+				<displayName draft="contributed">Ω</displayName>
+				<unitPattern count="one" draft="contributed">{0} Ω</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} Ω</unitPattern>
+			</unit>
+			<unit type="electric-volt">
+				<displayName draft="contributed">V</displayName>
+				<unitPattern count="one" draft="contributed">{0} V</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} V</unitPattern>
+			</unit>
+			<unit type="energy-kilocalorie">
+				<displayName draft="contributed">kcal</displayName>
+				<unitPattern count="one" draft="contributed">{0} kcal</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} kcal</unitPattern>
+			</unit>
+			<unit type="energy-calorie">
+				<displayName draft="contributed">cal</displayName>
+				<unitPattern count="one" draft="contributed">{0} cal</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} cal</unitPattern>
+			</unit>
+			<unit type="energy-foodcalorie">
+				<displayName draft="contributed">cal</displayName>
+				<unitPattern count="one" draft="contributed">{0} cal</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} cal</unitPattern>
+			</unit>
+			<unit type="energy-kilojoule">
+				<displayName draft="contributed">kJ</displayName>
+				<unitPattern count="one" draft="contributed">{0} kJ</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} kJ</unitPattern>
+			</unit>
+			<unit type="energy-joule">
+				<displayName draft="contributed">J</displayName>
+				<unitPattern count="one" draft="contributed">{0} J</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} J</unitPattern>
+			</unit>
+			<unit type="energy-kilowatt-hour">
+				<displayName draft="contributed">kWh</displayName>
+				<unitPattern count="one" draft="contributed">{0} kWh</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} kWh</unitPattern>
+			</unit>
+			<unit type="energy-electronvolt">
+				<displayName draft="contributed">eV</displayName>
+				<unitPattern count="one" draft="contributed">{0} eV</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} eV</unitPattern>
+			</unit>
+			<unit type="energy-british-thermal-unit">
+				<displayName draft="contributed">BTU</displayName>
+				<unitPattern count="one" draft="contributed">{0} BTU</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} BTU</unitPattern>
+			</unit>
+			<unit type="energy-therm-us">
+				<displayName draft="contributed">амер. термални ед.</displayName>
+				<unitPattern count="one" draft="contributed">{0} амер. терм. ед.</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} амер. терм. ед.</unitPattern>
+			</unit>
+			<unit type="force-pound-force">
+				<displayName draft="contributed">lbf</displayName>
+				<unitPattern count="one" draft="contributed">{0} lbf</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} lbf</unitPattern>
+			</unit>
+			<unit type="force-newton">
+				<displayName draft="contributed">N</displayName>
+				<unitPattern count="one" draft="contributed">{0} N</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} N</unitPattern>
+			</unit>
 			<unit type="force-kilowatt-hour-per-100-kilometer">
 				<displayName>kWh/100 km</displayName>
+				<unitPattern count="one" draft="contributed">{0} kWh/100 km</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} kWh/100 km</unitPattern>
+			</unit>
+			<unit type="frequency-gigahertz">
+				<displayName draft="contributed">GHz</displayName>
+				<unitPattern count="one" draft="contributed">{0} GHz</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} GHz</unitPattern>
+			</unit>
+			<unit type="frequency-megahertz">
+				<displayName draft="contributed">MHz</displayName>
+				<unitPattern count="one" draft="contributed">{0} MHz</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} MHz</unitPattern>
+			</unit>
+			<unit type="frequency-kilohertz">
+				<displayName draft="contributed">kHz</displayName>
+				<unitPattern count="one" draft="contributed">{0} kHz</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} kHz</unitPattern>
+			</unit>
+			<unit type="frequency-hertz">
+				<displayName draft="contributed">Hz</displayName>
+				<unitPattern count="one" draft="contributed">{0} Hz</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} Hz</unitPattern>
+			</unit>
+			<unit type="graphics-em">
+				<displayName draft="contributed">ем</displayName>
+				<unitPattern count="one" draft="contributed">{0} em</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} em</unitPattern>
+			</unit>
+			<unit type="graphics-pixel">
+				<displayName draft="contributed">px</displayName>
+				<unitPattern count="one" draft="contributed">{0} px</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} px</unitPattern>
+			</unit>
+			<unit type="graphics-megapixel">
+				<displayName draft="contributed">MP</displayName>
+				<unitPattern count="one" draft="contributed">{0} MP</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} MP</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-centimeter">
+				<displayName draft="contributed">ppcm</displayName>
+				<unitPattern count="one" draft="contributed">{0} ppcm</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} ppcm</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-inch">
+				<displayName draft="contributed">ppi</displayName>
+				<unitPattern count="one" draft="contributed">{0} ppi</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} ppi</unitPattern>
+			</unit>
+			<unit type="graphics-dot-per-centimeter">
+				<displayName draft="contributed">ppcm</displayName>
+				<unitPattern count="one" draft="contributed">{0} ppcm</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} ppcm</unitPattern>
+			</unit>
+			<unit type="graphics-dot-per-inch">
+				<displayName draft="contributed">ppi</displayName>
+				<unitPattern count="one" draft="contributed">{0} ppi</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} ppi</unitPattern>
+			</unit>
+			<unit type="graphics-dot">
+				<displayName draft="contributed">точка</displayName>
+				<unitPattern count="one" draft="contributed">{0} точка</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} точки</unitPattern>
+			</unit>
+			<unit type="length-earth-radius">
+				<displayName draft="contributed">R⊕</displayName>
+				<unitPattern count="one" draft="contributed">{0} R⊕</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} R⊕</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
 				<displayName>km</displayName>
 				<unitPattern count="one">{0} km</unitPattern>
 				<unitPattern count="other">{0} km</unitPattern>
+				<perUnitPattern draft="contributed">{0}/km</perUnitPattern>
 			</unit>
 			<unit type="length-meter">
 				<displayName>m</displayName>
 				<unitPattern count="one">{0} m</unitPattern>
 				<unitPattern count="other">{0} m</unitPattern>
+				<perUnitPattern draft="contributed">{0}/m</perUnitPattern>
+			</unit>
+			<unit type="length-decimeter">
+				<displayName draft="contributed">dm</displayName>
+				<unitPattern count="one" draft="contributed">{0} dm</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} dm</unitPattern>
 			</unit>
 			<unit type="length-centimeter">
 				<displayName>cm</displayName>
 				<unitPattern count="one">{0} cm</unitPattern>
 				<unitPattern count="other">{0} cm</unitPattern>
+				<perUnitPattern draft="contributed">{0}/cm</perUnitPattern>
 			</unit>
 			<unit type="length-millimeter">
 				<displayName>mm</displayName>
 				<unitPattern count="one">{0} mm</unitPattern>
 				<unitPattern count="other">{0} mm</unitPattern>
 			</unit>
+			<unit type="length-micrometer">
+				<displayName draft="contributed">μm</displayName>
+				<unitPattern count="one" draft="contributed">{0} μm</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} μm</unitPattern>
+			</unit>
+			<unit type="length-nanometer">
+				<displayName draft="contributed">nm</displayName>
+				<unitPattern count="one" draft="contributed">{0} nm</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} nm</unitPattern>
+			</unit>
 			<unit type="length-picometer">
+				<displayName draft="contributed">pm</displayName>
 				<unitPattern count="one">{0} pm</unitPattern>
 				<unitPattern count="other">{0} pm</unitPattern>
 			</unit>
 			<unit type="length-mile">
+				<displayName draft="contributed">mi</displayName>
 				<unitPattern count="one">{0} миля</unitPattern>
 				<unitPattern count="other">{0} мили</unitPattern>
 			</unit>
 			<unit type="length-yard">
+				<displayName draft="contributed">yd</displayName>
 				<unitPattern count="one">{0} ярд</unitPattern>
 				<unitPattern count="other">{0} ярда</unitPattern>
 			</unit>
 			<unit type="length-foot">
+				<displayName draft="contributed">ft</displayName>
 				<unitPattern count="one">{0} фут</unitPattern>
 				<unitPattern count="other">{0} фута</unitPattern>
+				<perUnitPattern draft="contributed">{0}/ft</perUnitPattern>
 			</unit>
 			<unit type="length-inch">
+				<displayName draft="contributed">in</displayName>
 				<unitPattern count="one">{0}&quot;</unitPattern>
 				<unitPattern count="other">{0}&quot;</unitPattern>
+				<perUnitPattern draft="contributed">{0}/in</perUnitPattern>
+			</unit>
+			<unit type="length-parsec">
+				<displayName draft="contributed">pc</displayName>
+				<unitPattern count="one" draft="contributed">{0} pc</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} pc</unitPattern>
 			</unit>
 			<unit type="length-light-year">
+				<displayName draft="contributed">св. г.</displayName>
 				<unitPattern count="one">{0} св.г.</unitPattern>
 				<unitPattern count="other">{0} св.г.</unitPattern>
+			</unit>
+			<unit type="length-astronomical-unit">
+				<displayName draft="contributed">AU</displayName>
+				<unitPattern count="one" draft="contributed">{0} AU</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} AU</unitPattern>
+			</unit>
+			<unit type="length-furlong">
+				<displayName draft="contributed">fur</displayName>
+				<unitPattern count="one" draft="contributed">{0} fur</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} fur</unitPattern>
+			</unit>
+			<unit type="length-fathom">
+				<displayName draft="contributed">fth</displayName>
+				<unitPattern count="one" draft="contributed">{0} fth</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} fth</unitPattern>
+			</unit>
+			<unit type="length-nautical-mile">
+				<displayName draft="contributed">nmi</displayName>
+				<unitPattern count="one" draft="contributed">{0} nmi</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} nmi</unitPattern>
+			</unit>
+			<unit type="length-mile-scandinavian">
+				<displayName draft="contributed">smi</displayName>
+				<unitPattern count="one" draft="contributed">{0} smi</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} smi</unitPattern>
+			</unit>
+			<unit type="length-point">
+				<displayName draft="contributed">pt</displayName>
+				<unitPattern count="one" draft="contributed">{0} pt</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} pt</unitPattern>
+			</unit>
+			<unit type="length-solar-radius">
+				<displayName draft="contributed">R☉</displayName>
+				<unitPattern count="one" draft="contributed">{0} R☉</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} R☉</unitPattern>
+			</unit>
+			<unit type="light-lux">
+				<displayName draft="contributed">lx</displayName>
+				<unitPattern count="one" draft="contributed">{0} lx</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} lx</unitPattern>
+			</unit>
+			<unit type="light-candela">
+				<displayName draft="contributed">cd</displayName>
+				<unitPattern count="one" draft="contributed">{0} cd</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} cd</unitPattern>
+			</unit>
+			<unit type="light-lumen">
+				<displayName draft="contributed">lm</displayName>
+				<unitPattern count="one" draft="contributed">{0} lm</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} lm</unitPattern>
+			</unit>
+			<unit type="light-solar-luminosity">
+				<displayName draft="contributed">L☉</displayName>
+				<unitPattern count="one" draft="contributed">{0} L☉</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} L☉</unitPattern>
+			</unit>
+			<unit type="mass-tonne">
+				<displayName draft="contributed">t</displayName>
+				<unitPattern count="one" draft="contributed">{0} t</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} t</unitPattern>
 			</unit>
 			<unit type="mass-kilogram">
 				<displayName>kg</displayName>
 				<unitPattern count="one">{0} kg</unitPattern>
 				<unitPattern count="other">{0} kg</unitPattern>
+				<perUnitPattern draft="contributed">{0}/kg</perUnitPattern>
 			</unit>
 			<unit type="mass-gram">
 				<displayName>g</displayName>
 				<unitPattern count="one">{0} g</unitPattern>
 				<unitPattern count="other">{0} g</unitPattern>
+				<perUnitPattern draft="contributed">{0}/g</perUnitPattern>
+			</unit>
+			<unit type="mass-milligram">
+				<displayName draft="contributed">mg</displayName>
+				<unitPattern count="one" draft="contributed">{0} mg</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} mg</unitPattern>
+			</unit>
+			<unit type="mass-microgram">
+				<displayName draft="contributed">μg</displayName>
+				<unitPattern count="one">{0} μg</unitPattern>
+				<unitPattern count="other">{0} μg</unitPattern>
+			</unit>
+			<unit type="mass-ton">
+				<displayName draft="contributed">tn</displayName>
+				<unitPattern count="one" draft="contributed">{0} tn</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} tn</unitPattern>
+			</unit>
+			<unit type="mass-stone">
+				<displayName>стоун.</displayName>
+				<unitPattern count="one">{0} st</unitPattern>
+				<unitPattern count="other">{0} st</unitPattern>
 			</unit>
 			<unit type="mass-pound">
+				<displayName draft="contributed">lb</displayName>
 				<unitPattern count="one">{0} фунт</unitPattern>
 				<unitPattern count="other">{0} фунта</unitPattern>
+				<perUnitPattern draft="contributed">{0}/lb</perUnitPattern>
 			</unit>
 			<unit type="mass-ounce">
+				<displayName draft="contributed">oz</displayName>
 				<unitPattern count="one">{0} унц.</unitPattern>
 				<unitPattern count="other">{0} унц.</unitPattern>
+				<perUnitPattern draft="contributed">{0}/oz</perUnitPattern>
+			</unit>
+			<unit type="mass-ounce-troy">
+				<displayName draft="contributed">тр. унц.</displayName>
+				<unitPattern count="one" draft="contributed">{0} тр. унц.</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} тр. унц.</unitPattern>
+			</unit>
+			<unit type="mass-carat">
+				<displayName draft="contributed">CD</displayName>
+				<unitPattern count="one" draft="contributed">{0} CD</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} CD</unitPattern>
 			</unit>
 			<unit type="mass-dalton">
 				<displayName draft="contributed">Da</displayName>
+				<unitPattern count="one" draft="contributed">{0} Da</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} Da</unitPattern>
+			</unit>
+			<unit type="mass-earth-mass">
+				<displayName draft="contributed">M⊕</displayName>
+				<unitPattern count="one" draft="contributed">{0} M⊕</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} M⊕</unitPattern>
+			</unit>
+			<unit type="mass-solar-mass">
+				<displayName draft="contributed">M☉</displayName>
+				<unitPattern count="one" draft="contributed">{0} M☉</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} M☉</unitPattern>
+			</unit>
+			<unit type="mass-grain">
+				<displayName draft="contributed">гран</displayName>
+				<unitPattern count="one" draft="contributed">{0} гран</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} грана</unitPattern>
+			</unit>
+			<unit type="power-gigawatt">
+				<displayName draft="contributed">GW</displayName>
+				<unitPattern count="one" draft="contributed">{0} GW</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} GW</unitPattern>
+			</unit>
+			<unit type="power-megawatt">
+				<displayName draft="contributed">MW</displayName>
+				<unitPattern count="one" draft="contributed">{0} MW</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} MW</unitPattern>
 			</unit>
 			<unit type="power-kilowatt">
+				<displayName draft="contributed">kW</displayName>
 				<unitPattern count="one">{0} kW</unitPattern>
 				<unitPattern count="other">{0} kW</unitPattern>
 			</unit>
 			<unit type="power-watt">
+				<displayName draft="contributed">W</displayName>
 				<unitPattern count="one">{0} W</unitPattern>
 				<unitPattern count="other">{0} W</unitPattern>
 			</unit>
+			<unit type="power-milliwatt">
+				<displayName draft="contributed">mW</displayName>
+				<unitPattern count="one" draft="contributed">{0} mW</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} mW</unitPattern>
+			</unit>
 			<unit type="power-horsepower">
+				<displayName draft="contributed">к. с.</displayName>
 				<unitPattern count="one">{0} к.с.</unitPattern>
 				<unitPattern count="other">{0} к.с.</unitPattern>
 			</unit>
+			<unit type="pressure-millimeter-ofhg">
+				<displayName draft="contributed">mmHg</displayName>
+				<unitPattern count="one" draft="contributed">{0} mmHg</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} mmHg</unitPattern>
+			</unit>
+			<unit type="pressure-pound-force-per-square-inch">
+				<displayName draft="contributed">psi</displayName>
+				<unitPattern count="one" draft="contributed">{0} psi</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} psi</unitPattern>
+			</unit>
 			<unit type="pressure-inch-ofhg">
+				<displayName draft="contributed">inHg</displayName>
 				<unitPattern count="one">{0} inHg</unitPattern>
 				<unitPattern count="other">{0} inHg</unitPattern>
 			</unit>
+			<unit type="pressure-bar">
+				<displayName draft="contributed">bar</displayName>
+				<unitPattern count="one" draft="contributed">{0} bar</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} bar</unitPattern>
+			</unit>
 			<unit type="pressure-millibar">
+				<displayName draft="contributed">mbar</displayName>
 				<unitPattern count="one">{0} mbar</unitPattern>
 				<unitPattern count="other">{0} mbar</unitPattern>
 			</unit>
+			<unit type="pressure-atmosphere">
+				<displayName draft="contributed">atm</displayName>
+				<unitPattern count="one" draft="contributed">{0} atm</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} atm</unitPattern>
+			</unit>
+			<unit type="pressure-pascal">
+				<displayName draft="contributed">Pa</displayName>
+				<unitPattern count="one" draft="contributed">{0} Pa</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} Pa</unitPattern>
+			</unit>
 			<unit type="pressure-hectopascal">
+				<displayName draft="contributed">hPa</displayName>
 				<unitPattern count="one">{0} hPa</unitPattern>
 				<unitPattern count="other">{0} hPa</unitPattern>
+			</unit>
+			<unit type="pressure-kilopascal">
+				<displayName draft="contributed">kPa</displayName>
+				<unitPattern count="one" draft="contributed">{0} kPa</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} kPa</unitPattern>
+			</unit>
+			<unit type="pressure-megapascal">
+				<displayName draft="contributed">MPa</displayName>
+				<unitPattern count="one" draft="contributed">{0} MPa</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} MPa</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName>km/h</displayName>
@@ -9018,12 +9612,24 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} km/h</unitPattern>
 			</unit>
 			<unit type="speed-meter-per-second">
+				<displayName draft="contributed">m/s</displayName>
 				<unitPattern count="one">{0} m/s</unitPattern>
 				<unitPattern count="other">{0} m/s</unitPattern>
 			</unit>
 			<unit type="speed-mile-per-hour">
+				<displayName draft="contributed">mph</displayName>
 				<unitPattern count="one">{0} миля/ч</unitPattern>
 				<unitPattern count="other">{0} мили/ч</unitPattern>
+			</unit>
+			<unit type="speed-knot">
+				<displayName draft="contributed">kn</displayName>
+				<unitPattern count="one" draft="contributed">{0} kn</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} kn</unitPattern>
+			</unit>
+			<unit type="temperature-generic">
+				<displayName draft="contributed">°</displayName>
+				<unitPattern count="one" draft="contributed">{0}°</unitPattern>
+				<unitPattern count="other" draft="contributed">{0}°</unitPattern>
 			</unit>
 			<unit type="temperature-celsius">
 				<displayName>°C</displayName>
@@ -9031,32 +9637,199 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}°C</unitPattern>
 			</unit>
 			<unit type="temperature-fahrenheit">
+				<displayName draft="contributed">°F</displayName>
 				<unitPattern count="one">{0} °F</unitPattern>
 				<unitPattern count="other">{0} °F</unitPattern>
 			</unit>
+			<unit type="temperature-kelvin">
+				<displayName draft="contributed">K</displayName>
+				<unitPattern count="one" draft="contributed">{0} K</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} K</unitPattern>
+			</unit>
+			<unit type="torque-pound-force-foot">
+				<displayName draft="contributed">lbf⋅ft</displayName>
+				<unitPattern count="one" draft="contributed">{0} lbf⋅ft</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} lbf⋅ft</unitPattern>
+			</unit>
+			<unit type="torque-newton-meter">
+				<displayName draft="contributed">N⋅m</displayName>
+				<unitPattern count="one" draft="contributed">{0} N⋅m</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} N⋅m</unitPattern>
+			</unit>
 			<unit type="volume-cubic-kilometer">
+				<displayName draft="contributed">km³</displayName>
 				<unitPattern count="one">{0} km³</unitPattern>
 				<unitPattern count="other">{0} km³</unitPattern>
 			</unit>
+			<unit type="volume-cubic-meter">
+				<displayName draft="contributed">m³</displayName>
+				<unitPattern count="one" draft="contributed">{0} m³</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} m³</unitPattern>
+				<perUnitPattern draft="contributed">{0}/m³</perUnitPattern>
+			</unit>
+			<unit type="volume-cubic-centimeter">
+				<displayName draft="contributed">cm³</displayName>
+				<unitPattern count="one" draft="contributed">{0} cm³</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} cm³</unitPattern>
+				<perUnitPattern draft="contributed">{0}/cm³</perUnitPattern>
+			</unit>
 			<unit type="volume-cubic-mile">
+				<displayName draft="contributed">mi³</displayName>
 				<unitPattern count="one">{0} куб. миля</unitPattern>
 				<unitPattern count="other">{0} куб. мили</unitPattern>
+			</unit>
+			<unit type="volume-cubic-yard">
+				<displayName draft="contributed">yd³</displayName>
+				<unitPattern count="one" draft="contributed">{0} yd³</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} yd³</unitPattern>
+			</unit>
+			<unit type="volume-cubic-foot">
+				<displayName draft="contributed">ft³</displayName>
+				<unitPattern count="one" draft="contributed">{0} ft³</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} ft³</unitPattern>
+			</unit>
+			<unit type="volume-cubic-inch">
+				<displayName draft="contributed">in³</displayName>
+				<unitPattern count="one" draft="contributed">{0} in³</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} in³</unitPattern>
+			</unit>
+			<unit type="volume-megaliter">
+				<displayName draft="contributed">Ml</displayName>
+				<unitPattern count="one" draft="contributed">{0} Ml</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} Ml</unitPattern>
+			</unit>
+			<unit type="volume-hectoliter">
+				<displayName draft="contributed">hl</displayName>
+				<unitPattern count="one" draft="contributed">{0} hl</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} hl</unitPattern>
 			</unit>
 			<unit type="volume-liter">
 				<displayName>l</displayName>
 				<unitPattern count="one">{0} l</unitPattern>
 				<unitPattern count="other">{0} l</unitPattern>
+				<perUnitPattern draft="contributed">{0}/l</perUnitPattern>
+			</unit>
+			<unit type="volume-deciliter">
+				<displayName draft="contributed">dl</displayName>
+				<unitPattern count="one" draft="contributed">{0} dl</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} dl</unitPattern>
+			</unit>
+			<unit type="volume-centiliter">
+				<displayName draft="contributed">cl</displayName>
+				<unitPattern count="one" draft="contributed">{0} cl</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} cl</unitPattern>
+			</unit>
+			<unit type="volume-milliliter">
+				<displayName draft="contributed">ml</displayName>
+				<unitPattern count="one" draft="contributed">{0} ml</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} ml</unitPattern>
+			</unit>
+			<unit type="volume-pint-metric">
+				<displayName draft="contributed">mpt</displayName>
+				<unitPattern count="one" draft="contributed">{0} mpt</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} mpt</unitPattern>
+			</unit>
+			<unit type="volume-cup-metric">
+				<displayName draft="contributed">mcup</displayName>
+				<unitPattern count="one" draft="contributed">{0} mc</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} mc</unitPattern>
+			</unit>
+			<unit type="volume-acre-foot">
+				<displayName draft="contributed">ac ft</displayName>
+				<unitPattern count="one" draft="contributed">{0} ac ft</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} ac ft</unitPattern>
+			</unit>
+			<unit type="volume-bushel">
+				<displayName draft="contributed">бушели</displayName>
+				<unitPattern count="one" draft="contributed">{0} bu</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} bu</unitPattern>
+			</unit>
+			<unit type="volume-gallon">
+				<displayName draft="contributed">US gal</displayName>
+				<unitPattern count="one" draft="contributed">{0} gal US</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} gal US</unitPattern>
+				<perUnitPattern draft="contributed">{0}/gal US</perUnitPattern>
+			</unit>
+			<unit type="volume-gallon-imperial">
+				<displayName draft="contributed">имп. галон</displayName>
+				<unitPattern count="one" draft="contributed">{0} имп. галон</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} имп. галона</unitPattern>
+				<perUnitPattern draft="contributed">{0}/имп. галон</perUnitPattern>
+			</unit>
+			<unit type="volume-quart">
+				<displayName draft="contributed">qt</displayName>
+				<unitPattern count="one" draft="contributed">{0} qt</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} qt</unitPattern>
+			</unit>
+			<unit type="volume-pint">
+				<displayName draft="contributed">pt</displayName>
+				<unitPattern count="one" draft="contributed">{0} pt</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} pt</unitPattern>
+			</unit>
+			<unit type="volume-cup">
+				<displayName draft="contributed">ч.</displayName>
+				<unitPattern count="one" draft="contributed">{0} ч.</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} ч.</unitPattern>
+			</unit>
+			<unit type="volume-fluid-ounce">
+				<displayName draft="contributed">US fl oz</displayName>
+				<unitPattern count="one" draft="contributed">{0} fl oz US</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} fl oz US</unitPattern>
+			</unit>
+			<unit type="volume-fluid-ounce-imperial">
+				<displayName draft="contributed">Imp. fl oz</displayName>
+				<unitPattern count="one" draft="contributed">{0} fl oz Imp.</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} fl oz Imp.</unitPattern>
+			</unit>
+			<unit type="volume-tablespoon">
+				<displayName draft="contributed">с. л.</displayName>
+				<unitPattern count="one" draft="contributed">{0} с. л.</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} с. л.</unitPattern>
+			</unit>
+			<unit type="volume-teaspoon">
+				<displayName draft="contributed">ч. л.</displayName>
+				<unitPattern count="one" draft="contributed">{0} ч. л.</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} ч. л.</unitPattern>
 			</unit>
 			<unit type="volume-barrel">
 				<displayName draft="contributed">bbl</displayName>
+				<unitPattern count="one" draft="contributed">{0} bbl</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} bbl</unitPattern>
 			</unit>
 			<unit type="volume-dessert-spoon">
+				<displayName draft="contributed">дес. лъжица</displayName>
 				<unitPattern count="one">{0} дес. лъж.</unitPattern>
 				<unitPattern count="other">{0} дес. лъж.</unitPattern>
 			</unit>
 			<unit type="volume-dessert-spoon-imperial">
+				<displayName draft="contributed">брит. дес. лъжица</displayName>
 				<unitPattern count="one">{0} брит. дес. лъж.</unitPattern>
 				<unitPattern count="other">{0} брит. дес. лъж.</unitPattern>
+			</unit>
+			<unit type="volume-drop">
+				<displayName draft="contributed">капка</displayName>
+				<unitPattern count="one" draft="contributed">{0} капка</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} капки</unitPattern>
+			</unit>
+			<unit type="volume-dram">
+				<displayName draft="contributed">течен драм</displayName>
+				<unitPattern count="one" draft="contributed">{0} теч. драм</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} теч. драма</unitPattern>
+			</unit>
+			<unit type="volume-jigger">
+				<displayName draft="contributed">джигър</displayName>
+				<unitPattern count="one" draft="contributed">{0} джигър</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} джигъра</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<displayName draft="contributed">щипка</displayName>
+				<unitPattern count="one" draft="contributed">{0} щипка</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} щипки</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName draft="contributed">имп. кварта</displayName>
+				<unitPattern count="one" draft="contributed">{0} имп. кварта</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} имп. кварти</unitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName>посока</displayName>
@@ -9089,13 +9862,29 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<listPatternPart type="end">{0} или {1}</listPatternPart>
 			<listPatternPart type="2">{0} или {1}</listPatternPart>
 		</listPattern>
+		<listPattern type="or-narrow">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0} или {1}</listPatternPart>
+			<listPatternPart type="2">{0} или {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="or-short">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0} или {1}</listPatternPart>
+			<listPatternPart type="2">{0} или {1}</listPatternPart>
+		</listPattern>
 		<listPattern type="standard-narrow">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0} и {1}</listPatternPart>
 			<listPatternPart type="2">{0}, {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="standard-short">
 			<listPatternPart type="start">{0}, {1}</listPatternPart>
 			<listPatternPart type="middle">{0}, {1}</listPatternPart>
 			<listPatternPart type="end">{0} и {1}</listPatternPart>
+			<listPatternPart type="2">{0} и {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="unit">
 			<listPatternPart type="start">{0}, {1}</listPatternPart>
@@ -9295,17 +10084,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	</typographicNames>
 	<personNames>
 		<nameOrderLocales order="givenFirst">und bg</nameOrderLocales>
-		<nameOrderLocales order="surnameFirst">ko vi yue zh</nameOrderLocales>
 		<initialPattern type="initial">{0}.</initialPattern>
 		<initialPattern type="initialSequence">{0} {1}</initialPattern>
 		<personName order="givenFirst" length="long" usage="referring" formality="formal">
-			<namePattern>{prefix} {given} {given2} {surname-core}, {suffix}</namePattern>
+			<namePattern>{title} {given} {given2} {surname-core}, {credentials}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="long" usage="referring" formality="informal">
 			<namePattern>{given} {surname-core}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="long" usage="addressing" formality="formal">
-			<namePattern>{prefix} {surname-core}</namePattern>
+			<namePattern>{title} {surname-core}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="long" usage="addressing" formality="informal">
 			<namePattern>{given}</namePattern>
@@ -9313,17 +10101,23 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<personName order="givenFirst" length="long" usage="monogram" formality="formal">
 			<namePattern>{given-monogram-allCaps}{given2-monogram-allCaps}{surname-core-monogram-allCaps}</namePattern>
 		</personName>
+		<personName order="givenFirst" length="long" usage="monogram" formality="informal">
+			<namePattern>{given-monogram-allCaps}{given2-monogram-allCaps}{surname-core-monogram-allCaps}</namePattern>
+		</personName>
 		<personName order="givenFirst" length="medium" usage="referring" formality="formal">
-			<namePattern>{prefix} {given} {given2} {surname-core}, {suffix}</namePattern>
+			<namePattern>{title} {given} {given2} {surname-core}, {credentials}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="referring" formality="informal">
 			<namePattern>{given} {surname-core}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="addressing" formality="formal">
-			<namePattern>{prefix} {surname-core}</namePattern>
+			<namePattern>{title} {surname-core}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="addressing" formality="informal">
 			<namePattern>{given}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="monogram" formality="formal">
+			<namePattern>{given-monogram-allCaps}{given2-monogram-allCaps}{surname-core-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="monogram" formality="informal">
 			<namePattern>{given-monogram-allCaps}</namePattern>
@@ -9335,22 +10129,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<namePattern>{given} {surname-core-initial}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="addressing" formality="formal">
-			<namePattern>{prefix} {surname-core}</namePattern>
+			<namePattern>{title} {surname-core}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="addressing" formality="informal">
 			<namePattern>{given}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="monogram" formality="formal">
+			<namePattern>{given-monogram-allCaps}{given2-monogram-allCaps}{surname-core-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="monogram" formality="informal">
 			<namePattern>{given-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="referring" formality="formal">
-			<namePattern>{prefix} {surname-core}, {given} {given2}, {suffix}</namePattern>
+			<namePattern>{title} {surname-core}, {given} {given2}, {credentials}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="referring" formality="informal">
 			<namePattern>{surname-core}, {given}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="addressing" formality="formal">
-			<namePattern>{prefix} {surname-core}</namePattern>
+			<namePattern>{title} {surname-core}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="addressing" formality="informal">
 			<namePattern>{given}</namePattern>
@@ -9362,13 +10159,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<namePattern>{surname-core-monogram-allCaps}{given-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="referring" formality="formal">
-			<namePattern>{prefix} {surname-core}, {given} {given2-initial}, {suffix}</namePattern>
+			<namePattern>{title} {surname-core}, {given} {given2-initial}, {credentials}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="referring" formality="informal">
 			<namePattern>{surname-core}, {given}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="addressing" formality="formal">
-			<namePattern>{prefix} {surname-core}</namePattern>
+			<namePattern>{title} {surname-core}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="addressing" formality="informal">
 			<namePattern>{given}</namePattern>
@@ -9386,7 +10183,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<namePattern>{surname-core}, {given-initial}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="addressing" formality="formal">
-			<namePattern>{prefix} {surname-core}</namePattern>
+			<namePattern>{title} {surname-core}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="addressing" formality="informal">
 			<namePattern>{given}</namePattern>
@@ -9398,13 +10195,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<namePattern>{given-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="sorting" length="long" usage="referring" formality="formal">
-			<namePattern>{prefix} {surname-core}, {given} {given2} {surname-prefix}</namePattern>
+			<namePattern>{title} {surname-core}, {given} {given2} {surname-prefix}</namePattern>
 		</personName>
 		<personName order="sorting" length="long" usage="referring" formality="informal">
 			<namePattern>{surname-core}, {given}</namePattern>
 		</personName>
 		<personName order="sorting" length="medium" usage="referring" formality="formal">
-			<namePattern>{prefix} {surname-core}, {given} {given2-initial} {surname-prefix}</namePattern>
+			<namePattern>{title} {surname-core}, {given} {given2-initial} {surname-prefix}</namePattern>
 		</personName>
 		<personName order="sorting" length="medium" usage="referring" formality="informal">
 			<namePattern>{surname-core}, {given}</namePattern>
@@ -9415,27 +10212,51 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<personName order="sorting" length="short" usage="referring" formality="informal">
 			<namePattern>{surname-core}, {given-initial}</namePattern>
 		</personName>
-		<sampleName item="givenOnly">
+		<sampleName item="nativeG">
 			<nameField type="given">Иван</nameField>
 		</sampleName>
-		<sampleName item="givenSurnameOnly">
+		<sampleName item="nativeGS">
 			<nameField type="given">Мария</nameField>
 			<nameField type="surname">Петрова</nameField>
 		</sampleName>
-		<sampleName item="given12Surname">
+		<sampleName item="nativeGGS">
 			<nameField type="given">Ана</nameField>
 			<nameField type="given2">Иванова</nameField>
 			<nameField type="surname">Димитрова</nameField>
 		</sampleName>
-		<sampleName item="full">
-			<nameField type="prefix">проф. д-р</nameField>
-			<nameField type="given">Ана</nameField>
-			<nameField type="given-informal">Ани</nameField>
-			<nameField type="given2">Иванова</nameField>
+		<sampleName item="nativeFull">
+			<nameField type="title">г-н</nameField>
+			<nameField type="given">Иван</nameField>
+			<nameField type="given-informal">Ванко</nameField>
+			<nameField type="given2">Асен</nameField>
 			<nameField type="surname-prefix">фон</nameField>
-			<nameField type="surname-core">Димитрова</nameField>
-			<nameField type="surname2">Петкова</nameField>
-			<nameField type="suffix">доктор</nameField>
+			<nameField type="surname-core">Вернер</nameField>
+			<nameField type="surname2">Иванов</nameField>
+			<nameField type="generation">младши</nameField>
+			<nameField type="credentials">проф. д-р</nameField>
+		</sampleName>
+		<sampleName item="foreignG">
+			<nameField type="given">Джон</nameField>
+		</sampleName>
+		<sampleName item="foreignGS">
+			<nameField type="given">Кати</nameField>
+			<nameField type="surname">Мюлер</nameField>
+		</sampleName>
+		<sampleName item="foreignGGS">
+			<nameField type="given">Зара</nameField>
+			<nameField type="given2">Мери</nameField>
+			<nameField type="surname">Джоунс</nameField>
+		</sampleName>
+		<sampleName item="foreignFull">
+			<nameField type="title">проф. д-р</nameField>
+			<nameField type="given">Ада Корнелия</nameField>
+			<nameField type="given-informal">Ади</nameField>
+			<nameField type="given2">Цезар Мартин</nameField>
+			<nameField type="surname-prefix">фон</nameField>
+			<nameField type="surname-core">Брюл</nameField>
+			<nameField type="surname2">Гонзалес Доминго</nameField>
+			<nameField type="generation">младша</nameField>
+			<nameField type="credentials">доктор</nameField>
 		</sampleName>
 	</personNames>
 </ldml>

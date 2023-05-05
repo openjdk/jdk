@@ -43,8 +43,10 @@ public final class MainWrapper {
 
         // It is needed to register finalizer thread in default thread group
         // So FinalizerThread thread can't be in virtual threads group
+
         FinalizableObject finalizableObject = new FinalizableObject();
         finalizableObject.registerCleanup();
+
 
         Runnable task = () -> {
             try {
@@ -76,16 +78,7 @@ public final class MainWrapper {
     }
 
     static Thread unstartedVirtualThread(Runnable task) {
-        try {
-            Object builder = Thread.class.getMethod("ofVirtual").invoke(null);
-            Class<?> clazz = Class.forName("java.lang.Thread$Builder");
-            Method unstarted = clazz.getMethod("unstarted", Runnable.class);
-            return (Thread) unstarted.invoke(builder, task);
-        } catch (RuntimeException | Error e) {
-            throw e;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        return Thread.ofVirtual().unstarted(task);
     }
 
 }

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 /*
  * @test
  * @enablePreview
- * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64" | os.arch == "riscv64"
+ * @requires jdk.foreign.linker != "UNSUPPORTED"
  * @run testng/othervm --enable-native-access=ALL-UNNAMED TestFunctionDescriptor
  */
 
@@ -101,6 +101,12 @@ public class TestFunctionDescriptor extends NativeTestHelper {
     public void testEquals() {
         FunctionDescriptor fd = FunctionDescriptor.of(C_INT, C_INT, C_INT);
         assertEquals(fd, fd);
+        FunctionDescriptor fdReturnSomethingElse = FunctionDescriptor.of(C_LONG_LONG, C_INT, C_INT);
+        FunctionDescriptor fdOtherArguments = FunctionDescriptor.of(C_INT, C_INT);
+        assertFalse(fd.equals(fdReturnSomethingElse));
+        assertFalse(fd.equals(fdOtherArguments));
+        assertFalse(fd.equals(null));
+        assertFalse(fd.equals("A"));
     }
 
     @Test
@@ -121,4 +127,17 @@ public class TestFunctionDescriptor extends NativeTestHelper {
                 MemoryLayout.paddingLayout(32));
         fd.toMethodType(); // should throw
     }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void testIllegalInsertArgNegIndex() {
+        FunctionDescriptor fd = FunctionDescriptor.of(C_INT);
+        fd.insertArgumentLayouts(-1, C_INT);
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void testIllegalInsertArgOutOfBounds() {
+        FunctionDescriptor fd = FunctionDescriptor.of(C_INT);
+        fd.insertArgumentLayouts(2, C_INT);
+    }
+
 }
