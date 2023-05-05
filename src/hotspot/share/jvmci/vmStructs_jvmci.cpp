@@ -129,7 +129,7 @@
   nonstatic_field(ConstantPool,                _source_file_name_index,                u2)                                           \
                                                                                                                                      \
   nonstatic_field(ConstMethod,                 _constants,                             ConstantPool*)                                \
-  nonstatic_field(ConstMethod,                 _flags,                                 u2)                                           \
+  nonstatic_field(ConstMethod,                 _flags._flags,                          u4)                                           \
   nonstatic_field(ConstMethod,                 _code_size,                             u2)                                           \
   nonstatic_field(ConstMethod,                 _name_index,                            u2)                                           \
   nonstatic_field(ConstMethod,                 _signature_index,                       u2)                                           \
@@ -228,7 +228,7 @@
   nonstatic_field(Method,                      _access_flags,                                 AccessFlags)                           \
   nonstatic_field(Method,                      _vtable_index,                                 int)                                   \
   nonstatic_field(Method,                      _intrinsic_id,                                 u2)                                    \
-  nonstatic_field(Method,                      _flags,                                        u2)                                    \
+  nonstatic_field(Method,                      _flags._status,                                u4)                                    \
   volatile_nonstatic_field(Method,             _code,                                         CompiledMethod*)                       \
   volatile_nonstatic_field(Method,             _from_compiled_entry,                          address)                               \
                                                                                                                                      \
@@ -416,8 +416,6 @@
   declare_constant(JVMCINMethodData::SPECULATION_LENGTH_BITS)             \
                                                                           \
   declare_constant(JVM_ACC_WRITTEN_FLAGS)                                 \
-  declare_constant(JVM_ACC_MONITOR_MATCH)                                 \
-  declare_constant(JVM_ACC_HAS_MONITOR_BYTECODES)                         \
   declare_constant(JVM_ACC_HAS_FINALIZER)                                 \
   declare_constant(JVM_ACC_IS_CLONEABLE_FAST)                             \
   declare_constant(JVM_ACC_IS_HIDDEN_CLASS)                               \
@@ -582,11 +580,16 @@
   declare_constant(ConstantPool::CPCACHE_INDEX_TAG)                       \
   declare_constant(ConstantPool::_has_dynamic_constant)                   \
                                                                           \
-  declare_constant(ConstMethod::_has_linenumber_table)                    \
-  declare_constant(ConstMethod::_has_localvariable_table)                 \
-  declare_constant(ConstMethod::_has_exception_table)                     \
-  declare_constant(ConstMethod::_has_method_annotations)                  \
-  declare_constant(ConstMethod::_has_parameter_annotations)               \
+  declare_constant(ConstMethodFlags::_misc_has_linenumber_table)          \
+  declare_constant(ConstMethodFlags::_misc_has_localvariable_table)       \
+  declare_constant(ConstMethodFlags::_misc_has_exception_table)           \
+  declare_constant(ConstMethodFlags::_misc_has_method_annotations)        \
+  declare_constant(ConstMethodFlags::_misc_has_parameter_annotations)     \
+  declare_constant(ConstMethodFlags::_misc_caller_sensitive)              \
+  declare_constant(ConstMethodFlags::_misc_is_hidden)                     \
+  declare_constant(ConstMethodFlags::_misc_intrinsic_candidate)           \
+  declare_constant(ConstMethodFlags::_misc_reserved_stack_access)         \
+  declare_constant(ConstMethodFlags::_misc_changes_current_thread)        \
                                                                           \
   declare_constant(CounterData::count_off)                                \
                                                                           \
@@ -683,13 +686,8 @@
                                                                           \
   declare_constant(markWord::no_hash)                                     \
                                                                           \
-  declare_constant(Method::_caller_sensitive)                             \
-  declare_constant(Method::_force_inline)                                 \
-  declare_constant(Method::_dont_inline)                                  \
-  declare_constant(Method::_hidden)                                       \
-  declare_constant(Method::_intrinsic_candidate)                          \
-  declare_constant(Method::_reserved_stack_access)                        \
-  declare_constant(Method::_changes_current_thread)                       \
+  declare_constant(MethodFlags::_misc_force_inline)                       \
+  declare_constant(MethodFlags::_misc_dont_inline)                        \
                                                                           \
   declare_constant(Method::nonvirtual_vtable_index)                       \
   declare_constant(Method::invalid_vtable_index)                          \

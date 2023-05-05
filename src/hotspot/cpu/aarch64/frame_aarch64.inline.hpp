@@ -39,11 +39,11 @@
 // Constructors:
 
 inline frame::frame() {
-  _pc = NULL;
-  _sp = NULL;
-  _unextended_sp = NULL;
-  _fp = NULL;
-  _cb = NULL;
+  _pc = nullptr;
+  _sp = nullptr;
+  _unextended_sp = nullptr;
+  _fp = nullptr;
+  _cb = nullptr;
   _deopt_state = unknown;
   _sp_is_trusted = false;
   _on_heap = false;
@@ -60,11 +60,11 @@ inline void frame::init(intptr_t* sp, intptr_t* fp, address pc) {
   _unextended_sp = sp;
   _fp = fp;
   _pc = pc;
-  _oop_map = NULL;
+  _oop_map = nullptr;
   _on_heap = false;
   DEBUG_ONLY(_frame_index = -1;)
 
-  assert(pc != NULL, "no pc?");
+  assert(pc != nullptr, "no pc?");
   _cb = CodeCache::find_blob(pc);
   setup(pc);
 }
@@ -73,10 +73,10 @@ inline void frame::setup(address pc) {
   adjust_unextended_sp();
 
   address original_pc = CompiledMethod::get_deopt_original_pc(this);
-  if (original_pc != NULL) {
+  if (original_pc != nullptr) {
     _pc = original_pc;
     _deopt_state = is_deoptimized;
-    assert(_cb == NULL || _cb->as_compiled_method()->insts_contains_inclusive(_pc),
+    assert(_cb == nullptr || _cb->as_compiled_method()->insts_contains_inclusive(_pc),
            "original PC must be in the main code section of the compiled method (or must be immediately following it)");
   } else {
     if (_cb == SharedRuntime::deopt_blob()) {
@@ -100,10 +100,10 @@ inline frame::frame(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, address
   _unextended_sp = unextended_sp;
   _fp = fp;
   _pc = pc;
-  assert(pc != NULL, "no pc?");
+  assert(pc != nullptr, "no pc?");
   _cb = cb;
-  _oop_map = NULL;
-  assert(_cb != NULL, "pc: " INTPTR_FORMAT, p2i(pc));
+  _oop_map = nullptr;
+  assert(_cb != nullptr, "pc: " INTPTR_FORMAT, p2i(pc));
   _on_heap = false;
   DEBUG_ONLY(_frame_index = -1;)
 
@@ -124,7 +124,7 @@ inline frame::frame(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, address
 
   // In thaw, non-heap frames use this constructor to pass oop_map.  I don't know why.
   assert(_on_heap || _cb != nullptr, "these frames are always heap frames");
-  if (cb != NULL) {
+  if (cb != nullptr) {
     setup(pc);
   }
 #ifdef ASSERT
@@ -144,8 +144,8 @@ inline frame::frame(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, address
   _fp = fp;
   _pc = pc;
   _cb = CodeCache::find_blob_fast(pc);
-  _oop_map = NULL;
-  assert(_cb != NULL, "pc: " INTPTR_FORMAT " sp: " INTPTR_FORMAT " unextended_sp: " INTPTR_FORMAT " fp: " INTPTR_FORMAT, p2i(pc), p2i(sp), p2i(unextended_sp), p2i(fp));
+  _oop_map = nullptr;
+  assert(_cb != nullptr, "pc: " INTPTR_FORMAT " sp: " INTPTR_FORMAT " unextended_sp: " INTPTR_FORMAT " fp: " INTPTR_FORMAT, p2i(pc), p2i(sp), p2i(unextended_sp), p2i(fp));
   _on_heap = false;
   DEBUG_ONLY(_frame_index = -1;)
 
@@ -171,13 +171,13 @@ inline frame::frame(intptr_t* sp, intptr_t* fp) {
   // call a specilaized frame constructor instead of this one.
   // Then we could use the assert below. However this assert is of somewhat dubious
   // value.
-  // assert(_pc != NULL, "no pc?");
+  // assert(_pc != nullptr, "no pc?");
 
   _cb = CodeCache::find_blob(_pc);
   adjust_unextended_sp();
 
   address original_pc = CompiledMethod::get_deopt_original_pc(this);
-  if (original_pc != NULL) {
+  if (original_pc != nullptr) {
     _pc = original_pc;
     _deopt_state = is_deoptimized;
   } else {
@@ -198,19 +198,19 @@ inline bool frame::equal(frame other) const {
 }
 
 // Return unique id for this frame. The id must have a value where we can distinguish
-// identity and younger/older relationship. NULL represents an invalid (incomparable)
+// identity and younger/older relationship. null represents an invalid (incomparable)
 // frame.
 inline intptr_t* frame::id(void) const { return unextended_sp(); }
 
 // Return true if the frame is older (less recent activation) than the frame represented by id
-inline bool frame::is_older(intptr_t* id) const   { assert(this->id() != NULL && id != NULL, "NULL frame id");
+inline bool frame::is_older(intptr_t* id) const   { assert(this->id() != nullptr && id != nullptr, "null frame id");
                                                     return this->id() > id ; }
 
 inline intptr_t* frame::link() const              { return (intptr_t*) *(intptr_t **)addr_at(link_offset); }
 
 inline intptr_t* frame::link_or_null() const {
   intptr_t** ptr = (intptr_t **)addr_at(link_offset);
-  return os::is_readable_pointer(ptr) ? *ptr : NULL;
+  return os::is_readable_pointer(ptr) ? *ptr : nullptr;
 }
 
 inline intptr_t* frame::unextended_sp() const          { assert_absolute(); return _unextended_sp; }
@@ -219,7 +219,7 @@ inline int  frame::offset_unextended_sp() const        { assert_offset();   retu
 inline void frame::set_offset_unextended_sp(int value) { assert_on_heap();  _offset_unextended_sp = value; }
 
 inline intptr_t* frame::real_fp() const {
-  if (_cb != NULL) {
+  if (_cb != nullptr) {
     // use the frame size if valid
     int size = _cb->frame_size();
     if (size > 0) {
@@ -243,7 +243,7 @@ inline int frame::compiled_frame_stack_argsize() const {
 }
 
 inline void frame::interpreted_frame_oop_map(InterpreterOopMap* mask) const {
-  assert(mask != NULL, "");
+  assert(mask != nullptr, "");
   Method* m = interpreter_frame_method();
   int   bci = interpreter_frame_bci();
   m->mask_for(bci, mask); // OopMapCache::compute_one_oop_map(m, bci, mask);
@@ -296,7 +296,7 @@ inline oop* frame::interpreter_frame_mirror_addr() const {
 // top of expression stack
 inline intptr_t* frame::interpreter_frame_tos_address() const {
   intptr_t* last_sp = interpreter_frame_last_sp();
-  if (last_sp == NULL) {
+  if (last_sp == nullptr) {
     return sp();
   } else {
     // sp() may have been extended or shrunk by an adapter.  At least
@@ -336,13 +336,13 @@ inline JavaCallWrapper** frame::entry_frame_call_wrapper_addr() const {
 
 inline oop frame::saved_oop_result(RegisterMap* map) const {
   oop* result_adr = (oop *)map->location(r0->as_VMReg(), sp());
-  guarantee(result_adr != NULL, "bad register save location");
+  guarantee(result_adr != nullptr, "bad register save location");
   return *result_adr;
 }
 
 inline void frame::set_saved_oop_result(RegisterMap* map, oop obj) {
   oop* result_adr = (oop *)map->location(r0->as_VMReg(), sp());
-  guarantee(result_adr != NULL, "bad register save location");
+  guarantee(result_adr != nullptr, "bad register save location");
 
   *result_adr = obj;
 }
@@ -356,17 +356,17 @@ inline int frame::sender_sp_ret_address_offset() {
 }
 
 inline const ImmutableOopMap* frame::get_oop_map() const {
-  if (_cb == NULL) return NULL;
-  if (_cb->oop_maps() != NULL) {
+  if (_cb == nullptr) return nullptr;
+  if (_cb->oop_maps() != nullptr) {
     NativePostCallNop* nop = nativePostCallNop_at(_pc);
-    if (nop != NULL && nop->displacement() != 0) {
+    if (nop != nullptr && nop->displacement() != 0) {
       int slot = ((nop->displacement() >> 24) & 0xff);
       return _cb->oop_map_for_slot(slot, _pc);
     }
     const ImmutableOopMap* oop_map = OopMapSet::find_map(this);
     return oop_map;
   }
-  return NULL;
+  return nullptr;
 }
 
 //------------------------------------------------------------------------------
@@ -395,7 +395,7 @@ inline frame frame::sender_raw(RegisterMap* map) const {
   if (is_interpreted_frame()) return sender_for_interpreter_frame(map);
 
   assert(_cb == CodeCache::find_blob(pc()), "Must be the same");
-  if (_cb != NULL) return sender_for_compiled_frame(map);
+  if (_cb != nullptr) return sender_for_compiled_frame(map);
 
   // Must be native-compiled frame, i.e. the marshaling code for native
   // methods that exists in the core system.
@@ -428,13 +428,13 @@ inline frame frame::sender_for_compiled_frame(RegisterMap* map) const {
     // outside of update_register_map.
     if (!_cb->is_compiled()) { // compiled frames do not use callee-saved registers
       map->set_include_argument_oops(_cb->caller_must_gc_arguments(map->thread()));
-      if (oop_map() != NULL) {
+      if (oop_map() != nullptr) {
         _oop_map->update_register_map(this, map);
       }
     } else {
       assert(!_cb->caller_must_gc_arguments(map->thread()), "");
       assert(!map->include_argument_oops(), "");
-      assert(oop_map() == NULL || !oop_map()->has_any(OopMapValue::callee_saved_value), "callee-saved value in compiled frame");
+      assert(oop_map() == nullptr || !oop_map()->has_any(OopMapValue::callee_saved_value), "callee-saved value in compiled frame");
     }
 
     // Since the prolog does the save and restore of FP there is no oopmap
