@@ -108,7 +108,7 @@ public:
 
   static jlong exited_allocated_bytes()       { return _exited_allocated_bytes; }
   static void incr_exited_allocated_bytes(jlong size) {
-    Atomic::add(&_exited_allocated_bytes, size);
+    Atomic::add(&_exited_allocated_bytes, size, memory_order_relaxed);
   }
 
   // Support for thread dump

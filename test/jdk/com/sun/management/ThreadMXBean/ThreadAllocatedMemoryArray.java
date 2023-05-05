@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,9 +115,9 @@ public class ThreadAllocatedMemoryArray {
         // restarted after we're done sleeping.
         goSleep(400);
 
-        long[] sizes1 = mbean.getThreadAllocatedBytes(ids);
+        long[] afterSizes = mbean.getThreadAllocatedBytes(ids);
         for (int i = 0; i < NUM_THREADS; i++) {
-            checkResult(threads[i], sizes[i], sizes1[i]);
+            checkResult(threads[i], sizes[i], afterSizes[i]);
         }
 
         try {
@@ -161,17 +161,17 @@ public class ThreadAllocatedMemoryArray {
 
 
     private static void checkResult(Thread curThread,
-                                    long prev_size, long curr_size) {
-        if (curr_size < prev_size) {
+                                    long prevSize, long currSize) {
+        if (currSize < prevSize) {
             throw new RuntimeException("TEST FAILED: " +
                                        curThread.getName() +
-                                       " previous allocated bytes = " + prev_size +
-                                       " > current allocated bytes = " + curr_size);
+                                       " previous allocated bytes = " + prevSize +
+                                       " > current allocated bytes = " + currSize);
 
         }
         System.out.println(curThread.getName() +
-                           " Previous allocated bytes = " + prev_size +
-                           " Current allocated bytes = " + curr_size);
+                           " Previous allocated bytes = " + prevSize +
+                           " Current allocated bytes = " + currSize);
     }
 
     private static void goSleep(long ms) throws Exception {

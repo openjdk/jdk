@@ -109,7 +109,7 @@ Java_sun_management_ThreadImpl_getThreadAllocatedMemory1
 }
 
 JNIEXPORT jlong JNICALL
-Java_sun_management_ThreadImpl_getThreadAllocatedMemory2
+Java_sun_management_ThreadImpl_getAllThreadAllocatedMemory
   (JNIEnv *env, jclass cls)
 {
     return jmm_interface->GetAllThreadAllocatedMemory(env);

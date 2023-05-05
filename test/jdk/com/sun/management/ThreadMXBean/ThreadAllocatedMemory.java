@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -218,10 +218,10 @@ public class ThreadAllocatedMemory {
 
         // baseline should be positive
         Thread curThread = Thread.currentThread();
-        long cumulative_size = mbean.getAllThreadAllocatedBytes();
-        if (cumulative_size <= 0) {
+        long cumulativeSize = mbean.getAllThreadAllocatedBytes();
+        if (cumulativeSize <= 0) {
             throw new RuntimeException(
-                "Invalid allocated bytes returned for " + curThread.getName() + " = " + cumulative_size);
+                "Invalid allocated bytes returned for " + curThread.getName() + " = " + cumulativeSize);
         }
 
         // start threads
@@ -235,7 +235,7 @@ public class ThreadAllocatedMemory {
         waitUntilThreadsBlocked();
 
         // check after threads are blocked
-        cumulative_size = checkResult(curThread, cumulative_size, mbean.getAllThreadAllocatedBytes());
+        cumulativeSize = checkResult(curThread, cumulativeSize, mbean.getAllThreadAllocatedBytes());
 
         // let threads go to do some more allocation
         synchronized (obj) {
@@ -251,7 +251,7 @@ public class ThreadAllocatedMemory {
         System.out.println("Done sleeping");
 
         // check while threads are running
-        cumulative_size = checkResult(curThread, cumulative_size, mbean.getAllThreadAllocatedBytes());
+        cumulativeSize = checkResult(curThread, cumulativeSize, mbean.getAllThreadAllocatedBytes());
 
         // let threads exit
         synchronized (obj) {
@@ -270,7 +270,7 @@ public class ThreadAllocatedMemory {
         }
 
         // check after threads exit
-        checkResult(curThread, cumulative_size, mbean.getAllThreadAllocatedBytes());
+        checkResult(curThread, cumulativeSize, mbean.getAllThreadAllocatedBytes());
     }
 
     private static void ensureValidSize(Thread curThread, long size) {
@@ -284,17 +284,17 @@ public class ThreadAllocatedMemory {
     }
 
     private static long checkResult(Thread curThread,
-                                    long prev_size, long curr_size) {
-        if (curr_size < prev_size) {
+                                    long prevSize, long currSize) {
+        System.out.println(curThread.getName() +
+                           " Previous allocated bytes = " + prevSize +
+                           " Current allocated bytes = " + currSize);
+        if (currSize < prevSize) {
             throw new RuntimeException("TEST FAILED: " +
                                        curThread.getName() +
-                                       " previous allocated bytes = " + prev_size +
-                                       " > current allocated bytes = " + curr_size);
+                                       " previous allocated bytes = " + prevSize +
+                                       " > current allocated bytes = " + currSize);
         }
-        System.out.println(curThread.getName() +
-                           " Previous allocated bytes = " + prev_size +
-                           " Current allocated bytes = " + curr_size);
-        return curr_size;
+        return currSize;
     }
 
     private static void goSleep(long ms) throws Exception {
@@ -363,19 +363,10 @@ public class ThreadAllocatedMemory {
                 }
             }
 
-            long size1 = mbean.getThreadAllocatedBytes(getId());
+            long prevSize = mbean.getThreadAllocatedBytes(getId());
             ThreadAllocatedMemory.doit();
-            long size2 = mbean.getThreadAllocatedBytes(getId());
-
-            System.out.println(getName() +
-                " ThreadAllocatedBytes before = " + size1 +
-                " ThreadAllocatedBytes after = " + size2);
-
-            if (size1 > size2) {
-                throw new RuntimeException(getName() +
-                    " ThreadAllocatedBytes before = " + size1 +
-                    " > ThreadAllocatedBytes after = " + size2);
-            }
+            long currSize = mbean.getThreadAllocatedBytes(getId());
+            checkResult(this, prevSize, currSize);
 
             synchronized (obj) {
                 while (!done1) {

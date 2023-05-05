@@ -344,7 +344,7 @@ public class ThreadImpl implements ThreadMXBean {
 
     protected long getAllThreadAllocatedBytes() {
         if (isThreadAllocatedMemoryEnabled()) {
-            return getThreadAllocatedMemory2();
+            return getAllThreadAllocatedMemory();
         }
         return -1;
     }
@@ -532,7 +532,7 @@ public class ThreadImpl implements ThreadMXBean {
     private static native void getThreadUserCpuTime1(long[] ids, long[] result);
     private static native long getThreadAllocatedMemory0(long id);
     private static native void getThreadAllocatedMemory1(long[] ids, long[] result);
-    private static native long getThreadAllocatedMemory2();
+    private static native long getAllThreadAllocatedMemory();
     private static native void setThreadCpuTimeEnabled0(boolean enable);
     private static native void setThreadAllocatedMemoryEnabled0(boolean enable);
     private static native void setThreadContentionMonitoringEnabled0(boolean enable);
