@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 /*
  * @test
  * @enablePreview
- * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64" | os.arch == "riscv64"
+ * @requires jdk.foreign.linker != "UNSUPPORTED"
  * @modules java.base/jdk.internal.foreign
  * @run testng/othervm --enable-native-access=ALL-UNNAMED -Dgenerator.sample.factor=17 TestVarArgs
  */
@@ -39,8 +39,6 @@ import java.lang.foreign.MemorySegment;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
-import java.lang.foreign.SegmentAllocator;
-import java.lang.foreign.SegmentScope;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -71,15 +69,13 @@ public class TestVarArgs extends CallGeneratorHelper {
     @Test(dataProvider = "variadicFunctions")
     public void testVarArgs(int count, String fName, Ret ret, // ignore this stuff
                             List<ParamType> paramTypes, List<StructFieldType> fields) throws Throwable {
-        try (Arena arena = Arena.openConfined()) {
+        try (Arena arena = Arena.ofConfined()) {
             List<Arg> args = makeArgs(arena, paramTypes, fields);
             MethodHandle checker = MethodHandles.insertArguments(MH_CHECK, 2, args);
-            MemorySegment writeBack = LINKER.upcallStub(checker, FunctionDescriptor.ofVoid(C_INT, C_POINTER), arena.scope());
+            MemorySegment writeBack = LINKER.upcallStub(checker, FunctionDescriptor.ofVoid(C_INT, C_POINTER), arena);
             MemorySegment callInfo = arena.allocate(CallInfo.LAYOUT);
             MemoryLayout layout = MemoryLayout.sequenceLayout(args.size(), C_INT);
             MemorySegment argIDs = arena.allocate(layout);
-
-            MemorySegment callInfoPtr = callInfo;
 
             CallInfo.writeback(callInfo, writeBack);
             CallInfo.argIDs(callInfo, argIDs);
@@ -99,7 +95,7 @@ public class TestVarArgs extends CallGeneratorHelper {
             MethodHandle downcallHandle = LINKER.downcallHandle(VARARGS_ADDR, desc, varargIndex);
 
             List<Object> argValues = new ArrayList<>();
-            argValues.add(callInfoPtr); // call info
+            argValues.add(callInfo); // call info
             argValues.add(args.size());  // size
             args.forEach(a -> argValues.add(a.value()));
 
@@ -178,8 +174,9 @@ public class TestVarArgs extends CallGeneratorHelper {
         Arg varArg = args.get(index);
         MemoryLayout layout = varArg.layout;
         MethodHandle getter = varArg.getter;
-        try (Arena arena = Arena.openConfined()) {
-            MemorySegment seg = MemorySegment.ofAddress(ptr.address(), layout.byteSize(), arena.scope());
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment seg = ptr.asSlice(0, layout)
+                    .reinterpret(arena, null);
             Object obj = getter.invoke(seg);
             varArg.check(obj);
         } catch (Throwable e) {

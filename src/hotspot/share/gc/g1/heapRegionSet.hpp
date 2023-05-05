@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,7 +82,7 @@ protected:
   void verify_region(HeapRegion* hr) PRODUCT_RETURN;
 
   void check_mt_safety() {
-    if (_checker != NULL) {
+    if (_checker != nullptr) {
       _checker->check_mt_safety();
     }
   }
@@ -190,7 +190,7 @@ protected:
   virtual void clear();
 
 public:
-  FreeRegionList(const char* name, HeapRegionSetChecker* checker = NULL);
+  FreeRegionList(const char* name, HeapRegionSetChecker* checker = nullptr);
   ~FreeRegionList();
 
   void verify_list();
@@ -249,7 +249,7 @@ private:
 
 public:
   bool more_available() {
-    return _curr != NULL;
+    return _curr != nullptr;
   }
 
   HeapRegion* get_next() {

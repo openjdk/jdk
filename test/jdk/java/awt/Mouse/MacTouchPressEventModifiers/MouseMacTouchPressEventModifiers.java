@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2022, JetBrains s.r.o.. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -22,10 +22,12 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 8294426
- * @summary The test verifies that a press {@link java.awt.event.MouseEvent} contains correct modifiers although the according native mouse event is accompanied by no mouse modifiers.
+ * @summary The test verifies that a press {@link java.awt.event.MouseEvent}
+ * contains correct modifiers although the according native mouse event is
+ * accompanied by no mouse modifiers.
  * @author Nikita.Provotorov@jetbrains.com
  *
  * @key headful
@@ -205,17 +207,17 @@ class MyFrame extends JFrame {
     }
 
     public Future<MouseEvent> sendNativeMousePress(int modifierFlags, int buttonNumber, int clickCount, int x, int y) {
-        final int eventType = (buttonNumber == CocoaConstants.kCGMouseButtonLeft) ? CocoaConstants.NSLeftMouseDown
-                              : (buttonNumber == CocoaConstants.kCGMouseButtonRight) ? CocoaConstants.NSRightMouseDown
-                              : CocoaConstants.NSOtherMouseDown;
+        final int eventType = (buttonNumber == CocoaConstants.kCGMouseButtonLeft) ? CocoaConstants.NSEventTypeLeftMouseDown
+                              : (buttonNumber == CocoaConstants.kCGMouseButtonRight) ? CocoaConstants.NSEventTypeRightMouseDown
+                              : CocoaConstants.NSEventTypeOtherMouseDown;
 
         return sendNativeMouseEvent(eventType, modifierFlags, buttonNumber, clickCount, x, y, getX() + x, getY() + y);
     }
 
     public Future<MouseEvent> sendNativeMouseRelease(int modifierFlags, int buttonNumber, int clickCount, int x, int y) {
-        final int eventType = (buttonNumber == CocoaConstants.kCGMouseButtonLeft) ? CocoaConstants.NSLeftMouseUp
-                              : (buttonNumber == CocoaConstants.kCGMouseButtonRight) ? CocoaConstants.NSRightMouseUp
-                              : CocoaConstants.NSOtherMouseUp;
+        final int eventType = (buttonNumber == CocoaConstants.kCGMouseButtonLeft) ? CocoaConstants.NSEventTypeLeftMouseUp
+                              : (buttonNumber == CocoaConstants.kCGMouseButtonRight) ? CocoaConstants.NSEventTypeRightMouseUp
+                              : CocoaConstants.NSEventTypeOtherMouseUp;
 
         return sendNativeMouseEvent(eventType, modifierFlags, buttonNumber, clickCount, x, y, getX() + x, getY() + y);
     }

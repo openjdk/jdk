@@ -5374,7 +5374,7 @@ instruct loadD(regD dst, memory mem)
 
 // max = java.lang.Math.max(float a, float b)
 instruct maxF_reg(legRegF dst, legRegF a, legRegF b, legRegF tmp, legRegF atmp, legRegF btmp) %{
-  predicate(UseAVX > 0 && !n->is_reduction());
+  predicate(UseAVX > 0 && !SuperWord::is_reduction(n));
   match(Set dst (MaxF a b));
   effect(USE a, USE b, TEMP tmp, TEMP atmp, TEMP btmp);
   format %{
@@ -5396,7 +5396,7 @@ instruct maxF_reg(legRegF dst, legRegF a, legRegF b, legRegF tmp, legRegF atmp, 
 %}
 
 instruct maxF_reduction_reg(legRegF dst, legRegF a, legRegF b, legRegF xmmt, rRegI tmp, rFlagsReg cr) %{
-  predicate(UseAVX > 0 && n->is_reduction());
+  predicate(UseAVX > 0 && SuperWord::is_reduction(n));
   match(Set dst (MaxF a b));
   effect(USE a, USE b, TEMP xmmt, TEMP tmp, KILL cr);
 
@@ -5410,7 +5410,7 @@ instruct maxF_reduction_reg(legRegF dst, legRegF a, legRegF b, legRegF xmmt, rRe
 
 // max = java.lang.Math.max(double a, double b)
 instruct maxD_reg(legRegD dst, legRegD a, legRegD b, legRegD tmp, legRegD atmp, legRegD btmp) %{
-  predicate(UseAVX > 0 && !n->is_reduction());
+  predicate(UseAVX > 0 && !SuperWord::is_reduction(n));
   match(Set dst (MaxD a b));
   effect(USE a, USE b, TEMP atmp, TEMP btmp, TEMP tmp);
   format %{
@@ -5432,7 +5432,7 @@ instruct maxD_reg(legRegD dst, legRegD a, legRegD b, legRegD tmp, legRegD atmp, 
 %}
 
 instruct maxD_reduction_reg(legRegD dst, legRegD a, legRegD b, legRegD xmmt, rRegL tmp, rFlagsReg cr) %{
-  predicate(UseAVX > 0 && n->is_reduction());
+  predicate(UseAVX > 0 && SuperWord::is_reduction(n));
   match(Set dst (MaxD a b));
   effect(USE a, USE b, TEMP xmmt, TEMP tmp, KILL cr);
 
@@ -5446,7 +5446,7 @@ instruct maxD_reduction_reg(legRegD dst, legRegD a, legRegD b, legRegD xmmt, rRe
 
 // min = java.lang.Math.min(float a, float b)
 instruct minF_reg(legRegF dst, legRegF a, legRegF b, legRegF tmp, legRegF atmp, legRegF btmp) %{
-  predicate(UseAVX > 0 && !n->is_reduction());
+  predicate(UseAVX > 0 && !SuperWord::is_reduction(n));
   match(Set dst (MinF a b));
   effect(USE a, USE b, TEMP tmp, TEMP atmp, TEMP btmp);
   format %{
@@ -5468,7 +5468,7 @@ instruct minF_reg(legRegF dst, legRegF a, legRegF b, legRegF tmp, legRegF atmp, 
 %}
 
 instruct minF_reduction_reg(legRegF dst, legRegF a, legRegF b, legRegF xmmt, rRegI tmp, rFlagsReg cr) %{
-  predicate(UseAVX > 0 && n->is_reduction());
+  predicate(UseAVX > 0 && SuperWord::is_reduction(n));
   match(Set dst (MinF a b));
   effect(USE a, USE b, TEMP xmmt, TEMP tmp, KILL cr);
 
@@ -5482,7 +5482,7 @@ instruct minF_reduction_reg(legRegF dst, legRegF a, legRegF b, legRegF xmmt, rRe
 
 // min = java.lang.Math.min(double a, double b)
 instruct minD_reg(legRegD dst, legRegD a, legRegD b, legRegD tmp, legRegD atmp, legRegD btmp) %{
-  predicate(UseAVX > 0 && !n->is_reduction());
+  predicate(UseAVX > 0 && !SuperWord::is_reduction(n));
   match(Set dst (MinD a b));
   effect(USE a, USE b, TEMP tmp, TEMP atmp, TEMP btmp);
   format %{
@@ -5504,7 +5504,7 @@ instruct minD_reg(legRegD dst, legRegD a, legRegD b, legRegD tmp, legRegD atmp, 
 %}
 
 instruct minD_reduction_reg(legRegD dst, legRegD a, legRegD b, legRegD xmmt, rRegL tmp, rFlagsReg cr) %{
-  predicate(UseAVX > 0 && n->is_reduction());
+  predicate(UseAVX > 0 && SuperWord::is_reduction(n));
   match(Set dst (MinD a b));
   effect(USE a, USE b, TEMP xmmt, TEMP tmp, KILL cr);
 
@@ -8462,44 +8462,34 @@ instruct xchgN( memory mem, rRegN newval) %{
 //----------Abs Instructions-------------------------------------------
 
 // Integer Absolute Instructions
-instruct absI_rReg(rRegI dst, rRegI src, rRegI tmp, rFlagsReg cr)
+instruct absI_rReg(rRegI dst, rRegI src, rFlagsReg cr)
 %{
   match(Set dst (AbsI src));
-  effect(TEMP dst, TEMP tmp, KILL cr);
-  format %{ "movl $tmp, $src\n\t"
-            "sarl $tmp, 31\n\t"
-            "movl $dst, $src\n\t"
-            "xorl $dst, $tmp\n\t"
-            "subl $dst, $tmp\n"
-          %}
+  effect(TEMP dst, KILL cr);
+  format %{ "xorl    $dst, $dst\t# abs int\n\t"
+            "subl    $dst, $src\n\t"
+            "cmovll  $dst, $src" %}
   ins_encode %{
-    __ movl($tmp$$Register, $src$$Register);
-    __ sarl($tmp$$Register, 31);
-    __ movl($dst$$Register, $src$$Register);
-    __ xorl($dst$$Register, $tmp$$Register);
-    __ subl($dst$$Register, $tmp$$Register);
+    __ xorl($dst$$Register, $dst$$Register);
+    __ subl($dst$$Register, $src$$Register);
+    __ cmovl(Assembler::less, $dst$$Register, $src$$Register);
   %}
 
   ins_pipe(ialu_reg_reg);
 %}
 
 // Long Absolute Instructions
-instruct absL_rReg(rRegL dst, rRegL src, rRegL tmp, rFlagsReg cr)
+instruct absL_rReg(rRegL dst, rRegL src, rFlagsReg cr)
 %{
   match(Set dst (AbsL src));
-  effect(TEMP dst, TEMP tmp, KILL cr);
-  format %{ "movq $tmp, $src\n\t"
-            "sarq $tmp, 63\n\t"
-            "movq $dst, $src\n\t"
-            "xorq $dst, $tmp\n\t"
-            "subq $dst, $tmp\n"
-          %}
+  effect(TEMP dst, KILL cr);
+  format %{ "xorl    $dst, $dst\t# abs long\n\t"
+            "subq    $dst, $src\n\t"
+            "cmovlq  $dst, $src" %}
   ins_encode %{
-    __ movq($tmp$$Register, $src$$Register);
-    __ sarq($tmp$$Register, 63);
-    __ movq($dst$$Register, $src$$Register);
-    __ xorq($dst$$Register, $tmp$$Register);
-    __ subq($dst$$Register, $tmp$$Register);
+    __ xorl($dst$$Register, $dst$$Register);
+    __ subq($dst$$Register, $src$$Register);
+    __ cmovq(Assembler::less, $dst$$Register, $src$$Register);
   %}
 
   ins_pipe(ialu_reg_reg);
@@ -13053,35 +13043,6 @@ instruct jmpLoopEnd(cmpOp cop, rFlagsReg cr, label labl)
   ins_pipe(pipe_jcc);
 %}
 
-// Jump Direct Conditional - Label defines a relative address from Jcc+1
-instruct jmpLoopEndU(cmpOpU cop, rFlagsRegU cmp, label labl) %{
-  match(CountedLoopEnd cop cmp);
-  effect(USE labl);
-
-  ins_cost(300);
-  format %{ "j$cop,u   $labl\t# loop end" %}
-  size(6);
-  ins_encode %{
-    Label* L = $labl$$label;
-    __ jcc((Assembler::Condition)($cop$$cmpcode), *L, false); // Always long jump
-  %}
-  ins_pipe(pipe_jcc);
-%}
-
-instruct jmpLoopEndUCF(cmpOpUCF cop, rFlagsRegUCF cmp, label labl) %{
-  match(CountedLoopEnd cop cmp);
-  effect(USE labl);
-
-  ins_cost(200);
-  format %{ "j$cop,u   $labl\t# loop end" %}
-  size(6);
-  ins_encode %{
-    Label* L = $labl$$label;
-    __ jcc((Assembler::Condition)($cop$$cmpcode), *L, false); // Always long jump
-  %}
-  ins_pipe(pipe_jcc);
-%}
-
 // Jump Direct Conditional - using unsigned comparison
 instruct jmpConU(cmpOpU cop, rFlagsRegU cmp, label labl) %{
   match(If cop cmp);
@@ -13245,37 +13206,6 @@ instruct jmpLoopEnd_short(cmpOp cop, rFlagsReg cr, label labl) %{
 
   ins_cost(300);
   format %{ "j$cop,s   $labl\t# loop end" %}
-  size(2);
-  ins_encode %{
-    Label* L = $labl$$label;
-    __ jccb((Assembler::Condition)($cop$$cmpcode), *L);
-  %}
-  ins_pipe(pipe_jcc);
-  ins_short_branch(1);
-%}
-
-// Jump Direct Conditional - Label defines a relative address from Jcc+1
-instruct jmpLoopEndU_short(cmpOpU cop, rFlagsRegU cmp, label labl) %{
-  match(CountedLoopEnd cop cmp);
-  effect(USE labl);
-
-  ins_cost(300);
-  format %{ "j$cop,us  $labl\t# loop end" %}
-  size(2);
-  ins_encode %{
-    Label* L = $labl$$label;
-    __ jccb((Assembler::Condition)($cop$$cmpcode), *L);
-  %}
-  ins_pipe(pipe_jcc);
-  ins_short_branch(1);
-%}
-
-instruct jmpLoopEndUCF_short(cmpOpUCF cop, rFlagsRegUCF cmp, label labl) %{
-  match(CountedLoopEnd cop cmp);
-  effect(USE labl);
-
-  ins_cost(300);
-  format %{ "j$cop,us  $labl\t# loop end" %}
   size(2);
   ins_encode %{
     Label* L = $labl$$label;
@@ -13802,6 +13732,13 @@ instruct leaL_rReg_immI2_peep(rRegL dst, rRegL src, immI2 shift)
   ins_pipe(ialu_reg_reg);
 %}
 
+// These peephole rules replace mov + I pairs (where I is one of {add, inc, dec,
+// sal}) with lea instructions. The {add, sal} rules are beneficial in
+// processors with at least partial ALU support for lea
+// (supports_fast_2op_lea()), whereas the {inc, dec} rules are only generally
+// beneficial for processors with full ALU support
+// (VM_Version::supports_fast_3op_lea()) and Intel Cascade Lake.
+
 peephole
 %{
   peeppredicate(VM_Version::supports_fast_2op_lea());
@@ -13820,7 +13757,8 @@ peephole
 
 peephole
 %{
-  peeppredicate(VM_Version::supports_fast_2op_lea());
+  peeppredicate(VM_Version::supports_fast_3op_lea() ||
+                VM_Version::is_intel_cascade_lake());
   peepmatch (incI_rReg);
   peepprocedure (lea_coalesce_imm);
   peepreplace (leaI_rReg_immI_peep());
@@ -13828,7 +13766,8 @@ peephole
 
 peephole
 %{
-  peeppredicate(VM_Version::supports_fast_2op_lea());
+  peeppredicate(VM_Version::supports_fast_3op_lea() ||
+                VM_Version::is_intel_cascade_lake());
   peepmatch (decI_rReg);
   peepprocedure (lea_coalesce_imm);
   peepreplace (leaI_rReg_immI_peep());
@@ -13860,7 +13799,8 @@ peephole
 
 peephole
 %{
-  peeppredicate(VM_Version::supports_fast_2op_lea());
+  peeppredicate(VM_Version::supports_fast_3op_lea() ||
+                VM_Version::is_intel_cascade_lake());
   peepmatch (incL_rReg);
   peepprocedure (lea_coalesce_imm);
   peepreplace (leaL_rReg_immL32_peep());
@@ -13868,7 +13808,8 @@ peephole
 
 peephole
 %{
-  peeppredicate(VM_Version::supports_fast_2op_lea());
+  peeppredicate(VM_Version::supports_fast_3op_lea() ||
+                VM_Version::is_intel_cascade_lake());
   peepmatch (decL_rReg);
   peepprocedure (lea_coalesce_imm);
   peepreplace (leaL_rReg_immL32_peep());

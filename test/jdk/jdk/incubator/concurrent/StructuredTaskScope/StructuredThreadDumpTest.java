@@ -25,7 +25,6 @@
  * @test
  * @bug 8284199
  * @summary Test thread dumps with StructuredTaskScope
- * @enablePreview
  * @modules jdk.incubator.concurrent
  * @library /test/lib
  * @run junit/othervm StructuredThreadDumpTest
