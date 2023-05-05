@@ -30,31 +30,46 @@
 #include "utilities/ostream.hpp"
 #include "utilities/powerOfTwo.hpp"
 
+#include "logging/log.hpp"
+
 // We cannot use 0, because that may already be a valid base address in zero-based heaps.
 // 0x1 is safe because heap base addresses must be aligned by much larger alignment
 HeapWord* const SlidingForwarding::UNUSED_BASE = reinterpret_cast<HeapWord*>(0x1);
 
 HeapWord* SlidingForwarding::_heap_start = nullptr;
+size_t SlidingForwarding::_heap_start_base_idx = 0;
 size_t SlidingForwarding::_num_regions = 0;
 size_t SlidingForwarding::_region_size_words = 0;
 uint SlidingForwarding::_region_size_words_shift = 0;
+uint SlidingForwarding::_region_size_bytes_shift = 0;
+uintptr_t SlidingForwarding::_region_mask = 0;
 HeapWord** SlidingForwarding::_bases_table = nullptr;
+HeapWord** SlidingForwarding::_biased_bases_table = nullptr;
 FallbackTable* SlidingForwarding::_fallback_table = nullptr;
 
 void SlidingForwarding::initialize(MemRegion heap, size_t region_size_words) {
 #ifdef _LP64
   if (UseAltGCForwarding) {
     _heap_start = heap.start();
+
     _num_regions = align_up(pointer_delta(heap.end(), heap.start()), region_size_words) / region_size_words;
     _region_size_words = region_size_words;
     _region_size_words_shift = log2i_exact(region_size_words);
-    if (UseSerialGC && heap.word_size() <= (1 << NUM_OFFSET_BITS)) {
+    _heap_start_base_idx = (uintptr_t)_heap_start >> (_region_size_words_shift + LogHeapWordSize);
+    log_error(gc)("heap at from " PTR_FORMAT " to " PTR_FORMAT " size words %zu region size words %zu shift %u num_regions %zu base idx %zu", p2i(heap.start()), p2i(heap.end()), heap.word_size(), _region_size_words, _region_size_words_shift, _num_regions, _heap_start_base_idx);
+    if (false && UseSerialGC && heap.word_size() <= (1 << NUM_OFFSET_BITS)) {
       // In this case we can treat the whole heap as a single region and
       // make the encoding very simple.
       _num_regions = 1;
       _region_size_words = round_up_power_of_2(heap.word_size());
       _region_size_words_shift = log2i_exact(_region_size_words);
+      _heap_start_base_idx = (uintptr_t)_heap_start >> (_region_size_words_shift + LogHeapWordSize);
+      log_error(gc)("heap2 at from " PTR_FORMAT " to " PTR_FORMAT " size words %zu region size words %zu shift %u num_regions %zu base idx %zu", p2i(heap.start()), p2i(heap.end()), heap.word_size(), _region_size_words, _region_size_words_shift, _num_regions, _heap_start_base_idx);
     }
+    _region_size_bytes_shift = _region_size_words_shift + LogHeapWordSize;
+    _region_mask = ~((uintptr_t(1) << _region_size_bytes_shift) - 1);
+
+    guarantee(_heap_start_base_idx << (_region_size_words_shift + LogHeapWordSize) == (uintptr_t)_heap_start, "must be aligned");
 
     assert(_region_size_words >= 1, "regions must be at least a word large");
     assert(_region_size_words_shift <= NUM_OFFSET_BITS, "regions must not be larger than maximum addressing bits allow");
@@ -72,6 +87,7 @@ void SlidingForwarding::begin() {
 
     size_t max = _num_regions * NUM_TARGET_REGIONS;
     _bases_table = NEW_C_HEAP_ARRAY(HeapWord*, max, mtGC);
+    _biased_bases_table = _bases_table - 2 * _heap_start_base_idx;
     for (size_t i = 0; i < max; i++) {
       _bases_table[i] = UNUSED_BASE;
     }

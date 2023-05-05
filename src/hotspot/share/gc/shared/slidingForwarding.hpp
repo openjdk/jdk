@@ -113,11 +113,15 @@ private:
   static HeapWord* const UNUSED_BASE;
 
   static HeapWord*      _heap_start;
+  static size_t         _heap_start_base_idx;
   static size_t         _num_regions;
   static size_t         _region_size_words;
   static uint           _region_size_words_shift;
+  static uint           _region_size_bytes_shift;
+  static uintptr_t      _region_mask;
 
   static HeapWord**     _bases_table;
+  static HeapWord**     _biased_bases_table;
   static FallbackTable* _fallback_table;
 
   static inline size_t region_index_containing(HeapWord* addr);

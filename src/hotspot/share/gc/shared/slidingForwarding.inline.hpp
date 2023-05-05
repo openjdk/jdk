@@ -40,31 +40,39 @@ inline bool SlidingForwarding::is_not_forwarded(oop obj) {
 }
 
 size_t SlidingForwarding::region_index_containing(HeapWord* addr) {
-  size_t index = pointer_delta(addr, _heap_start) >> _region_size_words_shift;
-  assert(index < _num_regions, "Region index is in bounds: " PTR_FORMAT, p2i(addr));
+  //size_t index = pointer_delta(addr, _heap_start) >> _region_size_words_shift;
+  size_t index = (uintptr_t)addr >> _region_size_bytes_shift;
+
+  assert((index - _heap_start_base_idx) == pointer_delta(addr, _heap_start) >> _region_size_words_shift,
+         "index %zu heap base idx %zu comp %zu",
+          index, _heap_start_base_idx, pointer_delta(addr, _heap_start) >> _region_size_words_shift
+         );
+  assert(index < (_heap_start_base_idx + _num_regions) && index >= _heap_start_base_idx,
+         "Region index is in bounds %zu %zu %zu: " PTR_FORMAT " %zu %zu",
+          index, _heap_start_base_idx, _heap_start_base_idx + _num_regions, p2i(addr), pointer_delta(addr, _heap_start) >> _region_size_words_shift, _heap_start_base_idx);
   return index;
 }
 
 uintptr_t SlidingForwarding::encode_forwarding(HeapWord* from, HeapWord* to) {
-  size_t from_reg_idx = region_index_containing(from);
-  size_t to_reg_idx = region_index_containing(to);
+  size_t from_reg_idx = region_index_containing(from) * NUM_TARGET_REGIONS;
 
-  HeapWord* to_region_base = _heap_start + to_reg_idx * _region_size_words;
-  size_t base_idx = from_reg_idx * NUM_TARGET_REGIONS;
+  HeapWord* to_region_base = (HeapWord*) ((uintptr_t)to & _region_mask);
+
+  HeapWord** cell = &_biased_bases_table[from_reg_idx];
 
   uintptr_t alt_region = 0;
-  if (_bases_table[base_idx] == to_region_base) {
+  if (*cell == to_region_base) {
     // Primary is good
-  } else if (_bases_table[base_idx] == UNUSED_BASE) {
+  } else if (*cell == UNUSED_BASE) {
     // Primary is free
-    _bases_table[base_idx] = to_region_base;
+    *cell = to_region_base;
   } else {
-    size_t base_idx_alt = base_idx + 1;
-    if (_bases_table[base_idx_alt] == to_region_base) {
+    cell++;
+    if (*cell == to_region_base) {
       // Alternate is good
-    } else if (_bases_table[base_idx_alt] == UNUSED_BASE) {
+    } else if (*cell == UNUSED_BASE) {
       // Alternate is free
-      _bases_table[base_idx_alt] = to_region_base;
+      *cell = to_region_base;
     } else {
       // Both primary and alternate are not fitting
       assert(UseG1GC, "Only happens with G1 serial compaction");
@@ -96,9 +104,7 @@ HeapWord* SlidingForwarding::decode_forwarding(HeapWord* from, uintptr_t encoded
   uintptr_t offset = (encoded >> OFFSET_BITS_SHIFT);
 
   size_t from_idx = region_index_containing(from) * NUM_TARGET_REGIONS;
-  size_t base_idx = from_idx + alt_region;
-
-  HeapWord* base = _bases_table[base_idx];
+  HeapWord* base = _biased_bases_table[from_idx + alt_region];
   assert(base != UNUSED_BASE, "must not be unused base");
   HeapWord* decoded = base + offset;
   assert(decoded >= _heap_start,
