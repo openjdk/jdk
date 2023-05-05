@@ -7,6 +7,7 @@ include:
 variables:
   CACHE_VERSION: "v6"
   BUILD_JDK_VERSION: 20
+  BINUTILS_DIR: binutils-2.38
 
 prepare-version:
   after_script:
@@ -96,6 +97,10 @@ create-sysroot-riscv64:
       curl -L https://api.adoptium.net/v3/binary/latest/${BUILD_JDK_VERSION}/ea/linux/x64/jdk/hotspot/normal/eclipse\?project\=jdk \
         | tar -xzf - -C /usr/lib/jvm/temurin-${BUILD_JDK_VERSION} --strip-components 1
     - |
+      mkdir ${BINUTILS_DIR}
+      curl -L https://ftp.gnu.org/gnu/binutils/${BINUTILS_DIR}.tar.gz \
+        | tar -xzf - -C ${BINUTILS_DIR} --strip-components 1
+    - |
       bash configure                                                           \
         --openjdk-target=${PKG_ARCH}-linux-gnu                                 \
         --with-conf-name=linux-${PKG_ARCH}                                     \
@@ -103,9 +108,12 @@ create-sysroot-riscv64:
         --with-version-pre="${JDK_VERSION_PRE}"                                \
         --with-version-opt="${JDK_VERSION_OPT}"                                \
         --with-sysroot=$(pwd)/sysroot-${UBUNTU_CODENAME}-${PKG_ARCH}           \
-        --with-boot-jdk=/usr/lib/jvm/temurin-20                                \
+        --with-boot-jdk=/usr/lib/jvm/temurin-${BUILD_JDK_VERSION}              \
         --disable-precompiled-headers                                          \
-        --with-zlib=system
+        --with-zlib=system                                                     \
+        --with-hsdis=binutils                                                  \
+        --with-binutils-src=${BINUTILS_DIR}                                    \
+        --enable-hsdis-bundling
     - make ${MAKE_TARGETS} LOG_LEVEL=info
   artifacts:
     when: always
