@@ -2763,13 +2763,16 @@ bool SuperWord::output() {
   }
 
   for (int i = 0; i < _block.length(); i++) {
-    Node* n = _block.at(i); // last in pack
+    Node* n = _block.at(i);
     Node_List* p = my_pack(n);
     if (p != nullptr && n == p->at(p->size()-1)) {
+      // After schedule_reorder_memops, we know that the memops have the same order in the pack
+      // as in the memory slice. Hence, "first" is the first memop in the slice from the pack,
+      // and "n" is the last node in the slice from the pack.
+      Node* first = p->at(0);
       uint vlen = p->size();
       uint vlen_in_bytes = 0;
       Node* vn = nullptr;
-      Node* first = p->at(0); // first in pack
       if (cl->is_rce_post_loop()) {
         // override vlen with the main loops vector length
         vlen = cl->slp_max_unroll();

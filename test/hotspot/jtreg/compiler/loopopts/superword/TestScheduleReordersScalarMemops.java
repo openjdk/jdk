@@ -29,7 +29,6 @@
  * @summary Test some examples where non-vectorized memops also need to
  *          be reordered during SuperWord::schedule.
  * @requires vm.compiler2.enabled
- * @requires vm.cpu.features ~= ".*avx2.*" | vm.cpu.features ~= ".*asimd.*"
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.TestScheduleReordersScalarMemops
@@ -81,7 +80,7 @@ public class TestScheduleReordersScalarMemops {
 
     @Test
     @IR(counts = {IRNode.MUL_VI, "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
     static void test0(int[] dataIa, int[] dataIb, float[] dataFa, float[] dataFb) {
         for (int i = 0; i < RANGE; i+=2) {
             // We have dependency edges:
@@ -121,7 +120,7 @@ public class TestScheduleReordersScalarMemops {
 
     @Test
     @IR(counts = {IRNode.MUL_VI, "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
     static void test1(int[] dataIa, int[] dataIb, float[] dataFa, float[] dataFb) {
         for (int i = 0; i < RANGE; i+=2) {
             // Do the same as test0, but without int-float conversion.
