@@ -29,6 +29,8 @@
 #include "asm/register.hpp"
 #include "runtime/vm_version.hpp"
 
+#define NOREG_ENCODING -1
+
 // forward declaration
 class VMRegImpl;
 typedef VMRegImpl* VMReg;
@@ -65,7 +67,7 @@ public:
     number_of_arg_registers = 5
   };
 
-  constexpr Register(int encoding = -1) : _encoding(encoding) {}
+  constexpr Register(int encoding = NOREG_ENCODING) : _encoding(encoding) {}
   bool operator==(const Register rhs) const { return _encoding == rhs._encoding; }
   bool operator!=(const Register rhs) const { return _encoding != rhs._encoding; }
   const Register* operator->()        const { return this; }
@@ -90,12 +92,12 @@ public:
 };
 
 inline constexpr Register as_Register(int encoding) {
-  assert(encoding >= -1 && encoding < Register::number_of_registers, "bad register encoding");
+  assert(encoding >= NOREG_ENCODING && encoding < Register::number_of_registers, "bad register encoding");
   return Register(encoding);
 }
 
 // The integer registers of the z/Architecture.
-constexpr Register noreg = as_Register(-1);
+constexpr Register noreg = as_Register(NOREG_ENCODING);
 
 constexpr Register  Z_R0 = as_Register( 0);
 constexpr Register  Z_R1 = as_Register( 1);
@@ -128,7 +130,7 @@ public:
     number_of_registers = 1
   };
 
-  constexpr ConditionRegister(int encoding = -1) : _encoding(encoding) {}
+  constexpr ConditionRegister(int encoding = NOREG_ENCODING) : _encoding(encoding) {}
   bool operator==(const ConditionRegister rhs) const { return _encoding == rhs._encoding; }
   bool operator!=(const ConditionRegister rhs) const { return _encoding != rhs._encoding; }
   const ConditionRegister* operator->()        const { return this; }
@@ -169,7 +171,7 @@ public:
     number_of_arg_registers = 4
   };
 
-  constexpr FloatRegister(int encoding = -1) : _encoding(encoding) {}
+  constexpr FloatRegister(int encoding = NOREG_ENCODING) : _encoding(encoding) {}
   bool operator==(const FloatRegister rhs) const { return _encoding == rhs._encoding; }
   bool operator!=(const FloatRegister rhs) const { return _encoding != rhs._encoding; }
   const FloatRegister* operator->()        const { return this; }
@@ -191,12 +193,12 @@ public:
 };
 
 inline constexpr FloatRegister as_FloatRegister(int encoding) {
-  assert(encoding >= -1 && encoding < FloatRegister::number_of_registers, "bad float register encoding");
+  assert(encoding >= NOREG_ENCODING && encoding < FloatRegister::number_of_registers, "bad float register encoding");
   return FloatRegister(encoding);
 }
 
 // The float registers of z/Architecture.
-constexpr FloatRegister fnoreg = as_FloatRegister(-1);
+constexpr FloatRegister fnoreg = as_FloatRegister(NOREG_ENCODING);
 
 constexpr FloatRegister  Z_F0 = as_FloatRegister( 0);
 constexpr FloatRegister  Z_F1 = as_FloatRegister( 1);
@@ -283,7 +285,7 @@ public:
     number_of_arg_registers = 0
   };
 
-  constexpr VectorRegister(int encoding = -1) : _encoding(encoding) {}
+  constexpr VectorRegister(int encoding = NOREG_ENCODING) : _encoding(encoding) {}
   bool operator==(const VectorRegister rhs) const { return _encoding == rhs._encoding; }
   bool operator!=(const VectorRegister rhs) const { return _encoding != rhs._encoding; }
   const VectorRegister* operator->()        const { return this; }
@@ -331,12 +333,12 @@ public:
 };
 
 inline constexpr VectorRegister as_VectorRegister(int encoding) {
-  assert(encoding >= -1 && encoding < VectorRegister::number_of_registers, "bad vector register encoding");
+  assert(encoding >= NOREG_ENCODING && encoding < VectorRegister::number_of_registers, "bad vector register encoding");
   return VectorRegister(encoding);
 }
 
 // The Vector registers of z/Architecture.
-constexpr VectorRegister vnoreg = as_VectorRegister(-1);
+constexpr VectorRegister vnoreg = as_VectorRegister(NOREG_ENCODING);
 
 constexpr VectorRegister  Z_V0 = as_VectorRegister( 0);
 constexpr VectorRegister  Z_V1 = as_VectorRegister( 1);
