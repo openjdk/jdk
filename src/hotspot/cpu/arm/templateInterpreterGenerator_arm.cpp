@@ -364,23 +364,31 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
 
   const Register Rcache = R2_tmp;
   const Register Rindex = R3_tmp;
-  __ get_cache_and_index_at_bcp(Rcache, Rindex, 1, index_size);
 
-  __ add(Rtemp, Rcache, AsmOperand(Rindex, lsl, LogBytesPerWord));
-  __ ldrb(Rtemp, Address(Rtemp, ConstantPoolCache::base_offset() + ConstantPoolCacheEntry::flags_offset()));
-  __ check_stack_top();
-  __ add(Rstack_top, Rstack_top, AsmOperand(Rtemp, lsl, Interpreter::logStackElementSize));
+  if (index_size == sizeof(u4)) {
+    __ load_resolved_indy_entry(Rcache, Rindex);
+    __ ldrh(Rcache, Address(Rcache, in_bytes(ResolvedIndyEntry::num_parameters_offset())));
+    __ check_stack_top();
+    __ add(Rstack_top, Rstack_top, AsmOperand(Rcache, lsl, Interpreter::logStackElementSize));
+  } else {
+    // Pop N words from the stack
+    __ get_cache_and_index_at_bcp(Rcache, Rindex, 1, index_size);
+
+    __ add(Rtemp, Rcache, AsmOperand(Rindex, lsl, LogBytesPerWord));
+    __ ldrb(Rtemp, Address(Rtemp, ConstantPoolCache::base_offset() + ConstantPoolCacheEntry::flags_offset()));
+    __ check_stack_top();
+    __ add(Rstack_top, Rstack_top, AsmOperand(Rtemp, lsl, Interpreter::logStackElementSize));
+  }
 
   __ convert_retval_to_tos(state);
 
- __ check_and_handle_popframe();
- __ check_and_handle_earlyret();
+  __ check_and_handle_popframe();
+  __ check_and_handle_earlyret();
 
   __ dispatch_next(state, step);
 
   return entry;
 }
-
 
 address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state, int step, address continuation) {
   address entry = __ pc();
