@@ -121,7 +121,7 @@ size_t G1DirtyCardQueueSet::num_cards() const {
 }
 
 void G1DirtyCardQueueSet::enqueue_completed_buffer(BufferNode* cbn) {
-  assert(cbn != NULL, "precondition");
+  assert(cbn != nullptr, "precondition");
   // Increment _num_cards before adding to queue, so queue removal doesn't
   // need to deal with _num_cards possibly going negative.
   Atomic::add(&_num_cards, buffer_size() - cbn->index());
@@ -134,11 +134,11 @@ void G1DirtyCardQueueSet::enqueue_completed_buffer(BufferNode* cbn) {
 
 // Thread-safe attempt to remove and return the first buffer from
 // the _completed queue, using the NonblockingQueue::try_pop() underneath.
-// It has a limitation that it may return NULL when there are objects
+// It has a limitation that it may return null when there are objects
 // in the queue if there is a concurrent push/append operation.
 BufferNode* G1DirtyCardQueueSet::dequeue_completed_buffer() {
   Thread* current_thread = Thread::current();
-  BufferNode* result = NULL;
+  BufferNode* result = nullptr;
   while (true) {
     // Use GlobalCounter critical section to avoid ABA problem.
     // The release of a buffer to its allocator's free list uses
@@ -155,10 +155,10 @@ BufferNode* G1DirtyCardQueueSet::dequeue_completed_buffer() {
 
 BufferNode* G1DirtyCardQueueSet::get_completed_buffer() {
   BufferNode* result = dequeue_completed_buffer();
-  if (result == NULL) {         // Unlikely if no paused buffers.
+  if (result == nullptr) {         // Unlikely if no paused buffers.
     enqueue_previous_paused_buffers();
     result = dequeue_completed_buffer();
-    if (result == NULL) return NULL;
+    if (result == nullptr) return nullptr;
   }
   Atomic::sub(&_num_cards, buffer_size() - result->index());
   return result;
@@ -179,14 +179,14 @@ void G1DirtyCardQueueSet::verify_num_cards() const {
 #endif // ASSERT
 
 G1DirtyCardQueueSet::PausedBuffers::PausedList::PausedList() :
-  _head(NULL), _tail(NULL),
+  _head(nullptr), _tail(nullptr),
   _safepoint_id(SafepointSynchronize::safepoint_id())
 {}
 
 #ifdef ASSERT
 G1DirtyCardQueueSet::PausedBuffers::PausedList::~PausedList() {
-  assert(Atomic::load(&_head) == NULL, "precondition");
-  assert(_tail == NULL, "precondition");
+  assert(Atomic::load(&_head) == nullptr, "precondition");
+  assert(_tail == nullptr, "precondition");
 }
 #endif // ASSERT
 
@@ -199,8 +199,8 @@ void G1DirtyCardQueueSet::PausedBuffers::PausedList::add(BufferNode* node) {
   assert_not_at_safepoint();
   assert(is_next(), "precondition");
   BufferNode* old_head = Atomic::xchg(&_head, node);
-  if (old_head == NULL) {
-    assert(_tail == NULL, "invariant");
+  if (old_head == nullptr) {
+    assert(_tail == nullptr, "invariant");
     _tail = node;
   } else {
     node->set_next(old_head);
@@ -210,27 +210,27 @@ void G1DirtyCardQueueSet::PausedBuffers::PausedList::add(BufferNode* node) {
 G1DirtyCardQueueSet::HeadTail G1DirtyCardQueueSet::PausedBuffers::PausedList::take() {
   BufferNode* head = Atomic::load(&_head);
   BufferNode* tail = _tail;
-  Atomic::store(&_head, (BufferNode*)NULL);
-  _tail = NULL;
+  Atomic::store(&_head, (BufferNode*)nullptr);
+  _tail = nullptr;
   return HeadTail(head, tail);
 }
 
-G1DirtyCardQueueSet::PausedBuffers::PausedBuffers() : _plist(NULL) {}
+G1DirtyCardQueueSet::PausedBuffers::PausedBuffers() : _plist(nullptr) {}
 
 #ifdef ASSERT
 G1DirtyCardQueueSet::PausedBuffers::~PausedBuffers() {
-  assert(Atomic::load(&_plist) == NULL, "invariant");
+  assert(Atomic::load(&_plist) == nullptr, "invariant");
 }
 #endif // ASSERT
 
 void G1DirtyCardQueueSet::PausedBuffers::add(BufferNode* node) {
   assert_not_at_safepoint();
   PausedList* plist = Atomic::load_acquire(&_plist);
-  if (plist == NULL) {
+  if (plist == nullptr) {
     // Try to install a new next list.
     plist = new PausedList();
-    PausedList* old_plist = Atomic::cmpxchg(&_plist, (PausedList*)NULL, plist);
-    if (old_plist != NULL) {
+    PausedList* old_plist = Atomic::cmpxchg(&_plist, (PausedList*)nullptr, plist);
+    if (old_plist != nullptr) {
       // Some other thread installed a new next list.  Use it instead.
       delete plist;
       plist = old_plist;
@@ -248,10 +248,10 @@ G1DirtyCardQueueSet::HeadTail G1DirtyCardQueueSet::PausedBuffers::take_previous(
     // deleted out from under us by a concurrent take_previous().
     GlobalCounter::CriticalSection cs(Thread::current());
     previous = Atomic::load_acquire(&_plist);
-    if ((previous == NULL) ||   // Nothing to take.
+    if ((previous == nullptr) ||   // Nothing to take.
         previous->is_next() ||  // Not from a previous safepoint.
         // Some other thread stole it.
-        (Atomic::cmpxchg(&_plist, previous, (PausedList*)NULL) != previous)) {
+        (Atomic::cmpxchg(&_plist, previous, (PausedList*)nullptr) != previous)) {
       return HeadTail();
     }
   }
@@ -269,8 +269,8 @@ G1DirtyCardQueueSet::HeadTail G1DirtyCardQueueSet::PausedBuffers::take_all() {
   assert_at_safepoint();
   HeadTail result;
   PausedList* plist = Atomic::load(&_plist);
-  if (plist != NULL) {
-    Atomic::store(&_plist, (PausedList*)NULL);
+  if (plist != nullptr) {
+    Atomic::store(&_plist, (PausedList*)nullptr);
     result = plist->take();
     delete plist;
   }
@@ -279,7 +279,7 @@ G1DirtyCardQueueSet::HeadTail G1DirtyCardQueueSet::PausedBuffers::take_all() {
 
 void G1DirtyCardQueueSet::record_paused_buffer(BufferNode* node) {
   assert_not_at_safepoint();
-  assert(node->next() == NULL, "precondition");
+  assert(node->next() == nullptr, "precondition");
   // Ensure there aren't any paused buffers from a previous safepoint.
   enqueue_previous_paused_buffers();
   // Cards for paused buffers are included in count, to contribute to
@@ -291,8 +291,8 @@ void G1DirtyCardQueueSet::record_paused_buffer(BufferNode* node) {
 }
 
 void G1DirtyCardQueueSet::enqueue_paused_buffers_aux(const HeadTail& paused) {
-  if (paused._head != NULL) {
-    assert(paused._tail != NULL, "invariant");
+  if (paused._head != nullptr) {
+    assert(paused._tail != nullptr, "invariant");
     // Cards from paused buffers are already recorded in the queue count.
     _completed.append(*paused._head, *paused._tail);
   }
@@ -311,10 +311,10 @@ void G1DirtyCardQueueSet::enqueue_all_paused_buffers() {
 void G1DirtyCardQueueSet::abandon_completed_buffers() {
   BufferNodeList list = take_all_completed_buffers();
   BufferNode* buffers_to_delete = list._head;
-  while (buffers_to_delete != NULL) {
+  while (buffers_to_delete != nullptr) {
     BufferNode* bn = buffers_to_delete;
     buffers_to_delete = bn->next();
-    bn->set_next(NULL);
+    bn->set_next(nullptr);
     deallocate_buffer(bn);
   }
 }
@@ -324,7 +324,7 @@ void G1DirtyCardQueueSet::abandon_completed_buffers() {
 void G1DirtyCardQueueSet::merge_bufferlists(G1RedirtyCardsQueueSet* src) {
   assert(allocator() == src->allocator(), "precondition");
   const BufferNodeList from = src->take_all_completed_buffers();
-  if (from._head != NULL) {
+  if (from._head != nullptr) {
     Atomic::add(&_num_cards, from._entry_count);
     _completed.append(*from._head, *from._tail);
   }
@@ -504,7 +504,7 @@ void G1DirtyCardQueueSet::handle_completed_buffer(BufferNode* new_node,
   }
 
   BufferNode* node = get_completed_buffer();
-  if (node == NULL) return;     // Didn't get a buffer to process.
+  if (node == nullptr) return;     // Didn't get a buffer to process.
 
   // Refine cards in buffer.
 
@@ -523,7 +523,7 @@ bool G1DirtyCardQueueSet::refine_completed_buffer_concurrently(uint worker_id,
   if (Atomic::load(&_num_cards) <= stop_at) return false;
 
   BufferNode* node = get_completed_buffer();
-  if (node == NULL) return false; // Didn't get a buffer to process.
+  if (node == nullptr) return false; // Didn't get a buffer to process.
 
   bool fully_processed = refine_buffer(node, worker_id, stats);
   handle_refined_buffer(node, fully_processed);

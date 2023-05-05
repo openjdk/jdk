@@ -814,7 +814,7 @@ jclass FindBootStrapClass(JNIEnv *env, const char *classname)
 }
 
 void
-InitLauncher(boolean javaw)
+InitLauncher(jboolean javaw)
 {
     INITCOMMONCONTROLSEX icx;
 

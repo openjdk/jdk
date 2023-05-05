@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2022 Unicode, Inc.
+<!-- Copyright © 1991-2023 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -959,6 +959,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="ZW">Зимбабве</territory>
 			<territory type="ZZ">Тодорхойгүй бүс</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">Англи</subdivision>
+			<subdivision type="gbsct">Шотланд</subdivision>
+			<subdivision type="gbwls">Уэльс</subdivision>
+		</subdivisions>
 		<keys>
 			<key type="calendar">цаглавар</key>
 			<key type="cf">мөнгөн тэмдэгтийн хэлбэр</key>
@@ -1132,6 +1137,342 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	</delimiters>
 	<dates>
 		<calendars>
+			<calendar type="buddhist">
+				<eras>
+					<eraNames>
+						<era type="0">BE</era>
+					</eraNames>
+					<eraNarrow>
+						<era type="0">BE</era>
+					</eraNarrow>
+				</eras>
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern>G y 'оны' MMMM'ын' d. cccc 'гараг'</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern>G y 'оны' MM 'сарын' dd</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern>G y 'оны' MMM'ын' d</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>GGGGG y.MM.dd</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<dateTimeFormats>
+					<dateTimeFormatLength type="full">
+						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="long">
+						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="medium">
+						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="short">
+						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<availableFormats>
+						<dateFormatItem id="d">d</dateFormatItem>
+						<dateFormatItem id="E">ccc</dateFormatItem>
+						<dateFormatItem id="Ed">dd. E</dateFormatItem>
+						<dateFormatItem id="Gy">G y</dateFormatItem>
+						<dateFormatItem id="GyMd">GGGGG y.MM.dd</dateFormatItem>
+						<dateFormatItem id="GyMMM">G y 'оны' MMM</dateFormatItem>
+						<dateFormatItem id="GyMMMd">G y 'оны' MMM'ын' d</dateFormatItem>
+						<dateFormatItem id="GyMMMEd">G y 'оны' MMM'ын' d. E</dateFormatItem>
+						<dateFormatItem id="M">LLLLL</dateFormatItem>
+						<dateFormatItem id="Md">MMMMM/dd</dateFormatItem>
+						<dateFormatItem id="MEd">MMMMM/dd. E</dateFormatItem>
+						<dateFormatItem id="MMM">LLL</dateFormatItem>
+						<dateFormatItem id="MMMd">MMM'ын' d</dateFormatItem>
+						<dateFormatItem id="MMMEd">MMM'ын' d. E</dateFormatItem>
+						<dateFormatItem id="MMMMd">MMMM'ын' d</dateFormatItem>
+						<dateFormatItem id="y">G y</dateFormatItem>
+						<dateFormatItem id="yyyy">G y</dateFormatItem>
+						<dateFormatItem id="yyyyM">GGGGG y MMMMM</dateFormatItem>
+						<dateFormatItem id="yyyyMd">GGGGG y.MM.dd</dateFormatItem>
+						<dateFormatItem id="yyyyMEd">GGGGG y.MM.dd. E</dateFormatItem>
+						<dateFormatItem id="yyyyMMM">G y 'оны' MMM</dateFormatItem>
+						<dateFormatItem id="yyyyMMMd">G y 'оны' MMM'ын' d</dateFormatItem>
+						<dateFormatItem id="yyyyMMMEd">G y 'оны' MMM'ын' d. E</dateFormatItem>
+						<dateFormatItem id="yyyyMMMM">G y 'оны' MMMM</dateFormatItem>
+						<dateFormatItem id="yyyyQQQ">G y 'оны' QQQ</dateFormatItem>
+						<dateFormatItem id="yyyyQQQQ">G y 'оны' QQQQ</dateFormatItem>
+					</availableFormats>
+					<intervalFormats>
+						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
+						<intervalFormatItem id="Bh">
+							<greatestDifference id="B">h B – h B</greatestDifference>
+							<greatestDifference id="h">h–h B</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Bhm">
+							<greatestDifference id="B">h:mm B – h:mm B</greatestDifference>
+							<greatestDifference id="h">h:mm–h:mm B</greatestDifference>
+							<greatestDifference id="m">h:mm–h:mm B</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="d">
+							<greatestDifference id="d">d – d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Gy">
+							<greatestDifference id="G">G y – G y</greatestDifference>
+							<greatestDifference id="y">G y–y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyM">
+							<greatestDifference id="G">GGGGG y-MM – GGGGG y-MM</greatestDifference>
+							<greatestDifference id="M">GGGGG y-MM – y-MM</greatestDifference>
+							<greatestDifference id="y">GGGGG y-MM – y-MM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMd">
+							<greatestDifference id="d">GGGGG y-MM-dd – y-MM-dd</greatestDifference>
+							<greatestDifference id="G">GGGGG y-MM-dd – GGGGG y-MM-dd</greatestDifference>
+							<greatestDifference id="M">GGGGG y-MM-dd – y-MM-dd</greatestDifference>
+							<greatestDifference id="y">GGGGG y-MM-dd – y-MM-dd</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMEd">
+							<greatestDifference id="d">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
+							<greatestDifference id="G">GGGGG y-MM-dd, E – GGGGG y-MM-dd, E</greatestDifference>
+							<greatestDifference id="M">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
+							<greatestDifference id="y">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMM">
+							<greatestDifference id="G">G y MMM – G y MMM</greatestDifference>
+							<greatestDifference id="M">G y MMM–MMM</greatestDifference>
+							<greatestDifference id="y">G y MMM – y MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMd">
+							<greatestDifference id="d">G y MMM d–d</greatestDifference>
+							<greatestDifference id="G">G y MMM d – G y MMM d</greatestDifference>
+							<greatestDifference id="M">G y MMM d – MMM d</greatestDifference>
+							<greatestDifference id="y">G y MMM d – y MMM d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMEd">
+							<greatestDifference id="d">G y MMM d, E – MMM d, E</greatestDifference>
+							<greatestDifference id="G">G y MMM d, E – G y MMM d, E</greatestDifference>
+							<greatestDifference id="M">G y MMM d, E – MMM d, E</greatestDifference>
+							<greatestDifference id="y">G y MMM d, E – y MMM d, E</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="h">
+							<greatestDifference id="a">h a – h a</greatestDifference>
+							<greatestDifference id="h">h–h a</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="H">
+							<greatestDifference id="H">HH–HH</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hm">
+							<greatestDifference id="a">h:mm a – h:mm a</greatestDifference>
+							<greatestDifference id="h">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="m">h:mm–h:mm a</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hm">
+							<greatestDifference id="H">HH:mm–HH:mm</greatestDifference>
+							<greatestDifference id="m">HH:mm–HH:mm</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hmv">
+							<greatestDifference id="a">h:mm a – h:mm a v</greatestDifference>
+							<greatestDifference id="h">h:mm–h:mm a v</greatestDifference>
+							<greatestDifference id="m">h:mm–h:mm a v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hmv">
+							<greatestDifference id="H">HH:mm–HH:mm v</greatestDifference>
+							<greatestDifference id="m">HH:mm–HH:mm v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hv">
+							<greatestDifference id="a">h a – h a v</greatestDifference>
+							<greatestDifference id="h">h–h a v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hv">
+							<greatestDifference id="H">HH–HH v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="M">
+							<greatestDifference id="M">MMMMM – MMMMM 'сар'</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Md">
+							<greatestDifference id="d">MMMMM/d – MMMMM/d</greatestDifference>
+							<greatestDifference id="M">MMMMM/d – MMMMM/d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MEd">
+							<greatestDifference id="d">MMMMM/d E – MMMMM/d E</greatestDifference>
+							<greatestDifference id="M">MMMMM/d E – MMMMM/d E</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMM">
+							<greatestDifference id="M">MMMMM – MMMMM 'сар'</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMd">
+							<greatestDifference id="d">MMMMM/d – d</greatestDifference>
+							<greatestDifference id="M">MMMMM/d – MMMMM/d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMEd">
+							<greatestDifference id="d">MMMMM/d E – MMMMM/d E</greatestDifference>
+							<greatestDifference id="M">MMMMM/d E – MMMMM/d E</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="y">
+							<greatestDifference id="y">G y–y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yM">
+							<greatestDifference id="M">GGGGG y 'оны' MMMMM–MMMMM 'сар'</greatestDifference>
+							<greatestDifference id="y">GGGGG y 'оны' MMMMM 'сар' – y 'оны' MMMMM 'сар'</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMd">
+							<greatestDifference id="d">GGGGG y 'оны' MMMMM/dd – MMMMM/dd</greatestDifference>
+							<greatestDifference id="M">GGGGG y 'оны' MMMMM/dd – MMMMM/dd</greatestDifference>
+							<greatestDifference id="y">GGGGG y 'оны' MMMMM/dd – y 'оны' MMMMM/dd</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMEd">
+							<greatestDifference id="d">GGGGG y 'оны' MMMMM/dd E – MMMMM/dd E</greatestDifference>
+							<greatestDifference id="M">GGGGG y 'оны' MMMMM/dd E – MMMMM/dd E</greatestDifference>
+							<greatestDifference id="y">GGGGG y 'оны' MMMMM/dd E – y 'оны' MMMMM/dd E</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMM">
+							<greatestDifference id="M">G y 'оны' MMMMM – MMMMM 'сар'</greatestDifference>
+							<greatestDifference id="y">G y 'оны' MMMMM 'сар' – y 'оны' MMMMM 'сар'</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMd">
+							<greatestDifference id="d">G y 'оны' MMMMM/dd – dd</greatestDifference>
+							<greatestDifference id="M">G y 'оны' MMMMM/dd – MMMMM/dd</greatestDifference>
+							<greatestDifference id="y">G y 'оны' MMMMM/dd – y 'оны' MMMMM/dd</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMEd">
+							<greatestDifference id="d">G y 'оны' MMMMM/dd E – MMMMM/dd E</greatestDifference>
+							<greatestDifference id="M">G y 'оны' MMMMM/dd E – MMMMM/dd E</greatestDifference>
+							<greatestDifference id="y">G y 'оны' MMMMM/dd E – y 'оны' MMMMM/dd E</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMM">
+							<greatestDifference id="M">G y 'оны' MMMMM – MMMMM 'сар'</greatestDifference>
+							<greatestDifference id="y">G y 'оны' MMMMM 'сар' – y 'оны' MMMMM 'сар'</greatestDifference>
+						</intervalFormatItem>
+					</intervalFormats>
+				</dateTimeFormats>
+			</calendar>
+			<calendar type="chinese">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1">1-р сар</month>
+							<month type="2">2-р сар</month>
+							<month type="3">3-р сар</month>
+							<month type="4">4-р сар</month>
+							<month type="5">5-р сар</month>
+							<month type="6">6-р сар</month>
+							<month type="7">7-р сар</month>
+							<month type="8">8-р сар</month>
+							<month type="9">9-р сар</month>
+							<month type="10">10-р сар</month>
+							<month type="11">11-р сар</month>
+							<month type="12">12-р сар</month>
+						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1">1</month>
+							<month type="2">2</month>
+							<month type="3">3</month>
+							<month type="4">4</month>
+							<month type="5">5</month>
+							<month type="6">6</month>
+							<month type="7">7</month>
+							<month type="8">8</month>
+							<month type="9">9</month>
+							<month type="10">10</month>
+							<month type="11">11</month>
+							<month type="12">12</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1">1-р сар</month>
+							<month type="2">2-р сар</month>
+							<month type="3">3-р сар</month>
+							<month type="4">4-р сар</month>
+							<month type="5">5-р сар</month>
+							<month type="6">6-р сар</month>
+							<month type="7">7-р сар</month>
+							<month type="8">8-р сар</month>
+							<month type="9">9-р сар</month>
+							<month type="10">10-р сар</month>
+							<month type="11">11-р сар</month>
+							<month type="12">12-р сар</month>
+						</monthWidth>
+					</monthContext>
+					<monthContext type="stand-alone">
+						<monthWidth type="abbreviated">
+							<month type="1">1-р сар</month>
+							<month type="2">2-р сар</month>
+							<month type="3">3-р сар</month>
+							<month type="4">4-р сар</month>
+							<month type="5">5-р сар</month>
+							<month type="6">6-р сар</month>
+							<month type="7">7-р сар</month>
+							<month type="8">8-р сар</month>
+							<month type="9">9-р сар</month>
+							<month type="10">10-р сар</month>
+							<month type="11">11-р сар</month>
+							<month type="12">12-р сар</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1">1-р сар</month>
+							<month type="2">2-р сар</month>
+							<month type="3">3-р сар</month>
+							<month type="4">4-р сар</month>
+							<month type="5">5-р сар</month>
+							<month type="6">6-р сар</month>
+							<month type="7">7-р сар</month>
+							<month type="8">8-р сар</month>
+							<month type="9">9-р сар</month>
+							<month type="10">10-р сар</month>
+							<month type="11">11-р сар</month>
+							<month type="12">12-р сар</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern>r(U) 'оны' MM 'сарын' d, EEEE</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern>r(U) 'оны' MM-'р' 'сарын' d</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern>r.MM.d</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>r-MM-dd</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+			</calendar>
 			<calendar type="generic">
 				<dateFormats>
 					<dateFormatLength type="full">
@@ -1164,9 +1505,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -1174,9 +1521,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -1613,7 +1966,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</eraAbbr>
 					<eraNarrow>
 						<era type="0">МЭӨ</era>
+						<era type="0" alt="variant">НТӨ</era>
 						<era type="1">МЭ</era>
+						<era type="1" alt="variant">НТ</era>
 					</eraNarrow>
 				</eras>
 				<dateFormats>
@@ -1673,9 +2028,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -1683,9 +2044,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -1869,6 +2236,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</field>
 			<field type="year-short">
 				<displayName>жил</displayName>
+				<relative type="-1">өнгөрсөн жил</relative>
+				<relative type="0">энэ жил</relative>
+				<relative type="1">ирэх жил</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} жилийн дараа</relativeTimePattern>
 					<relativeTimePattern count="other">{0} жилийн дараа</relativeTimePattern>
@@ -1880,6 +2250,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</field>
 			<field type="year-narrow">
 				<displayName>жил</displayName>
+				<relative type="-1">өнгөрсөн жил</relative>
+				<relative type="0">энэ жил</relative>
+				<relative type="1">ирэх жил</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} жилийн дараа</relativeTimePattern>
 					<relativeTimePattern count="other">{0} жилийн дараа</relativeTimePattern>
@@ -1905,6 +2278,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</field>
 			<field type="quarter-short">
 				<displayName>улирал</displayName>
+				<relative type="-1">өнгөрсөн улирал</relative>
+				<relative type="0">энэ улирал</relative>
+				<relative type="1">дараагийн улирал</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} улирлын дараа</relativeTimePattern>
 					<relativeTimePattern count="other">{0} улирлын дараа</relativeTimePattern>
@@ -1916,6 +2292,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</field>
 			<field type="quarter-narrow">
 				<displayName>улирал</displayName>
+				<relative type="-1">өнгөрсөн улирал</relative>
+				<relative type="0">энэ улирал</relative>
+				<relative type="1">дараагийн улирал</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} улирлын дараа</relativeTimePattern>
 					<relativeTimePattern count="other">{0} улирлын дараа</relativeTimePattern>
@@ -1941,6 +2320,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</field>
 			<field type="month-short">
 				<displayName>сар</displayName>
+				<relative type="-1">өнгөрсөн сар</relative>
+				<relative type="0">энэ сар</relative>
+				<relative type="1">ирэх сар</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} сарын дараа</relativeTimePattern>
 					<relativeTimePattern count="other">{0} сарын дараа</relativeTimePattern>
@@ -1952,6 +2334,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</field>
 			<field type="month-narrow">
 				<displayName>сар</displayName>
+				<relative type="-1">өнгөрсөн сар</relative>
+				<relative type="0">энэ сар</relative>
+				<relative type="1">ирэх сар</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} сарын дараа</relativeTimePattern>
 					<relativeTimePattern count="other">{0} сарын дараа</relativeTimePattern>
@@ -2033,6 +2418,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</field>
 			<field type="day-short">
 				<displayName>өдөр</displayName>
+				<relative type="-2">уржигдар</relative>
+				<relative type="-1">өчигдөр</relative>
+				<relative type="0">өнөөдөр</relative>
+				<relative type="1">маргааш</relative>
+				<relative type="2">нөгөөдөр</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} өдрийн дараа</relativeTimePattern>
 					<relativeTimePattern count="other">{0} өдрийн дараа</relativeTimePattern>
@@ -2044,6 +2434,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</field>
 			<field type="day-narrow">
 				<displayName>өдөр</displayName>
+				<relative type="-2">уржигдар</relative>
+				<relative type="-1">өчигдөр</relative>
+				<relative type="0">өнөөдөр</relative>
+				<relative type="1">маргааш</relative>
+				<relative type="2">нөгөөдөр</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} өдрийн дараа</relativeTimePattern>
 					<relativeTimePattern count="other">{0} өдрийн дараа</relativeTimePattern>
@@ -2376,6 +2771,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</field>
 			<field type="hour-short">
 				<displayName>ц</displayName>
+				<relative type="0">энэ цаг</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} ц дараа</relativeTimePattern>
 					<relativeTimePattern count="other">{0} ц дараа</relativeTimePattern>
@@ -2387,6 +2783,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</field>
 			<field type="hour-narrow">
 				<displayName>ц</displayName>
+				<relative type="0">энэ цаг</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} ц дараа</relativeTimePattern>
 					<relativeTimePattern count="other">{0} ц дараа</relativeTimePattern>
@@ -2410,6 +2807,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</field>
 			<field type="minute-short">
 				<displayName>мин</displayName>
+				<relative type="0">энэ минут</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} мин дараа</relativeTimePattern>
 					<relativeTimePattern count="other">{0} мин дараа</relativeTimePattern>
@@ -2421,6 +2819,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</field>
 			<field type="minute-narrow">
 				<displayName>мин</displayName>
+				<relative type="0">энэ минут</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} мин дараа</relativeTimePattern>
 					<relativeTimePattern count="other">{0} мин дараа</relativeTimePattern>
@@ -2444,6 +2843,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</field>
 			<field type="second-short">
 				<displayName>сек</displayName>
+				<relative type="0">одоо</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} сек дараа</relativeTimePattern>
 					<relativeTimePattern count="other">{0} сек дараа</relativeTimePattern>
@@ -2455,6 +2855,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</field>
 			<field type="second-narrow">
 				<displayName>сек</displayName>
+				<relative type="0">одоо</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} сек дараа</relativeTimePattern>
 					<relativeTimePattern count="other">{0} сек дараа</relativeTimePattern>
@@ -3275,6 +3676,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="America/Hermosillo">
 				<exemplarCity>Хермосилло</exemplarCity>
+			</zone>
+			<zone type="America/Ciudad_Juarez">
+				<exemplarCity>Сьюдад Хуарес</exemplarCity>
 			</zone>
 			<zone type="America/Mazatlan">
 				<exemplarCity>Мазатлан</exemplarCity>
@@ -4688,6 +5092,160 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<nan>NaN</nan>
 			<timeSeparator draft="contributed">:</timeSeparator>
 		</symbols>
+		<decimalFormats numberSystem="adlm">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="contributed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="arab">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="contributed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="arabext">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="contributed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="bali">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="contributed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="beng">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="contributed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="brah">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="contributed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="cakm">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="contributed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="cham">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="contributed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="deva">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="contributed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="fullwide">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="contributed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="gong">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="contributed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="gonm">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="contributed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="gujr">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="contributed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="guru">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="contributed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="hanidec">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="contributed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="java">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="contributed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="kali">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="contributed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="khmr">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="contributed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="knda">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="contributed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="lana">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="contributed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="lanatham">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="contributed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="laoo">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="contributed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
 		<decimalFormats numberSystem="latn">
 			<decimalFormatLength>
 				<decimalFormat>
@@ -4751,6 +5309,321 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</decimalFormat>
 			</decimalFormatLength>
 		</decimalFormats>
+		<decimalFormats numberSystem="lepc">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="contributed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="limb">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="contributed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="mlym">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="contributed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="mong">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="contributed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="mtei">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="contributed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="mymr">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="contributed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="mymrshan">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="contributed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="nkoo">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="contributed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="olck">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="contributed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="orya">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="contributed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="osma">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="contributed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="rohg">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="contributed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="saur">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="contributed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="shrd">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="contributed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="sora">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="contributed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="sund">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="contributed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="takr">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="contributed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="talu">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="contributed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="tamldec">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="contributed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="telu">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="contributed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="thai">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="contributed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="tibt">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="contributed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="vaii">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="contributed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<scientificFormats numberSystem="adlm">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern>#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="arab">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern>#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="arabext">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern>#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="bali">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern>#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="beng">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern>#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="brah">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern>#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="cakm">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern>#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="cham">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern>#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="deva">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern>#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="fullwide">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern>#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="gong">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern>#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="gonm">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern>#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="gujr">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern>#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="guru">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern>#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="hanidec">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern>#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="java">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern>#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="kali">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern>#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="khmr">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern>#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="knda">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern>#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="lana">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern>#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="lanatham">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern>#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="laoo">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern>#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
 		<scientificFormats numberSystem="latn">
 			<scientificFormatLength>
 				<scientificFormat>
@@ -4758,6 +5631,314 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</scientificFormat>
 			</scientificFormatLength>
 		</scientificFormats>
+		<scientificFormats numberSystem="lepc">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern>#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="limb">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern>#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="mlym">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern>#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="mong">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern>#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="mtei">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern>#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="mymr">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern>#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="mymrshan">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern>#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="nkoo">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern>#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="olck">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern>#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="orya">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern>#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="osma">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern>#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="rohg">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern>#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="saur">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern>#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="shrd">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern>#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="sora">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern>#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="sund">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern>#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="takr">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern>#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="talu">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern>#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="tamldec">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern>#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="telu">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern>#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="thai">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern>#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="tibt">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern>#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="vaii">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern>#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<percentFormats numberSystem="adlm">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern>#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="arabext">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern>#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="bali">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern>#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="beng">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern>#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="brah">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern>#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="cakm">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern>#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="cham">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern>#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="deva">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern>#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="fullwide">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern>#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="gong">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern>#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="gonm">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern>#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="gujr">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern>#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="guru">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern>#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="hanidec">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern>#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="java">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern>#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="kali">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern>#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="khmr">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern>#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="knda">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern>#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="lana">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern>#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="lanatham">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern>#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="laoo">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern>#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
 		<percentFormats numberSystem="latn">
 			<percentFormatLength>
 				<percentFormat>
@@ -4765,6 +5946,490 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</percentFormat>
 			</percentFormatLength>
 		</percentFormats>
+		<percentFormats numberSystem="lepc">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern>#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="limb">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern>#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="mlym">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern>#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="mong">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern>#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="mtei">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern>#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="mymr">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern>#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="mymrshan">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern>#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="nkoo">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern>#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="olck">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern>#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="orya">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern>#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="osma">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern>#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="rohg">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern>#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="saur">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern>#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="shrd">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern>#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="sora">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern>#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="sund">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern>#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="takr">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern>#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="talu">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern>#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="tamldec">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern>#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="telu">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern>#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="thai">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern>#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="tibt">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern>#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="vaii">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern>#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<currencyFormats numberSystem="adlm">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00;(#,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO>{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="one">{0} {1}</unitPattern>
+			<unitPattern count="other">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="arab">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern>#,##0.00 ¤</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="arabext">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00;(#,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO>{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="one">{0} {1}</unitPattern>
+			<unitPattern count="other">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="bali">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00;(#,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO>{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="one">{0} {1}</unitPattern>
+			<unitPattern count="other">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="beng">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00;(#,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO>{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="one">{0} {1}</unitPattern>
+			<unitPattern count="other">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="brah">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00;(#,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO>{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="one">{0} {1}</unitPattern>
+			<unitPattern count="other">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="cakm">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00;(#,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO>{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="one">{0} {1}</unitPattern>
+			<unitPattern count="other">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="cham">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00;(#,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO>{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="one">{0} {1}</unitPattern>
+			<unitPattern count="other">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="deva">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00;(#,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO>{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="one">{0} {1}</unitPattern>
+			<unitPattern count="other">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="fullwide">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00;(#,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO>{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="one">{0} {1}</unitPattern>
+			<unitPattern count="other">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="gong">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00;(#,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO>{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="one">{0} {1}</unitPattern>
+			<unitPattern count="other">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="gonm">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00;(#,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO>{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="one">{0} {1}</unitPattern>
+			<unitPattern count="other">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="gujr">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00;(#,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO>{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="one">{0} {1}</unitPattern>
+			<unitPattern count="other">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="guru">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00;(#,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO>{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="one">{0} {1}</unitPattern>
+			<unitPattern count="other">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="hanidec">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00;(#,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO>{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="one">{0} {1}</unitPattern>
+			<unitPattern count="other">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="java">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00;(#,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO>{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="one">{0} {1}</unitPattern>
+			<unitPattern count="other">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="kali">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00;(#,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO>{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="one">{0} {1}</unitPattern>
+			<unitPattern count="other">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="khmr">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00;(#,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO>{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="one">{0} {1}</unitPattern>
+			<unitPattern count="other">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="knda">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00;(#,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO>{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="one">{0} {1}</unitPattern>
+			<unitPattern count="other">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="lana">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00;(#,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO>{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="one">{0} {1}</unitPattern>
+			<unitPattern count="other">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="lanatham">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00;(#,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO>{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="one">{0} {1}</unitPattern>
+			<unitPattern count="other">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="laoo">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00;(#,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO>{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="one">{0} {1}</unitPattern>
+			<unitPattern count="other">{0} {1}</unitPattern>
+		</currencyFormats>
 		<currencyFormats numberSystem="latn">
 			<currencyFormatLength>
 				<currencyFormat type="standard">
@@ -4814,6 +6479,350 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<pattern type="100000000000000" count="other">¤ 000 их наяд</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
+			<unitPattern count="one">{0} {1}</unitPattern>
+			<unitPattern count="other">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="lepc">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00;(#,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO>{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="one">{0} {1}</unitPattern>
+			<unitPattern count="other">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="limb">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00;(#,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO>{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="one">{0} {1}</unitPattern>
+			<unitPattern count="other">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="mlym">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00;(#,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO>{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="one">{0} {1}</unitPattern>
+			<unitPattern count="other">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="mong">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00;(#,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO>{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="one">{0} {1}</unitPattern>
+			<unitPattern count="other">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="mtei">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00;(#,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO>{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="one">{0} {1}</unitPattern>
+			<unitPattern count="other">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="mymr">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00;(#,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO>{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="one">{0} {1}</unitPattern>
+			<unitPattern count="other">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="mymrshan">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00;(#,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO>{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="one">{0} {1}</unitPattern>
+			<unitPattern count="other">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="nkoo">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00;(#,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO>{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="one">{0} {1}</unitPattern>
+			<unitPattern count="other">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="olck">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern>¤ #,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO>{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="one">{0} {1}</unitPattern>
+			<unitPattern count="other">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="orya">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00;(#,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO>{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="one">{0} {1}</unitPattern>
+			<unitPattern count="other">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="osma">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00;(#,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO>{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="one">{0} {1}</unitPattern>
+			<unitPattern count="other">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="rohg">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00;(#,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO>{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="one">{0} {1}</unitPattern>
+			<unitPattern count="other">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="saur">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00;(#,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO>{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="one">{0} {1}</unitPattern>
+			<unitPattern count="other">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="shrd">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00;(#,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO>{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="one">{0} {1}</unitPattern>
+			<unitPattern count="other">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="sora">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00;(#,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO>{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="one">{0} {1}</unitPattern>
+			<unitPattern count="other">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="sund">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00;(#,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO>{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="one">{0} {1}</unitPattern>
+			<unitPattern count="other">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="takr">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00;(#,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO>{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="one">{0} {1}</unitPattern>
+			<unitPattern count="other">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="talu">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00;(#,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO>{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="one">{0} {1}</unitPattern>
+			<unitPattern count="other">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="tamldec">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00;(#,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO>{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="one">{0} {1}</unitPattern>
+			<unitPattern count="other">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="telu">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00;(#,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO>{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="one">{0} {1}</unitPattern>
+			<unitPattern count="other">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="thai">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00;(#,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO>{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="one">{0} {1}</unitPattern>
+			<unitPattern count="other">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="tibt">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00;(#,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO>{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="one">{0} {1}</unitPattern>
+			<unitPattern count="other">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="vaii">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00;(#,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO>{0} ¤¤</currencyPatternAppendISO>
 			<unitPattern count="one">{0} {1}</unitPattern>
 			<unitPattern count="other">{0} {1}</unitPattern>
 		</currencyFormats>
@@ -5896,7 +7905,276 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<symbol alt="narrow">ZK</symbol>
 			</currency>
 		</currencies>
+		<miscPatterns numberSystem="adlm">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">≥{0}</pattern>
+			<pattern type="atMost">≤{0}</pattern>
+			<pattern type="range">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="arab">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">≥{0}</pattern>
+			<pattern type="atMost">≤{0}</pattern>
+			<pattern type="range">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="arabext">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">≥{0}</pattern>
+			<pattern type="atMost">≤{0}</pattern>
+			<pattern type="range">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="bali">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">≥{0}</pattern>
+			<pattern type="atMost">≤{0}</pattern>
+			<pattern type="range">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="beng">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">≥{0}</pattern>
+			<pattern type="atMost">≤{0}</pattern>
+			<pattern type="range">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="brah">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">≥{0}</pattern>
+			<pattern type="atMost">≤{0}</pattern>
+			<pattern type="range">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="cakm">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">≥{0}</pattern>
+			<pattern type="atMost">≤{0}</pattern>
+			<pattern type="range">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="cham">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">≥{0}</pattern>
+			<pattern type="atMost">≤{0}</pattern>
+			<pattern type="range">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="deva">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">≥{0}</pattern>
+			<pattern type="atMost">≤{0}</pattern>
+			<pattern type="range">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="fullwide">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">≥{0}</pattern>
+			<pattern type="atMost">≤{0}</pattern>
+			<pattern type="range">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="gong">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">≥{0}</pattern>
+			<pattern type="atMost">≤{0}</pattern>
+			<pattern type="range">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="gonm">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">≥{0}</pattern>
+			<pattern type="atMost">≤{0}</pattern>
+			<pattern type="range">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="gujr">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">≥{0}</pattern>
+			<pattern type="atMost">≤{0}</pattern>
+			<pattern type="range">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="guru">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">≥{0}</pattern>
+			<pattern type="atMost">≤{0}</pattern>
+			<pattern type="range">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="hanidec">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">≥{0}</pattern>
+			<pattern type="atMost">≤{0}</pattern>
+			<pattern type="range">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="java">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">≥{0}</pattern>
+			<pattern type="atMost">≤{0}</pattern>
+			<pattern type="range">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="kali">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">≥{0}</pattern>
+			<pattern type="atMost">≤{0}</pattern>
+			<pattern type="range">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="khmr">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">≥{0}</pattern>
+			<pattern type="atMost">≤{0}</pattern>
+			<pattern type="range">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="knda">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">≥{0}</pattern>
+			<pattern type="atMost">≤{0}</pattern>
+			<pattern type="range">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="lana">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">≥{0}</pattern>
+			<pattern type="atMost">≤{0}</pattern>
+			<pattern type="range">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="lanatham">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">≥{0}</pattern>
+			<pattern type="atMost">≤{0}</pattern>
+			<pattern type="range">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="laoo">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">≥{0}</pattern>
+			<pattern type="atMost">≤{0}</pattern>
+			<pattern type="range">{0}–{1}</pattern>
+		</miscPatterns>
 		<miscPatterns numberSystem="latn">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">≥{0}</pattern>
+			<pattern type="atMost">≤{0}</pattern>
+			<pattern type="range">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="lepc">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">≥{0}</pattern>
+			<pattern type="atMost">≤{0}</pattern>
+			<pattern type="range">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="limb">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">≥{0}</pattern>
+			<pattern type="atMost">≤{0}</pattern>
+			<pattern type="range">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="mlym">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">≥{0}</pattern>
+			<pattern type="atMost">≤{0}</pattern>
+			<pattern type="range">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="mong">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">≥{0}</pattern>
+			<pattern type="atMost">≤{0}</pattern>
+			<pattern type="range">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="mtei">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">≥{0}</pattern>
+			<pattern type="atMost">≤{0}</pattern>
+			<pattern type="range">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="mymr">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">≥{0}</pattern>
+			<pattern type="atMost">≤{0}</pattern>
+			<pattern type="range">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="mymrshan">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">≥{0}</pattern>
+			<pattern type="atMost">≤{0}</pattern>
+			<pattern type="range">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="nkoo">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">≥{0}</pattern>
+			<pattern type="atMost">≤{0}</pattern>
+			<pattern type="range">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="olck">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">≥{0}</pattern>
+			<pattern type="atMost">≤{0}</pattern>
+			<pattern type="range">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="orya">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">≥{0}</pattern>
+			<pattern type="atMost">≤{0}</pattern>
+			<pattern type="range">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="osma">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">≥{0}</pattern>
+			<pattern type="atMost">≤{0}</pattern>
+			<pattern type="range">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="rohg">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">≥{0}</pattern>
+			<pattern type="atMost">≤{0}</pattern>
+			<pattern type="range">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="saur">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">≥{0}</pattern>
+			<pattern type="atMost">≤{0}</pattern>
+			<pattern type="range">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="shrd">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">≥{0}</pattern>
+			<pattern type="atMost">≤{0}</pattern>
+			<pattern type="range">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="sora">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">≥{0}</pattern>
+			<pattern type="atMost">≤{0}</pattern>
+			<pattern type="range">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="sund">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">≥{0}</pattern>
+			<pattern type="atMost">≤{0}</pattern>
+			<pattern type="range">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="takr">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">≥{0}</pattern>
+			<pattern type="atMost">≤{0}</pattern>
+			<pattern type="range">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="talu">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">≥{0}</pattern>
+			<pattern type="atMost">≤{0}</pattern>
+			<pattern type="range">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="tamldec">
+			<pattern type="atLeast">≥{0}</pattern>
+			<pattern type="atMost">≤{0}</pattern>
+			<pattern type="range">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="telu">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">≥{0}</pattern>
+			<pattern type="atMost">≤{0}</pattern>
+			<pattern type="range">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="thai">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">≥{0}</pattern>
+			<pattern type="atMost">≤{0}</pattern>
+			<pattern type="range">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="tibt">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">≥{0}</pattern>
+			<pattern type="atMost">≤{0}</pattern>
+			<pattern type="range">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="vaii">
 			<pattern type="approximately">~{0}</pattern>
 			<pattern type="atLeast">≥{0}</pattern>
 			<pattern type="atMost">≤{0}</pattern>
@@ -6006,6 +8284,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<compoundUnitPattern1>куб {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="one">куб {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other">куб {0}</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="times">
+				<compoundUnitPattern>{0}⋅{1}</compoundUnitPattern>
 			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<displayName>жи-хүч</displayName>
@@ -6390,6 +8671,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} Герц</unitPattern>
 				<unitPattern count="other">{0} Герц</unitPattern>
 			</unit>
+			<unit type="graphics-em">
+				<displayName>em</displayName>
+				<unitPattern count="one">{0} em</unitPattern>
+				<unitPattern count="other">{0} em</unitPattern>
+			</unit>
+			<unit type="graphics-pixel">
+				<displayName>px</displayName>
+				<unitPattern count="one">{0} px</unitPattern>
+				<unitPattern count="other">{0} px</unitPattern>
+			</unit>
+			<unit type="graphics-megapixel">
+				<displayName>MP</displayName>
+				<unitPattern count="one">{0} MP</unitPattern>
+				<unitPattern count="other">{0} MP</unitPattern>
+			</unit>
 			<unit type="graphics-pixel-per-centimeter">
 				<displayName>пиксель/см</displayName>
 				<unitPattern count="one">{0} пиксель/см</unitPattern>
@@ -6404,6 +8700,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>цэг/см</displayName>
 				<unitPattern count="one">{0} цэг/см</unitPattern>
 				<unitPattern count="other">{0} цэг/см</unitPattern>
+			</unit>
+			<unit type="graphics-dot-per-inch">
+				<displayName>ppi</displayName>
+				<unitPattern count="one">{0} ppi</unitPattern>
+				<unitPattern count="other">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
 				<displayName>цэг</displayName>
@@ -6721,6 +9022,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="speed-knot">
 				<displayName>зангилаа</displayName>
+				<unitPattern count="one">{0} занг.</unitPattern>
+				<unitPattern count="other">{0} занг.</unitPattern>
 			</unit>
 			<unit type="temperature-generic">
 				<displayName>°</displayName>
@@ -6834,6 +9137,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>акр-фут</displayName>
 				<unitPattern count="one">{0} акр-фут</unitPattern>
 				<unitPattern count="other">{0} акр-фут</unitPattern>
+			</unit>
+			<unit type="volume-bushel">
+				<displayName>bu</displayName>
+				<unitPattern count="one">{0} bu</unitPattern>
+				<unitPattern count="other">{0} bu</unitPattern>
 			</unit>
 			<unit type="volume-gallon">
 				<displayName>галлон</displayName>
@@ -7155,6 +9463,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="concentr-permyriad">
 				<displayName>арван мянганы хувь</displayName>
+				<unitPattern count="one">{0}‱</unitPattern>
+				<unitPattern count="other">{0}‱</unitPattern>
 			</unit>
 			<unit type="concentr-mole">
 				<displayName>моль</displayName>
@@ -7366,6 +9676,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="energy-british-thermal-unit">
 				<displayName>BTU</displayName>
+				<unitPattern count="one">{0} Btu</unitPattern>
+				<unitPattern count="other">{0} Btu</unitPattern>
 			</unit>
 			<unit type="energy-therm-us">
 				<displayName>ам.дулаан</displayName>
@@ -7374,6 +9686,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="force-pound-force">
 				<displayName>фунт хүч</displayName>
+				<unitPattern count="one">{0} lbf</unitPattern>
+				<unitPattern count="other">{0} lbf</unitPattern>
 			</unit>
 			<unit type="force-newton">
 				<displayName>ньютон</displayName>
@@ -7405,15 +9719,44 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} Гц</unitPattern>
 				<unitPattern count="other">{0} Гц</unitPattern>
 			</unit>
+			<unit type="graphics-em">
+				<unitPattern count="one">{0} em</unitPattern>
+				<unitPattern count="other">{0} em</unitPattern>
+			</unit>
+			<unit type="graphics-pixel">
+				<unitPattern count="one">{0} px</unitPattern>
+				<unitPattern count="other">{0} px</unitPattern>
+			</unit>
+			<unit type="graphics-megapixel">
+				<unitPattern count="one">{0} MP</unitPattern>
+				<unitPattern count="other">{0} MP</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-centimeter">
+				<unitPattern count="one">{0} ppcm</unitPattern>
+				<unitPattern count="other">{0} ppcm</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-inch">
+				<unitPattern count="one">{0} ppi</unitPattern>
+				<unitPattern count="other">{0} ppi</unitPattern>
+			</unit>
 			<unit type="graphics-dot-per-centimeter">
 				<displayName>цэг/см</displayName>
 				<unitPattern count="one">{0} цэг/см</unitPattern>
 				<unitPattern count="other">{0} цэг/см</unitPattern>
 			</unit>
+			<unit type="graphics-dot-per-inch">
+				<displayName>ppi</displayName>
+				<unitPattern count="one">{0} ppi</unitPattern>
+				<unitPattern count="other">{0} ppi</unitPattern>
+			</unit>
 			<unit type="graphics-dot">
 				<displayName>цэг</displayName>
 				<unitPattern count="one">{0} цэг</unitPattern>
 				<unitPattern count="other">{0} цэг</unitPattern>
+			</unit>
+			<unit type="length-earth-radius">
+				<unitPattern count="one">{0} R⊕</unitPattern>
+				<unitPattern count="other">{0} R⊕</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
 				<displayName>км</displayName>
@@ -7497,9 +9840,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="length-furlong">
 				<displayName>фурлонг</displayName>
+				<unitPattern count="one">{0} fur</unitPattern>
+				<unitPattern count="other">{0} fur</unitPattern>
 			</unit>
 			<unit type="length-fathom">
 				<displayName>фатом</displayName>
+				<unitPattern count="one">{0} fth</unitPattern>
+				<unitPattern count="other">{0} fth</unitPattern>
 			</unit>
 			<unit type="length-nautical-mile">
 				<displayName>дми</displayName>
@@ -7518,14 +9865,26 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="length-solar-radius">
 				<displayName>нарны радиус</displayName>
+				<unitPattern count="one">{0} R☉</unitPattern>
+				<unitPattern count="other">{0} R☉</unitPattern>
 			</unit>
 			<unit type="light-lux">
 				<displayName>люкс</displayName>
 				<unitPattern count="one">{0} люкс</unitPattern>
 				<unitPattern count="other">{0} люкс</unitPattern>
 			</unit>
+			<unit type="light-candela">
+				<unitPattern count="one">{0} cd</unitPattern>
+				<unitPattern count="other">{0} cd</unitPattern>
+			</unit>
+			<unit type="light-lumen">
+				<unitPattern count="one" draft="contributed">{0} lm</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} lm</unitPattern>
+			</unit>
 			<unit type="light-solar-luminosity">
 				<displayName>нарны гэрлийн урсгал</displayName>
+				<unitPattern count="one">{0} L☉</unitPattern>
+				<unitPattern count="other">{0} L☉</unitPattern>
 			</unit>
 			<unit type="mass-tonne">
 				<displayName>т</displayName>
@@ -7593,9 +9952,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="mass-earth-mass">
 				<displayName>Дэлхийн масс</displayName>
+				<unitPattern count="one">{0} M⊕</unitPattern>
+				<unitPattern count="other">{0} M⊕</unitPattern>
 			</unit>
 			<unit type="mass-solar-mass">
 				<displayName>нарны масс</displayName>
+				<unitPattern count="one">{0} M☉</unitPattern>
+				<unitPattern count="other">{0} M☉</unitPattern>
 			</unit>
 			<unit type="mass-grain">
 				<displayName>үр</displayName>
@@ -7722,6 +10085,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0}°К</unitPattern>
 				<unitPattern count="other">{0}°К</unitPattern>
 			</unit>
+			<unit type="torque-pound-force-foot">
+				<unitPattern count="one">{0} lbf⋅ft</unitPattern>
+				<unitPattern count="other">{0} lbf⋅ft</unitPattern>
+			</unit>
 			<unit type="torque-newton-meter">
 				<displayName>Н⋅м</displayName>
 				<unitPattern count="one">{0} Н⋅м</unitPattern>
@@ -7809,6 +10176,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>акр фут</displayName>
 				<unitPattern count="one">{0} акр фут</unitPattern>
 				<unitPattern count="other">{0} акр фут</unitPattern>
+			</unit>
+			<unit type="volume-bushel">
+				<unitPattern count="one">{0} bu</unitPattern>
+				<unitPattern count="other">{0} bu</unitPattern>
 			</unit>
 			<unit type="volume-gallon">
 				<displayName>гал</displayName>
@@ -8003,6 +10374,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<compoundUnitPattern1 count="one">{0}³</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other">{0}³</compoundUnitPattern1>
 			</compoundUnit>
+			<compoundUnit type="times">
+				<compoundUnitPattern>{0}⋅{1}</compoundUnitPattern>
+			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<displayName>гравитацын тогтмол хүч</displayName>
 				<unitPattern count="one">{0} гравитацын тогтмол хүч</unitPattern>
@@ -8010,42 +10384,103 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="acceleration-meter-per-square-second">
 				<displayName>м/с²</displayName>
+				<unitPattern count="one">{0} м/с²</unitPattern>
+				<unitPattern count="other">{0} м/с²</unitPattern>
+			</unit>
+			<unit type="angle-revolution">
+				<displayName>эргэлт</displayName>
+				<unitPattern count="one">{0} эргэлт</unitPattern>
+				<unitPattern count="other">{0} эргэлт</unitPattern>
+			</unit>
+			<unit type="angle-radian">
+				<displayName>радиан</displayName>
+				<unitPattern count="one">{0} рад</unitPattern>
+				<unitPattern count="other">{0} рад</unitPattern>
 			</unit>
 			<unit type="angle-degree">
+				<displayName>хэм</displayName>
 				<unitPattern count="one">{0}°</unitPattern>
 				<unitPattern count="other">{0}°</unitPattern>
 			</unit>
 			<unit type="angle-arc-minute">
+				<displayName>аркмин</displayName>
 				<unitPattern count="one">{0}′</unitPattern>
 				<unitPattern count="other">{0}′</unitPattern>
 			</unit>
 			<unit type="angle-arc-second">
+				<displayName>арксек</displayName>
 				<unitPattern count="one">{0}″</unitPattern>
 				<unitPattern count="other">{0}″</unitPattern>
 			</unit>
 			<unit type="area-square-kilometer">
+				<displayName>км²</displayName>
 				<unitPattern count="one">{0} км²</unitPattern>
 				<unitPattern count="other">{0} км²</unitPattern>
+				<perUnitPattern>{0}/км²</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
+				<displayName>гектар</displayName>
 				<unitPattern count="one">{0} га</unitPattern>
 				<unitPattern count="other">{0} га</unitPattern>
 			</unit>
 			<unit type="area-square-meter">
+				<displayName>метр²</displayName>
 				<unitPattern count="one">{0} м²</unitPattern>
 				<unitPattern count="other">{0} м²</unitPattern>
+				<perUnitPattern>{0}/м²</perUnitPattern>
+			</unit>
+			<unit type="area-square-centimeter">
+				<displayName>см²</displayName>
+				<unitPattern count="one">{0} см²</unitPattern>
+				<unitPattern count="other">{0} см²</unitPattern>
+				<perUnitPattern>{0}/см²</perUnitPattern>
 			</unit>
 			<unit type="area-square-mile">
+				<displayName>миль²</displayName>
 				<unitPattern count="one">{0} миль²</unitPattern>
 				<unitPattern count="other">{0} миль²</unitPattern>
+				<perUnitPattern>{0}/миль²</perUnitPattern>
 			</unit>
 			<unit type="area-acre">
+				<displayName>акр</displayName>
 				<unitPattern count="one">{0} акр</unitPattern>
 				<unitPattern count="other">{0} акр</unitPattern>
 			</unit>
+			<unit type="area-square-yard">
+				<displayName>ярд²</displayName>
+				<unitPattern count="one">{0} ярд²</unitPattern>
+				<unitPattern count="other">{0} ярд²</unitPattern>
+			</unit>
 			<unit type="area-square-foot">
+				<displayName>фут²</displayName>
 				<unitPattern count="one">{0} фт²</unitPattern>
 				<unitPattern count="other">{0} фт²</unitPattern>
+			</unit>
+			<unit type="area-square-inch">
+				<displayName>инч²</displayName>
+				<unitPattern count="one">{0} инч²</unitPattern>
+				<unitPattern count="other">{0} инч²</unitPattern>
+				<perUnitPattern>{0}/инч²</perUnitPattern>
+			</unit>
+			<unit type="area-dunam">
+				<displayName>дунам</displayName>
+				<unitPattern count="one">{0} дунам</unitPattern>
+				<unitPattern count="other">{0} дунам</unitPattern>
+			</unit>
+			<unit type="concentr-karat">
+				<displayName>карат</displayName>
+				<unitPattern count="one">{0} кар</unitPattern>
+				<unitPattern count="other">{0} кар</unitPattern>
+			</unit>
+			<unit type="concentr-milligram-ofglucose-per-deciliter">
+				<displayName>мг/дл</displayName>
+				<unitPattern count="one">{0} мг/дл</unitPattern>
+				<unitPattern count="other">{0} мг/дл</unitPattern>
+			</unit>
+			<unit type="concentr-millimole-per-liter">
+				<displayName>миллимоль/литр</displayName>
+				<unitPattern count="one">{0} ммоль/л</unitPattern>
+				<unitPattern count="other">{0} ммоль/л</unitPattern>
 			</unit>
 			<unit type="concentr-item">
 				<displayName>зүйл</displayName>
@@ -8064,27 +10499,109 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="concentr-permille">
 				<displayName>‰</displayName>
+				<unitPattern count="one">{0}‰</unitPattern>
+				<unitPattern count="other">{0}‰</unitPattern>
 			</unit>
 			<unit type="concentr-permyriad">
 				<displayName>‱</displayName>
+				<unitPattern count="one">{0}‱</unitPattern>
+				<unitPattern count="other">{0}‱</unitPattern>
+			</unit>
+			<unit type="concentr-mole">
+				<displayName>моль</displayName>
+				<unitPattern count="one">{0} моль</unitPattern>
+				<unitPattern count="other">{0} моль</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>л/км</displayName>
+				<unitPattern count="one">{0} л/км</unitPattern>
+				<unitPattern count="other">{0} л/км</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>л/100км</displayName>
 				<unitPattern count="one">{0} л/100км</unitPattern>
 				<unitPattern count="other">{0}л/100км</unitPattern>
 			</unit>
+			<unit type="consumption-mile-per-gallon">
+				<displayName>миль/гал</displayName>
+				<unitPattern count="one">миль/гал</unitPattern>
+				<unitPattern count="other">{0} ми/гал</unitPattern>
+			</unit>
 			<unit type="consumption-mile-per-gallon-imperial">
 				<displayName>ми/анг. гал</displayName>
 				<unitPattern count="one">{0} ми/анг.гал</unitPattern>
 				<unitPattern count="other">{0} ми/анг.гал</unitPattern>
 			</unit>
+			<unit type="digital-petabyte">
+				<displayName>ПБайт</displayName>
+				<unitPattern count="one">{0} ПБ</unitPattern>
+				<unitPattern count="other">{0} ПБ</unitPattern>
+			</unit>
+			<unit type="digital-terabyte">
+				<displayName>Тбайт</displayName>
+				<unitPattern count="one">{0} ТБ</unitPattern>
+				<unitPattern count="other">{0} ТБ</unitPattern>
+			</unit>
+			<unit type="digital-terabit">
+				<displayName>Тбит</displayName>
+				<unitPattern count="one">{0} Тб</unitPattern>
+				<unitPattern count="other">{0} Тб</unitPattern>
+			</unit>
+			<unit type="digital-gigabyte">
+				<displayName>Гбайт</displayName>
+				<unitPattern count="one">{0} ГБ</unitPattern>
+				<unitPattern count="other">{0} ГБ</unitPattern>
+			</unit>
+			<unit type="digital-gigabit">
+				<displayName>Гбит</displayName>
+				<unitPattern count="one">{0} Гб</unitPattern>
+				<unitPattern count="other">{0} Гб</unitPattern>
+			</unit>
+			<unit type="digital-megabyte">
+				<displayName>Мбайт</displayName>
+				<unitPattern count="one">{0} МБ</unitPattern>
+				<unitPattern count="other">{0} МБ</unitPattern>
+			</unit>
+			<unit type="digital-megabit">
+				<displayName>Мбит</displayName>
+				<unitPattern count="one">{0} Мб</unitPattern>
+				<unitPattern count="other">{0} Мб</unitPattern>
+			</unit>
+			<unit type="digital-kilobyte">
+				<displayName>кбайт</displayName>
+				<unitPattern count="one">{0} кБ</unitPattern>
+				<unitPattern count="other">{0} кБ</unitPattern>
+			</unit>
+			<unit type="digital-kilobit">
+				<displayName>кбит</displayName>
+				<unitPattern count="one">{0} кб</unitPattern>
+				<unitPattern count="other">{0} кб</unitPattern>
+			</unit>
+			<unit type="digital-byte">
+				<displayName>байт</displayName>
+				<unitPattern count="one">{0} байт</unitPattern>
+				<unitPattern count="other">{0} байт</unitPattern>
+			</unit>
+			<unit type="digital-bit">
+				<displayName>бит</displayName>
+				<unitPattern count="one">{0} бит</unitPattern>
+				<unitPattern count="other">{0} бит</unitPattern>
+			</unit>
+			<unit type="duration-century">
+				<displayName>зуун</displayName>
+				<unitPattern count="one">{0} зуун</unitPattern>
+				<unitPattern count="other">{0} зуун</unitPattern>
+			</unit>
+			<unit type="duration-decade">
+				<displayName>декад</displayName>
+				<unitPattern count="one">{0} декад</unitPattern>
+				<unitPattern count="other">{0} декад</unitPattern>
+			</unit>
 			<unit type="duration-year">
 				<displayName>жил</displayName>
 				<unitPattern count="one">{0}ж</unitPattern>
 				<unitPattern count="other">{0}ж</unitPattern>
+				<perUnitPattern>{0}/ж</perUnitPattern>
 			</unit>
 			<unit type="duration-quarter">
 				<displayName>улирал</displayName>
@@ -8096,44 +10613,182 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>сар</displayName>
 				<unitPattern count="one">{0}с</unitPattern>
 				<unitPattern count="other">{0}с</unitPattern>
+				<perUnitPattern>{0}/сар</perUnitPattern>
 			</unit>
 			<unit type="duration-week">
 				<displayName>д.х</displayName>
 				<unitPattern count="one">{0} д.х</unitPattern>
 				<unitPattern count="other">{0} д.х</unitPattern>
+				<perUnitPattern>{0}/д.х</perUnitPattern>
 			</unit>
 			<unit type="duration-day">
 				<displayName>хоног</displayName>
 				<unitPattern count="one">{0} хоног</unitPattern>
 				<unitPattern count="other">{0} хоног</unitPattern>
+				<perUnitPattern>{0}/хоног</perUnitPattern>
 			</unit>
 			<unit type="duration-hour">
 				<displayName>цаг</displayName>
 				<unitPattern count="one">{0} ц</unitPattern>
 				<unitPattern count="other">{0} ц</unitPattern>
+				<perUnitPattern>{0}/ц</perUnitPattern>
 			</unit>
 			<unit type="duration-minute">
 				<displayName>мин</displayName>
 				<unitPattern count="one">{0} мин</unitPattern>
 				<unitPattern count="other">{0} мин</unitPattern>
+				<perUnitPattern>{0}/мин</perUnitPattern>
 			</unit>
 			<unit type="duration-second">
 				<displayName>сек</displayName>
 				<unitPattern count="one">{0} сек</unitPattern>
 				<unitPattern count="other">{0} сек</unitPattern>
+				<perUnitPattern>{0}/сек</perUnitPattern>
 			</unit>
 			<unit type="duration-millisecond">
 				<displayName>мсек</displayName>
 				<unitPattern count="one">{0} мс</unitPattern>
 				<unitPattern count="other">{0} мс</unitPattern>
 			</unit>
+			<unit type="duration-microsecond">
+				<displayName>μсек</displayName>
+				<unitPattern count="one">{0} μсек</unitPattern>
+				<unitPattern count="other">{0} μсек</unitPattern>
+			</unit>
+			<unit type="duration-nanosecond">
+				<displayName>наносек</displayName>
+				<unitPattern count="one">{0} нс</unitPattern>
+				<unitPattern count="other">{0} нс</unitPattern>
+			</unit>
+			<unit type="electric-ampere">
+				<displayName>А</displayName>
+				<unitPattern count="one">{0} А</unitPattern>
+				<unitPattern count="other">{0} A</unitPattern>
+			</unit>
+			<unit type="electric-milliampere">
+				<displayName>мА</displayName>
+				<unitPattern count="one">{0} мА</unitPattern>
+				<unitPattern count="other">{0} мА</unitPattern>
+			</unit>
+			<unit type="electric-ohm">
+				<displayName>Ω</displayName>
+				<unitPattern count="one">{0} Ω</unitPattern>
+				<unitPattern count="other">{0} Ω</unitPattern>
+			</unit>
+			<unit type="electric-volt">
+				<displayName>В</displayName>
+				<unitPattern count="one">{0} В</unitPattern>
+				<unitPattern count="other">{0} В</unitPattern>
+			</unit>
+			<unit type="energy-kilocalorie">
+				<displayName>ккал</displayName>
+				<unitPattern count="one">{0} ккал</unitPattern>
+				<unitPattern count="other">{0} ккал</unitPattern>
+			</unit>
+			<unit type="energy-calorie">
+				<displayName>кал</displayName>
+				<unitPattern count="one">{0} кал</unitPattern>
+				<unitPattern count="other">{0} кал</unitPattern>
+			</unit>
+			<unit type="energy-foodcalorie">
+				<displayName>кал</displayName>
+				<unitPattern count="one">{0} кал</unitPattern>
+				<unitPattern count="other">{0} кал</unitPattern>
+			</unit>
+			<unit type="energy-kilojoule">
+				<displayName>килоЖоуль</displayName>
+				<unitPattern count="one">{0} кЖ</unitPattern>
+				<unitPattern count="other">{0} кЖ</unitPattern>
+			</unit>
+			<unit type="energy-joule">
+				<displayName>Жоуль</displayName>
+				<unitPattern count="one">{0} Ж</unitPattern>
+				<unitPattern count="other">{0} Ж</unitPattern>
+			</unit>
+			<unit type="energy-kilowatt-hour">
+				<displayName>кВт-цаг</displayName>
+				<unitPattern count="one">{0} кВтц</unitPattern>
+				<unitPattern count="other">{0} кВтц</unitPattern>
+			</unit>
+			<unit type="energy-electronvolt">
+				<displayName>электрон-Вольт</displayName>
+				<unitPattern count="one">{0} эВ</unitPattern>
+				<unitPattern count="other">{0} эВ</unitPattern>
+			</unit>
+			<unit type="energy-british-thermal-unit">
+				<displayName>BTU</displayName>
+				<unitPattern count="one">{0} Btu</unitPattern>
+				<unitPattern count="other">{0} Btu</unitPattern>
+			</unit>
+			<unit type="energy-therm-us">
+				<displayName>ам.дулаан</displayName>
+				<unitPattern count="one">{0} ам.дулаан</unitPattern>
+				<unitPattern count="other">{0} ам.дулаан</unitPattern>
+			</unit>
 			<unit type="force-pound-force">
 				<displayName>lbf</displayName>
+				<unitPattern count="one">{0} lbf</unitPattern>
+				<unitPattern count="other">{0} lbf</unitPattern>
+			</unit>
+			<unit type="force-newton">
+				<displayName>ньютон</displayName>
+				<unitPattern count="one">{0} Н</unitPattern>
+				<unitPattern count="other">{0} Н</unitPattern>
 			</unit>
 			<unit type="force-kilowatt-hour-per-100-kilometer">
 				<displayName>кВт.ц/100 км</displayName>
 				<unitPattern count="one">{0}кВт.ц/100км</unitPattern>
 				<unitPattern count="other">{0}кВт.ц/100км</unitPattern>
+			</unit>
+			<unit type="frequency-gigahertz">
+				<displayName>ГГц</displayName>
+				<unitPattern count="one">{0} ГГц</unitPattern>
+				<unitPattern count="other">{0} ГГц</unitPattern>
+			</unit>
+			<unit type="frequency-megahertz">
+				<displayName>МГц</displayName>
+				<unitPattern count="one">{0} МГц</unitPattern>
+				<unitPattern count="other">{0} МГц</unitPattern>
+			</unit>
+			<unit type="frequency-kilohertz">
+				<displayName>кГц</displayName>
+				<unitPattern count="one">{0} кГц</unitPattern>
+				<unitPattern count="other">{0} кГц</unitPattern>
+			</unit>
+			<unit type="frequency-hertz">
+				<displayName>Гц</displayName>
+				<unitPattern count="one">{0} Гц</unitPattern>
+				<unitPattern count="other">{0} Гц</unitPattern>
+			</unit>
+			<unit type="graphics-em">
+				<displayName>em</displayName>
+				<unitPattern count="one">{0} em</unitPattern>
+				<unitPattern count="other">{0} em</unitPattern>
+			</unit>
+			<unit type="graphics-pixel">
+				<displayName>px</displayName>
+				<unitPattern count="one">{0} px</unitPattern>
+				<unitPattern count="other">{0} px</unitPattern>
+			</unit>
+			<unit type="graphics-megapixel">
+				<displayName>MP</displayName>
+				<unitPattern count="one">{0} MP</unitPattern>
+				<unitPattern count="other">{0} MP</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-centimeter">
+				<displayName>ppcm</displayName>
+				<unitPattern count="one">{0} ppcm</unitPattern>
+				<unitPattern count="other">{0} ppcm</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-inch">
+				<displayName>ppi</displayName>
+				<unitPattern count="one">{0} ppi</unitPattern>
+				<unitPattern count="other">{0} ppi</unitPattern>
+			</unit>
+			<unit type="graphics-dot-per-centimeter">
+				<displayName>цэг/см</displayName>
+				<unitPattern count="one">{0} цэг/см</unitPattern>
+				<unitPattern count="other">{0} цэг/см</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
 				<displayName>цэг/инч</displayName>
@@ -8141,50 +10796,87 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} цэг/инч</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
+				<displayName>цэг</displayName>
 				<unitPattern count="one">{0}цэг</unitPattern>
 				<unitPattern count="other">{0}цэг</unitPattern>
+			</unit>
+			<unit type="length-earth-radius">
+				<displayName>R⊕</displayName>
+				<unitPattern count="one">{0} R⊕</unitPattern>
+				<unitPattern count="other">{0} R⊕</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
 				<displayName>км</displayName>
 				<unitPattern count="one">{0} км</unitPattern>
 				<unitPattern count="other">{0} км</unitPattern>
+				<perUnitPattern>{0}/км</perUnitPattern>
 			</unit>
 			<unit type="length-meter">
 				<displayName>метр</displayName>
 				<unitPattern count="one">{0} м</unitPattern>
 				<unitPattern count="other">{0} м</unitPattern>
+				<perUnitPattern>{0}/м</perUnitPattern>
+			</unit>
+			<unit type="length-decimeter">
+				<displayName>дм</displayName>
+				<unitPattern count="one">{0} дм</unitPattern>
+				<unitPattern count="other">{0} дм</unitPattern>
 			</unit>
 			<unit type="length-centimeter">
 				<displayName>см</displayName>
 				<unitPattern count="one">{0} см</unitPattern>
 				<unitPattern count="other">{0} см</unitPattern>
+				<perUnitPattern>{0}/см</perUnitPattern>
 			</unit>
 			<unit type="length-millimeter">
 				<displayName>мм</displayName>
 				<unitPattern count="one">{0} мм</unitPattern>
 				<unitPattern count="other">{0} мм</unitPattern>
 			</unit>
+			<unit type="length-micrometer">
+				<displayName>μметр</displayName>
+				<unitPattern count="one">{0} μм</unitPattern>
+				<unitPattern count="other">{0} μм</unitPattern>
+			</unit>
+			<unit type="length-nanometer">
+				<displayName>нм</displayName>
+				<unitPattern count="one">{0} нм</unitPattern>
+				<unitPattern count="other">{0} нм</unitPattern>
+			</unit>
 			<unit type="length-picometer">
+				<displayName>пм</displayName>
 				<unitPattern count="one">{0} пм</unitPattern>
 				<unitPattern count="other">{0} пм</unitPattern>
 			</unit>
 			<unit type="length-mile">
+				<displayName>миль</displayName>
 				<unitPattern count="one">{0} миль</unitPattern>
 				<unitPattern count="other">{0} миль</unitPattern>
 			</unit>
 			<unit type="length-yard">
+				<displayName>ярд</displayName>
 				<unitPattern count="one">{0} ярд</unitPattern>
 				<unitPattern count="other">{0} ярд</unitPattern>
 			</unit>
 			<unit type="length-foot">
+				<displayName>фут</displayName>
 				<unitPattern count="one">{0}′</unitPattern>
 				<unitPattern count="other">{0}′</unitPattern>
+				<perUnitPattern>{0}/фут</perUnitPattern>
 			</unit>
 			<unit type="length-inch">
+				<displayName>инч</displayName>
 				<unitPattern count="one">{0}″</unitPattern>
 				<unitPattern count="other">{0}″</unitPattern>
+				<perUnitPattern>{0}/инч</perUnitPattern>
+			</unit>
+			<unit type="length-parsec">
+				<displayName>парсек</displayName>
+				<unitPattern count="one">{0} пк</unitPattern>
+				<unitPattern count="other">{0} пк</unitPattern>
 			</unit>
 			<unit type="length-light-year">
+				<displayName>гэрл. жил</displayName>
 				<unitPattern count="one">{0} гэрл.жил</unitPattern>
 				<unitPattern count="other">{0} гэрл.жил</unitPattern>
 			</unit>
@@ -8194,15 +10886,39 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}au</unitPattern>
 			</unit>
 			<unit type="length-furlong">
+				<displayName>фурлонг</displayName>
 				<unitPattern count="one">{0} фурлонг</unitPattern>
 				<unitPattern count="other">{0} фурлонг</unitPattern>
 			</unit>
+			<unit type="length-fathom">
+				<displayName>фатом</displayName>
+				<unitPattern count="one">{0} fth</unitPattern>
+				<unitPattern count="other">{0} fth</unitPattern>
+			</unit>
+			<unit type="length-nautical-mile">
+				<displayName>дми</displayName>
+				<unitPattern count="one">{0} дми</unitPattern>
+				<unitPattern count="other">{0} дми</unitPattern>
+			</unit>
 			<unit type="length-mile-scandinavian">
+				<displayName>скандинавын миль</displayName>
 				<unitPattern count="one">{0} ск.миль</unitPattern>
 				<unitPattern count="other">{0} ск.миль</unitPattern>
 			</unit>
+			<unit type="length-point">
+				<displayName>оноо</displayName>
+				<unitPattern count="one">{0} оноо</unitPattern>
+				<unitPattern count="other">{0} оноо</unitPattern>
+			</unit>
 			<unit type="length-solar-radius">
 				<displayName>R☉</displayName>
+				<unitPattern count="one">{0} R☉</unitPattern>
+				<unitPattern count="other">{0} R☉</unitPattern>
+			</unit>
+			<unit type="light-lux">
+				<displayName>люкс</displayName>
+				<unitPattern count="one">{0} люкс</unitPattern>
+				<unitPattern count="other">{0} люкс</unitPattern>
 			</unit>
 			<unit type="light-candela">
 				<displayName>кандел</displayName>
@@ -8216,42 +10932,140 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="light-solar-luminosity">
 				<displayName>L☉</displayName>
+				<unitPattern count="one">{0} L☉</unitPattern>
+				<unitPattern count="other">{0} L☉</unitPattern>
+			</unit>
+			<unit type="mass-tonne">
+				<displayName>т</displayName>
+				<unitPattern count="one">{0} т</unitPattern>
+				<unitPattern count="other">{0} т</unitPattern>
 			</unit>
 			<unit type="mass-kilogram">
 				<displayName>кг</displayName>
 				<unitPattern count="one">{0} кг</unitPattern>
 				<unitPattern count="other">{0} кг</unitPattern>
+				<perUnitPattern>{0}/кг</perUnitPattern>
 			</unit>
 			<unit type="mass-gram">
 				<displayName>грамм</displayName>
 				<unitPattern count="one">{0} гр</unitPattern>
 				<unitPattern count="other">{0} гр</unitPattern>
+				<perUnitPattern>{0}/гр</perUnitPattern>
+			</unit>
+			<unit type="mass-milligram">
+				<displayName>мг</displayName>
+				<unitPattern count="one">{0} мг</unitPattern>
+				<unitPattern count="other">{0} мг</unitPattern>
+			</unit>
+			<unit type="mass-microgram">
+				<displayName>μг</displayName>
+				<unitPattern count="one">{0} μг</unitPattern>
+				<unitPattern count="other">{0} μг</unitPattern>
+			</unit>
+			<unit type="mass-ton">
+				<displayName>америк тонн</displayName>
+				<unitPattern count="one">{0} ам. тн</unitPattern>
+				<unitPattern count="other">{0} ам. тн</unitPattern>
+			</unit>
+			<unit type="mass-stone">
+				<displayName>чулуу</displayName>
+				<unitPattern count="one">{0} ч</unitPattern>
+				<unitPattern count="other">{0} ч</unitPattern>
 			</unit>
 			<unit type="mass-pound">
+				<displayName>фунт</displayName>
 				<unitPattern count="one">{0}#</unitPattern>
 				<unitPattern count="other">{0}#</unitPattern>
+				<perUnitPattern>{0}/фунт</perUnitPattern>
 			</unit>
 			<unit type="mass-ounce">
+				<displayName>унц</displayName>
 				<unitPattern count="one">{0} унц</unitPattern>
 				<unitPattern count="other">{0} унц</unitPattern>
+				<perUnitPattern>{0}/унц</perUnitPattern>
+			</unit>
+			<unit type="mass-ounce-troy">
+				<displayName>трой унц</displayName>
+				<unitPattern count="one">{0} тр.унц</unitPattern>
+				<unitPattern count="other">{0} тр.унц</unitPattern>
+			</unit>
+			<unit type="mass-carat">
+				<displayName>карат</displayName>
+				<unitPattern count="one">{0} кар</unitPattern>
+				<unitPattern count="other">{0} кар</unitPattern>
+			</unit>
+			<unit type="mass-dalton">
+				<displayName>дальтон</displayName>
+				<unitPattern count="one">{0} Да</unitPattern>
+				<unitPattern count="other">{0} Да</unitPattern>
+			</unit>
+			<unit type="mass-earth-mass">
+				<displayName>Дэлхийн масс</displayName>
+				<unitPattern count="one">{0} M⊕</unitPattern>
+				<unitPattern count="other">{0} M⊕</unitPattern>
+			</unit>
+			<unit type="mass-solar-mass">
+				<displayName>нарны масс</displayName>
+				<unitPattern count="one">{0} M☉</unitPattern>
+				<unitPattern count="other">{0} M☉</unitPattern>
+			</unit>
+			<unit type="mass-grain">
+				<displayName>үр</displayName>
+				<unitPattern count="one">{0} үр</unitPattern>
+				<unitPattern count="other">{0} үр</unitPattern>
+			</unit>
+			<unit type="power-gigawatt">
+				<displayName>ГВт</displayName>
+				<unitPattern count="one">{0} ГВт</unitPattern>
+				<unitPattern count="other">{0} ГВт</unitPattern>
+			</unit>
+			<unit type="power-megawatt">
+				<displayName>МВт</displayName>
+				<unitPattern count="one">{0} МВт</unitPattern>
+				<unitPattern count="other">{0} МВт</unitPattern>
 			</unit>
 			<unit type="power-kilowatt">
+				<displayName>кВт</displayName>
 				<unitPattern count="one">{0} кватт</unitPattern>
 				<unitPattern count="other">{0} кватт</unitPattern>
 			</unit>
 			<unit type="power-watt">
+				<displayName>Ватт</displayName>
 				<unitPattern count="one">{0} ватт</unitPattern>
 				<unitPattern count="other">{0} ватт</unitPattern>
 			</unit>
+			<unit type="power-milliwatt">
+				<displayName>мВт</displayName>
+				<unitPattern count="one">{0} мВт</unitPattern>
+				<unitPattern count="other">{0} мВт</unitPattern>
+			</unit>
 			<unit type="power-horsepower">
+				<displayName>мх</displayName>
 				<unitPattern count="one">{0} м.х.</unitPattern>
 				<unitPattern count="other">{0} м.х.</unitPattern>
 			</unit>
+			<unit type="pressure-millimeter-ofhg">
+				<displayName>мм.муб</displayName>
+				<unitPattern count="one">{0} мм.муб</unitPattern>
+				<unitPattern count="other">{0} мм.муб</unitPattern>
+			</unit>
+			<unit type="pressure-pound-force-per-square-inch">
+				<displayName>фунт/инч²</displayName>
+				<unitPattern count="one">{0} фунт/инч²</unitPattern>
+				<unitPattern count="other">{0} фунт/инч²</unitPattern>
+			</unit>
 			<unit type="pressure-inch-ofhg">
+				<displayName>инч.муб</displayName>
 				<unitPattern count="one">{0} муб</unitPattern>
 				<unitPattern count="other">{0} муб</unitPattern>
 			</unit>
+			<unit type="pressure-bar">
+				<displayName>бар</displayName>
+				<unitPattern count="one">{0} бар</unitPattern>
+				<unitPattern count="other">{0} бар</unitPattern>
+			</unit>
 			<unit type="pressure-millibar">
+				<displayName>мбар</displayName>
 				<unitPattern count="one">{0} милбар</unitPattern>
 				<unitPattern count="other">{0} милбар</unitPattern>
 			</unit>
@@ -8260,9 +11074,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} уур амьсгал</unitPattern>
 				<unitPattern count="other">{0} уур амьсгал</unitPattern>
 			</unit>
+			<unit type="pressure-pascal">
+				<displayName>Па</displayName>
+				<unitPattern count="one">{0} Па</unitPattern>
+				<unitPattern count="other">{0} Па</unitPattern>
+			</unit>
 			<unit type="pressure-hectopascal">
+				<displayName>гПа</displayName>
 				<unitPattern count="one">{0} гПа</unitPattern>
 				<unitPattern count="other">{0} гПа</unitPattern>
+			</unit>
+			<unit type="pressure-kilopascal">
+				<displayName>кПа</displayName>
+				<unitPattern count="one">{0} кПа</unitPattern>
+				<unitPattern count="other">{0} кПа</unitPattern>
+			</unit>
+			<unit type="pressure-megapascal">
+				<displayName>МПа</displayName>
+				<unitPattern count="one">{0} МПа</unitPattern>
+				<unitPattern count="other">{0} МПа</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName>км/ц</displayName>
@@ -8279,6 +11109,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ми/ц</unitPattern>
 				<unitPattern count="other">{0} ми/ц</unitPattern>
 			</unit>
+			<unit type="speed-knot">
+				<displayName>занг.</displayName>
+				<unitPattern count="one">{0} занг.</unitPattern>
+				<unitPattern count="other">{0} занг.</unitPattern>
+			</unit>
+			<unit type="temperature-generic">
+				<displayName>°</displayName>
+				<unitPattern count="one">{0}°</unitPattern>
+				<unitPattern count="other">{0}°</unitPattern>
+			</unit>
 			<unit type="temperature-celsius">
 				<displayName>°C</displayName>
 				<unitPattern count="one">{0}°C</unitPattern>
@@ -8290,23 +11130,112 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}°</unitPattern>
 			</unit>
 			<unit type="temperature-kelvin">
+				<displayName>K</displayName>
 				<unitPattern count="one">{0}K</unitPattern>
 				<unitPattern count="other">{0}K</unitPattern>
 			</unit>
+			<unit type="torque-pound-force-foot">
+				<displayName>lbf⋅ft</displayName>
+				<unitPattern count="one">{0} lbf⋅ft</unitPattern>
+				<unitPattern count="other">{0} lbf⋅ft</unitPattern>
+			</unit>
+			<unit type="torque-newton-meter">
+				<displayName>Н⋅м</displayName>
+				<unitPattern count="one">{0} Н⋅м</unitPattern>
+				<unitPattern count="other">{0} Н⋅м</unitPattern>
+			</unit>
 			<unit type="volume-cubic-kilometer">
+				<displayName>км³</displayName>
 				<unitPattern count="one">{0} км³</unitPattern>
 				<unitPattern count="other">{0} км³</unitPattern>
 			</unit>
+			<unit type="volume-cubic-meter">
+				<displayName>м³</displayName>
+				<unitPattern count="one">{0} м³</unitPattern>
+				<unitPattern count="other">{0} м³</unitPattern>
+				<perUnitPattern>{0}/м³</perUnitPattern>
+			</unit>
+			<unit type="volume-cubic-centimeter">
+				<displayName>см³</displayName>
+				<unitPattern count="one">{0} cм³</unitPattern>
+				<unitPattern count="other">{0} cм³</unitPattern>
+				<perUnitPattern>{0}/см³</perUnitPattern>
+			</unit>
 			<unit type="volume-cubic-mile">
+				<displayName>ми³</displayName>
 				<unitPattern count="one">{0} ми³</unitPattern>
 				<unitPattern count="other">{0} ми³</unitPattern>
+			</unit>
+			<unit type="volume-cubic-yard">
+				<displayName>ярд³</displayName>
+				<unitPattern count="one">{0} ярд³</unitPattern>
+				<unitPattern count="other">{0} ярд³</unitPattern>
+			</unit>
+			<unit type="volume-cubic-foot">
+				<displayName>фут³</displayName>
+				<unitPattern count="one">{0} фут³</unitPattern>
+				<unitPattern count="other">{0} фут³</unitPattern>
+			</unit>
+			<unit type="volume-cubic-inch">
+				<displayName>инч³</displayName>
+				<unitPattern count="one">{0} инч³</unitPattern>
+				<unitPattern count="other">{0} инч³</unitPattern>
+			</unit>
+			<unit type="volume-megaliter">
+				<displayName>Мл</displayName>
+				<unitPattern count="one">{0} Мл</unitPattern>
+				<unitPattern count="other">{0} Мл</unitPattern>
+			</unit>
+			<unit type="volume-hectoliter">
+				<displayName>хл</displayName>
+				<unitPattern count="one">{0} хл</unitPattern>
+				<unitPattern count="other">{0} хл</unitPattern>
 			</unit>
 			<unit type="volume-liter">
 				<displayName>литр</displayName>
 				<unitPattern count="one">{0} л</unitPattern>
 				<unitPattern count="other">{0} л</unitPattern>
+				<perUnitPattern>{0}/л</perUnitPattern>
+			</unit>
+			<unit type="volume-deciliter">
+				<displayName>дл</displayName>
+				<unitPattern count="one">{0} дл</unitPattern>
+				<unitPattern count="other">{0} дл</unitPattern>
+			</unit>
+			<unit type="volume-centiliter">
+				<displayName>цл</displayName>
+				<unitPattern count="one">{0} цл</unitPattern>
+				<unitPattern count="other">{0} цл</unitPattern>
+			</unit>
+			<unit type="volume-milliliter">
+				<displayName>мл</displayName>
+				<unitPattern count="one">{0} мл</unitPattern>
+				<unitPattern count="other">{0} мл</unitPattern>
+			</unit>
+			<unit type="volume-pint-metric">
+				<displayName>мпт</displayName>
+				<unitPattern count="one">{0} мпт</unitPattern>
+				<unitPattern count="other">{0} мпт</unitPattern>
+			</unit>
+			<unit type="volume-cup-metric">
+				<displayName>м.аяга</displayName>
+				<unitPattern count="one">{0} м.аяга</unitPattern>
+				<unitPattern count="other">{0} м.аяга</unitPattern>
+			</unit>
+			<unit type="volume-acre-foot">
+				<displayName>акр фут</displayName>
+				<unitPattern count="one">{0} акр фут</unitPattern>
+				<unitPattern count="other">{0} акр фут</unitPattern>
+			</unit>
+			<unit type="volume-bushel">
+				<displayName>bu</displayName>
+				<unitPattern count="one">{0} bu</unitPattern>
+				<unitPattern count="other">{0} bu</unitPattern>
 			</unit>
 			<unit type="volume-gallon">
+				<displayName>гал</displayName>
+				<unitPattern count="one">{0} гал</unitPattern>
+				<unitPattern count="other">{0} гал</unitPattern>
 				<perUnitPattern>{0} гал</perUnitPattern>
 			</unit>
 			<unit type="volume-gallon-imperial">
@@ -8315,9 +11244,80 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} анг.гал</unitPattern>
 				<perUnitPattern>{0} анг.гал</perUnitPattern>
 			</unit>
+			<unit type="volume-quart">
+				<displayName>крц</displayName>
+				<unitPattern count="one">{0} крц</unitPattern>
+				<unitPattern count="other">{0} крц</unitPattern>
+			</unit>
+			<unit type="volume-pint">
+				<displayName>пинт</displayName>
+				<unitPattern count="one">{0} пт</unitPattern>
+				<unitPattern count="other">{0} пт</unitPattern>
+			</unit>
 			<unit type="volume-cup">
+				<displayName>аяга</displayName>
 				<unitPattern count="one">{0} аяга</unitPattern>
 				<unitPattern count="other">{0} аяга</unitPattern>
+			</unit>
+			<unit type="volume-fluid-ounce">
+				<displayName>ш.унц</displayName>
+				<unitPattern count="one">{0} ш.унц</unitPattern>
+				<unitPattern count="other">{0} ш.унц</unitPattern>
+			</unit>
+			<unit type="volume-fluid-ounce-imperial">
+				<displayName>анг. ш.унц</displayName>
+				<unitPattern count="one">{0} анг. ш.унц</unitPattern>
+				<unitPattern count="other">{0} анг. ш.унц</unitPattern>
+			</unit>
+			<unit type="volume-tablespoon">
+				<displayName>х.х</displayName>
+				<unitPattern count="one">{0} х.х</unitPattern>
+				<unitPattern count="other">{0} х.х</unitPattern>
+			</unit>
+			<unit type="volume-teaspoon">
+				<displayName>ц.х</displayName>
+				<unitPattern count="one">{0} ц.х</unitPattern>
+				<unitPattern count="other">{0} ц.х</unitPattern>
+			</unit>
+			<unit type="volume-barrel">
+				<displayName>баррель</displayName>
+				<unitPattern count="one">{0} баррель</unitPattern>
+				<unitPattern count="other">{0} баррель</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName>амт.х</displayName>
+				<unitPattern count="one">{0} амт.х</unitPattern>
+				<unitPattern count="other">{0} амт.х</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<displayName>том амт.х</displayName>
+				<unitPattern count="one">{0} том амт.х</unitPattern>
+				<unitPattern count="other">{0} том амт.х</unitPattern>
+			</unit>
+			<unit type="volume-drop">
+				<displayName>дусал</displayName>
+				<unitPattern count="one">{0} дусал</unitPattern>
+				<unitPattern count="other">{0} дусал</unitPattern>
+			</unit>
+			<unit type="volume-dram">
+				<displayName>драм шингэн</displayName>
+				<unitPattern count="one">{0} драм.ш</unitPattern>
+				<unitPattern count="other">{0} драм.ш</unitPattern>
+			</unit>
+			<unit type="volume-jigger">
+				<displayName>джиггер</displayName>
+				<unitPattern count="one">{0} джиггер</unitPattern>
+				<unitPattern count="other">{0} джиггер</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<displayName>чимх</displayName>
+				<unitPattern count="one">{0} чимх</unitPattern>
+				<unitPattern count="other">{0} чимх</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName>том куарт</displayName>
+				<unitPattern count="one">{0} том куарт</unitPattern>
+				<unitPattern count="other">{0} том куарт</unitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName>зүг</displayName>
@@ -8351,12 +11351,26 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<listPatternPart type="2">{0} эсвэл {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="or-narrow">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
 			<listPatternPart type="end">{0}, {1} зэргийн аль нэг</listPatternPart>
+			<listPatternPart type="2">{0} эсвэл {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="or-short">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
 			<listPatternPart type="end">{0}, {1} зэргийн аль нэг</listPatternPart>
+			<listPatternPart type="2">{0} эсвэл {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="standard-narrow">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0}, {1}</listPatternPart>
+			<listPatternPart type="2">{0}, {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="standard-short">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
 			<listPatternPart type="end">{0}, {1}</listPatternPart>
 			<listPatternPart type="2">{0}, {1}</listPatternPart>
 		</listPattern>
@@ -8557,15 +11571,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<featureName type="zero">дундуураа ташуу зураастай тэг</featureName>
 	</typographicNames>
 	<personNames>
+		<nameOrderLocales order="givenFirst">und en</nameOrderLocales>
 		<nameOrderLocales order="surnameFirst">hu ja ko mn vi yue zh</nameOrderLocales>
-		<personName order="givenFirst" length="long" usage="referring" formality="formal">
-			<namePattern draft="contributed">{given} {given2} {surname} {suffix}</namePattern>
-		</personName>
 		<personName order="givenFirst" length="long" usage="referring" formality="informal">
 			<namePattern>{given-informal} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="long" usage="addressing" formality="formal">
-			<namePattern>{prefix} {surname}</namePattern>
+			<namePattern>{title} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="long" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
@@ -8574,13 +11586,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<namePattern>{given-informal-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="referring" formality="formal">
-			<namePattern>{suffix} {given} {given2-initial} {surname}</namePattern>
+			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="referring" formality="informal">
 			<namePattern>{given-informal} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="addressing" formality="formal">
-			<namePattern>{prefix} {given}</namePattern>
+			<namePattern>{title} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
@@ -8595,10 +11607,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<namePattern>{given-initial} {given2-initial} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="referring" formality="informal">
-			<namePattern draft="contributed">{given-informal} {surname-initial}</namePattern>
+			<namePattern>{given-informal} {surname-initial}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="addressing" formality="formal">
-			<namePattern>{prefix} {surname}</namePattern>
+			<namePattern>{title} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
@@ -8609,14 +11621,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<personName order="givenFirst" length="short" usage="monogram" formality="informal">
 			<namePattern>{given-informal-monogram-allCaps}</namePattern>
 		</personName>
-		<personName order="surnameFirst" length="long" usage="referring" formality="formal">
-			<namePattern draft="contributed">{suffix} {surname} {given} {given2}</namePattern>
-		</personName>
 		<personName order="surnameFirst" length="long" usage="referring" formality="informal">
 			<namePattern>{surname} {given-informal}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="addressing" formality="formal">
-			<namePattern>{prefix} {surname}</namePattern>
+			<namePattern>{title} {surname}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
@@ -8628,13 +11637,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<namePattern>{surname-monogram-allCaps}{given-informal-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="referring" formality="formal">
-			<namePattern draft="contributed">{suffix} {surname} {given} {given2-initial}</namePattern>
+			<namePattern>{surname} {given} {given2-initial} {generation}, {credentials}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="referring" formality="informal">
 			<namePattern>{surname} {given-informal}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="addressing" formality="formal">
-			<namePattern>{prefix} {surname}</namePattern>
+			<namePattern>{title} {surname}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
@@ -8646,13 +11655,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<namePattern>{given-informal-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="referring" formality="formal">
-			<namePattern draft="contributed">{surname-initial} {given}</namePattern>
+			<namePattern>{surname} {given-initial} {given2-initial}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="referring" formality="informal">
-			<namePattern>{surname-initial} {given}</namePattern>
+			<namePattern>{surname} {given-initial}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="addressing" formality="formal">
-			<namePattern>{prefix} {surname}</namePattern>
+			<namePattern>{title} {surname}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
@@ -8664,44 +11673,68 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<namePattern>{given-informal-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="sorting" length="long" usage="referring" formality="formal">
-			<namePattern draft="contributed">{surname-core}, {given} {given2} {surname-prefix}</namePattern>
+			<namePattern>{surname-core}, {given} {given2} {surname-prefix}</namePattern>
 		</personName>
 		<personName order="sorting" length="long" usage="referring" formality="informal">
-			<namePattern>{surname} {given-informal}</namePattern>
+			<namePattern>{surname}, {given-informal}</namePattern>
 		</personName>
 		<personName order="sorting" length="medium" usage="referring" formality="formal">
-			<namePattern draft="contributed">{surname-core}, {given} {given2-initial} {surname-prefix}</namePattern>
+			<namePattern>{surname-core}, {given} {given2-initial} {surname-prefix}</namePattern>
 		</personName>
 		<personName order="sorting" length="medium" usage="referring" formality="informal">
-			<namePattern>{surname} {given-informal}</namePattern>
+			<namePattern>{surname}, {given-informal}</namePattern>
 		</personName>
 		<personName order="sorting" length="short" usage="referring" formality="formal">
-			<namePattern draft="contributed">{surname-core}, {given-initial} {given2-initial} {surname-prefix}</namePattern>
+			<namePattern>{surname-core}, {given-initial} {given2-initial} {surname-prefix}</namePattern>
 		</personName>
 		<personName order="sorting" length="short" usage="referring" formality="informal">
-			<namePattern>{surname} {given-informal}</namePattern>
+			<namePattern>{surname}, {given-informal}</namePattern>
 		</personName>
-		<sampleName item="givenOnly">
+		<sampleName item="nativeG">
 			<nameField type="given">Синбад</nameField>
 		</sampleName>
-		<sampleName item="givenSurnameOnly">
+		<sampleName item="nativeGS">
 			<nameField type="given">Ирине</nameField>
 			<nameField type="surname">Адлэр</nameField>
 		</sampleName>
-		<sampleName item="given12Surname">
-			<nameField type="given">Жон</nameField>
+		<sampleName item="nativeGGS">
+			<nameField type="given">Мэри Сю</nameField>
 			<nameField type="given2">Хамиш</nameField>
 			<nameField type="surname">Ватсон</nameField>
 		</sampleName>
-		<sampleName item="full">
-			<nameField type="prefix">Проф. Др.</nameField>
+		<sampleName item="nativeFull">
+			<nameField type="title">Ноён</nameField>
+			<nameField type="given">Бэртрам Вилбэрфорс</nameField>
+			<nameField type="given-informal">Бэртие</nameField>
+			<nameField type="given2">Хэнри Роберт</nameField>
+			<nameField type="surname-prefix">∅∅∅</nameField>
+			<nameField type="surname-core">Вүүстэр</nameField>
+			<nameField type="surname2">∅∅∅</nameField>
+			<nameField type="generation">∅∅∅</nameField>
+			<nameField type="credentials">∅∅∅</nameField>
+		</sampleName>
+		<sampleName item="foreignG">
+			<nameField type="given">Синбад</nameField>
+		</sampleName>
+		<sampleName item="foreignGS">
+			<nameField type="given">Кате</nameField>
+			<nameField type="surname">Мюллер</nameField>
+		</sampleName>
+		<sampleName item="foreignGGS">
+			<nameField type="given">Зазилиа</nameField>
+			<nameField type="given2">Хамиш</nameField>
+			<nameField type="surname">Стобер</nameField>
+		</sampleName>
+		<sampleName item="foreignFull">
+			<nameField type="title">Проф. Др.</nameField>
 			<nameField type="given">Ада Корнелиа</nameField>
 			<nameField type="given-informal">Ниль</nameField>
 			<nameField type="given2">Эва Софиа</nameField>
-			<nameField type="surname-prefix">ван ден</nameField>
-			<nameField type="surname-core">Вольф</nameField>
-			<nameField type="surname2">Бэкер Шмит</nameField>
-			<nameField type="suffix">Анагаах ухааны доктор, Ph.D</nameField>
+			<nameField type="surname-prefix">вон</nameField>
+			<nameField type="surname-core">Брюхл</nameField>
+			<nameField type="surname2">Гонзалес Доминго</nameField>
+			<nameField type="generation">Жр</nameField>
+			<nameField type="credentials">Анагаах ухааны доктор</nameField>
 		</sampleName>
 	</personNames>
 </ldml>

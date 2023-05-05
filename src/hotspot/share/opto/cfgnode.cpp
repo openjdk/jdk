@@ -533,6 +533,7 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   bool modified = false;
   int cnt = 0;                  // Count of values merging
   DEBUG_ONLY( int cnt_orig = req(); ) // Save original inputs count
+  DEBUG_ONLY( uint outcnt_orig = outcnt(); )
   int del_it = 0;               // The last input path we delete
   bool found_top = false; // irreducible loops need to check reachability if we find TOP
   // For all inputs...
@@ -563,36 +564,32 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         continue;
       }
       cnt++;                    // One more value merging
-
     } else if (can_reshape) {   // Else found dead path with DU info
       PhaseIterGVN *igvn = phase->is_IterGVN();
       del_req(i);               // Yank path from self
       del_it = i;
-      uint max = outcnt();
-      DUIterator j;
-      bool progress = true;
-      while(progress) {         // Need to establish property over all users
-        progress = false;
-        for (j = outs(); has_out(j); j++) {
-          Node *n = out(j);
-          if( n->req() != req() && n->is_Phi() ) {
-            assert( n->in(0) == this, "" );
-            igvn->hash_delete(n); // Yank from hash before hacking edges
-            n->set_req_X(i,nullptr,igvn);// Correct DU info
-            n->del_req(i);        // Yank path from Phis
-            if( max != outcnt() ) {
-              progress = true;
-              j = refresh_out_pos(j);
-              max = outcnt();
-            }
-          }
+
+      for (DUIterator_Fast jmax, j = fast_outs(jmax); j < jmax; j++) {
+        Node* use = fast_out(j);
+
+        if (use->req() != req() && use->is_Phi()) {
+          assert(use->in(0) == this, "unexpected control input");
+          igvn->hash_delete(use);          // Yank from hash before hacking edges
+          use->set_req_X(i, nullptr, igvn);// Correct DU info
+          use->del_req(i);                 // Yank path from Phis
         }
       }
-      add_to_worklist = false;
-      phase->is_IterGVN()->add_users_to_worklist(this);
+
+      if (add_to_worklist) {
+        igvn->add_users_to_worklist(this);
+        add_to_worklist = false;
+      }
+
       i--;
     }
   }
+
+  assert(outcnt() == outcnt_orig, "not expect to remove any use");
 
   if (can_reshape && found_top && loop_status() == RegionNode::LoopStatus::MaybeIrreducibleEntry) {
     // Is it a dead irreducible loop?

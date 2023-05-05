@@ -1735,7 +1735,7 @@ MachNode* Matcher::find_shared_node(Node* leaf, uint rule) {
   if (!leaf->is_Con() && !leaf->is_DecodeNarrowPtr()) return nullptr;
 
   // See if this Con has already been reduced using this rule.
-  if (_shared_nodes.Size() <= leaf->_idx) return nullptr;
+  if (_shared_nodes.max() <= leaf->_idx) return nullptr;
   MachNode* last = (MachNode*)_shared_nodes.at(leaf->_idx);
   if (last != nullptr && rule == last->rule()) {
     // Don't expect control change for DecodeN

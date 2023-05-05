@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Map;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -49,10 +50,11 @@ public abstract class IntlTest {
     // Everything below here is boilerplate code that makes it possible
     // to add a new test by simply adding a method to an existing class.
     //------------------------------------------------------------------------
-
     protected IntlTest() {
+        Class<? extends IntlTest> testClass = getClass();
+        testName = testClass.getCanonicalName();
         // Populate testMethods with all the test methods.
-        Method[] methods = getClass().getDeclaredMethods();
+        Method[] methods = testClass.getDeclaredMethods();
         for (Method method : methods) {
             if (Modifier.isPublic(method.getModifiers())
                 && method.getReturnType() == void.class
@@ -67,71 +69,34 @@ public abstract class IntlTest {
         }
     }
 
-    protected void run(String[] args) throws Exception
-    {
+    protected void run(String[] args) throws Exception {
         // Set up the log and reference streams.  We use PrintWriters in order to
         // take advantage of character conversion.  The JavaEsc converter will
         // convert Unicode outside the ASCII range to Java's \\uxxxx notation.
         log = new PrintWriter(System.out, true);
-
-        // Parse the test arguments.  They can be either the flag
-        // "-verbose" or names of test methods. Create a list of
-        // tests to be run.
-        List<Method> testsToRun = new ArrayList<>(args.length);
-        for (String arg : args) {
-            switch (arg) {
-            case "-verbose":
-                verbose = true;
-                break;
-            case "-prompt":
-                prompt = true;
-                break;
-            case "-nothrow":
-                nothrow = true;
-                break;
-            case "-exitcode":
-                exitCode = true;
-                break;
-            default:
-                Method m = testMethods.get(arg);
-                if (m == null) {
-                    System.out.println("Method " + arg + ": not found");
-                    usage();
-                    return;
-                }
-                testsToRun.add(m);
-                break;
-            }
-        }
-
-        // If no test method names were given explicitly, run them all.
-        if (testsToRun.isEmpty()) {
-            testsToRun.addAll(testMethods.values());
-        }
-
-        System.out.println(getClass().getName() + " {");
+        List<Method> testsToRun = configureTestsAndArgs(args);
+        System.out.println(testName + " {");
         indentLevel++;
 
         // Run the list of tests given in the test arguments
         for (Method testMethod : testsToRun) {
             int oldCount = errorCount;
-
-            writeTestName(testMethod.getName());
-
+            String testName = testMethod.getName();
+            writeTestName(testName);
             try {
-                testMethod.invoke(this, new Object[0]);
+                testMethod.invoke(this);
             } catch (IllegalAccessException e) {
-                errln("Can't acces test method " + testMethod.getName());
+                errln("Can't access test method " + testName);
             } catch (InvocationTargetException e) {
-                errln("Uncaught exception thrown in test method "
-                        + testMethod.getName());
-                e.getTargetException().printStackTrace(this.log);
+                // Log exception first, that way if -nothrow is
+                // not an arg, the original exception is still logged
+                logExc(e);
+                errln(String.format("$$$ Uncaught exception thrown in %s," +
+                        " see above for cause", testName));
             }
             writeTestResult(errorCount - oldCount);
         }
         indentLevel--;
-        writeTestResult(errorCount);
-
         if (prompt) {
             System.out.println("Hit RETURN to exit...");
             try {
@@ -140,14 +105,46 @@ public abstract class IntlTest {
                 System.out.println("Exception: " + e.toString() + e.getMessage());
             }
         }
-        if (nothrow) {
-            if (exitCode) {
-                System.exit(errorCount);
-            }
-            if (errorCount > 0) {
-                throw new IllegalArgumentException("encountered " + errorCount + " errors");
+        if (exitCode) {
+            System.exit(errorCount);
+        }
+        if (errorCount > 0) {
+            throw new RuntimeException(String.format(
+                    "$$$ %s FAILED with %s failures%n", testName, errorCount));
+        } else {
+            log.println(String.format("\t$$$ %s PASSED%n", testName));
+        }
+    }
+
+    private List<Method> configureTestsAndArgs(String[] args) {
+        // Parse the test arguments. They can be either the flag
+        // "-verbose" or names of test methods. Create a list of
+        // tests to be run.
+        List<Method> testsToRun = new ArrayList<>(args.length);
+        for (String arg : args) {
+            switch (arg) {
+                case "-verbose" -> verbose = true;
+                case "-prompt" -> prompt = true;
+                case "-nothrow" -> nothrow = true;
+                case "-exitcode" -> exitCode = true;
+                default -> {
+                    Method m = testMethods.get(arg);
+                    if (m == null) {
+                        System.out.println("Method " + arg + ": not found");
+                        usage();
+                        return testsToRun;
+                    }
+                    testsToRun.add(m);
+                }
             }
         }
+        // If no test method names were given explicitly, run them all.
+        if (testsToRun.isEmpty()) {
+            testsToRun.addAll(testMethods.values());
+        }
+        // Arbitrarily sort the tests, so that they are run in the same order every time
+        testsToRun.sort(Comparator.comparing(Method::getName));
+        return testsToRun;
     }
 
     /**
@@ -175,6 +172,11 @@ public abstract class IntlTest {
                 log.println();
             }
         }
+    }
+
+    private void logExc(InvocationTargetException ite) {
+        indent(indentLevel);
+        ite.getTargetException().printStackTrace(this.log);
     }
 
     protected void err(String message) {
@@ -224,20 +226,6 @@ public abstract class IntlTest {
         }
     }
 
-    /*
-     * Returns a spece-delimited hex String.
-     */
-    protected static String toHexString(String s) {
-        StringBuilder sb = new StringBuilder(" ");
-
-        for (int i = 0; i < s.length(); i++) {
-            sb.append(Integer.toHexString(s.charAt(i)));
-            sb.append(' ');
-        }
-
-        return sb.toString();
-    }
-
     private void indent(int distance) {
         if (needLineFeed) {
             log.println(" {");
@@ -258,7 +246,7 @@ public abstract class IntlTest {
             System.out.println("\t" + methodName);
         }
     }
-
+    private final String testName;
     private boolean     prompt;
     private boolean     nothrow;
     protected boolean   verbose;

@@ -179,7 +179,7 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
 
   OopMapSet *oop_maps = new OopMapSet();
   OopMap* oop_map = new OopMap(frame_size_in_slots, 0);
-  assert_cond(oop_maps != NULL && oop_map != NULL);
+  assert_cond(oop_maps != nullptr && oop_map != nullptr);
 
   int sp_offset_in_slots = 0;
   int step_in_slots = 0;
@@ -659,13 +659,13 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
   address c2i_entry = __ pc();
 
   // Class initialization barrier for static methods
-  address c2i_no_clinit_check_entry = NULL;
+  address c2i_no_clinit_check_entry = nullptr;
   if (VM_Version::supports_fast_class_init_checks()) {
     Label L_skip_barrier;
 
     { // Bypass the barrier for non-static methods
       __ lwu(t0, Address(xmethod, Method::access_flags_offset()));
-      __ andi(t1, t0, JVM_ACC_STATIC);
+      __ test_bit(t1, t0, exact_log2(JVM_ACC_STATIC));
       __ beqz(t1, L_skip_barrier); // non-static
     }
 
@@ -696,7 +696,7 @@ int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
                                          VMRegPair *regs,
                                          VMRegPair *regs2,
                                          int total_args_passed) {
-  assert(regs2 == NULL, "not needed on riscv");
+  assert(regs2 == nullptr, "not needed on riscv");
 
   // We return the amount of VMRegImpl stack slots we need to reserve for all
   // the arguments NOT counting out_preserve_stack_slots.
@@ -1310,14 +1310,14 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
                                        stack_slots / VMRegImpl::slots_per_word,
                                        in_ByteSize(-1),
                                        in_ByteSize(-1),
-                                       (OopMapSet*)NULL);
+                                       (OopMapSet*)nullptr);
   }
   address native_func = method->native_function();
-  assert(native_func != NULL, "must have function");
+  assert(native_func != nullptr, "must have function");
 
   // An OopMap for lock (and class if static)
   OopMapSet *oop_maps = new OopMapSet();
-  assert_cond(oop_maps != NULL);
+  assert_cond(oop_maps != nullptr);
   intptr_t start = (intptr_t)__ pc();
 
   // We have received a description of where all the java arg are located
@@ -1331,7 +1331,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   BasicType* out_sig_bt = NEW_RESOURCE_ARRAY(BasicType, total_c_args);
   VMRegPair* out_regs   = NEW_RESOURCE_ARRAY(VMRegPair, total_c_args);
-  BasicType* in_elem_bt = NULL;
+  BasicType* in_elem_bt = nullptr;
 
   int argc = 0;
   out_sig_bt[argc++] = T_ADDRESS;
@@ -1345,7 +1345,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   // Now figure out where the args must be stored and how much stack space
   // they require.
-  int out_arg_slots = c_calling_convention(out_sig_bt, out_regs, NULL, total_c_args);
+  int out_arg_slots = c_calling_convention(out_sig_bt, out_regs, nullptr, total_c_args);
 
   // Compute framesize for the wrapper.  We need to handlize all oops in
   // incoming registers
@@ -1469,8 +1469,8 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   __ sub(sp, sp, stack_size - 2 * wordSize);
 
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  assert_cond(bs != NULL);
-  bs->nmethod_entry_barrier(masm, NULL /* slow_path */, NULL /* continuation */, NULL /* guard */);
+  assert_cond(bs != nullptr);
+  bs->nmethod_entry_barrier(masm, nullptr /* slow_path */, nullptr /* continuation */, nullptr /* guard */);
 
   // Frame is now completed as far as size and linkage.
   int frame_complete = ((intptr_t)__ pc()) - start;
@@ -1507,7 +1507,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   // caller.
   //
   OopMap* map = new OopMap(stack_slots * 2, 0 /* arg_slots*/);
-  assert_cond(map != NULL);
+  assert_cond(map != nullptr);
 
   int float_args = 0;
   int int_args = 0;
@@ -1680,7 +1680,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
       __ sd(swap_reg, Address(lock_reg, mark_word_offset));
 
       // src -> dest if dest == x10 else x10 <- dest
-      __ cmpxchg_obj_header(x10, lock_reg, obj_reg, t0, count, /*fallthrough*/NULL);
+      __ cmpxchg_obj_header(x10, lock_reg, obj_reg, t0, count, /*fallthrough*/nullptr);
 
       // Test if the oopMark is an obvious stack pointer, i.e.,
       //  1) (mark & 3) == 0, and
@@ -2026,7 +2026,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
                                             (is_static ? in_ByteSize(klass_offset) : in_ByteSize(receiver_offset)),
                                             in_ByteSize(lock_slot_offset*VMRegImpl::stack_slot_size),
                                             oop_maps);
-  assert(nm != NULL, "create native nmethod fail!");
+  assert(nm != nullptr, "create native nmethod fail!");
   return nm;
 }
 
@@ -2057,9 +2057,9 @@ void SharedRuntime::generate_deopt_blob() {
   CodeBuffer buffer("deopt_blob", 2048 + pad, 1024);
   MacroAssembler* masm = new MacroAssembler(&buffer);
   int frame_size_in_words = -1;
-  OopMap* map = NULL;
+  OopMap* map = nullptr;
   OopMapSet *oop_maps = new OopMapSet();
-  assert_cond(masm != NULL && oop_maps != NULL);
+  assert_cond(masm != nullptr && oop_maps != nullptr);
   RegisterSaver reg_saver(COMPILER2_OR_JVMCI != 0);
 
   // -------------
@@ -2420,7 +2420,7 @@ void SharedRuntime::generate_deopt_blob() {
   masm->flush();
 
   _deopt_blob = DeoptimizationBlob::create(&buffer, oop_maps, 0, exception_offset, reexecute_offset, frame_size_in_words);
-  assert(_deopt_blob != NULL, "create deoptimization blob fail!");
+  assert(_deopt_blob != nullptr, "create deoptimization blob fail!");
   _deopt_blob->set_unpack_with_exception_in_tls_offset(exception_in_tls_offset);
 #if INCLUDE_JVMCI
   if (EnableJVMCI) {
@@ -2450,7 +2450,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
   // Setup code generation tools
   CodeBuffer buffer("uncommon_trap_blob", 2048, 1024);
   MacroAssembler* masm = new MacroAssembler(&buffer);
-  assert_cond(masm != NULL);
+  assert_cond(masm != nullptr);
 
   assert(SimpleRuntimeFrame::framesize % 4 == 0, "sp not 16-byte aligned");
 
@@ -2497,7 +2497,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
   // Set an oopmap for the call site
   OopMapSet* oop_maps = new OopMapSet();
   OopMap* map = new OopMap(SimpleRuntimeFrame::framesize, 0);
-  assert_cond(oop_maps != NULL && map != NULL);
+  assert_cond(oop_maps != nullptr && map != nullptr);
 
   // location of fp is known implicitly by the frame sender code
 
@@ -2649,16 +2649,16 @@ void SharedRuntime::generate_uncommon_trap_blob() {
 SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_type) {
   ResourceMark rm;
   OopMapSet *oop_maps = new OopMapSet();
-  assert_cond(oop_maps != NULL);
-  OopMap* map = NULL;
+  assert_cond(oop_maps != nullptr);
+  OopMap* map = nullptr;
 
   // Allocate space for the code.  Setup code generation tools.
   CodeBuffer buffer("handler_blob", 2048, 1024);
   MacroAssembler* masm = new MacroAssembler(&buffer);
-  assert_cond(masm != NULL);
+  assert_cond(masm != nullptr);
 
   address start   = __ pc();
-  address call_pc = NULL;
+  address call_pc = nullptr;
   int frame_size_in_words = -1;
   bool cause_return = (poll_type == POLL_AT_RETURN);
   RegisterSaver reg_saver(poll_type == POLL_AT_VECTOR_LOOP /* save_vectors */);
@@ -2773,21 +2773,21 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
 // must do any gc of the args.
 //
 RuntimeStub* SharedRuntime::generate_resolve_blob(address destination, const char* name) {
-  assert(StubRoutines::forward_exception_entry() != NULL, "must be generated before");
+  assert(StubRoutines::forward_exception_entry() != nullptr, "must be generated before");
 
   // allocate space for the code
   ResourceMark rm;
 
   CodeBuffer buffer(name, 1000, 512);
   MacroAssembler* masm = new MacroAssembler(&buffer);
-  assert_cond(masm != NULL);
+  assert_cond(masm != nullptr);
 
   int frame_size_in_words = -1;
   RegisterSaver reg_saver(false /* save_vectors */);
 
   OopMapSet *oop_maps = new OopMapSet();
-  assert_cond(oop_maps != NULL);
-  OopMap* map = NULL;
+  assert_cond(oop_maps != nullptr);
+  OopMap* map = nullptr;
 
   int start = __ offset();
 
@@ -2896,7 +2896,7 @@ void OptoRuntime::generate_exception_blob() {
   // Setup code generation tools
   CodeBuffer buffer("exception_blob", 2048, 1024);
   MacroAssembler* masm = new MacroAssembler(&buffer);
-  assert_cond(masm != NULL);
+  assert_cond(masm != nullptr);
 
   // TODO check various assumptions made here
   //
@@ -2952,7 +2952,7 @@ void OptoRuntime::generate_exception_blob() {
   // exception.
 
   OopMapSet* oop_maps = new OopMapSet();
-  assert_cond(oop_maps != NULL);
+  assert_cond(oop_maps != nullptr);
 
   oop_maps->add_gc_map(the_pc - start, new OopMap(SimpleRuntimeFrame::framesize, 0));
 

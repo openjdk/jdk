@@ -24,7 +24,7 @@
 /*
  * @test
  * @enablePreview
- * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64" | os.arch == "riscv64"
+ * @requires jdk.foreign.linker != "UNSUPPORTED"
  * @library /test/lib
  * @library ../
  * @build jdk.test.whitebox.WhiteBox
@@ -69,9 +69,9 @@ public class TestReentrantUpcalls extends NativeTestHelper {
         FunctionDescriptor descriptor = FunctionDescriptor.ofVoid(C_INT, C_POINTER);
         MethodHandle downcallHandle = downcallHandle("do_recurse", descriptor);
 
-        try (Arena arena = Arena.openConfined()) {
+        try (Arena arena = Arena.ofConfined()) {
             MemorySegment stub = LINKER.upcallStub(
-                    MethodHandles.insertArguments(MH_m, 2, downcallHandle), descriptor, arena.scope());
+                    MethodHandles.insertArguments(MH_m, 2, downcallHandle), descriptor, arena);
 
             downcallHandle.invokeExact(0, stub);
         }
