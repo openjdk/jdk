@@ -22,7 +22,6 @@
  */
 
 package nsk.share;
-import java.lang.ref.Cleaner;
 
 
 /**
@@ -33,36 +32,11 @@ import java.lang.ref.Cleaner;
  * @see Finalizer
  */
 public class FinalizableObject implements Finalizable {
-
-
     /**
-     * This method will be invoked by <tt>Finalizer</tt> when virtual mashine
-     * shuts down.
-     *
-     * @throws Throwable if any throwable exception thrown during finalization
-     *
-     * @see Finalizer
+     * All instances of this class, should implement their own cleanup method
+     * to clean appropriately the objects they used.
      */
-
     public void cleanup() {}
-    /**
-     * This method will be invoked by <tt>Finalizer</tt> when virtual mashine
-     * shuts down.
-     *
-     * @throws Throwable if any throwable exception thrown during finalization
-     *
-     * @see Finalizer
-     */
-    public void finalizeAtExit() throws Throwable {
-        cleanup();
-    }
 
-    public void registerCleanup() {
-       // install finalizer to print errors summary at exit
-       Finalizer finalizer = new Finalizer(this);
-       finalizer.activate();
 
-       // register the cleanup method to be called when this Log instance becomes unreachable.
-       Cleaner.create().register(this, () -> cleanup());
-    }
 }

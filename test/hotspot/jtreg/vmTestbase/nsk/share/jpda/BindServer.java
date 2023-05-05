@@ -96,7 +96,6 @@ public class BindServer implements Finalizable {
     private int unauthorizedRequests = 0;
     private int busyRequests = 0;
 
-
     /**
      * Start <code>BindServer</code> utility from command line.
      * This method invokes <code>run()</code> and redirects output
@@ -121,15 +120,6 @@ public class BindServer implements Finalizable {
     public static int run(String argv[], PrintStream out) {
         return new BindServer().runIt(argv, out);
     }
-    @Override
-    public void registerCleanup() {
-        // install finalizer to print errors summary at exit
-        Finalizer finalizer = new Finalizer(this);
-        finalizer.activate();
-
-        // register the cleanup method to be called when this Log instance becomes unreachable.
-        Cleaner.create().register(this, () -> cleanup());
-     }
     /**
      * Perform execution of <code>BindServer</code>.
      * This method handles command line arguments, starts seperate

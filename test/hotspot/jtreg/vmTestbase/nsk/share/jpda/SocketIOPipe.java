@@ -83,15 +83,6 @@ public class SocketIOPipe extends Log.Logger implements Finalizable {
     protected ServerSocket serverSocket;
 
     protected String name;
-    @Override
-    public void registerCleanup() {
-        // install finalizer to print errors summary at exit
-        Finalizer finalizer = new Finalizer(this);
-        finalizer.activate();
-
-        // register the cleanup method to be called when this Log instance becomes unreachable.
-        Cleaner.create().register(this, () -> cleanup());
-     }
     /**
      * Make general <code>IOPipe</code> object with specified parameters.
      */
@@ -330,12 +321,6 @@ public class SocketIOPipe extends Log.Logger implements Finalizable {
         close();
     }
 
-    /**
-     * Perform finalization of the object at exit by invoking finalize().
-     */
-    public void finalizeAtExit() throws Throwable {
-        cleanup();
-    }
 
     /**
      * Field 'pipeCounter' and method 'getNextPipeNumber' are used to construct unique names for SocketIOPipes

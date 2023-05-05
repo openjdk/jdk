@@ -110,15 +110,6 @@ public class DebugeeBinder extends Log.Logger implements Finalizable {
     private ServerSocket pipeServerSocket = null;
 
     // -------------------------------------------------- //
-    @Override
-    public void registerCleanup() {
-        // install finalizer to print errors summary at exit
-        Finalizer finalizer = new Finalizer(this);
-        finalizer.activate();
-
-        // register the cleanup method to be called when this Log instance becomes unreachable.
-        Cleaner.create().register(this, () -> cleanup());
-     }
     /**
      * Incarnate new Binder obeying the given
      * <code>argumentHandler</code>; and assign the given
@@ -566,23 +557,12 @@ public class DebugeeBinder extends Log.Logger implements Finalizable {
     /**
      * Finalize binder by invoking <code>close()</code>.
      *
-     * @throws Throwable if any throwable exception is thrown during finalization
-     *
      * This is replacement of the finalize() method and is called when this
      * instance becomes unreachable.
      *
      */
     public void cleanup() {
         close();
-    }
-
-    /**
-     * Finalize binder at exit by invoking <code>cleanup()</code>.
-     *
-     * @throws Throwable if any throwable exception is thrown during finalization
-     */
-    public void finalizeAtExit() throws Throwable {
-        cleanup();
     }
 
     /**

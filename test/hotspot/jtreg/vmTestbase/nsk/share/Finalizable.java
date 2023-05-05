@@ -22,15 +22,23 @@
  */
 
 package nsk.share;
+import java.lang.ref.Cleaner;
 
 /**
  * Finalizable interface allows <tt>Finalizer</tt> to perform finalization of an object.
  * Each object that requires finalization at VM shutdown time should implement this
- * interface and activate a <tt>Finalizer</tt> hook.
+ * interface and call the <tt>registerClenup</tt> to activate a <tt>Finalizer</tt> hook.
  *
  * @see Finalizer
  */
 public interface Finalizable {
+
+    /**
+     * This method will be implemented by FinalizableObject and is called in <tt>finalizeAtExit</tt>.
+     *
+     * @see Finalizer
+     */
+    public void cleanup();
 
     /**
      * This method will be invoked by <tt>Finalizer</tt> when virtual machine
@@ -38,13 +46,23 @@ public interface Finalizable {
      *
      * @throws Throwable if any throwable exception thrown during finalization
      */
-    public void finalizeAtExit() throws Throwable;
+    default public void finalizeAtExit() throws Throwable {
+        cleanup();
+    }
 
-    /*
-     * This method will register a cleanup method and creates an instance of Finalizer
+    /**
+     * This method will register a cleanup method and create an instance of Finalizer
      * to register the object for finalization at VM exit.
      * It is implemented in FinalizableObject.
+     *
+     * @see Finalizer
      */
-    public void registerCleanup();
+    default public void registerCleanup() {
+       // install finalizer to print errors summary at exit
+       Finalizer finalizer = new Finalizer(this);
+       finalizer.activate();
 
+       // register the cleanup method to be called when this Log instance becomes unreachable.
+       Cleaner.create().register(this, () -> cleanup());
+    }
 }

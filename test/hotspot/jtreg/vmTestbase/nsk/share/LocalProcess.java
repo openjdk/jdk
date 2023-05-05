@@ -164,7 +164,7 @@ public class LocalProcess extends FinalizableObject {
     }
 
     /**
-     * This method is called at finalization and calls  <code>kill()</code>.
+     * This method is called at finalization and calls <code>kill()</code>.
      *
      */
     public void cleanup() {
