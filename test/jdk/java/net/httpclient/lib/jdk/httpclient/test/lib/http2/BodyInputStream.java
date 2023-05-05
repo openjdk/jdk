@@ -133,6 +133,10 @@ class BodyInputStream extends InputStream {
         return one[0] & 0xFF;
     }
 
+    public boolean unconsumed() {
+        return (!isEof() || q.size() > 0);
+    }
+
     @Override
     public void close() {
         closed = true;

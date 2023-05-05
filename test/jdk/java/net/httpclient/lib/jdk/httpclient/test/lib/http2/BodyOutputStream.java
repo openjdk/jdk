@@ -134,7 +134,7 @@ public class BodyOutputStream extends OutputStream {
         }
         try {
             sendEndStream();
-            if (resetNeeded()) {
+            if (bis!= null && bis.unconsumed()) {
                 // Send a reset if there is still unconsumed data in the input stream
                 sendReset(EMPTY_BARRAY, 0, 0, ResetFrame.NO_ERROR);
             }
@@ -154,9 +154,5 @@ public class BodyOutputStream extends OutputStream {
         assert streamid != 0;
         ResetFrame rf = new ResetFrame(streamid, flags);
         outputQ.put(rf);
-    }
-
-    private boolean resetNeeded() throws IOException {
-        return (bis != null && (!bis.isEof() || bis.q.size() > 0));
     }
 }
