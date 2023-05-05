@@ -63,15 +63,17 @@ void LockStack::verify(const char* msg) const {
   assert(LockingMode == LM_LIGHTWEIGHT, "never use lock-stack when light weight locking is disabled");
   assert((_top <= end_offset()), "lockstack overflow: _top %d end_offset %d", _top, end_offset());
   assert((_top >= start_offset()), "lockstack underflow: _top %d end_offset %d", _top, start_offset());
-  int top = to_index(_top);
-  for (int i = 0; i < top; i++) {
-    assert(_base[i] != nullptr || !is_owning_thread(), "no zapped before top");
-    for (int j = i + 1; j < top; j++) {
-      assert(_base[i] != _base[j], "entries must be unique: %s", msg);
+  if (is_owning_thread()) {
+    int top = to_index(_top);
+    for (int i = 0; i < top; i++) {
+      assert(_base[i] != nullptr, "no zapped before top");
+      for (int j = i + 1; j < top; j++) {
+        assert(_base[i] != _base[j], "entries must be unique: %s", msg);
+      }
     }
-  }
-  for (int i = top; i < CAPACITY; i++) {
-    assert(_base[i] == nullptr, "only zapped entries after top: i: %d, top: %d, entry: " PTR_FORMAT, i, top, p2i(_base[i]));
+    for (int i = top; i < CAPACITY; i++) {
+      assert(_base[i] == nullptr, "only zapped entries after top: i: %d, top: %d, entry: " PTR_FORMAT, i, top, p2i(_base[i]));
+    }
   }
 }
 #endif
