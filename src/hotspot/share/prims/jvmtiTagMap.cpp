@@ -49,6 +49,7 @@
 #include "prims/jvmtiImpl.hpp"
 #include "prims/jvmtiTagMap.hpp"
 #include "prims/jvmtiTagMapTable.hpp"
+#include "prims/jvmtiThreadState.hpp"
 #include "runtime/continuationWrapper.inline.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/frame.inline.hpp"
@@ -1120,6 +1121,9 @@ void JvmtiTagMap::iterate_over_heap(jvmtiHeapObjectFilter object_filter,
   eb.deoptimize_objects_all_threads();
   Arena dead_object_arena(mtServiceability);
   GrowableArray <jlong> dead_objects(&dead_object_arena, 10, 0, 0);
+
+  JvmtiVTMSTransitionDisabler disabler;
+
   {
     MutexLocker ml(Heap_lock);
     IterateOverHeapObjectClosure blk(this,
@@ -1147,6 +1151,9 @@ void JvmtiTagMap::iterate_through_heap(jint heap_filter,
 
   Arena dead_object_arena(mtServiceability);
   GrowableArray<jlong> dead_objects(&dead_object_arena, 10, 0, 0);
+
+  JvmtiVTMSTransitionDisabler disabler;
+
   {
     MutexLocker ml(Heap_lock);
     IterateThroughHeapObjectClosure blk(this,
