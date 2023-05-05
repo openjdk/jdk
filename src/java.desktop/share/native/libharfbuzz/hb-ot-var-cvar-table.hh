@@ -44,8 +44,8 @@ struct cvar
   {
     TRACE_SANITIZE (this);
     return_trace (c->check_struct (this) &&
-		  version.sanitize (c) && likely (version.major == 1) &&
-		  tupleVariationData.sanitize (c));
+                  version.sanitize (c) && likely (version.major == 1) &&
+                  tupleVariationData.sanitize (c));
   }
 
   const TupleVariationData* get_tuple_var_data (void) const
@@ -113,10 +113,10 @@ struct cvar
     hb_blob_t *cvt_blob = hb_face_reference_table (plan->source, cvt);
     hb_blob_t *cvt_prime_blob = hb_blob_copy_writable_or_fail (cvt_blob);
     hb_blob_destroy (cvt_blob);
-  
+
     if (unlikely (!cvt_prime_blob))
       return false;
- 
+
     unsigned cvt_blob_length = hb_blob_get_length (cvt_prime_blob);
     unsigned num_cvt_item = cvt_blob_length / FWORD::static_size;
 
@@ -138,15 +138,15 @@ struct cvar
     FWORD *cvt_prime = (FWORD *) hb_blob_get_data_writable (cvt_prime_blob, nullptr);
     for (unsigned i = 0; i < num_cvt_item; i++)
       cvt_prime[i] += (int) roundf (cvt_deltas[i]);
-    
+
     bool success = plan->add_table (cvt, cvt_prime_blob);
     hb_blob_destroy (cvt_prime_blob);
     return success;
   }
 
   protected:
-  FixedVersion<>version;		/* Version of the CVT variation table
-					 * initially set to 0x00010000u */
+  FixedVersion<>version;                /* Version of the CVT variation table
+                                         * initially set to 0x00010000u */
   TupleVariationData tupleVariationData; /* TupleVariationDate for cvar table */
   public:
   DEFINE_SIZE_MIN (8);
