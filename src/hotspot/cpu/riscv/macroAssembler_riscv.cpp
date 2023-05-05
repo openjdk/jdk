@@ -4063,14 +4063,13 @@ void MacroAssembler::zero_dcache_blocks(Register base, Register cnt, Register tm
 
 #define FCVT_SAFE(FLOATCVT, FLOATSIG)                                                     \
 void MacroAssembler::FLOATCVT##_safe(Register dst, FloatRegister src, Register tmp) {     \
-  Label do_convert, done;                                                                 \
+  Label done;                                                                             \
+  assert_different_registers(dst, tmp);                                                   \
   fclass_##FLOATSIG(tmp, src);                                                            \
+  mv(dst, zr);                                                                            \
   /* check if src is NaN */                                                               \
   andi(tmp, tmp, 0b1100000000);                                                           \
-  beqz(tmp, do_convert);                                                                  \
-  mv(dst, zr);                                                                            \
-  j(done);                                                                                \
-  bind(do_convert);                                                                       \
+  bnez(tmp, done);                                                                        \
   FLOATCVT(dst, src);                                                                     \
   bind(done);                                                                             \
 }
