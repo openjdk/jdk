@@ -294,6 +294,14 @@ public final class WeekFields implements Serializable {
      * those extensions. If both "fw" and "rg" are specified, the value from
      * the "fw" extension supersedes the implicit one from the "rg" extension.
      *
+     * <p>For example, users who are interested in using an English locale,
+     * but want the first day of the week that corresponds with the ISO-8601
+     * standard can call
+     * {@snippet lang=java :
+     * Locale enIsoLoc = Locale.forLanguageTag("en-u-fw-mon");
+     * WeekFields.of(theLoc).getFirstDayOfWeek(); // returns MONDAY
+     * }
+     *
      * @param locale  the locale to use, not null
      * @return the week-definition, not null
      */
