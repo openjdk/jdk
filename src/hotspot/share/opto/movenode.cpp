@@ -27,6 +27,7 @@
 #include "opto/connode.hpp"
 #include "opto/convertnode.hpp"
 #include "opto/matcher.hpp"
+#include "opto/loopConditionalPropagation.hpp"
 #include "opto/movenode.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/subnode.hpp"
@@ -169,6 +170,15 @@ const Type* CMoveNode::Value(PhaseGVN* phase) const {
   if (phase->type(in(Condition)) == TypeInt::ONE) {
     return phase->type(in(IfTrue))->filter(_type);  // Always pick right(true) input
   }
+
+  if (phase->is_ConditionalPropagation()) {
+    PhaseConditionalPropagation* conditionalPropagation = phase->is_ConditionalPropagation();
+    const Type* t = conditionalPropagation->cmove_value(this);
+    if (t != nullptr) {
+      return t;
+    }
+  }
+  
   const Type* t = phase->type(in(IfFalse))->meet_speculative(phase->type(in(IfTrue)));
   return t->filter(_type);
 }

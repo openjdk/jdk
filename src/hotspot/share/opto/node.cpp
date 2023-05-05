@@ -503,6 +503,9 @@ Node *Node::clone() const {
   if (is_expensive()) {
     C->add_expensive_node(n);
   }
+  if (is_CMove()) {
+    C->add_cmove_node(n->as_CMove());
+  }
   if (for_post_loop_opts_igvn()) {
     // Don't add cloned node to Compile::_for_post_loop_opts_igvn list automatically.
     // If it is applicable, it will happen anyway when the cloned node is registered with IGVN.
@@ -611,6 +614,9 @@ void Node::destruct(PhaseValues* phase) {
   }
   if (for_post_loop_opts_igvn()) {
     compile->remove_from_post_loop_opts_igvn(this);
+  }
+  if (is_CMove()) {
+    compile->remove_cmove_node(as_CMove());
   }
 
   if (is_SafePoint()) {
