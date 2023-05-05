@@ -615,10 +615,10 @@ public class TestVectorConditionalMove {
         double[] doubleb = new double[SIZE];
         double[] doublec = new double[SIZE];
 
-	init(floata);
-	init(floatb);
-	init(doublea);
-	init(doubleb);
+        init(floata);
+        init(floatb);
+        init(doublea);
+        init(doubleb);
 
         testCMoveVFGT(floata, floatb, floatc);
         testCMoveVDLE(doublea, doubleb, doublec);
