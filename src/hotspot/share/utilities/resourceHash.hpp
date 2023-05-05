@@ -231,7 +231,7 @@ class ResourceHashtableBase : public STORAGE {
     Node* node = *ptr;
     if (node != nullptr) {
       *ptr = node->_next;
-      bool cont = function(node->_key, node->_value);
+      function(node->_key, node->_value);
       if (ALLOC_TYPE == AnyObj::C_HEAP) {
         delete node;
       }
@@ -242,9 +242,7 @@ class ResourceHashtableBase : public STORAGE {
   }
 
   bool remove(K const& key) {
-    auto dummy = [&] (K& k, V& v) {
-      return true;
-    };
+    auto dummy = [&] (K& k, V& v) { };
     return remove(key, dummy);
   }
 

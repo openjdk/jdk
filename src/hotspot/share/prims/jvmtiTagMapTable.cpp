@@ -127,7 +127,6 @@ void JvmtiTagMapTable::remove(oop obj) {
   JvmtiTagMapKey jtme(obj);
   auto clean = [] (const JvmtiTagMapKey& entry, jlong tag) {
     entry.release_weak_handle();
-    return true;
   };
   _table.remove(jtme, clean);
 }

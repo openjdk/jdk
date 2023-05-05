@@ -88,7 +88,7 @@ class ResizeableResourceHashtable : public ResourceHashtableBase<
 
   // Calculate next "good" hashtable size based on requested count
   int calculate_resize(bool use_large_table_sizes) const {
-    const int resize_factor    = 2.0;     // by how much we will resize using current number of entries
+    const int resize_factor = 2;     // by how much we will resize using current number of entries
 
     // possible hashmap sizes - odd primes that roughly double in size.
     // To avoid excessive resizing the odd primes from 4801-76831 and
