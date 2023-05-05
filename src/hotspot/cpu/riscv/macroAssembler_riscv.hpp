@@ -1273,7 +1273,7 @@ public:
     vmnand_mm(vd, vs, vs);
   }
 
-  inline void vncvt_x_x_w(VectorRegister vd, VectorRegister vs, VectorMask vm) {
+  inline void vncvt_x_x_w(VectorRegister vd, VectorRegister vs, VectorMask vm = unmasked) {
     vnsrl_wx(vd, vs, x0, vm);
   }
 
@@ -1285,8 +1285,28 @@ public:
     vfsgnjn_vv(vd, vs, vs);
   }
 
-  inline void vnot_v(VectorRegister Vd, VectorRegister Vs, VectorMask vm = unmasked) {
-    vxor_vi(Vd, Vs, -1, vm);
+  inline void vmsgt_vv(VectorRegister vd, VectorRegister vs2, VectorRegister vs1, VectorMask vm = unmasked) {
+    vmslt_vv(vd, vs1, vs2, vm);
+  }
+
+  inline void vmsgtu_vv(VectorRegister vd, VectorRegister vs2, VectorRegister vs1, VectorMask vm = unmasked) {
+    vmsltu_vv(vd, vs1, vs2, vm);
+  }
+
+  inline void vmsge_vv(VectorRegister vd, VectorRegister vs2, VectorRegister vs1, VectorMask vm = unmasked) {
+    vmsle_vv(vd, vs1, vs2, vm);
+  }
+
+  inline void vmsgeu_vv(VectorRegister vd, VectorRegister vs2, VectorRegister vs1, VectorMask vm = unmasked) {
+    vmsleu_vv(vd, vs1, vs2, vm);
+  }
+
+  inline void vmfgt_vv(VectorRegister vd, VectorRegister vs2, VectorRegister vs1, VectorMask vm = unmasked) {
+    vmflt_vv(vd, vs1, vs2, vm);
+  }
+
+  inline void vmfge_vv(VectorRegister vd, VectorRegister vs2, VectorRegister vs1, VectorMask vm = unmasked) {
+    vmfle_vv(vd, vs1, vs2, vm);
   }
 
   inline void vmsltu_vi(VectorRegister Vd, VectorRegister Vs2, int32_t imm, VectorMask vm = unmasked) {
@@ -1295,6 +1315,25 @@ public:
 
   inline void vmsgeu_vi(VectorRegister Vd, VectorRegister Vs2, int32_t imm, VectorMask vm = unmasked) {
     vmsgtu_vi(Vd, Vs2, imm-1, vm);
+  }
+
+  // Copy mask register
+  inline void vmmv_m(VectorRegister vd, VectorRegister vs) {
+    vmand_mm(vd, vs, vs);
+  }
+
+  // Clear mask register
+  inline void vmclr_m(VectorRegister vd) {
+    vmxor_mm(vd, vd, vd);
+  }
+
+  // Set mask register
+  inline void vmset_m(VectorRegister vd) {
+    vmxnor_mm(vd, vd, vd);
+  }
+
+  inline void vnot_v(VectorRegister Vd, VectorRegister Vs, VectorMask vm = unmasked) {
+    vxor_vi(Vd, Vs, -1, vm);
   }
 
   static const int zero_words_block_size;

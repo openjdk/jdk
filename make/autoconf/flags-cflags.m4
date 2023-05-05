@@ -494,7 +494,7 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
   fi
 
   if test "x$TOOLCHAIN_TYPE" = xgcc; then
-    TOOLCHAIN_CFLAGS_JVM="$TOOLCHAIN_CFLAGS_JVM -fcheck-new -fstack-protector"
+    TOOLCHAIN_CFLAGS_JVM="$TOOLCHAIN_CFLAGS_JVM -fstack-protector"
     TOOLCHAIN_CFLAGS_JDK="-pipe -fstack-protector"
     # reduce lib size on linux in link step, this needs also special compile flags
     # do this on s390x also for libjvm (where serviceability agent is not supported)

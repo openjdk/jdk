@@ -4468,7 +4468,7 @@ void PhaseIdealLoop::build_and_optimize() {
           AutoNodeBudget node_budget(this);
           if (lpt->_head->as_CountedLoop()->is_normal_loop() &&
               lpt->policy_maximally_unroll(this)) {
-            memset( worklist.adr(), 0, worklist.Size()*sizeof(Node*) );
+            memset( worklist.adr(), 0, worklist.max()*sizeof(Node*) );
             do_maximally_unroll(lpt, worklist);
           }
         }
@@ -4543,7 +4543,7 @@ void PhaseIdealLoop::build_and_optimize() {
   // If split-if's didn't hack the graph too bad (no CFG changes)
   // then do loop opts.
   if (C->has_loops() && !C->major_progress()) {
-    memset( worklist.adr(), 0, worklist.Size()*sizeof(Node*) );
+    memset( worklist.adr(), 0, worklist.max()*sizeof(Node*) );
     _ltree_root->_child->iteration_split( this, worklist );
     // No verify after peeling!  GCM has hoisted code out of the loop.
     // After peeling, the hoisted code could sink inside the peeled area.
@@ -6356,7 +6356,7 @@ void PhaseIdealLoop::dump(IdealLoopTree* loop, uint idx, Node_List &rpo_list) co
       }
     }
     // Dump nodes it controls
-    for (uint k = 0; k < _nodes.Size(); k++) {
+    for (uint k = 0; k < _nodes.max(); k++) {
       // (k < C->unique() && get_ctrl(find(k)) == n)
       if (k < C->unique() && _nodes[k] == (Node*)((intptr_t)n + 1)) {
         Node* m = C->root()->find(k);
