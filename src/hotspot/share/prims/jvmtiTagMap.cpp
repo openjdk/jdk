@@ -1121,9 +1121,6 @@ void JvmtiTagMap::iterate_over_heap(jvmtiHeapObjectFilter object_filter,
   eb.deoptimize_objects_all_threads();
   Arena dead_object_arena(mtServiceability);
   GrowableArray <jlong> dead_objects(&dead_object_arena, 10, 0, 0);
-
-  JvmtiVTMSTransitionDisabler disabler;
-
   {
     MutexLocker ml(Heap_lock);
     IterateOverHeapObjectClosure blk(this,
@@ -1151,9 +1148,6 @@ void JvmtiTagMap::iterate_through_heap(jint heap_filter,
 
   Arena dead_object_arena(mtServiceability);
   GrowableArray<jlong> dead_objects(&dead_object_arena, 10, 0, 0);
-
-  JvmtiVTMSTransitionDisabler disabler;
-
   {
     MutexLocker ml(Heap_lock);
     IterateThroughHeapObjectClosure blk(this,
@@ -2999,6 +2993,9 @@ void JvmtiTagMap::iterate_over_reachable_objects(jvmtiHeapRootCallback heap_root
   eb.deoptimize_objects_all_threads();
   Arena dead_object_arena(mtServiceability);
   GrowableArray<jlong> dead_objects(&dead_object_arena, 10, 0, 0);
+
+  JvmtiVTMSTransitionDisabler disabler;
+
   {
     MutexLocker ml(Heap_lock);
     BasicHeapWalkContext context(heap_root_callback, stack_ref_callback, object_ref_callback);
@@ -3018,6 +3015,9 @@ void JvmtiTagMap::iterate_over_objects_reachable_from_object(jobject object,
 
   Arena dead_object_arena(mtServiceability);
   GrowableArray<jlong> dead_objects(&dead_object_arena, 10, 0, 0);
+
+  JvmtiVTMSTransitionDisabler disabler;
+
   {
     MutexLocker ml(Heap_lock);
     BasicHeapWalkContext context(nullptr, nullptr, object_ref_callback);
@@ -3046,6 +3046,9 @@ void JvmtiTagMap::follow_references(jint heap_filter,
 
   Arena dead_object_arena(mtServiceability);
   GrowableArray<jlong> dead_objects(&dead_object_arena, 10, 0, 0);
+
+  JvmtiVTMSTransitionDisabler disabler;
+
   {
     MutexLocker ml(Heap_lock);
     AdvancedHeapWalkContext context(heap_filter, klass, callbacks);
