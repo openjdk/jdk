@@ -162,6 +162,9 @@ public class ThreadAllocatedMemoryArray {
 
     private static void checkResult(Thread curThread,
                                     long prevSize, long currSize) {
+        System.out.println(curThread.getName() +
+                           " Previous allocated bytes = " + prevSize +
+                           " Current allocated bytes = " + currSize);
         if (currSize < prevSize) {
             throw new RuntimeException("TEST FAILED: " +
                                        curThread.getName() +
@@ -169,9 +172,6 @@ public class ThreadAllocatedMemoryArray {
                                        " > current allocated bytes = " + currSize);
 
         }
-        System.out.println(curThread.getName() +
-                           " Previous allocated bytes = " + prevSize +
-                           " Current allocated bytes = " + currSize);
     }
 
     private static void goSleep(long ms) throws Exception {
