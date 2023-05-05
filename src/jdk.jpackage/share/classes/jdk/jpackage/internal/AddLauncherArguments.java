@@ -131,7 +131,7 @@ class AddLauncherArguments {
                 CLIOptions.LAUNCHER_AS_SERVICE.getId(), getOptionValue(
                 CLIOptions.LAUNCHER_AS_SERVICE));
 
-        if (OperatingSystem.isWindows())  {
+        if (OperatingSystem.isWindows()) {
             Arguments.putUnlessNull(bundleParams,
                     CLIOptions.WIN_CONSOLE_HINT.getId(),
                     getOptionValue(CLIOptions.WIN_CONSOLE_HINT));
@@ -141,7 +141,7 @@ class AddLauncherArguments {
                     getOptionValue(CLIOptions.WIN_MENU_HINT));
         }
 
-        if (OperatingSystem.isLinux())  {
+        if (OperatingSystem.isLinux()) {
             Arguments.putUnlessNull(bundleParams, CLIOptions.LINUX_CATEGORY.getId(),
                     getOptionValue(CLIOptions.LINUX_CATEGORY));
             Arguments.putUnlessNull(bundleParams, SHORTCUT_HINT.getID(),

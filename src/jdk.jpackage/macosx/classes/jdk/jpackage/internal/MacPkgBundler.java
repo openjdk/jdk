@@ -322,7 +322,7 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
             xml.writeAttribute("customize", "never");
             xml.writeAttribute("require-scripts", "false");
             xml.writeAttribute("hostArchitectures",
-                    (OperatingSystem.isMacOS() && Architecture.isAARCH64()) ? "arm64" : "x86_64");
+                    Architecture.isAARCH64() ? "arm64" : "x86_64");
             xml.writeEndElement(); // </options>
             xml.writeStartElement("choices-outline");
             xml.writeStartElement("line");

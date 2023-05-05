@@ -103,7 +103,7 @@ class ValidOptions {
         put(CLIOptions.ABOUT_URL.getId(), USE.INSTALL);
 
         put(CLIOptions.FILE_ASSOCIATIONS.getId(),
-            (OperatingSystem.isMacOS()) ?  USE.ALL : USE.INSTALL);
+            (OperatingSystem.isMacOS()) ? USE.ALL : USE.INSTALL);
 
         if (OperatingSystem.isWindows()) {
             put(CLIOptions.WIN_CONSOLE_HINT.getId(), USE.LAUNCHER);

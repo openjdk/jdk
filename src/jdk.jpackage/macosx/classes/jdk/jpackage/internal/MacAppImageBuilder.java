@@ -610,7 +610,7 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
 
     public static void addNewKeychain(Map<String, ? super Object> params)
                                     throws IOException, InterruptedException {
-        if (OperatingSystem.version().compareTo(new Version(10,12)) < 0) {
+        if (OperatingSystem.version().compareTo(new Version(10, 12)) < 0) {
             // we need this for OS X 10.12+
             return;
         }
