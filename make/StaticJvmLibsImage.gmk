@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2023 Google Inc. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,31 +23,24 @@
 # questions.
 #
 
-# This makefile creates an image of the optional static versions of certain JDK
-# libraries.
+# This makefile creates an image of the optional static version of Hotspot 
+# JVM library.
 
 default: all
 
 include $(SPEC)
 include MakeBase.gmk
-include Modules.gmk
-
-ALL_MODULES = $(call FindAllModules)
 
 ################################################################################
 
 TARGETS :=
 
-$(foreach m, $(ALL_MODULES), \
-  $(eval $(call SetupCopyFiles, COPY_STATIC_LIBS_$m, \
-      FLATTEN := true, \
-      SRC := $(SUPPORT_OUTPUTDIR)/native/$m, \
-      DEST := $(STATIC_LIBS_IMAGE_DIR)/lib, \
-      FILES := $(filter %$(STATIC_LIBRARY_SUFFIX), \
-          $(call FindFiles, $(SUPPORT_OUTPUTDIR)/native/$m/*/static)), \
-  )) \
-  $(eval TARGETS += $$(COPY_STATIC_LIBS_$m)) \
-)
+$(eval $(call SetupCopyFiles, COPY_STATIC_LIBS_libjvm, \
+    SRC := $(HOTSPOT_OUTPUTDIR)/variant-$(JVM_VARIANT_MAIN)/libjvm/objs/static, \
+    DEST := $(STATIC_LIBS_IMAGE_DIR)/lib, \
+    FILES := $(wildcard $(HOTSPOT_OUTPUTDIR)/variant-$(JVM_VARIANT_MAIN)/libjvm/objs/static/*$(STATIC_LIBRARY_SUFFIX)), \
+))
+TARGETS += $(COPY_STATIC_LIBS_libjvm)
 
 ################################################################################
 

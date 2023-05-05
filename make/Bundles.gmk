@@ -457,7 +457,7 @@ endif
 
 ################################################################################
 
-ifneq ($(filter static-libs-bundles, $(MAKECMDGOALS)), )
+ifneq ($(filter static-libs-bundles java-static-libs-bundles, $(MAKECMDGOALS)), )
   STATIC_LIBS_BUNDLE_FILES := $(call FindFiles, $(STATIC_LIBS_IMAGE_DIR))
 
   ifeq ($(OPENJDK_TARGET_OS)-$(DEBUG_LEVEL), macosx-release)
@@ -490,8 +490,9 @@ docs-jdk-bundles: $(DOCS_JDK_TARGETS)
 docs-javase-bundles: $(DOCS_JAVASE_TARGETS)
 docs-reference-bundles: $(DOCS_REFERENCE_TARGETS)
 static-libs-bundles: $(STATIC_LIBS_TARGETS)
+java-static-libs-bundles: $(HOTSPOT_VARIANT_MAIN_STATIC_LIBS_TARGETS) $(STATIC_LIBS_TARGETS)
 jcov-bundles: $(JCOV_TARGETS)
 
 .PHONY: all default product-bundles test-bundles \
     docs-jdk-bundles docs-javase-bundles docs-reference-bundles \
-    static-libs-bundles jcov-bundles
+    static-libs-bundles java-static-libs-bundles jcov-bundles
