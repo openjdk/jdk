@@ -510,6 +510,47 @@ TEST_VM(os, release_multi_mappings) {
 }
 #endif // !AIX
 
+#ifndef _AIX // JDK-8257041
+TEST_VM(os, partial_release_multi_mappings) {
+
+  //  see "release_multi_mappings" test comment for general explanation
+
+  //  thread grabbing that memory.
+
+  const size_t stripe_len = os::vm_allocation_granularity();
+  const int num_stripes = 4;
+  const size_t total_range_len = stripe_len * num_stripes;
+  const size_t partial_release_len = total_range_len - (stripe_len/2); // partially release the last stripe
+
+  // reserve address space...
+  address p = reserve_multiple(num_stripes, stripe_len);
+  ASSERT_NE(p, (address)NULL);
+  PRINT_MAPPINGS("A");
+
+  // .. release the middle stripe...
+  address p_middle_stripes = p + stripe_len;
+  const size_t middle_stripe_len = (num_stripes - 2) * stripe_len;
+  {
+    // On Windows, temporarily switch on UseNUMAInterleaving to allow release_memory to release
+    //  multiple mappings in one go (otherwise we assert, which we test too, see death test below).
+    WINDOWS_ONLY(NUMASwitcher b(true);)
+    ASSERT_TRUE(os::release_memory((char*)p_middle_stripes, middle_stripe_len));
+  }
+  PRINT_MAPPINGS("B");
+
+  // ...re-reserve the middle stripes. This should work unless release silently failed.
+  address p2 = (address)os::attempt_reserve_memory_at((char*)p_middle_stripes, middle_stripe_len);
+  ASSERT_EQ(p2, p_middle_stripes);
+  PRINT_MAPPINGS("C");
+
+  // Clean up. Release all mappings except a 1/2 stripe sized portion at the very end.
+  {
+    WINDOWS_ONLY(NUMASwitcher b(true);) // allow release_memory to release multiple regions
+    ASSERT_TRUE(os::release_memory((char*)p, partial_release_len));
+  }
+}
+#endif // !AIX
+
 #ifdef _WIN32
 // On Windows, test that we recognize bad ranges.
 //  On debug this would assert. Test that too.

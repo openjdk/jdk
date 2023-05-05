@@ -550,18 +550,19 @@ bool VirtualMemoryTracker::remove_released_region(address addr, size_t size) {
     address end = addr+size;
     size_t remaining = size;
     LinkedListNode<ReservedMemoryRegion>* node_rgn = _reserved_regions->find_node(rgn);
-    while ((node_rgn != nullptr) && (remaining > 0))
-    {
+    while (remaining > 0) {
       ReservedMemoryRegion* remove_rgn = node_rgn->data();
       assert(remove_rgn!=nullptr, "NULL region");
-      assert(remove_rgn->base()+remove_rgn->size()<=end, "not contained");
 
-      remaining -= remove_rgn->size();
       node_rgn = node_rgn->next();
+      assert(remove_rgn->base()<node_rgn->data()->base(), "not ascending bases");
 
-      assert(remove_released_region(remove_rgn), "error in remove_released_region");
+      // Allow for the last segment to be partially released
+      size_t remove_size = MIN(remove_rgn->size(), remaining);
+      assert(remove_rgn->base()+remove_size<=end, "not contained");
+      assert(remove_released_region(remove_rgn->base(), remove_size), "error in remove_released_region");
+      remaining -= remove_size;
     }
-
     return true;
   }
 }
