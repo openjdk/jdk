@@ -114,7 +114,7 @@ public class StringTableCleaningTest {
         } else if (GC.G1.isSelected()) {
             return gcEndPrefix + g1Suffix;
         } else if (GC.Z.isSelected()) {
-            return gcEndPrefix + "(" + zEndSuffix +  ")|(" + xEndSuffix + ")";
+            return gcEndPrefix + "(" + zEndSuffix + ")|(" + xEndSuffix + ")";
         } else if (GC.Shenandoah.isSelected()) {
             return gcEndPrefix + shenSuffix;
         } else {
