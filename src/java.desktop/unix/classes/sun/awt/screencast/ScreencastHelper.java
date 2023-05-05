@@ -53,13 +53,13 @@ public class ScreencastHelper {
         return TOKEN_STORE.get(TOKEN_KEY, null);
     }
 
-    private static final int DENIED = -11; //defined in native code
+    private static final int DENIED = -11;
 
     private static synchronized native int getRGBPixelsImpl(
             int x, int y, int width, int height, int[] pixelArray, String token
     );
 
-    public static synchronized void getRGBPixels(
+    public static void getRGBPixels(
             int x, int y, int width, int height, int[] pixelArray
     ) {
         if (isNativeLoaded

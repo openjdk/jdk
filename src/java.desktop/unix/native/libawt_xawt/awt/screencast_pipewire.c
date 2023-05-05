@@ -599,7 +599,7 @@ static gboolean loadSymbols() {
         return FALSE;
     }
 
-    pipewire_libhandle = dlopen("libpipewire-0.3.so.0",
+    pipewire_libhandle = dlopen(VERSIONED_JNI_LIB_NAME("pipewire-0.3", "0"),
             RTLD_LAZY | RTLD_LOCAL);
 
     if (!pipewire_libhandle) {
@@ -719,7 +719,7 @@ JNIEXPORT jint JNICALL Java_sun_awt_screencast_ScreencastHelper_getRGBPixelsImpl
     GdkRectangle requestedArea = { jx, jy, jwidth, jheight};
 
     const gchar *token = jtoken
-                         ? token = (*env)->GetStringUTFChars(env, jtoken, NULL)
+                         ? (*env)->GetStringUTFChars(env, jtoken, NULL)
                          : NULL;
 
     DEBUG_SCREENCAST(

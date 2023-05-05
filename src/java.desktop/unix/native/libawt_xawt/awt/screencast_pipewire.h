@@ -61,8 +61,6 @@ struct ScreenSpace {
     int allocated;
 };
 
-void debug_screencast(const char *__restrict fmt, ...);
-
 #define DEBUG_SCREENCAST(FORMAT, ...) debug_screencast("%s:%i " FORMAT, \
                                         __func__, __LINE__, __VA_ARGS__);
 
