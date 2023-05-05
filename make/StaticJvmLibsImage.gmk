@@ -23,7 +23,7 @@
 # questions.
 #
 
-# This makefile creates an image of the optional static version of Hotspot 
+# This makefile creates an image of the optional static version of Hotspot
 # JVM library.
 
 default: all
