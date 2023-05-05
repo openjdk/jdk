@@ -64,7 +64,7 @@
 
       <!-- XPath transform -->
       <TransformAlgorithm URI="http://www.w3.org/TR/1999/REC-xpath-19991116"
-                          JAVACLASS="com.sun.org.apache.xml.internal.security.transforms.implementations.TransformXPath" />
+                          JAVACLASS="xalan.TransformXPath" />
       <!-- enveloped signature -->
       <TransformAlgorithm URI="http://www.w3.org/2000/09/xmldsig#enveloped-signature"
                           JAVACLASS="com.sun.org.apache.xml.internal.security.transforms.implementations.TransformEnvelopedSignature" />
@@ -73,7 +73,7 @@
                           JAVACLASS="com.sun.org.apache.xml.internal.security.transforms.implementations.TransformXSLT" />
       <!-- XPath version 2 -->
       <TransformAlgorithm URI="http://www.w3.org/2002/06/xmldsig-filter2"
-                          JAVACLASS="com.sun.org.apache.xml.internal.security.transforms.implementations.TransformXPath2Filter" />
+                          JAVACLASS="xalan.TransformXPath2Filter" />
    </TransformAlgorithms>
    <SignatureAlgorithms>
       <SignatureAlgorithm URI="http://www.w3.org/2000/09/xmldsig#dsa-sha1"

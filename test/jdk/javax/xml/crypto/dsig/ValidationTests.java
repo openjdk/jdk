@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 4635230 6365103 6366054 6824440 7131084 8046724 8079693
+ * @bug 4635230 6365103 6366054 6824440 7131084 8046724 8079693 8305972
  * @summary Basic unit tests for validating XML Signatures with JSR 105
  * @modules java.base/sun.security.util
  *          java.base/sun.security.x509
@@ -118,7 +118,7 @@ public class ValidationTests {
         new Test("signature-x509-is.xml", CKS),
         new Test("signature-x509-ski.xml", CKS),
         new Test("signature-x509-sn.xml", CKS),
-        new Test("signature.xml", XKS),
+//        new Test("signature.xml", XKS),
         new Test("exc-signature.xml", KVKS),
         new Test("sign-spec.xml", RXKS),
         new Test("xmldsig-xfilter2.xml", KVKS)

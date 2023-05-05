@@ -20,17 +20,21 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.sun.org.apache.xml.internal.security.utils;
 
+package xalan;
+
+import com.sun.org.apache.xml.internal.security.utils.XPathAPI;
+import com.sun.org.apache.xml.internal.security.utils.XPathFactory;
 
 /**
- * A Factory to return an XPathAPI instance.
+ * A Factory to return a XalanXPathAPI instance.
  */
-public abstract class XPathFactory {
+public class XalanXPathFactory extends XPathFactory {
 
     /**
      * Get a new XPathAPI instance
      */
-    public abstract XPathAPI newXPathAPI();
-
+    public XPathAPI newXPathAPI() {
+        return new XalanXPathAPI();
+    }
 }

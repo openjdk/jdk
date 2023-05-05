@@ -20,7 +20,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.sun.org.apache.xml.internal.security.utils;
+package xalan;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
@@ -30,7 +30,7 @@ import javax.xml.transform.ErrorListener;
 import javax.xml.transform.SourceLocator;
 import javax.xml.transform.TransformerException;
 
-import com.sun.org.apache.xml.internal.security.transforms.implementations.FuncHere;
+import com.sun.org.apache.xml.internal.security.utils.XPathAPI;
 import com.sun.org.apache.xml.internal.utils.PrefixResolver;
 import com.sun.org.apache.xml.internal.utils.PrefixResolverDefault;
 import com.sun.org.apache.xpath.internal.Expression;

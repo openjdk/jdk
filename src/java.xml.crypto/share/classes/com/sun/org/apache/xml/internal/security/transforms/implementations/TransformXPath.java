@@ -33,10 +33,7 @@ import com.sun.org.apache.xml.internal.security.signature.XMLSignatureInput;
 import com.sun.org.apache.xml.internal.security.transforms.TransformSpi;
 import com.sun.org.apache.xml.internal.security.transforms.TransformationException;
 import com.sun.org.apache.xml.internal.security.transforms.Transforms;
-import com.sun.org.apache.xml.internal.security.utils.Constants;
-import com.sun.org.apache.xml.internal.security.utils.XMLUtils;
-import com.sun.org.apache.xml.internal.security.utils.XPathAPI;
-import com.sun.org.apache.xml.internal.security.utils.XPathFactory;
+import com.sun.org.apache.xml.internal.security.utils.*;
 import org.w3c.dom.DOMException;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -112,7 +109,7 @@ public class TransformXPath extends TransformSpi {
     }
 
     protected XPathFactory getXPathFactory() {
-        return XPathFactory.newInstance();
+        return new JDKXPathFactory();
     }
 
     /**

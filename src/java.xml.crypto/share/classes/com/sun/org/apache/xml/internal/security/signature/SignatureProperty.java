@@ -49,7 +49,7 @@ public class SignatureProperty extends SignatureElementProxy {
     }
 
     /**
-     * Constructs {@link SignatureProperty} using sepcified {@code target} attribute and
+     * Constructs {@link SignatureProperty} using specified {@code target} attribute and
      * {@code id} attribute
      *
      * @param doc the {@link Document} in which {@code XMLsignature} is placed

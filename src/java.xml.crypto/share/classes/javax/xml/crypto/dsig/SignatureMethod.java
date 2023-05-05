@@ -60,7 +60,7 @@ import java.security.spec.AlgorithmParameterSpec;
  */
 public interface SignatureMethod extends XMLStructure, AlgorithmMethod {
 
-    // All methods can be found in RFC 6931.
+    // All methods can be found in RFC 9231.
 
     /**
      * The <a href="http://www.w3.org/2000/09/xmldsig#dsa-sha1">DSA-SHA1</a>
@@ -254,6 +254,22 @@ public interface SignatureMethod extends XMLStructure, AlgorithmMethod {
      * @since 17
      */
     String RSA_PSS = "http://www.w3.org/2007/05/xmldsig-more#rsa-pss";
+
+    /**
+     * The <a href="http://www.w3.org/2021/04/xmldsig-more#eddsa-ed25519">
+     * ED25519</a> signature method algorithm URI.
+     *
+     * @since 21
+     */
+    String ED25519 = "http://www.w3.org/2021/04/xmldsig-more#eddsa-ed25519";
+
+    /**
+     * The <a href="http://www.w3.org/2021/04/xmldsig-more#eddsa-ed448">
+     * ED448</a> signature method algorithm URI.
+     *
+     * @since 21
+     */
+    String ED448 = "http://www.w3.org/2021/04/xmldsig-more#eddsa-ed448";
 
     /**
      * Returns the algorithm-specific input parameters of this

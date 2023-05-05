@@ -20,7 +20,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.sun.org.apache.xml.internal.security.transforms.implementations;
+package xalan;
 
 import javax.xml.transform.TransformerException;
 

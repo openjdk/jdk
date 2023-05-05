@@ -27,7 +27,6 @@ import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
@@ -460,9 +459,8 @@ public abstract class CanonicalizerBase extends CanonicalizerSpi {
 
     protected int isVisibleDO(Node currentNode, int level) {
         if (nodeFilter != null) {
-            Iterator<NodeFilter> it = nodeFilter.iterator();
-            while (it.hasNext()) {
-                int i = it.next().isNodeIncludeDO(currentNode, level);
+            for (NodeFilter filter : nodeFilter) {
+                int i = filter.isNodeIncludeDO(currentNode, level);
                 if (i != 1) {
                     return i;
                 }
@@ -476,9 +474,8 @@ public abstract class CanonicalizerBase extends CanonicalizerSpi {
 
     protected int isVisibleInt(Node currentNode) {
         if (nodeFilter != null) {
-            Iterator<NodeFilter> it = nodeFilter.iterator();
-            while (it.hasNext()) {
-                int i = it.next().isNodeInclude(currentNode);
+            for (NodeFilter filter : nodeFilter) {
+                int i = filter.isNodeInclude(currentNode);
                 if (i != 1) {
                     return i;
                 }
@@ -492,9 +489,8 @@ public abstract class CanonicalizerBase extends CanonicalizerSpi {
 
     protected boolean isVisible(Node currentNode) {
         if (nodeFilter != null) {
-            Iterator<NodeFilter> it = nodeFilter.iterator();
-            while (it.hasNext()) {
-                if (it.next().isNodeInclude(currentNode) != 1) {
+            for (NodeFilter filter : nodeFilter) {
+                if (filter.isNodeInclude(currentNode) != 1) {
                     return false;
                 }
             }
