@@ -1098,6 +1098,8 @@ Node* MaxNode::IdealI(PhaseGVN* phase, bool can_reshape, int opcode) {
   Node* y = constant_add_input(r, &y_off);
   if (y == nullptr) return nullptr;
   Node* out;
+  // Transform MIN2/MAX2(x + c0, MIN2/MAX2(x + c1, z)) into MIN2/MAX2(x + MAX2/MAX2(c0, c1), z)
+  // if x == y and the additions can't overflow. Handle the four possible left/right combinations.
   if (l->Opcode() == opcode &&
       optimize_max_of_max(phase, opcode, /*left=*/true, x, y, l, x_off, y_off, &out)) {
     return out;
