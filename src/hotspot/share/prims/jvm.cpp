@@ -3044,9 +3044,9 @@ JVM_LEAF(void, JVM_Yield(JNIEnv *env, jclass threadClass))
   os::naked_yield();
 JVM_END
 
-JVM_ENTRY(void, JVM_Sleep(JNIEnv* env, jclass threadClass, jlong millis))
-  if (millis < 0) {
-    THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(), "timeout value is negative");
+JVM_ENTRY(void, JVM_Sleep(JNIEnv* env, jclass threadClass, jlong nanos))
+  if (nanos < 0) {
+    THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(), "nanosecond timeout value out of range");
   }
 
   if (thread->is_interrupted(true) && !HAS_PENDING_EXCEPTION) {
@@ -3057,14 +3057,14 @@ JVM_ENTRY(void, JVM_Sleep(JNIEnv* env, jclass threadClass, jlong millis))
   // And set new thread state to SLEEPING.
   JavaThreadSleepState jtss(thread);
 
-  HOTSPOT_THREAD_SLEEP_BEGIN(millis);
+  HOTSPOT_THREAD_SLEEP_BEGIN(nanos / NANOSECS_PER_MILLISEC);
 
-  if (millis == 0) {
+  if (nanos == 0) {
     os::naked_yield();
   } else {
     ThreadState old_state = thread->osthread()->get_state();
     thread->osthread()->set_state(SLEEPING);
-    if (!thread->sleep(millis)) { // interrupted
+    if (!thread->sleep_nanos(nanos)) { // interrupted
       // An asynchronous exception could have been thrown on
       // us while we were sleeping. We do not overwrite those.
       if (!HAS_PENDING_EXCEPTION) {
