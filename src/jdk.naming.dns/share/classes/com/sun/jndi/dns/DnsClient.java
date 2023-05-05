@@ -159,8 +159,8 @@ public class DnsClient {
             ne.setRootCause(e);
             throw ne;
         }
-        // register a cleaning action to close the channel
-        // selector when this DNS client becomes phantom reachable
+        // register a cleaning action to close the Selector
+        // when this DNS client becomes phantom reachable
         Selector sel = udpChannelSelector;
         CleanerFactory.cleaner().register(this, () -> {
             try {
