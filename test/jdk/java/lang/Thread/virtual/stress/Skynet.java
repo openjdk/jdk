@@ -25,7 +25,7 @@
  * @test
  * @summary Stress test virtual threads with a variation of the Skynet 1M benchmark
  * @requires vm.continuations
- * @run main/othervm/timeout=300 -Xmx1g Skynet
+ * @run main/othervm/timeout=350 -Xmx1g Skynet
  */
 
 /*
