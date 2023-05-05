@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "gc/shared/suspendibleThreadSet.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
@@ -1473,6 +1474,16 @@ class HandshakeForDeflation : public HandshakeClosure {
   }
 };
 
+class VM_RendezvousGCThreads : public VM_Operation {
+public:
+  bool evaluate_at_safepoint() const override { return false; }
+  VMOp_Type type() const override { return VMOp_RendezvousGCThreads; }
+  void doit() override {
+    SuspendibleThreadSet::synchronize();
+    SuspendibleThreadSet::desynchronize();
+  };
+};
+
 // This function is called by the MonitorDeflationThread to deflate
 // ObjectMonitors. It is also called via do_final_audit_and_print_stats()
 // and VM_ThreadDump::doit() by the VMThread.
@@ -1514,7 +1525,7 @@ size_t ObjectSynchronizer::deflate_idle_monitors(ObjectMonitorsHashtable* table)
     ResourceMark rm;
     GrowableArray<ObjectMonitor*> delete_list((int)deflated_count);
     unlinked_count = _in_use_list.unlink_deflated(current, ls, &timer, &delete_list);
-    if (current->is_Java_thread()) {
+    if (current->is_monitor_deflation_thread()) {
       if (ls != nullptr) {
         timer.stop();
         ls->print_cr("before handshaking: unlinked_count=" SIZE_FORMAT
@@ -1528,6 +1539,11 @@ size_t ObjectSynchronizer::deflate_idle_monitors(ObjectMonitorsHashtable* table)
       // ObjectMonitors that were deflated in this cycle.
       HandshakeForDeflation hfd_hc;
       Handshake::execute(&hfd_hc);
+      // Also, we sync and desync GC threads around the handshake, so that they can
+      // safely read the mark-word and look-through to the object-monitor, without
+      // being afraid that the object-monitor is going away.
+      VM_RendezvousGCThreads sync_gc;
+      VMThread::execute(&sync_gc);
 
       if (ls != nullptr) {
         ls->print_cr("after handshaking: in_use_list stats: ceiling="
@@ -1535,6 +1551,10 @@ size_t ObjectSynchronizer::deflate_idle_monitors(ObjectMonitorsHashtable* table)
                      in_use_list_ceiling(), _in_use_list.count(), _in_use_list.max());
         timer.start();
       }
+    } else {
+      // This is not a monitor deflation thread.
+      // No handshake or rendezvous is needed when we are already at safepoint.
+      assert_at_safepoint();
     }
 
     // After the handshake, safely free the ObjectMonitors that were
