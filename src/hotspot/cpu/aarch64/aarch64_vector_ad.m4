@@ -3617,46 +3617,30 @@ instruct vmaskcmp_sve(pReg dst, vReg src1, vReg src2, immI cond, rFlagsReg cr) %
   ins_pipe(pipe_slow);
 %}
 dnl
-dnl VMASKCMP_SVE_IMM_I($1      , $2            )
-dnl VMASKCMP_SVE_IMM_I(type_imm, type_condition)
-define(`VMASKCMP_SVE_IMM_I', `
-instruct vmask$2_immI_sve(pReg dst, vReg src, $1 imm, immI_$2_cond cond, rFlagsReg cr) %{
+dnl VMASKCMP_SVE_IMM($1          , $2          , $3      , $4            )
+dnl VMASKCMP_SVE_IMM(element_size, element_type, type_imm, type_condition)
+define(`VMASKCMP_SVE_IMM', `
+instruct vmask$4_imm$2_sve(pReg dst, vReg src, $3 imm, immI_$4_cond cond, rFlagsReg cr) %{
   predicate(UseSVE > 0);
-  match(Set dst (VectorMaskCmp (Binary src (ReplicateB imm)) cond));
-  match(Set dst (VectorMaskCmp (Binary src (ReplicateS imm)) cond));
-  match(Set dst (VectorMaskCmp (Binary src (ReplicateI imm)) cond));
+  match(Set dst (VectorMaskCmp (Binary src (Replicate$2 imm)) cond));
   effect(KILL cr);
-  format %{ "vmask$2_immI_sve $dst, $src, $imm, $cond\t# KILL cr" %}
-  ins_encode %{
-    Assembler::Condition condition = to_assembler_cond((BoolTest::mask)$cond$$constant);
-    BasicType bt = Matcher::vector_element_basic_type(this);
-    uint length_in_bytes = Matcher::vector_length_in_bytes(this);
-    assert(length_in_bytes == MaxVectorSize, "invalid vector length");
-    __ sve_cmp(condition, $dst$$PRegister, __ elemType_to_regVariant(bt),
-               ptrue, $src$$FloatRegister, (int)$imm$$constant);
-  %}
-  ins_pipe(pipe_slow);
-%}')dnl
-dnl VMASKCMP_SVE_IMM_L($1      , $2            )
-dnl VMASKCMP_SVE_IMM_L(type_imm, type_condition)
-define(`VMASKCMP_SVE_IMM_L', `
-instruct vmask$2_immL_sve(pReg dst, vReg src, $1 imm, immI_$2_cond cond, rFlagsReg cr) %{
-  predicate(UseSVE > 0);
-  match(Set dst (VectorMaskCmp (Binary src (ReplicateL imm)) cond));
-  effect(KILL cr);
-  format %{ "vmask$2_immL_sve $dst, $src, $imm, $cond\t# KILL cr" %}
+  format %{ "vmask$4_imm$2_sve $dst, $src, $imm, $cond\t# KILL cr" %}
   ins_encode %{
     Assembler::Condition condition = to_assembler_cond((BoolTest::mask)$cond$$constant);
     uint length_in_bytes = Matcher::vector_length_in_bytes(this);
     assert(length_in_bytes == MaxVectorSize, "invalid vector length");
-    __ sve_cmp(condition, $dst$$PRegister, __ D, ptrue, $src$$FloatRegister, (int)$imm$$constant);
+    __ sve_cmp(condition, $dst$$PRegister, __ $1, ptrue, $src$$FloatRegister, (int)$imm$$constant);
   %}
   ins_pipe(pipe_slow);
 %}')dnl
-VMASKCMP_SVE_IMM_I(immI5, cmp)
-VMASKCMP_SVE_IMM_L(immL5, cmp)
-VMASKCMP_SVE_IMM_I(immIU7, cmpU)
-VMASKCMP_SVE_IMM_L(immLU7, cmpU)
+VMASKCMP_SVE_IMM(B, B, immI5, cmp)
+VMASKCMP_SVE_IMM(B, B, immIU7, cmpU)
+VMASKCMP_SVE_IMM(H, S, immI5, cmp)
+VMASKCMP_SVE_IMM(H, S, immIU7, cmpU)
+VMASKCMP_SVE_IMM(S, I, immI5, cmp)
+VMASKCMP_SVE_IMM(S, I, immIU7, cmpU)
+VMASKCMP_SVE_IMM(D, L, immL5, cmp)
+VMASKCMP_SVE_IMM(D, L, immLU7, cmpU)
 
 instruct vmaskcmp_masked(pReg dst, vReg src1, vReg src2, immI cond,
                          pRegGov pg, rFlagsReg cr) %{
