@@ -25,6 +25,12 @@
 
 #include "jdk_internal_foreign_abi_fallback_LibFallback.h"
 
+// This is similar to globalDefinitions_zero.hpp, which is not accessible
+// from JDK libraries. Copy-paste it here.
+#if defined(__APPLE__) && !defined(FFI_GO_CLOSURES)
+#define FFI_GO_CLOSURES 0
+#endif
+
 #include <ffi.h>
 
 #include <errno.h>
