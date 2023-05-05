@@ -50,7 +50,7 @@ public class DoubleFlagWithIntegerValue {
     testDoubleFlagWithValue("-XX:SweeperThreshold", "10");
 
     // Test double format for -XX:SafepointTimeoutDelay
-    testDoubleFlagWithValue("-XX:SafepointTimeoutDelay", "0.050");
+    testDoubleFlagWithValue("-XX:SafepointTimeoutDelay", "5.0");
 
     // Test integer format -XX:SafepointTimeoutDelay
     testDoubleFlagWithValue("-XX:SafepointTimeoutDelay", "5");
