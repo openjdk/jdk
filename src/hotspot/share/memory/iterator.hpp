@@ -355,6 +355,10 @@ public:
   bool writing() {
     return !reading();
   }
+
+  // Useful aliases
+  void do_int(int* p)                        { do_u4((u4*)p);     }
+  template <typename T> void do_ptr(T* p)    { do_ptr((void**)p); }
 };
 
 class SymbolClosure : public StackObj {

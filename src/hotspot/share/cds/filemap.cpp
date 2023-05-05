@@ -453,16 +453,34 @@ bool SharedClassPathEntry::check_non_existent() const {
   }
 }
 
-
 void SharedClassPathEntry::metaspace_pointers_do(MetaspaceClosure* it) {
   it->push(&_name);
   it->push(&_manifest);
 }
 
+void SharedClassPathEntry::remember_embedded_pointers(Array<u8>* container) {
+  ArchiveBuilder::current()->remember_embedded_pointer_in_gathered_obj((address)container, (address*)&_name);
+  ArchiveBuilder::current()->remember_embedded_pointer_in_gathered_obj((address)container, (address*)&_manifest);
+}
+
 void SharedPathTable::metaspace_pointers_do(MetaspaceClosure* it) {
   it->push(&_table);
-  for (int i=0; i<_size; i++) {
+  for (int i = 0; i < _size; i++) {
+    // Hack alert: GatherSortedSourceObjs in archiveBuilder.cpp doesn't know that
+    // pointers like path_at(i)->{_name, _manifest} are embedded inside _table, because
+    // they are pushed independetly of _table.
+    //
+    // So we need to do the remember_embedded_pointers() trick below.
+    //
+    // If we want to get rid of this ugliness, we need to convert SharedPathTable
+    // to a proper MetaspaceObj subtype (but I have very little motivation for that).
     path_at(i)->metaspace_pointers_do(it);
+  }
+}
+
+void SharedPathTable::remember_embedded_pointers() {
+  for (int i = 0; i < _size; i++) {
+    path_at(i)->remember_embedded_pointers(_table);
   }
 }
 
@@ -477,40 +495,6 @@ void SharedPathTable::dumptime_init(ClassLoaderData* loader_data, TRAPS) {
 
   _table = MetadataFactory::new_array<u8>(loader_data, (int)bytes, CHECK);
   _size = num_entries;
-}
-
-// Make a copy of the _shared_path_table for use during dynamic CDS dump.
-// It is needed because some Java code continues to execute after dynamic dump has finished.
-// However, during dynamic dump, we have modified FileMapInfo::_shared_path_table so
-// FileMapInfo::shared_path(i) returns incorrect information in ClassLoader::record_result().
-void FileMapInfo::copy_shared_path_table(ClassLoaderData* loader_data, TRAPS) {
-  size_t entry_size = sizeof(SharedClassPathEntry);
-  size_t bytes = entry_size * _shared_path_table.size();
-
-  Array<u8>* array = MetadataFactory::new_array<u8>(loader_data, (int)bytes, CHECK);
-  _saved_shared_path_table = SharedPathTable(array, _shared_path_table.size());
-
-  for (int i = 0; i < _shared_path_table.size(); i++) {
-    _saved_shared_path_table.path_at(i)->copy_from(shared_path(i), loader_data, CHECK);
-  }
-  _saved_shared_path_table_array = array;
-}
-
-void FileMapInfo::clone_shared_path_table(TRAPS) {
-  Arguments::assert_is_dumping_archive();
-
-  ClassLoaderData* loader_data = ClassLoaderData::the_null_class_loader_data();
-  ClassPathEntry* jrt = ClassLoader::get_jrt_entry();
-
-  assert(jrt != nullptr,
-         "No modular java runtime image present when allocating the CDS classpath entry table");
-
-  if (_saved_shared_path_table_array != nullptr) {
-    MetadataFactory::free_array<u8>(loader_data, _saved_shared_path_table_array);
-    _saved_shared_path_table_array = nullptr;
-  }
-
-  copy_shared_path_table(loader_data, CHECK);
 }
 
 void FileMapInfo::allocate_shared_path_table(TRAPS) {
@@ -536,7 +520,6 @@ void FileMapInfo::allocate_shared_path_table(TRAPS) {
   }
 
   assert(i == _shared_path_table.size(), "number of shared path entry mismatch");
-  clone_shared_path_table(CHECK);
 }
 
 int FileMapInfo::add_shared_classpaths(int i, const char* which, ClassPathEntry *cpe, TRAPS) {
@@ -2328,20 +2311,10 @@ void FileMapInfo::assert_mark(bool check) {
   }
 }
 
-void FileMapInfo::metaspace_pointers_do(MetaspaceClosure* it, bool use_copy) {
-  if (use_copy) {
-    _saved_shared_path_table.metaspace_pointers_do(it);
-  } else {
-    _shared_path_table.metaspace_pointers_do(it);
-  }
-}
-
 FileMapInfo* FileMapInfo::_current_info = nullptr;
 FileMapInfo* FileMapInfo::_dynamic_archive_info = nullptr;
 bool FileMapInfo::_heap_pointers_need_patching = false;
 SharedPathTable FileMapInfo::_shared_path_table;
-SharedPathTable FileMapInfo::_saved_shared_path_table;
-Array<u8>*      FileMapInfo::_saved_shared_path_table_array = nullptr;
 bool FileMapInfo::_validating_shared_path_table = false;
 bool FileMapInfo::_memory_mapping_failed = false;
 GrowableArray<const char*>* FileMapInfo::_non_existent_class_paths = nullptr;

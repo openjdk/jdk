@@ -103,11 +103,13 @@ public:
     return is_modules_image() || // modules image doesn't contain unnamed modules
            _is_module_path;      // module path doesn't contain unnamed modules
   }
+  void remember_embedded_pointers(Array<u8>* container);
 };
 
 class SharedPathTable {
   Array<u8>* _table;
   int _size;
+  static SharedClassPathEntry* path_at(Array<u8>* table, int size, int index);
 public:
   SharedPathTable() : _table(nullptr), _size(0) {}
   SharedPathTable(Array<u8>* table, int size) : _table(table), _size(size) {}
@@ -129,6 +131,7 @@ public:
   }
   Array<u8>* table() {return _table;}
   void set_table(Array<u8>* table) {_table = table;}
+  void remember_embedded_pointers();
 };
 
 
@@ -338,10 +341,7 @@ private:
   const char*    _base_archive_name;
   FileMapHeader* _header;
 
-  // TODO: Probably change the following to be non-static
   static SharedPathTable       _shared_path_table;
-  static SharedPathTable       _saved_shared_path_table;
-  static Array<u8>*            _saved_shared_path_table_array;  // remember the table array for cleanup
   static bool                  _validating_shared_path_table;
 
   // FileMapHeader describes the shared space data in the file to be
@@ -361,13 +361,14 @@ public:
   static SharedPathTable shared_path_table() {
     return _shared_path_table;
   }
-  static SharedPathTable saved_shared_path_table() {
-    assert(_saved_shared_path_table.size() >= 0, "Sanity check");
-    return _saved_shared_path_table;
-  }
 
   bool init_from_file(int fd);
-  static void metaspace_pointers_do(MetaspaceClosure* it, bool use_copy = true);
+  static void metaspace_pointers_do(MetaspaceClosure* it) {
+    _shared_path_table.metaspace_pointers_do(it);
+  }
+  static void remember_embedded_pointers() {
+    _shared_path_table.remember_embedded_pointers();
+  }
 
   void log_paths(const char* msg, int start_idx, int end_idx);
 

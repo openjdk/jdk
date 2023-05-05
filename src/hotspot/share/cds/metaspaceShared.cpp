@@ -451,8 +451,8 @@ class StaticArchiveBuilder : public ArchiveBuilder {
 public:
   StaticArchiveBuilder() : ArchiveBuilder() {}
 
-  virtual void iterate_roots(MetaspaceClosure* it, bool is_relocating_pointers) {
-    FileMapInfo::metaspace_pointers_do(it, false);
+  virtual void iterate_roots(MetaspaceClosure* it) {
+    FileMapInfo::metaspace_pointers_do(it);
     SystemDictionaryShared::dumptime_classes_do(it);
     Universe::metaspace_pointers_do(it);
     vmSymbols::metaspace_pointers_do(it);
@@ -507,13 +507,8 @@ void VM_PopulateDumpSharedSpace::doit() {
   builder.dump_ro_metadata();
   builder.relocate_metaspaceobj_embedded_pointers();
 
-  // Dump supported java heap objects
   dump_java_heap_objects(builder.klasses());
-
-  builder.relocate_roots();
   dump_shared_symbol_table(builder.symbols());
-
-  builder.relocate_vm_classes();
 
   log_info(cds)("Make classes shareable");
   builder.make_klasses_shareable();
