@@ -160,7 +160,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   Symbol* _name_and_id;
   JFR_ONLY(DEFINE_TRACE_ID_FIELD;)
 
-  void set_next(ClassLoaderData* next) { _next = next; }
+  void set_next(ClassLoaderData* next) { Atomic::store(&_next, next); }
   ClassLoaderData* next() const        { return Atomic::load(&_next); }
 
   ClassLoaderData(Handle h_class_loader, bool has_class_mirror_holder);

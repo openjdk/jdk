@@ -311,7 +311,7 @@ void C1_MacroAssembler::allocate_array(Register obj, Register len, Register t1, 
 
 void C1_MacroAssembler::inline_cache_check(Register receiver, Register iCache) {
   verify_oop(receiver);
-  // explicit NULL check not needed since load from [klass_offset] causes a trap
+  // explicit null check not needed since load from [klass_offset] causes a trap
   // check against inline cache
   assert(!MacroAssembler::needs_explicit_null_check(oopDesc::klass_offset_in_bytes()), "must add explicit null check");
 
@@ -328,7 +328,7 @@ void C1_MacroAssembler::build_frame(int framesize, int bang_size_in_bytes) {
 
   // Insert nmethod entry barrier into frame.
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  bs->nmethod_entry_barrier(this, NULL /* slow_path */, NULL /* continuation */, NULL /* guard */);
+  bs->nmethod_entry_barrier(this, nullptr /* slow_path */, nullptr /* continuation */, nullptr /* guard */);
 }
 
 void C1_MacroAssembler::remove_frame(int framesize) {

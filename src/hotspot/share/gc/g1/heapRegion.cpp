@@ -110,9 +110,9 @@ void HeapRegion::handle_evacuation_failure() {
 }
 
 void HeapRegion::unlink_from_list() {
-  set_next(NULL);
-  set_prev(NULL);
-  set_containing_set(NULL);
+  set_next(nullptr);
+  set_prev(nullptr);
+  set_containing_set(nullptr);
 }
 
 void HeapRegion::hr_clear(bool clear_space) {
@@ -204,7 +204,7 @@ void HeapRegion::clear_humongous() {
   assert(is_humongous(), "pre-condition");
 
   assert(capacity() == HeapRegion::GrainBytes, "pre-condition");
-  _humongous_start_region = NULL;
+  _humongous_start_region = nullptr;
 }
 
 void HeapRegion::prepare_remset_for_scan() {
@@ -217,23 +217,23 @@ HeapRegion::HeapRegion(uint hrm_index,
                        G1CardSetConfiguration* config) :
   _bottom(mr.start()),
   _end(mr.end()),
-  _top(NULL),
+  _top(nullptr),
   _bot_part(bot, this),
-  _pre_dummy_top(NULL),
-  _rem_set(NULL),
+  _pre_dummy_top(nullptr),
+  _rem_set(nullptr),
   _hrm_index(hrm_index),
   _type(),
-  _humongous_start_region(NULL),
+  _humongous_start_region(nullptr),
   _index_in_opt_cset(InvalidCSetIndex),
-  _next(NULL), _prev(NULL),
+  _next(nullptr), _prev(nullptr),
 #ifdef ASSERT
-  _containing_set(NULL),
+  _containing_set(nullptr),
 #endif
-  _top_at_mark_start(NULL),
-  _parsable_bottom(NULL),
+  _top_at_mark_start(nullptr),
+  _parsable_bottom(nullptr),
   _garbage_bytes(0),
   _young_index_in_cset(-1),
-  _surv_rate_group(NULL), _age_index(G1SurvRateGroup::InvalidAgeIndex), _gc_efficiency(-1.0),
+  _surv_rate_group(nullptr), _age_index(G1SurvRateGroup::InvalidAgeIndex), _gc_efficiency(-1.0),
   _node_index(G1NUMA::UnknownNodeIndex)
 {
   assert(Universe::on_page_boundary(mr.start()) && Universe::on_page_boundary(mr.end()),
@@ -354,8 +354,8 @@ public:
     _hr(hr), _failures(false) {}
 
   void do_code_blob(CodeBlob* cb) {
-    nmethod* nm = (cb == NULL) ? NULL : cb->as_compiled_method()->as_nmethod_or_null();
-    if (nm != NULL) {
+    nmethod* nm = (cb == nullptr) ? nullptr : cb->as_compiled_method()->as_nmethod_or_null();
+    if (nm != nullptr) {
       // Verify that the nemthod is live
       VerifyCodeRootOopClosure oop_cl(_hr);
       nm->oops_do(&oop_cl);
