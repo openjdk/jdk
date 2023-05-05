@@ -424,48 +424,61 @@ public class Main {
             throws Fault, InvocationTargetException {
         System.setProperty("jdk.launcher.sourcefile", context.file.toString());
         ClassLoader cl = context.getClassLoader(ClassLoader.getSystemClassLoader());
+
+        Class<?> appClass;
         try {
-            Class<?> appClass = Class.forName(mainClassName, true, cl);
-            Method mainMethod = MainMethodFinder.findMainMethod(appClass);
-            int mods = mainMethod.getModifiers();
-            boolean isStatic = Modifier.isStatic(mods);
-            boolean isPublic = Modifier.isPublic(mods);
-            boolean noArgs = mainMethod.getParameterCount() == 0;
+            appClass = Class.forName(mainClassName, true, cl);
+        } catch (ClassNotFoundException e) {
+            throw new Fault(Errors.CantFindClass(mainClassName));
+        }
 
-            if (!PreviewFeatures.isEnabled() && (!isStatic || !isPublic)) {
-                throw new Fault(Errors.MainNotPublicStatic);
-            }
+        Method mainMethod;
+        try {
+            mainMethod = MainMethodFinder.findMainMethod(appClass);
+        } catch (NoSuchMethodException e) {
+            throw new Fault(Errors.CantFindMainMethod(mainClassName));
+        }
 
-            if (!mainMethod.getReturnType().equals(void.class)) {
-                throw new Fault(Errors.MainNotVoid);
-            }
+        int mods = mainMethod.getModifiers();
+        boolean isStatic = Modifier.isStatic(mods);
+        boolean isPublic = Modifier.isPublic(mods);
+        boolean noArgs = mainMethod.getParameterCount() == 0;
 
+        if (!PreviewFeatures.isEnabled() && (!isStatic || !isPublic)) {
+            throw new Fault(Errors.MainNotPublicStatic);
+        }
+
+        if (!mainMethod.getReturnType().equals(void.class)) {
+            throw new Fault(Errors.MainNotVoid);
+        }
+
+        Constructor<?> constructor;
+        try {
+            constructor = appClass.getDeclaredConstructor();
+        } catch (NoSuchMethodException e) {
+            throw new Fault(Errors.CantFindConstructor(mainClassName));
+        }
+
+        Object instance;
+        try {
+            constructor.setAccessible(true);
+            instance = constructor.newInstance();
+        } catch (InstantiationException | IllegalAccessException e) {
+            throw new Fault(Errors.CantAccessConstructor(mainClassName));
+        }
+
+        try {
             // Similar to sun.launcher.LauncherHelper#executeMainClass
             // but duplicated here to prevent additional launcher frames
             mainMethod.setAccessible(true);
+            Object receiver = isStatic ? appClass : instance;
 
-            if (isStatic) {
-                if (noArgs) {
-                    mainMethod.invoke(appClass);
-                } else {
-                    mainMethod.invoke(appClass, (Object)mainArgs);
-                }
+            if (noArgs) {
+                mainMethod.invoke(receiver);
             } else {
-                Constructor<?> constructor = appClass.getDeclaredConstructor();
-                constructor.setAccessible(true);
-                Object instance = constructor.newInstance();
-
-                if (noArgs) {
-                    mainMethod.invoke(instance);
-                } else {
-                    mainMethod.invoke(instance, (Object)mainArgs);
-                }
+                mainMethod.invoke(receiver, (Object)mainArgs);
             }
-        } catch (ClassNotFoundException e) {
-            throw new Fault(Errors.CantFindClass(mainClassName));
-        } catch (NoSuchMethodException e) {
-            throw new Fault(Errors.CantFindMainMethod(mainClassName));
-        } catch (IllegalAccessException | InstantiationException e) {
+        } catch (IllegalAccessException e) {
             throw new Fault(Errors.CantAccessMainMethod(mainClassName));
         } catch (InvocationTargetException e) {
             // remove stack frames for source launcher
