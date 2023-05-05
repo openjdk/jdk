@@ -30,6 +30,7 @@
 #include "gc/shared/gcId.hpp"
 #include "gc/shared/gcName.hpp"
 #include "gc/shared/gcWhen.hpp"
+#include "gc/shared/workerThread.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/referenceType.hpp"
 #include "utilities/macros.hpp"
