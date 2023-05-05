@@ -140,17 +140,6 @@ import jdk.internal.classfile.attribute.CodeAttribute;
  *      <li>It works with only minimal mandatory stack map frames.
  *      <li>It does not spend time on any non-essential verifications.
  * </ul>
- * <p>
- * In case of an exception during the Generator loop there is just minimal information available in the exception message.
- * <p>
- * To determine root cause of the exception it is recommended to enable debug logging of the Generator in one of the two modes
- * using following <code>java.lang.System</code> properties:<dl>
- * <dt><code>-Djdk.internal.classfile.impl.StackMapGenerator.DEBUG=true</code>
- *      <dd>Activates debug logging with basic information + generated stack map frames in case of success.
- *          It also re-runs with enabled full trace logging in case of an error or exception.
- * <dt><code>-Djdk.internal.classfile.impl.StackMapGenerator.TRACE=true</code>
- *      <dd>Activates full detailed tracing of the generator process for all invocations.
- * </dl>
  */
 
 public final class StackMapGenerator {
@@ -859,8 +848,9 @@ public final class StackMapGenerator {
                 methodDesc.parameterList().stream().map(ClassDesc::displayName).collect(Collectors.joining(","))));
         //try to attach debug info about corrupted bytecode to the message
         try {
-            cp.options.generateStackmaps = false;
-            var clb = new DirectClassBuilder(cp, cp.classEntry(ClassDesc.of("FakeClass")));
+            //clone SplitConstantPool with alternate Options
+            var newCp = new SplitConstantPool(cp, new Options(List.of(Classfile.Option.generateStackmap(false))));
+            var clb = new DirectClassBuilder(newCp, newCp.classEntry(ClassDesc.of("FakeClass")));
             clb.withMethod(methodName, methodDesc, isStatic ? ACC_STATIC : 0, mb ->
                     ((DirectMethodBuilder)mb).writeAttribute(new UnboundAttribute.AdHocAttribute<CodeAttribute>(Attributes.CODE) {
                         @Override

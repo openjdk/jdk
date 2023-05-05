@@ -83,7 +83,13 @@ class DiscontinuedInstructionsTest {
         assertEquals(list, List.of("Hello", "World", "Hello", "World"));
 
         var clm = Classfile.parse(bytes);
-        var exception = assertThrows(IllegalStateException.class, () ->
+
+        //test failover stack map generation
+        clm.transform(ClassTransform.transformingMethodBodies(CodeTransform.ACCEPT_ALL)
+                   .andThen(ClassTransform.endHandler(clb -> clb.withVersion(JAVA_6_VERSION, 0))));
+
+        //test failure of stack map generation
+        assertThrows(IllegalStateException.class, () ->
                 clm.transform(ClassTransform.transformingMethodBodies(CodeTransform.ACCEPT_ALL)
                    .andThen(ClassTransform.endHandler(clb -> clb.withVersion(JAVA_7_VERSION, 0)))));
     }
