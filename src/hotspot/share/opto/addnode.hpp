@@ -285,13 +285,20 @@ public:
     return build_min_max_diff_with_zero(a, b, false, t, gvn);
   }
 
+  static jint extreme(jint a, jint b, int opcode) {
+    assert(opcode == Op_MaxI || opcode == Op_MinI, "Unexpected opcode");
+    return opcode == Op_MinI ? MIN2(a, b) : MAX2(a, b);
+  }
+
   // Return:
   // <x, C>,       if n is of the form x + C, where 'C' is a non-TOP constant;
   // <nullptr, _>, if n is of the form x + C, where 'C' is a TOP constant;
   // <n, con>      otherwise.
   static Node* constant_add_input(Node* n, jint* con);
 
-  static bool optimize_max_of_max(PhaseGVN* phase, bool min, bool left, Node* x, Node* y, Node* n, jint x_off, jint y_off, Node** out);
+  Node* IdealI(PhaseGVN* phase, bool can_reshape, int opcode);
+
+  static bool optimize_max_of_max(PhaseGVN* phase, int opcode, bool left, Node* x, Node* y, Node* n, jint x_off, jint y_off, Node** out);
 };
 
 //------------------------------MaxINode---------------------------------------

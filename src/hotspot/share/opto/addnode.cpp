@@ -1087,7 +1087,40 @@ Node* MaxNode::constant_add_input(Node* n, jint* con) {
   return n;
 }
 
-bool MaxNode::optimize_max_of_max(PhaseGVN* phase, bool min, bool left, Node* x, Node* y, Node* n, jint x_off, jint y_off, Node** out) {
+Node* MaxNode::IdealI(PhaseGVN* phase, bool can_reshape, int opcode) {
+  assert(opcode == Op_MinI || opcode == Op_MaxI, "Unexpected opcode");
+  Node* l = in(1);
+  Node* r = in(2);
+  jint x_off = 0;
+  Node* x = constant_add_input(l, &x_off);
+  if (x == nullptr) return nullptr;
+  jint y_off = 0;
+  Node* y = constant_add_input(r, &y_off);
+  if (y == nullptr) return nullptr;
+  Node* out;
+  if (l->Opcode() == opcode) {
+    if (optimize_max_of_max(phase, opcode, /*left=*/true, x, y, l, x_off, y_off, &out)) {
+      return out;
+    }
+  } else if (r->Opcode() == opcode) {
+    if (optimize_max_of_max(phase, opcode, /*left=*/false, x, y, r, x_off, y_off, &out)) {
+      return out;
+    }
+  } else {
+    // Transform MIN2/MAX2(x + c0, y + c1) into x + MIN2/MAX2(c0, c1)
+    // if x == y and the additions can't overflow.
+    const TypeInt* tx = phase->type(x)->isa_int();
+    if (x == y && tx != nullptr &&
+        !can_overflow(tx, x_off) &&
+        !can_overflow(tx, y_off)) {
+      return new AddINode(x, phase->intcon(extreme(x_off, y_off, opcode)));
+    }
+  }
+  return nullptr;
+}
+
+bool MaxNode::optimize_max_of_max(PhaseGVN* phase, int opcode, bool left, Node* x, Node* y, Node* n, jint x_off, jint y_off, Node** out) {
+  assert(opcode == Op_MinI || opcode == Op_MaxI, "Unexpected opcode");
   const TypeInt* tx = phase->type(x)->isa_int();
   for (uint input = 1; input <= 2; input++) {
     Node* add = n->in(input);
@@ -1104,9 +1137,9 @@ bool MaxNode::optimize_max_of_max(PhaseGVN* phase, bool min, bool left, Node* x,
     if (x == y && tx != nullptr &&
         !can_overflow(tx, x_off) &&
         !can_overflow(tx, y_off)) {
-      jint c2 = min ? MIN2(x_off, y_off) : MAX2(x_off, y_off);
+      jint c2 = extreme(x_off, y_off, opcode);
       Node* add_x_c2 = phase->transform(new AddINode(x, phase->intcon(c2)));
-      if (min) {
+      if (opcode == Op_MinI) {
         *out = new MinINode(add_x_c2, z);
       } else {
         *out = new MaxINode(add_x_c2, z);
@@ -1130,71 +1163,15 @@ const Type *MaxINode::add_ring( const Type *t0, const Type *t1 ) const {
 
 // Ideal transformations for MaxINode
 Node* MaxINode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  Node* l = in(1);
-  Node* r = in(2);
-  jint x_off = 0;
-  Node* x = constant_add_input(l, &x_off);
-  if (x == nullptr) return nullptr;
-  jint y_off = 0;
-  Node* y = constant_add_input(r, &y_off);
-  if (y == nullptr) return nullptr;
-  Node* out;
-  if (l->Opcode() == Op_MaxI) {
-    if (optimize_max_of_max(phase, /*min=*/false, /*left=*/true, x, y, l, x_off, y_off, &out)) {
-      return out;
-    }
-  } else if (r->Opcode() == Op_MaxI) {
-    if (optimize_max_of_max(phase, /*min=*/false, /*left=*/false, x, y, r, x_off, y_off, &out)) {
-      return out;
-    }
-  } else {
-    // Transform MAX2(x + c0, y + c1) into x + MAX2(c0, c1)
-    // if x == y and the additions can't overflow.
-    const TypeInt* tx = phase->type(x)->isa_int();
-    if (x == y && tx != nullptr &&
-        !can_overflow(tx, x_off) &&
-        !can_overflow(tx, y_off)) {
-      jint c2 = false ? MIN2(x_off, y_off) : MAX2(x_off, y_off);
-      return new AddINode(x, phase->intcon(c2));
-    }
-  }
-  return nullptr;
+  return IdealI(phase, can_reshape, Op_MaxI);
 }
 
 //=============================================================================
 //------------------------------Idealize---------------------------------------
 // MINs show up in range-check loop limit calculations.  Look for
 // "MIN2(x+c0,MIN2(y,x+c1))".  Pick the smaller constant: "MIN2(x+c0,y)"
-Node *MinINode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  Node* l = in(1);
-  Node* r = in(2);
-  jint x_off = 0;
-  Node* x = constant_add_input(l, &x_off);
-  if (x == nullptr) return nullptr;
-  jint y_off = 0;
-  Node* y = constant_add_input(r, &y_off);
-  if (y == nullptr) return nullptr;
-  Node* out;
-  if (l->Opcode() == Op_MinI) {
-    if (optimize_max_of_max(phase, /*min=*/true, /*left=*/true, x, y, l, x_off, y_off, &out)) {
-      return out;
-    }
-  } else if (r->Opcode() == Op_MinI) {
-    if (optimize_max_of_max(phase, /*min=*/true, /*left=*/false, x, y, r, x_off, y_off, &out)) {
-      return out;
-    }
-  } else {
-    // Transform MIN2(x + c0, y + c1) into x + MIN2(c0, c1)
-    // if x == y and the additions can't overflow.
-    const TypeInt* tx = phase->type(x)->isa_int();
-    if (x == y && tx != nullptr &&
-        !can_overflow(tx, x_off) &&
-        !can_overflow(tx, y_off)) {
-      jint c2 = true ? MIN2(x_off, y_off) : MAX2(x_off, y_off);
-      return new AddINode(x,phase->intcon(c2));
-    }
-  }
-  return nullptr;
+Node* MinINode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  return IdealI(phase, can_reshape, Op_MinI);
 }
 
 //------------------------------add_ring---------------------------------------
