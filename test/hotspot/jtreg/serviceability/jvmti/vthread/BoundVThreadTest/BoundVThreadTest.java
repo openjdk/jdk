@@ -24,7 +24,6 @@
 /**
  * @test
  * @summary Verifies correct JVMTI behavior for BoundVirtualThreads.
- * @enablePreview
  * @run main/othervm/native -agentlib:BoundVThreadTest -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations BoundVThreadTest
  */
 

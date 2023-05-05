@@ -699,6 +699,7 @@ public abstract class DigestEchoServer implements HttpServerAdapters {
                         throw new InternalError(key + ": Invalid combination scheme="
                              + schemeType + " authType=" + authType);
                 }
+                break;
             case NONE:
                 // No authentication at all.
                 ctxt.addFilter(new HttpNoAuthFilter(key, authType));
