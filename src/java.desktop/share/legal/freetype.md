@@ -24,6 +24,7 @@ which fits your needs best.
 Copyright (C) 1996-2023 by David Turner, Robert Wilhelm, and Werner Lemberg.
 Copyright (C) 2007-2023 by Dereg Clegg and Michael Toftdal.
 Copyright (C) 1996-2023 by Just van Rossum, David Turner, Robert Wilhelm, and Werner Lemberg.
+Copyright (C) 2022-2023 by David Turner, Robert Wilhelm, Werner Lemberg, George Williams, and
 Copyright (C) 2004-2023 by Masatake YAMATO and Redhat K.K.
 Copyright (C) 2007-2023 by Derek Clegg and Michael Toftdal.
 Copyright (C) 2003-2023 by Masatake YAMATO, Red Hat K.K.,
@@ -37,8 +38,7 @@ Copyright (C) 2019-2023 by Nikhil Ramakrishnan, David Turner, Robert Wilhelm, an
 Copyright (C) 2009-2023 by Oran Agra and Mickey Gabel.
 Copyright (C) 2018-2023 by David Turner, Robert Wilhelm, Dominik Röttsches, and Werner Lemberg.
 Copyright 2013 by Google, Inc.
-
-
+Copyright (C) 2004-2023 by David Turner, Robert Wilhelm, Werner Lemberg, and George Williams.
                     The FreeType Project LICENSE
                     ----------------------------
 
