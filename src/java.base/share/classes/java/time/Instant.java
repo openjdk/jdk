@@ -1169,15 +1169,25 @@ public final class Instant
     }
 
     private long microsUntil(Instant end) {
-        long secsDiff = Math.subtractExact(end.seconds, seconds);
-        long totalMicros = Math.multiplyExact(secsDiff, MICROS_PER_SECOND);
-        return Math.addExact(totalMicros, (end.nanos - nanos) / 1000);
+        long microsDiff = Math.multiplyExact(end.seconds - seconds, MICROS_PER_SECOND);
+        long nanosDiff = end.nanos - nanos;
+        if (microsDiff > 0 && nanosDiff < 0) {
+            return (microsDiff - 1_000_000) + (nanosDiff + 1_000_000_000) / 1_000;
+        } else if (microsDiff < 0 && nanosDiff > 0) {
+            return (microsDiff + 1_000_000) + (nanosDiff - 1_000_000_000) / 1_000;
+        }
+        return Math.addExact(microsDiff, nanosDiff / 1_000);
     }
 
     private long millisUntil(Instant end) {
-        long secsDiff = Math.subtractExact(end.seconds, seconds);
-        long totalMillis = Math.multiplyExact(secsDiff, MILLIS_PER_SECOND);
-        return Math.addExact(totalMillis, (end.nanos - nanos) / 1000_000);
+        long millisDiff = Math.multiplyExact(end.seconds - seconds, MILLIS_PER_SECOND);
+        long nanosDiff = end.nanos - nanos;
+        if (millisDiff > 0 && nanosDiff < 0) {
+            return (millisDiff - 1_000) + (nanosDiff + 1_000_000_000) / 1_000_000;
+        } else if (millisDiff < 0 && nanosDiff > 0) {
+            return (millisDiff + 1_000) + (nanosDiff - 1_000_000_000) / 1_000_000;
+        }
+        return Math.addExact(millisDiff, nanosDiff / 1_000_000);
     }
 
     private long secondsUntil(Instant end) {
