@@ -125,6 +125,7 @@ class LogOutputList {
     }
 
     void operator++(int) {
+      // FIXME: memory_order_consume could be used here.
       // Atomic access on the reading side for LogOutputList.
       _current = Atomic::load_acquire(&_current->_next);
     }
@@ -140,6 +141,7 @@ class LogOutputList {
 
   Iterator iterator(LogLevelType level = LogLevel::Last) {
     increase_readers();
+    // FIXME: memory_order_consume could be used here.
     // Atomic access on the reading side for LogOutputList.
     return Iterator(this, Atomic::load_acquire(&_level_start[level]));
   }
