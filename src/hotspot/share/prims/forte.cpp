@@ -607,7 +607,7 @@ void AsyncGetCallTrace(ASGCT_CallTrace *trace, jint depth, void* ucontext) {
   }
 
   // signify to other code in the VM that we're in ASGCT
-  ThreadInAsgct tia(thread);
+  ThreadInAsyncStackWalking tia(thread);
 
   switch (thread->thread_state()) {
   case _thread_new:
@@ -666,7 +666,6 @@ void AsyncGetCallTrace(ASGCT_CallTrace *trace, jint depth, void* ucontext) {
     trace->num_frames = ticks_unknown_state; // -7
     break;
   }
-  DEBUG_ONLY(thread->set_in_async_stack_walking(false);)
 }
 
 

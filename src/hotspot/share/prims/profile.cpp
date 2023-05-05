@@ -34,6 +34,8 @@
 #include "runtime/vframe.inline.hpp"
 #include "runtime/vframeArray.hpp"
 #include "runtime/vframe_hp.hpp"
+#include "runtime/threadCrashProtection.hpp"
+#include "runtime/threadSMR.inline.hpp"
 #include "prims/stackWalker.hpp"
 #include "prims/jvmtiExport.hpp"
 
@@ -75,7 +77,7 @@ void fill_call_trace_given_top(JavaThread* thd,
       };
     } else {
       trace->frames[count] = {.non_java_frame = {
-          (uint8_t)(st.is_stub_frame() ? ASGST_FRAME_STUB : ASGST_FRAME_CPP),
+          (uint8_t)ASGST_FRAME_CPP,
           st.base_frame()->pc()
         }
       };
@@ -144,14 +146,31 @@ void fill_call_trace_for_non_java_thread(ASGST_CallTrace *trace, jint depth, voi
 }
 
 
-extern "C" JNIEXPORT void AsyncGetStackTrace(ASGST_CallTrace *trace, jint depth, void* ucontext, int32_t options) {
+void asyncGetStackTraceImpl(ASGST_CallTrace *trace, jint depth, void* ucontext, int32_t options) {
   assert(trace->frames != NULL, "");
   bool include_c_frames = (options & ASGST_INCLUDE_C_FRAMES) != 0;
   bool include_non_java_threads = (options & ASGST_INCLUDE_NON_JAVA_THREADS) != 0;
+  bool walk_during_unsafe_states = (options & ASGST_WALK_DURING_UNSAFE_STATES) != 0;
+  bool walk_same_thread = (options & ASGST_WALK_SAME_THREAD) != 0;
 
-  // Can't use thread_from_jni_environment as it may also perform a VM exit check that is unsafe to
-  // do from this context.
-  Thread* raw_thread = Thread::current_or_null_safe();
+  Thread* raw_thread;
+
+  if (walk_same_thread) {
+    raw_thread = Thread::current_or_null_safe();
+  } else {
+    ThreadsList *tl = ThreadsSMRSupport::get_java_thread_list();
+    if (tl == nullptr) {
+      trace->num_frames = ASGST_NO_THREAD;
+      return;
+    }
+    raw_thread = tl->find_JavaThread_from_ucontext(ucontext);
+    if (raw_thread == nullptr || raw_thread == Thread::current()) {
+      // bad thread
+      trace->num_frames = ASGST_NO_THREAD;
+      return;
+    }
+  }
+
   JavaThread* thread;
 
   if (raw_thread == NULL || !raw_thread->is_Java_thread()) {
@@ -171,6 +190,11 @@ extern "C" JNIEXPORT void AsyncGetStackTrace(ASGST_CallTrace *trace, jint depth,
 
   if ((thread = JavaThread::cast(raw_thread))->is_exiting()) {
     trace->num_frames = (jint)ASGST_THREAD_EXIT; // -8
+    return;
+  }
+
+  if (!walk_during_unsafe_states && thread->is_at_poll_safepoint()) {
+    trace->num_frames = (jint)ASGST_UNSAFE_STATE; // -12
     return;
   }
 
@@ -202,8 +226,6 @@ extern "C" JNIEXPORT void AsyncGetStackTrace(ASGST_CallTrace *trace, jint depth,
     return;
   }
 
-  DEBUG_ONLY(thread->set_in_async_stack_walking(true));
-
   switch (thread->thread_state()) {
   case _thread_new:
   case _thread_uninitialized:
@@ -226,7 +248,6 @@ extern "C" JNIEXPORT void AsyncGetStackTrace(ASGST_CallTrace *trace, jint depth,
         // check without forced ucontext again
         if (!include_c_frames || !thread->pd_get_top_frame_for_profiling(&ret_frame, ucontext, true, false)) {
           trace->num_frames = (jint)ASGST_UNKNOWN_NOT_JAVA;  // -3 unknown frame
-          DEBUG_ONLY(thread->set_in_async_stack_walking(false));
           return;
         }
       }
@@ -239,5 +260,47 @@ extern "C" JNIEXPORT void AsyncGetStackTrace(ASGST_CallTrace *trace, jint depth,
     trace->num_frames = (jint)ASGST_UNKNOWN_STATE; // -7
     break;
   }
-  DEBUG_ONLY(thread->set_in_async_stack_walking(false));
+}
+
+class AsyncGetStackTraceCallBack : public CrashProtectionCallback {
+public:
+  AsyncGetStackTraceCallBack(ASGST_CallTrace *trace, jint depth, void* ucontext, int32_t options) :
+    _trace(trace), _depth(depth), _ucontext(ucontext), _options(options) {
+  }
+  virtual void call() {
+    asyncGetStackTraceImpl(_trace, _depth, _ucontext, _options);
+  }
+ private:
+  ASGST_CallTrace* _trace;
+  jint _depth;
+  void* _ucontext;
+  int32_t _options;
+};
+
+void AsyncGetStackTrace(ASGST_CallTrace *trace, jint depth, void* ucontext, int32_t options) {
+  bool walk_same_thread = (options & ASGST_WALK_SAME_THREAD) != 0;
+  Thread* thread = Thread::current_or_null_safe();
+  if (thread != NULL) {
+    thread->set_in_async_stack_walking(true);
+  }
+  if (walk_same_thread) {
+    asyncGetStackTraceImpl(trace, depth, ucontext, options);
+  } else {
+    trace->num_frames = ASGST_UNKNOWN_STATE;
+#ifdef ASSERT
+    asyncGetStackTraceImpl(trace, depth, ucontext, options);
+#else
+    AsyncGetStackTraceCallBack cb(trace, depth, ucontext, options);
+    ThreadCrashProtection crash_protection;
+    if (!crash_protection.call(cb)) {
+      fprintf(stderr, "AsyncGetStackTrace: catched crash\n");
+      if (trace->num_frames >= 0) {
+        trace->num_frames = ASGST_UNKNOWN_STATE;
+      }
+    }
+#endif
+  }
+  if (thread != NULL) {
+    thread->set_in_async_stack_walking(false);
+  }
 }

@@ -44,15 +44,16 @@ enum ASGST_Error {
   ASGST_UNKNOWN_STATE         =  -7,
   ASGST_THREAD_EXIT           =  -8,
   ASGST_DEOPT                 =  -9,
-  ASGST_THREAD_NOT_JAVA       = -10
+  ASGST_THREAD_NOT_JAVA       = -10,
+  ASGST_NO_THREAD             = -11,
+  ASGST_UNSAFE_STATE          = -12,
 };
 
 enum ASGST_FrameTypeId {
   ASGST_FRAME_JAVA         = 1, // JIT compiled and interpreted
   ASGST_FRAME_JAVA_INLINED = 2, // inlined JIT compiled
   ASGST_FRAME_NATIVE       = 3, // native wrapper to call C methods from Java
-  ASGST_FRAME_STUB         = 4, // VM generated stubs
-  ASGST_FRAME_CPP          = 5  // C/C++/... frames
+  ASGST_FRAME_CPP          = 4  // C/C++/... frames
 };
 
 typedef struct {
@@ -65,7 +66,7 @@ typedef struct {
 typedef struct {
   uint8_t type;      // frame type
   void *pc;          // current program counter inside this frame
-} ASGST_NonJavaFrame; // used for FRAME_STUB, FRAME_CPP
+} ASGST_NonJavaFrame; // used for FRAME_CPP
 
 typedef union {
   uint8_t type;     // to distinguish between JavaFrame and NonJavaFrame
@@ -102,19 +103,20 @@ typedef struct {
 
 
 enum ASGST_Options {
-  ASGST_INCLUDE_C_FRAMES         = 1, // include C and stub frames too
-  ASGST_INCLUDE_NON_JAVA_THREADS = 2, // walk the stacks of C/Cpp, GC and deopt threads too
+ ASGST_INCLUDE_C_FRAMES         = 1, // include C/C++ (this includes Stub frames)
+  ASGST_INCLUDE_NON_JAVA_THREADS = 2, // walk the stacks of C/C++, GC and deopt threads too
+  ASGST_WALK_DURING_UNSAFE_STATES = 4, // walk the stack during potentially unsafe thread states (like safepoints)
+  // walk the stack for the same thread (e.g. in a signal handler),
+  // disables protections that are only enabled in separate thread mode
+  ASGST_WALK_SAME_THREAD = 8
 };
 
 
-// Asynchronous profiling entry point which is usually called from signal
-// handler. It is a replacement of AsyncGetCallTrace.
+// Asynchronous profiling entry point. It is a replacement of AsyncGetCallTrace.
 //
 // This function must only be called when JVM/TI
 // CLASS_LOAD events have been enabled since agent startup. The enabled
 // event will cause the jmethodIDs to be allocated at class load time.
-// The jmethodIDs cannot be allocated in a signal handler because locks
-// cannot be grabbed in a signal handler safely.
 //
 // void AsyncGetStackTrace(ASGST_CallTrace *trace, jint depth, void* ucontext, int32_t options)
 //

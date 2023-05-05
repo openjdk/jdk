@@ -87,11 +87,6 @@ class JavaThread: public Thread {
  private:
   bool           _on_thread_list;                // Is set when this JavaThread is added to the Threads list
 
-#ifdef ASSERT
-  // to adapt assertions during asynchronous stack walking
-  bool _in_async_stack_walking;
-#endif
-
   // All references to Java objects managed via OopHandles. These
   // have to be released by the ServiceThread after the JavaThread has
   // terminated - see add_oop_handles_for_release().
@@ -1186,17 +1181,6 @@ public:
   // Helper function to do vm_exit_on_initialization for osthread
   // resource allocation failure.
   static void vm_exit_on_osthread_failure(JavaThread* thread);
-
- #ifdef ASSERT
-  // to adapt assertions during asynchronous stack walking
-  inline bool in_async_stack_walking() { return _in_async_stack_walking; }
-  inline void set_in_async_stack_walking(bool b) { _in_async_stack_walking = b; }
-
-  static bool currently_in_async_stack_walking() {
-    JavaThread* thread = JavaThread::checked_current_or_null();
-    return thread != NULL && thread->in_async_stack_walking();
-  }
- #endif
 
   // Deferred OopHandle release support
  private:

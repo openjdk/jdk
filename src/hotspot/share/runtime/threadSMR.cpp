@@ -731,6 +731,21 @@ JavaThread* ThreadsList::find_JavaThread_from_java_tid(jlong java_tid) const {
   return nullptr;
 }
 
+JavaThread* ThreadsList::find_JavaThread_from_ucontext(const void* ucontext) const {
+  address sp = (address)os::fetch_frame_from_context(ucontext).sp();
+
+  for (uint i = 0; i < length(); i++) {
+    JavaThread* thread = thread_at(i);
+    if (thread == nullptr) {
+      continue;
+    }
+    if (thread->is_in_usable_stack(sp)) {
+      return thread;
+    }
+  }
+  return nullptr;
+}
+
 void ThreadsList::inc_nested_handle_cnt() {
   Atomic::inc(&_nested_handle_cnt);
 }

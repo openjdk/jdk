@@ -402,9 +402,6 @@ JavaThread::JavaThread() :
   // Initialize fields
 
   _on_thread_list(false),
-#ifdef ASSERT
-  _in_async_stack_walking(false),
-#endif
   DEBUG_ONLY(_java_call_counter(0) COMMA)
   _entry_point(nullptr),
   _deopt_mark(nullptr),

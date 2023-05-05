@@ -206,6 +206,8 @@ public:
   // Returns -1 if target is not found.
   int find_index_of_JavaThread(JavaThread* target);
   JavaThread* find_JavaThread_from_java_tid(jlong java_tid) const;
+  // find the JavaThread from the ucontext (using its stack pointer)
+  JavaThread* find_JavaThread_from_ucontext(const void* ucontext) const;
   bool includes(const JavaThread * const p) const;
 
 #ifdef ASSERT
