@@ -52,17 +52,14 @@ public:
   // contains three spaces (eden and two survivors).
   G1YoungGenerationCounters(G1MonitoringSupport* monitoring_support, const char* name, size_t max_size)
   : G1GenerationCounters(monitoring_support, name, 0 /* ordinal */, 3 /* spaces */,
-                         G1MonitoringSupport::pad_capacity(0, 3) /* min_capacity */,
-                         G1MonitoringSupport::pad_capacity(max_size, 3),
-                         G1MonitoringSupport::pad_capacity(0, 3) /* curr_capacity */) {
+                         0 /* min_capacity */, max_size, 0 /* curr_capacity */) {
     if (UsePerfData) {
       update_all();
     }
   }
 
   virtual void update_all() {
-    size_t committed =
-              G1MonitoringSupport::pad_capacity(_monitoring_support->young_gen_committed(), 3);
+    size_t committed = _monitoring_support->young_gen_committed();
     _current_size->set_value(committed);
   }
 };
@@ -71,17 +68,14 @@ class G1OldGenerationCounters : public G1GenerationCounters {
 public:
   G1OldGenerationCounters(G1MonitoringSupport* monitoring_support, const char* name, size_t max_size)
   : G1GenerationCounters(monitoring_support, name, 1 /* ordinal */, 1 /* spaces */,
-                         G1MonitoringSupport::pad_capacity(0) /* min_capacity */,
-                         G1MonitoringSupport::pad_capacity(max_size),
-                         G1MonitoringSupport::pad_capacity(0) /* curr_capacity */) {
+                         0 /* min_capacity */, max_size, 0 /* curr_capacity */) {
     if (UsePerfData) {
       update_all();
     }
   }
 
   virtual void update_all() {
-    size_t committed =
-              G1MonitoringSupport::pad_capacity(_monitoring_support->old_gen_committed());
+    size_t committed = _monitoring_support->old_gen_committed();
     _current_size->set_value(committed);
   }
 };
@@ -145,8 +139,8 @@ G1MonitoringSupport::G1MonitoringSupport(G1CollectedHeap* g1h) :
   // and used.
   _old_space_counters = new HSpaceCounters(_old_gen_counters->name_space(),
     "space", 0 /* ordinal */,
-    pad_capacity(g1h->max_capacity()) /* max_capacity */,
-    pad_capacity(_old_gen_committed) /* init_capacity */);
+    g1h->max_capacity() /* max_capacity */,
+    _old_gen_committed /* init_capacity */);
 
   //   Young collection set
   //  name "generation.0".  This is logically the young generation.
@@ -160,16 +154,16 @@ G1MonitoringSupport::G1MonitoringSupport(G1CollectedHeap* g1h) :
   // See _old_space_counters for additional counters
   _eden_space_counters = new HSpaceCounters(young_collection_name_space,
     "eden", 0 /* ordinal */,
-    pad_capacity(g1h->max_capacity()) /* max_capacity */,
-    pad_capacity(_eden_space_committed) /* init_capacity */);
+    g1h->max_capacity() /* max_capacity */,
+    _eden_space_committed /* init_capacity */);
 
   //  name "generation.0.space.1"
   // See _old_space_counters for additional counters
   // Set the arguments to indicate that this survivor space is not used.
   _from_space_counters = new HSpaceCounters(young_collection_name_space,
     "s0", 1 /* ordinal */,
-    pad_capacity(0) /* max_capacity */,
-    pad_capacity(0) /* init_capacity */);
+    0 /* max_capacity */,
+    0 /* init_capacity */);
   // Given that this survivor space is not used, we update it here
   // once to reflect that its used space is 0 so that we don't have to
   // worry about updating it again later.
@@ -181,8 +175,8 @@ G1MonitoringSupport::G1MonitoringSupport(G1CollectedHeap* g1h) :
   // See _old_space_counters for additional counters
   _to_space_counters = new HSpaceCounters(young_collection_name_space,
     "s1", 2 /* ordinal */,
-    pad_capacity(g1h->max_capacity()) /* max_capacity */,
-    pad_capacity(_survivor_space_committed) /* init_capacity */);
+    g1h->max_capacity() /* max_capacity */,
+    _survivor_space_committed /* init_capacity */);
 }
 
 G1MonitoringSupport::~G1MonitoringSupport() {
@@ -296,13 +290,13 @@ void G1MonitoringSupport::recalculate_sizes() {
 void G1MonitoringSupport::update_sizes() {
   recalculate_sizes();
   if (UsePerfData) {
-    _eden_space_counters->update_capacity(pad_capacity(_eden_space_committed));
+    _eden_space_counters->update_capacity(_eden_space_committed);
     _eden_space_counters->update_used(_eden_space_used);
     // only the "to" survivor space is active, so we don't need to
     // update the counters for the "from" survivor space
-    _to_space_counters->update_capacity(pad_capacity(_survivor_space_committed));
+    _to_space_counters->update_capacity(_survivor_space_committed);
     _to_space_counters->update_used(_survivor_space_used);
-    _old_space_counters->update_capacity(pad_capacity(_old_gen_committed));
+    _old_space_counters->update_capacity(_old_gen_committed);
     _old_space_counters->update_used(_old_gen_used);
 
     _young_gen_counters->update_all();
