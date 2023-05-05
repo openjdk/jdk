@@ -57,7 +57,16 @@ EXPORT struct S_FF add_float_to_struct_after_structs(
   return s;
 }
 
-// Corner case on PPC64le: Pass struct S_FF partially in FP register and in GP register and on stack.
+// Corner case on PPC64le: Pass struct S_FF partially in FP register and in GP register.
+// Pass additional double in GP register.
+EXPORT struct S_FF add_double_to_struct_after_structs(
+  struct S_FF s1, struct S_FF s2, struct S_FF s3, struct S_FF s4, struct S_FF s5, struct S_FF s6,
+  struct S_FF s, double f) {
+  s.p0 += f;
+  return s;
+}
+
+// Corner case on PPC64le: Pass struct S_FFFFFFF partially in FP register and in GP register and on stack.
 EXPORT struct S_FFFFFFF add_float_to_large_struct_after_structs(
   struct S_FF s1, struct S_FF s2, struct S_FF s3, struct S_FF s4, struct S_FF s5, struct S_FF s6,
   struct S_FFFFFFF s, float f) {
@@ -72,27 +81,37 @@ EXPORT struct S_FFFFFFF pass_two_large_structs(struct S_FFFFFFF (*fun)(struct S_
 }
 
 EXPORT struct S_FF pass_struct_after_floats(struct S_FF (*fun)(
-                                              float, float, float, float, float,
-                                              float, float, float, float, float,
-                                              float, float, struct S_FF, float),
+                                            float, float, float, float, float,
+                                            float, float, float, float, float,
+                                            float, float, struct S_FF, float),
                                             struct S_FF s1, float f) {
   return fun(1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f, 9.0f, 10.0f, 11.0f, 12.0f, s1, f);
 }
 
 EXPORT struct S_FF pass_struct_after_structs(struct S_FF (*fun)(
-                                               struct S_FF, struct S_FF, struct S_FF,
-                                               struct S_FF, struct S_FF, struct S_FF,
-                                               struct S_FF, float),
+                                             struct S_FF, struct S_FF, struct S_FF,
+                                             struct S_FF, struct S_FF, struct S_FF,
+                                             struct S_FF, float),
                                              struct S_FF s1, float f) {
   struct S_FF dummy;
   dummy.p0 = 1; dummy.p1 = 2;
   return fun(dummy, dummy, dummy, dummy, dummy, dummy, s1, f);
 }
 
+EXPORT struct S_FF pass_struct_after_structs_plus_double(struct S_FF (*fun)(
+                                                         struct S_FF, struct S_FF, struct S_FF,
+                                                         struct S_FF, struct S_FF, struct S_FF,
+                                                         struct S_FF, double),
+                                                         struct S_FF s1, double f) {
+  struct S_FF dummy;
+  dummy.p0 = 1; dummy.p1 = 2;
+  return fun(dummy, dummy, dummy, dummy, dummy, dummy, s1, f);
+}
+
 EXPORT struct S_FFFFFFF pass_large_struct_after_structs(struct S_FFFFFFF (*fun)(
-                                                          struct S_FF, struct S_FF, struct S_FF,
-                                                          struct S_FF, struct S_FF, struct S_FF,
-                                                          struct S_FFFFFFF, float),
+                                                        struct S_FF, struct S_FF, struct S_FF,
+                                                        struct S_FF, struct S_FF, struct S_FF,
+                                                        struct S_FFFFFFF, float),
                                                         struct S_FFFFFFF s1, float f) {
   struct S_FF dummy;
   dummy.p0 = 1; dummy.p1 = 2;

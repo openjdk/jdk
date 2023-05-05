@@ -215,10 +215,8 @@ public abstract class CallArranger {
 
         // Regular struct, no HFA.
         VMStorage[] structAlloc(MemoryLayout layout) {
-            // TODO: Big Endian can't pass partially used slots correctly.
-            if (!useABIv2() && layout.byteSize() % 8 != 0) throw new UnsupportedOperationException(
-                "Only MemoryLayouts with size multiple of 8 supported. This layout has size " +
-                layout.byteSize() + ".");
+            // TODO: Big Endian can't pass partially used slots correctly in some cases with:
+            // !useABIv2() && layout.byteSize() > 8 && layout.byteSize() % 8 != 0
 
             // Allocate individual fields as gp slots (regs and stack).
             int nFields = (int) ((layout.byteSize() + 7) / 8);

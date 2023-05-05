@@ -125,14 +125,18 @@ static void move_reg64(MacroAssembler* masm, int out_stk_bias,
       }
       break;
     case StorageType::FLOAT:
-      // FP arguments can get passed in GP reg!
+      // FP arguments can get passed in GP reg! (Only in Upcall with HFA usage.)
       assert(from_reg.segment_mask() == to_reg.segment_mask(), "sanity");
       if (to_reg.segment_mask() == REG32_MASK) {
         __ stw(as_Register(from_reg), -8, R1_SP);
-        __ lfs(as_FloatRegister(to_reg), -8, R1_SP);
+        __ lfs(as_FloatRegister(to_reg), -8, R1_SP); // convert to double precision format
       } else {
-        __ std(as_Register(from_reg), -8, R1_SP);
-        __ lfd(as_FloatRegister(to_reg), -8, R1_SP);
+        if (VM_Version::has_mtfprd()) {
+          __ mtfprd(as_FloatRegister(to_reg), as_Register(from_reg));
+        } else {
+          __ std(as_Register(from_reg), -8, R1_SP);
+          __ lfd(as_FloatRegister(to_reg), -8, R1_SP);
+        }
       }
       break;
     case StorageType::STACK:
@@ -159,14 +163,18 @@ static void move_float(MacroAssembler* masm, int out_stk_bias,
                        VMStorage from_reg, VMStorage to_reg) {
   switch (to_reg.type()) {
     case StorageType::INTEGER:
-      // FP arguments can get passed in GP reg!
+      // FP arguments can get passed in GP reg! (Only for VarArgs for which we don't use FP regs.)
       assert(from_reg.segment_mask() == to_reg.segment_mask(), "sanity");
       if (from_reg.segment_mask() == REG32_MASK) {
-        __ stfs(as_FloatRegister(from_reg), -8, R1_SP);
+        __ stfs(as_FloatRegister(from_reg), -8, R1_SP); // convert to single precision format
         __ lwa(as_Register(to_reg), -8, R1_SP);
       } else {
-        __ stfd(as_FloatRegister(from_reg), -8, R1_SP);
-        __ ld(as_Register(to_reg), -8, R1_SP);
+        if (VM_Version::has_mtfprd()) {
+          __ mffprd(as_Register(to_reg), as_FloatRegister(from_reg));
+        } else {
+          __ stfd(as_FloatRegister(from_reg), -8, R1_SP);
+          __ ld(as_Register(to_reg), -8, R1_SP);
+        }
       }
       break;
     case StorageType::FLOAT:

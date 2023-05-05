@@ -75,6 +75,9 @@ public class TestHFA {
     static final FunctionDescriptor fdadd_float_to_struct_after_structs = FunctionDescriptor.of(S_FFLayout,
         S_FFLayout, S_FFLayout, S_FFLayout, S_FFLayout, S_FFLayout, S_FFLayout,
         S_FFLayout, JAVA_FLOAT);
+    static final FunctionDescriptor fdadd_double_to_struct_after_structs = FunctionDescriptor.of(S_FFLayout,
+        S_FFLayout, S_FFLayout, S_FFLayout, S_FFLayout, S_FFLayout, S_FFLayout,
+        S_FFLayout, JAVA_DOUBLE);
     static final FunctionDescriptor fdadd_float_to_large_struct_after_structs = FunctionDescriptor.of(S_FFFFFFFLayout,
         S_FFLayout, S_FFLayout, S_FFLayout, S_FFLayout, S_FFLayout, S_FFLayout,
         S_FFFFFFFLayout, JAVA_FLOAT);
@@ -82,6 +85,7 @@ public class TestHFA {
     static final FunctionDescriptor fdpass_two_large_structs = FunctionDescriptor.of(S_FFFFFFFLayout, ADDRESS, S_FFFFFFFLayout, S_FFFFFFFLayout);
     static final FunctionDescriptor fdpass_struct_after_floats = FunctionDescriptor.of(S_FFLayout, ADDRESS, S_FFLayout, JAVA_FLOAT);
     static final FunctionDescriptor fdpass_struct_after_structs = FunctionDescriptor.of(S_FFLayout, ADDRESS, S_FFLayout, JAVA_FLOAT);
+    static final FunctionDescriptor fdpass_struct_after_structs_plus_double = FunctionDescriptor.of(S_FFLayout, ADDRESS, S_FFLayout, JAVA_DOUBLE);
     static final FunctionDescriptor fdpass_large_struct_after_structs = FunctionDescriptor.of(S_FFFFFFFLayout, ADDRESS, S_FFFFFFFLayout, JAVA_FLOAT);
 
     final static MethodHandle mhadd_float_structs = abi.downcallHandle(lookup.find("add_float_structs").orElseThrow(),
@@ -90,6 +94,8 @@ public class TestHFA {
         fdadd_float_to_struct_after_floats);
     final static MethodHandle mhadd_float_to_struct_after_structs = abi.downcallHandle(lookup.find("add_float_to_struct_after_structs").orElseThrow(),
         fdadd_float_to_struct_after_structs);
+    final static MethodHandle mhadd_double_to_struct_after_structs = abi.downcallHandle(lookup.find("add_double_to_struct_after_structs").orElseThrow(),
+        fdadd_double_to_struct_after_structs);
     final static MethodHandle mhadd_float_to_large_struct_after_structs = abi.downcallHandle(lookup.find("add_float_to_large_struct_after_structs").orElseThrow(),
         fdadd_float_to_large_struct_after_structs);
 
@@ -99,6 +105,8 @@ public class TestHFA {
         fdpass_struct_after_floats);
     final static MethodHandle mhpass_struct_after_structs = abi.downcallHandle(lookup.find("pass_struct_after_structs").orElseThrow(),
         fdpass_struct_after_structs);
+    final static MethodHandle mhpass_struct_after_structs_plus_double = abi.downcallHandle(lookup.find("pass_struct_after_structs_plus_double").orElseThrow(),
+        fdpass_struct_after_structs_plus_double);
     final static MethodHandle mhpass_large_struct_after_structs = abi.downcallHandle(lookup.find("pass_large_struct_after_structs").orElseThrow(),
         fdpass_large_struct_after_structs);
 
@@ -173,6 +181,26 @@ public class TestHFA {
     }
 
     @Test
+    public static void testAddDoubleToStructAfterStructs() {
+        float p0 = 0.0f, p1 = 0.0f;
+        try {
+            Arena arena = Arena.ofConfined();
+            MemorySegment s = arena.allocate(S_FFLayout);
+            s.set(FLOAT, 0, 1.0f);
+            s.set(FLOAT, 4, 1.0f);
+            s = (MemorySegment)mhadd_double_to_struct_after_structs.invokeExact((SegmentAllocator)arena,
+                 s, s, s, s, s, s,
+                 s, 1.0d);
+            p0 = s.get(FLOAT, 0);
+            p1 = s.get(FLOAT, 4);
+            System.out.println("S_FF(" + p0 + ";" + p1 + ")");
+        } catch (Throwable t) {
+            t.printStackTrace();
+        }
+        if (p0 != 2.0f || p1 != 1.0f) throw new RuntimeException("add_double_to_struct_after_structs error");
+    }
+
+    @Test
     public static void testAddFloatToLargeStructAfterStructs() {
         float p0 = 0.0f, p1 = 0.0f, p2 = 0.0f, p3 = 0.0f, p4 = 0.0f, p5 = 0.0f, p6 = 0.0f;
         try {
@@ -237,6 +265,15 @@ public class TestHFA {
             MemorySegment s, float f) {
         float val = s.get(FLOAT, 0);
         s.set(FLOAT, 0, val + f);
+        return s;
+    }
+
+    public static MemorySegment addDoubleToStructAfterStructs(
+            MemorySegment s1, MemorySegment s2, MemorySegment s3,
+            MemorySegment s4, MemorySegment s5, MemorySegment s6,
+            MemorySegment s, double f) {
+        float val = s.get(FLOAT, 0);
+        s.set(FLOAT, 0, val + (float) f);
         return s;
     }
 
@@ -320,6 +357,30 @@ public class TestHFA {
             t.printStackTrace();
         }
         if (p0 != 2.0f || p1 != 1.0f) throw new RuntimeException("add_float_to_struct_after_structs (Upcall)");
+    }
+
+    @Test
+    public static void testAddDoubleToStructAfterStructsUpcall() {
+        float p0 = 0.0f, p1 = 0.0f;
+        try {
+            Arena arena = Arena.ofConfined();
+            MemorySegment s = arena.allocate(S_FFLayout);
+            s.set(FLOAT, 0, 1.0f);
+            s.set(FLOAT, 4, 1.0f);
+            MethodType mt = MethodType.methodType(MemorySegment.class,
+                                                  MemorySegment.class, MemorySegment.class, MemorySegment.class,
+                                                  MemorySegment.class, MemorySegment.class, MemorySegment.class,
+                                                  MemorySegment.class, double.class);
+            MemorySegment stub = abi.upcallStub(MethodHandles.lookup().findStatic(TestHFA.class, "addDoubleToStructAfterStructs", mt),
+                                                fdadd_double_to_struct_after_structs, arena);
+            s = (MemorySegment)mhpass_struct_after_structs_plus_double.invokeExact((SegmentAllocator)arena, stub, s, 1.0d);
+            p0 = s.get(FLOAT, 0);
+            p1 = s.get(FLOAT, 4);
+            System.out.println("S_FF(" + p0 + ";" + p1 + ")");
+        } catch (Throwable t) {
+            t.printStackTrace();
+        }
+        if (p0 != 2.0f || p1 != 1.0f) throw new RuntimeException("add_double_to_struct_after_structs (Upcall)");
     }
 
     @Test
