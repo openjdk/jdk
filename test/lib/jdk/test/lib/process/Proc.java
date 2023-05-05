@@ -334,7 +334,7 @@ public class Proc {
                     cmd.subList(1, cmd.size()).toArray(new String[0]));
                         // subList(1): all options added without launcher name
             if (!comp) {
-                throw new IOException("Compilation error");
+                throw new RuntimeException("Compilation error");
             }
         }
 
