@@ -37,7 +37,6 @@ Copyright (C) 2013-2023 by Google, Inc.
 Copyright (C) 2019-2023 by Nikhil Ramakrishnan, David Turner, Robert Wilhelm, and Werner Lemberg.
 Copyright (C) 2009-2023 by Oran Agra and Mickey Gabel.
 Copyright (C) 2018-2023 by David Turner, Robert Wilhelm, Dominik Röttsches, and Werner Lemberg.
-Copyright 2013 by Google, Inc.
 Copyright (C) 2004-2023 by David Turner, Robert Wilhelm, Werner Lemberg, and George Williams.
 
 
