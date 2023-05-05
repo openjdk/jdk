@@ -64,8 +64,10 @@ public:
   void set_immediate(jint imm) { set_int_at(imm_offset, imm); }
   bool check_barrier(err_msg& msg) const;
   void verify() const {
+#ifdef ASSERT
     err_msg msg("%s", "");
     assert(check_barrier(msg), "%s", msg.buffer());
+#endif
   }
 };
 
