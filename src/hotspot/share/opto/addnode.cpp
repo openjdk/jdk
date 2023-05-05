@@ -1067,15 +1067,11 @@ Node* MaxNode::build_min_max_diff_with_zero(Node* a, Node* b, bool is_max, const
   return res;
 }
 
-// Check if addition of an integer with type 't' and a constant 'c' can overflow
-static bool can_overflow(const TypeInt* t, jint c) {
-  jint t_lo = t->_lo;
-  jint t_hi = t->_hi;
-  return ((c < 0 && (java_add(t_lo, c) > t_lo)) ||
-          (c > 0 && (java_add(t_hi, c) < t_hi)));
-}
-
-Node* MaxNode::constant_add_input(Node* n, jint* con) {
+// Return:
+// <x, C>,       if n is of the form x + C, where 'C' is a non-TOP constant;
+// <nullptr, _>, if n is of the form x + C, where 'C' is a TOP constant;
+// <n, con>      otherwise.
+static Node* constant_add_input(Node* n, jint* con) {
   if (n->Opcode() == Op_AddI && n->in(2)->is_Con()) {
     const Type* t = n->in(2)->bottom_type();
     if (t == Type::TOP) {
@@ -1085,6 +1081,54 @@ Node* MaxNode::constant_add_input(Node* n, jint* con) {
     n = n->in(1);
   }
   return n;
+}
+
+// Whether addition of an integer with type 't' and a constant 'c' can overflow.
+static bool can_overflow(const TypeInt* t, jint c) {
+  jint t_lo = t->_lo;
+  jint t_hi = t->_hi;
+  return ((c < 0 && (java_add(t_lo, c) > t_lo)) ||
+          (c > 0 && (java_add(t_hi, c) < t_hi)));
+}
+
+static Node* try_to_extract_addition(PhaseGVN* phase, Node* x, jint x_off, Node* y, jint y_off, int opcode) {
+  assert(opcode == Op_MaxI || opcode == Op_MinI, "Unexpected opcode");
+  const TypeInt* tx = phase->type(x)->isa_int();
+  if (x == y && tx != nullptr &&
+      !can_overflow(tx, x_off) &&
+      !can_overflow(tx, y_off)) {
+    jint c = opcode == Op_MinI ? MIN2(x_off, y_off) : MAX2(x_off, y_off);
+    return new AddINode(x, phase->intcon(c));
+  }
+  return nullptr;
+}
+
+static bool optimize_max_of_max(PhaseGVN* phase, int opcode, bool left, Node* x, Node* y, Node* n, jint x_off, jint y_off, Node** out) {
+  assert(opcode == Op_MinI || opcode == Op_MaxI, "Unexpected opcode");
+  for (uint input = 1; input <= 2; input++) {
+    Node* add = n->in(input);
+    Node* z   = n->in(input == 1 ? 2 : 1);
+    if (left) {
+      x = constant_add_input(add, &x_off);
+    } else {
+      y = constant_add_input(add, &y_off);
+    }
+    if (x == nullptr || y == nullptr) {
+      *out = nullptr;
+      return true;
+    }
+    Node* addi = try_to_extract_addition(phase, x, x_off, y, y_off, opcode);
+    if (addi == nullptr) {
+      continue;
+    }
+    if (opcode == Op_MinI) {
+      *out = new MinINode(phase->transform(addi), z);
+    } else {
+      *out = new MaxINode(phase->transform(addi), z);
+    }
+    return true;
+  }
+  return false;
 }
 
 Node* MaxNode::IdealI(PhaseGVN* phase, bool can_reshape, int opcode) {
@@ -1110,44 +1154,7 @@ Node* MaxNode::IdealI(PhaseGVN* phase, bool can_reshape, int opcode) {
   }
   // Transform MIN2/MAX2(x + c0, y + c1) into x + MIN2/MAX2(c0, c1)
   // if x == y and the additions can't overflow.
-  const TypeInt* tx = phase->type(x)->isa_int();
-  if (x == y && tx != nullptr &&
-      !can_overflow(tx, x_off) &&
-      !can_overflow(tx, y_off)) {
-    return new AddINode(x, phase->intcon(extreme(x_off, y_off, opcode)));
-  }
-  return nullptr;
-}
-
-bool MaxNode::optimize_max_of_max(PhaseGVN* phase, int opcode, bool left, Node* x, Node* y, Node* n, jint x_off, jint y_off, Node** out) {
-  assert(opcode == Op_MinI || opcode == Op_MaxI, "Unexpected opcode");
-  const TypeInt* tx = phase->type(x)->isa_int();
-  for (uint input = 1; input <= 2; input++) {
-    Node* add = n->in(input);
-    Node* z   = n->in(input == 1 ? 2 : 1);
-    if (left) {
-      x = constant_add_input(add, &x_off);
-    } else {
-      y = constant_add_input(add, &y_off);
-    }
-    if (x == nullptr || y == nullptr) {
-      *out = nullptr;
-      return true;
-    }
-    if (x == y && tx != nullptr &&
-        !can_overflow(tx, x_off) &&
-        !can_overflow(tx, y_off)) {
-      jint c2 = extreme(x_off, y_off, opcode);
-      Node* add_x_c2 = phase->transform(new AddINode(x, phase->intcon(c2)));
-      if (opcode == Op_MinI) {
-        *out = new MinINode(add_x_c2, z);
-      } else {
-        *out = new MaxINode(add_x_c2, z);
-      }
-      return true;
-    }
-  }
-  return false;
+  return try_to_extract_addition(phase, x, x_off, y, y_off, opcode);
 }
 
 //=============================================================================
