@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,8 @@ import java.util.Objects;
 import java.io.UnsupportedEncodingException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+
+import jdk.internal.misc.InternalLock;
 
 /**
  * A {@code Handler} object takes log messages from a {@code Logger} and
@@ -65,6 +67,7 @@ public abstract class Handler {
     private volatile Level logLevel = Level.ALL;
     private volatile ErrorManager errorManager = new ErrorManager();
     private volatile String encoding;
+    final InternalLock lock;
 
     /**
      * Default constructor.  The resulting {@code Handler} has a log
@@ -73,6 +76,17 @@ public abstract class Handler {
      * as the {@code ErrorManager}.
      */
     protected Handler() {
+        lock = initLocking();
+    }
+
+    private InternalLock initLocking() {
+        Class<?> clazz = this.getClass();
+        ClassLoader loader = clazz.getClassLoader();
+        if (loader != null && loader != ClassLoader.getPlatformClassLoader()) {
+            return null;
+        } else {
+            return InternalLock.newLockOrNull();
+        }
     }
 
     /**
@@ -90,6 +104,7 @@ public abstract class Handler {
     @SuppressWarnings("removal")
     Handler(Level defaultLevel, Formatter defaultFormatter,
             Formatter specifiedFormatter) {
+        this();
 
         LogManager manager = LogManager.getLogManager();
         String cname = getClass().getName();
@@ -120,6 +135,15 @@ public abstract class Handler {
                 return null;
             }
         }, null, LogManager.controlPermission);
+    }
+
+    boolean tryUseLock() {
+        if (lock == null) return false;
+        lock.lock();
+        return true;
+    }
+    void unlock() {
+        lock.unlock();
     }
 
     /**
