@@ -29,7 +29,6 @@ package java.lang.invoke;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 
-import java.util.List;
 import java.util.function.BiFunction;
 
 /**
@@ -63,16 +62,6 @@ import java.util.function.BiFunction;
         this.target = target;
         this.value = value;
         this.coordinates = coordinates;
-    }
-
-    @Override
-    public Class<?> varType() {
-        return value;
-    }
-
-    @Override
-    public List<Class<?>> coordinateTypes() {
-        return List.of(coordinates);
     }
 
     @Override

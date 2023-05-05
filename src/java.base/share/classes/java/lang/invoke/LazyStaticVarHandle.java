@@ -28,7 +28,6 @@ package java.lang.invoke;
 
 import jdk.internal.vm.annotation.Stable;
 
-import java.util.List;
 import java.util.Optional;
 
 import static java.lang.invoke.MethodHandleStatics.UNSAFE;
@@ -90,16 +89,6 @@ final class LazyStaticVarHandle extends VarHandle {
         this.field = field;
         this.fieldType = requireNonNull(field.getFieldType());
         this.writeAllowedOnFinalFields = writeAllowedOnFinalFields;
-    }
-
-    @Override
-    public Class<?> varType() {
-        return fieldType;
-    }
-
-    @Override
-    public List<Class<?>> coordinateTypes() {
-        return List.of();
     }
 
     @Override
@@ -176,7 +165,8 @@ final class LazyStaticVarHandle extends VarHandle {
 
             static {
                 try {
-                    MH_delegate = IMPL_LOOKUP.findVirtual(LazyStaticVarHandle.class, "delegate", MethodType.methodType(VarHandle.class));
+                    MH_delegate = IMPL_LOOKUP.findVirtual(LazyStaticVarHandle.class, "delegate",
+                            MethodType.methodType(VarHandle.class));
                 } catch (Throwable ex) {
                     throw uncaughtException(ex);
                 }
