@@ -40,16 +40,7 @@ inline bool SlidingForwarding::is_not_forwarded(oop obj) {
 }
 
 size_t SlidingForwarding::region_index_containing(HeapWord* addr) {
-  //size_t index = pointer_delta(addr, _heap_start) >> _region_size_words_shift;
   size_t index = (uintptr_t)addr >> _region_size_bytes_shift;
-
-  assert((index - _heap_start_base_idx) == pointer_delta(addr, _heap_start) >> _region_size_words_shift,
-         "index %zu heap base idx %zu comp %zu",
-          index, _heap_start_base_idx, pointer_delta(addr, _heap_start) >> _region_size_words_shift
-         );
-  assert(index < (_heap_start_base_idx + _num_regions) && index >= _heap_start_base_idx,
-         "Region index is in bounds %zu %zu %zu: " PTR_FORMAT " %zu %zu",
-          index, _heap_start_base_idx, _heap_start_base_idx + _num_regions, p2i(addr), pointer_delta(addr, _heap_start) >> _region_size_words_shift, _heap_start_base_idx);
   return index;
 }
 

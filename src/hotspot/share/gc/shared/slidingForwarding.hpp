@@ -121,7 +121,6 @@ private:
   static uintptr_t      _region_mask;
 
   static HeapWord**     _bases_table;
-  static HeapWord**     _biased_bases_table;
   static HeapWord**     _biased_bases[2];
   static FallbackTable* _fallback_table;
 
