@@ -3586,16 +3586,6 @@ operand iRegNNoSp()
   interface(REG_INTER);
 %}
 
-// heap base register -- used for encoding immN0
-operand iRegIHeapbase()
-%{
-  constraint(ALLOC_IN_RC(heapbase_reg));
-  match(RegI);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
 // Long 64 bit Register R10 only
 operand iRegL_R10()
 %{
