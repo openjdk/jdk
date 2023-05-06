@@ -74,13 +74,13 @@ void SharedRuntime::inline_check_hashcode_from_object_header(MacroAssembler* mas
   __ shrptr(result, shift);
   __ andptr(result, mask);
 #else
-  __ andptr(result, mask_in_place);
+  __ andptr(result, markWord::hash_mask_in_place);
 #endif //_LP64
 
   // test if hashCode exists
   __ jcc(Assembler::zero, slowCase);
 #ifndef _LP64
-  __ shrptr(result, shift);
+  __ shrptr(result, markWord::hash_shift);
 #endif
   __ ret(0);
   __ bind(slowCase);
