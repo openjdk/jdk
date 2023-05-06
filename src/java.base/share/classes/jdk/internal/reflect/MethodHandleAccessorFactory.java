@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,18 +104,25 @@ final class MethodHandleAccessorFactory {
 
         try {
             MethodHandle mh = JLIA.unreflectConstructor(ctor);
-            int paramCount = mh.type().parameterCount();
-            MethodHandle target = mh.asFixedArity();
-            MethodType mtype = specializedMethodTypeForConstructor(paramCount);
-            if (paramCount > SPECIALIZED_PARAM_COUNT) {
-                // spread the parameters only for the non-specialized case
-                target = target.asSpreader(Object[].class, paramCount);
-            }
-            target = target.asType(mtype);
-            return DirectConstructorHandleAccessor.constructorAccessor(ctor, target);
+            return maybeSpecializeDirectConstructorHandleAccessor(ctor, mh);
         } catch (IllegalAccessException e) {
             throw new InternalError(e);
         }
+    }
+
+    /**
+     * Shared routine, can also wrap serialization constructor allocator in an accessor.
+     */
+    static ConstructorAccessorImpl maybeSpecializeDirectConstructorHandleAccessor(Constructor<?> ctor, MethodHandle mh) {
+        int paramCount = mh.type().parameterCount();
+        MethodHandle target = mh.asFixedArity();
+        MethodType mtype = specializedMethodTypeForConstructor(paramCount);
+        if (paramCount > SPECIALIZED_PARAM_COUNT) {
+            // spread the parameters only for the non-specialized case
+            target = target.asSpreader(Object[].class, paramCount);
+        }
+        target = target.asType(mtype);
+        return DirectConstructorHandleAccessor.constructorAccessor(ctor, target);
     }
 
     /**

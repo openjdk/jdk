@@ -40,7 +40,10 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.security.PrivilegedAction;
+import java.util.Objects;
 import java.util.Properties;
+
+import jdk.internal.access.JavaLangInvokeAccess;
 import jdk.internal.access.JavaLangReflectAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.VM;
@@ -245,20 +248,6 @@ public class ReflectionFactory {
                                                 parameterAnnotations);
     }
 
-    /** Gets the ConstructorAccessor object for a
-        java.lang.reflect.Constructor */
-    public ConstructorAccessor getConstructorAccessor(Constructor<?> c) {
-        return langReflectAccess.getConstructorAccessor(c);
-    }
-
-    /** Sets the ConstructorAccessor object for a
-        java.lang.reflect.Constructor */
-    public void setConstructorAccessor(Constructor<?> c,
-                                       ConstructorAccessor accessor)
-    {
-        langReflectAccess.setConstructorAccessor(c, accessor);
-    }
-
     /** Makes a copy of the passed method. The returned method is a
         "child" of the passed one; see the comments in Method.java for
         details. */
@@ -330,7 +319,7 @@ public class ReflectionFactory {
             constructorToCall.setAccessible(true);
             return constructorToCall;
         }
-        return generateConstructor(cl, constructorToCall);
+        return generateSerializableConstructor(cl, constructorToCall);
     }
 
     /**
@@ -409,31 +398,31 @@ public class ReflectionFactory {
         } catch (NoSuchMethodException ex) {
             return null;
         }
-        return generateConstructor(cl, constructorToCall);
+        return generateSerializableConstructor(cl, constructorToCall);
     }
 
-    private final Constructor<?> generateConstructor(Class<?> cl,
-                                                     Constructor<?> constructorToCall) {
+    private Constructor<?> generateSerializableConstructor(Class<?> cl, Constructor<?> constructorToCall) {
+        Objects.requireNonNull(cl); // constructorToCall.getDeclaringClass checks null
+        Constructor<?> c = newConstructor(
+                constructorToCall.getDeclaringClass(),
+                langReflectAccess.getExecutableSharedParameterTypes(constructorToCall),
+                langReflectAccess.getExecutableSharedExceptionTypes(constructorToCall),
+                constructorToCall.getModifiers(),
+                langReflectAccess.getConstructorSlot(constructorToCall),
+                langReflectAccess.getConstructorSignature(constructorToCall),
+                langReflectAccess.getConstructorAnnotations(constructorToCall),
+                langReflectAccess.getConstructorParameterAnnotations(constructorToCall));
 
+        assert VM.isJavaLangInvokeInited() : "Cannot use method handle serialization constructors before j.l.i is ready";
+        class InvokeAccessHolder {
+            // ReflectionFactory is initialized earlier
+            static final JavaLangInvokeAccess ACCESS = SharedSecrets.getJavaLangInvokeAccess();
+        }
 
-        ConstructorAccessor acc = new MethodAccessorGenerator().
-            generateSerializationConstructor(cl,
-                                             constructorToCall.getParameterTypes(),
-                                             constructorToCall.getModifiers(),
-                                             constructorToCall.getDeclaringClass());
-        Constructor<?> c = newConstructor(constructorToCall.getDeclaringClass(),
-                                          constructorToCall.getParameterTypes(),
-                                          constructorToCall.getExceptionTypes(),
-                                          constructorToCall.getModifiers(),
-                                          langReflectAccess.
-                                          getConstructorSlot(constructorToCall),
-                                          langReflectAccess.
-                                          getConstructorSignature(constructorToCall),
-                                          langReflectAccess.
-                                          getConstructorAnnotations(constructorToCall),
-                                          langReflectAccess.
-                                          getConstructorParameterAnnotations(constructorToCall));
-        setConstructorAccessor(c, acc);
+        var accessor = MethodHandleAccessorFactory.maybeSpecializeDirectConstructorHandleAccessor(c,
+                InvokeAccessHolder.ACCESS.serializableConstructorAccessor(cl, constructorToCall));
+
+        langReflectAccess.setConstructorAccessor(c, accessor);
         c.setAccessible(true);
         return c;
     }

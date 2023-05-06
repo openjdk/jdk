@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,6 +75,9 @@ public interface JavaLangReflectAccess {
 
     /** Gets the shared array of parameter types of an Executable. */
     public Class<?>[] getExecutableSharedParameterTypes(Executable ex);
+
+    /** Gets the shared array of exception types of an Executable. */
+    public Class<?>[] getExecutableSharedExceptionTypes(Executable ex);
 
     //
     // Copying routines, needed to quickly fabricate new Field,

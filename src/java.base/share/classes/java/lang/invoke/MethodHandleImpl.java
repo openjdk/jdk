@@ -1660,6 +1660,13 @@ abstract class MethodHandleImpl {
             public Class<?>[] exceptionTypes(MethodHandle handle) {
                 return VarHandles.exceptionTypes(handle);
             }
+
+            @Override
+            public MethodHandle serializableConstructorAccessor(Class<?> allocated, Constructor<?> toCall) {
+                // This is also called via sun.reflect.ReflectionFactory public API
+                MemberName mn = new MemberName(toCall);
+                return DirectMethodHandle.makeAllocator(allocated, mn);
+            }
         });
     }
 

@@ -173,4 +173,15 @@ public interface JavaLangInvokeAccess {
      * @return an array of exceptions, or {@code null}.
      */
     Class<?>[] exceptionTypes(MethodHandle handle);
+
+    /**
+     * Returns a method handle that allocates an instance of a class and calls a constructor of
+     * one of its superclasses. Used by serialization, but also exposed via sun.reflect.ReflectionFactory.
+     *
+     * @param allocated the allocated type
+     * @param toCall the constructor of a supertype of the allocated type to call
+     * @see <a href="https://docs.oracle.com/en/java/javase/20/docs/specs/serialization/input.html#the-objectinputstream-class">
+     *     The ObjectInputStream Class</a>
+     */
+    MethodHandle serializableConstructorAccessor(Class<?> allocated, Constructor<?> toCall);
 }

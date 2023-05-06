@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,24 +94,6 @@ class MethodAccessorGenerator extends AccessorGenerator {
                                               true,
                                               false,
                                               null);
-    }
-
-    /** This routine is not thread-safe */
-    public SerializationConstructorAccessorImpl
-    generateSerializationConstructor(Class<?> declaringClass,
-                                     Class<?>[] parameterTypes,
-                                     int modifiers,
-                                     Class<?> targetConstructorClass)
-    {
-        return (SerializationConstructorAccessorImpl)
-            generate(declaringClass,
-                     "<init>",
-                     parameterTypes,
-                     Void.TYPE,
-                     modifiers,
-                     true,
-                     true,
-                     targetConstructorClass);
     }
 
     /** This routine is not thread-safe */

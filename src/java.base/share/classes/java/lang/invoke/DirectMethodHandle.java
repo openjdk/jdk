@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import sun.invoke.util.ValueConversions;
 import sun.invoke.util.VerifyAccess;
 import sun.invoke.util.Wrapper;
 
+import java.lang.constant.ConstantDescs;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.Function;
@@ -131,11 +132,19 @@ sealed class DirectMethodHandle extends MethodHandle {
             return makeAllocator(member);
         return make(member.getDeclaringClass(), member);
     }
+
     private static DirectMethodHandle makeAllocator(MemberName ctor) {
-        assert(ctor.isConstructor() && ctor.getName().equals("<init>"));
-        Class<?> instanceClass = ctor.getDeclaringClass();
+        return makeAllocator(ctor.getDeclaringClass(), ctor);
+    }
+
+    /**
+     * Allows serialization to allocate and invoke constructor of different types.
+     */
+    static DirectMethodHandle makeAllocator(Class<?> instanceClass, MemberName ctor) {
+        assert (ctor.isConstructor() && ctor.getName().equals(ConstantDescs.INIT_NAME));
+        assert (ctor.getDeclaringClass().isAssignableFrom(instanceClass)) : instanceClass + " " + ctor;
         ctor = ctor.asConstructor();
-        assert(ctor.isConstructor() && ctor.getReferenceKind() == REF_newInvokeSpecial) : ctor;
+        assert (ctor.isConstructor() && ctor.getReferenceKind() == REF_newInvokeSpecial) : ctor;
         MethodType mtype = ctor.getMethodType().changeReturnType(instanceClass);
         LambdaForm lform = preparedLambdaForm(ctor);
         MemberName init = ctor.asSpecial();
