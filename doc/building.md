@@ -126,7 +126,7 @@ space is required.
 Even for 32-bit builds, it is recommended to use a 64-bit build machine, and
 instead create a 32-bit target using `--with-target-bits=32`.
 
-Note: The Widows x86 port is deprecated.
+Note: The Widows 32-bit x86 port is deprecated.
 
 ### Building on aarch64
 
@@ -201,7 +201,7 @@ rule also applies to input to the build system, e.g. in arguments to
 `--with-msvcr-dll=c:\msvcr100.dll`. For details on this conversion, see the section
 on [Fixpath](#fixpath).
 
-Note: The Widows x86 port is deprecated.
+Note: The Widows x32-bit x86 port is deprecated.
 
 #### Cygwin
 
