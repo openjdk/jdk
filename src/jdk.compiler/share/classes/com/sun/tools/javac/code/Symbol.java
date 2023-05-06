@@ -1785,7 +1785,7 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
             return v.visitVarSymbol(this, p);
         }
 
-        @Override @DefinedBy(Api.LANGUAGE_MODEL)
+        @DefinedBy(Api.LANGUAGE_MODEL)
         public boolean isUnnamed() {
             return name.isEmpty();
         }
