@@ -227,7 +227,9 @@ bool CollectedHeap::is_oop(oop object) const {
     return false;
   }
 
-  if (is_in(object->klass_raw())) {
+  // With compact headers, we can't safely access the class, due
+  // to possibly forwarded objects.
+  if (!UseCompactObjectHeaders && is_in(object->klass_raw())) {
     return false;
   }
 
