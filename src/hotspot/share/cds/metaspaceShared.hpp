@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,23 +60,9 @@ class MetaspaceShared : AllStatic {
     rw = 0,  // read-write shared space
     ro = 1,  // read-only shared space
     bm = 2,  // relocation bitmaps (freed after file mapping is finished)
+    hp = 3,  // heap region
     num_core_region = 2,       // rw and ro
-    num_non_heap_regions = 3,  // rw and ro and bm
-
-    // java heap regions
-    first_closed_heap_region = bm + 1,
-    max_num_closed_heap_regions = 2,
-    last_closed_heap_region = first_closed_heap_region + max_num_closed_heap_regions - 1,
-    first_open_heap_region = last_closed_heap_region + 1,
-    max_num_open_heap_regions = 2,
-    last_open_heap_region = first_open_heap_region + max_num_open_heap_regions - 1,
-    max_num_heap_regions = max_num_closed_heap_regions + max_num_open_heap_regions,
-
-    first_archive_heap_region = first_closed_heap_region,
-    last_archive_heap_region = last_open_heap_region,
-
-    last_valid_region = last_open_heap_region,
-    n_regions =  last_valid_region + 1 // total number of regions
+    n_regions = 4              // total number of regions
   };
 
   static void prepare_for_dumping() NOT_CDS_RETURN;
@@ -106,8 +92,8 @@ public:
 
   static void initialize_shared_spaces() NOT_CDS_RETURN;
 
-  // Return true if given address is in the shared metaspace regions (i.e., excluding any
-  // mapped heap regions.)
+  // Return true if given address is in the shared metaspace regions (i.e., excluding the
+  // mapped heap region.)
   static bool is_in_shared_metaspace(const void* p) {
     return MetaspaceObj::is_shared((const MetaspaceObj*)p);
   }

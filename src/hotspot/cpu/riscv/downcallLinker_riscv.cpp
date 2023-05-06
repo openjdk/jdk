@@ -48,6 +48,7 @@ class DowncallStubGenerator : public StubCodeGenerator {
 
   bool _needs_return_buffer;
   int _captured_state_mask;
+  bool _needs_transition;
 
   int _frame_complete;
   int _frame_size_slots;
@@ -61,7 +62,8 @@ public:
                         const GrowableArray<VMStorage>& input_registers,
                         const GrowableArray<VMStorage>& output_registers,
                         bool needs_return_buffer,
-                        int captured_state_mask)
+                        int captured_state_mask,
+                        bool needs_transition)
    : StubCodeGenerator(buffer, PrintMethodHandleStubs),
      _signature(signature),
      _num_args(num_args),
@@ -71,6 +73,7 @@ public:
      _output_registers(output_registers),
      _needs_return_buffer(needs_return_buffer),
      _captured_state_mask(captured_state_mask),
+     _needs_transition(needs_transition),
      _frame_complete(0),
      _frame_size_slots(0),
      _oop_maps(nullptr) {
@@ -101,13 +104,15 @@ RuntimeStub* DowncallLinker::make_downcall_stub(BasicType* signature,
                                                 const GrowableArray<VMStorage>& input_registers,
                                                 const GrowableArray<VMStorage>& output_registers,
                                                 bool needs_return_buffer,
-                                                int captured_state_mask) {
+                                                int captured_state_mask,
+                                                bool needs_transition) {
   int code_size = native_invoker_code_base_size + (num_args * native_invoker_size_per_arg);
   int locs_size = 1; // must be non-zero
   CodeBuffer code("nep_invoker_blob", code_size, locs_size);
   DowncallStubGenerator g(&code, signature, num_args, ret_bt, abi,
                           input_registers, output_registers,
-                          needs_return_buffer, captured_state_mask);
+                          needs_return_buffer, captured_state_mask,
+                          needs_transition);
   g.generate();
   code.log_section_sizes("nep_invoker_blob");
 
@@ -160,7 +165,7 @@ void DowncallStubGenerator::generate() {
   assert(_abi._shadow_space_bytes == 0, "not expecting shadow space on RISCV64");
   allocated_frame_size += arg_shuffle.out_arg_bytes();
 
-  bool should_save_return_value = !_needs_return_buffer;
+  bool should_save_return_value = !_needs_return_buffer && _needs_transition;
   RegSpiller out_reg_spiller(_output_registers);
   int spill_offset = -1;
 
@@ -190,7 +195,7 @@ void DowncallStubGenerator::generate() {
   _frame_size_slots += framesize + (allocated_frame_size >> LogBytesPerInt);
   assert(is_even(_frame_size_slots / 2), "sp not 16-byte aligned");
 
-  _oop_maps = new OopMapSet();
+  _oop_maps = _needs_transition ? new OopMapSet() : nullptr;
   address start = __ pc();
 
   __ enter();
@@ -200,17 +205,19 @@ void DowncallStubGenerator::generate() {
 
   _frame_complete = __ pc() - start; // frame build complete.
 
-  __ block_comment("{ thread java2native");
-  address the_pc = __ pc();
-  __ set_last_Java_frame(sp, fp, the_pc, t0);
-  OopMap* map = new OopMap(_frame_size_slots, 0);
-  _oop_maps->add_gc_map(the_pc - start, map);
+  if (_needs_transition) {
+    __ block_comment("{ thread java2native");
+    address the_pc = __ pc();
+    __ set_last_Java_frame(sp, fp, the_pc, t0);
+    OopMap* map = new OopMap(_frame_size_slots, 0);
+    _oop_maps->add_gc_map(the_pc - start, map);
 
-  // State transition
-  __ mv(t0, _thread_in_native);
-  __ membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);
-  __ sw(t0, Address(xthread, JavaThread::thread_state_offset()));
-  __ block_comment("} thread java2native");
+    // State transition
+    __ mv(t0, _thread_in_native);
+    __ membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);
+    __ sw(t0, Address(xthread, JavaThread::thread_state_offset()));
+    __ block_comment("} thread java2native");
+  }
 
   __ block_comment("{ argument shuffle");
   arg_shuffle.generate(_masm, shuffle_reg, 0, _abi._shadow_space_bytes, locs);
@@ -260,79 +267,84 @@ void DowncallStubGenerator::generate() {
 
   //////////////////////////////////////////////////////////////////////////////
 
-  __ block_comment("{ thread native2java");
-  __ mv(t0, _thread_in_native_trans);
-  __ sw(t0, Address(xthread, JavaThread::thread_state_offset()));
-
-  // Force this write out before the read below
-  if (!UseSystemMemoryBarrier) {
-    __ membar(MacroAssembler::AnyAny);
-  }
-
   Label L_after_safepoint_poll;
   Label L_safepoint_poll_slow_path;
-  __ safepoint_poll(L_safepoint_poll_slow_path, true /* at_return */, true /* acquire */, false /* in_nmethod */);
-  __ lwu(t0, Address(xthread, JavaThread::suspend_flags_offset()));
-  __ bnez(t0, L_safepoint_poll_slow_path);
-
-  __ bind(L_after_safepoint_poll);
-
-  __ mv(t0, _thread_in_Java);
-  __ membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);
-  __ sw(t0, Address(xthread, JavaThread::thread_state_offset()));
-
-  __ block_comment("reguard stack check");
   Label L_reguard;
   Label L_after_reguard;
-  __ lbu(t0, Address(xthread, JavaThread::stack_guard_state_offset()));
-  __ mv(t1, StackOverflow::stack_guard_yellow_reserved_disabled);
-  __ beq(t0, t1, L_reguard);
-  __ bind(L_after_reguard);
+  if (_needs_transition) {
+    __ block_comment("{ thread native2java");
+    __ mv(t0, _thread_in_native_trans);
+    __ sw(t0, Address(xthread, JavaThread::thread_state_offset()));
 
-  __ reset_last_Java_frame(true);
-  __ block_comment("} thread native2java");
+    // Force this write out before the read below
+    if (!UseSystemMemoryBarrier) {
+      __ membar(MacroAssembler::AnyAny);
+    }
+
+    __ safepoint_poll(L_safepoint_poll_slow_path, true /* at_return */, true /* acquire */, false /* in_nmethod */);
+    __ lwu(t0, Address(xthread, JavaThread::suspend_flags_offset()));
+    __ bnez(t0, L_safepoint_poll_slow_path);
+
+    __ bind(L_after_safepoint_poll);
+
+    // change thread state
+    __ mv(t0, _thread_in_Java);
+    __ membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);
+    __ sw(t0, Address(xthread, JavaThread::thread_state_offset()));
+
+    __ block_comment("reguard stack check");
+    __ lbu(t0, Address(xthread, JavaThread::stack_guard_state_offset()));
+    __ mv(t1, StackOverflow::stack_guard_yellow_reserved_disabled);
+    __ beq(t0, t1, L_reguard);
+    __ bind(L_after_reguard);
+
+    __ reset_last_Java_frame(true);
+    __ block_comment("} thread native2java");
+  }
 
   __ leave(); // required for proper stackwalking of RuntimeStub frame
   __ ret();
 
   //////////////////////////////////////////////////////////////////////////////
 
-  __ block_comment("{ L_safepoint_poll_slow_path");
-  __ bind(L_safepoint_poll_slow_path);
+  if (_needs_transition) {
+    __ block_comment("{ L_safepoint_poll_slow_path");
+    __ bind(L_safepoint_poll_slow_path);
 
-  if (should_save_return_value) {
-    // Need to save the native result registers around any runtime calls.
-    out_reg_spiller.generate_spill(_masm, spill_offset);
-  }
+    if (should_save_return_value) {
+      // Need to save the native result registers around any runtime calls.
+      out_reg_spiller.generate_spill(_masm, spill_offset);
+    }
 
-  __ mv(c_rarg0, xthread);
-  assert(frame::arg_reg_save_area_bytes == 0, "not expecting frame reg save area");
-  __ rt_call(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans));
+    __ mv(c_rarg0, xthread);
+    assert(frame::arg_reg_save_area_bytes == 0, "not expecting frame reg save area");
+    __ rt_call(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans));
 
-  if (should_save_return_value) {
-    out_reg_spiller.generate_fill(_masm, spill_offset);
-  }
-  __ j(L_after_safepoint_poll);
-  __ block_comment("} L_safepoint_poll_slow_path");
+    if (should_save_return_value) {
+      out_reg_spiller.generate_fill(_masm, spill_offset);
+    }
+    __ j(L_after_safepoint_poll);
+    __ block_comment("} L_safepoint_poll_slow_path");
 
   //////////////////////////////////////////////////////////////////////////////
 
-  __ block_comment("{ L_reguard");
-  __ bind(L_reguard);
+    __ block_comment("{ L_reguard");
+    __ bind(L_reguard);
 
-  if (should_save_return_value) {
-    // Need to save the native result registers around any runtime calls.
-    out_reg_spiller.generate_spill(_masm, spill_offset);
+    if (should_save_return_value) {
+      // Need to save the native result registers around any runtime calls.
+      out_reg_spiller.generate_spill(_masm, spill_offset);
+    }
+
+    __ rt_call(CAST_FROM_FN_PTR(address, SharedRuntime::reguard_yellow_pages));
+
+    if (should_save_return_value) {
+      out_reg_spiller.generate_fill(_masm, spill_offset);
+    }
+
+    __ j(L_after_reguard);
+    __ block_comment("} L_reguard");
   }
-
-  __ rt_call(CAST_FROM_FN_PTR(address, SharedRuntime::reguard_yellow_pages));
-
-  if (should_save_return_value) {
-    out_reg_spiller.generate_fill(_masm, spill_offset);
-  }
-
-  __ j(L_after_reguard);
-  __ block_comment("} L_reguard");
 
   //////////////////////////////////////////////////////////////////////////////
 

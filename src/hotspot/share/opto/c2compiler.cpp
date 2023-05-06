@@ -775,9 +775,11 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method) {
     return EnableVectorSupport;
   case vmIntrinsics::_blackhole:
 #if INCLUDE_JVMTI
-  case vmIntrinsics::_notifyJvmtiMount:
-  case vmIntrinsics::_notifyJvmtiUnmount:
-  case vmIntrinsics::_notifyJvmtiHideFrames:
+  case vmIntrinsics::_notifyJvmtiVThreadStart:
+  case vmIntrinsics::_notifyJvmtiVThreadEnd:
+  case vmIntrinsics::_notifyJvmtiVThreadMount:
+  case vmIntrinsics::_notifyJvmtiVThreadUnmount:
+  case vmIntrinsics::_notifyJvmtiVThreadHideFrames:
 #endif
     break;
 

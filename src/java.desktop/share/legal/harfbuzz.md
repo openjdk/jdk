@@ -1,8 +1,8 @@
-## Harfbuzz v7.0.1
+## Harfbuzz v7.2.0
 
 ### Harfbuzz License
 
-https://github.com/harfbuzz/harfbuzz/blob/7.0.1/COPYING
+https://github.com/harfbuzz/harfbuzz/blob/7.2.0/COPYING
 
 <pre>
 
@@ -10,7 +10,7 @@ HarfBuzz is licensed under the so-called "Old MIT" license.  Details follow.
 For parts of HarfBuzz that are licensed under different licenses see individual
 files names COPYING in subdirectories where applicable.
 
-Copyright © 2010-2022  Google, Inc.
+Copyright © 2010-2023  Google, Inc.
 Copyright © 2018-2020  Ebrahim Byagowi
 Copyright © 2004-2013  Red Hat, Inc.
 Copyright © 2019  Facebook, Inc.
