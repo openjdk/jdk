@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,8 +35,8 @@ inline bool ParallelScavengeHeap::should_alloc_in_eden(const size_t size) const 
   return size < eden_size / 2;
 }
 
-inline void ParallelScavengeHeap::invoke_scavenge() {
-  PSScavenge::invoke();
+inline bool ParallelScavengeHeap::invoke_scavenge() {
+  return PSScavenge::invoke();
 }
 
 inline bool ParallelScavengeHeap::is_in_young(const void* p) const {

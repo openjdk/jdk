@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,9 +32,11 @@
 #define VIRTUAL_THREAD  "Ljava/lang/VirtualThread;"
 
 static JNINativeMethod methods[] = {
-    { "notifyJvmtiMount",        "(ZZ)V", (void *)&JVM_VirtualThreadMount },
-    { "notifyJvmtiUnmount",      "(ZZ)V", (void *)&JVM_VirtualThreadUnmount },
-    { "notifyJvmtiHideFrames",   "(Z)V",  (void *)&JVM_VirtualThreadHideFrames },
+    { "notifyJvmtiStart",        "()V",  (void *)&JVM_VirtualThreadStart },
+    { "notifyJvmtiEnd",          "()V",  (void *)&JVM_VirtualThreadEnd },
+    { "notifyJvmtiMount",        "(Z)V", (void *)&JVM_VirtualThreadMount },
+    { "notifyJvmtiUnmount",      "(Z)V", (void *)&JVM_VirtualThreadUnmount },
+    { "notifyJvmtiHideFrames",   "(Z)V", (void *)&JVM_VirtualThreadHideFrames },
 };
 
 JNIEXPORT void JNICALL
