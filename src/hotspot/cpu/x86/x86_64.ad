@@ -8348,8 +8348,20 @@ instruct xaddB(memory mem, rRegI newval, rFlagsReg cr) %{
   ins_pipe(pipe_cmpxchg);
 %}
 
-instruct xaddS_imm_no_res(memory mem, Universe dummy, immI add, rFlagsReg cr) %{
+instruct xaddS_reg_no_res(memory mem, Universe dummy, rRegI add, rFlagsReg cr) %{
   predicate(n->as_LoadStore()->result_not_used());
+  match(Set dummy (GetAndAddS mem add));
+  effect(KILL cr);
+  format %{ "addw_lock   $mem, $add" %}
+  ins_encode %{
+    __ lock();
+    __ addw($mem$$Address, $add$$Register);
+  %}
+  ins_pipe(pipe_cmpxchg);
+%}
+
+instruct xaddS_imm_no_res(memory mem, Universe dummy, immI add, rFlagsReg cr) %{
+  predicate(UseStoreImmI16 && n->as_LoadStore()->result_not_used());
   match(Set dummy (GetAndAddS mem add));
   effect(KILL cr);
   format %{ "addw_lock   $mem, $add" %}
