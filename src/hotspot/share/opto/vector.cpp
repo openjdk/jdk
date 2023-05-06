@@ -299,9 +299,11 @@ void PhaseVector::scalarize_vbox_node(VectorBoxNode* vec_box) {
 
 void PhaseVector::expand_vbox_node(VectorBoxNode* vec_box) {
   if (vec_box->outcnt() > 0) {
+    VectorSet visited;
     Node* vbox = vec_box->in(VectorBoxNode::Box);
     Node* vect = vec_box->in(VectorBoxNode::Value);
-    Node* result = expand_vbox_node_helper(vbox, vect, vec_box->box_type(), vec_box->vec_type());
+    Node* result = expand_vbox_node_helper(vbox, vect, vec_box->box_type(),
+                                           vec_box->vec_type(), visited);
     C->gvn_replace_by(vec_box, result);
     C->print_method(PHASE_EXPAND_VBOX, 3, vec_box);
   }
@@ -311,39 +313,64 @@ void PhaseVector::expand_vbox_node(VectorBoxNode* vec_box) {
 Node* PhaseVector::expand_vbox_node_helper(Node* vbox,
                                            Node* vect,
                                            const TypeInstPtr* box_type,
-                                           const TypeVect* vect_type) {
-  if (vbox->is_Phi() && vect->is_Phi()) {
-    assert(vbox->as_Phi()->region() == vect->as_Phi()->region(), "");
-    Node* new_phi = new PhiNode(vbox->as_Phi()->region(), box_type);
-    for (uint i = 1; i < vbox->req(); i++) {
-      Node* new_box = expand_vbox_node_helper(vbox->in(i), vect->in(i), box_type, vect_type);
-      new_phi->set_req(i, new_box);
-    }
-    new_phi = C->initial_gvn()->transform(new_phi);
-    return new_phi;
-  } else if (vbox->is_Phi() && (vect->is_Vector() || vect->is_LoadVector())) {
-    // Handle the case when the allocation input to VectorBoxNode is a phi
-    // but the vector input is not, which can definitely be the case if the
-    // vector input has been value-numbered. It seems to be safe to do by
-    // construction because VectorBoxNode and VectorBoxAllocate come in a
-    // specific order as a result of expanding an intrinsic call. After that, if
-    // any of the inputs to VectorBoxNode are value-numbered they can only
-    // move up and are guaranteed to dominate.
-    Node* new_phi = new PhiNode(vbox->as_Phi()->region(), box_type);
-    for (uint i = 1; i < vbox->req(); i++) {
-      Node* new_box = expand_vbox_node_helper(vbox->in(i), vect, box_type, vect_type);
-      new_phi->set_req(i, new_box);
-    }
-    new_phi = C->initial_gvn()->transform(new_phi);
-    return new_phi;
-  } else if (vbox->is_Proj() && vbox->in(0)->Opcode() == Op_VectorBoxAllocate) {
+                                           const TypeVect* vect_type,
+                                           VectorSet &visited) {
+  // JDK-8304948 shows an example that there may be a cycle in the graph.
+  if (visited.test_set(vbox->_idx)) {
+    assert(vbox->is_Phi(), "should be phi");
+    return vbox; // already visited
+  }
+
+  // Handle the case when the allocation input to VectorBoxNode is a Proj.
+  // This is the normal case before expanding.
+  if (vbox->is_Proj() && vbox->in(0)->Opcode() == Op_VectorBoxAllocate) {
     VectorBoxAllocateNode* vbox_alloc = static_cast<VectorBoxAllocateNode*>(vbox->in(0));
     return expand_vbox_alloc_node(vbox_alloc, vect, box_type, vect_type);
-  } else {
-    assert(!vbox->is_Phi(), "");
-    // TODO: assert that expanded vbox is initialized with the same value (vect).
-    return vbox; // already expanded
   }
+
+  // Handle the case when both the allocation input and vector input to
+  // VectorBoxNode are Phi. This case is generated after the transformation of
+  // Phi: Phi (VectorBox1 VectorBox2) => VectorBox (Phi1 Phi2).
+  // With this optimization, the relative two allocation inputs of VectorBox1 and
+  // VectorBox2 are gathered into Phi1 now. Similarly, the original vector
+  // inputs of two VectorBox nodes are in Phi2.
+  //
+  // See PhiNode::merge_through_phi in cfg.cpp for more details.
+  if (vbox->is_Phi() && vect->is_Phi()) {
+    assert(vbox->as_Phi()->region() == vect->as_Phi()->region(), "");
+    for (uint i = 1; i < vbox->req(); i++) {
+      Node* new_box = expand_vbox_node_helper(vbox->in(i), vect->in(i),
+                                              box_type, vect_type, visited);
+      if (!new_box->is_Phi()) {
+        C->initial_gvn()->hash_delete(vbox);
+        vbox->set_req(i, new_box);
+      }
+    }
+    return C->initial_gvn()->transform(vbox);
+  }
+
+  // Handle the case when the allocation input to VectorBoxNode is a phi
+  // but the vector input is not, which can definitely be the case if the
+  // vector input has been value-numbered. It seems to be safe to do by
+  // construction because VectorBoxNode and VectorBoxAllocate come in a
+  // specific order as a result of expanding an intrinsic call. After that, if
+  // any of the inputs to VectorBoxNode are value-numbered they can only
+  // move up and are guaranteed to dominate.
+  if (vbox->is_Phi() && (vect->is_Vector() || vect->is_LoadVector())) {
+    for (uint i = 1; i < vbox->req(); i++) {
+      Node* new_box = expand_vbox_node_helper(vbox->in(i), vect,
+                                              box_type, vect_type, visited);
+      if (!new_box->is_Phi()) {
+        C->initial_gvn()->hash_delete(vbox);
+        vbox->set_req(i, new_box);
+      }
+    }
+    return C->initial_gvn()->transform(vbox);
+  }
+
+  assert(!vbox->is_Phi(), "should be expanded");
+  // TODO: assert that expanded vbox is initialized with the same value (vect).
+  return vbox; // already expanded
 }
 
 Node* PhaseVector::expand_vbox_alloc_node(VectorBoxAllocateNode* vbox_alloc,

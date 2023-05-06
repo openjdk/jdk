@@ -71,6 +71,8 @@ typedef struct hb_subset_plan_t hb_subset_plan_t;
  * in the final subset.
  * @HB_SUBSET_FLAGS_NO_PRUNE_UNICODE_RANGES: If set then the unicode ranges in
  * OS/2 will not be recalculated.
+ * @HB_SUBSET_FLAGS_NO_LAYOUT_CLOSURE: If set don't perform glyph closure on layout
+ * substitution rules (GSUB). Since: 7.2.0.
  *
  * List of boolean properties that can be configured on the subset input.
  *
@@ -87,6 +89,7 @@ typedef enum { /*< flags >*/
   HB_SUBSET_FLAGS_NOTDEF_OUTLINE =           0x00000040u,
   HB_SUBSET_FLAGS_GLYPH_NAMES =              0x00000080u,
   HB_SUBSET_FLAGS_NO_PRUNE_UNICODE_RANGES =  0x00000100u,
+  HB_SUBSET_FLAGS_NO_LAYOUT_CLOSURE =        0x00000200u,
 } hb_subset_flags_t;
 
 /**

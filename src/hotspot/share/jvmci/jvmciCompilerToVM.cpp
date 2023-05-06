@@ -926,8 +926,8 @@ C2V_END
 
 C2V_VMENTRY(void, setNotInlinableOrCompilable,(JNIEnv* env, jobject, ARGUMENT_PAIR(method)))
   methodHandle method(THREAD, UNPACK_PAIR(Method, method));
-  method->set_not_c1_compilable();
-  method->set_not_c2_compilable();
+  method->set_is_not_c1_compilable();
+  method->set_is_not_c2_compilable();
   method->set_dont_inline(true);
 C2V_END
 
@@ -2716,7 +2716,7 @@ static jbyteArray get_encoded_annotation_data(InstanceKlass* holder, AnnotationA
   InstanceKlass** filter = filter_length == 1 ?
       (InstanceKlass**) &filter_klass_pointers:
       (InstanceKlass**) filter_klass_pointers;
-  objArrayOop filter_oop = oopFactory::new_objectArray(filter_length, CHECK_NULL);
+  objArrayOop filter_oop = oopFactory::new_objArray(vmClasses::Class_klass(), filter_length, CHECK_NULL);
   objArrayHandle filter_classes(THREAD, filter_oop);
   for (int i = 0; i < filter_length; i++) {
     filter_classes->obj_at_put(i, filter[i]->java_mirror());
