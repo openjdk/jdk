@@ -92,7 +92,8 @@ public:
 };
 
 inline constexpr Register as_Register(int encoding) {
-  assert(encoding >= NOREG_ENCODING && encoding < Register::number_of_registers, "bad register encoding");
+  assert(encoding == NOREG_ENCODING ||
+        (0 <= encoding && encoding < Register::number_of_registers), "bad register encoding");
   return Register(encoding);
 }
 
@@ -149,7 +150,8 @@ public:
 };
 
 inline constexpr ConditionRegister as_ConditionRegister(int encoding) {
-  assert(encoding >= 0 && encoding < ConditionRegister::number_of_registers, "bad condition register encoding");
+  assert(encoding == NOREG_ENCODING ||
+        (encoding >= 0 && encoding < ConditionRegister::number_of_registers), "bad condition register encoding");
   return ConditionRegister(encoding);
 }
 
@@ -182,7 +184,7 @@ public:
   // accessors
   constexpr int encoding()  const { assert(is_valid(), "invalid register"); return _encoding; }
   inline VMReg  as_VMReg()  const;
-  FloatRegister successor() const { return FloatRegister(encoding() + 1); }
+  FloatRegister successor() const { return FloatRegister((encoding() + 1) & (number_of_registers - 1)); }
 
   // tester
   constexpr bool is_valid()       const { return 0 <= _encoding && _encoding < number_of_registers; }
@@ -193,7 +195,8 @@ public:
 };
 
 inline constexpr FloatRegister as_FloatRegister(int encoding) {
-  assert(encoding >= NOREG_ENCODING && encoding < FloatRegister::number_of_registers, "bad float register encoding");
+  assert(encoding == NOREG_ENCODING ||
+        (encoding >= 0 && encoding < FloatRegister::number_of_registers), "bad float register encoding");
   return FloatRegister(encoding);
 }
 
@@ -297,7 +300,7 @@ public:
 
   // accessors
   constexpr int  encoding()  const { assert(is_valid(), "invalid register"); return _encoding; }
-  VectorRegister successor() const { return VectorRegister(encoding() + 1); }
+  VectorRegister successor() const { return VectorRegister((encoding() + 1) & (number_of_registers - 1)); }
 
 
   // tester
@@ -333,7 +336,8 @@ public:
 };
 
 inline constexpr VectorRegister as_VectorRegister(int encoding) {
-  assert(encoding >= NOREG_ENCODING && encoding < VectorRegister::number_of_registers, "bad vector register encoding");
+  assert(encoding == NOREG_ENCODING ||
+        (encoding >= 0 && encoding < VectorRegister::number_of_registers), "bad vector register encoding");
   return VectorRegister(encoding);
 }
 
