@@ -62,7 +62,7 @@ EXPORT struct S_FF add_float_to_struct_after_structs(
 EXPORT struct S_FF add_double_to_struct_after_structs(
   struct S_FF s1, struct S_FF s2, struct S_FF s3, struct S_FF s4, struct S_FF s5, struct S_FF s6,
   struct S_FF s, double f) {
-  s.p0 += f;
+  s.p0 += (float)f;
   return s;
 }
 
