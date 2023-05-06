@@ -645,7 +645,10 @@ void ArchiveBuilder::make_shallow_copy(DumpRegion *dump_region, SourceObjInfo* s
   _alloc_stats.record(ref->msotype(), int(newtop - oldtop), src_info->read_only());
 }
 
+// This is used by code that hand-assemble data structures, such as the LambdaProxyClassKey, that are
+// not handled by MetaspaceClosure.
 void ArchiveBuilder::write_pointer_in_buffer(address* ptr_location, address src_addr) {
+  assert(is_in_buffer_space(ptr_location), "must be");
   if (src_addr == nullptr) {
     *ptr_location = nullptr;
     ArchivePtrMarker::clear_pointer(ptr_location);

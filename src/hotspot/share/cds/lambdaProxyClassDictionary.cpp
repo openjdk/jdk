@@ -49,7 +49,7 @@ DumpTimeLambdaProxyClassInfo::~DumpTimeLambdaProxyClassInfo() {
 
 void LambdaProxyClassKey::init_for_archive(LambdaProxyClassKey& dumptime_key) {
   ArchiveBuilder* b = ArchiveBuilder::current();
-  
+
   b->write_pointer_in_buffer(&_caller_ik,                dumptime_key._caller_ik);
   b->write_pointer_in_buffer(&_instantiated_method_type, dumptime_key._instantiated_method_type);
   b->write_pointer_in_buffer(&_invoked_name,             dumptime_key._invoked_name);
@@ -75,7 +75,7 @@ void LambdaProxyClassKey::print_on(outputStream* st) const {
   st->print_cr("_invoked_name             : %s", _invoked_name->as_C_string());
   st->print_cr("_invoked_type             : %s", _invoked_type->as_C_string());
   st->print_cr("_member_method            : %s", _member_method->name()->as_C_string());
-  st->print_cr("_method_type              : %s", _method_type->as_C_string()); 
+  st->print_cr("_method_type              : %s", _method_type->as_C_string());
 }
 
 void RunTimeLambdaProxyClassInfo::print_on(outputStream* st) const {
