@@ -25,12 +25,14 @@
   @test
   @bug 5013739
   @summary MNEMONIC CONFLICTS IN DISABLED/HIDDEN MENU ITEMS
-  @library ../../regtesthelpers
-  @build Util JRobot
+  @library ../regtesthelpers
+  @build JRobot
   @key headful
   @run main bug5013739
 */
 
+import java.awt.Component;
+import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.lang.reflect.InvocationTargetException;
@@ -86,5 +88,22 @@ public class bug5013739 {
             throw new RuntimeException("Hidden menu item is selectable "+
                     "via mnemonic. Test failed.");
         }
+    }
+}
+
+class Util {
+    public static Point blockTillDisplayed(Component comp) {
+        Point p = null;
+        while (p == null) {
+            try {
+                p = comp.getLocationOnScreen();
+            } catch (IllegalStateException e) {
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException ie) {
+                }
+            }
+        }
+        return p;
     }
 }
