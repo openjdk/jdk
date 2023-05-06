@@ -3014,9 +3014,14 @@ uint LoadStoreNode::ideal_reg() const {
 }
 
 bool LoadStoreNode::result_not_used() const {
-  for( DUIterator_Fast imax, i = fast_outs(imax); i < imax; i++ ) {
+  for (DUIterator_Fast imax, i = fast_outs(imax); i < imax; i++) {
     Node *x = fast_out(i);
-    if (x->Opcode() == Op_SCMemProj) continue;
+    if (x->Opcode() == Op_SCMemProj) {
+      continue;
+    }
+    if (x->bottom_type() == TypeTuple::MEMBAR) {
+      continue;
+    }
     return false;
   }
   return true;
