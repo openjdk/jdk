@@ -3019,7 +3019,8 @@ bool LoadStoreNode::result_not_used() const {
     if (x->Opcode() == Op_SCMemProj) {
       continue;
     }
-    if (x->bottom_type() == TypeTuple::MEMBAR) {
+    if (x->bottom_type() == TypeTuple::MEMBAR &&
+        x->Opcode() != Op_Blackhole) {
       continue;
     }
     return false;
