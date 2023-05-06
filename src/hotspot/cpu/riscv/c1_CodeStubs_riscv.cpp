@@ -228,6 +228,11 @@ void MonitorExitStub::emit_code(LIR_Assembler* ce) {
   __ far_jump(RuntimeAddress(Runtime1::entry_for(exit_id)));
 }
 
+void LoadKlassStub::emit_code(LIR_Assembler* ce) {
+  // Currently not needed.
+  Unimplemented();
+}
+
 // Implementation of patching:
 // - Copy the code at given offset to an inlined buffer (first the bytes, then the number of bytes)
 // - Replace original code with a call to the stub

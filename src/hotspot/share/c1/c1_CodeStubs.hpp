@@ -581,6 +581,7 @@ class ArrayCopyStub: public CodeStub {
 #endif // PRODUCT
 };
 
+#if define(AARCH64) || defined(X86)
 class LoadKlassStub: public CodeStub {
 private:
   LIR_Opr          _result;
@@ -598,5 +599,6 @@ public:
   virtual void print_name(outputStream* out) const { out->print("LoadKlassStub"); }
 #endif // PRODUCT
 };
+#endif
 
 #endif // SHARE_C1_C1_CODESTUBS_HPP
