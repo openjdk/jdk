@@ -68,16 +68,19 @@ void SharedRuntime::inline_check_hashcode_from_object_header(MacroAssembler* mas
   // Read the header and build a mask to get its hash field.
   // Depend on hash_mask being at most 32 bits and avoid the use of hash_mask_in_place
   // because it could be larger than 32 bits in a 64-bit vm. See markWord.hpp.
-  __ shrptr(result, markWord::hash_shift);
-  __ andptr(result, markWord::hash_mask);
+  int shift               = UseCompactObjectHeaders ? markWord::hash_shift_compact          : markWord::hash_shift;
+  uintptr_t mask          = UseCompactObjectHeaders ? markWord::hash_mask_compact           : markWord::hash_mask;
+  uintptr_t mask_in_place = UseCompactObjectHeaders ? markWord::hash_mask_in_place_compact  : markWord::hash_mask_in_place;
+  __ shrptr(result, shift);
+  __ andptr(result, mask);
 #else
-  __ andptr(result, markWord::hash_mask_in_place);
+  __ andptr(result, mask_in_place);
 #endif //_LP64
 
   // test if hashCode exists
   __ jcc(Assembler::zero, slowCase);
 #ifndef _LP64
-  __ shrptr(result, markWord::hash_shift);
+  __ shrptr(result, shift);
 #endif
   __ ret(0);
   __ bind(slowCase);

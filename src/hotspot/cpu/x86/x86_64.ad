@@ -5314,6 +5314,7 @@ instruct loadKlass(rRegP dst, memory mem)
 // Load narrow Klass Pointer
 instruct loadNKlass(rRegN dst, memory mem)
 %{
+  predicate(!UseCompactObjectHeaders);
   match(Set dst (LoadNKlass mem));
 
   ins_cost(125); // XXX
@@ -5322,6 +5323,29 @@ instruct loadNKlass(rRegN dst, memory mem)
     __ movl($dst$$Register, $mem$$Address);
   %}
   ins_pipe(ialu_reg_mem); // XXX
+%}
+
+instruct loadNKlassCompactHeaders(rRegN dst, indOffset8 mem, rFlagsReg cr)
+%{
+  predicate(UseCompactObjectHeaders);
+  match(Set dst (LoadNKlass mem));
+  effect(TEMP_DEF dst, KILL cr);
+  ins_cost(125); // XXX
+  format %{ "movl    $dst, $mem\t# compressed klass ptr" %}
+  ins_encode %{
+    assert($mem$$disp == oopDesc::klass_offset_in_bytes(), "expect correct offset 4, but got: %d", $mem$$disp);
+    assert($mem$$index == 4, "expect no index register: %d", $mem$$index);
+    Register dst = $dst$$Register;
+    Register obj = $mem$$base$$Register;
+    C2LoadNKlassStub* stub = new (Compile::current()->comp_arena()) C2LoadNKlassStub(dst);
+    Compile::current()->output()->add_stub(stub);
+    __ movq(dst, Address(obj, oopDesc::mark_offset_in_bytes()));
+    __ testb(dst, markWord::monitor_value);
+    __ jcc(Assembler::notZero, stub->entry());
+    __ bind(stub->continuation());
+    __ shrq(dst, markWord::klass_shift);
+  %}
+  ins_pipe(pipe_slow); // XXX
 %}
 
 // Load Float
@@ -12665,6 +12689,7 @@ instruct compN_rReg_imm_klass(rFlagsRegU cr, rRegN op1, immNKlass op2) %{
 
 instruct compN_mem_imm_klass(rFlagsRegU cr, memory mem, immNKlass src)
 %{
+  predicate(!UseCompactObjectHeaders);
   match(Set cr (CmpN src (LoadNKlass mem)));
 
   format %{ "cmpl    $mem, $src\t# compressed klass ptr" %}
