@@ -1820,38 +1820,36 @@ void C2_MacroAssembler::integer_extend_v(VectorRegister dst, BasicType dst_bt, i
 // Vector narrow from src to dst with specified element sizes.
 // High part of dst vector will be filled with zero.
 void C2_MacroAssembler::integer_narrow_v(VectorRegister dst, BasicType dst_bt, int vector_length,
-                                         VectorRegister src, BasicType src_bt, VectorRegister tmp) {
+                                         VectorRegister src, BasicType src_bt) {
   assert(type2aelembytes(dst_bt) < type2aelembytes(src_bt) && type2aelembytes(dst_bt) <= 4 && type2aelembytes(src_bt) <= 8, "invalid element size");
   assert(dst_bt != T_FLOAT && dst_bt != T_DOUBLE && src_bt != T_FLOAT && src_bt != T_DOUBLE, "unsupported element type");
-  vmv1r_v(tmp, src);
   mv(t0, vector_length);
   if (src_bt == T_LONG) {
     // https://github.com/riscv/riscv-v-spec/blob/master/v-spec.adoc#117-vector-narrowing-integer-right-shift-instructions
     // Future extensions might add support for versions that narrow to a destination that is 1/4 the width of the source.
     // So we can currently only scale down by 1/2 the width at a time.
     vsetvli(t0, t0, Assembler::e32, Assembler::mf2);
-    vncvt_x_x_w(tmp, tmp);
+    vncvt_x_x_w(dst, src);
     if (dst_bt == T_SHORT || dst_bt == T_BYTE) {
       vsetvli(t0, t0, Assembler::e16, Assembler::mf2);
-      vncvt_x_x_w(tmp, tmp);
+      vncvt_x_x_w(dst, dst);
       if (dst_bt == T_BYTE) {
         vsetvli(t0, t0, Assembler::e8, Assembler::mf2);
-        vncvt_x_x_w(tmp, tmp);
+        vncvt_x_x_w(dst, dst);
       }
     }
   } else if (src_bt == T_INT) {
       // T_SHORT
       vsetvli(t0, t0, Assembler::e16, Assembler::mf2);
-      vncvt_x_x_w(tmp, tmp);
+      vncvt_x_x_w(dst, src);
       if (dst_bt == T_BYTE) {
         vsetvli(t0, t0, Assembler::e8, Assembler::mf2);
-        vncvt_x_x_w(tmp, tmp);
+        vncvt_x_x_w(dst, dst);
       }
   } else if (src_bt == T_SHORT) {
     vsetvli(t0, t0, Assembler::e8, Assembler::mf2);
-    vncvt_x_x_w(tmp, tmp);
+    vncvt_x_x_w(dst, src);
   }
-  vmv_v_v(dst, tmp);
 }
 
 #define VFCVT_SAFE(VFLOATCVT)                                                      \
@@ -1864,11 +1862,8 @@ void C2_MacroAssembler::VFLOATCVT##_safe(VectorRegister dst, VectorRegister src)
   VFLOATCVT(dst, src, Assembler::v0_t);                                            \
 }
 
-VFCVT_SAFE(vfcvt_rtz_xu_f_v);
 VFCVT_SAFE(vfcvt_rtz_x_f_v);
-VFCVT_SAFE(vfwcvt_rtz_xu_f_v);
 VFCVT_SAFE(vfwcvt_rtz_x_f_v);
-VFCVT_SAFE(vfncvt_rtz_xu_f_w);
 VFCVT_SAFE(vfncvt_rtz_x_f_w);
 
 #undef VFCVT_SAFE

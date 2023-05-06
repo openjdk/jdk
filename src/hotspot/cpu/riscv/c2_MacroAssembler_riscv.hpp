@@ -234,13 +234,10 @@
                         VectorRegister src, BasicType src_bt);
 
   void integer_narrow_v(VectorRegister dst, BasicType dst_bt, int vector_length,
-                        VectorRegister src, BasicType src_bt, VectorRegister tmp);
+                        VectorRegister src, BasicType src_bt);
 
-  void vfcvt_rtz_xu_f_v_safe(VectorRegister dst, VectorRegister src);
   void vfcvt_rtz_x_f_v_safe(VectorRegister dst, VectorRegister src);
-  void vfwcvt_rtz_xu_f_v_safe(VectorRegister dst, VectorRegister src);
   void vfwcvt_rtz_x_f_v_safe(VectorRegister dst, VectorRegister src);
-  void vfncvt_rtz_xu_f_w_safe(VectorRegister dst, VectorRegister src);
   void vfncvt_rtz_x_f_w_safe(VectorRegister dst, VectorRegister src);
 
 #endif // CPU_RISCV_C2_MACROASSEMBLER_RISCV_HPP
