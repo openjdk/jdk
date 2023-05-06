@@ -211,7 +211,7 @@ struct hb_subset_plan_t
   template<typename T>
   hb_blob_ptr_t<T> source_table()
   {
-    hb_lock_t (accelerator ? &accelerator->sanitized_table_cache_lock : nullptr);
+    hb_lock_t lock (accelerator ? &accelerator->sanitized_table_cache_lock : nullptr);
 
     auto *cache = accelerator ? &accelerator->sanitized_table_cache : &sanitized_table_cache;
     if (cache

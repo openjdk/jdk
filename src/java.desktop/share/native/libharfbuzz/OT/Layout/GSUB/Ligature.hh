@@ -29,6 +29,9 @@ struct Ligature
   bool intersects (const hb_set_t *glyphs) const
   { return hb_all (component, glyphs); }
 
+  bool intersects_lig_glyph (const hb_set_t *glyphs) const
+  { return glyphs->has(ligGlyph); }
+
   void closure (hb_closure_context_t *c) const
   {
     if (!intersects (c->glyphs)) return;

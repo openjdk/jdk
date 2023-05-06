@@ -1031,14 +1031,10 @@ void ConnectionGraph::add_call_node(CallNode* call) {
     ciMethod* meth = call->as_CallJava()->method();
     if (meth == nullptr) {
       const char* name = call->as_CallStaticJava()->_name;
-      if (strncmp(name, "_notify_jvmti_object_alloc", 26) == 0) { // Object escapes to JVMTI
-        add_java_object(call, PointsToNode::GlobalEscape);
-      } else {
-        assert(strncmp(name, "_multianewarray", 15) == 0, "TODO: add failed case check");
-        // Returns a newly allocated non-escaped object.
-        add_java_object(call, PointsToNode::NoEscape);
-        set_not_scalar_replaceable(ptnode_adr(call_idx) NOT_PRODUCT(COMMA "is result of multinewarray"));
-      }
+      assert(strncmp(name, "_multianewarray", 15) == 0, "TODO: add failed case check");
+      // Returns a newly allocated non-escaped object.
+      add_java_object(call, PointsToNode::NoEscape);
+      set_not_scalar_replaceable(ptnode_adr(call_idx) NOT_PRODUCT(COMMA "is result of multinewarray"));
     } else if (meth->is_boxing_method()) {
       // Returns boxing object
       PointsToNode::EscapeState es;
