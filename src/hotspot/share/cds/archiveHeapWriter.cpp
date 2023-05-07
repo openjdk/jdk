@@ -193,8 +193,13 @@ void ArchiveHeapWriter::copy_roots_to_buffer(GrowableArrayCHeap<oop, mtClassShar
   memset(mem, 0, byte_size);
   {
     // This is copied from MemAllocator::finish
-    oopDesc::set_mark(mem, markWord::prototype());
-    oopDesc::release_set_klass(mem, k);
+    if (UseCompactObjectHeaders) {
+      narrowKlass nk = ArchiveBuilder::current()->get_requested_narrow_klass(k);
+      oopDesc::release_set_mark(mem, markWord::prototype().set_narrow_klass(nk));
+    } else {
+      oopDesc::set_mark(mem, markWord::prototype());
+      oopDesc::release_set_klass(mem, k);
+    }
   }
   {
     // This is copied from ObjArrayAllocator::initialize
@@ -260,9 +265,13 @@ void ArchiveHeapWriter::init_filler_array_at_buffer_top(int array_length, size_t
   Klass* oak = Universe::objectArrayKlassObj(); // already relocated to point to archived klass
   HeapWord* mem = offset_to_buffered_address<HeapWord*>(_buffer_used);
   memset(mem, 0, fill_bytes);
-  oopDesc::set_mark(mem, markWord::prototype());
   narrowKlass nk = ArchiveBuilder::current()->get_requested_narrow_klass(oak);
-  cast_to_oop(mem)->set_narrow_klass(nk);
+  if (UseCompactObjectHeaders) {
+    oopDesc::release_set_mark(mem, markWord::prototype().set_narrow_klass(nk));
+  } else {
+    oopDesc::set_mark(mem, markWord::prototype());
+    cast_to_oop(mem)->set_narrow_klass(nk);
+  }
   arrayOopDesc::set_length(mem, array_length);
 }
 
@@ -430,7 +439,11 @@ void ArchiveHeapWriter::update_header_for_requested_obj(oop requested_obj, oop s
   // into during run time, increasing the potential of memory sharing.
   if (src_obj != nullptr) {
     int src_hash = src_obj->identity_hash();
-    fake_oop->set_mark(markWord::prototype().copy_set_hash(src_hash));
+    if (UseCompactObjectHeaders) {
+      fake_oop->set_mark(markWord::prototype().set_narrow_klass(nk).copy_set_hash(src_hash));
+    } else {
+      fake_oop->set_mark(markWord::prototype().copy_set_hash(src_hash));
+    }
     assert(fake_oop->mark().is_unlocked(), "sanity");
 
     DEBUG_ONLY(int archived_hash = fake_oop->identity_hash());
