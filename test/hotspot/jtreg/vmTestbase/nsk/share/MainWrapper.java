@@ -46,6 +46,7 @@ public final class MainWrapper {
         FinalizableObject finalizableObject = new FinalizableObject();
         finalizableObject.registerCleanup();
 
+
         // Some tests use this property to understand if virtual threads are used
         System.setProperty("main.wrapper", wrapperName);
 
@@ -79,16 +80,7 @@ public final class MainWrapper {
     }
 
     static Thread unstartedVirtualThread(Runnable task) {
-        try {
-            Object builder = Thread.class.getMethod("ofVirtual").invoke(null);
-            Class<?> clazz = Class.forName("java.lang.Thread$Builder");
-            Method unstarted = clazz.getMethod("unstarted", Runnable.class);
-            return (Thread) unstarted.invoke(builder, task);
-        } catch (RuntimeException | Error e) {
-            throw e;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        return Thread.ofVirtual().unstarted(task);
     }
 
 }
