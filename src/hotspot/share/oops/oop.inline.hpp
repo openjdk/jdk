@@ -488,7 +488,8 @@ void oopDesc::oop_iterate_backwards(OopClosureType* cl) {
 
 template <typename OopClosureType>
 void oopDesc::oop_iterate_backwards(OopClosureType* cl, Klass* k) {
-  assert(k == klass(), "wrong klass");
+  // We cannot safely access the Klass* with compact headers here.
+  assert(UseCompactObjectHeaders || k == klass(), "wrong klass");
   OopIteratorClosureDispatch::oop_oop_iterate_backwards(cl, this, k);
 }
 

@@ -2593,6 +2593,7 @@
   declare_constant(markWord::lock_shift)                                  \
   declare_constant(markWord::age_shift)                                   \
   declare_constant(markWord::hash_shift)                                  \
+  LP64_ONLY(declare_constant(markWord::klass_shift))                      \
                                                                           \
   declare_constant(markWord::lock_mask)                                   \
   declare_constant(markWord::lock_mask_in_place)                          \
