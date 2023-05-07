@@ -140,9 +140,10 @@ instruct vloadmask_masked(vRegMask dst, vReg src, vRegMask_V0 v0) %{
 instruct vstoremask(vReg dst, vRegMask_V0 v0, immI size) %{
   match(Set dst (VectorStoreMask v0 size));
   format %{ "vstoremask $dst, V0" %}
+  format %{ "vstoremask $dst, V0 # elem size is $size byte[s]" %}
   ins_encode %{
     __ vsetvli_helper(T_BOOLEAN, Matcher::vector_length(this));
-    __ vmv_v_x(as_VectorRegister($dst$$reg), zr);
+    __ vxor_vv(as_VectorRegister($dst$$reg), as_VectorRegister($dst$$reg), as_VectorRegister($dst$$reg));
     __ vmerge_vim(as_VectorRegister($dst$$reg), as_VectorRegister($dst$$reg), 1);
   %}
   ins_pipe(pipe_slow);
@@ -2932,7 +2933,7 @@ instruct vmask_reinterpret_diff_esize(vRegMask dst, vRegMask_V0 src, vReg tmp) %
   ins_encode %{
     BasicType from_bt = Matcher::vector_element_basic_type(this, $src);
     __ vsetvli_helper(from_bt, Matcher::vector_length(this, $src));
-    __ vmv_v_x(as_VectorRegister($tmp$$reg), zr);
+    __ vxor_vv(as_VectorRegister($tmp$$reg), as_VectorRegister($tmp$$reg), as_VectorRegister($tmp$$reg));
     __ vmerge_vim(as_VectorRegister($tmp$$reg), as_VectorRegister($tmp$$reg), -1);
     BasicType to_bt = Matcher::vector_element_basic_type(this);
     __ vsetvli_helper(to_bt, Matcher::vector_length(this));
