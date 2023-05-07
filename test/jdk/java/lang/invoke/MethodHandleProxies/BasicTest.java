@@ -112,9 +112,7 @@ public class BasicTest {
     private static long mul(int i) {
         return (long) i * i;
     }
-    private static long mul2(int i) {
-        return (long) i * i *2;
-    }
+
     @Test
     public void testConversion() throws Throwable {
         var mh = MethodHandles.lookup().findStatic(BasicTest.class, "mul", methodType(long.class, int.class));
@@ -132,20 +130,12 @@ public class BasicTest {
     @Test
     public void testSameModule() throws Throwable {
         var mh = MethodHandles.lookup().findStatic(BasicTest.class, "mul", methodType(long.class, int.class));
-        var mh2 = MethodHandles.lookup().findStatic(BasicTest.class, "mul2", methodType(long.class, int.class));
 
+        @SuppressWarnings("unchecked")
         Function<Integer, Long> func1 = (Function<Integer, Long>) asInterfaceInstance(Function.class, mh);
         assertEquals(32423432L * 32423432L, func1.apply(32423432));
         Class<?> c1 = func1.getClass();
         Module m1 = c1.getModule();
-
-        Function<Integer, Long> func2 = (Function<Integer, Long>) asInterfaceInstance(Function.class, mh2);
-        assertEquals(32423432L * 32423432L * 2, func2.apply(32423432));
-        Class<?> c2 = func2.getClass();
-        Module m2 = c2.getModule();
-        assertTrue(c1 != c2);
-        assertEquals(c1.getPackageName(), c2.getPackageName());
-        assertTrue(m1 == m2);
 
         String pn = c1.getPackageName();
         assertFalse(m1.isExported(pn));

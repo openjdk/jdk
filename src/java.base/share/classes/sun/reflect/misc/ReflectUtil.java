@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
 import jdk.internal.reflect.Reflection;
+import sun.invoke.WrapperInstance;
 import sun.security.util.SecurityConstants;
 
 public final class ReflectUtil {
@@ -265,6 +266,15 @@ public final class ReflectUtil {
             return false;
         }
         return !Modifier.isPublic(cls.getModifiers());
+    }
+
+    /**
+     * Test if the given class is a method handle proxy class.
+     * Such proxy classes may access certain java.base internal
+     * packages exported to its dynamic module.
+     */
+    public static boolean isMethodHandleProxiesClass(Class<?> cls) {
+        return WrapperInstance.class.isAssignableFrom(cls);
     }
 
     /**
