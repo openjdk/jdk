@@ -53,7 +53,6 @@ public interface Finalizable {
     /**
      * This method will register a cleanup method and create an instance of Finalizer
      * to register the object for finalization at VM exit.
-     * It is implemented in FinalizableObject.
      *
      * @see Finalizer
      */
