@@ -704,12 +704,12 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      * @param elementLayout the sequence element layout.
      * @return the new sequence layout with the given element layout and size.
      * @throws IllegalArgumentException if {@code elementCount } is negative.
-     * @throws IllegalArgumentException if {@code elementLayout.bitAlignment() > elementLayout.bitSize()}.
+     * @throws IllegalArgumentException if {@code elementLayout.bitSize() % elementLayout.bitAlignment() != 0}.
      */
     static SequenceLayout sequenceLayout(long elementCount, MemoryLayout elementLayout) {
         MemoryLayoutUtil.requireNonNegative(elementCount);
         Objects.requireNonNull(elementLayout);
-        Utils.checkElementAlignment(elementLayout, "Element layout alignment greater than its size");
+        Utils.checkElementAlignment(elementLayout, "Element layout size is not multiple of alignment");
         return wrapOverflow(() ->
                 SequenceLayoutImpl.of(elementCount, elementLayout));
     }
@@ -725,7 +725,7 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      *
      * @param elementLayout the sequence element layout.
      * @return a new sequence layout with the given element layout and maximum element count.
-     * @throws IllegalArgumentException if {@code elementLayout.bitAlignment() > elementLayout.bitSize()}.
+     * @throws IllegalArgumentException if {@code elementLayout.bitSize() % elementLayout.bitAlignment() != 0}.
      */
     static SequenceLayout sequenceLayout(MemoryLayout elementLayout) {
         Objects.requireNonNull(elementLayout);
@@ -739,6 +739,28 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      * @return a struct layout with the given member layouts.
      * @throws IllegalArgumentException if the sum of the {@linkplain #bitSize() bit sizes} of the member layouts
      * overflows.
+     * @throws IllegalArgumentException if a member layout in {@code elements} occurs at an offset (relative to the start
+     * of the struct layout) which is not compatible with its alignment constraint.
+     *
+     * @apiNote This factory does not automatically align element layouts, by inserting additional {@linkplain PaddingLayout
+     * padding layout} elements. As such, the following struct layout creation will fail with an exception:
+     *
+     * {@snippet lang = java:
+     * structLayout(JAVA_SHORT, JAVA_INT)
+     * }
+     *
+     * To avoid the exception, clients can either insert additional padding layout elements:
+     *
+     * {@snippet lang = java:
+     * structLayout(JAVA_SHORT, MemoryLayout.ofPadding(16), JAVA_INT)
+     * }
+     *
+     * Or, alternatively, they can use a member layout which features a smaller alignment constraint. This will result
+     * in a <em>packed</em> struct layout:
+     *
+     * {@snippet lang = java:
+     * structLayout(JAVA_SHORT, JAVA_INT.withBitAlignment(16))
+     * }
      */
     static StructLayout structLayout(MemoryLayout... elements) {
         Objects.requireNonNull(elements);

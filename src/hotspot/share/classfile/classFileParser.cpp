@@ -452,8 +452,8 @@ void ClassFileParser::parse_constant_pool(const ClassFileStream* const stream,
         // fall through
       case JVM_CONSTANT_InterfaceMethodref: {
         if (!_need_verify) break;
-        const int klass_ref_index = cp->klass_ref_index_at(index);
-        const int name_and_type_ref_index = cp->name_and_type_ref_index_at(index);
+        const int klass_ref_index = cp->uncached_klass_ref_index_at(index);
+        const int name_and_type_ref_index = cp->uncached_name_and_type_ref_index_at(index);
         check_property(valid_klass_reference_at(klass_ref_index),
                        "Invalid constant pool index %u in class file %s",
                        klass_ref_index, CHECK);
@@ -655,7 +655,7 @@ void ClassFileParser::parse_constant_pool(const ClassFileStream* const stream,
       }
       case JVM_CONSTANT_Dynamic: {
         const int name_and_type_ref_index =
-          cp->name_and_type_ref_index_at(index);
+          cp->uncached_name_and_type_ref_index_at(index);
         // already verified to be utf8
         const int name_ref_index =
           cp->name_ref_index_at(name_and_type_ref_index);
@@ -678,7 +678,7 @@ void ClassFileParser::parse_constant_pool(const ClassFileStream* const stream,
       case JVM_CONSTANT_Methodref:
       case JVM_CONSTANT_InterfaceMethodref: {
         const int name_and_type_ref_index =
-          cp->name_and_type_ref_index_at(index);
+          cp->uncached_name_and_type_ref_index_at(index);
         // already verified to be utf8
         const int name_ref_index =
           cp->name_ref_index_at(name_and_type_ref_index);
@@ -729,7 +729,7 @@ void ClassFileParser::parse_constant_pool(const ClassFileStream* const stream,
           case JVM_REF_invokeSpecial:
           case JVM_REF_newInvokeSpecial: {
             const int name_and_type_ref_index =
-              cp->name_and_type_ref_index_at(ref_index);
+              cp->uncached_name_and_type_ref_index_at(ref_index);
             const int name_ref_index =
               cp->name_ref_index_at(name_and_type_ref_index);
             const Symbol* const name = cp->symbol_at(name_ref_index);
