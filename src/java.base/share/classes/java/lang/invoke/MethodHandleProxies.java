@@ -33,10 +33,8 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.nio.file.Path;
-import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.security.ProtectionDomain;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -222,34 +220,21 @@ public class MethodHandleProxies {
         }
 
         /*
-         * For each interface I define a new hidden class and pass the
+         * For each interface I define a new hidden class and pass the original and
+         * caller-sensitive method handles to its constructor.
          *
-         * The bytecode is generated only once.  One hidden class is defined
-         * for each invocation of MethodHandleProxies::asInterfaceInstance(I, MH).
-         * Therefore, one or more hidden classes may be defined for I.
-         *
-         * All the hidden classes defined for I are defined in a dynamic module M
+         * The hidden classes defined for I is defined in a dynamic module M
          * which has access to the types referenced by the members of I including
          * the parameter types, return type and exception types.
          */
         ProxyClassInfo pci = PROXY_CLASS_INFOS.get(intfc); // throws IllegalArgumentException
 
         Object proxy;
-//        if (System.getSecurityManager() != null) {
-//            proxy = AccessController.doPrivileged((PrivilegedAction<?>) () -> {
-//                try {
-//                    return pci.constructor.invokeExact(pci.originalLookup, target, mh);
-//                } catch (Throwable e) {
-//                    throw uncaughtException(e);
-//                }
-//            });
-//        } else {
-            try {
-                proxy = pci.constructor.invokeExact(pci.originalLookup, target, mh);
-            } catch (Throwable e) {
-                throw uncaughtException(e);
-            }
-//        }
+        try {
+            proxy = pci.constructor.invokeExact(pci.originalLookup, target, mh);
+        } catch (Throwable e) {
+            throw uncaughtException(e); // propagates WrongMethodTypeException
+        }
 
         assert proxy.getClass().getModule().isNamed() : proxy.getClass() + " " + proxy.getClass().getModule();
         return intfc.cast(proxy);
