@@ -361,6 +361,7 @@ void SharedClassPathEntry::set_name(const char* name, TRAPS) {
 }
 
 void SharedClassPathEntry::copy_from(SharedClassPathEntry* ent, ClassLoaderData* loader_data, TRAPS) {
+  assert(ent != NULL, "sanity");
   _type = ent->_type;
   _is_module_path = ent->_is_module_path;
   _timestamp = ent->_timestamp;

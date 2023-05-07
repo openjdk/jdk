@@ -372,7 +372,7 @@ static void write_repository_files(const RepositoryIterator& iterator, char* con
     assert(fqn != NULL, "invariant");
     current_fd = open_exclusivly(fqn);
     if (current_fd != invalid_fd) {
-      const size_t size = (size_t)file_size(current_fd);
+      const int64_t size = file_size(current_fd);
       assert(size > 0, "invariant");
       unsigned int bytes_read = 0;
       unsigned int bytes_written = 0;
@@ -383,7 +383,7 @@ static void write_repository_files(const RepositoryIterator& iterator, char* con
               "Unable to recover JFR data, read failed.");
           break;
         }
-        bytes_read += read_result;
+        bytes_read += (unsigned int)read_result;
         assert(bytes_read - bytes_written <= block_size, "invariant");
         const ssize_t write_result = os::write(emergency_fd, copy_block, bytes_read - bytes_written);
         if (-1 == write_result) {
