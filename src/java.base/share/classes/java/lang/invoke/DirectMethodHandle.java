@@ -138,11 +138,10 @@ sealed class DirectMethodHandle extends MethodHandle {
     }
 
     /**
-     * Allows serialization to allocate and invoke constructor of different types.
+     * Allows serialization constructor to allocate and invoke constructor of different types.
      */
     static DirectMethodHandle makeAllocator(Class<?> instanceClass, MemberName ctor) {
         assert (ctor.isConstructor() && ctor.getName().equals(ConstantDescs.INIT_NAME));
-        assert (ctor.getDeclaringClass().isAssignableFrom(instanceClass)) : instanceClass + " " + ctor;
         ctor = ctor.asConstructor();
         assert (ctor.isConstructor() && ctor.getReferenceKind() == REF_newInvokeSpecial) : ctor;
         MethodType mtype = ctor.getMethodType().changeReturnType(instanceClass);
