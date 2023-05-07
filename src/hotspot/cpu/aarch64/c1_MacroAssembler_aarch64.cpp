@@ -176,6 +176,10 @@ void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register
 
   if (len->is_valid()) {
     strw(len, Address(obj, arrayOopDesc::length_offset_in_bytes()));
+    if (!is_aligned(arrayOopDesc::header_size_in_bytes(), BytesPerLong)) {
+      assert(is_aligned(arrayOopDesc::header_size_in_bytes(), BytesPerInt), "must be 4-byte aligned");
+      strw(zr, Address(obj, arrayOopDesc::header_size_in_bytes()));
+    }
   } else if (UseCompressedClassPointers) {
     store_klass_gap(obj, zr);
   }
@@ -195,17 +199,11 @@ void C1_MacroAssembler::initialize_body(Register obj, Register len_in_bytes, int
   subs(len_in_bytes, len_in_bytes, hdr_size_in_bytes);
   br(Assembler::EQ, done);
 
-  // Zero first 4 bytes, if start offset is not word aligned.
-  int start_offset = hdr_size_in_bytes;
-  if (!is_aligned(start_offset, BytesPerWord)) {
-    assert(is_aligned(start_offset, BytesPerInt), "must be 32-bit-aligned");
-    strw(zr, Address(obj, start_offset));
-    start_offset += BytesPerInt;
-  }
-
   // zero_words() takes ptr in r10 and count in words in r11
   mov(rscratch1, len_in_bytes);
-  lea(t1, Address(obj, start_offset));
+  // We align the hdr_size_in_bytes up to 8 bytes here because we clear the
+  // possible alignment gap in initialize_header().
+  lea(t1, Address(obj, align_up(hdr_size_in_bytes, BytesPerLong)));
   lsr(t2, rscratch1, LogBytesPerWord);
   address tpc = zero_words(t1, t2);
 
@@ -229,7 +227,6 @@ void C1_MacroAssembler::allocate_object(Register obj, Register t1, Register t2, 
 void C1_MacroAssembler::initialize_object(Register obj, Register klass, Register var_size_in_bytes, int con_size_in_bytes, Register t1, Register t2, bool is_tlab_allocated) {
   assert((con_size_in_bytes & MinObjAlignmentInBytesMask) == 0,
          "con_size_in_bytes is not multiple of alignment");
-  // TODO: Initialization code should deal with int-aligned header size, and skip the klass-gap clearing.
   const int hdr_size_in_bytes = align_up(instanceOopDesc::base_offset_in_bytes(), HeapWordSize);
 
   initialize_header(obj, klass, noreg, t1, t2);

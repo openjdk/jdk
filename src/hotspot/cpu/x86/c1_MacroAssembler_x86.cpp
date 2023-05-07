@@ -178,7 +178,7 @@ void C1_MacroAssembler::initialize_body(Register obj, Register len_in_bytes, int
   assert(hdr_size_in_bytes >= 0, "header size must be positive or 0");
   Label done;
 
-  // We align up the hdr_size_in_bytes to 8 bytes here because we clear the
+  // We align the hdr_size_in_bytes up to 8 bytes here because we clear the
   // possible alignment gap in initialize_header().
   hdr_size_in_bytes = align_up(hdr_size_in_bytes, BytesPerLong);
   // len_in_bytes is positive and ptr sized
