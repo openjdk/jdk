@@ -431,7 +431,9 @@ void ArchiveHeapWriter::update_header_for_requested_obj(oop requested_obj, oop s
   address buffered_addr = requested_addr_to_buffered_addr(cast_from_oop<address>(requested_obj));
 
   oop fake_oop = cast_to_oop(buffered_addr);
-  fake_oop->set_narrow_klass(nk);
+  if (!UseCompactObjectHeaders) {
+    fake_oop->set_narrow_klass(nk);
+  }
 
   // We need to retain the identity_hash, because it may have been used by some hashtables
   // in the shared heap. This also has the side effect of pre-initializing the
