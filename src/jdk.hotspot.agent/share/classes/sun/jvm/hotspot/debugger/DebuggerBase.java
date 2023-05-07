@@ -387,15 +387,7 @@ public abstract class DebuggerBase implements Debugger {
 
   protected long readCompOopAddressValue(long address)
     throws UnmappedAddressException, UnalignedAddressException {
-    long value;
-    if (VM.getVM().isCompactObjectHeadersEnabled()) {
-      // With compact headers, the compressed Klass* is currently read from the mark
-      // word. We need to load the whole mark, and shift the upper parts.
-      value = readCInteger(address, machDesc.getAddressSize(), true);
-      value = value >>> Mark.getKlassShift();
-    } else {
-      value = readCInteger(address, getKlassPtrSize(), true);
-    }
+    long value = readCInteger(address, getHeapOopSize(), true);
     if (value != 0) {
       // See oop.inline.hpp decode_heap_oop
       value = (long)(narrowOopBase + (long)(value << narrowOopShift));
@@ -405,7 +397,15 @@ public abstract class DebuggerBase implements Debugger {
 
   protected long readCompKlassAddressValue(long address)
     throws UnmappedAddressException, UnalignedAddressException {
-    long value = readCInteger(address, getKlassPtrSize(), true);
+    long value;
+    if (VM.getVM().isCompactObjectHeadersEnabled()) {
+      // With compact headers, the compressed Klass* is currently read from the mark
+      // word. We need to load the whole mark, and shift the upper parts.
+      value = readCInteger(address, machDesc.getAddressSize(), true);
+      value = value >>> Mark.getKlassShift();
+    } else {
+      value = readCInteger(address, getKlassPtrSize(), true);
+    }
     if (value != 0) {
       value = (long)(narrowKlassBase + (long)(value << narrowKlassShift));
     }
