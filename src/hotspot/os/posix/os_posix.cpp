@@ -824,10 +824,6 @@ int os::connect(int fd, struct sockaddr* him, socklen_t len) {
   RESTARTABLE_RETURN_INT(::connect(fd, him, len));
 }
 
-struct hostent* os::get_host_by_name(char* name) {
-  return ::gethostbyname(name);
-}
-
 void os::exit(int num) {
   ALLOW_C_FUNCTION(::exit, ::exit(num);)
 }
@@ -909,8 +905,8 @@ char* os::Posix::describe_pthread_attr(char* buf, size_t buflen, const pthread_a
   int detachstate = 0;
   pthread_attr_getstacksize(attr, &stack_size);
   pthread_attr_getguardsize(attr, &guard_size);
-  // Work around linux NPTL implementation error, see also os::create_thread() in os_linux.cpp.
-  LINUX_ONLY(stack_size -= guard_size);
+  // Work around glibc stack guard issue, see os::create_thread() in os_linux.cpp.
+  LINUX_ONLY(if (os::Linux::adjustStackSizeForGuardPages()) stack_size -= guard_size;)
   pthread_attr_getdetachstate(attr, &detachstate);
   jio_snprintf(buf, buflen, "stacksize: " SIZE_FORMAT "k, guardsize: " SIZE_FORMAT "k, %s",
     stack_size / K, guard_size / K,
@@ -1542,6 +1538,12 @@ void PlatformEvent::park() {       // AKA "down()"
 }
 
 int PlatformEvent::park(jlong millis) {
+  return park_nanos(millis_to_nanos_bounded(millis));
+}
+
+int PlatformEvent::park_nanos(jlong nanos) {
+  assert(nanos > 0, "nanos are positive");
+
   // Transitions for _event:
   //   -1 => -1 : illegal
   //    1 =>  0 : pass - return immediately
@@ -1561,7 +1563,7 @@ int PlatformEvent::park(jlong millis) {
 
   if (v == 0) { // Do this the hard way by blocking ...
     struct timespec abst;
-    to_abstime(&abst, millis_to_nanos_bounded(millis), false, false);
+    to_abstime(&abst, nanos, false, false);
 
     int ret = OS_TIMEOUT;
     int status = pthread_mutex_lock(_mutex);
@@ -2023,9 +2025,10 @@ void os::die() {
     // For TimeoutInErrorHandlingTest.java, we just kill the VM
     // and don't take the time to generate a core file.
     ::raise(SIGKILL);
-  } else {
-    ::abort();
+    // ::raise is not noreturn, even though with SIGKILL it definitely won't
+    // return.  Hence "fall through" to ::abort, which is declared noreturn.
   }
+  ::abort();
 }
 
 const char* os::file_separator() { return "/"; }

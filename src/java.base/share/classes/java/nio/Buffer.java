@@ -815,7 +815,9 @@ public abstract sealed class Buffer
 
                 @Override
                 public ByteBuffer newMappedByteBuffer(UnmapperProxy unmapperProxy, long address, int cap, Object obj, MemorySegment segment) {
-                    return new DirectByteBuffer(address, cap, obj, unmapperProxy.fileDescriptor(), unmapperProxy.isSync(), segment);
+                    return unmapperProxy == null
+                            ? new DirectByteBuffer(address, cap, obj, segment)
+                            : new DirectByteBuffer(address, cap, obj, unmapperProxy.fileDescriptor(), unmapperProxy.isSync(), segment);
                 }
 
                 @Override

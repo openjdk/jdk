@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ G1ParCopyHelper::G1ParCopyHelper(G1CollectedHeap* g1h,  G1ParScanThreadState* pa
   _g1h(g1h),
   _par_scan_state(par_scan_state),
   _worker_id(par_scan_state->worker_id()),
-  _scanned_cld(NULL),
+  _scanned_cld(nullptr),
   _cm(_g1h->concurrent_mark())
 { }
 
@@ -52,22 +52,9 @@ void G1CLDScanClosure::do_cld(ClassLoaderData* cld) {
     // Clean modified oops since we're going to scavenge all the metadata.
     cld->oops_do(_closure, ClassLoaderData::_claim_none, true /*clear_modified_oops*/);
 
-    _closure->set_scanned_cld(NULL);
+    _closure->set_scanned_cld(nullptr);
 
     _closure->trim_queue_partially();
   }
   _count++;
-}
-
-G1VerificationClosure::G1VerificationClosure(G1CollectedHeap* g1h, VerifyOption vo) :
-  _g1h(g1h), _containing_obj(nullptr), _num_failures(0), _vo(vo) { }
-
-void G1VerificationClosure::print_object(outputStream* out, oop obj) {
-#ifdef PRODUCT
-  Klass* k = obj->klass();
-  const char* class_name = k->external_name();
-  out->print_cr("class name %s", class_name);
-#else // PRODUCT
-  obj->print_on(out);
-#endif // PRODUCT
 }

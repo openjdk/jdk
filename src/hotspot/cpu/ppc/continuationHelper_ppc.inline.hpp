@@ -30,7 +30,7 @@
 template<typename FKind>
 static inline intptr_t** link_address(const frame& f) {
   Unimplemented();
-  return NULL;
+  return nullptr;
 }
 
 inline int ContinuationHelper::frame_align_words(int size) {
@@ -107,7 +107,7 @@ inline void ContinuationHelper::Frame::patch_pc(const frame& f, address pc) {
 }
 
 //                     | Minimal ABI          |
-//                     | (frame::abi_minframe)|
+//                     | (frame::java_abi)    |
 //                     | 4 words              |
 //                     | Caller's SP          |<- FP of f's caller
 //                     |======================|
@@ -124,7 +124,7 @@ inline void ContinuationHelper::Frame::patch_pc(const frame& f, address pc) {
 //                     | SP alignment (opt.)  |
 //                     |----------------------|
 //                     | Minimal ABI          |
-//                     | (frame::abi_minframe)|
+//                     | (frame::java_abi)    |
 //                     | 4 words              |
 //                     | Caller's SP          |<- SP of f's caller / FP of f
 //                     |======================|
@@ -145,7 +145,7 @@ inline void ContinuationHelper::Frame::patch_pc(const frame& f, address pc) {
 //                     | SP alignment (opt.)  |
 //                     |----------------------|
 //                     | Minimal ABI          |
-//                     | (frame::abi_minframe)|
+//                     | (frame::java_abi)    |
 //                     | 4 words              |
 //                     | Caller's SP          |<- SP of f / FP of f's callee
 //                     |======================|

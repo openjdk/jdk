@@ -42,8 +42,7 @@ class G1DetermineCompactionQueueClosure : public HeapRegionClosure {
   G1FullCollector* _collector;
   uint _cur_worker;
 
-  template<bool is_humongous>
-  inline void free_pinned_region(HeapRegion* hr);
+  inline void free_empty_humongous_region(HeapRegion* hr);
 
   inline bool should_compact(HeapRegion* hr) const;
 
@@ -86,22 +85,6 @@ private:
   public:
     G1CalculatePointersClosure(G1FullCollector* collector,
                                G1FullGCCompactionPoint* cp);
-
-    bool do_heap_region(HeapRegion* hr);
-  };
-
-  class G1ResetMetadataClosure : public HeapRegionClosure {
-    G1CollectedHeap* _g1h;
-    G1FullCollector* _collector;
-
-    void reset_region_metadata(HeapRegion* hr);
-    // Scrub all runs of dead objects within the given region by putting filler
-    // objects and updating the corresponding BOT. If update_bot_for_live is true,
-    // also update the BOT for live objects.
-    void scrub_skip_compacting_region(HeapRegion* hr, bool update_bot_for_live);
-
-  public:
-    G1ResetMetadataClosure(G1FullCollector* collector);
 
     bool do_heap_region(HeapRegion* hr);
   };

@@ -55,7 +55,6 @@ import sun.net.util.IPAddressUtil;
 import sun.security.action.GetPropertyAction;
 
 public class Net {
-
     private Net() { }
 
     // unspecified protocol family
@@ -100,8 +99,8 @@ public class Net {
     /**
      * Tells whether both IPV6_XXX and IP_XXX socket options should be set on
      * IPv6 sockets. On some kernels, both IPV6_XXX and IP_XXX socket options
-     * need to be set so that the settings are effective for IPv4 multicast
-     * datagrams sent using the socket.
+     * need to be set so that the settings are effective for IPv4 connections
+     * and datagrams.
      */
     static boolean shouldSetBothIPv4AndIPv6Options() {
         return shouldSetBothIPv4AndIPv6Options0();
@@ -448,6 +447,23 @@ public class Net {
         setIntOption0(fd, mayNeedConversion, key.level(), key.name(), arg, isIPv6);
     }
 
+    /**
+     * Sets a IPPROTO_IPV6/IPPROTO level socket. Some platforms require both
+     * IPPROTO_IPV6 and IPPROTO socket options to be set when the socket is IPv6.
+     * In that case, the IPPROTO socket option is set on a best effort basis.
+     */
+    static <T> void setIpSocketOption(FileDescriptor fd, ProtocolFamily family,
+                                      SocketOption<T> opt, T value)
+        throws IOException
+    {
+        setSocketOption(fd, family, opt, value);
+        if (family == StandardProtocolFamily.INET6 && shouldSetBothIPv4AndIPv6Options()) {
+            try {
+                setSocketOption(fd, StandardProtocolFamily.INET, opt, value);
+            } catch (IOException ignore) { }
+        }
+    }
+
     static Object getSocketOption(FileDescriptor fd, SocketOption<?> name)
         throws IOException
     {
@@ -483,7 +499,7 @@ public class Net {
         }
     }
 
-    public static boolean isFastTcpLoopbackRequested() {
+    private static boolean isFastTcpLoopbackRequested() {
         String loopbackProp = GetPropertyAction
                 .privilegedGetProperty("jdk.net.useFastTcpLoopback", "false");
         return loopbackProp.isEmpty() || Boolean.parseBoolean(loopbackProp);

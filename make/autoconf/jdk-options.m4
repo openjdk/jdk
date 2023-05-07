@@ -434,8 +434,9 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_ADDRESS_SANITIZER],
         elif test "x$TOOLCHAIN_TYPE" = "xmicrosoft"; then
           # -Oy- is equivalent to -fno-omit-frame-pointer in GCC/Clang.
           ASAN_CFLAGS="-fsanitize=address -Oy- -DADDRESS_SANITIZER"
-          # MSVC produces a warning if you pass -fsanitize=address to the linker.
-          ASAN_LDFLAGS=""
+          # MSVC produces a warning if you pass -fsanitize=address to the linker. It also complains
+          $ if -DEBUG is not passed to the linker when building with ASan.
+          ASAN_LDFLAGS="-debug"
         fi
         JVM_CFLAGS="$JVM_CFLAGS $ASAN_CFLAGS"
         JVM_LDFLAGS="$JVM_LDFLAGS $ASAN_LDFLAGS"
@@ -901,4 +902,23 @@ AC_DEFUN([JDKOPT_SETUP_MACOSX_SIGNING],
     AC_SUBST(MACOSX_CODESIGN_IDENTITY)
     AC_SUBST(MACOSX_CODESIGN_MODE)
   fi
+])
+
+################################################################################
+#
+# fallback linker
+#
+AC_DEFUN_ONCE([JDKOPT_SETUP_FALLBACK_LINKER],
+[
+  FALLBACK_LINKER_DEFAULT=false
+
+  if HOTSPOT_CHECK_JVM_VARIANT(zero); then
+    FALLBACK_LINKER_DEFAULT=true
+  fi
+
+  UTIL_ARG_ENABLE(NAME: fallback-linker, DEFAULT: $FALLBACK_LINKER_DEFAULT,
+      RESULT: ENABLE_FALLBACK_LINKER,
+      DESC: [enable libffi-based fallback implementation of java.lang.foreign.Linker],
+      CHECKING_MSG: [if fallback linker enabled])
+  AC_SUBST(ENABLE_FALLBACK_LINKER)
 ])

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019, 2022, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -32,6 +32,10 @@
 #include "prims/foreignGlobals.inline.hpp"
 #include "prims/vmstorage.hpp"
 #include "utilities/formatBuffer.hpp"
+
+bool ForeignGlobals::is_foreign_linker_supported() {
+  return true;
+}
 
 bool ABIDescriptor::is_volatile_reg(Register reg) const {
   return _integer_argument_registers.contains(reg)
@@ -176,6 +180,10 @@ static void move_stack(MacroAssembler* masm, Register tmp_reg, int in_stk_bias, 
 static void move_v128(MacroAssembler* masm, int out_stk_bias,
                       FloatRegister from_reg, VMStorage to_reg) {
   switch (to_reg.type()) {
+    case StorageType::INTEGER:
+      assert(to_reg.segment_mask() == REG64_MASK, "only moves to 64-bit registers supported");
+      masm->fmovd(as_Register(to_reg), from_reg);
+      break;
     case StorageType::VECTOR:
       assert(to_reg.segment_mask() == V128_MASK, "only moves to v128 registers supported");
       masm->fmovd(as_FloatRegister(to_reg), from_reg);

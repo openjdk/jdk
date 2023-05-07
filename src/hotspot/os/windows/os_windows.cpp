@@ -621,9 +621,9 @@ bool os::create_attached_thread(JavaThread* thread) {
   thread->set_osthread(osthread);
 
   log_info(os, thread)("Thread attached (tid: " UINTX_FORMAT ", stack: "
-                       PTR_FORMAT " - " PTR_FORMAT " (" SIZE_FORMAT "k) ).",
+                       PTR_FORMAT " - " PTR_FORMAT " (" SIZE_FORMAT "K) ).",
                        os::current_thread_id(), p2i(thread->stack_base()),
-                       p2i(thread->stack_end()), thread->stack_size());
+                       p2i(thread->stack_end()), thread->stack_size() / K);
 
   return true;
 }
@@ -1897,7 +1897,7 @@ void os::pd_print_cpu_info(outputStream* st, char* buf, size_t buflen) {
   }
 
   size_t sz_check = sizeof(PROCESSOR_POWER_INFORMATION) * (size_t)proc_count;
-  NTSTATUS status = ::CallNtPowerInformation(ProcessorInformation, NULL, 0, buf, (ULONG) buflen);
+  NTSTATUS status = ::CallNtPowerInformation(ProcessorInformation, nullptr, 0, buf, (ULONG) buflen);
   int max_mhz = -1, current_mhz = -1, mhz_limit = -1;
   bool same_vals_for_all_cpus = true;
 
@@ -5249,6 +5249,21 @@ class HighResolutionInterval : public CHeapObj<mtThread> {
 // explicit "PARKED" == 01b and "SIGNALED" == 10b bits.
 //
 
+int PlatformEvent::park_nanos(jlong nanos) {
+  assert(nanos > 0, "nanos are positive");
+
+  // Windows timers are still quite unpredictable to handle sub-millisecond granularity.
+  // Instead of implementing sub-millisecond sleeps, fall back to the usual behavior of
+  // rounding up any excess requested nanos to the full millisecond. This is how
+  // Thread.sleep(millis, nanos) has always behaved with only millisecond granularity.
+  jlong millis = nanos / NANOSECS_PER_MILLISEC;
+  if (nanos > millis * NANOSECS_PER_MILLISEC) {
+    millis++;
+  }
+  assert(millis > 0, "should always be positive");
+  return park(millis);
+}
+
 int PlatformEvent::park(jlong Millis) {
   // Transitions for _Event:
   //   -1 => -1 : illegal
@@ -5531,10 +5546,6 @@ static jint initSock() {
     return JNI_ERR;
   }
   return JNI_OK;
-}
-
-struct hostent* os::get_host_by_name(char* name) {
-  return (struct hostent*)gethostbyname(name);
 }
 
 int os::socket_close(int fd) {

@@ -122,8 +122,6 @@ address TemplateInterpreterGenerator::generate_abstract_entry(void) {
 }
 
 address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::MethodKind kind) {
-  if (!InlineIntrinsics) return nullptr; // Generate a vanilla entry
-
   address entry_point = nullptr;
   Register continuation = LR;
   bool use_runtime_call = false;
@@ -366,23 +364,31 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
 
   const Register Rcache = R2_tmp;
   const Register Rindex = R3_tmp;
-  __ get_cache_and_index_at_bcp(Rcache, Rindex, 1, index_size);
 
-  __ add(Rtemp, Rcache, AsmOperand(Rindex, lsl, LogBytesPerWord));
-  __ ldrb(Rtemp, Address(Rtemp, ConstantPoolCache::base_offset() + ConstantPoolCacheEntry::flags_offset()));
-  __ check_stack_top();
-  __ add(Rstack_top, Rstack_top, AsmOperand(Rtemp, lsl, Interpreter::logStackElementSize));
+  if (index_size == sizeof(u4)) {
+    __ load_resolved_indy_entry(Rcache, Rindex);
+    __ ldrh(Rcache, Address(Rcache, in_bytes(ResolvedIndyEntry::num_parameters_offset())));
+    __ check_stack_top();
+    __ add(Rstack_top, Rstack_top, AsmOperand(Rcache, lsl, Interpreter::logStackElementSize));
+  } else {
+    // Pop N words from the stack
+    __ get_cache_and_index_at_bcp(Rcache, Rindex, 1, index_size);
+
+    __ add(Rtemp, Rcache, AsmOperand(Rindex, lsl, LogBytesPerWord));
+    __ ldrb(Rtemp, Address(Rtemp, ConstantPoolCache::base_offset() + ConstantPoolCacheEntry::flags_offset()));
+    __ check_stack_top();
+    __ add(Rstack_top, Rstack_top, AsmOperand(Rtemp, lsl, Interpreter::logStackElementSize));
+  }
 
   __ convert_retval_to_tos(state);
 
- __ check_and_handle_popframe();
- __ check_and_handle_earlyret();
+  __ check_and_handle_popframe();
+  __ check_and_handle_earlyret();
 
   __ dispatch_next(state, step);
 
   return entry;
 }
-
 
 address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state, int step, address continuation) {
   address entry = __ pc();
@@ -780,9 +786,16 @@ address TemplateInterpreterGenerator::generate_Reference_get_entry(void) {
 }
 
 // Not supported
+address TemplateInterpreterGenerator::generate_currentThread() { return nullptr; }
 address TemplateInterpreterGenerator::generate_CRC32_update_entry() { return nullptr; }
 address TemplateInterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractInterpreter::MethodKind kind) { return nullptr; }
 address TemplateInterpreterGenerator::generate_CRC32C_updateBytes_entry(AbstractInterpreter::MethodKind kind) { return nullptr; }
+address TemplateInterpreterGenerator::generate_Float_intBitsToFloat_entry() { return nullptr; }
+address TemplateInterpreterGenerator::generate_Float_floatToRawIntBits_entry() { return nullptr; }
+address TemplateInterpreterGenerator::generate_Double_longBitsToDouble_entry() { return nullptr; }
+address TemplateInterpreterGenerator::generate_Double_doubleToRawLongBits_entry() { return nullptr; }
+address TemplateInterpreterGenerator::generate_Float_float16ToFloat_entry() { return nullptr; }
+address TemplateInterpreterGenerator::generate_Float_floatToFloat16_entry() { return nullptr; }
 
 //
 // Interpreter stub for calling a native method. (asm interpreter)
@@ -1002,8 +1015,10 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   __ mov(Rtemp, _thread_in_native_trans);
   __ str_32(Rtemp, Address(Rthread, JavaThread::thread_state_offset()));
 
-    // Force this write out before the read below
-  __ membar(MacroAssembler::StoreLoad, Rtemp);
+  // Force this write out before the read below
+  if (!UseSystemMemoryBarrier) {
+    __ membar(MacroAssembler::StoreLoad, Rtemp);
+  }
 
   // Protect the return value in the interleaved code: save it to callee-save registers.
   __ mov(Rsaved_result_lo, R0);

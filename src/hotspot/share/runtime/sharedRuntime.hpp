@@ -128,8 +128,6 @@ class SharedRuntime: AllStatic {
   static jfloat  d2f (jdouble x);
   static jfloat  l2f (jlong   x);
   static jdouble l2d (jlong   x);
-  static jfloat  hf2f(jshort  x);
-  static jshort  f2hf(jfloat  x);
   static jfloat  i2f (jint    x);
 
 #ifdef __SOFTFP__
@@ -265,6 +263,14 @@ class SharedRuntime: AllStatic {
   // Helper routine for full-speed JVMTI exception throwing support
   static void throw_and_post_jvmti_exception(JavaThread* current, Handle h_exception);
   static void throw_and_post_jvmti_exception(JavaThread* current, Symbol* name, const char *message = nullptr);
+
+#if INCLUDE_JVMTI
+  // Functions for JVMTI notifications
+  static void notify_jvmti_vthread_start(oopDesc* vt, jboolean hide, JavaThread* current);
+  static void notify_jvmti_vthread_end(oopDesc* vt, jboolean hide, JavaThread* current);
+  static void notify_jvmti_vthread_mount(oopDesc* vt, jboolean hide, JavaThread* current);
+  static void notify_jvmti_vthread_unmount(oopDesc* vt, jboolean hide, JavaThread* current);
+#endif
 
   // RedefineClasses() tracing support for obsolete method entry
   static int rc_trace_method_entry(JavaThread* thread, Method* m);

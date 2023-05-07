@@ -104,6 +104,7 @@
                                                                                                                                      \
   static_field(Abstract_VM_Version,            _features,                              uint64_t)                                     \
                                                                                                                                      \
+  nonstatic_field(Annotations,                 _class_annotations,                     AnnotationArray*)                             \
   nonstatic_field(Annotations,                 _fields_annotations,                    Array<AnnotationArray*>*)                     \
                                                                                                                                      \
   nonstatic_field(Array<int>,                  _length,                                int)                                          \
@@ -128,7 +129,7 @@
   nonstatic_field(ConstantPool,                _source_file_name_index,                u2)                                           \
                                                                                                                                      \
   nonstatic_field(ConstMethod,                 _constants,                             ConstantPool*)                                \
-  nonstatic_field(ConstMethod,                 _flags,                                 u2)                                           \
+  nonstatic_field(ConstMethod,                 _flags._flags,                          u4)                                           \
   nonstatic_field(ConstMethod,                 _code_size,                             u2)                                           \
   nonstatic_field(ConstMethod,                 _name_index,                            u2)                                           \
   nonstatic_field(ConstMethod,                 _signature_index,                       u2)                                           \
@@ -156,7 +157,7 @@
   nonstatic_field(ExceptionTableElement,       handler_pc,                                    u2)                                    \
   nonstatic_field(ExceptionTableElement,       catch_type_index,                              u2)                                    \
                                                                                                                                      \
-  nonstatic_field(InstanceKlass,               _fields,                                       Array<u2>*)                            \
+  nonstatic_field(InstanceKlass,               _fieldinfo_stream,                             Array<u1>*)                            \
   nonstatic_field(InstanceKlass,               _constants,                                    ConstantPool*)                         \
   volatile_nonstatic_field(InstanceKlass,      _init_state,                                   InstanceKlass::ClassState)             \
   volatile_nonstatic_field(InstanceKlass,      _init_thread,                                  JavaThread*)                           \
@@ -227,7 +228,7 @@
   nonstatic_field(Method,                      _access_flags,                                 AccessFlags)                           \
   nonstatic_field(Method,                      _vtable_index,                                 int)                                   \
   nonstatic_field(Method,                      _intrinsic_id,                                 u2)                                    \
-  nonstatic_field(Method,                      _flags,                                        u2)                                    \
+  nonstatic_field(Method,                      _flags._status,                                u4)                                    \
   volatile_nonstatic_field(Method,             _code,                                         CompiledMethod*)                       \
   volatile_nonstatic_field(Method,             _from_compiled_entry,                          address)                               \
                                                                                                                                      \
@@ -317,6 +318,7 @@
   static_field(StubRoutines,                _md5_implCompress,                                address)                               \
   static_field(StubRoutines,                _md5_implCompressMB,                              address)                               \
   static_field(StubRoutines,                _chacha20Block,                                   address)                               \
+  static_field(StubRoutines,                _poly1305_processBlocks,                          address)                               \
   static_field(StubRoutines,                _sha1_implCompress,                               address)                               \
   static_field(StubRoutines,                _sha1_implCompressMB,                             address)                               \
   static_field(StubRoutines,                _sha256_implCompress,                             address)                               \
@@ -342,6 +344,15 @@
                                                                                                                                      \
   nonstatic_field(Thread,                   _tlab,                                            ThreadLocalAllocBuffer)                \
   nonstatic_field(Thread,                   _allocated_bytes,                                 jlong)                                 \
+  JFR_ONLY(nonstatic_field(Thread,          _jfr_thread_local,                                JfrThreadLocal))                       \
+                                                                                                                                     \
+  static_field(java_lang_Thread,            _tid_offset,                                      int)                                   \
+  JFR_ONLY(static_field(java_lang_Thread,   _jfr_epoch_offset,                                int))                                  \
+                                                                                                                                     \
+  JFR_ONLY(nonstatic_field(JfrThreadLocal,  _vthread_id,                                      traceid))                              \
+  JFR_ONLY(nonstatic_field(JfrThreadLocal,  _vthread_epoch,                                   u2))                                   \
+  JFR_ONLY(nonstatic_field(JfrThreadLocal,  _vthread_excluded,                                bool))                                 \
+  JFR_ONLY(nonstatic_field(JfrThreadLocal,  _vthread,                                         bool))                                 \
                                                                                                                                      \
   nonstatic_field(ThreadLocalAllocBuffer,   _start,                                           HeapWord*)                             \
   nonstatic_field(ThreadLocalAllocBuffer,   _top,                                             HeapWord*)                             \
@@ -393,7 +404,6 @@
 
 #define VM_INT_CONSTANTS(declare_constant, declare_constant_with_value, declare_preprocessor_constant) \
   declare_preprocessor_constant("ASSERT", DEBUG_ONLY(1) NOT_DEBUG(0))     \
-  declare_preprocessor_constant("FIELDINFO_TAG_SIZE", FIELDINFO_TAG_SIZE) \
                                                                           \
   declare_constant(CompLevel_none)                                        \
   declare_constant(CompLevel_simple)                                      \
@@ -406,22 +416,18 @@
   declare_constant(JVMCINMethodData::SPECULATION_LENGTH_BITS)             \
                                                                           \
   declare_constant(JVM_ACC_WRITTEN_FLAGS)                                 \
-  declare_constant(JVM_ACC_MONITOR_MATCH)                                 \
-  declare_constant(JVM_ACC_HAS_MONITOR_BYTECODES)                         \
   declare_constant(JVM_ACC_HAS_FINALIZER)                                 \
   declare_constant(JVM_ACC_IS_CLONEABLE_FAST)                             \
   declare_constant(JVM_ACC_IS_HIDDEN_CLASS)                               \
-  declare_constant(JVM_ACC_FIELD_INTERNAL)                                \
-  declare_constant(JVM_ACC_FIELD_STABLE)                                  \
-  declare_constant(JVM_ACC_FIELD_HAS_GENERIC_SIGNATURE)                   \
   declare_constant(JVM_ACC_IS_VALUE_BASED_CLASS)                          \
+  declare_constant(FieldInfo::FieldFlags::_ff_injected)                   \
+  declare_constant(FieldInfo::FieldFlags::_ff_stable)                     \
   declare_preprocessor_constant("JVM_ACC_VARARGS", JVM_ACC_VARARGS)       \
   declare_preprocessor_constant("JVM_ACC_BRIDGE", JVM_ACC_BRIDGE)         \
   declare_preprocessor_constant("JVM_ACC_ANNOTATION", JVM_ACC_ANNOTATION) \
   declare_preprocessor_constant("JVM_ACC_ENUM", JVM_ACC_ENUM)             \
   declare_preprocessor_constant("JVM_ACC_SYNTHETIC", JVM_ACC_SYNTHETIC)   \
   declare_preprocessor_constant("JVM_ACC_INTERFACE", JVM_ACC_INTERFACE)   \
-  declare_preprocessor_constant("JVM_ACC_FIELD_INITIALIZED_FINAL_UPDATE", JVM_ACC_FIELD_INITIALIZED_FINAL_UPDATE) \
                                                                           \
   declare_constant(JVM_CONSTANT_Utf8)                                     \
   declare_constant(JVM_CONSTANT_Unicode)                                  \
@@ -574,11 +580,16 @@
   declare_constant(ConstantPool::CPCACHE_INDEX_TAG)                       \
   declare_constant(ConstantPool::_has_dynamic_constant)                   \
                                                                           \
-  declare_constant(ConstMethod::_has_linenumber_table)                    \
-  declare_constant(ConstMethod::_has_localvariable_table)                 \
-  declare_constant(ConstMethod::_has_exception_table)                     \
-  declare_constant(ConstMethod::_has_method_annotations)                  \
-  declare_constant(ConstMethod::_has_parameter_annotations)               \
+  declare_constant(ConstMethodFlags::_misc_has_linenumber_table)          \
+  declare_constant(ConstMethodFlags::_misc_has_localvariable_table)       \
+  declare_constant(ConstMethodFlags::_misc_has_exception_table)           \
+  declare_constant(ConstMethodFlags::_misc_has_method_annotations)        \
+  declare_constant(ConstMethodFlags::_misc_has_parameter_annotations)     \
+  declare_constant(ConstMethodFlags::_misc_caller_sensitive)              \
+  declare_constant(ConstMethodFlags::_misc_is_hidden)                     \
+  declare_constant(ConstMethodFlags::_misc_intrinsic_candidate)           \
+  declare_constant(ConstMethodFlags::_misc_reserved_stack_access)         \
+  declare_constant(ConstMethodFlags::_misc_changes_current_thread)        \
                                                                           \
   declare_constant(CounterData::count_off)                                \
                                                                           \
@@ -635,13 +646,6 @@
   declare_constant(Deoptimization::Reason_TRAP_HISTORY_LENGTH)            \
   declare_constant(Deoptimization::_support_large_access_byte_array_virtualization) \
                                                                           \
-  declare_constant(FieldInfo::access_flags_offset)                        \
-  declare_constant(FieldInfo::name_index_offset)                          \
-  declare_constant(FieldInfo::signature_index_offset)                     \
-  declare_constant(FieldInfo::initval_index_offset)                       \
-  declare_constant(FieldInfo::low_packed_offset)                          \
-  declare_constant(FieldInfo::high_packed_offset)                         \
-  declare_constant(FieldInfo::field_slots)                                \
                                                                           \
   declare_constant(InstanceKlass::linked)                                 \
   declare_constant(InstanceKlass::being_initialized)                      \
@@ -682,13 +686,8 @@
                                                                           \
   declare_constant(markWord::no_hash)                                     \
                                                                           \
-  declare_constant(Method::_caller_sensitive)                             \
-  declare_constant(Method::_force_inline)                                 \
-  declare_constant(Method::_dont_inline)                                  \
-  declare_constant(Method::_hidden)                                       \
-  declare_constant(Method::_intrinsic_candidate)                          \
-  declare_constant(Method::_reserved_stack_access)                        \
-  declare_constant(Method::_changes_current_thread)                       \
+  declare_constant(MethodFlags::_misc_force_inline)                       \
+  declare_constant(MethodFlags::_misc_dont_inline)                        \
                                                                           \
   declare_constant(Method::nonvirtual_vtable_index)                       \
   declare_constant(Method::invalid_vtable_index)                          \

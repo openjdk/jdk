@@ -46,6 +46,7 @@
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "metaprogramming/primitiveConversions.hpp"
 #include "oops/compiledICHolder.inline.hpp"
 #include "oops/klass.hpp"
 #include "oops/method.inline.hpp"
@@ -53,6 +54,7 @@
 #include "oops/oop.inline.hpp"
 #include "prims/forte.hpp"
 #include "prims/jvmtiExport.hpp"
+#include "prims/jvmtiThreadState.hpp"
 #include "prims/methodHandles.hpp"
 #include "prims/nativeLookup.hpp"
 #include "runtime/atomic.hpp"
@@ -62,6 +64,7 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/jniHandles.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stackWatermarkSet.hpp"
 #include "runtime/stubRoutines.hpp"
@@ -228,21 +231,23 @@ JRT_LEAF(jlong, SharedRuntime::lrem(jlong y, jlong x))
 JRT_END
 
 
+#ifdef _WIN64
 const juint  float_sign_mask  = 0x7FFFFFFF;
 const juint  float_infinity   = 0x7F800000;
 const julong double_sign_mask = CONST64(0x7FFFFFFFFFFFFFFF);
 const julong double_infinity  = CONST64(0x7FF0000000000000);
+#endif
 
-JRT_LEAF(jfloat, SharedRuntime::frem(jfloat  x, jfloat  y))
+#if !defined(X86) || !defined(TARGET_COMPILER_gcc) || defined(_WIN64)
+JRT_LEAF(jfloat, SharedRuntime::frem(jfloat x, jfloat y))
 #ifdef _WIN64
   // 64-bit Windows on amd64 returns the wrong values for
   // infinity operands.
-  union { jfloat f; juint i; } xbits, ybits;
-  xbits.f = x;
-  ybits.f = y;
+  juint xbits = PrimitiveConversions::cast<juint>(x);
+  juint ybits = PrimitiveConversions::cast<juint>(y);
   // x Mod Infinity == x unless x is infinity
-  if (((xbits.i & float_sign_mask) != float_infinity) &&
-       ((ybits.i & float_sign_mask) == float_infinity) ) {
+  if (((xbits & float_sign_mask) != float_infinity) &&
+       ((ybits & float_sign_mask) == float_infinity) ) {
     return x;
   }
   return ((jfloat)fmod_winx64((double)x, (double)y));
@@ -251,15 +256,13 @@ JRT_LEAF(jfloat, SharedRuntime::frem(jfloat  x, jfloat  y))
 #endif
 JRT_END
 
-
 JRT_LEAF(jdouble, SharedRuntime::drem(jdouble x, jdouble y))
 #ifdef _WIN64
-  union { jdouble d; julong l; } xbits, ybits;
-  xbits.d = x;
-  ybits.d = y;
+  julong xbits = PrimitiveConversions::cast<julong>(x);
+  julong ybits = PrimitiveConversions::cast<julong>(y);
   // x Mod Infinity == x unless x is infinity
-  if (((xbits.l & double_sign_mask) != double_infinity) &&
-       ((ybits.l & double_sign_mask) == double_infinity) ) {
+  if (((xbits & double_sign_mask) != double_infinity) &&
+       ((ybits & double_sign_mask) == double_infinity) ) {
     return x;
   }
   return ((jdouble)fmod_winx64((double)x, (double)y));
@@ -267,6 +270,7 @@ JRT_LEAF(jdouble, SharedRuntime::drem(jdouble x, jdouble y))
   return ((jdouble)fmod((double)x,(double)y));
 #endif
 JRT_END
+#endif // !X86 || !TARGET_COMPILER_gcc || _WIN64
 
 JRT_LEAF(jfloat, SharedRuntime::i2f(jint x))
   return (jfloat)x;
@@ -445,97 +449,6 @@ JRT_LEAF(jdouble, SharedRuntime::l2d(jlong x))
   return (jdouble)x;
 JRT_END
 
-// Reference implementation at src/java.base/share/classes/java/lang/Float.java:floatToFloat16
-JRT_LEAF(jshort, SharedRuntime::f2hf(jfloat  x))
-  union {jfloat f; jint i;} bits;
-  bits.f = x;
-  jint doppel = bits.i;
-  jshort sign_bit = (jshort) ((doppel & 0x80000000) >> 16);
-  if (g_isnan(x))
-    return (jshort)(sign_bit | 0x7c00 | (doppel & 0x007fe000) >> 13 | (doppel & 0x00001ff0) >> 4 | (doppel & 0x0000000f));
-
-  jfloat abs_f = (x >= 0.0f) ? x : (x * -1.0f);
-
-  // Overflow threshold is halffloat max value + 1/2 ulp
-  if (abs_f >= (65504.0f + 16.0f)) {
-    return (jshort)(sign_bit | 0x7c00); // Positive or negative infinity
-  }
-
-  // Smallest magnitude of Halffloat is 0x1.0p-24, half-way or smaller rounds to zero
-  if (abs_f <= (pow(2, -24) * 0.5f)) { // Covers float zeros and subnormals.
-    return sign_bit; // Positive or negative zero
-  }
-
-  jint exp = ((0x7f800000 & doppel) >> (24 - 1)) - 127;
-
-  // For binary16 subnormals, beside forcing exp to -15, retain
-  // the difference exp_delta = E_min - exp.  This is the excess
-  // shift value, in addition to 13, to be used in the
-  // computations below. Further the (hidden) msb with value 1
-  // in f must be involved as well
-  jint exp_delta = 0;
-  jint msb = 0x00000000;
-  if (exp < -14) {
-    exp_delta = -14 - exp;
-    exp = -15;
-    msb = 0x00800000;
-  }
-  jint f_signif_bits = ((doppel & 0x007fffff) | msb);
-
-  // Significand bits as if using rounding to zero
-  jshort signif_bits = (jshort)(f_signif_bits >> (13 + exp_delta));
-
-  jint lsb = f_signif_bits & (1 << (13 + exp_delta));
-  jint round  = f_signif_bits & (1 << (12 + exp_delta));
-  jint sticky = f_signif_bits & ((1 << (12 + exp_delta)) - 1);
-
-  if (round != 0 && ((lsb | sticky) != 0 )) {
-    signif_bits++;
-  }
-
-  return (jshort)(sign_bit | ( ((exp + 15) << 10) + signif_bits ) );
-JRT_END
-
-// Reference implementation at src/java.base/share/classes/java/lang/Float.java:float16ToFloat
-JRT_LEAF(jfloat, SharedRuntime::hf2f(jshort x))
-  // Halffloat format has 1 signbit, 5 exponent bits and
-  // 10 significand bits
-  union {jfloat f; jint i;} bits;
-  jint hf_arg = (jint)x;
-  jint hf_sign_bit = 0x8000 & hf_arg;
-  jint hf_exp_bits = 0x7c00 & hf_arg;
-  jint hf_significand_bits = 0x03ff & hf_arg;
-
-  jint significand_shift = 13; //difference between float and halffloat precision
-
-  jfloat sign = (hf_sign_bit != 0) ? -1.0f : 1.0f;
-
-  // Extract halffloat exponent, remove its bias
-  jint hf_exp = (hf_exp_bits >> 10) - 15;
-
-  if (hf_exp == -15) {
-    // For subnormal values, return 2^-24 * significand bits
-    return (sign * (pow(2,-24)) * hf_significand_bits);
-  } else if (hf_exp == 16) {
-    if (hf_significand_bits == 0) {
-      bits.i = 0x7f800000;
-      return sign * bits.f;
-    } else {
-      bits.i = (hf_sign_bit << 16) | 0x7f800000 |
-               (hf_significand_bits << significand_shift);
-      return bits.f;
-    }
-  }
-
-  // Add the bias of float exponent and shift
-  jint float_exp_bits = (hf_exp + 127) << (24 - 1);
-
-  // Combine sign, exponent and significand bits
-  bits.i = (hf_sign_bit << 16) | float_exp_bits |
-           (hf_significand_bits << significand_shift);
-
-  return bits.f;
-JRT_END
 
 // Exception handling across interpreter/compiler boundaries
 //
@@ -713,6 +626,34 @@ void SharedRuntime::throw_and_post_jvmti_exception(JavaThread* current, Symbol* 
   Handle h_exception = Exceptions::new_exception(current, name, message);
   throw_and_post_jvmti_exception(current, h_exception);
 }
+
+#if INCLUDE_JVMTI
+JRT_ENTRY(void, SharedRuntime::notify_jvmti_vthread_start(oopDesc* vt, jboolean hide, JavaThread* current))
+  assert(hide == JNI_FALSE, "must be VTMS transition finish");
+  jobject vthread = JNIHandles::make_local(const_cast<oopDesc*>(vt));
+  JvmtiVTMSTransitionDisabler::VTMS_vthread_start(vthread);
+  JNIHandles::destroy_local(vthread);
+JRT_END
+
+JRT_ENTRY(void, SharedRuntime::notify_jvmti_vthread_end(oopDesc* vt, jboolean hide, JavaThread* current))
+  assert(hide == JNI_TRUE, "must be VTMS transition start");
+  jobject vthread = JNIHandles::make_local(const_cast<oopDesc*>(vt));
+  JvmtiVTMSTransitionDisabler::VTMS_vthread_end(vthread);
+  JNIHandles::destroy_local(vthread);
+JRT_END
+
+JRT_ENTRY(void, SharedRuntime::notify_jvmti_vthread_mount(oopDesc* vt, jboolean hide, JavaThread* current))
+  jobject vthread = JNIHandles::make_local(const_cast<oopDesc*>(vt));
+  JvmtiVTMSTransitionDisabler::VTMS_vthread_mount(vthread, hide);
+  JNIHandles::destroy_local(vthread);
+JRT_END
+
+JRT_ENTRY(void, SharedRuntime::notify_jvmti_vthread_unmount(oopDesc* vt, jboolean hide, JavaThread* current))
+  jobject vthread = JNIHandles::make_local(const_cast<oopDesc*>(vt));
+  JvmtiVTMSTransitionDisabler::VTMS_vthread_unmount(vthread, hide);
+  JNIHandles::destroy_local(vthread);
+JRT_END
+#endif // INCLUDE_JVMTI
 
 // The interpreter code to call this tracing function is only
 // called/generated when UL is on for redefine, class and has the right level
@@ -2947,11 +2888,11 @@ AdapterHandlerEntry* AdapterHandlerLibrary::create_adapter(AdapterBlob*& new_ada
                                                            BasicType* sig_bt,
                                                            bool allocate_code_blob) {
 
-  // StubRoutines::code2() is initialized after this function can be called. As a result,
-  // VerifyAdapterCalls and VerifyAdapterSharing can fail if we re-use code that generated
-  // prior to StubRoutines::code2() being set. Checks refer to checks generated in an I2C
-  // stub that ensure that an I2C stub is called from an interpreter frame.
-  bool contains_all_checks = StubRoutines::code2() != nullptr;
+  // StubRoutines::_final_stubs_code is initialized after this function can be called. As a result,
+  // VerifyAdapterCalls and VerifyAdapterSharing can fail if we re-use code that generated prior
+  // to all StubRoutines::_final_stubs_code being set. Checks refer to runtime range checks generated
+  // in an I2C stub that ensure that an I2C stub is called from an interpreter frame or stubs.
+  bool contains_all_checks = StubRoutines::final_stubs_code() != nullptr;
 
   VMRegPair stack_regs[16];
   VMRegPair* regs = (total_args_passed <= 16) ? stack_regs : NEW_RESOURCE_ARRAY(VMRegPair, total_args_passed);
