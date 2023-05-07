@@ -39,6 +39,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
+import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandleProxies;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
@@ -128,7 +129,7 @@ public class BasicTest {
     }
 
     @Test
-    public void testSameModule() throws Throwable {
+    public void testModule() throws Throwable {
         var mh = MethodHandles.lookup().findStatic(BasicTest.class, "mul", methodType(long.class, int.class));
 
         @SuppressWarnings("unchecked")
@@ -140,6 +141,10 @@ public class BasicTest {
         String pn = c1.getPackageName();
         assertFalse(m1.isExported(pn));
         assertTrue(m1.isExported(pn, MethodHandleProxies.class.getModule()));
+        assertTrue(Object.class.getModule().isExported("sun.invoke", m1));
+        assertTrue(Object.class.getModule().isExported("sun.invoke.empty", m1));
+        assertTrue(m1.isNamed());
+        assertTrue(m1.getName().startsWith("jdk.MHProxy"));
     }
 
     @Test
@@ -176,12 +181,22 @@ public class BasicTest {
     }
 
     @Test
-    public void testNoInstantiation() throws IllegalAccessException {
+    public void testNoAccess() {
         Untrusted untrusted = asInterfaceInstance(Untrusted.class, MethodHandles.zero(void.class));
         var instanceClass = untrusted.getClass();
         var leakLookup = Untrusted.leakLookup();
         assertEquals(Lookup.ORIGINAL, leakLookup.lookupModes() & Lookup.ORIGINAL, "Leaked lookup original flag");
         assertThrows(IllegalAccessException.class, () -> MethodHandles.privateLookupIn(instanceClass, Untrusted.leakLookup()));
+    }
+
+    @Test
+    public void testNoInstantiation() throws ReflectiveOperationException {
+        var mh = MethodHandles.zero(void.class);
+        var instanceClass = asInterfaceInstance(Untrusted.class, mh).getClass();
+        var ctor = instanceClass.getDeclaredConstructor(Lookup.class, MethodHandle.class, MethodHandle.class);
+
+        assertThrows(IllegalAccessException.class, () -> ctor.newInstance(Untrusted.leakLookup(), mh, mh));
+        assertThrows(IllegalAccessException.class, () -> ctor.newInstance(MethodHandles.publicLookup(), mh, mh));
     }
 
     void checkMethods(Method[] methods) {

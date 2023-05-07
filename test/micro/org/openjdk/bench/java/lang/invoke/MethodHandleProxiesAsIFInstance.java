@@ -50,75 +50,75 @@ import java.util.concurrent.TimeUnit;
 @Fork(3)
 public class MethodHandleProxiesAsIFInstance {
 
-	/**
-	 * Implementation notes:
-	 *   - asInterfaceInstance() can only target static MethodHandle (adapters needed to call instance method?)
-	 *   - baselineCompute will quickly degrade to GC test, if escape analysis is unable to spare the allocation
-	 *   - testCreate* will always be slower if allocation is not eliminated; baselineAllocCompute makes sure allocation is present
-	 */
+    /**
+     * Implementation notes:
+     *   - asInterfaceInstance() can only target static MethodHandle (adapters needed to call instance method?)
+     *   - baselineCompute will quickly degrade to GC test, if escape analysis is unable to spare the allocation
+     *   - testCreate* will always be slower if allocation is not eliminated; baselineAllocCompute makes sure allocation is present
+     */
 
-	public int i;
+    public int i;
 
-	private MethodHandle target;
-	private Doable precreated;
+    private MethodHandle target;
+    private Doable precreated;
 
-	@Setup
-	public void setup() throws Throwable {
-		target = MethodHandles.lookup().findStatic(MethodHandleProxiesAsIFInstance.class, "doWork", MethodType.methodType(int.class, int.class));
-		precreated = MethodHandleProxies.asInterfaceInstance(Doable.class, target);
-	}
+    @Setup
+    public void setup() throws Throwable {
+        target = MethodHandles.lookup().findStatic(MethodHandleProxiesAsIFInstance.class, "doWork", MethodType.methodType(int.class, int.class));
+        precreated = MethodHandleProxies.asInterfaceInstance(Doable.class, target);
+    }
 
-	@Benchmark
-	public Doable testCreate() {
-		Doable doable = MethodHandleProxies.asInterfaceInstance(Doable.class, target);
-		return doable;              // make sure allocation happens
-	}
+    @Benchmark
+    public Doable testCreate() {
+        Doable doable = MethodHandleProxies.asInterfaceInstance(Doable.class, target);
+        return doable;              // make sure allocation happens
+    }
 
-	@Benchmark
-	public Doable testCreateCall() {
-		Doable doable = MethodHandleProxies.asInterfaceInstance(Doable.class, target);
-		i = doable.doWork(i);       // make sure computation happens
-		return null;                // let allocation be eliminated
-	}
+    @Benchmark
+    public Doable testCreateCall() {
+        Doable doable = MethodHandleProxies.asInterfaceInstance(Doable.class, target);
+        i = doable.doWork(i);       // make sure computation happens
+        return null;                // let allocation be eliminated
+    }
 
-	@Benchmark
-	public Doable testCall() {
-		i = precreated.doWork(i);   // make sure computation happens
-		return precreated;
-	}
+    @Benchmark
+    public Doable testCall() {
+        i = precreated.doWork(i);   // make sure computation happens
+        return precreated;
+    }
 
-	@Benchmark
-	public Doable baselineCompute() {
-		Doable doable = new Doable() {
-			@Override
-			public int doWork(int i) {
-				return MethodHandleProxiesAsIFInstance.doWork(i);
-			}
-		};
+    @Benchmark
+    public Doable baselineCompute() {
+        Doable doable = new Doable() {
+            @Override
+            public int doWork(int i) {
+                return MethodHandleProxiesAsIFInstance.doWork(i);
+            }
+        };
 
-		i = doable.doWork(i);       // make sure computation happens
-		return null;                // let allocation be eliminated
-	}
+        i = doable.doWork(i);       // make sure computation happens
+        return null;                // let allocation be eliminated
+    }
 
-	@Benchmark
-	public Doable baselineAllocCompute() {
-		Doable doable = new Doable() {
-			@Override
-			public int doWork(int i) {
-				return MethodHandleProxiesAsIFInstance.doWork(i);
-			}
-		};
+    @Benchmark
+    public Doable baselineAllocCompute() {
+        Doable doable = new Doable() {
+            @Override
+            public int doWork(int i) {
+                return MethodHandleProxiesAsIFInstance.doWork(i);
+            }
+        };
 
-		i = doable.doWork(i);       // make sure computation happens
-		return doable;              // make sure allocation happens
-	}
+        i = doable.doWork(i);       // make sure computation happens
+        return doable;              // make sure allocation happens
+    }
 
-	public static int doWork(int i) {
-		return i + 1;
-	}
+    public static int doWork(int i) {
+        return i + 1;
+    }
 
-	public interface Doable {
-		int doWork(int i);
-	}
+    public interface Doable {
+        int doWork(int i);
+    }
 
 }
