@@ -2592,8 +2592,8 @@ void AwtWindow::_ReshapeFrame(void *param)
             if (!p->IsEmbeddedFrame())
             {
                 jobject peer = p->GetPeer(env);
-                int minWidth = p->ScaleDownX(::GetSystemMetrics(SM_CXMIN));
-                int minHeight = p->ScaleDownY(::GetSystemMetrics(SM_CYMIN));
+                int minWidth = ::GetSystemMetrics(SM_CXMIN);
+                int minHeight = ::GetSystemMetrics(SM_CYMIN);
                 if (w < minWidth)
                 {
                     env->SetIntField(target, AwtComponent::widthID,
