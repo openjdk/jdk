@@ -159,6 +159,10 @@ void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register
 
   if (len->is_valid()) {
     movl(Address(obj, arrayOopDesc::length_offset_in_bytes()), len);
+    if (!is_aligned(arrayOopDesc::header_size_in_bytes(), BytesPerLong)) {
+      assert(is_aligned(arrayOopDesc::header_size_in_bytes(), BytesPerInt), "must be 4-byte aligned");
+      movl(Address(obj, arrayOopDesc::header_size_in_bytes()), 0);
+    }
   }
 #ifdef _LP64
   else if (UseCompressedClassPointers) {
@@ -174,6 +178,9 @@ void C1_MacroAssembler::initialize_body(Register obj, Register len_in_bytes, int
   assert(hdr_size_in_bytes >= 0, "header size must be positive or 0");
   Label done;
 
+  // We align up the hdr_size_in_bytes to 8 bytes here because we clear the
+  // possible alignment gap in initialize_header().
+  hdr_size_in_bytes = align_up(hdr_size_in_bytes, BytesPerLong);
   // len_in_bytes is positive and ptr sized
   subptr(len_in_bytes, hdr_size_in_bytes);
   zero_memory(obj, len_in_bytes, hdr_size_in_bytes, t1);

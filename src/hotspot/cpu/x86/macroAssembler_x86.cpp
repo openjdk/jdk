@@ -4168,43 +4168,26 @@ void MacroAssembler::pop_set(RegSet set, int offset) {
 
 // Preserves the contents of address, destroys the contents length_in_bytes and temp.
 void MacroAssembler::zero_memory(Register address, Register length_in_bytes, int offset_in_bytes, Register temp) {
-  assert_different_registers(address, length_in_bytes, temp);
-  assert(is_aligned(offset_in_bytes, BytesPerInt), "offset must be a multiple of BytesPerInt");
-
-  // For the remaining code to work, length must be a multiple of BytesPerInt.
-  // Check that here.
-#ifdef ASSERT
-  {
-    Label L;
-    testptr(length_in_bytes, BytesPerInt - 1);
-    jcc(Assembler::zero, L);
-    stop("length must be a multiple of BytesPerInt");
-    bind(L);
-  }
-#endif
-
+  assert(address != length_in_bytes && address != temp && temp != length_in_bytes, "registers must be different");
+  assert((offset_in_bytes & (BytesPerWord - 1)) == 0, "offset must be a multiple of BytesPerWord");
   Label done;
 
   testptr(length_in_bytes, length_in_bytes);
   jcc(Assembler::zero, done);
 
-  xorptr(temp, temp);    // use _zero reg to clear memory (shorter code)
-
-#ifdef _LP64
-  // Emit single 32bit store to clear leading bytes, if necessary.
-  if (!is_aligned(offset_in_bytes, BytesPerWord)) {
-    assert(is_aligned(offset_in_bytes, BytesPerInt), "must be 32-bit-aligned");
-    movl(Address(address, offset_in_bytes), temp);
-    offset_in_bytes += BytesPerInt;
-    decrement(length_in_bytes, BytesPerInt);
-  }
-  assert(is_aligned(offset_in_bytes, BytesPerWord), "offset must be a multiple of BytesPerWord");
-  testptr(length_in_bytes, length_in_bytes);
-  jcc(Assembler::zero, done);
-#endif
-
   // initialize topmost word, divide index by 2, check if odd and test if zero
+  // note: for the remaining code to work, index must be a multiple of BytesPerWord
+#ifdef ASSERT
+  {
+    Label L;
+    testptr(length_in_bytes, BytesPerWord - 1);
+    jcc(Assembler::zero, L);
+    stop("length must be a multiple of BytesPerWord");
+    bind(L);
+  }
+#endif
   Register index = length_in_bytes;
+  xorptr(temp, temp);    // use _zero reg to clear memory (shorter code)
   if (UseIncDec) {
     shrptr(index, 3);  // divide by 8/16 and set carry flag if bit 2 was set
   } else {
