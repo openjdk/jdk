@@ -1016,8 +1016,6 @@ static jclass jvm_lookup_define_class(jclass lookup, const char *name,
                                   ik->is_hidden() ? "is hidden" : "is not hidden");
     }
   }
-  assert(Reflection::is_same_class_package(lookup_k, ik),
-         "lookup class and defined class are in different packages");
 
   if (init) {
     ik->initialize(CHECK_NULL);
