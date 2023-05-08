@@ -246,6 +246,8 @@ public class ScaledTextFieldBorderTest {
             childPanel.add(Box.createHorizontalStrut(4));
 
             contentPanel.add(childPanel);
+            contentPanel.add(Box.createVerticalStrut(4));
+
             if (textFieldSize == null) {
                 textFieldSize = textField.getPreferredSize();
                 borderColor = tfBorder.getLineColor().getRGB();
@@ -254,17 +256,13 @@ public class ScaledTextFieldBorderTest {
             textField.setBounds(i, 0, textFieldSize.width, textFieldSize.height);
             childPanel.setBounds(0, (textFieldSize.height + 4) * i,
                     textFieldSize.width + i + 4, textFieldSize.height);
+            panelLocations.add(childPanel.getLocation());
         }
 
         contentPanel.setSize(textFieldSize.width + 4,
                 (textFieldSize.height + 4) * 4);
 
         panelColor = contentPanel.getBackground().getRGB();
-
-        // Save coordinates of the panels
-        for (Component comp : contentPanel.getComponents()) {
-            panelLocations.add(comp.getLocation());
-        }
 
         return contentPanel;
     }
