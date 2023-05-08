@@ -82,7 +82,9 @@ public class bug5013739 {
             robo.hitKey(KeyEvent.VK_A);
             robo.delay(1000);
         } finally {
-            SwingUtilities.invokeAndWait(() -> mainFrame.dispose());
+            if (mainFrame != null) {
+                SwingUtilities.invokeAndWait(() -> mainFrame.dispose());
+            }
         }
         if (!passed) {
             throw new RuntimeException("Hidden menu item is selectable "+
