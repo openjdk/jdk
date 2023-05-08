@@ -523,6 +523,7 @@ static SpecialFlag const special_jvm_flags[] = {
   { "G1UsePreventiveGC",            JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::jdk(22) },
   { "G1ConcRSLogCacheSize",         JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::undefined() },
   { "G1ConcRSHotCardLimit",         JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::undefined() },
+  { "RefDiscoveryPolicy",           JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::undefined() },
   { "MetaspaceReclaimPolicy",       JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::undefined() },
 
 #ifdef ASSERT
@@ -3048,6 +3049,11 @@ jint Arguments::finalize_vm_init_args(bool patch_mod_javabase) {
     // class metadata instead of modifying them in place. The copy is inaccessible to the compiler.
     // TODO: revisit the following for the static archive case.
     set_mode_flags(_int);
+
+    // String deduplication may cause CDS to iterate the strings in different order from one
+    // run to another which resulting in non-determinstic CDS archives.
+    // Disable UseStringDeduplication while dumping CDS archive.
+    UseStringDeduplication = false;
   }
 
   // RecordDynamicDumpInfo is not compatible with ArchiveClassesAtExit

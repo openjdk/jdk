@@ -194,7 +194,7 @@ struct hb_bit_set_t
       unsigned int end = major_start (m + 1);
       do
       {
-        if (v || page) /* The v check is to optimize out the page check if v is true. */
+        if (g != INVALID && (v || page)) /* The v check is to optimize out the page check if v is true. */
           page->set (g, v);
 
         array = &StructAtOffsetUnaligned<T> (array, stride);
@@ -238,7 +238,7 @@ struct hb_bit_set_t
         if (g < last_g) return false;
         last_g = g;
 
-        if (v || page) /* The v check is to optimize out the page check if v is true. */
+        if (g != INVALID && (v || page)) /* The v check is to optimize out the page check if v is true. */
           page->add (g);
 
         array = &StructAtOffsetUnaligned<T> (array, stride);

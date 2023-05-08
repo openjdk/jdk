@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,7 @@ InterpreterRuntime::SignatureHandlerGenerator::SignatureHandlerGenerator(
 void InterpreterRuntime::SignatureHandlerGenerator::pass_int() {
   int int_arg_nr = jni_offset() - _fp_arg_nr;
   Register r = (int_arg_nr < 5 /*max_int_register_arguments*/) ?
-                 as_Register(int_arg_nr) + Z_ARG1->encoding() : Z_R0;
+                 as_Register(int_arg_nr + Z_ARG1->encoding()) : Z_R0;
 
   __ z_lgf(r, locals_j_arg_at(offset()));
   if (DEBUG_ONLY(true ||) int_arg_nr >= 5) {
@@ -84,7 +84,7 @@ void InterpreterRuntime::SignatureHandlerGenerator::pass_int() {
 void InterpreterRuntime::SignatureHandlerGenerator::pass_long() {
   int int_arg_nr = jni_offset() - _fp_arg_nr;
   Register r = (int_arg_nr < 5 /*max_int_register_arguments*/) ?
-                 as_Register(int_arg_nr) + Z_ARG1->encoding() : Z_R0;
+                 as_Register(int_arg_nr + Z_ARG1->encoding()) : Z_R0;
 
   __ z_lg(r, locals_j_arg_at(offset() + 1)); // Long resides in upper slot.
   if (DEBUG_ONLY(true ||) int_arg_nr >= 5) {
@@ -115,7 +115,7 @@ void InterpreterRuntime::SignatureHandlerGenerator::pass_double() {
 void InterpreterRuntime::SignatureHandlerGenerator::pass_object() {
   int int_arg_nr = jni_offset() - _fp_arg_nr;
   Register  r = (int_arg_nr < 5 /*max_int_register_arguments*/) ?
-                  as_Register(int_arg_nr) + Z_ARG1->encoding() : Z_R0;
+                  as_Register(int_arg_nr + Z_ARG1->encoding()) : Z_R0;
 
   // The handle for a receiver will never be null.
   bool do_nullptr_check = offset() != 0 || is_static();
