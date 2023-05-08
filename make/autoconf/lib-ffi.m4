@@ -130,6 +130,26 @@ AC_DEFUN_ONCE([LIB_SETUP_LIBFFI],
       AC_MSG_ERROR([Found libffi but could not link and compile with it. $HELP_MSG])
     fi
 
+    # Check if FFI_GO_CLOSURES is properly defined. On some distributions, notably MacOS AArch64,
+    # ffitarget.h (included from ffi.h) does not explicitly define FFI_GO_CLOSURES. This makes the
+    # further include of ffi.h trigger the "FFI_GO_CLOSURES is undefined" warning, which fails
+    # the build when warnings are fatal.
+    AC_MSG_CHECKING([for FFI_GO_CLOSURES definition])
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
+      #include <ffi.h>
+      #ifndef FFI_GO_CLOSURES
+      #error "FFI_GO_CLOSURES is not defined"
+      #endif
+      ][])],
+      [
+        AC_MSG_RESULT([yes])
+      ],
+      [
+        AC_MSG_RESULT([no, defining])
+        LIBFFI_CFLAGS="$LIBFFI_CFLAGS -DFFI_GO_CLOSURES=0"
+      ]
+    )
+
     # Find the libffi.so.X to bundle
     if test "x${ENABLE_LIBFFI_BUNDLING}" = "xtrue"; then
       AC_MSG_CHECKING([for libffi lib file location])
