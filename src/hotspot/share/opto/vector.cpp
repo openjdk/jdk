@@ -69,7 +69,7 @@ void PhaseVector::do_cleanup() {
   }
   {
     Compile::TracePhase tp("incrementalInline_igvn", &timers[_t_vector_igvn]);
-    _igvn.reset(C->initial_gvn());
+    _igvn.reset_from_gvn(C->initial_gvn());
     _igvn.optimize();
     if (C->failing())  return;
   }

@@ -2054,7 +2054,7 @@ void Compile::inline_incrementally_cleanup(PhaseIterGVN& igvn) {
   }
   {
     TracePhase tp("incrementalInline_igvn", &timers[_t_incrInline_igvn]);
-    igvn.reset(initial_gvn());
+    igvn.reset_from_gvn(initial_gvn());
     igvn.optimize();
   }
   print_method(PHASE_INCREMENTAL_INLINE_CLEANUP, 3);
@@ -2281,7 +2281,7 @@ void Compile::Optimize() {
       ResourceMark rm;
       PhaseRenumberLive prl(initial_gvn(), igvn_worklist());
     }
-    igvn.reset(initial_gvn());
+    igvn.reset_from_gvn(initial_gvn());
     igvn.optimize();
   }
 
@@ -2379,7 +2379,7 @@ void Compile::Optimize() {
   // Iterative Global Value Numbering, including ideal transforms
   {
     TracePhase tp("iterGVN2", &timers[_t_iterGVN2]);
-    igvn.reset(&ccp);
+    igvn.reset_from_igvn(&ccp);
     igvn.optimize();
   }
   print_method(PHASE_ITER_GVN2, 2);

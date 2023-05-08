@@ -458,7 +458,7 @@ public:
   // Reset IGVN from GVN: call deconstructor, and placement new.
   // Acheives the same as the following (but without move constructors):
   // igvn = PhaseIterGVN(gvn);
-  void reset(PhaseGVN* gvn) {
+  void reset_from_gvn(PhaseGVN* gvn) {
     if (this != gvn) {
       this->~PhaseIterGVN();
       ::new (static_cast<void*>(this)) PhaseIterGVN(gvn);
@@ -468,7 +468,7 @@ public:
   // Reset IGVN with another: call deconstructor, and placement new.
   // Acheives the same as the following (but without move constructors):
   // igvn = PhaseIterGVN(other);
-  void reset(PhaseIterGVN* other) {
+  void reset_from_igvn(PhaseIterGVN* other) {
     if (this != other) {
       this->~PhaseIterGVN();
       ::new (static_cast<void*>(this)) PhaseIterGVN(other);
