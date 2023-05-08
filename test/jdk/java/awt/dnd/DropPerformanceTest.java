@@ -234,7 +234,7 @@ class DragSourceButton extends JButton
     public Object getTransferData(DataFlavor flavor) throws UnsupportedFlavorException, IOException {
         Object ret = null;
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ObjectOutputStream oos  = new ObjectOutputStream(baos);
+        ObjectOutputStream oos = new ObjectOutputStream(baos);
         oos.writeObject(this);
         ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
         ObjectInputStream ois = new ObjectInputStream(bais);
