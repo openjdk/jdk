@@ -95,7 +95,7 @@ public:
 
 #ifndef PRODUCT
   Node  *find_index(uint idx);  // For debugging
-  void   dump_xx();                // For debugging, dump statistics
+  void   dump();                // For debugging, dump statistics
   uint   _grows;                // For debugging, count of table grow()s
   uint   _look_probes;          // For debugging, count of hash probes
   uint   _lookup_hits;          // For debugging, count of hash_finds
@@ -279,7 +279,7 @@ public:
     assert(&_table == &C->gvn_node_hash(), "sanity");
     init_con_caches();
   }
-  NOT_PRODUCT(~PhaseGVN() { _table.dump_xx(); })
+  NOT_PRODUCT(~PhaseGVN() { _table.dump(); })
 
   Type_Array& types() {
     return _types;

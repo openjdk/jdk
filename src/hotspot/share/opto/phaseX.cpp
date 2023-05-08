@@ -320,7 +320,7 @@ void NodeHash::check_no_speculative_types() {
 #ifndef PRODUCT
 //------------------------------dump-------------------------------------------
 // Dump statistics for the hash table
-void NodeHash::dump_xx() {
+void NodeHash::dump() {
   _total_inserts       += _inserts;
   _total_insert_probes += _insert_probes;
   if (PrintCompilation && PrintOptoStatistics && Verbose && (_inserts > 0)) {
