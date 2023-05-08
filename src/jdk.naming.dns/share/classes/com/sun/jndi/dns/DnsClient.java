@@ -27,6 +27,7 @@ package com.sun.jndi.dns;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.lang.ref.Cleaner;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.PortUnreachableException;
@@ -104,6 +105,7 @@ public class DnsClient {
     private final ReentrantLock udpChannelLock = new ReentrantLock();
 
     private final Selector udpChannelSelector;
+    private final Cleaner.Cleanable selectorCleanup;
 
     private static final DNSDatagramChannelFactory factory =
             new DNSDatagramChannelFactory(random);
@@ -162,7 +164,7 @@ public class DnsClient {
         // register a cleaning action to close the Selector
         // when this DNS client becomes phantom reachable
         Selector sel = udpChannelSelector;
-        CleanerFactory.cleaner().register(this, () -> {
+        selectorCleanup = CleanerFactory.cleaner().register(this, () -> {
             try {
                 sel.close();
             } catch (IOException ignore) {
@@ -188,10 +190,7 @@ public class DnsClient {
     private Object queuesLock = new Object();
 
     public void close() {
-        try {
-            udpChannelSelector.close();
-        } catch (IOException ioException) {
-        }
+        selectorCleanup.clean();
         synchronized (queuesLock) {
             reqs.clear();
             resps.clear();
