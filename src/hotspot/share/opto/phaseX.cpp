@@ -411,7 +411,7 @@ PhaseRenumberLive::PhaseRenumberLive(PhaseGVN* gvn,
   assert(C->live_nodes() == _useful.size(), "the number of live nodes must match the number of useful nodes");
   assert(_delayed.size() == 0, "should be empty");
   assert(&worklist == &C->igvn_worklist(), "sanity");
-  assert(&gvn->types() == &C->gvn_types(), "sanity");
+  assert(&gvn->types() == &C->type_array(), "sanity");
 
   GrowableArray<Node_Notes*>* old_node_note_array = C->node_note_array();
   if (old_node_note_array != nullptr) {
@@ -517,14 +517,14 @@ int PhaseRenumberLive::update_embedded_ids(Node* n) {
   return no_of_updates;
 }
 
-void PhaseGVN::init_con_caches() {
+void PhaseValues::init_con_caches() {
   memset(_icons,0,sizeof(_icons));
   memset(_lcons,0,sizeof(_lcons));
   memset(_zcons,0,sizeof(_zcons));
 }
 
 //--------------------------------find_int_type--------------------------------
-const TypeInt* PhaseGVN::find_int_type(Node* n) {
+const TypeInt* PhaseValues::find_int_type(Node* n) {
   if (n == nullptr)  return nullptr;
   // Call type_or_null(n) to determine node's type since we might be in
   // parse phase and call n->Value() may return wrong type.
@@ -536,7 +536,7 @@ const TypeInt* PhaseGVN::find_int_type(Node* n) {
 
 
 //-------------------------------find_long_type--------------------------------
-const TypeLong* PhaseGVN::find_long_type(Node* n) {
+const TypeLong* PhaseValues::find_long_type(Node* n) {
   if (n == nullptr)  return nullptr;
   // (See comment above on type_or_null.)
   const Type* t = type_or_null(n);
@@ -547,6 +547,8 @@ const TypeLong* PhaseGVN::find_long_type(Node* n) {
 //------------------------------~PhaseValues-----------------------------------
 #ifndef PRODUCT
 PhaseValues::~PhaseValues() {
+  // Statistics for NodeHash
+  _table.dump();
   // Statistics for value progress and efficiency
   if( PrintCompilation && Verbose && WizardMode ) {
     tty->print("\n%sValues: %d nodes ---> %d/%d (%d)",
@@ -561,7 +563,7 @@ PhaseValues::~PhaseValues() {
 #endif
 
 //------------------------------makecon----------------------------------------
-ConNode* PhaseGVN::makecon(const Type *t) {
+ConNode* PhaseValues::makecon(const Type *t) {
   assert(t->singleton(), "must be a constant");
   assert(!t->empty() || t == Type::TOP, "must not be vacuous range");
   switch (t->base()) {  // fast paths
@@ -578,7 +580,7 @@ ConNode* PhaseGVN::makecon(const Type *t) {
 
 //--------------------------uncached_makecon-----------------------------------
 // Make an idealized constant - one of ConINode, ConPNode, etc.
-ConNode* PhaseGVN::uncached_makecon(const Type *t) {
+ConNode* PhaseValues::uncached_makecon(const Type *t) {
   assert(t->singleton(), "must be a constant");
   ConNode* x = ConNode::make(t);
   ConNode* k = (ConNode*)hash_find_insert(x); // Value numbering
@@ -598,7 +600,7 @@ ConNode* PhaseGVN::uncached_makecon(const Type *t) {
 
 //------------------------------intcon-----------------------------------------
 // Fast integer constant.  Same as "transform(new ConINode(TypeInt::make(i)))"
-ConINode* PhaseGVN::intcon(jint i) {
+ConINode* PhaseValues::intcon(jint i) {
   // Small integer?  Check cache! Check that cached node is not dead
   if (i >= _icon_min && i <= _icon_max) {
     ConINode* icon = _icons[i-_icon_min];
@@ -614,7 +616,7 @@ ConINode* PhaseGVN::intcon(jint i) {
 
 //------------------------------longcon----------------------------------------
 // Fast long constant.
-ConLNode* PhaseGVN::longcon(jlong l) {
+ConLNode* PhaseValues::longcon(jlong l) {
   // Small integer?  Check cache! Check that cached node is not dead
   if (l >= _lcon_min && l <= _lcon_max) {
     ConLNode* lcon = _lcons[l-_lcon_min];
@@ -627,7 +629,7 @@ ConLNode* PhaseGVN::longcon(jlong l) {
     _lcons[l-_lcon_min] = lcon;      // Cache small integers
   return lcon;
 }
-ConNode* PhaseGVN::integercon(jlong l, BasicType bt) {
+ConNode* PhaseValues::integercon(jlong l, BasicType bt) {
   if (bt == T_INT) {
     return intcon(checked_cast<jint>(l));
   }
@@ -638,7 +640,7 @@ ConNode* PhaseGVN::integercon(jlong l, BasicType bt) {
 
 //------------------------------zerocon-----------------------------------------
 // Fast zero or null constant. Same as "transform(ConNode::make(Type::get_zero_type(bt)))"
-ConNode* PhaseGVN::zerocon(BasicType bt) {
+ConNode* PhaseValues::zerocon(BasicType bt) {
   assert((uint)bt <= _zcon_max, "domain check");
   ConNode* zcon = _zcons[bt];
   if (zcon != nullptr && zcon->in(TypeFunc::Control) != nullptr)
@@ -795,18 +797,16 @@ void PhaseGVN::dump_infinite_loop_info(Node* n, const char* where) {
 //=============================================================================
 //------------------------------PhaseIterGVN-----------------------------------
 // Initialize with previous PhaseIterGVN info; used by PhaseCCP
-PhaseIterGVN::PhaseIterGVN(PhaseIterGVN* igvn) : PhaseGVN(igvn),
-                                                 _delay_transform(igvn->_delay_transform),
-                                                 _worklist(igvn->_worklist)
+PhaseIterGVN::PhaseIterGVN(PhaseIterGVN* igvn) : _delay_transform(igvn->_delay_transform),
+                                                 _worklist(C->igvn_worklist())
 {
   _iterGVN = true;
-  assert(&_worklist == &C->igvn_worklist(), "sanity");
+  assert(&_worklist == &igvn->_worklist, "sanity");
 }
 
 //------------------------------PhaseIterGVN-----------------------------------
 // Initialize with previous PhaseGVN info from Parser
-PhaseIterGVN::PhaseIterGVN(PhaseGVN* gvn) : PhaseGVN(gvn),
-                                            _delay_transform(false),
+PhaseIterGVN::PhaseIterGVN(PhaseGVN* gvn) : _delay_transform(false),
                                             _worklist(C->igvn_worklist())
 {
   _iterGVN = true;

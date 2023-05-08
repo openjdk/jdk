@@ -423,10 +423,10 @@ class Compile : public Phase {
   Unique_Node_List*     _igvn_worklist;
 
   // Shared type array for GVN, IGVN and CCP. It maps node ID -> Type*.
-  Type_Array*           _gvn_types;
+  Type_Array*           _type_array;
 
-  // Shared node hash table for GVN, IGVN and CCP.$
-  NodeHash*             _gvn_node_hash;
+  // Shared node hash table for GVN, IGVN and CCP.
+  NodeHash*             _node_hash_table;
 
   GrowableArray<CallGenerator*> _late_inlines;        // List of CallGenerators to be revisited after main parsing has finished.
   GrowableArray<CallGenerator*> _string_late_inlines; // same but for string operations
@@ -950,13 +950,13 @@ class Compile : public Phase {
     assert(_igvn_worklist != nullptr, "must be created in Compile::Compile");
     return *_igvn_worklist;
   }
-  Type_Array& gvn_types() {
-    assert(_gvn_types != nullptr, "must be created in Compile::Compile");
-    return *_gvn_types;
+  Type_Array& type_array() {
+    assert(_type_array != nullptr, "must be created in Compile::Compile");
+    return *_type_array;
   }
-  NodeHash& gvn_node_hash() {
-    assert(_gvn_node_hash != nullptr, "must be created in Compile::Compile");
-    return *_gvn_node_hash;
+  NodeHash& node_hash_table() {
+    assert(_node_hash_table != nullptr, "must be created in Compile::Compile");
+    return *_node_hash_table;
   }
   inline void       record_for_igvn(Node* n);   // Body is after class Unique_Node_List in node.hpp.
   inline void       remove_for_igvn(Node* n);   // Body is after class Unique_Node_List in node.hpp.

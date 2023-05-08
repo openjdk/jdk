@@ -124,7 +124,7 @@ class Type_Array : public AnyObj {
   void grow( uint i );          // Grow array node to fit
   const Type *operator[] ( uint i ) const // Lookup, or null for not mapped
   { return (i<_max) ? _types[i] : (Type*)nullptr; }
-  friend class PhaseGVN;
+  friend class PhaseValues;
 public:
   Type_Array(Arena *a) : _a(a), _max(0), _types(0) {}
   const Type *fast_lookup(uint i) const{assert(i<_max,"oob");return _types[i];}
@@ -218,26 +218,13 @@ public:
 class PhaseValues : public PhaseTransform {
 protected:
   bool      _iterGVN;
-public:
-  PhaseValues() : PhaseTransform(GVN), _iterGVN(false) {
-    NOT_PRODUCT( clear_new_values(); )
-  }
-  NOT_PRODUCT(~PhaseValues();)
-  PhaseIterGVN* is_IterGVN() { return (_iterGVN) ? (PhaseIterGVN*)this : nullptr; }
 
-#ifndef PRODUCT
-  uint   _count_new_values;     // For profiling, count new values produced
-  void    inc_new_values()        { ++_count_new_values; }
-  void    clear_new_values()      { _count_new_values = 0; }
-  uint    made_new_values() const { return _count_new_values; }
-#endif
-};
+  // Hash table for value-numbering. Reference to "C->node_hash_table()",
+  NodeHash &_table;
 
+  // Type array mapping node idx to Type*. Reference to "C->type_array()".
+  Type_Array &_types;
 
-//------------------------------PhaseGVN---------------------------------------
-// Phase for performing local, pessimistic GVN-style optimizations.
-class PhaseGVN : public PhaseValues {
-protected:
   // ConNode caches:
   // Support both int and long caches because either might be an intptr_t,
   // so they show up frequently in address computations.
@@ -252,38 +239,17 @@ protected:
   ConNode*  _zcons[_zcon_max + 1];               // cached is_zero_type nodes
   void init_con_caches();
 
-  // Hash table for value-numbering. Reference to "C->gvn_node_hash()",
-  NodeHash &_table;
-
-  // Type array mapping node idx to Type*. Reference to "C->gvn_types()".
-  Type_Array &_types;
-
-  bool is_dominator_helper(Node *d, Node *n, bool linear_only);
-
 public:
-  // Called to create a GVN
-  PhaseGVN() :
-    _table(C->gvn_node_hash()),
-    _types(C->gvn_types())
+  PhaseValues() : PhaseTransform(GVN), _iterGVN(false),
+                  _table(C->node_hash_table()), _types(C->type_array())
   {
-    init_con_caches();
+    NOT_PRODUCT( clear_new_values(); )
     // Force allocation for currently existing nodes
     _types.map(C->unique(), nullptr);
-  }
-  // Called from IGVN and CCP
-  PhaseGVN(PhaseGVN* gvn) :
-    _table(gvn->_table),
-    _types(gvn->_types)
-  {
-    assert(&_types == &C->gvn_types(), "sanity");
-    assert(&_table == &C->gvn_node_hash(), "sanity");
     init_con_caches();
   }
-  NOT_PRODUCT(~PhaseGVN() { _table.dump(); })
-
-  Type_Array& types() {
-    return _types;
-  }
+  NOT_PRODUCT(~PhaseValues();)
+  PhaseIterGVN* is_IterGVN() { return (_iterGVN) ? (PhaseIterGVN*)this : nullptr; }
 
   // Some Ideal and other transforms delete --> modify --> insert values
   bool   hash_delete(Node* n)     { return _table.hash_delete(n); }
@@ -298,12 +264,8 @@ public:
     init_con_caches();
   }
 
-  // Return a node which computes the same function as this node, but
-  // in a faster or cheaper fashion.
-  virtual Node* transform(Node* n);
-  Node  *transform_no_reclaim( Node *n );
-  virtual void record_for_igvn(Node *n) {
-    C->record_for_igvn(n);
+  Type_Array& types() {
+    return _types;
   }
 
   // Get a previously recorded type for the node n.
@@ -371,7 +333,6 @@ public:
   // Fast zero or null constant.  Same as makecon(Type::get_zero_type(bt)).
   ConNode* zerocon(BasicType bt);
 
-
   // For pessimistic passes, the return type must monotonically narrow.
   // For optimistic  passes, the return type must monotonically widen.
   // It is possible to get into a "death march" in either type of pass,
@@ -427,6 +388,32 @@ public:
   }
   virtual const Type* saturate_and_maybe_push_to_igvn_worklist(const TypeNode* n, const Type* new_type) {
     return saturate(new_type, type_or_null(n), n->type());
+  }
+
+#ifndef PRODUCT
+  uint   _count_new_values;     // For profiling, count new values produced
+  void    inc_new_values()        { ++_count_new_values; }
+  void    clear_new_values()      { _count_new_values = 0; }
+  uint    made_new_values() const { return _count_new_values; }
+#endif
+};
+
+
+//------------------------------PhaseGVN---------------------------------------
+// Phase for performing local, pessimistic GVN-style optimizations.
+class PhaseGVN : public PhaseValues {
+protected:
+  bool is_dominator_helper(Node *d, Node *n, bool linear_only);
+
+public:
+  PhaseGVN() {}
+
+  // Return a node which computes the same function as this node, but
+  // in a faster or cheaper fashion.
+  virtual Node* transform(Node* n);
+  Node  *transform_no_reclaim( Node *n );
+  virtual void record_for_igvn(Node *n) {
+    C->record_for_igvn(n);
   }
 
   virtual bool is_dominator(Node* d, Node* n) override { return is_dominator_helper(d, n, true); }
