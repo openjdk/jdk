@@ -31,6 +31,7 @@
 #include "oops/annotations.hpp"
 #include "oops/constantPool.hpp"
 #include "oops/methodCounters.hpp"
+#include "oops/methodFlags.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/oop.hpp"
 #include "oops/typeArrayOop.hpp"
@@ -79,23 +80,9 @@ class Method : public Metadata {
   AdapterHandlerEntry* _adapter;
   AccessFlags       _access_flags;               // Access flags
   int               _vtable_index;               // vtable index of this method (see VtableIndexFlag)
-                                                 // note: can have vtables with >2**16 elements (because of inheritance)
-  u2                _intrinsic_id;               // vmSymbols::intrinsic_id (0 == _none)
+  MethodFlags       _flags;
 
-  // Flags
-  enum Flags {
-    _caller_sensitive       = 1 << 0,
-    _force_inline           = 1 << 1,
-    _dont_inline            = 1 << 2,
-    _hidden                 = 1 << 3,
-    _has_injected_profile   = 1 << 4,
-    _intrinsic_candidate    = 1 << 5,
-    _reserved_stack_access  = 1 << 6,
-    _scoped                 = 1 << 7,
-    _changes_current_thread = 1 << 8,
-    _jvmti_mount_transition = 1 << 9,
-  };
-  mutable u2 _flags;
+  u2                _intrinsic_id;               // vmSymbols::intrinsic_id (0 == _none)
 
   JFR_ONLY(DEFINE_TRACE_FLAG;)
 
@@ -332,7 +319,7 @@ class Method : public Metadata {
 
   // exception handler table
   bool has_exception_handler() const
-                             { return constMethod()->has_exception_handler(); }
+                             { return constMethod()->has_exception_table(); }
   int exception_table_length() const
                              { return constMethod()->exception_table_length(); }
   ExceptionTableElement* exception_table_start() const
@@ -602,31 +589,35 @@ public:
   // true if method can omit stack trace in throw in compiled code.
   bool can_omit_stack_trace();
 
+  // Flags getting and setting.
+#define M_STATUS_GET_SET(name, ignore)          \
+  bool name() const { return _flags.name(); }   \
+  void set_##name(bool x) { _flags.set_##name(x); } \
+  void set_##name() { _flags.set_##name(true); }
+  M_STATUS_DO(M_STATUS_GET_SET)
+#undef M_STATUS_GET_SET
+
   // returns true if the method has any backward branches.
   bool has_loops() {
-    return access_flags().loops_flag_init() ? access_flags().has_loops() : compute_has_loops_flag();
+    return has_loops_flag_init() ? has_loops_flag() : compute_has_loops_flag();
   };
 
   bool compute_has_loops_flag();
-
-  bool has_jsrs() {
-    return access_flags().has_jsrs();
-  };
-  void set_has_jsrs() {
-    _access_flags.set_has_jsrs();
+  bool set_has_loops() {
+    // set both the flags and that it's been initialized.
+    set_has_loops_flag();
+    set_has_loops_flag_init();
+    return true;
   }
 
   // returns true if the method has any monitors.
-  bool has_monitors() const                      { return is_synchronized() || access_flags().has_monitor_bytecodes(); }
-  bool has_monitor_bytecodes() const             { return access_flags().has_monitor_bytecodes(); }
-
-  void set_has_monitor_bytecodes()               { _access_flags.set_has_monitor_bytecodes(); }
+  bool has_monitors() const                      { return is_synchronized() || has_monitor_bytecodes(); }
 
   // monitor matching. This returns a conservative estimate of whether the monitorenter/monitorexit bytecodes
-  // propererly nest in the method. It might return false, even though they actually nest properly, since the info.
+  // properly nest in the method. It might return false, even though they actually nest properly, since the info.
   // has not been computed yet.
-  bool guaranteed_monitor_matching() const       { return access_flags().is_monitor_matching(); }
-  void set_guaranteed_monitor_matching()         { _access_flags.set_monitor_matching(); }
+  bool guaranteed_monitor_matching() const       { return monitor_matching(); }
+  void set_guaranteed_monitor_matching()         { set_monitor_matching(); }
 
   // returns true if the method is an accessor function (setter/getter).
   bool is_accessor() const;
@@ -745,24 +736,13 @@ public:
   static int extra_stack_words();  // = extra_stack_entries() * Interpreter::stackElementSize
 
   // RedefineClasses() support:
-  bool is_old() const                               { return access_flags().is_old(); }
-  void set_is_old()                                 { _access_flags.set_is_old(); }
-  bool is_obsolete() const                          { return access_flags().is_obsolete(); }
-  void set_is_obsolete()                            { _access_flags.set_is_obsolete(); }
-  bool is_deleted() const                           { return access_flags().is_deleted(); }
-  void set_is_deleted()                             { _access_flags.set_is_deleted(); }
-
-  bool on_stack() const                             { return access_flags().on_stack(); }
+  bool on_stack() const                             { return on_stack_flag(); }
   void set_on_stack(const bool value);
 
   void record_gc_epoch();
 
   // see the definition in Method*.cpp for the gory details
   bool should_not_be_cached() const;
-
-  // JVMTI Native method prefixing support:
-  bool is_prefixed_native() const                   { return access_flags().is_prefixed_native(); }
-  void set_is_prefixed_native()                     { _access_flags.set_is_prefixed_native(); }
 
   // Rewriting support
   static methodHandle clone_with_new_data(const methodHandle& m, u_char* new_code, int new_code_length,
@@ -820,78 +800,29 @@ public:
   void init_intrinsic_id(vmSymbolID klass_id);     // updates from _none if a match
   static vmSymbolID klass_id_for_intrinsics(const Klass* holder);
 
-  bool caller_sensitive() {
-    return (_flags & _caller_sensitive) != 0;
-  }
-  void set_caller_sensitive(bool x) {
-    _flags = x ? (_flags | _caller_sensitive) : (_flags & ~_caller_sensitive);
-  }
+  bool caller_sensitive() const     { return constMethod()->caller_sensitive(); }
+  void set_caller_sensitive() { constMethod()->set_caller_sensitive(); }
 
-  bool force_inline() {
-    return (_flags & _force_inline) != 0;
-  }
-  void set_force_inline(bool x) {
-    _flags = x ? (_flags | _force_inline) : (_flags & ~_force_inline);
-  }
+  bool changes_current_thread() const { return constMethod()->changes_current_thread(); }
+  void set_changes_current_thread() { constMethod()->set_changes_current_thread(); }
 
-  bool dont_inline() {
-    return (_flags & _dont_inline) != 0;
-  }
-  void set_dont_inline(bool x) {
-    _flags = x ? (_flags | _dont_inline) : (_flags & ~_dont_inline);
-  }
+  bool jvmti_mount_transition() const { return constMethod()->jvmti_mount_transition(); }
+  void set_jvmti_mount_transition() { constMethod()->set_jvmti_mount_transition(); }
 
-  bool changes_current_thread() {
-    return (_flags & _changes_current_thread) != 0;
-  }
-  void set_changes_current_thread(bool x) {
-    _flags = x ? (_flags | _changes_current_thread) : (_flags & ~_changes_current_thread);
-  }
+  bool is_hidden() const { return constMethod()->is_hidden(); }
+  void set_is_hidden() { constMethod()->set_is_hidden(); }
 
-  bool jvmti_mount_transition() {
-    return (_flags & _jvmti_mount_transition) != 0;
-  }
-  void set_jvmti_mount_transition(bool x) {
-    _flags = x ? (_flags | _jvmti_mount_transition) : (_flags & ~_jvmti_mount_transition);
-  }
+  bool is_scoped() const { return constMethod()->is_scoped(); }
+  void set_scoped() { constMethod()->set_is_scoped(); }
 
-  bool is_hidden() const {
-    return (_flags & _hidden) != 0;
-  }
+  bool intrinsic_candidate() const { return constMethod()->intrinsic_candidate(); }
+  void set_intrinsic_candidate() { constMethod()->set_intrinsic_candidate(); }
 
-  void set_hidden(bool x) {
-    _flags = x ? (_flags | _hidden) : (_flags & ~_hidden);
-  }
+  bool has_injected_profile() const { return constMethod()->has_injected_profile(); }
+  void set_has_injected_profile() { constMethod()->set_has_injected_profile(); }
 
-  bool is_scoped() const {
-    return (_flags & _scoped) != 0;
-  }
-
-  void set_scoped(bool x) {
-    _flags = x ? (_flags | _scoped) : (_flags & ~_scoped);
-  }
-
-  bool intrinsic_candidate() {
-    return (_flags & _intrinsic_candidate) != 0;
-  }
-  void set_intrinsic_candidate(bool x) {
-    _flags = x ? (_flags | _intrinsic_candidate) : (_flags & ~_intrinsic_candidate);
-  }
-
-  bool has_injected_profile() {
-    return (_flags & _has_injected_profile) != 0;
-  }
-  void set_has_injected_profile(bool x) {
-    _flags = x ? (_flags | _has_injected_profile) : (_flags & ~_has_injected_profile);
-  }
-
-  bool has_reserved_stack_access() {
-    return (_flags & _reserved_stack_access) != 0;
-  }
-
-  void set_has_reserved_stack_access(bool x) {
-    _flags = x ? (_flags | _reserved_stack_access) : (_flags & ~_reserved_stack_access);
-  }
+  bool has_reserved_stack_access() const { return constMethod()->reserved_stack_access(); }
+  void set_has_reserved_stack_access() { constMethod()->set_reserved_stack_access(); }
 
   JFR_ONLY(DEFINE_TRACE_FLAG_ACCESSOR;)
 
@@ -939,24 +870,17 @@ public:
     return _method_counters;
   }
 
-  bool   is_not_c1_compilable() const         { return access_flags().is_not_c1_compilable();  }
-  void  set_not_c1_compilable()               {       _access_flags.set_not_c1_compilable();   }
-  void clear_not_c1_compilable()              {       _access_flags.clear_not_c1_compilable(); }
-  bool   is_not_c2_compilable() const         { return access_flags().is_not_c2_compilable();  }
-  void  set_not_c2_compilable()               {       _access_flags.set_not_c2_compilable();   }
-  void clear_not_c2_compilable()              {       _access_flags.clear_not_c2_compilable(); }
+  void clear_is_not_c1_compilable()           { set_is_not_c1_compilable(false); }
+  void clear_is_not_c2_compilable()           { set_is_not_c2_compilable(false); }
+  void clear_is_not_c2_osr_compilable()       { set_is_not_c2_osr_compilable(false); }
 
-  bool    is_not_c1_osr_compilable() const    { return is_not_c1_compilable(); }  // don't waste an accessFlags bit
-  void   set_not_c1_osr_compilable()          {       set_not_c1_compilable(); }  // don't waste an accessFlags bit
-  void clear_not_c1_osr_compilable()          {     clear_not_c1_compilable(); }  // don't waste an accessFlags bit
-  bool   is_not_c2_osr_compilable() const     { return access_flags().is_not_c2_osr_compilable();  }
-  void  set_not_c2_osr_compilable()           {       _access_flags.set_not_c2_osr_compilable();   }
-  void clear_not_c2_osr_compilable()          {       _access_flags.clear_not_c2_osr_compilable(); }
+  // not_c1_osr_compilable == not_c1_compilable
+  bool is_not_c1_osr_compilable() const       { return is_not_c1_compilable(); }
+  void set_is_not_c1_osr_compilable()         { set_is_not_c1_compilable(); }
+  void clear_is_not_c1_osr_compilable()       { clear_is_not_c1_compilable(); }
 
   // Background compilation support
-  bool queued_for_compilation() const  { return access_flags().queued_for_compilation(); }
-  void set_queued_for_compilation()    { _access_flags.set_queued_for_compilation();     }
-  void clear_queued_for_compilation()  { _access_flags.clear_queued_for_compilation();   }
+  void clear_queued_for_compilation()  { set_queued_for_compilation(false);   }
 
   // Resolve all classes in signature, return 'true' if successful
   static bool load_signature_classes(const methodHandle& m, TRAPS);

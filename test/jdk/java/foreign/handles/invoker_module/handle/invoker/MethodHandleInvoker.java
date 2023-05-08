@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,8 @@
 
 package handle.invoker;
 
-import java.lang.foreign.SegmentScope;
+import java.lang.foreign.AddressLayout;
+import java.lang.foreign.Arena;
 import java.lang.foreign.Linker;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.MemoryLayout;
@@ -39,6 +40,7 @@ import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Consumer;
 
 public class MethodHandleInvoker {
     public void call(MethodHandle methodHandle) throws Throwable {
@@ -72,7 +74,8 @@ public class MethodHandleInvoker {
         addDefaultMapping(MemorySegment.class, MemorySegment.NULL);
         addDefaultMapping(MemoryLayout.class, ValueLayout.JAVA_INT);
         addDefaultMapping(FunctionDescriptor.class, FunctionDescriptor.ofVoid());
-        addDefaultMapping(SegmentScope.class, SegmentScope.auto());
+        addDefaultMapping(Arena.class, Arena.ofAuto());
+        addDefaultMapping(MemorySegment.Scope.class, Arena.ofAuto().scope());
         addDefaultMapping(SegmentAllocator.class, SegmentAllocator.prefixAllocator(MemorySegment.ofArray(new byte[10])));
         addDefaultMapping(ValueLayout.OfByte.class, ValueLayout.JAVA_BYTE);
         addDefaultMapping(ValueLayout.OfBoolean.class, ValueLayout.JAVA_BOOLEAN);
@@ -82,8 +85,9 @@ public class MethodHandleInvoker {
         addDefaultMapping(ValueLayout.OfFloat.class, ValueLayout.JAVA_FLOAT);
         addDefaultMapping(ValueLayout.OfLong.class, ValueLayout.JAVA_LONG);
         addDefaultMapping(ValueLayout.OfDouble.class, ValueLayout.JAVA_DOUBLE);
-        addDefaultMapping(ValueLayout.OfAddress.class, ValueLayout.ADDRESS);
+        addDefaultMapping(AddressLayout.class, ValueLayout.ADDRESS);
         addDefaultMapping(SymbolLookup.class, SymbolLookup.loaderLookup());
+        addDefaultMapping(Consumer.class, (Consumer<Object>)(Object o) -> {});
         addDefaultMapping(byte.class, (byte)0);
         addDefaultMapping(boolean.class, true);
         addDefaultMapping(char.class, (char)0);

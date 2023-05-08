@@ -513,9 +513,6 @@ class CollectedHeap : public CHeapObj<mtGC> {
   virtual void pin_object(JavaThread* thread, oop obj) = 0;
   virtual void unpin_object(JavaThread* thread, oop obj) = 0;
 
-  // Is the given object inside a CDS archive area?
-  virtual bool is_archived_object(oop object) const;
-
   // Support for loading objects from CDS archive into the heap
   // (usually as a snapshot of the old generation).
   virtual bool can_load_archived_objects() const { return false; }

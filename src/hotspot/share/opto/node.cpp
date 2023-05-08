@@ -521,10 +521,6 @@ Node *Node::clone() const {
     // If it is applicable, it will happen anyway when the cloned node is registered with IGVN.
     n->remove_flag(Node::NodeFlags::Flag_for_post_loop_opts_igvn);
   }
-  if (n->is_reduction()) {
-    // Do not copy reduction information. This must be explicitly set by the calling code.
-    n->remove_flag(Node::Flag_is_reduction);
-  }
   BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
   bs->register_potential_barrier_node(n);
 
