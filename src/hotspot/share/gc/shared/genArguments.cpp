@@ -240,10 +240,13 @@ void GenArguments::initialize_size_info() {
   size_t initial_young_size = NewSize;
 
   if (MaxHeapSize == InitialHeapSize) {
+    if (FLAG_IS_CMDLINE(NewSize)) {
+      // If NewSize is set on command line and larger than the
+      // current max_young_size, use NewSize instead.
+      max_young_size = MAX2(NewSize, max_young_size);
+    }
     // The maximum and initial heap sizes are the same so the generation's
-    // initial size must be the same as it maximum size. Use NewSize as the
-    // size if set on command line.
-    max_young_size = FLAG_IS_CMDLINE(NewSize) ? NewSize : max_young_size;
+    // initial size must be the same as its maximum size.
     initial_young_size = max_young_size;
 
     // Also update the minimum size if min == initial == max.
