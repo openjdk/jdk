@@ -148,7 +148,7 @@ private:
   static bool should_grow();
 
 public:
-  static uint rehash_table_expected_workers();
+  static bool rehash_table_expects_safepoint_rehashing();
   static void rehash_table();
   static bool needs_rehashing() { return _needs_rehashing; }
   static inline void update_needs_rehash(bool rehash) {

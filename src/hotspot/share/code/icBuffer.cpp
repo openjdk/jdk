@@ -161,8 +161,18 @@ void InlineCacheBuffer::refill_ic_stubs() {
   VMThread::execute(&ibf);
 }
 
-uint InlineCacheBuffer::update_inline_caches_expected_workers() {
-  return (buffer()->number_of_stubs() > 0 || pending_icholder_count() > 0) ? 1 : 0;
+bool InlineCacheBuffer::needs_update_inline_caches() {
+  // Stub removal
+  if (buffer()->number_of_stubs() > 0) {
+    return true;
+  }
+
+  // Release pending CompiledICHolder
+  if (pending_icholder_count() > 0) {
+    return true;
+  }
+
+  return false;
 }
 
 void InlineCacheBuffer::update_inline_caches() {

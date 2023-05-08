@@ -550,9 +550,17 @@ public:
   uint expected_num_workers() const {
     uint workers = 0;
 
-    workers += SymbolTable::rehash_table_expected_workers();
-    workers += StringTable::rehash_table_expected_workers();
-    workers += InlineCacheBuffer::update_inline_caches_expected_workers();
+    if (SymbolTable::rehash_table_expects_safepoint_rehashing()) {
+      workers++;
+    }
+
+    if (StringTable::rehash_table_expects_safepoint_rehashing()) {
+      workers++;
+    }
+
+    if (InlineCacheBuffer::needs_update_inline_caches()) {
+      workers++;
+    }
 
     if (_do_lazy_roots) {
       workers++;

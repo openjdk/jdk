@@ -535,8 +535,28 @@ bool StringTable::should_grow() {
   return get_load_factor() > PREF_AVG_LIST_LEN && !_local_table->is_max_size_reached();
 }
 
-uint StringTable::rehash_table_expected_workers() {
-  return (!_needs_rehashing || should_grow() || _rehashed || !_local_table->is_safepoint_safe()) ? 0 : 1;
+bool StringTable::rehash_table_expects_safepoint_rehashing() {
+  // No rehashing required
+  if (!needs_rehashing()) {
+    return false;
+  }
+
+  // Grow instead of rehash
+  if (should_grow()) {
+    return false;
+  }
+
+  // Already rehashed
+  if (_rehashed) {
+    return false;
+  }
+
+  // Resizing in progress
+  if (!_local_table->is_safepoint_safe()) {
+    return false;
+  }
+
+  return true;
 }
 
 void StringTable::rehash_table() {
