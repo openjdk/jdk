@@ -371,15 +371,25 @@ public class GetObjectSizeIntrinsicsTest extends ASimpleInstrumentationTestCase 
         return (v + a - 1) / a * a;
     }
 
+    private static long expectedSmallObjSize() {
+        long size;
+        if (!Platform.is64bit() || WhiteBox.getWhiteBox().getBooleanVMFlag("UseCompactObjectHeaders")) {
+            size = 8;
+        } else {
+            size = 16;
+        }
+        return roundUp(size, OBJ_ALIGN);
+    }
+
     private void testSize_newObject() {
-        long expected = roundUp(Platform.is64bit() ? 16 : 8, OBJ_ALIGN);
+        long expected = expectedSmallObjSize();
         for (int c = 0; c < ITERS; c++) {
             assertEquals(expected, fInst.getObjectSize(new Object()));
         }
     }
 
     private void testSize_localObject() {
-        long expected = roundUp(Platform.is64bit() ? 16 : 8, OBJ_ALIGN);
+        long expected = expectedSmallObjSize();
         Object o = new Object();
         for (int c = 0; c < ITERS; c++) {
             assertEquals(expected, fInst.getObjectSize(o));
@@ -389,7 +399,7 @@ public class GetObjectSizeIntrinsicsTest extends ASimpleInstrumentationTestCase 
     static Object staticO = new Object();
 
     private void testSize_fieldObject() {
-        long expected = roundUp(Platform.is64bit() ? 16 : 8, OBJ_ALIGN);
+        long expected = expectedSmallObjSize();
         for (int c = 0; c < ITERS; c++) {
             assertEquals(expected, fInst.getObjectSize(staticO));
         }
