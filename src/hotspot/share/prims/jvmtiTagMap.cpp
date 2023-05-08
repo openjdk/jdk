@@ -2243,7 +2243,8 @@ private:
   int _depth;
   frame* _last_entry_frame;
 
-  bool report_stack_refs(StackValueCollection* values, jmethodID method, jlocation bci, jint slot_offset);
+  bool report_java_stack_refs(StackValueCollection* values, jmethodID method, jlocation bci, jint slot_offset);
+  bool report_native_stack_refs(jmethodID method);
 
 public:
   StackRefCollector(JvmtiTagMap* tag_map, JNILocalRootsClosure* blk, JavaThread* java_thread)
@@ -2277,7 +2278,7 @@ bool StackRefCollector::set_thread(jvmtiHeapReferenceKind kind, oop o) {
          && CallbackInvoker::report_simple_root(kind, _threadObj);
 }
 
-bool StackRefCollector::report_stack_refs(StackValueCollection* values, jmethodID method, jlocation bci, jint slot_offset) {
+bool StackRefCollector::report_java_stack_refs(StackValueCollection* values, jmethodID method, jlocation bci, jint slot_offset) {
   for (int index = 0; index < values->size(); index++) {
     if (values->at(index)->type() == T_OBJECT) {
       oop obj = values->obj_at(index)();
@@ -2288,6 +2289,28 @@ bool StackRefCollector::report_stack_refs(StackValueCollection* values, jmethodI
       // stack reference
       if (!CallbackInvoker::report_stack_ref_root(_thread_tag, _tid, _depth, method,
                                                   bci, slot_offset + index, obj)) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+bool StackRefCollector::report_native_stack_refs(jmethodID method) {
+  _blk->set_context(_thread_tag, _tid, _depth, method);
+  if (_is_top_frame) {
+    // JNI locals for the top frame.
+    assert(_java_thread != nullptr, "sanity");
+    _java_thread->active_handles()->oops_do(_blk);
+    if (_blk->stopped()) {
+      return false;
+    }
+  } else {
+    if (_last_entry_frame != nullptr) {
+      // JNI locals for the entry frame
+      assert(_last_entry_frame->is_entry_frame(), "checking");
+      _last_entry_frame->entry_frame_call_wrapper()->handles()->oops_do(_blk);
+      if (_blk->stopped()) {
         return false;
       }
     }
@@ -2306,10 +2329,10 @@ bool StackRefCollector::do_frame(vframe* vf) {
     if (!(jvf->method()->is_native())) {
       jlocation bci = (jlocation)jvf->bci();
       StackValueCollection* locals = jvf->locals();
-      if (!report_stack_refs(locals, method, bci, 0)) {
+      if (!report_java_stack_refs(locals, method, bci, 0)) {
         return false;
       }
-      if (!report_stack_refs(jvf->expressions(), method, bci, locals->size())) {
+      if (!report_java_stack_refs(jvf->expressions(), method, bci, locals->size())) {
         return false;
       }
 
@@ -2323,23 +2346,8 @@ bool StackRefCollector::do_frame(vframe* vf) {
       }
     } else {
       // native frame
-      _blk->set_context(_thread_tag, _tid, _depth, method);
-      if (_is_top_frame) {
-        // JNI locals for the top frame.
-        assert(_java_thread != nullptr, "sanity");
-        _java_thread->active_handles()->oops_do(_blk);
-        if (_blk->stopped()) {
-          return false;
-        }
-      } else {
-        if (_last_entry_frame != nullptr) {
-          // JNI locals for the entry frame
-          assert(_last_entry_frame->is_entry_frame(), "checking");
-          _last_entry_frame->entry_frame_call_wrapper()->handles()->oops_do(_blk);
-          if (_blk->stopped()) {
-            return false;
-          }
-        }
+      if (!report_native_stack_refs(method)) {
+        return false;
       }
     }
     _last_entry_frame = nullptr;
