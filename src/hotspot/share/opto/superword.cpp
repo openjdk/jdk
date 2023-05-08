@@ -2387,7 +2387,7 @@ public:
       if (pid == 0) {
         pid = new_pid();
         set_pid(n, pid);
-        assert(_slp->my_pack(n) == nullptr || UseVectorCmov, "no packset");
+        assert(_slp->my_pack(n) == nullptr, "no packset");
       }
     }
 
