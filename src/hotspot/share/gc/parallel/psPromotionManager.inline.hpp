@@ -76,14 +76,14 @@ inline void PSPromotionManager::promotion_trace_event(oop new_obj, oop old_obj,
       if (gc_tracer->should_report_promotion_in_new_plab_event()) {
         size_t obj_bytes = obj_size * HeapWordSize;
         size_t lab_size = lab->capacity();
-        gc_tracer->report_promotion_in_new_plab_event(old_obj->klass(), obj_bytes,
+        gc_tracer->report_promotion_in_new_plab_event(old_obj->forward_safe_klass(), obj_bytes,
                                                       age, tenured, lab_size);
       }
     } else {
       // Promotion of object directly to heap
       if (gc_tracer->should_report_promotion_outside_plab_event()) {
         size_t obj_bytes = obj_size * HeapWordSize;
-        gc_tracer->report_promotion_outside_plab_event(old_obj->klass(), obj_bytes,
+        gc_tracer->report_promotion_outside_plab_event(old_obj->forward_safe_klass(), obj_bytes,
                                                        age, tenured);
       }
     }

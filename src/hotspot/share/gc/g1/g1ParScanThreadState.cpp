@@ -381,11 +381,11 @@ void G1ParScanThreadState::report_promotion_event(G1HeapRegionAttr const dest_at
                                                   HeapWord * const obj_ptr, uint node_index) const {
   PLAB* alloc_buf = _plab_allocator->alloc_buffer(dest_attr, node_index);
   if (alloc_buf->contains(obj_ptr)) {
-    _g1h->gc_tracer_stw()->report_promotion_in_new_plab_event(old->klass(), word_sz * HeapWordSize, age,
+    _g1h->gc_tracer_stw()->report_promotion_in_new_plab_event(old->forward_safe_klass(), word_sz * HeapWordSize, age,
                                                               dest_attr.type() == G1HeapRegionAttr::Old,
                                                               alloc_buf->word_sz() * HeapWordSize);
   } else {
-    _g1h->gc_tracer_stw()->report_promotion_outside_plab_event(old->klass(), word_sz * HeapWordSize, age,
+    _g1h->gc_tracer_stw()->report_promotion_outside_plab_event(old->forward_safe_klass(), word_sz * HeapWordSize, age,
                                                                dest_attr.type() == G1HeapRegionAttr::Old);
   }
 }
