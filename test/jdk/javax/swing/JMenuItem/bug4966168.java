@@ -42,12 +42,6 @@ public class bug4966168 {
     }
 
     public static void main(String args[]) throws Exception {
-        bug4966168 test = new bug4966168();
-        test.init();
-    }
-
-    public void init() {
-
         JButton button = new JButton(new MyAction());
 
         ObjectOutputStream out = null;

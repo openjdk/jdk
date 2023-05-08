@@ -38,16 +38,11 @@ import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
 
 public class bug4304129 {
-    private int mnemonic = 102;
-    private KeyStroke accelerator = KeyStroke.getKeyStroke(
+    private static int mnemonic = 102;
+    private static KeyStroke accelerator = KeyStroke.getKeyStroke(
                                         KeyEvent.VK_E, Event.CTRL_MASK);
 
     public static void main(String args[]) throws Exception {
-        bug4304129 test = new bug4304129();
-        test.init();
-    }
-
-    public void init() {
         JMenuItem mi = new JMenuItem(new TestAction("Delete Folder"));
 
         if (mi.getMnemonic() != mnemonic) {
@@ -55,13 +50,13 @@ public class bug4304129 {
         }
 
         if (mi.getAccelerator() == null ||
-            ! mi.getAccelerator().equals(accelerator)) {
+                ! mi.getAccelerator().equals(accelerator)) {
 
             throw new Error("Failed: accelerator not set from Action");
         }
     }
 
-    class TestAction extends AbstractAction {
+    static class TestAction extends AbstractAction {
         TestAction(String str) {
             super(str);
             putValue(AbstractAction.ACCELERATOR_KEY, accelerator);

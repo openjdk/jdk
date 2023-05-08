@@ -36,27 +36,20 @@ import javax.swing.UIManager;
 public class bug4198809 {
     static JFrame frame;
     public static void main(String args[]) throws Exception {
-        bug4198809 test = new bug4198809();
+        UIManager.setLookAndFeel("com.sun.java.swing.plaf.motif.MotifLookAndFeel");
+
         SwingUtilities.invokeAndWait(() -> {
             try {
-                test.init();
+                frame = new JFrame("bug4198809");
+                JMenuItem mi = new JMenuItem("test");
+                mi.setDisabledIcon(null);
+                mi.setEnabled(false);
+                frame.getContentPane().add(mi);
             } finally {
                 if (frame != null) {
                     frame.dispose();
                 }
             }
         });
-    }
-
-    public void init() {
-        try {
-            UIManager.setLookAndFeel("com.sun.java.swing.plaf.motif.MotifLookAndFeel");
-        } catch (Exception e) {}
-
-        frame = new JFrame("bug4198809");
-        JMenuItem mi = new JMenuItem("test");
-        mi.setDisabledIcon(null);
-        mi.setEnabled(false);
-        frame.getContentPane().add(mi);
     }
 }
