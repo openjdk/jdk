@@ -469,18 +469,18 @@ endif
 # as a depenendency of a make rule, instead of having to conditionally depend on
 # $1 instead, based on the target platform.
 ifeq ($(call isTargetOs, windows), true)
-  FixPath = \
+  FixPath =\
     $(strip $(subst \,\\, $(shell $(FIXPATH_BASE) print $(patsubst $(FIXPATH), , $1))))
-  FixPathImport = \
+  FixPathImport =\
     $(strip $(subst \,\\, $(shell $(FIXPATH_BASE) import $(patsubst $(FIXPATH), , $1))))
-  FixPathFile = \
+  FixPathFile =\
     $(shell $(FIXPATH_BASE) convert $1 $2)
 else
-  FixPath = \
+  FixPath =\
       $1
-  FixPathImport = \
+  FixPathImport =\
       $1
-  FixPathFile = \
+  FixPathFile =\
       $(shell $(CP) $1 $2)
 endif
 
