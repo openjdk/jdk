@@ -96,18 +96,10 @@ public class LookupSignatureInPoolTest {
         if (entry == null) {
             return;
         }
-        int index = cpi;
-        String cached = "";
-        int cpci = dummyClass.getCPCacheIndex(cpi);
-        if (cpci != ConstantPoolTestsHelper.NO_CP_CACHE_PRESENT) {
-            index = cpci;
-            cached = "cached ";
-        }
-        String sigToVerify = CompilerToVMHelper.lookupSignatureInPool(constantPoolCTVM, index);
+        String sigToVerify = CompilerToVMHelper.lookupSignatureInPool(constantPoolCTVM, cpi);
         String sigToRefer = entry.type;
-        String msg = String.format("Wrong signature accessed by %sconstant pool index %d",
-                                   cached,
-                                   index);
+        String msg = String.format("Wrong signature accessed by constant pool index %d",
+                                   cpi);
         Asserts.assertEQ(sigToVerify, sigToRefer, msg);
     }
 }

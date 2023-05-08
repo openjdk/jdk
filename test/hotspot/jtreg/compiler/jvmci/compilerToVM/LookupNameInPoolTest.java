@@ -96,16 +96,9 @@ public class LookupNameInPoolTest {
         if (entry == null) {
             return;
         }
-        int index = cpi;
-        String cached = "";
-        int cpci = dummyClass.getCPCacheIndex(cpi);
-        if (cpci != ConstantPoolTestsHelper.NO_CP_CACHE_PRESENT) {
-            index = cpci;
-            cached = "cached ";
-        }
-        String nameToVerify = CompilerToVMHelper.lookupNameInPool(constantPoolCTVM, index);
+        String nameToVerify = CompilerToVMHelper.lookupNameInPool(constantPoolCTVM, cpi);
         String nameToRefer = entry.name;
-        String msg = String.format("Wrong name accessed by %sconstant pool index %d", cached, index);
+        String msg = String.format("Wrong name accessed by constant pool index %d", cpi);
         Asserts.assertEQ(nameToVerify, nameToRefer, msg);
     }
 }

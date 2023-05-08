@@ -95,19 +95,11 @@ public class LookupNameAndTypeRefIndexInPoolTest {
         if (entry == null) {
             return;
         }
-        int index = cpi;
-        String cached = "";
-        int cpci = dummyClass.getCPCacheIndex(cpi);
-        if (cpci != ConstantPoolTestsHelper.NO_CP_CACHE_PRESENT) {
-            index = cpci;
-            cached = "cached ";
-        }
-        int indexToVerify = CompilerToVMHelper.lookupNameAndTypeRefIndexInPool(constantPoolCTVM, index);
+        int indexToVerify = CompilerToVMHelper.lookupNameAndTypeRefIndexInPool(constantPoolCTVM, cpi);
         int indexToRefer = dummyClass.constantPoolSS.getNameAndTypeRefIndexAt(cpi);
         String msg = String.format("Wrong nameAndType index returned by lookupNameAndTypeRefIndexInPool"
-                                           + " method applied to %sconstant pool index %d",
-                                   cached,
-                                   index);
+                                           + " method applied to constant pool index %d",
+                                   cpi);
         Asserts.assertEQ(indexToRefer, indexToVerify, msg);
     }
 }

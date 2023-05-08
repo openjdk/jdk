@@ -93,19 +93,10 @@ public class LookupKlassRefIndexInPoolTest {
         if (entry == null) {
             return;
         }
-        int index = cpi;
-        String cached = "";
-        int cpci = dummyClass.getCPCacheIndex(cpi);
-        if (cpci != ConstantPoolTestsHelper.NO_CP_CACHE_PRESENT) {
-            index = cpci;
-            cached = "cached ";
-        }
-        int indexToVerify = CompilerToVMHelper.lookupKlassRefIndexInPool(constantPoolCTVM, index);
+        int indexToVerify = CompilerToVMHelper.lookupKlassRefIndexInPool(constantPoolCTVM, cpi);
         int indexToRefer = dummyClass.constantPoolSS.getClassRefIndexAt(cpi);
         String msg = String.format("Wrong class index returned by lookupKlassRefIndexInPool method "
-                                           + "applied to %sconstant pool index %d",
-                                   cached,
-                                   index);
+                                           + "applied to constant pool index %d", cpi);
         Asserts.assertEQ(indexToRefer, indexToVerify, msg);
     }
 }
