@@ -408,7 +408,7 @@ $(function() {
     $("input#search-input").focus(collapse);
     $("main").click(collapse);
     $("section[id] > :header, :header[id], :header:has(a[id])").each(function(idx, el) {
-        // Create anchor liniks for headers with an associated id attribute
+        // Create anchor links for headers with an associated id attribute
         var hdr = $(el);
         var id = hdr.attr("id") || hdr.parent("section").attr("id") || hdr.children("a").attr("id");
         if (id) {
