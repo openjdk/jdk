@@ -55,7 +55,7 @@ inline JavaThread* const* G1JavaThreadsListClaimer::claim(uint& count) {
   if (Atomic::load(&_cur_claim) >= _list.length()) {
     return nullptr;
   }
-  uint claim = Atomic::fetch_and_add(&_cur_claim, _claim_step);
+  uint claim = Atomic::fetch_then_add(&_cur_claim, _claim_step);
   if (claim >= _list.length()) {
     return nullptr;
   }

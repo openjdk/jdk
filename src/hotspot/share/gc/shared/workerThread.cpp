@@ -61,7 +61,7 @@ void WorkerTaskDispatcher::worker_run_task() {
   _start_semaphore.wait();
 
   // Get and set worker id.
-  const uint worker_id = Atomic::fetch_and_add(&_started, 1u);
+  const uint worker_id = Atomic::fetch_then_add(&_started, 1u);
   WorkerThread::set_worker_id(worker_id);
 
   // Run task.
