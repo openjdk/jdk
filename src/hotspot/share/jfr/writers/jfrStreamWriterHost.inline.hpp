@@ -75,11 +75,11 @@ template <typename Adapter, typename AP>
 inline void StreamWriterHost<Adapter, AP>::write_bytes(const u1* buf, intptr_t len) {
   assert(len >= 0, "invariant");
   const unsigned int nBytes = len > INT_MAX ? INT_MAX : (unsigned int)len;
-  const ssize_t num_written = os::write(_fd, buf, nBytes);
-  if (num_written < 0 && errno == ENOSPC) {
+  const bool successful_write = os::write(_fd, buf, nBytes);
+  if (!successful_write && errno == ENOSPC) {
     JfrJavaSupport::abort("Failed to write to jfr stream because no space left on device", false);
   }
-  guarantee(num_written == 0, "Not all the bytes got written, or os::write() failed");
+  guarantee(successful_write, "Not all the bytes got written, or os::write() failed");
   _stream_pos += nBytes;
 }
 

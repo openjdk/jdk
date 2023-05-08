@@ -374,8 +374,8 @@ static void write_repository_files(const RepositoryIterator& iterator, char* con
     if (current_fd != invalid_fd) {
       const int64_t size = file_size(current_fd);
       assert(size > 0, "invariant");
-      unsigned int bytes_read = 0;
-      unsigned int bytes_written = 0;
+      int64_t bytes_read = 0;
+      int64_t bytes_written = 0;
       while (bytes_read < size) {
         const ssize_t read_result = os::read_at(current_fd, copy_block, (int)block_size, bytes_read);
         if (-1 == read_result) {
@@ -383,10 +383,10 @@ static void write_repository_files(const RepositoryIterator& iterator, char* con
               "Unable to recover JFR data, read failed.");
           break;
         }
-        bytes_read += (unsigned int)read_result;
-        assert(bytes_read - bytes_written <= block_size, "invariant");
-        const ssize_t write_result = os::write(emergency_fd, copy_block, bytes_read - bytes_written);
-        if (-1 == write_result) {
+        bytes_read += (int64_t)read_result;
+        assert(bytes_read - bytes_written <= (int64_t)block_size, "invariant");
+        const bool successful_write = os::write(emergency_fd, copy_block, bytes_read - bytes_written);
+        if (!successful_write) {
           log_info(jfr)( // For user, should not be "jfr, system"
               "Unable to recover JFR data, write failed.");
           break;

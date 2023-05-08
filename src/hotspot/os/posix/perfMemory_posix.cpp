@@ -102,8 +102,8 @@ static void save_memory_to_file(char* addr, size_t size) {
   } else {
     ssize_t result;
 
-    result = os::write(fd, addr, size);
-    if (result < 0) {
+    bool successful_write = os::write(fd, addr, size);
+    if (!successful_write) {
       warning("Could not write Perfdata save file: %s: %s\n",
               destfile, os::strerror(errno));
     }
@@ -949,11 +949,12 @@ static int create_sharedmem_file(const char* dirname, const char* filename, size
     int zero_int = 0;
     result = (int)os::seek_to_file_offset(fd, (jlong)(seekpos));
     if (result == -1 ) break;
-    result = os::write(fd, &zero_int, 1);
-    if (result != 0) {
+    bool successful_write = os::write(fd, &zero_int, 1);
+    if (!successful_write) {
       if (errno == ENOSPC) {
         warning("Insufficient space for shared memory file:\n   %s\nTry using the -Djava.io.tmpdir= option to select an alternate temp location.\n", filename);
       }
+      result = OS_ERR;
       break;
     }
   }
