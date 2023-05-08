@@ -2106,9 +2106,9 @@ JVM_ENTRY(jlong, jmm_GetTotalThreadAllocatedMemory(JNIEnv *env))
     // before the call to exited_allocated_bytes to ensure we don't miss
     // accounting for threads that are just about to terminate.
     JavaThreadIteratorWithHandle jtiwh;
-    jlong result = ThreadService::exited_allocated_bytes();
-    JavaThread* thread;
-    while ((thread = jtiwh.next()) != nullptr) {
+    jlong result;
+    for (result = ThreadService::exited_allocated_bytes();
+         JavaThread* thread = jtiwh.next();) {
       jlong size = thread->cooked_allocated_bytes();
       result += size;
     }
