@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -199,7 +199,7 @@ private:
   // collection. Subsumes common checks like filtering out everything but old and
   // humongous regions outside the collection set.
   // This is valid because we are not interested in scanning stray remembered set
-  // entries from free or archive regions.
+  // entries from free regions.
   HeapWord** _scan_top;
 
   class G1ClearCardTableTask : public G1AbstractSubTask {
@@ -257,16 +257,16 @@ private:
 public:
   G1RemSetScanState() :
     _max_reserved_regions(0),
-    _collection_set_iter_state(NULL),
-    _card_table_scan_state(NULL),
+    _collection_set_iter_state(nullptr),
+    _card_table_scan_state(nullptr),
     _scan_chunks_per_region(G1CollectedHeap::get_chunks_per_region()),
     _log_scan_chunks_per_region(log2i(_scan_chunks_per_region)),
-    _region_scan_chunks(NULL),
+    _region_scan_chunks(nullptr),
     _num_total_scan_chunks(0),
     _scan_chunks_shift(0),
-    _all_dirty_regions(NULL),
-    _next_dirty_regions(NULL),
-    _scan_top(NULL) {
+    _all_dirty_regions(nullptr),
+    _next_dirty_regions(nullptr),
+    _scan_top(nullptr) {
   }
 
   ~G1RemSetScanState() {
@@ -277,7 +277,7 @@ public:
   }
 
   void initialize(size_t max_reserved_regions) {
-    assert(_collection_set_iter_state == NULL, "Must not be initialized twice");
+    assert(_collection_set_iter_state == nullptr, "Must not be initialized twice");
     _max_reserved_regions = max_reserved_regions;
     _collection_set_iter_state = NEW_C_HEAP_ARRAY(G1RemsetIterState, max_reserved_regions, mtGC);
     _card_table_scan_state = NEW_C_HEAP_ARRAY(uint, max_reserved_regions, mtGC);
@@ -327,7 +327,7 @@ public:
   // as we do not clean up remembered sets before merging heap roots.
   bool contains_cards_to_process(uint const region_idx) const {
     HeapRegion* hr = G1CollectedHeap::heap()->region_at_or_null(region_idx);
-    return (hr != NULL && !hr->in_collection_set() && hr->is_old_or_humongous_or_archive());
+    return (hr != nullptr && !hr->in_collection_set() && hr->is_old_or_humongous());
   }
 
   size_t num_visited_cards() const {
@@ -368,10 +368,10 @@ public:
 
   void cleanup() {
     delete _all_dirty_regions;
-    _all_dirty_regions = NULL;
+    _all_dirty_regions = nullptr;
 
     delete _next_dirty_regions;
-    _next_dirty_regions = NULL;
+    _next_dirty_regions = nullptr;
   }
 
   void iterate_dirty_regions_from(HeapRegionClosure* cl, uint worker_id) {
@@ -426,7 +426,7 @@ public:
   void add_dirty_region(uint const region) {
 #ifdef ASSERT
    HeapRegion* hr = G1CollectedHeap::heap()->region_at(region);
-   assert(!hr->in_collection_set() && hr->is_old_or_humongous_or_archive(),
+   assert(!hr->in_collection_set() && hr->is_old_or_humongous(),
           "Region %u is not suitable for scanning, is %sin collection set or %s",
           hr->hrm_index(), hr->in_collection_set() ? "" : "not ", hr->get_short_type_str());
 #endif
@@ -452,7 +452,7 @@ public:
   }
 
   void clear_scan_top(uint region_idx) {
-    set_scan_top(region_idx, NULL);
+    set_scan_top(region_idx, nullptr);
   }
 };
 
@@ -536,7 +536,7 @@ class G1ScanHRForRegionClosure : public HeapRegionClosure {
     G1ScanCardClosure card_cl(_g1h, _pss, _heap_roots_found);
 
     HeapWord* const scanned_to = card_region->oops_on_memregion_seq_iterate_careful<true>(mr, &card_cl);
-    assert(scanned_to != NULL, "Should be able to scan range");
+    assert(scanned_to != nullptr, "Should be able to scan range");
     assert(scanned_to >= mr.end(), "Scanned to " PTR_FORMAT " less than range " PTR_FORMAT, p2i(scanned_to), p2i(mr.end()));
 
     _pss->trim_queue_partially();
@@ -549,11 +549,6 @@ class G1ScanHRForRegionClosure : public HeapRegionClosure {
     _blocks_scanned++;
 
     HeapWord* const card_start = _ct->addr_for(dirty_l);
-#ifdef ASSERT
-    HeapRegion* hr = _g1h->region_at_or_null(region_idx);
-    assert(hr == NULL || hr->is_in_reserved(card_start),
-             "Card start " PTR_FORMAT " to scan outside of region %u", p2i(card_start), _g1h->region_at(region_idx)->hrm_index());
-#endif
     HeapWord* const top = _scan_state->scan_top(region_idx);
     if (card_start >= top) {
       return;
@@ -674,11 +669,11 @@ class G1ScanHRForRegionClosure : public HeapRegionClosure {
 
     G1CardTableChunkClaimer claim(_scan_state, region_idx);
 
-    // Set the current scan "finger" to NULL for every heap region to scan. Since
+    // Set the current scan "finger" to null for every heap region to scan. Since
     // the claim value is monotonically increasing, the check to not scan below this
     // will filter out objects spanning chunks within the region too then, as opposed
     // to resetting this value for every claim.
-    _scanned_to = NULL;
+    _scanned_to = nullptr;
 
     while (claim.has_next()) {
       _chunks_claimed++;
@@ -713,13 +708,13 @@ public:
     _heap_roots_found(0),
     _rem_set_root_scan_time(),
     _rem_set_trim_partially_time(),
-    _scanned_to(NULL),
+    _scanned_to(nullptr),
     _scanned_card_value(remember_already_scanned_cards ? G1CardTable::g1_scanned_card_val()
                                                        : G1CardTable::clean_card_val()) {
   }
 
   bool do_heap_region(HeapRegion* r) {
-    assert(!r->in_collection_set() && r->is_old_or_humongous_or_archive(),
+    assert(!r->in_collection_set() && r->is_old_or_humongous(),
            "Should only be called on old gen non-collection set regions but region %u is not.",
            r->hrm_index());
     uint const region_idx = r->hrm_index();
@@ -873,7 +868,7 @@ void G1RemSet::scan_collection_set_regions(G1ParScanThreadState* pss,
 
 #ifdef ASSERT
 void G1RemSet::assert_scan_top_is_null(uint hrm_index) {
-  assert(_scan_state->scan_top(hrm_index) == NULL,
+  assert(_scan_state->scan_top(hrm_index) == nullptr,
          "scan_top of region %u is unexpectedly " PTR_FORMAT,
          hrm_index, p2i(_scan_state->scan_top(hrm_index)));
 }
@@ -885,10 +880,10 @@ void G1RemSet::prepare_region_for_scan(HeapRegion* r) {
   r->prepare_remset_for_scan();
 
   // Only update non-collection set old regions, others must have already been set
-  // to NULL (don't scan) in the initialization.
+  // to null (don't scan) in the initialization.
   if (r->in_collection_set()) {
     assert_scan_top_is_null(hrm_index);
-  } else if (r->is_old_or_humongous_or_archive()) {
+  } else if (r->is_old_or_humongous()) {
     _scan_state->set_scan_top(hrm_index, r->top());
   } else {
     assert_scan_top_is_null(hrm_index);
@@ -1449,14 +1444,14 @@ bool G1RemSet::clean_card_before_refine(CardValue** const card_ptr_addr) {
   HeapRegion* r = _g1h->heap_region_containing_or_null(start);
 
   // If this is a (stale) card into an uncommitted region, exit.
-  if (r == NULL) {
+  if (r == nullptr) {
     return false;
   }
 
   check_card_ptr(card_ptr, _ct);
 
   // If the card is no longer dirty, nothing to do.
-  // We cannot load the card value before the "r == NULL" check, because G1
+  // We cannot load the card value before the "r == nullptr" check above, because G1
   // could uncommit parts of the card table covering uncommitted regions.
   if (*card_ptr != G1CardTable::dirty_card_val()) {
     return false;
@@ -1481,7 +1476,7 @@ bool G1RemSet::clean_card_before_refine(CardValue** const card_ptr_addr) {
   // In the normal (non-stale) case, the synchronization between the
   // enqueueing of the card and processing it here will have ensured
   // we see the up-to-date region type here.
-  if (!r->is_old_or_humongous_or_archive()) {
+  if (!r->is_old_or_humongous()) {
     return false;
   }
 
@@ -1490,9 +1485,8 @@ bool G1RemSet::clean_card_before_refine(CardValue** const card_ptr_addr) {
   // (part of) an object at the end of the allocated space and extend
   // beyond the end of allocation.
 
-  // Non-humongous objects are either allocated in the old regions during GC,
-  // or mapped in archive regions during startup. So if region is old or
-  // archive then top is stable.
+  // Non-humongous objects are either allocated in the old regions during GC.
+  // So if region is old then top is stable.
   // Humongous object allocation sets top last; if top has not yet been set,
   // this is a stale card and we'll end up with an empty intersection.
   // If this is not a stale card, the synchronization between the
@@ -1523,7 +1517,7 @@ void G1RemSet::refine_card_concurrently(CardValue* const card_ptr,
   // And find the region containing it.
   HeapRegion* r = _g1h->heap_region_containing(start);
   // This reload of the top is safe even though it happens after the full
-  // fence, because top is stable for old, archive and unfiltered humongous
+  // fence, because top is stable for old and unfiltered humongous
   // regions, so it must return the same value as the previous load when
   // cleaning the card. Also cleaning the card and refinement of the card
   // cannot span across safepoint, so we don't need to worry about top being
@@ -1538,7 +1532,7 @@ void G1RemSet::refine_card_concurrently(CardValue* const card_ptr,
   assert(!dirty_region.is_empty(), "sanity");
 
   G1ConcurrentRefineOopClosure conc_refine_cl(_g1h, worker_id);
-  if (r->oops_on_memregion_seq_iterate_careful<false>(dirty_region, &conc_refine_cl) != NULL) {
+  if (r->oops_on_memregion_seq_iterate_careful<false>(dirty_region, &conc_refine_cl) != nullptr) {
     return;
   }
 
