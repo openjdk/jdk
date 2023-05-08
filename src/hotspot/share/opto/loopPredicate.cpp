@@ -54,7 +54,7 @@
  * There are different kinds of predicates throughout the code. We differentiate between the following predicates:
  *
  * - Parse Predicate: Added during parsing to capture the current JVM state. This predicate represents a "placeholder"
- *                    above which more (runtime) predicates can be added later after parsing.
+ *                    above which more Runtime Predicates can be created later after parsing.
  *
  *                    There are initially three Parse Predicates for each loop:
  *                    - Loop Parse Predicate:             The Parse Predicate added for Loop Predicates.
@@ -134,7 +134,7 @@
  *                                                   values. Initially (before unrolling), both Assertion Predicates are
  *                                                   equal. The Initialized Assertion Predicates are always true because
  *                                                   their range is covered by a corresponding Hoisted Predicate.
- *                        - Range Check Elimination: A range check is removed from the main-loop by changing the pre/post
+ *                        - Range Check Elimination: A range check is removed from the main-loop by changing the pre
  *                                                   and main-loop iterations. We add two additional Template Assertion
  *                                                   Predicates (see explanation in section above) and one Initialized
  *                                                   Assertion Predicate for the just removed range check. When later
@@ -148,6 +148,9 @@
  * In order to group predicates and refer to them throughout the code, we introduce the following additional terms:
  * - Runtime Predicate Block: A block containing all Runtime Predicates belonging to a single Parse Predicate. This block
  *                            could be empty if there were no Runtime Predicates created at this Parse Predicate.
+ *                            For the time being: We also count Assertion Predicates to this block but that will be
+ *                            changed with the redesign of Assertion Predicates where we remove them from this block
+ *                            (JDK-8288981).
  * - Regular Predicate Block: A Regular Predicate Block consists of a Parse Predicate a Runtime Predicate Block (all its
  *                            Runtime Predicates, if any). There are three such blocks:
  *                            - Loop Predicate Block
