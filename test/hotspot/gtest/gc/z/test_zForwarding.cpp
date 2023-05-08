@@ -43,9 +43,29 @@ using namespace testing;
 class ZForwardingTest : public Test {
 public:
   // Setup and tear down
-  ZHeap*       _old_heap;
-  ZGenerationOld* _old_old;
+  ZHeap*            _old_heap;
+  ZGenerationOld*   _old_old;
   ZGenerationYoung* _old_young;
+  char*             _reserved;
+  static size_t     _page_offset;
+
+  char* reserve_page_memory() {
+    // Probe for a free 2MB region inside the usable address range.
+    // Inspired by ZVirtualMemoryManager::reserve_contiguous.
+    const size_t unused = ZAddressOffsetMax - ZGranuleSize;
+    const size_t increment = MAX2(align_up(unused / 100, ZGranuleSize), ZGranuleSize);
+
+    for (uintptr_t start = 0; start + ZGranuleSize <= ZAddressOffsetMax; start += increment) {
+      char* const reserved = os::attempt_reserve_memory_at((char*)ZAddressHeapBase + start, ZGranuleSize, false /* executable */);
+      if (reserved != nullptr) {
+        // Success
+        return reserved;
+      }
+    }
+
+    // Failed
+    return nullptr;
+  }
 
   virtual void SetUp() {
     ZGlobalsPointers::initialize();
@@ -64,9 +84,25 @@ public:
     ZGeneration::_old->_seqnum = 1;
     ZGeneration::_young->_seqnum = 2;
 
-    bool reserved = os::attempt_reserve_memory_at((char*)ZAddressHeapBase, ZGranuleSize, false /* executable */);
-    ASSERT_TRUE(reserved);
-    os::commit_memory((char*)ZAddressHeapBase, ZGranuleSize, false /* executable */);
+    // Preconditions for reserve_free_granule()
+    ASSERT_NE(ZAddressHeapBase, 0u);
+    ASSERT_NE(ZAddressOffsetMax, 0u);
+    ASSERT_NE(ZGranuleSize, 0u);
+
+    _reserved = nullptr;
+
+    // Find a suitable address for the testing page
+    char* reserved = reserve_page_memory();
+
+    ASSERT_NE(reserved, nullptr) << "Failed to reserve the page granule. Test needs tweaking";
+    ASSERT_GE(reserved, (char*)ZAddressHeapBase);
+    ASSERT_LT(reserved, (char*)ZAddressHeapBase + ZAddressOffsetMax);
+
+    _reserved = reserved;
+
+    os::commit_memory((char*)_reserved, ZGranuleSize, false /* executable */);
+
+    _page_offset = uintptr_t(_reserved) - ZAddressHeapBase;
   }
 
   virtual void TearDown() {
@@ -74,8 +110,10 @@ public:
     ZHeap::_heap = _old_heap;
     ZGeneration::_old = _old_old;
     ZGeneration::_young = _old_young;
-    os::uncommit_memory((char*)ZAddressHeapBase, ZGranuleSize, false /* executable */);
-    os::release_memory((char*)ZAddressHeapBase, ZGranuleSize);
+    if (_reserved != nullptr) {
+      os::uncommit_memory((char*)_reserved, ZGranuleSize, false /* executable */);
+      os::release_memory((char*)_reserved, ZGranuleSize);
+    }
   }
 
   // Helper functions
@@ -183,7 +221,7 @@ public:
 
   static void test(void (*function)(ZForwarding*), uint32_t size) {
     // Create page
-    const ZVirtualMemory vmem(zoffset(0), ZPageSizeSmall);
+    const ZVirtualMemory vmem(zoffset(_page_offset), ZPageSizeSmall);
     const ZPhysicalMemory pmem(ZPhysicalMemorySegment(zoffset(0), ZPageSizeSmall, true));
     ZPage page(ZPageType::small, vmem, pmem);
 
@@ -250,3 +288,5 @@ TEST_VM_F(ZForwardingTest, find_full) {
 TEST_VM_F(ZForwardingTest, find_every_other) {
   test(&ZForwardingTest::find_every_other);
 }
+
+size_t ZForwardingTest::_page_offset;
