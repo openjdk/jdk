@@ -1118,39 +1118,48 @@ static Node* extract_addition(PhaseGVN* phase, Node* x, jint x_off, Node* y, jin
 
 Node* MaxNode::IdealI(PhaseGVN* phase, bool can_reshape, int opcode) {
   assert(opcode == Op_MinI || opcode == Op_MaxI, "Unexpected opcode");
+  Node* l = in(1);
+  Node* r = in(2);
   jint x_off = 0;
-  Node* x = constant_add_input(in(1), &x_off);
+  Node* x = constant_add_input(l, &x_off);
   if (x == nullptr) return nullptr;
   jint y_off = 0;
-  Node* y = constant_add_input(in(2), &y_off);
+  Node* y = constant_add_input(r, &y_off);
   if (y == nullptr) return nullptr;
-  // Try to transform opcode(x + x_off, opcode(y + y_off, z)) into opcode(x +
-  // opcode(x_off, y_off), z), where opcode is either MinI or MaxI, if x == y
-  // and the additions can't overflow. Handle
+  // Try to transform opcode(x + x_off, opcode(y + y_off, z)) (in any of its
+  // four possible permutations given by opcode's commutativity) into
+  // opcode(x + opcode(x_off, y_off), z), where opcode is either MinI or MaxI,
+  // if x == y and the additions can't overflow.
   for (uint outer_input = 1; outer_input <= 2; outer_input++) {
-    Node* n = in(outer_input);
+    Node* n = in(outer_input); // Inner opcode operation.
     if (n->Opcode() != opcode) {
       continue;
     }
     for (uint inner_input = 1; inner_input <= 2; inner_input++) {
-      Node* add = n->in(inner_input);
-      Node* z   = n->in(inner_input == 1 ? 2 : 1);
-      if (outer_input == 1) {
-        x = constant_add_input(add, &x_off);
-      } else {
-        y = constant_add_input(add, &y_off);
+      Node* inner_add = n->in(inner_input);      // Addition within inner opcode.
+      Node* z = n->in(inner_input == 1 ? 2 : 1); // Opposite operand.
+      if (outer_input == 1) { // Update x from left inner add.
+        x = constant_add_input(inner_add, &x_off);
+        if (x == nullptr) {
+          return nullptr;
+        }
+      } else {                // Update y from right inner add.
+        y = constant_add_input(inner_add, &y_off);
+        if (y == nullptr) {
+          return nullptr;
+        }
       }
-      if (x == nullptr || y == nullptr) {
-        return nullptr;
-      }
-      Node* addi = extract_addition(phase, x, x_off, y, y_off, opcode);
-      if (addi == nullptr) {
+      // We have collected x, x_off, y, y_off, and z. Try to extract the inner
+      // addition if x == y and the additions can't overflow.
+      Node* result = extract_addition(phase, x, x_off, y, y_off, opcode);
+      if (result == nullptr) {
         continue;
       }
+      Node* transformed = phase->transform(result);
       if (opcode == Op_MinI) {
-        return new MinINode(phase->transform(addi), z);
+        return new MinINode(transformed, z);
       } else {
-        return new MaxINode(phase->transform(addi), z);
+        return new MaxINode(transformed, z);
       }
     }
   }
