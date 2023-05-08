@@ -3128,7 +3128,7 @@ jint Arguments::finalize_vm_init_args(bool patch_mod_javabase) {
   }
 
   if (UseCompactObjectHeaders && !UseHeavyMonitors) {
-    FLAG_SET_DEFAULT(UseHeavyMonitors, true);
+    FLAG_SET_DEFAULT(LockingMode, LM_LIGHTWEIGHT);
   }
   if (UseCompactObjectHeaders && !UseAltGCForwarding) {
     FLAG_SET_DEFAULT(UseAltGCForwarding, true);
