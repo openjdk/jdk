@@ -738,7 +738,6 @@ int ConstantPool::klass_ref_index_at(int index, Bytecodes::Code code) {
 }
 
 
-
 int ConstantPool::remap_instruction_operand_from_cache(int operand) {
   int cpc_index = operand;
   DEBUG_ONLY(cpc_index -= CPCACHE_INDEX_TAG);
