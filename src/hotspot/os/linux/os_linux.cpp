@@ -216,13 +216,8 @@ static bool suppress_primordial_thread_resolution = false;
 
 // utility functions
 
-julong os::available_memory() {
-  return Linux::available_memory();
-}
-
-julong os::Linux::available_memory() {
-  julong avail_mem = 0UL;
-
+julong os::Linux::available_memory_in_container() {
+  julong avail_mem = static_cast<julong>(-1L);
   if (OSContainer::is_containerized()) {
     jlong mem_limit = OSContainer::memory_limit_in_bytes();
     jlong mem_usage;
@@ -231,24 +226,34 @@ julong os::Linux::available_memory() {
     }
     if (mem_limit > 0 && mem_usage > 0) {
       avail_mem = mem_limit > mem_usage ? (julong)mem_limit - (julong)mem_usage : 0;
-      log_trace(os)("available container memory: " JULONG_FORMAT, avail_mem);
-      return avail_mem;
     }
+  }
+  return avail_mem;
+}
+
+julong os::available_memory() {
+  return Linux::available_memory();
+}
+
+julong os::Linux::available_memory() {
+  julong avail_mem = available_memory_in_container();
+  if (avail_mem != static_cast<julong>(-1L)) {
+    log_trace(os)("available container memory: " JULONG_FORMAT, avail_mem);
+    return avail_mem;
   }
 
   FILE *fp = os::fopen("/proc/meminfo", "r");
   if (fp) {
     char buf[80];
     do {
-      julong mem_available;
-      if (fscanf(fp, "MemAvailable: " JULONG_FORMAT " kB", &mem_available) == 1) {
-        avail_mem = mem_available;
+      if (fscanf(fp, "MemAvailable: " JULONG_FORMAT " kB", &avail_mem) == 1) {
+        avail_mem *= K;
         break;
       }
     } while (fgets(buf, sizeof(buf), fp) != nullptr);
     fclose(fp);
   }
-  if (avail_mem == 0UL) {
+  if (avail_mem == static_cast<julong>(-1L)) {
     avail_mem = free_memory();
   }
   log_trace(os)("available memory: " JULONG_FORMAT, avail_mem);
@@ -262,19 +267,10 @@ julong os::free_memory() {
 julong os::Linux::free_memory() {
   // values in struct sysinfo are "unsigned long"
   struct sysinfo si;
-  julong free_mem;
-
-  if (OSContainer::is_containerized()) {
-    jlong mem_limit = OSContainer::memory_limit_in_bytes();
-    jlong mem_usage;
-    if (mem_limit > 0 && (mem_usage = OSContainer::memory_usage_in_bytes()) < 1) {
-      log_debug(os, container)("container memory usage failed: " JLONG_FORMAT ", using host value", mem_usage);
-    }
-    if (mem_limit > 0 && mem_usage > 0) {
-      free_mem = mem_limit > mem_usage ? (julong)mem_limit - (julong)mem_usage : 0;
-      log_trace(os)("free container memory: " JULONG_FORMAT, free_mem);
-      return free_mem;
-    }
+  julong free_mem = available_memory_in_container();
+  if (free_mem != static_cast<julong>(-1L)) {
+    log_trace(os)("free container memory: " JULONG_FORMAT, free_mem);
+    return free_mem;
   }
 
   sysinfo(&si);
