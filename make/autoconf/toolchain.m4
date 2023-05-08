@@ -48,6 +48,7 @@ TOOLCHAIN_DESCRIPTION_clang="clang/LLVM"
 TOOLCHAIN_DESCRIPTION_gcc="GNU Compiler Collection"
 TOOLCHAIN_DESCRIPTION_microsoft="Microsoft Visual Studio"
 TOOLCHAIN_DESCRIPTION_xlc="IBM XL C/C++"
+# TODO: Remove this line
 
 # Minimum supported versions, empty means unspecified
 TOOLCHAIN_MINIMUM_VERSION_clang="3.5"
