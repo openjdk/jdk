@@ -84,7 +84,7 @@ markWord oopDesc::cas_set_mark(markWord new_mark, markWord old_mark, atomic_memo
 }
 
 markWord oopDesc::resolve_mark() const {
-  assert(UseHeavyMonitors, "Only safe with heavy monitors");
+  assert(LockingMode != LM_LEGACY, "Not safe with legacy stack-locking");
   markWord hdr = mark();
   if (hdr.has_displaced_mark_helper()) {
     hdr = hdr.displaced_mark_helper();
