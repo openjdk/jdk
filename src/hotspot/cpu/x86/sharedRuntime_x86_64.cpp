@@ -2149,8 +2149,9 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     // Load the oop from the handle
     __ movptr(obj_reg, Address(oop_handle_reg, 0));
 
-    if (!UseHeavyMonitors) {
-
+    if (LockingMode == LM_MONITOR) {
+      __ jmp(slow_path_lock);
+    } else if (LockingMode == LM_LEGACY) {
       // Load immediate 1 into swap_reg %rax
       __ movl(swap_reg, 1);
 
@@ -2183,7 +2184,10 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
       __ movptr(Address(lock_reg, mark_word_offset), swap_reg);
       __ jcc(Assembler::notEqual, slow_path_lock);
     } else {
-      __ jmp(slow_path_lock);
+      assert(LockingMode == LM_LIGHTWEIGHT, "must be");
+      // Load object header
+      __ movptr(swap_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
+      __ fast_lock_impl(obj_reg, swap_reg, r15_thread, rscratch1, slow_path_lock);
     }
     __ bind(count_mon);
     __ inc_held_monitor_count();
@@ -2295,7 +2299,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     // Get locked oop from the handle we passed to jni
     __ movptr(obj_reg, Address(oop_handle_reg, 0));
 
-    if (!UseHeavyMonitors) {
+    if (LockingMode == LM_LEGACY) {
       Label not_recur;
       // Simple recursive lock?
       __ cmpptr(Address(rsp, lock_slot_offset * VMRegImpl::stack_slot_size), NULL_WORD);
@@ -2310,7 +2314,9 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
       save_native_result(masm, ret_type, stack_slots);
     }
 
-    if (!UseHeavyMonitors) {
+    if (LockingMode == LM_MONITOR) {
+      __ jmp(slow_path_unlock);
+    } else if (LockingMode == LM_LEGACY) {
       // get address of the stack lock
       __ lea(rax, Address(rsp, lock_slot_offset * VMRegImpl::stack_slot_size));
       //  get old displaced header
@@ -2322,7 +2328,11 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
       __ jcc(Assembler::notEqual, slow_path_unlock);
       __ dec_held_monitor_count();
     } else {
-      __ jmp(slow_path_unlock);
+      assert(LockingMode == LM_LIGHTWEIGHT, "must be");
+      __ movptr(swap_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
+      __ andptr(swap_reg, ~(int32_t)markWord::lock_mask_in_place);
+      __ fast_unlock_impl(obj_reg, swap_reg, lock_reg, slow_path_unlock);
+      __ dec_held_monitor_count();
     }
 
     // slow path re-enters here

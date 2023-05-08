@@ -453,9 +453,10 @@ else
    LIBFONTMANAGER_EXCLUDE_FILES += libharfbuzz/hb-ft.cc
 
    HARFBUZZ_DISABLED_WARNINGS_gcc := missing-field-initializers strict-aliasing \
-       unused-result
+       unused-result array-bounds
    # noexcept-type required for GCC 7 builds. Not required for GCC 8+.
-   HARFBUZZ_DISABLED_WARNINGS_CXX_gcc := class-memaccess noexcept-type
+   # expansion-to-defined required for GCC 9 builds. Not required for GCC 10+.
+   HARFBUZZ_DISABLED_WARNINGS_CXX_gcc := class-memaccess noexcept-type expansion-to-defined
    HARFBUZZ_DISABLED_WARNINGS_clang := missing-field-initializers range-loop-analysis
    HARFBUZZ_DISABLED_WARNINGS_microsoft := 4267 4244
 

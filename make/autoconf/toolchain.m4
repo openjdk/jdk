@@ -53,7 +53,7 @@ TOOLCHAIN_DESCRIPTION_xlc="IBM XL C/C++"
 TOOLCHAIN_MINIMUM_VERSION_clang="3.5"
 TOOLCHAIN_MINIMUM_VERSION_gcc="6.0"
 TOOLCHAIN_MINIMUM_VERSION_microsoft="19.28.0.0" # VS2019 16.8, aka MSVC 14.28
-TOOLCHAIN_MINIMUM_VERSION_xlc=""
+TOOLCHAIN_MINIMUM_VERSION_xlc="16.1.0.0011"
 
 # Minimum supported linker versions, empty means unspecified
 TOOLCHAIN_MINIMUM_LD_VERSION_gcc="2.18"
@@ -384,7 +384,7 @@ AC_DEFUN([TOOLCHAIN_EXTRACT_COMPILER_VERSION],
     # Collapse compiler output into a single line
     COMPILER_VERSION_STRING=`$ECHO $COMPILER_VERSION_OUTPUT`
     COMPILER_VERSION_NUMBER=`$ECHO $COMPILER_VERSION_OUTPUT | \
-        $SED -e 's/^.*, V\(@<:@1-9@:>@@<:@0-9.@:>@*\).*$/\1/'`
+        $SED -e 's/^.*Version: \(@<:@1-9@:>@@<:@0-9.@:>@*\).*$/\1/'`
   elif test  "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     # There is no specific version flag, but all output starts with a version string.
     # First line typically looks something like:
@@ -632,7 +632,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_CORE],
   if test "x$TOOLCHAIN_MINIMUM_VERSION" != x; then
     TOOLCHAIN_CHECK_COMPILER_VERSION(VERSION: $TOOLCHAIN_MINIMUM_VERSION,
         IF_OLDER_THAN: [
-          AC_MSG_WARN([You are using $TOOLCHAIN_TYPE older than $TOOLCHAIN_MINIMUM_VERSION. This is not a supported configuration.])
+          AC_MSG_WARN([You are using $TOOLCHAIN_TYPE $CC_VERSION_NUMBER which is older than $TOOLCHAIN_MINIMUM_VERSION. This is not a supported configuration.])
         ]
     )
   fi
