@@ -1846,8 +1846,8 @@ MsgRouting AwtWindow::WmGetMinMaxInfo(LPMINMAXINFO lpmmi)
     if ((m_minSize.x == 0) && (m_minSize.y == 0)) {
         return r;
     }
-    lpmmi->ptMinTrackSize.x = m_minSize.x;
-    lpmmi->ptMinTrackSize.y = m_minSize.y;
+    lpmmi->ptMinTrackSize.x = ScaleUpX(m_minSize.x);
+    lpmmi->ptMinTrackSize.y = ScaleUpY(m_minSize.y);
     return mrConsume;
 }
 
