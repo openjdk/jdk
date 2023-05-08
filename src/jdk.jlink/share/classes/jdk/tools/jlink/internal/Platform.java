@@ -50,7 +50,7 @@ public record Platform(OperatingSystem os, Architecture arch) {
         OperatingSystem os = OperatingSystem.valueOf(osName.toUpperCase(Locale.ROOT));
 
         archName = platformString.substring(index + 1);
-        // Unalias Jmod architecture "amd64" to "x86_64"
+        // Alias architecture "amd64" to "X64"
         archName = archName.replace("amd64", "X64");
         Architecture arch = Architecture.valueOf(archName.toUpperCase(Locale.ROOT));
 
@@ -58,14 +58,15 @@ public record Platform(OperatingSystem os, Architecture arch) {
     }
 
     /**
-     * @return true is it's a 64-bit platform
+     * {@return true is it's a 64-bit platform}
+     * All platform exception X86 are 64-bit platforms.
      */
     public boolean is64Bit() {
-        return Architecture.is64bit();
+        return arch != Architecture.X86;
     }
 
     /**
-     * Returns the runtime {@code Platform}.
+     * {@return the runtime {@code Platform}}
      */
     public static Platform runtime() {
         return new Platform(OperatingSystem.current(), Architecture.current());
