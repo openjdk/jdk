@@ -133,7 +133,7 @@ public interface Element extends javax.lang.model.AnnotatedConstruct {
      * If this element represents an unnamed {@linkplain
      * PackageElement#getSimpleName package}, an unnamed {@linkplain
      * ModuleElement#getSimpleName module} or an unnamed {@linkplain
-     * VariableElement#getSimpleName module}, an {@linkplain Name##empty_name empty name}
+     * VariableElement#getSimpleName variable}, an {@linkplain Name##empty_name empty name}
      * is returned.
      *
      * If it represents a {@linkplain ExecutableElement#getSimpleName
