@@ -267,22 +267,22 @@ public class EquivMapsGenerator {
              * or visit www.oracle.com if you need additional information or have any
              * questions.
             */
-            
+           
             """;
 
     private static final String headerText =
             """
             package sun.util.locale;
-            
+           
             import java.util.HashMap;
             import java.util.Map;
-            
+           
             final class LocaleEquivalentMaps {
-            
+           
                 static final Map<String, String> singleEquivMap;
                 static final Map<String, String[]> multiEquivsMap;
                 static final Map<String, String> regionVariantEquivMap;
-            
+           
             """;
 
     private static String getMapsText() {
@@ -291,7 +291,7 @@ public class EquivMapsGenerator {
                         singleEquivMap = HashMap.newHashMap(%s);
                         multiEquivsMap = HashMap.newHashMap(%s);
                         regionVariantEquivMap = HashMap.newHashMap(%s);
-
+               
                 """.formatted(
                 sortedLanguageMap1.size(),
                 sortedLanguageMap2.size(),
