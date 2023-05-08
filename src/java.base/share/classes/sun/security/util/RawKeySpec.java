@@ -27,10 +27,14 @@ package sun.security.util;
 
 import java.security.spec.KeySpec;
 
-public class RawKeySpec  implements KeySpec {
-    final private byte[] keyArr;
+/**
+ * This is a KeySpec that is used to specify a key by its byte array implementation.
+ * It is intended to be used in testing algorithms where the algorithm specification describes the key in this form.
+ */
+public class RawKeySpec implements KeySpec {
+    private final byte[] keyArr;
     /**
-     * The sole constructor
+     * The sole constructor.
      * @param key contains the key as a byte array
      */
     public RawKeySpec(byte[] key) {
@@ -38,7 +42,7 @@ public class RawKeySpec  implements KeySpec {
     }
 
     /**
-     * Getter function
+     * Getter function.
      * @return a copy of the key bits
      */
     public byte[] getKeyArr() {

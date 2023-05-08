@@ -85,7 +85,7 @@ abstract class P11Key implements Key, Length {
     // algorithm name, returned by getAlgorithm(), etc.
     final String algorithm;
 
-    // effective key length of the key in bits, e.g. 56 for a DES key
+    // effective key length of the key, e.g. 56 for a DES key
     final int keyLength;
 
     // flags indicating whether the key is a token object, sensitive, extractable
