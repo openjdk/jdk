@@ -128,7 +128,7 @@ public abstract class Poller {
      * queues the file descriptor to the update thread, then parks until the file
      * descriptor is polled.
      */
-    private void pollAsync(int fdVal, long nanos, BooleanSupplier supplier) {
+    private void pollIndirect(int fdVal, long nanos, BooleanSupplier supplier) {
         Request request = registerAsync(fdVal);
         try {
             boolean isOpen = supplier.getAsBoolean();
