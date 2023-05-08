@@ -87,8 +87,17 @@ endif
 # Define external dependencies
 
 # Latest that could be made to work.
-GCC_VER := 10.3.0
-ifeq ($(GCC_VER), 10.3.0)
+GCC_VER := 11.2.0
+ifeq ($(GCC_VER), 11.2.0)
+  gcc_ver := gcc-11.2.0
+  binutils_ver := binutils-2.37
+  ccache_ver := ccache-3.7.12
+  mpfr_ver := mpfr-4.1.0
+  gmp_ver := gmp-6.2.1
+  mpc_ver := mpc-1.2.1
+  gdb_ver := gdb-11.1
+  REQUIRED_MIN_MAKE_MAJOR_VERSION := 4
+else ifeq ($(GCC_VER), 10.3.0)
   gcc_ver := gcc-10.3.0
   binutils_ver := binutils-2.36.1
   ccache_ver := ccache-3.7.11
