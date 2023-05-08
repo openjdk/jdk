@@ -37,12 +37,12 @@ namespace metaspace {
 
 // Metaspace allocation alignment:
 
-// Metaspace allocations have to be aligned such that 64bit values are aligned
+// Metaspace allocations have to be aligned such that 64-bit values are aligned
 //  correctly. We currently don't hold members with a larger alignment requirement
 //  than 64-bit inside MetaData, so 8-byte alignment is enough.
 //
 // Klass* structures need to be aligned to KlassAlignmentInBytes, but since that is
-// 64 bit, we don't need special handling for allocating Klass*.
+// 64-bit, we don't need special handling for allocating Klass*.
 //
 // On 64-bit platforms, we align to word size; on 32-bit, we align to two words.
 

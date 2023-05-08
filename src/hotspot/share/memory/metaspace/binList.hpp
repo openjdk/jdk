@@ -124,6 +124,19 @@ private:
     return i2 == num_lists ? -1 : i2;
   }
 
+#ifdef ASSERT
+  static const uintptr_t canary = 0xFFEEFFEE;
+  static void write_canary(MetaWord* p, size_t word_size) {
+    if (word_size > 1) { // 1-word-sized blocks have no space for a canary
+      ((uintptr_t*)p)[word_size - 1] = canary;
+    }
+  }
+  static bool check_canary(const Block* b, size_t word_size) {
+    return word_size == 1 || // 1-word-sized blocks have no space for a canary
+           ((const uintptr_t*)b)[word_size - 1] == canary;
+  }
+#endif
+
 public:
 
   BinListImpl() {
@@ -135,7 +148,7 @@ public:
   void add_block(MetaWord* p, size_t word_size) {
     assert(word_size >= MinWordSize &&
            word_size <= MaxWordSize, "bad block size");
-    DEBUG_ONLY(p[word_size - 1] = 0;) // canary
+    DEBUG_ONLY(write_canary(p, word_size);)
     const int index = index_for_word_size(word_size);
     Block* old_head = _blocks[index];
     Block* new_head = new(p)Block(old_head);
@@ -154,13 +167,12 @@ public:
       Block* b = _blocks[index];
       const size_t real_word_size = word_size_for_index(index);
       assert(b != nullptr, "Sanity");
+      assert(check_canary(b, real_word_size),
+             "bad block in list[%d] (" BLOCK_FORMAT ")", index, BLOCK_FORMAT_ARGS(b, real_word_size));
       _blocks[index] = b->_next;
       _counter.sub(real_word_size);
       *p_real_word_size = real_word_size;
-      MetaWord* p = (MetaWord*)b;
-      assert(real_word_size == 1 || p[real_word_size - 1] == 0,
-             "bad block size in list[%d] (" BLOCK_FORMAT ")", index, BLOCK_FORMAT_ARGS(b, real_word_size));
-      return p;
+      return (MetaWord*)b;
     } else {
       *p_real_word_size = 0;
       return nullptr;
@@ -182,9 +194,7 @@ public:
       const size_t s = word_size_for_index(i);
       int pos = 0;
       for (Block* b = _blocks[i]; b != nullptr; b = b->_next, pos++) {
-        assert(s == 1 || ((MetaWord*)b)[s - 1] == 0,
-              "bad block size in list[%d] at pos %d (" BLOCK_FORMAT ")",
-              i, pos, BLOCK_FORMAT_ARGS(b, s));
+        assert(check_canary(b, s), "");
         local_counter.add(s);
       }
     }
