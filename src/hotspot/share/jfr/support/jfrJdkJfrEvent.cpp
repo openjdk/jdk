@@ -147,7 +147,6 @@ jobject JdkJfrEvent::get_all_klasses(TRAPS) {
   assert(add_method_sym != nullptr, "invariant");
 
   const Symbol* const add_method_sig_sym = SymbolTable::new_symbol(add_method_signature);
-  assert(add_method_signature != nullptr, "invariant");
 
   JavaValue result(T_BOOLEAN);
   for (int i = 0; i < event_subklasses.length(); ++i) {
