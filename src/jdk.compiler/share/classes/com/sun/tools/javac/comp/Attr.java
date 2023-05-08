@@ -93,6 +93,7 @@ import com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag;
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
+@SuppressWarnings("preview")
 public class Attr extends JCTree.Visitor {
     protected static final Context.Key<Attr> attrKey = new Context.Key<>();
 

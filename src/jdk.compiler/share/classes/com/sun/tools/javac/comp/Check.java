@@ -93,6 +93,7 @@ import javax.lang.model.util.ElementKindVisitor14;
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
+@SuppressWarnings("preview")
 public class Check {
     protected static final Context.Key<Check> checkKey = new Context.Key<>();
 
