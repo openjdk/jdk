@@ -46,7 +46,7 @@
  * The key advantage of sliding compaction for encoding efficiency: it can forward objects from one region to a
  * maximum of two regions. This is an intuitive property: when we slide the compact region full of data, it can
  * only span two adjacent regions. This property allows us to use the off-side table to record the addresses of
- * two target regions. The table table holds N*2 entries for N logical regions. For each region, it gives the base
+ * two target regions. The table holds N*2 entries for N logical regions. For each region, it gives the base
  * address of the two target regions, or a special placeholder if not used. A single bit in forwarding would
  * indicate to which of the two "to" regions the object is forwarded into.
  *
@@ -72,7 +72,7 @@
  *      This gives us "alternate" = "true". This should always complete for sliding forwarding.
  *   4. Compute the mark word from "offset" and "alternate", write it out
  *
- * Similarily, looking up the target address, given an original object address generally works as follows:
+ * Similarly, looking up the target address, given an original object address generally works as follows:
  *   1. Load the mark from object, and decode "offset" and "alternate" from there
  *   2. Compute the "from" base offset from the object
  *   3. Look up "to" region base from the base table either at primary or alternate indices, using "alternate" flag
