@@ -25,7 +25,7 @@
  * @test
  * @bug 8159337
  * @summary Test Locale.caseFoldLanguageTag(String languageTag)
- * @run junit caseFoldLanguageTagTest
+ * @run junit CaseFoldLanguageTagTest
  */
 
 import org.junit.jupiter.api.AfterAll;
@@ -50,7 +50,7 @@ import java.util.stream.Stream;
  * In addition, the method is tested to ensure that IllformedLocaleException and
  * NullPointerException are thrown given the right circumstances.
  */
-public class caseFoldLanguageTagTest {
+public class CaseFoldLanguageTagTest {
 
     @ParameterizedTest
     @MethodSource("wellFormedTags")
