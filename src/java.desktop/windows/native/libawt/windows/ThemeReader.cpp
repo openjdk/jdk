@@ -238,7 +238,7 @@ static void assert_result(HRESULT hres, JNIEnv *env) {
  * Signature: (Ljava/lang/String;)J
  */
 JNIEXPORT jlong JNICALL Java_sun_awt_windows_ThemeReader_openTheme
-(JNIEnv* env, jclass klass, jstring widget, jint dpi) {
+(JNIEnv *env, jclass klass, jstring widget, jint dpi) {
 
     LPCTSTR str = (LPCTSTR)JNU_GetStringPlatformChars(env, widget, NULL);
     if (str == NULL) {

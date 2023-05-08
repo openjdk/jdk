@@ -101,10 +101,8 @@ public final class ThemeReader {
                 theme = openTheme(widget, dpi);
             }
 
-            if(dpiAwareWidgetToTheme.containsKey(dpi)) {
-                if (!dpiAwareWidgetToTheme.get(dpi).isEmpty()) {
-                    dpiAwareWidgetToTheme.get(dpi).put(widget, theme);
-                }
+            if (dpiAwareWidgetToTheme.get(dpi) != null) {
+                dpiAwareWidgetToTheme.get(dpi).put(widget, theme);
             } else {
                 dpiAwareWidgetToTheme.put(dpi, new HashMap<>());
                 dpiAwareWidgetToTheme.get(dpi).put(widget, theme);
@@ -126,9 +124,10 @@ public final class ThemeReader {
                 if (!valid) {
                     // Close old themes.
                     if (!dpiAwareWidgetToTheme.isEmpty()) {
-                        for (Long value :
-                             dpiAwareWidgetToTheme.get(dpi).values()) {
-                            closeTheme(value);
+                        for (Map <String, Long> dpiVal: dpiAwareWidgetToTheme.values()) {
+                            for (Long value : dpiVal.values()) {
+                                closeTheme(value);
+                            }
                         }
                         dpiAwareWidgetToTheme.get(dpi).clear();
                         dpiAwareWidgetToTheme.clear();
@@ -144,7 +143,7 @@ public final class ThemeReader {
         // mostly copied from the javadoc for ReentrantReadWriteLock
         Long theme = null;
 
-        if(dpiAwareWidgetToTheme.containsKey(dpi))
+        if (dpiAwareWidgetToTheme.get(dpi) != null)
         {
             theme = dpiAwareWidgetToTheme.get(dpi).get(widget);
         }
