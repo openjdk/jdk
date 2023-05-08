@@ -23,8 +23,8 @@
 
 import jdk.test.lib.RandomFactory;
 
+import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.SegmentScope;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -78,7 +78,7 @@ public class LargeMapTest {
         try (FileChannel fc = FileChannel.open(p, READ, WRITE)) {
             MemorySegment mappedMemorySegment =
                 fc.map(FileChannel.MapMode.READ_WRITE, 0, p.toFile().length(),
-                       SegmentScope.auto());
+                       Arena.ofAuto());
             MemorySegment target = mappedMemorySegment.asSlice(BASE, EXTRA);
             if (!target.asByteBuffer().equals(bb)) {
                 throw new RuntimeException("Expected buffers to be equal");

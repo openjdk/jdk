@@ -52,11 +52,11 @@ private:
   // 00001 1 [ 3] Survivor
   //
   // 00010 0 [ 4] Humongous Mask
-  // 00100 0 [ 8] Pinned Mask
-  // 00110 0 [12] Starts Humongous
-  // 00110 1 [13] Continues Humongous
+  // 00010 0 [ 4] Starts Humongous
+  // 00010 1 [ 5] Continues Humongous
   //
-  // 01000 0 [16] Old Mask
+  // 00100 0 [ 8] Old Mask
+  // 00100 0 [ 8] Old
   //
   typedef enum {
     FreeTag               = 0,
@@ -66,11 +66,10 @@ private:
     SurvTag               = YoungMask + 1,
 
     HumongousMask         = 4,
-    PinnedMask            = 8,
-    StartsHumongousTag    = HumongousMask | PinnedMask,
-    ContinuesHumongousTag = HumongousMask | PinnedMask + 1,
+    StartsHumongousTag    = HumongousMask,
+    ContinuesHumongousTag = HumongousMask + 1,
 
-    OldMask               = 16,
+    OldMask               = 8,
     OldTag                = OldMask
   } Tag;
 
@@ -117,12 +116,9 @@ public:
   bool is_starts_humongous()    const { return get() == StartsHumongousTag;    }
   bool is_continues_humongous() const { return get() == ContinuesHumongousTag; }
 
-  // is_old regions may or may not also be pinned
   bool is_old() const { return (get() & OldMask) != 0; }
 
   bool is_old_or_humongous() const { return (get() & (OldMask | HumongousMask)) != 0; }
-
-  bool is_pinned() const { return (get() & PinnedMask) != 0; }
 
   // Setters
 
