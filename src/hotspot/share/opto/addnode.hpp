@@ -285,7 +285,6 @@ public:
   static Node* min_diff_with_zero(Node* a, Node* b, const Type* t, PhaseGVN& gvn) {
     return build_min_max_diff_with_zero(a, b, false, t, gvn);
   }
-
 };
 
 //------------------------------MaxINode---------------------------------------
