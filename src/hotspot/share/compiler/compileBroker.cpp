@@ -967,6 +967,21 @@ JavaThread* CompileBroker::make_thread(ThreadType type, jobject thread_handle, C
   return new_thread;
 }
 
+static bool trace_compiler_threads() {
+  LogTarget(Debug, jit, thread) lt;
+  return TraceCompilerThreads || lt.is_enabled();
+}
+
+static void print_compiler_threads(stringStream& msg) {
+  if (TraceCompilerThreads) {
+    tty->print_cr("%7d %s", (int)tty->time_stamp().milliseconds(), msg.as_string());
+  }
+  LogTarget(Debug, jit, thread) lt;
+  if (lt.is_enabled()) {
+    LogStream ls(lt);
+    ls.print_cr("%s", msg.as_string());
+  }
+}
 
 void CompileBroker::init_compiler_sweeper_threads() {
   NMethodSweeper::set_sweep_threshold_bytes(static_cast<size_t>(SweeperThreshold * ReservedCodeCacheSize / 100.0));
@@ -1009,11 +1024,13 @@ void CompileBroker::init_compiler_sweeper_threads() {
       JavaThread *ct = make_thread(compiler_t, thread_handle, _c2_compile_queue, _compilers[1], THREAD);
       assert(ct != NULL, "should have been handled for initial thread");
       _compilers[1]->set_num_compiler_threads(i + 1);
-      if (TraceCompilerThreads) {
+      if (trace_compiler_threads()) {
         ResourceMark rm;
         ThreadsListHandle tlh;  // get_thread_name() depends on the TLH.
         assert(tlh.includes(ct), "ct=" INTPTR_FORMAT " exited unexpectedly.", p2i(ct));
-        tty->print_cr("Added initial compiler thread %s", ct->get_thread_name());
+        stringStream msg;
+        msg.print("Added initial compiler thread %s", ct->get_thread_name());
+        print_compiler_threads(msg);
       }
     }
   }
@@ -1030,11 +1047,13 @@ void CompileBroker::init_compiler_sweeper_threads() {
       JavaThread *ct = make_thread(compiler_t, thread_handle, _c1_compile_queue, _compilers[0], THREAD);
       assert(ct != NULL, "should have been handled for initial thread");
       _compilers[0]->set_num_compiler_threads(i + 1);
-      if (TraceCompilerThreads) {
+      if (trace_compiler_threads()) {
         ResourceMark rm;
         ThreadsListHandle tlh;  // get_thread_name() depends on the TLH.
         assert(tlh.includes(ct), "ct=" INTPTR_FORMAT " exited unexpectedly.", p2i(ct));
-        tty->print_cr("Added initial compiler thread %s", ct->get_thread_name());
+        stringStream msg;
+        msg.print("Added initial compiler thread %s", ct->get_thread_name());
+        print_compiler_threads(msg);
       }
     }
   }
@@ -1099,10 +1118,12 @@ void CompileBroker::possibly_add_compiler_threads(JavaThread* THREAD) {
           thread_oop = create_thread_oop(name_buffer, THREAD);
         }
         if (HAS_PENDING_EXCEPTION) {
-          if (TraceCompilerThreads) {
+          if (trace_compiler_threads()) {
             ResourceMark rm;
-            tty->print_cr("JVMCI compiler thread creation failed:");
-            PENDING_EXCEPTION->print();
+            stringStream msg;
+            msg.print_cr("JVMCI compiler thread creation failed:");
+            PENDING_EXCEPTION->print_on(&msg);
+            print_compiler_threads(msg);
           }
           CLEAR_PENDING_EXCEPTION;
           break;
@@ -1117,12 +1138,14 @@ void CompileBroker::possibly_add_compiler_threads(JavaThread* THREAD) {
       JavaThread *ct = make_thread(compiler_t, compiler2_object(i), _c2_compile_queue, _compilers[1], THREAD);
       if (ct == NULL) break;
       _compilers[1]->set_num_compiler_threads(i + 1);
-      if (TraceCompilerThreads) {
+      if (trace_compiler_threads()) {
         ResourceMark rm;
         ThreadsListHandle tlh;  // get_thread_name() depends on the TLH.
         assert(tlh.includes(ct), "ct=" INTPTR_FORMAT " exited unexpectedly.", p2i(ct));
-        tty->print_cr("Added compiler thread %s (available memory: %dMB, available non-profiled code cache: %dMB)",
-                      ct->get_thread_name(), (int)(available_memory/M), (int)(available_cc_np/M));
+        stringStream msg;
+        msg.print("Added compiler thread %s (available memory: %dMB, available non-profiled code cache: %dMB)",
+                  ct->get_thread_name(), (int)(available_memory/M), (int)(available_cc_np/M));
+        print_compiler_threads(msg);
       }
     }
   }
@@ -1138,12 +1161,14 @@ void CompileBroker::possibly_add_compiler_threads(JavaThread* THREAD) {
       JavaThread *ct = make_thread(compiler_t, compiler1_object(i), _c1_compile_queue, _compilers[0], THREAD);
       if (ct == NULL) break;
       _compilers[0]->set_num_compiler_threads(i + 1);
-      if (TraceCompilerThreads) {
+      if (trace_compiler_threads()) {
         ResourceMark rm;
         ThreadsListHandle tlh;  // get_thread_name() depends on the TLH.
         assert(tlh.includes(ct), "ct=" INTPTR_FORMAT " exited unexpectedly.", p2i(ct));
-        tty->print_cr("Added compiler thread %s (available memory: %dMB, available profiled code cache: %dMB)",
-                      ct->get_thread_name(), (int)(available_memory/M), (int)(available_cc_p/M));
+        stringStream msg;
+        msg.print("Added compiler thread %s (available memory: %dMB, available profiled code cache: %dMB)",
+                  ct->get_thread_name(), (int)(available_memory/M), (int)(available_cc_p/M));
+        print_compiler_threads(msg);
       }
     }
   }
@@ -1959,9 +1984,12 @@ void CompileBroker::compiler_thread_loop() {
         // Access compiler_count under lock to enforce consistency.
         MutexLocker only_one(CompileThread_lock);
         if (can_remove(thread, true)) {
-          if (TraceCompilerThreads) {
-            tty->print_cr("Removing compiler thread %s after " JLONG_FORMAT " ms idle time",
-                          thread->name(), thread->idle_time_millis());
+          if (trace_compiler_threads()) {
+            ResourceMark rm;
+            stringStream msg;
+            msg.print("Removing compiler thread %s after " JLONG_FORMAT " ms idle time",
+                      thread->name(), thread->idle_time_millis());
+            print_compiler_threads(msg);
           }
           // Free buffer blob, if allocated
           if (thread->get_buffer_blob() != NULL) {
