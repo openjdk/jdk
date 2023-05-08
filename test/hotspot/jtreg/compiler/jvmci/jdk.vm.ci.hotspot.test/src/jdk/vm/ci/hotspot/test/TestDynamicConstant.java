@@ -333,6 +333,8 @@ public class TestDynamicConstant implements Opcodes {
         Assert.assertTrue((code[bci] & 0xff) == INVOKEDYNAMIC, "unexpected bytecode");
         int cpi = beS4(code, bci + 1);
         method.getConstantPool().loadReferencedType(cpi, INVOKEDYNAMIC, false);
+        BootstrapMethodInvocation bmi = method.getConstantPool().lookupBootstrapMethodInvocation(cpi, INVOKEDYNAMIC);
+        Assert.assertEquals(bmi.getName(), "do_concat");
     }
 
     // @formatter:off
