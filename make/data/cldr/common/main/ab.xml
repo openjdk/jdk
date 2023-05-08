@@ -1,0 +1,4066 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2023 Unicode, Inc.
+For terms of use, see http://www.unicode.org/copyright.html
+SPDX-License-Identifier: Unicode-DFS-2016
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+
+Proper interpretation of these files requires synthesis of missing items, as per
+​https://www.unicode.org/reports/tr35/tr35-general.html#Annotations
+Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
+-->
+<ldml>
+	<identity>
+		<version number="$Revision$"/>
+		<language type="ab"/>
+	</identity>
+	<localeDisplayNames>
+		<localeDisplayPattern>
+			<localePattern draft="unconfirmed">{0} ({1})</localePattern>
+			<localeSeparator draft="unconfirmed">{0}, {1}</localeSeparator>
+			<localeKeyTypePattern draft="unconfirmed">{0}: {1}</localeKeyTypePattern>
+		</localeDisplayPattern>
+		<languages>
+			<language type="ab">Аԥсшәа</language>
+			<language type="ace" draft="unconfirmed">ачех</language>
+			<language type="ada" draft="unconfirmed">адангме</language>
+			<language type="ady" draft="unconfirmed">аедыгь</language>
+			<language type="af" draft="unconfirmed">африкаанс</language>
+			<language type="agq" draft="unconfirmed">агем</language>
+			<language type="ain" draft="unconfirmed">аин</language>
+			<language type="ak" draft="unconfirmed">акан</language>
+			<language type="ale" draft="unconfirmed">алеут</language>
+			<language type="alt" draft="unconfirmed">аладалтаи</language>
+			<language type="am" draft="unconfirmed">амхар</language>
+			<language type="an" draft="unconfirmed">арагон</language>
+			<language type="anp" draft="unconfirmed">ангика</language>
+			<language type="ar" draft="unconfirmed">араб</language>
+			<language type="arn" draft="unconfirmed">амапуче</language>
+			<language type="arp" draft="unconfirmed">арапахо</language>
+			<language type="ars" draft="unconfirmed">анедџитә араб</language>
+			<language type="as" draft="unconfirmed">ассам</language>
+			<language type="asa" draft="unconfirmed">асу</language>
+			<language type="ast" draft="unconfirmed">астури</language>
+			<language type="av" draft="unconfirmed">авар</language>
+			<language type="awa" draft="unconfirmed">авадхи</language>
+			<language type="ay" draft="unconfirmed">аимара</language>
+			<language type="az" draft="unconfirmed">азербаиџьан</language>
+			<language type="ba" draft="unconfirmed">абашкир</language>
+			<language type="ban" draft="unconfirmed">абали</language>
+			<language type="bas" draft="unconfirmed">абаса</language>
+			<language type="be" draft="unconfirmed">абелорус</language>
+			<language type="bem" draft="unconfirmed">абемба</language>
+			<language type="bez" draft="unconfirmed">абена</language>
+			<language type="bg" draft="unconfirmed">аболгар</language>
+			<language type="bho" draft="unconfirmed">абхоџпури</language>
+			<language type="bi" draft="unconfirmed">абислама</language>
+			<language type="bin" draft="unconfirmed">абини</language>
+			<language type="bla" draft="unconfirmed">асиксика</language>
+			<language type="bm" draft="unconfirmed">абамбара</language>
+			<language type="bn" draft="unconfirmed">абенгал</language>
+			<language type="bo" draft="unconfirmed">атибет</language>
+			<language type="br" draft="unconfirmed">абретон</language>
+			<language type="brx" draft="unconfirmed">абодо</language>
+			<language type="bs" draft="unconfirmed">абосни</language>
+			<language type="bug" draft="unconfirmed">абуги</language>
+			<language type="byn" draft="unconfirmed">абилин</language>
+			<language type="ca" draft="unconfirmed">акаталан</language>
+			<language type="cay" draft="unconfirmed">акаиуга</language>
+			<language type="ccp" draft="unconfirmed">ачакма</language>
+			<language type="ce" draft="unconfirmed">ачечен</language>
+			<language type="ceb" draft="unconfirmed">асебуано</language>
+			<language type="cgg" draft="unconfirmed">акига</language>
+			<language type="ch" draft="unconfirmed">ачаморро</language>
+			<language type="chk" draft="unconfirmed">ачукот</language>
+			<language type="chm" draft="unconfirmed">амари</language>
+			<language type="cho" draft="unconfirmed">ачоктав</language>
+			<language type="chp" draft="unconfirmed">ачипевиан</language>
+			<language type="chr" draft="unconfirmed">ачероки</language>
+			<language type="chy" draft="unconfirmed">ашаиен</language>
+			<language type="ckb" draft="unconfirmed">агәҭантәи ақәырд</language>
+			<language type="ckb" alt="menu" draft="unconfirmed">ақәырд (асорани)</language>
+			<language type="co" draft="unconfirmed">акорсикан</language>
+			<language type="cs" draft="unconfirmed">ачеш</language>
+			<language type="cu" draft="unconfirmed">ауахәама-славиан</language>
+			<language type="cv" draft="unconfirmed">ачуваш</language>
+			<language type="cy" draft="unconfirmed">авалли</language>
+			<language type="da" draft="unconfirmed">адат</language>
+			<language type="dak" draft="unconfirmed">адакота</language>
+			<language type="dar" draft="unconfirmed">адаргин</language>
+			<language type="dav" draft="unconfirmed">атаита</language>
+			<language type="de" draft="unconfirmed">агерман</language>
+			<language type="de_AT" draft="unconfirmed">австриа агерман</language>
+			<language type="de_CH" draft="unconfirmed">алитературатә ашвеицар агерман</language>
+			<language type="dgr" draft="unconfirmed">адогриб</language>
+			<language type="dje" draft="unconfirmed">аџерма</language>
+			<language type="doi" draft="unconfirmed">адогри</language>
+			<language type="dsb" draft="unconfirmed">ҵаҟатәи лужик</language>
+			<language type="dua" draft="unconfirmed">адуала</language>
+			<language type="dv" draft="unconfirmed">амалдив</language>
+			<language type="dyo" draft="unconfirmed">адиола-фони</language>
+			<language type="dz" draft="unconfirmed">аӡонг-ка</language>
+			<language type="dzg" draft="unconfirmed">адаза</language>
+			<language type="ebu" draft="unconfirmed">аембу</language>
+			<language type="ee" draft="unconfirmed">аеве</language>
+			<language type="efi" draft="unconfirmed">аефик</language>
+			<language type="eka" draft="unconfirmed">аекаџук</language>
+			<language type="el" draft="unconfirmed">абырзен</language>
+			<language type="en" draft="unconfirmed">англыз</language>
+			<language type="en_AU" draft="unconfirmed">австралиатәи англыз</language>
+			<language type="en_CA" draft="unconfirmed">канадатәи англыз</language>
+			<language type="en_GB" draft="unconfirmed">абритан англыз</language>
+			<language type="en_US" draft="unconfirmed">америкатәи англыз</language>
+			<language type="eo" draft="unconfirmed">аесперанто</language>
+			<language type="es" draft="unconfirmed">аиспан</language>
+			<language type="es_419" draft="unconfirmed">алаҭын-америкатәи аиспан</language>
+			<language type="es_ES" draft="unconfirmed">европатәи аиспан</language>
+			<language type="es_MX" draft="unconfirmed">мексикатәи аиспан</language>
+			<language type="et" draft="unconfirmed">аестон</language>
+			<language type="eu" draft="unconfirmed">абаск</language>
+			<language type="ewo" draft="unconfirmed">аевондо</language>
+			<language type="fa" draft="unconfirmed">аџьам</language>
+			<language type="fa_AF" draft="unconfirmed">адари</language>
+			<language type="ff" draft="unconfirmed">афулах</language>
+			<language type="fi" draft="unconfirmed">афин</language>
+			<language type="fil" draft="unconfirmed">афилиппин</language>
+			<language type="fj" draft="unconfirmed">афиџи</language>
+			<language type="fo" draft="unconfirmed">афарер</language>
+			<language type="fon" draft="unconfirmed">афон</language>
+			<language type="fr" draft="unconfirmed">афранцыз</language>
+			<language type="fr_CA" draft="unconfirmed">канадатәи афранцыз</language>
+			<language type="fr_CH" draft="unconfirmed">швеицариатәи афранцыз</language>
+			<language type="frc" draft="unconfirmed">каџунтәи афранцыз</language>
+			<language type="fur" draft="unconfirmed">африул</language>
+			<language type="fy" draft="unconfirmed">мраҭашәаратәи африз</language>
+			<language type="ga" draft="unconfirmed">аирланд</language>
+			<language type="gaa" draft="unconfirmed">ага</language>
+			<language type="gd" draft="unconfirmed">агел</language>
+			<language type="gez" draft="unconfirmed">агеез</language>
+			<language type="gil" draft="unconfirmed">агилберт</language>
+			<language type="gl" draft="unconfirmed">агалиси</language>
+			<language type="gn" draft="unconfirmed">агуарани</language>
+			<language type="gor" draft="unconfirmed">агоронтало</language>
+			<language type="gsw" draft="unconfirmed">швеицариатәи агерман</language>
+			<language type="gu" draft="unconfirmed">агуџарати</language>
+			<language type="guz" draft="unconfirmed">агуси</language>
+			<language type="gv" draft="unconfirmed">амен</language>
+			<language type="gwi" draft="unconfirmed">агвичин</language>
+			<language type="ha" draft="unconfirmed">ахауса</language>
+			<language type="hai" draft="unconfirmed">ахаида</language>
+			<language type="haw" draft="unconfirmed">агаваи</language>
+			<language type="he" draft="unconfirmed">аиврит</language>
+			<language type="hi" draft="unconfirmed">ахинди</language>
+			<language type="hi_Latn" alt="variant" draft="unconfirmed">ахынглыз</language>
+			<language type="hil" draft="unconfirmed">ахилигаинон</language>
+			<language type="hmn" draft="unconfirmed">ахмонг</language>
+			<language type="hr" draft="unconfirmed">ахорват</language>
+			<language type="hsb" draft="unconfirmed">хыхьтәи-алужик</language>
+			<language type="ht" draft="unconfirmed">агаитиан</language>
+			<language type="hu" draft="unconfirmed">авенгер</language>
+			<language type="hup" draft="unconfirmed">ахупа</language>
+			<language type="hy" draft="unconfirmed">аерман</language>
+			<language type="hz" draft="unconfirmed">агереро</language>
+			<language type="ia" draft="unconfirmed">аинтерлингва</language>
+			<language type="iba" draft="unconfirmed">аибан</language>
+			<language type="ibb" draft="unconfirmed">аибибио</language>
+			<language type="id" draft="unconfirmed">аиндонез</language>
+			<language type="ig" draft="unconfirmed">аигбо</language>
+			<language type="ii" draft="unconfirmed">аносу</language>
+			<language type="ilo" draft="unconfirmed">аилоко</language>
+			<language type="inh" draft="unconfirmed">аингәыш</language>
+			<language type="io" draft="unconfirmed">аидо</language>
+			<language type="is" draft="unconfirmed">аисланд</language>
+			<language type="it" draft="unconfirmed">аиталиа</language>
+			<language type="iu" draft="unconfirmed">аинуктитут</language>
+			<language type="ja" draft="unconfirmed">аиапон</language>
+			<language type="jbo" draft="unconfirmed">аложбан</language>
+			<language type="jgo" draft="unconfirmed">ангомба</language>
+			<language type="jmc" draft="unconfirmed">амачаме</language>
+			<language type="jv" draft="unconfirmed">аиаван</language>
+			<language type="ka" draft="unconfirmed">ақырҭ</language>
+			<language type="kab" draft="unconfirmed">акабил</language>
+			<language type="kac" draft="unconfirmed">акачин</language>
+			<language type="kaj" draft="unconfirmed">акаџи</language>
+			<language type="kam" draft="unconfirmed">акамба</language>
+			<language type="kbd" draft="unconfirmed">аҟабарда</language>
+			<language type="kcg" draft="unconfirmed">атиап</language>
+			<language type="kde" draft="unconfirmed">амаконде</language>
+			<language type="kea" draft="unconfirmed">акабувердиану</language>
+			<language type="kfo" draft="unconfirmed">акоро</language>
+			<language type="kha" draft="unconfirmed">акхаси</language>
+			<language type="khq" draft="unconfirmed">акоира чиини</language>
+			<language type="ki" draft="unconfirmed">акикәиу</language>
+			<language type="kj" draft="unconfirmed">акәнама</language>
+			<language type="kk" draft="unconfirmed">аҟазах</language>
+			<language type="kkj" draft="unconfirmed">акако</language>
+			<language type="kl" draft="unconfirmed">агренланд</language>
+			<language type="kln" draft="unconfirmed">акаленџин</language>
+			<language type="km" draft="unconfirmed">акхмер</language>
+			<language type="kmb" draft="unconfirmed">акимбунду</language>
+			<language type="kn" draft="unconfirmed">аканнада</language>
+			<language type="ko" draft="unconfirmed">акореи</language>
+			<language type="kok" draft="unconfirmed">аконкани</language>
+			<language type="kpe" draft="unconfirmed">акпелле</language>
+			<language type="kr" draft="unconfirmed">аканури</language>
+			<language type="krc" draft="unconfirmed">аҟарач-абалҟар</language>
+			<language type="krl" draft="unconfirmed">акарел</language>
+			<language type="kru" draft="unconfirmed">акурух</language>
+			<language type="ks" draft="unconfirmed">акашмири</language>
+			<language type="ksb" draft="unconfirmed">ашамбала</language>
+			<language type="ksf" draft="unconfirmed">абафиа</language>
+			<language type="ksh" draft="unconfirmed">акиолн</language>
+			<language type="ku" draft="unconfirmed">ақәырд</language>
+			<language type="kum" draft="unconfirmed">акәымык</language>
+			<language type="kv" draft="unconfirmed">акоми</language>
+			<language type="kw" draft="unconfirmed">акорн</language>
+			<language type="ky" draft="unconfirmed">акиргиз</language>
+			<language type="la" draft="unconfirmed">алаҭын</language>
+			<language type="lad" draft="unconfirmed">аладино</language>
+			<language type="lag" draft="unconfirmed">аланго</language>
+			<language type="lb" draft="unconfirmed">алиуксембург</language>
+			<language type="lez" draft="unconfirmed">алезгьын</language>
+			<language type="lg" draft="unconfirmed">аганда</language>
+			<language type="li" draft="unconfirmed">алимбург</language>
+			<language type="lkt" draft="unconfirmed">алакота</language>
+			<language type="ln" draft="unconfirmed">алингала</language>
+			<language type="lo" draft="unconfirmed">алаос</language>
+			<language type="lou" draft="unconfirmed">алуизиантәи акреол</language>
+			<language type="loz" draft="unconfirmed">алози</language>
+			<language type="lrc" draft="unconfirmed">аҩадалур</language>
+			<language type="lt" draft="unconfirmed">алитов</language>
+			<language type="lu" draft="unconfirmed">алуба-акатанга</language>
+			<language type="lua" draft="unconfirmed">алуба-алулуа</language>
+			<language type="lun" draft="unconfirmed">алунда</language>
+			<language type="luo" draft="unconfirmed">алуо</language>
+			<language type="lus" draft="unconfirmed">амизо</language>
+			<language type="luy" draft="unconfirmed">алухьиа</language>
+			<language type="lv" draft="unconfirmed">алатыш</language>
+			<language type="mad" draft="unconfirmed">амадур</language>
+			<language type="mag" draft="unconfirmed">амагахи</language>
+			<language type="mai" draft="unconfirmed">амаитхили</language>
+			<language type="mak" draft="unconfirmed">амакассар</language>
+			<language type="mas" draft="unconfirmed">амасаи</language>
+			<language type="mdf" draft="unconfirmed">амокшан</language>
+			<language type="men" draft="unconfirmed">аменде</language>
+			<language type="mer" draft="unconfirmed">амеру</language>
+			<language type="mfe" draft="unconfirmed">амаврикитә креол</language>
+			<language type="mg" draft="unconfirmed">амалагаси</language>
+			<language type="mgh" draft="unconfirmed">амакуа-амеетто</language>
+			<language type="mgo" draft="unconfirmed">амета</language>
+			<language type="mh" draft="unconfirmed">амаршал</language>
+			<language type="mi" draft="unconfirmed">амаори</language>
+			<language type="mic" draft="unconfirmed">амикмак</language>
+			<language type="min" draft="unconfirmed">аминангкабау</language>
+			<language type="mk" draft="unconfirmed">амакедон</language>
+			<language type="ml" draft="unconfirmed">амалаиалам</language>
+			<language type="mn" draft="unconfirmed">амонгол</language>
+			<language type="mni" draft="unconfirmed">аманипур</language>
+			<language type="moh" draft="unconfirmed">амохаук</language>
+			<language type="mos" draft="unconfirmed">амоси</language>
+			<language type="mr" draft="unconfirmed">амаратхи</language>
+			<language type="ms" draft="unconfirmed">амалаи</language>
+			<language type="mt" draft="unconfirmed">амалти</language>
+			<language type="mua" draft="unconfirmed">амунданг</language>
+			<language type="mul" draft="unconfirmed">еиуеиԥшым аҭаацәаратә бызшәақәа</language>
+			<language type="mus" draft="unconfirmed">акрик</language>
+			<language type="mwl" draft="unconfirmed">амиранд</language>
+			<language type="my" draft="unconfirmed">абирман</language>
+			<language type="myv" draft="unconfirmed">аерзиан</language>
+			<language type="mzn" draft="unconfirmed">амазандеран</language>
+			<language type="na" draft="unconfirmed">анауру</language>
+			<language type="nap" draft="unconfirmed">анеаполитан</language>
+			<language type="naq" draft="unconfirmed">анама</language>
+			<language type="nb" draft="unconfirmed">анорвегтәи абукмол</language>
+			<language type="nd" draft="unconfirmed">нхыҵ андебеле</language>
+			<language type="nds" draft="unconfirmed">ҵаҟатәи агерман</language>
+			<language type="nds_NL" draft="unconfirmed">ҵаҟатәи асаксон</language>
+			<language type="ne" draft="unconfirmed">анепал</language>
+			<language type="new" draft="unconfirmed">аневар</language>
+			<language type="ng" draft="unconfirmed">андонга</language>
+			<language type="nia" draft="unconfirmed">аниас</language>
+			<language type="niu" draft="unconfirmed">аниуе</language>
+			<language type="nl" draft="unconfirmed">анидерланд</language>
+			<language type="nl_BE" draft="unconfirmed">афламанд</language>
+			<language type="nmg" draft="unconfirmed">аквасио</language>
+			<language type="nn" draft="unconfirmed">аниунорск</language>
+			<language type="nnh" draft="unconfirmed">ангиембунд</language>
+			<language type="no" draft="unconfirmed">анорвег</language>
+			<language type="nog" draft="unconfirmed">аногаи</language>
+			<language type="nqo" draft="unconfirmed">анко</language>
+			<language type="nr" draft="unconfirmed">аладатәи андебеле</language>
+			<language type="nso" draft="unconfirmed">аҩадатәи асото</language>
+			<language type="nus" draft="unconfirmed">ануер</language>
+			<language type="nv" draft="unconfirmed">анавахо</language>
+			<language type="ny" draft="unconfirmed">анианџа</language>
+			<language type="nyn" draft="unconfirmed">анианколе</language>
+			<language type="oc" draft="unconfirmed">аокситан</language>
+			<language type="om" draft="unconfirmed">аоромо</language>
+			<language type="or" draft="unconfirmed">аориа</language>
+			<language type="os" draft="unconfirmed">ауаԥс</language>
+			<language type="pa" draft="unconfirmed">апанџаби</language>
+			<language type="pag" draft="unconfirmed">апангасинан</language>
+			<language type="pam" draft="unconfirmed">апампанга</language>
+			<language type="pap" draft="unconfirmed">апапиаменто</language>
+			<language type="pau" draft="unconfirmed">апалау</language>
+			<language type="pcm" draft="unconfirmed">анигери-креол</language>
+			<language type="pl" draft="unconfirmed">апол</language>
+			<language type="prg" draft="unconfirmed">апрус</language>
+			<language type="ps" draft="unconfirmed">апушту</language>
+			<language type="pt" draft="unconfirmed">апортугал</language>
+			<language type="pt_BR" draft="unconfirmed">бразилиатәи апортугал</language>
+			<language type="pt_PT" draft="unconfirmed">европатәи апортугал</language>
+			<language type="qu" draft="unconfirmed">акечуа</language>
+			<language type="rap" draft="unconfirmed">арапануи</language>
+			<language type="rar" draft="unconfirmed">араротонга</language>
+			<language type="rhg" draft="unconfirmed">арохинџа</language>
+			<language type="rm" draft="unconfirmed">ароманш</language>
+			<language type="rn" draft="unconfirmed">арунди</language>
+			<language type="ro" draft="unconfirmed">арумын</language>
+			<language type="ro_MD" draft="unconfirmed">молдав</language>
+			<language type="rof" draft="unconfirmed">аромбо</language>
+			<language type="ru" draft="unconfirmed">аурыс</language>
+			<language type="rup" draft="unconfirmed">аромун</language>
+			<language type="rw" draft="unconfirmed">акиниаруанда</language>
+			<language type="rwk" draft="unconfirmed">аруанда</language>
+			<language type="sa" draft="unconfirmed">асанскрит</language>
+			<language type="sad" draft="unconfirmed">асандаве</language>
+			<language type="sah" draft="unconfirmed">асаха</language>
+			<language type="saq" draft="unconfirmed">асамбуру</language>
+			<language type="sat" draft="unconfirmed">асантали</language>
+			<language type="sba" draft="unconfirmed">ангамбаи</language>
+			<language type="sbp" draft="unconfirmed">асангу</language>
+			<language type="sc" draft="unconfirmed">асардин</language>
+			<language type="scn" draft="unconfirmed">асицили</language>
+			<language type="sco" draft="unconfirmed">ашотланд</language>
+			<language type="sd" draft="unconfirmed">асиндхи</language>
+			<language type="se" draft="unconfirmed">аҩадасаам</language>
+			<language type="seh" draft="unconfirmed">асена</language>
+			<language type="ses" draft="unconfirmed">акоираборо асенни</language>
+			<language type="sg" draft="unconfirmed">асанго</language>
+			<language type="shi" draft="unconfirmed">аташелхит</language>
+			<language type="shn" draft="unconfirmed">ашан</language>
+			<language type="si" draft="unconfirmed">асингал</language>
+			<language type="sk" draft="unconfirmed">асловак</language>
+			<language type="sl" draft="unconfirmed">асловен</language>
+			<language type="sm" draft="unconfirmed">асамоан</language>
+			<language type="smn" draft="unconfirmed">аинари-асаам</language>
+			<language type="sms" draft="unconfirmed">аколтта-асаам</language>
+			<language type="sn" draft="unconfirmed">ашона</language>
+			<language type="snk" draft="unconfirmed">асонинке</language>
+			<language type="so" draft="unconfirmed">асомали</language>
+			<language type="sq" draft="unconfirmed">арнауҭ</language>
+			<language type="sr" draft="unconfirmed">асерб</language>
+			<language type="srn" draft="unconfirmed">асранан-атонго</language>
+			<language type="ss" draft="unconfirmed">асвази</language>
+			<language type="st" draft="unconfirmed">аладатәи асото</language>
+			<language type="su" draft="unconfirmed">асундан</language>
+			<language type="suk" draft="unconfirmed">асукәыма</language>
+			<language type="sv" draft="unconfirmed">ашвед</language>
+			<language type="sw" draft="unconfirmed">асуахили</language>
+			<language type="sw_CD" draft="unconfirmed">конголезтәи асуахили</language>
+			<language type="swb" draft="unconfirmed">акомор</language>
+			<language type="syr" draft="unconfirmed">ашьам</language>
+			<language type="ta" draft="unconfirmed">атамил</language>
+			<language type="te" draft="unconfirmed">ателугу</language>
+			<language type="tem" draft="unconfirmed">атемне</language>
+			<language type="teo" draft="unconfirmed">атесо</language>
+			<language type="tet" draft="unconfirmed">атетум</language>
+			<language type="tg" draft="unconfirmed">аҭаџьык</language>
+			<language type="th" draft="unconfirmed">атаи</language>
+			<language type="ti" draft="unconfirmed">атигриниа</language>
+			<language type="tig" draft="unconfirmed">атигре</language>
+			<language type="tk" draft="unconfirmed">атуркмен</language>
+			<language type="tlh" draft="unconfirmed">аклингон</language>
+			<language type="tli" draft="unconfirmed">атлингит</language>
+			<language type="tn" draft="unconfirmed">атсвана</language>
+			<language type="to" draft="unconfirmed">атонган</language>
+			<language type="tpi" draft="unconfirmed">аток-аписин</language>
+			<language type="tr" draft="unconfirmed">аҭырқә</language>
+			<language type="trv" draft="unconfirmed">аседек</language>
+			<language type="ts" draft="unconfirmed">атсонга</language>
+			<language type="tt" draft="unconfirmed">аҭаҭар</language>
+			<language type="tum" draft="unconfirmed">атумбука</language>
+			<language type="tvl" draft="unconfirmed">атувалу</language>
+			<language type="twq" draft="unconfirmed">атасавак</language>
+			<language type="ty" draft="unconfirmed">атаитиан</language>
+			<language type="tyv" draft="unconfirmed">атувин</language>
+			<language type="tzm" draft="unconfirmed">абжьара-атластәи атамазигхт</language>
+			<language type="udm" draft="unconfirmed">аудмурт</language>
+			<language type="ug" draft="unconfirmed">ауигур</language>
+			<language type="uk" draft="unconfirmed">аукраин</language>
+			<language type="umb" draft="unconfirmed">аумбунду</language>
+			<language type="und" draft="unconfirmed">еилкаам абызшәа</language>
+			<language type="ur" draft="unconfirmed">аурду</language>
+			<language type="uz" draft="unconfirmed">аузбек</language>
+			<language type="vai" draft="unconfirmed">аваи</language>
+			<language type="ve" draft="unconfirmed">авенда</language>
+			<language type="vi" draft="unconfirmed">авиетнам</language>
+			<language type="vo" draft="unconfirmed">аволапиук</language>
+			<language type="vun" draft="unconfirmed">авунџо</language>
+			<language type="wa" draft="unconfirmed">аваллон</language>
+			<language type="wae" draft="unconfirmed">аваллис</language>
+			<language type="wal" draft="unconfirmed">аволамо</language>
+			<language type="war" draft="unconfirmed">авараи</language>
+			<language type="wo" draft="unconfirmed">аволоф</language>
+			<language type="wuu" draft="unconfirmed">аву</language>
+			<language type="xal" draft="unconfirmed">аҟалмыҟ</language>
+			<language type="xh" draft="unconfirmed">акоса</language>
+			<language type="xog" draft="unconfirmed">асога</language>
+			<language type="yav" draft="unconfirmed">аиангбен</language>
+			<language type="ybb" draft="unconfirmed">аиемба</language>
+			<language type="yi" draft="unconfirmed">аидиш</language>
+			<language type="yo" draft="unconfirmed">аиоруба</language>
+			<language type="yue" draft="unconfirmed">акантон</language>
+			<language type="zgh" draft="unconfirmed">атамазигхт</language>
+			<language type="zh" draft="unconfirmed">акитаи</language>
+			<language type="zh" alt="menu" draft="unconfirmed">аҩадакитаи</language>
+			<language type="zh_Hans" draft="unconfirmed">акитаи, имариоу аҩыра</language>
+			<language type="zh_Hans" alt="long" draft="unconfirmed">аҩадакитаи, имариоу аҩыра</language>
+			<language type="zh_Hant" draft="unconfirmed">акитаи, атрадициатә ҩыра</language>
+			<language type="zh_Hant" alt="long" draft="unconfirmed">аҩадакитаи, атрадициатә ҩыра</language>
+			<language type="zu" draft="unconfirmed">азулу</language>
+			<language type="zun" draft="unconfirmed">азуни</language>
+			<language type="zxx" draft="unconfirmed">абызшәатә хыҵхырҭақәа ыҟаӡам</language>
+			<language type="zza" draft="unconfirmed">азаза</language>
+		</languages>
+		<scripts>
+			<script type="Arab" draft="unconfirmed">араб</script>
+			<script type="Aran" draft="unconfirmed">анасталик</script>
+			<script type="Armi" draft="unconfirmed">арамеи</script>
+			<script type="Armn" draft="unconfirmed">аерман</script>
+			<script type="Avst" draft="unconfirmed">авести</script>
+			<script type="Bali" draft="unconfirmed">абали</script>
+			<script type="Bamu" draft="unconfirmed">абамум</script>
+			<script type="Bass" draft="unconfirmed">абасса (авах)</script>
+			<script type="Batk" draft="unconfirmed">абатак</script>
+			<script type="Beng" draft="unconfirmed">абенгал</script>
+			<script type="Bopo" draft="unconfirmed">абопомофо</script>
+			<script type="Brah" draft="unconfirmed">абрахми</script>
+			<script type="Brai" draft="unconfirmed">Браили ишрифт</script>
+			<script type="Bugi" draft="unconfirmed">абугиниз</script>
+			<script type="Buhd" draft="unconfirmed">абухид</script>
+			<script type="Cakm" draft="unconfirmed">ачакма</script>
+			<script type="Cans" draft="unconfirmed">канадатәи ацыратә ҩыра</script>
+			<script type="Cari" draft="unconfirmed">акари</script>
+			<script type="Cham" draft="unconfirmed">ачам</script>
+			<script type="Cher" draft="unconfirmed">ачероки</script>
+			<script type="Copt" draft="unconfirmed">акопт</script>
+			<script type="Cprt" draft="unconfirmed">акипр</script>
+			<script type="Cyrl" draft="unconfirmed">акириллица</script>
+			<script type="Deva" draft="unconfirmed">адеванагар</script>
+			<script type="Dsrt" draft="unconfirmed">адезерет</script>
+			<script type="Dupl" draft="unconfirmed">адуплоиантә ццакҩыра</script>
+			<script type="Egyp" draft="unconfirmed">мсыртәи аиероглиф</script>
+			<script type="Ethi" draft="unconfirmed">аефиоп</script>
+			<script type="Geor" draft="unconfirmed">ақырҭ</script>
+			<script type="Glag" draft="unconfirmed">аглаголица</script>
+			<script type="Goth" draft="unconfirmed">агот</script>
+			<script type="Gran" draft="unconfirmed">агрантха</script>
+			<script type="Grek" draft="unconfirmed">абырзен</script>
+			<script type="Gujr" draft="unconfirmed">агуџарати</script>
+			<script type="Guru" draft="unconfirmed">агәырмукхи</script>
+			<script type="Hanb" draft="unconfirmed">аханб</script>
+			<script type="Hang" draft="unconfirmed">ахангыл</script>
+			<script type="Hani" draft="unconfirmed">акитаи</script>
+			<script type="Hano" draft="unconfirmed">ахануну</script>
+			<script type="Hans" draft="unconfirmed">имариоу акитаи</script>
+			<script type="Hant" draft="unconfirmed">китаитәи атрадициатә</script>
+			<script type="Hebr" draft="unconfirmed">ауриа</script>
+			<script type="Hira" draft="unconfirmed">ахирагана</script>
+			<script type="Hluw" draft="unconfirmed">лувиатәи аиероглифқәа</script>
+			<script type="Hmng" draft="unconfirmed">апахау ахмонг</script>
+			<script type="Hrkt" draft="unconfirmed">акатаканеи ахираганеи</script>
+			<script type="Hung" draft="unconfirmed">ажәытәвенгер</script>
+			<script type="Ital" draft="unconfirmed">ажәытәиталиа</script>
+			<script type="Jamo" draft="unconfirmed">аџамо</script>
+			<script type="Java" draft="unconfirmed">аиаван</script>
+			<script type="Jpan" draft="unconfirmed">аиапон</script>
+			<script type="Kali" draft="unconfirmed">акаиа</script>
+			<script type="Kana" draft="unconfirmed">акатакана</script>
+			<script type="Khar" draft="unconfirmed">акхароштхи</script>
+			<script type="Khmr" draft="unconfirmed">акхмер</script>
+			<script type="Khoj" draft="unconfirmed">ахоџики</script>
+			<script type="Knda" draft="unconfirmed">аканнада</script>
+			<script type="Kore" draft="unconfirmed">акореи</script>
+			<script type="Kthi" draft="unconfirmed">акаитхи</script>
+			<script type="Lana" draft="unconfirmed">аланна</script>
+			<script type="Laoo" draft="unconfirmed">алаос</script>
+			<script type="Latn" draft="unconfirmed">алаҭын</script>
+			<script type="Lepc" draft="unconfirmed">алепха</script>
+			<script type="Limb" draft="unconfirmed">алимбу</script>
+			<script type="Lina" draft="unconfirmed">ацәаҳәатә ҩыра А</script>
+			<script type="Linb" draft="unconfirmed">ацәаҳәатә ҩыра Б</script>
+			<script type="Lisu" draft="unconfirmed">алису</script>
+			<script type="Lyci" draft="unconfirmed">алициан</script>
+			<script type="Lydi" draft="unconfirmed">алиди</script>
+			<script type="Mand" draft="unconfirmed">амандеи</script>
+			<script type="Mani" draft="unconfirmed">аманихеи</script>
+			<script type="Mend" draft="unconfirmed">аменде</script>
+			<script type="Merc" draft="unconfirmed">ихьынаау америоттә</script>
+			<script type="Mero" draft="unconfirmed">амероит</script>
+			<script type="Mlym" draft="unconfirmed">амалаиалам</script>
+			<script type="Mong" draft="unconfirmed">амонгол</script>
+			<script type="Mroo" draft="unconfirmed">амро</script>
+			<script type="Mtei" draft="unconfirmed">аманипур</script>
+			<script type="Mymr" draft="unconfirmed">амианман</script>
+			<script type="Narb" draft="unconfirmed">аҩадарави</script>
+			<script type="Nbat" draft="unconfirmed">анабатеи</script>
+			<script type="Nkoo" draft="unconfirmed">анко</script>
+			<script type="Nshu" draft="unconfirmed">аниуи-шу</script>
+			<script type="Ogam" draft="unconfirmed">аогам</script>
+			<script type="Olck" draft="unconfirmed">аол чики</script>
+			<script type="Orkh" draft="unconfirmed">аорхоно-енисеи</script>
+			<script type="Orya" draft="unconfirmed">аориа</script>
+			<script type="Osma" draft="unconfirmed">аосман</script>
+			<script type="Palm" draft="unconfirmed">апалмир</script>
+			<script type="Perm" draft="unconfirmed">ажәытәпермтәи</script>
+			<script type="Phag" draft="unconfirmed">апагспа</script>
+			<script type="Phli" draft="unconfirmed">апехлеви</script>
+			<script type="Phlp" draft="unconfirmed">апахлави апсалтир</script>
+			<script type="Phnx" draft="unconfirmed">афиники</script>
+			<script type="Plrd" draft="unconfirmed">аполлардтәи афонетика</script>
+			<script type="Prti" draft="unconfirmed">апарфиан</script>
+			<script type="Qaag" draft="unconfirmed">азоџ</script>
+			<script type="Rjng" draft="unconfirmed">ареџанг</script>
+			<script type="Runr" draft="unconfirmed">арун</script>
+			<script type="Samr" draft="unconfirmed">асамаритиант</script>
+			<script type="Sarb" draft="unconfirmed">ажәытәа аладатәи араб</script>
+			<script type="Saur" draft="unconfirmed">асаураштра</script>
+			<script type="Sgnw" draft="unconfirmed">адыргақәа рбызшәа</script>
+			<script type="Shaw" draft="unconfirmed">алфавит Шоу</script>
+			<script type="Shrd" draft="unconfirmed">ашарада</script>
+			<script type="Sind" draft="unconfirmed">акхәыдавади</script>
+			<script type="Sinh" draft="unconfirmed">асингал</script>
+			<script type="Sora" draft="unconfirmed">асора-сонпенг</script>
+			<script type="Sund" draft="unconfirmed">асундан</script>
+			<script type="Sylo" draft="unconfirmed">асилоти нагри</script>
+			<script type="Syrc" draft="unconfirmed">ашьам</script>
+			<script type="Tagb" draft="unconfirmed">атагбанва</script>
+			<script type="Takr" draft="unconfirmed">атакри</script>
+			<script type="Tale" draft="unconfirmed">атаи ле</script>
+			<script type="Talu" draft="unconfirmed">атаи ле ҿыц</script>
+			<script type="Taml" draft="unconfirmed">атамил</script>
+			<script type="Tang" draft="unconfirmed">атангәыттә мениа</script>
+			<script type="Tavt" draft="unconfirmed">атаи-вет</script>
+			<script type="Telu" draft="unconfirmed">ателугу</script>
+			<script type="Tfng" draft="unconfirmed">ажәытәливиатәи</script>
+			<script type="Tglg" draft="unconfirmed">атагалог</script>
+			<script type="Thaa" draft="unconfirmed">атана</script>
+			<script type="Thai" draft="unconfirmed">атаи</script>
+			<script type="Tibt" draft="unconfirmed">атибет</script>
+			<script type="Tirh" draft="unconfirmed">атирхәыта</script>
+			<script type="Ugar" draft="unconfirmed">аугарит</script>
+			<script type="Vaii" draft="unconfirmed">аваи</script>
+			<script type="Wara" draft="unconfirmed">аваранг-кшити</script>
+			<script type="Xpeo" draft="unconfirmed">ажәытәџьам</script>
+			<script type="Xsux" draft="unconfirmed">ашумер-аккад асалҩыра</script>
+			<script type="Yiii" draft="unconfirmed">и</script>
+			<script type="Zinh" draft="unconfirmed">шьҭралатәи</script>
+			<script type="Zmth" draft="unconfirmed">аматематикатә дырга</script>
+			<script type="Zsye" draft="unconfirmed">аемоӡи</script>
+			<script type="Zsym" draft="unconfirmed">асимволқәа</script>
+			<script type="Zxxx" draft="unconfirmed">аҩыра змам</script>
+			<script type="Zyyy" draft="unconfirmed">азеиԥшшьҭых</script>
+			<script type="Zzzz" draft="unconfirmed">еилкаам аҩыра</script>
+		</scripts>
+		<territories>
+			<territory type="001" draft="unconfirmed">адунеи зегьы</territory>
+			<territory type="002" draft="unconfirmed">Африка</territory>
+			<territory type="003" draft="unconfirmed">Аҩадатәи Америка</territory>
+			<territory type="005" draft="unconfirmed">Аладатәи Америка</territory>
+			<territory type="009" draft="unconfirmed">Океаниа</territory>
+			<territory type="011" draft="unconfirmed">Мраҭашәаратәи Африка</territory>
+			<territory type="013" draft="unconfirmed">Агәҭантәи Америка</territory>
+			<territory type="014" draft="unconfirmed">Мрагыларатәи Африка</territory>
+			<territory type="015" draft="unconfirmed">Аҩадатәи Африка</territory>
+			<territory type="017" draft="unconfirmed">Агәҭантәи Африка</territory>
+			<territory type="018" draft="unconfirmed">Аладатәи Африка</territory>
+			<territory type="019" draft="unconfirmed">Америка</territory>
+			<territory type="021" draft="unconfirmed">Аҩада-Америкатәи арегион</territory>
+			<territory type="029" draft="unconfirmed">Кариб</territory>
+			<territory type="030" draft="unconfirmed">Мрагыларатәи Азиа</territory>
+			<territory type="034" draft="unconfirmed">Аладатәи Азиа</territory>
+			<territory type="035" draft="unconfirmed">Алада-Мрагыларатәи Азиа</territory>
+			<territory type="039" draft="unconfirmed">Аладатәи Европа</territory>
+			<territory type="053" draft="unconfirmed">Австралазиа</territory>
+			<territory type="054" draft="unconfirmed">Меланезиа</territory>
+			<territory type="057" draft="unconfirmed">Микронезиа</territory>
+			<territory type="061" draft="unconfirmed">Полинезиа</territory>
+			<territory type="142" draft="unconfirmed">Азиа</territory>
+			<territory type="143" draft="unconfirmed">Агәҭантәи Азиа</territory>
+			<territory type="145" draft="unconfirmed">Мраҭашәаратәи Азиа</territory>
+			<territory type="150" draft="unconfirmed">Европа</territory>
+			<territory type="151" draft="unconfirmed">Мрагыларатәи Европа</territory>
+			<territory type="154" draft="unconfirmed">Аҩадатәи Европа</territory>
+			<territory type="155" draft="unconfirmed">Мраҭашәаратәи Европа</territory>
+			<territory type="202" draft="unconfirmed">Атроптә Африка</territory>
+			<territory type="419" draft="unconfirmed">Алаҭынтәи Америка</territory>
+			<territory type="AC" draft="unconfirmed">ад-ха Вознесениа</territory>
+			<territory type="AD" draft="unconfirmed">Андорра</territory>
+			<territory type="AE" draft="unconfirmed">ЕАЕ</territory>
+			<territory type="AF" draft="unconfirmed">Афганистан</territory>
+			<territory type="AG" draft="unconfirmed">Антигуеи Барбудеи</territory>
+			<territory type="AI" draft="unconfirmed">Ангилиа</territory>
+			<territory type="AL" draft="unconfirmed">Албаниа</territory>
+			<territory type="AM" draft="unconfirmed">Ермантәыла</territory>
+			<territory type="AO" draft="unconfirmed">Ангола</territory>
+			<territory type="AQ" draft="unconfirmed">Антарктида</territory>
+			<territory type="AR" draft="unconfirmed">Аргентина</territory>
+			<territory type="AS" draft="unconfirmed">Америкатәи Самоа</territory>
+			<territory type="AT" draft="unconfirmed">Австриа</territory>
+			<territory type="AU" draft="unconfirmed">Австралиа</territory>
+			<territory type="AW" draft="unconfirmed">Аруба</territory>
+			<territory type="AX" draft="unconfirmed">Аландтәи ад-хақәа</territory>
+			<territory type="AZ" draft="unconfirmed">Азербаиџьан</territory>
+			<territory type="BA" draft="unconfirmed">Босниеи Герцеговинеи</territory>
+			<territory type="BB" draft="unconfirmed">Барбадос</territory>
+			<territory type="BD" draft="unconfirmed">Бангладеш</territory>
+			<territory type="BE" draft="unconfirmed">Бельгиа</territory>
+			<territory type="BF" draft="unconfirmed">Буркина-Фасо</territory>
+			<territory type="BG" draft="unconfirmed">Болгариа</territory>
+			<territory type="BH" draft="unconfirmed">Бахреин</territory>
+			<territory type="BI" draft="unconfirmed">Бурунди</territory>
+			<territory type="BJ" draft="unconfirmed">Бенин</territory>
+			<territory type="BL" draft="unconfirmed">Сен-Бартелеми</territory>
+			<territory type="BM" draft="unconfirmed">Бермудтәи ад-хақәа</territory>
+			<territory type="BN" draft="unconfirmed">Брунеи-Даруссалам</territory>
+			<territory type="BO" draft="unconfirmed">Боливиа</territory>
+			<territory type="BQ" draft="unconfirmed">Бонеир, Синт-Естатиуси Сабеи</territory>
+			<territory type="BR" draft="unconfirmed">Бразилиа</territory>
+			<territory type="BS" draft="unconfirmed">Баӷама</territory>
+			<territory type="BT" draft="unconfirmed">Бутан</territory>
+			<territory type="BV" draft="unconfirmed">ад-ха Буве</territory>
+			<territory type="BW" draft="unconfirmed">Ботсвана</territory>
+			<territory type="BY" draft="unconfirmed">Беларус</territory>
+			<territory type="BZ" draft="unconfirmed">Белиз</territory>
+			<territory type="CA" draft="unconfirmed">Канада</territory>
+			<territory type="CC" draft="unconfirmed">Кокостәи ад-қәа</territory>
+			<territory type="CD" draft="unconfirmed">Конго-Киншаса</territory>
+			<territory type="CD" alt="variant" draft="unconfirmed">Конго (АРК)</territory>
+			<territory type="CF" draft="unconfirmed">Агәҭантәи-Африкатәи Ареспублика</territory>
+			<territory type="CG" draft="unconfirmed">Конго-Браззавиль</territory>
+			<territory type="CG" alt="variant" draft="unconfirmed">Ареспублика Конго</territory>
+			<territory type="CH" draft="unconfirmed">Швеицариа</territory>
+			<territory type="CI" draft="unconfirmed">Кот-д’Ивуар</territory>
+			<territory type="CK" draft="unconfirmed">Кук идгьылбжьахақәа</territory>
+			<territory type="CL" draft="unconfirmed">Чили</territory>
+			<territory type="CM" draft="unconfirmed">Камерун</territory>
+			<territory type="CN" draft="unconfirmed">Китаи</territory>
+			<territory type="CO" draft="unconfirmed">Колумбиа</territory>
+			<territory type="CP" draft="unconfirmed">ад-ха Клиппертон</territory>
+			<territory type="CR" draft="unconfirmed">Коста-Рика</territory>
+			<territory type="CU" draft="unconfirmed">Куба</territory>
+			<territory type="CV" draft="unconfirmed">Кабо-Верде</territory>
+			<territory type="CW" draft="unconfirmed">Киурасао</territory>
+			<territory type="CX" draft="unconfirmed">ад-ха Қьырса</territory>
+			<territory type="CY" draft="unconfirmed">Кипр</territory>
+			<territory type="CZ" draft="unconfirmed">Чехиа</territory>
+			<territory type="CZ" alt="variant" draft="unconfirmed">Чештәи ареспублика</territory>
+			<territory type="DE" draft="unconfirmed">Германиа</territory>
+			<territory type="DG" draft="unconfirmed">Диего-Гарсиа</territory>
+			<territory type="DJ" draft="unconfirmed">Џибути</territory>
+			<territory type="DK" draft="unconfirmed">Даниа</territory>
+			<territory type="DM" draft="unconfirmed">Доминика</territory>
+			<territory type="DO" draft="unconfirmed">Доминиканатәи Ареспублика</territory>
+			<territory type="DZ" draft="unconfirmed">Алжир</territory>
+			<territory type="EA" draft="unconfirmed">Сеутеи Мелилиеи</territory>
+			<territory type="EC" draft="unconfirmed">Еквадор</territory>
+			<territory type="EE" draft="unconfirmed">Естониа</territory>
+			<territory type="EG" draft="unconfirmed">Египет</territory>
+			<territory type="EH" draft="unconfirmed">Мраҭашәаратәи Сахара</territory>
+			<territory type="ER" draft="unconfirmed">Еритреиа</territory>
+			<territory type="ES" draft="unconfirmed">Испаниа</territory>
+			<territory type="ET" draft="unconfirmed">Ефиопиа</territory>
+			<territory type="EU" draft="unconfirmed">Европатәи аидгыла</territory>
+			<territory type="EZ" draft="unconfirmed">евроцәаҳәа</territory>
+			<territory type="FI" draft="unconfirmed">Финлиандиа</territory>
+			<territory type="FJ" draft="unconfirmed">Фиџи</territory>
+			<territory type="FK" draft="unconfirmed">Фолклендтәи ад-хақәа</territory>
+			<territory type="FK" alt="variant" draft="unconfirmed">Фолклендтәи (Мальвинтәи) ад-хақәа</territory>
+			<territory type="FM" draft="unconfirmed">Еилоу Микронезиатәи Аштатқәа</territory>
+			<territory type="FO" draft="unconfirmed">Фарертәи ад-хақәа</territory>
+			<territory type="FR" draft="unconfirmed">Франциа</territory>
+			<territory type="GA" draft="unconfirmed">Габон</territory>
+			<territory type="GB" draft="unconfirmed">Британиа ду</territory>
+			<territory type="GB" alt="short" draft="unconfirmed">Британиа</territory>
+			<territory type="GD" draft="unconfirmed">Гренада</territory>
+			<territory type="GE" draft="unconfirmed">Қырҭтәыла</territory>
+			<territory type="GF" draft="unconfirmed">Францызтәи Гвиана</territory>
+			<territory type="GG" draft="unconfirmed">Гернси</territory>
+			<territory type="GH" draft="unconfirmed">Гана</territory>
+			<territory type="GI" draft="unconfirmed">Гибралтар</territory>
+			<territory type="GL" draft="unconfirmed">Гренландиа</territory>
+			<territory type="GM" draft="unconfirmed">Гамбиа</territory>
+			<territory type="GN" draft="unconfirmed">Гвинеиа</territory>
+			<territory type="GP" draft="unconfirmed">Гваделупа</territory>
+			<territory type="GQ" draft="unconfirmed">Екваториалтәи Гвинеиа</territory>
+			<territory type="GR" draft="unconfirmed">Бырзентәыла</territory>
+			<territory type="GS" draft="unconfirmed">Аладатәи Георгиеи Аладатәи Сандвичқәеи ад-қәа</territory>
+			<territory type="GT" draft="unconfirmed">Гватемала</territory>
+			<territory type="GU" draft="unconfirmed">Гуам</territory>
+			<territory type="GW" draft="unconfirmed">Гвинеиа-Бисау</territory>
+			<territory type="GY" draft="unconfirmed">Гаиана</territory>
+			<territory type="HK" draft="unconfirmed">Гонконг (ҶАР)</territory>
+			<territory type="HK" alt="short" draft="unconfirmed">Гонконг</territory>
+			<territory type="HM" draft="unconfirmed">ад-хақәа Херди Макдональди</territory>
+			<territory type="HN" draft="unconfirmed">Гондурас</territory>
+			<territory type="HR" draft="unconfirmed">Хорватиа</territory>
+			<territory type="HT" draft="unconfirmed">Гаити</territory>
+			<territory type="HU" draft="unconfirmed">Венгриа</territory>
+			<territory type="IC" draft="unconfirmed">Канартәи ад-хақәа</territory>
+			<territory type="ID" draft="unconfirmed">Индонезиа</territory>
+			<territory type="IE" draft="unconfirmed">Ирландиа</territory>
+			<territory type="IL" draft="unconfirmed">Израиль</territory>
+			<territory type="IM" draft="unconfirmed">ад-ха Мен</territory>
+			<territory type="IN" draft="unconfirmed">Индиа</territory>
+			<territory type="IO" draft="unconfirmed">Британиатәи аҵакырадгьыл Индиатәи аокеан аҟны</territory>
+			<territory type="IQ" draft="unconfirmed">Ирак</territory>
+			<territory type="IR" draft="unconfirmed">Иран</territory>
+			<territory type="IS" draft="unconfirmed">Исландиа</territory>
+			<territory type="IT" draft="unconfirmed">Италиа</territory>
+			<territory type="JE" draft="unconfirmed">Џерси</territory>
+			<territory type="JM" draft="unconfirmed">Иамаика</territory>
+			<territory type="JO" draft="unconfirmed">Иорданиа</territory>
+			<territory type="JP" draft="unconfirmed">Иапониа</territory>
+			<territory type="KE" draft="unconfirmed">Кениа</territory>
+			<territory type="KG" draft="unconfirmed">Киргизиа</territory>
+			<territory type="KH" draft="unconfirmed">Камбоџа</territory>
+			<territory type="KI" draft="unconfirmed">Кирибати</territory>
+			<territory type="KM" draft="unconfirmed">Комор</territory>
+			<territory type="KN" draft="unconfirmed">Сент-Китси Невиси</territory>
+			<territory type="KP" draft="unconfirmed">КЖӘДР</territory>
+			<territory type="KR" draft="unconfirmed">Кореиа Ареспублика</territory>
+			<territory type="KW" draft="unconfirmed">Кувеит</territory>
+			<territory type="KY" draft="unconfirmed">Адгьылбжьахақәа Каиман</territory>
+			<territory type="KZ" draft="unconfirmed">Ҟазахсҭан</territory>
+			<territory type="LA" draft="unconfirmed">Лаос</territory>
+			<territory type="LB" draft="unconfirmed">Ливан</territory>
+			<territory type="LC" draft="unconfirmed">Сент-Люсиа</territory>
+			<territory type="LI" draft="unconfirmed">Лихтенштеин</territory>
+			<territory type="LK" draft="unconfirmed">Шри-Ланка</territory>
+			<territory type="LR" draft="unconfirmed">Либериа</territory>
+			<territory type="LS" draft="unconfirmed">Лесото</territory>
+			<territory type="LT" draft="unconfirmed">Литва</territory>
+			<territory type="LU" draft="unconfirmed">Лиуксембург</territory>
+			<territory type="LV" draft="unconfirmed">Латвиа</territory>
+			<territory type="LY" draft="unconfirmed">Ливиа</territory>
+			<territory type="MA" draft="unconfirmed">Марокко</territory>
+			<territory type="MC" draft="unconfirmed">Монако</territory>
+			<territory type="MD" draft="unconfirmed">Молдова</territory>
+			<territory type="ME" draft="unconfirmed">Ашьхеиқәаҵәа</territory>
+			<territory type="MF" draft="unconfirmed">Сен-Мартен</territory>
+			<territory type="MG" draft="unconfirmed">Мадагаскар</territory>
+			<territory type="MH" draft="unconfirmed">Маршаллтәи Адгьылбжьахақәа</territory>
+			<territory type="MK" draft="unconfirmed">Аҩадатәи Македониа</territory>
+			<territory type="ML" draft="unconfirmed">Мали</territory>
+			<territory type="MM" draft="unconfirmed">Мианма (Бирма)</territory>
+			<territory type="MN" draft="unconfirmed">Монголиа</territory>
+			<territory type="MO" draft="unconfirmed">Макао (ҶАР)</territory>
+			<territory type="MO" alt="short" draft="unconfirmed">Макао</territory>
+			<territory type="MP" draft="unconfirmed">Аҩадатәи Мариантәи ад-хақәа</territory>
+			<territory type="MQ" draft="unconfirmed">Мартиника</territory>
+			<territory type="MR" draft="unconfirmed">Мавританиа</territory>
+			<territory type="MS" draft="unconfirmed">Монтсеррат</territory>
+			<territory type="MT" draft="unconfirmed">Мальта</territory>
+			<territory type="MU" draft="unconfirmed">Маврики</territory>
+			<territory type="MV" draft="unconfirmed">Мальдив</territory>
+			<territory type="MW" draft="unconfirmed">Малави</territory>
+			<territory type="MX" draft="unconfirmed">Мексика</territory>
+			<territory type="MY" draft="unconfirmed">Малаизиа</territory>
+			<territory type="MZ" draft="unconfirmed">Мозамбик</territory>
+			<territory type="NA" draft="unconfirmed">Намибиа</territory>
+			<territory type="NC" draft="unconfirmed">Каледониа ҿыц</territory>
+			<territory type="NE" draft="unconfirmed">Нигер</territory>
+			<territory type="NF" draft="unconfirmed">Ад-ха Норфолк</territory>
+			<territory type="NG" draft="unconfirmed">Нигериа</territory>
+			<territory type="NI" draft="unconfirmed">Никарагуа</territory>
+			<territory type="NL" draft="unconfirmed">Нидерланд</territory>
+			<territory type="NO" draft="unconfirmed">Норвегиа</territory>
+			<territory type="NP" draft="unconfirmed">Непал</territory>
+			<territory type="NR" draft="unconfirmed">Науру</territory>
+			<territory type="NU" draft="unconfirmed">Ниуе</territory>
+			<territory type="NZ" draft="unconfirmed">Зеландиа ҿыц</territory>
+			<territory type="NZ" alt="variant" draft="unconfirmed">Аотеароа (Зеландиа ҿыц)</territory>
+			<territory type="OM" draft="unconfirmed">Оман</territory>
+			<territory type="PA" draft="unconfirmed">Панама</territory>
+			<territory type="PE" draft="unconfirmed">Перу</territory>
+			<territory type="PF" draft="unconfirmed">Францызтәи Полинезиа</territory>
+			<territory type="PG" draft="unconfirmed">Папуа — Гвинеиа ҿыц</territory>
+			<territory type="PH" draft="unconfirmed">Филиппин</territory>
+			<territory type="PK" draft="unconfirmed">Пакистан</territory>
+			<territory type="PL" draft="unconfirmed">Польша</territory>
+			<territory type="PM" draft="unconfirmed">Сен-Пиери Микелони</territory>
+			<territory type="PN" draft="unconfirmed">Питкерн ад-хақәа</territory>
+			<territory type="PR" draft="unconfirmed">Пуерто-Рико</territory>
+			<territory type="PS" draft="unconfirmed">Палестинатәи аҵакырадгьылқәа</territory>
+			<territory type="PS" alt="short" draft="unconfirmed">Палестина</territory>
+			<territory type="PT" draft="unconfirmed">Португалиа</territory>
+			<territory type="PW" draft="unconfirmed">Палау</territory>
+			<territory type="PY" draft="unconfirmed">Парагваи</territory>
+			<territory type="QA" draft="unconfirmed">Катар</territory>
+			<territory type="QO" draft="unconfirmed">Нҭыҵтәи Океаниа</territory>
+			<territory type="RE" draft="unconfirmed">Реиунон</territory>
+			<territory type="RO" draft="unconfirmed">Румыниа</territory>
+			<territory type="RS" draft="unconfirmed">Сербиа</territory>
+			<territory type="RU" draft="unconfirmed">Урыстәыла</territory>
+			<territory type="RW" draft="unconfirmed">Руанда</territory>
+			<territory type="SA" draft="unconfirmed">Саудтәи Арабсҭан</territory>
+			<territory type="SB" draft="unconfirmed">Соломонтәи адгьылбжьахақәа</territory>
+			<territory type="SC" draft="unconfirmed">Сеишелтәи адгьылбжьахақәа</territory>
+			<territory type="SD" draft="unconfirmed">Судан</territory>
+			<territory type="SE" draft="unconfirmed">Швециа</territory>
+			<territory type="SG" draft="unconfirmed">Сингапур</territory>
+			<territory type="SH" draft="unconfirmed">Иԥшьоу Елена ладгьылбжьаха</territory>
+			<territory type="SI" draft="unconfirmed">Словениа</territory>
+			<territory type="SJ" draft="unconfirmed">Шпицбергени Иан-Маиени</territory>
+			<territory type="SK" draft="unconfirmed">Словакиа</territory>
+			<territory type="SL" draft="unconfirmed">Сиерра-Леоне</territory>
+			<territory type="SM" draft="unconfirmed">Сан-Марино</territory>
+			<territory type="SN" draft="unconfirmed">Сенегал</territory>
+			<territory type="SO" draft="unconfirmed">Сомали</territory>
+			<territory type="SR" draft="unconfirmed">Суринам</territory>
+			<territory type="SS" draft="unconfirmed">Аладатәи Судан</territory>
+			<territory type="ST" draft="unconfirmed">Сан-Томеи Принсипиеи</territory>
+			<territory type="SV" draft="unconfirmed">Сальвадор</territory>
+			<territory type="SX" draft="unconfirmed">Синт-Мартен</territory>
+			<territory type="SY" draft="unconfirmed">Шьамтәыла</territory>
+			<territory type="SZ" draft="unconfirmed">Есватини</territory>
+			<territory type="SZ" alt="variant" draft="unconfirmed">Свазиленд</territory>
+			<territory type="TA" draft="unconfirmed">Тристан-да-Куниа</territory>
+			<territory type="TC" draft="unconfirmed">ад-хақәа Тиоркси Каикоси</territory>
+			<territory type="TD" draft="unconfirmed">Чад</territory>
+			<territory type="TF" draft="unconfirmed">Францызтәи Аладатәи аҵакырадгьылқәа</territory>
+			<territory type="TG" draft="unconfirmed">Того</territory>
+			<territory type="TH" draft="unconfirmed">Таиланд</territory>
+			<territory type="TJ" draft="unconfirmed">Таџьықсҭан</territory>
+			<territory type="TK" draft="unconfirmed">Токелау</territory>
+			<territory type="TL" draft="unconfirmed">Мрагыларатәи Тимор</territory>
+			<territory type="TL" alt="variant" draft="unconfirmed">Тимор-Лесте</territory>
+			<territory type="TM" draft="unconfirmed">Ҭурқменисҭан</territory>
+			<territory type="TN" draft="unconfirmed">Тунис</territory>
+			<territory type="TO" draft="unconfirmed">Тонга</territory>
+			<territory type="TR" draft="unconfirmed">Ҭырқәтәыла</territory>
+			<territory type="TT" draft="unconfirmed">Тринидади Тобагои</territory>
+			<territory type="TV" draft="unconfirmed">Тувалу</territory>
+			<territory type="TW" draft="unconfirmed">Таиван</territory>
+			<territory type="TZ" draft="unconfirmed">Танзаниа</territory>
+			<territory type="UA" draft="unconfirmed">Украина</territory>
+			<territory type="UG" draft="unconfirmed">Уганда</territory>
+			<territory type="UM" draft="unconfirmed">Нҭыҵтәи малыетәи ад-қәа (ЕАШ)</territory>
+			<territory type="UN" draft="unconfirmed">Еиду Амилаҭқәа Реиҿкаара</territory>
+			<territory type="US" draft="unconfirmed">Еиду Аштатқәа</territory>
+			<territory type="US" alt="short" draft="unconfirmed">ЕАШ</territory>
+			<territory type="UY" draft="unconfirmed">Уругваи</territory>
+			<territory type="UZ" draft="unconfirmed">Узбеқьисҭан</territory>
+			<territory type="VA" draft="unconfirmed">Ватикан</territory>
+			<territory type="VC" draft="unconfirmed">Сент-Винсенти Гренадини</territory>
+			<territory type="VE" draft="unconfirmed">Венесуела</territory>
+			<territory type="VG" draft="unconfirmed">Виргинтәи ад-хақәа (Британиаду)</territory>
+			<territory type="VI" draft="unconfirmed">Виргинтәи ад-хақәа (ЕАШ)</territory>
+			<territory type="VN" draft="unconfirmed">Виетнам</territory>
+			<territory type="VU" draft="unconfirmed">Вануату</territory>
+			<territory type="WF" draft="unconfirmed">Уоллиси Футунеи</territory>
+			<territory type="WS" draft="unconfirmed">Самоа</territory>
+			<territory type="XA" draft="unconfirmed">амццәажәашьақәа</territory>
+			<territory type="XB" draft="unconfirmed">амц-Bidi</territory>
+			<territory type="XK" draft="unconfirmed">Косово</territory>
+			<territory type="YE" draft="unconfirmed">Иемен</territory>
+			<territory type="YT" draft="unconfirmed">Маиотта</territory>
+			<territory type="ZA" draft="unconfirmed">Алада-Африкатәи ареспублика</territory>
+			<territory type="ZM" draft="unconfirmed">Замбиа</territory>
+			<territory type="ZW" draft="unconfirmed">Зимбабве</territory>
+			<territory type="ZZ" draft="unconfirmed">еилкаам арегион</territory>
+		</territories>
+		<types>
+			<type key="calendar" type="gregorian" draft="unconfirmed">агригориантә мзар</type>
+			<type key="calendar" type="iso8601" draft="unconfirmed">амзар ISO-8601</type>
+			<type key="collation" type="standard" draft="unconfirmed">астандартә сортла аилыхра</type>
+			<type key="numbers" type="latn" draft="unconfirmed">иахьатәи араб ацифра</type>
+		</types>
+		<measurementSystemNames>
+			<measurementSystemName type="metric" draft="unconfirmed">Аметрикатә</measurementSystemName>
+			<measurementSystemName type="UK" draft="unconfirmed">Англиатәи</measurementSystemName>
+			<measurementSystemName type="US" draft="unconfirmed">Америкатә</measurementSystemName>
+		</measurementSystemNames>
+		<codePatterns>
+			<codePattern type="language" draft="unconfirmed">Абызшәа: {0}</codePattern>
+			<codePattern type="script" draft="unconfirmed">Аҩыра: {0}</codePattern>
+			<codePattern type="territory" draft="unconfirmed">Арегион: {0}</codePattern>
+		</codePatterns>
+	</localeDisplayNames>
+	<characters>
+		<exemplarCharacters>[а ә б в г {гә} {гь} ӷ {ӷә} {ӷь} д {дә} е ж {жә} {жь} з ӡ {ӡә} и к {кә} {кь} қ {қә} {қь} ҟ {ҟә} {ҟь} л м н о п ԥ р с т {тә} ҭ {ҭә} у ф х {хә} {хь} ҳ {ҳә} ц {цә} ҵ {ҵә} ч ҷ ҽ ҿ џ {џь} ш {шә} {шь} ы ь ҩ]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[{а\u0301} ҕ {ҕә} {ҕь} {е\u0301} {и\u0301} {о\u0301} ҧ {у\u0301} {ы\u0301}]</exemplarCharacters>
+		<exemplarCharacters type="index">[А Б В Г {ГӘ} {ГЬ} Ӷ {ӶӘ} {ӶЬ} Д {ДӘ} Е Ж {ЖӘ} {ЖЬ} З Ӡ {ӠӘ} И К {КӘ} {КЬ} Қ {ҚӘ} {ҚЬ} Ҟ {ҞӘ} {ҞЬ} Л М Н О П Ԥ Р С Т {ТӘ} Ҭ {ҬӘ} У Ф Х {ХӘ} {ХЬ} Ҳ {ҲӘ} Ц {ЦӘ} Ҵ {ҴӘ} Ч Ҷ Ҽ Ҿ Џ {ЏЬ} Ш {ШӘ} {ШЬ} Ы Ҩ]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[\- ‑ , % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐ ‑ – — , ; \: ! ? . … ' ‘ ‚ &quot; “ „ « » ( ) \[ \] \{ \} § @ * / \&amp; #]</exemplarCharacters>
+		<ellipsis type="final" draft="unconfirmed">{0}…</ellipsis>
+		<ellipsis type="initial" draft="unconfirmed">…{0}</ellipsis>
+		<ellipsis type="medial" draft="unconfirmed">{0}…{1}</ellipsis>
+		<ellipsis type="word-final" draft="unconfirmed">{0} …</ellipsis>
+		<ellipsis type="word-initial" draft="unconfirmed">… {0}</ellipsis>
+		<ellipsis type="word-medial" draft="unconfirmed">{0} … {1}</ellipsis>
+		<moreInformation draft="unconfirmed">?</moreInformation>
+		<parseLenients scope="date" level="lenient">
+			<parseLenient sample="-" draft="unconfirmed">[\--/]</parseLenient>
+			<parseLenient sample=":" draft="unconfirmed">[\:∶]</parseLenient>
+		</parseLenients>
+		<parseLenients scope="general" level="lenient">
+			<parseLenient sample="." draft="unconfirmed">[.․。︒﹒．｡]</parseLenient>
+			<parseLenient sample="’" draft="unconfirmed">['ʼ՚᾽᾿’＇]</parseLenient>
+			<parseLenient sample="%" draft="unconfirmed">[%٪﹪％]</parseLenient>
+			<parseLenient sample="‰" draft="unconfirmed">[؉‰]</parseLenient>
+			<parseLenient sample="$" draft="unconfirmed">[\$﹩＄$]</parseLenient>
+			<parseLenient sample="£" draft="unconfirmed">[£₤]</parseLenient>
+			<parseLenient sample="¥" draft="unconfirmed">[¥￥]</parseLenient>
+			<parseLenient sample="₩" draft="unconfirmed">[₩￦]</parseLenient>
+			<parseLenient sample="₹" draft="unconfirmed">[₨₹{Rp}{Rs}]</parseLenient>
+		</parseLenients>
+		<parseLenients scope="number" level="lenient">
+			<parseLenient sample="-" draft="unconfirmed">[\-‒⁻₋−➖﹣－]</parseLenient>
+			<parseLenient sample="," draft="unconfirmed">[,،٫、︐︑﹐﹑，､]</parseLenient>
+			<parseLenient sample="+" draft="unconfirmed">[+⁺₊➕﬩﹢＋]</parseLenient>
+		</parseLenients>
+		<parseLenients scope="number" level="stricter">
+			<parseLenient sample="," draft="unconfirmed">[,٫︐﹐，]</parseLenient>
+			<parseLenient sample="." draft="unconfirmed">[.․﹒．｡]</parseLenient>
+		</parseLenients>
+	</characters>
+	<delimiters>
+		<quotationStart draft="unconfirmed">«</quotationStart>
+		<quotationEnd draft="unconfirmed">»</quotationEnd>
+		<alternateQuotationStart draft="unconfirmed">„</alternateQuotationStart>
+		<alternateQuotationEnd draft="unconfirmed">“</alternateQuotationEnd>
+	</delimiters>
+	<dates>
+		<calendars>
+			<calendar type="generic">
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern draft="unconfirmed">EEEE, d MMMM y 'ш'. G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern draft="unconfirmed">d MMMM y 'ш'. G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern draft="unconfirmed">d MMM y 'ш'. G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern draft="unconfirmed">dd.MM.y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<dateTimeFormats>
+					<dateTimeFormatLength type="full">
+						<dateTimeFormat>
+							<pattern draft="unconfirmed">{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern draft="unconfirmed">{1}, {0} 'аҿы'</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="long">
+						<dateTimeFormat>
+							<pattern draft="unconfirmed">{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern draft="unconfirmed">{1}, {0} 'аҿы'</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="medium">
+						<dateTimeFormat>
+							<pattern draft="unconfirmed">{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern draft="unconfirmed">{1}, {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="short">
+						<dateTimeFormat>
+							<pattern draft="unconfirmed">{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern draft="unconfirmed">{1}, {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<availableFormats>
+						<dateFormatItem id="Ed" draft="unconfirmed">E, d</dateFormatItem>
+						<dateFormatItem id="Ehm" draft="unconfirmed">ccc, h:mm a</dateFormatItem>
+						<dateFormatItem id="EHm" draft="unconfirmed">ccc HH:mm</dateFormatItem>
+						<dateFormatItem id="Ehms" draft="unconfirmed">ccc, h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="EHms" draft="unconfirmed">ccc HH:mm:ss</dateFormatItem>
+						<dateFormatItem id="Gy" draft="unconfirmed">y 'ш'. G</dateFormatItem>
+						<dateFormatItem id="GyMd" draft="unconfirmed">dd.MM.y G</dateFormatItem>
+						<dateFormatItem id="GyMMM" draft="unconfirmed">LLL y 'ш'. G</dateFormatItem>
+						<dateFormatItem id="GyMMMd" draft="unconfirmed">d MMM y 'ш'. G</dateFormatItem>
+						<dateFormatItem id="GyMMMEd" draft="unconfirmed">E, d MMM y 'ш'. G</dateFormatItem>
+						<dateFormatItem id="Md" draft="unconfirmed">dd.MM</dateFormatItem>
+						<dateFormatItem id="MEd" draft="unconfirmed">E, dd.MM</dateFormatItem>
+						<dateFormatItem id="MMMd" draft="unconfirmed">d MMM</dateFormatItem>
+						<dateFormatItem id="MMMEd" draft="unconfirmed">ccc, d MMM</dateFormatItem>
+						<dateFormatItem id="MMMMd" draft="unconfirmed">d MMMM</dateFormatItem>
+						<dateFormatItem id="y" draft="unconfirmed">y 'ш'. G</dateFormatItem>
+						<dateFormatItem id="yyyy" draft="unconfirmed">y 'ш'. G</dateFormatItem>
+						<dateFormatItem id="yyyyM" draft="unconfirmed">MM.y G</dateFormatItem>
+						<dateFormatItem id="yyyyMd" draft="unconfirmed">dd.MM.y G</dateFormatItem>
+						<dateFormatItem id="yyyyMEd" draft="unconfirmed">E, dd.MM.y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMM" draft="unconfirmed">LLL y 'ш'. G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMd" draft="unconfirmed">d MMM y 'ш'. G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMEd" draft="unconfirmed">E, d MMM y 'ш'. G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMM" draft="unconfirmed">LLLL y 'ш'. G</dateFormatItem>
+						<dateFormatItem id="yyyyQQQ" draft="unconfirmed">QQQ y 'ш'. G</dateFormatItem>
+						<dateFormatItem id="yyyyQQQQ" draft="unconfirmed">QQQQ y 'ш'. G</dateFormatItem>
+					</availableFormats>
+					<intervalFormats>
+						<intervalFormatItem id="Gy">
+							<greatestDifference id="G" draft="unconfirmed">y 'ш'. G – y 'ш'. G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">y–y 'шш'. G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyM">
+							<greatestDifference id="G" draft="unconfirmed">MM.y G – MM.y G</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">MM.y – MM.y G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">MM.y – MM.y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMd">
+							<greatestDifference id="d" draft="unconfirmed">dd.MM.y – dd.MM.y G</greatestDifference>
+							<greatestDifference id="G" draft="unconfirmed">dd.MM.y G – dd.MM.y G</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">dd.MM.y – dd.MM.y G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">dd.MM.y – dd.MM.y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMEd">
+							<greatestDifference id="d" draft="unconfirmed">ccc, dd.MM.y – ccc, dd.MM.y G</greatestDifference>
+							<greatestDifference id="G" draft="unconfirmed">ccc, dd.MM.y G – ccc, dd.MM.y G</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">ccc, dd.MM.y – ccc, dd.MM.y G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">ccc, dd.MM.y – ccc, dd.MM.y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMM">
+							<greatestDifference id="G" draft="unconfirmed">LLL y 'ш'. G – LLL y 'ш'. G</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">LLL – LLL y 'ш'. G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">LLL y – LLL y 'шш'. G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMd">
+							<greatestDifference id="d" draft="unconfirmed">d–d MMM y 'ш'. G</greatestDifference>
+							<greatestDifference id="G" draft="unconfirmed">d MMM y 'ш'. G – d MMM y 'ш'. G</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">d MMM – d MMM y 'ш'. G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">d MMM y – d MMM y 'шш'. G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMEd">
+							<greatestDifference id="d" draft="unconfirmed">ccc, d MMM – ccc, d MMM y 'ш'. G</greatestDifference>
+							<greatestDifference id="G" draft="unconfirmed">ccc, d MMM y 'ш'. G – ccc, d MMM y 'ш'. G</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">ccc, d MMM – ccc, d MMM y 'ш'. G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">ccc, d MMM y – ccc, d MMM y 'шш'. G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="M">
+							<greatestDifference id="M" draft="unconfirmed">M–M</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MEd">
+							<greatestDifference id="d" draft="unconfirmed">E, dd.MM – E, dd.MM</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E, dd.MM – E, dd.MM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMM">
+							<greatestDifference id="M" draft="unconfirmed">LLL – LLL</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMd">
+							<greatestDifference id="d" draft="unconfirmed">d–d MMM</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">d MMM – d MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMEd">
+							<greatestDifference id="d" draft="unconfirmed">ccc, d MMM – ccc, d MMM</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">ccc, d MMM – ccc, d MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="y">
+							<greatestDifference id="y" draft="unconfirmed">y–y 'шш'. G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yM">
+							<greatestDifference id="M" draft="unconfirmed">MM.y – MM.y G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">MM.y – MM.y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMd">
+							<greatestDifference id="d" draft="unconfirmed">dd.MM.y – dd.MM.y G</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">dd.MM.y – dd.MM.y G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">dd.MM.y – dd.MM.y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMEd">
+							<greatestDifference id="d" draft="unconfirmed">ccc, dd.MM.y – ccc, dd.MM.y G</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">ccc, dd.MM.y – ccc, dd.MM.y G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">ccc, dd.MM.y – ccc, dd.MM.y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMM">
+							<greatestDifference id="M" draft="unconfirmed">LLL – LLL y 'ш'. G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">LLL y 'ш'. – LLL y 'ш'. G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMd">
+							<greatestDifference id="d" draft="unconfirmed">d–d MMM y 'ш'. G</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">d MMM – d MMM y 'ш'. G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">d MMM y 'ш'. – d MMM y 'ш'. G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMEd">
+							<greatestDifference id="d" draft="unconfirmed">ccc, d MMM – ccc, d MMM y 'ш'. G</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">ccc, d MMM – ccc, d MMM y 'ш'. G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">ccc, d MMM y 'ш'. – ccc, d MMM y 'ш'. G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMM">
+							<greatestDifference id="M" draft="unconfirmed">LLLL – LLLL y 'ш'. G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">LLLL y 'ш'. – LLLL y 'ш'. G</greatestDifference>
+						</intervalFormatItem>
+					</intervalFormats>
+				</dateTimeFormats>
+			</calendar>
+			<calendar type="gregorian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="unconfirmed">Ажь</month>
+							<month type="2" draft="unconfirmed">Жəаб</month>
+							<month type="3" draft="unconfirmed">Хəажә</month>
+							<month type="4" draft="unconfirmed">Мш</month>
+							<month type="5" draft="unconfirmed">Лаҵ</month>
+							<month type="6" draft="unconfirmed">Рашә</month>
+							<month type="7" draft="unconfirmed">Ԥхынгә</month>
+							<month type="8" draft="unconfirmed">Нанҳә</month>
+							<month type="9" draft="unconfirmed">Цəыб</month>
+							<month type="10" draft="unconfirmed">Жьҭ</month>
+							<month type="11" draft="unconfirmed">Абҵ</month>
+							<month type="12" draft="unconfirmed">Ԥхынҷ</month>
+						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1" draft="unconfirmed">Жь</month>
+							<month type="2" draft="unconfirmed">Жə</month>
+							<month type="3" draft="unconfirmed">Хə</month>
+							<month type="4" draft="unconfirmed">М</month>
+							<month type="5" draft="unconfirmed">Л</month>
+							<month type="6" draft="unconfirmed">Р</month>
+							<month type="7" draft="unconfirmed">Гә</month>
+							<month type="8" draft="unconfirmed">Н</month>
+							<month type="9" draft="unconfirmed">Цə</month>
+							<month type="10" draft="unconfirmed">Ҭ</month>
+							<month type="11" draft="unconfirmed">Б</month>
+							<month type="12" draft="unconfirmed">Ҷ</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1" draft="unconfirmed">Ажьырныҳəа</month>
+							<month type="2" draft="unconfirmed">Жəабран</month>
+							<month type="3" draft="unconfirmed">Хəажəкыра</month>
+							<month type="4" draft="unconfirmed">Мшаԥы</month>
+							<month type="5" draft="unconfirmed">Лаҵара</month>
+							<month type="6" draft="unconfirmed">Рашəара</month>
+							<month type="7" draft="unconfirmed">Ԥхынгəы</month>
+							<month type="8" draft="unconfirmed">Нанҳəа</month>
+							<month type="9" draft="unconfirmed">Цəыббра</month>
+							<month type="10" draft="unconfirmed">Жьҭаара</month>
+							<month type="11" draft="unconfirmed">Абҵара</month>
+							<month type="12" draft="unconfirmed">Ԥхынҷкәын</month>
+						</monthWidth>
+					</monthContext>
+					<monthContext type="stand-alone">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="unconfirmed">Ажь</month>
+							<month type="2" draft="unconfirmed">Жəаб</month>
+							<month type="3" draft="unconfirmed">Хəажә</month>
+							<month type="4" draft="unconfirmed">Мш</month>
+							<month type="5" draft="unconfirmed">Лаҵ</month>
+							<month type="6" draft="unconfirmed">Рашә</month>
+							<month type="7" draft="unconfirmed">Ԥхынгә</month>
+							<month type="8" draft="unconfirmed">Нанҳә</month>
+							<month type="9" draft="unconfirmed">Цəыб</month>
+							<month type="10" draft="unconfirmed">Жьҭ</month>
+							<month type="11" draft="unconfirmed">Абҵ</month>
+							<month type="12" draft="unconfirmed">Ԥхынҷ</month>
+						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1" draft="unconfirmed">Жь</month>
+							<month type="2" draft="unconfirmed">Жə</month>
+							<month type="3" draft="unconfirmed">Хə</month>
+							<month type="4" draft="unconfirmed">М</month>
+							<month type="5" draft="unconfirmed">Л</month>
+							<month type="6" draft="unconfirmed">Р</month>
+							<month type="7" draft="unconfirmed">Гә</month>
+							<month type="8" draft="unconfirmed">Н</month>
+							<month type="9" draft="unconfirmed">Цә</month>
+							<month type="10" draft="unconfirmed">Ҭ</month>
+							<month type="11" draft="unconfirmed">Б</month>
+							<month type="12" draft="unconfirmed">Ҷ</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1" draft="unconfirmed">Ажьырныҳəа</month>
+							<month type="2" draft="unconfirmed">Жəабран</month>
+							<month type="3" draft="unconfirmed">Хəажəкыра</month>
+							<month type="4" draft="unconfirmed">Мшаԥы</month>
+							<month type="5" draft="unconfirmed">Лаҵара</month>
+							<month type="6" draft="unconfirmed">Рашəара</month>
+							<month type="7" draft="unconfirmed">Ԥхынгəы</month>
+							<month type="8" draft="unconfirmed">Нанҳəа</month>
+							<month type="9" draft="unconfirmed">Цəыббра</month>
+							<month type="10" draft="unconfirmed">Жьҭаара</month>
+							<month type="11" draft="unconfirmed">Абҵара</month>
+							<month type="12" draft="unconfirmed">Ԥхынҷкәын</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<days>
+					<dayContext type="format">
+						<dayWidth type="abbreviated">
+							<day type="sun" draft="unconfirmed">Ам</day>
+							<day type="mon" draft="unconfirmed">Ашә</day>
+							<day type="tue" draft="unconfirmed">Аҩ</day>
+							<day type="wed" draft="unconfirmed">Ах</day>
+							<day type="thu" draft="unconfirmed">Аԥ</day>
+							<day type="fri" draft="unconfirmed">Ахә</day>
+							<day type="sat" draft="unconfirmed">Ас</day>
+						</dayWidth>
+						<dayWidth type="narrow">
+							<day type="sun" draft="unconfirmed">М</day>
+							<day type="mon" draft="unconfirmed">Шә</day>
+							<day type="tue" draft="unconfirmed">Ҩ</day>
+							<day type="wed" draft="unconfirmed">Х</day>
+							<day type="thu" draft="unconfirmed">Ԥ</day>
+							<day type="fri" draft="unconfirmed">Хә</day>
+							<day type="sat" draft="unconfirmed">С</day>
+						</dayWidth>
+						<dayWidth type="short">
+							<day type="sun" draft="unconfirmed">Ам</day>
+							<day type="mon" draft="unconfirmed">Ашә</day>
+							<day type="tue" draft="unconfirmed">Аҩ</day>
+							<day type="wed" draft="unconfirmed">Ах</day>
+							<day type="thu" draft="unconfirmed">Аԥ</day>
+							<day type="fri" draft="unconfirmed">Ахә</day>
+							<day type="sat" draft="unconfirmed">Ас</day>
+						</dayWidth>
+						<dayWidth type="wide">
+							<day type="sun" draft="unconfirmed">Амҽыша</day>
+							<day type="mon" draft="unconfirmed">Ашәахьа</day>
+							<day type="tue" draft="unconfirmed">Аҩаша</day>
+							<day type="wed" draft="unconfirmed">Ахаша</day>
+							<day type="thu" draft="unconfirmed">Аԥшьаша</day>
+							<day type="fri" draft="unconfirmed">Ахәаша</day>
+							<day type="sat" draft="unconfirmed">Асабша</day>
+						</dayWidth>
+					</dayContext>
+					<dayContext type="stand-alone">
+						<dayWidth type="abbreviated">
+							<day type="sun" draft="unconfirmed">Ам</day>
+							<day type="mon" draft="unconfirmed">Ашә</day>
+							<day type="tue" draft="unconfirmed">Аҩ</day>
+							<day type="wed" draft="unconfirmed">Ах</day>
+							<day type="thu" draft="unconfirmed">Аԥ</day>
+							<day type="fri" draft="unconfirmed">Ахә</day>
+							<day type="sat" draft="unconfirmed">Ас</day>
+						</dayWidth>
+						<dayWidth type="narrow">
+							<day type="sun" draft="unconfirmed">М</day>
+							<day type="mon" draft="unconfirmed">Шә</day>
+							<day type="tue" draft="unconfirmed">Ҩ</day>
+							<day type="wed" draft="unconfirmed">Х</day>
+							<day type="thu" draft="unconfirmed">Ԥ</day>
+							<day type="fri" draft="unconfirmed">Хә</day>
+							<day type="sat" draft="unconfirmed">С</day>
+						</dayWidth>
+						<dayWidth type="short">
+							<day type="sun" draft="unconfirmed">Ам</day>
+							<day type="mon" draft="unconfirmed">Ашә</day>
+							<day type="tue" draft="unconfirmed">Аҩ</day>
+							<day type="wed" draft="unconfirmed">Ах</day>
+							<day type="thu" draft="unconfirmed">Аԥ</day>
+							<day type="fri" draft="unconfirmed">Ахә</day>
+							<day type="sat" draft="unconfirmed">Ас</day>
+						</dayWidth>
+						<dayWidth type="wide">
+							<day type="sun" draft="unconfirmed">Амҽыша</day>
+							<day type="mon" draft="unconfirmed">Ашәахьа</day>
+							<day type="tue" draft="unconfirmed">Аҩаша</day>
+							<day type="wed" draft="unconfirmed">Ахаша</day>
+							<day type="thu" draft="unconfirmed">Аԥшьаша</day>
+							<day type="fri" draft="unconfirmed">Ахәаша</day>
+							<day type="sat" draft="unconfirmed">Асабша</day>
+						</dayWidth>
+					</dayContext>
+				</days>
+				<quarters>
+					<quarterContext type="format">
+						<quarterWidth type="abbreviated">
+							<quarter type="1" draft="unconfirmed">1-тәи акв.</quarter>
+							<quarter type="2" draft="unconfirmed">2-тәи акв.</quarter>
+							<quarter type="3" draft="unconfirmed">3-тәи акв.</quarter>
+							<quarter type="4" draft="unconfirmed">4-тәи акв.</quarter>
+						</quarterWidth>
+						<quarterWidth type="narrow">
+							<quarter type="1" draft="unconfirmed">1</quarter>
+							<quarter type="2" draft="unconfirmed">2</quarter>
+							<quarter type="3" draft="unconfirmed">3</quarter>
+							<quarter type="4" draft="unconfirmed">4</quarter>
+						</quarterWidth>
+						<quarterWidth type="wide">
+							<quarter type="1" draft="unconfirmed">1-тәи аквартал</quarter>
+							<quarter type="2" draft="unconfirmed">2-тәи аквартал</quarter>
+							<quarter type="3" draft="unconfirmed">3-тәи аквартал</quarter>
+							<quarter type="4" draft="unconfirmed">4-тәи аквартал</quarter>
+						</quarterWidth>
+					</quarterContext>
+					<quarterContext type="stand-alone">
+						<quarterWidth type="abbreviated">
+							<quarter type="1" draft="unconfirmed">1-тәи акв.</quarter>
+							<quarter type="2" draft="unconfirmed">2-тәи акв.</quarter>
+							<quarter type="3" draft="unconfirmed">3-тәи акв.</quarter>
+							<quarter type="4" draft="unconfirmed">4-тәи акв.</quarter>
+						</quarterWidth>
+						<quarterWidth type="wide">
+							<quarter type="1" draft="unconfirmed">1-тәи аквартал</quarter>
+							<quarter type="2" draft="unconfirmed">2-тәи аквартал</quarter>
+							<quarter type="3" draft="unconfirmed">3-тәи аквартал</quarter>
+							<quarter type="4" draft="unconfirmed">4-тәи аквартал</quarter>
+						</quarterWidth>
+					</quarterContext>
+				</quarters>
+				<dayPeriods>
+					<dayPeriodContext type="format">
+						<dayPeriodWidth type="narrow">
+							<dayPeriod type="am" draft="unconfirmed">AM</dayPeriod>
+							<dayPeriod type="pm" draft="unconfirmed">PM</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am" draft="unconfirmed">AM</dayPeriod>
+							<dayPeriod type="pm" draft="unconfirmed">PM</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+					<dayPeriodContext type="stand-alone">
+						<dayPeriodWidth type="abbreviated">
+							<dayPeriod type="am" draft="unconfirmed">AM</dayPeriod>
+							<dayPeriod type="pm" draft="unconfirmed">PM</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="narrow">
+							<dayPeriod type="am" draft="unconfirmed">AM</dayPeriod>
+							<dayPeriod type="pm" draft="unconfirmed">PM</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am" draft="unconfirmed">AM</dayPeriod>
+							<dayPeriod type="pm" draft="unconfirmed">PM</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+				</dayPeriods>
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern draft="unconfirmed">EEEE, d MMMM y 'ш'.</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern draft="unconfirmed">d MMMM y 'ш'.</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern draft="unconfirmed">d MMM y 'ш'.</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern draft="unconfirmed">dd.MM.y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<timeFormats>
+					<timeFormatLength type="full">
+						<timeFormat>
+							<pattern draft="unconfirmed">HH:mm:ss zzzz</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="long">
+						<timeFormat>
+							<pattern draft="unconfirmed">HH:mm:ss z</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="medium">
+						<timeFormat>
+							<pattern draft="unconfirmed">HH:mm:ss</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="short">
+						<timeFormat>
+							<pattern draft="unconfirmed">HH:mm</pattern>
+						</timeFormat>
+					</timeFormatLength>
+				</timeFormats>
+				<dateTimeFormats>
+					<dateTimeFormatLength type="full">
+						<dateTimeFormat>
+							<pattern draft="unconfirmed">{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern draft="unconfirmed">{1}, {0} 'аҿы'</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="long">
+						<dateTimeFormat>
+							<pattern draft="unconfirmed">{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern draft="unconfirmed">{1}, {0} 'аҿы'</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="medium">
+						<dateTimeFormat>
+							<pattern draft="unconfirmed">{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern draft="unconfirmed">{1}, {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="short">
+						<dateTimeFormat>
+							<pattern draft="unconfirmed">{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern draft="unconfirmed">{1}, {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<availableFormats>
+						<dateFormatItem id="EBhm" draft="unconfirmed">ccc, h:mm B</dateFormatItem>
+						<dateFormatItem id="EBhms" draft="unconfirmed">ccc, h:mm:ss B</dateFormatItem>
+						<dateFormatItem id="Ed" draft="unconfirmed">ccc, d</dateFormatItem>
+						<dateFormatItem id="Gy" draft="unconfirmed">y 'ш'. G</dateFormatItem>
+						<dateFormatItem id="GyMd" draft="unconfirmed">dd.MM.y GGGGG</dateFormatItem>
+						<dateFormatItem id="GyMMM" draft="unconfirmed">LLL y 'ш'. G</dateFormatItem>
+						<dateFormatItem id="GyMMMd" draft="unconfirmed">d MMM y 'ш'. G</dateFormatItem>
+						<dateFormatItem id="GyMMMEd" draft="unconfirmed">E, d MMM y 'ш'. G</dateFormatItem>
+						<dateFormatItem id="hm" draft="unconfirmed">h:mm a</dateFormatItem>
+						<dateFormatItem id="Hm" draft="unconfirmed">HH:mm</dateFormatItem>
+						<dateFormatItem id="hms" draft="unconfirmed">h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="Hms" draft="unconfirmed">HH:mm:ss</dateFormatItem>
+						<dateFormatItem id="hmsv" draft="unconfirmed">h:mm:ss a v</dateFormatItem>
+						<dateFormatItem id="Hmsv" draft="unconfirmed">HH:mm:ss v</dateFormatItem>
+						<dateFormatItem id="Md" draft="unconfirmed">dd.MM</dateFormatItem>
+						<dateFormatItem id="MEd" draft="unconfirmed">E, dd.MM</dateFormatItem>
+						<dateFormatItem id="MMMd" draft="unconfirmed">d MMM</dateFormatItem>
+						<dateFormatItem id="MMMEd" draft="unconfirmed">ccc, d MMM</dateFormatItem>
+						<dateFormatItem id="MMMMd" draft="unconfirmed">d MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="other" draft="unconfirmed">W-'тәи' 'амчыбжь' MMMM</dateFormatItem>
+						<dateFormatItem id="yM" draft="unconfirmed">MM.y</dateFormatItem>
+						<dateFormatItem id="yMd" draft="unconfirmed">dd.MM.y</dateFormatItem>
+						<dateFormatItem id="yMEd" draft="unconfirmed">ccc, dd.MM.y 'ш'.</dateFormatItem>
+						<dateFormatItem id="yMMM" draft="unconfirmed">LLL y 'ш'.</dateFormatItem>
+						<dateFormatItem id="yMMMd" draft="unconfirmed">d MMM y 'ш'.</dateFormatItem>
+						<dateFormatItem id="yMMMEd" draft="unconfirmed">E, d MMM y 'ш'.</dateFormatItem>
+						<dateFormatItem id="yMMMM" draft="unconfirmed">LLLL y 'ш'.</dateFormatItem>
+						<dateFormatItem id="yQQQ" draft="unconfirmed">QQQ y 'ш'.</dateFormatItem>
+						<dateFormatItem id="yQQQQ" draft="unconfirmed">QQQQ y 'ш'.</dateFormatItem>
+						<dateFormatItem id="yw" count="other" draft="unconfirmed">w-'тәи' 'амчыбжь' Y 'ш'.</dateFormatItem>
+					</availableFormats>
+					<intervalFormats>
+						<intervalFormatFallback draft="unconfirmed">{0} – {1}</intervalFormatFallback>
+						<intervalFormatItem id="d">
+							<greatestDifference id="d" draft="unconfirmed">d–d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Gy">
+							<greatestDifference id="G" draft="unconfirmed">y 'ш'. G – y 'ш'. G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">y–y 'шш'. G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyM">
+							<greatestDifference id="G" draft="unconfirmed">MM.y G – MM.y G</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">MM.y – MM.y G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">MM.y – MM.y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMd">
+							<greatestDifference id="d" draft="unconfirmed">dd.MM.y – dd.MM.y G</greatestDifference>
+							<greatestDifference id="G" draft="unconfirmed">dd.MM.y G – dd.MM.y G</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">dd.MM.y – dd.MM.y G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">dd.MM.y – dd.MM.y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMEd">
+							<greatestDifference id="d" draft="unconfirmed">ccc, dd.MM.y – ccc, dd.MM.y G</greatestDifference>
+							<greatestDifference id="G" draft="unconfirmed">ccc, dd.MM.y G – ccc, dd.MM.y G</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">ccc, dd.MM.y – ccc, dd.MM.y G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">ccc, dd.MM.y – ccc, dd.MM.y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMM">
+							<greatestDifference id="G" draft="unconfirmed">LLL y 'ш'. G – LLL y 'ш'. G</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">LLL – LLL y 'ш'. G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">LLL y – LLL y 'шш'. G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMd">
+							<greatestDifference id="d" draft="unconfirmed">d–d MMM y 'ш'. G</greatestDifference>
+							<greatestDifference id="G" draft="unconfirmed">d MMM y 'ш'. G – d MMM y 'ш'. G</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">d MMM – d MMM y 'ш'. G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">d MMM y – d MMM y 'шш'. G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMEd">
+							<greatestDifference id="d" draft="unconfirmed">ccc, d MMM – ccc, d MMM y 'ш'. G</greatestDifference>
+							<greatestDifference id="G" draft="unconfirmed">ccc, d MMM y 'ш'. G – ccc, d MMM y 'ш'. G</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">ccc, d MMM – ccc, d MMM y 'ш'. G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">ccc, d MMM y – ccc, d MMM y 'шш'. G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="h">
+							<greatestDifference id="a" draft="unconfirmed">h a – h a</greatestDifference>
+							<greatestDifference id="h" draft="unconfirmed">h–h a</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="H">
+							<greatestDifference id="H" draft="unconfirmed">HH–HH</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hm">
+							<greatestDifference id="a" draft="unconfirmed">h:mm a – h:mm a</greatestDifference>
+							<greatestDifference id="h" draft="unconfirmed">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="m" draft="unconfirmed">h:mm–h:mm a</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hmv">
+							<greatestDifference id="a" draft="unconfirmed">h:mm a – h:mm a v</greatestDifference>
+							<greatestDifference id="h" draft="unconfirmed">h:mm–h:mm a v</greatestDifference>
+							<greatestDifference id="m" draft="unconfirmed">h:mm–h:mm a v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hv">
+							<greatestDifference id="a" draft="unconfirmed">h a – h a v</greatestDifference>
+							<greatestDifference id="h" draft="unconfirmed">h–h a v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="M">
+							<greatestDifference id="M" draft="unconfirmed">M–M</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Md">
+							<greatestDifference id="d" draft="unconfirmed">dd.MM – dd.MM</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">dd.MM – dd.MM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MEd">
+							<greatestDifference id="d" draft="unconfirmed">E, dd.MM – E, dd.MM</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E, dd.MM – E, dd.MM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMM">
+							<greatestDifference id="M" draft="unconfirmed">LLL – LLL</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMd">
+							<greatestDifference id="d" draft="unconfirmed">d–d MMM</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">d MMM – d MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMEd">
+							<greatestDifference id="d" draft="unconfirmed">E, d MMM – E, d MMM</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E, d MMM – E, d MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="y">
+							<greatestDifference id="y" draft="unconfirmed">y–y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yM">
+							<greatestDifference id="M" draft="unconfirmed">MM.y – MM.y</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">MM.y – MM.y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMd">
+							<greatestDifference id="d" draft="unconfirmed">dd.MM.y – dd.MM.y</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">dd.MM.y – dd.MM.y</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">dd.MM.y – dd.MM.y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMEd">
+							<greatestDifference id="d" draft="unconfirmed">ccc, dd.MM.y – ccc, dd.MM.y</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">ccc, dd.MM.y – ccc, dd.MM.y</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">ccc, dd.MM.y – ccc, dd.MM.y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMM">
+							<greatestDifference id="M" draft="unconfirmed">LLL – LLL y 'ш'.</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">LLL y 'ш'. – LLL y 'ш'.</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMd">
+							<greatestDifference id="d" draft="unconfirmed">d–d MMM y 'ш'.</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">d MMM – d MMM y 'ш'.</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">d MMM y 'ш'. – d MMM y 'ш'.</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMEd">
+							<greatestDifference id="d" draft="unconfirmed">ccc, d – ccc, d MMM y 'ш'.</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">ccc, d MMM – ccc, d MMM y 'ш'.</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">ccc, d MMM y 'ш'. – ccc, d MMM y 'ш'.</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMM">
+							<greatestDifference id="M" draft="unconfirmed">LLLL – LLLL y 'ш'.</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">LLLL y 'ш'. – LLLL y 'ш'.</greatestDifference>
+						</intervalFormatItem>
+					</intervalFormats>
+				</dateTimeFormats>
+			</calendar>
+		</calendars>
+		<fields>
+			<field type="era">
+				<displayName draft="unconfirmed">аера</displayName>
+			</field>
+			<field type="year">
+				<displayName draft="unconfirmed">ашықәс</displayName>
+			</field>
+			<field type="year-short">
+				<displayName draft="unconfirmed">ш.</displayName>
+			</field>
+			<field type="year-narrow">
+				<displayName draft="unconfirmed">ш</displayName>
+			</field>
+			<field type="quarter">
+				<displayName draft="unconfirmed">аквартал</displayName>
+			</field>
+			<field type="quarter-short">
+				<displayName draft="unconfirmed">акв.</displayName>
+			</field>
+			<field type="quarter-narrow">
+				<displayName draft="unconfirmed">акв</displayName>
+			</field>
+			<field type="month">
+				<displayName draft="unconfirmed">амза</displayName>
+			</field>
+			<field type="month-short">
+				<displayName draft="unconfirmed">амз.</displayName>
+			</field>
+			<field type="month-narrow">
+				<displayName draft="unconfirmed">амз</displayName>
+			</field>
+			<field type="week">
+				<displayName draft="unconfirmed">амчыбжь</displayName>
+			</field>
+			<field type="week-short">
+				<displayName draft="unconfirmed">амч.</displayName>
+			</field>
+			<field type="week-narrow">
+				<displayName draft="unconfirmed">амч</displayName>
+			</field>
+			<field type="day">
+				<displayName draft="unconfirmed">амш</displayName>
+				<relative type="-1" draft="unconfirmed">иацы</relative>
+				<relative type="0" draft="unconfirmed">иахьа</relative>
+				<relative type="1" draft="unconfirmed">уаҵәы</relative>
+			</field>
+			<field type="day-short">
+				<displayName draft="unconfirmed">амш</displayName>
+				<relative type="-1" draft="unconfirmed">иацы</relative>
+				<relative type="0" draft="unconfirmed">иахьа</relative>
+				<relative type="1" draft="unconfirmed">уаҵәы</relative>
+			</field>
+			<field type="day-narrow">
+				<displayName draft="unconfirmed">амш</displayName>
+				<relative type="-1" draft="unconfirmed">иацы</relative>
+				<relative type="0" draft="unconfirmed">иахьа</relative>
+				<relative type="1" draft="unconfirmed">уаҵәы</relative>
+			</field>
+		</fields>
+		<timeZoneNames>
+			<regionFormat draft="unconfirmed">{0} Аамҭа</regionFormat>
+			<regionFormat type="daylight" draft="unconfirmed">{0} Аԥхынтәи Аамҭа</regionFormat>
+			<regionFormat type="standard" draft="unconfirmed">{0} Астандартә Аамҭа</regionFormat>
+			<zone type="Etc/Unknown">
+				<exemplarCity draft="unconfirmed">Еилкаам ақалақь</exemplarCity>
+			</zone>
+			<zone type="Europe/Andorra">
+				<exemplarCity draft="unconfirmed">Андорра</exemplarCity>
+			</zone>
+			<zone type="Asia/Dubai">
+				<exemplarCity draft="unconfirmed">Дубаи</exemplarCity>
+			</zone>
+			<zone type="Asia/Kabul">
+				<exemplarCity draft="unconfirmed">Кабул</exemplarCity>
+			</zone>
+			<zone type="America/Antigua">
+				<exemplarCity draft="unconfirmed">Антигуа</exemplarCity>
+			</zone>
+			<zone type="America/Anguilla">
+				<exemplarCity draft="unconfirmed">Ангилиа</exemplarCity>
+			</zone>
+			<zone type="Europe/Tirane">
+				<exemplarCity draft="unconfirmed">Тирана</exemplarCity>
+			</zone>
+			<zone type="Asia/Yerevan">
+				<exemplarCity draft="unconfirmed">Ереван</exemplarCity>
+			</zone>
+			<zone type="Africa/Luanda">
+				<exemplarCity draft="unconfirmed">Луанда</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Rothera">
+				<exemplarCity draft="unconfirmed">Ротера</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Palmer">
+				<exemplarCity draft="unconfirmed">Палмер</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Troll">
+				<exemplarCity draft="unconfirmed">Тролл</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Syowa">
+				<exemplarCity draft="unconfirmed">Сиова</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Mawson">
+				<exemplarCity draft="unconfirmed">Моусон</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Davis">
+				<exemplarCity draft="unconfirmed">Деивис</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Vostok">
+				<exemplarCity draft="unconfirmed">Амрагылара</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Casey">
+				<exemplarCity draft="unconfirmed">Кеиси</exemplarCity>
+			</zone>
+			<zone type="Antarctica/DumontDUrville">
+				<exemplarCity draft="unconfirmed">Диумон-д’Иурвил</exemplarCity>
+			</zone>
+			<zone type="Antarctica/McMurdo">
+				<exemplarCity draft="unconfirmed">Мак-Мердо</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/Rio_Gallegos">
+				<exemplarCity draft="unconfirmed">Рио-Галегос</exemplarCity>
+			</zone>
+			<zone type="America/Mendoza">
+				<exemplarCity draft="unconfirmed">Мендоса</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/San_Juan">
+				<exemplarCity draft="unconfirmed">Сан-Хуан</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/Ushuaia">
+				<exemplarCity draft="unconfirmed">Ушуаиа</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/La_Rioja">
+				<exemplarCity draft="unconfirmed">Ла-Риоха</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/San_Luis">
+				<exemplarCity draft="unconfirmed">Сан-Луис</exemplarCity>
+			</zone>
+			<zone type="America/Catamarca">
+				<exemplarCity draft="unconfirmed">Катамарка</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/Salta">
+				<exemplarCity draft="unconfirmed">Салта</exemplarCity>
+			</zone>
+			<zone type="America/Jujuy">
+				<exemplarCity draft="unconfirmed">Жужуи</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/Tucuman">
+				<exemplarCity draft="unconfirmed">Тукуман</exemplarCity>
+			</zone>
+			<zone type="America/Cordoba">
+				<exemplarCity draft="unconfirmed">Кордова</exemplarCity>
+			</zone>
+			<zone type="America/Buenos_Aires">
+				<exemplarCity draft="unconfirmed">Буенос-Аирес</exemplarCity>
+			</zone>
+			<zone type="Pacific/Pago_Pago">
+				<exemplarCity draft="unconfirmed">Паго-Паго</exemplarCity>
+			</zone>
+			<zone type="Europe/Vienna">
+				<exemplarCity draft="unconfirmed">Вена</exemplarCity>
+			</zone>
+			<zone type="Australia/Perth">
+				<exemplarCity draft="unconfirmed">Перт</exemplarCity>
+			</zone>
+			<zone type="Australia/Eucla">
+				<exemplarCity draft="unconfirmed">Иукла</exemplarCity>
+			</zone>
+			<zone type="Australia/Darwin">
+				<exemplarCity draft="unconfirmed">Дарвин</exemplarCity>
+			</zone>
+			<zone type="Australia/Adelaide">
+				<exemplarCity draft="unconfirmed">Аделаида</exemplarCity>
+			</zone>
+			<zone type="Australia/Broken_Hill">
+				<exemplarCity draft="unconfirmed">Брокен-Хилл</exemplarCity>
+			</zone>
+			<zone type="Australia/Melbourne">
+				<exemplarCity draft="unconfirmed">Мелбурн</exemplarCity>
+			</zone>
+			<zone type="Australia/Hobart">
+				<exemplarCity draft="unconfirmed">Хобарт</exemplarCity>
+			</zone>
+			<zone type="Australia/Lindeman">
+				<exemplarCity draft="unconfirmed">Линдеман</exemplarCity>
+			</zone>
+			<zone type="Australia/Sydney">
+				<exemplarCity draft="unconfirmed">Сиднеи</exemplarCity>
+			</zone>
+			<zone type="Australia/Brisbane">
+				<exemplarCity draft="unconfirmed">Брисбен</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Macquarie">
+				<exemplarCity draft="unconfirmed">Маккуори</exemplarCity>
+			</zone>
+			<zone type="Australia/Lord_Howe">
+				<exemplarCity draft="unconfirmed">Лорд-Хау</exemplarCity>
+			</zone>
+			<zone type="America/Aruba">
+				<exemplarCity draft="unconfirmed">Аруба</exemplarCity>
+			</zone>
+			<zone type="Europe/Mariehamn">
+				<exemplarCity draft="unconfirmed">Мариехамн</exemplarCity>
+			</zone>
+			<zone type="Asia/Baku">
+				<exemplarCity draft="unconfirmed">Баку</exemplarCity>
+			</zone>
+			<zone type="Europe/Sarajevo">
+				<exemplarCity draft="unconfirmed">Сараево</exemplarCity>
+			</zone>
+			<zone type="America/Barbados">
+				<exemplarCity draft="unconfirmed">Барбадос</exemplarCity>
+			</zone>
+			<zone type="Asia/Dhaka">
+				<exemplarCity draft="unconfirmed">Дакка</exemplarCity>
+			</zone>
+			<zone type="Europe/Brussels">
+				<exemplarCity draft="unconfirmed">Бриуссел</exemplarCity>
+			</zone>
+			<zone type="Africa/Ouagadougou">
+				<exemplarCity draft="unconfirmed">Уагадугу</exemplarCity>
+			</zone>
+			<zone type="Europe/Sofia">
+				<exemplarCity draft="unconfirmed">Софиа</exemplarCity>
+			</zone>
+			<zone type="Asia/Bahrain">
+				<exemplarCity draft="unconfirmed">Бахреин</exemplarCity>
+			</zone>
+			<zone type="Africa/Bujumbura">
+				<exemplarCity draft="unconfirmed">Бужумбура</exemplarCity>
+			</zone>
+			<zone type="Africa/Porto-Novo">
+				<exemplarCity draft="unconfirmed">Порто-Ново</exemplarCity>
+			</zone>
+			<zone type="America/St_Barthelemy">
+				<exemplarCity draft="unconfirmed">Сен-Бартелеми</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Bermuda">
+				<exemplarCity draft="unconfirmed">Бермудтәи ад-хақәа</exemplarCity>
+			</zone>
+			<zone type="Asia/Brunei">
+				<exemplarCity draft="unconfirmed">Брунеи</exemplarCity>
+			</zone>
+			<zone type="America/La_Paz">
+				<exemplarCity draft="unconfirmed">Ла-Пас</exemplarCity>
+			</zone>
+			<zone type="America/Kralendijk">
+				<exemplarCity draft="unconfirmed">Кралендеик</exemplarCity>
+			</zone>
+			<zone type="America/Eirunepe">
+				<exemplarCity draft="unconfirmed">Еирунепе</exemplarCity>
+			</zone>
+			<zone type="America/Rio_Branco">
+				<exemplarCity draft="unconfirmed">Риу-Бранку</exemplarCity>
+			</zone>
+			<zone type="America/Porto_Velho">
+				<exemplarCity draft="unconfirmed">Порту-Велиу</exemplarCity>
+			</zone>
+			<zone type="America/Boa_Vista">
+				<exemplarCity draft="unconfirmed">Боа-Виста</exemplarCity>
+			</zone>
+			<zone type="America/Manaus">
+				<exemplarCity draft="unconfirmed">Манаус</exemplarCity>
+			</zone>
+			<zone type="America/Cuiaba">
+				<exemplarCity draft="unconfirmed">Куиаба</exemplarCity>
+			</zone>
+			<zone type="America/Santarem">
+				<exemplarCity draft="unconfirmed">Сантарен</exemplarCity>
+			</zone>
+			<zone type="America/Campo_Grande">
+				<exemplarCity draft="unconfirmed">Кампу-Гранди</exemplarCity>
+			</zone>
+			<zone type="America/Belem">
+				<exemplarCity draft="unconfirmed">Белен</exemplarCity>
+			</zone>
+			<zone type="America/Araguaina">
+				<exemplarCity draft="unconfirmed">Арагуаина</exemplarCity>
+			</zone>
+			<zone type="America/Sao_Paulo">
+				<exemplarCity draft="unconfirmed">Сан-Паулу</exemplarCity>
+			</zone>
+			<zone type="America/Bahia">
+				<exemplarCity draft="unconfirmed">Баиа</exemplarCity>
+			</zone>
+			<zone type="America/Fortaleza">
+				<exemplarCity draft="unconfirmed">Форталеза</exemplarCity>
+			</zone>
+			<zone type="America/Maceio">
+				<exemplarCity draft="unconfirmed">Масеио</exemplarCity>
+			</zone>
+			<zone type="America/Recife">
+				<exemplarCity draft="unconfirmed">Ресифи</exemplarCity>
+			</zone>
+			<zone type="America/Noronha">
+				<exemplarCity draft="unconfirmed">Норониа</exemplarCity>
+			</zone>
+			<zone type="America/Nassau">
+				<exemplarCity draft="unconfirmed">Нассау</exemplarCity>
+			</zone>
+			<zone type="Asia/Thimphu">
+				<exemplarCity draft="unconfirmed">Тхимпху</exemplarCity>
+			</zone>
+			<zone type="Africa/Gaborone">
+				<exemplarCity draft="unconfirmed">Габороне</exemplarCity>
+			</zone>
+			<zone type="Europe/Minsk">
+				<exemplarCity draft="unconfirmed">Минск</exemplarCity>
+			</zone>
+			<zone type="America/Belize">
+				<exemplarCity draft="unconfirmed">Белиз</exemplarCity>
+			</zone>
+			<zone type="America/Dawson">
+				<exemplarCity draft="unconfirmed">Доусон</exemplarCity>
+			</zone>
+			<zone type="America/Whitehorse">
+				<exemplarCity draft="unconfirmed">Уаитхорс</exemplarCity>
+			</zone>
+			<zone type="America/Inuvik">
+				<exemplarCity draft="unconfirmed">Инувик</exemplarCity>
+			</zone>
+			<zone type="America/Vancouver">
+				<exemplarCity draft="unconfirmed">Ванкувер</exemplarCity>
+			</zone>
+			<zone type="America/Fort_Nelson">
+				<exemplarCity draft="unconfirmed">Форт Нелсон</exemplarCity>
+			</zone>
+			<zone type="America/Dawson_Creek">
+				<exemplarCity draft="unconfirmed">Доусон-Крик</exemplarCity>
+			</zone>
+			<zone type="America/Creston">
+				<exemplarCity draft="unconfirmed">Крестон</exemplarCity>
+			</zone>
+			<zone type="America/Yellowknife">
+				<exemplarCity draft="unconfirmed">Иеллоунаиф</exemplarCity>
+			</zone>
+			<zone type="America/Edmonton">
+				<exemplarCity draft="unconfirmed">Едмонтон</exemplarCity>
+			</zone>
+			<zone type="America/Swift_Current">
+				<exemplarCity draft="unconfirmed">Свифт-Керрент</exemplarCity>
+			</zone>
+			<zone type="America/Cambridge_Bay">
+				<exemplarCity draft="unconfirmed">Кеимбриџ-Беи</exemplarCity>
+			</zone>
+			<zone type="America/Regina">
+				<exemplarCity draft="unconfirmed">Реџаина</exemplarCity>
+			</zone>
+			<zone type="America/Winnipeg">
+				<exemplarCity draft="unconfirmed">Виннипег</exemplarCity>
+			</zone>
+			<zone type="America/Resolute">
+				<exemplarCity draft="unconfirmed">Резолиут</exemplarCity>
+			</zone>
+			<zone type="America/Rainy_River">
+				<exemplarCity draft="unconfirmed">Реини-Ривер</exemplarCity>
+			</zone>
+			<zone type="America/Rankin_Inlet">
+				<exemplarCity draft="unconfirmed">Ранкин-Инлет</exemplarCity>
+			</zone>
+			<zone type="America/Coral_Harbour">
+				<exemplarCity draft="unconfirmed">Корал-Харбор</exemplarCity>
+			</zone>
+			<zone type="America/Thunder_Bay">
+				<exemplarCity draft="unconfirmed">Тандер-Беи</exemplarCity>
+			</zone>
+			<zone type="America/Nipigon">
+				<exemplarCity draft="unconfirmed">Нипигон</exemplarCity>
+			</zone>
+			<zone type="America/Toronto">
+				<exemplarCity draft="unconfirmed">Торонто</exemplarCity>
+			</zone>
+			<zone type="America/Iqaluit">
+				<exemplarCity draft="unconfirmed">Икалуит</exemplarCity>
+			</zone>
+			<zone type="America/Pangnirtung">
+				<exemplarCity draft="unconfirmed">Пангниртанг</exemplarCity>
+			</zone>
+			<zone type="America/Moncton">
+				<exemplarCity draft="unconfirmed">Монктон</exemplarCity>
+			</zone>
+			<zone type="America/Halifax">
+				<exemplarCity draft="unconfirmed">Ҳалифакс</exemplarCity>
+			</zone>
+			<zone type="America/Goose_Bay">
+				<exemplarCity draft="unconfirmed">Гус-Беи</exemplarCity>
+			</zone>
+			<zone type="America/Glace_Bay">
+				<exemplarCity draft="unconfirmed">Глеис-Беи</exemplarCity>
+			</zone>
+			<zone type="America/Blanc-Sablon">
+				<exemplarCity draft="unconfirmed">Бланк-Саблон</exemplarCity>
+			</zone>
+			<zone type="America/St_Johns">
+				<exemplarCity draft="unconfirmed">Сент-Џонс</exemplarCity>
+			</zone>
+			<zone type="Indian/Cocos">
+				<exemplarCity draft="unconfirmed">Кокостәи ад-хақәа</exemplarCity>
+			</zone>
+			<zone type="Africa/Kinshasa">
+				<exemplarCity draft="unconfirmed">Киншаса</exemplarCity>
+			</zone>
+			<zone type="Africa/Lubumbashi">
+				<exemplarCity draft="unconfirmed">Лубумбаши</exemplarCity>
+			</zone>
+			<zone type="Africa/Bangui">
+				<exemplarCity draft="unconfirmed">Банги</exemplarCity>
+			</zone>
+			<zone type="Africa/Brazzaville">
+				<exemplarCity draft="unconfirmed">Браззавил</exemplarCity>
+			</zone>
+			<zone type="Europe/Zurich">
+				<exemplarCity draft="unconfirmed">Циурих</exemplarCity>
+			</zone>
+			<zone type="Africa/Abidjan">
+				<exemplarCity draft="unconfirmed">Абиџан</exemplarCity>
+			</zone>
+			<zone type="Pacific/Rarotonga">
+				<exemplarCity draft="unconfirmed">Раротонга</exemplarCity>
+			</zone>
+			<zone type="Pacific/Easter">
+				<exemplarCity draft="unconfirmed">ад-ха Пасхи</exemplarCity>
+			</zone>
+			<zone type="America/Punta_Arenas">
+				<exemplarCity draft="unconfirmed">Пунта-Аренас</exemplarCity>
+			</zone>
+			<zone type="America/Santiago">
+				<exemplarCity draft="unconfirmed">Сантиаго</exemplarCity>
+			</zone>
+			<zone type="Africa/Douala">
+				<exemplarCity draft="unconfirmed">Дуала</exemplarCity>
+			</zone>
+			<zone type="Asia/Urumqi">
+				<exemplarCity draft="unconfirmed">Урумчи</exemplarCity>
+			</zone>
+			<zone type="Asia/Shanghai">
+				<exemplarCity draft="unconfirmed">Шанхаи</exemplarCity>
+			</zone>
+			<zone type="America/Bogota">
+				<exemplarCity draft="unconfirmed">Богота</exemplarCity>
+			</zone>
+			<zone type="America/Costa_Rica">
+				<exemplarCity draft="unconfirmed">Коста-Рика</exemplarCity>
+			</zone>
+			<zone type="America/Havana">
+				<exemplarCity draft="unconfirmed">Гавана</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Cape_Verde">
+				<exemplarCity draft="unconfirmed">Кабо-Верде</exemplarCity>
+			</zone>
+			<zone type="America/Curacao">
+				<exemplarCity draft="unconfirmed">Киурасао</exemplarCity>
+			</zone>
+			<zone type="Indian/Christmas">
+				<exemplarCity draft="unconfirmed">ад-ха Қьырса</exemplarCity>
+			</zone>
+			<zone type="Asia/Nicosia">
+				<exemplarCity draft="unconfirmed">Никосиа</exemplarCity>
+			</zone>
+			<zone type="Asia/Famagusta">
+				<exemplarCity draft="unconfirmed">Фамагуста</exemplarCity>
+			</zone>
+			<zone type="Europe/Prague">
+				<exemplarCity draft="unconfirmed">Прага</exemplarCity>
+			</zone>
+			<zone type="Europe/Busingen">
+				<exemplarCity draft="unconfirmed">Биузинген-Хыхьтәи-Реине</exemplarCity>
+			</zone>
+			<zone type="Europe/Berlin">
+				<exemplarCity draft="unconfirmed">Берлин</exemplarCity>
+			</zone>
+			<zone type="Africa/Djibouti">
+				<exemplarCity draft="unconfirmed">Џибути</exemplarCity>
+			</zone>
+			<zone type="Europe/Copenhagen">
+				<exemplarCity draft="unconfirmed">Копенҳаген</exemplarCity>
+			</zone>
+			<zone type="America/Dominica">
+				<exemplarCity draft="unconfirmed">Доминика</exemplarCity>
+			</zone>
+			<zone type="America/Santo_Domingo">
+				<exemplarCity draft="unconfirmed">Санто-Доминго</exemplarCity>
+			</zone>
+			<zone type="Africa/Algiers">
+				<exemplarCity draft="unconfirmed">Алжир</exemplarCity>
+			</zone>
+			<zone type="Pacific/Galapagos">
+				<exemplarCity draft="unconfirmed">Галапагостәи ад-хақәа</exemplarCity>
+			</zone>
+			<zone type="America/Guayaquil">
+				<exemplarCity draft="unconfirmed">Гуаиакил</exemplarCity>
+			</zone>
+			<zone type="Europe/Tallinn">
+				<exemplarCity draft="unconfirmed">Таллин</exemplarCity>
+			</zone>
+			<zone type="Africa/Cairo">
+				<exemplarCity draft="unconfirmed">Каир</exemplarCity>
+			</zone>
+			<zone type="Africa/El_Aaiun">
+				<exemplarCity draft="unconfirmed">Ел-Аиун</exemplarCity>
+			</zone>
+			<zone type="Africa/Asmera">
+				<exemplarCity draft="unconfirmed">Асмера</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Canary">
+				<exemplarCity draft="unconfirmed">Канартәи ад-хақәа</exemplarCity>
+			</zone>
+			<zone type="Africa/Ceuta">
+				<exemplarCity draft="unconfirmed">Сеута</exemplarCity>
+			</zone>
+			<zone type="Europe/Madrid">
+				<exemplarCity draft="unconfirmed">Мадрид</exemplarCity>
+			</zone>
+			<zone type="Africa/Addis_Ababa">
+				<exemplarCity draft="unconfirmed">Аддис-Абеба</exemplarCity>
+			</zone>
+			<zone type="Europe/Helsinki">
+				<exemplarCity draft="unconfirmed">Хелсинки</exemplarCity>
+			</zone>
+			<zone type="Pacific/Fiji">
+				<exemplarCity draft="unconfirmed">Фиџи</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Stanley">
+				<exemplarCity draft="unconfirmed">Стенли</exemplarCity>
+			</zone>
+			<zone type="Pacific/Truk">
+				<exemplarCity draft="unconfirmed">Трук</exemplarCity>
+			</zone>
+			<zone type="Pacific/Ponape">
+				<exemplarCity draft="unconfirmed">Понпеи</exemplarCity>
+			</zone>
+			<zone type="Pacific/Kosrae">
+				<exemplarCity draft="unconfirmed">Косрае</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Faeroe">
+				<exemplarCity draft="unconfirmed">Фарертәи ад-хақәа</exemplarCity>
+			</zone>
+			<zone type="Europe/Paris">
+				<exemplarCity draft="unconfirmed">Париж</exemplarCity>
+			</zone>
+			<zone type="Africa/Libreville">
+				<exemplarCity draft="unconfirmed">Либревил</exemplarCity>
+			</zone>
+			<zone type="Europe/London">
+				<long>
+					<daylight draft="unconfirmed">Англиа Аԥхынтәи Аамҭа</daylight>
+				</long>
+				<exemplarCity draft="unconfirmed">Лондон</exemplarCity>
+			</zone>
+			<zone type="America/Grenada">
+				<exemplarCity draft="unconfirmed">Гренада</exemplarCity>
+			</zone>
+			<zone type="Asia/Tbilisi">
+				<exemplarCity draft="unconfirmed">Қарҭ</exemplarCity>
+			</zone>
+			<zone type="America/Cayenne">
+				<exemplarCity draft="unconfirmed">Каиенна</exemplarCity>
+			</zone>
+			<zone type="Europe/Guernsey">
+				<exemplarCity draft="unconfirmed">Гернси</exemplarCity>
+			</zone>
+			<zone type="Africa/Accra">
+				<exemplarCity draft="unconfirmed">Аккра</exemplarCity>
+			</zone>
+			<zone type="Europe/Gibraltar">
+				<exemplarCity draft="unconfirmed">Гибралтар</exemplarCity>
+			</zone>
+			<zone type="America/Thule">
+				<exemplarCity draft="unconfirmed">Туле</exemplarCity>
+			</zone>
+			<zone type="America/Godthab">
+				<exemplarCity draft="unconfirmed">Нуук</exemplarCity>
+			</zone>
+			<zone type="America/Scoresbysund">
+				<exemplarCity draft="unconfirmed">Скорсбисунн</exemplarCity>
+			</zone>
+			<zone type="America/Danmarkshavn">
+				<exemplarCity draft="unconfirmed">Денмарксхавн</exemplarCity>
+			</zone>
+			<zone type="Africa/Banjul">
+				<exemplarCity draft="unconfirmed">Банжул</exemplarCity>
+			</zone>
+			<zone type="Africa/Conakry">
+				<exemplarCity draft="unconfirmed">Конакри</exemplarCity>
+			</zone>
+			<zone type="America/Guadeloupe">
+				<exemplarCity draft="unconfirmed">Гваделупа</exemplarCity>
+			</zone>
+			<zone type="Africa/Malabo">
+				<exemplarCity draft="unconfirmed">Малабо</exemplarCity>
+			</zone>
+			<zone type="Europe/Athens">
+				<exemplarCity draft="unconfirmed">Афин</exemplarCity>
+			</zone>
+			<zone type="Atlantic/South_Georgia">
+				<exemplarCity draft="unconfirmed">Аладатәи Георгиа</exemplarCity>
+			</zone>
+			<zone type="America/Guatemala">
+				<exemplarCity draft="unconfirmed">Гватемала</exemplarCity>
+			</zone>
+			<zone type="Pacific/Guam">
+				<exemplarCity draft="unconfirmed">Гуам</exemplarCity>
+			</zone>
+			<zone type="Africa/Bissau">
+				<exemplarCity draft="unconfirmed">Бисау</exemplarCity>
+			</zone>
+			<zone type="America/Guyana">
+				<exemplarCity draft="unconfirmed">Гаиана</exemplarCity>
+			</zone>
+			<zone type="Asia/Hong_Kong">
+				<exemplarCity draft="unconfirmed">Ҳонконг</exemplarCity>
+			</zone>
+			<zone type="America/Tegucigalpa">
+				<exemplarCity draft="unconfirmed">Тегусигалпа</exemplarCity>
+			</zone>
+			<zone type="Europe/Zagreb">
+				<exemplarCity draft="unconfirmed">Загреб</exemplarCity>
+			</zone>
+			<zone type="America/Port-au-Prince">
+				<exemplarCity draft="unconfirmed">Порт-о-Пренс</exemplarCity>
+			</zone>
+			<zone type="Europe/Budapest">
+				<exemplarCity draft="unconfirmed">Будапешт</exemplarCity>
+			</zone>
+			<zone type="Asia/Jakarta">
+				<exemplarCity draft="unconfirmed">Џакарта</exemplarCity>
+			</zone>
+			<zone type="Asia/Pontianak">
+				<exemplarCity draft="unconfirmed">Понтианак</exemplarCity>
+			</zone>
+			<zone type="Asia/Makassar">
+				<exemplarCity draft="unconfirmed">Макасар</exemplarCity>
+			</zone>
+			<zone type="Asia/Jayapura">
+				<exemplarCity draft="unconfirmed">Џаиапура</exemplarCity>
+			</zone>
+			<zone type="Europe/Dublin">
+				<long>
+					<daylight draft="unconfirmed">Аирланд Астандартә Аамҭа</daylight>
+				</long>
+				<exemplarCity draft="unconfirmed">Дублин</exemplarCity>
+			</zone>
+			<zone type="Asia/Jerusalem">
+				<exemplarCity draft="unconfirmed">Иерусалим</exemplarCity>
+			</zone>
+			<zone type="Europe/Isle_of_Man">
+				<exemplarCity draft="unconfirmed">ад-ха Мен</exemplarCity>
+			</zone>
+			<zone type="Asia/Calcutta">
+				<exemplarCity draft="unconfirmed">Калкутта</exemplarCity>
+			</zone>
+			<zone type="Indian/Chagos">
+				<exemplarCity draft="unconfirmed">Чагос</exemplarCity>
+			</zone>
+			<zone type="Asia/Baghdad">
+				<exemplarCity draft="unconfirmed">Багдад</exemplarCity>
+			</zone>
+			<zone type="Asia/Tehran">
+				<exemplarCity draft="unconfirmed">Тегеран</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Reykjavik">
+				<exemplarCity draft="unconfirmed">Реикиавик</exemplarCity>
+			</zone>
+			<zone type="Europe/Rome">
+				<exemplarCity draft="unconfirmed">Рим</exemplarCity>
+			</zone>
+			<zone type="Europe/Jersey">
+				<exemplarCity draft="unconfirmed">Џерси</exemplarCity>
+			</zone>
+			<zone type="America/Jamaica">
+				<exemplarCity draft="unconfirmed">Иамаика</exemplarCity>
+			</zone>
+			<zone type="Asia/Amman">
+				<exemplarCity draft="unconfirmed">Амман</exemplarCity>
+			</zone>
+			<zone type="Asia/Tokyo">
+				<exemplarCity draft="unconfirmed">Токио</exemplarCity>
+			</zone>
+			<zone type="Africa/Nairobi">
+				<exemplarCity draft="unconfirmed">Наироби</exemplarCity>
+			</zone>
+			<zone type="Asia/Bishkek">
+				<exemplarCity draft="unconfirmed">Бишкек</exemplarCity>
+			</zone>
+			<zone type="Asia/Phnom_Penh">
+				<exemplarCity draft="unconfirmed">Пномпен</exemplarCity>
+			</zone>
+			<zone type="Pacific/Kanton">
+				<exemplarCity draft="unconfirmed">Кантон</exemplarCity>
+			</zone>
+			<zone type="Pacific/Kiritimati">
+				<exemplarCity draft="unconfirmed">Киритимати</exemplarCity>
+			</zone>
+			<zone type="Pacific/Tarawa">
+				<exemplarCity draft="unconfirmed">Тарава</exemplarCity>
+			</zone>
+			<zone type="Indian/Comoro">
+				<exemplarCity draft="unconfirmed">Комор</exemplarCity>
+			</zone>
+			<zone type="America/St_Kitts">
+				<exemplarCity draft="unconfirmed">Сент-Китс</exemplarCity>
+			</zone>
+			<zone type="Asia/Pyongyang">
+				<exemplarCity draft="unconfirmed">Пхениан</exemplarCity>
+			</zone>
+			<zone type="Asia/Seoul">
+				<exemplarCity draft="unconfirmed">Сеул</exemplarCity>
+			</zone>
+			<zone type="Asia/Kuwait">
+				<exemplarCity draft="unconfirmed">Кувеит</exemplarCity>
+			</zone>
+			<zone type="America/Cayman">
+				<exemplarCity draft="unconfirmed">Адгьылбжьахақәа Каиман</exemplarCity>
+			</zone>
+			<zone type="Asia/Aqtau">
+				<exemplarCity draft="unconfirmed">Актау</exemplarCity>
+			</zone>
+			<zone type="Asia/Oral">
+				<exemplarCity draft="unconfirmed">Уралск</exemplarCity>
+			</zone>
+			<zone type="Asia/Atyrau">
+				<exemplarCity draft="unconfirmed">Атырау</exemplarCity>
+			</zone>
+			<zone type="Asia/Aqtobe">
+				<exemplarCity draft="unconfirmed">Актобе</exemplarCity>
+			</zone>
+			<zone type="Asia/Qostanay">
+				<exemplarCity draft="unconfirmed">Костанаи</exemplarCity>
+			</zone>
+			<zone type="Asia/Qyzylorda">
+				<exemplarCity draft="unconfirmed">Кызылорда</exemplarCity>
+			</zone>
+			<zone type="Asia/Almaty">
+				<exemplarCity draft="unconfirmed">Алматы</exemplarCity>
+			</zone>
+			<zone type="Asia/Vientiane">
+				<exemplarCity draft="unconfirmed">Вентиан</exemplarCity>
+			</zone>
+			<zone type="Asia/Beirut">
+				<exemplarCity draft="unconfirmed">Беирут</exemplarCity>
+			</zone>
+			<zone type="America/St_Lucia">
+				<exemplarCity draft="unconfirmed">Сент-Лиусиа</exemplarCity>
+			</zone>
+			<zone type="Europe/Vaduz">
+				<exemplarCity draft="unconfirmed">Вадуц</exemplarCity>
+			</zone>
+			<zone type="Asia/Colombo">
+				<exemplarCity draft="unconfirmed">Коломбо</exemplarCity>
+			</zone>
+			<zone type="Africa/Monrovia">
+				<exemplarCity draft="unconfirmed">Монровиа</exemplarCity>
+			</zone>
+			<zone type="Africa/Maseru">
+				<exemplarCity draft="unconfirmed">Масеру</exemplarCity>
+			</zone>
+			<zone type="Europe/Vilnius">
+				<exemplarCity draft="unconfirmed">Вилниус</exemplarCity>
+			</zone>
+			<zone type="Europe/Luxembourg">
+				<exemplarCity draft="unconfirmed">Лиуксембург</exemplarCity>
+			</zone>
+			<zone type="Europe/Riga">
+				<exemplarCity draft="unconfirmed">Рига</exemplarCity>
+			</zone>
+			<zone type="Africa/Tripoli">
+				<exemplarCity draft="unconfirmed">Триполи</exemplarCity>
+			</zone>
+			<zone type="Africa/Casablanca">
+				<exemplarCity draft="unconfirmed">Касабланка</exemplarCity>
+			</zone>
+			<zone type="Europe/Monaco">
+				<exemplarCity draft="unconfirmed">Монако</exemplarCity>
+			</zone>
+			<zone type="Europe/Chisinau">
+				<exemplarCity draft="unconfirmed">Кишинев</exemplarCity>
+			</zone>
+			<zone type="Europe/Podgorica">
+				<exemplarCity draft="unconfirmed">Подгорица</exemplarCity>
+			</zone>
+			<zone type="America/Marigot">
+				<exemplarCity draft="unconfirmed">Мариго</exemplarCity>
+			</zone>
+			<zone type="Indian/Antananarivo">
+				<exemplarCity draft="unconfirmed">Антананариву</exemplarCity>
+			</zone>
+			<zone type="Pacific/Kwajalein">
+				<exemplarCity draft="unconfirmed">Кваџалеин</exemplarCity>
+			</zone>
+			<zone type="Pacific/Majuro">
+				<exemplarCity draft="unconfirmed">Маџуро</exemplarCity>
+			</zone>
+			<zone type="Europe/Skopje">
+				<exemplarCity draft="unconfirmed">Скопе</exemplarCity>
+			</zone>
+			<zone type="Africa/Bamako">
+				<exemplarCity draft="unconfirmed">Бамако</exemplarCity>
+			</zone>
+			<zone type="Asia/Rangoon">
+				<exemplarCity draft="unconfirmed">Иангон</exemplarCity>
+			</zone>
+			<zone type="Asia/Hovd">
+				<exemplarCity draft="unconfirmed">Ховд</exemplarCity>
+			</zone>
+			<zone type="Asia/Ulaanbaatar">
+				<exemplarCity draft="unconfirmed">Улан-Батор</exemplarCity>
+			</zone>
+			<zone type="Asia/Choibalsan">
+				<exemplarCity draft="unconfirmed">Чоибалсан</exemplarCity>
+			</zone>
+			<zone type="Asia/Macau">
+				<exemplarCity draft="unconfirmed">Макао</exemplarCity>
+			</zone>
+			<zone type="Pacific/Saipan">
+				<exemplarCity draft="unconfirmed">Саипан</exemplarCity>
+			</zone>
+			<zone type="America/Martinique">
+				<exemplarCity draft="unconfirmed">Мартиника</exemplarCity>
+			</zone>
+			<zone type="Africa/Nouakchott">
+				<exemplarCity draft="unconfirmed">Нуакшот</exemplarCity>
+			</zone>
+			<zone type="America/Montserrat">
+				<exemplarCity draft="unconfirmed">Монтсеррат</exemplarCity>
+			</zone>
+			<zone type="Europe/Malta">
+				<exemplarCity draft="unconfirmed">Малта</exemplarCity>
+			</zone>
+			<zone type="Indian/Mauritius">
+				<exemplarCity draft="unconfirmed">Маврики</exemplarCity>
+			</zone>
+			<zone type="Indian/Maldives">
+				<exemplarCity draft="unconfirmed">Малдив</exemplarCity>
+			</zone>
+			<zone type="Africa/Blantyre">
+				<exemplarCity draft="unconfirmed">Блантаир</exemplarCity>
+			</zone>
+			<zone type="America/Tijuana">
+				<exemplarCity draft="unconfirmed">Тихуана</exemplarCity>
+			</zone>
+			<zone type="America/Hermosillo">
+				<exemplarCity draft="unconfirmed">Ермосило</exemplarCity>
+			</zone>
+			<zone type="America/Mazatlan">
+				<exemplarCity draft="unconfirmed">Масатлан</exemplarCity>
+			</zone>
+			<zone type="America/Chihuahua">
+				<exemplarCity draft="unconfirmed">Чиуауа</exemplarCity>
+			</zone>
+			<zone type="America/Bahia_Banderas">
+				<exemplarCity draft="unconfirmed">Баиа-де-Бандерас</exemplarCity>
+			</zone>
+			<zone type="America/Ojinaga">
+				<exemplarCity draft="unconfirmed">Охинага</exemplarCity>
+			</zone>
+			<zone type="America/Monterrey">
+				<exemplarCity draft="unconfirmed">Монтерреи</exemplarCity>
+			</zone>
+			<zone type="America/Mexico_City">
+				<exemplarCity draft="unconfirmed">Мехико</exemplarCity>
+			</zone>
+			<zone type="America/Matamoros">
+				<exemplarCity draft="unconfirmed">Матаморос</exemplarCity>
+			</zone>
+			<zone type="America/Merida">
+				<exemplarCity draft="unconfirmed">Мерида</exemplarCity>
+			</zone>
+			<zone type="America/Cancun">
+				<exemplarCity draft="unconfirmed">Канкун</exemplarCity>
+			</zone>
+			<zone type="Asia/Kuala_Lumpur">
+				<exemplarCity draft="unconfirmed">Куала-Лумпур</exemplarCity>
+			</zone>
+			<zone type="Asia/Kuching">
+				<exemplarCity draft="unconfirmed">Кучинг</exemplarCity>
+			</zone>
+			<zone type="Africa/Maputo">
+				<exemplarCity draft="unconfirmed">Мапуту</exemplarCity>
+			</zone>
+			<zone type="Africa/Windhoek">
+				<exemplarCity draft="unconfirmed">Виндхук</exemplarCity>
+			</zone>
+			<zone type="Pacific/Noumea">
+				<exemplarCity draft="unconfirmed">Нумеа</exemplarCity>
+			</zone>
+			<zone type="Africa/Niamey">
+				<exemplarCity draft="unconfirmed">Ниамеи</exemplarCity>
+			</zone>
+			<zone type="Pacific/Norfolk">
+				<exemplarCity draft="unconfirmed">Норфолк</exemplarCity>
+			</zone>
+			<zone type="Africa/Lagos">
+				<exemplarCity draft="unconfirmed">Лагос</exemplarCity>
+			</zone>
+			<zone type="America/Managua">
+				<exemplarCity draft="unconfirmed">Манагуа</exemplarCity>
+			</zone>
+			<zone type="Europe/Amsterdam">
+				<exemplarCity draft="unconfirmed">Амстердам</exemplarCity>
+			</zone>
+			<zone type="Europe/Oslo">
+				<exemplarCity draft="unconfirmed">Осло</exemplarCity>
+			</zone>
+			<zone type="Asia/Katmandu">
+				<exemplarCity draft="unconfirmed">Катманду</exemplarCity>
+			</zone>
+			<zone type="Pacific/Nauru">
+				<exemplarCity draft="unconfirmed">Науру</exemplarCity>
+			</zone>
+			<zone type="Pacific/Niue">
+				<exemplarCity draft="unconfirmed">Ниуе</exemplarCity>
+			</zone>
+			<zone type="Pacific/Chatham">
+				<exemplarCity draft="unconfirmed">Чатем</exemplarCity>
+			</zone>
+			<zone type="Pacific/Auckland">
+				<exemplarCity draft="unconfirmed">Окленд</exemplarCity>
+			</zone>
+			<zone type="Asia/Muscat">
+				<exemplarCity draft="unconfirmed">Маскат</exemplarCity>
+			</zone>
+			<zone type="America/Panama">
+				<exemplarCity draft="unconfirmed">Панама</exemplarCity>
+			</zone>
+			<zone type="America/Lima">
+				<exemplarCity draft="unconfirmed">Лима</exemplarCity>
+			</zone>
+			<zone type="Pacific/Tahiti">
+				<exemplarCity draft="unconfirmed">Таити</exemplarCity>
+			</zone>
+			<zone type="Pacific/Marquesas">
+				<exemplarCity draft="unconfirmed">Маркизтәи ад-хақәа</exemplarCity>
+			</zone>
+			<zone type="Pacific/Gambier">
+				<exemplarCity draft="unconfirmed">ад-хақәа Гамбе</exemplarCity>
+			</zone>
+			<zone type="Pacific/Port_Moresby">
+				<exemplarCity draft="unconfirmed">Порт-Морсби</exemplarCity>
+			</zone>
+			<zone type="Pacific/Bougainville">
+				<exemplarCity draft="unconfirmed">Бугенвил</exemplarCity>
+			</zone>
+			<zone type="Asia/Manila">
+				<exemplarCity draft="unconfirmed">Манила</exemplarCity>
+			</zone>
+			<zone type="Asia/Karachi">
+				<exemplarCity draft="unconfirmed">Карачи</exemplarCity>
+			</zone>
+			<zone type="Europe/Warsaw">
+				<exemplarCity draft="unconfirmed">Варшава</exemplarCity>
+			</zone>
+			<zone type="America/Miquelon">
+				<exemplarCity draft="unconfirmed">Микелон</exemplarCity>
+			</zone>
+			<zone type="Pacific/Pitcairn">
+				<exemplarCity draft="unconfirmed">Питкерн</exemplarCity>
+			</zone>
+			<zone type="America/Puerto_Rico">
+				<exemplarCity draft="unconfirmed">Пуерто-Рико</exemplarCity>
+			</zone>
+			<zone type="Asia/Gaza">
+				<exemplarCity draft="unconfirmed">Газа</exemplarCity>
+			</zone>
+			<zone type="Asia/Hebron">
+				<exemplarCity draft="unconfirmed">Хеврон</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Azores">
+				<exemplarCity draft="unconfirmed">Азортәи ад-хақәа</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Madeira">
+				<exemplarCity draft="unconfirmed">Мадеира</exemplarCity>
+			</zone>
+			<zone type="Europe/Lisbon">
+				<exemplarCity draft="unconfirmed">Лиссабон</exemplarCity>
+			</zone>
+			<zone type="Pacific/Palau">
+				<exemplarCity draft="unconfirmed">Палау</exemplarCity>
+			</zone>
+			<zone type="America/Asuncion">
+				<exemplarCity draft="unconfirmed">Асунсон</exemplarCity>
+			</zone>
+			<zone type="Asia/Qatar">
+				<exemplarCity draft="unconfirmed">Катар</exemplarCity>
+			</zone>
+			<zone type="Indian/Reunion">
+				<exemplarCity draft="unconfirmed">Реиунон</exemplarCity>
+			</zone>
+			<zone type="Europe/Bucharest">
+				<exemplarCity draft="unconfirmed">Бухарест</exemplarCity>
+			</zone>
+			<zone type="Europe/Belgrade">
+				<exemplarCity draft="unconfirmed">Белград</exemplarCity>
+			</zone>
+			<zone type="Europe/Kaliningrad">
+				<exemplarCity draft="unconfirmed">Калининград</exemplarCity>
+			</zone>
+			<zone type="Europe/Moscow">
+				<exemplarCity draft="unconfirmed">Москва</exemplarCity>
+			</zone>
+			<zone type="Europe/Volgograd">
+				<exemplarCity draft="unconfirmed">Волгоград</exemplarCity>
+			</zone>
+			<zone type="Europe/Saratov">
+				<exemplarCity draft="unconfirmed">Саратов</exemplarCity>
+			</zone>
+			<zone type="Europe/Astrakhan">
+				<exemplarCity draft="unconfirmed">Астрахан</exemplarCity>
+			</zone>
+			<zone type="Europe/Ulyanovsk">
+				<exemplarCity draft="unconfirmed">Улиановск</exemplarCity>
+			</zone>
+			<zone type="Europe/Kirov">
+				<exemplarCity draft="unconfirmed">Киров</exemplarCity>
+			</zone>
+			<zone type="Europe/Samara">
+				<exemplarCity draft="unconfirmed">Самара</exemplarCity>
+			</zone>
+			<zone type="Asia/Yekaterinburg">
+				<exemplarCity draft="unconfirmed">Екатеринбург</exemplarCity>
+			</zone>
+			<zone type="Asia/Omsk">
+				<exemplarCity draft="unconfirmed">Омск</exemplarCity>
+			</zone>
+			<zone type="Asia/Novosibirsk">
+				<exemplarCity draft="unconfirmed">Новосибирск</exemplarCity>
+			</zone>
+			<zone type="Asia/Barnaul">
+				<exemplarCity draft="unconfirmed">Барнаул</exemplarCity>
+			</zone>
+			<zone type="Asia/Tomsk">
+				<exemplarCity draft="unconfirmed">Томск</exemplarCity>
+			</zone>
+			<zone type="Asia/Novokuznetsk">
+				<exemplarCity draft="unconfirmed">Новокузнецк</exemplarCity>
+			</zone>
+			<zone type="Asia/Krasnoyarsk">
+				<exemplarCity draft="unconfirmed">Красноиарск</exemplarCity>
+			</zone>
+			<zone type="Asia/Irkutsk">
+				<exemplarCity draft="unconfirmed">Иркутск</exemplarCity>
+			</zone>
+			<zone type="Asia/Chita">
+				<exemplarCity draft="unconfirmed">Чита</exemplarCity>
+			</zone>
+			<zone type="Asia/Yakutsk">
+				<exemplarCity draft="unconfirmed">Иакутск</exemplarCity>
+			</zone>
+			<zone type="Asia/Vladivostok">
+				<exemplarCity draft="unconfirmed">Владивосток</exemplarCity>
+			</zone>
+			<zone type="Asia/Khandyga">
+				<exemplarCity draft="unconfirmed">Хандыга</exemplarCity>
+			</zone>
+			<zone type="Asia/Sakhalin">
+				<exemplarCity draft="unconfirmed">ад-ха Сахалин</exemplarCity>
+			</zone>
+			<zone type="Asia/Ust-Nera">
+				<exemplarCity draft="unconfirmed">Уст-Нера</exemplarCity>
+			</zone>
+			<zone type="Asia/Magadan">
+				<exemplarCity draft="unconfirmed">Магадан</exemplarCity>
+			</zone>
+			<zone type="Asia/Srednekolymsk">
+				<exemplarCity draft="unconfirmed">Среднеколымск</exemplarCity>
+			</zone>
+			<zone type="Asia/Kamchatka">
+				<exemplarCity draft="unconfirmed">Петропавловск-Камчаткатәи</exemplarCity>
+			</zone>
+			<zone type="Asia/Anadyr">
+				<exemplarCity draft="unconfirmed">Анадыр</exemplarCity>
+			</zone>
+			<zone type="Africa/Kigali">
+				<exemplarCity draft="unconfirmed">Кигали</exemplarCity>
+			</zone>
+			<zone type="Asia/Riyadh">
+				<exemplarCity draft="unconfirmed">Ер-Риад</exemplarCity>
+			</zone>
+			<zone type="Pacific/Guadalcanal">
+				<exemplarCity draft="unconfirmed">Гуадалканал</exemplarCity>
+			</zone>
+			<zone type="Indian/Mahe">
+				<exemplarCity draft="unconfirmed">Мае</exemplarCity>
+			</zone>
+			<zone type="Africa/Khartoum">
+				<exemplarCity draft="unconfirmed">Хартум</exemplarCity>
+			</zone>
+			<zone type="Europe/Stockholm">
+				<exemplarCity draft="unconfirmed">Стокҳолм</exemplarCity>
+			</zone>
+			<zone type="Asia/Singapore">
+				<exemplarCity draft="unconfirmed">Сингапур</exemplarCity>
+			</zone>
+			<zone type="Atlantic/St_Helena">
+				<exemplarCity draft="unconfirmed">Иԥшьоу Елена ладгьылбжьаха</exemplarCity>
+			</zone>
+			<zone type="Europe/Ljubljana">
+				<exemplarCity draft="unconfirmed">Лиублиана</exemplarCity>
+			</zone>
+			<zone type="Arctic/Longyearbyen">
+				<exemplarCity draft="unconfirmed">Лонгир</exemplarCity>
+			</zone>
+			<zone type="Europe/Bratislava">
+				<exemplarCity draft="unconfirmed">Братислава</exemplarCity>
+			</zone>
+			<zone type="Africa/Freetown">
+				<exemplarCity draft="unconfirmed">Фритаун</exemplarCity>
+			</zone>
+			<zone type="Europe/San_Marino">
+				<exemplarCity draft="unconfirmed">Сан-Марино</exemplarCity>
+			</zone>
+			<zone type="Africa/Dakar">
+				<exemplarCity draft="unconfirmed">Дакар</exemplarCity>
+			</zone>
+			<zone type="Africa/Mogadishu">
+				<exemplarCity draft="unconfirmed">Могадишо</exemplarCity>
+			</zone>
+			<zone type="America/Paramaribo">
+				<exemplarCity draft="unconfirmed">Парамарибо</exemplarCity>
+			</zone>
+			<zone type="Africa/Juba">
+				<exemplarCity draft="unconfirmed">Џуба</exemplarCity>
+			</zone>
+			<zone type="Africa/Sao_Tome">
+				<exemplarCity draft="unconfirmed">Сан-Томе</exemplarCity>
+			</zone>
+			<zone type="America/El_Salvador">
+				<exemplarCity draft="unconfirmed">Салвадор</exemplarCity>
+			</zone>
+			<zone type="America/Lower_Princes">
+				<exemplarCity draft="unconfirmed">Лоуер-Принс-Куотер</exemplarCity>
+			</zone>
+			<zone type="Asia/Damascus">
+				<exemplarCity draft="unconfirmed">Дамаск</exemplarCity>
+			</zone>
+			<zone type="Africa/Mbabane">
+				<exemplarCity draft="unconfirmed">Мбабане</exemplarCity>
+			</zone>
+			<zone type="America/Grand_Turk">
+				<exemplarCity draft="unconfirmed">Гранд-Терк</exemplarCity>
+			</zone>
+			<zone type="Africa/Ndjamena">
+				<exemplarCity draft="unconfirmed">Нџамена</exemplarCity>
+			</zone>
+			<zone type="Indian/Kerguelen">
+				<exemplarCity draft="unconfirmed">Кергелен</exemplarCity>
+			</zone>
+			<zone type="Africa/Lome">
+				<exemplarCity draft="unconfirmed">Ломе</exemplarCity>
+			</zone>
+			<zone type="Asia/Bangkok">
+				<exemplarCity draft="unconfirmed">Бангкок</exemplarCity>
+			</zone>
+			<zone type="Asia/Dushanbe">
+				<exemplarCity draft="unconfirmed">Душанбе</exemplarCity>
+			</zone>
+			<zone type="Pacific/Fakaofo">
+				<exemplarCity draft="unconfirmed">Факаофо</exemplarCity>
+			</zone>
+			<zone type="Asia/Dili">
+				<exemplarCity draft="unconfirmed">Дили</exemplarCity>
+			</zone>
+			<zone type="Asia/Ashgabat">
+				<exemplarCity draft="unconfirmed">Ашхабад</exemplarCity>
+			</zone>
+			<zone type="Africa/Tunis">
+				<exemplarCity draft="unconfirmed">Тунис</exemplarCity>
+			</zone>
+			<zone type="Pacific/Tongatapu">
+				<exemplarCity draft="unconfirmed">Тонгатапу</exemplarCity>
+			</zone>
+			<zone type="Europe/Istanbul">
+				<exemplarCity draft="unconfirmed">Стамбул</exemplarCity>
+			</zone>
+			<zone type="America/Port_of_Spain">
+				<exemplarCity draft="unconfirmed">Порт-оф-Спеин</exemplarCity>
+			</zone>
+			<zone type="Pacific/Funafuti">
+				<exemplarCity draft="unconfirmed">Фунафути</exemplarCity>
+			</zone>
+			<zone type="Asia/Taipei">
+				<exemplarCity draft="unconfirmed">Таибеи</exemplarCity>
+			</zone>
+			<zone type="Africa/Dar_es_Salaam">
+				<exemplarCity draft="unconfirmed">Дар-ес-Салам</exemplarCity>
+			</zone>
+			<zone type="Europe/Uzhgorod">
+				<exemplarCity draft="unconfirmed">Ужҳород</exemplarCity>
+			</zone>
+			<zone type="Europe/Kiev">
+				<exemplarCity draft="unconfirmed">Киев</exemplarCity>
+			</zone>
+			<zone type="Europe/Simferopol">
+				<exemplarCity draft="unconfirmed">Симферопол</exemplarCity>
+			</zone>
+			<zone type="Europe/Zaporozhye">
+				<exemplarCity draft="unconfirmed">Запороже</exemplarCity>
+			</zone>
+			<zone type="Africa/Kampala">
+				<exemplarCity draft="unconfirmed">Кампала</exemplarCity>
+			</zone>
+			<zone type="Pacific/Midway">
+				<exemplarCity draft="unconfirmed">ад-хақәа Мидуеи</exemplarCity>
+			</zone>
+			<zone type="Pacific/Wake">
+				<exemplarCity draft="unconfirmed">Уеик</exemplarCity>
+			</zone>
+			<zone type="America/Adak">
+				<exemplarCity draft="unconfirmed">Адак</exemplarCity>
+			</zone>
+			<zone type="America/Nome">
+				<exemplarCity draft="unconfirmed">Ном</exemplarCity>
+			</zone>
+			<zone type="Pacific/Johnston">
+				<exemplarCity draft="unconfirmed">Џонстон</exemplarCity>
+			</zone>
+			<zone type="America/Anchorage">
+				<exemplarCity draft="unconfirmed">Анкориџ</exemplarCity>
+			</zone>
+			<zone type="America/Yakutat">
+				<exemplarCity draft="unconfirmed">Иакутат</exemplarCity>
+			</zone>
+			<zone type="America/Sitka">
+				<exemplarCity draft="unconfirmed">Ситка</exemplarCity>
+			</zone>
+			<zone type="America/Juneau">
+				<exemplarCity draft="unconfirmed">Џуно</exemplarCity>
+			</zone>
+			<zone type="America/Metlakatla">
+				<exemplarCity draft="unconfirmed">Метлакатла</exemplarCity>
+			</zone>
+			<zone type="America/Los_Angeles">
+				<exemplarCity draft="unconfirmed">Лос-Анџелес</exemplarCity>
+			</zone>
+			<zone type="America/Boise">
+				<exemplarCity draft="unconfirmed">Боисе</exemplarCity>
+			</zone>
+			<zone type="America/Phoenix">
+				<exemplarCity draft="unconfirmed">Финикс</exemplarCity>
+			</zone>
+			<zone type="America/Denver">
+				<exemplarCity draft="unconfirmed">Денвер</exemplarCity>
+			</zone>
+			<zone type="America/North_Dakota/Beulah">
+				<exemplarCity draft="unconfirmed">Боила, Аҩадатәи Дакота</exemplarCity>
+			</zone>
+			<zone type="America/North_Dakota/New_Salem">
+				<exemplarCity draft="unconfirmed">Ниу-Сеилем, Аҩадатәи Дакота</exemplarCity>
+			</zone>
+			<zone type="America/North_Dakota/Center">
+				<exemplarCity draft="unconfirmed">Агәҭа, Аҩадатәи Дакота</exemplarCity>
+			</zone>
+			<zone type="America/Chicago">
+				<exemplarCity draft="unconfirmed">Чикаго</exemplarCity>
+			</zone>
+			<zone type="America/Menominee">
+				<exemplarCity draft="unconfirmed">Меномини</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Vincennes">
+				<exemplarCity draft="unconfirmed">Винсеннес</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Petersburg">
+				<exemplarCity draft="unconfirmed">Питерсберг, Индиана</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Tell_City">
+				<exemplarCity draft="unconfirmed">Телл-Сити</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Knox">
+				<exemplarCity draft="unconfirmed">Нокс, Индиана</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Winamac">
+				<exemplarCity draft="unconfirmed">Уинамак</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Marengo">
+				<exemplarCity draft="unconfirmed">Маренго, Индиана</exemplarCity>
+			</zone>
+			<zone type="America/Indianapolis">
+				<exemplarCity draft="unconfirmed">Индианаполис</exemplarCity>
+			</zone>
+			<zone type="America/Louisville">
+				<exemplarCity draft="unconfirmed">Луисвилл</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Vevay">
+				<exemplarCity draft="unconfirmed">Вевеи, Индиана</exemplarCity>
+			</zone>
+			<zone type="America/Kentucky/Monticello">
+				<exemplarCity draft="unconfirmed">Монтиселло, Кентукки</exemplarCity>
+			</zone>
+			<zone type="America/Detroit">
+				<exemplarCity draft="unconfirmed">Детроит</exemplarCity>
+			</zone>
+			<zone type="America/New_York">
+				<exemplarCity draft="unconfirmed">Ниу-Иорк</exemplarCity>
+			</zone>
+			<zone type="America/Montevideo">
+				<exemplarCity draft="unconfirmed">Монтевидео</exemplarCity>
+			</zone>
+			<zone type="Asia/Samarkand">
+				<exemplarCity draft="unconfirmed">Самарканд</exemplarCity>
+			</zone>
+			<zone type="Asia/Tashkent">
+				<exemplarCity draft="unconfirmed">Ташкент</exemplarCity>
+			</zone>
+			<zone type="Europe/Vatican">
+				<exemplarCity draft="unconfirmed">Ватикан</exemplarCity>
+			</zone>
+			<zone type="America/St_Vincent">
+				<exemplarCity draft="unconfirmed">Сент-Винсент</exemplarCity>
+			</zone>
+			<zone type="America/Caracas">
+				<exemplarCity draft="unconfirmed">Каракас</exemplarCity>
+			</zone>
+			<zone type="America/Tortola">
+				<exemplarCity draft="unconfirmed">Тортола</exemplarCity>
+			</zone>
+			<zone type="America/St_Thomas">
+				<exemplarCity draft="unconfirmed">Сент-Томас</exemplarCity>
+			</zone>
+			<zone type="Asia/Saigon">
+				<exemplarCity draft="unconfirmed">Хошимин</exemplarCity>
+			</zone>
+			<zone type="Pacific/Efate">
+				<exemplarCity draft="unconfirmed">Ефате</exemplarCity>
+			</zone>
+			<zone type="Pacific/Wallis">
+				<exemplarCity draft="unconfirmed">Уоллис</exemplarCity>
+			</zone>
+			<zone type="Pacific/Apia">
+				<exemplarCity draft="unconfirmed">Апиа</exemplarCity>
+			</zone>
+			<zone type="Asia/Aden">
+				<exemplarCity draft="unconfirmed">Аден</exemplarCity>
+			</zone>
+			<zone type="Indian/Mayotte">
+				<exemplarCity draft="unconfirmed">Маиотта</exemplarCity>
+			</zone>
+			<zone type="Africa/Johannesburg">
+				<exemplarCity draft="unconfirmed">Иоҳаннесбург</exemplarCity>
+			</zone>
+			<zone type="Africa/Lusaka">
+				<exemplarCity draft="unconfirmed">Лусака</exemplarCity>
+			</zone>
+			<zone type="Africa/Harare">
+				<exemplarCity draft="unconfirmed">Ҳараре</exemplarCity>
+			</zone>
+			<metazone type="Acre">
+				<long>
+					<generic draft="unconfirmed">Акри аамҭа</generic>
+					<standard draft="unconfirmed">Акри астандартә аамҭа</standard>
+					<daylight draft="unconfirmed">Акри аԥхынтәи аамҭа</daylight>
+				</long>
+			</metazone>
+			<metazone type="Afghanistan">
+				<long>
+					<standard draft="unconfirmed">Афганистан</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Central">
+				<long>
+					<standard draft="unconfirmed">Агәҭантәи Африка</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Eastern">
+				<long>
+					<standard draft="unconfirmed">Мрагыларатәи Африка</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Southern">
+				<long>
+					<standard draft="unconfirmed">Аладатәи Африка</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Western">
+				<long>
+					<generic draft="unconfirmed">Мраҭашәаратәи Африка</generic>
+					<standard draft="unconfirmed">Мраҭашәаратәи Африка, астандартә аамҭа</standard>
+					<daylight draft="unconfirmed">Мраҭашәаратәи Африка, аԥхынтәи аамҭа</daylight>
+				</long>
+			</metazone>
+			<metazone type="Alaska">
+				<long>
+					<generic draft="unconfirmed">Алиаска</generic>
+					<standard draft="unconfirmed">Алиаска, астандартә аамҭа</standard>
+					<daylight draft="unconfirmed">Алиаска, аԥхынтәи аамҭа</daylight>
+				</long>
+			</metazone>
+			<metazone type="Almaty">
+				<long>
+					<generic draft="unconfirmed">Алма-Ата аамҭа</generic>
+					<standard draft="unconfirmed">Алма-Ата астандартә аамҭа</standard>
+					<daylight draft="unconfirmed">Алма-Ата аԥхынтәи аамҭа</daylight>
+				</long>
+			</metazone>
+			<metazone type="Amazon">
+				<long>
+					<generic draft="unconfirmed">Амазонка</generic>
+					<standard draft="unconfirmed">Амазонка, астандартә аамҭа</standard>
+					<daylight draft="unconfirmed">Амазонка, аԥхынтәи аамҭа</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Central">
+				<long>
+					<generic draft="unconfirmed">Агәҭантәи Америка</generic>
+					<standard draft="unconfirmed">Агәҭантәи Америка, астандартә аамҭа</standard>
+					<daylight draft="unconfirmed">Агәҭантәи Америка, аԥхынтәи аамҭа</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Eastern">
+				<long>
+					<generic draft="unconfirmed">Мрагыларатәи Америка</generic>
+					<standard draft="unconfirmed">Мрагыларатәи Америка, астандартә аамҭа</standard>
+					<daylight draft="unconfirmed">Мрагыларатәи Америка, аԥхынтәи аамҭа</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Mountain">
+				<long>
+					<generic draft="unconfirmed">Ашьхатә аамҭа (Аҩадатәи Америка)</generic>
+					<standard draft="unconfirmed">Астандартә ашьхатә аамҭа (Аҩадатәи Америка)</standard>
+					<daylight draft="unconfirmed">Аԥхынтәи ашьхатә аамҭа (Аҩадатәи Америка)</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Pacific">
+				<long>
+					<generic draft="unconfirmed">Аокеанҭынчтәи аамҭа</generic>
+					<standard draft="unconfirmed">Аокеанҭынчтәи астандартә аамҭа</standard>
+					<daylight draft="unconfirmed">Аокеанҭынчтәи аԥхынтәи аамҭа</daylight>
+				</long>
+			</metazone>
+			<metazone type="Anadyr">
+				<long>
+					<generic draft="unconfirmed">аамҭа Анадыр аҿы</generic>
+					<standard draft="unconfirmed">Анадыр астандартә аамҭа</standard>
+					<daylight draft="unconfirmed">Анадыр аԥхынтәи аамҭа</daylight>
+				</long>
+			</metazone>
+			<metazone type="Apia">
+				<long>
+					<generic draft="unconfirmed">Апиа</generic>
+					<standard draft="unconfirmed">Апиа, астандартә аамҭа</standard>
+					<daylight draft="unconfirmed">Апиа, аԥхынтәи аамҭа</daylight>
+				</long>
+			</metazone>
+			<metazone type="Aqtau">
+				<long>
+					<generic draft="unconfirmed">Актау аамҭа</generic>
+					<standard draft="unconfirmed">Актау, астандартә аамҭа</standard>
+					<daylight draft="unconfirmed">Актау аԥхынтәи аамҭа</daylight>
+				</long>
+			</metazone>
+			<metazone type="Aqtobe">
+				<long>
+					<generic draft="unconfirmed">Актобе аамҭа</generic>
+					<standard draft="unconfirmed">Актобе астандартә аамҭа</standard>
+					<daylight draft="unconfirmed">Актобе аԥхынтәи аамҭа</daylight>
+				</long>
+			</metazone>
+			<metazone type="Arabian">
+				<long>
+					<generic draft="unconfirmed">Саудтәи Арабсҭан</generic>
+					<standard draft="unconfirmed">Саудтәи Арабсҭан, астандартә аамҭа</standard>
+					<daylight draft="unconfirmed">Саудтәи Арабсҭан, аԥхынтәи аамҭа</daylight>
+				</long>
+			</metazone>
+			<metazone type="Argentina">
+				<long>
+					<generic draft="unconfirmed">Аргентина</generic>
+					<standard draft="unconfirmed">Аргентина, астандартә аамҭа</standard>
+					<daylight draft="unconfirmed">Аргентина, аԥхынтәи аамҭа</daylight>
+				</long>
+			</metazone>
+			<metazone type="Argentina_Western">
+				<long>
+					<generic draft="unconfirmed">Мраҭашәаратәи Аргентина</generic>
+					<standard draft="unconfirmed">Мраҭашәаратәи Аргентина, астандартә аамҭа</standard>
+					<daylight draft="unconfirmed">Мраҭашәаратәи Аргентина, аԥхынтәи аамҭа</daylight>
+				</long>
+			</metazone>
+			<metazone type="Armenia">
+				<long>
+					<generic draft="unconfirmed">Ермантәыла</generic>
+					<standard draft="unconfirmed">Ермантәыла, астандартә аамҭа</standard>
+					<daylight draft="unconfirmed">Ермантәыла, аԥхынтәи аамҭа</daylight>
+				</long>
+			</metazone>
+			<metazone type="Atlantic">
+				<long>
+					<generic draft="unconfirmed">Атлантикатәи аамҭа</generic>
+					<standard draft="unconfirmed">Атлантикатәи астандартә аамҭа</standard>
+					<daylight draft="unconfirmed">Атлантикатәи аԥхынтәи аамҭа</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_Central">
+				<long>
+					<generic draft="unconfirmed">Агәҭантәи Австралиа</generic>
+					<standard draft="unconfirmed">Агәҭантәи Австралиа, астандартә аамҭа</standard>
+					<daylight draft="unconfirmed">Агәҭантәи Австралиа, аԥхынтәи аамҭа</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_CentralWestern">
+				<long>
+					<generic draft="unconfirmed">Агәҭантәи Австралиа, мраҭашәаратәи аамҭа</generic>
+					<standard draft="unconfirmed">Агәҭантәи Австралиа, мраҭашәаратәи астандартә аамҭа</standard>
+					<daylight draft="unconfirmed">Агәҭантәи Австралиа, мраҭашәаратәи аԥхынтәи аамҭа</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_Eastern">
+				<long>
+					<generic draft="unconfirmed">Мрагыларатәи Австралиа</generic>
+					<standard draft="unconfirmed">Мрагыларатәи Австралиа, астандартә аамҭа</standard>
+					<daylight draft="unconfirmed">Мрагыларатәи Австралиа, аԥхынтәи аамҭа</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_Western">
+				<long>
+					<generic draft="unconfirmed">Мраҭашәаратәи Австралиа</generic>
+					<standard draft="unconfirmed">Мраҭашәаратәи Австралиа, астандартә аамҭа</standard>
+					<daylight draft="unconfirmed">Мраҭашәаратәи Австралиа, аԥхынтәи аамҭа</daylight>
+				</long>
+			</metazone>
+			<metazone type="Azerbaijan">
+				<long>
+					<generic draft="unconfirmed">Азербаиџьан</generic>
+					<standard draft="unconfirmed">Азербаиџьан, астандартә аамҭа</standard>
+					<daylight draft="unconfirmed">Азербаиџьан, аԥхынтәи аамҭа</daylight>
+				</long>
+			</metazone>
+			<metazone type="Azores">
+				<long>
+					<generic draft="unconfirmed">Азортәи ад-хақәа</generic>
+					<standard draft="unconfirmed">Азортәи ад-хақәа, астандартә аамҭа</standard>
+					<daylight draft="unconfirmed">Азортәи ад-хақәа, аԥхынтәи аамҭа</daylight>
+				</long>
+			</metazone>
+			<metazone type="Bangladesh">
+				<long>
+					<generic draft="unconfirmed">Бангладеш</generic>
+					<standard draft="unconfirmed">Бангладеш, астандартә аамҭа</standard>
+					<daylight draft="unconfirmed">Бангладеш, аԥхынтәи аамҭа</daylight>
+				</long>
+			</metazone>
+			<metazone type="Bhutan">
+				<long>
+					<standard draft="unconfirmed">Бутан</standard>
+				</long>
+			</metazone>
+			<metazone type="Bolivia">
+				<long>
+					<standard draft="unconfirmed">Боливиа</standard>
+				</long>
+			</metazone>
+			<metazone type="Brasilia">
+				<long>
+					<generic draft="unconfirmed">Бразилиа</generic>
+					<standard draft="unconfirmed">Бразилиа, астандартә аамҭа</standard>
+					<daylight draft="unconfirmed">Бразилиа, аԥхынтәи аамҭа</daylight>
+				</long>
+			</metazone>
+			<metazone type="Brunei">
+				<long>
+					<standard draft="unconfirmed">Брунеи-Даруссалам</standard>
+				</long>
+			</metazone>
+			<metazone type="Cape_Verde">
+				<long>
+					<generic draft="unconfirmed">Кабо-Верде</generic>
+					<standard draft="unconfirmed">Кабо-Верде, астандартә аамҭа</standard>
+					<daylight draft="unconfirmed">Кабо-Верде, аԥхынтәи аамҭа</daylight>
+				</long>
+			</metazone>
+			<metazone type="Casey">
+				<long>
+					<standard draft="unconfirmed">Кеиси</standard>
+				</long>
+			</metazone>
+			<metazone type="Chamorro">
+				<long>
+					<standard draft="unconfirmed">Чаморро</standard>
+				</long>
+			</metazone>
+			<metazone type="Chatham">
+				<long>
+					<generic draft="unconfirmed">Чатем</generic>
+					<standard draft="unconfirmed">Чатем, астандартә аамҭа</standard>
+					<daylight draft="unconfirmed">Чатем, аԥхынтәи аамҭа</daylight>
+				</long>
+			</metazone>
+			<metazone type="Chile">
+				<long>
+					<generic draft="unconfirmed">Чили</generic>
+					<standard draft="unconfirmed">Чили, астандартә аамҭа</standard>
+					<daylight draft="unconfirmed">Чили, аԥхынтәи аамҭа</daylight>
+				</long>
+			</metazone>
+			<metazone type="China">
+				<long>
+					<generic draft="unconfirmed">Китаи</generic>
+					<standard draft="unconfirmed">Китаи, астандартә аамҭа</standard>
+					<daylight draft="unconfirmed">Китаи, аԥхынтәи аамҭа</daylight>
+				</long>
+			</metazone>
+			<metazone type="Choibalsan">
+				<long>
+					<generic draft="unconfirmed">Чоибалсан</generic>
+					<standard draft="unconfirmed">Чоибалсан, астандартә аамҭа</standard>
+					<daylight draft="unconfirmed">Чоибалсан, аԥхынтәи аамҭа</daylight>
+				</long>
+			</metazone>
+			<metazone type="Christmas">
+				<long>
+					<standard draft="unconfirmed">ад-ха Қьырса</standard>
+				</long>
+			</metazone>
+			<metazone type="Cocos">
+				<long>
+					<standard draft="unconfirmed">Кокостәи ад-хақәа</standard>
+				</long>
+			</metazone>
+			<metazone type="Colombia">
+				<long>
+					<generic draft="unconfirmed">Колумбиа</generic>
+					<standard draft="unconfirmed">Колумбиа, астандартә аамҭа</standard>
+					<daylight draft="unconfirmed">Колумбиа, аԥхынтәи аамҭа</daylight>
+				</long>
+			</metazone>
+			<metazone type="Cook">
+				<long>
+					<generic draft="unconfirmed">Кук идгьылбжьахақәа</generic>
+					<standard draft="unconfirmed">Кук идгьылбжьахақәа, астандартә аамҭа</standard>
+					<daylight draft="unconfirmed">Кук идгьылбжьахақәа, полуаԥхынтәи аамҭа</daylight>
+				</long>
+			</metazone>
+			<metazone type="Cuba">
+				<long>
+					<generic draft="unconfirmed">Куба</generic>
+					<standard draft="unconfirmed">Куба, астандартә аамҭа</standard>
+					<daylight draft="unconfirmed">Куба, аԥхынтәи аамҭа</daylight>
+				</long>
+			</metazone>
+			<metazone type="Davis">
+				<long>
+					<standard draft="unconfirmed">Деивис</standard>
+				</long>
+			</metazone>
+			<metazone type="DumontDUrville">
+				<long>
+					<standard draft="unconfirmed">Диумон-д’Иурвил</standard>
+				</long>
+			</metazone>
+			<metazone type="East_Timor">
+				<long>
+					<standard draft="unconfirmed">Мрагыларатәи Тимор</standard>
+				</long>
+			</metazone>
+			<metazone type="Easter">
+				<long>
+					<generic draft="unconfirmed">ад-ха Пасхи</generic>
+					<standard draft="unconfirmed">ад-ха Пасхи, астандартә аамҭа</standard>
+					<daylight draft="unconfirmed">ад-ха Пасхи, аԥхынтәи аамҭа</daylight>
+				</long>
+			</metazone>
+			<metazone type="Ecuador">
+				<long>
+					<standard draft="unconfirmed">Еквадор</standard>
+				</long>
+			</metazone>
+			<metazone type="Europe_Central">
+				<long>
+					<generic draft="unconfirmed">Агәҭантәи Европа</generic>
+					<standard draft="unconfirmed">Агәҭантәи Европа, астандартә аамҭа</standard>
+					<daylight draft="unconfirmed">Агәҭантәи Европа, аԥхынтәи аамҭа</daylight>
+				</long>
+			</metazone>
+			<metazone type="Europe_Eastern">
+				<long>
+					<generic draft="unconfirmed">Мрагыларатәи Европа</generic>
+					<standard draft="unconfirmed">Мрагыларатәи Европа, астандартә аамҭа</standard>
+					<daylight draft="unconfirmed">Мрагыларатәи Европа, аԥхынтәи аамҭа</daylight>
+				</long>
+			</metazone>
+			<metazone type="Europe_Further_Eastern">
+				<long>
+					<standard draft="unconfirmed">Московатәи аамҭа</standard>
+				</long>
+			</metazone>
+			<metazone type="Europe_Western">
+				<long>
+					<generic draft="unconfirmed">Мраҭашәаратәи Европа</generic>
+					<standard draft="unconfirmed">Мраҭашәаратәи Европа, астандартә аамҭа</standard>
+					<daylight draft="unconfirmed">Мраҭашәаратәи Европа, аԥхынтәи аамҭа</daylight>
+				</long>
+			</metazone>
+			<metazone type="Falkland">
+				<long>
+					<generic draft="unconfirmed">Фолклендтәи ад-хақәа</generic>
+					<standard draft="unconfirmed">Фолклендтәи ад-хақәа, астандартә аамҭа</standard>
+					<daylight draft="unconfirmed">Фолклендтәи ад-хақәа, аԥхынтәи аамҭа</daylight>
+				</long>
+			</metazone>
+			<metazone type="Fiji">
+				<long>
+					<generic draft="unconfirmed">Фиџи</generic>
+					<standard draft="unconfirmed">Фиџи, астандартә аамҭа</standard>
+					<daylight draft="unconfirmed">Фиџи, аԥхынтәи аамҭа</daylight>
+				</long>
+			</metazone>
+			<metazone type="French_Guiana">
+				<long>
+					<standard draft="unconfirmed">Францызтәи Гвиана</standard>
+				</long>
+			</metazone>
+			<metazone type="French_Southern">
+				<long>
+					<standard draft="unconfirmed">Францызтәи Аладатәеи Антарктикатәи рҵакырадгьылқәа</standard>
+				</long>
+			</metazone>
+			<metazone type="Galapagos">
+				<long>
+					<standard draft="unconfirmed">Галапагостәи ад-хақәа</standard>
+				</long>
+			</metazone>
+			<metazone type="Gambier">
+				<long>
+					<standard draft="unconfirmed">Гамбе</standard>
+				</long>
+			</metazone>
+			<metazone type="Georgia">
+				<long>
+					<generic draft="unconfirmed">Қырҭтәыла</generic>
+					<standard draft="unconfirmed">Қырҭтәыла, астандартә аамҭа</standard>
+					<daylight draft="unconfirmed">Қырҭтәыла, аԥхынтәи аамҭа</daylight>
+				</long>
+			</metazone>
+			<metazone type="Gilbert_Islands">
+				<long>
+					<standard draft="unconfirmed">ад-хақәа Гилберта</standard>
+				</long>
+			</metazone>
+			<metazone type="GMT">
+				<long>
+					<standard draft="unconfirmed">Агринвич Ибжьаратәу Аамҭа</standard>
+				</long>
+			</metazone>
+			<metazone type="Greenland_Eastern">
+				<long>
+					<generic draft="unconfirmed">Мрагыларатәи Гренландиа</generic>
+					<standard draft="unconfirmed">Мрагыларатәи Гренландиа, стандарное времиа</standard>
+					<daylight draft="unconfirmed">Мрагыларатәи Гренландиа, аԥхынтәи аамҭа</daylight>
+				</long>
+			</metazone>
+			<metazone type="Greenland_Western">
+				<long>
+					<generic draft="unconfirmed">Мраҭашәаратәи Гренландиа</generic>
+					<standard draft="unconfirmed">Мраҭашәаратәи Гренландиа, астандартә аамҭа</standard>
+					<daylight draft="unconfirmed">Мраҭашәаратәи Гренландиа, аԥхынтәи аамҭа</daylight>
+				</long>
+			</metazone>
+			<metazone type="Guam">
+				<long>
+					<standard draft="unconfirmed">Гуам</standard>
+				</long>
+			</metazone>
+			<metazone type="Gulf">
+				<long>
+					<standard draft="unconfirmed">Аџьамтә аӡыбжьахала</standard>
+				</long>
+			</metazone>
+			<metazone type="Guyana">
+				<long>
+					<standard draft="unconfirmed">Гаиана</standard>
+				</long>
+			</metazone>
+			<metazone type="Hawaii_Aleutian">
+				<long>
+					<generic draft="unconfirmed">Ҳаваи-алеуттәи аамҭа</generic>
+					<standard draft="unconfirmed">Ҳаваи-алеуттәи астандартә аамҭа</standard>
+					<daylight draft="unconfirmed">Ҳаваи-алеуттәи аԥхынтәи аамҭа</daylight>
+				</long>
+			</metazone>
+			<metazone type="Hong_Kong">
+				<long>
+					<generic draft="unconfirmed">Ҳонконг</generic>
+					<standard draft="unconfirmed">Ҳонконг, астандартә аамҭа</standard>
+					<daylight draft="unconfirmed">Ҳонконг, аԥхынтәи аамҭа</daylight>
+				</long>
+			</metazone>
+			<metazone type="Hovd">
+				<long>
+					<generic draft="unconfirmed">Ховд</generic>
+					<standard draft="unconfirmed">Ховд, астандартә аамҭа</standard>
+					<daylight draft="unconfirmed">Ховд, аԥхынтәи аамҭа</daylight>
+				</long>
+			</metazone>
+			<metazone type="India">
+				<long>
+					<standard draft="unconfirmed">Индиа</standard>
+				</long>
+			</metazone>
+			<metazone type="Indian_Ocean">
+				<long>
+					<standard draft="unconfirmed">Индиатәи аокеан</standard>
+				</long>
+			</metazone>
+			<metazone type="Indochina">
+				<long>
+					<standard draft="unconfirmed">Индокитаи</standard>
+				</long>
+			</metazone>
+			<metazone type="Indonesia_Central">
+				<long>
+					<standard draft="unconfirmed">Агәҭантәи Индонезиа</standard>
+				</long>
+			</metazone>
+			<metazone type="Indonesia_Eastern">
+				<long>
+					<standard draft="unconfirmed">Мрагыларатәи Индонезиа</standard>
+				</long>
+			</metazone>
+			<metazone type="Indonesia_Western">
+				<long>
+					<standard draft="unconfirmed">Мраҭашәаратәи Индонезиа</standard>
+				</long>
+			</metazone>
+			<metazone type="Iran">
+				<long>
+					<generic draft="unconfirmed">Иран</generic>
+					<standard draft="unconfirmed">Иран, астандартә аамҭа</standard>
+					<daylight draft="unconfirmed">Иран, аԥхынтәи аамҭа</daylight>
+				</long>
+			</metazone>
+			<metazone type="Irkutsk">
+				<long>
+					<generic draft="unconfirmed">Иркутск</generic>
+					<standard draft="unconfirmed">Иркутск, астандартә аамҭа</standard>
+					<daylight draft="unconfirmed">Иркутск, аԥхынтәи аамҭа</daylight>
+				</long>
+			</metazone>
+			<metazone type="Israel">
+				<long>
+					<generic draft="unconfirmed">Израиль</generic>
+					<standard draft="unconfirmed">Израиль, астандартә аамҭа</standard>
+					<daylight draft="unconfirmed">Израиль, аԥхынтәи аамҭа</daylight>
+				</long>
+			</metazone>
+			<metazone type="Japan">
+				<long>
+					<generic draft="unconfirmed">Иапониа</generic>
+					<standard draft="unconfirmed">Иапониа, астандартә аамҭа</standard>
+					<daylight draft="unconfirmed">Иапониа, аԥхынтәи аамҭа</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kamchatka">
+				<long>
+					<generic draft="unconfirmed">Петропавловск-Камчаткатәи</generic>
+					<standard draft="unconfirmed">Петропавловск-Камчаткатәи, астандартә аамҭа</standard>
+					<daylight draft="unconfirmed">Петропавловск-Камчаткатәи, аԥхынтәи аамҭа</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan_Eastern">
+				<long>
+					<standard draft="unconfirmed">Мрагыларатәи Ҟазахсҭан</standard>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan_Western">
+				<long>
+					<standard draft="unconfirmed">Мраҭашәаратәи Ҟазахсҭан</standard>
+				</long>
+			</metazone>
+			<metazone type="Korea">
+				<long>
+					<generic draft="unconfirmed">Кореиа</generic>
+					<standard draft="unconfirmed">Кореиа, астандартә аамҭа</standard>
+					<daylight draft="unconfirmed">Кореиа, аԥхынтәи аамҭа</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kosrae">
+				<long>
+					<standard draft="unconfirmed">Косрае</standard>
+				</long>
+			</metazone>
+			<metazone type="Krasnoyarsk">
+				<long>
+					<generic draft="unconfirmed">Красноиарск</generic>
+					<standard draft="unconfirmed">Красноиарск, астандартә аамҭа</standard>
+					<daylight draft="unconfirmed">Красноиарск, аԥхынтәи аамҭа</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kyrgystan">
+				<long>
+					<standard draft="unconfirmed">Киргизиа</standard>
+				</long>
+			</metazone>
+			<metazone type="Lanka">
+				<long>
+					<standard draft="unconfirmed">Шри-Ланка</standard>
+				</long>
+			</metazone>
+			<metazone type="Line_Islands">
+				<long>
+					<standard draft="unconfirmed">ад-хақәа Лаин</standard>
+				</long>
+			</metazone>
+			<metazone type="Lord_Howe">
+				<long>
+					<generic draft="unconfirmed">Лорд-Ҳау</generic>
+					<standard draft="unconfirmed">Лорд-Ҳау, астандартә аамҭа</standard>
+					<daylight draft="unconfirmed">Лорд-Ҳау, аԥхынтәи аамҭа</daylight>
+				</long>
+			</metazone>
+			<metazone type="Macau">
+				<long>
+					<generic draft="unconfirmed">Макао</generic>
+					<standard draft="unconfirmed">Макао, астандартә аамҭа</standard>
+					<daylight draft="unconfirmed">Макао, аԥхынтәи аамҭа</daylight>
+				</long>
+			</metazone>
+			<metazone type="Macquarie">
+				<long>
+					<standard draft="unconfirmed">Маккуори</standard>
+				</long>
+			</metazone>
+			<metazone type="Magadan">
+				<long>
+					<generic draft="unconfirmed">Магадан</generic>
+					<standard draft="unconfirmed">Магадан, астандартә аамҭа</standard>
+					<daylight draft="unconfirmed">Магадан, аԥхынтәи аамҭа</daylight>
+				</long>
+			</metazone>
+			<metazone type="Malaysia">
+				<long>
+					<standard draft="unconfirmed">Малаизиа</standard>
+				</long>
+			</metazone>
+			<metazone type="Maldives">
+				<long>
+					<standard draft="unconfirmed">Мальдив</standard>
+				</long>
+			</metazone>
+			<metazone type="Marquesas">
+				<long>
+					<standard draft="unconfirmed">Маркизтәи ад-хақәа</standard>
+				</long>
+			</metazone>
+			<metazone type="Marshall_Islands">
+				<long>
+					<standard draft="unconfirmed">Маршаллтәи Адгьылбжьахақәа</standard>
+				</long>
+			</metazone>
+			<metazone type="Mauritius">
+				<long>
+					<generic draft="unconfirmed">Маврики</generic>
+					<standard draft="unconfirmed">Маврики, астандартә аамҭа</standard>
+					<daylight draft="unconfirmed">Маврики, аԥхынтәи аамҭа</daylight>
+				</long>
+			</metazone>
+			<metazone type="Mawson">
+				<long>
+					<standard draft="unconfirmed">Моусон</standard>
+				</long>
+			</metazone>
+			<metazone type="Mexico_Northwest">
+				<long>
+					<generic draft="unconfirmed">Аҩадамра-Ҭашәаратәи амексикатә аамҭа</generic>
+					<standard draft="unconfirmed">Аҩадамра-Ҭашәаратәи амексикатә астандартә аамҭа</standard>
+					<daylight draft="unconfirmed">Аҩадамра-Ҭашәаратәи амексикатә аԥхынтәи аамҭа</daylight>
+				</long>
+			</metazone>
+			<metazone type="Mexico_Pacific">
+				<long>
+					<generic draft="unconfirmed">Аокеанҭынчтәи амексикатә аамҭа</generic>
+					<standard draft="unconfirmed">Аокеанҭынчтәи амексикатә астандартә аамҭа</standard>
+					<daylight draft="unconfirmed">Аокеанҭынчтәи амексикатә аԥхынтәи аамҭа</daylight>
+				</long>
+			</metazone>
+			<metazone type="Mongolia">
+				<long>
+					<generic draft="unconfirmed">Улан-Батор</generic>
+					<standard draft="unconfirmed">Улан-Батор, астандартә аамҭа</standard>
+					<daylight draft="unconfirmed">Улан-Батор, аԥхынтәи аамҭа</daylight>
+				</long>
+			</metazone>
+			<metazone type="Moscow">
+				<long>
+					<generic draft="unconfirmed">Москва</generic>
+					<standard draft="unconfirmed">Москва, астандартә аамҭа</standard>
+					<daylight draft="unconfirmed">Москва, аԥхынтәи аамҭа</daylight>
+				</long>
+			</metazone>
+			<metazone type="Myanmar">
+				<long>
+					<standard draft="unconfirmed">Мианма</standard>
+				</long>
+			</metazone>
+			<metazone type="Nauru">
+				<long>
+					<standard draft="unconfirmed">Науру</standard>
+				</long>
+			</metazone>
+			<metazone type="Nepal">
+				<long>
+					<standard draft="unconfirmed">Непал</standard>
+				</long>
+			</metazone>
+			<metazone type="New_Caledonia">
+				<long>
+					<generic draft="unconfirmed">Каледониа ҿыц</generic>
+					<standard draft="unconfirmed">Каледониа ҿыц, астандартә аамҭа</standard>
+					<daylight draft="unconfirmed">Каледониа ҿыц, аԥхынтәи аамҭа</daylight>
+				</long>
+			</metazone>
+			<metazone type="New_Zealand">
+				<long>
+					<generic draft="unconfirmed">Зеландиа ҿыц</generic>
+					<standard draft="unconfirmed">Зеландиа ҿыц, астандартә аамҭа</standard>
+					<daylight draft="unconfirmed">Зеландиа ҿыц, аԥхынтәи аамҭа</daylight>
+				</long>
+			</metazone>
+			<metazone type="Newfoundland">
+				<long>
+					<generic draft="unconfirmed">Ниуфаундленд</generic>
+					<standard draft="unconfirmed">Ниуфаундленд, астандартә аамҭа</standard>
+					<daylight draft="unconfirmed">Ниуфаундленд, аԥхынтәи аамҭа</daylight>
+				</long>
+			</metazone>
+			<metazone type="Niue">
+				<long>
+					<standard draft="unconfirmed">Ниуе</standard>
+				</long>
+			</metazone>
+			<metazone type="Norfolk">
+				<long>
+					<generic draft="unconfirmed">Норфолк</generic>
+					<standard draft="unconfirmed">Норфолк, астандартә аамҭа</standard>
+					<daylight draft="unconfirmed">Норфолк, аԥхынтәи аамҭа</daylight>
+				</long>
+			</metazone>
+			<metazone type="Noronha">
+				<long>
+					<generic draft="unconfirmed">Фернанду-ди-Норониа</generic>
+					<standard draft="unconfirmed">Фернанду-ди-Норониа, астандартә аамҭа</standard>
+					<daylight draft="unconfirmed">Фернанду-ди-Норониа, аԥхынтәи аамҭа</daylight>
+				</long>
+			</metazone>
+			<metazone type="North_Mariana">
+				<long>
+					<standard draft="unconfirmed">Аҩадатәи Мариантәи ад-хақәа</standard>
+				</long>
+			</metazone>
+			<metazone type="Novosibirsk">
+				<long>
+					<generic draft="unconfirmed">Новосибирск</generic>
+					<standard draft="unconfirmed">Новосибирск, астандартә аамҭа</standard>
+					<daylight draft="unconfirmed">Новосибирск, аԥхынтәи аамҭа</daylight>
+				</long>
+			</metazone>
+			<metazone type="Omsk">
+				<long>
+					<generic draft="unconfirmed">Омск</generic>
+					<standard draft="unconfirmed">Омск, астандартә аамҭа</standard>
+					<daylight draft="unconfirmed">Омск, аԥхынтәи аамҭа</daylight>
+				</long>
+			</metazone>
+			<metazone type="Pakistan">
+				<long>
+					<generic draft="unconfirmed">Пакистан</generic>
+					<standard draft="unconfirmed">Пакистан, астандартә аамҭа</standard>
+					<daylight draft="unconfirmed">Пакистан, аԥхынтәи аамҭа</daylight>
+				</long>
+			</metazone>
+			<metazone type="Palau">
+				<long>
+					<standard draft="unconfirmed">Палау</standard>
+				</long>
+			</metazone>
+			<metazone type="Papua_New_Guinea">
+				<long>
+					<standard draft="unconfirmed">Папуа — Гвинеиа ҿыц</standard>
+				</long>
+			</metazone>
+			<metazone type="Paraguay">
+				<long>
+					<generic draft="unconfirmed">Парагваи</generic>
+					<standard draft="unconfirmed">Парагваи, астандартә аамҭа</standard>
+					<daylight draft="unconfirmed">Парагваи, аԥхынтәи аамҭа</daylight>
+				</long>
+			</metazone>
+			<metazone type="Peru">
+				<long>
+					<generic draft="unconfirmed">Перу</generic>
+					<standard draft="unconfirmed">Перу, астандартә аамҭа</standard>
+					<daylight draft="unconfirmed">Перу, аԥхынтәи аамҭа</daylight>
+				</long>
+			</metazone>
+			<metazone type="Philippines">
+				<long>
+					<generic draft="unconfirmed">Филиппин</generic>
+					<standard draft="unconfirmed">Филиппин, астандартә аамҭа</standard>
+					<daylight draft="unconfirmed">Филиппин, аԥхынтәи аамҭа</daylight>
+				</long>
+			</metazone>
+			<metazone type="Phoenix_Islands">
+				<long>
+					<standard draft="unconfirmed">ад-хақәа Феникс</standard>
+				</long>
+			</metazone>
+			<metazone type="Pierre_Miquelon">
+				<long>
+					<generic draft="unconfirmed">Сен-Пиери Микелони</generic>
+					<standard draft="unconfirmed">Сен-Пиери Микелони, астандартә аамҭа</standard>
+					<daylight draft="unconfirmed">Сен-Пиери Микелони, аԥхынтәи аамҭа</daylight>
+				</long>
+			</metazone>
+			<metazone type="Pitcairn">
+				<long>
+					<standard draft="unconfirmed">Питкерн</standard>
+				</long>
+			</metazone>
+			<metazone type="Ponape">
+				<long>
+					<standard draft="unconfirmed">Понпеи</standard>
+				</long>
+			</metazone>
+			<metazone type="Pyongyang">
+				<long>
+					<standard draft="unconfirmed">Пхениан</standard>
+				</long>
+			</metazone>
+			<metazone type="Qyzylorda">
+				<long>
+					<generic draft="unconfirmed">Кызылорда*</generic>
+					<standard draft="unconfirmed">Кызылорда, астандартә аамҭа*</standard>
+					<daylight draft="unconfirmed">Кызылорда, аԥхынтәи аамҭа*</daylight>
+				</long>
+			</metazone>
+			<metazone type="Reunion">
+				<long>
+					<standard draft="unconfirmed">Реиунон</standard>
+				</long>
+			</metazone>
+			<metazone type="Rothera">
+				<long>
+					<standard draft="unconfirmed">Ротера</standard>
+				</long>
+			</metazone>
+			<metazone type="Sakhalin">
+				<long>
+					<generic draft="unconfirmed">Сахалин</generic>
+					<standard draft="unconfirmed">Сахалин, астандартә аамҭа</standard>
+					<daylight draft="unconfirmed">Сахалин, аԥхынтәи аамҭа</daylight>
+				</long>
+			</metazone>
+			<metazone type="Samara">
+				<long>
+					<generic draft="unconfirmed">аамҭа Самараҿы</generic>
+					<standard draft="unconfirmed">Самартәи астандартә аамҭа</standard>
+					<daylight draft="unconfirmed">Самартәи аԥхынтәи аамҭа</daylight>
+				</long>
+			</metazone>
+			<metazone type="Samoa">
+				<long>
+					<generic draft="unconfirmed">Самоа</generic>
+					<standard draft="unconfirmed">Самоа, астандартә аамҭа</standard>
+					<daylight draft="unconfirmed">Самоа, аԥхынтәи аамҭа</daylight>
+				</long>
+			</metazone>
+			<metazone type="Seychelles">
+				<long>
+					<standard draft="unconfirmed">Сеишелтәи адгьылбжьахақәа</standard>
+				</long>
+			</metazone>
+			<metazone type="Singapore">
+				<long>
+					<standard draft="unconfirmed">Сингапур</standard>
+				</long>
+			</metazone>
+			<metazone type="Solomon">
+				<long>
+					<standard draft="unconfirmed">Соломонтәи адгьылбжьахақәа</standard>
+				</long>
+			</metazone>
+			<metazone type="South_Georgia">
+				<long>
+					<standard draft="unconfirmed">Аладатәи Георгиа</standard>
+				</long>
+			</metazone>
+			<metazone type="Suriname">
+				<long>
+					<standard draft="unconfirmed">Суринам</standard>
+				</long>
+			</metazone>
+			<metazone type="Syowa">
+				<long>
+					<standard draft="unconfirmed">Сиова</standard>
+				</long>
+			</metazone>
+			<metazone type="Tahiti">
+				<long>
+					<standard draft="unconfirmed">Таити</standard>
+				</long>
+			</metazone>
+			<metazone type="Taipei">
+				<long>
+					<generic draft="unconfirmed">Таиван</generic>
+					<standard draft="unconfirmed">Таиван, астандартә аамҭа</standard>
+					<daylight draft="unconfirmed">Таиван, аԥхынтәи аамҭа</daylight>
+				</long>
+			</metazone>
+			<metazone type="Tajikistan">
+				<long>
+					<standard draft="unconfirmed">Таџьықсҭан</standard>
+				</long>
+			</metazone>
+			<metazone type="Tokelau">
+				<long>
+					<standard draft="unconfirmed">Токелау</standard>
+				</long>
+			</metazone>
+			<metazone type="Tonga">
+				<long>
+					<generic draft="unconfirmed">Тонга</generic>
+					<standard draft="unconfirmed">Тонга, астандартә аамҭа</standard>
+					<daylight draft="unconfirmed">Тонга, аԥхынтәи аамҭа</daylight>
+				</long>
+			</metazone>
+			<metazone type="Truk">
+				<long>
+					<standard draft="unconfirmed">Трук</standard>
+				</long>
+			</metazone>
+			<metazone type="Turkmenistan">
+				<long>
+					<generic draft="unconfirmed">Туркменистан</generic>
+					<standard draft="unconfirmed">Туркменистан, астандартә аамҭа</standard>
+					<daylight draft="unconfirmed">Туркменистан, аԥхынтәи аамҭа</daylight>
+				</long>
+			</metazone>
+			<metazone type="Tuvalu">
+				<long>
+					<standard draft="unconfirmed">Тувалу</standard>
+				</long>
+			</metazone>
+			<metazone type="Uruguay">
+				<long>
+					<generic draft="unconfirmed">Уругваи</generic>
+					<standard draft="unconfirmed">Уругваи, астандартә аамҭа</standard>
+					<daylight draft="unconfirmed">Уругваи, аԥхынтәи аамҭа</daylight>
+				</long>
+			</metazone>
+			<metazone type="Uzbekistan">
+				<long>
+					<generic draft="unconfirmed">Узбеқьисҭан</generic>
+					<standard draft="unconfirmed">Узбеқьисҭан, астандартә аамҭа</standard>
+					<daylight draft="unconfirmed">Узбеқьисҭан, аԥхынтәи аамҭа</daylight>
+				</long>
+			</metazone>
+			<metazone type="Vanuatu">
+				<long>
+					<generic draft="unconfirmed">Вануату</generic>
+					<standard draft="unconfirmed">Вануату, астандартә аамҭа</standard>
+					<daylight draft="unconfirmed">Вануату, аԥхынтәи аамҭа</daylight>
+				</long>
+			</metazone>
+			<metazone type="Venezuela">
+				<long>
+					<standard draft="unconfirmed">Венесуела</standard>
+				</long>
+			</metazone>
+			<metazone type="Vladivostok">
+				<long>
+					<generic draft="unconfirmed">Владивосток</generic>
+					<standard draft="unconfirmed">Владивосток, астандартә аамҭа</standard>
+					<daylight draft="unconfirmed">Владивосток, аԥхынтәи аамҭа</daylight>
+				</long>
+			</metazone>
+			<metazone type="Volgograd">
+				<long>
+					<generic draft="unconfirmed">Волгоград</generic>
+					<standard draft="unconfirmed">Волгоград, астандартә аамҭа</standard>
+					<daylight draft="unconfirmed">Волгоград, аԥхынтәи аамҭа</daylight>
+				</long>
+			</metazone>
+			<metazone type="Vostok">
+				<long>
+					<standard draft="unconfirmed">Амрагылара</standard>
+				</long>
+			</metazone>
+			<metazone type="Wake">
+				<long>
+					<standard draft="unconfirmed">Уеик</standard>
+				</long>
+			</metazone>
+			<metazone type="Wallis">
+				<long>
+					<standard draft="unconfirmed">Уоллиси Футунеи</standard>
+				</long>
+			</metazone>
+			<metazone type="Yakutsk">
+				<long>
+					<generic draft="unconfirmed">Иакутск</generic>
+					<standard draft="unconfirmed">Иакутск, астандартә аамҭа</standard>
+					<daylight draft="unconfirmed">Иакутск, аԥхынтәи аамҭа</daylight>
+				</long>
+			</metazone>
+			<metazone type="Yekaterinburg">
+				<long>
+					<generic draft="unconfirmed">Екатеринбург</generic>
+					<standard draft="unconfirmed">Екатеринбург, астандартә аамҭа</standard>
+					<daylight draft="unconfirmed">Екатеринбург, аԥхынтәи аамҭа</daylight>
+				</long>
+			</metazone>
+			<metazone type="Yukon">
+				<long>
+					<standard draft="unconfirmed">Иукон</standard>
+				</long>
+			</metazone>
+		</timeZoneNames>
+	</dates>
+	<numbers>
+		<defaultNumberingSystem draft="unconfirmed">latn</defaultNumberingSystem>
+		<otherNumberingSystems>
+			<native draft="unconfirmed">latn</native>
+		</otherNumberingSystems>
+		<symbols numberSystem="latn">
+			<decimal draft="unconfirmed">,</decimal>
+			<group draft="unconfirmed"> </group>
+			<approximatelySign draft="unconfirmed">≈</approximatelySign>
+		</symbols>
+		<decimalFormats numberSystem="latn">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<scientificFormats numberSystem="latn">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<percentFormats numberSystem="latn">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0 %</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<currencyFormats numberSystem="latn">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">#,##0.00 ¤</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">#,##0.00 ¤</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencies>
+			<currency type="BMD">
+				<displayName draft="unconfirmed">бермудтәи адоллар</displayName>
+				<displayName count="other" draft="unconfirmed">бермудтәи адоллар</displayName>
+			</currency>
+			<currency type="EUR">
+				<displayName draft="unconfirmed">евро</displayName>
+				<displayName count="other" draft="unconfirmed">евро</displayName>
+			</currency>
+			<currency type="GEL">
+				<symbol alt="narrow" draft="unconfirmed">ლ</symbol>
+			</currency>
+			<currency type="JPY">
+				<symbol draft="unconfirmed">¥</symbol>
+			</currency>
+			<currency type="PHP">
+				<symbol draft="unconfirmed">PHP</symbol>
+			</currency>
+			<currency type="RON">
+				<symbol alt="narrow" draft="unconfirmed">L</symbol>
+			</currency>
+			<currency type="RUB">
+				<symbol draft="unconfirmed">₽</symbol>
+			</currency>
+			<currency type="SLL">
+				<displayName draft="unconfirmed">леоне</displayName>
+				<displayName count="other" draft="unconfirmed">леоне</displayName>
+			</currency>
+			<currency type="THB">
+				<symbol draft="unconfirmed">฿</symbol>
+			</currency>
+			<currency type="TWD">
+				<symbol alt="narrow" draft="unconfirmed">NT$</symbol>
+			</currency>
+			<currency type="UAH">
+				<symbol draft="unconfirmed">₴</symbol>
+			</currency>
+			<currency type="USD">
+				<symbol draft="unconfirmed">$</symbol>
+			</currency>
+			<currency type="XXX">
+				<displayName draft="unconfirmed">Еилкаам Авалиута</displayName>
+				<displayName count="other" draft="unconfirmed">(еилкаам авалиута)</displayName>
+			</currency>
+		</currencies>
+		<miscPatterns numberSystem="latn">
+			<pattern type="approximately" draft="unconfirmed">≈{0}</pattern>
+		</miscPatterns>
+		<minimalPairs>
+			<pluralMinimalPairs count="other" draft="unconfirmed">{0} мшы</pluralMinimalPairs>
+		</minimalPairs>
+	</numbers>
+	<units>
+		<unitLength type="long">
+			<compoundUnit type="per">
+				<compoundUnitPattern draft="unconfirmed">{0}/{1}</compoundUnitPattern>
+			</compoundUnit>
+			<compoundUnit type="times">
+				<compoundUnitPattern draft="unconfirmed">{0}⋅{1}</compoundUnitPattern>
+			</compoundUnit>
+		</unitLength>
+		<unitLength type="narrow">
+			<compoundUnit type="per">
+				<compoundUnitPattern draft="unconfirmed">{0}/{1}</compoundUnitPattern>
+			</compoundUnit>
+			<compoundUnit type="times">
+				<compoundUnitPattern draft="unconfirmed">{0}⋅{1}</compoundUnitPattern>
+			</compoundUnit>
+		</unitLength>
+	</units>
+	<listPatterns>
+		<listPattern>
+			<listPatternPart type="end" draft="unconfirmed">{0}-и {1}-и</listPatternPart>
+			<listPatternPart type="2" draft="unconfirmed">{0}-и {1}-и</listPatternPart>
+		</listPattern>
+		<listPattern type="or">
+			<listPatternPart type="end" draft="unconfirmed">{0} ма {1}</listPatternPart>
+			<listPatternPart type="2" draft="unconfirmed">{0} ма {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="or-narrow">
+			<listPatternPart type="start" draft="unconfirmed">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle" draft="unconfirmed">{0}, {1}</listPatternPart>
+			<listPatternPart type="end" draft="unconfirmed">{0} ма {1}</listPatternPart>
+			<listPatternPart type="2" draft="unconfirmed">{0} ма {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="or-short">
+			<listPatternPart type="start" draft="unconfirmed">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle" draft="unconfirmed">{0}, {1}</listPatternPart>
+			<listPatternPart type="end" draft="unconfirmed">{0} ма {1}</listPatternPart>
+			<listPatternPart type="2" draft="unconfirmed">{0} ма {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="standard-narrow">
+			<listPatternPart type="start" draft="unconfirmed">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle" draft="unconfirmed">{0}, {1}</listPatternPart>
+			<listPatternPart type="end" draft="unconfirmed">{0}, {1}</listPatternPart>
+			<listPatternPart type="2" draft="unconfirmed">{0}, {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="standard-short">
+			<listPatternPart type="start" draft="unconfirmed">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle" draft="unconfirmed">{0}, {1}</listPatternPart>
+			<listPatternPart type="end" draft="unconfirmed">{0}-и {1}-и</listPatternPart>
+			<listPatternPart type="2" draft="unconfirmed">{0}-и {1}-и</listPatternPart>
+		</listPattern>
+		<listPattern type="unit">
+			<listPatternPart type="start" draft="unconfirmed">{0} {1}</listPatternPart>
+			<listPatternPart type="middle" draft="unconfirmed">{0} {1}</listPatternPart>
+			<listPatternPart type="end" draft="unconfirmed">{0} {1}</listPatternPart>
+			<listPatternPart type="2" draft="unconfirmed">{0} {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="unit-narrow">
+			<listPatternPart type="start" draft="unconfirmed">{0} {1}</listPatternPart>
+			<listPatternPart type="middle" draft="unconfirmed">{0} {1}</listPatternPart>
+			<listPatternPart type="end" draft="unconfirmed">{0} {1}</listPatternPart>
+			<listPatternPart type="2" draft="unconfirmed">{0} {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="unit-short">
+			<listPatternPart type="start" draft="unconfirmed">{0} {1}</listPatternPart>
+			<listPatternPart type="middle" draft="unconfirmed">{0} {1}</listPatternPart>
+			<listPatternPart type="end" draft="unconfirmed">{0} {1}</listPatternPart>
+			<listPatternPart type="2" draft="unconfirmed">{0} {1}</listPatternPart>
+		</listPattern>
+	</listPatterns>
+	<posix>
+		<messages>
+			<yesstr draft="unconfirmed">ааи:а</yesstr>
+			<nostr draft="unconfirmed">мап:м</nostr>
+		</messages>
+	</posix>
+</ldml>

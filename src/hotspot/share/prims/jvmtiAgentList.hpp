@@ -27,9 +27,8 @@
 
 #include "memory/allocation.hpp"
 #include "prims/jvmtiAgent.hpp"
+#include "utilities/growableArray.hpp"
 
-template <typename, MEMFLAGS>
-class GrowableArrayCHeap;
 class JvmtiEnv;
 
 // Maintains a single cas linked-list of JvmtiAgents.
@@ -49,13 +48,14 @@ class JvmtiAgentList : AllStatic {
     };
     GrowableArrayCHeap<JvmtiAgent*, mtServiceability>* _stack;
     const Filter _filter;
+    Iterator() : _stack(nullptr), _filter(ALL) {}
     Iterator(JvmtiAgent** list, Filter filter);
     JvmtiAgent* select(JvmtiAgent* agent) const;
    public:
-    bool has_next() const;
-    JvmtiAgent* next();
-    const JvmtiAgent* next() const;
-    ~Iterator();
+    bool has_next() const NOT_JVMTI_RETURN_(false);
+    JvmtiAgent* next() NOT_JVMTI_RETURN_(nullptr);
+    const JvmtiAgent* next() const NOT_JVMTI_RETURN_(nullptr);
+    ~Iterator() { delete _stack; }
   };
 
  private:
@@ -66,19 +66,19 @@ class JvmtiAgentList : AllStatic {
   static void convert_xrun_agents();
 
  public:
-  static void add(JvmtiAgent* agent);
-  static void add(const char* name, char* options, bool absolute_path);
-  static void add_xrun(const char* name, char* options, bool absolute_path);
+  static void add(JvmtiAgent* agent) NOT_JVMTI_RETURN;
+  static void add(const char* name, char* options, bool absolute_path) NOT_JVMTI_RETURN;
+  static void add_xrun(const char* name, char* options, bool absolute_path) NOT_JVMTI_RETURN;
 
-  static void load_agents();
+  static void load_agents() NOT_JVMTI_RETURN;
   static jint load_agent(const char* agent, const char* absParam,
-                         const char* options, outputStream* st);
-  static void load_xrun_agents();
-  static void unload_agents();
+                         const char* options, outputStream* st) NOT_JVMTI_RETURN_(0);
+  static void load_xrun_agents() NOT_JVMTI_RETURN;
+  static void unload_agents() NOT_JVMTI_RETURN;
 
   static JvmtiAgent* lookup(JvmtiEnv* env, void* f_ptr);
 
-  static Iterator agents();
+  static Iterator agents() NOT_JVMTI({ Iterator it; return it; });
   static Iterator java_agents();
   static Iterator native_agents();
   static Iterator xrun_agents();
