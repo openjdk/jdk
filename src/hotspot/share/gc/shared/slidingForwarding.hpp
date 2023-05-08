@@ -55,14 +55,14 @@
  *
  * When recording the sliding forwarding, the mark word would look roughly like this:
  *
- *    64                       32                     0
- *    [........................|OOOOOOOOOOOOOOO|A|F|TT]
- *                                                  ^--- normal lock bits, would record "object is forwarded"
- *                                                ^----- fallback bit (explained below)
- *                                              ^------- alternate region select
- *                              ^----------------------- in-region offset
- *     ^------------------------------------------------ protected area, *not touched* by this code, useful for
- *                                                       compressed class pointer with compact object headers
+ *   64                              32                                0
+ *    [................................OOOOOOOOOOOOOOOOOOOOOOOOOOOOAFTT]
+ *                                                                    ^----- normal lock bits, would record "object is forwarded"
+ *                                                                   ^------ fallback bit (explained below)
+ *                                                                  ^------- alternate region select
+ *                                     ^------------------------------------ in-region offset
+ *     ^-------------------------------------------------------------------- protected area, *not touched* by this code, useful for
+ *                                                                           compressed class pointer with compact object headers
  *
  * Adding a forwarding then generally works as follows:
  *   1. Compute the "to" offset in the "to" region, this gives "offset".

@@ -50,10 +50,6 @@ TEST_VM(FlagGuard, int_flag) {
   TEST_FLAG(ParGCArrayScanChunk, int, 1337);
 }
 
-TEST_VM(FlagGuard, intx_flag) {
-  TEST_FLAG(RefDiscoveryPolicy, intx, 1337);
-}
-
 TEST_VM(FlagGuard, uint_flag) {
   TEST_FLAG(ConcGCThreads, uint, 1337);
 }

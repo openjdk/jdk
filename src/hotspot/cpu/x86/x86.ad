@@ -1246,10 +1246,6 @@ static inline bool is_vector_popcount_predicate(BasicType bt) {
          (is_non_subword_integral_type(bt) && VM_Version::supports_avx512_vpopcntdq());
 }
 
-static inline bool is_unsigned_booltest_pred(int bt) {
-  return  ((bt & BoolTest::unsigned_compare) == BoolTest::unsigned_compare);
-}
-
 static inline bool is_clz_non_subword_predicate_evex(BasicType bt, int vlen_bytes) {
   return is_non_subword_integral_type(bt) && VM_Version::supports_avx512cd() &&
            (VM_Version::supports_avx512vl() || vlen_bytes == 64);
@@ -7609,7 +7605,7 @@ instruct evcmpFD(kReg dst, vec src1, vec src2, immI8 cond) %{
 
 instruct vcmp_direct(legVec dst, legVec src1, legVec src2, immI8 cond) %{
   predicate(n->bottom_type()->isa_vectmask() == NULL &&
-            !is_unsigned_booltest_pred(n->in(2)->get_int()) &&
+            !Matcher::is_unsigned_booltest_pred(n->in(2)->get_int()) &&
             Matcher::vector_length_in_bytes(n->in(1)->in(1)) >=  4 && // src1
             Matcher::vector_length_in_bytes(n->in(1)->in(1)) <= 32 && // src1
             is_integral_type(Matcher::vector_element_basic_type(n->in(1)->in(1))) &&
@@ -7629,7 +7625,7 @@ instruct vcmp_direct(legVec dst, legVec src1, legVec src2, immI8 cond) %{
 
 instruct vcmp_negate(legVec dst, legVec src1, legVec src2, immI8 cond, legVec xtmp) %{
   predicate(n->bottom_type()->isa_vectmask() == NULL &&
-            !is_unsigned_booltest_pred(n->in(2)->get_int()) &&
+            !Matcher::is_unsigned_booltest_pred(n->in(2)->get_int()) &&
             Matcher::vector_length_in_bytes(n->in(1)->in(1)) >=  4 && // src1
             Matcher::vector_length_in_bytes(n->in(1)->in(1)) <= 32 && // src1
             is_integral_type(Matcher::vector_element_basic_type(n->in(1)->in(1))) &&
@@ -7650,7 +7646,7 @@ instruct vcmp_negate(legVec dst, legVec src1, legVec src2, immI8 cond, legVec xt
 
 instruct vcmpu(legVec dst, legVec src1, legVec src2, immI8 cond, legVec xtmp) %{
   predicate(n->bottom_type()->isa_vectmask() == NULL &&
-            is_unsigned_booltest_pred(n->in(2)->get_int()) &&
+            Matcher::is_unsigned_booltest_pred(n->in(2)->get_int()) &&
             Matcher::vector_length_in_bytes(n->in(1)->in(1)) >=  4 && // src1
             Matcher::vector_length_in_bytes(n->in(1)->in(1)) <= 32 && // src1
             is_integral_type(Matcher::vector_element_basic_type(n->in(1)->in(1)))); // src1
@@ -7687,7 +7683,7 @@ instruct vcmp64(vec dst, vec src1, vec src2, immI8 cond, kReg ktmp) %{
 
     int vlen_enc = vector_length_encoding(this, $src1);
     Assembler::ComparisonPredicate cmp = booltest_pred_to_comparison_pred($cond$$constant);
-    bool is_unsigned = is_unsigned_booltest_pred($cond$$constant);
+    bool is_unsigned = Matcher::is_unsigned_booltest_pred($cond$$constant);
     KRegister mask = k0; // The comparison itself is not being masked.
     bool merge = false;
     BasicType src1_elem_bt = Matcher::vector_element_basic_type(this, $src1);
@@ -7721,7 +7717,7 @@ instruct evcmp(kReg dst, vec src1, vec src2, immI8 cond) %{
 
     int vlen_enc = vector_length_encoding(this, $src1);
     Assembler::ComparisonPredicate cmp = booltest_pred_to_comparison_pred($cond$$constant);
-    bool is_unsigned = is_unsigned_booltest_pred($cond$$constant);
+    bool is_unsigned = Matcher::is_unsigned_booltest_pred($cond$$constant);
     BasicType src1_elem_bt = Matcher::vector_element_basic_type(this, $src1);
 
     // Comparison i
@@ -9936,25 +9932,25 @@ instruct evcmp_masked(kReg dst, vec src1, vec src2, immI8 cond, kReg mask) %{
     // Comparison i
     switch (src1_elem_bt) {
       case T_BYTE: {
-        bool is_unsigned = is_unsigned_booltest_pred($cond$$constant);
+        bool is_unsigned = Matcher::is_unsigned_booltest_pred($cond$$constant);
         Assembler::ComparisonPredicate cmp = booltest_pred_to_comparison_pred($cond$$constant);
         __ evpcmpb($dst$$KRegister, $mask$$KRegister, $src1$$XMMRegister, $src2$$XMMRegister, cmp, !is_unsigned, vlen_enc);
         break;
       }
       case T_SHORT: {
-        bool is_unsigned = is_unsigned_booltest_pred($cond$$constant);
+        bool is_unsigned = Matcher::is_unsigned_booltest_pred($cond$$constant);
         Assembler::ComparisonPredicate cmp = booltest_pred_to_comparison_pred($cond$$constant);
         __ evpcmpw($dst$$KRegister, $mask$$KRegister, $src1$$XMMRegister, $src2$$XMMRegister, cmp, !is_unsigned, vlen_enc);
         break;
       }
       case T_INT: {
-        bool is_unsigned = is_unsigned_booltest_pred($cond$$constant);
+        bool is_unsigned = Matcher::is_unsigned_booltest_pred($cond$$constant);
         Assembler::ComparisonPredicate cmp = booltest_pred_to_comparison_pred($cond$$constant);
         __ evpcmpd($dst$$KRegister, $mask$$KRegister, $src1$$XMMRegister, $src2$$XMMRegister, cmp, !is_unsigned, vlen_enc);
         break;
       }
       case T_LONG: {
-        bool is_unsigned = is_unsigned_booltest_pred($cond$$constant);
+        bool is_unsigned = Matcher::is_unsigned_booltest_pred($cond$$constant);
         Assembler::ComparisonPredicate cmp = booltest_pred_to_comparison_pred($cond$$constant);
         __ evpcmpq($dst$$KRegister, $mask$$KRegister, $src1$$XMMRegister, $src2$$XMMRegister, cmp, !is_unsigned, vlen_enc);
         break;

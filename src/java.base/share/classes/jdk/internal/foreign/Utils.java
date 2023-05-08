@@ -174,8 +174,18 @@ public final class Utils {
     }
 
     @ForceInline
-    public static void checkElementAlignment(MemoryLayout layout, String msg) {
+    public static void checkElementAlignment(ValueLayout layout, String msg) {
+        // Fast-path: if both size and alignment are powers of two, we can just
+        // check if one is greater than the other.
+        assert isPowerOfTwo(layout.bitSize());
         if (layout.byteAlignment() > layout.byteSize()) {
+            throw new IllegalArgumentException(msg);
+        }
+    }
+
+    @ForceInline
+    public static void checkElementAlignment(MemoryLayout layout, String msg) {
+        if (layout.byteSize() % layout.byteAlignment() != 0) {
             throw new IllegalArgumentException(msg);
         }
     }
@@ -244,5 +254,9 @@ public final class Utils {
 
     public static int byteWidthOfPrimitive(Class<?> primitive) {
         return Wrapper.forPrimitiveType(primitive).bitWidth() / 8;
+    }
+
+    public static boolean isPowerOfTwo(long value) {
+        return (value & (value - 1)) == 0L;
     }
 }
