@@ -210,7 +210,7 @@ void C1_MacroAssembler::allocate_object(Register obj, Register tmp1, Register tm
 void C1_MacroAssembler::initialize_object(Register obj, Register klass, Register var_size_in_bytes, int con_size_in_bytes, Register tmp1, Register tmp2, bool is_tlab_allocated) {
   assert((con_size_in_bytes & MinObjAlignmentInBytesMask) == 0,
          "con_size_in_bytes is not multiple of alignment");
-  const int hdr_size_in_bytes = instanceOopDesc::header_size() * HeapWordSize;
+  const int hdr_size_in_bytes = instanceOopDesc::base_offset_in_bytes();
 
   initialize_header(obj, klass, noreg, tmp1, tmp2);
 

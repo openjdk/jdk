@@ -276,7 +276,7 @@ void C1_MacroAssembler::initialize_object(
   Register t1,                         // temp register
   Register t2                          // temp register
   ) {
-  const int hdr_size_in_bytes = instanceOopDesc::header_size() * HeapWordSize;
+  const int hdr_size_in_bytes = instanceOopDesc::base_offset_in_bytes();
 
   initialize_header(obj, klass, noreg, t1, t2);
 

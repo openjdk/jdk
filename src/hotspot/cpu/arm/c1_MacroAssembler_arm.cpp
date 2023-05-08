@@ -125,7 +125,7 @@ void C1_MacroAssembler::initialize_object(Register obj, Register obj_end, Regist
   if (!(UseTLAB && ZeroTLAB && is_tlab_allocated)) {
     if (obj_size_in_bytes >= 0 && obj_size_in_bytes <= 8 * BytesPerWord) {
       mov(tmp1, 0);
-      const int base = instanceOopDesc::header_size() * HeapWordSize;
+      const int base = instanceOopDesc::base_offset_in_bytes();
       for (int i = base; i < obj_size_in_bytes; i += wordSize) {
         str(tmp1, Address(obj, i));
       }
@@ -158,7 +158,7 @@ void C1_MacroAssembler::allocate_object(Register obj, Register tmp1, Register tm
     mov_slow(Rtemp, object_size_in_bytes);
     try_allocate(obj, obj_end, tmp2, tmp3, Rtemp, slow_case);
   }
-  initialize_object(obj, obj_end, klass, len, tmp2, tmp3, instanceOopDesc::header_size() * HeapWordSize, object_size_in_bytes, /* is_tlab_allocated */ UseTLAB);
+  initialize_object(obj, obj_end, klass, len, tmp2, tmp3, instanceOopDesc::base_offset_in_bytes(), object_size_in_bytes, /* is_tlab_allocated */ UseTLAB);
 }
 
 void C1_MacroAssembler::allocate_array(Register obj, Register len,
