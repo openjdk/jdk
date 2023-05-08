@@ -88,7 +88,7 @@ class MethodFlags {
 
   int as_int() const { return _status; }
   void atomic_set_bits(u4 bits)   { Atomic::fetch_then_or(&_status, bits); }
-  void atomic_clear_bits(u4 bits) { u4 val = (~bits); Atomic::fetch_then_and(&_status, val); }
+  void atomic_clear_bits(u4 bits) { Atomic::fetch_then_and(&_status, ~bits); }
   void print_on(outputStream* st) const;
 };
 

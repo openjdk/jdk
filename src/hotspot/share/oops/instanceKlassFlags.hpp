@@ -124,7 +124,7 @@ class InstanceKlassFlags {
 #undef IK_STATUS_GET_SET
 
   void atomic_set_bits(u1 bits)   { Atomic::fetch_then_or(&_status, bits); }
-  void atomic_clear_bits(u1 bits) { u1 val = (~bits); Atomic::fetch_then_and(&_status, val); }
+  void atomic_clear_bits(u1 bits) { Atomic::fetch_then_and(&_status, (u1)(~bits)); }
   void print_on(outputStream* st) const;
 };
 

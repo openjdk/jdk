@@ -156,8 +156,7 @@ inline void FieldStatus::atomic_set_bits(u1& flags, u1 mask) {
 }
 
 inline void FieldStatus::atomic_clear_bits(u1& flags, u1 mask) {
-  u1 val = (~mask);
-  Atomic::fetch_then_and(&flags, val);
+  Atomic::fetch_then_and(&flags, (u1)(~mask));
 }
 
 inline void FieldStatus::update_flag(FieldStatusBitPosition pos, bool z) {
