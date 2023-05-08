@@ -780,10 +780,10 @@ public abstract sealed class $Type$Buffer
      * <code>src.get(dst,&nbsp;off,&nbsp;len)</code> has exactly the same effect as
      * the loop
      *
-     * <pre>{@code
+     * {@snippet lang=java :
      *     for (int i = off; i < off + len; i++)
      *         dst[i] = src.get();
-     * }</pre>
+     * }
      *
      * except that it first checks that there are sufficient $type$s in
      * this buffer and it is potentially much more efficient.
@@ -860,10 +860,10 @@ public abstract sealed class $Type$Buffer
      * checks the consistency of the supplied parameters and it is potentially
      * much more efficient:
      *
-     * <pre>{@code
+     * {@snippet lang=java :
      *     for (int i = offset, j = index; i < offset + length; i++, j++)
      *         dst[i] = src.get(j);
-     * }</pre>
+     * }
      *
      * @param  index
      *         The index in this buffer from which the first $type$ will be
@@ -1046,10 +1046,10 @@ public abstract sealed class $Type$Buffer
      * <code>dst.put(index,&nbsp;src,&nbsp;offset,&nbsp;length)</code>
      * has exactly the same effect as the loop
      *
-     * <pre>{@code
+     * {@snippet lang=java :
      * for (int i = offset, j = index; i < offset + length; i++, j++)
      *     dst.put(j, src.get(i));
-     * }</pre>
+     * }
      *
      * except that it first checks the consistency of the supplied parameters
      * and it is potentially much more efficient.  If this buffer and
@@ -1158,10 +1158,10 @@ public abstract sealed class $Type$Buffer
      * <code>dst.put(src,&nbsp;off,&nbsp;len)</code> has exactly the same effect as
      * the loop
      *
-     * <pre>{@code
+     * {@snippet lang=java :
      *     for (int i = off; i < off + len; i++)
      *         dst.put(src[i]);
-     * }</pre>
+     * }
      *
      * except that it first checks that there is sufficient space in this
      * buffer and it is potentially much more efficient.
@@ -1243,10 +1243,10 @@ public abstract sealed class $Type$Buffer
      * checks the consistency of the supplied parameters and it is potentially
      * much more efficient:
      *
-     * <pre>{@code
+     * {@snippet lang=java :
      *     for (int i = offset, j = index; i < offset + length; i++, j++)
      *         dst.put(j, src[i]);
-     * }</pre>
+     * }
      *
      * @param  index
      *         The index in this buffer at which the first $type$ will be
@@ -1378,10 +1378,10 @@ public abstract sealed class $Type$Buffer
      * <code>dst.put(src,&nbsp;start,&nbsp;end)</code> has exactly the same effect
      * as the loop
      *
-     * <pre>{@code
+     * {@snippet lang=java :
      *     for (int i = start; i < end; i++)
      *         dst.put(src.charAt(i));
-     * }</pre>
+     * }
      *
      * except that it first checks that there is sufficient space in this
      * buffer and it is potentially much more efficient.
@@ -1646,14 +1646,14 @@ public abstract sealed class $Type$Buffer
      * write was incomplete.  The following loop, for example, copies bytes
      * from one channel to another via the buffer {@code buf}:
      *
-     * <blockquote><pre>{@code
+     * {@snippet lang=java :
      *   buf.clear();          // Prepare buffer for use
      *   while (in.read(buf) >= 0 || buf.position != 0) {
      *       buf.flip();
      *       out.write(buf);
      *       buf.compact();    // In case of partial write
      *   }
-     * }</pre></blockquote>
+     * }
      *
 #end[byte]
      *
@@ -2239,10 +2239,10 @@ public abstract sealed class $Type$Buffer
      * and limit will be zero.  If rounding is within bounds the following
      * expressions will be true for a new buffer {@code nb} and unit size
      * {@code unitSize}:
-     * <pre>{@code
+     * {@snippet lang=java :
      * nb.alignmentOffset(0, unitSize) == 0
      * nb.alignmentOffset(nb.limit(), unitSize) == 0
-     * }</pre>
+     * }
      *
      * <p> Changes to this buffer's content will be visible in the new
      * buffer, and vice versa; the two buffers' position, limit, and mark
