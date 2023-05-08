@@ -550,9 +550,7 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
 #if INCLUDE_JVMCI
   , char* speculations,
   int speculations_len,
-  int nmethod_mirror_index,
-  const char* nmethod_mirror_name,
-  FailedSpeculation** failed_speculations
+  JVMCINMethodData* jvmci_data
 #endif
 )
 {
@@ -561,7 +559,7 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
   // create nmethod
   nmethod* nm = nullptr;
 #if INCLUDE_JVMCI
-  int jvmci_data_size = !compiler->is_jvmci() ? 0 : JVMCINMethodData::compute_size(nmethod_mirror_name);
+  int jvmci_data_size = compiler->is_jvmci() ? jvmci_data->size() : 0;
 #endif
   int nmethod_size =
     CodeBlob::allocation_size(code_buffer, sizeof(nmethod))
@@ -588,17 +586,11 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
 #if INCLUDE_JVMCI
             , speculations,
             speculations_len,
-            jvmci_data_size
+            jvmci_data
 #endif
             );
 
     if (nm != nullptr) {
-#if INCLUDE_JVMCI
-      if (compiler->is_jvmci()) {
-        // Initialize the JVMCINMethodData object inlined into nm
-        nm->jvmci_nmethod_data()->initialize(nmethod_mirror_index, nmethod_mirror_name, failed_speculations);
-      }
-#endif
       // To make dependency checking during class loading fast, record
       // the nmethod dependencies in the classes it is dependent on.
       // This allows the dependency checking code to simply walk the
@@ -786,7 +778,7 @@ nmethod::nmethod(
 #if INCLUDE_JVMCI
   , char* speculations,
   int speculations_len,
-  int jvmci_data_size
+  JVMCINMethodData* jvmci_data
 #endif
   )
   : CompiledMethod(method, "nmethod", type, nmethod_size, sizeof(nmethod), code_buffer, offsets->value(CodeOffsets::Frame_Complete), frame_size, oop_maps, false, true),
@@ -866,6 +858,7 @@ nmethod::nmethod(
 #if INCLUDE_JVMCI
     _speculations_offset     = _nul_chk_table_offset + align_up(nul_chk_table->size_in_bytes(), oopSize);
     _jvmci_data_offset       = _speculations_offset  + align_up(speculations_len, oopSize);
+    int jvmci_data_size      = compiler->is_jvmci() ? jvmci_data->size() : 0;
     _nmethod_end_offset      = _jvmci_data_offset    + align_up(jvmci_data_size, oopSize);
 #else
     _nmethod_end_offset      = _nul_chk_table_offset + align_up(nul_chk_table->size_in_bytes(), oopSize);
@@ -884,6 +877,13 @@ nmethod::nmethod(
     debug_info->copy_to(this);
     dependencies->copy_to(this);
     clear_unloading_state();
+
+#if INCLUDE_JVMCI
+    if (compiler->is_jvmci()) {
+      // Initialize the JVMCINMethodData object inlined into nm
+      jvmci_nmethod_data()->copy(jvmci_data);
+    }
+#endif
 
     Universe::heap()->register_nmethod(this);
     debug_only(Universe::heap()->verify_nmethod(this));
