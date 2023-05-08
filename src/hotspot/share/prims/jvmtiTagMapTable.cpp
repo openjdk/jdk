@@ -109,7 +109,7 @@ void JvmtiTagMapTable::add(oop obj, jlong tag) {
   bool is_added;
   if (obj->fast_no_hash_check()) {
     // Can't be in the table so add it fast.
-    is_added = _table.put_fast(new_entry, tag);
+    is_added = _table.put_when_absent(new_entry, tag);
   } else {
     jlong* value = _table.put_if_absent(new_entry, tag, &is_added);
     *value = tag; // assign the new tag

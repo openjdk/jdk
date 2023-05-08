@@ -139,11 +139,15 @@ class ResourceHashtableBase : public STORAGE {
   }
 
  /**
-  * Inserts a value in the front of the table.
-  * Since the table is locked, this is ok.
+  * Inserts a value in the front of the table, assuming that
+  * the entry is absent.
+  * The table must be locked for the get or test that the entry
+  * is absent, and for this operation.
+  * This is a faster variant of put_if_absent because it adds to the
+  * head of the bucket, and doesn't search the bucket.
   * @return: true: a new item is always added
   */
-  bool put_fast(K const& key, V const& value) {
+  bool put_when_absent(K const& key, V const& value) {
     unsigned hv = HASH(key);
     unsigned index = hv % table_size();
     assert(*lookup_node(hv, key) == nullptr, "use put_if_absent");
