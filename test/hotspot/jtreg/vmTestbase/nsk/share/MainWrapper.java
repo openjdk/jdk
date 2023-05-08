@@ -46,7 +46,6 @@ public final class MainWrapper {
         FinalizableObject finalizableObject = new FinalizableObject();
         finalizableObject.registerCleanup();
 
-
         // Some tests use this property to understand if virtual threads are used
         System.setProperty("main.wrapper", wrapperName);
 
