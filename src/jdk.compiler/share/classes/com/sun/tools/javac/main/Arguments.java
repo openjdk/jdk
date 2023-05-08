@@ -114,6 +114,7 @@ public class Arguments {
         return instance;
     }
 
+    @SuppressWarnings("this-escape")
     protected Arguments(Context context) {
         context.put(argsKey, this);
         options = Options.instance(context);

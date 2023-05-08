@@ -78,6 +78,7 @@
   template(VirtualThreadGetOrSetLocal)            \
   template(VirtualThreadGetCurrentLocation)       \
   template(ChangeSingleStep)                      \
+  template(SetNotifyJvmtiEventsMode)              \
   template(HeapWalkOperation)                     \
   template(HeapIterateOperation)                  \
   template(ReportJavaOutOfMemory)                 \
@@ -105,7 +106,8 @@
   template(GTestExecuteAtSafepoint)               \
   template(GTestStopSafepoint)                    \
   template(JFROldObject)                          \
-  template(JvmtiPostObjectFree)
+  template(JvmtiPostObjectFree)                   \
+  template(RendezvousGCThreads)
 
 class Thread;
 class outputStream;

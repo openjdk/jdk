@@ -60,7 +60,7 @@
 
 class ClassLoaderData;
 
-size_t CollectedHeap::_lab_alignment_reserve = ~(size_t)0;
+size_t CollectedHeap::_lab_alignment_reserve = SIZE_MAX;
 Klass* CollectedHeap::_filler_object_klass = nullptr;
 size_t CollectedHeap::_filler_array_max_size = 0;
 size_t CollectedHeap::_stack_chunk_max_size = 0;
@@ -152,6 +152,10 @@ MetaspaceSummary CollectedHeap::create_metaspace_summary() {
                           ms_chunk_free_list_summary, class_chunk_free_list_summary);
 }
 
+bool CollectedHeap::contains_null(const oop* p) const {
+  return *p == nullptr;
+}
+
 void CollectedHeap::print_heap_before_gc() {
   LogTarget(Debug, gc, heap) lt;
   if (lt.is_enabled()) {
@@ -223,7 +227,7 @@ bool CollectedHeap::is_oop(oop object) const {
     return false;
   }
 
-  if (is_in(object->klass_or_null())) {
+  if (is_in(object->klass_raw())) {
     return false;
   }
 
@@ -633,10 +637,6 @@ void CollectedHeap::reset_promotion_should_fail() {
 }
 
 #endif  // #ifndef PRODUCT
-
-bool CollectedHeap::is_archived_object(oop object) const {
-  return false;
-}
 
 // It's the caller's responsibility to ensure glitch-freedom
 // (if required).

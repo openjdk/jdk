@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.hpp"
+#include "runtime/thread.hpp"
 
 inline void G1BarrierSet::enqueue_preloaded(oop pre_val) {
   // Nulls should have been already filtered.
@@ -67,6 +68,18 @@ inline void G1BarrierSet::write_ref_field_pre(T* field) {
   enqueue(field);
 }
 
+inline void G1BarrierSet::invalidate(MemRegion mr) {
+  invalidate(JavaThread::current(), mr);
+}
+
+inline void G1BarrierSet::write_region(JavaThread* thread, MemRegion mr) {
+  invalidate(thread, mr);
+}
+
+inline void G1BarrierSet::write_ref_array_work(MemRegion mr) {
+  invalidate(mr);
+}
+
 template <DecoratorSet decorators, typename T>
 inline void G1BarrierSet::write_ref_field_post(T* field) {
   volatile CardValue* byte = _card_table->byte_for(field);
@@ -85,7 +98,7 @@ inline void G1BarrierSet::enqueue_preloaded_if_weak(DecoratorSet decorators, oop
   const bool peek              = (decorators & AS_NO_KEEPALIVE) != 0;
   const bool needs_enqueue     = (!peek && !on_strong_oop_ref);
 
-  if (needs_enqueue && value != NULL) {
+  if (needs_enqueue && value != nullptr) {
     enqueue_preloaded(value);
   }
 }

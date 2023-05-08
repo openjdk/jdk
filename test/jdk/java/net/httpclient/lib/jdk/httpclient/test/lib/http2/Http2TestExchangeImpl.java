@@ -26,6 +26,7 @@ package jdk.httpclient.test.lib.http2;
 import jdk.internal.net.http.common.HttpHeadersBuilder;
 import jdk.internal.net.http.frame.HeaderFrame;
 import jdk.internal.net.http.frame.HeadersFrame;
+import jdk.internal.net.http.frame.ResetFrame;
 
 import javax.net.ssl.SSLSession;
 import java.io.IOException;
@@ -45,7 +46,7 @@ public class Http2TestExchangeImpl implements Http2TestExchange {
     protected final HttpHeadersBuilder rspheadersBuilder;
     final URI uri;
     final String method;
-    final InputStream is;
+    protected final InputStream is;
     protected final BodyOutputStream os;
     final SSLSession sslSession;
     protected final int streamid;
@@ -149,9 +150,16 @@ public class Http2TestExchangeImpl implements Http2TestExchange {
 
         if (responseLength < 0 || rCode == 204) {
             response.setFlag(HeadersFrame.END_STREAM);
+            conn.outputQ.put(response);
+            // Put a reset frame on the outputQ if there is still unconsumed data in the input stream and output stream
+            // is going to be marked closed.
+            if (is instanceof BodyInputStream bis && bis.unconsumed()) {
+                conn.outputQ.put(new ResetFrame(streamid, ResetFrame.NO_ERROR));
+            }
             os.markClosed();
+        } else {
+            conn.outputQ.put(response);
         }
-        conn.outputQ.put(response);
         os.goodToGo();
         System.err.println("Sent response headers " + rCode);
     }

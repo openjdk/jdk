@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,7 @@ class G1DirtyCardQueueSet: public PtrQueueSet {
   struct HeadTail {
     BufferNode* _head;
     BufferNode* _tail;
-    HeadTail() : _head(NULL), _tail(NULL) {}
+    HeadTail() : _head(nullptr), _tail(nullptr) {}
     HeadTail(BufferNode* head, BufferNode* tail) : _head(head), _tail(tail) {}
   };
 
@@ -126,7 +126,7 @@ class G1DirtyCardQueueSet: public PtrQueueSet {
     };
 
     // The most recently created list, which might be for either the next or
-    // a previous safepoint, or might be NULL if the next list hasn't been
+    // a previous safepoint, or might be null if the next list hasn't been
     // created yet.  We only need one list because of the requirement that
     // threads calling add() must first ensure there are no paused buffers
     // from a previous safepoint.  There might be many list instances existing
@@ -211,10 +211,10 @@ class G1DirtyCardQueueSet: public PtrQueueSet {
 
   // Thread-safe attempt to remove and return the first buffer from
   // the _completed queue.
-  // Returns NULL if the queue is empty, or if a concurrent push/append
+  // Returns null if the queue is empty, or if a concurrent push/append
   // interferes. It uses GlobalCounter critical section to avoid ABA problem.
   BufferNode* dequeue_completed_buffer();
-  // Remove and return a completed buffer from the list, or return NULL
+  // Remove and return a completed buffer from the list, or return null
   // if none available.
   BufferNode* get_completed_buffer();
 
@@ -274,10 +274,14 @@ public:
   // precondition: at safepoint.
   void abandon_logs_and_stats();
 
-  // Collect and reset all the per-thread refinement stats.  If any threads
-  // have partial logs then add them to the global list.
+  // Update global refinement statistics with the ones given and the ones from
+  // detached threads.
   // precondition: at safepoint.
-  void concatenate_logs_and_stats();
+  void update_refinement_stats(G1ConcurrentRefineStats& stats);
+  // Add the given thread's partial logs to the global list and return and reset
+  // its refinement stats.
+  // precondition: at safepoint.
+  G1ConcurrentRefineStats concatenate_log_and_stats(Thread* thread);
 
   // Return the total of mutator refinement stats for all threads.
   // precondition: at safepoint.

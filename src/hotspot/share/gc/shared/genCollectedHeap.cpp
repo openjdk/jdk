@@ -30,12 +30,12 @@
 #include "code/codeCache.hpp"
 #include "code/icBuffer.hpp"
 #include "compiler/oopMap.hpp"
+#include "gc/serial/cardTableRS.hpp"
 #include "gc/serial/defNewGeneration.hpp"
 #include "gc/serial/genMarkSweep.hpp"
 #include "gc/serial/markSweep.hpp"
 #include "gc/shared/adaptiveSizePolicy.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
-#include "gc/shared/cardTableRS.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/collectorCounters.hpp"
 #include "gc/shared/continuationGCSupport.inline.hpp"
@@ -49,7 +49,6 @@
 #include "gc/shared/genArguments.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/generationSpec.hpp"
-#include "gc/shared/genOopClosures.inline.hpp"
 #include "gc/shared/locationPrinter.inline.hpp"
 #include "gc/shared/oopStorage.inline.hpp"
 #include "gc/shared/oopStorageParState.inline.hpp"
@@ -118,17 +117,17 @@ jint GenCollectedHeap::initialize() {
 
   initialize_reserved_region(heap_rs);
 
+  ReservedSpace young_rs = heap_rs.first_part(_young_gen_spec->max_size());
+  ReservedSpace old_rs = heap_rs.last_part(_young_gen_spec->max_size());
+
   _rem_set = create_rem_set(heap_rs.region());
-  _rem_set->initialize();
+  _rem_set->initialize(young_rs.base(), old_rs.base());
+
   CardTableBarrierSet *bs = new CardTableBarrierSet(_rem_set);
   bs->initialize();
   BarrierSet::set_barrier_set(bs);
 
-  ReservedSpace young_rs = heap_rs.first_part(_young_gen_spec->max_size());
   _young_gen = _young_gen_spec->init(young_rs, rem_set());
-  ReservedSpace old_rs = heap_rs.last_part(_young_gen_spec->max_size());
-
-  old_rs = old_rs.first_part(_old_gen_spec->max_size());
   _old_gen = _old_gen_spec->init(old_rs, rem_set());
 
   GCInitLogger::print();
@@ -190,9 +189,10 @@ static GenIsScavengable _is_scavengable;
 
 void GenCollectedHeap::post_initialize() {
   CollectedHeap::post_initialize();
-  ref_processing_init();
 
   DefNewGeneration* def_new_gen = (DefNewGeneration*)_young_gen;
+
+  def_new_gen->ref_processor_init();
 
   initialize_size_policy(def_new_gen->eden()->capacity(),
                          _old_gen->capacity(),
@@ -201,11 +201,6 @@ void GenCollectedHeap::post_initialize() {
   MarkSweep::initialize();
 
   ScavengableNMethods::initialize(&_is_scavengable);
-}
-
-void GenCollectedHeap::ref_processing_init() {
-  _young_gen->ref_processor_init();
-  _old_gen->ref_processor_init();
 }
 
 PreGenGCValues GenCollectedHeap::get_pre_gc_values() const {
@@ -437,7 +432,7 @@ void GenCollectedHeap::collect_generation(Generation* gen, bool full, size_t siz
   FormatBuffer<> title("Collect gen: %s", gen->short_name());
   GCTraceTime(Trace, gc, phases) t1(title);
   TraceCollectorStats tcs(gen->counters());
-  TraceMemoryManagerStats tmms(gen->gc_manager(), gc_cause());
+  TraceMemoryManagerStats tmms(gen->gc_manager(), gc_cause(), heap()->is_young_gen(gen) ? "end of minor GC" : "end of major GC");
 
   gen->stat_record()->invocations++;
   gen->stat_record()->accumulated_time.start();
@@ -456,29 +451,9 @@ void GenCollectedHeap::collect_generation(Generation* gen, bool full, size_t siz
 
   // Do collection work
   {
-    // Note on ref discovery: For what appear to be historical reasons,
-    // GCH enables and disabled (by enqueuing) refs discovery.
-    // In the future this should be moved into the generation's
-    // collect method so that ref discovery and enqueueing concerns
-    // are local to a generation. The collect method could return
-    // an appropriate indication in the case that notification on
-    // the ref lock was needed. This will make the treatment of
-    // weak refs more uniform (and indeed remove such concerns
-    // from GCH). XXX
-
     save_marks();   // save marks for all gens
-    // We want to discover references, but not process them yet.
-    // This mode is disabled in process_discovered_references if the
-    // generation does some collection work, or in
-    // enqueue_discovered_references if the generation returns
-    // without doing any work.
-    ReferenceProcessor* rp = gen->ref_processor();
-    rp->start_discovery(clear_soft_refs);
 
     gen->collect(full, clear_soft_refs, size, is_tlab);
-
-    rp->disable_discovery();
-    rp->verify_no_references_recorded();
   }
 
   COMPILER2_OR_JVMCI_PRESENT(DerivedPointerTable::update_pointers());
@@ -821,9 +796,28 @@ void GenCollectedHeap::collect(GCCause::Cause cause) {
                                       ? YoungGen
                                       : OldGen;
 
-  VM_GenCollectFull op(gc_count_before, full_gc_count_before,
-                       cause, max_generation);
-  VMThread::execute(&op);
+  while (true) {
+    VM_GenCollectFull op(gc_count_before, full_gc_count_before,
+                        cause, max_generation);
+    VMThread::execute(&op);
+
+    if (!GCCause::is_explicit_full_gc(cause)) {
+      return;
+    }
+
+    {
+      MutexLocker ml(Heap_lock);
+      // Read the GC count while holding the Heap_lock
+      if (full_gc_count_before != total_full_collections()) {
+        return;
+      }
+    }
+
+    if (GCLocker::is_active_and_needs_gc()) {
+      // If GCLocker is active, wait until clear before retrying.
+      GCLocker::stall_until_clear();
+    }
+  }
 }
 
 void GenCollectedHeap::do_full_collection(bool clear_all_soft_refs) {

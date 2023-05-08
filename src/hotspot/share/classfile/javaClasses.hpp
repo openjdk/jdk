@@ -340,6 +340,7 @@ class java_lang_Class : AllStatic {
 
 class java_lang_Thread : AllStatic {
   friend class java_lang_VirtualThread;
+  friend class JVMCIVMStructs;
  private:
   // Note that for this class the layout changed between JDK1.2 and JDK1.3,
   // so we compute the offsets at startup rather than hard-wiring them.
@@ -405,6 +406,7 @@ class java_lang_Thread : AllStatic {
   static void dec_VTMS_transition_disable_count(oop java_thread);
   static bool is_in_VTMS_transition(oop java_thread);
   static void set_is_in_VTMS_transition(oop java_thread, bool val);
+  static int  is_in_VTMS_transition_offset();
 
   // Clear all scoped value bindings on error
   static void clear_scopedValueBindings(oop java_thread);
@@ -453,9 +455,9 @@ class java_lang_Thread_FieldHolder : AllStatic {
   static jlong stackSize(oop holder);
 
   static bool is_daemon(oop holder);
-  static void set_daemon(oop holder);
+  static void set_daemon(oop holder, bool val);
 
-  static void set_thread_status(oop holder, JavaThreadStatus);
+  static void set_thread_status(oop holder, JavaThreadStatus status);
   static JavaThreadStatus get_thread_status(oop holder);
 
   friend class JavaClasses;
@@ -473,7 +475,6 @@ class java_lang_Thread_Constants : AllStatic {
 
  public:
   static oop get_VTHREAD_GROUP();
-  static oop get_NOT_SUPPORTED_CLASSLOADER();
 
   friend class JavaClasses;
 };
@@ -509,7 +510,6 @@ class java_lang_ThreadGroup : AllStatic {
 
 class java_lang_VirtualThread : AllStatic {
  private:
-  static int static_notify_jvmti_events_offset;
   static int static_vthread_scope_offset;
   static int _carrierThread_offset;
   static int _continuation_offset;
@@ -547,9 +547,6 @@ class java_lang_VirtualThread : AllStatic {
   static oop continuation(oop vthread);
   static int state(oop vthread);
   static JavaThreadStatus map_state_to_thread_status(int state);
-  static bool notify_jvmti_events();
-  static void set_notify_jvmti_events(bool enable);
-  static void init_static_notify_jvmti_events();
 };
 
 
@@ -615,7 +612,7 @@ class java_lang_Throwable: AllStatic {
   static void get_stack_trace_elements(int depth, Handle backtrace, objArrayHandle stack_trace, TRAPS);
 
   // For recreating class initialization error exceptions.
-  static Handle get_cause_with_stack_trace(Handle throwable, TRAPS);
+  static Handle create_initialization_error(JavaThread* current, Handle throwable);
 
   // Printing
   static void print(oop throwable, outputStream* st);

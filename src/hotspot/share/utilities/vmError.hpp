@@ -144,6 +144,8 @@ class VMError : public AllStatic {
   static jlong get_step_start_time();
   static void clear_step_start_time();
 
+  WINDOWS_ONLY(ATTRIBUTE_NORETURN static void raise_fail_fast(void* exrecord, void* context);)
+
 public:
 
   // print_source_info: if true, we try to resolve the source information on platforms that support it
@@ -162,22 +164,31 @@ public:
   static void print_vm_info(outputStream* st);
 
   // main error reporting function
+  ATTRIBUTE_NORETURN
+  ATTRIBUTE_PRINTF(6, 7)
   static void report_and_die(Thread* thread, unsigned int sig, address pc, void* siginfo,
-                             void* context, const char* detail_fmt, ...) ATTRIBUTE_PRINTF(6, 7);
+                             void* context, const char* detail_fmt, ...);
 
+  ATTRIBUTE_NORETURN
+  ATTRIBUTE_PRINTF(3, 0)
   static void report_and_die(int id, const char* message, const char* detail_fmt, va_list detail_args,
                              Thread* thread, address pc, void* siginfo, void* context,
-                             const char* filename, int lineno, size_t size) ATTRIBUTE_PRINTF(3, 0);
+                             const char* filename, int lineno, size_t size);
 
+  ATTRIBUTE_NORETURN
   static void report_and_die(Thread* thread, unsigned int sig, address pc,
                              void* siginfo, void* context);
 
+  ATTRIBUTE_NORETURN
+  ATTRIBUTE_PRINTF(6, 0)
   static void report_and_die(Thread* thread, void* context, const char* filename, int lineno, const char* message,
-                             const char* detail_fmt, va_list detail_args) ATTRIBUTE_PRINTF(6, 0);
+                             const char* detail_fmt, va_list detail_args);
 
+  ATTRIBUTE_NORETURN
+  ATTRIBUTE_PRINTF(6, 0)
   static void report_and_die(Thread* thread, const char* filename, int lineno, size_t size,
                              VMErrorType vm_err_type, const char* detail_fmt,
-                             va_list detail_args) ATTRIBUTE_PRINTF(6, 0);
+                             va_list detail_args);
 
   // reporting OutOfMemoryError
   static void report_java_out_of_memory(const char* message);
@@ -210,4 +221,27 @@ public:
   static int prepare_log_file(const char* pattern, const char* default_pattern, bool overwrite_existing, char* buf, size_t buflen);
 
 };
+
+class VMErrorCallback {
+  friend class VMError;
+  friend class VMErrorCallbackMark;
+
+  // Link through all callbacks active on a thread
+  VMErrorCallback* _next;
+
+  // Called by VMError reporting
+  virtual void call(outputStream* st) = 0;
+
+public:
+  VMErrorCallback() : _next(nullptr) {}
+};
+
+class VMErrorCallbackMark : public StackObj {
+  Thread* _thread;
+
+public:
+  VMErrorCallbackMark(VMErrorCallback* callback);
+  ~VMErrorCallbackMark();
+};
+
 #endif // SHARE_UTILITIES_VMERROR_HPP

@@ -718,6 +718,11 @@ public class Http2TestServerConnection {
 
             // give to user
             Http2Handler handler = server.getHandlerFor(uri.getPath());
+
+            // Need to pass the BodyInputStream reference to the BodyOutputStream, so it can determine if the stream
+            // must be reset due to the BodyInputStream not being consumed by the handler when invoked.
+            if (bis instanceof BodyInputStream bodyInputStream) bos.bis = bodyInputStream;
+
             try {
                 handler.handle(exchange);
             } catch (IOException closed) {
@@ -828,7 +833,10 @@ public class Http2TestServerConnection {
                                 throw new IOException("Unexpected frame");
                             }
                         } else {
-                            q.put(frame);
+                            if (!q.putIfOpen(frame)) {
+                                System.err.printf("Stream %s is closed: dropping %s%n",
+                                        stream, frame);
+                            }
                         }
                     }
                 }
@@ -963,7 +971,7 @@ public class Http2TestServerConnection {
                         SettingsFrame.INITIAL_WINDOW_SIZE), this) {
 
             @Override
-            protected void sendEndStream() throws IOException {
+            public void sendEndStream() throws IOException {
                 if (properties.getProperty("sendTrailingHeadersAfterPushPromise", "0").equals("1")) {
                     conn.outputQ.put(getTrailingHeadersFrame(promisedStreamid, List.of()));
                 } else {

@@ -33,6 +33,7 @@
 #include "gc/g1/g1ConcurrentMarkBitMap.inline.hpp"
 #include "gc/g1/g1FullCollector.inline.hpp"
 #include "gc/g1/g1FullGCOopClosures.inline.hpp"
+#include "gc/g1/g1OopClosures.inline.hpp"
 #include "gc/g1/g1RegionMarkStatsCache.hpp"
 #include "gc/g1/g1StringDedup.hpp"
 #include "gc/shared/continuationGCSupport.inline.hpp"
@@ -44,10 +45,6 @@
 #include "utilities/debug.hpp"
 
 inline bool G1FullGCMarker::mark_object(oop obj) {
-  if (_collector->is_skip_marking(obj)) {
-    return false;
-  }
-
   // Try to mark.
   if (!_bitmap->par_mark(obj)) {
     // Lost mark race.
@@ -82,11 +79,8 @@ template <class T> inline void G1FullGCMarker::mark_and_push(T* p) {
     oop obj = CompressedOops::decode_not_null(heap_oop);
     if (mark_object(obj)) {
       _oop_stack.push(obj);
-      assert(_bitmap->is_marked(obj), "Must be marked now - map self");
-    } else {
-      assert(_bitmap->is_marked(obj) || _collector->is_skip_marking(obj),
-             "Must be marked by other or object in skip marking region");
     }
+    assert(_bitmap->is_marked(obj), "Must be marked");
   }
 }
 
@@ -122,14 +116,6 @@ void G1FullGCMarker::follow_array_chunk(objArrayOop array, int index) {
   }
 
   array->oop_iterate_range(mark_closure(), beg_index, end_index);
-
-  if (VerifyDuringGC) {
-    _verify_closure.set_containing_obj(array);
-    array->oop_iterate_range(&_verify_closure, beg_index, end_index);
-    if (_verify_closure.failures()) {
-      fatal("there should not have been any failures");
-    }
-  }
 }
 
 inline void G1FullGCMarker::follow_object(oop obj) {
@@ -140,17 +126,6 @@ inline void G1FullGCMarker::follow_object(oop obj) {
     follow_array((objArrayOop)obj);
   } else {
     obj->oop_iterate(mark_closure());
-    if (VerifyDuringGC) {
-      if (obj->is_instanceRef()) {
-        return;
-      }
-      _verify_closure.set_containing_obj(obj);
-      obj->oop_iterate(&_verify_closure);
-      if (_verify_closure.failures()) {
-        log_warning(gc, verify)("Failed after %d", _verify_closure._cc);
-        fatal("there should not have been any failures");
-      }
-    }
   }
 }
 

@@ -355,7 +355,7 @@ class AddressLiteral {
   // creation
   AddressLiteral()
     : _is_lval(false),
-      _target(NULL)
+      _target(nullptr)
   {}
 
   public:
@@ -678,7 +678,8 @@ private:
   bool _legacy_mode_vlbw;
   NOT_LP64(bool _is_managed;)
 
-  class InstructionAttr *_attributes;
+  InstructionAttr *_attributes;
+  void set_attributes(InstructionAttr* attributes);
 
   // 64bit prefixes
   void prefix(Register reg);
@@ -917,9 +918,7 @@ private:
   // belong in macro assembler but there is no need for both varieties to exist
 
   void init_attributes(void);
-
-  void set_attributes(InstructionAttr *attributes) { _attributes = attributes; }
-  void clear_attributes(void) { _attributes = NULL; }
+  void clear_attributes(void) { _attributes = nullptr; }
 
   void set_managed(void) { NOT_LP64(_is_managed = true;) }
   void clear_managed(void) { NOT_LP64(_is_managed = false;) }
@@ -1762,9 +1761,11 @@ private:
   void vpermw(XMMRegister dst,  XMMRegister nds, XMMRegister src, int vector_len);
   void vpermd(XMMRegister dst,  XMMRegister nds, Address src, int vector_len);
   void vpermd(XMMRegister dst,  XMMRegister nds, XMMRegister src, int vector_len);
+  void vpermps(XMMRegister dst,  XMMRegister nds, XMMRegister src, int vector_len);
   void vperm2i128(XMMRegister dst,  XMMRegister nds, XMMRegister src, int imm8);
   void vperm2f128(XMMRegister dst, XMMRegister nds, XMMRegister src, int imm8);
   void vpermilps(XMMRegister dst, XMMRegister src, int imm8, int vector_len);
+  void vpermilps(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void vpermilpd(XMMRegister dst, XMMRegister src, int imm8, int vector_len);
   void vpermpd(XMMRegister dst, XMMRegister src, int imm8, int vector_len);
   void evpermi2q(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
@@ -2884,13 +2885,12 @@ public:
       _input_size_in_bits(Assembler::EVEX_NObit),
       _evex_encoding(0),
       _embedded_opmask_register_specifier(0), // hard code k0
-      _current_assembler(NULL) { }
+      _current_assembler(nullptr) { }
 
   ~InstructionAttr() {
-    if (_current_assembler != NULL) {
+    if (_current_assembler != nullptr) {
       _current_assembler->clear_attributes();
     }
-    _current_assembler = NULL;
   }
 
 private:

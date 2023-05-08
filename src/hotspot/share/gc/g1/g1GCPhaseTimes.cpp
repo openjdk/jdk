@@ -51,6 +51,9 @@ G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
 {
   assert(max_gc_threads > 0, "Must have some GC threads");
 
+  _gc_par_phases[RetireTLABsAndFlushLogs] = new WorkerDataArray<double>("RetireTLABsAndFlushLogs", "JT Retire TLABs And Flush Logs (ms):", max_gc_threads);
+  _gc_par_phases[NonJavaThreadFlushLogs] = new WorkerDataArray<double>("NonJavaThreadFlushLogs", "Non-JT Flush Logs (ms):", max_gc_threads);
+
   _gc_par_phases[GCWorkerStart] = new WorkerDataArray<double>("GCWorkerStart", "GC Worker Start (ms):", max_gc_threads);
   _gc_par_phases[ExtRootScan] = new WorkerDataArray<double>("ExtRootScan", "Ext Root Scanning (ms):", max_gc_threads);
 
@@ -165,7 +168,7 @@ void G1GCPhaseTimes::reset() {
   _cur_optional_merge_heap_roots_time_ms = 0.0;
   _cur_prepare_merge_heap_roots_time_ms = 0.0;
   _cur_optional_prepare_merge_heap_roots_time_ms = 0.0;
-  _cur_prepare_tlab_time_ms = 0.0;
+  _cur_pre_evacuate_prepare_time_ms = 0.0;
   _cur_post_evacuate_cleanup_1_time_ms = 0.0;
   _cur_post_evacuate_cleanup_2_time_ms = 0.0;
   _cur_expand_heap_time_ms = 0.0;
@@ -185,7 +188,7 @@ void G1GCPhaseTimes::reset() {
   _cur_verify_after_time_ms = 0.0;
 
   for (int i = 0; i < GCParPhasesSentinel; i++) {
-    if (_gc_par_phases[i] != NULL) {
+    if (_gc_par_phases[i] != nullptr) {
       _gc_par_phases[i]->reset();
     }
   }
@@ -200,10 +203,10 @@ void G1GCPhaseTimes::record_gc_pause_start() {
 }
 
 #define ASSERT_PHASE_UNINITIALIZED(phase) \
-    assert(_gc_par_phases[phase] == NULL || _gc_par_phases[phase]->get(i) == uninitialized, "Phase " #phase " reported for thread that was not started");
+    assert(_gc_par_phases[phase] == nullptr || _gc_par_phases[phase]->get(i) == uninitialized, "Phase " #phase " reported for thread that was not started");
 
 double G1GCPhaseTimes::worker_time(GCParPhases phase, uint worker) {
-  if (_gc_par_phases[phase] == NULL) {
+  if (_gc_par_phases[phase] == nullptr) {
     return 0.0;
   }
   double value = _gc_par_phases[phase]->get(worker);
@@ -284,17 +287,17 @@ size_t G1GCPhaseTimes::get_thread_work_item(GCParPhases phase, uint worker_id, u
 
 // return the average time for a phase in milliseconds
 double G1GCPhaseTimes::average_time_ms(GCParPhases phase) const {
-  if (_gc_par_phases[phase] == NULL) {
+  if (_gc_par_phases[phase] == nullptr) {
     return 0.0;
   }
   return _gc_par_phases[phase]->average() * 1000.0;
 }
 
 size_t G1GCPhaseTimes::sum_thread_work_items(GCParPhases phase, uint index) {
-  if (_gc_par_phases[phase] == NULL) {
+  if (_gc_par_phases[phase] == nullptr) {
     return 0;
   }
-  assert(_gc_par_phases[phase]->thread_work_items(index) != NULL, "No sub count");
+  assert(_gc_par_phases[phase]->thread_work_items(index) != nullptr, "No sub count");
   return _gc_par_phases[phase]->thread_work_items(index)->sum();
 }
 
@@ -311,7 +314,7 @@ void G1GCPhaseTimes::details(T* phase, uint indent_level) const {
 void G1GCPhaseTimes::print_thread_work_items(WorkerDataArray<double>* phase, uint indent_level, outputStream* out) const {
   for (uint i = 0; i < phase->MaxThreadWorkItems; i++) {
     WorkerDataArray<size_t>* work_items = phase->thread_work_items(i);
-    if (work_items != NULL) {
+    if (work_items != nullptr) {
       out->sp((indent_level + 1) * 2);
       work_items->print_summary_on(out, true);
       details(work_items, indent_level + 1);
@@ -402,8 +405,7 @@ double G1GCPhaseTimes::print_pre_evacuate_collection_set() const {
   const double pre_concurrent_start_ms = average_time_ms(ResetMarkingState) +
                                          average_time_ms(NoteStartOfMark);
 
-  const double sum_ms = _cur_prepare_tlab_time_ms +
-                        _cur_concatenate_dirty_card_logs_time_ms +
+  const double sum_ms = _cur_pre_evacuate_prepare_time_ms +
                         _recorded_young_cset_choice_time_ms +
                         _recorded_non_young_cset_choice_time_ms +
                         _cur_region_register_time +
@@ -412,8 +414,9 @@ double G1GCPhaseTimes::print_pre_evacuate_collection_set() const {
 
   info_time("Pre Evacuate Collection Set", sum_ms);
 
-  debug_time("Prepare TLABs", _cur_prepare_tlab_time_ms);
-  debug_time("Concatenate Dirty Card Logs", _cur_concatenate_dirty_card_logs_time_ms);
+  debug_time("Pre Evacuate Prepare", _cur_pre_evacuate_prepare_time_ms);
+  debug_phase(_gc_par_phases[RetireTLABsAndFlushLogs], 1);
+  debug_phase(_gc_par_phases[NonJavaThreadFlushLogs], 1);
   debug_time("Choose Collection Set", (_recorded_young_cset_choice_time_ms + _recorded_non_young_cset_choice_time_ms));
   debug_time("Region Register", _cur_region_register_time);
 
@@ -498,7 +501,6 @@ double G1GCPhaseTimes::print_post_evacuate_collection_set(bool evacuation_failed
     debug_phase(_gc_par_phases[RemoveSelfForwards], 2);
   }
 
-  trace_phase(_gc_par_phases[RedirtyCards]);
   debug_time("Post Evacuate Cleanup 2", _cur_post_evacuate_cleanup_2_time_ms);
   if (evacuation_failed) {
     debug_phase(_gc_par_phases[RecalculateUsed], 1);
@@ -600,13 +602,13 @@ void G1EvacPhaseWithTrimTimeTracker::stop() {
 
 G1GCParPhaseTimesTracker::G1GCParPhaseTimesTracker(G1GCPhaseTimes* phase_times, G1GCPhaseTimes::GCParPhases phase, uint worker_id, bool allow_multiple_record) :
   _start_time(), _phase(phase), _phase_times(phase_times), _worker_id(worker_id), _event(), _allow_multiple_record(allow_multiple_record) {
-  if (_phase_times != NULL) {
+  if (_phase_times != nullptr) {
     _start_time = Ticks::now();
   }
 }
 
 G1GCParPhaseTimesTracker::~G1GCParPhaseTimesTracker() {
-  if (_phase_times != NULL) {
+  if (_phase_times != nullptr) {
     if (_allow_multiple_record) {
       _phase_times->record_or_add_time_secs(_phase, _worker_id, (Ticks::now() - _start_time).seconds());
     } else {
@@ -627,7 +629,7 @@ G1EvacPhaseTimesTracker::G1EvacPhaseTimesTracker(G1GCPhaseTimes* phase_times,
 }
 
 G1EvacPhaseTimesTracker::~G1EvacPhaseTimesTracker() {
-  if (_phase_times != NULL) {
+  if (_phase_times != nullptr) {
     // Explicitly stop the trim tracker since it's not yet destructed.
     _trim_tracker.stop();
     // Exclude trim time by increasing the start time.

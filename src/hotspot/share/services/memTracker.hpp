@@ -234,6 +234,10 @@ class MemTracker : AllStatic {
   // under category f would hit either the global limit or the limit for category f.
   static inline bool check_exceeds_limit(size_t s, MEMFLAGS f);
 
+  // Given an unknown pointer, check if it points into a known region; print region if found
+  // and return true; false if not found.
+  static bool print_containing_region(const void* p, outputStream* out);
+
  private:
   static void report(bool summary_only, outputStream* output, size_t scale);
 

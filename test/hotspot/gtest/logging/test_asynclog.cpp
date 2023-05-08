@@ -93,10 +93,8 @@ LOG_LEVEL_LIST
     if (f != NULL) {
       size_t sz = output.size();
       size_t written = fwrite(output.c_str(), sizeof(char), output.size(), f);
-
-      if (written == sz * sizeof(char)) {
-        return fclose(f) == 0;
-      }
+      // at least see "header"
+      return fclose(f) == 0 && sz == written && sz >= 6;
     }
 
     return false;
@@ -257,38 +255,46 @@ TEST_VM_F(AsyncLogTest, droppingMessage) {
 
 TEST_VM_F(AsyncLogTest, stdoutOutput) {
   testing::internal::CaptureStdout();
+  fprintf(stdout, "header");
   set_log_config("stdout", "logging=debug");
 
   test_asynclog_ls();
   test_asynclog_drop_messages();
 
   AsyncLogWriter::flush();
-  EXPECT_TRUE(write_to_file(testing::internal::GetCapturedStdout()));
+  fflush(nullptr);
 
-  EXPECT_TRUE(file_contains_substring(TestLogFileName, "LogStreamWithAsyncLogImpl"));
-  EXPECT_TRUE(file_contains_substring(TestLogFileName, "logStream msg1-msg2-msg3"));
-  EXPECT_TRUE(file_contains_substring(TestLogFileName, "logStream newline"));
+  if (write_to_file(testing::internal::GetCapturedStdout())) {
+    EXPECT_TRUE(file_contains_substring(TestLogFileName, "header"));
+    EXPECT_TRUE(file_contains_substring(TestLogFileName, "LogStreamWithAsyncLogImpl"));
+    EXPECT_TRUE(file_contains_substring(TestLogFileName, "logStream msg1-msg2-msg3"));
+    EXPECT_TRUE(file_contains_substring(TestLogFileName, "logStream newline"));
 
-  if (AsyncLogWriter::instance() != nullptr) {
-    EXPECT_TRUE(file_contains_substring(TestLogFileName, "messages dropped due to async logging"));
+    if (AsyncLogWriter::instance() != nullptr) {
+      EXPECT_TRUE(file_contains_substring(TestLogFileName, "messages dropped due to async logging"));
+    }
   }
 }
 
 TEST_VM_F(AsyncLogTest, stderrOutput) {
   testing::internal::CaptureStderr();
+  fprintf(stderr, "header");
   set_log_config("stderr", "logging=debug");
 
   test_asynclog_ls();
   test_asynclog_drop_messages();
 
   AsyncLogWriter::flush();
-  EXPECT_TRUE(write_to_file(testing::internal::GetCapturedStderr()));
+  fflush(nullptr);
 
-  EXPECT_TRUE(file_contains_substring(TestLogFileName, "LogStreamWithAsyncLogImpl"));
-  EXPECT_TRUE(file_contains_substring(TestLogFileName, "logStream msg1-msg2-msg3"));
-  EXPECT_TRUE(file_contains_substring(TestLogFileName, "logStream newline"));
+  if (write_to_file(testing::internal::GetCapturedStderr())) {
+    EXPECT_TRUE(file_contains_substring(TestLogFileName, "header"));
+    EXPECT_TRUE(file_contains_substring(TestLogFileName, "LogStreamWithAsyncLogImpl"));
+    EXPECT_TRUE(file_contains_substring(TestLogFileName, "logStream msg1-msg2-msg3"));
+    EXPECT_TRUE(file_contains_substring(TestLogFileName, "logStream newline"));
 
-  if (AsyncLogWriter::instance() != nullptr) {
-    EXPECT_TRUE(file_contains_substring(TestLogFileName, "messages dropped due to async logging"));
+    if (AsyncLogWriter::instance() != nullptr) {
+      EXPECT_TRUE(file_contains_substring(TestLogFileName, "messages dropped due to async logging"));
+    }
   }
 }

@@ -29,21 +29,28 @@
 
 #include "hb.hh"
 
-/* Memory pool for persistent allocation of small objects. */
+/* Memory pool for persistent allocation of small objects.
+ *
+ * Some AI musings on this, not necessarily true:
+ *
+ * This is a very simple implementation, but it's good enough for our
+ * purposes.  It's not thread-safe.  It's not very fast.  It's not
+ * very memory efficient.  It's not very cache efficient.  It's not
+ * very anything efficient.  But it's simple and it works.  And it's
+ * good enough for our purposes.  If you need something more
+ * sophisticated, use a real allocator.  Or use a real language. */
 
-template <typename T, unsigned ChunkLen = 16>
+template <typename T, unsigned ChunkLen = 32>
 struct hb_pool_t
 {
   hb_pool_t () : next (nullptr) {}
-  ~hb_pool_t () { fini (); }
-
-  void fini ()
+  ~hb_pool_t ()
   {
     next = nullptr;
 
-    for (chunk_t *_ : chunks) hb_free (_);
-
-    chunks.fini ();
+    + hb_iter (chunks)
+    | hb_apply (hb_free)
+    ;
   }
 
   T* alloc ()
@@ -60,7 +67,7 @@ struct hb_pool_t
     T* obj = next;
     next = * ((T**) next);
 
-    memset (obj, 0, sizeof (T));
+    hb_memset (obj, 0, sizeof (T));
 
     return obj;
   }
