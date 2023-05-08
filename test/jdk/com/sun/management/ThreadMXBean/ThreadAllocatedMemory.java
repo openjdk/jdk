@@ -56,7 +56,7 @@ public class ThreadAllocatedMemory {
         testGetThreadsAllocatedBytes();
 
         // Test cumulative Java thread allocation since JVM launch
-        testGetAllThreadAllocatedBytes();
+        testGetTotalThreadAllocatedBytes();
 
         System.out.println("Test passed");
     }
@@ -213,12 +213,12 @@ public class ThreadAllocatedMemory {
         }
     }
 
-    private static void testGetAllThreadAllocatedBytes()
+    private static void testGetTotalThreadAllocatedBytes()
         throws Exception {
 
         // baseline should be positive
         Thread curThread = Thread.currentThread();
-        long cumulativeSize = mbean.getAllThreadAllocatedBytes();
+        long cumulativeSize = mbean.getTotalThreadAllocatedBytes();
         if (cumulativeSize <= 0) {
             throw new RuntimeException(
                 "Invalid allocated bytes returned for " + curThread.getName() + " = " + cumulativeSize);
@@ -235,7 +235,7 @@ public class ThreadAllocatedMemory {
         waitUntilThreadsBlocked();
 
         // check after threads are blocked
-        cumulativeSize = checkResult(curThread, cumulativeSize, mbean.getAllThreadAllocatedBytes());
+        cumulativeSize = checkResult(curThread, cumulativeSize, mbean.getTotalThreadAllocatedBytes());
 
         // let threads go to do some more allocation
         synchronized (obj) {
@@ -251,7 +251,7 @@ public class ThreadAllocatedMemory {
         System.out.println("Done sleeping");
 
         // check while threads are running
-        cumulativeSize = checkResult(curThread, cumulativeSize, mbean.getAllThreadAllocatedBytes());
+        cumulativeSize = checkResult(curThread, cumulativeSize, mbean.getTotalThreadAllocatedBytes());
 
         // let threads exit
         synchronized (obj) {
@@ -270,7 +270,7 @@ public class ThreadAllocatedMemory {
         }
 
         // check after threads exit
-        checkResult(curThread, cumulativeSize, mbean.getAllThreadAllocatedBytes());
+        checkResult(curThread, cumulativeSize, mbean.getTotalThreadAllocatedBytes());
     }
 
     private static void ensureValidSize(Thread curThread, long size) {
