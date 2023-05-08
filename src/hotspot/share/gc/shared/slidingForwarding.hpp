@@ -113,18 +113,21 @@ private:
   static HeapWord* const UNUSED_BASE;
 
   static HeapWord*      _heap_start;
-  static size_t         _heap_start_base_idx;
-  static size_t         _num_regions;
   static size_t         _region_size_words;
-  static uint           _region_size_words_shift;
+
+  static size_t         _heap_start_region_bias;
+  static size_t         _num_regions;
   static uint           _region_size_bytes_shift;
   static uintptr_t      _region_mask;
 
+  // The target base table memory.
   static HeapWord**     _bases_table;
-  static HeapWord**     _biased_bases[2];
+  // Entries into the target base tables, biased to the start of the heap.
+  static HeapWord**     _biased_bases[NUM_TARGET_REGIONS];
+
   static FallbackTable* _fallback_table;
 
-  static inline size_t region_index_containing(HeapWord* addr);
+  static inline size_t biased_region_index_containing(HeapWord* addr);
 
   static inline uintptr_t encode_forwarding(HeapWord* from, HeapWord* to);
   static inline HeapWord* decode_forwarding(HeapWord* from, uintptr_t encoded);

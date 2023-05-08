@@ -37,12 +37,12 @@
 HeapWord* const SlidingForwarding::UNUSED_BASE = reinterpret_cast<HeapWord*>(0x1);
 
 HeapWord* SlidingForwarding::_heap_start = nullptr;
-size_t SlidingForwarding::_heap_start_base_idx = 0;
-size_t SlidingForwarding::_num_regions = 0;
 size_t SlidingForwarding::_region_size_words = 0;
+size_t SlidingForwarding::_heap_start_region_bias = 0;
+size_t SlidingForwarding::_num_regions = 0;
 uint SlidingForwarding::_region_size_bytes_shift = 0;
 uintptr_t SlidingForwarding::_region_mask = 0;
-HeapWord** SlidingForwarding::_biased_bases[2] = { nullptr, nullptr };
+HeapWord** SlidingForwarding::_biased_bases[SlidingForwarding::NUM_TARGET_REGIONS] = { nullptr, nullptr };
 HeapWord** SlidingForwarding::_bases_table = nullptr;
 FallbackTable* SlidingForwarding::_fallback_table = nullptr;
 
@@ -55,16 +55,17 @@ void SlidingForwarding::initialize(MemRegion heap, size_t region_size_words) {
       // In this case we can treat the whole heap as a single region and
       // make the encoding very simple.
       _num_regions = 1;
-      _region_size_words = round_up_power_of_2(heap.word_size());
-    } else {
+      _region_size_words = heap.word_size();
+      _region_size_bytes_shift = log2i_exact(round_up_power_of_2(_region_size_words)) + LogHeapWordSize;
+  } else {
       _num_regions = align_up(pointer_delta(heap.end(), heap.start()), region_size_words) / region_size_words;
       _region_size_words = region_size_words;
+      _region_size_bytes_shift = log2i_exact(_region_size_words) + LogHeapWordSize;
     }
-    _region_size_bytes_shift = log2i_exact(_region_size_words) + LogHeapWordSize;
-    _heap_start_base_idx = (uintptr_t)_heap_start >> _region_size_bytes_shift;
+    _heap_start_region_bias = (uintptr_t)_heap_start >> _region_size_bytes_shift;
     _region_mask = ~((uintptr_t(1) << _region_size_bytes_shift) - 1);
 
-    guarantee((_heap_start_base_idx << _region_size_bytes_shift) == (uintptr_t)_heap_start, "must be aligned");
+    guarantee((_heap_start_region_bias << _region_size_bytes_shift) == (uintptr_t)_heap_start, "must be aligned");
 
     assert(_region_size_words >= 1, "regions must be at least a word large");
     assert(_bases_table == nullptr, "should not be initialized yet");
@@ -81,8 +82,8 @@ void SlidingForwarding::begin() {
 
     size_t max = _num_regions * NUM_TARGET_REGIONS;
     _bases_table = NEW_C_HEAP_ARRAY(HeapWord*, max, mtGC);
-    _biased_bases[0] = _bases_table - _heap_start_base_idx;
-    _biased_bases[1] = _bases_table + _num_regions - _heap_start_base_idx;
+    _biased_bases[0] = _bases_table - _heap_start_region_bias;
+    _biased_bases[1] = _bases_table + _num_regions - _heap_start_region_bias;
     for (size_t i = 0; i < max; i++) {
       _bases_table[i] = UNUSED_BASE;
     }
