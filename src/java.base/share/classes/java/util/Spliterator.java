@@ -304,7 +304,7 @@ public interface Spliterator<T> {
      * Subsequent behavior of a spliterator is unspecified if the action throws
      * an exception.
      *
-     * @param action The action which will be invoked at-most once
+     * @param action The action whose operation is performed at-most once
      * @return {@code false} if no remaining elements existed
      * upon entry to this method, else {@code true}.
      * @throws NullPointerException if the specified action is null
