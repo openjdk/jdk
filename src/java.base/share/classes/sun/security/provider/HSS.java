@@ -686,7 +686,7 @@ public final class HSS extends SignatureSpi {
         final LMSPublicKey lmsPublicKey;
 
         @SuppressWarnings("deprecation")
-        public HSSPublicKey(byte[] keyArray) throws InvalidKeyException {
+        HSSPublicKey(byte[] keyArray) throws InvalidKeyException {
             int inLen = keyArray.length;
             if (inLen < 4)
                 throw new InvalidKeyException("HSS public key too short");
@@ -714,11 +714,11 @@ public final class HSS extends SignatureSpi {
 
         HSSSignature(byte[] sigArr, HSSPublicKey pubKey) throws SignatureException {
             if (sigArr.length < 4) {
-                throw new SignatureException("Bad HSS signature");
+                throw new SignatureException("HSS signature is too short");
             }
             Nspk = LMSUtils.fourBytesToInt(sigArr, 0);
             if (Nspk + 1 != pubKey.L) {
-                throw new SignatureException("Bad HSS signature");
+                throw new SignatureException("HSS signature and public key have different tree heights");
             }
             siglist = new LMSignature[Nspk + 1];
             pubList = new LMSPublicKey[Nspk];
@@ -736,7 +736,7 @@ public final class HSS extends SignatureSpi {
                 }
                 siglist[Nspk] = new LMSignature(sigArr, index, true);
             } catch (InvalidKeyException e) {
-                throw new SignatureException("Bad HSS signature", e);
+                throw new SignatureException("Invalid key in HSS signature", e);
             }
         }
     }
