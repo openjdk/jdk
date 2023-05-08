@@ -32,7 +32,7 @@
  * @modules java.management
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/timeout=240 gc.g1.plab.TestPLABPromotion
+ * @run main/othervm/timeout=240 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI gc.g1.plab.TestPLABPromotion
  */
 package gc.g1.plab;
 
@@ -48,6 +48,7 @@ import gc.g1.plab.lib.PlabInfo;
 import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
+import jdk.test.whitebox.WhiteBox;
 
 /**
  * Test checks PLAB promotion of different size objects.
@@ -73,7 +74,7 @@ public class TestPLABPromotion {
     private static final int PLAB_SIZE_HIGH = 65536;
     private static final int OBJECT_SIZE_SMALL = 10;
     private static final int OBJECT_SIZE_MEDIUM = 100;
-    private static final int OBJECT_SIZE_HIGH = Platform.is64bit() ? 3266 : 3258;
+    private static final int OBJECT_SIZE_HIGH = (Platform.is64bit() && WhiteBox.getWhiteBox().getBooleanVMFlag("UseCompactObjectHeaders")) ? 3266 : 3250;
     private static final int GC_NUM_SMALL = 1;
     private static final int GC_NUM_MEDIUM = 3;
     private static final int GC_NUM_HIGH = 7;
