@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
 // Copyright (c) 2017, 2022 SAP SE. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
@@ -821,11 +821,6 @@ void MachPrologNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
     st->print_cr("NOP"); st->print("\t");
   }
 
-  if (VerifyThread) {
-    st->print_cr("Verify_Thread");
-    st->print("\t");
-  }
-
   long framesize = C->output()->frame_size_in_bytes();
   int bangsize   = C->output()->bang_size_in_bytes();
 
@@ -849,8 +844,6 @@ void MachPrologNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
 void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   Compile* C = ra_->C;
   C2_MacroAssembler _masm(&cbuf);
-
-  __ verify_thread();
 
   size_t framesize = C->output()->frame_size_in_bytes();
   size_t bangsize  = C->output()->bang_size_in_bytes();
@@ -931,7 +924,6 @@ void MachEpilogNode::format(PhaseRegAlloc *ra_, outputStream *os) const {
 void MachEpilogNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   C2_MacroAssembler _masm(&cbuf);
   Compile* C = ra_->C;
-  __ verify_thread();
 
   // If this does safepoint polling, then do it here.
   bool need_polling = do_polling() && C->is_method_compilation();
@@ -1537,6 +1529,10 @@ const bool Matcher::vector_needs_partial_operations(Node* node, const TypeVect* 
   return false;
 }
 
+const bool Matcher::vector_needs_load_shuffle(BasicType elem_bt, int vlen) {
+  return false;
+}
+
 const RegMask* Matcher::predicate_reg_mask(void) {
   return NULL;
 }
@@ -1577,6 +1573,10 @@ const int Matcher::max_vector_size(const BasicType bt) {
 
 const int Matcher::min_vector_size(const BasicType bt) {
   return max_vector_size(bt); // Same as max.
+}
+
+const int Matcher::superword_max_vector_size(const BasicType bt) {
+  return Matcher::max_vector_size(bt);
 }
 
 const int Matcher::scalable_vector_reg_size(const BasicType bt) {

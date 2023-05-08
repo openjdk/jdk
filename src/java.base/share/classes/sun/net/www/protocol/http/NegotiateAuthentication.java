@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,9 +80,7 @@ class NegotiateAuthentication extends AuthenticationInfo {
     public NegotiateAuthentication(HttpCallerInfo hci) {
         super(RequestorType.PROXY==hci.authType ? PROXY_AUTHENTICATION : SERVER_AUTHENTICATION,
               hci.scheme.equalsIgnoreCase("Negotiate") ? NEGOTIATE : KERBEROS,
-              hci.url,
-              "",
-              AuthenticatorKeys.getKey(hci.authenticator));
+              hci.url, "");
         this.hci = hci;
     }
 
@@ -240,6 +238,22 @@ class NegotiateAuthentication extends AuthenticationInfo {
      */
     private byte[] nextToken(byte[] token) throws IOException {
         return negotiator.nextToken(token);
+    }
+
+    /**
+     * Releases any system resources and cryptographic information stored in
+     * the context object and invalidates the context.
+     */
+    @Override
+    public void disposeContext() {
+        if (negotiator != null) {
+            try {
+                negotiator.disposeContext();
+            } catch (IOException ioEx) {
+                //do not rethrow IOException
+            }
+            negotiator = null;
+        }
     }
 
     // MS will send a final WWW-Authenticate even if the status is already

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,7 +77,7 @@ class ReservedSpace {
   // aligned up to the final alignment in this case.
   ReservedSpace(size_t size, size_t preferred_page_size);
   ReservedSpace(size_t size, size_t alignment, size_t page_size,
-                char* requested_address = NULL);
+                char* requested_address = nullptr);
 
   // Accessors
   char*  base()            const { return _base;      }
@@ -88,7 +88,7 @@ class ReservedSpace {
   bool   special()         const { return _special;   }
   bool   executable()      const { return _executable;   }
   size_t noaccess_prefix() const { return _noaccess_prefix;   }
-  bool is_reserved()       const { return _base != NULL; }
+  bool is_reserved()       const { return _base != nullptr; }
   void release();
 
   // Splitting
@@ -135,7 +135,7 @@ class ReservedHeapSpace : public ReservedSpace {
   // Constructor. Tries to find a heap that is good for compressed oops.
   // heap_allocation_directory is the path to the backing memory for Java heap. When set, Java heap will be allocated
   // on the device which is managed by the file system where the directory resides.
-  ReservedHeapSpace(size_t size, size_t forced_base_alignment, size_t page_size, const char* heap_allocation_directory = NULL);
+  ReservedHeapSpace(size_t size, size_t forced_base_alignment, size_t page_size, const char* heap_allocation_directory = nullptr);
   // Returns the base to be used for compression, i.e. so that null can be
   // encoded safely and implicit null checks can work.
   char *compressed_oop_base() const { return _base - _noaccess_prefix; }

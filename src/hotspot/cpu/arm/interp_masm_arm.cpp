@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,7 @@ void InterpreterMacroAssembler::call_VM_helper(Register oop_result, address entr
   { Label L;
     ldr(Rtemp, Address(FP, frame::interpreter_frame_last_sp_offset * wordSize));
     cbz(Rtemp, L);
-    stop("InterpreterMacroAssembler::call_VM_helper: last_sp != NULL");
+    stop("InterpreterMacroAssembler::call_VM_helper: last_sp != nullptr");
     bind(L);
   }
 #endif // ASSERT
@@ -160,7 +160,7 @@ void InterpreterMacroAssembler::check_and_handle_earlyret() {
     const Register thread_state = R2_tmp;
 
     ldr(thread_state, Address(Rthread, JavaThread::jvmti_thread_state_offset()));
-    cbz(thread_state, L); // if (thread->jvmti_thread_state() == NULL) exit;
+    cbz(thread_state, L); // if (thread->jvmti_thread_state() == nullptr) exit;
 
     // Initiate earlyret handling only if it is not already being processed.
     // If the flag has the earlyret_processing bit set, it means that this code
@@ -288,6 +288,27 @@ void InterpreterMacroAssembler::load_resolved_klass_at_offset(
   ldr(Rklass, Address(Rcpool,  ConstantPool::resolved_klasses_offset_in_bytes())); // Rklass = cpool->_resolved_klasses
   add(Rklass, Rklass, AsmOperand(Rtemp, lsl, LogBytesPerWord));
   ldr(Rklass, Address(Rklass, Array<Klass*>::base_offset_in_bytes()));
+}
+
+void InterpreterMacroAssembler::load_resolved_indy_entry(Register cache, Register index) {
+  // Get index out of bytecode pointer, get_cache_entry_pointer_at_bcp
+  assert_different_registers(cache, index, Rtemp);
+
+  get_index_at_bcp(index, 1, Rtemp, sizeof(u4));
+
+  // load constant pool cache pointer
+  ldr(cache, Address(FP, frame::interpreter_frame_cache_offset * wordSize));
+
+  // Get address of invokedynamic array
+  ldr(cache, Address(cache, in_bytes(ConstantPoolCache::invokedynamic_entries_offset())));
+
+  // Scale the index to be the entry index * sizeof(ResolvedInvokeDynamicInfo)
+  // On ARM32 sizeof(ResolvedIndyEntry) is 12, use mul instead of lsl
+  mov(Rtemp, sizeof(ResolvedIndyEntry));
+  mul(index, index, Rtemp);
+
+  add(cache, cache, Array<ResolvedIndyEntry>::base_offset_in_bytes());
+  add(cache, cache, index);
 }
 
 // Generate a subtype check: branch to not_subtype if sub_klass is
@@ -1028,7 +1049,7 @@ void InterpreterMacroAssembler::set_method_data_pointer_for_bcp() {
   assert(ProfileInterpreter, "must be profiling interpreter");
   Label set_mdp;
 
-  // Test MDO to avoid the call if it is NULL.
+  // Test MDO to avoid the call if it is null.
   ldr(Rtemp, Address(Rmethod, Method::method_data_offset()));
   cbz(Rtemp, set_mdp);
 
@@ -1360,7 +1381,7 @@ void InterpreterMacroAssembler::record_klass_in_profile_helper(
   }
 
   // In the fall-through case, we found no matching receiver, but we
-  // observed the receiver[start_row] is NULL.
+  // observed the receiver[start_row] is null.
 
   // Fill in the receiver field and increment the count.
   int recvr_offset = in_bytes(VirtualCallData::receiver_offset(start_row));

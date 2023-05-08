@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018, 2022 SAP SE. All rights reserved.
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,43 +50,32 @@ import jdk.test.lib.process.ProcessTools;
 public class ShowRegistersOnAssertTest {
 
     private static void do_test(boolean do_assert, // true - assert, false - guarantee
-        boolean suppress_assert,
         boolean show_registers_on_assert) throws Exception
     {
-        System.out.println("Testing " + (suppress_assert ? "suppressed" : "normal") + " " + (do_assert ? "assert" : "guarantee") +
+        System.out.println("Testing " + (do_assert ? "assert" : "guarantee") +
                            " with " + (show_registers_on_assert ? "-XX:+ShowRegistersOnAssert" : "-XX:-ShowRegistersOnAssert") + "...");
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
             "-XX:+UnlockDiagnosticVMOptions", "-Xmx100M", "-XX:-CreateCoredumpOnCrash",
             "-XX:ErrorHandlerTest=" + (do_assert ? "1" : "2"),
-            (suppress_assert ? "-XX:SuppressErrorAt=/vmError.cpp" : ""),
             (show_registers_on_assert ? "-XX:+ShowRegistersOnAssert" : "-XX:-ShowRegistersOnAssert"),
             "-version");
 
         OutputAnalyzer output_detail = new OutputAnalyzer(pb.start());
 
-        if (suppress_assert) {
-            // we should have not have crashed. See VMError::controlled_crash().
-            output_detail.shouldMatch(".*survived intentional crash.*");
-        } else {
-            // we should have crashed with an internal error. We should definitly NOT have crashed with a segfault
-            // (which would be a sign that the assert poison page mechanism does not work).
-            output_detail.shouldMatch("# A fatal error has been detected by the Java Runtime Environment:.*");
-            output_detail.shouldMatch("# +Internal Error.*");
-        }
+        // we should have crashed with an internal error. We should definitly NOT have crashed with a segfault
+        // (which would be a sign that the assert poison page mechanism does not work).
+        output_detail.shouldMatch("# A fatal error has been detected by the Java Runtime Environment:.*");
+        output_detail.shouldMatch("# +Internal Error.*");
     }
 
     public static void main(String[] args) throws Exception {
         // Note: for now, this is only a regression test testing that the addition of ShowRegistersOnAssert does
         // not break normal assert/guarantee handling. The feature is not implemented on all platforms and really testing
         // it requires more effort.
-        do_test(false, false, false);
-        do_test(false, false, true);
-        do_test(false, true, false);
-        do_test(false, true, true);
-        do_test(true, false, false);
-        do_test(true, false, true);
-        do_test(true, true, false);
-        do_test(true, true, true);
+        do_test(false, false);
+        do_test(false, true);
+        do_test(true, false);
+        do_test(true, true);
     }
 
 }

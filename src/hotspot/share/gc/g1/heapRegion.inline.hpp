@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -142,11 +142,6 @@ inline bool HeapRegion::block_is_obj(const HeapWord* const p, HeapWord* const pb
 inline bool HeapRegion::is_obj_dead(const oop obj, HeapWord* const pb) const {
   assert(is_in_reserved(obj), "Object " PTR_FORMAT " must be in region", p2i(obj));
 
-  // Objects in closed archive regions are always live.
-  if (is_closed_archive()) {
-    return false;
-  }
-
   // From Remark until a region has been concurrently scrubbed, parts of the
   // region is not guaranteed to be parsable. Use the bitmap for liveness.
   if (obj_in_unparsable_area(obj, pb)) {
@@ -181,8 +176,6 @@ inline size_t HeapRegion::block_size(const HeapWord* p, HeapWord* const pb) cons
 }
 
 inline void HeapRegion::reset_compacted_after_full_gc(HeapWord* new_top) {
-  assert(!is_pinned(), "must be");
-
   set_top(new_top);
   // After a compaction the mark bitmap in a non-pinned regions is invalid.
   // But all objects are live, we get this by setting TAMS to bottom.
@@ -296,10 +289,7 @@ inline void HeapRegion::reset_parsable_bottom() {
 }
 
 inline void HeapRegion::note_start_of_marking() {
-  assert(!is_closed_archive() || top_at_mark_start() == bottom(), "CA region's TAMS must always be at bottom");
-  if (!is_closed_archive()) {
-    set_top_at_mark_start(top());
-  }
+  set_top_at_mark_start(top());
   _gc_efficiency = -1.0;
 }
 
@@ -498,7 +488,7 @@ HeapWord* HeapRegion::oops_on_memregion_seq_iterate_careful(MemRegion mr,
   if (is_humongous()) {
     return do_oops_on_memregion_in_humongous<Closure, in_gc_pause>(mr, cl);
   }
-  assert(is_old() || is_archive(), "Wrongly trying to iterate over region %u type %s", _hrm_index, get_type_str());
+  assert(is_old(), "Wrongly trying to iterate over region %u type %s", _hrm_index, get_type_str());
 
   // Because mr has been trimmed to what's been allocated in this
   // region, the objects in these parts of the heap have non-NULL

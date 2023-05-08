@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -200,14 +200,6 @@ class Thread: public ThreadShadow {
   // with the calling Thread?
   static bool is_JavaThread_protected_by_TLH(const JavaThread* target);
 
-  void* operator new(size_t size) throw() { return allocate(size, true); }
-  void* operator new(size_t size, const std::nothrow_t& nothrow_constant) throw() {
-    return allocate(size, false); }
-  void  operator delete(void* p);
-
- protected:
-  static void* allocate(size_t size, bool throw_excpt, MEMFLAGS flags = mtThread);
-
  private:
   DEBUG_ONLY(bool _suspendible_thread;)
 
@@ -345,11 +337,11 @@ class Thread: public ThreadShadow {
   // and logging.
   virtual const char* type_name() const { return "Thread"; }
 
-  // Returns the current thread (ASSERTS if NULL)
+  // Returns the current thread (ASSERTS if nullptr)
   static inline Thread* current();
-  // Returns the current thread, or NULL if not attached
+  // Returns the current thread, or null if not attached
   static inline Thread* current_or_null();
-  // Returns the current thread, or NULL if not attached, and is
+  // Returns the current thread, or null if not attached, and is
   // safe for use from signal-handlers
   static inline Thread* current_or_null_safe();
 
@@ -435,7 +427,7 @@ class Thread: public ThreadShadow {
   // GC support
   // Apply "f->do_oop" to all root oops in "this".
   //   Used by JavaThread::oops_do.
-  // Apply "cf->do_code_blob" (if !NULL) to all code blobs active in frames
+  // Apply "cf->do_code_blob" (if !nullptr) to all code blobs active in frames
   virtual void oops_do_no_frames(OopClosure* f, CodeBlobClosure* cf);
   virtual void oops_do_frames(OopClosure* f, CodeBlobClosure* cf) {}
   void oops_do(OopClosure* f, CodeBlobClosure* cf);
@@ -535,7 +527,7 @@ protected:
 
  public:
   // Stack overflow support
-  address stack_base() const           { assert(_stack_base != NULL,"Sanity check"); return _stack_base; }
+  address stack_base() const           { assert(_stack_base != nullptr,"Sanity check"); return _stack_base; }
   void    set_stack_base(address base) { _stack_base = base; }
   size_t  stack_size() const           { return _stack_size; }
   void    set_stack_size(size_t size)  { _stack_size = size; }
@@ -569,7 +561,7 @@ protected:
   void print_owned_locks_on(outputStream* st) const;
   void print_owned_locks() const                 { print_owned_locks_on(tty);    }
   Mutex* owned_locks() const                     { return _owned_locks;          }
-  bool owns_locks() const                        { return owned_locks() != NULL; }
+  bool owns_locks() const                        { return owned_locks() != nullptr; }
 
   // Deadlock detection
   ResourceMark* current_resource_mark()          { return _current_resource_mark; }
@@ -605,9 +597,9 @@ protected:
                                               // and ObjectSynchronizer::read_stable_mark
 
   // Termination indicator used by the signal handler.
-  // _ParkEvent is just a convenient field we can NULL out after setting the JavaThread termination state
+  // _ParkEvent is just a convenient field we can null out after setting the JavaThread termination state
   // (which can't itself be read from the signal handler if a signal hits during the Thread destructor).
-  bool has_terminated()                       { return Atomic::load(&_ParkEvent) == NULL; };
+  bool has_terminated()                       { return Atomic::load(&_ParkEvent) == nullptr; };
 
   jint _hashStateW;                           // Marsaglia Shift-XOR thread-local RNG
   jint _hashStateX;                           // thread-specific hashCode generator state
@@ -631,12 +623,37 @@ protected:
     assert(_wx_state == expected, "wrong state");
   }
 #endif // __APPLE__ && AARCH64
+
+ private:
+  bool _in_asgct = false;
+ public:
+  bool in_asgct() const { return _in_asgct; }
+  void set_in_asgct(bool value) { _in_asgct = value; }
+  static bool current_in_asgct() {
+    Thread *cur = Thread::current_or_null_safe();
+    return cur != nullptr && cur->in_asgct();
+  }
+};
+
+class ThreadInAsgct {
+ private:
+  Thread* _thread;
+ public:
+  ThreadInAsgct(Thread* thread) : _thread(thread) {
+    assert(thread != nullptr, "invariant");
+    assert(!thread->in_asgct(), "invariant");
+    thread->set_in_asgct(true);
+  }
+  ~ThreadInAsgct() {
+    assert(_thread->in_asgct(), "invariant");
+    _thread->set_in_asgct(false);
+  }
 };
 
 // Inline implementation of Thread::current()
 inline Thread* Thread::current() {
   Thread* current = current_or_null();
-  assert(current != NULL, "Thread::current() called on detached thread");
+  assert(current != nullptr, "Thread::current() called on detached thread");
   return current;
 }
 
@@ -647,7 +664,7 @@ inline Thread* Thread::current_or_null() {
   if (ThreadLocalStorage::is_initialized()) {
     return ThreadLocalStorage::thread();
   }
-  return NULL;
+  return nullptr;
 #endif
 }
 
@@ -655,7 +672,7 @@ inline Thread* Thread::current_or_null_safe() {
   if (ThreadLocalStorage::is_initialized()) {
     return ThreadLocalStorage::thread();
   }
-  return NULL;
+  return nullptr;
 }
 
 #endif // SHARE_RUNTIME_THREAD_HPP

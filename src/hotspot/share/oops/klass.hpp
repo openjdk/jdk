@@ -145,9 +145,9 @@ class Klass : public Metadata {
   OopHandle   _java_mirror;
   // Superclass
   Klass*      _super;
-  // First subclass (NULL if none); _subklass->next_sibling() is next one
+  // First subclass (null if none); _subklass->next_sibling() is next one
   Klass* volatile _subklass;
-  // Sibling link (or NULL); links all subklasses of a klass
+  // Sibling link (or null); links all subklasses of a klass
   Klass* volatile _next_sibling;
 
   // All klasses loaded by a class loader are chained through these links
@@ -176,6 +176,7 @@ private:
   // Various attributes for shared classes. Should be zero for a non-shared class.
   u2     _shared_class_flags;
   enum CDSSharedClassFlags {
+    _is_shared_class                       = 1 << 0,  // shadows MetaspaceObj::is_shared
     _archived_lambda_proxy_is_available    = 1 << 1,
     _has_value_based_class_annotation      = 1 << 2,
     _verified_at_dump_time                 = 1 << 3,
@@ -220,7 +221,7 @@ protected:
                                                           Array<InstanceKlass*>* transitive_interfaces);
 
   // java_super is the Java-level super type as specified by Class.getSuperClass.
-  virtual InstanceKlass* java_super() const  { return NULL; }
+  virtual InstanceKlass* java_super() const  { return nullptr; }
 
   juint    super_check_offset() const  { return _super_check_offset; }
   void set_super_check_offset(juint o) { _super_check_offset = o; }
@@ -232,11 +233,11 @@ protected:
   void set_secondary_supers(Array<Klass*>* k) { _secondary_supers = k; }
 
   // Return the element of the _super chain of the given depth.
-  // If there is no such element, return either NULL or this.
+  // If there is no such element, return either null or this.
   Klass* primary_super_of_depth(juint i) const {
     assert(i < primary_super_limit(), "oob");
     Klass* super = _primary_supers[i];
-    assert(super == NULL || super->super_depth() == i, "correct display");
+    assert(super == nullptr || super->super_depth() == i, "correct display");
     return super;
   }
 
@@ -265,14 +266,14 @@ protected:
   oop java_mirror_no_keepalive() const;
   void set_java_mirror(Handle m);
 
-  oop archived_java_mirror() NOT_CDS_JAVA_HEAP_RETURN_(NULL);
+  oop archived_java_mirror() NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
   void set_archived_java_mirror(int mirror_index) NOT_CDS_JAVA_HEAP_RETURN;
 
   // Temporary mirror switch used by RedefineClasses
   OopHandle java_mirror_handle() const { return _java_mirror; }
   void swap_java_mirror_handle(OopHandle& mirror) { _java_mirror.swap(mirror); }
 
-  // Set java mirror OopHandle to NULL for CDS
+  // Set java mirror OopHandle to null for CDS
   // This leaves the OopHandle in the CLD, but that's ok, you can't release them.
   void clear_java_mirror_handle() { _java_mirror = OopHandle(); }
 
@@ -361,6 +362,15 @@ protected:
   bool is_generated_shared_class() const {
     CDS_ONLY(return (_shared_class_flags & _is_generated_shared_class) != 0;)
     NOT_CDS(return false;)
+  }
+
+  bool is_shared() const                { // shadows MetaspaceObj::is_shared)()
+    CDS_ONLY(return (_shared_class_flags & _is_shared_class) != 0;)
+    NOT_CDS(return false;)
+  }
+
+  void set_is_shared() {
+    CDS_ONLY(_shared_class_flags |= _is_shared_class;)
   }
 
   // Obtain the module or package for this class
@@ -528,7 +538,7 @@ protected:
   // array class with this klass as element type
   virtual Klass* array_klass(TRAPS) = 0;
 
-  // These will return NULL instead of allocating on the heap:
+  // These will return null instead of allocating on the heap:
   virtual Klass* array_klass_or_null(int rank) = 0;
   virtual Klass* array_klass_or_null() = 0;
 
@@ -567,7 +577,7 @@ protected:
     if (has_archived_mirror_index()) {
       // _java_mirror is not a valid OopHandle but rather an encoded reference in the shared heap
       return false;
-    } else if (_java_mirror.ptr_raw() == NULL) {
+    } else if (_java_mirror.ptr_raw() == nullptr) {
       return false;
     } else {
       return true;
@@ -649,15 +659,7 @@ protected:
   bool is_synthetic() const             { return _access_flags.is_synthetic(); }
   void set_is_synthetic()               { _access_flags.set_is_synthetic(); }
   bool has_finalizer() const            { return _access_flags.has_finalizer(); }
-  bool has_final_method() const         { return _access_flags.has_final_method(); }
   void set_has_finalizer()              { _access_flags.set_has_finalizer(); }
-  void set_has_final_method()           { _access_flags.set_has_final_method(); }
-  bool has_vanilla_constructor() const  { return _access_flags.has_vanilla_constructor(); }
-  void set_has_vanilla_constructor()    { _access_flags.set_has_vanilla_constructor(); }
-  bool has_miranda_methods () const     { return access_flags().has_miranda_methods(); }
-  void set_has_miranda_methods()        { _access_flags.set_has_miranda_methods(); }
-  bool is_shared() const                { return access_flags().is_shared_class(); } // shadows MetaspaceObj::is_shared)()
-  void set_is_shared()                  { _access_flags.set_is_shared_class(); }
   bool is_hidden() const                { return access_flags().is_hidden_class(); }
   void set_is_hidden()                  { _access_flags.set_is_hidden_class(); }
   bool is_value_based()                 { return _access_flags.is_value_based_class(); }

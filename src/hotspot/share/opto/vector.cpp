@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,11 +35,6 @@
 static bool is_vector_mask(ciKlass* klass) {
   return klass->is_subclass_of(ciEnv::current()->vector_VectorMask_klass());
 }
-
-static bool is_vector_shuffle(ciKlass* klass) {
-  return klass->is_subclass_of(ciEnv::current()->vector_VectorShuffle_klass());
-}
-
 
 void PhaseVector::optimize_vector_boxes() {
   Compile::TracePhase tp("vector_elimination", &timers[_t_vector_elimination]);
@@ -212,7 +207,7 @@ void PhaseVector::scalarize_vbox_node(VectorBoxNode* vec_box) {
       }
       jvms = kit.sync_jvms();
 
-      Node* new_vbox = NULL;
+      Node* new_vbox = nullptr;
       {
         Node* vect = vec_box->in(VectorBoxNode::Value);
         const TypeInstPtr* vbox_type = vec_box->box_type();
@@ -294,7 +289,7 @@ void PhaseVector::scalarize_vbox_node(VectorBoxNode* vec_box) {
     // to the allocated object with vector value.
     for (uint i = jvms->debug_start(); i < jvms->debug_end(); i++) {
       Node* debug = sfpt->in(i);
-      if (debug != NULL && debug->uncast(/*keep_deps*/false) == vec_box) {
+      if (debug != nullptr && debug->uncast(/*keep_deps*/false) == vec_box) {
         sfpt->set_req(i, sobj);
       }
     }
@@ -404,7 +399,7 @@ Node* PhaseVector::expand_vbox_alloc_node(VectorBoxAllocateNode* vbox_alloc,
   ciField* field = ciEnv::current()->vector_VectorPayload_klass()->get_field_by_name(ciSymbols::payload_name(),
                                                                                      ciSymbols::object_signature(),
                                                                                      false);
-  assert(field != NULL, "");
+  assert(field != nullptr, "");
   Node* vec_field = kit.basic_plus_adr(vec_obj, field->offset_in_bytes());
   const TypePtr* vec_adr_type = vec_field->bottom_type()->is_ptr();
 
@@ -438,14 +433,12 @@ void PhaseVector::expand_vunbox_node(VectorUnboxNode* vec_unbox) {
 
     if (is_vector_mask(from_kls)) {
       bt = T_BOOLEAN;
-    } else if (is_vector_shuffle(from_kls)) {
-      bt = T_BYTE;
     }
 
     ciField* field = ciEnv::current()->vector_VectorPayload_klass()->get_field_by_name(ciSymbols::payload_name(),
                                                                                        ciSymbols::object_signature(),
                                                                                        false);
-    assert(field != NULL, "");
+    assert(field != nullptr, "");
     int offset = field->offset_in_bytes();
     Node* vec_adr = kit.basic_plus_adr(obj, offset);
 
@@ -484,9 +477,6 @@ void PhaseVector::expand_vunbox_node(VectorUnboxNode* vec_unbox) {
 
     if (is_vector_mask(from_kls)) {
       vec_val_load = gvn.transform(new VectorLoadMaskNode(vec_val_load, TypeVect::makemask(masktype, num_elem)));
-    } else if (is_vector_shuffle(from_kls) && !vec_unbox->is_shuffle_to_vector()) {
-      assert(vec_unbox->bottom_type()->is_vect()->element_basic_type() == masktype, "expect shuffle type consistency");
-      vec_val_load = gvn.transform(new VectorLoadShuffleNode(vec_val_load, TypeVect::make(masktype, num_elem)));
     }
 
     gvn.hash_delete(vec_unbox);

@@ -73,7 +73,9 @@ public class BasicBooleanOpTest extends VectorizationTestRunner {
     @Test
     @IR(applyIfCPUFeature = {"asimd", "true"},
         counts = {IRNode.AND_V, ">0"})
-    @IR(applyIfCPUFeature = {"avx512vl", "true"},
+    @IR(applyIfCPUFeatureAnd = {"avx512f", "false", "sse2", "true"},
+        counts = {IRNode.AND_V, ">0"})
+    @IR(applyIfCPUFeature = {"avx512f", "true"},
         counts = {IRNode.MACRO_LOGIC_V, ">0"})
     public boolean[] vectorAnd() {
         boolean[] res = new boolean[SIZE];

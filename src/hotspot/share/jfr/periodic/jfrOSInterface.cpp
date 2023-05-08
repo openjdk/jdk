@@ -253,6 +253,8 @@ const char* JfrOSInterface::virtualization_name() {
   VirtualizationType vrt = VM_Version::get_detected_virtualization();
   if (vrt == XenHVM) {
     return "Xen hardware-assisted virtualization";
+  } else if (vrt == XenPVHVM) {
+    return "Xen optimized paravirtualization";
   } else if (vrt == KVM) {
     return "KVM virtualization";
   } else if (vrt == VMWare) {

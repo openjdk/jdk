@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,8 @@ import java.util.concurrent.atomic.AtomicReference;
  * @test JNIMonitor
  * @summary Tests that JNI monitors work correctly with virtual threads
  * @library /test/lib
- * @compile --enable-preview -source ${jdk.version} JNIMonitor.java
- * @run main/native/othervm --enable-preview JNIMonitor
+ * @compile JNIMonitor.java
+ * @run main/native/othervm JNIMonitor
  */
 
 public class JNIMonitor {

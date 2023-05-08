@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@
 
 BlockOffsetSharedArray::BlockOffsetSharedArray(MemRegion reserved,
                                                size_t init_word_size):
-  _reserved(reserved), _end(NULL)
+  _reserved(reserved), _end(nullptr)
 {
   size_t size = compute_size(reserved.word_size());
   ReservedSpace rs(size);
@@ -232,7 +232,7 @@ void BlockOffsetArray::check_all_cards(size_t start_card, size_t end_card) const
 
 void
 BlockOffsetArray::alloc_block(HeapWord* blk_start, HeapWord* blk_end) {
-  assert(blk_start != NULL && blk_end > blk_start,
+  assert(blk_start != nullptr && blk_end > blk_start,
          "phantom block");
   single_block(blk_start, blk_end);
 }
@@ -299,11 +299,11 @@ void BlockOffsetArray::verify() const {
   size_t next_index = 1;
   size_t last_index = last_active_index();
 
-  // Use for debugging.  Initialize to NULL to distinguish the
+  // Use for debugging.  Initialize to null to distinguish the
   // first iteration through the while loop.
-  HeapWord* last_p = NULL;
-  HeapWord* last_start = NULL;
-  oop last_o = NULL;
+  HeapWord* last_p = nullptr;
+  HeapWord* last_start = nullptr;
+  oop last_o = nullptr;
 
   while (next_index <= last_index) {
     // Use an address past the start of the address for
@@ -387,7 +387,7 @@ HeapWord* BlockOffsetArrayContigSpace::block_start_unsafe(const void* addr) cons
 
 void BlockOffsetArrayContigSpace::alloc_block_work(HeapWord* blk_start,
                                         HeapWord* blk_end) {
-  assert(blk_start != NULL && blk_end > blk_start,
+  assert(blk_start != nullptr && blk_end > blk_start,
          "phantom block");
   assert(blk_end > _next_offset_threshold,
          "should be past threshold");

@@ -53,6 +53,7 @@
 #include "runtime/safepoint.hpp"
 #include "runtime/synchronizer.hpp"
 #include "runtime/vmOperations.hpp"
+#include "services/nmtCommon.hpp"
 #ifdef COMPILER2
 #include "opto/compile.hpp"
 #include "opto/node.hpp"
@@ -319,5 +320,14 @@ void CompilerTypeConstant::serialize(JfrCheckpointWriter& writer) {
   for (u4 i = 0; i < nof_entries; ++i) {
     writer.write_key(i);
     writer.write(compilertype2name((CompilerType)i));
+  }
+}
+
+void NMTTypeConstant::serialize(JfrCheckpointWriter& writer) {
+  writer.write_count(mt_number_of_types);
+  for (int i = 0; i < mt_number_of_types; ++i) {
+    writer.write_key(i);
+    MEMFLAGS flag = NMTUtil::index_to_flag(i);
+    writer.write(NMTUtil::flag_to_name(flag));
   }
 }

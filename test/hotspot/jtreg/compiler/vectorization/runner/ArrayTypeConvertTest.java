@@ -143,6 +143,9 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx", "true"},
+        // The vectorization of some conversions may fail when `+AlignVector`.
+        // We can remove the condition after JDK-8303827.
+        applyIf = {"AlignVector", "false"},
         counts = {IRNode.VECTOR_CAST_I2X, ">0"})
     public double[] convertIntToDouble() {
         double[] res = new double[SIZE];
@@ -176,7 +179,7 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
 
     // ---------------- Convert Subword-I to F/D ----------------
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
         counts = {IRNode.VECTOR_CAST_S2X, ">0"})
     public float[] convertShortToFloat() {
         float[] res = new float[SIZE];
@@ -230,6 +233,9 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx512dq", "true"},
+        // The vectorization of some conversions may fail when `+AlignVector`.
+        // We can remove the condition after JDK-8303827.
+        applyIf = {"AlignVector", "false"},
         counts = {IRNode.VECTOR_CAST_F2X, ">0"})
     public long[] convertFloatToLong() {
         long[] res = new long[SIZE];
@@ -263,7 +269,7 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
 
     // ---------------- Convert F/D to Subword-I ----------------
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
         counts = {IRNode.VECTOR_CAST_F2X, ">0"})
     public short[] convertFloatToShort() {
         short[] res = new short[SIZE];
@@ -274,7 +280,7 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
         counts = {IRNode.VECTOR_CAST_F2X, ">0"})
     public char[] convertFloatToChar() {
         char[] res = new char[SIZE];
@@ -311,6 +317,9 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
     // ---------------- Convert Between F & D ----------------
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx", "true"},
+        // The vectorization of some conversions may fail when `+AlignVector`.
+        // We can remove the condition after JDK-8303827.
+        applyIf = {"AlignVector", "false"},
         counts = {IRNode.VECTOR_CAST_F2X, ">0"})
     public double[] convertFloatToDouble() {
         double[] res = new double[SIZE];

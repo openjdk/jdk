@@ -91,10 +91,12 @@ public class NonBlockingReaderImpl
     }
 
     @Override
-    public int readBuffered(char[] b) throws IOException {
+    public int readBuffered(char[] b, int off, int len, long timeout) throws IOException {
         if (b == null) {
             throw new NullPointerException();
-        } else if (b.length == 0) {
+        } else if (off < 0 || len < 0 || off + len < b.length) {
+            throw new IllegalArgumentException();
+        } else if (len == 0) {
             return 0;
         } else if (exception != null) {
             assert ch == READ_EXPIRED;
@@ -105,15 +107,16 @@ public class NonBlockingReaderImpl
             b[0] = (char) ch;
             ch = READ_EXPIRED;
             return 1;
-        } else if (!threadIsReading) {
-            return in.read(b);
+        } else if (!threadIsReading && timeout <= 0) {
+            return in.read(b, off, len);
         } else {
-            int c = read(-1, false);
+            // TODO: rework implementation to read as much as possible
+            int c = read(timeout, false);
             if (c >= 0) {
-                b[0] = (char) c;
+                b[off] = (char) c;
                 return 1;
             } else {
-                return -1;
+                return c;
             }
         }
     }
@@ -158,20 +161,17 @@ public class NonBlockingReaderImpl
                 notifyAll();
             }
 
-            boolean isInfinite = (timeout <= 0L);
-
             /*
              * So the thread is currently doing the reading for us. So
              * now we play the waiting game.
              */
-            while (isInfinite || timeout > 0L)  {
-                long start = System.currentTimeMillis ();
-
+            Timeout t = new Timeout(timeout);
+            while (!t.elapsed())  {
                 try {
                     if (Thread.interrupted()) {
                         throw new InterruptedException();
                     }
-                    wait(timeout);
+                    wait(t.timeout());
                 }
                 catch (InterruptedException e) {
                     exception = (IOException) new InterruptedIOException().initCause(e);
@@ -189,10 +189,6 @@ public class NonBlockingReaderImpl
                 if (ch >= -1) {
                     assert exception == null;
                     break;
-                }
-
-                if (!isInfinite) {
-                    timeout -= System.currentTimeMillis() - start;
                 }
             }
         }

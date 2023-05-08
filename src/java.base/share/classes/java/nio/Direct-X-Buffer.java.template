@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -178,12 +178,29 @@ class Direct$Type$Buffer$RW$$BO$
     }
 
     // Invoked only by JNI: NewDirectByteBuffer(void*, long)
+    // The long-valued capacity is restricted to int range.
     //
-    private Direct$Type$Buffer(long addr, int cap) {
-        super(-1, 0, cap, cap, null);
+    private Direct$Type$Buffer(long addr, long cap) {
+        super(-1, 0, checkCapacity(cap), (int)cap, null);
         address = addr;
         cleaner = null;
         att = null;
+    }
+
+    // Throw an IllegalArgumentException if the capacity is not in
+    // the range [0, Integer.MAX_VALUE]
+    //
+    private static int checkCapacity(long capacity) {
+        if (capacity < 0) {
+            throw new IllegalArgumentException
+                ("JNI NewDirectByteBuffer passed capacity < 0: ("
+                + capacity + ")");
+        } else if (capacity > Integer.MAX_VALUE) {
+            throw new IllegalArgumentException
+                ("JNI NewDirectByteBuffer passed capacity > Integer.MAX_VALUE: ("
+                + capacity + ")");
+        }
+        return (int)capacity;
     }
 
 #end[rw]
@@ -253,7 +270,7 @@ class Direct$Type$Buffer$RW$$BO$
         return new Direct$Type$Buffer$RW$$BO$(this,
                                               -1,
                                               0,
-                                              rem, 
+                                              rem,
                                               rem,
                                               off,
 #if[byte]
@@ -416,22 +433,81 @@ class Direct$Type$Buffer$RW$$BO$
 
     public String toString(int start, int end) {
         Objects.checkFromToIndex(start, end, limit());
-        try {
-            int len = end - start;
-            char[] ca = new char[len];
-            CharBuffer cb = CharBuffer.wrap(ca);
-            CharBuffer db = this.duplicate();
-            db.position(start);
-            db.limit(end);
-            cb.put(db);
-            return new String(ca);
-        } catch (StringIndexOutOfBoundsException x) {
-            throw new IndexOutOfBoundsException();
-        }
+        int len = end - start;
+        char[] ca = new char[len];
+        CharBuffer cb = CharBuffer.wrap(ca);
+        CharBuffer db = this.duplicate();
+        db.position(start);
+        db.limit(end);
+        cb.put(db);
+        return new String(ca);
     }
 
 
     // --- Methods to support CharSequence ---
+
+#if[rw] 
+    private static final int APPEND_BUF_SIZE = 1024;
+
+    private $Type$Buffer appendChars(CharSequence csq, int start, int end) {
+        Objects.checkFromToIndex(start, end, csq.length());
+
+        int pos = position();
+        int lim = limit();
+        int rem = (pos <= lim) ? lim - pos : 0;
+        int length = end - start;
+        if (length > rem)
+            throw new BufferOverflowException();
+
+        char[] buf = new char[Math.min(APPEND_BUF_SIZE, length)];
+        int index = pos;
+        while (start < end) {
+            int count = end - start;
+            if (count > buf.length)
+                count = buf.length;
+
+            if (csq instanceof String str) {
+                str.getChars(start, start + count, buf, 0);
+            } else if (csq instanceof StringBuilder sb) {
+                sb.getChars(start, start + count, buf, 0);
+            } else if (csq instanceof StringBuffer sb) {
+                sb.getChars(start, start + count, buf, 0);
+            }
+
+            putArray(index, buf, 0, count);
+
+            start += count;
+            index += count;
+        }
+
+        position(pos + length);
+
+        return this;
+    }
+#end[rw] 
+
+    public $Type$Buffer append(CharSequence csq) {
+#if[rw] 
+        if (csq instanceof StringBuilder) 
+            return appendChars(csq, 0, csq.length());
+ 
+        return super.append(csq);
+#else[rw]
+        throw new ReadOnlyBufferException();
+#end[rw]
+    }
+ 
+    public $Type$Buffer append(CharSequence csq, int start, int end) { 
+#if[rw]
+        if (csq instanceof String || csq instanceof StringBuffer ||
+            csq instanceof StringBuilder)
+            return appendChars(csq, start, end);
+
+        return super.append(csq, start, end);
+#else[rw]
+        throw new ReadOnlyBufferException();
+#end[rw]
+    }
 
     public CharBuffer subSequence(int start, int end) {
         int pos = position();

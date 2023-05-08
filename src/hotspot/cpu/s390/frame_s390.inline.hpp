@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -124,7 +124,7 @@ inline void frame::interpreter_frame_set_monitors(BasicObjectLock* monitors) {
 // Accessors
 
 // Return unique id for this frame. The id must have a value where we
-// can distinguish identity and younger/older relationship. NULL
+// can distinguish identity and younger/older relationship. null
 // represents an invalid (incomparable) frame.
 inline intptr_t* frame::id(void) const {
   // Use _fp. _sp or _unextended_sp wouldn't be correct due to resizing.
@@ -134,7 +134,7 @@ inline intptr_t* frame::id(void) const {
 // Return true if this frame is older (less recent activation) than
 // the frame represented by id.
 inline bool frame::is_older(intptr_t* id) const {
-  assert(this->id() != NULL && id != NULL, "NULL frame id");
+  assert(this->id() != nullptr && id != nullptr, "null frame id");
   // Stack grows towards smaller addresses on z/Architecture.
   return this->id() > id;
 }
@@ -179,8 +179,8 @@ inline intptr_t* frame::link_or_null() const {
   return link();
 }
 
-inline intptr_t** frame::interpreter_frame_locals_addr() const {
-  return (intptr_t**) &(ijava_state()->locals);
+inline intptr_t* frame::interpreter_frame_locals() const {
+  return (intptr_t*) (ijava_state()->locals);
 }
 
 inline intptr_t* frame::interpreter_frame_bcp_addr() const {
@@ -304,17 +304,17 @@ inline intptr_t* frame::real_fp() const {
 }
 
 inline const ImmutableOopMap* frame::get_oop_map() const {
-  if (_cb == NULL) return NULL;
-  if (_cb->oop_maps() != NULL) {
+  if (_cb == nullptr) return nullptr;
+  if (_cb->oop_maps() != nullptr) {
     NativePostCallNop* nop = nativePostCallNop_at(_pc);
-    if (nop != NULL && nop->displacement() != 0) {
+    if (nop != nullptr && nop->displacement() != 0) {
       int slot = ((nop->displacement() >> 24) & 0xff);
       return _cb->oop_map_for_slot(slot, _pc);
     }
     const ImmutableOopMap* oop_map = OopMapSet::find_map(this);
     return oop_map;
   }
-  return NULL;
+  return nullptr;
 }
 
 inline int frame::compiled_frame_stack_argsize() const {

@@ -53,7 +53,6 @@ class GCCause : public AllStatic {
     _wb_young_gc,
     _wb_full_gc,
     _wb_breakpoint,
-    _archive_time_gc,
 
     /* implementation independent, but reserved for GC use */
     _no_gc,
@@ -94,6 +93,12 @@ class GCCause : public AllStatic {
   inline static bool is_user_requested_gc(GCCause::Cause cause) {
     return (cause == GCCause::_java_lang_system_gc ||
             cause == GCCause::_dcmd_gc_run);
+  }
+
+  inline static bool is_explicit_full_gc(GCCause::Cause cause) {
+    return (is_user_requested_gc(cause) ||
+            is_serviceability_requested_gc(cause) ||
+            cause == GCCause::_wb_full_gc);
   }
 
   inline static bool is_serviceability_requested_gc(GCCause::Cause

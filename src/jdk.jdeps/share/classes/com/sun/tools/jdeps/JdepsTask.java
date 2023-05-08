@@ -515,6 +515,9 @@ class JdepsTask {
             if (options.version || options.fullVersion) {
                 showVersion(options.fullVersion);
             }
+            if (options.showProfile && !options.nowarning) {
+                warning("warn.deprecated.option", "-profile");
+            }
             if (options.help || options.version || options.fullVersion) {
                 return EXIT_OK;
             }

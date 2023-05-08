@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
  /*
  * @test
- * @bug 8159377 8283093
+ * @bug 8159377 8283093 8299891
  * @library /test/lib
  * @summary Tests ObjectFilter on default agent
  * @author Harsha Wardhana B
@@ -48,9 +48,20 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import javax.management.Attribute;
+import javax.management.AttributeList;
+import javax.management.AttributeChangeNotification;
 import javax.management.MBeanServerConnection;
 import javax.management.ObjectName;
+import javax.management.ObjectInstance;
+import javax.management.MBeanNotificationInfo;
+import javax.management.Notification;
+import javax.management.NotificationBroadcasterSupport;
+import javax.management.NotificationListener;
+import javax.management.Query;
+import javax.management.QueryExp;
 import javax.management.remote.JMXConnector;
 import javax.management.remote.JMXConnectorFactory;
 import javax.management.remote.JMXServiceURL;
@@ -73,9 +84,22 @@ public class DefaultAgentFilterTest {
         public void op2(String s, HashSet<String> params);
 
         public void op3(MyTestObject obj, String s, HashMap<String, String> param);
+
+        public void setMyAttribute(boolean b);
+
+        public boolean getMyAttribute();
+
+        public void setMyAttribute2(String s);
+
+        public String getMyAttribute2();
     }
 
-    public static class Test implements TestMBean {
+    public static class Test extends NotificationBroadcasterSupport implements TestMBean {
+
+        boolean myAttribute;
+        String myAttribute2;
+
+        private long sequenceNumber = 1;
 
         @Override
         public void op1(HashSet<Object> params) {
@@ -90,6 +114,41 @@ public class DefaultAgentFilterTest {
         @Override
         public void op3(MyTestObject obj, String s, HashMap<String, String> param) {
             System.out.println("Invoked op3");
+        }
+
+        public void setMyAttribute(boolean b) {
+            this.myAttribute = b;
+            System.out.println("Invoked setMyAttribute");
+        }
+
+        public boolean getMyAttribute() {
+            System.out.println("Invoked getMyAttribute");
+            return myAttribute;
+        }
+
+        public void setMyAttribute2(String s) {
+            String old = myAttribute2;
+            this.myAttribute2 = s;
+            Notification n = new AttributeChangeNotification(this, sequenceNumber++, System.currentTimeMillis(),
+                                                             "String attribute changed", "myAttribute2", "String",
+                                                             old, this.myAttribute2);
+            sendNotification(n);
+            System.out.println("Invoked setMyAttribute2");
+        }
+
+        public String getMyAttribute2() {
+            System.out.println("Invoked getMyAttribute2");
+            return myAttribute2;
+        }
+
+        @Override
+        public MBeanNotificationInfo[] getNotificationInfo() {
+            System.out.println("Invoked getNotificationInfo");
+            String[] types = new String[] { AttributeChangeNotification.ATTRIBUTE_CHANGE };
+            String name = AttributeChangeNotification.class.getName();
+            String description = "An attribute of this MBean has changed";
+            MBeanNotificationInfo info = new MBeanNotificationInfo(types, name, description);
+            return new MBeanNotificationInfo[] {info};
         }
     }
 
@@ -172,17 +231,22 @@ public class DefaultAgentFilterTest {
     private static final int FREE_PORT_ATTEMPTS = 10;
 
     private static void testDefaultAgent(String propertyFile) throws Exception {
-        testDefaultAgent(propertyFile, null);
+        testDefaultAgent(propertyFile, null, true /* test operations */);
     }
 
-    private static void testDefaultAgent(String propertyFile, String additionalArgument) throws Exception {
+    private static void testDefaultAgent(String propertyFile, boolean testOperations) throws Exception {
+        testDefaultAgent(propertyFile, null, testOperations);
+    }
+
+    private static void testDefaultAgent(String propertyFile, String additionalArgument, boolean testOperations) throws Exception {
         for (int i = 1; i <= FREE_PORT_ATTEMPTS; i++) {
             int port = Utils.getFreePort();
-            System.out.println("Attempting testDefaultAgent(" +
-                               (propertyFile != null ? propertyFile : "no properties")
+            System.out.println("Attempting testDefaultAgent("
+                               + (propertyFile != null ? propertyFile : "no properties")
+                               + " testOperations=" + testOperations
                                + ") with port: " + port);
             try {
-                testDefaultAgent(propertyFile, additionalArgument, port);
+                testDefaultAgent(propertyFile, additionalArgument, port, testOperations);
                 break;  // return succesfully
             } catch (BindException b) {
                 // Retry with new port.  Throw if last iteration:
@@ -193,7 +257,11 @@ public class DefaultAgentFilterTest {
         }
     }
 
-    private static void testDefaultAgent(String propertyFile, String additionalArgument, int port) throws Exception {
+    /**
+      * Run the test app and connect. Test MBean Operations if the boolean testOperations is true, otherwise
+      * test other usages (Attributes, Query)
+      */
+    private static void testDefaultAgent(String propertyFile, String additionalArgument, int port, boolean testOperations) throws Exception {
         List<String> pbArgs = new ArrayList<>(Arrays.asList(
                 "-cp",
                 System.getProperty("test.class.path"),
@@ -219,7 +287,11 @@ public class DefaultAgentFilterTest {
         try (TestAppRun s = new TestAppRun(pb, DefaultAgentFilterTest.class.getSimpleName())) {
             s.start();
             JMXServiceURL url = testConnect(port);
-            testMBeanOperations(url);
+            if (testOperations) {
+                testMBeanOperations(url);
+            } else {
+                testMBeanOtherClasses(url);
+            }
         }
     }
 
@@ -266,7 +338,7 @@ public class DefaultAgentFilterTest {
         System.out.println("---" + DefaultAgentFilterTest.class.getName() + "-main: starting ...");
 
         try {
-            // filter DefaultAgentFilterTest$MyTestObject
+            // Properties file filter blocks DefaultAgentFilterTest$MyTestObject
             testDefaultAgent("mgmt1.properties");
             System.out.println("----\tTest FAILED !!");
             throw new RuntimeException("---" + DefaultAgentFilterTest.class.getName() + " - No exception reported");
@@ -305,10 +377,19 @@ public class DefaultAgentFilterTest {
             }
         }
         try {
+            // Test Attributes and Query work by default:
+            testDefaultAgent(null /* no properties file */,  false /* not testing operations */);
+        } catch (Exception ex) {
+            System.out.println(ex);
+            System.out.println("----\tTest FAILED !!");
+            throw ex;
+        }
+        try {
             // Add custom filter on command-line.
             testDefaultAgent(null, "-Dcom.sun.management.jmxremote.serial.filter.pattern=\"java.lang.*;java.math.BigInteger;"
                              + "java.math.BigDecimal;java.util.*;javax.management.openmbean.*;javax.management.ObjectName;"
-                             + "java.rmi.MarshalledObject;javax.security.auth.Subject;DefaultAgentFilterTest$MyTestObject;!*\"");
+                             + "java.rmi.MarshalledObject;javax.security.auth.Subject;DefaultAgentFilterTest$MyTestObject;!*\"",
+                             true /* test operations */);
             System.out.println("----\tTest PASSED: with custom filter on command-line");
         } catch (Exception ex) {
             System.out.println(ex);
@@ -346,6 +427,49 @@ public class DefaultAgentFilterTest {
             String[] sig3 = {MyTestObject.class.getName(), String.class.getName(),
                 HashMap.class.getName()};
             conn.invoke(name, "op3", params3, sig3);
+
+            System.out.println("Done testMBeanOperations");
+        }
+    }
+
+    private static void testMBeanOtherClasses(JMXServiceURL serverUrl) throws Exception {
+        Map<String, Object> clientEnv = new HashMap<>(1);
+        ObjectName name = new ObjectName("jtreg:type=Test");
+        try (JMXConnector client = JMXConnectorFactory.connect(serverUrl, clientEnv)) {
+            MBeanServerConnection conn = client.getMBeanServerConnection();
+
+            // Set operations send types to the server and can conflict with the filter.
+            // Attribute set operations require javax.management.Attribute.
+            conn.setAttribute(name, new Attribute("MyAttribute", Boolean.TRUE));
+            boolean b = (Boolean) conn.getAttribute(name, "MyAttribute");
+            if (b != true) {
+                throw new RuntimeException("Attribute not as expected, got: " + b);
+            }
+            conn.setAttribute(name, new Attribute("MyAttribute2", "my string value"));
+            String s = (String) conn.getAttribute(name, "MyAttribute2");
+            if (!s.equals("my string value")) {
+                throw new RuntimeException("Attribute not as expected, got: " + s);
+            }
+
+            // Use javax.management.AttributeList:
+            AttributeList attrs = conn.getAttributes(name, new String [] { "MyAttribute", "MyAttribute2" });
+            attrs = conn.setAttributes(name, attrs); // Setting fails if filter too restrictive
+
+            // Sending a Query uses several classes from javax.management:
+            QueryExp exp = Query.isInstanceOf(Query.value("notImportantClassName"));
+            Set<ObjectInstance> queryResult = conn.queryMBeans(name, exp);
+
+            // Notification:
+            conn.addNotificationListener(name, new NotificationListener() {
+                public void handleNotification(Notification notification, Object handback) {
+                    System.out.println("Received notification: " +  notification);
+                } }, null,  null);
+            // Trigger a Notification:
+            conn.setAttribute(name, new Attribute("MyAttribute2", "my new string value"));
+            // Receiving the AttributeChangeNotification is not truly important for this test:
+            try { Thread.sleep(5000); } catch (InterruptedException ie) { }
+
+            System.out.println("Done testMBeanOtherClasses");
         }
     }
 }

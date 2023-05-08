@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -438,27 +438,10 @@ public class List<A> extends AbstractCollection<A> implements java.util.List<A> 
         return (List<T>)list;
     }
 
-    private static final Iterator<?> EMPTYITERATOR = new Iterator<Object>() {
-            public boolean hasNext() {
-                return false;
-            }
-            public Object next() {
-                throw new java.util.NoSuchElementException();
-            }
-            public void remove() {
-                throw new UnsupportedOperationException();
-            }
-        };
-
-    @SuppressWarnings("unchecked")
-    private static <A> Iterator<A> emptyIterator() {
-        return (Iterator<A>)EMPTYITERATOR;
-    }
-
     @Override
     public Iterator<A> iterator() {
         if (tail == null)
-            return emptyIterator();
+            return Iterators.emptyIterator();
         return new Iterator<A>() {
             List<A> elems = List.this;
             public boolean hasNext() {
@@ -553,7 +536,7 @@ public class List<A> extends AbstractCollection<A> implements java.util.List<A> 
     }
 
     /**
-     * Collect elements into a new list (using a @code{ListBuffer})
+     * Collect elements into a new list (using a {@code ListBuffer})
      */
     public static <Z> Collector<Z, ListBuffer<Z>, List<Z>> collector() {
         return Collector.of(ListBuffer::new,

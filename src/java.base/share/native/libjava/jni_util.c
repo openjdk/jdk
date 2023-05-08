@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,8 +35,13 @@
  * such as "z:" need to be appended with a "." so we
  * must allocate at least 4 bytes to allow room for
  * this expansion. See 4235353 for details.
+ * This macro returns NULL if the requested size is
+ * negative, or the size is INT_MAX as the macro adds 1
+ * that overflows into negative value.
  */
-#define MALLOC_MIN4(len) ((char *)malloc((len) + 1 < 4 ? 4 : (len) + 1))
+#define MALLOC_MIN4(len) ((len) >= INT_MAX || (len) < 0 ? \
+    NULL : \
+    ((char *)malloc((len) + 1 < 4 ? 4 : (len) + 1)))
 
 /**
  * Throw a Java exception by name. Similar to SignalError.
@@ -103,17 +108,13 @@ JNIEXPORT void JNICALL
 JNU_ThrowByNameWithLastError(JNIEnv *env, const char *name,
                              const char *defaultDetail)
 {
-    char buf[256];
-    size_t n = getLastErrorString(buf, sizeof(buf));
+    jstring s = getLastErrorString(env);
 
-    if (n > 0) {
-        jstring s = JNU_NewStringPlatform(env, buf);
-        if (s != NULL) {
-            jobject x = JNU_NewObjectByName(env, name,
-                                            "(Ljava/lang/String;)V", s);
-            if (x != NULL) {
-                (*env)->Throw(env, x);
-            }
+    if (s != NULL) {
+        jobject x = JNU_NewObjectByName(env, name,
+                                        "(Ljava/lang/String;)V", s);
+        if (x != NULL) {
+            (*env)->Throw(env, x);
         }
     }
     if (!(*env)->ExceptionOccurred(env)) {
@@ -129,48 +130,44 @@ JNIEXPORT void JNICALL
 JNU_ThrowByNameWithMessageAndLastError
   (JNIEnv *env, const char *name, const char *message)
 {
-    char buf[256];
-    size_t n = getLastErrorString(buf, sizeof(buf));
     size_t messagelen = message == NULL ? 0 : strlen(message);
 
-    if (n > 0) {
-        jstring s = JNU_NewStringPlatform(env, buf);
-        if (s != NULL) {
-            jobject x = NULL;
-            if (messagelen) {
-                jstring s2 = NULL;
-                size_t messageextlen = messagelen + 4;
-                char *str1 = (char *)malloc((messageextlen) * sizeof(char));
-                if (str1 == 0) {
-                    JNU_ThrowOutOfMemoryError(env, 0);
-                    return;
-                }
-                jio_snprintf(str1, messageextlen, " (%s)", message);
-                s2 = (*env)->NewStringUTF(env, str1);
-                free(str1);
+    jstring s = getLastErrorString(env);
+    if (s != NULL) {
+        jobject x = NULL;
+        if (messagelen > 0) {
+            jstring s2 = NULL;
+            size_t messageextlen = messagelen + 4;
+            char *str1 = (char *)malloc((messageextlen) * sizeof(char));
+            if (str1 == NULL) {
+                JNU_ThrowOutOfMemoryError(env, 0);
+                return;
+            }
+            jio_snprintf(str1, messageextlen, " (%s)", message);
+            s2 = (*env)->NewStringUTF(env, str1);
+            free(str1);
+            JNU_CHECK_EXCEPTION(env);
+            if (s2 != NULL) {
+                jstring s3 = JNU_CallMethodByName(
+                                 env, NULL, s, "concat",
+                                 "(Ljava/lang/String;)Ljava/lang/String;",
+                                 s2).l;
+                (*env)->DeleteLocalRef(env, s2);
                 JNU_CHECK_EXCEPTION(env);
-                if (s2 != NULL) {
-                    jstring s3 = JNU_CallMethodByName(
-                                     env, NULL, s, "concat",
-                                     "(Ljava/lang/String;)Ljava/lang/String;",
-                                     s2).l;
-                    (*env)->DeleteLocalRef(env, s2);
-                    JNU_CHECK_EXCEPTION(env);
-                    if (s3 != NULL) {
-                        (*env)->DeleteLocalRef(env, s);
-                        s = s3;
-                    }
+                if (s3 != NULL) {
+                    (*env)->DeleteLocalRef(env, s);
+                    s = s3;
                 }
             }
-            x = JNU_NewObjectByName(env, name, "(Ljava/lang/String;)V", s);
-            if (x != NULL) {
-                (*env)->Throw(env, x);
-            }
+        }
+        x = JNU_NewObjectByName(env, name, "(Ljava/lang/String;)V", s);
+        if (x != NULL) {
+            (*env)->Throw(env, x);
         }
     }
 
     if (!(*env)->ExceptionOccurred(env)) {
-        if (messagelen) {
+        if (messagelen > 0) {
             JNU_ThrowByName(env, name, message);
         } else {
             JNU_ThrowByName(env, name, "no further information");
@@ -633,11 +630,11 @@ getStringCp1252Chars(JNIEnv *env, jstring jstr)
 }
 
 static int fastEncoding = NO_ENCODING_YET;
-static jstring jnuEncoding = NULL;
+static jobject jnuCharset = NULL;
 
 /* Cached method IDs */
-static jmethodID String_init_ID;        /* String(byte[], enc) */
-static jmethodID String_getBytes_ID;    /* String.getBytes(enc) */
+static jmethodID String_init_ID;        /* String(byte[], Charset) */
+static jmethodID String_getBytes_ID;    /* String.getBytes(Charset) */
 
 /* Cached field IDs */
 static jfieldID String_coder_ID;        /* String.coder */
@@ -661,7 +658,7 @@ newSizedStringJava(JNIEnv *env, const char *str, const int len)
         CHECK_NULL_RETURN(strClazz, 0);
         (*env)->SetByteArrayRegion(env, bytes, 0, len, (jbyte *)str);
         result = (*env)->NewObject(env, strClazz,
-                                   String_init_ID, bytes, jnuEncoding);
+                                   String_init_ID, bytes, jnuCharset);
         (*env)->DeleteLocalRef(env, bytes);
         return result;
     }
@@ -720,18 +717,15 @@ InitializeEncoding(JNIEnv *env, const char *encname)
          *   "en_GB" locale -> "ISO8859-1"                   (on Sol 7/8)
          *   "en_UK" locale -> "ISO8859-1"                   (on 2.6)
          */
+        const char *charsetname = NULL;
         if ((strcmp(encname, "8859_1") == 0) ||
             (strcmp(encname, "ISO8859-1") == 0) ||
             (strcmp(encname, "ISO8859_1") == 0) ||
             (strcmp(encname, "ISO-8859-1") == 0)) {
             fastEncoding = FAST_8859_1;
         } else if (strcmp(encname, "UTF-8") == 0) {
-            jstring enc = (*env)->NewStringUTF(env, encname);
-            if (enc == NULL)
-                return;
+            charsetname = encname;
             fastEncoding = FAST_UTF_8;
-            jnuEncoding = (jstring)(*env)->NewGlobalRef(env, enc);
-            (*env)->DeleteLocalRef(env, enc);
         } else if (strcmp(encname, "ISO646-US") == 0) {
             fastEncoding = FAST_646_US;
         } else if (strcmp(encname, "Cp1252") == 0 ||
@@ -741,31 +735,38 @@ InitializeEncoding(JNIEnv *env, const char *encname)
             strcmp(encname, "utf-16le") == 0) {
             fastEncoding = FAST_CP1252;
         } else {
-            jboolean exe;
-            jstring enc = (*env)->NewStringUTF(env, encname);
-            if (enc == NULL)
+            charsetname = encname;
+            fastEncoding = NO_FAST_ENCODING;
+        }
+        while (charsetname != NULL) {
+            jstring enc = (*env)->NewStringUTF(env, charsetname);
+            if (enc == NULL) {
+                fastEncoding = NO_ENCODING_YET;
                 return;
-
-            if ((jboolean) JNU_CallStaticMethodByName (
-                                            env, &exe,
-                                            "java/nio/charset/Charset",
-                                            "isSupported",
-                                            "(Ljava/lang/String;)Z",
-                                            enc).z == JNI_TRUE) {
-                fastEncoding = NO_FAST_ENCODING;
-                jnuEncoding = (jstring)(*env)->NewGlobalRef(env, enc);
-            } else {
-                // jnuEncoding falls back to UTF-8
-                jstring utf8 = (*env)->NewStringUTF(env, "UTF-8");
-                if (utf8 == NULL) {
-                    (*env)->DeleteLocalRef(env, enc);
-                    return;
-                }
-                fastEncoding = FAST_UTF_8;
-                jnuEncoding = (jstring)(*env)->NewGlobalRef(env, utf8);
-                (*env)->DeleteLocalRef(env, utf8);
+            }
+            jboolean exc;
+            jvalue charset = JNU_CallStaticMethodByName(
+                    env, &exc,
+                    "java/nio/charset/Charset",
+                    "forName",
+                    "(Ljava/lang/String;)Ljava/nio/charset/Charset;",
+                    enc);
+            if (exc) {
+                (*env)->ExceptionClear(env);
             }
             (*env)->DeleteLocalRef(env, enc);
+
+            if (!exc && charset.l != NULL) {
+                jnuCharset = (*env)->NewGlobalRef(env, charset.l);
+                (*env)->DeleteLocalRef(env, charset.l);
+                break; // success, continue below
+            } else if (strcmp(charsetname, "UTF-8") != 0) { // fall back
+                charsetname = "UTF-8";
+                fastEncoding = FAST_UTF_8;
+            } else { // give up
+                fastEncoding = NO_ENCODING_YET;
+                return;
+            }
         }
     } else {
         JNU_ThrowInternalError(env, "platform encoding undefined");
@@ -774,10 +775,10 @@ InitializeEncoding(JNIEnv *env, const char *encname)
 
     /* Initialize method-id cache */
     String_getBytes_ID = (*env)->GetMethodID(env, strClazz,
-                                             "getBytes", "(Ljava/lang/String;)[B");
+                                             "getBytes", "(Ljava/nio/charset/Charset;)[B");
     CHECK_NULL(String_getBytes_ID);
     String_init_ID = (*env)->GetMethodID(env, strClazz,
-                                         "<init>", "([BLjava/lang/String;)V");
+                                         "<init>", "([BLjava/nio/charset/Charset;)V");
     CHECK_NULL(String_init_ID);
     String_coder_ID = (*env)->GetFieldID(env, strClazz, "coder", "B");
     CHECK_NULL(String_coder_ID);
@@ -816,7 +817,7 @@ static const char* getStringBytes(JNIEnv *env, jstring jstr) {
     if ((*env)->EnsureLocalCapacity(env, 2) < 0)
         return 0;
 
-    hab = (*env)->CallObjectMethod(env, jstr, String_getBytes_ID, jnuEncoding);
+    hab = (*env)->CallObjectMethod(env, jstr, String_getBytes_ID, jnuCharset);
     if (hab != 0) {
         if (!(*env)->ExceptionCheck(env)) {
             jint len = (*env)->GetArrayLength(env, hab);
@@ -869,17 +870,10 @@ getStringUTF8(JNIEnv *env, jstring jstr)
         }
     }
 
-    // Check `jint` overflow
-    if (rlen < 0) {
-        (*env)->ReleasePrimitiveArrayCritical(env, value, str, 0);
-        JNU_ThrowOutOfMemoryError(env, "requested array size exceeds VM limit");
-        return NULL;
-    }
-
     result = MALLOC_MIN4(rlen);
     if (result == NULL) {
         (*env)->ReleasePrimitiveArrayCritical(env, value, str, 0);
-        JNU_ThrowOutOfMemoryError(env, 0);
+        JNU_ThrowOutOfMemoryError(env, "requested array size exceeds VM limit");
         return NULL;
     }
 

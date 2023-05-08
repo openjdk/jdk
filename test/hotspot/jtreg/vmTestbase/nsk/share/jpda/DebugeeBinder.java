@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -312,12 +312,6 @@ public class DebugeeBinder extends Log.Logger implements Finalizable {
         Vector<String> args = new Vector<String>();
 
         args.add(argumentHandler.getLaunchExecPath());
-
-        /* Need --enable-preview on the debuggee in order to support virtual threads. */
-        boolean vthreadMode = "Virtual".equals(System.getProperty("main.wrapper"));
-        if (vthreadMode) {
-            args.add("--enable-preview");
-        }
 
         String javaOpts = argumentHandler.getLaunchOptions();
         if (javaOpts != null && javaOpts.length() > 0) {

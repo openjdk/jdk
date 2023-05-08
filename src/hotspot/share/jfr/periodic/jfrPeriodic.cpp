@@ -41,6 +41,7 @@
 #include "jfr/periodic/jfrOSInterface.hpp"
 #include "jfr/periodic/jfrThreadCPULoadEvent.hpp"
 #include "jfr/periodic/jfrThreadDumpEvent.hpp"
+#include "jfr/periodic/jfrNativeMemoryEvent.hpp"
 #include "jfr/periodic/jfrNetworkUtilization.hpp"
 #include "jfr/recorder/jfrRecorder.hpp"
 #include "jfr/utilities/jfrThreadIterator.hpp"
@@ -51,6 +52,7 @@
 #include "memory/heapInspection.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
+#include "prims/jvmtiAgentList.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/flags/jvmFlag.hpp"
 #include "runtime/globals.hpp"
@@ -63,7 +65,6 @@
 #include "runtime/vm_version.hpp"
 #include "services/classLoadingService.hpp"
 #include "services/management.hpp"
-#include "services/memJfrReporter.hpp"
 #include "services/threadService.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -267,6 +268,43 @@ TRACE_REQUEST_FUNC(SystemProcess) {
       delete tmp;
     }
   }
+}
+
+template <typename AgentEvent>
+static void send_agent_event(AgentEvent& event, const JvmtiAgent* agent) {
+  event.set_name(agent->name());
+  event.set_options(agent->options());
+  event.set_dynamic(agent->is_dynamic());
+  event.set_initializationTime(agent->initialization_time());
+  event.set_initializationDuration(agent->initialization_duration());
+  event.commit();
+}
+
+TRACE_REQUEST_FUNC(JavaAgent) {
+  const JvmtiAgentList::Iterator it =JvmtiAgentList::java_agents();
+  while (it.has_next()) {
+    const JvmtiAgent* agent = it.next();
+    assert(agent->is_jplis(), "invariant");
+    EventJavaAgent event;
+    send_agent_event(event, agent);
+  }
+}
+
+static void send_native_agent_events(const JvmtiAgentList::Iterator& it) {
+  while (it.has_next()) {
+    const JvmtiAgent* agent = it.next();
+    assert(!agent->is_jplis(), "invariant");
+    EventNativeAgent event;
+    event.set_path(agent->os_lib_path());
+    send_agent_event(event, agent);
+  }
+}
+
+TRACE_REQUEST_FUNC(NativeAgent) {
+  const JvmtiAgentList::Iterator native_agents_it = JvmtiAgentList::native_agents();
+  send_native_agent_events(native_agents_it);
+  const JvmtiAgentList::Iterator xrun_agents_it = JvmtiAgentList::xrun_agents();
+  send_native_agent_events(xrun_agents_it);
 }
 
 TRACE_REQUEST_FUNC(ThreadContextSwitchRate) {
@@ -643,9 +681,9 @@ TRACE_REQUEST_FUNC(FinalizerStatistics) {
 }
 
 TRACE_REQUEST_FUNC(NativeMemoryUsage) {
-  MemJFRReporter::send_type_events();
+  JfrNativeMemoryEvent::send_type_events(timestamp());
 }
 
 TRACE_REQUEST_FUNC(NativeMemoryUsageTotal) {
-  MemJFRReporter::send_total_event();
+  JfrNativeMemoryEvent::send_total_event(timestamp());
 }

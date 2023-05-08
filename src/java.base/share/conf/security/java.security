@@ -943,10 +943,16 @@ crypto.policy=crypto.policydir-tbd
 
 #
 # The policy for the XML Signature secure validation mode. Validation of
-# XML Signatures that violate any of these constraints will fail. The
-# mode is enforced by default. The mode can be disabled by setting the
-# property "org.jcp.xml.dsig.secureValidation" to Boolean.FALSE with the
-# javax.xml.crypto.XMLCryptoContext.setProperty() method.
+# XML Signatures that violate any of these constraints will fail.
+# The mode can be enabled or disabled by setting the property
+# "org.jcp.xml.dsig.secureValidation" to Boolean.TRUE or Boolean.FALSE with
+# the javax.xml.crypto.XMLCryptoContext.setProperty() method, or by setting
+# the system property "org.jcp.xml.dsig.secureValidation" to "true" or
+# "false". Any other value for the system property is also treated as "false".
+# If the system property is set, it supersedes the XMLCryptoContext property
+# value.
+#
+# The secure validation mode is enabled by default.
 #
 #   Policy:
 #       Constraint {"," Constraint }

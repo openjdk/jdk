@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2022 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,8 +82,8 @@ static const char* z_features[] = {"  ",
                                    "system-z, g5-z196, ldisp_fast, extimm, pcrel_load/store, cmpb, cond_load/store, interlocked_update",
                                    "system-z, g6-ec12, ldisp_fast, extimm, pcrel_load/store, cmpb, cond_load/store, interlocked_update, txm",
                                    "system-z, g7-z13, ldisp_fast, extimm, pcrel_load/store, cmpb, cond_load/store, interlocked_update, txm, vectorinstr",
-                                   "system-z, g8-z14, ldisp_fast, extimm, pcrel_load/store, cmpb, cond_load/store, interlocked_update, txm, vectorinstr, instrext2, venh1)",
-                                   "system-z, g9-z15, ldisp_fast, extimm, pcrel_load/store, cmpb, cond_load/store, interlocked_update, txm, vectorinstr, instrext2, venh1, instrext3, VEnh2 )"
+                                   "system-z, g8-z14, ldisp_fast, extimm, pcrel_load/store, cmpb, cond_load/store, interlocked_update, txm, vectorinstr, instrext2, venh1",
+                                   "system-z, g9-z15, ldisp_fast, extimm, pcrel_load/store, cmpb, cond_load/store, interlocked_update, txm, vectorinstr, instrext2, venh1, instrext3, venh2"
                                   };
 
 void VM_Version::initialize() {
@@ -374,7 +374,7 @@ void VM_Version::set_features_string() {
     strcpy(buf, "z/Architecture (unknown generation)");
   } else if (model_ix > 0) {
     _model_string = z_name[model_ix];
-    jio_snprintf(buf, sizeof(buf), "%s, out-of-support_as_of_", z_features[model_ix], z_EOS[model_ix]);
+    jio_snprintf(buf, sizeof(buf), "%s, out-of-support_as_of_%s", z_features[model_ix], z_EOS[model_ix]);
   } else if (model_ix < 0) {
     tty->print_cr("*** WARNING *** Ambiguous z/Architecture detection!");
     tty->print_cr("                oldest detected generation is %s", z_features[-model_ix]);
@@ -717,7 +717,7 @@ void VM_Version::print_platform_virtualization_info(outputStream* st) {
   // - LPAR
   // - whole "Box" (CPUs )
   // - z/VM / KVM (VM<nn>); this is not available in an LPAR-only setup
-  const char* kw[] = { "LPAR", "CPUs", "VM", NULL };
+  const char* kw[] = { "LPAR", "CPUs", "VM", nullptr };
   const char* info_file = "/proc/sysinfo";
 
   if (!print_matching_lines_from_file(info_file, st, kw)) {
@@ -842,7 +842,7 @@ void VM_Version::set_features_from(const char* march) {
   bool err = false;
   bool prt = false;
 
-  if ((march != NULL) && (march[0] != '\0')) {
+  if ((march != nullptr) && (march[0] != '\0')) {
     const int buf_len = 16;
     const int hdr_len =  5;
     char buf[buf_len];
@@ -909,10 +909,10 @@ void VM_Version::set_features_from(const char* march) {
 //                <  0: failure: required number of feature bit string words (buffer too small).
 //                == 0: failure: operation aborted.
 //
-static long (*getFeatures)(unsigned long*, int, int) = NULL;
+static long (*getFeatures)(unsigned long*, int, int) = nullptr;
 
 void VM_Version::set_getFeatures(address entryPoint) {
-  if (getFeatures == NULL) {
+  if (getFeatures == nullptr) {
     getFeatures = (long(*)(unsigned long*, int, int))entryPoint;
   }
 }

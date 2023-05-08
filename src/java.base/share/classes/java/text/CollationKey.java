@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,7 +68,7 @@ package java.text;
  * The following example shows how {@code CollationKey}s might be used
  * to sort a list of {@code String}s.
  * <blockquote>
- * <pre>{@code
+ * {@snippet lang=java :
  * // Create an array of CollationKeys for the Strings to be sorted.
  * Collator myCollator = Collator.getInstance();
  * CollationKey[] keys = new CollationKey[3];
@@ -89,7 +89,7 @@ package java.text;
  * System.out.println(keys[0].getSourceString());
  * System.out.println(keys[1].getSourceString());
  * System.out.println(keys[2].getSourceString());
- * }</pre>
+ * }
  * </blockquote>
  *
  * @see          Collator

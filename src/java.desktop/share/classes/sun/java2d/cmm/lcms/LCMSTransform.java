@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -127,19 +127,15 @@ final class LCMSTransform implements ColorTransform {
     }
 
     /**
-     * Returns {@code true} if lcms may supports this format directly.
+     * Returns {@code true} if lcms may support this format directly.
      */
     private static boolean isLCMSSupport(BufferedImage src, BufferedImage dst) {
-        if (!dst.getColorModel().hasAlpha()) {
-            return true;
-        }
-        // lcms as of now does not support pre-alpha
-        if (src.isAlphaPremultiplied() || dst.isAlphaPremultiplied()) {
-            return false;
-        }
+        boolean dstAlpha = dst.getColorModel().hasAlpha();
+        boolean srcAlpha = src.getColorModel().hasAlpha();
+        boolean srcPre = srcAlpha && src.getColorModel().isAlphaPremultiplied();
+        // lcms does not convert pre-alpha for transparent src if dst is opaque
         // lcms does not set correct alpha for transparent dst if src is opaque
-        // is it feature or bug?
-        return dst.getColorModel().hasAlpha() == src.getColorModel().hasAlpha();
+        return !dstAlpha && !srcPre || dstAlpha == srcAlpha;
     }
 
     public void colorConvert(BufferedImage src, BufferedImage dst) {
@@ -424,9 +420,9 @@ final class LCMSTransform implements ColorTransform {
     public void colorConvert(Raster src, WritableRaster dst) {
 
         LCMSImageLayout srcIL, dstIL;
-        dstIL = LCMSImageLayout.createImageLayout(dst);
+        dstIL = LCMSImageLayout.createImageLayout(dst, null);
         if (dstIL != null) {
-            srcIL = LCMSImageLayout.createImageLayout(src);
+            srcIL = LCMSImageLayout.createImageLayout(src, null);
             if (srcIL != null) {
                 doTransform(srcIL, dstIL);
                 return;

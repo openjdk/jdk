@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@ struct SpecialFlag {
 };
 
 struct LegacyGCLogging {
-    const char* file;        // NULL -> stdout
+    const char* file;        // null -> stdout
     int lastFlag;            // 0 not set; 1 -> -verbose:gc; 2 -> -Xloggc
 };
 
@@ -113,7 +113,7 @@ class SystemProperty : public PathString {
 
   bool readable() const {
     return !_internal || (strcmp(_key, "jdk.boot.class.path.append") == 0 &&
-                          value() != NULL);
+                          value() != nullptr);
   }
 
   // A system property should only have its value set
@@ -136,98 +136,6 @@ class SystemProperty : public PathString {
 
   // Constructor
   SystemProperty(const char* key, const char* value, bool writeable, bool internal = false);
-};
-
-
-// For use by -agentlib, -agentpath and -Xrun
-class AgentLibrary : public CHeapObj<mtArguments> {
-  friend class AgentLibraryList;
-public:
-  // Is this library valid or not. Don't rely on os_lib == NULL as statically
-  // linked lib could have handle of RTLD_DEFAULT which == 0 on some platforms
-  enum AgentState {
-    agent_invalid = 0,
-    agent_valid   = 1
-  };
-
- private:
-  char*           _name;
-  char*           _options;
-  void*           _os_lib;
-  bool            _is_absolute_path;
-  bool            _is_static_lib;
-  bool            _is_instrument_lib;
-  AgentState      _state;
-  AgentLibrary*   _next;
-
- public:
-  // Accessors
-  const char* name() const                  { return _name; }
-  char* options() const                     { return _options; }
-  bool is_absolute_path() const             { return _is_absolute_path; }
-  void* os_lib() const                      { return _os_lib; }
-  void set_os_lib(void* os_lib)             { _os_lib = os_lib; }
-  AgentLibrary* next() const                { return _next; }
-  bool is_static_lib() const                { return _is_static_lib; }
-  bool is_instrument_lib() const            { return _is_instrument_lib; }
-  void set_static_lib(bool is_static_lib)   { _is_static_lib = is_static_lib; }
-  bool valid()                              { return (_state == agent_valid); }
-  void set_valid()                          { _state = agent_valid; }
-
-  // Constructor
-  AgentLibrary(const char* name, const char* options, bool is_absolute_path,
-               void* os_lib, bool instrument_lib=false);
-};
-
-// maintain an order of entry list of AgentLibrary
-class AgentLibraryList {
- private:
-  AgentLibrary*   _first;
-  AgentLibrary*   _last;
- public:
-  bool is_empty() const                     { return _first == NULL; }
-  AgentLibrary* first() const               { return _first; }
-
-  // add to the end of the list
-  void add(AgentLibrary* lib) {
-    if (is_empty()) {
-      _first = _last = lib;
-    } else {
-      _last->_next = lib;
-      _last = lib;
-    }
-    lib->_next = NULL;
-  }
-
-  // search for and remove a library known to be in the list
-  void remove(AgentLibrary* lib) {
-    AgentLibrary* curr;
-    AgentLibrary* prev = NULL;
-    for (curr = first(); curr != NULL; prev = curr, curr = curr->next()) {
-      if (curr == lib) {
-        break;
-      }
-    }
-    assert(curr != NULL, "always should be found");
-
-    if (curr != NULL) {
-      // it was found, by-pass this library
-      if (prev == NULL) {
-        _first = curr->_next;
-      } else {
-        prev->_next = curr->_next;
-      }
-      if (curr == _last) {
-        _last = prev;
-      }
-      curr->_next = NULL;
-    }
-  }
-
-  AgentLibraryList() {
-    _first = NULL;
-    _last = NULL;
-  }
 };
 
 // Helper class for controlling the lifetime of JavaVMInitArgs objects.
@@ -331,24 +239,9 @@ class Arguments : AllStatic {
   // Value of the conservative maximum heap alignment needed
   static size_t  _conservative_max_heap_alignment;
 
-  // -Xrun arguments
-  static AgentLibraryList _libraryList;
-  static void add_init_library(const char* name, char* options);
-
-  // -agentlib and -agentpath arguments
-  static AgentLibraryList _agentList;
-  static void add_init_agent(const char* name, char* options, bool absolute_path);
-  static void add_instrument_agent(const char* name, char* options, bool absolute_path);
-
-  // Late-binding agents not started via arguments
-  static void add_loaded_agent(AgentLibrary *agentLib);
-
   // Operation modi
   static Mode _mode;
   static void set_mode_flags(Mode mode);
-  static bool _java_compiler;
-  static void set_java_compiler(bool arg) { _java_compiler = arg; }
-  static bool java_compiler()   { return _java_compiler; }
 
   // -Xdebug flag
   static bool _xdebug_mode;
@@ -406,7 +299,6 @@ class Arguments : AllStatic {
   static bool parse_argument(const char* arg, JVMFlagOrigin origin);
   static bool process_argument(const char* arg, jboolean ignore_unrecognized, JVMFlagOrigin origin);
   static void process_java_launcher_argument(const char*, void*);
-  static void process_java_compiler_argument(const char* arg);
   static jint parse_options_environment_variable(const char* name, ScopedVMInitArgs* vm_args);
   static jint parse_java_tool_options_environment_variable(ScopedVMInitArgs* vm_args);
   static jint parse_java_options_environment_variable(ScopedVMInitArgs* vm_args);
@@ -436,7 +328,7 @@ class Arguments : AllStatic {
   static bool is_bad_option(const JavaVMOption* option, jboolean ignore, const char* option_type);
 
   static bool is_bad_option(const JavaVMOption* option, jboolean ignore) {
-    return is_bad_option(option, ignore, NULL);
+    return is_bad_option(option, ignore, nullptr);
   }
 
   static void describe_range_error(ArgsRange errcode);
@@ -467,19 +359,16 @@ class Arguments : AllStatic {
   static JVMFlag* find_jvm_flag(const char* name, size_t name_length);
 
   // Return the "real" name for option arg if arg is an alias, and print a warning if arg is deprecated.
-  // Return NULL if the arg has expired.
+  // Return nullptr if the arg has expired.
   static const char* handle_aliases_and_deprecation(const char* arg);
 
+  static char*  _default_shared_archive_path;
   static char*  SharedArchivePath;
   static char*  SharedDynamicArchivePath;
   static size_t _default_SharedBaseAddress; // The default value specified in globals.hpp
   static void extract_shared_archive_paths(const char* archive_path,
                                          char** base_archive_path,
                                          char** top_archive_path) NOT_CDS_RETURN;
-
-  // Helpers for parse_malloc_limits
-  static bool parse_malloc_limit_size(const char* s, size_t* out);
-  static void parse_single_category_limit(char* expression, size_t limits[mt_number_of_types]);
 
  public:
   static int num_archives(const char* archive_path) NOT_CDS_RETURN_(0);
@@ -520,7 +409,7 @@ class Arguments : AllStatic {
   // convenient methods to get and set jvm_flags_file
   static const char* get_jvm_flags_file()  { return _jvm_flags_file; }
   static void set_jvm_flags_file(const char *value) {
-    if (_jvm_flags_file != NULL) {
+    if (_jvm_flags_file != nullptr) {
       os::free(_jvm_flags_file);
     }
     _jvm_flags_file = os::strdup_check_oom(value);
@@ -544,17 +433,6 @@ class Arguments : AllStatic {
   static bool created_by_java_launcher();
   // -Dsun.java.launcher.is_altjvm
   static bool sun_java_launcher_is_altjvm();
-
-  // -Xrun
-  static AgentLibrary* libraries()          { return _libraryList.first(); }
-  static bool init_libraries_at_startup()   { return !_libraryList.is_empty(); }
-  static void convert_library_to_agent(AgentLibrary* lib)
-                                            { _libraryList.remove(lib);
-                                              _agentList.add(lib); }
-
-  // -agentlib -agentpath
-  static AgentLibrary* agents()             { return _agentList.first(); }
-  static bool init_agents_at_startup()      { return !_agentList.is_empty(); }
 
   // abort, exit, vfprintf hooks
   static abort_hook_t    abort_hook()       { return _abort_hook; }
@@ -603,7 +481,7 @@ class Arguments : AllStatic {
   static void add_patch_mod_prefix(const char *module_name, const char *path, bool* patch_mod_javabase);
   static void set_boot_class_path(const char *value, bool has_jimage) {
     // During start up, set by os::set_boot_path()
-    assert(get_boot_class_path() == NULL, "Boot class path previously set");
+    assert(get_boot_class_path() == nullptr, "Boot class path previously set");
     _boot_class_path->set_value(value);
     _has_jimage = has_jimage;
   }
@@ -621,7 +499,7 @@ class Arguments : AllStatic {
   static char* get_appclasspath() { return _java_class_path->value(); }
   static void  fix_appclasspath();
 
-  static char* get_default_shared_archive_path() NOT_CDS_RETURN_(NULL);
+  static char* get_default_shared_archive_path() NOT_CDS_RETURN_(nullptr);
   static void  init_shared_archive_paths() NOT_CDS_RETURN;
 
   // Operation modi
@@ -651,16 +529,6 @@ class Arguments : AllStatic {
     assert(Arguments::is_dumping_archive(), "dump time only");
   }
 
-  // Parse diagnostic NMT switch "MallocLimit" and return the found limits.
-  // 1) If option is not given, it will set all limits to 0 (aka "no limit").
-  // 2) If option is given in the global form (-XX:MallocLimit=<size>), it
-  //    will return the size in *total_limit.
-  // 3) If option is given in its per-NMT-category form (-XX:MallocLimit=<category>:<size>[,<category>:<size>]),
-  //    it will return all found limits in the limits array.
-  // 4) If option is malformed, it will exit the VM.
-  // For (2) and (3), limits not affected by the switch will be set to 0.
-  static void parse_malloc_limits(size_t* total_limit, size_t limits[mt_number_of_types]);
-
   DEBUG_ONLY(static bool verify_special_jvm_flags(bool check_globals);)
 };
 
@@ -676,15 +544,15 @@ do {                                                     \
   }                                                      \
 } while(0)
 
-// similar to UNSUPPORTED_OPTION but sets flag to NULL
-#define UNSUPPORTED_OPTION_NULL(opt)                     \
-do {                                                     \
-  if (opt) {                                             \
-    if (FLAG_IS_CMDLINE(opt)) {                          \
+// similar to UNSUPPORTED_OPTION but sets flag to nullptr
+#define UNSUPPORTED_OPTION_NULL(opt)                         \
+do {                                                         \
+  if (opt) {                                                 \
+    if (FLAG_IS_CMDLINE(opt)) {                              \
       warning("-XX flag " #opt " not supported in this VM"); \
-    }                                                    \
-    FLAG_SET_DEFAULT(opt, NULL);                         \
-  }                                                      \
+    }                                                        \
+    FLAG_SET_DEFAULT(opt, nullptr);                          \
+  }                                                          \
 } while(0)
 
 // Initialize options not supported in this release, with a warning

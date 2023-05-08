@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -46,7 +46,7 @@ dynamicOdm::dynamicOdm() {
   if (!_odm_initialize || !_odm_set_path || !_odm_mount_class || !_odm_get_obj || !_odm_terminate) {
     trcVerbose("Couldn't find all required odm symbols from %s", libodmname);
     dlclose(_libhandle);
-    _libhandle = NULL;
+    _libhandle = nullptr;
     return;
   }
 }
@@ -56,7 +56,7 @@ dynamicOdm::~dynamicOdm() {
 }
 
 
-void odmWrapper::clean_data() { if (_data) { free(_data); _data = NULL; } }
+void odmWrapper::clean_data() { if (_data) { free(_data); _data = nullptr; } }
 
 
 int odmWrapper::class_offset(const char *field, bool is_aix_5)

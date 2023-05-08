@@ -48,6 +48,7 @@ class OopClosure;
 class CodeBlob;
 class ImmutableOopMap;
 
+enum class derived_base : intptr_t {};
 enum class derived_pointer : intptr_t {};
 
 class OopMapValue: public StackObj {
@@ -449,12 +450,12 @@ private:
 
 class SkipNullValue {
 public:
-  static inline bool should_skip(oop val);
+  static inline bool should_skip(void* val);
 };
 
 class IncludeAllValues {
 public:
-  static bool should_skip(oop value) { return false; }
+  static bool should_skip(void* value) { return false; }
 };
 
 template <typename OopFnT, typename DerivedOopFnT, typename ValueFilterT>
@@ -481,12 +482,12 @@ class DerivedPointerTable : public AllStatic {
   friend class VMStructs;
  private:
   class Entry;
-  static bool _active;                                  // do not record pointers for verify pass etc.
+  static bool _active;                                           // do not record pointers for verify pass etc.
 
  public:
-  static void clear();                                  // Called before scavenge/GC
-  static void add(derived_pointer* derived, oop *base); // Called during scavenge/GC
-  static void update_pointers();                        // Called after  scavenge/GC
+  static void clear();                                           // Called before scavenge/GC
+  static void add(derived_pointer* derived, derived_base* base); // Called during scavenge/GC
+  static void update_pointers();                                 // Called after  scavenge/GC
   static bool is_empty();
   static bool is_active()                    { return _active; }
   static void set_active(bool value)         { _active = value; }

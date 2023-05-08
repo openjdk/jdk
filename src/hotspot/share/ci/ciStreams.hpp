@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,16 +84,16 @@ public:
   }
 
   ciBytecodeStream() {
-    reset_to_method(NULL);
+    reset_to_method(nullptr);
   }
 
   ciMethod* method() const { return _method; }
 
   void reset_to_method(ciMethod* m) {
     _method = m;
-    if (m == NULL) {
-      _holder = NULL;
-      reset(NULL, 0);
+    if (m == nullptr) {
+      _holder = nullptr;
+      reset(nullptr, 0);
     } else {
       _holder = m->holder();
       reset(m->code(), m->code_size());
@@ -304,7 +304,7 @@ private:
   // holder is a method's holder
   ciKlass*     _holder;
 public:
-  ciSignatureStream(ciSignature* signature, ciKlass* holder = NULL) {
+  ciSignatureStream(ciSignature* signature, ciKlass* holder = nullptr) {
     _sig = signature;
     _pos = 0;
     _holder = holder;
@@ -331,9 +331,9 @@ public:
   // next klass in the signature
   ciKlass* next_klass() {
     ciKlass* sig_k;
-    if (_holder != NULL) {
+    if (_holder != nullptr) {
       sig_k = _holder;
-      _holder = NULL;
+      _holder = nullptr;
     } else {
       while (!type()->is_klass()) {
         next();
@@ -373,13 +373,13 @@ public:
 
     _pos = 0;
     _end = _method->_handler_count;
-    _exception_klass = NULL;
+    _exception_klass = nullptr;
     _bci    = -1;
     _is_exact = false;
   }
 
   ciExceptionHandlerStream(ciMethod* method, int bci,
-                           ciInstanceKlass* exception_klass = NULL,
+                           ciInstanceKlass* exception_klass = nullptr,
                            bool is_exact = false) {
     _method = method;
 
@@ -388,9 +388,9 @@ public:
 
     _pos = -1;
     _end = _method->_handler_count + 1; // include the rethrow handler
-    _exception_klass = (exception_klass != NULL && exception_klass->is_loaded()
+    _exception_klass = (exception_klass != nullptr && exception_klass->is_loaded()
                           ? exception_klass
-                          : NULL);
+                          : nullptr);
     _bci = bci;
     assert(_bci >= 0, "bci out of range");
     _is_exact = is_exact;
@@ -424,7 +424,7 @@ public:
             // Found final active catch block.
             _end = _pos+1;
             return;
-          } else if (_exception_klass == NULL || !handler->catch_klass()->is_loaded()) {
+          } else if (_exception_klass == nullptr || !handler->catch_klass()->is_loaded()) {
             // We cannot do any type analysis here.  Must conservatively assume
             // catch block is reachable.
             return;
@@ -457,7 +457,7 @@ public:
 
 
 // Implementation for declarations in bytecode.hpp
-Bytecode::Bytecode(const ciBytecodeStream* stream, address bcp): _bcp(bcp != NULL ? bcp : stream->cur_bcp()), _code(Bytecodes::code_at(NULL, addr_at(0))) {}
+Bytecode::Bytecode(const ciBytecodeStream* stream, address bcp): _bcp(bcp != nullptr ? bcp : stream->cur_bcp()), _code(Bytecodes::code_at(nullptr, addr_at(0))) {}
 Bytecode_lookupswitch::Bytecode_lookupswitch(const ciBytecodeStream* stream): Bytecode(stream) { verify(); }
 Bytecode_tableswitch::Bytecode_tableswitch(const ciBytecodeStream* stream): Bytecode(stream) { verify(); }
 

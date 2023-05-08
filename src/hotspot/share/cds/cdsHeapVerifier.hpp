@@ -67,7 +67,7 @@ class CDSHeapVerifier : public KlassClosure {
         return &excl[1];
       }
     }
-    return NULL;
+    return nullptr;
   }
   static int trace_to_root(outputStream* st, oop orig_obj, oop orig_field, HeapShared::CachedOopInfo* p);
 

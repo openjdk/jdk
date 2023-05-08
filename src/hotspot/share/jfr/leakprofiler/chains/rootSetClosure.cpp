@@ -81,7 +81,7 @@ public:
 
   void do_oop(narrowOop* ref) {
     assert(ref != NULL, "invariant");
-    assert(is_aligned(ref, HeapWordSize), "invariant");
+    assert(is_aligned(ref, sizeof(narrowOop)), "invariant");
     if (!CompressedOops::is_null(*ref)) {
       _delegate->do_root(UnifiedOopRef::encode_as_raw(ref));
     }

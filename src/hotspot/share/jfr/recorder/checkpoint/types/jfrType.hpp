@@ -123,4 +123,9 @@ class CompilerTypeConstant : public JfrSerializer {
   void serialize(JfrCheckpointWriter& writer);
 };
 
+class NMTTypeConstant : public JfrSerializer {
+ public:
+  void serialize(JfrCheckpointWriter& writer);
+};
+
 #endif // SHARE_JFR_RECORDER_CHECKPOINT_TYPES_JFRTYPE_HPP

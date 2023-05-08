@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,23 +73,17 @@ bool VectorSupport::is_vector_mask(Klass* klass) {
   return klass->is_subclass_of(vmClasses::vector_VectorMask_klass());
 }
 
-bool VectorSupport::is_vector_shuffle(Klass* klass) {
-  return klass->is_subclass_of(vmClasses::vector_VectorShuffle_klass());
-}
-
 BasicType VectorSupport::klass2bt(InstanceKlass* ik) {
   assert(ik->is_subclass_of(vmClasses::vector_VectorPayload_klass()), "%s not a VectorPayload", ik->name()->as_C_string());
   fieldDescriptor fd; // find_field initializes fd if found
   // static final Class<?> ETYPE;
   Klass* holder = ik->find_field(vmSymbols::ETYPE_name(), vmSymbols::class_signature(), &fd);
 
-  assert(holder != NULL, "sanity");
+  assert(holder != nullptr, "sanity");
   assert(fd.is_static(), "");
   assert(fd.offset() > 0, "");
 
-  if (is_vector_shuffle(ik)) {
-    return T_BYTE;
-  } else if (is_vector_mask(ik)) {
+  if (is_vector_mask(ik)) {
     return T_BOOLEAN;
   } else { // vector and mask
     oop value = ik->java_mirror()->obj_field(fd.offset());
@@ -103,7 +97,7 @@ jint VectorSupport::klass2length(InstanceKlass* ik) {
   // static final int VLENGTH;
   Klass* holder = ik->find_field(vmSymbols::VLENGTH_name(), vmSymbols::int_signature(), &fd);
 
-  assert(holder != NULL, "sanity");
+  assert(holder != nullptr, "sanity");
   assert(fd.is_static(), "");
   assert(fd.offset() > 0, "");
 

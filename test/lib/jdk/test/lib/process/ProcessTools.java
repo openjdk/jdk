@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,11 +27,13 @@ import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.Platform;
 import jdk.test.lib.Utils;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.lang.Thread.State;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.charset.Charset;
@@ -70,14 +72,17 @@ public final class ProcessTools {
             ps.println("[" + prefix + "] " + line);
         }
     }
-
     private ProcessTools() {
     }
 
     /**
      * <p>Starts a process from its builder.</p>
      * <span>The default redirects of STDOUT and STDERR are started</span>
-     *
+     * <p>
+     * Same as
+     * {@linkplain #startProcess(String, ProcessBuilder, Consumer, Predicate, long, TimeUnit) startProcess}
+     * {@code (name, processBuilder, null, null, -1, TimeUnit.NANOSECONDS)}
+     * </p>
      * @param name           The process name
      * @param processBuilder The process builder
      * @return Returns the initialized process
@@ -92,11 +97,15 @@ public final class ProcessTools {
     /**
      * <p>Starts a process from its builder.</p>
      * <span>The default redirects of STDOUT and STDERR are started</span>
-     * <p>It is possible to monitor the in-streams via the provided {@code consumer}
+     * <p>
+     * Same as
+     * {@linkplain #startProcess(String, ProcessBuilder, Consumer, Predicate, long, TimeUnit) startProcess}
+     * {@code (name, processBuilder, consumer, null, -1, TimeUnit.NANOSECONDS)}
+     * </p>
      *
      * @param name           The process name
-     * @param consumer       {@linkplain Consumer} instance to process the in-streams
      * @param processBuilder The process builder
+     * @param consumer       {@linkplain Consumer} instance to process the in-streams
      * @return Returns the initialized process
      * @throws IOException
      */
@@ -117,8 +126,9 @@ public final class ProcessTools {
      * <p>Starts a process from its builder.</p>
      * <span>The default redirects of STDOUT and STDERR are started</span>
      * <p>
-     * It is possible to wait for the process to get to a warmed-up state
-     * via {@linkplain Predicate} condition on the STDOUT/STDERR
+     * Same as
+     * {@linkplain #startProcess(String, ProcessBuilder, Consumer, Predicate, long, TimeUnit) startProcess}
+     * {@code (name, processBuilder, null, linePredicate, timeout, unit)}
      * </p>
      *
      * @param name           The process name
@@ -142,6 +152,58 @@ public final class ProcessTools {
             throws IOException, InterruptedException, TimeoutException {
         return startProcess(name, processBuilder, null, linePredicate, timeout, unit);
     }
+
+
+    /*
+        BufferOutputStream and BufferInputStream allow to re-use p.getInputStream() amd p.getOutputStream() of
+        processes started with ProcessTools.startProcess(...).
+        Implementation cashes ALL process output and allow to read it through InputStream.
+     */
+    private static class BufferOutputStream extends ByteArrayOutputStream {
+        private int current = 0;
+        final private Process p;
+
+        public BufferOutputStream(Process p) {
+            this.p = p;
+        }
+
+        synchronized int readNext() {
+            if (current > count) {
+                throw new RuntimeException("Shouldn't ever happen.  start: "
+                        + current + " count: " + count + " buffer: " + this);
+            }
+            while (current == count) {
+                if (!p.isAlive()) {
+                    return -1;
+                }
+                try {
+                    wait(1);
+                } catch (InterruptedException ie) {
+                    return -1;
+                }
+            }
+            return this.buf[current++];
+        }
+    }
+
+    private static class BufferInputStream extends InputStream {
+
+        private final BufferOutputStream buffer;
+
+        public BufferInputStream(Process p) {
+            buffer = new BufferOutputStream(p);
+        }
+
+        OutputStream getOutputStream() {
+            return buffer;
+        }
+
+        @Override
+        public int read() throws IOException {
+            return buffer.readNext();
+        }
+    }
+
 
     /**
      * <p>Starts a process from its builder.</p>
@@ -180,6 +242,12 @@ public final class ProcessTools {
 
         stdout.addPump(new LineForwarder(name, System.out));
         stderr.addPump(new LineForwarder(name, System.err));
+        BufferInputStream stdOut = new BufferInputStream(p);
+        BufferInputStream stdErr = new BufferInputStream(p);
+
+        stdout.addOutputStream(stdOut.getOutputStream());
+        stderr.addOutputStream(stdErr.getOutputStream());
+
         if (lineConsumer != null) {
             StreamPumper.LinePump pump = new StreamPumper.LinePump() {
                 @Override
@@ -216,15 +284,25 @@ public final class ProcessTools {
 
         try {
             if (timeout > -1) {
-                if (timeout == 0) {
-                    latch.await();
-                } else {
-                    if (!latch.await(Utils.adjustTimeout(timeout), unit)) {
+
+                long timeoutMs = timeout == 0 ? -1: unit.toMillis(Utils.adjustTimeout(timeout));
+                // Every second check if line is printed and if process is still alive
+                Utils.waitForCondition(() -> latch.getCount() == 0 || !p.isAlive(),
+                       timeoutMs , 1000);
+
+                if (latch.getCount() > 0) {
+                    if (!p.isAlive()) {
+                        // Give some extra time for the StreamPumper to run after the process completed
+                        Thread.sleep(1000);
+                        if (latch.getCount() > 0) {
+                            throw new RuntimeException("Started process " + name + " terminated before producing the expected output.");
+                        }
+                    } else {
                         throw new TimeoutException();
                     }
                 }
             }
-        } catch (TimeoutException | InterruptedException e) {
+        } catch (TimeoutException | RuntimeException | InterruptedException e) {
             System.err.println("Failed to start a process (thread dump follows)");
             for (Map.Entry<Thread, StackTraceElement[]> s : Thread.getAllStackTraces().entrySet()) {
                 printStack(s.getKey(), s.getValue());
@@ -239,7 +317,7 @@ public final class ProcessTools {
             throw e;
         }
 
-        return new ProcessImpl(p, stdoutTask, stderrTask);
+        return new ProcessImpl(p, stdoutTask, stderrTask, stdOut, stdErr);
     }
 
     /**
@@ -690,14 +768,19 @@ public final class ProcessTools {
 
     private static class ProcessImpl extends Process {
 
+        private final InputStream stdOut;
+        private final InputStream stdErr;
         private final Process p;
         private final Future<Void> stdoutTask;
         private final Future<Void> stderrTask;
 
-        public ProcessImpl(Process p, Future<Void> stdoutTask, Future<Void> stderrTask) {
+        public ProcessImpl(Process p, Future<Void> stdoutTask, Future<Void> stderrTask,
+                           InputStream stdOut, InputStream etdErr) {
             this.p = p;
             this.stdoutTask = stdoutTask;
             this.stderrTask = stderrTask;
+            this.stdOut = stdOut;
+            this.stdErr = etdErr;
         }
 
         @Override
@@ -707,12 +790,12 @@ public final class ProcessTools {
 
         @Override
         public InputStream getInputStream() {
-            return p.getInputStream();
+            return stdOut;
         }
 
         @Override
         public InputStream getErrorStream() {
-            return p.getErrorStream();
+            return stdErr;
         }
 
         @Override
@@ -823,9 +906,6 @@ public final class ProcessTools {
         }
 
         public void uncaughtException(Thread t, Throwable e) {
-            if (e instanceof ThreadDeath) {
-                return;
-            }
             e.printStackTrace(System.err);
             uncaughtThrowable = e;
         }
