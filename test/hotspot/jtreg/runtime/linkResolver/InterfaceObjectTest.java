@@ -24,13 +24,13 @@
 /*
  * @test
  * @bug 8026394 8251414
- * @summary test interface resolution when clone and finalize are declared abstract within
+ * @summary test interface resolution when clone and toString are declared abstract within
  *          an interface and when they are not
  * @compile InterfaceObj.jasm
  * @run main InterfaceObjectTest
  */
 interface IClone extends Cloneable {
-    void finalize() throws Throwable;
+    String toString();
     Object clone();
 }
 
@@ -42,19 +42,19 @@ public class InterfaceObjectTest implements ICloneExtend {
         System.out.println("In InterfaceObjectTest's clone() method\n");
         return null;
     }
-    @SuppressWarnings("removal")
-    public void finalize() throws Throwable {
+    public String toString() {
         try {
-            System.out.println("In InterfaceObjectTest's finalize() method\n");
+            System.out.println("In InterfaceObjectTest's toString() method\n");
         } catch (Throwable t) {
             throw new AssertionError(t);
         }
+        return "InterfaceObjectTest";
     }
 
     public static void tryIt(ICloneExtend o1) {
         try {
             Object o2 = o1.clone();
-            o1.finalize();
+            o1.toString();
         } catch (Throwable t) {
             throw new AssertionError(t);
         }
@@ -69,15 +69,6 @@ public class InterfaceObjectTest implements ICloneExtend {
 
         // Test with reflection without abstract public clone() and finalize() methods.
         Class cls = Class.forName("InterfaceObj");
-        try {
-            java.lang.reflect.Method m = cls.getMethod("testFinalize");
-            m.invoke(cls);
-            throw new RuntimeException("Failed to throw NoSuchMethodError for finalize()");
-        } catch (java.lang.reflect.InvocationTargetException e) {
-            if (!e.getCause().toString().contains("NoSuchMethodError")) {
-                throw new RuntimeException("wrong ITE: " + e.getCause().toString());
-            }
-        }
 
         try {
             java.lang.reflect.Method m = cls.getMethod("testClone");
