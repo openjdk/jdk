@@ -435,7 +435,7 @@ void Parse::do_tableswitch() {
 
   // generate decision tree, using trichotomy when possible
   int rnum = len+2;
-  bool makes_backward_branch = false;
+  bool makes_backward_branch = (default_dest <= bci());
   SwitchRange* ranges = NEW_RESOURCE_ARRAY(SwitchRange, rnum);
   int rp = -1;
   if (lo_index != min_jint) {
@@ -526,7 +526,7 @@ void Parse::do_lookupswitch() {
   }
 
   int rnum = len*2+1;
-  bool makes_backward_branch = false;
+  bool makes_backward_branch = (default_dest <= bci());
   SwitchRange* ranges = NEW_RESOURCE_ARRAY(SwitchRange, rnum);
   int rp = -1;
   for (int j = 0; j < len; j++) {
@@ -1192,6 +1192,25 @@ static bool has_injected_profile(BoolTest::mask btest, Node* test, int& taken, i
   }
   return false;
 }
+
+// Give up if too few (or too many, in which case the sum will overflow) counts to be meaningful.
+// We also check that individual counters are positive first, otherwise the sum can become positive.
+// (check for saturation, integer overflow, and immature counts)
+static bool counters_are_meaningful(int counter1, int counter2, int min) {
+  // check for saturation, including "uint" values too big to fit in "int"
+  if (counter1 < 0 || counter2 < 0) {
+    return false;
+  }
+  // check for integer overflow of the sum
+  int64_t sum = (int64_t)counter1 + (int64_t)counter2;
+  STATIC_ASSERT(sizeof(counter1) < sizeof(sum));
+  if (sum > INT_MAX) {
+    return false;
+  }
+  // check if mature
+  return (counter1 + counter2) >= min;
+}
+
 //--------------------------dynamic_branch_prediction--------------------------
 // Try to gather dynamic branch prediction behavior.  Return a probability
 // of the branch being taken and set the "cnt" field.  Returns a -1.0
@@ -1218,6 +1237,8 @@ float Parse::dynamic_branch_prediction(float &cnt, BoolTest::mask btest, Node* t
     if (!data->is_JumpData())  return PROB_UNKNOWN;
 
     // get taken and not taken values
+    // NOTE: saturated UINT_MAX values become negative,
+    // as do counts above INT_MAX.
     taken = data->as_JumpData()->taken();
     not_taken = 0;
     if (data->is_BranchData()) {
@@ -1225,13 +1246,16 @@ float Parse::dynamic_branch_prediction(float &cnt, BoolTest::mask btest, Node* t
     }
 
     // scale the counts to be commensurate with invocation counts:
+    // NOTE: overflow for positive values is clamped at INT_MAX
     taken = method()->scale_count(taken);
     not_taken = method()->scale_count(not_taken);
   }
+  // At this point, saturation or overflow is indicated by INT_MAX
+  // or a negative value.
 
   // Give up if too few (or too many, in which case the sum will overflow) counts to be meaningful.
   // We also check that individual counters are positive first, otherwise the sum can become positive.
-  if (taken < 0 || not_taken < 0 || taken + not_taken < 40) {
+  if (!counters_are_meaningful(taken, not_taken, 40)) {
     if (C->log() != nullptr) {
       C->log()->elem("branch target_bci='%d' taken='%d' not_taken='%d'", iter().get_dest(), taken, not_taken);
     }
@@ -1260,7 +1284,7 @@ float Parse::dynamic_branch_prediction(float &cnt, BoolTest::mask btest, Node* t
   }
 
   assert((cnt > 0.0f) && (prob > 0.0f),
-         "Bad frequency assignment in if");
+         "Bad frequency assignment in if cnt=%g prob=%g taken=%d not_taken=%d", cnt, prob, taken, not_taken);
 
   if (C->log() != nullptr) {
     const char* prob_str = nullptr;

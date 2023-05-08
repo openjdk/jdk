@@ -46,7 +46,7 @@ public class JstatGCUtilParser {
         S0(GcStatisticsType.PERCENTAGE_OR_DASH),
         S1(GcStatisticsType.PERCENTAGE_OR_DASH),
         E(GcStatisticsType.PERCENTAGE_OR_DASH),
-        O(GcStatisticsType.PERCENTAGE),
+        O(GcStatisticsType.PERCENTAGE_OR_DASH),
         M(GcStatisticsType.PERCENTAGE_OR_DASH),
         CCS(GcStatisticsType.PERCENTAGE_OR_DASH),
         YGC(GcStatisticsType.INTEGER_OR_DASH),

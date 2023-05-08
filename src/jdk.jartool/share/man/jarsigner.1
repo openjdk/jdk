@@ -1,4 +1,4 @@
-.\" Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+.\" Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
 .\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 .\"
 .\" This code is free software; you can redistribute it and/or modify it
@@ -197,8 +197,8 @@ The keystore is by default stored in a file named \f[V].keystore\f[R] in
 the user\[aq]s home directory, as determined by the \f[V]user.home\f[R]
 system property.
 .PP
-\f[B]Linux and OS X:\f[R] \f[V]user.home\f[R] defaults to the user\[aq]s
-home directory.
+\f[B]Linux and macOS:\f[R] \f[V]user.home\f[R] defaults to the
+user\[aq]s home directory.
 .PP
 The input stream from the \f[V]-keystore\f[R] option is passed to the
 \f[V]KeyStore.load\f[R] method.
@@ -1159,7 +1159,7 @@ KeyUsage extension that doesn\[aq]t allow it to sign a file, the
 \f[V]-strict\f[R] option is specified.
 .PP
 \f[B]Note:\f[R] Exit codes are reused because only the values from 0 to
-255 are legal on Linux and OS X.
+255 are legal on Linux and macOS.
 .PP
 The following sections describes the names, codes, and descriptions of
 the errors and warnings that the \f[V]jarsigner\f[R] command can issue.

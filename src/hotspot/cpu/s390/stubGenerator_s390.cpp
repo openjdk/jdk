@@ -372,9 +372,9 @@ class StubGenerator: public StubCodeGenerator {
 #ifdef ASSERT
       char  assertMsg[] = "check BasicType definition in globalDefinitions.hpp";
       __ z_chi(r_arg_result_type, T_BOOLEAN);
-      __ asm_assert_low(assertMsg, 0x0234);
+      __ asm_assert(Assembler::bcondNotLow, assertMsg, 0x0234);
       __ z_chi(r_arg_result_type, T_NARROWOOP);
-      __ asm_assert_high(assertMsg, 0x0235);
+      __ asm_assert(Assembler::bcondNotHigh, assertMsg, 0x0235);
 #endif
       __ add2reg(r_arg_result_type, -T_BOOLEAN);          // Remove offset.
       __ z_larl(Z_R1, firstHandler);                      // location of first handler
@@ -740,7 +740,7 @@ class StubGenerator: public StubCodeGenerator {
   void assert_positive_int(Register count) {
 #ifdef ASSERT
     __ z_srag(Z_R0, count, 31);  // Just leave the sign (must be zero) in Z_R0.
-    __ asm_assert_eq("missing zero extend", 0xAFFE);
+    __ asm_assert(Assembler::bcondZero, "missing zero extend", 0xAFFE);
 #endif
   }
 

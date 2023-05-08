@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2019 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -329,7 +329,7 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, RegisterSet reg
   // We have to restore return_pc right away.
   // Nobody else will. Furthermore, return_pc isn't necessarily the default (Z_R14).
   // Nobody else knows which register we saved.
-  __ z_lg(return_pc, _z_abi16(return_pc) + frame_size_in_bytes, Z_SP);
+  __ z_lg(return_pc, _z_common_abi(return_pc) + frame_size_in_bytes, Z_SP);
 
   // Register save area in new frame starts above z_abi_160 area.
   int offset = register_save_offset;
@@ -632,7 +632,7 @@ void SharedRuntime::restore_native_result(MacroAssembler *masm,
 // as framesizes are fixed.
 // VMRegImpl::stack0 refers to the first slot 0(sp).
 // VMRegImpl::stack0+1 refers to the memory word 4-byes higher. Registers
-// up to RegisterImpl::number_of_registers are the 64-bit integer registers.
+// up to Register::number_of_registers are the 64-bit integer registers.
 
 // Note: the INPUTS in sig_bt are in units of Java argument words, which are
 // either 32-bit or 64-bit depending on the build. The OUTPUTS are in 32-bit
@@ -668,8 +668,8 @@ int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
   const int z_num_iarg_registers = sizeof(z_iarg_reg) / sizeof(z_iarg_reg[0]);
   const int z_num_farg_registers = sizeof(z_farg_reg) / sizeof(z_farg_reg[0]);
 
-  assert(RegisterImpl::number_of_arg_registers == z_num_iarg_registers, "iarg reg count mismatch");
-  assert(FloatRegisterImpl::number_of_arg_registers == z_num_farg_registers, "farg reg count mismatch");
+  assert(Register::number_of_arg_registers == z_num_iarg_registers, "iarg reg count mismatch");
+  assert(FloatRegister::number_of_arg_registers == z_num_farg_registers, "farg reg count mismatch");
 
   int i;
   int stk = 0;
@@ -782,8 +782,8 @@ int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
   const int z_num_farg_registers = sizeof(z_farg_reg) / sizeof(z_farg_reg[0]);
 
   // Check calling conventions consistency.
-  assert(RegisterImpl::number_of_arg_registers == z_num_iarg_registers, "iarg reg count mismatch");
-  assert(FloatRegisterImpl::number_of_arg_registers == z_num_farg_registers, "farg reg count mismatch");
+  assert(Register::number_of_arg_registers == z_num_iarg_registers, "iarg reg count mismatch");
+  assert(FloatRegister::number_of_arg_registers == z_num_farg_registers, "farg reg count mismatch");
 
   // Avoid passing C arguments in the wrong stack slots.
 
@@ -1461,7 +1461,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
                     SharedRuntime::out_preserve_stack_slots(); // see c_calling_convention
 
   // Now the space for the inbound oop handle area.
-  int total_save_slots = RegisterImpl::number_of_arg_registers * VMRegImpl::slots_per_word;
+  int total_save_slots = Register::number_of_arg_registers * VMRegImpl::slots_per_word;
 
   int oop_handle_slot_offset = stack_slots;
   stack_slots += total_save_slots;                                        // 3)
@@ -1592,12 +1592,12 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   //--------------------------------------------------------------------
 
 #ifdef ASSERT
-  bool reg_destroyed[RegisterImpl::number_of_registers];
-  bool freg_destroyed[FloatRegisterImpl::number_of_registers];
-  for (int r = 0; r < RegisterImpl::number_of_registers; r++) {
+  bool reg_destroyed[Register::number_of_registers];
+  bool freg_destroyed[FloatRegister::number_of_registers];
+  for (int r = 0; r < Register::number_of_registers; r++) {
     reg_destroyed[r] = false;
   }
-  for (int f = 0; f < FloatRegisterImpl::number_of_registers; f++) {
+  for (int f = 0; f < FloatRegister::number_of_registers; f++) {
     freg_destroyed[f] = false;
   }
 #endif // ASSERT
@@ -2478,7 +2478,7 @@ static void push_skeleton_frames(MacroAssembler* masm, bool deopt,
 
   // Make sure that there is at least one entry in the array.
   DEBUG_ONLY(__ z_ltgr(number_of_frames_reg, number_of_frames_reg));
-  __ asm_assert_ne("array_size must be > 0", 0x205);
+  __ asm_assert(Assembler::bcondNotZero, "array_size must be > 0", 0x205);
 
   __ z_bru(loop_entry);
 
@@ -2788,7 +2788,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
   } else {
     __ z_cliy(unpack_kind_byte_offset, unroll_block_reg, Deoptimization::Unpack_uncommon_trap);
   }
-  __ asm_assert_eq("SharedRuntime::generate_deopt_blob: expected Unpack_uncommon_trap", 0);
+  __ asm_assert(Assembler::bcondEqual, "SharedRuntime::generate_deopt_blob: expected Unpack_uncommon_trap", 0);
 #endif
 
   __ zap_from_to(Z_SP, Z_SP, Z_R0_scratch, Z_R1, 500, -1);
@@ -2921,7 +2921,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
   if (!cause_return) {
     Label no_adjust;
      // If our stashed return pc was modified by the runtime we avoid touching it
-    const int offset_of_return_pc = _z_abi16(return_pc) + RegisterSaver::live_reg_frame_size(RegisterSaver::all_registers);
+    const int offset_of_return_pc = _z_common_abi(return_pc) + RegisterSaver::live_reg_frame_size(RegisterSaver::all_registers);
     __ z_cg(Z_R6, offset_of_return_pc, Z_SP);
     __ z_brne(no_adjust);
 

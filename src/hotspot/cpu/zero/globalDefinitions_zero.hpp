@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2009, 2021, Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -32,7 +32,7 @@
 
 #define SUPPORT_MONITOR_COUNT
 
-#ifndef FFI_GO_CLOSURES
+#ifdef __APPLE__
 #define FFI_GO_CLOSURES 0
 #endif
 
