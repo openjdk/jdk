@@ -243,7 +243,7 @@ julong os::Linux::available_memory() {
   }
 
   FILE *fp = os::fopen("/proc/meminfo", "r");
-  if (fp) {
+  if (fp != nullptr) {
     char buf[80];
     do {
       if (fscanf(fp, "MemAvailable: " JULONG_FORMAT " kB", &avail_mem) == 1) {
