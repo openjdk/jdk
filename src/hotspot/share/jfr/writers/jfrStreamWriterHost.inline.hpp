@@ -74,13 +74,17 @@ inline void StreamWriterHost<Adapter, AP>::write_bytes(void* dest, const void* b
 template <typename Adapter, typename AP>
 inline void StreamWriterHost<Adapter, AP>::write_bytes(const u1* buf, intptr_t len) {
   assert(len >= 0, "invariant");
-  const unsigned int nBytes = len > INT_MAX ? INT_MAX : (unsigned int)len;
-  const bool successful_write = os::write(_fd, buf, nBytes);
-  if (!successful_write && errno == ENOSPC) {
-    JfrJavaSupport::abort("Failed to write to jfr stream because no space left on device", false);
+  while (len > 0) {
+    const unsigned int nBytes = len > INT_MAX ? INT_MAX : (unsigned int)len;
+    const bool successful_write = os::write(_fd, buf, nBytes);
+    if (!successful_write && errno == ENOSPC) {
+      JfrJavaSupport::abort("Failed to write to jfr stream because no space left on device", false);
+    }
+    guarantee(successful_write, "Not all the bytes got written, or os::write() failed");
+    _stream_pos += nBytes;
+    len -= nBytes;
+    buf += nBytes;
   }
-  guarantee(successful_write, "Not all the bytes got written, or os::write() failed");
-  _stream_pos += nBytes;
 }
 
 template <typename Adapter, typename AP>
