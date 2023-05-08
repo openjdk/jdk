@@ -424,8 +424,9 @@ public interface StringTemplate {
      * produced by the interleaving concatenation of fragments and values from the supplied
      * {@link StringTemplate}. To accommodate concatenation, values are converted to strings
      * as if invoking {@link String#valueOf(Object)}.
-     * @implNote {@link StringTemplate#STR} is statically imported implicitly into every
-     * Java compilation unit.<p>The result of interpolation is not interned.
+     * @apiNote {@link StringTemplate#STR} is statically imported implicitly into every
+     * Java compilation unit.
+     * @implSpec The result of interpolation may or may not be interned.
      */
     Processor<String, RuntimeException> STR = StringTemplate::interpolate;
 
@@ -543,12 +544,20 @@ public interface StringTemplate {
         /**
          * Constructs a result based on the template fragments and values in the
          * supplied {@link StringTemplate stringTemplate} object.
+         * <p>
+         * Processing of a {@link StringTemplate} may include validation according to the particular facts relating
+         * to each situation. The {@code E} type parameter indicates the type of checked exception that is thrown by
+         * {@link #process} if validation fails, ex. {@code java.sql.SQLException}. If no checked exception is expected
+         * then {@link RuntimeException} may be used. Note that unchecked exceptions, such as {@link RuntimeException},
+         * {@link NullPointerException} or {@link IllegalArgumentException} may be thrown as part of the normal
+         * method arguments processing. Details of which exceptions are thrown will be found in the documentation
+         * of the specific implementation.
          *
          * @param stringTemplate  a {@link StringTemplate} instance
          *
          * @return constructed object of type R
          *
-         * @throws E exception thrown by the template processor when validation fails
+         * @throws E Checked exception thrown by the template processor when validation fails.
          */
         R process(StringTemplate stringTemplate) throws E;
 

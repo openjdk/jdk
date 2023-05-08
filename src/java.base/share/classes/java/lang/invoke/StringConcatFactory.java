@@ -120,6 +120,8 @@ public final class StringConcatFactory {
      */
     @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
     public static final int MAX_INDY_CONCAT_ARG_SLOTS;
+    // Use static initialize block to avoid MAX_INDY_CONCAT_ARG_SLOTS being treating
+    // as a constant for constant folding.
     static { MAX_INDY_CONCAT_ARG_SLOTS = 200; }
 
     private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();

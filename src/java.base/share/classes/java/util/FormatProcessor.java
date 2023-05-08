@@ -147,6 +147,7 @@ public final class FormatProcessor implements Processor<String, RuntimeException
      *          formatting errors, see the
      *          <a href="../util/Formatter.html#detail">details</a>
      *          section of the formatter class specification.
+     * @throws NullPointerException if stringTemplate is null
      *
      * @see java.util.Formatter
      */
@@ -190,6 +191,7 @@ public final class FormatProcessor implements Processor<String, RuntimeException
      *          formatting errors, see the
      *          <a href="../util/Formatter.html#detail">details</a>
      *          section of the formatter class specification.
+     * @throws NullPointerException if fragments or type is null
      *
      * @see java.util.Formatter
      */
