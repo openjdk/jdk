@@ -61,6 +61,13 @@ import javax.xml.crypto.dsig.XMLSignatureFactory;
 
 import jdk.test.lib.security.SecurityUtils;
 
+/**
+ * This test used to be part of ValidationTests but was moved into its own
+ * test because it tests a signature that contains the here() function which
+ * depends on Xalan internals. The Xalan dependency has been removed from
+ * the DSig implementation but can be optionally configured by using a
+ * customized TransformXPath instance. Use this test as an example.
+ */
 public class XalanTest {
 
     private static SignatureValidator validator;

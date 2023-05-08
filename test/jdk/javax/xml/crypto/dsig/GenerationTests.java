@@ -101,8 +101,7 @@ public class GenerationTests {
             ecdsaSha1, ecdsaSha224, ecdsaSha256, ecdsaSha384, ecdsaSha512,
             hmacSha1, hmacSha224, hmacSha256, hmacSha384, hmacSha512,
             rsaSha1mgf1, rsaSha224mgf1, rsaSha256mgf1, rsaSha384mgf1, rsaSha512mgf1,
-            rsaShaPSS,
-            ed25519, ed448;
+            rsaShaPSS, ed25519, ed448;
     private static DigestMethod sha1, sha224, sha256, sha384, sha512,
                                 sha3_224, sha3_256, sha3_384, sha3_512;
     private static KeyInfo dsa1024, dsa2048, rsa, rsa1024, rsa2048,
