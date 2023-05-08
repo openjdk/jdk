@@ -523,7 +523,7 @@ _Atomic_add_long:
         addl     %eax, %ebx        # result (low)
         adcl     %edx, %ecx        # result (high)
 1:      lock cmpxchg8b (%edi)
-        jne      $1
+        jne      1b
         popl     %edi
         popl     %ebx
         ret
