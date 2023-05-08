@@ -189,14 +189,20 @@
                   VectorRegister src1, VectorRegister src2,
                   bool is_double, bool is_min, int vector_length);
 
+ void minmax_fp_masked_v(VectorRegister dst_src1, VectorRegister src2,
+                         bool is_double, bool is_min, int vector_length,
+                         VectorRegister tmp1, VectorRegister tmp2, VectorRegister vmask);
+
  void reduce_minmax_fp_v(FloatRegister dst,
                          FloatRegister src1, VectorRegister src2,
                          VectorRegister tmp1, VectorRegister tmp2,
-                         bool is_double, bool is_min, int vector_length);
+                         bool is_double, bool is_min, int vector_length,
+                         VectorMask vm = Assembler::unmasked);
 
  void reduce_integral_v(Register dst, VectorRegister tmp,
                         Register src1, VectorRegister src2,
-                        BasicType bt, int opc, int vector_length);
+                        BasicType bt, int opc, int vector_length,
+                        VectorMask vm = Assembler::unmasked);
 
  void vsetvli_helper(BasicType bt, int vector_length, LMUL vlmul = Assembler::m1, Register tmp = t0);
 
@@ -240,7 +246,7 @@
   void vfwcvt_rtz_x_f_v_safe(VectorRegister dst, VectorRegister src);
   void vfncvt_rtz_x_f_w_safe(VectorRegister dst, VectorRegister src);
 
-  void extract_v(Register dst, BasicType bt, VectorRegister src, int idx, VectorRegister tmp);
-  void extract_fp_v(FloatRegister dst, BasicType bt, VectorRegister src, int idx, VectorRegister tmp);
+  void extract_v(Register dst, VectorRegister src, BasicType bt, int idx, VectorRegister tmp);
+  void extract_fp_v(FloatRegister dst, VectorRegister src, BasicType bt, int idx, VectorRegister tmp);
 
 #endif // CPU_RISCV_C2_MACROASSEMBLER_RISCV_HPP

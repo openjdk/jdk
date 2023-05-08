@@ -1632,29 +1632,55 @@ void C2_MacroAssembler::minmax_fp_v(VectorRegister dst, VectorRegister src1, Vec
 }
 
 // Set dst to NaN if any NaN input.
+void C2_MacroAssembler::minmax_fp_masked_v(VectorRegister dst_src1, VectorRegister src2,
+                                           bool is_double, bool is_min, int vector_length,
+                                           VectorRegister tmp1, VectorRegister tmp2, VectorRegister vmask) {
+  assert_different_registers(dst_src1, src2);
+
+  vsetvli_helper(is_double ? T_DOUBLE : T_FLOAT, vector_length);
+
+  // Check vector elements of src1 and src2 for quiet and signaling NaN.
+  vfclass_v(tmp1, dst_src1);
+  vfclass_v(tmp2, src2);
+  vsrl_vi(tmp1, tmp1, 8);
+  vsrl_vi(tmp2, tmp2, 8);
+  vmseq_vx(tmp1, tmp1, zr);
+  vmseq_vx(tmp2, tmp2, zr);
+
+  vmand_mm(tmp2, tmp1, tmp2);
+  vmand_mm(v0, vmask, tmp2);
+
+  is_min ? vfmin_vv(dst_src1, dst_src1, src2, Assembler::v0_t)
+         : vfmax_vv(dst_src1, dst_src1, src2, Assembler::v0_t);
+
+  vmandn_mm(v0, vmask, tmp2);
+  vfadd_vv(dst_src1, src2, src2, Assembler::v0_t);
+}
+
+// Set dst to NaN if any NaN input.
 void C2_MacroAssembler::reduce_minmax_fp_v(FloatRegister dst,
                                            FloatRegister src1, VectorRegister src2,
                                            VectorRegister tmp1, VectorRegister tmp2,
-                                           bool is_double, bool is_min, int vector_length) {
+                                           bool is_double, bool is_min, int vector_length, VectorMask vm) {
   assert_different_registers(src2, tmp1, tmp2);
 
   Label L_done, L_NaN;
   vsetvli_helper(is_double ? T_DOUBLE : T_FLOAT, vector_length);
   vfmv_s_f(tmp2, src1);
 
-  is_min ? vfredmin_vs(tmp1, src2, tmp2)
-         : vfredmax_vs(tmp1, src2, tmp2);
+  is_min ? vfredmin_vs(tmp1, src2, tmp2, vm)
+         : vfredmax_vs(tmp1, src2, tmp2, vm);
 
   fsflags(zr);
   // Checking NaNs
-  vmflt_vf(tmp2, src2, src1);
+  vmflt_vf(tmp2, src2, src1, vm);
   frflags(t0);
   bnez(t0, L_NaN);
   j(L_done);
 
   bind(L_NaN);
   vfmv_s_f(tmp2, src1);
-  vfredusum_vs(tmp1, src2, tmp2);
+  vfredusum_vs(tmp1, src2, tmp2, vm);
 
   bind(L_done);
   vfmv_f_s(dst, tmp1);
@@ -1672,37 +1698,33 @@ bool C2_MacroAssembler::in_scratch_emit_size() {
 
 void C2_MacroAssembler::reduce_integral_v(Register dst, VectorRegister tmp,
                                           Register src1, VectorRegister src2,
-                                          BasicType bt, int opc, int vector_length) {
+                                          BasicType bt, int opc, int vector_length, VectorMask vm) {
   assert(bt == T_BYTE || bt == T_SHORT || bt == T_INT || bt == T_LONG, "unsupported element type");
-
   vsetvli_helper(bt, vector_length);
-
   vmv_s_x(tmp, src1);
-
   switch (opc) {
     case Op_AddReductionVI:
     case Op_AddReductionVL:
-      vredsum_vs(tmp, src2, tmp);
+      vredsum_vs(tmp, src2, tmp, vm);
       break;
     case Op_AndReductionV:
-      vredand_vs(tmp, src2, tmp);
+      vredand_vs(tmp, src2, tmp, vm);
       break;
     case Op_OrReductionV:
-      vredor_vs(tmp, src2, tmp);
+      vredor_vs(tmp, src2, tmp, vm);
       break;
     case Op_XorReductionV:
-      vredxor_vs(tmp, src2, tmp);
+      vredxor_vs(tmp, src2, tmp, vm);
       break;
     case Op_MaxReductionV:
-      vredmax_vs(tmp, src2, tmp);
+      vredmax_vs(tmp, src2, tmp, vm);
       break;
     case Op_MinReductionV:
-      vredmin_vs(tmp, src2, tmp);
+      vredmin_vs(tmp, src2, tmp, vm);
       break;
     default:
       ShouldNotReachHere();
   }
-
   vmv_x_s(dst, tmp);
 }
 
@@ -1870,13 +1892,13 @@ VFCVT_SAFE(vfncvt_rtz_x_f_w);
 
 // Extract a scalar element from an vector at position 'idx'.
 // The input elements in src are expected to be of integral type.
-void C2_MacroAssembler::extract_v(Register dst, BasicType bt, VectorRegister src,
+void C2_MacroAssembler::extract_v(Register dst, VectorRegister src, BasicType bt,
                                   int idx, VectorRegister tmp) {
   assert(is_integral_type(bt), "unsupported element type");
   assert(idx >= 0, "idx cannot be negative");
   // Only need the first element after vector slidedown
   vsetvli_helper(bt, 1);
-  if(idx == 0) {
+  if (idx == 0) {
     vmv_x_s(dst, src);
   } else if (idx <= 31) {
     vslidedown_vi(tmp, src, idx);
@@ -1890,13 +1912,13 @@ void C2_MacroAssembler::extract_v(Register dst, BasicType bt, VectorRegister src
 
 // Extract a scalar element from an vector at position 'idx'.
 // The input elements in src are expected to be of floating point type.
-void C2_MacroAssembler::extract_fp_v(FloatRegister dst, BasicType bt, VectorRegister src,
+void C2_MacroAssembler::extract_fp_v(FloatRegister dst, VectorRegister src, BasicType bt,
                                      int idx, VectorRegister tmp) {
   assert(is_floating_point_type(bt), "unsupported element type");
   assert(idx >= 0, "idx cannot be negative");
   // Only need the first element after vector slidedown
   vsetvli_helper(bt, 1);
-  if(idx == 0) {
+  if (idx == 0) {
     vfmv_f_s(dst, src);
   } else if (idx <= 31) {
     vslidedown_vi(tmp, src, idx);
