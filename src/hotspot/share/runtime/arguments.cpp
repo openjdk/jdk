@@ -1939,27 +1939,43 @@ bool Arguments::check_vm_args_consistency() {
   }
 #endif
 
-#if !defined(X86) && !defined(AARCH64) && !defined(PPC64) && !defined(RISCV64)
+
+#if !defined(X86) && !defined(AARCH64) && !defined(RISCV64) && !defined(ARM)
+  if (LockingMode == LM_LIGHTWEIGHT) {
+    FLAG_SET_CMDLINE(LockingMode, LM_LEGACY);
+    warning("New lightweight locking not supported on this platform");
+  }
+#endif
+
   if (UseHeavyMonitors) {
+    if (FLAG_IS_CMDLINE(LockingMode) && LockingMode != LM_MONITOR) {
+      jio_fprintf(defaultStream::error_stream(),
+                  "Conflicting -XX:+UseHeavyMonitors and -XX:LockingMode=%d flags", LockingMode);
+      return false;
+    }
+    FLAG_SET_CMDLINE(LockingMode, LM_MONITOR);
+  }
+
+#if !defined(X86) && !defined(AARCH64) && !defined(PPC64) && !defined(RISCV64)
+  if (LockingMode == LM_MONITOR) {
     jio_fprintf(defaultStream::error_stream(),
-                "UseHeavyMonitors is not fully implemented on this architecture");
+                "LockingMode == 0 (LM_MONITOR) is not fully implemented on this architecture");
     return false;
   }
 #endif
 #if (defined(X86) || defined(PPC64)) && !defined(ZERO)
-  if (UseHeavyMonitors && UseRTMForStackLocks) {
+  if (LockingMode == LM_MONITOR && UseRTMForStackLocks) {
     jio_fprintf(defaultStream::error_stream(),
-                "-XX:+UseHeavyMonitors and -XX:+UseRTMForStackLocks are mutually exclusive");
+                "LockingMode == 0 (LM_MONITOR) and -XX:+UseRTMForStackLocks are mutually exclusive");
 
     return false;
   }
 #endif
-  if (VerifyHeavyMonitors && !UseHeavyMonitors) {
+  if (VerifyHeavyMonitors && LockingMode != LM_MONITOR) {
     jio_fprintf(defaultStream::error_stream(),
-                "-XX:+VerifyHeavyMonitors requires -XX:+UseHeavyMonitors");
+                "-XX:+VerifyHeavyMonitors requires LockingMode == 0 (LM_MONITOR)");
     return false;
   }
-
   return status;
 }
 
