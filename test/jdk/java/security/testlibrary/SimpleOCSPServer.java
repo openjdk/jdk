@@ -288,7 +288,15 @@ public class SimpleOCSPServer {
     public synchronized void stop() {
         if (started) {
             receivedShutdown = true;
+            started = false;
             log("Received shutdown notification");
+        }
+    }
+
+    public synchronized void shutdownNow() {
+        stop();
+        if (threadPool != null) {
+            threadPool.shutdownNow();
         }
     }
 
@@ -577,7 +585,7 @@ public class SimpleOCSPServer {
      * @param message the message to log
      */
     private static synchronized void err(String message) {
-        System.out.println("[" + Thread.currentThread().getName() + "]: " +
+        System.err.println("[" + Thread.currentThread().getName() + "]: " +
                 message);
     }
 

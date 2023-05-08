@@ -24,13 +24,11 @@
 /*
  * @test id=platform
  * @summary Basic tests for new thread-per-task executors
- * @enablePreview
  * @run junit/othervm -DthreadFactory=platform ThreadPerTaskExecutorTest
  */
 
 /*
  * @test id=virtual
- * @enablePreview
  * @run junit/othervm -DthreadFactory=virtual ThreadPerTaskExecutorTest
  */
 
