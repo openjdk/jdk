@@ -3316,8 +3316,8 @@ void TypePtr::InterfaceSet::compute_hash() {
     ciKlass* k = _list.at(i);
     hash += (jint)k->hash();
   }
-  _hash_computed = 1;
   _hash = hash;
+  _hash_computed = 1;
 }
 
 static int compare_interfaces(ciKlass** k1, ciKlass** k2) {
@@ -3445,8 +3445,8 @@ ciKlass* TypePtr::InterfaceSet::exact_klass() const {
 
 void TypePtr::InterfaceSet::compute_exact_klass() {
   if (_list.length() == 0) {
-    _exact_klass_computed = 1;
     _exact_klass = nullptr;
+    _exact_klass_computed = 1;
     return;
   }
   ciKlass* res = nullptr;
@@ -3457,8 +3457,8 @@ void TypePtr::InterfaceSet::compute_exact_klass() {
       res = _list.at(i);
     }
   }
-  _exact_klass_computed = 1;
   _exact_klass = res;
+  _exact_klass_computed = 1;
 }
 
 #ifdef ASSERT
