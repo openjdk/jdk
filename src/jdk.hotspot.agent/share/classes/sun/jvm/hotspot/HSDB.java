@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1103,9 +1103,6 @@ public class HSDB implements ObjectHistogramPanel.Listener, SAListener {
                             bad = false;
                           } else if (region.isHumongous()) {
                             anno = "Humongous ";
-                            bad = false;
-                          } else if (region.isPinned()) {
-                            anno = "Pinned ";
                             bad = false;
                           } else if (region.isOld()) {
                             anno = "Old ";
