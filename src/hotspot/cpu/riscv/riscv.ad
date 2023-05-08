@@ -1944,6 +1944,7 @@ const bool Matcher::match_rule_supported_vector_masked(int opcode, int vlen, Bas
     case Op_URShiftVI:
     case Op_URShiftVL:
     case Op_VectorBlend:
+    case Op_VectorReinterpret:
       break;
     case Op_LoadVector:
       opcode = Op_LoadVectorMasked;
@@ -2030,7 +2031,10 @@ const int Matcher::min_vector_size(const BasicType bt) {
   int max_size = max_vector_size(bt);
   // Limit the min vector size to 8 bytes.
   int size = 8 / type2aelembytes(bt);
-  if (bt == T_BOOLEAN) {
+  if (bt == T_BYTE) {
+    // To support vector api shuffle/rearrange.
+    size = 4;
+  } else if (bt == T_BOOLEAN) {
     // To support vector api load/store mask.
     size = 2;
   }

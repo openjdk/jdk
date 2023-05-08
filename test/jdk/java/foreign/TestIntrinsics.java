@@ -24,7 +24,7 @@
 /*
  * @test
  * @enablePreview
- * @requires os.arch=="amd64" | os.arch=="x86_64" | os.arch=="aarch64" | os.arch=="riscv64"
+ * @requires jdk.foreign.linker != "UNSUPPORTED"
  * @run testng/othervm
  *   -Djdk.internal.foreign.DowncallLinker.USE_SPEC=true
  *   --enable-native-access=ALL-UNNAMED

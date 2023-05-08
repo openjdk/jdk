@@ -78,10 +78,6 @@ public:
     _default
   };
 
-  enum SpecialRef {
-    _method_entry_ref
-  };
-
   // class MetaspaceClosure::Ref --
   //
   // MetaspaceClosure can be viewed as a very simple type of copying garbage
@@ -356,19 +352,6 @@ public:
   }
 #endif
 
-  template <class T> void push_method_entry(T** mpp, intptr_t* p) {
-    Ref* ref = new MSORef<T>(mpp, _default);
-    push_special(_method_entry_ref, ref, (intptr_t*)p);
-    if (!ref->keep_after_pushing()) {
-      delete ref;
-    }
-  }
-
-  // This is for tagging special pointers that are not a reference to MetaspaceObj. It's currently
-  // used to mark the method entry points in Method/ConstMethod.
-  virtual void push_special(SpecialRef type, Ref* obj, intptr_t* p) {
-    assert(type == _method_entry_ref, "only special type allowed for now");
-  }
 };
 
 // This is a special MetaspaceClosure that visits each unique MetaspaceObj once.
