@@ -633,6 +633,7 @@ define SetupRunMicroTestBody
 	$$(call LogWarn)
 	$$(call LogWarn, Running test '$$($1_TEST)')
 	$$(call MakeDir, $$($1_TEST_RESULTS_DIR) $$($1_TEST_SUPPORT_DIR))
+	# We perform path fixing by component to avoid presumptive fixing in quoted vm args
 	$$(call ExecuteWithLog, $$($1_TEST_SUPPORT_DIR)/micro, ( \
 	    $$(call FixPathImport, $$($1_MICRO_TEST_JDK)/bin/java) $$($1_MICRO_JAVA_OPTIONS) \
 	        -jar $$(call FixPath, $$($1_MICRO_BENCHMARKS_JAR)) \
