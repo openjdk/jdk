@@ -51,11 +51,7 @@ public class ScrollbarKeyControlTest implements AdjustmentListener, KeyListener 
     Frame frame;
 
     public static void main(String[] args) throws Exception {
-
-        final boolean isXAWT = Toolkit.getDefaultToolkit().getClass().getName().
-                equals("sun.awt.X11.XToolkit");
-
-        if (!isXAWT) {
+        if (!System.getProperty("os.name").startsWith("Linux")) {
             System.out.println("This test is for XAWT only.");
             return;
         }

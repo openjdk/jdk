@@ -31,6 +31,7 @@ import java.awt.EventQueue;
 import java.awt.Color;
 
 import javax.swing.JWindow;
+
 public class SetForegroundTest {
     static JWindow jwindow;
     public static void main(String[] args) throws Exception {
@@ -48,7 +49,7 @@ public class SetForegroundTest {
             });
         } finally {
             EventQueue.invokeAndWait(() -> {
-                if(jwindow != null) {
+                if (jwindow != null) {
                     jwindow.dispose();
                 }
             });
