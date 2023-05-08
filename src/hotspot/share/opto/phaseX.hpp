@@ -79,7 +79,7 @@ public:
   // Return 75% of _max, rounded up.
   uint   insert_limit() const { return _max - (_max>>2); }
 
-  void   clear_xx();               // Set all entries to null, keep storage.
+  void   clear();               // Set all entries to null, keep storage.
   // Size of hash table
   uint   size()         const { return _max; }
   // Return Node* at index in table

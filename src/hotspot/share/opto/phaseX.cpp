@@ -264,7 +264,7 @@ void  NodeHash::grow() {
 
 //------------------------------clear------------------------------------------
 // Clear all entries in _table to null but keep storage
-void  NodeHash::clear_xx() {
+void  NodeHash::clear() {
 #ifdef ASSERT
   // Unlock all nodes upon removal from table.
   for (uint i = 0; i < _max; i++) {

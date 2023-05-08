@@ -2437,12 +2437,15 @@ void Compile::Optimize() {
     // Though it's maybe too late to perform inlining, strength-reducing them to direct calls is still an option.
     process_late_inline_calls_no_inline(igvn);
   }
-  C->gvn_node_hash().clear_xx(); // TODO.clear does this belong here? At end of IGVN - maybe first report also?
  } // (End scope of igvn; run destructor if necessary for asserts.)
 
  check_no_dead_use();
 
  process_print_inlining();
+
+ // We will never use the NodeHash table any more. Clear it so that final_graph_reshaping does not have
+ // to remove hashes to unlock nodes for modifications.
+ C->gvn_node_hash().clear();
 
  // A method with only infinite loops has no edges entering loops from root
  {
