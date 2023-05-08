@@ -183,26 +183,26 @@ public final class WindowsAnsiWriter extends AnsiWriter {
     protected void processCursorUpLine(int count) throws IOException {
         getConsoleInfo();
         info.dwCursorPosition.X = 0;
-        info.dwCursorPosition.Y -= count;
+        info.dwCursorPosition.Y -= (short)count;
         applyCursorPosition();
     }
 
     protected void processCursorDownLine(int count) throws IOException {
         getConsoleInfo();
         info.dwCursorPosition.X = 0;
-        info.dwCursorPosition.Y += count;
+        info.dwCursorPosition.Y += (short)count;
         applyCursorPosition();
     }
 
     protected void processCursorLeft(int count) throws IOException {
         getConsoleInfo();
-        info.dwCursorPosition.X -= count;
+        info.dwCursorPosition.X -= (short)count;
         applyCursorPosition();
     }
 
     protected void processCursorRight(int count) throws IOException {
         getConsoleInfo();
-        info.dwCursorPosition.X += count;
+        info.dwCursorPosition.X += (short)count;
         applyCursorPosition();
     }
 
@@ -210,7 +210,7 @@ public final class WindowsAnsiWriter extends AnsiWriter {
         getConsoleInfo();
         int nb = Math.max(0, info.dwCursorPosition.Y + count - info.dwSize.Y + 1);
         if (nb != count) {
-            info.dwCursorPosition.Y += count;
+            info.dwCursorPosition.Y += (short)count;
             applyCursorPosition();
         }
         if (nb > 0) {
@@ -226,7 +226,7 @@ public final class WindowsAnsiWriter extends AnsiWriter {
 
     protected void processCursorUp(int count) throws IOException {
         getConsoleInfo();
-        info.dwCursorPosition.Y -= count;
+        info.dwCursorPosition.Y -= (short)count;
         applyCursorPosition();
     }
 
