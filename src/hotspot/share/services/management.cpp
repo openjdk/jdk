@@ -2097,14 +2097,18 @@ jlong Management::ticks_to_ms(jlong ticks) {
 }
 
 // Gets the amount of memory allocated on the Java heap since JVM launch.
-JVM_ENTRY(jlong, jmm_GetAllThreadAllocatedMemory(JNIEnv *env))
+JVM_ENTRY(jlong, jmm_GetTotalThreadAllocatedMemory(JNIEnv *env))
     // The result may be "too small" because the threads iterator takes a
     // snapshot and new threads may be created after result is initialized.
     // There's no check for terminated threads in the loop because their
     // allocated byte counts aren't included in exited_allocated_bytes
-    // when result is initialized.
+    // when result is initialized. The iterator is created and initialized
+    // before the call to exited_allocated_bytes to ensure we don't miss
+    // accounting for threads that are just about to terminate.
+    JavaThreadIteratorWithHandle jtiwh;
     jlong result = ThreadService::exited_allocated_bytes();
-    for (JavaThreadIteratorWithHandle jtiwh; JavaThread *thread = jtiwh.next();) {
+    JavaThread* thread;
+    while ((thread = jtiwh.next()) != nullptr) {
       jlong size = thread->cooked_allocated_bytes();
       result += size;
     }
@@ -2252,7 +2256,7 @@ const struct jmmInterface_1_ jmm_interface = {
   jmm_GetMemoryManagers,
   jmm_GetMemoryPoolUsage,
   jmm_GetPeakMemoryPoolUsage,
-  jmm_GetAllThreadAllocatedMemory,
+  jmm_GetTotalThreadAllocatedMemory,
   jmm_GetOneThreadAllocatedMemory,
   jmm_GetThreadAllocatedMemory,
   jmm_GetMemoryUsage,

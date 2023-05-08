@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,10 +109,10 @@ Java_sun_management_ThreadImpl_getThreadAllocatedMemory1
 }
 
 JNIEXPORT jlong JNICALL
-Java_sun_management_ThreadImpl_getAllThreadAllocatedMemory
+Java_sun_management_ThreadImpl_getTotalThreadAllocatedMemory
   (JNIEnv *env, jclass cls)
 {
-    return jmm_interface->GetAllThreadAllocatedMemory(env);
+    return jmm_interface->GetTotalThreadAllocatedMemory(env);
 }
 
 JNIEXPORT jobjectArray JNICALL

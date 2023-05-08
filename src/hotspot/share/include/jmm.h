@@ -241,7 +241,7 @@ typedef struct jmmInterface_1_ {
   jobject      (JNICALL *GetMemoryPoolUsage)     (JNIEnv* env, jobject pool);
   jobject      (JNICALL *GetPeakMemoryPoolUsage) (JNIEnv* env, jobject pool);
 
-  jlong        (JNICALL *GetAllThreadAllocatedMemory)
+  jlong        (JNICALL *GetTotalThreadAllocatedMemory)
                                                  (JNIEnv *env);
   jlong        (JNICALL *GetOneThreadAllocatedMemory)
                                                  (JNIEnv *env,
