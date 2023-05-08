@@ -77,35 +77,44 @@ class oopDesc;
 
 extern "C" bool CheckUnhandledOops;
 
+// Extra verification when creating and using oops.
+// Used to catch broken oops as soon as possible.
+using CheckOopFunctionPointer = void(*)(oopDesc*);
+extern CheckOopFunctionPointer check_oop_function;
+
 class oop {
   oopDesc* _o;
 
   void register_oop();
   void unregister_oop();
 
-  void register_if_checking() {
-    if (CheckUnhandledOops) register_oop();
-  }
+  // Extra verification of the oop
+  void check_oop() const { if (check_oop_function != nullptr && _o != nullptr) check_oop_function(_o); }
+
+  void on_usage() const  { check_oop(); }
+  void on_construction() { check_oop(); if (CheckUnhandledOops)   register_oop(); }
+  void on_destruction()  {              if (CheckUnhandledOops) unregister_oop(); }
 
 public:
-  oop()             : _o(nullptr) { register_if_checking(); }
-  oop(const oop& o) : _o(o._o)    { register_if_checking(); }
-  oop(oopDesc* o)   : _o(o)       { register_if_checking(); }
+  oop()             : _o(nullptr) { on_construction(); }
+  oop(const oop& o) : _o(o._o)    { on_construction(); }
+  oop(oopDesc* o)   : _o(o)       { on_construction(); }
   ~oop() {
-    if (CheckUnhandledOops) unregister_oop();
+    on_destruction();
   }
 
-  oopDesc* obj() const                 { return _o; }
-  oopDesc* operator->() const          { return _o; }
-  operator oopDesc* () const           { return _o; }
+  oopDesc* obj() const                  { on_usage(); return _o; }
 
-  bool operator==(const oop& o) const  { return _o == o._o; }
-  bool operator!=(const oop& o) const  { return _o != o._o; }
+  oopDesc* operator->() const           { return obj(); }
+  operator oopDesc* () const            { return obj(); }
 
-  bool operator==(std::nullptr_t) const     { return _o == nullptr; }
-  bool operator!=(std::nullptr_t) const     { return _o != nullptr; }
+  bool operator==(const oop& o) const   { return obj() == o.obj(); }
+  bool operator!=(const oop& o) const   { return obj() != o.obj(); }
 
-  oop& operator=(const oop& o)         { _o = o._o; return *this; }
+  bool operator==(std::nullptr_t) const { return obj() == nullptr; }
+  bool operator!=(std::nullptr_t) const { return obj() != nullptr; }
+
+  oop& operator=(const oop& o)          { _o = o.obj(); return *this; }
 };
 
 template<>

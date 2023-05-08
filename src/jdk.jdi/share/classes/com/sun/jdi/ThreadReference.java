@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ package com.sun.jdi;
 
 import java.util.List;
 import com.sun.jdi.event.EventSet;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * A thread object from the target VM.
@@ -516,9 +515,8 @@ public interface ThreadReference extends ObjectReference {
      * @implSpec
      * The default implementation throws {@code UnsupportedOperationException}.
      *
-     * @since 19
+     * @since 21
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.VIRTUAL_THREADS, reflective = true)
     default boolean isVirtual() {
         throw new UnsupportedOperationException("Method not implemented");
     }

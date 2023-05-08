@@ -92,7 +92,6 @@ America/Vancouver PST PDT
 America/Whitehorse MST
 America/Winnipeg CST CDT
 America/Yakutat AKST AKDT
-America/Yellowknife MST MDT
 Antarctica/Macquarie AEST AEDT
 Asia/Beirut EET EEST
 Asia/Famagusta EET EEST
@@ -144,6 +143,7 @@ Europe/Dublin IST/GMT IST/GMT
 Europe/Gibraltar CET CEST
 Europe/Helsinki EET EEST
 Europe/Kaliningrad EET
+Europe/Kirov MSK
 Europe/Kyiv EET EEST
 Europe/Lisbon WET WEST
 Europe/London GMT/BST GMT/BST
@@ -160,6 +160,7 @@ Europe/Tallinn EET EEST
 Europe/Tirane CET CEST
 Europe/Vienna CET CEST
 Europe/Vilnius EET EEST
+Europe/Volgograd MSK
 Europe/Warsaw CET CEST
 Europe/Zurich CET CEST
 HST HST

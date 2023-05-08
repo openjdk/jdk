@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,8 @@
  * @run testng/othervm --enable-native-access=ALL-UNNAMED TestMemoryAccessInstance
  */
 
-import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.SegmentScope;
+import java.lang.foreign.Arena;
 import java.lang.foreign.ValueLayout;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -80,8 +79,8 @@ public class TestMemoryAccessInstance {
         }
 
         void test() {
-            try (Arena arena = Arena.openConfined()) {
-                MemorySegment segment = MemorySegment.allocateNative(128, arena.scope());;
+            try (Arena arena = Arena.ofConfined()) {
+                MemorySegment segment = arena.allocate(128, 1);
                 ByteBuffer buffer = segment.asByteBuffer();
                 T t = transform.apply(segment);
                 segmentSetter.set(t, layout, 8, value);
@@ -93,8 +92,8 @@ public class TestMemoryAccessInstance {
 
         @SuppressWarnings("unchecked")
         void testHyperAligned() {
-            try (Arena arena = Arena.openConfined()) {
-                MemorySegment segment = MemorySegment.allocateNative(64, arena.scope());;
+            try (Arena arena = Arena.ofConfined()) {
+                MemorySegment segment = arena.allocate(64, 1);
                 T t = transform.apply(segment);
                 L alignedLayout = (L)layout.withBitAlignment(layout.byteSize() * 8 * 2);
                 try {
@@ -136,7 +135,9 @@ public class TestMemoryAccessInstance {
     @Test(expectedExceptions = IllegalArgumentException.class,
             expectedExceptionsMessageRegExp = ".*Heap segment not allowed.*")
     public void badHeapSegmentSet() {
-        MemorySegment targetSegment = MemorySegment.allocateNative(ValueLayout.ADDRESS.byteSize(), SegmentScope.auto());
+        long byteSize = ValueLayout.ADDRESS.byteSize();
+        Arena scope = Arena.ofAuto();
+        MemorySegment targetSegment = scope.allocate(byteSize, 1);
         MemorySegment segment = MemorySegment.ofArray(new byte[]{ 0, 1, 2 });
         targetSegment.set(ValueLayout.ADDRESS, 0, segment); // should throw
     }
@@ -144,7 +145,9 @@ public class TestMemoryAccessInstance {
     @Test(expectedExceptions = IllegalArgumentException.class,
             expectedExceptionsMessageRegExp = ".*Heap segment not allowed.*")
     public void badHeapSegmentSetAtIndex() {
-        MemorySegment targetSegment = MemorySegment.allocateNative(ValueLayout.ADDRESS.byteSize(), SegmentScope.auto());
+        long byteSize = ValueLayout.ADDRESS.byteSize();
+        Arena scope = Arena.ofAuto();
+        MemorySegment targetSegment = scope.allocate(byteSize, 1);
         MemorySegment segment = MemorySegment.ofArray(new byte[]{ 0, 1, 2 });
         targetSegment.setAtIndex(ValueLayout.ADDRESS, 0, segment); // should throw
     }
@@ -159,13 +162,17 @@ public class TestMemoryAccessInstance {
                         MemorySegment::get, MemorySegment::set,
                         ByteBuffer::get, ByteBuffer::put)
                 },
-                {"bool", Accessor.ofSegment(ValueLayout.JAVA_BOOLEAN, false,
+                {"boolean", Accessor.ofSegment(ValueLayout.JAVA_BOOLEAN, false,
                         MemorySegment::get, MemorySegment::set,
                         (bb, pos) -> bb.get(pos) != 0, (bb, pos, v) -> bb.put(pos, v ? (byte)1 : (byte)0))
                 },
                 {"char", Accessor.ofSegment(ValueLayout.JAVA_CHAR, (char) 42,
                         MemorySegment::get, MemorySegment::set,
                         (bb, pos) -> bb.order(NE).getChar(pos), (bb, pos, v) -> bb.order(NE).putChar(pos, v))
+                },
+                {"short", Accessor.ofSegment(ValueLayout.JAVA_SHORT, (short) 42,
+                        MemorySegment::get, MemorySegment::set,
+                        (bb, pos) -> bb.order(NE).getShort(pos), (bb, pos, v) -> bb.order(NE).putShort(pos, v))
                 },
                 {"int", Accessor.ofSegment(ValueLayout.JAVA_INT, 42,
                         MemorySegment::get, MemorySegment::set,
@@ -201,9 +208,21 @@ public class TestMemoryAccessInstance {
                         })
                 },
 
+                {"byte/index", Accessor.ofSegment(ValueLayout.JAVA_BYTE, (byte) 42,
+                        MemorySegment::getAtIndex, MemorySegment::setAtIndex,
+                        (bb, pos) -> bb.order(NE).get(pos), (bb, pos, v) -> bb.order(NE).put(pos, v))
+                },
+                {"boolean/index", Accessor.ofSegment(ValueLayout.JAVA_BOOLEAN, true,
+                        MemorySegment::getAtIndex, MemorySegment::setAtIndex,
+                        (bb, pos) -> bb.order(NE).get(pos) != 0, (bb, pos, v) -> bb.order(NE).put(pos, (byte) (v ? 1 : 0)))
+                },
                 {"char/index", Accessor.ofSegment(ValueLayout.JAVA_CHAR, (char) 42,
                         MemorySegment::getAtIndex, MemorySegment::setAtIndex,
                         (bb, pos) -> bb.order(NE).getChar(pos * 2), (bb, pos, v) -> bb.order(NE).putChar(pos * 2, v))
+                },
+                {"short/index", Accessor.ofSegment(ValueLayout.JAVA_SHORT, (short) 42,
+                        MemorySegment::getAtIndex, MemorySegment::setAtIndex,
+                        (bb, pos) -> bb.order(NE).getShort(pos * 2), (bb, pos, v) -> bb.order(NE).putShort(pos * 2, v))
                 },
                 {"int/index", Accessor.ofSegment(ValueLayout.JAVA_INT, 42,
                         MemorySegment::getAtIndex, MemorySegment::setAtIndex,

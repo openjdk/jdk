@@ -148,15 +148,10 @@ module java.base {
     // module declaration be annotated with jdk.internal.javac.ParticipatesInPreview
     exports jdk.internal.javac to
         java.compiler,
-        java.management, // participates in preview features
         jdk.compiler,
-        jdk.incubator.concurrent, // participates in preview features
         jdk.incubator.vector, // participates in preview features
         jdk.jartool, // participates in preview features
-        jdk.jdi,
-        jdk.jfr,
-        jdk.jshell,
-        jdk.management;
+        jdk.jshell;
     exports jdk.internal.access to
         java.desktop,
         java.logging,
@@ -265,7 +260,8 @@ module java.base {
         jdk.incubator.concurrent,
         jdk.internal.jvmstat,
         jdk.management,
-        jdk.management.agent;
+        jdk.management.agent,
+        jdk.internal.vm.ci;
     exports jdk.internal.vm.annotation to
         java.instrument,
         jdk.internal.vm.ci,
@@ -275,8 +271,6 @@ module java.base {
         jdk.unsupported;
     exports jdk.internal.vm.vector to
         jdk.incubator.vector;
-    exports jdk.internal.util.jar to
-        jdk.jartool;
     exports jdk.internal.util.xml to
         jdk.jfr;
     exports jdk.internal.util.xml.impl to
@@ -284,7 +278,12 @@ module java.base {
     exports jdk.internal.util.random to
         jdk.random;
     exports jdk.internal.util to
-        java.desktop;
+        java.desktop,
+        java.prefs,
+        java.security.jgss,
+        java.smartcardio,
+        jdk.charsets,
+        jdk.net;
     exports sun.net to
         java.net.http,
         jdk.naming.dns;
