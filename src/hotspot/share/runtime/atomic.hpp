@@ -307,8 +307,8 @@ private:
   struct AddImpl;
 
   // Platform-specific implementation of add.  Support for sizes of 4
-  // bytes and (if different) pointer size bytes are required.  The
-  // class must be default constructable, with these requirements:
+  // and 8 bytes are required.  The class must be default constructable,
+  // with these requirements:
   //
   // - dest is of type D*, where D is an integral or pointer type.
   // - add_value is of type I, an integral type.
