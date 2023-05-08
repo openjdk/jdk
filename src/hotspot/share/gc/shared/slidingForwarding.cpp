@@ -39,7 +39,7 @@ size_t SlidingForwarding::_num_regions = 0;
 size_t SlidingForwarding::_region_size_words = 0;
 uint SlidingForwarding::_region_size_words_shift = 0;
 HeapWord** SlidingForwarding::_bases_table = nullptr;
-FallbackTable* SlidingForwarding::_fallback_table = nullptr;
+SlidingForwarding::FallbackTable* SlidingForwarding::_fallback_table = nullptr;
 
 void SlidingForwarding::initialize(MemRegion heap, size_t region_size_words) {
 #ifdef _LP64
@@ -103,7 +103,7 @@ HeapWord* SlidingForwarding::fallback_forwardee(HeapWord* from) {
   return _fallback_table->forwardee(from);
 }
 
-FallbackTable::FallbackTable() {
+SlidingForwarding::FallbackTable::FallbackTable() {
   for (uint i = 0; i < TABLE_SIZE; i++) {
     _table[i]._next = nullptr;
     _table[i]._from = nullptr;
@@ -111,7 +111,7 @@ FallbackTable::FallbackTable() {
   }
 }
 
-FallbackTable::~FallbackTable() {
+SlidingForwarding::FallbackTable::~FallbackTable() {
   for (uint i = 0; i < TABLE_SIZE; i++) {
     FallbackTableEntry* entry = _table[i]._next;
     while (entry != nullptr) {
@@ -122,13 +122,13 @@ FallbackTable::~FallbackTable() {
   }
 }
 
-size_t FallbackTable::home_index(HeapWord* from) {
+size_t SlidingForwarding::FallbackTable::home_index(HeapWord* from) {
   uint64_t val = reinterpret_cast<uint64_t>(from);
   uint64_t hash = FastHash::get_hash64(val, UCONST64(0xAAAAAAAAAAAAAAAA));
   return hash >> (64 - log2i_exact(TABLE_SIZE));
 }
 
-void FallbackTable::forward_to(HeapWord* from, HeapWord* to) {
+void SlidingForwarding::FallbackTable::forward_to(HeapWord* from, HeapWord* to) {
   size_t idx = home_index(from);
   FallbackTableEntry* head = &_table[idx];
   FallbackTableEntry* entry = head;
@@ -151,7 +151,7 @@ void FallbackTable::forward_to(HeapWord* from, HeapWord* to) {
   entry->_to   = to;
 }
 
-HeapWord* FallbackTable::forwardee(HeapWord* from) const {
+HeapWord* SlidingForwarding::FallbackTable::forwardee(HeapWord* from) const {
   size_t idx = home_index(from);
   const FallbackTableEntry* entry = &_table[idx];
   while (entry != nullptr) {

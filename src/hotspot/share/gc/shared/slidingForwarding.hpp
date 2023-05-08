@@ -31,8 +31,6 @@
 #include "oops/markWord.hpp"
 #include "oops/oopsHierarchy.hpp"
 
-class FallbackTable;
-
 /**
  * SlidingForwarding is a method to store forwarding information in a compressed form into the object header,
  * that has been specifically designed for sliding compaction GCs and compact object headers. With compact object
@@ -89,6 +87,41 @@ class FallbackTable;
  */
 class SlidingForwarding : public AllStatic {
 private:
+
+  /*
+   * A simple hash-table that acts as fallback for the sliding forwarding.
+   * This is used in the case of G1 serial compaction, which violates the
+   * assumption of sliding forwarding that each object of any region is only
+   * ever forwarded to one of two target regions. At this point, the GC is
+   * scrambling to free up more Java heap memory, and therefore performance
+   * is not the major concern.
+   *
+   * The implementation is a straightforward open hashtable.
+   * It is a single-threaded (not thread-safe) implementation, and that
+   * is sufficient because G1 serial compaction is single-threaded.
+   */
+  class FallbackTable : public CHeapObj<mtGC>{
+  private:
+    struct FallbackTableEntry {
+      FallbackTableEntry* _next;
+      HeapWord* _from;
+      HeapWord* _to;
+    };
+
+    static const uint TABLE_SIZE = 1024;
+    FallbackTableEntry _table[TABLE_SIZE];
+
+    static size_t home_index(HeapWord* from);
+
+  public:
+    FallbackTable();
+    ~FallbackTable();
+
+    void forward_to(HeapWord* from, HeapWord* to);
+    HeapWord* forwardee(HeapWord* from) const;
+  };
+
+
   static const uintptr_t MARK_LOWER_HALF_MASK = right_n_bits(32);
 
   // We need the lowest two bits to indicate a forwarded object.
@@ -142,39 +175,6 @@ public:
 
   static inline void forward_to(oop from, oop to);
   static inline oop forwardee(oop from);
-};
-
-/*
- * A simple hash-table that acts as fallback for the sliding forwarding.
- * This is used in the case of G1 serial compaction, which violates the
- * assumption of sliding forwarding that each object of any region is only
- * ever forwarded to one of two target regions. At this point, the GC is
- * scrambling to free up more Java heap memory, and therefore performance
- * is not the major concern.
- *
- * The implementation is a straightforward open hashtable.
- * It is a single-threaded (not thread-safe) implementation, and that
- * is sufficient because G1 serial compaction is single-threaded.
- */
-class FallbackTable : public CHeapObj<mtGC>{
-private:
-  struct FallbackTableEntry {
-    FallbackTableEntry* _next;
-    HeapWord* _from;
-    HeapWord* _to;
-  };
-
-  static const uint TABLE_SIZE = 1024;
-  FallbackTableEntry _table[TABLE_SIZE];
-
-  static size_t home_index(HeapWord* from);
-
-public:
-  FallbackTable();
-  ~FallbackTable();
-
-  void forward_to(HeapWord* from, HeapWord* to);
-  HeapWord* forwardee(HeapWord* from) const;
 };
 
 #endif // SHARE_GC_SHARED_SLIDINGFORWARDING_HPP
