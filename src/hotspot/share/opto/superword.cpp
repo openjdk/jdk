@@ -3010,7 +3010,7 @@ bool SuperWord::output() {
 
         // VectorMaskCmp
         ConINode* bol_test_node  = _igvn.intcon((int)bol_test);
-        BasicType bt = velt_basic_type(n);
+        BasicType bt = velt_basic_type(cmp);
         const TypeVect* vt = TypeVect::make(bt, vlen);
         VectorNode* mask = new VectorMaskCmpNode(bol_test, cmp_in1, cmp_in2, bol_test_node, vt);
         _igvn.register_new_node_with_optimizer(mask);
