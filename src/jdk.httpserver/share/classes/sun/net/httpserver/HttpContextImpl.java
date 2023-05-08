@@ -59,7 +59,7 @@ class HttpContextImpl extends HttpContext {
         if (path == null || protocol == null || path.length() < 1 || path.charAt(0) != '/') {
             throw new IllegalArgumentException ("Illegal value for path or protocol");
         }
-        this.protocol = protocol.toLowerCase();
+        this.protocol = protocol.toLowerCase(Locale.ROOT);
         this.path = path;
         if (!this.protocol.equals ("http") && !this.protocol.equals ("https")) {
             throw new IllegalArgumentException ("Illegal value for protocol");

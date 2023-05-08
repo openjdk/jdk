@@ -55,7 +55,7 @@ class ContextList {
     }
 
     synchronized HttpContextImpl findContext (String protocol, String path, boolean exact) {
-        protocol = protocol.toLowerCase();
+        protocol = protocol.toLowerCase(Locale.ROOT);
         String longest = "";
         HttpContextImpl lc = null;
         for (HttpContextImpl ctx: list) {

@@ -35,6 +35,7 @@ import java.util.List;
 import java.io.IOException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.Locale;
 import java.util.StringJoiner;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -205,7 +206,7 @@ public class DefaultProxySelector extends ProxySelector {
          */
         final String proto = protocol;
         final NonProxyInfo nprop = pinfo;
-        final String urlhost = host.toLowerCase();
+        final String urlhost = host.toLowerCase(Locale.ROOT);
 
         /**
          * This is one big doPrivileged call, but we're trying to optimize
@@ -376,7 +377,7 @@ public class DefaultProxySelector extends ProxySelector {
             if (disjunct.isEmpty())
                 continue;
             disjunctionEmpty = false;
-            String regex = disjunctToRegex(disjunct.toLowerCase());
+            String regex = disjunctToRegex(disjunct.toLowerCase(Locale.ROOT));
             joiner.add(regex);
         }
         return disjunctionEmpty ? null : Pattern.compile(joiner.toString());

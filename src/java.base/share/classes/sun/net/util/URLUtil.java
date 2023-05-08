@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.net.URLPermission;
 import java.security.Permission;
+import java.util.Locale;
 
 /**
  * URL Utility class.
@@ -55,7 +56,7 @@ public class URLUtil {
              * use identity tests for speed
              */
             if (protocol != "file" && protocol != "jrt" && protocol != "jar") {
-                protocol = protocol.toLowerCase();
+                protocol = protocol.toLowerCase(Locale.ROOT);
             }
             strForm.append(protocol);
             strForm.append("://");
@@ -88,7 +89,7 @@ public class URLUtil {
     }
 
     public static Permission getConnectPermission(URL url) throws IOException {
-        String urlStringLowerCase = url.toString().toLowerCase();
+        String urlStringLowerCase = url.toString().toLowerCase(Locale.ROOT);
         if (urlStringLowerCase.startsWith("http:") || urlStringLowerCase.startsWith("https:")) {
             return getURLConnectPermission(url);
         } else if (urlStringLowerCase.startsWith("jar:http:") || urlStringLowerCase.startsWith("jar:https:")) {

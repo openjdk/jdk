@@ -34,10 +34,7 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.IOException;
 import java.net.FileNameMap;
-import java.util.Enumeration;
-import java.util.Hashtable;
-import java.util.Properties;
-import java.util.StringTokenizer;
+import java.util.*;
 
 public class MimeTable implements FileNameMap {
     /** Hash mark introducing a URI fragment */
@@ -164,7 +161,7 @@ public class MimeTable implements FileNameMap {
 
         String ext = "";
         if (i != -1 && fname.charAt(i) == '.') {
-            ext = fname.substring(i).toLowerCase();
+            ext = fname.substring(i).toLowerCase(Locale.ROOT);
         }
 
         return findByExt(ext);

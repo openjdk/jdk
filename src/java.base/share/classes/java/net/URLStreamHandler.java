@@ -26,6 +26,7 @@
 package java.net;
 
 import java.io.IOException;
+import java.util.Locale;
 import java.util.Objects;
 import sun.net.util.IPAddressUtil;
 
@@ -374,7 +375,7 @@ public abstract class URLStreamHandler {
         } else {
             String host = u.getHost();
             if (host != null)
-                h += host.toLowerCase().hashCode();
+                h += host.toLowerCase(Locale.ROOT).hashCode();
         }
 
         // Generate the file part.

@@ -34,12 +34,7 @@ import java.security.AccessController;
 import java.security.Permission;
 import java.security.PermissionCollection;
 import java.security.PrivilegedAction;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.Map;
-import java.util.StringJoiner;
-import java.util.StringTokenizer;
-import java.util.Vector;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import sun.net.util.IPAddressUtil;
 import sun.net.PortConfig;
@@ -460,7 +455,7 @@ public final class SocketPermission extends Permission
             if (host.equals("*")) {
                 cname = "";
             } else if (host.startsWith("*.")) {
-                cname = host.substring(1).toLowerCase();
+                cname = host.substring(1).toLowerCase(Locale.ROOT);
             } else {
               throw new
                IllegalArgumentException("invalid host wildcard specification");
@@ -670,10 +665,10 @@ public final class SocketPermission extends Permission
             // we have to do this check, otherwise we might not
             // get the fully qualified domain name
             if (init_with_ip) {
-                cname = addresses[0].getHostName(false).toLowerCase();
+                cname = addresses[0].getHostName(false).toLowerCase(Locale.ROOT);
             } else {
              cname = InetAddress.getByName(addresses[0].getHostAddress()).
-                                              getHostName(false).toLowerCase();
+                                              getHostName(false).toLowerCase(Locale.ROOT);
             }
         } catch (UnknownHostException uhe) {
             invalid = true;

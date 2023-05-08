@@ -26,6 +26,7 @@
 package java.io;
 
 import java.util.Arrays;
+import java.util.Locale;
 
 /**
  * The {@code StreamTokenizer} class takes an input stream and
@@ -628,7 +629,7 @@ public class StreamTokenizer {
             peekc = c;
             sval = String.copyValueOf(buf, 0, i);
             if (forceLower)
-                sval = sval.toLowerCase();
+                sval = sval.toLowerCase(Locale.ROOT);
             return ttype = TT_WORD;
         }
 

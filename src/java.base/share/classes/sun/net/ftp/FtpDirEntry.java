@@ -26,6 +26,7 @@ package sun.net.ftp;
 
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Locale;
 
 /**
  * A {@code FtpDirEntry} is a class agregating all the information that the FTP client
@@ -273,7 +274,7 @@ public class FtpDirEntry {
      * @return this {@code FtpDirEntry}
      */
     public FtpDirEntry addFact(String fact, String value) {
-        facts.put(fact.toLowerCase(), value);
+        facts.put(fact.toLowerCase(Locale.ROOT), value);
         return this;
     }
 
@@ -285,7 +286,7 @@ public class FtpDirEntry {
      * provided by the server.
      */
     public String getFact(String fact) {
-        return facts.get(fact.toLowerCase());
+        return facts.get(fact.toLowerCase(Locale.ROOT));
     }
 
     /**

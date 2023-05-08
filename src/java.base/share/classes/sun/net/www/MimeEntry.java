@@ -25,6 +25,7 @@
 
 package sun.net.www;
 import java.io.*;
+import java.util.Locale;
 import java.util.StringJoiner;
 import java.util.StringTokenizer;
 
@@ -66,7 +67,7 @@ public class MimeEntry implements Cloneable {
     MimeEntry(String typeName, int action, String command,
               String imageFileName, String fileExtensions[]) {
 
-        this.typeName = typeName.toLowerCase();
+        this.typeName = typeName.toLowerCase(Locale.ROOT);
         this.action = action;
         this.command = command;
         this.imageFileName = imageFileName;
@@ -81,7 +82,7 @@ public class MimeEntry implements Cloneable {
     }
 
     public synchronized void setType(String type) {
-        typeName = type.toLowerCase();
+        typeName = type.toLowerCase(Locale.ROOT);
     }
 
     public synchronized int getAction() {

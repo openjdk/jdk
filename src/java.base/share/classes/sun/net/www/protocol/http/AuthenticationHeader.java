@@ -25,10 +25,7 @@
 
 package sun.net.www.protocol.http;
 
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.HashMap;
-import java.util.Set;
+import java.util.*;
 
 import sun.net.www.*;
 import sun.security.action.GetPropertyAction;
@@ -106,7 +103,7 @@ public class AuthenticationHeader {
         // were used later.
 
         if (authPref != null) {
-            authPref = authPref.toLowerCase();
+            authPref = authPref.toLowerCase(Locale.ROOT);
             if(authPref.equals("spnego") || authPref.equals("kerberos")) {
                 authPref = "negotiate";
             }

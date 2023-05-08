@@ -281,7 +281,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
         if (!allowRestrictedHeaders) {
             restrictedHeaderSet = HashSet.newHashSet(restrictedHeaders.length);
             for (int i=0; i < restrictedHeaders.length; i++) {
-                restrictedHeaderSet.add(restrictedHeaders[i].toLowerCase());
+                restrictedHeaderSet.add(restrictedHeaders[i].toLowerCase(Locale.ROOT));
             }
         } else {
             restrictedHeaderSet = null;
@@ -485,7 +485,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
             return false;
         }
 
-        key = key.toLowerCase();
+        key = key.toLowerCase(Locale.ROOT);
         if (restrictedHeaderSet.contains(key)) {
             /*
              * Exceptions to restricted headers:

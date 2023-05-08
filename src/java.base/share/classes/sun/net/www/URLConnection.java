@@ -264,10 +264,10 @@ public abstract class URLConnection extends java.net.URLConnection {
     private static HashMap<String,Void> proxiedHosts = new HashMap<>();
 
     public static synchronized void setProxiedHost(String host) {
-        proxiedHosts.put(host.toLowerCase(), null);
+        proxiedHosts.put(host.toLowerCase(Locale.ROOT), null);
     }
 
     public static synchronized boolean isProxiedHost(String host) {
-        return proxiedHosts.containsKey(host.toLowerCase());
+        return proxiedHosts.containsKey(host.toLowerCase(Locale.ROOT));
     }
 }

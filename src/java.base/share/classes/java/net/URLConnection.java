@@ -29,17 +29,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.security.PrivilegedAction;
-import java.util.Hashtable;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.Objects;
-import java.util.ServiceConfigurationError;
-import java.util.ServiceLoader;
-import java.util.StringTokenizer;
-import java.util.Collections;
-import java.util.Map;
-import java.util.List;
 import java.security.Permission;
 import java.security.AccessController;
 import sun.security.util.SecurityConstants;
@@ -1454,7 +1445,7 @@ public abstract class URLConnection {
      */
     private String typeToPackageName(String contentType) {
         // make sure we canonicalize the class name: all lower case
-        contentType = contentType.toLowerCase();
+        contentType = contentType.toLowerCase(Locale.ROOT);
         int len = contentType.length();
         char nm[] = new char[len];
         contentType.getChars(0, len, nm, 0);

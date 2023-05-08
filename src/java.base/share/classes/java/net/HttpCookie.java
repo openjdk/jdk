@@ -370,7 +370,7 @@ public final class HttpCookie implements Cloneable {
      */
     public void setDomain(String pattern) {
         if (pattern != null)
-            domain = pattern.toLowerCase();
+            domain = pattern.toLowerCase(Locale.ROOT);
         else
             domain = pattern;
     }
@@ -743,8 +743,8 @@ public final class HttpCookie implements Cloneable {
      */
     @Override
     public int hashCode() {
-        int h1 = name.toLowerCase().hashCode();
-        int h2 = (domain!=null) ? domain.toLowerCase().hashCode() : 0;
+        int h1 = name.toLowerCase(Locale.ROOT).hashCode();
+        int h2 = (domain!=null) ? domain.toLowerCase(Locale.ROOT).hashCode() : 0;
         int h3 = (path!=null) ? path.hashCode() : 0;
 
         return h1 + h2 + h3;
@@ -977,7 +977,7 @@ public final class HttpCookie implements Cloneable {
         // strip off the surrounding "-sign if there's any
         attrValue = stripOffSurroundingQuote(attrValue);
 
-        CookieAttributeAssignor assignor = assignors.get(attrName.toLowerCase());
+        CookieAttributeAssignor assignor = assignors.get(attrName.toLowerCase(Locale.ROOT));
         if (assignor != null) {
             assignor.assign(cookie, attrName, attrValue);
         } else {
@@ -1079,7 +1079,7 @@ public final class HttpCookie implements Cloneable {
     private static int guessCookieVersion(String header) {
         int version = 0;
 
-        header = header.toLowerCase();
+        header = header.toLowerCase(Locale.ROOT);
         if (header.contains("expires=")) {
             // only netscape cookie using 'expires'
             version = 0;
