@@ -82,12 +82,6 @@ class BootstrapInfo : public StackObj {
   //int argc() is eagerly cached in _argc
   int arg_index(int i) const            { return _pool->bootstrap_argument_index_at(_bss_index, i); }
 
-  // CP cache entry for call site (indy only)
-  ConstantPoolCacheEntry* invokedynamic_cp_cache_entry() const {
-    assert(is_method_call(), "");
-    return _pool->invokedynamic_cp_cache_entry_at(_indy_index);
-  }
-
   // If there is evidence this call site was already linked, set the
   // existing linkage data into result, or throw previous exception.
   // Return true if either action is taken, else false.

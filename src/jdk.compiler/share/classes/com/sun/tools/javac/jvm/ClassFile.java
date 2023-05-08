@@ -106,6 +106,7 @@ public class ClassFile {
 
     public enum Version {
         V45_3(45, 3), // base level for all attributes
+        V48(48, 0),   // JDK 1.4
         V49(49, 0),   // JDK 1.5: enum, generics, annotations
         V50(50, 0),   // JDK 1.6: stackmaps
         V51(51, 0),   // JDK 1.7
@@ -165,24 +166,8 @@ public class ClassFile {
      * Note: the naming is the inverse of that used by JVMS 4.2 The Internal Form Of Names,
      * which defines "internal name" to be the form using "/" instead of "."
      */
-    public static byte[] internalize(Name name) {
-        return internalize(name.getByteArray(), name.getByteOffset(), name.getByteLength());
-    }
-
-    /**
-     * Return external representation of buf[offset..offset+len-1], converting '.' to '/'.
-     *
-     * Note: the naming is the inverse of that used by JVMS 4.2 The Internal Form Of Names,
-     * which defines "internal name" to be the form using "/" instead of "."
-     */
-    public static byte[] externalize(byte[] buf, int offset, int len) {
-        byte[] translated = new byte[len];
-        for (int j = 0; j < len; j++) {
-            byte b = buf[offset + j];
-            if (b == '.') translated[j] = (byte) '/';
-            else translated[j] = b;
-        }
-        return translated;
+    public static Name internalize(Name name) {
+        return name.table.names.fromString(name.toString().replace('/', '.'));
     }
 
     /**
@@ -191,7 +176,17 @@ public class ClassFile {
      * Note: the naming is the inverse of that used by JVMS 4.2 The Internal Form Of Names,
      * which defines "internal name" to be the form using "/" instead of "."
      */
-    public static byte[] externalize(Name name) {
-        return externalize(name.getByteArray(), name.getByteOffset(), name.getByteLength());
+    public static Name externalize(Name name) {
+        return name.table.names.fromString(externalize(name.toString()));
+    }
+
+    /**
+     * Return external representation of given name, converting '/' to '.'.
+     *
+     * Note: the naming is the inverse of that used by JVMS 4.2 The Internal Form Of Names,
+     * which defines "internal name" to be the form using "/" instead of "."
+     */
+    public static String externalize(String name) {
+        return name.replace('.', '/');
     }
 }

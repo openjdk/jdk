@@ -713,7 +713,14 @@ class ServerImpl {
                     return;
                 }
                 String uriStr = requestLine.substring (start, space);
-                URI uri = new URI (uriStr);
+                URI uri;
+                try {
+                    uri = new URI (uriStr);
+                } catch (URISyntaxException e3) {
+                    reject(Code.HTTP_BAD_REQUEST,
+                            requestLine, "URISyntaxException thrown");
+                    return;
+                }
                 start = space+1;
                 String version = requestLine.substring (start);
                 Headers headers = req.headers();
@@ -749,7 +756,13 @@ class ServerImpl {
                 } else {
                     headerValue = headers.getFirst("Content-Length");
                     if (headerValue != null) {
-                        clen = Long.parseLong(headerValue);
+                        try {
+                            clen = Long.parseLong(headerValue);
+                        } catch (NumberFormatException e2) {
+                            reject(Code.HTTP_BAD_REQUEST,
+                                    requestLine, "NumberFormatException thrown");
+                            return;
+                        }
                         if (clen < 0) {
                             reject(Code.HTTP_BAD_REQUEST, requestLine,
                                     "Illegal Content-Length value");
@@ -834,20 +847,11 @@ class ServerImpl {
                     uc.doFilter (new HttpExchangeImpl (tx));
                 }
 
-            } catch (IOException e1) {
-                logger.log (Level.TRACE, "ServerImpl.Exchange (1)", e1);
-                closeConnection(connection);
-            } catch (NumberFormatException e2) {
-                logger.log (Level.TRACE, "ServerImpl.Exchange (2)", e2);
-                reject (Code.HTTP_BAD_REQUEST,
-                        requestLine, "NumberFormatException thrown");
-            } catch (URISyntaxException e3) {
-                logger.log (Level.TRACE, "ServerImpl.Exchange (3)", e3);
-                reject (Code.HTTP_BAD_REQUEST,
-                        requestLine, "URISyntaxException thrown");
-            } catch (Exception e4) {
-                logger.log (Level.TRACE, "ServerImpl.Exchange (4)", e4);
-                closeConnection(connection);
+            } catch (Exception e) {
+                logger.log (Level.TRACE, "ServerImpl.Exchange", e);
+                if (tx == null || !tx.writefinished) {
+                    closeConnection(connection);
+                }
             } catch (Throwable t) {
                 logger.log(Level.TRACE, "ServerImpl.Exchange (5)", t);
                 throw t;
@@ -872,9 +876,8 @@ class ServerImpl {
             rejected = true;
             logReply (code, requestStr, message);
             sendReply (
-                code, false, "<h1>"+code+Code.msg(code)+"</h1>"+message
+                code, true, "<h1>"+code+Code.msg(code)+"</h1>"+message
             );
-            closeConnection(connection);
         }
 
         void sendReply (
