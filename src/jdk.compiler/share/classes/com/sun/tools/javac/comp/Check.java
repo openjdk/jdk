@@ -4586,7 +4586,7 @@ public class Check {
         new TreeScanner() {
             @Override
             public void visitBindingPattern(JCBindingPattern tree) {
-                bindings[0] = !tree.var.sym.isUnnamed();
+                bindings[0] = !tree.var.sym.isUnnamedVariable();
                 super.visitBindingPattern(tree);
             }
         }.scan(p);

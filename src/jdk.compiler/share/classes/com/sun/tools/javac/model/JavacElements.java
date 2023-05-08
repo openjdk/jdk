@@ -723,7 +723,7 @@ public class JavacElements implements Elements {
     @Override @DefinedBy(Api.LANGUAGE_MODEL)
     public boolean isUnnamed(VariableElement element) {
         VarSymbol sym = (VarSymbol) element;
-        return sym.isUnnamed();
+        return sym.isUnnamedVariable();
     }
 
     @Override @DefinedBy(Api.LANGUAGE_MODEL)

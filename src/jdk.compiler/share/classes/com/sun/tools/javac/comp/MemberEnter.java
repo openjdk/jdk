@@ -305,7 +305,7 @@ public class MemberEnter extends JCTree.Visitor {
             }
         }
 
-        if(!(Feature.UNNAMED_VARIABLES.allowedInSource(source) && tree.sym.isUnnamed())) {
+        if(!(Feature.UNNAMED_VARIABLES.allowedInSource(source) && tree.sym.isUnnamedVariable())) {
             if (chk.checkUnique(tree.pos(), v, enclScope)) {
                 chk.checkTransparentVar(tree.pos(), v, enclScope);
                 enclScope.enter(v);
