@@ -104,8 +104,9 @@ public interface VariableElement extends Element {
      * false} otherwise}
      *
      * @implSpec
-     * The default implementation of this method examines whether {@code
-     * getSimpleName()} returns an empty name.
+     * The default implementation of this method calls {@code
+     * getSimpleName()} and returns {@code true} if the result is
+     * empty and {@code false} otherwise.
      *
      * @jls 6.1 Declarations
      * @jls 14.4 Local Variable Declarations

@@ -46,10 +46,6 @@ public class TestUnnamedVariableElement extends JavacTestingAbstractProcessor im
     public boolean process(Set<? extends TypeElement> annotations,
                            RoundEnvironment roundEnv) {
         if (!roundEnv.processingOver()) {
-            Elements vacuousElements = new VacuousElements();
-            expectNpe( () -> vacuousElements.isUnnamed(null));
-            expectNpe( () -> elements.isUnnamed(null));
-
             Trees trees = Trees.instance(processingEnv);
 
             for(Element rootElement : roundEnv.getRootElements()) {
@@ -96,10 +92,6 @@ public class TestUnnamedVariableElement extends JavacTestingAbstractProcessor im
                 throw new RuntimeException("Expected a local variable, but got: " +
                         element.getKind());
             }
-            if (!elements.isUnnamed(element)) {
-                throw new RuntimeException("Expected empty name for simple name of an unnamed variable, but got: " +
-                        element.getSimpleName());
-            }
             StringWriter out = new StringWriter();
             String expected = "int _;";
             elements.printElements(out, element);
@@ -126,26 +118,6 @@ public class TestUnnamedVariableElement extends JavacTestingAbstractProcessor im
 
         if (visitorLatest.visit(element) == null) {
             throw new RuntimeException("Null result of a resource variable visitation.");
-        }
-    }
-
-    private void expectNpe(java.util.function.BooleanSupplier bs) {
-        try {
-            bs.getAsBoolean();
-            messager.printError("Did not get expected NPE");
-        } catch (NullPointerException npe) {
-            ; // Expected
-        }
-    }
-
-    private void expectFalse(java.util.function.BooleanSupplier bs) {
-        try {
-            boolean result = bs.getAsBoolean();
-            if (result) {
-                messager.printError("Unexpected true result");
-            }
-        } catch (NullPointerException npe) {
-            messager.printError("Unexpected NPE thrown");
         }
     }
 }
