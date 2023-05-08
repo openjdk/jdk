@@ -218,7 +218,7 @@ template <typename Client, template <typename> class RetrievalPolicy, typename F
 inline typename FreeListType::NodePtr JfrMemorySpace<Client, RetrievalPolicy, FreeListType, FullListType, epoch_aware>::allocate(size_t size) {
   const size_t aligned_size_bytes = align_allocation_size(size, _min_element_size);
   if (aligned_size_bytes == 0) {
-    return NULL;
+    return nullptr;
   }
   void* const allocation = JfrCHeapObj::new_array<u1>(aligned_size_bytes + sizeof(Node));
   if (allocation == nullptr) {
