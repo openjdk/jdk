@@ -338,6 +338,8 @@ class StaticCallInfo {
 class CompiledStaticCall : public ResourceObj {
  public:
   // Code
+
+  // Returns NULL if CodeBuffer::expand fails
   static address emit_to_interp_stub(CodeBuffer &cbuf, address mark = NULL);
   static int to_interp_stub_size();
   static int to_trampoline_stub_size();

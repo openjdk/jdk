@@ -1147,7 +1147,9 @@ void CodeInstaller::site_Call(CodeBuffer& buffer, jint pc_offset, JVMCIObject si
     CodeInstaller::pd_relocate_JavaMethod(buffer, hotspot_method, pc_offset, JVMCI_CHECK);
     if (_next_call_type == INVOKESTATIC || _next_call_type == INVOKESPECIAL) {
       // Need a static call stub for transitions from compiled to interpreted.
-      CompiledStaticCall::emit_to_interp_stub(buffer, _instructions->start() + pc_offset);
+      if (CompiledStaticCall::emit_to_interp_stub(buffer, _instructions->start() + pc_offset) == nullptr) {
+        JVMCI_ERROR("could not emit to_interp stub - code cache is full");
+      }
     }
   }
 
