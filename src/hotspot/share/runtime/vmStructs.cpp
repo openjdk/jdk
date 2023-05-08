@@ -48,6 +48,7 @@
 #include "code/vmreg.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/oopMap.hpp"
+#include "gc/shared/stringdedup/stringDedupThread.hpp"
 #include "gc/shared/vmStructs_gc.hpp"
 #include "interpreter/bytecodes.hpp"
 #include "interpreter/interpreter.hpp"
@@ -298,7 +299,6 @@
   nonstatic_field(Method,                      _access_flags,                                 AccessFlags)                           \
   nonstatic_field(Method,                      _vtable_index,                                 int)                                   \
   nonstatic_field(Method,                      _intrinsic_id,                                 u2)                                    \
-  nonstatic_field(Method,                      _flags,                                        u2)                                    \
   volatile_nonstatic_field(Method,             _code,                                         CompiledMethod*)                       \
   nonstatic_field(Method,                      _i2i_entry,                                    address)                               \
   volatile_nonstatic_field(Method,             _from_compiled_entry,                          address)                               \
@@ -307,7 +307,7 @@
   nonstatic_field(ConstMethod,                 _constants,                                    ConstantPool*)                         \
   nonstatic_field(ConstMethod,                 _stackmap_data,                                Array<u1>*)                            \
   nonstatic_field(ConstMethod,                 _constMethod_size,                             int)                                   \
-  nonstatic_field(ConstMethod,                 _flags,                                        u2)                                    \
+  nonstatic_field(ConstMethod,                 _flags._flags,                                 u4)                                    \
   nonstatic_field(ConstMethod,                 _code_size,                                    u2)                                    \
   nonstatic_field(ConstMethod,                 _name_index,                                   u2)                                    \
   nonstatic_field(ConstMethod,                 _signature_index,                              u2)                                    \
@@ -1311,6 +1311,7 @@
         declare_type(ServiceThread, JavaThread)                           \
         declare_type(NotificationThread, JavaThread)                      \
         declare_type(CompilerThread, JavaThread)                          \
+        declare_type(StringDedupThread, JavaThread)                       \
   declare_toplevel_type(OSThread)                                         \
   declare_toplevel_type(JavaFrameAnchor)                                  \
                                                                           \
@@ -2083,16 +2084,6 @@
   /************************************************************/          \
                                                                           \
   declare_constant(JVM_ACC_WRITTEN_FLAGS)                                 \
-  declare_constant(JVM_ACC_MONITOR_MATCH)                                 \
-  declare_constant(JVM_ACC_HAS_MONITOR_BYTECODES)                         \
-  declare_constant(JVM_ACC_HAS_LOOPS)                                     \
-  declare_constant(JVM_ACC_LOOPS_FLAG_INIT)                               \
-  declare_constant(JVM_ACC_QUEUED)                                        \
-  declare_constant(JVM_ACC_NOT_C2_OSR_COMPILABLE)                         \
-  declare_constant(JVM_ACC_HAS_JSRS)                                      \
-  declare_constant(JVM_ACC_IS_OLD)                                        \
-  declare_constant(JVM_ACC_IS_OBSOLETE)                                   \
-  declare_constant(JVM_ACC_IS_PREFIXED_NATIVE)                            \
   declare_constant(JVM_ACC_HAS_FINALIZER)                                 \
   declare_constant(JVM_ACC_IS_CLONEABLE_FAST)                             \
                                                                           \
@@ -2176,30 +2167,23 @@
   declare_constant(Klass::_lh_array_tag_type_value)                       \
   declare_constant(Klass::_lh_array_tag_obj_value)                        \
                                                                           \
+  declare_constant(Method::nonvirtual_vtable_index)                       \
+  declare_constant(Method::extra_stack_entries_for_jsr292)                \
+                                                                          \
   /********************************/                                      \
   /* ConstMethod anon-enum */                                             \
   /********************************/                                      \
                                                                           \
-  declare_constant(Method::_caller_sensitive)                             \
-  declare_constant(Method::_force_inline)                                 \
-  declare_constant(Method::_dont_inline)                                  \
-  declare_constant(Method::_hidden)                                       \
-  declare_constant(Method::_changes_current_thread)                       \
-                                                                          \
-  declare_constant(Method::nonvirtual_vtable_index)                       \
-                                                                          \
-  declare_constant(Method::extra_stack_entries_for_jsr292)                \
-                                                                          \
-  declare_constant(ConstMethod::_has_linenumber_table)                    \
-  declare_constant(ConstMethod::_has_checked_exceptions)                  \
-  declare_constant(ConstMethod::_has_localvariable_table)                 \
-  declare_constant(ConstMethod::_has_exception_table)                     \
-  declare_constant(ConstMethod::_has_generic_signature)                   \
-  declare_constant(ConstMethod::_has_method_parameters)                   \
-  declare_constant(ConstMethod::_has_method_annotations)                  \
-  declare_constant(ConstMethod::_has_parameter_annotations)               \
-  declare_constant(ConstMethod::_has_default_annotations)                 \
-  declare_constant(ConstMethod::_has_type_annotations)                    \
+  declare_constant(ConstMethodFlags::_misc_has_linenumber_table)          \
+  declare_constant(ConstMethodFlags::_misc_has_checked_exceptions)        \
+  declare_constant(ConstMethodFlags::_misc_has_localvariable_table)       \
+  declare_constant(ConstMethodFlags::_misc_has_exception_table)           \
+  declare_constant(ConstMethodFlags::_misc_has_generic_signature)         \
+  declare_constant(ConstMethodFlags::_misc_has_method_parameters)         \
+  declare_constant(ConstMethodFlags::_misc_has_method_annotations)        \
+  declare_constant(ConstMethodFlags::_misc_has_parameter_annotations)     \
+  declare_constant(ConstMethodFlags::_misc_has_default_annotations)       \
+  declare_constant(ConstMethodFlags::_misc_has_type_annotations)          \
                                                                           \
   /**************/                                                        \
   /* DataLayout */                                                        \
