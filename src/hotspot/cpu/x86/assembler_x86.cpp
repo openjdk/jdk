@@ -2431,12 +2431,13 @@ void Assembler::jcc(Condition cc, Label& L, bool maybe_short) {
 }
 
 void Assembler::jcc(Condition cc, Label& L, int is_taken, bool maybe_short) {
-  if (!UseBranchHints || !is_taken) {     // For now, only add taken hints
+  if (!UseBranchHints ||
+      (!BHAllNotTaken && !BHAddBothHints && is_taken < 1)) {
     return jcc(cc, L, maybe_short);
   }
+  uint8_t taken = ((is_taken == 1) && !BHAllNotTaken) ? 0x3e : 0x2e;
   InstructionMark im(this);
   assert((0 <= cc) && (cc < 16), "illegal cc");
-  uint8_t taken = is_taken ? 0x3e : 0x2e;
   if (L.is_bound()) {
     address dst = target(L);
     assert(dst != NULL, "jcc most probably wrong");
@@ -2490,10 +2491,11 @@ void Assembler::jccb_0(Condition cc, Label& L, const char* file, int line) {
 }
 
 void Assembler::jccb_h(Condition cc, Label& L, int is_taken, const char* file, int line) {
-  if (!UseBranchHints || !is_taken) {     // For now, only add taken hints
+  if (!UseBranchHints ||
+      (!BHAllNotTaken && !BHAddBothHints && is_taken < 1)) {
     return jccb_0(cc, L, file, line);
   }
-  uint8_t taken = is_taken ? 0x3e : 0x2e;
+  uint8_t taken = ((is_taken == 1) && !BHAllNotTaken) ? 0x3e : 0x2e;
   if (L.is_bound()) {
     const int short_size = 3;
     address entry = target(L);

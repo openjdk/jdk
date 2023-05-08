@@ -13031,13 +13031,9 @@ instruct jmpCon(cmpOp cop, rFlagsReg cr, label labl)
   format %{ "j$cop     $labl" %}
   ins_encode %{
     Label* L = $labl$$label;
-    int known = (((MachIfNode *)this)->_prob >= PROB_STATIC_FREQUENT) ? 1 :
-                (((MachIfNode *)this)->_prob <= PROB_STATIC_INFREQUENT) ? 0 : -1;
-    if (UseBranchHints && (known != -1)) {
-      __ jcc((Assembler::Condition)($cop$$cmpcode), *L, known, false); // Always long jump
-    } else {
-      __ jcc((Assembler::Condition)($cop$$cmpcode), *L, false); // Always long jump
-    }
+    int known = (_prob >= (((float)BHTakenThreshold) / 100.0f)) ? 1 :
+                (_prob <= (((float)BHNotTakenThreshold) / 100.0f)) ? 0 : -1;
+    __ jcc((Assembler::Condition)($cop$$cmpcode), *L, known, false); // Always long jump
   %}
   ins_pipe(pipe_jcc);
 %}
@@ -13052,13 +13048,9 @@ instruct jmpLoopEnd(cmpOp cop, rFlagsReg cr, label labl)
   format %{ "j$cop     $labl\t# loop end" %}
   ins_encode %{
     Label* L = $labl$$label;
-    int known = (((MachIfNode *)this)->_prob >= PROB_STATIC_FREQUENT) ? 1 :
-                (((MachIfNode *)this)->_prob <= PROB_STATIC_INFREQUENT) ? 0 : -1;
-    if (UseBranchHints && (known != -1)) {
-      __ jcc((Assembler::Condition)($cop$$cmpcode), *L, known, false); // Always long jump
-    } else {
-      __ jcc((Assembler::Condition)($cop$$cmpcode), *L, false); // Always long jump
-    }
+    int known = (_prob >= (((float)BHTakenThreshold) / 100.0f)) ? 1 :
+                (_prob <= (((float)BHNotTakenThreshold) / 100.0f)) ? 0 : -1;
+    __ jcc((Assembler::Condition)($cop$$cmpcode), *L, known, false); // Always long jump
   %}
   ins_pipe(pipe_jcc);
 %}
@@ -13072,13 +13064,9 @@ instruct jmpLoopEndU(cmpOpU cop, rFlagsRegU cmp, label labl) %{
   format %{ "j$cop,u   $labl\t# loop end" %}
   ins_encode %{
     Label* L = $labl$$label;
-    int known = (((MachIfNode *)this)->_prob >= PROB_STATIC_FREQUENT) ? 1 :
-                (((MachIfNode *)this)->_prob <= PROB_STATIC_INFREQUENT) ? 0 : -1;
-    if (UseBranchHints && (known != -1)) {
-      __ jcc((Assembler::Condition)($cop$$cmpcode), *L, known, false); // Always long jump
-    } else {
-      __ jcc((Assembler::Condition)($cop$$cmpcode), *L, false); // Always long jump
-    }
+    int known = (_prob >= (((float)BHTakenThreshold) / 100.0f)) ? 1 :
+                (_prob <= (((float)BHNotTakenThreshold) / 100.0f)) ? 0 : -1;
+    __ jcc((Assembler::Condition)($cop$$cmpcode), *L, known, false); // Always long jump
   %}
   ins_pipe(pipe_jcc);
 %}
@@ -13091,13 +13079,9 @@ instruct jmpLoopEndUCF(cmpOpUCF cop, rFlagsRegUCF cmp, label labl) %{
   format %{ "j$cop,u   $labl\t# loop end" %}
   ins_encode %{
     Label* L = $labl$$label;
-    int known = (((MachIfNode *)this)->_prob >= PROB_STATIC_FREQUENT) ? 1 :
-                (((MachIfNode *)this)->_prob <= PROB_STATIC_INFREQUENT) ? 0 : -1;
-    if (UseBranchHints && (known != -1)) {
-      __ jcc((Assembler::Condition)($cop$$cmpcode), *L, known, false); // Always long jump
-    } else {
-      __ jcc((Assembler::Condition)($cop$$cmpcode), *L, false); // Always long jump
-    }
+    int known = (_prob >= (((float)BHTakenThreshold) / 100.0f)) ? 1 :
+                (_prob <= (((float)BHNotTakenThreshold) / 100.0f)) ? 0 : -1;
+    __ jcc((Assembler::Condition)($cop$$cmpcode), *L, known, false); // Always long jump
   %}
   ins_pipe(pipe_jcc);
 %}
@@ -13111,13 +13095,9 @@ instruct jmpConU(cmpOpU cop, rFlagsRegU cmp, label labl) %{
   format %{ "j$cop,u   $labl" %}
   ins_encode %{
     Label* L = $labl$$label;
-    int known = (((MachIfNode *)this)->_prob >= PROB_STATIC_FREQUENT) ? 1 :
-                (((MachIfNode *)this)->_prob <= PROB_STATIC_INFREQUENT) ? 0 : -1;
-    if (UseBranchHints && (known != -1)) {
-      __ jcc((Assembler::Condition)($cop$$cmpcode), *L, known, false); // Always long jump
-    } else {
-      __ jcc((Assembler::Condition)($cop$$cmpcode), *L, false); // Always long jump
-    }
+    int known = (_prob >= (((float)BHTakenThreshold) / 100.0f)) ? 1 :
+                (_prob <= (((float)BHNotTakenThreshold) / 100.0f)) ? 0 : -1;
+    __ jcc((Assembler::Condition)($cop$$cmpcode), *L, known, false); // Always long jump
   %}
   ins_pipe(pipe_jcc);
 %}
@@ -13130,13 +13110,9 @@ instruct jmpConUCF(cmpOpUCF cop, rFlagsRegUCF cmp, label labl) %{
   format %{ "j$cop,u   $labl" %}
   ins_encode %{
     Label* L = $labl$$label;
-    int known = (((MachIfNode *)this)->_prob >= PROB_STATIC_FREQUENT) ? 1 :
-                (((MachIfNode *)this)->_prob <= PROB_STATIC_INFREQUENT) ? 0 : -1;
-    if (UseBranchHints && (known != -1)) {
-      __ jcc((Assembler::Condition)($cop$$cmpcode), *L, known, false); // Always long jump
-    } else {
-      __ jcc((Assembler::Condition)($cop$$cmpcode), *L, false); // Always long jump
-    }
+    int known = (_prob >= (((float)BHTakenThreshold) / 100.0f)) ? 1 :
+                (_prob <= (((float)BHNotTakenThreshold) / 100.0f)) ? 0 : -1;
+    __ jcc((Assembler::Condition)($cop$$cmpcode), *L, known, false); // Always long jump
   %}
   ins_pipe(pipe_jcc);
 %}
@@ -13158,25 +13134,15 @@ instruct jmpConUCF2(cmpOpUCF2 cop, rFlagsRegUCF cmp, label labl) %{
   %}
   ins_encode %{
     Label* l = $labl$$label;
-    int known = (((MachIfNode *)this)->_prob >= PROB_STATIC_FREQUENT) ? 1 :
-                (((MachIfNode *)this)->_prob <= PROB_STATIC_INFREQUENT) ? 0 : -1;
+    int known = (_prob >= (((float)BHTakenThreshold) / 100.0f)) ? 1 :
+                (_prob <= (((float)BHNotTakenThreshold) / 100.0f)) ? 0 : -1;
     if ($cop$$cmpcode == Assembler::notEqual) {
-      if (UseBranchHints && (known != -1)) {
-        __ jcc(Assembler::parity, *l, known, false);
-        __ jcc(Assembler::notEqual, *l, known, false);
-      } else {
-        __ jcc(Assembler::parity, *l, false);
-        __ jcc(Assembler::notEqual, *l, false);
-      }
+      __ jcc(Assembler::parity, *l, known, false);
+      __ jcc(Assembler::notEqual, *l, known, false);
     } else if ($cop$$cmpcode == Assembler::equal) {
       Label done;
-      if (UseBranchHints && (known != -1)) {
-        __ jccb(Assembler::parity, done, known);
-        __ jcc(Assembler::equal, *l, known, false);
-      } else {
-        __ jccb(Assembler::parity, done);
-        __ jcc(Assembler::equal, *l, false);
-      }
+      __ jccb(Assembler::parity, done, known);
+      __ jcc(Assembler::equal, *l, known, false);
       __ bind(done);
     } else {
        ShouldNotReachHere();
@@ -13273,13 +13239,9 @@ instruct jmpCon_short(cmpOp cop, rFlagsReg cr, label labl) %{
   format %{ "j$cop,s   $labl" %}
   ins_encode %{
     Label* L = $labl$$label;
-    int known = (((MachIfNode *)this)->_prob >= PROB_STATIC_FREQUENT) ? 1 :
-                (((MachIfNode *)this)->_prob <= PROB_STATIC_INFREQUENT) ? 0 : -1;
-    if (UseBranchHints && (known != -1)) {
-      __ jccb((Assembler::Condition)($cop$$cmpcode), *L, known);
-    } else {
-      __ jccb((Assembler::Condition)($cop$$cmpcode), *L);
-    }
+    int known = (_prob >= (((float)BHTakenThreshold) / 100.0f)) ? 1 :
+                (_prob <= (((float)BHNotTakenThreshold) / 100.0f)) ? 0 : -1;
+    __ jccb((Assembler::Condition)($cop$$cmpcode), *L, known);
   %}
   ins_pipe(pipe_jcc);
   ins_short_branch(1);
@@ -13294,13 +13256,9 @@ instruct jmpLoopEnd_short(cmpOp cop, rFlagsReg cr, label labl) %{
   format %{ "j$cop,s   $labl\t# loop end" %}
   ins_encode %{
     Label* L = $labl$$label;
-    int known = (((MachIfNode *)this)->_prob >= PROB_STATIC_FREQUENT) ? 1 :
-                (((MachIfNode *)this)->_prob <= PROB_STATIC_INFREQUENT) ? 0 : -1;
-    if (UseBranchHints && (known != -1)) {
-      __ jccb((Assembler::Condition)($cop$$cmpcode), *L, known);
-    } else {
-      __ jccb((Assembler::Condition)($cop$$cmpcode), *L);
-    }
+    int known = (_prob >= (((float)BHTakenThreshold) / 100.0f)) ? 1 :
+                (_prob <= (((float)BHNotTakenThreshold) / 100.0f)) ? 0 : -1;
+    __ jccb((Assembler::Condition)($cop$$cmpcode), *L, known);
   %}
   ins_pipe(pipe_jcc);
   ins_short_branch(1);
@@ -13315,13 +13273,9 @@ instruct jmpLoopEndU_short(cmpOpU cop, rFlagsRegU cmp, label labl) %{
   format %{ "j$cop,us  $labl\t# loop end" %}
   ins_encode %{
     Label* L = $labl$$label;
-    int known = (((MachIfNode *)this)->_prob >= PROB_STATIC_FREQUENT) ? 1 :
-                (((MachIfNode *)this)->_prob <= PROB_STATIC_INFREQUENT) ? 0 : -1;
-    if (UseBranchHints && (known != -1)) {
-      __ jccb((Assembler::Condition)($cop$$cmpcode), *L, known);
-    } else {
-      __ jccb((Assembler::Condition)($cop$$cmpcode), *L);
-    }
+    int known = (_prob >= (((float)BHTakenThreshold) / 100.0f)) ? 1 :
+                (_prob <= (((float)BHNotTakenThreshold) / 100.0f)) ? 0 : -1;
+    __ jccb((Assembler::Condition)($cop$$cmpcode), *L, known);
   %}
   ins_pipe(pipe_jcc);
   ins_short_branch(1);
@@ -13335,13 +13289,9 @@ instruct jmpLoopEndUCF_short(cmpOpUCF cop, rFlagsRegUCF cmp, label labl) %{
   format %{ "j$cop,us  $labl\t# loop end" %}
   ins_encode %{
     Label* L = $labl$$label;
-    int known = (((MachIfNode *)this)->_prob >= PROB_STATIC_FREQUENT) ? 1 :
-                (((MachIfNode *)this)->_prob <= PROB_STATIC_INFREQUENT) ? 0 : -1;
-    if (UseBranchHints && (known != -1)) {
-      __ jccb((Assembler::Condition)($cop$$cmpcode), *L, known);
-    } else {
-      __ jccb((Assembler::Condition)($cop$$cmpcode), *L);
-    }
+    int known = (_prob >= (((float)BHTakenThreshold) / 100.0f)) ? 1 :
+                (_prob <= (((float)BHNotTakenThreshold) / 100.0f)) ? 0 : -1;
+    __ jccb((Assembler::Condition)($cop$$cmpcode), *L, known);
   %}
   ins_pipe(pipe_jcc);
   ins_short_branch(1);
@@ -13356,13 +13306,9 @@ instruct jmpConU_short(cmpOpU cop, rFlagsRegU cmp, label labl) %{
   format %{ "j$cop,us  $labl" %}
   ins_encode %{
     Label* L = $labl$$label;
-    int known = (((MachIfNode *)this)->_prob >= PROB_STATIC_FREQUENT) ? 1 :
-                (((MachIfNode *)this)->_prob <= PROB_STATIC_INFREQUENT) ? 0 : -1;
-    if (UseBranchHints && (known != -1)) {
-      __ jccb((Assembler::Condition)($cop$$cmpcode), *L, known);
-    } else {
-      __ jccb((Assembler::Condition)($cop$$cmpcode), *L);
-    }
+    int known = (_prob >= (((float)BHTakenThreshold) / 100.0f)) ? 1 :
+                (_prob <= (((float)BHNotTakenThreshold) / 100.0f)) ? 0 : -1;
+    __ jccb((Assembler::Condition)($cop$$cmpcode), *L, known);
   %}
   ins_pipe(pipe_jcc);
   ins_short_branch(1);
@@ -13376,13 +13322,9 @@ instruct jmpConUCF_short(cmpOpUCF cop, rFlagsRegUCF cmp, label labl) %{
   format %{ "j$cop,us  $labl" %}
   ins_encode %{
     Label* L = $labl$$label;
-    int known = (((MachIfNode *)this)->_prob >= PROB_STATIC_FREQUENT) ? 1 :
-                (((MachIfNode *)this)->_prob <= PROB_STATIC_INFREQUENT) ? 0 : -1;
-    if (UseBranchHints && (known != -1)) {
-      __ jccb((Assembler::Condition)($cop$$cmpcode), *L, known);
-    } else {
-      __ jccb((Assembler::Condition)($cop$$cmpcode), *L);
-    }
+    int known = (_prob >= (((float)BHTakenThreshold) / 100.0f)) ? 1 :
+                (_prob <= (((float)BHNotTakenThreshold) / 100.0f)) ? 0 : -1;
+    __ jccb((Assembler::Condition)($cop$$cmpcode), *L, known);
   %}
   ins_pipe(pipe_jcc);
   ins_short_branch(1);
@@ -13405,25 +13347,15 @@ instruct jmpConUCF2_short(cmpOpUCF2 cop, rFlagsRegUCF cmp, label labl) %{
   %}
   ins_encode %{
     Label* l = $labl$$label;
-    int known = (((MachIfNode *)this)->_prob >= PROB_STATIC_FREQUENT) ? 1 :
-                (((MachIfNode *)this)->_prob <= PROB_STATIC_INFREQUENT) ? 0 : -1;
+    int known = (_prob >= (((float)BHTakenThreshold) / 100.0f)) ? 1 :
+                (_prob <= (((float)BHNotTakenThreshold) / 100.0f)) ? 0 : -1;
     if ($cop$$cmpcode == Assembler::notEqual) {
-      if (UseBranchHints && (known != -1)) {
-        __ jccb(Assembler::parity, *l, known);
-        __ jccb(Assembler::notEqual, *l, known);
-      } else {
-        __ jccb(Assembler::parity, *l);
-        __ jccb(Assembler::notEqual, *l);
-      }
+      __ jccb(Assembler::parity, *l, known);
+      __ jccb(Assembler::notEqual, *l, known);
     } else if ($cop$$cmpcode == Assembler::equal) {
       Label done;
-      if (UseBranchHints && (known != -1)) {
-        __ jccb(Assembler::parity, done, known);
-        __ jccb(Assembler::equal, *l, known);
-      } else {
-        __ jccb(Assembler::parity, done);
-        __ jccb(Assembler::equal, *l);
-      }
+      __ jccb(Assembler::parity, done, known);
+      __ jccb(Assembler::equal, *l, known);
       __ bind(done);
     } else {
        ShouldNotReachHere();

@@ -227,6 +227,21 @@ define_pd_global(intx, InitArrayShortSize, 8*BytesPerLong);
              "Turn off JVM mitigations related to Intel micro code "        \
              "mitigations for the Intel JCC erratum")                       \
                                                                             \
+  product(int, BHTakenThreshold, 99,                                        \
+          "Threshold for inserting taken branch hint percentage")           \
+          range(1, 99)                                                      \
+                                                                            \
+  product(int, BHNotTakenThreshold, 1,                                      \
+          "Threshold for inserting not taken branch hint percetage")        \
+          range(1, 99)                                                      \
+                                                                            \
+  product(bool, BHAllNotTaken, false,                                       \
+          "All jcc get not taken prefixes")                                 \
+                                                                            \
+  product(bool, BHAddBothHints, false,                                      \
+          "Add both taken and not taken hints.  If false "                  \
+          "only add taken hints. Overridden by BHAllNotTaken")              \
+                                                                            \
   /* Force branch hint prefix insertion for conditional branches */         \
   product(bool, UseBranchHints, true,                                       \
              "Use branch hint prefixes for conditional branches based "     \
