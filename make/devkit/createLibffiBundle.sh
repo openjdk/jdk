@@ -81,6 +81,7 @@ cd $LIBFFI_DIR
 if [ ! -e $LIBFFI_DIR/configure ]; then
   bash ./autogen.sh
 fi
+# For Linux/x86, add --build=i686-pc-linux-gnu CFLAGS=-m32 CXXFLAGS=-m32 LDFLAGS=-m32
 bash ./configure --prefix=$INSTALL_DIR CC=$DEVKIT_DIR/bin/gcc CXX=$DEVKIT_DIR/bin/g++
 
 # Run with nice to keep system usable during build.
@@ -91,6 +92,7 @@ mkdir -p $IMAGE_DIR
 if [ ! -e $IMAGE_DIR/lib/libffi.so ]; then
   echo "Copying libffi.so* to image"
   mkdir -p $IMAGE_DIR/lib
+  # For Linux/x86 it's under /lib/ instead of /lib64/
   cp -a $INSTALL_DIR/lib64/libffi.so* $IMAGE_DIR/lib/
 fi
 if [ ! -e $IMAGE_DIR/include/ ]; then

@@ -30,34 +30,44 @@
 #include "utilities/ostream.hpp"
 #include "utilities/powerOfTwo.hpp"
 
+#include "logging/log.hpp"
+
 // We cannot use 0, because that may already be a valid base address in zero-based heaps.
 // 0x1 is safe because heap base addresses must be aligned by much larger alignment
 HeapWord* const SlidingForwarding::UNUSED_BASE = reinterpret_cast<HeapWord*>(0x1);
 
 HeapWord* SlidingForwarding::_heap_start = nullptr;
-size_t SlidingForwarding::_num_regions = 0;
 size_t SlidingForwarding::_region_size_words = 0;
-uint SlidingForwarding::_region_size_words_shift = 0;
+size_t SlidingForwarding::_heap_start_region_bias = 0;
+size_t SlidingForwarding::_num_regions = 0;
+uint SlidingForwarding::_region_size_bytes_shift = 0;
+uintptr_t SlidingForwarding::_region_mask = 0;
+HeapWord** SlidingForwarding::_biased_bases[SlidingForwarding::NUM_TARGET_REGIONS] = { nullptr, nullptr };
 HeapWord** SlidingForwarding::_bases_table = nullptr;
-FallbackTable* SlidingForwarding::_fallback_table = nullptr;
+SlidingForwarding::FallbackTable* SlidingForwarding::_fallback_table = nullptr;
 
 void SlidingForwarding::initialize(MemRegion heap, size_t region_size_words) {
 #ifdef _LP64
   if (UseAltGCForwarding) {
     _heap_start = heap.start();
-    _num_regions = align_up(pointer_delta(heap.end(), heap.start()), region_size_words) / region_size_words;
-    _region_size_words = region_size_words;
-    _region_size_words_shift = log2i_exact(region_size_words);
+
     if (UseSerialGC && heap.word_size() <= (1 << NUM_OFFSET_BITS)) {
       // In this case we can treat the whole heap as a single region and
       // make the encoding very simple.
       _num_regions = 1;
-      _region_size_words = round_up_power_of_2(heap.word_size());
-      _region_size_words_shift = log2i_exact(_region_size_words);
+      _region_size_words = heap.word_size();
+      _region_size_bytes_shift = log2i_exact(round_up_power_of_2(_region_size_words)) + LogHeapWordSize;
+  } else {
+      _num_regions = align_up(pointer_delta(heap.end(), heap.start()), region_size_words) / region_size_words;
+      _region_size_words = region_size_words;
+      _region_size_bytes_shift = log2i_exact(_region_size_words) + LogHeapWordSize;
     }
+    _heap_start_region_bias = (uintptr_t)_heap_start >> _region_size_bytes_shift;
+    _region_mask = ~((uintptr_t(1) << _region_size_bytes_shift) - 1);
+
+    guarantee((_heap_start_region_bias << _region_size_bytes_shift) == (uintptr_t)_heap_start, "must be aligned");
 
     assert(_region_size_words >= 1, "regions must be at least a word large");
-    assert(_region_size_words_shift <= NUM_OFFSET_BITS, "regions must not be larger than maximum addressing bits allow");
     assert(_bases_table == nullptr, "should not be initialized yet");
     assert(_fallback_table == nullptr, "should not be initialized yet");
   }
@@ -72,6 +82,8 @@ void SlidingForwarding::begin() {
 
     size_t max = _num_regions * NUM_TARGET_REGIONS;
     _bases_table = NEW_C_HEAP_ARRAY(HeapWord*, max, mtGC);
+    _biased_bases[0] = _bases_table - _heap_start_region_bias;
+    _biased_bases[1] = _bases_table + _num_regions - _heap_start_region_bias;
     for (size_t i = 0; i < max; i++) {
       _bases_table[i] = UNUSED_BASE;
     }
@@ -103,7 +115,7 @@ HeapWord* SlidingForwarding::fallback_forwardee(HeapWord* from) {
   return _fallback_table->forwardee(from);
 }
 
-FallbackTable::FallbackTable() {
+SlidingForwarding::FallbackTable::FallbackTable() {
   for (uint i = 0; i < TABLE_SIZE; i++) {
     _table[i]._next = nullptr;
     _table[i]._from = nullptr;
@@ -111,7 +123,7 @@ FallbackTable::FallbackTable() {
   }
 }
 
-FallbackTable::~FallbackTable() {
+SlidingForwarding::FallbackTable::~FallbackTable() {
   for (uint i = 0; i < TABLE_SIZE; i++) {
     FallbackTableEntry* entry = _table[i]._next;
     while (entry != nullptr) {
@@ -122,13 +134,13 @@ FallbackTable::~FallbackTable() {
   }
 }
 
-size_t FallbackTable::home_index(HeapWord* from) {
+size_t SlidingForwarding::FallbackTable::home_index(HeapWord* from) {
   uint64_t val = reinterpret_cast<uint64_t>(from);
   uint64_t hash = FastHash::get_hash64(val, UCONST64(0xAAAAAAAAAAAAAAAA));
   return hash >> (64 - log2i_exact(TABLE_SIZE));
 }
 
-void FallbackTable::forward_to(HeapWord* from, HeapWord* to) {
+void SlidingForwarding::FallbackTable::forward_to(HeapWord* from, HeapWord* to) {
   size_t idx = home_index(from);
   FallbackTableEntry* head = &_table[idx];
   FallbackTableEntry* entry = head;
@@ -151,7 +163,7 @@ void FallbackTable::forward_to(HeapWord* from, HeapWord* to) {
   entry->_to   = to;
 }
 
-HeapWord* FallbackTable::forwardee(HeapWord* from) const {
+HeapWord* SlidingForwarding::FallbackTable::forwardee(HeapWord* from) const {
   size_t idx = home_index(from);
   const FallbackTableEntry* entry = &_table[idx];
   while (entry != nullptr) {

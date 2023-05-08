@@ -74,6 +74,26 @@ void C2EntryBarrierStub::emit(C2_MacroAssembler& masm) {
 }
 
 #ifdef _LP64
+int C2HandleAnonOMOwnerStub::max_size() const {
+  // Max size of stub has been determined by testing with 0, in which case
+  // C2CodeStubList::emit() will throw an assertion and report the actual size that
+  // is needed.
+  return DEBUG_ONLY(36) NOT_DEBUG(21);
+}
+
+void C2HandleAnonOMOwnerStub::emit(C2_MacroAssembler& masm) {
+  __ bind(entry());
+  Register mon = monitor();
+  Register t = tmp();
+  __ movptr(Address(mon, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)), r15_thread);
+  __ subl(Address(r15_thread, JavaThread::lock_stack_top_offset()), oopSize);
+#ifdef ASSERT
+  __ movl(t, Address(r15_thread, JavaThread::lock_stack_top_offset()));
+  __ movptr(Address(r15_thread, t), 0);
+#endif
+  __ jmp(continuation());
+}
+
 int C2LoadNKlassStub::max_size() const {
   return 10;
 }
@@ -84,6 +104,7 @@ void C2LoadNKlassStub::emit(C2_MacroAssembler& masm) {
   __ movq(d, Address(d, OM_OFFSET_NO_MONITOR_VALUE_TAG(header)));
   __ jmp(continuation());
 }
+
 #endif
 
 #undef __

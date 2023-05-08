@@ -167,7 +167,6 @@ ArchiveBuilder::ArchiveBuilder() :
 {
   _klasses = new (mtClassShared) GrowableArray<Klass*>(4 * K, mtClassShared);
   _symbols = new (mtClassShared) GrowableArray<Symbol*>(256 * K, mtClassShared);
-  _special_refs = new (mtClassShared) GrowableArray<SpecialRefInfo>(24 * K, mtClassShared);
 
   assert(_current == nullptr, "must be");
   _current = this;
@@ -185,7 +184,6 @@ ArchiveBuilder::~ArchiveBuilder() {
 
   delete _klasses;
   delete _symbols;
-  delete _special_refs;
   if (_shared_rs.is_reserved()) {
     _shared_rs.release();
   }
@@ -422,13 +420,6 @@ public:
     return _builder->gather_one_source_obj(enclosing_ref(), ref, read_only);
   }
 
-  virtual void push_special(SpecialRef type, Ref* ref, intptr_t* p) {
-    assert(type == _method_entry_ref, "only special type allowed for now");
-    address src_obj = ref->obj();
-    size_t field_offset = pointer_delta(p, src_obj,  sizeof(u1));
-    _builder->add_special_ref(type, src_obj, field_offset);
-  };
-
   virtual void do_pending_ref(Ref* ref) {
     if (ref->obj() != nullptr) {
       _builder->remember_embedded_pointer_in_copied_obj(enclosing_ref(), ref);
@@ -468,10 +459,6 @@ bool ArchiveBuilder::gather_one_source_obj(MetaspaceClosure::Ref* enclosing_ref,
   } else {
     return false;
   }
-}
-
-void ArchiveBuilder::add_special_ref(MetaspaceClosure::SpecialRef type, address src_obj, size_t field_offset) {
-  _special_refs->append(SpecialRefInfo(type, src_obj, field_offset));
 }
 
 void ArchiveBuilder::remember_embedded_pointer_in_copied_obj(MetaspaceClosure::Ref* enclosing_ref,
@@ -672,21 +659,6 @@ void ArchiveBuilder::relocate_embedded_pointers(ArchiveBuilder::SourceObjList* s
   }
 }
 
-void ArchiveBuilder::update_special_refs() {
-  for (int i = 0; i < _special_refs->length(); i++) {
-    SpecialRefInfo s = _special_refs->at(i);
-    size_t field_offset = s.field_offset();
-    address src_obj = s.src_obj();
-    address dst_obj = get_buffered_addr(src_obj);
-    intptr_t* src_p = (intptr_t*)(src_obj + field_offset);
-    intptr_t* dst_p = (intptr_t*)(dst_obj + field_offset);
-    assert(s.type() == MetaspaceClosure::_method_entry_ref, "only special type allowed for now");
-
-    assert(*src_p == *dst_p, "must be a copy");
-    ArchivePtrMarker::mark_pointer((address*)dst_p);
-  }
-}
-
 class RefRelocator: public MetaspaceClosure {
   ArchiveBuilder* _builder;
 
@@ -715,7 +687,6 @@ void ArchiveBuilder::relocate_metaspaceobj_embedded_pointers() {
   log_info(cds)("Relocating embedded pointers in core regions ... ");
   relocate_embedded_pointers(&_rw_src_objs);
   relocate_embedded_pointers(&_ro_src_objs);
-  update_special_refs();
 }
 
 // We must relocate vmClasses::_klasses[] only after we have copied the

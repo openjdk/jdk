@@ -44,7 +44,6 @@ public:
 class ZServiceabilityMemoryManager : public GCMemoryManager {
 public:
   ZServiceabilityMemoryManager(const char* name,
-                               const char* end_message,
                                ZServiceabilityMemoryPool* pool);
 };
 

@@ -25,7 +25,7 @@
 /*
  * @test
  * @enablePreview
- * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64" | os.arch == "riscv64"
+ * @requires jdk.foreign.linker != "UNSUPPORTED"
  *
  * @run testng/othervm/native
  *   --enable-native-access=ALL-UNNAMED
@@ -58,7 +58,8 @@ public class TestUpcallStructScope extends NativeTestHelper {
     static final MemoryLayout S_PDI_LAYOUT = MemoryLayout.structLayout(
         C_POINTER.withName("p0"),
         C_DOUBLE.withName("p1"),
-        C_INT.withName("p2")
+        C_INT.withName("p2"),
+        MemoryLayout.paddingLayout(32)
     );
 
     static {

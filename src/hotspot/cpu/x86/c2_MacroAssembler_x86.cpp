@@ -548,7 +548,7 @@ void C2_MacroAssembler::rtm_inflated_locking(Register objReg, Register boxReg, R
 // rax,: tmp -- KILLED
 // scr: tmp -- KILLED
 void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmpReg,
-                                 Register scrReg, Register cx1Reg, Register cx2Reg,
+                                 Register scrReg, Register cx1Reg, Register cx2Reg, Register thread,
                                  RTMLockingCounters* rtm_counters,
                                  RTMLockingCounters* stack_rtm_counters,
                                  Metadata* method_data,
@@ -590,7 +590,7 @@ void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmp
 
 #if INCLUDE_RTM_OPT
   if (UseRTMForStackLocks && use_rtm) {
-    assert(!UseHeavyMonitors, "+UseHeavyMonitors and +UseRTMForStackLocks are mutually exclusive");
+    assert(LockingMode != LM_MONITOR, "LockingMode == 0 (LM_MONITOR) and +UseRTMForStackLocks are mutually exclusive");
     rtm_stack_locking(objReg, tmpReg, scrReg, cx2Reg,
                       stack_rtm_counters, method_data, profile_rtm,
                       DONE_LABEL, IsInflated);
@@ -599,9 +599,12 @@ void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmp
 
   movptr(tmpReg, Address(objReg, oopDesc::mark_offset_in_bytes()));          // [FETCH]
   testptr(tmpReg, markWord::monitor_value); // inflated vs stack-locked|neutral
-  jccb(Assembler::notZero, IsInflated);
+  jcc(Assembler::notZero, IsInflated);
 
-  if (!UseHeavyMonitors) {
+  if (LockingMode == LM_MONITOR) {
+    // Clear ZF so that we take the slow path at the DONE label. objReg is known to be not 0.
+    testptr(objReg, objReg);
+  } else if (LockingMode == LM_LEGACY) {
     // Attempt stack-locking ...
     orptr (tmpReg, markWord::unlocked_value);
     movptr(Address(boxReg, 0), tmpReg);          // Anticipate successful CAS
@@ -617,8 +620,9 @@ void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmp
     andptr(tmpReg, (int32_t) (NOT_LP64(0xFFFFF003) LP64_ONLY(7 - (int)os::vm_page_size())) );
     movptr(Address(boxReg, 0), tmpReg);
   } else {
-    // Clear ZF so that we take the slow path at the DONE label. objReg is known to be not 0.
-    testptr(objReg, objReg);
+    assert(LockingMode == LM_LIGHTWEIGHT, "");
+    fast_lock_impl(objReg, tmpReg, thread, scrReg, NO_COUNT);
+    jmp(COUNT);
   }
   jmp(DONE_LABEL);
 
@@ -681,14 +685,14 @@ void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmp
   movq(scrReg, tmpReg);
   xorq(tmpReg, tmpReg);
   lock();
-  cmpxchgptr(r15_thread, Address(scrReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
+  cmpxchgptr(thread, Address(scrReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
   // Unconditionally set box->_displaced_header = markWord::unused_mark().
   // Without cast to int32_t this style of movptr will destroy r10 which is typically obj.
   movptr(Address(boxReg, 0), checked_cast<int32_t>(markWord::unused_mark().value()));
   // Propagate ICC.ZF from CAS above into DONE_LABEL.
   jccb(Assembler::equal, COUNT);          // CAS above succeeded; propagate ZF = 1 (success)
 
-  cmpptr(r15_thread, rax);                // Check if we are already the owner (recursive lock)
+  cmpptr(thread, rax);                // Check if we are already the owner (recursive lock)
   jccb(Assembler::notEqual, NO_COUNT);    // If not recursive, ZF = 0 at this point (fail)
   incq(Address(scrReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(recursions)));
   xorq(rax, rax); // Set ZF = 1 (success) for recursive lock, denoting locking success
@@ -704,12 +708,7 @@ void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmp
 
   bind(COUNT);
   // Count monitors in fast path
-#ifndef _LP64
-  get_thread(tmpReg);
-  incrementl(Address(tmpReg, JavaThread::held_monitor_count_offset()));
-#else // _LP64
-  incrementq(Address(r15_thread, JavaThread::held_monitor_count_offset()));
-#endif
+  increment(Address(thread, JavaThread::held_monitor_count_offset()));
 
   xorl(tmpReg, tmpReg); // Set ZF == 1
 
@@ -761,7 +760,7 @@ void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register t
 
 #if INCLUDE_RTM_OPT
   if (UseRTMForStackLocks && use_rtm) {
-    assert(!UseHeavyMonitors, "+UseHeavyMonitors and +UseRTMForStackLocks are mutually exclusive");
+    assert(LockingMode != LM_MONITOR, "LockingMode == 0 (LM_MONITOR) and +UseRTMForStackLocks are mutually exclusive");
     Label L_regular_unlock;
     movptr(tmpReg, Address(objReg, oopDesc::mark_offset_in_bytes())); // fetch markword
     andptr(tmpReg, markWord::lock_mask_in_place);                     // look at 2 lock bits
@@ -773,17 +772,35 @@ void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register t
   }
 #endif
 
-  if (!UseHeavyMonitors) {
+  if (LockingMode == LM_LEGACY) {
     cmpptr(Address(boxReg, 0), NULL_WORD);                            // Examine the displaced header
     jcc   (Assembler::zero, COUNT);                                   // 0 indicates recursive stack-lock
   }
   movptr(tmpReg, Address(objReg, oopDesc::mark_offset_in_bytes()));   // Examine the object's markword
-  if (!UseHeavyMonitors) {
+  if (LockingMode != LM_MONITOR) {
     testptr(tmpReg, markWord::monitor_value);                         // Inflated?
-    jccb   (Assembler::zero, Stacked);
+    jcc(Assembler::zero, Stacked);
   }
 
   // It's inflated.
+  if (LockingMode == LM_LIGHTWEIGHT) {
+    // If the owner is ANONYMOUS, we need to fix it -  in an outline stub.
+    testb(Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)), (int32_t) ObjectMonitor::ANONYMOUS_OWNER);
+#ifdef _LP64
+    if (!Compile::current()->output()->in_scratch_emit_size()) {
+      C2HandleAnonOMOwnerStub* stub = new (Compile::current()->comp_arena()) C2HandleAnonOMOwnerStub(tmpReg, boxReg);
+      Compile::current()->output()->add_stub(stub);
+      jcc(Assembler::notEqual, stub->entry());
+      bind(stub->continuation());
+    } else
+#endif
+    {
+      // We can't easily implement this optimization on 32 bit because we don't have a thread register.
+      // Call the slow-path instead.
+      jcc(Assembler::notEqual, NO_COUNT);
+    }
+  }
+
 #if INCLUDE_RTM_OPT
   if (use_rtm) {
     Label L_regular_inflated_unlock;
@@ -792,7 +809,7 @@ void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register t
     testptr(boxReg, boxReg);
     jccb(Assembler::notZero, L_regular_inflated_unlock);
     xend();
-    jmpb(DONE_LABEL);
+    jmp(DONE_LABEL);
     bind(L_regular_inflated_unlock);
   }
 #endif
@@ -904,11 +921,17 @@ void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register t
   jmpb  (DONE_LABEL);
 
 #endif
-  if (!UseHeavyMonitors) {
+  if (LockingMode != LM_MONITOR) {
     bind  (Stacked);
-    movptr(tmpReg, Address (boxReg, 0));      // re-fetch
-    lock();
-    cmpxchgptr(tmpReg, Address(objReg, oopDesc::mark_offset_in_bytes())); // Uses RAX which is box
+    if (LockingMode == LM_LIGHTWEIGHT) {
+      mov(boxReg, tmpReg);
+      fast_unlock_impl(objReg, boxReg, tmpReg, NO_COUNT);
+      jmp(COUNT);
+    } else if (LockingMode == LM_LEGACY) {
+      movptr(tmpReg, Address (boxReg, 0));      // re-fetch
+      lock();
+      cmpxchgptr(tmpReg, Address(objReg, oopDesc::mark_offset_in_bytes())); // Uses RAX which is box
+    }
     // Intentional fall-thru into DONE_LABEL
   }
   bind(DONE_LABEL);

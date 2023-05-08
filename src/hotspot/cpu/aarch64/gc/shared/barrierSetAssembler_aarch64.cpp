@@ -297,7 +297,7 @@ void BarrierSetAssembler::clear_patching_epoch() {
 void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slow_path, Label* continuation, Label* guard) {
   BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
 
-  if (bs_nm == NULL) {
+  if (bs_nm == nullptr) {
     return;
   }
 
@@ -305,13 +305,13 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slo
   Label skip_barrier;
   NMethodPatchingType patching_type = nmethod_patching_type();
 
-  if (slow_path == NULL) {
+  if (slow_path == nullptr) {
     guard = &local_guard;
   }
 
   // If the slow path is out of line in a stub, we flip the condition
-  Assembler::Condition condition = slow_path == NULL ? Assembler::EQ : Assembler::NE;
-  Label& barrier_target = slow_path == NULL ? skip_barrier : *slow_path;
+  Assembler::Condition condition = slow_path == nullptr ? Assembler::EQ : Assembler::NE;
+  Label& barrier_target = slow_path == nullptr ? skip_barrier : *slow_path;
 
   __ ldrw(rscratch1, *guard);
 
@@ -357,7 +357,7 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slo
   }
   __ br(condition, barrier_target);
 
-  if (slow_path == NULL) {
+  if (slow_path == nullptr) {
     __ movptr(rscratch1, (uintptr_t) StubRoutines::aarch64::method_entry_barrier());
     __ blr(rscratch1);
     __ b(skip_barrier);
@@ -374,7 +374,7 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slo
 
 void BarrierSetAssembler::c2i_entry_barrier(MacroAssembler* masm) {
   BarrierSetNMethod* bs = BarrierSet::barrier_set()->barrier_set_nmethod();
-  if (bs == NULL) {
+  if (bs == nullptr) {
     return;
   }
 
@@ -417,5 +417,5 @@ void BarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj, Register
 
   // make sure klass is 'reasonable', which is not zero.
   __ load_klass(obj, obj); // get klass
-  __ cbz(obj, error);      // if klass is NULL it is broken
+  __ cbz(obj, error);      // if klass is null it is broken
 }

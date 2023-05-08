@@ -45,7 +45,7 @@ void G1CollectionSetCandidates::remove_from_end(uint num_remove, size_t wasted) 
     uint cur_idx = _num_regions - i - 1;
     reclaimable += at(cur_idx)->reclaimable_bytes();
     // Make sure we crash if we access it.
-    _regions[cur_idx] = NULL;
+    _regions[cur_idx] = nullptr;
   }
 
   assert(reclaimable == wasted, "Recalculated reclaimable inconsistent");
@@ -79,16 +79,16 @@ void G1CollectionSetCandidates::verify() const {
   guarantee(_front_idx <= _num_regions, "Index: %u Num_regions: %u", _front_idx, _num_regions);
   uint idx = _front_idx;
   size_t sum_of_reclaimable_bytes = 0;
-  HeapRegion *prev = NULL;
+  HeapRegion *prev = nullptr;
   for (; idx < _num_regions; idx++) {
     HeapRegion *cur = _regions[idx];
-    guarantee(cur != NULL, "Regions after _front_idx %u cannot be NULL but %u is", _front_idx, idx);
-    // The first disjunction filters out regions with objects that were explicitly
-    // pinned after being added to the collection set candidates.
-    guarantee(cur->is_pinned() ||
-              G1CollectionSetChooser::should_add(cur),
+    guarantee(cur != nullptr, "Regions after _front_idx %u cannot be NULL but %u is", _front_idx, idx);
+    // Currently the decision whether young gc moves region contents is determined
+    // at region allocation time. It is not possible that a region becomes non-movable
+    // at a later point, which means below condition always holds true.
+    guarantee(G1CollectionSetChooser::should_add(cur),
               "Region %u should be eligible for addition.", cur->hrm_index());
-    if (prev != NULL) {
+    if (prev != nullptr) {
       guarantee(prev->gc_efficiency() >= cur->gc_efficiency(),
                 "GC efficiency for region %u: %1.4f smaller than for region %u: %1.4f",
                 prev->hrm_index(), prev->gc_efficiency(), cur->hrm_index(), cur->gc_efficiency());

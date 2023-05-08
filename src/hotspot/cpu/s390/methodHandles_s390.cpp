@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2017 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -638,7 +638,7 @@ void MethodHandles::trace_method_handle(MacroAssembler* _masm, const char* adapt
   if (!log_is_enabled(Info, methodhandles)) { return; }
 
   // If arg registers are contiguous, we can use STMG/LMG.
-  assert((Z_ARG5->encoding() - Z_ARG1->encoding() + 1) == RegisterImpl::number_of_arg_registers, "Oops");
+  assert((Z_ARG5->encoding() - Z_ARG1->encoding() + 1) == Register::number_of_arg_registers, "Oops");
 
   BLOCK_COMMENT("trace_method_handle {");
 

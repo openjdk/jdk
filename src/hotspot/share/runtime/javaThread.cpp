@@ -70,6 +70,7 @@
 #include "runtime/javaCalls.hpp"
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
+#include "runtime/lockStack.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/osThread.hpp"
@@ -490,8 +491,9 @@ JavaThread::JavaThread() :
 
   _class_to_be_initialized(nullptr),
 
-  _SleepEvent(ParkEvent::Allocate(this))
-{
+  _SleepEvent(ParkEvent::Allocate(this)),
+
+  _lock_stack(this) {
   set_jni_functions(jni_functions());
 
 #if INCLUDE_JVMCI
@@ -994,6 +996,7 @@ JavaThread* JavaThread::active() {
 }
 
 bool JavaThread::is_lock_owned(address adr) const {
+  assert(LockingMode != LM_LIGHTWEIGHT, "should not be called with new lightweight locking");
   if (Thread::is_lock_owned(adr)) return true;
 
   for (MonitorChunk* chunk = monitor_chunks(); chunk != nullptr; chunk = chunk->next()) {
@@ -1387,6 +1390,10 @@ void JavaThread::oops_do_no_frames(OopClosure* f, CodeBlobClosure* cf) {
     f->do_oop((oop*)entry->chunk_addr());
     entry = entry->parent();
   }
+
+  if (LockingMode == LM_LIGHTWEIGHT) {
+    lock_stack().oops_do(f);
+  }
 }
 
 void JavaThread::oops_do_frames(OopClosure* f, CodeBlobClosure* cf) {
@@ -1515,12 +1522,13 @@ void JavaThread::print_on_error(outputStream* st, char *buf, int buflen) const {
   st->print("%s \"%s\"", type_name(), get_thread_name_string(buf, buflen));
   Thread* current = Thread::current_or_null_safe();
   assert(current != nullptr, "cannot be called by a detached thread");
+  st->fill_to(60);
   if (!current->is_Java_thread() || JavaThread::cast(current)->is_oop_safe()) {
     // Only access threadObj() if current thread is not a JavaThread
     // or if it is a JavaThread that can safely access oops.
     oop thread_obj = threadObj();
     if (thread_obj != nullptr) {
-      if (java_lang_Thread::is_daemon(thread_obj)) st->print(" daemon");
+      st->print(java_lang_Thread::is_daemon(thread_obj) ? " daemon" : "       ");
     }
   }
   st->print(" [");
@@ -1528,8 +1536,9 @@ void JavaThread::print_on_error(outputStream* st, char *buf, int buflen) const {
   if (osthread()) {
     st->print(", id=%d", osthread()->thread_id());
   }
-  st->print(", stack(" PTR_FORMAT "," PTR_FORMAT ")",
-            p2i(stack_end()), p2i(stack_base()));
+  st->print(", stack(" PTR_FORMAT "," PTR_FORMAT ") (" PROPERFMT ")",
+            p2i(stack_end()), p2i(stack_base()),
+            PROPERFMTARGS(stack_size()));
   st->print("]");
 
   ThreadsSMRSupport::print_info_on(this, st);
@@ -1980,11 +1989,24 @@ Klass* JavaThread::security_get_caller_class(int depth) {
   return nullptr;
 }
 
+// Internal convenience function for millisecond resolution sleeps.
+bool JavaThread::sleep(jlong millis) {
+  jlong nanos;
+  if (millis > max_jlong / NANOUNITS_PER_MILLIUNIT) {
+    // Conversion to nanos would overflow, saturate at max
+    nanos = max_jlong;
+  } else {
+    nanos = millis * NANOUNITS_PER_MILLIUNIT;
+  }
+  return sleep_nanos(nanos);
+}
+
 // java.lang.Thread.sleep support
 // Returns true if sleep time elapsed as expected, and false
 // if the thread was interrupted.
-bool JavaThread::sleep(jlong millis) {
+bool JavaThread::sleep_nanos(jlong nanos) {
   assert(this == Thread::current(),  "thread consistency check");
+  assert(nanos >= 0, "nanos are in range");
 
   ParkEvent * const slp = this->_SleepEvent;
   // Because there can be races with thread interruption sending an unpark()
@@ -1998,20 +2020,22 @@ bool JavaThread::sleep(jlong millis) {
 
   jlong prevtime = os::javaTimeNanos();
 
+  jlong nanos_remaining = nanos;
+
   for (;;) {
     // interruption has precedence over timing out
     if (this->is_interrupted(true)) {
       return false;
     }
 
-    if (millis <= 0) {
+    if (nanos_remaining <= 0) {
       return true;
     }
 
     {
       ThreadBlockInVM tbivm(this);
       OSThreadWaitState osts(this->osthread(), false /* not Object.wait() */);
-      slp->park(millis);
+      slp->park_nanos(nanos_remaining);
     }
 
     // Update elapsed time tracking
@@ -2022,7 +2046,7 @@ bool JavaThread::sleep(jlong millis) {
       assert(false,
              "unexpected time moving backwards detected in JavaThread::sleep()");
     } else {
-      millis -= (newtime - prevtime) / NANOSECS_PER_MILLISEC;
+      nanos_remaining -= (newtime - prevtime);
     }
     prevtime = newtime;
   }

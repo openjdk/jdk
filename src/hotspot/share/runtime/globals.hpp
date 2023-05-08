@@ -738,8 +738,9 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   product(intx, MonitorUsedDeflationThreshold, 90, DIAGNOSTIC,              \
           "Percentage of used monitors before triggering deflation (0 is "  \
-          "off). The check is performed on GuaranteedSafepointInterval "    \
-          "or AsyncDeflationInterval.")                                     \
+          "off). The check is performed on GuaranteedSafepointInterval, "   \
+          "AsyncDeflationInterval or GuaranteedAsyncDeflationInterval, "    \
+          "whichever is lower.")                                            \
           range(0, 100)                                                     \
                                                                             \
   product(uintx, NoAsyncDeflationProgressMax, 3, DIAGNOSTIC,                \
@@ -1426,9 +1427,6 @@ const int ObjectAlignmentInBytes = 8;
           "Force the class space to be allocated at this address or "       \
           "fails VM initialization (requires -Xshare=off.")                 \
                                                                             \
-  product(ccstr, MetaspaceReclaimPolicy, "balanced", DIAGNOSTIC,            \
-          "options: balanced, aggressive")                                  \
-                                                                            \
   product(bool, PrintMetaspaceStatisticsAtExit, false, DIAGNOSTIC,          \
           "Print metaspace statistics upon VM exit.")                       \
                                                                             \
@@ -1985,6 +1983,13 @@ const int ObjectAlignmentInBytes = 8;
           false AARCH64_ONLY(DEBUG_ONLY(||true)),                           \
              "Mark all threads after a safepoint, and clear on a modify "   \
              "fence. Add cleanliness checks.")                              \
+                                                                            \
+  product(int, LockingMode, LM_LEGACY, EXPERIMENTAL,                        \
+          "Select locking mode: "                                           \
+          "0: monitors only (LM_MONITOR), "                                 \
+          "1: monitors & legacy stack-locking (LM_LEGACY, default), "       \
+          "2: monitors & new lightweight locking (LM_LIGHTWEIGHT)")         \
+          range(0, 2)                                                       \
 
 // end of RUNTIME_FLAGS
 
