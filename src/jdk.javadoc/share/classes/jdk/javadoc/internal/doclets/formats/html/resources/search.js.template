@@ -414,7 +414,7 @@ $(function() {
         if (id) {
             hdr.append(" <a href='#" + id + "' class='anchor-link' aria-label='" + messages.linkToSection
                 + "'><img src='" + pathtoroot + "link.svg' alt='" + messages.linkIcon +"' tabindex='0'"
-                + " style='width: 0.9em; height: 0.9em; vertical-align: baseline;'></a>");
+                + " width='16' height='16'></a>");
         }
     });
     $(window).on("orientationchange", collapse).on("resize", function(e) {

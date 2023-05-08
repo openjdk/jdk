@@ -926,6 +926,10 @@ a.anchor-link:focus-visible,
 a.anchor-link.visible {
     opacity: 100%;
 }
+a.anchor-link > img {
+    width: 0.9em;
+    height: 0.9em;
+}
 /*
  * Styles for copy-to-clipboard buttons
  */
