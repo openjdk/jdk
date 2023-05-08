@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -417,45 +417,35 @@ public class thread001 extends JDIBase {
             log2(":::::::::vm.resume();");
             vm.resume();
 
-            Event   event1    = null;
             String threadName = null;
             int    flagsCopy  = flags;
-            String eName      = null;
 
             log2("......getting and checking up on Events");
             for (int n4 = 0; n4 < namesRef.length(); n4++) {
-                int flag;
-                int index;
                 getEventSet();
-                event1 = eventIterator.nextEvent();
+                Event event1 = eventIterator.nextEvent();
 
+                int index;
                 if (event1 instanceof AccessWatchpointEvent) {
-                    eName = "AccessWatchpointEvent";
                     index = 0;
                 } else if (event1 instanceof ModificationWatchpointEvent ) {
-                    eName = "ModificationWatchpointEvent";
                     index = 1;
                 } else if (event1 instanceof BreakpointEvent ) {
-                    eName = "BreakpointEvent";
                     index = 2;
                 } else if (event1 instanceof ExceptionEvent ) {
-                    eName = "ExceptionEvent";
                     index = 3;
                 } else if (event1 instanceof MethodEntryEvent ) {
-                    eName = "MethodEntryEvent";
                     index = 4;
                 } else if (event1 instanceof MethodExitEvent ) {
-                    eName = "MethodExitEvent";
                     index = 5;
                 } else if (event1 instanceof StepEvent ) {
-                    eName = "StepEvent";
                     index = 6;
                 } else {
                     log3("ERROR: else clause in detecting type of event1");
                     testExitCode = FAILED;
-                    throw new JDITestRuntimeException("** unexpected event **");
+                    throw new JDITestRuntimeException("** unexpected event ** " + event1);
                 }
-                log2("--------> got: " + eName);
+                log2("--------> got: " + event1 + " index: " + index);
 
                 ThreadReference threadRef = ((LocatableEvent) event1).thread();
 
@@ -472,9 +462,11 @@ public class thread001 extends JDIBase {
                     log3("        thread's name == " + threadRef.name());
                 }
 
-                flag = 1 << index;
+                int flag = 1 << index;
                 if ((flagsCopy & flag) == 0) {
-                    log3("ERROR: event duplication: " + eName);
+                    log3("ERROR: event duplication. event " + event1
+                            + " flagsCopy = " + Integer.toBinaryString(flagsCopy)
+                            + " flag = " + Integer.toBinaryString(flag));
                     testExitCode = FAILED;
                 } else {
                     flagsCopy ^= flag;

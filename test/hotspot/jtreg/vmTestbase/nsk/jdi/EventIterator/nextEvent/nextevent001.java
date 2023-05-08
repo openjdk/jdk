@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -514,18 +514,15 @@ public class nextevent001 extends JDIBase {
             log2(":::::::::vm.resume();");
             vm.resume();
 
-            Event  event1     = null;
-            int    flagsCopy  = flags;
-            String eName      = null;
-            int    index      = 0;
+            int flagsCopy = flags;
 
             log2("......getting and checking up on Events");
             for (int n4 = 0; n4 < namesRef.length(); n4++) {
-                int flag;
 
                 getEventSet();
-                event1 = eventIterator.nextEvent();
+                Event event1 = eventIterator.nextEvent();
 
+                int index;
                 if (event1 instanceof AccessWatchpointEvent) {
                     index = 0;
                 } else if (event1 instanceof ModificationWatchpointEvent ) {
@@ -543,11 +540,15 @@ public class nextevent001 extends JDIBase {
                 } else {
                     log3("ERROR: else clause in detecting type of event1");
                     testExitCode = FAILED;
+                    throw new JDITestRuntimeException("** unexpected event ** " + event1);
                 }
+                log2("--------> got: " + event1 + " index: " + index);
 
-                flag = 1 << index;
+                int flag = 1 << index;
                 if ((flagsCopy & flag) == 0) {
-                    log3("ERROR: event duplication: " + eName);
+                    log3("ERROR: event duplication. event " + event1
+                            + " flagsCopy = " + Integer.toBinaryString(flagsCopy)
+                            + " flag = " + Integer.toBinaryString(flag));
                     testExitCode = FAILED;
                 } else {
                     flagsCopy ^= flag;
