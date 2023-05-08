@@ -99,7 +99,7 @@ public abstract class Poller {
         if (USE_DIRECT_REGISTER) {
             pollDirect(fdVal, nanos, supplier);
         } else {
-            pollAsync(fdVal, nanos, supplier);
+            pollIndirect(fdVal, nanos, supplier);
         }
     }
 
