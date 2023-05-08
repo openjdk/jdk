@@ -289,6 +289,8 @@ class Heap$Type$Buffer$RW$
     private $Type$Buffer appendChars(CharSequence csq, int start, int end) {
         checkSession();
 
+        Objects.checkFromToIndex(start, end, csq.length());
+
         int length = end - start;
         int pos = position();
         int lim = limit();

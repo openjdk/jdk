@@ -50,7 +50,6 @@
 #include "opto/runtime.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/subnode.hpp"
-#include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "prims/unsafe.hpp"
 #include "runtime/jniHandles.inline.hpp"
@@ -481,11 +480,15 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_setScopedValueCache:       return inline_native_setScopedValueCache();
 
 #if INCLUDE_JVMTI
-  case vmIntrinsics::_notifyJvmtiMount:         return inline_native_notify_jvmti_funcs(CAST_FROM_FN_PTR(address, OptoRuntime::notify_jvmti_mount()),
-                                                                                        "notifyJvmtiMount");
-  case vmIntrinsics::_notifyJvmtiUnmount:       return inline_native_notify_jvmti_funcs(CAST_FROM_FN_PTR(address, OptoRuntime::notify_jvmti_unmount()),
-                                                                                        "notifyJvmtiUnmount");
-  case vmIntrinsics::_notifyJvmtiHideFrames:    return inline_native_notify_jvmti_hide();
+  case vmIntrinsics::_notifyJvmtiVThreadStart:   return inline_native_notify_jvmti_funcs(CAST_FROM_FN_PTR(address, OptoRuntime::notify_jvmti_vthread_start()),
+                                                                                         "notifyJvmtiStart", true, false);
+  case vmIntrinsics::_notifyJvmtiVThreadEnd:     return inline_native_notify_jvmti_funcs(CAST_FROM_FN_PTR(address, OptoRuntime::notify_jvmti_vthread_end()),
+                                                                                         "notifyJvmtiEnd", false, true);
+  case vmIntrinsics::_notifyJvmtiVThreadMount:   return inline_native_notify_jvmti_funcs(CAST_FROM_FN_PTR(address, OptoRuntime::notify_jvmti_vthread_mount()),
+                                                                                         "notifyJvmtiMount", false, false);
+  case vmIntrinsics::_notifyJvmtiVThreadUnmount: return inline_native_notify_jvmti_funcs(CAST_FROM_FN_PTR(address, OptoRuntime::notify_jvmti_vthread_unmount()),
+                                                                                         "notifyJvmtiUnmount", false, false);
+  case vmIntrinsics::_notifyJvmtiVThreadHideFrames: return inline_native_notify_jvmti_hide();
 #endif
 
 #ifdef JFR_HAVE_INTRINSICS
@@ -2825,29 +2828,8 @@ bool LibraryCallKit::inline_unsafe_allocate() {
     test = _gvn.transform(new SubINode(inst, bits));
     // The 'test' is non-zero if we need to take a slow path.
   }
-  Node* obj = new_instance(kls, test);
-#if INCLUDE_JVMTI
-  // Check if JvmtiExport::_should_notify_object_alloc is enabled and post notifications
-  IdealKit ideal(this);
-  IdealVariable result(ideal); ideal.declarations_done();
-  Node* ONE = ideal.ConI(1);
-  Node* addr = makecon(TypeRawPtr::make((address) &JvmtiExport::_should_notify_object_alloc));
-  Node* should_post_vm_object_alloc = ideal.load(ideal.ctrl(), addr, TypeInt::BOOL, T_BOOLEAN, Compile::AliasIdxRaw);
 
-  ideal.sync_kit(this);
-  ideal.if_then(should_post_vm_object_alloc, BoolTest::eq, ONE); {
-    const TypeFunc *tf = OptoRuntime::notify_jvmti_object_alloc_Type();
-    address funcAddr = OptoRuntime::notify_jvmti_object_alloc();
-    sync_kit(ideal);
-    Node* call = make_runtime_call(RC_NO_LEAF, tf, funcAddr, "_notify_jvmti_object_alloc", TypePtr::BOTTOM, obj);
-    ideal.sync_kit(this);
-    ideal.set(result,_gvn.transform(new ProjNode(call, TypeFunc::Parms+0)));
-  } ideal.else_(); {
-    ideal.set(result,obj);
-  } ideal.end_if();
-  final_sync(ideal);
-  obj = ideal.value(result);
-#endif //INCLUDE_JVMTI
+  Node* obj = new_instance(kls, test);
   set_result(obj);
   return true;
 }
@@ -2873,25 +2855,24 @@ bool LibraryCallKit::inline_native_time_funcs(address funcAddr, const char* func
 
 // When notifications are disabled then just update the VTMS transition bit and return.
 // Otherwise, the bit is updated in the given function call implementing JVMTI notification protocol.
-bool LibraryCallKit::inline_native_notify_jvmti_funcs(address funcAddr, const char* funcName) {
+bool LibraryCallKit::inline_native_notify_jvmti_funcs(address funcAddr, const char* funcName, bool is_start, bool is_end) {
   if (!DoJVMTIVirtualThreadTransitions) {
     return true;
   }
   IdealKit ideal(this);
 
   Node* ONE = ideal.ConI(1);
-  Node* hide = _gvn.transform(argument(1)); // hide argument: true for begin and false for end of VTMS transition
+  Node* hide = is_start ? ideal.ConI(0) : (is_end ? ideal.ConI(1) : _gvn.transform(argument(1)));
   Node* addr = makecon(TypeRawPtr::make((address)&JvmtiVTMSTransitionDisabler::_VTMS_notify_jvmti_events));
   Node* notify_jvmti_enabled = ideal.load(ideal.ctrl(), addr, TypeInt::BOOL, T_BOOLEAN, Compile::AliasIdxRaw);
 
   ideal.if_then(notify_jvmti_enabled, BoolTest::eq, ONE); {
     // if notifyJvmti enabled then make a call to the given SharedRuntime function
-    const TypeFunc* tf = OptoRuntime::notify_jvmti_Type();
+    const TypeFunc* tf = OptoRuntime::notify_jvmti_vthread_Type();
     Node* vt_oop = _gvn.transform(must_be_not_null(argument(0), true)); // VirtualThread this argument
-    Node* cond   = _gvn.transform(argument(2)); // firstMount or lastUnmount argument
 
     sync_kit(ideal);
-    make_runtime_call(RC_NO_LEAF, tf, funcAddr, funcName, TypePtr::BOTTOM, vt_oop, hide, cond);
+    make_runtime_call(RC_NO_LEAF, tf, funcAddr, funcName, TypePtr::BOTTOM, vt_oop, hide);
     ideal.sync_kit(this);
   } ideal.else_(); {
     // set hide value to the VTMS transition bit in current JavaThread and VirtualThread object

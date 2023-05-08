@@ -1151,6 +1151,11 @@ hb_font_set_variations (hb_font_t *font,
                         unsigned int variations_length);
 
 HB_EXTERN void
+hb_font_set_variation (hb_font_t *font,
+                       hb_tag_t tag,
+                       float    value);
+
+HB_EXTERN void
 hb_font_set_var_coords_design (hb_font_t *font,
                                const float *coords,
                                unsigned int coords_length);
