@@ -1324,7 +1324,7 @@ public final class Pattern
      * <ul>
      *    <li> If the <i>limit</i> is positive then the pattern will be applied
      *    at most <i>limit</i> - 1 times, the array's length will be
-     *    no greater than 2 &centerdot; <i>limit</i> - 1, and the array's last
+     *    no greater than 2 &times; <i>limit</i> - 1, and the array's last
      *    entry will contain all input beyond the last matched delimiter.</li>
      *
      *    <li> If the <i>limit</i> is zero then the pattern will be applied as
