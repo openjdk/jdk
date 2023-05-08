@@ -54,7 +54,6 @@ JfrJavaArguments::Parameters::Parameters() : _storage_index(0), _java_stack_slot
 }
 
 void JfrJavaArguments::Parameters::push(const JavaValue& value) {
-  assert(_storage != nullptr, "invariant");
   assert(!is_large_value(value), "invariant");
   assert(_storage_index < SIZE, "invariant");
   _storage[_storage_index++] = value;
@@ -62,7 +61,6 @@ void JfrJavaArguments::Parameters::push(const JavaValue& value) {
 }
 
 void JfrJavaArguments::Parameters::push_large(const JavaValue& value) {
-  assert(_storage != nullptr, "invariant");
   assert(is_large_value(value), "invariant");
   assert(_storage_index < SIZE, "invariant");
   _storage[_storage_index++] = value;
@@ -70,7 +68,6 @@ void JfrJavaArguments::Parameters::push_large(const JavaValue& value) {
 }
 
 void JfrJavaArguments::Parameters::set_receiver(const oop receiver) {
-  assert(_storage != nullptr, "invariant");
   assert(receiver != nullptr, "invariant");
   JavaValue value(T_OBJECT);
   value.set_oop(receiver);
@@ -88,7 +85,6 @@ oop JfrJavaArguments::Parameters::receiver() const {
 }
 
 bool JfrJavaArguments::Parameters::has_receiver() const {
-  assert(_storage != nullptr, "invariant");
   assert(_storage_index >= 1, "invariant");
   assert(_java_stack_slots >= 1, "invariant");
   return _storage[0].get_type() == T_OBJECT;
