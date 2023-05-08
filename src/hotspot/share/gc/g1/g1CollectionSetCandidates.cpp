@@ -171,7 +171,8 @@ void G1CollectionSetRegionList::clear() {
 
 #ifndef PRODUCT
 void G1CollectionSetRegionList::verify() {
-  // We can't verify sorting because it is not guaranteed.
+  // We can't verify sorting because this list does not store efficiencies which
+  // can change between invocations.
 
   size_t reclaimable_bytes = 0;
   for (HeapRegion* r : _regions) {

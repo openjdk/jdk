@@ -108,8 +108,10 @@ public:
   // Merge the given set of candidates into this list, preserving the efficiency ordering.
   void merge(CandidateInfo* candidate_infos, uint num_infos);
   // Removes any HeapRegions stored in this list also in the other list. The other
-  // list may only contain regions in this list, sorted by gc efficiency. Returns
-  // the number of regions removed.
+  // list may only contain regions in this list, sorted by gc efficiency. It need
+  // not be a prefix of this list. Returns the number of regions removed.
+  // E.g. if this list is "A B G H", the other list may be "A G H", but not "F" (not in
+  // this list) or "A H G" (wrong order).
   size_t remove(G1CollectionSetRegionList* other);
 
   void clear();
