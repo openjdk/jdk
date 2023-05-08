@@ -113,7 +113,6 @@ import com.sun.tools.javac.util.List;
 /**
  * This pass translates pattern-matching constructs, such as instanceof <pattern>.
  */
-@SuppressWarnings("preview")
 public class TransPatterns extends TreeTranslator {
 
     protected static final Context.Key<TransPatterns> transPatternsKey = new Context.Key<>();

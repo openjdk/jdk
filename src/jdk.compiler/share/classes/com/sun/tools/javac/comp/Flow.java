@@ -203,7 +203,6 @@ import static java.util.stream.Collectors.groupingBy;
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
-@SuppressWarnings("preview")
 public class Flow {
     protected static final Context.Key<Flow> flowKey = new Context.Key<>();
 

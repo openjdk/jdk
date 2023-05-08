@@ -53,7 +53,6 @@ import static com.sun.tools.javac.code.TypeTag.TYPEVAR;
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
-@SuppressWarnings("preview")
 public class MemberEnter extends JCTree.Visitor {
     protected static final Context.Key<MemberEnter> memberEnterKey = new Context.Key<>();
 
