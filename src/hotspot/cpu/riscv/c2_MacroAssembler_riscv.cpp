@@ -1739,10 +1739,10 @@ void C2_MacroAssembler::compare_integral_v(VectorRegister vd, BasicType bt, int 
   }
 }
 
-void C2_MacroAssembler::compare_floating_point_v(VectorRegister vd, BasicType bt, int vector_length,
-                                                 VectorRegister src1, VectorRegister src2,
-                                                 VectorRegister tmp1, VectorRegister tmp2,
-                                                 VectorRegister vmask, int cond, VectorMask vm) {
+void C2_MacroAssembler::compare_fp_v(VectorRegister vd, BasicType bt, int vector_length,
+                                     VectorRegister src1, VectorRegister src2,
+                                     VectorRegister tmp1, VectorRegister tmp2,
+                                     VectorRegister vmask, int cond, VectorMask vm) {
   assert(is_floating_point_type(bt), "unsupported element type");
   assert(vd != v0, "should be different registers");
   assert(vm == Assembler::v0_t ? vmask != v0 : true, "vmask should not be v0");
@@ -1867,3 +1867,43 @@ VFCVT_SAFE(vfwcvt_rtz_x_f_v);
 VFCVT_SAFE(vfncvt_rtz_x_f_w);
 
 #undef VFCVT_SAFE
+
+// Extract a scalar element from an vector at position 'idx'.
+// The input elements in src are expected to be of integral type.
+void C2_MacroAssembler::extract_v(Register dst, BasicType bt, VectorRegister src,
+                                  int idx, VectorRegister tmp) {
+  assert(is_integral_type(bt), "unsupported element type");
+  assert(idx >= 0, "idx cannot be negative");
+  // Only need the first element after vector slidedown
+  vsetvli_helper(bt, 1);
+  if(idx == 0) {
+    vmv_x_s(dst, src);
+  } else if (idx <= 31) {
+    vslidedown_vi(tmp, src, idx);
+    vmv_x_s(dst, tmp);
+  } else {
+    mv(t0, idx);
+    vslidedown_vx(tmp, src, t0);
+    vmv_x_s(dst, tmp);
+  }
+}
+
+// Extract a scalar element from an vector at position 'idx'.
+// The input elements in src are expected to be of floating point type.
+void C2_MacroAssembler::extract_fp_v(FloatRegister dst, BasicType bt, VectorRegister src,
+                                     int idx, VectorRegister tmp) {
+  assert(is_floating_point_type(bt), "unsupported element type");
+  assert(idx >= 0, "idx cannot be negative");
+  // Only need the first element after vector slidedown
+  vsetvli_helper(bt, 1);
+  if(idx == 0) {
+    vfmv_f_s(dst, src);
+  } else if (idx <= 31) {
+    vslidedown_vi(tmp, src, idx);
+    vfmv_f_s(dst, tmp);
+  } else {
+    mv(t0, idx);
+    vslidedown_vx(tmp, src, t0);
+    vfmv_f_s(dst, tmp);
+  }
+}

@@ -203,9 +203,9 @@
  void compare_integral_v(VectorRegister dst, BasicType bt, int vector_length,
                          VectorRegister src1, VectorRegister src2, int cond, VectorMask vm = Assembler::unmasked);
 
- void compare_floating_point_v(VectorRegister dst, BasicType bt, int vector_length,
-                               VectorRegister src1, VectorRegister src2, VectorRegister tmp1, VectorRegister tmp2,
-                               VectorRegister vmask, int cond, VectorMask vm = Assembler::unmasked);
+ void compare_fp_v(VectorRegister dst, BasicType bt, int vector_length,
+                   VectorRegister src1, VectorRegister src2, VectorRegister tmp1, VectorRegister tmp2,
+                   VectorRegister vmask, int cond, VectorMask vm = Assembler::unmasked);
 
  // In Matcher::scalable_predicate_reg_slots,
  // we assume each predicate register is one-eighth of the size of
@@ -239,5 +239,8 @@
   void vfcvt_rtz_x_f_v_safe(VectorRegister dst, VectorRegister src);
   void vfwcvt_rtz_x_f_v_safe(VectorRegister dst, VectorRegister src);
   void vfncvt_rtz_x_f_w_safe(VectorRegister dst, VectorRegister src);
+
+  void extract_v(Register dst, BasicType bt, VectorRegister src, int idx, VectorRegister tmp);
+  void extract_fp_v(FloatRegister dst, BasicType bt, VectorRegister src, int idx, VectorRegister tmp);
 
 #endif // CPU_RISCV_C2_MACROASSEMBLER_RISCV_HPP
