@@ -4269,8 +4269,7 @@ void PhaseIdealLoop::move_unordered_reduction_out_of_loop(IdealLoopTree* loop) {
       // Create vector_accumulator to replace current.
       Node* vector_input = current->in(2);
       VectorNode* vector_accumulator = current->make_normal_vector_op(last_vector_accumulator, vector_input, vec_t);
-      _igvn.register_new_node_with_optimizer(vector_accumulator);
-      C->copy_node_notes_to(vector_accumulator, current);
+      _igvn.register_new_node_with_optimizer(vector_accumulator, current);
       set_ctrl(vector_accumulator, cl);
       last_vector_accumulator = vector_accumulator;
       if (current != last_ur) {
