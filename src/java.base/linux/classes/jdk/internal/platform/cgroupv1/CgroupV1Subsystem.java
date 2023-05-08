@@ -333,10 +333,6 @@ public class CgroupV1Subsystem implements CgroupSubsystem, CgroupV1Metrics {
         return getLongValue(memory, "memory.kmem.failcnt");
     }
 
-    public long getKernelMemoryLimit() {
-        return CgroupV1SubsystemController.longValOrUnlimited(getLongValue(memory, "memory.kmem.limit_in_bytes"));
-    }
-
     public long getKernelMemoryMaxUsage() {
         return getLongValue(memory, "memory.kmem.max_usage_in_bytes");
     }
@@ -347,10 +343,6 @@ public class CgroupV1Subsystem implements CgroupSubsystem, CgroupV1Metrics {
 
     public long getTcpMemoryFailCount() {
         return getLongValue(memory, "memory.kmem.tcp.failcnt");
-    }
-
-    public long getTcpMemoryLimit() {
-        return CgroupV1SubsystemController.longValOrUnlimited(getLongValue(memory, "memory.kmem.tcp.limit_in_bytes"));
     }
 
     public long getTcpMemoryMaxUsage() {
