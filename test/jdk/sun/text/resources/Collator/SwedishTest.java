@@ -42,23 +42,28 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 
 public class SwedishTest {
     private static final String[] src = {"wb", "va", "vc"};
-    private static final String[] expected = {"va", "vc", "wb"};
-    private static final String[] expectedTraditional = {"va", "wb", "vc"};
+    private static final String[] standard = {"va", "vc", "wb"};
+    private static final String[] traditional = {"va", "wb", "vc"};
 
     @ParameterizedTest
     @MethodSource("swedishData")
-    public void testSwedishCollation(String[] expected, Locale locale) {
-        Arrays.sort(src, Collator.getInstance(locale));
+    public void testSwedishCollation(Locale l, String[] expected) {
+        Arrays.sort(src, Collator.getInstance(l));
         assertArrayEquals(expected, src);
     }
 
     private static Stream<Arguments> swedishData() {
         return Stream.of(
-            Arguments.of(expected, Locale.forLanguageTag("sv")),
-            Arguments.of(expected, Locale.forLanguageTag("sv-u-co-standard")),
-            Arguments.of(expected, Locale.forLanguageTag("sv-u-co-foo")),
-            Arguments.of(expected, Locale.forLanguageTag("sv-u-co-traditional")),
-            Arguments.of(expectedTraditional, Locale.forLanguageTag("sv-u-co-trad"))
+            Arguments.of(Locale.forLanguageTag("sv"), standard),
+            Arguments.of(Locale.forLanguageTag("sv-u-co-standard"), standard),
+            Arguments.of(Locale.forLanguageTag("sv-u-co-STANDARD"), standard),
+            Arguments.of(Locale.forLanguageTag("sv-u-co-traditio"), standard),
+            Arguments.of(Locale.forLanguageTag("sv-u-co-TRADITIO"), standard),
+            Arguments.of(Locale.forLanguageTag("sv-u-co-traditional"), standard),
+            Arguments.of(Locale.forLanguageTag("sv-u-co-TRADITIONAL"), standard),
+
+            Arguments.of(Locale.forLanguageTag("sv-u-co-trad"), traditional),
+            Arguments.of(Locale.forLanguageTag("sv-u-co-TRAD"), traditional)
         );
     }
 }
