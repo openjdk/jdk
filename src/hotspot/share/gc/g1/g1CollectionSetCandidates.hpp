@@ -62,8 +62,6 @@ public:
   G1CollectionSetRegionListIterator begin() const { return _regions.begin(); }
   G1CollectionSetRegionListIterator end() const { return _regions.end(); }
 
-  void verify() PRODUCT_RETURN;
-
   void print(const char* prefix);
 };
 
@@ -211,7 +209,7 @@ public:
   const char* get_short_type_str(const HeapRegion* r) const;
 
   bool is_empty() const;
-  bool has_no_more_marking_candidates() const;
+  bool has_more_marking_candidates() const;
 
   uint marking_regions_length() const { return _marking_regions.length(); }
 

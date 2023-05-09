@@ -235,8 +235,8 @@ bool G1CollectionSetCandidates::is_empty() const {
   return length() == 0;
 }
 
-bool G1CollectionSetCandidates::has_no_more_marking_candidates() const {
-  return _marking_regions.length() == 0;
+bool G1CollectionSetCandidates::has_more_marking_candidates() const {
+  return _marking_regions.length() != 0;
 }
 
 #ifndef PRODUCT

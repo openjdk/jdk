@@ -800,7 +800,7 @@ void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mar
     if (!next_gc_should_be_mixed("do not continue mixed GCs")) {
       collector_state()->set_in_young_only_phase(true);
 
-      assert(candidates()->has_no_more_marking_candidates(),
+      assert(!candidates()->has_more_marking_candidates(),
              "only end mixed if all candidates from marking were processed");
 
       maybe_start_marking();
@@ -1365,7 +1365,7 @@ void G1Policy::abort_time_to_mixed_tracking() {
 }
 
 bool G1Policy::next_gc_should_be_mixed(const char* no_candidates_str) const {
-  if (candidates()->has_no_more_marking_candidates()) {
+  if (!candidates()->has_more_marking_candidates()) {
     if (no_candidates_str != nullptr) {
       log_debug(gc, ergo)("%s (candidate old regions not available)", no_candidates_str);
     }
