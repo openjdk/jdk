@@ -217,8 +217,10 @@ public:
 #endif
 };
 
-//------------------------------PhaseValues------------------------------------
-// Phase infrastructure to support values
+// Phase infrastructure required for Node::Value computations.
+// 1) Type array, and accessor methods.
+// 2) Constants cache, which requires access to the types.
+// 3) NodeHash table, to find identical nodes (and remove/update the hash of a node on modification).
 class PhaseValues : public PhaseTransform {
 protected:
   bool      _iterGVN;
