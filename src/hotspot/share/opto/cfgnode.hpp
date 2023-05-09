@@ -215,8 +215,8 @@ public:
 
   // Determine a unique non-trivial input, if any.
   // Ignore casts if it helps.  Return null on failure.
-  Node* unique_input(PhaseGVN* phase, bool uncast);
-  Node* unique_input(PhaseGVN* phase) {
+  Node* unique_input(PhaseValues* phase, bool uncast);
+  Node* unique_input(PhaseValues* phase) {
     Node* uin = unique_input(phase, false);
     if (uin == nullptr) {
       uin = unique_input(phase, true);

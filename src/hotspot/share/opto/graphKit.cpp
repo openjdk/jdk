@@ -3917,7 +3917,7 @@ Node* GraphKit::new_array(Node* klass_node,     // array klass (maybe variable)
 
 //---------------------------Ideal_allocation----------------------------------
 // Given an oop pointer or raw pointer, see if it feeds from an AllocateNode.
-AllocateNode* AllocateNode::Ideal_allocation(Node* ptr, PhaseGVN* phase) {
+AllocateNode* AllocateNode::Ideal_allocation(Node* ptr, PhaseValues* phase) {
   if (ptr == nullptr) {     // reduce dumb test in callers
     return nullptr;
   }
@@ -3944,7 +3944,7 @@ AllocateNode* AllocateNode::Ideal_allocation(Node* ptr, PhaseGVN* phase) {
 }
 
 // Fancy version which also strips off an offset (and reports it to caller).
-AllocateNode* AllocateNode::Ideal_allocation(Node* ptr, PhaseGVN* phase,
+AllocateNode* AllocateNode::Ideal_allocation(Node* ptr, PhaseValues* phase,
                                              intptr_t& offset) {
   Node* base = AddPNode::Ideal_base_and_offset(ptr, phase, offset);
   if (base == nullptr)  return nullptr;

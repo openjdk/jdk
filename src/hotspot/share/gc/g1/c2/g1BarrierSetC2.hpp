@@ -55,13 +55,13 @@ protected:
                             bool use_precise) const;
 
   bool g1_can_remove_pre_barrier(GraphKit* kit,
-                                 PhaseGVN* phase,
+                                 PhaseValues* phase,
                                  Node* adr,
                                  BasicType bt,
                                  uint adr_idx) const;
 
   bool g1_can_remove_post_barrier(GraphKit* kit,
-                                  PhaseGVN* phase, Node* store,
+                                  PhaseValues* phase, Node* store,
                                   Node* adr) const;
 
   void g1_mark_card(GraphKit* kit,

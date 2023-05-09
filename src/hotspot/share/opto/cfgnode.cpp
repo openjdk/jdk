@@ -1458,7 +1458,7 @@ Node* PhiNode::Identity(PhaseGVN* phase) {
 //-----------------------------unique_input------------------------------------
 // Find the unique value, discounting top, self-loops, and casts.
 // Return top if there are no inputs, and self if there are multiple.
-Node* PhiNode::unique_input(PhaseGVN* phase, bool uncast) {
+Node* PhiNode::unique_input(PhaseValues* phase, bool uncast) {
   //  1) One unique direct input,
   // or if uncast is true:
   //  2) some of the inputs have an intervening ConstraintCast
