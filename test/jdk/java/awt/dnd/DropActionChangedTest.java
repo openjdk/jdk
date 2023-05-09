@@ -98,21 +98,19 @@ public class DropActionChangedTest {
         frame.setVisible(true);
     }
 
-    public void start() {
-        try {
-            Robot robot = new Robot();
-            Thread.sleep(1000);
-            robot.mouseMove(250, 250);
-            robot.mousePress(InputEvent.BUTTON1_MASK);
-            for (int y = 250; y < 350; y+=5) {
+    public void start() throws Exception {
+        Robot robot = new Robot();
+        robot.waitForIdle();
+        Thread.sleep(1000);
+        robot.mouseMove(250, 250);
+        robot.waitForIdle();
+        robot.mousePress(InputEvent.BUTTON1_MASK);
+        robot.waitForIdle();
+        for (int y = 250; y < 350; y+=5) {
                 robot.mouseMove(250, y);
-                Thread.sleep(100);
+                robot.delay(100);
             }
             robot.mouseRelease(InputEvent.BUTTON1_MASK);
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new RuntimeException("The test failed.");
-        }
         if (dropTargetPanel.isDropActionChangedTriggered()) {
             throw new RuntimeException("The test failed.");
         }

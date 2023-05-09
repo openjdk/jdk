@@ -89,65 +89,53 @@ public class DragTriggerEventTest {
         frame.setVisible(true);
     }
 
-    public void start() {
+    public void start() throws Exception {
         Robot robot;
+        robot = new Robot();
+        robot.waitForIdle();
 
-        try {
-            robot = new Robot();
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new RuntimeException("The test failed.", e);
-        }
+        EventQueue.invokeAndWait(() -> {
+            srcPoint = list.getLocationOnScreen();
+            cellBounds = list.getCellBounds(0, 0);
+        });
+
+        srcPoint.translate(cellBounds.x + cellBounds.width / 2,
+                           cellBounds.y + cellBounds.height / 2);
+
+        EventQueue.invokeAndWait(() -> {
+            dstPoint = panel.getLocationOnScreen();
+            d = panel.getSize();
+        });
+        dstPoint.translate(d.width / 2, d.height / 2);
+
+        for (int delay = 8; delay < 10000 && !panel.getResult(); delay *= 2) {
+            System.err.println("attempt to drag with delay " + delay);
+            robot.mouseMove(srcPoint.x, srcPoint.y);
+            robot.mousePress(InputEvent.BUTTON1_MASK);
+            mouse1Pressed = true;
+            robot.waitForIdle();
+            robot.mouseRelease(InputEvent.BUTTON1_MASK);
+            mouse1Pressed = false;
             robot.waitForIdle();
 
-        try {
-            EventQueue.invokeAndWait(() -> {
-                srcPoint = list.getLocationOnScreen();
-                cellBounds = list.getCellBounds(0, 0);
-            });
+            robot.keyPress(KeyEvent.VK_CONTROL);
+            ctrlPressed = true;
+            robot.mousePress(InputEvent.BUTTON1_MASK);
+            mouse1Pressed = true;
 
-            srcPoint.translate(cellBounds.x + cellBounds.width / 2,
-                               cellBounds.y + cellBounds.height / 2);
-
-            EventQueue.invokeAndWait(() -> {
-                dstPoint = panel.getLocationOnScreen();
-                d = panel.getSize();
-            });
-            dstPoint.translate(d.width / 2, d.height / 2);
-
-            for (int delay = 8; delay < 10000 && !panel.getResult(); delay *= 2) {
-                System.err.println("attempt to drag with delay " + delay);
-                robot.mouseMove(srcPoint.x, srcPoint.y);
-                robot.mousePress(InputEvent.BUTTON1_MASK);
-                mouse1Pressed = true;
-                robot.waitForIdle();
-                robot.mouseRelease(InputEvent.BUTTON1_MASK);
-                mouse1Pressed = false;
-                robot.waitForIdle();
-
-                robot.keyPress(KeyEvent.VK_CONTROL);
-                ctrlPressed = true;
-                robot.mousePress(InputEvent.BUTTON1_MASK);
-                mouse1Pressed = true;
-
-                Point p = new Point(srcPoint);
-                while (!p.equals(dstPoint)) {
-                    p.translate(sign(dstPoint.x - p.x),
-                                sign(dstPoint.y - p.y));
-                    robot.mouseMove(p.x, p.y);
-                    Thread.sleep(delay);
-                }
+            Point p = new Point(srcPoint);
+            while (!p.equals(dstPoint)) {
+                p.translate(sign(dstPoint.x - p.x),
+                            sign(dstPoint.y - p.y));
+                robot.mouseMove(p.x, p.y);
+                robot.delay(delay);
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new RuntimeException("The test failed.", e);
-        } finally {
-            if (mouse1Pressed) {
-                robot.mouseRelease(InputEvent.BUTTON1_MASK);
-            }
-            if (ctrlPressed) {
-                robot.keyRelease(KeyEvent.VK_CONTROL);
-            }
+        }
+        if (mouse1Pressed) {
+            robot.mouseRelease(InputEvent.BUTTON1_MASK);
+        }
+        if (ctrlPressed) {
+            robot.keyRelease(KeyEvent.VK_CONTROL);
         }
 
         if (!panel.getResult()) {
