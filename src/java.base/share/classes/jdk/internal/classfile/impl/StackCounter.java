@@ -375,6 +375,6 @@ public final class StackCounter {
                 msg,
                 bcs.bci,
                 methodName,
-                methodDesc.displayDescriptor());
+                methodDesc.displayDescriptor()));
     }
 }
