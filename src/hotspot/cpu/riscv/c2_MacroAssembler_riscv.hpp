@@ -137,13 +137,15 @@
     vl1re8_v(v, t0);
   }
 
-  void spill_copy_vector_stack_to_stack(int src_offset, int dst_offset, int vec_reg_size_in_bytes) {
-    assert(vec_reg_size_in_bytes % 16 == 0, "unexpected vector reg size");
-    unspill(v0, src_offset);
-    spill(v0, dst_offset);
+  void spill_copy_vector_stack_to_stack(int src_offset, int dst_offset, int vector_length_in_bytes) {
+    assert(vector_length_in_bytes % 16 == 0, "unexpected vector reg size");
+    for (int i = 0; i < vector_length_in_bytes / 8; i++) {
+      unspill(t0, true, src_offset + (i * 8));
+      spill(t0, true, dst_offset + (i * 8));
+    }
   }
 
-  void minmax_FD(FloatRegister dst,
+  void minmax_fp(FloatRegister dst,
                  FloatRegister src1, FloatRegister src2,
                  bool is_double, bool is_min);
 
@@ -183,19 +185,59 @@
                             Register tmp1, Register tmp2,
                             bool isL);
 
- void minmax_FD_v(VectorRegister dst,
+ void minmax_fp_v(VectorRegister dst,
                   VectorRegister src1, VectorRegister src2,
-                  bool is_double, bool is_min, int length_in_bytes);
+                  bool is_double, bool is_min, int vector_length);
 
- void reduce_minmax_FD_v(FloatRegister dst,
+ void reduce_minmax_fp_v(FloatRegister dst,
                          FloatRegister src1, VectorRegister src2,
                          VectorRegister tmp1, VectorRegister tmp2,
-                         bool is_double, bool is_min, int length_in_bytes);
+                         bool is_double, bool is_min, int vector_length);
 
- void rvv_reduce_integral(Register dst, VectorRegister tmp,
-                          Register src1, VectorRegister src2,
-                          BasicType bt, int opc, int length_in_bytes);
+ void reduce_integral_v(Register dst, VectorRegister tmp,
+                        Register src1, VectorRegister src2,
+                        BasicType bt, int opc, int vector_length);
 
- void rvv_vsetvli(BasicType bt, int length_in_bytes, Register tmp = t0);
+ void vsetvli_helper(BasicType bt, int vector_length, LMUL vlmul = Assembler::m1, Register tmp = t0);
+
+ void compare_integral_v(VectorRegister dst, BasicType bt, int vector_length,
+                         VectorRegister src1, VectorRegister src2, int cond, VectorMask vm = Assembler::unmasked);
+
+ void compare_floating_point_v(VectorRegister dst, BasicType bt, int vector_length,
+                               VectorRegister src1, VectorRegister src2, VectorRegister tmp1, VectorRegister tmp2,
+                               VectorRegister vmask, int cond, VectorMask vm = Assembler::unmasked);
+
+ // In Matcher::scalable_predicate_reg_slots,
+ // we assume each predicate register is one-eighth of the size of
+ // scalable vector register, one mask bit per vector byte.
+ void spill_vmask(VectorRegister v, int offset){
+   vsetvli_helper(T_BYTE, MaxVectorSize >> 3);
+   add(t0, sp, offset);
+   vse8_v(v, t0);
+ }
+
+ void unspill_vmask(VectorRegister v, int offset){
+   vsetvli_helper(T_BYTE, MaxVectorSize >> 3);
+   add(t0, sp, offset);
+   vle8_v(v, t0);
+ }
+
+  void spill_copy_vmask_stack_to_stack(int src_offset, int dst_offset, int vector_length_in_bytes) {
+    assert(vector_length_in_bytes % 4 == 0, "unexpected vector mask reg size");
+    for (int i = 0; i < vector_length_in_bytes / 4; i++) {
+      unspill(t0, false, src_offset + (i * 4));
+      spill(t0, false, dst_offset + (i * 4));
+    }
+  }
+
+  void integer_extend_v(VectorRegister dst, BasicType dst_bt, int vector_length,
+                        VectorRegister src, BasicType src_bt);
+
+  void integer_narrow_v(VectorRegister dst, BasicType dst_bt, int vector_length,
+                        VectorRegister src, BasicType src_bt);
+
+  void vfcvt_rtz_x_f_v_safe(VectorRegister dst, VectorRegister src);
+  void vfwcvt_rtz_x_f_v_safe(VectorRegister dst, VectorRegister src);
+  void vfncvt_rtz_x_f_w_safe(VectorRegister dst, VectorRegister src);
 
 #endif // CPU_RISCV_C2_MACROASSEMBLER_RISCV_HPP

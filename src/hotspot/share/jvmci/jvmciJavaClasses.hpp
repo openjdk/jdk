@@ -87,6 +87,9 @@
   start_class(HotSpotResolvedJavaMethodImpl, jdk_vm_ci_hotspot_HotSpotResolvedJavaMethodImpl)                 \
     long_field(HotSpotResolvedJavaMethodImpl, methodHandle)                                                   \
   end_class                                                                                                   \
+  start_class(HotSpotMethodData, jdk_vm_ci_hotspot_HotSpotMethodData)                                         \
+    long_field(HotSpotMethodData, methodDataPointer)                                                          \
+  end_class                                                                                                   \
   start_class(InstalledCode, jdk_vm_ci_code_InstalledCode)                                                    \
     long_field(InstalledCode, address)                                                                        \
     long_field(InstalledCode, entryPoint)                                                                     \

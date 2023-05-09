@@ -4186,6 +4186,10 @@ public final class Arrays {
      * those that would change the size of the returned list. Those methods leave
      * the list unchanged and throw {@link UnsupportedOperationException}.
      *
+     * <p>If the specified array's actual component type differs from the type
+     * parameter T, this can result in operations on the returned list throwing an
+     * {@code ArrayStoreException}.
+     *
      * @apiNote
      * This method acts as bridge between array-based and collection-based
      * APIs, in combination with {@link Collection#toArray}.

@@ -1243,18 +1243,30 @@ uint MachSpillCopyNode::implementation( CodeBuffer *cbuf, PhaseRegAlloc *ra_, bo
   if (src_first_rc == rc_stack && dst_first_rc == rc_kreg) {
     assert((src_first & 1) == 0 && src_first + 1 == src_second, "invalid register pair");
     assert((dst_first & 1) == 0 && dst_first + 1 == dst_second, "invalid register pair");
-    MacroAssembler _masm(cbuf);
     int offset = ra_->reg2offset(src_first);
-    __ kmov(as_KRegister(Matcher::_regEncode[dst_first]), Address(rsp, offset));
+    if (cbuf != nullptr) {
+      MacroAssembler _masm(cbuf);
+      __ kmov(as_KRegister(Matcher::_regEncode[dst_first]), Address(rsp, offset));
+#ifndef PRODUCT
+    } else {
+      st->print("KMOV    %s, [ESP + %d]", Matcher::regName[dst_first], offset);
+#endif
+    }
     return 0;
   }
 
   if (src_first_rc == rc_kreg && dst_first_rc == rc_stack) {
     assert((src_first & 1) == 0 && src_first + 1 == src_second, "invalid register pair");
     assert((dst_first & 1) == 0 && dst_first + 1 == dst_second, "invalid register pair");
-    MacroAssembler _masm(cbuf);
     int offset = ra_->reg2offset(dst_first);
-    __ kmov(Address(rsp, offset), as_KRegister(Matcher::_regEncode[src_first]));
+    if (cbuf != nullptr) {
+      MacroAssembler _masm(cbuf);
+      __ kmov(Address(rsp, offset), as_KRegister(Matcher::_regEncode[src_first]));
+#ifndef PRODUCT
+    } else {
+      st->print("KMOV    [ESP + %d], %s", offset, Matcher::regName[src_first]);
+#endif
+    }
     return 0;
   }
 
@@ -1271,8 +1283,14 @@ uint MachSpillCopyNode::implementation( CodeBuffer *cbuf, PhaseRegAlloc *ra_, bo
   if (src_first_rc == rc_kreg && dst_first_rc == rc_kreg) {
     assert((src_first & 1) == 0 && src_first + 1 == src_second, "invalid register pair");
     assert((dst_first & 1) == 0 && dst_first + 1 == dst_second, "invalid register pair");
-    MacroAssembler _masm(cbuf);
-    __ kmov(as_KRegister(Matcher::_regEncode[dst_first]), as_KRegister(Matcher::_regEncode[src_first]));
+    if (cbuf != nullptr) {
+      MacroAssembler _masm(cbuf);
+      __ kmov(as_KRegister(Matcher::_regEncode[dst_first]), as_KRegister(Matcher::_regEncode[src_first]));
+#ifndef PRODUCT
+    } else {
+      st->print("KMOV    %s, %s", Matcher::regName[dst_first], Matcher::regName[src_first]);
+#endif
+    }
     return 0;
   }
 
@@ -13742,15 +13760,16 @@ instruct RethrowException()
 
 // inlined locking and unlocking
 
-instruct cmpFastLockRTM(eFlagsReg cr, eRegP object, eBXRegP box, eAXRegI tmp, eDXRegI scr, rRegI cx1, rRegI cx2) %{
+instruct cmpFastLockRTM(eFlagsReg cr, eRegP object, eBXRegP box, eAXRegI tmp, eDXRegI scr, rRegI cx1, rRegI cx2, eRegP thread) %{
   predicate(Compile::current()->use_rtm());
   match(Set cr (FastLock object box));
-  effect(TEMP tmp, TEMP scr, TEMP cx1, TEMP cx2, USE_KILL box);
+  effect(TEMP tmp, TEMP scr, TEMP cx1, TEMP cx2, USE_KILL box, TEMP thread);
   ins_cost(300);
   format %{ "FASTLOCK $object,$box\t! kills $box,$tmp,$scr,$cx1,$cx2" %}
   ins_encode %{
+    __ get_thread($thread$$Register);
     __ fast_lock($object$$Register, $box$$Register, $tmp$$Register,
-                 $scr$$Register, $cx1$$Register, $cx2$$Register,
+                 $scr$$Register, $cx1$$Register, $cx2$$Register, $thread$$Register,
                  _rtm_counters, _stack_rtm_counters,
                  ((Method*)(ra_->C->method()->constant_encoding()))->method_data(),
                  true, ra_->C->profile_rtm());
@@ -13758,15 +13777,16 @@ instruct cmpFastLockRTM(eFlagsReg cr, eRegP object, eBXRegP box, eAXRegI tmp, eD
   ins_pipe(pipe_slow);
 %}
 
-instruct cmpFastLock(eFlagsReg cr, eRegP object, eBXRegP box, eAXRegI tmp, eRegP scr) %{
+instruct cmpFastLock(eFlagsReg cr, eRegP object, eBXRegP box, eAXRegI tmp, eRegP scr, eRegP thread) %{
   predicate(!Compile::current()->use_rtm());
   match(Set cr (FastLock object box));
-  effect(TEMP tmp, TEMP scr, USE_KILL box);
+  effect(TEMP tmp, TEMP scr, USE_KILL box, TEMP thread);
   ins_cost(300);
   format %{ "FASTLOCK $object,$box\t! kills $box,$tmp,$scr" %}
   ins_encode %{
+    __ get_thread($thread$$Register);
     __ fast_lock($object$$Register, $box$$Register, $tmp$$Register,
-                 $scr$$Register, noreg, noreg, NULL, NULL, NULL, false, false);
+                 $scr$$Register, noreg, noreg, $thread$$Register, nullptr, nullptr, nullptr, false, false);
   %}
   ins_pipe(pipe_slow);
 %}

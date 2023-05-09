@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,22 +86,6 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
     private String nameCache;
 
     /**
-     * Gets the holder of a HotSpot metaspace method native object.
-     *
-     * @param metaspaceHandle a handle to a metaspace Method object
-     * @return the {@link ResolvedJavaType} corresponding to the holder of the
-     *         {@code metaspaceMethod}
-     */
-    private static HotSpotResolvedObjectTypeImpl getHolder(long metaspaceHandle) {
-        HotSpotVMConfig config = config();
-        long methodPointer = UNSAFE.getLong(metaspaceHandle);
-        assert methodPointer != 0 : metaspaceHandle;
-        final long constMethodPointer = UNSAFE.getAddress(methodPointer + config.methodConstMethodOffset);
-        final long constantPoolPointer = UNSAFE.getAddress(constMethodPointer + config.constMethodConstantsOffset);
-        return Objects.requireNonNull(compilerToVM().getResolvedJavaType(constantPoolPointer + config.constantPoolHolderOffset));
-    }
-
-    /**
      * Gets the JVMCI mirror from a HotSpot method. The VM is responsible for ensuring that the
      * Method* is kept alive for the duration of this call and the {@link HotSpotJVMCIRuntime} keeps
      * it alive after that.
@@ -113,8 +97,7 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
      */
     @SuppressWarnings("unused")
     @VMEntryPoint
-    private static HotSpotResolvedJavaMethod fromMetaspace(long metaspaceHandle) {
-        HotSpotResolvedObjectTypeImpl holder = getHolder(metaspaceHandle);
+    private static HotSpotResolvedJavaMethod fromMetaspace(long metaspaceHandle, HotSpotResolvedObjectTypeImpl holder) {
         return holder.createMethod(metaspaceHandle);
     }
 
@@ -317,7 +300,7 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
      */
     @Override
     public boolean isCallerSensitive() {
-        return (getFlags() & config().methodFlagsCallerSensitive) != 0;
+        return (getConstMethodFlags() & config().constMethodFlagsCallerSensitive) != 0;
     }
 
     /**
@@ -337,7 +320,7 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
      */
     @Override
     public boolean hasReservedStackAccess() {
-        return (getFlags() & config().methodFlagsReservedStackAccess) != 0;
+        return (getConstMethodFlags() & config().constMethodFlagsReservedStackAccess) != 0;
     }
 
     /**
@@ -737,7 +720,7 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
 
     @Override
     public boolean isIntrinsicCandidate() {
-        return (getFlags() & config().methodFlagsIntrinsicCandidate) != 0;
+        return (getConstMethodFlags() & config().constMethodFlagsIntrinsicCandidate) != 0;
     }
 
     /**

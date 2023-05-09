@@ -117,17 +117,17 @@ jint GenCollectedHeap::initialize() {
 
   initialize_reserved_region(heap_rs);
 
+  ReservedSpace young_rs = heap_rs.first_part(_young_gen_spec->max_size());
+  ReservedSpace old_rs = heap_rs.last_part(_young_gen_spec->max_size());
+
   _rem_set = create_rem_set(heap_rs.region());
-  _rem_set->initialize();
+  _rem_set->initialize(young_rs.base(), old_rs.base());
+
   CardTableBarrierSet *bs = new CardTableBarrierSet(_rem_set);
   bs->initialize();
   BarrierSet::set_barrier_set(bs);
 
-  ReservedSpace young_rs = heap_rs.first_part(_young_gen_spec->max_size());
   _young_gen = _young_gen_spec->init(young_rs, rem_set());
-  ReservedSpace old_rs = heap_rs.last_part(_young_gen_spec->max_size());
-
-  old_rs = old_rs.first_part(_old_gen_spec->max_size());
   _old_gen = _old_gen_spec->init(old_rs, rem_set());
 
   GCInitLogger::print();
@@ -432,7 +432,7 @@ void GenCollectedHeap::collect_generation(Generation* gen, bool full, size_t siz
   FormatBuffer<> title("Collect gen: %s", gen->short_name());
   GCTraceTime(Trace, gc, phases) t1(title);
   TraceCollectorStats tcs(gen->counters());
-  TraceMemoryManagerStats tmms(gen->gc_manager(), gc_cause());
+  TraceMemoryManagerStats tmms(gen->gc_manager(), gc_cause(), heap()->is_young_gen(gen) ? "end of minor GC" : "end of major GC");
 
   gen->stat_record()->invocations++;
   gen->stat_record()->accumulated_time.start();

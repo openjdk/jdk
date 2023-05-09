@@ -297,7 +297,7 @@ class ClassVerifier : public StackObj {
 
   VerificationType cp_ref_index_to_type(
       int index, const constantPoolHandle& cp, TRAPS) {
-    return cp_index_to_type(cp->klass_ref_index_at(index), cp, THREAD);
+    return cp_index_to_type(cp->uncached_klass_ref_index_at(index), cp, THREAD);
   }
 
   bool is_protected_access(

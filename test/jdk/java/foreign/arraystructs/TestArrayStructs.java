@@ -25,7 +25,7 @@
  * @test id=specialized
  * @enablePreview
  * @library ../
- * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64" | os.arch == "riscv64"
+ * @requires jdk.foreign.linker != "UNSUPPORTED"
  * @modules java.base/jdk.internal.foreign
  * @run testng/othervm
  *   --enable-native-access=ALL-UNNAMED
@@ -38,7 +38,7 @@
  * @test id=interpreted
  * @enablePreview
  * @library ../
- * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64" | os.arch == "riscv64"
+ * @requires jdk.foreign.linker != "UNSUPPORTED"
  * @modules java.base/jdk.internal.foreign
  * @run testng/othervm
  *   --enable-native-access=ALL-UNNAMED
@@ -77,7 +77,7 @@ public class TestArrayStructs extends NativeTestHelper {
         FunctionDescriptor downcallDesc = baseDesc.insertArgumentLayouts(0, C_POINTER); // CB
         MemoryLayout[] elementLayouts = Collections.nCopies(numElements, C_CHAR).toArray(MemoryLayout[]::new);
         FunctionDescriptor upcallDesc = baseDesc.appendArgumentLayouts(elementLayouts);
-        try (Arena arena = Arena.openConfined()) {
+        try (Arena arena = Arena.ofConfined()) {
             TestValue[] testArgs = genTestArgs(baseDesc, arena);
 
             MethodHandle downcallHandle = downcallHandle(functionName, downcallDesc);

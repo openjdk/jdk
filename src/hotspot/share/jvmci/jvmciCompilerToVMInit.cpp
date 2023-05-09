@@ -26,12 +26,18 @@
 #include "compiler/compiler_globals.hpp"
 #include "compiler/oopMap.hpp"
 #include "gc/shared/barrierSet.hpp"
+#include "gc/shared/barrierSetAssembler.hpp"
+#include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/tlab_globals.hpp"
-#include "jvmci/jvmciEnv.hpp"
+#if INCLUDE_ZGC
+#include "gc/z/zBarrierSetRuntime.hpp"
+#include "gc/z/zThreadLocalData.hpp"
+#endif
 #include "jvmci/jvmciCompilerToVM.hpp"
+#include "jvmci/jvmciEnv.hpp"
 #include "jvmci/vmStructs_jvmci.hpp"
 #include "memory/universe.hpp"
 #include "oops/compressedOops.hpp"
@@ -52,6 +58,27 @@ address CompilerToVM::Data::SharedRuntime_handle_wrong_method_stub;
 address CompilerToVM::Data::SharedRuntime_deopt_blob_unpack;
 address CompilerToVM::Data::SharedRuntime_deopt_blob_unpack_with_exception_in_tls;
 address CompilerToVM::Data::SharedRuntime_deopt_blob_uncommon_trap;
+address CompilerToVM::Data::SharedRuntime_polling_page_return_handler;
+
+address CompilerToVM::Data::nmethod_entry_barrier;
+int CompilerToVM::Data::thread_disarmed_guard_value_offset;
+int CompilerToVM::Data::thread_address_bad_mask_offset;
+
+address CompilerToVM::Data::ZBarrierSetRuntime_load_barrier_on_oop_field_preloaded;
+address CompilerToVM::Data::ZBarrierSetRuntime_load_barrier_on_weak_oop_field_preloaded;
+address CompilerToVM::Data::ZBarrierSetRuntime_load_barrier_on_phantom_oop_field_preloaded;
+address CompilerToVM::Data::ZBarrierSetRuntime_weak_load_barrier_on_oop_field_preloaded;
+address CompilerToVM::Data::ZBarrierSetRuntime_weak_load_barrier_on_weak_oop_field_preloaded;
+address CompilerToVM::Data::ZBarrierSetRuntime_weak_load_barrier_on_phantom_oop_field_preloaded;
+address CompilerToVM::Data::ZBarrierSetRuntime_load_barrier_on_oop_array;
+address CompilerToVM::Data::ZBarrierSetRuntime_clone;
+
+bool CompilerToVM::Data::continuations_enabled;
+
+#ifdef AARCH64
+int CompilerToVM::Data::BarrierSetAssembler_nmethod_patching_type;
+address CompilerToVM::Data::BarrierSetAssembler_patching_epoch_addr;
+#endif
 
 size_t CompilerToVM::Data::ThreadLocalAllocBuffer_alignment_reserve;
 
@@ -108,6 +135,33 @@ void CompilerToVM::Data::initialize(JVMCI_TRAPS) {
   SharedRuntime_deopt_blob_unpack = SharedRuntime::deopt_blob()->unpack();
   SharedRuntime_deopt_blob_unpack_with_exception_in_tls = SharedRuntime::deopt_blob()->unpack_with_exception_in_tls();
   SharedRuntime_deopt_blob_uncommon_trap = SharedRuntime::deopt_blob()->uncommon_trap();
+  SharedRuntime_polling_page_return_handler = SharedRuntime::polling_page_return_handler_blob()->entry_point();
+
+  BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
+  if (bs_nm != nullptr) {
+    thread_disarmed_guard_value_offset = in_bytes(bs_nm->thread_disarmed_guard_value_offset());
+    AMD64_ONLY(nmethod_entry_barrier = StubRoutines::x86::method_entry_barrier());
+    AARCH64_ONLY(nmethod_entry_barrier = StubRoutines::aarch64::method_entry_barrier());
+    BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
+    AARCH64_ONLY(BarrierSetAssembler_nmethod_patching_type = (int) bs_asm->nmethod_patching_type());
+    AARCH64_ONLY(BarrierSetAssembler_patching_epoch_addr = bs_asm->patching_epoch_addr());
+  }
+
+#if INCLUDE_ZGC
+  if (UseZGC) {
+    thread_address_bad_mask_offset = in_bytes(ZThreadLocalData::address_bad_mask_offset());
+    ZBarrierSetRuntime_load_barrier_on_oop_field_preloaded =                     ZBarrierSetRuntime::load_barrier_on_oop_field_preloaded_addr();
+    ZBarrierSetRuntime_load_barrier_on_weak_oop_field_preloaded =                ZBarrierSetRuntime::load_barrier_on_weak_oop_field_preloaded_addr();
+    ZBarrierSetRuntime_load_barrier_on_phantom_oop_field_preloaded =             ZBarrierSetRuntime::load_barrier_on_phantom_oop_field_preloaded_addr();
+    ZBarrierSetRuntime_weak_load_barrier_on_oop_field_preloaded =                ZBarrierSetRuntime::weak_load_barrier_on_oop_field_preloaded_addr();
+    ZBarrierSetRuntime_weak_load_barrier_on_weak_oop_field_preloaded =           ZBarrierSetRuntime::weak_load_barrier_on_weak_oop_field_preloaded_addr();
+    ZBarrierSetRuntime_weak_load_barrier_on_phantom_oop_field_preloaded =        ZBarrierSetRuntime::weak_load_barrier_on_phantom_oop_field_preloaded_addr();
+    ZBarrierSetRuntime_load_barrier_on_oop_array =                               ZBarrierSetRuntime::load_barrier_on_oop_array_addr();
+    ZBarrierSetRuntime_clone =                                                   ZBarrierSetRuntime::clone_addr();
+  }
+#endif
+
+  continuations_enabled = Continuations::enabled();
 
   ThreadLocalAllocBuffer_alignment_reserve = ThreadLocalAllocBuffer::alignment_reserve();
 

@@ -57,7 +57,7 @@ bool G1FullGCCompactionPoint::has_regions() {
 }
 
 bool G1FullGCCompactionPoint::is_initialized() {
-  return _current_region != NULL;
+  return _current_region != nullptr;
 }
 
 void G1FullGCCompactionPoint::initialize(HeapRegion* hr) {
@@ -71,7 +71,7 @@ HeapRegion* G1FullGCCompactionPoint::current_region() {
 
 HeapRegion* G1FullGCCompactionPoint::next_region() {
   HeapRegion* next = *(++_compaction_region_iterator);
-  assert(next != NULL, "Must return valid region");
+  assert(next != nullptr, "Must return valid region");
   return next;
 }
 
@@ -93,7 +93,7 @@ void G1FullGCCompactionPoint::switch_region() {
 }
 
 void G1FullGCCompactionPoint::forward(oop object, size_t size) {
-  assert(_current_region != NULL, "Must have been initialized");
+  assert(_current_region != nullptr, "Must have been initialized");
 
   // Ensure the object fit in the current region.
   while (!object_will_fit(size)) {

@@ -424,7 +424,7 @@ java/awt/SplashScreen/MultiResolutionSplash/unix/UnixMultiResolutionSplashTest.j
 java/awt/Robot/AcceptExtraMouseButtons/AcceptExtraMouseButtons.java 7107528 linux-all,macosx-all
 java/awt/Mouse/MouseDragEvent/MouseDraggedTest.java 8080676 linux-all
 java/awt/Mouse/MouseModifiersUnitTest/MouseModifiersInKeyEvent.java 8157147 linux-all,windows-all,macosx-all
-java/awt/Toolkit/ToolkitPropertyTest/ToolkitPropertyTest_Enable.java 6847163
+java/awt/Toolkit/ToolkitPropertyTest/ToolkitPropertyTest_Enable.java 6847163 linux-all
 java/awt/xembed/server/RunTestXEmbed.java 7034201 linux-all
 java/awt/Modal/ModalFocusTransferTests/FocusTransferDialogsDocModalTest.java 8164473 linux-all
 java/awt/Frame/DisposeParentGC/DisposeParentGC.java 8079786 macosx-all
@@ -441,7 +441,7 @@ java/awt/TrayIcon/RightClickWhenBalloonDisplayed/RightClickWhenBalloonDisplayed.
 java/awt/PopupMenu/PopupMenuLocation.java 8238720 windows-all
 java/awt/GridLayout/ComponentPreferredSize/ComponentPreferredSize.java 8238720 windows-all
 java/awt/GridLayout/ChangeGridSize/ChangeGridSize.java   8238720 windows-all
-java/awt/event/MouseEvent/FrameMouseEventAbsoluteCoordsTest/FrameMouseEventAbsoluteCoordsTest.java
+java/awt/event/MouseEvent/FrameMouseEventAbsoluteCoordsTest/FrameMouseEventAbsoluteCoordsTest.java 8238720 windows-all
 
 # Several tests which fail sometimes on macos11
 java/awt/Window/MainKeyWindowTest/TestMainKeyWindow.java 8265985 macosx-all
@@ -605,6 +605,7 @@ sun/security/pkcs11/rsa/TestSignatures.java                     8295343 linux-al
 sun/security/pkcs11/rsa/TestKeyPairGenerator.java               8295343 linux-all
 sun/security/pkcs11/rsa/TestKeyFactory.java                     8295343 linux-all
 sun/security/pkcs11/KeyStore/Basic.java                         8295343 linux-all
+sun/security/pkcs11/Cipher/TestKATForGCM.java                   8240611 linux-x64,macosx-x64
 
 
 ############################################################################
@@ -666,6 +667,7 @@ java/awt/dnd/MissingDragExitEventTest/MissingDragExitEventTest.java 8288839 wind
 
 sanity/client/SwingSet/src/ToolTipDemoTest.java 8293001 linux-all
 sanity/client/SwingSet/src/ButtonDemoScreenshotTest.java 8265770 macosx-all
+sanity/client/SwingSet/src/EditorPaneDemoTest.java 8212240 linux-x64
 
 ############################################################################
 
@@ -693,8 +695,6 @@ com/sun/jdi/RepStep.java                                        8043571 generic-
 com/sun/jdi/InvokeHangTest.java                                 8218463 linux-all
 
 com/sun/jdi/AfterThreadDeathTest.java                           8232839 linux-all
-
-com/sun/jdi/JdbLastErrorTest.java                               8305913 windows-x64
 
 ############################################################################
 
@@ -736,6 +736,9 @@ javax/rmi/ssl/SSLSocketParametersTest.sh                        8162906 generic-
 
 
 jdk/incubator/concurrent/ScopedValue/StressStackOverflow.java   8303498 linux-s390x
+
+jdk/incubator/vector/ShortMaxVectorTests.java                   8306592 generic-i586
+jdk/incubator/vector/LoadJsvmlTest.java                         8305390 windows-x64
 
 ############################################################################
 
