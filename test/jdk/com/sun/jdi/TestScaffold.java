@@ -722,8 +722,9 @@ abstract public class TestScaffold extends TargetAdapter {
         return vmStartThread;
     }
 
-    //
-    // Tests that expect an exitValue other than 0 will need to override this method.
+    /*
+     * Tests that expect an exitValue other than 0 or 1 will need to override this method.
+     */
     protected boolean allowedExitValue(int exitValue) {
         return exitValue == 0 || exitValue == 1;
     }
