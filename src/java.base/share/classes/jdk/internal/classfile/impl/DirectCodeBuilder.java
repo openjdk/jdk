@@ -326,13 +326,25 @@ public final class DirectCodeBuilder
                     maxStack = original.maxStack();
                     stackMapAttr = original.findAttribute(Attributes.STACK_MAP_TABLE).orElse(null);
                 }
-                else if (buf.getMajorVersion() >= Classfile.JAVA_7_VERSION) {
-                    //new instance of generator immediately calculates maxStack, maxLocals, all frames,
-                    // patches dead bytecode blocks and removes them from exception table
-                    StackMapGenerator gen = StackMapGenerator.of(DirectCodeBuilder.this, buf);
-                    maxStack = gen.maxStack();
-                    maxLocals = gen.maxLocals();
-                    stackMapAttr = gen.stackMapTableAttribute();
+                else if (buf.getMajorVersion() >= Classfile.JAVA_6_VERSION) {
+                    try {
+                        //new instance of generator immediately calculates maxStack, maxLocals, all frames,
+                        // patches dead bytecode blocks and removes them from exception table
+                        StackMapGenerator gen = StackMapGenerator.of(DirectCodeBuilder.this, buf);
+                        maxStack = gen.maxStack();
+                        maxLocals = gen.maxLocals();
+                        stackMapAttr = gen.stackMapTableAttribute();
+                    } catch (Exception e) {
+                        if (buf.getMajorVersion() == Classfile.JAVA_6_VERSION) {
+                            //failover following JVMS-4.10
+                            StackCounter cntr = StackCounter.of(DirectCodeBuilder.this, buf);
+                            maxStack = cntr.maxStack();
+                            maxLocals = cntr.maxLocals();
+                            stackMapAttr = null;
+                        } else {
+                            throw e;
+                        }
+                    }
                 }
                 else {
                     StackCounter cntr = StackCounter.of(DirectCodeBuilder.this, buf);
