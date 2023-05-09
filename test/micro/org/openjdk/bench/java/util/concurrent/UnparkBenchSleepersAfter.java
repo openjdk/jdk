@@ -84,8 +84,7 @@ public class UnparkBenchSleepersAfter {
         latch.await();
     }
 
-    IdleThread[] idle_threads;
-
+    IdleThread[] idleThreads;
 
     ExecutorService exec;
 
@@ -95,8 +94,7 @@ public class UnparkBenchSleepersAfter {
         exec = Executors.newFixedThreadPool(workers);
         CountDownLatch latch = new CountDownLatch(workers);
         for (int i = 0; i < workers; i++) { // warmup exec
-            exec.submit(() ->
-            {
+            exec.submit(() -> {
                 try {
                     Thread.sleep(0);
                 } catch (InterruptedException e) {
@@ -115,7 +113,7 @@ public class UnparkBenchSleepersAfter {
 
     @TearDown
     public void tearDown() {
-        for(IdleThread it : idle_threads) {
+        for (IdleThread it : idle_threads) {
             it.stop();
         }
         exec.shutdown();
@@ -123,7 +121,7 @@ public class UnparkBenchSleepersAfter {
 
     public static class IdleThread implements Runnable {
         boolean done = false;
-        Thread my_thread;
+        Thread myThread;
 
         @Override
         public void run() {
