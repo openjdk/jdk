@@ -386,7 +386,7 @@ public sealed interface CodeBuilder
 
         // Check for empty try block
         if (tryBlock.isEmpty()) {
-            throw new IllegalStateException("The body of the try block is empty");
+            throw new IllegalArgumentException("The body of the try block is empty");
         }
 
         var catchBuilder = new CatchBuilderImpl(this, tryBlock, tryCatchEnd);
