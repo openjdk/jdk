@@ -1081,7 +1081,7 @@ class metadata_Relocation : public DataRelocation {
 };
 
 
-class barrier_Relocation : public DataRelocation {
+class barrier_Relocation : public Relocation {
 
  public:
   // The uninitialized value used before the relocation has been patched.
@@ -1097,12 +1097,7 @@ class barrier_Relocation : public DataRelocation {
  private:
   friend class RelocIterator;
   friend class RelocationHolder;
-  barrier_Relocation() : DataRelocation(relocInfo::barrier_type) { }
-
- public:
-  int offset() override                  { ShouldNotReachHere(); return 0; }
-  address value() override               { ShouldNotReachHere(); return nullptr; }
-  void set_value(address value) override { ShouldNotReachHere(); }
+  barrier_Relocation() : Relocation(relocInfo::barrier_type) { }
 };
 
 
