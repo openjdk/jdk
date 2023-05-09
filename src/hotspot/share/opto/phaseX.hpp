@@ -116,7 +116,7 @@ public:
 // Abstractly provides an infinite array of Type*'s, initialized to null.
 // Note that the constructor just zeros things, and since I use Arena
 // allocation I do not need a destructor to reclaim storage.
-// Despite the general name, this class is customized for use by PhaseGVN.
+// Despite the general name, this class is customized for use by PhaseValues.
 class Type_Array : public AnyObj {
   Arena *_a;                    // Arena to allocate in
   uint   _max;

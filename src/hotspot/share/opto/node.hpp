@@ -1641,6 +1641,10 @@ public:
     Node_List::clear();
     _clock_index = 0;
   }
+  void ensure_empty() {
+    assert(size() == 0, "must be empty");
+    clear(); // just in case
+  }
 
   // Used after parsing to remove useless nodes before Iterative GVN
   void remove_useless_nodes(VectorSet& useful);

@@ -1986,8 +1986,7 @@ void Compile::inline_boxing_calls(PhaseIterGVN& igvn) {
     PhaseGVN* gvn = initial_gvn();
     set_inlining_incrementally(true);
 
-    assert(igvn_worklist().size() == 0, "should be done with igvn");
-    igvn_worklist().clear();
+    igvn_worklist().ensure_empty(); // should be done with igvn
 
     _late_inlines_pos = _late_inlines.length();
 
@@ -2097,8 +2096,7 @@ void Compile::inline_incrementally(PhaseIterGVN& igvn) {
       }
     }
 
-    assert(igvn_worklist().size() == 0, "should be done with igvn");
-    igvn_worklist().clear();
+    igvn_worklist().ensure_empty(); // should be done with igvn
 
     while (inline_incrementally_one()) {
       assert(!failing(), "inconsistent");
@@ -2115,11 +2113,11 @@ void Compile::inline_incrementally(PhaseIterGVN& igvn) {
       break; // no more progress
     }
   }
-  assert(igvn_worklist().size() == 0, "should be done with igvn");
+
+  igvn_worklist().ensure_empty(); // should be done with igvn
 
   if (_string_late_inlines.length() > 0) {
     assert(has_stringbuilder(), "inconsistent");
-    igvn_worklist().clear();
 
     inline_string_calls(false);
 
@@ -2141,8 +2139,7 @@ void Compile::process_late_inline_calls_no_inline(PhaseIterGVN& igvn) {
   assert(_late_inlines.length() > 0, "sanity");
 
   while (_late_inlines.length() > 0) {
-    assert(igvn_worklist().size() == 0, "should be done with igvn");
-    igvn_worklist().clear();
+    igvn_worklist().ensure_empty(); // should be done with igvn
 
     while (inline_incrementally_one()) {
       assert(!failing(), "inconsistent");
@@ -2275,8 +2272,7 @@ void Compile::Optimize() {
 
   if (!failing() && RenumberLiveNodes && live_nodes() + NodeLimitFudgeFactor < unique()) {
     Compile::TracePhase tp("", &timers[_t_renumberLive]);
-    assert(igvn_worklist().size() == 0, "should be done with igvn");
-    igvn_worklist().clear();
+    igvn_worklist().ensure_empty(); // should be done with igvn
     {
       ResourceMark rm;
       PhaseRenumberLive prl(initial_gvn(), igvn_worklist());

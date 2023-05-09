@@ -43,8 +43,7 @@ void PhaseVector::optimize_vector_boxes() {
   assert(C->inlining_incrementally() == false, "sanity");
   C->set_inlining_incrementally(true);
 
-  assert(C->igvn_worklist().size() == 0, "not sure about this in vector.cpp");
-  C->igvn_worklist().clear();
+  C->igvn_worklist().ensure_empty(); // should be done with igvn
 
   expand_vunbox_nodes();
   scalarize_vbox_nodes();
