@@ -55,6 +55,9 @@ public enum AclEntryPermission {
      * <p> <a href="http://www.ietf.org/rfc/rfc3530.txt">RFC&nbsp;3530: Network
      * File System (NFS) version 4 Protocol</a> defines <em>named attributes</em>
      * as opaque files associated with a file in the file system.
+     *
+     * @spec https://www.rfc-editor.org/info/rfc3530
+     *      RFC 3530: Network File System (NFS) version 4 Protocol
      */
     READ_NAMED_ATTRS,
 
@@ -64,6 +67,9 @@ public enum AclEntryPermission {
      * <p> <a href="http://www.ietf.org/rfc/rfc3530.txt">RFC&nbsp;3530: Network
      * File System (NFS) version 4 Protocol</a> defines <em>named attributes</em>
      * as opaque files associated with a file in the file system.
+     *
+     * @spec https://www.rfc-editor.org/info/rfc3530
+     *      RFC 3530: Network File System (NFS) version 4 Protocol
      */
     WRITE_NAMED_ATTRS,
 

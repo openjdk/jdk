@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,7 +81,7 @@ public:
 
   void do_oop(narrowOop* ref) {
     assert(ref != NULL, "invariant");
-    assert(is_aligned(ref, HeapWordSize), "invariant");
+    assert(is_aligned(ref, sizeof(narrowOop)), "invariant");
     if (!CompressedOops::is_null(*ref)) {
       _delegate->do_root(UnifiedOopRef::encode_as_raw(ref));
     }

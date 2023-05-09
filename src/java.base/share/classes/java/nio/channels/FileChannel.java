@@ -26,8 +26,8 @@
 package java.nio.channels;
 
 import java.io.IOException;
+import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.SegmentScope;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.spi.AbstractInterruptibleChannel;
@@ -633,10 +633,10 @@ public abstract class FileChannel
      * bytes free in its output buffer.
      *
      * <p> This method does not modify this channel's position.  If the given
-     * position is greater than or equal to the file's current size then no bytes are
-     * transferred.  If the target channel has a position then bytes are
-     * written starting at that position and then the position is incremented
-     * by the number of bytes written.
+     * position is greater than or equal to the file's current size then no
+     * bytes are transferred.  If the target channel has a position then bytes
+     * are written starting at that position and then the position
+     * is incremented by the number of bytes written.
      *
      * <p> This method is potentially much more efficient than a simple loop
      * that reads from this channel and writes to the target channel.  Many
@@ -701,8 +701,10 @@ public abstract class FileChannel
      * source has reached end-of-stream.
      *
      * <p> This method does not modify this channel's position.  If the given
-     * position is greater than the file's current size then no bytes are
-     * transferred.  If the source channel has a position then bytes are read
+     * position is greater than or equal to the file's current size then the
+     * file will be grown to accommodate the new bytes; the values of any bytes
+     * between the previous end-of-file and the newly-written bytes are
+     * unspecified.  If the source channel has a position then bytes are read
      * starting at that position and then the position is incremented by the
      * number of bytes read.
      *
@@ -715,7 +717,7 @@ public abstract class FileChannel
      *         The source channel
      *
      * @param  position
-     *         The position within the file at which the transfer is to begin;
+     *         The file position at which the transfer is to begin;
      *         must be non-negative
      *
      * @param  count
@@ -761,7 +763,8 @@ public abstract class FileChannel
      * #read(ByteBuffer)} method, except that bytes are read starting at the
      * given file position rather than at the channel's current position.  This
      * method does not modify this channel's position.  If the given position
-     * is greater than or equal to the file's current size then no bytes are read.  </p>
+     * is greater than or equal to the file's current size then no bytes are
+     * read.  </p>
      *
      * @param  dst
      *         The buffer into which bytes are to be transferred
@@ -806,9 +809,10 @@ public abstract class FileChannel
      * #write(ByteBuffer)} method, except that bytes are written starting at
      * the given file position rather than at the channel's current position.
      * This method does not modify this channel's position.  If the given
-     * position is greater than or equal to the file's current size then the file will be
-     * grown to accommodate the new bytes; the values of any bytes between the
-     * previous end-of-file and the newly-written bytes are unspecified.  </p>
+     * position is greater than or equal to the file's current size then the
+     * file will be grown to accommodate the new bytes; the values of any bytes
+     * between the previous end-of-file and the newly-written bytes are
+     * unspecified.  </p>
      *
      * <p> If the file is open in <a href="#append-mode">append mode</a>, then
      * the effect of invoking this method is unspecified.
@@ -1000,11 +1004,15 @@ public abstract class FileChannel
 
     /**
      * Maps a region of this channel's file into a new mapped memory segment,
-     * with the given offset, size and memory session.
+     * with the given offset, size and arena.
      * The {@linkplain MemorySegment#address() address} of the returned memory
      * segment is the starting address of the mapped off-heap region backing
      * the segment.
-     *
+     * <p>
+     * The lifetime of the returned segment is controlled by the provided arena.
+     * For instance, if the provided arena is a closeable arena,
+     * the returned segment will be unmapped when the provided closeable arena
+     * is {@linkplain Arena#close() closed}.
      * <p> If the specified mapping mode is
      * {@linkplain FileChannel.MapMode#READ_ONLY READ_ONLY}, the resulting
      * segment will be read-only (see {@link MemorySegment#isReadOnly()}).
@@ -1045,8 +1053,8 @@ public abstract class FileChannel
      *          The size (in bytes) of the mapped memory backing the memory
      *          segment.
      *
-     * @param   session
-     *          The segment memory session.
+     * @param   arena
+     *          The segment arena.
      *
      * @return  A new mapped memory segment.
      *
@@ -1055,13 +1063,11 @@ public abstract class FileChannel
      *          {@code offset + size} overflows the range of {@code long}.
      *
      * @throws  IllegalStateException
-     *          If the {@code session} is not
-     *          {@linkplain SegmentScope#isAlive() alive}.
+     *          If {@code arena.isAlive() == false}.
      *
      * @throws  WrongThreadException
-     *          If this method is called from a thread other than the thread
-     *          {@linkplain SegmentScope#isAccessibleBy(Thread) owning} the
-     *          {@code session}.
+     *          If {@code arena} is a confined scoped arena, and this method is called from a
+     *          thread {@code T}, other than the scoped arena's owner thread.
      *
      * @throws  NonReadableChannelException
      *          If the {@code mode} is {@link MapMode#READ_ONLY READ_ONLY} or
@@ -1083,7 +1089,7 @@ public abstract class FileChannel
      * @since   19
      */
     @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
-    public MemorySegment map(MapMode mode, long offset, long size, SegmentScope session)
+    public MemorySegment map(MapMode mode, long offset, long size, Arena arena)
         throws IOException
     {
         throw new UnsupportedOperationException();

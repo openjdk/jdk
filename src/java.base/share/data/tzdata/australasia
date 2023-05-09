@@ -346,7 +346,7 @@ Zone Antarctica/Macquarie 0	-	-00	1899 Nov
 
 # From Steffen Thorsen (2013-01-10):
 # Fiji will end DST on 2014-01-19 02:00:
-# http://www.fiji.gov.fj/Media-Center/Press-Releases/DAYLIGHT-SAVINGS-TO-END-THIS-MONTH-%281%29.aspx
+# http://www.fiji.gov.fj/Media-Center/Press-Releases/DAYLIGHT-SAVINGS-TO-END-THIS-MONTH-(1).aspx
 
 # From Ken Rylander (2014-10-20):
 # DST will start Nov. 2 this year.
@@ -746,7 +746,7 @@ Zone Pacific/Pago_Pago	 12:37:12 -	LMT	1892 Jul  5
 #
 # Samoa's Daylight Saving Time Act 2009 is available here, but does not
 # contain any dates:
-# http://www.parliament.gov.ws/documents/acts/Daylight%20Saving%20Act%20%202009%20%28English%29%20-%20Final%207-7-091.pdf
+# http://www.parliament.gov.ws/documents/acts/Daylight%20Saving%20Act%20%202009%20(English)%20-%20Final%207-7-091.pdf
 
 # From Laupue Raymond Hughes (2010-10-07):
 # Please see
@@ -1831,7 +1831,7 @@ Zone	Pacific/Efate	11:13:16 -	LMT	1912 Jan 13 # Vila
 # period.  It would probably be reasonable to assume Guam use GMT+9 during
 # that period of time like the surrounding area.
 
-# From Paul Eggert (2018-11-18):
+# From Paul Eggert (2023-01-23):
 # Howse writes (p 153) "The Spaniards, on the other hand, reached the
 # Philippines and the Ladrones from America," and implies that the Ladrones
 # (now called the Marianas) kept American date for quite some time.
@@ -1844,7 +1844,7 @@ Zone	Pacific/Efate	11:13:16 -	LMT	1912 Jan 13 # Vila
 # they did as that avoids the need for a separate zone due to our 1970 cutoff.
 #
 # US Public Law 106-564 (2000-12-23) made UT +10 the official standard time,
-# under the name "Chamorro Standard Time".  There is no official abbreviation,
+# under the name "Chamorro standard time".  There is no official abbreviation,
 # but Congressman Robert A. Underwood, author of the bill that became law,
 # wrote in a press release (2000-12-27) that he will seek the use of "ChST".
 
@@ -2222,24 +2222,18 @@ Zone	Pacific/Efate	11:13:16 -	LMT	1912 Jan 13 # Vila
 # an international standard, there are some places on the high seas where the
 # correct date is ambiguous.
 
-# From Wikipedia <https://en.wikipedia.org/wiki/Time_zone> (2005-08-31):
-# Before 1920, all ships kept local apparent time on the high seas by setting
-# their clocks at night or at the morning sight so that, given the ship's
-# speed and direction, it would be 12 o'clock when the Sun crossed the ship's
-# meridian (12 o'clock = local apparent noon).  During 1917, at the
-# Anglo-French Conference on Time-keeping at Sea, it was recommended that all
-# ships, both military and civilian, should adopt hourly standard time zones
-# on the high seas.  Whenever a ship was within the territorial waters of any
-# nation it would use that nation's standard time.  The captain was permitted
-# to change his ship's clocks at a time of his choice following his ship's
-# entry into another zone time - he often chose midnight.  These zones were
-# adopted by all major fleets between 1920 and 1925 but not by many
-# independent merchant ships until World War II.
+# From Wikipedia <https://en.wikipedia.org/wiki/Nautical_time> (2023-01-23):
+# The nautical time zone system is analogous to the terrestrial time zone
+# system for use on high seas.  Under the system time changes are required for
+# changes of longitude in one-hour steps.  The one-hour step corresponds to a
+# time zone width of 15° longitude.  The 15° gore that is offset from GMT or
+# UT1 (not UTC) by twelve hours is bisected by the nautical date line into two
+# 7°30' gores that differ from GMT by ±12 hours.  A nautical date line is
+# implied but not explicitly drawn on time zone maps.  It follows the 180th
+# meridian except where it is interrupted by territorial waters adjacent to
+# land, forming gaps: it is a pole-to-pole dashed line.
 
-# From Paul Eggert, using references suggested by Oscar van Vlijmen
-# (2005-03-20):
-#
-# The American Practical Navigator (2002)
-# http://pollux.nss.nima.mil/pubs/pubs_j_apn_sections.html?rid=187
-# talks only about the 180-degree meridian with respect to ships in
-# international waters; it ignores the international date line.
+# From Paul Eggert (2023-01-23):
+# The American Practical Navigator <https://msi.nga.mil/Publications/APN>,
+# 2019 edition, merely says that the International Date Line
+# "coincides with the 180th meridian over most of its length."

@@ -7,18 +7,18 @@
 	<version number="$Revision$" />
 	<keyword>
 		<key name="em" description="Emoji presentation style request" since="29">
-			<type name="emoji" description="use an emoji presentation for emoji characters if possible"/>
-			<type name="text" description="use a text presentation for emoji characters if possible"/>
-			<type name="default" description="use the default presentation as specified in UTR #51"/>
+			<type name="emoji" description="use an emoji presentation for emoji characters if possible" since="29"/>
+			<type name="text" description="use a text presentation for emoji characters if possible" since="29"/>
+			<type name="default" description="use the default presentation as specified in UTR #51" since="29"/>
 		</key>
 
 		<key name="rg" description="Alternate region for determining certain data values (e.g. default currency and units) specified by rgScope" since="29">
-			<type name="RG_KEY_VALUE" description="A region code from idValidity/id[type='region'][idStatus='regular'], suffixed with 'ZZZZ'" />
+			<type name="RG_KEY_VALUE" description="A region code from idValidity/id[type='region'][idStatus='regular'], suffixed with 'ZZZZ'" since="29"/>
 		</key>
 
 		<key name="sd" description="Region subdivision" since="28">
 			<type name="SUBDIVISION_CODE"
-				description="Valid unicode_subdivision_subtag for the region subtag as specified in LDML, based on subdivisionContainment data in supplementalData, prefixed by the associated unicode_region_subtag" />
+				description="Valid unicode_subdivision_subtag for the region subtag as specified in LDML, based on subdivisionContainment data in supplementalData, prefixed by the associated unicode_region_subtag" since="28"/>
 		</key>
 
 		<key name="va" description="Common locale variant type key">

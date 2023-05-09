@@ -83,6 +83,13 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
   static void leaving_dying_thread_env_iteration()  { --_dying_thread_env_iteration_count; }
   static bool is_inside_dying_thread_env_iteration(){ return _dying_thread_env_iteration_count > 0; }
 
+  // This function is to support agents loaded into running VM.
+  static bool enable_virtual_threads_notify_jvmti();
+
+  // This function is used in WhiteBox, only needed to test the function above.
+  // It is unsafe to use this function when virtual threads are executed.
+  static bool disable_virtual_threads_notify_jvmti();
+
   static jvmtiError suspend_thread(oop thread_oop, JavaThread* java_thread, bool single_suspend,
                                    int* need_safepoint_p);
   static jvmtiError resume_thread(oop thread_oop, JavaThread* java_thread, bool single_resume);
@@ -128,7 +135,6 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
   void env_dispose();
 
   void set_env_local_storage(const void* data)     { _env_local_storage = data; }
-  const void* get_env_local_storage()              { return _env_local_storage; }
 
   void record_class_file_load_hook_enabled();
   void record_first_time_class_file_load_hook_enabled();
@@ -162,6 +168,8 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
   bool use_version_1_2_semantics();  // agent asked for version 1.2
 
   bool is_retransformable()                        { return _is_retransformable; }
+
+  const void* get_env_local_storage() { return _env_local_storage; }
 
   static ByteSize jvmti_external_offset() {
     return byte_offset_of(JvmtiEnvBase, _jvmti_external);

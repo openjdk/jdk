@@ -148,6 +148,10 @@ import java.util.Locale;
  * from being set by application code, regardless of whether the security policy
  * in force, permits it.
  *
+ * @spec https://www.rfc-editor.org/info/rfc2296
+ *      RFC 2296: HTTP Remote Variant Selection Algorithm -- RVSA/1.0
+ * @spec https://www.rfc-editor.org/info/rfc2732
+ *      RFC 2732: Format for Literal IPv6 Addresses in URL's
  * @since 1.8
  */
 public final class URLPermission extends Permission {

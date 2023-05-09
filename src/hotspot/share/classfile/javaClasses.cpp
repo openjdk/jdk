@@ -765,8 +765,13 @@ void java_lang_String::print(oop java_string, outputStream* st) {
 
   st->print("\"");
   for (int index = 0; index < length; index++) {
-    st->print("%c", (!is_latin1) ?  value->char_at(index) :
-                           ((jchar) value->byte_at(index)) & 0xff );
+    jchar c = (!is_latin1) ?  value->char_at(index) :
+                             ((jchar) value->byte_at(index)) & 0xff;
+    if (c < ' ') {
+      st->print("\\x%02X", c); // print control characters e.g. \x0A
+    } else {
+      st->print("%c", c);
+    }
   }
   st->print("\"");
 }
@@ -889,7 +894,7 @@ void java_lang_Class::fixup_mirror(Klass* k, TRAPS) {
   }
 
   if (k->is_shared() && k->has_archived_mirror_index()) {
-    if (ArchiveHeapLoader::are_archived_mirrors_available()) {
+    if (ArchiveHeapLoader::is_in_use()) {
       bool present = restore_archived_mirror(k, Handle(), Handle(), Handle(), CHECK);
       assert(present, "Missing archived mirror for %s", k->external_name());
       return;
@@ -1121,9 +1126,6 @@ bool java_lang_Class::restore_archived_mirror(Klass *k,
 
   // mirror is archived, restore
   log_debug(cds, mirror)("Archived mirror is: " PTR_FORMAT, p2i(m));
-  if (ArchiveHeapLoader::is_mapped()) {
-    assert(Universe::heap()->is_archived_object(m), "must be archived mirror object");
-  }
   assert(as_Klass(m) == k, "must be");
   Handle mirror(THREAD, m);
 
@@ -1498,11 +1500,9 @@ JavaThreadStatus java_lang_Thread_FieldHolder::get_thread_status(oop holder) {
 
 
 int java_lang_Thread_Constants::_static_VTHREAD_GROUP_offset = 0;
-int java_lang_Thread_Constants::_static_NOT_SUPPORTED_CLASSLOADER_offset = 0;
 
 #define THREAD_CONSTANTS_STATIC_FIELDS_DO(macro) \
-  macro(_static_VTHREAD_GROUP_offset,             k, "VTHREAD_GROUP",             threadgroup_signature, true); \
-  macro(_static_NOT_SUPPORTED_CLASSLOADER_offset, k, "NOT_SUPPORTED_CLASSLOADER", classloader_signature, true);
+  macro(_static_VTHREAD_GROUP_offset,             k, "VTHREAD_GROUP",             threadgroup_signature, true);
 
 void java_lang_Thread_Constants::compute_offsets() {
   assert(_static_VTHREAD_GROUP_offset == 0, "offsets should be initialized only once");
@@ -1523,11 +1523,6 @@ oop java_lang_Thread_Constants::get_VTHREAD_GROUP() {
   return base->obj_field(_static_VTHREAD_GROUP_offset);
 }
 
-oop java_lang_Thread_Constants::get_NOT_SUPPORTED_CLASSLOADER() {
-  InstanceKlass* k = vmClasses::Thread_Constants_klass();
-  oop base = k->static_field_base_raw();
-  return base->obj_field(_static_NOT_SUPPORTED_CLASSLOADER_offset);
-}
 
 int java_lang_Thread::_holder_offset;
 int java_lang_Thread::_name_offset;
@@ -1610,6 +1605,10 @@ bool java_lang_Thread::is_in_VTMS_transition(oop java_thread) {
 
 void java_lang_Thread::set_is_in_VTMS_transition(oop java_thread, bool val) {
   java_thread->bool_field_put_volatile(_jvmti_is_in_VTMS_transition_offset, val);
+}
+
+int java_lang_Thread::is_in_VTMS_transition_offset() {
+  return _jvmti_is_in_VTMS_transition_offset;
 }
 
 void java_lang_Thread::clear_scopedValueBindings(oop java_thread) {

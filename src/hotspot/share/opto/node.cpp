@@ -521,10 +521,6 @@ Node *Node::clone() const {
     // If it is applicable, it will happen anyway when the cloned node is registered with IGVN.
     n->remove_flag(Node::NodeFlags::Flag_for_post_loop_opts_igvn);
   }
-  if (n->is_reduction()) {
-    // Do not copy reduction information. This must be explicitly set by the calling code.
-    n->remove_flag(Node::Flag_is_reduction);
-  }
   BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
   bs->register_potential_barrier_node(n);
 
@@ -1310,7 +1306,7 @@ bool Node::dominates(Node* sub, Node_List &nlist) {
     } else if (sub == up && sub->is_Region() && sub->req() == 2) {
       // Take in(1) path on the way up to 'dom' for regions with only one input
       up = sub->in(1);
-    } else if (sub == up && sub->is_Region() && sub->req() == 3) {
+    } else if (sub == up && sub->is_Region()) {
       // Try both paths for Regions with 2 input paths (it may be a loop head).
       // It could give conservative 'false' answer without information
       // which region's input is the entry path.

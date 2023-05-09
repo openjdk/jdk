@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,8 @@
 
 package sun.awt;
 
-import java.security.PrivilegedAction;
+import jdk.internal.util.OperatingSystem;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -58,10 +59,13 @@ public class OSInfo {
     public static final WindowsVersion WINDOWS_VISTA = new WindowsVersion(6, 0);
     public static final WindowsVersion WINDOWS_7 = new WindowsVersion(6, 1);
 
-    private static final String OS_NAME = "os.name";
     private static final String OS_VERSION = "os.version";
 
     private static final Map<String, WindowsVersion> windowsVersionMap = new HashMap<String, OSInfo.WindowsVersion>();
+
+    // Cache the OSType for getOSType()
+    private static final OSType CURRENT_OSTYPE = getOSTypeImpl();  // No DoPriv needed
+
 
     static {
         windowsVersionMap.put(WINDOWS_95.toString(), WINDOWS_95);
@@ -74,12 +78,6 @@ public class OSInfo {
         windowsVersionMap.put(WINDOWS_7.toString(), WINDOWS_7);
     }
 
-    private static final PrivilegedAction<OSType> osTypeAction = new PrivilegedAction<OSType>() {
-        public OSType run() {
-            return getOSType();
-        }
-    };
-
     private OSInfo() {
         // Don't allow to create instances
     }
@@ -87,34 +85,20 @@ public class OSInfo {
     /**
      * Returns type of operating system.
      */
-    public static OSType getOSType() throws SecurityException {
-        String osName = System.getProperty(OS_NAME);
-
-        if (osName != null) {
-            if (osName.contains("Windows")) {
-                return WINDOWS;
-            }
-
-            if (osName.contains("Linux")) {
-                return LINUX;
-            }
-
-            if (osName.contains("OS X")) {
-                return MACOSX;
-            }
-
-            if (osName.contains("AIX")) {
-                return AIX;
-            }
-
-            // determine another OS here
-        }
-
-        return UNKNOWN;
+    public static OSType getOSType() {
+        return CURRENT_OSTYPE;
     }
 
-    public static PrivilegedAction<OSType> getOSTypeAction() {
-        return osTypeAction;
+    private static OSType getOSTypeImpl() {
+        OperatingSystem os = OperatingSystem.current();
+        return switch (os) {
+            // Map OperatingSystem enum values to OSType enum values.
+            case WINDOWS -> WINDOWS;
+            case LINUX -> LINUX;
+            case MACOS -> MACOSX;
+            case AIX -> AIX;
+            default -> UNKNOWN;
+        };
     }
 
     public static WindowsVersion getWindowsVersion() throws SecurityException {

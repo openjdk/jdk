@@ -654,6 +654,12 @@ void BitMap::write_to(bm_word_t* buffer, size_t buffer_size_in_bytes) const {
   memcpy(buffer, _map, size_in_bytes());
 }
 
+#ifdef ASSERT
+void BitMap::IteratorImpl::assert_not_empty() const {
+  assert(!is_empty(), "empty iterator");
+}
+#endif
+
 #ifndef PRODUCT
 
 void BitMap::print_on(outputStream* st) const {

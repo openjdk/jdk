@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,8 +119,9 @@ public class SnippetTester extends JavadocTester {
         var idString = id.isEmpty() ? "" : " id=\"%s\"".formatted(id.get());
         var langString = lang.isEmpty() ? "" : " class=\"language-%s\"".formatted(lang.get());
         return """
-                <div class="snippet-container"><button class="copy snippet-copy" onclick="copySnippet(this)">\
-                <span data-copied="Copied!">Copy</span><img src="%s" alt="Copy"></button>
+                <div class="snippet-container"><button class="copy snippet-copy" aria-label="Copy snippet" \
+                onclick="copySnippet(this)"><span data-copied="Copied!">Copy</span><img src="%s" alt="Copy \
+                snippet"></button>
                 <pre class="snippet"%s><code%s>%s</code></pre>
                 </div>""".formatted(svgString, idString, langString, content);
     }

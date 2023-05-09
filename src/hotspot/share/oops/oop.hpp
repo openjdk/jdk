@@ -257,8 +257,6 @@ class oopDesc {
   // Forward pointer operations for scavenge
   inline bool is_forwarded() const;
 
-  void verify_forwardee(oop forwardee) NOT_DEBUG_RETURN;
-
   inline void forward_to(oop p);
 
   // Like "forward_to", but inserts the forwarding pointer atomically.

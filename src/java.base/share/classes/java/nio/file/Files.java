@@ -1719,6 +1719,10 @@ public final class Files {
      * @throws  SecurityException
      *          If a security manager is installed and it denies an unspecified
      *          permission required by a file type detector implementation.
+     *
+     * @spec https://www.rfc-editor.org/info/rfc2045
+     *      RFC 2045: Multipurpose Internet Mail Extensions (MIME) Part One:
+     *              Format of Internet Message Bodies
      */
     public static String probeContentType(Path path)
         throws IOException
