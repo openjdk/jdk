@@ -249,8 +249,11 @@ public class IntraJVMGetDropSuccessTest implements AWTEventListener {
         }
     }
 
-    public void reset() {
-        clickedComponent = null;
+    public void reset() throws Exception {
+        EventQueue.invokeAndWait(() -> {
+            clickedComponent = null;
+        });
+
     }
 
     public void eventDispatched(AWTEvent e) {
