@@ -42,12 +42,12 @@ JvmtiTagMapKey::JvmtiTagMapKey(const JvmtiTagMapKey& src) {
     Universe::heap()->keep_alive(src._obj);
 
     _wh = WeakHandle(JvmtiExport::weak_tag_storage(), src._obj);
-    _obj = nullptr;
   } else {
     // resizing needs to create a copy.
     _wh = src._wh;
-    _obj = nullptr;
   }
+  // obj is always null after a copy.
+  _obj = nullptr;
 }
 
 void JvmtiTagMapKey::release_weak_handle() const {
