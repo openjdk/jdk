@@ -82,7 +82,7 @@ void SlidingForwarding::begin() {
 
     size_t max = _num_regions * NUM_TARGET_REGIONS;
     _bases_table = NEW_C_HEAP_ARRAY(HeapWord*, max, mtGC);
-    HeapWord* biased_start = _bases_table - _heap_start_region_bias;
+    HeapWord** biased_start = _bases_table - _heap_start_region_bias;
     _biased_bases[0] = biased_start;
     _biased_bases[1] = biased_start + _num_regions;
     for (size_t i = 0; i < max; i++) {
