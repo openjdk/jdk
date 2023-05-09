@@ -307,7 +307,7 @@ $(eval $(call SetupTarget, eclipse-shared-mixed-env, \
 ))
 
 ALL_TARGETS += $(HOTSPOT_VARIANT_TARGETS) $(HOTSPOT_VARIANT_GENSRC_TARGETS) \
-    $(HOTSPOT_VARIANT_LIBS_TARGETS) $(HOTSPOT_VARIANT_STATIC_LIBS_TARGETS) 
+    $(HOTSPOT_VARIANT_LIBS_TARGETS) $(HOTSPOT_VARIANT_STATIC_LIBS_TARGETS)
 
 ################################################################################
 # Help and user support
@@ -1065,7 +1065,7 @@ else
 
   static-libs-image: hotspot-static-libs $(STATIC_LIBS_TARGETS)
 
-  static-libs-graal-image: $(STATIC_LIBS_TARGETS) 
+  static-libs-graal-image: $(STATIC_LIBS_TARGETS)
 
   bootcycle-images: jdk-image
 
