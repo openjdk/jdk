@@ -922,7 +922,7 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg)
       bne(tmp1, obj_reg, slow_case);
 
       ld(header_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
-      andi(t0, header_reg, markWord::monitor_value);
+      test_bit(t0, header_reg, exact_log2(markWord::monitor_value));
       bnez(t0, slow_case);
       fast_unlock(obj_reg, header_reg, swap_reg, t0, slow_case);
       j(count);

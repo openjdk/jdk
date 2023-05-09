@@ -2663,7 +2663,7 @@ encode %{
       // If the owner is anonymous, we need to fix it -- in an outline stub.
       Register tmp2 = disp_hdr;
       __ ld(tmp2, Address(tmp, ObjectMonitor::owner_offset_in_bytes()));
-      __ andi(t0, tmp2, (int64_t)ObjectMonitor::ANONYMOUS_OWNER);
+      __ test_bit(t0, tmp2, exact_log2(ObjectMonitor::ANONYMOUS_OWNER));
       C2HandleAnonOMOwnerStub* stub = new (Compile::current()->comp_arena()) C2HandleAnonOMOwnerStub(tmp, tmp2);
       Compile::current()->output()->add_stub(stub);
       __ bnez(t0, stub->entry(), /* is_far */ true);
