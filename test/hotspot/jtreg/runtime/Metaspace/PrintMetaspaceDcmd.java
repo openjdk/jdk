@@ -37,16 +37,6 @@ import jdk.test.lib.JDKToolFinder;
  */
 
 /*
- * @test id=test-64bit-ccs-aggressivereclaim
- * @summary Test the VM.metaspace command
- * @requires vm.bits == "64"
- * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management
- * @run main/othervm -Dwith-compressed-class-space -XX:MaxMetaspaceSize=201M -Xmx100M -XX:+UseCompressedOops -XX:+UseCompressedClassPointers -XX:+UnlockDiagnosticVMOptions -XX:MetaspaceReclaimPolicy=aggressive PrintMetaspaceDcmd
- */
-
-/*
  * @test id=test-64bit-ccs-guarded
  * @summary Test the VM.metaspace command
  * @requires vm.bits == "64"

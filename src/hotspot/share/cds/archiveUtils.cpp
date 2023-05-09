@@ -164,8 +164,8 @@ char* DumpRegion::expand_top_to(char* newtop) {
       // This is just a sanity check and should not appear in any real world usage. This
       // happens only if you allocate more than 2GB of shared objects and would require
       // millions of shared classes.
-      vm_exit_during_initialization("Out of memory in the CDS archive",
-                                    "Please reduce the number of shared classes.");
+      log_error(cds)("Out of memory in the CDS archive: Please reduce the number of shared classes.");
+      MetaspaceShared::unrecoverable_writing_error();
     }
   }
 
@@ -190,8 +190,9 @@ void DumpRegion::commit_to(char* newtop) {
   assert(commit <= uncommitted, "sanity");
 
   if (!_vs->expand_by(commit, false)) {
-    vm_exit_during_initialization(err_msg("Failed to expand shared space to " SIZE_FORMAT " bytes",
-                                          need_committed_size));
+    log_error(cds)("Failed to expand shared space to " SIZE_FORMAT " bytes",
+                    need_committed_size);
+    MetaspaceShared::unrecoverable_writing_error();
   }
 
   const char* which;
@@ -225,7 +226,7 @@ void DumpRegion::append_intptr_t(intptr_t n, bool need_to_mark) {
 }
 
 void DumpRegion::print(size_t total_bytes) const {
-  log_debug(cds)("%-3s space: " SIZE_FORMAT_W(9) " [ %4.1f%% of total] out of " SIZE_FORMAT_W(9) " bytes [%5.1f%% used] at " INTPTR_FORMAT,
+  log_debug(cds)("%s space: " SIZE_FORMAT_W(9) " [ %4.1f%% of total] out of " SIZE_FORMAT_W(9) " bytes [%5.1f%% used] at " INTPTR_FORMAT,
                  _name, used(), percent_of(used(), total_bytes), reserved(), percent_of(used(), reserved()),
                  p2i(ArchiveBuilder::current()->to_requested(_base)));
 }

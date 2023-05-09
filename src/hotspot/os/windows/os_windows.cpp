@@ -621,9 +621,9 @@ bool os::create_attached_thread(JavaThread* thread) {
   thread->set_osthread(osthread);
 
   log_info(os, thread)("Thread attached (tid: " UINTX_FORMAT ", stack: "
-                       PTR_FORMAT " - " PTR_FORMAT " (" SIZE_FORMAT "k) ).",
+                       PTR_FORMAT " - " PTR_FORMAT " (" SIZE_FORMAT "K) ).",
                        os::current_thread_id(), p2i(thread->stack_base()),
-                       p2i(thread->stack_end()), thread->stack_size());
+                       p2i(thread->stack_end()), thread->stack_size() / K);
 
   return true;
 }
@@ -5248,6 +5248,21 @@ class HighResolutionInterval : public CHeapObj<mtThread> {
 // Another possible encoding of _Event would be with
 // explicit "PARKED" == 01b and "SIGNALED" == 10b bits.
 //
+
+int PlatformEvent::park_nanos(jlong nanos) {
+  assert(nanos > 0, "nanos are positive");
+
+  // Windows timers are still quite unpredictable to handle sub-millisecond granularity.
+  // Instead of implementing sub-millisecond sleeps, fall back to the usual behavior of
+  // rounding up any excess requested nanos to the full millisecond. This is how
+  // Thread.sleep(millis, nanos) has always behaved with only millisecond granularity.
+  jlong millis = nanos / NANOSECS_PER_MILLISEC;
+  if (nanos > millis * NANOSECS_PER_MILLISEC) {
+    millis++;
+  }
+  assert(millis > 0, "should always be positive");
+  return park(millis);
+}
 
 int PlatformEvent::park(jlong Millis) {
   // Transitions for _Event:

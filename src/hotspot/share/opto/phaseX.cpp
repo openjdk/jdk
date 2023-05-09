@@ -664,7 +664,7 @@ void PhaseTransform::dump_old2new_map() const {
 }
 
 void PhaseTransform::dump_new( uint nidx ) const {
-  for( uint i=0; i<_nodes.Size(); i++ )
+  for( uint i=0; i<_nodes.max(); i++ )
     if( _nodes[i] && _nodes[i]->_idx == nidx ) {
       _nodes[i]->dump();
       tty->cr();
@@ -1760,31 +1760,16 @@ void PhaseIterGVN::add_users_to_worklist( Node *n ) {
     }
 
     // If changed Cast input, notify down for Phi and Sub - both do "uncast"
+    // Patterns:
+    // ConstraintCast+ -> Sub
+    // ConstraintCast+ -> Phi
     if (use->is_ConstraintCast()) {
-      for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
-        Node* u = use->fast_out(i2);
-        if (u->is_Phi() || u->is_Sub()) {
-          // Phi (.., CastII, ..) or Sub(Cast(x), x)
-          _worklist.push(u);
-        } else if (u->is_ConstraintCast()) {
-          // Follow cast-chains down to Sub: Sub( CastII(CastII(x)), x)
-          // This case is quite rare. Let's BFS-traverse casts, to find Subs:
-          ResourceMark rm;
-          Unique_Node_List casts;
-          casts.push(u); // start traversal
-          for (uint j = 0; j < casts.size(); ++j) {
-            Node* cast = casts.at(j); // for every cast
-            for (DUIterator_Fast kmax, k = cast->fast_outs(kmax); k < kmax; k++) {
-              Node* cast_use = cast->fast_out(k);
-              if (cast_use->is_ConstraintCast()) {
-                casts.push(cast_use); // traverse this cast also
-              } else if (cast_use->is_Sub()) {
-                _worklist.push(cast_use); // found Sub
-              }
-            }
-          }
+      auto push_phi_or_sub_uses_to_worklist = [&](Node* n){
+        if (n->is_Phi() || n->is_Sub()) {
+          _worklist.push(n);
         }
-      }
+      };
+      ConstraintCastNode::visit_uncasted_uses(use, push_phi_or_sub_uses_to_worklist);
     }
     // If changed LShift inputs, check RShift users for useless sign-ext
     if( use_op == Op_LShiftI ) {
@@ -1965,10 +1950,15 @@ void PhaseCCP::analyze() {
     _types.map(i, Type::TOP);
   }
 
+  // CCP worklist is placed on a local arena, so that we can allow ResourceMarks on "Compile::current()->resource_arena()".
+  // We also do not want to put the worklist on "Compile::current()->comp_arena()", as that one only gets de-allocated after
+  // Compile is over. The local arena gets de-allocated at the end of its scope.
+  ResourceArea local_arena(mtCompiler);
+  Unique_Node_List worklist(&local_arena);
+  DEBUG_ONLY(Unique_Node_List worklist_verify(&local_arena);)
+
   // Push root onto worklist
-  Unique_Node_List worklist;
   worklist.push(C->root());
-  DEBUG_ONLY(Unique_Node_List worklist_verify;)
 
   assert(_root_and_safepoints.size() == 0, "must be empty (unused)");
   _root_and_safepoints.push(C->root());
@@ -2149,17 +2139,18 @@ void PhaseCCP::push_load_barrier(Unique_Node_List& worklist, const BarrierSetC2*
 
 // AndI/L::Value() optimizes patterns similar to (v << 2) & 3 to zero if they are bitwise disjoint.
 // Add the AndI/L nodes back to the worklist to re-apply Value() in case the shift value changed.
+// Pattern: parent -> LShift (use) -> ConstraintCast* -> And
 void PhaseCCP::push_and(Unique_Node_List& worklist, const Node* parent, const Node* use) const {
   uint use_op = use->Opcode();
   if ((use_op == Op_LShiftI || use_op == Op_LShiftL)
       && use->in(2) == parent) { // is shift value (right-hand side of LShift)
-    for (DUIterator_Fast imax, i = use->fast_outs(imax); i < imax; i++) {
-      Node* and_node = use->fast_out(i);
-      uint and_node_op = and_node->Opcode();
-      if (and_node_op == Op_AndI || and_node_op == Op_AndL) {
-        push_if_not_bottom_type(worklist, and_node);
+    auto push_and_uses_to_worklist = [&](Node* n){
+      uint opc = n->Opcode();
+      if (opc == Op_AndI || opc == Op_AndL) {
+        push_if_not_bottom_type(worklist, n);
       }
-    }
+    };
+    ConstraintCastNode::visit_uncasted_uses(use, push_and_uses_to_worklist);
   }
 }
 

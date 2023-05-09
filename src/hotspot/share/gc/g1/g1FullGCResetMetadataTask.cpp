@@ -40,7 +40,7 @@ bool G1FullGCResetMetadataTask::G1ResetMetadataClosure::do_heap_region(HeapRegio
   uint const region_idx = hr->hrm_index();
   if (!_collector->is_compaction_target(region_idx)) {
     assert(!hr->is_free(), "all free regions should be compaction targets");
-    assert(_collector->is_skip_compacting(region_idx) || hr->is_closed_archive(), "must be");
+    assert(_collector->is_skip_compacting(region_idx), "must be");
     if (hr->needs_scrubbing_during_full_gc()) {
       scrub_skip_compacting_region(hr, hr->is_young());
     }
@@ -90,12 +90,6 @@ void G1FullGCResetMetadataTask::G1ResetMetadataClosure::reset_skip_compacting(He
   if (hr->is_humongous()) {
     oop obj = cast_to_oop(hr->humongous_start_region()->bottom());
     assert(_collector->mark_bitmap()->is_marked(obj), "must be live");
-  } else if (hr->is_open_archive()) {
-    bool is_empty = (_collector->live_words(hr->hrm_index()) == 0);
-    assert(!is_empty, "should contain at least one live obj");
-  } else if (hr->is_closed_archive()) {
-    // should early-return above
-    ShouldNotReachHere();
   } else {
     assert(_collector->live_words(region_index) > _collector->scope()->region_compaction_threshold(),
            "should be quite full");

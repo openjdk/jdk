@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2020 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,7 @@ define_pd_global(intx, StackRedPages,         DEFAULT_STACK_RED_PAGES);
 define_pd_global(intx, StackShadowPages,      DEFAULT_STACK_SHADOW_PAGES);
 define_pd_global(intx, StackReservedPages,    DEFAULT_STACK_RESERVED_PAGES);
 
-define_pd_global(bool,  VMContinuations, true BIG_ENDIAN_ONLY(&& false));
+define_pd_global(bool,  VMContinuations, true);
 
 // Use large code-entry alignment.
 define_pd_global(uintx, CodeCacheSegmentSize,  128);

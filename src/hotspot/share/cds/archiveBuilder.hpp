@@ -36,7 +36,7 @@
 #include "utilities/resizeableResourceHash.hpp"
 #include "utilities/resourceHash.hpp"
 
-struct ArchiveHeapBitmapInfo;
+class ArchiveHeapInfo;
 class CHeapBitMap;
 class FileMapInfo;
 class Klass;
@@ -122,23 +122,6 @@ public:
   };
 
 private:
-  class SpecialRefInfo {
-    // We have a "special pointer" of the given _type at _field_offset of _src_obj.
-    // See MetaspaceClosure::push_special().
-    MetaspaceClosure::SpecialRef _type;
-    address _src_obj;
-    size_t _field_offset;
-
-  public:
-    SpecialRefInfo() {}
-    SpecialRefInfo(MetaspaceClosure::SpecialRef type, address src_obj, size_t field_offset)
-      : _type(type), _src_obj(src_obj), _field_offset(field_offset) {}
-
-    MetaspaceClosure::SpecialRef type() const { return _type;         }
-    address src_obj()                   const { return _src_obj;      }
-    size_t field_offset()               const { return _field_offset; }
-  };
-
   class SourceObjInfo {
     MetaspaceClosure::Ref* _ref; // The object that's copied into the buffer
     uintx _ptrmap_start;     // The bit-offset of the start of this object (inclusive)
@@ -230,19 +213,14 @@ private:
   ResizeableResourceHashtable<address, address, AnyObj::C_HEAP, mtClassShared> _buffered_to_src_table;
   GrowableArray<Klass*>* _klasses;
   GrowableArray<Symbol*>* _symbols;
-  GrowableArray<SpecialRefInfo>* _special_refs;
 
   // statistics
   DumpAllocStats _alloc_stats;
-  size_t _total_closed_heap_region_size;
-  size_t _total_open_heap_region_size;
+  size_t _total_heap_region_size;
 
-  void print_region_stats(FileMapInfo *map_info,
-                          GrowableArray<MemRegion>* closed_heap_regions,
-                          GrowableArray<MemRegion>* open_heap_regions);
+  void print_region_stats(FileMapInfo *map_info, ArchiveHeapInfo* heap_info);
   void print_bitmap_region_stats(size_t size, size_t total_size);
-  void print_heap_region_stats(GrowableArray<MemRegion>* regions,
-                               const char *name, size_t total_size);
+  void print_heap_region_stats(ArchiveHeapInfo* heap_info, size_t total_size);
 
   // For global access.
   static ArchiveBuilder* _current;
@@ -272,7 +250,6 @@ private:
   void make_shallow_copies(DumpRegion *dump_region, const SourceObjList* src_objs);
   void make_shallow_copy(DumpRegion *dump_region, SourceObjInfo* src_info);
 
-  void update_special_refs();
   void relocate_embedded_pointers(SourceObjList* src_objs);
 
   bool is_excluded(Klass* k);
@@ -361,7 +338,6 @@ public:
   void gather_source_objs();
   bool gather_klass_and_symbol(MetaspaceClosure::Ref* ref, bool read_only);
   bool gather_one_source_obj(MetaspaceClosure::Ref* enclosing_ref, MetaspaceClosure::Ref* ref, bool read_only);
-  void add_special_ref(MetaspaceClosure::SpecialRef type, address src_obj, size_t field_offset);
   void remember_embedded_pointer_in_copied_obj(MetaspaceClosure::Ref* enclosing_ref, MetaspaceClosure::Ref* ref);
 
   DumpRegion* rw_region() { return &_rw_region; }
@@ -403,11 +379,7 @@ public:
   void relocate_vm_classes();
   void make_klasses_shareable();
   void relocate_to_requested();
-  void write_archive(FileMapInfo* mapinfo,
-                     GrowableArray<MemRegion>* closed_heap_regions,
-                     GrowableArray<MemRegion>* open_heap_regions,
-                     GrowableArray<ArchiveHeapBitmapInfo>* closed_heap_oopmaps,
-                     GrowableArray<ArchiveHeapBitmapInfo>* open_heap_oopmaps);
+  void write_archive(FileMapInfo* mapinfo, ArchiveHeapInfo* heap_info);
   void write_region(FileMapInfo* mapinfo, int region_idx, DumpRegion* dump_region,
                     bool read_only,  bool allow_exec);
 
