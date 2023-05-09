@@ -884,18 +884,19 @@ protected:
   class InterfaceSet {
   private:
     GrowableArray<ciKlass*> _list;
+    int _hash;
+    ciKlass* _exact_klass;
+    DEBUG_ONLY(bool _initialized;)
+
+    void initialize();
     void raw_add(ciKlass* interface);
     void add(ciKlass* interface);
     void verify() const NOT_DEBUG_RETURN;
-    uint _hash_computed:1;
-    uint _exact_klass_computed:1;
-    int _hash;
-    ciKlass* _exact_klass;
     void compute_hash();
     void compute_exact_klass();
   public:
     InterfaceSet();
-    InterfaceSet(GrowableArray<ciInstanceKlass*>* interfaces);
+    InterfaceSet(GrowableArray<ciInstanceKlass*>* interfaces, bool init = true);
     bool eq(const InterfaceSet& other) const;
     int hash() const;
     void dump(outputStream* st) const;
@@ -919,7 +920,7 @@ protected:
     static int compare(ciKlass* const &, ciKlass* const& k2);
   };
 
-  static InterfaceSet interfaces(ciKlass*& k, bool klass, bool interface, bool array, InterfaceHandling interface_handling);
+  static InterfaceSet interfaces(ciKlass*& k, bool klass, bool interface, bool array, InterfaceHandling interface_handling, bool init = true);
 
 public:
   enum PTR { TopPTR, AnyNull, Constant, Null, NotNull, BotPTR, lastPTR };
