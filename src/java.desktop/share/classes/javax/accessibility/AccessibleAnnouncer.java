@@ -36,12 +36,12 @@ public interface AccessibleAnnouncer {
     /**
      * messages do not interrupt the current speech, they are spoken after the screen reader has spoken the current phrase
      */
-    @Native int ANNOUNCE_WITHOUT_INTERRUPTING_CURRENT_OUTPUT = 0;
+    @Native int NO_INTERRUPT = 0;
 
     /**
      * messages interrupt the current speech, but only when the focus is on the window of the calling application
      */
-    @Native int ANNOUNCE_WITH_INTERRUPTING_CURRENT_OUTPUT = 1;
+    @Native int INTERRUPT = 1;
 
     /**
      * This method makes an announcement with the specified priority from an accessible to which the announcing relates

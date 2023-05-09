@@ -73,7 +73,7 @@ public class AccessibleAnnouncerTest extends AccessibleComponentTest {
                 if (accessibleAnnouncer== null) {
                     return;
                 }
-                accessibleAnnouncer.announce(button, str, AccessibleAnnouncer.ANNOUNCE_WITH_INTERRUPTING_CURRENT_OUTPUT);
+                accessibleAnnouncer.announce(button, str, AccessibleAnnouncer.INTERRUPT);
             }
         });
 
@@ -107,11 +107,11 @@ public class AccessibleAnnouncerTest extends AccessibleComponentTest {
                 if (accessibleAnnouncer == null) {
                     return;
                 }
-                accessibleAnnouncer.announce(button, firstMessage, AccessibleAnnouncer.ANNOUNCE_WITHOUT_INTERRUPTING_CURRENT_OUTPUT);
+                accessibleAnnouncer.announce(button, firstMessage, AccessibleAnnouncer.NO_INTERRUPT);
                 try {
                     Thread.sleep(3000);
-                    accessibleAnnouncer.announce(button, "You must not hear this message.", AccessibleAnnouncer.ANNOUNCE_WITHOUT_INTERRUPTING_CURRENT_OUTPUT);
-                    accessibleAnnouncer.announce(button, secondMessage, AccessibleAnnouncer.ANNOUNCE_WITH_INTERRUPTING_CURRENT_OUTPUT);
+                    accessibleAnnouncer.announce(button, "You must not hear this message.", AccessibleAnnouncer.NO_INTERRUPT);
+                    accessibleAnnouncer.announce(button, secondMessage, AccessibleAnnouncer.INTERRUPT);
                  } catch (Exception ex) {
                     ex.printStackTrace();
                 }

@@ -46,8 +46,8 @@ public class AccessibleAnnounceProvider {
      */
     public static void announce(Accessible a, final String str, final int priority) throws Exception {
         if (str == null ||
-        priority != AccessibleAnnouncer.ANNOUNCE_WITHOUT_INTERRUPTING_CURRENT_OUTPUT &&
-        priority != AccessibleAnnouncer.ANNOUNCE_WITH_INTERRUPTING_CURRENT_OUTPUT) {
+        priority != AccessibleAnnouncer.NO_INTERRUPT &&
+        priority != AccessibleAnnouncer.INTERRUPT) {
             throw new IllegalArgumentException("Invalid parameters passed for declaration");
         }
 
