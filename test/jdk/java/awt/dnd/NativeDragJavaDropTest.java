@@ -137,7 +137,7 @@ class DropTargetLabel extends Label implements DropTargetListener {
 
         DataFlavor[] dfs = dtde.getCurrentDataFlavors();
 
-        if(dfs != null && dfs.length >= 1) {
+        if (dfs != null && dfs.length >= 1) {
             Transferable transfer = dtde.getTransferable();
 
             try {
