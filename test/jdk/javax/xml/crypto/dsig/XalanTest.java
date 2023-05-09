@@ -23,8 +23,8 @@
 
 /**
  * @test
- * @bug 4635230 6365103 6366054 6824440 7131084 8046724 8079693
- * @summary Basic unit tests for validating XML Signatures with JSR 105
+ * @bug 8305972
+ * @summary Demonstrate here() support for validating XML Signatures
  * @modules java.base/sun.security.util
  *          java.base/sun.security.x509
  *          java.xml.crypto/org.jcp.xml.dsig.internal.dom
@@ -45,7 +45,6 @@
  *     X509KeySelector.java ValidationTests.java
  * @compile xalan/TransformXPath.java xalan/TransformXPath2Filter.java
  * @run main/othervm XalanTest
- * @author Sean Mullan
  */
 import java.io.File;
 import java.io.FileInputStream;
@@ -65,8 +64,8 @@ import jdk.test.lib.security.SecurityUtils;
  * This test used to be part of ValidationTests but was moved into its own
  * test because it tests a signature that contains the here() function which
  * depends on Xalan internals. The Xalan dependency has been removed from
- * the DSig implementation but can be optionally configured by using a
- * customized TransformXPath instance. Use this test as an example.
+ * the DSig implementation. This test demonstrates how the here() function
+ * can be supported by using a customized TransformXPath instance.
  */
 public class XalanTest {
 
