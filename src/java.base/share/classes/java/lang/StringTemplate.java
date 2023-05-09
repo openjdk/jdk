@@ -157,7 +157,6 @@ public interface StringTemplate {
     /**
      * Returns the string interpolation of the fragments and values for this
      * {@link StringTemplate}.
-     * <p>
      * @apiNote For better visibility and when practical, it is recommended to use the
      * {@link StringTemplate#STR} processor instead of invoking the
      * {@link StringTemplate#interpolate()} method.
@@ -543,7 +542,6 @@ public interface StringTemplate {
         /**
          * Constructs a result based on the template fragments and values in the
          * supplied {@link StringTemplate stringTemplate} object.
-         * <p>
          * @apiNote Processing of a {@link StringTemplate} may include validation according to the particular facts relating
          * to each situation. The {@code E} type parameter indicates the type of checked exception that is thrown by
          * {@link #process} if validation fails, ex. {@code java.sql.SQLException}. If no checked exception is expected
