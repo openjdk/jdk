@@ -41,7 +41,6 @@ package java.text;
 import java.lang.ref.SoftReference;
 import java.text.spi.CollatorProvider;
 import java.util.Locale;
-import java.util.ResourceBundle;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import sun.util.locale.provider.LocaleProviderAdapter;
@@ -123,9 +122,11 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  * <a href="http://www.unicode.org/reports/tr35/#UnicodeCollationIdentifier">
  * Unicode collation identifier</a> in the specified {@code Locale}.
  * For example:
+ * <blockquote>
  * {@snippet lang = java:
  * Collator.getInstance(Locale.forLanguageTag("sv-u-co-trad"));
  * }
+ * </blockquote>
  * may return a {@code Collator} instance with the traditional sorting, which
  * gives 'v' and 'w' the same sorting order.
  *
