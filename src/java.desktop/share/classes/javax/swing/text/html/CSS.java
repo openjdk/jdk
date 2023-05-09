@@ -38,6 +38,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Hashtable;
+import java.util.Objects;
 
 import javax.swing.ImageIcon;
 import javax.swing.SizeRequirements;
@@ -2026,12 +2027,13 @@ public class CSS implements Serializable {
 
         @Override
         public int hashCode() {
-            return this.svalue.hashCode();
+            return (this.svalue != null) ? this.svalue.hashCode() : 0;
         }
 
         @Override
         public boolean equals(Object val) {
-            return val instanceof CSS.StringValue strVal && this.svalue == strVal.svalue;
+            return val instanceof CSS.StringValue strVal
+                    && Objects.equals(this.svalue, strVal.svalue);
         }
 
     }
@@ -2328,7 +2330,8 @@ public class CSS implements Serializable {
 
         @Override
         public boolean equals(Object val) {
-            return val instanceof CSS.FontFamily font && family == font.family;
+            return val instanceof CSS.FontFamily font
+                       && Objects.equals(family, font.family);
         }
 
         String family;
@@ -2473,6 +2476,7 @@ public class CSS implements Serializable {
         public boolean equals(Object val) {
             return val instanceof CSS.ColorValue color && c.equals(color.c);
         }
+
         Color c;
     }
 
@@ -2529,13 +2533,14 @@ public class CSS implements Serializable {
 
         @Override
         public int hashCode() {
-            return style.hashCode();
+            return (style != null) ? style.hashCode() : 0;
         }
 
         @Override
         public boolean equals(Object val) {
             return val instanceof CSS.BorderStyle border && style.equals(border.style);
         }
+
         // CSS.Values are static, don't archive it.
         private transient CSS.Value style;
     }
@@ -2670,11 +2675,17 @@ public class CSS implements Serializable {
 
         @Override
         public boolean equals(Object val) {
-            return val instanceof CSS.LengthValue lu && span == lu.span;
+            if (percentage) {
+                return false;
+            } else {
+                return val instanceof CSS.LengthValue lu && span == lu.span;
+            }
         }
+
         /** If true, span is a percentage value, and that to determine
          * the length another value needs to be passed in. */
         boolean percentage;
+
         /** Either the absolute value (percentage == false) or
          * a percentage value. */
         float span;
