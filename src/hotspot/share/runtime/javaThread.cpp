@@ -2021,6 +2021,7 @@ bool JavaThread::sleep_nanos(jlong nanos) {
   jlong prevtime = os::javaTimeNanos();
 
   jlong nanos_remaining = nanos;
+  jlong nanos_slop = 0;
 
   for (;;) {
     // interruption has precedence over timing out
@@ -2032,22 +2033,45 @@ bool JavaThread::sleep_nanos(jlong nanos) {
       return true;
     }
 
+    jlong next_sleep = nanos_remaining;
+    if (nanos_slop == 0) {
+      // No slop estimate yet, try to perform a smaller sleep and get it.
+      // We expect the slops to be within 10..100 us on most systems.
+      // On some systems, the slop is correlated with the requested delay,
+      // so we cannot just do the shortest sleep and estimate the slop from
+      // there. Instead, do the fractional sleep of the same magnitude.
+      next_sleep /= 4;
+      if (next_sleep == 0) {
+        next_sleep = 1;
+      }
+    } else if (next_sleep > nanos_slop) {
+      // Slop estimate is given, and we can use it.
+      next_sleep -= nanos_slop;
+    }
+
     {
       ThreadBlockInVM tbivm(this);
       OSThreadWaitState osts(this->osthread(), false /* not Object.wait() */);
-      slp->park_nanos(nanos_remaining);
+      slp->park_nanos(next_sleep);
     }
 
     // Update elapsed time tracking
     jlong newtime = os::javaTimeNanos();
-    if (newtime - prevtime < 0) {
+    jlong actual = newtime - prevtime;
+
+    if (actual < 0) {
       // time moving backwards, should only happen if no monotonic clock
       // not a guarantee() because JVM should not abort on kernel/glibc bugs
       assert(false,
              "unexpected time moving backwards detected in JavaThread::sleep()");
     } else {
-      nanos_remaining -= (newtime - prevtime);
+      // Capture the slop once
+      if ((nanos_slop == 0) && (actual > next_sleep)) {
+        nanos_slop = actual - next_sleep;
+      }
+      nanos_remaining -= actual;
     }
+
     prevtime = newtime;
   }
 }
