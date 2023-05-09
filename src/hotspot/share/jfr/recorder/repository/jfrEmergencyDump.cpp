@@ -385,8 +385,7 @@ static void write_repository_files(const RepositoryIterator& iterator, char* con
         }
         bytes_read += (int64_t)read_result;
         assert(bytes_read - bytes_written <= (int64_t)block_size, "invariant");
-        const bool successful_write = os::write(emergency_fd, copy_block, bytes_read - bytes_written);
-        if (!successful_write) {
+        if (!os::write(emergency_fd, copy_block, bytes_read - bytes_written)) {
           log_info(jfr)( // For user, should not be "jfr, system"
               "Unable to recover JFR data, write failed.");
           break;

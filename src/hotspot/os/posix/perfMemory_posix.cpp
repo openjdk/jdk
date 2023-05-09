@@ -949,8 +949,7 @@ static int create_sharedmem_file(const char* dirname, const char* filename, size
     int zero_int = 0;
     result = (int)os::seek_to_file_offset(fd, (jlong)(seekpos));
     if (result == -1 ) break;
-    bool successful_write = os::write(fd, &zero_int, 1);
-    if (!successful_write) {
+    if (!os::write(fd, &zero_int, 1)) {
       if (errno == ENOSPC) {
         warning("Insufficient space for shared memory file:\n   %s\nTry using the -Djava.io.tmpdir= option to select an alternate temp location.\n", filename);
       }
