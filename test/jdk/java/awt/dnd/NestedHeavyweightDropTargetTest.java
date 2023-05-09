@@ -475,7 +475,7 @@ class DropTargetPanel extends Panel implements DropTargetListener {
         DataFlavor[] dfs = dtde.getCurrentDataFlavors();
         Component comp = null;
 
-        if(dfs != null && dfs.length >= 1) {
+        if (dfs != null && dfs.length >= 1) {
             Transferable transfer = dtde.getTransferable();
 
             try {

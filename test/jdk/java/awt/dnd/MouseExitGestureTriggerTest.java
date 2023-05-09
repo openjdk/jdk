@@ -104,9 +104,11 @@ public class MouseExitGestureTriggerTest {
 
         Thread.sleep(RECOGNITION_TIMEOUT);
 
-        if (recognized) {
-            throw new RuntimeException("Mouse exit event triggered drag");
-        }
+        EventQueue.invokeAndWait(() -> {
+            if (recognized) {
+                throw new RuntimeException("Mouse exit event triggered drag");
+            }
+        });
     }
 
     void clickRootNode(final Robot robot) throws Exception {

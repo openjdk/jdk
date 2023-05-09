@@ -94,7 +94,7 @@ public class MozillaDnDTest {
                 test.start();
             } finally {
                 EventQueue.invokeAndWait(() -> {
-                    if(test.frame != null) {
+                    if (test.frame != null) {
                         test.frame.dispose();
                     }
                 });
@@ -344,7 +344,7 @@ class ProcessResults {
                     // is thrown. If it is finished, we fall through and
                     // the variable finished is set to true.
                     pres.exitValue = p.exitValue();
-                    finished  = true;
+                    finished = true;
                 }
                 catch (IllegalThreadStateException e) {
                     // Process is not finished yet;

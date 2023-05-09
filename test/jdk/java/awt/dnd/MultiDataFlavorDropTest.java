@@ -375,9 +375,9 @@ class DropTargetPanel extends Panel implements DropTargetListener {
             Integer transferNumber = null;
 
             if (flavor.getRepresentationClass().equals(Integer.class)) {
-                try{
+                try {
                     transferNumber = (Integer)t.getTransferData(flavor);
-                } catch(Exception e) {
+                } catch (Exception e) {
                     e.printStackTrace();
                     throw new RuntimeException("FAILED: Cannot get data: " +
                                                flavor.getMimeType());
@@ -387,7 +387,7 @@ class DropTargetPanel extends Panel implements DropTargetListener {
             boolean supportedFlavor = false;
             for (int j = 0; j < TransferableNumber.NUM_DATA_FLAVORS; j++) {
                 int number = (i + j) % TransferableNumber.NUM_DATA_FLAVORS;
-                try{
+                try {
                     if (flavor.equals(new IntegerDataFlavor(number))) {
                         if (!(new Integer(number).equals(transferNumber))) {
                             throw new RuntimeException("FAILED: Invalid data \n" +
@@ -397,7 +397,7 @@ class DropTargetPanel extends Panel implements DropTargetListener {
                         supportedFlavor = true;
                         break;
                     }
-                } catch(ClassNotFoundException cannotHappen) {
+                } catch (ClassNotFoundException cannotHappen) {
                 }
             }
             if (!supportedFlavor) {
