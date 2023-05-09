@@ -46,7 +46,6 @@ public class InterfaceObjectTest implements ICloneExtend {
     public static void tryIt(ICloneExtend o1) {
         try {
             Object o2 = o1.clone();
-            o1.clone();
         } catch (Throwable t) {
             throw new AssertionError(t);
         }
@@ -59,7 +58,7 @@ public class InterfaceObjectTest implements ICloneExtend {
         tryIt(o1);
 
 
-        // Test with reflection without abstract public clone() and method.
+        // Test with reflection without abstract public clone() method.
         Class cls = Class.forName("InterfaceObj");
 
         try {
