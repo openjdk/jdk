@@ -697,8 +697,8 @@ public final class SocketPermission extends Permission
     }
 
     private boolean match(String cname, String hname) {
-        String a = checkForIDN(cname.toLowerCase());
-        String b = checkForIDN(hname.toLowerCase());
+        String a = checkForIDN(cname.toLowerCase(Locale.ROOT));
+        String b = checkForIDN(hname.toLowerCase(Locale.ROOT));
         if (a.startsWith(b)  &&
             ((a.length() == b.length()) || (a.charAt(b.length()) == '.'))) {
             return true;

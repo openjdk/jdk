@@ -66,7 +66,7 @@ public class URLUtil {
         if (host != null) {
             /* host is compared case-insensitive, so convert to lowercase */
             if (!host.isEmpty()) {
-                strForm.append(host.toLowerCase());
+                strForm.append(host.toLowerCase(Locale.ROOT));
             }
 
             int port = url.getPort();
