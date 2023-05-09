@@ -267,7 +267,7 @@ bool oopDesc::is_forwarded() const {
 
 // Used by scavengers
 void oopDesc::forward_to(oop p) {
-  assert(p != cast_to_oop(this), "Must not be called with self-forwarding");
+  assert(p != cast_to_oop(this) || !UseAltGCForwarding, "Must not be called with self-forwarding");
   markWord m = markWord::encode_pointer_as_mark(p);
   assert(forwardee(m) == p, "encoding must be reversible");
   set_mark(m);
@@ -291,7 +291,7 @@ void oopDesc::forward_to_self() {
 }
 
 oop oopDesc::forward_to_atomic(oop p, markWord compare, atomic_memory_order order) {
-  assert(p != cast_to_oop(this), "Must not be called with self-forwarding");
+  assert(p != cast_to_oop(this) || !UseAltGCForwarding, "Must not be called with self-forwarding");
   markWord m = markWord::encode_pointer_as_mark(p);
   assert(m.decode_pointer() == p, "encoding must be reversible");
   markWord old_mark = cas_set_mark(m, compare, order);
