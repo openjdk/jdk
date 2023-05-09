@@ -69,8 +69,8 @@ public interface BaseStream<T, S extends BaseStream<T, S>>
      * <p>This is a <a href="package-summary.html#StreamOps">terminal
      * operation</a>.
      *
-     * <p>
-     * This method is provided as an "escape hatch" to enable
+     * @apiNote
+     * This operation is provided as an "escape hatch" to enable
      * arbitrary client-controlled pipeline traversals in the event that the
      * existing operations are not sufficient to the task.
      *
@@ -84,8 +84,8 @@ public interface BaseStream<T, S extends BaseStream<T, S>>
      * <p>This is a <a href="package-summary.html#StreamOps">terminal
      * operation</a>.
      *
-     * <p>
-     * This method is provided as an "escape hatch" to enable
+     * @apiNote
+     * This operation is provided as an "escape hatch" to enable
      * arbitrary client-controlled pipeline traversals in the event that the
      * existing operations are not sufficient to the task.
      *
