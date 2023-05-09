@@ -29,6 +29,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 
+import jdk.internal.util.Architecture;
 import jdk.internal.util.OperatingSystem;
 import jdk.tools.jlink.internal.ExecutableImage;
 import jdk.tools.jlink.internal.Platform;
@@ -101,7 +102,9 @@ public final class CDSPlugin extends AbstractPlugin implements PostProcessor {
         if (Files.exists(classListPath)) {
             generateCDSArchive(image,false);
 
-            if (targetPlatform.is64Bit()) {
+            // The targetPlatform is the same as the runtimePlatform.
+            // For a 64-bit platform, generate the non-compressed oop CDS archive
+            if (Architecture.is64bit()) {
                 generateCDSArchive(image,true);
             }
             System.out.println("Created CDS archive successfully");

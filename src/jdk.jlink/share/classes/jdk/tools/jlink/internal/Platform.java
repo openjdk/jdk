@@ -58,14 +58,6 @@ public record Platform(OperatingSystem os, Architecture arch) {
     }
 
     /**
-     * {@return true is it's a 64-bit platform}
-     * All platform exception X86 are 64-bit platforms.
-     */
-    public boolean is64Bit() {
-        return arch != Architecture.X86;
-    }
-
-    /**
      * {@return the runtime {@code Platform}}
      */
     public static Platform runtime() {
