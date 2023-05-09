@@ -68,14 +68,43 @@ import static sun.java2d.SunGraphicsEnvironment.toDeviceSpaceAbs;
  * <p>
  * Applications that use Robot for purposes other than self-testing should
  * handle these error conditions gracefully.
+ * <p>
+ * Platforms and desktop environments may impose restrictions or limitations
+ * on the access required to implement all functionality in the Robot class.
+ * For example:
+ * <ul>
+ * <li> preventing access to the contents of any part of a desktop
+ * or Window on the desktop that is not owned by the running application.</li>
+ * <li> treating window decorations as non-owned content.</li>
+ * <li> ignoring or limiting specific requests to manipulate windows.</li>
+ * <li> ignoring or limiting specific requests for Robot generated (synthesized)
+ * events related to keyboard and mouse etc.</li>
+ * <li> requiring specific or global permissions to any access to window
+ * contents, even application owned content,or to perform even limited
+ * synthesizing of events.</li>
+ * </ul>
  *
- * @implNote on Linux systems using Wayland, the robot runs in
- * so-called X11 compatibility mode. This means that generated mouse and
- * keyboard events can only be delivered within the X11 server and between
- * their clients.<br>
- * Trying to interact with the Wayland area of responsibility may have no effect
- * (e.g. interacting with window decorations, trying to change the
- * window stacking order with the mouse or keyboard shortcuts)
+ * The Robot API specification requires that approvals for these be granted
+ * for full operation.
+ * If they are not granted, the API will be degraded as discussed here.
+ * Relevant specific API methods may document more specific limitations
+ * and requirements.
+ * Depending on the policies of the desktop environment,
+ * the approvals mentioned above may:
+ * <ul>
+ * <li>be required every time</li>
+ * <li>or persistent for the lifetime of an application,</li>
+ * <li>or persistent across multiple user desktop sessions</li>
+ * <li>be fine-grained permissions</li>
+ * <li>be associated with a specific binary application,
+ * or a class of binary applications.</li>
+ * </ul>
+ *
+ * When such approvals need to given interactively, it may impede the normal
+ * operation of the application until approved, and if approval is denied
+ * or not possible, or cannot be made persistent then it will degrade
+ * the functionality of this class and in turn any part of the operation
+ * of the application which is dependent on it.
  *
  * @author      Robi Khan
  * @since       1.3
@@ -395,25 +424,25 @@ public class Robot {
 
     /**
      * Returns the color of a pixel at the given screen coordinates.
-     *
-     * @implNote On Linux systems using Wayland, permission may be requested
-     * from a user to capture the screens via system dialog.
-     * When selected in this dialog, the permission to capture a set of screens
-     * can be saved for later reuse.<br>
-     * Use the {@link #revokeScreenCapturePermission()} to revoke the stored
-     * permission.
-     * <br>
-     * The pixel color may be black for screens for which no capture permission
-     * has been granted.
-     * <br>
-     * It is not recommended to call this method on EDT, as it may block the UI
-     * update until the user confirms his choice in the system dialog.
+     * <p>
+     * If the desktop environment requires that permissions be granted
+     * to capture screen content, and the required permissions are not granted,
+     * then a {@code SecurityException} may be thrown,
+     * or the content of the returned {@code Color} is undefined.
+     * <p>
+     * The {@link #revokeScreenCapturePermission()} can be used to revoke
+     * a previously granted permission.
+     * <p>
+     * @apiNote It is recommended to avoid calling this method on
+     * the AWT Event Dispatch Thread since screen capture may be a lengthy
+     * operation, particularly if acquiring permissions is needed and involves
+     * user interaction.
      *
      * @param   x       X position of pixel
      * @param   y       Y position of pixel
      * @throws  SecurityException if {@code readDisplayPixels} permission
-     *          is not granted, or user has denied screen capture for all
-     *          screens
+     *          is not granted, or user has not allowed any of his screens
+     *          to be captured.
      * @return  Color of the pixel
      */
     public synchronized Color getPixelColor(int x, int y) {
@@ -426,27 +455,27 @@ public class Robot {
     /**
      * Creates an image containing pixels read from the screen.  This image does
      * not include the mouse cursor.
-     *
-     * @implNote On Linux systems using Wayland, permission may be requested
-     * from a user to capture the screens via system dialog.
-     * When selected in this dialog, the permission to capture a set of screens
-     * can be saved for later reuse.<br>
-     * Use the {@link #revokeScreenCapturePermission()} to revoke the stored
-     * permission.
-     * <br>
-     * The image may be black for screens for which no capture permission
-     * has been granted.
-     * <br>
-     * It is not recommended to call this method on EDT, as it may block the UI
-     * update until the user confirms his choice in the system dialog.
+     * <p>
+     * If the desktop environment requires that permissions be granted
+     * to capture screen content, and the required permissions are not granted,
+     * then a {@code SecurityException} may be thrown,
+     * or the contents of the returned {@code BufferedImage} are undefined.
+     * <p>
+     * The {@link #revokeScreenCapturePermission()} can be used to revoke
+     * a previously granted permission.
+     * <p>
+     * @apiNote It is recommended to avoid calling this method on
+     * the AWT Event Dispatch Thread since screen capture may be a lengthy
+     * operation, particularly if acquiring permissions is needed and involves
+     * user interaction.
      *
      * @param   screenRect      Rect to capture in screen coordinates
      * @return  The captured image
      * @throws  IllegalArgumentException if {@code screenRect} width and height
      *          are not greater than zero
      * @throws  SecurityException if {@code readDisplayPixels} permission
-     *          is not granted, or user has denied screen capture for all
-     *          screens
+     *          is not granted, or user has not allowed any of his screens
+     *          to be captured.
      * @see     SecurityManager#checkPermission
      * @see     AWTPermission
      */
@@ -632,10 +661,13 @@ public class Robot {
     }
 
     /**
-     * Revokes the stored permission to capture screen data.
+     * Revokes the stored permission to capture screen data,
+     * if the desktop environment requires that permissions be granted
+     * to capture screen content. Does nothing otherwise.
+     * <p>
      * Subsequent calls to {@link #getPixelColor(int, int)}
      * and {@link #createScreenCapture(Rectangle)} may request
-     * a new permission from the user on applicable platforms.
+     * a new permission from the user.
      */
     public void revokeScreenCapturePermission() {
         peer.revokeScreenCapturePermission();
