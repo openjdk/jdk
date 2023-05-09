@@ -33,6 +33,7 @@ import jdk.internal.foreign.abi.aarch64.CallArranger;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
+import java.nio.ByteOrder;
 
 /**
  * ABI implementation for Windows/AArch64. Based on AAPCS with
@@ -56,5 +57,10 @@ public final class WindowsAArch64Linker extends AbstractLinker {
     @Override
     protected UpcallStubFactory arrangeUpcall(MethodType targetType, FunctionDescriptor function, LinkerOptions options) {
         return CallArranger.WINDOWS.arrangeUpcall(targetType, function, options);
+    }
+
+    @Override
+    protected ByteOrder linkerByteOrder() {
+        return ByteOrder.LITTLE_ENDIAN;
     }
 }

@@ -25,6 +25,8 @@
  */
 package jdk.internal.foreign.layout;
 
+import jdk.internal.foreign.Utils;
+
 import java.lang.foreign.GroupLayout;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.SequenceLayout;
@@ -138,8 +140,8 @@ public abstract sealed class AbstractLayout<L extends AbstractLayout<L> & Memory
     }
 
     private static long requirePowerOfTwoAndGreaterOrEqualToEight(long value) {
-        if (((value & (value - 1)) != 0L) || // value must be a power of two
-                (value < 8)) { // value must be greater or equal to 8
+        if (!Utils.isPowerOfTwo(value) || // value must be a power of two
+                value < 8) { // value must be greater or equal to 8
             throw new IllegalArgumentException("Invalid alignment: " + value);
         }
         return value;

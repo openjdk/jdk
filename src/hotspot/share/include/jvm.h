@@ -276,7 +276,7 @@ JNIEXPORT void JNICALL
 JVM_Yield(JNIEnv *env, jclass threadClass);
 
 JNIEXPORT void JNICALL
-JVM_Sleep(JNIEnv *env, jclass threadClass, jlong millis);
+JVM_Sleep(JNIEnv *env, jclass threadClass, jlong nanos);
 
 JNIEXPORT jobject JNICALL
 JVM_CurrentCarrierThread(JNIEnv *env, jclass threadClass);
@@ -1144,10 +1144,16 @@ JVM_GetEnclosingMethodInfo(JNIEnv* env, jclass ofClass);
  * Virtual thread support.
  */
 JNIEXPORT void JNICALL
-JVM_VirtualThreadMount(JNIEnv* env, jobject vthread, jboolean hide, jboolean first_mount);
+JVM_VirtualThreadStart(JNIEnv* env, jobject vthread);
 
 JNIEXPORT void JNICALL
-JVM_VirtualThreadUnmount(JNIEnv* env, jobject vthread, jboolean hide, jboolean last_unmount);
+JVM_VirtualThreadEnd(JNIEnv* env, jobject vthread);
+
+JNIEXPORT void JNICALL
+JVM_VirtualThreadMount(JNIEnv* env, jobject vthread, jboolean hide);
+
+JNIEXPORT void JNICALL
+JVM_VirtualThreadUnmount(JNIEnv* env, jobject vthread, jboolean hide);
 
 JNIEXPORT void JNICALL
 JVM_VirtualThreadHideFrames(JNIEnv* env, jobject vthread, jboolean hide);

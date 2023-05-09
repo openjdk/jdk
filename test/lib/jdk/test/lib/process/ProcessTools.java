@@ -48,6 +48,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -116,7 +117,7 @@ public final class ProcessTools {
             throws IOException {
         try {
             return startProcess(name, processBuilder, consumer, null, -1, TimeUnit.NANOSECONDS);
-        } catch (InterruptedException | TimeoutException e) {
+        } catch (InterruptedException | TimeoutException | CancellationException e) {
             // will never happen
             throw new RuntimeException(e);
         }
@@ -158,23 +159,38 @@ public final class ProcessTools {
         BufferOutputStream and BufferInputStream allow to re-use p.getInputStream() amd p.getOutputStream() of
         processes started with ProcessTools.startProcess(...).
         Implementation cashes ALL process output and allow to read it through InputStream.
+        The stream uses  Future<Void> task from StreamPumper.process() to check if output is complete.
      */
     private static class BufferOutputStream extends ByteArrayOutputStream {
         private int current = 0;
         final private Process p;
 
+        private Future<Void> task;
+
         public BufferOutputStream(Process p) {
             this.p = p;
         }
 
+        synchronized void setTask(Future<Void> task) {
+            this.task = task;
+        }
         synchronized int readNext() {
             if (current > count) {
                 throw new RuntimeException("Shouldn't ever happen.  start: "
                         + current + " count: " + count + " buffer: " + this);
             }
             while (current == count) {
-                if (!p.isAlive()) {
-                    return -1;
+                if (!p.isAlive() && (task != null)) {
+                    try {
+                        task.get(10, TimeUnit.MILLISECONDS);
+                        if (current == count) {
+                            return -1;
+                        }
+                    } catch (TimeoutException e) {
+                        // continue execution, so wait() give a chance to write
+                    } catch (InterruptedException | ExecutionException e) {
+                        return -1;
+                    }
                 }
                 try {
                     wait(1);
@@ -194,7 +210,7 @@ public final class ProcessTools {
             buffer = new BufferOutputStream(p);
         }
 
-        OutputStream getOutputStream() {
+        BufferOutputStream getOutputStream() {
             return buffer;
         }
 
@@ -242,6 +258,8 @@ public final class ProcessTools {
 
         stdout.addPump(new LineForwarder(name, System.out));
         stderr.addPump(new LineForwarder(name, System.err));
+
+
         BufferInputStream stdOut = new BufferInputStream(p);
         BufferInputStream stdErr = new BufferInputStream(p);
 
@@ -258,7 +276,6 @@ public final class ProcessTools {
             stdout.addPump(pump);
             stderr.addPump(pump);
         }
-
 
         CountDownLatch latch = new CountDownLatch(1);
         if (linePredicate != null) {
@@ -281,6 +298,9 @@ public final class ProcessTools {
         }
         final Future<Void> stdoutTask = stdout.process();
         final Future<Void> stderrTask = stderr.process();
+
+        stdOut.getOutputStream().setTask(stdoutTask);
+        stdErr.getOutputStream().setTask(stderrTask);
 
         try {
             if (timeout > -1) {

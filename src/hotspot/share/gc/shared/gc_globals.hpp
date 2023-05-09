@@ -216,12 +216,6 @@
           constraint(MarkStackSizeConstraintFunc,AfterErgo)                 \
           range(1, (max_jint - 1))                                          \
                                                                             \
-  product(intx, RefDiscoveryPolicy, 0,                                      \
-          "Select type of reference discovery policy: "                     \
-          "reference-based(0) or referent-based(1)")                        \
-          range(ReferenceProcessor::DiscoveryPolicyMin,                     \
-                ReferenceProcessor::DiscoveryPolicyMax)                     \
-                                                                            \
   product(bool, ParallelRefProcEnabled, false,                              \
           "Enable parallel reference processing whenever possible")         \
                                                                             \

@@ -256,7 +256,9 @@ void G1FullCollector::complete_collection() {
 void G1FullCollector::before_marking_update_attribute_table(HeapRegion* hr) {
   if (hr->is_free()) {
     _region_attr_table.set_free(hr->hrm_index());
-  } else if (hr->is_pinned()) {
+  } else if (hr->is_humongous()) {
+    // Humongous objects will never be moved in the "main" compaction phase, but
+    // afterwards in a special phase if needed.
     _region_attr_table.set_skip_compacting(hr->hrm_index());
   } else {
     // Everything else should be compacted.
@@ -323,7 +325,10 @@ void G1FullCollector::phase1_mark_live_objects() {
     _heap->complete_cleaning(purged_class);
   }
 
-  scope()->tracer()->report_object_count_after_gc(&_is_alive);
+  {
+    GCTraceTime(Debug, gc, phases) debug("Report Object Count", scope()->timer());
+    scope()->tracer()->report_object_count_after_gc(&_is_alive);
+  }
 #if TASKQUEUE_STATS
   oop_queue_set()->print_and_reset_taskqueue_stats("Oop Queue");
   array_queue_set()->print_and_reset_taskqueue_stats("ObjArrayOop Queue");
