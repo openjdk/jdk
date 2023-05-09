@@ -102,8 +102,9 @@ create-sysroot-riscv64:
         | tar -xzf - -C ${BINUTILS_DIR} --strip-components 1
     - |
       bash configure                                                           \
+        --with-debug-level=${DEBUG_LEVEL}                                      \
         --openjdk-target=${PKG_ARCH}-linux-gnu                                 \
-        --with-conf-name=linux-${PKG_ARCH}                                     \
+        --with-conf-name=linux-${PKG_ARCH}-${DEBUG_LEVEL}                      \
         --with-vendor-name="Rivos Inc"                                         \
         --with-version-pre="${JDK_VERSION_PRE}"                                \
         --with-version-opt="${JDK_VERSION_OPT}"                                \
@@ -119,10 +120,10 @@ create-sysroot-riscv64:
     when: always
     paths:
       - config.log # in case of error during configure
-      - build/linux-${PKG_ARCH}/images/jdk
-      - build/linux-${PKG_ARCH}/images/test
+      - build/linux-${PKG_ARCH}-${DEBUG_LEVEL}/images/jdk
+      - build/linux-${PKG_ARCH}-${DEBUG_LEVEL}/images/test
 
-build-linux-amd64:
+build-linux-amd64-fastdebug:
   extends: .build-linux
   dependencies:
     - prepare-version
@@ -132,9 +133,10 @@ build-linux-amd64:
     - create-sysroot-amd64
   variables:
     PKG_ARCH: amd64
-    MAKE_TARGETS: jdk-image
+    MAKE_TARGETS: jdk-image test-image
+    DEBUG_LEVEL: fastdebug
 
-build-linux-riscv64:
+build-linux-riscv64-fastdebug:
   extends: .build-linux
   dependencies:
     - prepare-version
@@ -145,24 +147,51 @@ build-linux-riscv64:
   variables:
     PKG_ARCH: riscv64
     MAKE_TARGETS: jdk-image test-image
+    DEBUG_LEVEL: fastdebug
+
+build-linux-amd64-release:
+  extends: .build-linux
+  dependencies:
+    - prepare-version
+    - create-sysroot-amd64
+  needs:
+    - prepare-version
+    - create-sysroot-amd64
+  variables:
+    PKG_ARCH: amd64
+    MAKE_TARGETS: jdk-image
+    DEBUG_LEVEL: release
+
+build-linux-riscv64-release:
+  extends: .build-linux
+  dependencies:
+    - prepare-version
+    - create-sysroot-riscv64
+  needs:
+    - prepare-version
+    - create-sysroot-riscv64
+  variables:
+    PKG_ARCH: riscv64
+    MAKE_TARGETS: jdk-image test-image
+    DEBUG_LEVEL: release
 
 package-tar:
   stage: deploy
   image: ubuntu:20.04
   dependencies:
     - prepare-version
-    - build-linux-amd64
-    - build-linux-riscv64
+    - build-linux-amd64-release
+    - build-linux-riscv64-release
   needs:
     - prepare-version
-    - build-linux-amd64
-    - build-linux-riscv64
+    - build-linux-amd64-release
+    - build-linux-riscv64-release
   script:
     - apt-get update
     - apt-get install -y curl
-    - tar -czf jdk-${JDK_VERSION_TAG}-linux-amd64.tar.gz -C build/linux-amd64/images jdk
+    - tar -czf jdk-${JDK_VERSION_TAG}-linux-amd64.tar.gz -C build/linux-amd64-release/images jdk
     - 'curl -i --header "JOB-TOKEN: $CI_JOB_TOKEN" --upload-file jdk-${JDK_VERSION_TAG}-linux-amd64.tar.gz "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/jdk/${JDK_VERSION_TAG}/jdk-${JDK_VERSION_TAG}-linux-amd64.tar.gz"'
-    - tar -czf jdk-${JDK_VERSION_TAG}-linux-riscv64.tar.gz -C build/linux-riscv64/images jdk
+    - tar -czf jdk-${JDK_VERSION_TAG}-linux-riscv64.tar.gz -C build/linux-riscv64-release/images jdk
     - 'curl -i --header "JOB-TOKEN: $CI_JOB_TOKEN" --upload-file jdk-${JDK_VERSION_TAG}-linux-riscv64.tar.gz "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/jdk/${JDK_VERSION_TAG}/jdk-${JDK_VERSION_TAG}-linux-riscv64.tar.gz"'
 
 .package-deb:
@@ -179,11 +208,11 @@ package-tar:
     - rm -rf $(echo "${PKG_DIRECTORIES}" | tr ';' ' ')
     # move the previous temporary install
     - |
-      cp -av build/linux-${PKG_ARCH}/images/jdk /rivos/
+      cp -av build/linux-${PKG_ARCH}-release/images/jdk /rivos/
       if [ "${PKG_ARCH}" = "amd64" ]; then
         # put linux-riscv64 build in sysroot
         mkdir -p /rivos/sysroot/riscv/rivos
-        cp -av build/linux-riscv64/images/jdk /rivos/sysroot/riscv/rivos
+        cp -av build/linux-riscv64-release/images/jdk /rivos/sysroot/riscv/rivos
       fi
     - |
       if [ "${PKG_DBG}" = "true" ]; then
@@ -198,12 +227,12 @@ package-deb-amd64:
   extends: .package-deb
   dependencies:
     - prepare-version
-    - build-linux-amd64
-    - build-linux-riscv64
+    - build-linux-amd64-release
+    - build-linux-riscv64-release
   needs:
     - prepare-version
-    - build-linux-amd64
-    - build-linux-riscv64
+    - build-linux-amd64-release
+    - build-linux-riscv64-release
   variables:
     PKG_DIRECTORIES: "/rivos/jdk;/rivos/sysroot/riscv/rivos/jdk"
     PKG_ARCH: "amd64"
@@ -212,10 +241,10 @@ package-deb-riscv64:
   extends: .package-deb
   dependencies:
     - prepare-version
-    - build-linux-riscv64
+    - build-linux-riscv64-release
   needs:
     - prepare-version
-    - build-linux-riscv64
+    - build-linux-riscv64-release
   variables:
     PKG_DIRECTORIES: "/rivos/jdk"
     PKG_ARCH: "riscv64"
@@ -224,12 +253,12 @@ package-deb-dbg-amd64:
   extends: .package-deb
   dependencies:
     - prepare-version
-    - build-linux-amd64
-    - build-linux-riscv64
+    - build-linux-amd64-release
+    - build-linux-riscv64-release
   needs:
     - prepare-version
-    - build-linux-amd64
-    - build-linux-riscv64
+    - build-linux-amd64-release
+    - build-linux-riscv64-release
   variables:
     PKG_NAME: "${PROJECT_NAME}-dbg"
     PKG_DIRECTORIES: "/rivos/jdk;/rivos/sysroot/riscv/rivos/jdk"
@@ -240,10 +269,10 @@ package-deb-dbg-riscv64:
   extends: .package-deb
   dependencies:
     - prepare-version
-    - build-linux-riscv64
+    - build-linux-riscv64-release
   needs:
     - prepare-version
-    - build-linux-riscv64
+    - build-linux-riscv64-release
   variables:
     PKG_NAME: "${PROJECT_NAME}-dbg"
     PKG_DIRECTORIES: "/rivos/jdk"
