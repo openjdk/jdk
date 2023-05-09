@@ -3517,10 +3517,10 @@ err = (*jvmti)-&gt;Deallocate(jvmti, stack_info);
             Heap root reference: monitor.
           </constant>
           <constant id="JVMTI_HEAP_REFERENCE_STACK_LOCAL" num="24">
-            Heap root reference: local variable on the stack.
+            Local variable on a thread stack.
           </constant>
           <constant id="JVMTI_HEAP_REFERENCE_JNI_LOCAL" num="25">
-            Heap root reference: JNI local reference.
+            JNI local reference.
           </constant>
           <constant id="JVMTI_HEAP_REFERENCE_THREAD" num="26">
             Heap root reference: Thread.
@@ -4535,7 +4535,7 @@ class C2 extends C1 implements I2 {
         if <code>initial_object</code> is not specified, all objects
         reachable from the heap roots.
         The heap root are the set of system classes,
-        JNI globals, references from thread stacks, and other objects used as roots
+        JNI globals, references from platform thread stacks, and other objects used as roots
         for the purposes of garbage collection.
         <p/>
         This function operates by traversing the reference graph.
@@ -5579,7 +5579,7 @@ class C2 extends C1 implements I2 {
         This function iterates over the root objects and all objects that
         are directly and indirectly reachable from the root objects.
         The root objects comprise the set of system classes,
-        JNI globals, references from thread stacks, and other objects used as roots
+        JNI globals, references from platform thread stacks, and other objects used as roots
         for the purposes of garbage collection.
         <p/>
         For each root the <paramlink id="heap_root_callback"></paramlink>
