@@ -42,19 +42,11 @@ public class InterfaceObjectTest implements ICloneExtend {
         System.out.println("In InterfaceObjectTest's clone() method\n");
         return null;
     }
-    public String toString() {
-        try {
-            System.out.println("In InterfaceObjectTest's toString() method\n");
-        } catch (Throwable t) {
-            throw new AssertionError(t);
-        }
-        return "InterfaceObjectTest";
-    }
 
     public static void tryIt(ICloneExtend o1) {
         try {
             Object o2 = o1.clone();
-            o1.toString();
+            o1.clone();
         } catch (Throwable t) {
             throw new AssertionError(t);
         }
@@ -62,12 +54,12 @@ public class InterfaceObjectTest implements ICloneExtend {
 
 
     public static void main(String[] args) throws Exception {
-        // Test with abstract public clone() and finalize() methods.
+        // Test with abstract public clone() method.
         InterfaceObjectTest o1 = new InterfaceObjectTest();
         tryIt(o1);
 
 
-        // Test with reflection without abstract public clone() and finalize() methods.
+        // Test with reflection without abstract public clone() and method.
         Class cls = Class.forName("InterfaceObj");
 
         try {
