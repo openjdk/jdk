@@ -265,16 +265,17 @@ public final class SealedGraph implements Taglet {
         }
 
         private static boolean isInPublicApi(TypeElement typeElement, Set<String> exports) {
-           return (exports.contains(packageName(typeElement.getQualifiedName().toString())) ||
-                   exports.contains(packageName(typeElement.getSuperclass().toString()))) &&
-                   typeElement.getModifiers().contains(Modifier.PUBLIC);
+            var packageName = packageName(typeElement);
+            return packageName.isPresent() && exports.contains(packageName.get()) &&
+                    typeElement.getModifiers().contains(Modifier.PUBLIC);
         }
 
-        private static String packageName(String name) {
-            int lastDot = name.lastIndexOf('.');
-            return lastDot < 0
-                    ? ""
-                    : name.substring(0, lastDot);
+        private static Optional<String> packageName(TypeElement element) {
+            return switch (element.getNestingKind()) {
+                case TOP_LEVEL -> Optional.of(((PackageElement) element.getEnclosingElement()).getQualifiedName().toString());
+                case ANONYMOUS, LOCAL -> Optional.empty();
+                case MEMBER -> packageName((TypeElement) element.getEnclosingElement());
+            };
         }
     }
 }
