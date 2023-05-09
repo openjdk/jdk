@@ -60,7 +60,7 @@ public class Util {
     public static int parameterSlots(MethodTypeDesc mDesc) {
         int count = 0;
         for (int i = 0; i < mDesc.parameterCount(); i++) {
-            count += isDoubleSlot(mDesc.parameterType(i)) ? 2 : 1;
+            count += slotSize(mDesc.parameterType(i));
         }
         return count;
     }
@@ -70,7 +70,7 @@ public class Util {
         int count = ((flags & ACC_STATIC) != 0) ? 0 : 1;
         for (int i = 0; i < result.length; i++) {
             result[i] = count;
-            count += isDoubleSlot(mDesc.parameterType(i)) ? 2 : 1;
+            count += slotSize(mDesc.parameterType(i));
         }
         return result;
     }
@@ -78,7 +78,7 @@ public class Util {
     public static int maxLocals(int flags, MethodTypeDesc mDesc) {
         int count = ((flags & ACC_STATIC) != 0) ? 0 : 1;
         for (int i = 0; i < mDesc.parameterCount(); i++) {
-            count += isDoubleSlot(mDesc.parameterType(i)) ? 2 : 1;
+            count += slotSize(mDesc.parameterType(i));
         }
         return count;
     }
@@ -207,6 +207,14 @@ public class Util {
 
     public static MethodTypeDesc methodTypeSymbol(NameAndTypeEntry nat) {
         return ((AbstractPoolEntry.NameAndTypeEntryImpl)nat).methodTypeSymbol();
+    }
+
+    public static int slotSize(ClassDesc desc) {
+        return switch (desc.descriptorString().charAt(0)) {
+            case 'V' -> 0;
+            case 'D','J' -> 2;
+            default -> 1;
+        };
     }
 
     public static boolean isDoubleSlot(ClassDesc desc) {

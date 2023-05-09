@@ -44,7 +44,7 @@ public final class StackCounter {
                 dcb,
                 buf.thisClass().asSymbol(),
                 dcb.methodInfo.methodName().stringValue(),
-                MethodTypeDesc.ofDescriptor(dcb.methodInfo.methodType().stringValue()),
+                dcb.methodInfo.methodTypeSymbol(),
                 (dcb.methodInfo.methodFlags() & ACC_STATIC) != 0,
                 dcb.bytecodesBufWriter.asByteBuffer().slice(0, dcb.bytecodesBufWriter.size()),
                 dcb.constantPool,
@@ -106,7 +106,7 @@ public final class StackCounter {
         for (var h : handlers) map.put(labelContext.labelToBci(h.handler), 1);
         maxLocals = isStatic ? 0 : 1;
         for (var cd : methodDesc.parameterList()) {
-            maxLocals += TypeKind.fromDescriptor(cd.descriptorString()).slotSize();
+            maxLocals += Util.slotSize(cd);
         }
         bcs = new RawBytecodeHelper(bytecode);
         visited = new BitSet(bcs.endBci);
@@ -307,12 +307,12 @@ public final class StackCounter {
                         var nameAndType = opcode == INVOKEDYNAMIC ? ((DynamicConstantPoolEntry)cpe).nameAndType() : ((MemberRefEntry)cpe).nameAndType();
                         var mDesc = ((AbstractPoolEntry.NameAndTypeEntryImpl)nameAndType).methodTypeSymbol();
                         for (var arg : mDesc.parameterList()) {
-                            stack(-TypeKind.fromDescriptor(arg.descriptorString()).slotSize());
+                            stack(-Util.slotSize(arg));
                         }
                         if (opcode != INVOKESTATIC && opcode != INVOKEDYNAMIC) {
                             stack(-1);
                         }
-                        stack(TypeKind.fromDescriptor(mDesc.returnType().descriptorString()).slotSize());
+                        stack(Util.slotSize(mDesc.returnType()));
                     }
                     case MULTIANEWARRAY ->
                         stack (1 - bcs.getU1(bcs.bci + 3));

@@ -160,7 +160,7 @@ public final class StackMapGenerator {
                 dcb,
                 buf.thisClass().asSymbol(),
                 dcb.methodInfo.methodName().stringValue(),
-                MethodTypeDesc.ofDescriptor(dcb.methodInfo.methodType().stringValue()),
+                dcb.methodInfo.methodTypeSymbol(),
                 (dcb.methodInfo.methodFlags() & ACC_STATIC) != 0,
                 dcb.bytecodesBufWriter.asByteBuffer().slice(0, dcb.bytecodesBufWriter.size()),
                 dcb.constantPool,
