@@ -20,12 +20,14 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 /*
  * @test
  * @bug 7083187
  * @summary  Verifies if CSS.CSSValue attribute is same
  * @run main CSSAttributeEqualityBug
  */
+
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.html.CSS;
 import javax.swing.text.html.StyleSheet;
@@ -43,6 +45,18 @@ public class CSSAttributeEqualityBug {
         testCSSStringValue();
     }
 
+    private static void checkEquality(SimpleAttributeSet a,
+                                      SimpleAttributeSet b,
+                                      String attribName) {
+        if (a.isEqual(b)) {
+            System.out.println("a equals b");
+        } else {
+            System.out.println("a = " + a);
+            System.out.println("b = " + b);
+            throw new RuntimeException(attribName + " a is not equal to b");
+        }
+    }
+
     private static void testFontSize() {
         StyleSheet ss = new StyleSheet();
         String fontSize = "42";
@@ -53,13 +67,7 @@ public class CSSAttributeEqualityBug {
         SimpleAttributeSet b = new SimpleAttributeSet();
         ss.addCSSAttribute(b, CSS.Attribute.FONT_SIZE, fontSize);
 
-        if (a.isEqual(b)) {
-            System.out.println( "a equals b");
-        } else {
-            System.out.println("a = " + a);
-            System.out.println("b = " + b);
-            throw new RuntimeException("CSS.Attribute.FontSize a is not equal to b");
-        }
+        checkEquality(a, b, "CSS.Attribute.FontSize");
     }
 
     private static void testFontFamily() {
@@ -67,18 +75,12 @@ public class CSSAttributeEqualityBug {
         String fontFamily = "Sans-Serif";
 
         SimpleAttributeSet a = new SimpleAttributeSet();
-        ss.addCSSAttribute(a, CSS.Attribute.FONT_FAMILY, "Sans-Serif");
+        ss.addCSSAttribute(a, CSS.Attribute.FONT_FAMILY, fontFamily);
 
         SimpleAttributeSet b = new SimpleAttributeSet();
-        ss.addCSSAttribute(b, CSS.Attribute.FONT_FAMILY, "Sans-Serif");
+        ss.addCSSAttribute(b, CSS.Attribute.FONT_FAMILY, fontFamily);
 
-        if (a.isEqual(b)) {
-            System.out.println( "a equals b");
-        } else {
-            System.out.println("a = " + a);
-            System.out.println("b = " + b);
-            throw new RuntimeException("CSS.Attribute.FontFamily a is not equal to b");
-        }
+        checkEquality(a, b, "CSS.Attribute.FontFamily");
     }
 
     private static void testFontWeight() {
@@ -91,13 +93,7 @@ public class CSSAttributeEqualityBug {
         SimpleAttributeSet b = new SimpleAttributeSet();
         ss.addCSSAttribute(b, CSS.Attribute.FONT_WEIGHT, fontWeight);
 
-        if (a.isEqual(b)) {
-            System.out.println( "a equals b");
-        } else {
-            System.out.println("a = " + a);
-            System.out.println("b = " + b);
-            throw new RuntimeException("CSS.Attribute.FontWeight a is not equal to b");
-        }
+        checkEquality(a, b, "CSS.Attribute.FontWeight");
     }
 
     private static void testColor() {
@@ -110,13 +106,7 @@ public class CSSAttributeEqualityBug {
         SimpleAttributeSet b = new SimpleAttributeSet();
         ss.addCSSAttribute(b, CSS.Attribute.COLOR, fontColor);
 
-        if (a.isEqual(b)) {
-            System.out.println( "a equals b");
-        } else {
-            System.out.println("a = " + a);
-            System.out.println("b = " + b);
-            throw new RuntimeException("CSS.Attribute.Color a is not equal to b");
-        }
+        checkEquality(a, b, "CSS.Attribute.Color");
     }
 
     private static void testBorderStyle() {
@@ -129,13 +119,7 @@ public class CSSAttributeEqualityBug {
         SimpleAttributeSet b = new SimpleAttributeSet();
         ss.addCSSAttribute(b, CSS.Attribute.BORDER_STYLE, borderStyle);
 
-        if (a.isEqual(b)) {
-            System.out.println( "a equals b");
-        } else {
-            System.out.println("a = " + a);
-            System.out.println("b = " + b);
-            throw new RuntimeException("CSS.Attribute.BorderStyle a is not equal to b");
-        }
+        checkEquality(a, b, "CSS.Attribute.BorderStyle");
     }
 
     private static void testCSSLengthValue() {
@@ -148,13 +132,7 @@ public class CSSAttributeEqualityBug {
         SimpleAttributeSet b = new SimpleAttributeSet();
         ss.addCSSAttribute(b, CSS.Attribute.MARGIN_TOP, lengthUnit);
 
-        if (a.isEqual(b)) {
-            System.out.println("a equals b");
-        } else {
-            System.out.println("a = " + a);
-            System.out.println("b = " + b);
-            throw new RuntimeException("CSS LengthValue a is not equal to b");
-        }
+        checkEquality(a, b, "CSS LengthValue");
     }
 
     private static void testBackgroundPosition() {
@@ -167,13 +145,7 @@ public class CSSAttributeEqualityBug {
         SimpleAttributeSet b = new SimpleAttributeSet();
         ss.addCSSAttribute(b, CSS.Attribute.BACKGROUND_POSITION, bgPosition);
 
-        if (a.isEqual(b)) {
-            System.out.println("a equals b");
-        } else {
-            System.out.println("a = " + a);
-            System.out.println("b = " + b);
-            throw new RuntimeException("CSS.Attribute.BACKGROUND_POSITION a is not equal to b");
-        }
+        checkEquality(a, b, "CSS.Attribute.BACKGROUND_POSITION");
     }
 
     private static void testCSSStringValue() {
@@ -186,13 +158,8 @@ public class CSSAttributeEqualityBug {
         SimpleAttributeSet b = new SimpleAttributeSet();
         ss.addCSSAttribute(b, CSS.Attribute.TEXT_DECORATION, strVal);
 
-        if (a.isEqual(b)) {
-            System.out.println("a equals b");
-        } else {
-            System.out.println("a = " + a);
-            System.out.println("b = " + b);
-            throw new RuntimeException("CSS.Attribute.TEXT_DECORATION a is not equal to b");
-        }
+        checkEquality(a, b, "CSS.Attribute.TEXT_DECORATION");
     }
 }
+
 
