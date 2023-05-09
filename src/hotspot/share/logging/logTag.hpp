@@ -77,6 +77,7 @@ class outputStream;
   LOG_TAG(event) \
   LOG_TAG(exceptions) \
   LOG_TAG(exit) \
+  LOG_TAG(fastlock) \
   LOG_TAG(finalizer) \
   LOG_TAG(fingerprint) \
   NOT_PRODUCT(LOG_TAG(foreign)) \

@@ -664,8 +664,7 @@ bool JfrJavaSupport::is_jdk_jfr_module_available(outputStream* stream, TRAPS) {
 
 typedef JfrOopTraceId<ThreadIdAccess> AccessThreadTraceId;
 
-static JavaThread* get_native(jobject thread) {
-  ThreadsListHandle tlh;
+static JavaThread* get_native(ThreadsListHandle& tlh, jobject thread) {
   JavaThread* native_thread = NULL;
   (void)tlh.cv_internal_thread_to_JavaThread(thread, &native_thread, NULL);
   return native_thread;
@@ -704,7 +703,8 @@ void JfrJavaSupport::exclude(JavaThread* jt, oop ref, jobject thread) {
       return;
     }
   }
-  jt = get_native(thread);
+  ThreadsListHandle tlh;
+  jt = get_native(tlh, thread);
   if (jt != nullptr) {
     JfrThreadLocal::exclude_jvm_thread(jt);
   }
@@ -720,7 +720,8 @@ void JfrJavaSupport::include(JavaThread* jt, oop ref, jobject thread) {
       return;
     }
   }
-  jt = get_native(thread);
+  ThreadsListHandle tlh;
+  jt = get_native(tlh, thread);
   if (jt != nullptr) {
     JfrThreadLocal::include_jvm_thread(jt);
   }
