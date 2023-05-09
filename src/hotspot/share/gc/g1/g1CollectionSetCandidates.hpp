@@ -39,8 +39,7 @@ class HeapRegionClosure;
 
 using G1CollectionSetRegionListIterator = GrowableArrayIterator<HeapRegion*>;
 
-// A set of HeapRegion*. Elements are typically sorted by decreasing gc efficiency
-// but their efficiencies are not stored.
+// A set of HeapRegion*.
 class G1CollectionSetRegionList {
   GrowableArray<HeapRegion*> _regions;
 
@@ -49,8 +48,8 @@ public:
 
   // Append a HeapRegion to the end of this list.
   void append(HeapRegion* r);
-  // Remove the given list of HeapRegion* from this list. Assumes that the given
-  // list is a prefix of this list.
+  // Remove the given list of HeapRegion* from this list. The given is a prefix
+  // of this list.
   void remove_prefix(G1CollectionSetRegionList* list);
 
   // Empty contents of the list.
