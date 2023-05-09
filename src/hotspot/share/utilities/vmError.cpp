@@ -172,26 +172,23 @@ static void print_bug_submit_message(outputStream *out, Thread *thread) {
   out->print_raw_cr("#");
 }
 
-static bool check_stack_headroom(Thread* thread,
-                                 size_t headroom) {
-  static const address stack_top    = thread != nullptr
-                                    ? thread->stack_base()
-                                    : os::current_stack_base();
-  static const size_t  stack_size   = thread != nullptr
-                                    ? thread->stack_size()
-                                    : os::current_stack_size();
-  static const address stack_bottom = stack_top - stack_size;
+static bool stack_has_headroom(size_t headroom) {
+  const size_t  stack_size    = os::current_stack_size();
 
+  if (stack_size < headroom) {
+    return false;
+  }
+
+  const address stack_base    = os::current_stack_base();
+  const address stack_end     = stack_base - stack_size;
   const address stack_pointer = os::current_stack_pointer();
 
-  const ptrdiff_t stack_headroom = stack_pointer - stack_bottom;
-  return (stack_pointer < stack_bottom || stack_headroom < 0 ||
-          static_cast<size_t>(stack_headroom) < headroom);
+  return stack_pointer >= stack_end + headroom;
 }
 
 #ifdef ASSERT
 void VMError::reenterant_test_hit_stack_limit() {
-  if (!check_stack_headroom(_thread, _reattempt_required_stack_headroom)) {
+  if (stack_has_headroom(_reattempt_required_stack_headroom)) {
     char stack_buffer[_reattempt_required_stack_headroom / 2];
     static_cast<void>(stack_buffer[sizeof(stack_buffer) - 1] = '\0');
     reenterant_test_hit_stack_limit();
@@ -201,7 +198,7 @@ void VMError::reenterant_test_hit_stack_limit() {
 #endif // ASSERT
 
 bool VMError::should_stop_reattempt_step(const char* &reason) {
-  if (check_stack_headroom(_thread, _reattempt_required_stack_headroom)) {
+  if (!stack_has_headroom(_reattempt_required_stack_headroom)) {
     reason = "Stack headroom limit reached";
     return true;
   }
@@ -471,11 +468,13 @@ static void print_oom_reasons(outputStream* st) {
 }
 
 static void print_stack_location(outputStream* st, void* context, int& continuation) {
+  const int number_of_stack_slots = 8;
+
   int i = continuation;
   // Update continuation with next index before fetching frame
   continuation = i + 1;
   const frame fr = os::fetch_frame_from_context(context);
-  while (i < 8) {
+  while (i < number_of_stack_slots) {
     // Update continuation with next index before printing location
     continuation = i + 1;
     // decode stack contents if possible
