@@ -1165,7 +1165,7 @@ Node *PhaseIterGVN::transform( Node *n ) {
   return transform_old(n);
 }
 
-Node* PhaseIterGVN::transform_old(Node* n) {
+Node *PhaseIterGVN::transform_old(Node* n) {
   NOT_PRODUCT(set_transforms());
   // Remove 'n' from hash table in case it gets modified
   _table.hash_delete(n);
@@ -2076,9 +2076,9 @@ Node *PhaseCCP::transform( Node *n ) {
   return new_root;
 }
 
-
+//------------------------------transform_once---------------------------------
 // For PhaseCCP, transformation is IDENTITY unless Node computed a constant.
-Node* PhaseCCP::transform_once(Node* n) {
+Node *PhaseCCP::transform_once( Node *n ) {
   const Type *t = type(n);
   // Constant?  Use constant Node instead
   if( t->singleton() ) {

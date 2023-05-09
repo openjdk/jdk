@@ -655,7 +655,6 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
 #endif
 {
   C = this;
-
   CompileWrapper cw(this);
 
   if (CITimeVerbose) {
