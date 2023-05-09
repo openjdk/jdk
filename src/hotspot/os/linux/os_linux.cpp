@@ -110,6 +110,7 @@
 # include <inttypes.h>
 # include <sys/ioctl.h>
 # include <linux/elf-em.h>
+# include <sys/prctl.h>
 #ifdef __GLIBC__
 # include <malloc.h>
 #endif
@@ -4644,6 +4645,13 @@ jint os::init_2(void) {
     // Disable code cache flushing to ensure the map file written at
     // exit contains all nmethods generated during execution.
     FLAG_SET_DEFAULT(UseCodeCacheFlushing, false);
+  }
+
+  // Override the timer slack value if needed.
+  if (TimerSlack > 0) {
+    if (prctl(PR_SET_TIMERSLACK, TimerSlack) < 0) {
+      vm_exit_during_initialization("Setting timer slack failed: %s", os::strerror(errno));
+    }
   }
 
   return JNI_OK;
