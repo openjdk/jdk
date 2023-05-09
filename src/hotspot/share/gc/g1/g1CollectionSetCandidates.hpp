@@ -121,7 +121,7 @@ public:
   // Comparison function to order regions in decreasing GC efficiency order. This
   // will cause regions with a lot of live objects and large remembered sets to end
   // up at the end of the list.
-  static int order_regions(CandidateInfo* ci1, CandidateInfo* ci2);
+  static int compare(CandidateInfo* ci1, CandidateInfo* ci2);
 
   void print(const char* prefix);
 
