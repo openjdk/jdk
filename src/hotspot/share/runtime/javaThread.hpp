@@ -512,9 +512,7 @@ private:
   virtual bool is_Java_thread() const            { return true;  }
   virtual bool can_call_java() const             { return true; }
 
-  virtual bool is_active_Java_thread() const {
-    return on_thread_list() && !is_terminated();
-  }
+  virtual bool is_active_Java_thread() const;
 
   // Thread oop. threadObj() can be null for initial JavaThread
   // (or for threads attached via JNI)
@@ -1142,6 +1140,7 @@ private:
   ParkEvent * _SleepEvent;
 public:
   bool sleep(jlong millis);
+  bool sleep_nanos(jlong nanos);
 
   // java.lang.Thread interruption support
   void interrupt();
