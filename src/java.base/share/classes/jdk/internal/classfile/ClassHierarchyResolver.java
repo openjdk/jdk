@@ -34,9 +34,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import jdk.internal.classfile.impl.Util;
-
 import jdk.internal.classfile.impl.ClassHierarchyImpl;
+import jdk.internal.classfile.impl.ClassHierarchyImpl.ClassLoadingClassHierarchyResolver;
+import jdk.internal.classfile.impl.ClassHierarchyImpl.StaticClassHierarchyResolver;
+import jdk.internal.classfile.impl.ClassHierarchyImpl.ResourceParsingClassHierarchyResolver;
+import jdk.internal.classfile.impl.Util;
 
 /**
  * Provides class hierarchy information for generating correct stack maps
@@ -51,9 +53,9 @@ public interface ClassHierarchyResolver {
      * as the {@code ClassStreamResolver}
      */
     ClassHierarchyResolver DEFAULT_CLASS_HIERARCHY_RESOLVER
-            = ofCached(ofParsing(ClassLoader.getSystemClassLoader())
-                    .orElse(ofReflection(ClassLoader.getSystemClassLoader())),
-            new Supplier<Map<ClassDesc, ClassHierarchyInfo>>() {
+            = ofCached(ofResourceParsing(ResourceParsingClassHierarchyResolver.SYSTEM_STREAM_PROVIDER)
+                    .orElse(new ClassLoadingClassHierarchyResolver(ClassLoadingClassHierarchyResolver.SYSTEM_CLASS_PROVIDER)),
+            new Supplier<>() {
                 @Override
                 public Map<ClassDesc, ClassHierarchyInfo> get() {
                     return new ConcurrentHashMap<>();
@@ -140,8 +142,8 @@ public interface ClassHierarchyResolver {
      * @param classStreamResolver maps class descriptors to classfile input streams
      * @return the {@linkplain ClassHierarchyResolver}
      */
-    static ClassHierarchyResolver ofParsing(Function<ClassDesc, InputStream> classStreamResolver) {
-        return new ClassHierarchyImpl.ParsingClassHierarchyResolver(classStreamResolver);
+    static ClassHierarchyResolver ofResourceParsing(Function<ClassDesc, InputStream> classStreamResolver) {
+        return new ClassHierarchyImpl.ResourceParsingClassHierarchyResolver(classStreamResolver);
     }
 
     /**
@@ -151,8 +153,8 @@ public interface ClassHierarchyResolver {
      * @param loader the class loader, to find class files
      * @return the {@linkplain ClassHierarchyResolver}
      */
-    static ClassHierarchyResolver ofParsing(ClassLoader loader) {
-        return ofParsing(new Function<ClassDesc, InputStream>() {
+    static ClassHierarchyResolver ofResourceParsing(ClassLoader loader) {
+        return ofResourceParsing(new Function<>() {
             @Override
             public InputStream apply(ClassDesc classDesc) {
                 return loader.getResourceAsStream(Util.toInternalName(classDesc) + ".class");
@@ -170,7 +172,7 @@ public interface ClassHierarchyResolver {
      */
     static ClassHierarchyResolver of(Collection<ClassDesc> interfaces,
                                             Map<ClassDesc, ClassDesc> classToSuperClass) {
-        return new ClassHierarchyImpl.StaticClassHierarchyResolver(interfaces, classToSuperClass);
+        return new StaticClassHierarchyResolver(interfaces, classToSuperClass);
     }
 
     /**
@@ -180,17 +182,17 @@ public interface ClassHierarchyResolver {
      * @param loader the class loader
      * @return the class hierarchy resolver
      */
-    static ClassHierarchyResolver ofReflection(ClassLoader loader) {
-        return new ClassHierarchyImpl.ReflectionClassHierarchyResolver() {
+    static ClassHierarchyResolver ofClassLoading(ClassLoader loader) {
+        return new ClassLoadingClassHierarchyResolver(new Function<>() {
             @Override
-            protected Class<?> resolve(ClassDesc cd) {
+            public Class<?> apply(ClassDesc cd) {
                 try {
                     return Class.forName(Util.toBinaryName(cd.descriptorString()), false, loader);
                 } catch (ClassNotFoundException ex) {
                     return null;
                 }
             }
-        };
+        });
     }
 
     /**
@@ -202,18 +204,18 @@ public interface ClassHierarchyResolver {
      * @param lookup the lookup, must be able to access classes to resolve
      * @return the class hierarchy resolver
      */
-    static ClassHierarchyResolver ofReflection(MethodHandles.Lookup lookup) {
-        return new ClassHierarchyImpl.ReflectionClassHierarchyResolver() {
+    static ClassHierarchyResolver ofClassLoading(MethodHandles.Lookup lookup) {
+        return new ClassLoadingClassHierarchyResolver(new Function<>() {
             @Override
-            protected Class<?> resolve(ClassDesc cd) {
+            public Class<?> apply(ClassDesc cd) {
                 try {
-                    return (Class<?>) cd.resolveConstantDesc(lookup);
+                    return cd.resolveConstantDesc(lookup);
                 } catch (IllegalAccessException ex) {
                     throw new IllegalArgumentException(ex);
                 } catch (ReflectiveOperationException ex) {
                     return null;
                 }
             }
-        };
+        });
     }
 }

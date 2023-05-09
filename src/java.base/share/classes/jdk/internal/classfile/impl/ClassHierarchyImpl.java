@@ -30,6 +30,10 @@ import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDescs;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -118,7 +122,7 @@ public final class ClassHierarchyImpl {
 
         @Override
         public ClassHierarchyInfo getClassInfo(ClassDesc classDesc) {
-            var ret = resolvedCache.computeIfAbsent(classDesc, new Function<ClassDesc, ClassHierarchyInfo>() {
+            var ret = resolvedCache.computeIfAbsent(classDesc, new Function<>() {
                 @Override
                 public ClassHierarchyInfo apply(ClassDesc classDesc) {
                     var ret = delegate.getClassInfo(classDesc);
@@ -129,13 +133,28 @@ public final class ClassHierarchyImpl {
         }
     }
 
-    public static final class ParsingClassHierarchyResolver implements ClassHierarchyResolver {
+    public static final class ResourceParsingClassHierarchyResolver implements ClassHierarchyResolver {
+        public static final Function<ClassDesc, InputStream> SYSTEM_STREAM_PROVIDER = new Function<>() {
+            @SuppressWarnings("removal")
+            @Override
+            public InputStream apply(ClassDesc cd) {
+                var sm = System.getSecurityManager();
+                if (sm != null) {
+                    return AccessController.doPrivileged(new PrivilegedAction<>() {
+                        @Override
+                        public InputStream run() {
+                            return ClassLoader.getSystemClassLoader().getResourceAsStream(Util.toInternalName(cd) + ".class");
+                        }
+                    });
+                }
+                return ClassLoader.getSystemClassLoader().getResourceAsStream(Util.toInternalName(cd) + ".class");
+            }
+        };
         private final Function<ClassDesc, InputStream> streamProvider;
 
-        public ParsingClassHierarchyResolver(Function<ClassDesc, InputStream> classStreamProvider) {
+        public ResourceParsingClassHierarchyResolver(Function<ClassDesc, InputStream> classStreamProvider) {
             this.streamProvider = classStreamProvider;
         }
-
 
         // resolve method looks for the class file using <code>ClassStreamResolver</code> instance and tries to briefly scan it just for minimal information necessary
         // minimal information includes: identification of the class as interface, obtaining its superclass name and identification of all potential interfaces (to avoid unnecessary future resolutions of them)
@@ -198,13 +217,43 @@ public final class ClassHierarchyImpl {
         }
     }
 
-    public abstract static class ReflectionClassHierarchyResolver implements ClassHierarchyResolver {
+    public static final class ClassLoadingClassHierarchyResolver implements ClassHierarchyResolver {
+        public static final Function<ClassDesc, Class<?>> SYSTEM_CLASS_PROVIDER = new Function<>() {
+            @Override
+            @SuppressWarnings("removal")
+            public Class<?> apply(ClassDesc cd) {
+                var sm = System.getSecurityManager();
+                if (sm != null) {
+                    try {
+                        return AccessController.doPrivileged(new PrivilegedExceptionAction<>() {
+                            @Override
+                            public Class<?> run() throws ClassNotFoundException {
+                                return Class.forName(Util.toBinaryName(cd.descriptorString()), false, ClassLoader.getSystemClassLoader());
+                            }
+                        });
+                    } catch (PrivilegedActionException ex) {
+                        return null;
+                    }
+                } else {
+                    try {
+                        return Class.forName(Util.toBinaryName(cd.descriptorString()), false, ClassLoader.getSystemClassLoader());
+                    } catch (ClassNotFoundException ex) {
+                        return null;
+                    }
+                }
+            }
+        };
+        private final Function<ClassDesc, Class<?>> classProvider;
+
+        public ClassLoadingClassHierarchyResolver(Function<ClassDesc, Class<?>> classProvider) {
+            this.classProvider = classProvider;
+        }
 
         @Override
         public ClassHierarchyInfo getClassInfo(ClassDesc cd) {
             if (!cd.isClassOrInterface())
                 return null;
-            var cl = resolve(cd);
+            var cl = classProvider.apply(cd);
             if (cl == null) {
                 return null;
             }
@@ -212,7 +261,5 @@ public final class ClassHierarchyImpl {
             return new ClassHierarchyInfo(cd, cl.isInterface(),
                     sup == null ? null : ClassDesc.of(sup.getName()));
         }
-
-        protected abstract Class<?> resolve(ClassDesc cd);
     }
 }

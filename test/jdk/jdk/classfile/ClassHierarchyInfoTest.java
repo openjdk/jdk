@@ -90,7 +90,7 @@ class ClassHierarchyInfoTest {
     @Test
     void testProvideCustomClassStreamResolver() throws Exception {
         var fs = FileSystems.getFileSystem(URI.create("jrt:/"));
-        transformAndVerify(ClassHierarchyResolver.ofParsing(classDesc -> {
+        transformAndVerify(ClassHierarchyResolver.ofResourceParsing(classDesc -> {
             try {
                 return Files.newInputStream(fs.getPath("modules/java.base/" + Util.toInternalName(classDesc) + ".class"));
             } catch (IOException ioe) {
@@ -101,26 +101,26 @@ class ClassHierarchyInfoTest {
 
     @Test
     void testClassLoaderParsingResolver() throws Exception {
-        transformAndVerify(ClassHierarchyResolver.ofParsing(ClassLoader.getSystemClassLoader()));
+        transformAndVerify(ClassHierarchyResolver.ofResourceParsing(ClassLoader.getSystemClassLoader()));
     }
 
     @Test
     void testClassLoaderReflectionResolver() throws Exception {
-        transformAndVerify(ClassHierarchyResolver.ofReflection(ClassLoader.getSystemClassLoader()));
+        transformAndVerify(ClassHierarchyResolver.ofClassLoading(ClassLoader.getSystemClassLoader()));
     }
 
     @Test
     void testLookupResolver() throws Exception {
         // A lookup must be able to access all the classes involved in the class file generation
         var privilegedLookup = MethodHandles.privateLookupIn(HashMap.class, MethodHandles.lookup());
-        transformAndVerify(ClassHierarchyResolver.ofReflection(privilegedLookup));
+        transformAndVerify(ClassHierarchyResolver.ofClassLoading(privilegedLookup));
     }
 
     @Test
     void testLookupResolver_IllegalAccess() throws Exception {
         // A lookup from this test class, cannot access nested classes in HashMap
         var lookup = MethodHandles.lookup();
-        assertThrows(IllegalArgumentException.class, () -> transformAndVerify(ClassHierarchyResolver.ofReflection(lookup)));
+        assertThrows(IllegalArgumentException.class, () -> transformAndVerify(ClassHierarchyResolver.ofClassLoading(lookup)));
     }
 
     void transformAndVerify(ClassHierarchyResolver res) throws Exception {
