@@ -62,6 +62,7 @@ public sealed interface FunctionDescriptor permits FunctionDescriptorImpl {
      * Returns a function descriptor with the given argument layouts appended to the argument layout array
      * of this function descriptor.
      * @param addedLayouts the argument layouts to append.
+     * @throws IllegalArgumentException if one of the layouts in {@code addedLayouts} is a padding layout.
      * @return the new function descriptor.
      */
     FunctionDescriptor appendArgumentLayouts(MemoryLayout... addedLayouts);
@@ -72,6 +73,7 @@ public sealed interface FunctionDescriptor permits FunctionDescriptorImpl {
      * @param index the index at which to insert the arguments
      * @param addedLayouts the argument layouts to insert at given index.
      * @return the new function descriptor.
+     * @throws IllegalArgumentException if one of the layouts in {@code addedLayouts} is a padding layout.
      * @throws IllegalArgumentException if {@code index < 0 || index > argumentLayouts().size()}.
      */
     FunctionDescriptor insertArgumentLayouts(int index, MemoryLayout... addedLayouts);
@@ -79,6 +81,7 @@ public sealed interface FunctionDescriptor permits FunctionDescriptorImpl {
     /**
      * Returns a function descriptor with the given memory layout as the new return layout.
      * @param newReturn the new return layout.
+     * @throws IllegalArgumentException if {@code newReturn} is a padding layout.
      * @return the new function descriptor.
      */
     FunctionDescriptor changeReturnLayout(MemoryLayout newReturn);
@@ -96,9 +99,11 @@ public sealed interface FunctionDescriptor permits FunctionDescriptorImpl {
      * The carrier type of a layout is determined as follows:
      * <ul>
      * <li>If the layout is a {@link ValueLayout} the carrier type is determined through {@link ValueLayout#carrier()}.</li>
-     * <li>If the layout is a {@link GroupLayout} the carrier type is {@link MemorySegment}.</li>
-     * <li>If the layout is a {@link PaddingLayout}, or {@link SequenceLayout} an {@link IllegalArgumentException} is thrown.</li>
+     * <li>If the layout is a {@link GroupLayout} or a {@link SequenceLayout}, the carrier type is {@link MemorySegment}.</li>
      * </ul>
+     *
+     * @apiNote A function descriptor cannot, by construction, contain any padding layouts. As such, it is not
+     * necessary to specify how padding layout should be mapped to carrier types.
      *
      * @return the method type consisting of the carrier types of the layouts in this function descriptor
      * @throws IllegalArgumentException if one or more layouts in the function descriptor can not be mapped to carrier
@@ -110,6 +115,8 @@ public sealed interface FunctionDescriptor permits FunctionDescriptorImpl {
      * Creates a function descriptor with the given return and argument layouts.
      * @param resLayout the return layout.
      * @param argLayouts the argument layouts.
+     * @throws IllegalArgumentException if {@code resLayout} is a padding layout.
+     * @throws IllegalArgumentException if one of the layouts in {@code argLayouts} is a padding layout.
      * @return the new function descriptor.
      */
     static FunctionDescriptor of(MemoryLayout resLayout, MemoryLayout... argLayouts) {
@@ -121,6 +128,7 @@ public sealed interface FunctionDescriptor permits FunctionDescriptorImpl {
     /**
      * Creates a function descriptor with the given argument layouts and no return layout.
      * @param argLayouts the argument layouts.
+     * @throws IllegalArgumentException if one of the layouts in {@code argLayouts} is a padding layout.
      * @return the new function descriptor.
      */
     static FunctionDescriptor ofVoid(MemoryLayout... argLayouts) {
