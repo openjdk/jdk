@@ -339,7 +339,7 @@ public abstract class SelectionKey {
      * behaves in exactly the same way as the expression
      *
      * {@snippet lang=java :
-     * k.readyOps() & OP_READ != 0
+     *     k.readyOps() & OP_READ != 0
      * }
      *
      * <p> If this key's channel does not support read operations then this
@@ -362,7 +362,7 @@ public abstract class SelectionKey {
      * behaves in exactly the same way as the expression
      *
      * {@snippet lang=java :
-     * k.readyOps() & OP_WRITE != 0
+     *     k.readyOps() & OP_WRITE != 0
      * }
      *
      * <p> If this key's channel does not support write operations then this
@@ -386,7 +386,7 @@ public abstract class SelectionKey {
      * behaves in exactly the same way as the expression
      *
      * {@snippet lang=java :
-     * k.readyOps() & OP_CONNECT != 0
+     *     k.readyOps() & OP_CONNECT != 0
      * }
      *
      * <p> If this key's channel does not support socket-connect operations
@@ -410,7 +410,7 @@ public abstract class SelectionKey {
      * behaves in exactly the same way as the expression
      *
      * {@snippet lang=java :
-     * k.readyOps() & OP_ACCEPT != 0
+     *     k.readyOps() & OP_ACCEPT != 0
      * }
      *
      * <p> If this key's channel does not support socket-accept operations then

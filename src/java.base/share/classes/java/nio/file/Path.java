@@ -846,6 +846,7 @@ public interface Path
      * <p> An invocation of this method behaves in exactly the same way as the
      * invocation
      * {@snippet lang=java :
+     *     // @link substring="register" target="Watchable#register" :
      *     register(watcher, events, new WatchEvent.Modifier[0]);
      * }
      *
