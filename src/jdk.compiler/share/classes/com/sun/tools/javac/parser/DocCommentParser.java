@@ -520,6 +520,7 @@ public class DocCommentParser {
      * It is an error if the beginning of the next tag is detected.
      */
     protected DCText quotedString() {
+        newline = false;
         int pos = bp;
         nextChar();
 
