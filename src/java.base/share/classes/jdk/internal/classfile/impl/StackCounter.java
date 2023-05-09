@@ -66,12 +66,12 @@ public final class StackCounter {
         }
     }
 
-    private void stack(int delta) {
+    private void addStackSlot(int delta) {
         stack += delta;
         if (stack > maxStack) maxStack = stack;
     }
 
-    private void local(int index) {
+    private void ensureLocalSlot(int index) {
         if (index >= maxLocals) maxLocals = index + 1;
     }
 
@@ -124,113 +124,113 @@ public final class StackCounter {
                         next();
                     case ACONST_NULL, ICONST_M1, ICONST_0, ICONST_1, ICONST_2, ICONST_3, ICONST_4, ICONST_5, SIPUSH, BIPUSH,
                          FCONST_0, FCONST_1, FCONST_2, DUP, DUP_X1, DUP_X2, I2L, I2D, F2L, F2D, NEW ->
-                        stack(+1);
+                        addStackSlot(+1);
                     case LCONST_0, LCONST_1, DCONST_0, DCONST_1, DUP2, DUP2_X1, DUP2_X2 ->
-                        stack(+2);
+                        addStackSlot(+2);
                     case POP, MONITORENTER, MONITOREXIT, IADD, ISUB, IMUL, IDIV, IREM, ISHL, ISHR, IUSHR, IOR, IXOR, IAND,
                          LSHL, LSHR, LUSHR, FADD, FSUB, FMUL, FDIV, FREM, L2I, L2F, D2F, FCMPL, FCMPG, D2I ->
-                        stack(-1);
+                        addStackSlot(-1);
                     case POP2, LADD, LSUB, LMUL, LDIV, LREM, LAND, LOR, LXOR, DADD, DSUB, DMUL, DDIV, DREM ->
-                        stack(-2);
+                        addStackSlot(-2);
                     case IASTORE, BASTORE, CASTORE, SASTORE, FASTORE, AASTORE, LCMP, DCMPL, DCMPG ->
-                        stack(-3);
+                        addStackSlot(-3);
                     case LASTORE, DASTORE ->
-                        stack(-4);
+                        addStackSlot(-4);
                     case LDC ->
                         processLdc(bcs.getIndexU1());
                     case LDC_W, LDC2_W ->
                         processLdc(bcs.getIndexU2());
                     case ILOAD, FLOAD, ALOAD -> {
-                        local(bcs.getIndex());
-                        stack(+1);
+                        ensureLocalSlot(bcs.getIndex());
+                        addStackSlot(+1);
                     }
                     case LLOAD, DLOAD -> {
-                        local(bcs.getIndex() + 1);
-                        stack(+2);
+                        ensureLocalSlot(bcs.getIndex() + 1);
+                        addStackSlot(+2);
                     }
                     case ILOAD_0, FLOAD_0, ALOAD_0 -> {
-                        local(0);
-                        stack(+1);
+                        ensureLocalSlot(0);
+                        addStackSlot(+1);
                     }
                     case ILOAD_1, FLOAD_1, ALOAD_1 -> {
-                        local(1);
-                        stack(+1);
+                        ensureLocalSlot(1);
+                        addStackSlot(+1);
                     }
                     case ILOAD_2, FLOAD_2, ALOAD_2 -> {
-                        local(2);
-                        stack(+1);
+                        ensureLocalSlot(2);
+                        addStackSlot(+1);
                     }
                     case ILOAD_3, FLOAD_3, ALOAD_3 -> {
-                        local(3);
-                        stack(+1);
+                        ensureLocalSlot(3);
+                        addStackSlot(+1);
                     }
                     case LLOAD_0, DLOAD_0 -> {
-                        local(1);
-                        stack(+2);
+                        ensureLocalSlot(1);
+                        addStackSlot(+2);
                     }
                     case LLOAD_1, DLOAD_1 -> {
-                        local(2);
-                        stack(+2);
+                        ensureLocalSlot(2);
+                        addStackSlot(+2);
                     }
                     case LLOAD_2, DLOAD_2 -> {
-                        local(3);
-                        stack(+2);
+                        ensureLocalSlot(3);
+                        addStackSlot(+2);
                     }
                     case LLOAD_3, DLOAD_3 -> {
-                        local(4);
-                        stack(+2);
+                        ensureLocalSlot(4);
+                        addStackSlot(+2);
                     }
                     case IALOAD, BALOAD, CALOAD, SALOAD, FALOAD, AALOAD ->  {
-                        stack(-1);
+                        addStackSlot(-1);
                     }
                     case ISTORE, FSTORE, ASTORE -> {
-                        local(bcs.getIndex());
-                        stack(-1);
+                        ensureLocalSlot(bcs.getIndex());
+                        addStackSlot(-1);
                     }
                     case LSTORE, DSTORE -> {
-                        local(bcs.getIndex() + 1);
-                        stack(-2);
+                        ensureLocalSlot(bcs.getIndex() + 1);
+                        addStackSlot(-2);
                     }
                     case ISTORE_0, FSTORE_0, ASTORE_0 -> {
-                        local(0);
-                        stack(-1);
+                        ensureLocalSlot(0);
+                        addStackSlot(-1);
                     }
                     case ISTORE_1, FSTORE_1, ASTORE_1 -> {
-                        local(1);
-                        stack(-1);
+                        ensureLocalSlot(1);
+                        addStackSlot(-1);
                     }
                     case ISTORE_2, FSTORE_2, ASTORE_2 -> {
-                        local(2);
-                        stack(-1);
+                        ensureLocalSlot(2);
+                        addStackSlot(-1);
                     }
                     case ISTORE_3, FSTORE_3, ASTORE_3 -> {
-                        local(3);
-                        stack(-1);
+                        ensureLocalSlot(3);
+                        addStackSlot(-1);
                     }
                     case LSTORE_0, DSTORE_0 -> {
-                        local(1);
-                        stack(-2);
+                        ensureLocalSlot(1);
+                        addStackSlot(-2);
                     }
                     case LSTORE_1, DSTORE_1 -> {
-                        local(2);
-                        stack(-2);
+                        ensureLocalSlot(2);
+                        addStackSlot(-2);
                     }
                     case LSTORE_2, DSTORE_2 -> {
-                        local(3);
-                        stack(-2);
+                        ensureLocalSlot(3);
+                        addStackSlot(-2);
                     }
                     case LSTORE_3, DSTORE_3 -> {
-                        local(4);
-                        stack(-2);
+                        ensureLocalSlot(4);
+                        addStackSlot(-2);
                     }
                     case IINC ->
-                        local(bcs.getIndex());
+                        ensureLocalSlot(bcs.getIndex());
                     case IF_ICMPEQ, IF_ICMPNE, IF_ICMPLT, IF_ICMPGE, IF_ICMPGT, IF_ICMPLE, IF_ACMPEQ, IF_ACMPNE -> {
-                        stack(-2);
+                        addStackSlot(-2);
                         jump(bcs.dest());
                     }
                     case IFEQ, IFNE, IFLT, IFGE, IFGT, IFLE, IFNULL, IFNONNULL -> {
-                        stack(-1);
+                        addStackSlot(-1);
                         jump(bcs.dest());
                     }
                     case GOTO -> {
@@ -245,7 +245,7 @@ public final class StackCounter {
                         int alignedBci = RawBytecodeHelper.align(bci + 1);
                         int defaultOfset = bcs.getInt(alignedBci);
                         int keys, delta;
-                        stack(-1);
+                        addStackSlot(-1);
                         if (bcs.rawCode == TABLESWITCH) {
                             int low = bcs.getInt(alignedBci + 4);
                             int high = bcs.getInt(alignedBci + 2 * 4);
@@ -281,24 +281,24 @@ public final class StackCounter {
                         next();
                     }
                     case LRETURN, DRETURN -> {
-                        stack(-2);
+                        addStackSlot(-2);
                         next();
                     }
                     case IRETURN, FRETURN, ARETURN, ATHROW -> {
-                        stack(-1);
+                        addStackSlot(-1);
                         next();
                     }
                     case GETSTATIC, PUTSTATIC, GETFIELD, PUTFIELD -> {
                         var tk = TypeKind.fromDescriptor(((MemberRefEntry)cp.entryByIndex(bcs.getIndexU2())).nameAndType().type().stringValue());
                         switch (bcs.rawCode) {
                             case GETSTATIC ->
-                                stack(tk.slotSize());
+                                addStackSlot(tk.slotSize());
                             case PUTSTATIC ->
-                                stack(-tk.slotSize());
+                                addStackSlot(-tk.slotSize());
                             case GETFIELD ->
-                                stack(tk.slotSize() - 1);
+                                addStackSlot(tk.slotSize() - 1);
                             case PUTFIELD ->
-                                stack(-tk.slotSize() - 1);
+                                addStackSlot(-tk.slotSize() - 1);
                             default -> throw new AssertionError("Should not reach here");
                         }
                     }
@@ -307,27 +307,27 @@ public final class StackCounter {
                         var nameAndType = opcode == INVOKEDYNAMIC ? ((DynamicConstantPoolEntry)cpe).nameAndType() : ((MemberRefEntry)cpe).nameAndType();
                         var mDesc = MethodTypeDesc.ofDescriptor(nameAndType.type().stringValue());
                         for (var arg : mDesc.parameterList()) {
-                            stack(-TypeKind.from(arg).slotSize());
+                            addStackSlot(-TypeKind.from(arg).slotSize());
                         }
                         if (opcode != INVOKESTATIC && opcode != INVOKEDYNAMIC) {
-                            stack(-1);
+                            addStackSlot(-1);
                         }
-                        stack(TypeKind.from(mDesc.returnType()).slotSize());
+                        addStackSlot(TypeKind.from(mDesc.returnType()).slotSize());
                     }
                     case MULTIANEWARRAY ->
-                        stack (1 - bcs.getU1(bcs.bci + 3));
+                        addStackSlot (1 - bcs.getU1(bcs.bci + 3));
                     case JSR -> {
-                        stack(+1);
+                        addStackSlot(+1);
                         jump(bcs.dest()); //here we lost track of the exact stack size after return from subroutine
-                        stack(-1);
+                        addStackSlot(-1);
                     }
                     case JSR_W -> {
-                        stack(+1);
+                        addStackSlot(+1);
                         jump(bcs.destW()); //here we lost track of the exact stack size after return from subroutine
-                        stack(-1);
+                        addStackSlot(-1);
                     }
                     case RET -> {
-                        local(bcs.getIndex());
+                        ensureLocalSlot(bcs.getIndex());
                         rets++; //subroutines must be counted for later maxStack correction
                         next();
                     }
@@ -360,11 +360,11 @@ public final class StackCounter {
     private void processLdc(int index) {
         switch (cp.entryByIndex(index).tag()) {
             case TAG_UTF8, TAG_STRING, TAG_CLASS, TAG_INTEGER, TAG_FLOAT, TAG_METHODHANDLE, TAG_METHODTYPE ->
-                stack(+1);
+                addStackSlot(+1);
             case TAG_DOUBLE, TAG_LONG ->
-                stack(+2);
+                addStackSlot(+2);
             case TAG_CONSTANTDYNAMIC ->
-                stack(((ConstantDynamicEntry)cp.entryByIndex(index)).typeKind().slotSize());
+                addStackSlot(((ConstantDynamicEntry)cp.entryByIndex(index)).typeKind().slotSize());
             default ->
                 error("CP entry #%d %s is not loadable constant".formatted(index, cp.entryByIndex(index).tag()));
         }
