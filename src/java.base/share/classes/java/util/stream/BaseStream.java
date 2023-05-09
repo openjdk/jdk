@@ -69,6 +69,11 @@ public interface BaseStream<T, S extends BaseStream<T, S>>
      * <p>This is a <a href="package-summary.html#StreamOps">terminal
      * operation</a>.
      *
+     * <p>
+     * This method is provided as an "escape hatch" to enable
+     * arbitrary client-controlled pipeline traversals in the event that the
+     * existing operations are not sufficient to the task.
+     *
      * @return the element iterator for this stream
      */
     Iterator<T> iterator();
@@ -78,6 +83,11 @@ public interface BaseStream<T, S extends BaseStream<T, S>>
      *
      * <p>This is a <a href="package-summary.html#StreamOps">terminal
      * operation</a>.
+     *
+     * <p>
+     * This method is provided as an "escape hatch" to enable
+     * arbitrary client-controlled pipeline traversals in the event that the
+     * existing operations are not sufficient to the task.
      *
      * <p>
      * The returned spliterator should report the set of characteristics derived
