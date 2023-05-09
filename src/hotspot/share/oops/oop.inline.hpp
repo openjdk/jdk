@@ -319,7 +319,7 @@ oop oopDesc::forward_to_self_atomic(markWord compare, atomic_memory_order order)
       return forwardee(old_mark);
     }
   } else {
-    return forward_to_atomic(oop(this), compare, order);
+    return forward_to_atomic(cast_to_oop(this), compare, order);
   }
 }
 
