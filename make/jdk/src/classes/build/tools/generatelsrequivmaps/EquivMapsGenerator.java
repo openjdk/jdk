@@ -266,23 +266,18 @@ public class EquivMapsGenerator {
              * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
              * or visit www.oracle.com if you need additional information or have any
              * questions.
-            */
-           
+            */\n
             """;
 
     private static final String headerText =
             """
-            package sun.util.locale;
-           
+            package sun.util.locale;\n
             import java.util.HashMap;
-            import java.util.Map;
-           
-            final class LocaleEquivalentMaps {
-           
+            import java.util.Map;\n
+            final class LocaleEquivalentMaps {\n
                 static final Map<String, String> singleEquivMap;
                 static final Map<String, String[]> multiEquivsMap;
-                static final Map<String, String> regionVariantEquivMap;
-           
+                static final Map<String, String> regionVariantEquivMap;\n
             """;
 
     private static String getMapsText() {
@@ -290,8 +285,7 @@ public class EquivMapsGenerator {
                     static {
                         singleEquivMap = HashMap.newHashMap(%s);
                         multiEquivsMap = HashMap.newHashMap(%s);
-                        regionVariantEquivMap = HashMap.newHashMap(%s);
-               
+                        regionVariantEquivMap = HashMap.newHashMap(%s);\n
                 """.formatted(
                 sortedLanguageMap1.size(),
                 sortedLanguageMap2.size(),
