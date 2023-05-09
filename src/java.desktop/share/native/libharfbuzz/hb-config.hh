@@ -136,6 +136,10 @@
 #define HB_NO_SUBSET_CFF
 #endif
 
+#ifdef HB_NO_DRAW
+#define HB_NO_OUTLINE
+#endif
+
 #ifdef HB_NO_GETENV
 #define HB_NO_UNISCRIBE_BUG_COMPATIBLE
 #endif

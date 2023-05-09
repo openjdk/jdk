@@ -50,7 +50,6 @@
 #include "opto/runtime.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/subnode.hpp"
-#include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "prims/unsafe.hpp"
 #include "runtime/jniHandles.inline.hpp"
@@ -2829,29 +2828,8 @@ bool LibraryCallKit::inline_unsafe_allocate() {
     test = _gvn.transform(new SubINode(inst, bits));
     // The 'test' is non-zero if we need to take a slow path.
   }
-  Node* obj = new_instance(kls, test);
-#if INCLUDE_JVMTI
-  // Check if JvmtiExport::_should_notify_object_alloc is enabled and post notifications
-  IdealKit ideal(this);
-  IdealVariable result(ideal); ideal.declarations_done();
-  Node* ONE = ideal.ConI(1);
-  Node* addr = makecon(TypeRawPtr::make((address) &JvmtiExport::_should_notify_object_alloc));
-  Node* should_post_vm_object_alloc = ideal.load(ideal.ctrl(), addr, TypeInt::BOOL, T_BOOLEAN, Compile::AliasIdxRaw);
 
-  ideal.sync_kit(this);
-  ideal.if_then(should_post_vm_object_alloc, BoolTest::eq, ONE); {
-    const TypeFunc *tf = OptoRuntime::notify_jvmti_object_alloc_Type();
-    address funcAddr = OptoRuntime::notify_jvmti_object_alloc();
-    sync_kit(ideal);
-    Node* call = make_runtime_call(RC_NO_LEAF, tf, funcAddr, "_notify_jvmti_object_alloc", TypePtr::BOTTOM, obj);
-    ideal.sync_kit(this);
-    ideal.set(result,_gvn.transform(new ProjNode(call, TypeFunc::Parms+0)));
-  } ideal.else_(); {
-    ideal.set(result,obj);
-  } ideal.end_if();
-  final_sync(ideal);
-  obj = ideal.value(result);
-#endif //INCLUDE_JVMTI
+  Node* obj = new_instance(kls, test);
   set_result(obj);
   return true;
 }

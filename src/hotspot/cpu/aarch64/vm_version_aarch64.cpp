@@ -591,7 +591,7 @@ static bool check_info_file(const char* fpath,
       fclose(fp);
       return true;
     }
-    if (virt2 != NULL && strcasestr(line, virt2) != 0) {
+    if (virt2 != nullptr && strcasestr(line, virt2) != 0) {
       Abstract_VM_Version::_detected_virtualization = vt2;
       fclose(fp);
       return true;
@@ -609,7 +609,7 @@ void VM_Version::check_virtualizations() {
   if (check_info_file(pname_file, "KVM", KVM, "VMWare", VMWare)) {
     return;
   }
-  check_info_file(tname_file, "Xen", XenPVHVM, NULL, NoDetectedVirtualization);
+  check_info_file(tname_file, "Xen", XenPVHVM, nullptr, NoDetectedVirtualization);
 #endif
 }
 

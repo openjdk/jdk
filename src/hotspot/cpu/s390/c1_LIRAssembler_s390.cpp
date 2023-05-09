@@ -856,13 +856,13 @@ void LIR_Assembler::stack2stack(LIR_Opr src, LIR_Opr dest, BasicType type) {
 // 4-byte accesses only! Don't use it to access 8 bytes!
 Address LIR_Assembler::as_Address_hi(LIR_Address* addr) {
   ShouldNotCallThis();
-  return 0; // unused
+  return Address(); // unused
 }
 
 // 4-byte accesses only! Don't use it to access 8 bytes!
 Address LIR_Assembler::as_Address_lo(LIR_Address* addr) {
   ShouldNotCallThis();
-  return 0; // unused
+  return Address(); // unused
 }
 
 void LIR_Assembler::mem2reg(LIR_Opr src_opr, LIR_Opr dest, BasicType type, LIR_PatchCode patch_code,

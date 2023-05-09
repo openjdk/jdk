@@ -238,7 +238,7 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
      */
     private HotSpotResolvedObjectType getHolder() {
         if (holder == null) {
-            holder = compilerToVM().getResolvedJavaType(this, config().constantPoolHolderOffset, false);
+            holder = compilerToVM().getResolvedJavaType(this, config().constantPoolHolderOffset);
         }
         return holder;
     }

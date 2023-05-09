@@ -287,16 +287,16 @@ void C2_MacroAssembler::string_indexof(Register str2, Register str1,
     cmp(cnt1, (u1)16); // small patterns still should be handled by simple algorithm
     br(LT, LINEAR_MEDIUM);
     mov(result, zr);
-    RuntimeAddress stub = NULL;
+    RuntimeAddress stub = nullptr;
     if (isL) {
       stub = RuntimeAddress(StubRoutines::aarch64::string_indexof_linear_ll());
-      assert(stub.target() != NULL, "string_indexof_linear_ll stub has not been generated");
+      assert(stub.target() != nullptr, "string_indexof_linear_ll stub has not been generated");
     } else if (str1_isL) {
       stub = RuntimeAddress(StubRoutines::aarch64::string_indexof_linear_ul());
-       assert(stub.target() != NULL, "string_indexof_linear_ul stub has not been generated");
+       assert(stub.target() != nullptr, "string_indexof_linear_ul stub has not been generated");
     } else {
       stub = RuntimeAddress(StubRoutines::aarch64::string_indexof_linear_uu());
-      assert(stub.target() != NULL, "string_indexof_linear_uu stub has not been generated");
+      assert(stub.target() != nullptr, "string_indexof_linear_uu stub has not been generated");
     }
     address call = trampoline_call(stub);
     if (call == nullptr) {
@@ -844,7 +844,7 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
   }
 
   bind(STUB);
-    RuntimeAddress stub = NULL;
+    RuntimeAddress stub = nullptr;
     switch(ae) {
       case StrIntrinsicNode::LL:
         stub = RuntimeAddress(StubRoutines::aarch64::compare_long_string_LL());
@@ -861,7 +861,7 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
       default:
         ShouldNotReachHere();
      }
-    assert(stub.target() != NULL, "compare_long_string stub has not been generated");
+    assert(stub.target() != nullptr, "compare_long_string stub has not been generated");
     address call = trampoline_call(stub);
     if (call == nullptr) {
       DEBUG_ONLY(reset_labels(DONE, SHORT_LOOP, SHORT_STRING, SHORT_LAST, SHORT_LOOP_TAIL, SHORT_LAST2, SHORT_LAST_INIT, SHORT_LOOP_START));
@@ -2049,9 +2049,9 @@ void C2_MacroAssembler::vector_signum_sve(FloatRegister dst, FloatRegister src, 
 }
 
 bool C2_MacroAssembler::in_scratch_emit_size() {
-  if (ciEnv::current()->task() != NULL) {
+  if (ciEnv::current()->task() != nullptr) {
     PhaseOutput* phase_output = Compile::current()->output();
-    if (phase_output != NULL && phase_output->in_scratch_emit_size()) {
+    if (phase_output != nullptr && phase_output->in_scratch_emit_size()) {
       return true;
     }
   }

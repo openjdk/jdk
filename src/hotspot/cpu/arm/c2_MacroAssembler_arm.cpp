@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
+#include "logging/log.hpp"
 #include "opto/c2_MacroAssembler.hpp"
 #include "runtime/basicLock.hpp"
 
@@ -80,13 +81,7 @@ void C2_MacroAssembler::char_arrays_equals(Register ary1, Register ary2,
 
 void C2_MacroAssembler::fast_lock(Register Roop, Register Rbox, Register Rscratch, Register Rscratch2) {
   assert(VM_Version::supports_ldrex(), "unsupported, yet?");
-
-  Register Rmark      = Rscratch2;
-
-  assert(Roop != Rscratch, "");
-  assert(Roop != Rmark, "");
-  assert(Rbox != Rscratch, "");
-  assert(Rbox != Rmark, "");
+  assert_different_registers(Roop, Rbox, Rscratch, Rscratch2);
 
   Label fast_lock, done;
 
@@ -97,29 +92,43 @@ void C2_MacroAssembler::fast_lock(Register Roop, Register Rbox, Register Rscratc
     b(done, ne);
   }
 
-  ldr(Rmark, Address(Roop, oopDesc::mark_offset_in_bytes()));
-  tst(Rmark, markWord::unlocked_value);
-  b(fast_lock, ne);
+  if (LockingMode == LM_LIGHTWEIGHT) {
+    log_trace(fastlock)("C2_MacroAssembler::lock fast");
 
-  // Check for recursive lock
-  // See comments in InterpreterMacroAssembler::lock_object for
-  // explanations on the fast recursive locking check.
-  // -1- test low 2 bits
-  movs(Rscratch, AsmOperand(Rmark, lsl, 30));
-  // -2- test (hdr - SP) if the low two bits are 0
-  sub(Rscratch, Rmark, SP, eq);
-  movs(Rscratch, AsmOperand(Rscratch, lsr, exact_log2(os::vm_page_size())), eq);
-  // If still 'eq' then recursive locking OK
-  // set to zero if recursive lock, set to non zero otherwise (see discussion in JDK-8153107)
-  str(Rscratch, Address(Rbox, BasicLock::displaced_header_offset_in_bytes()));
-  b(done);
+    fast_lock_2(Roop /* obj */, Rbox /* t1 */, Rscratch /* t2 */, Rscratch2 /* t3 */,
+                1 /* savemask (save t1) */, done);
 
-  bind(fast_lock);
-  str(Rmark, Address(Rbox, BasicLock::displaced_header_offset_in_bytes()));
+    // Success: set Z
+    cmp(Roop, Roop);
 
-  bool allow_fallthrough_on_failure = true;
-  bool one_shot = true;
-  cas_for_lock_acquire(Rmark, Rbox, Roop, Rscratch, done, allow_fallthrough_on_failure, one_shot);
+  } else if (LockingMode == LM_LEGACY) {
+
+    Register Rmark      = Rscratch2;
+
+    ldr(Rmark, Address(Roop, oopDesc::mark_offset_in_bytes()));
+    tst(Rmark, markWord::unlocked_value);
+    b(fast_lock, ne);
+
+    // Check for recursive lock
+    // See comments in InterpreterMacroAssembler::lock_object for
+    // explanations on the fast recursive locking check.
+    // -1- test low 2 bits
+    movs(Rscratch, AsmOperand(Rmark, lsl, 30));
+    // -2- test (hdr - SP) if the low two bits are 0
+    sub(Rscratch, Rmark, SP, eq);
+    movs(Rscratch, AsmOperand(Rscratch, lsr, exact_log2(os::vm_page_size())), eq);
+    // If still 'eq' then recursive locking OK
+    // set to zero if recursive lock, set to non zero otherwise (see discussion in JDK-8153107)
+    str(Rscratch, Address(Rbox, BasicLock::displaced_header_offset_in_bytes()));
+    b(done);
+
+    bind(fast_lock);
+    str(Rmark, Address(Rbox, BasicLock::displaced_header_offset_in_bytes()));
+
+    bool allow_fallthrough_on_failure = true;
+    bool one_shot = true;
+    cas_for_lock_acquire(Rmark, Rbox, Roop, Rscratch, done, allow_fallthrough_on_failure, one_shot);
+  }
 
   bind(done);
 
@@ -130,26 +139,37 @@ void C2_MacroAssembler::fast_lock(Register Roop, Register Rbox, Register Rscratc
 
 void C2_MacroAssembler::fast_unlock(Register Roop, Register Rbox, Register Rscratch, Register Rscratch2) {
   assert(VM_Version::supports_ldrex(), "unsupported, yet?");
-
-  Register Rmark      = Rscratch2;
-
-  assert(Roop != Rscratch, "");
-  assert(Roop != Rmark, "");
-  assert(Rbox != Rscratch, "");
-  assert(Rbox != Rmark, "");
+  assert_different_registers(Roop, Rbox, Rscratch, Rscratch2);
 
   Label done;
 
-  ldr(Rmark, Address(Rbox, BasicLock::displaced_header_offset_in_bytes()));
-  // If hdr is null, we've got recursive locking and there's nothing more to do
-  cmp(Rmark, 0);
-  b(done, eq);
+  if (LockingMode == LM_LIGHTWEIGHT) {
+    log_trace(fastlock)("C2_MacroAssembler::unlock fast");
 
-  // Restore the object header
-  bool allow_fallthrough_on_failure = true;
-  bool one_shot = true;
-  cas_for_lock_release(Rbox, Rmark, Roop, Rscratch, done, allow_fallthrough_on_failure, one_shot);
+    fast_unlock_2(Roop /* obj */, Rbox /* t1 */, Rscratch /* t2 */, Rscratch2 /* t3 */,
+                  1 /* savemask (save t1) */, done);
 
+    cmp(Roop, Roop); // Success: Set Z
+    // Fall through
+
+  } else if (LockingMode == LM_LEGACY) {
+
+    Register Rmark      = Rscratch2;
+
+    // Find the lock address and load the displaced header from the stack.
+    ldr(Rmark, Address(Rbox, BasicLock::displaced_header_offset_in_bytes()));
+    // If hdr is null, we've got recursive locking and there's nothing more to do
+    cmp(Rmark, 0);
+    b(done, eq);
+
+    // Restore the object header
+    bool allow_fallthrough_on_failure = true;
+    bool one_shot = true;
+    cas_for_lock_release(Rbox, Rmark, Roop, Rscratch, done, allow_fallthrough_on_failure, one_shot);
+  }
   bind(done);
-}
 
+  // At this point flags are set as follows:
+  //  EQ -> Success
+  //  NE -> Failure, branch to slow path
+}
