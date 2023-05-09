@@ -101,8 +101,7 @@ public class XalanTest {
             ks = new X509KeySelector(keystore, false);
         }
         if (!validator.validate("signature.xml", ks, new HttpURIDereferencer(), false)) {
-            throw new Exception
-                    ("At least one signature did not validate as expected");
+            throw new Exception("Signature did not validate as expected");
         }
     }
 

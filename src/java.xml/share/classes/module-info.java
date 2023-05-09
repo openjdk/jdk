@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -900,21 +900,6 @@ module java.xml {
     exports org.xml.sax;
     exports org.xml.sax.ext;
     exports org.xml.sax.helpers;
-
-    exports com.sun.org.apache.xml.internal.dtm to
-        java.xml.crypto;
-    exports com.sun.org.apache.xml.internal.utils to
-        java.xml.crypto;
-    exports com.sun.org.apache.xpath.internal to
-        java.xml.crypto;
-    exports com.sun.org.apache.xpath.internal.compiler to
-        java.xml.crypto;
-    exports com.sun.org.apache.xpath.internal.functions to
-        java.xml.crypto;
-    exports com.sun.org.apache.xpath.internal.objects to
-        java.xml.crypto;
-    exports com.sun.org.apache.xpath.internal.res to
-        java.xml.crypto;
 
     uses javax.xml.datatype.DatatypeFactory;
     uses javax.xml.parsers.DocumentBuilderFactory;
