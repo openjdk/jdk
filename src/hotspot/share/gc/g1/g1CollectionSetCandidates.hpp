@@ -43,7 +43,6 @@ using G1CollectionSetRegionListIterator = GrowableArrayIterator<HeapRegion*>;
 // but their efficiencies are not stored.
 class G1CollectionSetRegionList {
   GrowableArray<HeapRegion*> _regions;
-  size_t _reclaimable_bytes;
 
 public:
   G1CollectionSetRegionList();
@@ -60,8 +59,6 @@ public:
   HeapRegion* at(uint index);
 
   uint length() const { return (uint)_regions.length(); }
-
-  size_t reclaimable_bytes() const { return _reclaimable_bytes; }
 
   G1CollectionSetRegionListIterator begin() const { return _regions.begin(); }
   G1CollectionSetRegionListIterator end() const { return _regions.end(); }
@@ -105,8 +102,8 @@ private:
 public:
   G1CollectionCandidateList();
 
-  // Merge the given set of candidates into this list, preserving the efficiency ordering.
-  void merge(CandidateInfo* candidate_infos, uint num_infos);
+  // Put the given set of candidates into this list, preserving the efficiency ordering.
+  void set(CandidateInfo* candidate_infos, uint num_infos);
   // Removes any HeapRegions stored in this list also in the other list. The other
   // list may only contain regions in this list, sorted by gc efficiency. It need
   // not be a prefix of this list. Returns the number of regions removed.
@@ -180,7 +177,7 @@ class G1CollectionSetCandidates : public CHeapObj<mtGC> {
   uint _max_regions;
 
   // The number of regions from the last merge of candidates from the marking.
-  uint _last_merge_length;
+  uint _last_marking_candidates_length;
 
   size_t _reclaimable_bytes;
 
@@ -198,13 +195,13 @@ public:
 
   // Merge collection set candidates from marking into the current marking list
   // (which needs to be empty).
-  void merge_candidates_from_marking(G1CollectionCandidateList::CandidateInfo* candidate_infos,
-                                     uint num_infos,
-                                     size_t reclaimable_bytes);
+  void set_candidates_from_marking(G1CollectionCandidateList::CandidateInfo* candidate_infos,
+                                   uint num_infos,
+                                   size_t reclaimable_bytes);
   // The most recent length of the list that had been merged last via
-  // merge_candidates_from_marking(). Used for calculating minimum collection set
+  // set_candidates_from_marking(). Used for calculating minimum collection set
   // regions.
-  uint last_merge_length() const { return _last_merge_length; }
+  uint last_marking_candidates_length() const { return _last_marking_candidates_length; }
 
   // Remove the given regions from the candidates. All given regions must be part
   // of the candidates.

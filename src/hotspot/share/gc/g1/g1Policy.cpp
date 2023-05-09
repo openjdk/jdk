@@ -485,7 +485,7 @@ uint G1Policy::calculate_desired_eden_length_before_young_only(double base_time_
 uint G1Policy::calculate_desired_eden_length_before_mixed(double base_time_ms,
                                                           uint min_eden_length,
                                                           uint max_eden_length) const {
-  uint min_marking_candidates = MIN2(calc_min_old_cset_length(candidates()->last_merge_length()),
+  uint min_marking_candidates = MIN2(calc_min_old_cset_length(candidates()->last_marking_candidates_length()),
                                      candidates()->marking_regions_length());
   double predicted_region_evac_time_ms = base_time_ms;
   for (HeapRegion* r : candidates()->marking_regions()) {
@@ -1427,7 +1427,7 @@ double G1Policy::select_candidates_from_marking(G1CollectionCandidateList* marki
 
   double optional_threshold_ms = time_remaining_ms * optional_prediction_fraction();
 
-  const uint min_old_cset_length = calc_min_old_cset_length(candidates()->last_merge_length());
+  const uint min_old_cset_length = calc_min_old_cset_length(candidates()->last_marking_candidates_length());
   const uint max_old_cset_length = MAX2(min_old_cset_length, calc_max_old_cset_length());
   const uint max_optional_regions = max_old_cset_length - min_old_cset_length;
   bool check_time_remaining = use_adaptive_young_list_length();

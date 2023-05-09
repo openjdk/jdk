@@ -31,17 +31,11 @@
 
 G1CollectionCandidateList::G1CollectionCandidateList() : _candidates(2, mtGC) { }
 
-void G1CollectionCandidateList::merge(G1CollectionCandidateList::CandidateInfo* candidate_infos, uint num_infos) {
-  bool was_empty = _candidates.is_empty();
+void G1CollectionCandidateList::set(G1CollectionCandidateList::CandidateInfo* candidate_infos, uint num_infos) {
+  assert(_candidates.is_empty(), "must be");
 
   GrowableArrayFromArray<G1CollectionCandidateList::CandidateInfo> a(candidate_infos, (int)num_infos);
   _candidates.appendAll(&a);
-
-  if (!was_empty) {
-    // Just sort everything if there were already regions in the candidates to maintain
-    // order. This should be a rare case.
-    _candidates.sort(order_regions);
-  }
 }
 
 size_t G1CollectionCandidateList::remove(G1CollectionSetRegionList* other) {
@@ -52,8 +46,7 @@ size_t G1CollectionCandidateList::remove(G1CollectionSetRegionList* other) {
     return 0;
   }
 
-  other->verify();
-
+  size_t reclaimable_bytes_removed = 0;
   // Create a list from scratch, copying over the elements from the candidate
   // list not in the other list. Finally deallocate and overwrite the old list.
   int new_length = _candidates.length() - other->length();
@@ -66,6 +59,7 @@ size_t G1CollectionCandidateList::remove(G1CollectionSetRegionList* other) {
       new_list.append(_candidates.at(candidate_idx));
     } else {
       other_idx++;
+      reclaimable_bytes_removed += _candidates.at(candidate_idx)._r->reclaimable_bytes();
     }
   }
   _candidates.swap(&new_list);
@@ -73,7 +67,7 @@ size_t G1CollectionCandidateList::remove(G1CollectionSetRegionList* other) {
   verify();
   assert(_candidates.length() == new_length, "must be %u %u", _candidates.length(), new_length);
 
-  return other->reclaimable_bytes();
+  return reclaimable_bytes_removed;
 }
 
 void G1CollectionCandidateList::clear() {
@@ -133,14 +127,11 @@ int G1CollectionCandidateList::order_regions(CandidateInfo* ci1, CandidateInfo* 
   }
 }
 
-G1CollectionSetRegionList::G1CollectionSetRegionList() :
-  _regions(2, mtGC), _reclaimable_bytes(0) {
-}
+G1CollectionSetRegionList::G1CollectionSetRegionList() : _regions(2, mtGC) { }
 
 void G1CollectionSetRegionList::append(HeapRegion* r) {
   assert(!_regions.contains(r), "must be");
   _regions.append(r);
-  _reclaimable_bytes += r->reclaimable_bytes();
 }
 
 void G1CollectionSetRegionList::remove(G1CollectionSetRegionList* other) {
@@ -157,7 +148,6 @@ void G1CollectionSetRegionList::remove(G1CollectionSetRegionList* other) {
     return;
   }
   _regions.remove_till(other->length());
-  _reclaimable_bytes -= other->reclaimable_bytes();
 }
 
 HeapRegion* G1CollectionSetRegionList::at(uint index) {
@@ -166,21 +156,7 @@ HeapRegion* G1CollectionSetRegionList::at(uint index) {
 
 void G1CollectionSetRegionList::clear() {
   _regions.clear();
-  _reclaimable_bytes = 0;
 }
-
-#ifndef PRODUCT
-void G1CollectionSetRegionList::verify() {
-  // We can't verify sorting because this list does not store efficiencies which
-  // can change between invocations.
-
-  size_t reclaimable_bytes = 0;
-  for (HeapRegion* r : _regions) {
-    reclaimable_bytes += r->reclaimable_bytes();
-  }
-  assert(_reclaimable_bytes == reclaimable_bytes, "Mismatch between calculated and stored reclaimable bytes");
-}
-#endif
 
 void G1CollectionSetRegionList::print(const char* prefix) {
   LogTarget(Debug, gc, ergo, cset) lt;
@@ -195,7 +171,7 @@ void G1CollectionSetRegionList::print(const char* prefix) {
 }
 
 G1CollectionSetCandidates::G1CollectionSetCandidates() :
-  _marking_regions(), _contains_map(nullptr), _max_regions(0), _last_merge_length(0), _reclaimable_bytes(0) { }
+  _marking_regions(), _contains_map(nullptr), _max_regions(0), _last_marking_candidates_length(0), _reclaimable_bytes(0) { }
 
 G1CollectionSetCandidates::~G1CollectionSetCandidates() {
   FREE_C_HEAP_ARRAY(CandidateOrigin, _contains_map);
@@ -219,21 +195,23 @@ void G1CollectionSetCandidates::clear() {
     _contains_map[i] = CandidateOrigin::Invalid;
   }
   _reclaimable_bytes = 0;
-  _last_merge_length = 0;
+  _last_marking_candidates_length = 0;
 }
 
-void G1CollectionSetCandidates::merge_candidates_from_marking(G1CollectionCandidateList::CandidateInfo* candidate_infos, uint num_infos, size_t reclaimable_bytes) {
+void G1CollectionSetCandidates::set_candidates_from_marking(G1CollectionCandidateList::CandidateInfo* candidate_infos,
+                                                            uint num_infos,
+                                                            size_t reclaimable_bytes) {
   assert(_marking_regions.length() == 0, "must be empty before adding new ones");
 
   verify();
 
-  _marking_regions.merge(candidate_infos, num_infos);
+  _marking_regions.set(candidate_infos, num_infos);
   for (uint i = 0; i < num_infos; i++) {
     HeapRegion* r = candidate_infos[i]._r;
     assert(!contains(r), "must not contain region %u", r->hrm_index());
     _contains_map[r->hrm_index()] = CandidateOrigin::Marking;
   }
-  _last_merge_length = num_infos;
+  _last_marking_candidates_length = num_infos;
   _reclaimable_bytes += reclaimable_bytes;
 
   verify();

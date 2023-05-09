@@ -111,45 +111,6 @@ class G1BuildCandidateRegionsTask : public WorkerTask {
       }
     }
 
-    // Early prune (remove) regions meeting the G1HeapWastePercent criteria. That
-    // is, either until only the minimum amount of old collection set regions are
-    // available (for forward progress in evacuation) or the waste accumulated by the
-    // removed regions is above the maximum allowed waste.
-    void prune(uint num_candidates, uint& num_pruned, size_t& wasted_bytes) {
-      G1Policy* p = G1CollectedHeap::heap()->policy();
-
-      uint min_old_cset_length = p->calc_min_old_cset_length(num_candidates);
-      num_pruned = 0;
-      wasted_bytes = 0;
-
-      if (min_old_cset_length >= num_candidates) {
-        // We take all of the candidate regions to provide some forward progress.
-        return;
-      }
-
-      size_t allowed_waste = p->allowed_waste_in_collection_set();
-      uint max_to_prune = num_candidates - min_old_cset_length;
-
-      while (true) {
-        HeapRegion* r = _data[num_candidates - num_pruned - 1]._r;
-        size_t const reclaimable = r->reclaimable_bytes();
-        if (num_pruned >= max_to_prune ||
-            wasted_bytes + reclaimable > allowed_waste) {
-          break;
-        }
-        r->rem_set()->clear(true /* cardset_only */);
-
-        wasted_bytes += reclaimable;
-        num_pruned++;
-      }
-
-      log_debug(gc, ergo, cset)("Pruned %u regions out of %u, leaving " SIZE_FORMAT " bytes waste (allowed " SIZE_FORMAT ")",
-                                num_pruned,
-                                num_candidates,
-                                wasted_bytes,
-                                allowed_waste);
-    }
-
     CandidateInfo* array() const { return _data; }
   };
 
@@ -195,9 +156,8 @@ class G1BuildCandidateRegionsTask : public WorkerTask {
       // before we fill them up).
       if (should_add(r) && !G1CollectedHeap::heap()->is_old_gc_alloc_region(r)) {
         add_region(r);
-      } else if (r->is_old() && !r->is_collection_set_candidate()) {
-        // Keep remembered sets for humongous regions and regions in the collection
-        // set candidates, otherwise clean them out.
+      } else if (r->is_old()) {
+        // Keep remembered sets for humongous regions, otherwise clean them out.
         r->rem_set()->clear(true /* only_cardset */);
       } else {
         assert(!r->is_old() || !r->rem_set()->is_tracked(),
@@ -229,6 +189,51 @@ class G1BuildCandidateRegionsTask : public WorkerTask {
     }
   }
 
+  // Early prune (remove) regions meeting the G1HeapWastePercent criteria. That
+  // is, either until only the minimum amount of old collection set regions are
+  // available (for forward progress in evacuation) or the waste accumulated by the
+  // removed regions is above the maximum allowed waste.
+  // Updates number of candidates and reclaimable bytes given.
+  void prune(CandidateInfo* data) {
+    G1Policy* p = G1CollectedHeap::heap()->policy();
+
+    uint num_candidates = Atomic::load(&_num_regions_added);
+
+    uint min_old_cset_length = p->calc_min_old_cset_length(num_candidates);
+    uint num_pruned = 0;
+    size_t wasted_bytes = 0;
+
+    if (min_old_cset_length >= num_candidates) {
+      // We take all of the candidate regions to provide some forward progress.
+      return;
+    }
+
+    size_t allowed_waste = p->allowed_waste_in_collection_set();
+    uint max_to_prune = num_candidates - min_old_cset_length;
+
+    while (true) {
+      HeapRegion* r = data[num_candidates - num_pruned - 1]._r;
+      size_t const reclaimable = r->reclaimable_bytes();
+      if (num_pruned >= max_to_prune ||
+          wasted_bytes + reclaimable > allowed_waste) {
+        break;
+      }
+      r->rem_set()->clear(true /* cardset_only */);
+
+      wasted_bytes += reclaimable;
+      num_pruned++;
+    }
+
+    log_debug(gc, ergo, cset)("Pruned %u regions out of %u, leaving " SIZE_FORMAT " bytes waste (allowed " SIZE_FORMAT ")",
+                              num_pruned,
+                              num_candidates,
+                              wasted_bytes,
+                              allowed_waste);
+
+    Atomic::sub(&_num_regions_added, num_pruned, memory_order_relaxed);
+    Atomic::sub(&_reclaimable_bytes_added, wasted_bytes, memory_order_relaxed);
+  }
+
 public:
   G1BuildCandidateRegionsTask(uint max_num_regions, uint chunk_size, uint num_workers) :
     WorkerTask("G1 Build Candidate Regions"),
@@ -246,14 +251,10 @@ public:
 
   void sort_and_prune_into(G1CollectionSetCandidates* candidates) {
     _result.sort_by_efficiency();
-
-    uint num_pruned;
-    size_t pruned_wasted_bytes;
-
-    _result.prune(_num_regions_added, num_pruned, pruned_wasted_bytes);
-    candidates->merge_candidates_from_marking(_result.array(),
-                                              _num_regions_added - num_pruned,
-                                              _reclaimable_bytes_added - pruned_wasted_bytes);
+    prune(_result.array());
+    candidates->set_candidates_from_marking(_result.array(),
+                                            _num_regions_added,
+                                            _reclaimable_bytes_added);
   }
 };
 
