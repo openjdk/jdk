@@ -25,8 +25,6 @@
 
 package javax.lang.model.util;
 
-import jdk.internal.javac.PreviewFeature;
-
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;

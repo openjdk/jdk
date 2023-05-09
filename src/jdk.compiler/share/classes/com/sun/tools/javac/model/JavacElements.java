@@ -85,7 +85,6 @@ import static com.sun.tools.javac.tree.JCTree.Tag.*;
  * risk.  This code and its internal interfaces are subject to change
  * or deletion without notice.</b></p>
  */
-@SuppressWarnings("preview")
 public class JavacElements implements Elements {
 
     private final JavaCompiler javaCompiler;
