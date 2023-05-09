@@ -299,7 +299,7 @@ public final class WeekFields implements Serializable {
      * standard can call
      * {@snippet lang=java :
      * Locale enIsoLoc = Locale.forLanguageTag("en-u-fw-mon");
-     * WeekFields.of(theLoc).getFirstDayOfWeek(); // returns MONDAY
+     * WeekFields.of(enIsoLoc).getFirstDayOfWeek(); // returns MONDAY
      * }
      *
      * @param locale  the locale to use, not null
