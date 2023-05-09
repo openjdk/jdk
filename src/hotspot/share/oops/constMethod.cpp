@@ -199,7 +199,7 @@ u2* ConstMethod::checked_exceptions_length_addr() const {
 }
 
 u2* ConstMethod::exception_table_length_addr() const {
-  assert(has_exception_handler(), "called only if table is present");
+  assert(has_exception_table(), "called only if table is present");
   if (has_checked_exceptions()) {
     // If checked_exception present, locate immediately before them.
     return (u2*) checked_exceptions_start() - 1;
@@ -217,7 +217,7 @@ u2* ConstMethod::exception_table_length_addr() const {
 
 u2* ConstMethod::localvariable_table_length_addr() const {
   assert(has_localvariable_table(), "called only if table is present");
-  if (has_exception_handler()) {
+  if (has_exception_table()) {
     // If exception_table present, locate immediately before them.
     return (u2*) exception_table_start() - 1;
   } else {
@@ -239,30 +239,29 @@ u2* ConstMethod::localvariable_table_length_addr() const {
 
 // Update the flags to indicate the presence of these optional fields.
 void ConstMethod::set_inlined_tables_length(InlineTableSizes* sizes) {
-  _flags = 0;
   if (sizes->compressed_linenumber_size() > 0)
-    _flags |= _has_linenumber_table;
+    set_has_linenumber_table();
   if (sizes->generic_signature_index() != 0)
-    _flags |= _has_generic_signature;
+    set_has_generic_signature();
   if (sizes->method_parameters_length() >= 0)
-    _flags |= _has_method_parameters;
+    set_has_method_parameters();
   if (sizes->checked_exceptions_length() > 0)
-    _flags |= _has_checked_exceptions;
+    set_has_checked_exceptions();
   if (sizes->exception_table_length() > 0)
-    _flags |= _has_exception_table;
+    set_has_exception_table();
   if (sizes->localvariable_table_length() > 0)
-    _flags |= _has_localvariable_table;
+    set_has_localvariable_table();
 
   // annotations, they are all pointer sized embedded objects so don't have
   // a length embedded also.
   if (sizes->method_annotations_length() > 0)
-    _flags |= _has_method_annotations;
+    set_has_method_annotations();
   if (sizes->parameter_annotations_length() > 0)
-    _flags |= _has_parameter_annotations;
+    set_has_parameter_annotations();
   if (sizes->type_annotations_length() > 0)
-    _flags |= _has_type_annotations;
+    set_has_type_annotations();
   if (sizes->default_annotations_length() > 0)
-    _flags |= _has_default_annotations;
+    set_has_default_annotations();
 
   // This code is extremely brittle and should possibly be revised.
   // The *_length_addr functions walk backwards through the
@@ -329,7 +328,7 @@ LocalVariableTableElement* ConstMethod::localvariable_table_start() const {
 }
 
 int ConstMethod::exception_table_length() const {
-  return has_exception_handler() ? *(exception_table_length_addr()) : 0;
+  return has_exception_table() ? *(exception_table_length_addr()) : 0;
 }
 
 ExceptionTableElement* ConstMethod::exception_table_start() const {
@@ -431,13 +430,14 @@ void ConstMethod::print_on(outputStream* st) const {
   ResourceMark rm;
   st->print_cr("%s", internal_name());
   Method* m = method();
-  st->print(" - method:       " PTR_FORMAT " ", p2i(m));
+  st->print(" - method:           " PTR_FORMAT " ", p2i(m));
   if (m != nullptr) {
     m->print_value_on(st);
   }
   st->cr();
+  st->print(" - flags:            0x%x  ", _flags.as_int()); _flags.print_on(st); st->cr();
   if (has_stackmap_table()) {
-    st->print(" - stackmap data:       ");
+    st->print(" - stackmap data:    ");
     stackmap_data()->print_value_on(st);
     st->cr();
   }
@@ -484,7 +484,7 @@ void ConstMethod::verify_on(outputStream* st) {
     u2* addr = checked_exceptions_length_addr();
     guarantee(*addr > 0 && (address) addr >= compressed_table_end && (address) addr < m_end, "invalid method layout");
   }
-  if (has_exception_handler()) {
+  if (has_exception_table()) {
     u2* addr = exception_table_length_addr();
      guarantee(*addr > 0 && (address) addr >= compressed_table_end && (address) addr < m_end, "invalid method layout");
   }
@@ -496,7 +496,7 @@ void ConstMethod::verify_on(outputStream* st) {
   u2* uncompressed_table_start;
   if (has_localvariable_table()) {
     uncompressed_table_start = (u2*) localvariable_table_start();
-  } else if (has_exception_handler()) {
+  } else if (has_exception_table()) {
     uncompressed_table_start = (u2*) exception_table_start();
   } else if (has_checked_exceptions()) {
       uncompressed_table_start = (u2*) checked_exceptions_start();

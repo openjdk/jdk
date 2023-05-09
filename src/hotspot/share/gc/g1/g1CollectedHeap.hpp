@@ -352,10 +352,10 @@ private:
                                    "should not be at a safepoint"));          \
   } while (0)
 
-#define assert_at_safepoint_on_vm_thread()                                    \
-  do {                                                                        \
-    assert_at_safepoint();                                                    \
-    assert(Thread::current_or_null() != NULL, "no current thread");           \
+#define assert_at_safepoint_on_vm_thread()                                        \
+  do {                                                                            \
+    assert_at_safepoint();                                                        \
+    assert(Thread::current_or_null() != nullptr, "no current thread");            \
     assert(Thread::current()->is_VM_thread(), "current thread is not VM thread"); \
   } while (0)
 
@@ -404,7 +404,7 @@ private:
                                                       size_t word_size);
 
   // Attempt to allocate a humongous object of the given size. Return
-  // NULL if unsuccessful.
+  // null if unsuccessful.
   HeapWord* humongous_obj_allocate(size_t word_size);
 
   // The following two methods, allocate_new_tlab() and
@@ -427,7 +427,7 @@ private:
   //   retry the allocation.
   //
   // * If all allocation attempts fail, even after trying to schedule
-  //   an evacuation pause, allocate_new_tlab() will return NULL,
+  //   an evacuation pause, allocate_new_tlab() will return null,
   //   whereas mem_allocate() will attempt a heap expansion and/or
   //   schedule a Full GC.
   //
@@ -461,7 +461,7 @@ private:
 
   // Allocation attempt that should be called during safepoints (e.g.,
   // at the end of a successful GC). expect_null_mutator_alloc_region
-  // specifies whether the mutator alloc region is expected to be NULL
+  // specifies whether the mutator alloc region is expected to be null
   // or not.
   HeapWord* attempt_allocation_at_safepoint(size_t word_size,
                                             bool expect_null_mutator_alloc_region);
@@ -479,16 +479,13 @@ private:
   void retire_gc_alloc_region(HeapRegion* alloc_region,
                               size_t allocated_bytes, G1HeapRegionAttr dest);
 
-  // - if explicit_gc is true, the GC is for a System.gc() etc,
-  //   otherwise it's for a failed allocation.
   // - if clear_all_soft_refs is true, all soft references should be
   //   cleared during the GC.
   // - if do_maximal_compaction is true, full gc will do a maximally
   //   compacting collection, leaving no dead wood.
   // - it returns false if it is unable to do the collection due to the
   //   GC locker being active, true otherwise.
-  bool do_full_collection(bool explicit_gc,
-                          bool clear_all_soft_refs,
+  bool do_full_collection(bool clear_all_soft_refs,
                           bool do_maximal_compaction);
 
   // Callback from VM_G1CollectFull operation, or collect_as_vm_thread.
@@ -505,7 +502,7 @@ private:
   // Internal helpers used during full GC to split it up to
   // increase readability.
   bool abort_concurrent_cycle();
-  void verify_before_full_collection(bool explicit_gc);
+  void verify_before_full_collection();
   void prepare_heap_for_full_collection();
   void prepare_for_mutator_after_full_collection();
   void abort_refinement();
@@ -522,7 +519,7 @@ private:
   // Attempting to expand the heap sufficiently
   // to support an allocation of the given "word_size".  If
   // successful, perform the allocation and return the address of the
-  // allocated block, or else "NULL".
+  // allocated block, or else null.
   HeapWord* expand_and_allocate(size_t word_size);
 
   void verify_numa_regions(const char* desc);
@@ -577,7 +574,7 @@ public:
   // Returns true if the heap was expanded by the requested amount;
   // false otherwise.
   // (Rounds up to a HeapRegion boundary.)
-  bool expand(size_t expand_bytes, WorkerThreads* pretouch_workers = NULL, double* expand_time_ms = NULL);
+  bool expand(size_t expand_bytes, WorkerThreads* pretouch_workers = nullptr, double* expand_time_ms = nullptr);
   bool expand_single_region(uint node_index);
 
   // Returns the PLAB statistics for a given destination.
@@ -681,7 +678,7 @@ public:
 
   // Frees a region by resetting its metadata and adding it to the free list
   // passed as a parameter (this is usually a local list which will be appended
-  // to the master free list later or NULL if free list management is handled
+  // to the master free list later or null if free list management is handled
   // in another way).
   // Callers must ensure they are the only one calling free on the given region
   // at the same time.
@@ -1121,7 +1118,7 @@ public:
   // The variant with the HeapRegionClaimer guarantees that the closure will be
   // applied to a particular region exactly once.
   void collection_set_iterate_increment_from(HeapRegionClosure *blk, uint worker_id) {
-    collection_set_iterate_increment_from(blk, NULL, worker_id);
+    collection_set_iterate_increment_from(blk, nullptr, worker_id);
   }
   void collection_set_iterate_increment_from(HeapRegionClosure *blk, HeapRegionClaimer* hr_claimer, uint worker_id);
   // Iterate over the array of region indexes, uint regions[length], applying
@@ -1133,11 +1130,11 @@ public:
                                  size_t length,
                                  uint worker_id) const;
 
-  // Returns the HeapRegion that contains addr. addr must not be nullptr.
+  // Returns the HeapRegion that contains addr. addr must not be null.
   inline HeapRegion* heap_region_containing(const void* addr) const;
 
-  // Returns the HeapRegion that contains addr, or nullptr if that is an uncommitted
-  // region. addr must not be nullptr.
+  // Returns the HeapRegion that contains addr, or null if that is an uncommitted
+  // region. addr must not be null.
   inline HeapRegion* heap_region_containing_or_null(const void* addr) const;
 
   // A CollectedHeap is divided into a dense sequence of "blocks"; that is,
@@ -1229,7 +1226,7 @@ public:
   // Determine if an object is dead, given only the object itself.
   // This will find the region to which the object belongs and
   // then call the region version of the same function.
-  // If obj is NULL it is not dead.
+  // If obj is null it is not dead.
   inline bool is_obj_dead(const oop obj) const;
 
   inline bool is_obj_dead_full(const oop obj, const HeapRegion* hr) const;

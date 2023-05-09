@@ -95,7 +95,7 @@ public:
     _pause_cause(cause),
     // Fake a "no cause" and manually add the correct string in update_young_gc_name()
     // to make the string look more natural.
-    _tt(update_young_gc_name(), NULL, GCCause::_no_gc, true) {
+    _tt(update_young_gc_name(), nullptr, GCCause::_no_gc, true) {
   }
 
   ~G1YoungGCTraceTime() {
@@ -793,7 +793,7 @@ public:
   void do_oop(narrowOop* p) { guarantee(false, "Not needed"); }
   void do_oop(oop* p) {
     oop obj = *p;
-    assert(obj != NULL, "the caller should have filtered out NULL values");
+    assert(obj != nullptr, "the caller should have filtered out null values");
 
     const G1HeapRegionAttr region_attr =_g1h->region_attr(obj);
     if (!region_attr.is_in_cset_or_humongous_candidate()) {

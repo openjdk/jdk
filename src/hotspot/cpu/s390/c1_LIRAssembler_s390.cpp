@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2019 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -238,7 +238,7 @@ int LIR_Assembler::emit_unwind_handler() {
 
   // Remove the activation and dispatch to the unwind handler.
   __ pop_frame();
-  __ z_lg(Z_EXC_PC, _z_abi16(return_pc), Z_SP);
+  __ z_lg(Z_EXC_PC, _z_common_abi(return_pc), Z_SP);
 
   // Z_EXC_OOP: exception oop
   // Z_EXC_PC: exception pc
@@ -856,13 +856,13 @@ void LIR_Assembler::stack2stack(LIR_Opr src, LIR_Opr dest, BasicType type) {
 // 4-byte accesses only! Don't use it to access 8 bytes!
 Address LIR_Assembler::as_Address_hi(LIR_Address* addr) {
   ShouldNotCallThis();
-  return 0; // unused
+  return Address(); // unused
 }
 
 // 4-byte accesses only! Don't use it to access 8 bytes!
 Address LIR_Assembler::as_Address_lo(LIR_Address* addr) {
   ShouldNotCallThis();
-  return 0; // unused
+  return Address(); // unused
 }
 
 void LIR_Assembler::mem2reg(LIR_Opr src_opr, LIR_Opr dest, BasicType type, LIR_PatchCode patch_code,
@@ -2984,7 +2984,7 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
       __ z_bru(next);
     }
   } else {
-    __ asm_assert_ne("unexpected null obj", __LINE__);
+    __ asm_assert(Assembler::bcondNotZero, "unexpected null obj", __LINE__);
   }
 
   __ bind(update);
@@ -2995,7 +2995,7 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
       __ load_klass(tmp1, tmp1);
       metadata2reg(exact_klass->constant_encoding(), tmp2);
       __ z_cgr(tmp1, tmp2);
-      __ asm_assert_eq("exact klass and actual klass differ", __LINE__);
+      __ asm_assert(Assembler::bcondEqual, "exact klass and actual klass differ", __LINE__);
     }
 #endif
 

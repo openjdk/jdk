@@ -292,7 +292,7 @@ JvmtiVTMSTransitionDisabler::~JvmtiVTMSTransitionDisabler() {
 // disable VTMS transitions for one virtual thread
 void
 JvmtiVTMSTransitionDisabler::VTMS_transition_disable_for_one() {
-  assert(_thread != NULL, "sanity check");
+  assert(_thread != nullptr, "sanity check");
   JavaThread* thread = JavaThread::current();
   HandleMark hm(thread);
   Handle vth = Handle(thread, JNIHandles::resolve_external_guard(_thread));
@@ -511,8 +511,95 @@ JvmtiVTMSTransitionDisabler::finish_VTMS_transition(jthread vthread, bool is_mou
 #endif
 }
 
+// set VTMS transition bit value in JavaThread and java.lang.VirtualThread object
+void JvmtiVTMSTransitionDisabler::set_is_in_VTMS_transition(JavaThread* thread, jobject vthread, bool in_trans) {
+  oop vt = JNIHandles::resolve_external_guard(vthread);
+  java_lang_Thread::set_is_in_VTMS_transition(vt, in_trans);
+  thread->set_is_in_VTMS_transition(in_trans);
+}
+
 void
-JvmtiVTMSTransitionDisabler::VTMS_mount_begin(jobject vthread, jboolean first_mount) {
+JvmtiVTMSTransitionDisabler::VTMS_vthread_start(jobject vthread) {
+  VTMS_mount_end(vthread);
+  JavaThread* thread = JavaThread::current();
+
+  assert(!thread->is_in_VTMS_transition(), "sanity check");
+  assert(!thread->is_in_tmp_VTMS_transition(), "sanity check");
+
+  if (JvmtiExport::can_support_virtual_threads()) {
+    JvmtiEventController::thread_started(thread);
+    if (JvmtiExport::should_post_vthread_start()) {
+      JvmtiExport::post_vthread_start(vthread);
+    }
+  } else { // compatibility for vthread unaware agents: legacy thread_start
+    if (PostVirtualThreadCompatibleLifecycleEvents &&
+        JvmtiExport::should_post_thread_life()) {
+      // JvmtiEventController::thread_started is called here
+      JvmtiExport::post_thread_start(thread);
+    }
+  }
+  // post VirtualThreadMount event after VirtualThreadStart
+  if (JvmtiExport::should_post_vthread_mount()) {
+    JvmtiExport::post_vthread_mount(vthread);
+  }
+}
+
+void
+JvmtiVTMSTransitionDisabler::VTMS_vthread_end(jobject vthread) {
+  JavaThread* thread = JavaThread::current();
+
+  assert(!thread->is_in_VTMS_transition(), "sanity check");
+  assert(!thread->is_in_tmp_VTMS_transition(), "sanity check");
+
+  // post VirtualThreadUnmount event before VirtualThreadEnd
+  if (JvmtiExport::should_post_vthread_unmount()) {
+    JvmtiExport::post_vthread_unmount(vthread);
+  }
+  if (JvmtiExport::can_support_virtual_threads()) {
+    if (JvmtiExport::should_post_vthread_end()) {
+      JvmtiExport::post_vthread_end(vthread);
+    }
+  } else { // compatibility for vthread unaware agents: legacy thread_end
+    if (PostVirtualThreadCompatibleLifecycleEvents &&
+        JvmtiExport::should_post_thread_life()) {
+      JvmtiExport::post_thread_end(thread);
+    }
+  }
+  if (thread->jvmti_thread_state() != nullptr) {
+    JvmtiExport::cleanup_thread(thread);
+    thread->set_jvmti_thread_state(nullptr);
+    oop vt = JNIHandles::resolve(vthread);
+    java_lang_Thread::set_jvmti_thread_state(vt, nullptr);
+  }
+  VTMS_unmount_begin(vthread);
+}
+
+void
+JvmtiVTMSTransitionDisabler::VTMS_vthread_mount(jobject vthread, bool hide) {
+  if (hide) {
+    VTMS_mount_begin(vthread);
+  } else {
+    VTMS_mount_end(vthread);
+    if (JvmtiExport::should_post_vthread_mount()) {
+      JvmtiExport::post_vthread_mount(vthread);
+    }
+  }
+}
+
+void
+JvmtiVTMSTransitionDisabler::VTMS_vthread_unmount(jobject vthread, bool hide) {
+  if (hide) {
+    if (JvmtiExport::should_post_vthread_unmount()) {
+      JvmtiExport::post_vthread_unmount(vthread);
+    }
+    VTMS_unmount_begin(vthread);
+  } else {
+    VTMS_unmount_end(vthread);
+  }
+}
+
+void
+JvmtiVTMSTransitionDisabler::VTMS_mount_begin(jobject vthread) {
   JavaThread* thread = JavaThread::current();
   assert(!thread->is_in_tmp_VTMS_transition(), "sanity check");
   assert(!thread->is_in_VTMS_transition(), "sanity check");
@@ -520,7 +607,7 @@ JvmtiVTMSTransitionDisabler::VTMS_mount_begin(jobject vthread, jboolean first_mo
 }
 
 void
-JvmtiVTMSTransitionDisabler::VTMS_mount_end(jobject vthread, jboolean first_mount) {
+JvmtiVTMSTransitionDisabler::VTMS_mount_end(jobject vthread) {
   JavaThread* thread = JavaThread::current();
   oop vt = JNIHandles::resolve(vthread);
 
@@ -536,62 +623,21 @@ JvmtiVTMSTransitionDisabler::VTMS_mount_end(jobject vthread, jboolean first_moun
   assert(thread->is_in_VTMS_transition(), "sanity check");
   assert(!thread->is_in_tmp_VTMS_transition(), "sanity check");
   finish_VTMS_transition(vthread, /* is_mount */ true);
-  if (first_mount) {
-    // thread start
-    if (JvmtiExport::can_support_virtual_threads()) {
-      JvmtiEventController::thread_started(thread);
-      if (JvmtiExport::should_post_vthread_start()) {
-        JvmtiExport::post_vthread_start(vthread);
-      }
-    } else { // compatibility for vthread unaware agents: legacy thread_start
-      if (PostVirtualThreadCompatibleLifecycleEvents &&
-          JvmtiExport::should_post_thread_life()) {
-        // JvmtiEventController::thread_started is called here
-        JvmtiExport::post_thread_start(thread);
-      }
-    }
-  }
-  if (JvmtiExport::should_post_vthread_mount()) {
-    JvmtiExport::post_vthread_mount(vthread);
-  }
 }
 
 void
-JvmtiVTMSTransitionDisabler::VTMS_unmount_begin(jobject vthread, jboolean last_unmount) {
+JvmtiVTMSTransitionDisabler::VTMS_unmount_begin(jobject vthread) {
   JavaThread* thread = JavaThread::current();
-  HandleMark hm(thread);
-  Handle ct(thread, thread->threadObj());
 
-  if (JvmtiExport::should_post_vthread_unmount()) {
-    JvmtiExport::post_vthread_unmount(vthread);
-  }
-  if (last_unmount) {
-    if (JvmtiExport::can_support_virtual_threads()) {
-      if (JvmtiExport::should_post_vthread_end()) {
-        JvmtiExport::post_vthread_end(vthread);
-      }
-    } else { // compatibility for vthread unaware agents: legacy thread_end
-      if (PostVirtualThreadCompatibleLifecycleEvents &&
-          JvmtiExport::should_post_thread_life()) {
-        JvmtiExport::post_thread_end(thread);
-      }
-    }
-  }
   assert(!thread->is_in_tmp_VTMS_transition(), "sanity check");
   assert(!thread->is_in_VTMS_transition(), "sanity check");
-  start_VTMS_transition(vthread, /* is_mount */ false);
 
-  if (last_unmount && thread->jvmti_thread_state() != nullptr) {
-    JvmtiExport::cleanup_thread(thread);
-    thread->set_jvmti_thread_state(nullptr);
-    oop vt = JNIHandles::resolve(vthread);
-    java_lang_Thread::set_jvmti_thread_state(vt, nullptr);
-  }
-  thread->rebind_to_jvmti_thread_state_of(ct());
+  start_VTMS_transition(vthread, /* is_mount */ false);
+  thread->rebind_to_jvmti_thread_state_of(thread->threadObj());
 }
 
 void
-JvmtiVTMSTransitionDisabler::VTMS_unmount_end(jobject vthread, jboolean last_unmount) {
+JvmtiVTMSTransitionDisabler::VTMS_unmount_end(jobject vthread) {
   JavaThread* thread = JavaThread::current();
   assert(thread->is_in_VTMS_transition(), "sanity check");
   assert(!thread->is_in_tmp_VTMS_transition(), "sanity check");

@@ -44,7 +44,7 @@ import org.openjdk.jmh.annotations.Warmup;
 @Fork(1)
 public class CharBufferAppend {
 
-    static final int SIZE = 8192;
+    static final int SIZE = 32768;
 
     static String str;
     static StringBuffer strbuf;
@@ -137,5 +137,41 @@ public class CharBufferAppend {
     public CharBuffer appendSubStringBuilder() {
         hbDst.clear();
         return hbDst.append(strbld, SIZE/4, 3*SIZE/4);
+    }
+
+    @Benchmark
+    public CharBuffer appendStringToDirect() {
+        dbDst.clear();
+        return dbDst.append(str);
+    }
+
+    @Benchmark
+    public CharBuffer appendStringBufferToDirect() {
+        dbDst.clear();
+        return dbDst.append(strbuf);
+    }
+
+    @Benchmark
+    public CharBuffer appendStringBuilderToDirect() {
+        dbDst.clear();
+        return dbDst.append(strbld);
+    }
+
+    @Benchmark
+    public CharBuffer appendSubStringToDirect() {
+        dbDst.clear();
+        return dbDst.append(str, SIZE/4, 3*SIZE/4);
+    }
+
+    @Benchmark
+    public CharBuffer appendSubStringBufferToDirect() {
+        dbDst.clear();
+        return dbDst.append(strbuf, SIZE/4, 3*SIZE/4);
+    }
+
+    @Benchmark
+    public CharBuffer appendSubStringBuilderToDirect() {
+        dbDst.clear();
+        return dbDst.append(strbld, SIZE/4, 3*SIZE/4);
     }
 }

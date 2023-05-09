@@ -63,8 +63,8 @@ public class VarHandleExact {
 
     @Setup
     public void setup() {
-        arena = Arena.openConfined();
-        data = MemorySegment.allocateNative(JAVA_INT, arena.scope());
+        arena = Arena.ofConfined();
+        data = arena.allocate(JAVA_INT);
     }
 
     @TearDown
