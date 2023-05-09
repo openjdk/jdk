@@ -119,9 +119,11 @@ public class MissedDragEnterTest {
         robot.mouseRelease(InputEvent.BUTTON1_MASK);
         robot.keyRelease(KeyEvent.VK_CONTROL);
 
-        if (!panel.getResult()) {
-            throw new RuntimeException("The test failed.");
-        }
+        EventQueue.invokeAndWait(() -> {
+            if (!panel.getResult()) {
+                throw new RuntimeException("The test failed.");
+            }
+        });
     }
 }
 
