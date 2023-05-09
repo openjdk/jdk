@@ -30,8 +30,6 @@
 #include "utilities/ostream.hpp"
 #include "utilities/powerOfTwo.hpp"
 
-#include "logging/log.hpp"
-
 // We cannot use 0, because that may already be a valid base address in zero-based heaps.
 // 0x1 is safe because heap base addresses must be aligned by much larger alignment
 HeapWord* const SlidingForwarding::UNUSED_BASE = reinterpret_cast<HeapWord*>(0x1);
@@ -51,13 +49,17 @@ void SlidingForwarding::initialize(MemRegion heap, size_t region_size_words) {
   if (UseAltGCForwarding) {
     _heap_start = heap.start();
 
-    if (UseSerialGC && heap.word_size() <= (1 << NUM_OFFSET_BITS)) {
-      // In this case we can treat the whole heap as a single region and
-      // make the encoding very simple.
+    // If the heap is small enough to fit directly into the available offset bits,
+    // and we are running Serial GC, we can treat the whole heap as a single region
+    // if it happens to be aligned to allow biasing.
+    size_t rounded_heap_size = round_up_power_of_2(heap.byte_size());
+
+    if (UseSerialGC && (heap.word_size() <= (1 << NUM_OFFSET_BITS)) &&
+        is_aligned((uintptr_t)_heap_start, rounded_heap_size)) {
       _num_regions = 1;
       _region_size_words = heap.word_size();
-      _region_size_bytes_shift = log2i_exact(round_up_power_of_2(_region_size_words)) + LogHeapWordSize;
-  } else {
+      _region_size_bytes_shift = log2i_exact(rounded_heap_size);
+    } else {
       _num_regions = align_up(pointer_delta(heap.end(), heap.start()), region_size_words) / region_size_words;
       _region_size_words = region_size_words;
       _region_size_bytes_shift = log2i_exact(_region_size_words) + LogHeapWordSize;
@@ -82,8 +84,9 @@ void SlidingForwarding::begin() {
 
     size_t max = _num_regions * NUM_TARGET_REGIONS;
     _bases_table = NEW_C_HEAP_ARRAY(HeapWord*, max, mtGC);
-    _biased_bases[0] = _bases_table - _heap_start_region_bias;
-    _biased_bases[1] = _bases_table + _num_regions - _heap_start_region_bias;
+    HeapWord** biased_start = _bases_table - _heap_start_region_bias;
+    _biased_bases[0] = biased_start;
+    _biased_bases[1] = biased_start + _num_regions;
     for (size_t i = 0; i < max; i++) {
       _bases_table[i] = UNUSED_BASE;
     }
@@ -143,24 +146,18 @@ size_t SlidingForwarding::FallbackTable::home_index(HeapWord* from) {
 void SlidingForwarding::FallbackTable::forward_to(HeapWord* from, HeapWord* to) {
   size_t idx = home_index(from);
   FallbackTableEntry* head = &_table[idx];
-  FallbackTableEntry* entry = head;
+#ifdef ASSERT
   // Search existing entry in chain starting at idx.
-  while (entry != nullptr) {
-    if (entry->_from == from || entry->_from == nullptr) {
-      break;
-    }
-    entry = entry->_next;
+  for (FallbackTableEntry* entry = head; entry != nullptr; entry = entry->_next) {
+    assert(entry->_from != from,"Don't re-forward entries into the fallback-table");
   }
-  if (entry == nullptr) {
-    // No entry found, create new one and insert after head.
-    FallbackTableEntry* new_entry = NEW_C_HEAP_OBJ(FallbackTableEntry, mtGC);
-    *new_entry = *head;
-    head->_next = new_entry;
-    entry = head; // Set from and to fields below.
-  }
-  // Set from and to in new or found entry.
-  entry->_from = from;
-  entry->_to   = to;
+#endif
+  // No entry found, create new one and insert after head.
+  FallbackTableEntry* new_entry = NEW_C_HEAP_OBJ(FallbackTableEntry, mtGC);
+  *new_entry = *head;
+  head->_next = new_entry;
+  head->_from = from;
+  head->_to   = to;
 }
 
 HeapWord* SlidingForwarding::FallbackTable::forwardee(HeapWord* from) const {
