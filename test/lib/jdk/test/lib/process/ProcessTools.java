@@ -904,10 +904,10 @@ public final class ProcessTools {
                         tg.uncaughtThrowable = error;
                     }
                 });
-            if (tg.uncaughtThrowable != null) {
-                throw new RuntimeException(tg.uncaughtThrowable);
-            }
             vthread.join();
+            if (tg.uncaughtThrowable != null) {
+                throw tg.uncaughtThrowable;
+            }
         } else if (wrapper.equals("Kernel")) {
             MainThreadGroup tg = new MainThreadGroup();
             Thread t = new Thread(tg, () -> {
@@ -922,7 +922,7 @@ public final class ProcessTools {
             t.start();
             t.join();
             if (tg.uncaughtThrowable != null) {
-                throw new RuntimeException(tg.uncaughtThrowable);
+                throw tg.uncaughtThrowable;
             }
         } else {
             mainMethod.invoke(null, new Object[] { classArgs });
