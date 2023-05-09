@@ -48,8 +48,6 @@ public:
 
 class G1YoungGenerationCounters : public G1GenerationCounters {
 public:
-  // We pad the capacity three times given that the young generation
-  // contains three spaces (eden and two survivors).
   G1YoungGenerationCounters(G1MonitoringSupport* monitoring_support, const char* name, size_t max_size)
   : G1GenerationCounters(monitoring_support, name, 0 /* ordinal */, 3 /* spaces */,
                          0 /* min_capacity */, max_size, 0 /* curr_capacity */) {
