@@ -88,7 +88,7 @@ ifneq ($(call check-jvm-feature, jvmti), true)
       jvmtiImpl.cpp jvmtiManageCapabilities.cpp jvmtiRawMonitor.cpp jvmtiUtil.cpp jvmtiTrace.cpp \
       jvmtiCodeBlobEvents.cpp jvmtiEnv.cpp jvmtiRedefineClasses.cpp jvmtiEnvBase.cpp jvmtiEnvThreadState.cpp \
       jvmtiTagMap.cpp jvmtiEventController.cpp evmCompat.cpp jvmtiEnter.xsl jvmtiExport.cpp \
-      jvmtiClassFileReconstituter.cpp jvmtiTagMapTable.cpp
+      jvmtiClassFileReconstituter.cpp jvmtiTagMapTable.cpp jvmtiAgent.cpp jvmtiAgentList.cpp
 endif
 
 ifneq ($(call check-jvm-feature, jvmci), true)
@@ -171,6 +171,9 @@ ifeq ($(call check-jvm-feature, link-time-opt), true)
   ifeq ($(call isCompiler, gcc), true)
     JVM_CFLAGS_FEATURES += -flto=auto -fuse-linker-plugin -fno-strict-aliasing -fno-fat-lto-objects
     JVM_LDFLAGS_FEATURES += $(CXX_O_FLAG_HIGHEST_JVM) -flto=auto -fuse-linker-plugin -fno-strict-aliasing
+  else ifeq ($(call isCompiler, microsoft), true)
+    JVM_CFLAGS_FEATURES += -GL
+    JVM_LDFLAGS_FEATURES += -LTCG:INCREMENTAL
   endif
 else
   ifeq ($(call isCompiler, gcc), true)

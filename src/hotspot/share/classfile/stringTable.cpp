@@ -797,7 +797,7 @@ void StringTable::allocate_shared_strings_array(TRAPS) {
       // refer to more than 16384 * 16384 = 26M interned strings! Not a practical concern
       // but bail out for safety.
       log_error(cds)("Too many strings to be archived: " SIZE_FORMAT, _items_count);
-      os::_exit(1);
+      MetaspaceShared::unrecoverable_writing_error();
     }
 
     objArrayOop primary = oopFactory::new_objArray(vmClasses::Object_klass(), primary_array_length, CHECK);

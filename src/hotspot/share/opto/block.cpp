@@ -1764,21 +1764,20 @@ void PhaseBlockLayout::merge_traces(bool fall_thru_only) {
 
 // Order the sequence of the traces in some desirable way
 void PhaseBlockLayout::reorder_traces(int count) {
-  ResourceArea *area = Thread::current()->resource_area();
-  Trace ** new_traces = NEW_ARENA_ARRAY(area, Trace *, count);
+  Trace** new_traces = NEW_RESOURCE_ARRAY(Trace*, count);
   Block_List worklist;
   int new_count = 0;
 
   // Compact the traces.
   for (int i = 0; i < count; i++) {
-    Trace *tr = traces[i];
+    Trace* tr = traces[i];
     if (tr != nullptr) {
       new_traces[new_count++] = tr;
     }
   }
 
   // The entry block should be first on the new trace list.
-  Trace *tr = trace(_cfg.get_root_block());
+  Trace* tr = trace(_cfg.get_root_block());
   assert(tr == new_traces[0], "entry trace misplaced");
 
   // Sort the new trace list by frequency
@@ -1787,7 +1786,7 @@ void PhaseBlockLayout::reorder_traces(int count) {
   // Collect all blocks from existing Traces
   _cfg.clear_blocks();
   for (int i = 0; i < new_count; i++) {
-    Trace *tr = new_traces[i];
+    Trace* tr = new_traces[i];
     if (tr != nullptr) {
       // push blocks onto the CFG list
       for (Block* b = tr->first_block(); b != nullptr; b = tr->next(b)) {
@@ -1802,16 +1801,15 @@ PhaseBlockLayout::PhaseBlockLayout(PhaseCFG &cfg)
 : Phase(BlockLayout)
 , _cfg(cfg) {
   ResourceMark rm;
-  ResourceArea *area = Thread::current()->resource_area();
 
   // List of traces
   int size = _cfg.number_of_blocks() + 1;
-  traces = NEW_ARENA_ARRAY(area, Trace *, size);
+  traces = NEW_RESOURCE_ARRAY(Trace*, size);
   memset(traces, 0, size*sizeof(Trace*));
-  next = NEW_ARENA_ARRAY(area, Block *, size);
-  memset(next,   0, size*sizeof(Block *));
-  prev = NEW_ARENA_ARRAY(area, Block *, size);
-  memset(prev  , 0, size*sizeof(Block *));
+  next = NEW_RESOURCE_ARRAY(Block*, size);
+  memset(next,   0, size*sizeof(Block*));
+  prev = NEW_RESOURCE_ARRAY(Block*, size);
+  memset(prev  , 0, size*sizeof(Block*));
 
   // List of edges
   edges = new GrowableArray<CFGEdge*>;

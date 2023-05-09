@@ -649,9 +649,34 @@ public class IRNode {
         beforeMatchingNameRegex(MAX, "Max(I|L)");
     }
 
+    public static final String MAX_D_REDUCTION_REG = PREFIX + "MAX_D_REDUCTION_REG" + POSTFIX;
+    static {
+        machOnlyNameRegex(MAX_D_REDUCTION_REG, "maxD_reduction_reg");
+    }
+
+    public static final String MAX_D_REG = PREFIX + "MAX_D_REG" + POSTFIX;
+    static {
+        machOnlyNameRegex(MAX_D_REG, "maxD_reg");
+    }
+
+    public static final String MAX_F_REDUCTION_REG = PREFIX + "MAX_F_REDUCTION_REG" + POSTFIX;
+    static {
+        machOnlyNameRegex(MAX_F_REDUCTION_REG, "maxF_reduction_reg");
+    }
+
+    public static final String MAX_F_REG = PREFIX + "MAX_F_REG" + POSTFIX;
+    static {
+        machOnlyNameRegex(MAX_F_REG, "maxF_reg");
+    }
+
     public static final String MAX_I = PREFIX + "MAX_I" + POSTFIX;
     static {
         beforeMatchingNameRegex(MAX_I, "MaxI");
+    }
+
+    public static final String MAX_L = PREFIX + "MAX_L" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(MAX_L, "MaxL");
     }
 
     public static final String MAX_V = PREFIX + "MAX_V" + POSTFIX;
@@ -674,9 +699,34 @@ public class IRNode {
         beforeMatchingNameRegex(MIN, "Min(I|L)");
     }
 
+    public static final String MIN_D_REDUCTION_REG = PREFIX + "MIN_D_REDUCTION_REG" + POSTFIX;
+    static {
+        machOnlyNameRegex(MIN_D_REDUCTION_REG, "minD_reduction_reg");
+    }
+
+    public static final String MIN_D_REG = PREFIX + "MIN_D_REG" + POSTFIX;
+    static {
+        machOnlyNameRegex(MIN_D_REG, "minD_reg");
+    }
+
+    public static final String MIN_F_REDUCTION_REG = PREFIX + "MIN_F_REDUCTION_REG" + POSTFIX;
+    static {
+        machOnlyNameRegex(MIN_F_REDUCTION_REG, "minF_reduction_reg");
+    }
+
+    public static final String MIN_F_REG = PREFIX + "MIN_F_REG" + POSTFIX;
+    static {
+        machOnlyNameRegex(MIN_F_REG, "minF_reg");
+    }
+
     public static final String MIN_I = PREFIX + "MIN_I" + POSTFIX;
     static {
         beforeMatchingNameRegex(MIN_I, "MinI");
+    }
+
+    public static final String MIN_L = PREFIX + "MIN_L" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(MIN_L, "MinL");
     }
 
     public static final String MIN_V = PREFIX + "MIN_V" + POSTFIX;
@@ -1366,6 +1416,46 @@ public class IRNode {
     public static final String VMASK_CMP_ZERO_D_NEON = PREFIX + "VMASK_CMP_ZERO_D_NEON" + POSTFIX;
     static {
         machOnlyNameRegex(VMASK_CMP_ZERO_D_NEON, "vmaskcmp_zeroD_neon");
+    }
+
+    public static final String VMASK_CMP_IMM_B_SVE = PREFIX + "VMASK_CMP_IMM_B_SVE" + POSTFIX;
+    static {
+        machOnlyNameRegex(VMASK_CMP_IMM_B_SVE, "vmaskcmp_immB_sve");
+    }
+
+    public static final String VMASK_CMPU_IMM_B_SVE = PREFIX + "VMASK_CMPU_IMM_B_SVE" + POSTFIX;
+    static {
+        machOnlyNameRegex(VMASK_CMPU_IMM_B_SVE, "vmaskcmpU_immB_sve");
+    }
+
+    public static final String VMASK_CMP_IMM_S_SVE = PREFIX + "VMASK_CMP_IMM_S_SVE" + POSTFIX;
+    static {
+        machOnlyNameRegex(VMASK_CMP_IMM_S_SVE, "vmaskcmp_immS_sve");
+    }
+
+    public static final String VMASK_CMPU_IMM_S_SVE = PREFIX + "VMASK_CMPU_IMM_S_SVE" + POSTFIX;
+    static {
+        machOnlyNameRegex(VMASK_CMPU_IMM_S_SVE, "vmaskcmpU_immS_sve");
+    }
+
+    public static final String VMASK_CMP_IMM_I_SVE = PREFIX + "VMASK_CMP_IMM_I_SVE" + POSTFIX;
+    static {
+        machOnlyNameRegex(VMASK_CMP_IMM_I_SVE, "vmaskcmp_immI_sve");
+    }
+
+    public static final String VMASK_CMPU_IMM_I_SVE = PREFIX + "VMASK_CMPU_IMM_I_SVE" + POSTFIX;
+    static {
+        machOnlyNameRegex(VMASK_CMPU_IMM_I_SVE, "vmaskcmpU_immI_sve");
+    }
+
+    public static final String VMASK_CMP_IMM_L_SVE = PREFIX + "VMASK_CMP_IMM_L_SVE" + POSTFIX;
+    static {
+        machOnlyNameRegex(VMASK_CMP_IMM_L_SVE, "vmaskcmp_immL_sve");
+    }
+
+    public static final String VMASK_CMPU_IMM_L_SVE = PREFIX + "VMASK_CMPU_IMM_L_SVE" + POSTFIX;
+    static {
+        machOnlyNameRegex(VMASK_CMPU_IMM_L_SVE, "vmaskcmpU_immL_sve");
     }
 
     public static final String VNOT_I_MASKED = PREFIX + "VNOT_I_MASKED" + POSTFIX;

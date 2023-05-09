@@ -47,6 +47,38 @@ void MonitorDeflationThread::initialize() {
 }
 
 void MonitorDeflationThread::monitor_deflation_thread_entry(JavaThread* jt, TRAPS) {
+
+  // We wait for the lowest of these three intervals:
+  //  - GuaranteedSafepointInterval
+  //      While deflation is not related to safepoint anymore, this keeps compatibility with
+  //      the old behavior when deflation also happened at safepoints. Users who set this
+  //      option to get more/less frequent deflations would be served with this option.
+  //  - AsyncDeflationInterval
+  //      Normal threshold-based deflation heuristic checks the conditions at this interval.
+  //      See is_async_deflation_needed().
+  //  - GuaranteedAsyncDeflationInterval
+  //      Backup deflation heuristic checks the conditions at this interval.
+  //      See is_async_deflation_needed().
+  //
+  intx wait_time = max_intx;
+  if (GuaranteedSafepointInterval > 0) {
+    wait_time = MIN2(wait_time, GuaranteedSafepointInterval);
+  }
+  if (AsyncDeflationInterval > 0) {
+    wait_time = MIN2(wait_time, AsyncDeflationInterval);
+  }
+  if (GuaranteedAsyncDeflationInterval > 0) {
+    wait_time = MIN2(wait_time, GuaranteedAsyncDeflationInterval);
+  }
+
+  // If all options are disabled, then wait time is not defined, and the deflation
+  // is effectively disabled. In that case, exit the thread immediately after printing
+  // a warning message.
+  if (wait_time == max_intx) {
+    warning("Async deflation is disabled");
+    return;
+  }
+
   while (true) {
     {
       // Need state transition ThreadBlockInVM so that this thread
@@ -58,9 +90,7 @@ void MonitorDeflationThread::monitor_deflation_thread_entry(JavaThread* jt, TRAP
       MonitorLocker ml(MonitorDeflation_lock, Mutex::_no_safepoint_check_flag);
       while (!ObjectSynchronizer::is_async_deflation_needed()) {
         // Wait until notified that there is some work to do.
-        // We wait for GuaranteedSafepointInterval so that
-        // is_async_deflation_needed() is checked at the same interval.
-        ml.wait(GuaranteedSafepointInterval);
+        ml.wait(wait_time);
       }
     }
 

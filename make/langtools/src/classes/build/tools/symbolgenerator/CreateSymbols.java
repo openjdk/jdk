@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2384,7 +2384,8 @@ public class CreateSymbols {
                 MethodDescription method = (MethodDescription) feature;
                 method.methodParameters = new ArrayList<>();
                 for (MethodParameters_attribute.Entry e : params.method_parameter_table) {
-                    String name = cf.constant_pool.getUTF8Value(e.name_index);
+                    String name = e.name_index == 0 ? null
+                            : cf.constant_pool.getUTF8Value(e.name_index);
                     MethodDescription.MethodParam param =
                             new MethodDescription.MethodParam(e.flags, name);
                     method.methodParameters.add(param);
