@@ -47,6 +47,10 @@ com/sun/jdi/ReferrersTest.java 8285422 generic-all
 com/sun/jdi/SetLocalWhileThreadInNative.java 8285422 generic-all
 com/sun/jdi/StepTest.java 8285422 generic-all
 com/sun/jdi/PopAndInvokeTest.java 8305632 generic-all
+com/sun/jdi/cds/CDSBreakpointTest.java 8307778 generic-all
+com/sun/jdi/cds/CDSDeleteAllBkptsTest.java 8307778 generic-all
+com/sun/jdi/cds/CDSFieldWatchpoints.java 8307778 generic-all
+
 
 ##########
 ## Tests incompatible with  with virtual test thread factory.
@@ -68,3 +72,5 @@ jdk/jfr/startupargs/TestDumpOnExit.java 0000000 generic-all
 java/util/PluggableLocale/PermissionTest.java 0000000 generic-all
 java/util/Properties/StoreReproducibilityTest.java 0000000 generic-all
 java/util/Properties/StoreReproducibilityTest.java 0000000 generic-all
+=======
+>>>>>>> 7f05f6f7c77c10dd2aed291af20664c9130e35f9
