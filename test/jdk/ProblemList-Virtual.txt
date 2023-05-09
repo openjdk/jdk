@@ -47,3 +47,6 @@ com/sun/jdi/ReferrersTest.java 8285422 generic-all
 com/sun/jdi/SetLocalWhileThreadInNative.java 8285422 generic-all
 com/sun/jdi/StepTest.java 8285422 generic-all
 com/sun/jdi/PopAndInvokeTest.java 8305632 generic-all
+com/sun/jdi/cds/CDSBreakpointTest.java 8307778 generic-all
+com/sun/jdi/cds/CDSDeleteAllBkptsTest.java 8307778 generic-all
+com/sun/jdi/cds/CDSFieldWatchpoints.java 8307778 generic-all
