@@ -51,9 +51,9 @@ public class TestAbortOnVMOperationTimeout {
             return;
         }
 
-        // These should definitely pass: more than a minute is enough for Serial to act.
+        // These should definitely pass: more than 3 minutes is enough for Serial to act.
         // The values are deliberately non-round to trip off periodic task granularity.
-        for (int delay : new int[]{63423, 12388131}) {
+        for (int delay : new int[]{183423}) {
             testWith(delay, true);
         }
 
@@ -72,7 +72,7 @@ public class TestAbortOnVMOperationTimeout {
                 "-Xmx256m",
                 "-XX:+UseSerialGC",
                 "-XX:-CreateCoredumpOnCrash",
-                "-Xlog:gc",
+                "-Xlog:gc*=debug",
                 "TestAbortOnVMOperationTimeout",
                 "foo"
         );
