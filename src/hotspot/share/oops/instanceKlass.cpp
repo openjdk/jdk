@@ -1205,6 +1205,46 @@ void InstanceKlass::set_initialization_state_and_notify(ClassState state, JavaTh
   ml.notify_all();
 }
 
+// Update hierarchy. This is done before the new klass has been added to the SystemDictionary. The Compile_lock
+// is grabbed, to ensure that the compiler is not using the class hierarchy.
+void InstanceKlass::add_to_hierarchy(JavaThread* current) {
+  assert(!SafepointSynchronize::is_at_safepoint(), "must NOT be at safepoint");
+
+  // In case we are not using CHA based vtables we need to make sure the loaded
+  // deopt is completed before anyone links this class.
+  // Linking is done with _init_monitor held, by loading and deopting with it
+  // held we make sure the deopt is completed before linking.
+  if (!UseVtableBasedCHA) {
+    init_monitor()->lock();
+  }
+
+  DeoptimizationScope deopt_scope;
+  {
+    MutexLocker ml(current, Compile_lock);
+
+    set_init_state(InstanceKlass::loaded);
+    // make sure init_state store is already done.
+    // The compiler reads the hierarchy outside of the Compile_lock.
+    // Access ordering is used to add to hierarchy.
+
+    // Link into hierarchy.
+    append_to_sibling_list();                    // add to superklass/sibling list
+    process_interfaces();                        // handle all "implements" declarations
+
+    // Now mark all code that depended on old class hierarchy.
+    // Note: must be done *after* linking k into the hierarchy (was bug 12/9/97)
+    if (Universe::is_fully_initialized()) {
+      CodeCache::mark_dependents_on(&deopt_scope, this);
+    }
+  }
+  // Perform the deopt handshake outside Compile_lock.
+  deopt_scope.deoptimize_marked();
+
+  if (!UseVtableBasedCHA) {
+    init_monitor()->unlock();
+  }
+}
+
 InstanceKlass* InstanceKlass::implementor() const {
   InstanceKlass* volatile* ik = adr_implementor();
   if (ik == nullptr) {
@@ -2093,9 +2133,9 @@ void PrintClassClosure::do_klass(Klass* k)  {
   char buf[10];
   int i = 0;
   if (k->has_finalizer()) buf[i++] = 'F';
-  if (k->has_final_method()) buf[i++] = 'f';
   if (k->is_instance_klass()) {
     InstanceKlass* ik = InstanceKlass::cast(k);
+    if (ik->has_final_method()) buf[i++] = 'f';
     if (ik->is_rewritten()) buf[i++] = 'W';
     if (ik->is_contended()) buf[i++] = 'C';
     if (ik->has_been_redefined()) buf[i++] = 'R';
@@ -2512,7 +2552,7 @@ void InstanceKlass::remove_unshareable_info() {
   // Reset to the 'allocated' state to prevent any premature accessing to
   // a shared class at runtime while the class is still being loaded and
   // restored. A class' init_state is set to 'loaded' at runtime when it's
-  // being added to class hierarchy (see SystemDictionary:::add_to_hierarchy()).
+  // being added to class hierarchy (see InstanceKlass:::add_to_hierarchy()).
   _init_state = allocated;
 
   { // Otherwise this needs to take out the Compile_lock.
@@ -2584,9 +2624,19 @@ void InstanceKlass::init_shared_package_entry() {
 #endif
 }
 
+void InstanceKlass::compute_has_loops_flag_for_methods() {
+  Array<Method*>* methods = this->methods();
+  for (int index = 0; index < methods->length(); ++index) {
+    Method* m = methods->at(index);
+    if (!m->is_overpass()) { // work around JDK-8305771
+      m->compute_has_loops_flag();
+    }
+  }
+}
+
 void InstanceKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protection_domain,
                                              PackageEntry* pkg_entry, TRAPS) {
-  // SystemDictionary::add_to_hierarchy() sets the init_state to loaded
+  // InstanceKlass::add_to_hierarchy() sets the init_state to loaded
   // before the InstanceKlass is added to the SystemDictionary. Make
   // sure the current state is <loaded.
   assert(!is_loaded(), "invalid init state");
@@ -3427,6 +3477,7 @@ void InstanceKlass::print_on(outputStream* st) const {
   st->print(BULLET"instance size:     %d", size_helper());                        st->cr();
   st->print(BULLET"klass size:        %d", size());                               st->cr();
   st->print(BULLET"access:            "); access_flags().print_on(st);            st->cr();
+  st->print(BULLET"flags:             "); _misc_flags.print_on(st);               st->cr();
   st->print(BULLET"state:             "); st->print_cr("%s", init_state_name());
   st->print(BULLET"name:              "); name()->print_value_on(st);             st->cr();
   st->print(BULLET"super:             "); Metadata::print_value_on_maybe_null(st, super()); st->cr();
@@ -3971,18 +4022,18 @@ void InstanceKlass::set_init_state(ClassState state) {
 // Globally, there is at least one previous version of a class to walk
 // during class unloading, which is saved because old methods in the class
 // are still running.   Otherwise the previous version list is cleaned up.
-bool InstanceKlass::_has_previous_versions = false;
+bool InstanceKlass::_should_clean_previous_versions = false;
 
 // Returns true if there are previous versions of a class for class
 // unloading only. Also resets the flag to false. purge_previous_version
 // will set the flag to true if there are any left, i.e., if there's any
 // work to do for next time. This is to avoid the expensive code cache
 // walk in CLDG::clean_deallocate_lists().
-bool InstanceKlass::has_previous_versions_and_reset() {
-  bool ret = _has_previous_versions;
-  log_trace(redefine, class, iklass, purge)("Class unloading: has_previous_versions = %s",
+bool InstanceKlass::should_clean_previous_versions_and_reset() {
+  bool ret = _should_clean_previous_versions;
+  log_trace(redefine, class, iklass, purge)("Class unloading: should_clean_previous_versions = %s",
      ret ? "true" : "false");
-  _has_previous_versions = false;
+  _should_clean_previous_versions = false;
   return ret;
 }
 
@@ -4039,12 +4090,17 @@ void InstanceKlass::purge_previous_version_list() {
       version++;
       continue;
     } else {
-      log_trace(redefine, class, iklass, purge)("previous version " PTR_FORMAT " is alive", p2i(pv_node));
       assert(pvcp->pool_holder() != nullptr, "Constant pool with no holder");
       guarantee (!loader_data->is_unloading(), "unloaded classes can't be on the stack");
       live_count++;
-      // found a previous version for next time we do class unloading
-      _has_previous_versions = true;
+      if (pvcp->is_shared()) {
+        // Shared previous versions can never be removed so no cleaning is needed.
+        log_trace(redefine, class, iklass, purge)("previous version " PTR_FORMAT " is shared", p2i(pv_node));
+      } else {
+        // Previous version alive, set that clean is needed for next time.
+        _should_clean_previous_versions = true;
+        log_trace(redefine, class, iklass, purge)("previous version " PTR_FORMAT " is alive", p2i(pv_node));
+      }
     }
 
     // next previous version
@@ -4144,13 +4200,19 @@ void InstanceKlass::add_previous_version(InstanceKlass* scratch_class,
     return;
   }
 
-  // Add previous version if any methods are still running.
-  // Set has_previous_version flag for processing during class unloading.
-  _has_previous_versions = true;
-  log_trace(redefine, class, iklass, add) ("scratch class added; one of its methods is on_stack.");
+  // Add previous version if any methods are still running or if this is
+  // a shared class which should never be removed.
   assert(scratch_class->previous_versions() == nullptr, "shouldn't have a previous version");
   scratch_class->link_previous_versions(previous_versions());
   link_previous_versions(scratch_class);
+  if (cp_ref->is_shared()) {
+    log_trace(redefine, class, iklass, add) ("scratch class added; class is shared");
+  } else {
+    //  We only set clean_previous_versions flag for processing during class
+    // unloading for non-shared classes.
+    _should_clean_previous_versions = true;
+    log_trace(redefine, class, iklass, add) ("scratch class added; one of its methods is on_stack.");
+  }
 } // end add_previous_version()
 
 #endif // INCLUDE_JVMTI

@@ -33,6 +33,7 @@
 #include "gc/shared/gcLogPrecious.hpp"
 #include "jvm.h"
 #include "logging/logConfiguration.hpp"
+#include "memory/allocation.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/metaspaceUtils.hpp"
 #include "memory/resourceArea.inline.hpp"
@@ -944,6 +945,14 @@ void VMError::report(outputStream* st, bool _verbose) {
     if (op) {
       op->print_on_error(st);
       st->cr();
+      st->cr();
+    }
+
+  STEP_IF("printing registered callbacks", _verbose && _thread != nullptr);
+    for (VMErrorCallback* callback = _thread->_vm_error_callbacks;
+        callback != nullptr;
+        callback = callback->_next) {
+      callback->call(st);
       st->cr();
     }
 
@@ -1895,3 +1904,14 @@ void VMError::controlled_crash(int how) {
   ShouldNotReachHere();
 }
 #endif // !ASSERT
+
+VMErrorCallbackMark::VMErrorCallbackMark(VMErrorCallback* callback)
+  : _thread(Thread::current()) {
+  callback->_next = _thread->_vm_error_callbacks;
+  _thread->_vm_error_callbacks = callback;
+}
+
+VMErrorCallbackMark::~VMErrorCallbackMark() {
+  assert(_thread->_vm_error_callbacks != nullptr, "Popped too far");
+  _thread->_vm_error_callbacks = _thread->_vm_error_callbacks->_next;
+}

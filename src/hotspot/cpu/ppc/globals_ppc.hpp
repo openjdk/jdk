@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2020 SAP SE. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,9 @@
 
 define_pd_global(bool, ImplicitNullChecks,    true);  // Generate code for implicit null checks.
 define_pd_global(bool, TrapBasedNullChecks,   true);
-define_pd_global(bool, UncommonNullCast,      true);  // Uncommon-trap NULLs passed to check cast.
+define_pd_global(bool, UncommonNullCast,      true);  // Uncommon-trap nulls passed to check cast.
+
+define_pd_global(bool, DelayCompilerStubsGeneration, COMPILER2_OR_JVMCI);
 
 #define DEFAULT_STACK_YELLOW_PAGES (2)
 #define DEFAULT_STACK_RED_PAGES (1)
@@ -54,7 +56,7 @@ define_pd_global(intx, StackRedPages,         DEFAULT_STACK_RED_PAGES);
 define_pd_global(intx, StackShadowPages,      DEFAULT_STACK_SHADOW_PAGES);
 define_pd_global(intx, StackReservedPages,    DEFAULT_STACK_RESERVED_PAGES);
 
-define_pd_global(bool,  VMContinuations, AIX_ONLY(false) NOT_AIX(true));
+define_pd_global(bool,  VMContinuations, true);
 
 // Use large code-entry alignment.
 define_pd_global(uintx, CodeCacheSegmentSize,  128);

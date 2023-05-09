@@ -36,7 +36,7 @@ public:
   // Code used by cmpFastLock and cmpFastUnlock mach instructions in .ad file.
   // See full description in macroAssembler_x86.cpp.
   void fast_lock(Register obj, Register box, Register tmp,
-                 Register scr, Register cx1, Register cx2,
+                 Register scr, Register cx1, Register cx2, Register thread,
                  RTMLockingCounters* rtm_counters,
                  RTMLockingCounters* stack_rtm_counters,
                  Metadata* method_data,
@@ -133,6 +133,7 @@ public:
   XMMRegister get_lane(BasicType typ, XMMRegister dst, XMMRegister src, int elemindex);
   void get_elem(BasicType typ, Register dst, XMMRegister src, int elemindex);
   void get_elem(BasicType typ, XMMRegister dst, XMMRegister src, int elemindex, XMMRegister vtmp = xnoreg);
+  void movsxl(BasicType typ, Register dst);
 
   // vector test
   void vectortest(BasicType bt, XMMRegister src1, XMMRegister src2, XMMRegister vtmp, int vlen_in_bytes);
@@ -483,5 +484,8 @@ public:
 
   void rearrange_bytes(XMMRegister dst, XMMRegister shuffle, XMMRegister src, XMMRegister xtmp1,
                        XMMRegister xtmp2, XMMRegister xtmp3, Register rtmp, KRegister ktmp, int vlen_enc);
+
+  void vector_rearrange_int_float(BasicType bt, XMMRegister dst, XMMRegister shuffle,
+                                  XMMRegister src, int vlen_enc);
 
 #endif // CPU_X86_C2_MACROASSEMBLER_X86_HPP

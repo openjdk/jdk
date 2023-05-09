@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,14 +39,14 @@
 // a lot of live objects, not the ones with just a lot of live objects if we
 // ordered according to the amount of reclaimable bytes per region.
 static int order_regions(HeapRegion* hr1, HeapRegion* hr2) {
-  // Make sure that NULL entries are moved to the end.
-  if (hr1 == NULL) {
-    if (hr2 == NULL) {
+  // Make sure that null entries are moved to the end.
+  if (hr1 == nullptr) {
+    if (hr2 == nullptr) {
       return 0;
     } else {
       return 1;
     }
-  } else if (hr2 == NULL) {
+  } else if (hr2 == nullptr) {
     return -1;
   }
 
@@ -74,7 +74,7 @@ class G1BuildCandidateRegionsTask : public WorkerTask {
   // Work area for building the set of collection set candidates. Contains references
   // to heap regions with their GC efficiencies calculated. To reduce contention
   // on claiming array elements, worker threads claim parts of this array in chunks;
-  // Array elements may be NULL as threads might not get enough regions to fill
+  // Array elements may be null as threads might not get enough regions to fill
   // up their chunks completely.
   // Final sorting will remove them.
   class G1BuildCandidateArray : public StackObj {
@@ -102,7 +102,7 @@ class G1BuildCandidateRegionsTask : public WorkerTask {
       _data(NEW_C_HEAP_ARRAY(HeapRegion*, _max_size, mtGC)),
       _cur_claim_idx(0) {
       for (uint i = 0; i < _max_size; i++) {
-        _data[i] = NULL;
+        _data[i] = nullptr;
       }
     }
 
@@ -123,7 +123,7 @@ class G1BuildCandidateRegionsTask : public WorkerTask {
     // Set element in array.
     void set(uint idx, HeapRegion* hr) {
       assert(idx < _max_size, "Index %u out of bounds %u", idx, _max_size);
-      assert(_data[idx] == NULL, "Value must not have been set.");
+      assert(_data[idx] == nullptr, "Value must not have been set.");
       _data[idx] = hr;
     }
 
@@ -132,11 +132,11 @@ class G1BuildCandidateRegionsTask : public WorkerTask {
         return;
       }
       for (uint i = _cur_claim_idx; i < _max_size; i++) {
-        assert(_data[i] == NULL, "must be");
+        assert(_data[i] == nullptr, "must be");
       }
       QuickSort::sort(_data, _cur_claim_idx, order_regions, true);
       for (uint i = num_regions; i < _max_size; i++) {
-        assert(_data[i] == NULL, "must be");
+        assert(_data[i] == nullptr, "must be");
       }
       for (uint i = 0; i < num_regions; i++) {
         dest[i] = _data[i];
@@ -192,7 +192,7 @@ class G1BuildCandidateRegionsTask : public WorkerTask {
         // sets for old regions.
         r->rem_set()->clear(true /* only_cardset */);
       } else {
-        assert(r->is_archive() || !r->is_old() || !r->rem_set()->is_tracked(),
+        assert(!r->is_old() || !r->rem_set()->is_tracked(),
                "Missed to clear unused remembered set of region %u (%s) that is %s",
                r->hrm_index(), r->get_type_str(), r->rem_set()->get_state_str());
       }
@@ -252,7 +252,7 @@ uint G1CollectionSetChooser::calculate_work_chunk_size(uint num_workers, uint nu
 
 bool G1CollectionSetChooser::should_add(HeapRegion* hr) {
   return !hr->is_young() &&
-         !hr->is_pinned() &&
+         !hr->is_humongous() &&
          region_occupancy_low_enough_for_evac(hr->live_bytes()) &&
          hr->rem_set()->is_complete();
 }
@@ -291,7 +291,7 @@ public:
 void G1CollectionSetChooser::prune(G1CollectionSetCandidates* candidates) {
   G1Policy* p = G1CollectedHeap::heap()->policy();
 
-  uint min_old_cset_length = p->calc_min_old_cset_length(candidates);
+  uint min_old_cset_length = p->calc_min_old_cset_length(candidates->num_regions());
   uint num_candidates = candidates->num_regions();
 
   if (min_old_cset_length < num_candidates) {

@@ -1,4 +1,4 @@
-File-Date: 2023-02-14
+File-Date: 2023-04-13
 %%
 Type: language
 Subtag: aa
@@ -2143,6 +2143,8 @@ Type: language
 Subtag: ajp
 Description: South Levantine Arabic
 Added: 2009-07-29
+Deprecated: 2023-03-17
+Preferred-Value: apc
 Macrolanguage: ar
 %%
 Type: language
@@ -2790,7 +2792,7 @@ Added: 2009-07-29
 %%
 Type: language
 Subtag: apc
-Description: North Levantine Arabic
+Description: Levantine Arabic
 Added: 2009-07-29
 Macrolanguage: ar
 %%
@@ -8910,6 +8912,11 @@ Description: Kuwaataay
 Added: 2009-07-29
 %%
 Type: language
+Subtag: cxh
+Description: Cha'ari
+Added: 2023-03-17
+%%
+Type: language
 Subtag: cya
 Description: Nopala Chatino
 Added: 2009-07-29
@@ -10176,6 +10183,11 @@ Description: Disa
 Added: 2009-07-29
 %%
 Type: language
+Subtag: dsk
+Description: Dokshi
+Added: 2023-03-17
+%%
+Type: language
 Subtag: dsl
 Description: Danish Sign Language
 Added: 2009-07-29
@@ -10503,6 +10515,11 @@ Description: Jola-Fonyi
 Added: 2009-07-29
 %%
 Type: language
+Subtag: dyr
+Description: Dyarim
+Added: 2023-03-17
+%%
+Type: language
 Subtag: dyu
 Description: Dyula
 Added: 2005-10-16
@@ -10522,7 +10539,6 @@ Type: language
 Subtag: dzd
 Description: Daza
 Added: 2009-07-29
-Deprecated: 2015-02-12
 %%
 Type: language
 Subtag: dze
@@ -11144,6 +11160,11 @@ Type: language
 Subtag: etz
 Description: Semimi
 Added: 2009-07-29
+%%
+Type: language
+Subtag: eud
+Description: Eudeve
+Added: 2023-03-17
 %%
 Type: language
 Subtag: euq
@@ -14805,6 +14826,11 @@ Added: 2009-07-29
 Macrolanguage: iu
 %%
 Type: language
+Subtag: ikh
+Description: Ikhin-Arokho
+Added: 2023-03-17
+%%
+Type: language
 Subtag: iki
 Description: Iko
 Added: 2009-07-29
@@ -15378,6 +15404,11 @@ Description: Izi-Ezaa-Ikwo-Mgbo
 Added: 2009-07-29
 Deprecated: 2013-09-10
 Comments: see eza, gmz, iqw, izz
+%%
+Type: language
+Subtag: izm
+Description: Kizamani
+Added: 2023-03-17
 %%
 Type: language
 Subtag: izr
@@ -16922,6 +16953,8 @@ Type: language
 Subtag: kgm
 Description: Karipúna
 Added: 2009-07-29
+Deprecated: 2023-03-17
+Preferred-Value: plu
 %%
 Type: language
 Subtag: kgn
@@ -18339,7 +18372,7 @@ Scope: collection
 %%
 Type: language
 Subtag: krp
-Description: Korop
+Description: Durop
 Added: 2009-07-29
 %%
 Type: language
@@ -18392,6 +18425,8 @@ Type: language
 Subtag: ksa
 Description: Shuwa-Zamani
 Added: 2009-07-29
+Deprecated: 2023-03-17
+Comments: see izm, rsw
 %%
 Type: language
 Subtag: ksb
@@ -19476,7 +19511,7 @@ Added: 2009-07-29
 %%
 Type: language
 Subtag: lag
-Description: Langi
+Description: Rangi
 Added: 2009-07-29
 %%
 Type: language
@@ -20009,6 +20044,12 @@ Type: language
 Subtag: lgr
 Description: Lengo
 Added: 2009-07-29
+%%
+Type: language
+Subtag: lgs
+Description: Guinea-Bissau Sign Language
+Description: Língua Gestual Guineense
+Added: 2023-03-17
 %%
 Type: language
 Subtag: lgt
@@ -20655,6 +20696,7 @@ Added: 2009-07-29
 %%
 Type: language
 Subtag: loh
+Description: Laarim
 Description: Narim
 Added: 2009-07-29
 %%
@@ -21127,6 +21169,11 @@ Type: language
 Subtag: lvk
 Description: Lavukaleve
 Added: 2009-07-29
+%%
+Type: language
+Subtag: lvl
+Description: Lwel
+Added: 2023-03-17
 %%
 Type: language
 Subtag: lvs
@@ -26188,6 +26235,8 @@ Type: language
 Subtag: nom
 Description: Nocamán
 Added: 2009-07-29
+Deprecated: 2023-03-17
+Preferred-Value: cbr
 %%
 Type: language
 Subtag: non
@@ -27086,6 +27135,11 @@ Type: language
 Subtag: nzm
 Description: Zeme Naga
 Added: 2009-07-29
+%%
+Type: language
+Subtag: nzr
+Description: Dir-Nyamzak-Mbarimi
+Added: 2023-03-17
 %%
 Type: language
 Subtag: nzs
@@ -28846,6 +28900,8 @@ Type: language
 Subtag: plj
 Description: Polci
 Added: 2009-07-29
+Deprecated: 2023-03-17
+Comments: see nzr, pze, uly, zlu
 %%
 Type: language
 Subtag: plk
@@ -28971,6 +29027,8 @@ Type: language
 Subtag: pmk
 Description: Pamlico
 Added: 2009-07-29
+Deprecated: 2023-03-17
+Preferred-Value: crr
 %%
 Type: language
 Subtag: pml
@@ -29447,6 +29505,8 @@ Type: language
 Subtag: prp
 Description: Parsi
 Added: 2009-07-29
+Deprecated: 2023-03-17
+Preferred-Value: gu
 %%
 Type: language
 Subtag: prq
@@ -29856,6 +29916,11 @@ Type: language
 Subtag: pyy
 Description: Pyen
 Added: 2009-07-29
+%%
+Type: language
+Subtag: pze
+Description: Pesse
+Added: 2023-03-17
 %%
 Type: language
 Subtag: pzh
@@ -30874,7 +30939,7 @@ Deprecated: 2017-02-23
 Type: language
 Subtag: rsk
 Description: Ruthenian
-Description: Rusyn
+Description: Rusnak
 Added: 2022-02-25
 %%
 Type: language
@@ -30891,6 +30956,11 @@ Type: language
 Subtag: rsn
 Description: Rwandan Sign Language
 Added: 2022-02-25
+%%
+Type: language
+Subtag: rsw
+Description: Rishiwa
+Added: 2023-03-17
 %%
 Type: language
 Subtag: rtc
@@ -32329,6 +32399,7 @@ Type: language
 Subtag: slq
 Description: Salchuq
 Added: 2009-07-29
+Deprecated: 2023-03-17
 %%
 Type: language
 Subtag: slr
@@ -33686,6 +33757,8 @@ Type: language
 Subtag: szd
 Description: Seru
 Added: 2009-07-29
+Deprecated: 2023-03-17
+Preferred-Value: umi
 %%
 Type: language
 Subtag: sze
@@ -35066,6 +35139,8 @@ Type: language
 Subtag: tmk
 Description: Northwestern Tamang
 Added: 2009-07-29
+Deprecated: 2023-03-17
+Preferred-Value: tdg
 %%
 Type: language
 Subtag: tml
@@ -35482,6 +35557,8 @@ Type: language
 Subtag: tpw
 Description: Tupí
 Added: 2009-07-29
+Deprecated: 2023-03-17
+Preferred-Value: tpn
 %%
 Type: language
 Subtag: tpx
@@ -36075,6 +36152,11 @@ Type: language
 Subtag: tve
 Description: Te'un
 Added: 2009-07-29
+%%
+Type: language
+Subtag: tvi
+Description: Tulai
+Added: 2023-03-17
 %%
 Type: language
 Subtag: tvk
@@ -36728,6 +36810,11 @@ Description: Ulwa
 Added: 2010-03-11
 %%
 Type: language
+Subtag: uly
+Description: Buli
+Added: 2023-03-17
+%%
+Type: language
 Subtag: uma
 Description: Umatilla
 Added: 2009-07-29
@@ -37317,6 +37404,11 @@ Type: language
 Subtag: viv
 Description: Iduna
 Added: 2009-07-29
+%%
+Type: language
+Subtag: vjk
+Description: Bajjika
+Added: 2023-03-17
 %%
 Type: language
 Subtag: vka
@@ -38317,7 +38409,7 @@ Added: 2009-07-29
 %%
 Type: language
 Subtag: wnb
-Description: Wanambre
+Description: Mokati
 Added: 2009-07-29
 %%
 Type: language
@@ -38618,6 +38710,11 @@ Type: language
 Subtag: wsv
 Description: Wotapuri-Katarqalai
 Added: 2009-07-29
+%%
+Type: language
+Subtag: wtb
+Description: Matambwe
+Added: 2023-03-17
 %%
 Type: language
 Subtag: wtf
@@ -40086,6 +40183,8 @@ Type: language
 Subtag: xss
 Description: Assan
 Added: 2009-07-29
+Deprecated: 2023-03-17
+Preferred-Value: zko
 %%
 Type: language
 Subtag: xsu
@@ -40669,6 +40768,11 @@ Description: Chepya
 Added: 2009-07-29
 %%
 Type: language
+Subtag: ycr
+Description: Yilan Creole
+Added: 2023-03-17
+%%
+Type: language
 Subtag: yda
 Description: Yanda
 Added: 2013-09-10
@@ -40946,6 +41050,11 @@ Type: language
 Subtag: ykg
 Description: Northern Yukaghir
 Added: 2009-07-29
+%%
+Type: language
+Subtag: ykh
+Description: Khamnigan Mongol
+Added: 2023-03-17
 %%
 Type: language
 Subtag: yki
@@ -41922,6 +42031,11 @@ Added: 2009-07-29
 Macrolanguage: za
 %%
 Type: language
+Subtag: zem
+Description: Zeem
+Added: 2023-03-17
+%%
+Type: language
 Subtag: zen
 Description: Zenaga
 Added: 2005-10-16
@@ -42048,6 +42162,8 @@ Type: language
 Subtag: zkb
 Description: Koibal
 Added: 2009-07-29
+Deprecated: 2023-03-17
+Preferred-Value: kjh
 %%
 Type: language
 Subtag: zkd
@@ -42149,6 +42265,11 @@ Subtag: zls
 Description: South Slavic languages
 Added: 2009-07-29
 Scope: collection
+%%
+Type: language
+Subtag: zlu
+Description: Zul
+Added: 2023-03-17
 %%
 Type: language
 Subtag: zlw
@@ -42655,6 +42776,8 @@ Type: language
 Subtag: zua
 Description: Zeem
 Added: 2009-07-29
+Deprecated: 2023-03-17
+Comments: see cxh, dsk, dyr, tvi, zem
 %%
 Type: language
 Subtag: zuh
@@ -42862,6 +42985,7 @@ Type: extlang
 Subtag: ajp
 Description: South Levantine Arabic
 Added: 2009-07-29
+Deprecated: 2023-03-17
 Preferred-Value: ajp
 Prefix: ar
 Macrolanguage: ar
@@ -42875,7 +42999,7 @@ Prefix: sgn
 %%
 Type: extlang
 Subtag: apc
-Description: North Levantine Arabic
+Description: Levantine Arabic
 Added: 2009-07-29
 Preferred-Value: apc
 Prefix: ar
@@ -43694,6 +43818,14 @@ Added: 2009-07-29
 Preferred-Value: lcf
 Prefix: ms
 Macrolanguage: ms
+%%
+Type: extlang
+Subtag: lgs
+Description: Guinea-Bissau Sign Language
+Description: Língua Gestual Guineense
+Added: 2023-03-17
+Preferred-Value: lgs
+Prefix: sgn
 %%
 Type: extlang
 Subtag: liw

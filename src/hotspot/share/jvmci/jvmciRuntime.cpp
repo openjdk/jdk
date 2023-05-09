@@ -258,6 +258,12 @@ JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* c
   current->set_is_method_handle_return(false);
 
   Handle exception(current, ex);
+
+  // The frame we rethrow the exception to might not have been processed by the GC yet.
+  // The stack watermark barrier takes care of detecting that and ensuring the frame
+  // has updated oops.
+  StackWatermarkSet::after_unwind(current);
+
   cm = CodeCache::find_compiled(pc);
   assert(cm != nullptr, "this is not a compiled method");
   // Adjust the pc as needed/
@@ -753,20 +759,25 @@ void JVMCIRuntime::call_getCompiler(TRAPS) {
   JVMCIENV->call_HotSpotJVMCIRuntime_getCompiler(jvmciRuntime, JVMCI_CHECK);
 }
 
-void JVMCINMethodData::initialize(
-  int nmethod_mirror_index,
-  const char* name,
-  FailedSpeculation** failed_speculations)
+void JVMCINMethodData::initialize(int nmethod_mirror_index,
+                                  int nmethod_entry_patch_offset,
+                                  const char* nmethod_mirror_name,
+                                  FailedSpeculation** failed_speculations)
 {
   _failed_speculations = failed_speculations;
   _nmethod_mirror_index = nmethod_mirror_index;
-  if (name != nullptr) {
+  _nmethod_entry_patch_offset = nmethod_entry_patch_offset;
+  if (nmethod_mirror_name != nullptr) {
     _has_name = true;
-    char* dest = (char*) this->name();
-    strcpy(dest, name);
+    char* dest = (char*) name();
+    strcpy(dest, nmethod_mirror_name);
   } else {
     _has_name = false;
   }
+}
+
+void JVMCINMethodData::copy(JVMCINMethodData* data) {
+  initialize(data->_nmethod_mirror_index, data->_nmethod_entry_patch_offset, data->name(), data->_failed_speculations);
 }
 
 void JVMCINMethodData::add_failed_speculation(nmethod* nm, jlong speculation) {
@@ -852,7 +863,7 @@ jlong JVMCIRuntime::make_oop_handle(const Handle& obj) {
   oop* ptr = OopHandle(object_handles(), obj()).ptr_raw();
   MutexLocker ml(_lock);
   _oop_handles.append(ptr);
-  return (jlong) ptr;
+  return reinterpret_cast<jlong>(ptr);
 }
 
 int JVMCIRuntime::release_and_clear_oop_handles() {
@@ -933,20 +944,22 @@ int JVMCIRuntime::release_cleared_oop_handles() {
         next++;
       }
     }
-    int to_release = next - num_alive;
+    if (next != num_alive) {
+      int to_release = next - num_alive;
 
-    // `next` is now the index of the first null handle
-    // Example: to_release: 2
+      // `next` is now the index of the first null handle
+      // Example: to_release: 2
 
-    // Bulk release the handles with a null referent
-    object_handles()->release(_oop_handles.adr_at(num_alive), to_release);
+      // Bulk release the handles with a null referent
+      object_handles()->release(_oop_handles.adr_at(num_alive), to_release);
 
-    // Truncate oop handles to only those with a non-null referent
-    JVMCI_event_1("compacted oop handles in JVMCI runtime %d from %d to %d", _id, _oop_handles.length(), num_alive);
-    _oop_handles.trunc_to(num_alive);
-    // Example: HHH
+      // Truncate oop handles to only those with a non-null referent
+      JVMCI_event_1("compacted oop handles in JVMCI runtime %d from %d to %d", _id, _oop_handles.length(), num_alive);
+      _oop_handles.trunc_to(num_alive);
+      // Example: HHH
 
-    return to_release;
+      return to_release;
+    }
   }
   return 0;
 }
@@ -1671,16 +1684,9 @@ Klass* JVMCIRuntime::get_klass_by_name_impl(Klass*& accessing_klass,
     domain = Handle(THREAD, accessing_klass->protection_domain());
   }
 
-  Klass* found_klass;
-  {
-    ttyUnlocker ttyul;  // release tty lock to avoid ordering problems
-    MutexLocker ml(THREAD, Compile_lock);
-    if (!require_local) {
-      found_klass = SystemDictionary::find_constrained_instance_or_array_klass(THREAD, sym, loader);
-    } else {
-      found_klass = SystemDictionary::find_instance_or_array_klass(THREAD, sym, loader, domain);
-    }
-  }
+  Klass* found_klass = require_local ?
+                         SystemDictionary::find_instance_or_array_klass(THREAD, sym, loader, domain) :
+                         SystemDictionary::find_constrained_instance_or_array_klass(THREAD, sym, loader);
 
   // If we fail to find an array klass, look again for its element type.
   // The element type may be available either locally or via constraints.
@@ -1874,13 +1880,9 @@ Method* JVMCIRuntime::get_method_by_index_impl(const constantPoolHandle& cpool,
                                                int index, Bytecodes::Code bc,
                                                InstanceKlass* accessor) {
   if (bc == Bytecodes::_invokedynamic) {
-    ConstantPoolCacheEntry* cpce = cpool->invokedynamic_cp_cache_entry_at(index);
-    bool is_resolved = !cpce->is_f1_null();
-    if (is_resolved) {
-      // Get the invoker Method* from the constant pool.
-      // (The appendix argument, if any, will be noted in the method's signature.)
-      Method* adapter = cpce->f1_as_method();
-      return adapter;
+    int indy_index = cpool->decode_invokedynamic_index(index);
+    if (cpool->resolved_indy_entry_at(indy_index)->is_resolved()) {
+      return cpool->resolved_indy_entry_at(indy_index)->method();
     }
 
     return nullptr;
@@ -2086,7 +2088,8 @@ JVMCI::CodeInstallResult JVMCIRuntime::register_method(JVMCIEnv* JVMCIENV,
                                                        JVMCIObject nmethod_mirror,
                                                        FailedSpeculation** failed_speculations,
                                                        char* speculations,
-                                                       int speculations_len) {
+                                                       int speculations_len,
+                                                       int nmethod_entry_patch_offset) {
   JVMCI_EXCEPTION_CONTEXT;
   CompLevel comp_level = CompLevel_full_optimization;
   char* failure_detail = nullptr;
@@ -2120,7 +2123,7 @@ JVMCI::CodeInstallResult JVMCIRuntime::register_method(JVMCIEnv* JVMCIENV,
     // To prevent compile queue updates.
     MutexLocker locker(THREAD, MethodCompileQueue_lock);
 
-    // Prevent SystemDictionary::add_to_hierarchy from running
+    // Prevent InstanceKlass::add_to_hierarchy from running
     // and invalidating our dependencies until we install this method.
     MutexLocker ml(Compile_lock);
 
@@ -2154,6 +2157,10 @@ JVMCI::CodeInstallResult JVMCIRuntime::register_method(JVMCIEnv* JVMCIENV,
       // as in C2, then it must be freed.
       //code_buffer->free_blob();
     } else {
+      JVMCINMethodData* data = JVMCINMethodData::create(nmethod_mirror_index,
+                                                        nmethod_entry_patch_offset,
+                                                        nmethod_mirror_name,
+                                                        failed_speculations);
       nm =  nmethod::new_nmethod(method,
                                  compile_id,
                                  entry_bci,
@@ -2163,8 +2170,7 @@ JVMCI::CodeInstallResult JVMCIRuntime::register_method(JVMCIEnv* JVMCIENV,
                                  frame_words, oop_map_set,
                                  handler_table, implicit_exception_table,
                                  compiler, comp_level,
-                                 speculations, speculations_len,
-                                 nmethod_mirror_index, nmethod_mirror_name, failed_speculations);
+                                 speculations, speculations_len, data);
 
 
       // Free codeBlobs

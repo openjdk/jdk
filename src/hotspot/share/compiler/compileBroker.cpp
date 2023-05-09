@@ -759,7 +759,7 @@ void CompileBroker::compilation_init_phase2() {
 }
 
 Handle CompileBroker::create_thread_oop(const char* name, TRAPS) {
-  Handle thread_oop = JavaThread::create_system_thread_object(name, false /* not visible */, CHECK_NH);
+  Handle thread_oop = JavaThread::create_system_thread_object(name, CHECK_NH);
   return thread_oop;
 }
 
@@ -2277,7 +2277,8 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
     DirectivesStack::release(directive);
 
     if (!ci_env.failing() && !task->is_success()) {
-      //assert(false, "compiler should always document failure");
+      assert(ci_env.failure_reason() != nullptr, "expect failure reason");
+      assert(false, "compiler should always document failure: %s", ci_env.failure_reason());
       // The compiler elected, without comment, not to register a result.
       // Do not attempt further compilations of this method.
       ci_env.record_method_not_compilable("compile failed");

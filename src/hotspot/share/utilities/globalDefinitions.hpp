@@ -25,6 +25,7 @@
 #ifndef SHARE_UTILITIES_GLOBALDEFINITIONS_HPP
 #define SHARE_UTILITIES_GLOBALDEFINITIONS_HPP
 
+#include "utilities/attributeNoreturn.hpp"
 #include "utilities/compilerWarnings.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
@@ -1039,6 +1040,15 @@ enum JavaThreadState {
   _thread_blocked           = 10, // blocked in vm
   _thread_blocked_trans     = 11, // corresponding transition state
   _thread_max_state         = 12  // maximum thread state+1 - used for statistics allocation
+};
+
+enum LockingMode {
+  // Use only heavy monitors for locking
+  LM_MONITOR     = 0,
+  // Legacy stack-locking, with monitors as 2nd tier
+  LM_LEGACY      = 1,
+  // New lightweight locking, with monitors as 2nd tier
+  LM_LIGHTWEIGHT = 2
 };
 
 //----------------------------------------------------------------------------------------------------

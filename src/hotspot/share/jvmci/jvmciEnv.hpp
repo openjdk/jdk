@@ -27,6 +27,7 @@
 
 #include "classfile/javaClasses.hpp"
 #include "jvmci/jvmciJavaClasses.hpp"
+#include "oops/klass.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.hpp"
 
@@ -374,6 +375,9 @@ public:
 
   // Unpack an instance of HotSpotResolvedObjectTypeImpl into the original Klass*
   Klass* asKlass(JVMCIObject jvmci_type);
+
+  // Unpack an instance of HotSpotMethodData into the original MethodData*
+  MethodData* asMethodData(JVMCIObject jvmci_method_data);
 
   JVMCIObject get_jvmci_method(const methodHandle& method, JVMCI_TRAPS);
 

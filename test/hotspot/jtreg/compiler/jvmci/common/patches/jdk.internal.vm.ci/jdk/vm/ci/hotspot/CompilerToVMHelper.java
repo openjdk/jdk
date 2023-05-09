@@ -304,11 +304,6 @@ public class CompilerToVMHelper {
         return CTVM.getConstantPool(object);
     }
 
-    public static HotSpotResolvedObjectType getResolvedJavaType(MetaspaceObject base,
-            long displacement, boolean compressed) {
-        return CTVM.getResolvedJavaType(base, displacement, compressed);
-    }
-
     public static long getMetaspacePointer(Object o) {
         return ((MetaspaceObject) o).getMetaspacePointer();
     }

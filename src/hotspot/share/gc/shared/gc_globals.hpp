@@ -199,6 +199,9 @@
   product(bool, AlwaysPreTouch, false,                                      \
           "Force all freshly committed pages to be pre-touched")            \
                                                                             \
+  product(bool, AlwaysPreTouchStacks, false, DIAGNOSTIC,                    \
+          "Force java thread stacks to be fully pre-touched")               \
+                                                                            \
   product_pd(size_t, PreTouchParallelChunkSize,                             \
           "Per-thread chunk size for parallel memory pre-touch.")           \
           range(4*K, SIZE_MAX / 2)                                          \
@@ -212,12 +215,6 @@
           "Size of marking stack")                                          \
           constraint(MarkStackSizeConstraintFunc,AfterErgo)                 \
           range(1, (max_jint - 1))                                          \
-                                                                            \
-  product(intx, RefDiscoveryPolicy, 0,                                      \
-          "Select type of reference discovery policy: "                     \
-          "reference-based(0) or referent-based(1)")                        \
-          range(ReferenceProcessor::DiscoveryPolicyMin,                     \
-                ReferenceProcessor::DiscoveryPolicyMax)                     \
                                                                             \
   product(bool, ParallelRefProcEnabled, false,                              \
           "Enable parallel reference processing whenever possible")         \
