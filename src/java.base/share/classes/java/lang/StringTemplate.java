@@ -158,7 +158,7 @@ public interface StringTemplate {
      * Returns the string interpolation of the fragments and values for this
      * {@link StringTemplate}.
      * <p>
-     * For better visibility and when practical, it is recommended to use the
+     * @apiNote For better visibility and when practical, it is recommended to use the
      * {@link StringTemplate#STR} processor instead of invoking the
      * {@link StringTemplate#interpolate()} method.
      * {@snippet :
@@ -426,7 +426,6 @@ public interface StringTemplate {
      * as if invoking {@link String#valueOf(Object)}.
      * @apiNote {@link StringTemplate#STR} is statically imported implicitly into every
      * Java compilation unit.
-     * @implSpec The result of interpolation may or may not be interned.
      */
     Processor<String, RuntimeException> STR = StringTemplate::interpolate;
 
@@ -545,7 +544,7 @@ public interface StringTemplate {
          * Constructs a result based on the template fragments and values in the
          * supplied {@link StringTemplate stringTemplate} object.
          * <p>
-         * Processing of a {@link StringTemplate} may include validation according to the particular facts relating
+         * @apiNote Processing of a {@link StringTemplate} may include validation according to the particular facts relating
          * to each situation. The {@code E} type parameter indicates the type of checked exception that is thrown by
          * {@link #process} if validation fails, ex. {@code java.sql.SQLException}. If no checked exception is expected
          * then {@link RuntimeException} may be used. Note that unchecked exceptions, such as {@link RuntimeException},
@@ -557,7 +556,7 @@ public interface StringTemplate {
          *
          * @return constructed object of type R
          *
-         * @throws E Checked exception thrown by the template processor when validation fails.
+         * @throws E exception thrown by the template processor when validation fails
          */
         R process(StringTemplate stringTemplate) throws E;
 
