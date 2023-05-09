@@ -74,8 +74,7 @@ public class UnparkBenchSleepersBefore {
     public void barrier() throws InterruptedException {
         CountDownLatch latch = new CountDownLatch(workers);
         for (int i = 0; i < workers; i++) {
-            exec.submit(() ->
-            {
+            exec.submit(() -> {
                 try {
                     barrier.await();
                 } catch (InterruptedException | BrokenBarrierException e) {
@@ -88,16 +87,15 @@ public class UnparkBenchSleepersBefore {
         latch.await();
     }
 
-    IdleThread[] idle_threads;
-
+    IdleRunnable[] idleRunnables;
 
     ExecutorService exec;
 
     @Setup
     public void setup() {
-        idle_threads = new IdleThread[idles];
-        for(int i=0; i < idle_threads.length; i++) {
-            new Thread(idle_threads[i] = new IdleThread()).start();
+        idleRunnables = new IdleRunnable[idles];
+        for(int i = 0; i < idleRunnables.length; i++) {
+            new Thread(idleRunnables[i] = new IdleRunnable()).start();
         }
         barrier = new CyclicBarrier(workers);
         exec = Executors.newFixedThreadPool(workers); // order is important, create this executor only after idle threads
@@ -105,19 +103,19 @@ public class UnparkBenchSleepersBefore {
 
     @TearDown
     public void tearDown() {
-        for(IdleThread it : idle_threads) {
+        for(IdleRunnable it : idleRunnables) {
             it.stop();
         }
         exec.shutdown();
     }
 
-    public static class IdleThread implements Runnable {
-        boolean done = false;
-        Thread my_thread;
+    public static class IdleRunnable implements Runnable {
+        volatile boolean done = false;
+        Thread myThread;
 
         @Override
         public void run() {
-            my_thread = Thread.currentThread();
+            myThread = Thread.currentThread();
             while (!done) {
                 LockSupport.park();
             }
@@ -125,7 +123,7 @@ public class UnparkBenchSleepersBefore {
 
         public void stop() {
             done = true;
-            LockSupport.unpark(my_thread);
+            LockSupport.unpark(myThread);
         }
     }
 

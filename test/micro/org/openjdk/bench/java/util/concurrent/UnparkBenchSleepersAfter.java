@@ -84,7 +84,7 @@ public class UnparkBenchSleepersAfter {
         latch.await();
     }
 
-    IdleThread[] idleThreads;
+    IdleRunnable[] idleRunnables;
 
     ExecutorService exec;
 
@@ -105,27 +105,29 @@ public class UnparkBenchSleepersAfter {
             });
         }
         latch.await();
-        idle_threads = new IdleThread[idles];
-        for(int i=0; i < idle_threads.length; i++) {
-            new Thread(idle_threads[i] = new IdleThread()).start();
+        idleRunnables = new IdleRunnable[idles];
+        for(int i = 0; i < idles; i++) {
+            IdleRunnable r = new IdleRunnable();
+            idleRunnables[i] = r;
+            new Thread(r).start();
         }
     }
 
     @TearDown
     public void tearDown() {
-        for (IdleThread it : idle_threads) {
+        for (IdleRunnable it : idleRunnables) {
             it.stop();
         }
         exec.shutdown();
     }
 
-    public static class IdleThread implements Runnable {
-        boolean done = false;
+    public static class IdleRunnable implements Runnable {
+        volatile boolean done = false;
         Thread myThread;
 
         @Override
         public void run() {
-            my_thread = Thread.currentThread();
+            myThread = Thread.currentThread();
             while (!done) {
                 LockSupport.park();
             }
@@ -133,7 +135,7 @@ public class UnparkBenchSleepersAfter {
 
         public void stop() {
             done = true;
-            LockSupport.unpark(my_thread);
+            LockSupport.unpark(myThread);
         }
     }
 
