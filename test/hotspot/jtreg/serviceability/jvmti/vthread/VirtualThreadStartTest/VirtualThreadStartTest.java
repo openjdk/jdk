@@ -56,8 +56,6 @@ public class VirtualThreadStartTest {
             String arg = args.length == 2 ? args[1] : "";
             VirtualMachine vm = VirtualMachine.attach(String.valueOf(ProcessHandle.current().pid()));
             vm.loadAgentLibrary(AGENT_LIB, arg);
-//        } else {
-//            System.loadLibrary(AGENT_LIB);
         }
         getAndResetStartedThreads();
 
@@ -65,6 +63,7 @@ public class VirtualThreadStartTest {
             Thread.ofVirtual().name("Tested-VT-" + i).start(() -> {}).join();
         }
 
+        // No VirtualThreadStart events are expected if can_support_virtual_threads is disabled.
         int expStartedThreads = canSupportVirtualThreads() ? THREAD_CNT : 0;
         int startedThreads = getAndResetStartedThreads();
 
