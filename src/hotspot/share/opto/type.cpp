@@ -3259,16 +3259,13 @@ TypePtr::InterfaceSet::InterfaceSet()
   DEBUG_ONLY(_initialized = true);
 }
 
-TypePtr::InterfaceSet::InterfaceSet(GrowableArray<ciInstanceKlass*>* interfaces, bool init)
+TypePtr::InterfaceSet::InterfaceSet(GrowableArray<ciInstanceKlass*>* interfaces)
         : _list(Compile::current()->type_arena(), interfaces->length(), 0, nullptr),
           _hash(0), _exact_klass(nullptr) {
-  DEBUG_ONLY(_initialized = false);
   for (int i = 0; i < interfaces->length(); i++) {
     add(interfaces->at(i));
   }
-  if (init) {
-    initialize();
-  }
+  initialize();
 }
 
 void TypePtr::InterfaceSet::initialize() {
@@ -3310,6 +3307,24 @@ bool TypePtr::InterfaceSet::eq(const InterfaceSet& other) const {
   }
   return true;
 }
+
+bool TypePtr::InterfaceSet::eq(ciInstanceKlass* k, InterfaceHandling interface_handling) const {
+  assert(k->is_loaded(), "should be loaded");
+  assert((interface_handling == trust_interfaces) || !k->is_interface(), "no interface expected");
+  GrowableArray<ciInstanceKlass *>* interfaces = k->as_instance_klass()->transitive_interfaces();
+  if (_list.length() != interfaces->length()) {
+    return false;
+  }
+  for (int i = 0; i < interfaces->length(); i++) {
+    bool found = false;
+    _list.find_sorted<ciKlass*, compare>(interfaces->at(i), found);
+    if (!found) {
+      return false;
+    }
+  }
+  return true;
+}
+
 
 int TypePtr::InterfaceSet::hash() const {
   assert(_initialized, "must be");
@@ -3453,10 +3468,10 @@ void TypePtr::InterfaceSet::compute_exact_klass() {
   }
   ciKlass* res = nullptr;
   for (int i = 0; i < _list.length(); i++) {
-    ciKlass* interface = _list.at(i);
-    if (eq(interfaces(interface, false, true, false, trust_interfaces, false))) {
+    ciInstanceKlass* interface = _list.at(i)->as_instance_klass();
+    if (eq(interface, trust_interfaces)) {
       assert(res == nullptr, "");
-      res = _list.at(i);
+      res = interface;
     }
   }
   _exact_klass = res;
@@ -3979,9 +3994,7 @@ ciKlass* TypeInstPtr::exact_klass_helper() const {
     return _klass;
   }
   if (_klass != ciEnv::current()->Object_klass()) {
-    ciKlass* k = _klass;
-    const TypePtr::InterfaceSet interfaces = TypePtr::interfaces(k, true, false, false, ignore_interfaces, false);
-    if (_interfaces.eq(interfaces)) {
+    if (_interfaces.eq(_klass->as_instance_klass(), ignore_interfaces)) {
       return _klass;
     }
     return nullptr;
@@ -4034,7 +4047,7 @@ const TypeInstPtr *TypeInstPtr::make(PTR ptr,
   return result;
 }
 
-TypePtr::InterfaceSet TypePtr::interfaces(ciKlass*& k, bool klass, bool interface, bool array, InterfaceHandling interface_handling, bool init) {
+TypePtr::InterfaceSet TypePtr::interfaces(ciKlass*& k, bool klass, bool interface, bool array, InterfaceHandling interface_handling) {
   if (k->is_instance_klass()) {
     if (k->is_loaded()) {
       if (k->is_interface() && interface_handling == ignore_interfaces) {
@@ -4043,8 +4056,8 @@ TypePtr::InterfaceSet TypePtr::interfaces(ciKlass*& k, bool klass, bool interfac
         InterfaceSet interfaces;
         return interfaces;
       }
-      GrowableArray<ciInstanceKlass *> *k_interfaces = k->as_instance_klass()->transitive_interfaces();
-      InterfaceSet interfaces(k_interfaces, init);
+      GrowableArray<ciInstanceKlass *>* k_interfaces = k->as_instance_klass()->transitive_interfaces();
+      InterfaceSet interfaces(k_interfaces);
       if (k->is_interface()) {
         assert(interface, "no interface expected");
         k = ciEnv::current()->Object_klass();
@@ -4580,11 +4593,8 @@ const TypeKlassPtr* TypeInstPtr::as_klass_type(bool try_for_exact) const {
   bool xk = klass_is_exact();
   ciInstanceKlass* ik = klass()->as_instance_klass();
   if (try_for_exact && !xk && !ik->has_subklass() && !ik->is_final()) {
-    ciKlass* k = ik;
-    TypePtr::InterfaceSet interfaces = TypePtr::interfaces(k, true, false, false, ignore_interfaces, false);
-    assert(k == ik, "");
-    if (interfaces.eq(_interfaces)) {
-      Compile *C = Compile::current();
+    if (_interfaces.eq(ik, ignore_interfaces)) {
+      Compile* C = Compile::current();
       Dependencies* deps = C->dependencies();
       deps->assert_leaf_type(ik);
       xk = true;
@@ -5591,8 +5601,7 @@ ciKlass* TypeKlassPtr::exact_klass_helper() const {
     return _klass;
   }
   if (_klass != ciEnv::current()->Object_klass()) {
-    ciKlass* k = _klass;
-    if (_interfaces.eq(TypePtr::interfaces(k, true, false, true, ignore_interfaces, false))) {
+    if (_interfaces.eq(_klass->as_instance_klass(), ignore_interfaces)) {
       return _klass;
     }
     return nullptr;
@@ -5789,10 +5798,7 @@ const TypeOopPtr* TypeInstKlassPtr::as_instance_type(bool klass_change) const {
         && deps != nullptr && UseUniqueSubclasses) {
       ciInstanceKlass* sub = ik->unique_concrete_subklass();
       if (sub != nullptr) {
-        ciKlass* sub_k = sub;
-        TypePtr::InterfaceSet sub_interfaces = TypePtr::interfaces(sub_k, true, false, false, ignore_interfaces, false);
-        assert(sub_k == sub, "");
-        if (sub_interfaces.eq(_interfaces)) {
+        if (_interfaces.eq(sub, ignore_interfaces)) {
           deps->assert_abstract_with_unique_concrete_subtype(ik, sub);
           k = ik = sub;
           xk = sub->is_final();
@@ -6039,10 +6045,7 @@ const TypeKlassPtr* TypeInstKlassPtr::try_improve() const {
         deps != nullptr) {
       ciInstanceKlass* sub = ik->unique_concrete_subklass();
       if (sub != nullptr) {
-        ciKlass *sub_k = sub;
-        TypePtr::InterfaceSet sub_interfaces = TypePtr::interfaces(sub_k, true, false, false, ignore_interfaces, false);
-        assert(sub_k == sub, "");
-        if (sub_interfaces.eq(_interfaces)) {
+        if (_interfaces.eq(sub, ignore_interfaces)) {
           deps->assert_abstract_with_unique_concrete_subtype(ik, sub);
           k = ik = sub;
           klass_is_exact = sub->is_final();

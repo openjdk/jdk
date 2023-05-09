@@ -896,8 +896,9 @@ protected:
     void compute_exact_klass();
   public:
     InterfaceSet();
-    InterfaceSet(GrowableArray<ciInstanceKlass*>* interfaces, bool init = true);
+    InterfaceSet(GrowableArray<ciInstanceKlass*>* interfaces);
     bool eq(const InterfaceSet& other) const;
+    bool eq(ciInstanceKlass* k, InterfaceHandling interface_handling) const;
     int hash() const;
     void dump(outputStream* st) const;
     InterfaceSet union_with(const InterfaceSet& other) const;
@@ -917,10 +918,10 @@ protected:
     ciKlass* exact_klass() const;
     void verify_is_loaded() const NOT_DEBUG_RETURN;
 
-    static int compare(ciKlass* const &, ciKlass* const& k2);
+    static int compare(ciKlass* const& k1, ciKlass* const& k2);
   };
 
-  static InterfaceSet interfaces(ciKlass*& k, bool klass, bool interface, bool array, InterfaceHandling interface_handling, bool init = true);
+  static InterfaceSet interfaces(ciKlass*& k, bool klass, bool interface, bool array, InterfaceHandling interface_handling);
 
 public:
   enum PTR { TopPTR, AnyNull, Constant, Null, NotNull, BotPTR, lastPTR };
