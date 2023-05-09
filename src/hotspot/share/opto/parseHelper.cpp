@@ -34,6 +34,17 @@
 #include "opto/runtime.hpp"
 #include "runtime/sharedRuntime.hpp"
 
+#ifndef PRODUCT
+unsigned peaNumAllocsTracked = 0;
+unsigned peaNumMaterializations = 0;
+
+void printPeaStatistics() {
+  tty->print("PEA: ");
+  tty->print("num allocations tracked = %u, ", peaNumAllocsTracked);
+  tty->print_cr("num materializations = %u", peaNumMaterializations);
+}
+#endif
+
 //------------------------------make_dtrace_method_entry_exit ----------------
 // Dtrace -- record entry or exit of a method if compiled with dtrace support
 void GraphKit::make_dtrace_method_entry_exit(ciMethod* method, bool is_entry) {
@@ -446,6 +457,7 @@ void PEAState::add_new_allocation(Node* obj) {
     } else if (PEA_debug_idx < 0 && alloc->_idx == static_cast<node_idx_t>(-PEA_debug_idx)) { // block PEA_debug_idx
       return;
     }
+    Atomic::inc(&peaNumAllocsTracked);
 #endif
     // Opt out all subclasses of Throwable because C2 will not inline all methods of them including <init>.
     // PEA needs to materialize it at <init>.
@@ -517,6 +529,7 @@ EscapedState* PEAState::materialize(GraphKit* kit, Node* var) {
   if (Verbose) {
     tty->print_cr("PEA materializes a virtual object: %d", alloc->_idx);
   }
+  Atomic::inc(&peaNumMaterializations);
 #endif
   Compile* C = kit->C;
   const TypeOopPtr* oop_type = var->as_Type()->type()->is_oopptr();

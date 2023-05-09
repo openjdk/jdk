@@ -204,4 +204,6 @@ class AllocationStateMerger {
   void merge(const PEAState& newin, GraphKit* kit, RegionNode* region, int pnum);
   void process_phi(PhiNode* phi, Node* old);
 };
+
+void printPeaStatistics();
 #endif // SHARE_OPTO_PARTIAL_ESCAPE_HPP

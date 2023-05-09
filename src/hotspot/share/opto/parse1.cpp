@@ -95,6 +95,10 @@ void Parse::print_statistics() {
   if (PrintParseStatistics && BytecodeParseHistogram::initialized()) {
     BytecodeParseHistogram::print();
   }
+
+  if (DoPartialEscapeAnalysis) {
+    printPeaStatistics();
+  }
 }
 #endif
 
