@@ -171,7 +171,12 @@ void G1CollectionSetRegionList::print(const char* prefix) {
 }
 
 G1CollectionSetCandidates::G1CollectionSetCandidates() :
-  _marking_regions(), _contains_map(nullptr), _max_regions(0), _last_marking_candidates_length(0), _reclaimable_bytes(0) { }
+  _marking_regions(),
+  _contains_map(nullptr),
+  _max_regions(0),
+  _last_marking_candidates_length(0)
+  DEBUG_ONLY(COMMA _reclaimable_bytes(0))
+{ }
 
 G1CollectionSetCandidates::~G1CollectionSetCandidates() {
   FREE_C_HEAP_ARRAY(CandidateOrigin, _contains_map);
@@ -194,7 +199,7 @@ void G1CollectionSetCandidates::clear() {
   for (uint i = 0; i < _max_regions; i++) {
     _contains_map[i] = CandidateOrigin::Invalid;
   }
-  _reclaimable_bytes = 0;
+  DEBUG_ONLY(_reclaimable_bytes = 0;)
   _last_marking_candidates_length = 0;
 }
 
@@ -212,7 +217,7 @@ void G1CollectionSetCandidates::set_candidates_from_marking(G1CollectionCandidat
     _contains_map[r->hrm_index()] = CandidateOrigin::Marking;
   }
   _last_marking_candidates_length = num_infos;
-  _reclaimable_bytes += reclaimable_bytes;
+  DEBUG_ONLY(_reclaimable_bytes += reclaimable_bytes;)
 
   verify();
 }
@@ -226,7 +231,7 @@ void G1CollectionSetCandidates::remove(G1CollectionSetRegionList* other) {
   }
 
   assert(_reclaimable_bytes >= reclaimed_from_marked_list, "must be");
-  _reclaimable_bytes -= reclaimed_from_marked_list;
+  DEBUG_ONLY(_reclaimable_bytes -= reclaimed_from_marked_list;)
 
   verify();
 }

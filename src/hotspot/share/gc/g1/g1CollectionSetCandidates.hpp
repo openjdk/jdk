@@ -176,7 +176,7 @@ class G1CollectionSetCandidates : public CHeapObj<mtGC> {
   // The number of regions from the last merge of candidates from the marking.
   uint _last_marking_candidates_length;
 
-  size_t _reclaimable_bytes;
+  DEBUG_ONLY(size_t _reclaimable_bytes;)
 
   bool is_from_marking(HeapRegion* r) const;
 
