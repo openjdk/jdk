@@ -233,7 +233,7 @@ ALL_TARGETS += $(LAUNCHER_TARGETS)
 HOTSPOT_VARIANT_TARGETS := $(addprefix hotspot-, $(JVM_VARIANTS))
 HOTSPOT_VARIANT_GENSRC_TARGETS := $(addsuffix -gensrc, $(HOTSPOT_VARIANT_TARGETS))
 HOTSPOT_VARIANT_LIBS_TARGETS := $(addsuffix -libs, $(HOTSPOT_VARIANT_TARGETS))
-HOTSPOT_VARIANT_MAIN_STATIC_LIBS_TARGETS := hotspot-$(JVM_VARIANT_MAIN)-static-libs
+HOTSPOT_VARIANT_STATIC_LIBS_TARGETS := $(addsuffix -static-libs, $(HOTSPOT_VARIANT_TARGETS))
 
 define DeclareHotspotGensrcRecipe
   hotspot-$1-gensrc:
@@ -253,12 +253,12 @@ endef
 $(foreach v, $(JVM_VARIANTS), $(eval $(call DeclareHotspotLibsRecipe,$v)))
 
 define DeclareHotspotStaticLibsRecipe
-  hotspot-$(JVM_VARIANT_MAIN)-static-libs:
+  hotspot-$1-static-libs:
 	+($(CD) $(TOPDIR)/make/hotspot && $(MAKE) $(MAKE_ARGS) -f lib/CompileLibraries.gmk \
-	    JVM_VARIANT=$(JVM_VARIANT_MAIN) STATIC_LIBS=true)
+	    JVM_VARIANT=$1 STATIC_LIBS=true)
 endef
 
-$(eval $(call DeclareHotspotStaticLibsRecipe))
+$(foreach v, $(JVM_VARIANTS), $(eval $(call DeclareHotspotStaticLibsRecipe,$v)))
 
 $(eval $(call SetupTarget, hotspot-ide-project, \
     MAKEFILE := ide/visualstudio/hotspot/CreateVSProject, \
@@ -307,7 +307,7 @@ $(eval $(call SetupTarget, eclipse-shared-mixed-env, \
 ))
 
 ALL_TARGETS += $(HOTSPOT_VARIANT_TARGETS) $(HOTSPOT_VARIANT_GENSRC_TARGETS) \
-    $(HOTSPOT_VARIANT_LIBS_TARGETS) $(HOTSPOT_VARIANT_MAIN_STATIC_LIBS_TARGETS)
+    $(HOTSPOT_VARIANT_LIBS_TARGETS) $(HOTSPOT_VARIANT_STATIC_LIBS_TARGETS) 
 
 ################################################################################
 # Help and user support
@@ -471,10 +471,12 @@ $(eval $(call SetupTarget, symbols-image, \
 
 $(eval $(call SetupTarget, static-libs-image, \
     MAKEFILE := StaticLibsImage, \
+    TARGET := static-libs-image, \
 ))
 
-$(eval $(call SetupTarget, java-static-libs-image, \
-    MAKEFILE := StaticJvmLibsImage, \
+$(eval $(call SetupTarget, static-libs-graal-image, \
+    MAKEFILE := StaticLibsImage, \
+    TARGET := static-libs-graal-image, \
 ))
 
 $(eval $(call SetupTarget, mac-jdk-bundle, \
@@ -502,7 +504,7 @@ $(eval $(call SetupTarget, exploded-image-optimize, \
 
 $(eval $(call SetupTarget, graal-builder-image, \
     MAKEFILE := GraalBuilderImage, \
-    DEPS := jdk-image static-libs-image, \
+    DEPS := jdk-image static-libs-graal-image, \
 ))
 
 ifeq ($(JCOV_ENABLED), true)
@@ -849,12 +851,6 @@ $(eval $(call SetupTarget, static-libs-bundles, \
     DEPS := static-libs-image, \
 ))
 
-$(eval $(call SetupTarget, java-static-libs-bundles, \
-    MAKEFILE := Bundles, \
-    TARGET := java-static-libs-bundles, \
-    DEPS := java-static-libs-image, \
-))
-
 ifeq ($(JCOV_ENABLED), true)
   $(eval $(call SetupTarget, jcov-bundles, \
       MAKEFILE := Bundles, \
@@ -908,9 +904,8 @@ else
   $(foreach v, $(JVM_VARIANTS), \
       $(eval hotspot-$v-gensrc: java.base-copy buildtools-hotspot) \
       $(eval hotspot-$v-libs: hotspot-$v-gensrc java.base-copy) \
+      $(eval hotspot-$v-static-libs: hotspot-$v-gensrc java.base-copy) \
   )
-
-  hotspot-$(JVM_VARIANT_MAIN)-static-libs: hotspot-$(JVM_VARIANT_MAIN)-gensrc java.base-copy
 
   # If not already set, set the JVM variant target so that the JVM will be built.
   JVM_MAIN_LIB_TARGETS ?= hotspot-$(JVM_VARIANT_MAIN)-libs
@@ -1068,9 +1063,9 @@ else
 
   symbols-image: $(LIBS_TARGETS) $(LAUNCHER_TARGETS)
 
-  static-libs-image: $(STATIC_LIBS_TARGETS)
+  static-libs-image: hotspot-static-libs $(STATIC_LIBS_TARGETS)
 
-  java-static-libs-image: hotspot-static-libs static-libs-image
+  static-libs-graal-image: $(STATIC_LIBS_TARGETS) 
 
   bootcycle-images: jdk-image
 
@@ -1120,9 +1115,8 @@ hotspot: $(HOTSPOT_VARIANT_TARGETS)
 $(foreach v, $(JVM_VARIANTS), \
   $(eval hotspot-libs: hotspot-$v-libs) \
   $(eval hotspot-gensrc: hotspot-$v-gensrc) \
+  $(eval hotspot-static-libs: hotspot-$v-static-libs) \
 )
-
-$(eval hotspot-static-libs: hotspot-$(JVM_VARIANT_MAIN)-static-libs)
 
 gensrc: $(GENSRC_TARGETS)
 
@@ -1282,7 +1276,7 @@ endif
 all-images: product-images test-image all-docs-images
 
 # all-bundles packages all our deliverables as tar.gz bundles.
-all-bundles: product-bundles test-bundles docs-bundles static-libs-bundles java-static-libs-bundles
+all-bundles: product-bundles test-bundles docs-bundles static-libs-bundles
 
 ALL_TARGETS += buildtools hotspot hotspot-libs hotspot-static-libs hotspot-gensrc gensrc gendata \
     copy java libs static-libs launchers jmods \
