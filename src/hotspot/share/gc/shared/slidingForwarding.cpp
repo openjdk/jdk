@@ -146,24 +146,18 @@ size_t SlidingForwarding::FallbackTable::home_index(HeapWord* from) {
 void SlidingForwarding::FallbackTable::forward_to(HeapWord* from, HeapWord* to) {
   size_t idx = home_index(from);
   FallbackTableEntry* head = &_table[idx];
-  FallbackTableEntry* entry = head;
+#ifdef ASSERT
   // Search existing entry in chain starting at idx.
-  while (entry != nullptr) {
-    if (entry->_from == from || entry->_from == nullptr) {
-      break;
-    }
-    entry = entry->_next;
+  for (FallbackTableEntry* entry = head; entry != nullptr; entry = entry->_next) {
+    assert(entry->_from != from,"Don't re-forward entries into the fallback-table");
   }
-  if (entry == nullptr) {
-    // No entry found, create new one and insert after head.
-    FallbackTableEntry* new_entry = NEW_C_HEAP_OBJ(FallbackTableEntry, mtGC);
-    *new_entry = *head;
-    head->_next = new_entry;
-    entry = head; // Set from and to fields below.
-  }
-  // Set from and to in new or found entry.
-  entry->_from = from;
-  entry->_to   = to;
+#endif
+  // No entry found, create new one and insert after head.
+  FallbackTableEntry* new_entry = NEW_C_HEAP_OBJ(FallbackTableEntry, mtGC);
+  *new_entry = *head;
+  head->_next = new_entry;
+  head->_from = from;
+  head->_to   = to;
 }
 
 HeapWord* SlidingForwarding::FallbackTable::forwardee(HeapWord* from) const {
