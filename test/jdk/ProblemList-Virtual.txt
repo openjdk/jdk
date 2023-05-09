@@ -48,8 +48,6 @@ com/sun/jdi/SetLocalWhileThreadInNative.java 8285422 generic-all
 com/sun/jdi/StepTest.java 8285422 generic-all
 com/sun/jdi/PopAndInvokeTest.java 8305632 generic-all
 
-java/foreign/enablenativeaccess/TestEnableNativeAccessDynamic.java 8307486 generic-all
-
 ##########
 ## Tests incompatible with  with virtual test thread factory.
 ## There is no goal to run all test with virtual test thread factory.
