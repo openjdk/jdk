@@ -186,17 +186,15 @@ class BlockingSocketOps {
                 Socket s2 = connection.socket2();
 
                 // delayed abrupt close of s2
-                s2.setSoLinger(true, 0);
-                runAfterParkedAsync(s2::close);
+                runAfterParkedAsync(() -> {
+                    s2.setSoLinger(true, 0);
+                    s2.close();
+                });
 
                 // read from s1 should block, then throw
                 try {
                     int n = s1.getInputStream().read();
-                    if (!Platform.isAix()) {
-                        fail("read " + n);
-                    } else {
-                        assertTrue(n == -1);
-                    }
+                    fail("read " + n);
                 } catch (IOException ioe) {
                     // expected
                 }
