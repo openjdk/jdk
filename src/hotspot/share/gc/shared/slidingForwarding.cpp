@@ -57,7 +57,7 @@ void SlidingForwarding::initialize(MemRegion heap, size_t region_size_words) {
       _num_regions = 1;
       _region_size_words = heap.word_size();
       _region_size_bytes_shift = log2i_exact(round_up_power_of_2(_region_size_words)) + LogHeapWordSize;
-  } else {
+    } else {
       _num_regions = align_up(pointer_delta(heap.end(), heap.start()), region_size_words) / region_size_words;
       _region_size_words = region_size_words;
       _region_size_bytes_shift = log2i_exact(_region_size_words) + LogHeapWordSize;
