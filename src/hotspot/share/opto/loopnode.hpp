@@ -1012,7 +1012,7 @@ public:
     return n;
   }
   // true if CFG node d dominates CFG node n
-  virtual bool is_dominator(Node* d, Node* n) override;
+  bool is_dominator(Node *d, Node *n);
   // return get_ctrl for a data node and self(n) for a CFG node
   Node* ctrl_or_self(Node* n) {
     if (has_ctrl(n))
@@ -1203,6 +1203,9 @@ public:
 
   // True if the method has at least 1 irreducible loop
   bool _has_irreducible_loops;
+
+  // Per-Node transform
+  virtual Node* transform(Node* n) { return nullptr; }
 
   Node* loop_exit_control(Node* x, IdealLoopTree* loop);
   Node* loop_exit_test(Node* back_control, IdealLoopTree* loop, Node*& incr, Node*& limit, BoolTest::mask& bt, float& cl_prob);

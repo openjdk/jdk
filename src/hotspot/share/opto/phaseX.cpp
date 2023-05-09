@@ -955,7 +955,7 @@ void PhaseIterGVN::verify_PhaseIterGVN() {
     Node* n = modified_list->pop();
     if (!n->is_Con()) { // skip Con nodes
       n->dump();
-      fatal("modified node was not processed by IGVN.transform_igvn()");
+      fatal("modified node was not processed by IGVN.transform_old()");
     }
   }
 #endif
@@ -1034,7 +1034,7 @@ void PhaseIterGVN::optimize() {
     if (n->outcnt() != 0) {
       NOT_PRODUCT(const Type* oldtype = type_or_null(n));
       // Do the transformation
-      Node* nn = transform_igvn(n);
+      Node* nn = transform_old(n);
       NOT_PRODUCT(trace_PhaseIterGVN(n, nn, oldtype);)
     } else if (!n->is_top()) {
       remove_dead_node(n);
@@ -1162,10 +1162,10 @@ Node *PhaseIterGVN::transform( Node *n ) {
     set_type_bottom(n);
   }
 
-  return transform_igvn(n);
+  return transform_old(n);
 }
 
-Node* PhaseIterGVN::transform_igvn(Node* n) {
+Node* PhaseIterGVN::transform_old(Node* n) {
   NOT_PRODUCT(set_transforms());
   // Remove 'n' from hash table in case it gets modified
   _table.hash_delete(n);
@@ -1195,7 +1195,7 @@ Node* PhaseIterGVN::transform_igvn(Node* n) {
   while (i != nullptr) {
 #ifdef ASSERT
     if (loop_count >= K + C->live_nodes()) {
-      dump_infinite_loop_info(i, "PhaseIterGVN::transform_igvn");
+      dump_infinite_loop_info(i, "PhaseIterGVN::transform_old");
     }
 #endif
     assert((i->_idx >= k->_idx) || i->is_top(), "Idealize should return new nodes, use Identity to return old nodes");
@@ -1995,10 +1995,21 @@ void PhaseCCP::push_opaque_zero_trip_guard(Unique_Node_List& worklist, const Nod
   }
 }
 
-void PhaseCCP::do_transform_ccp() {
-  RootNode* root = C->root();
-  assert(root != nullptr, "must have root");
-  assert(_root_and_safepoints.member(root), "root must be in list");
+//------------------------------do_transform-----------------------------------
+// Top level driver for the recursive transformer
+void PhaseCCP::do_transform() {
+  // Correct leaves of new-space Nodes; they point to old-space.
+  C->set_root( transform(C->root())->as_Root() );
+  assert( C->top(),  "missing TOP node" );
+  assert( C->root(), "missing root" );
+}
+
+//------------------------------transform--------------------------------------
+// Given a Node in old-space, clone him into new-space.
+// Convert any of his old-space children into new-space children.
+Node *PhaseCCP::transform( Node *n ) {
+  assert(n->is_Root(), "traversal must start at root");
+  assert(_root_and_safepoints.member(n), "root (n) must be in list");
 
   ResourceMark rm;
   // Map: old node idx -> node after CCP (or nullptr if not yet transformed or useless).
@@ -2020,7 +2031,7 @@ void PhaseCCP::do_transform_ccp() {
     Node* nn = _root_and_safepoints.at(i);
     Node* new_node = node_map[nn->_idx];
     assert(new_node == nullptr, "");
-    new_node = transform_ccp(nn);  // Check for constant
+    new_node = transform_once(nn);  // Check for constant
     node_map.map(nn->_idx, new_node); // Flag as having been cloned
     transform_stack.push(new_node); // Process children of cloned node
     useful.push(new_node);
@@ -2034,7 +2045,7 @@ void PhaseCCP::do_transform_ccp() {
       if( input != nullptr ) {                 // Ignore nulls
         Node *new_input = node_map[input->_idx]; // Check for cloned input node
         if( new_input == nullptr ) {
-          new_input = transform_ccp(input);   // Check for constant
+          new_input = transform_once(input);   // Check for constant
           node_map.map( input->_idx, new_input );// Flag as having been cloned
           transform_stack.push(new_input);     // Process children of cloned node
           useful.push(new_input);
@@ -2060,17 +2071,14 @@ void PhaseCCP::do_transform_ccp() {
   _worklist.remove_useless_nodes(useful.member_set());
   C->disconnect_useless_nodes(useful, _worklist);
 
-  Node* new_root = node_map[root->_idx];
+  Node* new_root = node_map[n->_idx];
   assert(new_root->is_Root(), "transformed root node must be a root node");
-
-  C->set_root(new_root->as_Root());
-  assert(C->top(),  "missing TOP node");
-  assert(C->root(), "missing root");
+  return new_root;
 }
 
 
 // For PhaseCCP, transformation is IDENTITY unless Node computed a constant.
-Node* PhaseCCP::transform_ccp(Node* n) {
+Node* PhaseCCP::transform_once(Node* n) {
   const Type *t = type(n);
   // Constant?  Use constant Node instead
   if( t->singleton() ) {
@@ -2179,6 +2187,12 @@ PhasePeephole::~PhasePeephole() {
   _total_peepholes += count_peepholes();
 }
 #endif
+
+//------------------------------transform--------------------------------------
+Node *PhasePeephole::transform( Node *n ) {
+  ShouldNotCallThis();
+  return nullptr;
+}
 
 //------------------------------do_transform-----------------------------------
 void PhasePeephole::do_transform() {

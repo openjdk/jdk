@@ -1107,6 +1107,7 @@ static void match_alias_type(Compile* C, Node* n, Node* m) {
 //------------------------------xform------------------------------------------
 // Given a Node in old-space, Match him (Label/Reduce) to produce a machine
 // Node in new-space.  Given a new-space Node, recursively walk his children.
+Node *Matcher::transform( Node *n ) { ShouldNotCallThis(); return n; }
 Node *Matcher::xform( Node *n, int max_stack ) {
   // Use one stack to keep both: child's node/state and parent's node/index
   MStack mstack(max_stack * 2 * 2); // usually: C->live_nodes() * 2 * 2

@@ -193,6 +193,10 @@ public:
 #endif
   }
 
+  // Return a node which computes the same function as this node, but
+  // in a faster or cheaper fashion.
+  virtual Node *transform( Node *n ) = 0;
+
   // true if CFG node d dominates CFG node n
   virtual bool is_dominator(Node *d, Node *n) { fatal("unimplemented for this pass"); return false; };
 
@@ -410,13 +414,13 @@ public:
 
   // Return a node which computes the same function as this node, but
   // in a faster or cheaper fashion.
-  virtual Node* transform(Node* n);
+  Node  *transform( Node *n );
   Node  *transform_no_reclaim( Node *n );
   virtual void record_for_igvn(Node *n) {
     C->record_for_igvn(n);
   }
 
-  virtual bool is_dominator(Node* d, Node* n) override { return is_dominator_helper(d, n, true); }
+  bool is_dominator(Node *d, Node *n) { return is_dominator_helper(d, n, true); }
 
   // Helper to call Node::Ideal() and BarrierSetC2::ideal_node().
   Node* apply_ideal(Node* i, bool can_reshape);
@@ -436,8 +440,8 @@ private:
   bool _delay_transform;  // When true simply register the node when calling transform
                           // instead of actually optimizing it
 
-  // IGVN transform: apply Ideal (iteratively), Value and Identity.
-  Node* transform_igvn(Node* n);
+  // Idealize old Node 'n' with respect to its inputs and its value
+  virtual Node *transform_old( Node *a_node );
 
   // Subsume users of node 'old' into node 'nn'
   void subsume_node( Node *old, Node *nn );
@@ -447,11 +451,12 @@ protected:
   void shuffle_worklist();
 
   virtual const Type* saturate(const Type* new_type, const Type* old_type,
-                               const Type* limit_type) const override;
+                               const Type* limit_type) const;
   // Usually returns new_type.  Returns old_type if new_type is only a slight
   // improvement, such that it would take many (>>10) steps to reach 2**32.
 
 public:
+
   PhaseIterGVN(PhaseIterGVN* igvn); // Used by CCP constructor
   PhaseIterGVN(PhaseGVN* gvn); // Used after Parser
 
@@ -476,8 +481,8 @@ public:
   }
 
   // Idealize new Node 'n' with respect to its inputs and its value
-  virtual Node* transform(Node* n) override;
-  virtual void record_for_igvn(Node *n) override { }
+  virtual Node *transform( Node *a_node );
+  virtual void record_for_igvn(Node *n) { }
 
   // Iterative worklist. Reference to "C->igvn_worklist()".
   Unique_Node_List &_worklist;
@@ -574,7 +579,7 @@ public:
     _table.check_no_speculative_types();
   }
 
-  virtual bool is_dominator(Node* d, Node* n) override { return is_dominator_helper(d, n, false); }
+  bool is_dominator(Node *d, Node *n) { return is_dominator_helper(d, n, false); }
   bool no_dependent_zero_check(Node* n) const;
 
 #ifndef PRODUCT
@@ -602,7 +607,7 @@ protected:
 class PhaseCCP : public PhaseIterGVN {
   Unique_Node_List _root_and_safepoints;
   // Non-recursive.  Use analysis to transform single Node.
-  Node* transform_ccp(Node* n);
+  virtual Node* transform_once(Node* n);
 
   Node* fetch_next_node(Unique_Node_List& worklist);
   static void dump_type_and_node(const Node* n, const Type* t) PRODUCT_RETURN;
@@ -631,22 +636,17 @@ class PhaseCCP : public PhaseIterGVN {
   // For every node n on verify list, check if type(n) == n->Value()
   void verify_analyze(Unique_Node_List& worklist_verify);
 #endif
-
-  // This should never get called on CCP.
-  virtual Node* transform(Node* n) override {
-    ShouldNotReachHere();
-    return nullptr;
-  }
-
-  // Recursive traversal of the graph. Call transform_ccp on all useful nodes.
-  void do_transform_ccp();
+  // Recursive traversal of program.  Used analysis to modify program.
+  virtual Node *transform( Node *n );
+  // Do any transformation after analysis
+  void          do_transform();
 
   virtual const Type* saturate(const Type* new_type, const Type* old_type,
-                               const Type* limit_type) const override;
+                               const Type* limit_type) const;
   // Returns new_type->widen(old_type), which increments the widen bits until
   // giving up with TypeInt::INT or TypeLong::LONG.
   // Result is clipped to limit_type if necessary.
-  virtual const Type* saturate_and_maybe_push_to_igvn_worklist(const TypeNode* n, const Type* new_type) override {
+  virtual const Type* saturate_and_maybe_push_to_igvn_worklist(const TypeNode* n, const Type* new_type) {
     const Type* t = saturate(new_type, type_or_null(n), n->type());
     if (t != new_type) {
       // Type was widened in CCP, but IGVN may be able to make it narrower.
@@ -675,6 +675,8 @@ class PhaseCCP : public PhaseIterGVN {
 class PhasePeephole : public PhaseTransform {
   PhaseRegAlloc *_regalloc;
   PhaseCFG     &_cfg;
+  // Recursive traversal of program.  Pure function is unused in this phase
+  virtual Node *transform( Node *n );
 
 public:
   PhasePeephole( PhaseRegAlloc *regalloc, PhaseCFG &cfg );

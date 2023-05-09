@@ -137,6 +137,8 @@ private:
   // Node labeling iterator for instruction selection
   Node* Label_Root(const Node* n, State* svec, Node* control, Node*& mem);
 
+  Node *transform( Node *dummy );
+
   Node_List _projection_list;        // For Machine nodes killing many values
 
   Node_Array _shared_nodes;

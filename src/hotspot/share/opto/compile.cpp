@@ -2366,7 +2366,7 @@ void Compile::Optimize() {
   assert( true, "Break here to ccp.dump_nodes_and_types(_root,999,1)");
   {
     TracePhase tp("ccp", &timers[_t_ccp]);
-    ccp.do_transform_ccp();
+    ccp.do_transform();
   }
   print_method(PHASE_CCP1, 2);
 
