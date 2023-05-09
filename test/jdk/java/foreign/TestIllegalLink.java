@@ -110,14 +110,6 @@ public class TestIllegalLink extends NativeTestHelper {
     public static Object[][] types() {
         List<Object[]> cases = new ArrayList<>(Arrays.asList(new Object[][]{
             {
-                    FunctionDescriptor.of(MemoryLayout.paddingLayout(64)),
-                    "Unsupported layout: x64"
-            },
-            {
-                    FunctionDescriptor.ofVoid(MemoryLayout.paddingLayout(64)),
-                    "Unsupported layout: x64"
-            },
-            {
                     FunctionDescriptor.of(MemoryLayout.sequenceLayout(2, C_INT)),
                     "Unsupported layout: [2:i32]"
             },

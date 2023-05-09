@@ -189,11 +189,6 @@ class Address {
     _index(noreg),
     _disp(0) {}
 
-  Address(Register base, Register index, intptr_t disp = 0) :
-    _base(base),
-    _index(index),
-    _disp(disp) {}
-
   Address(Register base, intptr_t disp = 0) :
     _base(base),
     _index(noreg),

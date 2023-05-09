@@ -884,7 +884,7 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
     // Make sure there is room for the exception oop pushed in case method throws
     // an exception (see TemplateInterpreterGenerator::generate_throw_exception())
     __ sub(rscratch1, sp, 2 * wordSize);
-    __ stp(zr, rscratch1, Address(sp, 4 * wordSize));
+    __ stp(r10, rscratch1, Address(sp, 4 * wordSize));
     __ mov(sp, rscratch1);
   }
 }
