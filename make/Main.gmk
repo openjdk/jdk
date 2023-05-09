@@ -1278,7 +1278,8 @@ all-images: product-images test-image all-docs-images
 # all-bundles packages all our deliverables as tar.gz bundles.
 all-bundles: product-bundles test-bundles docs-bundles static-libs-bundles
 
-ALL_TARGETS += buildtools hotspot hotspot-libs hotspot-static-libs hotspot-gensrc gensrc gendata \
+ALL_TARGETS += buildtools hotspot hotspot-libs hotspot-static-libs \
+    hotspot-gensrc gensrc gendata \
     copy java libs static-libs launchers jmods \
     jdk.jdwp.agent-gensrc $(ALL_MODULES) demos \
     exploded-image-base exploded-image runnable-buildjdk \
