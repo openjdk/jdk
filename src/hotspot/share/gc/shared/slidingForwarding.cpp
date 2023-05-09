@@ -30,8 +30,6 @@
 #include "utilities/ostream.hpp"
 #include "utilities/powerOfTwo.hpp"
 
-#include "logging/log.hpp"
-
 // We cannot use 0, because that may already be a valid base address in zero-based heaps.
 // 0x1 is safe because heap base addresses must be aligned by much larger alignment
 HeapWord* const SlidingForwarding::UNUSED_BASE = reinterpret_cast<HeapWord*>(0x1);
@@ -51,12 +49,16 @@ void SlidingForwarding::initialize(MemRegion heap, size_t region_size_words) {
   if (UseAltGCForwarding) {
     _heap_start = heap.start();
 
-    if (UseSerialGC && heap.word_size() <= (1 << NUM_OFFSET_BITS)) {
-      // In this case we can treat the whole heap as a single region and
-      // make the encoding very simple.
+    // If the heap is small enough to fit directly into the available offset bits,
+    // and we are running Serial GC, we can treat the whole heap as a single region
+    // if it happens to be aligned to allow biasing.
+    size_t rounded_heap_size = round_up_power_of_2(heap.byte_size());
+
+    if (UseSerialGC && (heap.word_size() <= (1 << NUM_OFFSET_BITS)) &&
+        is_aligned((uintptr_t)_heap_start, rounded_heap_size)) {
       _num_regions = 1;
       _region_size_words = heap.word_size();
-      _region_size_bytes_shift = log2i_exact(round_up_power_of_2(_region_size_words)) + LogHeapWordSize;
+      _region_size_bytes_shift = log2i_exact(rounded_heap_size);
     } else {
       _num_regions = align_up(pointer_delta(heap.end(), heap.start()), region_size_words) / region_size_words;
       _region_size_words = region_size_words;

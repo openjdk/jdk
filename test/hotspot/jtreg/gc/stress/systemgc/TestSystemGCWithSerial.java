@@ -46,6 +46,17 @@ package gc.stress.systemgc;
  */
 
 /*
+ * @test id=alt-forwarding-unaligned
+ * @key stress
+ * @bug 8190703
+ * @library /
+ * @requires vm.gc.Serial
+ * @requires vm.debug
+ * @summary Stress the Serial GC full GC by allocating objects of different lifetimes concurrently with System.gc().
+ * @run main/othervm/timeout=300 -XX:+UseAltGCForwarding -Xlog:gc*=info -Xmx700m -XX:+UseSerialGC gc.stress.systemgc.TestSystemGCWithSerial 270
+ */
+
+/*
  * @test id=alt-forwarding-large-heap
  * @key stress
  * @bug 8190703
