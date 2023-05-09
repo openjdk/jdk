@@ -95,10 +95,10 @@ How you set these properties will depend on the SA tool being used. The followin
 </p>
 
 <code>
-jhsdb -J-Dsun.jvm.hotspot.debugger.windbg.imagePath="%PATH%;D:/SomePath" clhsdb
+jhsdb -J-Dsun.jvm.hotspot.debugger.windbg.imagePath="%PATH%;D:\SomePath" clhsdb
 </code>
 
-<p>If you are not seeing symbols for Windows libraries, try adding "<b>srv*https://msdl.microsoft.com/download/symbols</b>" to <b>sun.jvm.hotspot.debugger.windbg.symbolPath</b>. Note doing this means that SA will no longer look in <b>PATH</b> for your JVM and JNI symbols, so make sure those paths also get added. The following is one possible approach:
+<p>If you are not seeing symbols for Windows libraries, try setting <b>sun.jvm.hotspot.debugger.windbg.symbolPath</b> to include "<b>srv*https://msdl.microsoft.com/download/symbols</b>". Also include <b>PATH</b> so SA will still find your JVM and JNI symbols. For example:
 </p>
 
 <code>
