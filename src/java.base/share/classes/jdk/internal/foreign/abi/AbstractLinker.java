@@ -35,6 +35,7 @@ import jdk.internal.foreign.abi.x64.sysv.SysVx64Linker;
 import jdk.internal.foreign.abi.x64.windows.Windowsx64Linker;
 import jdk.internal.foreign.layout.AbstractLayout;
 
+import java.lang.foreign.AddressLayout;
 import java.lang.foreign.GroupLayout;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.Arena;
@@ -48,6 +49,7 @@ import java.lang.foreign.UnionLayout;
 import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
+import java.util.List;
 import java.nio.ByteOrder;
 import java.util.Objects;
 
@@ -69,6 +71,7 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
         Objects.requireNonNull(function);
         Objects.requireNonNull(options);
         checkLayouts(function);
+        function = stripNames(function);
         LinkerOptions optionSet = LinkerOptions.forDowncall(function, options);
 
         return DOWNCALL_CACHE.get(new LinkRequest(function, optionSet), linkRequest ->  {
@@ -88,6 +91,7 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
         Objects.requireNonNull(function);
         checkLayouts(function);
         SharedUtils.checkExceptions(target);
+        function = stripNames(function);
         LinkerOptions optionSet = LinkerOptions.forUpcall(function, options);
 
         MethodType type = function.toMethodType();
@@ -111,11 +115,20 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
     protected abstract ByteOrder linkerByteOrder();
 
     private void checkLayouts(FunctionDescriptor descriptor) {
-        descriptor.returnLayout().ifPresent(this::checkLayoutsRecursive);
-        descriptor.argumentLayouts().forEach(this::checkLayoutsRecursive);
+        descriptor.returnLayout().ifPresent(this::checkLayout);
+        descriptor.argumentLayouts().forEach(this::checkLayout);
     }
 
-    private void checkLayoutsRecursive(MemoryLayout layout) {
+    private void checkLayout(MemoryLayout layout) {
+        // Note: we should not worry about padding layouts, as they cannot be present in a function descriptor
+        if (layout instanceof SequenceLayout) {
+            throw new IllegalArgumentException("Unsupported layout: " + layout);
+        } else {
+            checkLayoutRecursive(layout);
+        }
+    }
+
+    private void checkLayoutRecursive(MemoryLayout layout) {
         checkHasNaturalAlignment(layout);
         if (layout instanceof ValueLayout vl) {
             checkByteOrder(vl);
@@ -126,7 +139,7 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
                 // check element offset before recursing so that an error points at the
                 // outermost layout first
                 checkMemberOffset(sl, member, lastUnpaddedOffset, offset);
-                checkLayoutsRecursive(member);
+                checkLayoutRecursive(member);
 
                 offset += member.bitSize();
                 if (!(member instanceof PaddingLayout)) {
@@ -137,14 +150,14 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
         } else if (layout instanceof UnionLayout ul) {
             long maxUnpaddedLayout = 0;
             for (MemoryLayout member : ul.memberLayouts()) {
-                checkLayoutsRecursive(member);
+                checkLayoutRecursive(member);
                 if (!(member instanceof PaddingLayout)) {
                     maxUnpaddedLayout = Long.max(maxUnpaddedLayout, member.bitSize());
                 }
             }
             checkGroupSize(ul, maxUnpaddedLayout);
         } else if (layout instanceof SequenceLayout sl) {
-            checkLayoutsRecursive(sl.elementLayout());
+            checkLayoutRecursive(sl.elementLayout());
         }
     }
 
@@ -172,6 +185,32 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
         if (!((AbstractLayout<?>) layout).hasNaturalAlignment()) {
             throw new IllegalArgumentException("Layout bit alignment must be natural alignment: " + layout);
         }
+    }
+
+    private static MemoryLayout stripNames(MemoryLayout ml) {
+        // we don't care about transferring alignment and byte order here
+        // since the linker already restricts those such that they will always be the same
+        return switch (ml) {
+            case StructLayout sl -> MemoryLayout.structLayout(stripNames(sl.memberLayouts()));
+            case UnionLayout ul -> MemoryLayout.unionLayout(stripNames(ul.memberLayouts()));
+            case SequenceLayout sl -> MemoryLayout.sequenceLayout(sl.elementCount(), stripNames(sl.elementLayout()));
+            case AddressLayout al -> al.targetLayout()
+                    .map(tl -> al.withoutName().withTargetLayout(stripNames(tl)))
+                    .orElseGet(al::withoutName);
+            default -> ml.withoutName(); // ValueLayout and PaddingLayout
+        };
+    }
+
+    private static MemoryLayout[] stripNames(List<MemoryLayout> layouts) {
+        return layouts.stream()
+                .map(AbstractLinker::stripNames)
+                .toArray(MemoryLayout[]::new);
+    }
+
+    private static FunctionDescriptor stripNames(FunctionDescriptor function) {
+        return function.returnLayout()
+                .map(rl -> FunctionDescriptor.of(stripNames(rl), stripNames(function.argumentLayouts())))
+                .orElseGet(() -> FunctionDescriptor.ofVoid(stripNames(function.argumentLayouts())));
     }
 
     private void checkByteOrder(ValueLayout vl) {
