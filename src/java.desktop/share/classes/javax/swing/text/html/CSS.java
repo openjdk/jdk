@@ -2905,7 +2905,9 @@ public class CSS implements Serializable {
 
         @Override
         public int hashCode() {
-            return Float.hashCode(horizontalPosition);
+            int hashCode = Float.hashCode(horizontalPosition);
+            hashCode |= Float.hashCode(verticalPosition);
+            return hashCode;
         }
 
         @Override
