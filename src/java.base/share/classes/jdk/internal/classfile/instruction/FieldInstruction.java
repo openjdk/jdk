@@ -77,7 +77,7 @@ public sealed interface FieldInstruction extends Instruction
      * {@return a symbolic descriptor for the type of the field}
      */
     default ClassDesc typeSymbol() {
-        return ((AbstractPoolEntry.NameAndTypeEntryImpl)field().nameAndType()).fieldTypeSymbol();
+        return Util.fieldTypeSymbol(field().nameAndType());
     }
 
     /**
