@@ -3965,20 +3965,20 @@ instruct vexpand(vReg dst, vReg src, vRegMask_V0 v0, vReg tmp) %{
 
 // ------------------------------ Vector Load Gather ---------------------------
 
-instruct gather_load(vReg dst, vmemA mem, vReg idx, vReg tmp) %{
+instruct gather_load(vReg dst, vmemA mem, vReg idx) %{
   predicate(type2aelembytes(Matcher::vector_element_basic_type(n)) == 4 ||
             type2aelembytes(Matcher::vector_element_basic_type(n)) == 8);
   match(Set dst (LoadVectorGather mem idx));
-  effect(TEMP_DEF dst, TEMP tmp);
-  format %{ "gather_load $dst, $mem, $idx\t# KILL $tmp" %}
+  effect(TEMP_DEF dst);
+  format %{ "gather_load $dst, $mem, $idx" %}
   ins_encode %{
-    __ vmv1r_v(as_VectorRegister($tmp$$reg), as_VectorRegister($idx$$reg));
+    __ vmv1r_v(as_VectorRegister($dst$$reg), as_VectorRegister($idx$$reg));
     BasicType bt = Matcher::vector_element_basic_type(this);
     Assembler::SEW sew = Assembler::elemtype_to_sew(bt);
     __ vsetvli_helper(bt, Matcher::vector_length(this));
-    __ vsll_vi(as_VectorRegister($tmp$$reg), as_VectorRegister($tmp$$reg), (int)sew);
+    __ vsll_vi(as_VectorRegister($dst$$reg), as_VectorRegister($dst$$reg), (int)sew);
     __ vluxei32_v(as_VectorRegister($dst$$reg), as_Register($mem$$base),
-                  as_VectorRegister($tmp$$reg));
+                  as_VectorRegister($dst$$reg));
  %}
   ins_pipe(pipe_slow);
 %}
