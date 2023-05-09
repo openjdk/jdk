@@ -26,6 +26,7 @@ package nsk.share.jpda;
 import nsk.share.*;
 
 import java.io.*;
+import java.lang.ref.Cleaner;
 import java.net.*;
 import java.util.*;
 
@@ -109,7 +110,6 @@ public class DebugeeBinder extends Log.Logger implements Finalizable {
     private ServerSocket pipeServerSocket = null;
 
     // -------------------------------------------------- //
-
     /**
      * Incarnate new Binder obeying the given
      * <code>argumentHandler</code>; and assign the given
@@ -118,8 +118,8 @@ public class DebugeeBinder extends Log.Logger implements Finalizable {
     public DebugeeBinder (DebugeeArgumentHandler argumentHandler, Log log) {
         super(log, LOG_PREFIX);
         this.argumentHandler = argumentHandler;
-        Finalizer finalizer = new Finalizer(this);
-        finalizer.activate();
+
+        registerCleanup();
     }
 
     /**
@@ -312,6 +312,12 @@ public class DebugeeBinder extends Log.Logger implements Finalizable {
         Vector<String> args = new Vector<String>();
 
         args.add(argumentHandler.getLaunchExecPath());
+
+        /* Need --enable-preview on the debuggee in order to support virtual threads. */
+        boolean vthreadMode = "Virtual".equals(System.getProperty("main.wrapper"));
+        if (vthreadMode) {
+            args.add("--enable-preview");
+        }
 
         String javaOpts = argumentHandler.getLaunchOptions();
         if (javaOpts != null && javaOpts.length() > 0) {
@@ -551,20 +557,9 @@ public class DebugeeBinder extends Log.Logger implements Finalizable {
     /**
      * Finalize binder by invoking <code>close()</code>.
      *
-     * @throws Throwable if any throwable exception is thrown during finalization
      */
-    protected void finalize() throws Throwable {
+    public void cleanup() {
         close();
-        super.finalize();
-    }
-
-    /**
-     * Finalize binder at exit by invoking <code>finalize()</code>.
-     *
-     * @throws Throwable if any throwable exception is thrown during finalization
-     */
-    public void finalizeAtExit() throws Throwable {
-        finalize();
     }
 
     /**
