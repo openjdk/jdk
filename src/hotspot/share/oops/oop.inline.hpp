@@ -303,7 +303,7 @@ oop oopDesc::forward_to_atomic(oop p, markWord compare, atomic_memory_order orde
 oop oopDesc::forward_to_self_atomic(markWord compare, atomic_memory_order order) {
   if (UseAltGCForwarding) {
     markWord m = compare;
-    // If mark is displaced, we need to preserve real header during GC.
+    // If mark is displaced, we need to preserve the real header during GC.
     // It will be restored to the displaced header after GC.
     assert(SafepointSynchronize::is_at_safepoint(), "we can only safely fetch the displaced header at safepoint");
     if (m.has_displaced_mark_helper()) {
