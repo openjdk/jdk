@@ -58,10 +58,6 @@ class os::Linux {
   static julong _physical_memory;
   static pthread_t _main_thread;
 
-  // Usually available memory (MemAvailable in /proc/meminfo) is greater
-  // than free memory (MemFree in /proc/meminfo) because Linux would use
-  // free memory aggressively (e.g. caches).
-  // Thus we distinguish free memory and available memory in Linux.
   static julong available_memory();
   static julong free_memory();
 
