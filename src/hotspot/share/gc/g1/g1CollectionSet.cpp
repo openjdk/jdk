@@ -383,7 +383,7 @@ bool G1CollectionSet::finalize_optional_for_evacuation(double remaining_pause_ti
 
   move_candidates_to_collection_set(&selected_regions);
 
-  _optional_old_regions.remove(&selected_regions);
+  _optional_old_regions.remove_prefix(&selected_regions);
 
   stop_incremental_building();
 

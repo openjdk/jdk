@@ -134,7 +134,7 @@ void G1CollectionSetRegionList::append(HeapRegion* r) {
   _regions.append(r);
 }
 
-void G1CollectionSetRegionList::remove(G1CollectionSetRegionList* other) {
+void G1CollectionSetRegionList::remove_prefix(G1CollectionSetRegionList* other) {
 #ifdef ASSERT
   // Check that the given list is a prefix of this list.
   int i = 0;

@@ -51,7 +51,7 @@ public:
   void append(HeapRegion* r);
   // Remove the given list of HeapRegion* from this list. Assumes that the given
   // list is a prefix of this list.
-  void remove(G1CollectionSetRegionList* list);
+  void remove_prefix(G1CollectionSetRegionList* list);
 
   // Empty contents of the list.
   void clear();
