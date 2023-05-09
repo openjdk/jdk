@@ -473,6 +473,12 @@ void PEAState::add_new_allocation(Node* obj) {
     if (ik->is_subclass_of(env->Throwable_klass())) {
       return;
     }
+    // Opt out of all subclasses that non-partial escape analysis opts out of.
+    if (ik->is_subclass_of(env->Thread_klass()) ||
+        ik->is_subclass_of(env->Reference_klass()) ||
+        !ik->can_be_instantiated() || ik->has_finalizer()) {
+      return;
+    }
 
     bool result = _state.put(alloc, new VirtualState(oop_type));
     assert(result, "the key existed in _state");
