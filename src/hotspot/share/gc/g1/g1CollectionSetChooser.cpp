@@ -124,7 +124,6 @@ class G1BuildCandidateRegionsTask : public WorkerTask {
     uint _cur_chunk_end;
 
     uint _regions_added;
-    size_t _reclaimable_bytes_added;
 
     void add_region(HeapRegion* hr) {
       if (_cur_chunk_idx == _cur_chunk_end) {
@@ -137,7 +136,6 @@ class G1BuildCandidateRegionsTask : public WorkerTask {
       _cur_chunk_idx++;
 
       _regions_added++;
-      _reclaimable_bytes_added += hr->reclaimable_bytes();
     }
 
     bool should_add(HeapRegion* hr) { return G1CollectionSetChooser::should_add(hr); }
@@ -147,8 +145,7 @@ class G1BuildCandidateRegionsTask : public WorkerTask {
       _array(array),
       _cur_chunk_idx(0),
       _cur_chunk_end(0),
-      _regions_added(0),
-      _reclaimable_bytes_added(0) { }
+      _regions_added(0) { }
 
     bool do_heap_region(HeapRegion* r) {
       // We will skip any region that's currently used as an old GC
@@ -168,24 +165,18 @@ class G1BuildCandidateRegionsTask : public WorkerTask {
     }
 
     uint regions_added() const { return _regions_added; }
-    size_t reclaimable_bytes_added() const { return _reclaimable_bytes_added; }
   };
 
   G1CollectedHeap* _g1h;
   HeapRegionClaimer _hrclaimer;
 
   uint volatile _num_regions_added;
-  size_t volatile _reclaimable_bytes_added;
 
   G1BuildCandidateArray _result;
 
-  void update_totals(uint num_regions, size_t reclaimable_bytes) {
+  void update_totals(uint num_regions) {
     if (num_regions > 0) {
-      assert(reclaimable_bytes > 0, "invariant");
       Atomic::add(&_num_regions_added, num_regions);
-      Atomic::add(&_reclaimable_bytes_added, reclaimable_bytes);
-    } else {
-      assert(reclaimable_bytes == 0, "invariant");
     }
   }
 
@@ -231,7 +222,6 @@ class G1BuildCandidateRegionsTask : public WorkerTask {
                               allowed_waste);
 
     Atomic::sub(&_num_regions_added, num_pruned, memory_order_relaxed);
-    Atomic::sub(&_reclaimable_bytes_added, wasted_bytes, memory_order_relaxed);
   }
 
 public:
@@ -240,21 +230,19 @@ public:
     _g1h(G1CollectedHeap::heap()),
     _hrclaimer(num_workers),
     _num_regions_added(0),
-    _reclaimable_bytes_added(0),
     _result(max_num_regions, chunk_size, num_workers) { }
 
   void work(uint worker_id) {
     G1BuildCandidateRegionsClosure cl(&_result);
     _g1h->heap_region_par_iterate_from_worker_offset(&cl, &_hrclaimer, worker_id);
-    update_totals(cl.regions_added(), cl.reclaimable_bytes_added());
+    update_totals(cl.regions_added());
   }
 
   void sort_and_prune_into(G1CollectionSetCandidates* candidates) {
     _result.sort_by_efficiency();
     prune(_result.array());
     candidates->set_candidates_from_marking(_result.array(),
-                                            _num_regions_added,
-                                            _reclaimable_bytes_added);
+                                            _num_regions_added);
   }
 };
 

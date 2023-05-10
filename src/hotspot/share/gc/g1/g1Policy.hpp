@@ -268,11 +268,6 @@ public:
   // during a mixed GC.
   uint calc_max_old_cset_length() const;
 
-  // Returns the given amount of reclaimable bytes (that represents
-  // the amount of reclaimable space still to be collected) as a
-  // percentage of the current heap capacity.
-  double reclaimable_bytes_percent(size_t reclaimable_bytes) const;
-
 private:
   void abandon_collection_set_candidates();
   // Sets up marking if proper conditions are met.

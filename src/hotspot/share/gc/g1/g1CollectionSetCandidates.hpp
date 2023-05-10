@@ -61,8 +61,6 @@ public:
 
   G1CollectionSetRegionListIterator begin() const { return _regions.begin(); }
   G1CollectionSetRegionListIterator end() const { return _regions.end(); }
-
-  void print(const char* prefix);
 };
 
 class G1CollectionCandidateListIterator : public StackObj {
@@ -106,7 +104,7 @@ public:
   // not be a prefix of this list. Returns the number of regions removed.
   // E.g. if this list is "A B G H", the other list may be "A G H", but not "F" (not in
   // this list) or "A H G" (wrong order).
-  size_t remove(G1CollectionSetRegionList* other);
+  void remove(G1CollectionSetRegionList* other);
 
   void clear();
 
@@ -120,8 +118,6 @@ public:
   // will cause regions with a lot of live objects and large remembered sets to end
   // up at the end of the list.
   static int compare(CandidateInfo* ci1, CandidateInfo* ci2);
-
-  void print(const char* prefix);
 
   G1CollectionCandidateListIterator begin() {
     return G1CollectionCandidateListIterator(this, 0);
@@ -176,8 +172,6 @@ class G1CollectionSetCandidates : public CHeapObj<mtGC> {
   // The number of regions from the last merge of candidates from the marking.
   uint _last_marking_candidates_length;
 
-  DEBUG_ONLY(size_t _reclaimable_bytes;)
-
   bool is_from_marking(HeapRegion* r) const;
 
 public:
@@ -193,8 +187,7 @@ public:
   // Merge collection set candidates from marking into the current marking list
   // (which needs to be empty).
   void set_candidates_from_marking(G1CollectionCandidateList::CandidateInfo* candidate_infos,
-                                   uint num_infos,
-                                   size_t reclaimable_bytes);
+                                   uint num_infos);
   // The most recent length of the list that had been merged last via
   // set_candidates_from_marking(). Used for calculating minimum collection set
   // regions.
@@ -214,7 +207,7 @@ public:
   uint marking_regions_length() const { return _marking_regions.length(); }
 
 private:
-  void verify_helper(G1CollectionCandidateList* list, uint& from_marking, size_t& reclaimable_bytes, CandidateOrigin* verify_map) PRODUCT_RETURN;
+  void verify_helper(G1CollectionCandidateList* list, uint& from_marking, CandidateOrigin* verify_map) PRODUCT_RETURN;
 
 public:
   void verify() PRODUCT_RETURN;

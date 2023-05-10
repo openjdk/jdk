@@ -38,15 +38,14 @@ void G1CollectionCandidateList::set(G1CollectionCandidateList::CandidateInfo* ca
   _candidates.appendAll(&a);
 }
 
-size_t G1CollectionCandidateList::remove(G1CollectionSetRegionList* other) {
+void G1CollectionCandidateList::remove(G1CollectionSetRegionList* other) {
   guarantee((uint)_candidates.length() >= other->length(), "must be");
 
   if (other->length() == 0) {
     // Nothing to remove or nothing in the original set.
-    return 0;
+    return;
   }
 
-  size_t reclaimable_bytes_removed = 0;
   // Create a list from scratch, copying over the elements from the candidate
   // list not in the other list. Finally deallocate and overwrite the old list.
   int new_length = _candidates.length() - other->length();
@@ -59,15 +58,12 @@ size_t G1CollectionCandidateList::remove(G1CollectionSetRegionList* other) {
       new_list.append(_candidates.at(candidate_idx));
     } else {
       other_idx++;
-      reclaimable_bytes_removed += _candidates.at(candidate_idx)._r->reclaimable_bytes();
     }
   }
   _candidates.swap(&new_list);
 
   verify();
   assert(_candidates.length() == new_length, "must be %u %u", _candidates.length(), new_length);
-
-  return reclaimable_bytes_removed;
 }
 
 void G1CollectionCandidateList::clear() {
@@ -88,20 +84,6 @@ void G1CollectionCandidateList::verify() {
   }
 }
 #endif
-
-void G1CollectionCandidateList::print(const char* prefix) {
-  LogTarget(Debug, gc, ergo, cset) lt;
-  if (!lt.is_enabled()) {
-    return;
-  }
-  LogStream ls(lt);
-  ls.print("%s (%u): ", prefix, (uint)_candidates.length());
-  for (uint i = 0; i < (uint)_candidates.length(); i++) {
-    CandidateInfo& ci = _candidates.at(i);
-    HeapRegion* r = ci._r;
-    ls.print("%u ", r->hrm_index());
-  }
-}
 
 int G1CollectionCandidateList::compare(CandidateInfo* ci1, CandidateInfo* ci2) {
   // Make sure that null entries are moved to the end.
@@ -158,24 +140,11 @@ void G1CollectionSetRegionList::clear() {
   _regions.clear();
 }
 
-void G1CollectionSetRegionList::print(const char* prefix) {
-  LogTarget(Debug, gc, ergo, cset) lt;
-  if (lt.is_enabled()) {
-    LogStream ls(lt);
-    ls.print("%s: ", prefix);
-    for (HeapRegion* r : _regions) {
-      ls.print("%u ", r->hrm_index());
-    }
-    ls.cr();
-  }
-}
-
 G1CollectionSetCandidates::G1CollectionSetCandidates() :
   _marking_regions(),
   _contains_map(nullptr),
   _max_regions(0),
   _last_marking_candidates_length(0)
-  DEBUG_ONLY(COMMA _reclaimable_bytes(0))
 { }
 
 G1CollectionSetCandidates::~G1CollectionSetCandidates() {
@@ -199,13 +168,11 @@ void G1CollectionSetCandidates::clear() {
   for (uint i = 0; i < _max_regions; i++) {
     _contains_map[i] = CandidateOrigin::Invalid;
   }
-  DEBUG_ONLY(_reclaimable_bytes = 0;)
   _last_marking_candidates_length = 0;
 }
 
 void G1CollectionSetCandidates::set_candidates_from_marking(G1CollectionCandidateList::CandidateInfo* candidate_infos,
-                                                            uint num_infos,
-                                                            size_t reclaimable_bytes) {
+                                                            uint num_infos) {
   assert(_marking_regions.length() == 0, "must be empty before adding new ones");
 
   verify();
@@ -217,21 +184,17 @@ void G1CollectionSetCandidates::set_candidates_from_marking(G1CollectionCandidat
     _contains_map[r->hrm_index()] = CandidateOrigin::Marking;
   }
   _last_marking_candidates_length = num_infos;
-  DEBUG_ONLY(_reclaimable_bytes += reclaimable_bytes;)
 
   verify();
 }
 
 void G1CollectionSetCandidates::remove(G1CollectionSetRegionList* other) {
-  size_t reclaimed_from_marked_list = _marking_regions.remove(other);
+  _marking_regions.remove(other);
 
   for (HeapRegion* r : *other) {
     assert(contains(r), "must contain region %u", r->hrm_index());
     _contains_map[r->hrm_index()] = CandidateOrigin::Invalid;
   }
-
-  assert(_reclaimable_bytes >= reclaimed_from_marked_list, "must be");
-  DEBUG_ONLY(_reclaimable_bytes -= reclaimed_from_marked_list;)
 
   verify();
 }
@@ -245,7 +208,7 @@ bool G1CollectionSetCandidates::has_more_marking_candidates() const {
 }
 
 #ifndef PRODUCT
-void G1CollectionSetCandidates::verify_helper(G1CollectionCandidateList* list, uint& from_marking, size_t& reclaimable_bytes, CandidateOrigin* verify_map) {
+void G1CollectionSetCandidates::verify_helper(G1CollectionCandidateList* list, uint& from_marking, CandidateOrigin* verify_map) {
   list->verify();
 
   for (uint i = 0; i < (uint)list->length(); i++) {
@@ -260,25 +223,21 @@ void G1CollectionSetCandidates::verify_helper(G1CollectionCandidateList* list, u
     assert(verify_map[hrm_index] == CandidateOrigin::Invalid, "already added");
 
     verify_map[hrm_index] = CandidateOrigin::Verify;
-
-    reclaimable_bytes += r->reclaimable_bytes();
   }
 }
 
 void G1CollectionSetCandidates::verify() {
   uint from_marking = 0;
-  size_t reclaimable_bytes = 0;
 
   CandidateOrigin* verify_map = NEW_C_HEAP_ARRAY(CandidateOrigin, _max_regions, mtGC);
   for (uint i = 0; i < _max_regions; i++) {
     verify_map[i] = CandidateOrigin::Invalid;
   }
 
-  verify_helper(&_marking_regions, from_marking, reclaimable_bytes, verify_map);
+  verify_helper(&_marking_regions, from_marking, verify_map);
 
   assert(length() >= marking_regions_length(), "must be");
   assert(from_marking == marking_regions_length(), "must be");
-  assert(_reclaimable_bytes == reclaimable_bytes, "Mismatch between calculated and stored reclaimable bytes");
 
   // Check whether the _contains_map is consistent with the list.
   for (uint i = 0; i < _max_regions; i++) {

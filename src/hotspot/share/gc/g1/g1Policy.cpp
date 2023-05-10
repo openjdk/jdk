@@ -1272,10 +1272,6 @@ void G1Policy::record_concurrent_mark_cleanup_end(bool has_rebuilt_remembered_se
   record_pause(G1GCPauseType::Cleanup, _mark_cleanup_start_sec, end_sec);
 }
 
-double G1Policy::reclaimable_bytes_percent(size_t reclaimable_bytes) const {
-  return percent_of(reclaimable_bytes, _g1h->capacity());
-}
-
 void G1Policy::abandon_collection_set_candidates() {
   // Clear remembered sets of remaining candidate regions and the actual candidate
   // set.
