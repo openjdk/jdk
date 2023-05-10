@@ -399,7 +399,7 @@ void
 hb_map_keys (const hb_map_t *map,
              hb_set_t *keys)
 {
-  map->keys (*keys);
+  hb_copy (map->keys() , *keys);
 }
 
 /**
@@ -415,5 +415,5 @@ void
 hb_map_values (const hb_map_t *map,
                hb_set_t *values)
 {
-  map->values (*values);
+  hb_copy (map->values() , *values);
 }
