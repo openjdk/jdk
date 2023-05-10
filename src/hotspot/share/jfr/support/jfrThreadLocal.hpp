@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,11 +92,11 @@ class JfrThreadLocal {
   JfrThreadLocal();
 
   JfrBuffer* native_buffer() const {
-    return _native_buffer != NULL ? _native_buffer : install_native_buffer();
+    return _native_buffer != nullptr ? _native_buffer : install_native_buffer();
   }
 
   bool has_native_buffer() const {
-    return _native_buffer != NULL;
+    return _native_buffer != nullptr;
   }
 
   void set_native_buffer(JfrBuffer* buffer) {
@@ -104,11 +104,11 @@ class JfrThreadLocal {
   }
 
   JfrBuffer* java_buffer() const {
-    return _java_buffer != NULL ? _java_buffer : install_java_buffer();
+    return _java_buffer != nullptr ? _java_buffer : install_java_buffer();
   }
 
   bool has_java_buffer() const {
-    return _java_buffer != NULL;
+    return _java_buffer != nullptr;
   }
 
   void set_java_buffer(JfrBuffer* buffer) {
@@ -124,7 +124,7 @@ class JfrThreadLocal {
   }
 
   bool has_java_event_writer() const {
-    return _java_event_writer != NULL;
+    return _java_event_writer != nullptr;
   }
 
   jobject java_event_writer() {
@@ -136,7 +136,7 @@ class JfrThreadLocal {
   }
 
   JfrStackFrame* stackframes() const {
-    return _stackframes != NULL ? _stackframes : install_stackframes();
+    return _stackframes != nullptr ? _stackframes : install_stackframes();
   }
 
   void set_stackframes(JfrStackFrame* frames) {
