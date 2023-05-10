@@ -495,7 +495,7 @@ public final class Files {
      * ".java" in a directory:
      * {@snippet lang=java :
      *     Path dir = ...
-     *     try (DirectoryStream&lt;Path&gt; stream = Files.newDirectoryStream(dir, "*.java")) {
+     *     try (DirectoryStream<Path> stream = Files.newDirectoryStream(dir, "*.java")) {
      *         :
      *     }
      * }

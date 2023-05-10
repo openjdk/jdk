@@ -2195,7 +2195,7 @@ public abstract sealed class $Type$Buffer
      * }
      * then the identities
      * {@snippet lang=java :
-     *     alignmentOffset(index - value, unitSize) == 0, value &le; index
+     *     alignmentOffset(index - value, unitSize) == 0, value <= index
      * }
      * and
      * {@snippet lang=java :

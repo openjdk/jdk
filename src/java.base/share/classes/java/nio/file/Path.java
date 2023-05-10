@@ -267,7 +267,7 @@ public interface Path
      * <p> If this path has more than one element, and no root component, then
      * this method is equivalent to evaluating the expression:
      * {@snippet lang=java :
-     * subpath(0,&nbsp;getNameCount()-1);
+     * subpath(0, getNameCount()-1);
      * }
      *
      * @return  a path representing the path's parent
