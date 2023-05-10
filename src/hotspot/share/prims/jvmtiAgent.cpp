@@ -35,8 +35,10 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/jniHandles.hpp"
+#include "runtime/globals_extension.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/thread.inline.hpp"
+#include "utilities/defaultStream.hpp"
 
 static inline const char* copy_string(const char* str) {
   return str != nullptr ? os::strdup(str, mtServiceability) : nullptr;
@@ -503,6 +505,14 @@ static bool invoke_Agent_OnAttach(JvmtiAgent* agent, outputStream* st) {
     agent->set_os_lib_path(&buffer[0]);
     agent->set_os_lib(library);
     agent->set_loaded();
+
+    // Print warning if EnableDynamicAgentLoading not enabled on the command line
+    if (!FLAG_IS_CMDLINE(EnableDynamicAgentLoading) && !agent->is_instrument_lib()) {
+      jio_fprintf(defaultStream::error_stream(),
+        "WARNING: A JVM TI agent has been dynamically loaded (%s)\n"
+        "WARNING: If a serviceability tool is in use, please run with -XX:+EnableDynamicAgentLoading to hide this warning\n"
+        "WARNING: Dynamic loading of agents will be disallowed by default in a future release\n", agent->name());
+    }
   }
   assert(agent->is_loaded(), "invariant");
   // The library was loaded so we attempt to lookup and invoke the Agent_OnAttach function.

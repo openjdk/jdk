@@ -157,6 +157,7 @@ JVM_IsHiddenClass
 JVM_IsInterface
 JVM_IsPreviewEnabled
 JVM_IsContinuationsSupported
+JVM_IsDynamicAgentLoadingEnabledOnCommandLine
 JVM_IsPrimitiveClass
 JVM_IsRecord
 JVM_IsSameClassPackage
