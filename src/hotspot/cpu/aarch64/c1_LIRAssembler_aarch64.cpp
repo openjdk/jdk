@@ -2289,8 +2289,6 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
 
   Address src_length_addr = Address(src, arrayOopDesc::length_offset_in_bytes());
   Address dst_length_addr = Address(dst, arrayOopDesc::length_offset_in_bytes());
-  Address src_klass_addr = Address(src, oopDesc::klass_offset_in_bytes());
-  Address dst_klass_addr = Address(dst, oopDesc::klass_offset_in_bytes());
 
   // test for null
   if (flags & LIR_OpArrayCopy::src_null_check) {
@@ -2351,15 +2349,7 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
     // We don't know the array types are compatible
     if (basic_type != T_OBJECT) {
       // Simple test for basic type arrays
-      if (UseCompressedClassPointers) {
-        __ load_nklass(tmp, src);
-        __ load_nklass(rscratch1, dst);
-        __ cmpw(tmp, rscratch1);
-      } else {
-        __ ldr(tmp, Address(src, oopDesc::klass_offset_in_bytes()));
-        __ ldr(rscratch1, Address(dst, oopDesc::klass_offset_in_bytes()));
-        __ cmp(tmp, rscratch1);
-      }
+      __ cmp_klass(src, dst, tmp, rscratch1);
       __ br(Assembler::NE, *stub->entry());
     } else {
       // For object arrays, if src is a sub class of dst then we can

@@ -4405,9 +4405,22 @@ void MacroAssembler::cmp_klass(Register oop, Register trial_klass, Register tmp)
   cmp(trial_klass, tmp);
 }
 
+void MacroAssembler::cmp_klass(Register src, Register dst, Register tmp1, Register tmp2) {
+  if (UseCompressedClassPointers) {
+    load_nklass(tmp1, src);
+    load_nklass(tmp2, dst);
+    cmpw(tmp1, tmp2);
+  } else {
+    ldr(tmp1, Address(src, oopDesc::klass_offset_in_bytes()));
+    ldr(tmp2, Address(dst, oopDesc::klass_offset_in_bytes()));
+    cmp(tmp1, tmp2);
+  }
+}
+
 void MacroAssembler::store_klass(Register dst, Register src) {
   // FIXME: Should this be a store release?  concurrent gcs assumes
   // klass length is valid if klass field is not null.
+  assert(!UseCompactObjectHeaders, "not with compact headers");
   if (UseCompressedClassPointers) {
     encode_klass_not_null(src);
     strw(src, Address(dst, oopDesc::klass_offset_in_bytes()));
@@ -4417,6 +4430,7 @@ void MacroAssembler::store_klass(Register dst, Register src) {
 }
 
 void MacroAssembler::store_klass_gap(Register dst, Register src) {
+  assert(!UseCompactObjectHeaders, "not with compact headers");
   if (UseCompressedClassPointers) {
     // Store to klass gap in destination
     strw(src, Address(dst, oopDesc::klass_gap_offset_in_bytes()));

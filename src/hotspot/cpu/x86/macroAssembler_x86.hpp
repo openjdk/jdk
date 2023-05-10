@@ -374,7 +374,7 @@ class MacroAssembler: public Assembler {
   void cmp_klass(Register klass, Register dst, Register tmp);
 
   // Compares the Klass pointer of two objects o1 and o2. Result is in the condition flags.
-  // Uses t1 and t2 as temporary registers.
+  // Uses tmp1 and tmp2 as temporary registers.
   void cmp_klass(Register src, Register dst, Register tmp1, Register tmp2);
 
   void access_load_at(BasicType type, DecoratorSet decorators, Register dst, Address src,
