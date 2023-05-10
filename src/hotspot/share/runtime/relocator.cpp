@@ -413,11 +413,24 @@ void Relocator::adjust_exception_table(int bci, int delta) {
   }
 }
 
+static void print_linenumber_table(unsigned char* table) {
+  CompressedLineNumberReadStream stream(table);
+  tty->print_cr("-------------------------------------------------");
+  while (stream.read_pair()) {
+    tty->print_cr("   - line %d: %d", stream.line(), stream.bci());
+  }
+  tty->print_cr("-------------------------------------------------");
+}
 
 // The width of instruction at "bci" is changing by "delta".  Adjust the line number table.
 void Relocator::adjust_line_no_table(int bci, int delta) {
   if (method()->has_linenumber_table()) {
-    CompressedLineNumberReadStream  reader(method()->compressed_linenumber_table());
+    // if we already made adjustments then use the updated table
+    unsigned char *table = compressed_line_number_table();
+    if (table == nullptr) {
+      table = method()->compressed_linenumber_table();
+    }
+    CompressedLineNumberReadStream  reader(table);
     CompressedLineNumberWriteStream writer(64);  // plenty big for most line number tables
     while (reader.read_pair()) {
       int adjustment = (reader.bci() > bci) ? delta : 0;
@@ -426,6 +439,10 @@ void Relocator::adjust_line_no_table(int bci, int delta) {
     writer.write_terminator();
     set_compressed_line_number_table(writer.buffer());
     set_compressed_line_number_table_size(writer.position());
+    if (TraceRelocator) {
+      tty->print_cr("Adjusted line number table");
+      print_linenumber_table(compressed_line_number_table());
+    }
   }
 }
 
