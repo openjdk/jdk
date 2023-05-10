@@ -429,7 +429,7 @@ PhaseRenumberLive::PhaseRenumberLive(PhaseGVN* gvn,
     C->grow_node_notes(C->node_note_array(), new_size);
   }
 
-  assert(worklist.is_subset_of(_useful), "sanity");
+  assert(worklist.is_subset_of(_useful), "only useful nodes should still be in the worklist");
 
   // Iterate over the set of live nodes.
   for (uint current_idx = 0; current_idx < _useful.size(); current_idx++) {

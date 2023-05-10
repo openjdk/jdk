@@ -88,6 +88,7 @@ private:
   // Private arena of State objects
   ResourceArea _states_arena;
 
+  // Map old nodes to new nodes
   Node_List   _new_nodes;
 
   VectorSet   _visited;         // Visit bits

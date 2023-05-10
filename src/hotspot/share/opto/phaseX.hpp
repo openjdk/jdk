@@ -25,7 +25,6 @@
 #ifndef SHARE_OPTO_PHASEX_HPP
 #define SHARE_OPTO_PHASEX_HPP
 
-#include "utilities/globalDefinitions.hpp"
 #include "libadt/dict.hpp"
 #include "libadt/vectset.hpp"
 #include "memory/resourceArea.hpp"
@@ -33,6 +32,7 @@
 #include "opto/node.hpp"
 #include "opto/phase.hpp"
 #include "opto/type.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 class BarrierSetC2;
 class Compile;
