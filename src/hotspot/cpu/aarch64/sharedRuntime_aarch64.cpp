@@ -1778,7 +1778,9 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     // Load the oop from the handle
     __ ldr(obj_reg, Address(oop_handle_reg, 0));
 
-    if (!UseHeavyMonitors) {
+    if (LockingMode == LM_MONITOR) {
+      __ b(slow_path_lock);
+    } else if (LockingMode == LM_LEGACY) {
       // Load (object->mark() | 1) into swap_reg %r0
       __ ldr(rscratch1, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
       __ orr(swap_reg, rscratch1, 1);
@@ -1808,7 +1810,9 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
       __ str(swap_reg, Address(lock_reg, mark_word_offset));
       __ br(Assembler::NE, slow_path_lock);
     } else {
-      __ b(slow_path_lock);
+      assert(LockingMode == LM_LIGHTWEIGHT, "must be");
+      __ ldr(swap_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
+      __ fast_lock(obj_reg, swap_reg, tmp, rscratch1, slow_path_lock);
     }
     __ bind(count);
     __ increment(Address(rthread, JavaThread::held_monitor_count_offset()));
@@ -1917,7 +1921,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
     Label done, not_recursive;
 
-    if (!UseHeavyMonitors) {
+    if (LockingMode == LM_LEGACY) {
       // Simple recursive lock?
       __ ldr(rscratch1, Address(sp, lock_slot_offset * VMRegImpl::stack_slot_size));
       __ cbnz(rscratch1, not_recursive);
@@ -1932,7 +1936,9 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
       save_native_result(masm, ret_type, stack_slots);
     }
 
-    if (!UseHeavyMonitors) {
+    if (LockingMode == LM_MONITOR) {
+      __ b(slow_path_unlock);
+    } else if (LockingMode == LM_LEGACY) {
       // get address of the stack lock
       __ lea(r0, Address(sp, lock_slot_offset * VMRegImpl::stack_slot_size));
       //  get old displaced header
@@ -1944,7 +1950,11 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
       __ bind(count);
       __ decrement(Address(rthread, JavaThread::held_monitor_count_offset()));
     } else {
-      __ b(slow_path_unlock);
+      assert(LockingMode == LM_LIGHTWEIGHT, "");
+      __ ldr(old_hdr, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
+      __ tbnz(old_hdr, exact_log2(markWord::monitor_value), slow_path_unlock);
+      __ fast_unlock(obj_reg, old_hdr, swap_reg, rscratch1, slow_path_unlock);
+      __ decrement(Address(rthread, JavaThread::held_monitor_count_offset()));
     }
 
     // slow path re-enters here
