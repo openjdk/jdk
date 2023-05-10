@@ -2259,6 +2259,8 @@ public:
   bool set_thread(jvmtiHeapReferenceKind kind, oop o);
 
   bool do_frame(vframe* vf);
+  // handles frames until vf->sender() is null.
+  bool process_frames(vframe* vf);
 };
 
 bool StackRefCollector::set_thread(oop o) {
@@ -2366,6 +2368,17 @@ bool StackRefCollector::do_frame(vframe* vf) {
 
   return true;
 }
+
+bool StackRefCollector::process_frames(vframe* vf) {
+  while (vf != nullptr) {
+    if (!do_frame(vf)) {
+      return false;
+    }
+    vf = vf->sender();
+  }
+  return true;
+}
+
 
 // A VM operation to iterate over objects that are reachable from
 // a set of roots or an initial object.
@@ -2795,66 +2808,50 @@ inline bool VM_HeapWalkOperation::collect_stack_refs(JavaThread* java_thread,
   StackRefCollector stack_collector(tag_map(), blk, java_thread);
 
   if (!java_thread->has_last_Java_frame()) {
-
     if (!stack_collector.set_thread(JVMTI_HEAP_REFERENCE_THREAD, threadObj)) {
       return false;
     }
-
     // no last java frame but there may be JNI locals
     blk->set_context(tag_for(_tag_map, threadObj), java_lang_Thread::thread_id(threadObj), 0, (jmethodID)nullptr);
     java_thread->active_handles()->oops_do(blk);
     return !blk->stopped();
-  } else {
-    // vframes are resource allocated
-    Thread* current_thread = Thread::current();
-    ResourceMark rm(current_thread);
-    HandleMark hm(current_thread);
+  }
+  // vframes are resource allocated
+  Thread* current_thread = Thread::current();
+  ResourceMark rm(current_thread);
+  HandleMark hm(current_thread);
 
-    // first handle mounted vthread (if any)
-    if (mounted_vt != nullptr) {
-      RegisterMap reg_map(java_thread,
-                          RegisterMap::UpdateMap::include,
-                          RegisterMap::ProcessFrames::include,
-                          RegisterMap::WalkContinuation::skip);
+  RegisterMap reg_map(java_thread,
+                      RegisterMap::UpdateMap::include,
+                      RegisterMap::ProcessFrames::include,
+                      RegisterMap::WalkContinuation::include);
 
-      frame f = java_thread->last_frame();
-      vframe* vf = vframe::new_vframe(&f, &reg_map, java_thread);
-      // report virtual thread as JVMTI_HEAP_REFERENCE_OTHER.
-      if (!stack_collector.set_thread(JVMTI_HEAP_REFERENCE_OTHER, mounted_vt)) {
-        return false;
-      }
-      // split virtual thread and carrier thread stacks by vthread entry ("enterSpecial") frame,
-      // consider vthread entry frame as the last vthread stack frame.
-      while (vf != nullptr) {
-        if (!stack_collector.do_frame(vf)) {
-          return false;
-        }
-        if (vf->is_vthread_entry()) {
-          break;
-        }
-        vf = vf->sender();
-      }
-    }
-
-    // Platform or carrier thread
-    RegisterMap reg_map(java_thread,
-                        RegisterMap::UpdateMap::include,
-                        RegisterMap::ProcessFrames::include,
-                        RegisterMap::WalkContinuation::skip);
-
-    vframe* vf = JvmtiEnvBase::get_cthread_last_java_vframe(java_thread, &reg_map);
-    if (!stack_collector.set_thread(JVMTI_HEAP_REFERENCE_THREAD, threadObj)) {
+  // first handle mounted vthread (if any).
+  if (mounted_vt != nullptr) {
+    frame f = java_thread->last_frame();
+    vframe* vf = vframe::new_vframe(&f, &reg_map, java_thread);
+    // report virtual thread as JVMTI_HEAP_REFERENCE_OTHER.
+    if (!stack_collector.set_thread(JVMTI_HEAP_REFERENCE_OTHER, mounted_vt)) {
       return false;
     }
+    // split virtual thread and carrier thread stacks by vthread entry ("enterSpecial") frame,
+    // consider vthread entry frame as the last vthread stack frame.
     while (vf != nullptr) {
       if (!stack_collector.do_frame(vf)) {
         return false;
       }
+      if (vf->is_vthread_entry()) {
+        break;
+      }
       vf = vf->sender();
     }
   }
-
-  return true;
+  // Platform or carrier thread.
+  vframe* vf = JvmtiEnvBase::get_cthread_last_java_vframe(java_thread, &reg_map);
+  if (!stack_collector.set_thread(JVMTI_HEAP_REFERENCE_THREAD, threadObj)) {
+    return false;
+  }
+  return stack_collector.process_frames(vf);
 }
 
 
@@ -2907,13 +2904,7 @@ inline bool VM_HeapWalkOperation::collect_vthread_stack_refs(oop vt) {
 
   frame fr = chunk->top_frame(&reg_map);
   vframe* vf = vframe::new_vframe(&fr, &reg_map, nullptr);
-  while (vf != nullptr) {
-    if (!stack_collector.do_frame(vf)) {
-      return false;
-    }
-    vf = vf->sender();
-  }
-  return true;
+  return stack_collector.process_frames(vf);
 }
 
 // visit an object
