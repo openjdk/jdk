@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,10 +58,10 @@
   #endif
 #elif defined(__open_xl_version__)
   #if __open_xl_version__ < 17
-  #error "xlc < 16 not supported"
+  #error "open xlc < 17 not supported"
   #endif
 #else
-  #error "xlc < 16 not supported, macro __ibmxl_version__ or __open_xl_version__ not found"
+  #error "xlc version not supported, macro __ibmxl_version__ or __open_xl_version__ not found"
 #endif
 
 #ifndef _AIX

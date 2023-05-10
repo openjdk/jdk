@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -92,7 +92,8 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_HELPER],
     BASIC_LDFLAGS_JVM_ONLY="-opt:icf,8 -subsystem:windows"
   fi
 
-  if (test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang) && test "x$OPENJDK_TARGET_OS" != xaix; then
+  if (test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang) \
+      && test "x$OPENJDK_TARGET_OS" != xaix; then
     if test -n "$HAS_NOEXECSTACK"; then
       BASIC_LDFLAGS="$BASIC_LDFLAGS -Wl,-z,noexecstack"
     fi
