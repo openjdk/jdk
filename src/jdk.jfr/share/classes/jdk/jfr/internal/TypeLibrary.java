@@ -98,6 +98,8 @@ public final class TypeLibrary {
     }
 
     public static synchronized void initialize() {
+        // The usual case is that TypeLibrary is initialized only once by the MetadataRepository singleton.
+        // However, this check is needed to ensure some tools (ie. GraalVM Native Image) do not perform the initialization routine twice.
         if (initialized) {
             return;
         }
