@@ -47,6 +47,12 @@ bool PhaseConditionalPropagation::valid_use(Node* u, Node* c) {
     _control_dependent_node.set(u->_idx);
     return false;
   }
+  if (u->is_CMove()) {
+    if (_phase->get_ctrl(u) == c) {
+      return true;
+    }
+    return false;
+  }
   Node* u_c = _phase->ctrl_or_self(u);
   if (!_phase->is_dominator(c, u_c) && (u->is_CFG() || !_phase->is_dominator(u_c, c))) {
     return false;
