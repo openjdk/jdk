@@ -63,7 +63,9 @@ protected:
 
 public:
   NodeHash(Arena *arena, uint est_max_size);
-
+#ifdef ASSERT
+  ~NodeHash();
+#endif
   Node  *hash_find(const Node*);// Find an equivalent version in hash table
   Node  *hash_find_insert(Node*);// If not in table insert else return found node
   void   hash_insert(Node*);    // Insert into hash table

@@ -53,6 +53,7 @@ private:
 public:
   VectorSet();
   VectorSet(Arena* arena);
+  ~VectorSet() {}
 
   // Allow move constructor for && (eg. capture return of function)
   VectorSet(VectorSet&&) = default;

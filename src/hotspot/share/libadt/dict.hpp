@@ -59,7 +59,9 @@ class Dict : public AnyObj { // Dictionary structure
   Dict(CmpKey cmp, Hash hash);
   Dict(CmpKey cmp, Hash hash, Arena* arena, int size = 16);
   Dict(const Dict &base, Arena* arena); // Deep-copy
+  ~Dict();
 
+  // Allow move constructor for && (eg. capture return of function)
   Dict(Dict&&) = default;
 
   // Return # of key-value pairs in dict

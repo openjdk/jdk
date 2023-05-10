@@ -352,6 +352,14 @@ Node *NodeHash::find_index(uint idx) { // For debugging
 }
 #endif
 
+#ifdef ASSERT
+NodeHash::~NodeHash() {
+  // Unlock all nodes upon destruction of table.
+  if (_table != (Node**)badAddress)  clear();
+}
+#endif
+
+
 //=============================================================================
 //------------------------------PhaseRemoveUseless-----------------------------
 // 1) Use a breadthfirst walk to collect useful nodes reachable from root.
