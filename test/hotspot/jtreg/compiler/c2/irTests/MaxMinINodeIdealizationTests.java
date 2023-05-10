@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2022, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -45,19 +46,19 @@ public class MaxMinINodeIdealizationTests {
                  "testMin1",
                  "testMin2",
                  "testMin3"})
-    public void runMethod() {
+    public void runPositiveTests() {
         int a = RunInfo.getRandom().nextInt();
         int min = Integer.MIN_VALUE;
         int max = Integer.MAX_VALUE;
 
-        assertResult(a);
-        assertResult(0);
-        assertResult(min);
-        assertResult(max);
+        assertPositiveResult(a);
+        assertPositiveResult(0);
+        assertPositiveResult(min);
+        assertPositiveResult(max);
     }
 
     @DontCompile
-    public void assertResult(int a) {
+    public void assertPositiveResult(int a) {
         Asserts.assertEQ(Math.max(Math.max(((a >> 1) + 150), 200), ((a >> 1) + 100)), testMax1LL(a));
         Asserts.assertEQ(testMax1LL(a)                                              , testMax1LR(a));
         Asserts.assertEQ(testMax1LL(a)                                              , testMax1RL(a));
@@ -156,4 +157,76 @@ public class MaxMinINodeIdealizationTests {
     public int testMin3(int i) {
         return Math.min(i, i);
     }
+
+    @Run(test = {"testTwoLevelsDifferentXY",
+                 "testTwoLevelsNoLeftConstant",
+                 "testTwoLevelsNoRightConstant",
+                 "testDifferentXY",
+                 "testNoLeftConstant",
+                 "testNoRightConstant"})
+    public void runNegativeTests() {
+        int a = RunInfo.getRandom().nextInt();
+        int min = Integer.MIN_VALUE;
+        int max = Integer.MAX_VALUE;
+
+        assertNegativeResult(a);
+        assertNegativeResult(0);
+        assertNegativeResult(min);
+        assertNegativeResult(max);
+
+        testTwoLevelsDifferentXY(10);
+        testTwoLevelsNoLeftConstant(10, 42);
+        testTwoLevelsNoRightConstant(10, 42);
+        testDifferentXY(10);
+        testNoLeftConstant(10, 42);
+        testNoRightConstant(10, 42);
+    }
+
+    @DontCompile
+    public void assertNegativeResult(int a) {
+        Asserts.assertEQ(Math.max(Math.max(((a >> 1) + 150), 200), ((a >> 2) + 100)), testTwoLevelsDifferentXY(a));
+        Asserts.assertEQ(Math.max(Math.max(((a >> 1) + a*2), 200), ((a >> 1) + 100)),  testTwoLevelsNoLeftConstant(a, a*2));
+        Asserts.assertEQ(Math.max(Math.max(((a >> 1) + 150), 200), ((a >> 1) + a*2)),  testTwoLevelsNoRightConstant(a, a*2));
+        Asserts.assertEQ(Math.max((a >> 1) + 10, (a >> 2) + 11), testDifferentXY(a));
+        Asserts.assertEQ(Math.max((a >> 1) + a*2, (a >> 1) + 11), testNoLeftConstant(a, a*2));
+        Asserts.assertEQ(Math.max((a >> 1) + 10, (a >> 1) + a*2), testNoRightConstant(a, a*2));
+    }
+
+    @Test
+    @IR(counts = {IRNode.MAX_I, "2"})
+    public int testTwoLevelsDifferentXY(int i) {
+        return Math.max(Math.max(((i >> 1) + 150), 200), ((i >> 2) + 100));
+    }
+
+    @Test
+    @IR(counts = {IRNode.MAX_I, "2"})
+    public int testTwoLevelsNoLeftConstant(int i, int c0) {
+        return Math.max(Math.max(((i >> 1) + c0), 200), ((i >> 1) + 100));
+    }
+
+    @Test
+    @IR(counts = {IRNode.MAX_I, "2"})
+    public int testTwoLevelsNoRightConstant(int i, int c1) {
+        return Math.max(Math.max(((i >> 1) + 150), 200), ((i >> 1) + c1));
+    }
+
+    @Test
+    @IR(counts = {IRNode.MAX_I, "1"})
+    public int testDifferentXY(int i) {
+        return Math.max((i >> 1) + 10, (i >> 2) + 11);
+    }
+
+    @Test
+    @IR(counts = {IRNode.MAX_I, "1"})
+    public int testNoLeftConstant(int i, int c0) {
+        return Math.max((i >> 1) + c0, (i >> 1) + 11);
+    }
+
+    @Test
+    @IR(counts = {IRNode.MAX_I, "1"})
+    public int testNoRightConstant(int i, int c1) {
+        return Math.max((i >> 1) + 10, (i >> 1) + c1);
+    }
+
+
 }
