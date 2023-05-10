@@ -160,6 +160,9 @@ void ThreadService::decrement_thread_counts(JavaThread* jt, bool daemon) {
 void ThreadService::remove_thread(JavaThread* thread, bool daemon) {
   assert(Threads_lock->owned_by_self(), "must have threads lock");
 
+  // Include hidden thread allcations in exited_allocated_bytes
+  ThreadService::incr_exited_allocated_bytes(thread->cooked_allocated_bytes());
+
   // Do not count hidden threads
   if (is_hidden_thread(thread)) {
     return;
@@ -170,7 +173,6 @@ void ThreadService::remove_thread(JavaThread* thread, bool daemon) {
     // We did not get here via JavaThread::exit() so current_thread_exiting()
     // was not called, e.g., JavaThread::cleanup_failed_attach_current_thread().
     decrement_thread_counts(thread, daemon);
-    ThreadService::incr_exited_allocated_bytes(thread->cooked_allocated_bytes());
   }
 
   int daemon_count = _atomic_daemon_threads_count;
@@ -221,7 +223,6 @@ void ThreadService::current_thread_exiting(JavaThread* jt, bool daemon) {
   assert(!jt->is_terminated() && jt->is_exiting(), "must be exiting");
 
   decrement_thread_counts(jt, daemon);
-  ThreadService::incr_exited_allocated_bytes(jt->cooked_allocated_bytes());
 }
 
 // FIXME: JVMTI should call this function

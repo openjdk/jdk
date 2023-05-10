@@ -111,12 +111,11 @@ public interface ThreadMXBean extends java.lang.management.ThreadMXBean {
      * The returned value is an approximation because some Java virtual machine
      * implementations may use object allocation mechanisms that result in a
      * delay between the time an object is allocated and the time its size is
-     * recorded. An implementation that walks an active Java thread list will
-     * necessarily also deliver an approximate result.
+     * recorded.
      *
      * @implSpec The default implementation throws UnsupportedOperationException
      * if the Java virtual machine implementation does not support thread
-     * memory allocation measuremust, and otherwise acts as though thread
+     * memory allocation measurement, and otherwise acts as though thread
      * memory allocation measurement is disabled.
      *
      * @return an approximation of the total memory allocated, in bytes, in

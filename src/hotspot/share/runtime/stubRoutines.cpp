@@ -71,6 +71,7 @@ address StubRoutines::_atomic_xchg_entry                        = nullptr;
 address StubRoutines::_atomic_cmpxchg_entry                     = nullptr;
 address StubRoutines::_atomic_cmpxchg_long_entry                = nullptr;
 address StubRoutines::_atomic_add_entry                         = nullptr;
+address StubRoutines::_atomic_add_long_entry                    = nullptr;
 address StubRoutines::_fence_entry                              = nullptr;
 
 // Compiled code entry points default values

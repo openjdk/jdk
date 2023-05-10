@@ -503,12 +503,26 @@ void os::print_register_info(outputStream *st, const void *context) {
 }
 
 
-ARMAtomicFuncs::cmpxchg_long_func_t ARMAtomicFuncs::_cmpxchg_long_func = ARMAtomicFuncs::cmpxchg_long_bootstrap;
-ARMAtomicFuncs::load_long_func_t    ARMAtomicFuncs::_load_long_func    = ARMAtomicFuncs::load_long_bootstrap;
-ARMAtomicFuncs::store_long_func_t   ARMAtomicFuncs::_store_long_func   = ARMAtomicFuncs::store_long_bootstrap;
-ARMAtomicFuncs::atomic_add_func_t   ARMAtomicFuncs::_add_func          = ARMAtomicFuncs::add_bootstrap;
-ARMAtomicFuncs::atomic_xchg_func_t  ARMAtomicFuncs::_xchg_func         = ARMAtomicFuncs::xchg_bootstrap;
-ARMAtomicFuncs::cmpxchg_func_t      ARMAtomicFuncs::_cmpxchg_func      = ARMAtomicFuncs::cmpxchg_bootstrap;
+ARMAtomicFuncs::atomic_add_long_func_t ARMAtomicFuncs::_add_long_func     = ARMAtomicFuncs::add_long_bootstrap;
+ARMAtomicFuncs::cmpxchg_long_func_t    ARMAtomicFuncs::_cmpxchg_long_func = ARMAtomicFuncs::cmpxchg_long_bootstrap;
+ARMAtomicFuncs::load_long_func_t       ARMAtomicFuncs::_load_long_func    = ARMAtomicFuncs::load_long_bootstrap;
+ARMAtomicFuncs::store_long_func_t      ARMAtomicFuncs::_store_long_func   = ARMAtomicFuncs::store_long_bootstrap;
+ARMAtomicFuncs::atomic_add_func_t      ARMAtomicFuncs::_add_func          = ARMAtomicFuncs::add_bootstrap;
+ARMAtomicFuncs::atomic_xchg_func_t     ARMAtomicFuncs::_xchg_func         = ARMAtomicFuncs::xchg_bootstrap;
+ARMAtomicFuncs::cmpxchg_func_t         ARMAtomicFuncs::_cmpxchg_func      = ARMAtomicFuncs::cmpxchg_bootstrap;
+
+int64_t ARMAtomicFuncs::add_long_bootstrap(int64_t add_value, volatile int64_t *dest) {
+  atomic_add_long_func_t func = CAST_TO_FN_PTR(atomic_add_long_func_t,
+                                               StubRoutines::atomic_add_long_entry());
+  if (func != nullptr) {
+    _add_func = func;
+    return (*func)(add_value, dest);
+  }
+
+  int64_t old_value = *dest;
+  *dest = old_value + add_value;
+  return (old_value + add_value);
+}
 
 int64_t ARMAtomicFuncs::cmpxchg_long_bootstrap(int64_t compare_value, int64_t exchange_value, volatile int64_t* dest) {
   // try to use the stub:

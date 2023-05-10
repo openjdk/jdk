@@ -428,8 +428,6 @@ static MemoryPool* get_memory_pool_from_jobject(jobject obj, TRAPS) {
   return MemoryService::get_memory_pool(ph);
 }
 
-#endif // INCLUDE_MANAGEMENT
-
 static void validate_thread_id_array(typeArrayHandle ids_ah, TRAPS) {
   int num_threads = ids_ah->length();
 
@@ -454,8 +452,6 @@ static bool is_platform_thread(JavaThread* jt) {
     return false;
   }
 }
-
-#if INCLUDE_MANAGEMENT
 
 static void validate_thread_info_array(objArrayHandle infoArray_h, TRAPS) {
   // check if the element of infoArray is of type ThreadInfo class
@@ -2098,17 +2094,32 @@ jlong Management::ticks_to_ms(jlong ticks) {
 
 // Gets the amount of memory allocated on the Java heap since JVM launch.
 JVM_ENTRY(jlong, jmm_GetTotalThreadAllocatedMemory(JNIEnv *env))
-    // The result may be "too small" because the threads iterator takes a
-    // snapshot and new threads may be created after result is initialized.
-    // There's no check for terminated threads in the loop because their
-    // allocated byte counts aren't included in exited_allocated_bytes
-    // when result is initialized. The iterator is created and initialized
-    // before the call to exited_allocated_bytes to ensure we don't miss
-    // accounting for threads that are just about to terminate.
+    // A thread increments exited_allocated_bytes after being removed from
+    // the threads list (in ThreadService::remove_thread), which means there's
+    // a race between threads that exit during the loop and reading
+    // exited_allocated_bytes. If result is initialized with exited_allocated_bytes,
+    // the final result may be "too small" because a thread might be removed
+    // from the list before the loop gets to it and thus not be counted. If,
+    // on the other hand, exited_allocated_bytes is added after the loop,
+    // the final result might be "too large" because a thread might be counted
+    // twice, once in the loop and agsin in exited_allocated_bytes if it's
+    // removed from the list after it's encountered in the loop but before
+    // adding exited_allocated_bytes.
+    //
+    // The "too large" approach can result in multiple calls to this method
+    // returning non-monotonically increasing values. Consider the case where
+    // (1) all threads on the list exit after being counted but before adding
+    // exited_allocated_bytes, so we double count all of them, (2) on the
+    // next call, all threads exit before the addition, so we single count
+    // all of them and the total is less than the total (before double
+    // counting) for the previous call. The result of the second call will
+    // be less than the result of the first.
+    //
+    // The "too small" approach doesn't have this problem, so we choose it
+    // over the "too large" approach to avoid user surprise.
     JavaThreadIteratorWithHandle jtiwh;
-    jlong result;
-    for (result = ThreadService::exited_allocated_bytes();
-         JavaThread* thread = jtiwh.next();) {
+    jlong result = ThreadService::exited_allocated_bytes();
+    for (; JavaThread* thread = jtiwh.next();) {
       jlong size = thread->cooked_allocated_bytes();
       result += size;
     }
