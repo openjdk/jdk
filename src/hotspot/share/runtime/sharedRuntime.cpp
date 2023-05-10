@@ -457,7 +457,6 @@ JRT_END
 // previous frame depending on the return address.
 
 address SharedRuntime::raw_exception_handler_for_return_address(JavaThread* current, address return_address) {
-  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, current));
   // Note: This is called when we have unwound the frame of the callee that did
   // throw an exception. So far, no check has been performed by the StackWatermarkSet.
   // Notably, the stack is not walkable at this point, and hence the check must
@@ -479,6 +478,9 @@ address SharedRuntime::raw_exception_handler_for_return_address(JavaThread* curr
   if (Continuation::is_return_barrier_entry(return_address)) {
     return StubRoutines::cont_returnBarrierExc();
   }
+
+  // write lock needed because we might update the pc desc cache via PcDescCache::add_pc_desc
+  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, current));
 
   // The fastest case first
   CodeBlob* blob = CodeCache::find_blob(return_address);
@@ -2037,7 +2039,6 @@ bool SharedRuntime::should_fixup_call_destination(address destination, address e
 // interpreted. If the caller is compiled we attempt to patch the caller
 // so he no longer calls into the interpreter.
 JRT_LEAF(void, SharedRuntime::fixup_callers_callsite(Method* method, address caller_pc))
-  MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, JavaThread::current()));
   Method* moop(method);
 
   AARCH64_PORT_ONLY(assert(pauth_ptr_is_raw(caller_pc), "should be raw"));
@@ -2064,6 +2065,9 @@ JRT_LEAF(void, SharedRuntime::fixup_callers_callsite(Method* method, address cal
   if (cb == nullptr || !cb->is_compiled() || callee->is_unloading()) {
     return;
   }
+
+  // write lock needed because we might update the pc desc cache via PcDescCache::add_pc_desc
+  MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, JavaThread::current()));
 
   // The check above makes sure this is a nmethod.
   CompiledMethod* nm = cb->as_compiled_method_or_null();
