@@ -213,8 +213,7 @@ final class JceSecurity {
                     // no mapping found
                     if (verifyingProviders.get(p) != null) {
                         // recursion; return failure now
-                        throw new IllegalStateException
-                                ("Recursion during verification");
+                        throw new IllegalStateException();
                     }
                     Object result;
                     try {
