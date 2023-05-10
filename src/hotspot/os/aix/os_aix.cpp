@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -892,9 +892,9 @@ bool os::create_attached_thread(JavaThread* thread) {
   PosixSignals::hotspot_sigmask(thread);
 
   log_info(os, thread)("Thread attached (tid: " UINTX_FORMAT ", kernel thread  id: " UINTX_FORMAT
-                       ", stack: " PTR_FORMAT " - " PTR_FORMAT " (" SIZE_FORMAT "k) ).",
+                       ", stack: " PTR_FORMAT " - " PTR_FORMAT " (" SIZE_FORMAT "K) ).",
                        os::current_thread_id(), (uintx) kernel_thread_id,
-                       p2i(thread->stack_base()), p2i(thread->stack_end()), thread->stack_size());
+                       p2i(thread->stack_base()), p2i(thread->stack_end()), thread->stack_size() / K);
 
   return true;
 }
@@ -1077,7 +1077,17 @@ bool os::dll_address_to_library_name(address addr, char* buf,
     return false;
   }
 
-  return AixSymbols::get_module_name(addr, buf, buflen);
+  address  base = nullptr;
+  if (!AixSymbols::get_module_name_and_base(addr, buf, buflen, &base)
+      || base == nullptr) {
+    return false;
+  }
+  assert(addr >= base && addr <= base + INT_MAX, "address not in library text range");
+  if (offset != nullptr) {
+    *offset = addr - base;
+  }
+
+  return true;
 }
 
 // Loads .dll/.so and in case of error it checks if .dll/.so was built

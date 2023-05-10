@@ -57,7 +57,7 @@ protected:
   static constexpr int max_covered_regions = 2;
 
   // The covered regions should be in address order.
-  MemRegion* _covered;
+  MemRegion _covered[max_covered_regions];
 
   // The last card is a guard card; never committed.
   MemRegion _guard_region;
@@ -82,13 +82,15 @@ protected:
   size_t last_valid_index() const {
     return cards_required(_whole_heap.word_size()) - 1;
   }
+
 private:
   void initialize_covered_region(void* region0_start, void* region1_start);
 
   MemRegion committed_for(const MemRegion mr) const;
 public:
   CardTable(MemRegion whole_heap);
-  virtual ~CardTable();
+  virtual ~CardTable() = default;
+
   void initialize(void* region0_start, void* region1_start);
 
   // *** Barrier set functions.

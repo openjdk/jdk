@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,8 @@
  * @run testng TestSegmentCopy
  */
 
+import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.SegmentScope;
 import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
@@ -46,40 +46,62 @@ import static org.testng.Assert.*;
 
 public class TestSegmentCopy {
 
-    @Test(dataProvider = "slices")
-    public void testByteCopy(SegmentSlice s1, SegmentSlice s2) {
-        int size = Math.min(s1.byteSize(), s2.byteSize());
-        //prepare source and target segments
-        for (int i = 0 ; i < size ; i++) {
-            Type.BYTE.set(s2, i, 0);
-        }
-        for (int i = 0 ; i < size ; i++) {
-            Type.BYTE.set(s1, i, i);
-        }
-        //perform copy
-        MemorySegment.copy(s1.segment, 0, s2.segment, 0, size);
-        //check that copy actually worked
-        for (int i = 0 ; i < size ; i++) {
-            Type.BYTE.check(s2, i, i);
+    static final int TEST_BYTE_SIZE = 16;
+
+    @Test(dataProvider = "segmentKinds")
+    public void testByteCopy(SegmentKind kind1, SegmentKind kind2) {
+        MemorySegment s1 = kind1.makeSegment(TEST_BYTE_SIZE);
+        MemorySegment s2 = kind2.makeSegment(TEST_BYTE_SIZE);
+
+        // for all offsets
+        for (int s1Offset = 0; s1Offset < s1.byteSize(); s1Offset++) {
+            for (int s2Offset = 0; s2Offset < s2.byteSize(); s2Offset++) {
+                long slice1ByteSize = s1.byteSize() - s1Offset;
+                long slice2ByteSize = s2.byteSize() - s2Offset;
+
+                long copySize = Math.min(slice1ByteSize, slice2ByteSize);
+
+                //prepare source slice
+                for (int i = 0 ; i < copySize; i++) {
+                    Type.BYTE.set(s1, s1Offset, i, i);
+                }
+                //perform copy
+                MemorySegment.copy(s1, Type.BYTE.layout, s1Offset, s2, Type.BYTE.layout, s2Offset, copySize);
+                //check that copy actually worked
+                for (int i = 0; i < copySize; i++) {
+                    Type.BYTE.check(s2, s2Offset, i, i);
+                }
+            }
         }
     }
 
-    @Test(dataProvider = "slices")
-    public void testElementCopy(SegmentSlice s1, SegmentSlice s2) {
-        if (s1.type.carrier != s2.type.carrier) return;
-        int size = Math.min(s1.elementSize(), s2.elementSize());
-        //prepare source and target segments
-        for (int i = 0 ; i < size ; i++) {
-            s2.set(i, 0);
-        }
-        for (int i = 0 ; i < size ; i++) {
-            s1.set(i, i);
-        }
-        //perform copy
-        MemorySegment.copy(s1.segment, s1.type.layout, 0, s2.segment, s2.type.layout, 0, size);
-        //check that copy actually worked
-        for (int i = 0; i < size; i++) {
-            s2.check(i, i);
+    @Test(dataProvider = "segmentKindsAndTypes")
+    public void testElementCopy(SegmentKind kind1, SegmentKind kind2, Type type1, Type type2) {
+        MemorySegment s1 = kind1.makeSegment(TEST_BYTE_SIZE);
+        MemorySegment s2 = kind2.makeSegment(TEST_BYTE_SIZE);
+
+        // for all offsets
+        for (int s1Offset = 0; s1Offset < s1.byteSize(); s1Offset++) {
+            for (int s2Offset = 0; s2Offset < s2.byteSize(); s2Offset++) {
+                long slice1ByteSize = s1.byteSize() - s1Offset;
+                long slice2ByteSize = s2.byteSize() - s2Offset;
+
+                long slice1ElementSize = slice1ByteSize / type1.size();
+                long slice2ElementSize = slice2ByteSize / type2.size();
+
+                long copySize = Math.min(slice1ElementSize, slice2ElementSize);
+
+                //prepare source slice
+                for (int i = 0 ; i < copySize; i++) {
+                    type1.set(s1, s1Offset, i, i);
+                }
+                //perform copy
+                MemorySegment.copy(s1, type1.layout, s1Offset, s2, type2.layout, s2Offset, copySize);
+                //check that copy actually worked
+                for (int i = 0; i < copySize; i++) {
+                    type2.check(s2, s2Offset, i, i);
+                }
+            }
         }
     }
 
@@ -99,19 +121,19 @@ public class TestSegmentCopy {
         // Byte
         BYTE(byte.class, JAVA_BYTE, i -> (byte)i),
         //LE
-        SHORT_LE(short.class, ValueLayout.JAVA_SHORT.withBitAlignment(8).withOrder(ByteOrder.LITTLE_ENDIAN), i -> (short)i),
-        CHAR_LE(char.class, ValueLayout.JAVA_CHAR.withBitAlignment(8).withOrder(ByteOrder.LITTLE_ENDIAN), i -> (char)i),
-        INT_LE(int.class, ValueLayout.JAVA_INT.withBitAlignment(8).withOrder(ByteOrder.LITTLE_ENDIAN), i -> i),
-        FLOAT_LE(float.class, ValueLayout.JAVA_FLOAT.withBitAlignment(8).withOrder(ByteOrder.LITTLE_ENDIAN), i -> (float)i),
-        LONG_LE(long.class, ValueLayout.JAVA_LONG.withBitAlignment(8).withOrder(ByteOrder.LITTLE_ENDIAN), i -> (long)i),
-        DOUBLE_LE(double.class, ValueLayout.JAVA_DOUBLE.withBitAlignment(8).withOrder(ByteOrder.LITTLE_ENDIAN), i -> (double)i),
+        SHORT_LE(short.class, ValueLayout.JAVA_SHORT_UNALIGNED.withOrder(ByteOrder.LITTLE_ENDIAN), i -> (short)i),
+        CHAR_LE(char.class, ValueLayout.JAVA_CHAR_UNALIGNED.withOrder(ByteOrder.LITTLE_ENDIAN), i -> (char)i),
+        INT_LE(int.class, ValueLayout.JAVA_INT_UNALIGNED.withOrder(ByteOrder.LITTLE_ENDIAN), i -> i),
+        FLOAT_LE(float.class, ValueLayout.JAVA_FLOAT_UNALIGNED.withOrder(ByteOrder.LITTLE_ENDIAN), i -> (float)i),
+        LONG_LE(long.class, ValueLayout.JAVA_LONG_UNALIGNED.withOrder(ByteOrder.LITTLE_ENDIAN), i -> (long)i),
+        DOUBLE_LE(double.class, ValueLayout.JAVA_DOUBLE_UNALIGNED.withOrder(ByteOrder.LITTLE_ENDIAN), i -> (double)i),
         //BE
-        SHORT_BE(short.class, ValueLayout.JAVA_SHORT.withBitAlignment(8).withOrder(ByteOrder.BIG_ENDIAN), i -> (short)i),
-        CHAR_BE(char.class, ValueLayout.JAVA_CHAR.withBitAlignment(8).withOrder(ByteOrder.BIG_ENDIAN), i -> (char)i),
-        INT_BE(int.class, ValueLayout.JAVA_INT.withBitAlignment(8).withOrder(ByteOrder.BIG_ENDIAN), i -> i),
-        FLOAT_BE(float.class, ValueLayout.JAVA_FLOAT.withBitAlignment(8).withOrder(ByteOrder.BIG_ENDIAN), i -> (float)i),
-        LONG_BE(long.class, ValueLayout.JAVA_LONG.withBitAlignment(8).withOrder(ByteOrder.BIG_ENDIAN), i -> (long)i),
-        DOUBLE_BE(double.class, ValueLayout.JAVA_DOUBLE.withBitAlignment(8).withOrder(ByteOrder.BIG_ENDIAN), i -> (double)i);
+        SHORT_BE(short.class, ValueLayout.JAVA_SHORT_UNALIGNED.withOrder(ByteOrder.BIG_ENDIAN), i -> (short)i),
+        CHAR_BE(char.class, ValueLayout.JAVA_CHAR_UNALIGNED.withOrder(ByteOrder.BIG_ENDIAN), i -> (char)i),
+        INT_BE(int.class, ValueLayout.JAVA_INT_UNALIGNED.withOrder(ByteOrder.BIG_ENDIAN), i -> i),
+        FLOAT_BE(float.class, ValueLayout.JAVA_FLOAT_UNALIGNED.withOrder(ByteOrder.BIG_ENDIAN), i -> (float)i),
+        LONG_BE(long.class, ValueLayout.JAVA_LONG_UNALIGNED.withOrder(ByteOrder.BIG_ENDIAN), i -> (long)i),
+        DOUBLE_BE(double.class, ValueLayout.JAVA_DOUBLE_UNALIGNED.withOrder(ByteOrder.BIG_ENDIAN), i -> (double)i);
 
         final ValueLayout layout;
         final IntFunction<Object> valueConverter;
@@ -124,97 +146,61 @@ public class TestSegmentCopy {
             this.valueConverter = (IntFunction<Object>)valueConverter;
         }
 
-        int size() {
-            return (int)layout.byteSize();
+        long size() {
+            return layout.byteSize();
         }
 
         VarHandle handle() {
             return MethodHandles.memorySegmentViewVarHandle(layout);
         }
 
-        void set(SegmentSlice slice, int index, int val) {
-            handle().set(slice.segment, index * size(), valueConverter.apply(val));
+        void set(MemorySegment segment, long offset, int index, int val) {
+            handle().set(segment, offset + (index * size()), valueConverter.apply(val));
         }
 
-        void check(SegmentSlice slice, int index, int val) {
-            assertEquals(handle().get(slice.segment, index * size()), valueConverter.apply(val));
-        }
-    }
-
-    static class SegmentSlice {
-
-        enum Kind {
-            NATIVE(i -> MemorySegment.allocateNative(i, SegmentScope.auto())),
-            ARRAY(i -> MemorySegment.ofArray(new byte[i]));
-
-            final IntFunction<MemorySegment> segmentFactory;
-
-            Kind(IntFunction<MemorySegment> segmentFactory) {
-                this.segmentFactory = segmentFactory;
-            }
-
-            MemorySegment makeSegment(int elems) {
-                return segmentFactory.apply(elems);
-            }
-        }
-
-        final Kind kind;
-        final Type type;
-        final int first;
-        final int last;
-        final MemorySegment segment;
-
-        public SegmentSlice(Kind kind, Type type, int first, int last, MemorySegment segment) {
-            this.kind = kind;
-            this.type = type;
-            this.first = first;
-            this.last = last;
-            this.segment = segment;
-        }
-
-        void set(int index, int val) {
-            type.set(this, index, val);
-        }
-
-        void check(int index, int val) {
-            type.check(this, index, val);
-        }
-
-        int byteSize() {
-            return last - first + 1;
-        }
-
-        int elementSize() {
-            return byteSize() / type.size();
-        }
-
-        @Override
-        public String toString() {
-            return String.format("SegmentSlice{%s, %d, %d}", type, first, last);
+        void check(MemorySegment segment, long offset, int index, int val) {
+            assertEquals(handle().get(segment, offset + (index * size())), valueConverter.apply(val));
         }
     }
 
-    @DataProvider(name = "slices")
-    static Object[][] elementSlices() {
-        List<SegmentSlice> slices = new ArrayList<>();
-        for (SegmentSlice.Kind kind : SegmentSlice.Kind.values()) {
-            MemorySegment segment = kind.makeSegment(16);
-            //compute all slices
-            for (Type type : Type.values()) {
-                for (int index = 0; index < 16; index += type.size()) {
-                    MemorySegment first = segment.asSlice(0, index);
-                    slices.add(new SegmentSlice(kind, type, 0, index - 1, first));
-                    MemorySegment second = segment.asSlice(index);
-                    slices.add(new SegmentSlice(kind, type, index, 15, second));
+    enum SegmentKind {
+        NATIVE(i -> Arena.ofAuto().allocate(i, 1)),
+        ARRAY(i -> MemorySegment.ofArray(new byte[i]));
+
+        final IntFunction<MemorySegment> segmentFactory;
+
+        SegmentKind(IntFunction<MemorySegment> segmentFactory) {
+            this.segmentFactory = segmentFactory;
+        }
+
+        MemorySegment makeSegment(int size) {
+            return segmentFactory.apply(size);
+        }
+    }
+
+    @DataProvider
+    static Object[][] segmentKinds() {
+        List<Object[]> cases = new ArrayList<>();
+        for (SegmentKind kind1 : SegmentKind.values()) {
+            for (SegmentKind kind2 : SegmentKind.values()) {
+                cases.add(new Object[] {kind1, kind2});
+            }
+        }
+        return cases.toArray(Object[][]::new);
+    }
+
+    @DataProvider
+    static Object[][] segmentKindsAndTypes() {
+        List<Object[]> cases = new ArrayList<>();
+        for (Object[] segmentKinds : segmentKinds()) {
+            for (Type type1 : Type.values()) {
+                for (Type type2 : Type.values()) {
+                    if (type1.layout.carrier() == type2.layout.carrier()) {
+                        cases.add(new Object[]{segmentKinds[0], segmentKinds[1], type1, type2});
+                    }
                 }
             }
         }
-        Object[][] sliceArray = new Object[slices.size() * slices.size()][];
-        for (int i = 0 ; i < slices.size() ; i++) {
-            for (int j = 0 ; j < slices.size() ; j++) {
-                sliceArray[i * slices.size() + j] = new Object[] { slices.get(i), slices.get(j) };
-            }
-        }
-        return sliceArray;
+        return cases.toArray(Object[][]::new);
     }
 }
