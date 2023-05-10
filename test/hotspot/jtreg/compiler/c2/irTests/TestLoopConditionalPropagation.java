@@ -408,47 +408,47 @@ public class TestLoopConditionalPropagation {
         test13(array2, 0, c, false); 
     }
 
-    @Test
-    @IR(counts = { IRNode.CMOVE_I, "1" })
-    @IR(failOn = { IRNode.IF })
-    private static int test14(int i) {
-        if (i < 0) {
-            i = 0;
-        }
-        if (i - 1 < -1) {
-            throw new RuntimeException("never taken");
-        }
-        return i;
-    }
+    // @Test
+    // @IR(counts = { IRNode.CMOVE_I, "1" })
+    // @IR(failOn = { IRNode.IF })
+    // private static int test14(int i) {
+    //     if (i < 0) {
+    //         i = 0;
+    //     }
+    //     if (i - 1 < -1) {
+    //         throw new RuntimeException("never taken");
+    //     }
+    //     return i;
+    // }
 
-    @Run(test = "test14")
-    @Warmup(10_000)
-    public static void test14_runner() {
-        test14(-42);
-        test14(42);
-    }
+    // @Run(test = "test14")
+    // @Warmup(10_000)
+    // public static void test14_runner() {
+    //     test14(-42);
+    //     test14(42);
+    // }
 
-    @Test
-    @IR(counts = { IRNode.CMOVE_I, "1" })
-    @IR(failOn = { IRNode.IF })
-    private static int test15(int i) {
-        if (i < 0) {
-            i = 0;
-        } else {
-            i = i - 1;
-        }
-        if (i - 1 < -2) {
-            throw new RuntimeException("never taken");
-        }
-        return i;
-    }
+    // @Test
+    // @IR(counts = { IRNode.CMOVE_I, "1" })
+    // @IR(failOn = { IRNode.IF })
+    // private static int test15(int i) {
+    //     if (i < 0) {
+    //         i = 0;
+    //     } else {
+    //         i = i - 1;
+    //     }
+    //     if (i - 1 < -2) {
+    //         throw new RuntimeException("never taken");
+    //     }
+    //     return i;
+    // }
 
-    @Run(test = "test15")
-    @Warmup(10_000)
-    public static void test15_runner() {
-        test15(-42);
-        test15(42);
-    }
+    // @Run(test = "test15")
+    // @Warmup(10_000)
+    // public static void test15_runner() {
+    //     test15(-42);
+    //     test15(42);
+    // }
 
     // @Test
     // @IR(counts = { IRNode.CMOVE_I, "1" })

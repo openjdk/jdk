@@ -117,19 +117,20 @@ void PhaseConditionalPropagation::enqueue_uses(const Node* n, Node* c) {
           }
         }
       }
-      if (u->is_Cmp()) {
-        for (DUIterator_Fast jmax, j = u->fast_outs(jmax); j < jmax; j++) {
-          Node* u2 = u->fast_out(j);
-          if (u2->is_Bool()) {
-            for (DUIterator_Fast kmax, k = u2->fast_outs(kmax); k < kmax; k++) {
-              Node* u3 = u2->fast_out(k);
-              if (u3->is_CMove()) {
-                _wq.push(u3);
-              }
-            }
-          }
-        }
-      }
+
+//      if (u->is_Cmp()) {
+//        for (DUIterator_Fast jmax, j = u->fast_outs(jmax); j < jmax; j++) {
+//          Node* u2 = u->fast_out(j);
+//          if (u2->is_Bool()) {
+//            for (DUIterator_Fast kmax, k = u2->fast_outs(kmax); k < kmax; k++) {
+//              Node* u3 = u2->fast_out(k);
+//              if (u3->is_CMove()) {
+//                _wq.push(u3);
+//              }
+//            }
+//          }
+//        }
+//      }
     }
   }
 }
