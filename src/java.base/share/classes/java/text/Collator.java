@@ -119,7 +119,7 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  * for an example using {@code CollationKey}s.
  * @implNote Implementations of {@code Collator} class may produce
  * different instances based on the "{@code co}"
- * <a href="http://www.unicode.org/reports/tr35/#UnicodeCollationIdentifier">
+ * <a href="https://www.unicode.org/reports/tr35/#UnicodeCollationIdentifier">
  * Unicode collation identifier</a> in the specified {@code Locale}.
  * For example:
  * <blockquote>
