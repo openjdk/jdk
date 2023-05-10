@@ -1941,10 +1941,6 @@ bool Arguments::check_vm_args_consistency() {
       return false;
     }
     FLAG_SET_CMDLINE(LockingMode, LM_MONITOR);
-  } else {
-    if (LockingMode == LM_MONITOR) {
-      FLAG_SET_CMDLINE(UseHeavyMonitors, true);
-    }
   }
 
 #if !defined(X86) && !defined(AARCH64) && !defined(PPC64) && !defined(RISCV64)
