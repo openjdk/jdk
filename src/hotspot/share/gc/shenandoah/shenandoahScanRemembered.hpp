@@ -391,13 +391,14 @@ private:
   // a particular card region.  We pack this bit into start byte under assumption that start byte is accessed less
   // frequently than last byte.  This is true when number of clean cards is greater than number of dirty cards.
   static const uint16_t ObjectStartsInCardRegion = 0x80;
-  static const uint16_t FirstStartBits           = 0x3f;
+  static const uint16_t FirstStartBits           = 0x7f;
 
   crossing_info *object_starts;
 
 public:
   // If we're setting first_start, assume the card has an object.
   inline void set_first_start(size_t card_index, uint8_t value) {
+    assert(value < FirstStartBits, "Offset into card would be truncated");
     object_starts[card_index].offsets.first = ObjectStartsInCardRegion | value;
   }
 
