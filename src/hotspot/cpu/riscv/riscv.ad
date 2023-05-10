@@ -10206,7 +10206,7 @@ instruct stringU_indexof_char(iRegP_R11 str1, iRegI_R12 cnt1, iRegI_R13 ch,
   effect(USE_KILL str1, USE_KILL cnt1, USE_KILL ch, TEMP_DEF result,
          TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, KILL cr);
 
-  format %{ "StringUTF16 IndexOf char[] $str1,$cnt1,$ch -> $result" %}
+  format %{ "StringUTF16 IndexOf char[] $str1, $cnt1, $ch -> $result" %}
   ins_encode %{
     __ string_indexof_char($str1$$Register, $cnt1$$Register, $ch$$Register,
                            $result$$Register, $tmp1$$Register, $tmp2$$Register,
@@ -10225,7 +10225,7 @@ instruct stringL_indexof_char(iRegP_R11 str1, iRegI_R12 cnt1, iRegI_R13 ch,
   effect(USE_KILL str1, USE_KILL cnt1, USE_KILL ch, TEMP_DEF result,
          TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, KILL cr);
 
-  format %{ "StringUTF16 IndexOf char[] $str1,$cnt1,$ch -> $result" %}
+  format %{ "StringLatin1 IndexOf char[] $str1, $cnt1, $ch -> $result" %}
   ins_encode %{
     __ string_indexof_char($str1$$Register, $cnt1$$Register, $ch$$Register,
                            $result$$Register, $tmp1$$Register, $tmp2$$Register,
