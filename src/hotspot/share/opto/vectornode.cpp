@@ -1265,13 +1265,17 @@ int ReductionNode::opcode(int opc, BasicType bt) {
 }
 
 // Return the appropriate reduction node.
-ReductionNode* ReductionNode::make(int opc, Node *ctrl, Node* n1, Node* n2, BasicType bt) {
+ReductionNode* ReductionNode::make(int opc, Node* ctrl, Node* n1, Node* n2, BasicType bt) {
 
   int vopc = opcode(opc, bt);
 
   // This method should not be called for unimplemented vectors.
   guarantee(vopc != opc, "Vector for '%s' is not implemented", NodeClassNames[opc]);
 
+  return ReductionNode::make_from_vopc(vopc, ctrl, n1, n2, bt);
+}
+
+ReductionNode* ReductionNode::make_from_vopc(int vopc, Node* ctrl, Node* n1, Node* n2, BasicType bt) {
   switch (vopc) {
   case Op_AddReductionVI: return new AddReductionVINode(ctrl, n1, n2);
   case Op_AddReductionVL: return new AddReductionVLNode(ctrl, n1, n2);

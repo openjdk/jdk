@@ -4252,8 +4252,7 @@ void PhaseIdealLoop::move_unordered_reduction_out_of_loop(IdealLoopTree* loop) {
     Node* identity_scalar = ReductionNode::make_identity_input_for_reduction_from_vector_opc(_igvn, last_ur->Opcode(), bt);
     set_ctrl(identity_scalar, C->root());
     VectorNode* identity_vector = VectorNode::scalar2vector(identity_scalar, vector_length, bt_t);
-    _igvn.register_new_node_with_optimizer(identity_vector);
-    set_ctrl(identity_vector, C->root());
+    register_new_node(identity_vector, C->root());
     assert(vec_t == identity_vector->vect_type(), "matching vector type");
 #ifdef ASSERT
     if (TraceNewVectors) {
@@ -4262,62 +4261,50 @@ void PhaseIdealLoop::move_unordered_reduction_out_of_loop(IdealLoopTree* loop) {
     }
 #endif
 
-    // Traverse down the chain of UnorderedReductions, and create the vector_accumulators.
+    // Turn the scalar phi into a vector phi.
+    _igvn.rehash_node_delayed(phi);
+    Node* init = phi->in(1); // Remember init before replacing it.
+    phi->set_req_X(1, identity_vector, &_igvn);
+    phi->as_Type()->set_type(vec_t);
+    _igvn.set_type(phi, vec_t);
+
+    // Traverse down the chain of UnorderedReductions, and replace them with vector_accumulators.
     current = first_ur;
-    Node* last_vector_accumulator = phi;
     while (true) {
       // Create vector_accumulator to replace current.
-      Node* vector_input = current->in(2);
+      Node* last_vector_accumulator = current->in(1);
+      Node* vector_input            = current->in(2);
       VectorNode* vector_accumulator = current->make_normal_vector_op(last_vector_accumulator, vector_input, vec_t);
-      _igvn.register_new_node_with_optimizer(vector_accumulator, current);
-      set_ctrl(vector_accumulator, cl);
-      last_vector_accumulator = vector_accumulator;
-      if (current != last_ur) {
-        // All UnorderedReductions except the last are now useless.
-        _igvn.rehash_node_delayed(current);
-        current->set_req_X(1, C->top(), &_igvn);
-        current->set_req_X(2, C->top(), &_igvn);
-      }
+      register_new_node(vector_accumulator, cl);
+      _igvn.replace_node(current, vector_accumulator);
 #ifdef ASSERT
       if (TraceNewVectors) {
         tty->print("new Vector node: ");
         vector_accumulator->dump();
       }
 #endif
-      // Iterate down, until we hit last_ur.
-      if (current != last_ur) {
-        current = current->unique_out()->as_UnorderedReduction();
-      } else {
-        current = nullptr;
+      if (current == last_ur) {
         break;
       }
+      current = vector_accumulator->unique_out()->as_UnorderedReduction();
     }
-    assert(current == nullptr, "terminated correctly");
 
-    // After the loop, we can reduce the init and last_vector_accumulator.
-    Node* init = phi->in(1);
-    _igvn.rehash_node_delayed(last_ur);
-    last_ur->set_req_X(1, init, &_igvn);
-    last_ur->set_req_X(2, last_vector_accumulator, &_igvn);
+    // Create post-loop reduction.
+    Node* last_accumulator = phi->in(2);
+    Node* post_loop_reduction = ReductionNode::make_from_vopc(first_ur->Opcode(), nullptr, init, last_accumulator, bt);
 
-    // Turn the scalar phi into a vector phi.
-    _igvn.rehash_node_delayed(phi);
-    phi->set_req_X(1, identity_vector, &_igvn);
-    phi->set_req_X(2, last_vector_accumulator, &_igvn);
-    phi->as_Type()->set_type(vec_t);
-    _igvn.set_type(phi, vec_t);
-    assert(phi->outcnt() == 1, "accumulator is only use of phi");
-
-    // Update control to outside the loop.
-    Node* new_ctrl = get_late_ctrl(last_ur, cl);
-    set_ctrl(last_ur, new_ctrl);
-    assert(new_ctrl != nullptr && new_ctrl != cl, "new control of ur must be outside loop");
-
-#ifdef ASSERT
-    if (TraceNewVectors) {
-      tty->print("new Vector node: ");
-      phi->dump();
+    // Take over uses of last_accumulator that are not in the loop.
+    for (DUIterator i = last_accumulator->outs(); last_accumulator->has_out(i); i++) {
+      Node* use = last_accumulator->out(i);
+      if (ctrl_or_self(use) != cl) {
+        use->replace_edge(last_accumulator, post_loop_reduction,  &_igvn);
+        --i;
+      }
     }
-#endif
+    register_new_node(post_loop_reduction, get_late_ctrl(post_loop_reduction, cl));
+
+    assert(last_accumulator->outcnt() == 2, "last_accumulator has 2 uses: phi and post_loop_reduction");
+    assert(post_loop_reduction->outcnt() > 0, "should have taken over all non loop uses of last_accumulator");
+    assert(phi->outcnt() == 1, "accumulator is the only use of phi");
   }
 }
