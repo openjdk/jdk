@@ -22,14 +22,15 @@
  */
 
 
-package org.openjdk.bench.jdk.incubator.concurrent;
+package org.openjdk.bench.java.lang;
 
-import jdk.incubator.concurrent.ScopedValue;
+import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.Blackhole;
 
-import static org.openjdk.bench.jdk.incubator.concurrent.ScopedValuesData.*;
+import static org.openjdk.bench.java.lang.ScopedValuesData.*;
 
 /**
  * Tests ScopedValue
@@ -40,10 +41,9 @@ import static org.openjdk.bench.jdk.incubator.concurrent.ScopedValuesData.*;
 @Measurement(iterations=10, time=1)
 @Threads(1)
 @Fork(value = 1,
-      jvmArgsPrepend = {"-Djmh.executor.class=org.openjdk.bench.jdk.incubator.concurrent.ScopedValuesExecutorService",
+      jvmArgsPrepend = {"-Djmh.executor.class=org.openjdk.bench.java.lang.ScopedValuesExecutorService",
                         "-Djmh.executor=CUSTOM",
                         "-Djmh.blackhole.mode=COMPILER",
-                        "--add-modules=jdk.incubator.concurrent",
                         "--enable-preview"})
 @State(Scope.Thread)
 @SuppressWarnings("preview")
@@ -161,12 +161,21 @@ public class ScopedValues {
     }
 
     // Test 4: The cost of binding, but not using any result
-
     @Benchmark
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     public Object bind_ScopedValue() throws Exception {
-        return HOLD_42.call(this::getClass);
+        return HOLD_42.call(aCallable);
     }
+    private static final Callable<Class<?>> aCallable = () -> ScopedValues.class;
+
+    // Same, but make sure that Carrier.get(Supplier) is no slower
+    // than Carrier.call(Callable).
+    @Benchmark
+    @OutputTimeUnit(TimeUnit.NANOSECONDS)
+    public Object bindViaGet_ScopedValue() {
+        return HOLD_42.get(aSupplier);
+    }
+    private static final Supplier<Class<?>> aSupplier = () -> ScopedValues.class;
 
     @Benchmark
     @OutputTimeUnit(TimeUnit.NANOSECONDS)

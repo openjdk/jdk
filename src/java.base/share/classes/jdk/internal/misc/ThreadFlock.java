@@ -31,6 +31,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.StructureViolationException;
 import java.util.concurrent.locks.LockSupport;
 import java.util.stream.Stream;
 import jdk.internal.access.JavaLangAccess;
@@ -87,7 +88,6 @@ public class ThreadFlock implements AutoCloseable {
             MethodHandles.Lookup l = MethodHandles.lookup();
             THREAD_COUNT = l.findVarHandle(ThreadFlock.class, "threadCount", int.class);
             PERMIT = l.findVarHandle(ThreadFlock.class, "permit", boolean.class);
-            Unsafe.getUnsafe().ensureClassInitialized(StructureViolationExceptions.class);
         } catch (Exception e) {
             throw new InternalError(e);
         }
@@ -262,8 +262,8 @@ public class ThreadFlock implements AutoCloseable {
      * @throws IllegalThreadStateException if the given thread was already started
      * @throws WrongThreadException if the current thread is not the owner or a thread
      * contained in the flock
-     * @throws jdk.incubator.concurrent.StructureViolationException if the current
-     * scoped value bindings are not the same as when the flock was created
+     * @throws StructureViolationException if the current scoped value bindings are
+     * not the same as when the flock was created
      */
     public Thread start(Thread thread) {
         ensureOwnerOrContainsThread();
@@ -405,8 +405,7 @@ public class ThreadFlock implements AutoCloseable {
      * thread flock.
      *
      * @throws WrongThreadException if invoked by a thread that is not the owner
-     * @throws jdk.incubator.concurrent.StructureViolationException if a structure
-     * violation was detected
+     * @throws StructureViolationException if a structure violation was detected
      */
     public void close() {
         ensureOwner();
@@ -538,7 +537,7 @@ public class ThreadFlock implements AutoCloseable {
                 if (key != null)
                     ThreadContainers.deregisterContainer(key);
                 if (!atTop)
-                    StructureViolationExceptions.throwException();
+                    throw new StructureViolationException();
             }
         }
 
@@ -564,6 +563,10 @@ public class ThreadFlock implements AutoCloseable {
         }
 
         @Override
+        public String name() {
+            return flock.name();
+        }
+        @Override
         public long threadCount() {
             return flock.threadCount();
         }
@@ -578,10 +581,6 @@ public class ThreadFlock implements AutoCloseable {
         @Override
         public void onExit(Thread thread) {
             flock.onExit(thread);
-        }
-        @Override
-        public String toString() {
-            return flock.toString();
         }
         @Override
         public ScopedValueContainer.BindingsSnapshot scopedValueBindings() {

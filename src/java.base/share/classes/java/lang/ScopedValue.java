@@ -24,19 +24,20 @@
  * questions.
  */
 
-package jdk.incubator.concurrent;
+package java.lang;
 
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.lang.ref.Reference;
 import java.util.concurrent.Callable;
+import java.util.concurrent.StructuredTaskScope;
+import java.util.concurrent.StructureViolationException;
 import java.util.function.Supplier;
-import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.JavaUtilConcurrentTLRAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.javac.PreviewFeature;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Hidden;
-import jdk.internal.vm.annotation.Stable;
 import jdk.internal.vm.ScopedValueContainer;
 import sun.security.action.GetPropertyAction;
 
@@ -45,8 +46,8 @@ import sun.security.action.GetPropertyAction;
  * execution by a thread. A {@code ScopedValue} allows for safely and efficiently sharing
  * data for a bounded period of execution without passing the data as method arguments.
  *
- * <p> {@code ScopedValue} defines the {@link #where(ScopedValue, Object, Runnable)}
- * method to set the value of a {@code ScopedValue} for the bouned period of execution by
+ * <p> {@code ScopedValue} defines the {@link #runWhere(ScopedValue, Object, Runnable)}
+ * method to set the value of a {@code ScopedValue} for the bounded period of execution by
  * a thread of the runnable's {@link Runnable#run() run} method. The unfolding execution of
  * the methods executed by {@code run} defines a <b><em>dynamic scope</em></b>. The scoped
  * value is {@linkplain #isBound() bound} while executing in the dynamic scope, it reverts
@@ -65,7 +66,7 @@ import sun.security.action.GetPropertyAction;
  *     // @link substring="newInstance" target="#newInstance" :
  *     private static final ScopedValue<String> USERNAME = ScopedValue.newInstance();
  *
- *     ScopedValue.where(USERNAME, "duke", () -> doSomething());
+ *     ScopedValue.runWhere(USERNAME, "duke", () -> doSomething());
  * }
  * Code executed directly or indirectly by {@code doSomething()} that invokes {@code
  * USERNAME.get()} will read the value "{@code duke}". The scoped value is bound while
@@ -76,11 +77,12 @@ import sun.security.action.GetPropertyAction;
  * {@code USERNAME.get()} would read the value "{@code duke1}" or "{@code duke2}",
  * depending on which thread is executing.
  *
- * <p> In addition to the {@code where} method that executes a {@code run} method, {@code
- * ScopedValue} defines the {@link #where(ScopedValue, Object, Callable)} method to execute
- * a method that returns a result. It also defines the {@link #where(ScopedValue, Object)}
- * method for cases where it is useful to accumulate mappings of {@code ScopedValue} to
- * value.
+ * <p> In addition to the {@code runWhere} method that executes a {@code run} method, {@code
+ * ScopedValue} defines the {@link #callWhere(ScopedValue, Object, Callable)} and
+ * {@link #getWhere(ScopedValue, Object, Supplier)} methods to execute
+ * methods that returns results. It also defines the {@link #where(ScopedValue, Object)}
+ * method for cases where it is useful to accumulate mappings of multiple {@code ScopedValue}s to
+ * bound values.
  *
  * <p> A {@code ScopedValue} will typically be declared in a {@code final} and {@code
  * static} field. The accessibility of the field will determine which components can
@@ -101,7 +103,7 @@ import sun.security.action.GetPropertyAction;
  * <p> In the above example, suppose that code executed by {@code doSomething()} binds
  * {@code USERNAME} to a new value with:
  * {@snippet lang=java :
- *     ScopedValue.where(USERNAME, "duchess", () -> doMore());
+ *     ScopedValue.runWhere(USERNAME, "duchess", () -> doMore());
  * }
  * Code executed directly or indirectly by {@code doMore()} that invokes {@code
  * USERNAME.get()} will read the value "{@code duchess}". When {@code doMore()} completes
@@ -126,7 +128,7 @@ import sun.security.action.GetPropertyAction;
  * {@snippet lang=java :
  *     private static final ScopedValue<String> USERNAME = ScopedValue.newInstance();
 
- *     ScopedValue.where(USERNAME, "duke", () -> {
+ *     ScopedValue.runWhere(USERNAME, "duke", () -> {
  *         try (var scope = new StructuredTaskScope<String>()) {
  *
  *             scope.fork(() -> childTask1());
@@ -158,11 +160,11 @@ import sun.security.action.GetPropertyAction;
  * it makes sense to create a record class to hold those values, and
  * then bind a single {@code ScopedValue} to an instance of that record.
  *
- * <p>For this incubator release, the reference implementation
+ * <p>For this release, the reference implementation
  * provides some system properties to tune the performance of scoped
  * values.
  *
- * <p>The system property {@code jdk.incubator.concurrent.ScopedValue.cacheSize}
+ * <p>The system property {@code java.lang.ScopedValue.cacheSize}
  * controls the size of the (per-thread) scoped-value cache. This cache is crucial
  * for the performance of scoped values. If it is too small,
  * the runtime library will repeatedly need to scan for each
@@ -171,7 +173,7 @@ import sun.security.action.GetPropertyAction;
  * be varied from 2 to 16 entries in size. {@code ScopedValue.cacheSize}
  * must be an integer power of 2.
  *
- * <p>For example, you could use {@code -Djdk.incubator.concurrent.ScopedValue.cacheSize=8}.
+ * <p>For example, you could use {@code -Djava.lang.ScopedValue.cacheSize=8}.
  *
  * <p>The other system property is {@code jdk.preserveScopedValueCache}.
  * This property determines whether the per-thread scoped-value
@@ -185,12 +187,11 @@ import sun.security.action.GetPropertyAction;
  * have to be regenerated after a blocking operation.
  *
  * @param <T> the type of the object bound to this {@code ScopedValue}
- * @since 20
+ * @since 21
  */
+@PreviewFeature(feature = PreviewFeature.Feature.SCOPED_VALUES)
 public final class ScopedValue<T> {
-    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
-
-    private final @Stable int hash;
+    private final int hash;
 
     @Override
     public int hashCode() { return hash; }
@@ -248,7 +249,7 @@ public final class ScopedValue<T> {
      * mapping bound to values. The following example runs an operation with {@code k1}
      * bound (or rebound) to {@code v1}, and {@code k2} bound (or rebound) to {@code v2}.
      * {@snippet lang=java :
-     *     // @link substring="where" target="#where(ScopedValue, Object)" :
+     *     // @link substring="runWhere" target="#runWhere(ScopedValue, Object)" :
      *     ScopedValue.where(k1, v1).where(k2, v2).run(() -> ... );
      * }
      *
@@ -259,8 +260,9 @@ public final class ScopedValue<T> {
      * <p> Unless otherwise specified, passing a {@code null} argument to a method in
      * this class will cause a {@link NullPointerException} to be thrown.
      *
-     * @since 20
+     * @since 21
      */
+    @PreviewFeature(feature = PreviewFeature.Feature.SCOPED_VALUES)
     public static final class Carrier {
         // Bit masks: a 1 in postion n indicates that this set of bound values
         // hits that slot in the cache.
@@ -360,7 +362,7 @@ public final class ScopedValue<T> {
          * @param <R> the type of the result of the operation
          * @return the result
          * @throws Exception if {@code op} completes with an exception
-         * @see ScopedValue#where(ScopedValue, Object, Callable)
+         * @see ScopedValue#callWhere(ScopedValue, Object, Callable) callWhere(ScopedValue, Object, Callable)
          */
         public <R> R call(Callable<? extends R> op) throws Exception {
             Objects.requireNonNull(op);
@@ -368,6 +370,48 @@ public final class ScopedValue<T> {
             var prevSnapshot = scopedValueBindings();
             var newSnapshot = new Snapshot(this, prevSnapshot);
             return runWith(newSnapshot, op);
+        }
+
+        /**
+         * Invokes a supplier of results with each scoped value in this mapping bound
+         * to its value in the current thread.
+         * When the operation completes (normally or with an exception), each scoped value
+         * in the mapping will revert to being unbound, or revert to its previous value
+         * when previously bound, in the current thread.
+         *
+         * <p> Scoped values are intended to be used in a <em>structured manner</em>.
+         * If {@code op} creates a {@link StructuredTaskScope} but does not {@linkplain
+         * StructuredTaskScope#close() close} it, then exiting {@code op} causes the
+         * underlying construct of each {@code StructuredTaskScope} created in the
+         * dynamic scope to be closed. This may require blocking until all child threads
+         * have completed their sub-tasks. The closing is done in the reverse order that
+         * they were created. Once closed, {@link StructureViolationException} is thrown.
+         *
+         * @param op the operation to run
+         * @param <R> the type of the result of the operation
+         * @return the result
+         * @see ScopedValue#getWhere(ScopedValue, Object, Supplier)
+         */
+        public <R> R get(Supplier<? extends R> op) {
+            Objects.requireNonNull(op);
+            Cache.invalidate(bitmask);
+            var prevSnapshot = scopedValueBindings();
+            var newSnapshot = new Snapshot(this, prevSnapshot);
+            return runWith(newSnapshot, new CallableAdapter<R>(op));
+        }
+
+        // A lightweight adapter from Supplier to Callable. This is
+        // used here to create the Callable which is passed to
+        // Carrier#call() in this thread because it needs neither
+        // runtime bytecode generation nor any release fencing.
+        private static final class CallableAdapter<V> implements Callable<V> {
+            private Supplier<? extends V> s;
+            CallableAdapter(Supplier<? extends V> s) {
+                this.s = s;
+            }
+            public V call() {
+                return s.get();
+            }
         }
 
         /**
@@ -379,14 +423,14 @@ public final class ScopedValue<T> {
          */
         @Hidden
         @ForceInline
-        private <R> R runWith(Snapshot newSnapshot, Callable<R> op) throws Exception {
+        private <R> R runWith(Snapshot newSnapshot, Callable<R> op) {
             try {
-                JLA.setScopedValueBindings(newSnapshot);
-                JLA.ensureMaterializedForStackWalk(newSnapshot);
+                Thread.setScopedValueBindings(newSnapshot);
+                Thread.ensureMaterializedForStackWalk(newSnapshot);
                 return ScopedValueContainer.call(op);
             } finally {
                 Reference.reachabilityFence(newSnapshot);
-                JLA.setScopedValueBindings(newSnapshot.prev);
+                Thread.setScopedValueBindings(newSnapshot.prev);
                 Cache.invalidate(bitmask);
             }
         }
@@ -407,7 +451,7 @@ public final class ScopedValue<T> {
          * they were created. Once closed, {@link StructureViolationException} is thrown.
          *
          * @param op the operation to run
-         * @see ScopedValue#where(ScopedValue, Object, Runnable)
+         * @see ScopedValue#runWhere(ScopedValue, Object, Runnable)
          */
         public void run(Runnable op) {
             Objects.requireNonNull(op);
@@ -428,12 +472,12 @@ public final class ScopedValue<T> {
         @ForceInline
         private void runWith(Snapshot newSnapshot, Runnable op) {
             try {
-                JLA.setScopedValueBindings(newSnapshot);
-                JLA.ensureMaterializedForStackWalk(newSnapshot);
+                Thread.setScopedValueBindings(newSnapshot);
+                Thread.ensureMaterializedForStackWalk(newSnapshot);
                 ScopedValueContainer.run(op);
             } finally {
                 Reference.reachabilityFence(newSnapshot);
-                JLA.setScopedValueBindings(newSnapshot.prev);
+                Thread.setScopedValueBindings(newSnapshot.prev);
                 Cache.invalidate(bitmask);
             }
         }
@@ -488,10 +532,44 @@ public final class ScopedValue<T> {
      * @return the result
      * @throws Exception if the operation completes with an exception
      */
-    public static <T, R> R where(ScopedValue<T> key,
+    public static <T, R> R callWhere(ScopedValue<T> key,
                                  T value,
                                  Callable<? extends R> op) throws Exception {
         return where(key, value).call(op);
+    }
+
+    /**
+     * Invokes a supplier of results with a {@code ScopedValue} bound to a value
+     * in the current thread. When the operation completes (normally or with an
+     * exception), the {@code ScopedValue} will revert to being unbound, or revert to
+     * its previous value when previously bound, in the current thread.
+     *
+     * <p> Scoped values are intended to be used in a <em>structured manner</em>.
+     * If {@code op} creates a {@link StructuredTaskScope} but does not {@linkplain
+     * StructuredTaskScope#close() close} it, then exiting {@code op} causes the
+     * underlying construct of each {@code StructuredTaskScope} created in the
+     * dynamic scope to be closed. This may require blocking until all child threads
+     * have completed their sub-tasks. The closing is done in the reverse order that
+     * they were created. Once closed, {@link StructureViolationException} is thrown.
+     *
+     * @implNote
+     * This method is implemented to be equivalent to:
+     * {@snippet lang=java :
+     *     // @link substring="call" target="Carrier#call(Callable)" :
+     *     ScopedValue.where(key, value).get(op);
+     * }
+     *
+     * @param key the {@code ScopedValue} key
+     * @param value the value, can be {@code null}
+     * @param <T> the type of the value
+     * @param <R> the result type
+     * @param op the operation to call
+     * @return the result
+     */
+    public static <T, R> R getWhere(ScopedValue<T> key,
+                                 T value,
+                                 Supplier<? extends R> op) {
+        return where(key, value).get(op);
     }
 
     /**
@@ -520,7 +598,7 @@ public final class ScopedValue<T> {
      * @param <T> the type of the value
      * @param op the operation to call
      */
-    public static <T> void where(ScopedValue<T> key, T value, Runnable op) {
+    public static <T> void runWhere(ScopedValue<T> key, T value, Runnable op) {
         where(key, value).run(op);
     }
 
@@ -642,11 +720,11 @@ public final class ScopedValue<T> {
     }
 
     private static Object[] scopedValueCache() {
-        return JLA.scopedValueCache();
+        return Thread.scopedValueCache();
     }
 
     private static void setScopedValueCache(Object[] cache) {
-        JLA.setScopedValueCache(cache);
+        Thread.setScopedValueCache(cache);
     }
 
     // Special value to indicate this is a newly-created Thread
@@ -662,24 +740,24 @@ public final class ScopedValue<T> {
         // 3: A Snapshot instance: this contains one or more scoped value
         // bindings.
         // 4: null: there may be some bindings in this Thread, but we don't know
-        // where they are. We must invoke JLA.findScopedValueBindings() to walk
+        // where they are. We must invoke Thread.findScopedValueBindings() to walk
         // the stack to find them.
 
-        Object bindings = JLA.scopedValueBindings();
+        Object bindings = Thread.scopedValueBindings();
         if (bindings == NEW_THREAD_BINDINGS) {
             // This must be a new thread
            return Snapshot.EMPTY_SNAPSHOT;
         }
         if (bindings == null) {
             // Search the stack
-            bindings = JLA.findScopedValueBindings();
+            bindings = Thread.findScopedValueBindings();
             if (bindings == null) {
                 // Nothing on the stack.
                 bindings = Snapshot.EMPTY_SNAPSHOT;
             }
         }
         assert (bindings != null);
-        JLA.setScopedValueBindings(bindings);
+        Thread.setScopedValueBindings(bindings);
         return (Snapshot) bindings;
     }
 
@@ -732,7 +810,7 @@ public final class ScopedValue<T> {
         private static final int MAX_CACHE_SIZE = 16;
 
         static {
-            final String propertyName = "jdk.incubator.concurrent.ScopedValue.cacheSize";
+            final String propertyName = "java.lang.ScopedValue.cacheSize";
             var sizeString = GetPropertyAction.privilegedGetProperty(propertyName, "16");
             var cacheSize = Integer.valueOf(sizeString);
             if (cacheSize < 2 || cacheSize > MAX_CACHE_SIZE) {

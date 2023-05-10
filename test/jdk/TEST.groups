@@ -279,7 +279,6 @@ jdk_loom = \
     java/util/concurrent \
     java/net/vthread \
     java/nio/channels/vthread \
-    jdk/incubator/concurrent \
     jdk/internal/misc/ThreadFlock \
     jdk/internal/vm/Continuation \
     jdk/jfr/threading
@@ -319,7 +318,6 @@ jdk_other = \
     javax/xml \
     -javax/xml/crypto \
     jdk/dynalink \
-    jdk/incubator/concurrent \
     jdk/internal/jline \
     com/sun/jndi \
     lib/testlibrary

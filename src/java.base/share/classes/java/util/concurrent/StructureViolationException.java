@@ -22,15 +22,18 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.incubator.concurrent;
+package java.util.concurrent;
+
+import jdk.internal.javac.PreviewFeature;
 
 /**
  * Thrown when a structure violation is detected.
  *
  * @see StructuredTaskScope#close()
  *
- * @since 19
+ * @since 21
  */
+@PreviewFeature(feature = PreviewFeature.Feature.STRUCTURED_CONCURRENCY)
 public final class StructureViolationException extends RuntimeException {
     @java.io.Serial
     private static final long serialVersionUID = -7705327650798235468L;

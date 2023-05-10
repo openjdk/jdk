@@ -74,6 +74,10 @@ public @interface PreviewFeature {
         FOREIGN,
         @JEP(number=430, title="String Templates", status="First Preview")
         STRING_TEMPLATES,
+        @JEP(number=999, title="Structured Concurrency", status="Preview")
+        STRUCTURED_CONCURRENCY,
+        @JEP(number=446, title="Scoped Values", status="Preview")
+        SCOPED_VALUES,
         /**
          * A key for testing.
          */
