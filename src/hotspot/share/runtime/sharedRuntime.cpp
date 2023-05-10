@@ -2061,13 +2061,13 @@ JRT_LEAF(void, SharedRuntime::fixup_callers_callsite(Method* method, address cal
     return;
   }
 
+  // write lock needed because we might update the pc desc cache via PcDescCache::add_pc_desc
+  MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, JavaThread::current()));
+
   CodeBlob* cb = CodeCache::find_blob(caller_pc);
   if (cb == nullptr || !cb->is_compiled() || callee->is_unloading()) {
     return;
   }
-
-  // write lock needed because we might update the pc desc cache via PcDescCache::add_pc_desc
-  MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, JavaThread::current()));
 
   // The check above makes sure this is a nmethod.
   CompiledMethod* nm = cb->as_compiled_method_or_null();
