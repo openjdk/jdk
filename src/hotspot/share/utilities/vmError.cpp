@@ -51,6 +51,7 @@
 #include "runtime/safefetch.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/stackFrameStream.inline.hpp"
+#include "runtime/stackOverflow.hpp"
 #include "runtime/threads.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vmThread.hpp"
@@ -173,24 +174,28 @@ static void print_bug_submit_message(outputStream *out, Thread *thread) {
 }
 
 static bool stack_has_headroom(size_t headroom) {
-  const size_t  stack_size    = os::current_stack_size();
+  const size_t stack_size = os::current_stack_size();
+  const size_t guard_size = StackOverflow::stack_guard_zone_size();
+  const size_t unguarded_stack_size = stack_size - guard_size;
 
-  if (stack_size < headroom) {
+  if (unguarded_stack_size < headroom) {
     return false;
   }
 
-  const address stack_base    = os::current_stack_base();
-  const address stack_end     = stack_base - stack_size;
-  const address stack_pointer = os::current_stack_pointer();
+  const address stack_base          = os::current_stack_base();
+  const address unguarded_stack_end = stack_base - unguarded_stack_size;
+  const address stack_pointer       = os::current_stack_pointer();
 
-  return stack_pointer >= stack_end + headroom;
+  return stack_pointer >= unguarded_stack_end + headroom;
 }
 
 #ifdef ASSERT
-void VMError::reenterant_test_hit_stack_limit() {
-  while (stack_has_headroom(_reattempt_required_stack_headroom)) {
-    char* array = (char*)alloca(_reattempt_required_stack_headroom / 2);
-    static_cast<void>(array[_reattempt_required_stack_headroom / 2 - 1] = '\0');
+void VMError::reattempt_test_hit_stack_limit() {
+  if (stack_has_headroom(_reattempt_required_stack_headroom)) {
+    volatile char stack_buffer[_reattempt_required_stack_headroom / 2];
+    static_cast<void>(stack_buffer[sizeof(stack_buffer) - 1] = '\0');
+    reattempt_test_hit_stack_limit();
+    static_cast<void>(stack_buffer[sizeof(stack_buffer) - 1] == '\0');
   }
   controlled_crash(14);
 }
@@ -697,7 +702,7 @@ void VMError::report(outputStream* st, bool _verbose) {
   STEP_IF("test reattempt stack headroom",
       _verbose && TestCrashInErrorHandler == TEST_REATTEMPT_SECONDARY_CRASH)
     st->print_cr("test reattempt stack headroom");
-    reenterant_test_hit_stack_limit();
+    reattempt_test_hit_stack_limit();
 
   REATTEMPT_STEP_IF("test reattempt stack headroom, attempt 2",
       _verbose && TestCrashInErrorHandler == TEST_REATTEMPT_SECONDARY_CRASH)
