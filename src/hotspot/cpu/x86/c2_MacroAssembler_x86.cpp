@@ -6129,3 +6129,13 @@ void C2_MacroAssembler::vector_rearrange_int_float(BasicType bt, XMMRegister dst
     vpermps(dst, shuffle, src, vlen_enc);
   }
 }
+
+void C2_MacroAssembler::load_nklass_compact(Register dst, Register obj) {
+  C2LoadNKlassStub* stub = new (Compile::current()->comp_arena()) C2LoadNKlassStub(dst);
+  Compile::current()->output()->add_stub(stub);
+  movq(dst, Address(obj, oopDesc::mark_offset_in_bytes()));
+  testb(dst, markWord::monitor_value);
+  jcc(Assembler::notZero, stub->entry());
+  bind(stub->continuation());
+  shrq(dst, markWord::klass_shift);
+}

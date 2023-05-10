@@ -92,8 +92,8 @@ public class Oop {
 
   public Klass getKlass() {
     if (VM.getVM().isCompactObjectHeadersEnabled()) {
-        assert(VM.getVM().isCompressedKlassPointersEnabled());
-        return getKlass(getMark());
+      assert(VM.getVM().isCompressedKlassPointersEnabled());
+      return getKlass(getMark());
     } else if (VM.getVM().isCompressedKlassPointersEnabled()) {
       return (Klass)compressedKlass.getValue(getHandle());
     } else {

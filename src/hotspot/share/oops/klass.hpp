@@ -672,7 +672,7 @@ protected:
   bool is_cloneable() const;
   void set_is_cloneable();
 
-  markWord prototype_header() const      {
+  markWord prototype_header() const {
     assert(UseCompactObjectHeaders, "only use with compact object headers");
     return _prototype_header;
   }

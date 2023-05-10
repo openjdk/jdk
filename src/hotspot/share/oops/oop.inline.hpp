@@ -101,13 +101,9 @@ markWord oopDesc::prototype_mark() const {
 }
 
 void oopDesc::init_mark() {
-#ifdef _LP64
   if (UseCompactObjectHeaders) {
-    assert(UseCompressedClassPointers, "expect compressed klass pointers");
     set_mark(prototype_mark());
-  } else
-#endif
-  {
+  } else {
     set_mark(markWord::prototype());
   }
 }
@@ -115,7 +111,6 @@ void oopDesc::init_mark() {
 Klass* oopDesc::klass() const {
 #ifdef _LP64
   if (UseCompactObjectHeaders) {
-    assert(UseCompressedClassPointers, "only with compressed class pointers");
     markWord header = resolve_mark();
     return header.klass();
   } else if (UseCompressedClassPointers) {
@@ -130,7 +125,6 @@ Klass* oopDesc::klass() const {
 Klass* oopDesc::klass_or_null() const {
 #ifdef _LP64
   if (UseCompactObjectHeaders) {
-    assert(UseCompressedClassPointers, "only with compressed class pointers");
     markWord header = resolve_mark();
     return header.klass_or_null();
   } else if (UseCompressedClassPointers) {
@@ -145,7 +139,6 @@ Klass* oopDesc::klass_or_null() const {
 Klass* oopDesc::klass_or_null_acquire() const {
 #ifdef _LP64
   if (UseCompactObjectHeaders) {
-    assert(UseCompressedClassPointers, "only with compressed class pointers");
     markWord header = mark_acquire();
     if (header.has_displaced_mark_helper()) {
       header = header.displaced_mark_helper();
@@ -257,25 +250,14 @@ size_t oopDesc::size_given_klass(Klass* klass)  {
   return s;
 }
 
-markWord oopDesc::forward_safe_mark() const {
-  markWord mrk = mark();
-#ifdef _LP64
-  if (UseCompactObjectHeaders) {
-    if (mrk.is_marked()) {
-      mrk = forwardee(mrk)->mark();
-    }
-    return mrk.actual_mark();
-  } else
-#endif
-  {
-    return mrk;
-  }
-}
-
 Klass* oopDesc::forward_safe_klass() const {
 #ifdef _LP64
   if (UseCompactObjectHeaders) {
-    return forward_safe_mark().klass();
+    markWord m = mark();
+    if (m.is_marked()) {
+      m = forwardee(m)->mark();
+    }
+    return m.actual_mark().klass();
   } else
 #endif
   {
@@ -488,7 +470,7 @@ void oopDesc::oop_iterate_backwards(OopClosureType* cl) {
 
 template <typename OopClosureType>
 void oopDesc::oop_iterate_backwards(OopClosureType* cl, Klass* k) {
-  // We cannot safely access the Klass* with compact headers here.
+  // In this assert, we cannot safely access the Klass* with compact headers.
   assert(UseCompactObjectHeaders || k == klass(), "wrong klass");
   OopIteratorClosureDispatch::oop_oop_iterate_backwards(cl, this, k);
 }

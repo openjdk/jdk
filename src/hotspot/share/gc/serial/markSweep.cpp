@@ -172,6 +172,8 @@ void MarkSweep::mark_object(oop obj) {
     _string_dedup_requests->add(obj);
   }
 
+  // Do the transform while we still have the header intact,
+  // which might include important class information.
   ContinuationGCSupport::transform_stack_chunk(obj);
 
   // some marks may contain information we need to preserve so we store them away

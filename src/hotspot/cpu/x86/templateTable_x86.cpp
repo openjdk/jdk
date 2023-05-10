@@ -4031,8 +4031,11 @@ void TemplateTable::_new() {
 
     // The object is initialized before the header.  If the object size is
     // zero, go directly to the header initialization.
-    int header_size = align_up(oopDesc::base_offset_in_bytes(), BytesPerLong);
-    __ decrement(rdx, header_size);
+    if (UseCompactObjectHeaders) {
+      __ decrement(rdx, align_up(oopDesc::base_offset_in_bytes(), BytesPerLong));
+    } else {
+      __ decrement(rdx, sizeof(oopDesc));
+    }
     __ jcc(Assembler::zero, initialize_header);
 
     // Initialize topmost object field, divide rdx by 8, check if odd and
@@ -4054,8 +4057,14 @@ void TemplateTable::_new() {
     // initialize remaining object fields: rdx was a multiple of 8
     { Label loop;
     __ bind(loop);
-    __ movptr(Address(rax, rdx, Address::times_8, header_size - 1*oopSize), rcx);
-    NOT_LP64(__ movptr(Address(rax, rdx, Address::times_8, header_size - 2*oopSize), rcx));
+    if (UseCompactObjectHeaders) {
+      int header_size = align_up(oopDesc::base_offset_in_bytes(), BytesPerLong);
+      __ movptr(Address(rax, rdx, Address::times_8, header_size - 1*oopSize), rcx);
+      NOT_LP64(__ movptr(Address(rax, rdx, Address::times_8, header_size - 2*oopSize), rcx));
+    } else {
+      __ movptr(Address(rax, rdx, Address::times_8, sizeof(oopDesc) - 1*oopSize), rcx);
+      NOT_LP64(__ movptr(Address(rax, rdx, Address::times_8, sizeof(oopDesc) - 2*oopSize), rcx));
+    }
     __ decrement(rdx);
     __ jcc(Assembler::notZero, loop);
     }
@@ -4065,7 +4074,7 @@ void TemplateTable::_new() {
     if (UseCompactObjectHeaders) {
       __ pop(rcx);   // get saved klass back in the register.
       __ movptr(rbx, Address(rcx, Klass::prototype_header_offset()));
-      __ movptr(Address(rax, oopDesc::mark_offset_in_bytes ()), rbx);
+      __ movptr(Address(rax, oopDesc::mark_offset_in_bytes()), rbx);
     } else {
       __ movptr(Address(rax, oopDesc::mark_offset_in_bytes()),
                 (intptr_t)markWord::prototype().value()); // header

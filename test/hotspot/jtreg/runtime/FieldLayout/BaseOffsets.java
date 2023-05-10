@@ -58,7 +58,6 @@ public class BaseOffsets {
 
     public static final WhiteBox WB = WhiteBox.getWhiteBox();
 
-  // @0:  8 byte header,  @8: int field
     static final long INT_OFFSET;
     static final int  INT_ARRAY_OFFSET;
     static final int  LONG_ARRAY_OFFSET;

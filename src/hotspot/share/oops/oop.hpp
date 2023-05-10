@@ -103,12 +103,11 @@ class oopDesc {
 
   // size of object header, aligned to platform wordSize
   static int header_size() {
-#ifdef _LP64
     if (UseCompactObjectHeaders) {
       return sizeof(markWord) / HeapWordSize;
-    } else
-#endif
-    return sizeof(oopDesc)/HeapWordSize;
+    } else {
+      return sizeof(oopDesc)/HeapWordSize;
+    }
   }
 
   // Returns whether this is an instance of k or an instance of a subclass of k
@@ -127,7 +126,6 @@ class oopDesc {
   // the header as a plain pointer (or self-forwarded). In particular,
   // those methods can not deal with the sliding-forwarding that is used
   // in Serial, G1 and Shenandoah full-GCs.
-  inline markWord forward_safe_mark() const;
   inline Klass*   forward_safe_klass() const;
   inline size_t   forward_safe_size();
   inline void     forward_safe_init_mark();
@@ -340,11 +338,12 @@ class oopDesc {
 #ifdef _LP64
     if (UseCompactObjectHeaders) {
       // With compact object headers, the klass-offset is only used by the
-      // compiler to differentiate LoadNKlass. It is never used to actually
-      // load the narrowKlass from the header.
-      STATIC_ASSERT(markWord::klass_shift % 8 == 0);
-      return mark_offset_in_bytes() + markWord::klass_shift / 8;
-    } else
+      // C2 compiler to differentiate LoadNKlass. It is never used to actually
+      // load the narrowKlass from the header. Any offset that is not used by
+      // anything else should suffice, here.
+      STATIC_ASSERT(markWord::klass_shift % BitsPerByte == 0);
+      return mark_offset_in_bytes() + markWord::klass_shift / BitsPerByte;
+    }
 #endif
     return offset_of(oopDesc, _metadata._klass);
   }
@@ -359,13 +358,15 @@ class oopDesc {
     if (UseCompactObjectHeaders) {
       // With compact headers, the Klass* field is not used for the Klass*
       // and is used for the object fields instead.
-      assert(sizeof(markWord) == 8, "sanity");
+      STATIC_ASSERT(sizeof(markWord) == 8);
       return sizeof(markWord);
     } else if (UseCompressedClassPointers) {
       return sizeof(markWord) + sizeof(narrowKlass);
     } else
 #endif
-    return sizeof(oopDesc);
+    {
+      return sizeof(oopDesc);
+    }
   }
 
   // for error reporting

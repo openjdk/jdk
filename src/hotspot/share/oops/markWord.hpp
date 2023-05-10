@@ -235,7 +235,7 @@ class markWord {
     uintptr_t mask_in_place = UseCompactObjectHeaders ? hash_mask_in_place_compact : hash_mask_in_place;
     uintptr_t mask          = UseCompactObjectHeaders ? hash_mask_compact          : hash_mask;
     int shift               = UseCompactObjectHeaders ? hash_shift_compact         : hash_shift;
-    uintptr_t tmp = value() & ~mask_in_place;
+    uintptr_t tmp = value() & (~mask_in_place);
     tmp |= ((hash & mask) << shift);
     return markWord(tmp);
   }
