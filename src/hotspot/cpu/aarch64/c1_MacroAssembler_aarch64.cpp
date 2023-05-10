@@ -201,7 +201,7 @@ void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register
     if (UseCompactObjectHeaders) {
       // With compact headers, arrays have a 32bit alignment gap after the length.
       assert(arrayOopDesc::length_offset_in_bytes() == 8, "check length offset");
-      strwl(zr, Address(obj, arrayOopDesc::length_offset_in_bytes() + sizeof(jint)));
+      strw(zr, Address(obj, arrayOopDesc::length_offset_in_bytes() + sizeof(jint)));
     }
   } else if (UseCompressedClassPointers && !UseCompactObjectHeaders) {
     store_klass_gap(obj, zr);
