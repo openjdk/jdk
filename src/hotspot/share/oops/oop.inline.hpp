@@ -273,7 +273,7 @@ void oopDesc::forward_to(oop p) {
   set_mark(m);
 }
 
-void oopDesc::forward_to_self() {
+void oopDesc::forward_failed() {
   if (UseAltGCForwarding) {
     markWord m = mark();
     // If mark is displaced, we need to preserve the real header during GC.
@@ -282,7 +282,7 @@ void oopDesc::forward_to_self() {
     if (m.has_displaced_mark_helper()) {
       m = m.displaced_mark_helper();
     }
-    m = m.set_self_forwarded();
+    m = m.set_forward_failed();
     assert(forwardee(m) == cast_to_oop(this), "encoding must be reversable");
     set_mark(m);
   } else {
@@ -302,7 +302,7 @@ oop oopDesc::forward_to_atomic(oop p, markWord compare, atomic_memory_order orde
   }
 }
 
-oop oopDesc::forward_to_self_atomic(markWord compare, atomic_memory_order order) {
+oop oopDesc::forward_failed_atomic(markWord compare, atomic_memory_order order) {
   if (UseAltGCForwarding) {
     markWord m = compare;
     // If mark is displaced, we need to preserve the real header during GC.
@@ -311,7 +311,7 @@ oop oopDesc::forward_to_self_atomic(markWord compare, atomic_memory_order order)
     if (m.has_displaced_mark_helper()) {
       m = m.displaced_mark_helper();
     }
-    m = m.set_self_forwarded();
+    m = m.set_forward_failed();
     assert(forwardee(m) == cast_to_oop(this), "encoding must be reversable");
     markWord old_mark = cas_set_mark(m, compare, order);
     if (old_mark == compare) {
@@ -327,7 +327,7 @@ oop oopDesc::forward_to_self_atomic(markWord compare, atomic_memory_order order)
 
 oop oopDesc::forwardee(markWord header) const {
   assert(header.is_marked(), "only decode when actually forwarded");
-  if (header.self_forwarded()) {
+  if (header.forward_failed()) {
     return cast_to_oop(this);
   } else {
     return cast_to_oop(header.decode_pointer());
