@@ -111,7 +111,7 @@ private:
                             BasicType copy_type, const Type* value_type, int count);
   bool finish_transform(PhaseGVN *phase, bool can_reshape,
                         Node* ctl, Node *mem);
-  static bool may_modify_helper(const TypeOopPtr* t_oop, Node* n, PhaseValues* phase, CallNode* &call);
+  static bool may_modify_helper(const TypeOopPtr* t_oop, Node* n, PhaseValues* phase, CallNode*& call);
 public:
   static Node* load(BarrierSetC2* bs, PhaseGVN *phase, Node*& ctl, MergeMemNode* mem, Node* addr, const TypePtr* adr_type, const Type *type, BasicType bt);
 private:
@@ -179,7 +179,7 @@ public:
 
   bool has_negative_length_guard() const { return _has_negative_length_guard; }
 
-  static bool may_modify(const TypeOopPtr* t_oop, MemBarNode* mb, PhaseValues* phase, ArrayCopyNode* &ac);
+  static bool may_modify(const TypeOopPtr* t_oop, MemBarNode* mb, PhaseValues* phase, ArrayCopyNode*& ac);
 
   static int get_partial_inline_vector_lane_count(BasicType type, int const_len);
 

@@ -363,7 +363,7 @@ NodeHash::~NodeHash() {
 //=============================================================================
 //------------------------------PhaseRemoveUseless-----------------------------
 // 1) Use a breadthfirst walk to collect useful nodes reachable from root.
-PhaseRemoveUseless::PhaseRemoveUseless(PhaseGVN* gvn, Unique_Node_List &worklist, PhaseNumber phase_num) : Phase(phase_num) {
+PhaseRemoveUseless::PhaseRemoveUseless(PhaseGVN* gvn, Unique_Node_List& worklist, PhaseNumber phase_num) : Phase(phase_num) {
   // Implementation requires an edge from root to each SafePointNode
   // at a backward branch. Inserted in add_safepoint().
 
@@ -407,7 +407,7 @@ PhaseRemoveUseless::PhaseRemoveUseless(PhaseGVN* gvn, Unique_Node_List &worklist
 // numbering (the field PhaseGVN::_table) is not updated because computing the hash
 // values is not based on node IDs.
 PhaseRenumberLive::PhaseRenumberLive(PhaseGVN* gvn,
-                                     Unique_Node_List &worklist,
+                                     Unique_Node_List& worklist,
                                      PhaseNumber phase_num) :
   PhaseRemoveUseless(gvn, worklist, Remove_Useless_And_Renumber_Live),
   _new_type_array(C->comp_arena()),
@@ -453,7 +453,7 @@ PhaseRenumberLive::PhaseRenumberLive(PhaseGVN* gvn,
     }
   }
 
-  // VectorSet in Unique_Node_Set must be recomputed, since ID's have changed.
+  // VectorSet in Unique_Node_Set must be recomputed, since IDs have changed.
   worklist.recompute_idx_set();
 
   assert(_live_node_count == _useful.size(), "all live nodes must be processed");

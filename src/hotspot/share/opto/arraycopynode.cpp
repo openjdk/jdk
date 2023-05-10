@@ -672,7 +672,7 @@ bool ArrayCopyNode::may_modify(const TypeOopPtr* t_oop, PhaseValues* phase) {
   return CallNode::may_modify_arraycopy_helper(dest_t, t_oop, phase);
 }
 
-bool ArrayCopyNode::may_modify_helper(const TypeOopPtr* t_oop, Node* n, PhaseValues* phase, CallNode* &call) {
+bool ArrayCopyNode::may_modify_helper(const TypeOopPtr* t_oop, Node* n, PhaseValues* phase, CallNode*& call) {
   if (n != nullptr &&
       n->is_Call() &&
       n->as_Call()->may_modify(t_oop, phase) &&
@@ -683,7 +683,7 @@ bool ArrayCopyNode::may_modify_helper(const TypeOopPtr* t_oop, Node* n, PhaseVal
   return false;
 }
 
-bool ArrayCopyNode::may_modify(const TypeOopPtr* t_oop, MemBarNode* mb, PhaseValues* phase, ArrayCopyNode* &ac) {
+bool ArrayCopyNode::may_modify(const TypeOopPtr* t_oop, MemBarNode* mb, PhaseValues* phase, ArrayCopyNode*& ac) {
   Node* c = mb->in(0);
 
   BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();

@@ -1658,8 +1658,8 @@ public:
     }
   }
 
-#ifndef PRODUCT
-  bool is_subset_of(Unique_Node_List &other) {
+#ifdef ASSERT
+  bool is_subset_of(Unique_Node_List& other) {
     for (uint i = 0; i < size(); i++) {
       Node* n = at(i);
       if (!other.member(n)) {

@@ -407,7 +407,7 @@ void Compile::remove_useless_node(Node* dead) {
 }
 
 // Disconnect all useless nodes by disconnecting those at the boundary.
-void Compile::disconnect_useless_nodes(Unique_Node_List &useful, Unique_Node_List &worklist) {
+void Compile::disconnect_useless_nodes(Unique_Node_List& useful, Unique_Node_List& worklist) {
   uint next = 0;
   while (next < useful.size()) {
     Node *n = useful.at(next++);
