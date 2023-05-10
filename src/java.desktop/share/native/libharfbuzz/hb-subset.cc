@@ -54,6 +54,7 @@
 #include "hb-ot-name-table.hh"
 #include "hb-ot-layout-gsub-table.hh"
 #include "hb-ot-layout-gpos-table.hh"
+#include "hb-ot-var-cvar-table.hh"
 #include "hb-ot-var-fvar-table.hh"
 #include "hb-ot-var-gvar-table.hh"
 #include "hb-ot-var-hvar-table.hh"
@@ -482,6 +483,16 @@ _subset_table (hb_subset_plan_t *plan,
     if (plan->all_axes_pinned) return _subset<const OT::STAT> (plan, buf);
     else return _passthrough (plan, tag);
 
+  case HB_TAG ('c', 'v', 't', ' '):
+#ifndef HB_NO_VAR
+    if (_is_table_present (plan->source, HB_OT_TAG_cvar) &&
+        plan->normalized_coords && !plan->pinned_at_default)
+    {
+      auto &cvar = *plan->source->table.cvar;
+      return OT::cvar::add_cvt_and_apply_deltas (plan, cvar.get_tuple_var_data (), &cvar);
+    }
+#endif
+    return _passthrough (plan, tag);
   default:
     if (plan->flags & HB_SUBSET_FLAGS_PASSTHROUGH_UNRECOGNIZED)
       return _passthrough (plan, tag);
@@ -630,8 +641,3 @@ hb_subset_plan_execute_or_fail (hb_subset_plan_t *plan)
 end:
   return success ? hb_face_reference (plan->dest) : nullptr;
 }
-
-#ifndef HB_NO_VISIBILITY
-/* If NO_VISIBILITY, libharfbuzz has this. */
-#include "hb-ot-name-language-static.hh"
-#endif

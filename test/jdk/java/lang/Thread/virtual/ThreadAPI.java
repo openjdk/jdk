@@ -1802,7 +1802,7 @@ class ThreadAPI {
     }
 
     /**
-     * Test Thread.holdLock when lock not held.
+     * Test Thread.holdsLock when lock not held.
      */
     @Test
     void testHoldsLock1() throws Exception {
@@ -1813,7 +1813,7 @@ class ThreadAPI {
     }
 
     /**
-     * Test Thread.holdLock when lock held.
+     * Test Thread.holdsLock when lock held.
      */
     @Test
     void testHoldsLock2() throws Exception {
