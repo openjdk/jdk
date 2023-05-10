@@ -61,14 +61,13 @@ import sun.util.ResourceBundleEnumeration;
  * "MyResources" is the default member of the bundle family, and
  * "MyResources_fr" is the French member.
  * These members are based on {@code ListResourceBundle}
- * (a related <a href="PropertyResourceBundle.html#sample">example</a> shows
+ * (a related {@linkplain PropertyResourceBundle##sample example} shows
  * how you can add a bundle to this family that's based on a properties file).
  * The keys in this example are of the form "s1" etc. The actual
  * keys are entirely up to your choice, so long as they are the same as
  * the keys you use in your program to retrieve the objects from the bundle.
  * Keys are case-sensitive.
- * <blockquote>
- * <pre>
+ * {@snippet lang=java :
  *
  * public class MyResources extends ListResourceBundle {
  *     protected Object[][] getContents() {
@@ -103,8 +102,7 @@ import sun.util.ResourceBundleEnumeration;
  *         };
  *     }
  * }
- * </pre>
- * </blockquote>
+ * }
  *
  * <p>
  * The implementation of a {@code ListResourceBundle} subclass must be thread-safe
