@@ -139,6 +139,8 @@ import java.io.IOException;
  * any attempt to create a file that would be less secure as a result of the
  * translation.
  *
+ * @spec https://www.rfc-editor.org/info/rfc3530
+ *      RFC 3530: Network File System (NFS) version 4 Protocol
  * @since 1.7
  */
 

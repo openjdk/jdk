@@ -98,19 +98,19 @@ public:
     }
     if (BASE::number_of_entries() / int(old_size) > load_factor) {
       unsigned new_size = MIN2<unsigned>(old_size * 2, _max_size);
-      resize(old_size, new_size);
+      resize(new_size);
       return true;
     } else {
       return false;
     }
   }
 
-  void resize(unsigned old_size, unsigned new_size) {
+  void resize(unsigned new_size) {
     Node** old_table = BASE::_table;
     Node** new_table = BASE::alloc_table(new_size);
 
     Node* const* bucket = old_table;
-    while (bucket < &old_table[old_size]) {
+    while (bucket < &old_table[BASE::_table_size]) {
       Node* node = *bucket;
       while (node != nullptr) {
         Node* next = node->_next;

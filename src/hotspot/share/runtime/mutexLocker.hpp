@@ -34,7 +34,8 @@
 extern Mutex*   Patching_lock;                   // a lock used to guard code patching of compiled code
 extern Mutex*   CompiledMethod_lock;             // a lock used to guard a compiled method and OSR queues
 extern Monitor* SystemDictionary_lock;           // a lock on the system dictionary
-extern Mutex*   InvokeMethodTable_lock;
+extern Mutex*   InvokeMethodTypeTable_lock;
+extern Monitor* InvokeMethodIntrinsicTable_lock;
 extern Mutex*   SharedDictionary_lock;           // a lock on the CDS shared dictionary
 extern Monitor* ClassInitError_lock;             // a lock on the class initialization error table
 extern Mutex*   Module_lock;                     // a lock on module and package related data structures
@@ -69,11 +70,11 @@ extern Monitor* CGC_lock;                        // used for coordination betwee
                                                  // fore- & background GC threads.
 extern Monitor* STS_lock;                        // used for joining/leaving SuspendibleThreadSet.
 extern Monitor* G1OldGCCount_lock;               // in support of "concurrent" full gc
+extern Mutex*   G1RareEvent_lock;                // Synchronizes (rare) parallel GC operations.
 extern Mutex*   G1DetachedRefinementStats_lock;  // Lock protecting detached refinement stats
 extern Mutex*   MarkStackFreeList_lock;          // Protects access to the global mark stack free list.
 extern Mutex*   MarkStackChunkList_lock;         // Protects access to the global mark stack chunk list.
 extern Mutex*   MonitoringSupport_lock;          // Protects updates to the serviceability memory pools.
-extern Mutex*   ParGCRareEvent_lock;             // Synchronizes various (rare) parallel GC ops.
 extern Monitor* ConcurrentGCBreakpoints_lock;    // Protects concurrent GC breakpoint management
 extern Mutex*   Compile_lock;                    // a lock held when Compilation is updating code (used to block CodeCache traversal, CHA updates, etc)
 extern Monitor* MethodCompileQueue_lock;         // a lock held when method compilations are enqueued, dequeued
@@ -156,7 +157,7 @@ extern Monitor* JVMCIRuntime_lock;               // protects critical sections f
 
 extern Mutex*   Bootclasspath_lock;
 
-extern Mutex* tty_lock;                          // lock to synchronize output.
+extern Mutex*   tty_lock;                          // lock to synchronize output.
 
 // A MutexLocker provides mutual exclusion with respect to a given mutex
 // for the scope which contains the locker.  The lock is an OS lock, not
@@ -180,11 +181,9 @@ void print_lock_ranks(outputStream* st);
 // for debugging: check that we're already owning this lock (or are at a safepoint / handshake)
 #ifdef ASSERT
 void assert_locked_or_safepoint(const Mutex* lock);
-void assert_locked_or_safepoint_weak(const Mutex* lock);
 void assert_lock_strong(const Mutex* lock);
 #else
 #define assert_locked_or_safepoint(lock)
-#define assert_locked_or_safepoint_weak(lock)
 #define assert_lock_strong(lock)
 #endif
 

@@ -93,6 +93,9 @@ endif
 JTREG_FAILURE_HANDLER_DIR := $(TEST_IMAGE_DIR)/failure_handler
 JTREG_FAILURE_HANDLER := $(JTREG_FAILURE_HANDLER_DIR)/jtregFailureHandler.jar
 
+JTREG_TEST_THREAD_FACTORY_DIR := $(TEST_IMAGE_DIR)/jtreg_test_thread_factory
+JTREG_TEST_THREAD_FACTORY_JAR := $(JTREG_TEST_THREAD_FACTORY_DIR)/jtregTestThreadFactory.jar
+
 JTREG_FAILURE_HANDLER_TIMEOUT ?= 0
 
 ifneq ($(wildcard $(JTREG_FAILURE_HANDLER)), )
@@ -200,7 +203,7 @@ $(eval $(call SetTestOpt,REPORT,JTREG))
 
 $(eval $(call ParseKeywordVariable, JTREG, \
     SINGLE_KEYWORDS := JOBS TIMEOUT_FACTOR FAILURE_HANDLER_TIMEOUT \
-        TEST_MODE ASSERT VERBOSE RETAIN MAX_MEM RUN_PROBLEM_LISTS \
+        TEST_MODE ASSERT VERBOSE RETAIN TEST_THREAD_FACTORY MAX_MEM RUN_PROBLEM_LISTS \
         RETRY_COUNT REPEAT_COUNT MAX_OUTPUT REPORT $(CUSTOM_JTREG_SINGLE_KEYWORDS), \
     STRING_KEYWORDS := OPTIONS JAVA_OPTIONS VM_OPTIONS KEYWORDS \
         EXTRA_PROBLEM_LISTS LAUNCHER_OPTIONS \
@@ -592,7 +595,16 @@ define SetupRunMicroTestBody
   endif
 
   # Set library path for native dependencies
-  $1_JMH_JVM_ARGS := -Djava.library.path=$$(TEST_IMAGE_DIR)/micro/native
+  $1_JMH_JVM_ARGS := -Djava.library.path=$$(TEST_IMAGE_DIR)/micro/native \
+        --add-exports java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED \
+        --add-exports java.base/jdk.internal.org.objectweb.asm.tree=ALL-UNNAMED \
+        --add-exports java.base/jdk.internal.classfile=ALL-UNNAMED \
+        --add-exports java.base/jdk.internal.classfile.attribute=ALL-UNNAMED \
+        --add-exports java.base/jdk.internal.classfile.constantpool=ALL-UNNAMED \
+        --add-exports java.base/jdk.internal.classfile.instruction=ALL-UNNAMED \
+        --add-exports java.base/jdk.internal.classfile.java.lang.constant=ALL-UNNAMED \
+        --add-exports java.base/jdk.internal.classfile.components=ALL-UNNAMED \
+        --add-exports java.base/jdk.internal.classfile.impl=ALL-UNNAMED
 
   ifneq ($$(MICRO_VM_OPTIONS)$$(MICRO_JAVA_OPTIONS), )
     $1_JMH_JVM_ARGS += $$(MICRO_VM_OPTIONS) $$(MICRO_JAVA_OPTIONS)
@@ -743,6 +755,7 @@ define SetupRunJtregTestBody
 
   JTREG_VERBOSE ?= fail,error,summary
   JTREG_RETAIN ?= fail,error
+  JTREG_TEST_THREAD_FACTORY ?=
   JTREG_RUN_PROBLEM_LISTS ?= false
   JTREG_RETRY_COUNT ?= 0
   JTREG_REPEAT_COUNT ?= 0
@@ -754,6 +767,14 @@ define SetupRunJtregTestBody
       $$(info Please choose one or the other.)
       $$(error Cannot continue)
     endif
+  endif
+
+  ifneq ($$(JTREG_TEST_THREAD_FACTORY), )
+    $1_JTREG_BASIC_OPTIONS += -testThreadFactoryPath:$$(JTREG_TEST_THREAD_FACTORY_JAR)
+    $1_JTREG_BASIC_OPTIONS += -testThreadFactory:$$(JTREG_TEST_THREAD_FACTORY)
+    $1_JTREG_BASIC_OPTIONS += $$(addprefix $$(JTREG_PROBLEM_LIST_PREFIX), $$(wildcard \
+	$$(addprefix $$($1_TEST_ROOT)/, ProblemList-$$(JTREG_TEST_THREAD_FACTORY).txt) \
+    ))
   endif
 
   ifneq ($$(JTREG_LAUNCHER_OPTIONS), )

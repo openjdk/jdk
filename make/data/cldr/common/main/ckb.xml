@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2022 Unicode, Inc.
+<!-- Copyright © 1991-2023 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -744,6 +744,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="ZW">زیمبابوی</territory>
 			<territory type="ZZ">ناوچەی نەناسراو</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">ئینگلاند</subdivision>
+			<subdivision type="gbsct">سکۆتلەندا</subdivision>
+			<subdivision type="gbwls">وەیڵز</subdivision>
+		</subdivisions>
 		<keys>
 			<key type="calendar" draft="unconfirmed">ڕۆژژمێر</key>
 			<key type="collation" draft="unconfirmed">ڕیزبەندی</key>
@@ -1453,6 +1458,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0" draft="unconfirmed">ئەمڕۆ</relative>
 				<relative type="1" draft="unconfirmed">سبەی</relative>
 			</field>
+			<field type="day-short">
+				<relative type="-1" draft="unconfirmed">دوێنێ</relative>
+				<relative type="0" draft="unconfirmed">ئەمڕۆ</relative>
+				<relative type="1" draft="unconfirmed">سبەی</relative>
+			</field>
+			<field type="day-narrow">
+				<relative type="-1" draft="unconfirmed">دوێنێ</relative>
+				<relative type="0" draft="unconfirmed">ئەمڕۆ</relative>
+				<relative type="1" draft="unconfirmed">سبەی</relative>
+			</field>
 			<field type="weekday">
 				<displayName draft="unconfirmed">ڕۆژی ھەفتە</displayName>
 			</field>
@@ -1618,6 +1633,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="TTD">
 				<displayName draft="unconfirmed">دۆلاری ترینیداد و تۆباگۆ</displayName>
+				<displayName count="one" draft="unconfirmed">دۆلاری ترینیداد و تۆباگۆ</displayName>
+				<displayName count="other" draft="unconfirmed">دۆلاری ترینیداد و تۆباگۆ</displayName>
 			</currency>
 			<currency type="XAU">
 				<displayName draft="unconfirmed">زێڕ</displayName>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,6 +69,28 @@ public:
   static Node* make_cast_for_type(Node* c, Node* in, const Type* type, DependencyType dependency);
 
   Node* optimize_integer_cast(PhaseGVN* phase, BasicType bt);
+
+  // Visit all non-cast uses of the node, bypassing ConstraintCasts.
+  // Pattern: this (-> ConstraintCast)* -> non_cast
+  // In other words: find all non_cast nodes such that
+  // non_cast->uncast() == this.
+  template <typename Callback>
+  static void visit_uncasted_uses(const Node* n, Callback callback) {
+    ResourceMark rm;
+    Unique_Node_List internals;
+    internals.push((Node*)n); // start traversal
+    for (uint j = 0; j < internals.size(); ++j) {
+      Node* internal = internals.at(j); // for every internal
+      for (DUIterator_Fast kmax, k = internal->fast_outs(kmax); k < kmax; k++) {
+        Node* internal_use = internal->fast_out(k);
+        if (internal_use->is_ConstraintCast()) {
+          internals.push(internal_use); // traverse this cast also
+        } else {
+          callback(internal_use);
+        }
+      }
+    }
+  }
 };
 
 //------------------------------CastIINode-------------------------------------
@@ -190,7 +212,7 @@ class CheckCastPPNode: public ConstraintCastNode {
 // convert a machine-pointer-sized integer to a raw pointer
 class CastX2PNode : public Node {
   public:
-  CastX2PNode( Node *n ) : Node(NULL, n) {}
+  CastX2PNode( Node *n ) : Node(nullptr, n) {}
   virtual int Opcode() const;
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);

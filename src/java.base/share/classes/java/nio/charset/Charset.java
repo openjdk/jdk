@@ -38,7 +38,6 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map;
@@ -263,6 +262,13 @@ import java.util.TreeMap;
  * of chars) and sequences of bytes. </p>
  *
  *
+ * @spec http://www.iana.org/assignments/character-sets Character Sets
+ * @spec https://www.rfc-editor.org/info/rfc2278
+ *      RFC 2278: IANA Charset Registration Procedures
+ * @spec https://www.rfc-editor.org/info/rfc2279
+ *      RFC 2279: UTF-8, a transformation format of ISO 10646
+ * @spec https://www.rfc-editor.org/info/rfc2781
+ *      RFC 2781: UTF-16, an encoding of ISO 10646
  * @author Mark Reinhold
  * @author JSR-51 Expert Group
  * @since 1.4
@@ -667,7 +673,7 @@ public abstract class Charset
 
     private final String name;          // tickles a bug in oldjavac
     private final String[] aliases;     // tickles a bug in oldjavac
-    private Set<String> aliasSet = null;
+    private Set<String> aliasSet;
 
     /**
      * Initializes a new charset with the given canonical name and alias
@@ -714,14 +720,12 @@ public abstract class Charset
      * @return  An immutable set of this charset's aliases
      */
     public final Set<String> aliases() {
-        if (aliasSet != null)
-            return aliasSet;
-        int n = aliases.length;
-        HashSet<String> hs = HashSet.newHashSet(n);
-        for (int i = 0; i < n; i++)
-            hs.add(aliases[i]);
-        aliasSet = Collections.unmodifiableSet(hs);
-        return aliasSet;
+        Set<String> set = this.aliasSet;
+        if (set == null) {
+            set = Set.of(aliases);
+            this.aliasSet = set;
+        }
+        return set;
     }
 
     /**
@@ -744,6 +748,7 @@ public abstract class Charset
      *
      * @return  {@code true} if, and only if, this charset is known by its
      *          implementor to be registered with the IANA
+     * @spec http://www.iana.org/assignments/character-sets Character Sets
      */
     public final boolean isRegistered() {
         return !name.startsWith("X-") && !name.startsWith("x-");

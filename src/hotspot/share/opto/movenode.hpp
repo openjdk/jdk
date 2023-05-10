@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ class CMoveNode : public TypeNode {
   {
     init_class_id(Class_CMove);
     // all inputs are nullified in Node::Node(int)
-    // init_req(Control,NULL);
+    // init_req(Control,nullptr);
     init_req(Condition,bol);
     init_req(IfFalse,left);
     init_req(IfTrue,right);
@@ -100,7 +100,7 @@ class CMoveNNode : public CMoveNode {
 //
 class MoveNode : public Node {
   protected:
-  MoveNode(Node* value) : Node(NULL, value) {
+  MoveNode(Node* value) : Node(nullptr, value) {
     init_class_id(Class_Move);
   }
 

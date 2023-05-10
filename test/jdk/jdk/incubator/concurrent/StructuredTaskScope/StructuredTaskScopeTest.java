@@ -25,14 +25,12 @@
  * @test id=platform
  * @bug 8284199
  * @summary Basic tests for StructuredTaskScope
- * @enablePreview
  * @modules jdk.incubator.concurrent
  * @run junit/othervm -DthreadFactory=platform StructuredTaskScopeTest
  */
 
 /*
  * @test id=virtual
- * @enablePreview
  * @modules jdk.incubator.concurrent
  * @run junit/othervm -DthreadFactory=virtual StructuredTaskScopeTest
  */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -819,7 +819,7 @@ void PhaseChaitin::adjust_high_pressure_index(Block* b, uint& block_hrp_index, P
 }
 
 void PhaseChaitin::print_pressure_info(Pressure& pressure, const char *str) {
-  if (str != NULL) {
+  if (str != nullptr) {
     tty->print_cr("#  *** %s ***", str);
   }
   tty->print_cr("#     start pressure is = %d", pressure.start_pressure());

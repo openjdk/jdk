@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -123,7 +123,7 @@ class BufferNode {
   BufferNode* volatile _next;
   void* _buffer[1];             // Pseudo flexible array member.
 
-  BufferNode() : _index(0), _next(NULL) { }
+  BufferNode() : _index(0), _next(nullptr) { }
   ~BufferNode() { }
 
   NONCOPYABLE(BufferNode);

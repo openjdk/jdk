@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -563,6 +563,8 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
     case lir_sqrt:
     case lir_abs:
     case lir_neg:
+    case lir_f2hf:
+    case lir_hf2f:
     case lir_logic_and:
     case lir_logic_or:
     case lir_logic_xor:
@@ -1731,6 +1733,8 @@ const char * LIR_Op::name() const {
      case lir_abs:                   s = "abs";           break;
      case lir_neg:                   s = "neg";           break;
      case lir_sqrt:                  s = "sqrt";          break;
+     case lir_f2hf:                  s = "f2hf";          break;
+     case lir_hf2f:                  s = "hf2f";          break;
      case lir_logic_and:             s = "logic_and";     break;
      case lir_logic_or:              s = "logic_or";      break;
      case lir_logic_xor:             s = "logic_xor";     break;

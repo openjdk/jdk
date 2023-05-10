@@ -242,6 +242,7 @@ import sun.security.action.GetIntegerAction;
  * <cite>Java Object Serialization Specification,</cite> Section 1.13,
  * "Serialization of Records"</a> for additional information.
  *
+ * @spec serialization/index.html Java Object Serialization Specification
  * @author      Mike Warres
  * @author      Roger Riggs
  * @see java.io.DataInput
@@ -308,8 +309,8 @@ public class ObjectInputStream
          * The maximum number of interfaces allowed for a proxy is limited to 65535 by
          * {@link java.lang.reflect.Proxy#newProxyInstance(ClassLoader, Class[], InvocationHandler)}.
          */
-        static final int PROXY_INTERFACE_LIMIT = Math.max(0, Math.min(65535, GetIntegerAction
-                .privilegedGetProperty("jdk.serialProxyInterfaceLimit", 65535)));
+        static final int PROXY_INTERFACE_LIMIT = Math.clamp(GetIntegerAction
+                .privilegedGetProperty("jdk.serialProxyInterfaceLimit", 65535), 0, 65535);
     }
 
     /*

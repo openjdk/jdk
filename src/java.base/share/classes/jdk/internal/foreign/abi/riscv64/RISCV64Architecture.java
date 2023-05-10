@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2023, Institute of Software, Chinese Academy of Sciences.
  * All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -32,7 +32,7 @@ import jdk.internal.foreign.abi.StubLocations;
 import jdk.internal.foreign.abi.VMStorage;
 import jdk.internal.foreign.abi.riscv64.linux.TypeClass;
 
-public class RISCV64Architecture implements Architecture {
+public final class RISCV64Architecture implements Architecture {
     public static final Architecture INSTANCE = new RISCV64Architecture();
 
     private static final short REG64_MASK = 0b0000_0000_0000_0001;
@@ -41,6 +41,9 @@ public class RISCV64Architecture implements Architecture {
     private static final int INTEGER_REG_SIZE = 8; // bytes
     private static final int FLOAT_REG_SIZE = 8;
 
+    // Suppresses default constructor, ensuring non-instantiability.
+    private RISCV64Architecture() {}
+
     @Override
     public boolean isStackType(int cls) {
         return cls == StorageType.STACK;
@@ -48,13 +51,12 @@ public class RISCV64Architecture implements Architecture {
 
     @Override
     public int typeSize(int cls) {
-        switch (cls) {
-            case StorageType.INTEGER: return INTEGER_REG_SIZE;
-            case StorageType.FLOAT: return FLOAT_REG_SIZE;
+        return switch (cls) {
+            case StorageType.INTEGER -> INTEGER_REG_SIZE;
+            case StorageType.FLOAT   -> FLOAT_REG_SIZE;
             // STACK is deliberately omitted
-        }
-
-        throw new IllegalArgumentException("Invalid Storage Class: " + cls);
+            default -> throw new IllegalArgumentException("Invalid Storage Class: " + cls);
+        };
     }
 
     public interface StorageType {

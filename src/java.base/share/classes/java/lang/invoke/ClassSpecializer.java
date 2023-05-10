@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package java.lang.invoke;
 
-import jdk.internal.access.SharedSecrets;
 import jdk.internal.loader.BootLoader;
 import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.FieldVisitor;
@@ -36,9 +35,6 @@ import sun.invoke.util.BytecodeName;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.security.ProtectionDomain;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -570,22 +566,9 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
         @SuppressWarnings("removal")
         Class<? extends T> generateConcreteSpeciesCode(String className, ClassSpecializer<T,K,S>.SpeciesData speciesData) {
             byte[] classFile = generateConcreteSpeciesCodeFile(className, speciesData);
-
-            // load class
-            InvokerBytecodeGenerator.maybeDump(classBCName(className), classFile);
-            ClassLoader cl = topClass.getClassLoader();
-            ProtectionDomain pd = null;
-            if (cl != null) {
-                pd = AccessController.doPrivileged(
-                        new PrivilegedAction<>() {
-                            @Override
-                            public ProtectionDomain run() {
-                                return topClass().getProtectionDomain();
-                            }
-                        });
-            }
-            Class<?> speciesCode = SharedSecrets.getJavaLangAccess()
-                    .defineClass(cl, className, classFile, pd, "_ClassSpecializer_generateConcreteSpeciesCode");
+            var lookup = new MethodHandles.Lookup(topClass);
+            Class<?> speciesCode = lookup.makeClassDefiner(classBCName(className), classFile, dumper())
+                                         .defineClass(false);
             return speciesCode.asSubclass(topClass());
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package java.util.regex;
 
+import java.io.IOException;
 import java.util.ConcurrentModificationException;
 import java.util.Iterator;
 import java.util.Map;
@@ -607,7 +608,9 @@ public final class Matcher implements MatchResult {
      * successfully matches the empty string in the input.  </p>
      *
      * @return The (possibly empty) subsequence matched by the previous match,
-     *         in string form
+     *         in string form or {@code null} if a matcher with a previous
+     *         match has changed its {@link java.util.regex.Pattern},
+     *         but no new match has yet been attempted
      *
      * @throws  IllegalStateException
      *          If no match has yet been attempted,
@@ -643,7 +646,9 @@ public final class Matcher implements MatchResult {
      *
      * @return  The (possibly empty) subsequence captured by the group
      *          during the previous match, or {@code null} if the group
-     *          failed to match part of the input
+     *          failed to match part of the input or if the matcher's
+     *          {@link java.util.regex.Pattern} has changed after a
+     *          successful match, but a new match has not been attempted
      *
      * @throws  IllegalStateException
      *          If no match has yet been attempted,
@@ -913,12 +918,16 @@ public final class Matcher implements MatchResult {
      */
     public Matcher appendReplacement(StringBuffer sb, String replacement) {
         checkMatch();
-        StringBuilder result = new StringBuilder();
-        appendExpandedReplacement(replacement, result);
-        // Append the intervening text
-        sb.append(text, lastAppendPosition, first);
-        // Append the match substitution
-        sb.append(result);
+        int curLen = sb.length();
+        try {
+            // Append the intervening text
+            sb.append(text, lastAppendPosition, first);
+            // Append the match substitution
+            appendExpandedReplacement(sb, replacement);
+        } catch (IllegalArgumentException e) {
+            sb.setLength(curLen);
+            throw e;
+        }
         lastAppendPosition = last;
         modCount++;
         return this;
@@ -1000,14 +1009,17 @@ public final class Matcher implements MatchResult {
      * @since 9
      */
     public Matcher appendReplacement(StringBuilder sb, String replacement) {
-        // If no match, return error
         checkMatch();
-        StringBuilder result = new StringBuilder();
-        appendExpandedReplacement(replacement, result);
-        // Append the intervening text
-        sb.append(text, lastAppendPosition, first);
-        // Append the match substitution
-        sb.append(result);
+        int curLen = sb.length();
+        try {
+            // Append the intervening text
+            sb.append(text, lastAppendPosition, first);
+            // Append the match substitution
+            appendExpandedReplacement(sb, replacement);
+        } catch (IllegalArgumentException e) {
+            sb.setLength(curLen);
+            throw e;
+        }
         lastAppendPosition = last;
         modCount++;
         return this;
@@ -1017,93 +1029,94 @@ public final class Matcher implements MatchResult {
      * Processes replacement string to replace group references with
      * groups.
      */
-    private StringBuilder appendExpandedReplacement(
-        String replacement, StringBuilder result) {
-        int cursor = 0;
-        while (cursor < replacement.length()) {
-            char nextChar = replacement.charAt(cursor);
-            if (nextChar == '\\') {
-                cursor++;
-                if (cursor == replacement.length())
-                    throw new IllegalArgumentException(
-                        "character to be escaped is missing");
-                nextChar = replacement.charAt(cursor);
-                result.append(nextChar);
-                cursor++;
-            } else if (nextChar == '$') {
-                // Skip past $
-                cursor++;
-                // Throw IAE if this "$" is the last character in replacement
-                if (cursor == replacement.length())
-                   throw new IllegalArgumentException(
-                        "Illegal group reference: group index is missing");
-                nextChar = replacement.charAt(cursor);
-                int refNum = -1;
-                if (nextChar == '{') {
+    private void appendExpandedReplacement(Appendable app, String replacement) {
+        try {
+            int cursor = 0;
+            while (cursor < replacement.length()) {
+                char nextChar = replacement.charAt(cursor);
+                if (nextChar == '\\') {
                     cursor++;
-                    StringBuilder gsb = new StringBuilder();
-                    while (cursor < replacement.length()) {
-                        nextChar = replacement.charAt(cursor);
-                        if (ASCII.isLower(nextChar) ||
-                            ASCII.isUpper(nextChar) ||
-                            ASCII.isDigit(nextChar)) {
-                            gsb.append(nextChar);
-                            cursor++;
-                        } else {
-                            break;
+                    if (cursor == replacement.length())
+                        throw new IllegalArgumentException(
+                                "character to be escaped is missing");
+                    nextChar = replacement.charAt(cursor);
+                    app.append(nextChar);
+                    cursor++;
+                } else if (nextChar == '$') {
+                    // Skip past $
+                    cursor++;
+                    // Throw IAE if this "$" is the last character in replacement
+                    if (cursor == replacement.length())
+                        throw new IllegalArgumentException(
+                                "Illegal group reference: group index is missing");
+                    nextChar = replacement.charAt(cursor);
+                    int refNum = -1;
+                    if (nextChar == '{') {
+                        cursor++;
+                        int begin = cursor;
+                        while (cursor < replacement.length()) {
+                            nextChar = replacement.charAt(cursor);
+                            if (ASCII.isLower(nextChar) ||
+                                    ASCII.isUpper(nextChar) ||
+                                    ASCII.isDigit(nextChar)) {
+                                cursor++;
+                            } else {
+                                break;
+                            }
+                        }
+                        if (begin == cursor)
+                            throw new IllegalArgumentException(
+                                    "named capturing group has 0 length name");
+                        if (nextChar != '}')
+                            throw new IllegalArgumentException(
+                                    "named capturing group is missing trailing '}'");
+                        String gname = replacement.substring(begin, cursor);
+                        if (ASCII.isDigit(gname.charAt(0)))
+                            throw new IllegalArgumentException(
+                                    "capturing group name {" + gname +
+                                            "} starts with digit character");
+                        if (!namedGroups().containsKey(gname))
+                            throw new IllegalArgumentException(
+                                    "No group with name {" + gname + "}");
+                        refNum = namedGroups().get(gname);
+                        cursor++;
+                    } else {
+                        // The first number is always a group
+                        refNum = nextChar - '0';
+                        if ((refNum < 0) || (refNum > 9))
+                            throw new IllegalArgumentException(
+                                    "Illegal group reference");
+                        cursor++;
+                        // Capture the largest legal group string
+                        boolean done = false;
+                        while (!done) {
+                            if (cursor >= replacement.length()) {
+                                break;
+                            }
+                            int nextDigit = replacement.charAt(cursor) - '0';
+                            if ((nextDigit < 0) || (nextDigit > 9)) { // not a number
+                                break;
+                            }
+                            int newRefNum = (refNum * 10) + nextDigit;
+                            if (groupCount() < newRefNum) {
+                                done = true;
+                            } else {
+                                refNum = newRefNum;
+                                cursor++;
+                            }
                         }
                     }
-                    if (gsb.length() == 0)
-                        throw new IllegalArgumentException(
-                            "named capturing group has 0 length name");
-                    if (nextChar != '}')
-                        throw new IllegalArgumentException(
-                            "named capturing group is missing trailing '}'");
-                    String gname = gsb.toString();
-                    if (ASCII.isDigit(gname.charAt(0)))
-                        throw new IllegalArgumentException(
-                            "capturing group name {" + gname +
-                            "} starts with digit character");
-                    if (!namedGroups().containsKey(gname))
-                        throw new IllegalArgumentException(
-                            "No group with name {" + gname + "}");
-                    refNum = namedGroups().get(gname);
-                    cursor++;
+                    // Append group
+                    if (start(refNum) != -1 && end(refNum) != -1)
+                        app.append(text, start(refNum), end(refNum));
                 } else {
-                    // The first number is always a group
-                    refNum = nextChar - '0';
-                    if ((refNum < 0) || (refNum > 9))
-                        throw new IllegalArgumentException(
-                            "Illegal group reference");
+                    app.append(nextChar);
                     cursor++;
-                    // Capture the largest legal group string
-                    boolean done = false;
-                    while (!done) {
-                        if (cursor >= replacement.length()) {
-                            break;
-                        }
-                        int nextDigit = replacement.charAt(cursor) - '0';
-                        if ((nextDigit < 0) || (nextDigit > 9)) { // not a number
-                            break;
-                        }
-                        int newRefNum = (refNum * 10) + nextDigit;
-                        if (groupCount() < newRefNum) {
-                            done = true;
-                        } else {
-                            refNum = newRefNum;
-                            cursor++;
-                        }
-                    }
                 }
-                // Append group
-                if (start(refNum) != -1 && end(refNum) != -1)
-                    result.append(text, start(refNum), end(refNum));
-            } else {
-                result.append(nextChar);
-                cursor++;
             }
+        } catch (IOException e) {  // cannot happen on String[Buffer|Builder]
+            throw new AssertionError(e.getMessage());
         }
-        return result;
     }
 
     /**

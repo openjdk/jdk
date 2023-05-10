@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,7 +101,7 @@ class ObjectCountEventSenderClosure : public KlassInfoClosure {
 };
 
 void GCTracer::report_object_count_after_gc(BoolObjectClosure* is_alive_cl) {
-  assert(is_alive_cl != NULL, "Must supply function to check liveness");
+  assert(is_alive_cl != nullptr, "Must supply function to check liveness");
 
   if (ObjectCountEventSender::should_send_event()) {
     ResourceMark rm;

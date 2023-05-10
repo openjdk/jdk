@@ -411,7 +411,8 @@ private:
 public:
   ThreadsListEnumerator(Thread* cur_thread,
                         bool include_jvmti_agent_threads = false,
-                        bool include_jni_attaching_threads = true);
+                        bool include_jni_attaching_threads = true,
+                        bool include_bound_virtual_threads = false);
   int            num_threads()            { return _threads_array->length(); }
   instanceHandle get_threadObj(int index) { return _threads_array->at(index); }
 };

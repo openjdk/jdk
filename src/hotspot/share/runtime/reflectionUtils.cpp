@@ -26,6 +26,7 @@
 #include "classfile/javaClasses.hpp"
 #include "classfile/vmClasses.hpp"
 #include "memory/universe.hpp"
+#include "oops/instanceKlass.inline.hpp"
 #include "runtime/reflectionUtils.hpp"
 
 KlassStream::KlassStream(InstanceKlass* klass, bool local_only,
@@ -68,6 +69,7 @@ bool KlassStream::eos() {
   return eos();
 }
 
+int FieldStream::length() { return _klass->java_fields_count(); }
 
 GrowableArray<FilteredField*> *FilteredFieldsMap::_filtered_fields =
   new (mtServiceability) GrowableArray<FilteredField*>(3, mtServiceability);

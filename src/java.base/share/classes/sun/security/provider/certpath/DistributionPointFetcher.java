@@ -430,7 +430,7 @@ public class DistributionPointFetcher {
                             debug.println("DP relativeName:" + relativeName);
                         }
                         if (indirectCRL) {
-                            if (pointCrlIssuers.size() != 1) {
+                            if (pointCrlIssuers == null || pointCrlIssuers.size() != 1) {
                                 // RFC 5280: there must be only 1 CRL issuer
                                 // name when relativeName is present
                                 if (debug != null) {
@@ -439,6 +439,9 @@ public class DistributionPointFetcher {
                                 }
                                 return false;
                             }
+                            // if pointCrlIssuers is not null, pointCrlIssuer
+                            // will also be non-null or the code would have
+                            // returned before now
                             pointNames = getFullNames
                                 (pointCrlIssuer, relativeName);
                         } else {
@@ -475,6 +478,9 @@ public class DistributionPointFetcher {
                     // verify that one of the names in the IDP matches one of
                     // the names in the cRLIssuer of the cert's DP
                     boolean match = false;
+                    // the DP's fullName and relativeName fields are null
+                    // which means pointCrlIssuers is non-null; the three
+                    // cannot all be missing from a certificate.
                     for (Iterator<GeneralName> t = pointCrlIssuers.iterator();
                             !match && t.hasNext(); ) {
                         GeneralNameInterface crlIssuerName = t.next().getName();

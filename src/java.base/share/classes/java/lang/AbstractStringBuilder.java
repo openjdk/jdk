@@ -29,6 +29,7 @@ import jdk.internal.math.DoubleToDecimal;
 import jdk.internal.math.FloatToDecimal;
 
 import java.io.IOException;
+import java.nio.CharBuffer;
 import java.util.Arrays;
 import java.util.Spliterator;
 import java.util.stream.IntStream;
@@ -1820,5 +1821,116 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
             StringUTF16.putCharsSB(this.value, count, s, off, end);
         }
         count += end - off;
+    }
+
+    private AbstractStringBuilder repeat(char c, int count) {
+        int limit = this.count + count;
+        ensureCapacityInternal(limit);
+        boolean isLatin1 = isLatin1();
+        if (isLatin1 && StringLatin1.canEncode(c)) {
+            Arrays.fill(value, this.count, limit, (byte)c);
+        } else {
+            if (isLatin1) {
+                inflate();
+            }
+            for (int index = this.count; index < limit; index++) {
+                StringUTF16.putCharSB(value, index, c);
+            }
+        }
+        this.count = limit;
+        return this;
+    }
+
+    /**
+     * Repeats {@code count} copies of the string representation of the
+     * {@code codePoint} argument to this sequence.
+     * <p>
+     * The length of this sequence increases by {@code count} times the
+     * string representation length.
+     * <p>
+     * It is usual to use {@code char} expressions for code points. For example:
+     * {@snippet lang="java":
+     * // insert 10 asterisks into the buffer
+     * sb.repeat('*', 10);
+     * }
+     *
+     * @param codePoint  code point to append
+     * @param count      number of times to copy
+     *
+     * @return  a reference to this object.
+     *
+     * @throws IllegalArgumentException if the specified {@code codePoint}
+     * is not a valid Unicode code point or if {@code count} is negative.
+     *
+     * @since 21
+     */
+    public AbstractStringBuilder repeat(int codePoint, int count) {
+        if (count < 0) {
+            throw new IllegalArgumentException("count is negative: " + count);
+        } else if (count == 0) {
+            return this;
+        }
+        if (Character.isBmpCodePoint(codePoint)) {
+            repeat((char)codePoint, count);
+        } else {
+            repeat(CharBuffer.wrap(Character.toChars(codePoint)), count);
+        }
+        return this;
+    }
+
+    /**
+     * Appends {@code count} copies of the specified {@code CharSequence} {@code cs}
+     * to this sequence.
+     * <p>
+     * The length of this sequence increases by {@code count} times the
+     * {@code CharSequence} length.
+     * <p>
+     * If {@code cs} is {@code null}, then the four characters
+     * {@code "null"} are repeated into this sequence.
+     *
+     * @param cs     a {@code CharSequence}
+     * @param count  number of times to copy
+     *
+     * @return  a reference to this object.
+     *
+     * @throws IllegalArgumentException  if {@code count} is negative
+     *
+     * @since 21
+     */
+    public AbstractStringBuilder repeat(CharSequence cs, int count) {
+        if (count < 0) {
+            throw new IllegalArgumentException("count is negative: " + count);
+        } else if (count == 0) {
+            return this;
+        } else if (count == 1) {
+            return append(cs);
+        }
+        if (cs == null) {
+            cs = "null";
+        }
+        int length = cs.length();
+        if (length == 0) {
+            return this;
+        } else if (length == 1) {
+            return repeat(cs.charAt(0), count);
+        }
+        int offset = this.count;
+        int valueLength = length << coder;
+        if ((Integer.MAX_VALUE - offset) / count < valueLength) {
+            throw new OutOfMemoryError("Required length exceeds implementation limit");
+        }
+        int total = count * length;
+        int limit = offset + total;
+        ensureCapacityInternal(limit);
+        if (cs instanceof String str) {
+            putStringAt(offset, str);
+        } else if (cs instanceof AbstractStringBuilder asb) {
+            append(asb);
+        } else {
+            appendChars(cs, 0, length);
+        }
+        String.repeatCopyRest(value, offset << coder, total << coder, length << coder);
+        this.count = limit;
+        return this;
     }
 }

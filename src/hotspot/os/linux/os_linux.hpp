@@ -149,6 +149,8 @@ class os::Linux {
   // Return default guard size for the specified thread type
   static size_t default_guard_size(os::ThreadType thr_type);
 
+  static bool adjustStackSizeForGuardPages(); // See comments in os_linux.cpp
+
   static void capture_initial_stack(size_t max_size);
 
   // Stack overflow handling
@@ -424,6 +426,10 @@ class os::Linux {
     size_t keepcost;
   };
   static void get_mallinfo(glibc_mallinfo* out, bool* might_have_wrapped);
+
+  // Calls out to GNU extension malloc_info if available
+  // otherwise does nothing and returns -2.
+  static int malloc_info(FILE* stream);
 #endif // GLIBC
 };
 

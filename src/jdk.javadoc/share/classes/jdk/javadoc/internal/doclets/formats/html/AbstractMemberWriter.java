@@ -202,8 +202,9 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
             if (list != null && !list.isEmpty()) {
                 Content typeParameters = ((AbstractExecutableMemberWriter) this)
                         .getTypeParameters((ExecutableElement)member);
-                    code.add(typeParameters);
-                //Code to avoid ugly wrapping in member summary table.
+                code.add(typeParameters);
+                // Add explicit line break between method type parameters and
+                // return type in member summary table to avoid random wrapping.
                 if (typeParameters.charCount() > 10) {
                     code.add(new HtmlTree(TagName.BR));
                 } else {
@@ -212,7 +213,8 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
             }
             code.add(
                     writer.getLink(new HtmlLinkInfo(configuration,
-                            HtmlLinkInfo.Kind.LINK_TYPE_PARAMS, type)));
+                            HtmlLinkInfo.Kind.LINK_TYPE_PARAMS, type)
+                            .addLineBreakOpportunitiesInTypeParameters(true)));
         }
         target.add(code);
     }

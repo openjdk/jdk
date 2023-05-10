@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -118,10 +118,10 @@ void InterpreterRuntime::SignatureHandlerGenerator::pass_object() {
                   as_Register(int_arg_nr) + Z_ARG1->encoding() : Z_R0;
 
   // The handle for a receiver will never be null.
-  bool do_NULL_check = offset() != 0 || is_static();
+  bool do_nullptr_check = offset() != 0 || is_static();
 
   Label do_null;
-  if (do_NULL_check) {
+  if (do_nullptr_check) {
     __ clear_reg(r, true, false);
     __ load_and_test_long(Z_R0, locals_j_arg_at(offset()));
     __ z_bre(do_null);

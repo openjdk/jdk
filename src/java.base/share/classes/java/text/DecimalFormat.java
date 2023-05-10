@@ -3649,13 +3649,11 @@ public class DecimalFormat extends NumberFormat {
      */
     @Override
     public void setMaximumIntegerDigits(int newValue) {
-        maximumIntegerDigits = Math.min(Math.max(0, newValue), MAXIMUM_INTEGER_DIGITS);
-        super.setMaximumIntegerDigits((maximumIntegerDigits > DOUBLE_INTEGER_DIGITS) ?
-            DOUBLE_INTEGER_DIGITS : maximumIntegerDigits);
+        maximumIntegerDigits = Math.clamp(newValue, 0, MAXIMUM_INTEGER_DIGITS);
+        super.setMaximumIntegerDigits(Math.min(maximumIntegerDigits, DOUBLE_INTEGER_DIGITS));
         if (minimumIntegerDigits > maximumIntegerDigits) {
             minimumIntegerDigits = maximumIntegerDigits;
-            super.setMinimumIntegerDigits((minimumIntegerDigits > DOUBLE_INTEGER_DIGITS) ?
-                DOUBLE_INTEGER_DIGITS : minimumIntegerDigits);
+            super.setMinimumIntegerDigits(Math.min(minimumIntegerDigits, DOUBLE_INTEGER_DIGITS));
         }
         fastPathCheckNeeded = true;
     }
@@ -3670,13 +3668,11 @@ public class DecimalFormat extends NumberFormat {
      */
     @Override
     public void setMinimumIntegerDigits(int newValue) {
-        minimumIntegerDigits = Math.min(Math.max(0, newValue), MAXIMUM_INTEGER_DIGITS);
-        super.setMinimumIntegerDigits((minimumIntegerDigits > DOUBLE_INTEGER_DIGITS) ?
-            DOUBLE_INTEGER_DIGITS : minimumIntegerDigits);
+        minimumIntegerDigits = Math.clamp(newValue, 0, MAXIMUM_INTEGER_DIGITS);
+        super.setMinimumIntegerDigits(Math.min(minimumIntegerDigits, DOUBLE_INTEGER_DIGITS));
         if (minimumIntegerDigits > maximumIntegerDigits) {
             maximumIntegerDigits = minimumIntegerDigits;
-            super.setMaximumIntegerDigits((maximumIntegerDigits > DOUBLE_INTEGER_DIGITS) ?
-                DOUBLE_INTEGER_DIGITS : maximumIntegerDigits);
+            super.setMaximumIntegerDigits(Math.min(maximumIntegerDigits, DOUBLE_INTEGER_DIGITS));
         }
         fastPathCheckNeeded = true;
     }
@@ -3691,13 +3687,11 @@ public class DecimalFormat extends NumberFormat {
      */
     @Override
     public void setMaximumFractionDigits(int newValue) {
-        maximumFractionDigits = Math.min(Math.max(0, newValue), MAXIMUM_FRACTION_DIGITS);
-        super.setMaximumFractionDigits((maximumFractionDigits > DOUBLE_FRACTION_DIGITS) ?
-            DOUBLE_FRACTION_DIGITS : maximumFractionDigits);
+        maximumFractionDigits = Math.clamp(newValue, 0, MAXIMUM_FRACTION_DIGITS);
+        super.setMaximumFractionDigits(Math.min(maximumFractionDigits, DOUBLE_FRACTION_DIGITS));
         if (minimumFractionDigits > maximumFractionDigits) {
             minimumFractionDigits = maximumFractionDigits;
-            super.setMinimumFractionDigits((minimumFractionDigits > DOUBLE_FRACTION_DIGITS) ?
-                DOUBLE_FRACTION_DIGITS : minimumFractionDigits);
+            super.setMinimumFractionDigits(Math.min(minimumFractionDigits, DOUBLE_FRACTION_DIGITS));
         }
         fastPathCheckNeeded = true;
     }
@@ -3712,13 +3706,11 @@ public class DecimalFormat extends NumberFormat {
      */
     @Override
     public void setMinimumFractionDigits(int newValue) {
-        minimumFractionDigits = Math.min(Math.max(0, newValue), MAXIMUM_FRACTION_DIGITS);
-        super.setMinimumFractionDigits((minimumFractionDigits > DOUBLE_FRACTION_DIGITS) ?
-            DOUBLE_FRACTION_DIGITS : minimumFractionDigits);
+        minimumFractionDigits = Math.clamp(newValue, 0, MAXIMUM_FRACTION_DIGITS);
+        super.setMinimumFractionDigits(Math.min(minimumFractionDigits, DOUBLE_FRACTION_DIGITS));
         if (minimumFractionDigits > maximumFractionDigits) {
             maximumFractionDigits = minimumFractionDigits;
-            super.setMaximumFractionDigits((maximumFractionDigits > DOUBLE_FRACTION_DIGITS) ?
-                DOUBLE_FRACTION_DIGITS : maximumFractionDigits);
+            super.setMaximumFractionDigits(Math.min(maximumFractionDigits, DOUBLE_FRACTION_DIGITS));
         }
         fastPathCheckNeeded = true;
     }

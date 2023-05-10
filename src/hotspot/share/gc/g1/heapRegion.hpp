@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,8 +97,8 @@ public:
     assert(is_in(pre_dummy_top) && pre_dummy_top <= top(), "pre-condition");
     _pre_dummy_top = pre_dummy_top;
   }
-  HeapWord* pre_dummy_top() const { return (_pre_dummy_top == NULL) ? top() : _pre_dummy_top; }
-  void reset_pre_dummy_top() { _pre_dummy_top = NULL; }
+  HeapWord* pre_dummy_top() const { return (_pre_dummy_top == nullptr) ? top() : _pre_dummy_top; }
+  void reset_pre_dummy_top() { _pre_dummy_top = nullptr; }
 
   // Returns true iff the given the heap  region contains the
   // given address as part of an allocated object. This may
@@ -128,13 +128,13 @@ private:
   void mangle_unused_area() PRODUCT_RETURN;
 
   // Try to allocate at least min_word_size and up to desired_size from this region.
-  // Returns NULL if not possible, otherwise sets actual_word_size to the amount of
+  // Returns null if not possible, otherwise sets actual_word_size to the amount of
   // space allocated.
   // This version assumes that all allocation requests to this HeapRegion are properly
   // synchronized.
   inline HeapWord* allocate_impl(size_t min_word_size, size_t desired_word_size, size_t* actual_word_size);
   // Try to allocate at least min_word_size and up to desired_size from this HeapRegion.
-  // Returns NULL if not possible, otherwise sets actual_word_size to the amount of
+  // Returns null if not possible, otherwise sets actual_word_size to the amount of
   // space allocated.
   // This version synchronizes with other calls to par_allocate_impl().
   inline HeapWord* par_allocate_impl(size_t min_word_size, size_t desired_word_size, size_t* actual_word_size);
@@ -269,7 +269,7 @@ private:
   // object and apply the given closure to them.
   // Humongous objects are allocated directly in the old-gen. So we need special
   // handling for concurrent processing encountering an in-progress allocation.
-  // Returns the address after the last actually scanned or NULL if the area could
+  // Returns the address after the last actually scanned or null if the area could
   // not be scanned (That should only happen when invoked concurrently with the
   // mutator).
   template <class Closure, bool in_gc_pause>
@@ -312,8 +312,8 @@ public:
   // Returns whether a field is in the same region as the obj it points to.
   template <typename T>
   static bool is_in_same_region(T* p, oop obj) {
-    assert(p != NULL, "p can't be NULL");
-    assert(obj != NULL, "obj can't be NULL");
+    assert(p != nullptr, "p can't be null");
+    assert(obj != nullptr, "obj can't be null");
     return (((uintptr_t) p ^ cast_from_oop<uintptr_t>(obj)) >> LogOfHRGrainBytes) == 0;
   }
 
@@ -375,11 +375,10 @@ public:
 
   // During the concurrent scrubbing phase, can there be any areas with unloaded
   // classes or dead objects in this region?
-  // This set only includes old and open archive regions - humongous regions only
-  // contain a single object which is either dead or live, contents of closed archive
-  // regions never die (so is always contiguous), and young regions are never even
+  // This set only includes old regions - humongous regions only
+  // contain a single object which is either dead or live, and young regions are never even
   // considered during concurrent scrub.
-  bool needs_scrubbing() const { return is_old() || is_open_archive(); }
+  bool needs_scrubbing() const { return is_old(); }
   // Same question as above, during full gc. Full gc needs to scrub any region that
   // might be skipped for compaction. This includes young generation regions as the
   // region relabeling to old happens later than scrubbing.
@@ -403,19 +402,6 @@ public:
 
   bool is_old_or_humongous() const { return _type.is_old_or_humongous(); }
 
-  bool is_old_or_humongous_or_archive() const { return _type.is_old_or_humongous_or_archive(); }
-
-  // A pinned region contains objects which are not moved by garbage collections.
-  // Humongous regions and archive regions are pinned.
-  bool is_pinned() const { return _type.is_pinned(); }
-
-  // An archive region is a pinned region, also tagged as old, which
-  // should not be marked during mark/sweep. This allows the address
-  // space to be shared by JVM instances.
-  bool is_archive()        const { return _type.is_archive(); }
-  bool is_open_archive()   const { return _type.is_open_archive(); }
-  bool is_closed_archive() const { return _type.is_closed_archive(); }
-
   void set_free();
 
   void set_eden();
@@ -424,9 +410,6 @@ public:
 
   void move_to_old();
   void set_old();
-
-  void set_open_archive();
-  void set_closed_archive();
 
   // For a humongous region, region in which it starts.
   HeapRegion* humongous_start_region() const {
@@ -477,8 +460,8 @@ public:
   // available in non-product builds.
 #ifdef ASSERT
   void set_containing_set(HeapRegionSetBase* containing_set) {
-    assert((containing_set != NULL && _containing_set == NULL) ||
-            containing_set == NULL,
+    assert((containing_set != nullptr && _containing_set == nullptr) ||
+            containing_set == nullptr,
            "containing_set: " PTR_FORMAT " "
            "_containing_set: " PTR_FORMAT,
            p2i(containing_set), p2i(_containing_set));
@@ -559,7 +542,7 @@ public:
   // mr must not be empty. Must be trimmed to the allocated/parseable space in this region.
   // This region must be old or humongous.
   // Returns the next unscanned address if the designated objects were successfully
-  // processed, NULL if an unparseable part of the heap was encountered (That should
+  // processed, null if an unparseable part of the heap was encountered (That should
   // only happen when invoked concurrently with the mutator).
   template <bool in_gc_pause, class Closure>
   inline HeapWord* oops_on_memregion_seq_iterate_careful(MemRegion mr, Closure* cl);
@@ -579,15 +562,14 @@ public:
 
   // Verify that the entries on the code root list for this
   // region are live and include at least one pointer into this region.
-  void verify_code_roots(VerifyOption vo, bool* failures) const;
+  // Returns whether there has been a failure.
+  bool verify_code_roots(VerifyOption vo) const;
+  bool verify_liveness_and_remset(VerifyOption vo) const;
 
   void print() const;
   void print_on(outputStream* st) const;
 
-  void verify(VerifyOption vo, bool *failures) const;
-
-  void verify_rem_set(VerifyOption vo, bool *failures) const;
-  void verify_rem_set() const;
+  bool verify(VerifyOption vo) const;
 };
 
 // HeapRegionClosure is used for iterating over regions.

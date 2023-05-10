@@ -49,6 +49,8 @@ import java.util.concurrent.Future;
 import java.util.function.Predicate;
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
 import jdk.httpclient.test.lib.http2.Http2TestServer;
+import static java.net.http.HttpClient.Version.HTTP_1_1;
+import static java.net.http.HttpClient.Version.HTTP_2;
 
 /*
  * @test
@@ -107,30 +109,26 @@ public class HttpClientLocalAddrTest implements HttpServerAdapters {
         };
 
         // HTTP/1.1 - create servers with http and https
-        final var sa = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
-        final int backlog = 0;
-        http1_1_Server = HttpServerAdapters.HttpTestServer.of(HttpServer.create(sa, backlog));
+        http1_1_Server = HttpServerAdapters.HttpTestServer.create(HTTP_1_1);
         http1_1_Server.addHandler(handler, "/");
         http1_1_Server.start();
         System.out.println("Started HTTP v1.1 server at " + http1_1_Server.serverAuthority());
         httpURI = new URI("http://" + http1_1_Server.serverAuthority() + "/");
 
-        final HttpsServer httpsServer = HttpsServer.create(sa, 0);
-        httpsServer.setHttpsConfigurator(new HttpsConfigurator(sslContext));
-        https_1_1_Server = HttpServerAdapters.HttpTestServer.of(httpsServer);
+        https_1_1_Server = HttpServerAdapters.HttpTestServer.create(HTTP_1_1, sslContext);
         https_1_1_Server.addHandler(handler, "/");
         https_1_1_Server.start();
         System.out.println("Started HTTPS v1.1 server at " + https_1_1_Server.serverAuthority());
         httpsURI = new URI("https://" + https_1_1_Server.serverAuthority() + "/");
 
         // HTTP/2 - create servers with http and https
-        http2_Server = HttpServerAdapters.HttpTestServer.of(new Http2TestServer(sa.getHostString(), false, null));
+        http2_Server = HttpServerAdapters.HttpTestServer.create(HTTP_2);
         http2_Server.addHandler(handler, "/");
         http2_Server.start();
         System.out.println("Started HTTP v2 server at " + http2_Server.serverAuthority());
         http2URI = new URI("http://" + http2_Server.serverAuthority() + "/");
 
-        https2_Server = HttpServerAdapters.HttpTestServer.of(new Http2TestServer(sa.getHostString(), true, sslContext));
+        https2_Server = HttpServerAdapters.HttpTestServer.create(HTTP_2, sslContext);
         https2_Server.addHandler(handler, "/");
         https2_Server.start();
         System.out.println("Started HTTPS v2 server at " + https2_Server.serverAuthority());

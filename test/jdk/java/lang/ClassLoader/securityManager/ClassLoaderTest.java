@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,14 @@
  * @bug 8168423
  * @summary Different types of ClassLoader running with(out) SecurityManager and
  *          (in)valid security policy file.
+ * @modules java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.classfile.java.lang.constant
+ *          java.base/jdk.internal.module
  * @library /test/lib
- * @modules java.base/jdk.internal.module
  * @build jdk.test.lib.util.JarUtils
+ *        jdk.test.lib.util.ModuleInfoWriter
  * @build TestClassLoader TestClient
  * @run main ClassLoaderTest -noPolicy
  * @run main ClassLoaderTest -validPolicy
@@ -48,9 +53,9 @@ import java.lang.module.ModuleDescriptor;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
-import jdk.internal.module.ModuleInfoWriter;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.util.JarUtils;
+import jdk.test.lib.util.ModuleInfoWriter;
 
 public class ClassLoaderTest {
 

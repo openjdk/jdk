@@ -165,6 +165,7 @@ const char* const default_sample_threads = "true";
 const char* const default_stack_depth = "64";
 const char* const default_retransform = "true";
 const char* const default_old_object_queue_size = "256";
+const char* const default_preserve_repository = "false";
 DEBUG_ONLY(const char* const default_sample_protection = "false";)
 
 // statics
@@ -254,6 +255,13 @@ static DCmdArgument<bool> _dcmd_retransform(
   true,
   default_retransform);
 
+static DCmdArgument<bool> _dcmd_preserve_repository(
+  "preserve-repository",
+  "Preserve disk repository after JVM exit",
+  "BOOLEAN",
+  false,
+  default_preserve_repository);
+
 static DCmdParser _parser;
 
 static void register_parser_options() {
@@ -268,6 +276,7 @@ static void register_parser_options() {
   _parser.add_dcmd_option(&_dcmd_sample_threads);
   _parser.add_dcmd_option(&_dcmd_retransform);
   _parser.add_dcmd_option(&_dcmd_old_object_queue_size);
+  _parser.add_dcmd_option(&_dcmd_preserve_repository);
   DEBUG_ONLY(_parser.add_dcmd_option(&_dcmd_sample_protection);)
 }
 
@@ -378,6 +387,9 @@ bool JfrOptionSet::configure(TRAPS) {
 
   configure._sample_threads.set_is_set(_dcmd_sample_threads.is_set());
   configure._sample_threads.set_value(_dcmd_sample_threads.value());
+
+  configure._preserve_repository.set_is_set(_dcmd_preserve_repository.is_set());
+  configure._preserve_repository.set_value(_dcmd_preserve_repository.value());
 
   configure.set_verbose(false);
   configure.execute(DCmd_Source_Internal, THREAD);

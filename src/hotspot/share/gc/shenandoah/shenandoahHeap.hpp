@@ -93,7 +93,7 @@ public:
   // Reset iterator to default state
   void reset();
 
-  // Returns next region, or NULL if there are no more regions.
+  // Returns next region, or null if there are no more regions.
   // This is multi-thread-safe.
   inline ShenandoahHeapRegion* next();
 
@@ -327,12 +327,7 @@ private:
 
     // GC has been cancelled. Worker threads can not suspend for
     // safepoint but must finish their work as soon as possible.
-    CANCELLED,
-
-    // GC has not been cancelled and must not be cancelled. At least
-    // one worker thread checks for pending safepoint and may suspend
-    // if a safepoint is pending.
-    NOT_CANCELLED
+    CANCELLED
   };
 
   ShenandoahSharedEnumFlag<CancelState> _cancelled_gc;

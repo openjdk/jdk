@@ -46,7 +46,7 @@ public interface DebugDirectoryEntry {
 
   /** Format of debugging information: this field enables support of
       multiple debuggers. See
-      @link{sun.jvm.hotspot.debugger.win32.coff.DebugTypes}. */
+      {@link sun.jvm.hotspot.debugger.win32.coff.DebugTypes}. */
   public int getType();
 
   /** Size of the debug data (not including the debug directory itself). */
@@ -60,7 +60,7 @@ public interface DebugDirectoryEntry {
 
   /** If this debug directory entry is of type
       IMAGE_DEBUG_TYPE_CODEVIEW (see
-      @link{sun.jvm.hotspot.debugger.win32.coff.DebugTypes}), returns
+      {@link sun.jvm.hotspot.debugger.win32.coff.DebugTypes}), returns
       the contents as a DebugVC50 object; otherwise, returns null. */
   public DebugVC50 getDebugVC50();
 

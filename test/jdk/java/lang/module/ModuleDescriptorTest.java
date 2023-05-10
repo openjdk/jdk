@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,13 @@
  * @test
  * @bug 8142968 8158456 8298875
  * @modules java.base/jdk.internal.access
+ *          java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.classfile.java.lang.constant
  *          java.base/jdk.internal.module
+ * @library /test/lib
+ * @build jdk.test.lib.util.ModuleInfoWriter
  * @run testng ModuleDescriptorTest
  * @summary Basic test for java.lang.module.ModuleDescriptor and its builder
  */
@@ -57,7 +63,11 @@ import static java.lang.module.ModuleDescriptor.Requires.Modifier.*;
 
 import jdk.internal.access.JavaLangModuleAccess;
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.module.ModuleInfoWriter;
+import jdk.internal.classfile.Classfile;
+import jdk.internal.classfile.attribute.ModuleAttribute;
+import jdk.internal.classfile.java.lang.constant.PackageDesc;
+import jdk.internal.classfile.java.lang.constant.ModuleDesc;
+import jdk.test.lib.util.ModuleInfoWriter;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import static org.testng.Assert.*;
@@ -1362,14 +1372,11 @@ public class ModuleDescriptorTest {
      * complete set of packages.
      */
     public void testReadsWithBadPackageFinder() throws Exception {
-        ModuleDescriptor descriptor = ModuleDescriptor.newModule("foo")
-                .requires("java.base")
-                .exports("p")
-                .build();
-
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ModuleInfoWriter.write(descriptor, baos);
-        ByteBuffer bb = ByteBuffer.wrap(baos.toByteArray());
+        ByteBuffer bb = ByteBuffer.wrap(Classfile.buildModule(
+                ModuleAttribute.of(
+                        ModuleDesc.of("foo"),
+                        mb -> mb.requires(ModuleDesc.of("java.base"), 0, null)
+                                .exports(PackageDesc.of("p"), 0))));
 
         // package finder returns a set that doesn't include p
         assertThrows(InvalidModuleDescriptorException.class,

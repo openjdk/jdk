@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@
 #include "gc/g1/g1CollectionSet.hpp"
 #include "gc/g1/g1CollectionSetCandidates.hpp"
 #include "gc/g1/g1CollectorState.hpp"
-#include "gc/g1/g1HotCardCache.hpp"
 #include "gc/g1/g1ParScanThreadState.hpp"
 #include "gc/g1/g1Policy.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
@@ -51,11 +50,11 @@ G1GCPhaseTimes* G1CollectionSet::phase_times() {
 G1CollectionSet::G1CollectionSet(G1CollectedHeap* g1h, G1Policy* policy) :
   _g1h(g1h),
   _policy(policy),
-  _candidates(NULL),
+  _candidates(nullptr),
   _eden_region_length(0),
   _survivor_region_length(0),
   _old_region_length(0),
-  _collection_set_regions(NULL),
+  _collection_set_regions(nullptr),
   _collection_set_cur_length(0),
   _collection_set_max_length(0),
   _num_optional_regions(0),
@@ -84,7 +83,7 @@ void G1CollectionSet::init_region_lengths(uint eden_cset_region_length,
 }
 
 void G1CollectionSet::initialize(uint max_region_length) {
-  guarantee(_collection_set_regions == NULL, "Must only initialize once.");
+  guarantee(_collection_set_regions == nullptr, "Must only initialize once.");
   _collection_set_max_length = max_region_length;
   _collection_set_regions = NEW_C_HEAP_ARRAY(uint, max_region_length, mtGC);
 }
@@ -95,7 +94,7 @@ void G1CollectionSet::free_optional_regions() {
 
 void G1CollectionSet::clear_candidates() {
   delete _candidates;
-  _candidates = NULL;
+  _candidates = nullptr;
 }
 
 // Add the heap region at the head of the non-incremental collection set
@@ -293,8 +292,7 @@ double G1CollectionSet::finalize_young_part(double target_pause_time_ms, G1Survi
   guarantee(target_pause_time_ms > 0.0,
             "target_pause_time_ms = %1.6lf should be positive", target_pause_time_ms);
 
-  size_t pending_cards = _policy->pending_cards_at_gc_start() +
-                         _g1h->hot_card_cache()->num_entries();
+  size_t pending_cards = _policy->pending_cards_at_gc_start();
 
   log_trace(gc, ergo, cset)("Start choosing CSet. Pending cards: " SIZE_FORMAT " target pause time: %1.2fms",
                             pending_cards, target_pause_time_ms);

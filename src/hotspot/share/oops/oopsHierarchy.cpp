@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ void oop::register_oop() {
   if (!Universe::is_fully_initialized()) return;
   // This gets expensive, which is why checking unhandled oops is on a switch.
   Thread* t = Thread::current_or_null();
-  if (t != NULL && t->is_Java_thread()) {
+  if (t != nullptr && t->is_Java_thread()) {
      t->unhandled_oops()->register_unhandled_oop(this);
   }
 }
@@ -45,7 +45,7 @@ void oop::unregister_oop() {
   if (!Universe::is_fully_initialized()) return;
   // This gets expensive, which is why checking unhandled oops is on a switch.
   Thread* t = Thread::current_or_null();
-  if (t != NULL && t->is_Java_thread()) {
+  if (t != nullptr && t->is_Java_thread()) {
     t->unhandled_oops()->unregister_unhandled_oop(this);
   }
 }

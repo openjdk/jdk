@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2020 SAP SE. All rights reserved.
+ * Copyright (c) 2020, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,15 +51,6 @@ namespace metaspace {
 //  of at least n committed words to satisfy the caller requested
 //  committed word size. We stop searching at the first fully uncommitted
 //  chunk.
-//
-// Note that even though this is an O(n) search, partially committed chunks are
-//  very rare. A partially committed chunk is one spanning multiple commit
-//  granules, of which some are committed and some are not.
-// If metaspace reclamation is on (MetaspaceReclaimPolicy=balanced|aggressive), these
-//  chunks will become uncommitted after they are returned to the ChunkManager.
-// If metaspace reclamation is off (MetaspaceReclaimPolicy=none) they are fully
-//  committed when handed out and will not be uncommitted when returned to the
-//  ChunkManager.
 //
 // Therefore in all likelihood the chunk lists only contain fully committed or
 // fully uncommitted chunks; either way search will stop at the first chunk.

@@ -36,7 +36,7 @@
  */
 int CgroupV2Subsystem::cpu_shares() {
   GET_CONTAINER_INFO(int, _unified, "/cpu.weight",
-                     "Raw value for CPU Shares is: %d", "%d", shares);
+                     "Raw value for CPU Shares is: ", "%d", "%d", shares);
   // Convert default value of 100 to no shares setup
   if (shares == 100) {
     log_debug(os, container)("CPU Shares is: %d", -1);
@@ -109,7 +109,7 @@ char * CgroupV2Subsystem::cpu_cpuset_memory_nodes() {
 
 int CgroupV2Subsystem::cpu_period() {
   GET_CONTAINER_INFO(int, _unified, "/cpu.max",
-                     "CPU Period is: %d", "%*s %d", period);
+                     "CPU Period is: ", "%d", "%*s %d", period);
   return period;
 }
 
@@ -124,7 +124,7 @@ int CgroupV2Subsystem::cpu_period() {
  */
 jlong CgroupV2Subsystem::memory_usage_in_bytes() {
   GET_CONTAINER_INFO(jlong, _unified, "/memory.current",
-                     "Memory Usage is: " JLONG_FORMAT, JLONG_FORMAT, memusage);
+                     "Memory Usage is: ", JLONG_FORMAT, JLONG_FORMAT, memusage);
   return memusage;
 }
 
@@ -152,12 +152,19 @@ char* CgroupV2Subsystem::mem_soft_limit_val() {
 // without also setting a memory limit is not allowed.
 jlong CgroupV2Subsystem::memory_and_swap_limit_in_bytes() {
   char* mem_swp_limit_str = mem_swp_limit_val();
+  if (mem_swp_limit_str == nullptr) {
+    // Some container tests rely on this trace logging to happen.
+    log_trace(os, container)("Memory and Swap Limit is: %d", OSCONTAINER_ERROR);
+    // swap disabled at kernel level, treat it as no swap
+    return read_memory_limit_in_bytes();
+  }
   jlong swap_limit = limit_from_str(mem_swp_limit_str);
   if (swap_limit >= 0) {
     jlong memory_limit = read_memory_limit_in_bytes();
     assert(memory_limit >= 0, "swap limit without memory limit?");
     return memory_limit + swap_limit;
   }
+  log_trace(os, container)("Memory and Swap Limit is: " JLONG_FORMAT, swap_limit);
   return swap_limit;
 }
 
@@ -251,6 +258,6 @@ jlong CgroupV2Subsystem::pids_max() {
  */
 jlong CgroupV2Subsystem::pids_current() {
   GET_CONTAINER_INFO(jlong, _unified, "/pids.current",
-                     "Current number of tasks is: " JLONG_FORMAT, JLONG_FORMAT, pids_current);
+                     "Current number of tasks is: ", JLONG_FORMAT, JLONG_FORMAT, pids_current);
   return pids_current;
 }

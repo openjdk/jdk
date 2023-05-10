@@ -25,7 +25,6 @@
 
 package java.io;
 
-import java.io.File;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.util.BitSet;
@@ -40,7 +39,7 @@ import sun.security.action.GetPropertyAction;
  * @author Konstantin Kladko
  * @since 1.4
  */
-class WinNTFileSystem extends FileSystem {
+final class WinNTFileSystem extends FileSystem {
 
     private final char slash;
     private final char altSlash;
@@ -61,14 +60,12 @@ class WinNTFileSystem extends FileSystem {
         }
     }
 
-    public WinNTFileSystem() {
+    WinNTFileSystem() {
         Properties props = GetPropertyAction.privilegedGetProperties();
         slash = props.getProperty("file.separator").charAt(0);
         semicolon = props.getProperty("path.separator").charAt(0);
         altSlash = (this.slash == '\\') ? '/' : '\\';
         userDir = normalize(props.getProperty("user.dir"));
-        cache = useCanonCaches ? new ExpiringCache() : null;
-        prefixCache = useCanonPrefixCache ? new ExpiringCache() : null;
     }
 
     private boolean isSlash(char c) {
@@ -410,7 +407,7 @@ class WinNTFileSystem extends FileSystem {
         return (pl == 3) ? path.substring(0, 2) : null;
     }
 
-    private static String[] driveDirCache = new String[26];
+    private static final String[] DRIVE_DIR_CACHE = new String[26];
 
     private static int driveIndex(char d) {
         if ((d >= 'a') && (d <= 'z')) return d - 'a';
@@ -423,21 +420,16 @@ class WinNTFileSystem extends FileSystem {
     private String getDriveDirectory(char drive) {
         int i = driveIndex(drive);
         if (i < 0) return null;
-        String s = driveDirCache[i];
+        // Updates might not be visible to other threads so there
+        // is no guarantee getDriveDirectory(i+1) is called just once
+        // for any given value of i.
+        String s = DRIVE_DIR_CACHE[i];
         if (s != null) return s;
         s = getDriveDirectory(i + 1);
-        driveDirCache[i] = s;
+        DRIVE_DIR_CACHE[i] = s;
         return s;
-    }
 
-    // Caches for canonicalization results to improve startup performance.
-    // The first cache handles repeated canonicalizations of the same path
-    // name. The prefix cache handles repeated canonicalizations within the
-    // same directory, and must not create results differing from the true
-    // canonicalization algorithm in canonicalize_md.c. For this reason the
-    // prefix cache is conservative and is not used for complex path names.
-    private final ExpiringCache cache;
-    private final ExpiringCache prefixCache;
+    }
 
     @Override
     public String canonicalize(String path) throws IOException {
@@ -459,125 +451,17 @@ class WinNTFileSystem extends FileSystem {
                 return path;
             return "" + ((char) (c-32)) + ':' + '\\';
         }
-        if (!useCanonCaches) {
-            long comp = Blocker.begin();
-            try {
-                return canonicalize0(path);
-            } finally {
-                Blocker.end(comp);
-            }
-        } else {
-            String res = cache.get(path);
-            if (res == null) {
-                String dir = null;
-                String resDir = null;
-                if (useCanonPrefixCache) {
-                    dir = parentOrNull(path);
-                    if (dir != null) {
-                        resDir = prefixCache.get(dir);
-                        if (resDir != null) {
-                            /*
-                             * Hit only in prefix cache; full path is canonical,
-                             * but we need to get the canonical name of the file
-                             * in this directory to get the appropriate
-                             * capitalization
-                             */
-                            String filename = path.substring(1 + dir.length());
-                            res = canonicalizeWithPrefix(resDir, filename);
-                            cache.put(dir + File.separatorChar + filename, res);
-                        }
-                    }
-                }
-                if (res == null) {
-                    res = canonicalize0(path);
-                    cache.put(path, res);
-                    if (useCanonPrefixCache && dir != null) {
-                        resDir = parentOrNull(res);
-                        if (resDir != null) {
-                            File f = new File(res);
-                            if (f.exists() && !f.isDirectory()) {
-                                prefixCache.put(dir, resDir);
-                            }
-                        }
-                    }
-                }
-            }
-            return res;
+        long comp = Blocker.begin();
+        try {
+            return canonicalize0(path);
+        } finally {
+            Blocker.end(comp);
         }
     }
 
     private native String canonicalize0(String path)
             throws IOException;
 
-    private String canonicalizeWithPrefix(String canonicalPrefix,
-            String filename) throws IOException
-    {
-        return canonicalizeWithPrefix0(canonicalPrefix,
-                canonicalPrefix + File.separatorChar + filename);
-    }
-
-    // Run the canonicalization operation assuming that the prefix
-    // (everything up to the last filename) is canonical; just gets
-    // the canonical name of the last element of the path
-    private native String canonicalizeWithPrefix0(String canonicalPrefix,
-            String pathWithCanonicalPrefix)
-            throws IOException;
-
-    // Best-effort attempt to get parent of this path; used for
-    // optimization of filename canonicalization. This must return null for
-    // any cases where the code in canonicalize_md.c would throw an
-    // exception or otherwise deal with non-simple pathnames like handling
-    // of "." and "..". It may conservatively return null in other
-    // situations as well. Returning null will cause the underlying
-    // (expensive) canonicalization routine to be called.
-    private static String parentOrNull(String path) {
-        if (path == null) return null;
-        char sep = File.separatorChar;
-        char altSep = '/';
-        int last = path.length() - 1;
-        int idx = last;
-        int adjacentDots = 0;
-        int nonDotCount = 0;
-        while (idx > 0) {
-            char c = path.charAt(idx);
-            if (c == '.') {
-                if (++adjacentDots >= 2) {
-                    // Punt on pathnames containing . and ..
-                    return null;
-                }
-                if (nonDotCount == 0) {
-                    // Punt on pathnames ending in a .
-                    return null;
-                }
-            } else if (c == sep) {
-                if (adjacentDots == 1 && nonDotCount == 0) {
-                    // Punt on pathnames containing . and ..
-                    return null;
-                }
-                if (idx == 0 ||
-                    idx >= last - 1 ||
-                    path.charAt(idx - 1) == sep ||
-                    path.charAt(idx - 1) == altSep) {
-                    // Punt on pathnames containing adjacent slashes
-                    // toward the end
-                    return null;
-                }
-                return path.substring(0, idx);
-            } else if (c == altSep) {
-                // Punt on pathnames containing both backward and
-                // forward slashes
-                return null;
-            } else if (c == '*' || c == '?') {
-                // Punt on pathnames containing wildcards
-                return null;
-            } else {
-                ++nonDotCount;
-                adjacentDots = 0;
-            }
-            --idx;
-        }
-        return null;
-    }
 
     /* -- Attribute accessors -- */
 
@@ -695,17 +579,6 @@ class WinNTFileSystem extends FileSystem {
 
     @Override
     public boolean delete(File f) {
-        // Keep canonicalization caches in sync after file deletion
-        // and renaming operations. Could be more clever than this
-        // (i.e., only remove/update affected entries) but probably
-        // not worth it since these entries expire after 30 seconds
-        // anyway.
-        if (useCanonCaches) {
-            cache.clear();
-        }
-        if (useCanonPrefixCache) {
-            prefixCache.clear();
-        }
         long comp = Blocker.begin();
         try {
             return delete0(f);
@@ -717,17 +590,6 @@ class WinNTFileSystem extends FileSystem {
 
     @Override
     public boolean rename(File f1, File f2) {
-        // Keep canonicalization caches in sync after file deletion
-        // and renaming operations. Could be more clever than this
-        // (i.e., only remove/update affected entries) but probably
-        // not worth it since these entries expire after 30 seconds
-        // anyway.
-        if (useCanonCaches) {
-            cache.clear();
-        }
-        if (useCanonPrefixCache) {
-            prefixCache.clear();
-        }
         long comp = Blocker.begin();
         try {
             return rename0(f1, f2);

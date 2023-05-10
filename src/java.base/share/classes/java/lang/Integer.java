@@ -529,10 +529,6 @@ public final class Integer extends Number
         return charPos;
     }
 
-    // Left here for compatibility reasons, see JDK-8143900.
-    static final int [] sizeTable = { 9, 99, 999, 9999, 99999, 999999, 9999999,
-                                      99999999, 999999999, Integer.MAX_VALUE };
-
     /**
      * Returns the string representation size for a given int value.
      *

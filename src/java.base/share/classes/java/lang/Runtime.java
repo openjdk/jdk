@@ -113,6 +113,7 @@ import jdk.internal.reflect.Reflection;
  * typically terminate the OS process hosting the JVM and do not interact with the JNI Invocation
  * API.
  *
+ * @spec jni/index.html Java Native Interface Specification
  * @see     java.lang.Runtime#getRuntime()
  * @jls     12.8 Program Exit
  * @since   1.0
@@ -139,22 +140,29 @@ public class Runtime {
     private Runtime() {}
 
     /**
-     * Initiates the <a href="#shutdown">shutdown sequence</a> of the Java Virtual Machine.
-     * This method blocks indefinitely; it never returns or throws an exception (that is, it
-     * does not complete either normally or abruptly). The argument serves as a status code;
-     * by convention, a nonzero status code indicates abnormal termination.
+     * Initiates the {@linkplain ##shutdown shutdown sequence} of the Java Virtual Machine.
+     * Unless the security manager denies exiting, this method initiates the shutdown sequence
+     * (if it is not already initiated) and then blocks indefinitely. This method neither returns
+     * nor throws an exception; that is, it does not complete either normally or abruptly.
      *
-     * <p> Invocations of this method are serialized such that only one
-     * invocation will actually proceed with the shutdown sequence and
-     * terminate the VM with the given status code. All other invocations
-     * simply block indefinitely.
+     * <p> The argument serves as a status code. By convention, a nonzero status code
+     * indicates abnormal termination.
      *
-     * <p> Because this method always blocks indefinitely, if it is invoked from
-     * a shutdown hook, it will prevent that shutdown hook from terminating.
-     * Consequently, this will prevent the shutdown sequence from finishing.
+     * <p> Successful invocations of this method are serialized such that only one invocation
+     * initiates the shutdown sequence and terminates the VM with the given status code.
+     * All other invocations will perform no action and block indefinitely.
+     *
+     * <p> Because a successful invocation of this method blocks indefinitely, if it is invoked
+     * from a shutdown hook, it will prevent that shutdown hook from terminating. Consequently,
+     * this will prevent the shutdown sequence from finishing.
      *
      * <p> The {@link System#exit(int) System.exit} method is the
      * conventional and convenient means of invoking this method.
+     *
+     * @implNote
+     * If the {@linkplain System#getLogger(String) system logger} for {@code java.lang.Runtime}
+     * is enabled with logging level {@link System.Logger.Level#DEBUG Level.DEBUG} the stack trace
+     * of the call to {@code Runtime.exit()} is logged.
      *
      * @param  status
      *         Termination status.  By convention, a nonzero status code
@@ -184,7 +192,7 @@ public class Runtime {
      * Registers a new virtual-machine shutdown hook.
      *
      * <p> A <i>shutdown hook</i> is simply an initialized but unstarted thread. Shutdown hooks
-     * are started at the beginning of the <a href="#shutdown">shutdown sequence</a>.
+     * are started at the beginning of the {@linkplain ##shutdown shutdown sequence}.
      * Registration and de-registration of shutdown hooks is disallowed once the shutdown
      * sequence has begun.
      * <p>
@@ -274,15 +282,17 @@ public class Runtime {
     }
 
     /**
-     * Immediately <a href="#termination">terminates</a> the Java Virtual Machine. Termination
-     * is unconditional and immediate. This method does not initiate the
-     * <a href="#shutdown">shutdown sequence</a>, nor does it wait for the shutdown sequence
-     * to finish if it is already in progress. This method never returns normally.
+     * Immediately {@linkplain ##termination terminates} the Java Virtual Machine.
+     * If the security manager denies exiting, throws {@link SecurityException}.
+     * Otherwise, termination of the Java Virtual Machine is unconditional and immediate.
+     * This method does not initiate the {@linkplain ##shutdown shutdown sequence}, nor does
+     * it wait for the shutdown sequence to finish if it is already in progress. An
+     * invocation of this method never returns normally.
      *
      * @apiNote
      * This method should be used with extreme caution. Using it may circumvent or disrupt
      * any cleanup actions intended to be performed by shutdown hooks, possibly leading to
-     * data corruption. See the <a href="#termination">termination</a> section above
+     * data corruption. See the {@linkplain ##termination termination} section above
      * for other possible consequences of halting the Java Virtual Machine.
      *
      * @param  status
@@ -344,6 +354,10 @@ public class Runtime {
      * @throws  IllegalArgumentException
      *          If {@code command} is empty
      *
+     * @implNote
+     * In the reference implementation, logging of the created process can be enabled,
+     * see {@link ProcessBuilder#start()} for details.
+     *
      * @see     #exec(String[], String[], File)
      * @see     ProcessBuilder
      */
@@ -391,6 +405,10 @@ public class Runtime {
      *
      * @throws  IllegalArgumentException
      *          If {@code command} is empty
+     *
+     * @implNote
+     * In the reference implementation, logging of the created process can be enabled,
+     * see {@link ProcessBuilder#start()} for details.
      *
      * @see     #exec(String[], String[], File)
      * @see     ProcessBuilder
@@ -453,6 +471,10 @@ public class Runtime {
      * @throws  IllegalArgumentException
      *          If {@code command} is empty
      *
+     * @implNote
+     * In the reference implementation, logging of the created process can be enabled,
+     * see {@link ProcessBuilder#start()} for details.
+     *
      * @see     ProcessBuilder
      * @since 1.3
      */
@@ -498,6 +520,10 @@ public class Runtime {
      *          If {@code cmdarray} is an empty array
      *          (has length {@code 0})
      *
+     * @implNote
+     * In the reference implementation, logging of the created process can be enabled,
+     * see {@link ProcessBuilder#start()} for details.
+     *
      * @see     ProcessBuilder
      */
     public Process exec(String[] cmdarray) throws IOException {
@@ -540,6 +566,10 @@ public class Runtime {
      * @throws  IndexOutOfBoundsException
      *          If {@code cmdarray} is an empty array
      *          (has length {@code 0})
+     *
+     * @implNote
+     * In the reference implementation, logging of the created process can be enabled,
+     * see {@link ProcessBuilder#start()} for details.
      *
      * @see     ProcessBuilder
      */
@@ -635,6 +665,10 @@ public class Runtime {
      * @throws  IndexOutOfBoundsException
      *          If {@code cmdarray} is an empty array
      *          (has length {@code 0})
+     *
+     * @implNote
+     * In the reference implementation, logging of the created process can be enabled,
+     * see {@link ProcessBuilder#start()} for details.
      *
      * @see     ProcessBuilder
      * @since 1.3
@@ -794,6 +828,7 @@ public class Runtime {
      *             a native library image by the host system.
      * @throws     NullPointerException if {@code filename} is
      *             {@code null}
+     * @spec jni/index.html Java Native Interface Specification
      * @see        java.lang.Runtime#getRuntime()
      * @see        java.lang.SecurityException
      * @see        java.lang.SecurityManager#checkLink(java.lang.String)
@@ -859,6 +894,7 @@ public class Runtime {
      *             native library image by the host system.
      * @throws     NullPointerException if {@code libname} is
      *             {@code null}
+     * @spec jni/index.html Java Native Interface Specification
      * @see        java.lang.SecurityException
      * @see        java.lang.SecurityManager#checkLink(java.lang.String)
      */

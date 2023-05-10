@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -130,7 +130,7 @@ void C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hd
   load_const_optimized(Z_R0_scratch, (~(os::vm_page_size()-1) | markWord::lock_mask_in_place));
   z_ngr(hdr, Z_R0_scratch); // AND sets CC (result eq/ne 0).
   // For recursive locking, the result is zero. => Save it in the displaced header
-  // location (NULL in the displaced hdr location indicates recursive locking).
+  // location (null in the displaced hdr location indicates recursive locking).
   z_stg(hdr, Address(disp_hdr, (intptr_t)0));
   // Otherwise we don't care about the result and handle locking via runtime call.
   branch_optimized(Assembler::bcondNotZero, slow_case);
@@ -146,7 +146,7 @@ void C1_MacroAssembler::unlock_object(Register hdr, Register obj, Register disp_
 
   // Load displaced header.
   z_ltg(hdr, Address(disp_hdr, (intptr_t)0));
-  // If the loaded hdr is NULL we had recursive locking, and we are done.
+  // If the loaded hdr is null we had recursive locking, and we are done.
   z_bre(done);
   // Load object.
   z_lg(obj, Address(disp_hdr, BasicObjectLock::obj_offset_in_bytes()));

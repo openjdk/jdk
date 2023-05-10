@@ -94,9 +94,6 @@ private:
   // Reserve aligned space for the heap as needed by the contained generations.
   ReservedHeapSpace allocate(size_t alignment);
 
-  // Initialize ("weak") refs processing support
-  void ref_processing_init();
-
   PreGenGCValues get_pre_gc_values() const;
 
 protected:

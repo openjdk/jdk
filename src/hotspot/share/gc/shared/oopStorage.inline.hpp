@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -184,7 +184,7 @@ public:
   void set_active_index(size_t index);
   static size_t active_index_safe(const Block* block); // Returns 0 if access fails.
 
-  // Returns NULL if ptr is not in a block or not allocated in that block.
+  // Returns null if ptr is not in a block or not allocated in that block.
   static Block* block_for_ptr(const OopStorage* owner, const oop* ptr);
 
   oop* allocate();
@@ -258,11 +258,11 @@ public:
   bool operator()(oop* ptr) const {
     bool result = true;
     oop v = *ptr;
-    if (v != NULL) {
+    if (v != nullptr) {
       if (_is_alive->do_object_b(v)) {
         result = _f(ptr);
       } else {
-        *ptr = NULL;            // Clear dead value.
+        *ptr = nullptr;            // Clear dead value.
       }
     }
     return result;
@@ -285,7 +285,7 @@ public:
 
   template<typename OopPtr>     // [const] oop*
   bool operator()(OopPtr ptr) const {
-    return (*ptr != NULL) ? _f(ptr) : true;
+    return (*ptr != nullptr) ? _f(ptr) : true;
   }
 
 private:

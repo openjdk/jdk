@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,18 @@
  * questions.
  */
 
+/*
+ * @test
+ * @bug 5016500
+ * @summary Test SslRmi[Client|Server]SocketFactory SSL socket parameters.
+ * @run main/othervm SSLSocketParametersTest 1
+ * @run main/othervm SSLSocketParametersTest 2
+ * @run main/othervm SSLSocketParametersTest 3
+ * @run main/othervm SSLSocketParametersTest 4
+ * @run main/othervm SSLSocketParametersTest 5
+ * @run main/othervm SSLSocketParametersTest 6
+ * @run main/othervm SSLSocketParametersTest 7
+ */
 import java.io.IOException;
 import java.io.File;
 import java.io.Serializable;
@@ -77,7 +89,7 @@ public class SSLSocketParametersTest implements Serializable {
         }
     }
 
-    public class ClientFactory extends SslRMIClientSocketFactory {
+    public static class ClientFactory extends SslRMIClientSocketFactory {
 
         public ClientFactory() {
             super();
@@ -90,7 +102,7 @@ public class SSLSocketParametersTest implements Serializable {
         }
     }
 
-    public class ServerFactory extends SslRMIServerSocketFactory {
+    public static class ServerFactory extends SslRMIServerSocketFactory {
 
         public ServerFactory() {
             super();
@@ -116,158 +128,90 @@ public class SSLSocketParametersTest implements Serializable {
         }
     }
 
-    public void runTest(String[] args) {
+    public void testRmiCommunication(RMIServerSocketFactory serverFactory, boolean expectException) {
 
-        int test = Integer.parseInt(args[0]);
+        HelloImpl server = null;
+        try {
+            server = new HelloImpl(0,
+                                    new ClientFactory(),
+                                    serverFactory);
+            Remote stub = server.runServer();
+            HelloClient client = new HelloClient();
+            client.runClient(stub);
+            if (expectException) {
+                throw new RuntimeException("Test completed without throwing an expected exception.");
+            }
 
-        String msg1 = "Running SSLSocketParametersTest [" + test + "]";
-        String msg2 = "SSLSocketParametersTest [" + test + "] PASSED!";
-        String msg3 = "SSLSocketParametersTest [" + test + "] FAILED!";
+        } catch (IOException exc) {
+            if (!expectException) {
+                throw new RuntimeException("An error occurred during test execution", exc);
+            } else {
+                System.out.println("Caught expected exception: " + exc);
+            }
 
-        switch (test) {
-        case 1: /* default constructor - default config */
-            System.out.println(msg1);
-            try {
-                HelloImpl server = new HelloImpl(
-                          0,
-                          new ClientFactory(),
-                          new ServerFactory());
-                Remote stub = server.runServer();
-                HelloClient client = new HelloClient();
-                client.runClient(stub);
-                System.out.println(msg2);
-            } catch (Exception e) {
-                System.out.println(msg3 + " Exception: " + e.toString());
-                e.printStackTrace(System.out);
-                System.exit(1);
-            }
-            break;
-        case 2: /* non-default constructor - default config */
-            System.out.println(msg1);
-            try {
-                HelloImpl server = new HelloImpl(
-                          0,
-                          new ClientFactory(),
-                          new ServerFactory(null,
-                                            null,
-                                            false));
-                Remote stub = server.runServer();
-                HelloClient client = new HelloClient();
-                client.runClient(stub);
-                System.out.println(msg2);
-            } catch (Exception e) {
-                System.out.println(msg3 + " Exception: " + e.toString());
-                e.printStackTrace(System.out);
-                System.exit(1);
-            }
-            break;
-        case 3: /* needClientAuth=true */
-            System.out.println(msg1);
-            try {
-                HelloImpl server = new HelloImpl(
-                          0,
-                          new ClientFactory(),
-                          new ServerFactory(null,
-                                            null,
-                                            null,
-                                            true));
-                Remote stub = server.runServer();
-                HelloClient client = new HelloClient();
-                client.runClient(stub);
-                System.out.println(msg2);
-            } catch (Exception e) {
-                System.out.println(msg3 + " Exception: " + e.toString());
-                e.printStackTrace(System.out);
-                System.exit(1);
-            }
-            break;
-        case 4: /* server side dummy_ciphersuite */
-            System.out.println(msg1);
-            try {
-                HelloImpl server = new HelloImpl(
-                          0,
-                          new ClientFactory(),
-                          new ServerFactory(SSLContext.getDefault(),
-                                            new String[] {"dummy_ciphersuite"},
-                                            null,
-                                            false));
-                Remote stub = server.runServer();
-                HelloClient client = new HelloClient();
-                client.runClient(stub);
-                System.out.println(msg3);
-                System.exit(1);
-            } catch (Exception e) {
-                System.out.println(msg2 + " Exception: " + e.toString());
-                System.exit(0);
-            }
-            break;
-        case 5: /* server side dummy_protocol */
-            System.out.println(msg1);
-            try {
-                HelloImpl server = new HelloImpl(
-                          0,
-                          new ClientFactory(),
-                          new ServerFactory(null,
-                                            new String[] {"dummy_protocol"},
-                                            false));
-                Remote stub = server.runServer();
-                HelloClient client = new HelloClient();
-                client.runClient(stub);
-                System.out.println(msg3);
-                System.exit(1);
-            } catch (Exception e) {
-                System.out.println(msg2 + " Exception: " + e.toString());
-                System.exit(0);
-            }
-            break;
-        case 6: /* client side dummy_ciphersuite */
-            System.out.println(msg1);
-            try {
-                System.setProperty("javax.rmi.ssl.client.enabledCipherSuites",
-                                   "dummy_ciphersuite");
-                HelloImpl server = new HelloImpl(
-                          0,
-                          new ClientFactory(),
-                          new ServerFactory());
-                Remote stub = server.runServer();
-                HelloClient client = new HelloClient();
-                client.runClient(stub);
-                System.out.println(msg3);
-                System.exit(1);
-            } catch (Exception e) {
-                System.out.println(msg2 + " Exception: " + e.toString());
-                System.exit(0);
-            }
-            break;
-        case 7: /* client side dummy_protocol */
-            System.out.println(msg1);
-            try {
-                System.setProperty("javax.rmi.ssl.client.enabledProtocols",
-                                   "dummy_protocol");
-                HelloImpl server = new HelloImpl(
-                          0,
-                          new ClientFactory(),
-                          new ServerFactory());
-                Remote stub = server.runServer();
-                HelloClient client = new HelloClient();
-                client.runClient(stub);
-                System.out.println(msg3);
-                System.exit(1);
-            } catch (Exception e) {
-                System.out.println(msg2 + " Exception: " + e.toString());
-                System.exit(0);
-            }
-            break;
-        default:
-            throw new IllegalArgumentException("invalid test number");
         }
     }
 
-    public static void main(String[] args) {
+    private static void testServerFactory(String[] cipherSuites, String[] protocol, String expectedMessage) throws Exception {
+        try {
+            new ServerFactory(SSLContext.getDefault(),
+                    cipherSuites, protocol, false);
+            throw new RuntimeException(
+                    "The expected exception for "+ expectedMessage + " was not thrown.");
+        } catch (IllegalArgumentException exc) {
+            // expecting an exception with a specific message
+            // anything else is an error
+            if (!exc.getMessage().toLowerCase().contains(expectedMessage)) {
+                throw exc;
+            }
+        }
+    }
+
+    public void runTest(int testNumber) throws Exception {
+        System.out.println("Running test " + testNumber);
+
+        switch (testNumber) {
+            /* default constructor - default config */
+            case 1 -> testRmiCommunication(new ServerFactory(), false);
+
+            /* non-default constructor - default config */
+            case 2 -> testRmiCommunication(new ServerFactory(null, null, false), false);
+
+            /* needClientAuth=true */
+            case 3 -> testRmiCommunication(new ServerFactory(null, null, null, true), false);
+
+            /* server side dummy_ciphersuite */
+            case 4 ->
+                testServerFactory(new String[]{"dummy_ciphersuite"}, null, "unsupported ciphersuite");
+
+            /* server side dummy_protocol */
+            case 5 ->
+                testServerFactory(null, new String[]{"dummy_protocol"}, "unsupported protocol");
+
+            /* client side dummy_ciphersuite */
+            case 6 -> {
+                System.setProperty("javax.rmi.ssl.client.enabledCipherSuites",
+                        "dummy_ciphersuite");
+                testRmiCommunication(new ServerFactory(), true);
+            }
+
+            /* client side dummy_protocol */
+            case 7 -> {
+                System.setProperty("javax.rmi.ssl.client.enabledProtocols",
+                        "dummy_protocol");
+                testRmiCommunication(new ServerFactory(), true);
+            }
+
+            default ->
+                    throw new RuntimeException("Unknown test number: " + testNumber);
+        }
+    }
+
+    public static void main(String[] args) throws Exception {
         // Set keystore properties (server-side)
         //
         final String keystore = System.getProperty("test.src") +
-            File.separator + "keystore";
+                File.separator + "keystore";
         System.out.println("KeyStore = " + keystore);
         System.setProperty("javax.net.ssl.keyStore", keystore);
         System.setProperty("javax.net.ssl.keyStorePassword", "password");
@@ -275,15 +219,12 @@ public class SSLSocketParametersTest implements Serializable {
         // Set truststore properties (client-side)
         //
         final String truststore = System.getProperty("test.src") +
-            File.separator + "truststore";
+                File.separator + "truststore";
         System.out.println("TrustStore = " + truststore);
         System.setProperty("javax.net.ssl.trustStore", truststore);
         System.setProperty("javax.net.ssl.trustStorePassword", "trustword");
 
-        // Run test
-        //
         SSLSocketParametersTest test = new SSLSocketParametersTest();
-        test.runTest(args);
-        System.exit(0);
+        test.runTest(Integer.parseInt(args[0]));
     }
 }

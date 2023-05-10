@@ -298,8 +298,6 @@ class JvmtiExport : public AllStatic {
   static void decode_version_values(jint version, int * major, int * minor,
                                     int * micro) NOT_JVMTI_RETURN;
 
-  static void check_vthread_and_suspend_at_safepoint(JavaThread *thread) NOT_JVMTI_RETURN;
-
   // single stepping management methods
   static void at_single_stepping_point(JavaThread *thread, Method* method, address location) NOT_JVMTI_RETURN;
   static void expose_single_stepping(JavaThread *thread) NOT_JVMTI_RETURN;
@@ -397,6 +395,9 @@ class JvmtiExport : public AllStatic {
       record_vm_internal_object_allocation(object);
     }
   }
+
+  // Used by C2 to post vm_object_alloc
+  static bool _should_notify_object_alloc;
 
   static void record_sampled_internal_object_allocation(oop object) NOT_JVMTI_RETURN;
   // Post objects collected by sampled_object_alloc_event_collector.

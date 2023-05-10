@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,7 +76,6 @@ void OptoRuntime::generate_exception_blob() {
 
   Register handle_exception = Z_ARG5;
 
-  __ verify_thread();
   __ z_stg(Z_ARG1/*exception oop*/, Address(Z_thread, JavaThread::exception_oop_offset()));
   __ z_stg(Z_ARG2/*issuing pc*/,    Address(Z_thread, JavaThread::exception_pc_offset()));
 
@@ -115,12 +114,12 @@ void OptoRuntime::generate_exception_blob() {
   // Pop the exception blob's C frame that has been pushed before.
   __ z_lgr(Z_SP, saved_sp);
 
-  // [Z_RET]!=NULL was possible in hotspot5 but not in sapjvm6.
+  // [Z_RET] isn't null was possible in hotspot5 but not in sapjvm6.
   // C2I adapter extensions are now removed by a resize in the frame manager
   // (unwind_initial_activation_pending_exception).
 #ifdef ASSERT
   __ z_ltgr(handle_exception, handle_exception);
-  __ asm_assert_ne("handler must not be NULL", 0x852);
+  __ asm_assert(Assembler::bcondNotZero, "handler must not be null", 0x852);
 #endif
 
   // Handle_exception contains the handler address. If the associated frame
@@ -137,8 +136,8 @@ void OptoRuntime::generate_exception_blob() {
   __ clear_mem(Address(Z_thread, JavaThread::exception_oop_offset()),sizeof(intptr_t));
 #ifdef ASSERT
   __ clear_mem(Address(Z_thread, JavaThread::exception_handler_pc_offset()), sizeof(intptr_t));
-  __ clear_mem(Address(Z_thread, JavaThread::exception_pc_offset()), sizeof(intptr_t));
 #endif
+  NOT_PRODUCT(__ clear_mem(Address(Z_thread, JavaThread::exception_pc_offset()), sizeof(intptr_t)));
 
   __ z_br(handle_exception);
 
@@ -146,6 +145,6 @@ void OptoRuntime::generate_exception_blob() {
   masm->flush();
 
   // Set exception blob.
-  OopMapSet *oop_maps = NULL;
+  OopMapSet *oop_maps = nullptr;
   _exception_blob =  ExceptionBlob::create(&buffer, oop_maps, frame_size/wordSize);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,7 +99,8 @@ Node* BarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue& val) cons
     }
 
     store = kit->store_to_memory(kit->control(), access.addr().node(), val.node(), bt,
-                                 access.addr().type(), mo, requires_atomic_access, unaligned, mismatched, unsafe);
+                                 access.addr().type(), mo, requires_atomic_access, unaligned,
+                                 mismatched, unsafe, access.barrier_data());
   } else {
     assert(access.is_opt_access(), "either parse or opt access");
     C2OptAccess& opt_access = static_cast<C2OptAccess&>(access);
@@ -117,6 +118,7 @@ Node* BarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue& val) cons
     if (mismatched) {
       st->set_mismatched_access();
     }
+    st->set_barrier_data(access.barrier_data());
     store = gvn.transform(st);
     if (store == st) {
       mm->set_memory_at(alias, st);
@@ -148,7 +150,7 @@ Node* BarrierSetC2::load_at_resolved(C2Access& access, const Type* val_type) con
   if (access.is_parse_access()) {
     C2ParseAccess& parse_access = static_cast<C2ParseAccess&>(access);
     GraphKit* kit = parse_access.kit();
-    Node* control = control_dependent ? kit->control() : NULL;
+    Node* control = control_dependent ? kit->control() : nullptr;
 
     if (immutable) {
       Compile* C = Compile::current();
@@ -165,7 +167,7 @@ Node* BarrierSetC2::load_at_resolved(C2Access& access, const Type* val_type) con
   } else {
     assert(access.is_opt_access(), "either parse or opt access");
     C2OptAccess& opt_access = static_cast<C2OptAccess&>(access);
-    Node* control = control_dependent ? opt_access.ctl() : NULL;
+    Node* control = control_dependent ? opt_access.ctl() : nullptr;
     MergeMemNode* mm = opt_access.mem();
     PhaseGVN& gvn = opt_access.gvn();
     Node* mem = mm->memory_at(gvn.C->get_alias_index(adr_type));
@@ -184,8 +186,8 @@ class C2AccessFence: public StackObj {
 
 public:
   C2AccessFence(C2Access& access) :
-    _access(access), _leading_membar(NULL) {
-    GraphKit* kit = NULL;
+    _access(access), _leading_membar(nullptr) {
+    GraphKit* kit = nullptr;
     if (access.is_parse_access()) {
       C2ParseAccess& parse_access = static_cast<C2ParseAccess&>(access);
       kit = parse_access.kit();
@@ -200,7 +202,7 @@ public:
     bool is_release = (decorators & MO_RELEASE) != 0;
 
     if (is_atomic) {
-      assert(kit != NULL, "unsupported at optimization time");
+      assert(kit != nullptr, "unsupported at optimization time");
       // Memory-model-wise, a LoadStore acts like a little synchronized
       // block, so needs barriers on each side.  These don't translate
       // into actual barriers on most machines, but we still need rest of
@@ -219,7 +221,7 @@ public:
       // floating down past the volatile write.  Also prevents commoning
       // another volatile read.
       if (is_volatile || is_release) {
-        assert(kit != NULL, "unsupported at optimization time");
+        assert(kit != nullptr, "unsupported at optimization time");
         _leading_membar = kit->insert_mem_bar(Op_MemBarRelease);
       }
     } else {
@@ -229,13 +231,13 @@ public:
       // so there's no problems making a strong assert about mixing users
       // of safe & unsafe memory.
       if (is_volatile && support_IRIW_for_not_multiple_copy_atomic_cpu) {
-        assert(kit != NULL, "unsupported at optimization time");
+        assert(kit != nullptr, "unsupported at optimization time");
         _leading_membar = kit->insert_mem_bar(Op_MemBarVolatile);
       }
     }
 
     if (access.needs_cpu_membar()) {
-      assert(kit != NULL, "unsupported at optimization time");
+      assert(kit != nullptr, "unsupported at optimization time");
       kit->insert_mem_bar(Op_MemBarCPUOrder);
     }
 
@@ -248,7 +250,7 @@ public:
   }
 
   ~C2AccessFence() {
-    GraphKit* kit = NULL;
+    GraphKit* kit = nullptr;
     if (_access.is_parse_access()) {
       C2ParseAccess& parse_access = static_cast<C2ParseAccess&>(_access);
       kit = parse_access.kit();
@@ -269,29 +271,29 @@ public:
     }
 
     if (is_atomic) {
-      assert(kit != NULL, "unsupported at optimization time");
+      assert(kit != nullptr, "unsupported at optimization time");
       if (is_acquire || is_volatile) {
         Node* n = _access.raw_access();
         Node* mb = kit->insert_mem_bar(Op_MemBarAcquire, n);
-        if (_leading_membar != NULL) {
+        if (_leading_membar != nullptr) {
           MemBarNode::set_load_store_pair(_leading_membar->as_MemBar(), mb->as_MemBar());
         }
       }
     } else if (is_write) {
       // If not multiple copy atomic, we do the MemBarVolatile before the load.
       if (is_volatile && !support_IRIW_for_not_multiple_copy_atomic_cpu) {
-        assert(kit != NULL, "unsupported at optimization time");
+        assert(kit != nullptr, "unsupported at optimization time");
         Node* n = _access.raw_access();
         Node* mb = kit->insert_mem_bar(Op_MemBarVolatile, n); // Use fat membar
-        if (_leading_membar != NULL) {
+        if (_leading_membar != nullptr) {
           MemBarNode::set_store_pair(_leading_membar->as_MemBar(), mb->as_MemBar());
         }
       }
     } else {
       if (is_volatile || is_acquire) {
-        assert(kit != NULL, "unsupported at optimization time");
+        assert(kit != nullptr, "unsupported at optimization time");
         Node* n = _access.raw_access();
-        assert(_leading_membar == NULL || support_IRIW_for_not_multiple_copy_atomic_cpu, "no leading membar expected");
+        assert(_leading_membar == nullptr || support_IRIW_for_not_multiple_copy_atomic_cpu, "no leading membar expected");
         Node* mb = kit->insert_mem_bar(Op_MemBarAcquire, n);
         mb->as_MemBar()->set_trailing_load();
       }
@@ -388,7 +390,7 @@ void BarrierSetC2::pin_atomic_op(C2AtomicParseAccess& access) const {
   C2ParseAccess& parse_access = static_cast<C2ParseAccess&>(access);
   GraphKit* kit = parse_access.kit();
   Node* load_store = access.raw_access();
-  assert(load_store != NULL, "must pin atomic op");
+  assert(load_store != nullptr, "must pin atomic op");
   Node* proj = kit->gvn().transform(new SCMemProjNode(load_store));
   kit->set_memory(proj, access.alias_idx());
 }
@@ -407,7 +409,7 @@ Node* BarrierSetC2::atomic_cmpxchg_val_at_resolved(C2AtomicParseAccess& access, 
   Node* adr = access.addr().node();
   const TypePtr* adr_type = access.addr().type();
 
-  Node* load_store = NULL;
+  Node* load_store = nullptr;
 
   if (access.is_oop()) {
 #ifdef _LP64
@@ -465,7 +467,7 @@ Node* BarrierSetC2::atomic_cmpxchg_bool_at_resolved(C2AtomicParseAccess& access,
   MemNode::MemOrd mo = access.mem_node_mo();
   Node* mem = access.memory();
   bool is_weak_cas = (decorators & C2_WEAK_CMPXCHG) != 0;
-  Node* load_store = NULL;
+  Node* load_store = nullptr;
   Node* adr = access.addr().node();
 
   if (access.is_oop()) {
@@ -540,7 +542,7 @@ Node* BarrierSetC2::atomic_xchg_at_resolved(C2AtomicParseAccess& access, Node* n
   Node* mem = access.memory();
   Node* adr = access.addr().node();
   const TypePtr* adr_type = access.addr().type();
-  Node* load_store = NULL;
+  Node* load_store = nullptr;
 
   if (access.is_oop()) {
 #ifdef _LP64
@@ -587,7 +589,7 @@ Node* BarrierSetC2::atomic_xchg_at_resolved(C2AtomicParseAccess& access, Node* n
 }
 
 Node* BarrierSetC2::atomic_add_at_resolved(C2AtomicParseAccess& access, Node* new_val, const Type* value_type) const {
-  Node* load_store = NULL;
+  Node* load_store = nullptr;
   GraphKit* kit = access.kit();
   Node* adr = access.addr().node();
   const TypePtr* adr_type = access.addr().type();
@@ -767,7 +769,7 @@ void BarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* ac
   Node* payload_dst = phase->basic_plus_adr(dest, dest_offset);
 
   const char* copyfunc_name = "arraycopy";
-  address     copyfunc_addr = phase->basictype2arraycopy(T_LONG, NULL, NULL, true, copyfunc_name, true);
+  address     copyfunc_addr = phase->basictype2arraycopy(T_LONG, nullptr, nullptr, true, copyfunc_name, true);
 
   const TypePtr* raw_adr_type = TypeRawPtr::BOTTOM;
   const TypeFunc* call_type = OptoRuntime::fast_arraycopy_Type();

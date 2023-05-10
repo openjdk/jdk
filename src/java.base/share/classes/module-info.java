@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -148,14 +148,10 @@ module java.base {
     // module declaration be annotated with jdk.internal.javac.ParticipatesInPreview
     exports jdk.internal.javac to
         java.compiler,
-        java.management, // participates in preview features
         jdk.compiler,
-        jdk.incubator.concurrent, // participates in preview features
         jdk.incubator.vector, // participates in preview features
-        jdk.jdi,
-        jdk.jfr,
-        jdk.jshell,
-        jdk.management;
+        jdk.jartool, // participates in preview features
+        jdk.jshell;
     exports jdk.internal.access to
         java.desktop,
         java.logging,
@@ -190,14 +186,23 @@ module java.base {
         jdk.jlink;
     exports jdk.internal.logger to
         java.logging;
-    exports jdk.internal.org.objectweb.asm to
+    exports jdk.internal.classfile to
         jdk.jartool,
-        jdk.jfr,
         jdk.jlink,
         jdk.jshell;
-    exports jdk.internal.org.objectweb.asm.tree to
-        jdk.jfr,
+    exports jdk.internal.classfile.attribute to
+        jdk.jartool,
         jdk.jlink;
+    exports jdk.internal.classfile.constantpool to
+        jdk.jartool,
+        jdk.jlink;
+    exports jdk.internal.classfile.instruction to
+        jdk.jlink,
+        jdk.jshell;
+    exports jdk.internal.org.objectweb.asm to
+        jdk.jfr;
+    exports jdk.internal.org.objectweb.asm.tree to
+        jdk.jfr;
     exports jdk.internal.org.objectweb.asm.util to
         jdk.jfr;
     exports jdk.internal.org.objectweb.asm.commons to
@@ -254,7 +259,8 @@ module java.base {
         jdk.incubator.concurrent,
         jdk.internal.jvmstat,
         jdk.management,
-        jdk.management.agent;
+        jdk.management.agent,
+        jdk.internal.vm.ci;
     exports jdk.internal.vm.annotation to
         java.instrument,
         jdk.internal.vm.ci,
@@ -264,8 +270,6 @@ module java.base {
         jdk.unsupported;
     exports jdk.internal.vm.vector to
         jdk.incubator.vector;
-    exports jdk.internal.util.jar to
-        jdk.jartool;
     exports jdk.internal.util.xml to
         jdk.jfr;
     exports jdk.internal.util.xml.impl to
@@ -273,7 +277,12 @@ module java.base {
     exports jdk.internal.util.random to
         jdk.random;
     exports jdk.internal.util to
-        java.desktop;
+        java.desktop,
+        java.prefs,
+        java.security.jgss,
+        java.smartcardio,
+        jdk.charsets,
+        jdk.net;
     exports sun.net to
         java.net.http,
         jdk.naming.dns;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -342,7 +342,6 @@ public final class Instant
      *
      * @param epochMilli  the number of milliseconds from 1970-01-01T00:00:00Z
      * @return an instant, not null
-     * @throws DateTimeException if the instant exceeds the maximum or minimum instant
      */
     public static Instant ofEpochMilli(long epochMilli) {
         long secs = Math.floorDiv(epochMilli, 1000);
@@ -425,7 +424,6 @@ public final class Instant
      * @param nanos  the nanoseconds within the second, must be positive
      */
     private Instant(long epochSecond, int nanos) {
-        super();
         this.seconds = epochSecond;
         this.nanos = nanos;
     }

@@ -33,6 +33,8 @@
 
 #if (defined(__GNUC__) && !defined(__clang__)) || __has_attribute(visibility)
 #define ATTRIBUTE_DEFAULT_VISIBILITY __attribute__((visibility("default")))
+#elif defined(_MSC_VER)
+#define ATTRIBUTE_DEFAULT_VISIBILITY __declspec(dllexport)
 #else
 #define ATTRIBUTE_DEFAULT_VISIBILITY
 #endif
@@ -43,12 +45,18 @@
 #define ATTRIBUTE_USED
 #endif
 
+#if defined(_MSC_VER)
+#define CDECL __cdecl
+#else
+#define CDECL
+#endif
+
 // Override weak symbol exposed by ASan to override default options. This is called by ASan
 // extremely early during library loading, before main is called. We need to override the default
 // options because LSan is enabled by default and Hotspot is not yet compatible with it.
 // Additionally we need to prevent ASan from handling SIGSEGV, so that Hotspot's crash handler is
 // used. You can override these options by setting the environment variable ASAN_OPTIONS.
-ATTRIBUTE_DEFAULT_VISIBILITY ATTRIBUTE_USED const char* __asan_default_options() {
+ATTRIBUTE_DEFAULT_VISIBILITY ATTRIBUTE_USED const char* CDECL __asan_default_options() {
   return
 #ifdef LEAK_SANITIZER
     "leak_check_at_exit=0,"

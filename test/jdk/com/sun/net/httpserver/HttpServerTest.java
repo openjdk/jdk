@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,7 @@ public class HttpServerTest implements HttpHandler {
         sendHttpStatusCode(HTTP_STATUS_CODE_OK, ex);
 
         System.out.println("Stopping server ...");
-        server.stop(1);
+        server.stop(0);
         serverStopped.countDown();
     }
 

@@ -209,7 +209,7 @@ public class IndexWriter extends HtmlDocletWriter {
             case ANNOTATION_TYPE:
             case INTERFACE:
                 dt = HtmlTree.DT(getLink(new HtmlLinkInfo(configuration,
-                        HtmlLinkInfo.Kind.LINK_TYPE_PARAMS_AND_BOUNDS, (TypeElement) element).style(HtmlStyle.typeNameLink)));
+                        HtmlLinkInfo.Kind.SHOW_TYPE_PARAMS_IN_LABEL, (TypeElement) element).style(HtmlStyle.typeNameLink)));
                 dt.add(" - ");
                 addClassInfo((TypeElement) element, dt);
                 break;

@@ -25,18 +25,10 @@
  * @test
  * @summary Checks correct handling of Publishers that call onComplete without demand
  * @library /test/lib /test/jdk/java/net/httpclient/lib
- * @build jdk.httpclient.test.lib.http2.Http2TestServer jdk.test.lib.net.SimpleSSLContext
+ * @build jdk.httpclient.test.lib.common.HttpServerAdapters jdk.test.lib.net.SimpleSSLContext
  * @run testng/othervm CustomRequestPublisher
  */
 
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
-import com.sun.net.httpserver.HttpServer;
-import com.sun.net.httpserver.HttpsConfigurator;
-import com.sun.net.httpserver.HttpsServer;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
@@ -55,9 +47,8 @@ import javax.net.ssl.SSLSession;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import jdk.httpclient.test.lib.http2.Http2TestServer;
-import jdk.httpclient.test.lib.http2.Http2TestExchange;
-import jdk.httpclient.test.lib.http2.Http2Handler;
+
+import jdk.httpclient.test.lib.common.HttpServerAdapters;
 import jdk.test.lib.net.SimpleSSLContext;
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
@@ -72,13 +63,13 @@ import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 
-public class CustomRequestPublisher {
+public class CustomRequestPublisher implements HttpServerAdapters {
 
     SSLContext sslContext;
-    HttpServer httpTestServer;         // HTTP/1.1    [ 4 servers ]
-    HttpsServer httpsTestServer;       // HTTPS/1.1
-    Http2TestServer http2TestServer;   // HTTP/2 ( h2c )
-    Http2TestServer https2TestServer;  // HTTP/2 ( h2  )
+    HttpTestServer httpTestServer;    // HTTP/1.1        [ 4 servers ]
+    HttpTestServer httpsTestServer;   // HTTPS/1.1
+    HttpTestServer http2TestServer;   // HTTP/2 ( h2c )
+    HttpTestServer https2TestServer;  // HTTP/2 ( h2  )
     String httpURI;
     String httpsURI;
     String http2URI;
@@ -311,11 +302,6 @@ public class CustomRequestPublisher {
         }
     }
 
-    static String serverAuthority(HttpServer server) {
-        return InetAddress.getLoopbackAddress().getHostName() + ":"
-                + server.getAddress().getPort();
-    }
-
     @BeforeTest
     public void setup() throws Exception {
         sslContext = new SimpleSSLContext().get();
@@ -323,21 +309,20 @@ public class CustomRequestPublisher {
             throw new AssertionError("Unexpected null sslContext");
 
         InetSocketAddress sa = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
-        httpTestServer = HttpServer.create(sa, 0);
-        httpTestServer.createContext("/http1/echo", new Http1EchoHandler());
-        httpURI = "http://" + serverAuthority(httpTestServer) + "/http1/echo";
+        httpTestServer = HttpTestServer.create(HTTP_1_1);
+        httpTestServer.addHandler(new HttpTestEchoHandler(), "/http1/echo");
+        httpURI = "http://" + httpTestServer.serverAuthority() + "/http1/echo";
 
-        httpsTestServer = HttpsServer.create(sa, 0);
-        httpsTestServer.setHttpsConfigurator(new HttpsConfigurator(sslContext));
-        httpsTestServer.createContext("/https1/echo", new Http1EchoHandler());
-        httpsURI = "https://" + serverAuthority(httpsTestServer) + "/https1/echo";
+        httpsTestServer = HttpTestServer.create(HTTP_1_1, sslContext);
+        httpsTestServer.addHandler(new HttpTestEchoHandler(), "/https1/echo");
+        httpsURI = "https://" + httpsTestServer.serverAuthority() + "/https1/echo";
 
-        http2TestServer = new Http2TestServer("localhost", false, 0);
-        http2TestServer.addHandler(new Http2EchoHandler(), "/http2/echo");
+        http2TestServer = HttpTestServer.create(HTTP_2);
+        http2TestServer.addHandler(new HttpTestEchoHandler(), "/http2/echo");
         http2URI = "http://" + http2TestServer.serverAuthority() + "/http2/echo";
 
-        https2TestServer = new Http2TestServer("localhost", true, sslContext);
-        https2TestServer.addHandler(new Http2EchoHandler(), "/https2/echo");
+        https2TestServer = HttpTestServer.create(HTTP_2, sslContext);
+        https2TestServer.addHandler(new HttpTestEchoHandler(), "/https2/echo");
         https2URI = "https://" + https2TestServer.serverAuthority() + "/https2/echo";
 
         httpTestServer.start();
@@ -348,33 +333,10 @@ public class CustomRequestPublisher {
 
     @AfterTest
     public void teardown() throws Exception {
-        httpTestServer.stop(0);
-        httpsTestServer.stop(0);
+        httpTestServer.stop();
+        httpsTestServer.stop();
         http2TestServer.stop();
         https2TestServer.stop();
     }
 
-    static class Http1EchoHandler implements HttpHandler {
-        @Override
-        public void handle(HttpExchange t) throws IOException {
-            try (InputStream is = t.getRequestBody();
-                 OutputStream os = t.getResponseBody()) {
-                byte[] bytes = is.readAllBytes();
-                t.sendResponseHeaders(200, bytes.length);
-                os.write(bytes);
-            }
-        }
-    }
-
-    static class Http2EchoHandler implements Http2Handler {
-        @Override
-        public void handle(Http2TestExchange t) throws IOException {
-            try (InputStream is = t.getRequestBody();
-                 OutputStream os = t.getResponseBody()) {
-                byte[] bytes = is.readAllBytes();
-                t.sendResponseHeaders(200, bytes.length);
-                os.write(bytes);
-            }
-        }
-    }
 }

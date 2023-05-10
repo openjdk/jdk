@@ -26,10 +26,10 @@
 
 #include "register_x86.hpp"
 
-Register::RegisterImpl           all_RegisterImpls     [Register::number_of_registers      + 1];
-FloatRegister::FloatRegisterImpl all_FloatRegisterImpls[FloatRegister::number_of_registers + 1];
-XMMRegister::XMMRegisterImpl     all_XMMRegisterImpls  [XMMRegister::number_of_registers   + 1];
-KRegister::KRegisterImpl         all_KRegisterImpls    [KRegister::number_of_registers     + 1];
+const Register::RegisterImpl           all_RegisterImpls     [Register::number_of_registers      + 1];
+const FloatRegister::FloatRegisterImpl all_FloatRegisterImpls[FloatRegister::number_of_registers + 1];
+const XMMRegister::XMMRegisterImpl     all_XMMRegisterImpls  [XMMRegister::number_of_registers   + 1];
+const KRegister::KRegisterImpl         all_KRegisterImpls    [KRegister::number_of_registers     + 1];
 
 const char * Register::RegisterImpl::name() const {
   static const char *const names[number_of_registers] = {
@@ -63,7 +63,7 @@ const char* XMMRegister::XMMRegisterImpl::name() const {
 }
 
 const char* KRegister::KRegisterImpl::name() const {
-  const char* names[number_of_registers] = {
+  const char *const names[number_of_registers] = {
     "k0", "k1", "k2", "k3", "k4", "k5", "k6", "k7"
   };
   return is_valid() ? names[encoding()] : "knoreg";
