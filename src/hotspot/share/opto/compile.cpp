@@ -633,8 +633,8 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
                   _Compile_types(mtCompiler),
                   _initial_gvn(nullptr),
                   _igvn_worklist(nullptr),
-                  _type_array(nullptr),
-                  _node_hash_table(nullptr),
+                  _types(nullptr),
+                  _node_hash(nullptr),
                   _late_inlines(comp_arena(), 2, 0, nullptr),
                   _string_late_inlines(comp_arena(), 2, 0, nullptr),
                   _boxing_late_inlines(comp_arena(), 2, 0, nullptr),
@@ -712,8 +712,8 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
   uint estimated_size = method()->code_size()*4+64;
   estimated_size = (estimated_size < MINIMUM_NODE_HASH ? MINIMUM_NODE_HASH : estimated_size);
   _igvn_worklist = new (comp_arena()) Unique_Node_List(comp_arena());
-  _type_array = new (comp_arena()) Type_Array(comp_arena());
-  _node_hash_table = new (comp_arena()) NodeHash(comp_arena(), estimated_size);
+  _types = new (comp_arena()) Type_Array(comp_arena());
+  _node_hash = new (comp_arena()) NodeHash(comp_arena(), estimated_size);
   PhaseGVN gvn;
   set_initial_gvn(&gvn);
 
@@ -922,8 +922,8 @@ Compile::Compile( ciEnv* ci_env,
     _Compile_types(mtCompiler),
     _initial_gvn(nullptr),
     _igvn_worklist(nullptr),
-    _type_array(nullptr),
-    _node_hash_table(nullptr),
+    _types(nullptr),
+    _node_hash(nullptr),
     _number_of_mh_late_inlines(0),
     _print_inlining_stream(new (mtCompiler) stringStream()),
     _print_inlining_list(nullptr),
@@ -956,8 +956,8 @@ Compile::Compile( ciEnv* ci_env,
   init_tf((*generator)());
 
   _igvn_worklist = new (comp_arena()) Unique_Node_List(comp_arena());
-  _type_array = new (comp_arena()) Type_Array(comp_arena());
-  _node_hash_table = new (comp_arena()) NodeHash(comp_arena(), 255);
+  _types = new (comp_arena()) Type_Array(comp_arena());
+  _node_hash = new (comp_arena()) NodeHash(comp_arena(), 255);
   {
     PhaseGVN gvn;
     set_initial_gvn(&gvn);    // not significant, but GraphKit guys use it pervasively
@@ -2440,7 +2440,7 @@ void Compile::Optimize() {
 
  // We will never use the NodeHash table any more. Clear it so that final_graph_reshaping does not have
  // to remove hashes to unlock nodes for modifications.
- C->node_hash_table().clear();
+ C->node_hash()->clear();
 
  // A method with only infinite loops has no edges entering loops from root
  {

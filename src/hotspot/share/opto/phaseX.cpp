@@ -418,8 +418,8 @@ PhaseRenumberLive::PhaseRenumberLive(PhaseGVN* gvn,
   assert(RenumberLiveNodes, "RenumberLiveNodes must be set to true for node renumbering to take place");
   assert(C->live_nodes() == _useful.size(), "the number of live nodes must match the number of useful nodes");
   assert(_delayed.size() == 0, "should be empty");
-  assert(&worklist == &C->igvn_worklist(), "sanity");
-  assert(&gvn->types() == &C->type_array(), "sanity");
+  assert(&worklist == &C->igvn_worklist(), "reference still same as the one from Compile");
+  assert(&gvn->types() == C->types(), "reference still same as that from Compile");
 
   GrowableArray<Node_Notes*>* old_node_note_array = C->node_note_array();
   if (old_node_note_array != nullptr) {

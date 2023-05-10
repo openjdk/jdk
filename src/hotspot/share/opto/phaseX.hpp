@@ -227,10 +227,10 @@ class PhaseValues : public PhaseTransform {
 protected:
   bool      _iterGVN;
 
-  // Hash table for value-numbering. Reference to "C->node_hash_table()",
+  // Hash table for value-numbering. Reference to "C->node_hash()",
   NodeHash &_table;
 
-  // Type array mapping node idx to Type*. Reference to "C->type_array()".
+  // Type array mapping node idx to Type*. Reference to "C->types()".
   Type_Array &_types;
 
   // ConNode caches:
@@ -249,7 +249,7 @@ protected:
 
 public:
   PhaseValues() : PhaseTransform(GVN), _iterGVN(false),
-                  _table(C->node_hash_table()), _types(C->type_array())
+                  _table(*C->node_hash()), _types(*C->types())
   {
     NOT_PRODUCT( clear_new_values(); )
     // Force allocation for currently existing nodes
