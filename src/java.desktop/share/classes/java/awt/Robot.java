@@ -431,9 +431,6 @@ public class Robot {
      * then a {@code SecurityException} may be thrown,
      * or the content of the returned {@code Color} is undefined.
      * <p>
-     * The {@link #revokeScreenCapturePermission()} can be used to revoke
-     * a previously granted permission.
-     * <p>
      * @apiNote It is recommended to avoid calling this method on
      * the AWT Event Dispatch Thread since screen capture may be a lengthy
      * operation, particularly if acquiring permissions is needed and involves
@@ -460,9 +457,6 @@ public class Robot {
      * to capture screen content, and the required permissions are not granted,
      * then a {@code SecurityException} may be thrown,
      * or the contents of the returned {@code BufferedImage} are undefined.
-     * <p>
-     * The {@link #revokeScreenCapturePermission()} can be used to revoke
-     * a previously granted permission.
      * <p>
      * @apiNote It is recommended to avoid calling this method on
      * the AWT Event Dispatch Thread since screen capture may be a lengthy
@@ -657,19 +651,6 @@ public class Robot {
         if (security != null) {
             security.checkPermission(AWTPermissions.READ_DISPLAY_PIXELS_PERMISSION);
         }
-    }
-
-    /**
-     * Revokes the stored permission to capture screen data,
-     * if the desktop environment requires that permissions be granted
-     * to capture screen content. Does nothing otherwise.
-     * <p>
-     * Subsequent calls to {@link #getPixelColor(int, int)}
-     * and {@link #createScreenCapture(Rectangle)} may request
-     * a new permission from the user.
-     */
-    public void revokeScreenCapturePermission() {
-        peer.revokeScreenCapturePermission();
     }
 
     /*
