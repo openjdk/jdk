@@ -312,7 +312,7 @@ oop oopDesc::forward_to_self_atomic(markWord compare, atomic_memory_order order)
       m = m.displaced_mark_helper();
     }
     m = m.set_self_forwarded();
-    assert(forwardee(m) == cast_to_oop(this), "encoding must be reversable");
+    assert(forwardee(m) == cast_to_oop(this), "encoding must be reversible");
     markWord old_mark = cas_set_mark(m, compare, order);
     if (old_mark == compare) {
       return nullptr;
