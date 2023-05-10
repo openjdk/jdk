@@ -56,12 +56,21 @@
   #if __ibmxl_version__ < 16
   #error "xlc < 16 not supported"
   #endif
+#elif defined(__open_xl_version__)
+  #if __open_xl_version__ < 17
+  #error "xlc < 16 not supported"
+  #endif
 #else
-  #error "xlc < 16 not supported, macro __ibmxl_version__ not found"
+  #error "xlc < 16 not supported, macro __ibmxl_version__ or __open_xl_version__ not found"
 #endif
 
 #ifndef _AIX
 #error "missing AIX-specific definition _AIX"
+#endif
+
+// Shortcut for the new xlc 17 compiler
+#if defined(AIX) && defined(__open_xl_version__) && __open_xl_version__ >= 17
+#define AIX_XLC_GE_17
 #endif
 
 // Use XLC compiler builtins instead of inline assembler

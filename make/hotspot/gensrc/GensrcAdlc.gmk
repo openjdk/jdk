@@ -37,8 +37,13 @@ ifeq ($(call check-jvm-feature, compiler2), true)
   ifeq ($(call isBuildOs, linux), true)
     ADLC_CFLAGS := -fno-exceptions -DLINUX
   else ifeq ($(call isBuildOs, aix), true)
-    ADLC_LDFLAGS += -q64
-    ADLC_CFLAGS := -qnortti -qeh -q64 -DAIX
+    ifeq ($(TOOLCHAIN_TYPE), clang)
+      ADLC_LDFLAGS += -m64
+      ADLC_CFLAGS := -fno-rtti -fexceptions -ffunction-sections -m64 -DAIX
+    else
+      ADLC_LDFLAGS += -q64
+      ADLC_CFLAGS := -qnortti -qeh -q64 -DAIX
+    endif
   else ifeq ($(call isBuildOs, windows), true)
     ADLC_LDFLAGS += -nologo
     ADLC_CFLAGS := -nologo -EHsc
