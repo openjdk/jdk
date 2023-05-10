@@ -26,6 +26,7 @@
 #define SHARE_OOPS_FIELDINFO_HPP
 
 #include "memory/allocation.hpp"
+#include "oops/metadataFlags.hpp"
 #include "oops/typeArrayOop.hpp"
 #include "utilities/unsigned5.hpp"
 #include "utilities/vmEnums.hpp"
@@ -281,7 +282,7 @@ class FieldInfoStream : AllStatic {
   static void print_from_fieldinfo_stream(Array<u1>* fis, outputStream* os, ConstantPool* cp);
 };
 
-class FieldStatus {
+class FieldStatus : public MetadataFlags {
   enum FieldStatusBitPosition {
     _fs_access_watched,       // field access is watched by JVMTI
     _fs_modification_watched, // field modification is watched by JVMTI
@@ -294,9 +295,6 @@ class FieldStatus {
   bool test_flag(FieldStatusBitPosition pos) { return (_flags & flag_mask(pos)) != 0; }
   // this performs an atomic update on a live status byte!
   void update_flag(FieldStatusBitPosition pos, bool z);
-  // out-of-line functions do a CAS-loop
-  static void atomic_set_bits(u1& flags, u1 mask);
-  static void atomic_clear_bits(u1& flags, u1 mask);
 
   public:
   FieldStatus() { _flags = 0; }

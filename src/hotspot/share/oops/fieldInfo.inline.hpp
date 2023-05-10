@@ -150,26 +150,6 @@ inline FieldInfoReader& FieldInfoReader::set_position_and_next_index(int positio
   return *this;
 }
 
-inline void FieldStatus::atomic_set_bits(u1& flags, u1 mask) {
-  // Atomically update the flags with the bits given
-  u1 old_flags, new_flags, witness;
-  do {
-    old_flags = flags;
-    new_flags = old_flags | mask;
-    witness = Atomic::cmpxchg(&flags, old_flags, new_flags);
-  } while (witness != old_flags);
-}
-
-inline void FieldStatus::atomic_clear_bits(u1& flags, u1 mask) {
-  // Atomically update the flags with the bits given
-  u1 old_flags, new_flags, witness;
-  do {
-    old_flags = flags;
-    new_flags = old_flags & ~mask;
-    witness = Atomic::cmpxchg(&flags, old_flags, new_flags);
-  } while (witness != old_flags);
-}
-
 inline void FieldStatus::update_flag(FieldStatusBitPosition pos, bool z) {
   if (z) atomic_set_bits(_flags, flag_mask(pos));
   else atomic_clear_bits(_flags, flag_mask(pos));

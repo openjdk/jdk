@@ -25,6 +25,8 @@
 #ifndef SHARE_OOPS_INSTANCEKLASSFLAGS_HPP
 #define SHARE_OOPS_INSTANCEKLASSFLAGS_HPP
 
+#include "oops/metadataFlags.hpp"
+
 class ClassLoaderData;
 
 // The InstanceKlassFlags class contains the parse-time and writeable flags associated with
@@ -33,7 +35,7 @@ class ClassLoaderData;
 // require atomic access.
 // These flags are JVM internal and not part of the AccessFlags classfile specification.
 
-class InstanceKlassFlags {
+class InstanceKlassFlags : public MetadataFlags {
   friend class VMStructs;
   friend class JVMCIVMStructs;
 
@@ -113,16 +115,14 @@ class InstanceKlassFlags {
   bool name() const { return (_status & _misc_##name) != 0; } \
   void set_##name(bool b) {         \
     if (b) { \
-      atomic_set_bits(_misc_##name); \
+      atomic_set_bits(_status, _misc_##name); \
     } else { \
-      atomic_clear_bits(_misc_##name); \
+      atomic_clear_bits(_status, _misc_##name); \
     } \
   }
   IK_STATUS_DO(IK_STATUS_GET_SET)
 #undef IK_STATUS_GET_SET
 
-  void atomic_set_bits(u1 bits);
-  void atomic_clear_bits(u1 bits);
   void print_on(outputStream* st) const;
 };
 
