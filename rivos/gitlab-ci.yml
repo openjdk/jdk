@@ -8,6 +8,7 @@ variables:
   CACHE_VERSION: "v6"
   BUILD_JDK_VERSION: 20
   BINUTILS_DIR: binutils-2.38
+  GTEST_TAG: v1.13.0
 
 prepare-version:
   after_script:
@@ -77,6 +78,8 @@ create-sysroot-riscv64:
 .build-linux:
   stage: build
   image: ubuntu:20.04
+  variables:
+    CONF_NAME: linux-${PKG_ARCH}-${DEBUG_LEVEL}
   script:
     - apt-get update
     - |
@@ -87,6 +90,7 @@ create-sysroot-riscv64:
         file                                                                   \
         g++                                                                    \
         gcc                                                                    \
+        git                                                                    \
         $(test "${PKG_ARCH}" = "riscv64" && echo "g++-riscv64-linux-gnu" || true) \
         $(test "${PKG_ARCH}" = "riscv64" && echo "gcc-riscv64-linux-gnu" || true) \
         unzip                                                                  \
@@ -100,11 +104,12 @@ create-sysroot-riscv64:
       mkdir ${BINUTILS_DIR}
       curl -L https://ftp.gnu.org/gnu/binutils/${BINUTILS_DIR}.tar.gz \
         | tar -xzf - -C ${BINUTILS_DIR} --strip-components 1
+    - git clone https://github.com/google/googletest.git -b ${GTEST_TAG} googletest
     - |
       bash configure                                                           \
         --with-debug-level=${DEBUG_LEVEL}                                      \
         --openjdk-target=${PKG_ARCH}-linux-gnu                                 \
-        --with-conf-name=linux-${PKG_ARCH}-${DEBUG_LEVEL}                      \
+        --with-conf-name=${CONF_NAME}                                          \
         --with-vendor-name="Rivos Inc"                                         \
         --with-version-pre="${JDK_VERSION_PRE}"                                \
         --with-version-opt="${JDK_VERSION_OPT}"                                \
@@ -112,16 +117,20 @@ create-sysroot-riscv64:
         --with-boot-jdk=/usr/lib/jvm/temurin-${BUILD_JDK_VERSION}              \
         --disable-precompiled-headers                                          \
         --with-zlib=system                                                     \
+        --with-gtest=$(pwd)/googletest                                         \
         --with-hsdis=binutils                                                  \
         --with-binutils-src=${BINUTILS_DIR}                                    \
         --enable-hsdis-bundling
-    - make ${MAKE_TARGETS} LOG_LEVEL=info
+    - make jdk-image test-image LOG_LEVEL=info
   artifacts:
     when: always
     paths:
-      - config.log # in case of error during configure
-      - build/linux-${PKG_ARCH}-${DEBUG_LEVEL}/images/jdk
-      - build/linux-${PKG_ARCH}-${DEBUG_LEVEL}/images/test
+      - build/${CONF_NAME}/*.log
+      - build/${CONF_NAME}/Makefile
+      - build/${CONF_NAME}/make-support
+      - build/${CONF_NAME}/*.gmk
+      - build/${CONF_NAME}/images/jdk
+      - build/${CONF_NAME}/images/test
 
 build-linux-amd64-fastdebug:
   extends: .build-linux
@@ -133,7 +142,6 @@ build-linux-amd64-fastdebug:
     - create-sysroot-amd64
   variables:
     PKG_ARCH: amd64
-    MAKE_TARGETS: jdk-image test-image
     DEBUG_LEVEL: fastdebug
 
 build-linux-riscv64-fastdebug:
@@ -146,7 +154,6 @@ build-linux-riscv64-fastdebug:
     - create-sysroot-riscv64
   variables:
     PKG_ARCH: riscv64
-    MAKE_TARGETS: jdk-image test-image
     DEBUG_LEVEL: fastdebug
 
 build-linux-amd64-release:
@@ -159,7 +166,6 @@ build-linux-amd64-release:
     - create-sysroot-amd64
   variables:
     PKG_ARCH: amd64
-    MAKE_TARGETS: jdk-image
     DEBUG_LEVEL: release
 
 build-linux-riscv64-release:
@@ -172,8 +178,86 @@ build-linux-riscv64-release:
     - create-sysroot-riscv64
   variables:
     PKG_ARCH: riscv64
-    MAKE_TARGETS: jdk-image test-image
     DEBUG_LEVEL: release
+
+.run-gtests:
+  stage: test
+  # image set in jobs that extend this
+  variables:
+    CONF_NAME: linux-${PKG_ARCH}-${DEBUG_LEVEL}
+  script:
+    - apt-get update
+    - |
+      apt-get install -y                                                       \
+        build-essential                                                        \
+        curl                                                                   \
+        git
+    - |
+      mkdir -p /usr/lib/jvm/temurin-${BUILD_JDK_VERSION}
+      curl -L https://api.adoptium.net/v3/binary/latest/${BUILD_JDK_VERSION}/ea/linux/x64/jdk/hotspot/normal/eclipse\?project\=jdk \
+        | tar -xzf - -C /usr/lib/jvm/temurin-${BUILD_JDK_VERSION} --strip-components 1
+    - git clone https://github.com/google/googletest.git -b ${GTEST_TAG} googletest
+    - make test-prebuilt \
+        CONF=${CONF_NAME} \
+        BOOT_JDK=/usr/lib/jvm/temurin-${BUILD_JDK_VERSION} \
+        JDK_IMAGE_DIR=$(pwd)/build/${CONF_NAME}/images/jdk \
+        TEST_IMAGE_DIR=$(pwd)/build/${CONF_NAME}/images/test \
+        JT_HOME=$(pwd)/googletest \
+        TEST="gtest:all"
+
+run-gtests-amd64-fastdebug:
+  extends: .run-gtests
+  image: ubuntu:20.04
+  dependencies:
+    - build-linux-amd64-fastdebug
+    - create-sysroot-amd64
+  needs:
+    - build-linux-amd64-fastdebug
+    - create-sysroot-amd64
+  variables:
+    PKG_ARCH: amd64
+    DEBUG_LEVEL: fastdebug
+
+# the riscv64 gtests jobs are disabled until we figure out how to run them with a more recent qemu
+# run-gtests-riscv64-fastdebug:
+#   extends: .run-gtests
+#   image: gitlab.ba.rivosinc.com:5050/rv/it/int/rivos-sdk:22.04-riscv64
+#   dependencies:
+#     - build-linux-riscv64-fastdebug
+#     - create-sysroot-riscv64
+#   needs:
+#     - build-linux-riscv64-fastdebug
+#     - create-sysroot-riscv64
+#   variables:
+#     PKG_ARCH: riscv64
+#     DEBUG_LEVEL: fastdebug
+
+run-gtests-amd64-release:
+  extends: .run-gtests
+  image: ubuntu:20.04
+  dependencies:
+    - build-linux-amd64-release
+    - create-sysroot-amd64
+  needs:
+    - build-linux-amd64-release
+    - create-sysroot-amd64
+  variables:
+    PKG_ARCH: amd64
+    DEBUG_LEVEL: release
+
+# the riscv64 gtests jobs are disabled until we figure out how to run them with a more recent qemu
+# run-gtests-riscv64-release:
+#   extends: .run-gtests
+#   image: gitlab.ba.rivosinc.com:5050/rv/it/int/rivos-sdk:22.04-riscv64
+#   dependencies:
+#     - build-linux-riscv64-release
+#     - create-sysroot-riscv64
+#   needs:
+#     - build-linux-riscv64-release
+#     - create-sysroot-riscv64
+#   variables:
+#     PKG_ARCH: riscv64
+#     DEBUG_LEVEL: release
 
 package-tar:
   stage: deploy
