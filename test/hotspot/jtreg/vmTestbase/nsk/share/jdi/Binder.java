@@ -751,8 +751,6 @@ public class Binder extends DebugeeBinder {
 
         boolean vthreadMode = "Virtual".equals(System.getProperty("main.wrapper"));
         if (vthreadMode) {
-            /* Need --enable-preview on the debuggee in order to support virtual threads. */
-            vmArgs += " --enable-preview";
             /* Some tests need more carrier threads than the default provided. */
             vmArgs += " -Djdk.virtualThreadScheduler.parallelism=15";
         }

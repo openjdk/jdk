@@ -153,7 +153,6 @@ public class BindServer implements Finalizable {
 
         registerCleanup();
 
-
         logger.trace(TRACE_LEVEL_THREADS, "BindServer: starting main thread");
 
         logger.display("Listening to port: " + argHandler.getBindPortNumber());
@@ -407,6 +406,7 @@ public class BindServer implements Finalizable {
      *
      * @see #close()
      */
+    @Override
     public void cleanup() {
         close();
     }
