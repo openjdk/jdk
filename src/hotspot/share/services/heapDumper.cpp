@@ -861,7 +861,7 @@ class DumperController : public CHeapObj<mtInternal> {
    void wait_all_dumpers_complete() {
      MonitorLocker ml(_lock, Mutex::_no_safepoint_check_flag);
      while (_complete_number != _dumper_number) {
-        ml.wait();
+      ml.wait();
      }
    }
 };
@@ -1495,12 +1495,7 @@ int HeapDumper::dump(const char* path, outputStream* out, int compression, bool 
 
   // generate the segmented heap dump into separate files
   VM_HeapDumper dumper(&writer, _gc_before_heap_dump, _oome, num_dump_threads);
-  if (Thread::current()->is_VM_thread()) {
-    assert(SafepointSynchronize::is_at_safepoint(), "Expected to be called at a safepoint");
-    dumper.doit();
-  } else {
-    VMThread::execute(&dumper);
-  }
+  VMThread::execute(&dumper);
 
   // record any error that the writer may have encountered
   set_error(writer.error());
