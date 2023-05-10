@@ -453,8 +453,7 @@ public class Robot {
     }
 
     /**
-     * Creates an image containing pixels read from the screen.  This image does
-     * not include the mouse cursor.
+     * Creates an image containing pixels read from the screen.
      * <p>
      * If the desktop environment requires that permissions be granted
      * to capture screen content, and the required permissions are not granted,
@@ -485,7 +484,6 @@ public class Robot {
 
     /**
      * Creates an image containing pixels read from the screen.
-     * This image does not include the mouse cursor.
      * This method can be used in case there is a scaling transform
      * from user space to screen (device) space.
      * Typically this means that the display is a high resolution screen,
