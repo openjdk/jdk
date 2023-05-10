@@ -226,10 +226,10 @@ public class Robot {
 
     /**
      * Moves mouse pointer to given screen coordinates.
-     * @implNote the mouse pointer may not visually move on some platforms,
-     *           such as Linux systems using Wayland, while the subsequent
-     *           mousePress and mouseRelease can be delivered to
-     *           the correct location
+     * <p>
+     * The mouse pointer may not visually move on some platforms,
+     * while the subsequent mousePress and mouseRelease can be
+     * delivered to the correct location
      *
      * @param x         X position
      * @param y         Y position
@@ -439,7 +439,7 @@ public class Robot {
      * @param   x       X position of pixel
      * @param   y       Y position of pixel
      * @throws  SecurityException if {@code readDisplayPixels} permission
-     *          is not granted, or user has not allowed any of his screens
+     *          is not granted, or the user has not allowed any of their screens
      *          to be captured.
      * @return  Color of the pixel
      */
@@ -468,7 +468,7 @@ public class Robot {
      * @throws  IllegalArgumentException if {@code screenRect} width and height
      *          are not greater than zero
      * @throws  SecurityException if {@code readDisplayPixels} permission
-     *          is not granted, or user has not allowed any of his screens
+     *          is not granted, or the user has not allowed any of their screens
      *          to be captured.
      * @see     SecurityManager#checkPermission
      * @see     AWTPermission
