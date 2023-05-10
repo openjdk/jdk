@@ -33,7 +33,6 @@ import java.io.*;
 import java.security.*;
 import java.security.spec.*;
 import java.util.Arrays;
-import java.util.Objects;
 
 /*
  * This class implements the Hierarchical Signature System using the
@@ -43,11 +42,13 @@ public final class HSS extends SignatureSpi {
     private HSSPublicKey pubKey;
     private ByteArrayOutputStream messageStream;
 
+    @Override
     @Deprecated
     protected void engineSetParameter(String param, Object value) {
         throw new InvalidParameterException("No settable parameters exist for HSS/LMS");
     }
 
+    @Override
     @Deprecated
     protected AlgorithmParameters engineGetParameter(String param) {
         throw new InvalidParameterException("No parameters exist for HSS/LMS");
@@ -87,31 +88,28 @@ public final class HSS extends SignatureSpi {
         HSSSignature sig = new HSSSignature(signature, pubKey);
         LMSPublicKey lmsPubKey = pubKey.lmsPublicKey;
         boolean result = true;
-        for (int i = 0; i < sig.Nspk; i++) {
-            byte[] keyArr = sig.pubList[i].keyArray();
-            result &= LMSUtils.lmsVerify(lmsPubKey, sig.siglist[i], keyArr);
-            lmsPubKey = sig.pubList[i];
-        }
+        try {
+            for (int i = 0; i < sig.Nspk; i++) {
+                byte[] keyArr = sig.pubList[i].keyArray();
+                result &= LMSUtils.lmsVerify(lmsPubKey, sig.siglist[i], keyArr);
+                lmsPubKey = sig.pubList[i];
+            }
 
-        result &= LMSUtils.lmsVerify(lmsPubKey, sig.siglist[sig.Nspk], messageStream.toByteArray());
-        messageStream.reset();
+            result &= LMSUtils.lmsVerify(lmsPubKey, sig.siglist[sig.Nspk], messageStream.toByteArray());
+        } finally {
+            messageStream.reset();
+        }
         return result;
     }
 
-    static class LMSPublicKey implements Serializable {
-        @java.io.Serial
-        private static final long serialVersionUID = 21L;
+    static class LMSPublicKey {
         final int type;
         final int otsType;
-        final transient LMSParams lmsParams;
+        final LMSParams lmsParams;
         private final byte[] I;
         private final byte[] T1;
 
-        public static LMSPublicKey of(byte[] keyArray) throws InvalidKeyException {
-            return new LMSPublicKey(keyArray, 0, true);
-        }
-
-        public LMSPublicKey(byte[] keyArray, int offset, boolean checkExactLength) throws InvalidKeyException {
+        LMSPublicKey(byte[] keyArray, int offset, boolean checkExactLength) throws InvalidKeyException {
             int inLen = keyArray.length - offset;
             if (inLen < 8) {
                 throw new InvalidKeyException("LMS public key is too short");
@@ -172,11 +170,39 @@ public final class HSS extends SignatureSpi {
         final static int LMS_SHA256_M32_H20 = 8;
         final static int LMS_SHA256_M32_H25 = 9;
 
+        static String lmsType(int type) {
+            String typeStr;
+            switch (type) {
+                case LMS_RESERVED: typeStr = "LMS_RESERVED"; break;
+                case LMS_SHA256_M32_H5: typeStr = "LMS_SHA256_M32_H5"; break;
+                case LMS_SHA256_M32_H10: typeStr = "LMS_SHA256_M32_H10"; break;
+                case LMS_SHA256_M32_H15: typeStr = "LMS_SHA256_M32_H15"; break;
+                case LMS_SHA256_M32_H20: typeStr = "LMS_SHA256_M32_H20"; break;
+                case LMS_SHA256_M32_H25: typeStr = "LMS_SHA256_M32_H25"; break;
+                default: typeStr = "unrecognized";
+            }
+            return typeStr;
+        }
+
         final static int LMOTS_RESERVED = 0;
         final static int LMOTS_SHA256_N32_W1 = 1;
         final static int LMOTS_SHA256_N32_W2 = 2;
         final static int LMOTS_SHA256_N32_W4 = 3;
         final static int LMOTS_SHA256_N32_W8 = 4;
+
+        static String lmotsType(int type) {
+            String typeStr;
+            switch (type) {
+                case LMOTS_RESERVED: typeStr = "LMOTS_RESERVED"; break;
+                case LMOTS_SHA256_N32_W1: typeStr = "LMOTS_SHA256_N32_W1"; break;
+                case LMOTS_SHA256_N32_W2: typeStr = "LMOTS_SHA256_N32_W2"; break;
+                case LMOTS_SHA256_N32_W4: typeStr = "LMOTS_SHA256_N32_W4"; break;
+                case LMOTS_SHA256_N32_W8: typeStr = "LMOTS_SHA256_N32_W8"; break;
+                default: typeStr = "unrecognized";
+            }
+            return typeStr;
+        }
+
 
         static int fourBytesToInt(byte[] arr, int i) {
             return ((arr[i] & 0xff) << 24) |
@@ -252,8 +278,8 @@ public final class HSS extends SignatureSpi {
     static class LMOTSignature {
         final int otSigType;
         final LMOTSParams lmotsParams;
-        final int n;
-        final int p;
+        private final int n;
+        private final int p;
         private final byte[] C;
         private final byte[][] y;
 
@@ -288,7 +314,6 @@ public final class HSS extends SignatureSpi {
     }
 
     static class LMSParams {
-        final int type;
         final int m; // the number of bytes used from the hash output
         final int hashAlg_m = 32; // output length of the hash function used for the LMS tree
         final int h; // height of the LMS tree
@@ -296,7 +321,6 @@ public final class HSS extends SignatureSpi {
         final String hashAlgStr;
 
         LMSParams(int type, int m, int h, String hashAlgStr) {
-            this.type = type;
             this.m = m;
             this.h = h;
             this.hashAlgStr = hashAlgStr;
@@ -369,10 +393,10 @@ public final class HSS extends SignatureSpi {
             }
 
             LMOTSParams lmotsParams;
-            try {
                 q = LMSUtils.fourBytesToInt(sigArray, offset);
                 qArr = Arrays.copyOfRange(sigArray, offset, offset + 4);
                 sigOtsType = LMSUtils.fourBytesToInt(sigArray, offset + 4);
+            try {
                 lmotsParams = LMOTSParams.of(sigOtsType);
             } catch (IllegalArgumentException e) {
                 throw new SignatureException(e);
@@ -439,14 +463,15 @@ public final class HSS extends SignatureSpi {
         final int p;
         final String hashAlgName;
 
-        // The buffer for the lmotsPubKeyCandidate() function. In that function this buffer is fed into the
-        // hash function as input to the implDigestFixedLengthPreprocessed() function (which is
-        // basically an allocation and padding computation free digest() function, so we can avoid the
-        // update()-digest() sequence) which is parametrized so that the digest output is copied back into this buffer.
+        // The initial buffer image for the lmotsPubKeyCandidate() function.
+        // In that function a clone of this buffer is fed into the hash function as input to the
+        // implDigestFixedLengthPreprocessed() function (which is basically an allocation and
+        // padding computation free digest() function, so we can avoid the update()-digest() sequence)
+        // which is parametrized so that the digest output is copied back into the buffer.
         // This way, we avoid memory allocations and some computations that would have to be done otherwise.
         final byte[] hashBuf;
         // Precomputed block for SHA256 when the message size is 55 bytes (i.e. when SHA256 is used)
-        final static byte[] hashbufSha256_32 = {
+        private final static byte[] hashbufSha256_32 = {
                 0, 0, 0, 0, 0, 0, 0, 0,
                 0, 0, 0, 0, 0, 0, 0, 0,
                 0, 0, 0, 0, 0, 0, 0, 0,
@@ -457,8 +482,6 @@ public final class HSS extends SignatureSpi {
                 0, 0, 0, 0, 0, 0, 1, (byte) 0xb8
         };
 
-        final SHA2.SHA256 sha256Fix;
-
         private LMOTSParams(int lmotSigType, int hLen, int w, int ls, int p, String hashAlgName) {
             this.lmotSigType = lmotSigType;
             this.n = hLen;
@@ -468,11 +491,6 @@ public final class HSS extends SignatureSpi {
             twoPowWMinus1 = (1 << w) - 1;
             this.hashAlgName = hashAlgName;
             hashBuf = hashbufSha256_32;
-            if (Objects.equals(hashAlgName, "SHA-256")) {
-                sha256Fix = new SHA2.SHA256();
-            } else {
-                sha256Fix = null;
-            }
         }
 
         static LMOTSParams of(int lmotsType) {
@@ -513,11 +531,10 @@ public final class HSS extends SignatureSpi {
         }
 
         void digestFixedLengthPreprocessed(
-                byte[] input, int inLen, byte[] output, int outOffset, int outLen) {
-            if (sha256Fix != null) {
-                sha256Fix.implDigestFixedLengthPreprocessed(input, inLen, output, outOffset, outLen);
-            }
+                SHA2.SHA256 sha256, byte[] input, int inLen, byte[] output, int outOffset, int outLen) {
+            sha256.implDigestFixedLengthPreprocessed(input, inLen, output, outOffset, outLen);
         }
+
         byte[] lmotsPubKeyCandidate(LMSignature lmSig, byte[] message, LMSPublicKey pKey)
                 throws SignatureException {
             LMOTSignature lmOtSig = lmSig.lmotSig;
@@ -537,7 +554,7 @@ public final class HSS extends SignatureSpi {
             } catch (NoSuchAlgorithmException e) { // This should not happen
                 throw new ProviderException("Digest implementation not found", e);
             }
-            byte[] result = new byte[md.getDigestLength()];
+            byte[] result;
             try {
                 md.update(preQ, 0, 22 + n);
                 md.update(message);
@@ -552,6 +569,7 @@ public final class HSS extends SignatureSpi {
                 preCandidate[21] = (byte) 0x80;
 
                 byte[] preZi = hashBuf.clone();
+                SHA2.SHA256 sha256 = new SHA2.SHA256();
                 pKey.getI(preZi, 0);
                 lmSig.getQArr(preZi, 16);
 
@@ -569,9 +587,9 @@ public final class HSS extends SignatureSpi {
                     for (int j = a; j < twoPowWMinus1; j++) {
                         preZi[22] = (byte) j;
                         if (j < twoPowWMinus2) {
-                            digestFixedLengthPreprocessed(preZi, 64, preZi, 23, n);
+                            digestFixedLengthPreprocessed(sha256, preZi, 64, preZi, 23, n);
                         } else {
-                            digestFixedLengthPreprocessed(preZi, 64, preCandidate, 22 + i * n, n);
+                            digestFixedLengthPreprocessed(sha256, preZi, 64, preCandidate, 22 + i * n, n);
                         }
                     }
                 }
@@ -651,35 +669,58 @@ public final class HSS extends SignatureSpi {
         }
     }
 
-    static class HSSPublicKey extends X509Key implements Length {
+    static class HSSPublicKey extends X509Key implements Serializable {
         @Serial
         private static final long serialVersionUID = 21;
-        final int L;
-        final LMSPublicKey lmsPublicKey;
+        private int L;
+        private transient LMSPublicKey lmsPublicKey;
 
-        @SuppressWarnings("deprecation")
         HSSPublicKey(byte[] keyArray) throws InvalidKeyException {
             int inLen = keyArray.length;
             if (inLen < 4) {
                 throw new InvalidKeyException("HSS public key too short");
             }
             L = LMSUtils.fourBytesToInt(keyArray, 0);
-            lmsPublicKey = LMSPublicKey.of(Arrays.copyOfRange(keyArray, 4, keyArray.length));
+            lmsPublicKey = new LMSPublicKey(Arrays.copyOfRange(keyArray, 4, keyArray.length), 0, true);
             algid = new AlgorithmId(ObjectIdentifier.of(KnownOIDs.HSSLMS));
-            key = new DerOutputStream().putOctetString(keyArray).toByteArray();
+            byte[] derEncodedKeyarray = new DerOutputStream().putOctetString(keyArray).toByteArray();
+            this.setKey(new BitArray(8 * derEncodedKeyarray.length, derEncodedKeyarray));
         }
 
         @Override
-        @SuppressWarnings("deprecation")
-        public int length() {
-            return key.length * 8; // length in bits
+        public String toString() {
+            HexDumpEncoder  encoder = new HexDumpEncoder();
+
+            return "HSS/LMS public key, number of layers: " + L +
+                    ", LMS type: " + LMSUtils.lmsType(lmsPublicKey.type) +
+                    ",\nOTS type: " + LMSUtils.lmotsType(lmsPublicKey.otsType) +
+                    ", byte array representation:\n" +
+                    encoder.encode(getKey().toByteArray());
+        }
+
+        /**
+         * Parse the key. Called by X509Key.
+         */
+        protected void parseKeyBits() throws InvalidKeyException {
+            byte[] keyArray = getKey().toByteArray();
+            L = LMSUtils.fourBytesToInt(keyArray, 0);
+            lmsPublicKey = new LMSPublicKey(keyArray, 0, true);
+        }
+
+
+        @java.io.Serial
+        protected Object writeReplace() throws java.io.ObjectStreamException {
+            return new KeyRep(KeyRep.Type.PUBLIC,
+                    getAlgorithm(),
+                    getFormat(),
+                    getEncoded());
         }
     }
 
     static class HSSSignature {
-        final int Nspk;
-        final LMSignature[] siglist;
-        final LMSPublicKey[] pubList;
+        private final int Nspk;
+        private final LMSignature[] siglist;
+        private final LMSPublicKey[] pubList;
 
         HSSSignature(byte[] sigArr, HSSPublicKey pubKey) throws SignatureException {
             if (sigArr.length < 4) {
