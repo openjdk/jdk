@@ -60,61 +60,65 @@ public class SerializationTest {
     new JDK7GregorianCalendarAndDurationSerData(), new JDK8GregorianCalendarAndDurationSerData(), new JDK9GregorianCalendarAndDurationSerData()};
 
     /**
-     * Create the Serialization Bytes using JDK under test.
-     * @throws DatatypeConfigurationException
-     * @throws IOException
-     * @throws ClassNotFoundException
+     * Create the serialized Bytes array and serialized bytes base64 string for GregorianCalender and Duration
+     * with jdk under test.
+     * @throws DatatypeConfigurationException Unexpected.
+     * @throws IOException Unexpected.
      */
     @BeforeClass
     public void setup() throws DatatypeConfigurationException, IOException {
         DatatypeFactory dtf = DatatypeFactory.newInstance();
         XMLGregorianCalendar xmlGregorianCalendar = dtf.newXMLGregorianCalendar(EXPECTED_CAL);
-        //Serialize the given xmlGregorianCalendar
-        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        final ObjectOutputStream oos = new ObjectOutputStream(baos);
-        oos.writeObject(xmlGregorianCalendar);
-        oos.flush();
-        oos.close();
-        // Now get a Base64 string representation of the serialized bytes.
-        final String base64 = Base64.getEncoder().encodeToString(baos.toByteArray());
-
-       //Create the Duration instance
         Duration duration = dtf.newDuration(EXPECTED_DURATION);
-        //Serialize the given xml Duration
-        final ByteArrayOutputStream baos2 = new ByteArrayOutputStream();
-        final ObjectOutputStream oos2 = new ObjectOutputStream(baos2);
-        oos2.writeObject(duration);
-        oos2.flush();
-        oos2.close();
-        // Now get a Base64 string representation of the serialized bytes.
-        final String base64dur = Base64.getEncoder().encodeToString(baos2.toByteArray());
+        try(ByteArrayOutputStream baos = new ByteArrayOutputStream(); ObjectOutputStream oos = new ObjectOutputStream(baos);
+            ByteArrayOutputStream baos2 = new ByteArrayOutputStream(); ObjectOutputStream oos2 = new ObjectOutputStream(baos2)) {
+            //Serialize the given xmlGregorianCalendar
+            oos.writeObject(xmlGregorianCalendar);
+            //Serialize the given xml Duration
+            oos2.writeObject(duration);
+            // Now get a Base64 string representation of the xmlGregorianCalendar serialized bytes.
+            final String base64 = Base64.getEncoder().encodeToString(baos.toByteArray());
+            // Now get a Base64 string representation of Duration the serialized bytes.
+            final String base64dur = Base64.getEncoder().encodeToString(baos2.toByteArray());
 
-        // Create the Data for JDK under test.
-        gregorianCalendarAndDurationSerData[0] = new GregorianCalendarAndDurationSerData() {
-            @Override
-            public byte[] getGregorianCalendarByteArray() {
-                return baos.toByteArray();
-            }
+            // Create the Data for JDK under test.
+            gregorianCalendarAndDurationSerData[0] = new GregorianCalendarAndDurationSerData() {
+                @Override
+                public byte[] getGregorianCalendarByteArray() {
+                    return baos.toByteArray();
+                }
 
-            @Override
-            public String getGregorianCalendarBase64() {
-                return base64;
-            }
+                @Override
+                public String getGregorianCalendarBase64() {
+                    return base64;
+                }
 
-            @Override
-            public byte[] getDurationBytes() {
-                return baos2.toByteArray();
-            }
+                @Override
+                public byte[] getDurationBytes() {
+                    return baos2.toByteArray();
+                }
 
-            @Override
-            public String getDurationBase64() {
-                return base64dur;
-            }
-        };
+                @Override
+                public String getDurationBase64() {
+                    return base64dur;
+                }
+            };
+            // To create the pseudocode for <JDK version>GregorianCalendarAndDurationSerData.java for specific version
+            // of JDK (other than 6, 7, 8 and 9), execute this test with that specific JDK version after uncommenting
+            // the below methods calls :
+
+            // generatePseudoCodeForGregCalSerBytes(baos);
+            // generatePseudoCodeForGregCalSerBytesAsBase64(base64);
+            // generatePseudoCodeForDurationSerBytes(baos2);
+            // generatePseudoCodeForDurationSerBytesAsBase64(base64dur);
+        }
     }
 
     /**
-     *Provide data for JDK version and Gregorian Calendar serialized bytes
+     * Provide data for JDK version and Gregorian Calendar serialized bytes.
+     * @return A two-dimensional Array of objects where each element is an array of size three. First element contain JDK version,
+     * second element contain object reference to GregorianCalendarAndDurationSerData specific to JDK version
+     * and third element contain expected Gregorian Calendar as string.
      */
     @DataProvider(name = "GregorianCalendarData")
     public Object [][] gregorianCalendarDataBytes() {
@@ -126,7 +130,10 @@ public class SerializationTest {
     }
 
     /**
-     *Provide data for JDK version and serialized Gregorian Calendar Base64 encoded string
+     * Provide data for JDK version and serialized Gregorian Calendar Base64 encoded string.
+     * @return A two-dimensional Array of objects where each element is an array of size three. First element contain JDK version,
+     * second element contain object reference to GregorianCalendarAndDurationSerData specific to JDK version
+     * and third element contain expected Gregorian Calendar as string.
      */
     @DataProvider(name = "GregorianCalendarDataBase64")
     public Object [][] gregorianCalendarDataBase64() {
@@ -136,7 +143,10 @@ public class SerializationTest {
     }
 
     /**
-     *Provide data for JDK version and Duration serialized bytes
+     * Provide data for JDK version and Duration serialized bytes.
+     * @return A two-dimensional Array of objects where each element is an array of size three. First element contain JDK version,
+     * second element contain object reference to GregorianCalendarAndDurationSerData specific to JDK version
+     * and third element contain expected Duration as string.
      */
     @DataProvider(name = "DurationData")
     public Object [][] DurationData() {
@@ -148,7 +158,10 @@ public class SerializationTest {
     }
 
     /**
-     *Provide data for JDK version and Duration Base64 encode serialized bytes string
+     * Provide data for JDK version and Duration Base64 encode serialized bytes string.
+     * @return A two-dimensional Array of objects where each element is an array of size three. First element contain JDK version,
+     * second element contain object reference to GregorianCalendarAndDurationSerData specific to JDK version
+     * and third element contain expected Duration as string.
      */
     @DataProvider(name = "DurationDataBase64")
     public Object [][] DurationDataBase64() {
@@ -158,12 +171,13 @@ public class SerializationTest {
     }
 
     /**
-     * verify serialization compatibility for XMLGregorianCalendar
-     * @param javaVersion
-     * @param gcsd
-     * @param gregorianDate
-     * @throws IOException
-     * @throws ClassNotFoundException
+     * Verify that GregorianCalendar serialized with different old JDK versions can be deserialized correctly with
+     * JDK under test.
+     * @param javaVersion JDK version used to GregorianCalendar serialization.
+     * @param gcsd JDK version specific GregorianCalendarAndDurationSerData.
+     * @param gregorianDate String representation of GregorianCalendar Date.
+     * @throws IOException Unexpected.
+     * @throws ClassNotFoundException Unexpected.
      */
     @Test(dataProvider="GregorianCalendarData")
     public void testReadCalBytes(String javaVersion, GregorianCalendarAndDurationSerData gcsd, String gregorianDate) throws IOException,
@@ -175,12 +189,13 @@ public class SerializationTest {
     }
 
     /**
-     * verify serialization compatibility for XMLGregorianCalendar
-     * @param javaVersion
-     * @param gcsd
-     * @param gregorianDate
-     * @throws IOException
-     * @throws ClassNotFoundException
+     * Verify that GregorianCalendar serialized and encoded as base64 string with different old JDK versions can be
+     * deserialized correctly with JDK under test.
+     * @param javaVersion JDK version used to GregorianCalendar serialization.
+     * @param gcsd JDK version specific GregorianCalendarAndDurationSerData.
+     * @param gregorianDate String representation of GregorianCalendar Date.
+     * @throws IOException Unexpected.
+     * @throws ClassNotFoundException Unexpected.
      */
     @Test(dataProvider="GregorianCalendarDataBase64")
     public void testReadCalBase64(String javaVersion, GregorianCalendarAndDurationSerData gcsd, String gregorianDate) throws IOException,
@@ -192,12 +207,13 @@ public class SerializationTest {
     }
 
     /**
-     * verify serialization compatibility for Duration
-     * @param javaVersion
-     * @param gcsd
-     * @param duration
-     * @throws IOException
-     * @throws ClassNotFoundException
+     * Verify that Duration serialized with different old JDK versions can be deserialized correctly with
+     * JDK under test.
+     * @param javaVersion JDK version used to GregorianCalendar serialization.
+     * @param gcsd JDK version specific GregorianCalendarAndDurationSerData.
+     * @param duration String representation of Duration.
+     * @throws IOException Unexpected.
+     * @throws ClassNotFoundException Unexpected.
      */
     @Test(dataProvider = "DurationData")
     public void testReadDurationBytes(String javaVersion, GregorianCalendarAndDurationSerData gcsd, String duration) throws IOException,
@@ -209,12 +225,13 @@ public class SerializationTest {
     }
 
     /**
-     * verify serialization compatibility for Duration
-     * @param javaVersion
-     * @param gcsd
-     * @param duration
-     * @throws IOException
-     * @throws ClassNotFoundException
+     * Verify that Duration serialized  and encoded as base64 string with different old JDK versions can be deserialized correctly
+     * with JDK under test.
+     * @param javaVersion JDK version used to GregorianCalendar serialization.
+     * @param gcsd JDK version specific GregorianCalendarAndDurationSerData.
+     * @param duration String representation of Duration.
+     * @throws IOException Unexpected.
+     * @throws ClassNotFoundException Unexpected.
      */
     @Test(dataProvider = "DurationDataBase64")
     public void testReadDurationBase64(String javaVersion, GregorianCalendarAndDurationSerData gcsd, String duration) throws IOException,
@@ -227,8 +244,8 @@ public class SerializationTest {
 
     /**
      * Generates the Java Pseudo code for serialized Gregorian Calendar byte array that can be cut & pasted into the
-     * JDK<version>GregorianCalendarAndDurationSerData.java files.
-     * @param baos
+     * JDK<version>GregorianCalendarAndDurationSerData.java files. Use of this method is explained in setup() method.
+     * @param baos Serialized GregorianCalendar ByteArrayOutputStream.
      */
     public void generatePseudoCodeForGregCalSerBytes(ByteArrayOutputStream baos) {
         byte [] bytes = baos.toByteArray();
@@ -248,8 +265,8 @@ public class SerializationTest {
 
     /**
      * Generates the Java Pseudo code for Duration byte array that can be cut & pasted into the
-     * JDK<version>GregorianCalendarAndDurationSerData.java files.
-     * @param baos
+     * JDK<version>GregorianCalendarAndDurationSerData.java files. Use of this method is explained in setup() method.
+     * @param baos Serialized Duration ByteArrayOutputStream.
      */
     public void generatePseudoCodeForDurationSerBytes(ByteArrayOutputStream baos) {
         byte [] bytesdur = baos.toByteArray();
@@ -269,8 +286,9 @@ public class SerializationTest {
 
     /**
      * Generates the Java Pseudo code for Gregorian Calendar serialized byte array as Base64 string that
-     * can be cut & pasted into the JDK<version>GregorianCalendarAndDurationSerData.java files.
-     * @param base64
+     * can be cut & pasted into the JDK<version>GregorianCalendarAndDurationSerData.java files. Use of this method is
+     * explained in setup() method.
+     * @param base64 Serialized GregorianCalendar bytes encoded as Base64 string.
      */
     public void generatePseudoCodeForGregCalSerBytesAsBase64(String base64) {
         final StringBuilder sb = new StringBuilder();
@@ -294,8 +312,9 @@ public class SerializationTest {
 
     /**
      * Generates the Java Pseudo code for Duration serialized byte array as Base64 string that
-     * can be cut & pasted into the JDK<version>GregorianCalendarAndDurationSerData.java files.
-     * @param base64
+     * can be cut & pasted into the JDK<version>GregorianCalendarAndDurationSerData.java files. Use of this method is
+     * explained in setup() method.
+     * @param base64 Serialized Duration bytes encoded as Base64 string.
      */
     public void generatePseudoCodeForDurationSerBytesAsBase64(String base64) {
         final StringBuilder sbdur = new StringBuilder();
