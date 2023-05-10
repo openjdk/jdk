@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -499,12 +499,17 @@ public class Agent {
             }
 
             // Get service URL to broadcast it
-            Map<String,String> remoteProps = ConnectorAddressLink.importRemoteFrom(0);
-            String jmxUrlStr = remoteProps.get("sun.management.JMXConnectorServer.0.remoteAddress");
-
-            String instanceName = props.getProperty("com.sun.management.jdp.name");
-
-            JdpController.startDiscoveryService(address, port, instanceName, jmxUrlStr);
+            Map<String,String> remoteProps = null;
+            try {
+                remoteProps = ConnectorAddressLink.importRemoteFrom(0);
+            } catch (IOException ioe) {
+                warning(AGENT_EXCEPTION, "JDP not starting, PerfData not available: " + ioe.getMessage());
+            }
+            if (remoteProps != null) {
+                String jmxUrlStr = remoteProps.get("sun.management.JMXConnectorServer.0.remoteAddress");
+                String instanceName = props.getProperty("com.sun.management.jdp.name");
+                JdpController.startDiscoveryService(address, port, instanceName, jmxUrlStr);
+            }
         }
     }
 
