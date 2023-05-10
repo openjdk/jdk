@@ -149,7 +149,7 @@ inline void FreezeBase::relativize_interpreted_frame_metadata(const frame& f, co
   // because we freeze the padding word (see recurse_freeze_interpreted_frame) in order to keep the same relativized
   // locals value, we don't need to change the locals value here.
 
-  // at(frame::interpreter_frame_last_sp_offset) can be NULL at safepoint preempts
+  // at(frame::interpreter_frame_last_sp_offset) can be null at safepoint preempts
   *hf.addr_at(frame::interpreter_frame_last_sp_offset) = hf.unextended_sp() - hf.fp();
 
   relativize_one(vfp, hfp, frame::interpreter_frame_initial_sp_offset); // == block_top == block_bottom

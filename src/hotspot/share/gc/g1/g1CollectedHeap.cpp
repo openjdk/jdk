@@ -568,7 +568,7 @@ bool G1CollectedHeap::alloc_archive_regions(MemRegion range) {
   // Mark each G1 region touched by the range as old, add it to
   // the old set, and set top.
   auto set_region_to_old = [&] (HeapRegion* r, bool is_last) {
-    assert(r->is_empty() && !r->is_pinned(), "Region already in use (%u)", r->hrm_index());
+    assert(r->is_empty(), "Region already in use (%u)", r->hrm_index());
 
     HeapWord* top = is_last ? last_address + 1 : r->end();
     r->set_top(top);

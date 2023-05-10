@@ -513,6 +513,7 @@ abstract public class TestScaffold extends TargetAdapter {
         // Need to change args to run wrapper using command like 'TestScaffold Virtual <app-name>'
         String mainWrapper = System.getProperty("main.wrapper");
         if (mainWrapper != null && !argInfo.targetAppCommandLine.isEmpty()) {
+            argInfo.targetVMArgs += "-Dmain.wrapper=" + mainWrapper;
             argInfo.targetAppCommandLine = TestScaffold.class.getName() + ' '
                     + mainWrapper + ' ' + argInfo.targetAppCommandLine;
         } else if ("true".equals(System.getProperty("test.enable.preview"))) {

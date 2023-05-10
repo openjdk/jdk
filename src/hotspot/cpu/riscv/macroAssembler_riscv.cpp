@@ -59,6 +59,7 @@
 #else
 #define BLOCK_COMMENT(str) block_comment(str)
 #endif
+#define STOP(str) stop(str);
 #define BIND(label) bind(label); __ BLOCK_COMMENT(#label ":")
 
 static void pass_arg0(MacroAssembler* masm, Register arg) {
@@ -2416,7 +2417,7 @@ void MacroAssembler::safepoint_poll(Label& slow_path, bool at_return, bool acqui
     membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
   }
   if (at_return) {
-    bgtu(in_nmethod ? sp : fp, t0, slow_path, true /* is_far */);
+    bgtu(in_nmethod ? sp : fp, t0, slow_path, /* is_far */ true);
   } else {
     test_bit(t0, t0, exact_log2(SafepointMechanism::poll_bit()));
     bnez(t0, slow_path, true /* is_far */);
@@ -4061,24 +4062,23 @@ void MacroAssembler::zero_dcache_blocks(Register base, Register cnt, Register tm
   bge(cnt, tmp1, loop);
 }
 
-#define FCVT_SAFE(FLOATCVT, FLOATEQ)                                                             \
-void MacroAssembler:: FLOATCVT##_safe(Register dst, FloatRegister src, Register tmp) {           \
-  Label L_Okay;                                                                                  \
-  fscsr(zr);                                                                                     \
-  FLOATCVT(dst, src);                                                                            \
-  frcsr(tmp);                                                                                    \
-  andi(tmp, tmp, 0x1E);                                                                          \
-  beqz(tmp, L_Okay);                                                                             \
-  FLOATEQ(tmp, src, src);                                                                        \
-  bnez(tmp, L_Okay);                                                                             \
-  mv(dst, zr);                                                                                   \
-  bind(L_Okay);                                                                                  \
+#define FCVT_SAFE(FLOATCVT, FLOATSIG)                                                     \
+void MacroAssembler::FLOATCVT##_safe(Register dst, FloatRegister src, Register tmp) {     \
+  Label done;                                                                             \
+  assert_different_registers(dst, tmp);                                                   \
+  fclass_##FLOATSIG(tmp, src);                                                            \
+  mv(dst, zr);                                                                            \
+  /* check if src is NaN */                                                               \
+  andi(tmp, tmp, 0b1100000000);                                                           \
+  bnez(tmp, done);                                                                        \
+  FLOATCVT(dst, src);                                                                     \
+  bind(done);                                                                             \
 }
 
-FCVT_SAFE(fcvt_w_s, feq_s)
-FCVT_SAFE(fcvt_l_s, feq_s)
-FCVT_SAFE(fcvt_w_d, feq_d)
-FCVT_SAFE(fcvt_l_d, feq_d)
+FCVT_SAFE(fcvt_w_s, s);
+FCVT_SAFE(fcvt_l_s, s);
+FCVT_SAFE(fcvt_w_d, d);
+FCVT_SAFE(fcvt_l_d, d);
 
 #undef FCVT_SAFE
 
@@ -4486,4 +4486,101 @@ void MacroAssembler::test_bit(Register Rd, Register Rs, uint32_t bit_pos, Regist
     return;
   }
   andi(Rd, Rs, 1UL << bit_pos, tmp);
+}
+
+// Implements fast-locking.
+// Branches to slow upon failure to lock the object.
+// Falls through upon success.
+//
+//  - obj: the object to be locked
+//  - hdr: the header, already loaded from obj, will be destroyed
+//  - tmp1, tmp2: temporary registers, will be destroyed
+void MacroAssembler::fast_lock(Register obj, Register hdr, Register tmp1, Register tmp2, Label& slow) {
+  assert(LockingMode == LM_LIGHTWEIGHT, "only used with new lightweight locking");
+  assert_different_registers(obj, hdr, tmp1, tmp2);
+
+  // Check if we would have space on lock-stack for the object.
+  lwu(tmp1, Address(xthread, JavaThread::lock_stack_top_offset()));
+  mv(tmp2, (unsigned)LockStack::end_offset());
+  bge(tmp1, tmp2, slow, /* is_far */ true);
+
+  // Load (object->mark() | 1) into hdr
+  ori(hdr, hdr, markWord::unlocked_value);
+  // Clear lock-bits, into tmp2
+  xori(tmp2, hdr, markWord::unlocked_value);
+
+  // Try to swing header from unlocked to locked
+  Label success;
+  cmpxchgptr(hdr, tmp2, obj, tmp1, success, &slow);
+  bind(success);
+
+  // After successful lock, push object on lock-stack
+  lwu(tmp1, Address(xthread, JavaThread::lock_stack_top_offset()));
+  add(tmp2, xthread, tmp1);
+  sd(obj, Address(tmp2, 0));
+  addw(tmp1, tmp1, oopSize);
+  sw(tmp1, Address(xthread, JavaThread::lock_stack_top_offset()));
+}
+
+// Implements fast-unlocking.
+// Branches to slow upon failure.
+// Falls through upon success.
+//
+// - obj: the object to be unlocked
+// - hdr: the (pre-loaded) header of the object
+// - tmp1, tmp2: temporary registers
+void MacroAssembler::fast_unlock(Register obj, Register hdr, Register tmp1, Register tmp2, Label& slow) {
+  assert(LockingMode == LM_LIGHTWEIGHT, "only used with new lightweight locking");
+  assert_different_registers(obj, hdr, tmp1, tmp2);
+
+#ifdef ASSERT
+  {
+    // The following checks rely on the fact that LockStack is only ever modified by
+    // its owning thread, even if the lock got inflated concurrently; removal of LockStack
+    // entries after inflation will happen delayed in that case.
+
+    // Check for lock-stack underflow.
+    Label stack_ok;
+    lwu(tmp1, Address(xthread, JavaThread::lock_stack_top_offset()));
+    mv(tmp2, (unsigned)LockStack::start_offset());
+    bgt(tmp1, tmp2, stack_ok);
+    STOP("Lock-stack underflow");
+    bind(stack_ok);
+  }
+  {
+    // Check if the top of the lock-stack matches the unlocked object.
+    Label tos_ok;
+    subw(tmp1, tmp1, oopSize);
+    add(tmp1, xthread, tmp1);
+    ld(tmp1, Address(tmp1, 0));
+    beq(tmp1, obj, tos_ok);
+    STOP("Top of lock-stack does not match the unlocked object");
+    bind(tos_ok);
+  }
+  {
+    // Check that hdr is fast-locked.
+   Label hdr_ok;
+    andi(tmp1, hdr, markWord::lock_mask_in_place);
+    beqz(tmp1, hdr_ok);
+    STOP("Header is not fast-locked");
+    bind(hdr_ok);
+  }
+#endif
+
+  // Load the new header (unlocked) into tmp1
+  ori(tmp1, hdr, markWord::unlocked_value);
+
+  // Try to swing header from locked to unlocked
+  Label success;
+  cmpxchgptr(hdr, tmp1, obj, tmp2, success, &slow);
+  bind(success);
+
+  // After successful unlock, pop object from lock-stack
+  lwu(tmp1, Address(xthread, JavaThread::lock_stack_top_offset()));
+  subw(tmp1, tmp1, oopSize);
+#ifdef ASSERT
+  add(tmp2, xthread, tmp1);
+  sd(zr, Address(tmp2, 0));
+#endif
+  sw(tmp1, Address(xthread, JavaThread::lock_stack_top_offset()));
 }
