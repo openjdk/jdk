@@ -313,7 +313,7 @@ void MethodHandles::jump_to_native_invoker(MacroAssembler* _masm, Register nep_r
 
   // Load the invoker, as NEP -> .invoker
   __ verify_oop(nep_reg);
-  __ ld(temp_target, jdk_internal_foreign_abi_NativeEntryPoint::downcall_stub_address_offset_in_bytes(), nep_reg);
+  __ ld(temp_target, NONZERO(jdk_internal_foreign_abi_NativeEntryPoint::downcall_stub_address_offset_in_bytes()), nep_reg);
   __ mtctr(temp_target);
   __ bctr();
   BLOCK_COMMENT("} jump_to_native_invoker");
