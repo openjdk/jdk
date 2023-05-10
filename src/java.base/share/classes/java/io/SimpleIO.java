@@ -50,7 +50,7 @@ import java.util.stream.Stream;
  * allowing the user to scroll through previously entered input. The methods {@link #inputInt(String)},
  * {@link #inputLong(String)}, {@link #inputFloat(String)} and {@link #inputDouble(String)}
  * can be used to input primitive values. The methods {@link #print(Object...)} and
- * {@link #println(Object...)} allow developers to display data directly to the console/screen.
+ * {@link #printLine(Object...)} allow developers to display data directly to the console/screen.
  * For example:
  * {@snippet lang="java":
  * import static java.io.SimpleIO.*;
@@ -58,7 +58,7 @@ import java.util.stream.Stream;
  * public class Example1 {
  *     public static void main(String[] args) {
  *         String name = input("Enter name>> ");
- *         println("Hello", name);
+ *         printLine("Hello", name);
  *     }
  * }
  * }
@@ -91,7 +91,7 @@ import java.util.stream.Stream;
  *           String content = read("original.txt");
  *           write("copy.txt", content);
  *         } catch (UncheckedIOException ex) {
- *              println("File not copied");
+ *              printLine("File not copied");
  *         }
  *     }
  * }
@@ -199,7 +199,7 @@ public final class SimpleIO {
      * as scrolling back through historic input. For example:
      * {@snippet lang="java":
      * var name = input("Name>> "); // @highlight substring="input"
-     * println(name);
+     * printLine(name);
      * }
      * will interact with the console as:
      * {@snippet lang="text":
@@ -225,51 +225,111 @@ public final class SimpleIO {
     }
 
     /**
-     * Return an int value from input after issuing a prompt. This method
-     * uses {@link #input} to request input.
+     * Return a space delimited token from input after issuing a prompt. The prompt
+     * will repeat until a token is input.
      *
      * @param prompt string contain prompt for input, may be the empty string
-     * @return int value from input
-     * @throws NumberFormatException if the input  does not contain a parsable {@code int}.
+     * @return a token entered by user
      */
-    public static int inputInt(String prompt) throws NumberFormatException {
-        return Integer.parseInt(input(prompt).strip(), 10);
+    public static String inputNext(String prompt) {
+        while (true) {
+            String input = input(prompt);
+            var scanner = scanner(input);
+
+            if (scanner.hasNext()) {
+                return scanner.next();
+            }
+        }
     }
 
     /**
-     * Return a long value from input after issuing a prompt. This method
-     * uses {@link #input} to request input.
+     * Return an int from input after issuing a prompt. The prompt will repeat until
+     * an int is input.
      *
      * @param prompt string contain prompt for input, may be the empty string
-     * @return long value from input
-     * @throws NumberFormatException if the input  does not contain a parsable {@code long}.
+     * @return an int value entered by user
      */
-    public static long inputLong(String prompt) throws NumberFormatException {
-        return Long.parseLong(input(prompt).strip(), 10);
+    public static int inputInt(String prompt) {
+        while (true) {
+            String input = input(prompt);
+            var scanner = scanner(input);
+
+            if (scanner.hasNextInt()) {
+                return scanner.nextInt();
+            }
+        }
     }
 
     /**
-     * Return a float value from input after issuing a prompt. This method
-     * uses {@link #input} to request input.
+     * Return a long from input after issuing a prompt. The prompt will repeat until
+     * a long is input.
      *
      * @param prompt string contain prompt for input, may be the empty string
-     * @return float value from input
-     * @throws NumberFormatException if the input  does not contain a parsable {@code float}.
+     * @return a long value entered by user
      */
-    public static float inputFloat(String prompt) throws NumberFormatException {
-        return Float.parseFloat(input(prompt).strip());
+    public static long inputLong(String prompt) {
+        while (true) {
+            String input = input(prompt);
+            var scanner = scanner(input);
+
+            if (scanner.hasNextLong()) {
+                return scanner.nextLong();
+            }
+        }
     }
 
     /**
-     * Return a double value from input after issuing a prompt. This method
-     * uses {@link #input} to request input.
+     * Return a float from input after issuing a prompt. The prompt will repeat until
+     * a float is input.
      *
      * @param prompt string contain prompt for input, may be the empty string
-     * @return double value from input
-     * @throws NumberFormatException if the input  does not contain a parsable {@code double}.
+     * @return a float value entered by user
      */
-    public static double inputDouble(String prompt) throws NumberFormatException {
-        return Double.parseDouble(input(prompt).strip());
+    public static float inputFloat(String prompt) {
+        while (true) {
+            String input = input(prompt);
+            var scanner = scanner(input);
+
+            if (scanner.hasNextFloat()) {
+                return scanner.nextFloat();
+            }
+        }
+    }
+
+    /**
+     * Return a double from input after issuing a prompt. The prompt will repeat until
+     * a double is input.
+     *
+     * @param prompt string contain prompt for input, may be the empty string
+     * @return a double value entered by user
+     */
+    public static double inputDouble(String prompt) {
+        while (true) {
+            String input = input(prompt);
+            var scanner = scanner(input);
+
+            if (scanner.hasNextDouble()) {
+                return scanner.nextDouble();
+            }
+        }
+    }
+
+    /**
+     * Return a boolean from input after issuing a prompt. The prompt will repeat until
+     * a boolean is input.
+     *
+     * @param prompt string contain prompt for input, may be the empty string
+     * @return a boolean value entered by user
+     */
+    public static boolean inputBoolean(String prompt) {
+        while (true) {
+            String input = input(prompt);
+            var scanner = scanner(input);
+
+            if (scanner.hasNextBoolean()) {
+                return scanner.nextBoolean();
+            }
+        }
     }
 
     private static final Object[] NULL_ARRAY = new Object[1];
@@ -299,8 +359,8 @@ public final class SimpleIO {
      * platform line terminator.
      * For example:
      * {@snippet lang="java":
-     * println("A", "B"); // @highlight substring="println"
-     * println("C", "D"); // @highlight substring="println"
+     * printLine("A", "B"); // @highlight substring="printLine"
+     * printLine("C", "D"); // @highlight substring="printLine"
      * }
      * will print on the output stream as:
      * {@snippet lang="text":
@@ -311,7 +371,7 @@ public final class SimpleIO {
      *
      * @param values values to be printed.
      */
-    public static void println(Object... values) {
+    public static void printLine(Object... values) {
         System.out.println(Stream.of(values == null ? NULL_ARRAY : values)
                 .map(String::valueOf)
                 .collect(Collectors.joining(" ")));
@@ -643,7 +703,7 @@ public final class SimpleIO {
      * var weight = scanner.nextFloat();
      * }
      */
-    public static class StringScanner implements Iterator<String>, Iterable<String> {
+    public static class StringScanner {
         private final Scanner scanner;
 
         private StringScanner(String string) {
@@ -652,17 +712,9 @@ public final class SimpleIO {
             this.scanner.useRadix(10);
         }
 
-        @Override
-        public Iterator<String> iterator() {
-            return this;
-        }
-
         /**
-         * Returns true if this scanner has another token in its input.
-         * @return true if and only if this scanner has another token
-         * @see java.util.Iterator
+         * {@return true if and only if this scanner has another token}
          */
-        @Override
         public boolean hasNext() {
             return scanner.hasNext();
         }
@@ -676,24 +728,11 @@ public final class SimpleIO {
          *
          * @return the next token
          * @throws NoSuchElementException if no more tokens are available
-         * @see java.util.Iterator
          */
-        @Override
         public String next() {
             return scanner.next();
         }
 
-        /**
-         * The remove operation is not supported by this implementation of
-         * {@code Iterator}.
-         *
-         * @throws UnsupportedOperationException if this method is invoked.
-         * @see java.util.Iterator
-         */
-        @Override
-        public void remove() {
-            throw new UnsupportedOperationException();
-        }
         /**
          * Returns true if there is another line in the input of this scanner.
          *
