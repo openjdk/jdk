@@ -137,11 +137,11 @@ class JVMCICompileState : public ResourceObj {
   bool failure_reason_on_C_heap() { return _failure_reason_on_C_heap; }
   bool retryable() { return _retryable; }
 
-  void set_failure(bool retryable, const char* reason, bool reason_on_C_heap = false) {
-    _failure_reason = reason;
-    _failure_reason_on_C_heap = reason_on_C_heap;
-    _retryable = retryable;
-  }
+  void set_failure(bool retryable, const char* reason, bool reason_on_C_heap = false);
+
+  // Called when creating or attaching to a libjvmci isolate failed
+  // due to an out of memory condition.
+  void notify_libjvmci_oome();
 
   jint compilation_ticks() const { return _compilation_ticks; }
   void inc_compilation_ticks();
@@ -169,7 +169,7 @@ class JVMCIEnv : public ResourceObj {
   bool        _throw_to_caller;  // Propagate an exception raised in this env to the caller?
   const char*            _file;  // The file and ...
   int                    _line;  // ... line where this JNIEnv was created
-  bool    _attach_threw_OOME;    // Failed to attach thread due to OutOfMemoryError, the JVMCIEnv is invalid
+  bool             _threw_OOME;  // OOME trying to create a libjvmci isolate or attach to it; the JVMCIEnv is invalid
 
   // Translates an exception on the HotSpot heap (i.e., hotspot_env) to an exception on
   // the shared library heap (i.e., jni_env). The translation includes the stack and cause(s) of `throwable`.
@@ -249,7 +249,9 @@ public:
   // Returns true if a pending exception was transferred, false otherwise.
   static jboolean transfer_pending_exception_to_jni(JavaThread* THREAD, JVMCIEnv* hotspot_env, JVMCIEnv* jni_env);
 
-  // Prints an exception and stack trace of a pending exception.
+  // Prints the toString() and stack trace of a pending exception.
+  // If there is no pending exception, this is a nop.
+  // If `clear` is false, the pending exception will remain pending upon return.
   void describe_pending_exception(bool clear);
 
   int get_length(JVMCIArray array);
