@@ -804,7 +804,7 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
     // Remove clutter produced by parsing.
     if (!failing()) {
       ResourceMark rm;
-      PhaseRemoveUseless pru(initial_gvn(), igvn_worklist());
+      PhaseRemoveUseless pru(initial_gvn(), *igvn_worklist());
     }
   }
 
@@ -1954,7 +1954,7 @@ void Compile::inline_string_calls(bool parse_time) {
   {
     // remove useless nodes to make the usage analysis simpler
     ResourceMark rm;
-    PhaseRemoveUseless pru(initial_gvn(), igvn_worklist());
+    PhaseRemoveUseless pru(initial_gvn(), *igvn_worklist());
   }
 
   {
@@ -1985,7 +1985,7 @@ void Compile::inline_boxing_calls(PhaseIterGVN& igvn) {
     PhaseGVN* gvn = initial_gvn();
     set_inlining_incrementally(true);
 
-    igvn_worklist().ensure_empty(); // should be done with igvn
+    igvn_worklist()->ensure_empty(); // should be done with igvn
 
     _late_inlines_pos = _late_inlines.length();
 
@@ -2048,7 +2048,7 @@ void Compile::inline_incrementally_cleanup(PhaseIterGVN& igvn) {
   {
     TracePhase tp("incrementalInline_pru", &timers[_t_incrInline_pru]);
     ResourceMark rm;
-    PhaseRemoveUseless pru(initial_gvn(), igvn_worklist());
+    PhaseRemoveUseless pru(initial_gvn(), *igvn_worklist());
   }
   {
     TracePhase tp("incrementalInline_igvn", &timers[_t_incrInline_igvn]);
@@ -2095,7 +2095,7 @@ void Compile::inline_incrementally(PhaseIterGVN& igvn) {
       }
     }
 
-    igvn_worklist().ensure_empty(); // should be done with igvn
+    igvn_worklist()->ensure_empty(); // should be done with igvn
 
     while (inline_incrementally_one()) {
       assert(!failing(), "inconsistent");
@@ -2113,7 +2113,7 @@ void Compile::inline_incrementally(PhaseIterGVN& igvn) {
     }
   }
 
-  igvn_worklist().ensure_empty(); // should be done with igvn
+  igvn_worklist()->ensure_empty(); // should be done with igvn
 
   if (_string_late_inlines.length() > 0) {
     assert(has_stringbuilder(), "inconsistent");
@@ -2138,7 +2138,7 @@ void Compile::process_late_inline_calls_no_inline(PhaseIterGVN& igvn) {
   assert(_late_inlines.length() > 0, "sanity");
 
   while (_late_inlines.length() > 0) {
-    igvn_worklist().ensure_empty(); // should be done with igvn
+    igvn_worklist()->ensure_empty(); // should be done with igvn
 
     while (inline_incrementally_one()) {
       assert(!failing(), "inconsistent");
@@ -2271,10 +2271,10 @@ void Compile::Optimize() {
 
   if (!failing() && RenumberLiveNodes && live_nodes() + NodeLimitFudgeFactor < unique()) {
     Compile::TracePhase tp("", &timers[_t_renumberLive]);
-    igvn_worklist().ensure_empty(); // should be done with igvn
+    igvn_worklist()->ensure_empty(); // should be done with igvn
     {
       ResourceMark rm;
-      PhaseRenumberLive prl(initial_gvn(), igvn_worklist());
+      PhaseRenumberLive prl(initial_gvn(), *igvn_worklist());
     }
     igvn.reset_from_gvn(initial_gvn());
     igvn.optimize();

@@ -418,7 +418,7 @@ PhaseRenumberLive::PhaseRenumberLive(PhaseGVN* gvn,
   assert(RenumberLiveNodes, "RenumberLiveNodes must be set to true for node renumbering to take place");
   assert(C->live_nodes() == _useful.size(), "the number of live nodes must match the number of useful nodes");
   assert(_delayed.size() == 0, "should be empty");
-  assert(&worklist == &C->igvn_worklist(), "reference still same as the one from Compile");
+  assert(&worklist == C->igvn_worklist(), "reference still same as the one from Compile");
   assert(&gvn->types() == C->types(), "reference still same as that from Compile");
 
   GrowableArray<Node_Notes*>* old_node_note_array = C->node_note_array();
@@ -806,7 +806,7 @@ void PhaseGVN::dump_infinite_loop_info(Node* n, const char* where) {
 //------------------------------PhaseIterGVN-----------------------------------
 // Initialize with previous PhaseIterGVN info; used by PhaseCCP
 PhaseIterGVN::PhaseIterGVN(PhaseIterGVN* igvn) : _delay_transform(igvn->_delay_transform),
-                                                 _worklist(C->igvn_worklist())
+                                                 _worklist(*C->igvn_worklist())
 {
   _iterGVN = true;
   assert(&_worklist == &igvn->_worklist, "sanity");
@@ -815,7 +815,7 @@ PhaseIterGVN::PhaseIterGVN(PhaseIterGVN* igvn) : _delay_transform(igvn->_delay_t
 //------------------------------PhaseIterGVN-----------------------------------
 // Initialize with previous PhaseGVN info from Parser
 PhaseIterGVN::PhaseIterGVN(PhaseGVN* gvn) : _delay_transform(false),
-                                            _worklist(C->igvn_worklist())
+                                            _worklist(*C->igvn_worklist())
 {
   _iterGVN = true;
   uint max;

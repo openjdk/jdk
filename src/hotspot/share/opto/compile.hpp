@@ -946,9 +946,9 @@ class Compile : public Phase {
 
   // Parsing, optimization
   PhaseGVN*         initial_gvn()               { return _initial_gvn; }
-  Unique_Node_List& igvn_worklist() {
+  Unique_Node_List* igvn_worklist() {
     assert(_igvn_worklist != nullptr, "must be created in Compile::Compile");
-    return *_igvn_worklist;
+    return _igvn_worklist;
   }
   Type_Array* types() {
     assert(_types != nullptr, "must be created in Compile::Compile");

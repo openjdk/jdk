@@ -43,7 +43,7 @@ void PhaseVector::optimize_vector_boxes() {
   assert(C->inlining_incrementally() == false, "sanity");
   C->set_inlining_incrementally(true);
 
-  C->igvn_worklist().ensure_empty(); // should be done with igvn
+  C->igvn_worklist()->ensure_empty(); // should be done with igvn
 
   expand_vunbox_nodes();
   scalarize_vbox_nodes();
@@ -63,7 +63,7 @@ void PhaseVector::do_cleanup() {
   {
     Compile::TracePhase tp("vector_pru", &timers[_t_vector_pru]);
     ResourceMark rm;
-    PhaseRemoveUseless pru(C->initial_gvn(), C->igvn_worklist());
+    PhaseRemoveUseless pru(C->initial_gvn(), *C->igvn_worklist());
     if (C->failing())  return;
   }
   {
