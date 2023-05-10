@@ -283,7 +283,7 @@ void oopDesc::forward_to_self() {
       m = m.displaced_mark_helper();
     }
     m = m.set_self_forwarded();
-    assert(forwardee(m) == cast_to_oop(this), "encoding must be reversable");
+    assert(forwardee(m) == cast_to_oop(this), "encoding must be reversible");
     set_mark(m);
   } else {
     forward_to(oop(this));
