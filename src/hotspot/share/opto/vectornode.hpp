@@ -132,6 +132,15 @@ class VectorNode : public TypeNode {
   static bool is_vector_shift_count(Node* n) {
     return is_vector_shift_count(n->Opcode());
   }
+
+  static void trace_new_vector(Node* n, const char* context) {
+#ifdef ASSERT
+    if (TraceNewVectors) {
+      tty->print("TraceNewVectors [%s]: ", context);
+      n->dump();
+    }
+#endif
+  }
 };
 
 //===========================Vector=ALU=Operations=============================

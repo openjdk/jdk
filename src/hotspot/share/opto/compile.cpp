@@ -2844,12 +2844,7 @@ void Compile::process_logic_cone_root(PhaseIterGVN &igvn, Node *n, VectorSet &vi
     if (mask == nullptr ||
         Matcher::match_rule_supported_vector_masked(Op_MacroLogicV, vt->length(), vt->element_basic_type())) {
       Node* macro_logic = xform_to_MacroLogicV(igvn, vt, partition, inputs);
-#ifdef ASSERT
-      if (TraceNewVectors) {
-        tty->print("new Vector node: ");
-        macro_logic->dump();
-      }
-#endif
+      VectorNode::trace_new_vector(macro_logic, "MacroLogic");
       igvn.replace_node(n, macro_logic);
     }
   }

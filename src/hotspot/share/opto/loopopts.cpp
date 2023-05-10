@@ -4254,12 +4254,7 @@ void PhaseIdealLoop::move_unordered_reduction_out_of_loop(IdealLoopTree* loop) {
     VectorNode* identity_vector = VectorNode::scalar2vector(identity_scalar, vector_length, bt_t);
     register_new_node(identity_vector, C->root());
     assert(vec_t == identity_vector->vect_type(), "matching vector type");
-#ifdef ASSERT
-    if (TraceNewVectors) {
-      tty->print("new Vector node: ");
-      identity_vector->dump();
-    }
-#endif
+    VectorNode::trace_new_vector(identity_vector, "UnorderedReduction");
 
     // Turn the scalar phi into a vector phi.
     _igvn.rehash_node_delayed(phi);
@@ -4277,12 +4272,7 @@ void PhaseIdealLoop::move_unordered_reduction_out_of_loop(IdealLoopTree* loop) {
       VectorNode* vector_accumulator = current->make_normal_vector_op(last_vector_accumulator, vector_input, vec_t);
       register_new_node(vector_accumulator, cl);
       _igvn.replace_node(current, vector_accumulator);
-#ifdef ASSERT
-      if (TraceNewVectors) {
-        tty->print("new Vector node: ");
-        vector_accumulator->dump();
-      }
-#endif
+      VectorNode::trace_new_vector(vector_accumulator, "UnorderedReduction");
       if (current == last_ur) {
         break;
       }
@@ -4296,12 +4286,14 @@ void PhaseIdealLoop::move_unordered_reduction_out_of_loop(IdealLoopTree* loop) {
     // Take over uses of last_accumulator that are not in the loop.
     for (DUIterator i = last_accumulator->outs(); last_accumulator->has_out(i); i++) {
       Node* use = last_accumulator->out(i);
-      if (ctrl_or_self(use) != cl) {
+      if (use != phi && use != post_loop_reduction) {
+        assert(ctrl_or_self(use) != cl, "use must be outside loop");
         use->replace_edge(last_accumulator, post_loop_reduction,  &_igvn);
         --i;
       }
     }
     register_new_node(post_loop_reduction, get_late_ctrl(post_loop_reduction, cl));
+    VectorNode::trace_new_vector(post_loop_reduction, "UnorderedReduction");
 
     assert(last_accumulator->outcnt() == 2, "last_accumulator has 2 uses: phi and post_loop_reduction");
     assert(post_loop_reduction->outcnt() > 0, "should have taken over all non loop uses of last_accumulator");
