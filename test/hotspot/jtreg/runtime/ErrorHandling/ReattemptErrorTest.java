@@ -50,13 +50,11 @@ public class ReattemptErrorTest {
         // How this works:
         // The test will fault with SIGFPE (ErrorHandlerTest=15) and then, during error handling,
         // three pieces of reattempt logic are tested:
-        // * First a step will fault with SIGSEGV. And then reattmempt the step twice. With the first
+        // * First a step will fault with SIGSEGV. And then reattempts the step twice. With the first
         //   reattempt succeeding. And the second reattempt being skipped.
-        // * Second a step will timeout, followed by two reattempts, the first is given a new timeout
-        //   window so it will be run, but also timeout and the second reattempt is not given a new
-        //   timeout window and will be skipped.
+        // * Second a step will timeout, followed by a reattempt, the reattempt will be skipped.
         // * Third a step will use almost all stack space and then fault with SIGSEGV. After this the
-        //   procceeding reattempt steps will be skipped because of low stack headroom.
+        //   proceeding reattempt steps will be skipped because of low stack headroom.
 
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
             "-XX:+UnlockDiagnosticVMOptions",
@@ -92,12 +90,9 @@ public class ReattemptErrorTest {
         //   * First step timeouts
         positivePatternlist.add(Pattern.compile("test reattempt timeout"));
         positivePatternlist.add(Pattern.compile(".*timeout occurred during error reporting in step \"test reattempt timeout\".*"));
-        //   * Second attempt with new timeout window is run and timeouts
-        positivePatternlist.add(Pattern.compile("test reattempt timeout, attempt 2"));
-        positivePatternlist.add(Pattern.compile(".*timeout occurred during error reporting in step \"test reattempt timeout, attempt 2\".*"));
-        //   * Third attempt is skipped becuase of previous timeout
-        negativePatternlist.add(Pattern.compile("test reattempt secondary crash, attempt 3"));
-        positivePatternlist.add(Pattern.compile(".*stop reattempt \\(test reattempt timeout, attempt 3\\) reason: Step time limit reached.*"));
+        //   * Second attempt is skipped because of previous timeout
+        negativePatternlist.add(Pattern.compile("test reattempt secondary crash, attempt 2"));
+        positivePatternlist.add(Pattern.compile(".*stop reattempt \\(test reattempt timeout, attempt 2\\) reason: Step time limit reached.*"));
 
         // * Third case
         //   * First step crashes after using almost all stack space
@@ -110,7 +105,7 @@ public class ReattemptErrorTest {
         Pattern[] positivePatterns = positivePatternlist.toArray(new Pattern[] {});
         Pattern[] negativePatterns = negativePatternlist.toArray(new Pattern[] {});
 
-        HsErrFileUtils.checkHsErrFileContent(hs_err_file, positivePatterns, negativePatterns, true, false);
+        HsErrFileUtils.checkHsErrFileContent(hs_err_file, positivePatterns, negativePatterns, true, true);
 
         System.out.println("OK.");
     }

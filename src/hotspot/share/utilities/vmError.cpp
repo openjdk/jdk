@@ -615,17 +615,13 @@ void VMError::report(outputStream* st, bool _verbose) {
 
 # define STEP(s) STEP_IF(s, true)
 
-# define REATTEMPT_STEP_IF_IMPL(s, cond, with_new_timeout) \
+# define REATTEMPT_STEP_IF(s, cond)                        \
     }                                                      \
     _step_did_succeed = true;                              \
   }                                                        \
   if (_current_step < __LINE__ && !_step_did_succeed) {    \
     _current_step = __LINE__;                              \
     _current_step_info = s;                                \
-    if ((with_new_timeout)) {                              \
-      record_step_start_time();                            \
-      _step_did_timeout = false;                           \
-    }                                                      \
     const bool cond_value = (cond);                        \
     if (cond_value && should_stop_reattempt_step(          \
                           stop_reattempt_reason)) {        \
@@ -634,12 +630,6 @@ void VMError::report(outputStream* st, bool _verbose) {
                    stop_reattempt_reason);                 \
     } else if (cond_value) {
       // [Continue Step logic]
-
-# define REATTEMPT_STEP_IF(s, cond)                        \
-  REATTEMPT_STEP_IF_IMPL(s, cond, false)
-
-# define REATTEMPT_STEP_WITH_NEW_TIMEOUT_IF(s, cond)       \
-  REATTEMPT_STEP_IF_IMPL(s, cond, true)
 
 # define END                                               \
     }                                                      \
@@ -700,14 +690,9 @@ void VMError::report(outputStream* st, bool _verbose) {
     st->print_cr("test reattempt timeout");
     os::infinite_sleep();
 
-  REATTEMPT_STEP_WITH_NEW_TIMEOUT_IF("test reattempt timeout, attempt 2",
-       _verbose && TestCrashInErrorHandler == TEST_REATTEMPT_SECONDARY_CRASH)
-    st->print_cr("test reattempt timeout, attempt 2");
-    os::infinite_sleep();
-
-  REATTEMPT_STEP_IF("test reattempt timeout, attempt 3",
+  REATTEMPT_STEP_IF("test reattempt timeout, attempt 2",
       _verbose && TestCrashInErrorHandler == TEST_REATTEMPT_SECONDARY_CRASH)
-    st->print_cr("test reattempt timeout, attempt 3");
+    st->print_cr("test reattempt timeout, attempt 2");
 
   STEP_IF("test reattempt stack headroom",
       _verbose && TestCrashInErrorHandler == TEST_REATTEMPT_SECONDARY_CRASH)
@@ -954,7 +939,7 @@ void VMError::report(outputStream* st, bool _verbose) {
       _print_native_stack_used = true;
     }
 
-  REATTEMPT_STEP_WITH_NEW_TIMEOUT_IF("retry printing native stack (no source info)", _verbose)
+  REATTEMPT_STEP_IF("retry printing native stack (no source info)", _verbose)
     st->cr();
     st->print_cr("Retrying call stack printing without source information...");
     frame fr = _context ? os::fetch_frame_from_context(_context) : os::current_frame();
