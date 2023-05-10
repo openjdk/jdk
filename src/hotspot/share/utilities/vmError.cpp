@@ -189,8 +189,7 @@ static bool stack_has_headroom(size_t headroom) {
 #ifdef ASSERT
 void VMError::reenterant_test_hit_stack_limit() {
   if (stack_has_headroom(_reattempt_required_stack_headroom)) {
-    char stack_buffer[_reattempt_required_stack_headroom / 2];
-    static_cast<void>(stack_buffer[sizeof(stack_buffer) - 1] = '\0');
+    static_cast<void>(alloca(_reattempt_required_stack_headroom / 2));
     reenterant_test_hit_stack_limit();
   }
   controlled_crash(14);
