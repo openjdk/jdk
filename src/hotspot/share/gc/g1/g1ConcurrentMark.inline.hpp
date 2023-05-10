@@ -43,8 +43,8 @@
 inline bool G1CMIsAliveClosure::do_object_b(oop obj) {
   // Check whether the passed in object is null. During discovery the referent
   // may be cleared between the initial check and being passed in here.
-  if (obj == NULL) {
-    // Return true to avoid discovery when the referent is NULL.
+  if (obj == nullptr) {
+    // Return true to avoid discovery when the referent is null.
     return true;
   }
 
@@ -59,14 +59,9 @@ inline bool G1CMIsAliveClosure::do_object_b(oop obj) {
 }
 
 inline bool G1CMSubjectToDiscoveryClosure::do_object_b(oop obj) {
-  // Re-check whether the passed object is null. With ReferentBasedDiscovery the
-  // mutator may have changed the referent's value (i.e. cleared it) between the
-  // time the referent was determined to be potentially alive and calling this
-  // method.
-  if (obj == NULL) {
-    return false;
-  }
+  assert(obj != nullptr, "precondition");
   assert(_g1h->is_in_reserved(obj), "Trying to discover obj " PTR_FORMAT " not in heap", p2i(obj));
+
   return _g1h->heap_region_containing(obj)->is_old_or_humongous();
 }
 
@@ -96,7 +91,7 @@ inline void G1CMMarkStack::iterate(Fn fn) const {
   size_t num_chunks = 0;
 
   TaskQueueEntryChunk* cur = _chunk_list;
-  while (cur != NULL) {
+  while (cur != nullptr) {
     guarantee(num_chunks <= _chunks_in_chunk_list, "Found " SIZE_FORMAT " oop chunks which is more than there should be", num_chunks);
 
     for (size_t i = 0; i < EntriesPerChunk; ++i) {
@@ -142,13 +137,13 @@ inline bool G1CMTask::is_below_finger(oop obj, HeapWord* global_finger) const {
   // local check will be more accurate and so result in fewer pushes,
   // but may also be a little slower.
   HeapWord* objAddr = cast_from_oop<HeapWord*>(obj);
-  if (_finger != NULL) {
+  if (_finger != nullptr) {
     // We have a current region.
 
-    // Finger and region values are all NULL or all non-NULL.  We
+    // Finger and region values are all null or all non-null.  We
     // use _finger to check since we immediately use its value.
-    assert(_curr_region != NULL, "invariant");
-    assert(_region_limit != NULL, "invariant");
+    assert(_curr_region != nullptr, "invariant");
+    assert(_region_limit != nullptr, "invariant");
     assert(_region_limit <= global_finger, "invariant");
 
     // True if obj is less than the local finger, or is between
@@ -197,14 +192,14 @@ inline HeapWord* G1ConcurrentMark::top_at_rebuild_start(uint region) const {
 inline void G1ConcurrentMark::update_top_at_rebuild_start(HeapRegion* r) {
   uint const region = r->hrm_index();
   assert(region < _g1h->max_reserved_regions(), "Tried to access TARS for region %u out of bounds", region);
-  assert(_top_at_rebuild_starts[region] == NULL,
-         "TARS for region %u has already been set to " PTR_FORMAT " should be NULL",
+  assert(_top_at_rebuild_starts[region] == nullptr,
+         "TARS for region %u has already been set to " PTR_FORMAT " should be null",
          region, p2i(_top_at_rebuild_starts[region]));
   G1RemSetTrackingPolicy* tracker = _g1h->policy()->remset_tracker();
   if (tracker->needs_scan_for_rebuild(r)) {
     _top_at_rebuild_starts[region] = r->top();
   } else {
-    // Leave TARS at NULL.
+    // Leave TARS at null.
   }
 }
 
@@ -269,7 +264,7 @@ template <class T>
 inline bool G1CMTask::deal_with_reference(T* p) {
   increment_refs_reached();
   oop const obj = RawAccess<MO_RELAXED>::oop_load(p);
-  if (obj == NULL) {
+  if (obj == nullptr) {
     return false;
   }
   return make_reference_grey(obj);
@@ -280,7 +275,7 @@ inline void G1ConcurrentMark::raw_mark_in_bitmap(oop obj) {
 }
 
 bool G1ConcurrentMark::is_marked_in_bitmap(oop p) const {
-  assert(p != NULL && oopDesc::is_oop(p), "expected an oop");
+  assert(p != nullptr && oopDesc::is_oop(p), "expected an oop");
   return _mark_bitmap.is_marked(cast_from_oop<HeapWord*>(p));
 }
 

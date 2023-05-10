@@ -452,8 +452,8 @@ void ClassFileParser::parse_constant_pool(const ClassFileStream* const stream,
         // fall through
       case JVM_CONSTANT_InterfaceMethodref: {
         if (!_need_verify) break;
-        const int klass_ref_index = cp->klass_ref_index_at(index);
-        const int name_and_type_ref_index = cp->name_and_type_ref_index_at(index);
+        const int klass_ref_index = cp->uncached_klass_ref_index_at(index);
+        const int name_and_type_ref_index = cp->uncached_name_and_type_ref_index_at(index);
         check_property(valid_klass_reference_at(klass_ref_index),
                        "Invalid constant pool index %u in class file %s",
                        klass_ref_index, CHECK);
@@ -655,7 +655,7 @@ void ClassFileParser::parse_constant_pool(const ClassFileStream* const stream,
       }
       case JVM_CONSTANT_Dynamic: {
         const int name_and_type_ref_index =
-          cp->name_and_type_ref_index_at(index);
+          cp->uncached_name_and_type_ref_index_at(index);
         // already verified to be utf8
         const int name_ref_index =
           cp->name_ref_index_at(name_and_type_ref_index);
@@ -678,7 +678,7 @@ void ClassFileParser::parse_constant_pool(const ClassFileStream* const stream,
       case JVM_CONSTANT_Methodref:
       case JVM_CONSTANT_InterfaceMethodref: {
         const int name_and_type_ref_index =
-          cp->name_and_type_ref_index_at(index);
+          cp->uncached_name_and_type_ref_index_at(index);
         // already verified to be utf8
         const int name_ref_index =
           cp->name_ref_index_at(name_and_type_ref_index);
@@ -729,7 +729,7 @@ void ClassFileParser::parse_constant_pool(const ClassFileStream* const stream,
           case JVM_REF_invokeSpecial:
           case JVM_REF_newInvokeSpecial: {
             const int name_and_type_ref_index =
-              cp->name_and_type_ref_index_at(ref_index);
+              cp->uncached_name_and_type_ref_index_at(ref_index);
             const int name_ref_index =
               cp->name_ref_index_at(name_and_type_ref_index);
             const Symbol* const name = cp->symbol_at(name_ref_index);
@@ -1978,27 +1978,27 @@ ClassFileParser::FieldAnnotationCollector::~FieldAnnotationCollector() {
 
 void MethodAnnotationCollector::apply_to(const methodHandle& m) {
   if (has_annotation(_method_CallerSensitive))
-    m->set_caller_sensitive(true);
+    m->set_caller_sensitive();
   if (has_annotation(_method_ForceInline))
-    m->set_force_inline(true);
+    m->set_force_inline();
   if (has_annotation(_method_DontInline))
-    m->set_dont_inline(true);
+    m->set_dont_inline();
   if (has_annotation(_method_ChangesCurrentThread))
-    m->set_changes_current_thread(true);
+    m->set_changes_current_thread();
   if (has_annotation(_method_JvmtiMountTransition))
-    m->set_jvmti_mount_transition(true);
+    m->set_jvmti_mount_transition();
   if (has_annotation(_method_InjectedProfile))
-    m->set_has_injected_profile(true);
+    m->set_has_injected_profile();
   if (has_annotation(_method_LambdaForm_Compiled) && m->intrinsic_id() == vmIntrinsics::_none)
     m->set_intrinsic_id(vmIntrinsics::_compiledLambdaForm);
   if (has_annotation(_method_Hidden))
-    m->set_hidden(true);
+    m->set_is_hidden();
   if (has_annotation(_method_Scoped))
-    m->set_scoped(true);
+    m->set_scoped();
   if (has_annotation(_method_IntrinsicCandidate) && !m->is_synthetic())
-    m->set_intrinsic_candidate(true);
+    m->set_intrinsic_candidate();
   if (has_annotation(_jdk_internal_vm_annotation_ReservedStackAccess))
-    m->set_has_reserved_stack_access(true);
+    m->set_has_reserved_stack_access();
 }
 
 void ClassFileParser::ClassAnnotationCollector::apply_to(InstanceKlass* ik) {
@@ -2739,7 +2739,7 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
     parsed_annotations.apply_to(methodHandle(THREAD, m));
 
   if (is_hidden()) { // Mark methods in hidden classes as 'hidden'.
-    m->set_hidden(true);
+    m->set_is_hidden();
   }
 
   // Copy annotations

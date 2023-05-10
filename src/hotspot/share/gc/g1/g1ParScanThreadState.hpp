@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -185,7 +185,7 @@ private:
   // Tries to allocate word_sz in the PLAB of the next "generation" after trying to
   // allocate into dest. Previous_plab_refill_failed indicates whether previous
   // PLAB refill for the original (source) object failed.
-  // Returns a non-NULL pointer if successful, and updates dest if required.
+  // Returns a non-null pointer if successful, and updates dest if required.
   // Also determines whether we should continue to try to allocate into the various
   // generations or just end trying to allocate.
   HeapWord* allocate_in_next_plab(G1HeapRegionAttr* dest,

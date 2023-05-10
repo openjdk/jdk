@@ -89,10 +89,9 @@
   nonstatic_field(CardTable,                   _whole_heap,                                   const MemRegion)                       \
   nonstatic_field(CardTable,                   _page_size,                                    const size_t)                          \
   nonstatic_field(CardTable,                   _byte_map_size,                                const size_t)                          \
-  nonstatic_field(CardTable,                   _byte_map,                                     CardTable::CardValue*)                                \
-  nonstatic_field(CardTable,                   _covered,                                      MemRegion*)                            \
+  nonstatic_field(CardTable,                   _byte_map,                                     CardTable::CardValue*)                 \
   nonstatic_field(CardTable,                   _guard_region,                                 MemRegion)                             \
-  nonstatic_field(CardTable,                   _byte_map_base,                                CardTable::CardValue*)                                \
+  nonstatic_field(CardTable,                   _byte_map_base,                                CardTable::CardValue*)                 \
   nonstatic_field(CardTableBarrierSet,         _defer_initial_card_mark,                      bool)                                  \
   nonstatic_field(CardTableBarrierSet,         _card_table,                                   CardTable*)                            \
                                                                                                                                      \
