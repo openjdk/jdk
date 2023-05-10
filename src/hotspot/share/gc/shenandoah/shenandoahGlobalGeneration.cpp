@@ -30,7 +30,6 @@
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahVerifier.hpp"
 #include "gc/shenandoah/shenandoahYoungGeneration.hpp"
-#include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 
 const char* ShenandoahGlobalGeneration::name() const {
   return "GLOBAL";
@@ -42,6 +41,7 @@ size_t ShenandoahGlobalGeneration::max_capacity() const {
 
 size_t ShenandoahGlobalGeneration::used_regions() const {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
+  assert(heap->mode()->is_generational(), "Region usage accounting is only for generational mode");
   return heap->old_generation()->used_regions() + heap->young_generation()->used_regions();
 }
 
