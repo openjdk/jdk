@@ -45,12 +45,12 @@ public class SimpleIO {
     static void testinput() {
         provideInput("Joan");
         String i1 = input("Name >> ");
-        println(1, i1);
+        printLine(1, i1);
 
         provideInput("Pelham");
         print("Address >> ");
         String i2 = input("");
-        println(2, i2);
+        printLine(2, i2);
     }
 
     static void testPrint() {
@@ -58,25 +58,25 @@ public class SimpleIO {
 
         print("Hello ");
         print("Joan");
-        println();
+        printLine();
 
         print((Object[])null);
         print((byte)1, (short)2, (int)3, (long)4, (float)5.7, (double)8.9, 'a', true);
         print(List.of("a", "b", "c"));
-        println();
+        printLine();
     }
 
     static void testPrintln() {
         print();
 
-        println("Hello ");
-        println("Joan");
-        println();
+        printLine("Hello ");
+        printLine("Joan");
+        printLine();
 
-        println((Object[])null);
-        println((byte)1, (short)2, (int)3, (long)4, (float)5.7, (double)8.9, 'a', true);
-        println(List.of("a", "b", "c"));
-        println();
+        printLine((Object[])null);
+        printLine((byte)1, (short)2, (int)3, (long)4, (float)5.7, (double)8.9, 'a', true);
+        printLine(List.of("a", "b", "c"));
+        printLine();
     }
 
     static void testPrintLines() {
@@ -115,27 +115,27 @@ public class SimpleIO {
                 377 ABCD
                 """;
         var scanner = scanner(input);
-        println(scanner.hasNextLine());
-        println(scanner.nextLine());
-        println(scanner.hasNext());
-        println(scanner.next());
-        println(scanner.hasNext());
-        println(scanner.next());
-        println(scanner.hasNextInt());
-        println(scanner.nextInt());
-        println(scanner.hasNextLong());
-        println(scanner.nextLong());
-        println(scanner.hasNextFloat());
-        println(scanner.nextFloat());
-        println(scanner.hasNextDouble());
-        println(scanner.nextDouble());
-        println(scanner.hasNextBoolean());
-        println(scanner.nextBoolean());
-        println(scanner.hasNextInt(8));
-        println(scanner.nextInt(8));
-        println(scanner.hasNextInt(16));
-        println(scanner.nextInt(16));
-        println(scanner.hasNext());
+        printLine(scanner.hasNextLine());
+        printLine(scanner.nextLine());
+        printLine(scanner.hasNext());
+        printLine(scanner.next());
+        printLine(scanner.hasNext());
+        printLine(scanner.next());
+        printLine(scanner.hasNextInt());
+        printLine(scanner.nextInt());
+        printLine(scanner.hasNextLong());
+        printLine(scanner.nextLong());
+        printLine(scanner.hasNextFloat());
+        printLine(scanner.nextFloat());
+        printLine(scanner.hasNextDouble());
+        printLine(scanner.nextDouble());
+        printLine(scanner.hasNextBoolean());
+        printLine(scanner.nextBoolean());
+        printLine(scanner.hasNextInt(8));
+        printLine(scanner.nextInt(8));
+        printLine(scanner.hasNextInt(16));
+        printLine(scanner.nextInt(16));
+        printLine(scanner.hasNext());
     }
 
     static void testThrown(String test, Consumer<String> consumer) {
@@ -143,7 +143,7 @@ public class SimpleIO {
             consumer.accept(test);
             throw new RuntimeException(test + " exception not thrown");
         } catch (Throwable ex) {
-            println(test + " " + ex.getClass().getSimpleName() + " thrown");
+            printLine(test + " " + ex.getClass().getSimpleName() + " thrown");
         }
     }
 
@@ -253,12 +253,12 @@ false
 
         if (!expected.strip().equals(output.strip())) {
             System.setOut(out);
-            println();
-            println("Expected:");
-            println(expected);
-            println();
-            println("Output:");
-            println(output);
+            printLine();
+            printLine("Expected:");
+            printLine(expected);
+            printLine();
+            printLine("Output:");
+            printLine(output);
             throw new RuntimeException("Unexpected output");
         }
     }

@@ -25,6 +25,7 @@
 
 package java.io;
 
+
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -32,7 +33,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.InputMismatchException;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
@@ -213,15 +213,13 @@ public final class SimpleIO {
      */
     public static String input(String prompt) {
         Objects.requireNonNull(prompt, "prompt must not be null");
-
+        String input;
         if (LineReader.hasLineReader()) {
-            String input = LineReader.readLine(prompt);
-            return input != null ? input : "";
+            input = LineReader.readLine(prompt);
         } else {
-            System.out.print(prompt);
-            Scanner scanner = new Scanner(System.in);
-            return scanner.hasNext() ? scanner.nextLine() : "";
+            input = System.console().readLine(prompt);
         }
+        return input != null ? input : "";
     }
 
     /**
@@ -424,7 +422,7 @@ public final class SimpleIO {
      *
      * }
      *
-     * @param filename  file name of file to be read
+     * @param filename  string representing the name or path of the file to be read
      * @return Content read from a file
      * @throws UncheckedIOException wrapping an IOException if an io error occurs.
      *
@@ -489,7 +487,7 @@ public final class SimpleIO {
      *
      * }
      *
-     * @param filename  file name of file to be read
+     * @param filename  string representing the name or path of the file to be read
      * @return list of lines read from a file
      * @throws UncheckedIOException wrapping an IOException if an io error occurs.
      *
@@ -533,7 +531,7 @@ public final class SimpleIO {
         }
     }
     /**
-     * The contents of the file at {@code path} are read as a string.
+     * The string is replaces the content of the file at {@code path}.
      * For example:
      * {@snippet lang="java":
      * var text = """
@@ -557,7 +555,7 @@ public final class SimpleIO {
      *
      * @implSpec Line terminators are normalized the platform line separator.
      *
-     * @param filename  file name string of file to be written
+     * @param filename  string representing the name or path of the file to be written
      * @param content  string content of the file
      * @throws UncheckedIOException wrapping an IOException if an io error occurs.
      */
@@ -568,7 +566,7 @@ public final class SimpleIO {
     }
 
     /**
-     * The contents of the file at {@code path} are read as a string.
+     * The string is replaces the content of the file at {@code path}.
      * For example:
      * {@snippet lang="java":
      * var text = """
@@ -600,11 +598,7 @@ public final class SimpleIO {
     public static void write(Path path, String content) {
         Objects.requireNonNull(path, "path must not be null");
         Objects.requireNonNull(content, "content must not be null");
-        try (PrintWriter out = new PrintWriter(path.toFile())) {
-            content.lines().forEach(out::println);
-        } catch (IOException ex) {
-            throw new UncheckedIOException(ex);
-        }
+        writeLines(path, content.lines().toList());
     }
 
     /**
@@ -626,7 +620,7 @@ public final class SimpleIO {
      *
      * @implSpec Each line will be followed by the platform line separator.
      *
-     * @param filename  file name string of file to be written
+     * @param filename  string representing the name or path of the file to be written
      * @param lines list of lines to be written to the file
      * @throws UncheckedIOException wrapping an IOException if an io error occurs.
      */
@@ -663,8 +657,8 @@ public final class SimpleIO {
     public static void writeLines(Path path, List<String> lines) {
         Objects.requireNonNull(path, "path must not be null");
         Objects.requireNonNull(lines, "lines must not be null");
-        try (PrintWriter out = new PrintWriter(path.toFile())) {
-            lines.forEach(out::println);
+        try {
+            Files.write(path, lines);
         } catch (IOException ex) {
             throw new UncheckedIOException(ex);
         }
