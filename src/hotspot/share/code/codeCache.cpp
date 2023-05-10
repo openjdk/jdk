@@ -35,6 +35,7 @@
 #include "compiler/compilationPolicy.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
+#include "compiler/compilerDirectives.hpp"
 #include "compiler/oopMap.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shared/collectedHeap.hpp"
@@ -1363,6 +1364,23 @@ void CodeCache::mark_all_nmethods_for_deoptimization(DeoptimizationScope* deopt_
   while(iter.next()) {
     CompiledMethod* nm = iter.method();
     if (!nm->is_native_method()) {
+      deopt_scope->mark(nm);
+    }
+  }
+}
+
+void CodeCache::mark_for_deoptimization_directives_matches(DeoptimizationScope *deopt_scope) {
+  MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+  Thread *thread = Thread::current();
+
+  CompiledMethodIterator iter(CompiledMethodIterator::only_not_unloading);
+  while(iter.next()) {
+    CompiledMethod* nm = iter.method();
+    HandleMark hm(thread);
+    methodHandle mh(thread, nm->method());
+    if (DirectivesStack::hasMatchingDirectives(mh)) {
+      ResourceMark rm;
+      log_trace(codecache)("Mark for deopt because of matching directives %s", mh->external_name());
       deopt_scope->mark(nm);
     }
   }

@@ -43,6 +43,7 @@
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "prims/jvmtiAgentList.hpp"
+#include "runtime/deoptimization.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/flags/jvmFlag.hpp"
 #include "runtime/handles.inline.hpp"
@@ -135,6 +136,7 @@ void DCmd::register_dcmds(){
 
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CompilerDirectivesPrintDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CompilerDirectivesAddDCmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CompilerDirectivesReplaceDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CompilerDirectivesRemoveDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CompilerDirectivesClearDCmd>(full_export, true, false));
 
@@ -884,21 +886,91 @@ void CompilerDirectivesPrintDCmd::execute(DCmdSource source, TRAPS) {
 
 CompilerDirectivesAddDCmd::CompilerDirectivesAddDCmd(outputStream* output, bool heap) :
                            DCmdWithParser(output, heap),
-  _filename("filename","Name of the directives file", "STRING",true) {
+  _filename("filename","Name of the directives file", "STRING",true),
+  _force_deopt("-d", "Force deoptimization of affected methods.", "BOOLEAN", false, "false") {
+
   _dcmdparser.add_dcmd_argument(&_filename);
+  _dcmdparser.add_dcmd_option(&_force_deopt);
 }
 
 void CompilerDirectivesAddDCmd::execute(DCmdSource source, TRAPS) {
   DirectivesParser::parse_from_file(_filename.value(), output());
+  if (_force_deopt.value()) {
+    DeoptimizationScope deopt_scope;
+    CodeCache::mark_for_deoptimization_directives_matches(&deopt_scope);
+    deopt_scope.deoptimize_marked();
+  }
+}
+
+CompilerDirectivesReplaceDCmd::CompilerDirectivesReplaceDCmd(outputStream* output, bool heap) :
+                           DCmdWithParser(output, heap),
+  _filename("filename","Name of the directives file", "STRING",true),
+  _force_deopt("-d", "Force deoptimization of affected methods.", "BOOLEAN", false, "false") {
+
+  _dcmdparser.add_dcmd_argument(&_filename);
+  _dcmdparser.add_dcmd_option(&_force_deopt);
+}
+
+void CompilerDirectivesReplaceDCmd::execute(DCmdSource source, TRAPS) {
+  // Need to do it twice, to account for the method that doesn't match
+  // the directives anymore
+  // Have to duplicate code to shut an assert in DTR of DeoptimizationScope
+  if (_force_deopt.value()) {
+    DeoptimizationScope deopt_scope;
+    CodeCache::mark_for_deoptimization_directives_matches(&deopt_scope);
+
+    DirectivesStack::clear();
+    DirectivesParser::parse_from_file(_filename.value(), output());
+
+    CodeCache::mark_for_deoptimization_directives_matches(&deopt_scope);
+    deopt_scope.deoptimize_marked();
+  }
+  else {
+    DirectivesStack::clear();
+    DirectivesParser::parse_from_file(_filename.value(), output());
+  }
+}
+
+CompilerDirectivesRemoveDCmd::CompilerDirectivesRemoveDCmd(outputStream* output, bool heap) :
+                           DCmdWithParser(output, heap),
+  _force_deopt("-d", "Force deoptimization of affected methods.", "BOOLEAN", false, "false") {
+
+  _dcmdparser.add_dcmd_option(&_force_deopt);
 }
 
 void CompilerDirectivesRemoveDCmd::execute(DCmdSource source, TRAPS) {
-  DirectivesStack::pop(1);
+  // Have to duplicate code to shut an assert in DTR of DeoptimizationScope
+  if (_force_deopt.value()) {
+    DeoptimizationScope deopt_scope;
+    CodeCache::mark_for_deoptimization_directives_matches(&deopt_scope);
+    DirectivesStack::pop(1);
+    deopt_scope.deoptimize_marked();
+  }
+  else {
+    DirectivesStack::pop(1);
+  }
+}
+
+CompilerDirectivesClearDCmd::CompilerDirectivesClearDCmd(outputStream* output, bool heap) :
+                           DCmdWithParser(output, heap),
+  _force_deopt("-d", "Force deoptimization of affected methods.", "BOOLEAN", false, "false") {
+
+  _dcmdparser.add_dcmd_option(&_force_deopt);
 }
 
 void CompilerDirectivesClearDCmd::execute(DCmdSource source, TRAPS) {
-  DirectivesStack::clear();
+  // Have to duplicate code to shut an assert in DTR of DeoptimizationScope
+  if (_force_deopt.value()) {
+    DeoptimizationScope deopt_scope;
+    CodeCache::mark_for_deoptimization_directives_matches(&deopt_scope);
+    DirectivesStack::clear();
+    deopt_scope.deoptimize_marked();
+  }
+  else {
+    DirectivesStack::clear();
+  }
 }
+
 #if INCLUDE_SERVICES
 ClassHierarchyDCmd::ClassHierarchyDCmd(outputStream* output, bool heap) :
                                        DCmdWithParser(output, heap),

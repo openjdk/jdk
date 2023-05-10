@@ -684,9 +684,11 @@ public:
   virtual void execute(DCmdSource source, TRAPS);
 };
 
-class CompilerDirectivesRemoveDCmd : public DCmd {
+class CompilerDirectivesRemoveDCmd : public DCmdWithParser {
+protected:
+  DCmdArgument<bool> _force_deopt; // true if deopt should be forced after directives changes.
 public:
-  CompilerDirectivesRemoveDCmd(outputStream* output, bool heap) : DCmd(output, heap) {}
+  CompilerDirectivesRemoveDCmd(outputStream* output, bool heap);
   static const char* name() {
     return "Compiler.directives_remove";
   }
@@ -707,6 +709,7 @@ public:
 class CompilerDirectivesAddDCmd : public DCmdWithParser {
 protected:
   DCmdArgument<char*> _filename;
+  DCmdArgument<bool> _force_deopt; // true if deopt should be forced after directives changes.
 public:
   static int num_arguments() { return 1; }
   CompilerDirectivesAddDCmd(outputStream* output, bool heap);
@@ -727,9 +730,34 @@ public:
   virtual void execute(DCmdSource source, TRAPS);
 };
 
-class CompilerDirectivesClearDCmd : public DCmd {
+class CompilerDirectivesReplaceDCmd : public DCmdWithParser {
+protected:
+  DCmdArgument<char*> _filename;
+  DCmdArgument<bool> _force_deopt; // true if deopt should be forced after directives changes.
 public:
-  CompilerDirectivesClearDCmd(outputStream* output, bool heap) : DCmd(output, heap) {}
+  CompilerDirectivesReplaceDCmd(outputStream* output, bool heap);
+  static const char* name() {
+    return "Compiler.directives_replace";
+  }
+  static const char* description() {
+    return "Clear derectives stack amd load new compiler directives from file.";
+  }
+  static const char* impact() {
+    return "Low";
+  }
+  static const JavaPermission permission() {
+    JavaPermission p = {"java.lang.management.ManagementPermission",
+                        "monitor", NULL};
+    return p;
+  }
+  virtual void execute(DCmdSource source, TRAPS);
+};
+
+class CompilerDirectivesClearDCmd : public DCmdWithParser {
+protected:
+  DCmdArgument<bool> _force_deopt; // true if deopt should be forced after directives changes.
+public:
+  CompilerDirectivesClearDCmd(outputStream* output, bool heap);
   static const char* name() {
     return "Compiler.directives_clear";
   }

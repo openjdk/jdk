@@ -95,6 +95,7 @@ private:
 public:
   static void init();
   static DirectiveSet* getMatchingDirective(const methodHandle& mh, AbstractCompiler* comp);
+  static bool hasMatchingDirectives(const methodHandle& method);
   static DirectiveSet* getDefaultDirective(AbstractCompiler* comp);
   static void push(CompilerDirectives* directive);
   static void pop(int count);
