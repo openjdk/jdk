@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package com.sun.jndi.dns;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.lang.ref.Cleaner;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.PortUnreachableException;
@@ -51,6 +52,7 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.concurrent.locks.ReentrantLock;
 
+import jdk.internal.ref.CleanerFactory;
 import sun.security.jca.JCAUtil;
 
 // Some of this code began life as part of sun.javaos.net.DnsClient
@@ -103,6 +105,7 @@ public class DnsClient {
     private final ReentrantLock udpChannelLock = new ReentrantLock();
 
     private final Selector udpChannelSelector;
+    private final Cleaner.Cleanable selectorCleanup;
 
     private static final DNSDatagramChannelFactory factory =
             new DNSDatagramChannelFactory(random);
@@ -158,6 +161,16 @@ public class DnsClient {
             ne.setRootCause(e);
             throw ne;
         }
+        // register a cleaning action to close the Selector
+        // when this DNS client becomes phantom reachable
+        Selector sel = udpChannelSelector;
+        selectorCleanup = CleanerFactory.cleaner().register(this, () -> {
+            try {
+                sel.close();
+            } catch (IOException ignore) {
+            }
+        });
+
         reqs = Collections.synchronizedMap(
             new HashMap<Integer, ResourceRecord>());
         resps = Collections.synchronizedMap(new HashMap<Integer, byte[]>());
@@ -173,19 +186,11 @@ public class DnsClient {
         }
     }
 
-    @SuppressWarnings("removal")
-    protected void finalize() {
-        close();
-    }
-
     // A lock to access the request and response queues in tandem.
     private Object queuesLock = new Object();
 
     public void close() {
-        try {
-            udpChannelSelector.close();
-        } catch (IOException ioException) {
-        }
+        selectorCleanup.clean();
         synchronized (queuesLock) {
             reqs.clear();
             resps.clear();

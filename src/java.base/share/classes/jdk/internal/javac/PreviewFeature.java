@@ -70,8 +70,10 @@ public @interface PreviewFeature {
         RECORD_PATTERNS,
         // not used
         VIRTUAL_THREADS,
-        @JEP(number=434, title="Foreign Function & Memory API", status="Second Preview")
+        @JEP(number=442, title="Foreign Function & Memory API", status="Third Preview")
         FOREIGN,
+        @JEP(number=430, title="String Templates", status="First Preview")
+        STRING_TEMPLATES,
         /**
          * A key for testing.
          */

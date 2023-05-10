@@ -1058,12 +1058,8 @@ NOINLINE freeze_result FreezeBase::recurse_freeze_interpreted_frame(frame& f, fr
 
   // The frame's top never includes the stack arguments to the callee
   intptr_t* const stack_frame_top = ContinuationHelper::InterpretedFrame::frame_top(f, callee_argsize, callee_interpreted);
-  intptr_t* const callers_sp      = ContinuationHelper::InterpretedFrame::callers_sp(f);
-  const int locals = f.interpreter_frame_method()->max_locals();
-  const int fsize = callers_sp + frame::metadata_words_at_top + locals - stack_frame_top;
-
   intptr_t* const stack_frame_bottom = ContinuationHelper::InterpretedFrame::frame_bottom(f);
-  assert(stack_frame_bottom - stack_frame_top >= fsize, ""); // == on x86
+  const int fsize = stack_frame_bottom - stack_frame_top;
 
   DEBUG_ONLY(verify_frame_top(f, stack_frame_top));
 
@@ -1093,9 +1089,9 @@ NOINLINE freeze_result FreezeBase::recurse_freeze_interpreted_frame(frame& f, fr
   intptr_t* heap_frame_bottom = ContinuationHelper::InterpretedFrame::frame_bottom(hf);
   assert(heap_frame_bottom == heap_frame_top + fsize, "");
 
-  // on AArch64 we add padding between the locals and the rest of the frame to keep the fp 16-byte-aligned
-  copy_to_chunk(stack_frame_bottom - locals, heap_frame_bottom - locals, locals); // copy locals
-  copy_to_chunk(stack_frame_top, heap_frame_top, fsize - locals);                 // copy rest
+  // Some architectures (like AArch64/PPC64/RISC-V) add padding between the locals and the fixed_frame to keep the fp 16-byte-aligned.
+  // On those architectures we freeze the padding in order to keep the same fp-relative offsets in the fixed_frame.
+  copy_to_chunk(stack_frame_top, heap_frame_top, fsize);
   assert(!is_bottom_frame || !caller.is_interpreted_frame() || (heap_frame_top + fsize) == (caller.unextended_sp() + argsize), "");
 
   relativize_interpreted_frame_metadata(f, hf);
@@ -1754,7 +1750,6 @@ private:
   void maybe_set_fastpath(intptr_t* sp) { if (sp > _fastpath) _fastpath = sp; }
 
   static inline void derelativize_interpreted_frame_metadata(const frame& hf, const frame& f);
-  static inline void set_interpreter_frame_bottom(const frame& f, intptr_t* bottom);
 
  public:
   CONT_JFR_ONLY(FreezeThawJfrInfo& jfr_info() { return _jfr_info; })
@@ -2150,20 +2145,18 @@ NOINLINE void ThawBase::recurse_thaw_interpreted_frame(const frame& hf, frame& c
   intptr_t* const heap_frame_bottom = ContinuationHelper::InterpretedFrame::frame_bottom(hf);
 
   assert(hf.is_heap_frame(), "should be");
-  const int fsize = heap_frame_bottom - heap_frame_top;
-
-  assert((stack_frame_bottom >= stack_frame_top + fsize) &&
-         (stack_frame_bottom <= stack_frame_top + fsize + 1), ""); // internal alignment on aarch64
-
-  // on AArch64/PPC64 we add padding between the locals and the rest of the frame to keep the fp 16-byte-aligned
-  const int locals = hf.interpreter_frame_method()->max_locals();
-  assert(hf.is_heap_frame(), "should be");
   assert(!f.is_heap_frame(), "should not be");
 
-  copy_from_chunk(heap_frame_bottom - locals, stack_frame_bottom - locals, locals); // copy locals
-  copy_from_chunk(heap_frame_top, stack_frame_top, fsize - locals);                 // copy rest
+  const int fsize = heap_frame_bottom - heap_frame_top;
+  assert((stack_frame_bottom == stack_frame_top + fsize), "");
 
-  set_interpreter_frame_bottom(f, stack_frame_bottom); // the copy overwrites the metadata
+  // Some architectures (like AArch64/PPC64/RISC-V) add padding between the locals and the fixed_frame to keep the fp 16-byte-aligned.
+  // On those architectures we freeze the padding in order to keep the same fp-relative offsets in the fixed_frame.
+  copy_from_chunk(heap_frame_top, stack_frame_top, fsize);
+
+  // Make sure the relativized locals is already set.
+  assert(f.interpreter_frame_local_at(0) == stack_frame_bottom - 1, "invalid frame bottom");
+
   derelativize_interpreted_frame_metadata(hf, f);
   patch(f, caller, is_bottom_frame);
 
@@ -2173,6 +2166,8 @@ NOINLINE void ThawBase::recurse_thaw_interpreted_frame(const frame& hf, frame& c
   CONT_JFR_ONLY(_jfr_info.record_interpreted_frame();)
 
   maybe_set_fastpath(f.sp());
+
+  const int locals = hf.interpreter_frame_method()->max_locals();
 
   if (!is_bottom_frame) {
     // can only fix caller once this frame is thawed (due to callee saved regs)

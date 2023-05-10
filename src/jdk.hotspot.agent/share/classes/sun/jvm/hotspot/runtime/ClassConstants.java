@@ -103,25 +103,6 @@ public interface ClassConstants
     // flags actually put in .class file
     public static final long JVM_ACC_WRITTEN_FLAGS = 0x00007FFF;
 
-    // Method* flags
-    // monitorenter/monitorexit bytecodes match
-    public static final long JVM_ACC_MONITOR_MATCH = 0x10000000;
-    // Method contains monitorenter/monitorexit bytecodes
-    public static final long JVM_ACC_HAS_MONITOR_BYTECODES = 0x20000000;
-    // Method has loops
-    public static final long JVM_ACC_HAS_LOOPS             = 0x40000000;
-    // The loop flag has been initialized
-    public static final long JVM_ACC_LOOPS_FLAG_INIT       = (int)0x80000000;
-    // Queued for compilation
-    public static final long JVM_ACC_QUEUED                = 0x01000000;
-    // TEMPORARY: currently on stack replacement compilation is not built into the
-    // invocation counter machinery.  Until it is, we will keep track of methods which
-    // cannot be on stack replaced in the access flags.
-    public static final long JVM_ACC_NOT_OSR_COMPILABLE     = 0x08000000;
-    public static final long JVM_ACC_HAS_JSRS               = 0x00800000;
-    // RedefineClasses() has made method obsolete
-    public static final long JVM_ACC_IS_OBSOLETE            = 0x00010000;
-
     // Klass* flags
     // True if klass has a non-empty finalize() method
     public static final long JVM_ACC_HAS_FINALIZER            = 0x40000000;

@@ -105,13 +105,23 @@ class JvmtiVTMSTransitionDisabler {
   JvmtiVTMSTransitionDisabler(jthread thread);
   ~JvmtiVTMSTransitionDisabler();
 
+  // set VTMS transition bit value in JavaThread and java.lang.VirtualThread object
+  static void set_is_in_VTMS_transition(JavaThread* thread, jobject vthread, bool in_trans);
+
   static void start_VTMS_transition(jthread vthread, bool is_mount);
   static void finish_VTMS_transition(jthread vthread, bool is_mount);
 
-  static void VTMS_mount_begin(jobject vthread, jboolean first_mount);
-  static void VTMS_mount_end(jobject vthread, jboolean first_mount);
-  static void VTMS_unmount_begin(jobject vthread, jboolean last_unmount);
-  static void VTMS_unmount_end(jobject vthread, jboolean last_unmount);
+  static void VTMS_vthread_start(jobject vthread);
+  static void VTMS_vthread_end(jobject vthread);
+
+  static void VTMS_vthread_mount(jobject vthread, bool hide);
+  static void VTMS_vthread_unmount(jobject vthread, bool hide);
+
+  static void VTMS_mount_begin(jobject vthread);
+  static void VTMS_mount_end(jobject vthread);
+
+  static void VTMS_unmount_begin(jobject vthread);
+  static void VTMS_unmount_end(jobject vthread);
 };
 
 ///////////////////////////////////////////////////////////////

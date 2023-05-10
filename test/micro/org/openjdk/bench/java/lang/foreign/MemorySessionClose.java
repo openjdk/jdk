@@ -22,7 +22,6 @@
  */
 package org.openjdk.bench.java.lang.foreign;
 
-import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 
 import org.openjdk.jmh.annotations.Benchmark;
@@ -37,7 +36,7 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.TearDown;
 import org.openjdk.jmh.annotations.Warmup;
 
-import java.lang.foreign.SegmentScope;
+import java.lang.foreign.Arena;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -104,27 +103,27 @@ public class MemorySessionClose {
 
     @Benchmark
     public MemorySegment confined_close() {
-        try (Arena arena = Arena.openConfined()) {
+        try (Arena arena = Arena.ofConfined()) {
             return arena.allocate(ALLOC_SIZE, 4);
         }
     }
 
     @Benchmark
     public MemorySegment shared_close() {
-        try (Arena arena = Arena.openShared()) {
+        try (Arena arena = Arena.ofShared()) {
             return arena.allocate(ALLOC_SIZE, 4);
         }
     }
 
     @Benchmark
     public MemorySegment implicit_close() {
-        return MemorySegment.allocateNative(ALLOC_SIZE, 4, SegmentScope.auto());
+        return Arena.ofAuto().allocate(ALLOC_SIZE, 4);
     }
 
     @Benchmark
     public MemorySegment implicit_close_systemgc() {
         if (gcCount++ == 0) System.gc(); // GC when we overflow
-        return MemorySegment.allocateNative(ALLOC_SIZE, 4, SegmentScope.auto());
+        return Arena.ofAuto().allocate(ALLOC_SIZE, 4);
     }
 
     // keep

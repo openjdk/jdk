@@ -32,21 +32,26 @@ import java.util.Optional;
 
 public final class StructLayoutImpl extends AbstractGroupLayout<StructLayoutImpl> implements StructLayout {
 
-    private StructLayoutImpl(List<MemoryLayout> elements) {
-        super(Kind.STRUCT, elements);
-    }
-
-    private StructLayoutImpl(List<MemoryLayout> elements, long bitAlignment, Optional<String> name) {
-        super(Kind.STRUCT, elements, bitAlignment, name);
+    private StructLayoutImpl(List<MemoryLayout> elements, long bitSize, long bitAlignment, long minBitAlignment, Optional<String> name) {
+        super(Kind.STRUCT, elements, bitSize, bitAlignment, minBitAlignment, name);
     }
 
     @Override
     StructLayoutImpl dup(long bitAlignment, Optional<String> name) {
-        return new StructLayoutImpl(memberLayouts(), bitAlignment, name);
+        return new StructLayoutImpl(memberLayouts(), bitSize(), bitAlignment, minBitAlignment, name);
     }
 
     public static StructLayout of(List<MemoryLayout> elements) {
-        return new StructLayoutImpl(elements);
+        long size = 0;
+        long align = 8;
+        for (MemoryLayout elem : elements) {
+            if (size % elem.bitAlignment() != 0) {
+                throw new IllegalArgumentException("Invalid alignment constraint for member layout: " + elem);
+            }
+            size = Math.addExact(size, elem.bitSize());
+            align = Math.max(align, elem.bitAlignment());
+        }
+        return new StructLayoutImpl(elements, size, align, align, Optional.empty());
     }
 
 }

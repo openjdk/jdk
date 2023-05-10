@@ -244,6 +244,7 @@ protected:
   G1MonitoringScope(G1MonitoringSupport* monitoring_support,
                     CollectorCounters* collection_counters,
                     GCMemoryManager* gc_memory_manager,
+                    const char* end_message,
                     bool all_memory_pools_affected = true);
   ~G1MonitoringScope();
 };

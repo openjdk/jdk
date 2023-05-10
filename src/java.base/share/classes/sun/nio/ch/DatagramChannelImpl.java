@@ -78,6 +78,9 @@ import sun.net.ResourceManager;
 import sun.net.ext.ExtendedSocketOptions;
 import sun.net.util.IPAddressUtil;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.NANOSECONDS;
+
 /**
  * An implementation of DatagramChannels.
  */
@@ -497,7 +500,12 @@ class DatagramChannelImpl
             if (nanos == 0) {
                 millis = -1;
             } else {
-                millis = TimeUnit.NANOSECONDS.toMillis(nanos);
+                millis = NANOSECONDS.toMillis(nanos);
+                if (nanos > MILLISECONDS.toNanos(millis)) {
+                    // Round up any excess nanos to the nearest millisecond to
+                    // avoid parking for less than requested.
+                    millis++;
+                }
             }
             Net.poll(getFD(), event, millis);
         }

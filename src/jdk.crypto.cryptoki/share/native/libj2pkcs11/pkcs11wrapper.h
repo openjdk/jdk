@@ -231,7 +231,7 @@
 #endif
 
 /* debug output */
-extern jboolean debug;
+extern jboolean debug_j2pkcs11;
 void printDebug(const char *format, ...);
 
 #define CK_ASSERT_OK 0L

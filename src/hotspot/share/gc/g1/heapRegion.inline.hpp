@@ -32,6 +32,7 @@
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1ConcurrentMarkBitMap.inline.hpp"
 #include "gc/g1/g1MonotonicArena.inline.hpp"
+#include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1Predictions.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
@@ -54,7 +55,7 @@ inline HeapWord* HeapRegion::allocate_impl(size_t min_word_size,
     *actual_size = want_to_allocate;
     return obj;
   } else {
-    return NULL;
+    return nullptr;
   }
 }
 
@@ -77,7 +78,7 @@ inline HeapWord* HeapRegion::par_allocate_impl(size_t min_word_size,
         return obj;
       }
     } else {
-      return NULL;
+      return nullptr;
     }
   } while (true);
 }
@@ -177,7 +178,7 @@ inline size_t HeapRegion::block_size(const HeapWord* p, HeapWord* const pb) cons
 
 inline void HeapRegion::reset_compacted_after_full_gc(HeapWord* new_top) {
   set_top(new_top);
-  // After a compaction the mark bitmap in a non-pinned regions is invalid.
+  // After a compaction the mark bitmap in a movable region is invalid.
   // But all objects are live, we get this by setting TAMS to bottom.
   init_top_at_mark_start();
 
@@ -335,14 +336,14 @@ HeapWord* HeapRegion::do_oops_on_memregion_in_humongous(MemRegion mr,
   HeapRegion* sr = humongous_start_region();
   oop obj = cast_to_oop(sr->bottom());
 
-  // If concurrent and klass_or_null is NULL, then space has been
+  // If concurrent and klass_or_null is null, then space has been
   // allocated but the object has not yet been published by setting
   // the klass.  That can only happen if the card is stale.  However,
   // we've already set the card clean, so we must return failure,
   // since the allocating thread could have performed a write to the
   // card that might be missed otherwise.
-  if (!in_gc_pause && (obj->klass_or_null_acquire() == NULL)) {
-    return NULL;
+  if (!in_gc_pause && (obj->klass_or_null_acquire() == nullptr)) {
+    return nullptr;
   }
 
   // We have a well-formed humongous object at the start of sr.
@@ -491,7 +492,7 @@ HeapWord* HeapRegion::oops_on_memregion_seq_iterate_careful(MemRegion mr,
   assert(is_old(), "Wrongly trying to iterate over region %u type %s", _hrm_index, get_type_str());
 
   // Because mr has been trimmed to what's been allocated in this
-  // region, the objects in these parts of the heap have non-NULL
+  // region, the objects in these parts of the heap have non-null
   // klass pointers. There's no need to use klass_or_null to detect
   // in-progress allocation.
   // We might be in the progress of scrubbing this region and in this
@@ -512,7 +513,7 @@ inline bool HeapRegion::has_valid_age_in_surv_rate() const {
 }
 
 inline bool HeapRegion::has_surv_rate_group() const {
-  return _surv_rate_group != NULL;
+  return _surv_rate_group != nullptr;
 }
 
 inline double HeapRegion::surv_rate_prediction(G1Predictions const& predictor) const {
@@ -521,7 +522,7 @@ inline double HeapRegion::surv_rate_prediction(G1Predictions const& predictor) c
 }
 
 inline void HeapRegion::install_surv_rate_group(G1SurvRateGroup* surv_rate_group) {
-  assert(surv_rate_group != NULL, "pre-condition");
+  assert(surv_rate_group != nullptr, "pre-condition");
   assert(!has_surv_rate_group(), "pre-condition");
   assert(is_young(), "pre-condition");
 
@@ -534,7 +535,7 @@ inline void HeapRegion::uninstall_surv_rate_group() {
     assert(has_valid_age_in_surv_rate(), "pre-condition");
     assert(is_young(), "pre-condition");
 
-    _surv_rate_group = NULL;
+    _surv_rate_group = nullptr;
     _age_index = G1SurvRateGroup::InvalidAgeIndex;
   } else {
     assert(!has_valid_age_in_surv_rate(), "pre-condition");
