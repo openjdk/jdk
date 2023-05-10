@@ -59,7 +59,6 @@ public class MinMaxRed_Int {
         }
     }
 
-    /*
     @Run(test = {"minReductionImplement"},
          mode = RunMode.STANDALONE)
     public void runMinTest() {
@@ -76,14 +75,14 @@ public class MinMaxRed_Int {
             throw new AssertionError("Failed");
         }
     }
-    */
+
     public static void ReductionInit(int[] a, int[] b) {
         for (int i = 0; i < a.length; i++) {
             a[i] = -i;
             b[i] = i;
         }
     }
-    /*
+
     @Test
     @IR(applyIf = {"SuperWordReductions", "true"},
         applyIfCPUFeatureOr = { "sse4.1", "true" , "asimd" , "true"},
@@ -94,7 +93,7 @@ public class MinMaxRed_Int {
         }
         return res;
     }
-    */
+
     @Test
     @IR(applyIf = {"SuperWordReductions", "true"},
         applyIfCPUFeatureOr = { "sse4.1", "true" , "asimd" , "true"},
