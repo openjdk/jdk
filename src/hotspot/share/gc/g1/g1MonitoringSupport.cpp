@@ -40,17 +40,22 @@ public:
   G1GenerationCounters(G1MonitoringSupport* monitoring_support,
                        const char* name, int ordinal, int spaces,
                        size_t min_capacity, size_t max_capacity,
-                       size_t curr_capacity)
-  : GenerationCounters(name, ordinal, spaces, min_capacity,
+                       size_t curr_capacity) :
+    GenerationCounters(name, ordinal, spaces, min_capacity,
                        max_capacity, curr_capacity),
     _monitoring_support(monitoring_support) { }
 };
 
 class G1YoungGenerationCounters : public G1GenerationCounters {
 public:
-  G1YoungGenerationCounters(G1MonitoringSupport* monitoring_support, const char* name, size_t max_size)
-  : G1GenerationCounters(monitoring_support, name, 0 /* ordinal */, 3 /* spaces */,
-                         0 /* min_capacity */, max_size, 0 /* curr_capacity */) {
+  G1YoungGenerationCounters(G1MonitoringSupport* monitoring_support, const char* name, size_t max_size) :
+    G1GenerationCounters(monitoring_support,
+                         name,
+                         0 /* ordinal */,
+                         3 /* spaces */,
+                         0 /* min_capacity */,
+                         max_size,
+                         0 /* curr_capacity */) {
     if (UsePerfData) {
       update_all();
     }
@@ -64,9 +69,14 @@ public:
 
 class G1OldGenerationCounters : public G1GenerationCounters {
 public:
-  G1OldGenerationCounters(G1MonitoringSupport* monitoring_support, const char* name, size_t max_size)
-  : G1GenerationCounters(monitoring_support, name, 1 /* ordinal */, 1 /* spaces */,
-                         0 /* min_capacity */, max_size, 0 /* curr_capacity */) {
+  G1OldGenerationCounters(G1MonitoringSupport* monitoring_support, const char* name, size_t max_size) :
+    G1GenerationCounters(monitoring_support,
+                         name,
+                         1 /* ordinal */,
+                         1 /* spaces */,
+                         0 /* min_capacity */,
+                         max_size,
+                         0 /* curr_capacity */) {
     if (UsePerfData) {
       update_all();
     }
@@ -136,9 +146,9 @@ G1MonitoringSupport::G1MonitoringSupport(G1CollectedHeap* g1h) :
   // Counters are created from maxCapacity, capacity, initCapacity,
   // and used.
   _old_space_counters = new HSpaceCounters(_old_gen_counters->name_space(),
-    "space", 0 /* ordinal */,
-    g1h->max_capacity() /* max_capacity */,
-    _old_gen_committed /* init_capacity */);
+                                           "space", 0 /* ordinal */,
+                                           g1h->max_capacity() /* max_capacity */,
+                                           _old_gen_committed /* init_capacity */);
 
   //   Young collection set
   //  name "generation.0".  This is logically the young generation.
@@ -151,17 +161,17 @@ G1MonitoringSupport::G1MonitoringSupport(G1CollectedHeap* g1h) :
   //  name "generation.0.space.0"
   // See _old_space_counters for additional counters
   _eden_space_counters = new HSpaceCounters(young_collection_name_space,
-    "eden", 0 /* ordinal */,
-    g1h->max_capacity() /* max_capacity */,
-    _eden_space_committed /* init_capacity */);
+                                            "eden", 0 /* ordinal */,
+                                            g1h->max_capacity() /* max_capacity */,
+                                            _eden_space_committed /* init_capacity */);
 
   //  name "generation.0.space.1"
   // See _old_space_counters for additional counters
   // Set the arguments to indicate that this survivor space is not used.
   _from_space_counters = new HSpaceCounters(young_collection_name_space,
-    "s0", 1 /* ordinal */,
-    0 /* max_capacity */,
-    0 /* init_capacity */);
+                                            "s0", 1 /* ordinal */,
+                                            0 /* max_capacity */,
+                                            0 /* init_capacity */);
   // Given that this survivor space is not used, we update it here
   // once to reflect that its used space is 0 so that we don't have to
   // worry about updating it again later.
@@ -172,9 +182,9 @@ G1MonitoringSupport::G1MonitoringSupport(G1CollectedHeap* g1h) :
   //  name "generation.0.space.2"
   // See _old_space_counters for additional counters
   _to_space_counters = new HSpaceCounters(young_collection_name_space,
-    "s1", 2 /* ordinal */,
-    g1h->max_capacity() /* max_capacity */,
-    _survivor_space_committed /* init_capacity */);
+                                          "s1", 2 /* ordinal */,
+                                          g1h->max_capacity() /* max_capacity */,
+                                          _survivor_space_committed /* init_capacity */);
 }
 
 G1MonitoringSupport::~G1MonitoringSupport() {
