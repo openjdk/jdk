@@ -236,7 +236,6 @@ void G1CollectionSetCandidates::verify() {
 
   verify_helper(&_marking_regions, from_marking, verify_map);
 
-  assert(length() >= marking_regions_length(), "must be");
   assert(from_marking == marking_regions_length(), "must be");
 
   // Check whether the _contains_map is consistent with the list.
