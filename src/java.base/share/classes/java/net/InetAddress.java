@@ -214,14 +214,14 @@ import static java.net.spi.InetAddressResolver.LookupPolicy.IPV6_FIRST;
  * stale name rather than result of unsuccessful name lookup. The default
  * setting is to cache for an implementation specific period of time.
  * <p>
- * If the value of this property is large than "networkaddress.cache.ttl" then
+ * If the value of this property is larger than "networkaddress.cache.ttl" then
  * "networkaddress.cache.ttl" will be used as a refresh interval of the name in
  * the cache. For example, if this property is set to 1 day and
  * "networkaddress.cache.ttl" is set to 30 seconds, then the positive response
  * will be cached for 1 day but an attempt to refresh it will be done every
  * 30 seconds.
  * <p>
- * A value of 0 (zero) do not use stale names.
+ * A value of 0 (zero) means do not use stale names.
  * </dd>
  * <dt><b>networkaddress.cache.negative.ttl</b> (default: 10)</dt>
  * <dd>Indicates the caching policy for un-successful name lookups
@@ -1076,7 +1076,7 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
 
         /**
          * Overrides the parent method to skip deleting the record from the
-         * cache if the staled data can still be used. Note to update the
+         * cache if the stale data can still be used. Note to update the
          * "expiryTime" field we have to remove the record from the expirySet
          * and add it back. It is not necessary to remove/add it here, we can do
          * that in the "get()" method above, but extracting it minimizes
