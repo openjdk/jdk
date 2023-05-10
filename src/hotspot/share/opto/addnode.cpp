@@ -1131,12 +1131,12 @@ Node* MaxNode::IdealI(PhaseGVN* phase, bool can_reshape, int opcode) {
   // opcode(x + opcode(x_off, y_off), z), where opcode is either MinI or MaxI,
   // if x == y and the additions can't overflow.
   for (uint outer_input = 1; outer_input <= 2; outer_input++) {
-    Node* n = in(outer_input); // Inner opcode operation.
+    Node* n = in(outer_input); // Inner opcode operation (opcode(y + y_off, z)).
     if (n->Opcode() != opcode) {
       continue;
     }
     for (uint inner_input = 1; inner_input <= 2; inner_input++) {
-      Node* inner_add = n->in(inner_input);      // Addition within inner opcode.
+      Node* inner_add = n->in(inner_input);      // Addition within inner opcode (y + y_off).
       Node* z = n->in(inner_input == 1 ? 2 : 1); // Opposite operand.
       if (outer_input == 1) { // Update x from left inner add.
         x = constant_add_input(inner_add, &x_off);
