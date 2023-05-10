@@ -24,13 +24,12 @@
 /*
  * @test
  * @bug 8026394 8251414
- * @summary test interface resolution when clone and toString are declared abstract within
+ * @summary test interface resolution when clone is declared abstract within
  *          an interface and when they are not
  * @compile InterfaceObj.jasm
  * @run main InterfaceObjectTest
  */
 interface IClone extends Cloneable {
-    String toString();
     Object clone();
 }
 
