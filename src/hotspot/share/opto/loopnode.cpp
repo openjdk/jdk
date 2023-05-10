@@ -4633,7 +4633,7 @@ void PhaseIdealLoop::build_and_optimize() {
   if (C->has_loops() && !C->major_progress()) {
     for (LoopTreeIterator iter(_ltree_root); !iter.done(); iter.next()) {
       IdealLoopTree* lpt = iter.current();
-      if (lpt->_head->is_CountedLoop()) {
+      if (lpt->is_counted() && lpt->is_innermost()) {
         move_unordered_reduction_out_of_loop(lpt);
       }
     }

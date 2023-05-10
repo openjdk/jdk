@@ -4169,7 +4169,7 @@ bool PhaseIdealLoop::duplicate_loop_backedge(IdealLoopTree *loop, Node_List &old
 // We can not do this with all reductions. Some reductions do not allow the
 // reordering of operations (for example float addition).
 void PhaseIdealLoop::move_unordered_reduction_out_of_loop(IdealLoopTree* loop) {
-  assert(!C->major_progress() && loop->_head->is_CountedLoop(), "sanity");
+  assert(!C->major_progress() && loop->is_counted() && loop->is_innermost(), "sanity");
 
   // Find all Phi nodes with UnorderedReduction on backedge.
   CountedLoopNode* cl = loop->_head->as_CountedLoop();
