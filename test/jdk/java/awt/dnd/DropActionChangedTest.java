@@ -100,10 +100,8 @@ public class DropActionChangedTest {
 
     public void start() throws Exception {
         Robot robot = new Robot();
-        robot.waitForIdle();
-        Thread.sleep(1000);
+        robot.delay(2000);
         robot.mouseMove(250, 250);
-        robot.waitForIdle();
         robot.mousePress(InputEvent.BUTTON1_MASK);
         robot.waitForIdle();
         for (int y = 250; y < 350; y+=5) {

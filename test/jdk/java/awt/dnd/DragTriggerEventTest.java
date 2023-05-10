@@ -92,7 +92,6 @@ public class DragTriggerEventTest {
     public void start() throws Exception {
         Robot robot;
         robot = new Robot();
-        robot.waitForIdle();
 
         EventQueue.invokeAndWait(() -> {
             srcPoint = list.getLocationOnScreen();
@@ -120,8 +119,10 @@ public class DragTriggerEventTest {
 
             robot.keyPress(KeyEvent.VK_CONTROL);
             ctrlPressed = true;
+            robot.waitForIdle();
             robot.mousePress(InputEvent.BUTTON1_MASK);
             mouse1Pressed = true;
+            robot.waitForIdle();
 
             Point p = new Point(srcPoint);
             while (!p.equals(dstPoint)) {
@@ -138,9 +139,11 @@ public class DragTriggerEventTest {
             robot.keyRelease(KeyEvent.VK_CONTROL);
         }
 
-        if (!panel.getResult()) {
-            throw new RuntimeException("The test failed.");
-        }
+        EventQueue.invokeAndWait(() -> {
+            if (!panel.getResult()) {
+                throw new RuntimeException("The test failed.");
+            }
+        });
     }
 
     public static int sign(int n) {
