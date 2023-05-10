@@ -1923,12 +1923,17 @@ bool MulNode::AndIL_shift_and_mask_is_always_zero(PhaseGVN* phase, Node* shift, 
   if (mask == nullptr || shift == nullptr) {
     return false;
   }
+  const TypeInteger* mask_t = phase->type(mask)->isa_integer(bt);
+  const TypeInteger* shift_t = phase->type(shift)->isa_integer(bt);
+  if (mask_t == nullptr || shift_t == nullptr) {
+    return false;
+  }
   shift = shift->uncast();
   if (shift == nullptr) {
     return false;
   }
-  const TypeInteger* mask_t = phase->type(mask)->isa_integer(bt);
-  const TypeInteger* shift_t = phase->type(shift)->isa_integer(bt);
+  mask_t = phase->type(mask)->isa_integer(bt);
+  shift_t = phase->type(shift)->isa_integer(bt);
   if (mask_t == nullptr || shift_t == nullptr) {
     return false;
   }
