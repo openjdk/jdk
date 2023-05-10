@@ -226,9 +226,10 @@ public class Robot {
 
     /**
      * Moves mouse pointer to given screen coordinates.
-     * @implNote the mouse pointer may not visually move on Linux systems
-     *           using Wayland, while the subsequent mousePress and mouseRelease
-     *           can be delivered to the correct location
+     * @implNote the mouse pointer may not visually move on some platforms,
+     *           such as Linux systems using Wayland, while the subsequent
+     *           mousePress and mouseRelease can be delivered to
+     *           the correct location
      *
      * @param x         X position
      * @param y         Y position
