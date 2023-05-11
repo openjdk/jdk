@@ -34,7 +34,8 @@ import jdk.internal.foreign.abi.riscv64.linux.LinuxRISCV64Linker;
 import jdk.internal.foreign.abi.x64.sysv.SysVx64Linker;
 import jdk.internal.foreign.abi.x64.windows.Windowsx64Linker;
 import jdk.internal.foreign.layout.AbstractLayout;
-import jdk.internal.foreign.layout.ValueLayouts;
+import jdk.internal.reflect.CallerSensitive;
+import jdk.internal.reflect.Reflection;
 
 import java.lang.foreign.AddressLayout;
 import java.lang.foreign.GroupLayout;
@@ -68,7 +69,21 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
     private final SoftReferenceCache<LinkRequest, UpcallStubFactory> UPCALL_CACHE = new SoftReferenceCache<>();
 
     @Override
-    public MethodHandle downcallHandle(FunctionDescriptor function, Option... options) {
+    @CallerSensitive
+    public final MethodHandle downcallHandle(MemorySegment symbol, FunctionDescriptor function, Option... options) {
+        Reflection.ensureNativeAccess(Reflection.getCallerClass(), Linker.class, "downcallHandle");
+        SharedUtils.checkSymbol(symbol);
+        return downcallHandle0(function, options).bindTo(symbol);
+    }
+
+    @Override
+    @CallerSensitive
+    public final MethodHandle downcallHandle(FunctionDescriptor function, Option... options) {
+        Reflection.ensureNativeAccess(Reflection.getCallerClass(), Linker.class, "downcallHandle");
+        return downcallHandle0(function, options);
+    }
+
+    private final MethodHandle downcallHandle0(FunctionDescriptor function, Option... options) {
         Objects.requireNonNull(function);
         Objects.requireNonNull(options);
         checkLayouts(function);
@@ -83,10 +98,13 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
             return handle;
         });
     }
+
     protected abstract MethodHandle arrangeDowncall(MethodType inferredMethodType, FunctionDescriptor function, LinkerOptions options);
 
     @Override
-    public MemorySegment upcallStub(MethodHandle target, FunctionDescriptor function, Arena arena, Linker.Option... options) {
+    @CallerSensitive
+    public final MemorySegment upcallStub(MethodHandle target, FunctionDescriptor function, Arena arena, Linker.Option... options) {
+        Reflection.ensureNativeAccess(Reflection.getCallerClass(), Linker.class, "upcallStub");
         Objects.requireNonNull(arena);
         Objects.requireNonNull(target);
         Objects.requireNonNull(function);
@@ -116,11 +134,20 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
     protected abstract ByteOrder linkerByteOrder();
 
     private void checkLayouts(FunctionDescriptor descriptor) {
-        descriptor.returnLayout().ifPresent(this::checkLayoutsRecursive);
-        descriptor.argumentLayouts().forEach(this::checkLayoutsRecursive);
+        descriptor.returnLayout().ifPresent(this::checkLayout);
+        descriptor.argumentLayouts().forEach(this::checkLayout);
     }
 
-    private void checkLayoutsRecursive(MemoryLayout layout) {
+    private void checkLayout(MemoryLayout layout) {
+        // Note: we should not worry about padding layouts, as they cannot be present in a function descriptor
+        if (layout instanceof SequenceLayout) {
+            throw new IllegalArgumentException("Unsupported layout: " + layout);
+        } else {
+            checkLayoutRecursive(layout);
+        }
+    }
+
+    private void checkLayoutRecursive(MemoryLayout layout) {
         checkHasNaturalAlignment(layout);
         if (layout instanceof ValueLayout vl) {
             checkByteOrder(vl);
@@ -131,7 +158,7 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
                 // check element offset before recursing so that an error points at the
                 // outermost layout first
                 checkMemberOffset(sl, member, lastUnpaddedOffset, offset);
-                checkLayoutsRecursive(member);
+                checkLayoutRecursive(member);
 
                 offset += member.bitSize();
                 if (!(member instanceof PaddingLayout)) {
@@ -142,14 +169,14 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
         } else if (layout instanceof UnionLayout ul) {
             long maxUnpaddedLayout = 0;
             for (MemoryLayout member : ul.memberLayouts()) {
-                checkLayoutsRecursive(member);
+                checkLayoutRecursive(member);
                 if (!(member instanceof PaddingLayout)) {
                     maxUnpaddedLayout = Long.max(maxUnpaddedLayout, member.bitSize());
                 }
             }
             checkGroupSize(ul, maxUnpaddedLayout);
         } else if (layout instanceof SequenceLayout sl) {
-            checkLayoutsRecursive(sl.elementLayout());
+            checkLayoutRecursive(sl.elementLayout());
         }
     }
 

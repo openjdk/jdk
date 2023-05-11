@@ -176,6 +176,12 @@ public interface Tree {
         INSTANCE_OF(InstanceOfTree.class),
 
         /**
+         * Used for instances of {@link StringTemplateTree}.
+         */
+        @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES, reflective=true)
+        TEMPLATE(StringTemplateTree.class),
+
+        /**
          * Used for instances of {@link LabeledStatementTree}.
          */
         LABELED_STATEMENT(LabeledStatementTree.class),
