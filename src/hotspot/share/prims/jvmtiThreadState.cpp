@@ -526,16 +526,10 @@ JvmtiVTMSTransitionDisabler::VTMS_vthread_start(jobject vthread) {
   assert(!thread->is_in_VTMS_transition(), "sanity check");
   assert(!thread->is_in_tmp_VTMS_transition(), "sanity check");
 
+  JvmtiEventController::thread_started(thread);
   if (JvmtiExport::can_support_virtual_threads()) {
-    JvmtiEventController::thread_started(thread);
     if (JvmtiExport::should_post_vthread_start()) {
       JvmtiExport::post_vthread_start(vthread);
-    }
-  } else { // compatibility for vthread unaware agents: legacy thread_start
-    if (PostVirtualThreadCompatibleLifecycleEvents &&
-        JvmtiExport::should_post_thread_life()) {
-      // JvmtiEventController::thread_started is called here
-      JvmtiExport::post_thread_start(thread);
     }
   }
   // post VirtualThreadMount event after VirtualThreadStart
@@ -558,11 +552,6 @@ JvmtiVTMSTransitionDisabler::VTMS_vthread_end(jobject vthread) {
   if (JvmtiExport::can_support_virtual_threads()) {
     if (JvmtiExport::should_post_vthread_end()) {
       JvmtiExport::post_vthread_end(vthread);
-    }
-  } else { // compatibility for vthread unaware agents: legacy thread_end
-    if (PostVirtualThreadCompatibleLifecycleEvents &&
-        JvmtiExport::should_post_thread_life()) {
-      JvmtiExport::post_thread_end(thread);
     }
   }
   if (thread->jvmti_thread_state() != nullptr) {

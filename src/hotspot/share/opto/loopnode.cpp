@@ -861,7 +861,7 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
     // not a loop after all
     return false;
   }
-  julong orig_iters = hi->hi_as_long() - lo->lo_as_long();
+  julong orig_iters = (julong)hi->hi_as_long() - lo->lo_as_long();
   iters_limit = checked_cast<int>(MIN2((julong)iters_limit, orig_iters));
 
   // We need a safepoint to insert empty predicates for the inner loop.
@@ -2014,7 +2014,8 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
   bool strip_mine_loop = iv_bt == T_INT &&
                          loop->_child == nullptr &&
                          sfpt != nullptr &&
-                         !loop->_has_call;
+                         !loop->_has_call &&
+                         is_deleteable_safept(sfpt);
   IdealLoopTree* outer_ilt = nullptr;
   if (strip_mine_loop) {
     outer_ilt = create_outer_strip_mined_loop(test, cmp, init_control, loop,

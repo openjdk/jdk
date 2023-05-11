@@ -982,7 +982,7 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
 //   object  - Address of the object to be locked.
 void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
 
-  if (UseHeavyMonitors) {
+  if (LockingMode == LM_MONITOR) {
     call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter), monitor);
     return;
   }
@@ -1086,7 +1086,7 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
 // Throw IllegalMonitorException if object is not locked by current thread.
 void InterpreterMacroAssembler::unlock_object(Register monitor, Register object) {
 
-  if (UseHeavyMonitors) {
+  if (LockingMode == LM_MONITOR) {
     call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorexit), monitor);
     return;
   }

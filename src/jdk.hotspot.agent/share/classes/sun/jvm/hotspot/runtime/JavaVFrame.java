@@ -82,6 +82,10 @@ public abstract class JavaVFrame extends VFrame {
     if (mark.hasMonitor() &&
         ( // we have marked ourself as pending on this monitor
           mark.monitor().equals(thread.getCurrentPendingMonitor()) ||
+          // Owned anonymously means that we are not the owner of
+          // the monitor and must be waiting for the owner to
+          // exit it.
+          mark.monitor().isOwnedAnonymous() ||
           // we are not the owner of this monitor
           !mark.monitor().isEntered(thread)
         )) {
