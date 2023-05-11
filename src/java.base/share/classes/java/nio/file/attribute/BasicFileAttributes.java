@@ -34,8 +34,8 @@ package java.nio.file.attribute;
  *
  * <p> <b>Usage Example:</b>
  * {@snippet lang=java :
- *    Path file = ...
- *    BasicFileAttributes attrs = Files.readAttributes(file, BasicFileAttributes.class);
+ *     Path file = ...
+ *     BasicFileAttributes attrs = Files.readAttributes(file, BasicFileAttributes.class);
  * }
  *
  * @since 1.7

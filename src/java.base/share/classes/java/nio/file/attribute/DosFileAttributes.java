@@ -31,8 +31,8 @@ package java.nio.file.attribute;
  *
  * <p> <b>Usage Example:</b>
  * {@snippet lang=java :
- *    Path file = ...
- *    DosFileAttributes attrs = Files.readAttributes(file, DosFileAttributes.class);
+ *     Path file = ...
+ *     DosFileAttributes attrs = Files.readAttributes(file, DosFileAttributes.class);
  * }
  *
  * @since 1.7

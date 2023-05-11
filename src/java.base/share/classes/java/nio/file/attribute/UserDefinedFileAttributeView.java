@@ -132,13 +132,13 @@ public interface UserDefinedFileAttributeView
      * Suppose we want to read a file's MIME type that is stored as a user-defined
      * attribute with the name "{@code user.mimetype}".
      * {@snippet lang=java :
-     *    UserDefinedFileAttributeView view =
-     *        Files.getFileAttributeView(path, UserDefinedFileAttributeView.class);
-     *    String name = "user.mimetype";
-     *    ByteBuffer buf = ByteBuffer.allocate(view.size(name));
-     *    view.read(name, buf);
-     *    buf.flip();
-     *    String value = Charset.defaultCharset().decode(buf).toString();
+     *     UserDefinedFileAttributeView view =
+     *         Files.getFileAttributeView(path, UserDefinedFileAttributeView.class);
+     *     String name = "user.mimetype";
+     *     ByteBuffer buf = ByteBuffer.allocate(view.size(name));
+     *     view.read(name, buf);
+     *     buf.flip();
+     *     String value = Charset.defaultCharset().decode(buf).toString();
      * }
      *
      * @param   name
@@ -189,9 +189,9 @@ public interface UserDefinedFileAttributeView
      * <p> <b>Usage Example:</b>
      * Suppose we want to write a file's MIME type as a user-defined attribute:
      * {@snippet lang=java :
-     *    UserDefinedFileAttributeView view =
-     *        Files.getFileAttributeView(path, UserDefinedFileAttributeView.class);
-     *    view.write("user.mimetype", Charset.defaultCharset().encode("text/html"));
+     *     UserDefinedFileAttributeView view =
+     *         Files.getFileAttributeView(path, UserDefinedFileAttributeView.class);
+     *     view.write("user.mimetype", Charset.defaultCharset().encode("text/html"));
      * }
      *
      * @param   name

@@ -256,8 +256,8 @@ public final class FileSystems {
      * Suppose there is a provider identified by the scheme {@code "memory"}
      * installed:
      * {@snippet lang=java :
-     *  FileSystem fs = FileSystems.newFileSystem(URI.create("memory:///?name=logfs"),
-     *                                            Map.of("capacity", "16G", "blockSize", "4k"));
+     *     FileSystem fs = FileSystems.newFileSystem(URI.create("memory:///?name=logfs"),
+     *                                               Map.of("capacity", "16G", "blockSize", "4k"));
      * }
      *
      * @param   uri

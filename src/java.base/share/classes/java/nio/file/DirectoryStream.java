@@ -53,12 +53,12 @@ import java.io.IOException;
  * in a resource leak. The try-with-resources statement provides a useful
  * construct to ensure that the stream is closed:
  * {@snippet lang=java :
- *   Path dir = ...
- *   try (DirectoryStream&lt;Path&gt; stream = Files.newDirectoryStream(dir)) {
- *       for (Path entry: stream) {
- *           ...
- *       }
- *   }
+ *     Path dir = ...
+ *     try (DirectoryStream<Path> stream = Files.newDirectoryStream(dir)) {
+ *         for (Path entry: stream) {
+ *             ...
+ *         }
+ *     }
  * }
  *
  * <p> Once a directory stream is closed, then further access to the directory,
@@ -96,18 +96,18 @@ import java.io.IOException;
  * Suppose we want a list of the source files in a directory. This example uses
  * both the for-each and try-with-resources constructs.
  * {@snippet lang=java :
- *   List<Path> listSourceFiles(Path dir) throws IOException {
- *       List<Path> result = new ArrayList<>();
- *       try (DirectoryStream<Path> stream = Files.newDirectoryStream(dir, "*.{c,h,cpp,hpp,java}")) {
- *           for (Path entry: stream) {
- *               result.add(entry);
- *           }
- *       } catch (DirectoryIteratorException ex) {
- *           // I/O error encountered during the iteration, the cause is an IOException
- *           throw ex.getCause();
- *       }
- *       return result;
- *   }
+ *     List<Path> listSourceFiles(Path dir) throws IOException {
+ *         List<Path> result = new ArrayList<>();
+ *         try (DirectoryStream<Path> stream = Files.newDirectoryStream(dir, "*.{c,h,cpp,hpp,java}")) {
+ *             for (Path entry: stream) {
+ *                 result.add(entry);
+ *             }
+ *         } catch (DirectoryIteratorException ex) {
+ *             // I/O error encountered during the iteration, the cause is an IOException
+ *             throw ex.getCause();
+ *         }
+ *         return result;
+ *     }
  * }
  * @param   <T>     The type of element returned by the iterator
  *

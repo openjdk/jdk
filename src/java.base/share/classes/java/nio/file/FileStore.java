@@ -232,7 +232,7 @@ public abstract class FileStore {
      * Suppose we want to know if ZFS compression is enabled (assuming the "zfs"
      * view is supported):
      * {@snippet lang=java :
-     *    boolean compression = (Boolean)fs.getAttribute("zfs:compression");
+     *     boolean compression = (Boolean)fs.getAttribute("zfs:compression");
      * }
      *
      * @param   attribute

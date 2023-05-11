@@ -1811,14 +1811,14 @@ public final class Files {
      * <p> <b>Usage Example:</b>
      * Suppose we want to read a file's attributes in bulk:
      * {@snippet lang=java :
-     *    Path path = ...
-     *    BasicFileAttributes attrs = Files.readAttributes(path, BasicFileAttributes.class);
+     *     Path path = ...
+     *     BasicFileAttributes attrs = Files.readAttributes(path, BasicFileAttributes.class);
      * }
      * Alternatively, suppose we want to read file's POSIX attributes without
      * following symbolic links:
      * {@snippet lang=java :
-     *    PosixFileAttributes attrs =
-     *        Files.readAttributes(path, PosixFileAttributes.class, NOFOLLOW_LINKS);
+     *     PosixFileAttributes attrs =
+     *         Files.readAttributes(path, PosixFileAttributes.class, NOFOLLOW_LINKS);
      * }
      *
      * @param   <A>
@@ -1879,8 +1879,8 @@ public final class Files {
      * <p> <b>Usage Example:</b>
      * Suppose we want to set the DOS "hidden" attribute:
      * {@snippet lang=java :
-     *    Path path = ...
-     *    Files.setAttribute(path, "dos:hidden", true);
+     *     Path path = ...
+     *     Files.setAttribute(path, "dos:hidden", true);
      * }
      *
      * @param   path
@@ -1948,8 +1948,8 @@ public final class Files {
      * Suppose we require the user ID of the file owner on a system that
      * supports a "{@code unix}" view:
      * {@snippet lang=java :
-     *    Path path = ...
-     *    int uid = (Integer)Files.getAttribute(path, "unix:uid");
+     *     Path path = ...
+     *     int uid = (Integer)Files.getAttribute(path, "unix:uid");
      * }
      *
      * @param   path
@@ -2407,9 +2407,9 @@ public final class Files {
      * <p> <b>Usage Example:</b>
      * Suppose we want to set the last modified time to the current time:
      * {@snippet lang=java :
-     *    Path path = ...
-     *    FileTime now = FileTime.fromMillis(System.currentTimeMillis());
-     *    Files.setLastModifiedTime(path, now);
+     *     Path path = ...
+     *     FileTime now = FileTime.fromMillis(System.currentTimeMillis());
+     *     Files.setLastModifiedTime(path, now);
      * }
      *
      * @param   path

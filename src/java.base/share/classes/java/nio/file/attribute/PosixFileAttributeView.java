@@ -120,7 +120,7 @@ import java.io.IOException;
  *
  * {@snippet lang=java :
  *     Path path = ...
- *     Set&lt;PosixFilePermission&gt; perms =
+ *     Set<PosixFilePermission> perms =
  *         EnumSet.of(OWNER_READ, OWNER_WRITE, OWNER_EXECUTE, GROUP_READ);
  *     Files.createFile(path, PosixFilePermissions.asFileAttribute(perms));
  * }

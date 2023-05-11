@@ -110,7 +110,7 @@ public final class PosixFilePermissions {
      * write, and execute permissions, the group has read and execute permissions
      * and others have none.
      * {@snippet lang=java :
-     *   Set&lt;PosixFilePermission&gt; perms = PosixFilePermissions.fromString("rwxr-x---");
+     *     Set<PosixFilePermission> perms = PosixFilePermissions.fromString("rwxr-x---");
      * }
      *
      * @param   perms

@@ -1058,8 +1058,8 @@ public abstract sealed class $Type$Buffer
      * has exactly the same effect as the loop
      *
      * {@snippet lang=java :
-     * for (int i = offset, j = index; i < offset + length; i++, j++)
-     *     dst.put(j, src.get(i));
+     *     for (int i = offset, j = index; i < offset + length; i++, j++)
+     *         dst.put(j, src.get(i));
      * }
      *
      * except that it first checks the consistency of the supplied parameters
