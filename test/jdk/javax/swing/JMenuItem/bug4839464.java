@@ -61,11 +61,11 @@ public class bug4839464 {
 
     public static KeyStroke ks1 =
             KeyStroke.getKeyStroke(KeyEvent.VK_F1,
-                                   KeyEvent.SHIFT_MASK);
+                                   KeyEvent.SHIFT_DOWN_MASK);
 
     public static KeyStroke ks2 =
             KeyStroke.getKeyStroke(KeyEvent.VK_F1,
-                                   KeyEvent.CTRL_MASK);
+                                   KeyEvent.CTRL_DOWN_MASK);
 
     public static JFrame frame;
 
