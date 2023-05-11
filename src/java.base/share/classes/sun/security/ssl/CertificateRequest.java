@@ -32,6 +32,7 @@ import java.security.cert.X509Certificate;
 import java.text.MessageFormat;
 import java.util.*;
 import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.X509ExtendedKeyManager;
 import javax.security.auth.x500.X500Principal;
@@ -198,11 +199,17 @@ final class CertificateRequest {
             return  ClientCertificateType.getKeyTypes(types);
         }
 
-        X500Principal[] getAuthorities() {
+        X500Principal[] getAuthorities() throws SSLException {
             X500Principal[] principals = new X500Principal[authorities.size()];
             int i = 0;
-            for (byte[] encoded : authorities) {
-                principals[i++] = new X500Principal(encoded);
+
+            try {
+                for (byte[] encoded : authorities) {
+                    principals[i++] = new X500Principal(encoded);
+                }
+            } catch (IllegalArgumentException iae) {
+                throw new SSLException("X500Principal could not be parsed " +
+                        "successfully", iae);
             }
 
             return principals;
@@ -254,8 +261,12 @@ final class CertificateRequest {
 
             List<String> authorityNames = new ArrayList<>(authorities.size());
             for (byte[] encoded : authorities) {
-                X500Principal principal = new X500Principal(encoded);
-                authorityNames.add(principal.toString());
+                try {
+                    X500Principal principal = new X500Principal(encoded);
+                    authorityNames.add(principal.toString());
+                } catch (IllegalArgumentException iae) {
+                    authorityNames.add("unparseable X500Principal");
+                }
             }
             Object[] messageFields = {
                 typeNames,
@@ -512,11 +523,17 @@ final class CertificateRequest {
             return ClientCertificateType.getKeyTypes(types);
         }
 
-        X500Principal[] getAuthorities() {
+        X500Principal[] getAuthorities() throws SSLException {
             X500Principal[] principals = new X500Principal[authorities.size()];
             int i = 0;
-            for (byte[] encoded : authorities) {
-                principals[i++] = new X500Principal(encoded);
+
+            try {
+                for (byte[] encoded : authorities) {
+                    principals[i++] = new X500Principal(encoded);
+                }
+            } catch (IllegalArgumentException iae) {
+                throw new SSLException("X500Principal could not be parsed " +
+                        "successfully", iae);
             }
 
             return principals;
@@ -579,8 +596,12 @@ final class CertificateRequest {
 
             List<String> authorityNames = new ArrayList<>(authorities.size());
             for (byte[] encoded : authorities) {
-                X500Principal principal = new X500Principal(encoded);
-                authorityNames.add(principal.toString());
+                try {
+                    X500Principal principal = new X500Principal(encoded);
+                    authorityNames.add(principal.toString());
+                } catch (IllegalArgumentException iae) {
+                    authorityNames.add("unparseable X500Principal");
+                }
             }
             Object[] messageFields = {
                 typeNames,

@@ -123,11 +123,17 @@ final class CertificateAuthoritiesExtension {
             return authorities;
         }
 
-        X500Principal[] getAuthorities() {
+        X500Principal[] getAuthorities() throws SSLException{
             X500Principal[] principals = new X500Principal[authorities.size()];
-            int i = 0;
-            for (byte[] encoded : authorities) {
-                principals[i++] = new X500Principal(encoded);
+
+            try {
+                int i = 0;
+                for (byte[] encoded : authorities) {
+                    principals[i++] = new X500Principal(encoded);
+                }
+            } catch (IllegalArgumentException iae) {
+                throw new SSLException("X500Principal could not be parsed " +
+                        "successfully", iae);
             }
 
             return principals;
@@ -139,8 +145,12 @@ final class CertificateAuthoritiesExtension {
                 "\"certificate authorities\": '['\n{0}']'", Locale.ENGLISH);
             StringBuilder builder = new StringBuilder(512);
             for (byte[] encoded : authorities) {
-                X500Principal principal = new X500Principal(encoded);
-                builder.append(principal.toString());
+                try {
+                    X500Principal principal = new X500Principal(encoded);
+                    builder.append(principal.toString());
+                } catch (IllegalArgumentException iae) {
+                    builder.append("unparseable X500Principal");
+                }
                 builder.append("\n");
             }
             Object[] messageFields = {
@@ -278,12 +288,7 @@ final class CertificateAuthoritiesExtension {
                     new CertificateAuthoritiesSpec(shc, buffer);
 
             // Update the context.
-            try {
-                shc.peerSupportedAuthorities = spec.getAuthorities();
-            } catch (IllegalArgumentException iae) {
-                throw shc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
-                        "Certificate authority distinguished name is not valid");
-            }
+            shc.peerSupportedAuthorities = spec.getAuthorities();
             shc.handshakeExtensions.put(
                     SSLExtension.CH_CERTIFICATE_AUTHORITIES, spec);
 
