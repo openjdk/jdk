@@ -94,6 +94,8 @@ class StackWalker {
 
   int _bci;
 
+  int _compilation_level;
+
   RegisterMap _map;
 
   compiledFrameStream _st;
@@ -180,6 +182,9 @@ public:
 
   // bci or -1 if not at a Java frame
   int bci() const { return _bci; }
+
+  // -1 if not at a Java frame
+  int compilation_level() const;
 
 };
 

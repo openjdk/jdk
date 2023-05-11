@@ -315,6 +315,7 @@ void StackWalker::reset() {
   _inlined = false;
   _method = nullptr;
   _bci = -1;
+  _compilation_level = -1;
 }
 
 void StackWalker::set_state(int state) {
@@ -405,6 +406,7 @@ void StackWalker::process_normal(bool potentially_first_java_frame) {
       return;
     }
     _method = nm->method();
+    _compilation_level = -1;
     _bci = -1;
     _inlined = false;
     set_state(STACKWALKER_NATIVE_FRAME);
@@ -418,6 +420,7 @@ void StackWalker::process_normal(bool potentially_first_java_frame) {
     if (_frame.is_interpreted_frame()) {
       _inlined = false;
       _method = nullptr;
+      _compilation_level = 0;
       if (!_frame.is_interpreted_frame_valid(_thread) ||
           (potentially_first_java_frame && !is_decipherable_first_interpreted_frame(_thread, &_frame, &_method, &_bci))) {
         set_state(STACKWALKER_INDECIPHERABLE_FRAME);
@@ -462,6 +465,7 @@ void StackWalker::process_normal(bool potentially_first_java_frame) {
         // because is_interpreted_frame return true for native method frames too
         _bci = -1;
         _inlined = false;
+        _compilation_level = -1;
         set_state(STACKWALKER_NATIVE_FRAME);
         return;
       }
@@ -479,10 +483,12 @@ void StackWalker::process_normal(bool potentially_first_java_frame) {
         _method = nm->method();
         _bci = 0;
         _inlined = false;
+        _compilation_level = -1;
         set_state(STACKWALKER_NATIVE_FRAME);
         had_first_java_frame = true;
         return;
       }
+      _compilation_level = nm->comp_level();
       _st = compiledFrameStream(_thread, _frame, false);
       set_state(STACKWALKER_COMPILED_FRAME);
       process_in_compiled();
@@ -562,4 +568,8 @@ int StackWalker::next(){
     skip_c_frames();
   }
   return _state;
+}
+
+int StackWalker::compilation_level() const {
+  return _compilation_level;
 }

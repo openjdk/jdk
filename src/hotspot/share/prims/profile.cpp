@@ -65,12 +65,8 @@ void fill_call_trace_given_top(JavaThread* thd,
       } else if (st.is_inlined()) {
         type = ASGST_FRAME_JAVA_INLINED;
       }
-      int comp_level = 0;
-      if (st.state() == STACKWALKER_COMPILED_FRAME) {
-        comp_level = st.method()->highest_comp_level();
-      }
       trace->frames[count] = {.java_frame = {
-          type, (int8_t)comp_level,
+          type, (int8_t) st.compilation_level(),
           st.is_native_frame() ? (uint16_t)0 : (uint16_t)st.bci(),
           st.method()->find_jmethod_id_or_null()
         }
