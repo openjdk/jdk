@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -154,7 +154,7 @@ public:
   // Predict other time for count young regions.
   double predict_young_region_other_time_ms(uint count) const;
   // Predict copying live data time for count eden regions. Return the predict bytes if
-  // bytes_to_copy is non-nullptr.
+  // bytes_to_copy is non-null.
   double predict_eden_copy_time_ms(uint count, size_t* bytes_to_copy = nullptr) const;
   // Total time for a region is handling remembered sets (as a single unit), copying its live data
   // and other time.
@@ -313,7 +313,7 @@ public:
 
   bool need_to_start_conc_mark(const char* source, size_t alloc_word_size = 0);
 
-  bool concurrent_operation_is_full_mark(const char* msg = NULL);
+  bool concurrent_operation_is_full_mark(const char* msg = nullptr);
 
   bool about_to_start_mixed_phase() const;
 

@@ -2014,7 +2014,8 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
   bool strip_mine_loop = iv_bt == T_INT &&
                          loop->_child == nullptr &&
                          sfpt != nullptr &&
-                         !loop->_has_call;
+                         !loop->_has_call &&
+                         is_deleteable_safept(sfpt);
   IdealLoopTree* outer_ilt = nullptr;
   if (strip_mine_loop) {
     outer_ilt = create_outer_strip_mined_loop(test, cmp, init_control, loop,
@@ -2249,7 +2250,6 @@ void CountedLoopNode::dump_spec(outputStream *st) const {
   if (is_pre_loop ()) st->print("pre of N%d" , _main_idx);
   if (is_main_loop()) st->print("main of N%d", _idx);
   if (is_post_loop()) st->print("post of N%d", _main_idx);
-  if (is_reduction_loop()) st->print(" reduction");
   if (is_strip_mined()) st->print(" strip mined");
 }
 #endif
@@ -3991,7 +3991,6 @@ void IdealLoopTree::dump_head() {
     if (cl->is_pre_loop ()) tty->print(" pre" );
     if (cl->is_main_loop()) tty->print(" main");
     if (cl->is_post_loop()) tty->print(" post");
-    if (cl->is_reduction_loop()) tty->print(" reduction");
     if (cl->is_vectorized_loop()) tty->print(" vector");
     if (range_checks_present()) tty->print(" rc ");
     if (cl->is_multiversioned()) tty->print(" multi ");
@@ -4468,7 +4467,7 @@ void PhaseIdealLoop::build_and_optimize() {
           AutoNodeBudget node_budget(this);
           if (lpt->_head->as_CountedLoop()->is_normal_loop() &&
               lpt->policy_maximally_unroll(this)) {
-            memset( worklist.adr(), 0, worklist.Size()*sizeof(Node*) );
+            memset( worklist.adr(), 0, worklist.max()*sizeof(Node*) );
             do_maximally_unroll(lpt, worklist);
           }
         }
@@ -4543,7 +4542,7 @@ void PhaseIdealLoop::build_and_optimize() {
   // If split-if's didn't hack the graph too bad (no CFG changes)
   // then do loop opts.
   if (C->has_loops() && !C->major_progress()) {
-    memset( worklist.adr(), 0, worklist.Size()*sizeof(Node*) );
+    memset( worklist.adr(), 0, worklist.max()*sizeof(Node*) );
     _ltree_root->_child->iteration_split( this, worklist );
     // No verify after peeling!  GCM has hoisted code out of the loop.
     // After peeling, the hoisted code could sink inside the peeled area.
@@ -6356,7 +6355,7 @@ void PhaseIdealLoop::dump(IdealLoopTree* loop, uint idx, Node_List &rpo_list) co
       }
     }
     // Dump nodes it controls
-    for (uint k = 0; k < _nodes.Size(); k++) {
+    for (uint k = 0; k < _nodes.max(); k++) {
       // (k < C->unique() && get_ctrl(find(k)) == n)
       if (k < C->unique() && _nodes[k] == (Node*)((intptr_t)n + 1)) {
         Node* m = C->root()->find(k);

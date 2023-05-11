@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,6 +81,13 @@ static jlong page_size = 0;
   #define readdir readdir64
   #define closedir closedir64
 #endif
+
+static void throw_internal_error(JNIEnv* env, const char* msg) {
+    char errmsg[128];
+
+    snprintf(errmsg, sizeof(errmsg), "errno: %d error: %s\n", errno, msg);
+    JNU_ThrowInternalError(env, errmsg);
+}
 
 // true = get available swap in bytes
 // false = get total swap in bytes

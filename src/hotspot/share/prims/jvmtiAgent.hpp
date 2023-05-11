@@ -62,7 +62,7 @@ class JvmtiAgent : public CHeapObj<mtServiceability> {
   const char* options() const;
   bool is_absolute_path() const NOT_JVMTI_RETURN_(false);
   void* os_lib() const NOT_JVMTI_RETURN_(nullptr);
-  void set_os_lib(void* os_lib);
+  void set_os_lib(void* os_lib) NOT_JVMTI_RETURN;
   const char* os_lib_path() const;
   void set_os_lib_path(const char* path) NOT_JVMTI_RETURN;
   bool is_static_lib() const NOT_JVMTI_RETURN_(false);

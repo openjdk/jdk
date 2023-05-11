@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "cds/archiveBuilder.hpp"
+#include "cds/archiveHeapWriter.hpp"
 #include "cds/archiveUtils.inline.hpp"
 #include "cds/cds_globals.hpp"
 #include "cds/classPrelinker.hpp"
@@ -323,7 +324,8 @@ void DynamicArchiveBuilder::write_archive(char* serialized_data) {
   assert(dynamic_info != nullptr, "Sanity");
 
   dynamic_info->open_for_write();
-  ArchiveBuilder::write_archive(dynamic_info, nullptr, nullptr, nullptr, nullptr);
+  ArchiveHeapInfo no_heap_for_dynamic_dump;
+  ArchiveBuilder::write_archive(dynamic_info, &no_heap_for_dynamic_dump);
 
   address base = _requested_dynamic_archive_bottom;
   address top  = _requested_dynamic_archive_top;
@@ -442,4 +444,13 @@ bool DynamicArchive::validate(FileMapInfo* dynamic_info) {
   }
 
   return true;
+}
+
+void DynamicArchiveHeader::print(outputStream* st) {
+  ResourceMark rm;
+
+  st->print_cr("- base_header_crc:                0x%08x", base_header_crc());
+  for (int i = 0; i < NUM_CDS_REGIONS; i++) {
+    st->print_cr("- base_region_crc[%d]:             0x%08x", i, base_region_crc(i));
+  }
 }
