@@ -120,10 +120,14 @@ public final class RecordingInput implements DataInput, AutoCloseable {
 
     @Override
     public final void readFully(byte[] dest, int offset, int length) throws IOException {
-        // TODO: Optimize, use Arrays.copy if all bytes are in current block
-        // array
-        for (int i = 0; i < length; i++) {
-            dest[i + offset] = readByte();
+        // Optimize, use Arrays.copy if all bytes are in current block array
+        if (length <= currentBlockRemaining()) {
+            System.arraycopy(currentBlock, currentPosition, dest, offset, length);
+            currentPosition += length;
+        } else {
+            for (int i = 0; i < length; i++) {
+                dest[i + offset] = readByte();
+            }
         }
     }
 
