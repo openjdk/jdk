@@ -53,7 +53,6 @@ class outputStream;
 
 class G1ParScanThreadState : public CHeapObj<mtGC> {
   G1CollectedHeap* _g1h;
-  G1CollectionSet* _collection_set;
   G1ScannerTasksQueue* _task_queue;
   G1RedirtyCardsLocalQueueSet _rdc_local_qset;
   G1CardTable* _ct;
