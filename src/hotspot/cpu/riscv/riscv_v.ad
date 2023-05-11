@@ -3323,8 +3323,10 @@ instruct vmask_gen_imm(vRegMask dst, immL con) %{
   format %{ "vmask_gen_imm $dst, $con" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
-    __ vsetvli_helper(bt, Matcher::vector_length(this));
-    __ vmclr_m(as_VectorRegister($dst$$reg));
+    if ($con$$constant != Matcher::vector_length(this)) {
+      __ vsetvli_helper(bt, Matcher::vector_length(this));
+      __ vmclr_m(as_VectorRegister($dst$$reg));
+    }
     __ vsetvli_helper(bt, (uint)($con$$constant));
     __ vmset_m(as_VectorRegister($dst$$reg));
   %}
