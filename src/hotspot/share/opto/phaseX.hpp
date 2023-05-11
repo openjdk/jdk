@@ -414,8 +414,6 @@ protected:
   bool is_dominator_helper(Node *d, Node *n, bool linear_only);
 
 public:
-  PhaseGVN() {}
-
   // Return a node which computes the same function as this node, but
   // in a faster or cheaper fashion.
   Node  *transform( Node *n );

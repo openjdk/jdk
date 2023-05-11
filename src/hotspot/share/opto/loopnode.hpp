@@ -832,7 +832,7 @@ class PhaseIdealLoop : public PhaseTransform {
   friend class AutoNodeBudget;
 
   // Map loop membership for CFG nodes, and ctrl for non-CFG nodes.
-  Node_List _loop_ctrl;
+  Node_List _loop_or_ctrl;
 
   // Pre-computed def-use info
   PhaseIterGVN &_igvn;
@@ -895,7 +895,7 @@ class PhaseIdealLoop : public PhaseTransform {
 public:
   // Set/get control node out.  Set lower bit to distinguish from IdealLoopTree
   // Returns true if "n" is a data node, false if it's a control node.
-  bool has_ctrl(const Node* n) const { return ((intptr_t)_loop_ctrl[n->_idx]) & 1; }
+  bool has_ctrl(const Node* n) const { return ((intptr_t)_loop_or_ctrl[n->_idx]) & 1; }
 
 private:
   // clear out dead code after build_loop_late
@@ -974,7 +974,7 @@ public:
 
   bool has_node(const Node* n) const {
     guarantee(n != nullptr, "No Node.");
-    return _loop_ctrl[n->_idx] != nullptr;
+    return _loop_or_ctrl[n->_idx] != nullptr;
   }
   // check if transform created new nodes that need _ctrl recorded
   Node *get_late_ctrl( Node *n, Node *early );
@@ -986,7 +986,7 @@ public:
     assert( !has_node(n) || has_ctrl(n), "" );
     assert( ctrl->in(0), "cannot set dead control node" );
     assert( ctrl == find_non_split_ctrl(ctrl), "must set legal crtl" );
-    _loop_ctrl.map( n->_idx, (Node*)((intptr_t)ctrl + 1) );
+    _loop_or_ctrl.map(n->_idx, (Node*)((intptr_t)ctrl + 1));
   }
   // Set control and update loop membership
   void set_ctrl_and_loop(Node* n, Node* ctrl) {
@@ -1006,7 +1006,7 @@ public:
   Node* get_ctrl(const Node* i) {
     assert(has_node(i), "");
     Node *n = get_ctrl_no_update(i);
-    _loop_ctrl.map( i->_idx, (Node*)((intptr_t)n + 1) );
+    _loop_or_ctrl.map(i->_idx, (Node*)((intptr_t)n + 1));
     assert(has_node(i) && has_ctrl(i), "");
     assert(n == find_non_split_ctrl(n), "must return legal ctrl" );
     return n;
@@ -1025,7 +1025,7 @@ public:
 
   Node* get_ctrl_no_update_helper(const Node* i) const {
     assert(has_ctrl(i), "should be control, not loop");
-    return (Node*)(((intptr_t)_loop_ctrl[i->_idx]) & ~1);
+    return (Node*)(((intptr_t)_loop_or_ctrl[i->_idx]) & ~1);
   }
 
   Node* get_ctrl_no_update(const Node* i) const {
@@ -1049,7 +1049,7 @@ public:
   }
   // Set loop
   void set_loop( Node *n, IdealLoopTree *loop ) {
-    _loop_ctrl.map(n->_idx, (Node*)loop);
+    _loop_or_ctrl.map(n->_idx, (Node*)loop);
   }
   // Lazy-dazy update of 'get_ctrl' and 'idom_at' mechanisms.  Replace
   // the 'old_node' with 'new_node'.  Kill old-node.  Add a reference
@@ -1059,7 +1059,7 @@ public:
     assert(old_node != new_node, "no cycles please");
     // Re-use the side array slot for this node to provide the
     // forwarding pointer.
-    _loop_ctrl.map(old_node->_idx, (Node*)((intptr_t)new_node + 1));
+    _loop_or_ctrl.map(old_node->_idx, (Node*)((intptr_t)new_node + 1));
   }
   void lazy_replace(Node *old_node, Node *new_node) {
     _igvn.replace_node(old_node, new_node);
@@ -1138,7 +1138,7 @@ public:
     Node* n = _idom[didx];
     assert(n != nullptr,"Bad immediate dominator info.");
     while (n->in(0) == nullptr) { // Skip dead CFG nodes
-      n = (Node*)(((intptr_t)_loop_ctrl[n->_idx]) & ~1);
+      n = (Node*)(((intptr_t)_loop_or_ctrl[n->_idx]) & ~1);
       assert(n != nullptr,"Bad immediate dominator info.");
     }
     return n;
@@ -1234,7 +1234,7 @@ public:
     // Dead nodes have no loop, so return the top level loop instead
     if (!has_node(n))  return _ltree_root;
     assert(!has_ctrl(n), "");
-    return (IdealLoopTree*)_loop_ctrl[n->_idx];
+    return (IdealLoopTree*)_loop_or_ctrl[n->_idx];
   }
 
   IdealLoopTree* ltree_root() const { return _ltree_root; }
@@ -1699,7 +1699,7 @@ public:
   void dump(IdealLoopTree* loop, uint rpo_idx, Node_List &rpo_list) const;
   IdealLoopTree* get_loop_idx(Node* n) const {
     // Dead nodes have no loop, so return the top level loop instead
-    return _loop_ctrl[n->_idx] ? (IdealLoopTree*)_loop_ctrl[n->_idx] : _ltree_root;
+    return _loop_or_ctrl[n->_idx] ? (IdealLoopTree*)_loop_or_ctrl[n->_idx] : _ltree_root;
   }
   // Print some stats
   static void print_statistics();

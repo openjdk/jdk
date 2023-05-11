@@ -399,13 +399,13 @@ PhaseRemoveUseless::PhaseRemoveUseless(PhaseGVN* gvn, Unique_Node_List& worklist
 // The PhaseRenumberLive phase updates two data structures with the new node IDs.
 // (1) The "worklist" is "C->igvn_worklist()", which is to collect which nodes need to
 //     be processed by IGVN after removal of the useless nodes.
-// (2) Type information (the field PhaseGVN::_types) maps type information to each
-//     node ID. The mapping is updated to use the new node IDs as well. Updated type
-//     information is returned in PhaseGVN::_types.
+// (2) Type information "gvn->types()" (same as "C->types()") maps every node ID to
+//     the node's type. The mapping is updated to use the new node IDs as well. We
+//     create a new map, and swap it with the old one.
 //
 // Other data structures used by the compiler are not updated. The hash table for value
-// numbering (the field PhaseGVN::_table) is not updated because computing the hash
-// values is not based on node IDs.
+// numbering ("C->node_hash()", referenced by PhaseValue::_table) is not updated because
+// computing the hash values is not based on node IDs.
 PhaseRenumberLive::PhaseRenumberLive(PhaseGVN* gvn,
                                      Unique_Node_List& worklist,
                                      PhaseNumber phase_num) :
