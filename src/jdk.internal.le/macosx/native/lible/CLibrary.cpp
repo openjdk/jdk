@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,8 @@ static jfieldID ws_ypixel;
 static jclass nativelong_j;
 static jfieldID nativelong_value;
 
+static void throw_errno(JNIEnv *env);
+
 JNIEXPORT void JNICALL Java_jdk_internal_org_jline_terminal_impl_jna_osx_CLibraryImpl_initIDs
   (JNIEnv *env, jclass) {
     jclass cls;
@@ -106,10 +108,7 @@ JNIEXPORT void JNICALL Java_jdk_internal_org_jline_terminal_impl_jna_osx_CLibrar
     termios data;
 
     if (tcgetattr(fd, &data) != 0) {
-        jobject exc = env->NewObject(lastErrorExceptionClass,
-                                     lastErrorExceptionConstructor,
-                                     errno);
-        env->Throw((jthrowable) exc);
+        throw_errno(env);
         return ;
     }
 
@@ -137,15 +136,12 @@ JNIEXPORT void JNICALL Java_jdk_internal_org_jline_terminal_impl_jna_osx_CLibrar
     data.c_cflag = env->GetLongField(env->GetObjectField(input, c_cflag), nativelong_value);
     data.c_lflag = env->GetLongField(env->GetObjectField(input, c_lflag), nativelong_value);
     jbyteArray c_ccValue = (jbyteArray) env->GetObjectField(input, c_cc);
-    env->GetByteArrayRegion(c_ccValue, 0, NCCS, (signed char *) data.c_cc);
+    env->GetByteArrayRegion(c_ccValue, 0, NCCS, (jbyte *) data.c_cc);
     data.c_ispeed = env->GetLongField(env->GetObjectField(input, c_ispeed), nativelong_value);
     data.c_ospeed = env->GetLongField(env->GetObjectField(input, c_ospeed), nativelong_value);
 
     if (tcsetattr(fd, cmd, &data) != 0) {
-        jobject exc = env->NewObject(lastErrorExceptionClass,
-                                     lastErrorExceptionConstructor,
-                                     errno);
-        env->Throw((jthrowable) exc);
+        throw_errno(env);
     }
 }
 
@@ -164,10 +160,7 @@ JNIEXPORT void JNICALL Java_jdk_internal_org_jline_terminal_impl_jna_osx_CLibrar
     ws.ws_ypixel = env->GetIntField(data, ws_ypixel);
 
     if (ioctl(fd, cmd, &ws) != 0) {
-        jobject exc = env->NewObject(lastErrorExceptionClass,
-                                     lastErrorExceptionConstructor,
-                                     errno);
-        env->Throw((jthrowable) exc);
+        throw_errno(env);
         return ;
     }
 
@@ -198,13 +191,20 @@ JNIEXPORT void JNICALL Java_jdk_internal_org_jline_terminal_impl_jna_osx_CLibrar
     int error = ttyname_r(fd, data, len);
 
     if (error != 0) {
-        jobject exc = env->NewObject(lastErrorExceptionClass,
-                                     lastErrorExceptionConstructor,
-                                     error);
-        env->Throw((jthrowable) exc);
+        throw_errno(env);
         return ;
     }
 
-    env->SetByteArrayRegion(buf, 0, len, (signed char *) data);
+    env->SetByteArrayRegion(buf, 0, len, (jbyte *) data);
     delete[] data;
+}
+
+/*
+ * Throws LastErrorException based on the errno:
+ */
+static void throw_errno(JNIEnv *env) {
+    jobject exc = env->NewObject(lastErrorExceptionClass,
+                                 lastErrorExceptionConstructor,
+                                 errno);
+    env->Throw((jthrowable) exc);
 }

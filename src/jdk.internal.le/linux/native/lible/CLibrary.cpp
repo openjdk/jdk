@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,8 +53,10 @@ static jfieldID ws_col;
 static jfieldID ws_xpixel;
 static jfieldID ws_ypixel;
 
+static void throw_errno(JNIEnv *env);
+
 JNIEXPORT void JNICALL Java_jdk_internal_org_jline_terminal_impl_jna_linux_CLibraryImpl_initIDs
-  (JNIEnv *env, jclass) {
+  (JNIEnv *env, jclass unused) {
     jclass cls;
     cls = env->FindClass("jdk/internal/org/jline/terminal/impl/jna/LastErrorException");
     CHECK_NULL(cls);
@@ -100,10 +102,7 @@ JNIEXPORT void JNICALL Java_jdk_internal_org_jline_terminal_impl_jna_linux_CLibr
     termios data;
 
     if (tcgetattr(fd, &data) != 0) {
-        jobject exc = env->NewObject(lastErrorExceptionClass,
-                                     lastErrorExceptionConstructor,
-                                     errno);
-        env->Throw((jthrowable) exc);
+        throw_errno(env);
         return ;
     }
 
@@ -133,15 +132,12 @@ JNIEXPORT void JNICALL Java_jdk_internal_org_jline_terminal_impl_jna_linux_CLibr
     data.c_lflag = env->GetIntField(input, c_lflag);
     data.c_line = env->GetIntField(input, c_line);
     jbyteArray c_ccValue = (jbyteArray) env->GetObjectField(input, c_cc);
-    env->GetByteArrayRegion(c_ccValue, 0, NCCS, (signed char *) data.c_cc);//TODO: cast?
+    env->GetByteArrayRegion(c_ccValue, 0, NCCS, (jbyte *) data.c_cc);
     data.c_ispeed = env->GetIntField(input, c_ispeed);
     data.c_ospeed = env->GetIntField(input, c_ospeed);
 
     if (tcsetattr(fd, cmd, &data) != 0) {
-        jobject exc = env->NewObject(lastErrorExceptionClass,
-                                     lastErrorExceptionConstructor,
-                                     errno);
-        env->Throw((jthrowable) exc);
+        throw_errno(env);
     }
 }
 
@@ -160,10 +156,7 @@ JNIEXPORT void JNICALL Java_jdk_internal_org_jline_terminal_impl_jna_linux_CLibr
     ws.ws_ypixel = env->GetIntField(data, ws_ypixel);
 
     if (ioctl(fd, cmd, &ws) != 0) {
-        jobject exc = env->NewObject(lastErrorExceptionClass,
-                                     lastErrorExceptionConstructor,
-                                     errno);
-        env->Throw((jthrowable) exc);
+        throw_errno(env);
         return ;
     }
 
@@ -194,13 +187,20 @@ JNIEXPORT void JNICALL Java_jdk_internal_org_jline_terminal_impl_jna_linux_CLibr
     int error = ttyname_r(fd, data, len);
 
     if (error != 0) {
-        jobject exc = env->NewObject(lastErrorExceptionClass,
-                                     lastErrorExceptionConstructor,
-                                     error);
-        env->Throw((jthrowable) exc);
+        throw_errno(env);
         return ;
     }
 
-    env->SetByteArrayRegion(buf, 0, len, (signed char *) data);
+    env->SetByteArrayRegion(buf, 0, len, (jbyte *) data);
     delete[] data;
+}
+
+/*
+ * Throws LastErrorException based on the errno:
+ */
+static void throw_errno(JNIEnv *env) {
+    jobject exc = env->NewObject(lastErrorExceptionClass,
+                                 lastErrorExceptionConstructor,
+                                 errno);
+    env->Throw((jthrowable) exc);
 }
