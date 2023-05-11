@@ -125,7 +125,7 @@ create-sysroot-riscv64:
   artifacts:
     when: always
     paths:
-      - config.log # in case of error during configure
+      - config.log  # in case of error during configure
       - build/${CONF_NAME}/*.log
       - build/${CONF_NAME}/Makefile
       - build/${CONF_NAME}/make-support
