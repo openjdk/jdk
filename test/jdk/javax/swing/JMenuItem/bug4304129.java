@@ -46,13 +46,13 @@ public class bug4304129 {
         JMenuItem mi = new JMenuItem(new TestAction("Delete Folder"));
 
         if (mi.getMnemonic() != mnemonic) {
-            throw new Error("Failed: mnemonic not set from Action");
+            throw new RuntimeException("Failed: mnemonic not set from Action");
         }
 
         if (mi.getAccelerator() == null ||
                 ! mi.getAccelerator().equals(accelerator)) {
 
-            throw new Error("Failed: accelerator not set from Action");
+            throw new RuntimeException("Failed: accelerator not set from Action");
         }
     }
 

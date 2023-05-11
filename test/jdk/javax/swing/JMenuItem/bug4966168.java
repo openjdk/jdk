@@ -34,6 +34,7 @@ import java.io.ObjectOutputStream;
 import java.io.IOException;
 import java.io.Serializable;
 import java.awt.event.ActionEvent;
+import javax.swing.UIManager;
 
 public class bug4966168 {
 
@@ -52,12 +53,21 @@ public class bug4966168 {
         } catch (IOException e) {}
 
         if (out != null) {
-            System.out.println("Testing...");
-            try {
-                out.writeObject(button);
-            } catch (Exception e) {
-                System.out.println(e);
-                throw new Error("Serialization exception. Test failed.");
+            for (UIManager.LookAndFeelInfo laf :
+                    UIManager.getInstalledLookAndFeels()) {
+                try {
+                    UIManager.setLookAndFeel(laf.getClassName());
+                    System.out.println("Testing LAF: " + laf.getClassName());
+                } catch (Exception e) {
+                    System.out.println("Look and Feel not set: " + laf.getClassName());
+                    continue;
+                }
+
+                try {
+                    out.writeObject(button);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
             }
         }
     }
