@@ -2021,7 +2021,8 @@ JDWP "Java(tm) Debug Wire Protocol"
                                   "is not alive.")
             (Error THREAD_NOT_SUSPENDED "The thread is a virtual thread and was not suspended.")
             (Error OPAQUE_FRAME   "The thread is a suspended virtual thread and the implementation "
-                                  "was unable to throw an asynchronous exception from this frame.")
+                                  "was unable to throw an asynchronous exception "
+                                  "from the current frame.")
             (Error INVALID_OBJECT "If thread is not a known ID or the asynchronous "
                                   "exception has been garbage collected.")
             (Error VM_DEAD)
@@ -3168,7 +3169,7 @@ JDWP "Java(tm) Debug Wire Protocol"
                                           "call stack.")
     (Constant OPAQUE_FRAME           =32  "Information about the frame is not available "
                                           "(e.g. native frame) or the target VM is unable "
-                                          "to perform an operation on the frame.")
+                                          "to perform an operation on the thread's current frame.")
     (Constant NOT_CURRENT_FRAME      =33  "Operation can only be performed on current frame.")
     (Constant TYPE_MISMATCH          =34  "The variable is not an appropriate type for "
                                           "the function used.")
