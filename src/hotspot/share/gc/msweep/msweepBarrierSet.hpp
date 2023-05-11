@@ -21,21 +21,35 @@
  * questions.
  */
 
-#ifndef SHARE_GC_NOOP_NOOPARGUMENTS_HPP
-#define SHARE_GC_NOOP_NOOPARGUMENTS_HPP
+#ifndef SHARE_GC_MSWEEP_MSWEEPBARRIERSET_HPP
+#define SHARE_GC_MSWEEP_MSWEEPBARRIERSET_HPP
 
-#include "gc/shared/gcArguments.hpp"
+#include "gc/shared/barrierSet.hpp"
 
-class CollectedHeap;
-
-class NoopArguments : public GCArguments {
-protected:
-    virtual void initialize_alignments();
+// The barrier set is empty.
+class MSweepBarrierSet: public BarrierSet {
+    friend class VMStructs;
 
 public:
-    virtual void initialize();
-    virtual size_t conservative_max_heap_alignment();
-    virtual CollectedHeap* create_heap();
+    MSweepBarrierSet();
+
+    virtual void print_on(outputStream *st) const {}
+
+    virtual void on_thread_create(Thread* thread) {}
+    virtual void on_thread_destroy(Thread* thread) {}
+
+    template <DecoratorSet decorators, typename BarrierSetT = MSweepBarrierSet>
+    class AccessBarrier: public BarrierSet::AccessBarrier<decorators, BarrierSetT> {};
 };
 
-#endif // SHARE_GC_NOOP_NOOPARGUMENTS_HPP
+template<>
+struct BarrierSet::GetName<MSweepBarrierSet> {
+    static const BarrierSet::Name value = BarrierSet::MSweepBarrierSet;
+};
+
+template<>
+struct BarrierSet::GetType<BarrierSet::MSweepBarrierSet> {
+    typedef::MSweepBarrierSet type;
+};
+
+#endif // SHARE_GC_MSWEEP_MSWEEPBARRIERSET_HPP

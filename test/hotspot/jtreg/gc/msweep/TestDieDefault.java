@@ -21,13 +21,13 @@
  * questions.
  */
 
-package gc.noop;
+package gc.msweep;
 
 /**
  * @test TestDieDefault
- * @summary Noop GC should die on heap exhaustion
+ * @summary MSweep GC should die on heap exhaustion
  * @library /test/lib
- * @run driver gc.noop.TestDieDefault
+ * @run driver gc.msweep.TestDieDefault
  */
 
 import jdk.test.lib.process.OutputAnalyzer;
@@ -54,7 +54,7 @@ public class TestDieDefault {
   public static void main(String[] args) throws Exception {
     failWith("-Xmx64m",
              "-XX:+UnlockExperimentalVMOptions",
-             "-XX:+UseNoopGC",
+             "-XX:+UseMSweepGC",
              "-XX:-UseCompressedOops",
              TestDieDefault.Workload.class.getName());
   }

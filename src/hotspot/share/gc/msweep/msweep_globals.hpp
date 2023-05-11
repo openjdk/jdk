@@ -21,16 +21,16 @@
  * questions.
  */
 
-#ifndef SHARE_GC_NOOP_NOOP_GLOBALS_HPP
-#define SHARE_GC_NOOP_NOOP_GLOBALS_HPP
+#ifndef SHARE_GC_MSWEEP_MSWEEP_GLOBALS_HPP
+#define SHARE_GC_MSWEEP_MSWEEP_GLOBALS_HPP
 
 #include "runtime/globals_shared.hpp"
 
 //
-// Defines all globals flags used by the Noop GC.
+// Defines all globals flags used by the MSweep GC.
 //
 
-#define GC_NOOP_FLAGS(develop,                                              \
+#define GC_MSWEEP_FLAGS(develop,                                              \
                          develop_pd,                                        \
                          product,                                           \
                          product_pd,                                        \
@@ -38,17 +38,17 @@
                          range,                                             \
                          constraint)                                        \
                                                                             \
-  product(size_t, NoopMaxTLABSize, 4 * M, EXPERIMENTAL,                     \
-          "Max TLAB size to use with Noop GC. Larger value improves "       \
+  product(size_t, MSweepMaxTLABSize, 4 * M, EXPERIMENTAL,                     \
+          "Max TLAB size to use with MSweep GC. Larger value improves "       \
           "performance at the expense of per-thread memory waste. This "    \
           "asks TLAB machinery to cap TLAB sizes at this value.")           \
           range(1, max_intx)                                                \
                                                                             \
-  product(size_t, NoopMinHeapExpand, 128 * M, EXPERIMENTAL,                 \
+  product(size_t, MSweepMinHeapExpand, 128 * M, EXPERIMENTAL,                 \
           "Min expansion step for heap. Larger value improves performance " \
           "at the potential expense of memory waste.")                      \
           range(1, max_intx)
 
-// end of GC_NOOP_FLAGS
+// end of GC_MSWEEP_FLAGS
 
-#endif // SHARE_GC_NOOP_NOOP_GLOBALS_HPP
+#endif // SHARE_GC_MSWEEP_MSWEEP_GLOBALS_HPP

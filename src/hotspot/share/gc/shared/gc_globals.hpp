@@ -30,8 +30,8 @@
 #if INCLUDE_EPSILONGC
 #include "gc/epsilon/epsilon_globals.hpp"
 #endif
-#if INCLUDE_NOOPGC
-#include "gc/noop/noop_globals.hpp"
+#if INCLUDE_MSWEEPGC
+#include "gc/msweep/msweep_globals.hpp"
 #endif
 #if INCLUDE_G1GC
 #include "gc/g1/g1_globals.hpp"
@@ -66,7 +66,7 @@
     range,                                                                  \
     constraint))                                                            \
                                                                             \
-  NOOPGC_ONLY(GC_NOOP_FLAGS(                                                \
+  MSWEEPGC_ONLY(GC_MSWEEP_FLAGS(                                                \
     develop,                                                                \
     develop_pd,                                                             \
     product,                                                                \
@@ -134,8 +134,8 @@
   product(bool, UseEpsilonGC, false, EXPERIMENTAL,                          \
           "Use the Epsilon (no-op) garbage collector")                      \
                                                                             \
-  product(bool, UseNoopGC, false, EXPERIMENTAL,                             \
-          "Use the Noop garbage collector")                                 \
+  product(bool, UseMSweepGC, false, EXPERIMENTAL,                             \
+          "Use the MSweep garbage collector")                                 \
                                                                             \
   product(bool, UseZGC, false,                                              \
           "Use the Z garbage collector")                                    \

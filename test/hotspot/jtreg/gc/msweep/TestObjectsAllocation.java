@@ -21,19 +21,19 @@
  * questions.
  */
 
-package gc.noop;
+package gc.msweep;
 
 /**
  * @test TestObjectsAllocation
  * @key randomness
- * @summary Noop is able to allocate objects, and does not corrupt their state
+ * @summary MSweep is able to allocate objects, and does not corrupt their state
  * @library /test/lib
  *
  *
  * @run main/othervm -XX:-UseTLAB -Xmx256m
- *                   -XX:+UnlockExperimentalVMOptions -XX:+UseNoopGC
+ *                   -XX:+UnlockExperimentalVMOptions -XX:+UseMSweepGC
  *                   -XX:-UseCompressedOops
- *                   gc.noop.TestObjectsAllocation
+ *                   gc.msweep.TestObjectsAllocation
  *
  */
 

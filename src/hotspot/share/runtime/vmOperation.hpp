@@ -106,7 +106,7 @@
   template(GTestStopSafepoint)                    \
   template(JFROldObject)                          \
   template(JvmtiPostObjectFree)                   \
-  template(NoopGC)
+  template(MSweepGC)
 
 class Thread;
 class outputStream;

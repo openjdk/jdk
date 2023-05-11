@@ -21,18 +21,18 @@
  * questions.
  */
 
-package gc.noop;
+package gc.msweep;
 
 /**
  * @test TestArraysAllocation
  * @key randomness
- * @summary Noop is able to allocate arrays, and does not corrupt their state
+ * @summary MSweep is able to allocate arrays, and does not corrupt their state
  * @library /test/lib
  *
  * @run main/othervm -XX:-UseTLAB -Xmx256m
- *                   -XX:+UnlockExperimentalVMOptions -XX:+UseNoopGC
+ *                   -XX:+UnlockExperimentalVMOptions -XX:+UseMSweepGC
  *                   -XX:-UseCompressedOops
- *                   gc.noop.TestArraysAllocation
+ *                   gc.msweep.TestArraysAllocation
  */
 
 import java.util.Random;

@@ -21,34 +21,24 @@
  * questions.
  */
 
-package gc.noop;
+#ifndef SHARE_GC_MSWEEP_VMSTRUCTS_MSWEEP_HPP
+#define SHARE_GC_MSWEEP_VMSTRUCTS_MSWEEP_HPP
 
-/**
- * @test TestNoopEnabled
- * @summary Basic sanity test for Noop
- * @library /test/lib
- *
- * @run main/othervm -Xmx256m
- *                   -XX:+UnlockExperimentalVMOptions -XX:+UseNoopGC
- *                   gc.noop.TestNoopEnabled
- */
+#include "gc/msweep/msweepHeap.hpp"
+#include "gc/shared/space.hpp"
+#include "memory/virtualspace.hpp"
 
-import java.lang.management.GarbageCollectorMXBean;
-import java.lang.management.ManagementFactory;
+#define VM_STRUCTS_MSWEEPGC(nonstatic_field,                       \
+                            volatile_nonstatic_field,            \
+                            static_field)                        \
+  nonstatic_field(MSweepHeap, _virtual_space, VirtualSpace)        
 
-public class TestNoopEnabled {
-  public static void main(String[] args) throws Exception {
-    if (!isNoopEnabled()) {
-      throw new IllegalStateException("Debug builds should have Noop enabled");
-    }
-  }
+#define VM_TYPES_MSWEEPGC(declare_type,                            \
+                          declare_toplevel_type,                 \
+                          declare_integer_type)                  \
+  declare_type(MSweepHeap, CollectedHeap)
 
-  public static boolean isNoopEnabled() {
-    for (GarbageCollectorMXBean bean : ManagementFactory.getGarbageCollectorMXBeans()) {
-      if (bean.getName().contains("Noop")) {
-        return true;
-      }
-    }
-    return false;
-  }
-}
+#define VM_INT_CONSTANTS_MSWEEPGC(declare_constant,                \
+                                  declare_constant_with_value)
+
+#endif // SHARE_GC_MSWEEP_VMSTRUCTS_MSWEEP_HPP

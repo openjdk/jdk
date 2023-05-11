@@ -21,9 +21,9 @@
  * questions.
  */
 
-#include "gc/noop/noopHeap.hpp"
-#include "gc/noop/noopMemoryPool.hpp"
-#include "gc/noop/noopInitLogger.hpp"
+#include "gc/msweep/msweepHeap.hpp"
+#include "gc/msweep/msweepMemoryPool.hpp"
+#include "gc/msweep/msweepInitLogger.hpp"
 #include "precompiled.hpp"
 #include "memory/universe.hpp"
 #include "memory/allocation.hpp"
@@ -60,11 +60,11 @@
 #include "utilities/stack.inline.hpp"
 #include "services/management.hpp"
 
-NoopHeap* NoopHeap::heap() {
-    return named_heap<NoopHeap>(CollectedHeap::Noop);
+MSweepHeap* MSweepHeap::heap() {
+    return named_heap<MSweepHeap>(CollectedHeap::MSweep);
 }
 
-jint NoopHeap::initialize() {
+jint MSweepHeap::initialize() {
     size_t align = HeapAlignment;
     size_t init_byte_size = align_up(InitialHeapSize, align);
     size_t max_byte_size  = align_up(MaxHeapSize, align);
@@ -101,39 +101,39 @@ jint NoopHeap::initialize() {
 		}
 
     //Initialize space
-    _free_list_space = new NoopFreeListSpace(&_free_chunk_bitmap);
+    _free_list_space = new MSweepFreeListSpace(&_free_chunk_bitmap);
     _free_list_space->initialize(committed_region, /* clear_space = */ true, /* mangle_space = */ true);
 
-    _max_tlab_size = MIN2(CollectedHeap::max_tlab_size(), align_object_size(NoopMaxTLABSize / HeapWordSize));
+    _max_tlab_size = MIN2(CollectedHeap::max_tlab_size(), align_object_size(MSweepMaxTLABSize / HeapWordSize));
 
     // Install barrier set
-    BarrierSet::set_barrier_set(new NoopBarrierSet());
+    BarrierSet::set_barrier_set(new MSweepBarrierSet());
 
     // Print out the configuration
-    NoopInitLogger::print();
+    MSweepInitLogger::print();
 
     return JNI_OK;
 }
 
-void NoopHeap::initialize_serviceability() {
-    _pool = new NoopMemoryPool(this);
+void MSweepHeap::initialize_serviceability() {
+    _pool = new MSweepMemoryPool(this);
     _memory_manager.add_pool(_pool);
 }
 
-GrowableArray<GCMemoryManager*> NoopHeap::memory_managers() {
+GrowableArray<GCMemoryManager*> MSweepHeap::memory_managers() {
     GrowableArray<GCMemoryManager*> memory_managers(1);
     memory_managers.append(&_memory_manager);
     return memory_managers;
 }
 
-GrowableArray<MemoryPool*> NoopHeap::memory_pools() {
+GrowableArray<MemoryPool*> MSweepHeap::memory_pools() {
     GrowableArray<MemoryPool*> memory_pools(1);
     memory_pools.append(_pool);
     return memory_pools;
 }
 
 //Main allocation method used in any other allocation method
-HeapWord* NoopHeap::allocate_work(size_t size, bool verbose) {
+HeapWord* MSweepHeap::allocate_work(size_t size, bool verbose) {
     assert(is_object_aligned(size), "Allocation size should be aligned: " SIZE_FORMAT, size);
 
     HeapWord* res = NULL;
@@ -144,7 +144,7 @@ HeapWord* NoopHeap::allocate_work(size_t size, bool verbose) {
     return res;
 }
 
-HeapWord* NoopHeap::allocate_new_tlab(size_t min_size,
+HeapWord* MSweepHeap::allocate_new_tlab(size_t min_size,
                                          size_t requested_size,
                                          size_t* actual_size) {
     Thread* thread = Thread::current();
@@ -180,12 +180,12 @@ HeapWord* NoopHeap::allocate_new_tlab(size_t min_size,
     return res;
 }
 
-HeapWord* NoopHeap::mem_allocate(size_t size, bool *gc_overhead_limit_was_exceeded) {
+HeapWord* MSweepHeap::mem_allocate(size_t size, bool *gc_overhead_limit_was_exceeded) {
     *gc_overhead_limit_was_exceeded = false;
     return allocate_or_collect_work(size);
 }
 
-size_t NoopHeap::unsafe_max_tlab_alloc(Thread* thr) const {
+size_t MSweepHeap::unsafe_max_tlab_alloc(Thread* thr) const {
     // Return max allocatable TLAB size, and let allocation path figure out
     // the actual allocation size. Note: result should be in bytes.
     return _max_tlab_size * HeapWordSize;
@@ -197,17 +197,17 @@ size_t NoopHeap::unsafe_max_tlab_alloc(Thread* thr) const {
 //
 //
 
-class VM_NoopGC: public VM_Operation {
+class VM_MSweepGC: public VM_Operation {
 	private:
 		const GCCause::Cause _cause;
-		NoopHeap* const _heap;
+		MSweepHeap* const _heap;
 	public:
-		VM_NoopGC(GCCause::Cause cause) :
-		    VM_Operation(), _cause(cause), _heap(NoopHeap::heap()) {}
+		VM_MSweepGC(GCCause::Cause cause) :
+		    VM_Operation(), _cause(cause), _heap(MSweepHeap::heap()) {}
 
-		VM_Operation::VMOp_Type type() const { return VMOp_NoopGC; }
+		VM_Operation::VMOp_Type type() const { return VMOp_MSweepGC; }
 
-		const char* name() const { return "NoopGC Collection"; }
+		const char* name() const { return "MSweepGC Collection"; }
 
 	virtual bool doit_prologue() {
 		Heap_lock->lock();
@@ -223,12 +223,12 @@ class VM_NoopGC: public VM_Operation {
 	}
 };
 
-void NoopHeap::vmentry_collect(GCCause::Cause cause) {
-    VM_NoopGC vmop(cause);
+void MSweepHeap::vmentry_collect(GCCause::Cause cause) {
+    VM_MSweepGC vmop(cause);
     VMThread::execute(&vmop);
 }
 
-void NoopHeap::entry_collect(GCCause::Cause cause) {
+void MSweepHeap::entry_collect(GCCause::Cause cause) {
     prologue();
     mark();
     sweep();
@@ -242,7 +242,7 @@ class PrintHeapClosure: public ObjectClosure {
         }
 };
 
-HeapWord* NoopHeap::allocate_or_collect_work(size_t size, bool verbose) {
+HeapWord* MSweepHeap::allocate_or_collect_work(size_t size, bool verbose) {
 	HeapWord* res = allocate_work(size, verbose);
 	if (res == NULL) {
 		vmentry_collect(GCCause::_allocation_failure);
@@ -251,9 +251,9 @@ HeapWord* NoopHeap::allocate_or_collect_work(size_t size, bool verbose) {
 	return res;
 }
 
-typedef Stack<oop, mtGC> NoopMarkStack;
+typedef Stack<oop, mtGC> MSweepMarkStack;
 
-void NoopHeap::do_roots(OopClosure* cl, bool everything) {
+void MSweepHeap::do_roots(OopClosure* cl, bool everything) {
 	// Need to tell runtime we are about to walk the roots with 1 thread
 	StrongRootsScope scope(0);
 
@@ -274,7 +274,7 @@ void NoopHeap::do_roots(OopClosure* cl, bool everything) {
 
 class ScanOopClosure: public BasicOopIterateClosure {
     private:
-        NoopMarkStack* const _stack;
+        MSweepMarkStack* const _stack;
         MarkBitMap* const _bitmap;
 
         template<class T>
@@ -297,7 +297,7 @@ class ScanOopClosure: public BasicOopIterateClosure {
 		}
 
     public:
-        ScanOopClosure(NoopMarkStack* stack, MarkBitMap* bitmap) :
+        ScanOopClosure(MSweepMarkStack* stack, MarkBitMap* bitmap) :
 			_stack(stack), _bitmap(bitmap) {
 		}
 
@@ -312,24 +312,24 @@ class ScanOopClosure: public BasicOopIterateClosure {
 class SweepClosure: public ObjectClosure {
     private:
         MarkBitMap* const _live_bitmap;
-        NoopFreeList* const _free_list;
+        MSweepFreeList* const _free_list;
 
     public:
-        SweepClosure(MarkBitMap* live, NoopFreeList* free_list) :
+        SweepClosure(MarkBitMap* live, MSweepFreeList* free_list) :
 			_live_bitmap(live), _free_list(free_list) {
 		}
         
         virtual void do_object(oop obj) {
             if (!_live_bitmap->is_marked(obj)) {
                 if (obj->size() > 100) log_info(gc)("Sweeping obj %li", obj->size());
-                NoopNode* node = new NoopNode(cast_from_oop<HeapWord*>(obj), NoopFreeList::adjust_chunk_size(obj->size()));
+                MSweepNode* node = new MSweepNode(cast_from_oop<HeapWord*>(obj), MSweepFreeList::adjust_chunk_size(obj->size()));
                 
                 _free_list->append(node);
             }
         }
 };
 
-void NoopHeap::prologue() {
+void MSweepHeap::prologue() {
     //Commiting memory for bitmap
     if (!os::commit_memory((char*)_bitmap_region.start(), _bitmap_region.byte_size(), false)) { return; }
 
@@ -337,11 +337,11 @@ void NoopHeap::prologue() {
     ensure_parsability(true);
 }
 
-void NoopHeap::mark() {
+void MSweepHeap::mark() {
     // Marking stack and the closure that does most of the work. The closure
     // would scan the outgoing references, mark them, and push newly-marked
     // objects to stack for further processing.
-    NoopMarkStack stack;
+    MSweepMarkStack stack;
     ScanOopClosure cl(&stack, &_mark_bitmap);
 
     //Not all roots
@@ -355,23 +355,23 @@ void NoopHeap::mark() {
     }
 }
 
-void NoopHeap::sweep() {
+void MSweepHeap::sweep() {
     SweepClosure cl = SweepClosure(&_mark_bitmap, _free_list_space->free_list());
     _free_list_space->object_iterate(&cl);
 }
 
-void NoopHeap::epilogue() {
+void MSweepHeap::epilogue() {
     if (!os::uncommit_memory((char*)_bitmap_region.start(), _bitmap_region.byte_size())) {
 			log_warning(gc)("Could not uncommit native memory for marking bitmap");
 		}
 }
 
-void NoopHeap::collect(GCCause::Cause cause) {
+void MSweepHeap::collect(GCCause::Cause cause) {
     switch (cause) {
         case GCCause::_metadata_GC_threshold:
         case GCCause::_metadata_GC_clear_soft_refs:
             // Receiving these causes means the VM itself entered the safepoint for metadata collection.
-            // While Noop does not do GC, it has to perform sizing adjustments, otherwise we would
+            // While MSweep does not do GC, it has to perform sizing adjustments, otherwise we would
             // re-enter the safepoint again very soon.
 
             assert(SafepointSynchronize::is_at_safepoint(), "Expected at safepoint");
@@ -383,6 +383,6 @@ void NoopHeap::collect(GCCause::Cause cause) {
     }
 }
 
-void NoopHeap::do_full_collection(bool clear_all_soft_refs) {
+void MSweepHeap::do_full_collection(bool clear_all_soft_refs) {
     collect(gc_cause());
 }

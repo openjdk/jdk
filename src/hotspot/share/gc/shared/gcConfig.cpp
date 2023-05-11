@@ -31,8 +31,8 @@
 #if INCLUDE_EPSILONGC
 #include "gc/epsilon/epsilonArguments.hpp"
 #endif
-#if INCLUDE_NOOPGC
-#include "gc/noop/noopArguments.hpp"
+#if INCLUDE_MSWEEPGC
+#include "gc/msweep/msweepArguments.hpp"
 #endif
 #if INCLUDE_G1GC
 #include "gc/g1/g1Arguments.hpp"
@@ -61,7 +61,7 @@ struct IncludedGC {
 };
 
    EPSILONGC_ONLY(static EpsilonArguments    epsilonArguments;)
-      NOOPGC_ONLY(static NoopArguments       noopArguments;)
+      MSWEEPGC_ONLY(static MSweepArguments       msweepArguments;)
         G1GC_ONLY(static G1Arguments         g1Arguments;)
   PARALLELGC_ONLY(static ParallelArguments   parallelArguments;)
     SERIALGC_ONLY(static SerialArguments     serialArguments;)
@@ -72,7 +72,7 @@ SHENANDOAHGC_ONLY(static ShenandoahArguments shenandoahArguments;)
 // line flag, CollectedHeap::Name and GCArguments instance.
 static const IncludedGC IncludedGCs[] = {
    EPSILONGC_ONLY_ARG(IncludedGC(UseEpsilonGC,       CollectedHeap::Epsilon,    epsilonArguments,    "epsilon gc"))
-      NOOPGC_ONLY_ARG(IncludedGC(UseNoopGC,          CollectedHeap::Noop,       noopArguments,       "noop gc"))
+      MSWEEPGC_ONLY_ARG(IncludedGC(UseMSweepGC,          CollectedHeap::MSweep,       msweepArguments,       "msweep gc"))
         G1GC_ONLY_ARG(IncludedGC(UseG1GC,            CollectedHeap::G1,         g1Arguments,         "g1 gc"))
   PARALLELGC_ONLY_ARG(IncludedGC(UseParallelGC,      CollectedHeap::Parallel,   parallelArguments,   "parallel gc"))
     SERIALGC_ONLY_ARG(IncludedGC(UseSerialGC,        CollectedHeap::Serial,     serialArguments,     "serial gc"))
@@ -93,7 +93,7 @@ bool GCConfig::_gc_selected_ergonomically = false;
 
 void GCConfig::fail_if_non_included_gc_is_selected() {
   NOT_EPSILONGC(   FAIL_IF_SELECTED(UseEpsilonGC));
-  NOT_NOOPGC(      FAIL_IF_SELECTED(UseNoopGC));
+  NOT_MSWEEPGC(      FAIL_IF_SELECTED(UseMSweepGC));
   NOT_G1GC(        FAIL_IF_SELECTED(UseG1GC));
   NOT_PARALLELGC(  FAIL_IF_SELECTED(UseParallelGC));
   NOT_SERIALGC(    FAIL_IF_SELECTED(UseSerialGC));

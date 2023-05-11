@@ -21,25 +21,25 @@
  * questions.
  */
 
-#ifndef SHARE_GC_NOOP_NOOPHEAP_H
-#define SHARE_GC_NOOP_NOOPHEAP_H
+#ifndef SHARE_GC_MSWEEP_MSWEEPHEAP_H
+#define SHARE_GC_MSWEEP_MSWEEPHEAP_H
 
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/softRefPolicy.hpp"
 #include "services/memoryManager.hpp"
 #include "gc/shared/space.hpp"
 #include "memory/virtualspace.hpp"
-#include "gc/noop/noopBarrierSet.hpp"
+#include "gc/msweep/msweepBarrierSet.hpp"
 #include "gc/shared/markBitMap.inline.hpp"
-#include "gc/noop/noopFreeListSpace.hpp"
+#include "gc/msweep/msweepFreeListSpace.hpp"
 
-class NoopHeap: public CollectedHeap {
+class MSweepHeap: public CollectedHeap {
     friend class VMStructs;
 private:
     SoftRefPolicy _soft_ref_policy;
     GCMemoryManager _memory_manager;
     MemoryPool* _pool;
-    NoopFreeListSpace* _free_list_space;
+    MSweepFreeListSpace* _free_list_space;
     VirtualSpace _virtual_space;
     size_t _max_tlab_size;
 
@@ -64,18 +64,18 @@ private:
     void epilogue();
 
 public:
-    static NoopHeap* heap();
+    static MSweepHeap* heap();
 
-    NoopHeap() :
-            _memory_manager("Noop Heap", ""),
+    MSweepHeap() :
+            _memory_manager("MSweep Heap", ""),
             _free_list_space(NULL) {};
 
     virtual Name kind() const {
-        return CollectedHeap::Noop;
+        return CollectedHeap::MSweep;
     }
 
     virtual const char* name() const {
-        return "Noop";
+        return "MSweep";
     }
 
     virtual SoftRefPolicy* soft_ref_policy() {
@@ -165,4 +165,4 @@ public:
 };
 
 
-#endif //SHARE_GC_NOOP_NOOPHEAP_H
+#endif //SHARE_GC_MSWEEP_MSWEEPHEAP_H

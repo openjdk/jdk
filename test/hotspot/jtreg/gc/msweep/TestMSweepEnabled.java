@@ -21,17 +21,34 @@
  * questions.
  */
 
-package gc.noop;
+package gc.msweep;
 
 /**
- * @test TestHelloWorld
- * @summary Basic sanity test for Noop
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseNoopGC
- *                   gc.noop.TestHelloWorld
+ * @test TestMSweepEnabled
+ * @summary Basic sanity test for MSweep
+ * @library /test/lib
+ *
+ * @run main/othervm -Xmx256m
+ *                   -XX:+UnlockExperimentalVMOptions -XX:+UseMSweepGC
+ *                   gc.msweep.TestMSweepEnabled
  */
 
-public class TestHelloWorld {
+import java.lang.management.GarbageCollectorMXBean;
+import java.lang.management.ManagementFactory;
+
+public class TestMSweepEnabled {
   public static void main(String[] args) throws Exception {
-    System.out.println("Hello World");
+    if (!isMSweepEnabled()) {
+      throw new IllegalStateException("Debug builds should have MSweep enabled");
+    }
+  }
+
+  public static boolean isMSweepEnabled() {
+    for (GarbageCollectorMXBean bean : ManagementFactory.getGarbageCollectorMXBeans()) {
+      if (bean.getName().contains("MSweep")) {
+        return true;
+      }
+    }
+    return false;
   }
 }

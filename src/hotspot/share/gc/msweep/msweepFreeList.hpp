@@ -21,57 +21,57 @@
  * questions.
  */
 
-#ifndef SHARE_GC_NOOP_NOOPFREELIST_H
-#define SHARE_GC_NOOP_NOOPFREELIST_H
+#ifndef SHARE_GC_MSWEEP_MSWEEPFREELIST_H
+#define SHARE_GC_MSWEEP_MSWEEPFREELIST_H
 
 #include "memory/allocation.hpp"
 #include "gc/shared/markBitMap.inline.hpp"
 
-struct NoopNode: public CHeapObj<mtGC> {
+struct MSweepNode: public CHeapObj<mtGC> {
 private:
     HeapWord* _start;
     size_t _size;
-    NoopNode* _next;
+    MSweepNode* _next;
 public:
-    NoopNode(HeapWord* start, size_t size, NoopNode* next = NULL): _start(start), _size(size), _next(next) {}
+    MSweepNode(HeapWord* start, size_t size, MSweepNode* next = NULL): _start(start), _size(size), _next(next) {}
 
     inline HeapWord* start() const { return _start; }
 
     inline size_t size() const { return _size; }
 
-    inline NoopNode* next() const { return _next; }
+    inline MSweepNode* next() const { return _next; }
 
-    inline void setNext(NoopNode* next) { _next = next; }
+    inline void setNext(MSweepNode* next) { _next = next; }
 
     inline void setSize(size_t size) { _size = size; }
 
     inline void setStart(HeapWord* start) { _start = start; }
 };
 
-class NoopFreeList: public CHeapObj<mtGC> {
+class MSweepFreeList: public CHeapObj<mtGC> {
 private:
-    NoopNode* _head;
-    NoopNode* _tail;
+    MSweepNode* _head;
+    MSweepNode* _tail;
     MarkBitMap* _free_chunk_bitmap;
     static const size_t _chunk_size_alignment = 2;
 public:
-    NoopFreeList(NoopNode* head, MarkBitMap* fc);
+    MSweepFreeList(MSweepNode* head, MarkBitMap* fc);
 
-    void mark(NoopNode* node);
-    void unmark(NoopNode* node);
+    void mark(MSweepNode* node);
+    void unmark(MSweepNode* node);
 
-    static void link_next(NoopNode* cur, NoopNode* next);
-    void remove_next(NoopNode* node, NoopNode* prev);
+    static void link_next(MSweepNode* cur, MSweepNode* next);
+    void remove_next(MSweepNode* node, MSweepNode* prev);
 
-    void append(NoopNode* node);
+    void append(MSweepNode* node);
 
     static size_t adjust_chunk_size(size_t size);
 
     //Slice the given node and return a new one
-    NoopNode* slice_node(NoopNode* node, size_t size, NoopNode* prev = NULL);
+    MSweepNode* slice_node(MSweepNode* node, size_t size, MSweepNode* prev = NULL);
     
     //Pop from list
-    NoopNode* getFirstFit(size_t size);
+    MSweepNode* getFirstFit(size_t size);
 };
 
 #endif

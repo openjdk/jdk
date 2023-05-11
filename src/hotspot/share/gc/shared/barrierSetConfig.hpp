@@ -34,7 +34,7 @@
   G1GC_ONLY(f(G1BarrierSet))                         \
   SHENANDOAHGC_ONLY(f(ShenandoahBarrierSet))         \
   ZGC_ONLY(f(ZBarrierSet))                           \
-  NOOPGC_ONLY(f(NoopBarrierSet))
+  MSWEEPGC_ONLY(f(MSweepBarrierSet))
 #define FOR_EACH_ABSTRACT_BARRIER_SET_DO(f)          \
   f(ModRef)
 

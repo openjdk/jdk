@@ -21,17 +21,17 @@
  * questions.
  */
 
-package gc.noop;
+package gc.msweep;
 
 /**
  * @test TestCollect
- * @summary Noop is able to continue working after multiple collections
+ * @summary MSweep is able to continue working after multiple collections
  * @library /test/lib
  *
  * @run main/othervm -XX:-UseTLAB -Xmx4m
- *                   -XX:+UnlockExperimentalVMOptions -XX:+UseNoopGC
+ *                   -XX:+UnlockExperimentalVMOptions -XX:+UseMSweepGC
  *                   -XX:-UseCompressedOops -Xlog:gc
- *                   gc.noop.TestCollect
+ *                   gc.msweep.TestCollect
  */
 
 import jdk.test.lib.Utils;

@@ -161,23 +161,23 @@
 #define NOT_EPSILONGC_RETURN_(code) { return code; }
 #endif // INCLUDE_EPSILONGC
 
-#ifndef INCLUDE_NOOPGC
-#define INCLUDE_NOOPGC 1
-#endif // INCLUDE_NOOPGC
+#ifndef INCLUDE_MSWEEPGC
+#define INCLUDE_MSWEEPGC 1
+#endif // INCLUDE_MSWEEPGC
 
-#if INCLUDE_NOOPGC
-#define NOOPGC_ONLY(x) x
-#define NOOPGC_ONLY_ARG(arg) arg,
-#define NOT_NOOPGC(x)
-#define NOT_NOOPGC_RETURN        /* next token must be ; */
-#define NOT_NOOPGC_RETURN_(code) /* next token must be ; */
+#if INCLUDE_MSWEEPGC
+#define MSWEEPGC_ONLY(x) x
+#define MSWEEPGC_ONLY_ARG(arg) arg,
+#define NOT_MSWEEPGC(x)
+#define NOT_MSWEEPGC_RETURN        /* next token must be ; */
+#define NOT_MSWEEPGC_RETURN_(code) /* next token must be ; */
 #else
-#define NOOPGC_ONLY(x)
-#define NOOPGC_ONLY_ARG(arg)
-#define NOT_NOOPGC(x) x
-#define NOT_NOOPGC_RETURN        {}
-#define NOT_NOOPGC_RETURN_(code) { return code; }
-#endif // INCLUDE_NOOPGC
+#define MSWEEPGC_ONLY(x)
+#define MSWEEPGC_ONLY_ARG(arg)
+#define NOT_MSWEEPGC(x) x
+#define NOT_MSWEEPGC_RETURN        {}
+#define NOT_MSWEEPGC_RETURN_(code) { return code; }
+#endif // INCLUDE_MSWEEPGC
 
 #ifndef INCLUDE_G1GC
 #define INCLUDE_G1GC 1

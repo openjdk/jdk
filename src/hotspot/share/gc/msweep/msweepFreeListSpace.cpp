@@ -21,20 +21,20 @@
  * questions.
  */
 
-#include "gc/noop/noopFreeListSpace.hpp"
-#include "gc/noop/noopInitLogger.hpp"
+#include "gc/msweep/msweepFreeListSpace.hpp"
+#include "gc/msweep/msweepInitLogger.hpp"
 
-void NoopFreeListSpace::initialize(MemRegion mr, bool clear_space, bool mangle_space) {
+void MSweepFreeListSpace::initialize(MemRegion mr, bool clear_space, bool mangle_space) {
     CompactibleSpace::initialize(mr, clear_space, mangle_space);
 
     //Free list
     //All memory region is a node at first except for 1 word if heap size is odd
-    NoopNode* firstNode = new NoopNode(mr.start(), NoopFreeList::adjust_chunk_size(mr.word_size()));
-    _free_list = new NoopFreeList(firstNode, _free_chunk_bitmap);
+    MSweepNode* firstNode = new MSweepNode(mr.start(), MSweepFreeList::adjust_chunk_size(mr.word_size()));
+    _free_list = new MSweepFreeList(firstNode, _free_chunk_bitmap);
 }
 
-HeapWord* NoopFreeListSpace::allocate(size_t size) {
-    NoopNode* resNode = _free_list->getFirstFit(size);
+HeapWord* MSweepFreeListSpace::allocate(size_t size) {
+    MSweepNode* resNode = _free_list->getFirstFit(size);
     if (resNode) {
         HeapWord* res = resNode->start();
         delete resNode;
@@ -45,7 +45,7 @@ HeapWord* NoopFreeListSpace::allocate(size_t size) {
     return NULL;
 }
 
-bool NoopFreeListSpace::is_oop(HeapWord* addr) {
+bool MSweepFreeListSpace::is_oop(HeapWord* addr) {
     if (_free_chunk_bitmap->is_marked(addr)) return false;
 
     Klass* k = cast_to_oop(addr)->klass_or_null_acquire();
@@ -58,7 +58,7 @@ bool NoopFreeListSpace::is_oop(HeapWord* addr) {
     }
 }
 
-void NoopFreeListSpace::object_iterate(ObjectClosure* blk) {
+void MSweepFreeListSpace::object_iterate(ObjectClosure* blk) {
     HeapWord* obj_addr = bottom();
     HeapWord* t = end();
 
@@ -69,7 +69,7 @@ void NoopFreeListSpace::object_iterate(ObjectClosure* blk) {
         //log_info(gc)("Obj_addr: %li", (size_t)obj_addr);
         if (is_oop(obj_addr)) {
             oop obj = cast_to_oop(obj_addr);
-            size_t size = NoopFreeList::adjust_chunk_size(obj->size());
+            size_t size = MSweepFreeList::adjust_chunk_size(obj->size());
             blk->do_object(obj);
             last = obj_addr;
             obj_addr += size;

@@ -21,22 +21,22 @@
  * questions.
  */
 
-#ifndef SHARE_GC_NOOP_NOOPFREELISTSPACE_H
-#define SHARE_GC_NOOP_NOOPFREELISTSPACE_H
+#ifndef SHARE_GC_MSWEEP_MSWEEPFREELISTSPACE_H
+#define SHARE_GC_MSWEEP_MSWEEPFREELISTSPACE_H
 
 #include "gc/shared/space.hpp"
-#include "gc/noop/noopFreeList.hpp"
+#include "gc/msweep/msweepFreeList.hpp"
 
-class NoopFreeListSpace: public CompactibleSpace {
+class MSweepFreeListSpace: public CompactibleSpace {
     friend class VMStructs;
 private:
     MarkBitMap* _free_chunk_bitmap;
-    NoopFreeList* _free_list;
+    MSweepFreeList* _free_list;
 public:
     
-    NoopFreeList* free_list() { return _free_list; }
+    MSweepFreeList* free_list() { return _free_list; }
     
-    NoopFreeListSpace(MarkBitMap* bitmap): _free_chunk_bitmap(bitmap), _free_list(NULL) {}
+    MSweepFreeListSpace(MarkBitMap* bitmap): _free_chunk_bitmap(bitmap), _free_list(NULL) {}
 
     //Useless virtual methods
     virtual MemRegion used_region() const { return MemRegion(bottom(), end()); }

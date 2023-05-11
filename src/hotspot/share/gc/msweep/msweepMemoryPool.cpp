@@ -22,18 +22,18 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/noop/noopHeap.hpp"
-#include "gc/noop/noopMemoryPool.hpp"
+#include "gc/msweep/msweepHeap.hpp"
+#include "gc/msweep/msweepMemoryPool.hpp"
 
-NoopMemoryPool::NoopMemoryPool(NoopHeap* heap) :
-        CollectedMemoryPool("Noop Heap",
+MSweepMemoryPool::MSweepMemoryPool(MSweepHeap* heap) :
+        CollectedMemoryPool("MSweep Heap",
                             heap->capacity(),
                             heap->max_capacity(),
                             false),
         _heap(heap) {
 }
 
-MemoryUsage NoopMemoryPool::get_memory_usage() {
+MemoryUsage MSweepMemoryPool::get_memory_usage() {
     size_t initial_sz = initial_size();
     size_t max_sz     = max_size();
     size_t used       = used_in_bytes();

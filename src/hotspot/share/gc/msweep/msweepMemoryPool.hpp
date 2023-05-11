@@ -21,17 +21,26 @@
  * questions.
  */
 
-#ifndef SHARE_GC_NOOP_NOOPINITLOGGER_HPP
-#define SHARE_GC_NOOP_NOOPINITLOGGER_HPP
+#ifndef SHARE_GC_MSWEEP_MSWEEPMEMORYPOOL_H
+#define SHARE_GC_MSWEEP_MSWEEPMEMORYPOOL_H
 
-#include "gc/shared/gcInitLogger.hpp"
 
-class NoopInitLogger : public GCInitLogger {
-protected:
-    virtual void print_gc_specific();
+#include "gc/msweep/msweepHeap.hpp"
+#include "services/memoryPool.hpp"
+#include "services/memoryUsage.hpp"
+#include "utilities/macros.hpp"
+
+class MSweepMemoryPool : public CollectedMemoryPool {
+private:
+    MSweepHeap* _heap;
 
 public:
-    static void print();
+    MSweepMemoryPool(MSweepHeap* heap);
+    size_t committed_in_bytes() { return _heap->capacity();     }
+    size_t used_in_bytes()      { return _heap->used();         }
+    size_t max_size()     const { return _heap->max_capacity(); }
+    MemoryUsage get_memory_usage();
 };
 
-#endif // SHARE_GC_NOOP_NOOPINITLOGGER_HPP
+
+#endif //SHARE_GC_MSWEEP_MSWEEPMEMORYPOOL_H
