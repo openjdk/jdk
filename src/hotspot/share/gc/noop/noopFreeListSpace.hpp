@@ -33,7 +33,9 @@ private:
     MarkBitMap* _free_chunk_bitmap;
     NoopFreeList* _free_list;
 public:
-
+    
+    NoopFreeList* free_list() { return _free_list; }
+    
     NoopFreeListSpace(MarkBitMap* bitmap): _free_chunk_bitmap(bitmap), _free_list(NULL) {}
 
     //Useless virtual methods
@@ -49,7 +51,8 @@ public:
     virtual size_t block_size(const HeapWord* addr) const { return 0; }
 
     //Space walking
-    virtual void object_iterate(ObjectClosure* blk) {}
+    bool is_oop(HeapWord* addr);
+    virtual void object_iterate(ObjectClosure* blk);
     virtual bool block_is_obj(const HeapWord* addr) const { return true; }
     virtual bool is_free_block(const HeapWord* p) const { return false; }
     virtual HeapWord* par_allocate(size_t word_size) { return bottom(); }
@@ -59,12 +62,6 @@ public:
     virtual void initialize(MemRegion mr, bool clear_space, bool mangle_space);
 
     virtual HeapWord* allocate(size_t size);
-
-    //Min node size
-
-    //GC support
-        //Iteration
-
 };
 
 #endif

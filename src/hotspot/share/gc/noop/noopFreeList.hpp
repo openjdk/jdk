@@ -30,10 +30,10 @@
 struct NoopNode: public CHeapObj<mtGC> {
 private:
     HeapWord* _start;
-    size_t _size = 0;
+    size_t _size;
     NoopNode* _next;
 public:
-    NoopNode(HeapWord* start, size_t size, NoopNode* next = nullptr): _start(start), _size(size), _next(next) {}
+    NoopNode(HeapWord* start, size_t size, NoopNode* next = NULL): _start(start), _size(size), _next(next) {}
 
     inline HeapWord* start() const { return _start; }
 
@@ -51,19 +51,24 @@ public:
 class NoopFreeList: public CHeapObj<mtGC> {
 private:
     NoopNode* _head;
+    NoopNode* _tail;
     MarkBitMap* _free_chunk_bitmap;
     static const size_t _chunk_size_alignment = 2;
 public:
     NoopFreeList(NoopNode* head, MarkBitMap* fc);
 
-    static void link_next(NoopNode* cur, NoopNode* next);
-    void remove_next(NoopNode* NoopNode);
+    void mark(NoopNode* node);
+    void unmark(NoopNode* node);
 
-    void append(NoopNode* NoopNode);
+    static void link_next(NoopNode* cur, NoopNode* next);
+    void remove_next(NoopNode* node, NoopNode* prev);
+
+    void append(NoopNode* node);
 
     static size_t adjust_chunk_size(size_t size);
 
-    NoopNode* slice_node(NoopNode* node, size_t size);
+    //Slice the given node and return a new one
+    NoopNode* slice_node(NoopNode* node, size_t size, NoopNode* prev = NULL);
     
     //Pop from list
     NoopNode* getFirstFit(size_t size);

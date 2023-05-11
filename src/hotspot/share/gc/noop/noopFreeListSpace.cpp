@@ -35,8 +35,49 @@ void NoopFreeListSpace::initialize(MemRegion mr, bool clear_space, bool mangle_s
 
 HeapWord* NoopFreeListSpace::allocate(size_t size) {
     NoopNode* resNode = _free_list->getFirstFit(size);
-    HeapWord* res = resNode->start();
-    delete resNode;
+    if (resNode) {
+        HeapWord* res = resNode->start();
+        delete resNode;
 
-    return res;
+        return res;
+    }
+    
+    return NULL;
+}
+
+bool NoopFreeListSpace::is_oop(HeapWord* addr) {
+    if (_free_chunk_bitmap->is_marked(addr)) return false;
+
+    Klass* k = cast_to_oop(addr)->klass_or_null_acquire();
+    if (k != NULL) {
+        assert(oopDesc::is_oop(cast_to_oop(addr), true), "Should be an oop");
+        return true;
+    } else {
+        log_info(gc)("Not an object and not free block!");
+        return false;
+    }
+}
+
+void NoopFreeListSpace::object_iterate(ObjectClosure* blk) {
+    HeapWord* obj_addr = bottom();
+    HeapWord* t = end();
+
+    HeapWord* last = 0;
+
+    while (obj_addr < t && obj_addr != last)
+    {
+        //log_info(gc)("Obj_addr: %li", (size_t)obj_addr);
+        if (is_oop(obj_addr)) {
+            oop obj = cast_to_oop(obj_addr);
+            size_t size = NoopFreeList::adjust_chunk_size(obj->size());
+            blk->do_object(obj);
+            last = obj_addr;
+            obj_addr += size;
+        } else {
+            //Skip free block
+            last = obj_addr;
+            obj_addr = _free_chunk_bitmap->get_next_marked_addr(obj_addr + 1, t) + 1;
+        }
+        
+    }
 }

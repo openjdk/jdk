@@ -101,8 +101,6 @@ jint NoopHeap::initialize() {
 		}
 
     //Initialize space
-    //_free_list_space = new NoopFreeListSpace(&_free_chunk_bitmap);
-    //_free_list_space->initialize(committed_region, /* clear_space = */ true, /* mangle_space = */ true);
     _free_list_space = new NoopFreeListSpace(&_free_chunk_bitmap);
     _free_list_space->initialize(committed_region, /* clear_space = */ true, /* mangle_space = */ true);
 
@@ -233,8 +231,16 @@ void NoopHeap::vmentry_collect(GCCause::Cause cause) {
 void NoopHeap::entry_collect(GCCause::Cause cause) {
     prologue();
     mark();
+    sweep();
     epilogue();
 }
+
+class PrintHeapClosure: public ObjectClosure {
+    public:
+        virtual void do_object(oop obj) {
+            if (obj->size() > 100) log_info(gc)("Object, %li", obj->size());
+        }
+};
 
 HeapWord* NoopHeap::allocate_or_collect_work(size_t size, bool verbose) {
 	HeapWord* res = allocate_work(size, verbose);
@@ -283,6 +289,7 @@ class ScanOopClosure: public BasicOopIterateClosure {
 				// mark and push it on mark stack for further traversal. Non-atomic
 				// check and set would do, as this closure is called by single thread.
 				if (!_bitmap->is_marked(obj)) {
+                    if (obj->size() > 100 ) log_info(gc)("Marking obj %li", obj->size());
 					_bitmap->mark(obj);
 					_stack->push(obj);
 				}
@@ -300,6 +307,26 @@ class ScanOopClosure: public BasicOopIterateClosure {
 		virtual void do_oop(narrowOop* p) {
 			do_oop_work(p);
 		}
+};
+
+class SweepClosure: public ObjectClosure {
+    private:
+        MarkBitMap* const _live_bitmap;
+        NoopFreeList* const _free_list;
+
+    public:
+        SweepClosure(MarkBitMap* live, NoopFreeList* free_list) :
+			_live_bitmap(live), _free_list(free_list) {
+		}
+        
+        virtual void do_object(oop obj) {
+            if (!_live_bitmap->is_marked(obj)) {
+                if (obj->size() > 100) log_info(gc)("Sweeping obj %li", obj->size());
+                NoopNode* node = new NoopNode(cast_from_oop<HeapWord*>(obj), NoopFreeList::adjust_chunk_size(obj->size()));
+                
+                _free_list->append(node);
+            }
+        }
 };
 
 void NoopHeap::prologue() {
@@ -329,7 +356,8 @@ void NoopHeap::mark() {
 }
 
 void NoopHeap::sweep() {
-    
+    SweepClosure cl = SweepClosure(&_mark_bitmap, _free_list_space->free_list());
+    _free_list_space->object_iterate(&cl);
 }
 
 void NoopHeap::epilogue() {
@@ -358,4 +386,3 @@ void NoopHeap::collect(GCCause::Cause cause) {
 void NoopHeap::do_full_collection(bool clear_all_soft_refs) {
     collect(gc_cause());
 }
-
