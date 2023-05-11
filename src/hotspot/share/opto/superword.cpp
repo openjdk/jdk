@@ -2860,9 +2860,9 @@ bool SuperWord::output() {
           //   BoolTest::ge:  Case 0, 1  -> GE_O
           //   BoolTest::gt:  Case 1     -> GT_O
           //
-          // With these two cases we must convert the unordered into an ordered comparison:
-          //   BoolTest::lt:  Case -1    -> LT_U
-          //   BoolTest::le:  Case -1, 0 -> LE_U
+          // But the lt and le comparisons must be converted from unordered to ordered:
+          //   BoolTest::lt:  Case -1    -> LT_U -> VectorMaskCmp would interpret lt as LT_O
+          //   BoolTest::le:  Case -1, 0 -> LE_U -> VectorMaskCmp would interpret le as LE_O
           //
           if (bol_test == BoolTest::lt || bol_test == BoolTest::le) {
             // Negating the bol_test and swapping the blend-inputs leaves all non-NaN cases equal,
