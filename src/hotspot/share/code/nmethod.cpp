@@ -1831,7 +1831,8 @@ bool nmethod::is_unloading() {
   // oops in the CompiledMethod, by calling oops_do on it.
   state_unloading_cycle = current_cycle;
 
-  if (is_zombie() || method()->can_be_allocated_in_NonNMethod_space()) {
+  Method* m = method();
+  if (is_zombie() || (m != nullptr && m->can_be_allocated_in_NonNMethod_space())) {
     // When the nmethod is in NonNMethod space, we may reach here without IsUnloadingBehaviour.
     // However, we only allow this for special methods which never get unloaded.
 
