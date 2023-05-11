@@ -59,7 +59,6 @@ import java.net.SocketException;
 import java.net.SocketTimeoutException;
 
 import jdk.test.lib.thread.VThreadRunner;
-import jdk.test.lib.Platform;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
