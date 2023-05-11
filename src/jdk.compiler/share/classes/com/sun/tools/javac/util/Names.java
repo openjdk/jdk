@@ -222,6 +222,14 @@ public class Names {
     public final Name typeSwitch;
     public final Name enumSwitch;
 
+    // templated string
+    public final Name process;
+    public final Name STR;
+    public final Name RAW;
+    public final Name newStringTemplate;
+    public final Name newLargeStringTemplate;
+    public final Name processStringTemplate;
+
     public final Name.Table table;
 
     @SuppressWarnings("this-escape")
@@ -395,6 +403,14 @@ public class Names {
         // sealed types
         permits = fromString("permits");
         sealed = fromString("sealed");
+
+        // templated string
+        process = fromString("process");
+        STR = fromString("STR");
+        RAW = fromString("RAW");
+        newStringTemplate = fromString("newStringTemplate");
+        newLargeStringTemplate = fromString("newLargeStringTemplate");
+        processStringTemplate = fromString("processStringTemplate");
 
         // pattern switches
         typeSwitch = fromString("typeSwitch");
