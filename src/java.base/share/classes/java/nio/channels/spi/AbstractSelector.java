@@ -39,7 +39,7 @@ import sun.nio.ch.SelectorImpl;
 /**
  * Base implementation class for selectors.
  *
- * <p id="be"> This class encapsulates the low-level machinery required to implement
+ * <p> This class encapsulates the low-level machinery required to implement
  * the interruption of selection operations.  A concrete selector class must
  * invoke the {@link #begin begin} and {@link #end end} methods before and
  * after, respectively, invoking an I/O operation that might block
@@ -47,7 +47,7 @@ import sun.nio.ch.SelectorImpl;
  * invoked, these methods should be used within a
  * {@code try}&nbsp;...&nbsp;{@code finally} block:
  *
- * {@snippet lang=java :
+ * {@snippet lang=java id="be" :
  *     try {
  *         begin();
  *         // Perform blocking I/O operation here
