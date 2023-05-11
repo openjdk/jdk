@@ -1158,7 +1158,7 @@ void C2_MacroAssembler::string_equals(Register a1, Register a2,
     j(SAME);
   } else {
     add(tmp1, cnt1, wordSize);
-    beqz(cnt1, SAME);
+    beqz(tmp1, SAME);
   }
 
   bind(SHORT);
