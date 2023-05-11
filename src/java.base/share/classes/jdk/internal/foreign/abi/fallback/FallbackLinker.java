@@ -81,7 +81,7 @@ public final class FallbackLinker extends AbstractLinker {
 
     @Override
     protected MethodHandle arrangeDowncall(MethodType inferredMethodType, FunctionDescriptor function, LinkerOptions options) {
-        MemorySegment cif = makeCif(inferredMethodType, function, FFIABI.DEFAULT, Arena.ofAuto());
+        MemorySegment cif = makeCif(inferredMethodType, function, options, Arena.ofAuto());
 
         int capturedStateMask = options.capturedCallState()
                 .mapToInt(CapturableState::mask)
@@ -107,7 +107,7 @@ public final class FallbackLinker extends AbstractLinker {
 
     @Override
     protected UpcallStubFactory arrangeUpcall(MethodType targetType, FunctionDescriptor function, LinkerOptions options) {
-        MemorySegment cif = makeCif(targetType, function, FFIABI.DEFAULT, Arena.ofAuto());
+        MemorySegment cif = makeCif(targetType, function, options, Arena.ofAuto());
 
         UpcallData invData = new UpcallData(function.returnLayout().orElse(null), function.argumentLayouts(), cif);
         MethodHandle doUpcallMH = MethodHandles.insertArguments(MH_DO_UPCALL, 3, invData);
@@ -123,7 +123,9 @@ public final class FallbackLinker extends AbstractLinker {
         return ByteOrder.nativeOrder();
     }
 
-    private static MemorySegment makeCif(MethodType methodType, FunctionDescriptor function, FFIABI abi, Arena scope) {
+    private static MemorySegment makeCif(MethodType methodType, FunctionDescriptor function, LinkerOptions options, Arena scope) {
+        FFIABI abi = FFIABI.DEFAULT;
+
         MemorySegment argTypes = scope.allocate(function.argumentLayouts().size() * ADDRESS.byteSize());
         List<MemoryLayout> argLayouts = function.argumentLayouts();
         for (int i = 0; i < argLayouts.size(); i++) {
@@ -134,7 +136,14 @@ public final class FallbackLinker extends AbstractLinker {
         MemorySegment returnType = methodType.returnType() != void.class
                 ? FFIType.toFFIType(function.returnLayout().orElseThrow(), abi, scope)
                 : LibFallback.voidType();
-        return LibFallback.prepCif(returnType, argLayouts.size(), argTypes, abi, scope);
+
+        if (options.isVariadicFunction()) {
+            int numFixedArgs = options.firstVariadicArgIndex();
+            int numTotalArgs = argLayouts.size();
+            return LibFallback.prepCifVar(returnType, numFixedArgs, numTotalArgs, argTypes, abi, scope);
+        } else {
+            return LibFallback.prepCif(returnType, argLayouts.size(), argTypes, abi, scope);
+        }
     }
 
     private record DowncallData(MemorySegment cif, MemoryLayout returnLayout, List<MemoryLayout> argLayouts,

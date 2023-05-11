@@ -383,7 +383,7 @@ public class StdLibTest extends NativeTestHelper {
         STRING(MemorySegment.class, C_POINTER, "%s", arena -> {
             return arena.allocateUtf8String("str");
         }, "str"),
-        CHAR(byte.class, C_CHAR, "%c", arena -> (byte) 'h', 'h'),
+        CHAR(int.class, C_INT, "%c", arena -> (int) 'h', (int) 'h'), // promote to int, per C spec
         DOUBLE(double.class, C_DOUBLE, "%.4f", arena ->1.2345d, 1.2345d);
 
         final Class<?> carrier;
