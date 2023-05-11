@@ -1037,7 +1037,7 @@ abstract public class TestScaffold extends TargetAdapter {
                 // Note we cant just rethrow tg.uncaughtThrowable because there are tests
                 // that track ExceptionEvents, and they will complain about the extra
                 // exception. So instead mimic what happens when the main thread exits
-                // with an exception. 
+                // with an exception.
                 System.out.println("Uncaught Exception: " + tg.uncaughtThrowable);
                 tg.uncaughtThrowable.printStackTrace(System.out);
                 System.exit(1);
