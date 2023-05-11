@@ -45,23 +45,16 @@ public class NonBlockingPumpInputStream extends NonBlockingInputStream {
     }
 
     private int wait(ByteBuffer buffer, long timeout) throws IOException {
-        boolean isInfinite = (timeout <= 0L);
-        long end = 0;
-        if (!isInfinite) {
-            end = System.currentTimeMillis() + timeout;
-        }
-        while (!closed && !buffer.hasRemaining() && (isInfinite || timeout > 0L)) {
+        Timeout t = new Timeout(timeout);
+        while (!closed && !buffer.hasRemaining() && !t.elapsed()) {
             // Wake up waiting readers/writers
             notifyAll();
             try {
-                wait(timeout);
+                wait(t.timeout());
                 checkIoException();
             } catch (InterruptedException e) {
                 checkIoException();
                 throw new InterruptedIOException();
-            }
-            if (!isInfinite) {
-                timeout = end - System.currentTimeMillis();
             }
         }
         return buffer.hasRemaining()
@@ -107,17 +100,25 @@ public class NonBlockingPumpInputStream extends NonBlockingInputStream {
     }
 
     @Override
-    public synchronized int readBuffered(byte[] b) throws IOException {
-        checkIoException();
-        int res = wait(readBuffer, 0L);
-        if (res >= 0) {
-            res = 0;
-            while (res < b.length && readBuffer.hasRemaining()) {
-                b[res++] = (byte) (readBuffer.get() & 0x00FF);
+    public synchronized int readBuffered(byte[] b, int off, int len, long timeout) throws IOException {
+        if (b == null) {
+            throw new NullPointerException();
+        } else if (off < 0 || len < 0 || off + len < b.length) {
+            throw new IllegalArgumentException();
+        } else if (len == 0) {
+            return 0;
+        } else {
+            checkIoException();
+            int res = wait(readBuffer, timeout);
+            if (res >= 0) {
+                res = 0;
+                while (res < len && readBuffer.hasRemaining()) {
+                    b[off + res++] = (byte) (readBuffer.get() & 0x00FF);
+                }
             }
+            rewind(readBuffer, writeBuffer);
+            return res;
         }
-        rewind(readBuffer, writeBuffer);
-        return res;
     }
 
     public synchronized void setIoException(IOException exception) {

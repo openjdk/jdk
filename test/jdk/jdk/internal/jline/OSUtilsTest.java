@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,5 +21,32 @@
  * questions.
  */
 
+/**
+ * @test
+ * @bug 8304498
+ * @summary Verify the OSUtils class is initialized properly
+ * @modules jdk.internal.le/jdk.internal.org.jline.utils
+ */
 
-provides jdk.internal.org.jline.terminal.spi.JnaSupport with jdk.internal.org.jline.terminal.impl.jna.JnaSupportImpl;
+import jdk.internal.org.jline.utils.OSUtils;
+
+public class OSUtilsTest {
+    public static void main(String... args) throws Exception {
+        new OSUtilsTest().run();
+    }
+
+    void run() throws Exception {
+        runTestTest();
+    }
+
+    void runTestTest() throws Exception {
+        if (OSUtils.IS_WINDOWS) {
+            return ; //skip on Windows
+        }
+
+        Process p = new ProcessBuilder(OSUtils.TEST_COMMAND, "-z", "").inheritIO().start();
+        if (p.waitFor() != 0) {
+            throw new AssertionError("Unexpected result!");
+        }
+    }
+}
