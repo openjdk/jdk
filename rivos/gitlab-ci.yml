@@ -125,6 +125,7 @@ create-sysroot-riscv64:
   artifacts:
     when: always
     paths:
+      - config.log # in case of error during configure
       - build/${CONF_NAME}/*.log
       - build/${CONF_NAME}/Makefile
       - build/${CONF_NAME}/make-support
@@ -190,19 +191,20 @@ build-linux-riscv64-release:
     - |
       apt-get install -y                                                       \
         build-essential                                                        \
-        curl                                                                   \
-        git
+        curl
     - |
       mkdir -p /usr/lib/jvm/temurin-${BUILD_JDK_VERSION}
       curl -L https://api.adoptium.net/v3/binary/latest/${BUILD_JDK_VERSION}/ea/linux/x64/jdk/hotspot/normal/eclipse\?project\=jdk \
         | tar -xzf - -C /usr/lib/jvm/temurin-${BUILD_JDK_VERSION} --strip-components 1
-    - git clone https://github.com/google/googletest.git -b ${GTEST_TAG} googletest
+    # jtreg is not needed to run the gtests but make-prebuilt requires JT_HOME to point to a dir.
+    # We'll just point it to an empty dir, it's not worth checking out jtreg for this.
+    - mkdir $(pwd)/jtreg
     - make test-prebuilt \
         CONF=${CONF_NAME} \
         BOOT_JDK=/usr/lib/jvm/temurin-${BUILD_JDK_VERSION} \
         JDK_IMAGE_DIR=$(pwd)/build/${CONF_NAME}/images/jdk \
         TEST_IMAGE_DIR=$(pwd)/build/${CONF_NAME}/images/test \
-        JT_HOME=$(pwd)/googletest \
+        JT_HOME=$(pwd)/jtreg \
         TEST="gtest:all"
 
 run-gtests-amd64-fastdebug:
