@@ -3538,8 +3538,7 @@ void LIR_Assembler::emit_load_klass(LIR_OpLoadKlass* op) {
     // Fast-path: shift and decode Klass*.
     __ shrq(result, markWord::klass_shift);
     __ decode_klass_not_null(result, tmp);
-  } else
-  if (UseCompressedClassPointers) {
+  } else if (UseCompressedClassPointers) {
     __ movl(result, Address(obj, oopDesc::klass_offset_in_bytes()));
     __ decode_klass_not_null(result, rscratch1);
   } else

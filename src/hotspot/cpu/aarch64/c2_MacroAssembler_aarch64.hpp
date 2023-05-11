@@ -172,4 +172,6 @@
   void vector_signum_sve(FloatRegister dst, FloatRegister src, FloatRegister zero,
                          FloatRegister one, FloatRegister vtmp, PRegister pgtmp, SIMD_RegVariant T);
 
+  void load_nklass_compact(Register dst, Register obj);
+
 #endif // CPU_AARCH64_C2_MACROASSEMBLER_AARCH64_HPP

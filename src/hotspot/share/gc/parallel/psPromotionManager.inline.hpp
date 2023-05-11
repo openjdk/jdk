@@ -247,9 +247,19 @@ inline oop PSPromotionManager::copy_unmarked_to_survivor_space(oop o,
   // Copy obj
   Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(o), cast_from_oop<HeapWord*>(new_obj), new_obj_size);
 
-  if (!new_obj->mark().is_marked()) {
-    // Parallel GC claims with a release - so other threads might access this object
-    // after claiming and they should see the "completed" object.
+  if (UseCompactObjectHeaders) {
+    // The copy above is not atomic. Make sure we have seen the proper mark
+    // and re-install it into the copy, so that Klass* is guaranteed to be correct.
+    markWord mark = o->mark_acquire();
+    if (!mark.is_marked()) {
+      new_obj->set_mark(mark);
+      ContinuationGCSupport::transform_stack_chunk(new_obj);
+    } else {
+      // If we copied a mark-word that indicates 'forwarded' state, the object
+      // installation would not succeed. We cannot access Klass* anymore either.
+      // Skip the transformation.
+    }
+  } else {
     ContinuationGCSupport::transform_stack_chunk(new_obj);
   }
 

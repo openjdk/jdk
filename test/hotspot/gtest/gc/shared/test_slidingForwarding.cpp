@@ -42,7 +42,12 @@ static uintptr_t make_fallback() {
 
 // Test simple forwarding within the same region.
 TEST_VM(SlidingForwarding, simple) {
+#ifndef PRODUCT
   FlagSetting fs(UseAltGCForwarding, true);
+#else
+  // Should not run this test with alt GC forwarding
+  if (UseAltGCForwarding) return;
+#endif
   HeapWord fakeheap[32] = { nullptr };
   HeapWord* heap = align_up(fakeheap, 8 * sizeof(HeapWord));
   oop obj1 = cast_to_oop(&heap[2]);
@@ -60,7 +65,12 @@ TEST_VM(SlidingForwarding, simple) {
 
 // Test forwardings crossing 2 regions.
 TEST_VM(SlidingForwarding, tworegions) {
+#ifndef PRODUCT
   FlagSetting fs(UseAltGCForwarding, true);
+#else
+  // Should not run this test with alt GC forwarding
+  if (UseAltGCForwarding) return;
+#endif
   HeapWord fakeheap[32] = { nullptr };
   HeapWord* heap = align_up(fakeheap, 8 * sizeof(HeapWord));
   oop obj1 = cast_to_oop(&heap[14]);
@@ -83,7 +93,12 @@ TEST_VM(SlidingForwarding, tworegions) {
 
 // Test fallback forwardings crossing 4 regions.
 TEST_VM(SlidingForwarding, fallback) {
+#ifndef PRODUCT
   FlagSetting fs(UseAltGCForwarding, true);
+#else
+  // Should not run this test with alt GC forwarding
+  if (UseAltGCForwarding) return;
+#endif
   HeapWord fakeheap[32] = { nullptr };
   HeapWord* heap = align_up(fakeheap, 8 * sizeof(HeapWord));
   oop s_obj1 = cast_to_oop(&heap[12]);

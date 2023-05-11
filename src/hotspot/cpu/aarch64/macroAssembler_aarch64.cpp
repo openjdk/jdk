@@ -4316,8 +4316,8 @@ void MacroAssembler::load_method_holder(Register holder, Register method) {
 
 // Loads the obj's Klass* into dst.
 // Preserves all registers (incl src, rscratch1 and rscratch2).
-void MacroAssembler::load_nklass(Register dst, Register src) {
-  assert(UseCompressedClassPointers, "expects UseCompressedClassPointers");
+void MacroAssembler::load_nklass_compact(Register dst, Register src) {
+  assert(UseCompactObjectHeaders, "expects UseCompactObjectHeaders");
 
   if (!UseCompactObjectHeaders) {
     ldrw(dst, Address(src, oopDesc::klass_offset_in_bytes()));
@@ -4339,12 +4339,11 @@ void MacroAssembler::load_nklass(Register dst, Register src) {
 }
 
 void MacroAssembler::load_klass(Register dst, Register src) {
-  if (UseCompressedClassPointers) {
-    if (UseCompactObjectHeaders) {
-      load_nklass(dst, src);
-    } else {
-      ldrw(dst, Address(src, oopDesc::klass_offset_in_bytes()));
-    }
+  if (UseCompactObjectHeaders) {
+    load_nklass_compact(dst, src);
+    decode_klass_not_null(dst);
+  } else if (UseCompressedClassPointers) {
+    ldrw(dst, Address(src, oopDesc::klass_offset_in_bytes()));
     decode_klass_not_null(dst);
   } else {
     ldr(dst, Address(src, oopDesc::klass_offset_in_bytes()));
@@ -4385,7 +4384,7 @@ void MacroAssembler::cmp_klass(Register oop, Register trial_klass, Register tmp)
   assert_different_registers(oop, trial_klass, tmp);
   if (UseCompressedClassPointers) {
     if (UseCompactObjectHeaders) {
-      load_nklass(tmp, oop);
+      load_nklass_compact(tmp, oop);
     } else {
       ldrw(tmp, Address(oop, oopDesc::klass_offset_in_bytes()));
     }
@@ -4406,9 +4405,13 @@ void MacroAssembler::cmp_klass(Register oop, Register trial_klass, Register tmp)
 }
 
 void MacroAssembler::cmp_klass(Register src, Register dst, Register tmp1, Register tmp2) {
-  if (UseCompressedClassPointers) {
-    load_nklass(tmp1, src);
-    load_nklass(tmp2, dst);
+  if (UseCompactObjectHeaders) {
+    load_nklass_compact(tmp1, src);
+    load_nklass_compact(tmp2, dst);
+    cmpw(tmp1, tmp2);
+  } else if (UseCompressedClassPointers) {
+    ldrw(tmp1, Address(src, oopDesc::klass_offset_in_bytes()));
+    ldrw(tmp2, Address(dst, oopDesc::klass_offset_in_bytes()));
     cmpw(tmp1, tmp2);
   } else {
     ldr(tmp1, Address(src, oopDesc::klass_offset_in_bytes()));
