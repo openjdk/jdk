@@ -126,6 +126,11 @@ public class VirtualParser extends JavacParser {
         }
 
         @Override
+        public void setPrevToken(Token prevToken) {
+            this.prevToken = prevToken;
+        }
+
+        @Override
         public Token split() {
             Token[] splitTokens = token.split(((Scanner)S).tokens);
             prevToken = splitTokens[0];
