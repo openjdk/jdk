@@ -35,6 +35,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.awt.event.ActionEvent;
 import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
 
 public class bug4966168 {
 
@@ -58,16 +59,12 @@ public class bug4966168 {
                 try {
                     UIManager.setLookAndFeel(laf.getClassName());
                     System.out.println("Testing LAF: " + laf.getClassName());
-                } catch (Exception e) {
+                } catch (UnsupportedLookAndFeelException e) {
                     System.out.println("Look and Feel not set: " + laf.getClassName());
                     continue;
                 }
 
-                try {
-                    out.writeObject(button);
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
+                out.writeObject(button);
             }
         }
     }
