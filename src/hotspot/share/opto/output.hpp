@@ -188,6 +188,8 @@ public:
   void       set_in_scratch_emit_size(bool x)   {        _in_scratch_emit_size = x; }
   bool           in_scratch_emit_size() const   { return _in_scratch_emit_size;     }
 
+  BufferSizingData* buffer_sizing_data()        { return &_buf_sizes; }
+
   enum ScratchBufferBlob {
     MAX_inst_size       = 2048,
     MAX_locs_size       = 128, // number of relocInfo elements
