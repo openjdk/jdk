@@ -185,10 +185,8 @@ class BlockingSocketOps {
                 Socket s2 = connection.socket2();
 
                 // delayed abrupt close of s2
-                runAfterParkedAsync(() -> {
-                    s2.setSoLinger(true, 0);
-                    s2.close();
-                });
+                s2.setSoLinger(true, 0);
+                runAfterParkedAsync(s2::close);
 
                 // read from s1 should block, then throw
                 try {
