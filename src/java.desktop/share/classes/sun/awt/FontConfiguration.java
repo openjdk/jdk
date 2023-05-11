@@ -51,6 +51,8 @@ import sun.font.SunFontManager;
 import sun.font.FontUtilities;
 import sun.util.logging.PlatformLogger;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 /**
  * Provides the definitions of the five logical fonts: Serif, SansSerif,
  * Monospaced, Dialog, and DialogInput. The necessary information
@@ -136,7 +138,8 @@ public abstract class FontConfiguration {
     }
 
     private void setEncoding() {
-        encoding = Charset.defaultCharset().name();
+        encoding = Charset.forName(System.getProperty("native.encoding"),
+                                   UTF_8).name();
         startupLocale = SunToolkit.getStartupLocale();
     }
 
