@@ -54,6 +54,7 @@ public class EquiDoublesTest {
      * all equidistant doubles are generated.
      */
     private static final long SAFETY_FACTOR = 100L;
+    private static final RandomGenerator rnd = RandomFactory.getRandom();
 
     private static double nextUp(double d, int steps) {
         for (int i = 0; i < steps; ++i) {
@@ -67,10 +68,6 @@ public class EquiDoublesTest {
             d = Math.nextDown(d);
         }
         return d;
-    }
-
-    private static RandomGenerator rnd() {
-        return RandomFactory.getRandom();
     }
 
     static Arguments[] equi() {
@@ -92,50 +89,50 @@ public class EquiDoublesTest {
         double[] minmax = new double[2];
 
         resetMinmax(minmax);
-        DoubleStream equi = rnd().equiDoubles(l, r, true, false);
+        DoubleStream equi = rnd.equiDoubles(l, r, true, false);
         equi.limit(SAMPLES).forEach(d -> updateMinmax(minmax, d));
         assertTrue(l <= minmax[0]);
         assertTrue(minmax[1] < r);
 
         resetMinmax(minmax);
-        equi = rnd().equiDoubles(l, r, true, true);
+        equi = rnd.equiDoubles(l, r, true, true);
         equi.limit(SAMPLES).forEach(d -> updateMinmax(minmax, d));
         assertTrue(l <= minmax[0]);
         assertTrue(minmax[1] <= r);
 
         resetMinmax(minmax);
-        equi = rnd().equiDoubles(l, r, false, true);
+        equi = rnd.equiDoubles(l, r, false, true);
         equi.limit(SAMPLES).forEach(d -> updateMinmax(minmax, d));
         assertTrue(l < minmax[0]);
         assertTrue(minmax[1] <= r);
 
         resetMinmax(minmax);
-        equi = rnd().equiDoubles(l, r, false, false);
+        equi = rnd.equiDoubles(l, r, false, false);
         equi.limit(SAMPLES).forEach(d -> updateMinmax(minmax, d));
         assertTrue(l < minmax[0]);
         assertTrue(minmax[1] < r);
 
         /* with negated intervals */
         resetMinmax(minmax);
-        equi = rnd().equiDoubles(-r, -l, true, false);
+        equi = rnd.equiDoubles(-r, -l, true, false);
         equi.limit(SAMPLES).forEach(d -> updateMinmax(minmax, d));
         assertTrue(-r <= minmax[0]);
         assertTrue(minmax[1] < -l);
 
         resetMinmax(minmax);
-        equi = rnd().equiDoubles(-r, -l, true, true);
+        equi = rnd.equiDoubles(-r, -l, true, true);
         equi.limit(SAMPLES).forEach(d -> updateMinmax(minmax, d));
         assertTrue(-r <= minmax[0]);
         assertTrue(minmax[1] <= -l);
 
         resetMinmax(minmax);
-        equi = rnd().equiDoubles(-r, -l, false, true);
+        equi = rnd.equiDoubles(-r, -l, false, true);
         equi.limit(SAMPLES).forEach(d -> updateMinmax(minmax, d));
         assertTrue(-r < minmax[0]);
         assertTrue(minmax[1] <= -l);
 
         resetMinmax(minmax);
-        equi = rnd().equiDoubles(-r, -l, false, false);
+        equi = rnd.equiDoubles(-r, -l, false, false);
         equi.limit(SAMPLES).forEach(d -> updateMinmax(minmax, d));
         assertTrue(-r < minmax[0]);
         assertTrue(minmax[1] < -l);
@@ -182,50 +179,50 @@ public class EquiDoublesTest {
         double r = nextUp(l, steps);
 
         TreeSet<Double> set = new TreeSet<>();
-        DoubleStream equi = rnd().equiDoubles(l, r, true, false);
+        DoubleStream equi = rnd.equiDoubles(l, r, true, false);
         equi.limit(SAFETY_FACTOR * steps).forEach(set::add);
         assertEquals(steps, set.size());
         checkEquidistance(set);
 
         set.clear();
-        equi = rnd().equiDoubles(l, r, true, true);
+        equi = rnd.equiDoubles(l, r, true, true);
         equi.limit(SAFETY_FACTOR * steps).forEach(set::add);
         assertEquals(steps + 1, set.size());
         checkEquidistance(set);
 
         set.clear();
-        equi = rnd().equiDoubles(l, r, false, true);
+        equi = rnd.equiDoubles(l, r, false, true);
         equi.limit(SAFETY_FACTOR * steps).forEach(set::add);
         assertEquals(steps, set.size());
         checkEquidistance(set);
 
         set.clear();
-        equi = rnd().equiDoubles(l, r, false, false);
+        equi = rnd.equiDoubles(l, r, false, false);
         equi.limit(SAFETY_FACTOR * steps).forEach(set::add);
         assertEquals(steps - 1, set.size());
         checkEquidistance(set);
 
         /* with negated intervals */
         set.clear();
-        equi = rnd().equiDoubles(-r, -l, true, true);
+        equi = rnd.equiDoubles(-r, -l, true, true);
         equi.limit(SAFETY_FACTOR * steps).forEach(set::add);
         assertEquals(steps + 1, set.size());
         checkEquidistance(set);
 
         set.clear();
-        equi = rnd().equiDoubles(-r, -l, true, true);
+        equi = rnd.equiDoubles(-r, -l, true, true);
         equi.limit(SAFETY_FACTOR * steps).forEach(set::add);
         assertEquals(steps + 1, set.size());
         checkEquidistance(set);
 
         set.clear();
-        equi = rnd().equiDoubles(-r, -l, false, true);
+        equi = rnd.equiDoubles(-r, -l, false, true);
         equi.limit(SAFETY_FACTOR * steps).forEach(set::add);
         assertEquals(steps, set.size());
         checkEquidistance(set);
 
         set.clear();
-        equi = rnd().equiDoubles(-r, -l, false, false);
+        equi = rnd.equiDoubles(-r, -l, false, false);
         equi.limit(SAFETY_FACTOR * steps).forEach(set::add);
         assertEquals(steps - 1, set.size());
         checkEquidistance(set);
@@ -252,50 +249,50 @@ public class EquiDoublesTest {
         int steps = lSteps + rSteps;
 
         TreeSet<Double> set = new TreeSet<>();
-        DoubleStream equi = rnd().equiDoubles(l, r, true, false);
+        DoubleStream equi = rnd.equiDoubles(l, r, true, false);
         equi.limit(SAFETY_FACTOR * steps).forEach(set::add);
         assertEquals(steps, set.size());
         checkEquidistance(set);
 
         set.clear();
-        equi = rnd().equiDoubles(l, r, true, true);
+        equi = rnd.equiDoubles(l, r, true, true);
         equi.limit(SAFETY_FACTOR * steps).forEach(set::add);
         assertEquals(steps + 1, set.size());
         checkEquidistance(set);
 
         set.clear();
-        equi = rnd().equiDoubles(l, r, false, true);
+        equi = rnd.equiDoubles(l, r, false, true);
         equi.limit(SAFETY_FACTOR * steps).forEach(set::add);
         assertEquals(steps, set.size());
         checkEquidistance(set);
 
         set.clear();
-        equi = rnd().equiDoubles(l, r, false, false);
+        equi = rnd.equiDoubles(l, r, false, false);
         equi.limit(SAFETY_FACTOR * steps).forEach(set::add);
         assertEquals(steps - 1, set.size());
         checkEquidistance(set);
 
         /* with negated intervals */
         set.clear();
-        equi = rnd().equiDoubles(-r, -l, true, true);
+        equi = rnd.equiDoubles(-r, -l, true, true);
         equi.limit(SAFETY_FACTOR * steps).forEach(set::add);
         assertEquals(steps + 1, set.size());
         checkEquidistance(set);
 
         set.clear();
-        equi = rnd().equiDoubles(-r, -l, true, true);
+        equi = rnd.equiDoubles(-r, -l, true, true);
         equi.limit(SAFETY_FACTOR * steps).forEach(set::add);
         assertEquals(steps + 1, set.size());
         checkEquidistance(set);
 
         set.clear();
-        equi = rnd().equiDoubles(-r, -l, false, true);
+        equi = rnd.equiDoubles(-r, -l, false, true);
         equi.limit(SAFETY_FACTOR * steps).forEach(set::add);
         assertEquals(steps, set.size());
         checkEquidistance(set);
 
         set.clear();
-        equi = rnd().equiDoubles(-r, -l, false, false);
+        equi = rnd.equiDoubles(-r, -l, false, false);
         equi.limit(SAFETY_FACTOR * steps).forEach(set::add);
         assertEquals(steps - 1, set.size());
         checkEquidistance(set);
@@ -330,22 +327,22 @@ public class EquiDoublesTest {
     @MethodSource
     void empty(double l) {
         assertThrows(IllegalArgumentException.class,
-                () -> rnd().equiDoubles(l, l, true, false)
+                () -> rnd.equiDoubles(l, l, true, false)
         );
         assertThrows(IllegalArgumentException.class,
-                () -> rnd().equiDoubles(l, nextUp(l, 1), false, false)
+                () -> rnd.equiDoubles(l, nextUp(l, 1), false, false)
         );
         assertThrows(IllegalArgumentException.class,
-                () -> rnd().equiDoubles(nextDown(l, 1), l, false, false)
+                () -> rnd.equiDoubles(nextDown(l, 1), l, false, false)
         );
         assertThrows(IllegalArgumentException.class,
-                () -> rnd().equiDoubles(l, l, false, true)
+                () -> rnd.equiDoubles(l, l, false, true)
         );
         assertThrows(IllegalArgumentException.class,
-                () -> rnd().equiDoubles(l, nextDown(l, 1), true, true)
+                () -> rnd.equiDoubles(l, nextDown(l, 1), true, true)
         );
         assertThrows(IllegalArgumentException.class,
-                () -> rnd().equiDoubles(nextUp(l, 1), l, true, true)
+                () -> rnd.equiDoubles(nextUp(l, 1), l, true, true)
         );
     }
 
