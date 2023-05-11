@@ -1828,7 +1828,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     } else {
       assert(LockingMode == LM_LIGHTWEIGHT, "");
       __ ld(old_hdr, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
-      __ andi(t0, old_hdr, markWord::monitor_value);
+      __ test_bit(t0, old_hdr, exact_log2(markWord::monitor_value));
       __ bnez(t0, slow_path_unlock);
       __ fast_unlock(obj_reg, old_hdr, swap_reg, t0, slow_path_unlock);
       __ decrement(Address(xthread, JavaThread::held_monitor_count_offset()));

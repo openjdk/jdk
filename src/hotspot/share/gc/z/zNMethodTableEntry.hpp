@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,7 @@ public:
   explicit ZNMethodTableEntry(bool unregistered = false) :
       _entry(field_registered::encode(false) |
              field_unregistered::encode(unregistered) |
-             field_method::encode(NULL)) {}
+             field_method::encode(nullptr)) {}
 
   explicit ZNMethodTableEntry(nmethod* method) :
       _entry(field_registered::encode(true) |
