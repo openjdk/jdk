@@ -34,7 +34,8 @@
 #include "services/memoryUsage.hpp"
 
 class ZDirector;
-class ZDriver;
+class ZDriverMajor;
+class ZDriverMinor;
 class ZStat;
 
 class ZCollectedHeap : public CollectedHeap {
@@ -45,7 +46,8 @@ private:
   ZBarrierSet       _barrier_set;
   ZInitialize       _initialize;
   ZHeap             _heap;
-  ZDriver*          _driver;
+  ZDriverMinor*     _driver_minor;
+  ZDriverMajor*     _driver_major;
   ZDirector*        _director;
   ZStat*            _stat;
   ZRuntimeWorkers   _runtime_workers;
@@ -109,6 +111,8 @@ public:
   void gc_threads_do(ThreadClosure* tc) const override;
 
   VirtualSpaceSummary create_heap_space_summary() override;
+
+  bool contains_null(const oop* p) const override;
 
   void safepoint_synchronize_begin() override;
   void safepoint_synchronize_end() override;
