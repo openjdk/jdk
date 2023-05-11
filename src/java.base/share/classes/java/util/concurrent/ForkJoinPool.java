@@ -2759,8 +2759,10 @@ public class ForkJoinPool extends AbstractExecutorService {
                         ForkJoinTask.cancelIgnoringExceptions(f);
                     else {
                         ((ForkJoinTask<T>)f).awaitPoolInvoke(this, ns);
-                        if ((ns = nanos - (System.nanoTime() - startTime)) < 0L)
+                        if ((ns = nanos - (System.nanoTime() - startTime)) < 0L) {
                             timedOut = true;
+                            ForkJoinTask.cancelIgnoringExceptions(f);
+                        }
                     }
                 }
             }
