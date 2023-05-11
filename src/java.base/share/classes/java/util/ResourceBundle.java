@@ -327,7 +327,7 @@ import static sun.security.util.SecurityConstants.GET_CLASSLOADER_PERMISSION;
  * public class MyResources extends ResourceBundle {
  *     public Object handleGetObject(String key) {
  *         if (key.equals("okKey")) {
- *           return "Ok";
+ *            return "Ok";
  *         }
  *         if (key.equals("cancelKey")) {
  *            return "Cancel";
@@ -509,7 +509,8 @@ public abstract class ResourceBundle {
      * Gets a string for the given key from this resource bundle or one of its parents.
      * Calling this method is equivalent to calling
      * {@snippet lang=java :
-     *     (String[]) getObject(key); // @link substring="getObject" target="#getObject(java.lang.String)"
+     *     // @link substring="getObject" target="#getObject(java.lang.String)"
+     *     (String[]) getObject(key);
      * }
      *
      * @param key the key for the desired string
@@ -526,7 +527,8 @@ public abstract class ResourceBundle {
      * Gets a string array for the given key from this resource bundle or one of its parents.
      * Calling this method is equivalent to calling
      * {@snippet lang=java :
-     *     (String[]) getObject(key); // @link substring="getObject" target="#getObject(java.lang.String)"
+     *     // @link substring="getObject" target="#getObject(java.lang.String)"
+     *     (String[]) getObject(key);
      * }
      *
      * @param key the key for the desired string array
