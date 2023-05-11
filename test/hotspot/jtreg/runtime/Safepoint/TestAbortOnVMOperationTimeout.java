@@ -32,7 +32,7 @@ import jdk.test.lib.process.*;
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @run driver/timeout=600 TestAbortOnVMOperationTimeout
+ * @run driver TestAbortOnVMOperationTimeout
  */
 
 public class TestAbortOnVMOperationTimeout {
@@ -51,8 +51,8 @@ public class TestAbortOnVMOperationTimeout {
             return;
         }
 
-        // These should definitely pass: more than 3 minutes is enough for Serial to act.
-        // The values are deliberately non-round to trip off periodic task granularity.
+        // This should definitely pass: more than 3 minutes is enough for Serial to act.
+        // The value is deliberately non-round to trip off periodic task granularity.
         testWith(183423, true);
 
         // These should fail: Serial is not very fast but we have seen the test
@@ -70,7 +70,7 @@ public class TestAbortOnVMOperationTimeout {
                 "-Xmx256m",
                 "-XX:+UseSerialGC",
                 "-XX:-CreateCoredumpOnCrash",
-                "-Xlog:gc*=debug",
+                "-Xlog:gc*=info",
                 "TestAbortOnVMOperationTimeout",
                 "foo"
         );
