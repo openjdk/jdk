@@ -408,7 +408,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
         } else {
             requestedServerNames = new ArrayList<>();
             while (len > 0) {
-                int l = buf.get();
+                int l = Byte.toUnsignedInt(buf.get());
                 b = new byte[l];
                 buf.get(b, 0, l);
                 requestedServerNames.add(new SNIHostName(new String(b)));
