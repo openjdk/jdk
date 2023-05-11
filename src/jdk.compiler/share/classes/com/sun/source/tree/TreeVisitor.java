@@ -25,6 +25,8 @@
 
 package com.sun.source.tree;
 
+import jdk.internal.javac.PreviewFeature;
+
 /**
  * A visitor of trees, in the style of the visitor design pattern.
  * Classes implementing this interface are used to operate
@@ -256,6 +258,15 @@ public interface TreeVisitor<R,P> {
      * @return a result value
      */
     R visitLiteral(LiteralTree node, P p);
+
+    /**
+     * Visits a StringTemplateTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
+    @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES, reflective=true)
+    R visitStringTemplate(StringTemplateTree node, P p);
 
     /**
      * Visits a {@code BindingPatternTree} node.

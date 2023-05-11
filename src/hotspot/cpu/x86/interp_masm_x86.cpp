@@ -1196,7 +1196,7 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg) {
   assert(lock_reg == LP64_ONLY(c_rarg1) NOT_LP64(rdx),
          "The argument is only for looks. It must be c_rarg1");
 
-  if (UseHeavyMonitors) {
+  if (LockingMode == LM_MONITOR) {
     call_VM(noreg,
             CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter),
             lock_reg);
@@ -1223,69 +1223,86 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg) {
       jcc(Assembler::notZero, slow_case);
     }
 
-    // Load immediate 1 into swap_reg %rax
-    movl(swap_reg, 1);
+    if (LockingMode == LM_LIGHTWEIGHT) {
+#ifdef _LP64
+      const Register thread = r15_thread;
+#else
+      const Register thread = lock_reg;
+      get_thread(thread);
+#endif
+      // Load object header, prepare for CAS from unlocked to locked.
+      movptr(swap_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
+      fast_lock_impl(obj_reg, swap_reg, thread, tmp_reg, slow_case);
+    } else if (LockingMode == LM_LEGACY) {
+      // Load immediate 1 into swap_reg %rax
+      movl(swap_reg, 1);
 
-    // Load (object->mark() | 1) into swap_reg %rax
-    orptr(swap_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
+      // Load (object->mark() | 1) into swap_reg %rax
+      orptr(swap_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
 
-    // Save (object->mark() | 1) into BasicLock's displaced header
-    movptr(Address(lock_reg, mark_offset), swap_reg);
+      // Save (object->mark() | 1) into BasicLock's displaced header
+      movptr(Address(lock_reg, mark_offset), swap_reg);
 
-    assert(lock_offset == 0,
-           "displaced header must be first word in BasicObjectLock");
+      assert(lock_offset == 0,
+             "displaced header must be first word in BasicObjectLock");
 
-    lock();
-    cmpxchgptr(lock_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
-    jcc(Assembler::zero, count_locking);
+      lock();
+      cmpxchgptr(lock_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
+      jcc(Assembler::zero, count_locking);
 
-    const int zero_bits = LP64_ONLY(7) NOT_LP64(3);
+      const int zero_bits = LP64_ONLY(7) NOT_LP64(3);
 
-    // Fast check for recursive lock.
-    //
-    // Can apply the optimization only if this is a stack lock
-    // allocated in this thread. For efficiency, we can focus on
-    // recently allocated stack locks (instead of reading the stack
-    // base and checking whether 'mark' points inside the current
-    // thread stack):
-    //  1) (mark & zero_bits) == 0, and
-    //  2) rsp <= mark < mark + os::pagesize()
-    //
-    // Warning: rsp + os::pagesize can overflow the stack base. We must
-    // neither apply the optimization for an inflated lock allocated
-    // just above the thread stack (this is why condition 1 matters)
-    // nor apply the optimization if the stack lock is inside the stack
-    // of another thread. The latter is avoided even in case of overflow
-    // because we have guard pages at the end of all stacks. Hence, if
-    // we go over the stack base and hit the stack of another thread,
-    // this should not be in a writeable area that could contain a
-    // stack lock allocated by that thread. As a consequence, a stack
-    // lock less than page size away from rsp is guaranteed to be
-    // owned by the current thread.
-    //
-    // These 3 tests can be done by evaluating the following
-    // expression: ((mark - rsp) & (zero_bits - os::vm_page_size())),
-    // assuming both stack pointer and pagesize have their
-    // least significant bits clear.
-    // NOTE: the mark is in swap_reg %rax as the result of cmpxchg
-    subptr(swap_reg, rsp);
-    andptr(swap_reg, zero_bits - (int)os::vm_page_size());
+      // Fast check for recursive lock.
+      //
+      // Can apply the optimization only if this is a stack lock
+      // allocated in this thread. For efficiency, we can focus on
+      // recently allocated stack locks (instead of reading the stack
+      // base and checking whether 'mark' points inside the current
+      // thread stack):
+      //  1) (mark & zero_bits) == 0, and
+      //  2) rsp <= mark < mark + os::pagesize()
+      //
+      // Warning: rsp + os::pagesize can overflow the stack base. We must
+      // neither apply the optimization for an inflated lock allocated
+      // just above the thread stack (this is why condition 1 matters)
+      // nor apply the optimization if the stack lock is inside the stack
+      // of another thread. The latter is avoided even in case of overflow
+      // because we have guard pages at the end of all stacks. Hence, if
+      // we go over the stack base and hit the stack of another thread,
+      // this should not be in a writeable area that could contain a
+      // stack lock allocated by that thread. As a consequence, a stack
+      // lock less than page size away from rsp is guaranteed to be
+      // owned by the current thread.
+      //
+      // These 3 tests can be done by evaluating the following
+      // expression: ((mark - rsp) & (zero_bits - os::vm_page_size())),
+      // assuming both stack pointer and pagesize have their
+      // least significant bits clear.
+      // NOTE: the mark is in swap_reg %rax as the result of cmpxchg
+      subptr(swap_reg, rsp);
+      andptr(swap_reg, zero_bits - (int)os::vm_page_size());
 
-    // Save the test result, for recursive case, the result is zero
-    movptr(Address(lock_reg, mark_offset), swap_reg);
-    jcc(Assembler::notZero, slow_case);
+      // Save the test result, for recursive case, the result is zero
+      movptr(Address(lock_reg, mark_offset), swap_reg);
+      jcc(Assembler::notZero, slow_case);
 
-    bind(count_locking);
+      bind(count_locking);
+    }
     inc_held_monitor_count();
     jmp(done);
 
     bind(slow_case);
 
     // Call the runtime routine for slow case
-    call_VM(noreg,
-            CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter),
-            lock_reg);
-
+    if (LockingMode == LM_LIGHTWEIGHT) {
+      call_VM(noreg,
+              CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter_obj),
+              obj_reg);
+    } else {
+      call_VM(noreg,
+              CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter),
+              lock_reg);
+    }
     bind(done);
   }
 }
@@ -1307,7 +1324,7 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg) {
   assert(lock_reg == LP64_ONLY(c_rarg1) NOT_LP64(rdx),
          "The argument is only for looks. It must be c_rarg1");
 
-  if (UseHeavyMonitors) {
+  if (LockingMode == LM_MONITOR) {
     call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorexit), lock_reg);
   } else {
     Label count_locking, done, slow_case;
@@ -1318,9 +1335,11 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg) {
 
     save_bcp(); // Save in case of exception
 
-    // Convert from BasicObjectLock structure to object and BasicLock
-    // structure Store the BasicLock address into %rax
-    lea(swap_reg, Address(lock_reg, BasicObjectLock::lock_offset_in_bytes()));
+    if (LockingMode != LM_LIGHTWEIGHT) {
+      // Convert from BasicObjectLock structure to object and BasicLock
+      // structure Store the BasicLock address into %rax
+      lea(swap_reg, Address(lock_reg, BasicObjectLock::lock_offset_in_bytes()));
+    }
 
     // Load oop into obj_reg(%c_rarg3)
     movptr(obj_reg, Address(lock_reg, BasicObjectLock::obj_offset_in_bytes()));
@@ -1328,24 +1347,42 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg) {
     // Free entry
     movptr(Address(lock_reg, BasicObjectLock::obj_offset_in_bytes()), NULL_WORD);
 
-    // Load the old header from BasicLock structure
-    movptr(header_reg, Address(swap_reg,
-                               BasicLock::displaced_header_offset_in_bytes()));
+    if (LockingMode == LM_LIGHTWEIGHT) {
+#ifdef _LP64
+      const Register thread = r15_thread;
+#else
+      const Register thread = header_reg;
+      get_thread(thread);
+#endif
+      // Handle unstructured locking.
+      Register tmp = swap_reg;
+      movl(tmp, Address(thread, JavaThread::lock_stack_top_offset()));
+      cmpptr(obj_reg, Address(thread, tmp, Address::times_1,  -oopSize));
+      jcc(Assembler::notEqual, slow_case);
+      // Try to swing header from locked to unlocked.
+      movptr(swap_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
+      andptr(swap_reg, ~(int32_t)markWord::lock_mask_in_place);
+      fast_unlock_impl(obj_reg, swap_reg, header_reg, slow_case);
+    } else if (LockingMode == LM_LEGACY) {
+      // Load the old header from BasicLock structure
+      movptr(header_reg, Address(swap_reg,
+                                 BasicLock::displaced_header_offset_in_bytes()));
 
-    // Test for recursion
-    testptr(header_reg, header_reg);
+      // Test for recursion
+      testptr(header_reg, header_reg);
 
-    // zero for recursive case
-    jcc(Assembler::zero, count_locking);
+      // zero for recursive case
+      jcc(Assembler::zero, count_locking);
 
-    // Atomic swap back the old header
-    lock();
-    cmpxchgptr(header_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
+      // Atomic swap back the old header
+      lock();
+      cmpxchgptr(header_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
 
-    // zero for simple unlock of a stack-lock case
-    jcc(Assembler::notZero, slow_case);
+      // zero for simple unlock of a stack-lock case
+      jcc(Assembler::notZero, slow_case);
 
-    bind(count_locking);
+      bind(count_locking);
+    }
     dec_held_monitor_count();
     jmp(done);
 
