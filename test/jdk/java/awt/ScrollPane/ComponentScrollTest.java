@@ -39,8 +39,6 @@ import java.awt.ScrollPane;
 import java.awt.event.AdjustmentEvent;
 import java.awt.event.AdjustmentListener;
 
-import java.lang.reflect.InvocationTargetException;
-
 public class ComponentScrollTest {
     public ScrollPane scrollpane;
     public Frame frame;
@@ -84,7 +82,7 @@ public class ComponentScrollTest {
                 scrollpane.getVAdjustable().setValue(20);
             });
 
-            Thread.sleep(5000);
+            Thread.sleep(1000);
 
             System.out.println("Count = " + count);
             if (count > 50) {

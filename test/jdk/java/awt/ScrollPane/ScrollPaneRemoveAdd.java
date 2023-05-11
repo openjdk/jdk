@@ -28,7 +28,6 @@
   @key headful
 */
 
-import java.awt.BorderLayout;
 import java.awt.Button;
 import java.awt.Dimension;
 import java.awt.EventQueue;
@@ -36,20 +35,21 @@ import java.awt.Frame;
 import java.awt.Point;
 import java.awt.Robot;
 import java.awt.ScrollPane;
-import java.awt.Toolkit;
 
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import java.awt.event.InputEvent;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 public class ScrollPaneRemoveAdd {
     Button button;
     ScrollPane pane;
-    Semaphore actionSema;
     Frame frame;
     Robot robot;
     volatile Point buttonLoc;
     volatile Dimension buttonSize;
+    volatile CountDownLatch latch;
 
     public static void main(String[] args) throws Exception {
         ScrollPaneRemoveAdd scrollTest = new ScrollPaneRemoveAdd();
@@ -60,15 +60,16 @@ public class ScrollPaneRemoveAdd {
     public void init() throws Exception {
         EventQueue.invokeAndWait(() -> {
             frame = new Frame("Scroll pane Add/Remove");
-
             pane = new ScrollPane(ScrollPane.SCROLLBARS_ALWAYS);
             button = new Button("press");
+            latch = new CountDownLatch(1);
+
             pane.add(button);
             frame.add(pane);
-            actionSema = new Semaphore();
+
             button.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
-                    actionSema.raise();
+                    latch.countDown();
                 }
             });
         });
@@ -97,15 +98,7 @@ public class ScrollPaneRemoveAdd {
             robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
 
             robot.delay(50);
-            robot.waitForIdle();
-            try {
-                actionSema.doWait(1000);
-            } catch (Exception ie) {
-                throw new RuntimeException("My sleep was interrupted");
-            }
-            robot.delay(50);
-            robot.waitForIdle();
-            if (!actionSema.getState()) {
+            if (!latch.await(1, TimeUnit.SECONDS)) {
                 throw new RuntimeException("ScrollPane doesn't handle " +
                         "correctly add after remove");
             }

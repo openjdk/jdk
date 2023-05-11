@@ -54,6 +54,8 @@ public class ScrollPaneWindowsTest implements AdjustmentListener {
     ScrollPaneAdjustable vScroll;
     ScrollPaneAdjustable hScroll;
     boolean notifyReceived = false;
+    volatile int xPos = 0;
+    volatile int yPos = 0;
 
     public static void main(String[] args) throws Exception {
         ScrollPaneWindowsTest scrollTest = new ScrollPaneWindowsTest();
@@ -93,16 +95,23 @@ public class ScrollPaneWindowsTest implements AdjustmentListener {
 
             robot.delay(100);
             robot.waitForIdle();
+            EventQueue.invokeAndWait(() -> {
+                        xPos = sp.getLocationOnScreen().x + sp.getWidth() - paneInsets.right / 2;
+                        yPos = sp.getLocationOnScreen().y + sp.getHeight() / 2;
+                    }
 
-            robot.mouseMove(sp.getLocationOnScreen().x + sp.getWidth() - paneInsets.right / 2,
-                    sp.getLocationOnScreen().y + sp.getHeight() / 2);
+                    robot.mouseMove(xPos, yPos);
             testOneScrollbar(vScroll);
 
             robot.delay(100);
             robot.waitForIdle();
 
-            robot.mouseMove(sp.getLocationOnScreen().x + sp.getWidth() / 2,
-                    sp.getLocationOnScreen().y + sp.getHeight() - paneInsets.bottom / 2);
+            EventQueue.invokeAndWait(() -> {
+                        xPos = sp.getLocationOnScreen().x + sp.getWidth() / 2;
+                        yPos = sp.getLocationOnScreen().y + sp.getHeight() - paneInsets.bottom / 2;
+                    }
+
+                    robot.mouseMove(xPos, yPos);
             testOneScrollbar(hScroll);
         } finally {
             EventQueue.invokeAndWait(() -> {
@@ -115,68 +124,64 @@ public class ScrollPaneWindowsTest implements AdjustmentListener {
     }
 
     public void testOneScrollbar(ScrollPaneAdjustable scroll) throws Exception {
-        try {
-            //to Bottom  - right
-            robot.mousePress(InputEvent.BUTTON3_DOWN_MASK);
-            robot.mouseRelease(InputEvent.BUTTON3_DOWN_MASK);
-            robot.delay(2000);
-            robot.waitForIdle();
+        //to Bottom  - right
+        robot.mousePress(InputEvent.BUTTON3_DOWN_MASK);
+        robot.mouseRelease(InputEvent.BUTTON3_DOWN_MASK);
+        robot.delay(2000);
+        robot.waitForIdle();
 
-            notifyReceived = false;
-            synchronized (LOCK) {
-                for (int i = 0; i < 3; i++) {
-                    robot.keyPress(KeyEvent.VK_DOWN);
-                    robot.keyRelease(KeyEvent.VK_DOWN);
-                }
-                robot.keyPress(KeyEvent.VK_ENTER);
-                robot.keyRelease(KeyEvent.VK_ENTER);
-                if (!notifyReceived) {
-                    System.out.println("we are waiting 1");
-                    LOCK.wait(2000);
-                }
-                if (scroll.getValue() + scroll.getVisibleAmount() != scroll.getMaximum()) {
-                    System.out.println("scroll.getValue() = " + scroll.getValue());
-                    System.out.println("scroll.getVisibleAmount() = " + scroll.getVisibleAmount());
-                    System.out.println("scroll.getMaximum() = " + scroll.getMaximum());
-                    throw new RuntimeException("Test Failed. Position of scrollbar is incorrect.");
-                } else {
-                    System.out.println("Test stage 1 passed.");
-                }
+        notifyReceived = false;
+        synchronized (LOCK) {
+            for (int i = 0; i < 3; i++) {
+                robot.keyPress(KeyEvent.VK_DOWN);
+                robot.keyRelease(KeyEvent.VK_DOWN);
             }
-
-            //to top-left
-            notifyReceived = false;
-            robot.mousePress(InputEvent.BUTTON3_DOWN_MASK);
-            robot.mouseRelease(InputEvent.BUTTON3_DOWN_MASK);
-            robot.delay(2000);
-            robot.waitForIdle();
-
-            synchronized (LOCK) {
-                for (int i = 0; i < 2; i++) {
-                    robot.keyPress(KeyEvent.VK_DOWN);
-                    robot.keyRelease(KeyEvent.VK_DOWN);
-                }
-                robot.keyPress(KeyEvent.VK_ENTER);
-                robot.keyRelease(KeyEvent.VK_ENTER);
-                if (!notifyReceived) {
-                    System.out.println("we are waiting 2");
-                    LOCK.wait(2000);
-                }
-                if (scroll.getValue() != 0) {
-                    System.out.println("scroll.getValue() = " + scroll.getValue());
-                    throw new RuntimeException("Test Failed. Position of scrollbar is incorrect.");
-                } else {
-                    System.out.println("Test stage 2 passed.");
-                }
+            robot.keyPress(KeyEvent.VK_ENTER);
+            robot.keyRelease(KeyEvent.VK_ENTER);
+            if (!notifyReceived) {
+                System.out.println("we are waiting 1");
+                LOCK.wait(2000);
             }
-        } catch (InterruptedException e) {
-            throw new RuntimeException("Test interrupted while keys being pressed.", e);
+            if (scroll.getValue() + scroll.getVisibleAmount() != scroll.getMaximum()) {
+                System.out.println("scroll.getValue() = " + scroll.getValue());
+                System.out.println("scroll.getVisibleAmount() = " + scroll.getVisibleAmount());
+                System.out.println("scroll.getMaximum() = " + scroll.getMaximum());
+                throw new RuntimeException("Test Failed. Position of scrollbar is incorrect.");
+            } else {
+                System.out.println("Test stage 1 passed.");
+            }
+        }
+
+        //to top-left
+        notifyReceived = false;
+        robot.mousePress(InputEvent.BUTTON3_DOWN_MASK);
+        robot.mouseRelease(InputEvent.BUTTON3_DOWN_MASK);
+        robot.delay(2000);
+        robot.waitForIdle();
+
+        synchronized (LOCK) {
+            for (int i = 0; i < 2; i++) {
+                robot.keyPress(KeyEvent.VK_DOWN);
+                robot.keyRelease(KeyEvent.VK_DOWN);
+            }
+            robot.keyPress(KeyEvent.VK_ENTER);
+            robot.keyRelease(KeyEvent.VK_ENTER);
+            if (!notifyReceived) {
+                System.out.println("we are waiting 2");
+                LOCK.wait(2000);
+            }
+            if (scroll.getValue() != 0) {
+                System.out.println("scroll.getValue() = " + scroll.getValue());
+                throw new RuntimeException("Test Failed. Position of scrollbar is incorrect.");
+            } else {
+                System.out.println("Test stage 2 passed.");
+            }
         }
     }
 
     public void adjustmentValueChanged(AdjustmentEvent e) {
-        notifyReceived = true;
         synchronized (ScrollPaneWindowsTest.LOCK) {
+            notifyReceived = true;
             ScrollPaneWindowsTest.LOCK.notify();
         }
         System.out.println("Adjustment Event called ");

@@ -68,9 +68,11 @@ public class ScrollPositionIntact {
                 frame.add(sp);
                 frame.setVisible(true);
             });
+
             Robot robot = new Robot();
             robot.delay(1000);
             robot.waitForIdle();
+
             EventQueue.invokeAndWait(() -> {
                 frame.toFront();
                 frame.requestFocus();

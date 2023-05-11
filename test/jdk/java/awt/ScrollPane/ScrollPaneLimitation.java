@@ -49,14 +49,12 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 public class ScrollPaneLimitation {
-    final static int SCROLL_POS = 50000;
-    public static boolean mouseWasPressed = false;
+    static final int SCROLL_POS = 50000;
     public static Component child = null;
-    private final Object lock = new Object();
     static CountDownLatch go = new CountDownLatch(1);
     public Frame frame;
     Robot robot;
-    Point p;
+    volatile Point point;
     ScrollPane pane;
 
     public static void main(String[] args) throws Exception {
@@ -81,14 +79,11 @@ public class ScrollPaneLimitation {
                 child = new MyPanel();
                 child.addMouseListener(new MouseAdapter() {
                     public void mousePressed(MouseEvent e) {
-                        if (e.getID() == MouseEvent.MOUSE_PRESSED &&
-                                e.getSource() == ScrollPaneLimitation.child
-                                && e.getY() > SCROLL_POS) {
-                            mouseWasPressed = true;
-                            synchronized (lock) {
-                                lock.notify();
-                            }
-                        }
+                    if (e.getID() == MouseEvent.MOUSE_PRESSED
+                            && e.getSource() == ScrollPaneLimitation.child
+                            && e.getY() > SCROLL_POS) {
+                        go.countDown();
+                    }
                     }
                 });
                 pane.add(child);
@@ -103,7 +98,7 @@ public class ScrollPaneLimitation {
             robot.waitForIdle();
 
             EventQueue.invokeAndWait(() -> {
-                p = child.getLocation();
+                Point p = child.getLocation();
                 System.out.println("Child's initial location " + p);
                 System.out.println("Pane's insets " + pane.getInsets());
                 pane.setScrollPosition(0, SCROLL_POS);
@@ -129,17 +124,17 @@ public class ScrollPaneLimitation {
                     }
                 }
 
-                p = pane.getLocationOnScreen();
+                point = pane.getLocationOnScreen();
                 Dimension d = pane.getSize();
-                p.x += d.width / 2;
-                p.y += d.height / 2;
+                point.x += d.width / 2;
+                point.y += d.height / 2;
             });
-            robot.mouseMove(p.x, p.y);
+            robot.mouseMove(point.x, point.y);
             robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
             robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
             robot.waitForIdle();
-            go.await(3, TimeUnit.SECONDS);
-            if (!mouseWasPressed) {
+
+            if (!go.await(3, TimeUnit.SECONDS)) {
                 throw new RuntimeException("mouse was not pressed");
             }
         } finally {
