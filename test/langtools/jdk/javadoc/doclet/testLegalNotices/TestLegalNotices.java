@@ -32,7 +32,6 @@
  */
 
 import java.io.IOException;
-import java.io.File;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -105,24 +104,24 @@ public class TestLegalNotices extends JavadocTester {
         }
         javadoc(args.toArray(new String[0]));
 
-        Set<File> expectFiles = getExpectFiles(optionKind, indexKind, legal);
-        Set<File> foundFiles = listFiles(out.resolve("legal"));
+        Set<Path> expectFiles = getExpectFiles(optionKind, indexKind, legal);
+        Set<Path> foundFiles = listFiles(out.resolve("legal"));
 
         checking("Checking legal notice files");
         super.out.println("Expected: " + expectFiles);
         super.out.println("   Found: " + foundFiles);
         boolean passed = true;
-        for (File expectFile : expectFiles) {
+        for (Path expectFile : expectFiles) {
             boolean matched = false;
-            for (File foundFile : foundFiles) {
-                if (!expectFile.getName().equals(foundFile.getName())) {
+            for (Path foundFile : foundFiles) {
+                if (!expectFile.getFileName().equals(foundFile.getFileName())) {
                     continue;
                 }
-                matched = Arrays.equals(Files.readAllBytes(expectFile.toPath()), Files.readAllBytes(foundFile.toPath()));
+                matched = Arrays.equals(Files.readAllBytes(expectFile), Files.readAllBytes(foundFile));
                 break;
             }
             if (!matched) {
-                super.out.println("Not Matched: " + expectFile.getName());
+                super.out.println("Not Matched: " + expectFile);
                 passed = false;
             }
         }
@@ -131,11 +130,11 @@ public class TestLegalNotices extends JavadocTester {
         }
     }
 
-    Set<File> getExpectFiles(OptionKind optionKind, IndexKind indexKind, Path legal) throws IOException {
+    Set<Path> getExpectFiles(OptionKind optionKind, IndexKind indexKind, Path legal) throws IOException {
         switch (optionKind) {
             case UNSET, DEFAULT -> {
                 String reg = "LICENSE|ASSEMBLY_EXCEPTION|ADDITIONAL_LICENSE_INFO";
-                Set<File> files = new TreeSet<>();
+                Set<Path> files = new TreeSet<>();
                 Path javaHome = Path.of(System.getProperty("java.home"));
                 Path legal_javadoc = javaHome.resolve("legal").resolve("java.base");
                 files = listFiles(legal_javadoc, p -> p.getFileName().toString().matches(reg));
@@ -159,20 +158,20 @@ public class TestLegalNotices extends JavadocTester {
         throw new IllegalStateException();
     }
 
-    Set<File> listFiles(Path dir) throws IOException {
+    Set<Path> listFiles(Path dir) throws IOException {
         return listFiles(dir, p -> true);
     }
 
-    Set<File> listFiles(Path dir, Predicate<Path> filter) throws IOException {
+    Set<Path> listFiles(Path dir, Predicate<Path> filter) throws IOException {
         if (!Files.exists(dir)) {
             return Collections.emptySet();
         }
 
         try (DirectoryStream<Path> ds = Files.newDirectoryStream(dir)) {
-            Set<File> files = new TreeSet<>();
+            Set<Path> files = new TreeSet<>();
             for (Path p : ds) {
                 if (!Files.isDirectory(p) && filter.test(p)) {
-                    files.add(p.toFile());
+                    files.add(p);
                 }
             }
             return files;
