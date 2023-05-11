@@ -30,8 +30,7 @@ import java.util.Objects;
 import java.io.UnsupportedEncodingException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-
-import jdk.internal.misc.InternalLock;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * A {@code Handler} object takes log messages from a {@code Logger} and
@@ -67,7 +66,7 @@ public abstract class Handler {
     private volatile Level logLevel = Level.ALL;
     private volatile ErrorManager errorManager = new ErrorManager();
     private volatile String encoding;
-    final InternalLock lock;
+    private final ReentrantLock lock;
 
     /**
      * Default constructor.  The resulting {@code Handler} has a log
@@ -79,13 +78,13 @@ public abstract class Handler {
         lock = initLocking();
     }
 
-    private InternalLock initLocking() {
+    private ReentrantLock initLocking() {
         Class<?> clazz = this.getClass();
         ClassLoader loader = clazz.getClassLoader();
         if (loader != null && loader != ClassLoader.getPlatformClassLoader()) {
             return null;
         } else {
-            return InternalLock.newLockOrNull();
+            return new ReentrantLock();
         }
     }
 
