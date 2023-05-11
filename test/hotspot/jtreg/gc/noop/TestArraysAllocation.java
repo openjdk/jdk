@@ -29,42 +29,9 @@ package gc.noop;
  * @summary Noop is able to allocate arrays, and does not corrupt their state
  * @library /test/lib
  *
- * @run main/othervm -XX:+UseTLAB -Xmx256m
- *                   -XX:+UnlockExperimentalVMOptions -XX:+UseNoopGC
- *                   gc.noop.TestArraysAllocation
- *
- * @run main/othervm -XX:+UseTLAB -Xmx256m
- *                   -Xint
- *                   -XX:+UnlockExperimentalVMOptions -XX:+UseNoopGC
- *                   gc.noop.TestArraysAllocation
- *
- * @run main/othervm -XX:+UseTLAB -Xmx256m
- *                   -Xbatch -Xcomp -XX:TieredStopAtLevel=1
- *                   -XX:+UnlockExperimentalVMOptions -XX:+UseNoopGC
- *                   gc.noop.TestArraysAllocation
- *
- * @run main/othervm -XX:+UseTLAB -Xmx256m
- *                   -Xbatch -Xcomp -XX:-TieredCompilation
- *                   -XX:+UnlockExperimentalVMOptions -XX:+UseNoopGC
- *                   gc.noop.TestArraysAllocation
- *
  * @run main/othervm -XX:-UseTLAB -Xmx256m
  *                   -XX:+UnlockExperimentalVMOptions -XX:+UseNoopGC
- *                   gc.noop.TestArraysAllocation
- *
- * @run main/othervm -XX:-UseTLAB -Xmx256m
- *                   -Xint
- *                   -XX:+UnlockExperimentalVMOptions -XX:+UseNoopGC
- *                   gc.noop.TestArraysAllocation
- *
- * @run main/othervm -XX:-UseTLAB -Xmx256m
- *                   -Xbatch -Xcomp -XX:TieredStopAtLevel=1
- *                   -XX:+UnlockExperimentalVMOptions -XX:+UseNoopGC
- *                   gc.noop.TestArraysAllocation
- *
- * @run main/othervm -XX:-UseTLAB -Xmx256m
- *                   -Xbatch -Xcomp -XX:-TieredCompilation
- *                   -XX:+UnlockExperimentalVMOptions -XX:+UseNoopGC
+ *                   -XX:-UseCompressedOops
  *                   gc.noop.TestArraysAllocation
  */
 

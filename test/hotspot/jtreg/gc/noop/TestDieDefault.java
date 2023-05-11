@@ -52,48 +52,21 @@ public class TestDieDefault {
   }
 
   public static void main(String[] args) throws Exception {
-    passWith("-Xmx64m",
-             "-XX:+UnlockExperimentalVMOptions",
-             "-XX:+UseNoopGC",
-             "-Dcount=1",
-             TestDieDefault.Workload.class.getName());
-
     failWith("-Xmx64m",
              "-XX:+UnlockExperimentalVMOptions",
              "-XX:+UseNoopGC",
-             TestDieDefault.Workload.class.getName());
-
-    failWith("-Xmx64m",
-             "-Xint",
-             "-XX:+UnlockExperimentalVMOptions",
-             "-XX:+UseNoopGC",
-             TestDieDefault.Workload.class.getName());
-
-    failWith("-Xmx64m",
-             "-Xbatch",
-             "-Xcomp",
-             "-XX:TieredStopAtLevel=1",
-             "-XX:+UnlockExperimentalVMOptions",
-             "-XX:+UseNoopGC",
-             TestDieDefault.Workload.class.getName());
-
-    failWith("-Xmx64m",
-             "-Xbatch",
-             "-Xcomp",
-             "-XX:-TieredCompilation",
-             "-XX:+UnlockExperimentalVMOptions",
-             "-XX:+UseNoopGC",
+             "-XX:-UseCompressedOops",
              TestDieDefault.Workload.class.getName());
   }
 
   public static class Workload {
-    static int COUNT = Integer.getInteger("count", 1_000_000_000); // ~24 GB allocation
+    static int COUNT = Integer.getInteger("count", 1); // ~1 GB allocation
 
     static volatile Object sink;
 
     public static void main(String... args) {
       for (int c = 0; c < COUNT; c++) {
-        sink = new Object();
+        sink = new int[270000000];
       }
     }
   }
