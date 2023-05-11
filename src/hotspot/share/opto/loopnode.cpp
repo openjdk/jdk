@@ -5192,7 +5192,7 @@ int PhaseIdealLoop::build_loop_tree_impl( Node *n, int pre_order ) {
         set_loop(m, l);         // Set loop header to loop now
 
     } else {                    // Else not a nested loop
-      if( !_loop_ctrl[m->_idx] ) continue; // Dead code has no loop
+      if (!_loop_ctrl[m->_idx]) continue; // Dead code has no loop
       l = get_loop(m);          // Get previously determined loop
       // If successor is header of a loop (nest), move up-loop till it
       // is a member of some outer enclosing loop.  Since there are no
@@ -5880,7 +5880,7 @@ void PhaseIdealLoop::build_loop_late( VectorSet &visited, Node_List &worklist, N
     uint cnt = n->outcnt();
     uint   i = 0;
     while (true) {
-      assert( _loop_ctrl[n->_idx], "no dead nodes" );
+      assert(_loop_ctrl[n->_idx], "no dead nodes");
       // Visit all children
       if (i < cnt) {
         Node* use = n->raw_out(i);
@@ -5888,7 +5888,7 @@ void PhaseIdealLoop::build_loop_late( VectorSet &visited, Node_List &worklist, N
         // Check for dead uses.  Aggressively prune such junk.  It might be
         // dead in the global sense, but still have local uses so I cannot
         // easily call 'remove_dead_node'.
-        if( _loop_ctrl[use->_idx] != nullptr || use->is_top() ) { // Not dead?
+        if (_loop_ctrl[use->_idx] != nullptr || use->is_top()) { // Not dead?
           // Due to cycles, we might not hit the same fixed point in the verify
           // pass as we do in the regular pass.  Instead, visit such phis as
           // simple uses of the loop head.
@@ -6043,7 +6043,7 @@ void PhaseIdealLoop::build_loop_late_post_work(Node *n, bool pinned) {
   if( LCA == nullptr ) {
 #ifdef ASSERT
     for (DUIterator i1 = n->outs(); n->has_out(i1); i1++) {
-      assert( _loop_ctrl[n->out(i1)->_idx] == nullptr, "all uses must also be dead");
+      assert(_loop_ctrl[n->out(i1)->_idx] == nullptr, "all uses must also be dead");
     }
 #endif
     _loop_ctrl.map(n->_idx, 0);     // This node is useless

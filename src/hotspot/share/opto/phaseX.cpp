@@ -571,7 +571,7 @@ PhaseValues::~PhaseValues() {
 #endif
 
 //------------------------------makecon----------------------------------------
-ConNode* PhaseValues::makecon(const Type *t) {
+ConNode* PhaseValues::makecon(const Type* t) {
   assert(t->singleton(), "must be a constant");
   assert(!t->empty() || t == Type::TOP, "must not be vacuous range");
   switch (t->base()) {  // fast paths

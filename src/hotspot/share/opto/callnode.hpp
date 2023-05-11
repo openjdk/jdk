@@ -1071,7 +1071,7 @@ public:
   void set_nested()      { _kind = Nested; set_eliminated_lock_counter(); }
 
   // locking does not modify its arguments
-  virtual bool may_modify(const TypeOopPtr* t_oop, PhaseValues* phase){ return false;}
+  virtual bool may_modify(const TypeOopPtr* t_oop, PhaseValues* phase){ return false; }
 
 #ifndef PRODUCT
   void create_lock_counter(JVMState* s);

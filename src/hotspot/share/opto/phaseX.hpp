@@ -154,7 +154,7 @@ protected:
   Unique_Node_List _useful;   // Nodes reachable from root
                               // list is allocated from current resource area
 public:
-  PhaseRemoveUseless(PhaseGVN *gvn, Unique_Node_List &worklist, PhaseNumber phase_num = Remove_Useless);
+  PhaseRemoveUseless(PhaseGVN* gvn, Unique_Node_List& worklist, PhaseNumber phase_num = Remove_Useless);
 
   Unique_Node_List *get_useful() { return &_useful; }
 };
