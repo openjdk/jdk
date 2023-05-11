@@ -1746,13 +1746,13 @@ public:
 
   bool try_merge_identical_ifs(Node* n);
 
-  void clone_loop_body(const Node_List& body, Node_List &old_new, CloneMap* cm);
+  void clone_loop_body(const Node_List& body, Node_List &old_new);
 
   void fix_body_edges(const Node_List &body, IdealLoopTree* loop, const Node_List &old_new, int dd,
                       IdealLoopTree* parent, bool partial);
 
   void fix_ctrl_uses(const Node_List& body, const IdealLoopTree* loop, Node_List &old_new, CloneLoopMode mode,
-                Node* side_by_side_idom, CloneMap* cm, Node_List &worklist);
+                     Node* side_by_side_idom, Node_List &worklist);
 
   void fix_data_uses(Node_List& body, IdealLoopTree* loop, CloneLoopMode mode, IdealLoopTree* outer_loop,
                      uint new_counter, Node_List& old_new, Node_List& worklist, Node_List*& split_if_set,

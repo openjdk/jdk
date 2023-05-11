@@ -2534,9 +2534,6 @@ void Node::dump(const char* suffix, bool mark, outputStream* st, DumpConfig* dc)
     return;                     // don't process dead nodes
   }
 
-  if (C->clone_map().value(_idx) != 0) {
-    C->clone_map().dump(_idx);
-  }
   // Dump node-specific info
   dump_spec(st);
 #ifdef ASSERT

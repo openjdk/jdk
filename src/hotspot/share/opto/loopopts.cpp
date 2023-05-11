@@ -2372,26 +2372,8 @@ void PhaseIdealLoop::clone_loop( IdealLoopTree *loop, Node_List &old_new, int dd
   LoopNode* head = loop->_head->as_Loop();
   head->verify_strip_mined(1);
 
-  if (C->do_vector_loop() && PrintOpto) {
-    const char* mname = C->method()->name()->as_quoted_ascii();
-    if (mname != nullptr) {
-      tty->print("PhaseIdealLoop::clone_loop: for vectorize method %s\n", mname);
-    }
-  }
-
-  CloneMap& cm = C->clone_map();
-  if (C->do_vector_loop()) {
-    cm.set_clone_idx(cm.max_gen()+1);
-#ifndef PRODUCT
-    if (PrintOpto) {
-      tty->print_cr("PhaseIdealLoop::clone_loop: _clone_idx %d", cm.clone_idx());
-      loop->dump_head();
-    }
-#endif
-  }
-
   // Step 1: Clone the loop body.  Make the old->new mapping.
-  clone_loop_body(loop->_body, old_new, &cm);
+  clone_loop_body(loop->_body, old_new);
 
   IdealLoopTree* outer_loop = (head->is_strip_mined() && mode != IgnoreStripMined) ? get_loop(head->as_CountedLoop()->outer_loop()) : loop;
 
@@ -2410,7 +2392,7 @@ void PhaseIdealLoop::clone_loop( IdealLoopTree *loop, Node_List &old_new, int dd
   // refer to this.
   Node_List worklist;
   uint new_counter = C->unique();
-  fix_ctrl_uses(loop->_body, loop, old_new, mode, side_by_side_idom, &cm, worklist);
+  fix_ctrl_uses(loop->_body, loop, old_new, mode, side_by_side_idom, worklist);
 
   // Step 4: If loop-invariant use is not control, it must be dominated by a
   // loop exit IfFalse/IfTrue.  Find "proper" loop exit.  Make a Region
@@ -2479,7 +2461,7 @@ void PhaseIdealLoop::fix_data_uses(Node_List& body, IdealLoopTree* loop, CloneLo
 }
 
 void PhaseIdealLoop::fix_ctrl_uses(const Node_List& body, const IdealLoopTree* loop, Node_List &old_new, CloneLoopMode mode,
-                                   Node* side_by_side_idom, CloneMap* cm, Node_List &worklist) {
+                                   Node* side_by_side_idom, Node_List &worklist) {
   LoopNode* head = loop->_head->as_Loop();
   for(uint i = 0; i < body.size(); i++ ) {
     Node* old = body.at(i);
@@ -2520,10 +2502,6 @@ void PhaseIdealLoop::fix_ctrl_uses(const Node_List& body, const IdealLoopTree* l
           newuse = use->clone();
         }
 
-        // Clone the loop exit control projection
-        if (C->do_vector_loop() && cm != nullptr) {
-          cm->verify_insert_and_clone(use, newuse, cm->clone_idx());
-        }
         newuse->set_req(0,nnn);
         _igvn.register_new_node_with_optimizer(newuse);
         set_loop(newuse, use_loop);
@@ -2617,14 +2595,11 @@ void PhaseIdealLoop::fix_body_edges(const Node_List &body, IdealLoopTree* loop, 
   }
 }
 
-void PhaseIdealLoop::clone_loop_body(const Node_List& body, Node_List &old_new, CloneMap* cm) {
+void PhaseIdealLoop::clone_loop_body(const Node_List& body, Node_List &old_new) {
   for (uint i = 0; i < body.size(); i++) {
     Node* old = body.at(i);
     Node* nnn = old->clone();
     old_new.map(old->_idx, nnn);
-    if (C->do_vector_loop() && cm != nullptr) {
-      cm->verify_insert_and_clone(old, nnn, cm->clone_idx());
-    }
     _igvn.register_new_node_with_optimizer(nnn);
   }
 }
@@ -4046,7 +4021,7 @@ bool PhaseIdealLoop::duplicate_loop_backedge(IdealLoopTree *loop, Node_List &old
   }
 
   // clone shared_stmt
-  clone_loop_body(wq, old_new, nullptr);
+  clone_loop_body(wq, old_new);
 
   Node* region_clone = old_new[region->_idx];
   region_clone->set_req(inner, C->top());
@@ -4099,7 +4074,7 @@ bool PhaseIdealLoop::duplicate_loop_backedge(IdealLoopTree *loop, Node_List &old
   // create control and data nodes for out of loop uses (including region2)
   Node_List worklist;
   uint new_counter = C->unique();
-  fix_ctrl_uses(wq, loop, old_new, ControlAroundStripMined, outer_head, nullptr, worklist);
+  fix_ctrl_uses(wq, loop, old_new, ControlAroundStripMined, outer_head, worklist);
 
   Node_List *split_if_set = nullptr;
   Node_List *split_bool_set = nullptr;

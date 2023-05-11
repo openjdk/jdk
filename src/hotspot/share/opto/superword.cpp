@@ -59,7 +59,6 @@ SuperWord::SuperWord(PhaseIdealLoop* phase) :
   _mem_slice_head(arena(), 8,  0, nullptr),                 // memory slice heads
   _mem_slice_tail(arena(), 8,  0, nullptr),                 // memory slice tails
   _node_info(arena(), 8,  0, SWNodeInfo::initial),          // info needed per node
-  _clone_map(phase->C->clone_map()),                        // map of nodes created in cloning
   _cmovev_kit(_arena, this),                                // map to facilitate CMoveV creation
   _align_to_ref(nullptr),                                   // memory reference to align vectors to
   _disjoint_ptrs(arena(), 8,  0, OrderedPair::initial),     // runtime disambiguated pointer pairs
@@ -80,10 +79,7 @@ SuperWord::SuperWord(PhaseIdealLoop* phase) :
   _do_vector_loop(phase->C->do_vector_loop()),              // whether to do vectorization/simd style
   _do_reserve_copy(DoReserveCopyInSuperWord),
   _num_work_vecs(0),                                        // amount of vector work we have
-  _num_reductions(0),                                       // amount of reduction work we have
-  _ii_first(-1),                                            // first loop generation index - only if do_vector_loop()
-  _ii_last(-1),                                             // last loop generation index - only if do_vector_loop()
-  _ii_order(arena(), 8, 0, 0)
+  _num_reductions(0)                                        // amount of reduction work we have
 {
 #ifndef PRODUCT
   _vector_loop_debug = 0;
@@ -93,8 +89,6 @@ SuperWord::SuperWord(PhaseIdealLoop* phase) :
 
 #endif
 }
-
-static const bool _do_vector_loop_experimental = false; // Experimental vectorization which uses data from loop unrolling.
 
 //------------------------------transform_loop---------------------------
 bool SuperWord::transform_loop(IdealLoopTree* lpt, bool do_optimization) {
@@ -584,18 +578,6 @@ void SuperWord::mark_reductions() {
 //    extraction of scalar values from vectors.
 //
 bool SuperWord::SLP_extract() {
-
-#ifndef PRODUCT
-  if (_do_vector_loop && TraceSuperWord) {
-    tty->print("SuperWord::SLP_extract\n");
-    tty->print("input loop\n");
-    _lpt->dump_head();
-    _lpt->dump();
-    for (uint i = 0; i < _lpt->_body.size(); i++) {
-      _lpt->_body.at(i)->dump();
-    }
-  }
-#endif
   // Ready the block
   if (!construct_bb()) {
     return false; // Exit if no interesting nodes or complex graph.
@@ -609,32 +591,6 @@ bool SuperWord::SLP_extract() {
 
   CountedLoopNode *cl = lpt()->_head->as_CountedLoop();
   if (cl->is_main_loop()) {
-    if (_do_vector_loop_experimental) {
-      if (mark_generations() != -1) {
-        hoist_loads_in_graph(); // this only rebuild the graph; all basic structs need rebuild explicitly
-
-        if (!construct_bb()) {
-          return false; // Exit if no interesting nodes or complex graph.
-        }
-        dependence_graph();
-        compute_max_depth();
-      }
-
-#ifndef PRODUCT
-      if (TraceSuperWord) {
-        tty->print_cr("\nSuperWord::_do_vector_loop: graph after hoist_loads_in_graph");
-        _lpt->dump_head();
-        for (int j = 0; j < _block.length(); j++) {
-          Node* n = _block.at(j);
-          int d = depth(n);
-          for (int i = 0; i < d; i++) tty->print("%s", "  ");
-          tty->print("%d :", d);
-          n->dump();
-        }
-      }
-#endif
-    }
-
     compute_vector_element_type();
 
     // Attempt vectorization
@@ -646,17 +602,6 @@ bool SuperWord::SLP_extract() {
     }
 
     extend_packlist();
-
-    if (_do_vector_loop_experimental) {
-      if (_packset.length() == 0) {
-#ifndef PRODUCT
-        if (TraceSuperWord) {
-          tty->print_cr("\nSuperWord::_do_vector_loop DFA could not build packset, now trying to build anyway");
-        }
-#endif
-        pack_parallel();
-      }
-    }
 
     combine_packs();
 
@@ -760,8 +705,7 @@ void SuperWord::find_adjacent_refs() {
     // Set alignment relative to "align_to_ref" for all related memory operations.
     for (int i = memops.size() - 1; i >= 0; i--) {
       MemNode* s = memops.at(i)->as_Mem();
-      if (isomorphic(s, mem_ref) &&
-           (!_do_vector_loop || same_origin_idx(s, mem_ref))) {
+      if (isomorphic(s, mem_ref)) {
         SWPointer p2(s, this, nullptr, false);
         if (p2.comparable(align_to_ref_p)) {
           int align = memory_alignment(s, iv_adjustment);
@@ -786,9 +730,7 @@ void SuperWord::find_adjacent_refs() {
               Node_List* pair = new Node_List();
               pair->push(s1);
               pair->push(s2);
-              if (!_do_vector_loop || same_origin_idx(s1, s2)) {
-                _packset.append(pair);
-              }
+              _packset.append(pair);
             }
           }
         }
@@ -2142,7 +2084,7 @@ Node* CMoveKit::is_Bool_candidate(Node* def) const {
   }
   for (DUIterator_Fast jmax, j = def->fast_outs(jmax); j < jmax; j++) {
     use = def->fast_out(j);
-    if (!_sw->same_generation(def, use) || !use->is_CMove()) {
+    if (!use->is_CMove()) {
       return nullptr;
     }
   }
@@ -2156,7 +2098,7 @@ Node* CMoveKit::is_Cmp_candidate(Node* def) const {
   }
   for (DUIterator_Fast jmax, j = def->fast_outs(jmax); j < jmax; j++) {
     use = def->fast_out(j);
-    if (!_sw->same_generation(def, use) || (use = is_Bool_candidate(use)) == nullptr || !_sw->same_generation(def, use)) {
+    if ((use = is_Bool_candidate(use)) == nullptr) {
       return nullptr;
     }
   }
@@ -2181,7 +2123,6 @@ bool CMoveKit::can_merge_cmove_pack(Node_List* cmove_pk) {
   Node* bol = cmove->as_CMove()->in(CMoveNode::Condition);
   if (!bol->is_Bool() ||
       bol->outcnt() != 1 ||
-      !_sw->same_generation(bol, cmove) ||
       bol->in(0) != nullptr || // Bool node has control flow!!
       _sw->my_pack(bol) == nullptr) {
       NOT_PRODUCT(if(_sw->is_trace_cmov()) {tty->print("CMoveKit::can_merge_cmove_pack: Bool %d does not fit CMove %d for building vector, escaping...", bol->_idx, cmove->_idx); bol->dump();})
@@ -2195,7 +2136,6 @@ bool CMoveKit::can_merge_cmove_pack(Node_List* cmove_pk) {
   Node* cmp = bol->in(1);
   if (!cmp->is_Cmp() ||
       cmp->outcnt() != 1 ||
-      !_sw->same_generation(cmp, cmove) ||
       cmp->in(0) != nullptr || // Cmp node has control flow!!
       _sw->my_pack(cmp) == nullptr) {
       NOT_PRODUCT(if(_sw->is_trace_cmov()) {tty->print("CMoveKit::can_merge_cmove_pack: Cmp %d does not fit CMove %d for building vector, escaping...", cmp->_idx, cmove->_idx); cmp->dump();})
@@ -3741,35 +3681,16 @@ bool SuperWord::construct_bb() {
 
   int ii_current = -1;
   unsigned int load_idx = (unsigned int)-1;
-  // Build iterations order if needed
-  bool build_ii_order = _do_vector_loop_experimental && _ii_order.is_empty();
   // Create real map of block indices for nodes
   for (int j = 0; j < _block.length(); j++) {
     Node* n = _block.at(j);
     set_bb_idx(n, j);
-    if (build_ii_order && n->is_Load()) {
-      if (ii_current == -1) {
-        ii_current = _clone_map.gen(n->_idx);
-        _ii_order.push(ii_current);
-        load_idx = _clone_map.idx(n->_idx);
-      } else if (_clone_map.idx(n->_idx) == load_idx && _clone_map.gen(n->_idx) != ii_current) {
-        ii_current = _clone_map.gen(n->_idx);
-        _ii_order.push(ii_current);
-      }
-    }
   }//for
 
   // Ensure extra info is allocated.
   initialize_bb();
 
 #ifndef PRODUCT
-  if (_vector_loop_debug && _ii_order.length() > 0) {
-    tty->print("SuperWord::construct_bb: List of generations: ");
-    for (int jj = 0; jj < _ii_order.length(); ++jj) {
-      tty->print("  %d:%d", jj, _ii_order.at(jj));
-    }
-    tty->print_cr(" ");
-  }
   if (TraceSuperWord) {
     print_bb();
     tty->print_cr("\ndata entry nodes: %s", _data_entry.length() > 0 ? "" : "NONE");
@@ -4303,27 +4224,12 @@ void SuperWord::init() {
   _data_entry.clear();
   _mem_slice_head.clear();
   _mem_slice_tail.clear();
-  _iteration_first.clear();
-  _iteration_last.clear();
   _node_info.clear();
   _align_to_ref = nullptr;
   _race_possible = 0;
   _early_return = false;
   _num_work_vecs = 0;
   _num_reductions = 0;
-}
-
-//------------------------------restart---------------------------
-void SuperWord::restart() {
-  _dg.init();
-  _packset.clear();
-  _disjoint_ptrs.clear();
-  _block.clear();
-  _post_block.clear();
-  _data_entry.clear();
-  _mem_slice_head.clear();
-  _mem_slice_tail.clear();
-  _node_info.clear();
 }
 
 //------------------------------print_packset---------------------------
@@ -4835,7 +4741,7 @@ void SWPointer::Tracer::ctor_6(Node* mem) {
 }
 
 void SWPointer::Tracer::invariant_1(Node *n, Node *n_c) const {
-  if (_slp->do_vector_loop() && _slp->is_debug() && _slp->_lpt->is_member(_slp->_phase->get_loop(n_c)) != (int)_slp->in_bb(n)) {
+  if (_slp->is_debug() && _slp->_lpt->is_member(_slp->_phase->get_loop(n_c)) != (int)_slp->in_bb(n)) {
     int is_member =  _slp->_lpt->is_member(_slp->_phase->get_loop(n_c));
     int in_bb     =  _slp->in_bb(n);
     print_depth(); tty->print("  \\ ");  tty->print_cr(" %d SWPointer::invariant  conditions differ: n_c %d", n->_idx, n_c->_idx);
@@ -5209,407 +5115,3 @@ void DepSuccs::next() {
   }
 }
 
-//
-// --------------------------------- vectorization/simd -----------------------------------
-//
-bool SuperWord::same_origin_idx(Node* a, Node* b) const {
-  return a != nullptr && b != nullptr && _clone_map.same_idx(a->_idx, b->_idx);
-}
-bool SuperWord::same_generation(Node* a, Node* b) const {
-  return a != nullptr && b != nullptr && _clone_map.same_gen(a->_idx, b->_idx);
-}
-
-Node*  SuperWord::find_phi_for_mem_dep(LoadNode* ld) {
-  assert(in_bb(ld), "must be in block");
-  if (_clone_map.gen(ld->_idx) == _ii_first) {
-#ifndef PRODUCT
-    if (_vector_loop_debug) {
-      tty->print_cr("SuperWord::find_phi_for_mem_dep _clone_map.gen(ld->_idx)=%d",
-        _clone_map.gen(ld->_idx));
-    }
-#endif
-    return nullptr; //we think that any ld in the first gen being vectorizable
-  }
-
-  Node* mem = ld->in(MemNode::Memory);
-  if (mem->outcnt() <= 1) {
-    // we don't want to remove the only edge from mem node to load
-#ifndef PRODUCT
-    if (_vector_loop_debug) {
-      tty->print_cr("SuperWord::find_phi_for_mem_dep input node %d to load %d has no other outputs and edge mem->load cannot be removed",
-        mem->_idx, ld->_idx);
-      ld->dump();
-      mem->dump();
-    }
-#endif
-    return nullptr;
-  }
-  if (!in_bb(mem) || same_generation(mem, ld)) {
-#ifndef PRODUCT
-    if (_vector_loop_debug) {
-      tty->print_cr("SuperWord::find_phi_for_mem_dep _clone_map.gen(mem->_idx)=%d",
-        _clone_map.gen(mem->_idx));
-    }
-#endif
-    return nullptr; // does not depend on loop volatile node or depends on the same generation
-  }
-
-  //otherwise first node should depend on mem-phi
-  Node* first = first_node(ld);
-  assert(first->is_Load(), "must be Load");
-  Node* phi = first->as_Load()->in(MemNode::Memory);
-  if (!phi->is_Phi() || phi->bottom_type() != Type::MEMORY) {
-#ifndef PRODUCT
-    if (_vector_loop_debug) {
-      tty->print_cr("SuperWord::find_phi_for_mem_dep load is not vectorizable node, since it's `first` does not take input from mem phi");
-      ld->dump();
-      first->dump();
-    }
-#endif
-    return nullptr;
-  }
-
-  Node* tail = 0;
-  for (int m = 0; m < _mem_slice_head.length(); m++) {
-    if (_mem_slice_head.at(m) == phi) {
-      tail = _mem_slice_tail.at(m);
-    }
-  }
-  if (tail == 0) { //test that found phi is in the list  _mem_slice_head
-#ifndef PRODUCT
-    if (_vector_loop_debug) {
-      tty->print_cr("SuperWord::find_phi_for_mem_dep load %d is not vectorizable node, its phi %d is not _mem_slice_head",
-        ld->_idx, phi->_idx);
-      ld->dump();
-      phi->dump();
-    }
-#endif
-    return nullptr;
-  }
-
-  // now all conditions are met
-  return phi;
-}
-
-Node* SuperWord::first_node(Node* nd) {
-  for (int ii = 0; ii < _iteration_first.length(); ii++) {
-    Node* nnn = _iteration_first.at(ii);
-    if (same_origin_idx(nnn, nd)) {
-#ifndef PRODUCT
-      if (_vector_loop_debug) {
-        tty->print_cr("SuperWord::first_node: %d is the first iteration node for %d (_clone_map.idx(nnn->_idx) = %d)",
-          nnn->_idx, nd->_idx, _clone_map.idx(nnn->_idx));
-      }
-#endif
-      return nnn;
-    }
-  }
-
-#ifndef PRODUCT
-  if (_vector_loop_debug) {
-    tty->print_cr("SuperWord::first_node: did not find first iteration node for %d (_clone_map.idx(nd->_idx)=%d)",
-      nd->_idx, _clone_map.idx(nd->_idx));
-  }
-#endif
-  return 0;
-}
-
-Node* SuperWord::last_node(Node* nd) {
-  for (int ii = 0; ii < _iteration_last.length(); ii++) {
-    Node* nnn = _iteration_last.at(ii);
-    if (same_origin_idx(nnn, nd)) {
-#ifndef PRODUCT
-      if (_vector_loop_debug) {
-        tty->print_cr("SuperWord::last_node _clone_map.idx(nnn->_idx)=%d, _clone_map.idx(nd->_idx)=%d",
-          _clone_map.idx(nnn->_idx), _clone_map.idx(nd->_idx));
-      }
-#endif
-      return nnn;
-    }
-  }
-  return 0;
-}
-
-int SuperWord::mark_generations() {
-  Node *ii_err = nullptr, *tail_err = nullptr;
-  for (int i = 0; i < _mem_slice_head.length(); i++) {
-    Node* phi  = _mem_slice_head.at(i);
-    assert(phi->is_Phi(), "must be phi");
-
-    Node* tail = _mem_slice_tail.at(i);
-    if (_ii_last == -1) {
-      tail_err = tail;
-      _ii_last = _clone_map.gen(tail->_idx);
-    }
-    else if (_ii_last != _clone_map.gen(tail->_idx)) {
-#ifndef PRODUCT
-      if (TraceSuperWord && Verbose) {
-        tty->print_cr("SuperWord::mark_generations _ii_last error - found different generations in two tail nodes ");
-        tail->dump();
-        tail_err->dump();
-      }
-#endif
-      return -1;
-    }
-
-    // find first iteration in the loop
-    for (DUIterator_Fast imax, i = phi->fast_outs(imax); i < imax; i++) {
-      Node* ii = phi->fast_out(i);
-      if (in_bb(ii) && ii->is_Store()) { // we speculate that normally Stores of one and one only generation have deps from mem phi
-        if (_ii_first == -1) {
-          ii_err = ii;
-          _ii_first = _clone_map.gen(ii->_idx);
-        } else if (_ii_first != _clone_map.gen(ii->_idx)) {
-#ifndef PRODUCT
-          if (TraceSuperWord && Verbose) {
-            tty->print_cr("SuperWord::mark_generations: _ii_first was found before and not equal to one in this node (%d)", _ii_first);
-            ii->dump();
-            if (ii_err!= 0) {
-              ii_err->dump();
-            }
-          }
-#endif
-          return -1; // this phi has Stores from different generations of unroll and cannot be simd/vectorized
-        }
-      }
-    }//for (DUIterator_Fast imax,
-  }//for (int i...
-
-  if (_ii_first == -1 || _ii_last == -1) {
-    if (TraceSuperWord && Verbose) {
-      tty->print_cr("SuperWord::mark_generations unknown error, something vent wrong");
-    }
-    return -1; // something vent wrong
-  }
-  // collect nodes in the first and last generations
-  assert(_iteration_first.length() == 0, "_iteration_first must be empty");
-  assert(_iteration_last.length() == 0, "_iteration_last must be empty");
-  for (int j = 0; j < _block.length(); j++) {
-    Node* n = _block.at(j);
-    node_idx_t gen = _clone_map.gen(n->_idx);
-    if ((signed)gen == _ii_first) {
-      _iteration_first.push(n);
-    } else if ((signed)gen == _ii_last) {
-      _iteration_last.push(n);
-    }
-  }
-
-  // building order of iterations
-  if (_ii_order.length() == 0 && ii_err != 0) {
-    assert(in_bb(ii_err) && ii_err->is_Store(), "should be Store in bb");
-    Node* nd = ii_err;
-    while(_clone_map.gen(nd->_idx) != _ii_last) {
-      _ii_order.push(_clone_map.gen(nd->_idx));
-      bool found = false;
-      for (DUIterator_Fast imax, i = nd->fast_outs(imax); i < imax; i++) {
-        Node* use = nd->fast_out(i);
-        if (same_origin_idx(use, nd) && use->as_Store()->in(MemNode::Memory) == nd) {
-          found = true;
-          nd = use;
-          break;
-        }
-      }//for
-
-      if (found == false) {
-        if (TraceSuperWord && Verbose) {
-          tty->print_cr("SuperWord::mark_generations: Cannot build order of iterations - no dependent Store for %d", nd->_idx);
-        }
-        _ii_order.clear();
-        return -1;
-      }
-    } //while
-    _ii_order.push(_clone_map.gen(nd->_idx));
-  }
-
-#ifndef PRODUCT
-  if (_vector_loop_debug) {
-    tty->print_cr("SuperWord::mark_generations");
-    tty->print_cr("First generation (%d) nodes:", _ii_first);
-    for (int ii = 0; ii < _iteration_first.length(); ii++)  _iteration_first.at(ii)->dump();
-    tty->print_cr("Last generation (%d) nodes:", _ii_last);
-    for (int ii = 0; ii < _iteration_last.length(); ii++)  _iteration_last.at(ii)->dump();
-    tty->print_cr(" ");
-
-    tty->print("SuperWord::List of generations: ");
-    for (int jj = 0; jj < _ii_order.length(); ++jj) {
-      tty->print("%d:%d ", jj, _ii_order.at(jj));
-    }
-    tty->print_cr(" ");
-  }
-#endif
-
-  return _ii_first;
-}
-
-bool SuperWord::fix_commutative_inputs(Node* gold, Node* fix) {
-  assert(gold->is_Add() && fix->is_Add() || gold->is_Mul() && fix->is_Mul(), "should be only Add or Mul nodes");
-  assert(same_origin_idx(gold, fix), "should be clones of the same node");
-  Node* gin1 = gold->in(1);
-  Node* gin2 = gold->in(2);
-  Node* fin1 = fix->in(1);
-  Node* fin2 = fix->in(2);
-  bool swapped = false;
-
-  if (in_bb(gin1) && in_bb(gin2) && in_bb(fin1) && in_bb(fin2)) {
-    if (same_origin_idx(gin1, fin1) &&
-        same_origin_idx(gin2, fin2)) {
-      return true; // nothing to fix
-    }
-    if (same_origin_idx(gin1, fin2) &&
-        same_origin_idx(gin2, fin1)) {
-      fix->swap_edges(1, 2);
-      swapped = true;
-    }
-  }
-  // at least one input comes from outside of bb
-  if (gin1->_idx == fin1->_idx)  {
-    return true; // nothing to fix
-  }
-  if (!swapped && (gin1->_idx == fin2->_idx || gin2->_idx == fin1->_idx))  { //swapping is expensive, check condition first
-    fix->swap_edges(1, 2);
-    swapped = true;
-  }
-
-  if (swapped) {
-#ifndef PRODUCT
-    if (_vector_loop_debug) {
-      tty->print_cr("SuperWord::fix_commutative_inputs: fixed node %d", fix->_idx);
-    }
-#endif
-    return true;
-  }
-
-  if (TraceSuperWord && Verbose) {
-    tty->print_cr("SuperWord::fix_commutative_inputs: cannot fix node %d", fix->_idx);
-  }
-
-  return false;
-}
-
-bool SuperWord::pack_parallel() {
-#ifndef PRODUCT
-  if (_vector_loop_debug) {
-    tty->print_cr("SuperWord::pack_parallel: START");
-  }
-#endif
-
-  _packset.clear();
-
-  if (_ii_order.is_empty()) {
-#ifndef PRODUCT
-    if (_vector_loop_debug) {
-      tty->print_cr("SuperWord::pack_parallel: EMPTY");
-    }
-#endif
-    return false;
-  }
-
-  for (int ii = 0; ii < _iteration_first.length(); ii++) {
-    Node* nd = _iteration_first.at(ii);
-    if (in_bb(nd) && (nd->is_Load() || nd->is_Store() || nd->is_Add() || nd->is_Mul())) {
-      Node_List* pk = new Node_List();
-      pk->push(nd);
-      for (int gen = 1; gen < _ii_order.length(); ++gen) {
-        for (int kk = 0; kk < _block.length(); kk++) {
-          Node* clone = _block.at(kk);
-          if (same_origin_idx(clone, nd) &&
-              _clone_map.gen(clone->_idx) == _ii_order.at(gen)) {
-            if (nd->is_Add() || nd->is_Mul()) {
-              fix_commutative_inputs(nd, clone);
-            }
-            pk->push(clone);
-            if (pk->size() == 4) {
-              _packset.append(pk);
-#ifndef PRODUCT
-              if (_vector_loop_debug) {
-                tty->print_cr("SuperWord::pack_parallel: added pack ");
-                pk->dump();
-              }
-#endif
-              if (_clone_map.gen(clone->_idx) != _ii_last) {
-                pk = new Node_List();
-              }
-            }
-            break;
-          }
-        }
-      }//for
-    }//if
-  }//for
-
-#ifndef PRODUCT
-  if (_vector_loop_debug) {
-    tty->print_cr("SuperWord::pack_parallel: END");
-  }
-#endif
-
-  return true;
-}
-
-bool SuperWord::hoist_loads_in_graph() {
-  GrowableArray<Node*> loads;
-
-#ifndef PRODUCT
-  if (_vector_loop_debug) {
-    tty->print_cr("SuperWord::hoist_loads_in_graph: total number _mem_slice_head.length() = %d", _mem_slice_head.length());
-  }
-#endif
-
-  for (int i = 0; i < _mem_slice_head.length(); i++) {
-    Node* n = _mem_slice_head.at(i);
-    if ( !in_bb(n) || !n->is_Phi() || n->bottom_type() != Type::MEMORY) {
-      if (TraceSuperWord && Verbose) {
-        tty->print_cr("SuperWord::hoist_loads_in_graph: skipping unexpected node n=%d", n->_idx);
-      }
-      continue;
-    }
-
-#ifndef PRODUCT
-    if (_vector_loop_debug) {
-      tty->print_cr("SuperWord::hoist_loads_in_graph: processing phi %d  = _mem_slice_head.at(%d);", n->_idx, i);
-    }
-#endif
-
-    for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
-      Node* ld = n->fast_out(i);
-      if (ld->is_Load() && ld->as_Load()->in(MemNode::Memory) == n && in_bb(ld)) {
-        for (int i = 0; i < _block.length(); i++) {
-          Node* ld2 = _block.at(i);
-          if (ld2->is_Load() && same_origin_idx(ld, ld2) &&
-              !same_generation(ld, ld2)) { // <= do not collect the first generation ld
-#ifndef PRODUCT
-            if (_vector_loop_debug) {
-              tty->print_cr("SuperWord::hoist_loads_in_graph: will try to hoist load ld2->_idx=%d, cloned from %d (ld->_idx=%d)",
-                ld2->_idx, _clone_map.idx(ld->_idx), ld->_idx);
-            }
-#endif
-            // could not do on-the-fly, since iterator is immutable
-            loads.push(ld2);
-          }
-        }// for
-      }//if
-    }//for (DUIterator_Fast imax,
-  }//for (int i = 0; i
-
-  for (int i = 0; i < loads.length(); i++) {
-    LoadNode* ld = loads.at(i)->as_Load();
-    Node* phi = find_phi_for_mem_dep(ld);
-    if (phi != nullptr) {
-#ifndef PRODUCT
-      if (_vector_loop_debug) {
-        tty->print_cr("SuperWord::hoist_loads_in_graph replacing MemNode::Memory(%d) edge in %d with one from %d",
-          MemNode::Memory, ld->_idx, phi->_idx);
-      }
-#endif
-      _igvn.replace_input_of(ld, MemNode::Memory, phi);
-    }
-  }//for
-
-  restart(); // invalidate all basic structures, since we rebuilt the graph
-
-  if (TraceSuperWord && Verbose) {
-    tty->print_cr("\nSuperWord::hoist_loads_in_graph() the graph was rebuilt, all structures invalidated and need rebuild");
-  }
-
-  return true;
-}

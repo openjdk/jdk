@@ -2182,15 +2182,6 @@ void PhaseIdealLoop::do_unroll(IdealLoopTree *loop, Node_List &old_new, bool adj
     }
     loop->dump_head();
   }
-
-  if (C->do_vector_loop() && (PrintOpto && (VerifyLoopOptimizations || TraceLoopOpts))) {
-    Node_Stack stack(C->live_nodes() >> 2);
-    Node_List rpo_list;
-    VectorSet visited;
-    visited.set(loop_head->_idx);
-    rpo(loop_head, stack, visited, rpo_list);
-    dump(loop, rpo_list.size(), rpo_list);
-  }
 #endif
 
   // Remember loop node count before unrolling to detect
@@ -2392,29 +2383,6 @@ void PhaseIdealLoop::do_unroll(IdealLoopTree *loop, Node_List &old_new, bool adj
 
   loop->record_for_igvn();
   loop_head->clear_strip_mined();
-
-#ifndef PRODUCT
-  if (C->do_vector_loop() && (PrintOpto && (VerifyLoopOptimizations || TraceLoopOpts))) {
-    tty->print("\nnew loop after unroll\n");       loop->dump_head();
-    for (uint i = 0; i < loop->_body.size(); i++) {
-      loop->_body.at(i)->dump();
-    }
-    if (C->clone_map().is_debug()) {
-      tty->print("\nCloneMap\n");
-      Dict* dict = C->clone_map().dict();
-      DictI i(dict);
-      tty->print_cr("Dict@%p[%d] = ", dict, dict->Size());
-      for (int ii = 0; i.test(); ++i, ++ii) {
-        NodeCloneInfo cl((uint64_t)dict->operator[]((void*)i._key));
-        tty->print("%d->%d:%d,", (int)(intptr_t)i._key, cl.idx(), cl.gen());
-        if (ii % 10 == 9) {
-          tty->print_cr(" ");
-        }
-      }
-      tty->print_cr(" ");
-    }
-  }
-#endif
 }
 
 //------------------------------do_maximally_unroll----------------------------
