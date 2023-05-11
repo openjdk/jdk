@@ -25,21 +25,32 @@
 #include "jni.h"
 #include "testlib_threads.h"
 
-void call(void* ctxt) {
-    JavaVM *jvm = (JavaVM*) ctxt;
+typedef struct {
+   JavaVM* jvm;
+   jobject linker;
+   jobject desc;
+   jarray opts;
+} Context;
+
+void call(void* arg) {
+    Context* context = (Context*)arg;
     JNIEnv* env;
-    jvm->AttachCurrentThread((void**)&env, NULL);
+    context->jvm->AttachCurrentThread((void**)&env, NULL);
     jclass linkerClass = env->FindClass("java/lang/foreign/Linker");
-    jmethodID nativeLinkerMethod = env->GetStaticMethodID(linkerClass, "nativeLinker", "()Ljava/lang/foreign/Linker;");
-    env->CallStaticVoidMethod(linkerClass, nativeLinkerMethod);
-    jvm->DetachCurrentThread();
+    jmethodID nativeLinkerMethod = env->GetMethodID(linkerClass, "downcallHandle",
+            "(Ljava/lang/foreign/FunctionDescriptor;[Ljava/lang/foreign/Linker$Option;)Ljava/lang/invoke/MethodHandle;");
+    env->CallVoidMethod(context->linker, nativeLinkerMethod, context->desc, context->opts);
+    context->jvm->DetachCurrentThread();
 }
 
 extern "C" {
     JNIEXPORT void JNICALL
-    Java_org_openjdk_foreigntest_PanamaMainJNI_nativeLinker0(JNIEnv *env, jclass cls) {
-        JavaVM* jvm;
-        env->GetJavaVM(&jvm);
-        run_in_new_thread_and_join(call, jvm);
+    Java_org_openjdk_foreigntest_PanamaMainJNI_nativeLinker0(JNIEnv *env, jclass cls, jobject linker, jobject desc, jarray opts) {
+        Context context;
+        env->GetJavaVM(&context.jvm);
+        context.linker = linker;
+        context.desc = desc;
+        context.opts = opts;
+        run_in_new_thread_and_join(call, &context);
     }
 }

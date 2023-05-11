@@ -26,7 +26,7 @@
  // key: compiler.err.unclosed.text.block
  // key: compiler.err.text.block.template.is.not.well.formed
  // key: compiler.err.premature.eof
- // options: --enable-preview -source 21
+ // options: --enable-preview -source ${jdk.version}
 
 import java.lang.*;
 
