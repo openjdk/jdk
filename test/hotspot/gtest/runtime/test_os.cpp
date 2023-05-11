@@ -456,29 +456,34 @@ struct NUMASwitcher {
 #endif
 
 #ifndef _AIX // JDK-8257041
-TEST_VM(os, release_multi_mappings) {
 
-  // Test that we can release an area created with multiple reservation calls
+static void test_release(double start_left, double length_left,
+                         double start_right, double length_right) {
+
+  // Test that we can release a contigous area created with multiple reservation calls
+  //
   // What we do:
-  // A) we reserve 6 small segments (stripes) adjacent to each other. We commit
+  // A) we reserve 4 segments (stripes) adjacent to each other. We commit
   //    them with alternating permissions to prevent the kernel from folding them into
   //    a single segment.
-  //    -stripe-stripe-stripe-stripe-stripe-stripe-
-  // B) we release the middle four stripes with a single os::release_memory call. This
+  // B) we release the inside stripe(s) with a single os::release_memory call. This
   //    tests that os::release_memory indeed works across multiple segments created with
   //    multiple os::reserve calls.
-  //    -stripe-___________________________-stripe-
-  // C) Into the now vacated address range between the first and the last stripe, we
+  // C) into the now vacated address range between the first and the last stripe, we
   //    re-reserve a new memory range. We expect this to work as a proof that the address
   //    range was really released by the single release call (B).
+  // D) we cleanup and release all memory in one go
   //
   // Note that this is inherently racy. Between (B) and (C), some other thread may have
   //  reserved something into the hole in the meantime. Therefore we keep that range small and
   //  entrenched between the first and last stripe, which reduces the chance of some concurrent
   //  thread grabbing that memory.
 
-  const size_t stripe_len = os::vm_allocation_granularity();
-  const int num_stripes = 6;
+  ASSERT_TRUE(start_left + length_left <= 1.0);
+  ASSERT_TRUE(start_right + length_right <= 1.0);
+
+  const size_t stripe_len = 1 * M;
+  const size_t num_stripes = 4;
   const size_t total_range_len = stripe_len * num_stripes;
 
   // reserve address space...
@@ -488,67 +493,99 @@ TEST_VM(os, release_multi_mappings) {
 
   // .. release the middle stripes...
   address p_middle_stripes = p + stripe_len;
-  const size_t middle_stripe_len = (num_stripes - 2) * stripe_len;
+  size_t len_middle_stripes = 0;
+  if (length_left > 0.0) {
+    p_middle_stripes += (size_t)(start_left * stripe_len);
+    len_middle_stripes = (size_t)(length_left * stripe_len) + (size_t)(length_right * stripe_len);
+  } else {
+    p_middle_stripes += (size_t)(stripe_len + (start_right * stripe_len));
+    len_middle_stripes = (size_t)(length_right * stripe_len);
+  }
+
   {
     // On Windows, temporarily switch on UseNUMAInterleaving to allow release_memory to release
     //  multiple mappings in one go (otherwise we assert, which we test too, see death test below).
     WINDOWS_ONLY(NUMASwitcher b(true);)
-    ASSERT_TRUE(os::release_memory((char*)p_middle_stripes, middle_stripe_len));
+    ASSERT_TRUE(os::release_memory((char*)p_middle_stripes, len_middle_stripes));
   }
   PRINT_MAPPINGS("B");
 
   // ...re-reserve the middle stripes. This should work unless release silently failed.
-  address p2 = (address)os::attempt_reserve_memory_at((char*)p_middle_stripes, middle_stripe_len);
+  address p2 = (address)os::attempt_reserve_memory_at((char*)p_middle_stripes, len_middle_stripes);
   ASSERT_EQ(p2, p_middle_stripes);
   PRINT_MAPPINGS("C");
+
+  // Use memory to make sure it's available
+  int success = os::commit_memory((char*)p_middle_stripes, len_middle_stripes, false);
+  ASSERT_TRUE(success);
+  memset((char*)p_middle_stripes, 0b1, len_middle_stripes);
 
   // Clean up. Release all mappings.
   {
     WINDOWS_ONLY(NUMASwitcher b(true);) // allow release_memory to release multiple regions
     ASSERT_TRUE(os::release_memory((char*)p, total_range_len));
   }
+  PRINT_MAPPINGS("D");
 }
-#endif // !AIX
 
-#ifndef _AIX // JDK-8257041
-TEST_VM(os, partial_release_multi_mappings) {
+// test_release(start_left, length_left, start_right, length_right)
 
-  //  see "release_multi_mappings" test comment for general explanation
-
-  //  thread grabbing that memory.
-
-  const size_t stripe_len = os::vm_allocation_granularity();
-  const int num_stripes = 4;
-  const size_t total_range_len = stripe_len * num_stripes;
-  const size_t partial_release_len = total_range_len - (stripe_len/2); // partially release the last stripe
-
-  // reserve address space...
-  address p = reserve_multiple(num_stripes, stripe_len);
-  ASSERT_NE(p, (address)NULL);
-  PRINT_MAPPINGS("A");
-
-  // .. release the middle stripe...
-  address p_middle_stripes = p + stripe_len;
-  const size_t middle_stripe_len = (num_stripes - 2) * stripe_len;
-  {
-    // On Windows, temporarily switch on UseNUMAInterleaving to allow release_memory to release
-    //  multiple mappings in one go (otherwise we assert, which we test too, see death test below).
-    WINDOWS_ONLY(NUMASwitcher b(true);)
-    ASSERT_TRUE(os::release_memory((char*)p_middle_stripes, middle_stripe_len));
-  }
-  PRINT_MAPPINGS("B");
-
-  // ...re-reserve the middle stripes. This should work unless release silently failed.
-  address p2 = (address)os::attempt_reserve_memory_at((char*)p_middle_stripes, middle_stripe_len);
-  ASSERT_EQ(p2, p_middle_stripes);
-  PRINT_MAPPINGS("C");
-
-  // Clean up. Release all mappings except a 1/2 stripe sized portion at the very end.
-  {
-    WINDOWS_ONLY(NUMASwitcher b(true);) // allow release_memory to release multiple regions
-    ASSERT_TRUE(os::release_memory((char*)p, partial_release_len));
-  }
+// A reserve [aaaa][bbbb][cccc][dddd]
+// B release [....][xx..][....][....]
+// C reserve [....][xx..][....][....]
+// D release [xxxx][xxxx][xxxx][xxxx]
+TEST_VM(os, release_multi_mappings_partial_single_region_case1) {
+  test_release(0.00, 0.50, 0.00, 0.00);
 }
+
+// A reserve [aaaa][bbbb][cccc][dddd]
+// B release [....][.xx.][....][....]
+// C reserve [....][.xx.][....][....]
+// D release [xxxx][xxxx][xxxx][xxxx]
+TEST_VM(os, release_multi_mappings_partial_single_region_case2) {
+  test_release(0.25, 0.50, 0.00, 0.00);
+}
+
+// A reserve [aaaa][bbbb][cccc][dddd]
+// B release [....][..xx][....][....]
+// C reserve [....][..xx][....][....]
+// D release [xxxx][xxxx][xxxx][xxxx]
+TEST_VM(os, release_multi_mappings_partial_single_region_case3) {
+  test_release(0.50, 0.50, 0.00, 0.00);
+}
+
+// A reserve [aaaa][bbbb][cccc][dddd]
+// B release [....][xxxx][xxxx][....]
+// C reserve [....][xxxx][xxxx][....]
+// D release [xxxx][xxxx][xxxx][xxxx]
+TEST_VM(os, release_multi_mappings_partial_multi_regions_case1) {
+  test_release(0.00, 1.00, 0.00, 1.00);
+}
+
+// A reserve [aaaa][bbbb][cccc][dddd]
+// B release [....][xxxx][xx..][....]
+// C reserve [....][xxxx][xx..][....]
+// D release [xxxx][xxxx][xxxx][xxxx]
+TEST_VM(os, release_multi_mappings_partial_multi_regions_case2) {
+  test_release(0.00, 1.00, 0.00, 0.50);
+}
+
+// A reserve [aaaa][bbbb][cccc][dddd]
+// B release [....][..xx][xxxx][....]
+// C reserve [....][..xx][xxxx][....]
+// D release [xxxx][xxxx][xxxx][xxxx]
+TEST_VM(os, release_multi_mappings_partial_multi_regions_case3) {
+  test_release(0.50, 0.50, 0.00, 1.00);
+}
+
+// A reserve [aaaa][bbbb][cccc][dddd]
+// B release [....][..xx][xx..][....]
+// C reserve [....][..xx][xx..][....]
+// D release [xxxx][xxxx][xxxx][xxxx]
+TEST_VM(os, release_multi_mappings_partial_multi_regions_case4) {
+  test_release(0.50, 0.50, 0.00, 0.50);
+}
+
 #endif // !AIX
 
 #ifdef _WIN32

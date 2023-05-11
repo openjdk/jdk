@@ -395,10 +395,12 @@ bool VirtualMemoryTracker::add_reserved_region(address base_addr, size_t size,
 
       // Print some more details. Don't use UL here to avoid circularities.
 #ifdef ASSERT
-      tty->print_cr("Error: existing region: [" INTPTR_FORMAT "-" INTPTR_FORMAT "), flag %u.\n"
-                    "       new region: [" INTPTR_FORMAT "-" INTPTR_FORMAT "), flag %u.",
-                    p2i(reserved_rgn->base()), p2i(reserved_rgn->end()), (unsigned)reserved_rgn->flag(),
-                    p2i(base_addr), p2i(base_addr + size), (unsigned)flag);
+      tty->print_cr("Error: existing region: [" INTPTR_FORMAT "-" INTPTR_FORMAT "), flag \'%s\'.\n"
+                    "       new region: [" INTPTR_FORMAT "-" INTPTR_FORMAT "), flag \'%s\'.",
+                    p2i(reserved_rgn->base()), p2i(reserved_rgn->end()),
+                    reserved_rgn->flag_name(),
+                    p2i(base_addr), p2i(base_addr + size),
+                    NMTUtil::flag_to_name(flag));
 #endif
       ShouldNotReachHere();
       return false;
@@ -415,7 +417,7 @@ void VirtualMemoryTracker::set_reserved_region_type(address addr, MEMFLAGS flag)
   if (reserved_rgn != nullptr) {
     assert(reserved_rgn->contain_address(addr), "Containment");
     if (reserved_rgn->flag() != flag) {
-      assert(reserved_rgn->flag() == mtNone, "Overwrite memory type (should be mtNone, is: \"%s\")",
+      assert(reserved_rgn->flag() == mtNone, "Overwrite memory type (should be mtNone, is: \'%s\')",
              NMTUtil::flag_to_name(reserved_rgn->flag()));
       reserved_rgn->set_flag(flag);
     }
@@ -523,11 +525,10 @@ bool VirtualMemoryTracker::remove_released_region(address addr, size_t size) {
     }
   }
 
-  if (size <= reserved_rgn->size()) {
+  if (size <= reserved_rgn->size() && reserved_rgn->contain_region(addr, size)) {
     VirtualMemorySummary::record_released_memory(size, reserved_rgn->flag());
     assert(reserved_rgn->contain_region(addr, size), "Not completely contained");
-    if (reserved_rgn->base() == addr ||
-        reserved_rgn->end() == addr + size) {
+    if (reserved_rgn->base() == addr || reserved_rgn->end() == addr + size) {
       reserved_rgn->exclude_region(addr, size);
       return true;
     } else {
@@ -536,7 +537,7 @@ bool VirtualMemoryTracker::remove_released_region(address addr, size_t size) {
       ReservedMemoryRegion high_rgn(high_base, top - high_base,
                                     *reserved_rgn->call_stack(), reserved_rgn->flag());
 
-      // use original region for lower region
+      // Use original region for lower region
       reserved_rgn->exclude_region(addr, top - addr);
       LinkedListNode<ReservedMemoryRegion>* new_rgn = _reserved_regions->add(high_rgn);
       if (new_rgn == nullptr) {
@@ -550,21 +551,32 @@ bool VirtualMemoryTracker::remove_released_region(address addr, size_t size) {
     address end = addr+size;
     size_t remaining = size;
     LinkedListNode<ReservedMemoryRegion>* node_rgn = _reserved_regions->find_node(rgn);
+    // Segment the region into stripes to be further processed recursively
     while (remaining > 0) {
       ReservedMemoryRegion* remove_rgn = node_rgn->data();
-      assert(remove_rgn!=nullptr, "NULL region");
+      assert(remove_rgn != nullptr, "NULL region");
 
       node_rgn = node_rgn->next();
-      assert(remove_rgn->base()<node_rgn->data()->base(), "not ascending bases");
+      assert(remove_rgn->base() < node_rgn->data()->base(), "not ascending bases");
 
-      // Allow for the last segment to be partially released
-      size_t remove_size = MIN(remove_rgn->size(), remaining);
-      assert(remove_rgn->base()+remove_size<=end, "not contained");
-      assert(remove_released_region(remove_rgn->base(), remove_size), "error in remove_released_region");
+      // Allow for the segment to be partially released
+      long offset = remove_rgn->base() - addr;
+      long remove_size = 0;
+      if (offset < 0) {
+        remove_size = MIN(remove_rgn->size()+offset, remaining);
+      } else {
+        remove_size = MIN(remove_rgn->size(), remaining);
+      }
+      assert(remove_size > 0, "negative size");
+      assert(addr+remove_size <= end, "not contained");
+      remove_released_region(addr, remove_size);
+
       remaining -= remove_size;
+      addr += remove_size;
     }
     return true;
   }
+  return false;
 }
 
 // Given an existing memory mapping registered with NMT, split the mapping in
@@ -698,7 +710,7 @@ public:
 
   bool do_allocation_site(const ReservedMemoryRegion* rgn) {
     if (rgn->contain_address(_p)) {
-      _st->print_cr(PTR_FORMAT " in mmap'd memory region [" PTR_FORMAT " - " PTR_FORMAT "], tag %s",
+      _st->print_cr(PTR_FORMAT " in mmap'd memory region [" PTR_FORMAT " - " PTR_FORMAT "], tag \'%s\'",
         p2i(_p), p2i(rgn->base()), p2i(rgn->base() + rgn->size()), NMTUtil::flag_to_enum_name(rgn->flag()));
       if (MemTracker::tracking_level() == NMT_detail) {
         rgn->call_stack()->print_on(_st);
