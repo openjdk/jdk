@@ -432,6 +432,7 @@ class MacroAssembler: public Assembler {
 
   // Misaligned loads, will use the best way, according to the AvoidUnalignedAccess flag
   void load_int_misaligned(Register dst, Address src, Register tmp, bool is_signed);
+  void load_long_misaligned(Register dst, Address src, Register tmp, int granularity);
 
  public:
   // Standard pseudo instructions

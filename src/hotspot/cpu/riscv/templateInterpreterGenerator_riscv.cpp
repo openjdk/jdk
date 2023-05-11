@@ -1100,18 +1100,9 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     __ mv(t1, unsatisfied);
     if (AvoidUnalignedAccesses) {
       __ mv(t, t1);
-      __ lhu(t1, Address(t1, 0));
-      __ lhu(t0, Address(t, 2));
-      __ slli(t0, t0, 16);
-      __ add(t1, t1, t0);
-      __ lhu(t0, Address(t, 4));
-      __ slli(t0, t0, 32);
-      __ add(t1, t1, t0);
-      __ lhu(t0, Address(t, 6));
-      __ slli(t0, t0, 48);
-      __ add(t1, t1, t0);
+      __ MacroAssembler::load_long_misaligned(t1, Address(t,0), t0, 2); // 2 bytes aligned, but not 4 or 8
     } else {
-      __ ld(t1, Address(t1, 0)); // 2 bytes aligned, but not 4 or 8
+      __ ld(t1, Address(t1, 0));
     }
     __ bne(x28, t1, L);
     __ call_VM(noreg,

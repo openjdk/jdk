@@ -1708,6 +1708,62 @@ void MacroAssembler::load_int_misaligned(Register dst, Address src, Register tmp
   }
 }
 
+// granularity is 1, 2 or 4 bytes per load
+void MacroAssembler::load_long_misaligned(Register dst, Address src, Register tmp, int granularity) {
+  if (AvoidUnalignedAccesses && (granularity != 8)) {
+    assert_different_registers(dst, tmp);
+    switch(granularity){
+      case 1:
+        lbu(dst, src);
+        lbu(tmp, Address(src.base(), src.offset() + 1));
+        slli(tmp, tmp, 8);
+        add(dst, dst, tmp);
+        lbu(tmp, Address(src.base(), src.offset() + 2));
+        slli(tmp, tmp, 16);
+        add(dst, dst, tmp);
+        lbu(tmp, Address(src.base(), src.offset() + 3));
+        slli(tmp, tmp, 24);
+        add(dst, dst, tmp);
+        lbu(tmp, Address(src.base(), src.offset() + 4));
+        slli(tmp, tmp, 32);
+        add(dst, dst, tmp);
+        lbu(tmp, Address(src.base(), src.offset() + 5));
+        slli(tmp, tmp, 40);
+        add(dst, dst, tmp);
+        lbu(tmp, Address(src.base(), src.offset() + 6));
+        slli(tmp, tmp, 48);
+        add(dst, dst, tmp);
+        lbu(tmp, Address(src.base(), src.offset() + 7));
+        slli(tmp, tmp, 56);
+        add(dst, dst, tmp);
+        break;
+      case 2:
+        lhu(dst, src);
+        lhu(tmp, Address(src.base(), src.offset() + 2));
+        slli(tmp, tmp, 16);
+        add(dst, dst, tmp);
+        lhu(tmp, Address(src.base(), src.offset() + 4));
+        slli(tmp, tmp, 32);
+        add(dst, dst, tmp);
+        lhu(tmp, Address(src.base(), src.offset() + 6));
+        slli(tmp, tmp, 48);
+        add(dst, dst, tmp);
+        break;
+      case 4:
+        lwu(dst, src);
+        lwu(tmp, Address(src.base(), src.offset() + 4));
+        slli(tmp, tmp, 32);
+        add(dst, dst, tmp);
+        break;
+      default:
+        ShouldNotReachHere();
+    }
+  } else {
+    ld(dst, src);
+  }
+}
+
+
 // reverse bytes in halfword in lower 16 bits and sign-extend
 // Rd[15:0] = Rs[7:0] Rs[15:8] (sign-extend to 64 bits)
 void MacroAssembler::revb_h_h(Register Rd, Register Rs, Register tmp) {
