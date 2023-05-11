@@ -54,15 +54,18 @@ public final class HSS extends SignatureSpi {
         throw new InvalidParameterException("No parameters exist for HSS/LMS");
     }
 
+    @Override
     protected void engineInitSign(PrivateKey privateKey) throws InvalidKeyException {
         throw new InvalidKeyException("HSS/LMS signing is not supported");
     }
 
     // This will never be called because engineInitSign unconditionally throws an exception
+    @Override
     protected byte[] engineSign() throws SignatureException {
         throw new SignatureException("HSS/LMS signing is not supported");
     }
 
+    @Override
     protected void engineInitVerify(PublicKey publicKey) throws InvalidKeyException {
         HSSPublicKey pub;
         if (publicKey instanceof HSSPublicKey p) {
@@ -76,14 +79,17 @@ public final class HSS extends SignatureSpi {
         messageStream = new ByteArrayOutputStream();
     }
 
+    @Override
     protected void engineUpdate(byte data) {
         messageStream.write(data);
     }
 
+    @Override
     protected void engineUpdate(byte[] data, int off, int len) {
         messageStream.write(data, off, len);
     }
 
+    @Override
     protected boolean engineVerify(byte[] signature) throws SignatureException {
         HSSSignature sig = new HSSSignature(signature, pubKey);
         LMSPublicKey lmsPubKey = pubKey.lmsPublicKey;
@@ -669,7 +675,7 @@ public final class HSS extends SignatureSpi {
         }
     }
 
-    static class HSSPublicKey extends X509Key implements Serializable {
+    static class HSSPublicKey extends X509Key implements Serializable, Length {
         @Serial
         private static final long serialVersionUID = 21;
         private int L;
@@ -701,6 +707,7 @@ public final class HSS extends SignatureSpi {
         /**
          * Parse the key. Called by X509Key.
          */
+        @Override
         protected void parseKeyBits() throws InvalidKeyException {
             byte[] keyArray = getKey().toByteArray();
             L = LMSUtils.fourBytesToInt(keyArray, 0);
@@ -714,6 +721,11 @@ public final class HSS extends SignatureSpi {
                     getAlgorithm(),
                     getFormat(),
                     getEncoded());
+        }
+
+        @Override
+        public int length() {
+            return getKey().length();
         }
     }
 
