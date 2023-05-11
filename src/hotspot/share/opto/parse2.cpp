@@ -1665,7 +1665,7 @@ static Node* extract_obj_from_klass_load(PhaseGVN* gvn, Node* n) {
   Node* adr = ldk->in(MemNode::Address);
   intptr_t off = 0;
   Node* obj = AddPNode::Ideal_base_and_offset(adr, gvn, off);
-  if (obj == nullptr || off != oopDesc::klass_offset_in_bytes()) // loading oopDesc::_klass?
+  if (obj == nullptr || off != TypeOopPtr::klass_offset_in_bytes()) // loading oopDesc::_klass?
     return nullptr;
   const TypePtr* tp = gvn->type(obj)->is_ptr();
   if (tp == nullptr || !(tp->isa_instptr() || tp->isa_aryptr())) // is obj a Java object ptr?

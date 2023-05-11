@@ -335,16 +335,7 @@ class oopDesc {
   // for code generation
   static int mark_offset_in_bytes()      { return offset_of(oopDesc, _mark); }
   static int klass_offset_in_bytes()     {
-#ifdef _LP64
-    if (UseCompactObjectHeaders) {
-      // With compact object headers, the klass-offset is only used by the
-      // C2 compiler to differentiate LoadNKlass. It is never used to actually
-      // load the narrowKlass from the header. Any offset that is not used by
-      // anything else should suffice, here.
-      STATIC_ASSERT(markWord::klass_shift % BitsPerByte == 0);
-      return mark_offset_in_bytes() + markWord::klass_shift / BitsPerByte;
-    }
-#endif
+    assert(!UseCompactObjectHeaders, "don't use klass_offset_in_bytes() with compact headers");
     return offset_of(oopDesc, _metadata._klass);
   }
   static int klass_gap_offset_in_bytes() {
