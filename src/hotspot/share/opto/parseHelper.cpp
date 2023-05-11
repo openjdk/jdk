@@ -374,6 +374,12 @@ void VirtualState::set_field(ciField* field, Node* val) {
   ShouldNotReachHere();
 }
 
+static void ensure_phi(PhiNode* phi, uint pnum) {
+    while (phi->req() <= pnum) {
+      phi->add_req(nullptr);
+    }
+}
+
 ObjectState& VirtualState::merge(ObjectState* newin, GraphKit* kit, RegionNode* r, int pnum) {
   assert(newin->is_virtual(), "only support VirtualState");
 
@@ -403,6 +409,7 @@ ObjectState& VirtualState::merge(ObjectState* newin, GraphKit* kit, RegionNode* 
         if (n == nullptr) {
           n = kit->zerocon(bt);
         }
+        ensure_phi(m->as_Phi(), pnum);
         m->set_req(pnum, n);
         if (pnum == 1) {
           _entries[i] = kit->gvn().transform(m);
@@ -581,8 +588,6 @@ EscapedState* PEAState::materialize(GraphKit* kit, Node* var) {
       }
       decorators |= field->is_volatile() ? MO_SEQ_CST : MO_UNORDERED;
 
-
-      val = kit->gvn().transform(val);
 #ifndef PRODUCT
       if (Verbose) {
         val->dump();
@@ -722,6 +727,7 @@ void AllocationStateMerger::merge(const PEAState& newin, GraphKit* kit, RegionNo
       Node* m = _state.get_cooked_oop(obj);
       Node* n = newin.get_cooked_oop(obj);
       if (m->is_Phi() && m->in(0) == region) {
+        ensure_phi(m->as_Phi(), pnum);
         // only update the pnum that we have never seen before.
         if (m->in(pnum) == nullptr) {
           m->set_req(pnum, n);

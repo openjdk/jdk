@@ -409,7 +409,7 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses, PEAS
   _entry_bci = InvocationEntryBci;
   _tf = nullptr;
   _block = nullptr;
-  _first_return = true;
+  _first_return = 0;
   _replaced_nodes_for_exceptions = false;
   _new_idx = C->unique();
   debug_only(_block_count = -1);
@@ -2398,14 +2398,14 @@ void Parse::return_current(Node* value) {
     phi->add_req(value);
   }
 
-  if (_first_return) {
+  if (_first_return++ == 0) {
     _exits.map()->transfer_replaced_nodes_from(map(), _new_idx);
     // copy assignment
     _exits.jvms()->alloc_state() = jvms()->alloc_state();
-    _first_return = false;
   } else {
     _exits.map()->merge_replaced_nodes_with(map());
-    // TODO: support merge from other regular exits.
+    AllocationStateMerger mp(_exits.jvms()->alloc_state());
+    mp.merge(jvms()->alloc_state(), &_exits, _exits.control()->as_Region(), _first_return);
   }
 
   stop_and_kill_map();          // This CFG path dies here
