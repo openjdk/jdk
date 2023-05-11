@@ -79,7 +79,8 @@ public:
   OpaqueZeroTripGuardNode(Compile* C, Node* n, BoolTest::mask loop_entered_test) :
           Opaque1Node(C, n), _loop_entered_mask(loop_entered_test) {
   }
-  CountedLoopNode* guarded_loop() const;
+
+  DEBUG_ONLY(CountedLoopNode* guarded_loop() const);
   virtual int Opcode() const;
   virtual uint size_of() const {
     return sizeof(*this);

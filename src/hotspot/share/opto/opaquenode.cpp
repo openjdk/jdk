@@ -55,6 +55,7 @@ Node* Opaque3Node::Identity(PhaseGVN* phase) {
   return this;
 }
 
+#ifdef ASSERT
 CountedLoopNode* OpaqueZeroTripGuardNode::guarded_loop() const {
   Node* cmp = unique_out();
   assert(cmp->Opcode() == Op_CmpI, "");
@@ -85,6 +86,7 @@ CountedLoopNode* OpaqueZeroTripGuardNode::guarded_loop() const {
   }
   return nullptr;
 }
+#endif
 
 // Do not allow value-numbering
 uint Opaque3Node::hash() const { return NO_HASH; }
