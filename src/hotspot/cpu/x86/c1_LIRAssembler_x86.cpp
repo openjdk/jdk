@@ -3195,8 +3195,6 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
 
   Address src_length_addr = Address(src, arrayOopDesc::length_offset_in_bytes());
   Address dst_length_addr = Address(dst, arrayOopDesc::length_offset_in_bytes());
-  Address src_klass_addr = Address(src, oopDesc::klass_offset_in_bytes());
-  Address dst_klass_addr = Address(dst, oopDesc::klass_offset_in_bytes());
 
   // length and pos's are all sign extended at this point on 64bit
 
@@ -3321,6 +3319,7 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
        store_parameter(src, 4);
 
 #ifndef _LP64
+       Address dst_klass_addr = Address(dst, oopDesc::klass_offset_in_bytes());
         __ movptr(tmp, dst_klass_addr);
         __ movptr(tmp, Address(tmp, ObjArrayKlass::element_klass_offset()));
         __ push(tmp);
