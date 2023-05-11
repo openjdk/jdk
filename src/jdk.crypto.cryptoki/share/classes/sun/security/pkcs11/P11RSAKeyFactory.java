@@ -54,8 +54,7 @@ final class P11RSAKeyFactory extends P11KeyFactory {
 
     PublicKey implTranslatePublicKey(PublicKey key) throws InvalidKeyException {
         try {
-            if (key instanceof RSAPublicKey) {
-                RSAPublicKey rsaKey = (RSAPublicKey)key;
+            if (key instanceof RSAPublicKey rsaKey) {
                 return generatePublic(
                     rsaKey.getModulus(),
                     rsaKey.getPublicExponent()
@@ -74,8 +73,7 @@ final class P11RSAKeyFactory extends P11KeyFactory {
     PrivateKey implTranslatePrivateKey(PrivateKey key)
             throws InvalidKeyException {
         try {
-            if (key instanceof RSAPrivateCrtKey) {
-                RSAPrivateCrtKey rsaKey = (RSAPrivateCrtKey)key;
+            if (key instanceof RSAPrivateCrtKey rsaKey) {
                 return generatePrivate(
                     rsaKey.getModulus(),
                     rsaKey.getPublicExponent(),
@@ -86,8 +84,7 @@ final class P11RSAKeyFactory extends P11KeyFactory {
                     rsaKey.getPrimeExponentQ(),
                     rsaKey.getCrtCoefficient()
                 );
-            } else if (key instanceof RSAPrivateKey) {
-                RSAPrivateKey rsaKey = (RSAPrivateKey)key;
+            } else if (key instanceof RSAPrivateKey rsaKey) {
                 return generatePrivate(
                     rsaKey.getModulus(),
                     rsaKey.getPrivateExponent()
@@ -117,7 +114,7 @@ final class P11RSAKeyFactory extends P11KeyFactory {
                         ("Could not create RSA public key", e);
             }
         }
-        if (keySpec instanceof RSAPublicKeySpec == false) {
+        if (!(keySpec instanceof RSAPublicKeySpec)) {
             throw new InvalidKeySpecException("Only RSAPublicKeySpec and "
                 + "X509EncodedKeySpec supported for RSA public keys");
         }
@@ -288,8 +285,7 @@ final class P11RSAKeyFactory extends P11KeyFactory {
         // that existing logic.
         if (keySpec.isAssignableFrom(RSAPrivateCrtKeySpec.class)) {
             // All supported keyspecs (other than PKCS8EncodedKeySpec) descend from RSAPrivateCrtKeySpec
-            if (key instanceof RSAPrivateCrtKey) {
-                RSAPrivateCrtKey crtKey = (RSAPrivateCrtKey)key;
+            if (key instanceof RSAPrivateCrtKey crtKey) {
                 return keySpec.cast(new RSAPrivateCrtKeySpec(
                     crtKey.getModulus(),
                     crtKey.getPublicExponent(),
@@ -307,7 +303,7 @@ final class P11RSAKeyFactory extends P11KeyFactory {
                         ("RSAPrivateCrtKeySpec can only be used with CRT keys");
                 }
 
-                if (!(key instanceof RSAPrivateKey)) {
+                if (!(key instanceof RSAPrivateKey rsaKey)) {
                     // We should never reach here as P11Key.privateKey() should always produce an instance
                     // of RSAPrivateKey when the RSA key is both extractable and non-sensitive.
                     throw new InvalidKeySpecException
@@ -315,7 +311,6 @@ final class P11RSAKeyFactory extends P11KeyFactory {
                 }
 
                 // fall through to RSAPrivateKey (non-CRT)
-                RSAPrivateKey rsaKey = (RSAPrivateKey) key;
                 return keySpec.cast(new RSAPrivateKeySpec(
                     rsaKey.getModulus(),
                     rsaKey.getPrivateExponent(),

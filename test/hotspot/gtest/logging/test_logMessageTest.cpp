@@ -146,11 +146,12 @@ TEST_VM_F(LogMessageTest, long_message) {
   char* data = NEW_C_HEAP_ARRAY(char, size, mtLogging);
 
   // fill buffer with start_marker...some data...end_marker
-  sprintf(data, "%s", start_marker);
+  os::snprintf_checked(data, size, "%s", start_marker);
   for (size_t i = strlen(start_marker); i < size; i++) {
     data[i] = '0' + (i % 10);
   }
-  sprintf(data + size - strlen(end_marker) - 1, "%s", end_marker);
+  size_t remaining_size = strlen(end_marker) + 1;
+  os::snprintf_checked(data + size - remaining_size, remaining_size, "%s", end_marker);
 
   msg.trace("%s", data); // Adds a newline, making the message exactly 10K in length.
   _log.write(msg);

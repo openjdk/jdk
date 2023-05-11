@@ -32,5 +32,5 @@ import org.netbeans.api.visual.widget.Widget;
  */
 public interface DoubleClickHandler {
 
-    public void handleDoubleClick(Widget w, WidgetMouseEvent e);
+    void handleDoubleClick(Widget w, WidgetMouseEvent e);
 }

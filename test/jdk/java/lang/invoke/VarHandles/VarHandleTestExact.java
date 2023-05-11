@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
  * @test
  * @enablePreview
  * @modules java.base/jdk.internal.access.foreign
+ * @modules java.base/jdk.internal.foreign.layout
  *
  * @run testng/othervm -Xverify:all
  *   -Djdk.internal.foreign.SHOULD_ADAPT_HANDLES=false
@@ -46,9 +47,10 @@
  *   VarHandleTestExact
  */
 
-import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
+
+import jdk.internal.foreign.layout.ValueLayouts;
 import org.testng.SkipException;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -101,7 +103,7 @@ public class VarHandleTestExact {
         doTest(vh,
             tvh -> tvh.set(w, testValue),
             tvh -> setter.set(tvh, w, testValue),
-            ".*\\Qexpected (Widget," + fieldType.getSimpleName() + ")void \\E.*");
+            ".*\\Qhandle's method type (Widget," + fieldType.getSimpleName() + ")void \\E.*");
     }
 
     @Test(dataProvider = "dataObjectAccess")
@@ -115,7 +117,7 @@ public class VarHandleTestExact {
         doTest(vh,
             tvh -> tvh.get(w),
             tvh -> getter.get(tvh, w),
-            ".*\\Qexpected (Widget)" + fieldType.getSimpleName() + " \\E.*");
+            ".*\\Qhandle's method type (Widget)" + fieldType.getSimpleName() + " \\E.*");
     }
 
     @Test(dataProvider = "dataObjectAccess")
@@ -129,7 +131,7 @@ public class VarHandleTestExact {
         doTest(vh,
             tvh -> tvh.set(testValue),
             tvh -> staticSetter.set(tvh, testValue),
-            ".*\\Qexpected (" + fieldType.getSimpleName() + ")void \\E.*");
+            ".*\\Qhandle's method type (" + fieldType.getSimpleName() + ")void \\E.*");
     }
 
     @Test(dataProvider = "dataObjectAccess")
@@ -142,7 +144,7 @@ public class VarHandleTestExact {
         doTest(vh,
             tvh -> tvh.get(),
             tvh -> staticGetter.get(tvh),
-            ".*\\Qexpected ()" + fieldType.getSimpleName() + " \\E.*");
+            ".*\\Qhandle's method type ()" + fieldType.getSimpleName() + " \\E.*");
     }
 
     @Test(dataProvider = "dataSetArray")
@@ -153,7 +155,7 @@ public class VarHandleTestExact {
         doTest(vh,
             tvh -> tvh.set(arr, 0, testValue),
             tvh -> setter.set(tvh, arr, testValue),
-            ".*\\Qexpected (" + arrayClass.getSimpleName() + ",int," + arrayClass.componentType().getSimpleName() + ")void \\E.*");
+            ".*\\Qhandle's method type (" + arrayClass.getSimpleName() + ",int," + arrayClass.componentType().getSimpleName() + ")void \\E.*");
     }
 
     @Test(dataProvider = "dataSetBuffer")
@@ -164,18 +166,18 @@ public class VarHandleTestExact {
         doTest(vh,
             tvh -> tvh.set(buff, 0, testValue),
             tvh -> setter.set(tvh, buff, testValue),
-            ".*\\Qexpected (ByteBuffer,int," + arrayClass.componentType().getSimpleName() + ")void \\E.*");
+            ".*\\Qhandle's method type (ByteBuffer,int," + arrayClass.componentType().getSimpleName() + ")void \\E.*");
     }
 
     @Test(dataProvider = "dataSetMemorySegment")
     public void testExactSegmentSet(Class<?> carrier, Object testValue, SetSegmentX setter) {
-        VarHandle vh = MethodHandles.memorySegmentViewVarHandle(MemoryLayout.valueLayout(carrier, ByteOrder.nativeOrder()));
-        try (MemorySession session = MemorySession.openConfined()) {
-            MemorySegment seg = MemorySegment.allocateNative(8, session);
+        VarHandle vh = MethodHandles.memorySegmentViewVarHandle(ValueLayouts.valueLayout(carrier, ByteOrder.nativeOrder()));
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment seg = arena.allocate(8);
             doTest(vh,
                 tvh -> tvh.set(seg, 0L, testValue),
                 tvh -> setter.set(tvh, seg, 0L, testValue),
-                ".*\\Qexpected (MemorySegment,long," + carrier.getSimpleName() + ")void \\E.*");
+                ".*\\Qhandle's method type (MemorySegment,long," + carrier.getSimpleName() + ")void \\E.*");
         }
     }
 

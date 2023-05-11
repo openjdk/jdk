@@ -203,9 +203,6 @@
   develop_pd(bool, CSEArrayLength,                                          \
           "Create separate nodes for length in array accesses")             \
                                                                             \
-  develop_pd(bool, TwoOperandLIRForm,                                       \
-          "true if LIR requires src1 and dst to match in binary LIR ops")   \
-                                                                            \
   develop(intx, TraceLinearScanLevel, 0,                                    \
           "Debug levels for the linear scan allocator")                     \
           range(0, 4)                                                       \

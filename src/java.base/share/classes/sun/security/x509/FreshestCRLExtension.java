@@ -25,8 +25,9 @@
 
 package sun.security.x509;
 
+import sun.security.util.DerOutputStream;
+
 import java.io.IOException;
-import java.io.OutputStream;
 import java.util.List;
 
 /**
@@ -64,8 +65,7 @@ public class FreshestCRLExtension extends CRLDistributionPointsExtension {
      *
      * @param distributionPoints the list of delta CRL distribution points.
      */
-    public FreshestCRLExtension(List<DistributionPoint> distributionPoints)
-        throws IOException {
+    public FreshestCRLExtension(List<DistributionPoint> distributionPoints) {
 
         super(PKIXExtensions.FreshestCRL_Id, false, distributionPoints, NAME);
     }
@@ -87,9 +87,9 @@ public class FreshestCRLExtension extends CRLDistributionPointsExtension {
      * Writes the extension to the DerOutputStream.
      *
      * @param out the DerOutputStream to write the extension to.
-     * @exception IOException on encoding errors.
      */
-    public void encode(OutputStream out) throws IOException {
+    @Override
+    public void encode(DerOutputStream out) {
         super.encode(out, PKIXExtensions.FreshestCRL_Id, false);
     }
 }

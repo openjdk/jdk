@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -312,7 +312,7 @@ public class RandomSupport {
         final int m = Math.min(seed.length, n << 2);
         // Distribute seed bytes into the words to be formed.
         for (int j = 0; j < m; j++) {
-            result[j>>2] = (result[j>>2] << 8) | seed[j];
+            result[j>>2] = (result[j>>2] << 8) | (seed[j] & 0xFF);
         }
         // If there aren't enough seed bytes for all the words we need,
         // use a SplitMix-style PRNG to fill in the rest.
@@ -2081,7 +2081,7 @@ public class RandomSupport {
         /* ---------------- public methods ---------------- */
 
         /**
-         * Implements the @code{split()} method as
+         * Implements the {@code split()} method as
          * {@link SplittableGenerator#split(SplittableGenerator) split}(this).
          *
          * @return the new {@link SplittableGenerator} instance

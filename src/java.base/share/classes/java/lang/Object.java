@@ -568,7 +568,7 @@ public class Object {
      * @deprecated Finalization is deprecated and subject to removal in a future
      * release. The use of finalization can lead to problems with security,
      * performance, and reliability.
-     * See <a href="https://openjdk.java.net/jeps/421">JEP 421</a> for
+     * See <a href="https://openjdk.org/jeps/421">JEP 421</a> for
      * discussion and alternatives.
      * <p>
      * Subclasses that override {@code finalize} to perform cleanup should use

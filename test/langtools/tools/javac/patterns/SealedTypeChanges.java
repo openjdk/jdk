@@ -25,15 +25,15 @@
  * @test
  * @bug 8262891 8270151
  * @summary Verify pattern switches work properly when the set of sealed types changes.
- * @compile --enable-preview -source ${jdk.version} SealedTypeChanges.java
- * @compile --enable-preview -source ${jdk.version} SealedTypeChanges2.java
- * @run main/othervm --enable-preview SealedTypeChanges
+ * @enablePreview
+ * @compile SealedTypeChanges.java
+ * @compile SealedTypeChanges2.java
+ * @run main SealedTypeChanges
  */
 
 import java.util.function.Consumer;
 
 public class SealedTypeChanges {
-
     public static void main(String... args) throws Exception {
         new SealedTypeChanges().run();
     }

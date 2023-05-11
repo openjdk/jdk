@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,13 +35,13 @@ address RegisterMap::pd_location(VMReg reg) const {
     intptr_t offset_in_bytes = (reg->value() - base_reg->value()) * VMRegImpl::stack_slot_size;
     if (base_reg_enc > 15) {
       if (offset_in_bytes == 0) {
-        return NULL; // ZMM16-31 are stored in full.
+        return nullptr; // ZMM16-31 are stored in full.
       }
     } else {
       if (offset_in_bytes == 0 || offset_in_bytes == 16 || offset_in_bytes == 32) {
         // Reads of the low and high 16 byte parts should be handled by location itself because
         // they have separate callee saved entries (see RegisterSaver::save_live_registers()).
-        return NULL;
+        return nullptr;
       }
       // The upper part of YMM0-15 and ZMM0-15 registers are saved separately in the frame.
       if (offset_in_bytes > 32) {
@@ -55,11 +55,11 @@ address RegisterMap::pd_location(VMReg reg) const {
       }
     }
     address base_location = location(base_reg, nullptr);
-    if (base_location != NULL) {
+    if (base_location != nullptr) {
       return base_location + offset_in_bytes;
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 address RegisterMap::pd_location(VMReg base_reg, int slot_idx) const {

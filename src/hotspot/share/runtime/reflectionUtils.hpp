@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,7 +70,6 @@ class KlassStream {
   virtual void next() = 0;
 
   // accessors
-  InstanceKlass* klass() const      { return _klass; }
   int index() const                 { return _index; }
   bool base_class_search_defaults() const { return _base_class_search_defaults; }
   void base_class_search_defaults(bool b) { _base_class_search_defaults = b; }
@@ -121,7 +120,7 @@ class MethodStream : public KlassStream {
 
 class FieldStream : public KlassStream {
  private:
-  int length() { return _klass->java_fields_count(); }
+  int length();
 
   fieldDescriptor _fd_buf;
 

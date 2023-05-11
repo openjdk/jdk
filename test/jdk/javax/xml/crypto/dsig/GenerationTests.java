@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
  *          java.xml.crypto/org.jcp.xml.dsig.internal.dom
  *          jdk.httpserver/com.sun.net.httpserver
  * @library /test/lib
+ * @build jdk.test.lib.Asserts
  * @compile -XDignore.symbol.file KeySelectors.java SignatureValidator.java
  *     X509KeySelector.java GenerationTests.java
  * @run main/othervm/timeout=300 -Dsun.net.httpserver.nodelay=true GenerationTests
@@ -93,6 +94,7 @@ import javax.xml.transform.stream.StreamResult;
 import org.w3c.dom.*;
 
 import jdk.test.lib.security.SecurityUtils;
+import jdk.test.lib.Asserts;
 
 /**
  * Test that recreates merlin-xmldsig-twenty-three test vectors (and more)
@@ -292,6 +294,7 @@ public class GenerationTests {
         SecurityUtils.removeAlgsFromDSigPolicy("sha1");
 
         setup();
+        test_context_iterator();
         test_create_signature_enveloped_dsa(1024);
         test_create_signature_enveloped_dsa(2048);
         test_create_signature_enveloping_b64_dsa();
@@ -1883,6 +1886,48 @@ public class GenerationTests {
             return false;
         }
 
+        return true;
+    }
+
+    static boolean test_context_iterator() throws Exception {
+        System.out.println("Testing context iterator() method.");
+
+        Reference ref = fac.newReference("#object",
+                fac.newDigestMethod(DigestMethod.SHA512, null));
+        SignedInfo si = fac.newSignedInfo(withoutComments, rsaSha512,
+                Collections.singletonList(ref));
+
+        Document doc = db.newDocument();
+        XMLObject obj = fac.newXMLObject(Collections.singletonList(
+                new DOMStructure(doc.createTextNode("test text"))), "object",
+                null, null);
+
+        DOMSignContext dsc = new DOMSignContext(signingKey, doc);
+        Asserts.assertNotNull(dsc.iterator());
+        Asserts.assertFalse(dsc.iterator().hasNext());
+
+        String namespaceURI = "https://example.com/ns";
+        String idAttrValue = "id1";
+        String elementQualifiedName = "test:data";
+
+        Element elm = doc.createElementNS(namespaceURI, elementQualifiedName);
+        elm.setAttributeNS(namespaceURI, "test:id", idAttrValue);
+        dsc.setIdAttributeNS(elm, namespaceURI, "id");
+
+        Iterator<Map.Entry<String, Element>> iter = dsc.iterator();
+        Asserts.assertTrue(dsc.iterator().hasNext());
+
+        Map.Entry<String, Element> element = iter.next();
+        Asserts.assertEquals(element.getKey(), idAttrValue);
+        Asserts.assertEquals(element.getValue().getNodeName(), elementQualifiedName);
+
+        try {
+            iter.remove();
+            throw new RuntimeException(
+                    "The expected UnsupportedOperationException was not thrown.");
+        } catch (UnsupportedOperationException exc) {
+            // this is expected
+        }
         return true;
     }
 

@@ -410,7 +410,7 @@ public class CertificateBuilder {
             throw new CertificateException(ge);
         }
         topLevelItems.write(tbsCertBytes);
-        signAlg.derEncode(topLevelItems);
+        signAlg.encode(topLevelItems);
         topLevelItems.putBitString(signatureBytes);
         outerSeq.write(DerValue.tag_Sequence, topLevelItems);
 
@@ -459,7 +459,7 @@ public class CertificateBuilder {
         sn.encode(tbsCertItems);
 
         // Algorithm ID
-        signAlg.derEncode(tbsCertItems);
+        signAlg.encode(tbsCertItems);
 
         // Issuer Name
         if (issuerCert != null) {

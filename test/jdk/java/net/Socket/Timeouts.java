@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,8 @@
  * @bug 8221481
  * @library /test/lib
  * @build jdk.test.lib.Utils
- * @compile --enable-preview -source ${jdk.version} Timeouts.java
- * @run testng/othervm/timeout=180 --enable-preview Timeouts
+ * @compile Timeouts.java
+ * @run testng/othervm/timeout=180 Timeouts
  * @summary Test Socket timeouts
  */
 
@@ -252,7 +252,7 @@ public class Timeouts {
             int b = s2.getInputStream().read();
             assertTrue(b == 99);
 
-            // schedule s2 to be be closed
+            // schedule s2 to be closed
             scheduleClose(s2, 3000);
 
             // write a lot so that write blocks

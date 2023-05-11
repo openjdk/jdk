@@ -25,6 +25,7 @@
 #
 
 GITHUB_STEP_SUMMARY="$1"
+GITHUB_OUTPUT="$2"
 
 test_suite_name=$(cat build/run-test-prebuilt/test-support/test-last-ids.txt)
 results_dir=build/run-test-prebuilt/test-results/$test_suite_name/text
@@ -41,12 +42,12 @@ error_count=$(echo $errors | wc -w || true)
 
 if [[ "$failures" = "" && "$errors" = "" ]]; then
   # We know something went wrong, but not what
-  echo '::set-output name=error-message::Unspecified test suite failure. Please see log for job for details.'
+  echo 'error-message=Unspecified test suite failure. Please see log for job for details.' >> $GITHUB_OUTPUT
   exit 0
 fi
 
-echo '::set-output name=failure::true'
-echo "::set-output name=error-message::Test run reported $failure_count test failure(s) and $error_count error(s). See summary for details."
+echo 'failure=true' >> $GITHUB_OUTPUT
+echo "error-message=Test run reported $failure_count test failure(s) and $error_count error(s). See summary for details." >> $GITHUB_OUTPUT
 
 echo '### :boom: Test failures summary' >> $GITHUB_STEP_SUMMARY
 

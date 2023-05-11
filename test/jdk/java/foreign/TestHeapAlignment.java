@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,14 @@
 /*
  * @test
  * @enablePreview
- * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64"
+ * @requires jdk.foreign.linker != "UNSUPPORTED"
  * @run testng/othervm --enable-native-access=ALL-UNNAMED TestHeapAlignment
  */
 
-import java.lang.foreign.MemoryAddress;
+import java.lang.foreign.AddressLayout;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
+import java.lang.foreign.Arena;
 import java.lang.foreign.ValueLayout;
 import java.util.ArrayList;
 import java.util.List;
@@ -91,7 +91,7 @@ public class TestHeapAlignment {
     static final ValueLayout.OfFloat JAVA_FLOAT_ALIGNED = ValueLayout.JAVA_FLOAT.withBitAlignment(32);
     static final ValueLayout.OfLong JAVA_LONG_ALIGNED = ValueLayout.JAVA_LONG.withBitAlignment(64);
     static final ValueLayout.OfDouble JAVA_DOUBLE_ALIGNED = ValueLayout.JAVA_DOUBLE.withBitAlignment(64);
-    static final ValueLayout.OfAddress ADDRESS_ALIGNED = ValueLayout.ADDRESS.withBitAlignment(ValueLayout.ADDRESS.bitSize());
+    static final AddressLayout ADDRESS_ALIGNED = ValueLayout.ADDRESS.withBitAlignment(ValueLayout.ADDRESS.bitSize());
 
     enum SegmentAndAlignment {
         HEAP_BYTE(MemorySegment.ofArray(new byte[8]), 1),
@@ -101,7 +101,7 @@ public class TestHeapAlignment {
         HEAP_FLOAT(MemorySegment.ofArray(new float[2]), 4),
         HEAP_LONG(MemorySegment.ofArray(new long[1]), 8),
         HEAP_DOUBLE(MemorySegment.ofArray(new double[1]), 8),
-        NATIVE(MemorySegment.allocateNative(8, MemorySession.openImplicit()), -1);
+        NATIVE(Arena.ofAuto().allocate(8, 1), -1);
 
         final MemorySegment segment;
         final int align;
@@ -124,7 +124,7 @@ public class TestHeapAlignment {
             layouts.add(new Object[] { testCase.segment, testCase.align, 42f, new float[]{42}, JAVA_FLOAT_ALIGNED, (Function<float[], MemorySegment>)MemorySegment::ofArray });
             layouts.add(new Object[] { testCase.segment, testCase.align, 42L, new long[]{42}, JAVA_LONG_ALIGNED, (Function<long[], MemorySegment>)MemorySegment::ofArray });
             layouts.add(new Object[] { testCase.segment, testCase.align, 42d, new double[]{42}, JAVA_DOUBLE_ALIGNED, (Function<double[], MemorySegment>)MemorySegment::ofArray });
-            layouts.add(new Object[] { testCase.segment, testCase.align, MemoryAddress.ofLong(42), null, ADDRESS_ALIGNED, null });
+            layouts.add(new Object[] { testCase.segment, testCase.align, MemorySegment.ofAddress(42), null, ADDRESS_ALIGNED, null });
         }
         return layouts.toArray(new Object[0][]);
     }

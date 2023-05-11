@@ -429,7 +429,7 @@ MsgRouting AwtTrayIcon::WmMouseMove(UINT flags, int x, int y)
 
 MsgRouting AwtTrayIcon::WmBalloonUserClick(UINT flags, int x, int y)
 {
-    // The windows api GetKeyState() when read would provide the key state of the requrested key
+    // The windows api GetKeyState() when read would provide the key state of the requested key
     // but it is not guaranteed to receive the same as it is stored in the thread message queue and
     // unless the thread runs faster.
     // Event NIN_BALLOONUSERCLICK is received only upon left mouse click. Hence the additional check
@@ -620,7 +620,7 @@ AwtTrayIcon* AwtTrayIcon::SearchTrayIconItem(UINT id) {
     }
     /*
      * DASSERT(FALSE);
-     * This should not be happend if all tray icons are recorded
+     * This should not be happening if all tray icons are recorded
      */
     return NULL;
 }
@@ -1113,7 +1113,7 @@ Java_sun_awt_windows_WTrayIconPeer__1displayMessage(JNIEnv *env, jobject self,
     AwtToolkit::GetInstance().SyncCall(AwtTrayIcon::_DisplayMessage, dms);
     // global ref is deleted in _DisplayMessage
 
-    CATCH_BAD_ALLOC(NULL);
+    CATCH_BAD_ALLOC;
 }
 
 } /* extern "C" */

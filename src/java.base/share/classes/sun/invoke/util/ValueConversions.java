@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -342,73 +342,13 @@ public class ValueConversions {
         // no value to return; this is an unbox of null
     }
 
-    static void empty() {
-    }
-
-    static Object zeroObject() {
-        return null;
-    }
-
-    static int zeroInteger() {
-        return 0;
-    }
-
-    static long zeroLong() {
-        return 0;
-    }
-
-    static float zeroFloat() {
-        return 0;
-    }
-
-    static double zeroDouble() {
-        return 0;
-    }
-
-    private static final WrapperCache[] CONSTANT_FUNCTIONS = newWrapperCaches(2);
-
-    public static MethodHandle zeroConstantFunction(Wrapper wrap) {
-        WrapperCache cache = CONSTANT_FUNCTIONS[0];
-        MethodHandle mh = cache.get(wrap);
-        if (mh != null) {
-            return mh;
-        }
-        // slow path
-        MethodType type = MethodType.methodType(wrap.primitiveType());
-        switch (wrap) {
-            case VOID:
-                mh = Handles.EMPTY;
-                break;
-            case OBJECT:
-            case INT: case LONG: case FLOAT: case DOUBLE:
-                try {
-                    mh = IMPL_LOOKUP.findStatic(THIS_CLASS, "zero"+wrap.wrapperSimpleName(), type);
-                } catch (ReflectiveOperationException ex) {
-                    mh = null;
-                }
-                break;
-        }
-        if (mh != null) {
-            return cache.put(wrap, mh);
-        }
-
-        // use zeroInt and cast the result
-        if (wrap.isSubwordOrInt() && wrap != Wrapper.INT) {
-            mh = MethodHandles.explicitCastArguments(zeroConstantFunction(Wrapper.INT), type);
-            return cache.put(wrap, mh);
-        }
-        throw new IllegalArgumentException("cannot find zero constant for " + wrap);
-    }
-
     private static class Handles {
-        static final MethodHandle CAST_REFERENCE, IGNORE, EMPTY;
+        static final MethodHandle IGNORE;
         static {
             try {
                 MethodType idType = MethodType.genericMethodType(1);
                 MethodType ignoreType = idType.changeReturnType(void.class);
-                CAST_REFERENCE = IMPL_LOOKUP.findVirtual(Class.class, "cast", idType);
                 IGNORE = IMPL_LOOKUP.findStatic(THIS_CLASS, "ignore", ignoreType);
-                EMPTY = IMPL_LOOKUP.findStatic(THIS_CLASS, "empty", ignoreType.dropParameterTypes(0, 1));
             } catch (NoSuchMethodException | IllegalAccessException ex) {
                 throw newInternalError("uncaught exception", ex);
             }
@@ -419,10 +359,6 @@ public class ValueConversions {
         return Handles.IGNORE;
     }
 
-    /** Return a method that casts its second argument (an Object) to the given type (a Class). */
-    public static MethodHandle cast() {
-        return Handles.CAST_REFERENCE;
-    }
 
     /// Primitive conversions.
     // These are supported directly by the JVM, usually by a single instruction.
@@ -672,8 +608,5 @@ public class ValueConversions {
     // handy shared exception makers (they simplify the common case code)
     private static InternalError newInternalError(String message, Throwable cause) {
         return new InternalError(message, cause);
-    }
-    private static InternalError newInternalError(Throwable cause) {
-        return new InternalError(cause);
     }
 }

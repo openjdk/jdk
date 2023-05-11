@@ -39,7 +39,7 @@ public class TestServers {
     private TestServers() { }
 
     /**
-     * An abstract server identifies a server which listens on a port on on a
+     * An abstract server identifies a server which listens on a port on a
      * given machine.
      */
     static abstract class AbstractServer {

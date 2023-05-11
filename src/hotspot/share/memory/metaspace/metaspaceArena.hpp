@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -175,7 +175,7 @@ public:
   // 2) Attempt to allocate from the current chunk.
   // 3) Attempt to enlarge the current chunk in place if it is too small.
   // 4) Attempt to get a new chunk and allocate from that chunk.
-  // At any point, if we hit a commit limit, we return NULL.
+  // At any point, if we hit a commit limit, we return null.
   MetaWord* allocate(size_t word_size);
 
   // Prematurely returns a metaspace allocation to the _block_freelists because it is not

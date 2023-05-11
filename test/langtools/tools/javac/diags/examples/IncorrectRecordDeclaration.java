@@ -21,6 +21,7 @@
  * questions.
  */
 
-// key: compiler.err.record.header.expected
+// key: compiler.err.expected
+// key: compiler.err.illegal.start.of.type
 
 record R {}

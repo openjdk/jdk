@@ -105,29 +105,34 @@ public enum Source {
     JDK15("15"),
 
     /**
-      * 16, tbd
+      * 16, records and pattern matching for instanceof
       */
     JDK16("16"),
 
     /**
-      * 17, tbd
+      * 17, sealed classes, restoration of always-strict floating-point
       */
     JDK17("17"),
 
     /**
-      * 18, tbd
+      * 18, no major changes
       */
     JDK18("18"),
 
     /**
-      * 19, tbd
+      * 19, no major changes
       */
     JDK19("19"),
 
     /**
-      * 20, tbd
+      * 20, no major changes
       */
-    JDK20("20");
+    JDK20("20"),
+
+    /**
+      * 21, tbd
+      */
+    JDK21("21");
 
     private static final Context.Key<Source> sourceKey = new Context.Key<>();
 
@@ -179,6 +184,7 @@ public enum Source {
 
     public Target requiredTarget() {
         return switch(this) {
+        case JDK21  -> Target.JDK1_21;
         case JDK20  -> Target.JDK1_20;
         case JDK19  -> Target.JDK1_19;
         case JDK18  -> Target.JDK1_18;
@@ -220,6 +226,7 @@ public enum Source {
         SWITCH_MULTIPLE_CASE_LABELS(JDK14, Fragments.FeatureMultipleCaseLabels, DiagKind.PLURAL),
         SWITCH_RULE(JDK14, Fragments.FeatureSwitchRules, DiagKind.PLURAL),
         SWITCH_EXPRESSION(JDK14, Fragments.FeatureSwitchExpressions, DiagKind.PLURAL),
+        NO_TARGET_ANNOTATION_APPLICABILITY(JDK14),
         TEXT_BLOCKS(JDK15, Fragments.FeatureTextBlocks, DiagKind.PLURAL),
         PATTERN_MATCHING_IN_INSTANCEOF(JDK16, Fragments.FeaturePatternMatchingInstanceof, DiagKind.NORMAL),
         REIFIABLE_TYPES_INSTANCEOF(JDK16, Fragments.FeatureReifiableTypesInstanceof, DiagKind.PLURAL),
@@ -228,8 +235,10 @@ public enum Source {
         CASE_NULL(JDK17, Fragments.FeatureCaseNull, DiagKind.NORMAL),
         PATTERN_SWITCH(JDK17, Fragments.FeaturePatternSwitch, DiagKind.PLURAL),
         REDUNDANT_STRICTFP(JDK17),
+        STRING_TEMPLATES(JDK21, Fragments.FeatureStringTemplates, DiagKind.PLURAL),
         UNCONDITIONAL_PATTERN_IN_INSTANCEOF(JDK19, Fragments.FeatureUnconditionalPatternsInInstanceof, DiagKind.PLURAL),
         RECORD_PATTERNS(JDK19, Fragments.FeatureDeconstructionPatterns, DiagKind.PLURAL),
+        WARN_ON_ILLEGAL_UTF8(MIN, JDK21),
         ;
 
         enum DiagKind {
@@ -312,6 +321,7 @@ public enum Source {
         case JDK18  -> RELEASE_18;
         case JDK19  -> RELEASE_19;
         case JDK20  -> RELEASE_20;
+        case JDK21  -> RELEASE_21;
         default     -> null;
         };
     }

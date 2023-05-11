@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -688,7 +688,7 @@ JRT_ENTRY(void, Runtime1::throw_range_check_exception(JavaThread* current, int i
   const int len = 35;
   assert(len < strlen("Index %d out of bounds for length %d"), "Must allocate more space for message.");
   char message[2 * jintAsStringSize + len];
-  sprintf(message, "Index %d out of bounds for length %d", index, a->length());
+  os::snprintf_checked(message, sizeof(message), "Index %d out of bounds for length %d", index, a->length());
   SharedRuntime::throw_and_post_jvmti_exception(current, vmSymbols::java_lang_ArrayIndexOutOfBoundsException(), message);
 JRT_END
 
@@ -700,7 +700,7 @@ JRT_ENTRY(void, Runtime1::throw_index_exception(JavaThread* current, int index))
   }
 #endif
   char message[16];
-  sprintf(message, "%d", index);
+  os::snprintf_checked(message, sizeof(message), "%d", index);
   SharedRuntime::throw_and_post_jvmti_exception(current, vmSymbols::java_lang_IndexOutOfBoundsException(), message);
 JRT_END
 
@@ -754,15 +754,16 @@ JRT_BLOCK_ENTRY(void, Runtime1::monitorenter(JavaThread* current, oopDesc* obj, 
     _monitorenter_slowcase_cnt++;
   }
 #endif
-  if (UseHeavyMonitors) {
+  if (LockingMode == LM_MONITOR) {
     lock->set_obj(obj);
   }
-  assert(obj == lock->obj(), "must match");
-  SharedRuntime::monitor_enter_helper(obj, lock->lock(), current);
+  assert(LockingMode == LM_LIGHTWEIGHT || obj == lock->obj(), "must match");
+  SharedRuntime::monitor_enter_helper(obj, LockingMode == LM_LIGHTWEIGHT ? nullptr : lock->lock(), current);
 JRT_END
 
 
 JRT_LEAF(void, Runtime1::monitorexit(JavaThread* current, BasicObjectLock* lock))
+  assert(current == JavaThread::current(), "pre-condition");
 #ifndef PRODUCT
   if (PrintC1Statistics) {
     _monitorexit_slowcase_cnt++;
@@ -1061,9 +1062,8 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* current, Runtime1::StubID stub_
         break;
       }
       case Bytecodes::_invokedynamic: {
-        ConstantPoolCacheEntry* cpce = pool->invokedynamic_cp_cache_entry_at(index);
-        cpce->set_dynamic_call(pool, info);
-        appendix = Handle(current, cpce->appendix_if_resolved(pool)); // just in case somebody already resolved the entry
+        int indy_index = pool->decode_invokedynamic_index(index);
+        appendix = Handle(current, pool->cache()->set_dynamic_call(info, indy_index));
         break;
       }
       default: fatal("unexpected bytecode for load_appendix_patching_id");

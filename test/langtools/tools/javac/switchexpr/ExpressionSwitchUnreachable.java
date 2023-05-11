@@ -7,7 +7,7 @@
 
 public class ExpressionSwitchUnreachable {
 
-    public static void main(String[] args) {
+    public static void meth() {
         int z = 42;
         int i = switch (z) {
             case 0 -> {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,26 +25,60 @@
 
 package javax.swing.plaf.basic;
 
-import java.awt.Font;
-import java.awt.Color;
-import java.awt.SystemColor;
-import java.awt.event.*;
-import java.awt.Insets;
-import java.awt.Component;
-import java.awt.Container;
-import java.awt.FocusTraversalPolicy;
 import java.awt.AWTEvent;
-import java.awt.Toolkit;
-import java.awt.Point;
-import java.net.URL;
-import java.io.*;
+import java.awt.Color;
+import java.awt.Component;
 import java.awt.Dimension;
-import java.awt.KeyboardFocusManager;
+import java.awt.Font;
+import java.awt.Point;
+import java.awt.SystemColor;
+import java.awt.Toolkit;
+import java.awt.Window;
+import java.awt.event.AWTEventListener;
+import java.awt.event.ActionEvent;
+import java.awt.event.MouseEvent;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyVetoException;
+import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.Serializable;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.util.*;
-import java.lang.reflect.*;
-import javax.sound.sampled.*;
+import java.util.HashSet;
+import java.util.Locale;
+
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.Clip;
+import javax.sound.sampled.DataLine;
+import javax.sound.sampled.LineEvent;
+import javax.sound.sampled.LineListener;
+import javax.swing.AbstractAction;
+import javax.swing.Action;
+import javax.swing.ActionMap;
+import javax.swing.DefaultListCellRenderer;
+import javax.swing.JComponent;
+import javax.swing.JInternalFrame;
+import javax.swing.JPopupMenu;
+import javax.swing.JTextField;
+import javax.swing.LookAndFeel;
+import javax.swing.MenuElement;
+import javax.swing.MenuSelectionManager;
+import javax.swing.SwingUtilities;
+import javax.swing.UIDefaults;
+import javax.swing.UIManager;
+import javax.swing.border.BevelBorder;
+import javax.swing.plaf.ActionMapUIResource;
+import javax.swing.plaf.BorderUIResource;
+import javax.swing.plaf.ColorUIResource;
+import javax.swing.plaf.ComponentUI;
+import javax.swing.plaf.DimensionUIResource;
+import javax.swing.plaf.FontUIResource;
+import javax.swing.plaf.InsetsUIResource;
+import javax.swing.text.DefaultEditorKit;
 
 import sun.awt.AppContext;
 import sun.awt.SunToolkit;
@@ -52,33 +86,7 @@ import sun.swing.SwingAccessor;
 import sun.swing.SwingUtilities2;
 import sun.swing.icon.SortArrowIcon;
 
-import javax.swing.LookAndFeel;
-import javax.swing.AbstractAction;
-import javax.swing.Action;
-import javax.swing.ActionMap;
-import javax.swing.BorderFactory;
-import javax.swing.JComponent;
-import javax.swing.ImageIcon;
-import javax.swing.UIDefaults;
-import javax.swing.UIManager;
-import javax.swing.KeyStroke;
-import javax.swing.JTextField;
-import javax.swing.DefaultListCellRenderer;
-import javax.swing.FocusManager;
-import javax.swing.LayoutFocusTraversalPolicy;
-import javax.swing.SwingUtilities;
-import javax.swing.MenuSelectionManager;
-import javax.swing.MenuElement;
-import javax.swing.border.*;
-import javax.swing.plaf.*;
-import javax.swing.text.JTextComponent;
-import javax.swing.text.DefaultEditorKit;
-import javax.swing.JInternalFrame;
 import static javax.swing.UIDefaults.LazyValue;
-import java.beans.PropertyVetoException;
-import java.awt.Window;
-import java.beans.PropertyChangeListener;
-import java.beans.PropertyChangeEvent;
 
 
 /**
@@ -636,7 +644,7 @@ public abstract class BasicLookAndFeel extends LookAndFeel implements Serializab
             new BorderUIResource.EmptyBorderUIResource(6, zero, zero, zero);
 
 
-        // *** ProgessBar value objects
+        // *** ProgressBar value objects
 
         LazyValue progressBarBorder =
             t -> BasicBorders.getProgressBarBorder();
@@ -1151,7 +1159,7 @@ public abstract class BasicLookAndFeel extends LookAndFeel implements Serializab
             "PopupMenu.consumeEventOnClose", Boolean.FALSE,
 
             // *** OptionPane
-            // You can additionaly define OptionPane.messageFont which will
+            // You can additionally define OptionPane.messageFont which will
             // dictate the fonts used for the message, and
             // OptionPane.buttonFont, which defines the font for the buttons.
             "OptionPane.font", dialogPlain12,
@@ -2221,36 +2229,34 @@ public abstract class BasicLookAndFeel extends LookAndFeel implements Serializab
                             ((BasicSplitPaneDivider)c).getParent();
                     }
                     if(src != null) {
-                        if(src.getComponentPopupMenu() != null) {
+                        JPopupMenu componentPopupMenu = src.getComponentPopupMenu();
+                        if(componentPopupMenu != null) {
                             Point pt = src.getPopupLocation(me);
                             if(pt == null) {
                                 pt = me.getPoint();
                                 pt = SwingUtilities.convertPoint((Component)c,
                                                                   pt, src);
                             }
-                            src.getComponentPopupMenu().show(src, pt.x, pt.y);
+                            componentPopupMenu.show(src, pt.x, pt.y);
                             me.consume();
                         }
                     }
                 }
             }
-            /* Activate a JInternalFrame if necessary. */
-            if (eventID == MouseEvent.MOUSE_PRESSED) {
-                Object object = ev.getSource();
-                if (!(object instanceof Component)) {
-                    return;
-                }
-                Component component = (Component)object;
-                if (component != null) {
-                    Component parent = component;
-                    while (parent != null && !(parent instanceof Window)) {
-                        if (parent instanceof JInternalFrame) {
+
+            // Activate a JInternalFrame if necessary.
+            if (eventID == MouseEvent.MOUSE_PRESSED
+                    && ev.getSource() instanceof Component parent) {
+                while (parent != null && !(parent instanceof Window)) {
+                    if (parent instanceof JInternalFrame internalFrame) {
+                        try {
                             // Activate the frame.
-                            try { ((JInternalFrame)parent).setSelected(true); }
-                            catch (PropertyVetoException e1) { }
+                            internalFrame.setSelected(true);
+                        } catch (PropertyVetoException ignored) {
                         }
-                        parent = parent.getParent();
                     }
+
+                    parent = parent.getParent();
                 }
             }
         }

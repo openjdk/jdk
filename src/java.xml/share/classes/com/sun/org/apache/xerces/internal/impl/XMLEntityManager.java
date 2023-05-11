@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -647,6 +647,7 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
         if (reader == null) {
             stream = xmlInputSource.getByteStream();
             if (stream == null) {
+                @SuppressWarnings("deprecation")
                 URL location = new URL(expandedSystemId);
                 URLConnection connect = location.openConnection();
                 if (!(connect instanceof HttpURLConnection)) {
@@ -2037,6 +2038,7 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
     public static OutputStream createOutputStream(String uri) throws IOException {
         // URI was specified. Handle relative URIs.
         final String expanded = XMLEntityManager.expandSystemId(uri, null, true);
+        @SuppressWarnings("deprecation")
         final URL url = new URL(expanded != null ? expanded : uri);
         OutputStream out = null;
         String protocol = url.getProtocol();

@@ -38,11 +38,18 @@ import javax.tools.Diagnostic;
 import jdk.jshell.SourceCodeAnalysis;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
+import org.testng.annotations.BeforeMethod;
 import jdk.jshell.TypeDeclSnippet;
 import static jdk.jshell.Snippet.Status.OVERWRITTEN;
 import static jdk.jshell.Snippet.Status.VALID;
 
 public class ClassMembersTest extends KullaTesting {
+
+    @BeforeMethod
+    @Override
+    public void setUp() {
+        setUp(builder -> builder.executionEngine("local"));
+    }
 
     @Test(dataProvider = "memberTestCase")
     public void memberTest(AccessModifier accessModifier, CodeChunk codeChunk, Static isStaticMember, Static isStaticReference) {

@@ -32,7 +32,7 @@
 #include "runtime/continuation.hpp"
 
 ShenandoahNMethod::ShenandoahNMethod(nmethod* nm, GrowableArray<oop*>& oops, bool non_immediate_oops) :
-  _nm(nm), _oops(NULL), _oops_count(0), _unregistered(false) {
+  _nm(nm), _oops(nullptr), _oops_count(0), _unregistered(false) {
 
   if (!oops.is_empty()) {
     _oops_count = oops.length();
@@ -47,7 +47,7 @@ ShenandoahNMethod::ShenandoahNMethod(nmethod* nm, GrowableArray<oop*>& oops, boo
 }
 
 ShenandoahNMethod::~ShenandoahNMethod() {
-  if (_oops != NULL) {
+  if (_oops != nullptr) {
     FREE_C_HEAP_ARRAY(oop*, _oops);
   }
 }
@@ -92,9 +92,9 @@ void ShenandoahNMethod::update() {
 
   detect_reloc_oops(nm(), oops, non_immediate_oops);
   if (oops.length() != _oops_count) {
-    if (_oops != NULL) {
+    if (_oops != nullptr) {
       FREE_C_HEAP_ARRAY(oop*, _oops);
-      _oops = NULL;
+      _oops = nullptr;
     }
 
     _oops_count = oops.length();
@@ -129,14 +129,14 @@ void ShenandoahNMethod::detect_reloc_oops(nmethod* nm, GrowableArray<oop*>& oops
     }
 
     oop value = r->oop_value();
-    if (value != NULL) {
+    if (value != nullptr) {
       oop* addr = r->oop_addr();
       shenandoah_assert_correct(addr, value);
       shenandoah_assert_not_in_cset_except(addr, value, ShenandoahHeap::heap()->cancelled_gc());
       shenandoah_assert_not_forwarded(addr, value);
-      // Non-NULL immediate oop found. NULL oops can safely be
+      // Non-null immediate oop found. null oops can safely be
       // ignored since the method will be re-registered if they
-      // are later patched to be non-NULL.
+      // are later patched to be non-null.
       oops.push(addr);
     }
   }
@@ -153,7 +153,7 @@ ShenandoahNMethod* ShenandoahNMethod::for_nmethod(nmethod* nm) {
 
 void ShenandoahNMethod::heal_nmethod(nmethod* nm) {
   ShenandoahNMethod* data = gc_data(nm);
-  assert(data != NULL, "Sanity");
+  assert(data != nullptr, "Sanity");
   assert(data->lock()->owned_by_self(), "Must hold the lock");
 
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
@@ -178,7 +178,7 @@ void ShenandoahNMethod::assert_correct() {
     oop *loc = _oops[c];
     assert(_nm->code_contains((address) loc) || _nm->oops_contains(loc), "nmethod should contain the oop*");
     oop o = RawAccess<>::oop_load(loc);
-    shenandoah_assert_correct_except(loc, o, o == NULL || heap->is_full_gc_move_in_progress());
+    shenandoah_assert_correct_except(loc, o, o == nullptr || heap->is_full_gc_move_in_progress());
   }
 
   oop* const begin = _nm->oops_begin();
@@ -186,7 +186,7 @@ void ShenandoahNMethod::assert_correct() {
   for (oop* p = begin; p < end; p++) {
     if (*p != Universe::non_oop_word()) {
       oop o = RawAccess<>::oop_load(p);
-      shenandoah_assert_correct_except(p, o, o == NULL || heap->is_full_gc_move_in_progress());
+      shenandoah_assert_correct_except(p, o, o == nullptr || heap->is_full_gc_move_in_progress());
     }
   }
 }
@@ -263,7 +263,7 @@ ShenandoahNMethodTable::ShenandoahNMethodTable() :
 }
 
 ShenandoahNMethodTable::~ShenandoahNMethodTable() {
-  assert(_list != NULL, "Sanity");
+  assert(_list != nullptr, "Sanity");
   _list->release();
 }
 
@@ -273,7 +273,7 @@ void ShenandoahNMethodTable::register_nmethod(nmethod* nm) {
 
   ShenandoahNMethod* data = ShenandoahNMethod::gc_data(nm);
 
-  if (data != NULL) {
+  if (data != nullptr) {
     assert(contain(nm), "Must have been registered");
     assert(nm == data->nm(), "Must be same nmethod");
     // Prevent updating a nmethod while concurrent iteration is in progress.
@@ -284,7 +284,7 @@ void ShenandoahNMethodTable::register_nmethod(nmethod* nm) {
     // For a new nmethod, we can safely append it to the list, because
     // concurrent iteration will not touch it.
     data = ShenandoahNMethod::for_nmethod(nm);
-    assert(data != NULL, "Sanity");
+    assert(data != nullptr, "Sanity");
     ShenandoahNMethod::attach_gc_data(nm, data);
     ShenandoahLocker locker(&_lock);
     log_register_nmethod(nm);
@@ -298,14 +298,14 @@ void ShenandoahNMethodTable::unregister_nmethod(nmethod* nm) {
   assert_locked_or_safepoint(CodeCache_lock);
 
   ShenandoahNMethod* data = ShenandoahNMethod::gc_data(nm);
-  assert(data != NULL, "Sanity");
+  assert(data != nullptr, "Sanity");
   log_unregister_nmethod(nm);
   ShenandoahLocker locker(&_lock);
   assert(contain(nm), "Must have been registered");
 
   int idx = index_of(nm);
   assert(idx >= 0 && idx < _index, "Invalid index");
-  ShenandoahNMethod::attach_gc_data(nm, NULL);
+  ShenandoahNMethod::attach_gc_data(nm, nullptr);
   remove(idx);
 }
 
@@ -376,7 +376,7 @@ ShenandoahNMethodTableSnapshot* ShenandoahNMethodTable::snapshot_for_iteration()
 void ShenandoahNMethodTable::finish_iteration(ShenandoahNMethodTableSnapshot* snapshot) {
   assert(CodeCache_lock->owned_by_self(), "Must have CodeCache_lock held");
   assert(iteration_in_progress(), "Why we here?");
-  assert(snapshot != NULL, "No snapshot");
+  assert(snapshot != nullptr, "No snapshot");
   _itr_cnt--;
 
   delete snapshot;
@@ -429,7 +429,7 @@ ShenandoahNMethodList::ShenandoahNMethodList(int size) :
 }
 
 ShenandoahNMethodList::~ShenandoahNMethodList() {
-  assert(_list != NULL, "Sanity");
+  assert(_list != nullptr, "Sanity");
   assert(_ref_count == 0, "Must be");
   FREE_C_HEAP_ARRAY(ShenandoahNMethod*, _list);
 }
@@ -478,7 +478,7 @@ void ShenandoahNMethodTableSnapshot::parallel_blobs_do(CodeBlobClosure *f) {
 
     for (size_t idx = start; idx < end; idx++) {
       ShenandoahNMethod* nmr = list[idx];
-      assert(nmr != NULL, "Sanity");
+      assert(nmr != nullptr, "Sanity");
       if (nmr->is_unregistered()) {
         continue;
       }
@@ -502,7 +502,7 @@ void ShenandoahNMethodTableSnapshot::concurrent_nmethods_do(NMethodClosure* cl) 
 
     for (size_t idx = start; idx < end; idx++) {
       ShenandoahNMethod* data = list[idx];
-      assert(data != NULL, "Should not be NULL");
+      assert(data != nullptr, "Should not be null");
       if (!data->is_unregistered()) {
         cl->do_nmethod(data->nm());
       }
@@ -511,7 +511,7 @@ void ShenandoahNMethodTableSnapshot::concurrent_nmethods_do(NMethodClosure* cl) 
 }
 
 ShenandoahConcurrentNMethodIterator::ShenandoahConcurrentNMethodIterator(ShenandoahNMethodTable* table) :
-  _table(table), _table_snapshot(NULL) {
+  _table(table), _table_snapshot(nullptr) {
 }
 
 void ShenandoahConcurrentNMethodIterator::nmethods_do_begin() {
@@ -520,7 +520,7 @@ void ShenandoahConcurrentNMethodIterator::nmethods_do_begin() {
 }
 
 void ShenandoahConcurrentNMethodIterator::nmethods_do(NMethodClosure* cl) {
-  assert(_table_snapshot != NULL, "Must first call nmethod_do_begin()");
+  assert(_table_snapshot != nullptr, "Must first call nmethod_do_begin()");
   _table_snapshot->concurrent_nmethods_do(cl);
 }
 

@@ -128,9 +128,9 @@ public class ModifiersTest extends KullaTesting {
         assertEval("A.y;", "18");
 
         assertDeclareFail("A.x = 18;",
-                new ExpectedDiagnostic("compiler.err.cant.assign.val.to.final.var", 0, 3, 1, -1, -1, Diagnostic.Kind.ERROR));
+                new ExpectedDiagnostic("compiler.err.cant.assign.val.to.var", 0, 3, 1, -1, -1, Diagnostic.Kind.ERROR));
         assertDeclareFail("A.y = 88;",
-                new ExpectedDiagnostic("compiler.err.cant.assign.val.to.final.var", 0, 3, 1, -1, -1, Diagnostic.Kind.ERROR));
+                new ExpectedDiagnostic("compiler.err.cant.assign.val.to.var", 0, 3, 1, -1, -1, Diagnostic.Kind.ERROR));
         assertActiveKeys();
     }
 

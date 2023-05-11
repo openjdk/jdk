@@ -42,7 +42,7 @@ public class ClassFileVersionTest {
      * compilation. If a particular class becomes non-preview, any
      * currently preview class can be substituted in.
      */
-    private static final Class<?> PREVIEW_API = java.lang.foreign.MemoryAddress.class;
+    private static final Class<?> PREVIEW_API = java.lang.foreign.MemorySegment.class;
     static Method m;
 
     public static void testIt(String className, int expectedResult) throws Exception {
@@ -77,11 +77,11 @@ public class ClassFileVersionTest {
 
         // test primitive array.  should return latest version.
         int ver = (int)m.invoke((new int[3]).getClass());
-        if (ver != 64) {
+        if (ver != latestMajor) {
             int got_minor = (ver >> 16) & LOWER_16;
             int got_major = ver & LOWER_16;
             throw new RuntimeException(
-                "Expected 0:64, but got " + got_minor + ":" + got_major + " for primitive array");
+                "Expected 0:" + latestMajor + ", but got " + got_minor + ":" + got_major + " for primitive array");
         }
 
         // test object array.  should return class file version of component.

@@ -30,6 +30,7 @@ import jdk.internal.misc.VM;
 import jdk.internal.module.ModuleHashes;
 import jdk.internal.module.ModuleReferenceImpl;
 
+import java.lang.constant.ConstantDescs;
 import java.lang.module.ModuleReference;
 import java.lang.module.ResolvedModule;
 import java.util.HashSet;
@@ -262,9 +263,9 @@ public final class StackTraceElement implements java.io.Serializable {
      * Returns the name of the method containing the execution point
      * represented by this stack trace element.  If the execution point is
      * contained in an instance or class initializer, this method will return
-     * the appropriate <i>special method name</i>, {@code <init>} or
-     * {@code <clinit>}, as per Section {@jvms 3.9} of <cite>The Java Virtual
-     * Machine Specification</cite>.
+     * the appropriate <i>special method name</i>, {@value ConstantDescs#INIT_NAME}
+     * or {@value ConstantDescs#CLASS_INIT_NAME}, as per Section {@jvms 3.9}
+     * of <cite>The Java Virtual Machine Specification</cite>.
      *
      * @return the name of the method containing the execution point
      *         represented by this stack trace element.

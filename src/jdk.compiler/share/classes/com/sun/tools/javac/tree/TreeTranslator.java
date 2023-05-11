@@ -189,7 +189,7 @@ public class TreeTranslator extends JCTree.Visitor {
     }
 
     public void visitForeachLoop(JCEnhancedForLoop tree) {
-        tree.var = translate(tree.var);
+        tree.varOrRecordPattern = translate(tree.varOrRecordPattern);
         tree.expr = translate(tree.expr);
         tree.body = translate(tree.body);
         result = tree;
@@ -408,6 +408,13 @@ public class TreeTranslator extends JCTree.Visitor {
     }
 
     public void visitLiteral(JCLiteral tree) {
+        result = tree;
+    }
+
+    public void visitStringTemplate(JCStringTemplate tree) {
+        tree.processor = translate(tree.processor);
+        tree.expressions = translate(tree.expressions);
+
         result = tree;
     }
 

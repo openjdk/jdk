@@ -141,7 +141,6 @@ class vframeArray: public CHeapObj<mtCompiler> {
   */
 
   JavaThread*                  _owner_thread;
-  vframeArray*                 _next;
   frame                        _original;          // the original frame of the deoptee
   frame                        _caller;            // caller of root frame in vframeArray
   frame                        _sender;
@@ -152,14 +151,8 @@ class vframeArray: public CHeapObj<mtCompiler> {
   int                          _frames; // number of javavframes in the array (does not count any adapter)
 
   intptr_t                     _callee_registers[RegisterMap::reg_count];
-  unsigned char                _valid[RegisterMap::reg_count];
 
   vframeArrayElement           _elements[1];   // First variable section.
-
-  void fill_in_element(int index, compiledVFrame* vf);
-
-  bool is_location_valid(int i) const        { return _valid[i] != 0; }
-  void set_location_valid(int i, bool valid) { _valid[i] = valid; }
 
  public:
 
@@ -183,20 +176,12 @@ class vframeArray: public CHeapObj<mtCompiler> {
   // Returns the owner of this vframeArray
   JavaThread* owner_thread() const           { return _owner_thread; }
 
-  // Accessors for next
-  vframeArray* next() const                  { return _next; }
-  void set_next(vframeArray* value)          { _next = value; }
-
   // Accessors for sp
   intptr_t* sp() const                       { return _original.sp(); }
 
   intptr_t* unextended_sp() const;
 
-  address original_pc() const                { return _original.pc(); }
-
   frame original() const                     { return _original; }
-
-  frame caller() const                       { return _caller; }
 
   frame sender() const                       { return _sender; }
 

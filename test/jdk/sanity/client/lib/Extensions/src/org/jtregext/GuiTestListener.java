@@ -1,7 +1,7 @@
 package org.jtregext;
 
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ import org.testng.ITestContext;
 import org.testng.ITestListener;
 import org.testng.ITestResult;
 
-// TODO: Remove this once https://bugs.openjdk.java.net/browse/JDK-8151671 is fixed
+// TODO: Remove this once https://bugs.openjdk.org/browse/JDK-8151671 is fixed
 public class GuiTestListener implements ITestListener {
 
     private void afterTest() {

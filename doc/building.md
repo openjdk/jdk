@@ -7,7 +7,7 @@ the time. They assume that you have installed Git (and Cygwin if running
 on Windows) and cloned the top-level JDK repository that you want to build.
 
  1. [Get the complete source code](#getting-the-source-code): \
-    `git clone https://git.openjdk.java.net/jdk/`
+    `git clone https://git.openjdk.org/jdk/`
 
  2. [Run configure](#running-configure): \
     `bash configure`
@@ -40,14 +40,14 @@ reasonably powerful hardware.
 
 If you just want to use the JDK and not build it yourself, this document is not
 for you. See for instance [OpenJDK installation](
-http://openjdk.java.net/install) for some methods of installing a prebuilt
+http://openjdk.org/install) for some methods of installing a prebuilt
 JDK.
 
 ## Getting the Source Code
 
 Make sure you are getting the correct version. As of JDK 10, the source is no
 longer split into separate repositories so you only need to clone one single
-repository. At the [OpenJDK Git site](https://git.openjdk.java.net/) you
+repository. At the [OpenJDK Git site](https://git.openjdk.org/) you
 can see a list of all available repositories. If you want to build an older version,
 e.g. JDK 11, it is recommended that you get the `jdk11u` repo, which contains
 incremental updates, instead of the `jdk11` repo, which was frozen at JDK 11 GA.
@@ -96,7 +96,7 @@ on where and how to check out the source code.
           Cygwin paths (which are used throughout the JDK build system).
           However, it does not currently work well with the Skara CLI tooling.
           Please see the [Skara wiki on Git clients](
-          https://wiki.openjdk.java.net/display/SKARA/Skara#Skara-Git) for
+          https://wiki.openjdk.org/display/SKARA/Skara#Skara-Git) for
           up-to-date information about the Skara git client support.
 
         * The [Git for Windows](https://gitforwindows.org) client has issues
@@ -162,18 +162,18 @@ This table lists the OS versions used by Oracle when building the JDK. Such
 information is always subject to change, but this table is up to date at the
 time of writing.
 
- Operating system   Vendor/version used
- -----------------  -------------------------------------------------------
- Linux              Oracle Enterprise Linux 6.4 / 7.6
- macOS              Mac OS X 10.13 (High Sierra)
- Windows            Windows Server 2012 R2
+| Operating system  | Vendor/version used                |
+| ----------------- | ---------------------------------- |
+| Linux             | Oracle Enterprise Linux 6.4 / 7.6  |
+| macOS             | Mac OS X 10.13 (High Sierra)       |
+| Windows           | Windows Server 2012 R2             |
 
 The double version numbers for Linux are due to the hybrid model
 used at Oracle, where header files and external libraries from an older version
 are used when building on a more modern version of the OS.
 
 The Build Group has a wiki page with [Supported Build Platforms](
-https://wiki.openjdk.java.net/display/Build/Supported+Build+Platforms). From
+https://wiki.openjdk.org/display/Build/Supported+Build+Platforms). From
 time to time, this is updated by contributors to list successes or failures of
 building on different platforms.
 
@@ -303,7 +303,7 @@ sudo apk add build-base bash grep zip
 ### AIX
 
 Please consult the AIX section of the [Supported Build Platforms](
-https://wiki.openjdk.java.net/display/Build/Supported+Build+Platforms) OpenJDK
+https://wiki.openjdk.org/display/Build/Supported+Build+Platforms) OpenJDK
 Build Wiki page for details about which versions of AIX are supported.
 
 ## Native Compiler (Toolchain) Requirements
@@ -311,14 +311,17 @@ Build Wiki page for details about which versions of AIX are supported.
 Large portions of the JDK consists of native code, that needs to be compiled to
 be able to run on the target platform. In theory, toolchain and operating
 system should be independent factors, but in practice there's more or less a
-one-to-one correlation between target operating system and toolchain.
+one-to-one correlation between target operating system and toolchain. There are
+ongoing efforts to loosen this strict coupling between compiler and operating
+system (see [JDK-8288293](https://bugs.openjdk.org/browse/JDK-8288293)) but it
+will likely be a very long time before this goal can be realized.
 
- Operating system   Supported toolchain
- ------------------ -------------------------
- Linux              gcc, clang
- macOS              Apple Xcode (using clang)
- AIX                IBM XL C/C++
- Windows            Microsoft Visual Studio
+| Operating system   | Supported toolchain       |
+| ------------------ | ------------------------- |
+| Linux              | gcc, clang                |
+| macOS              | Apple Xcode (using clang) |
+| AIX                | IBM XL C/C++              |
+| Windows            | Microsoft Visual Studio   |
 
 Please see the individual sections on the toolchains for version
 recommendations. As a reference, these versions of the toolchains are used, at
@@ -327,11 +330,11 @@ possible to compile the JDK with both older and newer versions, but the closer
 you stay to this list, the more likely you are to compile successfully without
 issues.
 
- Operating system   Toolchain version
- ------------------ -------------------------------------------------------
- Linux              gcc 11.2.0
- macOS              Apple Xcode 10.1 (using clang 10.0.0)
- Windows            Microsoft Visual Studio 2022 update 17.1.0
+| Operating system   | Toolchain version                          |
+| ------------------ | ------------------------------------------ |
+| Linux              | gcc 11.2.0                                 |
+| macOS              | Apple Xcode 10.1 (using clang 10.0.0)      |
+| Windows            | Microsoft Visual Studio 2022 update 17.1.0 |
 
 All compilers are expected to be able to compile to the C99 language standard,
 as some C99 features are used in the source code. Microsoft Visual Studio
@@ -359,20 +362,20 @@ To use clang instead of gcc on Linux, use `--with-toolchain-type=clang`.
 
 The oldest supported version of Xcode is 8.
 
-You will need the Xcode command lines developers tools to be able to build
-the JDK. (Actually, *only* the command lines tools are needed, not the IDE.)
+You will need the Xcode command line developer tools to be able to build
+the JDK. (Actually, *only* the command line tools are needed, not the IDE.)
 The simplest way to install these is to run:
 ```
 xcode-select --install
 ```
 
-It is advisable to keep an older version of Xcode for building the JDK when
-updating Xcode. This [blog page](
-http://iosdevelopertips.com/xcode/install-multiple-versions-of-xcode.html) has
-good suggestions on managing multiple Xcode versions. To use a specific version
-of Xcode, use `xcode-select -s` before running `configure`, or use
-`--with-toolchain-path` to point to the version of Xcode to use, e.g.
-`configure --with-toolchain-path=/Applications/Xcode8.app/Contents/Developer/usr/bin`
+When updating Xcode, it is advisable to keep an older version for building the JDK.
+To use a specific version of Xcode you have multiple options:
+
+  * Use `xcode-select -s` before running `configure`, e.g. `xcode-select -s /Applications/Xcode13.1.app`. The drawback is that the setting
+    is system wide and you may have to revert it after an OpenJDK build.
+  * Use configure option `--with-xcode-path`, e.g. `configure --with-xcode-path=/Applications/Xcode13.1.app`
+    This allows using a specific Xcode version for an OpenJDK build, independently of the active Xcode version by `xcode-select`.
 
 If you have recently (inadvertently) updated your OS and/or Xcode version, and
 the JDK can no longer be built, please see the section on [Problems with the
@@ -397,7 +400,7 @@ be because of [spaces in path](#spaces-in-path).
 ### IBM XL C/C++
 
 Please consult the AIX section of the [Supported Build Platforms](
-https://wiki.openjdk.java.net/display/Build/Supported+Build+Platforms) OpenJDK
+https://wiki.openjdk.org/display/Build/Supported+Build+Platforms) OpenJDK
 Build Wiki page for details about which versions of XLC are supported.
 
 
@@ -848,26 +851,27 @@ Suggestions for Advanced Users](#hints-and-suggestions-for-advanced-users) and
 
 ## Running Tests
 
-Most of the JDK tests are using the [JTReg](http://openjdk.java.net/jtreg)
+Most of the JDK tests are using the [JTReg](http://openjdk.org/jtreg)
 test framework. Make sure that your configuration knows where to find your
 installation of JTReg. If this is not picked up automatically, use the
 `--with-jtreg=<path to jtreg home>` option to point to the JTReg framework.
 Note that this option should point to the JTReg home, i.e. the top directory,
 containing `lib/jtreg.jar` etc.
 
-The [Adoption Group](https://wiki.openjdk.java.net/display/Adoption) provides
+The [Adoption Group](https://wiki.openjdk.org/display/Adoption) provides
 recent builds of jtreg [here](
-https://ci.adoptopenjdk.net/view/Dependencies/job/dependency_pipeline/lastSuccessfulBuild/artifact/jtreg/).
+https://ci.adoptium.net/view/Dependencies/job/dependency_pipeline/lastSuccessfulBuild/artifact/jtreg/).
 Download the latest `.tar.gz` file, unpack it, and point `--with-jtreg` to the
 `jtreg` directory that you just unpacked.
 
-Building of Hotspot Gtest suite requires the source code of Google Test framework.
-The top directory, which contains both `googletest` and `googlemock`
-directories, should be specified via `--with-gtest`.
-The supported version of Google Test is 1.8.1, whose source code can be obtained:
+Building of Hotspot Gtest suite requires the source code of Google
+Test framework.  The top directory, which contains both `googletest`
+and `googlemock` directories, should be specified via `--with-gtest`.
+The minimum supported version of Google Test is 1.13.0, whose source
+code can be obtained:
 
- * by downloading and unpacking the source bundle from [here](https://github.com/google/googletest/releases/tag/release-1.8.1)
- * or by checking out `release-1.8.1` tag of `googletest` project: `git clone -b release-1.8.1 https://github.com/google/googletest`
+ * by downloading and unpacking the source bundle from [here](https://github.com/google/googletest/releases/tag/v1.13.0)
+ * or by checking out `v1.13.0` tag of `googletest` project: `git clone -b v1.13.0 https://github.com/google/googletest`
 
 To execute the most basic tests (tier 1), use:
 ```
@@ -966,14 +970,14 @@ https://sourceware.org/autobook/autobook/autobook_17.html). If no
 targets are given, a native toolchain for the current platform will be
 created. Currently, at least the following targets are known to work:
 
- Supported devkit targets
- -------------------------
- x86_64-linux-gnu
- aarch64-linux-gnu
- arm-linux-gnueabihf
- ppc64-linux-gnu
- ppc64le-linux-gnu
- s390x-linux-gnu
+| Supported devkit targets |
+| ------------------------ |
+| x86_64-linux-gnu         |
+| aarch64-linux-gnu        |
+| arm-linux-gnueabihf      |
+| ppc64-linux-gnu          |
+| ppc64le-linux-gnu        |
+| s390x-linux-gnu          |
 
 `BASE_OS` must be one of "OEL6" for Oracle Enterprise Linux 6 or
 "Fedora" (if not specified "OEL6" will be the default). If the base OS
@@ -1143,7 +1147,7 @@ Note that X11 is needed even if you only want to build a headless JDK.
 ### Cross compiling with Debian sysroots
 
 Fortunately, you can create sysroots for foreign architectures with tools
-provided by your OS. On Debian/Ubuntu systems, one could use `qemu-deboostrap` to
+provided by your OS. On Debian/Ubuntu systems, one could use `debootstrap` to
 create the *target* system chroot, which would have the native libraries and headers
 specific to that *target* system. After that, we can use the cross-compiler on the *build*
 system, pointing into chroot to get the build dependencies right. This allows building
@@ -1158,7 +1162,7 @@ For example, cross-compiling to AArch64 from x86_64 could be done like this:
 
   * Create chroot on the *build* system, configuring it for *target* system:
     ```
-    sudo qemu-debootstrap \
+    sudo debootstrap \
       --arch=arm64 \
       --verbose \
       --include=fakeroot,symlinks,build-essential,libx11-dev,libxext-dev,libxrender-dev,libxrandr-dev,libxtst-dev,libxt-dev,libcups2-dev,libfontconfig1-dev,libasound2-dev,libfreetype6-dev,libpng-dev,libffi-dev \
@@ -1166,6 +1170,8 @@ For example, cross-compiling to AArch64 from x86_64 could be done like this:
       buster \
       ~/sysroot-arm64 \
       http://httpredir.debian.org/debian/
+    # If the target architecture is `riscv64`,
+    # the path should be `debian-ports` instead of `debian`.
     ```
 
   * Make sure the symlinks inside the newly created chroot point to proper locations:
@@ -1198,21 +1204,22 @@ it might require a little nudge with:
 
 Architectures that are known to successfully cross-compile like this are:
 
-  Target        Debian tree  Debian arch   `--openjdk-target=...`   `--with-jvm-variants=...`
-  ------------  ------------ ------------- ------------------------ --------------
-  x86           buster       i386          i386-linux-gnu           (all)
-  arm           buster       armhf         arm-linux-gnueabihf      (all)
-  aarch64       buster       arm64         aarch64-linux-gnu        (all)
-  ppc64le       buster       ppc64el       powerpc64le-linux-gnu    (all)
-  s390x         buster       s390x         s390x-linux-gnu          (all)
-  mipsle        buster       mipsel        mipsel-linux-gnu         zero
-  mips64le      buster       mips64el      mips64el-linux-gnueabi64 zero
-  armel         buster       arm           arm-linux-gnueabi        zero
-  ppc           sid          powerpc       powerpc-linux-gnu        zero
-  ppc64be       sid          ppc64         powerpc64-linux-gnu      (all)
-  m68k          sid          m68k          m68k-linux-gnu           zero
-  alpha         sid          alpha         alpha-linux-gnu          zero
-  sh4           sid          sh4           sh4-linux-gnu            zero
+| Target       | Debian tree  | Debian arch   | `--openjdk-target=...`   | `--with-jvm-variants=...` |
+| ------------ | ------------ | ------------- | ------------------------ | ------------------------- |
+| x86          | buster       | i386          | i386-linux-gnu           | (all)                     |
+| arm          | buster       | armhf         | arm-linux-gnueabihf      | (all)                     |
+| aarch64      | buster       | arm64         | aarch64-linux-gnu        | (all)                     |
+| ppc64le      | buster       | ppc64el       | powerpc64le-linux-gnu    | (all)                     |
+| s390x        | buster       | s390x         | s390x-linux-gnu          | (all)                     |
+| mipsle       | buster       | mipsel        | mipsel-linux-gnu         | zero                      |
+| mips64le     | buster       | mips64el      | mips64el-linux-gnueabi64 | zero                      |
+| armel        | buster       | arm           | arm-linux-gnueabi        | zero                      |
+| ppc          | sid          | powerpc       | powerpc-linux-gnu        | zero                      |
+| ppc64be      | sid          | ppc64         | powerpc64-linux-gnu      | (all)                     |
+| m68k         | sid          | m68k          | m68k-linux-gnu           | zero                      |
+| alpha        | sid          | alpha         | alpha-linux-gnu          | zero                      |
+| sh4          | sid          | sh4           | sh4-linux-gnu            | zero                      |
+| riscv64      | sid          | riscv64       | riscv64-linux-gnu        | (all)                     |
 
 ### Building for ARM/aarch64
 
@@ -1221,6 +1228,44 @@ useful to set the ABI profile. A number of pre-defined ABI profiles are
 available using `--with-abi-profile`: arm-vfp-sflt, arm-vfp-hflt, arm-sflt,
 armv5-vfp-sflt, armv6-vfp-hflt. Note that soft-float ABIs are no longer
 properly supported by the JDK.
+
+### Building for RISC-V
+
+The RISC-V community provides a basic
+[GNU compiler toolchain](https://github.com/riscv-collab/riscv-gnu-toolchain),
+but the [external libraries](#External-Library-Requirements) required by OpenJDK
+complicate the building process. The placeholder `<toolchain-installed-path>`
+shown below is the path where you want to install the toolchain.
+
+  * Install the RISC-V GNU compiler toolchain:
+    ```
+    git clone --recursive https://github.com/riscv-collab/riscv-gnu-toolchain
+    cd riscv-gnu-toolchain
+    ./configure --prefix=<toolchain-installed-path>
+    make linux
+    export PATH=<toolchain-installed-path>/bin:$PATH
+    ```
+
+  * Cross-compile all the required libraries:
+    ```
+    # An example for libffi
+    git clone https://github.com/libffi/libffi
+    cd libffi
+    ./configure --host=riscv64-unknown-linux-gnu --prefix=<toolchain-installed-path>/sysroot/usr
+    make
+    make install
+    ```
+
+  * Configure and build OpenJDK:
+    ```
+    bash configure \
+      --with-boot-jdk=$BOOT_JDK \
+      --openjdk-target=riscv64-linux-gnu \
+      --with-sysroot=<toolchain-installed-path>/sysroot \
+      --with-toolchain-path=<toolchain-installed-path>/bin \
+      --with-extra-path=<toolchain-installed-path>/bin
+    make images
+    ```
 
 ### Building for musl
 
@@ -1330,12 +1375,12 @@ it.
 To use, setup an icecc network, and install icecc on the build machine. Then
 run `configure` using `--enable-icecc`.
 
-### Using sjavac
+### Using the javac server
 
-To speed up compilation of Java code, especially during incremental compilations,
-the sjavac server is automatically enabled in the configuration step by default.
-To explicitly enable or disable sjavac, use either `--enable-javac-server`
-or `--disable-javac-server`.
+To speed up compilation of Java code, especially during incremental
+compilations, the javac server is automatically enabled in the configuration
+step by default. To explicitly enable or disable the javac server, use either
+`--enable-javac-server` or `--disable-javac-server`.
 
 ### Building the Right Target
 
@@ -1548,7 +1593,7 @@ You can run `fsutil file setshortname` in `cmd` on certain directories, such as
 
 If none of the suggestions in this document helps you, or if you find what you
 believe is a bug in the build system, please contact the Build Group by sending
-a mail to [build-dev@openjdk.java.net](mailto:build-dev@openjdk.java.net).
+a mail to [build-dev@openjdk.org](mailto:build-dev@openjdk.org).
 Please include the relevant parts of the configure and/or build log.
 
 If you need general help or advice about developing for the JDK, you can also
@@ -1958,7 +2003,7 @@ To analyze build performance, run with `LOG=trace` and check `$BUILD/build-trace
 Use `JOBS=1` to avoid parallelism.
 
 Please check that you adhere to the [Code Conventions for the Build System](
-http://openjdk.java.net/groups/build/doc/code-conventions.html) before
+http://openjdk.org/groups/build/doc/code-conventions.html) before
 submitting patches.
 
 ## Contributing to the JDK
@@ -1971,19 +2016,19 @@ However, please bear in mind that the JDK is a massive project, and we must ask
 you to follow our rules and guidelines to be able to accept your contribution.
 
 The official place to start is the ['How to contribute' page](
-http://openjdk.java.net/contribute/). There is also an official (but somewhat
+http://openjdk.org/contribute/). There is also an official (but somewhat
 outdated and skimpy on details) [Developer's Guide](
-http://openjdk.java.net/guide/).
+http://openjdk.org/guide/).
 
 If this seems overwhelming to you, the Adoption Group is there to help you! A
 good place to start is their ['New Contributor' page](
-https://wiki.openjdk.java.net/display/Adoption/New+Contributor), or start
+https://wiki.openjdk.org/display/Adoption/New+Contributor), or start
 reading the comprehensive [Getting Started Kit](
 https://adoptopenjdk.gitbooks.io/adoptopenjdk-getting-started-kit/en/). The
 Adoption Group will also happily answer any questions you have about
 contributing. Contact them by [mail](
-http://mail.openjdk.java.net/mailman/listinfo/adoption-discuss) or [IRC](
-http://openjdk.java.net/irc/).
+http://mail.openjdk.org/mailman/listinfo/adoption-discuss) or [IRC](
+http://openjdk.org/irc/).
 
 ## Editing this document
 

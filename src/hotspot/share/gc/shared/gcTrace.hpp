@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
 #include "gc/shared/gcId.hpp"
 #include "gc/shared/gcName.hpp"
 #include "gc/shared/gcWhen.hpp"
+#include "gc/shared/workerThread.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/referenceType.hpp"
 #include "utilities/macros.hpp"
@@ -84,14 +85,14 @@ class SharedGCInfo {
 class ParallelOldGCInfo {
   void* _dense_prefix;
  public:
-  ParallelOldGCInfo() : _dense_prefix(NULL) {}
+  ParallelOldGCInfo() : _dense_prefix(nullptr) {}
   void report_dense_prefix(void* addr) {
     _dense_prefix = addr;
   }
   void* dense_prefix() const { return _dense_prefix; }
 };
 
-class GCTracer : public ResourceObj {
+class GCTracer {
  protected:
   SharedGCInfo _shared_gc_info;
 
@@ -102,7 +103,7 @@ class GCTracer : public ResourceObj {
   void report_gc_heap_summary(GCWhen::Type when, const GCHeapSummary& heap_summary) const;
   void report_metaspace_summary(GCWhen::Type when, const MetaspaceSummary& metaspace_summary) const;
   void report_gc_reference_stats(const ReferenceProcessorStats& rp) const;
-  void report_object_count_after_gc(BoolObjectClosure* object_filter) NOT_SERVICES_RETURN;
+  void report_object_count_after_gc(BoolObjectClosure* object_filter, WorkerThreads* workers) NOT_SERVICES_RETURN;
   void report_cpu_time_event(double user_time, double system_time, double real_time) const;
 
  protected:
@@ -196,7 +197,7 @@ class ParallelOldTracer : public OldGCTracer {
   void send_parallel_old_event() const;
 };
 
-class SerialOldTracer : public OldGCTracer {
+class SerialOldTracer : public OldGCTracer, public CHeapObj<mtGC> {
  public:
   SerialOldTracer() : OldGCTracer(SerialOld) {}
 };
@@ -206,7 +207,7 @@ class ParallelScavengeTracer : public YoungGCTracer {
   ParallelScavengeTracer() : YoungGCTracer(ParallelScavenge) {}
 };
 
-class DefNewTracer : public YoungGCTracer {
+class DefNewTracer : public YoungGCTracer, public CHeapObj<mtGC> {
  public:
   DefNewTracer() : YoungGCTracer(DefNew) {}
 };

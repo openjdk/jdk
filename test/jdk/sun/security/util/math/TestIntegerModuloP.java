@@ -302,7 +302,7 @@ public class TestIntegerModuloP {
             if (elem.test.getField() instanceof IntegerPolynomial) {
                 IntegerPolynomial field =
                     (IntegerPolynomial) elem.test.getField();
-                int numAdds = field.getMaxAdds();
+                int numAdds = 10;   // check for addition overflow
                 for (int j = 1; j < numAdds; j++) {
                     ElemFunction addFunc3 = ADD_FUNCTIONS.
                         get(random.nextInt(ADD_FUNCTIONS.size()));

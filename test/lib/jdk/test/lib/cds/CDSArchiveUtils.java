@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,6 +53,7 @@ public class CDSArchiveUtils {
     private static int offsetCrc;                  // offset of GenericCDSFileMapHeader::_crc
     private static int offsetVersion;              // offset of GenericCDSFileMapHeader::_version
     private static int offsetHeaderSize;           // offset of GenericCDSFileMapHeader::_header_size
+    private static int offsetCommonAppClasspathPrefixSize;// offset of GenericCDSFileMapHeader::_common_app_classpath_size
     private static int offsetBaseArchiveNameOffset;// offset of GenericCDSFileMapHeader::_base_archive_name_offset
     private static int offsetBaseArchiveNameSize;  // offset of GenericCDSFileMapHeader::_base_archive_name_size
     private static int offsetJvmIdent;             // offset of FileMapHeader::_jvm_ident
@@ -74,10 +75,7 @@ public class CDSArchiveUtils {
         "rw",          // ReadWrite
         "ro",          // ReadOnly
         "bm",          // relocation bitmaps
-        "first_closed_archive",
-        "last_closed_archive",
-        "first_open_archive",
-        "last_open_archive"
+        "hp",          // heap
     };
     private static int num_regions = shared_region_name.length;
 
@@ -93,12 +91,13 @@ public class CDSArchiveUtils {
             offsetCrc = wb.getCDSOffsetForName("GenericCDSFileMapHeader::_crc");
             offsetVersion = wb.getCDSOffsetForName("GenericCDSFileMapHeader::_version");
             offsetHeaderSize = wb.getCDSOffsetForName("GenericCDSFileMapHeader::_header_size");
+            offsetCommonAppClasspathPrefixSize = wb.getCDSOffsetForName("FileMapHeader::_common_app_classpath_prefix_size");
             offsetBaseArchiveNameOffset = wb.getCDSOffsetForName("GenericCDSFileMapHeader::_base_archive_name_offset");
             offsetBaseArchiveNameSize = wb.getCDSOffsetForName("GenericCDSFileMapHeader::_base_archive_name_size");
             offsetJvmIdent = wb.getCDSOffsetForName("FileMapHeader::_jvm_ident");
             spOffsetCrc = wb.getCDSOffsetForName("CDSFileMapRegion::_crc");
             spUsedOffset = wb.getCDSOffsetForName("CDSFileMapRegion::_used") - spOffsetCrc;
-            spOffset = wb.getCDSOffsetForName("CDSFileMapHeaderBase::_space[0]") - offsetMagic;
+            spOffset = wb.getCDSOffsetForName("CDSFileMapHeaderBase::_regions[0]") - offsetMagic;
             // constants
             staticMagic = wb.getCDSConstantForName("static_magic");
             dynamicMagic = wb.getCDSConstantForName("dynamic_magic");
@@ -131,6 +130,7 @@ public class CDSArchiveUtils {
     public static int offsetCrc()                   { return offsetCrc;                   }
     public static int offsetVersion()               { return offsetVersion;               }
     public static int offsetHeaderSize()            { return offsetHeaderSize;            }
+    public static int offsetCommonAppClasspathPrefixSize() { return offsetCommonAppClasspathPrefixSize; }
     public static int offsetBaseArchiveNameOffset() { return offsetBaseArchiveNameOffset; }
     public static int offsetBaseArchiveNameSize()   { return offsetBaseArchiveNameSize;   }
     public static int offsetJvmIdent()              { return offsetJvmIdent;              }
@@ -156,6 +156,10 @@ public class CDSArchiveUtils {
     public static long fileHeaderSizeAligned(File jsaFile) throws Exception {
         long size = fileHeaderSize(jsaFile);
         return alignUpWithAlignment(size);
+    }
+
+    public static int commonAppClasspathPrefixSize(File jsaFile) throws Exception {
+        return (int)readInt(jsaFile, offsetCommonAppClasspathPrefixSize, 4);
     }
 
     public static int baseArchiveNameOffset(File jsaFile) throws Exception {

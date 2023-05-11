@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,171 +23,172 @@
 
 package jdk.jfr.api.event;
 
+import java.nio.file.Path;
 import java.time.Duration;
+import java.util.Set;
 
 import jdk.jfr.Event;
 import jdk.jfr.Recording;
-import jdk.test.lib.Asserts;
+import jdk.jfr.SettingControl;
+import jdk.jfr.SettingDefinition;
+import jdk.jfr.consumer.RecordingFile;
+
+import static jdk.test.lib.Asserts.assertTrue;
+import static jdk.test.lib.Asserts.assertFalse;
 
 /**
  * @test
- * @summary Test enable/disable event and verify recording has expected events.
+ * @summary Test jdk.jfr.Event::shouldCommit()
  * @key jfr
  * @requires vm.hasJFR
  * @library /test/lib
- * @run main/othervm -Xlog:jfr+event+setting=trace jdk.jfr.api.event.TestShouldCommit
+ * @run main/othervm jdk.jfr.api.event.TestShouldCommit
  */
-
 public class TestShouldCommit {
 
-    public static void main(String[] args) throws Exception {
-        Recording rA = new Recording();
-
-        verifyShouldCommitFalse(); // No active recordings
-
-        rA.start();
-        rA.enable(MyEvent.class).withoutThreshold(); // recA=all
-        verifyShouldCommitTrue();
-
-        setThreshold(rA, 100); // recA=100
-        verifyThreshold(100);
-
-        setThreshold(rA, 200); // recA=200
-        verifyThreshold(200);
-
-        Recording rB = new Recording();
-        verifyThreshold(200);  // recA=200, recB=not started
-
-        rB.start();
-        verifyThreshold(200);  // recA=200, recB=not specified, settings from recA is used.
-
-        setThreshold(rB, 100); // recA=200, recB=100
-        verifyThreshold(100);
-
-        setThreshold(rB, 300); // recA=200, recB=300
-        verifyThreshold(200);
-
-        rA.disable(MyEvent.class); // recA=disabled, recB=300
-
-        verifyThreshold(300);
-
-        rB.disable(MyEvent.class); // recA=disabled, recB=disabled
-        verifyShouldCommitFalse();
-
-        setThreshold(rA, 200); // recA=200, recB=disabled
-        verifyThreshold(200);
-
-        rB.enable(MyEvent.class).withoutThreshold(); // recA=200, recB=all
-        verifyShouldCommitTrue();
-
-        setThreshold(rB, 100); // recA=200, recB=100
-        verifyThreshold(100);
-
-        rB.stop(); // recA=200, recB=stopped
-        verifyThreshold(200);
-
-        rA.stop(); // recA=stopped, recB=stopped
-        verifyShouldCommitFalse();
-
-        rA.close();
-        rB.close();
-
-        verifyShouldCommitFalse();
+    private static class CatEvent extends Event {
     }
 
-    private static void setThreshold(Recording r, long millis) {
-        r.enable(MyEvent.class).withThreshold(Duration.ofMillis(millis));
+    private static class DogEvent extends Event {
     }
 
-    private static void verifyThreshold(long threshold) throws Exception {
-        // Create 2 events, with different sleep time between begin() and end()
-        // First event ends just before threshold, the other just after.
-        verifyThreshold(threshold-5, threshold);
-        verifyThreshold(threshold+5, threshold);
-    }
+    private static class BirdEvent extends Event {
+        public boolean isFlying;
 
-    private static void verifyThreshold(long sleepMs, long thresholdMs) throws Exception {
-        MyEvent event = new MyEvent();
-
-        long beforeStartNanos = System.nanoTime();
-        event.begin();
-        long afterStartNanos = System.nanoTime();
-
-        Thread.sleep(sleepMs);
-
-        long beforeStopNanos = System.nanoTime();
-        event.end();
-        long afterStopNanos = System.nanoTime();
-
-        boolean actualShouldCommit = event.shouldCommit();
-
-        final long safetyMarginNanos = 2000000; // Allow an error of 2 ms. May have to be tuned.
-
-        //Duration of event has been at least minDurationMicros
-        long minDurationMicros = (beforeStopNanos - afterStartNanos - safetyMarginNanos) / 1000;
-        //Duration of event has been at most maxDurationMicros
-        long maxDurationMicros = (afterStopNanos - beforeStartNanos + safetyMarginNanos) / 1000;
-        Asserts.assertLessThanOrEqual(minDurationMicros, maxDurationMicros, "Wrong min/max duration. Test error.");
-
-        long thresholdMicros = thresholdMs * 1000;
-        Boolean shouldCommit = null;
-        if (minDurationMicros > thresholdMicros) {
-            shouldCommit = new Boolean(true);  // shouldCommit() must be true
-        } else if (maxDurationMicros < thresholdMicros) {
-            shouldCommit = new Boolean(false); // shouldCommit() must be false
-        } else {
-            // Too close to call. No checks are done since we are not sure of expected shouldCommit().
+        @SettingDefinition
+        public boolean fly(FlySetting control) {
+            return control.shouldFly() == isFlying;
         }
+    }
 
-        System.out.printf(
-            "threshold=%d, duration=[%d-%d], shouldCommit()=%b, expected=%s%n",
-            thresholdMicros, minDurationMicros, maxDurationMicros, actualShouldCommit,
-            (shouldCommit!=null ? shouldCommit : "too close to call"));
+    private static class FlySetting extends SettingControl {
+        private boolean shouldFly;
 
-        try {
-            if (shouldCommit != null) {
-                Asserts.assertEquals(shouldCommit.booleanValue(), actualShouldCommit, "Wrong shouldCommit()");
+        @Override
+        public String combine(Set<String> settingValues) {
+            for (String s : settingValues) {
+                if ("true".equals(s)) {
+                    return "true";
+                }
             }
-        } catch (Exception e) {
-            System.out.println("Unexpected value of shouldCommit(). Searching for active threshold...");
-            searchThreshold(thresholdMs, 2000+thresholdMs);
-            throw e;
+            return "false";
+        }
+
+        public boolean shouldFly() {
+            return shouldFly;
+        }
+
+        @Override
+        public void setValue(String settingValue) {
+            shouldFly = "true".equals(settingValue);
+        }
+
+        @Override
+        public String getValue() {
+            return String.valueOf(shouldFly);
         }
     }
 
-    // Sleeps until shouldCommit() is true, or give up. Used for logging.
-    private static void searchThreshold(long expectedMs, long maxMs) throws Exception {
-        long start = System.nanoTime();
-        long stop = start + maxMs * 1000000;
+    public static void main(String[] args) throws Exception {
+        testEnablement();
+        testThreshold();
+        testCustomSetting();
+        testWithoutEnd();
+        testCommit();
+    }
 
-        MyEvent event = new MyEvent();
-        event.begin();
-        event.end();
+    private static void testEnablement() throws Exception {
+        DogEvent b = new DogEvent();
+        assertFalse(b.shouldCommit(), "Expected false before recording is started");
 
-        while (!event.shouldCommit() && System.nanoTime() < stop) {
+        try (Recording r = new Recording()) {
+            r.enable(CatEvent.class);
+            r.disable(DogEvent.class);
+            r.start();
+
+            CatEvent c = new CatEvent();
+            assertTrue(c.shouldCommit(), "Expected true for enabled event");
+
+            DogEvent d = new DogEvent();
+            assertFalse(d.shouldCommit(), "Expected false for disabled event");
+        }
+
+        CatEvent c = new CatEvent();
+        assertFalse(c.shouldCommit(), "Expected false after recording is stopped");
+    }
+
+    private static void testThreshold() throws Exception {
+        try (Recording r = new Recording()) {
+            r.enable(CatEvent.class).withThreshold(Duration.ofNanos(0));
+            r.enable(DogEvent.class).withThreshold(Duration.ofDays(1));
+            r.start();
+
+            CatEvent c = new CatEvent();
+            c.begin();
             Thread.sleep(1);
-            event.end();
+            c.end();
+            assertTrue(c.shouldCommit(), "Expected true if above threshold");
+
+            DogEvent d = new DogEvent();
+            d.begin();
+            Thread.sleep(1);
+            d.end();
+            assertFalse(d.shouldCommit(), "Expected false if below threshold");
         }
-        long durationMicros = (System.nanoTime() - start) / 1000;
-        long expectedMicros = expectedMs * 1000;
-        System.out.printf("shouldCommit()=%b after %,d ms, expected %,d%n", event.shouldCommit(), durationMicros, expectedMicros);
     }
 
-    private static void verifyShouldCommitFalse() {
-        MyEvent event = new MyEvent();
-        event.begin();
-        event.end();
-        Asserts.assertFalse(event.shouldCommit(), "shouldCommit() expected false");
+    private static void testCustomSetting() throws Exception {
+        try (Recording r = new Recording()) {
+            r.enable(BirdEvent.class).with("fly", "true");
+            r.start();
+            BirdEvent b1 = new BirdEvent();
+            b1.isFlying = false;
+            b1.begin();
+            b1.end();
+            assertFalse(b1.shouldCommit(), "Expected false if rejected by custom setting");
+
+            BirdEvent b2 = new BirdEvent();
+            b2.isFlying = true;
+            b2.begin();
+            b2.end();
+            assertTrue(b2.shouldCommit(), "Expected true if accepted by custom setting");
+        }
     }
 
-    private static void verifyShouldCommitTrue() {
-        MyEvent event = new MyEvent();
-        event.begin();
-        event.end();
-        Asserts.assertTrue(event.shouldCommit(), "shouldCommit() expected true");
+    private static void testWithoutEnd() throws Exception {
+        try (Recording r = new Recording()) {
+            r.enable(CatEvent.class).withThreshold(Duration.ofDays(0));
+            r.enable(DogEvent.class).withThreshold(Duration.ofDays(1));
+            r.start();
+
+            CatEvent c = new CatEvent();
+            c.begin();
+            Thread.sleep(1);
+            assertTrue(c.shouldCommit(), "Expected true when above threshold and end() not invoked");
+
+            DogEvent d = new DogEvent();
+            d.begin();
+            Thread.sleep(1);
+            assertFalse(d.shouldCommit(), "Expected false when below threshold and end() not invoked");
+        }
     }
 
-    private static class MyEvent extends Event {
+    private static void testCommit() throws Exception {
+        try (Recording r = new Recording()) {
+            r.enable(CatEvent.class);
+            r.start();
+            CatEvent c = new CatEvent();
+            c.begin();
+            Thread.sleep(1);
+            c.end();
+            if (c.shouldCommit()) {
+                c.commit();
+            }
+            r.stop();
+            Path file = Path.of("dump.jfr");
+            r.dump(file);
+            boolean hasEvent = RecordingFile.readAllEvents(file).size() > 0;
+            assertTrue(hasEvent, "Expected event when using commit() after shouldCommit()");
+        }
     }
-
 }

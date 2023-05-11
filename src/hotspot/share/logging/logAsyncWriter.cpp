@@ -116,7 +116,7 @@ AsyncLogWriter::AsyncLogWriter()
 
 void AsyncLogWriter::write() {
   ResourceMark rm;
-  AsyncLogMap<ResourceObj::RESOURCE_AREA> snapshot;
+  AsyncLogMap<AnyObj::RESOURCE_AREA> snapshot;
 
   // lock protection. This guarantees I/O jobs don't block logsites.
   {
@@ -192,10 +192,10 @@ void AsyncLogWriter::initialize() {
   AsyncLogWriter* self = new AsyncLogWriter();
   if (self->_initialized) {
     Atomic::release_store_fence(&AsyncLogWriter::_instance, self);
-    // All readers of _instance after the fence see non-NULL.
+    // All readers of _instance after the fence see non-nullptr.
     // We use LogOutputList's RCU counters to ensure all synchronous logsites have completed.
     // After that, we start AsyncLog Thread and it exclusively takes over all logging I/O.
-    for (LogTagSet* ts = LogTagSet::first(); ts != NULL; ts = ts->next()) {
+    for (LogTagSet* ts = LogTagSet::first(); ts != nullptr; ts = ts->next()) {
       ts->wait_until_no_readers();
     }
     os::start_thread(self);

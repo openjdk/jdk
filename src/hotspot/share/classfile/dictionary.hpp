@@ -41,7 +41,6 @@ template <typename T> class GrowableArray;
 class DictionaryEntry;
 
 class Dictionary : public CHeapObj<mtClass> {
-  bool _resizable;
   int _number_of_entries;
 
   class Config {
@@ -63,7 +62,7 @@ class Dictionary : public CHeapObj<mtClass> {
   int table_size() const;
 
 public:
-  Dictionary(ClassLoaderData* loader_data, size_t table_size, bool resizable = false);
+  Dictionary(ClassLoaderData* loader_data, size_t table_size);
   ~Dictionary();
 
   void add_klass(JavaThread* current, Symbol* class_name, InstanceKlass* obj);

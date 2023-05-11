@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -140,7 +140,7 @@ public final class MetadataLoader {
     }
 
     private final List<TypeElement> types;
-    private final Map<String, List<AnnotationElement>> anotationElements = new HashMap<>(20);
+    private final Map<String, List<AnnotationElement>> anotationElements = HashMap.newHashMap(16);
     private final Map<String, AnnotationElement> categories = new HashMap<>();
 
     MetadataLoader(DataInputStream dis) throws IOException {
@@ -204,7 +204,7 @@ public final class MetadataLoader {
     }
 
     private Map<String, AnnotationElement> buildRelationMap(Map<String, Type> typeMap) {
-        Map<String, AnnotationElement> relationMap = new HashMap<>(20);
+        Map<String, AnnotationElement> relationMap = HashMap.newHashMap(10);
         for (TypeElement t : types) {
             if (t.isRelation) {
                 Type relationType = typeMap.get(t.name);
@@ -272,8 +272,8 @@ public final class MetadataLoader {
     }
 
     private Map<String, Type> buildTypeMap() {
-        Map<String, Type> typeMap = new HashMap<>(2 * types.size());
-        Map<String, Type> knownTypeMap = new HashMap<>(20);
+        Map<String, Type> typeMap = HashMap.newHashMap(types.size());
+        Map<String, Type> knownTypeMap = HashMap.newHashMap(16);
         for (Type kt : Type.getKnownTypes()) {
             typeMap.put(kt.getName(), kt);
             knownTypeMap.put(kt.getName(), kt);

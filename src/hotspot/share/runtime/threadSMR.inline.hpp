@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -140,7 +140,7 @@ inline ThreadsList* ThreadsSMRSupport::get_java_thread_list() {
 }
 
 inline bool ThreadsSMRSupport::is_a_protected_JavaThread_with_lock(JavaThread *thread) {
-  MutexLocker ml(Threads_lock->owned_by_self() ? NULL : Threads_lock);
+  MutexLocker ml(Threads_lock->owned_by_self() ? nullptr : Threads_lock);
   return is_a_protected_JavaThread(thread);
 }
 

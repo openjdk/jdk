@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,8 +35,8 @@ public final class Grapheme {
      * <p>
      * See Unicode Standard Annex #29 Unicode Text Segmentation for the specification
      * for the extended grapheme cluster boundary rules. The following implementation
-     * is based on the annex for Unicode version 14.0.
-     * (http://www.unicode.org/reports/tr29/tr29-38.html)
+     * is based on the annex for Unicode version 15.0.
+     * (http://www.unicode.org/reports/tr29/tr29-40.html)
      *
      * @param src the {@code CharSequence} to be scanned
      * @param off offset to start looking for the next boundary in the src
@@ -176,7 +176,7 @@ public final class Grapheme {
             return OTHER;
         }
 
-        if (EmojiData.isExtendedPictographic(cp)) {
+        if (Character.isExtendedPictographic(cp)) {
             return EXTENDED_PICTOGRAPHIC;
         }
 
@@ -277,6 +277,7 @@ public final class Grapheme {
                 case 0x11A88:
                 case 0x11A89:
                 case 0x11D46:
+                case 0x11F02:
                     return PREPEND;
             }
         }

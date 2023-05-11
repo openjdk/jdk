@@ -26,8 +26,6 @@
 package sun.security.x509;
 
 import java.io.IOException;
-import java.io.OutputStream;
-import java.util.Enumeration;
 
 import sun.security.util.*;
 
@@ -50,27 +48,16 @@ import sun.security.util.*;
  * @author Amit Kapoor
  * @author Hemma Prafullchandra
  * @see Extension
- * @see CertAttrSet
  */
-public class SubjectAlternativeNameExtension extends Extension
-implements CertAttrSet<String> {
-    /**
-     * Identifier for this attribute, to be used with the
-     * get, set, delete methods of Certificate, x509 type.
-     */
-    public static final String IDENT =
-                         "x509.info.extensions.SubjectAlternativeName";
-    /**
-     * Attribute names.
-     */
+public class SubjectAlternativeNameExtension extends Extension {
+
     public static final String NAME = "SubjectAlternativeName";
-    public static final String SUBJECT_NAME = "subject_name";
 
     // private data members
     GeneralNames        names;
 
     // Encode this extension
-    private void encodeThis() throws IOException {
+    private void encodeThis() {
         if (names == null || names.isEmpty()) {
             this.extensionValue = null;
             return;
@@ -85,10 +72,8 @@ implements CertAttrSet<String> {
      * The extension is marked non-critical.
      *
      * @param names the GeneralNames for the subject.
-     * @exception IOException on error.
      */
-    public SubjectAlternativeNameExtension(GeneralNames names)
-    throws IOException {
+    public SubjectAlternativeNameExtension(GeneralNames names) {
         this(Boolean.FALSE, names);
     }
 
@@ -97,25 +82,16 @@ implements CertAttrSet<String> {
      * criticality and GeneralNames.
      *
      * @param critical true if the extension is to be treated as critical.
-     * @param names the GeneralNames for the subject.
-     * @exception IOException on error.
+     * @param names the GeneralNames for the subject, cannot be null or empty.
      */
-    public SubjectAlternativeNameExtension(Boolean critical, GeneralNames names)
-    throws IOException {
+    public SubjectAlternativeNameExtension(Boolean critical, GeneralNames names) {
+        if (names == null || names.isEmpty()) {
+            throw new IllegalArgumentException("names cannot be null or empty");
+        }
         this.names = names;
         this.extensionId = PKIXExtensions.SubjectAlternativeName_Id;
         this.critical = critical.booleanValue();
         encodeThis();
-    }
-
-    /**
-     * Create a default SubjectAlternativeNameExtension. The extension
-     * is marked non-critical.
-     */
-    public SubjectAlternativeNameExtension() {
-        extensionId = PKIXExtensions.SubjectAlternativeName_Id;
-        critical = false;
-        names = new GeneralNames();
     }
 
     /**
@@ -161,77 +137,32 @@ implements CertAttrSet<String> {
     /**
      * Write the extension to the OutputStream.
      *
-     * @param out the OutputStream to write the extension to.
-     * @exception IOException on encoding errors.
+     * @param out the DerOutputStream to write the extension to.
      */
-    public void encode(OutputStream out) throws IOException {
-        DerOutputStream tmp = new DerOutputStream();
+    @Override
+    public void encode(DerOutputStream out) {
         if (extensionValue == null) {
             extensionId = PKIXExtensions.SubjectAlternativeName_Id;
             critical = false;
             encodeThis();
         }
-        super.encode(tmp);
-        out.write(tmp.toByteArray());
+        super.encode(out);
     }
 
     /**
-     * Set the attribute value.
+     * Get the GeneralNames value.
      */
-    public void set(String name, Object obj) throws IOException {
-        if (name.equalsIgnoreCase(SUBJECT_NAME)) {
-            if (!(obj instanceof GeneralNames)) {
-              throw new IOException("Attribute value should be of " +
-                                    "type GeneralNames.");
-            }
-            names = (GeneralNames)obj;
-        } else {
-          throw new IOException("Attribute name not recognized by " +
-                        "CertAttrSet:SubjectAlternativeName.");
-        }
-        encodeThis();
+    public GeneralNames getNames() {
+        return names;
     }
 
-    /**
-     * Get the attribute value.
-     */
-    public GeneralNames get(String name) throws IOException {
-        if (name.equalsIgnoreCase(SUBJECT_NAME)) {
-            return (names);
-        } else {
-          throw new IOException("Attribute name not recognized by " +
-                        "CertAttrSet:SubjectAlternativeName.");
-        }
-    }
+
 
     /**
-     * Delete the attribute value.
+     * Return the name of this extension.
      */
-    public void delete(String name) throws IOException {
-        if (name.equalsIgnoreCase(SUBJECT_NAME)) {
-            names = null;
-        } else {
-          throw new IOException("Attribute name not recognized by " +
-                        "CertAttrSet:SubjectAlternativeName.");
-        }
-        encodeThis();
-    }
-
-    /**
-     * Return an enumeration of names of attributes existing within this
-     * attribute.
-     */
-    public Enumeration<String> getElements() {
-        AttributeNameEnumeration elements = new AttributeNameEnumeration();
-        elements.addElement(SUBJECT_NAME);
-
-        return (elements.elements());
-    }
-
-    /**
-     * Return the name of this attribute.
-     */
+    @Override
     public String getName() {
-        return (NAME);
+        return NAME;
     }
 }

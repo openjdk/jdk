@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,30 +47,31 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.function.Predicate;
+import jdk.httpclient.test.lib.common.HttpServerAdapters;
+import jdk.httpclient.test.lib.http2.Http2TestServer;
+import static java.net.http.HttpClient.Version.HTTP_1_1;
+import static java.net.http.HttpClient.Version.HTTP_2;
 
 /*
  * @test
  * @summary Tests HttpClient usage when configured with a local address to bind
  *          to, when sending requests
  * @bug 8209137
- * @modules jdk.httpserver
- *          java.net.http/jdk.internal.net.http.common
- *          java.net.http/jdk.internal.net.http.frame
- *          java.base/sun.net.www.http
- *          java.net.http/jdk.internal.net.http.hpack
+ * @library /test/lib /test/jdk/java/net/httpclient/lib
  *
- * @library /test/lib http2/server
- *
- * @build jdk.test.lib.net.SimpleSSLContext jdk.test.lib.net.IPSupport HttpServerAdapters
+ * @build jdk.test.lib.net.SimpleSSLContext jdk.test.lib.net.IPSupport
+ *        jdk.httpclient.test.lib.common.HttpServerAdapters
  *
  * @run testng/othervm
  *      -Djdk.httpclient.HttpClient.log=frames,ssl,requests,responses,errors
  *      -Djdk.internal.httpclient.debug=true
+ *      -Dsun.net.httpserver.idleInterval=50000
  *      HttpClientLocalAddrTest
  *
  * @run testng/othervm/java.security.policy=httpclient-localaddr-security.policy
  *      -Djdk.httpclient.HttpClient.log=frames,ssl,requests,responses,errors
  *      -Djdk.internal.httpclient.debug=true
+ *      -Dsun.net.httpserver.idleInterval=50000
  *      HttpClientLocalAddrTest
  *
  */
@@ -108,30 +109,26 @@ public class HttpClientLocalAddrTest implements HttpServerAdapters {
         };
 
         // HTTP/1.1 - create servers with http and https
-        final var sa = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
-        final int backlog = 0;
-        http1_1_Server = HttpServerAdapters.HttpTestServer.of(HttpServer.create(sa, backlog));
+        http1_1_Server = HttpServerAdapters.HttpTestServer.create(HTTP_1_1);
         http1_1_Server.addHandler(handler, "/");
         http1_1_Server.start();
         System.out.println("Started HTTP v1.1 server at " + http1_1_Server.serverAuthority());
         httpURI = new URI("http://" + http1_1_Server.serverAuthority() + "/");
 
-        final HttpsServer httpsServer = HttpsServer.create(sa, 0);
-        httpsServer.setHttpsConfigurator(new HttpsConfigurator(sslContext));
-        https_1_1_Server = HttpServerAdapters.HttpTestServer.of(httpsServer);
+        https_1_1_Server = HttpServerAdapters.HttpTestServer.create(HTTP_1_1, sslContext);
         https_1_1_Server.addHandler(handler, "/");
         https_1_1_Server.start();
         System.out.println("Started HTTPS v1.1 server at " + https_1_1_Server.serverAuthority());
         httpsURI = new URI("https://" + https_1_1_Server.serverAuthority() + "/");
 
         // HTTP/2 - create servers with http and https
-        http2_Server = HttpServerAdapters.HttpTestServer.of(new Http2TestServer(sa.getHostString(), false, null));
+        http2_Server = HttpServerAdapters.HttpTestServer.create(HTTP_2);
         http2_Server.addHandler(handler, "/");
         http2_Server.start();
         System.out.println("Started HTTP v2 server at " + http2_Server.serverAuthority());
         http2URI = new URI("http://" + http2_Server.serverAuthority() + "/");
 
-        https2_Server = HttpServerAdapters.HttpTestServer.of(new Http2TestServer(sa.getHostString(), true, sslContext));
+        https2_Server = HttpServerAdapters.HttpTestServer.create(HTTP_2, sslContext);
         https2_Server.addHandler(handler, "/");
         https2_Server.start();
         System.out.println("Started HTTPS v2 server at " + https2_Server.serverAuthority());

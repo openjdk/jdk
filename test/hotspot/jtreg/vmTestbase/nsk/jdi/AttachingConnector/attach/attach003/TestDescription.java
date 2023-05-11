@@ -37,7 +37,7 @@
  *     public VirtualMachine attach(Map arguments)
  *                           throws IOException,
  *                                  IllegalConnectorArgumentsException
- *          Attaches to a running application and and returns a mirror of its VM.
+ *          Attaches to a running application and returns a mirror of its VM.
  *          The connector uses the given argument map in attaching the application.
  *          These arguments will include addressing information that identifies
  *          the VM. The argument map associates argument name strings to instances

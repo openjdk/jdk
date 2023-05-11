@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,13 +114,13 @@ GCPhase::PhaseType TimePartitions::current_phase_type() const {
 }
 
 TimePartitions::TimePartitions() {
-  _phases = new (ResourceObj::C_HEAP, mtGC) GrowableArray<GCPhase>(INITIAL_CAPACITY, mtGC);
+  _phases = new (mtGC) GrowableArray<GCPhase>(INITIAL_CAPACITY, mtGC);
   clear();
 }
 
 TimePartitions::~TimePartitions() {
   delete _phases;
-  _phases = NULL;
+  _phases = nullptr;
 }
 
 void TimePartitions::clear() {

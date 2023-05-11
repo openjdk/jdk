@@ -24,6 +24,8 @@
  */
 package com.sun.nio.sctp;
 
+import java.io.Serial;
+
 /**
  * Unchecked exception thrown when an attempt is made to invoke the
  * {@code receive} method of {@link SctpChannel} or {@link SctpMultiChannel}
@@ -32,6 +34,7 @@ package com.sun.nio.sctp;
  * @since 1.7
  */
 public class IllegalReceiveException extends IllegalStateException {
+    @Serial
     private static final long serialVersionUID = 2296619040988576224L;
 
     /**

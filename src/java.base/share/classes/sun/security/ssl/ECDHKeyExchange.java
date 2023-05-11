@@ -44,7 +44,6 @@ import javax.crypto.KeyAgreement;
 import javax.crypto.SecretKey;
 import javax.net.ssl.SSLHandshakeException;
 import sun.security.ssl.NamedGroup.NamedGroupSpec;
-import sun.security.ssl.SupportedGroupsExtension.SupportedGroups;
 import sun.security.ssl.X509Authentication.X509Credentials;
 import sun.security.ssl.X509Authentication.X509Possession;
 import sun.security.ssl.XDHKeyExchange.XDHECredentials;
@@ -236,7 +235,8 @@ final class ECDHKeyExchange {
             // Find most preferred EC or XEC groups
             if ((context.clientRequestedNamedGroups != null) &&
                     (!context.clientRequestedNamedGroups.isEmpty())) {
-                preferableNamedGroup = SupportedGroups.getPreferredGroup(
+                preferableNamedGroup = NamedGroup.getPreferredGroup(
+                        context.sslConfig,
                         context.negotiatedProtocol,
                         context.algorithmConstraints,
                         new NamedGroupSpec[] {
@@ -244,7 +244,8 @@ final class ECDHKeyExchange {
                             NamedGroupSpec.NAMED_GROUP_XDH },
                         context.clientRequestedNamedGroups);
             } else {
-                preferableNamedGroup = SupportedGroups.getPreferredGroup(
+                preferableNamedGroup = NamedGroup.getPreferredGroup(
+                        context.sslConfig,
                         context.negotiatedProtocol,
                         context.algorithmConstraints,
                         new NamedGroupSpec[] {

@@ -479,7 +479,7 @@ tcp_ping6(JNIEnv *env, SOCKETADDRESS *sa, SOCKETADDRESS *netif, jint timeout,
     SET_NONBLOCKING(fd);
 
     sa->sa6.sin6_port = htons(7); // echo port
-    connect_rv = NET_Connect(fd, &sa->sa, sizeof(struct sockaddr_in6));
+    connect_rv = connect(fd, &sa->sa, sizeof(struct sockaddr_in6));
 
     // connection established or refused immediately, either way it means
     // we were able to reach the host!
@@ -545,7 +545,7 @@ ping6(JNIEnv *env, jint fd, SOCKETADDRESS *sa, SOCKETADDRESS *netif,
     struct icmp6_hdr *icmp6;
     struct sockaddr_in6 sa_recv;
     jchar pid;
-    struct timeval tv;
+    struct timeval tv = { 0, 0 };
     size_t plen = sizeof(struct icmp6_hdr) + sizeof(tv);
 
 #if defined(__linux__)

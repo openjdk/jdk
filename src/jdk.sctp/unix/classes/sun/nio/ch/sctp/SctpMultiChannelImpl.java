@@ -36,6 +36,7 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.HashMap;
+import java.util.Map;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.ClosedChannelException;
@@ -53,6 +54,8 @@ import com.sun.nio.sctp.MessageInfo;
 import com.sun.nio.sctp.SctpChannel;
 import com.sun.nio.sctp.SctpMultiChannel;
 import com.sun.nio.sctp.SctpSocketOption;
+import jdk.internal.access.JavaNioAccess;
+import jdk.internal.access.SharedSecrets;
 import sun.net.util.IPAddressUtil;
 import sun.nio.ch.DirectBuffer;
 import sun.nio.ch.NativeThread;
@@ -71,13 +74,15 @@ import static sun.nio.ch.sctp.ResultContainer.*;
 public class SctpMultiChannelImpl extends SctpMultiChannel
     implements SelChImpl
 {
+    private static final JavaNioAccess NIO_ACCESS = SharedSecrets.getJavaNioAccess();
+
     private final FileDescriptor fd;
 
     private final int fdVal;
 
     /* IDs of native threads doing send and receives, for signalling */
-    private volatile long receiverThread = 0;
-    private volatile long senderThread = 0;
+    private volatile long receiverThread;
+    private volatile long senderThread;
 
     /* Lock held by current receiving thread */
     private final Object receiveLock = new Object();
@@ -100,30 +105,25 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
 
     /* Binding: Once bound the port will remain constant. */
     int port = -1;
-    private HashSet<InetSocketAddress> localAddresses = new HashSet<InetSocketAddress>();
+    private final Set<InetSocketAddress> localAddresses = new HashSet<>();
     /* Has the channel been bound to the wildcard address */
     private boolean wildcard; /* false */
 
-    /* Keeps a map of addresses to association, and visa versa */
-    private HashMap<SocketAddress, Association> addressMap =
-                         new HashMap<SocketAddress, Association>();
-    private HashMap<Association, Set<SocketAddress>> associationMap =
-                         new HashMap<Association, Set<SocketAddress>>();
+    /* Keeps a map of addresses to association, and vice versa */
+    private final Map<SocketAddress, Association> addressMap =
+                         new HashMap<>();
+    private final Map<Association, Set<SocketAddress>> associationMap =
+                         new HashMap<>();
 
     /* -- End of fields protected by stateLock -- */
 
     /* If an association has been shutdown mark it for removal after
      * the user handler has been invoked */
-    private final ThreadLocal<Association> associationToRemove =
-        new ThreadLocal<Association>() {
-             @Override protected Association initialValue() {
-                 return null;
-            }
-    };
+    private final ThreadLocal<Association> associationToRemove = new ThreadLocal<>();
 
     /* A notification handler cannot invoke receive */
     private final ThreadLocal<Boolean> receiveInvoked =
-        new ThreadLocal<Boolean>() {
+        new ThreadLocal<>() {
              @Override protected Boolean initialValue() {
                  return Boolean.FALSE;
             }
@@ -255,7 +255,7 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
 
     private boolean isBound() {
         synchronized (stateLock) {
-            return port == -1 ? false : true;
+            return port != -1;
         }
     }
 
@@ -436,28 +436,23 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
         }
     }
 
-    private static class DefaultOptionsHolder {
-        static final Set<SctpSocketOption<?>> defaultOptions = defaultOptions();
-
-        private static Set<SctpSocketOption<?>> defaultOptions() {
-            HashSet<SctpSocketOption<?>> set = new HashSet<SctpSocketOption<?>>(10);
-            set.add(SCTP_DISABLE_FRAGMENTS);
-            set.add(SCTP_EXPLICIT_COMPLETE);
-            set.add(SCTP_FRAGMENT_INTERLEAVE);
-            set.add(SCTP_INIT_MAXSTREAMS);
-            set.add(SCTP_NODELAY);
-            set.add(SCTP_PRIMARY_ADDR);
-            set.add(SCTP_SET_PEER_PRIMARY_ADDR);
-            set.add(SO_SNDBUF);
-            set.add(SO_RCVBUF);
-            set.add(SO_LINGER);
-            return Collections.unmodifiableSet(set);
-        }
-    }
-
     @Override
     public final Set<SctpSocketOption<?>> supportedOptions() {
-        return DefaultOptionsHolder.defaultOptions;
+        final class Holder {
+            static final Set<SctpSocketOption<?>> DEFAULT_OPTIONS = Set.of(
+                    SCTP_DISABLE_FRAGMENTS,
+                    SCTP_EXPLICIT_COMPLETE,
+                    SCTP_FRAGMENT_INTERLEAVE,
+                    SCTP_INIT_MAXSTREAMS,
+                    SCTP_NODELAY,
+                    SCTP_PRIMARY_ADDR,
+                    SCTP_SET_PEER_PRIMARY_ADDR,
+                    SO_SNDBUF,
+                    SO_RCVBUF,
+                    SO_LINGER);
+
+        }
+        return Holder.DEFAULT_OPTIONS;
     }
 
     @Override
@@ -583,13 +578,18 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
                                         int rem,
                                         int pos)
             throws IOException {
-        int n = receive0(fd, resultContainer, ((DirectBuffer)bb).address() + pos, rem);
-        if (n > 0)
-            bb.position(pos + n);
-        return n;
+        NIO_ACCESS.acquireSession(bb);
+        try {
+            int n = receive0(fd, resultContainer, ((DirectBuffer)bb).address() + pos, rem);
+            if (n > 0)
+                bb.position(pos + n);
+            return n;
+        } finally {
+            NIO_ACCESS.releaseSession(bb);
+        }
     }
 
-    private InternalNotificationHandler internalNotificationHandler =
+    private final InternalNotificationHandler internalNotificationHandler =
             new InternalNotificationHandler();
 
     private void handleNotificationInternal(ResultContainer resultContainer)
@@ -598,66 +598,53 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
                 internalNotificationHandler, null);
     }
 
-    private class InternalNotificationHandler
+    private final class InternalNotificationHandler
             extends AbstractNotificationHandler<Object>
     {
         @Override
-        public HandlerResult handleNotification(
-                AssociationChangeNotification not, Object unused) {
+        public HandlerResult handleNotification(AssociationChangeNotification not,
+                                                Object unused) {
             AssociationChange sac = (AssociationChange) not;
 
             /* Update map to reflect change in association */
             switch (not.event()) {
-                case COMM_UP :
+                case COMM_UP -> {
                     Association newAssociation = new AssociationImpl
-                       (sac.assocId(), sac.maxInStreams(), sac.maxOutStreams());
+                            (sac.assocId(), sac.maxInStreams(), sac.maxOutStreams());
                     addAssociation(newAssociation);
-                    break;
-                case SHUTDOWN :
-                case COMM_LOST :
-                //case RESTART: ???
+                }
+                case SHUTDOWN, COMM_LOST ->
+                    //case RESTART: ???
                     /* mark association for removal after user handler invoked*/
-                    associationToRemove.set(lookupAssociation(sac.assocId()));
+                        associationToRemove.set(lookupAssociation(sac.assocId()));
             }
             return HandlerResult.CONTINUE;
         }
     }
 
-    private <T> HandlerResult invokeNotificationHandler(
-                                   ResultContainer resultContainer,
-                                   NotificationHandler<T> handler,
-                                   T attachment) {
+    private <T> HandlerResult invokeNotificationHandler(ResultContainer resultContainer,
+                                                        NotificationHandler<T> handler,
+                                                        T attachment) {
         HandlerResult result;
         SctpNotification notification = resultContainer.notification();
         notification.setAssociation(lookupAssociation(notification.assocId()));
 
-        if (!(handler instanceof AbstractNotificationHandler)) {
+        if (!(handler instanceof AbstractNotificationHandler<T> absHandler)) {
             result = handler.handleNotification(notification, attachment);
         } else { /* AbstractNotificationHandler */
-            AbstractNotificationHandler<T> absHandler =
-                    (AbstractNotificationHandler<T>)handler;
-            switch(resultContainer.type()) {
-                case ASSOCIATION_CHANGED :
-                    result = absHandler.handleNotification(
-                            resultContainer.getAssociationChanged(), attachment);
-                    break;
-                case PEER_ADDRESS_CHANGED :
-                    result = absHandler.handleNotification(
-                            resultContainer.getPeerAddressChanged(), attachment);
-                    break;
-                case SEND_FAILED :
-                    result = absHandler.handleNotification(
-                            resultContainer.getSendFailed(), attachment);
-                    break;
-                case SHUTDOWN :
-                    result =  absHandler.handleNotification(
-                            resultContainer.getShutdown(), attachment);
-                    break;
-                default :
-                    /* implementation specific handlers */
-                    result =  absHandler.handleNotification(
-                            resultContainer.notification(), attachment);
-            }
+            result = switch (resultContainer.type()) {
+                case ASSOCIATION_CHANGED  -> absHandler.handleNotification(
+                        resultContainer.getAssociationChanged(), attachment);
+                case PEER_ADDRESS_CHANGED -> absHandler.handleNotification(
+                        resultContainer.getPeerAddressChanged(), attachment);
+                case SEND_FAILED          -> absHandler.handleNotification(
+                        resultContainer.getSendFailed(), attachment);
+                case SHUTDOWN             -> absHandler.handleNotification(
+                        resultContainer.getShutdown(), attachment);
+                /* implementation specific handlers */
+                default                   -> absHandler.handleNotification(
+                        resultContainer.notification(), attachment);
+            };
         }
 
         if (!(handler instanceof InternalNotificationHandler)) {
@@ -745,17 +732,15 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
     }
 
     /**
-     * @throws  IllegalArgumentException
-     *          If the given association is not controlled by this channel
+     * Checks if the given association is controlled by this channel.
      *
-     * @return  {@code true} if, and only if, the given association is one
-     *          of the current associations controlled by this channel
+     * @throws IllegalArgumentException If the given association is not controlled by this channel
      */
-    private boolean checkAssociation(Association messageAssoc) {
+    private void checkAssociation(Association messageAssoc) {
         synchronized (stateLock) {
             for (Association association : associationMap.keySet()) {
                 if (messageAssoc.equals(association)) {
-                    return true;
+                    return;
                 }
             }
         }
@@ -908,11 +893,16 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
         assert (pos <= lim);
         int rem = (pos <= lim ? lim - pos : 0);
 
-        int written = send0(fd, ((DirectBuffer)bb).address() + pos, rem, addr,
-                            port, assocId, streamNumber, unordered, ppid);
-        if (written > 0)
-            bb.position(pos + written);
-        return written;
+        NIO_ACCESS.acquireSession(bb);
+        try {
+            int written = send0(fd, ((DirectBuffer)bb).address() + pos, rem, addr,
+                    port, assocId, streamNumber, unordered, ppid);
+            if (written > 0)
+                bb.position(pos + written);
+            return written;
+        } finally {
+            NIO_ACCESS.releaseSession(bb);
+        }
     }
 
     @Override
@@ -953,8 +943,7 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
                 return SctpNet.getRemoteAddresses(fdVal, association.associationID());
             } catch (SocketException se) {
                 /* a valid association should always have remote addresses */
-                Set<SocketAddress> addrs = associationMap.get(association);
-                return addrs != null ? addrs : Collections.<SocketAddress>emptySet();
+                return associationMap.getOrDefault(association, Collections.emptySet());
             }
         }
     }

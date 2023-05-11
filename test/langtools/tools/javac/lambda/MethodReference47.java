@@ -25,7 +25,7 @@ public class MethodReference47 {
     static void g2(SAM1 s) { }
     static void g2(SAM2 s) { }
 
-    public static void main(String[] args) {
+    public static void meth() {
         g1(MethodReference47::m);
         g2(MethodReference47::m);
     }

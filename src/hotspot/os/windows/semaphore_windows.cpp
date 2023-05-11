@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,9 +30,9 @@
 #include <errno.h>
 
 WindowsSemaphore::WindowsSemaphore(uint value) {
-  _semaphore = ::CreateSemaphore(NULL, value, LONG_MAX, NULL);
+  _semaphore = ::CreateSemaphore(nullptr, value, LONG_MAX, nullptr);
 
-  guarantee(_semaphore != NULL, "CreateSemaphore failed with error code: %lu", GetLastError());
+  guarantee(_semaphore != nullptr, "CreateSemaphore failed with error code: %lu", GetLastError());
 }
 
 WindowsSemaphore::~WindowsSemaphore() {
@@ -41,7 +41,7 @@ WindowsSemaphore::~WindowsSemaphore() {
 
 void WindowsSemaphore::signal(uint count) {
   if (count > 0) {
-    BOOL ret = ::ReleaseSemaphore(_semaphore, count, NULL);
+    BOOL ret = ::ReleaseSemaphore(_semaphore, count, nullptr);
 
     assert(ret != 0, "ReleaseSemaphore failed with error code: %lu", GetLastError());
   }

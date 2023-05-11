@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@
 //
 // collector.collect();
 // JvmtiCodeBlobDesc* blob = collector.first();
-// while (blob != NULL) {
+// while (blob != nullptr) {
 //   :
 //   blob = collector.next();
 // }
@@ -70,11 +70,11 @@ class CodeBlobCollector : StackObj {
   static void do_vtable_stub(VtableStub* vs);
  public:
   CodeBlobCollector() {
-    _code_blobs = NULL;
+    _code_blobs = nullptr;
     _pos = -1;
   }
   ~CodeBlobCollector() {
-    if (_code_blobs != NULL) {
+    if (_code_blobs != nullptr) {
       for (int i=0; i<_code_blobs->length(); i++) {
         FreeHeap(_code_blobs->at(i));
       }
@@ -87,9 +87,9 @@ class CodeBlobCollector : StackObj {
 
   // iteration support - return first code blob
   JvmtiCodeBlobDesc* first() {
-    assert(_code_blobs != NULL, "not collected");
+    assert(_code_blobs != nullptr, "not collected");
     if (_code_blobs->length() == 0) {
-      return NULL;
+      return nullptr;
     }
     _pos = 0;
     return _code_blobs->at(0);
@@ -99,7 +99,7 @@ class CodeBlobCollector : StackObj {
   JvmtiCodeBlobDesc* next() {
     assert(_pos >= 0, "iteration not started");
     if (_pos+1 >= _code_blobs->length()) {
-      return NULL;
+      return nullptr;
     }
     return _code_blobs->at(++_pos);
   }
@@ -170,13 +170,13 @@ void CodeBlobCollector::do_vtable_stub(VtableStub* vs) {
 
 void CodeBlobCollector::collect() {
   assert_locked_or_safepoint(CodeCache_lock);
-  assert(_global_code_blobs == NULL, "checking");
+  assert(_global_code_blobs == nullptr, "checking");
 
   // create the global list
-  _global_code_blobs = new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<JvmtiCodeBlobDesc*>(50, mtServiceability);
+  _global_code_blobs = new (mtServiceability) GrowableArray<JvmtiCodeBlobDesc*>(50, mtServiceability);
 
   // iterate over the stub code descriptors and put them in the list first.
-  for (StubCodeDesc* desc = StubCodeDesc::first(); desc != NULL; desc = StubCodeDesc::next(desc)) {
+  for (StubCodeDesc* desc = StubCodeDesc::first(); desc != nullptr; desc = StubCodeDesc::next(desc)) {
     _global_code_blobs->append(new JvmtiCodeBlobDesc(desc->name(), desc->begin(), desc->end()));
   }
 
@@ -192,7 +192,7 @@ void CodeBlobCollector::collect() {
   // make the global list the instance list so that it can be used
   // for other iterations.
   _code_blobs = _global_code_blobs;
-  _global_code_blobs = NULL;
+  _global_code_blobs = nullptr;
 }
 
 
@@ -212,7 +212,7 @@ jvmtiError JvmtiCodeBlobEvents::generate_dynamic_code_events(JvmtiEnv* env) {
 
   // iterate over the collected list and post an event for each blob
   JvmtiCodeBlobDesc* blob = collector.first();
-  while (blob != NULL) {
+  while (blob != nullptr) {
     JvmtiExport::post_dynamic_code_generated(env, blob->name(), blob->code_begin(), blob->code_end());
     blob = collector.next();
   }
@@ -262,7 +262,7 @@ void JvmtiCodeBlobEvents::build_jvmti_addr_location_map(nmethod *nm,
                                                         jint *map_length_ptr)
 {
   ResourceMark rm;
-  jvmtiAddrLocationMap* map = NULL;
+  jvmtiAddrLocationMap* map = nullptr;
   jint map_length = 0;
 
 

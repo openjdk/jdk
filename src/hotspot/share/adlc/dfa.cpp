@@ -212,13 +212,13 @@ Expr *ArchDesc::calc_cost(FILE *fp, const char *spaces, MatchList &mList, Produc
   Expr *c = new Expr("0");
   if (mList._lchild) { // If left child, add it in
     const char* lchild_to_upper = ArchDesc::getMachOperEnum(mList._lchild);
-    sprintf(Expr::buffer(), "_kids[0]->_cost[%s]", lchild_to_upper);
+    snprintf_checked(Expr::buffer(), STRING_BUFFER_LENGTH, "_kids[0]->_cost[%s]", lchild_to_upper);
     c->add(Expr::buffer());
     delete[] lchild_to_upper;
 }
   if (mList._rchild) { // If right child, add it in
     const char* rchild_to_upper = ArchDesc::getMachOperEnum(mList._rchild);
-    sprintf(Expr::buffer(), "_kids[1]->_cost[%s]", rchild_to_upper);
+    snprintf_checked(Expr::buffer(), STRING_BUFFER_LENGTH, "_kids[1]->_cost[%s]", rchild_to_upper);
     c->add(Expr::buffer());
     delete[] rchild_to_upper;
   }
@@ -757,7 +757,7 @@ const char *Expr::compute_expr(const Expr *c1, const Expr *c2) {
     snprintf(string_buffer, STRING_BUFFER_LENGTH, "%s", c2->_expr);
   }
   else {
-    sprintf( string_buffer, "0");
+    snprintf_checked(string_buffer, STRING_BUFFER_LENGTH, "0");
   }
   string_buffer[STRING_BUFFER_LENGTH - 1] = '\0';
   char *cost = strdup(string_buffer);

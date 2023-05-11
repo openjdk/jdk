@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,6 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
 import static java.lang.invoke.MethodType.genericMethodType;
-import static jdk.internal.reflect.MethodHandleAccessorFactory.SPECIALIZED_PARAM_COUNT;
 import static jdk.internal.reflect.MethodHandleAccessorFactory.LazyStaticHolder.JLIA;
 
 class DirectMethodHandleAccessor extends MethodAccessorImpl {
@@ -175,12 +174,8 @@ class DirectMethodHandleAccessor extends MethodAccessorImpl {
             // caller-sensitive method is invoked through a per-caller invoker while
             // the target MH is always spreading the args
             var invoker = JLIA.reflectiveInvoker(caller);
-            try {
-                // invoke the target method handle via an invoker
-                return invoker.invokeExact(target, obj, args);
-            } catch (IllegalArgumentException e) {
-                throw new InvocationTargetException(e);
-            }
+            // invoke the target method handle via an invoker
+            return invoker.invokeExact(target, obj, args);
         }
     }
 
@@ -329,9 +324,6 @@ class DirectMethodHandleAccessor extends MethodAccessorImpl {
     }
 
     private static void checkArgumentCount(int paramCount, Object[] args) {
-        // only check argument count for specialized forms
-        if (paramCount > SPECIALIZED_PARAM_COUNT) return;
-
         int argc = args != null ? args.length : 0;
         if (argc != paramCount) {
             throw new IllegalArgumentException("wrong number of arguments: " + argc + " expected: " + paramCount);

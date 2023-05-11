@@ -2,7 +2,8 @@
  * @test /nodynamiccopyright/
  * @bug 8262891 8269146 8269113
  * @summary Verify errors related to pattern switches.
- * @compile/fail/ref=SwitchErrors.out --enable-preview -source ${jdk.version} -XDrawDiagnostics -XDshould-stop.at=FLOW SwitchErrors.java
+ * @enablePreview
+ * @compile/fail/ref=SwitchErrors.out -XDrawDiagnostics -XDshould-stop.at=FLOW SwitchErrors.java
  */
 public class SwitchErrors {
     void incompatibleSelectorObjectString(Object o) {
@@ -274,6 +275,29 @@ public class SwitchErrors {
         switch (o) {
             case ((R(var v))): case null: break;
             default: break;
+        }
+    }
+    void noDiamond(Object o) {
+        record R<T>(T t) {}
+        switch (o) {
+            case R<> r -> {}
+            default -> {}
+        }
+        if (o instanceof R<> r) {}
+    }
+    void noRawInferenceNonDeconstruction() {
+        record R<T>(T t) {}
+        R<String> o = null;
+        switch (o) {
+            case R r -> System.out.println(r.t().length());
+        }
+        if (o instanceof R r) System.out.println(r.t().length());
+    }
+    void cannotInfer() {
+        interface A<T> {}
+        record R<T extends Number>() implements A<T> {}
+        A<String> i = null;
+        if (i instanceof R()) {
         }
     }
 }

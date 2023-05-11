@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7021614 8031212 8273244 8284908
+ * @bug 7021614 8031212 8273244 8284908 8200337
  * @summary extend com.sun.source API to support parsing javadoc comments
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.file
@@ -151,8 +151,27 @@ DocComment[DOC_COMMENT, pos:1
   block tags: 1
     See[SEE, pos:7
       reference: 2
-        Reference[REFERENCE, pos:12, java.lang.String...#matches(String_regex)]
+        Reference[REFERENCE, pos:12, java.lang.String#matches(String_regex)]
         Text[TEXT, pos:51, text]
+    ]
+]
+*/
+
+    /**
+     * abc.
+     * @see java.lang.String##fragment text
+     */
+    void j_l_string_anchor() { }
+/*
+DocComment[DOC_COMMENT, pos:1
+  firstSentence: 1
+    Text[TEXT, pos:1, abc.]
+  body: empty
+  block tags: 1
+    See[SEE, pos:7
+      reference: 2
+        Reference[REFERENCE, pos:12, java.lang.String##fragment]
+        Text[TEXT, pos:39, text]
     ]
 ]
 */

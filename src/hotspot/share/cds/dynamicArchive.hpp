@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,16 +54,15 @@ public:
     assert(is_valid_region(i), "must be");
     _base_region_crc[i] = c;
   }
+  void print(outputStream* st);
 };
 
 class DynamicArchive : AllStatic {
 public:
   static void check_for_dynamic_dump();
-  static bool should_dump_at_vm_exit();
-  static void prepare_for_dump_at_exit();
   static void dump_for_jcmd(const char* archive_name, TRAPS);
-  static void dump(const char* archive_name, TRAPS);
-  static bool is_mapped() { return FileMapInfo::dynamic_info() != NULL; }
+  static void dump_at_exit(JavaThread* current, const char* archive_name);
+  static bool is_mapped() { return FileMapInfo::dynamic_info() != nullptr; }
   static bool validate(FileMapInfo* dynamic_info);
 };
 #endif // INCLUDE_CDS

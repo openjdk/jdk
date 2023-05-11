@@ -33,7 +33,7 @@
 #include "runtime/atomic.hpp"
 #include "utilities/bitMap.inline.hpp"
 
-void HeapRegionRemSet::set_state_empty() {
+void HeapRegionRemSet::set_state_untracked() {
   guarantee(SafepointSynchronize::is_at_safepoint() || !is_tracked(),
             "Should only set to Untracked during safepoint but is %s.", get_state_str());
   if (_state == Untracked) {

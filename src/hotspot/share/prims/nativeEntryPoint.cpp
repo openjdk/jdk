@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,9 @@
 #include "runtime/jniHandles.inline.hpp"
 
 JNI_ENTRY(jlong, NEP_makeDowncallStub(JNIEnv* env, jclass _unused, jobject method_type, jobject jabi,
-                                      jobjectArray arg_moves, jobjectArray ret_moves, jboolean needs_return_buffer))
+                                      jobjectArray arg_moves, jobjectArray ret_moves,
+                                      jboolean needs_return_buffer, jint captured_state_mask,
+                                      jboolean needs_transition))
   ResourceMark rm;
   const ABIDescriptor abi = ForeignGlobals::parse_abi_descriptor(jabi);
 
@@ -47,7 +49,7 @@ JNI_ENTRY(jlong, NEP_makeDowncallStub(JNIEnv* env, jclass _unused, jobject metho
   int pslots = java_lang_invoke_MethodType::ptype_slot_count(type);
   BasicType* basic_type = NEW_RESOURCE_ARRAY(BasicType, pslots);
 
-  GrowableArray<VMReg> input_regs(pcount);
+  GrowableArray<VMStorage> input_regs(pcount);
   for (int i = 0, bt_idx = 0; i < pcount; i++) {
     oop type_oop = java_lang_invoke_MethodType::ptype(type, i);
     assert(java_lang_Class::is_primitive(type_oop), "Only primitives expected");
@@ -65,7 +67,7 @@ JNI_ENTRY(jlong, NEP_makeDowncallStub(JNIEnv* env, jclass _unused, jobject metho
 
 
   jint outs = ret_moves_oop->length();
-  GrowableArray<VMReg> output_regs(outs);
+  GrowableArray<VMStorage> output_regs(outs);
   oop type_oop = java_lang_invoke_MethodType::rtype(type);
   BasicType  ret_bt = java_lang_Class::primitive_type(type_oop);
   for (int i = 0; i < outs; i++) {
@@ -74,8 +76,10 @@ JNI_ENTRY(jlong, NEP_makeDowncallStub(JNIEnv* env, jclass _unused, jobject metho
     output_regs.push(ForeignGlobals::parse_vmstorage(ret_moves_oop->obj_at(i)));
   }
 
-  return (jlong) DowncallLinker::make_downcall_stub(
-    basic_type, pslots, ret_bt, abi, input_regs, output_regs, needs_return_buffer)->code_begin();
+  return (jlong) DowncallLinker::make_downcall_stub(basic_type, pslots, ret_bt, abi,
+                                                    input_regs, output_regs,
+                                                    needs_return_buffer, captured_state_mask,
+                                                    needs_transition)->code_begin();
 JNI_END
 
 JNI_ENTRY(jboolean, NEP_freeDowncallStub(JNIEnv* env, jclass _unused, jlong invoker))
@@ -95,7 +99,7 @@ JNI_END
 #define VM_STORAGE_ARR "[Ljdk/internal/foreign/abi/VMStorage;"
 
 static JNINativeMethod NEP_methods[] = {
-  {CC "makeDowncallStub", CC "(" METHOD_TYPE ABI_DESC VM_STORAGE_ARR VM_STORAGE_ARR "Z)J", FN_PTR(NEP_makeDowncallStub)},
+  {CC "makeDowncallStub", CC "(" METHOD_TYPE ABI_DESC VM_STORAGE_ARR VM_STORAGE_ARR "ZIZ)J", FN_PTR(NEP_makeDowncallStub)},
   {CC "freeDowncallStub0", CC "(J)Z", FN_PTR(NEP_freeDowncallStub)},
 };
 

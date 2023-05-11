@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,6 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import jdk.internal.misc.InnocuousThread;
@@ -51,7 +50,7 @@ import sun.util.logging.PlatformLogger;
  * @author Dave Brown
  */
 public class KeepAliveCache
-    extends HashMap<KeepAliveKey, ClientVector>
+    extends HashMap<KeepAliveKey, KeepAliveCache.ClientVector>
     implements Runnable {
     @java.io.Serial
     private static final long serialVersionUID = -2937172892064557949L;
@@ -122,6 +121,12 @@ public class KeepAliveCache
      */
     @SuppressWarnings("removal")
     public void put(final URL url, Object obj, HttpClient http) {
+        // this method may need to close an HttpClient, either because
+        // it is not cacheable, or because the cache is at its capacity.
+        // In the latter case, we close the least recently used client.
+        // The client to close is stored in oldClient, and is closed
+        // after cacheLock is released.
+        HttpClient oldClient = null;
         cacheLock.lock();
         try {
             boolean startThread = (keepAliveTimer == null);
@@ -167,45 +172,34 @@ public class KeepAliveCache
                         // different default for server and proxy
                         keepAliveTimeout = http.getUsingProxy() ? 60 : 5;
                     }
+                } else if (keepAliveTimeout == -2) {
+                    keepAliveTimeout = 0;
                 }
                 // at this point keepAliveTimeout is the number of seconds to keep
                 // alive, which could be 0, if the user specified 0 for the property
                 assert keepAliveTimeout >= 0;
                 if (keepAliveTimeout == 0) {
-                    http.closeServer();
+                    oldClient = http;
                 } else {
                     v = new ClientVector(keepAliveTimeout * 1000);
                     v.put(http);
                     super.put(key, v);
                 }
             } else {
-                v.put(http);
+                oldClient = v.put(http);
             }
         } finally {
             cacheLock.unlock();
+        }
+        // close after releasing locks
+        if (oldClient != null) {
+            oldClient.closeServer();
         }
     }
 
     // returns the keep alive set by user in system property or -1 if not set
     private static int getUserKeepAlive(boolean isProxy) {
         return isProxy ? userKeepAliveProxy : userKeepAliveServer;
-    }
-
-    /* remove an obsolete HttpClient from its VectorCache */
-    public void remove(HttpClient h, Object obj) {
-        cacheLock.lock();
-        try {
-            KeepAliveKey key = new KeepAliveKey(h.url, obj);
-            ClientVector v = super.get(key);
-            if (v != null) {
-                v.remove(h);
-                if (v.isEmpty()) {
-                    removeVector(key);
-                }
-            }
-        } finally {
-            cacheLock.unlock();
-        }
     }
 
     /* called by a clientVector thread when all its connections have timed out
@@ -243,33 +237,37 @@ public class KeepAliveCache
             try {
                 Thread.sleep(LIFETIME);
             } catch (InterruptedException e) {}
+            List<HttpClient> closeList = null;
 
             // Remove all outdated HttpClients.
             cacheLock.lock();
             try {
+                if (isEmpty()) {
+                    // cache not used in the last LIFETIME - exit
+                    keepAliveTimer = null;
+                    break;
+                }
                 long currentTime = System.currentTimeMillis();
                 List<KeepAliveKey> keysToRemove = new ArrayList<>();
 
                 for (KeepAliveKey key : keySet()) {
                     ClientVector v = get(key);
-                    v.lock();
-                    try {
-                        KeepAliveEntry e = v.peek();
-                        while (e != null) {
-                            if ((currentTime - e.idleStartTime) > v.nap) {
-                                v.poll();
-                                e.hc.closeServer();
-                            } else {
-                                break;
+                    KeepAliveEntry e = v.peekLast();
+                    while (e != null) {
+                        if ((currentTime - e.idleStartTime) > v.nap) {
+                            v.pollLast();
+                            if (closeList == null) {
+                                closeList = new ArrayList<>();
                             }
-                            e = v.peek();
+                            closeList.add(e.hc);
+                        } else {
+                            break;
                         }
+                        e = v.peekLast();
+                    }
 
-                        if (v.isEmpty()) {
-                            keysToRemove.add(key);
-                        }
-                    } finally {
-                        v.unlock();
+                    if (v.isEmpty()) {
+                        keysToRemove.add(key);
                     }
                 }
 
@@ -278,105 +276,14 @@ public class KeepAliveCache
                 }
             } finally {
                 cacheLock.unlock();
-            }
-        } while (!isEmpty());
-    }
-
-    /*
-     * Do not serialize this class!
-     */
-    @java.io.Serial
-    private void writeObject(ObjectOutputStream stream) throws IOException {
-        throw new NotSerializableException();
-    }
-
-    @java.io.Serial
-    private void readObject(ObjectInputStream stream)
-        throws IOException, ClassNotFoundException
-    {
-        throw new NotSerializableException();
-    }
-}
-
-/* FILO order for recycling HttpClients, should run in a thread
- * to time them out.  If > maxConns are in use, block.
- */
-class ClientVector extends ArrayDeque<KeepAliveEntry> {
-    @java.io.Serial
-    private static final long serialVersionUID = -8680532108106489459L;
-    private final ReentrantLock lock = new ReentrantLock();
-
-    // sleep time in milliseconds, before cache clear
-    int nap;
-
-    ClientVector(int nap) {
-        this.nap = nap;
-    }
-
-    HttpClient get() {
-        lock();
-        try {
-            if (isEmpty()) {
-                return null;
-            }
-
-            // Loop until we find a connection that has not timed out
-            HttpClient hc = null;
-            long currentTime = System.currentTimeMillis();
-            do {
-                KeepAliveEntry e = pop();
-                if ((currentTime - e.idleStartTime) > nap) {
-                    e.hc.closeServer();
-                } else {
-                    hc = e.hc;
-                    if (KeepAliveCache.logger.isLoggable(PlatformLogger.Level.FINEST)) {
-                        String msg = "cached HttpClient was idle for "
-                                + Long.toString(currentTime - e.idleStartTime);
-                        KeepAliveCache.logger.finest(msg);
+                // close connections outside cacheLock
+                if (closeList != null) {
+                    for (HttpClient hc : closeList) {
+                        hc.closeServer();
                     }
                 }
-            } while ((hc == null) && (!isEmpty()));
-            return hc;
-        } finally {
-            unlock();
-        }
-    }
-
-    /* return a still valid, unused HttpClient */
-    void put(HttpClient h) {
-        lock();
-        try {
-            if (size() >= KeepAliveCache.getMaxConnections()) {
-                h.closeServer(); // otherwise the connection remains in limbo
-            } else {
-                push(new KeepAliveEntry(h, System.currentTimeMillis()));
             }
-        } finally {
-            unlock();
-        }
-    }
-
-    /* remove an HttpClient */
-    boolean remove(HttpClient h) {
-        lock();
-        try {
-            for (KeepAliveEntry curr : this) {
-                if (curr.hc == h) {
-                    return super.remove(curr);
-                }
-            }
-            return false;
-        } finally {
-            unlock();
-        }
-    }
-
-    final void lock() {
-        lock.lock();
-    }
-
-    final void unlock() {
-        lock.unlock();
+        } while (keepAliveTimer == Thread.currentThread());
     }
 
     /*
@@ -392,14 +299,78 @@ class ClientVector extends ArrayDeque<KeepAliveEntry> {
         throws IOException, ClassNotFoundException
     {
         throw new NotSerializableException();
+    }
+
+    /* LIFO order for reusing HttpClients. Most recent entries at the front.
+     * If > maxConns are in use, discard oldest.
+     */
+    class ClientVector extends ArrayDeque<KeepAliveEntry> {
+        @java.io.Serial
+        private static final long serialVersionUID = -8680532108106489459L;
+
+        // sleep time in milliseconds, before cache clear
+        int nap;
+
+        ClientVector(int nap) {
+            this.nap = nap;
+        }
+
+        /* return a still valid, idle HttpClient */
+        HttpClient get() {
+            assert cacheLock.isHeldByCurrentThread();
+            // check the most recent connection, use if still valid
+            KeepAliveEntry e = peekFirst();
+            if (e == null) {
+                return null;
+            }
+            long currentTime = System.currentTimeMillis();
+            if ((currentTime - e.idleStartTime) > nap) {
+                return null; // all connections stale - will be cleaned up later
+            } else {
+                pollFirst();
+                if (KeepAliveCache.logger.isLoggable(PlatformLogger.Level.FINEST)) {
+                    String msg = "cached HttpClient was idle for "
+                            + Long.toString(currentTime - e.idleStartTime);
+                    KeepAliveCache.logger.finest(msg);
+                }
+                return e.hc;
+            }
+        }
+
+        HttpClient put(HttpClient h) {
+            assert cacheLock.isHeldByCurrentThread();
+            HttpClient staleClient = null;
+            assert KeepAliveCache.getMaxConnections() > 0;
+            if (size() >= KeepAliveCache.getMaxConnections()) {
+                // remove oldest connection
+                staleClient = removeLast().hc;
+            }
+            addFirst(new KeepAliveEntry(h, System.currentTimeMillis()));
+            // close after releasing the locks
+            return staleClient;
+        }
+
+        /*
+         * Do not serialize this class!
+         */
+        @java.io.Serial
+        private void writeObject(ObjectOutputStream stream) throws IOException {
+            throw new NotSerializableException();
+        }
+
+        @java.io.Serial
+        private void readObject(ObjectInputStream stream)
+                throws IOException, ClassNotFoundException {
+            throw new NotSerializableException();
+        }
     }
 }
 
 class KeepAliveKey {
-    private String      protocol = null;
-    private String      host = null;
-    private int         port = 0;
-    private Object      obj = null; // additional key, such as socketfactory
+    private final String      protocol;
+    private final String      host;
+    private final int         port;
+    private final Object      obj; // additional key, such as socketfactory
 
     /**
      * Constructor
@@ -440,8 +411,8 @@ class KeepAliveKey {
 }
 
 class KeepAliveEntry {
-    HttpClient hc;
-    long idleStartTime;
+    final HttpClient hc;
+    final long idleStartTime;
 
     KeepAliveEntry(HttpClient hc, long idleStartTime) {
         this.hc = hc;

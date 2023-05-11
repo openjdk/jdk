@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,19 +21,17 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @summary Stress test Thread.sleep
  * @requires vm.debug != true & vm.continuations
- * @compile --enable-preview -source ${jdk.version} SleepALot.java
- * @run main/othervm --enable-preview SleepALot
+ * @run main/othervm SleepALot 500000
  */
 
-/**
+/*
  * @test
  * @requires vm.debug == true & vm.continuations
- * @compile --enable-preview -source ${jdk.version} SleepALot.java
- * @run main/othervm/timeout=300 --enable-preview SleepALot 200000
+ * @run main/othervm/timeout=300 SleepALot 200000
  */
 
 import java.time.Duration;

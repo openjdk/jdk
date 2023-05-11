@@ -36,8 +36,8 @@ import sun.awt.EmbeddedFrame;
   * WHEN_IN_FOCUSED_WINDOW style actions.  Actions with other conditions are handled
   * directly in JComponent.
   *
-  * Here's a description of the symantics of how keyboard dispatching should work
-  * atleast as I understand it.
+  * Here's a description of the semantics of how keyboard dispatching should work
+  * at least as I understand it.
   *
   * KeyEvents are dispatched to the focused component.  The focus manager gets first
   * crack at processing this event.  If the focus manager doesn't want it, then
@@ -45,7 +45,7 @@ import sun.awt.EmbeddedFrame;
   * to process the event.
   *
   * If none of the listeners "consumes" the event then the keybindings get a shot.
-  * This is where things start to get interesting.  First, KeyStokes defined with the
+  * This is where things start to get interesting.  First, KeyStrokes defined with the
   * WHEN_FOCUSED condition get a chance.  If none of these want the event, then the component
   * walks though it's parents looked for actions of type WHEN_ANCESTOR_OF_FOCUSED_COMPONENT.
   *
@@ -110,7 +110,7 @@ class KeyboardManager {
              }
          } else if (tmp instanceof JComponent) {
            // if a JComponent is there then remove it and replace it with a vector
-           // Then add the old compoennt and the new compoent to the vector
+           // Then add the old component and the new component to the vector
            // then insert the vector in the table
            if (tmp != c) {  // this means this is already registered for this component, no need to dup
                Vector<JComponent> v = new Vector<>();
@@ -201,7 +201,7 @@ class KeyboardManager {
     /**
       * This method is called when the focused component (and none of
       * its ancestors) want the key event.  This will look up the keystroke
-      * to see if any chidren (or subchildren) of the specified container
+      * to see if any children (or subchildren) of the specified container
       * want a crack at the event.
       * If one of them wants it, then it will "DO-THE-RIGHT-THING"
       */

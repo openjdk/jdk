@@ -2309,7 +2309,8 @@ public class LambdaToMethod extends TreeTranslator {
                 List<Type> tl = tree.getDescriptorType(types).getParameterTypes();
                 for (; tl.nonEmpty(); tl = tl.tail) {
                     Type pt = tl.head;
-                    return isIntersectionOrUnionType(pt);
+                    if (isIntersectionOrUnionType(pt))
+                        return true;
                 }
                 return false;
             }
@@ -2452,7 +2453,12 @@ public class LambdaToMethod extends TreeTranslator {
 
         @Override
         protected void append(byte[] ba) {
-            Name name = names.fromUtf(ba);
+            Name name;
+            try {
+                name = names.fromUtf(ba);
+            } catch (InvalidUtfException e) {
+                throw new AssertionError(e);
+            }
             sb.append(name.toString());
         }
 

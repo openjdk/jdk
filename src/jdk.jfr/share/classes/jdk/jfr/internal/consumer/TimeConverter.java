@@ -41,11 +41,11 @@ final class TimeConverter {
     private final double divisor;
     private final ZoneOffset zoneOffset;
 
-    TimeConverter(ChunkHeader chunkHeader, int rawOffset) {
+    TimeConverter(ChunkHeader chunkHeader, int offset) {
         this.startTicks = chunkHeader.getStartTicks();
         this.startNanos = chunkHeader.getStartNanos();
         this.divisor = chunkHeader.getTicksPerSecond() / 1000_000_000L;
-        this.zoneOffset = zoneOfSet(rawOffset);
+        this.zoneOffset = zoneOfSet(offset);
     }
 
     public long convertTimestamp(long ticks) {
@@ -60,11 +60,11 @@ final class TimeConverter {
         return zoneOffset;
     }
 
-    private ZoneOffset zoneOfSet(int rawOffset) {
+    private ZoneOffset zoneOfSet(int offset) {
         try {
-            return ZoneOffset.ofTotalSeconds(rawOffset / 1000);
+            return ZoneOffset.ofTotalSeconds(offset / 1000);
         } catch (DateTimeException dte) {
-            Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Could not create ZoneOffset from raw offset " + rawOffset);
+            Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Could not create ZoneOffset from raw offset " + offset);
         }
         return ZoneOffset.UTC;
     }

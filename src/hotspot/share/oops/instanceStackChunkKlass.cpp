@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -168,7 +168,7 @@ class DescribeStackChunkClosure {
 public:
   DescribeStackChunkClosure(stackChunkOop chunk)
     : _chunk(chunk),
-      _map((JavaThread*)nullptr,
+      _map(nullptr,
            RegisterMap::UpdateMap::include,
            RegisterMap::ProcessFrames::skip,
            RegisterMap::WalkContinuation::include),
@@ -235,7 +235,7 @@ public:
 
 void InstanceStackChunkKlass::print_chunk(const stackChunkOop c, bool verbose, outputStream* st) {
   if (c == nullptr) {
-    st->print_cr("CHUNK NULL");
+    st->print_cr("CHUNK null");
     return;
   }
 

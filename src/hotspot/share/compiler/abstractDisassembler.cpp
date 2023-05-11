@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -311,11 +311,11 @@ void AbstractDisassembler::decode_range_abstract(address range_start, address ra
                                                  address start, address end,
                                                  outputStream* st,
                                                  const int max_instr_size_in_bytes) {
-  assert(st != NULL, "need an output stream (no default)!");
+  assert(st != nullptr, "need an output stream (no default)!");
   int     idx = 0;
   address pos = range_start;
 
-  while ((pos != NULL) && (pos < range_end)) {
+  while ((pos != nullptr) && (pos < range_end)) {
     int instr_size_in_bytes = Assembler::instr_len(pos);
 
     if (idx == 0) print_location(pos, start, end, st, false, false);
@@ -349,7 +349,7 @@ void AbstractDisassembler::decode_abstract(address start, address end, outputStr
   int     idx = 0;
   address pos = start;
 
-  outputStream* st = (ost == NULL) ? tty : ost;
+  outputStream* st = (ost == nullptr) ? tty : ost;
 
   //---<  Open the output (Marker for post-mortem disassembler)  >---
   st->bol();

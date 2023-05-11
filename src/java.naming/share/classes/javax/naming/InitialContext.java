@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -413,34 +413,60 @@ public class InitialContext implements Context {
         return getURLOrDefaultInitCtx(name).lookup(name);
     }
 
+    /**
+     * @throws  NameAlreadyBoundException {@inheritDoc}
+     * @throws  javax.naming.directory.InvalidAttributesException {@inheritDoc}
+     */
     public void bind(String name, Object obj) throws NamingException {
         getURLOrDefaultInitCtx(name).bind(name, obj);
     }
 
+    /**
+     * @throws  NameAlreadyBoundException {@inheritDoc}
+     * @throws  javax.naming.directory.InvalidAttributesException {@inheritDoc}
+     */
     public void bind(Name name, Object obj) throws NamingException {
         getURLOrDefaultInitCtx(name).bind(name, obj);
     }
 
+    /**
+     * @throws  javax.naming.directory.InvalidAttributesException {@inheritDoc}
+     */
     public void rebind(String name, Object obj) throws NamingException {
         getURLOrDefaultInitCtx(name).rebind(name, obj);
     }
 
+    /**
+     * @throws  javax.naming.directory.InvalidAttributesException {@inheritDoc}
+     */
     public void rebind(Name name, Object obj) throws NamingException {
         getURLOrDefaultInitCtx(name).rebind(name, obj);
     }
 
+    /**
+     * @throws  NameNotFoundException {@inheritDoc}
+     */
     public void unbind(String name) throws NamingException  {
         getURLOrDefaultInitCtx(name).unbind(name);
     }
 
+    /**
+     * @throws  NameNotFoundException {@inheritDoc}
+     */
     public void unbind(Name name) throws NamingException  {
         getURLOrDefaultInitCtx(name).unbind(name);
     }
 
+    /**
+     * @throws  NameAlreadyBoundException {@inheritDoc}
+     */
     public void rename(String oldName, String newName) throws NamingException {
         getURLOrDefaultInitCtx(oldName).rename(oldName, newName);
     }
 
+    /**
+     * @throws  NameAlreadyBoundException {@inheritDoc}
+     */
     public void rename(Name oldName, Name newName)
         throws NamingException
     {
@@ -469,18 +495,36 @@ public class InitialContext implements Context {
         return getURLOrDefaultInitCtx(name).listBindings(name);
     }
 
+    /**
+     * @throws  NameNotFoundException {@inheritDoc}
+     * @throws  NotContextException {@inheritDoc}
+     * @throws  ContextNotEmptyException {@inheritDoc}
+     */
     public void destroySubcontext(String name) throws NamingException  {
         getURLOrDefaultInitCtx(name).destroySubcontext(name);
     }
 
+    /**
+     * @throws  NameNotFoundException {@inheritDoc}
+     * @throws  NotContextException {@inheritDoc}
+     * @throws  ContextNotEmptyException {@inheritDoc}
+     */
     public void destroySubcontext(Name name) throws NamingException  {
         getURLOrDefaultInitCtx(name).destroySubcontext(name);
     }
 
+    /**
+     * @throws  NameAlreadyBoundException {@inheritDoc}
+     * @throws  javax.naming.directory.InvalidAttributesException {@inheritDoc}
+     */
     public Context createSubcontext(String name) throws NamingException  {
         return getURLOrDefaultInitCtx(name).createSubcontext(name);
     }
 
+    /**
+     * @throws  NameAlreadyBoundException {@inheritDoc}
+     * @throws  javax.naming.directory.InvalidAttributesException {@inheritDoc}
+     */
     public Context createSubcontext(Name name) throws NamingException  {
         return getURLOrDefaultInitCtx(name).createSubcontext(name);
     }
@@ -551,6 +595,9 @@ public class InitialContext implements Context {
         gotDefault = false;
     }
 
+    /**
+     * @throws OperationNotSupportedException {@inheritDoc}
+     */
     public String getNameInNamespace() throws NamingException {
         return getDefaultInitCtx().getNameInNamespace();
     }

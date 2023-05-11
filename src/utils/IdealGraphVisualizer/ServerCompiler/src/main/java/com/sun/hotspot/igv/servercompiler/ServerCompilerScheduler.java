@@ -24,6 +24,9 @@
  */
 package com.sun.hotspot.igv.servercompiler;
 
+import com.ibm.wala.util.graph.Graph;
+import com.ibm.wala.util.graph.dominators.Dominators;
+import com.ibm.wala.util.graph.impl.SlowSparseNumberedGraph;
 import com.sun.hotspot.igv.data.InputBlock;
 import com.sun.hotspot.igv.data.InputEdge;
 import com.sun.hotspot.igv.data.InputGraph;
@@ -33,9 +36,6 @@ import java.util.*;
 import java.util.function.Predicate;
 import org.openide.ErrorManager;
 import org.openide.util.lookup.ServiceProvider;
-import com.ibm.wala.util.graph.Graph;
-import com.ibm.wala.util.graph.impl.SlowSparseNumberedGraph;
-import com.ibm.wala.util.graph.dominators.Dominators;
 
 /**
  *
@@ -122,13 +122,7 @@ public class ServerCompilerScheduler implements Scheduler {
     Map<Node, List<Node>> controlSuccs = new HashMap<>();
     // Nodes reachable in backward traversal from root.
     private Map<InputBlock, InputBlock> dominatorMap;
-    private static final Comparator<InputEdge> edgeComparator = new Comparator<InputEdge>() {
-
-        @Override
-        public int compare(InputEdge o1, InputEdge o2) {
-            return o1.getToIndex() - o2.getToIndex();
-        }
-    };
+    private static final Comparator<InputEdge> edgeComparator = Comparator.comparingInt(InputEdge::getToIndex);
 
     public void buildBlocks() {
 
@@ -173,7 +167,7 @@ public class ServerCompilerScheduler implements Scheduler {
                 rootBlock = block;
             }
             blockCount++;
-            Set<Node> blockTerminators = new HashSet<Node>();
+            Set<Node> blockTerminators = new HashSet<>();
             // Move forwards until a terminator node is found, assigning all
             // visited nodes to the current block.
             while (true) {
@@ -283,12 +277,12 @@ public class ServerCompilerScheduler implements Scheduler {
         Node n = new Node();
         n.preds.add(p);
         n.succs.add(s);
-        controlSuccs.put(n, Arrays.asList(s));
+        controlSuccs.put(n, Collections.singletonList(s));
         n.isCFG = true;
         // Update predecessor node p.
         p.succs.remove(s);
         p.succs.add(n);
-        controlSuccs.put(p, Arrays.asList(n));
+        controlSuccs.put(p, Collections.singletonList(n));
         // Update successor node s.
         Collections.replaceAll(s.preds, p, n);
         return n;
@@ -373,30 +367,27 @@ public class ServerCompilerScheduler implements Scheduler {
         }
     }
 
-    private static final Comparator<Node> schedulePriority = new Comparator<Node>(){
-            @Override
-            public int compare(Node n1, Node n2) {
-                // Order by rank, then idx.
-                int r1 = n1.rank, r2 = n2.rank;
-                int o1, o2;
-                if (r1 != r2) { // Different rank.
-                    o1 = r1;
-                    o2 = r2;
-                } else { // Same rank, order by idx.
-                    o1 = Integer.parseInt(n1.inputNode.getProperties().get("idx"));
-                    o2 = Integer.parseInt(n2.inputNode.getProperties().get("idx"));
-                }
-                return Integer.compare(o1, o2);
-            };
-        };
+    private static final Comparator<Node> schedulePriority = (n1, n2) -> {
+        // Order by rank, then idx.
+        int r1 = n1.rank, r2 = n2.rank;
+        int o1, o2;
+        if (r1 != r2) { // Different rank.
+            o1 = r1;
+            o2 = r2;
+        } else { // Same rank, order by idx.
+            o1 = Integer.parseInt(n1.inputNode.getProperties().get("idx"));
+            o2 = Integer.parseInt(n2.inputNode.getProperties().get("idx"));
+        }
+        return Integer.compare(o1, o2);
+    };
 
     private List<InputNode> scheduleBlock(Collection<Node> nodes) {
-        List<InputNode> schedule = new ArrayList<InputNode>();
+        List<InputNode> schedule = new ArrayList<>();
 
         // Initialize ready priority queue with nodes without predecessors.
-        Queue<Node> ready = new PriorityQueue<Node>(schedulePriority);
+        Queue<Node> ready = new PriorityQueue<>(schedulePriority);
         // Set of nodes that have been enqueued.
-        Set<Node> visited = new HashSet<Node>(nodes.size());
+        Set<Node> visited = new HashSet<>(nodes.size());
         for (Node n : nodes) {
             if (n.preds.isEmpty()) {
                 ready.add(n);
@@ -712,9 +703,7 @@ public class ServerCompilerScheduler implements Scheduler {
     // Find all nodes reachable in backward traversal from root.
     private Set<Node> reachableNodes() {
         Node root = findRoot();
-        if (root == null) {
-            assert false : "No root found!";
-        }
+        assert root != null : "No root found!";
         Set<Node> reachable = new HashSet<>();
         reachable.add(root);
         Stack<Node> stack = new Stack<>();
@@ -753,7 +742,7 @@ public class ServerCompilerScheduler implements Scheduler {
 
             int to = e.getTo();
             if (!edgeMap.containsKey(to)) {
-                edgeMap.put(to, new ArrayList<InputEdge>());
+                edgeMap.put(to, new ArrayList<>());
             }
 
 
@@ -862,7 +851,7 @@ public class ServerCompilerScheduler implements Scheduler {
             }
             for (String warning : n.warnings) {
                 if (!nodesPerWarning.containsKey(warning)) {
-                    nodesPerWarning.put(warning, new HashSet<Node>());
+                    nodesPerWarning.put(warning, new HashSet<>());
                 }
                 nodesPerWarning.get(warning).add(n);
             }

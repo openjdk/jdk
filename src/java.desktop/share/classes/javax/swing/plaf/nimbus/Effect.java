@@ -54,7 +54,7 @@ abstract class Effect {
     /**
      * Get the opacity to use to paint the result effected image if the EffectType is UNDER or OVER.
      *
-     * @return The opactity for the effect, 0.0f -> 1.0f
+     * @return The opacity for the effect, 0.0f -> 1.0f
      */
     abstract float getOpacity();
 
@@ -63,7 +63,7 @@ abstract class Effect {
      * image depending on what the effect type is.
      *
      * @param src The source image for applying the effect to
-     * @param dst The dstination image to paint effect result into. If this is null then a new image will be created
+     * @param dst The destination image to paint effect result into. If this is null then a new image will be created
      * @param w   The width of the src image to apply effect to, this allow the src and dst buffers to be bigger than
      *            the area the need effect applied to it
      * @param h   The height of the src image to apply effect to, this allow the src and dst buffers to be bigger than

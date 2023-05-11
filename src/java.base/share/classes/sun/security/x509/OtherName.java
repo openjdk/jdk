@@ -151,9 +151,9 @@ public class OtherName implements GeneralNameInterface {
      * Encode the Other name into the DerOutputStream.
      *
      * @param out the DER stream to encode the Other-Name to.
-     * @exception IOException on encoding errors.
      */
-    public void encode(DerOutputStream out) throws IOException {
+    @Override
+    public void encode(DerOutputStream out) {
         if (gni != null) {
             // This OtherName has a supported class
             gni.encode(out);

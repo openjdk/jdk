@@ -39,7 +39,7 @@ import javax.sound.sampled.spi.FormatConversionProvider;
 
 /**
  * This class is used to convert between 8,16,24,32 bit signed/unsigned
- * big/litle endian fixed/floating stereo/mono/multi-channel audio streams and
+ * big/little endian fixed/floating stereo/mono/multi-channel audio streams and
  * perform sample-rate conversion if needed.
  *
  * @author Karl Helgason

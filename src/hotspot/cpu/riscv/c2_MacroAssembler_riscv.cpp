@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -27,6 +27,7 @@
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
 #include "opto/c2_MacroAssembler.hpp"
+#include "opto/compile.hpp"
 #include "opto/intrinsicnode.hpp"
 #include "opto/output.hpp"
 #include "opto/subnode.hpp"
@@ -241,35 +242,6 @@ void C2_MacroAssembler::string_indexof_char(Register str1, Register cnt1,
 }
 
 typedef void (MacroAssembler::* load_chr_insn)(Register rd, const Address &adr, Register temp);
-
-void C2_MacroAssembler::emit_entry_barrier_stub(C2EntryBarrierStub* stub) {
-  // make guard value 4-byte aligned so that it can be accessed by atomic instructions on riscv
-  int alignment_bytes = align(4);
-
-  bind(stub->slow_path());
-
-  int32_t offset = 0;
-  movptr(t0, StubRoutines::riscv::method_entry_barrier(), offset);
-  jalr(ra, t0, offset);
-  j(stub->continuation());
-
-  bind(stub->guard());
-  relocate(entry_guard_Relocation::spec());
-  assert_alignment(pc());
-  emit_int32(0);  // nmethod guard value
-  // make sure the stub with a fixed code size
-  if (alignment_bytes == 2) {
-    assert(UseRVC, "bad alignment");
-    c_nop();
-  } else {
-    assert(alignment_bytes == 0, "bad alignment");
-    nop();
-  }
-}
-
-int C2_MacroAssembler::entry_barrier_stub_size() {
-  return 8 * 4 + 4; // 4 bytes for alignment margin
-}
 
 // Search for needle in haystack and return index or -1
 // x10: result
@@ -579,18 +551,23 @@ void C2_MacroAssembler::string_indexof(Register haystack, Register needle,
   sub(t0, needle_len, 16); // small patterns still should be handled by simple algorithm
   bltz(t0, LINEARSEARCH);
   mv(result, zr);
-  RuntimeAddress stub = NULL;
+  RuntimeAddress stub = nullptr;
   if (isLL) {
     stub = RuntimeAddress(StubRoutines::riscv::string_indexof_linear_ll());
-    assert(stub.target() != NULL, "string_indexof_linear_ll stub has not been generated");
+    assert(stub.target() != nullptr, "string_indexof_linear_ll stub has not been generated");
   } else if (needle_isL) {
     stub = RuntimeAddress(StubRoutines::riscv::string_indexof_linear_ul());
-    assert(stub.target() != NULL, "string_indexof_linear_ul stub has not been generated");
+    assert(stub.target() != nullptr, "string_indexof_linear_ul stub has not been generated");
   } else {
     stub = RuntimeAddress(StubRoutines::riscv::string_indexof_linear_uu());
-    assert(stub.target() != NULL, "string_indexof_linear_uu stub has not been generated");
+    assert(stub.target() != nullptr, "string_indexof_linear_uu stub has not been generated");
   }
-  trampoline_call(stub);
+  address call = trampoline_call(stub);
+  if (call == nullptr) {
+    DEBUG_ONLY(reset_labels(LINEARSEARCH, DONE, NOMATCH));
+    ciEnv::current()->record_failure("CodeCache is full");
+    return;
+  }
   j(DONE);
 
   bind(NOMATCH);
@@ -975,7 +952,7 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
   }
 
   bind(STUB);
-  RuntimeAddress stub = NULL;
+  RuntimeAddress stub = nullptr;
   switch (ae) {
     case StrIntrinsicNode::LL:
       stub = RuntimeAddress(StubRoutines::riscv::compare_long_string_LL());
@@ -992,8 +969,13 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
     default:
       ShouldNotReachHere();
   }
-  assert(stub.target() != NULL, "compare_long_string stub has not been generated");
-  trampoline_call(stub);
+  assert(stub.target() != nullptr, "compare_long_string stub has not been generated");
+  address call = trampoline_call(stub);
+  if (call == nullptr) {
+    DEBUG_ONLY(reset_labels(DONE, SHORT_LOOP, SHORT_STRING, SHORT_LAST, SHORT_LOOP_TAIL, SHORT_LAST2, SHORT_LAST_INIT, SHORT_LOOP_START));
+    ciEnv::current()->record_failure("CodeCache is full");
+    return;
+  }
   j(DONE);
 
   bind(SHORT_STRING);
@@ -1177,7 +1159,7 @@ void C2_MacroAssembler::string_equals(Register a1, Register a2,
   Label TAIL03, TAIL01;
 
   // 0-7 bytes left.
-  andi(t0, cnt1, 4);
+  test_bit(t0, cnt1, 2);
   beqz(t0, TAIL03);
   {
     lwu(tmp1, Address(a1, 0));
@@ -1189,7 +1171,7 @@ void C2_MacroAssembler::string_equals(Register a1, Register a2,
 
   bind(TAIL03);
   // 0-3 bytes left.
-  andi(t0, cnt1, 2);
+  test_bit(t0, cnt1, 1);
   beqz(t0, TAIL01);
   {
     lhu(tmp1, Address(a1, 0));
@@ -1202,11 +1184,11 @@ void C2_MacroAssembler::string_equals(Register a1, Register a2,
   bind(TAIL01);
   if (elem_size == 1) { // Only needed when comparing 1-byte elements
     // 0-1 bytes left.
-    andi(t0, cnt1, 1);
+    test_bit(t0, cnt1, 0);
     beqz(t0, SAME);
     {
-      lbu(tmp1, a1, 0);
-      lbu(tmp2, a2, 0);
+      lbu(tmp1, Address(a1, 0));
+      lbu(tmp2, Address(a2, 0));
       bne(tmp1, tmp2, DONE);
     }
   }
@@ -1227,24 +1209,24 @@ typedef void (MacroAssembler::*float_conditional_branch_insn)(FloatRegister op1,
 static conditional_branch_insn conditional_branches[] =
 {
   /* SHORT branches */
-  (conditional_branch_insn)&Assembler::beq,
-  (conditional_branch_insn)&Assembler::bgt,
-  NULL, // BoolTest::overflow
-  (conditional_branch_insn)&Assembler::blt,
-  (conditional_branch_insn)&Assembler::bne,
-  (conditional_branch_insn)&Assembler::ble,
-  NULL, // BoolTest::no_overflow
-  (conditional_branch_insn)&Assembler::bge,
+  (conditional_branch_insn)&MacroAssembler::beq,
+  (conditional_branch_insn)&MacroAssembler::bgt,
+  nullptr, // BoolTest::overflow
+  (conditional_branch_insn)&MacroAssembler::blt,
+  (conditional_branch_insn)&MacroAssembler::bne,
+  (conditional_branch_insn)&MacroAssembler::ble,
+  nullptr, // BoolTest::no_overflow
+  (conditional_branch_insn)&MacroAssembler::bge,
 
   /* UNSIGNED branches */
-  (conditional_branch_insn)&Assembler::beq,
-  (conditional_branch_insn)&Assembler::bgtu,
-  NULL,
-  (conditional_branch_insn)&Assembler::bltu,
-  (conditional_branch_insn)&Assembler::bne,
-  (conditional_branch_insn)&Assembler::bleu,
-  NULL,
-  (conditional_branch_insn)&Assembler::bgeu
+  (conditional_branch_insn)&MacroAssembler::beq,
+  (conditional_branch_insn)&MacroAssembler::bgtu,
+  nullptr,
+  (conditional_branch_insn)&MacroAssembler::bltu,
+  (conditional_branch_insn)&MacroAssembler::bne,
+  (conditional_branch_insn)&MacroAssembler::bleu,
+  nullptr,
+  (conditional_branch_insn)&MacroAssembler::bgeu
 };
 
 static float_conditional_branch_insn float_conditional_branches[] =
@@ -1252,21 +1234,21 @@ static float_conditional_branch_insn float_conditional_branches[] =
   /* FLOAT SHORT branches */
   (float_conditional_branch_insn)&MacroAssembler::float_beq,
   (float_conditional_branch_insn)&MacroAssembler::float_bgt,
-  NULL,  // BoolTest::overflow
+  nullptr,  // BoolTest::overflow
   (float_conditional_branch_insn)&MacroAssembler::float_blt,
   (float_conditional_branch_insn)&MacroAssembler::float_bne,
   (float_conditional_branch_insn)&MacroAssembler::float_ble,
-  NULL, // BoolTest::no_overflow
+  nullptr, // BoolTest::no_overflow
   (float_conditional_branch_insn)&MacroAssembler::float_bge,
 
   /* DOUBLE SHORT branches */
   (float_conditional_branch_insn)&MacroAssembler::double_beq,
   (float_conditional_branch_insn)&MacroAssembler::double_bgt,
-  NULL,
+  nullptr,
   (float_conditional_branch_insn)&MacroAssembler::double_blt,
   (float_conditional_branch_insn)&MacroAssembler::double_bne,
   (float_conditional_branch_insn)&MacroAssembler::double_ble,
-  NULL,
+  nullptr,
   (float_conditional_branch_insn)&MacroAssembler::double_bge
 };
 
@@ -1322,30 +1304,31 @@ void C2_MacroAssembler::enc_cmove(int cmpFlag, Register op1, Register op2, Regis
 }
 
 // Set dst to NaN if any NaN input.
-void C2_MacroAssembler::minmax_FD(FloatRegister dst, FloatRegister src1, FloatRegister src2,
+void C2_MacroAssembler::minmax_fp(FloatRegister dst, FloatRegister src1, FloatRegister src2,
                                   bool is_double, bool is_min) {
   assert_different_registers(dst, src1, src2);
 
-  Label Done;
-  fsflags(zr);
+  Label Done, Compare;
+
+  is_double ? fclass_d(t0, src1)
+            : fclass_s(t0, src1);
+  is_double ? fclass_d(t1, src2)
+            : fclass_s(t1, src2);
+  orr(t0, t0, t1);
+  andi(t0, t0, 0b1100000000); //if src1 or src2 is quiet or signaling NaN then return NaN
+  beqz(t0, Compare);
+  is_double ? fadd_d(dst, src1, src2)
+            : fadd_s(dst, src1, src2);
+  j(Done);
+
+  bind(Compare);
   if (is_double) {
     is_min ? fmin_d(dst, src1, src2)
            : fmax_d(dst, src1, src2);
-    // Checking NaNs
-    flt_d(zr, src1, src2);
   } else {
     is_min ? fmin_s(dst, src1, src2)
            : fmax_s(dst, src1, src2);
-    // Checking NaNs
-    flt_s(zr, src1, src2);
   }
-
-  frflags(t0);
-  beqz(t0, Done);
-
-  // In case of NaNs
-  is_double ? fadd_d(dst, src1, src2)
-            : fadd_s(dst, src1, src2);
 
   bind(Done);
 }
@@ -1633,11 +1616,11 @@ void C2_MacroAssembler::string_indexof_char_v(Register str1, Register cnt1,
 }
 
 // Set dst to NaN if any NaN input.
-void C2_MacroAssembler::minmax_FD_v(VectorRegister dst, VectorRegister src1, VectorRegister src2,
-                                    bool is_double, bool is_min) {
+void C2_MacroAssembler::minmax_fp_v(VectorRegister dst, VectorRegister src1, VectorRegister src2,
+                                    bool is_double, bool is_min, int vector_length) {
   assert_different_registers(dst, src1, src2);
 
-  vsetvli(t0, x0, is_double ? Assembler::e64 : Assembler::e32);
+  vsetvli_helper(is_double ? T_DOUBLE : T_FLOAT, vector_length);
 
   is_min ? vfmin_vv(dst, src1, src2)
          : vfmax_vv(dst, src1, src2);
@@ -1649,14 +1632,14 @@ void C2_MacroAssembler::minmax_FD_v(VectorRegister dst, VectorRegister src1, Vec
 }
 
 // Set dst to NaN if any NaN input.
-void C2_MacroAssembler::reduce_minmax_FD_v(FloatRegister dst,
+void C2_MacroAssembler::reduce_minmax_fp_v(FloatRegister dst,
                                            FloatRegister src1, VectorRegister src2,
                                            VectorRegister tmp1, VectorRegister tmp2,
-                                           bool is_double, bool is_min) {
+                                           bool is_double, bool is_min, int vector_length) {
   assert_different_registers(src2, tmp1, tmp2);
 
   Label L_done, L_NaN;
-  vsetvli(t0, x0, is_double ? Assembler::e64 : Assembler::e32);
+  vsetvli_helper(is_double ? T_DOUBLE : T_FLOAT, vector_length);
   vfmv_s_f(tmp2, src1);
 
   is_min ? vfredmin_vs(tmp1, src2, tmp2)
@@ -1671,8 +1654,216 @@ void C2_MacroAssembler::reduce_minmax_FD_v(FloatRegister dst,
 
   bind(L_NaN);
   vfmv_s_f(tmp2, src1);
-  vfredsum_vs(tmp1, src2, tmp2);
+  vfredusum_vs(tmp1, src2, tmp2);
 
   bind(L_done);
   vfmv_f_s(dst, tmp1);
 }
+
+bool C2_MacroAssembler::in_scratch_emit_size() {
+  if (ciEnv::current()->task() != nullptr) {
+    PhaseOutput* phase_output = Compile::current()->output();
+    if (phase_output != nullptr && phase_output->in_scratch_emit_size()) {
+      return true;
+    }
+  }
+  return MacroAssembler::in_scratch_emit_size();
+}
+
+void C2_MacroAssembler::reduce_integral_v(Register dst, VectorRegister tmp,
+                                          Register src1, VectorRegister src2,
+                                          BasicType bt, int opc, int vector_length) {
+  assert(bt == T_BYTE || bt == T_SHORT || bt == T_INT || bt == T_LONG, "unsupported element type");
+
+  vsetvli_helper(bt, vector_length);
+
+  vmv_s_x(tmp, src1);
+
+  switch (opc) {
+    case Op_AddReductionVI:
+    case Op_AddReductionVL:
+      vredsum_vs(tmp, src2, tmp);
+      break;
+    case Op_AndReductionV:
+      vredand_vs(tmp, src2, tmp);
+      break;
+    case Op_OrReductionV:
+      vredor_vs(tmp, src2, tmp);
+      break;
+    case Op_XorReductionV:
+      vredxor_vs(tmp, src2, tmp);
+      break;
+    case Op_MaxReductionV:
+      vredmax_vs(tmp, src2, tmp);
+      break;
+    case Op_MinReductionV:
+      vredmin_vs(tmp, src2, tmp);
+      break;
+    default:
+      ShouldNotReachHere();
+  }
+
+  vmv_x_s(dst, tmp);
+}
+
+// Set vl and vtype for full and partial vector operations.
+// (vma = mu, vta = tu, vill = false)
+void C2_MacroAssembler::vsetvli_helper(BasicType bt, int vector_length, LMUL vlmul, Register tmp) {
+  Assembler::SEW sew = Assembler::elemtype_to_sew(bt);
+  if (vector_length <= 31) {
+    vsetivli(tmp, vector_length, sew, vlmul);
+  } else if (vector_length == (MaxVectorSize / type2aelembytes(bt))) {
+    vsetvli(tmp, x0, sew, vlmul);
+  } else {
+    mv(tmp, vector_length);
+    vsetvli(tmp, tmp, sew, vlmul);
+  }
+}
+
+void C2_MacroAssembler::compare_integral_v(VectorRegister vd, BasicType bt, int vector_length,
+                                           VectorRegister src1, VectorRegister src2, int cond, VectorMask vm) {
+  assert(is_integral_type(bt), "unsupported element type");
+  assert(vm == Assembler::v0_t ? vd != v0 : true, "should be different registers");
+  vsetvli_helper(bt, vector_length);
+  vmclr_m(vd);
+  switch (cond) {
+    case BoolTest::eq: vmseq_vv(vd, src1, src2, vm); break;
+    case BoolTest::ne: vmsne_vv(vd, src1, src2, vm); break;
+    case BoolTest::le: vmsle_vv(vd, src1, src2, vm); break;
+    case BoolTest::ge: vmsge_vv(vd, src1, src2, vm); break;
+    case BoolTest::lt: vmslt_vv(vd, src1, src2, vm); break;
+    case BoolTest::gt: vmsgt_vv(vd, src1, src2, vm); break;
+    default:
+      assert(false, "unsupported compare condition");
+      ShouldNotReachHere();
+  }
+}
+
+void C2_MacroAssembler::compare_floating_point_v(VectorRegister vd, BasicType bt, int vector_length,
+                                                 VectorRegister src1, VectorRegister src2,
+                                                 VectorRegister tmp1, VectorRegister tmp2,
+                                                 VectorRegister vmask, int cond, VectorMask vm) {
+  assert(is_floating_point_type(bt), "unsupported element type");
+  assert(vd != v0, "should be different registers");
+  assert(vm == Assembler::v0_t ? vmask != v0 : true, "vmask should not be v0");
+  vsetvli_helper(bt, vector_length);
+  // Check vector elements of src1 and src2 for quiet and signaling NaN.
+  vfclass_v(tmp1, src1);
+  vfclass_v(tmp2, src2);
+  vsrl_vi(tmp1, tmp1, 8);
+  vsrl_vi(tmp2, tmp2, 8);
+  vmseq_vx(tmp1, tmp1, zr);
+  vmseq_vx(tmp2, tmp2, zr);
+  if (vm == Assembler::v0_t) {
+    vmand_mm(tmp2, tmp1, tmp2);
+    if (cond == BoolTest::ne) {
+      vmandn_mm(tmp1, vmask, tmp2);
+    }
+    vmand_mm(v0, vmask, tmp2);
+  } else {
+    vmand_mm(v0, tmp1, tmp2);
+    if (cond == BoolTest::ne) {
+      vmnot_m(tmp1, v0);
+    }
+  }
+  vmclr_m(vd);
+  switch (cond) {
+    case BoolTest::eq: vmfeq_vv(vd, src1, src2, Assembler::v0_t); break;
+    case BoolTest::ne: vmfne_vv(vd, src1, src2, Assembler::v0_t);
+                       vmor_mm(vd, vd, tmp1); break;
+    case BoolTest::le: vmfle_vv(vd, src1, src2, Assembler::v0_t); break;
+    case BoolTest::ge: vmfge_vv(vd, src1, src2, Assembler::v0_t); break;
+    case BoolTest::lt: vmflt_vv(vd, src1, src2, Assembler::v0_t); break;
+    case BoolTest::gt: vmfgt_vv(vd, src1, src2, Assembler::v0_t); break;
+    default:
+      assert(false, "unsupported compare condition");
+      ShouldNotReachHere();
+  }
+}
+
+void C2_MacroAssembler::integer_extend_v(VectorRegister dst, BasicType dst_bt, int vector_length,
+                                         VectorRegister src, BasicType src_bt) {
+  assert(type2aelembytes(dst_bt) > type2aelembytes(src_bt) && type2aelembytes(dst_bt) <= 8 && type2aelembytes(src_bt) <= 4, "invalid element size");
+  assert(dst_bt != T_FLOAT && dst_bt != T_DOUBLE && src_bt != T_FLOAT && src_bt != T_DOUBLE, "unsupported element type");
+  // https://github.com/riscv/riscv-v-spec/blob/master/v-spec.adoc#52-vector-operands
+  // The destination EEW is greater than the source EEW, the source EMUL is at least 1,
+  // and the overlap is in the highest-numbered part of the destination register group.
+  // Since LMUL=1, vd and vs cannot be the same.
+  assert_different_registers(dst, src);
+
+  vsetvli_helper(dst_bt, vector_length);
+  if (src_bt == T_BYTE) {
+    switch (dst_bt) {
+    case T_SHORT:
+      vsext_vf2(dst, src);
+      break;
+    case T_INT:
+      vsext_vf4(dst, src);
+      break;
+    case T_LONG:
+      vsext_vf8(dst, src);
+      break;
+    default:
+      ShouldNotReachHere();
+    }
+  } else if (src_bt == T_SHORT) {
+    if (dst_bt == T_INT) {
+      vsext_vf2(dst, src);
+    } else {
+      vsext_vf4(dst, src);
+    }
+  } else if (src_bt == T_INT) {
+    vsext_vf2(dst, src);
+  }
+}
+
+// Vector narrow from src to dst with specified element sizes.
+// High part of dst vector will be filled with zero.
+void C2_MacroAssembler::integer_narrow_v(VectorRegister dst, BasicType dst_bt, int vector_length,
+                                         VectorRegister src, BasicType src_bt) {
+  assert(type2aelembytes(dst_bt) < type2aelembytes(src_bt) && type2aelembytes(dst_bt) <= 4 && type2aelembytes(src_bt) <= 8, "invalid element size");
+  assert(dst_bt != T_FLOAT && dst_bt != T_DOUBLE && src_bt != T_FLOAT && src_bt != T_DOUBLE, "unsupported element type");
+  mv(t0, vector_length);
+  if (src_bt == T_LONG) {
+    // https://github.com/riscv/riscv-v-spec/blob/master/v-spec.adoc#117-vector-narrowing-integer-right-shift-instructions
+    // Future extensions might add support for versions that narrow to a destination that is 1/4 the width of the source.
+    // So we can currently only scale down by 1/2 the width at a time.
+    vsetvli(t0, t0, Assembler::e32, Assembler::mf2);
+    vncvt_x_x_w(dst, src);
+    if (dst_bt == T_SHORT || dst_bt == T_BYTE) {
+      vsetvli(t0, t0, Assembler::e16, Assembler::mf2);
+      vncvt_x_x_w(dst, dst);
+      if (dst_bt == T_BYTE) {
+        vsetvli(t0, t0, Assembler::e8, Assembler::mf2);
+        vncvt_x_x_w(dst, dst);
+      }
+    }
+  } else if (src_bt == T_INT) {
+      // T_SHORT
+      vsetvli(t0, t0, Assembler::e16, Assembler::mf2);
+      vncvt_x_x_w(dst, src);
+      if (dst_bt == T_BYTE) {
+        vsetvli(t0, t0, Assembler::e8, Assembler::mf2);
+        vncvt_x_x_w(dst, dst);
+      }
+  } else if (src_bt == T_SHORT) {
+    vsetvli(t0, t0, Assembler::e8, Assembler::mf2);
+    vncvt_x_x_w(dst, src);
+  }
+}
+
+#define VFCVT_SAFE(VFLOATCVT)                                                      \
+void C2_MacroAssembler::VFLOATCVT##_safe(VectorRegister dst, VectorRegister src) { \
+  assert_different_registers(dst, src);                                            \
+  vfclass_v(v0, src);                                                              \
+  vxor_vv(dst, dst, dst);                                                          \
+  vsrl_vi(v0, v0, 8);                                                              \
+  vmseq_vx(v0, v0, zr);                                                            \
+  VFLOATCVT(dst, src, Assembler::v0_t);                                            \
+}
+
+VFCVT_SAFE(vfcvt_rtz_x_f_v);
+VFCVT_SAFE(vfwcvt_rtz_x_f_v);
+VFCVT_SAFE(vfncvt_rtz_x_f_w);
+
+#undef VFCVT_SAFE

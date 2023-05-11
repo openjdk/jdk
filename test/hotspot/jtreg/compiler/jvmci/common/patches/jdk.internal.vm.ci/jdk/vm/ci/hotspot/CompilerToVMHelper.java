@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -243,8 +243,8 @@ public class CompilerToVMHelper {
         CTVM.reprofile((HotSpotResolvedJavaMethodImpl)method);
     }
 
-    public static void invalidateHotSpotNmethod(HotSpotNmethod nmethodMirror) {
-        CTVM.invalidateHotSpotNmethod(nmethodMirror, true);
+    public static void invalidateHotSpotNmethod(HotSpotNmethod nmethodMirror, boolean deoptimize) {
+        CTVM.invalidateHotSpotNmethod(nmethodMirror, deoptimize);
     }
 
     public static long[] collectCounters() {
@@ -302,11 +302,6 @@ public class CompilerToVMHelper {
 
     public static HotSpotConstantPool getConstantPool(MetaspaceObject object) {
         return CTVM.getConstantPool(object);
-    }
-
-    public static HotSpotResolvedObjectType getResolvedJavaType(MetaspaceObject base,
-            long displacement, boolean compressed) {
-        return CTVM.getResolvedJavaType(base, displacement, compressed);
     }
 
     public static long getMetaspacePointer(Object o) {

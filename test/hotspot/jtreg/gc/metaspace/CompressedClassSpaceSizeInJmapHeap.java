@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,10 +32,11 @@ package gc.metaspace;
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @run main/othervm -XX:CompressedClassSpaceSize=48m gc.metaspace.CompressedClassSpaceSizeInJmapHeap
+ * @run main/timeout=240 gc.metaspace.CompressedClassSpaceSizeInJmapHeap
  */
 
 import jdk.test.lib.JDKToolLauncher;
+import jdk.test.lib.apps.LingeredApp;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.SA.SATestUtils;
@@ -49,7 +50,9 @@ public class CompressedClassSpaceSizeInJmapHeap {
     public static void main(String[] args) throws Exception {
         SATestUtils.skipIfCannotAttach(); // throws SkippedException if attach not expected to work.
 
-        String pid = Long.toString(ProcessTools.getProcessId());
+        LingeredApp theApp = new LingeredApp();
+        LingeredApp.startApp(theApp, "-XX:CompressedClassSpaceSize=48m");
+        String pid = Long.toString(theApp.getPid());
 
         JDKToolLauncher jmap = JDKToolLauncher.create("jhsdb")
                                               .addToolArg("jmap")
@@ -69,6 +72,8 @@ public class CompressedClassSpaceSizeInJmapHeap {
         OutputAnalyzer output = new OutputAnalyzer(read(out));
         output.shouldContain("CompressedClassSpaceSize = 50331648 (48.0MB)");
         out.delete();
+
+        LingeredApp.stopApp(theApp);
     }
 
     private static void run(ProcessBuilder pb) throws Exception {

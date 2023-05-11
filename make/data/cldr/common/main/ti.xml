@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2022 Unicode, Inc.
+<!-- Copyright © 1991-2023 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -17,56 +17,114 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<localeKeyTypePattern>{0}፦ {1}</localeKeyTypePattern>
 		</localeDisplayPattern>
 		<languages>
+			<language type="ab">ኣብካዝኛ</language>
+			<language type="ace">ኣቸኒዝኛ</language>
+			<language type="ada">ኣዳንግሜ</language>
+			<language type="ady">ኣዲጊ</language>
 			<language type="af">ኣፍሪካንስ</language>
 			<language type="agq">ኣገም</language>
+			<language type="ain">ኣይኑ</language>
 			<language type="ak">ኣካን</language>
+			<language type="ale">ኣለውትኛ</language>
+			<language type="alt">ደቡባዊ ኣልታይ</language>
 			<language type="am">ኣምሓርኛ</language>
+			<language type="an">ኣራጎንኛ</language>
+			<language type="ann">ኦቦሎ</language>
+			<language type="anp">ኣንጂካ</language>
 			<language type="ar">ዓረብ</language>
 			<language type="ar_001">ዘመናዊ ምዱብ ዓረብ</language>
+			<language type="arn">ማፑቺ</language>
+			<language type="arp">ኣራፓሆ</language>
+			<language type="ars">ናጅዲ ዓረብኛ</language>
 			<language type="as">ኣሳሜዝኛ</language>
 			<language type="asa">ኣሱ</language>
 			<language type="ast">ኣስቱርያን</language>
+			<language type="atj">ኣቲካመክ</language>
+			<language type="av">ኣቫር</language>
+			<language type="awa">ኣዋዲ</language>
+			<language type="ay">ኣይማራ</language>
 			<language type="az">ኣዘርባጃንኛ</language>
 			<language type="az" alt="short">ኣዘሪ</language>
+			<language type="ba">ባሽኪር</language>
+			<language type="ban">ባሊንኛ</language>
 			<language type="bas">ባሳ</language>
 			<language type="be">ቤላሩስኛ</language>
 			<language type="bem">ቤምባ</language>
 			<language type="bez">በና</language>
 			<language type="bg">ቡልጋርኛ</language>
+			<language type="bgc">ሃርያንቪ</language>
+			<language type="bho">ቦጅፑሪ</language>
+			<language type="bi">ቢስላማ</language>
+			<language type="bin">ቢኒ</language>
+			<language type="bla">ሲክሲካ</language>
 			<language type="bm">ባምባራ</language>
 			<language type="bn">በንጋሊ</language>
 			<language type="bo">ቲበታንኛ</language>
 			<language type="br">ብረቶንኛ</language>
 			<language type="brx">ቦዶ</language>
 			<language type="bs">ቦዝንኛ</language>
+			<language type="bug">ቡጊንኛ</language>
+			<language type="byn">ብሊን</language>
 			<language type="ca">ካታላን</language>
+			<language type="cay">ካዩጋ</language>
 			<language type="ccp">ቻክማ</language>
 			<language type="ce">ቸቸንይና</language>
 			<language type="ceb">ሰብዋኖ</language>
 			<language type="cgg">ቺጋ</language>
+			<language type="ch">ቻሞሮ</language>
+			<language type="chk">ቹኪዝኛ</language>
+			<language type="chm">ማሪ</language>
+			<language type="cho">ቾክቶ</language>
+			<language type="chp">ቺፐውያን</language>
 			<language type="chr">ቸሮኪ</language>
+			<language type="chy">ሻያን</language>
 			<language type="ckb">ሶራኒ ኩርዲሽ</language>
 			<language type="ckb" alt="variant">ማእከላይ ኩርዲሽ</language>
+			<language type="clc">ቺልኮቲን</language>
 			<language type="co">ኮርስኛ</language>
+			<language type="crg">ሚቺፍ</language>
+			<language type="crj">ደቡባዊ ምብራቕ ክሪ</language>
+			<language type="crk">ክሪ ፕሌንስ</language>
+			<language type="crl">ሰሜናዊ ምብራቕ ክሪ</language>
+			<language type="crm">ሙስ ክሪ</language>
+			<language type="crr">ካቶሊና አልጎንጉያኛ</language>
 			<language type="cs">ቸክኛ</language>
+			<language type="csw">ክሪ ረግረግ</language>
 			<language type="cu">ቤተ-ክርስትያን ስላቭኛ</language>
+			<language type="cv">ቹቫሽኛ</language>
 			<language type="cy">ዌልስኛ</language>
 			<language type="da">ዳኒሽ</language>
+			<language type="dak">ዳኮታ</language>
+			<language type="dar">ዳርግዋ</language>
 			<language type="dav">ታይታ</language>
 			<language type="de">ጀርመን</language>
+			<language type="de_CH">ጀርመን (ስዊዘርላንድ)</language>
+			<language type="dgr">ዶግሪብ</language>
 			<language type="dje">ዛርማ</language>
 			<language type="doi">ዶግሪ</language>
 			<language type="dsb">ታሕተዋይ ሶርብኛ</language>
 			<language type="dua">ድዋላ</language>
+			<language type="dv">ዲቨሂ</language>
 			<language type="dyo">ጆላ-ፎኒይ</language>
 			<language type="dz">ድዞንግካ</language>
+			<language type="dzg">ዳዛጋ</language>
 			<language type="ebu">ኤምቡ</language>
 			<language type="ee">ኢው</language>
+			<language type="efi">ኤፊክ</language>
+			<language type="eka">ኤካጁክ</language>
 			<language type="el">ግሪኽኛ</language>
 			<language type="en">እንግሊዝኛ</language>
+			<language type="en_AU">እንግሊዝኛ (ኣውስትራልያ)</language>
+			<language type="en_CA">እንግሊዝኛ (ካናዳ)</language>
+			<language type="en_GB">እንግሊዝኛ (ብሪጣንያ)</language>
+			<language type="en_GB" alt="short">እንግሊዝኛ (ዩ.ኪ.)</language>
 			<language type="en_US">እንግሊዝኛ (ሕቡራት መንግስታት)</language>
+			<language type="en_US" alt="short">እንግሊዝኛ (ሕ.መ.)</language>
 			<language type="eo">ኤስፐራንቶ</language>
 			<language type="es">ስጳንኛ</language>
+			<language type="es_419">ስጳንኛ (ላቲን ኣመሪካ)</language>
+			<language type="es_ES">ስጳንኛ (ስጳኛ)</language>
+			<language type="es_MX">ስጳንኛ (ሜክሲኮ)</language>
 			<language type="et">ኤስቶንኛ</language>
 			<language type="eu">ባስክኛ</language>
 			<language type="ewo">ኤዎንዶ</language>
@@ -75,123 +133,212 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ff">ፉላ</language>
 			<language type="fi">ፊንላንድኛ</language>
 			<language type="fil">ፊሊፒንኛ</language>
+			<language type="fj">ፊጅያንኛ</language>
 			<language type="fo">ፋሮእይና</language>
+			<language type="fon">ፎን</language>
 			<language type="fr">ፈረንሳይኛ</language>
+			<language type="fr_CA">ፈረንሳይኛ (ካናዳ)</language>
+			<language type="fr_CH">ፈረንሳይኛ (ስዊዘርላንድ)</language>
 			<language type="frc">ካጁን ፈረንሳይ</language>
+			<language type="frr">ሰሜናዊ ፍሪስኛ</language>
 			<language type="fur">ፍርዩልኛ</language>
 			<language type="fy">ምዕራባዊ ፍሪስኛ</language>
 			<language type="ga">ኣየርላንድኛ</language>
+			<language type="gaa">ጋ</language>
 			<language type="gd">ስኮትላንዳዊ ጋኤሊክኛ</language>
+			<language type="gez">ግእዝ</language>
+			<language type="gil">ጊልበርትኛ</language>
 			<language type="gl">ጋሊሽያን</language>
 			<language type="gn">ጓራኒ</language>
+			<language type="gor">ጎሮንታሎ</language>
 			<language type="gsw">ስዊዘርላንዳዊ ጀርመን</language>
 			<language type="gu">ጉጃራቲ</language>
 			<language type="guz">ጉሲ</language>
 			<language type="gv">ማንክስ</language>
+			<language type="gwi">ጒቺን</language>
 			<language type="ha">ሃውሳ</language>
+			<language type="hai">ሃይዳ</language>
 			<language type="haw">ሃዋይኛ</language>
+			<language type="hax">ደቡባዊ ሃይዳ</language>
 			<language type="he">እብራይስጢ</language>
 			<language type="hi">ሂንዲ</language>
+			<language type="hi_Latn" alt="variant">ሂንግሊሽ</language>
+			<language type="hil">ሂሊጋይኖን</language>
 			<language type="hmn">ህሞንግ</language>
 			<language type="hr">ክሮኤሽያን</language>
 			<language type="hsb">ላዕለዋይ ሶርብኛ</language>
 			<language type="ht">ክርዮል ሃይትኛ</language>
 			<language type="hu">ሃንጋርኛ</language>
+			<language type="hup">ሁፓ</language>
+			<language type="hur">ሃልኮመለም</language>
 			<language type="hy">ኣርሜንኛ</language>
+			<language type="hz">ሄረሮ</language>
 			<language type="ia">ኢንተርሊንጓ</language>
+			<language type="iba">ኢባን</language>
+			<language type="ibb">ኢቢብዮ</language>
 			<language type="id">ኢንዶነዥኛ</language>
 			<language type="ig">ኢግቦ</language>
 			<language type="ii">ሲችዋን ዪ</language>
+			<language type="ikt">ምዕራባዊ ካናዳዊ ኢናክቲቱት</language>
+			<language type="ilo">ኢሎካኖ</language>
+			<language type="inh">ኢንጉሽኛ</language>
+			<language type="io">ኢዶ</language>
 			<language type="is">ኣይስላንድኛ</language>
 			<language type="it">ጥልያን</language>
+			<language type="iu">ኢናክቲቱት</language>
 			<language type="ja">ጃፓንኛ</language>
-			<language type="jgo">ንጎምባ</language>
+			<language type="jbo">ሎጅባን</language>
+			<language type="jgo">ኤንጎምባ</language>
 			<language type="jmc">ማኬም</language>
 			<language type="jv">ጃቫንኛ</language>
 			<language type="ka">ጆርጅያንኛ</language>
 			<language type="kab">ካቢልኛ</language>
+			<language type="kac">ካቺን</language>
+			<language type="kaj">ጅጁ</language>
 			<language type="kam">ካምባ</language>
+			<language type="kbd">ካባርድኛ</language>
+			<language type="kcg">ታያፕ</language>
 			<language type="kde">ማኮንደ</language>
 			<language type="kea">ክርዮል ኬፕ ቨርድኛ</language>
+			<language type="kfo">ኮሮ</language>
 			<language type="kgp">ካይንጋንግ</language>
+			<language type="kha">ካሲ</language>
 			<language type="khq">ኮይራ ቺኒ</language>
 			<language type="ki">ኪኩዩ</language>
+			<language type="kj">ክዋንያማ</language>
 			<language type="kk">ካዛክ</language>
 			<language type="kkj">ካኮ</language>
 			<language type="kl">ግሪንላንድኛ</language>
 			<language type="kln">ካለንጂን</language>
 			<language type="km">ክመር</language>
+			<language type="kmb">ኪምቡንዱ</language>
 			<language type="kn">ካንናዳ</language>
 			<language type="ko">ኮርይኛ</language>
 			<language type="kok">ኮንካኒ</language>
+			<language type="kpe">ክፐለ</language>
+			<language type="kr">ካኑሪ</language>
+			<language type="krc">ካራቻይ-ባልካርኛ</language>
+			<language type="krl">ካረልኛ</language>
+			<language type="kru">ኩሩክ</language>
 			<language type="ks">ካሽሚሪ</language>
 			<language type="ksb">ሻምባላ</language>
 			<language type="ksf">ባፍያ</language>
 			<language type="ksh">ኮልሽ</language>
 			<language type="ku">ኩርዲሽ</language>
+			<language type="kum">ኩሚይክ</language>
+			<language type="kv">ኮሚ</language>
 			<language type="kw">ኮርንኛ</language>
+			<language type="kwk">ክዋክዋላ</language>
 			<language type="ky">ኪርጊዝኛ</language>
 			<language type="la">ላቲን</language>
+			<language type="lad">ላዲኖ</language>
 			<language type="lag">ላንጊ</language>
 			<language type="lb">ሉክሰምበርግኛ</language>
+			<language type="lez">ለዝግኛ</language>
 			<language type="lg">ጋንዳ</language>
+			<language type="li">ሊምበርግኛ</language>
 			<language type="lij">ሊጉርኛ</language>
+			<language type="lil">ሊሉት</language>
 			<language type="lkt">ላኮታ</language>
 			<language type="ln">ሊንጋላ</language>
 			<language type="lo">ላኦ</language>
 			<language type="lou">ክርዮል ሉዊዝያና</language>
+			<language type="loz">ሎዚ</language>
 			<language type="lrc">ሰሜናዊ ሉሪ</language>
+			<language type="lsm">ሳምያ</language>
 			<language type="lt">ሊትዌንኛ</language>
 			<language type="lu">ሉባ-ካታንጋ</language>
+			<language type="lua">ሉባ-ሉልዋ</language>
+			<language type="lun">ሉንዳ</language>
 			<language type="luo">ሉኦ</language>
+			<language type="lus">ማይዞ</language>
 			<language type="luy">ሉይያ</language>
 			<language type="lv">ላትቭኛ</language>
+			<language type="mad">ማዱሪዝኛ</language>
+			<language type="mag">ማጋሂ</language>
 			<language type="mai">ማይቲሊ</language>
+			<language type="mak">ማካሳር</language>
 			<language type="mas">ማሳይ</language>
+			<language type="mdf">ሞክሻ</language>
+			<language type="men">መንዴ</language>
 			<language type="mer">መሩ</language>
 			<language type="mfe">ክርዮል ማውሪሽይና</language>
 			<language type="mg">ማላጋሲ</language>
 			<language type="mgh">ማክዋ-ሜቶ</language>
 			<language type="mgo">መታ</language>
+			<language type="mh">ማርሻሊዝኛ</language>
 			<language type="mi">ማኦሪ</language>
+			<language type="mic">ሚክማክ</language>
+			<language type="min">ሚናንግካባው</language>
 			<language type="mk">መቄዶንኛ</language>
 			<language type="ml">ማላያላም</language>
 			<language type="mn">ሞንጎልኛ</language>
 			<language type="mni">ማኒፑሪ</language>
+			<language type="moe">ኢኑ-ኤመን</language>
+			<language type="moh">ሞሃውክ</language>
+			<language type="mos">ሞሲ</language>
 			<language type="mr">ማራቲ</language>
 			<language type="ms">ማላይኛ</language>
 			<language type="mt">ማልትኛ</language>
 			<language type="mua">ሙንዳንግ</language>
 			<language type="mul">ዝተፈላለዩ ቋንቋታት</language>
+			<language type="mus">ክሪክ</language>
+			<language type="mwl">ሚራንዲዝኛ</language>
 			<language type="my">በርምኛ</language>
+			<language type="myv">ኤርዝያ</language>
 			<language type="mzn">ማዛንደራኒ</language>
+			<language type="na">ናውርዋንኛ</language>
+			<language type="nap">ናፖሊታንኛ</language>
 			<language type="naq">ናማ</language>
 			<language type="nb">ኖርወያዊ ቦክማል</language>
-			<language type="nd">ሰሜን ንደበለ</language>
+			<language type="nd">ሰሜን ኤንደበለ</language>
 			<language type="nds">ትሑት ጀርመን</language>
 			<language type="nds_NL">ትሑት ሳክሰን</language>
 			<language type="ne">ኔፓሊ</language>
+			<language type="new">ነዋሪ</language>
+			<language type="ng">ኤንዶንጋ</language>
+			<language type="nia">ንያስ</language>
+			<language type="niu">ንዌንኛ</language>
 			<language type="nl">ዳች</language>
 			<language type="nl_BE">ፍላሚሽ</language>
 			<language type="nmg">ክዋስዮ</language>
 			<language type="nn">ኖርወያዊ ናይኖርስክ</language>
-			<language type="nnh">ንጌምቡን</language>
+			<language type="nnh">ኤንጌምቡን</language>
 			<language type="no">ኖርወይኛ</language>
+			<language type="nog">ኖጋይኛ</language>
+			<language type="nqo">ኤንኮ</language>
+			<language type="nr">ደቡብ ኤንደበለ</language>
+			<language type="nso">ሰሜናዊ ሶቶ</language>
 			<language type="nus">ንዌር</language>
 			<language type="nv">ናቫሆ</language>
 			<language type="ny">ንያንጃ</language>
 			<language type="nyn">ንያንኮል</language>
 			<language type="oc">ኦክሲታንኛ</language>
+			<language type="ojb">ሰሜናዊ ምዕራብ ኦጂብዋ</language>
+			<language type="ojc">ማእከላይ ኦጂብዋ</language>
+			<language type="ojs">ኦጂ-ክሪ</language>
+			<language type="ojw">ምዕራባዊ ኦጂብዋ</language>
+			<language type="oka">ኦካናጋን</language>
 			<language type="om">ኦሮሞ</language>
 			<language type="or">ኦድያ</language>
 			<language type="os">ኦሰትኛ</language>
 			<language type="pa">ፑንጃቢ</language>
+			<language type="pag">ፓንጋሲናን</language>
+			<language type="pam">ፓምፓንጋ</language>
+			<language type="pap">ፓፕያመንቶ</language>
+			<language type="pau">ፓላውኛ</language>
 			<language type="pcm">ፒጂን ናይጀርያ</language>
+			<language type="pis">ፒጂን</language>
 			<language type="pl">ፖሊሽ</language>
+			<language type="pqm">ማሊሲት-ፓሳማኳዲ</language>
 			<language type="prg">ፕሩስኛ</language>
 			<language type="ps">ፓሽቶ</language>
 			<language type="pt">ፖርቱጊዝኛ</language>
+			<language type="pt_BR">ፖርቱጊዝኛ (ብራዚል)</language>
+			<language type="pt_PT">ፖርቱጊዝኛ (ፖርቱጋል)</language>
 			<language type="qu">ቀችዋ</language>
+			<language type="rap">ራፓኑይ</language>
+			<language type="rar">ራሮቶንጋንኛ</language>
 			<language type="rhg">ሮሂንግያ</language>
 			<language type="rm">ሮማንሽ</language>
 			<language type="rn">ኪሩንዲ</language>
@@ -199,13 +346,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ro_MD">ሞልዶቨኛ</language>
 			<language type="rof">ሮምቦ</language>
 			<language type="ru">ሩስኛ</language>
+			<language type="rup">ኣሩማንኛ</language>
 			<language type="rw">ኪንያርዋንዳ</language>
 			<language type="rwk">ርዋ</language>
 			<language type="sa">ሳንስክሪት</language>
+			<language type="sad">ሳንዳወ</language>
 			<language type="sah">ሳኻ</language>
 			<language type="saq">ሳምቡሩ</language>
 			<language type="sat">ሳንታሊ</language>
+			<language type="sba">ኤንጋምባይ</language>
 			<language type="sbp">ሳንጉ</language>
+			<language type="sc">ሳርዲንኛ</language>
+			<language type="scn">ሲሲልኛ</language>
+			<language type="sco">ስኮትኛ</language>
 			<language type="sd">ሲንድሂ</language>
 			<language type="se">ሰሜናዊ ሳሚ</language>
 			<language type="seh">ሰና</language>
@@ -213,50 +366,88 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="sg">ሳንጎ</language>
 			<language type="sh">ሰርቦ-ክሮኤሽያን</language>
 			<language type="shi">ታቸልሂት</language>
+			<language type="shn">ሻን</language>
 			<language type="si">ሲንሃላ</language>
 			<language type="sk">ስሎቫክኛ</language>
 			<language type="sl">ስሎቬንኛ</language>
+			<language type="slh">ደቡባዊ ሉሹትሲድ</language>
 			<language type="sm">ሳሞእኛ</language>
 			<language type="smn">ሳሚ ኢናሪ</language>
+			<language type="sms">ሳሚ ስኮልት</language>
 			<language type="sn">ሾና</language>
+			<language type="snk">ሶኒንከ</language>
 			<language type="so">ሶማሊ</language>
 			<language type="sq">ኣልባንኛ</language>
-			<language type="sr">ሰርብኛ</language>
+			<language type="sr">ቃንቃ ሰርቢያ</language>
+			<language type="srn">ስራናን ቶንጎ</language>
+			<language type="ss">ስዋዚ</language>
 			<language type="st">ደቡባዊ ሶቶ</language>
+			<language type="str">ሳሊሽ መጻብቦታት</language>
 			<language type="su">ሱንዳንኛ</language>
+			<language type="suk">ሱኩማ</language>
 			<language type="sv">ስዊድንኛ</language>
 			<language type="sw">ስዋሂሊ</language>
 			<language type="sw_CD">ስዋሂሊ (ኮንጎ)</language>
+			<language type="swb">ኮሞርኛ</language>
+			<language type="syr">ሱርስት</language>
 			<language type="ta">ታሚል</language>
+			<language type="tce">ደቡባዊ ታትቾን</language>
 			<language type="te">ተሉጉ</language>
+			<language type="tem">ቲምኔ</language>
 			<language type="teo">ተሶ</language>
+			<language type="tet">ቲተም</language>
 			<language type="tg">ታጂክኛ</language>
+			<language type="tgx">ታጊሽ</language>
 			<language type="th">ታይኛ</language>
+			<language type="tht">ታልተን</language>
 			<language type="ti">ትግርኛ</language>
+			<language type="tig">ትግረ</language>
 			<language type="tk">ቱርክመንኛ</language>
 			<language type="tlh">ክሊንጎን</language>
+			<language type="tli">ትሊንጊት</language>
+			<language type="tn">ስዋና</language>
 			<language type="to">ቶንጋንኛ</language>
+			<language type="tok">ቶኪ ፖና</language>
+			<language type="tpi">ቶክ ፒሲን</language>
 			<language type="tr">ቱርክኛ</language>
+			<language type="trv">ታሮኮ</language>
+			<language type="ts">ሶንጋ</language>
 			<language type="tt">ታታር</language>
+			<language type="ttm">ሰሜናዊ ታትቾን</language>
+			<language type="tum">ተምቡካ</language>
+			<language type="tvl">ቱቫልዋንኛ</language>
 			<language type="tw">ትዊ</language>
 			<language type="twq">ታሳዋቅ</language>
+			<language type="ty">ታሂትኛ</language>
+			<language type="tyv">ቱቪንኛ</language>
 			<language type="tzm">ማእከላይ ኣትላስ ታማዛይት</language>
+			<language type="udm">ዩድሙርት</language>
 			<language type="ug">ኡይጉር</language>
 			<language type="uk">ዩክረይንኛ</language>
+			<language type="umb">ኣምቡንዱ</language>
 			<language type="und">ዘይተፈልጠ ቋንቋ</language>
 			<language type="ur">ኡርዱ</language>
 			<language type="uz">ኡዝበክኛ</language>
 			<language type="vai">ቫይ</language>
+			<language type="ve">ቨንዳ</language>
+			<language type="vec">ቬንቲያንኛ</language>
 			<language type="vi">ቬትናምኛ</language>
 			<language type="vo">ቮላፑክ</language>
 			<language type="vun">ቩንጆ</language>
+			<language type="wa">ዋሎን</language>
 			<language type="wae">ዋልሰር</language>
+			<language type="wal">ዎላይታኛ</language>
+			<language type="war">ዋራይ</language>
 			<language type="wo">ዎሎፍ</language>
+			<language type="wuu">ቻይናዊ ዉ</language>
+			<language type="xal">ካልምይክ</language>
 			<language type="xh">ኮሳ</language>
 			<language type="xog">ሶጋ</language>
 			<language type="yav">ያንግበን</language>
+			<language type="ybb">የምባ</language>
 			<language type="yi">ይሁድኛ</language>
 			<language type="yo">ዮሩባ</language>
+			<language type="yrl">ኒንጋቱ</language>
 			<language type="yue">ካንቶንኛ</language>
 			<language type="yue" alt="menu">ቻይናዊ ካንቶንኛ</language>
 			<language type="zgh">ሞሮካዊ ምዱብ ታማዛይት</language>
@@ -267,7 +458,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="zh_Hant">ባህላዊ ቻይንኛ</language>
 			<language type="zh_Hant" alt="long">ባህላዊ ማንዳሪን ቻይንኛ</language>
 			<language type="zu">ዙሉ</language>
+			<language type="zun">ዙኚ</language>
 			<language type="zxx">ቋንቋዊ ትሕዝቶ የለን</language>
+			<language type="zza">ዛዛኪ</language>
 		</languages>
 		<scripts>
 			<script type="Ethi">ፊደል</script>
@@ -471,7 +664,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="MN">ሞንጎልያ</territory>
 			<territory type="MO">ፍሉይ ምምሕዳራዊ ዞባ ማካው (ቻይና)</territory>
 			<territory type="MO" alt="short">ማካው</territory>
-			<territory type="MP">ደሴታት ሰሜናዊ ማርያና</territory>
+			<territory type="MP">ሰሜናዊ ደሴታት ማርያና</territory>
 			<territory type="MQ">ማርቲኒክ</territory>
 			<territory type="MR">ማውሪታንያ</territory>
 			<territory type="MS">ሞንትሰራት</territory>
@@ -497,7 +690,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="OM">ዖማን</territory>
 			<territory type="PA">ፓናማ</territory>
 			<territory type="PE">ፔሩ</territory>
-			<territory type="PF">ፈረንሳይ ፖሊነዥያ</territory>
+			<territory type="PF">ፈረንሳዊት ፖሊነዥያ</territory>
 			<territory type="PG">ፓፕዋ ኒው ጊኒ</territory>
 			<territory type="PH">ፊሊፒንስ</territory>
 			<territory type="PK">ፓኪስታን</territory>
@@ -634,6 +827,51 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</eraNarrow>
 				</eras>
 			</calendar>
+			<calendar type="coptic">
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern>EEEE፣ d MMMM y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern>d MMMM y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern>d MMM y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>dd/MM/yy GGGGG</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<dateTimeFormats>
+					<dateTimeFormatLength type="full">
+						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+				</dateTimeFormats>
+			</calendar>
+			<calendar type="dangi">
+				<dateTimeFormats>
+					<intervalFormats>
+						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
+					</intervalFormats>
+				</dateTimeFormats>
+			</calendar>
+			<calendar type="ethiopic">
+				<dateTimeFormats>
+					<intervalFormats>
+						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
+					</intervalFormats>
+				</dateTimeFormats>
+			</calendar>
 			<calendar type="generic">
 				<dateFormats>
 					<dateFormatLength type="full">
@@ -664,11 +902,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<dateTimeFormats>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} ሰዓት {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} ሰዓት {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -1067,11 +1311,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<dateTimeFormats>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} ሰዓት {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} ሰዓት {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -1079,9 +1329,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -1286,6 +1542,134 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</intervalFormats>
 				</dateTimeFormats>
 			</calendar>
+			<calendar type="islamic">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="narrow">
+							<month type="1">1</month>
+							<month type="2">2</month>
+							<month type="3">3</month>
+							<month type="4">4</month>
+							<month type="5">5</month>
+							<month type="6">6</month>
+							<month type="7">7</month>
+							<month type="8">8</month>
+							<month type="9">9</month>
+							<month type="10">10</month>
+							<month type="11">11</month>
+							<month type="12">12</month>
+						</monthWidth>
+					</monthContext>
+					<monthContext type="stand-alone">
+						<monthWidth type="abbreviated">
+							<month type="1">Muh.</month>
+							<month type="2">Saf.</month>
+							<month type="3">Rab. I</month>
+							<month type="4">Rab. II</month>
+							<month type="5">Jum. I</month>
+							<month type="6">Jum. II</month>
+							<month type="7">Raj.</month>
+							<month type="8">Sha.</month>
+							<month type="9">Ram.</month>
+							<month type="10">Shaw.</month>
+							<month type="11">Dhuʻl-Q.</month>
+							<month type="12">Dhuʻl-H.</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1">Muharram</month>
+							<month type="2">Safar</month>
+							<month type="3">Rabiʻ I</month>
+							<month type="4">Rabiʻ II</month>
+							<month type="5">Jumada I</month>
+							<month type="6">Jumada II</month>
+							<month type="7">Rajab</month>
+							<month type="8">Shaʻban</month>
+							<month type="9">Ramadan</month>
+							<month type="10">Shawwal</month>
+							<month type="11">Dhuʻl-Qiʻdah</month>
+							<month type="12">Dhuʻl-Hijjah</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern>EEEE፣ d MMMM y G</pattern>
+							<datetimeSkeleton>GyMMMMEEEEd</datetimeSkeleton>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern>d MMMM y G</pattern>
+							<datetimeSkeleton>GyMMMMdd</datetimeSkeleton>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern>d MMM y G</pattern>
+							<datetimeSkeleton>GyMMMdd</datetimeSkeleton>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>dd/MM/yy GGGGG</pattern>
+							<datetimeSkeleton>GGGGGyyMMdd</datetimeSkeleton>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="d">d</dateFormatItem>
+						<dateFormatItem id="E">ccc</dateFormatItem>
+						<dateFormatItem id="Ed">E d</dateFormatItem>
+						<dateFormatItem id="Gy">y G</dateFormatItem>
+						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMd">d MMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMEd">E፣ d MMM y G</dateFormatItem>
+						<dateFormatItem id="M">L</dateFormatItem>
+						<dateFormatItem id="Md">d/M</dateFormatItem>
+						<dateFormatItem id="MEd">E፣ d/M</dateFormatItem>
+						<dateFormatItem id="MMM">LLL</dateFormatItem>
+						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
+						<dateFormatItem id="MMMEd">E፣ d MMM</dateFormatItem>
+						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
+						<dateFormatItem id="y">y G</dateFormatItem>
+						<dateFormatItem id="yMMMM">MMMM y</dateFormatItem>
+						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
+						<dateFormatItem id="yyyy">y G</dateFormatItem>
+						<dateFormatItem id="yyyyM">M/y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMd">d/M/y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMEd">E፣ d/M/y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMMM">MMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMd">d MMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMEd">E፣ d MMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMM">MMMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyQQQ">QQQ y G</dateFormatItem>
+						<dateFormatItem id="yyyyQQQQ">QQQQ y G</dateFormatItem>
+					</availableFormats>
+				</dateTimeFormats>
+			</calendar>
+			<calendar type="japanese">
+				<dateTimeFormats>
+					<intervalFormats>
+						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
+					</intervalFormats>
+				</dateTimeFormats>
+			</calendar>
+			<calendar type="persian">
+				<dateTimeFormats>
+					<intervalFormats>
+						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
+					</intervalFormats>
+				</dateTimeFormats>
+			</calendar>
+			<calendar type="roc">
+				<dateTimeFormats>
+					<intervalFormats>
+						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
+					</intervalFormats>
+				</dateTimeFormats>
+			</calendar>
 		</calendars>
 		<fields>
 			<field type="era">
@@ -1313,6 +1697,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="year-short">
 				<displayName>ዓመት</displayName>
+				<relative type="-1">ዓሚ</relative>
+				<relative type="0">ሎሚ ዓመት</relative>
+				<relative type="1">ንዓመታ</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">ኣብ {0} ዓ</relativeTimePattern>
 					<relativeTimePattern count="other">ኣብ {0} ዓ</relativeTimePattern>
@@ -1324,6 +1711,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="year-narrow">
 				<displayName>ዓመት</displayName>
+				<relative type="-1">ዓሚ</relative>
+				<relative type="0">ሎሚ ዓመት</relative>
+				<relative type="1">ንዓመታ</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">ኣብ {0} ዓ</relativeTimePattern>
 					<relativeTimePattern count="other">ኣብ {0} ዓ</relativeTimePattern>
@@ -1349,6 +1739,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="quarter-short">
 				<displayName>ርብዒ</displayName>
+				<relative type="-1">ዝሓለፈ ርብዒ</relative>
+				<relative type="0">ህሉው ርብዒ</relative>
+				<relative type="1">ዝመጽእ ርብዒ</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">ኣብ {0} ርብዒ</relativeTimePattern>
 					<relativeTimePattern count="other">ኣብ {0} ርብዒ</relativeTimePattern>
@@ -1360,6 +1753,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="quarter-narrow">
 				<displayName>ርብዒ</displayName>
+				<relative type="-1">ዝሓለፈ ርብዒ</relative>
+				<relative type="0">ህሉው ርብዒ</relative>
+				<relative type="1">ዝመጽእ ርብዒ</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">ኣብ {0} ርብዒ</relativeTimePattern>
 					<relativeTimePattern count="other">ኣብ {0} ርብዒ</relativeTimePattern>
@@ -1428,6 +1824,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="week-short">
 				<displayName>ሰሙን</displayName>
+				<relative type="-1">ዝሓለፈ ሰሙን</relative>
+				<relative type="0">ህሉው ሰሙን</relative>
+				<relative type="1">ዝመጽእ ሰሙን</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">ኣብ {0} ሰሙን</relativeTimePattern>
 					<relativeTimePattern count="other">ኣብ {0} ሰሙን</relativeTimePattern>
@@ -1440,6 +1839,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="week-narrow">
 				<displayName>ሰሙን</displayName>
+				<relative type="-1">ዝሓለፈ ሰሙን</relative>
+				<relative type="0">ህሉው ሰሙን</relative>
+				<relative type="1">ዝመጽእ ሰሙን</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">ኣብ {0} ሰሙን</relativeTimePattern>
 					<relativeTimePattern count="other">ኣብ {0} ሰሙን</relativeTimePattern>
@@ -1454,6 +1856,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>ሰሙን ናይ ወርሒ</displayName>
 			</field>
 			<field type="weekOfMonth-short">
+				<displayName>ሰሙ. ናይ ወር.</displayName>
+			</field>
+			<field type="weekOfMonth-narrow">
 				<displayName>ሰሙ. ናይ ወር.</displayName>
 			</field>
 			<field type="day">
@@ -1472,6 +1877,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="day-short">
 				<displayName>መዓልቲ</displayName>
+				<relative type="-1">ትማሊ</relative>
+				<relative type="0">ሎሚ</relative>
+				<relative type="1">ጽባሕ</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">ኣብ {0} መዓልቲ</relativeTimePattern>
 					<relativeTimePattern count="other">ኣብ {0} መዓልቲ</relativeTimePattern>
@@ -1483,6 +1891,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="day-narrow">
 				<displayName>መዓልቲ</displayName>
+				<relative type="-1">ትማሊ</relative>
+				<relative type="0">ሎሚ</relative>
+				<relative type="1">ጽባሕ</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">ኣብ {0} መዓልቲ</relativeTimePattern>
 					<relativeTimePattern count="other">ኣብ {0} መዓልቲ</relativeTimePattern>
@@ -1793,13 +2204,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</relativeTime>
 			</field>
 			<field type="dayperiod-short">
-				<displayName>ቅ.ቀ./ድ.ቀ.</displayName>
+				<displayName>AM/PM</displayName>
 			</field>
 			<field type="dayperiod">
-				<displayName>ቅ.ቀ./ድ.ቀ.</displayName>
+				<displayName>AM/PM</displayName>
 			</field>
 			<field type="dayperiod-narrow">
-				<displayName>ቅ.ቀ./ድ.ቀ.</displayName>
+				<displayName>AM/PM</displayName>
 			</field>
 			<field type="hour">
 				<displayName>ሰዓት</displayName>
@@ -1815,6 +2226,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="hour-short">
 				<displayName>ሰዓት</displayName>
+				<relative type="0">ኣብዚ ሰዓት</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">ኣብ {0} ሰዓት</relativeTimePattern>
 					<relativeTimePattern count="other">ኣብ {0} ሰዓት</relativeTimePattern>
@@ -1826,6 +2238,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="hour-narrow">
 				<displayName>ሰዓት</displayName>
+				<relative type="0">ኣብዚ ሰዓት</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">ኣብ {0} ሰዓት</relativeTimePattern>
 					<relativeTimePattern count="other">ኣብ {0} ሰዓት</relativeTimePattern>
@@ -1849,6 +2262,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="minute-short">
 				<displayName>ደቒቕ</displayName>
+				<relative type="0">ኣብዚ ደቒቕ</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">ኣብ {0} ደቒቕ</relativeTimePattern>
 					<relativeTimePattern count="other">ኣብ {0} ደቒቕ</relativeTimePattern>
@@ -1860,6 +2274,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="minute-narrow">
 				<displayName>ደቒ.</displayName>
+				<relative type="0">ኣብዚ ደቒቕ</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">ኣብ {0} ደቒቕ</relativeTimePattern>
 					<relativeTimePattern count="other">ኣብ {0} ደቒቕ</relativeTimePattern>
@@ -1883,6 +2298,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="second-short">
 				<displayName>ካልኢት</displayName>
+				<relative type="0">ሕጂ</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">ኣብ {0} ካልኢት</relativeTimePattern>
 					<relativeTimePattern count="other">ኣብ {0} ካልኢት</relativeTimePattern>
@@ -1894,6 +2310,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="second-narrow">
 				<displayName>ካልኢት</displayName>
+				<relative type="0">ሕጂ</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">ኣብ {0} ካልኢት</relativeTimePattern>
 					<relativeTimePattern count="other">ኣብ {0} ካልኢት</relativeTimePattern>
@@ -2555,6 +2972,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="Pacific/Enderbury">
 				<exemplarCity>ኤንደርበሪ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Kanton">
+				<exemplarCity>ካንቶን</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
 				<exemplarCity>ኪሪቲማቲ</exemplarCity>
@@ -3351,6 +3771,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>ግዜ ጋላፓጎስ</standard>
 				</long>
 			</metazone>
+			<metazone type="GMT">
+				<long>
+					<standard>GMT</standard>
+				</long>
+			</metazone>
 			<metazone type="Guyana">
 				<long>
 					<standard>ግዜ ጉያና</standard>
@@ -3550,37 +3975,65 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>¤#,##0.00</pattern>
+					<pattern alt="alphaNextToNumber" draft="provisional">¤ #,##0.00</pattern>
+					<pattern alt="noCurrency" draft="provisional">#,##0.00</pattern>
 				</currencyFormat>
 				<currencyFormat type="accounting">
 					<pattern>¤#,##0.00</pattern>
+					<pattern alt="alphaNextToNumber" draft="provisional">¤ #,##0.00</pattern>
+					<pattern alt="noCurrency" draft="provisional">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
 				<currencyFormat type="standard">
 					<pattern type="1000" count="one">¤0 ሽ</pattern>
+					<pattern type="1000" count="one" alt="alphaNextToNumber" draft="provisional">¤ 0 ሽ</pattern>
 					<pattern type="1000" count="other">¤0 ሽ</pattern>
+					<pattern type="1000" count="other" alt="alphaNextToNumber" draft="provisional">¤ 0 ሽ</pattern>
 					<pattern type="10000" count="one">¤00 ሽ</pattern>
+					<pattern type="10000" count="one" alt="alphaNextToNumber" draft="provisional">¤ 00 ሽ</pattern>
 					<pattern type="10000" count="other">¤00 ሽ</pattern>
+					<pattern type="10000" count="other" alt="alphaNextToNumber" draft="provisional">¤ 00 ሽ</pattern>
 					<pattern type="100000" count="one">¤000 ሽ</pattern>
+					<pattern type="100000" count="one" alt="alphaNextToNumber" draft="provisional">¤ 000 ሽ</pattern>
 					<pattern type="100000" count="other">¤000 ሽ</pattern>
+					<pattern type="100000" count="other" alt="alphaNextToNumber" draft="provisional">¤ 000 ሽ</pattern>
 					<pattern type="1000000" count="one">¤0 ሚ</pattern>
+					<pattern type="1000000" count="one" alt="alphaNextToNumber" draft="provisional">¤ 0 ሚ</pattern>
 					<pattern type="1000000" count="other">¤0 ሚ</pattern>
+					<pattern type="1000000" count="other" alt="alphaNextToNumber" draft="provisional">¤ 0 ሚ</pattern>
 					<pattern type="10000000" count="one">¤00 ሚ</pattern>
+					<pattern type="10000000" count="one" alt="alphaNextToNumber" draft="provisional">¤ 00 ሚ</pattern>
 					<pattern type="10000000" count="other">¤00 ሚ</pattern>
+					<pattern type="10000000" count="other" alt="alphaNextToNumber" draft="provisional">¤ 00 ሚ</pattern>
 					<pattern type="100000000" count="one">¤000 ሚ</pattern>
+					<pattern type="100000000" count="one" alt="alphaNextToNumber" draft="provisional">¤ 000 ሚ</pattern>
 					<pattern type="100000000" count="other">¤000 ሚ</pattern>
+					<pattern type="100000000" count="other" alt="alphaNextToNumber" draft="provisional">¤ 000 ሚ</pattern>
 					<pattern type="1000000000" count="one">¤0 ቢ</pattern>
+					<pattern type="1000000000" count="one" alt="alphaNextToNumber" draft="provisional">¤ 0 ቢ</pattern>
 					<pattern type="1000000000" count="other">¤0 ቢ</pattern>
+					<pattern type="1000000000" count="other" alt="alphaNextToNumber" draft="provisional">¤ 0 ቢ</pattern>
 					<pattern type="10000000000" count="one">¤00 ቢ</pattern>
+					<pattern type="10000000000" count="one" alt="alphaNextToNumber" draft="provisional">¤ 00 ቢ</pattern>
 					<pattern type="10000000000" count="other">¤00 ቢ</pattern>
+					<pattern type="10000000000" count="other" alt="alphaNextToNumber" draft="provisional">¤ 00 ቢ</pattern>
 					<pattern type="100000000000" count="one">¤000 ቢ</pattern>
+					<pattern type="100000000000" count="one" alt="alphaNextToNumber" draft="provisional">¤ 000 ቢ</pattern>
 					<pattern type="100000000000" count="other">¤000 ቢ</pattern>
+					<pattern type="100000000000" count="other" alt="alphaNextToNumber" draft="provisional">¤ 000 ቢ</pattern>
 					<pattern type="1000000000000" count="one">¤0 ት</pattern>
+					<pattern type="1000000000000" count="one" alt="alphaNextToNumber" draft="provisional">¤ 0 ት</pattern>
 					<pattern type="1000000000000" count="other">¤0 ት</pattern>
+					<pattern type="1000000000000" count="other" alt="alphaNextToNumber" draft="provisional">¤ 0 ት</pattern>
 					<pattern type="10000000000000" count="one">¤00 ት</pattern>
+					<pattern type="10000000000000" count="one" alt="alphaNextToNumber" draft="provisional">¤ 00 ት</pattern>
 					<pattern type="10000000000000" count="other">¤00 ት</pattern>
+					<pattern type="10000000000000" count="other" alt="alphaNextToNumber" draft="provisional">¤ 00 ት</pattern>
 					<pattern type="100000000000000" count="one">¤000 ት</pattern>
+					<pattern type="100000000000000" count="one" alt="alphaNextToNumber" draft="provisional">¤ 000 ት</pattern>
 					<pattern type="100000000000000" count="other">¤000 ት</pattern>
+					<pattern type="100000000000000" count="other" alt="alphaNextToNumber" draft="provisional">¤ 000 ት</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<unitPattern count="one">{0} {1}</unitPattern>
@@ -3665,12 +4118,77 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<pattern type="range">{0}–{1}</pattern>
 		</miscPatterns>
 		<minimalPairs>
-			<pluralMinimalPairs count="one" draft="contributed">{0} መዓልቲ</pluralMinimalPairs>
-			<pluralMinimalPairs count="other" draft="contributed">{0} መዓልታት</pluralMinimalPairs>
+			<pluralMinimalPairs count="one">{0} መዓልቲ</pluralMinimalPairs>
+			<pluralMinimalPairs count="other">{0} መዓልታት</pluralMinimalPairs>
 		</minimalPairs>
 	</numbers>
 	<units>
 		<unitLength type="long">
+			<unit type="acceleration-g-force">
+				<displayName>g-force</displayName>
+				<unitPattern count="one">{0} G</unitPattern>
+				<unitPattern count="other">{0} G</unitPattern>
+			</unit>
+			<unit type="acceleration-meter-per-square-second">
+				<displayName>m/s²</displayName>
+				<unitPattern count="one">{0} m/s²</unitPattern>
+				<unitPattern count="other">{0} m/s²</unitPattern>
+			</unit>
+			<unit type="area-square-kilometer">
+				<displayName>km²</displayName>
+				<unitPattern count="one">{0} km²</unitPattern>
+				<unitPattern count="other">{0} km²</unitPattern>
+				<perUnitPattern>{0}/km²</perUnitPattern>
+			</unit>
+			<unit type="area-hectare">
+				<displayName>hectare</displayName>
+				<unitPattern count="one">{0} ha</unitPattern>
+				<unitPattern count="other">{0} ha</unitPattern>
+			</unit>
+			<unit type="area-square-meter">
+				<displayName>m²</displayName>
+				<unitPattern count="one">{0} m²</unitPattern>
+				<unitPattern count="other">{0} m²</unitPattern>
+				<perUnitPattern>{0}/m²</perUnitPattern>
+			</unit>
+			<unit type="area-square-centimeter">
+				<displayName>cm²</displayName>
+				<unitPattern count="one">{0} cm²</unitPattern>
+				<unitPattern count="other">{0} cm²</unitPattern>
+				<perUnitPattern>{0}/cm²</perUnitPattern>
+			</unit>
+			<unit type="area-square-mile">
+				<displayName>mi²</displayName>
+				<unitPattern count="one">{0} mi²</unitPattern>
+				<unitPattern count="other">{0} mi²</unitPattern>
+				<perUnitPattern>{0}/mi²</perUnitPattern>
+			</unit>
+			<unit type="area-acre">
+				<displayName>acre</displayName>
+				<unitPattern count="one">{0} ac</unitPattern>
+				<unitPattern count="other">{0} ac</unitPattern>
+			</unit>
+			<unit type="area-square-yard">
+				<displayName>yd²</displayName>
+				<unitPattern count="one">{0} yd²</unitPattern>
+				<unitPattern count="other">{0} yd²</unitPattern>
+			</unit>
+			<unit type="area-square-foot">
+				<displayName>ft²</displayName>
+				<unitPattern count="one">{0} ft²</unitPattern>
+				<unitPattern count="other">{0} ft²</unitPattern>
+			</unit>
+			<unit type="area-square-inch">
+				<displayName>in²</displayName>
+				<unitPattern count="one">{0} in²</unitPattern>
+				<unitPattern count="other">{0} in²</unitPattern>
+				<perUnitPattern>{0}/in²</perUnitPattern>
+			</unit>
+			<unit type="area-dunam">
+				<displayName>dunam</displayName>
+				<unitPattern count="one">{0} dunam</unitPattern>
+				<unitPattern count="other">{0} dunam</unitPattern>
+			</unit>
 			<unit type="duration-century">
 				<displayName>ዘመናት</displayName>
 				<unitPattern count="one">{0} ዘመን</unitPattern>
@@ -3683,9 +4201,481 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="duration-year">
 				<displayName>ዓመታት</displayName>
+				<unitPattern count="one">{0} y</unitPattern>
+				<unitPattern count="other">{0} y</unitPattern>
+				<perUnitPattern>{0}/y</perUnitPattern>
+			</unit>
+			<unit type="duration-month">
+				<displayName>mon</displayName>
+				<unitPattern count="one">{0} m</unitPattern>
+				<unitPattern count="other">{0} m</unitPattern>
+				<perUnitPattern>{0}/m</perUnitPattern>
+			</unit>
+			<unit type="duration-week">
+				<displayName>wk</displayName>
+				<unitPattern count="one">{0} w</unitPattern>
+				<unitPattern count="other">{0} w</unitPattern>
+				<perUnitPattern>{0}/w</perUnitPattern>
+			</unit>
+			<unit type="duration-day">
+				<displayName>day</displayName>
+				<unitPattern count="one">{0} d</unitPattern>
+				<unitPattern count="other">{0} d</unitPattern>
+				<perUnitPattern>{0}/d</perUnitPattern>
+			</unit>
+			<unit type="duration-hour">
+				<displayName>hr</displayName>
+				<unitPattern count="one">{0} h</unitPattern>
+				<unitPattern count="other">{0} h</unitPattern>
+				<perUnitPattern>{0}/h</perUnitPattern>
+			</unit>
+			<unit type="duration-minute">
+				<displayName>min</displayName>
+				<unitPattern count="one">{0} min</unitPattern>
+				<unitPattern count="other">{0} min</unitPattern>
+				<perUnitPattern>{0}/min</perUnitPattern>
+			</unit>
+			<unit type="duration-second">
+				<displayName>sec</displayName>
+				<unitPattern count="one">{0} s</unitPattern>
+				<unitPattern count="other">{0} s</unitPattern>
+				<perUnitPattern>{0}/s</perUnitPattern>
+			</unit>
+			<unit type="duration-millisecond">
+				<displayName>ms</displayName>
+				<unitPattern count="one">{0} ms</unitPattern>
+				<unitPattern count="other">{0} ms</unitPattern>
+			</unit>
+			<unit type="duration-microsecond">
+				<displayName>μs</displayName>
+				<unitPattern count="one">{0} μs</unitPattern>
+				<unitPattern count="other">{0} μs</unitPattern>
+			</unit>
+			<unit type="duration-nanosecond">
+				<displayName>ns</displayName>
+				<unitPattern count="one">{0} ns</unitPattern>
+				<unitPattern count="other">{0} ns</unitPattern>
+			</unit>
+			<unit type="graphics-em">
+				<displayName>em</displayName>
+				<unitPattern count="one">{0} em</unitPattern>
+				<unitPattern count="other">{0} em</unitPattern>
+			</unit>
+			<unit type="graphics-pixel">
+				<displayName>px</displayName>
+				<unitPattern count="one">{0} px</unitPattern>
+				<unitPattern count="other">{0} px</unitPattern>
+			</unit>
+			<unit type="graphics-megapixel">
+				<displayName>MP</displayName>
+				<unitPattern count="one">{0} MP</unitPattern>
+				<unitPattern count="other">{0} MP</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-centimeter">
+				<displayName>ppcm</displayName>
+				<unitPattern count="one">{0} ppcm</unitPattern>
+				<unitPattern count="other">{0} ppcm</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-inch">
+				<displayName>ppi</displayName>
+				<unitPattern count="one">{0} ppi</unitPattern>
+				<unitPattern count="other">{0} ppi</unitPattern>
+			</unit>
+			<unit type="graphics-dot-per-centimeter">
+				<displayName>ppcm</displayName>
+				<unitPattern count="one">{0} ppcm</unitPattern>
+				<unitPattern count="other">{0} ppcm</unitPattern>
+			</unit>
+			<unit type="graphics-dot-per-inch">
+				<displayName>ppi</displayName>
+				<unitPattern count="one">{0} ppi</unitPattern>
+				<unitPattern count="other">{0} ppi</unitPattern>
+			</unit>
+			<unit type="graphics-dot">
+				<displayName>px</displayName>
+				<unitPattern count="one">{0} px</unitPattern>
+				<unitPattern count="other">{0} px</unitPattern>
+			</unit>
+			<unit type="length-earth-radius">
+				<displayName>R⊕</displayName>
+				<unitPattern count="one">{0} R⊕</unitPattern>
+				<unitPattern count="other">{0} R⊕</unitPattern>
+			</unit>
+			<unit type="length-kilometer">
+				<displayName>km</displayName>
+				<unitPattern count="one">{0} km</unitPattern>
+				<unitPattern count="other">{0} km</unitPattern>
+				<perUnitPattern>{0}/km</perUnitPattern>
+			</unit>
+			<unit type="length-meter">
+				<displayName>meter</displayName>
+				<unitPattern count="one">{0} m</unitPattern>
+				<unitPattern count="other">{0} m</unitPattern>
+				<perUnitPattern>{0}/m</perUnitPattern>
+			</unit>
+			<unit type="length-decimeter">
+				<displayName>dm</displayName>
+				<unitPattern count="one">{0} dm</unitPattern>
+				<unitPattern count="other">{0} dm</unitPattern>
+			</unit>
+			<unit type="length-centimeter">
+				<displayName>cm</displayName>
+				<unitPattern count="one">{0} cm</unitPattern>
+				<unitPattern count="other">{0} cm</unitPattern>
+				<perUnitPattern>{0}/cm</perUnitPattern>
+			</unit>
+			<unit type="length-millimeter">
+				<displayName>mm</displayName>
+				<unitPattern count="one">{0} mm</unitPattern>
+				<unitPattern count="other">{0} mm</unitPattern>
+			</unit>
+			<unit type="length-micrometer">
+				<displayName>μm</displayName>
+				<unitPattern count="one">{0} μm</unitPattern>
+				<unitPattern count="other">{0} μm</unitPattern>
+			</unit>
+			<unit type="length-nanometer">
+				<displayName>nm</displayName>
+				<unitPattern count="one">{0} nm</unitPattern>
+				<unitPattern count="other">{0} nm</unitPattern>
+			</unit>
+			<unit type="length-picometer">
+				<displayName>pm</displayName>
+				<unitPattern count="one">{0} pm</unitPattern>
+				<unitPattern count="other">{0} pm</unitPattern>
+			</unit>
+			<unit type="length-mile">
+				<displayName>mi</displayName>
+				<unitPattern count="one">{0} mi</unitPattern>
+				<unitPattern count="other">{0} mi</unitPattern>
+			</unit>
+			<unit type="length-yard">
+				<displayName>yd</displayName>
+				<unitPattern count="one">{0} yd</unitPattern>
+				<unitPattern count="other">{0} yd</unitPattern>
+			</unit>
+			<unit type="length-foot">
+				<displayName>ft</displayName>
+				<unitPattern count="one">{0} ft</unitPattern>
+				<unitPattern count="other">{0} ft</unitPattern>
+				<perUnitPattern>{0}/ft</perUnitPattern>
+			</unit>
+			<unit type="length-inch">
+				<displayName>in</displayName>
+				<unitPattern count="one">{0} in</unitPattern>
+				<unitPattern count="other">{0} in</unitPattern>
+				<perUnitPattern>{0}/in</perUnitPattern>
+			</unit>
+			<unit type="length-parsec">
+				<displayName>pc</displayName>
+				<unitPattern count="one">{0} pc</unitPattern>
+				<unitPattern count="other">{0} pc</unitPattern>
+			</unit>
+			<unit type="length-light-year">
+				<displayName>ly</displayName>
+				<unitPattern count="one">{0} ly</unitPattern>
+				<unitPattern count="other">{0} ly</unitPattern>
+			</unit>
+			<unit type="length-astronomical-unit">
+				<displayName>au</displayName>
+				<unitPattern count="one">{0} au</unitPattern>
+				<unitPattern count="other">{0} au</unitPattern>
+			</unit>
+			<unit type="length-furlong">
+				<displayName>fur</displayName>
+				<unitPattern count="one">{0} fur</unitPattern>
+				<unitPattern count="other">{0} fur</unitPattern>
+			</unit>
+			<unit type="length-fathom">
+				<displayName>fm</displayName>
+				<unitPattern count="one">{0} fth</unitPattern>
+				<unitPattern count="other">{0} fth</unitPattern>
+			</unit>
+			<unit type="length-nautical-mile">
+				<displayName>nmi</displayName>
+				<unitPattern count="one">{0} nmi</unitPattern>
+				<unitPattern count="other">{0} nmi</unitPattern>
+			</unit>
+			<unit type="length-mile-scandinavian">
+				<displayName>smi</displayName>
+				<unitPattern count="one">{0} smi</unitPattern>
+				<unitPattern count="other">{0} smi</unitPattern>
+			</unit>
+			<unit type="length-point">
+				<displayName>pt</displayName>
+				<unitPattern count="one">{0} pt</unitPattern>
+				<unitPattern count="other">{0} pt</unitPattern>
+			</unit>
+			<unit type="length-solar-radius">
+				<displayName>R☉</displayName>
+				<unitPattern count="one">{0} R☉</unitPattern>
+				<unitPattern count="other">{0} R☉</unitPattern>
+			</unit>
+			<unit type="mass-tonne">
+				<displayName>t</displayName>
+				<unitPattern count="one">{0} t</unitPattern>
+				<unitPattern count="other">{0} t</unitPattern>
+			</unit>
+			<unit type="mass-kilogram">
+				<displayName>kg</displayName>
+				<unitPattern count="one">{0} kg</unitPattern>
+				<unitPattern count="other">{0} kg</unitPattern>
+				<perUnitPattern>{0}/kg</perUnitPattern>
+			</unit>
+			<unit type="mass-gram">
+				<displayName>gram</displayName>
+				<unitPattern count="one">{0} g</unitPattern>
+				<unitPattern count="other">{0} g</unitPattern>
+				<perUnitPattern>{0}/g</perUnitPattern>
+			</unit>
+			<unit type="mass-milligram">
+				<displayName>mg</displayName>
+			</unit>
+			<unit type="speed-kilometer-per-hour">
+				<displayName>km/h</displayName>
+				<unitPattern count="one">{0} km/h</unitPattern>
+				<unitPattern count="other">{0} km/h</unitPattern>
+			</unit>
+			<unit type="speed-meter-per-second">
+				<displayName>m/s</displayName>
+				<unitPattern count="one">{0} m/s</unitPattern>
+				<unitPattern count="other">{0} m/s</unitPattern>
+			</unit>
+			<unit type="speed-mile-per-hour">
+				<displayName>mi/h</displayName>
+				<unitPattern count="one">{0} mi/h</unitPattern>
+				<unitPattern count="other">{0} mi/h</unitPattern>
+			</unit>
+			<unit type="speed-knot">
+				<displayName>kn</displayName>
+				<unitPattern count="one">{0} kn</unitPattern>
+				<unitPattern count="other">{0} kn</unitPattern>
+			</unit>
+			<unit type="volume-cubic-kilometer">
+				<displayName>km³</displayName>
+				<unitPattern count="one">{0} km³</unitPattern>
+				<unitPattern count="other">{0} km³</unitPattern>
+			</unit>
+			<unit type="volume-cubic-meter">
+				<displayName>m³</displayName>
+				<unitPattern count="one">{0} m³</unitPattern>
+				<unitPattern count="other">{0} m³</unitPattern>
+				<perUnitPattern>{0}/m³</perUnitPattern>
+			</unit>
+			<unit type="volume-cubic-centimeter">
+				<displayName>cm³</displayName>
+				<unitPattern count="one">{0} cm³</unitPattern>
+				<unitPattern count="other">{0} cm³</unitPattern>
+				<perUnitPattern>{0}/cm³</perUnitPattern>
+			</unit>
+			<unit type="volume-cubic-mile">
+				<displayName>mi³</displayName>
+				<unitPattern count="one">{0} mi³</unitPattern>
+				<unitPattern count="other">{0} mi³</unitPattern>
+			</unit>
+			<unit type="volume-cubic-yard">
+				<displayName>yd³</displayName>
+				<unitPattern count="one">{0} yd³</unitPattern>
+				<unitPattern count="other">{0} yd³</unitPattern>
+			</unit>
+			<unit type="volume-cubic-foot">
+				<displayName>ft³</displayName>
+				<unitPattern count="one">{0} ft³</unitPattern>
+				<unitPattern count="other">{0} ft³</unitPattern>
+			</unit>
+			<unit type="volume-cubic-inch">
+				<displayName>in³</displayName>
+				<unitPattern count="one">{0} in³</unitPattern>
+				<unitPattern count="other">{0} in³</unitPattern>
+			</unit>
+			<unit type="volume-megaliter">
+				<displayName>ML</displayName>
+				<unitPattern count="one">{0} ML</unitPattern>
+				<unitPattern count="other">{0} ML</unitPattern>
+			</unit>
+			<unit type="volume-hectoliter">
+				<displayName>hL</displayName>
+				<unitPattern count="one">{0} hL</unitPattern>
+				<unitPattern count="other">{0} hL</unitPattern>
+			</unit>
+			<unit type="volume-liter">
+				<displayName>liter</displayName>
+				<unitPattern count="one">{0} l</unitPattern>
+				<unitPattern count="other">{0} l</unitPattern>
+				<perUnitPattern>{0}/l</perUnitPattern>
+			</unit>
+			<unit type="volume-deciliter">
+				<displayName>dL</displayName>
+				<unitPattern count="one">{0} dL</unitPattern>
+				<unitPattern count="other">{0} dL</unitPattern>
+			</unit>
+			<unit type="volume-centiliter">
+				<displayName>cL</displayName>
+				<unitPattern count="one">{0} cL</unitPattern>
+				<unitPattern count="other">{0} cL</unitPattern>
+			</unit>
+			<unit type="volume-milliliter">
+				<displayName>mL</displayName>
+				<unitPattern count="one">{0} mL</unitPattern>
+				<unitPattern count="other">{0} mL</unitPattern>
+			</unit>
+			<unit type="volume-pint-metric">
+				<displayName>mpt</displayName>
+				<unitPattern count="one">{0} mpt</unitPattern>
+				<unitPattern count="other">{0} mpt</unitPattern>
+			</unit>
+			<unit type="volume-cup-metric">
+				<displayName>mcup</displayName>
+				<unitPattern count="one">{0} mc</unitPattern>
+				<unitPattern count="other">{0} mc</unitPattern>
+			</unit>
+			<unit type="volume-acre-foot">
+				<displayName>ac ft</displayName>
+				<unitPattern count="one">{0} ac ft</unitPattern>
+				<unitPattern count="other">{0} ac ft</unitPattern>
+			</unit>
+			<unit type="volume-bushel">
+				<displayName>bu</displayName>
+				<unitPattern count="one">{0} bu</unitPattern>
+				<unitPattern count="other">{0} bu</unitPattern>
+			</unit>
+			<unit type="volume-gallon">
+				<displayName>US gal</displayName>
+				<unitPattern count="one">{0} gal US</unitPattern>
+				<unitPattern count="other">{0} gal US</unitPattern>
+				<perUnitPattern>{0}/gal US</perUnitPattern>
+			</unit>
+			<unit type="volume-gallon-imperial">
+				<displayName>Imp. gal</displayName>
+				<unitPattern count="one">{0} gal Imp.</unitPattern>
+				<unitPattern count="other">{0} gal Imp.</unitPattern>
+				<perUnitPattern>{0}/gal Imp.</perUnitPattern>
+			</unit>
+			<unit type="volume-quart">
+				<displayName>qt</displayName>
+				<unitPattern count="one">{0} qt</unitPattern>
+				<unitPattern count="other">{0} qt</unitPattern>
+			</unit>
+			<unit type="volume-pint">
+				<displayName>pt</displayName>
+				<unitPattern count="one">{0} pt</unitPattern>
+				<unitPattern count="other">{0} pt</unitPattern>
+			</unit>
+			<unit type="volume-cup">
+				<displayName>cup</displayName>
+				<unitPattern count="one">{0} c</unitPattern>
+				<unitPattern count="other">{0} c</unitPattern>
+			</unit>
+			<unit type="volume-fluid-ounce">
+				<displayName>US fl oz</displayName>
+				<unitPattern count="one">{0} fl oz US</unitPattern>
+				<unitPattern count="other">{0} fl oz US</unitPattern>
+			</unit>
+			<unit type="volume-fluid-ounce-imperial">
+				<displayName>Imp. fl oz</displayName>
+				<unitPattern count="one">{0} fl oz Imp.</unitPattern>
+				<unitPattern count="other">{0} fl oz Imp.</unitPattern>
+			</unit>
+			<unit type="volume-tablespoon">
+				<displayName>tbsp</displayName>
+				<unitPattern count="one">{0} tbsp</unitPattern>
+				<unitPattern count="other">{0} tbsp</unitPattern>
+			</unit>
+			<unit type="volume-teaspoon">
+				<displayName>tsp</displayName>
+				<unitPattern count="one">{0} tsp</unitPattern>
+				<unitPattern count="other">{0} tsp</unitPattern>
+			</unit>
+			<unit type="volume-barrel">
+				<displayName>bbl</displayName>
+				<unitPattern count="one">{0} bbl</unitPattern>
+				<unitPattern count="other">{0} bbl</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName>dstspn</displayName>
+				<unitPattern count="one">{0} dstspn</unitPattern>
+				<unitPattern count="other">{0} dstspn</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<displayName>dstspn Imp</displayName>
+				<unitPattern count="one">{0} dstspn Imp</unitPattern>
+				<unitPattern count="other">{0} dstspn Imp</unitPattern>
+			</unit>
+			<unit type="volume-drop">
+				<displayName>drop</displayName>
+				<unitPattern count="one">{0} drop</unitPattern>
+				<unitPattern count="other">{0} drop</unitPattern>
+			</unit>
+			<unit type="volume-dram">
+				<displayName>dram fluid</displayName>
+				<unitPattern count="one">{0} dram fl</unitPattern>
+				<unitPattern count="other">{0} dram fl</unitPattern>
+			</unit>
+			<unit type="volume-jigger">
+				<displayName>jigger</displayName>
+				<unitPattern count="one">{0} jigger</unitPattern>
+				<unitPattern count="other">{0} jigger</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<displayName>pinch</displayName>
+				<unitPattern count="one">{0} pinch</unitPattern>
+				<unitPattern count="other">{0} pinch</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName>qt Imp</displayName>
+				<unitPattern count="one">{0} qt Imp.</unitPattern>
+				<unitPattern count="other">{0} qt Imp.</unitPattern>
 			</unit>
 		</unitLength>
 		<unitLength type="short">
+			<unit type="acceleration-g-force">
+				<unitPattern count="one">{0} G</unitPattern>
+				<unitPattern count="other">{0} G</unitPattern>
+			</unit>
+			<unit type="acceleration-meter-per-square-second">
+				<unitPattern count="one">{0} m/s²</unitPattern>
+				<unitPattern count="other">{0} m/s²</unitPattern>
+			</unit>
+			<unit type="area-square-kilometer">
+				<unitPattern count="one">{0} km²</unitPattern>
+				<unitPattern count="other">{0} km²</unitPattern>
+			</unit>
+			<unit type="area-hectare">
+				<unitPattern count="one">{0} ha</unitPattern>
+				<unitPattern count="other">{0} ha</unitPattern>
+			</unit>
+			<unit type="area-square-meter">
+				<unitPattern count="one">{0} m²</unitPattern>
+				<unitPattern count="other">{0} m²</unitPattern>
+			</unit>
+			<unit type="area-square-centimeter">
+				<unitPattern count="one">{0} cm²</unitPattern>
+				<unitPattern count="other">{0} cm²</unitPattern>
+			</unit>
+			<unit type="area-square-mile">
+				<unitPattern count="one">{0} mi²</unitPattern>
+				<unitPattern count="other">{0} mi²</unitPattern>
+			</unit>
+			<unit type="area-acre">
+				<unitPattern count="one">{0} ac</unitPattern>
+				<unitPattern count="other">{0} ac</unitPattern>
+			</unit>
+			<unit type="area-square-yard">
+				<unitPattern count="one">{0} yd²</unitPattern>
+				<unitPattern count="other">{0} yd²</unitPattern>
+			</unit>
+			<unit type="area-square-foot">
+				<unitPattern count="one">{0} ft²</unitPattern>
+				<unitPattern count="other">{0} ft²</unitPattern>
+			</unit>
+			<unit type="area-square-inch">
+				<unitPattern count="one">{0} in²</unitPattern>
+				<unitPattern count="other">{0} in²</unitPattern>
+			</unit>
+			<unit type="area-dunam">
+				<unitPattern count="one">{0} dunam</unitPattern>
+				<unitPattern count="other">{0} dunam</unitPattern>
+			</unit>
 			<unit type="duration-century">
 				<displayName>ዘመን</displayName>
 				<unitPattern count="one">{0} ዘመን</unitPattern>
@@ -3695,6 +4685,329 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>ዓሰርተ ዓመት</displayName>
 				<unitPattern count="one">{0} ዓሰ.ዓመ.</unitPattern>
 				<unitPattern count="other">{0} ዓሰ.ዓመ.</unitPattern>
+			</unit>
+			<unit type="duration-year">
+				<unitPattern count="one">{0} y</unitPattern>
+				<unitPattern count="other">{0} y</unitPattern>
+			</unit>
+			<unit type="duration-month">
+				<unitPattern count="one">{0} m</unitPattern>
+				<unitPattern count="other">{0} m</unitPattern>
+			</unit>
+			<unit type="duration-week">
+				<unitPattern count="one">{0} w</unitPattern>
+				<unitPattern count="other">{0} w</unitPattern>
+			</unit>
+			<unit type="duration-day">
+				<unitPattern count="one">{0} d</unitPattern>
+				<unitPattern count="other">{0} d</unitPattern>
+			</unit>
+			<unit type="duration-hour">
+				<unitPattern count="one">{0} h</unitPattern>
+				<unitPattern count="other">{0} h</unitPattern>
+			</unit>
+			<unit type="duration-minute">
+				<unitPattern count="one">{0} min</unitPattern>
+				<unitPattern count="other">{0} min</unitPattern>
+			</unit>
+			<unit type="duration-second">
+				<unitPattern count="one">{0} s</unitPattern>
+				<unitPattern count="other">{0} s</unitPattern>
+			</unit>
+			<unit type="duration-millisecond">
+				<unitPattern count="one">{0} ms</unitPattern>
+				<unitPattern count="other">{0} ms</unitPattern>
+			</unit>
+			<unit type="duration-microsecond">
+				<unitPattern count="one">{0} μs</unitPattern>
+				<unitPattern count="other">{0} μs</unitPattern>
+			</unit>
+			<unit type="duration-nanosecond">
+				<unitPattern count="one">{0} ns</unitPattern>
+				<unitPattern count="other">{0} ns</unitPattern>
+			</unit>
+			<unit type="graphics-em">
+				<unitPattern count="one">{0} em</unitPattern>
+				<unitPattern count="other">{0} em</unitPattern>
+			</unit>
+			<unit type="graphics-pixel">
+				<unitPattern count="one">{0} px</unitPattern>
+				<unitPattern count="other">{0} px</unitPattern>
+			</unit>
+			<unit type="graphics-megapixel">
+				<unitPattern count="one">{0} MP</unitPattern>
+				<unitPattern count="other">{0} MP</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-centimeter">
+				<unitPattern count="one">{0} ppcm</unitPattern>
+				<unitPattern count="other">{0} ppcm</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-inch">
+				<unitPattern count="one">{0} ppi</unitPattern>
+				<unitPattern count="other">{0} ppi</unitPattern>
+			</unit>
+			<unit type="graphics-dot-per-centimeter">
+				<displayName>ppcm</displayName>
+				<unitPattern count="one">{0} ppcm</unitPattern>
+				<unitPattern count="other">{0} ppcm</unitPattern>
+			</unit>
+			<unit type="graphics-dot-per-inch">
+				<displayName>ppi</displayName>
+				<unitPattern count="one">{0} ppi</unitPattern>
+				<unitPattern count="other">{0} ppi</unitPattern>
+			</unit>
+			<unit type="graphics-dot">
+				<displayName>px</displayName>
+				<unitPattern count="one">{0} px</unitPattern>
+				<unitPattern count="other">{0} px</unitPattern>
+			</unit>
+			<unit type="length-earth-radius">
+				<unitPattern count="one">{0} R⊕</unitPattern>
+				<unitPattern count="other">{0} R⊕</unitPattern>
+			</unit>
+			<unit type="length-kilometer">
+				<unitPattern count="one">{0} km</unitPattern>
+				<unitPattern count="other">{0} km</unitPattern>
+			</unit>
+			<unit type="length-meter">
+				<unitPattern count="one">{0} m</unitPattern>
+				<unitPattern count="other">{0} m</unitPattern>
+			</unit>
+			<unit type="length-decimeter">
+				<unitPattern count="one">{0} dm</unitPattern>
+				<unitPattern count="other">{0} dm</unitPattern>
+			</unit>
+			<unit type="length-centimeter">
+				<unitPattern count="one">{0} cm</unitPattern>
+				<unitPattern count="other">{0} cm</unitPattern>
+			</unit>
+			<unit type="length-millimeter">
+				<unitPattern count="one">{0} mm</unitPattern>
+				<unitPattern count="other">{0} mm</unitPattern>
+			</unit>
+			<unit type="length-micrometer">
+				<unitPattern count="one">{0} μm</unitPattern>
+				<unitPattern count="other">{0} μm</unitPattern>
+			</unit>
+			<unit type="length-nanometer">
+				<unitPattern count="one">{0} nm</unitPattern>
+				<unitPattern count="other">{0} nm</unitPattern>
+			</unit>
+			<unit type="length-picometer">
+				<unitPattern count="one">{0} pm</unitPattern>
+				<unitPattern count="other">{0} pm</unitPattern>
+			</unit>
+			<unit type="length-mile">
+				<unitPattern count="one">{0} mi</unitPattern>
+				<unitPattern count="other">{0} mi</unitPattern>
+			</unit>
+			<unit type="length-yard">
+				<unitPattern count="one">{0} yd</unitPattern>
+				<unitPattern count="other">{0} yd</unitPattern>
+			</unit>
+			<unit type="length-foot">
+				<unitPattern count="one">{0} ft</unitPattern>
+				<unitPattern count="other">{0} ft</unitPattern>
+			</unit>
+			<unit type="length-inch">
+				<unitPattern count="one">{0} in</unitPattern>
+				<unitPattern count="other">{0} in</unitPattern>
+			</unit>
+			<unit type="length-parsec">
+				<unitPattern count="one">{0} pc</unitPattern>
+				<unitPattern count="other">{0} pc</unitPattern>
+			</unit>
+			<unit type="length-light-year">
+				<unitPattern count="one">{0} ly</unitPattern>
+				<unitPattern count="other">{0} ly</unitPattern>
+			</unit>
+			<unit type="length-astronomical-unit">
+				<unitPattern count="one">{0} au</unitPattern>
+				<unitPattern count="other">{0} au</unitPattern>
+			</unit>
+			<unit type="length-furlong">
+				<unitPattern count="one">{0} fur</unitPattern>
+				<unitPattern count="other">{0} fur</unitPattern>
+			</unit>
+			<unit type="length-fathom">
+				<unitPattern count="one">{0} fth</unitPattern>
+				<unitPattern count="other">{0} fth</unitPattern>
+			</unit>
+			<unit type="length-nautical-mile">
+				<unitPattern count="one">{0} nmi</unitPattern>
+				<unitPattern count="other">{0} nmi</unitPattern>
+			</unit>
+			<unit type="length-mile-scandinavian">
+				<unitPattern count="one">{0} smi</unitPattern>
+				<unitPattern count="other">{0} smi</unitPattern>
+			</unit>
+			<unit type="length-point">
+				<unitPattern count="one">{0} pt</unitPattern>
+				<unitPattern count="other">{0} pt</unitPattern>
+			</unit>
+			<unit type="length-solar-radius">
+				<unitPattern count="one">{0} R☉</unitPattern>
+				<unitPattern count="other">{0} R☉</unitPattern>
+			</unit>
+			<unit type="mass-tonne">
+				<unitPattern count="one">{0} t</unitPattern>
+				<unitPattern count="other">{0} t</unitPattern>
+			</unit>
+			<unit type="mass-kilogram">
+				<unitPattern count="one">{0} kg</unitPattern>
+				<unitPattern count="other">{0} kg</unitPattern>
+			</unit>
+			<unit type="mass-gram">
+				<unitPattern count="one">{0} g</unitPattern>
+				<unitPattern count="other">{0} g</unitPattern>
+			</unit>
+			<unit type="speed-kilometer-per-hour">
+				<unitPattern count="one">{0} km/h</unitPattern>
+				<unitPattern count="other">{0} km/h</unitPattern>
+			</unit>
+			<unit type="speed-meter-per-second">
+				<unitPattern count="one">{0} m/s</unitPattern>
+				<unitPattern count="other">{0} m/s</unitPattern>
+			</unit>
+			<unit type="speed-mile-per-hour">
+				<unitPattern count="one">{0} mi/h</unitPattern>
+				<unitPattern count="other">{0} mi/h</unitPattern>
+			</unit>
+			<unit type="speed-knot">
+				<unitPattern count="one">{0} kn</unitPattern>
+				<unitPattern count="other">{0} kn</unitPattern>
+			</unit>
+			<unit type="volume-cubic-kilometer">
+				<unitPattern count="one">{0} km³</unitPattern>
+				<unitPattern count="other">{0} km³</unitPattern>
+			</unit>
+			<unit type="volume-cubic-meter">
+				<unitPattern count="one">{0} m³</unitPattern>
+				<unitPattern count="other">{0} m³</unitPattern>
+			</unit>
+			<unit type="volume-cubic-centimeter">
+				<unitPattern count="one">{0} cm³</unitPattern>
+				<unitPattern count="other">{0} cm³</unitPattern>
+			</unit>
+			<unit type="volume-cubic-mile">
+				<unitPattern count="one">{0} mi³</unitPattern>
+				<unitPattern count="other">{0} mi³</unitPattern>
+			</unit>
+			<unit type="volume-cubic-yard">
+				<unitPattern count="one">{0} yd³</unitPattern>
+				<unitPattern count="other">{0} yd³</unitPattern>
+			</unit>
+			<unit type="volume-cubic-foot">
+				<unitPattern count="one">{0} ft³</unitPattern>
+				<unitPattern count="other">{0} ft³</unitPattern>
+			</unit>
+			<unit type="volume-cubic-inch">
+				<unitPattern count="one">{0} in³</unitPattern>
+				<unitPattern count="other">{0} in³</unitPattern>
+			</unit>
+			<unit type="volume-megaliter">
+				<unitPattern count="one">{0} ML</unitPattern>
+				<unitPattern count="other">{0} ML</unitPattern>
+			</unit>
+			<unit type="volume-hectoliter">
+				<unitPattern count="one">{0} hL</unitPattern>
+				<unitPattern count="other">{0} hL</unitPattern>
+			</unit>
+			<unit type="volume-liter">
+				<unitPattern count="one">{0} l</unitPattern>
+				<unitPattern count="other">{0} l</unitPattern>
+			</unit>
+			<unit type="volume-deciliter">
+				<unitPattern count="one">{0} dL</unitPattern>
+				<unitPattern count="other">{0} dL</unitPattern>
+			</unit>
+			<unit type="volume-centiliter">
+				<unitPattern count="one">{0} cL</unitPattern>
+				<unitPattern count="other">{0} cL</unitPattern>
+			</unit>
+			<unit type="volume-milliliter">
+				<unitPattern count="one">{0} mL</unitPattern>
+				<unitPattern count="other">{0} mL</unitPattern>
+			</unit>
+			<unit type="volume-pint-metric">
+				<unitPattern count="one">{0} mpt</unitPattern>
+				<unitPattern count="other">{0} mpt</unitPattern>
+			</unit>
+			<unit type="volume-cup-metric">
+				<unitPattern count="one">{0} mc</unitPattern>
+				<unitPattern count="other">{0} mc</unitPattern>
+			</unit>
+			<unit type="volume-acre-foot">
+				<unitPattern count="one">{0} ac ft</unitPattern>
+				<unitPattern count="other">{0} ac ft</unitPattern>
+			</unit>
+			<unit type="volume-bushel">
+				<unitPattern count="one">{0} bu</unitPattern>
+				<unitPattern count="other">{0} bu</unitPattern>
+			</unit>
+			<unit type="volume-gallon">
+				<unitPattern count="one">{0} gal US</unitPattern>
+				<unitPattern count="other">{0} gal US</unitPattern>
+			</unit>
+			<unit type="volume-gallon-imperial">
+				<unitPattern count="one">{0} gal Imp.</unitPattern>
+				<unitPattern count="other">{0} gal Imp.</unitPattern>
+			</unit>
+			<unit type="volume-quart">
+				<unitPattern count="one">{0} qt</unitPattern>
+				<unitPattern count="other">{0} qt</unitPattern>
+			</unit>
+			<unit type="volume-pint">
+				<unitPattern count="one">{0} pt</unitPattern>
+				<unitPattern count="other">{0} pt</unitPattern>
+			</unit>
+			<unit type="volume-cup">
+				<unitPattern count="one">{0} c</unitPattern>
+				<unitPattern count="other">{0} c</unitPattern>
+			</unit>
+			<unit type="volume-fluid-ounce">
+				<unitPattern count="one">{0} fl oz US</unitPattern>
+				<unitPattern count="other">{0} fl oz US</unitPattern>
+			</unit>
+			<unit type="volume-fluid-ounce-imperial">
+				<unitPattern count="one">{0} fl oz Imp.</unitPattern>
+				<unitPattern count="other">{0} fl oz Imp.</unitPattern>
+			</unit>
+			<unit type="volume-tablespoon">
+				<unitPattern count="one">{0} tbsp</unitPattern>
+				<unitPattern count="other">{0} tbsp</unitPattern>
+			</unit>
+			<unit type="volume-barrel">
+				<unitPattern count="one">{0} bbl</unitPattern>
+				<unitPattern count="other">{0} bbl</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon">
+				<unitPattern count="one">{0} dstspn</unitPattern>
+				<unitPattern count="other">{0} dstspn</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<unitPattern count="one">{0} dstspn Imp</unitPattern>
+				<unitPattern count="other">{0} dstspn Imp</unitPattern>
+			</unit>
+			<unit type="volume-drop">
+				<unitPattern count="one">{0} drop</unitPattern>
+				<unitPattern count="other">{0} drop</unitPattern>
+			</unit>
+			<unit type="volume-dram">
+				<unitPattern count="one">{0} dram fl</unitPattern>
+				<unitPattern count="other">{0} dram fl</unitPattern>
+			</unit>
+			<unit type="volume-jigger">
+				<unitPattern count="one">{0} jigger</unitPattern>
+				<unitPattern count="other">{0} jigger</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<unitPattern count="one">{0} pinch</unitPattern>
+				<unitPattern count="other">{0} pinch</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<unitPattern count="one">{0} qt Imp.</unitPattern>
+				<unitPattern count="other">{0} qt Imp.</unitPattern>
 			</unit>
 		</unitLength>
 		<unitLength type="narrow">
@@ -3707,6 +5020,86 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>ዓሰርተ ዓመት</displayName>
 				<unitPattern count="one">{0} ዓ.ዓ.</unitPattern>
 				<unitPattern count="other">{0} ዓ.ዓ.</unitPattern>
+			</unit>
+			<unit type="duration-year">
+				<displayName>yr</displayName>
+				<unitPattern count="one">{0} y</unitPattern>
+				<unitPattern count="other">{0} y</unitPattern>
+			</unit>
+			<unit type="duration-month">
+				<displayName>mon</displayName>
+				<unitPattern count="one">{0} m</unitPattern>
+				<unitPattern count="other">{0} m</unitPattern>
+			</unit>
+			<unit type="duration-week">
+				<displayName>wk</displayName>
+				<unitPattern count="one">{0} w</unitPattern>
+				<unitPattern count="other">{0} w</unitPattern>
+			</unit>
+			<unit type="duration-day">
+				<displayName>day</displayName>
+				<unitPattern count="one">{0} d</unitPattern>
+				<unitPattern count="other">{0} d</unitPattern>
+			</unit>
+			<unit type="duration-hour">
+				<displayName>hr</displayName>
+				<unitPattern count="one">{0} h</unitPattern>
+				<unitPattern count="other">{0} h</unitPattern>
+			</unit>
+			<unit type="duration-minute">
+				<displayName>min</displayName>
+				<unitPattern count="one">{0} min</unitPattern>
+				<unitPattern count="other">{0} min</unitPattern>
+			</unit>
+			<unit type="duration-second">
+				<displayName>sec</displayName>
+				<unitPattern count="one">{0} s</unitPattern>
+				<unitPattern count="other">{0} s</unitPattern>
+			</unit>
+			<unit type="duration-millisecond">
+				<displayName>ms</displayName>
+				<unitPattern count="one">{0} ms</unitPattern>
+				<unitPattern count="other">{0} ms</unitPattern>
+			</unit>
+			<unit type="length-kilometer">
+				<displayName>km</displayName>
+				<unitPattern count="one">{0} km</unitPattern>
+				<unitPattern count="other">{0} km</unitPattern>
+			</unit>
+			<unit type="length-meter">
+				<displayName>meter</displayName>
+				<unitPattern count="one">{0} m</unitPattern>
+				<unitPattern count="other">{0} m</unitPattern>
+			</unit>
+			<unit type="length-centimeter">
+				<displayName>cm</displayName>
+				<unitPattern count="one">{0} cm</unitPattern>
+				<unitPattern count="other">{0} cm</unitPattern>
+			</unit>
+			<unit type="length-millimeter">
+				<displayName>mm</displayName>
+				<unitPattern count="one">{0} mm</unitPattern>
+				<unitPattern count="other">{0} mm</unitPattern>
+			</unit>
+			<unit type="mass-kilogram">
+				<displayName>kg</displayName>
+				<unitPattern count="one">{0} kg</unitPattern>
+				<unitPattern count="other">{0} kg</unitPattern>
+			</unit>
+			<unit type="mass-gram">
+				<displayName>gram</displayName>
+				<unitPattern count="one">{0} g</unitPattern>
+				<unitPattern count="other">{0} g</unitPattern>
+			</unit>
+			<unit type="speed-kilometer-per-hour">
+				<displayName>km/h</displayName>
+				<unitPattern count="one">{0} km/h</unitPattern>
+				<unitPattern count="other">{0} km/h</unitPattern>
+			</unit>
+			<unit type="volume-liter">
+				<displayName>liter</displayName>
+				<unitPattern count="one">{0} l</unitPattern>
+				<unitPattern count="other">{0} l</unitPattern>
 			</unit>
 		</unitLength>
 		<durationUnit type="hm">
@@ -3731,6 +5124,24 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<listPatternPart type="middle">{0}፣ {1}</listPatternPart>
 			<listPatternPart type="end">{0} ወይ {1}</listPatternPart>
 			<listPatternPart type="2">{0} ወይ {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="or-narrow">
+			<listPatternPart type="start">{0}፣ {1}</listPatternPart>
+			<listPatternPart type="middle">{0}፣ {1}</listPatternPart>
+			<listPatternPart type="end">{0} ወይ {1}</listPatternPart>
+			<listPatternPart type="2">{0} ወይ {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="or-short">
+			<listPatternPart type="start">{0}፣ {1}</listPatternPart>
+			<listPatternPart type="middle">{0}፣ {1}</listPatternPart>
+			<listPatternPart type="end">{0} ወይ {1}</listPatternPart>
+			<listPatternPart type="2">{0} ወይ {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="standard-narrow">
+			<listPatternPart type="start">{0}፣ {1}</listPatternPart>
+			<listPatternPart type="middle">{0}፣ {1}</listPatternPart>
+			<listPatternPart type="end">{0}ን {1}ን</listPatternPart>
+			<listPatternPart type="2">{0}ን {1}ን</listPatternPart>
 		</listPattern>
 		<listPattern type="standard-short">
 			<listPatternPart type="start">{0}፣ {1}</listPatternPart>
@@ -3770,9 +5181,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<characterLabel type="activities">ንጥፈታት</characterLabel>
 		<characterLabel type="animal">እንስሳታት</characterLabel>
 		<characterLabel type="animals_nature">እንስሳታትን ተፈጥሮን</characterLabel>
-		<characterLabel type="arrows">ፍላጻታት</characterLabel>
+		<characterLabel type="arrows">ፍላጻ</characterLabel>
 		<characterLabel type="body">ኣካላት</characterLabel>
-		<characterLabel type="building">ህንጻታት</characterLabel>
+		<characterLabel type="building">ህንጻ</characterLabel>
 		<characterLabel type="digits">ኣሃዛት</characterLabel>
 		<characterLabel type="emoji">ኢሞጂታት</characterLabel>
 		<characterLabel type="female">ደቂ ኣንስትዮ</characterLabel>
@@ -3817,4 +5228,119 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<styleName type="wght" subtype="700">ዓጺቕ</styleName>
 		<styleName type="wght" subtype="900">ጸሊም</styleName>
 	</typographicNames>
+	<personNames>
+		<nameOrderLocales order="givenFirst">und ti</nameOrderLocales>
+		<nameOrderLocales order="surnameFirst">ko si ta te vi yue zh</nameOrderLocales>
+		<personName order="givenFirst" length="long" usage="referring" formality="informal">
+			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="addressing" formality="formal">
+			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="addressing" formality="informal">
+			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="monogram" formality="informal">
+			<namePattern>{given-monogram-allCaps}{given2-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="referring" formality="formal">
+			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="referring" formality="informal">
+			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="addressing" formality="formal">
+			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="addressing" formality="informal">
+			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="monogram" formality="formal">
+			<namePattern>{given-monogram-allCaps}{given2-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="monogram" formality="informal">
+			<namePattern>{given-monogram-allCaps}{given2-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="referring" formality="formal">
+			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="referring" formality="informal">
+			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="addressing" formality="formal">
+			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="addressing" formality="informal">
+			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="monogram" formality="formal">
+			<namePattern>{given-monogram-allCaps}{given2-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="monogram" formality="informal">
+			<namePattern>{given-monogram-allCaps}{given2-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="referring" formality="informal">
+			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="addressing" formality="formal">
+			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="addressing" formality="informal">
+			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="monogram" formality="informal">
+			<namePattern>{surname-monogram-allCaps}{given-monogram-allCaps}{given2-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="referring" formality="formal">
+			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="referring" formality="informal">
+			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="addressing" formality="formal">
+			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="addressing" formality="informal">
+			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}{given-monogram-allCaps}{given2-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="monogram" formality="informal">
+			<namePattern>{surname-monogram-allCaps}{given-monogram-allCaps}{given2-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="referring" formality="formal">
+			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="referring" formality="informal">
+			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="addressing" formality="formal">
+			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="addressing" formality="informal">
+			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}{given-monogram-allCaps}{given2-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="monogram" formality="informal">
+			<namePattern>{surname-monogram-allCaps}{given-monogram-allCaps}{given2-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="sorting" length="long" usage="referring" formality="informal">
+			<namePattern>{surname} {surname2}, {title} {given} {given2} {credentials}</namePattern>
+		</personName>
+		<personName order="sorting" length="medium" usage="referring" formality="formal">
+			<namePattern>{surname} {surname2}, {title} {given} {given2} {credentials}</namePattern>
+		</personName>
+		<personName order="sorting" length="medium" usage="referring" formality="informal">
+			<namePattern>{surname} {surname2}, {title} {given} {given2} {credentials}</namePattern>
+		</personName>
+		<personName order="sorting" length="short" usage="referring" formality="formal">
+			<namePattern>{surname} {surname2}, {title} {given} {given2} {credentials}</namePattern>
+		</personName>
+		<personName order="sorting" length="short" usage="referring" formality="informal">
+			<namePattern>{surname} {surname2}, {title} {given} {given2} {credentials}</namePattern>
+		</personName>
+	</personNames>
 </ldml>

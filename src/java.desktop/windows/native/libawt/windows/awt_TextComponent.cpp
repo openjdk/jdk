@@ -735,7 +735,7 @@ void AwtTextComponent::SetColor(COLORREF c) {
 }
 
 /*
- * In responce to EM_SETBKGNDCOLOR rich edit changes
+ * In response to EM_SETBKGNDCOLOR rich edit changes
  * its bg color and repaints itself so we don't need
  * to force repaint.
  */

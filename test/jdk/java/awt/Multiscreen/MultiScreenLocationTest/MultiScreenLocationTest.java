@@ -70,9 +70,12 @@ public class MultiScreenLocationTest {
             GraphicsConfiguration gc = gd.getDefaultConfiguration();
             Rectangle screen = gc.getBounds();
             Robot robot = new Robot(gd);
+            robot.setAutoDelay(250);
+            robot.waitForIdle();
 
             // check Robot.mouseMove()
             robot.mouseMove(screen.x + mouseOffset.x, screen.y + mouseOffset.y);
+            robot.waitForIdle();
             Point mouse = MouseInfo.getPointerInfo().getLocation();
             Point point = screen.getLocation();
             point.translate(mouseOffset.x, mouseOffset.y);
@@ -100,6 +103,16 @@ public class MultiScreenLocationTest {
                 || image.getRGB(image.getWidth() - 1, 0) != rgb
                 || image.getRGB(image.getWidth() - 1, image.getHeight() - 1) != rgb
                 || image.getRGB(0, image.getHeight() - 1) != rgb) {
+                    System.out.println("Robot.createScreenCapture Expected: " +
+                            String.format("0x%08X",rgb));
+                    System.out.println("Robot.createScreenCapture Top Left Actual: " +
+                            String.format("0x%08X",image.getRGB(0, 0)));
+                    System.out.println("Robot.createScreenCapture Top Right Actual: " +
+                            String.format("0x%08X",image.getRGB(image.getWidth() - 1, 0)));
+                    System.out.println("Robot.createScreenCapture Bottom Right Actual: " +
+                            String.format("0x%08X",image.getRGB(image.getWidth() - 1, image.getHeight() - 1)));
+                    System.out.println("Robot.createScreenCapture Top Left Actual: " +
+                            String.format("0x%08X",image.getRGB(0, image.getHeight() - 1)));
                     throw new RuntimeException(
                             getErrorText("Robot.createScreenCapture", i));
             }

@@ -333,9 +333,8 @@ public class RDN {
      * Encode the RDN in DER-encoded form.
      *
      * @param out DerOutputStream to which RDN is to be written
-     * @throws IOException on error
      */
-    void encode(DerOutputStream out) throws IOException {
+    void encode(DerOutputStream out) {
         out.putOrderedSetOf(DerValue.tag_Set, assertion);
     }
 

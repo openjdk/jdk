@@ -486,7 +486,7 @@ public class BasicScrollPaneUI
             JComponent c) {
         super.getBaselineResizeBehavior(c);
         // Baseline is either from the header, in which case it's always
-        // the same size and therefor can be created as CONSTANT_ASCENT.
+        // the same size and therefore can be created as CONSTANT_ASCENT.
         // If the header doesn't have a baseline than the baseline will only
         // be valid if it's BaselineResizeBehavior is
         // CONSTANT_ASCENT, so, return CONSTANT_ASCENT.
@@ -1165,7 +1165,7 @@ public class BasicScrollPaneUI
         }
 
         //
-        // ChangeListener: This is added to the vieport, and hsb/vsb models.
+        // ChangeListener: This is added to the viewport, and hsb/vsb models.
         //
         public void stateChanged(ChangeEvent e) {
             JViewport viewport = scrollpane.getViewport();

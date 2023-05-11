@@ -57,6 +57,7 @@
 #define ARG_ERROR15     "Error: Option %s is not allowed in this context"
 #define ARG_ERROR16     "Error: Option %s in %s is not allowed in this context"
 #define ARG_ERROR17     "Error: Cannot specify main class in this context"
+#define ARG_ERROR18     "Error: Failed to read %s"
 
 #define JVM_ERROR1      "Error: Could not create the Java Virtual Machine.\n" GEN_ERROR
 #define JVM_ERROR2      "Error: Could not detach main thread.\n" JNI_ERROR
@@ -108,7 +109,7 @@
 #define DLL_ERROR1      "Error: dl failure on line %d"
 #define DLL_ERROR2      "Error: failed %s, because %s"
 #define DLL_ERROR3      "Error: could not find executable %s"
-#define DLL_ERROR4      "Error: loading: %s"
+#define DLL_ERROR4      "Error: Failed to load %s"
 
 #define REG_ERROR1      "Error: opening registry key '%s'"
 #define REG_ERROR2      "Error: Failed reading value of registry key:\n\t%s\\CurrentVersion"

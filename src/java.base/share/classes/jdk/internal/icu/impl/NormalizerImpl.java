@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 
 /*
  *******************************************************************************
- *   Copyright (C) 2009-2014, International Business Machines
+ *   Copyright (C) 2009-2015, International Business Machines
  *   Corporation and others.  All Rights Reserved.
  *******************************************************************************
  */
@@ -556,8 +556,8 @@ public final class NormalizerImpl {
     public static final int MIN_YES_YES_WITH_CC=0xfe02;
     public static final int JAMO_VT=0xfe00;
     public static final int MIN_NORMAL_MAYBE_YES=0xfc00;
-    public static final int JAMO_L=2;  // offset=1 hasCompBoundaryAfter=FALSE
-    public static final int INERT=1;  // offset=0 hasCompBoundaryAfter=TRUE
+    public static final int JAMO_L=2;  // offset=1 hasCompBoundaryAfter=false
+    public static final int INERT=1;  // offset=0 hasCompBoundaryAfter=true
 
     // norm16 bit 0 is comp-boundary-after.
     public static final int HAS_COMP_BOUNDARY_AFTER=1;

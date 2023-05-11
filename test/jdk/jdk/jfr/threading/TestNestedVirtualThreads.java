@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,8 +41,7 @@ import jdk.test.lib.jfr.Events;
  * @requires vm.hasJFR & vm.continuations
  * @library /test/lib /test/jdk
  * @modules jdk.jfr/jdk.jfr.internal
- * @compile --enable-preview -source ${jdk.version} TestNestedVirtualThreads.java
- * @run main/othervm --enable-preview jdk.jfr.threading.TestNestedVirtualThreads
+ * @run main/othervm jdk.jfr.threading.TestNestedVirtualThreads
  */
 public class TestNestedVirtualThreads {
     @Name("test.Nested")

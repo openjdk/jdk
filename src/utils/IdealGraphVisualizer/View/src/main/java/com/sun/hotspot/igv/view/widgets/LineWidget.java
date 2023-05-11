@@ -23,12 +23,14 @@
  */
 package com.sun.hotspot.igv.view.widgets;
 
+import com.sun.hotspot.igv.graph.Block;
 import com.sun.hotspot.igv.graph.Connection;
 import com.sun.hotspot.igv.graph.Figure;
 import com.sun.hotspot.igv.graph.OutputSlot;
-import com.sun.hotspot.igv.graph.Block;
+import com.sun.hotspot.igv.layout.Vertex;
 import com.sun.hotspot.igv.util.StringUtils;
 import com.sun.hotspot.igv.view.DiagramScene;
+import com.sun.hotspot.igv.view.actions.CustomSelectAction;
 import java.awt.*;
 import java.awt.geom.Line2D;
 import java.util.ArrayList;
@@ -41,7 +43,6 @@ import javax.swing.event.PopupMenuListener;
 import org.netbeans.api.visual.action.ActionFactory;
 import org.netbeans.api.visual.action.PopupMenuProvider;
 import org.netbeans.api.visual.action.SelectProvider;
-import org.netbeans.api.visual.animator.SceneAnimator;
 import org.netbeans.api.visual.model.ObjectState;
 import org.netbeans.api.visual.widget.Widget;
 
@@ -57,22 +58,21 @@ public class LineWidget extends Widget implements PopupMenuProvider {
     public final int HOVER_ARROW_SIZE = 8;
     public final int BOLD_STROKE_WIDTH = 2;
     public final int HOVER_STROKE_WIDTH = 3;
-    private static double ZOOM_FACTOR = 0.1;
-    private OutputSlot outputSlot;
-    private DiagramScene scene;
-    private List<Connection> connections;
-    private Point from;
-    private Point to;
-    private Rectangle clientArea;
-    private Color color = Color.BLACK;
-    private LineWidget predecessor;
-    private List<LineWidget> successors;
+    private final static double ZOOM_FACTOR = 0.1;
+    private final OutputSlot outputSlot;
+    private final DiagramScene scene;
+    private final List<Connection> connections;
+    private final Point from;
+    private final Point to;
+    private final Rectangle clientArea;
+    private final LineWidget predecessor;
+    private final List<LineWidget> successors;
     private boolean highlighted;
     private boolean popupVisible;
-    private boolean isBold;
-    private boolean isDashed;
+    private final boolean isBold;
+    private final boolean isDashed;
 
-    public LineWidget(DiagramScene scene, OutputSlot s, List<Connection> connections, Point from, Point to, LineWidget predecessor, SceneAnimator animator, boolean isBold, boolean isDashed) {
+    public LineWidget(DiagramScene scene, OutputSlot s, List<Connection> connections, Point from, Point to, LineWidget predecessor, boolean isBold, boolean isDashed) {
         super(scene);
         this.scene = scene;
         this.outputSlot = s;
@@ -107,43 +107,39 @@ public class LineWidget extends Widget implements PopupMenuProvider {
         clientArea = new Rectangle(minX, minY, maxX - minX + 1, maxY - minY + 1);
         clientArea.grow(BORDER, BORDER);
 
+        Color color = Color.BLACK;
         if (connections.size() > 0) {
             color = connections.get(0).getColor();
         }
-        this.setToolTipText("<HTML>" + generateToolTipText(this.connections) + "</HTML>");
+        setToolTipText("<HTML>" + generateToolTipText(this.connections) + "</HTML>");
 
-        this.setCheckClipping(true);
+        setCheckClipping(true);
 
-        this.getActions().addAction(ActionFactory.createPopupMenuAction(this));
-        if (animator == null) {
-            this.setBackground(color);
-        } else {
-            this.setBackground(Color.WHITE);
-            animator.animateBackgroundColor(this, color);
-        }
+        getActions().addAction(ActionFactory.createPopupMenuAction(this));
+        setBackground(color);
 
-        this.getActions().addAction(ActionFactory.createSelectAction(new SelectProvider() {
+        getActions().addAction(new CustomSelectAction(new SelectProvider() {
 
             @Override
-            public boolean isAimingAllowed(Widget arg0, Point arg1, boolean arg2) {
+            public boolean isAimingAllowed(Widget widget, Point localLocation, boolean invertSelection) {
                 return true;
             }
 
             @Override
-            public boolean isSelectionAllowed(Widget arg0, Point arg1, boolean arg2) {
+            public boolean isSelectionAllowed(Widget widget, Point localLocation, boolean invertSelection) {
                 return true;
             }
 
             @Override
-            public void select(Widget arg0, Point arg1, boolean arg2) {
-                Set<Figure> set = new HashSet<>();
-                for (Connection c : LineWidget.this.connections) {
-                    if (c.hasSlots()) {
-                        set.add(scene.getWidget(c.getTo()));
-                        set.add(scene.getWidget(c.getFrom()));
+            public void select(Widget widget, Point localLocation, boolean invertSelection) {
+                Set<Vertex> vertexSet = new HashSet<>();
+                for (Connection connection : connections) {
+                    if (connection.hasSlots()) {
+                        vertexSet.add(connection.getTo().getVertex());
+                        vertexSet.add(connection.getFrom().getVertex());
                     }
                 }
-                LineWidget.this.scene.setSelectedObjects(set);
+                scene.userSelectionSuggested(vertexSet, invertSelection);
             }
         }));
     }
@@ -209,6 +205,7 @@ public class LineWidget extends Widget implements PopupMenuProvider {
         for (LineWidget w : successors) {
             if (w.getFrom().equals(getTo())) {
                 sameTo = true;
+                break;
             }
         }
 
@@ -239,27 +236,6 @@ public class LineWidget extends Widget implements PopupMenuProvider {
         g.setStroke(oldStroke);
     }
 
-    private void setHighlighted(boolean b) {
-        this.highlighted = b;
-        Set<Object> highlightedObjects = new HashSet<>(scene.getHighlightedObjects());
-        Set<Object> highlightedObjectsChange = new HashSet<>();
-        for (Connection c : connections) {
-            if (c.hasSlots()) {
-                highlightedObjectsChange.add(c.getTo());
-                highlightedObjectsChange.add(c.getTo().getVertex());
-                highlightedObjectsChange.add(c.getFrom());
-                highlightedObjectsChange.add(c.getFrom().getVertex());
-            }
-        }
-        if(b) {
-            highlightedObjects.addAll(highlightedObjectsChange);
-        } else {
-            highlightedObjects.removeAll(highlightedObjectsChange);
-        }
-        scene.setHighlightedObjects(highlightedObjects);
-        this.revalidate(true);
-    }
-
     private void setPopupVisible(boolean b) {
         this.popupVisible = b;
         this.revalidate(true);
@@ -273,26 +249,51 @@ public class LineWidget extends Widget implements PopupMenuProvider {
     @Override
     protected void notifyStateChanged(ObjectState previousState, ObjectState state) {
         if (previousState.isHovered() != state.isHovered()) {
-            setRecursiveHighlighted(state.isHovered());
+            boolean enableHighlighting = state.isHovered();
+            highlightPredecessors(enableHighlighting);
+            setHighlighted(enableHighlighting);
+            recursiveHighlightSuccessors(enableHighlighting);
+            highlightVertices(enableHighlighting);
         }
     }
 
-    private void setRecursiveHighlighted(boolean b) {
-        LineWidget cur = predecessor;
-        while (cur != null) {
-            cur.setHighlighted(b);
-            cur = cur.predecessor;
+    private void highlightPredecessors(boolean enable) {
+        LineWidget predecessorLineWidget = predecessor;
+        while (predecessorLineWidget != null) {
+            predecessorLineWidget.setHighlighted(enable);
+            predecessorLineWidget = predecessorLineWidget.predecessor;
         }
-
-        highlightSuccessors(b);
-        this.setHighlighted(b);
     }
 
-    private void highlightSuccessors(boolean b) {
-        for (LineWidget s : successors) {
-            s.setHighlighted(b);
-            s.highlightSuccessors(b);
+    private void recursiveHighlightSuccessors(boolean enable) {
+        for (LineWidget successorLineWidget : successors) {
+            successorLineWidget.setHighlighted(enable);
+            successorLineWidget.recursiveHighlightSuccessors(enable);
         }
+    }
+
+    private void highlightVertices(boolean enable) {
+        Set<Object> highlightedObjects = new HashSet<>(scene.getHighlightedObjects());
+        Set<Object> highlightedObjectsChange = new HashSet<>();
+        for (Connection c : connections) {
+            if (c.hasSlots()) {
+                highlightedObjectsChange.add(c.getTo());
+                highlightedObjectsChange.add(c.getTo().getVertex());
+                highlightedObjectsChange.add(c.getFrom());
+                highlightedObjectsChange.add(c.getFrom().getVertex());
+            }
+        }
+        if (enable) {
+            highlightedObjects.addAll(highlightedObjectsChange);
+        } else {
+            highlightedObjects.removeAll(highlightedObjectsChange);
+        }
+        scene.setHighlightedObjects(highlightedObjects);
+    }
+
+    private void setHighlighted(boolean enable) {
+        highlighted = enable;
+        revalidate(true);
     }
 
     private void setRecursivePopupVisible(boolean b) {

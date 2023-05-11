@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,7 @@ NMTDCmd::NMTDCmd(outputStream* output,
 
 
 size_t NMTDCmd::get_scale(const char* scale) const {
-  if (scale == NULL) return 0;
+  if (scale == nullptr) return 0;
   return NMTUtil::scale_from_name(scale);
 }
 
@@ -177,13 +177,9 @@ void NMTDCmd::report_diff(bool summaryOnly, size_t scale_unit) {
 }
 
 bool NMTDCmd::check_detail_tracking_level(outputStream* out) {
-  if (MemTracker::tracking_level() == NMT_detail) {
-    return true;
-  } else if (MemTracker::cmdline_tracking_level() == NMT_detail) {
-    out->print_cr("Tracking level has been downgraded due to lack of resources");
-    return false;
-  } else {
+  if (MemTracker::tracking_level() != NMT_detail) {
     out->print_cr("Detail tracking is not enabled");
     return false;
   }
+  return true;
 }

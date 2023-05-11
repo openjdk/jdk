@@ -71,8 +71,6 @@ private:
 
   inline void set_offset_array(size_t left, size_t right, u_char offset);
 
-  bool is_card_boundary(HeapWord* p) const;
-
   void check_index(size_t index, const char* msg) const NOT_DEBUG_RETURN;
 
 public:

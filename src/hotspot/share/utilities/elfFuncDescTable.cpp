@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2013 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -48,17 +48,17 @@ ElfFuncDescTable::~ElfFuncDescTable() {
 
 address ElfFuncDescTable::lookup(Elf_Word index) {
   if (NullDecoder::is_error(_status)) {
-    return NULL;
+    return nullptr;
   }
 
   address*  func_descs = cached_func_descs();
   const Elf_Shdr* shdr = _section.section_header();
   if (!(shdr->sh_size > 0 && shdr->sh_addr <= index && index <= shdr->sh_addr + shdr->sh_size)) {
     // don't put the whole decoder in error mode if we just tried a wrong index
-    return NULL;
+    return nullptr;
   }
 
-  if (func_descs != NULL) {
+  if (func_descs != nullptr) {
     return func_descs[(index - shdr->sh_addr) / sizeof(address)];
   } else {
     MarkedFileReader mfd(_file);
@@ -67,7 +67,7 @@ address ElfFuncDescTable::lookup(Elf_Word index) {
         !mfd.set_position(shdr->sh_offset + index - shdr->sh_addr) ||
         !mfd.read((void*)&addr, sizeof(addr))) {
       _status = NullDecoder::file_invalid;
-      return NULL;
+      return nullptr;
     }
     return addr;
   }

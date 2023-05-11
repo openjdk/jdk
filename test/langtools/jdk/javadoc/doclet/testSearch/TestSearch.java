@@ -45,7 +45,7 @@ import javadoc.tester.JavadocTester;
 public class TestSearch extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestSearch tester = new TestSearch();
+        var tester = new TestSearch();
         tester.runTests();
     }
 
@@ -423,7 +423,7 @@ public class TestSearch extends JavadocTester {
                     <link rel="stylesheet" type="text/css" href="script-dir/jquery-ui.min.css" title="Style">
                     """,
                 """
-                    <script type="text/javascript" src="script-dir/jquery-3.6.0.min.js"></script>
+                    <script type="text/javascript" src="script-dir/jquery-3.6.1.min.js"></script>
                     """,
                 """
                     <script type="text/javascript" src="script-dir/jquery-ui.min.js"></script>""",
@@ -695,7 +695,7 @@ public class TestSearch extends JavadocTester {
     void checkJqueryAndImageFiles(boolean expectedOutput) {
         checkFiles(expectedOutput,
                 "search.js",
-                "script-dir/jquery-3.6.0.min.js",
+                "script-dir/jquery-3.6.1.min.js",
                 "script-dir/jquery-ui.min.js",
                 "script-dir/jquery-ui.min.css",
                 "resources/x.png",

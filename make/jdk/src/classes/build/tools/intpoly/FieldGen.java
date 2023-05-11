@@ -246,8 +246,7 @@ public class FieldGen {
         }
 
         public BigInteger getValue() {
-            return BigInteger.valueOf(2).pow(power)
-                    .multiply(BigInteger.valueOf(coefficient));
+            return BigInteger.valueOf(coefficient).shiftLeft(power);
         }
 
         public String toString() {
@@ -663,14 +662,12 @@ public class FieldGen {
                 subtract = true;
             }
             String coefExpr = "BigInteger.valueOf(" + coefValue + ")";
-            String powExpr = "BigInteger.valueOf(2).pow(" + t.getPower() + ")";
+            String powExpr = ".shiftLeft(" + t.getPower() + ")";
             String termExpr = "ERROR";
             if (t.getPower() == 0) {
                 termExpr = coefExpr;
-            } else if (coefValue == 1) {
-                termExpr = powExpr;
             } else {
-                termExpr = powExpr + ".multiply(" + coefExpr + ")";
+                termExpr = coefExpr + powExpr;
             }
             if (subtract) {
                 result.appendLine("result = result.subtract(" + termExpr + ");");

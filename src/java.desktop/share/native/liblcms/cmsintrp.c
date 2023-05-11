@@ -30,7 +30,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2020 Marti Maria Saguer
+//  Copyright (c) 1998-2023 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -229,8 +229,8 @@ void LinLerp1D(CMSREGISTER const cmsUInt16Number Value[],
     int val3;
     const cmsUInt16Number* LutTable = (cmsUInt16Number*) p ->Table;
 
-    // if last value...
-    if (Value[0] == 0xffff) {
+    // if last value or just one point
+    if (Value[0] == 0xffff || p->Domain[0] == 0) {
 
         Output[0] = LutTable[p -> Domain[0]];
     }
@@ -269,7 +269,7 @@ void LinLerp1Dfloat(const cmsFloat32Number Value[],
        val2 = fclamp(Value[0]);
 
        // if last value...
-       if (val2 == 1.0) {
+       if (val2 == 1.0 || p->Domain[0] == 0) {
            Output[0] = LutTable[p -> Domain[0]];
        }
        else
@@ -303,20 +303,34 @@ void Eval1Input(CMSREGISTER const cmsUInt16Number Input[],
        cmsUInt32Number OutChan;
        const cmsUInt16Number* LutTable = (cmsUInt16Number*) p16 -> Table;
 
-       v = Input[0] * p16 -> Domain[0];
-       fk = _cmsToFixedDomain(v);
 
-       k0 = FIXED_TO_INT(fk);
-       rk = (cmsUInt16Number) FIXED_REST_TO_INT(fk);
+       // if last value...
+       if (Input[0] == 0xffff || p16->Domain[0] == 0) {
 
-       k1 = k0 + (Input[0] != 0xFFFFU ? 1 : 0);
+           cmsUInt32Number y0 = p16->Domain[0] * p16->opta[0];
 
-       K0 = p16 -> opta[0] * k0;
-       K1 = p16 -> opta[0] * k1;
+           for (OutChan = 0; OutChan < p16->nOutputs; OutChan++) {
+               Output[OutChan] = LutTable[y0 + OutChan];
+           }
+       }
+       else
+       {
 
-       for (OutChan=0; OutChan < p16->nOutputs; OutChan++) {
+           v = Input[0] * p16->Domain[0];
+           fk = _cmsToFixedDomain(v);
 
-           Output[OutChan] = LinearInterp(rk, LutTable[K0+OutChan], LutTable[K1+OutChan]);
+           k0 = FIXED_TO_INT(fk);
+           rk = (cmsUInt16Number)FIXED_REST_TO_INT(fk);
+
+           k1 = k0 + (Input[0] != 0xFFFFU ? 1 : 0);
+
+           K0 = p16->opta[0] * k0;
+           K1 = p16->opta[0] * k1;
+
+           for (OutChan = 0; OutChan < p16->nOutputs; OutChan++) {
+
+               Output[OutChan] = LinearInterp(rk, LutTable[K0 + OutChan], LutTable[K1 + OutChan]);
+           }
        }
 }
 
@@ -337,12 +351,12 @@ void Eval1InputFloat(const cmsFloat32Number Value[],
     val2 = fclamp(Value[0]);
 
     // if last value...
-    if (val2 == 1.0) {
+    if (val2 == 1.0 || p->Domain[0] == 0) {
 
-        y0 = LutTable[p->Domain[0]];
+        cmsUInt32Number start = p->Domain[0] * p->opta[0];
 
         for (OutChan = 0; OutChan < p->nOutputs; OutChan++) {
-            Output[OutChan] = y0;
+            Output[OutChan] = LutTable[start + OutChan];
         }
     }
     else

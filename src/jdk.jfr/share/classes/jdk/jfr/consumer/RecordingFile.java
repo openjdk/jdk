@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -163,8 +163,8 @@ public final class RecordingFile implements Closeable {
     List<Type> readTypes() throws IOException  {
         ensureOpen();
         MetadataDescriptor previous = null;
-        List<Type> types = new ArrayList<>();
-        HashSet<Long> foundIds = new HashSet<>();
+        List<Type> types = new ArrayList<>(200);
+        HashSet<Long> foundIds = HashSet.newHashSet(types.size());
         try (RecordingInput ri = new RecordingInput(file, FileAccess.UNPRIVILEGED)) {
             ChunkHeader ch = new ChunkHeader(ri);
             ch.awaitFinished();
@@ -267,6 +267,7 @@ public final class RecordingFile implements Closeable {
      *         {@code checkRead} method denies read access to the file.
      */
     public static List<RecordedEvent> readAllEvents(Path path) throws IOException {
+        Objects.requireNonNull(path, "path");
         try (RecordingFile r = new RecordingFile(path)) {
             List<RecordedEvent> list = new ArrayList<>();
             while (r.hasMoreEvents()) {

@@ -125,11 +125,6 @@ public final class PrivateCredentialPermission extends Permission {
     private transient CredOwner[] credOwners;
 
     /**
-     * @serial
-     */
-    private final boolean testing = false;
-
-    /**
      * Create a new {@code PrivateCredentialPermission}
      * with the specified {@code credentialClass} and Principals.
      */
@@ -317,13 +312,8 @@ public final class PrivateCredentialPermission extends Permission {
         String principalClass;
         String principalName;
 
-        if (testing)
-            System.out.println("whole name = " + name);
-
         // get the Credential Class
         credentialClass = tokenizer.nextToken();
-        if (testing)
-            System.out.println("Credential Class = " + credentialClass);
 
         if (!tokenizer.hasMoreTokens()) {
             MessageFormat form = new MessageFormat(ResourcesMgr.getString
@@ -341,8 +331,6 @@ public final class PrivateCredentialPermission extends Permission {
 
             // get the Principal Class
             principalClass = tokenizer.nextToken();
-            if (testing)
-                System.out.println("    Principal Class = " + principalClass);
 
             if (!tokenizer.hasMoreTokens()) {
                 MessageFormat form = new MessageFormat(ResourcesMgr.getString
@@ -391,9 +379,6 @@ public final class PrivateCredentialPermission extends Permission {
                 }
             }
 
-            if (testing)
-                System.out.println("\tprincipalName = '" + principalName + "'");
-
             principalName = principalName.substring
                                         (1, principalName.length() - 1);
 
@@ -402,9 +387,6 @@ public final class PrivateCredentialPermission extends Permission {
                     throw new IllegalArgumentException(ResourcesMgr.getString
                         ("PrivateCredentialPermission.Principal.Class.can.not.be.a.wildcard.value.if.Principal.Name.is.not.a.wildcard.value"));
             }
-
-            if (testing)
-                System.out.println("\tprincipalName = '" + principalName + "'");
 
             pList.add(new CredOwner(principalClass, principalName));
         }
@@ -418,10 +400,6 @@ public final class PrivateCredentialPermission extends Permission {
         // this should never happen
         if (thisC == null || thatC == null)
             return false;
-
-        if (testing)
-            System.out.println("credential class comparison: " +
-                                thisC + "/" + thatC);
 
         if (thisC.equals("*"))
             return true;

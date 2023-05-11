@@ -181,6 +181,7 @@ public class Modules extends JCTree.Visitor {
         return instance;
     }
 
+    @SuppressWarnings("this-escape")
     protected Modules(Context context) {
         context.put(Modules.class, this);
         log = Log.instance(context);
@@ -1222,6 +1223,10 @@ public class Modules extends JCTree.Visitor {
     private void setupAllModules() {
         Assert.checkNonNull(rootModules);
         Assert.checkNull(allModules);
+
+        //java.base may not be completed yet and computeTransitiveClosure
+        //may not complete it either, make sure it is completed:
+        syms.java_base.complete();
 
         Set<ModuleSymbol> observable;
 

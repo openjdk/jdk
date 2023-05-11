@@ -88,12 +88,11 @@ public final class EventTypeInfo {
     }
 
     private static List<SettingDescriptorInfo> createSettings(Object settings) {
-        if (settings != null && settings.getClass().isArray()) {
-            Object[] settingsArray = (Object[]) settings;
+        if (settings instanceof Object[] settingsArray) {
             List<SettingDescriptorInfo> list = new ArrayList<>(settingsArray.length);
-            for (Object cd : settingsArray) {
-                if (cd instanceof CompositeData) {
-                    list.add(SettingDescriptorInfo.from((CompositeData) cd));
+            for (Object element : settingsArray) {
+                if (element instanceof CompositeData cd) {
+                    list.add(SettingDescriptorInfo.from(cd));
                 }
             }
             return Collections.unmodifiableList(list);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ const char *VMRegImpl::regName[ConcreteRegisterImpl::number_of_registers];
 
 void VMRegImpl::print_on(outputStream* st) const {
   if (is_reg()) {
-    assert(VMRegImpl::regName[value()], "VMRegImpl::regName[" INTPTR_FORMAT "] returns NULL", value());
+    assert(VMRegImpl::regName[value()], "VMRegImpl::regName[" INTPTR_FORMAT "] returns nullptr", value());
     st->print("%s",VMRegImpl::regName[value()]);
   } else if (is_stack()) {
     int stk = reg2stack();

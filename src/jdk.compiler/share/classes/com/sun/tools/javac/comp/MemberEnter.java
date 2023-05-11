@@ -71,6 +71,7 @@ public class MemberEnter extends JCTree.Visitor {
         return instance;
     }
 
+    @SuppressWarnings("this-escape")
     protected MemberEnter(Context context) {
         context.put(memberEnterKey, this);
         enter = Enter.instance(context);

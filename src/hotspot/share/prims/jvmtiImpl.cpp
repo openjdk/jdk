@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,21 +108,21 @@ void GrowableCache::recache() {
     // mode. The call to remove() will rebuild the cache again
     // without the bad entry.
     //
-    if (_cache[i] == NULL) {
-      assert(false, "cannot recache NULL elements");
+    if (_cache[i] == nullptr) {
+      assert(false, "cannot recache null elements");
       remove(i);
       return;
     }
   }
-  _cache[len] = NULL;
+  _cache[len] = nullptr;
 
   _listener_fun(_this_obj,_cache);
 }
 
 bool GrowableCache::equals(void* v, GrowableElement *e2) {
   GrowableElement *e1 = (GrowableElement *) v;
-  assert(e1 != NULL, "e1 != NULL");
-  assert(e2 != NULL, "e2 != NULL");
+  assert(e1 != nullptr, "e1 != nullptr");
+  assert(e2 != nullptr, "e2 != nullptr");
 
   return e1->equals(e2);
 }
@@ -132,10 +132,10 @@ bool GrowableCache::equals(void* v, GrowableElement *e2) {
 //
 
 GrowableCache::GrowableCache() {
-  _this_obj       = NULL;
-  _listener_fun   = NULL;
-  _elements       = NULL;
-  _cache          = NULL;
+  _this_obj       = nullptr;
+  _listener_fun   = nullptr;
+  _elements       = nullptr;
+  _cache          = nullptr;
 }
 
 GrowableCache::~GrowableCache() {
@@ -147,7 +147,7 @@ GrowableCache::~GrowableCache() {
 void GrowableCache::initialize(void *this_obj, void listener_fun(void *, address*) ) {
   _this_obj       = this_obj;
   _listener_fun   = listener_fun;
-  _elements       = new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<GrowableElement*>(5, mtServiceability);
+  _elements       = new (mtServiceability) GrowableArray<GrowableElement*>(5, mtServiceability);
   recache();
 }
 
@@ -159,7 +159,7 @@ int GrowableCache::length() {
 // get the value of the index element in the collection
 GrowableElement* GrowableCache::at(int index) {
   GrowableElement *e = (GrowableElement *) _elements->at(index);
-  assert(e != NULL, "e != NULL");
+  assert(e != nullptr, "e != nullptr");
   return e;
 }
 
@@ -177,7 +177,7 @@ void GrowableCache::append(GrowableElement* e) {
 // remove the element at index
 void GrowableCache::remove (int index) {
   GrowableElement *e = _elements->at(index);
-  assert(e != NULL, "e != NULL");
+  assert(e != nullptr, "e != nullptr");
   _elements->remove(e);
   delete e;
   recache();
@@ -200,7 +200,7 @@ void GrowableCache::clear() {
 
 JvmtiBreakpoint::JvmtiBreakpoint(Method* m_method, jlocation location)
     : _method(m_method), _bci((int)location) {
-  assert(_method != NULL, "No method for breakpoint.");
+  assert(_method != nullptr, "No method for breakpoint.");
   assert(_bci >= 0, "Negative bci for breakpoint.");
   oop class_holder_oop  = _method->method_holder()->klass_holder();
   _class_holder = OopHandle(JvmtiExport::jvmti_oop_storage(), class_holder_oop);
@@ -236,7 +236,7 @@ void JvmtiBreakpoint::each_method_version_do(method_action meth_act) {
 
   // search previous versions if they exist
   for (InstanceKlass* pv_node = ik->previous_versions();
-       pv_node != NULL;
+       pv_node != nullptr;
        pv_node = pv_node->previous_versions()) {
     Array<Method*>* methods = pv_node->methods();
 
@@ -277,8 +277,8 @@ void JvmtiBreakpoint::clear() {
 void JvmtiBreakpoint::print_on(outputStream* out) const {
 #ifndef PRODUCT
   ResourceMark rm;
-  const char *class_name  = (_method == NULL) ? "NULL" : _method->klass_name()->as_C_string();
-  const char *method_name = (_method == NULL) ? "NULL" : _method->name()->as_C_string();
+  const char *class_name  = (_method == nullptr) ? "null" : _method->klass_name()->as_C_string();
+  const char *method_name = (_method == nullptr) ? "null" : _method->name()->as_C_string();
   out->print("Breakpoint(%s,%s,%d,%p)", class_name, method_name, _bci, getBcp());
 #endif
 }
@@ -402,23 +402,23 @@ void JvmtiBreakpoints::clearall_in_class_at_safepoint(Klass* klass) {
 // class JvmtiCurrentBreakpoints
 //
 
-JvmtiBreakpoints *JvmtiCurrentBreakpoints::_jvmti_breakpoints  = NULL;
-address *         JvmtiCurrentBreakpoints::_breakpoint_list    = NULL;
+JvmtiBreakpoints *JvmtiCurrentBreakpoints::_jvmti_breakpoints  = nullptr;
+address *         JvmtiCurrentBreakpoints::_breakpoint_list    = nullptr;
 
 
 JvmtiBreakpoints& JvmtiCurrentBreakpoints::get_jvmti_breakpoints() {
-  if (_jvmti_breakpoints != NULL) return (*_jvmti_breakpoints);
+  if (_jvmti_breakpoints != nullptr) return (*_jvmti_breakpoints);
   _jvmti_breakpoints = new JvmtiBreakpoints(listener_fun);
-  assert(_jvmti_breakpoints != NULL, "_jvmti_breakpoints != NULL");
+  assert(_jvmti_breakpoints != nullptr, "_jvmti_breakpoints != nullptr");
   return (*_jvmti_breakpoints);
 }
 
 void  JvmtiCurrentBreakpoints::listener_fun(void *this_obj, address *cache) {
   JvmtiBreakpoints *this_jvmti = (JvmtiBreakpoints *) this_obj;
-  assert(this_jvmti != NULL, "this_jvmti != NULL");
+  assert(this_jvmti != nullptr, "this_jvmti != nullptr");
 
   debug_only(int n = this_jvmti->length(););
-  assert(cache[n] == NULL, "cache must be NULL terminated");
+  assert(cache[n] == nullptr, "cache must be null terminated");
 
   set_breakpoint_list(cache);
 }
@@ -432,14 +432,15 @@ const jvalue VM_BaseGetOrSetLocal::_DEFAULT_VALUE = {0L};
 // Constructor for non-object getter
 
 VM_BaseGetOrSetLocal::VM_BaseGetOrSetLocal(JavaThread* calling_thread, jint depth,
-                                           jint index, BasicType type, jvalue value, bool set)
+                                           jint index, BasicType type, jvalue value, bool set, bool self)
   : _calling_thread(calling_thread)
   , _depth(depth)
   , _index(index)
   , _type(type)
   , _value(value)
-  , _jvf(NULL)
+  , _jvf(nullptr)
   , _set(set)
+  , _self(self)
   , _result(JVMTI_ERROR_NONE)
 {
 }
@@ -450,9 +451,9 @@ VM_BaseGetOrSetLocal::VM_BaseGetOrSetLocal(JavaThread* calling_thread, jint dept
 // This may cause unexpected consequences like CFLH or class-init JVMTI events.
 // It is better to avoid such a behavior.
 bool VM_BaseGetOrSetLocal::is_assignable(const char* ty_sign, Klass* klass, Thread* thread) {
-  assert(ty_sign != NULL, "type signature must not be NULL");
-  assert(thread != NULL, "thread must not be NULL");
-  assert(klass != NULL, "klass must not be NULL");
+  assert(ty_sign != nullptr, "type signature must not be null");
+  assert(thread != nullptr, "thread must not be null");
+  assert(klass != nullptr, "klass must not be null");
 
   int len = (int) strlen(ty_sign);
   if (ty_sign[0] == JVM_SIGNATURE_CLASS &&
@@ -544,7 +545,7 @@ bool VM_BaseGetOrSetLocal::check_slot_type_lvt(javaVFrame* jvf) {
   }
 
   jobject jobj = _value.l;
-  if (_set && slot_type == T_OBJECT && jobj != NULL) { // NULL reference is allowed
+  if (_set && slot_type == T_OBJECT && jobj != nullptr) { // null reference is allowed
     // Check that the jobject class matches the return type signature.
     oop obj = JNIHandles::resolve_external_guard(jobj);
     NULL_CHECK(obj, (_result = JVMTI_ERROR_INVALID_OBJECT, false));
@@ -605,7 +606,7 @@ bool VM_GetOrSetLocal::doit_prologue() {
 
 void VM_BaseGetOrSetLocal::doit() {
   _jvf = get_java_vframe();
-  if (_jvf == NULL) {
+  if (_jvf == nullptr) {
     return;
   };
 
@@ -743,24 +744,24 @@ bool VM_BaseGetOrSetLocal::allow_nested_vm_operations() const {
 //
 
 // Constructor for non-object getter
-VM_GetOrSetLocal::VM_GetOrSetLocal(JavaThread* thread, jint depth, jint index, BasicType type)
-  : VM_BaseGetOrSetLocal((JavaThread*)NULL, depth, index, type, _DEFAULT_VALUE, false),
+VM_GetOrSetLocal::VM_GetOrSetLocal(JavaThread* thread, jint depth, jint index, BasicType type, bool self)
+  : VM_BaseGetOrSetLocal(nullptr, depth, index, type, _DEFAULT_VALUE, false, self),
     _thread(thread),
-    _eb(false, NULL, NULL)
+    _eb(false, nullptr, nullptr)
 {
 }
 
 // Constructor for object or non-object setter
-VM_GetOrSetLocal::VM_GetOrSetLocal(JavaThread* thread, jint depth, jint index, BasicType type, jvalue value)
-  : VM_BaseGetOrSetLocal((JavaThread*)NULL, depth, index, type, value, true),
+VM_GetOrSetLocal::VM_GetOrSetLocal(JavaThread* thread, jint depth, jint index, BasicType type, jvalue value, bool self)
+  : VM_BaseGetOrSetLocal(nullptr, depth, index, type, value, true, self),
     _thread(thread),
     _eb(type == T_OBJECT, JavaThread::current(), thread)
 {
 }
 
 // Constructor for object getter
-VM_GetOrSetLocal::VM_GetOrSetLocal(JavaThread* thread, JavaThread* calling_thread, jint depth, int index)
-  : VM_BaseGetOrSetLocal(calling_thread, depth, index, T_OBJECT, _DEFAULT_VALUE, false),
+VM_GetOrSetLocal::VM_GetOrSetLocal(JavaThread* thread, JavaThread* calling_thread, jint depth, int index, bool self)
+  : VM_BaseGetOrSetLocal(calling_thread, depth, index, T_OBJECT, _DEFAULT_VALUE, false, self),
     _thread(thread),
     _eb(true, calling_thread, thread)
 {
@@ -768,7 +769,7 @@ VM_GetOrSetLocal::VM_GetOrSetLocal(JavaThread* thread, JavaThread* calling_threa
 
 vframe *VM_GetOrSetLocal::get_vframe() {
   if (!_thread->has_last_Java_frame()) {
-    return NULL;
+    return nullptr;
   }
   RegisterMap reg_map(_thread,
                       RegisterMap::UpdateMap::include,
@@ -776,7 +777,7 @@ vframe *VM_GetOrSetLocal::get_vframe() {
                       RegisterMap::WalkContinuation::include);
   vframe *vf = JvmtiEnvBase::get_cthread_last_java_vframe(_thread, &reg_map);
   int d = 0;
-  while ((vf != NULL) && (d < _depth)) {
+  while ((vf != nullptr) && (d < _depth)) {
     vf = vf->java_sender();
     d++;
   }
@@ -785,22 +786,26 @@ vframe *VM_GetOrSetLocal::get_vframe() {
 
 javaVFrame *VM_GetOrSetLocal::get_java_vframe() {
   vframe* vf = get_vframe();
-  if (vf == NULL) {
+  if (!(_self || _thread->is_carrier_thread_suspended())) {
+    _result = JVMTI_ERROR_THREAD_NOT_SUSPENDED;
+    return nullptr;
+  }
+  if (vf == nullptr) {
     _result = JVMTI_ERROR_NO_MORE_FRAMES;
-    return NULL;
+    return nullptr;
   }
   javaVFrame *jvf = (javaVFrame*)vf;
 
   if (!vf->is_java_frame()) {
     _result = JVMTI_ERROR_OPAQUE_FRAME;
-    return NULL;
+    return nullptr;
   }
   return jvf;
 }
 
 VM_GetReceiver::VM_GetReceiver(
-    JavaThread* thread, JavaThread* caller_thread, jint depth)
-    : VM_GetOrSetLocal(thread, caller_thread, depth, 0) {}
+    JavaThread* thread, JavaThread* caller_thread, jint depth, bool self)
+    : VM_GetOrSetLocal(thread, caller_thread, depth, 0, self) {}
 
 
 ///////////////////////////////////////////////////////////////
@@ -810,8 +815,8 @@ VM_GetReceiver::VM_GetReceiver(
 
 // Constructor for non-object getter
 VM_VirtualThreadGetOrSetLocal::VM_VirtualThreadGetOrSetLocal(JvmtiEnv* env, Handle vthread_h, jint depth,
-                                                             jint index, BasicType type)
-  : VM_BaseGetOrSetLocal((JavaThread*)NULL, depth, index, type, _DEFAULT_VALUE, false)
+                                                             jint index, BasicType type, bool self)
+  : VM_BaseGetOrSetLocal(nullptr, depth, index, type, _DEFAULT_VALUE, false, self)
 {
   _env = env;
   _vthread_h = vthread_h;
@@ -819,8 +824,8 @@ VM_VirtualThreadGetOrSetLocal::VM_VirtualThreadGetOrSetLocal(JvmtiEnv* env, Hand
 
 // Constructor for object or non-object setter
 VM_VirtualThreadGetOrSetLocal::VM_VirtualThreadGetOrSetLocal(JvmtiEnv* env, Handle vthread_h, jint depth,
-                                                             jint index, BasicType type, jvalue value)
-  : VM_BaseGetOrSetLocal((JavaThread*)NULL, depth, index, type, value, true)
+                                                             jint index, BasicType type, jvalue value, bool self)
+  : VM_BaseGetOrSetLocal(nullptr, depth, index, type, value, true, self)
 {
   _env = env;
   _vthread_h = vthread_h;
@@ -828,8 +833,8 @@ VM_VirtualThreadGetOrSetLocal::VM_VirtualThreadGetOrSetLocal(JvmtiEnv* env, Hand
 
 // Constructor for object getter
 VM_VirtualThreadGetOrSetLocal::VM_VirtualThreadGetOrSetLocal(JvmtiEnv* env, Handle vthread_h, JavaThread* calling_thread,
-                                                             jint depth, int index)
-  : VM_BaseGetOrSetLocal(calling_thread, depth, index, T_OBJECT, _DEFAULT_VALUE, false)
+                                                             jint depth, int index, bool self)
+  : VM_BaseGetOrSetLocal(calling_thread, depth, index, T_OBJECT, _DEFAULT_VALUE, false, self)
 {
   _env = env;
   _vthread_h = vthread_h;
@@ -838,11 +843,16 @@ VM_VirtualThreadGetOrSetLocal::VM_VirtualThreadGetOrSetLocal(JvmtiEnv* env, Hand
 javaVFrame *VM_VirtualThreadGetOrSetLocal::get_java_vframe() {
   Thread* cur_thread = Thread::current();
   oop cont = java_lang_VirtualThread::continuation(_vthread_h());
-  assert(cont != NULL, "vthread contintuation must not be NULL");
+  assert(cont != nullptr, "vthread contintuation must not be null");
 
-  javaVFrame* jvf = NULL;
+  javaVFrame* jvf = nullptr;
   JavaThread* java_thread = JvmtiEnvBase::get_JavaThread_or_null(_vthread_h());
-  bool is_cont_mounted = (java_thread != NULL);
+  bool is_cont_mounted = (java_thread != nullptr);
+
+  if (!(_self || JvmtiVTSuspender::is_vthread_suspended(_vthread_h()))) {
+    _result = JVMTI_ERROR_THREAD_NOT_SUSPENDED;
+    return nullptr;
+  }
 
   if (is_cont_mounted) {
     vframeStream vfs(java_thread);
@@ -860,26 +870,26 @@ javaVFrame *VM_VirtualThreadGetOrSetLocal::get_java_vframe() {
     }
   }
   int d = 0;
-  while ((jvf != NULL) && (d < _depth)) {
+  while ((jvf != nullptr) && (d < _depth)) {
     jvf = jvf->java_sender();
     d++;
   }
 
-  if (d < _depth || jvf == NULL) {
+  if (d < _depth || jvf == nullptr) {
     _result = JVMTI_ERROR_NO_MORE_FRAMES;
-    return NULL;
+    return nullptr;
   }
 
   if ((_set && !is_cont_mounted) || !jvf->is_java_frame()) {
     _result = JVMTI_ERROR_OPAQUE_FRAME;
-    return NULL;
+    return nullptr;
   }
   return jvf;
 }
 
 VM_VirtualThreadGetReceiver::VM_VirtualThreadGetReceiver(
-    JvmtiEnv* env, Handle vthread_h, JavaThread* caller_thread, jint depth)
-    : VM_VirtualThreadGetOrSetLocal(env, vthread_h, caller_thread, depth, 0) {}
+    JvmtiEnv* env, Handle vthread_h, JavaThread* caller_thread, jint depth, bool self)
+    : VM_VirtualThreadGetOrSetLocal(env, vthread_h, caller_thread, depth, 0, self) {}
 
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -972,11 +982,11 @@ void JvmtiDeferredEvent::post() {
     case TYPE_DYNAMIC_CODE_GENERATED: {
       JvmtiExport::post_dynamic_code_generated_internal(
         // if strdup failed give the event a default name
-        (_event_data.dynamic_code_generated.name == NULL)
+        (_event_data.dynamic_code_generated.name == nullptr)
           ? "unknown_code" : _event_data.dynamic_code_generated.name,
         _event_data.dynamic_code_generated.code_begin,
         _event_data.dynamic_code_generated.code_end);
-      if (_event_data.dynamic_code_generated.name != NULL) {
+      if (_event_data.dynamic_code_generated.name != nullptr) {
         // release our copy
         os::free((void *)_event_data.dynamic_code_generated.name);
       }
@@ -985,9 +995,9 @@ void JvmtiDeferredEvent::post() {
     case TYPE_CLASS_UNLOAD: {
       JvmtiExport::post_class_unload_internal(
         // if strdup failed give the event a default name
-        (_event_data.class_unload.name == NULL)
+        (_event_data.class_unload.name == nullptr)
           ? "unknown_class" : _event_data.class_unload.name);
-      if (_event_data.class_unload.name != NULL) {
+      if (_event_data.class_unload.name != nullptr) {
         // release our copy
         os::free((void *)_event_data.class_unload.name);
       }
@@ -1013,7 +1023,7 @@ void JvmtiDeferredEvent::run_nmethod_entry_barriers() {
 
 // Keep the nmethod for compiled_method_load from being unloaded.
 void JvmtiDeferredEvent::oops_do(OopClosure* f, CodeBlobClosure* cf) {
-  if (cf != NULL && _type == TYPE_COMPILED_METHOD_LOAD) {
+  if (cf != nullptr && _type == TYPE_COMPILED_METHOD_LOAD) {
     cf->do_code_blob(_event_data.compiled_method_load);
   }
 }
@@ -1021,7 +1031,7 @@ void JvmtiDeferredEvent::oops_do(OopClosure* f, CodeBlobClosure* cf) {
 // The GC calls this and marks the nmethods here on the stack so that
 // they cannot be unloaded while in the queue.
 void JvmtiDeferredEvent::nmethods_do(CodeBlobClosure* cf) {
-  if (cf != NULL && _type == TYPE_COMPILED_METHOD_LOAD) {
+  if (cf != nullptr && _type == TYPE_COMPILED_METHOD_LOAD) {
     cf->do_code_blob(_event_data.compiled_method_load);
   }
 }
@@ -1035,39 +1045,39 @@ bool JvmtiDeferredEventQueue::has_events() {
   // The events on the queue should all be posted after the live phase so this is an
   // ok check.  Before the live phase, DynamicCodeGenerated events are posted directly.
   // If we add other types of events to the deferred queue, this could get ugly.
-  return JvmtiEnvBase::get_phase() == JVMTI_PHASE_LIVE  && _queue_head != NULL;
+  return JvmtiEnvBase::get_phase() == JVMTI_PHASE_LIVE  && _queue_head != nullptr;
 }
 
 void JvmtiDeferredEventQueue::enqueue(JvmtiDeferredEvent event) {
   // Events get added to the end of the queue (and are pulled off the front).
   QueueNode* node = new QueueNode(event);
-  if (_queue_tail == NULL) {
+  if (_queue_tail == nullptr) {
     _queue_tail = _queue_head = node;
   } else {
-    assert(_queue_tail->next() == NULL, "Must be the last element in the list");
+    assert(_queue_tail->next() == nullptr, "Must be the last element in the list");
     _queue_tail->set_next(node);
     _queue_tail = node;
   }
 
-  assert((_queue_head == NULL) == (_queue_tail == NULL),
+  assert((_queue_head == nullptr) == (_queue_tail == nullptr),
          "Inconsistent queue markers");
 }
 
 JvmtiDeferredEvent JvmtiDeferredEventQueue::dequeue() {
-  assert(_queue_head != NULL, "Nothing to dequeue");
+  assert(_queue_head != nullptr, "Nothing to dequeue");
 
-  if (_queue_head == NULL) {
+  if (_queue_head == nullptr) {
     // Just in case this happens in product; it shouldn't but let's not crash
     return JvmtiDeferredEvent();
   }
 
   QueueNode* node = _queue_head;
   _queue_head = _queue_head->next();
-  if (_queue_head == NULL) {
-    _queue_tail = NULL;
+  if (_queue_head == nullptr) {
+    _queue_tail = nullptr;
   }
 
-  assert((_queue_head == NULL) == (_queue_tail == NULL),
+  assert((_queue_head == nullptr) == (_queue_tail == nullptr),
          "Inconsistent queue markers");
 
   JvmtiDeferredEvent event = node->event();
@@ -1077,27 +1087,27 @@ JvmtiDeferredEvent JvmtiDeferredEventQueue::dequeue() {
 
 void JvmtiDeferredEventQueue::post(JvmtiEnv* env) {
   // Post events while nmethods are still in the queue and can't be unloaded.
-  while (_queue_head != NULL) {
+  while (_queue_head != nullptr) {
     _queue_head->event().post_compiled_method_load_event(env);
     dequeue();
   }
 }
 
 void JvmtiDeferredEventQueue::run_nmethod_entry_barriers() {
-  for(QueueNode* node = _queue_head; node != NULL; node = node->next()) {
+  for(QueueNode* node = _queue_head; node != nullptr; node = node->next()) {
      node->event().run_nmethod_entry_barriers();
   }
 }
 
 
 void JvmtiDeferredEventQueue::oops_do(OopClosure* f, CodeBlobClosure* cf) {
-  for(QueueNode* node = _queue_head; node != NULL; node = node->next()) {
+  for(QueueNode* node = _queue_head; node != nullptr; node = node->next()) {
      node->event().oops_do(f, cf);
   }
 }
 
 void JvmtiDeferredEventQueue::nmethods_do(CodeBlobClosure* cf) {
-  for(QueueNode* node = _queue_head; node != NULL; node = node->next()) {
+  for(QueueNode* node = _queue_head; node != nullptr; node = node->next()) {
      node->event().nmethods_do(cf);
   }
 }

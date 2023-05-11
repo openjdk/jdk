@@ -76,11 +76,9 @@ public class TestNames extends JavacTestingAbstractProcessor {
                 failed = true;
 
 
-            try {
-                // Force another round with a new context
-                PrintWriter pw = new PrintWriter(filer.createSourceFile("Foo").openWriter());
+            // Force another round with a new context
+            try (PrintWriter pw = new PrintWriter(filer.createSourceFile("Foo").openWriter())) {
                 pw.println("public class Foo {}");
-                pw.close();
             } catch (IOException ioe) {
                 throw new RuntimeException();
             }

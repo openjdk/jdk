@@ -8,7 +8,7 @@ import java.util.List;
 
 public class NullsInPatterns {
 
-    public static void main(String[] args) {
+    public static void meth() {
         if (null instanceof List t) {
             throw new AssertionError("broken");
         } else {

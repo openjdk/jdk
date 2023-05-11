@@ -106,7 +106,7 @@
  * Note that when using posix_spawn(3), we exec twice: first a tiny binary called
  * the jspawnhelper, then in the jspawnhelper we do the pre-exec work and exec a
  * second time, this time the target binary (similar to the "exec-twice-technique"
- * described in http://mail.openjdk.java.net/pipermail/core-libs-dev/2018-September/055333.html).
+ * described in http://mail.openjdk.org/pipermail/core-libs-dev/2018-September/055333.html).
  *
  * This is a JDK-specific implementation detail which just happens to be
  * implemented for jdk.lang.Process.launchMechanism=POSIX_SPAWN.

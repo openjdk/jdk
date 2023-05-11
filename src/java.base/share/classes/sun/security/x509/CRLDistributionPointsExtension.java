@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,8 @@
 package sun.security.x509;
 
 import java.io.IOException;
-import java.io.OutputStream;
 
 import java.util.*;
-import java.util.Collections;
 
 import sun.security.util.DerOutputStream;
 import sun.security.util.DerValue;
@@ -78,23 +76,10 @@ import sun.security.util.ObjectIdentifier;
  * @since 1.4.2
  * @see DistributionPoint
  * @see Extension
- * @see CertAttrSet
  */
-public class CRLDistributionPointsExtension extends Extension
-        implements CertAttrSet<String> {
+public class CRLDistributionPointsExtension extends Extension {
 
-    /**
-     * Identifier for this attribute, to be used with the
-     * get, set, delete methods of Certificate, x509 type.
-     */
-    public static final String IDENT =
-                                "x509.info.extensions.CRLDistributionPoints";
-
-    /**
-     * Attribute name.
-     */
     public static final String NAME = "CRLDistributionPoints";
-    public static final String POINTS = "points";
 
     /**
      * The List of DistributionPoint objects.
@@ -108,10 +93,9 @@ public class CRLDistributionPointsExtension extends Extension
      * DistributionPoint; the criticality is set to false.
      *
      * @param distributionPoints the list of distribution points
-     * @throws IOException on error
      */
     public CRLDistributionPointsExtension(
-        List<DistributionPoint> distributionPoints) throws IOException {
+            List<DistributionPoint> distributionPoints) {
 
         this(false, distributionPoints);
     }
@@ -121,11 +105,11 @@ public class CRLDistributionPointsExtension extends Extension
      * DistributionPoint.
      *
      * @param isCritical the criticality setting.
-     * @param distributionPoints the list of distribution points
-     * @throws IOException on error
+     * @param distributionPoints the list of distribution points,
+     *                           cannot be null or empty.
      */
     public CRLDistributionPointsExtension(boolean isCritical,
-        List<DistributionPoint> distributionPoints) throws IOException {
+        List<DistributionPoint> distributionPoints) {
 
         this(PKIXExtensions.CRLDistributionPoints_Id, isCritical,
             distributionPoints, NAME);
@@ -135,8 +119,13 @@ public class CRLDistributionPointsExtension extends Extension
      * Creates the extension (also called by the subclass).
      */
     protected CRLDistributionPointsExtension(ObjectIdentifier extensionId,
-        boolean isCritical, List<DistributionPoint> distributionPoints,
-            String extensionName) throws IOException {
+            boolean isCritical, List<DistributionPoint> distributionPoints,
+            String extensionName) {
+
+        if (distributionPoints == null || distributionPoints.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "distribution points cannot be null or empty");
+        }
 
         this.extensionId = extensionId;
         this.critical = isCritical;
@@ -187,8 +176,9 @@ public class CRLDistributionPointsExtension extends Extension
     }
 
     /**
-     * Return the name of this attribute.
+     * Return the name of this extension.
      */
+    @Override
     public String getName() {
         return extensionName;
     }
@@ -197,9 +187,9 @@ public class CRLDistributionPointsExtension extends Extension
      * Write the extension to the DerOutputStream.
      *
      * @param out the DerOutputStream to write the extension to.
-     * @exception IOException on encoding errors.
      */
-    public void encode(OutputStream out) throws IOException {
+    @Override
+    public void encode(DerOutputStream out) {
         encode(out, PKIXExtensions.CRLDistributionPoints_Id, false);
     }
 
@@ -207,77 +197,28 @@ public class CRLDistributionPointsExtension extends Extension
      * Write the extension to the DerOutputStream.
      * (Also called by the subclass)
      */
-    protected void encode(OutputStream out, ObjectIdentifier extensionId,
-        boolean isCritical) throws IOException {
+    protected void encode(DerOutputStream out, ObjectIdentifier extensionId,
+            boolean isCritical) {
 
-        DerOutputStream tmp = new DerOutputStream();
         if (this.extensionValue == null) {
             this.extensionId = extensionId;
             this.critical = isCritical;
             encodeThis();
         }
-        super.encode(tmp);
-        out.write(tmp.toByteArray());
+        super.encode(out);
     }
 
-    /**
-     * Set the attribute value.
+   /**
+     * Get the DistributionPoint value.
      */
-    @SuppressWarnings("unchecked") // Checked with instanceof
-    public void set(String name, Object obj) throws IOException {
-        if (name.equalsIgnoreCase(POINTS)) {
-            if (!(obj instanceof List)) {
-                throw new IOException("Attribute value should be of type List.");
-            }
-            distributionPoints = (List<DistributionPoint>)obj;
-        } else {
-            throw new IOException("Attribute name [" + name +
-                                  "] not recognized by " +
-                                  "CertAttrSet:" + extensionName + '.');
-        }
-        encodeThis();
+    public List<DistributionPoint> getDistributionPoints() {
+        return distributionPoints;
     }
 
-    /**
-     * Get the attribute value.
-     */
-    public List<DistributionPoint> get(String name) throws IOException {
-        if (name.equalsIgnoreCase(POINTS)) {
-            return distributionPoints;
-        } else {
-            throw new IOException("Attribute name [" + name +
-                                  "] not recognized by " +
-                                  "CertAttrSet:" + extensionName + '.');
-        }
-    }
 
-    /**
-     * Delete the attribute value.
-     */
-    public void delete(String name) throws IOException {
-        if (name.equalsIgnoreCase(POINTS)) {
-            distributionPoints =
-                    Collections.emptyList();
-        } else {
-            throw new IOException("Attribute name [" + name +
-                                  "] not recognized by " +
-                                  "CertAttrSet:" + extensionName + '.');
-        }
-        encodeThis();
-    }
-
-    /**
-     * Return an enumeration of names of attributes existing within this
-     * attribute.
-     */
-    public Enumeration<String> getElements() {
-        AttributeNameEnumeration elements = new AttributeNameEnumeration();
-        elements.addElement(POINTS);
-        return elements.elements();
-    }
 
      // Encode this extension value
-    private void encodeThis() throws IOException {
+    private void encodeThis() {
         if (distributionPoints.isEmpty()) {
             this.extensionValue = null;
         } else {

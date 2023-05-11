@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -198,11 +198,11 @@ void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm,
   __ srli(tmp1, tmp1, HeapRegion::LogOfHRGrainBytes);
   __ beqz(tmp1, done);
 
-  // crosses regions, storing NULL?
+  // crosses regions, storing null?
 
   __ beqz(new_val, done);
 
-  // storing region crossing non-NULL, is card already dirty?
+  // storing region crossing non-null, is card already dirty?
 
   ExternalAddress cardtable((address) ct->byte_map_base());
   const Register card_addr = tmp1;
@@ -223,7 +223,7 @@ void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm,
   __ lbu(tmp2, Address(card_addr));
   __ beqz(tmp2, done);
 
-  // storing a region crossing, non-NULL oop, card is clean.
+  // storing a region crossing, non-null oop, card is clean.
   // dirty card and log.
 
   __ sb(zr, Address(card_addr));
@@ -415,7 +415,7 @@ void G1BarrierSetAssembler::generate_c1_post_barrier_runtime_stub(StubAssembler*
   Label done;
   Label runtime;
 
-  // At this point we know new_value is non-NULL and the new_value crosses regions.
+  // At this point we know new_value is non-null and the new_value crosses regions.
   // Must check to see if card is already dirty
   const Register thread = xthread;
 
@@ -446,7 +446,7 @@ void G1BarrierSetAssembler::generate_c1_post_barrier_runtime_stub(StubAssembler*
   __ lbu(t0, Address(card_addr, 0));
   __ beqz(t0, done);
 
-  // storing region crossing non-NULL, card is clean.
+  // storing region crossing non-null, card is clean.
   // dirty card and log.
   __ sb(zr, Address(card_addr, 0));
 

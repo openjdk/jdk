@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -325,15 +325,14 @@ class ThreadPerTaskExecutor extends ThreadContainer implements ExecutorService {
      * notified when the task completes.
      */
     private static class ThreadBoundFuture<T>
-            extends CompletableFuture<T> implements Runnable {
+            extends FutureTask<T> implements Runnable {
 
         final ThreadPerTaskExecutor executor;
-        final Callable<T> task;
         final Thread thread;
 
         ThreadBoundFuture(ThreadPerTaskExecutor executor, Callable<T> task) {
+            super(task);
             this.executor = executor;
-            this.task = task;
             this.thread = executor.newThread(this);
         }
 
@@ -342,28 +341,8 @@ class ThreadPerTaskExecutor extends ThreadContainer implements ExecutorService {
         }
 
         @Override
-        public void run() {
-            if (Thread.currentThread() != thread) {
-                // should not happen except where something casts this object
-                // to a Runnable and invokes the run method.
-                throw new WrongThreadException();
-            }
-            try {
-                T result = task.call();
-                complete(result);
-            } catch (Throwable e) {
-                completeExceptionally(e);
-            } finally {
-                executor.taskComplete(thread);
-            }
-        }
-
-        @Override
-        public boolean cancel(boolean mayInterruptIfRunning) {
-            boolean cancelled = super.cancel(mayInterruptIfRunning);
-            if (cancelled && mayInterruptIfRunning)
-                thread.interrupt();
-            return cancelled;
+        protected void done() {
+            executor.taskComplete(thread);
         }
     }
 

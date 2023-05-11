@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -134,6 +134,8 @@ import sun.security.util.Debug;
  * transfer and share confidential data among parties who may not
  * otherwise have access to the data.
  *
+ * @spec https://www.rfc-editor.org/info/rfc2732
+ *      RFC 2732: Format for Literal IPv6 Addresses in URL's
  * @see java.security.Permissions
  * @see SocketPermission
  *
@@ -1383,27 +1385,20 @@ final class SocketPermissionCollection extends PermissionCollection
                 "attempt to add a Permission to a readonly PermissionCollection");
 
         // Add permission to map if it is absent, or replace with new
-        // permission if applicable. NOTE: cannot use lambda for
-        // remappingFunction parameter until JDK-8076596 is fixed.
-        perms.merge(sp.getName(), sp,
-            new java.util.function.BiFunction<>() {
-                @Override
-                public SocketPermission apply(SocketPermission existingVal,
-                                              SocketPermission newVal) {
-                    int oldMask = existingVal.getMask();
-                    int newMask = newVal.getMask();
-                    if (oldMask != newMask) {
-                        int effective = oldMask | newMask;
-                        if (effective == newMask) {
-                            return newVal;
-                        }
-                        if (effective != oldMask) {
-                            return new SocketPermission(sp.getName(),
-                                                        effective);
-                        }
+        // permission if applicable.
+        perms.merge(sp.getName(), sp, (existingVal, newVal) -> {
+                int oldMask = existingVal.getMask();
+                int newMask = newVal.getMask();
+                if (oldMask != newMask) {
+                    int effective = oldMask | newMask;
+                    if (effective == newMask) {
+                        return newVal;
                     }
-                    return existingVal;
+                    if (effective != oldMask) {
+                        return new SocketPermission(sp.getName(), effective);
+                    }
                 }
+                return existingVal;
             }
         );
     }

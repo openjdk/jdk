@@ -42,6 +42,7 @@ import com.sun.tools.javac.jvm.PoolConstant.Dynamic;
 import com.sun.tools.javac.jvm.PoolConstant.Dynamic.BsmKey;
 import com.sun.tools.javac.jvm.PoolConstant.NameAndType;
 import com.sun.tools.javac.util.ByteBuffer;
+import com.sun.tools.javac.util.InvalidUtfException;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.Name;
 import com.sun.tools.javac.util.Names;
@@ -324,7 +325,11 @@ public class PoolWriter {
         }
 
         protected Name toName() {
-            return sigbuf.toName(names);
+            try {
+                return sigbuf.toName(names);
+            } catch (InvalidUtfException e) {
+                throw new AssertionError(e);
+            }
         }
     }
 
@@ -365,7 +370,7 @@ public class PoolWriter {
                     Type ct = (Type)c;
                     Name name = ct.hasTag(ARRAY) ?
                             typeSig(ct) :
-                            names.fromUtf(externalize(ct.tsym.flatName()));
+                            externalize(ct.tsym.flatName());
                     poolbuf.appendByte(tag);
                     poolbuf.appendChar(putName(name));
                     if (ct.hasTag(CLASS)) {
@@ -396,7 +401,7 @@ public class PoolWriter {
                 }
                 case ClassFile.CONSTANT_Package: {
                     PackageSymbol pkg = (PackageSymbol)c;
-                    Name pkgName = names.fromUtf(externalize(pkg.flatName()));
+                    Name pkgName = externalize(pkg.flatName());
                     poolbuf.appendByte(tag);
                     poolbuf.appendChar(putName(pkgName));
                     break;

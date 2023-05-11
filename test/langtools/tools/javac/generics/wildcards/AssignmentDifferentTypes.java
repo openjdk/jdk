@@ -7,7 +7,7 @@
 
 public class AssignmentDifferentTypes {
 
-    public static void main(String[] args) {
+    public static void meth() {
         Ref<Der> derexact = null;
         Ref<Base> baseexact = null;
         Ref<? extends Der> derext = null;

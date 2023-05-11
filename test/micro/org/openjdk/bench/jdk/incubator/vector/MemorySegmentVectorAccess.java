@@ -26,7 +26,7 @@
 package org.openjdk.bench.jdk.incubator.vector;
 
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
+import java.lang.foreign.Arena;
 import java.nio.ByteOrder;
 import java.util.concurrent.TimeUnit;
 import jdk.incubator.vector.ByteVector;
@@ -69,8 +69,10 @@ public class MemorySegmentVectorAccess {
 
   @Setup
   public void setup() {
-    nativeIn = MemorySegment.allocateNative(size, MemorySession.openImplicit());
-    nativeOut = MemorySegment.allocateNative(size, MemorySession.openImplicit());
+      Arena scope1 = Arena.ofAuto();
+      nativeIn = scope1.allocate(size, 1);
+      Arena scope = Arena.ofAuto();
+      nativeOut = scope.allocate(size, 1);
 
     byteIn = new byte[size];
     byteOut = new byte[size];

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,10 @@
 
 package java.util.regex;
 
+import java.io.IOException;
 import java.util.ConcurrentModificationException;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Spliterator;
@@ -229,6 +231,8 @@ public final class Matcher implements MatchResult {
      */
     int modCount;
 
+    private Map<String, Integer> namedGroups;
+
     /**
      * No default constructor.
      */
@@ -278,7 +282,8 @@ public final class Matcher implements MatchResult {
                                         this.last,
                                         groupCount(),
                                         this.groups.clone(),
-                                        text);
+                                        text,
+                                        namedGroups());
     }
 
     private static class ImmutableMatchResult implements MatchResult {
@@ -287,15 +292,18 @@ public final class Matcher implements MatchResult {
         private final int[] groups;
         private final int groupCount;
         private final String text;
+        private final Map<String, Integer> namedGroups;
 
         ImmutableMatchResult(int first, int last, int groupCount,
-                             int[] groups, String text)
+                             int[] groups, String text,
+                             Map<String, Integer> namedGroups)
         {
             this.first = first;
             this.last = last;
             this.groupCount = groupCount;
             this.groups = groups;
             this.text = text;
+            this.namedGroups = namedGroups;
         }
 
         @Override
@@ -307,8 +315,7 @@ public final class Matcher implements MatchResult {
         @Override
         public int start(int group) {
             checkMatch();
-            if (group < 0 || group > groupCount)
-                throw new IndexOutOfBoundsException("No group " + group);
+            checkGroup(group);
             return groups[group * 2];
         }
 
@@ -321,8 +328,7 @@ public final class Matcher implements MatchResult {
         @Override
         public int end(int group) {
             checkMatch();
-            if (group < 0 || group > groupCount)
-                throw new IndexOutOfBoundsException("No group " + group);
+            checkGroup(group);
             return groups[group * 2 + 1];
         }
 
@@ -340,18 +346,33 @@ public final class Matcher implements MatchResult {
         @Override
         public String group(int group) {
             checkMatch();
-            if (group < 0 || group > groupCount)
-                throw new IndexOutOfBoundsException("No group " + group);
-            if ((groups[group*2] == -1) || (groups[group*2+1] == -1))
+            checkGroup(group);
+            if ((groups[group * 2] == -1) || (groups[group * 2 + 1] == -1))
                 return null;
             return text.subSequence(groups[group * 2], groups[group * 2 + 1]).toString();
         }
 
+        @Override
+        public Map<String, Integer> namedGroups() {
+            return namedGroups;
+        }
+
+        @Override
+        public boolean hasMatch() {
+            return first >= 0;
+        }
+
+        private void checkGroup(int group) {
+            if (group < 0 || group > groupCount)
+                throw new IndexOutOfBoundsException("No group " + group);
+        }
+
         private void checkMatch() {
-            if (first < 0)
+            if (!hasMatch())
                 throw new IllegalStateException("No match found");
 
         }
+
     }
 
     /**
@@ -446,8 +467,7 @@ public final class Matcher implements MatchResult {
      *          or if the previous match operation failed
      */
     public int start() {
-        if (first < 0)
-            throw new IllegalStateException("No match available");
+        checkMatch();
         return first;
     }
 
@@ -476,10 +496,8 @@ public final class Matcher implements MatchResult {
      *          with the given index
      */
     public int start(int group) {
-        if (first < 0)
-            throw new IllegalStateException("No match available");
-        if (group < 0 || group > groupCount())
-            throw new IndexOutOfBoundsException("No group " + group);
+        checkMatch();
+        checkGroup(group);
         return groups[group * 2];
     }
 
@@ -518,8 +536,7 @@ public final class Matcher implements MatchResult {
      *          or if the previous match operation failed
      */
     public int end() {
-        if (first < 0)
-            throw new IllegalStateException("No match available");
+        checkMatch();
         return last;
     }
 
@@ -548,10 +565,8 @@ public final class Matcher implements MatchResult {
      *          with the given index
      */
     public int end(int group) {
-        if (first < 0)
-            throw new IllegalStateException("No match available");
-        if (group < 0 || group > groupCount())
-            throw new IndexOutOfBoundsException("No group " + group);
+        checkMatch();
+        checkGroup(group);
         return groups[group * 2 + 1];
     }
 
@@ -593,7 +608,9 @@ public final class Matcher implements MatchResult {
      * successfully matches the empty string in the input.  </p>
      *
      * @return The (possibly empty) subsequence matched by the previous match,
-     *         in string form
+     *         in string form or {@code null} if a matcher with a previous
+     *         match has changed its {@link java.util.regex.Pattern},
+     *         but no new match has yet been attempted
      *
      * @throws  IllegalStateException
      *          If no match has yet been attempted,
@@ -629,7 +646,9 @@ public final class Matcher implements MatchResult {
      *
      * @return  The (possibly empty) subsequence captured by the group
      *          during the previous match, or {@code null} if the group
-     *          failed to match part of the input
+     *          failed to match part of the input or if the matcher's
+     *          {@link java.util.regex.Pattern} has changed after a
+     *          successful match, but a new match has not been attempted
      *
      * @throws  IllegalStateException
      *          If no match has yet been attempted,
@@ -640,10 +659,8 @@ public final class Matcher implements MatchResult {
      *          with the given index
      */
     public String group(int group) {
-        if (first < 0)
-            throw new IllegalStateException("No match found");
-        if (group < 0 || group > groupCount())
-            throw new IndexOutOfBoundsException("No group " + group);
+        checkMatch();
+        checkGroup(group);
         if ((groups[group*2] == -1) || (groups[group*2+1] == -1))
             return null;
         return getSubSequence(groups[group * 2], groups[group * 2 + 1]).toString();
@@ -900,15 +917,17 @@ public final class Matcher implements MatchResult {
      *          that does not exist in the pattern
      */
     public Matcher appendReplacement(StringBuffer sb, String replacement) {
-        // If no match, return error
-        if (first < 0)
-            throw new IllegalStateException("No match available");
-        StringBuilder result = new StringBuilder();
-        appendExpandedReplacement(replacement, result);
-        // Append the intervening text
-        sb.append(text, lastAppendPosition, first);
-        // Append the match substitution
-        sb.append(result);
+        checkMatch();
+        int curLen = sb.length();
+        try {
+            // Append the intervening text
+            sb.append(text, lastAppendPosition, first);
+            // Append the match substitution
+            appendExpandedReplacement(sb, replacement);
+        } catch (IllegalArgumentException e) {
+            sb.setLength(curLen);
+            throw e;
+        }
         lastAppendPosition = last;
         modCount++;
         return this;
@@ -990,15 +1009,17 @@ public final class Matcher implements MatchResult {
      * @since 9
      */
     public Matcher appendReplacement(StringBuilder sb, String replacement) {
-        // If no match, return error
-        if (first < 0)
-            throw new IllegalStateException("No match available");
-        StringBuilder result = new StringBuilder();
-        appendExpandedReplacement(replacement, result);
-        // Append the intervening text
-        sb.append(text, lastAppendPosition, first);
-        // Append the match substitution
-        sb.append(result);
+        checkMatch();
+        int curLen = sb.length();
+        try {
+            // Append the intervening text
+            sb.append(text, lastAppendPosition, first);
+            // Append the match substitution
+            appendExpandedReplacement(sb, replacement);
+        } catch (IllegalArgumentException e) {
+            sb.setLength(curLen);
+            throw e;
+        }
         lastAppendPosition = last;
         modCount++;
         return this;
@@ -1008,93 +1029,94 @@ public final class Matcher implements MatchResult {
      * Processes replacement string to replace group references with
      * groups.
      */
-    private StringBuilder appendExpandedReplacement(
-        String replacement, StringBuilder result) {
-        int cursor = 0;
-        while (cursor < replacement.length()) {
-            char nextChar = replacement.charAt(cursor);
-            if (nextChar == '\\') {
-                cursor++;
-                if (cursor == replacement.length())
-                    throw new IllegalArgumentException(
-                        "character to be escaped is missing");
-                nextChar = replacement.charAt(cursor);
-                result.append(nextChar);
-                cursor++;
-            } else if (nextChar == '$') {
-                // Skip past $
-                cursor++;
-                // Throw IAE if this "$" is the last character in replacement
-                if (cursor == replacement.length())
-                   throw new IllegalArgumentException(
-                        "Illegal group reference: group index is missing");
-                nextChar = replacement.charAt(cursor);
-                int refNum = -1;
-                if (nextChar == '{') {
+    private void appendExpandedReplacement(Appendable app, String replacement) {
+        try {
+            int cursor = 0;
+            while (cursor < replacement.length()) {
+                char nextChar = replacement.charAt(cursor);
+                if (nextChar == '\\') {
                     cursor++;
-                    StringBuilder gsb = new StringBuilder();
-                    while (cursor < replacement.length()) {
-                        nextChar = replacement.charAt(cursor);
-                        if (ASCII.isLower(nextChar) ||
-                            ASCII.isUpper(nextChar) ||
-                            ASCII.isDigit(nextChar)) {
-                            gsb.append(nextChar);
-                            cursor++;
-                        } else {
-                            break;
+                    if (cursor == replacement.length())
+                        throw new IllegalArgumentException(
+                                "character to be escaped is missing");
+                    nextChar = replacement.charAt(cursor);
+                    app.append(nextChar);
+                    cursor++;
+                } else if (nextChar == '$') {
+                    // Skip past $
+                    cursor++;
+                    // Throw IAE if this "$" is the last character in replacement
+                    if (cursor == replacement.length())
+                        throw new IllegalArgumentException(
+                                "Illegal group reference: group index is missing");
+                    nextChar = replacement.charAt(cursor);
+                    int refNum = -1;
+                    if (nextChar == '{') {
+                        cursor++;
+                        int begin = cursor;
+                        while (cursor < replacement.length()) {
+                            nextChar = replacement.charAt(cursor);
+                            if (ASCII.isLower(nextChar) ||
+                                    ASCII.isUpper(nextChar) ||
+                                    ASCII.isDigit(nextChar)) {
+                                cursor++;
+                            } else {
+                                break;
+                            }
+                        }
+                        if (begin == cursor)
+                            throw new IllegalArgumentException(
+                                    "named capturing group has 0 length name");
+                        if (nextChar != '}')
+                            throw new IllegalArgumentException(
+                                    "named capturing group is missing trailing '}'");
+                        String gname = replacement.substring(begin, cursor);
+                        if (ASCII.isDigit(gname.charAt(0)))
+                            throw new IllegalArgumentException(
+                                    "capturing group name {" + gname +
+                                            "} starts with digit character");
+                        if (!namedGroups().containsKey(gname))
+                            throw new IllegalArgumentException(
+                                    "No group with name {" + gname + "}");
+                        refNum = namedGroups().get(gname);
+                        cursor++;
+                    } else {
+                        // The first number is always a group
+                        refNum = nextChar - '0';
+                        if ((refNum < 0) || (refNum > 9))
+                            throw new IllegalArgumentException(
+                                    "Illegal group reference");
+                        cursor++;
+                        // Capture the largest legal group string
+                        boolean done = false;
+                        while (!done) {
+                            if (cursor >= replacement.length()) {
+                                break;
+                            }
+                            int nextDigit = replacement.charAt(cursor) - '0';
+                            if ((nextDigit < 0) || (nextDigit > 9)) { // not a number
+                                break;
+                            }
+                            int newRefNum = (refNum * 10) + nextDigit;
+                            if (groupCount() < newRefNum) {
+                                done = true;
+                            } else {
+                                refNum = newRefNum;
+                                cursor++;
+                            }
                         }
                     }
-                    if (gsb.length() == 0)
-                        throw new IllegalArgumentException(
-                            "named capturing group has 0 length name");
-                    if (nextChar != '}')
-                        throw new IllegalArgumentException(
-                            "named capturing group is missing trailing '}'");
-                    String gname = gsb.toString();
-                    if (ASCII.isDigit(gname.charAt(0)))
-                        throw new IllegalArgumentException(
-                            "capturing group name {" + gname +
-                            "} starts with digit character");
-                    if (!parentPattern.namedGroups().containsKey(gname))
-                        throw new IllegalArgumentException(
-                            "No group with name {" + gname + "}");
-                    refNum = parentPattern.namedGroups().get(gname);
-                    cursor++;
+                    // Append group
+                    if (start(refNum) != -1 && end(refNum) != -1)
+                        app.append(text, start(refNum), end(refNum));
                 } else {
-                    // The first number is always a group
-                    refNum = nextChar - '0';
-                    if ((refNum < 0) || (refNum > 9))
-                        throw new IllegalArgumentException(
-                            "Illegal group reference");
+                    app.append(nextChar);
                     cursor++;
-                    // Capture the largest legal group string
-                    boolean done = false;
-                    while (!done) {
-                        if (cursor >= replacement.length()) {
-                            break;
-                        }
-                        int nextDigit = replacement.charAt(cursor) - '0';
-                        if ((nextDigit < 0) || (nextDigit > 9)) { // not a number
-                            break;
-                        }
-                        int newRefNum = (refNum * 10) + nextDigit;
-                        if (groupCount() < newRefNum) {
-                            done = true;
-                        } else {
-                            refNum = newRefNum;
-                            cursor++;
-                        }
-                    }
                 }
-                // Append group
-                if (start(refNum) != -1 && end(refNum) != -1)
-                    result.append(text, start(refNum), end(refNum));
-            } else {
-                result.append(nextChar);
-                cursor++;
             }
+        } catch (IOException e) {  // cannot happen on String[Buffer|Builder]
+            throw new AssertionError(e.getMessage());
         }
-        return result;
     }
 
     /**
@@ -1796,10 +1818,47 @@ public final class Matcher implements MatchResult {
      */
     int getMatchedGroupIndex(String name) {
         Objects.requireNonNull(name, "Group name");
-        if (first < 0)
-            throw new IllegalStateException("No match found");
-        if (!parentPattern.namedGroups().containsKey(name))
+        checkMatch();
+        if (!namedGroups().containsKey(name))
             throw new IllegalArgumentException("No group with name <" + name + ">");
-        return parentPattern.namedGroups().get(name);
+        return namedGroups().get(name);
     }
+
+    private void checkGroup(int group) {
+        if (group < 0 || group > groupCount())
+            throw new IndexOutOfBoundsException("No group " + group);
+    }
+
+    private void checkMatch() {
+        if (!hasMatch())
+            throw new IllegalStateException("No match found");
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @return {@inheritDoc}
+     *
+     * @since {@inheritDoc}
+     */
+    @Override
+    public Map<String, Integer> namedGroups() {
+        if (namedGroups == null) {
+            return namedGroups = parentPattern.namedGroups();
+        }
+        return namedGroups;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @return {@inheritDoc}
+     *
+     * @since {@inheritDoc}
+     */
+    @Override
+    public boolean hasMatch() {
+        return first >= 0;
+    }
+
 }

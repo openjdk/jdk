@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ import sun.jvm.hotspot.memory.*;
 import sun.jvm.hotspot.oops.*;
 
 public class ConcurrentLocksPrinter {
-    private Map<JavaThread, List<Oop>> locksMap = new HashMap<>();
+    private final Map<JavaThread, List<Oop>> locksMap = new HashMap<>();
 
     public ConcurrentLocksPrinter() {
         fillLocks();
@@ -42,8 +42,7 @@ public class ConcurrentLocksPrinter {
         if (locks == null || locks.isEmpty()) {
             tty.println("    - None");
         } else {
-            for (Iterator<Oop> itr = locks.iterator(); itr.hasNext();) {
-                Oop oop = itr.next();
+            for (Oop oop : locks) {
                 tty.println("    - <" + oop.getHandle() + ">, (a " +
                        oop.getKlass().getName().asString() + ")");
             }
@@ -71,12 +70,8 @@ public class ConcurrentLocksPrinter {
                     public boolean doObj(Oop oop) {
                         JavaThread thread = getOwnerThread(oop);
                         if (thread != null) {
-                            List<Oop> locks = locksMap.get(thread);
-                            if (locks == null) {
-                                locks = new LinkedList<>();
-                                locksMap.put(thread, locks);
-                            }
-                            locks.add(oop);
+                            locksMap.computeIfAbsent(thread, t -> new ArrayList<>())
+                                    .add(oop);
                         }
                         return false;
                     }

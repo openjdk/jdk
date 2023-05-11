@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2023 Unicode, Inc.
+For terms of use, see http://www.unicode.org/copyright.html
+SPDX-License-Identifier: Unicode-DFS-2016
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+-->
+<ldml>
+	<identity>
+		<version number="$Revision$"/>
+		<language type="arn"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="arn">Mapudungun</language>
+		</languages>
+	</localeDisplayNames>
+	<layout>
+		<orientation>
+			<characterOrder>left-to-right</characterOrder>
+			<lineOrder>top-to-bottom</lineOrder>
+		</orientation>
+	</layout>
+	<characters>
+		<exemplarCharacters>[a {ch} d e f g i k l ḻ {ll} m n ñ ṉ {ng} o p r s {sh} t ṯ {tr} u ü w y]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[b c h j q x z]</exemplarCharacters>
+		<exemplarCharacters type="index">[A {CH} D E F G I K L Ḻ {LL} M N Ñ Ṉ {NG} O P R S {SH} T Ṯ {TR} U Ü W Y]</exemplarCharacters>
+	</characters>
+</ldml>

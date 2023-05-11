@@ -87,7 +87,7 @@ public final class P11TlsMasterSecretGenerator extends KeyGeneratorSpi {
     @SuppressWarnings("deprecation")
     protected void engineInit(AlgorithmParameterSpec params,
             SecureRandom random) throws InvalidAlgorithmParameterException {
-        if (params instanceof TlsMasterSecretParameterSpec == false) {
+        if (!(params instanceof TlsMasterSecretParameterSpec)) {
             throw new InvalidAlgorithmParameterException(MSG);
         }
 

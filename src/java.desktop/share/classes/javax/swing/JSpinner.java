@@ -672,7 +672,7 @@ public class JSpinner extends JComponent implements Accessible
             // We want the spinner's increment/decrement actions to be
             // active vs those of the JFormattedTextField. As such we
             // put disabled actions in the JFormattedTextField's actionmap.
-            // A binding to a disabled action is treated as a nonexistant
+            // A binding to a disabled action is treated as a non-existent
             // binding.
             ActionMap ftfMap = ftf.getActionMap();
 
@@ -1847,7 +1847,7 @@ public class JSpinner extends JComponent implements Accessible
         }
 
         /**
-         * Returns the number of characters (valid indicies)
+         * Returns the number of characters (valid indices)
          *
          * @return the number of characters
          */

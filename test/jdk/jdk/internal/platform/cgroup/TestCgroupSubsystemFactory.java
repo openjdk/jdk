@@ -51,7 +51,7 @@ import jdk.test.lib.util.FileUtils;
 
 /*
  * @test
- * @bug 8287107 8287073
+ * @bug 8287107 8287073 8293540
  * @key cgroups
  * @requires os.family == "linux"
  * @modules java.base/jdk.internal.platform
@@ -72,8 +72,8 @@ public class TestCgroupSubsystemFactory {
     private Path cgroupv1CgInfoNonZeroHierarchy;
     private Path cgroupv1MntInfoNonZeroHierarchy;
     private Path cgroupv1MntInfoSystemdOnly;
-    private Path cgroupv1MntInfoDoubleCpusets;
-    private Path cgroupv1MntInfoDoubleCpusets2;
+    private Path cgroupv1MntInfoDoubleControllers;
+    private Path cgroupv1MntInfoDoubleControllers2;
     private Path cgroupv1MntInfoColonsHierarchy;
     private Path cgroupv1SelfCgroup;
     private Path cgroupv1SelfColons;
@@ -194,9 +194,13 @@ public class TestCgroupSubsystemFactory {
     private String mntInfoCgroupsV1SystemdOnly =
             "35 26 0:26 / /sys/fs/cgroup/systemd rw,nosuid,nodev,noexec,relatime - cgroup systemd rw,name=systemd\n" +
             "26 18 0:19 / /sys/fs/cgroup rw,relatime - tmpfs none rw,size=4k,mode=755\n";
-    private String mntInfoCgroupv1MoreCpusetLine = "121 32 0:37 / /cpuset rw,relatime shared:69 - cgroup none rw,cpuset\n";
-    private String mntInfoCgroupsV1DoubleCpuset = mntInfoHybrid + mntInfoCgroupv1MoreCpusetLine;
-    private String mntInfoCgroupsV1DoubleCpuset2 = mntInfoCgroupv1MoreCpusetLine + mntInfoHybrid;
+    private String mntInfoCgroupv1MoreControllers = "121 32 0:37 / /cpuset rw,relatime shared:69 - cgroup none rw,cpuset\n" +
+            "35 30 0:31 / /cgroup-in/memory rw,nosuid,nodev,noexec,relatime shared:7 - cgroup none rw,seclabel,memory\n" +
+            "36 30 0:32 / /cgroup-in/pids rw,nosuid,nodev,noexec,relatime shared:8 - cgroup none rw,seclabel,pids\n" +
+            "40 30 0:36 / /cgroup-in/cpu,cpuacct rw,nosuid,nodev,noexec,relatime shared:12 - cgroup none rw,seclabel,cpu,cpuacct\n" +
+            "40 30 0:36 / /cgroup-in/blkio rw,nosuid,nodev,noexec,relatime shared:12 - cgroup none rw,seclabel,blkio\n";
+    private String mntInfoCgroupsV1DoubleControllers = mntInfoHybrid + mntInfoCgroupv1MoreControllers;
+    private String mntInfoCgroupsV1DoubleControllers2 = mntInfoCgroupv1MoreControllers + mntInfoHybrid;
     private String cgroupv1SelfCgroupContent = "11:memory:/user.slice/user-1000.slice/user@1000.service\n" +
             "10:hugetlb:/\n" +
             "9:cpuset:/\n" +
@@ -275,11 +279,11 @@ public class TestCgroupSubsystemFactory {
             cgroupv1MntInfoSystemdOnly = Paths.get(existingDirectory.toString(), "mountinfo_cgroupv1_systemd_only");
             Files.writeString(cgroupv1MntInfoSystemdOnly, mntInfoCgroupsV1SystemdOnly);
 
-            cgroupv1MntInfoDoubleCpusets = Paths.get(existingDirectory.toString(), "mountinfo_cgroupv1_double_cpuset");
-            Files.writeString(cgroupv1MntInfoDoubleCpusets, mntInfoCgroupsV1DoubleCpuset);
+            cgroupv1MntInfoDoubleControllers = Paths.get(existingDirectory.toString(), "mountinfo_cgroupv1_double_controllers");
+            Files.writeString(cgroupv1MntInfoDoubleControllers, mntInfoCgroupsV1DoubleControllers);
 
-            cgroupv1MntInfoDoubleCpusets2 = Paths.get(existingDirectory.toString(), "mountinfo_cgroupv1_double_cpuset2");
-            Files.writeString(cgroupv1MntInfoDoubleCpusets2, mntInfoCgroupsV1DoubleCpuset2);
+            cgroupv1MntInfoDoubleControllers2 = Paths.get(existingDirectory.toString(), "mountinfo_cgroupv1_double_controllers2");
+            Files.writeString(cgroupv1MntInfoDoubleControllers2, mntInfoCgroupsV1DoubleControllers2);
 
             cgroupv1CgroupsJoinControllers = Paths.get(existingDirectory.toString(), "cgroups_cgv1_join_controllers");
             Files.writeString(cgroupv1CgroupsJoinControllers, cgroupsNonZeroJoinControllers);
@@ -390,11 +394,11 @@ public class TestCgroupSubsystemFactory {
 
     @Test
     public void testCgroupv1MultipleCpusetMounts() throws IOException {
-        doMultipleCpusetMountsTest(cgroupv1MntInfoDoubleCpusets);
-        doMultipleCpusetMountsTest(cgroupv1MntInfoDoubleCpusets2);
+        doMultipleMountsTest(cgroupv1MntInfoDoubleControllers);
+        doMultipleMountsTest(cgroupv1MntInfoDoubleControllers2);
     }
 
-    private void doMultipleCpusetMountsTest(Path info) throws IOException {
+    private void doMultipleMountsTest(Path info) throws IOException {
         String cgroups = cgroupv1CgInfoNonZeroHierarchy.toString();
         String mountInfo = info.toString();
         String selfCgroup = cgroupv1SelfCgroup.toString();
@@ -406,6 +410,13 @@ public class TestCgroupSubsystemFactory {
         CgroupInfo cpuSetInfo = res.getInfos().get("cpuset");
         assertEquals("/sys/fs/cgroup/cpuset", cpuSetInfo.getMountPoint());
         assertEquals("/", cpuSetInfo.getMountRoot());
+        // Ensure controllers at /sys/fs/cgroup will be used
+        String[] ctrlNames = new String[] { "memory", "cpu", "cpuacct", "blkio", "pids" };
+        for (int i = 0; i < ctrlNames.length; i++) {
+            CgroupInfo cinfo = res.getInfos().get(ctrlNames[i]);
+            assertTrue(cinfo.getMountPoint().startsWith("/sys/fs/cgroup/"));
+            assertEquals("/", cinfo.getMountRoot());
+        }
     }
 
     @Test

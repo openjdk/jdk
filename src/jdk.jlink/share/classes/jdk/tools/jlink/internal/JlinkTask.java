@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package jdk.tools.jlink.internal;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.UncheckedIOException;
 import java.lang.module.Configuration;
@@ -69,6 +70,7 @@ import jdk.tools.jlink.internal.ImagePluginStack.ImageProvider;
 import jdk.tools.jlink.plugin.PluginException;
 import jdk.tools.jlink.builder.DefaultImageBuilder;
 import jdk.tools.jlink.plugin.Plugin;
+import jdk.internal.opt.CommandLine;
 import jdk.internal.module.ModulePath;
 import jdk.internal.module.ModuleResolution;
 
@@ -223,6 +225,8 @@ public class JlinkTask {
         boolean suggestProviders = false;
     }
 
+    public static final String OPTIONS_RESOURCE = "jdk/tools/jlink/internal/options";
+
     int run(String[] args) {
         if (log == null) {
             setLog(new PrintWriter(System.out, true),
@@ -230,6 +234,18 @@ public class JlinkTask {
         }
         Path outputPath = null;
         try {
+            Module m = JlinkTask.class.getModule();
+            try (InputStream savedOptions = m.getResourceAsStream(OPTIONS_RESOURCE)) {
+                if (savedOptions != null) {
+                    List<String> prependArgs = new ArrayList<>();
+                    CommandLine.loadCmdFile(savedOptions, prependArgs);
+                    if (!prependArgs.isEmpty()) {
+                        prependArgs.addAll(Arrays.asList(args));
+                        args = prependArgs.toArray(new String[prependArgs.size()]);
+                    }
+                }
+            }
+
             List<String> remaining = optionsHelper.handleOptions(this, args);
             if (remaining.size() > 0 && !options.suggestProviders) {
                 throw taskHelper.newBadArgs("err.orphan.arguments",
@@ -248,12 +264,6 @@ public class JlinkTask {
                 taskHelper.showVersion(options.fullVersion);
                 return EXIT_OK;
             }
-
-            if (taskHelper.getExistingImage() != null) {
-                postProcessOnly(taskHelper.getExistingImage());
-                return EXIT_OK;
-            }
-
 
             if (options.modulePath.isEmpty()) {
                 // no --module-path specified - try to set $JAVA_HOME/jmods if that exists
@@ -353,29 +363,6 @@ public class JlinkTask {
 
         //Ask the stack to proceed;
         stack.operate(imageProvider);
-    }
-
-    /*
-     * Jlink API entry point.
-     */
-    public static void postProcessImage(ExecutableImage image, List<Plugin> postProcessorPlugins)
-            throws Exception {
-        Objects.requireNonNull(image);
-        Objects.requireNonNull(postProcessorPlugins);
-        PluginsConfiguration config = new PluginsConfiguration(postProcessorPlugins);
-        ImagePluginStack stack = ImagePluginConfiguration.
-                parseConfiguration(config);
-
-        stack.operate((ImagePluginStack stack1) -> image);
-    }
-
-    private void postProcessOnly(Path existingImage) throws Exception {
-        PluginsConfiguration config = taskHelper.getPluginsConfig(null, null);
-        ExecutableImage img = DefaultImageBuilder.getExecutableImage(existingImage);
-        if (img == null) {
-            throw taskHelper.newBadArgs("err.existing.image.invalid");
-        }
-        postProcessImage(img, config.getPlugins());
     }
 
     // the token for "all modules on the module path"

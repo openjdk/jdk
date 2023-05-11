@@ -91,7 +91,7 @@ public class MTLLayer extends CFLayer {
         // break the connection between the layer and the buffer
         validate(null);
         SurfaceData oldData = surfaceData;
-        surfaceData = NullSurfaceData.theInstance;;
+        surfaceData = NullSurfaceData.theInstance;
         if (oldData != null) {
             oldData.flush();
         }

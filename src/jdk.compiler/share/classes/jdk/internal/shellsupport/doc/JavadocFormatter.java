@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,7 @@ import com.sun.source.doctree.DocCommentTree;
 import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.EndElementTree;
 import com.sun.source.doctree.EntityTree;
+import com.sun.source.doctree.EscapeTree;
 import com.sun.source.doctree.InlineTagTree;
 import com.sun.source.doctree.LinkTree;
 import com.sun.source.doctree.LiteralTree;
@@ -215,6 +216,12 @@ public class JavadocFormatter {
                 text = text.replaceAll("\n", "\n" + indentString(indent));
             }
             result.append(text);
+            return null;
+        }
+
+        @Override @DefinedBy(Api.COMPILER_TREE)
+        public Object visitEscape(EscapeTree node, Object p) {
+            result.append(node.getBody());
             return null;
         }
 

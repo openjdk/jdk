@@ -34,6 +34,8 @@ import java.util.Objects;
 
 import sun.security.util.math.*;
 import sun.security.util.math.intpoly.*;
+import jdk.internal.vm.annotation.IntrinsicCandidate;
+import jdk.internal.vm.annotation.ForceInline;
 
 /**
  * This class represents the Poly1305 function defined in RFC 7539.
@@ -59,8 +61,10 @@ final class Poly1305 {
     private IntegerModuloP s;
     private MutableIntegerModuloP a;
     private final MutableIntegerModuloP n = ipl1305.get1().mutable();
+    private final boolean checkWeakKey;
 
-    Poly1305() { }
+    Poly1305() { this(true); }
+    Poly1305(boolean checkKey) { checkWeakKey = checkKey; }
 
     /**
      * Initialize the Poly1305 object
@@ -120,10 +124,10 @@ final class Poly1305 {
                     BLOCK_LENGTH - blockOffset);
 
             if (bytesToWrite >= BLOCK_LENGTH) {
-                // If bytes to write == BLOCK_LENGTH, then we have no
-                // left-over data from previous updates and we can create
-                // the IntegerModuloP directly from the input buffer.
-                processBlock(buf, bytesToWrite);
+                // Have at least one full block in the buf, process all full blocks
+                int blockMultipleLength = remaining & (~(BLOCK_LENGTH-1));
+                processMultipleBlocks(buf, blockMultipleLength);
+                remaining -= blockMultipleLength;
             } else {
                 // We have some left-over data from previous updates, so
                 // copy that into the holding block until we get a full block.
@@ -134,9 +138,8 @@ final class Poly1305 {
                     processBlock(block, 0, BLOCK_LENGTH);
                     blockOffset = 0;
                 }
+                remaining -= bytesToWrite;
             }
-
-            remaining -= bytesToWrite;
         }
     }
 
@@ -165,11 +168,15 @@ final class Poly1305 {
                 blockOffset = 0;
             }
         }
-        while (len >= BLOCK_LENGTH) {
-            processBlock(input, offset, BLOCK_LENGTH);
-            offset += BLOCK_LENGTH;
-            len -= BLOCK_LENGTH;
-        }
+
+        int blockMultipleLength = len & (~(BLOCK_LENGTH-1));
+        long[] aLimbs = a.getLimbs();
+        long[] rLimbs = r.getLimbs();
+        processMultipleBlocksCheck(input, offset, blockMultipleLength, aLimbs, rLimbs);
+        processMultipleBlocks(input, offset, blockMultipleLength, aLimbs, rLimbs);
+        offset += blockMultipleLength;
+        len -= blockMultipleLength;
+
         if (len > 0) { // and len < BLOCK_LENGTH
             System.arraycopy(input, offset, block, 0, len);
             blockOffset = len;
@@ -235,12 +242,53 @@ final class Poly1305 {
         a.setProduct(r);                // a = (a * r) % p
     }
 
+    // This is an intrinsified method. The unused parameters aLimbs and rLimbs are used by the intrinsic.
+    // They correspond to this.a and this.r respectively
+    @ForceInline
+    @IntrinsicCandidate
+    private void processMultipleBlocks(byte[] input, int offset, int length, long[] aLimbs, long[] rLimbs) {
+        while (length >= BLOCK_LENGTH) {
+            processBlock(input, offset, BLOCK_LENGTH);
+            offset += BLOCK_LENGTH;
+            length -= BLOCK_LENGTH;
+        }
+    }
+
+    private void processMultipleBlocks(ByteBuffer buf, int blockMultipleLength) {
+        if (buf.hasArray()) {
+            byte[] input = buf.array();
+            int offset = buf.arrayOffset() + buf.position();
+            long[] aLimbs = a.getLimbs();
+            long[] rLimbs = r.getLimbs();
+
+            processMultipleBlocksCheck(input, offset, blockMultipleLength, aLimbs, rLimbs);
+            processMultipleBlocks(input, offset, blockMultipleLength, aLimbs, rLimbs);
+            buf.position(offset + blockMultipleLength);
+        } else {
+            while (blockMultipleLength >= BLOCK_LENGTH) {
+                processBlock(buf, BLOCK_LENGTH);
+                blockMultipleLength -= BLOCK_LENGTH;
+            }
+        }
+    }
+
+    private static void processMultipleBlocksCheck(byte[] input, int offset, int length, long[] aLimbs, long[] rLimbs) {
+        Objects.checkFromIndexSize(offset, length, input.length);
+        final int numLimbs = 5; // Intrinsic expects exactly 5 limbs
+        if (aLimbs.length != numLimbs) {
+            throw new RuntimeException("invalid accumulator length: " + aLimbs.length);
+        }
+        if (rLimbs.length != numLimbs) {
+            throw new RuntimeException("invalid R length: " + rLimbs.length);
+        }
+    }
+
     /**
      * Partition the authentication key into the R and S components, clamp
      * the R value, and instantiate IntegerModuloP objects to R and S's
      * numeric values.
      */
-    private void setRSVals() {
+    private void setRSVals() throws InvalidKeyException {
         // Clamp the bytes in the "r" half of the key.
         keyBytes[3] &= 15;
         keyBytes[7] &= 15;
@@ -249,6 +297,24 @@ final class Poly1305 {
         keyBytes[4] &= (byte)252;
         keyBytes[8] &= (byte)252;
         keyBytes[12] &= (byte)252;
+
+        if (checkWeakKey) {
+            byte keyIsZero = 0;
+            for (int i = 0; i < RS_LENGTH; i++) {
+                keyIsZero |= keyBytes[i];
+            }
+            if (keyIsZero == 0) {
+                throw new InvalidKeyException("R is set to zero");
+            }
+
+            keyIsZero = 0;
+            for (int i = RS_LENGTH; i < 2*RS_LENGTH; i++) {
+                keyIsZero |= keyBytes[i];
+            }
+            if (keyIsZero == 0) {
+                throw new InvalidKeyException("S is set to zero");
+            }
+        }
 
         // Create IntegerModuloP elements from the r and s values
         r = ipl1305.getElement(keyBytes, 0, RS_LENGTH, (byte)0);

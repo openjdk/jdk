@@ -245,6 +245,19 @@ public enum HtmlStyle {
      * the class for the {@code section} element for the enum constants of an enum class.
      */
     constantsSummary,
+
+    /**
+     * The class for a {@code ul} element in various summary pages containing links to the
+     * contents of the page.
+     */
+    contentsList,
+
+    /**
+     * The class for a {@code ul} element in the preview summary page containing information
+     * about the preview features in the current release.
+     */
+    previewFeatureList,
+
     //</editor-fold>
 
     //<editor-fold desc="details">
@@ -370,15 +383,15 @@ public enum HtmlStyle {
     previewLabel,
 
     /**
-     * The class for the list containing the {@code @see} tags of an element.
+     * The class for a list containing the tags of an element.
      */
-    seeList,
+    tagList,
 
     /**
-     * The class for the list containing the {@code @see} tags of an element
-     * when some of the tags have longer labels.
+     * The class for a list containing the tags of an element
+     * when some tags have longer labels or contain commas.
      */
-    seeListLong,
+    tagListLong,
 
     //</editor-fold>
 
@@ -903,6 +916,8 @@ public enum HtmlStyle {
      * The class of text highlighted with the type {@code highlighted}.
      */
     highlighted,
+
+    //</editor-fold>
 
     //<editor-fold desc="miscellaneous">
     //

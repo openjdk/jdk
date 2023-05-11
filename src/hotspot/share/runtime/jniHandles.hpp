@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,9 +45,12 @@ class JNIHandles : AllStatic {
   static OopStorage* global_handles();
   static OopStorage* weak_global_handles();
 
-  inline static bool is_jweak(jobject handle);
-  inline static oop* jobject_ptr(jobject handle); // NOT jweak!
-  inline static oop* jweak_ptr(jobject handle);
+  inline static bool is_local_tagged(jobject handle);
+  inline static bool is_weak_global_tagged(jobject handle);
+  inline static bool is_global_tagged(jobject handle);
+  inline static oop* local_ptr(jobject handle);
+  inline static oop* global_ptr(jobject handle);
+  inline static oop* weak_global_ptr(jweak handle);
 
   template <DecoratorSet decorators, bool external_guard> inline static oop resolve_impl(jobject handle);
 
@@ -59,18 +62,24 @@ class JNIHandles : AllStatic {
   static bool current_thread_in_native();
 
  public:
-  // Low tag bit in jobject used to distinguish a jweak.  jweak is
-  // type equivalent to jobject, but there are places where we need to
-  // be able to distinguish jweak values from other jobjects, and
-  // is_weak_global_handle is unsuitable for performance reasons.  To
-  // provide such a test we add weak_tag_value to the (aligned) byte
-  // address designated by the jobject to produce the corresponding
-  // jweak.  Accessing the value of a jobject must account for it
-  // being a possibly offset jweak.
-  static const uintptr_t weak_tag_size = 1;
-  static const uintptr_t weak_tag_alignment = (1u << weak_tag_size);
-  static const uintptr_t weak_tag_mask = weak_tag_alignment - 1;
-  static const int weak_tag_value = 1;
+  // Low tag bits in jobject used to distinguish its type. Checking
+  // the underlying storage type is unsuitable for performance reasons.
+  enum TypeTag {
+    local = 0b00,
+    weak_global = 0b01,
+    global = 0b10,
+  };
+
+private:
+  inline static bool is_tagged_with(jobject handle, TypeTag tag);
+
+public:
+  static const uintptr_t tag_size = 2;
+  static const uintptr_t tag_mask = ((1u << tag_size) - 1u);
+
+  STATIC_ASSERT((TypeTag::local & tag_mask) == TypeTag::local);
+  STATIC_ASSERT((TypeTag::weak_global & tag_mask) == TypeTag::weak_global);
+  STATIC_ASSERT((TypeTag::global & tag_mask) == TypeTag::global);
 
   // Resolve handle into oop
   inline static oop resolve(jobject handle);
@@ -94,24 +103,22 @@ class JNIHandles : AllStatic {
   static void destroy_global(jobject handle);
 
   // Weak global handles
-  static jobject make_weak_global(Handle obj,
-                                  AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
-  static void destroy_weak_global(jobject handle);
-  static bool is_global_weak_cleared(jweak handle); // Test jweak without resolution
+  static jweak make_weak_global(Handle obj,
+                                AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
+  static void destroy_weak_global(jweak handle);
+  static bool is_weak_global_cleared(jweak handle); // Test jweak without resolution
 
   // Debugging
   static void print_on(outputStream* st);
   static void print();
   static void verify();
-  // The category predicates all require handle != NULL.
+  // The category predicates all require handle != nullptr.
   static bool is_local_handle(JavaThread* thread, jobject handle);
   static bool is_frame_handle(JavaThread* thread, jobject handle);
   static bool is_global_handle(jobject handle);
   static bool is_weak_global_handle(jobject handle);
-  static size_t global_handle_memory_usage();
-  static size_t weak_global_handle_memory_usage();
 
-  // precondition: handle != NULL.
+  // precondition: handle != nullptr.
   static jobjectRefType handle_type(JavaThread* thread, jobject handle);
 
   // Garbage collection support(global handles only, local handles are traversed from thread)
@@ -147,8 +154,6 @@ class JNIHandleBlock : public CHeapObj<mtInternal> {
   JNIHandleBlock* _pop_frame_link;              // Block to restore on PopLocalFrame call
   uintptr_t*      _free_list;                   // Handle free list
 
-  // Check JNI, "planned capacity" for current frame (or push/ensure)
-  size_t          _planned_capacity;
   static int      _blocks_allocated;            // For debugging/printing
 
   // Fill block with bad_handle values
@@ -165,8 +170,8 @@ class JNIHandleBlock : public CHeapObj<mtInternal> {
   jobject allocate_handle(JavaThread* caller, oop obj, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
 
   // Block allocation and block free list management
-  static JNIHandleBlock* allocate_block(JavaThread* thread = NULL, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
-  static void release_block(JNIHandleBlock* block, JavaThread* thread = NULL);
+  static JNIHandleBlock* allocate_block(JavaThread* thread = nullptr, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
+  static void release_block(JNIHandleBlock* block, JavaThread* thread = nullptr);
 
   // JNI PushLocalFrame/PopLocalFrame support
   JNIHandleBlock* pop_frame_link() const          { return _pop_frame_link; }
@@ -179,16 +184,9 @@ class JNIHandleBlock : public CHeapObj<mtInternal> {
   // Traversal of handles
   void oops_do(OopClosure* f);
 
-  // Checked JNI support
-  void set_planned_capacity(size_t planned_capacity) { _planned_capacity = planned_capacity; }
-  const size_t get_planned_capacity() { return _planned_capacity; }
-  const size_t get_number_of_live_handles();
-
   // Debugging
   bool chain_contains(jobject handle) const;    // Does this block or following blocks contain handle
   bool contains(jobject handle) const;          // Does this block contain handle
-  size_t length() const;                        // Length of chain starting with this block
-  size_t memory_usage() const;
 };
 
 #endif // SHARE_RUNTIME_JNIHANDLES_HPP

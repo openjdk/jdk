@@ -155,12 +155,9 @@ public class GSSHeader {
                                           int maxTotalSize) {
 
         int mechOidBytesSize = 0;
-        try {
-            DerOutputStream temp = new DerOutputStream();
-            temp.putOID(mechOid);
-            mechOidBytesSize = temp.toByteArray().length;
-        } catch (IOException ignored) {
-        }
+        DerOutputStream temp = new DerOutputStream();
+        temp.putOID(mechOid);
+        mechOidBytesSize = temp.toByteArray().length;
 
         // Subtract bytes needed for 0x60 tag and mechOidBytes
         maxTotalSize -= (1 + mechOidBytesSize);
