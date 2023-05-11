@@ -87,6 +87,7 @@ import jdk.internal.module.ModuleBootstrap;
 import jdk.internal.module.Modules;
 import jdk.internal.platform.Container;
 import jdk.internal.platform.Metrics;
+import sun.util.calendar.ZoneInfoFile;
 
 /**
  * A utility package for the java(1), javaw(1) launchers.
@@ -284,6 +285,8 @@ public final class LauncherHelper {
                 Locale.getDefault(Category.DISPLAY).getDisplayName());
         ostream.println(INDENT + "default format locale = " +
                 Locale.getDefault(Category.FORMAT).getDisplayName());
+        ostream.println(INDENT + "tzdata version = " +
+                ZoneInfoFile.getVersion());
         printLocales();
         ostream.println();
     }

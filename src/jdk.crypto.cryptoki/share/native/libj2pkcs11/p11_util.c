@@ -1334,7 +1334,7 @@ void p11free(void *p, char *file, int line) {
 
 // prints a message to stdout if debug output is enabled
 void printDebug(const char *format, ...) {
-    if (debug == JNI_TRUE) {
+    if (debug_j2pkcs11 == JNI_TRUE) {
         va_list args;
         fprintf(stdout, "sunpkcs11: ");
         va_start(args, format);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,15 +47,15 @@
 #include "utilities/sizes.hpp"
 
 JfrThreadLocal::JfrThreadLocal() :
-  _java_event_writer(NULL),
-  _java_buffer(NULL),
-  _native_buffer(NULL),
-  _shelved_buffer(NULL),
-  _load_barrier_buffer_epoch_0(NULL),
-  _load_barrier_buffer_epoch_1(NULL),
-  _checkpoint_buffer_epoch_0(NULL),
-  _checkpoint_buffer_epoch_1(NULL),
-  _stackframes(NULL),
+  _java_event_writer(nullptr),
+  _java_buffer(nullptr),
+  _native_buffer(nullptr),
+  _shelved_buffer(nullptr),
+  _load_barrier_buffer_epoch_0(nullptr),
+  _load_barrier_buffer_epoch_1(nullptr),
+  _checkpoint_buffer_epoch_0(nullptr),
+  _checkpoint_buffer_epoch_1(nullptr),
+  _stackframes(nullptr),
   _dcmd_arena(nullptr),
   _thread(),
   _vthread_id(0),
@@ -77,7 +77,7 @@ JfrThreadLocal::JfrThreadLocal() :
   _vthread(false),
   _dead(false) {
   Thread* thread = Thread::current_or_null();
-  _parent_trace_id = thread != NULL ? jvm_thread_id(thread) : (traceid)0;
+  _parent_trace_id = thread != nullptr ? jvm_thread_id(thread) : (traceid)0;
 }
 
 u8 JfrThreadLocal::add_data_lost(u8 value) {
@@ -99,7 +99,7 @@ const JfrBlobHandle& JfrThreadLocal::thread_blob() const {
 }
 
 static void send_java_thread_start_event(JavaThread* jt) {
-  assert(jt != NULL, "invariant");
+  assert(jt != nullptr, "invariant");
   assert(Thread::current() == jt, "invariant");
   if (!JfrJavaSupport::on_thread_start(jt)) {
     // thread is excluded
@@ -146,35 +146,35 @@ void JfrThreadLocal::release(Thread* t) {
   if (has_java_event_writer()) {
     assert(t->is_Java_thread(), "invariant");
     JfrJavaSupport::destroy_global_jni_handle(java_event_writer());
-    _java_event_writer = NULL;
+    _java_event_writer = nullptr;
   }
   if (has_native_buffer()) {
     JfrStorage::release_thread_local(native_buffer(), t);
-    _native_buffer = NULL;
+    _native_buffer = nullptr;
   }
   if (has_java_buffer()) {
     JfrStorage::release_thread_local(java_buffer(), t);
-    _java_buffer = NULL;
+    _java_buffer = nullptr;
   }
-  if (_stackframes != NULL) {
+  if (_stackframes != nullptr) {
     FREE_C_HEAP_ARRAY(JfrStackFrame, _stackframes);
-    _stackframes = NULL;
+    _stackframes = nullptr;
   }
-  if (_load_barrier_buffer_epoch_0 != NULL) {
+  if (_load_barrier_buffer_epoch_0 != nullptr) {
     _load_barrier_buffer_epoch_0->set_retired();
-    _load_barrier_buffer_epoch_0 = NULL;
+    _load_barrier_buffer_epoch_0 = nullptr;
   }
-  if (_load_barrier_buffer_epoch_1 != NULL) {
+  if (_load_barrier_buffer_epoch_1 != nullptr) {
     _load_barrier_buffer_epoch_1->set_retired();
-    _load_barrier_buffer_epoch_1 = NULL;
+    _load_barrier_buffer_epoch_1 = nullptr;
   }
-  if (_checkpoint_buffer_epoch_0 != NULL) {
+  if (_checkpoint_buffer_epoch_0 != nullptr) {
     _checkpoint_buffer_epoch_0->set_retired();
-    _checkpoint_buffer_epoch_0 = NULL;
+    _checkpoint_buffer_epoch_0 = nullptr;
   }
-  if (_checkpoint_buffer_epoch_1 != NULL) {
+  if (_checkpoint_buffer_epoch_1 != nullptr) {
     _checkpoint_buffer_epoch_1->set_retired();
-    _checkpoint_buffer_epoch_1 = NULL;
+    _checkpoint_buffer_epoch_1 = nullptr;
   }
   if (_dcmd_arena != nullptr) {
     delete _dcmd_arena;
@@ -183,17 +183,17 @@ void JfrThreadLocal::release(Thread* t) {
 }
 
 void JfrThreadLocal::release(JfrThreadLocal* tl, Thread* t) {
-  assert(tl != NULL, "invariant");
-  assert(t != NULL, "invariant");
+  assert(tl != nullptr, "invariant");
+  assert(t != nullptr, "invariant");
   assert(Thread::current() == t, "invariant");
   assert(!tl->is_dead(), "invariant");
-  assert(tl->shelved_buffer() == NULL, "invariant");
+  assert(tl->shelved_buffer() == nullptr, "invariant");
   tl->_dead = true;
   tl->release(t);
 }
 
 static void send_java_thread_end_event(JavaThread* jt, traceid tid) {
-  assert(jt != NULL, "invariant");
+  assert(jt != nullptr, "invariant");
   assert(Thread::current() == jt, "invariant");
   assert(tid != 0, "invariant");
   if (JfrRecorder::is_recording()) {
@@ -205,7 +205,7 @@ static void send_java_thread_end_event(JavaThread* jt, traceid tid) {
 }
 
 void JfrThreadLocal::on_exit(Thread* t) {
-  assert(t != NULL, "invariant");
+  assert(t != nullptr, "invariant");
   JfrThreadLocal * const tl = t->jfr_thread_local();
   assert(!tl->is_dead(), "invariant");
   if (JfrRecorder::is_recording()) {
@@ -237,7 +237,7 @@ JfrBuffer* JfrThreadLocal::install_java_buffer() const {
 }
 
 JfrStackFrame* JfrThreadLocal::install_stackframes() const {
-  assert(_stackframes == NULL, "invariant");
+  assert(_stackframes == nullptr, "invariant");
   _stackframes = NEW_C_HEAP_ARRAY(JfrStackFrame, stackdepth(), mtTracing);
   return _stackframes;
 }
@@ -327,14 +327,14 @@ bool JfrThreadLocal::is_impersonating(const Thread* t) {
 }
 
 void JfrThreadLocal::impersonate(const Thread* t, traceid other_thread_id) {
-  assert(t != NULL, "invariant");
+  assert(t != nullptr, "invariant");
   assert(other_thread_id != 0, "invariant");
   JfrThreadLocal* const tl = t->jfr_thread_local();
   tl->_thread_id_alias = other_thread_id;
 }
 
 void JfrThreadLocal::stop_impersonating(const Thread* t) {
-  assert(t != NULL, "invariant");
+  assert(t != nullptr, "invariant");
   JfrThreadLocal* const tl = t->jfr_thread_local();
   if (is_impersonating(t)) {
     tl->_thread_id_alias = max_julong;
@@ -380,7 +380,7 @@ u2 JfrThreadLocal::vthread_epoch(const JavaThread* jt) {
 }
 
 traceid JfrThreadLocal::thread_id(const Thread* t) {
-  assert(t != NULL, "invariant");
+  assert(t != nullptr, "invariant");
   if (is_impersonating(t)) {
     return t->jfr_thread_local()->_thread_id_alias;
   }
@@ -404,7 +404,7 @@ traceid JfrThreadLocal::thread_id(const Thread* t) {
 // When not recording, there is no checkpoint system
 // in place for writing vthread information.
 traceid JfrThreadLocal::external_thread_id(const Thread* t) {
-  assert(t != NULL, "invariant");
+  assert(t != nullptr, "invariant");
   return JfrRecorder::is_recording() ? thread_id(t) : jvm_thread_id(t);
 }
 

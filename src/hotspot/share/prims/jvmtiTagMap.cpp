@@ -241,23 +241,14 @@ class CallbackWrapper : public StackObj {
 void inline CallbackWrapper::post_callback_tag_update(oop o,
                                                       JvmtiTagMapTable* hashmap,
                                                       jlong obj_tag) {
-  jlong current_tag = hashmap->find(o);
-  if (current_tag == 0) {
-    if (obj_tag != 0) {
-      // callback has tagged the object
-      assert(Thread::current()->is_VM_thread(), "must be VMThread");
-      hashmap->add(o, obj_tag);
-    }
+  if (obj_tag == 0) {
+    // callback has untagged the object, remove the entry if present
+    hashmap->remove(o);
   } else {
-    // object was previously tagged - the callback may have untagged
-    // the object or changed the tag value
-    if (obj_tag == 0) {
-      hashmap->remove(o);
-    } else {
-      if (obj_tag != current_tag) {
-        hashmap->update(o, obj_tag);
-      }
-    }
+    // object was previously tagged or not present - the callback may have
+    // changed the tag value
+    assert(Thread::current()->is_VM_thread(), "must be VMThread");
+    hashmap->add(o, obj_tag);
   }
 }
 
@@ -347,24 +338,14 @@ void JvmtiTagMap::set_tag(jobject object, jlong tag) {
 
   // see if the object is already tagged
   JvmtiTagMapTable* hashmap = _hashmap;
-  jlong found_tag = hashmap->find(o);
 
-  // if the object is not already tagged then we tag it
-  if (found_tag == 0) {
-    if (tag != 0) {
-      hashmap->add(o, tag);
-    } else {
-      // no-op
-    }
+  if (tag == 0) {
+    // remove the entry if present
+    hashmap->remove(o);
   } else {
-    // if the object is already tagged then we either update
-    // the tag (if a new tag value has been provided)
-    // or remove the object if the new tag value is 0.
-    if (tag == 0) {
-      hashmap->remove(o);
-    } else {
-      hashmap->update(o, tag);
-    }
+    // if the object is already tagged or not present then we add/update
+    // the tag
+    hashmap->add(o, tag);
   }
 }
 

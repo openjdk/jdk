@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,6 +53,10 @@
 #endif
 #ifndef ATTRIBUTE_SCANF
 #define ATTRIBUTE_SCANF(fmt, vargs)
+#endif
+
+#ifndef PRAGMA_DANGLING_POINTER_IGNORED
+#define PRAGMA_DANGLING_POINTER_IGNORED
 #endif
 
 #ifndef PRAGMA_FORMAT_NONLITERAL_IGNORED

@@ -599,10 +599,11 @@ var getJibProfilesProfiles = function (input, common, data) {
         "linux-aarch64-zero": {
             target_os: "linux",
             target_cpu: "aarch64",
-            dependencies: ["devkit", "gtest"],
+            dependencies: ["devkit", "gtest", "libffi"],
             configure_args: concat(common.configure_args_64bit, [
                 "--with-zlib=system",
                 "--with-jvm-variants=zero",
+                "--with-libffi=" + input.get("libffi", "home_path"),
                 "--enable-libffi-bundling"
             ])
         },
@@ -611,10 +612,11 @@ var getJibProfilesProfiles = function (input, common, data) {
             target_os: "linux",
             target_cpu: "x86",
             build_cpu: "x64",
-            dependencies: ["devkit", "gtest"],
+            dependencies: ["devkit", "gtest", "libffi"],
             configure_args:  concat(common.configure_args_32bit, [
                 "--with-zlib=system",
                 "--with-jvm-variants=zero",
+                "--with-libffi=" + input.get("libffi", "home_path"),
                 "--enable-libffi-bundling"
             ])
         }
@@ -1272,7 +1274,7 @@ var getJibProfilesDependencies = function (input, common) {
 
         libffi: {
             organization: common.organization,
-            module: "libffi-" + input.build_platform,
+            module: "libffi-" + input.target_platform,
             ext: "tar.gz",
             revision: "3.4.2+1.0"
         },
