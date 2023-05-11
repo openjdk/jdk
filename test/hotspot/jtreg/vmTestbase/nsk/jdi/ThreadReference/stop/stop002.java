@@ -67,7 +67,7 @@ public class stop002 {
     static final String DEBUGGEE_STOP_LOOP2_FIELD = "stopLooping2";
 
     // debuggee source line where it should be stopped
-    static final int DEBUGGEE_STOPATLINE = 81;
+    static final int DEBUGGEE_STOPATLINE = 88;
 
     static final int DELAY = 500; // in milliseconds
 
