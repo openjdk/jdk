@@ -1127,6 +1127,7 @@ void C2_MacroAssembler::string_equals(Register a1, Register a2,
 
   BLOCK_COMMENT("string_equals {");
 
+  beqz(cnt1, SAME);
   mv(result, false);
 
   // Check for short strings, i.e. smaller than wordSize.
@@ -1141,19 +1142,24 @@ void C2_MacroAssembler::string_equals(Register a1, Register a2,
     add(a2, a2, wordSize);
     sub(cnt1, cnt1, wordSize);
     bne(tmp1, tmp2, DONE);
-  } bgtz(cnt1, NEXT_WORD);
+  } bgez(cnt1, NEXT_WORD);
 
-  // Last longword.  In the case where length == 4 we compare the
-  // same longword twice, but that's still faster than another
-  // conditional branch.
-  // cnt1 could be 0, -1, -2, -3, -4 for chars; -4 only happens when
-  // length == 4.
-  add(tmp1, a1, cnt1);
-  ld(tmp1, Address(tmp1, 0));
-  add(tmp2, a2, cnt1);
-  ld(tmp2, Address(tmp2, 0));
-  bne(tmp1, tmp2, DONE);
-  j(SAME);
+  if (!AvoidUnalignedAccesses) {
+    // Last longword.  In the case where length == 4 we compare the
+    // same longword twice, but that's still faster than another
+    // conditional branch.
+    // cnt1 could be 0, -1, -2, -3, -4 for chars; -4 only happens when
+    // length == 4.
+    add(tmp1, a1, cnt1);
+    ld(tmp1, Address(tmp1, 0));
+    add(tmp2, a2, cnt1);
+    ld(tmp2, Address(tmp2, 0));
+    bne(tmp1, tmp2, DONE);
+    j(SAME);
+  } else {
+    add(tmp1, cnt1, wordSize);
+    beqz(cnt1, SAME);
+  }
 
   bind(SHORT);
   Label TAIL03, TAIL01;
