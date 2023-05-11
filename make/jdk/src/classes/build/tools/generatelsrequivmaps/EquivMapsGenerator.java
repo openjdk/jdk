@@ -223,9 +223,9 @@ public class EquivMapsGenerator {
         try (BufferedWriter writer = Files.newBufferedWriter(
                 Paths.get(fileName))) {
             writer.write(getOpenJDKCopyright());
-            writer.write(headerText);
+            writer.write(HEADER_TEXT);
             writer.write(getMapsText());
-            writer.write(getlsrText());
+            writer.write(getLSRText());
             writeEquiv(writer, "singleEquivMap", sortedLanguageMap1);
             writeMultiEquiv(writer);
             writeEquiv(writer, "regionVariantEquivMap", sortedRegionVariantMap);
@@ -269,7 +269,7 @@ public class EquivMapsGenerator {
             */\n
             """;
 
-    private static final String headerText =
+    private static final String HEADER_TEXT =
             """
             package sun.util.locale;\n
             import java.util.HashMap;
@@ -292,7 +292,7 @@ public class EquivMapsGenerator {
                 sortedRegionVariantMap.size());
     }
 
-    private static final String getlsrText(){
+    private static final String getLSRText(){
         return  """
                         // This is an auto-generated file and should not be manually edited.
                         //   LSR Revision: %s
