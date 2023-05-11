@@ -31,9 +31,7 @@
 
 class MachODecoder : public AbstractDecoder {
  public:
-  MachODecoder() {
-    _decoder_status = no_error;
-  }
+  MachODecoder() : AbstractDecoder(no_error) { }
   virtual ~MachODecoder() { }
   virtual bool demangle(const char* symbol, char* buf, int buflen);
   virtual bool decode(address pc, char* buf, int buflen, int* offset,
