@@ -63,6 +63,7 @@ package gc.stress.systemgc;
  * @library /
  * @requires vm.gc.Serial
  * @requires vm.debug
+ * @requires (vm.bits == "64") & (os.maxMemory >= 6G)
  * @summary Stress the Serial GC full GC by allocating objects of different lifetimes concurrently with System.gc().
  * @run main/othervm/timeout=300 -XX:+UseAltGCForwarding -Xlog:gc*=info -Xmx6g -XX:+UseSerialGC gc.stress.systemgc.TestSystemGCWithSerial 270
  */

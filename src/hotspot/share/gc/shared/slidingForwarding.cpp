@@ -149,7 +149,7 @@ void SlidingForwarding::FallbackTable::forward_to(HeapWord* from, HeapWord* to) 
 #ifdef ASSERT
   // Search existing entry in chain starting at idx.
   for (FallbackTableEntry* entry = head; entry != nullptr; entry = entry->_next) {
-    assert(entry->_from != from,"Don't re-forward entries into the fallback-table");
+    assert(entry->_from != from, "Don't re-forward entries into the fallback-table");
   }
 #endif
   // No entry found, create new one and insert after head.

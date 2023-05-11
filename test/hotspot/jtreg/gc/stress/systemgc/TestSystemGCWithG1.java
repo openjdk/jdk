@@ -41,7 +41,7 @@ package gc.stress.systemgc;
  * @library /
  * @requires vm.gc.G1
  * @requires vm.debug
- * @requires os.maxMemory > 8g
+ * @requires (vm.bits == "64")
  * @summary Stress the G1 GC full GC by allocating objects of different lifetimes concurrently with System.gc().
  * @run main/othervm/timeout=300 -XX:+UseAltGCForwarding -Xlog:gc*=info -Xmx512m -XX:+UseG1GC gc.stress.systemgc.TestSystemGCWithG1 270
  */
