@@ -37,12 +37,10 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.security.*;
 import java.security.interfaces.ECPublicKey;
-import java.security.spec.AlgorithmParameterSpec;
-import java.security.spec.ECGenParameterSpec;
-import java.security.spec.ECParameterSpec;
-import java.security.spec.ECPoint;
+import java.security.spec.*;
 import java.util.Arrays;
 import java.util.Objects;
+import java.util.Random;
 import java.util.function.Consumer;
 
 import com.sun.crypto.provider.DHKEM;
@@ -52,6 +50,7 @@ public class Compliance {
     public static void main(String[] args) throws Exception {
         basic();
         conform();
+        determined();
         try {
             Security.insertProviderAt(new ProviderImpl(), 1);
             delayed();
@@ -60,6 +59,7 @@ public class Compliance {
         }
     }
 
+    // Encapsulated comformance checks
     private static void conform() {
         new KEM.Encapsulated(new SecretKeySpec(new byte[1], "X"), new byte[0], new byte[0]);
         new KEM.Encapsulated(new SecretKeySpec(new byte[1], "X"), new byte[0], null);
@@ -71,6 +71,7 @@ public class Compliance {
                 NullPointerException.class);
     }
 
+    // basic should and shouldn't behaviors
     static void basic() throws Exception {
         KeyPair kpRSA = KeyPairGenerator.getInstance("RSA").generateKeyPair();
         KeyPair kpX = KeyPairGenerator.getInstance("X25519").generateKeyPair();
@@ -169,6 +170,42 @@ public class Compliance {
                 DecapsulateException.class);
     }
 
+    static class MySecureRandom extends SecureRandom {
+        final Random ran;
+
+        MySecureRandom(long seed) {
+            ran = new Random(seed);
+        }
+
+        @Override
+        public void nextBytes(byte[] bytes) {
+            ran.nextBytes(bytes);
+        }
+    }
+
+    // Same random should generate same key encapsulation messages
+    static void determined() throws Exception {
+        long seed = new Random().nextLong();
+        byte[] enc1 = calcDetermined(seed);
+        byte[] enc2 = calcDetermined(seed);
+        Asserts.assertTrue(Arrays.equals(enc1, enc2),
+                "Undetermined for " + seed);
+    }
+
+    static byte[] calcDetermined(long seed) throws Exception {
+        SecureRandom random = new MySecureRandom(seed);
+        KeyPairGenerator g = KeyPairGenerator.getInstance("XDH");
+        g.initialize(NamedParameterSpec.X25519, random);
+        PublicKey pk = g.generateKeyPair().getPublic();
+        KEM kem = KEM.getInstance("DHKEM");
+        kem.newEncapsulator(pk, random); // skip one
+        KEM.Encapsulator e = kem.newEncapsulator(pk, random);
+        byte[] enc1 = e.encapsulate().encapsulation();
+        byte[] enc2 = e.encapsulate().encapsulation();
+        Asserts.assertFalse(Arrays.equals(enc1, enc2));
+        return enc2;
+    }
+
     public static class ProviderImpl extends Provider {
         ProviderImpl() {
             super("XP", "1", "XP");
@@ -197,6 +234,7 @@ public class Compliance {
         }
     }
 
+    // Ensure delayed provider selection
     static void delayed() throws Exception {
         KeyPairGenerator g = KeyPairGenerator.getInstance("X25519");
         PublicKey even = null, odd = null;
