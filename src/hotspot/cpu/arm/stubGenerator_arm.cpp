@@ -506,7 +506,7 @@ class StubGenerator: public StubCodeGenerator {
     address start;
 
     StubCodeMark mark(this, "StubRoutines", "atomic_add_long");
-    // TBD
+    Unimplemented();
     __ bx(LR);
 
     return start;
@@ -3103,6 +3103,14 @@ class StubGenerator: public StubCodeGenerator {
   //---------------------------------------------------------------------------
   // Initialization
 
+  static void should_not_call() {
+    report_should_not_call(__FILE__, __LINE__);
+  }
+
+  static address ShouldNotCallThisStub() {
+    return (address) should_not_call;
+  }
+
   void generate_initial_stubs() {
     // Generates all stubs and initializes the entry points
 
@@ -3128,7 +3136,7 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::Arm::_idiv_irem_entry = generate_idiv_irem();
 
     StubRoutines::_atomic_add_entry = generate_atomic_add();
-    StubRoutines::_atomic_add_long_entry = generate_atomic_add_long();
+    StubRoutines::_atomic_add_long_entry = ShouldNotCallThisStub();
     StubRoutines::_atomic_xchg_entry = generate_atomic_xchg();
     StubRoutines::_atomic_cmpxchg_entry = generate_atomic_cmpxchg();
     StubRoutines::_atomic_cmpxchg_long_entry = generate_atomic_cmpxchg_long();
