@@ -3121,10 +3121,8 @@ jint Arguments::finalize_vm_init_args(bool patch_mod_javabase) {
     FLAG_SET_DEFAULT(UseSharedSpaces, false);
   }
 
-  if (UseCompactObjectHeaders && !UseCompressedClassPointers) {
-    if (FLAG_IS_CMDLINE(UseCompressedClassPointers)) {
-      warning("Compact object headers require compressed class pointers. Disabling compact object headers.");
-    }
+  if (UseCompactObjectHeaders && FLAG_IS_CMDLINE(UseCompressedClassPointers) && !UseCompressedClassPointers) {
+    warning("Compact object headers require compressed class pointers. Disabling compact object headers.");
     FLAG_SET_DEFAULT(UseCompactObjectHeaders, false);
   }
   if (UseCompactObjectHeaders && LockingMode == LM_LEGACY) {
