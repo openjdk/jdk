@@ -25,7 +25,7 @@ package nsk.share;
 
 
 /**
- * This class is an simple example of finalizable object, that
+ * This class is a simple example of finalizable object, that
  * implements interface <code>Finalizable</code>.
  *
  * @see Finalizable
