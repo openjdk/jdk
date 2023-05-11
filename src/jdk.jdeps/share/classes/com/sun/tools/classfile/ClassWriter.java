@@ -528,9 +528,9 @@ public class ClassWriter {
 
         @Override
         public Void visitMatcher(Matcher_attribute attr, ClassOutputStream out) {
-            out.writeShort(attr.pattern_flags);
-            out.writeShort(attr.pattern_name_index);
-            out.writeShort(attr.pattern_descriptor.index);
+            out.writeShort(attr.matcher_flags);
+            out.writeShort(attr.matcher_name_index);
+            out.writeShort(attr.matcher_methodtype.descriptor_index);
             int size = attr.attributes.size();
             out.writeShort(size);
             for (Attribute componentAttr: attr.attributes)

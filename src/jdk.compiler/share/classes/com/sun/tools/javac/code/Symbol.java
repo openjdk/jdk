@@ -468,6 +468,12 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
         return (flags() & MATCHER) != 0;
     }
 
+    /** Is this symbol a deconstructor?
+     */
+    public boolean isDeconstructor() {
+        return isMatcher() && name == owner.name;
+    }
+
     public boolean isDynamic() {
         return false;
     }
@@ -2005,6 +2011,59 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
             return false;
         }
 
+        public Name externalName(Types types) {
+            if ((flags() & MATCHER) != 0) {
+                return owner.name.append('$', name.table.names.fromString(params().map(param -> {
+                    var g = new UnSharedSignatureGenerator(types, name.table.names);
+                    g.assembleSig(param.erasure(types));
+                    return name.table.names.fromString(g.toName().toString().replace("/", "\\\u007C").replace(";", "\\\u003F"));
+                }).stream().collect(Collectors.joining("$"))));
+            } else {
+                return name;
+            }
+        }
+
+        static class UnSharedSignatureGenerator extends Types.SignatureGenerator {
+
+            /**
+             * An output buffer for type signatures.
+             */
+            ByteBuffer sigbuf = new ByteBuffer();
+            private final Names names;
+
+            UnSharedSignatureGenerator(Types types, Names names) {
+                super(types);
+                this.names = names;
+            }
+
+            @Override
+            protected void append(char ch) {
+                sigbuf.appendByte(ch);
+            }
+
+            @Override
+            protected void append(byte[] ba) {
+                sigbuf.appendBytes(ba);
+            }
+
+            @Override
+            protected void append(Name name) {
+                sigbuf.appendName(name);
+            }
+
+            @Override
+            protected void classReference(ClassSymbol c) {
+                //            enterInner(c);
+            }
+
+            protected void reset() {
+                sigbuf.reset();
+            }
+
+            protected Name toName() {
+                return sigbuf.toName(names);
+            }
+        }
 
         public MethodHandleSymbol asHandle() {
             return new MethodHandleSymbol(this);
@@ -2296,61 +2355,6 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
         public List<Type> getThrownTypes() {
             return asType().getThrownTypes();
         }
-
-        public Name externalName(Types types) {
-            if ((flags() & MATCHER) != 0) {
-                return owner.name.append('$', name.table.names.fromString(params().map(param -> {
-                    var g = new UnSharedSignatureGenerator(types, name.table.names);
-                    g.assembleSig(param.erasure(types));
-                    return name.table.names.fromString(g.toName().toString().replace("/", "\\\u007C").replace(";", "\\\u003F"));
-                }).stream().collect(Collectors.joining("$"))));
-            } else {
-                return name;
-            }
-        }
-
-        static class UnSharedSignatureGenerator extends Types.SignatureGenerator {
-
-            /**
-             * An output buffer for type signatures.
-             */
-            ByteBuffer sigbuf = new ByteBuffer();
-            private final Names names;
-
-            UnSharedSignatureGenerator(Types types, Names names) {
-                super(types);
-                this.names = names;
-            }
-
-            @Override
-            protected void append(char ch) {
-                sigbuf.appendByte(ch);
-            }
-
-            @Override
-            protected void append(byte[] ba) {
-                sigbuf.appendBytes(ba);
-            }
-
-            @Override
-            protected void append(Name name) {
-                sigbuf.appendName(name);
-            }
-
-            @Override
-            protected void classReference(ClassSymbol c) {
-    //            enterInner(c);
-            }
-
-            protected void reset() {
-                sigbuf.reset();
-            }
-
-            protected Name toName() {
-                return sigbuf.toName(names);
-            }
-        }
-
     }
 
     /** A class for invokedynamic method calls.

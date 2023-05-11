@@ -1155,6 +1155,9 @@ public class TransPatterns extends TreeTranslator {
             currentMethodSym = tree.sym;
             variableIndex = 0;
             deconstructorCalls = null;
+//            if (tree.sym.isDeconstructor()) {
+//                tree.params = List.nil();
+//            }
             super.visitMethodDef(tree);
             preparePatternMatchingCatchIfNeeded(tree.body);
         } finally {

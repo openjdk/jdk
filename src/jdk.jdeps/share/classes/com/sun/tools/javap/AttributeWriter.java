@@ -368,25 +368,23 @@ public class AttributeWriter extends BasicWriter
         println("Matcher:");
         indent(+1);
 
-        String nameString = attr.pattern_name_index != 0 ?
-                constantWriter.stringValue(attr.pattern_name_index) : "<no name>";
-        println("pattern_name: " + nameString);
+        String nameString = attr.matcher_name_index != 0 ?
+                constantWriter.stringValue(attr.matcher_name_index) : "<no name>";
+        println("matcher_name_index: " + nameString);
 
         String flagString =
-                (0 != (attr.pattern_flags & Matcher_attribute.PAT_DECONSTRUCTOR) ? "deconstructor " : "") +
-                        (0 != (attr.pattern_flags & Matcher_attribute.PAT_TOTAL) ? "total" : "");
-        println("flags: " + flagString);
+                (0 != (attr.matcher_flags & Matcher_attribute.PAT_DECONSTRUCTOR) ? "deconstructor " : "") +
+                        (0 != (attr.matcher_flags & Matcher_attribute.PAT_TOTAL) ? "total" : "");
+        println("matcher_flags: " + flagString);
 
-        if (options.showDescriptors) {
-            println("pattern_descriptor: " + getValue(attr.pattern_descriptor));
-        }
-        if (options.showAllAttrs) {
+        constantWriter.write(attr.matcher_methodtype.descriptor_index);
+        println();
+
+        if (options.showAllAttrs && attr.attributes.size() > 0) {
             for (Attribute matcherAttribute: attr.attributes)
                 write(attr, matcherAttribute, constant_pool);
             println();
         }
-        indent(-1);
-
         indent(-1);
         return null;
     }

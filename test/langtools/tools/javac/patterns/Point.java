@@ -1,19 +1,18 @@
 /**
  * @test
  * @enablePreview
- * @compile Matcher.java
- * @run main Matcher
+ * @compile Point.java
+ * @run main Point
  */
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.template.Carriers;
 import java.util.Objects;
 
-public record Matcher(String s, int i) {
+public record Point(Integer x, Integer y) {
     /*
         TODO
         ask about exceptions on matchers
@@ -31,32 +30,32 @@ public record Matcher(String s, int i) {
     */
 
     public static void main(String... args) {
-        assertEquals("a", test(new Matcher("a", 0)));
-        assertEquals(2, test2(new Matcher("a", 42)));
+        assertEquals(1, test(new Point(1, 2)));
+        assertEquals(2, test2(new Point(42, 4)));
     }
 
-    public static String test(Object o) {
-        if (o instanceof Matcher(String os, int oi)) {
-            return os;
+    public static Integer test(Object o) {
+        if (o instanceof Point(Integer x, Integer y)) {
+            return x;
         }
-        return "error";
+        return -1;
     }
 
-    public static int test2(Matcher o) {
+    public static int test2(Point o) {
         return switch (o) {
-            case Matcher(String s, int i) when s.isEmpty() -> 1;
-            case Matcher(String s, int i) when i == 42 -> 2;
-            case Matcher mm -> 3;
+            case Point(Integer x, Integer y) when x == 42 -> 2;
+            case Point mm -> 3;
         };
     }
 
     //original code:
     @MyCustomAnnotation(annotField = 42)
-    public __matcher Matcher(String s, int i) throws Throwable { //XXX: exceptions?
-        MethodType returnType = MethodType.methodType(Object.class, String.class, int.class); //TODO: return type of the Carrier constructor?
-        return Carriers.factory(returnType).invoke(this.s, this.i);
+    public __matcher Point(Integer x, Integer y) throws Throwable { //XXX: exceptions?
         // s = this.s;
         // i = this.i;
+
+        MethodType returnType = MethodType.methodType(Object.class, Integer.class, Integer.class); //TODO: return type of the Carrier constructor?
+        return Carriers.factory(returnType).invoke(this.x, this.y);
     }
 
     @Target(ElementType.METHOD) // TODO: element type must target matchers

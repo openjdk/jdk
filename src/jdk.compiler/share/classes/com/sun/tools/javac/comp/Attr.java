@@ -1142,7 +1142,7 @@ public class Attr extends JCTree.Visitor {
                 }
             }
 
-            if ((m.flags() & MATCHER) != 0 && tree.name == owner.name) {
+            if (m.isDeconstructor()) {
                 m.matcherFlags.add(MatcherFlags.PAT_DECONSTRUCTOR);
             }
 
