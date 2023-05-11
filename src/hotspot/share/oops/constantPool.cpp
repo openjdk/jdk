@@ -675,7 +675,8 @@ bool ConstantPool::has_local_signature_at_if_loaded(const constantPoolHandle& cp
   }
 }
 
-int ConstantPool::cp_index_helper(int index, Bytecodes::Code code) {
+// Translate index, which could be CPCache index or Indy index, to a constant pool index
+int ConstantPool::to_cp_index(int index, Bytecodes::Code code) {
   assert(cache() != nullptr, "'index' is a rewritten index so this class must have been rewritten");
   switch(code) {
     case Bytecodes::_invokedynamic:
@@ -711,15 +712,14 @@ int ConstantPool::uncached_name_and_type_ref_index_at(int cp_index)  {
 }
 
 int ConstantPool::name_and_type_ref_index_at(int index, Bytecodes::Code code) {
-  return uncached_name_and_type_ref_index_at(cp_index_helper(index, code));
+  return uncached_name_and_type_ref_index_at(to_cp_index(index, code));
 }
 
 constantTag ConstantPool::tag_ref_at(int which, Bytecodes::Code code) {
   // which may be either a Constant Pool index or a rewritten index
   int pool_index = which;
-  if (cache() != nullptr) {
-    pool_index = cp_index_helper(which, code);
-  }
+  assert(cache() != nullptr, "'index' is a rewritten index so this class must have been rewritten");
+  pool_index = to_cp_index(which, code);
   return tag_at(pool_index);
 }
 
@@ -734,7 +734,7 @@ int ConstantPool::klass_ref_index_at(int index, Bytecodes::Code code) {
             "an invokedynamic instruction does not have a klass");
   assert(code != Bytecodes::_invokedynamic,
             "an invokedynamic instruction does not have a klass");
-  return uncached_klass_ref_index_at(cp_index_helper(index, code));
+  return uncached_klass_ref_index_at(to_cp_index(index, code));
 }
 
 

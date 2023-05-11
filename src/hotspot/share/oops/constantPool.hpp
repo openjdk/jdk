@@ -675,7 +675,7 @@ class ConstantPool : public Metadata {
 
   constantTag tag_ref_at(int cp_cache_index, Bytecodes::Code code);
 
-  int cp_index_helper(int which, Bytecodes::Code code);
+  int to_cp_index(int which, Bytecodes::Code code);
 
   // Lookup for entries consisting of (name_index, signature_index)
   int name_ref_index_at(int which_nt);            // ==  low-order jshort of name_and_type_at(which_nt)
