@@ -1588,9 +1588,9 @@ public class File
      * <p> An invocation of this method of the form {@code file.setWritable(arg)}
      * behaves in exactly the same way as the invocation
      *
-     * <pre>{@code
+     * {@snippet lang=java :
      *     file.setWritable(arg, true)
-     * }</pre>
+     * }
      *
      * @param   writable
      *          If {@code true}, sets the access permission to allow write
@@ -1667,9 +1667,9 @@ public class File
      * <p>An invocation of this method of the form {@code file.setReadable(arg)}
      * behaves in exactly the same way as the invocation
      *
-     * <pre>{@code
+     * {@snippet lang=java :
      *     file.setReadable(arg, true)
-     * }</pre>
+     * }
      *
      * @param  readable
      *          If {@code true}, sets the access permission to allow read
@@ -1749,9 +1749,9 @@ public class File
      * <p>An invocation of this method of the form {@code file.setExcutable(arg)}
      * behaves in exactly the same way as the invocation
      *
-     * <pre>{@code
+     * {@snippet lang=java :
      *     file.setExecutable(arg, true)
-     * }</pre>
+     * }
      *
      * @param   executable
      *          If {@code true}, sets the access permission to allow execute
@@ -2369,11 +2369,11 @@ public class File
      * {@link java.nio.file.FileSystems#getDefault default-filesystem}.
      *
      * <p> The first invocation of this method works as if invoking it were
-     * equivalent to evaluating the expression:
-     * <blockquote><pre>
-     * {@link java.nio.file.FileSystems#getDefault FileSystems.getDefault}().{@link
-     * java.nio.file.FileSystem#getPath getPath}(this.{@link #getPath getPath}());
-     * </pre></blockquote>
+     * equivalent to evaluating the statements:
+     * {@snippet lang=java :
+     *         // @link substring="getDefault" target="java.nio.file.FileSystems#getDefault" @link substring="getPath" target="java.nio.file.FileSystem#getPath" @link substring="getPath()" target="#getPath" :
+     *         FileSystems.getDefault().getPath(this.getPath());
+     * }
      * Subsequent invocations of this method return the same {@code Path}.
      *
      * <p> If this abstract pathname is the empty abstract pathname then this

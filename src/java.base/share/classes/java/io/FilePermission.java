@@ -1029,9 +1029,9 @@ public final class FilePermission extends Permission implements Serializable {
      *
      * <p>and you are calling the {@code implies} method with the FilePermission:
      *
-     * <pre>
-     *   "/tmp/scratch/foo", "read,write",
-     * </pre>
+     * {@snippet lang=java :
+     *     "/tmp/scratch/foo", "read,write",
+     * }
      *
      * then the {@code implies} function must
      * take into account both the "/tmp/-" and "/tmp/scratch/foo"

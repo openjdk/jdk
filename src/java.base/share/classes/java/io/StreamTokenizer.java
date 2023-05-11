@@ -217,10 +217,10 @@ public class StreamTokenizer {
      *
      * @deprecated As of JDK version 1.1, the preferred way to tokenize an
      * input stream is to convert it into a character stream, for example:
-     * <blockquote><pre>
-     *   Reader r = new BufferedReader(new InputStreamReader(is));
-     *   StreamTokenizer st = new StreamTokenizer(r);
-     * </pre></blockquote>
+     * {@snippet lang=java :
+     *     Reader r = new BufferedReader(new InputStreamReader(is));
+     *     StreamTokenizer st = new StreamTokenizer(r);
+     * }
      *
      * @param      is        an input stream.
      * @see        java.io.BufferedReader
@@ -390,9 +390,9 @@ public class StreamTokenizer {
      * Specifies that numbers should be parsed by this tokenizer. The
      * syntax table of this tokenizer is modified so that each of the twelve
      * characters:
-     * <blockquote><pre>
-     *      0 1 2 3 4 5 6 7 8 9 . -
-     * </pre></blockquote>
+     * {@snippet lang=java :
+     *         0 1 2 3 4 5 6 7 8 9 . -
+     * }
      * <p>
      * has the "numeric" attribute.
      * <p>
@@ -770,7 +770,9 @@ public class StreamTokenizer {
      * <p>The precise string returned is unspecified, although the following
      * example can be considered typical:
      *
-     * <blockquote><pre>Token['a'], line 10</pre></blockquote>
+     * {@snippet lang=java :
+     *         Token['a'], line 10
+     * }
      *
      * @return  a string representation of the token
      * @see     java.io.StreamTokenizer#nval
