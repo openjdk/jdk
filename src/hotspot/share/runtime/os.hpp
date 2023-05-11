@@ -310,10 +310,10 @@ class os: AllStatic {
     return (_processor_count != 1);
   }
 
-  // Usually available memory (MemAvailable in /proc/meminfo) is greater
-  // than free memory (MemFree in /proc/meminfo) because Linux would use
-  // free memory aggressively (e.g. caches).
-  // Thus we distinguish free memory and available memory in Linux.
+  // On some platforms there is a distinction between "available" memory and "free" memory.
+  // For example, on Linux, "available" memory (`MemAvailable` in `/proc/meminfo`) is greater
+  // than "free" memory (`MemFree` in `/proc/meminfo`) because Linux can free memory
+  // aggressively (e.g. clear caches) so that it becomes available.
   static julong available_memory();
   static julong free_memory();
 
