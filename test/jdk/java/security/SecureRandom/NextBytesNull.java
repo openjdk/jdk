@@ -26,7 +26,7 @@
  * @bug 8155191
  * @summary check NPE is thrown for various methods of SecureRandom class,
  *     e.g. SecureRandom(byte[]), nextBytes(byte[]), and setSeed(byte[]).
- * @run main/othervm NextBytesNull
+ * @run main NextBytesNull
  */
 
 import java.security.NoSuchAlgorithmException;
