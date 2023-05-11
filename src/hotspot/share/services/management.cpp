@@ -2094,29 +2094,14 @@ jlong Management::ticks_to_ms(jlong ticks) {
 
 // Gets the amount of memory allocated on the Java heap since JVM launch.
 JVM_ENTRY(jlong, jmm_GetTotalThreadAllocatedMemory(JNIEnv *env))
-    // A thread increments exited_allocated_bytes after being removed from
-    // the threads list (in ThreadService::remove_thread), which means there's
-    // a race between threads that exit during the loop and reading
-    // exited_allocated_bytes. If result is initialized with exited_allocated_bytes,
-    // the final result may be "too small" because a thread might be removed
-    // from the list before the loop gets to it and thus not be counted. If,
-    // on the other hand, exited_allocated_bytes is added after the loop,
-    // the final result might be "too large" because a thread might be counted
-    // twice, once in the loop and agsin in exited_allocated_bytes if it's
-    // removed from the list after it's encountered in the loop but before
-    // adding exited_allocated_bytes.
-    //
-    // The "too large" approach can result in multiple calls to this method
-    // returning non-monotonically increasing values. Consider the case where
-    // (1) all threads on the list exit after being counted but before adding
-    // exited_allocated_bytes, so we double count all of them, (2) on the
-    // next call, all threads exit before the addition, so we single count
-    // all of them and the total is less than the total (before double
-    // counting) for the previous call. The result of the second call will
-    // be less than the result of the first.
-    //
-    // The "too small" approach doesn't have this problem, so we choose it
-    // over the "too large" approach to avoid user surprise.
+    // A thread increments exited_allocated_bytes in ThreadService::remove_thread
+    // only after it removes itself from the threads list, and once a TLH is
+    // created, no thread it references can remove itself from the threads
+    // list, so none can update exited_allocated_bytes. We therefore initialize
+    // result with exited_allocated_bytes after after we create the TLH so that
+    // the final result can only be short due to (1) threads that start after
+    // the TLH is created, or (2) terminating threads that escape TLH creation
+    // and don't update exited_allocated_bytes before we initialize result.
     JavaThreadIteratorWithHandle jtiwh;
     jlong result = ThreadService::exited_allocated_bytes();
     for (; JavaThread* thread = jtiwh.next();) {
