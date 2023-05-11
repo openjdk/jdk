@@ -26,9 +26,6 @@
 package java.io;
 
 
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -106,93 +103,11 @@ public final class SimpleIO {
         throw new AssertionError("private constructor");
     }
 
-    /**
-     * Fetch jline LineReader lazily.
-     */
-    private static class LineReader {
-        /**
-         * MethodHandle to LineReader::readLine.
-         */
-        private static final MethodHandle READ_LINE_MH;
-        /**
-         * MethodHandle to LineReader::readLine with mask.
-         */
-        private static final MethodHandle READ_LINE_MASK_MH;
-
-        /**
-         * Instance of LineReader.
-         */
-        private static final Object LINE_READER;
-
-        static {
-            MethodHandle readLineMH = null;
-            MethodHandle readLineMaskMH = null;
-            Object lineReader = null;
-
-            try {
-                Class<?> lrbClass = Class.forName("jdk.internal.org.jline.reader.LineReaderBuilder",
-                        false, ClassLoader.getSystemClassLoader());
-                Class<?> lrClass = Class.forName("jdk.internal.org.jline.reader.LineReader",
-                        false, ClassLoader.getSystemClassLoader());
-                Module lrbModule = lrbClass.getModule();
-                Module baseModule = Object.class.getModule();
-                baseModule.addReads(lrbModule);
-                MethodHandles.Lookup lookup = MethodHandles.lookup();
-                MethodHandle builderMH = lookup.findStatic(lrbClass, "builder", MethodType.methodType(lrbClass));
-                MethodHandle buildMH = lookup.findVirtual(lrbClass, "build", MethodType.methodType(lrClass));
-                readLineMH = lookup.findVirtual(lrClass, "readLine",
-                        MethodType.methodType(String.class, String.class));
-                readLineMaskMH = lookup.findVirtual(lrClass, "readLine",
-                        MethodType.methodType(String.class, String.class, Character.class));
-                Object builder = builderMH.invoke();
-                lineReader = buildMH.invoke(builder);
-            } catch (Throwable ex) {
-                readLineMH = null;
-                readLineMaskMH = null;
-                lineReader = null;
-            }
-
-            READ_LINE_MH = readLineMH;
-            READ_LINE_MASK_MH = readLineMaskMH;
-            LINE_READER = lineReader;
-        }
-
-        /**
-         * {@return true if LineReader is available.}
-         */
-        private static boolean hasLineReader() {
-            return LINE_READER != null;
-        }
-
-        /**
-         * Invoke LineReader::readLine.
-         *
-         * @param prompt Read line prompt.
-         * @return Line read in.
-         */
-        private static String readLine(String prompt) {
-            try {
-                return (String) READ_LINE_MH.invoke(LINE_READER, prompt);
-            } catch (Throwable ex) {
-                return null;
-            }
-        }
-
-        /**
-         * Invoke LineReader::readLine with mask.
-         *
-         * @param prompt Read line prompt.
-         * @return Line read in.
-         */
-        private static String readLine(String prompt, Character mask) {
-            try {
-                return (String) READ_LINE_MASK_MH.invoke(LINE_READER, prompt, mask);
-            } catch (Throwable ex) {
-                return null;
-            }
+    static {
+        if (System.getProperty("jdk.console", "").isEmpty()) {
+            System.setProperty("jdk.console", "jdk.internal.le");
         }
     }
-
     /**
      * Return a string of characters from input after issuing a prompt. Unlike other
      * input methods, this method supports editing and navigation of the input, as well
@@ -213,12 +128,7 @@ public final class SimpleIO {
      */
     public static String input(String prompt) {
         Objects.requireNonNull(prompt, "prompt must not be null");
-        String input;
-        if (LineReader.hasLineReader()) {
-            input = LineReader.readLine(prompt);
-        } else {
-            input = System.console().readLine(prompt);
-        }
+        String input = System.console().readLine(prompt);
         return input != null ? input : "";
     }
 
