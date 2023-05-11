@@ -1252,15 +1252,24 @@ public abstract class FontConfiguration {
         return filenamesMap.get(platformName);
     }
 
+    private static final String fontconfigErrorMessage =
+            "Fontconfig head is null, check your fonts or fonts configuration";
+
     /**
      * Returns a configuration specific path to be appended to the font
      * search path.
      */
     public String getExtraFontPath() {
+        if (head == null) {
+            throw new RuntimeException(fontconfigErrorMessage);
+        }
         return getString(head[INDEX_appendedfontpath]);
     }
 
     public String getVersion() {
+        if (head == null) {
+            throw new RuntimeException(fontconfigErrorMessage);
+        }
         return getString(head[INDEX_version]);
     }
 
