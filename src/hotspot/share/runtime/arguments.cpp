@@ -1484,7 +1484,7 @@ void Arguments::set_use_compressed_oops() {
 
 void Arguments::set_use_compressed_klass_ptrs() {
 #ifdef _LP64
-  assert(CompressedClassSpaceSize <= KlassEncodingMetaspaceMax,
+  assert(!UseCompressedClassPointers || CompressedClassSpaceSize <= KlassEncodingMetaspaceMax,
          "CompressedClassSpaceSize is too large for UseCompressedClassPointers");
 #endif // _LP64
 }
