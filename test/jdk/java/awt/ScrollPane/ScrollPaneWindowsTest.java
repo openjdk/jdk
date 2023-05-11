@@ -96,22 +96,22 @@ public class ScrollPaneWindowsTest implements AdjustmentListener {
             robot.delay(100);
             robot.waitForIdle();
             EventQueue.invokeAndWait(() -> {
-                        xPos = sp.getLocationOnScreen().x + sp.getWidth() - paneInsets.right / 2;
-                        yPos = sp.getLocationOnScreen().y + sp.getHeight() / 2;
-                    }
+                xPos = sp.getLocationOnScreen().x + sp.getWidth() - paneInsets.right / 2;
+                yPos = sp.getLocationOnScreen().y + sp.getHeight() / 2;
+            });
 
-                    robot.mouseMove(xPos, yPos);
+            robot.mouseMove(xPos, yPos);
             testOneScrollbar(vScroll);
 
             robot.delay(100);
             robot.waitForIdle();
 
             EventQueue.invokeAndWait(() -> {
-                        xPos = sp.getLocationOnScreen().x + sp.getWidth() / 2;
-                        yPos = sp.getLocationOnScreen().y + sp.getHeight() - paneInsets.bottom / 2;
-                    }
+                xPos = sp.getLocationOnScreen().x + sp.getWidth() / 2;
+                yPos = sp.getLocationOnScreen().y + sp.getHeight() - paneInsets.bottom / 2;
+            });
 
-                    robot.mouseMove(xPos, yPos);
+            robot.mouseMove(xPos, yPos);
             testOneScrollbar(hScroll);
         } finally {
             EventQueue.invokeAndWait(() -> {
