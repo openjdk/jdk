@@ -2057,3 +2057,15 @@ bool C2_MacroAssembler::in_scratch_emit_size() {
   }
   return MacroAssembler::in_scratch_emit_size();
 }
+
+void C2_MacroAssembler::load_nklass_compact(Register dst, Register obj) {
+  C2LoadNKlassStub* stub = new (Compile::current()->comp_arena()) C2LoadNKlassStub(dst);
+  Compile::current()->output()->add_stub(stub);
+  ldr(dst, Address(obj, oopDesc::mark_offset_in_bytes()));
+  // NOTE: We can't use tbnz here, because the target is sometimes too far away
+  // and cannot be encoded.
+  tst(dst, markWord::monitor_value);
+  br(Assembler::NE, stub->entry());
+  bind(stub->continuation());
+  lsr(dst, dst, markWord::klass_shift);
+}

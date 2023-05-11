@@ -70,7 +70,7 @@ void ObjArrayKlass::oop_oop_iterate_elements_bounded(
 
 template <typename T, typename OopClosureType>
 void ObjArrayKlass::oop_oop_iterate(oop obj, OopClosureType* closure) {
-  // We cannot safely access the Klass* with compact headers.
+  // In this assert, we cannot safely access the Klass* with compact headers.
   assert (UseCompactObjectHeaders || obj->is_array(), "obj must be array");
   objArrayOop a = objArrayOop(obj);
 
