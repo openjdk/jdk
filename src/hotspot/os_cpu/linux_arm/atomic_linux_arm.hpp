@@ -41,7 +41,7 @@ public:
   typedef int32_t (*atomic_xchg_func_t)(int32_t exchange_value, volatile int32_t *dest);
   typedef int32_t (*cmpxchg_func_t)(int32_t, int32_t, volatile int32_t*);
 
-  static atomic_add_long_func_t _add_func;
+  static atomic_add_long_func_t _add_long_func;
   static cmpxchg_long_func_t    _cmpxchg_long_func;
   static load_long_func_t       _load_long_func;
   static store_long_func_t      _store_long_func;
@@ -122,7 +122,15 @@ inline D Atomic::PlatformAdd<8>::add_and_fetch(D volatile* dest, I add_value,
                                                atomic_memory_order order) const {
   STATIC_ASSERT(8 == sizeof(I));
   STATIC_ASSERT(8 == sizeof(D));
+
+#if 0
+  // TBD assembly stub
   return add_using_helper<int64_t>(ARMAtomicFuncs::_add_long_func, dest, add_value);
+#else
+  D res = __atomic_add_fetch(dest, add_value, __ATOMIC_RELEASE);
+  FULL_MEM_BARRIER;
+  return res;
+#endif
 }
 
 
