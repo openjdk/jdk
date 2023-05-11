@@ -21,33 +21,49 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 8132995
- * @summary Tests to excercise the optimization described in the bug report.
- * @run junit ImmutableMatchResultTest
- */
-
+import jdk.test.lib.RandomFactory;
 import org.junit.jupiter.api.Test;
 
 import java.nio.CharBuffer;
+import java.util.Random;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+/*
+ * @test
+ * @bug 8132995
+ * @key randomness
+ *
+ * @summary Tests to excercise the optimization described in the bug report.
+ * @library /test/lib
+ * @run junit ImmutableMatchResultTest
+ */
+
 public class ImmutableMatchResultTest {
 
-    private static final int prefixLen = 3;
-    private static final int infixLen = 5;
-    private static final int suffixLen = 4;
+    private static final int prefixLen;
+    private static final int infixLen;
+    private static final int suffixLen;
 
-    private static final String group1 = "abc";
-    private static final String group2 = "wxyz";
-    private static final String group0 = group1 + "-".repeat(infixLen) + group2;
+    private static final String group1;
+    private static final String group2;
+    private static final String group0;
 
-    private static final String in = "-".repeat(prefixLen) + group0 + "-".repeat(suffixLen);
+    private static final String in;
+
+    static {
+        Random rnd = RandomFactory.getRandom();
+        prefixLen = rnd.nextInt(10);
+        infixLen = rnd.nextInt(10);
+        suffixLen = rnd.nextInt(10);
+        group1 = "abc";
+        group2 = "wxyz";
+        group0 = group1 + "-".repeat(infixLen) + group2;
+        in = "-".repeat(prefixLen) + group0 + "-".repeat(suffixLen);
+    }
 
     private static void test(CharSequence cs) {
         Matcher m = Pattern.compile("(" + group1 + ")-*(" + group2 + ")").matcher(cs);
