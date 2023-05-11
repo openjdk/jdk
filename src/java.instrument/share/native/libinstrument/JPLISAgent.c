@@ -1077,11 +1077,6 @@ retransformableEnvironment(JPLISAgent * agent) {
  *  Underpinnings for native methods
  */
 
-jstring
-jarFile(JNIEnv * jnienv, JPLISAgent * agent) {
-    return (*jnienv)->NewStringUTF(jnienv, agent->mJarfile);
-}
-
 jboolean
 isModifiableClass(JNIEnv * jnienv, JPLISAgent * agent, jclass clazz) {
     jvmtiEnv *          jvmtienv = jvmti(agent);
@@ -1617,4 +1612,9 @@ setNativeMethodPrefixes(JNIEnv * jnienv, JPLISAgent * agent, jobjectArray prefix
         deallocate(jvmtienv, (void*)prefixes);
         deallocate(jvmtienv, (void*)originForRelease);
     }
+}
+
+jstring
+jarFile(JNIEnv * jnienv, JPLISAgent * agent) {
+    return (*jnienv)->NewStringUTF(jnienv, agent->mJarfile);
 }

@@ -325,8 +325,8 @@ DEF_Agent_OnAttach(JavaVM* vm, char *args, void * reserved) {
         return JNI_ENOMEM;
     }
 
-    jboolean warning = JVM_IsDynamicAgentLoadingEnabledOnCommandLine() ? JNI_FALSE : JNI_TRUE;
-    initerror = createNewJPLISAgent(vm, &agent, jarfile, warning);
+    jboolean print_warning = JVM_PrintWarningAtDynamicAgentLoad();
+    initerror = createNewJPLISAgent(vm, &agent, jarfile, print_warning);
     if ( initerror == JPLIS_INIT_ERROR_NONE ) {
         int             oldLen, newLen;
         jarAttribute*   attributes;

@@ -507,6 +507,7 @@ static bool invoke_Agent_OnAttach(JvmtiAgent* agent, outputStream* st) {
     agent->set_loaded();
 
     // Print warning if EnableDynamicAgentLoading not enabled on the command line
+    assert(EnableDynamicAgentLoading, "Dynamic loading of agents not enabled");
     if (!FLAG_IS_CMDLINE(EnableDynamicAgentLoading) && !agent->is_instrument_lib()) {
       jio_fprintf(defaultStream::error_stream(),
         "WARNING: A JVM TI agent has been dynamically loaded (%s)\n"

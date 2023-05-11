@@ -239,10 +239,6 @@ retransformableEnvironment(JPLISAgent * agent);
  *  Most are simple covers for JVMTI access services. These are the guts of the InstrumentationImpl
  *  native methods.
  */
-
-extern jstring
-jarFile(JNIEnv * jnienv, JPLISAgent * agent);
-
 extern jboolean
 isModifiableClass(JNIEnv * jnienv, JPLISAgent * agent, jclass clazz);
 
@@ -276,6 +272,9 @@ appendToClassLoaderSearch(JNIEnv * jnienv, JPLISAgent * agent, jstring jarFile, 
 extern void
 setNativeMethodPrefixes(JNIEnv * jnienv, JPLISAgent * agent, jobjectArray prefixArray,
                         jboolean isRetransformable);
+
+extern jstring
+jarFile(JNIEnv * jnienv, JPLISAgent * agent);
 
 #define jvmti(a) a->mNormalEnvironment.mJVMTIEnv
 

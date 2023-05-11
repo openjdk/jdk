@@ -184,6 +184,7 @@ public class InstrumentationImpl implements Instrumentation {
 
     @Override
     public boolean isModifiableClass(Class<?> theClass) {
+        trace("isModifiableClass");
         if (theClass == null) {
             throw new NullPointerException(
                          "null passed as 'theClass' in isModifiableClass");
@@ -193,6 +194,7 @@ public class InstrumentationImpl implements Instrumentation {
 
     @Override
     public boolean isModifiableModule(Module module) {
+        trace("isModifiableModule");
         if (module == null) {
             throw new NullPointerException("'module' is null");
         }
@@ -201,6 +203,7 @@ public class InstrumentationImpl implements Instrumentation {
 
     @Override
     public boolean isRetransformClassesSupported() {
+        trace("isRetransformClassesSupported");
         // ask lazily since there is some overhead
         if (!mEnvironmentSupportsRetransformClassesKnown) {
             mEnvironmentSupportsRetransformClasses = isRetransformClassesSupported0(mNativeAgent);
@@ -224,6 +227,7 @@ public class InstrumentationImpl implements Instrumentation {
 
     @Override
     public boolean isRedefineClassesSupported() {
+        trace("isRedefineClassesSupported");
         return mEnvironmentSupportsRedefineClasses;
     }
 
@@ -261,8 +265,9 @@ public class InstrumentationImpl implements Instrumentation {
         return getInitiatedClasses0(mNativeAgent, loader);
     }
 
-    public long
-    getObjectSize(Object objectToSize) {
+    @Override
+    public long getObjectSize(Object objectToSize) {
+        trace("getObjectSize");
         if (objectToSize == null) {
             throw new NullPointerException("null passed as 'objectToSize' in getObjectSize");
         }
@@ -283,6 +288,7 @@ public class InstrumentationImpl implements Instrumentation {
 
     @Override
     public boolean isNativeMethodPrefixSupported() {
+        trace("isNativeMethodPrefixSupported");
         return mEnvironmentSupportsNativeMethodPrefix;
     }
 

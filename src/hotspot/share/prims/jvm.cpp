@@ -3467,10 +3467,6 @@ JVM_LEAF(jboolean, JVM_IsForeignLinkerSupported(void))
   return ForeignGlobals::is_foreign_linker_supported() ? JNI_TRUE : JNI_FALSE;
 JVM_END
 
-JVM_LEAF(jboolean, JVM_IsDynamicAgentLoadingEnabledOnCommandLine(void))
-  return FLAG_IS_CMDLINE(EnableDynamicAgentLoading);
-JVM_END
-
 // String support ///////////////////////////////////////////////////////////////////////////
 
 JVM_ENTRY(jstring, JVM_InternString(JNIEnv *env, jstring str))
@@ -4027,4 +4023,11 @@ JVM_END
  */
 JVM_ENTRY(void, JVM_EnsureMaterializedForStackWalk_func(JNIEnv* env, jobject vthread, jobject value))
   JVM_EnsureMaterializedForStackWalk(env, value);
+JVM_END
+
+/*
+ * Return JNI_TRUE if warnings are printed when agents are dynamically loaded.
+ */
+JVM_LEAF(jboolean, JVM_PrintWarningAtDynamicAgentLoad(void))
+  return (EnableDynamicAgentLoading && !FLAG_IS_CMDLINE(EnableDynamicAgentLoading)) ? JNI_TRUE : JNI_FALSE;
 JVM_END
