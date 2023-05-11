@@ -138,8 +138,10 @@ public final class SimpleIO {
      *
      * @param prompt string contain prompt for input, may be the empty string
      * @return a token entered by user
+     * @throws NullPointerException if prompt is null
      */
     public static String inputNext(String prompt) {
+        Objects.requireNonNull(prompt, "prompt must not be null");
         while (true) {
             String input = input(prompt);
             var scanner = scanner(input);
@@ -156,8 +158,10 @@ public final class SimpleIO {
      *
      * @param prompt string contain prompt for input, may be the empty string
      * @return an int value entered by user
+     * @throws NullPointerException if prompt is null
      */
     public static int inputInt(String prompt) {
+        Objects.requireNonNull(prompt, "prompt must not be null");
         while (true) {
             String input = input(prompt);
             var scanner = scanner(input);
@@ -174,8 +178,10 @@ public final class SimpleIO {
      *
      * @param prompt string contain prompt for input, may be the empty string
      * @return a long value entered by user
+     * @throws NullPointerException if prompt is null
      */
     public static long inputLong(String prompt) {
+        Objects.requireNonNull(prompt, "prompt must not be null");
         while (true) {
             String input = input(prompt);
             var scanner = scanner(input);
@@ -192,8 +198,10 @@ public final class SimpleIO {
      *
      * @param prompt string contain prompt for input, may be the empty string
      * @return a float value entered by user
+     * @throws NullPointerException if prompt is null
      */
     public static float inputFloat(String prompt) {
+        Objects.requireNonNull(prompt, "prompt must not be null");
         while (true) {
             String input = input(prompt);
             var scanner = scanner(input);
@@ -210,8 +218,10 @@ public final class SimpleIO {
      *
      * @param prompt string contain prompt for input, may be the empty string
      * @return a double value entered by user
+     * @throws NullPointerException if prompt is null
      */
     public static double inputDouble(String prompt) {
+        Objects.requireNonNull(prompt, "prompt must not be null");
         while (true) {
             String input = input(prompt);
             var scanner = scanner(input);
@@ -228,8 +238,10 @@ public final class SimpleIO {
      *
      * @param prompt string contain prompt for input, may be the empty string
      * @return a boolean value entered by user
+     * @throws NullPointerException if prompt is null
      */
     public static boolean inputBoolean(String prompt) {
+        Objects.requireNonNull(prompt, "prompt must not be null");
         while (true) {
             String input = input(prompt);
             var scanner = scanner(input);
@@ -335,6 +347,7 @@ public final class SimpleIO {
      * @param filename  string representing the name or path of the file to be read
      * @return Content read from a file
      * @throws UncheckedIOException wrapping an IOException if an io error occurs.
+     * @throws NullPointerException if filename is null
      *
      * @implSpec Line terminators are normalized to '\n'.
      */
@@ -370,6 +383,7 @@ public final class SimpleIO {
      * @param path  path of file to be read
      * @return Content read from a file
      * @throws UncheckedIOException wrapping an IOException if an io error occurs.
+     * @throws NullPointerException if path is null
      *
      * @implSpec Line terminators are normalized to '\n'.
      */
@@ -400,6 +414,7 @@ public final class SimpleIO {
      * @param filename  string representing the name or path of the file to be read
      * @return list of lines read from a file
      * @throws UncheckedIOException wrapping an IOException if an io error occurs.
+     * @throws NullPointerException if filename is null
      *
      * @implNote The result represents the content split at line terminators.
      */
@@ -429,6 +444,7 @@ public final class SimpleIO {
      * @param path  path of file to be read
      * @return list of lines read from a file
      * @throws UncheckedIOException wrapping an IOException if an io error occurs.
+     * @throws NullPointerException if path is null
      *
      * @implNote The result represents the content split at line terminators.
      */
@@ -468,6 +484,7 @@ public final class SimpleIO {
      * @param filename  string representing the name or path of the file to be written
      * @param content  string content of the file
      * @throws UncheckedIOException wrapping an IOException if an io error occurs.
+     * @throws NullPointerException if filename or content is null
      */
     public static void write(String filename, String content) {
         Objects.requireNonNull(filename, "filename must not be null");
@@ -504,6 +521,7 @@ public final class SimpleIO {
      * @param path  path of file to be written
      * @param content  string content of the file
      * @throws UncheckedIOException wrapping an IOException if an io error occurs.
+     * @throws NullPointerException if path or content is null
      */
     public static void write(Path path, String content) {
         Objects.requireNonNull(path, "path must not be null");
@@ -533,6 +551,7 @@ public final class SimpleIO {
      * @param filename  string representing the name or path of the file to be written
      * @param lines list of lines to be written to the file
      * @throws UncheckedIOException wrapping an IOException if an io error occurs.
+     * @throws NullPointerException if filename or lines is null
      */
     public static void writeLines(String filename, List<String> lines) {
         Objects.requireNonNull(filename, "filename must not be null");
@@ -563,6 +582,7 @@ public final class SimpleIO {
      * @param path  file name string of file to be written
      * @param lines  list of lines to be written to the file
      * @throws UncheckedIOException wrapping an IOException if an io error occurs.
+     * @throws NullPointerException if path or lines is null
      */
     public static void writeLines(Path path, List<String> lines) {
         Objects.requireNonNull(path, "path must not be null");
@@ -588,6 +608,7 @@ public final class SimpleIO {
      * }
      * @param string string to be scanned
      * @return a {@link StringScanner} object
+     * @throws NullPointerException if string is null
      */
     public static StringScanner scanner(String string) {
         Objects.requireNonNull(string, "string must not be null");
