@@ -61,6 +61,9 @@ public class SwedishTest {
             Arguments.of(Locale.forLanguageTag("sv-u-co-TRADITIO"), standard),
             Arguments.of(Locale.forLanguageTag("sv-u-co-traditional"), standard),
             Arguments.of(Locale.forLanguageTag("sv-u-co-TRADITIONAL"), standard),
+            // the new standard used to be called "reformed"
+            Arguments.of(Locale.forLanguageTag("sv-u-co-reformed"), standard),
+            Arguments.of(Locale.forLanguageTag("sv-u-co-REFORMED"), standard),
 
             Arguments.of(Locale.forLanguageTag("sv-u-co-trad"), traditional),
             Arguments.of(Locale.forLanguageTag("sv-u-co-TRAD"), traditional)
