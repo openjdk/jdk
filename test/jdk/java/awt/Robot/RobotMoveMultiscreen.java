@@ -20,6 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 /*
   @test
   @bug 4288230
@@ -78,7 +79,7 @@ public class RobotMoveMultiscreen {
             robot.delay(1000);
             robot.waitForIdle();
 
-            if(testCondition == false) {
+            if (testCondition == false) {
                 throw new RuntimeException("Can't move to another display");
             }
 

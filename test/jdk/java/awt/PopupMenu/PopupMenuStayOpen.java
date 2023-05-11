@@ -20,6 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 /*
   @test
   @bug 4791953
@@ -99,8 +100,10 @@ public class PopupMenuStayOpen {
             robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
             robot.delay(500);
 
-            if (!wasActionFired) {
-                throw new RuntimeException("Popup not visible or has no focus");
+            EventQueue.invokeAndWait(() -> {
+                if (!wasActionFired) {
+                    throw new RuntimeException("Popup not visible or has no focus");
+                }
             }
             System.out.println("Test Pass!!");
         } finally {
