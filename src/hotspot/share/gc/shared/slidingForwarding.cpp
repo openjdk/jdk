@@ -67,7 +67,7 @@ void SlidingForwarding::initialize(MemRegion heap, size_t region_size_words) {
     _heap_start_region_bias = (uintptr_t)_heap_start >> _region_size_bytes_shift;
     _region_mask = ~((uintptr_t(1) << _region_size_bytes_shift) - 1);
 
-    guarantee((_heap_start_region_bias << _region_size_bytes_shift) == (uintptr_t)_heap_start, "must be aligned");
+    guarantee((_heap_start_region_bias << _region_size_bytes_shift) == (uintptr_t)_heap_start, "must be aligned: _heap_start_region_bias: " SIZE_FORMAT ", _region_size_byte_shift: %u, _heap_start: " PTR_FORMAT, _heap_start_region_bias, _region_size_bytes_shift, p2i(_heap_start));
 
     assert(_region_size_words >= 1, "regions must be at least a word large");
     assert(_bases_table == nullptr, "should not be initialized yet");
@@ -149,7 +149,7 @@ void SlidingForwarding::FallbackTable::forward_to(HeapWord* from, HeapWord* to) 
 #ifdef ASSERT
   // Search existing entry in chain starting at idx.
   for (FallbackTableEntry* entry = head; entry != nullptr; entry = entry->_next) {
-    assert(entry->_from != from,"Don't re-forward entries into the fallback-table");
+    assert(entry->_from != from, "Don't re-forward entries into the fallback-table");
   }
 #endif
   // No entry found, create new one and insert after head.

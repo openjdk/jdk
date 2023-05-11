@@ -905,7 +905,7 @@ void DefNewGeneration::handle_promotion_failure(oop old) {
 
   ContinuationGCSupport::transform_stack_chunk(old);
 
-  old->forward_failed();
+  old->forward_to_self();
 
   _promo_failure_scan_stack.push(old);
 

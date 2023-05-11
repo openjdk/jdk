@@ -108,8 +108,8 @@ class markWord {
   // Constants
   static const int age_bits                       = 4;
   static const int lock_bits                      = 2;
-  static const int forward_failed_bits            = 1;
-  static const int max_hash_bits                  = BitsPerWord - age_bits - lock_bits - forward_failed_bits;
+  static const int self_forwarded_bits            = 1;
+  static const int max_hash_bits                  = BitsPerWord - age_bits - lock_bits - self_forwarded_bits;
   static const int hash_bits                      = max_hash_bits > 31 ? 31 : max_hash_bits;
   static const int hash_bits_compact              = max_hash_bits > 25 ? 25 : max_hash_bits;
   // Used only without compact headers.
@@ -120,8 +120,8 @@ class markWord {
 #endif
 
   static const int lock_shift                     = 0;
-  static const int forward_failed_shift           = lock_shift + lock_bits;
-  static const int age_shift                      = forward_failed_shift + forward_failed_bits;
+  static const int self_forwarded_shift           = lock_shift + lock_bits;
+  static const int age_shift                      = self_forwarded_shift + self_forwarded_bits;
   static const int hash_shift                     = age_shift + age_bits + unused_gap_bits;
   static const int hash_shift_compact             = age_shift + age_bits;
 #ifdef _LP64
@@ -131,8 +131,8 @@ class markWord {
 
   static const uintptr_t lock_mask                = right_n_bits(lock_bits);
   static const uintptr_t lock_mask_in_place       = lock_mask << lock_shift;
-  static const uintptr_t forward_failed_mask      = right_n_bits(forward_failed_bits);
-  static const uintptr_t forward_failed_mask_in_place = forward_failed_mask << forward_failed_shift;
+  static const uintptr_t self_forwarded_mask      = right_n_bits(self_forwarded_bits);
+  static const uintptr_t self_forwarded_mask_in_place = self_forwarded_mask << self_forwarded_shift;
   static const uintptr_t age_mask                 = right_n_bits(age_bits);
   static const uintptr_t age_mask_in_place        = age_mask << age_shift;
   static const uintptr_t hash_mask                = right_n_bits(hash_bits);
@@ -302,15 +302,15 @@ class markWord {
   // Recover address of oop from encoded form used in mark
   inline void* decode_pointer() { return (void*)clear_lock_bits().value(); }
 
-  inline bool forward_failed() const {
-    bool fwd_failed = mask_bits(value(), forward_failed_mask_in_place) != 0;
-    assert(!fwd_failed || UseAltGCForwarding, "Only set fwd-failed bit when using alt GC forwarding");
-    return fwd_failed;
+  inline bool self_forwarded() const {
+    bool self_fwd = mask_bits(value(), self_forwarded_mask_in_place) != 0;
+    assert(!self_fwd || UseAltGCForwarding, "Only set self-fwd bit when using alt GC forwarding");
+    return self_fwd;
   }
 
-  inline markWord set_forward_failed() const {
+  inline markWord set_self_forwarded() const {
     assert(UseAltGCForwarding, "Only call this with alt GC forwarding");
-    return markWord(value() | forward_failed_mask_in_place | marked_value);
+    return markWord(value() | self_forwarded_mask_in_place | marked_value);
   }
 };
 

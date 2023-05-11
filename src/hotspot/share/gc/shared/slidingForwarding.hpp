@@ -58,8 +58,8 @@
  *   64                              32                                0
  *    [................................OOOOOOOOOOOOOOOOOOOOOOOOOOOOAFTT]
  *                                                                    ^----- normal lock bits, would record "object is forwarded"
- *                                                                   ^------ fallback bit (explained below)
- *                                                                  ^------- alternate region select
+ *                                                                  ^------- fallback bit (explained below)
+ *                                                                 ^-------- alternate region select
  *                                     ^------------------------------------ in-region offset
  *     ^-------------------------------------------------------------------- protected area, *not touched* by this code, useful for
  *                                                                           compressed class pointer with compact object headers
