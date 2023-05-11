@@ -24,6 +24,7 @@
 ####
 # Bugs
 
+compiler/jvmci/compilerToVM/MaterializeVirtualObjectTest.java 8307125 generic-all
 serviceability/jvmti/Heap/IterateHeapWithEscapeAnalysisEnabled.java 8264699 generic-all
 
 ####
@@ -78,6 +79,7 @@ vmTestbase/nsk/jdb/where/where005/where005.java 8278470 generic-all
 
 vmTestbase/nsk/jdb/list/list003/list003.java        8300707 generic-all
 vmTestbase/nsk/jdb/repeat/repeat001/repeat001.java  8300707 generic-all
+vmTestbase/nsk/jdb/kill/kill001/kill001.java        8306467 generic-all
 
 ####
 ## NSK JDI tests failing with wrapper
@@ -127,3 +129,14 @@ vmTestbase/nsk/jdi/stress/serial/forceEarlyReturn002/TestDescription.java 828541
 # of this no vthreads can complete their reads, and the test times out as a result.
 
 vmTestbase/nsk/jdi/VMOutOfMemoryException/VMOutOfMemoryException001/VMOutOfMemoryException001.java 8285417 windows-all
+
+##########
+## Tests incompatible with  with virtual test thread factory.
+## There is no goal to run all test with virtual test thread factory.
+## So any test migth be added as incompatible, the bug is not required.
+
+gc/arguments/TestNewSizeThreadIncrease.java 0000000 generic-all
+runtime/ErrorHandling/MachCodeFramesInErrorFile.java 0000000 generic-all
+runtime/Thread/AsyncExceptionOnMonitorEnter.java 0000000 generic-all
+runtime/Thread/StopAtExit.java 0000000 generic-all
+runtime/handshake/HandshakeWalkStackTest.java 0000000 generic-all

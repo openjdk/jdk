@@ -26,11 +26,13 @@
 /*
  * @test
  * @summary Testing Classfile stack maps generator.
+ * @bug 8305990
  * @build testdata.*
  * @run junit StackMapsTest
  */
 
-import jdk.internal.classfile.Classfile;
+import jdk.internal.classfile.*;
+import jdk.internal.classfile.components.ClassPrinter;
 import java.net.URI;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
@@ -213,6 +215,20 @@ class StackMapsTest {
                                              cob.iload(0).goto_(t).labelBinding(t).ireturn();
                                          })
                                          .withFlags(AccessFlag.STATIC))));
+    }
+
+    @Test
+    void testClassVersions() throws Exception {
+        var actualVersion = Classfile.parse(StackMapsTest.class.getResourceAsStream("/testdata/Pattern1.class").readAllBytes());
+
+        //test transformation to class version 49 with removal of StackMapTable attributes
+        var version49 = Classfile.parse(actualVersion.transform(ClassTransform.transformingMethodBodies(CodeTransform.ACCEPT_ALL)
+                .andThen(ClassTransform.endHandler(clb -> clb.withVersion(49, 0)))));
+        assertFalse(ClassPrinter.toTree(version49, ClassPrinter.Verbosity.CRITICAL_ATTRIBUTES).walk().anyMatch(n -> n.name().equals("stack map frames")));
+
+        //test transformation to class version 50 with re-generation of StackMapTable attributes
+         assertEmpty(Classfile.parse(version49.transform(ClassTransform.transformingMethodBodies(CodeTransform.ACCEPT_ALL)
+                .andThen(ClassTransform.endHandler(clb -> clb.withVersion(50, 0))))).verify(null));
     }
 
     private static final FileSystem JRT = FileSystems.getFileSystem(URI.create("jrt:/"));

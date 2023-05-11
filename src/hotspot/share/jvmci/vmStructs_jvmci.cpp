@@ -56,6 +56,24 @@
   static_field(CompilerToVM::Data,             SharedRuntime_deopt_blob_unpack_with_exception_in_tls,                                \
                                                                                        address)                                      \
   static_field(CompilerToVM::Data,             SharedRuntime_deopt_blob_uncommon_trap, address)                                      \
+  static_field(CompilerToVM::Data,             SharedRuntime_polling_page_return_handler,                                            \
+                                                                                       address)                                      \
+                                                                                                                                     \
+  static_field(CompilerToVM::Data,             nmethod_entry_barrier, address)                                                       \
+  static_field(CompilerToVM::Data,             thread_disarmed_guard_value_offset, int)                                              \
+  static_field(CompilerToVM::Data,             thread_address_bad_mask_offset, int)                                                  \
+  AARCH64_ONLY(static_field(CompilerToVM::Data, BarrierSetAssembler_nmethod_patching_type, int))                                     \
+                                                                                                                                     \
+  static_field(CompilerToVM::Data,             ZBarrierSetRuntime_load_barrier_on_oop_field_preloaded, address)                      \
+  static_field(CompilerToVM::Data,             ZBarrierSetRuntime_load_barrier_on_weak_oop_field_preloaded, address)                 \
+  static_field(CompilerToVM::Data,             ZBarrierSetRuntime_load_barrier_on_phantom_oop_field_preloaded, address)              \
+  static_field(CompilerToVM::Data,             ZBarrierSetRuntime_weak_load_barrier_on_oop_field_preloaded, address)                 \
+  static_field(CompilerToVM::Data,             ZBarrierSetRuntime_weak_load_barrier_on_weak_oop_field_preloaded, address)            \
+  static_field(CompilerToVM::Data,             ZBarrierSetRuntime_weak_load_barrier_on_phantom_oop_field_preloaded, address)         \
+  static_field(CompilerToVM::Data,             ZBarrierSetRuntime_load_barrier_on_oop_array, address)                                \
+  static_field(CompilerToVM::Data,             ZBarrierSetRuntime_clone, address)                                                    \
+                                                                                                                                     \
+  static_field(CompilerToVM::Data,             continuations_enabled, bool)                                                          \
                                                                                                                                      \
   static_field(CompilerToVM::Data,             ThreadLocalAllocBuffer_alignment_reserve, size_t)                                     \
                                                                                                                                      \
@@ -184,6 +202,7 @@
   volatile_nonstatic_field(JavaThread,         _is_method_handle_return,                      int)                                   \
   volatile_nonstatic_field(JavaThread,         _doing_unsafe_access,                          bool)                                  \
   nonstatic_field(JavaThread,                  _osthread,                                     OSThread*)                             \
+  nonstatic_field(JavaThread,                  _saved_exception_pc,                           address)                               \
   nonstatic_field(JavaThread,                  _pending_deoptimization,                       int)                                   \
   nonstatic_field(JavaThread,                  _pending_failed_speculation,                   jlong)                                 \
   nonstatic_field(JavaThread,                  _pending_transfer_to_interpreter,              bool)                                  \
@@ -475,6 +494,7 @@
   declare_constant(CodeInstaller::EXCEPTION_HANDLER_ENTRY)                \
   declare_constant(CodeInstaller::DEOPT_HANDLER_ENTRY)                    \
   declare_constant(CodeInstaller::FRAME_COMPLETE)                         \
+  declare_constant(CodeInstaller::ENTRY_BARRIER_PATCH)                    \
   declare_constant(CodeInstaller::INVOKEINTERFACE)                        \
   declare_constant(CodeInstaller::INVOKEVIRTUAL)                          \
   declare_constant(CodeInstaller::INVOKESTATIC)                           \
@@ -694,6 +714,10 @@
                                                                           \
   declare_constant(MultiBranchData::per_case_cell_count)                  \
                                                                           \
+  AARCH64_ONLY(declare_constant(NMethodPatchingType::stw_instruction_and_data_patch))  \
+  AARCH64_ONLY(declare_constant(NMethodPatchingType::conc_instruction_and_data_patch)) \
+  AARCH64_ONLY(declare_constant(NMethodPatchingType::conc_data_patch))                 \
+                                                                          \
   declare_constant(ReceiverTypeData::nonprofiled_count_off_set)           \
   declare_constant(ReceiverTypeData::receiver_type_row_cell_count)        \
   declare_constant(ReceiverTypeData::receiver0_offset)                    \
@@ -715,6 +739,7 @@
   declare_constant(markWord::hash_shift)                                  \
   declare_constant(markWord::monitor_value)                               \
                                                                           \
+  declare_constant(markWord::lock_mask_in_place)                          \
   declare_constant(markWord::age_mask_in_place)                           \
   declare_constant(markWord::hash_mask)                                   \
   declare_constant(markWord::hash_mask_in_place)                          \

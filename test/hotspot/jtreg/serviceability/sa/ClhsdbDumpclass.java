@@ -31,6 +31,7 @@ import jdk.test.lib.Utils;
 import jdk.test.lib.apps.LingeredApp;
 import jdk.test.lib.JDKToolLauncher;
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.SA.SATestUtils;
 import jtreg.SkippedException;
 
 /**
@@ -47,6 +48,10 @@ public class ClhsdbDumpclass {
     static final String APP_SLASH_CLASSNAME = APP_DOT_CLASSNAME.replace('.', '/');
 
     public static void main(String[] args) throws Exception {
+        if (SATestUtils.needsPrivileges()) {
+            // This test will create a file as root that cannot be easily deleted, so don't run it.
+            throw new SkippedException("Cannot run this test on OSX if adding privileges is required.");
+        }
         System.out.println("Starting ClhsdbDumpclass test");
 
         LingeredApp theApp = null;

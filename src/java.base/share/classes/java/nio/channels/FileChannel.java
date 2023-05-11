@@ -122,7 +122,8 @@ import jdk.internal.javac.PreviewFeature;
  * the originating object, and vice versa. Changing the file's length via the
  * file channel will change the length seen via the originating object, and vice
  * versa.  Changing the file's content by writing bytes will change the content
- * seen by the originating object, and vice versa.
+ * seen by the originating object, and vice versa. Closing the channel will
+ * close the originating object.
  *
  * <a id="open-mode"></a> <p> At various points this class specifies that an
  * instance that is "open for reading," "open for writing," or "open for
