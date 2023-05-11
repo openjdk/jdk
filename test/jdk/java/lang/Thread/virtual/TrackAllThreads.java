@@ -36,6 +36,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 
 import jdk.test.lib.util.ForceGC;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -78,6 +79,7 @@ class TrackAllThreads {
      * Test that a ThreadPoolExecutor using a virtual thread factory is not GC'ed when
      * a task (running in a virtual thread) has parked.
      */
+    @Disabled
     @Test
     void testSharedContainer2() throws Exception {
         var queue = new LinkedTransferQueue<Runnable>();
@@ -114,6 +116,7 @@ class TrackAllThreads {
      * Test that a ThreadPerTaskExecutor using a virtual thread factory is not GC'ed when
      * a task (running in a virtual thread) has parked.
      */
+    @Disabled
     @Test
     void testThreadPerTaskExecutor2() throws Exception {
         var executor = Executors.newVirtualThreadPerTaskExecutor();

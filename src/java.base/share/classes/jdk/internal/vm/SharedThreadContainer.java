@@ -26,9 +26,9 @@ package jdk.internal.vm;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
-import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.LongAdder;
 import java.util.stream.Stream;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
@@ -41,7 +41,6 @@ public class SharedThreadContainer extends ThreadContainer implements AutoClosea
     private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
     private static final VarHandle CLOSED;
     private static final VarHandle VIRTUAL_THREADS;
-    private static final VarHandle VTHREAD_COUNT;
     static {
         try {
             MethodHandles.Lookup l = MethodHandles.lookup();
@@ -49,8 +48,6 @@ public class SharedThreadContainer extends ThreadContainer implements AutoClosea
                     "closed", boolean.class);
             VIRTUAL_THREADS = l.findVarHandle(SharedThreadContainer.class,
                     "virtualThreads", Set.class);
-            VTHREAD_COUNT = l.findVarHandle(SharedThreadContainer.class,
-                    "vthreadCount", long.class);
         } catch (Exception e) {
             throw new ExceptionInInitializerError(e);
         }
@@ -59,8 +56,8 @@ public class SharedThreadContainer extends ThreadContainer implements AutoClosea
     // name of container, used by toString
     private final String name;
 
-    // virtual thread count when tracking all threads
-    private volatile long vthreadCount;
+    // the number of threads in the container
+    private final LongAdder threadCount;
 
     // the virtual threads in the container, created lazily
     private volatile Set<Thread> virtualThreads;
@@ -78,6 +75,7 @@ public class SharedThreadContainer extends ThreadContainer implements AutoClosea
     private SharedThreadContainer(String name) {
         super(/*shared*/ true);
         this.name = name;
+        this.threadCount = new LongAdder();
     }
 
     /**
@@ -124,26 +122,20 @@ public class SharedThreadContainer extends ThreadContainer implements AutoClosea
                 }
             }
             vthreads.add(thread);
-
-            // the first virtual thread pins the container
-            if (ThreadContainers.trackAllThreads()
-                    && (long)VTHREAD_COUNT.getAndAdd(this, 1) == 0) {
-                ThreadContainers.pinContainer(this);
-            }
         }
+        threadCount.add(1L);
     }
 
     @Override
     public void onExit(Thread thread) {
-        if (thread.isVirtual()) {
+        threadCount.add(-1L);
+        if (thread.isVirtual())
             virtualThreads.remove(thread);
+    }
 
-            // the last virtual thread unpins the container
-            if (ThreadContainers.trackAllThreads()
-                    && (long)VTHREAD_COUNT.getAndAdd(this, -1) == 1) {
-                ThreadContainers.unpinContainer(this);
-            }
-        }
+    @Override
+    public long threadCount() {
+        return threadCount.sum();
     }
 
     @Override

@@ -512,14 +512,15 @@ public class ThreadFlock implements AutoCloseable {
 
         @Override
         public ThreadContainerImpl push() {
-            // Virtual threads in the root containers are not tracked so need
+            // Virtual threads in the root containers may not be tracked so need
             // to register container to ensure that it is found
-            Thread thread = Thread.currentThread();
-            if (thread.isVirtual()
-                    && JLA.threadContainer(thread) == ThreadContainers.root()) {
-                this.key = ThreadContainers.registerContainer(this);
+            if (!ThreadContainers.trackAllThreads()) {
+                Thread thread = Thread.currentThread();
+                if (thread.isVirtual()
+                        && JLA.threadContainer(thread) == ThreadContainers.root()) {
+                    this.key = ThreadContainers.registerContainer(this);
+                }
             }
-
             super.push();
             return this;
         }

@@ -756,8 +756,3 @@ vmTestbase_nsk_jdb = \
   vmTestbase/nsk/jdb
 
 # vmTestbase_*_quick groups are defined in TEST.quick-groups
-
-hotspot_remaining = \
- :hotspot_all_no_apps \
-  -vmTestbase \
-  -:tier1

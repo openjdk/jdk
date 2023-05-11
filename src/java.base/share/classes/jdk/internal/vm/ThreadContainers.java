@@ -51,19 +51,14 @@ public class ThreadContainers {
     private static final Set<WeakReference<ThreadContainer>> CONTAINER_REGISTRY = ConcurrentHashMap.newKeySet();
     private static final ReferenceQueue<Object> QUEUE = new ReferenceQueue<>();
 
-    // the set of thread containers that temporarily "pinned" so they can't be GC'ed
-    private static final Set<ThreadContainer> PINNED_CONTAINERS;
-
     static {
         String s = GetPropertyAction.privilegedGetProperty("jdk.trackAllThreads");
         if (s != null && (s.isEmpty() || Boolean.parseBoolean(s))) {
             TRACK_ALL_THREADS = true;
             ROOT_CONTAINER = new RootContainer.TrackingRootContainer();
-            PINNED_CONTAINERS = ConcurrentHashMap.newKeySet();
         } else {
             TRACK_ALL_THREADS = false;
             ROOT_CONTAINER = new RootContainer.CountingRootContainer();
-            PINNED_CONTAINERS = null; // not used
         }
     }
 
@@ -104,22 +99,6 @@ public class ThreadContainers {
     public static void deregisterContainer(Object key) {
         assert key instanceof WeakReference;
         CONTAINER_REGISTRY.remove(key);
-    }
-
-    /**
-     * Pin a thread container to prevent it from being GC'ed.
-     */
-    public static void pinContainer(ThreadContainer container) {
-        boolean added = PINNED_CONTAINERS.add(container);
-        assert added;
-    }
-
-    /**
-     * Unpin a thread container to allow it be GC'ed if unreachable.
-     */
-    public static void unpinContainer(ThreadContainer container) {
-        boolean removed = PINNED_CONTAINERS.remove(container);
-        assert removed;
     }
 
     /**

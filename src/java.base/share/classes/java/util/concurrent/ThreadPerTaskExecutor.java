@@ -49,16 +49,15 @@ class ThreadPerTaskExecutor extends ThreadContainer implements ExecutorService {
     private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
     private static final Permission MODIFY_THREAD = new RuntimePermission("modifyThread");
     private static final VarHandle STATE;
-    private static final VarHandle VTHREAD_COUNT;
     static {
         try {
             MethodHandles.Lookup l = MethodHandles.lookup();
             STATE = l.findVarHandle(ThreadPerTaskExecutor.class, "state", int.class);
-            VTHREAD_COUNT = l.findVarHandle(ThreadPerTaskExecutor.class, "vthreadCount", long.class);
         } catch (Exception e) {
             throw new ExceptionInInitializerError(e);
         }
     }
+
     private final ThreadFactory factory;
     private final Set<Thread> threads = ConcurrentHashMap.newKeySet();
     private final CountDownLatch terminationSignal = new CountDownLatch(1);
@@ -68,9 +67,6 @@ class ThreadPerTaskExecutor extends ThreadContainer implements ExecutorService {
     private static final int SHUTDOWN   = 1;
     private static final int TERMINATED = 2;
     private volatile int state;
-
-    // virtual thread count when tracking all threads
-    private volatile long vthreadCount;
 
     // the key for this container in the registry
     private volatile Object key;
@@ -138,24 +134,6 @@ class ThreadPerTaskExecutor extends ThreadContainer implements ExecutorService {
             tryTerminate();
         if (interruptThreads) {
             threads.forEach(Thread::interrupt);
-        }
-    }
-
-    @Override
-    public void onStart(Thread thread) {
-        if (ThreadContainers.trackAllThreads()
-                && thread.isVirtual()
-                && (long)VTHREAD_COUNT.getAndAdd(this, 1) == 0) {
-            ThreadContainers.pinContainer(this);
-        }
-    }
-
-    @Override
-    public void onExit(Thread thread) {
-        if (ThreadContainers.trackAllThreads()
-                && thread.isVirtual()
-                && (long)VTHREAD_COUNT.getAndAdd(this, -1) == 1) {
-            ThreadContainers.unpinContainer(this);
         }
     }
 
