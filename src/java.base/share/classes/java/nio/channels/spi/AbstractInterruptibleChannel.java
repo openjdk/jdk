@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ import sun.nio.ch.Interruptible;
 /**
  * Base implementation class for interruptible channels.
  *
- * <p> This class encapsulates the low-level machinery required to implement
+ * <p id="be"> This class encapsulates the low-level machinery required to implement
  * the asynchronous closing and interruption of channels.  A concrete channel
  * class must invoke the {@link #begin begin} and {@link #end end} methods
  * before and after, respectively, invoking an I/O operation that might block
@@ -46,15 +46,16 @@ import sun.nio.ch.Interruptible;
  * invoked, these methods should be used within a
  * {@code try}&nbsp;...&nbsp;{@code finally} block:
  *
- * <blockquote><pre id="be">
- * boolean completed = false;
- * try {
- *     begin();
- *     completed = ...;    // Perform blocking I/O operation
- *     return ...;         // Return result
- * } finally {
- *     end(completed);
- * }</pre></blockquote>
+ * {@snippet lang=java :
+ *     boolean completed = false;
+ *     try {
+ *         begin();
+ *         completed = ...;    // Perform blocking I/O operation
+ *         return ...;         // Return result
+ *     } finally {
+ *         end(completed);
+ *     }
+ * }
  *
  * <p> The {@code completed} argument to the {@link #end end} method tells
  * whether or not the I/O operation actually completed, that is, whether it had

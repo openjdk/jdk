@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ import sun.nio.ch.SelectorImpl;
 /**
  * Base implementation class for selectors.
  *
- * <p> This class encapsulates the low-level machinery required to implement
+ * <p id="be"> This class encapsulates the low-level machinery required to implement
  * the interruption of selection operations.  A concrete selector class must
  * invoke the {@link #begin begin} and {@link #end end} methods before and
  * after, respectively, invoking an I/O operation that might block
@@ -47,14 +47,15 @@ import sun.nio.ch.SelectorImpl;
  * invoked, these methods should be used within a
  * {@code try}&nbsp;...&nbsp;{@code finally} block:
  *
- * <blockquote><pre id="be">
- * try {
- *     begin();
- *     // Perform blocking I/O operation here
- *     ...
- * } finally {
- *     end();
- * }</pre></blockquote>
+ * {@snippet lang=java :
+ *     try {
+ *         begin();
+ *         // Perform blocking I/O operation here
+ *         ...
+ *     } finally {
+ *         end();
+ *     }
+ * }
  *
  * <p> This class also defines methods for maintaining a selector's
  * cancelled-key set and for removing a key from its channel's key set, and
