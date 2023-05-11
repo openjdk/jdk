@@ -335,8 +335,8 @@ void Canonicalizer::do_NegateOp(NegateOp* x) {
   ValueType* t = x->x()->type();
   if (t->is_constant()) {
     switch (t->tag()) {
-      case intTag   : set_constant(java_negate(t->as_IntConstant   ()->value())); return;
-      case longTag  : set_constant(java_negate(t->as_LongConstant  ()->value())); return;
+      case intTag   : set_constant(java_negate(t->as_IntConstant()->value())); return;
+      case longTag  : set_constant(java_negate(t->as_LongConstant()->value())); return;
       case floatTag : set_constant(-t->as_FloatConstant ()->value()); return;
       case doubleTag: set_constant(-t->as_DoubleConstant()->value()); return;
       default       : ShouldNotReachHere();
