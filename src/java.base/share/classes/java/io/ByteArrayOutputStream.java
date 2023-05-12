@@ -229,14 +229,14 @@ public class ByteArrayOutputStream extends OutputStream {
      * <p> An invocation of this method of the form
      *
      * {@snippet lang=java :
-     *     ByteArrayOutputStream b = ...
+     *     ByteArrayOutputStream b;
      *     b.toString("UTF-8")
      * }
      *
      * behaves in exactly the same way as the expression
      *
      * {@snippet lang=java :
-     *     ByteArrayOutputStream b = ...
+     *     ByteArrayOutputStream b;
      *     b.toString(StandardCharsets.UTF_8)
      * }
      *

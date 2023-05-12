@@ -86,7 +86,6 @@ import sun.security.action.GetPropertyAction;
  * char[] passwd;
  * if ((cons = System.console()) != null &&
  *     (passwd = cons.readPassword("[%s]", "Password:")) != null) {
- *     ...
  *     java.util.Arrays.fill(passwd, ' ');
  * }
  * }
@@ -121,7 +120,6 @@ public sealed class Console implements Flushable permits ProxyingConsole {
      *         Console con = System.console();
      *         if (con != null) {
      *             Scanner sc = new Scanner(con.reader());
-     *             ...
      *         }
      * }
      * <p>
