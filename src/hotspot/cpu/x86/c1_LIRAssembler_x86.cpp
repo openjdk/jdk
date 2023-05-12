@@ -1350,8 +1350,8 @@ void LIR_Assembler::mem2reg(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_Patch
     }
 #endif
 
-    // Load barrier has not yet been applied, so ZGC can't verify the oop here
-    if (!UseZGC) {
+    if (!(UseZGC && !ZGenerational)) {
+      // Load barrier has not yet been applied, so ZGC can't verify the oop here
       __ verify_oop(dest->as_register());
     }
   }

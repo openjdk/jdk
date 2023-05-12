@@ -25,11 +25,11 @@
 #ifndef SHARE_GC_G1_G1COLLECTIONSET_HPP
 #define SHARE_GC_G1_G1COLLECTIONSET_HPP
 
+#include "gc/g1/g1CollectionSetCandidates.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class G1CollectedHeap;
-class G1CollectionSetCandidates;
 class G1CollectorState;
 class G1GCPhaseTimes;
 class G1ParScanThreadStateSet;
@@ -133,12 +133,8 @@ class G1CollectionSet {
   G1CollectedHeap* _g1h;
   G1Policy* _policy;
 
-  // All old gen collection set candidate regions for the current mixed phase.
-  G1CollectionSetCandidates* _candidates;
-
-  uint _eden_region_length;
-  uint _survivor_region_length;
-  uint _old_region_length;
+  // All old gen collection set candidate regions.
+  G1CollectionSetCandidates _candidates;
 
   // The actual collection set as a set of region indices.
   // All entries in _collection_set_regions below _collection_set_cur_length are
@@ -150,11 +146,13 @@ class G1CollectionSet {
   volatile uint _collection_set_cur_length;
   uint _collection_set_max_length;
 
+  uint _eden_region_length;
+  uint _survivor_region_length;
+  uint _initial_old_region_length;
+
   // When doing mixed collections we can add old regions to the collection set, which
-  // will be collected only if there is enough time. We call these optional regions.
-  // This member records the current number of regions that are of that type that
-  // correspond to the first x entries in the collection set candidates.
-  uint _num_optional_regions;
+  // will be collected only if there is enough time. We call these optional (old) regions.
+  G1CollectionCandidateRegionList _optional_old_regions;
 
   enum CSetBuildType {
     Active,             // We are actively building the collection set
@@ -172,14 +170,13 @@ class G1CollectionSet {
   // Update the incremental collection set information when adding a region.
   void add_young_region_common(HeapRegion* hr);
 
-  // Add old region "hr" to the collection set.
+  // Add the given old region to the head of the current collection set.
   void add_old_region(HeapRegion* hr);
-  void free_optional_regions();
 
-  // Add old region "hr" to optional collection set.
-  void add_optional_region(HeapRegion* hr);
-
-  void move_candidates_to_collection_set(uint num_regions);
+  void move_candidates_to_collection_set(G1CollectionCandidateRegionList* regions);
+  // Prepares old regions in the given set for optional collection later. Does not
+  // add the region to collection set yet.
+  void prepare_optional_regions(G1CollectionCandidateRegionList* regions);
 
   // Finalize the young part of the initial collection set. Relabel survivor regions
   // as Eden and calculate a prediction on how long the evacuation of all young regions
@@ -208,26 +205,25 @@ public:
   // Initializes the collection set giving the maximum possible length of the collection set.
   void initialize(uint max_region_length);
 
-  void clear_candidates();
+  void abandon_all_candidates();
 
-  void set_candidates(G1CollectionSetCandidates* candidates) {
-    assert(_candidates == nullptr, "Trying to replace collection set candidates.");
-    _candidates = candidates;
-  }
-  G1CollectionSetCandidates* candidates() { return _candidates; }
+  G1CollectionSetCandidates* candidates() { return &_candidates; }
+  const G1CollectionSetCandidates* candidates() const { return &_candidates; }
 
   void init_region_lengths(uint eden_cset_region_length,
                            uint survivor_cset_region_length);
 
   uint region_length() const       { return young_region_length() +
-                                            old_region_length(); }
+                                            initial_old_region_length(); }
   uint young_region_length() const { return eden_region_length() +
                                             survivor_region_length(); }
 
-  uint eden_region_length() const     { return _eden_region_length;     }
+  uint eden_region_length() const     { return _eden_region_length; }
   uint survivor_region_length() const { return _survivor_region_length; }
-  uint old_region_length() const      { return _old_region_length;      }
-  uint optional_region_length() const { return _num_optional_regions; }
+  uint initial_old_region_length() const      { return _initial_old_region_length; }
+  uint optional_region_length() const { return _optional_old_regions.length(); }
+
+  bool only_contains_young_regions() const { return (initial_old_region_length() + optional_region_length()) == 0; }
 
   // Reset the contents of the collection set.
   void clear();

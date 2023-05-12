@@ -47,7 +47,7 @@ struct AtomicAddTestSupport {
     T zero = 0;
     T five = 5;
     Atomic::store(&_test_value, zero);
-    T value = Atomic::fetch_and_add(&_test_value, five);
+    T value = Atomic::fetch_then_add(&_test_value, five);
     EXPECT_EQ(zero, value);
     EXPECT_EQ(five, Atomic::load(&_test_value));
   }
@@ -82,7 +82,7 @@ TEST(AtomicAddTest, ptr) {
   EXPECT_EQ(five, Atomic::load(&_test_value));
 
   Atomic::store(&_test_value, zero);
-  value = Atomic::fetch_and_add(&_test_value, 6);
+  value = Atomic::fetch_then_add(&_test_value, 6);
   EXPECT_EQ(zero, value);
   EXPECT_EQ(six, Atomic::load(&_test_value));
 };

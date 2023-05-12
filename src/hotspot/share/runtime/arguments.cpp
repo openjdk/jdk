@@ -1477,9 +1477,6 @@ void Arguments::set_use_compressed_oops() {
     if (UseCompressedOops && !FLAG_IS_DEFAULT(UseCompressedOops)) {
       warning("Max heap size too large for Compressed Oops");
       FLAG_SET_DEFAULT(UseCompressedOops, false);
-      if (COMPRESSED_CLASS_POINTERS_DEPENDS_ON_COMPRESSED_OOPS) {
-        FLAG_SET_DEFAULT(UseCompressedClassPointers, false);
-      }
     }
   }
 #endif // _LP64
@@ -1497,22 +1494,15 @@ void Arguments::set_use_compressed_klass_ptrs() {
   // be completely avoided instead. So it is better not to perform this trick. And by
   // not having that reliance, large heaps, or heaps not supporting compressed oops,
   // can still use compressed class pointers.
-  if (COMPRESSED_CLASS_POINTERS_DEPENDS_ON_COMPRESSED_OOPS && !UseCompressedOops) {
-    if (UseCompressedClassPointers) {
-      warning("UseCompressedClassPointers requires UseCompressedOops");
-    }
-    FLAG_SET_DEFAULT(UseCompressedClassPointers, false);
-  } else {
-    // Turn on UseCompressedClassPointers too
-    if (FLAG_IS_DEFAULT(UseCompressedClassPointers)) {
-      FLAG_SET_ERGO(UseCompressedClassPointers, true);
-    }
-    // Check the CompressedClassSpaceSize to make sure we use compressed klass ptrs.
-    if (UseCompressedClassPointers) {
-      if (CompressedClassSpaceSize > KlassEncodingMetaspaceMax) {
-        warning("CompressedClassSpaceSize is too large for UseCompressedClassPointers");
-        FLAG_SET_DEFAULT(UseCompressedClassPointers, false);
-      }
+  // Turn on UseCompressedClassPointers too
+  if (FLAG_IS_DEFAULT(UseCompressedClassPointers)) {
+    FLAG_SET_ERGO(UseCompressedClassPointers, true);
+  }
+  // Check the CompressedClassSpaceSize to make sure we use compressed klass ptrs.
+  if (UseCompressedClassPointers) {
+    if (CompressedClassSpaceSize > KlassEncodingMetaspaceMax) {
+      warning("CompressedClassSpaceSize is too large for UseCompressedClassPointers");
+      FLAG_SET_DEFAULT(UseCompressedClassPointers, false);
     }
   }
 #endif // _LP64
@@ -1677,9 +1667,6 @@ void Arguments::set_heap_size() {
             "Please check the setting of MaxRAMPercentage %5.2f."
             ,(size_t)reasonable_max, (size_t)max_coop_heap, MaxRAMPercentage);
           FLAG_SET_ERGO(UseCompressedOops, false);
-          if (COMPRESSED_CLASS_POINTERS_DEPENDS_ON_COMPRESSED_OOPS) {
-            FLAG_SET_ERGO(UseCompressedClassPointers, false);
-          }
         } else {
           reasonable_max = MIN2(reasonable_max, max_coop_heap);
         }
