@@ -232,12 +232,15 @@ class markWord {
   markWord displaced_mark_helper() const;
   void set_displaced_mark_helper(markWord m) const;
   markWord copy_set_hash(intptr_t hash) const {
-    uintptr_t mask_in_place = UseCompactObjectHeaders ? hash_mask_in_place_compact : hash_mask_in_place;
-    uintptr_t mask          = UseCompactObjectHeaders ? hash_mask_compact          : hash_mask;
-    int shift               = UseCompactObjectHeaders ? hash_shift_compact         : hash_shift;
-    uintptr_t tmp = value() & (~mask_in_place);
-    tmp |= ((hash & mask) << shift);
-    return markWord(tmp);
+    if (UseCompactObjectHeaders) {
+      uintptr_t tmp = value() & (~hash_mask_in_place_compact);
+      tmp |= ((hash & hash_mask_compact) << hash_shift_compact);
+      return markWord(tmp);
+    } else {
+      uintptr_t tmp = value() & (~hash_mask_in_place);
+      tmp |= ((hash & hash_mask) << hash_shift);
+      return markWord(tmp);
+    }
   }
   // it is only used to be stored into BasicLock as the
   // indicator that the lock is using heavyweight monitor
@@ -270,9 +273,11 @@ class markWord {
 
   // hash operations
   intptr_t hash() const {
-    uintptr_t mask = UseCompactObjectHeaders ? hash_mask_compact  : hash_mask;
-    int shift      = UseCompactObjectHeaders ? hash_shift_compact : hash_shift;
-    return mask_bits(value() >> shift, mask);
+    if (UseCompactObjectHeaders) {
+      return mask_bits(value() >> hash_shift_compact, hash_mask_compact);
+    } else {
+      return mask_bits(value() >> hash_shift, hash_mask);
+    }
   }
 
   bool has_no_hash() const {
