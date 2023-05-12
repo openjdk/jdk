@@ -752,12 +752,14 @@ private:
                             Address::ScaleFactor scale, int index_enc, int base_enc,
                             int disp);
 
+public:
   void emit_operand_helper(int reg_enc,
                            int base_enc, int index_enc, Address::ScaleFactor scale,
                            int disp,
                            RelocationHolder const& rspec,
                            int post_addr_length);
 
+private:
   void emit_operand(Register reg,
                     Register base, Register index, Address::ScaleFactor scale,
                     int disp,

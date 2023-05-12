@@ -97,6 +97,10 @@ public:
   static address  ptrs_base_addr()           { return (address)&_narrow_oop._base; }
   static address  ptrs_base()                { return _narrow_oop._base; }
 
+#ifdef AMD64
+  static bool need_heapbase_reg()            { return UseCompressedOops && (PreserveHeapbaseReg || _narrow_oop._base != nullptr); }
+#endif
+
   static bool is_in(void* addr);
   static bool is_in(MemRegion mr);
 

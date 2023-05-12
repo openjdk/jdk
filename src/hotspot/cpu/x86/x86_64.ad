@@ -379,7 +379,8 @@ RegMask _STACK_OR_LONG_REG_mask;
 RegMask _STACK_OR_INT_REG_mask;
 
 static bool need_r12_heapbase() {
-  return UseCompressedOops;
+  // return UseCompressedOops && (PreserveHeapbaseReg || CompressedOops::ptrs_base() != nullptr);
+  return CompressedOops::need_heapbase_reg();
 }
 
 void reg_mask_init() {
@@ -635,68 +636,9 @@ void encode_RegMem(CodeBuffer &cbuf,
                    int base, int index, int scale, int disp, relocInfo::relocType disp_reloc)
 {
   assert(disp_reloc == relocInfo::none, "cannot have disp");
-  int regenc = reg & 7;
-  int baseenc = base & 7;
-  int indexenc = index & 7;
-
-  // There is no index & no scale, use form without SIB byte
-  if (index == 0x4 && scale == 0 && base != RSP_enc && base != R12_enc) {
-    // If no displacement, mode is 0x0; unless base is [RBP] or [R13]
-    if (disp == 0 && base != RBP_enc && base != R13_enc) {
-      emit_rm(cbuf, 0x0, regenc, baseenc); // *
-    } else if (-0x80 <= disp && disp < 0x80 && disp_reloc == relocInfo::none) {
-      // If 8-bit displacement, mode 0x1
-      emit_rm(cbuf, 0x1, regenc, baseenc); // *
-      emit_d8(cbuf, disp);
-    } else {
-      // If 32-bit displacement
-      if (base == -1) { // Special flag for absolute address
-        emit_rm(cbuf, 0x0, regenc, 0x5); // *
-        if (disp_reloc != relocInfo::none) {
-          emit_d32_reloc(cbuf, disp, relocInfo::oop_type, RELOC_DISP32);
-        } else {
-          emit_d32(cbuf, disp);
-        }
-      } else {
-        // Normal base + offset
-        emit_rm(cbuf, 0x2, regenc, baseenc); // *
-        if (disp_reloc != relocInfo::none) {
-          emit_d32_reloc(cbuf, disp, relocInfo::oop_type, RELOC_DISP32);
-        } else {
-          emit_d32(cbuf, disp);
-        }
-      }
-    }
-  } else {
-    // Else, encode with the SIB byte
-    // If no displacement, mode is 0x0; unless base is [RBP] or [R13]
-    if (disp == 0 && base != RBP_enc && base != R13_enc) {
-      // If no displacement
-      emit_rm(cbuf, 0x0, regenc, 0x4); // *
-      emit_rm(cbuf, scale, indexenc, baseenc);
-    } else {
-      if (-0x80 <= disp && disp < 0x80 && disp_reloc == relocInfo::none) {
-        // If 8-bit displacement, mode 0x1
-        emit_rm(cbuf, 0x1, regenc, 0x4); // *
-        emit_rm(cbuf, scale, indexenc, baseenc);
-        emit_d8(cbuf, disp);
-      } else {
-        // If 32-bit displacement
-        if (base == 0x04 ) {
-          emit_rm(cbuf, 0x2, regenc, 0x4);
-          emit_rm(cbuf, scale, indexenc, 0x04); // XXX is this valid???
-        } else {
-          emit_rm(cbuf, 0x2, regenc, 0x4);
-          emit_rm(cbuf, scale, indexenc, baseenc); // *
-        }
-        if (disp_reloc != relocInfo::none) {
-          emit_d32_reloc(cbuf, disp, relocInfo::oop_type, RELOC_DISP32);
-        } else {
-          emit_d32(cbuf, disp);
-        }
-      }
-    }
-  }
+  MacroAssembler masm(&cbuf);
+  masm.emit_operand_helper(reg, base, index, (Address::ScaleFactor)scale, disp, RelocationHolder::none,
+                           -1 /* post_addr_length is used only in reloc mode */);
 }
 
 // This could be in MacroAssembler but it's fairly C2 specific
@@ -3995,10 +3937,8 @@ operand indPosIndexScaleOffset(any_RegP reg, immL32 off, rRegI idx, immI2 scale)
 %}
 
 // Indirect Narrow Oop Plus Offset Operand
-// Note: x86 architecture doesn't support "scale * index + offset" without a base
-// we can't free r12 even with CompressedOops::base() == NULL.
 operand indCompressedOopOffset(rRegN reg, immL32 off) %{
-  predicate(UseCompressedOops && (CompressedOops::shift() == Address::times_8));
+  predicate(UseCompressedOops && (CompressedOops::shift() == Address::times_8) && CompressedOops::need_heapbase_reg());
   constraint(ALLOC_IN_RC(ptr_reg));
   match(AddP (DecodeN reg) off);
 
@@ -4006,6 +3946,22 @@ operand indCompressedOopOffset(rRegN reg, immL32 off) %{
   format %{"[R12 + $reg << 3 + $off] (compressed oop addressing)" %}
   interface(MEMORY_INTER) %{
     base(0xc); // R12
+    index($reg);
+    scale(0x3);
+    disp($off);
+  %}
+%}
+
+// Indirect Narrow Oop Plus Offset Operand Zero Base
+operand indCompressedOopOffsetZeroBase(rRegN reg, immL32 off) %{
+  predicate(UseCompressedOops && (CompressedOops::shift() == Address::times_8) && !CompressedOops::need_heapbase_reg());
+  constraint(ALLOC_IN_RC(ptr_reg));
+  match(AddP (DecodeN reg) off);
+
+  op_cost(10);
+  format %{"[,$reg << 3 + $off] (zero base compressed oop addressing)" %}
+  interface(MEMORY_INTER) %{
+    base(0xffffffff); // no base
     index($reg);
     scale(0x3);
     disp($off);
@@ -4340,7 +4296,7 @@ operand cmpOpUCF2() %{
 
 opclass memory(indirect, indOffset8, indOffset32, indIndexOffset, indIndex,
                indIndexScale, indPosIndexScale, indIndexScaleOffset, indPosIndexOffset, indPosIndexScaleOffset,
-               indCompressedOopOffset,
+               indCompressedOopOffset,indCompressedOopOffsetZeroBase,
                indirectNarrow, indOffset8Narrow, indOffset32Narrow,
                indIndexOffsetNarrow, indIndexNarrow, indIndexScaleNarrow,
                indIndexScaleOffsetNarrow, indPosIndexOffsetNarrow, indPosIndexScaleOffsetNarrow);
@@ -6093,7 +6049,7 @@ instruct storeP(memory mem, any_RegP src)
 
 instruct storeImmP0(memory mem, immP0 zero)
 %{
-  predicate(UseCompressedOops && (CompressedOops::base() == NULL) && n->as_Store()->barrier_data() == 0);
+  predicate(UseCompressedOops && (CompressedOops::base() == NULL) && n->as_Store()->barrier_data() == 0 && CompressedOops::need_heapbase_reg());
   match(Set mem (StoreP mem zero));
 
   ins_cost(125); // XXX
@@ -6145,7 +6101,7 @@ instruct storeNKlass(memory mem, rRegN src)
 
 instruct storeImmN0(memory mem, immN0 zero)
 %{
-  predicate(CompressedOops::base() == NULL);
+  predicate(CompressedOops::base() == NULL && CompressedOops::need_heapbase_reg());
   match(Set mem (StoreN mem zero));
 
   ins_cost(125); // XXX
@@ -6188,7 +6144,7 @@ instruct storeImmNKlass(memory mem, immNKlass src)
 // Store Integer Immediate
 instruct storeImmI0(memory mem, immI_0 zero)
 %{
-  predicate(UseCompressedOops && (CompressedOops::base() == NULL));
+  predicate(UseCompressedOops && (CompressedOops::base() == NULL) && CompressedOops::need_heapbase_reg());
   match(Set mem (StoreI mem zero));
 
   ins_cost(125); // XXX
@@ -6214,7 +6170,7 @@ instruct storeImmI(memory mem, immI src)
 // Store Long Immediate
 instruct storeImmL0(memory mem, immL0 zero)
 %{
-  predicate(UseCompressedOops && (CompressedOops::base() == NULL));
+  predicate(UseCompressedOops && (CompressedOops::base() == NULL) && CompressedOops::need_heapbase_reg());
   match(Set mem (StoreL mem zero));
 
   ins_cost(125); // XXX
@@ -6240,7 +6196,7 @@ instruct storeImmL(memory mem, immL32 src)
 // Store Short/Char Immediate
 instruct storeImmC0(memory mem, immI_0 zero)
 %{
-  predicate(UseCompressedOops && (CompressedOops::base() == NULL));
+  predicate(UseCompressedOops && (CompressedOops::base() == NULL) && CompressedOops::need_heapbase_reg());
   match(Set mem (StoreC mem zero));
 
   ins_cost(125); // XXX
@@ -6267,7 +6223,7 @@ instruct storeImmI16(memory mem, immI16 src)
 // Store Byte Immediate
 instruct storeImmB0(memory mem, immI_0 zero)
 %{
-  predicate(UseCompressedOops && (CompressedOops::base() == NULL));
+  predicate(UseCompressedOops && (CompressedOops::base() == NULL) && CompressedOops::need_heapbase_reg());
   match(Set mem (StoreB mem zero));
 
   ins_cost(125); // XXX
@@ -6293,7 +6249,7 @@ instruct storeImmB(memory mem, immI8 src)
 // Store CMS card-mark Immediate
 instruct storeImmCM0_reg(memory mem, immI_0 zero)
 %{
-  predicate(UseCompressedOops && (CompressedOops::base() == NULL));
+  predicate(UseCompressedOops && (CompressedOops::base() == NULL) && CompressedOops::need_heapbase_reg());
   match(Set mem (StoreCM mem zero));
 
   ins_cost(125); // XXX
@@ -6332,7 +6288,7 @@ instruct storeF(memory mem, regF src)
 // Store immediate Float value (it is faster than store from XMM register)
 instruct storeF0(memory mem, immF0 zero)
 %{
-  predicate(UseCompressedOops && (CompressedOops::base() == NULL));
+  predicate(UseCompressedOops && (CompressedOops::base() == NULL) && CompressedOops::need_heapbase_reg());
   match(Set mem (StoreF mem zero));
 
   ins_cost(25); // XXX
@@ -6384,7 +6340,7 @@ instruct storeD0_imm(memory mem, immD0 src)
 
 instruct storeD0(memory mem, immD0 zero)
 %{
-  predicate(UseCompressedOops && (CompressedOops::base() == NULL));
+  predicate(UseCompressedOops && (CompressedOops::base() == NULL) && CompressedOops::need_heapbase_reg());
   match(Set mem (StoreD mem zero));
 
   ins_cost(25); // XXX
@@ -12613,7 +12569,7 @@ instruct testP_mem(rFlagsReg cr, memory op, immP0 zero)
 instruct testP_mem_reg0(rFlagsReg cr, memory mem, immP0 zero)
 %{
   predicate(UseCompressedOops && (CompressedOops::base() == NULL) &&
-            n->in(1)->as_Load()->barrier_data() == 0);
+            n->in(1)->as_Load()->barrier_data() == 0 && CompressedOops::need_heapbase_reg());
   match(Set cr (CmpP (LoadP mem) zero));
 
   format %{ "cmpq    R12, $mem\t# ptr (R12_heapbase==0)" %}
@@ -12708,7 +12664,7 @@ instruct testN_mem(rFlagsReg cr, memory mem, immN0 zero)
 
 instruct testN_mem_reg0(rFlagsReg cr, memory mem, immN0 zero)
 %{
-  predicate(CompressedOops::base() == NULL);
+  predicate(CompressedOops::base() == NULL && CompressedOops::need_heapbase_reg());
   match(Set cr (CmpN (LoadN mem) zero));
 
   format %{ "cmpl    R12, $mem\t# compressed ptr (R12_heapbase==0)" %}

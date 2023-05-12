@@ -5200,7 +5200,7 @@ void MacroAssembler::store_klass_gap(Register dst, Register src) {
 void MacroAssembler::verify_heapbase(const char* msg) {
   assert (UseCompressedOops, "should be compressed");
   assert (Universe::heap() != nullptr, "java heap should be initialized");
-  if (CheckCompressedOops) {
+  if (CheckCompressedOops && X86_ONLY(CompressedOops::need_heapbase_reg())) {
     Label ok;
     ExternalAddress src2(CompressedOops::ptrs_base_addr());
     const bool is_src2_reachable = reachable(src2);
