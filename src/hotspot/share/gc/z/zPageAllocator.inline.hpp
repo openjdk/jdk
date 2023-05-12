@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,11 @@ inline ZPageAllocatorStats::ZPageAllocatorStats(size_t min_capacity,
                                                 size_t used,
                                                 size_t used_high,
                                                 size_t used_low,
-                                                size_t reclaimed) :
+                                                size_t used_generation,
+                                                size_t freed,
+                                                size_t promoted,
+                                                size_t compacted,
+                                                size_t allocation_stalls) :
     _min_capacity(min_capacity),
     _max_capacity(max_capacity),
     _soft_max_capacity(soft_max_capacity),
@@ -41,7 +45,11 @@ inline ZPageAllocatorStats::ZPageAllocatorStats(size_t min_capacity,
     _used(used),
     _used_high(used_high),
     _used_low(used_low),
-    _reclaimed(reclaimed) {}
+    _used_generation(used_generation),
+    _freed(freed),
+    _promoted(promoted),
+    _compacted(compacted),
+    _allocation_stalls(allocation_stalls) {}
 
 inline size_t ZPageAllocatorStats::min_capacity() const {
   return _min_capacity;
@@ -71,8 +79,24 @@ inline size_t ZPageAllocatorStats::used_low() const {
   return _used_low;
 }
 
-inline size_t ZPageAllocatorStats::reclaimed() const {
-  return _reclaimed;
+inline size_t ZPageAllocatorStats::used_generation() const {
+  return _used_generation;
+}
+
+inline size_t ZPageAllocatorStats::freed() const {
+  return _freed;
+}
+
+inline size_t ZPageAllocatorStats::promoted() const {
+  return _promoted;
+}
+
+inline size_t ZPageAllocatorStats::compacted() const {
+  return _compacted;
+}
+
+inline size_t ZPageAllocatorStats::allocation_stalls() const {
+  return _allocation_stalls;
 }
 
 #endif // SHARE_GC_Z_ZPAGEALLOCATOR_INLINE_HPP

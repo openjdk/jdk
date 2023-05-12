@@ -218,7 +218,7 @@ G1CMMarkStack::TaskQueueEntryChunk* G1CMMarkStack::allocate_new_chunk() {
     return nullptr;
   }
 
-  size_t cur_idx = Atomic::fetch_and_add(&_hwm, 1u);
+  size_t cur_idx = Atomic::fetch_then_add(&_hwm, 1u);
   if (cur_idx >= _chunk_capacity) {
     return nullptr;
   }
@@ -286,7 +286,7 @@ void G1CMRootMemRegions::reset() {
 
 void G1CMRootMemRegions::add(HeapWord* start, HeapWord* end) {
   assert_at_safepoint();
-  size_t idx = Atomic::fetch_and_add(&_num_root_regions, 1u);
+  size_t idx = Atomic::fetch_then_add(&_num_root_regions, 1u);
   assert(idx < _max_regions, "Trying to add more root MemRegions than there is space " SIZE_FORMAT, _max_regions);
   assert(start != nullptr && end != nullptr && start <= end, "Start (" PTR_FORMAT ") should be less or equal to "
          "end (" PTR_FORMAT ")", p2i(start), p2i(end));
@@ -314,7 +314,7 @@ const MemRegion* G1CMRootMemRegions::claim_next() {
     return nullptr;
   }
 
-  size_t claimed_index = Atomic::fetch_and_add(&_claimed_root_regions, 1u);
+  size_t claimed_index = Atomic::fetch_then_add(&_claimed_root_regions, 1u);
   if (claimed_index < _num_root_regions) {
     return &_root_regions[claimed_index];
   }
@@ -1731,10 +1731,10 @@ void G1ConcurrentMark::report_object_count(bool mark_completed) {
   // using either the bitmap or after the cycle using the scrubbing information.
   if (mark_completed) {
     G1ObjectCountIsAliveClosure is_alive(_g1h);
-    _gc_tracer_cm->report_object_count_after_gc(&is_alive);
+    _gc_tracer_cm->report_object_count_after_gc(&is_alive, _g1h->workers());
   } else {
     G1CMIsAliveClosure is_alive(_g1h);
-    _gc_tracer_cm->report_object_count_after_gc(&is_alive);
+    _gc_tracer_cm->report_object_count_after_gc(&is_alive, _g1h->workers());
   }
 }
 

@@ -200,6 +200,10 @@ class RebuildingTransformation {
                                                         default -> throw new AssertionError("Should not reach here");
                                                     }
                                                 }
+                                                case DiscontinuedInstruction.JsrInstruction i ->
+                                                    cob.with(DiscontinuedInstruction.JsrInstruction.of(i.opcode(), labels.computeIfAbsent(i.target(), l -> cob.newLabel())));
+                                                case DiscontinuedInstruction.RetInstruction i ->
+                                                    cob.with(DiscontinuedInstruction.RetInstruction.of(i.opcode(), i.slot()));
                                                 case FieldInstruction i -> {
                                                     if (pathSwitch.nextBoolean()) {
                                                         switch (i.opcode()) {
