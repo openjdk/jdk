@@ -1125,7 +1125,7 @@ void C2_MacroAssembler::string_equals(Register a1, Register a2,
   Register tmp2 = t1;
 
   assert(elem_size == 1 || elem_size == 2, "must be 2 or 1 byte");
-  assert_different_registers(a1, a2, result, cnt1, t0, t1);
+  assert_different_registers(a1, a2, result, cnt1, tmp1, tmp2);
 
   BLOCK_COMMENT("string_equals {");
 
@@ -1167,8 +1167,8 @@ void C2_MacroAssembler::string_equals(Register a1, Register a2,
   Label TAIL03, TAIL01;
 
   // 0-7 bytes left.
-  test_bit(t0, cnt1, 2);
-  beqz(t0, TAIL03);
+  test_bit(tmp1, cnt1, 2);
+  beqz(tmp1, TAIL03);
   {
     lwu(tmp1, Address(a1, 0));
     add(a1, a1, 4);
@@ -1179,8 +1179,8 @@ void C2_MacroAssembler::string_equals(Register a1, Register a2,
 
   bind(TAIL03);
   // 0-3 bytes left.
-  test_bit(t0, cnt1, 1);
-  beqz(t0, TAIL01);
+  test_bit(tmp1, cnt1, 1);
+  beqz(tmp1, TAIL01);
   {
     lhu(tmp1, Address(a1, 0));
     add(a1, a1, 2);
@@ -1192,8 +1192,8 @@ void C2_MacroAssembler::string_equals(Register a1, Register a2,
   bind(TAIL01);
   if (elem_size == 1) { // Only needed when comparing 1-byte elements
     // 0-1 bytes left.
-    test_bit(t0, cnt1, 0);
-    beqz(t0, SAME);
+    test_bit(tmp1, cnt1, 0);
+    beqz(tmp1, SAME);
     {
       lbu(tmp1, Address(a1, 0));
       lbu(tmp2, Address(a2, 0));
