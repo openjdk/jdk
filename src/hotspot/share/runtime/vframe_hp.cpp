@@ -150,7 +150,6 @@ void compiledVFrame::create_deferred_updates_after_object_deoptimization() {
   if (lcls != nullptr) {
     for (int i2 = 0; i2 < lcls->size(); i2++) {
       StackValue* var = lcls->at(i2);
-      assert(!scopedValues->at(i2)->is_object_merge(), "sanity");
       if (var->type() == T_OBJECT && scopedValues->at(i2)->is_object()) {
         jvalue val;
         val.l = cast_from_oop<jobject>(lcls->at(i2)->get_obj()());
@@ -165,7 +164,6 @@ void compiledVFrame::create_deferred_updates_after_object_deoptimization() {
   if (exprs != nullptr) {
     for (int i2 = 0; i2 < exprs->size(); i2++) {
       StackValue* var = exprs->at(i2);
-      assert(!scopeExpressions->at(i2)->is_object_merge(), "sanity");
       if (var->type() == T_OBJECT && scopeExpressions->at(i2)->is_object()) {
         jvalue val;
         val.l = cast_from_oop<jobject>(exprs->at(i2)->get_obj()());
@@ -269,7 +267,6 @@ GrowableArray<MonitorInfo*>* compiledVFrame::monitors() const {
     MonitorValue* mv = monitors->at(index);
     ScopeValue*   ov = mv->owner();
     StackValue *owner_sv = create_stack_value(ov); // it is an oop
-    assert(!ov->is_object_merge(), "sanity");
     if (ov->is_object() && owner_sv->obj_is_scalar_replaced()) { // The owner object was scalar replaced
       assert(mv->eliminated(), "monitor should be eliminated for scalar replaced object");
       // Put klass for scalar replaced object.

@@ -163,20 +163,18 @@ class ObjectValue: public ScopeValue {
   // Accessors
   bool                        is_object() const                   { return true; }
   int                         id() const                          { return _id; }
-  ScopeValue*                 klass() const                       { return _klass; }
-  GrowableArray<ScopeValue*>* field_values()                      { return &_field_values; }
-  ScopeValue*                 field_at(int i) const               { return _field_values.at(i); }
-  int                         field_size()                        { return _field_values.length(); }
-  Handle                      value() const                       { return _value; }
+  virtual ScopeValue*         klass() const                       { return _klass; }
+  virtual GrowableArray<ScopeValue*>* field_values()              { return &_field_values; }
+  virtual ScopeValue*         field_at(int i) const               { return _field_values.at(i); }
+  virtual int                 field_size()                        { return _field_values.length(); }
+  virtual Handle              value() const                       { return _value; }
   bool                        is_visited() const                  { return _visited; }
   bool                        is_only_merge_candidate() const     { return _only_merge_candidate; }
-  bool                        skip_rematerialization() const      { return _skip_rematerialization; }
 
   void                        set_id(int id)                      { _id = id; }
-  void                        set_value(oop value);
+  virtual void                set_value(oop value);
   void                        set_visited(bool visited)           { _visited = visited; }
   void                        set_only_merge_candidate(bool cnd)  { _only_merge_candidate = cnd; }
-  void                        set_skip_rematerialization()        { _skip_rematerialization = true; }
 
   // Serialization of debugging information
   void read_object(DebugInfoReadStream* stream);
@@ -221,8 +219,15 @@ public:
   ScopeValue*                 selector() const                { return _selector; }
   ScopeValue*                 merge_pointer() const           { return _merge_pointer; }
   GrowableArray<ScopeValue*>* possible_objects()              { return &_possible_objects; }
-  ObjectValue*                select(frame* fr, RegisterMap* reg_map) ;
-  ObjectValue*                selected()                      { assert(_selected != nullptr, "not yet."); return _selected; };
+  ObjectValue*                select(frame& fr, RegisterMap& reg_map) ;
+
+  ScopeValue*                 klass() const                   { ShouldNotReachHere(); return nullptr; }
+  GrowableArray<ScopeValue*>* field_values()                  { ShouldNotReachHere(); return nullptr; }
+  ScopeValue*                 field_at(int i) const           { ShouldNotReachHere(); return nullptr; }
+  int                         field_size()                    { ShouldNotReachHere(); return -1; }
+
+  Handle                      value() const                   { assert(_selected != nullptr, "Should call select() first."); return _selected->value(); }
+  void                        set_value(oop value)            { assert(_selected != nullptr, "Should call select() first."); _selected->set_value(value); }
 
   // Serialization of debugging information
   void read_object(DebugInfoReadStream* stream);
@@ -230,7 +235,6 @@ public:
 
   // Printing
   void print_on(outputStream* st) const;
-  void print_candidates_on(outputStream* st) const;
 };
 
 class AutoBoxObjectValue : public ObjectValue {

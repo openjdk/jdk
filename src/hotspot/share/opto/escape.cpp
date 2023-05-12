@@ -512,6 +512,7 @@ bool ConnectionGraph::can_reduce_phi(PhiNode* ophi) const {
   if (phi_t == nullptr || phi_t->make_ptr() == nullptr ||
                           phi_t->make_ptr()->isa_instptr() == nullptr ||
                           !phi_t->make_ptr()->isa_instptr()->klass_is_exact()) {
+    NOT_PRODUCT(if (TraceReduceAllocationMerges) { tty->print_cr("Can NOT reduce Phi %d during invocation %d because it's nullable.", ophi->_idx, _invocation); })
     return false;
   }
 

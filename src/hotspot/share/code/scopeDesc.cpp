@@ -129,6 +129,41 @@ GrowableArray<MonitorValue*>* ScopeDesc::decode_monitor_values(int decode_offset
   return result;
 }
 
+GrowableArray<ScopeValue*>* ScopeDesc::objects_to_rematerialize(frame& frm, RegisterMap& map) {
+  if (_objects == nullptr) {
+    return nullptr;
+  }
+
+  GrowableArray<ScopeValue*>* result = new GrowableArray<ScopeValue*>();
+  for (int i = 0; i < _objects->length(); i++) {
+    assert(_objects->at(i)->is_object(), "invalid debug information");
+    ObjectValue* sv = nullptr;
+
+    if (_objects->at(i)->is_object_merge()) {
+      ObjectMergeValue* merged = _objects->at(i)->as_ObjectMergeValue();
+      sv = merged->select(frm, map);
+
+      if (sv == nullptr) {
+        continue;
+      }
+    } else if (_objects->at(i)->is_object()) {
+      sv = _objects->at(i)->as_ObjectValue();
+
+      // We skip allocation if the object is only a candidate inside an
+      // ObjectMergeValue or if it already has an allocation.
+      if (sv->is_only_merge_candidate()) {
+        continue;
+      }
+    } else {
+      assert(false, "sanity");
+    }
+
+    result->append_if_missing(sv);
+  }
+
+  return result;
+}
+
 DebugInfoReadStream* ScopeDesc::stream_at(int decode_offset) const {
   return new DebugInfoReadStream(_code, decode_offset, _objects);
 }
@@ -237,8 +272,10 @@ void ScopeDesc::print_on(outputStream* st, PcDesc* pd) const {
     st->print_cr("   Objects");
     for (int i = 0; i < _objects->length(); i++) {
       ScopeValue* sv = (ScopeValue*) _objects->at(i);
+      st->print("    - %d: ", i);
       if (sv->is_object_merge()) {
         sv->as_ObjectMergeValue()->print_on(st);
+        st->cr();
       } else if (sv->is_object()) {
         sv->as_ObjectValue()->print_on(st);
       } else {

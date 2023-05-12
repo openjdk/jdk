@@ -33,6 +33,7 @@ import compiler.lib.ir_framework.*;
  * @run driver compiler.c2.irTests.scalarReplacement.AllocationMergesTests
  */
 public class AllocationMergesTests {
+    private int invocations = 0;
     private static Point global_escape = new Point(2022, 2023);
 
     public static void main(String[] args) {
@@ -784,6 +785,43 @@ public class AllocationMergesTests {
         return val + p1.x + p2.y;
     }
 
+    @Test
+    @Arguments({ Argument.RANDOM_EACH, Argument.RANDOM_EACH, Argument.RANDOM_EACH })
+    @IR(counts = { IRNode.ALLOC, "2" }, phase = CompilePhase.PHASEIDEAL_BEFORE_EA)
+    @IR(counts = { IRNode.ALLOC, "1" }, phase = CompilePhase.ITER_GVN_AFTER_ELIMINATION)
+    int testSRAndNSR_NoTrap(boolean cond1, int x, int y) {
+        Point p = new Point(x, y);
+
+        if (cond1) {
+            p = new Point(x+1, y+1);
+            global_escape = p;
+        }
+
+        return p.y;
+    }
+
+    @Test
+    @Warmup(2000)
+    @Arguments({ Argument.RANDOM_EACH, Argument.FALSE, Argument.RANDOM_EACH, Argument.RANDOM_EACH })
+    @IR(counts = { IRNode.ALLOC, "2" }, phase = CompilePhase.PHASEIDEAL_BEFORE_EA)
+    @IR(counts = { IRNode.ALLOC, "1" }, phase = CompilePhase.ITER_GVN_AFTER_ELIMINATION)
+    int testSRAndNSR_Trap(boolean cond1, boolean cond2, int x, int y) {
+        invocations++;
+        Point p = new Point(x, y);
+
+        if (cond1) {
+            p = new Point(x+1, y+1);
+            global_escape = p;
+        }
+
+        if (invocations == 2001) {
+            // This will show up to C2 as a trap.
+            new ADefaults();
+        }
+
+        return p.y;
+    }
+
     // ------------------ Utility for Testing ------------------- //
 
     @DontCompile
@@ -840,7 +878,7 @@ public class AllocationMergesTests {
         }
     }
 
-   static class ADefaults {
+    static class ADefaults {
         static int ble;
         int i;
         @DontCompile

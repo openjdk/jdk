@@ -134,6 +134,7 @@ class ScopeDesc : public ResourceObj {
  public:
   // Verification
   void verify();
+  GrowableArray<ScopeValue*>* objects_to_rematerialize(frame& frm, RegisterMap& map);
 
 #ifndef PRODUCT
  public:

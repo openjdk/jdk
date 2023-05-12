@@ -224,15 +224,8 @@ void ObjectValue::print_fields_on(outputStream* st) const {
 // merges in C2. This method will select which path the allocation merge
 // took during execution of the Trap that triggered the rematerialization
 // of the object.
-ObjectValue* ObjectMergeValue::select(frame* fr, RegisterMap* reg_map) {
-  assert(fr != nullptr && reg_map != nullptr, "sanity");
-
-  // If we call select again on the same merge we should return the same result
-  if (_selected != nullptr) {
-    return _selected;
-  }
-
-  StackValue* sv_selector = StackValue::create_stack_value(fr, reg_map, _selector);
+ObjectValue* ObjectMergeValue::select(frame& fr, RegisterMap& reg_map) {
+  StackValue* sv_selector = StackValue::create_stack_value(&fr, &reg_map, _selector);
   jint selector = sv_selector->get_int();
 
   // If the selector is '-1' it means that execution followed the path
@@ -240,25 +233,33 @@ ObjectValue* ObjectMergeValue::select(frame* fr, RegisterMap* reg_map) {
   // Otherwise, it is the index in _possible_objects array that holds
   // the description of the scalar replaced object.
   if (selector == -1) {
-    StackValue* sv_merge_pointer = StackValue::create_stack_value(fr, reg_map, _merge_pointer);
+    StackValue* sv_merge_pointer = StackValue::create_stack_value(&fr, &reg_map, _merge_pointer);
     _selected = new ObjectValue(id());
 
     // Retrieve the pointer to the real object and use it as if we had
     // allocated it during the deoptimization
     _selected->set_value(sv_merge_pointer->get_obj()());
 
-    // No need to allocate the object or do field reassignment since
-    // the object wasn't really scalar replaced.
-    _selected->set_skip_rematerialization();
+    // No need to rematerialize
+    return nullptr;
   } else {
     assert(selector < _possible_objects.length(), "sanity");
     _selected = (ObjectValue*) _possible_objects.at(selector);
 
-    // Candidate is not candidate anymore.
-    _selected->set_only_merge_candidate(false);
-  }
+    // Set it to true so that the object will get rematerialized
+    if (_selected->is_only_merge_candidate()) {
+      _selected->set_only_merge_candidate(false);
 
-  return _selected;
+      // We can't assume that 'select(...)' will be called before we check if
+      // the candidate needs to be rematerialized or not. Therefore, we need to
+      // return the candidate, now set to 'not only merge candidate', and try to
+      // rematerialize it.
+      return _selected;
+    } else {
+      // Since the object was not only a candidate it will already be rematerialized on its own.
+      return nullptr;
+    }
+  }
 }
 
 void ObjectMergeValue::read_object(DebugInfoReadStream* stream) {
@@ -292,13 +293,11 @@ void ObjectMergeValue::write_on(DebugInfoWriteStream* stream) {
 }
 
 void ObjectMergeValue::print_on(outputStream* st) const {
-  st->print("merge: ID=%d, N.Candidates=%d", _id, _possible_objects.length());
-}
-
-void ObjectMergeValue::print_candidates_on(outputStream* st) const {
   int ncandidates = _possible_objects.length();
-  for (int i = 0; i < ncandidates; i++) {
-    _possible_objects.at(i)->as_ObjectValue()->print_on(st);
+  st->print("merge: ID=%d, Candidates excluding potential NSR pointer: ", _id);
+  st->print("%d", _possible_objects.at(0)->as_ObjectValue()->id());
+  for (int i = 1; i < ncandidates; i++) {
+    st->print(", %d", _possible_objects.at(i)->as_ObjectValue()->id());
   }
 }
 

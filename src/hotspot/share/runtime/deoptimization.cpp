@@ -291,40 +291,19 @@ JRT_END
 #if COMPILER2_OR_JVMCI
 // print information about reallocated objects
 static void print_objects(JavaThread* deoptee_thread,
-                          GrowableArray<ScopeValue*>* objects, bool realloc_failures,
-                          frame* frame, RegisterMap* reg_map) {
+                          GrowableArray<ScopeValue*>* objects, bool realloc_failures) {
   ResourceMark rm;
   stringStream st;  // change to logStream with logging
   st.print_cr("REALLOC OBJECTS in thread " INTPTR_FORMAT, p2i(deoptee_thread));
   fieldDescriptor fd;
 
   for (int i = 0; i < objects->length(); i++) {
-    ObjectValue* sv = nullptr;
-    Klass* k = nullptr;
-
-    if (objects->at(i)->is_object_merge()) {
-      ObjectMergeValue* merged = objects->at(i)->as_ObjectMergeValue();
-      sv = merged->select(frame, reg_map);
-      // Klass may be null if the object was actually a NSR input of a merge.
-      k = (sv->klass() != nullptr) ? java_lang_Class::as_Klass(sv->klass()->as_ConstantOopReadValue()->value()()) : nullptr;
-    } else if (objects->at(i)->is_object()) {
-      sv = objects->at(i)->as_ObjectValue();
-      // This object is only a candidate inside an ObjectMergeValue
-      if (sv->is_only_merge_candidate()) {
-        continue;
-      }
-      k = java_lang_Class::as_Klass(sv->klass()->as_ConstantOopReadValue()->value()());
-    }
-
+    ObjectValue* sv = (ObjectValue*) objects->at(i);
+    Klass* k = java_lang_Class::as_Klass(sv->klass()->as_ConstantOopReadValue()->value()());
     Handle obj = sv->value();
 
-    st.print("     object <" INTPTR_FORMAT ">", p2i(sv->value()()));
-    if (k == nullptr) {
-      st.print(" NSR input from an allocation merge.");
-    } else {
-      st.print(" of type ");
-      k->print_value_on(&st);
-    }
+    st.print("     object <" INTPTR_FORMAT "> of type ", p2i(sv->value()()));
+    k->print_value_on(&st);
     assert(obj.not_null() || realloc_failures, "reallocation was missed");
     if (obj.is_null()) {
       st.print(" allocation failed");
@@ -333,7 +312,7 @@ static void print_objects(JavaThread* deoptee_thread,
     }
     st.cr();
 
-    if (Verbose && !obj.is_null() && k != nullptr) {
+    if (Verbose && !obj.is_null()) {
       k->oop_print_on(obj(), &st);
     }
   }
@@ -350,7 +329,7 @@ static bool rematerialize_objects(JavaThread* thread, int exec_mode, CompiledMet
   assert(exec_mode == Deoptimization::Unpack_none || (deoptee_thread == thread),
          "a frame can only be deoptimized by the owner thread");
 
-  GrowableArray<ScopeValue*>* objects = chunk->at(0)->scope()->objects();
+  GrowableArray<ScopeValue*>* objects = chunk->at(0)->scope()->objects_to_rematerialize(deoptee, map);
 
   // The flag return_oop() indicates call sites which return oop
   // in compiled code. Such sites include java method calls,
@@ -391,7 +370,7 @@ static bool rematerialize_objects(JavaThread* thread, int exec_mode, CompiledMet
     bool skip_internal = (compiled_method != nullptr) && !compiled_method->is_compiled_by_jvmci();
     Deoptimization::reassign_fields(&deoptee, &map, objects, realloc_failures, skip_internal);
     if (TraceDeoptimization) {
-      print_objects(deoptee_thread, objects, realloc_failures, &deoptee, &map);
+      print_objects(deoptee_thread, objects, realloc_failures);
     }
   }
   if (save_oop_result) {
@@ -1230,34 +1209,7 @@ bool Deoptimization::realloc_objects(JavaThread* thread, frame* fr, RegisterMap*
 
   for (int i = 0; i < objects->length(); i++) {
     assert(objects->at(i)->is_object(), "invalid debug information");
-    ObjectValue* sv = nullptr;
-
-    if (objects->at(i)->is_object_merge()) {
-      ObjectMergeValue* merged = objects->at(i)->as_ObjectMergeValue();
-      sv = merged->select(fr, reg_map);
-
-      // 'skip_rematerialization' will be true whenever the object was a NSR
-      // input of an allocation merge.
-      // 'value' will be not null if the object selected in the merge was a
-      // 'not_only_candidate' and it was visited by this loop before the current
-      // iteration.
-      if (sv->skip_rematerialization() || sv->value().not_null()) {
-        continue;
-      }
-    } else if (objects->at(i)->is_object()) {
-      sv = objects->at(i)->as_ObjectValue();
-
-      // We skip allocation if the object is only a candidate inside an
-      // ObjectMergeValue or if it already has an allocation. The object may
-      // already be allocated if it was the result of a 'select' on an
-      // ObjectMergeValue.
-      if (sv->is_only_merge_candidate() || sv->value().not_null()) {
-        continue;
-      }
-    } else {
-      assert(false, "sanity");
-    }
-
+    ObjectValue* sv = (ObjectValue*) objects->at(i);
     Klass* k = java_lang_Class::as_Klass(sv->klass()->as_ConstantOopReadValue()->value()());
     oop obj = nullptr;
 
@@ -1611,26 +1563,7 @@ static int reassign_fields_by_klass(InstanceKlass* klass, frame* fr, RegisterMap
 void Deoptimization::reassign_fields(frame* fr, RegisterMap* reg_map, GrowableArray<ScopeValue*>* objects, bool realloc_failures, bool skip_internal) {
   for (int i = 0; i < objects->length(); i++) {
     assert(objects->at(i)->is_object(), "invalid debug information");
-    ObjectValue* sv = nullptr;
-
-    if (objects->at(i)->is_object_merge()) {
-      // Merge objects don't need field reassignment
-      continue;
-    } else if (objects->at(i)->is_object()) {
-      sv = objects->at(i)->as_ObjectValue();
-
-      // If the object is only a candidate inside an ObjectMergeValue we
-      // skip processing it.
-      //
-      // If the pointer didn't come from a scalar replaced object then
-      // we don't need to do field reassignment.
-      if (sv->is_only_merge_candidate() || sv->skip_rematerialization()) {
-        continue;
-      }
-    } else {
-      assert(false, "sanity");
-    }
-
+    ObjectValue* sv = (ObjectValue*) objects->at(i);
     Klass* k = java_lang_Class::as_Klass(sv->klass()->as_ConstantOopReadValue()->value()());
     Handle obj = sv->value();
     assert(obj.not_null() || realloc_failures, "reallocation was missed");
