@@ -112,17 +112,13 @@ public class DragTriggerEventTest {
             robot.mouseMove(srcPoint.x, srcPoint.y);
             robot.mousePress(InputEvent.BUTTON1_MASK);
             mouse1Pressed = true;
-            robot.waitForIdle();
             robot.mouseRelease(InputEvent.BUTTON1_MASK);
             mouse1Pressed = false;
-            robot.waitForIdle();
 
             robot.keyPress(KeyEvent.VK_CONTROL);
             ctrlPressed = true;
-            robot.waitForIdle();
             robot.mousePress(InputEvent.BUTTON1_MASK);
             mouse1Pressed = true;
-            robot.waitForIdle();
 
             Point p = new Point(srcPoint);
             while (!p.equals(dstPoint)) {
