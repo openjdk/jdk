@@ -1200,6 +1200,16 @@ public class RandomSupport {
          * (September 1977), 253-256. DOI: https://doi.org/10.1145/355744.355749
          *
          */
+        long U1 = rng.nextLong();
+        // Experimentation on a variety of machines indicates that it is overall much faster
+        // to do the following & and < operations on longs rather than first cast U1 to int
+        // (but then we need to cast to int before doing the array indexing operation).
+        long i = U1 & DoubleZigguratTables.exponentialLayerMask;
+        if (i < DoubleZigguratTables.exponentialNumberOfLayers) {
+            // This is the fast path (occurring more than 98% of the time).  Make an early exit.
+            return DoubleZigguratTables.exponentialX[(int)i] * (U1 >>> 1);
+        }
+        // We didn't use the upper part of U1 after all.  We'll probably be able to use it later.
         if (maxValue <= 0.0) {
             return 0.0;
         }
@@ -1210,16 +1220,6 @@ public class RandomSupport {
             // Conversion to long rounds toward zero
             maxExtraMinus1 = (long) (maxValue / DoubleZigguratTables.exponentialX0);
         }
-        long U1 = rng.nextLong();
-        // Experimentation on a variety of machines indicates that it is overall much faster
-        // to do the following & and < operations on longs rather than first cast U1 to int
-        // (but then we need to cast to int before doing the array indexing operation).
-        long i = U1 & DoubleZigguratTables.exponentialLayerMask;
-        if (i < DoubleZigguratTables.exponentialNumberOfLayers) {
-            // This is the fast path (occurring more than 98% of the time).  Make an early exit.
-            return DoubleZigguratTables.exponentialX[(int)i] * (U1 >>> 1);
-        }
-        // We didn't use the upper part of U1 after all.  We'll be able to use it later.
         for (long extra = 0; ; ) {
             // Use Walker's alias method to sample an (unsigned) integer j from a discrete
             // probability distribution that includes the tail and all the ziggurat overhangs;
