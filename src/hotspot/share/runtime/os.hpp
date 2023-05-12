@@ -310,7 +310,13 @@ class os: AllStatic {
     return (_processor_count != 1);
   }
 
+  // On some platforms there is a distinction between "available" memory and "free" memory.
+  // For example, on Linux, "available" memory (`MemAvailable` in `/proc/meminfo`) is greater
+  // than "free" memory (`MemFree` in `/proc/meminfo`) because Linux can free memory
+  // aggressively (e.g. clear caches) so that it becomes available.
   static julong available_memory();
+  static julong free_memory();
+
   static julong physical_memory();
   static bool has_allocatable_memory_limit(size_t* limit);
   static bool is_server_class_machine();

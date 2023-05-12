@@ -109,6 +109,9 @@
 #if INCLUDE_PARALLELGC
 #include "gc/parallel/parallelScavengeHeap.inline.hpp"
 #endif // INCLUDE_PARALLELGC
+#if INCLUDE_ZGC
+#include "gc/z/zAddress.inline.hpp"
+#endif // INCLUDE_ZGC
 #if INCLUDE_JVMCI
 #include "jvmci/jvmciEnv.hpp"
 #include "jvmci/jvmciRuntime.hpp"
@@ -397,7 +400,11 @@ WB_ENTRY(jboolean, WB_isObjectInOldGen(JNIEnv* env, jobject o, jobject obj))
 #endif
 #if INCLUDE_ZGC
   if (UseZGC) {
-    return Universe::heap()->is_in(p);
+    if (ZGenerational) {
+      return ZHeap::heap()->is_old(to_zaddress(p));
+    } else {
+      return Universe::heap()->is_in(p);
+    }
   }
 #endif
 #if INCLUDE_SHENANDOAHGC
