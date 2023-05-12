@@ -863,9 +863,9 @@ void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mar
                                                         _collection_set->young_region_length());
     }
 
-    if (_collection_set->old_region_length() > 0) {
+    if (_collection_set->initial_old_region_length() > 0) {
       _analytics->report_non_young_other_cost_per_region_ms(non_young_other_time_ms() /
-                                                            _collection_set->old_region_length());
+                                                            _collection_set->initial_old_region_length());
     }
 
     _analytics->report_constant_other_time_ms(constant_other_time_ms(pause_time_ms));

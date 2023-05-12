@@ -56,7 +56,7 @@ G1CollectionSet::G1CollectionSet(G1CollectedHeap* g1h, G1Policy* policy) :
   _collection_set_max_length(0),
   _eden_region_length(0),
   _survivor_region_length(0),
-  _initial_old_regions(),
+  _initial_old_region_length(0),
   _optional_old_regions(),
   _inc_build_state(Inactive),
   _inc_part_start(0) {
@@ -77,7 +77,7 @@ void G1CollectionSet::init_region_lengths(uint eden_cset_region_length,
   assert((size_t)young_region_length() == _collection_set_cur_length,
          "Young region length %u should match collection set length %u", young_region_length(), _collection_set_cur_length);
 
-  _initial_old_regions.clear();
+  _initial_old_region_length = 0;
   _optional_old_regions.clear();
 }
 
@@ -91,7 +91,7 @@ void G1CollectionSet::initialize(uint max_region_length) {
 
 void G1CollectionSet::abandon_all_candidates() {
   _candidates.clear();
-  _initial_old_regions.clear();
+  _initial_old_region_length = 0;
   _optional_old_regions.clear();
 }
 
@@ -107,6 +107,7 @@ void G1CollectionSet::add_old_region(HeapRegion* hr) {
 
   assert(_collection_set_cur_length < _collection_set_max_length, "Collection set now larger than maximum size.");
   _collection_set_regions[_collection_set_cur_length++] = hr->hrm_index();
+  _initial_old_region_length++;
 
   _g1h->old_set_remove(hr);
 }
@@ -322,16 +323,16 @@ void G1CollectionSet::finalize_old_part(double time_remaining_ms) {
   if (collector_state()->in_mixed_phase()) {
     candidates()->verify();
 
-    assert(_initial_old_regions.length() == 0, "must be");
+    G1CollectionSetRegionList initial_old_regions;
     assert(_optional_old_regions.length() == 0, "must be");
 
     _policy->select_candidates_from_marking(&candidates()->marking_regions(),
                                             time_remaining_ms,
-                                            &_initial_old_regions,
+                                            &initial_old_regions,
                                             &_optional_old_regions);
 
     // Move initially selected old regions to collection set directly.
-    move_candidates_to_collection_set(&_initial_old_regions);
+    move_candidates_to_collection_set(&initial_old_regions);
     // Only prepare selected optional regions for now.
     prepare_optional_regions(&_optional_old_regions);
 

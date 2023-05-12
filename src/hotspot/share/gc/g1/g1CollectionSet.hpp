@@ -148,8 +148,8 @@ class G1CollectionSet {
 
   uint _eden_region_length;
   uint _survivor_region_length;
+  uint _initial_old_region_length;
 
-  G1CollectionSetRegionList _initial_old_regions;
   // When doing mixed collections we can add old regions to the collection set, which
   // will be collected only if there is enough time. We call these optional (old) regions.
   G1CollectionSetRegionList _optional_old_regions;
@@ -214,16 +214,16 @@ public:
                            uint survivor_cset_region_length);
 
   uint region_length() const       { return young_region_length() +
-                                            old_region_length(); }
+                                            initial_old_region_length(); }
   uint young_region_length() const { return eden_region_length() +
                                             survivor_region_length(); }
 
   uint eden_region_length() const     { return _eden_region_length; }
   uint survivor_region_length() const { return _survivor_region_length; }
-  uint old_region_length() const      { return _initial_old_regions.length(); }
+  uint initial_old_region_length() const      { return _initial_old_region_length; }
   uint optional_region_length() const { return _optional_old_regions.length(); }
 
-  bool only_contains_young_regions() const { return (old_region_length() + optional_region_length()) == 0; }
+  bool only_contains_young_regions() const { return (initial_old_region_length() + optional_region_length()) == 0; }
 
   // Reset the contents of the collection set.
   void clear();
