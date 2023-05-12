@@ -190,14 +190,11 @@ void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register
       xorptr(t1, t1);
       movl(Address(obj, arrayOopDesc::length_offset_in_bytes() + sizeof(jint)), t1);
     }
-#endif
-  }
-#ifdef _LP64
-  else if (UseCompressedClassPointers && !UseCompactObjectHeaders) {
+  } else if (UseCompressedClassPointers && !UseCompactObjectHeaders) {
     xorptr(t1, t1);
     store_klass_gap(obj, t1);
-  }
 #endif
+  }
 }
 
 
