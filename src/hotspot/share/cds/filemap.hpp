@@ -74,7 +74,8 @@ public:
                            _from_class_path_attr(false), _timestamp(0),
                            _filesize(0), _name(nullptr), _manifest(nullptr) {}
   static int size() {
-    return align_metadata_size(sizeof(SharedClassPathEntry));
+    static_assert(is_aligned(sizeof(SharedClassPathEntry), wordSize), "must be");
+    return (int)(sizeof(SharedClassPathEntry) / wordSize);
   }
   void init(bool is_modules_image, bool is_module_path, ClassPathEntry* cpe, TRAPS);
   void init_as_non_existent(const char* path, TRAPS);
