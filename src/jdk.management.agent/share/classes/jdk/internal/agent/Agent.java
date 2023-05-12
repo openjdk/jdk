@@ -35,6 +35,7 @@ import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.UnknownHostException;
+import java.nio.BufferUnderflowException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.text.MessageFormat;
@@ -502,8 +503,8 @@ public class Agent {
             Map<String,String> remoteProps = null;
             try {
                 remoteProps = ConnectorAddressLink.importRemoteFrom(0);
-            } catch (IOException ioe) {
-                warning(AGENT_EXCEPTION, "JDP not starting, PerfData not available: " + ioe.getMessage());
+            } catch (BufferUnderflowException bue) {
+                warning(AGENT_EXCEPTION, "JDP not starting, PerfData not available");
             }
             if (remoteProps != null) {
                 String jmxUrlStr = remoteProps.get("sun.management.JMXConnectorServer.0.remoteAddress");

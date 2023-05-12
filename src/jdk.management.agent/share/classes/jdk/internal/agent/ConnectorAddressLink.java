@@ -204,9 +204,6 @@ public class ConnectorAddressLink {
         } catch (IllegalArgumentException iae) {
             throw new IOException(iae.getMessage());
         }
-        if (bb.capacity() == 0) {
-            throw new IOException("Empty PerfData buffer");
-        }
         List<Counter> counters = new PerfInstrumentation(bb).getAllCounters();
         Map<String, String> properties = new HashMap<>();
         for (Counter c : counters) {
