@@ -2077,7 +2077,7 @@ uint os::processor_id() {
     // Assign processor id to APIC id
     processor_id = Atomic::cmpxchg(&processor_id_map[apic_id], processor_id_unassigned, processor_id_assigning);
     if (processor_id == processor_id_unassigned) {
-      processor_id = Atomic::fetch_and_add(&processor_id_next, 1) % os::processor_count();
+      processor_id = Atomic::fetch_then_add(&processor_id_next, 1) % os::processor_count();
       Atomic::store(&processor_id_map[apic_id], processor_id);
     }
   }
