@@ -107,7 +107,7 @@ public class DragTriggerEventTest {
         });
         dstPoint.translate(d.width / 2, d.height / 2);
 
-        for (int delay = 8; delay < 10000 && !panel.getResult(); delay *= 2) {
+        for (int delay = 32; delay < 10000 && !panel.getResult(); delay *= 2) {
             System.err.println("attempt to drag with delay " + delay);
             robot.mouseMove(srcPoint.x, srcPoint.y);
             robot.mousePress(InputEvent.BUTTON1_MASK);

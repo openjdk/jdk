@@ -103,7 +103,7 @@ public class DropActionChangedTest {
         robot.delay(2000);
         robot.mouseMove(250, 250);
         robot.mousePress(InputEvent.BUTTON1_MASK);
-        robot.waitForIdle();
+        robot.delay(1000);
         for (int y = 250; y < 350; y+=5) {
                 robot.mouseMove(250, y);
                 robot.delay(100);
