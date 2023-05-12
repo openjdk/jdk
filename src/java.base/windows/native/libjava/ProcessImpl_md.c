@@ -382,9 +382,10 @@ Java_java_lang_ProcessImpl_create(JNIEnv *env, jclass ignored,
                     if (handles != NULL) {
                         // Copy command line to mutable char buffer; CreateProcessW may modify it
                         jsize cmdLen = (*env)->GetStringLength(env, cmd);
-                        WCHAR *pcmdCopy = (WCHAR*)malloc(cmdLen * sizeof(WCHAR));
+                        WCHAR *pcmdCopy = (WCHAR*)malloc((cmdLen + 1) * sizeof(WCHAR));
                         if (pcmdCopy != NULL) {
                             wmemcpy(pcmdCopy, pcmd, cmdLen);
+                            pcmdCopy[cmdLen] = 0;    // null terminate
 
                             ret = processCreate(
                                 env,
