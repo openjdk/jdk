@@ -250,7 +250,7 @@ inline oop PSPromotionManager::copy_unmarked_to_survivor_space(oop o,
   if (UseCompactObjectHeaders) {
     // The copy above is not atomic. Make sure we have seen the proper mark
     // and re-install it into the copy, so that Klass* is guaranteed to be correct.
-    markWord mark = o->mark_acquire();
+    markWord mark = o->mark();
     if (!mark.is_marked()) {
       new_obj->set_mark(mark);
       ContinuationGCSupport::transform_stack_chunk(new_obj);

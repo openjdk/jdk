@@ -324,7 +324,7 @@ inline oop ShenandoahHeap::evacuate_object(oop p, Thread* thread) {
   if (UseCompactObjectHeaders) {
     // The copy above is not atomic. Make sure we have seen the proper mark
     // and re-install it into the copy, so that Klass* is guaranteed to be correct.
-    markWord mark = copy_val->mark_acquire();
+    markWord mark = copy_val->mark();
     if (!mark.is_marked()) {
       copy_val->set_mark(mark);
       ContinuationGCSupport::relativize_stack_chunk(copy_val);
