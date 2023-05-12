@@ -180,12 +180,13 @@ void InterpreterMacroAssembler::get_unsigned_2_byte_index_at_bcp(Register reg, i
   if (AvoidUnalignedAccesses && (bcp_offset % 2)) {
     lbu(t1, Address(xbcp, bcp_offset));
     lbu(reg, Address(xbcp, bcp_offset + 1));
-    slli(reg, reg, 8);
-    add(reg, t1, reg);
+    slli(t1, t1, 8);
+    add(reg, reg, t1);
   } else {
     lhu(reg, Address(xbcp, bcp_offset));
+    revb_h_h_u(reg, reg);
   }
-  revb_h(reg, reg);
+  
 }
 
 void InterpreterMacroAssembler::get_dispatch() {
