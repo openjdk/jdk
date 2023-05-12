@@ -61,6 +61,7 @@ import jtreg.SkippedException;
  * @key headful
  * @summary Tests the location of the heavy weight popup portion of JComboBox,
  * JMenu and JPopupMenu.
+ * On MAC disable all system shortcuts before executing this test case.
  * @library ../regtesthelpers
  * @library /test/lib
  * @build Util
