@@ -149,7 +149,7 @@ public class stop002 {
             log.display("\nTEST #1: Trying to stop debuggee thread using non-throwable object.");
             try {
                 thrRef.stop(objRef); // objRef is an instance of the debuggee class, not a Throwable
-                log.complain("TEST #1 FAILED: expected IllegalArgumentException was not thrown");
+                log.complain("TEST #1 FAILED: expected InvalidTypeException was not thrown");
                 tot_res = Consts.TEST_FAILED;
             } catch (InvalidTypeException ee) {
                 log.display("TEST #1 PASSED: caught expected " + ee);
