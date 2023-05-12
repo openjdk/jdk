@@ -6130,6 +6130,7 @@ void C2_MacroAssembler::vector_rearrange_int_float(BasicType bt, XMMRegister dst
   }
 }
 
+#ifdef _LP64
 void C2_MacroAssembler::load_nklass_compact_c2(Register dst, Register obj) {
   C2LoadNKlassStub* stub = new (Compile::current()->comp_arena()) C2LoadNKlassStub(dst);
   Compile::current()->output()->add_stub(stub);
@@ -6139,3 +6140,4 @@ void C2_MacroAssembler::load_nklass_compact_c2(Register dst, Register obj) {
   bind(stub->continuation());
   shrq(dst, markWord::klass_shift);
 }
+#endif
