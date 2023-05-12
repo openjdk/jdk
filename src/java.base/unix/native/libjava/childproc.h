@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,7 +85,6 @@ extern char **environ;
 #define MODE_FORK 1
 #define MODE_POSIX_SPAWN 2
 #define MODE_VFORK 3
-#define MODE_CLONE 4
 
 typedef struct _ChildStuff
 {

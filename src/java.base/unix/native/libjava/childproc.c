@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -210,7 +210,7 @@ execve_with_shell_fallback(int mode, const char *file,
                            const char *argv[],
                            const char *const envp[])
 {
-    if (mode == MODE_CLONE || mode == MODE_VFORK) {
+    if (mode == MODE_VFORK) {
         /* shared address space; be very careful. */
         execve(file, (char **) argv, (char **) envp);
         if (errno == ENOEXEC)

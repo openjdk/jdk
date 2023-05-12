@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -487,14 +487,14 @@ static pid_t
 spawnChild(JNIEnv *env, jobject process, ChildStuff *c, const char *helperpath) {
     pid_t resultPid;
     int i, offset, rval, bufsize, magic;
-    char *buf, buf1[16];
+    char *buf, buf1[24];
     char *hlpargs[2];
     SpawnInfo sp;
 
     /* need to tell helper which fd is for receiving the childstuff
      * and which fd to send response back on
      */
-    snprintf(buf1, sizeof(buf1), "%d:%d", c->childenv[0], c->fail[1]);
+    snprintf(buf1, sizeof(buf1), "%d:%d:%d", c->childenv[0], c->childenv[1], c->fail[1]);
     /* put the fd string as argument to the helper cmd */
     hlpargs[0] = buf1;
     hlpargs[1] = 0;
@@ -553,10 +553,10 @@ spawnChild(JNIEnv *env, jobject process, ChildStuff *c, const char *helperpath) 
     magic = magicNumber();
 
     /* write the two structs and the data buffer */
-    write(c->childenv[1], (char *)&magic, sizeof(magic)); // magic number first
-    write(c->childenv[1], (char *)c, sizeof(*c));
-    write(c->childenv[1], (char *)&sp, sizeof(sp));
-    write(c->childenv[1], buf, bufsize);
+    restartableWrite(c->childenv[1], (char *)&magic, sizeof(magic)); // magic number first
+    restartableWrite(c->childenv[1], (char *)c, sizeof(*c));
+    restartableWrite(c->childenv[1], (char *)&sp, sizeof(sp));
+    restartableWrite(c->childenv[1], buf, bufsize);
     free(buf);
 
     /* In this mode an external main() in invoked which calls back into
