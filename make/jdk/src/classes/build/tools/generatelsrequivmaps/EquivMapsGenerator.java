@@ -60,7 +60,9 @@ public class EquivMapsGenerator {
         }
         copyrightYear = Integer.parseInt(args[2]);
         readLSRfile(args[0]);
+        // Builds the maps from the IANA data
         generateEquivalentMap();
+        // Writes the maps out to LocaleEquivalentMaps.java
         generateSourceCode(args[1]);
     }
 
@@ -230,7 +232,7 @@ public class EquivMapsGenerator {
             writeMultiEquiv(writer);
             writeEquiv(writer, "regionVariantEquivMap", sortedRegionVariantMap);
             writer.newLine();
-            writer.write(footerText);
+            writer.write(FOOTER_TEXT);
         } catch (IOException ex) {
             ex.printStackTrace(System.err);
             System.exit(1);
@@ -283,6 +285,14 @@ public class EquivMapsGenerator {
                 static final Map<String, String[]> multiEquivsMap;
                 static final Map<String, String> regionVariantEquivMap;
 
+            """;
+
+    private static final String FOOTER_TEXT =
+            """
+                }
+
+
+            }
             """;
 
     private static String getMapsText() {
@@ -340,6 +350,4 @@ public class EquivMapsGenerator {
         }
         return outputStr;
     }
-
-    private static final String footerText = "    }\n\n}";
 }
