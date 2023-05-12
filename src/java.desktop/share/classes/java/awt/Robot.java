@@ -439,8 +439,8 @@ public class Robot {
      * @param   x       X position of pixel
      * @param   y       Y position of pixel
      * @throws  SecurityException if {@code readDisplayPixels} permission
-     *          is not granted, or the user has not allowed any of their screens
-     *          to be captured.
+     *          is not granted, or access to the screen is denied
+     *          by the desktop environment
      * @return  Color of the pixel
      */
     public synchronized Color getPixelColor(int x, int y) {
@@ -468,8 +468,8 @@ public class Robot {
      * @throws  IllegalArgumentException if {@code screenRect} width and height
      *          are not greater than zero
      * @throws  SecurityException if {@code readDisplayPixels} permission
-     *          is not granted, or the user has not allowed any of their screens
-     *          to be captured.
+     *          is not granted, or access to the screen is denied
+     *          by the desktop environment
      * @see     SecurityManager#checkPermission
      * @see     AWTPermission
      */
