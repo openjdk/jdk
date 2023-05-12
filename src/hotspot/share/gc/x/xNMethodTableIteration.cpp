@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,7 @@ void XNMethodTableIteration::nmethods_do(NMethodClosure* cl) {
     // Claim table partition. Each partition is currently sized to span
     // two cache lines. This number is just a guess, but seems to work well.
     const size_t partition_size = (XCacheLineSize * 2) / sizeof(XNMethodTableEntry);
-    const size_t partition_start = MIN2(Atomic::fetch_and_add(&_claimed, partition_size), _size);
+    const size_t partition_start = MIN2(Atomic::fetch_then_add(&_claimed, partition_size), _size);
     const size_t partition_end = MIN2(partition_start + partition_size, _size);
     if (partition_start == partition_end) {
       // End of table
