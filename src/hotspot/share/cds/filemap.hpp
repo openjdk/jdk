@@ -109,7 +109,6 @@ public:
 class SharedPathTable {
   Array<u8>* _table;
   int _size;
-  static SharedClassPathEntry* path_at(Array<u8>* table, int size, int index);
 public:
   SharedPathTable() : _table(nullptr), _size(0) {}
   SharedPathTable(Array<u8>* table, int size) : _table(table), _size(size) {}

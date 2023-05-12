@@ -492,6 +492,10 @@ void ArchiveBuilder::gather_source_objs() {
   GatherSortedSourceObjs doit(this);
   iterate_sorted_roots(&doit);
   doit.finish();
+  // Normally, all the embedded pointers are remembered inside the iterate_sorted_roots()
+  // call above. However, the embedded pointers in SharedPathTable (filemap.cpp) are not
+  // remembered because they are not proper MetaspaceObjs -- see comments in
+  // SharedPathTable::metaspace_pointers_do. We need to handle them specially.
   FileMapInfo::remember_embedded_pointers();
 }
 
