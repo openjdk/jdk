@@ -1215,6 +1215,17 @@ public:
   }
 };
 
+class G1ObjectCountIsAliveClosure: public BoolObjectClosure {
+  G1CollectedHeap* _g1h;
+public:
+  G1ObjectCountIsAliveClosure(G1CollectedHeap* g1h) : _g1h(g1h) { }
+
+  bool do_object_b(oop obj) {
+    return obj != nullptr &&
+           (!_g1h->is_in_reserved(obj) || !_g1h->is_obj_dead(obj));
+  }
+};
+
 void G1ConcurrentMark::remark() {
   assert_at_safepoint_on_vm_thread();
 
@@ -1297,6 +1308,12 @@ void G1ConcurrentMark::remark() {
     reset_at_marking_complete();
 
     G1CollectedHeap::finish_codecache_marking_cycle();
+
+    {
+      GCTraceTime(Debug, gc, phases) debug("Report Object Count", _gc_timer_cm);
+      G1ObjectCountIsAliveClosure is_alive(_g1h);
+      _gc_tracer_cm->report_object_count_after_gc(&is_alive, _g1h->workers());
+    }
   } else {
     // We overflowed.  Restart concurrent marking.
     _restart_for_overflow = true;
@@ -1306,11 +1323,6 @@ void G1ConcurrentMark::remark() {
     // Clear the marking state because we will be restarting
     // marking due to overflowing the global mark stack.
     reset_marking_for_restart();
-  }
-
-  {
-    GCTraceTime(Debug, gc, phases) debug("Report Object Count", _gc_timer_cm);
-    report_object_count(mark_finished);
   }
 
   // Statistics
@@ -1713,29 +1725,6 @@ void G1ConcurrentMark::preclean() {
                                      &enqueue,
                                      &yield_cl,
                                      _gc_timer_cm);
-}
-
-class G1ObjectCountIsAliveClosure: public BoolObjectClosure {
-  G1CollectedHeap* _g1h;
-public:
-  G1ObjectCountIsAliveClosure(G1CollectedHeap* g1h) : _g1h(g1h) { }
-
-  bool do_object_b(oop obj) {
-    return obj != nullptr &&
-           (!_g1h->is_in_reserved(obj) || !_g1h->is_obj_dead(obj));
-  }
-};
-
-void G1ConcurrentMark::report_object_count(bool mark_completed) {
-  // Depending on the completion of the marking liveness needs to be determined
-  // using either the bitmap or after the cycle using the scrubbing information.
-  if (mark_completed) {
-    G1ObjectCountIsAliveClosure is_alive(_g1h);
-    _gc_tracer_cm->report_object_count_after_gc(&is_alive, _g1h->workers());
-  } else {
-    G1CMIsAliveClosure is_alive(_g1h);
-    _gc_tracer_cm->report_object_count_after_gc(&is_alive, _g1h->workers());
-  }
 }
 
 // Closure for marking entries in SATB buffers.
