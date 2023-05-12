@@ -698,10 +698,6 @@ const int ObjectAlignmentInBytes = 8;
                "Disable the use of stack guard pages if the JVM is loaded " \
                "on the primordial process thread")                          \
                                                                             \
-  product(bool, PostVirtualThreadCompatibleLifecycleEvents, true, EXPERIMENTAL, \
-               "Post virtual thread ThreadStart and ThreadEnd events for "  \
-               "virtual thread unaware agents")                             \
-                                                                            \
   product(bool, DoJVMTIVirtualThreadTransitions, true, EXPERIMENTAL,        \
                "Do JVMTI virtual thread mount/unmount transitions "         \
                "(disabling this flag implies no JVMTI events are posted)")  \
