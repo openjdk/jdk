@@ -36,7 +36,7 @@ import java.util.Arrays;
 
 /*
  * This class implements the Hierarchical Signature System using the
- * Leighton-Micali Signatures (LMS) as described in RFC 8554 and NIST Special publication 800-208
+ * Leighton-Micali Signatures (LMS) as described in RFC 8554 and NIST Special publication 800-208.
  */
 public final class HSS extends SignatureSpi {
     private HSSPublicKey pubKey;
@@ -433,7 +433,7 @@ public final class HSS extends SignatureSpi {
 
             int sigArrLen = (12 + n * (p + 1) + m * h);
             if ((q >= (1 << h)) || (inLen < sigArrLen) || (checkExactLen && (inLen != sigArrLen))) {
-                throw new InvalidParameterException("LMS signature length is incorrect");
+                throw new SignatureException("LMS signature length is incorrect");
             }
 
             sigArr = Arrays.copyOfRange(sigArray, offset, offset + sigArrLen);
@@ -617,15 +617,14 @@ public final class HSS extends SignatureSpi {
         protected PublicKey engineGeneratePublic(KeySpec keySpec) throws InvalidKeySpecException {
             if (keySpec instanceof X509EncodedKeySpec x) {
                 try {
-                    var val = new DerValue(new ByteArrayInputStream(x.getEncoded()));
-                    val.data.getDerValue();
-                    return new HSSPublicKey(new DerValue(val.data.getBitString()).getOctetString());
-                } catch (IOException | InvalidKeyException e) {
+                    X509EncodedKeySpec x509Spec = (X509EncodedKeySpec)keySpec;
+                    return new HSSPublicKey(x509Spec.getEncoded(), true);
+                } catch (InvalidKeyException e) {
                     throw new InvalidKeySpecException(e);
                 }
             } else if (keySpec instanceof RawKeySpec x) {
                 try {
-                    return new HSSPublicKey(x.getKeyArr());
+                    return new HSSPublicKey(x.getKeyArr(), false);
                 } catch (InvalidKeyException e) {
                     throw new InvalidKeySpecException(e);
                 }
@@ -675,27 +674,31 @@ public final class HSS extends SignatureSpi {
         }
     }
 
-    static class HSSPublicKey extends X509Key implements Serializable, Length {
+    static class HSSPublicKey extends X509Key implements Serializable {
         @Serial
         private static final long serialVersionUID = 21;
-        private int L;
+        private transient int L;
         private transient LMSPublicKey lmsPublicKey;
 
-        HSSPublicKey(byte[] keyArray) throws InvalidKeyException {
-            int inLen = keyArray.length;
-            if (inLen < 4) {
-                throw new InvalidKeyException("HSS public key too short");
+        HSSPublicKey(byte[] keyArray, boolean x509Encoded) throws InvalidKeyException {
+            if (x509Encoded) {
+                decode(keyArray);
+            } else {
+                int inLen = keyArray.length;
+                if (inLen < 4) {
+                    throw new InvalidKeyException("HSS public key too short");
+                }
+                L = LMSUtils.fourBytesToInt(keyArray, 0);
+                lmsPublicKey = new LMSPublicKey(Arrays.copyOfRange(keyArray, 4, keyArray.length), 0, true);
+                algid = new AlgorithmId(ObjectIdentifier.of(KnownOIDs.HSSLMS));
+                byte[] derEncodedKeyarray = new DerOutputStream().putOctetString(keyArray).toByteArray();
+                this.setKey(new BitArray(8 * derEncodedKeyarray.length, derEncodedKeyarray));
             }
-            L = LMSUtils.fourBytesToInt(keyArray, 0);
-            lmsPublicKey = new LMSPublicKey(Arrays.copyOfRange(keyArray, 4, keyArray.length), 0, true);
-            algid = new AlgorithmId(ObjectIdentifier.of(KnownOIDs.HSSLMS));
-            byte[] derEncodedKeyarray = new DerOutputStream().putOctetString(keyArray).toByteArray();
-            this.setKey(new BitArray(8 * derEncodedKeyarray.length, derEncodedKeyarray));
         }
 
         @Override
         public String toString() {
-            HexDumpEncoder  encoder = new HexDumpEncoder();
+            HexDumpEncoder encoder = new HexDumpEncoder();
 
             return "HSS/LMS public key, number of layers: " + L +
                     ", LMS type: " + LMSUtils.lmsType(lmsPublicKey.type) +
@@ -710,10 +713,9 @@ public final class HSS extends SignatureSpi {
         @Override
         protected void parseKeyBits() throws InvalidKeyException {
             byte[] keyArray = getKey().toByteArray();
-            L = LMSUtils.fourBytesToInt(keyArray, 0);
-            lmsPublicKey = new LMSPublicKey(keyArray, 0, true);
+            L = LMSUtils.fourBytesToInt(keyArray, 2);
+            lmsPublicKey = new LMSPublicKey(keyArray, 6, true);
         }
-
 
         @java.io.Serial
         protected Object writeReplace() throws java.io.ObjectStreamException {
@@ -721,11 +723,6 @@ public final class HSS extends SignatureSpi {
                     getAlgorithm(),
                     getFormat(),
                     getEncoded());
-        }
-
-        @Override
-        public int length() {
-            return getKey().length();
         }
     }
 
