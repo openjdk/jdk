@@ -840,11 +840,12 @@ public abstract class Charset
      * <p> An invocation of this method upon a charset {@code cs} returns the
      * same result as the expression
      *
-     * <pre>
+     * {@snippet lang=java :
      *     cs.newDecoder()
      *       .onMalformedInput(CodingErrorAction.REPLACE)
      *       .onUnmappableCharacter(CodingErrorAction.REPLACE)
-     *       .decode(bb); </pre>
+     *       .decode(bb);
+     * }
      *
      * except that it is potentially more efficient because it can cache
      * decoders between successive invocations.
@@ -876,11 +877,12 @@ public abstract class Charset
      * <p> An invocation of this method upon a charset {@code cs} returns the
      * same result as the expression
      *
-     * <pre>
+     * {@snippet lang=java :
      *     cs.newEncoder()
      *       .onMalformedInput(CodingErrorAction.REPLACE)
      *       .onUnmappableCharacter(CodingErrorAction.REPLACE)
-     *       .encode(bb); </pre>
+     *       .encode(bb);
+     * }
      *
      * except that it is potentially more efficient because it can cache
      * encoders between successive invocations.
@@ -911,8 +913,9 @@ public abstract class Charset
      * <p> An invocation of this method upon a charset {@code cs} returns the
      * same result as the expression
      *
-     * <pre>
-     *     cs.encode(CharBuffer.wrap(s)); </pre>
+     * {@snippet lang=java :
+     *     cs.encode(CharBuffer.wrap(s));
+     * }
      *
      * @param  str  The string to be encoded
      *
