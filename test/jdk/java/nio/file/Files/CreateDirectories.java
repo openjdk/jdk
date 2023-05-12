@@ -127,6 +127,6 @@ public class CreateDirectories {
         Files.deleteIfExists(temp.getParent());
         temp.toFile().deleteOnExit();
         Path a = Files.createDirectories(temp);
-        assertFalse(a.isAbsolute(), a + " should not be absolute");
+        assertTrue(a == temp, a + " should not be absolute");
     }
 }
