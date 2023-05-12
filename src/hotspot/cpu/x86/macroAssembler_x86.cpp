@@ -5123,11 +5123,6 @@ void MacroAssembler::load_method_holder(Register holder, Register method) {
 void MacroAssembler::load_nklass_compact(Register dst, Register src) {
   assert(UseCompactObjectHeaders, "expect compact object headers");
 
-  if (!UseCompactObjectHeaders) {
-    movl(dst, Address(src, oopDesc::klass_offset_in_bytes()));
-    return;
-  }
-
   Label fast;
   movq(dst, Address(src, oopDesc::mark_offset_in_bytes()));
   testb(dst, markWord::monitor_value);
