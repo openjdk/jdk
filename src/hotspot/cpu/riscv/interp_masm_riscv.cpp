@@ -186,7 +186,6 @@ void InterpreterMacroAssembler::get_unsigned_2_byte_index_at_bcp(Register reg, i
     lhu(reg, Address(xbcp, bcp_offset));
     revb_h_h_u(reg, reg);
   }
-  
 }
 
 void InterpreterMacroAssembler::get_dispatch() {
