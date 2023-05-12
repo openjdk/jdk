@@ -147,7 +147,7 @@ extern "C" {
 template<>
 template<typename D, typename I>
 inline D Atomic::PlatformAdd<8>::fetch_then_add(D volatile* dest, I add_value,
-                                                atomic_memory_order order) const {
+                                                 atomic_memory_order order) const {
   STATIC_ASSERT(8 == sizeof(I));
   STATIC_ASSERT(8 == sizeof(D));
   return add_using_helper<int64_t>(_Atomic_add_long, dest, add_value);
