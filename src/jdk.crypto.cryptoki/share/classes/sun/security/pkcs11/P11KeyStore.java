@@ -2035,30 +2035,28 @@ final class P11KeyStore extends KeyStoreSpi {
                             cert.getSubjectX500Principal() + "]");
                     }
                 }
-                if (!selfSigned) {
-                    attrs = new CK_ATTRIBUTE[] {
-                        ATTR_TOKEN_TRUE,
-                        ATTR_CLASS_CERT,
-                        new CK_ATTRIBUTE(CKA_SUBJECT,
-                            cert.getIssuerX500Principal().getEncoded())
-                    };
-                    long[] ch = findObjects(session, attrs);
-                    if (ch.length > 0) {
-                        // if more than one found, use first
-                        if (debug != null && ch.length > 1) {
-                            debug.println("destroyChain found " +
-                                ch.length +
-                                " certificate entries for subject [" +
-                                cert.getIssuerX500Principal() +
-                                "] in token - using first entry");
-                        }
-                        currHdl = ch[0];
-                    } else {
-                        currHdl = 0L;
-                    }
-                } else {
-                    currHdl = 0L;
+                if (selfSigned) {
+                    break; // done
                 }
+                attrs = new CK_ATTRIBUTE[] {
+                    ATTR_TOKEN_TRUE,
+                    ATTR_CLASS_CERT,
+                    new CK_ATTRIBUTE(CKA_SUBJECT,
+                        cert.getIssuerX500Principal().getEncoded())
+                };
+                long[] ch = findObjects(session, attrs);
+                if (ch.length == 0) {
+                    break;
+                }
+                // if more than one found, use first
+                if (debug != null && ch.length > 1) {
+                    debug.println("destroyChain found " +
+                        ch.length +
+                        " certificate entries for subject [" +
+                        cert.getIssuerX500Principal() +
+                        "] in token - using first entry");
+                }
+                currHdl = ch[0];
                 checkPrivKey = true;
             }
             return true;

@@ -23,30 +23,20 @@
 
 /* @test
  * @bug 8301154
- * @summary KeyStore support for NSS cert/key databases
+ * @summary test cert chain deletion logic w/ NSS PKCS11 KeyStore
  * @library /test/lib ..
  * @run testng/othervm CertChainRemoval
  */
-
+import jdk.test.lib.SecurityTools;
 import java.io.*;
 import java.nio.file.Path;
-import java.nio.charset.Charset;
 import java.util.*;
 
+import java.security.Key;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
-import java.security.KeyFactory;
-import java.security.PrivateKey;
 import java.security.Provider;
-import java.security.Signature;
-import java.security.Security;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.cert.*;
-import java.security.spec.*;
-import java.security.interfaces.*;
-
-import javax.security.auth.Subject;
+import java.security.cert.Certificate;
 
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
@@ -57,52 +47,34 @@ public class CertChainRemoval extends PKCS11Test {
     private static final Path TEST_DATA_PATH = Path.of(BASE)
             .resolve("CertChainRemoval");
     private static final String DIR = TEST_DATA_PATH.toString();
-    private static final char[] tokenPwd =
-                        new char[] { 't', 'e', 's', 't', '1', '2' };
 
-    private static final String KS_TYPE = "PKCS11";
+    private record KeyStoreInfo(File file, String type, char[] passwd) {}
+
+    private static final KeyStoreInfo TEMP = new KeyStoreInfo(
+            new File(DIR, "temp.ks"),
+            "JKS",
+            new char[] { 'c', 'h', 'a', 'n', 'g', 'e', 'i', 't' });
+
+    private static final KeyStoreInfo PKCS11KS = new KeyStoreInfo(
+            null,
+            "PKCS11",
+            new char[] { 't', 'e', 's', 't', '1', '2' });
 
     @BeforeClass
     public void setUp() throws Exception {
         copyNssCertKeyToClassesDir();
         setCommonSystemProps();
+        // if temp keystore already exists; skip the creation
+        if (!TEMP.file.exists()) {
+            createKeyStore(TEMP);
+        }
         System.setProperty("CUSTOM_P11_CONFIG",
                 TEST_DATA_PATH.resolve("p11-nss.txt").toString());
     }
 
-    private static class FooEntry implements KeyStore.Entry { }
-
     @Test
     public void test() throws Exception {
         main(new CertChainRemoval());
-    }
-
-    private static PrivateKey getPrivateKey(String fn)
-            throws NoSuchAlgorithmException, IOException,
-            InvalidKeySpecException, FileNotFoundException,
-            ClassNotFoundException {
-        KeyFactory kf = KeyFactory.getInstance("RSA");
-
-        FileInputStream fis = new FileInputStream(new File(DIR, fn));
-        String key = new String(fis.readAllBytes(), Charset.defaultCharset());
-        String privKeyPEM = key.replace("-----BEGIN PRIVATE KEY-----", "")
-                .replaceAll("\\n", "")
-                .replace("-----END PRIVATE KEY-----", "");
-
-        byte[] privKeyBytes = Base64.getDecoder().decode(privKeyPEM);
-        return kf.generatePrivate(new PKCS8EncodedKeySpec(privKeyBytes));
-    }
-
-    private static Certificate[] getCertificateChain(String... fn)
-            throws NoSuchAlgorithmException, NoSuchProviderException,
-            CertificateException, FileNotFoundException {
-        Certificate[] chain = new Certificate[fn.length];
-        CertificateFactory cf = CertificateFactory.getInstance("X.509", "SUN");
-        for (int i = 0; i < chain.length; i++) {
-            chain[i] = cf.generateCertificate(new FileInputStream
-                (new File(DIR, fn[i])));
-        }
-        return chain;
     }
 
     private static void printKeyStore(String header, KeyStore ks)
@@ -128,6 +100,8 @@ public class CertChainRemoval extends PKCS11Test {
             }
         } else {
             if (!c.equals(expChain[0]) || !Arrays.equals(chain, expChain)) {
+                System.out.println("expChain: " + expChain.length);
+                System.out.println("actualChain: " + chain.length);
                 throw new RuntimeException("Fail: " + alias +
                         " chain check diff");
             }
@@ -135,60 +109,123 @@ public class CertChainRemoval extends PKCS11Test {
     }
 
     public void main(Provider p) throws Exception {
+        KeyStore sunks = KeyStore.getInstance(TEMP.type, "SUN");
+        sunks.load(new FileInputStream(TEMP.file), TEMP.passwd);
+        printKeyStore("Starting with: ", sunks);
 
-        KeyStore ks = KeyStore.getInstance(KS_TYPE, p);
-        ks.load(null, tokenPwd);
-        printKeyStore("Initial: ", ks);
+        KeyStore p11ks;
+        try {
+            p11ks = KeyStore.getInstance(PKCS11KS.type, p);
+            p11ks.load(null, PKCS11KS.passwd);
+            printKeyStore("Initial PKCS11 KeyStore: ", p11ks);
+        } catch (Exception e) {
+            System.out.println("Skip test, due to " + e);
+            return;
+        }
 
-        PrivateKey pk1PrivKey = getPrivateKey("pk1.key");
-        Certificate[] pk1Chain =
-                getCertificateChain("pk1.cert", "ca.cert");
+        // get the necessary keys from the temp keystore
+        Key pk1PrivKey = sunks.getKey("pk1", TEMP.passwd);
+        Certificate pk1Cert = sunks.getCertificate("pk1");
+        Key caPrivKey = sunks.getKey("ca1", TEMP.passwd);
+        Certificate ca1Cert = sunks.getCertificate("ca1");
+        Key rootPrivKey = sunks.getKey("root", TEMP.passwd);
+        Certificate rootCert = sunks.getCertificate("root");
 
-        PrivateKey caPrivKey = getPrivateKey("ca.key");
-        Certificate[] caChain = getCertificateChain("ca.cert");
+        Certificate[] pk1Chain = { pk1Cert, ca1Cert, rootCert };
+        Certificate[] ca1Chain = { ca1Cert, rootCert };
+        Certificate[] rootChain = { rootCert };
 
         // populate keystore with "pk1" and "ca", then delete "pk1"
-        System.out.println("Add pk1 and ca, then delete pk1");
-        ks.setKeyEntry("pk1", pk1PrivKey, null, pk1Chain);
-        ks.setKeyEntry("ca", caPrivKey, null, caChain);
-        ks.deleteEntry("pk1");
+        System.out.println("Add pk1, ca1 and root, then delete pk1");
+        p11ks.setKeyEntry("pk1", pk1PrivKey, null, pk1Chain);
+        p11ks.setKeyEntry("ca1", caPrivKey, null, ca1Chain);
+        p11ks.setKeyEntry("root", rootPrivKey, null, rootChain);
+        p11ks.deleteEntry("pk1");
 
         // reload the keystore
-        ks.store(null, tokenPwd);
-        ks.load(null, tokenPwd);
-        printKeyStore("Reload#1: ", ks);
+        p11ks.store(null, PKCS11KS.passwd);
+        p11ks.load(null, PKCS11KS.passwd);
+        printKeyStore("Reload#1: ca1 / root", p11ks);
 
-        // should only have "ca"
-        checkEntry(ks, "pk1", null);
-        checkEntry(ks, "ca", caChain);
+        // should only have "ca1" and "root"
+        checkEntry(p11ks, "pk1", null);
+        checkEntry(p11ks, "ca1", ca1Chain);
+        checkEntry(p11ks, "root", rootChain);
 
-        // now add "pk1" and delete "ca"
-        System.out.println("Now add pk1 and delete ca");
-        ks.setKeyEntry("pk1", pk1PrivKey, null, pk1Chain);
-        ks.deleteEntry("ca");
+        // now add "pk1" and delete "ca1"
+        System.out.println("Now add pk1 and delete ca1");
+        p11ks.setKeyEntry("pk1", pk1PrivKey, null, pk1Chain);
+        p11ks.deleteEntry("ca1");
 
         // reload the keystore
-        ks.store(null, tokenPwd);
-        ks.load(null, tokenPwd);
-        printKeyStore("Reload#2: ", ks);
+        p11ks.store(null, PKCS11KS.passwd);
+        p11ks.load(null, PKCS11KS.passwd);
+        printKeyStore("Reload#2: pk1 / root", p11ks);
+
+        // should only have "pk1" and "root" now
+        checkEntry(p11ks, "pk1", pk1Chain);
+        checkEntry(p11ks, "ca1", null);
+        checkEntry(p11ks, "root", rootChain);
+
+        // now delete "root"
+        System.out.println("Now delete root");
+        p11ks.deleteEntry("root");
+
+        // reload the keystore
+        p11ks.store(null, PKCS11KS.passwd);
+        p11ks.load(null, PKCS11KS.passwd);
+        printKeyStore("Reload#3: pk1", p11ks);
 
         // should only have "pk1" now
-        checkEntry(ks, "pk1", pk1Chain);
-        checkEntry(ks, "ca", null);
+        checkEntry(p11ks, "pk1", pk1Chain);
+        checkEntry(p11ks, "ca1", null);
+        checkEntry(p11ks, "root", null);
 
         // now delete "pk1"
         System.out.println("Now delete pk1");
-        ks.deleteEntry("pk1");
+        p11ks.deleteEntry("pk1");
 
         // reload the keystore
-        ks.store(null, tokenPwd);
-        ks.load(null, tokenPwd);
-        printKeyStore("Reload#3: ", ks);
+        p11ks.store(null, PKCS11KS.passwd);
+        p11ks.load(null, PKCS11KS.passwd);
+        printKeyStore("Reload#4: ", p11ks);
 
-        // should only have nothing now
-        checkEntry(ks, "pk1", null);
-        checkEntry(ks, "ca", null);
+        // should have nothing now
+        checkEntry(p11ks, "pk1", null);
+        checkEntry(p11ks, "ca1", null);
+        checkEntry(p11ks, "root", null);
 
         System.out.println("Test Passed");
     }
+
+    private static void createKeyStore(KeyStoreInfo ksi) throws Exception {
+        System.out.println("Creating keypairs and storing them into " +
+            ksi.file.getAbsolutePath());
+        String keyGenOptions = " -keyalg RSA -keysize 2048 ";
+        String keyStoreOptions = " -keystore " + ksi.file.getAbsolutePath() +
+                " -storetype " + ksi.type + " -storepass " +
+                new String(ksi.passwd);
+
+        String[] aliases = { "ROOT", "CA1", "PK1" };
+        for (String n : aliases) {
+            SecurityTools.keytool("-genkeypair -alias " + n +
+                " -dname CN=" + n + keyGenOptions + keyStoreOptions);
+            String issuer = switch (n) {
+                case "CA1"-> "ROOT";
+                case "PK1"-> "CA1";
+                default-> null;
+            };
+            if (issuer != null) {
+                // export CSR and issue the cert using the issuer
+                SecurityTools.keytool("-certreq -alias " + n +
+                    " -file tmp.req" + keyStoreOptions);
+                SecurityTools.keytool("-gencert -alias " + issuer +
+                    " -infile tmp.req -outfile tmp.cert -validity 3650" +
+                    keyStoreOptions);
+                SecurityTools.keytool("-importcert -alias " + n +
+                    " -file tmp.cert" + keyStoreOptions);
+            }
+        }
+    }
+
 }
