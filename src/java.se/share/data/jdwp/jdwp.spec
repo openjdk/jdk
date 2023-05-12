@@ -2022,7 +2022,7 @@ JDWP "Java(tm) Debug Wire Protocol"
             (Error THREAD_NOT_SUSPENDED "The thread is a virtual thread and was not suspended.")
             (Error OPAQUE_FRAME   "The thread is a suspended virtual thread and the implementation "
                                   "was unable to throw an asynchronous exception "
-                                  "from the current frame.")
+                                  "from the thread's current frame.")
             (Error INVALID_OBJECT "If thread is not a known ID or the asynchronous "
                                   "exception has been garbage collected.")
             (Error VM_DEAD)

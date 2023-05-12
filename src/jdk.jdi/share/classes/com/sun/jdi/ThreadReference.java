@@ -129,7 +129,7 @@ public interface ThreadReference extends ObjectReference {
      * or if the thread is a virtual thread and was not suspended
      * @throws OpaqueFrameException if the thread is a suspended
      * virtual thread and the implementation was unable to throw an
-     * asynchronous exception from the current frame
+     * asynchronous exception from the thread's current frame
      * @throws VMCannotBeModifiedException if the VirtualMachine is read-only
      * @see VirtualMachine#canBeModified()
      */
