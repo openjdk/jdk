@@ -292,7 +292,6 @@ void FileMapHeader::print(outputStream* st) {
   st->print_cr("- heap_end:                       " INTPTR_FORMAT, p2i(_heap_end));
   st->print_cr("- jvm_ident:                      %s", _jvm_ident);
   st->print_cr("- shared_path_table_offset:       " SIZE_FORMAT_X, _shared_path_table_offset);
-  st->print_cr("- shared_path_table_size:         %d", _shared_path_table_size);
   st->print_cr("- app_class_paths_start_index:    %d", _app_class_paths_start_index);
   st->print_cr("- app_module_paths_start_index:   %d", _app_module_paths_start_index);
   st->print_cr("- num_module_paths:               %d", _num_module_paths);
@@ -458,43 +457,22 @@ void SharedClassPathEntry::metaspace_pointers_do(MetaspaceClosure* it) {
   it->push(&_manifest);
 }
 
-void SharedClassPathEntry::remember_embedded_pointers(Array<u8>* container) {
-  ArchiveBuilder::current()->remember_embedded_pointer_in_gathered_obj((address)container, (address*)&_name);
-  ArchiveBuilder::current()->remember_embedded_pointer_in_gathered_obj((address)container, (address*)&_manifest);
-}
-
 void SharedPathTable::metaspace_pointers_do(MetaspaceClosure* it) {
-  it->push(&_table);
-  for (int i = 0; i < _size; i++) {
-    // Hack alert: GatherSortedSourceObjs in archiveBuilder.cpp doesn't know that
-    // pointers like path_at(i)->{_name, _manifest} are embedded inside _table, because
-    // they are pushed independetly of _table.
-    //
-    // So we need to do the remember_embedded_pointers() trick below.
-    //
-    // If we want to get rid of this ugliness, we need to convert SharedPathTable
-    // to a proper MetaspaceObj subtype (but I have very little motivation for that).
-    path_at(i)->metaspace_pointers_do(it);
-  }
-}
-
-void SharedPathTable::remember_embedded_pointers() {
-  for (int i = 0; i < _size; i++) {
-    path_at(i)->remember_embedded_pointers(_table);
-  }
+  it->push(&_entries);
 }
 
 void SharedPathTable::dumptime_init(ClassLoaderData* loader_data, TRAPS) {
-  size_t entry_size = sizeof(SharedClassPathEntry);
-  int num_entries = 0;
-  num_entries += ClassLoader::num_boot_classpath_entries();
-  num_entries += ClassLoader::num_app_classpath_entries();
-  num_entries += ClassLoader::num_module_path_entries();
-  num_entries += FileMapInfo::num_non_existent_class_paths();
-  size_t bytes = entry_size * num_entries;
-
-  _table = MetadataFactory::new_array<u8>(loader_data, (int)bytes, CHECK);
-  _size = num_entries;
+  const int num_entries =
+    ClassLoader::num_boot_classpath_entries() +
+    ClassLoader::num_app_classpath_entries() +
+    ClassLoader::num_module_path_entries() +
+    FileMapInfo::num_non_existent_class_paths();
+  _entries = MetadataFactory::new_array<SharedClassPathEntry*>(loader_data, num_entries, CHECK);
+  for (int i = 0; i < num_entries; i++) {
+    SharedClassPathEntry* ent =
+      new (loader_data, SharedClassPathEntry::size(), MetaspaceObj::SharedClassPathEntryType, THREAD) SharedClassPathEntry;
+    _entries->at_put(i, ent);
+  }
 }
 
 void FileMapInfo::allocate_shared_path_table(TRAPS) {

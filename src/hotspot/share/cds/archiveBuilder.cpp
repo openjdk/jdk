@@ -84,15 +84,16 @@ void ArchiveBuilder::SourceObjList::append(MetaspaceClosure::Ref* enclosing_ref,
   }
 }
 
-void ArchiveBuilder::SourceObjList::remember_embedded_pointer(SourceObjInfo* src_info, address* field_addr) {
+void ArchiveBuilder::SourceObjList::remember_embedded_pointer(SourceObjInfo* src_info, MetaspaceClosure::Ref* ref) {
   // src_obj contains a pointer. Remember the location of this pointer in _ptrmap,
   // so that we can copy/relocate it later. E.g., if we have
   //    class Foo { intx scala; Bar* ptr; }
   //    Foo *f = 0x100;
   // To mark the f->ptr pointer on 64-bit platform, this function is called with
   //    src_info()->obj() == 0x100
-  //    field_addr == 0x108
+  //    ref->addr() == 0x108
   address src_obj = src_info->obj();
+  address* field_addr = ref->addr();
   assert(src_info->ptrmap_start() < _total_bytes, "sanity");
   assert(src_info->ptrmap_end() <= _total_bytes, "sanity");
   assert(*field_addr != nullptr, "should have checked");
@@ -454,14 +455,6 @@ bool ArchiveBuilder::gather_one_source_obj(MetaspaceClosure::Ref* enclosing_ref,
   }
 }
 
-void ArchiveBuilder::remember_embedded_pointer_in_gathered_obj(address src_obj, address* field_addr) {
-  // field_addr must be a valid field inside src_obj.
-  if (*field_addr != nullptr) {
-    SourceObjInfo* src_info = _src_obj_table.get(src_obj);
-    remember_embedded_pointer_in_gathered_obj(src_info, field_addr);
-  }
-}
-
 void ArchiveBuilder::remember_embedded_pointer_in_gathered_obj(MetaspaceClosure::Ref* enclosing_ref,
                                                                MetaspaceClosure::Ref* ref) {
   assert(ref->obj() != nullptr, "should have checked");
@@ -472,16 +465,12 @@ void ArchiveBuilder::remember_embedded_pointer_in_gathered_obj(MetaspaceClosure:
       // source objects of point_to_it/set_to_null types are not copied
       // so we don't need to remember their pointers.
     } else {
-      remember_embedded_pointer_in_gathered_obj(src_info, ref->addr());
+      if (src_info->read_only()) {
+        _ro_src_objs.remember_embedded_pointer(src_info, ref);
+      } else {
+        _rw_src_objs.remember_embedded_pointer(src_info, ref);
+      }
     }
-  }
-}
-
-void ArchiveBuilder::remember_embedded_pointer_in_gathered_obj(SourceObjInfo* src_info, address* field_addr) {
-  if (src_info->read_only()) {
-    _ro_src_objs.remember_embedded_pointer(src_info, field_addr);
-  } else {
-    _rw_src_objs.remember_embedded_pointer(src_info, field_addr);
   }
 }
 
@@ -492,11 +481,6 @@ void ArchiveBuilder::gather_source_objs() {
   GatherSortedSourceObjs doit(this);
   iterate_sorted_roots(&doit);
   doit.finish();
-  // Normally, all the embedded pointers are remembered inside the iterate_sorted_roots()
-  // call above. However, the embedded pointers in SharedPathTable (filemap.cpp) are not
-  // remembered because they are not proper MetaspaceObjs -- see comments in
-  // SharedPathTable::metaspace_pointers_do. We need to handle them specially.
-  FileMapInfo::remember_embedded_pointers();
 }
 
 bool ArchiveBuilder::is_excluded(Klass* klass) {

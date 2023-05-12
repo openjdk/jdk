@@ -314,9 +314,7 @@ void DynamicArchiveBuilder::remark_pointers_for_instance_klass(InstanceKlass* k,
 }
 
 void DynamicArchiveBuilder::write_archive(char* serialized_data) {
-  Array<u8>* table = FileMapInfo::shared_path_table().table();
-  SharedPathTable runtime_table(table, FileMapInfo::shared_path_table().size());
-  _header->set_shared_path_table(runtime_table);
+  _header->set_shared_path_table(FileMapInfo::shared_path_table().table());
   _header->set_serialized_data(serialized_data);
 
   FileMapInfo* dynamic_info = FileMapInfo::dynamic_info();

@@ -28,6 +28,7 @@
 #include "cds/metaspaceShared.hpp"
 #include "include/cds.h"
 #include "logging/logLevel.hpp"
+#include "memory/allocation.hpp"
 #include "oops/array.hpp"
 #include "oops/compressedOops.hpp"
 #include "utilities/align.hpp"
@@ -48,7 +49,7 @@ class ClassLoaderData;
 class ClassPathEntry;
 class outputStream;
 
-class SharedClassPathEntry {
+class SharedClassPathEntry : public MetaspaceObj {
   enum {
     modules_image_entry,
     jar_entry,
@@ -69,9 +70,16 @@ class SharedClassPathEntry {
   Array<u1>*   _manifest;
 
 public:
+  SharedClassPathEntry() : _type(0), _is_module_path(false),
+                           _from_class_path_attr(false), _timestamp(0),
+                           _filesize(0), _name(nullptr), _manifest(nullptr) {}
+  static int size() {
+    return align_metadata_size(sizeof(SharedClassPathEntry));
+  }
   void init(bool is_modules_image, bool is_module_path, ClassPathEntry* cpe, TRAPS);
   void init_as_non_existent(const char* path, TRAPS);
   void metaspace_pointers_do(MetaspaceClosure* it);
+  MetaspaceObj::Type type() const { return SharedClassPathEntryType; }
   bool validate(bool is_class_path = true) const;
 
   // The _timestamp only gets set for jar files.
@@ -103,34 +111,25 @@ public:
     return is_modules_image() || // modules image doesn't contain unnamed modules
            _is_module_path;      // module path doesn't contain unnamed modules
   }
-  void remember_embedded_pointers(Array<u8>* container);
 };
 
 class SharedPathTable {
-  Array<u8>* _table;
-  int _size;
+  Array<SharedClassPathEntry*>* _entries;
 public:
-  SharedPathTable() : _table(nullptr), _size(0) {}
-  SharedPathTable(Array<u8>* table, int size) : _table(table), _size(size) {}
+  SharedPathTable() : _entries(nullptr) {}
+  SharedPathTable(Array<SharedClassPathEntry*>* entries) : _entries(entries) {}
 
   void dumptime_init(ClassLoaderData* loader_data, TRAPS);
   void metaspace_pointers_do(MetaspaceClosure* it);
 
   int size() {
-    return _size;
+    return _entries == nullptr ? 0 : _entries->length();
   }
   SharedClassPathEntry* path_at(int index) {
-    if (index < 0) {
-      return nullptr;
-    }
-    assert(index < _size, "sanity");
-    char* p = (char*)_table->data();
-    p += sizeof(SharedClassPathEntry) * index;
-    return (SharedClassPathEntry*)p;
+    return _entries->at(index);
   }
-  Array<u8>* table() {return _table;}
-  void set_table(Array<u8>* table) {_table = table;}
-  void remember_embedded_pointers();
+  Array<SharedClassPathEntry*>* table() {return _entries;}
+  void set_table(Array<SharedClassPathEntry*>* table) {_entries = table;}
 };
 
 
@@ -217,7 +216,6 @@ private:
   //      validate_shared_path_table()
   //      validate_non_existent_class_paths()
   size_t _shared_path_table_offset;
-  int    _shared_path_table_size;
 
   jshort _app_class_paths_start_index;  // Index of first app classpath entry
   jshort _app_module_paths_start_index; // Index of first module path entry
@@ -292,7 +290,6 @@ public:
 
   void set_shared_path_table(SharedPathTable table) {
     set_as_offset((char*)table.table(), &_shared_path_table_offset);
-    _shared_path_table_size = table.size();
   }
 
   void set_requested_base(char* b) {
@@ -301,8 +298,8 @@ public:
   }
 
   SharedPathTable shared_path_table() const {
-    return SharedPathTable((Array<u8>*)from_mapped_offset(_shared_path_table_offset),
-                           _shared_path_table_size);
+    return SharedPathTable((Array<SharedClassPathEntry*>*)
+                           from_mapped_offset(_shared_path_table_offset));
   }
 
   bool validate();
@@ -364,9 +361,6 @@ public:
   bool init_from_file(int fd);
   static void metaspace_pointers_do(MetaspaceClosure* it) {
     _shared_path_table.metaspace_pointers_do(it);
-  }
-  static void remember_embedded_pointers() {
-    _shared_path_table.remember_embedded_pointers();
   }
 
   void log_paths(const char* msg, int start_idx, int end_idx);
