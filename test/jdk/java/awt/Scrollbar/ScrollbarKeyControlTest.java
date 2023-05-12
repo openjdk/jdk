@@ -80,21 +80,17 @@ public class ScrollbarKeyControlTest implements AdjustmentListener, KeyListener 
                 frame.validate();
                 frame.toFront();
             });
-            try {
-                robot = new Robot();
-                testOneScrollbar(scrollbarV);
-                if (changesTotal != 9) { //one by mouse click and six by keys
-                    throw new RuntimeException("Test failed.  Not all adjustment " +
-                            "events received by vertical scrollbar (" + changesTotal + " of 9)");
-                }
-                changesTotal = 0;
-                testOneScrollbar(scrollbarH);
-                if (changesTotal != 9) { //one by mouse click and six by keys
-                    throw new RuntimeException("Test failed.  Not all adjustment " +
-                            "events received by horizontal scrollbar (" + changesTotal + " of 9)");
-                }
-            } catch (AWTException e) {
-                throw new RuntimeException("Test interrupted.", e);
+            robot = new Robot();
+            testOneScrollbar(scrollbarV);
+            if (changesTotal != 9) { //one by mouse click and six by keys
+                throw new RuntimeException("Test failed.  Not all adjustment " +
+                        "events received by vertical scrollbar (" + changesTotal + " of 9)");
+            }
+            changesTotal = 0;
+            testOneScrollbar(scrollbarH);
+            if (changesTotal != 9) { //one by mouse click and six by keys
+                throw new RuntimeException("Test failed.  Not all adjustment " +
+                        "events received by horizontal scrollbar (" + changesTotal + " of 9)");
             }
             System.out.println("Test passed. Adjustment Event called  "
                     + changesTotal + " times for each scrollbar");

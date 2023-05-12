@@ -35,18 +35,14 @@ import javax.swing.JWindow;
 
 public class SetForegroundTest {
     static JWindow jwindow;
+
     public static void main(String[] args) throws Exception {
         try {
             EventQueue.invokeAndWait(() -> {
                 jwindow = new JWindow();
                 jwindow.pack();
-                try {
-                    jwindow.setForeground(Color.BLACK);
-                    System.out.println("TEST PASSED");
-                } catch (ClassCastException cce) {
-                    System.out.println("TEST FAILED");
-                    throw new RuntimeException("Test failed.", cce);
-                }
+                jwindow.setForeground(Color.BLACK);
+                System.out.println("TEST PASSED");
             });
         } finally {
             EventQueue.invokeAndWait(() -> {
