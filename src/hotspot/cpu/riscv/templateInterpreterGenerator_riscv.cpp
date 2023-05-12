@@ -1099,7 +1099,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     address unsatisfied = (SharedRuntime::native_method_throw_unsatisfied_link_error_entry());
     __ mv(t, unsatisfied);
     if (AvoidUnalignedAccesses) {
-      __ MacroAssembler::load_long_misaligned(t1, Address(t, 0), t0, 2); // 2 bytes aligned, but not 4 or 8
+      __ load_long_misaligned(t1, Address(t, 0), t0, 2); // 2 bytes aligned, but not 4 or 8
     } else {
       __ ld(t1, Address(t, 0));
     }

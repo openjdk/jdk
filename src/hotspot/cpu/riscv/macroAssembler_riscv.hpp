@@ -431,8 +431,8 @@ class MacroAssembler: public Assembler {
   void store_sized_value(Address dst, Register src, size_t size_in_bytes);
 
   // Misaligned loads, will use the best way, according to the AvoidUnalignedAccess flag
-  void load_int_misaligned(Register dst, Address src, Register tmp, bool is_signed);
-  void load_long_misaligned(Register dst, Address src, Register tmp, int granularity);
+  void load_int_misaligned(Register dst, Address src, Register tmp, bool is_signed, int granularity = 1);
+  void load_long_misaligned(Register dst, Address src, Register tmp, int granularity = 1);
 
  public:
   // Standard pseudo instructions
