@@ -127,6 +127,6 @@ public class CreateDirectories {
         Files.deleteIfExists(temp.getParent());
         temp.toFile().deleteOnExit();
         Path a = Files.createDirectories(temp);
-        assertTrue(a == temp);
+        assertEquals(a, temp, a + " != " + temp);
     }
 }
