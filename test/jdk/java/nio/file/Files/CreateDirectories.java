@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ import org.testng.annotations.Test;
 
 /*
  * @test
- * @bug 8032220 8293792
+ * @bug 8032220 8293792 8307976
  * @summary Test java.nio.file.Files.createDirectories method
  * @library ..
  * @run testng CreateDirectories
@@ -120,5 +120,13 @@ public class CreateDirectories {
         Path root = Path.of("/");
         Files.createDirectories(root);
         Files.createDirectories(root.toAbsolutePath());
+
+        // the returned path should not be absolute
+        Path temp = Path.of(".temp/temp.abc/temp.def");
+        Files.deleteIfExists(temp);
+        Files.deleteIfExists(temp.getParent());
+        temp.toFile().deleteOnExit();
+        Path a = Files.createDirectories(temp);
+        assertFalse(a.isAbsolute(), a + " should not be absolute");
     }
 }
