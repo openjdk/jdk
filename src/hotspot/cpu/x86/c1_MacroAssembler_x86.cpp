@@ -168,17 +168,16 @@ void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register
   if (UseCompactObjectHeaders) {
     movptr(t1, Address(klass, Klass::prototype_header_offset()));
     movptr(Address(obj, oopDesc::mark_offset_in_bytes()), t1);
-  } else {
+  } else if (UseCompressedClassPointers) { // Take care not to kill klass
     movptr(Address(obj, oopDesc::mark_offset_in_bytes()), checked_cast<int32_t>(markWord::prototype().value()));
-    if (UseCompressedClassPointers) { // Take care not to kill klass
-      movptr(t1, klass);
-      encode_klass_not_null(t1, rscratch1);
-      movl(Address(obj, oopDesc::klass_offset_in_bytes()), t1);
-    } else
+    movptr(t1, klass);
+    encode_klass_not_null(t1, rscratch1);
+    movl(Address(obj, oopDesc::klass_offset_in_bytes()), t1);
+  } else
 #endif
-    {
-      movptr(Address(obj, oopDesc::klass_offset_in_bytes()), klass);
-    }
+  {
+    movptr(Address(obj, oopDesc::mark_offset_in_bytes()), checked_cast<int32_t>(markWord::prototype().value()));
+    movptr(Address(obj, oopDesc::klass_offset_in_bytes()), klass);
   }
 
   if (len->is_valid()) {
