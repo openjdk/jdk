@@ -49,7 +49,7 @@ class G1CollectionSet;
 class G1CollectionCandidateList;
 class G1CollectionSetCandidates;
 class G1CollectionSetChooser;
-class G1CollectionSetRegionList;
+class G1CollectionCandidateRegionList;
 class G1IHOPControl;
 class G1Analytics;
 class G1SurvivorRegions;
@@ -343,15 +343,15 @@ public:
   // Returns the remaining time.
   double select_candidates_from_marking(G1CollectionCandidateList* marking_list,
                                         double time_remaining_ms,
-                                        G1CollectionSetRegionList* initial_old_regions,
-                                        G1CollectionSetRegionList* optional_old_regions);
+                                        G1CollectionCandidateRegionList* initial_old_regions,
+                                        G1CollectionCandidateRegionList* optional_old_regions);
 
   // Calculate the number of optional regions from the given collection set candidates,
   // the remaining time and the maximum number of these regions and return the number
   // of actually selected regions in num_optional_regions.
-  void calculate_optional_collection_set_regions(G1CollectionSetRegionList* optional_old_regions,
+  void calculate_optional_collection_set_regions(G1CollectionCandidateRegionList* optional_old_regions,
                                                  double time_remaining_ms,
-                                                 G1CollectionSetRegionList* selected);
+                                                 G1CollectionCandidateRegionList* selected);
 
 private:
 

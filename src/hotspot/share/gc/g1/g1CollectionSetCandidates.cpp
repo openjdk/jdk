@@ -38,7 +38,7 @@ void G1CollectionCandidateList::set(G1CollectionCandidateList::CandidateInfo* ca
   _candidates.appendAll(&a);
 }
 
-void G1CollectionCandidateList::remove(G1CollectionSetRegionList* other) {
+void G1CollectionCandidateList::remove(G1CollectionCandidateRegionList* other) {
   guarantee((uint)_candidates.length() >= other->length(), "must be");
 
   if (other->length() == 0) {
@@ -109,14 +109,14 @@ int G1CollectionCandidateList::compare(CandidateInfo* ci1, CandidateInfo* ci2) {
   }
 }
 
-G1CollectionSetRegionList::G1CollectionSetRegionList() : _regions(2, mtGC) { }
+G1CollectionCandidateRegionList::G1CollectionCandidateRegionList() : _regions(2, mtGC) { }
 
-void G1CollectionSetRegionList::append(HeapRegion* r) {
+void G1CollectionCandidateRegionList::append(HeapRegion* r) {
   assert(!_regions.contains(r), "must be");
   _regions.append(r);
 }
 
-void G1CollectionSetRegionList::remove_prefix(G1CollectionSetRegionList* other) {
+void G1CollectionCandidateRegionList::remove_prefix(G1CollectionCandidateRegionList* other) {
 #ifdef ASSERT
   // Check that the given list is a prefix of this list.
   int i = 0;
@@ -132,11 +132,11 @@ void G1CollectionSetRegionList::remove_prefix(G1CollectionSetRegionList* other) 
   _regions.remove_till(other->length());
 }
 
-HeapRegion* G1CollectionSetRegionList::at(uint index) {
+HeapRegion* G1CollectionCandidateRegionList::at(uint index) {
   return _regions.at(index);
 }
 
-void G1CollectionSetRegionList::clear() {
+void G1CollectionCandidateRegionList::clear() {
   _regions.clear();
 }
 
@@ -188,7 +188,7 @@ void G1CollectionSetCandidates::set_candidates_from_marking(G1CollectionCandidat
   verify();
 }
 
-void G1CollectionSetCandidates::remove(G1CollectionSetRegionList* other) {
+void G1CollectionSetCandidates::remove(G1CollectionCandidateRegionList* other) {
   _marking_regions.remove(other);
 
   for (HeapRegion* r : *other) {

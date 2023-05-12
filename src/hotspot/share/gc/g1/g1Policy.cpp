@@ -1409,8 +1409,8 @@ static void print_finish_message(const char* reason, bool from_marking) {
 
 double G1Policy::select_candidates_from_marking(G1CollectionCandidateList* marking_list,
                                                 double time_remaining_ms,
-                                                G1CollectionSetRegionList* initial_old_regions,
-                                                G1CollectionSetRegionList* optional_old_regions) {
+                                                G1CollectionCandidateRegionList* initial_old_regions,
+                                                G1CollectionCandidateRegionList* optional_old_regions) {
   assert(marking_list != nullptr, "must be");
 
   uint num_expensive_regions = 0;
@@ -1494,9 +1494,9 @@ double G1Policy::select_candidates_from_marking(G1CollectionCandidateList* marki
   return time_remaining_ms;
 }
 
-void G1Policy::calculate_optional_collection_set_regions(G1CollectionSetRegionList* optional_regions,
+void G1Policy::calculate_optional_collection_set_regions(G1CollectionCandidateRegionList* optional_regions,
                                                          double time_remaining_ms,
-                                                         G1CollectionSetRegionList* selected_regions) {
+                                                         G1CollectionCandidateRegionList* selected_regions) {
   assert(_collection_set->optional_region_length() > 0,
          "Should only be called when there are optional regions");
 

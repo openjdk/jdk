@@ -152,7 +152,7 @@ class G1CollectionSet {
 
   // When doing mixed collections we can add old regions to the collection set, which
   // will be collected only if there is enough time. We call these optional (old) regions.
-  G1CollectionSetRegionList _optional_old_regions;
+  G1CollectionCandidateRegionList _optional_old_regions;
 
   enum CSetBuildType {
     Active,             // We are actively building the collection set
@@ -173,10 +173,10 @@ class G1CollectionSet {
   // Add the given old region to the head of the current collection set.
   void add_old_region(HeapRegion* hr);
 
-  void move_candidates_to_collection_set(G1CollectionSetRegionList* regions);
+  void move_candidates_to_collection_set(G1CollectionCandidateRegionList* regions);
   // Prepares old regions in the given set for optional collection later. Does not
   // add the region to collection set yet.
-  void prepare_optional_regions(G1CollectionSetRegionList* regions);
+  void prepare_optional_regions(G1CollectionCandidateRegionList* regions);
 
   // Finalize the young part of the initial collection set. Relabel survivor regions
   // as Eden and calculate a prediction on how long the evacuation of all young regions

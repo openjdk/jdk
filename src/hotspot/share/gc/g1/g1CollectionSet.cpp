@@ -323,7 +323,7 @@ void G1CollectionSet::finalize_old_part(double time_remaining_ms) {
   if (collector_state()->in_mixed_phase()) {
     candidates()->verify();
 
-    G1CollectionSetRegionList initial_old_regions;
+    G1CollectionCandidateRegionList initial_old_regions;
     assert(_optional_old_regions.length() == 0, "must be");
 
     _policy->select_candidates_from_marking(&candidates()->marking_regions(),
@@ -349,7 +349,7 @@ void G1CollectionSet::finalize_old_part(double time_remaining_ms) {
   QuickSort::sort(_collection_set_regions, _collection_set_cur_length, compare_region_idx, true);
 }
 
-void G1CollectionSet::move_candidates_to_collection_set(G1CollectionSetRegionList* regions) {
+void G1CollectionSet::move_candidates_to_collection_set(G1CollectionCandidateRegionList* regions) {
   for (HeapRegion* r : *regions) {
     _g1h->clear_region_attr(r);
     add_old_region(r);
@@ -357,7 +357,7 @@ void G1CollectionSet::move_candidates_to_collection_set(G1CollectionSetRegionLis
   candidates()->remove(regions);
 }
 
-void G1CollectionSet::prepare_optional_regions(G1CollectionSetRegionList* regions){
+void G1CollectionSet::prepare_optional_regions(G1CollectionCandidateRegionList* regions){
   uint cur_index = 0;
   for (HeapRegion* r : *regions) {
     assert(r->is_old(), "the region should be old");
@@ -377,7 +377,7 @@ void G1CollectionSet::finalize_initial_collection_set(double target_pause_time_m
 bool G1CollectionSet::finalize_optional_for_evacuation(double remaining_pause_time) {
   update_incremental_marker();
 
-  G1CollectionSetRegionList selected_regions;
+  G1CollectionCandidateRegionList selected_regions;
   _policy->calculate_optional_collection_set_regions(&_optional_old_regions,
                                                      remaining_pause_time,
                                                      &selected_regions);
