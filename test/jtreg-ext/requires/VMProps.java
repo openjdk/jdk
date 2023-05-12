@@ -413,9 +413,6 @@ public class VMProps implements Callable<Map<String, String>> {
      * @return true if CDS is supported by the VM to be tested.
      */
     protected String vmCDS() {
-        if (WB.getBooleanVMFlag("UseCompactObjectHeaders")) {
-            return "false";
-        }
         return "" + WB.isCDSIncluded();
     }
 

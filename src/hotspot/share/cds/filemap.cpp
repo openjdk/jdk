@@ -203,6 +203,7 @@ void FileMapHeader::populate(FileMapInfo *info, size_t core_region_alignment,
   _core_region_alignment = core_region_alignment;
   _obj_alignment = ObjectAlignmentInBytes;
   _compact_strings = CompactStrings;
+  _compact_headers = UseCompactObjectHeaders;
   if (DumpSharedSpaces && HeapShared::can_write()) {
     _narrow_oop_mode = CompressedOops::mode();
     _narrow_oop_base = CompressedOops::base();
@@ -281,6 +282,7 @@ void FileMapHeader::print(outputStream* st) {
   st->print_cr("- narrow_oop_base:                " INTPTR_FORMAT, p2i(_narrow_oop_base));
   st->print_cr("- narrow_oop_shift                %d", _narrow_oop_shift);
   st->print_cr("- compact_strings:                %d", _compact_strings);
+  st->print_cr("- compact_headers:                %d", _compact_headers);
   st->print_cr("- max_heap_size:                  " UINTX_FORMAT, _max_heap_size);
   st->print_cr("- narrow_oop_mode:                %d", _narrow_oop_mode);
   st->print_cr("- narrow_klass_shift:             %d", _narrow_klass_shift);
@@ -2482,6 +2484,14 @@ bool FileMapHeader::validate() {
   if (compressed_oops() != UseCompressedOops || compressed_class_pointers() != UseCompressedClassPointers) {
     log_info(cds)("Unable to use shared archive.\nThe saved state of UseCompressedOops and UseCompressedClassPointers is "
                                "different from runtime, CDS will be disabled.");
+    return false;
+  }
+
+  if (compact_headers() != UseCompactObjectHeaders) {
+    log_info(cds)("The shared archive file's UseCompactObjectHeaders setting (%s)"
+                  " does not equal the current UseCompactObjectHeaders setting (%s).",
+                  _compact_headers          ? "enabled" : "disabled",
+                  UseCompactObjectHeaders   ? "enabled" : "disabled");
     return false;
   }
 
