@@ -689,6 +689,7 @@ public:
   void la(Register Rd, const address dest);
   void la(Register Rd, const Address &adr);
 
+  void li16u(Register Rd, int32_t imm);
   void li32(Register Rd, int32_t imm);
   void li64(Register Rd, int64_t imm);
   void li  (Register Rd, int64_t imm);  // optimized load immediate
@@ -1418,6 +1419,10 @@ private:
 
   void load_reserved(Register addr, enum operand_size size, Assembler::Aqrl acquire);
   void store_conditional(Register addr, Register new_val, enum operand_size size, Assembler::Aqrl release);
+
+public:
+  void fast_lock(Register obj, Register hdr, Register tmp1, Register tmp2, Label& slow);
+  void fast_unlock(Register obj, Register hdr, Register tmp1, Register tmp2, Label& slow);
 };
 
 #ifdef ASSERT

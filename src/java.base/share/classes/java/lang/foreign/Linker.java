@@ -430,11 +430,6 @@ public sealed interface Linker permits AbstractLinker {
     /**
      * Returns a linker for the ABI associated with the underlying native platform. The underlying native platform
      * is the combination of OS and processor where the Java runtime is currently executing.
-     * <p>
-     * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
-     * Restricted methods are unsafe, and, if used incorrectly, their use might crash
-     * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
-     * restricted methods, and use safe and supported functionalities, where possible.
      *
      * @apiNote It is not currently possible to obtain a linker for a different combination of OS and processor.
      * @implNote The libraries exposed by the {@linkplain #defaultLookup() default lookup} associated with the returned
@@ -443,11 +438,8 @@ public sealed interface Linker permits AbstractLinker {
      *
      * @return a linker for the ABI associated with the underlying native platform.
      * @throws UnsupportedOperationException if the underlying native platform is not supported.
-     * @throws IllegalCallerException If the caller is in a module that does not have native access enabled.
      */
-    @CallerSensitive
     static Linker nativeLinker() {
-        Reflection.ensureNativeAccess(Reflection.getCallerClass(), Linker.class, "nativeLinker");
         return SharedUtils.getSystemLinker();
     }
 
@@ -458,6 +450,11 @@ public sealed interface Linker permits AbstractLinker {
      * {@snippet lang=java :
      * linker.downcallHandle(function).bindTo(symbol);
      * }
+     * <p>
+     * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
+     * Restricted methods are unsafe, and, if used incorrectly, their use might crash
+     * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
+     * restricted methods, and use safe and supported functionalities, where possible.
      *
      * @param symbol   the address of the target function.
      * @param function the function descriptor of the target function.
@@ -466,11 +463,10 @@ public sealed interface Linker permits AbstractLinker {
      * @throws IllegalArgumentException if the provided function descriptor is not supported by this linker.
      *                                  or if the symbol is {@link MemorySegment#NULL}
      * @throws IllegalArgumentException if an invalid combination of linker options is given.
+     * @throws IllegalCallerException If the caller is in a module that does not have native access enabled.
      */
-    default MethodHandle downcallHandle(MemorySegment symbol, FunctionDescriptor function, Option... options) {
-        SharedUtils.checkSymbol(symbol);
-        return downcallHandle(function, options).bindTo(symbol);
-    }
+    @CallerSensitive
+    MethodHandle downcallHandle(MemorySegment symbol, FunctionDescriptor function, Option... options);
 
     /**
      * Creates a method handle which is used to call a foreign function with the given signature.
@@ -502,6 +498,11 @@ public sealed interface Linker permits AbstractLinker {
      * The returned method handle will throw an {@link IllegalArgumentException} if the {@link MemorySegment}
      * representing the target address of the foreign function is the {@link MemorySegment#NULL} address.
      * The returned method handle will additionally throw {@link NullPointerException} if any argument passed to it is {@code null}.
+     * <p>
+     * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
+     * Restricted methods are unsafe, and, if used incorrectly, their use might crash
+     * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
+     * restricted methods, and use safe and supported functionalities, where possible.
      *
      * @param function the function descriptor of the target function.
      * @param options  any linker options.
@@ -509,7 +510,9 @@ public sealed interface Linker permits AbstractLinker {
      * from the provided function descriptor.
      * @throws IllegalArgumentException if the provided function descriptor is not supported by this linker.
      * @throws IllegalArgumentException if an invalid combination of linker options is given.
+     * @throws IllegalCallerException If the caller is in a module that does not have native access enabled.
      */
+    @CallerSensitive
     MethodHandle downcallHandle(FunctionDescriptor function, Option... options);
 
     /**
@@ -533,6 +536,11 @@ public sealed interface Linker permits AbstractLinker {
      * could wrap all code in the target method handle in a try/catch block that catches any {@link Throwable}, for
      * instance by using the {@link java.lang.invoke.MethodHandles#catchException(MethodHandle, Class, MethodHandle)}
      * method handle combinator, and handle exceptions as desired in the corresponding catch block.
+     * <p>
+     * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
+     * Restricted methods are unsafe, and, if used incorrectly, their use might crash
+     * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
+     * restricted methods, and use safe and supported functionalities, where possible.
      *
      * @param target the target method handle.
      * @param function the upcall stub function descriptor.
@@ -545,7 +553,9 @@ public sealed interface Linker permits AbstractLinker {
      * @throws IllegalStateException if {@code arena.scope().isAlive() == false}
      * @throws WrongThreadException if {@code arena} is a confined arena, and this method is called from a
      * thread {@code T}, other than the arena's owner thread.
+     * @throws IllegalCallerException If the caller is in a module that does not have native access enabled.
      */
+    @CallerSensitive
     MemorySegment upcallStub(MethodHandle target, FunctionDescriptor function, Arena arena, Linker.Option... options);
 
     /**

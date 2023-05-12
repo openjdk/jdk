@@ -477,8 +477,8 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   _phase_timings(nullptr),
   _monitoring_support(nullptr),
   _memory_pool(nullptr),
-  _stw_memory_manager("Shenandoah Pauses", "end of GC pause"),
-  _cycle_memory_manager("Shenandoah Cycles", "end of GC cycle"),
+  _stw_memory_manager("Shenandoah Pauses"),
+  _cycle_memory_manager("Shenandoah Cycles"),
   _gc_timer(new ConcurrentGCTimer()),
   _soft_ref_policy(),
   _log_min_obj_alignment_in_bytes(LogMinObjAlignmentInBytes),
@@ -1503,7 +1503,7 @@ public:
 
     size_t max = _heap->num_regions();
     while (Atomic::load(&_index) < max) {
-      size_t cur = Atomic::fetch_and_add(&_index, stride, memory_order_relaxed);
+      size_t cur = Atomic::fetch_then_add(&_index, stride, memory_order_relaxed);
       size_t start = cur;
       size_t end = MIN2(cur + stride, max);
       if (start >= max) break;

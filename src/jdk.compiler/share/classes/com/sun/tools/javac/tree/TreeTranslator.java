@@ -411,6 +411,13 @@ public class TreeTranslator extends JCTree.Visitor {
         result = tree;
     }
 
+    public void visitStringTemplate(JCStringTemplate tree) {
+        tree.processor = translate(tree.processor);
+        tree.expressions = translate(tree.expressions);
+
+        result = tree;
+    }
+
     public void visitTypeIdent(JCPrimitiveTypeTree tree) {
         result = tree;
     }
