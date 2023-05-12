@@ -4319,11 +4319,6 @@ void MacroAssembler::load_method_holder(Register holder, Register method) {
 void MacroAssembler::load_nklass_compact(Register dst, Register src) {
   assert(UseCompactObjectHeaders, "expects UseCompactObjectHeaders");
 
-  if (!UseCompactObjectHeaders) {
-    ldrw(dst, Address(src, oopDesc::klass_offset_in_bytes()));
-    return;
-  }
-
   Label fast;
 
   // Check if we can take the (common) fast path, if obj is unlocked.
