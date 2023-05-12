@@ -138,6 +138,10 @@ julong os::available_memory() {
   return Bsd::available_memory();
 }
 
+julong os::free_memory() {
+  return Bsd::available_memory();
+}
+
 // available here means free
 julong os::Bsd::available_memory() {
   uint64_t available = physical_memory() >> 2;
