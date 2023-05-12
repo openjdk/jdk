@@ -898,7 +898,7 @@ protected:
     InterfaceSet();
     InterfaceSet(GrowableArray<ciInstanceKlass*>* interfaces);
     bool eq(const InterfaceSet& other) const;
-    bool eq(ciInstanceKlass* k, InterfaceHandling interface_handling) const;
+    bool eq(ciInstanceKlass* k) const;
     int hash() const;
     void dump(outputStream* st) const;
     InterfaceSet union_with(const InterfaceSet& other) const;
