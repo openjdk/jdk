@@ -269,6 +269,7 @@ public class stop001 {
                 line = pipe.readln();
                 log2("       returned string is: " + line);
                 if (vthreadMode) {
+                    // Because the stop() called failed, stop001a.tObj should be "null".
                     if (!line.equals("null")) {
                         log3("ERROR: 'stop001a.tObj' is not 'null'");
                         expresult = returnCode1;
