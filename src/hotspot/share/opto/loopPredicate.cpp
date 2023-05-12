@@ -179,13 +179,6 @@ ProjNode* PhaseIdealLoop::create_new_if_for_predicate(ProjNode* cont_proj, Node*
 
   _igvn.add_input_to(rgn, if_uct);
 
-  // When called from beautify_loops() idom is not constructed yet.
-  if (_idom != nullptr) {
-    Node* ridom = idom(rgn);
-    Node* nrdom = dom_lca_internal(ridom, new_iff);
-    set_idom(rgn, nrdom, dom_depth(rgn));
-  }
-
   // If rgn has phis add new edges which has the same
   // value as on original uncommon_proj pass.
   assert(rgn->in(rgn->req() -1) == if_uct, "new edge should be last");
@@ -223,6 +216,14 @@ ProjNode* PhaseIdealLoop::create_new_if_for_predicate(ProjNode* cont_proj, Node*
       set_idom(iff, if_cont, dom_depth(iff));
     }
   }
+
+  // When called from beautify_loops() idom is not constructed yet.
+  if (_idom != nullptr) {
+    Node* ridom = idom(rgn);
+    Node* nrdom = dom_lca_internal(ridom, new_iff);
+    set_idom(rgn, nrdom, dom_depth(rgn));
+  }
+
   return if_cont->as_Proj();
 }
 
