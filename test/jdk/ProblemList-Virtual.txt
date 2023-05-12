@@ -54,6 +54,8 @@ com/sun/jdi/cds/CDSFieldWatchpoints.java 8307778 generic-all
 sun/tools/jcmd/JcmdOutputEncodingTest.java 8308033 generic-all
 sun/tools/jstack/BasicJStackTest.java 8308033 generic-all
 
+javax/management/remote/mandatory/connection/BrokenConnectionTest.java 8308035 windows-x64
+
 ##########
 ## Tests incompatible with  with virtual test thread factory.
 ## There is no goal to run all test with virtual test thread factory.
