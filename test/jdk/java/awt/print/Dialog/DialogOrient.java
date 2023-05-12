@@ -69,8 +69,8 @@ public class DialogOrient implements Printable {
       Sysout.printInstructions( instructions );
 
         PrinterJob job = PrinterJob.getPrinterJob();
-        job.setPrintable(new DialogOrient());
         PageFormat landscape = job.pageDialog(job.defaultPage());
+        job.setPrintable(new DialogOrient(), landscape);
 
         if (job.printDialog()) {
             job.print();
