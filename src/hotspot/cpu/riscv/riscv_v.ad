@@ -68,6 +68,7 @@ source %{
       case Op_MulReductionVI:
       case Op_MulReductionVL:
       // Vector API specific
+      case Op_VectorTest:
       case Op_PopCountVI:
       case Op_PopCountVL:
         return false;
@@ -4266,39 +4267,6 @@ instruct vmask_fromlong(vRegMask dst, iRegL src) %{
   ins_encode %{
     __ vsetivli(t0, 1, Assembler::e64);
     __ vmv_s_x(as_VectorRegister($dst$$reg), $src$$Register);
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-// ------------------------------ VectorTest -----------------------------------
-// anytrue
-
-instruct vtest_anytrue(rFlagsReg cr, vRegMask src1, vRegMask src2) %{
-  predicate(static_cast<const VectorTestNode*>(n)->get_predicate() == BoolTest::ne);
-  match(Set cr (VectorTest src1 src2));
-  format %{ "vtest_anytrue $src1" %}
-  ins_encode %{
-    BasicType bt = Matcher::vector_element_basic_type(this, $src1);
-    __ vsetvli_helper(bt, Matcher::vector_length(this, $src1));
-    __ vcpop_m($cr$$Register, as_VectorRegister($src1$$reg));
-    __ snez($cr$$Register, $cr$$Register);
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-// alltrue
-
-instruct vtest_alltrue(rFlagsReg cr, vRegMask src1, vRegMask src2) %{
-  predicate(static_cast<const VectorTestNode*>(n)->get_predicate() == BoolTest::overflow);
-  match(Set cr (VectorTest src1 src2));
-  format %{ "vtest_alltrue $src1" %}
-  ins_encode %{
-    uint vector_length = Matcher::vector_length(this, $src1);
-    BasicType bt = Matcher::vector_element_basic_type(this, $src1);
-    __ vsetvli_helper(bt, vector_length);
-    __ vcpop_m($cr$$Register, as_VectorRegister($src1$$reg));
-    __ subw($cr$$Register, $cr$$Register, vector_length);
-    __ snez($cr$$Register, $cr$$Register);
   %}
   ins_pipe(pipe_slow);
 %}
