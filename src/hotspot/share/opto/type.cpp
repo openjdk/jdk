@@ -1687,7 +1687,7 @@ const Type *TypeInt::widen( const Type *old, const Type* limit ) const {
         // If neither endpoint is extremal yet, push out the endpoint
         // which is closer to its respective limit.
         if (_lo >= 0 ||                 // easy common case
-            (juint)(_lo - min) >= (juint)(max - _hi)) {
+            ((juint)_lo - min) >= ((juint)max - _hi)) {
           // Try to widen to an unsigned range type of 31 bits:
           return make(_lo, max, WidenMax);
         } else {
@@ -1997,8 +1997,8 @@ const Type *TypeLong::narrow( const Type *old ) const {
 
   // The new type narrows the old type, so look for a "death march".
   // See comments on PhaseTransform::saturate.
-  julong nrange = _hi - _lo;
-  julong orange = ohi - olo;
+  julong nrange = (julong)_hi - _lo;
+  julong orange = (julong)ohi - olo;
   if (nrange < max_julong - 1 && nrange > (orange >> 1) + (SMALLINT*2)) {
     // Use the new type only if the range shrinks a lot.
     // We do not want the optimizer computing 2^31 point by point.

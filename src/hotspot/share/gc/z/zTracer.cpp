@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,9 @@
 
 #include "precompiled.hpp"
 #include "gc/shared/gcId.hpp"
+#include "gc/z/zGeneration.inline.hpp"
 #include "gc/z/zGlobals.hpp"
+#include "gc/z/zPageType.hpp"
 #include "gc/z/zStat.hpp"
 #include "gc/z/zTracer.hpp"
 #include "jfr/jfrEvents.hpp"
@@ -40,11 +42,11 @@ class ZPageTypeConstant : public JfrSerializer {
 public:
   virtual void serialize(JfrCheckpointWriter& writer) {
     writer.write_count(3);
-    writer.write_key(ZPageTypeSmall);
+    writer.write_key((u8)ZPageType::small);
     writer.write("Small");
-    writer.write_key(ZPageTypeMedium);
+    writer.write_key((u8)ZPageType::medium);
     writer.write("Medium");
-    writer.write_key(ZPageTypeLarge);
+    writer.write_key((u8)ZPageType::large);
     writer.write("Large");
   }
 };
@@ -53,7 +55,7 @@ class ZStatisticsCounterTypeConstant : public JfrSerializer {
 public:
   virtual void serialize(JfrCheckpointWriter& writer) {
     writer.write_count(ZStatCounter::count());
-    for (ZStatCounter* counter = ZStatCounter::first(); counter != NULL; counter = counter->next()) {
+    for (ZStatCounter* counter = ZStatCounter::first(); counter != nullptr; counter = counter->next()) {
       writer.write_key(counter->id());
       writer.write(counter->name());
     }
@@ -64,7 +66,7 @@ class ZStatisticsSamplerTypeConstant : public JfrSerializer {
 public:
   virtual void serialize(JfrCheckpointWriter& writer) {
     writer.write_count(ZStatSampler::count());
-    for (ZStatSampler* sampler = ZStatSampler::first(); sampler != NULL; sampler = sampler->next()) {
+    for (ZStatSampler* sampler = ZStatSampler::first(); sampler != nullptr; sampler = sampler->next()) {
       writer.write_key(sampler->id());
       writer.write(sampler->name());
     }
@@ -85,14 +87,39 @@ static void register_jfr_type_serializers() {
 
 #endif // INCLUDE_JFR
 
-ZTracer* ZTracer::_tracer = NULL;
+ZMinorTracer::ZMinorTracer() :
+    GCTracer(ZMinor) {
+}
 
-ZTracer::ZTracer() :
-    GCTracer(Z) {}
+ZMajorTracer::ZMajorTracer() :
+    GCTracer(ZMajor) {}
+
+void ZGenerationTracer::report_start(const Ticks& timestamp) {
+  _start = timestamp;
+}
+
+void ZYoungTracer::report_end(const Ticks& timestamp) {
+  NoSafepointVerifier nsv;
+
+  EventZYoungGarbageCollection e(UNTIMED);
+  e.set_gcId(GCId::current());
+  e.set_tenuringThreshold(ZGeneration::young()->tenuring_threshold());
+  e.set_starttime(_start);
+  e.set_endtime(timestamp);
+  e.commit();
+}
+
+void ZOldTracer::report_end(const Ticks& timestamp) {
+  NoSafepointVerifier nsv;
+
+  EventZOldGarbageCollection e(UNTIMED);
+  e.set_gcId(GCId::current());
+  e.set_starttime(_start);
+  e.set_endtime(timestamp);
+  e.commit();
+}
 
 void ZTracer::initialize() {
-  assert(_tracer == NULL, "Already initialized");
-  _tracer = new ZTracer();
   JFR_ONLY(register_jfr_type_serializers());
 }
 
