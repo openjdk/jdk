@@ -2004,10 +2004,11 @@ JDWP "Java(tm) Debug Wire Protocol"
     (Command Stop=10
         "Stops the thread with an asynchronous exception. "
         "<p>"
-        "The target VM may not support, or may only provide limited support, for "
-        "this command when the thread is a virtual thread. It may, for example, "
-        "only support this command when the virtual thread is suspended at a "
-        "breakpoint or singlestep event."
+        "This command may be used to send an asynchronous "
+        "exception to a virtual thread when it is suspended at an event. "
+        "An implementation may support sending an asynchronous exception "
+        "to a suspended virtual thread in other cases."
+
         (Out
             (threadObject thread "The thread object ID. ")
             (object throwable "Asynchronous exception. This object must "
@@ -2018,8 +2019,10 @@ JDWP "Java(tm) Debug Wire Protocol"
         (ErrorSet
             (Error INVALID_THREAD "The thread is null, not a valid thread, or the thread "
                                   "is not alive.")
-            (Error NOT_IMPLEMENTED "The thread is a virtual thread and the target "
-                                  "VM does not support the command on virtual threads.")
+            (Error THREAD_NOT_SUSPENDED "The thread is a virtual thread and was not suspended.")
+            (Error OPAQUE_FRAME   "The thread is a suspended virtual thread and the implementation "
+                                  "was unable to throw an asynchronous exception "
+                                  "from the thread's current frame.")
             (Error INVALID_OBJECT "If thread is not a known ID or the asynchronous "
                                   "exception has been garbage collected.")
             (Error VM_DEAD)
@@ -3166,7 +3169,7 @@ JDWP "Java(tm) Debug Wire Protocol"
                                           "call stack.")
     (Constant OPAQUE_FRAME           =32  "Information about the frame is not available "
                                           "(e.g. native frame) or the target VM is unable "
-                                          "to perform an operation on the frame.")
+                                          "to perform an operation on the thread's current frame.")
     (Constant NOT_CURRENT_FRAME      =33  "Operation can only be performed on current frame.")
     (Constant TYPE_MISMATCH          =34  "The variable is not an appropriate type for "
                                           "the function used.")
