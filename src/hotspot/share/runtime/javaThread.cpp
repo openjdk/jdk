@@ -1100,9 +1100,12 @@ void JavaThread::install_async_exception(AsyncExceptionHandshake* aeh) {
   // for AbortVMOnException flag
   Exceptions::debug_check_abort(exception->klass()->external_name());
 
-  // Interrupt thread so it will wake up from a potential wait()/sleep()/park()
-  java_lang_Thread::set_interrupted(threadObj(), true);
-  this->interrupt();
+  oop vt_oop = vthread();
+  if (vt_oop == nullptr || !vt_oop->is_a(vmClasses::BaseVirtualThread_klass())) {
+    // Interrupt thread so it will wake up from a potential wait()/sleep()/park()
+    java_lang_Thread::set_interrupted(threadObj(), true);
+    this->interrupt();
+  }
 }
 
 class InstallAsyncExceptionHandshake : public HandshakeClosure {
