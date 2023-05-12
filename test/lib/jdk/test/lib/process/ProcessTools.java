@@ -399,7 +399,7 @@ public final class ProcessTools {
 
         final List<String> unsupportedArgs = List.of(
              "-jar", "-cp", "-classpath", "--class-path", "--describe-module", "-d",
-             "--dry-run", "--list-modules","--validate-modules", "-version");
+             "--dry-run", "--list-modules","--validate-modules", "-m", "--module", "-version");
 
         final List<String> doubleWordArgs = List.of(
              "-jar", "-cp", "-classpath", "--class-path", "--add-opens", "--upgrade-module-path",
