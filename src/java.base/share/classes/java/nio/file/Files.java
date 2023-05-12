@@ -758,7 +758,7 @@ public final class Files {
             // parent may not exist or other reason
         }
         SecurityException se = null;
-        Path absDir = null;
+        Path absDir = dir;
         try {
             absDir = dir.toAbsolutePath();
         } catch (SecurityException x) {
