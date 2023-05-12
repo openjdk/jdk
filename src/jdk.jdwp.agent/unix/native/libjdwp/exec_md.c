@@ -85,13 +85,10 @@ dbgsysExec(char *cmdLine)
     }
 
     for (i = 0, p = args; i < argc; i++) {
+        p = skipWhitespace(p); // no-op on first iteration
         argv[i] = p;
         p = skipNonWhitespace(p);
         *p++ = '\0';
-        if ((i + 1) == argc) {
-            break; // finished: do not call skipWhitespace again
-        }
-        p = skipWhitespace(p);
     }
     argv[i] = NULL;  /* NULL terminate */
 
