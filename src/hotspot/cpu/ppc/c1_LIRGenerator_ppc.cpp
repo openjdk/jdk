@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2019 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -423,7 +423,7 @@ void LIRGenerator::do_ArithmeticOp_Long(ArithmeticOp* x) {
   LIRItem right(x->y(), this);
   // Missing test if instr is commutative and if we should swap.
   if (right.value()->type()->as_LongConstant() &&
-      (x->op() == Bytecodes::_lsub && right.value()->type()->as_LongConstant()->value() == ((-1)<<15)) ) {
+      (x->op() == Bytecodes::_lsub && right.value()->type()->as_LongConstant()->value() == -32768 ) ) {
     // Sub is implemented by addi and can't support min_simm16 as constant..
     right.load_item();
   } else {
@@ -477,7 +477,7 @@ void LIRGenerator::do_ArithmeticOp_Int(ArithmeticOp* x) {
   LIRItem right(x->y(), this);
   // Missing test if instr is commutative and if we should swap.
   if (right.value()->type()->as_IntConstant() &&
-      (x->op() == Bytecodes::_isub && right.value()->type()->as_IntConstant()->value() == ((-1)<<15)) ) {
+      (x->op() == Bytecodes::_isub && right.value()->type()->as_IntConstant()->value() == -32768) ) {
     // Sub is implemented by addi and can't support min_simm16 as constant.
     right.load_item();
   } else {
