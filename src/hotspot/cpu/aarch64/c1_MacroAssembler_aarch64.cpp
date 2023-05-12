@@ -322,13 +322,7 @@ void C1_MacroAssembler::allocate_array(Register obj, Register len, Register t1, 
 void C1_MacroAssembler::inline_cache_check(Register receiver, Register iCache) {
   verify_oop(receiver);
   // explicit null check not needed since load from [klass_offset] causes a trap
-  // check against inline cache
-  if (UseCompactObjectHeaders) {
-    assert(!MacroAssembler::needs_explicit_null_check(oopDesc::mark_offset_in_bytes()), "must add explicit null check");
-  } else {
-    assert(!MacroAssembler::needs_explicit_null_check(oopDesc::klass_offset_in_bytes()), "must add explicit null check");
-  }
-
+  // check against inline cache. This is checked in Universe::genesis()..
   cmp_klass(receiver, iCache, rscratch1);
 }
 

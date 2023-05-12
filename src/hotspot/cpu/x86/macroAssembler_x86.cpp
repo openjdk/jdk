@@ -5120,8 +5120,8 @@ void MacroAssembler::load_method_holder(Register holder, Register method) {
 }
 
 #ifdef _LP64
-void MacroAssembler::load_nklass(Register dst, Register src) {
-  assert(UseCompressedClassPointers, "expect compressed class pointers");
+void MacroAssembler::load_nklass_compact(Register dst, Register src) {
+  assert(UseCompactObjectHeaders, "expect compact object headers");
 
   if (!UseCompactObjectHeaders) {
     movl(dst, Address(src, oopDesc::klass_offset_in_bytes()));
@@ -5145,12 +5145,17 @@ void MacroAssembler::load_klass(Register dst, Register src, Register tmp) {
   assert_different_registers(src, tmp);
   assert_different_registers(dst, tmp);
 #ifdef _LP64
-  if (UseCompressedClassPointers) {
-    load_nklass(dst, src);
+  if (UseCompactObjectHeaders) {
+    load_nklass_compact(dst, src);
+    decode_klass_not_null(dst, tmp);
+  } else if (UseCompressedClassPointers) {
+    movl(dst, Address(src, oopDesc::klass_offset_in_bytes()));
     decode_klass_not_null(dst, tmp);
   } else
 #endif
+  {
     movptr(dst, Address(src, oopDesc::klass_offset_in_bytes()));
+  }
 }
 
 void MacroAssembler::store_klass(Register dst, Register src, Register tmp) {
@@ -5169,7 +5174,7 @@ void MacroAssembler::store_klass(Register dst, Register src, Register tmp) {
 void MacroAssembler::cmp_klass(Register klass, Register obj, Register tmp) {
 #ifdef _LP64
   if (UseCompactObjectHeaders) {
-    load_nklass(tmp, obj);
+    load_nklass_compact(tmp, obj);
     cmpl(klass, tmp);
   } else if (UseCompressedClassPointers) {
     cmpl(klass, Address(obj, oopDesc::klass_offset_in_bytes()));
@@ -5185,8 +5190,8 @@ void MacroAssembler::cmp_klass(Register src, Register dst, Register tmp1, Regist
   if (UseCompactObjectHeaders) {
     assert(tmp2 != noreg, "need tmp2");
     assert_different_registers(src, dst, tmp1, tmp2);
-    load_nklass(tmp1, src);
-    load_nklass(tmp2, dst);
+    load_nklass_compact(tmp1, src);
+    load_nklass_compact(tmp2, dst);
     cmpl(tmp1, tmp2);
   } else if (UseCompressedClassPointers) {
     movl(tmp1, Address(src, oopDesc::klass_offset_in_bytes()));

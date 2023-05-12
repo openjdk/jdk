@@ -164,12 +164,12 @@ void C1_MacroAssembler::try_allocate(Register obj, Register var_size_in_bytes, i
 
 void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register len, Register t1, Register t2) {
   assert_different_registers(obj, klass, len, t1, t2);
+#ifdef _LP64
   if (UseCompactObjectHeaders) {
     movptr(t1, Address(klass, Klass::prototype_header_offset()));
     movptr(Address(obj, oopDesc::mark_offset_in_bytes()), t1);
   } else {
     movptr(Address(obj, oopDesc::mark_offset_in_bytes()), checked_cast<int32_t>(markWord::prototype().value()));
-#ifdef _LP64
     if (UseCompressedClassPointers) { // Take care not to kill klass
       movptr(t1, klass);
       encode_klass_not_null(t1, rscratch1);
@@ -183,12 +183,14 @@ void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register
 
   if (len->is_valid()) {
     movl(Address(obj, arrayOopDesc::length_offset_in_bytes()), len);
+#ifdef _LP64
     if (UseCompactObjectHeaders) {
       // With compact headers, arrays have a 32bit alignment gap after the length.
       assert(arrayOopDesc::length_offset_in_bytes() == 8, "check length offset");
       xorptr(t1, t1);
       movl(Address(obj, arrayOopDesc::length_offset_in_bytes() + sizeof(jint)), t1);
     }
+#endif
   }
 #ifdef _LP64
   else if (UseCompressedClassPointers && !UseCompactObjectHeaders) {
@@ -315,12 +317,7 @@ void C1_MacroAssembler::allocate_array(Register obj, Register len, Register t1, 
 void C1_MacroAssembler::inline_cache_check(Register receiver, Register iCache) {
   verify_oop(receiver);
   // explicit null check not needed since load from [klass_offset] causes a trap
-  // check against inline cache
-  if (UseCompactObjectHeaders) {
-    assert(!MacroAssembler::needs_explicit_null_check(oopDesc::mark_offset_in_bytes()), "must add explicit null check");
-  } else {
-    assert(!MacroAssembler::needs_explicit_null_check(oopDesc::klass_offset_in_bytes()), "must add explicit null check");
-  }
+  // check against inline cache. This is checked in Universe::genesis().
   int start_offset = offset();
 
   if (UseCompressedClassPointers) {
