@@ -89,7 +89,7 @@ dbgsysExec(char *cmdLine)
         p = skipNonWhitespace(p);
         *p++ = '\0';
         if ((i + 1) == argc) {
-            break; // finished: do not call skipWhitespace once extra
+            break; // finished: do not call skipWhitespace again
         }
         p = skipWhitespace(p);
     }
