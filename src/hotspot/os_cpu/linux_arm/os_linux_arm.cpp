@@ -515,7 +515,7 @@ int64_t ARMAtomicFuncs::add_long_bootstrap(int64_t add_value, volatile int64_t *
   atomic_add_long_func_t func = CAST_TO_FN_PTR(atomic_add_long_func_t,
                                                StubRoutines::atomic_add_long_entry());
   if (func != nullptr) {
-    _add_func = func;
+    _add_long_func = func;
     return (*func)(add_value, dest);
   }
 
