@@ -187,7 +187,7 @@ NET_ThrowNew(JNIEnv *env, int errorNum, char *msg)
     if (excP == NULL) {
         excP = "SocketException";
     }
-    sprintf(exc, "%s%s", JNU_JAVANETPKG, excP);
+    snprintf(exc, sizeof(exc), "%s%s", JNU_JAVANETPKG, excP);
     JNU_ThrowByName(env, exc, fullMsg);
 }
 
