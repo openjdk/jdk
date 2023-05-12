@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,7 +70,7 @@ class CompilerToVM {
     static CardTable::CardValue* cardtable_start_address;
     static int cardtable_shift;
 
-    static int vm_page_size;
+    static size_t vm_page_size;
 
     static int sizeof_vtableEntry;
     static int sizeof_ExceptionTableElement;

@@ -89,7 +89,7 @@ ShenandoahGCPauseMark::ShenandoahGCPauseMark(uint gc_id, SvcGCMarker::reason_typ
 
 ShenandoahPausePhase::ShenandoahPausePhase(const char* title, ShenandoahPhaseTimings::Phase phase, bool log_heap_usage) :
   ShenandoahTimingsTracker(phase),
-  _tracer(title, NULL, GCCause::_no_gc, log_heap_usage),
+  _tracer(title, nullptr, GCCause::_no_gc, log_heap_usage),
   _timer(ShenandoahHeap::heap()->gc_timer()) {
   _timer->register_gc_pause_start(title);
 }
@@ -100,7 +100,7 @@ ShenandoahPausePhase::~ShenandoahPausePhase() {
 
 ShenandoahConcurrentPhase::ShenandoahConcurrentPhase(const char* title, ShenandoahPhaseTimings::Phase phase, bool log_heap_usage) :
   ShenandoahTimingsTracker(phase),
-  _tracer(title, NULL, GCCause::_no_gc, log_heap_usage),
+  _tracer(title, nullptr, GCCause::_no_gc, log_heap_usage),
   _timer(ShenandoahHeap::heap()->gc_timer()) {
   _timer->register_gc_concurrent_start(title);
 }

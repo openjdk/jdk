@@ -6,7 +6,7 @@
  */
 
 class T8161985 {
-    public static void main(String [] arg) {
+    public static void meth() {
         T8161985 t = new T8161985();
         t.getClass();
 

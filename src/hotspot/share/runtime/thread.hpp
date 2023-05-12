@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -115,20 +115,16 @@ class Thread: public ThreadShadow {
 
   // On AArch64, the high order 32 bits are used by a "patching epoch" number
   // which reflects if this thread has executed the required fences, after
-  // an nmethod gets disarmed. The low order 32 bit denote the disarm value.
-  uint64_t _nmethod_disarm_value;
+  // an nmethod gets disarmed. The low order 32 bits denote the disarmed value.
+  uint64_t _nmethod_disarmed_guard_value;
 
  public:
-  int nmethod_disarm_value() {
-    return (int)(uint32_t)_nmethod_disarm_value;
+  void set_nmethod_disarmed_guard_value(int value) {
+    _nmethod_disarmed_guard_value = (uint64_t)(uint32_t)value;
   }
 
-  void set_nmethod_disarm_value(int value) {
-    _nmethod_disarm_value = (uint64_t)(uint32_t)value;
-  }
-
-  static ByteSize nmethod_disarmed_offset() {
-    ByteSize offset = byte_offset_of(Thread, _nmethod_disarm_value);
+  static ByteSize nmethod_disarmed_guard_value_offset() {
+    ByteSize offset = byte_offset_of(Thread, _nmethod_disarmed_guard_value);
     // At least on x86_64, nmethod entry barrier encodes disarmed value offset
     // in instruction as disp8 immed
     assert(in_bytes(offset) < 128, "Offset >= 128");
@@ -324,7 +320,6 @@ class Thread: public ThreadShadow {
   virtual bool is_Java_thread()     const            { return false; }
   virtual bool is_Compiler_thread() const            { return false; }
   virtual bool is_service_thread() const             { return false; }
-  virtual bool is_monitor_deflation_thread() const   { return false; }
   virtual bool is_hidden_from_external_view() const  { return false; }
   virtual bool is_jvmti_agent_thread() const         { return false; }
   virtual bool is_Watcher_thread() const             { return false; }
@@ -350,11 +345,11 @@ class Thread: public ThreadShadow {
   // and logging.
   virtual const char* type_name() const { return "Thread"; }
 
-  // Returns the current thread (ASSERTS if NULL)
+  // Returns the current thread (ASSERTS if nullptr)
   static inline Thread* current();
-  // Returns the current thread, or NULL if not attached
+  // Returns the current thread, or null if not attached
   static inline Thread* current_or_null();
-  // Returns the current thread, or NULL if not attached, and is
+  // Returns the current thread, or null if not attached, and is
   // safe for use from signal-handlers
   static inline Thread* current_or_null_safe();
 
@@ -363,7 +358,6 @@ class Thread: public ThreadShadow {
   static void check_for_dangling_thread_pointer(Thread *thread);
 #endif
   static void set_priority(Thread* thread, ThreadPriority priority);
-  static ThreadPriority get_priority(const Thread* const thread);
   static void start(Thread* thread);
 
   void set_native_thread_name(const char *name) {
@@ -441,7 +435,7 @@ class Thread: public ThreadShadow {
   // GC support
   // Apply "f->do_oop" to all root oops in "this".
   //   Used by JavaThread::oops_do.
-  // Apply "cf->do_code_blob" (if !NULL) to all code blobs active in frames
+  // Apply "cf->do_code_blob" (if !nullptr) to all code blobs active in frames
   virtual void oops_do_no_frames(OopClosure* f, CodeBlobClosure* cf);
   virtual void oops_do_frames(OopClosure* f, CodeBlobClosure* cf) {}
   void oops_do(OopClosure* f, CodeBlobClosure* cf);
@@ -541,7 +535,7 @@ protected:
 
  public:
   // Stack overflow support
-  address stack_base() const           { assert(_stack_base != NULL,"Sanity check"); return _stack_base; }
+  address stack_base() const           { assert(_stack_base != nullptr,"Sanity check"); return _stack_base; }
   void    set_stack_base(address base) { _stack_base = base; }
   size_t  stack_size() const           { return _stack_size; }
   void    set_stack_size(size_t size)  { _stack_size = size; }
@@ -575,7 +569,7 @@ protected:
   void print_owned_locks_on(outputStream* st) const;
   void print_owned_locks() const                 { print_owned_locks_on(tty);    }
   Mutex* owned_locks() const                     { return _owned_locks;          }
-  bool owns_locks() const                        { return owned_locks() != NULL; }
+  bool owns_locks() const                        { return owned_locks() != nullptr; }
 
   // Deadlock detection
   ResourceMark* current_resource_mark()          { return _current_resource_mark; }
@@ -611,9 +605,9 @@ protected:
                                               // and ObjectSynchronizer::read_stable_mark
 
   // Termination indicator used by the signal handler.
-  // _ParkEvent is just a convenient field we can NULL out after setting the JavaThread termination state
+  // _ParkEvent is just a convenient field we can null out after setting the JavaThread termination state
   // (which can't itself be read from the signal handler if a signal hits during the Thread destructor).
-  bool has_terminated()                       { return Atomic::load(&_ParkEvent) == NULL; };
+  bool has_terminated()                       { return Atomic::load(&_ParkEvent) == nullptr; };
 
   jint _hashStateW;                           // Marsaglia Shift-XOR thread-local RNG
   jint _hashStateX;                           // thread-specific hashCode generator state
@@ -642,7 +636,7 @@ protected:
 // Inline implementation of Thread::current()
 inline Thread* Thread::current() {
   Thread* current = current_or_null();
-  assert(current != NULL, "Thread::current() called on detached thread");
+  assert(current != nullptr, "Thread::current() called on detached thread");
   return current;
 }
 
@@ -653,7 +647,7 @@ inline Thread* Thread::current_or_null() {
   if (ThreadLocalStorage::is_initialized()) {
     return ThreadLocalStorage::thread();
   }
-  return NULL;
+  return nullptr;
 #endif
 }
 
@@ -661,7 +655,7 @@ inline Thread* Thread::current_or_null_safe() {
   if (ThreadLocalStorage::is_initialized()) {
     return ThreadLocalStorage::thread();
   }
-  return NULL;
+  return nullptr;
 }
 
 #endif // SHARE_RUNTIME_THREAD_HPP

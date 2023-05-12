@@ -61,6 +61,7 @@ public class Tokens {
         return instance;
     }
 
+    @SuppressWarnings("this-escape")
     protected Tokens(Context context) {
         context.put(tokensKey, this);
         names = Names.instance(context);
@@ -272,9 +273,9 @@ public class Tokens {
     public interface Comment {
 
         enum CommentStyle {
-            LINE,
-            BLOCK,
-            JAVADOC,
+            LINE,       // Starting with //
+            BLOCK,      // starting with /*
+            JAVADOC,    // starting with /**
         }
 
         String getText();

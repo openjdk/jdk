@@ -5,7 +5,7 @@ SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 
-<!ELEMENT ldml ( identity, ( alias | ( fallback*, localeDisplayNames?, layout?, contextTransforms?, characters?, delimiters?, measurement?, dates?, numbers?, units?, listPatterns?, collations?, posix?, characterLabels?, segmentations?, rbnf?, typographicNames?, annotations?, metadata?, references?, special* ) ) ) >
+<!ELEMENT ldml ( identity, ( alias | ( fallback*, localeDisplayNames?, layout?, contextTransforms?, characters?, delimiters?, measurement?, dates?, numbers?, units?, listPatterns?, collations?, posix?, characterLabels?, segmentations?, rbnf?, typographicNames?, personNames?, annotations?, metadata?, references?, special* ) ) ) >
 <!ATTLIST ldml version CDATA #IMPLIED >
     <!--@METADATA-->
     <!--@DEPRECATED-->
@@ -42,7 +42,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 <!ATTLIST version number CDATA #REQUIRED >
     <!--@MATCH:regex/\$Revision.*\$-->
     <!--@METADATA-->
-<!ATTLIST version cldrVersion CDATA #FIXED "41" >
+<!ATTLIST version cldrVersion CDATA #FIXED "42" >
     <!--@MATCH:any-->
     <!--@VALUE-->
 <!ATTLIST version draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
@@ -1421,7 +1421,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 
 <!ELEMENT pattern ( #PCDATA ) >
 <!ATTLIST pattern type NMTOKEN "standard" >
-    <!--@MATCH:literal/1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000, 10000000000, 100000000000, 1000000000000, 10000000000000, 100000000000000, approximately, atLeast, atMost, range, standard-->
+    <!--@MATCH:literal/1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000, 10000000000, 100000000000, 1000000000000, 10000000000000, 100000000000000, 1000000000000000, 10000000000000000, 100000000000000000, 1000000000000000000, 10000000000000000000, approximately, atLeast, atMost, range, standard-->
 <!ATTLIST pattern numbers CDATA #IMPLIED >
     <!-- TODO: generalize this to be any (M=|d=)?<numberSystem> -->
     <!--@MATCH:literal/M=romanlow, d=hanidays, hanidec, hebr, y=jpanyear-->
@@ -1429,7 +1429,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 <!ATTLIST pattern count (0 | 1 | zero | one | two | few | many | other) #IMPLIED >
     <!-- Only used for decimalFormats type="1000..." -->
 <!ATTLIST pattern alt NMTOKENS #IMPLIED >
-    <!--@MATCH:literal/variant-->
+    <!--@MATCH:literal/alphaNextToNumber, noCurrency, variant-->
 <!ATTLIST pattern draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
     <!--@METADATA-->
     <!--@DEPRECATED:true, false-->
@@ -1526,7 +1526,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 
 <!ELEMENT dateTimeFormat ( alias | ( pattern*, displayName*, special* ) ) >
 <!ATTLIST dateTimeFormat type NMTOKEN "standard" >
-    <!--@MATCH:literal/standard-->
+    <!--@MATCH:literal/standard, atTime-->
 <!ATTLIST dateTimeFormat alt NMTOKENS #IMPLIED >
     <!--@MATCH:literal/variant-->
 <!ATTLIST dateTimeFormat draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
@@ -1615,7 +1615,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 <!ELEMENT intervalFormatItem ( alias | ( greatestDifference*, special* ) ) >
 <!ATTLIST intervalFormatItem id NMTOKEN #REQUIRED >
     <!-- TODO: check to see if this should be minimized -->
-    <!--@MATCH:literal/Bh, Bhm, Gy, GyM, GyMEd, GyMMM, GyMMMEd, GyMMMd, GyMd, H, Hm, Hmv, Hv, M, MEd, MMM, MMMEEEEd, MMMEd, MMMM, MMMMEd, MMMMd, MMMd, Md, d, h, hm, hmv, hv, y, yM, yMEd, yMMM, yMMMEEEEd, yMMMEd, yMMMM, yMMMMEEEEd, yMMMMEd, yMMMMd, yMMMd, yMd, GGGGGyM, GGGGGyMEd, GGGGGyMd, GyMMMM, GyMMMMEd, GyMMMMd-->
+    <!--@MATCH:literal/Bh, Bhm, Gy, GyM, GyMEd, GyMMM, GyMMMEd, GyMMMd, GyMd, H, Hm, Hmv, Hmvvvv, Hv, Hvvvv, M, MEd, MMM, MMMEEEEd, MMMEd, MMMM, MMMMEd, MMMMd, MMMd, Md, d, h, hm, hmv, hmvvvv, hv, hvvvv, y, yM, yMEd, yMMM, yMMMEEEEd, yMMMEd, yMMMM, yMMMMEEEEd, yMMMMEd, yMMMMd, yMMMd, yMd, GGGGGyM, GGGGGyMEd, GGGGGyMd, GyMMMM, GyMMMMEd, GyMMMMd-->
 <!ATTLIST intervalFormatItem alt NMTOKENS #IMPLIED >
     <!--@MATCH:literal/variant-->
 <!ATTLIST intervalFormatItem draft (approved | contributed | provisional | unconfirmed) #IMPLIED >
@@ -2353,7 +2353,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
     <!--@VALUE-->
     <!--@DEPRECATED-->
 
-<!ELEMENT currencyFormats ( alias | ( default*, currencySpacing*, currencyFormatLength*, unitPattern*, special* ) ) >
+<!ELEMENT currencyFormats ( alias | ( default*, currencySpacing*, currencyFormatLength*, currencyPatternAppendISO*, unitPattern*, special* ) ) >
 <!ATTLIST currencyFormats draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
     <!--@METADATA-->
     <!--@DEPRECATED-->
@@ -2428,6 +2428,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 <!ATTLIST currencyFormat validSubLocales CDATA #IMPLIED >
     <!--@VALUE-->
     <!--@DEPRECATED-->
+
+<!ELEMENT currencyPatternAppendISO ( #PCDATA ) >
+<!ATTLIST currencyPatternAppendISO alt NMTOKENS #IMPLIED >
+    <!--@MATCH:literal/variant-->
+<!ATTLIST currencyPatternAppendISO draft (approved | contributed | provisional | unconfirmed) #IMPLIED >
+    <!--@METADATA-->
+<!ATTLIST currencyPatternAppendISO references CDATA #IMPLIED >
+    <!--@METADATA-->
 
 <!ELEMENT unitPattern ( #PCDATA ) >
 <!ATTLIST unitPattern count (0 | 1 | zero | one | two | few | many | other) #REQUIRED >
@@ -3148,6 +3156,75 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 <!ATTLIST featureName alt NMTOKENS #IMPLIED >
     <!--@MATCH:literal/short, variant-->
 <!ATTLIST featureName draft (approved | contributed | provisional | unconfirmed) #IMPLIED >
+    <!--@METADATA-->
+
+<!ELEMENT personNames ( alias | ( nameOrderLocales*, foreignSpaceReplacement*, initialPattern*, personName*, sampleName*, special* ) ) >
+    <!--@TECHPREVIEW-->
+
+<!ELEMENT nameOrderLocales ( #PCDATA ) >
+    <!--@TECHPREVIEW-->
+<!ATTLIST nameOrderLocales order (givenFirst | surnameFirst) #REQUIRED >
+<!ATTLIST nameOrderLocales alt NMTOKENS #IMPLIED >
+    <!--@MATCH:literal/variant-->
+<!ATTLIST nameOrderLocales draft (approved | contributed | provisional | unconfirmed) #IMPLIED >
+    <!--@METADATA-->
+<!ATTLIST nameOrderLocales references CDATA #IMPLIED >
+    <!--@METADATA-->
+
+<!ELEMENT foreignSpaceReplacement ( #PCDATA ) >
+    <!--@TECHPREVIEW-->
+<!ATTLIST foreignSpaceReplacement xml:space (default | preserve) "preserve" >
+    <!--@METADATA-->
+<!ATTLIST foreignSpaceReplacement alt NMTOKENS #IMPLIED >
+    <!--@MATCH:literal/variant-->
+<!ATTLIST foreignSpaceReplacement draft (approved | contributed | provisional | unconfirmed) #IMPLIED >
+    <!--@METADATA-->
+<!ATTLIST foreignSpaceReplacement references CDATA #IMPLIED >
+    <!--@METADATA-->
+
+<!ELEMENT initialPattern ( #PCDATA ) >
+    <!--@TECHPREVIEW-->
+<!ATTLIST initialPattern type (initial | initialSequence) #REQUIRED >
+<!ATTLIST initialPattern alt NMTOKENS #IMPLIED >
+    <!--@MATCH:literal/variant-->
+<!ATTLIST initialPattern draft (approved | contributed | provisional | unconfirmed) #IMPLIED >
+    <!--@METADATA-->
+<!ATTLIST initialPattern references CDATA #IMPLIED >
+    <!--@METADATA-->
+
+<!ELEMENT personName ( alias | ( namePattern+, special* ) ) >
+    <!--@TECHPREVIEW-->
+<!ATTLIST personName order NMTOKENS #IMPLIED >
+    <!--@MATCH:set/literal/givenFirst, surnameFirst, sorting-->
+<!ATTLIST personName length NMTOKENS #IMPLIED >
+    <!--@MATCH:set/literal/long, medium, short-->
+<!ATTLIST personName usage NMTOKENS #IMPLIED >
+    <!--@MATCH:set/literal/referring, addressing, monogram-->
+<!ATTLIST personName formality NMTOKENS #IMPLIED >
+    <!--@MATCH:set/literal/formal, informal-->
+
+<!ELEMENT namePattern ( #PCDATA ) >
+    <!--@TECHPREVIEW-->
+<!ATTLIST namePattern alt (1 | 2) #IMPLIED >
+<!ATTLIST namePattern draft (approved | contributed | provisional | unconfirmed) #IMPLIED >
+    <!--@METADATA-->
+<!ATTLIST namePattern references CDATA #IMPLIED >
+    <!--@METADATA-->
+
+<!ELEMENT sampleName ( alias | ( nameField+, special* ) ) >
+    <!--@TECHPREVIEW-->
+<!ATTLIST sampleName item NMTOKENS #REQUIRED >
+    <!--@MATCH:literal/givenOnly, givenSurnameOnly, given12Surname, full-->
+
+<!ELEMENT nameField ( #PCDATA ) >
+    <!--@TECHPREVIEW-->
+<!ATTLIST nameField type CDATA #REQUIRED >
+    <!--@MATCH:literal/prefix, given, given-informal, given2, surname, surname-prefix, surname-core, surname2, suffix-->
+<!ATTLIST nameField alt NMTOKENS #IMPLIED >
+    <!--@MATCH:literal/variant-->
+<!ATTLIST nameField draft (approved | contributed | provisional | unconfirmed) #IMPLIED >
+    <!--@METADATA-->
+<!ATTLIST nameField references CDATA #IMPLIED >
     <!--@METADATA-->
 
 <!ELEMENT annotations ( alias | ( annotation*, special* ) ) >

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -54,6 +54,8 @@ import javax.xml.stream.events.XMLEvent;
  * @author Neeraj Bajaj, Sun Microsystems
  * @author Venugopal Rao K, Sun Microsystems
  * @author Elena Litani, IBM
+ *
+ * @LastModified: Nov 2022
  */
 public class XMLNSDocumentScannerImpl
         extends XMLDocumentScannerImpl {
@@ -453,8 +455,8 @@ public class XMLNSDocumentScannerImpl
         // record namespace declarations if any.
         if (fBindNamespaces) {
             if (isNSDecl) {
-                //check the length of URI
-                if (tmpStr.length > fXMLNameLimit) {
+                //check the length of URI if a limit is set
+                if (fXMLNameLimit > 0 && tmpStr.length > fXMLNameLimit) {
                     fErrorReporter.reportError(XMLMessageFormatter.XML_DOMAIN,
                             "MaxXMLNameLimit",
                             new Object[]{new String(tmpStr.ch,tmpStr.offset,tmpStr.length),

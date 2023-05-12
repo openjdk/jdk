@@ -51,7 +51,9 @@ public class StringBuilders {
     private String[] str3p9p8;
     private String[] str22p40p31;
     private StringBuilder sbLatin1;
+    private StringBuilder sbLatin2;
     private StringBuilder sbUtf16;
+    private StringBuilder sbUtf17;
 
     @Setup
     public void setup() {
@@ -64,7 +66,9 @@ public class StringBuilders {
         str3p9p8 = new String[]{"123", "123456789", "12345678"};
         str22p40p31 = new String[]{"1234567890123456789012", "1234567890123456789012345678901234567890", "1234567890123456789012345678901"};
         sbLatin1 = new StringBuilder("Latin1 string");
+        sbLatin2 = new StringBuilder("Latin1 string");
         sbUtf16 = new StringBuilder("UTF-\uFF11\uFF16 string");
+        sbUtf17 = new StringBuilder("UTF-\uFF11\uFF16 string");
     }
 
     @Benchmark
@@ -250,6 +254,15 @@ public class StringBuilders {
         return result.toString();
     }
 
+    @Benchmark
+    public int compareToLatin1() {
+        return sbLatin1.compareTo(sbLatin2);
+    }
+
+    @Benchmark
+    public int compareToUTF16() {
+        return sbUtf16.compareTo(sbUtf17);
+    }
 
     @Benchmark
     public String toStringCharWithMixed8() {

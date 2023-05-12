@@ -32,6 +32,13 @@ import java.util.List;
 public class TestFormat {
     private static final List<String> FAILURES = new ArrayList<>();
 
+    public static void checkAndReport(boolean test, String failureMessage) {
+        if (!test) {
+            FAILURES.add(failureMessage);
+            throwIfAnyFailures();
+        }
+    }
+
     public static void check(boolean test, String failureMessage) {
         if (!test) {
             fail(failureMessage);
@@ -41,6 +48,12 @@ public class TestFormat {
     public static void checkNoThrow(boolean test, String failureMessage) {
         if (!test) {
             failNoThrow(failureMessage);
+        }
+    }
+
+    public static void checkNoReport(boolean test, String failureMessage) {
+        if (!test) {
+            throw new TestFormatException(failureMessage);
         }
     }
 

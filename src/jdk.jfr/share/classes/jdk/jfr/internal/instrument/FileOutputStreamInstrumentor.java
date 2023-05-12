@@ -42,7 +42,6 @@ final class FileOutputStreamInstrumentor {
 
     private String path;
 
-    @SuppressWarnings("deprecation")
     @JIInstrumentationMethod
     public void write(int b) throws IOException {
         EventConfiguration eventConfiguration = EventConfigurations.FILE_WRITE;
@@ -64,7 +63,6 @@ final class FileOutputStreamInstrumentor {
         }
     }
 
-    @SuppressWarnings("deprecation")
     @JIInstrumentationMethod
     public void write(byte b[]) throws IOException {
         EventConfiguration eventConfiguration = EventConfigurations.FILE_WRITE;
@@ -86,7 +84,6 @@ final class FileOutputStreamInstrumentor {
         }
     }
 
-    @SuppressWarnings("deprecation")
     @JIInstrumentationMethod
     public void write(byte b[], int off, int len) throws IOException {
         EventConfiguration eventConfiguration = EventConfigurations.FILE_WRITE;

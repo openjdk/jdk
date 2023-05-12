@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -505,7 +505,7 @@ public class LinkedHashMap<K,V>
      *
      * @param    eldest The least recently inserted entry in the map, or if
      *           this is an access-ordered map, the least recently accessed
-     *           entry.  This is the entry that will be removed it this
+     *           entry.  This is the entry that will be removed if this
      *           method returns {@code true}.  If the map was empty prior
      *           to the {@code put} or {@code putAll} invocation resulting
      *           in this invocation, this will be the entry that was just

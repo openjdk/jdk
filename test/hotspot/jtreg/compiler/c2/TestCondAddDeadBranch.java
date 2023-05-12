@@ -23,10 +23,13 @@
 
 /**
  * @test
- * @bug 8268883
+ * @bug 8268883 8293833
  * @summary C2: assert(false) failed: unscheduable graph
- *
+ *          Error mixing types with -XX:+UseCMoveUnconditionally -XX:+UseVectorCmov
+ * @requires vm.compiler2.enabled
  * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:CompileOnly=TestCondAddDeadBranch TestCondAddDeadBranch
+ * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:CompileOnly=TestCondAddDeadBranch
+ *                   -XX:+UseCMoveUnconditionally -XX:+UseVectorCmov -XX:MaxVectorSize=32  TestCondAddDeadBranch
  *
  */
 

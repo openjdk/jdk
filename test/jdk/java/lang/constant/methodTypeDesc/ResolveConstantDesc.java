@@ -34,8 +34,8 @@ import java.lang.constant.MethodTypeDesc;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
-import java.security.AccessControlException;;
-import java.security.Permission;;
+import java.security.AccessControlException;
+import java.security.Permission;
 
 import static jdk.test.lib.Asserts.*;
 

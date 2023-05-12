@@ -24,6 +24,7 @@
  */
 package java.lang;
 
+import java.lang.ref.Reference;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Locale;
@@ -53,6 +54,9 @@ import jdk.internal.vm.StackableScope;
 import jdk.internal.vm.ThreadContainer;
 import jdk.internal.vm.ThreadContainers;
 import jdk.internal.vm.annotation.ChangesCurrentThread;
+import jdk.internal.vm.annotation.ForceInline;
+import jdk.internal.vm.annotation.Hidden;
+import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.vm.annotation.JvmtiMountTransition;
 import sun.nio.ch.Interruptible;
 import sun.security.action.GetPropertyAction;
@@ -207,7 +211,7 @@ final class VirtualThread extends BaseVirtualThread {
         }
 
         // notify JVMTI before mount
-        if (notifyJvmtiEvents) notifyJvmtiMountBegin(firstRun);
+        notifyJvmtiMount(true, firstRun);
 
         try {
             cont.run();
@@ -221,45 +225,59 @@ final class VirtualThread extends BaseVirtualThread {
     }
 
     /**
-     * Submits the runContinuation task to the scheduler.
-     * @param {@code lazySubmit} to lazy submit
+     * Submits the runContinuation task to the scheduler. For the default scheduler,
+     * and calling it on a worker thread, the task will be pushed to the local queue,
+     * otherwise it will be pushed to a submission queue.
+     *
      * @throws RejectedExecutionException
-     * @see ForkJoinPool#lazySubmit(ForkJoinTask)
      */
-    private void submitRunContinuation(boolean lazySubmit) {
+    private void submitRunContinuation() {
         try {
-            if (lazySubmit && scheduler instanceof ForkJoinPool pool) {
-                pool.lazySubmit(ForkJoinTask.adapt(runContinuation));
-            } else {
-                scheduler.execute(runContinuation);
-            }
+            scheduler.execute(runContinuation);
         } catch (RejectedExecutionException ree) {
-            // record event
-            var event = new VirtualThreadSubmitFailedEvent();
-            if (event.isEnabled()) {
-                event.javaThreadId = threadId();
-                event.exceptionMessage = ree.getMessage();
-                event.commit();
-            }
+            submitFailed(ree);
             throw ree;
         }
     }
 
     /**
-     * Submits the runContinuation task to the scheduler.
+     * Submits the runContinuation task to the scheduler with a lazy submit.
      * @throws RejectedExecutionException
+     * @see ForkJoinPool#lazySubmit(ForkJoinTask)
      */
-    private void submitRunContinuation() {
-        submitRunContinuation(false);
+    private void lazySubmitRunContinuation(ForkJoinPool pool) {
+        try {
+            pool.lazySubmit(ForkJoinTask.adapt(runContinuation));
+        } catch (RejectedExecutionException ree) {
+            submitFailed(ree);
+            throw ree;
+        }
     }
 
     /**
-     * Submits the runContinuation task to the scheduler and without signalling
-     * any threads if possible.
+     * Submits the runContinuation task to the scheduler as an external submit.
      * @throws RejectedExecutionException
+     * @see ForkJoinPool#externalSubmit(ForkJoinTask)
      */
-    private void lazySubmitRunContinuation() {
-        submitRunContinuation(true);
+    private void externalSubmitRunContinuation(ForkJoinPool pool) {
+        try {
+            pool.externalSubmit(ForkJoinTask.adapt(runContinuation));
+        } catch (RejectedExecutionException ree) {
+            submitFailed(ree);
+            throw ree;
+        }
+    }
+
+    /**
+     * If enabled, emits a JFR VirtualThreadSubmitFailedEvent.
+     */
+    private void submitFailed(RejectedExecutionException ree) {
+        var event = new VirtualThreadSubmitFailedEvent();
+        if (event.isEnabled()) {
+            event.javaThreadId = threadId();
+            event.exceptionMessage = ree.getMessage();
+            event.commit();
+        }
     }
 
     /**
@@ -270,11 +288,10 @@ final class VirtualThread extends BaseVirtualThread {
     @ChangesCurrentThread
     private void run(Runnable task) {
         assert state == RUNNING;
-        boolean notifyJvmti = notifyJvmtiEvents;
 
         // first mount
         mount();
-        if (notifyJvmti) notifyJvmtiMountEnd(true);
+        notifyJvmtiMount(false, true);
 
         // emit JFR event if enabled
         if (VirtualThreadStartEvent.isTurnedOn()) {
@@ -283,13 +300,13 @@ final class VirtualThread extends BaseVirtualThread {
             event.commit();
         }
 
+        Object bindings = scopedValueBindings();
         try {
-            task.run();
+            runWith(bindings, task);
         } catch (Throwable exc) {
             dispatchUncaughtException(exc);
         } finally {
             try {
-
                 // pop any remaining scopes from the stack, this may block
                 StackableScope.popAll();
 
@@ -302,13 +319,21 @@ final class VirtualThread extends BaseVirtualThread {
 
             } finally {
                 // last unmount
-                if (notifyJvmti) notifyJvmtiUnmountBegin(true);
+                notifyJvmtiUnmount(true, true);
                 unmount();
 
                 // final state
                 setState(TERMINATED);
             }
         }
+    }
+
+    @Hidden
+    @ForceInline
+    private void runWith(Object bindings, Runnable op) {
+        ensureMaterializedForStackWalk(bindings);
+        op.run();
+        Reference.reachabilityFence(bindings);
     }
 
     /**
@@ -356,35 +381,27 @@ final class VirtualThread extends BaseVirtualThread {
 
     /**
      * Sets the current thread to the current carrier thread.
-     * @return true if JVMTI was notified
      */
     @ChangesCurrentThread
     @JvmtiMountTransition
-    private boolean switchToCarrierThread() {
-        boolean notifyJvmti = notifyJvmtiEvents;
-        if (notifyJvmti) {
-            notifyJvmtiHideFrames(true);
-        }
+    private void switchToCarrierThread() {
+        notifyJvmtiHideFrames(true);
         Thread carrier = this.carrierThread;
         assert Thread.currentThread() == this
                 && carrier == Thread.currentCarrierThread();
         carrier.setCurrentThread(carrier);
-        return notifyJvmti;
     }
 
     /**
      * Sets the current thread to the given virtual thread.
-     * If {@code notifyJvmti} is true then JVMTI is notified.
      */
     @ChangesCurrentThread
     @JvmtiMountTransition
-    private void switchToVirtualThread(VirtualThread vthread, boolean notifyJvmti) {
+    private void switchToVirtualThread(VirtualThread vthread) {
         Thread carrier = vthread.carrierThread;
         assert carrier == Thread.currentCarrierThread();
         carrier.setCurrentThread(vthread);
-        if (notifyJvmti) {
-            notifyJvmtiHideFrames(false);
-        }
+        notifyJvmtiHideFrames(false);
     }
 
     /**
@@ -394,17 +411,15 @@ final class VirtualThread extends BaseVirtualThread {
      */
     @ChangesCurrentThread
     private boolean yieldContinuation() {
-        boolean notifyJvmti = notifyJvmtiEvents;
-
         // unmount
-        if (notifyJvmti) notifyJvmtiUnmountBegin(false);
+        notifyJvmtiUnmount(true, false);
         unmount();
         try {
             return Continuation.yield(VTHREAD_SCOPE);
         } finally {
             // re-mount
             mount();
-            if (notifyJvmti) notifyJvmtiMountEnd(false);
+            notifyJvmtiMount(false, false);
         }
     }
 
@@ -421,21 +436,30 @@ final class VirtualThread extends BaseVirtualThread {
             setState(PARKED);
 
             // notify JVMTI that unmount has completed, thread is parked
-            if (notifyJvmtiEvents) notifyJvmtiUnmountEnd(false);
+            notifyJvmtiUnmount(false, false);
 
             // may have been unparked while parking
             if (parkPermit && compareAndSetState(PARKED, RUNNABLE)) {
                 // lazy submit to continue on the current thread as carrier if possible
-                lazySubmitRunContinuation();
+                if (currentThread() instanceof CarrierThread ct) {
+                    lazySubmitRunContinuation(ct.getPool());
+                } else {
+                    submitRunContinuation();
+                }
+
             }
         } else if (s == YIELDING) {   // Thread.yield
             setState(RUNNABLE);
 
             // notify JVMTI that unmount has completed, thread is runnable
-            if (notifyJvmtiEvents) notifyJvmtiUnmountEnd(false);
+            notifyJvmtiUnmount(false, false);
 
-            // lazy submit to continue on the current thread as carrier if possible
-            lazySubmitRunContinuation();
+            // external submit if there are no tasks in the local task queue
+            if (currentThread() instanceof CarrierThread ct && ct.getQueuedTaskCount() == 0) {
+                externalSubmitRunContinuation(ct.getPool());
+            } else {
+                submitRunContinuation();
+            }
         }
     }
 
@@ -449,7 +473,7 @@ final class VirtualThread extends BaseVirtualThread {
         assert (state() == TERMINATED) && (carrierThread == null);
 
         if (executed) {
-            if (notifyJvmtiEvents) notifyJvmtiUnmountEnd(true);
+            notifyJvmtiUnmount(false, true);
         }
 
         // notify anyone waiting for this virtual thread to terminate
@@ -488,8 +512,8 @@ final class VirtualThread extends BaseVirtualThread {
         boolean started = false;
         container.onStart(this); // may throw
         try {
-            // extent locals may be inherited
-            inheritExtentLocalBindings(container);
+            // scoped values may be inherited
+            inheritScopedValueBindings(container);
 
             // submit task to run thread
             submitRunContinuation();
@@ -617,11 +641,11 @@ final class VirtualThread extends BaseVirtualThread {
     @ChangesCurrentThread
     private Future<?> scheduleUnpark(Runnable unparker, long nanos) {
         // need to switch to current carrier thread to avoid nested parking
-        boolean notifyJvmti = switchToCarrierThread();
+        switchToCarrierThread();
         try {
             return UNPARKER.schedule(unparker, nanos, NANOSECONDS);
         } finally {
-            switchToVirtualThread(this, notifyJvmti);
+            switchToVirtualThread(this);
         }
     }
 
@@ -632,11 +656,11 @@ final class VirtualThread extends BaseVirtualThread {
     private void cancel(Future<?> future) {
         if (!future.isDone()) {
             // need to switch to current carrier thread to avoid nested parking
-            boolean notifyJvmti = switchToCarrierThread();
+            switchToCarrierThread();
             try {
                 future.cancel(false);
             } finally {
-                switchToVirtualThread(this, notifyJvmti);
+                switchToVirtualThread(this);
             }
         }
     }
@@ -656,11 +680,11 @@ final class VirtualThread extends BaseVirtualThread {
             int s = state();
             if (s == PARKED && compareAndSetState(PARKED, RUNNABLE)) {
                 if (currentThread instanceof VirtualThread vthread) {
-                    boolean notifyJvmti = vthread.switchToCarrierThread();
+                    vthread.switchToCarrierThread();
                     try {
                         submitRunContinuation();
                     } finally {
-                        switchToVirtualThread(vthread, notifyJvmti);
+                        switchToVirtualThread(vthread);
                     }
                 } else {
                     submitRunContinuation();
@@ -1021,20 +1045,15 @@ final class VirtualThread extends BaseVirtualThread {
 
     // -- JVM TI support --
 
-    private static volatile boolean notifyJvmtiEvents;  // set by VM
-
+    @IntrinsicCandidate
     @JvmtiMountTransition
-    private native void notifyJvmtiMountBegin(boolean firstMount);
+    private native void notifyJvmtiMount(boolean hide, boolean firstMount);
 
+    @IntrinsicCandidate
     @JvmtiMountTransition
-    private native void notifyJvmtiMountEnd(boolean firstMount);
+    private native void notifyJvmtiUnmount(boolean hide, boolean lastUnmount);
 
-    @JvmtiMountTransition
-    private native void notifyJvmtiUnmountBegin(boolean lastUnmount);
-
-    @JvmtiMountTransition
-    private native void notifyJvmtiUnmountEnd(boolean lastUnmount);
-
+    @IntrinsicCandidate
     @JvmtiMountTransition
     private native void notifyJvmtiHideFrames(boolean hide);
 

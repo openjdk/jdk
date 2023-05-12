@@ -927,7 +927,7 @@ public class ProgressMonitor implements Accessible
         }
 
         /**
-         * Returns the number of characters (valid indicies)
+         * Returns the number of characters (valid indices)
          *
          * @return the number of characters
          */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -276,7 +276,7 @@ public:
   Array<u1>* stackmap_data() const { return _stackmap_data; }
   void set_stackmap_data(Array<u1>* sd) { _stackmap_data = sd; }
   void copy_stackmap_data(ClassLoaderData* loader_data, u1* sd, int length, TRAPS);
-  bool has_stackmap_table() const { return _stackmap_data != NULL; }
+  bool has_stackmap_table() const { return _stackmap_data != nullptr; }
 
   void init_fingerprint() {
     const uint64_t initval = UCONST64(0x8000000000000000);
@@ -398,7 +398,7 @@ public:
 
   AnnotationArray** method_annotations_addr() const;
   AnnotationArray* method_annotations() const  {
-    return has_method_annotations() ? *(method_annotations_addr()) : NULL;
+    return has_method_annotations() ? *(method_annotations_addr()) : nullptr;
   }
   void set_method_annotations(AnnotationArray* anno) {
     *(method_annotations_addr()) = anno;
@@ -406,7 +406,7 @@ public:
 
   AnnotationArray** parameter_annotations_addr() const;
   AnnotationArray* parameter_annotations() const {
-    return has_parameter_annotations() ? *(parameter_annotations_addr()) : NULL;
+    return has_parameter_annotations() ? *(parameter_annotations_addr()) : nullptr;
   }
   void set_parameter_annotations(AnnotationArray* anno) {
     *(parameter_annotations_addr()) = anno;
@@ -414,7 +414,7 @@ public:
 
   AnnotationArray** type_annotations_addr() const;
   AnnotationArray* type_annotations() const {
-    return has_type_annotations() ? *(type_annotations_addr()) : NULL;
+    return has_type_annotations() ? *(type_annotations_addr()) : nullptr;
   }
   void set_type_annotations(AnnotationArray* anno) {
     *(type_annotations_addr()) = anno;
@@ -422,7 +422,7 @@ public:
 
   AnnotationArray** default_annotations_addr() const;
   AnnotationArray* default_annotations() const {
-    return has_default_annotations() ? *(default_annotations_addr()) : NULL;
+    return has_default_annotations() ? *(default_annotations_addr()) : nullptr;
   }
   void set_default_annotations(AnnotationArray* anno) {
     *(default_annotations_addr()) = anno;

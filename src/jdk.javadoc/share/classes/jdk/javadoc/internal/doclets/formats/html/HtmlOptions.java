@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -137,6 +137,13 @@ public class HtmlOptions extends BaseOptions {
      * false.
      */
     private boolean noDeprecatedList = false;
+
+    /**
+     * Argument for command-line option {@code --no-external-spec-page}.
+     * True if command-line option "--no-external-spec-page" is used. Default value is
+     * false.
+     */
+    private boolean noExternalSpecsPage = false;
 
     /**
      * Argument for command-line option {@code -nohelp}.
@@ -343,6 +350,14 @@ public class HtmlOptions extends BaseOptions {
                     }
                 },
 
+                new Hidden(resources, "--no-external-specs-page") {
+                    @Override
+                    public boolean process(String opt, List<String> args) {
+                        noExternalSpecsPage = true;
+                        return true;
+                    }
+                },
+
                 new Option(resources, "-notree") {
                     @Override
                     public boolean process(String opt,  List<String> args) {
@@ -458,7 +473,8 @@ public class HtmlOptions extends BaseOptions {
                     public boolean process(String opt, List<String> args) {
                         docrootParent = args.get(0);
                         try {
-                            new URL(docrootParent);
+                            @SuppressWarnings("deprecation")
+                            var _unused = new URL(docrootParent);
                         } catch (MalformedURLException e) {
                             messages.error("doclet.MalformedURL", docrootParent);
                             return false;
@@ -654,6 +670,15 @@ public class HtmlOptions extends BaseOptions {
      */
     public boolean noDeprecatedList() {
         return noDeprecatedList;
+    }
+
+    /**
+     * Argument for command-line option {@code --no-external-specs-page}.
+     * True if command-line option "--no-external-specs-page" is used. Default value is
+     * false.
+     */
+    public boolean noExternalSpecsPage() {
+        return noExternalSpecsPage;
     }
 
     /**

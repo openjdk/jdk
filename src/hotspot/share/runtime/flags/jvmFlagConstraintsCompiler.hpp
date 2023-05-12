@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,6 @@
  */
 
 #define COMPILER_CONSTRAINTS(f)                         \
-  f(intx,  AliasLevelConstraintFunc)                    \
   f(intx,  CICompilerCountConstraintFunc)               \
   f(intx,  AllocatePrefetchDistanceConstraintFunc)      \
   f(intx,  AllocatePrefetchInstrConstraintFunc)         \
@@ -48,7 +47,8 @@
   f(uintx, ArraycopyDstPrefetchDistanceConstraintFunc)  \
   f(uintx, ArraycopySrcPrefetchDistanceConstraintFunc)  \
   f(int,   AVX3ThresholdConstraintFunc)                 \
-  f(uintx, TypeProfileLevelConstraintFunc)              \
+  f(uint,  TypeProfileLevelConstraintFunc)              \
+  f(uint,  VerifyIterativeGVNConstraintFunc)            \
   f(intx,  InitArrayShortSizeConstraintFunc)            \
   f(int ,  RTMTotalCountIncrRateConstraintFunc)         \
   f(ccstrlist, DisableIntrinsicConstraintFunc)          \

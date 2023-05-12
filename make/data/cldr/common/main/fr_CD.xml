@@ -34,7 +34,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<dateTimeFormats>
 					<intervalFormats>
 						<intervalFormatItem id="y">
-							<greatestDifference id="y" draft="contributed">y – y</greatestDifference>
+							<greatestDifference id="y" draft="contributed">y – y</greatestDifference>
 						</intervalFormatItem>
 					</intervalFormats>
 				</dateTimeFormats>

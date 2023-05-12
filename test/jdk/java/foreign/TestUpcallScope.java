@@ -24,7 +24,8 @@
 /*
  * @test
  * @enablePreview
- * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64"
+ * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64" | os.arch == "riscv64"
+ * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcallBase
  *
  * @run testng/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-VerifyDependencies
@@ -32,14 +33,16 @@
  *   TestUpcallScope
  */
 
-import java.lang.foreign.Addressable;
-import java.lang.foreign.MemorySession;
-import java.lang.foreign.SegmentAllocator;
+import java.lang.foreign.Arena;
+import java.lang.foreign.FunctionDescriptor;
+import java.lang.foreign.MemorySegment;
+
 import org.testng.annotations.Test;
 
 import java.lang.invoke.MethodHandle;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 public class TestUpcallScope extends TestUpcallBase {
@@ -51,17 +54,23 @@ public class TestUpcallScope extends TestUpcallBase {
     @Test(dataProvider="functions", dataProviderClass=CallGeneratorHelper.class)
     public void testUpcalls(int count, String fName, Ret ret, List<ParamType> paramTypes, List<StructFieldType> fields) throws Throwable {
         List<Consumer<Object>> returnChecks = new ArrayList<>();
-        List<Consumer<Object[]>> argChecks = new ArrayList<>();
-        Addressable addr = findNativeOrThrow(fName);
-        try (MemorySession session = MemorySession.openConfined()) {
-            SegmentAllocator allocator = SegmentAllocator.newNativeArena(session);
-            MethodHandle mh = downcallHandle(ABI, addr, allocator, function(ret, paramTypes, fields));
-            Object[] args = makeArgs(session, ret, paramTypes, fields, returnChecks, argChecks);
-            Object[] callArgs = args;
-            Object res = mh.invokeWithArguments(callArgs);
-            argChecks.forEach(c -> c.accept(args));
+        List<Consumer<Object>> argChecks = new ArrayList<>();
+        MemorySegment addr = findNativeOrThrow(fName);
+        try (Arena arena = Arena.openConfined()) {
+            FunctionDescriptor descriptor = function(ret, paramTypes, fields);
+            MethodHandle mh = downcallHandle(LINKER, addr, arena, descriptor);
+            AtomicReference<Object[]> capturedArgs = new AtomicReference<>();
+            Object[] args = makeArgs(capturedArgs, arena, descriptor, returnChecks, argChecks, 0);
+
+            Object res = mh.invokeWithArguments(args);
+
             if (ret == Ret.NON_VOID) {
                 returnChecks.forEach(c -> c.accept(res));
+            }
+
+            Object[] capturedArgsArr = capturedArgs.get();
+            for (int i = 0; i < capturedArgsArr.length; i++) {
+                argChecks.get(i).accept(capturedArgsArr[i]);
             }
         }
     }

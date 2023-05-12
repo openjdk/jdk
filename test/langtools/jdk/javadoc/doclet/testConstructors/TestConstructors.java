@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ import javadoc.tester.JavadocTester;
 public class TestConstructors extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestConstructors tester = new TestConstructors();
+        var tester = new TestConstructors();
         tester.runTests();
     }
 
@@ -51,7 +51,7 @@ public class TestConstructors extends JavadocTester {
                 """
                     <dt>See Also:</dt>
                     <dd>
-                    <ul class="see-list">
+                    <ul class="tag-list">
                     <li><a href="Outer.Inner.html#%3Cinit%3E()"><code>Inner()</code></a></li>
                     <li><a href="Outer.Inner.html#%3Cinit%3E(int)"><code>Inner(int)</code></a></li>
                     <li><a href="Outer.Inner.NestedInner.html#%3Cinit%3E()"><code>NestedInner()</code></a></li>

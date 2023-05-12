@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,9 +52,9 @@ void InstanceMirrorKlass::oop_oop_iterate(oop obj, OopClosureType* closure) {
 
   if (Devirtualizer::do_metadata(closure)) {
     Klass* klass = java_lang_Class::as_Klass(obj);
-    // We'll get NULL for primitive mirrors.
-    if (klass != NULL) {
-      if (klass->class_loader_data() == NULL) {
+    // We'll get null for primitive mirrors.
+    if (klass != nullptr) {
+      if (klass->class_loader_data() == nullptr) {
         // This is a mirror that belongs to a shared class that has not be loaded yet.
         // It's only reachable via HeapShared::roots(). All of its fields should be zero
         // so there's no need to scan.
@@ -71,7 +71,7 @@ void InstanceMirrorKlass::oop_oop_iterate(oop obj, OopClosureType* closure) {
         Devirtualizer::do_klass(closure, klass);
       }
     } else {
-      // We would like to assert here (as below) that if klass has been NULL, then
+      // We would like to assert here (as below) that if klass has been null, then
       // this has been a mirror for a primitive type that we do not need to follow
       // as they are always strong roots.
       // However, we might get across a klass that just changed during CMS concurrent
@@ -125,8 +125,8 @@ void InstanceMirrorKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* closu
   if (Devirtualizer::do_metadata(closure)) {
     if (mr.contains(obj)) {
       Klass* klass = java_lang_Class::as_Klass(obj);
-      // We'll get NULL for primitive mirrors.
-      if (klass != NULL) {
+      // We'll get null for primitive mirrors.
+      if (klass != nullptr) {
         Devirtualizer::do_klass(closure, klass);
       }
     }

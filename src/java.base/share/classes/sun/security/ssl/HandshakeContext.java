@@ -39,7 +39,6 @@ import javax.net.ssl.SSLHandshakeException;
 import javax.security.auth.x500.X500Principal;
 import sun.security.ssl.NamedGroup.NamedGroupSpec;
 import static sun.security.ssl.NamedGroup.NamedGroupSpec.*;
-import sun.security.ssl.SupportedGroupsExtension.SupportedGroups;
 
 abstract class HandshakeContext implements ConnectionContext {
     // System properties
@@ -157,8 +156,8 @@ abstract class HandshakeContext implements ConnectionContext {
 
         this.algorithmConstraints = SSLAlgorithmConstraints.wrap(
                 sslConfig.userSpecifiedAlgorithmConstraints);
-        this.activeProtocols = getActiveProtocols(sslConfig.enabledProtocols,
-                sslConfig.enabledCipherSuites, algorithmConstraints);
+        this.activeProtocols =
+                getActiveProtocols(sslConfig, algorithmConstraints);
         if (activeProtocols.isEmpty()) {
             throw new SSLHandshakeException(
                 "No appropriate protocol (protocol is disabled or " +
@@ -173,8 +172,8 @@ abstract class HandshakeContext implements ConnectionContext {
             }
         }
         this.maximumActiveProtocol = maximumVersion;
-        this.activeCipherSuites = getActiveCipherSuites(this.activeProtocols,
-                sslConfig.enabledCipherSuites, algorithmConstraints);
+        this.activeCipherSuites = getActiveCipherSuites(sslConfig,
+                this.activeProtocols, algorithmConstraints);
         if (activeCipherSuites.isEmpty()) {
             throw new SSLHandshakeException("No appropriate cipher suite");
         }
@@ -256,12 +255,11 @@ abstract class HandshakeContext implements ConnectionContext {
     }
 
     private static List<ProtocolVersion> getActiveProtocols(
-            List<ProtocolVersion> enabledProtocols,
-            List<CipherSuite> enabledCipherSuites,
+            SSLConfiguration sslConfig,
             AlgorithmConstraints algorithmConstraints) {
         boolean enabledSSL20Hello = false;
         ArrayList<ProtocolVersion> protocols = new ArrayList<>(4);
-        for (ProtocolVersion protocol : enabledProtocols) {
+        for (ProtocolVersion protocol : sslConfig.enabledProtocols) {
             if (!enabledSSL20Hello && protocol == ProtocolVersion.SSL20Hello) {
                 enabledSSL20Hello = true;
                 continue;
@@ -277,9 +275,9 @@ abstract class HandshakeContext implements ConnectionContext {
             boolean found = false;
             Map<NamedGroupSpec, Boolean> cachedStatus =
                     new EnumMap<>(NamedGroupSpec.class);
-            for (CipherSuite suite : enabledCipherSuites) {
+            for (CipherSuite suite : sslConfig.enabledCipherSuites) {
                 if (suite.isAvailable() && suite.supports(protocol)) {
-                    if (isActivatable(suite,
+                    if (isActivatable(sslConfig, suite,
                             algorithmConstraints, cachedStatus)) {
                         protocols.add(protocol);
                         found = true;
@@ -309,15 +307,15 @@ abstract class HandshakeContext implements ConnectionContext {
     }
 
     private static List<CipherSuite> getActiveCipherSuites(
+            SSLConfiguration sslConfig,
             List<ProtocolVersion> enabledProtocols,
-            List<CipherSuite> enabledCipherSuites,
             AlgorithmConstraints algorithmConstraints) {
 
         List<CipherSuite> suites = new LinkedList<>();
         if (enabledProtocols != null && !enabledProtocols.isEmpty()) {
             Map<NamedGroupSpec, Boolean> cachedStatus =
                     new EnumMap<>(NamedGroupSpec.class);
-            for (CipherSuite suite : enabledCipherSuites) {
+            for (CipherSuite suite : sslConfig.enabledCipherSuites) {
                 if (!suite.isAvailable()) {
                     continue;
                 }
@@ -327,7 +325,7 @@ abstract class HandshakeContext implements ConnectionContext {
                     if (!suite.supports(protocol)) {
                         continue;
                     }
-                    if (isActivatable(suite,
+                    if (isActivatable(sslConfig, suite,
                             algorithmConstraints, cachedStatus)) {
                         suites.add(suite);
                         isSupported = true;
@@ -525,7 +523,9 @@ abstract class HandshakeContext implements ConnectionContext {
         return activeProtocols.contains(protocolVersion);
     }
 
-    private static boolean isActivatable(CipherSuite suite,
+    private static boolean isActivatable(
+            SSLConfiguration sslConfig,
+            CipherSuite suite,
             AlgorithmConstraints algorithmConstraints,
             Map<NamedGroupSpec, Boolean> cachedStatus) {
 
@@ -543,8 +543,8 @@ abstract class HandshakeContext implements ConnectionContext {
                 if (groupType != NAMED_GROUP_NONE) {
                     Boolean checkedStatus = cachedStatus.get(groupType);
                     if (checkedStatus == null) {
-                        groupAvailable = SupportedGroups.isActivatable(
-                                algorithmConstraints, groupType);
+                        groupAvailable = NamedGroup.isActivatable(
+                                sslConfig, algorithmConstraints, groupType);
                         cachedStatus.put(groupType, groupAvailable);
 
                         if (!groupAvailable &&

@@ -162,7 +162,7 @@ public class TreeScanner extends Visitor {
     }
 
     public void visitForeachLoop(JCEnhancedForLoop tree) {
-        scan(tree.var);
+        scan(tree.varOrRecordPattern);
         scan(tree.expr);
         scan(tree.body);
     }
@@ -331,9 +331,6 @@ public class TreeScanner extends Visitor {
     public void visitRecordPattern(JCRecordPattern that) {
         scan(that.deconstructor);
         scan(that.nested);
-        if (that.var != null) {
-            scan(that.var);
-        }
     }
 
     public void visitIndexed(JCArrayAccess tree) {

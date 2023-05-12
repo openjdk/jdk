@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -652,10 +652,11 @@ final class Double512Vector extends DoubleVector {
 
         @Override
         @ForceInline
-        public Double512Mask eq(VectorMask<Double> mask) {
-            Objects.requireNonNull(mask);
-            Double512Mask m = (Double512Mask)mask;
-            return xor(m.not());
+        /*package-private*/
+        Double512Mask indexPartiallyInUpperRange(long offset, long limit) {
+            return (Double512Mask) VectorSupport.indexPartiallyInUpperRange(
+                Double512Mask.class, double.class, VLENGTH, offset, limit,
+                (o, l) -> (Double512Mask) TRUE_MASK.indexPartiallyInRange(o, l));
         }
 
         // Unary operations
@@ -697,9 +698,9 @@ final class Double512Vector extends DoubleVector {
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a | b));
         }
 
+        @Override
         @ForceInline
-        /* package-private */
-        Double512Mask xor(VectorMask<Double> mask) {
+        public Double512Mask xor(VectorMask<Double> mask) {
             Objects.requireNonNull(mask);
             Double512Mask m = (Double512Mask)mask;
             return VectorSupport.binaryOp(VECTOR_OP_XOR, Double512Mask.class, null, long.class, VLENGTH,

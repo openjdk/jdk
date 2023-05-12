@@ -22,14 +22,15 @@
  */
 
 #include "precompiled.hpp"
-#include "runtime/os.hpp" // malloc
+#include "runtime/os.hpp"
 #include "utilities/align.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include <stdlib.h>
 #include "unittest.hpp"
+
+#include <stdlib.h>
 
 typedef BitMap::idx_t idx_t;
 typedef BitMap::bm_word_t bm_word_t;

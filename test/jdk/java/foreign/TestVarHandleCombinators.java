@@ -28,7 +28,8 @@
  * @run testng TestVarHandleCombinators
  */
 
-import java.lang.foreign.MemorySession;
+import java.lang.foreign.Arena;
+import java.lang.foreign.SegmentScope;
 import java.lang.foreign.ValueLayout;
 
 import org.testng.annotations.Test;
@@ -65,7 +66,7 @@ public class TestVarHandleCombinators {
     public void testAlign() {
         VarHandle vh = MethodHandles.memorySegmentViewVarHandle(ValueLayout.JAVA_BYTE.withBitAlignment(16));
 
-        MemorySegment segment = MemorySegment.allocateNative(1, 2, MemorySession.openImplicit());
+        MemorySegment segment = MemorySegment.allocateNative(1L, 2, SegmentScope.auto());
         vh.set(segment, 0L, (byte) 10); // fine, memory region is aligned
         assertEquals((byte) vh.get(segment, 0L), (byte) 10);
     }
@@ -101,8 +102,8 @@ public class TestVarHandleCombinators {
 
         VarHandle vh = MethodHandles.memorySegmentViewVarHandle(ValueLayout.JAVA_INT.withBitAlignment(32));
         int count = 0;
-        try (MemorySession session = MemorySession.openConfined()) {
-            MemorySegment segment = MemorySegment.allocateNative(inner_size * outer_size * 8, 4, session);
+        try (Arena arena = Arena.openConfined()) {
+            MemorySegment segment = MemorySegment.allocateNative(inner_size * outer_size * 8, 4, arena.scope());;
             for (long i = 0; i < outer_size; i++) {
                 for (long j = 0; j < inner_size; j++) {
                     vh.set(segment, i * 40 + j * 8, count);

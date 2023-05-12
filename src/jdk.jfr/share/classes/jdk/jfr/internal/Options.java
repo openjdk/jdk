@@ -27,9 +27,6 @@ package jdk.jfr.internal;
 
 import java.io.IOException;
 
-import jdk.jfr.internal.LogLevel;
-import jdk.jfr.internal.LogTag;
-import jdk.jfr.internal.Logger;
 import jdk.jfr.internal.SecuritySupport.SafePath;
 import jdk.internal.misc.Unsafe;
 
@@ -55,6 +52,7 @@ public final class Options {
     private static final int DEFAULT_STACK_DEPTH = 64;
     private static final long DEFAULT_MAX_CHUNK_SIZE = 12 * 1024 * 1024;
     private static final SafePath DEFAULT_DUMP_PATH = null;
+    private static final boolean DEFAULT_PRESERVE_REPOSITORY = false;
 
     private static long memorySize;
     private static long globalBufferSize;
@@ -62,6 +60,7 @@ public final class Options {
     private static long threadBufferSize;
     private static int stackDepth;
     private static long maxChunkSize;
+    private static boolean preserveRepository;
 
     static {
         final long pageSize = Unsafe.getUnsafe().pageSize();
@@ -141,6 +140,14 @@ public final class Options {
         return stackDepth;
     }
 
+    public static synchronized void setPreserveRepository(boolean preserve) {
+        preserveRepository = preserve;
+    }
+
+    public static synchronized boolean getPreserveRepository() {
+        return preserveRepository;
+    }
+
     private static synchronized void reset() {
         setMaxChunkSize(DEFAULT_MAX_CHUNK_SIZE);
         setMemorySize(DEFAULT_MEMORY_SIZE);
@@ -153,6 +160,7 @@ public final class Options {
         }
         setStackDepth(DEFAULT_STACK_DEPTH);
         setThreadBufferSize(DEFAULT_THREAD_BUFFER_SIZE);
+        setPreserveRepository(DEFAULT_PRESERVE_REPOSITORY);
     }
 
     static synchronized long getWaitInterval() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,16 +72,16 @@
 #include "utilities/stack.inline.hpp"
 
 SpanSubjectToDiscoveryClosure PSScavenge::_span_based_discoverer;
-ReferenceProcessor*           PSScavenge::_ref_processor = NULL;
-PSCardTable*                  PSScavenge::_card_table = NULL;
+ReferenceProcessor*           PSScavenge::_ref_processor = nullptr;
+PSCardTable*                  PSScavenge::_card_table = nullptr;
 bool                          PSScavenge::_survivor_overflow = false;
 uint                          PSScavenge::_tenuring_threshold = 0;
-HeapWord*                     PSScavenge::_young_generation_boundary = NULL;
+HeapWord*                     PSScavenge::_young_generation_boundary = nullptr;
 uintptr_t                     PSScavenge::_young_generation_boundary_compressed = 0;
 elapsedTimer                  PSScavenge::_accumulated_time;
 STWGCTimer                    PSScavenge::_gc_timer;
 ParallelScavengeTracer        PSScavenge::_gc_tracer;
-CollectorCounters*            PSScavenge::_counters = NULL;
+CollectorCounters*            PSScavenge::_counters = nullptr;
 
 static void scavenge_roots_work(ParallelRootType::Value root_type, uint worker_id) {
   assert(ParallelScavengeHeap::heap()->is_gc_active(), "called outside gc");
@@ -100,7 +100,7 @@ static void scavenge_roots_work(ParallelRootType::Value root_type, uint worker_i
 
     case ParallelRootType::code_cache:
       {
-        MarkingCodeBlobClosure code_closure(&roots_to_old_closure, CodeBlobToOopClosure::FixRelocations, true /* keepalive nmethods */);
+        MarkingCodeBlobClosure code_closure(&roots_to_old_closure, CodeBlobToOopClosure::FixRelocations, false /* keepalive nmethods */);
         ScavengableNMethods::nmethods_do(&code_closure);
       }
       break;
@@ -159,7 +159,7 @@ public:
     ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
     _to_space = heap->young_gen()->to_space();
 
-    assert(_promotion_manager != NULL, "Sanity");
+    assert(_promotion_manager != nullptr, "Sanity");
   }
 
   template <class T> void do_oop_work(T* p) {
@@ -270,7 +270,7 @@ public:
 
     PSPromotionManager* pm = PSPromotionManager::gc_thread_promotion_manager(_worker_id);
     PSScavengeRootsClosure roots_closure(pm);
-    MarkingCodeBlobClosure roots_in_blobs(&roots_closure, CodeBlobToOopClosure::FixRelocations, true /* keepalive nmethods */);
+    MarkingCodeBlobClosure roots_in_blobs(&roots_closure, CodeBlobToOopClosure::FixRelocations, false /* keepalive nmethods */);
 
     thread->oops_do(&roots_closure, &roots_in_blobs);
 
@@ -300,7 +300,7 @@ public:
       _active_workers(active_workers),
       _is_old_gen_empty(old_gen->object_space()->is_empty()),
       _terminator(active_workers, PSPromotionManager::vm_thread_promotion_manager()->stack_array_depth()) {
-    assert(_old_gen != NULL, "Sanity");
+    assert(_old_gen != nullptr, "Sanity");
   }
 
   virtual void work(uint worker_id) {
@@ -331,7 +331,7 @@ public:
     }
 
     PSThreadRootsTaskClosure closure(worker_id);
-    Threads::possibly_parallel_threads_do(true /*parallel */, &closure);
+    Threads::possibly_parallel_threads_do(true /* is_par */, &closure);
 
     // Scavenge OopStorages
     {
@@ -406,7 +406,7 @@ bool PSScavenge::invoke_no_policy() {
     ResourceMark rm;
 
     GCTraceCPUTime tcpu(&_gc_tracer);
-    GCTraceTime(Info, gc) tm("Pause Young", NULL, gc_cause, true);
+    GCTraceTime(Info, gc) tm("Pause Young", nullptr, gc_cause, true);
     TraceCollectorStats tcs(counters());
     TraceMemoryManagerStats tms(heap->young_gc_manager(), gc_cause);
 

@@ -26,7 +26,6 @@ package com.sun.hotspot.igv.data;
 import java.io.Serializable;
 import java.lang.ref.WeakReference;
 import java.util.*;
-import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -188,7 +187,7 @@ public class Properties implements Serializable, Iterable<Property> {
 
     public static class InvertPropertyMatcher implements PropertyMatcher {
 
-        private PropertyMatcher matcher;
+        private final PropertyMatcher matcher;
 
         public InvertPropertyMatcher(PropertyMatcher matcher) {
             this.matcher = matcher;
@@ -210,8 +209,8 @@ public class Properties implements Serializable, Iterable<Property> {
 
     public static class StringPropertyMatcher implements PropertyMatcher {
 
-        private String name;
-        private String value;
+        private final String name;
+        private final String value;
 
         public StringPropertyMatcher(String name, String value) {
             if (name == null) {
@@ -240,8 +239,8 @@ public class Properties implements Serializable, Iterable<Property> {
 
     public static class RegexpPropertyMatcher implements PropertyMatcher {
 
-        private String name;
-        private Pattern valuePattern;
+        private final String name;
+        private final Pattern valuePattern;
 
         public RegexpPropertyMatcher(String name, String value) {
             this(name, value, 0);
@@ -312,13 +311,10 @@ public class Properties implements Serializable, Iterable<Property> {
             }
         }
 
-        pairs.sort(new Comparator<String[]>() {
-            @Override
-            public int compare(String[] o1, String[] o2) {
-                assert o1.length == 2;
-                assert o2.length == 2;
-                return o1[0].compareTo(o2[0]);
-            }
+        pairs.sort((o1, o2) -> {
+            assert o1.length == 2;
+            assert o2.length == 2;
+            return o1[0].compareTo(o2[0]);
         });
 
         StringBuilder sb = new StringBuilder();
@@ -337,7 +333,7 @@ public class Properties implements Serializable, Iterable<Property> {
 
     public static class PropertySelector<T extends Properties.Provider> {
 
-        private Collection<T> objects;
+        private final Collection<T> objects;
 
         public PropertySelector(Collection<T> objects) {
             this.objects = objects;

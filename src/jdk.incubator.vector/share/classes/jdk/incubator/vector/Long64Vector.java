@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -639,10 +639,11 @@ final class Long64Vector extends LongVector {
 
         @Override
         @ForceInline
-        public Long64Mask eq(VectorMask<Long> mask) {
-            Objects.requireNonNull(mask);
-            Long64Mask m = (Long64Mask)mask;
-            return xor(m.not());
+        /*package-private*/
+        Long64Mask indexPartiallyInUpperRange(long offset, long limit) {
+            return (Long64Mask) VectorSupport.indexPartiallyInUpperRange(
+                Long64Mask.class, long.class, VLENGTH, offset, limit,
+                (o, l) -> (Long64Mask) TRUE_MASK.indexPartiallyInRange(o, l));
         }
 
         // Unary operations
@@ -684,9 +685,9 @@ final class Long64Vector extends LongVector {
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a | b));
         }
 
+        @Override
         @ForceInline
-        /* package-private */
-        Long64Mask xor(VectorMask<Long> mask) {
+        public Long64Mask xor(VectorMask<Long> mask) {
             Objects.requireNonNull(mask);
             Long64Mask m = (Long64Mask)mask;
             return VectorSupport.binaryOp(VECTOR_OP_XOR, Long64Mask.class, null, long.class, VLENGTH,

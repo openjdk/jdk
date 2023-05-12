@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/java.hpp"
+#include "runtime/javaCalls.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/semaphore.inline.hpp"
@@ -417,6 +418,8 @@ static void lookup_field(JfrJavaArguments* args, const InstanceKlass* ik, fieldD
 }
 
 static void read_field(JfrJavaArguments* args, JavaValue* result, Thread* thread) {
+  assert(result != nullptr, "invariant");
+  assert(result->get_oop() == nullptr, "result not initialized");
   const bool static_field = !args->has_receiver();
   fieldDescriptor fd;
   const InstanceKlass* const ik = static_cast<InstanceKlass*>(args->klass());
@@ -431,14 +434,14 @@ static void read_field(JfrJavaArguments* args, JavaValue* result, TRAPS) {
   assert(args != NULL, "invariant");
   assert(result != NULL, "invariant");
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(THREAD));
+  result->set_oop(nullptr); // Initialize result in case klass initialize throws.
   InstanceKlass* const klass = static_cast<InstanceKlass*>(args->klass());
   klass->initialize(CHECK);
   read_field(args, result, static_cast<Thread*>(THREAD));
 }
 
-static void write_field(JfrJavaArguments* args, JavaValue* result, TRAPS) {
+static void write_field(JfrJavaArguments* args, TRAPS) {
   assert(args != NULL, "invariant");
-  assert(result != NULL, "invariant");
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(THREAD));
 
   InstanceKlass* const klass = static_cast<InstanceKlass*>(args->klass());
@@ -456,7 +459,7 @@ static void write_field(JfrJavaArguments* args, JavaValue* result, TRAPS) {
 
 void JfrJavaSupport::set_field(JfrJavaArguments* args, TRAPS) {
   assert(args != NULL, "invariant");
-  write_field(args, args->result(), THREAD);
+  write_field(args, THREAD);
 }
 
 void JfrJavaSupport::get_field(JfrJavaArguments* args, TRAPS) {
@@ -464,39 +467,30 @@ void JfrJavaSupport::get_field(JfrJavaArguments* args, TRAPS) {
   read_field(args, args->result(), THREAD);
 }
 
-void JfrJavaSupport::get_field(JfrJavaArguments* args, Thread* thread) {
+static void get_field_ref(JfrJavaArguments* args, bool local_ref, TRAPS) {
   assert(args != NULL, "invariant");
-  read_field(args, args->result(), thread);
+  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(THREAD));
+  JavaValue* const result = args->result();
+  assert(result != NULL, "invariant");
+  assert(result->get_type() == T_OBJECT, "invariant");
+  read_field(args, result, CHECK);
+  const oop obj = result->get_oop();
+  if (obj == nullptr) {
+    return;
+  }
+  if (local_ref) {
+    result->set_jobject(JfrJavaSupport::local_jni_handle(obj, THREAD));
+  } else {
+    result->set_jobject(JfrJavaSupport::global_jni_handle(obj, THREAD));
+  }
 }
 
 void JfrJavaSupport::get_field_local_ref(JfrJavaArguments* args, TRAPS) {
-  assert(args != NULL, "invariant");
-  DEBUG_ONLY(check_java_thread_in_vm(THREAD));
-
-  JavaValue* const result = args->result();
-  assert(result != NULL, "invariant");
-  assert(result->get_type() == T_OBJECT, "invariant");
-
-  read_field(args, result, CHECK);
-  const oop obj = result->get_oop();
-
-  if (obj != NULL) {
-    result->set_jobject(local_jni_handle(obj, THREAD));
-  }
+  get_field_ref(args, true /* local_ref */, THREAD);
 }
 
 void JfrJavaSupport::get_field_global_ref(JfrJavaArguments* args, TRAPS) {
-  assert(args != NULL, "invariant");
-  DEBUG_ONLY(check_java_thread_in_vm(THREAD));
-
-  JavaValue* const result = args->result();
-  assert(result != NULL, "invariant");
-  assert(result->get_type() == T_OBJECT, "invariant");
-  read_field(args, result, CHECK);
-  const oop obj = result->get_oop();
-  if (obj != NULL) {
-    result->set_jobject(global_jni_handle(obj, THREAD));
-  }
+  get_field_ref(args, false /* local_ref */, THREAD);
 }
 
 /*
@@ -624,6 +618,23 @@ JfrJavaSupport::CAUSE JfrJavaSupport::cause() {
 
 const char* const JDK_JFR_MODULE_NAME = "jdk.jfr";
 const char* const JDK_JFR_PACKAGE_NAME = "jdk/jfr";
+
+
+
+void JfrJavaSupport::load_jdk_jfr_module(TRAPS) {
+  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(THREAD));
+  ResourceMark rm(THREAD);
+  HandleMark hm(THREAD);
+  Handle h_module_name = java_lang_String::create_from_str(JDK_JFR_MODULE_NAME, CHECK);
+  JavaValue result(T_OBJECT);
+  JavaCalls::call_static(&result,
+    vmClasses::module_Modules_klass(),
+    vmSymbols::loadModule_name(),
+    vmSymbols::loadModule_signature(),
+    h_module_name,
+    CHECK
+  );
+}
 
 static bool is_jdk_jfr_module_in_readability_graph() {
   // take one of the packages in the module to be located and query for its definition.

@@ -64,8 +64,8 @@ public class SummarySanityCheck {
     long totalCommitted = 0, totalReserved = 0;
     long totalCommittedSum = 0, totalReservedSum = 0;
 
-    // Match '- <mtType> (reserved=<reserved>KB, committed=<committed>KB)
-    Pattern mtTypePattern = Pattern.compile("-\\s+(?<typename>[\\w\\s]+)\\(reserved=(?<reserved>\\d+)KB,\\scommitted=(?<committed>\\d+)KB\\)");
+    // Match '- <mtType> (reserved=<reserved>KB, committed=<committed>KB) and some times readonly=<readonly>KB
+    Pattern mtTypePattern = Pattern.compile("-\\s+(?<typename>[\\w\\s]+)\\(reserved=(?<reserved>\\d+)KB,\\scommitted=(?<committed>\\d+)KB((,\\sreadonly=(?<readonly>\\d+)KB)|)\\)");
     // Match 'Total: reserved=<reserved>KB, committed=<committed>KB'
     Pattern totalMemoryPattern = Pattern.compile("Total\\:\\sreserved=(?<reserved>\\d+)KB,\\scommitted=(?<committed>\\d+)KB");
 
@@ -84,6 +84,16 @@ public class SummarySanityCheck {
         if (typeMatcher.matches()) {
           long typeCommitted = Long.parseLong(typeMatcher.group("committed"));
           long typeReserved = Long.parseLong(typeMatcher.group("reserved"));
+
+          // Only Shared class space has readonly component
+          if (lines[i].contains("Shared class space") && typeMatcher.group("readonly") != null) {
+            long typeReadOnly = Long.parseLong(typeMatcher.group("readonly"));
+            // Make sure readonly is always less or equal to committed
+            if (typeReadOnly > typeCommitted) {
+              throwTestException("Readonly (" + typeReadOnly + ") was more than Committed ("
+                  + typeCommitted + ") for mtType: " + typeMatcher.group("typename"));
+            }
+          }
 
           // Make sure reserved is always less or equals
           if (typeCommitted > typeReserved) {

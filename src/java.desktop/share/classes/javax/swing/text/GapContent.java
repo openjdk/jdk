@@ -368,7 +368,7 @@ public class GapContent extends GapVector implements AbstractDocument.Content, S
     }
 
     /**
-     * Overridden to make growth policy less agressive for large
+     * Overridden to make growth policy less aggressive for large
      * text amount.
      */
     int getNewArraySize(int reqSize) {
@@ -771,7 +771,7 @@ public class GapContent extends GapVector implements AbstractDocument.Content, S
     @SuppressWarnings("rawtypes") // UndoPosRef type cannot be exposed
     protected void updateUndoPositions(Vector positions, int offset,
                                        int length) {
-        // Find the indexs of the end points.
+        // Find the indices of the end points.
         int endOffset = offset + length;
         int g1 = getGapEnd();
         int startIndex;

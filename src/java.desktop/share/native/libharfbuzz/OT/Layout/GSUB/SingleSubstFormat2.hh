@@ -5,21 +5,22 @@
 
 namespace OT {
 namespace Layout {
-namespace GSUB {
+namespace GSUB_impl {
 
-struct SingleSubstFormat2
+template <typename Types>
+struct SingleSubstFormat2_4
 {
   protected:
   HBUINT16      format;                 /* Format identifier--format = 2 */
-  Offset16To<Coverage>
+  typename Types::template OffsetTo<Coverage>
                 coverage;               /* Offset to Coverage table--from
                                          * beginning of Substitution table */
-  Array16Of<HBGlyphID16>
+  Array16Of<typename Types::HBGlyphID>
                 substitute;             /* Array of substitute
                                          * GlyphIDs--ordered by Coverage Index */
 
   public:
-  DEFINE_SIZE_ARRAY (6, substitute);
+  DEFINE_SIZE_ARRAY (4 + Types::size, substitute);
 
   bool sanitize (hb_sanitize_context_t *c) const
   {
@@ -35,12 +36,27 @@ struct SingleSubstFormat2
 
   void closure (hb_closure_context_t *c) const
   {
-    + hb_zip (this+coverage, substitute)
-    | hb_filter (c->parent_active_glyphs (), hb_first)
+    auto &cov = this+coverage;
+    auto &glyph_set = c->parent_active_glyphs ();
+
+    if (substitute.len > glyph_set.get_population () * 4)
+    {
+      for (auto g : glyph_set)
+      {
+        unsigned i = cov.get_coverage (g);
+        if (i == NOT_COVERED || i >= substitute.len)
+          continue;
+        c->output->add (substitute.arrayZ[i]);
+      }
+
+      return;
+    }
+
+    + hb_zip (cov, substitute)
+    | hb_filter (glyph_set, hb_first)
     | hb_map (hb_second)
     | hb_sink (c->output)
     ;
-
   }
 
   void closure_lookups (hb_closure_lookups_context_t *c) const {}
@@ -67,7 +83,22 @@ struct SingleSubstFormat2
 
     if (unlikely (index >= substitute.len)) return_trace (false);
 
+    if (HB_BUFFER_MESSAGE_MORE && c->buffer->messaging ())
+    {
+      c->buffer->sync_so_far ();
+      c->buffer->message (c->font,
+                          "replacing glyph at %u (single substitution)",
+                          c->buffer->idx);
+    }
+
     c->replace_glyph (substitute[index]);
+
+    if (HB_BUFFER_MESSAGE_MORE && c->buffer->messaging ())
+    {
+      c->buffer->message (c->font,
+                          "replaced glyph at %u (single substitution)",
+                          c->buffer->idx - 1u);
+    }
 
     return_trace (true);
   }
@@ -103,7 +134,7 @@ struct SingleSubstFormat2
     + hb_zip (this+coverage, substitute)
     | hb_filter (glyphset, hb_first)
     | hb_filter (glyphset, hb_second)
-    | hb_map_retains_sorting ([&] (hb_pair_t<hb_codepoint_t, const HBGlyphID16 &> p) -> hb_codepoint_pair_t
+    | hb_map_retains_sorting ([&] (hb_pair_t<hb_codepoint_t, const typename Types::HBGlyphID &> p) -> hb_codepoint_pair_t
                               { return hb_pair (glyph_map[p.first], glyph_map[p.second]); })
     ;
 

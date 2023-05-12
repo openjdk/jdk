@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,14 +84,14 @@ class SharedGCInfo {
 class ParallelOldGCInfo {
   void* _dense_prefix;
  public:
-  ParallelOldGCInfo() : _dense_prefix(NULL) {}
+  ParallelOldGCInfo() : _dense_prefix(nullptr) {}
   void report_dense_prefix(void* addr) {
     _dense_prefix = addr;
   }
   void* dense_prefix() const { return _dense_prefix; }
 };
 
-class GCTracer : public ResourceObj {
+class GCTracer {
  protected:
   SharedGCInfo _shared_gc_info;
 
@@ -196,7 +196,7 @@ class ParallelOldTracer : public OldGCTracer {
   void send_parallel_old_event() const;
 };
 
-class SerialOldTracer : public OldGCTracer {
+class SerialOldTracer : public OldGCTracer, public CHeapObj<mtGC> {
  public:
   SerialOldTracer() : OldGCTracer(SerialOld) {}
 };
@@ -206,7 +206,7 @@ class ParallelScavengeTracer : public YoungGCTracer {
   ParallelScavengeTracer() : YoungGCTracer(ParallelScavenge) {}
 };
 
-class DefNewTracer : public YoungGCTracer {
+class DefNewTracer : public YoungGCTracer, public CHeapObj<mtGC> {
  public:
   DefNewTracer() : YoungGCTracer(DefNew) {}
 };

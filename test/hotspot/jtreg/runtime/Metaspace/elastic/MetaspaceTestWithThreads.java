@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2021 SAP SE. All rights reserved.
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,16 +61,12 @@ public class MetaspaceTestWithThreads {
 
         // This deletes the arenas, which will cause them to return all their accumulated
         // metaspace chunks into the context' chunk manager (freelist) before vanishing.
-        // It then purges the context.
-        // We may return memory to the operating system:
-        // - with -XX:MetaspaceReclaimPolicy=balanced|aggressive (balanced is the default),
-        //   we will scourge the freelist for chunks larger than a commit granule, and uncommit
-        //   their backing memory. Note that since we deleted all arenas, all their chunks are
-        //   in the freelist, should have been maximally folded by the buddy allocator, and
-        //   therefore should all be eligible for uncommitting. Meaning the context should
-        //   retain no memory at all, its committed counter should be zero.
-        // - with -XX:MetaspaceReclaimPolicy=none, we omit the purging and retain memory in the
-        //   metaspace allocator, so the context should retain its memory.
+        // It then purges the context. We will scourge the freelist for chunks larger than a
+        // commit granule, and uncommit their backing memory. Note that since we deleted all
+        // arenas, all their chunks are in the freelist, should have been maximally folded
+        // by the buddy allocator, and therefore should all be eligible for uncommitting.
+        // Meaning the context should retain no memory at all, its committed counter should
+        // be zero.
 
         for (RandomAllocatorThread t: threads) {
             if (t.allocator.arena.isLive()) {

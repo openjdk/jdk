@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -166,10 +166,12 @@ class ImmutableCollections {
      */
     @SuppressWarnings("unchecked")
     static <E> List<E> listCopy(Collection<? extends E> coll) {
-        if (coll instanceof List12 || (coll instanceof ListN && ! ((ListN<?>)coll).allowNulls)) {
+        if (coll instanceof List12 || (coll instanceof ListN<?> c && !c.allowNulls)) {
             return (List<E>)coll;
+        } else if (coll.isEmpty()) { // implicit nullcheck of coll
+            return List.of();
         } else {
-            return (List<E>)List.of(coll.toArray()); // implicit nullcheck of coll
+            return (List<E>)List.of(coll.toArray());
         }
     }
 

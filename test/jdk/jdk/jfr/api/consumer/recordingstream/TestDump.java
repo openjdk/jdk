@@ -54,6 +54,7 @@ public class TestDump {
 
     public static void main(String... args) throws Exception {
         testUnstarted();
+        testStopped();
         testClosed();
         testOneDump();
         testMultipleDumps();
@@ -69,6 +70,22 @@ public class TestDump {
             throw new Exception("Should not be able to dump unstarted recording");
         } catch (IOException ise) {
             // OK, expected
+        }
+    }
+
+    private static void testStopped() throws Exception {
+        Path path = Path.of("recording.jfr");
+        try (var rs = new RecordingStream()) {
+            rs.setMaxAge(Duration.ofHours(1));
+            rs.startAsync();
+            DumpEvent event = new DumpEvent();
+            event.commit();
+            rs.stop();
+            rs.dump(path);
+            var events = RecordingFile.readAllEvents(path);
+            if (events.size() != 1) {
+                throw new Exception("Expected one event");
+            }
         }
     }
 

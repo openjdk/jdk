@@ -24,6 +24,8 @@
 package org.openjdk.bench.java.lang.foreign;
 
 import java.lang.foreign.*;
+import java.lang.foreign.SegmentScope;
+import java.lang.invoke.VarHandle;
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.options.Options;
@@ -31,7 +33,7 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 import sun.misc.Unsafe;
 import java.util.concurrent.TimeUnit;
 
-import static java.lang.foreign.ValueLayout.JAVA_LONG;
+import static java.lang.foreign.ValueLayout.*;
 
 @BenchmarkMode(Mode.AverageTime)
 @Warmup(iterations = 5, time = 500, timeUnit = TimeUnit.MILLISECONDS)
@@ -42,6 +44,10 @@ import static java.lang.foreign.ValueLayout.JAVA_LONG;
 public class UnrolledAccess extends JavaLayouts {
 
     static final Unsafe U = Utils.unsafe;
+
+    static final VarHandle VH_LONG_UNALIGNED = JAVA_LONG_UNALIGNED.arrayElementVarHandle();
+
+    static final VarHandle VH_LONG = JAVA_LONG.arrayElementVarHandle();
 
     final static int SIZE = 1024;
 
@@ -61,8 +67,8 @@ public class UnrolledAccess extends JavaLayouts {
             this.outputArray = new double[SIZE];
             this.inputAddress = U.allocateMemory(8 * SIZE);
             this.outputAddress = U.allocateMemory(8 * SIZE);
-            this.inputSegment = MemorySegment.ofAddress(MemoryAddress.ofLong(inputAddress), 8*SIZE, MemorySession.global());
-            this.outputSegment = MemorySegment.ofAddress(MemoryAddress.ofLong(outputAddress), 8*SIZE, MemorySession.global());
+            this.inputSegment = MemorySegment.ofAddress(inputAddress, 8*SIZE, SegmentScope.global());
+            this.outputSegment = MemorySegment.ofAddress(outputAddress, 8*SIZE, SegmentScope.global());
         }
     }
 

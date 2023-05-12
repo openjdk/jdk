@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -61,7 +61,7 @@ inline void frame::setup() {
     _pc = original_pc;
     _deopt_state = is_deoptimized;
     assert(_cb == nullptr || _cb->as_compiled_method()->insts_contains_inclusive(_pc),
-           "original PC must be in the main code section of the the compiled method (or must be immediately following it)");
+           "original PC must be in the main code section of the compiled method (or must be immediately following it)");
   } else {
     if (_cb == SharedRuntime::deopt_blob()) {
       _deopt_state = is_deoptimized;
@@ -179,8 +179,8 @@ inline intptr_t* frame::link_or_null() const {
   return link();
 }
 
-inline intptr_t** frame::interpreter_frame_locals_addr() const {
-  return (intptr_t**) &(ijava_state()->locals);
+inline intptr_t* frame::interpreter_frame_locals() const {
+  return (intptr_t*) (ijava_state()->locals);
 }
 
 inline intptr_t* frame::interpreter_frame_bcp_addr() const {
@@ -324,11 +324,6 @@ inline int frame::compiled_frame_stack_argsize() const {
 
 inline void frame::interpreted_frame_oop_map(InterpreterOopMap* mask) const {
   Unimplemented();
-}
-
-inline intptr_t* frame::interpreter_frame_last_sp() const {
-  Unimplemented();
-  return NULL;
 }
 
 inline int frame::sender_sp_ret_address_offset() {

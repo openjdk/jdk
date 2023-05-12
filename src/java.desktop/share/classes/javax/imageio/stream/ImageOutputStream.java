@@ -205,7 +205,7 @@ public interface ImageOutputStream extends ImageInputStream, DataOutput {
      * (byte)(v &amp; 0xff)
      * </pre>
      *
-     * Otheriwse, the bytes written will be:
+     * Otherwise, the bytes written will be:
      *
      * <pre>
      * (byte)(v &amp; 0xff)

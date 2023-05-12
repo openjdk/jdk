@@ -37,7 +37,6 @@ public:
                        bool in_young_gc) :
       _closures(g1h, pss, in_young_gc) {}
 
-  OopClosure* weak_oops()   { return &_closures._oops; }
   OopClosure* strong_oops() { return &_closures._oops; }
 
   CLDClosure* weak_clds()             { return &_closures._clds; }
@@ -61,7 +60,6 @@ public:
       _strong(g1h, pss, /* process_only_dirty_klasses */ false),
       _weak(g1h, pss,   /* process_only_dirty_klasses */ false) {}
 
-  OopClosure* weak_oops()   { return &_weak._oops; }
   OopClosure* strong_oops() { return &_strong._oops; }
 
   CLDClosure* weak_clds()             { return &_weak._clds; }

@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2022 Unicode, Inc.
+For terms of use, see http://www.unicode.org/copyright.html
+SPDX-License-Identifier: Unicode-DFS-2016
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+-->
+<ldml>
+	<identity>
+		<version number="$Revision$"/>
+		<language type="tok"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="ar" draft="unconfirmed">toki Alapi</language>
+			<language type="bn" draft="unconfirmed">toki Panla</language>
+			<language type="de" draft="unconfirmed">toki Tosi</language>
+			<language type="en" draft="unconfirmed">toki Inli</language>
+			<language type="en_CA" draft="unconfirmed">toki Inli pi ma Kanata</language>
+			<language type="en_GB" draft="unconfirmed">toki Inli pi ma Piten</language>
+			<language type="en_GB" alt="short" draft="unconfirmed">toki Inli pi ma Juke</language>
+			<language type="en_US" draft="unconfirmed">toki Inli pi ma Mewika</language>
+			<language type="es" draft="unconfirmed">toki Epanja</language>
+			<language type="es_419" draft="unconfirmed">toki Epanja pi ma Amelika</language>
+			<language type="fr" draft="unconfirmed">toki Kanse</language>
+			<language type="fr_CA" draft="unconfirmed">toki Kanse pi ma Kanata</language>
+			<language type="hi" draft="unconfirmed">toki Insi</language>
+			<language type="id" draft="unconfirmed">toki Intonesija</language>
+			<language type="it" draft="unconfirmed">toki Italija</language>
+			<language type="ja" draft="unconfirmed">toki Nijon</language>
+			<language type="ko" draft="unconfirmed">toki Anku</language>
+			<language type="nl" draft="unconfirmed">toki Netelan</language>
+			<language type="pl" draft="unconfirmed">toki Posuka</language>
+			<language type="pt" draft="unconfirmed">toki Potuke</language>
+			<language type="ru" draft="unconfirmed">toki Lusi</language>
+			<language type="th" draft="unconfirmed">toki Tawi</language>
+			<language type="tok">Toki Pona</language>
+			<language type="tr" draft="unconfirmed">toki Tuki</language>
+			<language type="und" draft="unconfirmed">toki ante</language>
+			<language type="zh" draft="unconfirmed">toki Sonko</language>
+		</languages>
+		<scripts>
+			<script type="Arab" draft="unconfirmed">sitelen Alapi</script>
+			<script type="Cyrl" draft="unconfirmed">sitelen Kililita</script>
+			<script type="Hans" draft="unconfirmed">sitelen Sonko</script>
+			<script type="Jpan" draft="unconfirmed">sitelen Nijon</script>
+			<script type="Kore" draft="unconfirmed">sitelen Anku</script>
+			<script type="Latn" draft="unconfirmed">sitelen Lasina</script>
+			<script type="Zxxx" draft="unconfirmed">sitelen ala</script>
+			<script type="Zzzz" draft="unconfirmed">sitelen ante</script>
+		</scripts>
+		<territories>
+			<territory type="001" draft="unconfirmed">ma ale</territory>
+			<territory type="002" draft="unconfirmed">ma Apika</territory>
+			<territory type="009" draft="unconfirmed">ma Osijanija</territory>
+			<territory type="019" draft="unconfirmed">ma Amelika</territory>
+			<territory type="142" draft="unconfirmed">ma Asija</territory>
+			<territory type="150" draft="unconfirmed">ma Elopa</territory>
+			<territory type="AD" draft="unconfirmed">ma Antola</territory>
+			<territory type="AF" draft="unconfirmed">ma Akanisan</territory>
+			<territory type="AL" draft="unconfirmed">ma Sipe</territory>
+			<territory type="AM" draft="unconfirmed">ma Aja</territory>
+			<territory type="AO" draft="unconfirmed">ma Ankola</territory>
+			<territory type="AQ" draft="unconfirmed">ma Antasika</territory>
+			<territory type="AR" draft="unconfirmed">ma Alensina</territory>
+			<territory type="AT" draft="unconfirmed">ma Esalasi</territory>
+			<territory type="AU" draft="unconfirmed">ma Oselija</territory>
+			<territory type="BA" draft="unconfirmed">ma Posan</territory>
+			<territory type="BD" draft="unconfirmed">ma Panla</territory>
+			<territory type="BE" draft="unconfirmed">ma Pesije</territory>
+			<territory type="BF" draft="unconfirmed">ma Pukinapaso</territory>
+			<territory type="BG" draft="unconfirmed">toki Pokasi</territory>
+			<territory type="BH" draft="unconfirmed">ma Palani</territory>
+			<territory type="BJ" draft="unconfirmed">ma Penen</territory>
+			<territory type="BR" draft="unconfirmed">ma Pasiju</territory>
+			<territory type="BW" draft="unconfirmed">ma Posuwana</territory>
+			<territory type="BY" draft="unconfirmed">ma Pelalusi</territory>
+			<territory type="CD" draft="unconfirmed">ma Konko pi ma tomo Kinsasa</territory>
+			<territory type="CF" draft="unconfirmed">ma Santapiken</territory>
+			<territory type="CG" draft="unconfirmed">ma Konko pi ma tomo Pasapi</territory>
+			<territory type="CH" draft="unconfirmed">ma Suwasi</territory>
+			<territory type="CI" draft="unconfirmed">ma Kosiwa</territory>
+			<territory type="CL" draft="unconfirmed">ma Sile</territory>
+			<territory type="CM" draft="unconfirmed">ma Kamelun</territory>
+			<territory type="CN" draft="unconfirmed">ma Sonko</territory>
+			<territory type="CO" draft="unconfirmed">ma Kolonpija</territory>
+			<territory type="CY" draft="unconfirmed">ma Kiposi</territory>
+			<territory type="CZ" draft="unconfirmed">ma Seki</territory>
+			<territory type="DE" draft="unconfirmed">ma Tosi</territory>
+			<territory type="DJ" draft="unconfirmed">ma Sipusi</territory>
+			<territory type="DK" draft="unconfirmed">ma Tansi</territory>
+			<territory type="DZ" draft="unconfirmed">ma Sasali</territory>
+			<territory type="EC" draft="unconfirmed">ma Ekato</territory>
+			<territory type="EE" draft="unconfirmed">ma Esi</territory>
+			<territory type="EG" draft="unconfirmed">ma Masu</territory>
+			<territory type="ER" draft="unconfirmed">ma Eliteja</territory>
+			<territory type="ES" draft="unconfirmed">ma Epanja</territory>
+			<territory type="ET" draft="unconfirmed">ma Isijopija</territory>
+			<territory type="EU" draft="unconfirmed">kulupu ma Elopa</territory>
+			<territory type="FI" draft="unconfirmed">ma Sumi</territory>
+			<territory type="FJ" draft="unconfirmed">ma Pisi</territory>
+			<territory type="FR" draft="unconfirmed">ma Kanse</territory>
+			<territory type="GA" draft="unconfirmed">ma Kapon</territory>
+			<territory type="GE" draft="unconfirmed">ma Katelo</territory>
+			<territory type="GH" draft="unconfirmed">ma Kana</territory>
+			<territory type="GM" draft="unconfirmed">ma Kanpija</territory>
+			<territory type="GN" draft="unconfirmed">ma Kine</territory>
+			<territory type="GQ" draft="unconfirmed">ma Kinejekatolija</territory>
+			<territory type="GR" draft="unconfirmed">ma Elena</territory>
+			<territory type="GW" draft="unconfirmed">ma Kinepisa</territory>
+			<territory type="HK" draft="unconfirmed">ma Onkon</territory>
+			<territory type="HR" draft="unconfirmed">ma Lowasi</territory>
+			<territory type="HU" draft="unconfirmed">ma Mosijo</territory>
+			<territory type="ID" draft="unconfirmed">ma Intonesija</territory>
+			<territory type="IE" draft="unconfirmed">ma Alan</territory>
+			<territory type="IL" draft="unconfirmed">ma Isale</territory>
+			<territory type="IN" draft="unconfirmed">ma Palata</territory>
+			<territory type="IQ" draft="unconfirmed">ma Ilakija</territory>
+			<territory type="IR" draft="unconfirmed">ma Ilan</territory>
+			<territory type="IS" draft="unconfirmed">ma Isilan</territory>
+			<territory type="IT" draft="unconfirmed">ma Italija</territory>
+			<territory type="JO" draft="unconfirmed">ma Utun</territory>
+			<territory type="JP" draft="unconfirmed">ma Nijon</territory>
+			<territory type="KE" draft="unconfirmed">ma Kenja</territory>
+			<territory type="KH" draft="unconfirmed">ma Kanpusi</territory>
+			<territory type="KI" draft="unconfirmed">ma Kilipasi</territory>
+			<territory type="KM" draft="unconfirmed">ma Komo</territory>
+			<territory type="KP" draft="unconfirmed">ma Anku</territory>
+			<territory type="KR" draft="unconfirmed">ma Soson</territory>
+			<territory type="KW" draft="unconfirmed">ma Kuwasi</territory>
+			<territory type="LB" draft="unconfirmed">ma Lunpan</territory>
+			<territory type="LI" draft="unconfirmed">ma Lisensan</territory>
+			<territory type="LK" draft="unconfirmed">ma Lanka</territory>
+			<territory type="LR" draft="unconfirmed">ma Lapewija</territory>
+			<territory type="LS" draft="unconfirmed">ma Lesoto</territory>
+			<territory type="LT" draft="unconfirmed">ma Lijatuwa</territory>
+			<territory type="LU" draft="unconfirmed">ma Lusepu</territory>
+			<territory type="LV" draft="unconfirmed">ma Lawi</territory>
+			<territory type="LY" draft="unconfirmed">ma Lipija</territory>
+			<territory type="MA" draft="unconfirmed">ma Malipe</territory>
+			<territory type="MD" draft="unconfirmed">ma Motowa</territory>
+			<territory type="MG" draft="unconfirmed">ma Malakasi</territory>
+			<territory type="MK" draft="unconfirmed">ma Maketonija</territory>
+			<territory type="ML" draft="unconfirmed">ma Mali</territory>
+			<territory type="MM" draft="unconfirmed">ma Mijama</territory>
+			<territory type="MR" draft="unconfirmed">ma Mulitanija</territory>
+			<territory type="MU" draft="unconfirmed">ma Mowisi</territory>
+			<territory type="MW" draft="unconfirmed">ma Malawi</territory>
+			<territory type="MX" draft="unconfirmed">ma Mesiko</territory>
+			<territory type="MY" draft="unconfirmed">ma Malasija</territory>
+			<territory type="MZ" draft="unconfirmed">ma Mosanpi</territory>
+			<territory type="NA" draft="unconfirmed">ma Namipija</territory>
+			<territory type="NE" draft="unconfirmed">ma Nise</territory>
+			<territory type="NG" draft="unconfirmed">ma Naselija</territory>
+			<territory type="NL" draft="unconfirmed">ma Netelan</territory>
+			<territory type="NO" draft="unconfirmed">ma Nosiki</territory>
+			<territory type="NZ" draft="unconfirmed">ma Nusilan</territory>
+			<territory type="OM" draft="unconfirmed">ma Uman</territory>
+			<territory type="PE" draft="unconfirmed">ma Pelu</territory>
+			<territory type="PG" draft="unconfirmed">ma Papuwanijukini</territory>
+			<territory type="PH" draft="unconfirmed">ma Pilipina</territory>
+			<territory type="PK" draft="unconfirmed">ma Pakisan</territory>
+			<territory type="PL" draft="unconfirmed">ma Posuka</territory>
+			<territory type="PS" draft="unconfirmed">ma Pilisin</territory>
+			<territory type="PT" draft="unconfirmed">ma Potuke</territory>
+			<territory type="RO" draft="unconfirmed">ma Lomani</territory>
+			<territory type="RS" draft="unconfirmed">ma Sopisi</territory>
+			<territory type="RU" draft="unconfirmed">ma Lusi</territory>
+			<territory type="RW" draft="unconfirmed">ma Luwanta</territory>
+			<territory type="SA" draft="unconfirmed">ma Sawusi</territory>
+			<territory type="SD" draft="unconfirmed">ma Sutan</territory>
+			<territory type="SE" draft="unconfirmed">ma Sensa</territory>
+			<territory type="SG" draft="unconfirmed">ma Sinkapo</territory>
+			<territory type="SI" draft="unconfirmed">ma Lowensina</territory>
+			<territory type="SK" draft="unconfirmed">ma Lowenki</territory>
+			<territory type="SL" draft="unconfirmed">ma Sijelalijon</territory>
+			<territory type="SM" draft="unconfirmed">ma Samalino</territory>
+			<territory type="SN" draft="unconfirmed">ma Seneka</territory>
+			<territory type="SO" draft="unconfirmed">ma Somalija</territory>
+			<territory type="SS" draft="unconfirmed">ma Sasutan</territory>
+			<territory type="SY" draft="unconfirmed">ma Sulija</territory>
+			<territory type="SZ">ma Sawasi</territory>
+			<territory type="TD" draft="unconfirmed">ma Sate</territory>
+			<territory type="TG" draft="unconfirmed">ma Toko</territory>
+			<territory type="TH" draft="unconfirmed">ma Tawi</territory>
+			<territory type="TN" draft="unconfirmed">ma Tunisi</territory>
+			<territory type="TO" draft="unconfirmed">ma Tona</territory>
+			<territory type="TR" draft="unconfirmed">ma Tuki</territory>
+			<territory type="TV" draft="unconfirmed">ma Tuwalu</territory>
+			<territory type="TZ" draft="unconfirmed">ma Tansanija</territory>
+			<territory type="UA" draft="unconfirmed">ma Ukawina</territory>
+			<territory type="UG" draft="unconfirmed">ma Ukanta</territory>
+			<territory type="UN" draft="unconfirmed">kulupu pi ma ale</territory>
+			<territory type="US" draft="unconfirmed">ma Mewika</territory>
+			<territory type="VA" draft="unconfirmed">ma Wasikano</territory>
+			<territory type="VE" draft="unconfirmed">ma Penesuwela</territory>
+			<territory type="VN" draft="unconfirmed">ma Wije</territory>
+			<territory type="VU" draft="unconfirmed">ma Wanuwatu</territory>
+			<territory type="WS" draft="unconfirmed">ma Samowa</territory>
+			<territory type="YE" draft="unconfirmed">ma Jamanija</territory>
+			<territory type="ZA" draft="unconfirmed">ma Setapika</territory>
+			<territory type="ZM" draft="unconfirmed">ma Sanpija</territory>
+			<territory type="ZW" draft="unconfirmed">ma Sinpapuwe</territory>
+		</territories>
+		<types>
+			<type key="numbers" type="latn" draft="unconfirmed">sitelen nanpa Alapi</type>
+		</types>
+		<codePatterns>
+			<codePattern type="language" draft="unconfirmed">toki {0}</codePattern>
+			<codePattern type="script" draft="unconfirmed">sitelen {0}</codePattern>
+			<codePattern type="territory" draft="unconfirmed">ma {0}</codePattern>
+		</codePatterns>
+	</localeDisplayNames>
+	<characters>
+		<exemplarCharacters>[a e i j k l m n o p s t u w]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[b c d f g h q r v x y z]</exemplarCharacters>
+		<exemplarCharacters type="index">[A E I J K L M N O P S T U W]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[\- ‑ / # % + 0 1 2 3 5 6 7 8 9]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‑ , ; \: ! ? . ' ‘ ’ &quot; “ ” ( ) \[ \] @ * / #]</exemplarCharacters>
+	</characters>
+</ldml>

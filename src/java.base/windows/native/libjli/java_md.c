@@ -475,38 +475,6 @@ jlong CurrentTimeMicros()
     return (jlong)(count.QuadPart * 1000 * 1000 / counterFrequency.QuadPart);
 }
 
-/*
- * windows snprintf does not guarantee a null terminator in the buffer,
- * if the computed size is equal to or greater than the buffer size,
- * as well as error conditions. This function guarantees a null terminator
- * under all these conditions. An unreasonable buffer or size will return
- * an error value. Under all other conditions this function will return the
- * size of the bytes actually written minus the null terminator, similar
- * to ansi snprintf api. Thus when calling this function the caller must
- * ensure storage for the null terminator.
- */
-int
-JLI_Snprintf(char* buffer, size_t size, const char* format, ...) {
-    int rc;
-    va_list vl;
-    if (size == 0 || buffer == NULL)
-        return -1;
-    buffer[0] = '\0';
-    va_start(vl, format);
-    rc = vsnprintf(buffer, size, format, vl);
-    va_end(vl);
-    /* force a null terminator, if something is amiss */
-    if (rc < 0) {
-        /* apply ansi semantics */
-        buffer[size - 1] = '\0';
-        return (int)size;
-    } else if (rc == size) {
-        /* force a null terminator */
-        buffer[size - 1] = '\0';
-    }
-    return rc;
-}
-
 static errno_t convert_to_unicode(const char* path, const wchar_t* prefix, wchar_t** wpath) {
     int unicode_path_len;
     size_t prefix_len, wpath_len;

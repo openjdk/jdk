@@ -209,106 +209,105 @@ final class P11KeyGenerator extends KeyGeneratorSpi {
     // set default keysize and keyType
     private void setDefault() {
         significantKeySize = -1;
-        switch ((int)mechanism) {
-        case (int)CKM_DES_KEY_GEN:
-            keySize = 64;
-            keyType = CKK_DES;
-            significantKeySize = 56;
-            break;
-        case (int)CKM_DES2_KEY_GEN:
-            keySize = 128;
-            keyType = CKK_DES2;
-            significantKeySize = 112;
-            break;
-        case (int)CKM_DES3_KEY_GEN:
-            keySize = 192;
-            keyType = CKK_DES3;
-            significantKeySize = 168;
-            break;
-        case (int)CKM_AES_KEY_GEN:
-            keySize = adjustKeySize
-                    (SecurityProviderConstants.getDefAESKeySize(), range);
-            keyType = CKK_AES;
-            break;
-        case (int)CKM_RC4_KEY_GEN:
-            keySize = adjustKeySize(128, range);
-            keyType = CKK_RC4;
-            break;
-        case (int)CKM_BLOWFISH_KEY_GEN:
-            keySize = adjustKeySize(128, range);
-            keyType = CKK_BLOWFISH;
-            break;
-        case (int)CKM_CHACHA20_KEY_GEN:
-            keySize = 256;
-            keyType = CKK_CHACHA20;
-            break;
-        case (int)CKM_SHA_1_KEY_GEN:
-            keySize = adjustKeySize(160, range);
-            keyType = CKK_SHA_1_HMAC;
-            break;
-        case (int)CKM_SHA224_KEY_GEN:
-            keySize = adjustKeySize(224, range);
-            keyType = CKK_SHA224_HMAC;
-            break;
-        case (int)CKM_SHA256_KEY_GEN:
-            keySize = adjustKeySize(256, range);
-            keyType = CKK_SHA256_HMAC;
-            break;
-        case (int)CKM_SHA384_KEY_GEN:
-            keySize = adjustKeySize(384, range);
-            keyType = CKK_SHA384_HMAC;
-            break;
-        case (int)CKM_SHA512_KEY_GEN:
-            keySize = adjustKeySize(512, range);
-            keyType = CKK_SHA512_HMAC;
-            break;
-        case (int)CKM_SHA512_224_KEY_GEN:
-            keySize = adjustKeySize(224, range);
-            keyType = CKK_SHA512_224_HMAC;
-            break;
-        case (int)CKM_SHA512_256_KEY_GEN:
-            keySize = adjustKeySize(256, range);
-            keyType = CKK_SHA512_256_HMAC;
-            break;
-        case (int)CKM_SHA3_224_KEY_GEN:
-            keySize = adjustKeySize(224, range);
-            keyType = CKK_SHA3_224_HMAC;
-            break;
-        case (int)CKM_SHA3_256_KEY_GEN:
-            keySize = adjustKeySize(256, range);
-            keyType = CKK_SHA3_256_HMAC;
-            break;
-        case (int)CKM_SHA3_384_KEY_GEN:
-            keySize = adjustKeySize(384, range);
-            keyType = CKK_SHA3_384_HMAC;
-            break;
-        case (int)CKM_SHA3_512_KEY_GEN:
-            keySize = adjustKeySize(512, range);
-            keyType = CKK_SHA3_512_HMAC;
-            break;
-        case (int)CKM_GENERIC_SECRET_KEY_GEN:
-            if (algorithm.startsWith("Hmac")) {
-                String digest = algorithm.substring(4);
-                keySize = adjustKeySize(switch (digest) {
-                    case "MD5" -> 512;
-                    case "SHA1" -> 160;
-                    case "SHA224", "SHA512/224", "SHA3-224" -> 224;
-                    case "SHA256", "SHA512/256", "SHA3-256" -> 256;
-                    case "SHA384", "SHA3-384" -> 384;
-                    case "SHA512", "SHA3-512" -> 512;
-                    default -> {
-                        throw new ProviderException("Unsupported algorithm " +
-                            algorithm);
-                    }
-                }, range);
-            } else {
-                throw new ProviderException("Unsupported algorithm " +
-                        algorithm);
+        switch ((int) mechanism) {
+            case (int) CKM_DES_KEY_GEN -> {
+                keySize = 64;
+                keyType = CKK_DES;
+                significantKeySize = 56;
             }
-            keyType = CKK_GENERIC_SECRET;
-            break;
-        default:
-            throw new ProviderException("Unknown mechanism " + mechanism);
+            case (int) CKM_DES2_KEY_GEN -> {
+                keySize = 128;
+                keyType = CKK_DES2;
+                significantKeySize = 112;
+            }
+            case (int) CKM_DES3_KEY_GEN -> {
+                keySize = 192;
+                keyType = CKK_DES3;
+                significantKeySize = 168;
+            }
+            case (int) CKM_AES_KEY_GEN -> {
+                keySize = adjustKeySize
+                        (SecurityProviderConstants.getDefAESKeySize(), range);
+                keyType = CKK_AES;
+            }
+            case (int) CKM_RC4_KEY_GEN -> {
+                keySize = adjustKeySize(128, range);
+                keyType = CKK_RC4;
+            }
+            case (int) CKM_BLOWFISH_KEY_GEN -> {
+                keySize = adjustKeySize(128, range);
+                keyType = CKK_BLOWFISH;
+            }
+            case (int) CKM_CHACHA20_KEY_GEN -> {
+                keySize = 256;
+                keyType = CKK_CHACHA20;
+            }
+            case (int) CKM_SHA_1_KEY_GEN -> {
+                keySize = adjustKeySize(160, range);
+                keyType = CKK_SHA_1_HMAC;
+            }
+            case (int) CKM_SHA224_KEY_GEN -> {
+                keySize = adjustKeySize(224, range);
+                keyType = CKK_SHA224_HMAC;
+            }
+            case (int) CKM_SHA256_KEY_GEN -> {
+                keySize = adjustKeySize(256, range);
+                keyType = CKK_SHA256_HMAC;
+            }
+            case (int) CKM_SHA384_KEY_GEN -> {
+                keySize = adjustKeySize(384, range);
+                keyType = CKK_SHA384_HMAC;
+            }
+            case (int) CKM_SHA512_KEY_GEN -> {
+                keySize = adjustKeySize(512, range);
+                keyType = CKK_SHA512_HMAC;
+            }
+            case (int) CKM_SHA512_224_KEY_GEN -> {
+                keySize = adjustKeySize(224, range);
+                keyType = CKK_SHA512_224_HMAC;
+            }
+            case (int) CKM_SHA512_256_KEY_GEN -> {
+                keySize = adjustKeySize(256, range);
+                keyType = CKK_SHA512_256_HMAC;
+            }
+            case (int) CKM_SHA3_224_KEY_GEN -> {
+                keySize = adjustKeySize(224, range);
+                keyType = CKK_SHA3_224_HMAC;
+            }
+            case (int) CKM_SHA3_256_KEY_GEN -> {
+                keySize = adjustKeySize(256, range);
+                keyType = CKK_SHA3_256_HMAC;
+            }
+            case (int) CKM_SHA3_384_KEY_GEN -> {
+                keySize = adjustKeySize(384, range);
+                keyType = CKK_SHA3_384_HMAC;
+            }
+            case (int) CKM_SHA3_512_KEY_GEN -> {
+                keySize = adjustKeySize(512, range);
+                keyType = CKK_SHA3_512_HMAC;
+            }
+            case (int) CKM_GENERIC_SECRET_KEY_GEN -> {
+                if (algorithm.startsWith("Hmac")) {
+                    String digest = algorithm.substring(4);
+                    keySize = adjustKeySize(switch (digest) {
+                        case "MD5" -> 512;
+                        case "SHA1" -> 160;
+                        case "SHA224", "SHA512/224", "SHA3-224" -> 224;
+                        case "SHA256", "SHA512/256", "SHA3-256" -> 256;
+                        case "SHA384", "SHA3-384" -> 384;
+                        case "SHA512", "SHA3-512" -> 512;
+                        default -> {
+                            throw new ProviderException("Unsupported algorithm " +
+                                    algorithm);
+                        }
+                    }, range);
+                } else {
+                    throw new ProviderException("Unsupported algorithm " +
+                            algorithm);
+                }
+                keyType = CKK_GENERIC_SECRET;
+            }
+            default -> throw new ProviderException("Unknown mechanism " + mechanism);
         }
         if (significantKeySize == -1) {
             significantKeySize = keySize;
@@ -335,8 +334,7 @@ final class P11KeyGenerator extends KeyGeneratorSpi {
         try {
             newSignificantKeySize = checkKeySize(mechanism, keySize, range);
         } catch (InvalidAlgorithmParameterException iape) {
-            throw (InvalidParameterException)
-                    (new InvalidParameterException().initCause(iape));
+            throw new InvalidParameterException(iape);
         }
         if ((mechanism == CKM_DES2_KEY_GEN) ||
             (mechanism == CKM_DES3_KEY_GEN))  {
@@ -364,24 +362,18 @@ final class P11KeyGenerator extends KeyGeneratorSpi {
         Session session = null;
         try {
             session = token.getObjSession();
-            CK_ATTRIBUTE[] attributes;
+            CK_ATTRIBUTE[] attributes = switch ((int) mechanism) {
+                case (int) CKM_DES_KEY_GEN, (int) CKM_DES2_KEY_GEN, (int) CKM_DES3_KEY_GEN ->
+                    // fixed length, do not specify CKA_VALUE_LEN
+                        new CK_ATTRIBUTE[]{
+                                new CK_ATTRIBUTE(CKA_CLASS, CKO_SECRET_KEY),
+                        };
+                default -> new CK_ATTRIBUTE[]{
+                        new CK_ATTRIBUTE(CKA_CLASS, CKO_SECRET_KEY),
+                        new CK_ATTRIBUTE(CKA_VALUE_LEN, keySize >> 3),
+                };
+            };
 
-            switch ((int)mechanism) {
-            case (int)CKM_DES_KEY_GEN:
-            case (int)CKM_DES2_KEY_GEN:
-            case (int)CKM_DES3_KEY_GEN:
-                // fixed length, do not specify CKA_VALUE_LEN
-                attributes = new CK_ATTRIBUTE[] {
-                    new CK_ATTRIBUTE(CKA_CLASS, CKO_SECRET_KEY),
-                };
-                break;
-            default:
-                attributes = new CK_ATTRIBUTE[] {
-                    new CK_ATTRIBUTE(CKA_CLASS, CKO_SECRET_KEY),
-                    new CK_ATTRIBUTE(CKA_VALUE_LEN, keySize >> 3),
-                };
-                break;
-            }
             attributes = token.getAttributes
                 (O_GENERATE, CKO_SECRET_KEY, keyType, attributes);
             long keyID = token.p11.C_GenerateKey

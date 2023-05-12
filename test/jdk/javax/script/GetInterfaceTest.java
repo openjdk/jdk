@@ -35,7 +35,7 @@ public class GetInterfaceTest {
         ScriptEngine engine = manager.getEngineByName("nashorn");
 
         if (engine == null) {
-            System.out.println("Warning: No js engine engine found; test vacuously passes.");
+            System.out.println("Warning: No js engine found; test vacuously passes.");
             return;
         }
 

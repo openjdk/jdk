@@ -90,7 +90,9 @@ protected:
   void verify_no_safepoints(Compile* compile, Node* marking_load, const Unique_Node_List& loads) const;
 #endif
 
+  static bool is_g1_pre_val_load(Node* n);
 public:
+  virtual bool is_gc_pre_barrier_node(Node* node) const;
   virtual bool is_gc_barrier_node(Node* node) const;
   virtual void eliminate_gc_barrier(PhaseMacroExpand* macro, Node* node) const;
   virtual Node* step_over_gc_barrier(Node* c) const;

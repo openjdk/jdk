@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "runtime/flags/jvmFlag.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
+
 #include <errno.h>
 
 class ArgumentsTest : public ::testing::Test {
@@ -200,7 +201,7 @@ TEST_VM_F(ArgumentsTest, parse_xss) {
   // Test value aligned both to K and vm_page_size.
   {
     EXPECT_TRUE(is_aligned(32 * M, K));
-    EXPECT_TRUE(is_aligned(32 * M, (size_t)os::vm_page_size()));
+    EXPECT_TRUE(is_aligned(32 * M, os::vm_page_size()));
     EXPECT_EQ(parse_xss_inner(to_string(32 * M), JNI_OK), (intx)(32 * M / K));
   }
 

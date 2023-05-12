@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,11 +34,7 @@ import jdk.internal.org.objectweb.asm.Type;
 import sun.invoke.util.VerifyAccess;
 import sun.invoke.util.VerifyType;
 import sun.invoke.util.Wrapper;
-import sun.reflect.misc.ReflectUtil;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -125,7 +121,7 @@ class InvokerBytecodeGenerator {
             name = invokerName.substring(0, p);
             invokerName = invokerName.substring(p + 1);
         }
-        if (DUMP_CLASS_FILES) {
+        if (dumper().isEnabled()) {
             name = makeDumpableClassName(name);
         }
         this.name = name;
@@ -173,58 +169,8 @@ class InvokerBytecodeGenerator {
     }
 
     /** instance counters for dumped classes */
-    private static final HashMap<String,Integer> DUMP_CLASS_FILES_COUNTERS;
-    /** debugging flag for saving generated class files */
-    private static final File DUMP_CLASS_FILES_DIR;
-
-    static {
-        if (DUMP_CLASS_FILES) {
-            DUMP_CLASS_FILES_COUNTERS = new HashMap<>();
-            try {
-                File dumpDir = new File("DUMP_CLASS_FILES");
-                if (!dumpDir.exists()) {
-                    dumpDir.mkdirs();
-                }
-                DUMP_CLASS_FILES_DIR = dumpDir;
-                System.out.println("Dumping class files to "+DUMP_CLASS_FILES_DIR+"/...");
-            } catch (Exception e) {
-                throw newInternalError(e);
-            }
-        } else {
-            DUMP_CLASS_FILES_COUNTERS = null;
-            DUMP_CLASS_FILES_DIR = null;
-        }
-    }
-
-    private void maybeDump(final byte[] classFile) {
-        if (DUMP_CLASS_FILES) {
-            maybeDump(className, classFile);
-        }
-    }
-
-    // Also used from BoundMethodHandle
-    @SuppressWarnings("removal")
-    static void maybeDump(final String className, final byte[] classFile) {
-        if (DUMP_CLASS_FILES) {
-            java.security.AccessController.doPrivileged(
-            new java.security.PrivilegedAction<>() {
-                public Void run() {
-                    try {
-                        String dumpName = className.replace('.','/');
-                        File dumpFile = new File(DUMP_CLASS_FILES_DIR, dumpName+".class");
-                        System.out.println("dump: " + dumpFile);
-                        dumpFile.getParentFile().mkdirs();
-                        FileOutputStream file = new FileOutputStream(dumpFile);
-                        file.write(classFile);
-                        file.close();
-                        return null;
-                    } catch (IOException ex) {
-                        throw newInternalError(ex);
-                    }
-                }
-            });
-        }
-    }
+    private static final HashMap<String,Integer> DUMP_CLASS_FILES_COUNTERS =
+            dumper().isEnabled() ?  new HashMap<>(): null;
 
     private static String makeDumpableClassName(String className) {
         Integer ctr;
@@ -271,7 +217,7 @@ class InvokerBytecodeGenerator {
 
         // unique static variable name
         String name;
-        if (DUMP_CLASS_FILES) {
+        if (dumper().isEnabled()) {
             Class<?> c = arg.getClass();
             while (c.isArray()) {
                 c = c.getComponentType();
@@ -283,24 +229,6 @@ class InvokerBytecodeGenerator {
         ClassData cd = new ClassData(name, desc, arg);
         classData.add(cd);
         return name;
-    }
-
-    List<Object> classDataValues() {
-        final List<ClassData> cd = classData;
-        return switch(cd.size()) {
-            case 0 -> List.of();
-            case 1 -> List.of(cd.get(0).value);
-            case 2 -> List.of(cd.get(0).value, cd.get(1).value);
-            case 3 -> List.of(cd.get(0).value, cd.get(1).value, cd.get(2).value);
-            case 4 -> List.of(cd.get(0).value, cd.get(1).value, cd.get(2).value, cd.get(3).value);
-            default -> {
-                Object[] data = new Object[classData.size()];
-                for (int i = 0; i < classData.size(); i++) {
-                    data[i] = classData.get(i).value;
-                }
-                yield List.of(data);
-            }
-        };
     }
 
     private static String debugString(Object arg) {
@@ -317,7 +245,7 @@ class InvokerBytecodeGenerator {
      * Extract the MemberName of a newly-defined method.
      */
     private MemberName loadMethod(byte[] classFile) {
-        Class<?> invokerClass = LOOKUP.makeHiddenClassDefiner(className, classFile, Set.of())
+        Class<?> invokerClass = LOOKUP.makeHiddenClassDefiner(className, classFile, Set.of(), dumper())
                                       .defineClass(true, classDataValues());
         return resolveInvokerMember(invokerClass, invokerName, invokerType);
     }
@@ -360,6 +288,32 @@ class InvokerBytecodeGenerator {
         mv.visitEnd();
     }
 
+    /**
+     * Returns the class data object that will be passed to `Lookup.defineHiddenClassWithClassData`.
+     * The classData is loaded in the <clinit> method of the generated class.
+     * If the class data contains only one single object, this method returns  that single object.
+     * If the class data contains more than one objects, this method returns a List.
+     *
+     * This method returns null if no class data.
+     */
+    private Object classDataValues() {
+        final List<ClassData> cd = classData;
+        return switch (cd.size()) {
+            case 0 -> null;             // special case (classData is not used by <clinit>)
+            case 1 -> cd.get(0).value;  // special case (single object)
+            case 2 -> List.of(cd.get(0).value, cd.get(1).value);
+            case 3 -> List.of(cd.get(0).value, cd.get(1).value, cd.get(2).value);
+            case 4 -> List.of(cd.get(0).value, cd.get(1).value, cd.get(2).value, cd.get(3).value);
+            default -> {
+                Object[] data = new Object[classData.size()];
+                for (int i = 0; i < classData.size(); i++) {
+                    data[i] = classData.get(i).value;
+                }
+                yield List.of(data);
+            }
+        };
+    }
+
     /*
      * <clinit> to initialize the static final fields with the live class data
      * LambdaForms can't use condy due to bootstrapping issue.
@@ -379,18 +333,23 @@ class InvokerBytecodeGenerator {
         mv.visitLdcInsn(Type.getType("L" + className + ";"));
         mv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/invoke/MethodHandles",
                            "classData", "(Ljava/lang/Class;)Ljava/lang/Object;", false);
-        // we should optimize one single element case that does not need to create a List
-        mv.visitTypeInsn(Opcodes.CHECKCAST, "java/util/List");
-        mv.visitVarInsn(Opcodes.ASTORE, 0);
-        int index = 0;
-        for (ClassData p : classData) {
-            // initialize the static field
-            mv.visitVarInsn(Opcodes.ALOAD, 0);
-            emitIconstInsn(mv, index++);
-            mv.visitMethodInsn(Opcodes.INVOKEINTERFACE, "java/util/List",
-                               "get", "(I)Ljava/lang/Object;", true);
+        if (classData.size() == 1) {
+            ClassData p = classData.get(0);
             mv.visitTypeInsn(Opcodes.CHECKCAST, p.desc.substring(1, p.desc.length()-1));
             mv.visitFieldInsn(Opcodes.PUTSTATIC, className, p.name, p.desc);
+        } else {
+            mv.visitTypeInsn(Opcodes.CHECKCAST, "java/util/List");
+            mv.visitVarInsn(Opcodes.ASTORE, 0);
+            int index = 0;
+            for (ClassData p : classData) {
+                // initialize the static field
+                mv.visitVarInsn(Opcodes.ALOAD, 0);
+                emitIconstInsn(mv, index++);
+                mv.visitMethodInsn(Opcodes.INVOKEINTERFACE, "java/util/List",
+                                   "get", "(I)Ljava/lang/Object;", true);
+                mv.visitTypeInsn(Opcodes.CHECKCAST, p.desc.substring(1, p.desc.length()-1));
+                mv.visitFieldInsn(Opcodes.PUTSTATIC, className, p.name, p.desc);
+            }
         }
         mv.visitInsn(Opcodes.RETURN);
         mv.visitMaxs(2, 1);
@@ -796,9 +755,7 @@ class InvokerBytecodeGenerator {
         clinit(cw, className, classData);
         bogusMethod(lambdaForm);
 
-        final byte[] classFile = toByteArray();
-        maybeDump(classFile);
-        return classFile;
+        return toByteArray();
     }
 
     void setClassWriter(ClassWriter cw) {
@@ -1030,7 +987,7 @@ class InvokerBytecodeGenerator {
     private static boolean isStaticallyInvocableType(MethodType mtype) {
         if (!isStaticallyNameable(mtype.returnType()))
             return false;
-        for (Class<?> ptype : mtype.parameterArray())
+        for (Class<?> ptype : mtype.ptypes())
             if (!isStaticallyNameable(ptype))
                 return false;
         return true;
@@ -1885,9 +1842,7 @@ class InvokerBytecodeGenerator {
         clinit(cw, className, classData);
         bogusMethod(invokerType);
 
-        final byte[] classFile = cw.toByteArray();
-        maybeDump(classFile);
-        return classFile;
+        return cw.toByteArray();
     }
 
     /**
@@ -1954,9 +1909,7 @@ class InvokerBytecodeGenerator {
         clinit(cw, className, classData);
         bogusMethod(dstType);
 
-        final byte[] classFile = cw.toByteArray();
-        maybeDump(classFile);
-        return classFile;
+        return cw.toByteArray();
     }
 
     /**
@@ -1964,7 +1917,7 @@ class InvokerBytecodeGenerator {
      * for debugging purposes.
      */
     private void bogusMethod(Object os) {
-        if (DUMP_CLASS_FILES) {
+        if (dumper().isEnabled()) {
             mv = cw.visitMethod(Opcodes.ACC_STATIC, "dummy", "()V", null, null);
             mv.visitLdcInsn(os.toString());
             mv.visitInsn(Opcodes.POP);

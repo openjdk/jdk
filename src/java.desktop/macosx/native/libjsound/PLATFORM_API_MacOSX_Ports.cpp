@@ -438,7 +438,7 @@ static void* CreatePortControl(PortMixer *mixer, PortControlCreator *creator, Po
     case PortControl::Balance:
         jControl = creator->newFloatControl(creator, control, CONTROL_TYPE_BALANCE, -1, 1, precision, "");
         break;
-    };
+    }
 
     if (jControl == NULL) {
         ERROR0("CreatePortControl: javaControl was not created\n");
@@ -635,7 +635,7 @@ void PORT_GetControls(void* id, INT32 portIndex, PortControlCreator* creator) {
                     if (channelName == NULL) {
                         return;
                     }
-                    sprintf(channelName, "Ch %d", ch);
+                    snprintf(channelName, 16, "Ch %d", ch);
                 }
 
                 void* jControls[2];

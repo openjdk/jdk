@@ -284,7 +284,7 @@ static const int initial_size = 64;
 static int save(const StoredEdge* edge) {
   assert(edge != nullptr, "invariant");
   if (_leak_context_edges == nullptr) {
-    _leak_context_edges = new (ResourceObj::C_HEAP, mtTracing)GrowableArray<const StoredEdge*>(initial_size, mtTracing);
+    _leak_context_edges = new (mtTracing) GrowableArray<const StoredEdge*>(initial_size, mtTracing);
     _leak_context_edges->append(nullptr); // next idx now at 1, for disambiguation in markword.
   }
   return _leak_context_edges->append(edge);

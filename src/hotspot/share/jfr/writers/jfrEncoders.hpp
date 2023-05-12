@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,6 +62,9 @@ class BigEndianEncoderImpl {
 
   template <typename T>
   static size_t encode_padded(const T* src, size_t len, u1* dest);
+
+  template <typename T>
+  static size_t size_in_bytes(T value);
 
 };
 
@@ -129,6 +132,17 @@ inline size_t BigEndianEncoderImpl::encode_padded(const T* src, size_t len, u1* 
   return size;
 }
 
+template <typename T>
+inline size_t BigEndianEncoderImpl::size_in_bytes(T value) {
+  switch (sizeof(T)) {
+    case 1: return 1;
+    case 2: return 2;
+    case 4: return 4;
+    case 8:return 8;
+  }
+  ShouldNotReachHere();
+  return 0;
+}
 
 // The Varint128 encoder implements encoding according to
 // msb(it) 128bit encoding (1 encode bit | 7 value bits),
@@ -159,6 +173,9 @@ class Varint128EncoderImpl {
 
   template <typename T>
   static size_t encode_padded(const T* src, size_t len, u1* dest);
+
+  template <typename T>
+  static size_t size_in_bytes(T value);
 
 };
 
@@ -293,6 +310,36 @@ inline size_t Varint128EncoderImpl::encode_padded(const T* src, size_t len, u1* 
     }
   }
   return size;
+}
+
+template <typename T>
+inline size_t Varint128EncoderImpl::size_in_bytes(T value) {
+  const u8 v = to_u8(value);
+  if (LESS_THAN_128(v)) {
+    return 1;
+  }
+  if (LESS_THAN_128(v >> 7)) {
+    return 2;
+  }
+  if (LESS_THAN_128(v >> 14)) {
+    return 3;
+  }
+  if (LESS_THAN_128(v >> 21)) {
+    return 4;
+  }
+  if (LESS_THAN_128(v >> 28)) {
+    return 5;
+  }
+  if (LESS_THAN_128(v >> 35)) {
+    return 6;
+  }
+  if (LESS_THAN_128(v >> 42)) {
+    return 7;
+  }
+  if (LESS_THAN_128(v >> 49)) {
+    return 8;
+  }
+  return 9;
 }
 
 #endif // SHARE_JFR_WRITERS_JFRENCODERS_HPP

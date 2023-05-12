@@ -272,6 +272,7 @@ public class MetalLookAndFeel extends BasicLookAndFeel
               "FileChooserUI", metalPackageName + "MetalFileChooserUI",
             "InternalFrameUI", metalPackageName + "MetalInternalFrameUI",
                     "LabelUI", metalPackageName + "MetalLabelUI",
+                  "MenuBarUI", metalPackageName + "MetalMenuBarUI",
        "PopupMenuSeparatorUI", metalPackageName + "MetalPopupMenuSeparatorUI",
               "ProgressBarUI", metalPackageName + "MetalProgressBarUI",
               "RadioButtonUI", metalPackageName + "MetalRadioButtonUI",

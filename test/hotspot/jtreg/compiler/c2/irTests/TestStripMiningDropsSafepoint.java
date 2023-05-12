@@ -41,7 +41,7 @@ public class TestStripMiningDropsSafepoint {
     }
 
     @Test
-    @IR(applyIf = { "PartialPeelLoop", "true" }, counts = { IRNode.COUNTEDLOOP, "1",  IRNode.OUTERSTRIPMINEDLOOP, "1", IRNode.SAFEPOINT, "1" })
+    @IR(applyIf = { "PartialPeelLoop", "true" }, counts = {IRNode.COUNTED_LOOP, "1", IRNode.OUTER_STRIP_MINED_LOOP, "1", IRNode.SAFEPOINT, "1" })
     private static void test1(int[] dst, int[] src) {
         // Partial peel is applied. No side effect between exit and
         // safepoint.
@@ -68,8 +68,8 @@ public class TestStripMiningDropsSafepoint {
     }
 
     @Test
-    @IR(applyIf = { "PartialPeelLoop", "true" }, counts = { IRNode.COUNTEDLOOP, "1", IRNode.SAFEPOINT, "1" })
-    @IR(applyIf = { "PartialPeelLoop", "true" }, failOn = { IRNode.OUTERSTRIPMINEDLOOP })
+    @IR(applyIf = { "PartialPeelLoop", "true" }, counts = {IRNode.COUNTED_LOOP, "1", IRNode.SAFEPOINT, "1" })
+    @IR(applyIf = { "PartialPeelLoop", "true" }, failOn = { IRNode.OUTER_STRIP_MINED_LOOP})
     private static void test2(int[] dst, int[] src) {
         // Partial peel is applied. Some side effect between exit and
         // safepoint.
@@ -97,7 +97,7 @@ public class TestStripMiningDropsSafepoint {
     }
 
     @Test
-    @IR(applyIf = { "PartialPeelLoop", "false" }, counts = { IRNode.COUNTEDLOOP, "1",  IRNode.OUTERSTRIPMINEDLOOP, "1", IRNode.SAFEPOINT, "1" })
+    @IR(applyIf = { "PartialPeelLoop", "false" }, counts = {IRNode.COUNTED_LOOP, "1", IRNode.OUTER_STRIP_MINED_LOOP, "1", IRNode.SAFEPOINT, "1" })
     private static void test3(int[] dst, int[] src) {
         int v = src[0];
         for (int i = 0; ; ) {

@@ -59,7 +59,7 @@ import toolbox.ToolBox;
  */
 public class TestJavadocTester extends JavadocTester {
     public static void main(String... args) throws Exception {
-        TestJavadocTester tester = new TestJavadocTester();
+        var tester = new TestJavadocTester();
         tester.setup().runTests();
     }
 

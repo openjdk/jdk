@@ -2429,15 +2429,17 @@ void LIR_Assembler::setup_md_access(ciMethod* method, int bci,
 
 void LIR_Assembler::store_parameter(Register r, int param_num) {
   assert(param_num >= 0, "invalid num");
-  int offset_in_bytes = param_num * BytesPerWord + FrameMap::first_available_sp_in_frame;
-  assert(offset_in_bytes < frame_map()->reserved_argument_area_size(), "invalid offset");
+  int offset_in_bytes = param_num * BytesPerWord;
+  check_reserved_argument_area(offset_in_bytes);
+  offset_in_bytes += FrameMap::first_available_sp_in_frame;
   __ z_stg(r, offset_in_bytes, Z_SP);
 }
 
 void LIR_Assembler::store_parameter(jint c, int param_num) {
   assert(param_num >= 0, "invalid num");
-  int offset_in_bytes = param_num * BytesPerWord + FrameMap::first_available_sp_in_frame;
-  assert(offset_in_bytes < frame_map()->reserved_argument_area_size(), "invalid offset");
+  int offset_in_bytes = param_num * BytesPerWord;
+  check_reserved_argument_area(offset_in_bytes);
+  offset_in_bytes += FrameMap::first_available_sp_in_frame;
   __ store_const(Address(Z_SP, offset_in_bytes), c, Z_R1_scratch, true);
 }
 

@@ -194,6 +194,7 @@ public final class DocumentCache implements DOMCache {
      */
     private final long getLastModified(String uri) {
         try {
+            @SuppressWarnings("deprecation")
             URL url = new URL(uri);
             URLConnection connection = url.openConnection();
             long timestamp = connection.getLastModified();

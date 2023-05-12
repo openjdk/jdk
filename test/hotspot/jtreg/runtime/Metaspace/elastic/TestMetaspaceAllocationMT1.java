@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2020 SAP SE. All rights reserved.
+ * Copyright (c) 2020, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,24 +58,6 @@
  */
 
 /*
- * @test id=debug-none
- * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management
- * @build jdk.test.whitebox.WhiteBox
- * @key randomness
- * @requires (vm.debug == true)
- *
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- *
- * @run main/othervm/timeout=400
- *      -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *      -XX:VerifyMetaspaceInterval=10
- *      -XX:MetaspaceReclaimPolicy=none
- *      TestMetaspaceAllocationMT1
- */
-
-/*
  * @test id=debug-aggressive
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
@@ -128,23 +110,6 @@
  */
 
 /*
- * @test id=ndebug-none
- * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management
- * @build jdk.test.whitebox.WhiteBox
- * @key randomness
- * @requires (vm.debug == false)
- *
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- *
- * @run main/othervm/timeout=400
- *      -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *      -XX:MetaspaceReclaimPolicy=none
- *      TestMetaspaceAllocationMT1
- */
-
-/*
  * @test id=ndebug-aggressive
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
@@ -175,7 +140,7 @@ public class TestMetaspaceAllocationMT1 {
 
             // Note: reserve limit must be a multiple of Metaspace::reserve_alignment_words()
             //  (512K on 64bit, 1M on 32bit)
-            long reserveLimit = (i == 2) ? 1024 * 1024 : 0;
+            long reserveLimit = (i == 2) ? Settings.rootChunkWordSize * 2 : 0;
 
             System.out.println("#### Test: ");
             System.out.println("#### testAllocationCeiling: " + testAllocationCeiling);

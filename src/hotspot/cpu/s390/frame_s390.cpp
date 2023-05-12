@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -180,6 +180,13 @@ bool frame::safe_for_sender(JavaThread *thread) {
 
 bool frame::is_interpreted_frame() const {
   return Interpreter::contains(pc());
+}
+
+// locals
+
+void frame::interpreter_frame_set_locals(intptr_t* locs)  {
+  assert(is_interpreted_frame(), "interpreted frame expected");
+  ijava_state_unchecked()->locals = (uint64_t)locs;
 }
 
 // sender_sp

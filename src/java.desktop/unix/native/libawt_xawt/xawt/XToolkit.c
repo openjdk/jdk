@@ -382,7 +382,7 @@ static jlong        poll_wakeup_time = 0LL; // Used for tracing
 // considered by schedulers as zero, so this might cause unnecessary
 // CPU consumption by Java.  The values between 10 - 50 are suggested
 // for single client desktop configurations.  For SunRay servers, it
-// is highly recomended to use aging algorithm (set static poll timeout
+// is highly recommended to use aging algorithm (set static poll timeout
 // to 0).
 static int32_t static_poll_timeout = 0;
 
@@ -845,7 +845,7 @@ int32_t getNumButtons() {
     int32_t local_num_buttons = 0;
 
     /* 4700242:
-     * If XTest is asked to press a non-existant mouse button
+     * If XTest is asked to press a non-existent mouse button
      * (i.e. press Button3 on a system configured with a 2-button mouse),
      * then a crash may happen.  To avoid this, we use the XInput
      * extension to query for the number of buttons on the XPointer, and check

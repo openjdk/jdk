@@ -22,10 +22,12 @@
  */
 package org.openjdk.bench.java.lang.foreign;
 
+import java.lang.foreign.Arena;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
+import java.lang.foreign.SegmentScope;
 import java.lang.foreign.SegmentAllocator;
-import java.lang.foreign.MemorySession;
+
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -42,7 +44,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.concurrent.TimeUnit;
 
-import static java.lang.foreign.ValueLayout.JAVA_INT;
+import static java.lang.foreign.ValueLayout.*;
 
 @BenchmarkMode(Mode.AverageTime)
 @Warmup(iterations = 5, time = 500, timeUnit = TimeUnit.MILLISECONDS)
@@ -58,12 +60,12 @@ public class LoopOverNew extends JavaLayouts {
     static final int CARRIER_SIZE = (int)JAVA_INT.byteSize();
     static final int ALLOC_SIZE = ELEM_SIZE * CARRIER_SIZE;
     static final MemoryLayout ALLOC_LAYOUT = MemoryLayout.sequenceLayout(ELEM_SIZE, JAVA_INT);
-    final MemorySession session = MemorySession.openConfined();
-    final SegmentAllocator recyclingAlloc = SegmentAllocator.prefixAllocator(MemorySegment.allocateNative(ALLOC_LAYOUT, session));
+    final Arena arena = Arena.openConfined();
+    final SegmentAllocator recyclingAlloc = SegmentAllocator.prefixAllocator(MemorySegment.allocateNative(ALLOC_LAYOUT, arena.scope()));
 
     @TearDown
     public void tearDown() throws Throwable {
-        session.close();
+        arena.close();
     }
 
     @Benchmark
@@ -77,8 +79,8 @@ public class LoopOverNew extends JavaLayouts {
 
     @Benchmark
     public void segment_loop_confined() {
-        try (MemorySession session = MemorySession.openConfined()) {
-            MemorySegment segment = MemorySegment.allocateNative(ALLOC_SIZE, 4, session);
+        try (Arena arena = Arena.openConfined()) {
+            MemorySegment segment = arena.allocate(ALLOC_SIZE, 4);
             for (int i = 0; i < ELEM_SIZE; i++) {
                 VH_INT.set(segment, (long) i, i);
             }
@@ -87,8 +89,8 @@ public class LoopOverNew extends JavaLayouts {
 
     @Benchmark
     public void segment_loop_shared() {
-        try (MemorySession session = MemorySession.openShared()) {
-            MemorySegment segment = MemorySegment.allocateNative(ALLOC_SIZE, 4, session);
+        try (Arena arena = Arena.openShared()) {
+            MemorySegment segment = arena.allocate(ALLOC_SIZE, 4);
             for (int i = 0; i < ELEM_SIZE; i++) {
                 VH_INT.set(segment, (long) i, i);
             }
@@ -133,7 +135,7 @@ public class LoopOverNew extends JavaLayouts {
     @Benchmark
     public void segment_loop_implicit() {
         if (gcCount++ == 0) System.gc(); // GC when we overflow
-        MemorySegment segment = MemorySegment.allocateNative(ALLOC_SIZE, 4, MemorySession.openImplicit());
+        MemorySegment segment = MemorySegment.allocateNative(ALLOC_SIZE, 4, SegmentScope.auto());
         for (int i = 0; i < ELEM_SIZE; i++) {
             VH_INT.set(segment, (long) i, i);
         }

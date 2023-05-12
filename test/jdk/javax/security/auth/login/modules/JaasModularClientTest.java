@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,19 +33,23 @@ import java.io.File;
 import java.io.OutputStream;
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleDescriptor.Builder;
-import jdk.internal.module.ModuleInfoWriter;
 import java.util.stream.Stream;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.util.JarUtils;
+import jdk.test.lib.util.ModuleInfoWriter;
 
 /*
  * @test
  * @bug 8078813 8183310
  * @summary Test custom JAAS login module with all possible modular option.
+ * @modules java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.classfile.java.lang.constant
+ *          java.base/jdk.internal.module
  * @library /test/lib
- * @modules java.base/jdk.internal.module
- * @build jdk.test.lib.util.JarUtils
+ * @build jdk.test.lib.util.JarUtils jdk.test.lib.util.ModuleInfoWriter
  * @build TestLoginModule JaasClient
  * @run main JaasModularClientTest false
  * @run main JaasModularClientTest true

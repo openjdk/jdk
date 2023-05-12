@@ -88,6 +88,10 @@ private:
   // to allocate a new region even if the max has been reached.
   HeapWord* new_alloc_region_and_allocate(size_t word_size, bool force);
 
+  // Perform an allocation out of a new allocation region, retiring the current one.
+  inline HeapWord* attempt_allocation_using_new_region(size_t min_word_size,
+                                                       size_t desired_word_size,
+                                                       size_t* actual_word_size);
 protected:
   // The memory node index this allocation region belongs to.
   uint _node_index;
@@ -171,11 +175,6 @@ public:
   inline HeapWord* attempt_allocation_locked(size_t min_word_size,
                                              size_t desired_word_size,
                                              size_t* actual_word_size);
-
-  // Perform an allocation out of a new allocation region, retiring the current one.
-  inline HeapWord* attempt_allocation_using_new_region(size_t min_word_size,
-                                                       size_t desired_word_size,
-                                                       size_t* actual_word_size);
 
   // Should be called to allocate a new region even if the max of this
   // type of regions has been reached. Should only be called if other
@@ -276,13 +275,6 @@ class OldGCAllocRegion : public G1GCAllocRegion {
 public:
   OldGCAllocRegion(G1EvacStats* stats)
   : G1GCAllocRegion("Old GC Alloc Region", true /* bot_updates */, stats, G1HeapRegionAttr::Old) { }
-
-  // This specialization of release() makes sure that the last card that has
-  // been allocated into has been completely filled by a dummy object.  This
-  // avoids races when remembered set scanning wants to update the BOT of the
-  // last card in the retained old gc alloc region, and allocation threads
-  // allocating into that card at the same time.
-  virtual HeapRegion* release();
 };
 
 #endif // SHARE_GC_G1_G1ALLOCREGION_HPP

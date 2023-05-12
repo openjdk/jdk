@@ -52,8 +52,6 @@ class MethodHandleNatives {
     static native void expand(MemberName self);
     static native MemberName resolve(MemberName self, Class<?> caller, int lookupMode,
             boolean speculativeResolve) throws LinkageError, ClassNotFoundException;
-    static native int getMembers(Class<?> defc, String matchName, String matchSig,
-            int matchFlags, Class<?> caller, int skip, MemberName[] results);
 
     /// Field layout queries parallel to jdk.internal.misc.Unsafe:
     static native long objectFieldOffset(MemberName self);  // e.g., returns vmindex
@@ -119,10 +117,7 @@ class MethodHandleNatives {
             MN_CALLER_SENSITIVE    = 0x00100000, // @CallerSensitive annotation detected
             MN_TRUSTED_FINAL       = 0x00200000, // trusted final field
             MN_REFERENCE_KIND_SHIFT = 24, // refKind
-            MN_REFERENCE_KIND_MASK = 0x0F000000 >> MN_REFERENCE_KIND_SHIFT,
-            // The SEARCH_* bits are not for MN.flags but for the matchFlags argument of MHN.getMembers:
-            MN_SEARCH_SUPERCLASSES = 0x00100000,
-            MN_SEARCH_INTERFACES   = 0x00200000;
+            MN_REFERENCE_KIND_MASK = 0x0F000000 >> MN_REFERENCE_KIND_SHIFT;
 
         /**
          * Constant pool reference-kind codes, as used by CONSTANT_MethodHandle CP entries.
@@ -281,6 +276,12 @@ class MethodHandleNatives {
                                               type,
                                               staticArguments,
                                               caller);
+        if (TRACE_METHOD_LINKAGE) {
+            MethodHandle target = callSite.getTarget();
+            System.out.println("linkCallSite target class => " + target.getClass().getName());
+            System.out.println("linkCallSite target => " + target.debugString(0));
+        }
+
         if (callSite instanceof ConstantCallSite) {
             appendixResult[0] = callSite.dynamicInvoker();
             return Invokers.linkToTargetMethod(type);
@@ -298,19 +299,33 @@ class MethodHandleNatives {
         Object bsmReference = bootstrapMethod.internalMemberName();
         if (bsmReference == null)  bsmReference = bootstrapMethod;
         String staticArglist = staticArglistForTrace(staticArguments);
-        System.out.println("linkCallSite "+caller.getName()+" "+
+        System.out.println("linkCallSite "+getCallerInfo(caller)+" "+
                            bsmReference+" "+
                            name+type+"/"+staticArglist);
         try {
             MemberName res = linkCallSiteImpl(caller, bootstrapMethod, name, type,
                                               staticArguments, appendixResult);
-            System.out.println("linkCallSite => "+res+" + "+appendixResult[0]);
+            System.out.println("linkCallSite linkage => "+res+" + "+appendixResult[0]);
             return res;
         } catch (Throwable ex) {
             ex.printStackTrace(); // print now in case exception is swallowed
             System.out.println("linkCallSite => throw "+ex);
             throw ex;
         }
+    }
+
+    /**
+     * Return a human-readable description of the caller. Something like
+     * "java.base/java.security.Security.<clinit>(Security.java:82)"
+     */
+    private static String getCallerInfo(Class<?> caller) {
+        for (StackTraceElement e : Thread.currentThread().getStackTrace()) {
+            if (e.getClassName().equals(caller.getName())) {
+                return e.toString();
+            }
+        }
+        // fallback if the caller is somehow missing from the stack.
+        return caller.getName();
     }
 
     // this implements the upcall from the JVM, MethodHandleNatives.linkDynamicConstant:

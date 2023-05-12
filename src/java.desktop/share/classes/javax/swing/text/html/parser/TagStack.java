@@ -35,8 +35,8 @@ import java.io.*;
  * It, together with the ContentModelStates, defines the
  * complete state of the parser while reading a document.
  * When a start tag is encountered an element is pushed onto
- * the stack, when an end tag is enountered an element is popped
- * of the stack.
+ * the stack, when an end tag is encountered an element is popped
+ * off the stack.
  *
  * @see Parser
  * @see DTD

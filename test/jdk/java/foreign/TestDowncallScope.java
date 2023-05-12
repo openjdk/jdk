@@ -24,7 +24,8 @@
 /*
  * @test
  * @enablePreview
- * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64"
+ * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64" | os.arch == "riscv64"
+ * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestDowncallBase
  *
  * @run testng/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-VerifyDependencies
@@ -38,11 +39,10 @@
 
 import org.testng.annotations.Test;
 
-import java.lang.foreign.Addressable;
+import java.lang.foreign.Arena;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.GroupLayout;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
 import java.lang.foreign.SegmentAllocator;
 import java.util.ArrayList;
 import java.util.List;
@@ -61,20 +61,20 @@ public class TestDowncallScope extends TestDowncallBase {
                              List<CallGeneratorHelper.ParamType> paramTypes,
                              List<CallGeneratorHelper.StructFieldType> fields) throws Throwable {
         List<Consumer<Object>> checks = new ArrayList<>();
-        Addressable addr = findNativeOrThrow(fName);
+        MemorySegment addr = findNativeOrThrow(fName);
         FunctionDescriptor descriptor = function(ret, paramTypes, fields);
-        Object[] args = makeArgs(paramTypes, fields, checks);
-        try (MemorySession session = MemorySession.openShared()) {
+        try (Arena arena = Arena.openShared()) {
+            Object[] args = makeArgs(arena, descriptor, checks);
             boolean needsScope = descriptor.returnLayout().map(GroupLayout.class::isInstance).orElse(false);
             SegmentAllocator allocator = needsScope ?
-                    SegmentAllocator.newNativeArena(session) :
+                    SegmentAllocator.nativeAllocator(arena.scope()) :
                     THROWING_ALLOCATOR;
             Object res = doCall(addr, allocator, descriptor, args);
             if (ret == CallGeneratorHelper.Ret.NON_VOID) {
                 checks.forEach(c -> c.accept(res));
                 if (needsScope) {
                     // check that return struct has indeed been allocated in the native scope
-                    assertEquals(((MemorySegment)res).session(), session);
+                    assertEquals(((MemorySegment)res).scope(), arena.scope());
                 }
             }
         }
@@ -84,8 +84,8 @@ public class TestDowncallScope extends TestDowncallBase {
         return function(ret, params, fields, List.of());
     }
 
-    static Object[] makeArgs(List<ParamType> params, List<StructFieldType> fields, List<Consumer<Object>> checks) throws ReflectiveOperationException {
-        return makeArgs(params, fields, checks, List.of());
+    static Object[] makeArgs(Arena arena, FunctionDescriptor descriptor, List<Consumer<Object>> checks) {
+        return makeArgs(arena, descriptor, checks, 0);
     }
 
 }

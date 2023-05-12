@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,7 +72,6 @@ public class DynamicPolicy extends Policy{
 
         perms.add(new java.security.SecurityPermission("getPolicy"));
         perms.add(new java.security.SecurityPermission("setPolicy"));
-        perms.add(new java.lang.RuntimePermission("stopThread"));
         perms.add(new java.net.SocketPermission("localhost:1024-", "listen"));
         perms.add(new PropertyPermission("java.version","read"));
         perms.add(new PropertyPermission("java.vendor","read"));

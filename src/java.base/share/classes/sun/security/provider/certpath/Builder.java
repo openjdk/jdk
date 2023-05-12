@@ -204,7 +204,7 @@ abstract class Builder {
             /* base is ancestor of test */
         case GeneralNameInterface.NAME_NARROWS:
             /* base is descendant of test */
-            return (test.subtreeDepth()-base.subtreeDepth());
+            return test.subtreeDepth() - base.subtreeDepth();
         default: // should never occur
             return incomparable;
         }
@@ -230,7 +230,7 @@ abstract class Builder {
             int commonDistance = commonName.subtreeDepth();
             int baseDistance = baseName.subtreeDepth();
             int testDistance = testName.subtreeDepth();
-            return (baseDistance + testDistance - (2 * commonDistance));
+            return baseDistance + testDistance - (2 * commonDistance);
         }
     }
 
@@ -300,8 +300,7 @@ abstract class Builder {
         SubjectAlternativeNameExtension altNameExt =
             certImpl.getSubjectAlternativeNameExtension();
         if (altNameExt != null) {
-            GeneralNames altNames = altNameExt.get(
-                    SubjectAlternativeNameExtension.SUBJECT_NAME);
+            GeneralNames altNames = altNameExt.getNames();
             /* see if any alternative name matches target */
             if (altNames != null) {
                 for (int j = 0, n = altNames.size(); j < n; j++) {
@@ -337,10 +336,8 @@ abstract class Builder {
                 + constraints);
         }
         /* reduce permitted by excluded */
-        GeneralSubtrees permitted =
-                constraints.get(NameConstraintsExtension.PERMITTED_SUBTREES);
-        GeneralSubtrees excluded =
-                constraints.get(NameConstraintsExtension.EXCLUDED_SUBTREES);
+        GeneralSubtrees permitted = constraints.getPermittedSubtrees();
+        GeneralSubtrees excluded = constraints.getExcludedSubtrees();
         if (permitted != null) {
             permitted.reduce(excluded);
         }
@@ -362,7 +359,7 @@ abstract class Builder {
             GeneralNameInterface perName = permitted.get(i).getName().getName();
             int distance = distance(perName, target, -1);
             if (distance >= 0) {
-                return (distance + 1);
+                return distance + 1;
             }
         }
         /* no matching type in permitted; cert holder could certify target */

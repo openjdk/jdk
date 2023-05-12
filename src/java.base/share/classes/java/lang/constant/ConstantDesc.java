@@ -74,6 +74,7 @@ import java.lang.invoke.VarHandle.VarHandleDesc;
  * @jvms 4.4 The Constant Pool
  *
  * @since 12
+ * @sealedGraph
  */
 public sealed interface ConstantDesc
         permits ClassDesc,

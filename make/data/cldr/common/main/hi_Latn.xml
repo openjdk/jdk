@@ -19,53 +19,44 @@ annotations.
 	<localeDisplayNames>
 		<languages>
 			<language type="af">Afreeki</language>
-			<language type="ar_001">Modern Standard Arabic</language>
-			<language type="as">Aasaami</language>
 			<language type="bn">Bangla</language>
 			<language type="bo">Tibbati</language>
 			<language type="ckb">Kurdish, Sorani</language>
 			<language type="crh">Crimean Turkish</language>
-			<language type="de_AT">Austrian German</language>
-			<language type="de_CH">Swiss High German</language>
-			<language type="en_AU">Australian English</language>
-			<language type="en_CA">Canadian English</language>
-			<language type="en_GB">British English</language>
-			<language type="en_GB" alt="short">UK English</language>
-			<language type="en_US">American English</language>
-			<language type="en_US" alt="short">US English</language>
-			<language type="es_419">Latin American Spanish</language>
-			<language type="es_ES">European Spanish</language>
-			<language type="es_MX">Mexican Spanish</language>
 			<language type="fa">Faarsi</language>
-			<language type="fa_AF">Dari</language>
-			<language type="fr_CA">Canadian French</language>
-			<language type="fr_CH">Swiss French</language>
-			<language type="ht">Haitian</language>
+			<language type="ff">Fulah</language>
+			<language type="lah">Lahnda</language>
 			<language type="mus">Muscogee</language>
 			<language type="nan">Min Nan</language>
+			<language type="nb">Norwegian Bokmal</language>
 			<language type="nds_NL">Low Saxon</language>
-			<language type="nl_BE">Flemish</language>
-			<language type="pt_BR">Brazilian Portuguese</language>
-			<language type="pt_PT">European Portuguese</language>
-			<language type="ro_MD">Moldavian</language>
-			<language type="sw_CD">Congo Swahili</language>
 			<language type="ug">Uighur</language>
 			<language type="wal">walamo</language>
-			<language type="zh_Hans">Simplified Chinese</language>
-			<language type="zh_Hans" alt="long">Simplified Mandarin Chinese</language>
-			<language type="zh_Hant">Traditional Chinese</language>
-			<language type="zh_Hant" alt="long">Traditional Mandarin Chinese</language>
 		</languages>
 		<scripts>
 			<script type="Bali">Baali</script>
 			<script type="Beng">Bangla</script>
 			<script type="Inds">Sindhu</script>
+			<script type="Mymr">Burmese</script>
 			<script type="Orya">Odia</script>
 			<script type="Talu">Naya Tai Lue</script>
 		</scripts>
 		<territories>
+			<territory type="AX">Aland Islands</territory>
+			<territory type="BL">St. Barthelemy</territory>
+			<territory type="CI">Cote d’Ivoire</territory>
+			<territory type="CW">Curacao</territory>
+			<territory type="KN">St. Kitts &amp; Nevis</territory>
+			<territory type="LC">St. Lucia</territory>
+			<territory type="MF">St. Martin</territory>
+			<territory type="PM">St. Pierre &amp; Miquelon</territory>
+			<territory type="RE">Reunion</territory>
+			<territory type="SH">St. Helena</territory>
+			<territory type="ST">Sao Tome &amp; Principe</territory>
+			<territory type="TR" alt="variant">Turkiye</territory>
 			<territory type="UM">U.S. Outlying Islands</territory>
 			<territory type="US" alt="short">America</territory>
+			<territory type="VC">St. Vincent &amp; Grenadines</territory>
 			<territory type="VI">U.S. Virgin Islands</territory>
 			<territory type="XB">Pseudo-Bidirectional</territory>
 		</territories>
@@ -75,9 +66,12 @@ annotations.
 			<key type="colCaseLevel">Case Sensitive Sorting</key>
 			<key type="colNormalization">Normalized Sorting</key>
 			<key type="colStrength">Sorting ki Strength</key>
+			<key type="fw">Week kaa pahla din</key>
 			<key type="hc">Hours ki Cycle (12 vs 24)</key>
 			<key type="lb">Line break ki style</key>
+			<key type="lw">Words Setting mein Line Breaks</key>
 			<key type="ms">Measurement kaa system</key>
+			<key type="rg">Supplemental Data ke liye region</key>
 		</keys>
 		<types>
 			<type key="calendar" type="islamic-civil">Islamic Civil Calendar (tabular, civil epoch)</type>
@@ -103,15 +97,44 @@ annotations.
 			<type key="colStrength" type="quaternary">Accents/Case/Width/Kana ko sort karein</type>
 			<type key="colStrength" type="secondary">Accents ko sort karein</type>
 			<type key="colStrength" type="tertiary">Accents/Case/Width ko sort karein</type>
+			<type key="d0" type="ascii">ASCII</type>
 			<type key="d0" type="fwidth">Poori width</type>
 			<type key="d0" type="hwidth">Aadhi width</type>
+			<type key="d0" type="lower">Lowercase</type>
 			<type key="d0" type="npinyin">Numeric tones ke saath pinyin karna</type>
+			<type key="d0" type="title">Titlecase</type>
+			<type key="d0" type="upper">Uppercase</type>
+			<type key="em" type="default">Emoji Characters ke liye Default Presentation use karein</type>
+			<type key="em" type="emoji">Emoji Characters ke liye Emoji Presentation prefer karein</type>
+			<type key="em" type="text">Emoji Characters ke liye Text Presentation prefer karein</type>
+			<type key="fw" type="fri">Week kaa pahla din Friday</type>
+			<type key="fw" type="mon">Week kaa pahla din Monday</type>
+			<type key="fw" type="sat">Week kaa pahla din Saturday</type>
+			<type key="fw" type="sun">Week kaa pahla din Sunday</type>
+			<type key="fw" type="thu">Week kaa pahla din Thursday</type>
+			<type key="fw" type="tue">Week kaa pahla din Tuesday</type>
+			<type key="fw" type="wed">Week kaa pahla din Wednesday</type>
 			<type key="hc" type="h11">12 Hour System (0–11)</type>
 			<type key="hc" type="h12">12 Hour System (1–12)</type>
 			<type key="hc" type="h23">24 Hour System (0–23)</type>
 			<type key="hc" type="h24">24 Hour System (1–24)</type>
+			<type key="lw" type="breakall">Sabhi Words mein Line Breaks allow karein</type>
+			<type key="lw" type="keepall">Sabhi Words mein Line Breaks se bachein</type>
+			<type key="lw" type="normal">Words ke liye normal Line Breaks</type>
+			<type key="lw" type="phrase">Phrases mein Line Breaks se bachein</type>
 			<type key="numbers" type="beng">Bangla Digits</type>
+			<type key="numbers" type="hanidec">Chinese Decimal Numbers</type>
+			<type key="numbers" type="hans">Simplified Chinese Numbers</type>
+			<type key="numbers" type="hansfin">Simplified Chinese Financial Numbers</type>
+			<type key="numbers" type="hant">Traditional Chinese Numbers</type>
+			<type key="numbers" type="hantfin">Traditional Chinese Financial Numbers</type>
+			<type key="numbers" type="hebr">Hebrew Numbers</type>
+			<type key="numbers" type="jpan">Japanese Numbers</type>
+			<type key="numbers" type="jpanfin">Japanese Financial Numbers</type>
 			<type key="numbers" type="orya">Odia Digits</type>
+			<type key="numbers" type="roman">Roman Numbers</type>
+			<type key="numbers" type="romanlow">Roman Lowercase Numbers</type>
+			<type key="numbers" type="taml">Traditional Tamil Numbers</type>
 		</types>
 		<measurementSystemNames>
 			<measurementSystemName type="UK">U.K.</measurementSystemName>
@@ -125,7 +148,6 @@ annotations.
 	</localeDisplayNames>
 	<characters>
 		<exemplarCharacters type="auxiliary" draft="contributed">[ā ḍ ĕ ē ḥ ī ḷ {l\u0325} ṁ {m\u0310} ñ ṅ ṇ ŏ ō ṛ {r\u0325} {r\u0325\u0304} ś ṣ ṭ ū]</exemplarCharacters>
-		<exemplarCharacters type="punctuation" draft="provisional">[\- ‐ ‑ – — , ; \: ! ? . ' ‘ ’ &quot; “ ” ( ) \[ \] \{ \} @ * / \&amp; # ′ ″]</exemplarCharacters>
 	</characters>
 	<dates>
 		<calendars>
@@ -164,33 +186,62 @@ annotations.
 					</dateFormatLength>
 				</dateFormats>
 				<dateTimeFormats>
+					<dateTimeFormatLength type="full">
+						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1}, {0} 'par'</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="long">
+						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1}, {0} 'par'</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="medium">
+						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="short">
+						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
 					<availableFormats>
 						<dateFormatItem id="Bhms">h:mm.ss B</dateFormatItem>
 						<dateFormatItem id="yyyyMd">d/M/y GGGGG</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
 						<intervalFormatItem id="MEd">
-							<greatestDifference id="d">E, d/M – E, d/M</greatestDifference>
-							<greatestDifference id="M">E, d/M – E, d/M</greatestDifference>
+							<greatestDifference id="d">E, d/M – E, d/M</greatestDifference>
+							<greatestDifference id="M">E, d/M – E, d/M</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
-							<greatestDifference id="M">M/y – M/y GGGGG</greatestDifference>
-							<greatestDifference id="y">M/y – M/y GGGGG</greatestDifference>
+							<greatestDifference id="M">M/y – M/y GGGGG</greatestDifference>
+							<greatestDifference id="y">M/y – M/y GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMd">
-							<greatestDifference id="d">d/M/y – d/M/y GGGGG</greatestDifference>
-							<greatestDifference id="M">d/M/y – d/M/y GGGGG</greatestDifference>
-							<greatestDifference id="y">d/M/y – d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="d">d/M/y – d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="M">d/M/y – d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="y">d/M/y – d/M/y GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMEd">
-							<greatestDifference id="d">E, d/M/y – E, d/M/y GGGGG</greatestDifference>
-							<greatestDifference id="M">E, d/M/y – E, d/M/y GGGGG</greatestDifference>
-							<greatestDifference id="y">E, d/M/y – E, d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="d">E, d/M/y – E, d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="M">E, d/M/y – E, d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="y">E, d/M/y – E, d/M/y GGGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMd">
+							<greatestDifference id="d">d–d MMM, y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
-							<greatestDifference id="d">E, d – E, d MMM y G</greatestDifference>
-							<greatestDifference id="M">E, d MMM – E, d MMM y G</greatestDifference>
-							<greatestDifference id="y">E, d MMM y – E, d MMM y G</greatestDifference>
+							<greatestDifference id="d">E, d – E, d MMM y G</greatestDifference>
+							<greatestDifference id="M">E, d MMM – E, d MMM y G</greatestDifference>
+							<greatestDifference id="y">E, d MMM y – E, d MMM y G</greatestDifference>
 						</intervalFormatItem>
 					</intervalFormats>
 				</dateTimeFormats>
@@ -217,45 +268,96 @@ annotations.
 				<days>
 					<dayContext type="format">
 						<dayWidth type="abbreviated">
-							<day type="sun">ravi</day>
-							<day type="mon">som</day>
-							<day type="tue">mangal</day>
-							<day type="wed">budh</day>
-							<day type="thu">guru</day>
-							<day type="fri">shukra</day>
-							<day type="sat">shani</day>
+							<day type="sun">Ravi</day>
+							<day type="mon">Som</day>
+							<day type="tue">Mangal</day>
+							<day type="wed">Budh</day>
+							<day type="thu">Guru</day>
+							<day type="fri">Shukra</day>
+							<day type="sat">Shani</day>
+						</dayWidth>
+						<dayWidth type="narrow">
+							<day type="sun">Ra</day>
+							<day type="mon">So</day>
+							<day type="tue">Ma</day>
+							<day type="wed">Bu</day>
+							<day type="thu">Gu</day>
+							<day type="fri">Sh</day>
+							<day type="sat">Sha</day>
+						</dayWidth>
+						<dayWidth type="short">
+							<day type="sun">Ra</day>
+							<day type="mon">So</day>
+							<day type="tue">Ma</day>
+							<day type="wed">Bu</day>
+							<day type="thu">Gu</day>
+							<day type="fri">Shu</day>
+							<day type="sat">Sha</day>
 						</dayWidth>
 						<dayWidth type="wide">
-							<day type="sun">ravivaar</day>
-							<day type="mon">somvaar</day>
-							<day type="tue">mangalvaar</day>
-							<day type="wed">budhvaar</day>
-							<day type="thu">guruvaar</day>
-							<day type="fri">shukravaar</day>
-							<day type="sat">shanivaar</day>
+							<day type="sun">Raviwaar</day>
+							<day type="mon">Somwaar</day>
+							<day type="tue">Mangalwaar</day>
+							<day type="wed">Budhwaar</day>
+							<day type="thu">Guruwaar</day>
+							<day type="fri">Shukrawaar</day>
+							<day type="sat">Shaniwaar</day>
 						</dayWidth>
 					</dayContext>
 					<dayContext type="stand-alone">
 						<dayWidth type="narrow">
-							<day type="sun">ra</day>
-							<day type="mon">so</day>
-							<day type="tue">ma</day>
-							<day type="wed">bu</day>
-							<day type="thu">gu</day>
-							<day type="fri">su</day>
-							<day type="sat">sa</day>
+							<day type="sun">Ra</day>
+							<day type="mon">So</day>
+							<day type="tue">Ma</day>
+							<day type="wed">Bu</day>
+							<day type="thu">Gu</day>
+							<day type="fri">Sh</day>
+							<day type="sat">Sha</day>
+						</dayWidth>
+						<dayWidth type="short">
+							<day type="sun">Ra</day>
+							<day type="mon">So</day>
+							<day type="tue">Ma</day>
+							<day type="wed">Bu</day>
+							<day type="thu">Gu</day>
+							<day type="fri">Shu</day>
+							<day type="sat">Sha</day>
+						</dayWidth>
+						<dayWidth type="wide">
+							<day type="sun">Raviwaar</day>
+							<day type="mon">Somwaar</day>
+							<day type="tue">Mangalwaar</day>
+							<day type="wed">Budhwaar</day>
+							<day type="thu">Guruwaar</day>
+							<day type="fri">Shukrawaar</day>
+							<day type="sat">Shaniwaar</day>
 						</dayWidth>
 					</dayContext>
 				</days>
 				<dayPeriods>
 					<dayPeriodContext type="format">
 						<dayPeriodWidth type="abbreviated">
+							<dayPeriod type="midnight">midnight</dayPeriod>
 							<dayPeriod type="am">AM</dayPeriod>
+							<dayPeriod type="noon">noon</dayPeriod>
 							<dayPeriod type="pm">PM</dayPeriod>
+							<dayPeriod type="morning1">subah</dayPeriod>
+							<dayPeriod type="afternoon1">dopahar</dayPeriod>
+							<dayPeriod type="evening1">shaam</dayPeriod>
+							<dayPeriod type="night1">raat</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="narrow">
+							<dayPeriod type="midnight">mi</dayPeriod>
+							<dayPeriod type="noon">n</dayPeriod>
+							<dayPeriod type="morning1">subah</dayPeriod>
+							<dayPeriod type="afternoon1">dopahar</dayPeriod>
+							<dayPeriod type="evening1">shaam</dayPeriod>
+							<dayPeriod type="night1">raat</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
 							<dayPeriod type="midnight">aadhi raat</dayPeriod>
 							<dayPeriod type="am">AM</dayPeriod>
+							<dayPeriod type="noon">Madhyanh</dayPeriod>
 							<dayPeriod type="pm">PM</dayPeriod>
 							<dayPeriod type="morning1">subah</dayPeriod>
 							<dayPeriod type="afternoon1">dopahar</dayPeriod>
@@ -264,9 +366,14 @@ annotations.
 						</dayPeriodWidth>
 					</dayPeriodContext>
 					<dayPeriodContext type="stand-alone">
+						<dayPeriodWidth type="narrow">
+							<dayPeriod type="am">AM</dayPeriod>
+							<dayPeriod type="pm">PM</dayPeriod>
+						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
 							<dayPeriod type="midnight">aadhi raat</dayPeriod>
 							<dayPeriod type="am">AM</dayPeriod>
+							<dayPeriod type="noon">Madhyanh</dayPeriod>
 							<dayPeriod type="pm">PM</dayPeriod>
 							<dayPeriod type="morning1">subah</dayPeriod>
 							<dayPeriod type="afternoon1">dopahar</dayPeriod>
@@ -283,12 +390,12 @@ annotations.
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
-							<pattern>d MMMM y</pattern>
+							<pattern>d MMMM, y</pattern>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
-							<pattern>dd-MMM-y</pattern>
+							<pattern>dd MMM, y</pattern>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
@@ -301,22 +408,22 @@ annotations.
 				<timeFormats>
 					<timeFormatLength type="full">
 						<timeFormat>
-							<pattern>h:mm:ss a zzzz</pattern>
+							<pattern>h:mm:ss a zzzz</pattern>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="long">
 						<timeFormat>
-							<pattern>h:mm:ss a z</pattern>
+							<pattern>h:mm:ss a z</pattern>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="medium">
 						<timeFormat>
-							<pattern>h:mm:ss a</pattern>
+							<pattern>h:mm:ss a</pattern>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="short">
 						<timeFormat>
-							<pattern>h:mm a</pattern>
+							<pattern>h:mm a</pattern>
 						</timeFormat>
 					</timeFormatLength>
 				</timeFormats>
@@ -325,22 +432,92 @@ annotations.
 						<dateTimeFormat>
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1}, {0} 'baje'</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
 							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1}, {0} 'baje'</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="medium">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
+					<availableFormats>
+						<dateFormatItem id="Gy">G y</dateFormatItem>
+						<dateFormatItem id="GyMMM">G y MMM</dateFormatItem>
+						<dateFormatItem id="GyMMMd">G y, d MMM</dateFormatItem>
+						<dateFormatItem id="GyMMMEd">G y, dd MMM, E</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="one">MMMM 'kaa' 'week' W</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="other">MMMM 'kaa' 'week' W</dateFormatItem>
+						<dateFormatItem id="yMMMd">d MMM, y</dateFormatItem>
+						<dateFormatItem id="yw" count="one">Y 'kaa' 'week' w</dateFormatItem>
+						<dateFormatItem id="yw" count="other">Y 'kaa' 'week' w</dateFormatItem>
+					</availableFormats>
+					<intervalFormats>
+						<intervalFormatItem id="Gy">
+							<greatestDifference id="G">G y –G y</greatestDifference>
+							<greatestDifference id="y">G y – y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMM">
+							<greatestDifference id="G">G y MMM – G y MMM</greatestDifference>
+							<greatestDifference id="M">G y MMM – MMM</greatestDifference>
+							<greatestDifference id="y">G y MMM – y MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMd">
+							<greatestDifference id="d">G y MMM d–d</greatestDifference>
+							<greatestDifference id="G">G y MMM d – G y MMM d</greatestDifference>
+							<greatestDifference id="M">G y MMM d  – MMM d</greatestDifference>
+							<greatestDifference id="y">G y MMM d –  y d MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMEd">
+							<greatestDifference id="d">G y MMM d, E – MMM d, E</greatestDifference>
+							<greatestDifference id="G">G y MMM d, E –  G y MMM d, E</greatestDifference>
+							<greatestDifference id="M">G y MMM d, E –  MMM d, E</greatestDifference>
+							<greatestDifference id="y">G y MMM d, E –  y MMM d, E</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="H">
+							<greatestDifference id="H">HH – HH</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hm">
+							<greatestDifference id="H">HH:mm – HH:mm</greatestDifference>
+							<greatestDifference id="m">HH:mm – HH:mm</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hmv">
+							<greatestDifference id="H">HH:mm – HH:mm v</greatestDifference>
+							<greatestDifference id="m">HH:mm – HH:mm v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hv">
+							<greatestDifference id="H">HH – HH v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMd">
+							<greatestDifference id="d">d–d MMM, y</greatestDifference>
+							<greatestDifference id="M">d MMM – d MMM, y</greatestDifference>
+							<greatestDifference id="y">d MMM, y – d MMM, y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMEd">
+							<greatestDifference id="d">E, d – E, d MMM, y</greatestDifference>
+							<greatestDifference id="M">E, d MMM – E, d MMM, y</greatestDifference>
+							<greatestDifference id="y">E, d MMM, y – E, d MMM, y</greatestDifference>
+						</intervalFormatItem>
+					</intervalFormats>
 				</dateTimeFormats>
 			</calendar>
 			<calendar type="indian">
@@ -404,22 +581,107 @@ annotations.
 					<relativeTimePattern count="other">{0} saal mein</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} saal pehle</relativeTimePattern>
-					<relativeTimePattern count="other">{0} saal pehle</relativeTimePattern>
+					<relativeTimePattern count="one">{0} saal pahle</relativeTimePattern>
+					<relativeTimePattern count="other">{0} saal pahle</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="year-short">
+				<relative type="-1">last yr.</relative>
+				<relative type="0">is yr.</relative>
+				<relative type="1">next yr.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} yr. mein</relativeTimePattern>
+					<relativeTimePattern count="other">{0} yr. mein</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} yr. pahle</relativeTimePattern>
+					<relativeTimePattern count="other">{0} yr. pahle</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="year-narrow">
+				<relative type="-1">last yr.</relative>
+				<relative type="0">is yr.</relative>
+				<relative type="1">next yr.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0}y mein</relativeTimePattern>
+					<relativeTimePattern count="other">{0}y mein</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0}y pahle</relativeTimePattern>
+					<relativeTimePattern count="other">{0}y pahle</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="quarter">
+				<relative type="-1">last quarter</relative>
+				<relative type="0">is quarter</relative>
+				<relative type="1">next quarter</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} quarter mein</relativeTimePattern>
+					<relativeTimePattern count="other">{0} quarters mein</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} quarter pahle</relativeTimePattern>
+					<relativeTimePattern count="other">{0} quarters pahle</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="quarter-short">
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} qtr. mein</relativeTimePattern>
+					<relativeTimePattern count="other">{0} qtrs. mein</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} qtr. pahle</relativeTimePattern>
+					<relativeTimePattern count="other">{0} qtrs. pahle</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="quarter-narrow">
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0}q mein</relativeTimePattern>
+					<relativeTimePattern count="other">{0}q mein</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0}q pahle</relativeTimePattern>
+					<relativeTimePattern count="other">{0}q pahle</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="month">
 				<displayName>mahina</displayName>
-				<relative type="-1">pichhla mahina</relative>
-				<relative type="0">is mahine</relative>
-				<relative type="1">agla mahina</relative>
+				<relative type="-1">pichhla maheena</relative>
+				<relative type="0">yah maheena</relative>
+				<relative type="1">agla maheena</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} mahine mein</relativeTimePattern>
-					<relativeTimePattern count="other">{0} mahine mein</relativeTimePattern>
+					<relativeTimePattern count="one">{0} maheene mein</relativeTimePattern>
+					<relativeTimePattern count="other">{0} maheene mein</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} mahine pehle</relativeTimePattern>
-					<relativeTimePattern count="other">{0} mahine pehle</relativeTimePattern>
+					<relativeTimePattern count="one">{0} maheene pahle</relativeTimePattern>
+					<relativeTimePattern count="other">{0} maheene pahle</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="month-short">
+				<relative type="-1">last mo</relative>
+				<relative type="0">is mo</relative>
+				<relative type="1">next mo</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} mo. mein</relativeTimePattern>
+					<relativeTimePattern count="other">{0} mo. mein</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} mo. pahle</relativeTimePattern>
+					<relativeTimePattern count="other">{0} mo. pahle</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="month-narrow">
+				<relative type="-1">last mo.</relative>
+				<relative type="0">is mo.</relative>
+				<relative type="1">next mo.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0}mo mein</relativeTimePattern>
+					<relativeTimePattern count="other">{0}mo mein</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0}mo pahle</relativeTimePattern>
+					<relativeTimePattern count="other">{0}mo pahle</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="week">
@@ -435,7 +697,44 @@ annotations.
 					<relativeTimePattern count="one">{0} hafte pehle</relativeTimePattern>
 					<relativeTimePattern count="other">{0} hafte pehle</relativeTimePattern>
 				</relativeTime>
-				<relativePeriod>{0} ke hafta</relativePeriod>
+				<relativePeriod>{0} date wala hafta</relativePeriod>
+			</field>
+			<field type="week-short">
+				<relative type="-1">last wk.</relative>
+				<relative type="0">is wk.</relative>
+				<relative type="1">next wk.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} wk. mein</relativeTimePattern>
+					<relativeTimePattern count="other">{0} wk. mein</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} wk. pahle</relativeTimePattern>
+					<relativeTimePattern count="other">{0} wk. pahle</relativeTimePattern>
+				</relativeTime>
+				<relativePeriod>{0} wala hafta</relativePeriod>
+			</field>
+			<field type="week-narrow">
+				<relative type="-1">last wk</relative>
+				<relative type="0">is wk</relative>
+				<relative type="1">next wk</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0}w mein</relativeTimePattern>
+					<relativeTimePattern count="other">{0}w mein</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0}w pahle</relativeTimePattern>
+					<relativeTimePattern count="other">{0}w pahle</relativeTimePattern>
+				</relativeTime>
+				<relativePeriod>{0} wala week</relativePeriod>
+			</field>
+			<field type="weekOfMonth">
+				<displayName>month kaa week</displayName>
+			</field>
+			<field type="weekOfMonth-short">
+				<displayName>mo kaa wk</displayName>
+			</field>
+			<field type="weekOfMonth-narrow">
+				<displayName>mo kaa wk</displayName>
 			</field>
 			<field type="day">
 				<displayName>din</displayName>
@@ -453,27 +752,392 @@ annotations.
 					<relativeTimePattern count="other">{0} din pehle</relativeTimePattern>
 				</relativeTime>
 			</field>
+			<field type="day-short">
+				<displayName>din</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} din mein</relativeTimePattern>
+					<relativeTimePattern count="other">{0} din mein</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} din pahle</relativeTimePattern>
+					<relativeTimePattern count="other">{0} din pahle</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="day-narrow">
+				<displayName>din</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} din mein</relativeTimePattern>
+					<relativeTimePattern count="other">{0} din mein</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} din pahle</relativeTimePattern>
+					<relativeTimePattern count="other">{0} din pahle</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="dayOfYear">
+				<displayName>saal kaa din</displayName>
+			</field>
+			<field type="dayOfYear-short">
+				<displayName>yr kaa day</displayName>
+			</field>
+			<field type="dayOfYear-narrow">
+				<displayName>saal kaa din</displayName>
+			</field>
+			<field type="weekday">
+				<displayName>Week kaa din</displayName>
+			</field>
+			<field type="weekday-short">
+				<displayName>wk kaa din</displayName>
+			</field>
+			<field type="weekday-narrow">
+				<displayName>wk kaa din</displayName>
+			</field>
+			<field type="weekdayOfMonth">
+				<displayName>month kaa weekday</displayName>
+			</field>
+			<field type="weekdayOfMonth-short">
+				<displayName>mo kaa wkday</displayName>
+			</field>
+			<field type="weekdayOfMonth-narrow">
+				<displayName>mo kaa wkday</displayName>
+			</field>
+			<field type="sun">
+				<relative type="-1">last Sunday</relative>
+				<relative type="0">is Sunday</relative>
+				<relative type="1">next Sunday</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} Sunday mein</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Sundays mein</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} Sunday pahle</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Sundays pahle</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sun-short">
+				<relative type="-1">last Sun.</relative>
+				<relative type="0">yah Sun.</relative>
+				<relative type="1">next Sun.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} Sun. mein</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Sun. mein</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} Sun. pahle</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Sun. pahle</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sun-narrow">
+				<relative type="-1">last Su</relative>
+				<relative type="0">is Su</relative>
+				<relative type="1">next Su</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} Su mein</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Su mein</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} Su pahle</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Su pahle</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="mon">
+				<relative type="-1">last Monday</relative>
+				<relative type="0">Monday</relative>
+				<relative type="1">next Monday</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} Monday mein</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Mondays mein</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} Monday pahle</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Mondays pahle</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="mon-short">
+				<relative type="-1">last Mon</relative>
+				<relative type="0">Mon</relative>
+				<relative type="1">next Mon</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} Mon. mein</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Mon. mein</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} Mon. pahle</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Mon. pahle</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="mon-narrow">
+				<relative type="-1">last M</relative>
+				<relative type="0">M</relative>
+				<relative type="1">next M</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} M mein</relativeTimePattern>
+					<relativeTimePattern count="other">{0} M mein</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} M pahle</relativeTimePattern>
+					<relativeTimePattern count="other">{0} M pahle</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="tue">
+				<relative type="-1">last Tuesday</relative>
+				<relative type="0">Tuesday</relative>
+				<relative type="1">next Tuesday</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} Tuesday mein</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Tuesdays mein</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} Tuesday pahle</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Tuesdays pahle</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="tue-short">
+				<relative type="-1">last Tue.</relative>
+				<relative type="0">is Tue.</relative>
+				<relative type="1">next Tue.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} Tue. mein</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Tue. mein</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} Tue. pahle</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Tue. pahle</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="tue-narrow">
+				<relative type="-1">last Tu</relative>
+				<relative type="0">is Tu</relative>
+				<relative type="1">next Tu</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} Tu mein</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Tu mein</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} Tu pahle</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Tu pahle</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="wed">
+				<relative type="-1">last Wednesday</relative>
+				<relative type="0">is Wednesday</relative>
+				<relative type="1">next Wednesday</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} Wednesday mein</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Wednesdays mein</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} Wednesday pahle</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Wednesdays pahle</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="wed-short">
+				<relative type="-1">last Wed</relative>
+				<relative type="0">is Wed</relative>
+				<relative type="1">next Wed</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} Wed. mein</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Wed. mein</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} Wed. pahle</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Wed. pahle</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="wed-narrow">
+				<relative type="-1">last W</relative>
+				<relative type="0">is W</relative>
+				<relative type="1">next W</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} W mein</relativeTimePattern>
+					<relativeTimePattern count="other">{0} W mein</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} W pahle</relativeTimePattern>
+					<relativeTimePattern count="other">{0} W pahle</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="thu">
+				<relative type="-1">last Thursday</relative>
+				<relative type="0">yah Thursday</relative>
+				<relative type="1">next Thursday</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} Thursday mein</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Thursdays mein</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} Thursday pahle</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Thursdays pahle</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="thu-short">
+				<relative type="-1">last Thu.</relative>
+				<relative type="0">yah Thu.</relative>
+				<relative type="1">next Thu.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} Thu. mein</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Thu. mein</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} Thu. pahle</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Thu. pahle</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="thu-narrow">
+				<relative type="-1">last Th</relative>
+				<relative type="0">is Th</relative>
+				<relative type="1">next Th</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} Th mein</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Th mein</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} Th pahle</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Th pahle</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="fri">
+				<relative type="-1">last Friday</relative>
+				<relative type="0">Friday</relative>
+				<relative type="1">next Friday</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} Friday mein</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Fridays mein</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} Friday pahle</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Fridays pahle</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="fri-short">
+				<relative type="-1">last Fri</relative>
+				<relative type="0">Fri</relative>
+				<relative type="1">next Fri</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} Fri. mein</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Fri. mein</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} Fri. pahle</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Fri. pahle</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="fri-narrow">
+				<relative type="-1">last F</relative>
+				<relative type="0">F</relative>
+				<relative type="1">next F</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} F mein</relativeTimePattern>
+					<relativeTimePattern count="other">{0} F mein</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} F pahle</relativeTimePattern>
+					<relativeTimePattern count="other">{0} F pahle</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sat">
+				<relative type="-1">last Saturday</relative>
+				<relative type="0">is Saturday</relative>
+				<relative type="1">next Saturday</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} Saturday mein</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Saturdays mein</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} Saturday pahle</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Saturdays pahle</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sat-short">
+				<relative type="-1">last Sat.</relative>
+				<relative type="0">is Sat.</relative>
+				<relative type="1">last Sat.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} Sat. mein</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Sat. mein</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} Sat. pahle</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Sat. pahle</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sat-narrow">
+				<relative type="-1">last Sa</relative>
+				<relative type="0">is Sa</relative>
+				<relative type="1">next Sa</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} Sa mein</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Sa mein</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} Sa pahle</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Sa pahle</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="dayperiod-short">
+				<displayName>AM/PM</displayName>
+			</field>
 			<field type="hour">
 				<displayName>ghanta</displayName>
-				<relative type="0">yeh ghanta</relative>
+				<relative type="0">yah ghanta</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} ghante mein</relativeTimePattern>
 					<relativeTimePattern count="other">{0} ghante mein</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} ghante pehle</relativeTimePattern>
-					<relativeTimePattern count="other">{0} ghante pehle</relativeTimePattern>
+					<relativeTimePattern count="one">{0} ghante pahle</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ghante pahle</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="hour-short">
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} hr mein</relativeTimePattern>
+					<relativeTimePattern count="other">{0} hr mein</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} hr pahle</relativeTimePattern>
+					<relativeTimePattern count="other">{0} hr mein</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="hour-narrow">
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0}hr mein</relativeTimePattern>
+					<relativeTimePattern count="other">{0}hr mein</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0}hr pahle</relativeTimePattern>
+					<relativeTimePattern count="other">{0}hr pahle</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="minute">
-				<relative type="0">yeh minute</relative>
+				<relative type="0">yah minute</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} minute mein</relativeTimePattern>
 					<relativeTimePattern count="other">{0} minute mein</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} minute pehle</relativeTimePattern>
-					<relativeTimePattern count="other">{0} minute pehle</relativeTimePattern>
+					<relativeTimePattern count="one">{0} minute pahle</relativeTimePattern>
+					<relativeTimePattern count="other">{0} minute pahle</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="minute-short">
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} min. mein</relativeTimePattern>
+					<relativeTimePattern count="other">{0} min. mein</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} min. pahle</relativeTimePattern>
+					<relativeTimePattern count="other">{0} min. pahle</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="minute-narrow">
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} min. mein</relativeTimePattern>
+					<relativeTimePattern count="other">{0} min. mein</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} min. pahle</relativeTimePattern>
+					<relativeTimePattern count="other">{0} min. pahle</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="second">
@@ -483,8 +1147,28 @@ annotations.
 					<relativeTimePattern count="other">{0} second mein</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} second pehle</relativeTimePattern>
-					<relativeTimePattern count="other">{0} second pehle</relativeTimePattern>
+					<relativeTimePattern count="one">{0} second pahle</relativeTimePattern>
+					<relativeTimePattern count="other">{0} second pahle</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="second-short">
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} sec. mein</relativeTimePattern>
+					<relativeTimePattern count="other">{0} sec. mein</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} sec. pahle</relativeTimePattern>
+					<relativeTimePattern count="other">{0} sec. pahle</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="second-narrow">
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0}s mein</relativeTimePattern>
+					<relativeTimePattern count="other">{0}s mein</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0}s pahle</relativeTimePattern>
+					<relativeTimePattern count="other">{0}s pahle</relativeTimePattern>
 				</relativeTime>
 			</field>
 		</fields>
@@ -602,9 +1286,6 @@ annotations.
 			</zone>
 			<zone type="Australia/Melbourne">
 				<exemplarCity>Melbourne</exemplarCity>
-			</zone>
-			<zone type="Australia/Currie">
-				<exemplarCity>Currie</exemplarCity>
 			</zone>
 			<zone type="Australia/Hobart">
 				<exemplarCity>Hobart</exemplarCity>
@@ -819,9 +1500,6 @@ annotations.
 			<zone type="America/Blanc-Sablon">
 				<exemplarCity>Blanc Sablon</exemplarCity>
 			</zone>
-			<zone type="America/St_Johns">
-				<exemplarCity>St Johns</exemplarCity>
-			</zone>
 			<zone type="Indian/Cocos">
 				<exemplarCity>Cocos</exemplarCity>
 			</zone>
@@ -907,7 +1585,7 @@ annotations.
 				<exemplarCity>Dominica</exemplarCity>
 			</zone>
 			<zone type="America/Santo_Domingo">
-				<exemplarCity>Santo_Domingo</exemplarCity>
+				<exemplarCity>Santo Domingo</exemplarCity>
 			</zone>
 			<zone type="Africa/Algiers">
 				<exemplarCity>Algiers</exemplarCity>
@@ -992,12 +1670,6 @@ annotations.
 			</zone>
 			<zone type="America/Thule">
 				<exemplarCity>Thule</exemplarCity>
-			</zone>
-			<zone type="America/Godthab">
-				<exemplarCity>Godthab</exemplarCity>
-			</zone>
-			<zone type="America/Scoresbysund">
-				<exemplarCity>Scoresbysund</exemplarCity>
 			</zone>
 			<zone type="America/Danmarkshavn">
 				<exemplarCity>Danmarkshavn</exemplarCity>
@@ -1106,9 +1778,6 @@ annotations.
 			</zone>
 			<zone type="Asia/Phnom_Penh">
 				<exemplarCity>Phnom Penh</exemplarCity>
-			</zone>
-			<zone type="Pacific/Enderbury">
-				<exemplarCity>Enderbury</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
 				<exemplarCity>Kiritimati</exemplarCity>
@@ -1313,9 +1982,6 @@ annotations.
 			</zone>
 			<zone type="Europe/Oslo">
 				<exemplarCity>Oslo</exemplarCity>
-			</zone>
-			<zone type="Asia/Katmandu">
-				<exemplarCity>Katmandu</exemplarCity>
 			</zone>
 			<zone type="Pacific/Nauru">
 				<exemplarCity>Nauru</exemplarCity>
@@ -1536,9 +2202,6 @@ annotations.
 			<zone type="America/El_Salvador">
 				<exemplarCity>El Salvador</exemplarCity>
 			</zone>
-			<zone type="America/Lower_Princes">
-				<exemplarCity>Lower Princes</exemplarCity>
-			</zone>
 			<zone type="Asia/Damascus">
 				<exemplarCity>Damascus</exemplarCity>
 			</zone>
@@ -1595,9 +2258,6 @@ annotations.
 			</zone>
 			<zone type="Europe/Uzhgorod">
 				<exemplarCity>Uzhgorod</exemplarCity>
-			</zone>
-			<zone type="Europe/Kiev">
-				<exemplarCity>Kiev</exemplarCity>
 			</zone>
 			<zone type="Europe/Simferopol">
 				<exemplarCity>Simferopol</exemplarCity>
@@ -1656,50 +2316,20 @@ annotations.
 			<zone type="America/Denver">
 				<exemplarCity>Denver</exemplarCity>
 			</zone>
-			<zone type="America/North_Dakota/Beulah">
-				<exemplarCity>North Dakota/Beulah</exemplarCity>
-			</zone>
-			<zone type="America/North_Dakota/New_Salem">
-				<exemplarCity>North Dakota/New Salem</exemplarCity>
-			</zone>
-			<zone type="America/North_Dakota/Center">
-				<exemplarCity>North Dakota/Center</exemplarCity>
-			</zone>
 			<zone type="America/Chicago">
 				<exemplarCity>Chicago</exemplarCity>
 			</zone>
 			<zone type="America/Menominee">
 				<exemplarCity>Menominee</exemplarCity>
 			</zone>
-			<zone type="America/Indiana/Vincennes">
-				<exemplarCity>Indiana/Vincennes</exemplarCity>
-			</zone>
-			<zone type="America/Indiana/Petersburg">
-				<exemplarCity>Indiana/Petersburg</exemplarCity>
-			</zone>
-			<zone type="America/Indiana/Tell_City">
-				<exemplarCity>Indiana/Tell City</exemplarCity>
-			</zone>
 			<zone type="America/Indiana/Knox">
-				<exemplarCity>Indiana/Knox</exemplarCity>
-			</zone>
-			<zone type="America/Indiana/Winamac">
-				<exemplarCity>Indiana/Winamac</exemplarCity>
-			</zone>
-			<zone type="America/Indiana/Marengo">
-				<exemplarCity>Indiana/Marengo</exemplarCity>
+				<exemplarCity>Knox, Indiana</exemplarCity>
 			</zone>
 			<zone type="America/Indianapolis">
 				<exemplarCity>Indianapolis</exemplarCity>
 			</zone>
 			<zone type="America/Louisville">
 				<exemplarCity>Louisville</exemplarCity>
-			</zone>
-			<zone type="America/Indiana/Vevay">
-				<exemplarCity>वेवे, इंडियाना</exemplarCity>
-			</zone>
-			<zone type="America/Kentucky/Monticello">
-				<exemplarCity>Kentucky/Monticello</exemplarCity>
 			</zone>
 			<zone type="America/Detroit">
 				<exemplarCity>Detroit</exemplarCity>
@@ -1787,6 +2417,11 @@ annotations.
 					<daylight>St. Pierre &amp; Miquelon Daylight Time</daylight>
 				</long>
 			</metazone>
+			<metazone type="Reunion">
+				<long>
+					<standard>Reunion Time</standard>
+				</long>
+			</metazone>
 		</timeZoneNames>
 	</dates>
 	<numbers>
@@ -1825,8 +2460,8 @@ annotations.
 				<decimalFormat>
 					<pattern type="1000" count="one">0 hazaar</pattern>
 					<pattern type="1000" count="other">0 hazaar</pattern>
-					<pattern type="10000" count="one">00 hazaar</pattern>
-					<pattern type="10000" count="other">00 hazaar</pattern>
+					<pattern type="10000" count="one">00Th</pattern>
+					<pattern type="10000" count="other">00Th</pattern>
 					<pattern type="100000" count="one">0 laakh</pattern>
 					<pattern type="100000" count="other">0 laakh</pattern>
 					<pattern type="1000000" count="one">00 laakh</pattern>
@@ -1845,8 +2480,8 @@ annotations.
 					<pattern type="1000000000000" count="other">00 kha'.'</pattern>
 					<pattern type="10000000000000" count="one">000 kha'.'</pattern>
 					<pattern type="10000000000000" count="other">000 kha'.'</pattern>
-					<pattern type="100000000000000" count="one">0000 kha'.'</pattern>
-					<pattern type="100000000000000" count="other">0000 kha'.'</pattern>
+					<pattern type="100000000000000" count="one">000kha'.'</pattern>
+					<pattern type="100000000000000" count="other">000kha'.'</pattern>
 				</decimalFormat>
 			</decimalFormatLength>
 		</decimalFormats>
@@ -1861,26 +2496,40 @@ annotations.
 			<currencyFormatLength>
 				<currencyFormat type="accounting">
 					<pattern>¤#,##,##0.00</pattern>
+					<pattern alt="alphaNextToNumber">¤ #,##,##0.00</pattern>
+					<pattern alt="noCurrency">#,##,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
 				<currencyFormat type="standard">
 					<pattern type="1000" count="one">¤0 hazaar</pattern>
+					<pattern type="1000" count="one" alt="alphaNextToNumber">¤ 0 hazaar</pattern>
 					<pattern type="1000" count="other">¤0 hazaar</pattern>
+					<pattern type="1000" count="other" alt="alphaNextToNumber">¤ 0 hazaar</pattern>
 					<pattern type="10000" count="one">¤00 hazaar</pattern>
+					<pattern type="10000" count="one" alt="alphaNextToNumber">¤ 00 hazaar</pattern>
 					<pattern type="10000" count="other">¤00 hazaar</pattern>
+					<pattern type="10000" count="other" alt="alphaNextToNumber">¤ 00 hazaar</pattern>
 					<pattern type="100000" count="one">¤0 laakh</pattern>
+					<pattern type="100000" count="one" alt="alphaNextToNumber">¤ 0 laakh</pattern>
 					<pattern type="100000" count="other">¤0 laakh</pattern>
+					<pattern type="100000" count="other" alt="alphaNextToNumber">¤ 0 laakh</pattern>
 					<pattern type="1000000" count="one">¤00 laakh</pattern>
+					<pattern type="1000000" count="one" alt="alphaNextToNumber">¤ 00 laakh</pattern>
 					<pattern type="1000000" count="other">¤00 laakh</pattern>
-					<pattern type="10000000" count="one">¤0 ka'.'</pattern>
+					<pattern type="1000000" count="other" alt="alphaNextToNumber">¤ 00 laakh</pattern>
+					<pattern type="10000000" count="one">¤0Cr</pattern>
 					<pattern type="10000000" count="other">¤0 ka'.'</pattern>
 					<pattern type="100000000" count="one">¤00 ka'.'</pattern>
 					<pattern type="100000000" count="other">¤00 ka'.'</pattern>
 					<pattern type="1000000000" count="one">¤0 a'.'</pattern>
+					<pattern type="1000000000" count="one" alt="alphaNextToNumber">¤ 0B</pattern>
 					<pattern type="1000000000" count="other">¤0 a'.'</pattern>
+					<pattern type="1000000000" count="other" alt="alphaNextToNumber">¤ 0B</pattern>
 					<pattern type="10000000000" count="one">¤00 a'.'</pattern>
+					<pattern type="10000000000" count="one" alt="alphaNextToNumber">¤ 00B</pattern>
 					<pattern type="10000000000" count="other">¤00 a'.'</pattern>
+					<pattern type="10000000000" count="other" alt="alphaNextToNumber">¤ 00B</pattern>
 					<pattern type="100000000000" count="one">¤0 kha'.'</pattern>
 					<pattern type="100000000000" count="other">¤0 kha'.'</pattern>
 					<pattern type="1000000000000" count="one">¤00 kha'.'</pattern>
@@ -1892,18 +2541,194 @@ annotations.
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>
+		<currencies>
+			<currency type="ALL">
+				<displayName count="one">Albanian lek</displayName>
+				<displayName count="other">Albanian leke</displayName>
+			</currency>
+			<currency type="CRC">
+				<displayName>Costa Rican colon</displayName>
+				<displayName count="one">Costa Rican colon</displayName>
+				<displayName count="other">Costa Rican colons</displayName>
+			</currency>
+			<currency type="ISK">
+				<displayName>Icelandic krona</displayName>
+				<displayName count="one">Icelandic krona</displayName>
+				<displayName count="other">Icelandic kronur</displayName>
+			</currency>
+			<currency type="LSL">
+				<displayName count="one">Lesotho loti</displayName>
+				<displayName count="other">Lesotho lotis</displayName>
+			</currency>
+			<currency type="NIO">
+				<displayName>Nicaraguan cordoba</displayName>
+				<displayName count="one">Nicaraguan cordoba</displayName>
+				<displayName count="other">Nicaraguan cordobas</displayName>
+			</currency>
+			<currency type="RUB">
+				<displayName>Russian ruble</displayName>
+				<displayName count="one">Russian ruble</displayName>
+				<displayName count="other">Russian rubles</displayName>
+			</currency>
+			<currency type="STN">
+				<displayName>Sao Tome &amp; Principe Dobra</displayName>
+				<displayName count="one">Sao Tome &amp; Principe dobra</displayName>
+				<displayName count="other">Sao Tome &amp; Principe dobras</displayName>
+			</currency>
+			<currency type="VES">
+				<displayName>Venezuelan bolivar</displayName>
+				<displayName count="one">Venezuelan bolivar</displayName>
+				<displayName count="other">Venezuelan bolivars</displayName>
+			</currency>
+			<currency type="XXX">
+				<displayName count="one">currency ki unknown unit</displayName>
+				<displayName count="other">(unknown currency)</displayName>
+			</currency>
+		</currencies>
+		<minimalPairs>
+			<ordinalMinimalPairs ordinal="few">{0}rd right lein.</ordinalMinimalPairs>
+			<ordinalMinimalPairs ordinal="one">{0}st right lein.</ordinalMinimalPairs>
+			<ordinalMinimalPairs ordinal="other">{0}th right lein.</ordinalMinimalPairs>
+			<ordinalMinimalPairs ordinal="two">{0}nd right lein.</ordinalMinimalPairs>
+		</minimalPairs>
 	</numbers>
 	<units>
+		<unitLength type="long">
+			<unit type="concentr-percent">
+				<displayName>percent</displayName>
+				<unitPattern count="one">{0} percent</unitPattern>
+				<unitPattern count="other">{0} percent</unitPattern>
+			</unit>
+			<unit type="consumption-mile-per-gallon-imperial">
+				<displayName>miles per Imp. gallon</displayName>
+				<unitPattern count="one">{0} mile per Imp. gallon</unitPattern>
+				<unitPattern count="other">{0} miles per Imp. gallon</unitPattern>
+			</unit>
+			<unit type="duration-year">
+				<unitPattern count="one">{0} saal</unitPattern>
+				<unitPattern count="other">{0} saal</unitPattern>
+				<perUnitPattern>{0} har saal</perUnitPattern>
+			</unit>
+			<unit type="duration-month">
+				<perUnitPattern>{0} har month</perUnitPattern>
+			</unit>
+			<unit type="duration-week">
+				<perUnitPattern>{0} har week</perUnitPattern>
+			</unit>
+			<unit type="duration-day">
+				<unitPattern count="one">{0} din</unitPattern>
+				<unitPattern count="other">{0} din</unitPattern>
+				<perUnitPattern>{0} har din</perUnitPattern>
+			</unit>
+			<unit type="duration-hour">
+				<unitPattern count="one">{0} ghanta</unitPattern>
+				<unitPattern count="other">{0} ghante</unitPattern>
+				<perUnitPattern>{0} har ghante</perUnitPattern>
+			</unit>
+			<unit type="duration-minute">
+				<perUnitPattern>{0} har minute</perUnitPattern>
+			</unit>
+			<unit type="duration-second">
+				<perUnitPattern>{0} har second</perUnitPattern>
+			</unit>
+			<unit type="graphics-em">
+				<displayName>typographic em</displayName>
+			</unit>
+			<unit type="length-micrometer">
+				<displayName>micrometres</displayName>
+			</unit>
+			<unit type="length-mile-scandinavian">
+				<displayName>Scandinavian miles</displayName>
+			</unit>
+			<unit type="mass-stone">
+				<displayName>stones</displayName>
+				<unitPattern count="one">{0} stone</unitPattern>
+				<unitPattern count="other">{0} stones</unitPattern>
+			</unit>
+			<unit type="pressure-millimeter-ofhg">
+				<displayName>millimetres mercury</displayName>
+				<unitPattern count="one">{0} millimetre mercury</unitPattern>
+				<unitPattern count="other">{0} millimetres mercury</unitPattern>
+			</unit>
+			<unit type="pressure-inch-ofhg">
+				<unitPattern count="one">{0} inch mercury</unitPattern>
+				<unitPattern count="other">{0} inches mercury</unitPattern>
+			</unit>
+			<unit type="temperature-generic">
+				<displayName>degrees temperature</displayName>
+				<unitPattern count="one">{0} degree temperature</unitPattern>
+				<unitPattern count="other">{0} degrees temperature</unitPattern>
+			</unit>
+			<unit type="temperature-kelvin">
+				<displayName>kelvins</displayName>
+				<unitPattern count="one">{0} kelvin</unitPattern>
+				<unitPattern count="other">{0} kelvins</unitPattern>
+			</unit>
+			<unit type="volume-gallon-imperial">
+				<displayName>Imp. gallons</displayName>
+				<unitPattern count="one">{0} Imp. gallon</unitPattern>
+				<unitPattern count="other">{0} Imp. gallons</unitPattern>
+				<perUnitPattern>{0} per Imp. gallon</perUnitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName>dessert spoons</displayName>
+				<unitPattern count="one">{0} dessert spoon</unitPattern>
+				<unitPattern count="other">{0} dessert spoons</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<displayName>Imp. dessert spoons</displayName>
+				<unitPattern count="one">{0} Imp. dessert spoon</unitPattern>
+				<unitPattern count="other">{0} Imp. dessert spoons</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName>Imp. quarts</displayName>
+				<unitPattern count="one">{0} Imp. quart</unitPattern>
+				<unitPattern count="other">{0} Imp. quarts</unitPattern>
+			</unit>
+		</unitLength>
 		<unitLength type="short">
+			<compoundUnit type="10p-6">
+				<unitPrefixPattern>μ {0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-9">
+				<unitPrefixPattern>n {0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p6">
+				<unitPrefixPattern>M {0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p12">
+				<unitPrefixPattern>T {0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p15">
+				<unitPrefixPattern>P {0}</unitPrefixPattern>
+			</compoundUnit>
 			<unit type="angle-revolution">
 				<unitPattern count="one">{0} rev</unitPattern>
 				<unitPattern count="other">{0} rev</unitPattern>
+			</unit>
+			<unit type="concentr-karat">
+				<displayName>karats</displayName>
 			</unit>
 			<unit type="concentr-millimole-per-liter">
 				<displayName>millimol/litre</displayName>
 			</unit>
 			<unit type="consumption-mile-per-gallon">
 				<displayName>miles/gal US</displayName>
+			</unit>
+			<unit type="consumption-mile-per-gallon-imperial">
+				<unitPattern count="one">{0} mpg Imp.</unitPattern>
+				<unitPattern count="other">{0} mpg Imp.</unitPattern>
+			</unit>
+			<unit type="duration-day">
+				<unitPattern count="one">{0} din</unitPattern>
+				<unitPattern count="other">{0} din</unitPattern>
+			</unit>
+			<unit type="graphics-dot">
+				<unitPattern count="one">{0} px</unitPattern>
+				<unitPattern count="other">{0} px</unitPattern>
+			</unit>
+			<unit type="mass-stone">
+				<displayName>stones</displayName>
 			</unit>
 			<unit type="mass-carat">
 				<unitPattern count="one">{0} CD</unitPattern>
@@ -1917,6 +2742,43 @@ annotations.
 				<unitPattern count="one">{0} gal US</unitPattern>
 				<unitPattern count="other">{0} gal US</unitPattern>
 			</unit>
+			<unit type="volume-gallon-imperial">
+				<unitPattern count="one">{0} gal</unitPattern>
+				<unitPattern count="other">{0} gal Imp.</unitPattern>
+			</unit>
+			<unit type="volume-fluid-ounce-imperial">
+				<displayName>Imp. fl oz</displayName>
+				<unitPattern count="one">{0} fl oz Imp.</unitPattern>
+				<unitPattern count="other">{0} fl oz Imp.</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName>dstspn</displayName>
+				<unitPattern count="one">{0} dstspn</unitPattern>
+				<unitPattern count="other">{0} dstspn</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<displayName>Imp dstspn</displayName>
+				<unitPattern count="one">{0} Imp dstspn</unitPattern>
+				<unitPattern count="other">{0} Imp dstspn</unitPattern>
+			</unit>
+			<unit type="volume-drop">
+				<unitPattern count="one">{0} drop</unitPattern>
+				<unitPattern count="other">{0} drop</unitPattern>
+			</unit>
+			<unit type="volume-dram">
+				<displayName>dram fluid</displayName>
+				<unitPattern count="one">{0} dram fl</unitPattern>
+				<unitPattern count="other">{0} dram fl</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<unitPattern count="one">{0} pinch</unitPattern>
+				<unitPattern count="other">{0} pinch</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName>Imp. qt</displayName>
+				<unitPattern count="one">{0} Imp. qt</unitPattern>
+				<unitPattern count="other">{0} Imp. qt</unitPattern>
+			</unit>
 		</unitLength>
 		<unitLength type="narrow">
 			<unit type="concentr-karat">
@@ -1924,11 +2786,12 @@ annotations.
 				<unitPattern count="one">{0}kt</unitPattern>
 				<unitPattern count="other">{0}kt</unitPattern>
 			</unit>
+			<unit type="consumption-mile-per-gallon-imperial">
+				<unitPattern count="one">{0}m/gUK</unitPattern>
+				<unitPattern count="other">{0}m/gUK</unitPattern>
+			</unit>
 			<unit type="digital-petabyte">
 				<displayName>PByte</displayName>
-			</unit>
-			<unit type="digital-terabyte">
-				<displayName>TByte</displayName>
 			</unit>
 			<unit type="digital-terabit">
 				<displayName>Tbit</displayName>
@@ -1945,14 +2808,15 @@ annotations.
 			<unit type="digital-megabit">
 				<displayName>Mbit</displayName>
 			</unit>
-			<unit type="digital-kilobyte">
-				<displayName>kByte</displayName>
-			</unit>
 			<unit type="digital-kilobit">
 				<displayName>kbit</displayName>
 			</unit>
 			<unit type="digital-byte">
 				<displayName>byte</displayName>
+			</unit>
+			<unit type="mass-pound">
+				<unitPattern count="one">{0}#</unitPattern>
+				<unitPattern count="other">{0}#</unitPattern>
 			</unit>
 			<unit type="pressure-bar">
 				<unitPattern count="one">{0}bar</unitPattern>
@@ -1961,10 +2825,34 @@ annotations.
 			<unit type="speed-mile-per-hour">
 				<displayName>mi/hr</displayName>
 			</unit>
+			<unit type="volume-gallon-imperial">
+				<unitPattern count="one">{0}galIm</unitPattern>
+				<unitPattern count="other">{0}galIm</unitPattern>
+			</unit>
+			<unit type="volume-fluid-ounce">
+				<displayName>fl oz</displayName>
+				<unitPattern count="one">{0}fl oz</unitPattern>
+				<unitPattern count="other">{0}fl oz</unitPattern>
+			</unit>
 			<unit type="volume-fluid-ounce-imperial">
 				<displayName>Imp fl oz</displayName>
 				<unitPattern count="one">{0}fl oz Im</unitPattern>
 				<unitPattern count="other">{0}fl oz Im</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName>dsp</displayName>
+				<unitPattern count="one">{0}dsp</unitPattern>
+				<unitPattern count="other">{0}dsp</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<displayName>Imp dsp</displayName>
+				<unitPattern count="one">{0}dsp-Imp</unitPattern>
+				<unitPattern count="other">{0}dsp-Imp</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName>Imp qt</displayName>
+				<unitPattern count="one">{0}qt-Imp.</unitPattern>
+				<unitPattern count="other">{0}qt-Imp.</unitPattern>
 			</unit>
 		</unitLength>
 	</units>
@@ -1974,15 +2862,23 @@ annotations.
 			<listPatternPart type="2">{0} aur {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="or">
-			<listPatternPart type="end">{0} ya {1}</listPatternPart>
-			<listPatternPart type="2">{0} ya {1}</listPatternPart>
+			<listPatternPart type="end">{0} yaa {1}</listPatternPart>
+			<listPatternPart type="2">{0} yaa {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="or-narrow">
+			<listPatternPart type="end">{0} yaa {1}</listPatternPart>
+			<listPatternPart type="2">{0} yaa {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="or-short">
+			<listPatternPart type="end">{0} yaa {1}</listPatternPart>
+			<listPatternPart type="2">{0} yaa {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="standard-narrow">
-			<listPatternPart type="end">{0} aur {1}</listPatternPart>
+			<listPatternPart type="end">{0}, {1}</listPatternPart>
 			<listPatternPart type="2">{0} aur {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="standard-short">
-			<listPatternPart type="end">{0} aur {1}</listPatternPart>
+			<listPatternPart type="end">{0}, aur {1}</listPatternPart>
 			<listPatternPart type="2">{0} aur {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="unit">
@@ -1996,4 +2892,25 @@ annotations.
 			<listPatternPart type="2">{0}, {1}</listPatternPart>
 		</listPattern>
 	</listPatterns>
+	<characterLabels>
+		<characterLabel type="animals_nature">animal yaa nature</characterLabel>
+		<characterLabel type="bullets_stars">bullet yaa star</characterLabel>
+		<characterLabel type="dash_connector">dash yaa connector</characterLabel>
+		<characterLabel type="sign_standard_symbols">sign yaa symbol</characterLabel>
+		<characterLabel type="smileys_people">smiley yaa person</characterLabel>
+		<characterLabel type="travel_places">travel yaa place</characterLabel>
+	</characterLabels>
+	<typographicNames>
+		<styleName type="wdth" subtype="75" alt="compressed">compress kiya hua</styleName>
+		<styleName type="wdth" subtype="125" alt="extended">extend kiya hua</styleName>
+		<styleName type="wdth" subtype="125" alt="wide">chauda</styleName>
+		<styleName type="wdth" subtype="200" alt="wide">ultra wide</styleName>
+		<styleName type="wght" subtype="900" alt="heavy">bhaari</styleName>
+		<styleName type="wght" subtype="950" alt="ultrablack">ultra black</styleName>
+		<styleName type="wght" subtype="950" alt="ultraheavy">ultra heavy</styleName>
+	</typographicNames>
+	<personNames>
+		<nameOrderLocales order="givenFirst">und hi</nameOrderLocales>
+		<nameOrderLocales order="surnameFirst">ko si ta te vi yue zh</nameOrderLocales>
+	</personNames>
 </ldml>

@@ -659,6 +659,7 @@ public interface Spliterator<T> {
      * A Spliterator specialized for {@code int} values.
      * @since 1.8
      */
+    @SuppressWarnings("overloads")
     public interface OfInt extends OfPrimitive<Integer, IntConsumer, OfInt> {
 
         @Override
@@ -723,6 +724,7 @@ public interface Spliterator<T> {
      * A Spliterator specialized for {@code long} values.
      * @since 1.8
      */
+    @SuppressWarnings("overloads")
     public interface OfLong extends OfPrimitive<Long, LongConsumer, OfLong> {
 
         @Override
@@ -787,6 +789,7 @@ public interface Spliterator<T> {
      * A Spliterator specialized for {@code double} values.
      * @since 1.8
      */
+    @SuppressWarnings("overloads")
     public interface OfDouble extends OfPrimitive<Double, DoubleConsumer, OfDouble> {
 
         @Override

@@ -760,6 +760,8 @@ public final class DateTimeFormatter {
      * @param requestedTemplate the requested template, not null
      * @return the formatter based on the {@code requestedTemplate} pattern, not null
      * @throws IllegalArgumentException if {@code requestedTemplate} is invalid
+     *
+     * @spec https://www.unicode.org/reports/tr35 Unicode Locale Data Markup Language (LDML)
      * @see #ofPattern(String)
      * @since 19
      */

@@ -43,7 +43,7 @@
 // We use an illtrap for marking a method as not_entrant
 // Work around a C++ compiler bug which changes 'this'
 bool NativeInstruction::is_sigill_not_entrant_at(address addr) {
-  if (*(int*)addr != 0 /*illtrap*/) return false;
+  if (!Assembler::is_illtrap(addr)) return false;
   CodeBlob* cb = CodeCache::find_blob(addr);
   if (cb == NULL || !cb->is_nmethod()) return false;
   nmethod *nm = (nmethod *)cb;
@@ -423,4 +423,34 @@ void NativeCallTrampolineStub::set_destination(address new_destination) {
   address ctable = cb->content_begin();
 
   *(address*)(ctable + destination_toc_offset()) = new_destination;
+}
+
+void NativePostCallNop::make_deopt() {
+  NativeDeoptInstruction::insert(addr_at(0));
+}
+
+void NativePostCallNop::patch(jint diff) {
+  // unsupported for now
+}
+
+void NativeDeoptInstruction::verify() {
+}
+
+bool NativeDeoptInstruction::is_deopt_at(address code_pos) {
+  if (!Assembler::is_illtrap(code_pos)) return false;
+  CodeBlob* cb = CodeCache::find_blob(code_pos);
+  if (cb == NULL || !cb->is_compiled()) return false;
+  nmethod *nm = (nmethod *)cb;
+  // see NativeInstruction::is_sigill_not_entrant_at()
+  return nm->verified_entry_point() != code_pos;
+}
+
+// Inserts an instruction which is specified to cause a SIGILL at a given pc
+void NativeDeoptInstruction::insert(address code_pos) {
+  ResourceMark rm;
+  int code_size = 1 * BytesPerInstWord;
+  CodeBuffer cb(code_pos, code_size + 1);
+  MacroAssembler* a = new MacroAssembler(&cb);
+  a->illtrap();
+  ICache::ppc64_flush_icache_bytes(code_pos, code_size);
 }

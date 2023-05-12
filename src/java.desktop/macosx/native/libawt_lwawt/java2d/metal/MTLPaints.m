@@ -369,8 +369,8 @@ jint _color;
 - (NSUInteger)hash {
     NSUInteger h = [super hash];
     h = h*31 + [@(_p0) hash];
-    h = h*31 + [@(_p1) hash];;
-    h = h*31 + [@(_p3) hash];;
+    h = h*31 + [@(_p1) hash];
+    h = h*31 + [@(_p3) hash];
     h = h*31 + _pixel1;
     h = h*31 + _pixel2;
     return h;

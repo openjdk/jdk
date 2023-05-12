@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -344,10 +344,10 @@ public class SystemTray {
 
     /**
      * Returns the size, in pixels, of the space that a tray icon will
-     * occupy in the system tray.  Developers may use this methods to
-     * acquire the preferred size for the image property of a tray icon
-     * before it is created.  For convenience, there is a similar
-     * method {@link TrayIcon#getSize} in the {@code TrayIcon} class.
+     * occupy in the system tray. Developers may use this method to
+     * acquire the preferred size for the tray icon before it is created.
+     * For convenience, there is a similar method {@link TrayIcon#getSize}
+     * in the {@code TrayIcon} class.
      *
      * @return the default size of a tray icon, in pixels
      * @see TrayIcon#setImageAutoSize(boolean)

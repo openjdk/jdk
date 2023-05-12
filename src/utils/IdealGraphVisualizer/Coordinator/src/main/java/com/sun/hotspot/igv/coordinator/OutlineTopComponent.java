@@ -37,7 +37,6 @@ import java.awt.Dimension;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
-import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
 import javax.swing.UIManager;
@@ -66,8 +65,6 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
     private ExplorerManager manager;
     private final GraphDocument document;
     private FolderNode root;
-    private Server server;
-    private Server binaryServer;
     private SaveAllAction saveAllAction;
     private RemoveAllAction removeAllAction;
     private GraphNode[] selectedGraphs = new GraphNode[0];
@@ -138,8 +135,7 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
             }
         };
 
-        server = new Server(getDocument(), callback, false);
-        binaryServer = new Server(getDocument(), callback, true);
+        new Server(callback);
     }
 
     public void clear() {
@@ -284,15 +280,6 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
     @Override
     public void writeExternal(ObjectOutput objectOutput) throws IOException {
         super.writeExternal(objectOutput);
-    }
-
-    static final class ResolvableHelper implements Serializable {
-
-        private static final long serialVersionUID = 1L;
-
-        public Object readResolve() {
-            return OutlineTopComponent.getDefault();
-        }
     }
 
     /** This method is called from within the constructor to

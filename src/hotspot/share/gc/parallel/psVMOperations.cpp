@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ void VM_ParallelGCFailedAllocation::doit() {
   GCCauseSetter gccs(heap, _gc_cause);
   _result = heap->failed_mem_allocate(_word_size);
 
-  if (_result == NULL && GCLocker::is_active_and_needs_gc()) {
+  if (_result == nullptr && GCLocker::is_active_and_needs_gc()) {
     set_gc_locked();
   }
 }

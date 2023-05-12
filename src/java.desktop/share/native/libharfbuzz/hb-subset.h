@@ -28,6 +28,7 @@
 #define HB_SUBSET_H
 
 #include "hb.h"
+#include "hb-ot.h"
 
 HB_BEGIN_DECLS
 
@@ -100,6 +101,8 @@ typedef enum { /*< flags >*/
  * @HB_SUBSET_SETS_NAME_LANG_ID: the set of name lang ids that will be retained.
  * @HB_SUBSET_SETS_LAYOUT_FEATURE_TAG: the set of layout feature tags that will be retained
  * in the subset.
+ * @HB_SUBSET_SETS_LAYOUT_SCRIPT_TAG: the set of layout script tags that will be retained
+ * in the subset. Defaults to all tags. Since: 5.0.0
  *
  * List of sets that can be configured on the subset input.
  *
@@ -113,6 +116,7 @@ typedef enum {
   HB_SUBSET_SETS_NAME_ID,
   HB_SUBSET_SETS_NAME_LANG_ID,
   HB_SUBSET_SETS_LAYOUT_FEATURE_TAG,
+  HB_SUBSET_SETS_LAYOUT_SCRIPT_TAG,
 } hb_subset_sets_t;
 
 HB_EXTERN hb_subset_input_t *
@@ -135,6 +139,9 @@ HB_EXTERN void *
 hb_subset_input_get_user_data (const hb_subset_input_t *input,
                                hb_user_data_key_t      *key);
 
+HB_EXTERN void
+hb_subset_input_keep_everything (hb_subset_input_t *input);
+
 HB_EXTERN hb_set_t *
 hb_subset_input_unicode_set (hb_subset_input_t *input);
 
@@ -151,6 +158,32 @@ HB_EXTERN void
 hb_subset_input_set_flags (hb_subset_input_t *input,
                            unsigned value);
 
+HB_EXTERN hb_bool_t
+hb_subset_input_pin_axis_to_default (hb_subset_input_t  *input,
+                                     hb_face_t          *face,
+                                     hb_tag_t            axis_tag);
+
+HB_EXTERN hb_bool_t
+hb_subset_input_pin_axis_location (hb_subset_input_t  *input,
+                                   hb_face_t          *face,
+                                   hb_tag_t            axis_tag,
+                                   float               axis_value);
+
+#ifdef HB_EXPERIMENTAL_API
+HB_EXTERN hb_bool_t
+hb_subset_input_override_name_table (hb_subset_input_t  *input,
+                                     hb_ot_name_id_t     name_id,
+                                     unsigned            platform_id,
+                                     unsigned            encoding_id,
+                                     unsigned            language_id,
+                                     const char         *name_str,
+                                     int                 str_len);
+
+#endif
+
+HB_EXTERN hb_face_t *
+hb_subset_preprocess (hb_face_t *source);
+
 HB_EXTERN hb_face_t *
 hb_subset_or_fail (hb_face_t *source, const hb_subset_input_t *input);
 
@@ -164,13 +197,13 @@ hb_subset_plan_create_or_fail (hb_face_t                 *face,
 HB_EXTERN void
 hb_subset_plan_destroy (hb_subset_plan_t *plan);
 
-HB_EXTERN const hb_map_t*
+HB_EXTERN hb_map_t *
 hb_subset_plan_old_to_new_glyph_mapping (const hb_subset_plan_t *plan);
 
-HB_EXTERN const hb_map_t*
+HB_EXTERN hb_map_t *
 hb_subset_plan_new_to_old_glyph_mapping (const hb_subset_plan_t *plan);
 
-HB_EXTERN const hb_map_t*
+HB_EXTERN hb_map_t *
 hb_subset_plan_unicode_to_old_glyph_mapping (const hb_subset_plan_t *plan);
 
 

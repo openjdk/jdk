@@ -88,6 +88,8 @@
  * NullPointerException} to be thrown.
  *
  *
+ * @spec https://www.rfc-editor.org/info/rfc2278
+ *      RFC 2278: IANA Charset Registration Procedures
  * @since 1.4
  * @author Mark Reinhold
  * @author JSR-51 Expert Group

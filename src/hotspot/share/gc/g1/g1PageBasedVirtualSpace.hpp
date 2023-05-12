@@ -71,9 +71,6 @@ class G1PageBasedVirtualSpace {
   // os::commit_memory() or os::uncommit_memory() have no function.
   bool _special;
 
-  // Indicates whether the committed space should be executable.
-  bool _executable;
-
   // Helper function for committing memory. Commit the given memory range by using
   // _page_size pages as much as possible and the remainder with small sized pages.
   void commit_internal(size_t start_page, size_t end_page);

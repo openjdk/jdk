@@ -104,6 +104,10 @@ class TestStringDeduplicationTools {
                     if ("end of GC cycle".equals(info.getGcAction())) {
                         gcCount++;
                     }
+                } else if (info.getGcName().startsWith("G1")) {
+                    if ("end of minor GC".equals(info.getGcAction())) {
+                        gcCount++;
+                    }
                 } else {
                     gcCount++;
                 }

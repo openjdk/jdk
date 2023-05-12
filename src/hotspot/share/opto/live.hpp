@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,7 +78,7 @@ public:
   // Compute liveness info
   void compute(uint maxlrg);
   // Reset arena storage
-  void reset() { _live = NULL; }
+  void reset() { _live = nullptr; }
 
   // Return the live-out set for this block
   IndexSet *live( const Block * b ) { return &_live[b->_pre_order-1]; }

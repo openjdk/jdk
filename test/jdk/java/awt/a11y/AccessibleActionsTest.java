@@ -57,7 +57,7 @@ public class AccessibleActionsTest extends AccessibleComponentTest {
             + "Check a11y actions.\n\n"
             + "Turn screen reader on, and Tab to the label.\n\n"
             + "Perform the VO action \"Press\" (VO+space)\n"
-            + "Perform the VO action \"Show menu\" (VO+Shift+m)\n\n"
+            + "Perform the VO action \"Show menu\" (Shift+VO+m)\n\n"
             + "If after the first action the text of the label has changed, and after the second action the menu appears  tab further and press PASS, otherwise press FAIL.";
 
     exceptionString = "AccessibleAction test failed!";
@@ -67,7 +67,7 @@ public class AccessibleActionsTest extends AccessibleComponentTest {
   void createTree() {
     INSTRUCTIONS = "INSTRUCTIONS:\n"
             + "Check a11y actions.\n\n"
-            + "Turn screen reader on, and Tab to the label.\n\n"
+            + "Turn screen reader on, and Tab to the tree.\n\n"
             + "Perform the VO action \"Press\" (VO+space) on tree nodes\n\n"
             + "If after press the tree node is expanded  tab further and press PASS, otherwise press FAIL.";
 

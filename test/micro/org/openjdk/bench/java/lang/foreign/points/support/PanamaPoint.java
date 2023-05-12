@@ -22,12 +22,12 @@
  */
 package org.openjdk.bench.java.lang.foreign.points.support;
 
-import java.lang.foreign.Addressable;
+import java.lang.foreign.Arena;
 import java.lang.foreign.Linker;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
+
 import org.openjdk.bench.java.lang.foreign.CLayouts;
 
 import java.lang.foreign.SymbolLookup;
@@ -53,19 +53,21 @@ public class PanamaPoint extends CLayouts implements AutoCloseable {
         System.loadLibrary("Point");
         SymbolLookup loaderLibs = SymbolLookup.loaderLookup();
         MH_distance = abi.downcallHandle(
-                loaderLibs.lookup("distance").get(),
+                loaderLibs.find("distance").get(),
                 FunctionDescriptor.of(C_DOUBLE, LAYOUT, LAYOUT)
         );
         MH_distance_ptrs = abi.downcallHandle(
-                loaderLibs.lookup("distance_ptrs").get(),
+                loaderLibs.find("distance_ptrs").get(),
                 FunctionDescriptor.of(C_DOUBLE, C_POINTER, C_POINTER)
         );
     }
 
+    Arena arena;
     private final MemorySegment segment;
 
     public PanamaPoint(int x, int y) {
-        this.segment = MemorySegment.allocateNative(LAYOUT, MemorySession.openConfined());
+        this.arena = Arena.openConfined();
+        this.segment = MemorySegment.allocateNative(LAYOUT, arena.scope());
         setX(x);
         setY(y);
     }
@@ -96,7 +98,7 @@ public class PanamaPoint extends CLayouts implements AutoCloseable {
 
     public double distanceToPtrs(PanamaPoint other) {
         try {
-            return (double) MH_distance_ptrs.invokeExact((Addressable)segment, (Addressable)other.segment);
+            return (double) MH_distance_ptrs.invokeExact(segment, other.segment);
         } catch (Throwable throwable) {
             throw new InternalError(throwable);
         }
@@ -104,6 +106,6 @@ public class PanamaPoint extends CLayouts implements AutoCloseable {
 
     @Override
     public void close() {
-        segment.session().close();
+        arena.close();
     }
 }

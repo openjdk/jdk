@@ -212,7 +212,7 @@ public class JToggleButton extends AbstractButton implements Accessible {
 
 
     /**
-     * Overriden to return true, JToggleButton supports
+     * Overridden to return true, JToggleButton supports
      * the selected state.
      */
     boolean shouldUpdateSelectedStateFromAction() {

@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.util.*;
 
 import sun.security.util.BitArray;
+import sun.security.util.DerEncoder;
 import sun.security.util.DerOutputStream;
 import sun.security.util.DerValue;
 
@@ -93,7 +94,7 @@ import sun.security.util.DerValue;
  * @since 1.4.2
  * @see CRLDistributionPointsExtension
  */
-public class DistributionPoint {
+public class DistributionPoint implements DerEncoder {
 
     // reason flag bits
     // NOTE that these are NOT quite the same as the CRL reason code extension
@@ -275,9 +276,9 @@ public class DistributionPoint {
      * Write the DistributionPoint value to the DerOutputStream.
      *
      * @param out the DerOutputStream to write the extension to.
-     * @exception IOException on error.
      */
-    public void encode(DerOutputStream out) throws IOException {
+    @Override
+    public void encode(DerOutputStream out) {
         DerOutputStream tagged = new DerOutputStream();
 
         // NOTE: only one of pointNames and pointRDN can be set

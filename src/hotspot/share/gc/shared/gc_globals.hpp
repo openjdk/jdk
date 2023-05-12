@@ -199,6 +199,9 @@
   product(bool, AlwaysPreTouch, false,                                      \
           "Force all freshly committed pages to be pre-touched")            \
                                                                             \
+  product(bool, AlwaysPreTouchStacks, false, DIAGNOSTIC,                    \
+          "Force java thread stacks to be fully pre-touched")               \
+                                                                            \
   product_pd(size_t, PreTouchParallelChunkSize,                             \
           "Per-thread chunk size for parallel memory pre-touch.")           \
           range(4*K, SIZE_MAX / 2)                                          \

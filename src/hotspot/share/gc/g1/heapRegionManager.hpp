@@ -76,7 +76,6 @@ class HeapRegionManager: public CHeapObj<mtGC> {
 
   G1RegionToSpaceMapper* _bot_mapper;
   G1RegionToSpaceMapper* _cardtable_mapper;
-  G1RegionToSpaceMapper* _card_counts_mapper;
 
   // Keeps track of the currently committed regions in the heap. The committed regions
   // can either be active (ready for use) or inactive (ready for uncommit).
@@ -163,8 +162,7 @@ public:
   void initialize(G1RegionToSpaceMapper* heap_storage,
                   G1RegionToSpaceMapper* bitmap,
                   G1RegionToSpaceMapper* bot,
-                  G1RegionToSpaceMapper* cardtable,
-                  G1RegionToSpaceMapper* card_counts);
+                  G1RegionToSpaceMapper* cardtable);
 
   // Return the "dummy" region used for G1AllocRegion. This is currently a hardwired
   // new HeapRegion that owns HeapRegion at index 0. Since at the moment we commit

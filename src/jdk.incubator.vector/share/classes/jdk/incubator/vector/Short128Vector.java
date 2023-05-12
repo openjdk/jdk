@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -663,10 +663,11 @@ final class Short128Vector extends ShortVector {
 
         @Override
         @ForceInline
-        public Short128Mask eq(VectorMask<Short> mask) {
-            Objects.requireNonNull(mask);
-            Short128Mask m = (Short128Mask)mask;
-            return xor(m.not());
+        /*package-private*/
+        Short128Mask indexPartiallyInUpperRange(long offset, long limit) {
+            return (Short128Mask) VectorSupport.indexPartiallyInUpperRange(
+                Short128Mask.class, short.class, VLENGTH, offset, limit,
+                (o, l) -> (Short128Mask) TRUE_MASK.indexPartiallyInRange(o, l));
         }
 
         // Unary operations
@@ -708,9 +709,9 @@ final class Short128Vector extends ShortVector {
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a | b));
         }
 
+        @Override
         @ForceInline
-        /* package-private */
-        Short128Mask xor(VectorMask<Short> mask) {
+        public Short128Mask xor(VectorMask<Short> mask) {
             Objects.requireNonNull(mask);
             Short128Mask m = (Short128Mask)mask;
             return VectorSupport.binaryOp(VECTOR_OP_XOR, Short128Mask.class, null, short.class, VLENGTH,

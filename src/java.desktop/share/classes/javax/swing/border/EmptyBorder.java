@@ -83,6 +83,8 @@ public class EmptyBorder extends AbstractBorder implements Serializable
     /**
      * Creates an empty border with the specified insets.
      * @param borderInsets the insets of the border
+     * @throws NullPointerException if the specified {@code borderInsets}
+     *         is {@code null}
      */
     @ConstructorProperties({"borderInsets"})
     public EmptyBorder(Insets borderInsets)   {
@@ -102,6 +104,8 @@ public class EmptyBorder extends AbstractBorder implements Serializable
      * Reinitialize the insets parameter with this Border's current Insets.
      * @param c the component for which this border insets value applies
      * @param insets the object to be reinitialized
+     * @throws NullPointerException if the specified {@code insets}
+     *         is {@code null}
      */
     public Insets getBorderInsets(Component c, Insets insets) {
         insets.left = left;

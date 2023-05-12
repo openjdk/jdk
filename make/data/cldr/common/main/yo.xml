@@ -16,49 +16,98 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<localeKeyTypePattern>{0}: {1}</localeKeyTypePattern>
 		</localeDisplayPattern>
 		<languages>
+			<language type="ab">Èdè Abasia</language>
+			<language type="ace">Èdè Akinisi</language>
+			<language type="ada">Èdè Adame</language>
+			<language type="ady">Èdè Adiji</language>
 			<language type="af">Èdè Afrikani</language>
 			<language type="agq">Èdè Ágẹ̀ẹ̀mù</language>
+			<language type="ain">Èdè Ainu</language>
 			<language type="ak">Èdè Akani</language>
+			<language type="ale">Èdè Aleti</language>
+			<language type="alt">Èdè Gusu Ata</language>
 			<language type="am">Èdè Amariki</language>
+			<language type="an">Èdè Aragoni</language>
+			<language type="ann">Èdè Obolo</language>
+			<language type="anp">Èdè Angika</language>
 			<language type="ar">Èdè Árábìkì</language>
+			<language type="arn">Èdè Mapushe</language>
+			<language type="arp">Èdè Arapaho</language>
+			<language type="ars">Èdè Arabiki ti Najidi</language>
 			<language type="as">Èdè Ti Assam</language>
 			<language type="asa">Èdè Asu</language>
 			<language type="ast">Èdè Asturian</language>
+			<language type="atj">Èdè Atikameki</language>
+			<language type="av">Èdè Afariki</language>
+			<language type="awa">Èdè Awadi</language>
+			<language type="ay">Èdè Amara</language>
 			<language type="az">Èdè Azerbaijani</language>
+			<language type="ba">Èdè Bashiri</language>
+			<language type="ban">Èdè Balini</language>
 			<language type="bas">Èdè Basaa</language>
 			<language type="be">Èdè Belarusi</language>
 			<language type="bem">Èdè Béḿbà</language>
 			<language type="bez">Èdè Bẹ́nà</language>
 			<language type="bg">Èdè Bugaria</language>
+			<language type="bho">Èdè Bojuri</language>
+			<language type="bi">Èdè Bisilama</language>
+			<language type="bin">Èdè Bini</language>
+			<language type="bla">Èdè Sikiska</language>
 			<language type="bm">Èdè Báḿbàrà</language>
 			<language type="bn">Èdè Bengali</language>
 			<language type="bo">Tibetán</language>
 			<language type="br">Èdè Bretoni</language>
 			<language type="brx">Èdè Bódò</language>
 			<language type="bs">Èdè Bosnia</language>
+			<language type="bug">Èdè Bugini</language>
+			<language type="byn">Èdè Bilini</language>
 			<language type="ca">Èdè Catala</language>
+			<language type="cay">Èdè Kayuga</language>
 			<language type="ccp">Èdè Chakma</language>
 			<language type="ce">Èdè Chechen</language>
 			<language type="ceb">Èdè Cebuano</language>
 			<language type="cgg">Èdè Chiga</language>
+			<language type="ch">Èdè S̩amoro</language>
+			<language type="chk">Èdè Shuki</language>
+			<language type="chm">Èdè Mari</language>
+			<language type="cho">Èdè Shokita</language>
+			<language type="chp">Èdè Shipewa</language>
 			<language type="chr">Èdè Shẹ́rókiì</language>
+			<language type="chy">Èdè Sheyeni</language>
 			<language type="ckb">Ààrin Gbùngbùn Kurdish</language>
+			<language type="clc">Èdè Shikoti</language>
 			<language type="co">Èdè Corsican</language>
+			<language type="crg">Èdè Misifu</language>
+			<language type="crj">Èdè Gusu Ila-oorun Kri</language>
+			<language type="crk">Èdè Papa Kri</language>
+			<language type="crl">Èdè ti Ila oorun Ariwa Kri</language>
+			<language type="crm">Èdè Moose Kri</language>
+			<language type="crr">Èdè Alonkuia ti Karolina</language>
 			<language type="cs">Èdè Seeki</language>
+			<language type="csw">Èdè Swampi Kri</language>
 			<language type="cu">Èdè Síláfííkì Ilé Ìjọ́sìn</language>
+			<language type="cv">Èdè Shufasi</language>
 			<language type="cy">Èdè Welshi</language>
 			<language type="da">Èdè Ilẹ̀ Denmark</language>
+			<language type="dak">Èdè Dakota</language>
+			<language type="dar">Èdè Dagiwa</language>
 			<language type="dav">Táítà</language>
 			<language type="de">Èdè Jámánì</language>
 			<language type="de_AT">Èdè Jámánì (Ọ́síríà )</language>
 			<language type="de_CH">Èdè Ilẹ̀ Jámánì (Orílẹ́ède swítsàlandì)</language>
+			<language type="dgr">Èdè Dogribu</language>
 			<language type="dje">Ṣárúmà</language>
+			<language type="doi">Èdè Dogiri</language>
 			<language type="dsb">Ṣóbíánù Apá Ìṣàlẹ̀</language>
 			<language type="dua">Èdè Duala</language>
+			<language type="dv">Èdè Difehi</language>
 			<language type="dyo">Jola-Fonyi</language>
 			<language type="dz">Èdè Dzongkha</language>
+			<language type="dzg">Èdè Dasaga</language>
 			<language type="ebu">Èdè Ẹmbù</language>
 			<language type="ee">Èdè Ewè</language>
+			<language type="efi">Èdè Efiki</language>
+			<language type="eka">Èdè Ekaju</language>
 			<language type="el">Èdè Giriki</language>
 			<language type="en">Èdè Gẹ̀ẹ́sì</language>
 			<language type="en_AU">Èdè Gẹ̀ẹ́sì (órílẹ̀-èdè Ọsirélíà)</language>
@@ -78,128 +127,229 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ff">Èdè Fúlàní</language>
 			<language type="fi">Èdè Finisi</language>
 			<language type="fil">Èdè Filipino</language>
+			<language type="fj">Èdè Fiji</language>
 			<language type="fo">Èdè Faroesi</language>
+			<language type="fon">Èdè Fon</language>
 			<language type="fr">Èdè Faransé</language>
 			<language type="fr_CA">Èdè Faransé (orílẹ̀-èdè Kánádà)</language>
 			<language type="fr_CH">Èdè Faranṣé (Súwísàlaǹdì)</language>
+			<language type="frc">Èdè Faranse ti Kajun</language>
+			<language type="frr">Èdè Ariwa Frisa</language>
 			<language type="fur">Firiúlíànì</language>
 			<language type="fy">Èdè Frisia</language>
 			<language type="ga">Èdè Ireland</language>
+			<language type="gaa">Èdè Gaa</language>
 			<language type="gd">Èdè Gaelik ti Ilu Scotland</language>
+			<language type="gez">Ede Gẹ́sì</language>
+			<language type="gil">Èdè Gibaati</language>
 			<language type="gl">Èdè Galicia</language>
 			<language type="gn">Èdè Guarani</language>
+			<language type="gor">Èdè Gorontalo</language>
 			<language type="gsw">Súwísì ti Jámánì</language>
 			<language type="gu">Èdè Gujarati</language>
 			<language type="guz">Gusii</language>
 			<language type="gv">Máǹkì</language>
+			<language type="gwi">Èdè giwisi</language>
 			<language type="ha">Èdè Hausa</language>
+			<language type="hai">Èdè Haida</language>
 			<language type="haw">Hawaiian</language>
+			<language type="hax">Èdè Gusu Haida</language>
 			<language type="he">Èdè Heberu</language>
 			<language type="hi">Èdè Híńdì</language>
+			<language type="hi_Latn">Èdè Híndì (Látìnì)</language>
+			<language type="hi_Latn" alt="variant">Èdè Híńgílíṣì</language>
+			<language type="hil">Èdè Hilgayo</language>
 			<language type="hmn">Hmong</language>
 			<language type="hr">Èdè Kroatia</language>
 			<language type="hsb">Sorbian Apá Òkè</language>
 			<language type="ht">Haitian Creole</language>
 			<language type="hu">Èdè Hungaria</language>
+			<language type="hup">Èdè Hupa</language>
+			<language type="hur">Èdè Hakomelemi</language>
 			<language type="hy">Èdè Ile Armenia</language>
+			<language type="hz">Èdè Herero</language>
 			<language type="ia">Èdè pipo</language>
+			<language type="iba">Èdè Iba</language>
+			<language type="ibb">Èdè Ibibio</language>
 			<language type="id">Èdè Indonéṣíà</language>
 			<language type="ie">Iru Èdè</language>
 			<language type="ig">Èdè Yíbò</language>
 			<language type="ii">Ṣíkuán Yì</language>
+			<language type="ikt">Èdè Iwoorun Inutitu ti Kanada</language>
+			<language type="ilo">Èdè Iloko</language>
+			<language type="inh">Èdè Ingusi</language>
+			<language type="io">Èdè Ido</language>
 			<language type="is">Èdè Icelandic</language>
 			<language type="it">Èdè Ítálì</language>
+			<language type="iu">Èdè Inukitu</language>
 			<language type="ja">Èdè Jàpáànù</language>
+			<language type="jbo">Èdè Lobani</language>
 			<language type="jgo">Ńgòmbà</language>
 			<language type="jmc">Máṣámè</language>
 			<language type="jv">Èdè Javanasi</language>
 			<language type="ka">Èdè Georgia</language>
 			<language type="kab">Kabilè</language>
+			<language type="kac">Èdè Kashini</language>
+			<language type="kaj">Èdè Ju</language>
 			<language type="kam">Káńbà</language>
+			<language type="kbd">Èdè Kabadia</language>
+			<language type="kcg">Èdè Tiyapu</language>
 			<language type="kde">Mákondé</language>
 			<language type="kea">Kabufadíánù</language>
+			<language type="kfo">Èdè Koro</language>
+			<language type="kgp">Èdè Kaigani</language>
+			<language type="kha">Èdè Kasi</language>
 			<language type="khq">Koira Ṣíínì</language>
 			<language type="ki">Kíkúyù</language>
+			<language type="kj">Èdè Kuayama</language>
 			<language type="kk">Kaṣakì</language>
 			<language type="kkj">Kàkó</language>
 			<language type="kl">Kalaalísùtì</language>
 			<language type="kln">Kálẹnjín</language>
 			<language type="km">Èdè kameri</language>
+			<language type="kmb">Èdè Kimbundu</language>
 			<language type="kn">Èdè Kannada</language>
 			<language type="ko">Èdè Kòríà</language>
 			<language type="kok">Kónkánì</language>
+			<language type="kpe">Èdè Pele</language>
+			<language type="kr">Èdè Kanuri</language>
+			<language type="krc">Èdè Karasha-Baka</language>
+			<language type="krl">Èdè Karelia</language>
+			<language type="kru">Èdè Kuruki</language>
 			<language type="ks">Kaṣímirì</language>
 			<language type="ksb">Ṣáńbálà</language>
 			<language type="ksf">Èdè Báfíà</language>
 			<language type="ksh">Èdè Colognian</language>
 			<language type="ku">Kọdiṣì</language>
+			<language type="kum">Èdè Kumiki</language>
+			<language type="kv">Èdè Komi</language>
 			<language type="kw">Èdè Kọ́nììṣì</language>
+			<language type="kwk">Èdè Kwawala</language>
 			<language type="ky">Kírígíìsì</language>
 			<language type="la">Èdè Latini</language>
+			<language type="lad">Èdè Ladino</language>
 			<language type="lag">Láńgì</language>
 			<language type="lb">Lùṣẹ́mbọ́ọ̀gì</language>
+			<language type="lez">Èdè Lesgina</language>
 			<language type="lg">Ganda</language>
+			<language type="li">Èdè Limbogishi</language>
+			<language type="lil">Èdè Liloeti</language>
 			<language type="lkt">Lákota</language>
 			<language type="ln">Lìǹgálà</language>
 			<language type="lo">Láò</language>
+			<language type="lou">Èdè Kreoli ti Louisiana</language>
+			<language type="loz">Èdè Lozi</language>
 			<language type="lrc">Apáàríwá Lúrì</language>
+			<language type="lsm">Èdè Samia</language>
 			<language type="lt">Èdè Lithuania</language>
 			<language type="lu">Lúbà-Katanga</language>
+			<language type="lua">Èdè Luba Lulua</language>
+			<language type="lun">Èdè Lunda</language>
+			<language type="lus">Èdè Miso</language>
 			<language type="luy">Luyíà</language>
 			<language type="lv">Èdè Latvianu</language>
+			<language type="mad">Èdè Maduri</language>
+			<language type="mag">Èdè Magahi</language>
+			<language type="mai">Èdè Matihi</language>
+			<language type="mak">Èdè Makasa</language>
 			<language type="mas">Másáì</language>
+			<language type="mdf">Èdè Mokisa</language>
+			<language type="men">Èdè Mende</language>
 			<language type="mer">Mérù</language>
 			<language type="mfe">Morisiyen</language>
 			<language type="mg">Malagasì</language>
 			<language type="mgh">Makhuwa-Meeto</language>
 			<language type="mgo">Métà</language>
+			<language type="mh">Èdè Mashali</language>
 			<language type="mi">Màórì</language>
+			<language type="mic">Èdè Mikmaki</language>
+			<language type="min">Èdè Minakabau</language>
 			<language type="mk">Èdè Macedonia</language>
 			<language type="ml">Málàyálámù</language>
 			<language type="mn">Mòngólíà</language>
+			<language type="mni">Èdè Manipuri</language>
+			<language type="moe">Èdè Inuamu</language>
+			<language type="moh">Èdè Mohaki</language>
+			<language type="mos">Èdè Mosi</language>
 			<language type="mr">Èdè marathi</language>
 			<language type="ms">Èdè Malaya</language>
 			<language type="mt">Èdè Malta</language>
 			<language type="mua">Múndàngì</language>
 			<language type="mul">Ọlọ́pọ̀ èdè</language>
+			<language type="mus">Èdè Muskogi</language>
+			<language type="mwl">Èdè Mirandisi</language>
 			<language type="my">Èdè Bumiisi</language>
+			<language type="myv">Èdè Esiya</language>
 			<language type="mzn">Masanderani</language>
+			<language type="na">Èdè Nauru</language>
+			<language type="nap">Èdè Neapolita</language>
 			<language type="naq">Námà</language>
 			<language type="nb">Nọ́ọ́wè Bokímàl</language>
 			<language type="nd">Àríwá Ndebele</language>
 			<language type="nds">Jámánì ìpìlẹ̀</language>
 			<language type="ne">Èdè Nepali</language>
+			<language type="new">Èdè Newari</language>
+			<language type="ng">Èdè Ndonga</language>
+			<language type="nia">Èdè Nia</language>
+			<language type="niu">Èdè Niu</language>
 			<language type="nl">Èdè Dọ́ọ̀ṣì</language>
 			<language type="nmg">Kíwáṣíò</language>
 			<language type="nn">Nọ́ọ́wè Nínọ̀sìkì</language>
 			<language type="nnh">Ngiembùnù</language>
 			<language type="no">Èdè Norway</language>
+			<language type="nog">Èdè Nogai</language>
+			<language type="nqo">Èdè Nko</language>
+			<language type="nr">Èdè Gusu Ndebele</language>
+			<language type="nso">Èdè Ariwa Soto</language>
 			<language type="nus">Núẹ̀</language>
+			<language type="nv">Èdè Nafajo</language>
 			<language type="ny">Ńyájà</language>
 			<language type="nyn">Ńyákọ́lè</language>
 			<language type="oc">Èdè Occitani</language>
+			<language type="ojb">Èdè Ariwa-iwoorun Ojibwa</language>
+			<language type="ojc">Èdè Ojibwa Aarin</language>
+			<language type="ojs">Èdè Oji Kri</language>
+			<language type="ojw">Èdè Iwoorun Ojibwa</language>
+			<language type="oka">Èdè Okanaga</language>
 			<language type="om">Òròmọ́</language>
 			<language type="or">Òdíà</language>
 			<language type="os">Ọṣẹ́tíìkì</language>
 			<language type="pa">Èdè Punjabi</language>
+			<language type="pag">Èdè Pangasina</language>
+			<language type="pam">Èdè Pampanga</language>
+			<language type="pap">Èdè Papiamento</language>
+			<language type="pau">Èdè Pala</language>
+			<language type="pcm">Èdè Pijini ti Naijiriya</language>
+			<language type="pis">Èdè Piji</language>
 			<language type="pl">Èdè Póláǹdì</language>
+			<language type="pqm">Èdè Maliseti-Pasamkodi</language>
 			<language type="prg">Púrúṣíànù</language>
 			<language type="ps">Páshítò</language>
 			<language type="pt">Èdè Pọtogí</language>
 			<language type="pt_BR">Èdè Pọtogí (Orilẹ̀-èdè Bràsíl)</language>
 			<language type="pt_PT">Èdè Pọtogí (orílẹ̀-èdè Yúróòpù)</language>
 			<language type="qu">Kúẹ́ńjùà</language>
+			<language type="rap">Èdè Rapanu</language>
+			<language type="rar">Èdè Rarotonga</language>
+			<language type="rhg">Èdè Rohinga</language>
 			<language type="rm">Rómáǹṣì</language>
 			<language type="rn">Rúńdì</language>
 			<language type="ro">Èdè Romania</language>
 			<language type="rof">Róńbò</language>
 			<language type="ru">Èdè Rọ́ṣíà</language>
+			<language type="rup">Èdè Aromani</language>
 			<language type="rw">Èdè Ruwanda</language>
 			<language type="rwk">Riwa</language>
 			<language type="sa">Èdè awon ara Indo</language>
+			<language type="sad">Èdè Sandawe</language>
 			<language type="sah">Sàkíhà</language>
 			<language type="saq">Samburu</language>
+			<language type="sat">Èdè Santali</language>
+			<language type="sba">Èdè Ngambayi</language>
 			<language type="sbp">Sangu</language>
+			<language type="sc">Èdè Sadini</language>
+			<language type="scn">Èdè Sikila</language>
+			<language type="sco">Èdè Sikoti</language>
 			<language type="sd">Èdè Sindhi</language>
 			<language type="se">Apáàríwá Sami</language>
 			<language type="seh">Ṣẹnà</language>
@@ -207,47 +357,84 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="sg">Sango</language>
 			<language type="sh">Èdè Serbo-Croatiani</language>
 			<language type="shi">Taṣelíìtì</language>
+			<language type="shn">Èdè Shani</language>
 			<language type="si">Èdè Sinhalese</language>
 			<language type="sk">Èdè Slovaki</language>
 			<language type="sl">Èdè Slovenia</language>
+			<language type="slh">Èdè Gusu Lushootseed</language>
 			<language type="sm">Sámóánù</language>
 			<language type="smn">Inari Sami</language>
+			<language type="sms">Èdè Sikoti Smi</language>
 			<language type="sn">Ṣọnà</language>
+			<language type="snk">Èdè Sonike</language>
 			<language type="so">Èdè ara Somalia</language>
 			<language type="sq">Èdè Albania</language>
 			<language type="sr">Èdè Serbia</language>
+			<language type="srn">Èdè Sirana Tongo</language>
+			<language type="ss">Èdè Suwati</language>
 			<language type="st">Èdè Sesoto</language>
+			<language type="str">Èdè Sitirati Salisi</language>
 			<language type="su">Èdè Sudanísì</language>
+			<language type="suk">Èdè Sukuma</language>
 			<language type="sv">Èdè Suwidiisi</language>
 			<language type="sw">Èdè Swahili</language>
+			<language type="swb">Èdè Komora</language>
+			<language type="syr">Èdè Siriaki</language>
 			<language type="ta">Èdè Tamili</language>
+			<language type="tce">Èdè Gusu Tushoni</language>
 			<language type="te">Èdè Telugu</language>
+			<language type="tem">Èdè Timne</language>
 			<language type="teo">Tẹ́sò</language>
+			<language type="tet">Èdè Tetum</language>
 			<language type="tg">Tàjíìkì</language>
+			<language type="tgx">Èdè Tagisi</language>
 			<language type="th">Èdè Tai</language>
+			<language type="tht">Èdè Tajiti</language>
 			<language type="ti">Èdè Tigrinya</language>
+			<language type="tig">Èdè Tigre</language>
 			<language type="tk">Èdè Turkmen</language>
 			<language type="tlh">Èdè Klingoni</language>
+			<language type="tli">Èdè Tlingiti</language>
+			<language type="tn">Èdè Suwana</language>
 			<language type="to">Tóńgàn</language>
+			<language type="tok">Èdè Toki Pona</language>
+			<language type="tpi">Èdè Tok Pisini</language>
 			<language type="tr">Èdè Tọọkisi</language>
+			<language type="trv">Èdè Taroko</language>
+			<language type="ts">Èdè Songa</language>
 			<language type="tt">Tatarí</language>
+			<language type="ttm">Èdè Ariwa Tusoni</language>
+			<language type="tum">Èdè Tumbuka</language>
+			<language type="tvl">Èdè Tifalu</language>
 			<language type="twq">Tasawak</language>
+			<language type="ty">Èdè Tahiti</language>
+			<language type="tyv">Èdè Tuvini</language>
 			<language type="tzm">Ààrin Gbùngbùn Atlas Tamazight</language>
+			<language type="udm">Èdè Udmuti</language>
 			<language type="ug">Yúgọ̀</language>
 			<language type="uk">Èdè Ukania</language>
+			<language type="umb">Èdè Umbundu</language>
 			<language type="und">Èdè àìmọ̀</language>
 			<language type="ur">Èdè Udu</language>
 			<language type="uz">Èdè Uzbek</language>
+			<language type="ve">Èdè Fenda</language>
 			<language type="vi">Èdè Jetinamu</language>
 			<language type="vo">Fọ́lápùùkù</language>
 			<language type="vun">Funjo</language>
+			<language type="wa">Èdè Waluni</language>
 			<language type="wae">Wọsà</language>
+			<language type="wal">Èdè Wolata</language>
+			<language type="war">Èdè Wara</language>
 			<language type="wo">Wọ́lọ́ọ̀fù</language>
+			<language type="wuu">Èdè Wu ti Saina</language>
+			<language type="xal">Èdè Kalimi</language>
 			<language type="xh">Èdè Xhosa</language>
 			<language type="xog">Ṣógà</language>
 			<language type="yav">Yangbẹn</language>
+			<language type="ybb">Èdè Yemba</language>
 			<language type="yi">Èdè Yiddishi</language>
 			<language type="yo">Èdè Yorùbá</language>
+			<language type="yrl">Èdè Ningatu</language>
 			<language type="yue">Èdè Cantonese</language>
 			<language type="zgh">Àfẹnùkò Támásáìtì ti Mòrókò</language>
 			<language type="zh">Edè Ṣáínà</language>
@@ -257,14 +444,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="zh_Hant">Èdè Ṣáínà Ìbílẹ̀</language>
 			<language type="zh_Hant" alt="long">Èdè Mandárínì Ṣáínà Ìbílẹ̀</language>
 			<language type="zu">Èdè Ṣulu</language>
+			<language type="zun">Èdè Suni</language>
 			<language type="zxx">Kò sí àkóònú elédè</language>
+			<language type="zza">Èdè Sasa</language>
 		</languages>
 		<scripts>
+			<script type="Adlm">Èdè Adam</script>
 			<script type="Arab">èdè Lárúbáwá</script>
+			<script type="Aran">Èdè Aran</script>
 			<script type="Armn">Àmẹ́níà</script>
 			<script type="Beng">Báńgílà</script>
 			<script type="Bopo">Bopomófò</script>
 			<script type="Brai">Bíráìlè</script>
+			<script type="Cakm">Kami</script>
+			<script type="Cans">Èdè Apapo Onile Onisilebu ti Kanada</script>
+			<script type="Cher">Èdè Sheroki</script>
 			<script type="Cyrl">èdè ilẹ̀ Rọ́ṣíà</script>
 			<script type="Deva">Dẹfanagárì</script>
 			<script type="Ethi">Ẹtiópíìkì</script>
@@ -290,13 +484,22 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Latn">Èdè Látìn</script>
 			<script type="Mlym">Málàyálámù</script>
 			<script type="Mong">Mòngólíà</script>
+			<script type="Mtei">Èdè Meitei Mayeki</script>
 			<script type="Mymr">Myánmarà</script>
+			<script type="Nkoo">Èdè Nkoo</script>
+			<script type="Olck">Èdè Ol Siki</script>
 			<script type="Orya">Òdíà</script>
+			<script type="Rohg">Èdè Hanifi</script>
 			<script type="Sinh">Sìnhálà</script>
+			<script type="Sund">Èdè Sundani</script>
+			<script type="Syrc">Èdè Siriaki</script>
 			<script type="Taml">Támílì</script>
 			<script type="Telu">Télúgù</script>
+			<script type="Tfng">Èdè Tifina</script>
 			<script type="Thaa">Taana</script>
 			<script type="Tibt">Tíbétán</script>
+			<script type="Vaii">Èdè Fai</script>
+			<script type="Yiii">Èdè Yi</script>
 			<script type="Zmth">Àmì Ìṣèsìrò</script>
 			<script type="Zsye">Émójì</script>
 			<script type="Zsym">Àwọn àmì</script>
@@ -518,6 +721,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="NR">Nauru</territory>
 			<territory type="NU">Niue</territory>
 			<territory type="NZ">Ṣilandi Titun</territory>
+			<territory type="NZ" alt="variant">Sílándì Titun ti Atìríà</territory>
 			<territory type="OM">Ọọma</territory>
 			<territory type="PA">Panama</territory>
 			<territory type="PE">Peru</territory>
@@ -577,6 +781,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="TN">Tuniṣia</territory>
 			<territory type="TO">Tonga</territory>
 			<territory type="TR">Tọọki</territory>
+			<territory type="TR" alt="variant">Èdè Tọọki</territory>
 			<territory type="TT">Tirinida ati Tobaga</territory>
 			<territory type="TV">Tufalu</territory>
 			<territory type="TW">Taiwani</territory>
@@ -620,11 +825,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<types>
 			<type key="calendar" type="buddhist">Kàlẹ́ńdà Buddhist</type>
 			<type key="calendar" type="chinese">Kàlẹ́ńdà ti Ṣáìnà</type>
+			<type key="calendar" type="coptic">Èdè Kopti</type>
 			<type key="calendar" type="dangi">Kàlẹ́ńdà dangi</type>
 			<type key="calendar" type="ethiopic">Kàlẹ́ńdà Ẹtíópíìkì</type>
+			<type key="calendar" type="ethiopic-amete-alem">Èdè Kalenda Alem Amete tio Etiopia</type>
 			<type key="calendar" type="gregorian">Kàlẹ́ńdà Gregory</type>
 			<type key="calendar" type="hebrew">Kàlẹ́ńdà Hébérù</type>
 			<type key="calendar" type="islamic">Kàlẹ́ńdà Lárúbáwá</type>
+			<type key="calendar" type="islamic-civil">Kàlẹ́ńdà ti Musulumi</type>
+			<type key="calendar" type="islamic-umalqura">Kàlẹ́ńdà Musulumi</type>
 			<type key="calendar" type="iso8601">Kàlẹ́ńdà ISO-8601</type>
 			<type key="calendar" type="japanese">Kàlẹ́ńdà ti Jàpánù</type>
 			<type key="calendar" type="persian">Kàlẹ́ńdà Pásíànù</type>
@@ -649,6 +858,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="numbers" type="armn">Àwọn nọ́ńbà Àmẹ́níà</type>
 			<type key="numbers" type="armnlow">Àwọn Nọ́ńbà Kékèké ti Amẹ́ríkà</type>
 			<type key="numbers" type="beng">Àwọn díjíìtì Báńgílà</type>
+			<type key="numbers" type="cakm">Àwọn díjíìtì Shakma</type>
 			<type key="numbers" type="deva">Àwọn díjììtì Defanagárì</type>
 			<type key="numbers" type="ethi">Àwọn nọ́ńbà Ẹtiópíìkì</type>
 			<type key="numbers" type="fullwide">Àwọn Díjíìtì Fífẹ̀-Ẹ̀kún</type>
@@ -663,6 +873,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="numbers" type="hant">Àwọn nọ́ńbà Ìbílẹ̀ Ṣáìnà</type>
 			<type key="numbers" type="hantfin">Àwọn nọ́ńbà Ìṣúná Ìbílẹ̀ Ṣáìnà</type>
 			<type key="numbers" type="hebr">Àwọn nọ́ńbà Hébérù</type>
+			<type key="numbers" type="java">Àwọn díjíìtì Jafaniisi</type>
 			<type key="numbers" type="jpan">Àwọn nọ́ńbà Jápànù</type>
 			<type key="numbers" type="jpanfin">Àwọn nọ́ńbà Ìṣúná Jàpáànù</type>
 			<type key="numbers" type="khmr">Àwọn díjíìtì Kẹ́mẹ̀</type>
@@ -670,7 +881,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="numbers" type="laoo">Àwọn díjíìtì Láó</type>
 			<type key="numbers" type="latn">Díjíítì Ìwọ̀ Oòrùn</type>
 			<type key="numbers" type="mlym">Àwọn díjíìtì Málàyálámù</type>
+			<type key="numbers" type="mtei">Àwọn díjíìtì Mete Mayeki</type>
 			<type key="numbers" type="mymr">Àwọn díjíìtì Myánmarí</type>
+			<type key="numbers" type="olck">Àwọn díjíìtì Shiki</type>
 			<type key="numbers" type="orya">Àwọn díjíìtì Òdíà</type>
 			<type key="numbers" type="roman">Àwọn díjíìtì Rómánù</type>
 			<type key="numbers" type="romanlow">Àwọn díjíìtì Rómánù Kékeré</type>
@@ -679,6 +892,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="numbers" type="telu">Àwọn díjíìtì Télúgù</type>
 			<type key="numbers" type="thai">Àwọn díjíìtì Thai</type>
 			<type key="numbers" type="tibt">Àwọn díjíìtì Tibetán</type>
+			<type key="numbers" type="vaii">Àwọn díjíìtì Fai</type>
 		</types>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">Mẹ́tíríìkì</measurementSystemName>
@@ -692,7 +906,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[a á à b d e é è ẹ {ẹ\u0301} {ẹ\u0300} f g {gb} h i í ì j k l m ḿ {m\u0300} n ń ǹ o ó ò ọ {ọ\u0301} {ọ\u0300} p r s ṣ t u ú ù w y]</exemplarCharacters>
+		<exemplarCharacters>[a á à b d e é è ẹ {ẹ\u0301} {ẹ\u0300} f g {gb} h i í ì j k l m ḿ {m\u0300} {m\u0304} n ń ǹ {n\u0304} o ó ò ọ {ọ\u0301} {ọ\u0300} p r s ṣ t u ú ù w y]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[c q v x z]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B D E F G H I J K L M N O P R S T U W Y]</exemplarCharacters>
 		<exemplarCharacters type="punctuation" draft="contributed">[\- ‐ ‑ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
@@ -735,11 +949,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<dateTimeFormats>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} 'ní' {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} 'ní' {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -747,16 +967,22 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
 						<dateFormatItem id="d">d</dateFormatItem>
 						<dateFormatItem id="GyMd">d/M/y GGGGG</dateFormatItem>
-						<dateFormatItem id="hm">h:mm a</dateFormatItem>
+						<dateFormatItem id="hm">h:mm a</dateFormatItem>
 						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
 						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="M">L</dateFormatItem>
@@ -778,7 +1004,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yQQQQ">QQQQ y</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
-						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
+						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
 					</intervalFormats>
 				</dateTimeFormats>
 			</calendar>
@@ -1054,44 +1280,56 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} 'ní' {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} 'níti' {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="medium">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
 						<dateFormatItem id="d">d</dateFormatItem>
 						<dateFormatItem id="E">ccc</dateFormatItem>
 						<dateFormatItem id="Ed">E, d</dateFormatItem>
-						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
+						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
 						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
-						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">G y</dateFormatItem>
 						<dateFormatItem id="GyMd">d/M/y GGGGG</dateFormatItem>
 						<dateFormatItem id="GyMMM">G y MMM</dateFormatItem>
 						<dateFormatItem id="GyMMMd">G y MMM d</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">G y MMM d, E</dateFormatItem>
-						<dateFormatItem id="h">h a</dateFormatItem>
+						<dateFormatItem id="h">h a</dateFormatItem>
 						<dateFormatItem id="H">HH</dateFormatItem>
-						<dateFormatItem id="hm">h:mm a</dateFormatItem>
+						<dateFormatItem id="hm">h:mm a</dateFormatItem>
 						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
-						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
-						<dateFormatItem id="hmsv">h:mm:ss a v</dateFormatItem>
+						<dateFormatItem id="hmsv">h:mm:ss a v</dateFormatItem>
 						<dateFormatItem id="Hmsv">HH:mm:ss v</dateFormatItem>
-						<dateFormatItem id="hmv">h:mm a v</dateFormatItem>
+						<dateFormatItem id="hmv">h:mm a v</dateFormatItem>
 						<dateFormatItem id="Hmv">HH:mm v</dateFormatItem>
 						<dateFormatItem id="M">L</dateFormatItem>
 						<dateFormatItem id="Md">d/M</dateFormatItem>
@@ -1101,6 +1339,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="MMMEd">d MMM, E</dateFormatItem>
 						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
 						<dateFormatItem id="MMMMEd">d, MMMM E</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="other">'week' W 'of' MMMM</dateFormatItem>
 						<dateFormatItem id="ms">mm:ss</dateFormatItem>
 						<dateFormatItem id="y">y</dateFormatItem>
 						<dateFormatItem id="yM">M/y</dateFormatItem>
@@ -1117,38 +1356,75 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<appendItem request="Timezone">{0} {1}</appendItem>
 					</appendItems>
 					<intervalFormats>
-						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
+						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="d">
 							<greatestDifference id="d">d–d</greatestDifference>
 						</intervalFormatItem>
+						<intervalFormatItem id="Gy">
+							<greatestDifference id="G">y G – y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyM">
+							<greatestDifference id="G">M/y G – M/y G</greatestDifference>
+							<greatestDifference id="M">M/y – M/y G</greatestDifference>
+							<greatestDifference id="y">M/y – M/y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMd">
+							<greatestDifference id="d">M/d/y – M/d/y G</greatestDifference>
+							<greatestDifference id="G">M/d/y G – M/d/y G</greatestDifference>
+							<greatestDifference id="M">M/d/y – M/d/y G</greatestDifference>
+							<greatestDifference id="y">M/d/y – M/d/y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMEd">
+							<greatestDifference id="d">E, M/d/y – E, M/d/y G</greatestDifference>
+							<greatestDifference id="G">E, M/d/y G – E, M/d/y G</greatestDifference>
+							<greatestDifference id="M">E, M/d/y – E, M/d/y G</greatestDifference>
+							<greatestDifference id="y">E, M/d/y – E, M/d/y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMM">
+							<greatestDifference id="G">MMM y G – MMM y G</greatestDifference>
+							<greatestDifference id="M">MMM – MMM y G</greatestDifference>
+							<greatestDifference id="y">MMM y – MMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMd">
+							<greatestDifference id="d">MMM d – d, y G</greatestDifference>
+							<greatestDifference id="G">MMM d, y G – MMM d, y G</greatestDifference>
+							<greatestDifference id="M">MMM d – MMM d, y G</greatestDifference>
+							<greatestDifference id="y">MMM d, y – MMM d, y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMEd">
+							<greatestDifference id="d">E, MMM d – E, MMM d, y G</greatestDifference>
+							<greatestDifference id="G">E, MMM d, y G – E, MMM d, y G</greatestDifference>
+							<greatestDifference id="M">E, MMM d – E, MMM d, y G</greatestDifference>
+							<greatestDifference id="y">E, MMM d, y – E, MMM d, y G</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="h">
-							<greatestDifference id="a">h a – h a</greatestDifference>
-							<greatestDifference id="h">h–h a</greatestDifference>
+							<greatestDifference id="a">h a – h a</greatestDifference>
+							<greatestDifference id="h">h–h a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="H">
 							<greatestDifference id="H">HH–HH</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hm">
-							<greatestDifference id="a">h:mm a – h:mm a</greatestDifference>
-							<greatestDifference id="h">h:mm–h:mm a</greatestDifference>
-							<greatestDifference id="m">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="a">h:mm a – h:mm a</greatestDifference>
+							<greatestDifference id="h">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="m">h:mm–h:mm a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hm">
 							<greatestDifference id="H">HH:mm–HH:mm</greatestDifference>
 							<greatestDifference id="m">HH:mm–HH:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
-							<greatestDifference id="a">h:mm a – h:mm a v</greatestDifference>
-							<greatestDifference id="h">h:mm–h:mm a v</greatestDifference>
-							<greatestDifference id="m">h:mm–h:mm a v</greatestDifference>
+							<greatestDifference id="a">h:mm a – h:mm a v</greatestDifference>
+							<greatestDifference id="h">h:mm–h:mm a v</greatestDifference>
+							<greatestDifference id="m">h:mm–h:mm a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hmv">
 							<greatestDifference id="H">HH:mm–HH:mm v</greatestDifference>
 							<greatestDifference id="m">HH:mm–HH:mm v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hv">
-							<greatestDifference id="a">h a – h a v</greatestDifference>
-							<greatestDifference id="h">h–h a v</greatestDifference>
+							<greatestDifference id="a">h a – h a v</greatestDifference>
+							<greatestDifference id="h">h–h a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hv">
 							<greatestDifference id="H">HH–HH v</greatestDifference>
@@ -1157,53 +1433,53 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<greatestDifference id="M">MM–MM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Md">
-							<greatestDifference id="d">MM-dd – MM-dd</greatestDifference>
-							<greatestDifference id="M">MM-dd – MM-dd</greatestDifference>
+							<greatestDifference id="d">MM-dd – MM-dd</greatestDifference>
+							<greatestDifference id="M">MM-dd – MM-dd</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
-							<greatestDifference id="d">MM-dd, E – MM-dd, E</greatestDifference>
-							<greatestDifference id="M">MM-dd, E – MM-dd, E</greatestDifference>
+							<greatestDifference id="d">MM-dd, E – MM-dd, E</greatestDifference>
+							<greatestDifference id="M">MM-dd, E – MM-dd, E</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMM">
 							<greatestDifference id="M">LLL–LLL</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMd">
 							<greatestDifference id="d">MMM d–d</greatestDifference>
-							<greatestDifference id="M">MMM d – MMM d</greatestDifference>
+							<greatestDifference id="M">MMM d – MMM d</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMEd">
-							<greatestDifference id="d">MMM d, E – MMM d, E</greatestDifference>
-							<greatestDifference id="M">MMM d, E – MMM d, E</greatestDifference>
+							<greatestDifference id="d">MMM d, E – MMM d, E</greatestDifference>
+							<greatestDifference id="M">MMM d, E – MMM d, E</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="y">
 							<greatestDifference id="y">y–y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
-							<greatestDifference id="M">MM-y – MM-y</greatestDifference>
-							<greatestDifference id="y">y-MM – y-MM</greatestDifference>
+							<greatestDifference id="M">MM-y – MM-y</greatestDifference>
+							<greatestDifference id="y">y-MM – y-MM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMd">
-							<greatestDifference id="d">y-MM-dd – y-MM-dd</greatestDifference>
-							<greatestDifference id="M">y-MM-dd – y-MM-dd</greatestDifference>
-							<greatestDifference id="y">y-MM-dd – y-MM-dd</greatestDifference>
+							<greatestDifference id="d">y-MM-dd – y-MM-dd</greatestDifference>
+							<greatestDifference id="M">y-MM-dd – y-MM-dd</greatestDifference>
+							<greatestDifference id="y">y-MM-dd – y-MM-dd</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMEd">
-							<greatestDifference id="d">E, dd-MM-y – E dd-MM-y, E</greatestDifference>
-							<greatestDifference id="M">y-MM-dd, E – y-MM-dd, E</greatestDifference>
-							<greatestDifference id="y">y-MM-dd, E – y-MM-dd, E</greatestDifference>
+							<greatestDifference id="d">E, dd-MM-y – E dd-MM-y, E</greatestDifference>
+							<greatestDifference id="M">y-MM-dd, E – y-MM-dd, E</greatestDifference>
+							<greatestDifference id="y">y-MM-dd, E – y-MM-dd, E</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMM">
 							<greatestDifference id="M">y MMM–MMM</greatestDifference>
-							<greatestDifference id="y">y MMM – y MMM</greatestDifference>
+							<greatestDifference id="y">y MMM – y MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMd">
 							<greatestDifference id="d">MMM d–d y</greatestDifference>
-							<greatestDifference id="M">MMM d – MMM d y</greatestDifference>
-							<greatestDifference id="y">y MMM d – y MMM d</greatestDifference>
+							<greatestDifference id="M">MMM d – MMM d y</greatestDifference>
+							<greatestDifference id="y">y MMM d – y MMM d</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
-							<greatestDifference id="d">MMM d, E – MMM d, E y</greatestDifference>
-							<greatestDifference id="M">MMM d, E – MMM d, E y</greatestDifference>
+							<greatestDifference id="d">MMM d, E – MMM d, E y</greatestDifference>
+							<greatestDifference id="M">MMM d, E – MMM d, E y</greatestDifference>
 							<greatestDifference id="y">y MMM d y, E – MMM d, E y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMM">
@@ -1306,6 +1582,168 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<field type="sun-narrow">
 				<relativeTime type="future">
 					<relativeTimePattern count="other">Ọjọ́ Àíkú +{0}</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="tue">
+				<relative type="-1">Ìṣẹ́gun tókọ́já</relative>
+				<relative type="0">Ìṣẹ́gun èyí</relative>
+				<relative type="1">Ìṣẹ́gun tóńbọ̀</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">+{0} àwọn ìsẹ́gun</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} àwọn Ìṣẹ́gun tẹ́lẹ̀</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="tue-short">
+				<relative type="-1">Ìṣẹ́ tókọ́já</relative>
+				<relative type="0">Ìṣẹ́ èyí</relative>
+				<relative type="1">Ìṣẹ́ tónbọ̀</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">{0} Ìṣẹ́</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} Iṣẹ́. tẹ́lẹ̀</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="tue-narrow">
+				<relative type="-1">Ìṣẹ́gun tẹ́lẹ̀</relative>
+				<relative type="0">Ìṣẹ́gun yì</relative>
+				<relative type="1">Ìṣẹ́gun tọ́ńbọ̀</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">+{0} Ìs</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} Ìs tẹ́lẹ̀</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="wed">
+				<relative type="-1">Ojọ́rú àná</relative>
+				<relative type="0">Ojọ́rú yì</relative>
+				<relative type="1">Ojọ́rú tónbọ̀</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">{0} Àwọn Ojọ́rú</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">-{0} Àwọn Ojọ́rú tẹ́lẹ̀</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="wed-short">
+				<relative type="-1">Ojọ́rú àná</relative>
+				<relative type="0">Ojọ́rú yì</relative>
+				<relative type="1">Ojọ́rú tóńbọ̀</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">ní {0} Ojọ́</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} Ojọ́ tẹ́lẹ̀</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="wed-narrow">
+				<relative type="-1">O àná</relative>
+				<relative type="0">O yì</relative>
+				<relative type="1">O tóńbọ̀</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">ní {0} O</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} W tẹ́lẹ̀</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="thu">
+				<relative type="-1">Ojọ́bọ̀ kẹyìn</relative>
+				<relative type="0">Ojọ́bọ̀ eyì</relative>
+				<relative type="1">Ojọ́bọ̀ tónbọ̀</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">+{0} Ojọ́bọ̀</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">-{0} Àwọn Ojọ́bọ̀</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="thu-short">
+				<relative type="-1">Ojọ́ sẹ́yìn</relative>
+				<relative type="0">Ojọ́ èyí</relative>
+				<relative type="1">Ojọ́ tónbọ̀</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">+ {0} Ojọ́</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} Ojọ́ èyìn</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="thu-narrow">
+				<relativeTime type="future">
+					<relativeTimePattern count="other">{0} Ojọ́</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} Ojọ́ sẹ́yìn</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="fri">
+				<relative type="-1">E̩tì tóko̩já</relative>
+				<relative type="0">E̩tì èyí</relative>
+				<relative type="1">E̩tì tómbò̩</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">{0} Àwo̩n Eti</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} Àwo̩n E̩tì té̩lè̩</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="fri-short">
+				<relative type="-1">Etì àná</relative>
+				<relative type="0">Etì yì</relative>
+				<relative type="1">Et tónbọ̀</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">{0} Et</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} Et sẹ́yìn</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="fri-narrow">
+				<relative type="-1">F tóko̩já</relative>
+				<relative type="0">F èyí</relative>
+				<relative type="1">F tómbò̩</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">{0} F</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} F tẹ́lẹ̀</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sat">
+				<relative type="-1">Abameta tóko̩já</relative>
+				<relative type="0">Abameta eyi</relative>
+				<relative type="1">Abameta tombo</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">{0} Awon Abameta</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} Abameta tokoja</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sat-short">
+				<relative type="-1">Aba tókojá</relative>
+				<relative type="0">Aba èyí</relative>
+				<relative type="1">Aba tónbọ̀</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">{0} Aba</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} Aba. sẹ́yìn</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sat-narrow">
+				<relative type="-1">Ab sẹ́yìn</relative>
+				<relative type="0">Ab èyí</relative>
+				<relative type="1">Ab tónbò</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">{0} Ab</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} Ab ẹ̀yí</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="dayperiod">
@@ -2051,11 +2489,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Àkókò Àfẹnukò Ìgba Oòru Greenland</daylight>
 				</long>
 			</metazone>
-			<metazone type="Gulf">
-				<long>
-					<standard>Gulf Standard Time [translation hint: translate as just &quot;Gulf Time&quot;]</standard>
-				</long>
-			</metazone>
 			<metazone type="Guyana">
 				<long>
 					<standard>Àkókò Gúyànà</standard>
@@ -2624,27 +3057,44 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>¤#,##0.00</pattern>
+					<pattern alt="alphaNextToNumber" draft="provisional">¤ #,##0.00</pattern>
+					<pattern alt="noCurrency" draft="provisional">#,##0.00</pattern>
 				</currencyFormat>
 				<currencyFormat type="accounting">
 					<pattern>¤#,##0.00;(¤#,##0.00)</pattern>
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;(¤ #,##0.00)</pattern>
+					<pattern alt="noCurrency">#,##0.00;(#,##0.00)</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
 				<currencyFormat type="standard">
-					<pattern type="1000" count="other" draft="provisional">¤0K</pattern>
-					<pattern type="10000" count="other" draft="provisional">¤00K</pattern>
-					<pattern type="100000" count="other" draft="provisional">¤000K</pattern>
-					<pattern type="1000000" count="other" draft="provisional">¤0M</pattern>
-					<pattern type="10000000" count="other" draft="provisional">¤00M</pattern>
-					<pattern type="100000000" count="other" draft="provisional">¤000M</pattern>
-					<pattern type="1000000000" count="other" draft="provisional">¤0G</pattern>
-					<pattern type="10000000000" count="other" draft="provisional">¤00G</pattern>
-					<pattern type="100000000000" count="other" draft="provisional">¤000G</pattern>
-					<pattern type="1000000000000" count="other" draft="provisional">¤0T</pattern>
-					<pattern type="10000000000000" count="other" draft="provisional">¤00T</pattern>
-					<pattern type="100000000000000" count="other" draft="provisional">¤000T</pattern>
+					<pattern type="1000" count="other">¤0K</pattern>
+					<pattern type="1000" count="other" alt="alphaNextToNumber">¤ 0K</pattern>
+					<pattern type="10000" count="other">¤00K</pattern>
+					<pattern type="10000" count="other" alt="alphaNextToNumber">¤ 00K</pattern>
+					<pattern type="100000" count="other">¤000K</pattern>
+					<pattern type="100000" count="other" alt="alphaNextToNumber">¤ 000K</pattern>
+					<pattern type="1000000" count="other">¤0M</pattern>
+					<pattern type="1000000" count="other" alt="alphaNextToNumber">¤ 0M</pattern>
+					<pattern type="10000000" count="other">¤00M</pattern>
+					<pattern type="10000000" count="other" alt="alphaNextToNumber">¤ 00M</pattern>
+					<pattern type="100000000" count="other">¤000M</pattern>
+					<pattern type="100000000" count="other" alt="alphaNextToNumber">¤ 000M</pattern>
+					<pattern type="1000000000" count="other">¤0B</pattern>
+					<pattern type="1000000000" count="other" alt="alphaNextToNumber">¤ 0B</pattern>
+					<pattern type="10000000000" count="other">¤00B</pattern>
+					<pattern type="10000000000" count="other" alt="alphaNextToNumber">¤ 00B</pattern>
+					<pattern type="100000000000" count="other">¤000B</pattern>
+					<pattern type="100000000000" count="other" alt="alphaNextToNumber">¤ 000B</pattern>
+					<pattern type="1000000000000" count="other">¤0T</pattern>
+					<pattern type="1000000000000" count="other" alt="alphaNextToNumber">¤ 0T</pattern>
+					<pattern type="10000000000000" count="other">¤00T</pattern>
+					<pattern type="10000000000000" count="other" alt="alphaNextToNumber">¤ 00T</pattern>
+					<pattern type="100000000000000" count="other">¤000T</pattern>
+					<pattern type="100000000000000" count="other" alt="alphaNextToNumber">¤ 000T</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
+			<currencyPatternAppendISO>{0} ¤¤</currencyPatternAppendISO>
 			<unitPattern count="other">{0} {1}</unitPattern>
 		</currencyFormats>
 		<currencies>
@@ -3277,6 +3727,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<compoundUnit type="1024p8">
 				<unitPrefixPattern>yóòbù {0}</unitPrefixPattern>
 			</compoundUnit>
+			<compoundUnit type="power2">
+				<compoundUnitPattern1 count="other">{0} sikuwe</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="power3">
+				<compoundUnitPattern1 count="other">kubiki {0}</compoundUnitPattern1>
+			</compoundUnit>
+			<unit type="concentr-item">
+				<displayName>àwọ́n ohun</displayName>
+				<unitPattern count="other">{0} àwon ohun</unitPattern>
+			</unit>
 			<unit type="concentr-permille">
 				<unitPattern count="other">{0} ìdákan nínú ẹgbẹ̀rún</unitPattern>
 			</unit>
@@ -3337,6 +3797,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} ọd</unitPattern>
 				<perUnitPattern>{0} ọd</perUnitPattern>
 			</unit>
+			<unit type="duration-quarter">
+				<displayName>idamerin</displayName>
+				<unitPattern count="other">{0} idamerin</unitPattern>
+				<perUnitPattern>{0}/ida</perUnitPattern>
+			</unit>
 			<unit type="duration-month">
 				<displayName>oṣù</displayName>
 				<unitPattern count="other">{0} oṣù</unitPattern>
@@ -3367,6 +3832,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0}ìṣ àáy</unitPattern>
 				<perUnitPattern>{0}/ìṣ àáy</perUnitPattern>
 			</unit>
+			<unit type="duration-microsecond">
+				<displayName>iseju aya kekere</displayName>
+			</unit>
+			<unit type="force-kilowatt-hour-per-100-kilometer">
+				<displayName>àwọ́n wákàtí kílówáàtì ní kìlómítà ọgọ́rùn</displayName>
+				<unitPattern count="other">{0} àwọ́n wákàtí kílówáàtì ní kìlómítà ọgọ́rùn</unitPattern>
+			</unit>
 			<unit type="graphics-dot">
 				<displayName>dọ́ọ̀tì</displayName>
 				<unitPattern count="other">{0} dọ́ọ̀tì</unitPattern>
@@ -3374,6 +3846,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="length-earth-radius">
 				<displayName>ìdinwọ̀n ayé</displayName>
 				<unitPattern count="other">{0} ìdinwọ̀n ayé</unitPattern>
+			</unit>
+			<unit type="length-furlong">
+				<displayName>àwọn fọ́lọ́ọ̀ngì</displayName>
+				<unitPattern count="other">{0} àwọn fọ́lọ́ọ̀ngì</unitPattern>
+			</unit>
+			<unit type="length-fathom">
+				<displayName>fátọ́ọ̀mu</displayName>
+				<unitPattern count="other">{0} fátọ́ọ̀mù</unitPattern>
 			</unit>
 			<unit type="light-candela">
 				<displayName>kandẹ́là</displayName>
@@ -3383,9 +3863,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>lumẹ́ẹ̀nì</displayName>
 				<unitPattern count="other">{0} lumẹ́ẹ̀nì</unitPattern>
 			</unit>
+			<unit type="mass-stone">
+				<displayName>àwon okùta</displayName>
+				<unitPattern count="other">{0} àwon okùta</unitPattern>
+			</unit>
 			<unit type="mass-grain">
 				<displayName>giréènì</displayName>
 				<unitPattern count="other">{0} gíréènì</unitPattern>
+			</unit>
+			<unit type="volume-bushel">
+				<displayName>búsẹ́ẹ̀li</displayName>
+				<unitPattern count="other">{0} búsẹ́ẹ̀li</unitPattern>
 			</unit>
 			<unit type="volume-dessert-spoon">
 				<displayName>àmì ṣíbí oúnjẹ́ kékeré</displayName>
@@ -3441,8 +3929,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<compoundUnit type="1024p8">
 				<unitPrefixPattern>àmì {0}</unitPrefixPattern>
 			</compoundUnit>
+			<unit type="concentr-item">
+				<displayName>ohun</displayName>
+				<unitPattern count="other">{0} ohun</unitPattern>
+			</unit>
+			<unit type="concentr-permillion">
+				<displayName>ara/milíọ̀nù</displayName>
+				<unitPattern count="other">{0} ppm</unitPattern>
+			</unit>
 			<unit type="concentr-permille">
 				<displayName>ìdákan nínú ẹgbẹ̀rún</displayName>
+				<unitPattern count="other">{0} pasenti</unitPattern>
 			</unit>
 			<unit type="digital-petabyte">
 				<displayName>Píbáìtì</displayName>
@@ -3492,6 +3989,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} ọd</unitPattern>
 				<perUnitPattern>{0}/ọd</perUnitPattern>
 			</unit>
+			<unit type="duration-quarter">
+				<displayName>idame</displayName>
+				<unitPattern count="other">{0} idame</unitPattern>
+				<perUnitPattern>{0}/id</perUnitPattern>
+			</unit>
 			<unit type="duration-month">
 				<displayName>oṣù</displayName>
 				<unitPattern count="other">{0} oṣù</unitPattern>
@@ -3522,6 +4024,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} ìṣ àáy</unitPattern>
 				<perUnitPattern>{0} ìṣ àáy</perUnitPattern>
 			</unit>
+			<unit type="force-kilowatt-hour-per-100-kilometer">
+				<displayName>KWh lọ́rí 100km</displayName>
+				<unitPattern count="other">{0} KWh lọ́rí 100km</unitPattern>
+			</unit>
 			<unit type="graphics-dot">
 				<displayName>dọ́ọ̀tì</displayName>
 				<unitPattern count="other">{0} dọ́ọ̀tì</unitPattern>
@@ -3529,6 +4035,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="length-earth-radius">
 				<displayName>àmì ìdínwọ̀n ayé</displayName>
 				<unitPattern count="other">{0} àmì ìdínwọ̀n ayé</unitPattern>
+			</unit>
+			<unit type="length-furlong">
+				<displayName>fọ́lọ́ọ̀ngì</displayName>
+				<unitPattern count="other">{0} fọ́</unitPattern>
+			</unit>
+			<unit type="length-fathom">
+				<displayName>fátọ́mù</displayName>
+				<unitPattern count="other">{0} fth</unitPattern>
 			</unit>
 			<unit type="light-candela">
 				<displayName>sídiì</displayName>
@@ -3538,9 +4052,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>àmì lumẹ́ẹ̀nì</displayName>
 				<unitPattern count="other">{0} Lúmẹ́nì</unitPattern>
 			</unit>
+			<unit type="mass-stone">
+				<displayName>àwon okùta</displayName>
+				<unitPattern count="other">{0} st</unitPattern>
+			</unit>
 			<unit type="mass-grain">
 				<displayName>gíréènì</displayName>
 				<unitPattern count="other">{0} gíréènì</unitPattern>
+			</unit>
+			<unit type="volume-bushel">
+				<displayName>Búsẹ́ẹ̀li</displayName>
+				<unitPattern count="other">{0} bu</unitPattern>
 			</unit>
 			<unit type="volume-dessert-spoon">
 				<displayName>ṣíbí oúnjẹ́ kékeré</displayName>
@@ -3596,9 +4118,18 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<compoundUnit type="1024p8">
 				<unitPrefixPattern>àmì Yí {0}</unitPrefixPattern>
 			</compoundUnit>
+			<unit type="concentr-item">
+				<displayName>ohun</displayName>
+				<unitPattern count="other">{0}ohun</unitPattern>
+			</unit>
 			<unit type="duration-year">
 				<displayName>ọd</displayName>
 				<unitPattern count="other">{0} ọd</unitPattern>
+			</unit>
+			<unit type="duration-quarter">
+				<displayName>idame</displayName>
+				<unitPattern count="other">{0} i</unitPattern>
+				<perUnitPattern>{0}/id</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
 				<displayName>oṣù</displayName>
@@ -3624,8 +4155,31 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>ìṣ àáy</displayName>
 				<unitPattern count="other">{0} ìṣ àáy</unitPattern>
 			</unit>
+			<unit type="force-kilowatt-hour-per-100-kilometer">
+				<displayName>KWh ní 100km</displayName>
+				<unitPattern count="other">{0} kWh ní 100km</unitPattern>
+			</unit>
+			<unit type="length-furlong">
+				<displayName>fọ́lọ́ọ̀ngì</displayName>
+				<unitPattern count="other">{0}fur</unitPattern>
+			</unit>
+			<unit type="length-fathom">
+				<displayName>fatọ́</displayName>
+				<unitPattern count="other">{0}fth</unitPattern>
+			</unit>
+			<unit type="light-lux">
+				<displayName>lọ́s</displayName>
+			</unit>
 			<unit type="light-lumen">
 				<unitPattern count="other">{0} Lúmẹ́nì</unitPattern>
+			</unit>
+			<unit type="mass-stone">
+				<displayName>okùta</displayName>
+				<unitPattern count="other">{0}st</unitPattern>
+			</unit>
+			<unit type="volume-bushel">
+				<displayName>búsẹ́li</displayName>
+				<unitPattern count="other">{0}búsẹ́ẹ̀li</unitPattern>
 			</unit>
 		</unitLength>
 		<durationUnit type="hm">
@@ -3646,7 +4200,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<listPatternPart type="2">{0}, {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="or">
+			<listPatternPart type="start">{0} pẹ̀lú {1}</listPatternPart>
 			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0}, tabi {1}</listPatternPart>
+			<listPatternPart type="2">{0} tàbí {1}</listPatternPart>
 		</listPattern>
 	</listPatterns>
 	<posix>
@@ -3655,4 +4212,323 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<nostr>Bẹ́ẹ̀kọ́:K</nostr>
 		</messages>
 	</posix>
+	<characterLabels>
+		<characterLabelPattern type="all">{0} - gbogbo</characterLabelPattern>
+		<characterLabelPattern type="category-list">{0}: {1}</characterLabelPattern>
+		<characterLabelPattern type="compatibility">{0}-ibaramu</characterLabelPattern>
+		<characterLabelPattern type="enclosed">{0} ipade</characterLabelPattern>
+		<characterLabelPattern type="extended">{0}-ifasiwaju</characterLabelPattern>
+		<characterLabelPattern type="historic">{0}-àtijó̩</characterLabelPattern>
+		<characterLabelPattern type="miscellaneous">{0} - míràn</characterLabelPattern>
+		<characterLabelPattern type="other">{0} miran</characterLabelPattern>
+		<characterLabelPattern type="scripts">àwọ́n ìwé - {0}</characterLabelPattern>
+		<characterLabelPattern type="strokes" count="other">{0} ìlà</characterLabelPattern>
+		<characterLabelPattern type="subscript">ìwé kékeré {0}</characterLabelPattern>
+		<characterLabelPattern type="superscript">ìwé nl {0}</characterLabelPattern>
+		<characterLabel type="activities">Ise</characterLabel>
+		<characterLabel type="african_scripts">Iwe Adulawo</characterLabel>
+		<characterLabel type="american_scripts">Iwe Amerika</characterLabel>
+		<characterLabel type="animal">eranko</characterLabel>
+		<characterLabel type="animals_nature">eranko tabi eda</characterLabel>
+		<characterLabel type="arrows">ofa</characterLabel>
+		<characterLabel type="body">ara</characterLabel>
+		<characterLabel type="box_drawing">pali yíyà</characterLabel>
+		<characterLabel type="braille">burali</characterLabel>
+		<characterLabel type="building">ile</characterLabel>
+		<characterLabel type="bullets_stars">búlé̩tì tàbí ìràwò̩</characterLabel>
+		<characterLabel type="consonantal_jamo">jamo konsonanti</characterLabel>
+		<characterLabel type="currency_symbols">ami owo</characterLabel>
+		<characterLabel type="dash_connector">dasi tabi asopo</characterLabel>
+		<characterLabel type="digits">digibaati</characterLabel>
+		<characterLabel type="dingbats">digibaati</characterLabel>
+		<characterLabel type="divination_symbols">ami idifa</characterLabel>
+		<characterLabel type="downwards_arrows">ofa isale</characterLabel>
+		<characterLabel type="downwards_upwards_arrows">ofa isale ati oke</characterLabel>
+		<characterLabel type="east_asian_scripts">Iwe Ila oorun Asia</characterLabel>
+		<characterLabel type="flag">filaagi</characterLabel>
+		<characterLabel type="flags">awon filaagi</characterLabel>
+		<characterLabel type="food_drink">ounje ati omi</characterLabel>
+		<characterLabel type="format">ilana</characterLabel>
+		<characterLabel type="format_whitespace">ìlànà àti àyè funfun</characterLabel>
+		<characterLabel type="full_width_form_variant">kun-egbe eda</characterLabel>
+		<characterLabel type="geometric_shapes">seepu jiometiriki</characterLabel>
+		<characterLabel type="half_width_form_variant">aarin-egbe eda</characterLabel>
+		<characterLabel type="han_characters">ami ikowe Han</characterLabel>
+		<characterLabel type="han_radicals">ikowe Han</characterLabel>
+		<characterLabel type="hanja">hanja</characterLabel>
+		<characterLabel type="hanzi_simplified">Hansi</characterLabel>
+		<characterLabel type="hanzi_traditional">Hansi</characterLabel>
+		<characterLabel type="heart">okan</characterLabel>
+		<characterLabel type="historic_scripts">iwe atijo</characterLabel>
+		<characterLabel type="ideographic_desc_characters">ikowe isapejuwe</characterLabel>
+		<characterLabel type="japanese_kana">kana ti Japaani</characterLabel>
+		<characterLabel type="kanbun">Kabuni</characterLabel>
+		<characterLabel type="kanji">Kanji</characterLabel>
+		<characterLabel type="keycap">Keyacap</characterLabel>
+		<characterLabel type="leftwards_arrows">ofa osi</characterLabel>
+		<characterLabel type="leftwards_rightwards_arrows">ofa osi ati otun</characterLabel>
+		<characterLabel type="letterlike_symbols">ami ti leta</characterLabel>
+		<characterLabel type="limited_use">ilo die</characterLabel>
+		<characterLabel type="male">okunrin</characterLabel>
+		<characterLabel type="math_symbols">ami isiro</characterLabel>
+		<characterLabel type="middle_eastern_scripts">iwe aarin ila-oorun</characterLabel>
+		<characterLabel type="miscellaneous">eyikeyi</characterLabel>
+		<characterLabel type="modern_scripts">iwe ode-oni</characterLabel>
+		<characterLabel type="modifier">ayán nnkan</characterLabel>
+		<characterLabel type="musical_symbols">ami orin</characterLabel>
+		<characterLabel type="nature">eda</characterLabel>
+		<characterLabel type="nonspacing">ailaye</characterLabel>
+		<characterLabel type="numbers">awon nonba</characterLabel>
+		<characterLabel type="objects">nnkan</characterLabel>
+		<characterLabel type="other">miran</characterLabel>
+		<characterLabel type="paired">pinsimeji</characterLabel>
+		<characterLabel type="person">eniyan</characterLabel>
+		<characterLabel type="phonetic_alphabet">afabeeti iro</characterLabel>
+		<characterLabel type="pictographs">aworan</characterLabel>
+		<characterLabel type="place">ibi</characterLabel>
+		<characterLabel type="plant">eso</characterLabel>
+		<characterLabel type="rightwards_arrows">ofa otun</characterLabel>
+		<characterLabel type="sign_standard_symbols">ami</characterLabel>
+		<characterLabel type="small_form_variant">awon è̩dà kékèkè</characterLabel>
+		<characterLabel type="smiley">oju irerin</characterLabel>
+		<characterLabel type="smileys_people">oju rerin tabi eniyan</characterLabel>
+		<characterLabel type="south_asian_scripts">iwe Gusu Asia</characterLabel>
+		<characterLabel type="southeast_asian_scripts">Iwe Gusu-ila oorun Asia</characterLabel>
+		<characterLabel type="spacing">aye</characterLabel>
+		<characterLabel type="sport">ere idaraya</characterLabel>
+		<characterLabel type="symbols">ami</characterLabel>
+		<characterLabel type="technical_symbols">ami ise</characterLabel>
+		<characterLabel type="tone_marks">ami ohun</characterLabel>
+		<characterLabel type="travel">irinajo</characterLabel>
+		<characterLabel type="travel_places">irinajo tabi ibi</characterLabel>
+		<characterLabel type="variant_forms">eda</characterLabel>
+		<characterLabel type="vocalic_jamo">awon iwe</characterLabel>
+		<characterLabel type="weather">ojú=ọjọ́</characterLabel>
+		<characterLabel type="western_asian_scripts">Iwe Iwoorun to Asia</characterLabel>
+		<characterLabel type="whitespace">àyè funfun</characterLabel>
+	</characterLabels>
+	<typographicNames>
+		<axisName type="ital">ítálísì</axisName>
+		<axisName type="opsz">iwon oput;ikà</axisName>
+		<axisName type="slnt">sílántì</axisName>
+		<axisName type="wdth">fífẹ̀ sí</axisName>
+		<axisName type="wght">títobi sí</axisName>
+		<styleName type="ital" subtype="1">kíkọ́</styleName>
+		<styleName type="opsz" subtype="8">ọ̀rọ̀ àtúmọ̀</styleName>
+		<styleName type="opsz" subtype="12">àtẹ̀jíṣẹ́</styleName>
+		<styleName type="opsz" subtype="18">títì</styleName>
+		<styleName type="opsz" subtype="72">ìfihàn</styleName>
+		<styleName type="opsz" subtype="144">posítà</styleName>
+		<styleName type="slnt" subtype="-12">sílántì ẹ̀yìn</styleName>
+		<styleName type="slnt" subtype="0">dídúró</styleName>
+		<styleName type="slnt" subtype="12">tó sílántì</styleName>
+		<styleName type="slnt" subtype="24">sílántì-púpọ̀</styleName>
+		<styleName type="wdth" subtype="50">kànpọ̀ gidigidi</styleName>
+		<styleName type="wdth" subtype="50" alt="compressed">tẹ̀pọ̀ gidigidi</styleName>
+		<styleName type="wdth" subtype="50" alt="narrow">papọ̀ gidigidi</styleName>
+		<styleName type="wdth" subtype="62.5">kànpọ̀ púpọ̀</styleName>
+		<styleName type="wdth" subtype="62.5" alt="compressed">tẹ̀pọ̀ pupọ̀</styleName>
+		<styleName type="wdth" subtype="62.5" alt="narrow">papọ̀-púpọ̀</styleName>
+		<styleName type="wdth" subtype="75">kànpọ̀</styleName>
+		<styleName type="wdth" subtype="75" alt="compressed">tẹ̀pọ̀</styleName>
+		<styleName type="wdth" subtype="75" alt="narrow">tẹ̀pọ̀</styleName>
+		<styleName type="wdth" subtype="87.5">tẹ̀pọ̀ díẹ̀</styleName>
+		<styleName type="wdth" subtype="87.5" alt="compressed">kànpọ̀ díẹ̀</styleName>
+		<styleName type="wdth" subtype="87.5" alt="narrow">papọ̀ díẹ̀</styleName>
+		<styleName type="wdth" subtype="100">dára</styleName>
+		<styleName type="wdth" subtype="112.5">tóbi díẹ̀</styleName>
+		<styleName type="wdth" subtype="112.5" alt="extended">fasiwaju díe</styleName>
+		<styleName type="wdth" subtype="112.5" alt="wide">sánra díẹ̀</styleName>
+		<styleName type="wdth" subtype="125">tóbi</styleName>
+		<styleName type="wdth" subtype="125" alt="extended">fasiwaju</styleName>
+		<styleName type="wdth" subtype="125" alt="wide">sanra</styleName>
+		<styleName type="wdth" subtype="150">tobi-púpọ̀</styleName>
+		<styleName type="wdth" subtype="150" alt="extended">fasiwaju pupo</styleName>
+		<styleName type="wdth" subtype="150" alt="wide">sanra-pupọ̀</styleName>
+		<styleName type="wdth" subtype="200">tóbi gidigidi</styleName>
+		<styleName type="wdth" subtype="200" alt="extended">fasiwaju gidigidi</styleName>
+		<styleName type="wdth" subtype="200" alt="wide">sanra gidigidi</styleName>
+		<styleName type="wght" subtype="100">tínínrín</styleName>
+		<styleName type="wght" subtype="200">fuyẹ́ púpọ̀</styleName>
+		<styleName type="wght" subtype="200" alt="ultra">fúyẹ́ gidigidi</styleName>
+		<styleName type="wght" subtype="300">fúyẹ́</styleName>
+		<styleName type="wght" subtype="350">fúyẹ́ díẹ̀</styleName>
+		<styleName type="wght" subtype="380">Ìwé</styleName>
+		<styleName type="wght" subtype="400">níwọ́n</styleName>
+		<styleName type="wght" subtype="500">aarin</styleName>
+		<styleName type="wght" subtype="600">gbojú díẹ̀</styleName>
+		<styleName type="wght" subtype="600" alt="demi">boodi die</styleName>
+		<styleName type="wght" subtype="700">gbójú</styleName>
+		<styleName type="wght" subtype="800">boodi nla</styleName>
+		<styleName type="wght" subtype="900">dúdú</styleName>
+		<styleName type="wght" subtype="900" alt="heavy">wúwo</styleName>
+		<styleName type="wght" subtype="950">dúdú-púpọ̀</styleName>
+		<styleName type="wght" subtype="950" alt="ultrablack">dúdú gidigidi</styleName>
+		<styleName type="wght" subtype="950" alt="ultraheavy">wúwo gidigidi</styleName>
+		<featureName type="afrc">ìsirò ila</featureName>
+		<featureName type="cpsp">alafo nla</featureName>
+		<featureName type="dlig">ligasọ̀ ti o fẹ́</featureName>
+		<featureName type="frac">isiro apa kan</featureName>
+		<featureName type="lnum">nonba tito</featureName>
+		<featureName type="onum">nonba tele</featureName>
+		<featureName type="ordn">kika</featureName>
+		<featureName type="pnum">nonba</featureName>
+		<featureName type="smcp">leta kekere</featureName>
+		<featureName type="tnum">nonba ni tebu</featureName>
+		<featureName type="zero">odo silasi</featureName>
+	</typographicNames>
+	<personNames>
+		<nameOrderLocales order="givenFirst">und yo</nameOrderLocales>
+		<nameOrderLocales order="surnameFirst">ko vi yue zh</nameOrderLocales>
+		<initialPattern type="initial">{0}.</initialPattern>
+		<initialPattern type="initialSequence">{0} {1}</initialPattern>
+		<personName order="givenFirst" length="long" usage="referring" formality="formal">
+			<namePattern>{given} {given2} {surname} {suffix}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="referring" formality="informal">
+			<namePattern>{given-informal} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="addressing" formality="formal">
+			<namePattern>{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="monogram" formality="formal">
+			<namePattern>{given-monogram-allCaps}{given2-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="monogram" formality="informal">
+			<namePattern>{given-informal-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="referring" formality="formal">
+			<namePattern>{given} {given2-initial} {surname} {suffix}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="referring" formality="informal">
+			<namePattern>{given-informal} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="addressing" formality="formal">
+			<namePattern>{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="monogram" formality="informal">
+			<namePattern>{given-informal-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="referring" formality="formal">
+			<namePattern>{given-initial} {given2-initial} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="referring" formality="informal">
+			<namePattern>{given-informal} {surname-initial}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="addressing" formality="formal">
+			<namePattern>{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="monogram" formality="informal">
+			<namePattern>{given-informal-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="referring" formality="formal">
+			<namePattern>{surname} {given} {given2} {suffix}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="referring" formality="informal">
+			<namePattern>{surname} {given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="addressing" formality="formal">
+			<namePattern>{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}{given-monogram-allCaps}{given2-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="monogram" formality="informal">
+			<namePattern>{surname-monogram-allCaps}{given-informal-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="referring" formality="formal">
+			<namePattern>{surname} {given} {given2-initial} {suffix}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="referring" formality="informal">
+			<namePattern>{surname} {given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="addressing" formality="formal">
+			<namePattern>{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="monogram" formality="informal">
+			<namePattern>{given-informal-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="referring" formality="formal">
+			<namePattern>{surname} {given-initial} {given2-initial}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="referring" formality="informal">
+			<namePattern>{surname} {given-initial}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="addressing" formality="formal">
+			<namePattern>{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="monogram" formality="informal">
+			<namePattern>{given-informal-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="sorting" length="long" usage="referring" formality="formal">
+			<namePattern>{surname-core}, {given} {given2} {surname-prefix}</namePattern>
+		</personName>
+		<personName order="sorting" length="long" usage="referring" formality="informal">
+			<namePattern>{surname}, {given-informal}</namePattern>
+		</personName>
+		<personName order="sorting" length="medium" usage="referring" formality="formal">
+			<namePattern>{surname-core}, {given} {given2-initial} {surname-prefix}</namePattern>
+		</personName>
+		<personName order="sorting" length="medium" usage="referring" formality="informal">
+			<namePattern>{surname}, {given-informal}</namePattern>
+		</personName>
+		<personName order="sorting" length="short" usage="referring" formality="formal">
+			<namePattern>{surname-core}, {given-initial} {given2-initial} {surname-prefix}</namePattern>
+		</personName>
+		<personName order="sorting" length="short" usage="referring" formality="informal">
+			<namePattern>{surname}, {given-informal}</namePattern>
+		</personName>
+		<sampleName item="givenOnly">
+			<nameField type="given">sibadì</nameField>
+		</sampleName>
+		<sampleName item="givenSurnameOnly">
+			<nameField type="given">irínì</nameField>
+			<nameField type="surname">ádà</nameField>
+		</sampleName>
+		<sampleName item="given12Surname">
+			<nameField type="given">jòhánú</nameField>
+			<nameField type="given2">Hamísì</nameField>
+			<nameField type="surname">wásìn</nameField>
+		</sampleName>
+		<sampleName item="full">
+			<nameField type="prefix">ọ̀jọ̀gbọ́n. omọ́wé</nameField>
+			<nameField type="given">Adá Konelíà</nameField>
+			<nameField type="given-informal">nélì</nameField>
+			<nameField type="given2">Efa Sófíà</nameField>
+			<nameField type="surname-prefix">fanú dẹ́ni</nameField>
+			<nameField type="surname-core">woofù</nameField>
+			<nameField type="surname2">Bekà Símíìtì</nameField>
+			<nameField type="suffix">M.D. Ph.D.</nameField>
+		</sampleName>
+	</personNames>
 </ldml>

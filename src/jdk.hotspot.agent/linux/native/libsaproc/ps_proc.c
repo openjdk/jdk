@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -231,7 +231,7 @@ static bool process_doesnt_exist(pid_t pid) {
   FILE *fp = NULL;
   const char state_string[] = "State:";
 
-  sprintf(fname, "/proc/%d/status", pid);
+  snprintf(fname, sizeof(fname), "/proc/%d/status", pid);
   fp = fopen(fname, "r");
   if (fp == NULL) {
     print_debug("can't open /proc/%d/status file\n", pid);
@@ -350,7 +350,7 @@ static bool read_lib_info(struct ps_prochandle* ph) {
   char buf[PATH_MAX];
   FILE *fp = NULL;
 
-  sprintf(fname, "/proc/%d/maps", ph->pid);
+  snprintf(fname, sizeof(fname), "/proc/%d/maps", ph->pid);
   fp = fopen(fname, "r");
   if (fp == NULL) {
     print_debug("can't open /proc/%d/maps file\n", ph->pid);

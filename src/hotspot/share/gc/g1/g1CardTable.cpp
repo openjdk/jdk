@@ -44,15 +44,13 @@ void G1CardTable::verify_g1_young_region(MemRegion mr) {
 void G1CardTableChangedListener::on_commit(uint start_idx, size_t num_regions, bool zero_filled) {
   // Default value for a clean card on the card table is -1. So we cannot take advantage of the zero_filled parameter.
   MemRegion mr(G1CollectedHeap::heap()->bottom_addr_for_region(start_idx), num_regions * HeapRegion::GrainWords);
-  _card_table->clear(mr);
+  _card_table->clear_MemRegion(mr);
 }
 
 void G1CardTable::initialize(G1RegionToSpaceMapper* mapper) {
   mapper->set_mapping_changed_listener(&_listener);
 
   _byte_map_size = mapper->reserved().byte_size();
-
-  size_t num_cards = cards_required(_whole_heap.word_size());
 
   HeapWord* low_bound  = _whole_heap.start();
   HeapWord* high_bound = _whole_heap.end();

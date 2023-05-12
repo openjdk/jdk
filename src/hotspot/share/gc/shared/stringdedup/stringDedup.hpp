@@ -94,7 +94,7 @@
 // of its Requests objects.
 //
 // For additional information on string deduplication, please see JEP 192,
-// http://openjdk.java.net/jeps/192
+// https://openjdk.org/jeps/192
 
 #include "memory/allocation.hpp"
 #include "memory/allStatic.hpp"

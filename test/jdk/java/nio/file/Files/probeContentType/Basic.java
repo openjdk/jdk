@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4313887 8129632 8129633 8162624 8146215 8162745 8273655 8274171 8287237
+ * @bug 4313887 8129632 8129633 8162624 8146215 8162745 8273655 8274171 8287237 8297609
  * @summary Unit test for probeContentType method
  * @library ../..
  * @build Basic SimpleFileTypeDetector
@@ -187,6 +187,7 @@ public class Basic {
                 new ExType("xls", List.of("application/vnd.ms-excel")),
                 new ExType("xlsx", List.of("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")),
                 new ExType("7z", List.of("application/x-7z-compressed")),
+                new ExType("wasm", List.of("application/wasm")),
         };
         failures += checkContentTypes(exTypes);
 

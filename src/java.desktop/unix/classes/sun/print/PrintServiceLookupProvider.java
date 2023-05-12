@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package sun.print;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Vector;
@@ -475,7 +476,7 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
         if (CUPSPrinter.isCupsRunning()) {
             try {
                 return new IPPPrintService(name,
-                                           new URL("http://"+
+                                           newURL("http://"+
                                                    CUPSPrinter.getServer()+":"+
                                                    CUPSPrinter.getPort()+"/"+
                                                    name));
@@ -687,7 +688,7 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
                                                         psuri, true);
                     } else {
                         defaultPS = new IPPPrintService(defaultPrinter,
-                                            new URL("http://"+
+                                            newURL("http://"+
                                                     CUPSPrinter.getServer()+":"+
                                                     CUPSPrinter.getPort()+"/"+
                                                     defaultPrinter));
@@ -968,5 +969,10 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
                 }
             }
         }
+    }
+
+    @SuppressWarnings("deprecation")
+    private static URL newURL(String spec) throws MalformedURLException {
+        return new URL(spec);
     }
 }

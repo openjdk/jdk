@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -529,10 +529,6 @@ public final class Integer extends Number
         return charPos;
     }
 
-    // Left here for compatibility reasons, see JDK-8143900.
-    static final int [] sizeTable = { 9, 99, 999, 9999, 99999, 999999, 9999999,
-                                      99999999, 999999999, Integer.MAX_VALUE };
-
     /**
      * Returns the string representation size for a given int value.
      *
@@ -951,7 +947,7 @@ public final class Integer extends Number
      * object equal to the value of:
      *
      * <blockquote>
-     *  {@code new Integer(Integer.parseInt(s, radix))}
+     *  {@code Integer.valueOf(Integer.parseInt(s, radix))}
      * </blockquote>
      *
      * @param      s   the string to be parsed.
@@ -979,7 +975,7 @@ public final class Integer extends Number
      * object equal to the value of:
      *
      * <blockquote>
-     *  {@code new Integer(Integer.parseInt(s))}
+     *  {@code Integer.valueOf(Integer.parseInt(s))}
      * </blockquote>
      *
      * @param      s   the string to be parsed.
@@ -1286,14 +1282,14 @@ public final class Integer extends Number
      * equal to the value of:
      *
      * <blockquote>
-     *  {@code getInteger(nm, new Integer(val))}
+     *  {@code getInteger(nm, Integer.valueOf(val))}
      * </blockquote>
      *
      * but in practice it may be implemented in a manner such as:
      *
      * <blockquote><pre>
      * Integer result = getInteger(nm, null);
-     * return (result == null) ? new Integer(val) : result;
+     * return (result == null) ? Integer.valueOf(val) : result;
      * </pre></blockquote>
      *
      * to avoid the unnecessary allocation of an {@code Integer}

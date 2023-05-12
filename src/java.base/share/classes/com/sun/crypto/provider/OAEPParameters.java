@@ -180,7 +180,7 @@ public final class OAEPParameters extends AlgorithmParametersSpi {
                                   " impl not found");
         }
         tmp2 = new DerOutputStream();
-        mdAlgId.derEncode(tmp2);
+        mdAlgId.encode(tmp2);
         tmp.write(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0),
                       tmp2);
 

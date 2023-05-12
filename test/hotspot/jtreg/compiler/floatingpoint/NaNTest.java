@@ -82,9 +82,10 @@ public class NaNTest {
         // native methods that use FPU instructions, and those strip the
         // signaling NaNs.
         if (Platform.isX86()) {
-            int sse = WHITE_BOX.getIntxVMFlag("UseSSE").intValue();
-            expectStableFloats = (sse >= 1);
-            expectStableDoubles = (sse >= 2);
+            int sse = WHITE_BOX.getIntVMFlag("UseSSE").intValue();
+            boolean stubsPresent = WHITE_BOX.getBooleanVMFlag("InlineIntrinsics");
+            expectStableFloats = (sse >= 1) && stubsPresent;
+            expectStableDoubles = (sse >= 2) && stubsPresent;
         }
 
         if (expectStableFloats) {

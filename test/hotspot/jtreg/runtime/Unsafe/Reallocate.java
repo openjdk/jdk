@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,9 @@
  * questions.
  */
 
+// Note: we run the test with MallocLimit for the "other" category set to 100m (oom mode),
+// in order to trigger and observe a fake os::malloc oom. This needs NMT.
+
 /*
  * @test
  * @requires vm.compMode != "Xcomp"
@@ -28,7 +31,7 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:MallocMaxTestWords=100m Reallocate
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:NativeMemoryTracking=summary -XX:MallocLimit=other:100m:oom Reallocate
  */
 
 import jdk.internal.misc.Unsafe;
@@ -59,7 +62,7 @@ public class Reallocate {
 
         // Make sure we can throw an OOME when we fail to reallocate due to OOM
         try {
-            unsafe.reallocateMemory(address, 100 * 1024 * 1024 * 8);
+            unsafe.reallocateMemory(address, 100 * 1024 * 1024);
         } catch (OutOfMemoryError e) {
             // Expected
             return;

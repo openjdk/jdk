@@ -162,8 +162,8 @@
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  *
- * @see <a href="https://openjdk.java.net/groups/compiler/javadoc-architecture.html">JavaDoc Architecture</a>
- * @see <a href="https://openjdk.java.net/groups/compiler/using-new-doclet.html">Using the new Doclet API</a>
- * @see <a href="https://openjdk.java.net/groups/compiler/processing-code.html">Processing Code</a>
+ * @see <a href="https://openjdk.org/groups/compiler/javadoc-architecture.html">JavaDoc Architecture</a>
+ * @see <a href="https://openjdk.org/groups/compiler/using-new-doclet.html">Using the new Doclet API</a>
+ * @see <a href="https://openjdk.org/groups/compiler/processing-code.html">Processing Code</a>
  */
 package jdk.javadoc.internal;

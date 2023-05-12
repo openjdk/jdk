@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -318,7 +318,7 @@ public abstract class AbstractPreferences extends Preferences {
      *         removed with the {@link #removeNode()} method.
      * @throws IllegalArgumentException if key contains the null control
      *         character, code point U+0000.
-     * @throws NullPointerException {@inheritDoc}.
+     * @throws NullPointerException {@inheritDoc}
      */
     public void remove(String key) {
         Objects.requireNonNull(key, "Specified key cannot be null");

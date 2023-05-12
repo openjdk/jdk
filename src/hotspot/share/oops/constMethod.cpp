@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,8 +53,8 @@ ConstMethod::ConstMethod(int byte_code_size,
 
   NoSafepointVerifier no_safepoint;
   init_fingerprint();
-  set_constants(NULL);
-  set_stackmap_data(NULL);
+  set_constants(nullptr);
+  set_stackmap_data(nullptr);
   set_code_size(byte_code_size);
   set_constMethod_size(size);
   set_inlined_tables_length(sizes); // sets _flags
@@ -62,7 +62,7 @@ ConstMethod::ConstMethod(int byte_code_size,
   assert(this->size() == size, "wrong size for object");
   set_name_index(0);
   set_signature_index(0);
-  set_constants(NULL);
+  set_constants(nullptr);
   set_max_stack(0);
   set_max_locals(0);
   set_method_idnum(0);
@@ -79,10 +79,10 @@ void ConstMethod::copy_stackmap_data(ClassLoaderData* loader_data,
 
 // Deallocate metadata fields associated with ConstMethod*
 void ConstMethod::deallocate_contents(ClassLoaderData* loader_data) {
-  if (stackmap_data() != NULL) {
+  if (stackmap_data() != nullptr) {
     MetadataFactory::free_array<u1>(loader_data, stackmap_data());
   }
-  set_stackmap_data(NULL);
+  set_stackmap_data(nullptr);
 
   // deallocate annotation arrays
   if (has_method_annotations())
@@ -432,7 +432,7 @@ void ConstMethod::print_on(outputStream* st) const {
   st->print_cr("%s", internal_name());
   Method* m = method();
   st->print(" - method:       " PTR_FORMAT " ", p2i(m));
-  if (m != NULL) {
+  if (m != nullptr) {
     m->print_value_on(st);
   }
   st->cr();
@@ -448,10 +448,10 @@ void ConstMethod::print_on(outputStream* st) const {
 void ConstMethod::print_value_on(outputStream* st) const {
   st->print(" const part of method " );
   Method* m = method();
-  if (m != NULL) {
+  if (m != nullptr) {
     m->print_value_on(st);
   } else {
-    st->print("NULL");
+    st->print("null");
   }
 }
 
@@ -460,7 +460,7 @@ void ConstMethod::print_value_on(outputStream* st) const {
 void ConstMethod::verify_on(outputStream* st) {
   // Verification can occur during oop construction before the method or
   // other fields have been initialized.
-  guarantee(method() != NULL && method()->is_method(), "should be method");
+  guarantee(method() != nullptr && method()->is_method(), "should be method");
 
   address m_end = (address)((intptr_t) this + size());
   address compressed_table_start = code_end();

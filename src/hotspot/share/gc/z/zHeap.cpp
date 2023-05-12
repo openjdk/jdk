@@ -22,6 +22,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/classLoaderDataGraph.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/locationPrinter.hpp"
 #include "gc/shared/tlab_globals.hpp"
@@ -221,6 +222,17 @@ void ZHeap::flip_to_remapped() {
 void ZHeap::mark_start() {
   assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
 
+  // Verification
+  ClassLoaderDataGraph::verify_claimed_marks_cleared(ClassLoaderData::_claim_strong);
+
+  if (ZHeap::heap()->has_alloc_stalled()) {
+    // If there are stalled allocations, ensure that regardless of the
+    // cause of the GC, we have to clear soft references, as we are just
+    // about to increment the sequence number, and all previous allocations
+    // will throw if not presented with enough memory.
+    ZHeap::heap()->set_soft_reference_policy(true);
+  }
+
   // Flip address view
   flip_to_marked();
 
@@ -335,6 +347,10 @@ void ZHeap::process_non_strong_references() {
   // during the resurrection block window, since such referents
   // are only Finalizable marked.
   _reference_processor.enqueue_references();
+
+  // Clear old markings claim bits.
+  // Note: Clearing _claim_strong also clears _claim_finalizable.
+  ClassLoaderDataGraph::clear_claimed_marks(ClassLoaderData::_claim_strong);
 }
 
 void ZHeap::free_empty_pages(ZRelocationSetSelector* selector, int bulk) {
@@ -420,9 +436,6 @@ void ZHeap::relocate_start() {
 
   // Update statistics
   ZStatHeap::set_at_relocate_start(_page_allocator.stats());
-
-  // Notify JVMTI
-  JvmtiTagMap::set_needs_rehashing();
 }
 
 void ZHeap::relocate() {

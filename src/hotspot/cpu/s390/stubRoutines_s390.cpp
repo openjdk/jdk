@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2017 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -37,6 +37,8 @@ address StubRoutines::zarch::_partial_subtype_check = NULL;
 
 // Comapct string intrinsics: Translate table for string inflate intrinsic. Used by trot instruction.
 address StubRoutines::zarch::_trot_table_addr = NULL;
+
+address StubRoutines::zarch::_nmethod_entry_barrier = NULL;
 
 int StubRoutines::zarch::_atomic_memory_operation_lock = StubRoutines::zarch::unlocked;
 

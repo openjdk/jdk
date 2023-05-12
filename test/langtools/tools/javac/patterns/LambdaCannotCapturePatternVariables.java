@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,7 @@
  * @bug 8267610 8269738
  * @summary LambdaToMethod cannot capture pattern variables. So the TransPatterns should
  *          transform the pattern variables and symbols to normal variables and symbols.
- * @compile --enable-preview -source ${jdk.version} LambdaCannotCapturePatternVariables.java
- * @run main/othervm --enable-preview LambdaCannotCapturePatternVariables
+ * @enablePreview
  */
 
 import java.util.function.Supplier;

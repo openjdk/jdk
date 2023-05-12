@@ -89,6 +89,12 @@ public class DefaultButtonTest {
                 buttonPressed = false;
                 String lafName = laf.getClassName();
                 System.out.println("Testing L&F: " + lafName);
+
+                // Ignore obsolete/deprecated Motif
+                if (lafName.contains("Motif")) {
+                    System.out.println("Skipped Motif");
+                    continue;
+                }
                 SwingUtilities.invokeAndWait(() -> {
                     setLookAndFeel(lafName);
                     createUI();

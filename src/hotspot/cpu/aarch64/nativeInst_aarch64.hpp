@@ -29,6 +29,11 @@
 #include "asm/assembler.hpp"
 #include "runtime/icache.hpp"
 #include "runtime/os.hpp"
+#include "runtime/os.hpp"
+#if INCLUDE_JVMCI
+#include "jvmci/jvmciExceptions.hpp"
+#endif
+
 
 // We have interfaces for the following instructions:
 // - NativeInstruction
@@ -251,7 +256,9 @@ public:
   void set_destination_mt_safe(address dest, bool assert_lock = true);
 
   address get_trampoline();
-  address trampoline_jump(CodeBuffer &cbuf, address dest);
+#if INCLUDE_JVMCI
+  void trampoline_jump(CodeBuffer &cbuf, address dest, JVMCI_TRAPS);
+#endif
 };
 
 inline NativeCall* nativeCall_at(address address) {

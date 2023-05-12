@@ -286,7 +286,7 @@ public class WindowWaiter extends Waiter<Window, Void> implements Timeoutable {
     }
 
     /**
-     * Wait till the count of windows which meet the the search criteria becomes
+     * Wait till the count of windows which meet the search criteria becomes
      * equal to count.
      *
      * @param ch a component chooser used to define and apply the search
@@ -300,7 +300,7 @@ public class WindowWaiter extends Waiter<Window, Void> implements Timeoutable {
     }
 
     /**
-     * Wait till the count of windows which meet the the search criteria becomes
+     * Wait till the count of windows which meet the search criteria becomes
      * equal to count.
      *
      * @param owner The owner window of all the windows to be checked

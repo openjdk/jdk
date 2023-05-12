@@ -29,6 +29,7 @@
 #include "asm/macroAssembler.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
+
 #ifdef COMPILER1
 class LIR_Assembler;
 class ShenandoahPreBarrierStub;

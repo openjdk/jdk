@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2018, 2022, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,11 +50,11 @@ void ShenandoahLoadReferenceBarrierStub::emit_code(LIR_Assembler* ce) {
 }
 
 ShenandoahBarrierSetC1::ShenandoahBarrierSetC1() :
-  _pre_barrier_c1_runtime_code_blob(NULL),
-  _load_reference_barrier_strong_rt_code_blob(NULL),
-  _load_reference_barrier_strong_native_rt_code_blob(NULL),
-  _load_reference_barrier_weak_rt_code_blob(NULL),
-  _load_reference_barrier_phantom_rt_code_blob(NULL) {}
+  _pre_barrier_c1_runtime_code_blob(nullptr),
+  _load_reference_barrier_strong_rt_code_blob(nullptr),
+  _load_reference_barrier_strong_native_rt_code_blob(nullptr),
+  _load_reference_barrier_weak_rt_code_blob(nullptr),
+  _load_reference_barrier_phantom_rt_code_blob(nullptr) {}
 
 void ShenandoahBarrierSetC1::pre_barrier(LIRGenerator* gen, CodeEmitInfo* info, DecoratorSet decorators, LIR_Opr addr_opr, LIR_Opr pre_val) {
   // First we test whether marking is in progress.
@@ -97,7 +97,7 @@ void ShenandoahBarrierSetC1::pre_barrier(LIRGenerator* gen, CodeEmitInfo* info, 
       assert(addr_opr->is_register(), "must be");
       addr_opr = LIR_OprFact::address(new LIR_Address(addr_opr, T_OBJECT));
     }
-    slow = new ShenandoahPreBarrierStub(addr_opr, pre_val, pre_val_patch_code, info ? new CodeEmitInfo(info) : NULL);
+    slow = new ShenandoahPreBarrierStub(addr_opr, pre_val, pre_val_patch_code, info ? new CodeEmitInfo(info) : nullptr);
   } else {
     assert(addr_opr == LIR_OprFact::illegalOpr, "sanity");
     assert(pre_val->is_register(), "must be");
@@ -146,7 +146,7 @@ LIR_Opr ShenandoahBarrierSetC1::load_reference_barrier_impl(LIRGenerator* gen, L
   LIR_Opr mask_reg = gen->new_register(T_INT);
   __ move(mask, mask_reg);
 
-  if (TwoOperandLIRForm) {
+  if (two_operand_lir_form) {
     __ logical_and(flag_val, mask_reg, flag_val);
   } else {
     LIR_Opr masked_flag = gen->new_register(T_INT);
@@ -246,7 +246,7 @@ class C1ShenandoahPreBarrierCodeGenClosure : public StubAssemblerCodeGenClosure 
   virtual OopMapSet* generate_code(StubAssembler* sasm) {
     ShenandoahBarrierSetAssembler* bs = (ShenandoahBarrierSetAssembler*)BarrierSet::barrier_set()->barrier_set_assembler();
     bs->generate_c1_pre_barrier_runtime_stub(sasm);
-    return NULL;
+    return nullptr;
   }
 };
 
@@ -260,7 +260,7 @@ public:
   virtual OopMapSet* generate_code(StubAssembler* sasm) {
     ShenandoahBarrierSetAssembler* bs = (ShenandoahBarrierSetAssembler*)BarrierSet::barrier_set()->barrier_set_assembler();
     bs->generate_c1_load_reference_barrier_runtime_stub(sasm, _decorators);
-    return NULL;
+    return nullptr;
   }
 };
 

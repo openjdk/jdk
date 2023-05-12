@@ -171,6 +171,62 @@ ifneq ($(READ_WRITE_VALUE), $(READ_WRITE_RESULT))
   $(error Expected: >$(READ_WRITE_VALUE)< - Result: >$(READ_WRITE_RESULT)<)
 endif
 
+TEST_STRING_1 := 1234
+TEST_STRING_2 := 1234$(NEWLINE)
+TEST_STRING_3 := 1234$(NEWLINE)$(NEWLINE)
+
+# Writing a string ending in newline should not add a newline, but if it does
+# not, a newline should be added. We check this by verifying that the size of the
+# file is 5 characters for both test strings.
+TEST_FILE_1 := $(OUTPUT_DIR)/write-file-1
+TEST_FILE_2 := $(OUTPUT_DIR)/write-file-2
+TEST_FILE_3 := $(OUTPUT_DIR)/write-file-3
+
+$(call WriteFile, $(TEST_STRING_1), $(TEST_FILE_1))
+$(call WriteFile, $(TEST_STRING_2), $(TEST_FILE_2))
+$(call WriteFile, $(TEST_STRING_3), $(TEST_FILE_3))
+
+TEST_FILE_1_SIZE := $(strip $(shell $(WC) -c < $(TEST_FILE_1)))
+TEST_FILE_2_SIZE := $(strip $(shell $(WC) -c < $(TEST_FILE_2)))
+TEST_FILE_3_SIZE := $(strip $(shell $(WC) -c < $(TEST_FILE_3)))
+
+ifneq ($(TEST_FILE_1_SIZE), 5)
+  $(error Expected file size 5 for WriteFile 1, got $(TEST_FILE_1_SIZE))
+endif
+ifneq ($(TEST_FILE_2_SIZE), 5)
+  $(error Expected file size 5 for WriteFile 2, got $(TEST_FILE_2_SIZE))
+endif
+ifneq ($(TEST_FILE_3_SIZE), 5)
+  $(error Expected file size 5 for WriteFile 3, got $(TEST_FILE_3_SIZE))
+endif
+
+# Also test append (assumes WriteFile works as expected)
+$(call WriteFile, $(TEST_STRING_1), $(TEST_FILE_1))
+$(call AppendFile, $(TEST_STRING_1), $(TEST_FILE_1))
+$(call AppendFile, $(TEST_STRING_1), $(TEST_FILE_1))
+
+$(call WriteFile, $(TEST_STRING_2), $(TEST_FILE_2))
+$(call AppendFile, $(TEST_STRING_2), $(TEST_FILE_2))
+$(call AppendFile, $(TEST_STRING_2), $(TEST_FILE_2))
+
+$(call WriteFile, $(TEST_STRING_3), $(TEST_FILE_3))
+$(call AppendFile, $(TEST_STRING_3), $(TEST_FILE_3))
+$(call AppendFile, $(TEST_STRING_3), $(TEST_FILE_3))
+
+TEST_FILE_1_SIZE := $(strip $(shell $(WC) -c < $(TEST_FILE_1)))
+TEST_FILE_2_SIZE := $(strip $(shell $(WC) -c < $(TEST_FILE_2)))
+TEST_FILE_3_SIZE := $(strip $(shell $(WC) -c < $(TEST_FILE_3)))
+
+ifneq ($(TEST_FILE_1_SIZE), 15)
+  $(error Expected file size 15 for AppendFile 1, got $(TEST_FILE_1_SIZE))
+endif
+ifneq ($(TEST_FILE_2_SIZE), 15)
+  $(error Expected file size 15 for AppendFile 2, got $(TEST_FILE_2_SIZE))
+endif
+ifneq ($(TEST_FILE_3_SIZE), 15)
+  $(error Expected file size 15 for AppendFile 3, got $(TEST_FILE_3_SIZE))
+endif
+
 ################################################################################
 # Test creating dependencies on make variables
 

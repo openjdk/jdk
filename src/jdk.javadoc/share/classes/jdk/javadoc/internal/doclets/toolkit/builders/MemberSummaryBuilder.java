@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import javax.lang.model.element.Element;
@@ -50,6 +51,7 @@ import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.MemberSummaryWriter;
 import jdk.javadoc.internal.doclets.toolkit.WriterFactory;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFinder;
+import jdk.javadoc.internal.doclets.toolkit.util.DocFinder.Result;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
 
@@ -260,19 +262,18 @@ public abstract class MemberSummaryBuilder extends AbstractMemberBuilder {
                 if (property != null && member instanceof ExecutableElement ee) {
                     configuration.cmtUtils.updatePropertyMethodComment(ee, property);
                 }
-                List<? extends DocTree> firstSentenceTags = utils.getFirstSentenceTrees(member);
-                if (utils.isMethod(member) && firstSentenceTags.isEmpty()) {
-                    //Inherit comments from overridden or implemented method if
-                    //necessary.
-                    DocFinder.Output inheritedDoc =
-                            DocFinder.search(configuration,
-                                    new DocFinder.Input(utils, member));
-                    if (inheritedDoc.holder != null
-                            && !utils.getFirstSentenceTrees(inheritedDoc.holder).isEmpty()) {
-                        firstSentenceTags = utils.getFirstSentenceTrees(inheritedDoc.holder);
-                    }
+                if (utils.isMethod(member)) {
+                    var docFinder = utils.docFinder();
+                    Optional<List<? extends DocTree>> r = docFinder.search((ExecutableElement) member, (m -> {
+                        var firstSentenceTrees = utils.getFirstSentenceTrees(m);
+                        Optional<List<? extends DocTree>> optional = firstSentenceTrees.isEmpty() ? Optional.empty() : Optional.of(firstSentenceTrees);
+                        return Result.fromOptional(optional);
+                    })).toOptional();
+                    // The fact that we use `member` for possibly unrelated tags is suspicious
+                    writer.addMemberSummary(typeElement, member, r.orElse(List.of()));
+                } else {
+                    writer.addMemberSummary(typeElement, member, utils.getFirstSentenceTrees(member));
                 }
-                writer.addMemberSummary(typeElement, member, firstSentenceTags);
             }
             summaryTreeList.add(writer.getSummaryTable(typeElement));
         }
@@ -294,7 +295,7 @@ public abstract class MemberSummaryBuilder extends AbstractMemberBuilder {
             if (!(utils.isPublic(inheritedClass) || utils.isLinkable(inheritedClass))) {
                 continue;
             }
-            if (inheritedClass == typeElement) {
+            if (Objects.equals(inheritedClass, typeElement)) {
                 continue;
             }
             if (utils.hasHiddenTag(inheritedClass)) {
@@ -302,7 +303,7 @@ public abstract class MemberSummaryBuilder extends AbstractMemberBuilder {
             }
 
             List<? extends Element> members = inheritedMembersFromMap.stream()
-                    .filter(e -> utils.getEnclosingTypeElement(e) == inheritedClass)
+                    .filter(e -> Objects.equals(utils.getEnclosingTypeElement(e), inheritedClass))
                     .toList();
 
             if (!members.isEmpty()) {
@@ -317,13 +318,15 @@ public abstract class MemberSummaryBuilder extends AbstractMemberBuilder {
         }
     }
 
-    private void addSummaryFootNote(TypeElement inheritedClass, SortedSet<Element> inheritedMembers,
+    private void addSummaryFootNote(TypeElement inheritedClass, Iterable<Element> inheritedMembers,
                                     Content links, MemberSummaryWriter writer) {
-        for (Element member : inheritedMembers) {
+        boolean isFirst = true;
+        for (var iterator = inheritedMembers.iterator(); iterator.hasNext(); ) {
+            var member = iterator.next();
             TypeElement t = utils.isUndocumentedEnclosure(inheritedClass)
                     ? typeElement : inheritedClass;
-            writer.addInheritedMemberSummary(t, member, inheritedMembers.first() == member,
-                    inheritedMembers.last() == member, links);
+            writer.addInheritedMemberSummary(t, member, isFirst, !iterator.hasNext(), links);
+            isFirst = false;
         }
     }
 

@@ -162,7 +162,6 @@ JVM_IsRecord
 JVM_IsSameClassPackage
 JVM_IsSharingEnabled
 JVM_IsSupportedJNIVersion
-JVM_IsThreadAlive
 JVM_IsVMGeneratedMethodIx
 JVM_LatestUserDefinedLoader
 JVM_LoadZipLibrary
@@ -194,8 +193,6 @@ JVM_RegisterLambdaProxyClassForArchiving
 JVM_RegisterSignal
 JVM_ReleaseUTF
 JVM_ReportFinalizationComplete
-JVM_ExtentLocalCache
-JVM_SetExtentLocalCache
 JVM_SetArrayElement
 JVM_SetClassSigners
 JVM_SetNativeThreadName
@@ -220,9 +217,13 @@ JVM_DefineModule
 JVM_SetBootLoaderUnnamedModule
 
 # Virtual thread notifications for JVMTI
-JVM_VirtualThreadMountBegin
-JVM_VirtualThreadMountEnd
-JVM_VirtualThreadUnmountBegin
-JVM_VirtualThreadUnmountEnd
+JVM_VirtualThreadMount
+JVM_VirtualThreadUnmount
 JVM_VirtualThreadHideFrames
+
+# Scoped values
+JVM_EnsureMaterializedForStackWalk_func
+JVM_FindScopedValueBindings
+JVM_ScopedValueCache
+JVM_SetScopedValueCache
 #

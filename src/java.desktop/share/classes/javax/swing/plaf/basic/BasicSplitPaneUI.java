@@ -1378,7 +1378,7 @@ public class BasicSplitPaneUI extends SplitPaneUI
         private int             lastSplitPaneSize;
         /** True if resetToPreferredSizes has been invoked. */
         private boolean         doReset;
-        /** Axis, 0 for horizontal, or 1 for veritcal. */
+        /** Axis, 0 for horizontal, or 1 for vertical. */
         private int             axis;
 
 

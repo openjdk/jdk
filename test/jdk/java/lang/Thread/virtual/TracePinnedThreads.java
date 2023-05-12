@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,8 @@
  * @requires vm.continuations
  * @enablePreview
  * @library /test/lib
- * @run testng/othervm -Djdk.tracePinnedThreads=full TracePinnedThreads
- * @run testng/othervm -Djdk.tracePinnedThreads=short TracePinnedThreads
+ * @run junit/othervm -Djdk.tracePinnedThreads=full TracePinnedThreads
+ * @run junit/othervm -Djdk.tracePinnedThreads=short TracePinnedThreads
  */
 
 import java.io.ByteArrayOutputStream;
@@ -38,10 +38,10 @@ import java.time.Duration;
 import java.util.concurrent.locks.LockSupport;
 
 import jdk.test.lib.thread.VThreadRunner;
-import org.testng.annotations.Test;
-import static org.testng.Assert.*;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class TracePinnedThreads {
+class TracePinnedThreads {
     static final Object lock = new Object();
 
     /**
@@ -62,7 +62,7 @@ public class TracePinnedThreads {
      * Test parking inside synchronized block.
      */
     @Test
-    public void testPinnedCausedBySynchronizedBlock() throws Exception {
+    void testPinnedCausedBySynchronizedBlock() throws Exception {
         String output = run(() -> {
             synchronized (lock) {
                 park();
@@ -76,7 +76,7 @@ public class TracePinnedThreads {
      * Test parking with native frame on stack.
      */
     @Test
-    public void testPinnedCausedByNativeMethod() throws Exception {
+    void testPinnedCausedByNativeMethod() throws Exception {
         System.loadLibrary("TracePinnedThreads");
         String output = run(() -> invokePark());
         assertContains(output, "(Native Method)");

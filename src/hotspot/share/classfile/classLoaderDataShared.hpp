@@ -1,5 +1,5 @@
  /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,6 @@ public:
   static void allocate_archived_tables();
   static void iterate_symbols(MetaspaceClosure* closure);
   static void init_archived_tables();
-  static void init_archived_oops();
   static void serialize(SerializeClosure* f);
   static void clear_archived_oops();
   static oop  restore_archived_oops_for_null_class_loader_data();

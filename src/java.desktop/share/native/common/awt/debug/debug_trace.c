@@ -216,7 +216,7 @@ void DTrace_VPrintImpl(const char * fmt, va_list arglist) {
     DASSERT(fmt != NULL);
 
     /* format the trace message */
-    vsprintf(DTraceBuffer, fmt, arglist);
+    vsnprintf(DTraceBuffer, sizeof(DTraceBuffer), fmt, arglist);
     /* not a real great overflow check (memory would already be hammered) but better than nothing */
     DASSERT(strlen(DTraceBuffer) < MAX_TRACE_BUFFER);
     /* output the trace message */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,7 +108,7 @@ int java_lang_String::length(oop java_string, typeArrayOop value) {
   assert(is_instance(java_string), "must be java_string");
   assert(value_equals(value, java_lang_String::value(java_string)),
          "value must be equal to java_lang_String::value(java_string)");
-  if (value == NULL) {
+  if (value == nullptr) {
     return 0;
   }
   int arr_length = value->length();
@@ -127,7 +127,7 @@ int java_lang_String::length(oop java_string) {
 }
 
 bool java_lang_String::is_instance(oop obj) {
-  return obj != NULL && obj->klass() == vmClasses::String_klass();
+  return obj != nullptr && obj->klass() == vmClasses::String_klass();
 }
 
 // Accessors
@@ -152,6 +152,10 @@ oop java_lang_ref_Reference::unknown_referent_no_keepalive(oop ref) {
 }
 
 void java_lang_ref_Reference::clear_referent(oop ref) {
+  HeapAccess<ON_UNKNOWN_OOP_REF | AS_NO_KEEPALIVE>::oop_store_at(ref, _referent_offset, nullptr);
+}
+
+void java_lang_ref_Reference::clear_referent_raw(oop ref) {
   ref->obj_field_put_raw(_referent_offset, nullptr);
 }
 
@@ -244,7 +248,7 @@ inline void java_lang_invoke_CallSite::set_target(oop site, oop target) {
 }
 
 inline bool java_lang_invoke_CallSite::is_instance(oop obj) {
-  return obj != NULL && is_subclass(obj->klass());
+  return obj != nullptr && is_subclass(obj->klass());
 }
 
 inline jboolean java_lang_invoke_ConstantCallSite::is_frozen(oop site) {
@@ -252,50 +256,50 @@ inline jboolean java_lang_invoke_ConstantCallSite::is_frozen(oop site) {
 }
 
 inline bool java_lang_invoke_ConstantCallSite::is_instance(oop obj) {
-  return obj != NULL && is_subclass(obj->klass());
+  return obj != nullptr && is_subclass(obj->klass());
 }
 
 inline bool java_lang_invoke_MethodHandleNatives_CallSiteContext::is_instance(oop obj) {
-  return obj != NULL && is_subclass(obj->klass());
+  return obj != nullptr && is_subclass(obj->klass());
 }
 
 inline bool java_lang_invoke_MemberName::is_instance(oop obj) {
-  return obj != NULL && obj->klass() == vmClasses::MemberName_klass();
+  return obj != nullptr && obj->klass() == vmClasses::MemberName_klass();
 }
 
 inline bool java_lang_invoke_ResolvedMethodName::is_instance(oop obj) {
-  return obj != NULL && obj->klass() == vmClasses::ResolvedMethodName_klass();
+  return obj != nullptr && obj->klass() == vmClasses::ResolvedMethodName_klass();
 }
 
 inline bool java_lang_invoke_MethodType::is_instance(oop obj) {
-  return obj != NULL && obj->klass() == vmClasses::MethodType_klass();
+  return obj != nullptr && obj->klass() == vmClasses::MethodType_klass();
 }
 
 inline bool java_lang_invoke_MethodHandle::is_instance(oop obj) {
-  return obj != NULL && is_subclass(obj->klass());
+  return obj != nullptr && is_subclass(obj->klass());
 }
 
 inline bool java_lang_Class::is_instance(oop obj) {
-  return obj != NULL && obj->klass() == vmClasses::Class_klass();
+  return obj != nullptr && obj->klass() == vmClasses::Class_klass();
 }
 
 inline Klass* java_lang_Class::as_Klass(oop java_class) {
   //%note memory_2
   assert(java_lang_Class::is_instance(java_class), "must be a Class object");
   Klass* k = ((Klass*)java_class->metadata_field(_klass_offset));
-  assert(k == NULL || k->is_klass(), "type check");
+  assert(k == nullptr || k->is_klass(), "type check");
   return k;
 }
 
 inline bool java_lang_Class::is_primitive(oop java_class) {
   // should assert:
   //assert(java_lang_Class::is_instance(java_class), "must be a Class object");
-  bool is_primitive = (java_class->metadata_field(_klass_offset) == NULL);
+  bool is_primitive = (java_class->metadata_field(_klass_offset) == nullptr);
 
 #ifdef ASSERT
   if (is_primitive) {
     Klass* k = ((Klass*)java_class->metadata_field(_array_klass_offset));
-    assert(k == NULL || is_java_primitive(ArrayKlass::cast(k)->element_type()),
+    assert(k == nullptr || is_java_primitive(ArrayKlass::cast(k)->element_type()),
         "Should be either the T_VOID primitive or a java primitive");
   }
 #endif
@@ -311,11 +315,11 @@ inline size_t java_lang_Class::oop_size(oop java_class) {
 }
 
 inline bool java_lang_invoke_DirectMethodHandle::is_instance(oop obj) {
-  return obj != NULL && is_subclass(obj->klass());
+  return obj != nullptr && is_subclass(obj->klass());
 }
 
 inline bool java_lang_Module::is_instance(oop obj) {
-  return obj != NULL && obj->klass() == vmClasses::Module_klass();
+  return obj != nullptr && obj->klass() == vmClasses::Module_klass();
 }
 
 inline int Backtrace::merge_bci_and_version(int bci, int version) {
@@ -369,7 +373,7 @@ inline Symbol* Backtrace::get_source_file_name(InstanceKlass* holder, int versio
   // the source_file_name_index for any older constant pool version
   // to be unstable so we shouldn't try to use it.
   if (holder->constants()->version() != version) {
-    return NULL;
+    return nullptr;
   } else {
     return holder->source_file_name();
   }

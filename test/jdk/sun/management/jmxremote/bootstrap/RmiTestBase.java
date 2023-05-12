@@ -26,6 +26,7 @@
  * */
 
 import jdk.test.lib.Platform;
+import jdk.test.lib.Utils;
 
 import java.io.File;
 import java.io.FilenameFilter;
@@ -145,54 +146,16 @@ public class RmiTestBase {
     }
 
     /**
-     * Grant file access.
-     *
-     * @param file   file to grant access
-     * @param access user access or full access
-     * @throws IOException if error occurs
-     */
-    static void grantAccess(Path file, AccessControl access) throws IOException {
-        Set<String> attr = file.getFileSystem().supportedFileAttributeViews();
-        if (attr.contains("posix")) {
-            String perms = access == AccessControl.OWNER ? "rw-------" : "rwxrwxrwx";
-            Files.setPosixFilePermissions(file, PosixFilePermissions.fromString(perms));
-        } else if (attr.contains("acl")) {
-            AclFileAttributeView view = Files.getFileAttributeView(file, AclFileAttributeView.class);
-            List<AclEntry> acl = new ArrayList<>();
-            for (AclEntry thisEntry : view.getAcl()) {
-                if (access == AccessControl.OWNER) {
-                    if (thisEntry.principal().getName().equals(view.getOwner().getName())) {
-                        acl.add(Utils.allowAccess(thisEntry));
-                    } else if (thisEntry.type() == AclEntryType.ALLOW) {
-                        acl.add(Utils.revokeAccess(thisEntry));
-                    } else {
-                        acl.add(thisEntry);
-                    }
-                } else {
-                    if (!thisEntry.principal().getName().contains("NULL SID")
-                            && thisEntry.type() != AclEntryType.ALLOW) {
-                        acl.add(Utils.allowAccess(thisEntry));
-                    } else {
-                        acl.add(thisEntry);
-                    }
-                }
-            }
-            view.setAcl(acl);
-        } else {
-            throw new RuntimeException("Unsupported file attributes: " + attr);
-        }
-    }
-
-    /**
      * Grant files' access.
      *
      * @param files  files to grant access
      * @param access user access or full access
      * @throws IOException if error occurs
      */
-    static void grantFilesAccess(List<Path> files, AccessControl access) throws IOException {
+    static void grantFilesAccess(List<Path> files, AccessControl access)
+            throws IOException {
         for (Path thisFile : files) {
-            grantAccess(thisFile, access);
+            Utils.grantFileAccess(thisFile, access == AccessControl.OWNER);
         }
     }
 
@@ -209,7 +172,7 @@ public class RmiTestBase {
         Utils.copyFiles(files, sslTarget, StandardCopyOption.REPLACE_EXISTING);
 
         for (Path file : files) {
-            grantAccess(sslTarget.resolve(file.getFileName()), AccessControl.EVERYONE);
+            Utils.fullAccess(sslTarget.resolve(file.getFileName()));
         }
     }
 

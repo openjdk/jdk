@@ -6,12 +6,14 @@
 
 
 namespace OT {
+
+struct glyf_accelerator_t;
+
 namespace glyf_impl {
 
 
 struct SubsetGlyph
 {
-  hb_codepoint_t new_gid;
   hb_codepoint_t old_gid;
   Glyph source_glyph;
   hb_bytes_t dest_start;  /* region of source_glyph to copy first */
@@ -19,14 +21,14 @@ struct SubsetGlyph
 
   bool serialize (hb_serialize_context_t *c,
                   bool use_short_loca,
-                  const hb_subset_plan_t *plan) const
+                  const hb_subset_plan_t *plan)
   {
     TRACE_SERIALIZE (this);
 
     hb_bytes_t dest_glyph = dest_start.copy (c);
     dest_glyph = hb_bytes_t (&dest_glyph, dest_glyph.length + dest_end.copy (c).length);
     unsigned int pad_length = use_short_loca ? padding () : 0;
-    DEBUG_MSG (SUBSET, nullptr, "serialize %d byte glyph, width %d pad %d", dest_glyph.length, dest_glyph.length + pad_length, pad_length);
+    DEBUG_MSG (SUBSET, nullptr, "serialize %u byte glyph, width %u pad %u", dest_glyph.length, dest_glyph.length + pad_length, pad_length);
 
     HBUINT8 pad;
     pad = 0;
@@ -42,8 +44,8 @@ struct SubsetGlyph
     for (auto &_ : Glyph (dest_glyph).get_composite_iterator ())
     {
       hb_codepoint_t new_gid;
-      if (plan->new_gid_for_old_gid (_.glyphIndex, &new_gid))
-        const_cast<CompositeGlyphRecord &> (_).glyphIndex = new_gid;
+      if (plan->new_gid_for_old_gid (_.get_gid(), &new_gid))
+        const_cast<CompositeGlyphRecord &> (_).set_gid (new_gid);
     }
 
     if (plan->flags & HB_SUBSET_FLAGS_NO_HINTING)
@@ -53,6 +55,17 @@ struct SubsetGlyph
       Glyph (dest_glyph).set_overlaps_flag ();
 
     return_trace (true);
+  }
+
+  bool compile_bytes_with_deltas (const hb_subset_plan_t *plan,
+                                  hb_font_t *font,
+                                  const glyf_accelerator_t &glyf)
+  { return source_glyph.compile_bytes_with_deltas (plan, font, glyf, dest_start, dest_end); }
+
+  void free_compiled_bytes ()
+  {
+    dest_start.fini ();
+    dest_end.fini ();
   }
 
   void drop_hints_bytes ()

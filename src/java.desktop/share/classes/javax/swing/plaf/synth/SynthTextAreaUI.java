@@ -167,7 +167,7 @@ public class SynthTextAreaUI extends BasicTextAreaUI implements SynthUI {
      */
     @Override
     protected void paintBackground(Graphics g) {
-        // Overriden to do nothing, all our painting is done from update/paint.
+        // Overridden to do nothing, all our painting is done from update/paint.
     }
 
     /**

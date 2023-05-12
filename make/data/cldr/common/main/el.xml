@@ -37,6 +37,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="am">Αμχαρικά</language>
 			<language type="an">Αραγονικά</language>
 			<language type="ang">Παλαιά Αγγλικά</language>
+			<language type="ann">Ομπόλο</language>
 			<language type="anp">Ανγκικά</language>
 			<language type="ar">Αραβικά</language>
 			<language type="ar_001">Σύγχρονα Τυπικά Αραβικά</language>
@@ -48,6 +49,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="as">Ασαμικά</language>
 			<language type="asa">Άσου</language>
 			<language type="ast">Αστουριανά</language>
+			<language type="atj">Ατικαμέκ</language>
 			<language type="av">Αβαρικά</language>
 			<language type="awa">Αγουαντί</language>
 			<language type="ay">Αϊμάρα</language>
@@ -107,13 +109,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ckb">Κεντρικά Κουρδικά</language>
 			<language type="ckb" alt="menu">Κουρδικά, Κεντρικά</language>
 			<language type="ckb" alt="variant">Κουρδικά, Σοράνι</language>
+			<language type="clc">Τσιλκότιν</language>
 			<language type="co">Κορσικανικά</language>
 			<language type="cop">Κοπτικά</language>
 			<language type="cr">Κρι</language>
+			<language type="crg">Μίτσιφ</language>
 			<language type="crh">Τουρκικά Κριμαίας</language>
+			<language type="crj">Νοτιοανατολικά Κρι</language>
+			<language type="crk">Κρι πεδιάδας</language>
+			<language type="crl">Βορειοανατολικά Κρι</language>
+			<language type="crm">Μους Κρι</language>
+			<language type="crr">Καρολίνα Αλγκονκιάν</language>
 			<language type="crs">Κρεολικά Γαλλικά Σεϋχελλών</language>
 			<language type="cs">Τσεχικά</language>
 			<language type="csb">Κασούμπιαν</language>
+			<language type="csw">Κρι Βάλτου</language>
 			<language type="cu">Εκκλησιαστικά Σλαβικά</language>
 			<language type="cv">Τσουβασικά</language>
 			<language type="cy">Ουαλικά</language>
@@ -206,8 +216,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ha">Χάουσα</language>
 			<language type="hai">Χάιντα</language>
 			<language type="haw">Χαβαϊκά</language>
+			<language type="hax">Βόρεια Χάιντα</language>
 			<language type="he">Εβραϊκά</language>
 			<language type="hi">Χίντι</language>
+			<language type="hi_Latn" alt="variant">Hinglish</language>
 			<language type="hil">Χιλιγκαϊνόν</language>
 			<language type="hit">Χιτίτε</language>
 			<language type="hmn">Χμονγκ</language>
@@ -217,6 +229,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ht">Αϊτιανά</language>
 			<language type="hu">Ουγγρικά</language>
 			<language type="hup">Χούπα</language>
+			<language type="hur">Χαλκομελέμ</language>
 			<language type="hy">Αρμενικά</language>
 			<language type="hz">Χερέρο</language>
 			<language type="ia">Ιντερλίνγκουα</language>
@@ -227,6 +240,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ig">Ίγκμπο</language>
 			<language type="ii">Σίτσουαν Γι</language>
 			<language type="ik">Ινουπιάκ</language>
+			<language type="ikt">Ινουκτιτούτ Δυτικού Καναδά</language>
 			<language type="ilo">Ιλόκο</language>
 			<language type="inh">Ινγκούς</language>
 			<language type="io">Ίντο</language>
@@ -254,6 +268,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="kea">Γλώσσα του Πράσινου Ακρωτηρίου</language>
 			<language type="kfo">Κόρο</language>
 			<language type="kg">Κονγκό</language>
+			<language type="kgp">Κάινγκανγκ</language>
 			<language type="kha">Κάσι</language>
 			<language type="kho">Κοτανικά</language>
 			<language type="khq">Κόιρα Τσίνι</language>
@@ -284,6 +299,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="kut">Κουτενάι</language>
 			<language type="kv">Κόμι</language>
 			<language type="kw">Κορνουαλικά</language>
+			<language type="kwk">Κουακουάλα</language>
 			<language type="ky">Κιργιζικά</language>
 			<language type="la">Λατινικά</language>
 			<language type="lad">Λαδίνο</language>
@@ -294,6 +310,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="lez">Λεζγκικά</language>
 			<language type="lg">Γκάντα</language>
 			<language type="li">Λιμβουργιανά</language>
+			<language type="lil">Λιλουέτ</language>
 			<language type="lkt">Λακότα</language>
 			<language type="ln">Λινγκάλα</language>
 			<language type="lo">Λαοτινά</language>
@@ -301,6 +318,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="lou">Κρεολικά (Λουιζιάνα)</language>
 			<language type="loz">Λόζι</language>
 			<language type="lrc">Βόρεια Λούρι</language>
+			<language type="lsm">Σαάμια</language>
 			<language type="lt">Λιθουανικά</language>
 			<language type="lu">Λούμπα-Κατάνγκα</language>
 			<language type="lua">Λούμπα-Λουλούα</language>
@@ -336,6 +354,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="mn">Μογγολικά</language>
 			<language type="mnc">Μαντσού</language>
 			<language type="mni">Μανιπούρι</language>
+			<language type="moe">Ινου-αϊμούν</language>
 			<language type="moh">Μοχόκ</language>
 			<language type="mos">Μόσι</language>
 			<language type="mr">Μαραθικά</language>
@@ -383,6 +402,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="nzi">Νζίμα</language>
 			<language type="oc">Οξιτανικά</language>
 			<language type="oj">Οζιβίγουα</language>
+			<language type="ojb">Βορειοδυτικά Οζιβίγουα</language>
+			<language type="ojc">Κεντρικά Οτζίμπουα</language>
+			<language type="ojs">Ότζι-Κρι</language>
+			<language type="ojw">Δυτικά Οζιβίγουα</language>
+			<language type="oka">Οκανάγκαν</language>
 			<language type="om">Ορόμο</language>
 			<language type="or">Όντια</language>
 			<language type="os">Οσετικά</language>
@@ -398,8 +422,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="peo">Αρχαία Περσικά</language>
 			<language type="phn">Φοινικικά</language>
 			<language type="pi">Πάλι</language>
+			<language type="pis">Πιτζίν</language>
 			<language type="pl">Πολωνικά</language>
 			<language type="pon">Πομπηικά</language>
+			<language type="pqm">Μαλισιτ-Πασσαμακουόντ</language>
 			<language type="prg">Πρωσικά</language>
 			<language type="pro">Παλαιά Προβανσάλ</language>
 			<language type="ps">Πάστο</language>
@@ -411,7 +437,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="raj">Ραζασθάνι</language>
 			<language type="rap">Ραπανούι</language>
 			<language type="rar">Ραροτονγκάν</language>
-			<language type="rhg" draft="contributed">Ροχίνγκια</language>
+			<language type="rhg">Ροχίνγκια</language>
 			<language type="rm">Ρομανικά</language>
 			<language type="rn">Ρούντι</language>
 			<language type="ro">Ρουμανικά</language>
@@ -451,6 +477,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="sid">Σιντάμο</language>
 			<language type="sk">Σλοβακικά</language>
 			<language type="sl">Σλοβενικά</language>
+			<language type="slh">Νότια Λάσουτσιντ</language>
 			<language type="sm">Σαμοανά</language>
 			<language type="sma">Νότια Σάμι</language>
 			<language type="smj">Λούλε Σάμι</language>
@@ -467,6 +494,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ss">Σουάτι</language>
 			<language type="ssy">Σάχο</language>
 			<language type="st">Νότια Σόθο</language>
+			<language type="str">Στρέιτς Σαλίς</language>
 			<language type="su">Σουνδανικά</language>
 			<language type="suk">Σουκούμα</language>
 			<language type="sus">Σούσου</language>
@@ -478,13 +506,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="syc">Κλασικά Συριακά</language>
 			<language type="syr">Συριακά</language>
 			<language type="ta">Ταμιλικά</language>
+			<language type="tce">Νότια Τουτσόνε</language>
 			<language type="te">Τελούγκου</language>
 			<language type="tem">Τίμνε</language>
 			<language type="teo">Τέσο</language>
 			<language type="ter">Τερένο</language>
 			<language type="tet">Τέτουμ</language>
 			<language type="tg">Τατζικικά</language>
+			<language type="tgx">Τατζίς</language>
 			<language type="th">Ταϊλανδικά</language>
+			<language type="tht">Ταλτάν</language>
 			<language type="ti">Τιγκρινικά</language>
 			<language type="tig">Τίγκρε</language>
 			<language type="tiv">Τιβ</language>
@@ -497,12 +528,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="tn">Τσουάνα</language>
 			<language type="to">Τονγκανικά</language>
 			<language type="tog">Νιάσα Τόνγκα</language>
+			<language type="tok">Τόκι Πόνα</language>
 			<language type="tpi">Τοκ Πισίν</language>
 			<language type="tr">Τουρκικά</language>
 			<language type="trv">Ταρόκο</language>
 			<language type="ts">Τσόνγκα</language>
 			<language type="tsi">Τσίμσιαν</language>
 			<language type="tt">Ταταρικά</language>
+			<language type="ttm">Βόρεια Τουτσόνε</language>
 			<language type="tum">Τουμπούκα</language>
 			<language type="tvl">Τουβαλού</language>
 			<language type="tw">Τούι</language>
@@ -542,6 +575,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ybb">Γιέμπα</language>
 			<language type="yi">Γίντις</language>
 			<language type="yo">Γιορούμπα</language>
+			<language type="yrl">Νινγκατού</language>
 			<language type="yue">Καντονέζικα</language>
 			<language type="yue" alt="menu">Κινεζικά, Καντονέζικα</language>
 			<language type="za">Ζουάνγκ</language>
@@ -561,9 +595,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="zza">Ζάζα</language>
 		</languages>
 		<scripts>
+			<script type="Adlm">Άντλαμ</script>
 			<script type="Arab">Αραβικό</script>
 			<script type="Arab" alt="variant">Περσικό-Αραβικό</script>
-			<script type="Aran" draft="contributed">Νασταλίκ</script>
+			<script type="Aran">Νασταλίκ</script>
 			<script type="Armi">Αυτοκρατορικό Αραμαϊκό</script>
 			<script type="Armn">Αρμενικό</script>
 			<script type="Avst">Αβεστάν</script>
@@ -659,6 +694,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Plrd">Φωνητικό Πόλαρντ</script>
 			<script type="Prti">Επιγραφικό Παρθιάν</script>
 			<script type="Rjng">Ρετζάνγκ</script>
+			<script type="Rohg">Χανίφι</script>
 			<script type="Roro">Ρονγκορόνγκο</script>
 			<script type="Runr">Ρουνίκ</script>
 			<script type="Samr">Σαμαριτικό</script>
@@ -910,12 +946,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="NF">Νήσος Νόρφολκ</territory>
 			<territory type="NG">Νιγηρία</territory>
 			<territory type="NI">Νικαράγουα</territory>
-			<territory type="NL">Ολλανδία</territory>
+			<territory type="NL">Κάτω Χώρες</territory>
 			<territory type="NO">Νορβηγία</territory>
 			<territory type="NP">Νεπάλ</territory>
 			<territory type="NR">Ναουρού</territory>
 			<territory type="NU">Νιούε</territory>
 			<territory type="NZ">Νέα Ζηλανδία</territory>
+			<territory type="NZ" alt="variant">Αοτεαρόα Νέα Ζηλανδία</territory>
 			<territory type="OM">Ομάν</territory>
 			<territory type="PA">Παναμάς</territory>
 			<territory type="PE">Περού</territory>
@@ -1065,10 +1102,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<types>
 			<type key="calendar" type="buddhist">Βουδιστικό ημερολόγιο</type>
 			<type key="calendar" type="chinese">Κινεζικό ημερολόγιο</type>
-			<type key="calendar" type="coptic" draft="contributed">Κοπτικό ημερολόγιο</type>
+			<type key="calendar" type="coptic">Κοπτικό ημερολόγιο</type>
 			<type key="calendar" type="dangi">Κορεατικό ημερολόγιο ντάνγκι</type>
 			<type key="calendar" type="ethiopic">Αιθιοπικό ημερολόγιο</type>
-			<type key="calendar" type="ethiopic-amete-alem" draft="contributed">Αιθιοπικό ημερολόγιο Άμετ Άλεμ</type>
+			<type key="calendar" type="ethiopic-amete-alem">Αιθιοπικό ημερολόγιο Άμετ Άλεμ</type>
 			<type key="calendar" type="gregorian">Γρηγοριανό ημερολόγιο</type>
 			<type key="calendar" type="hebrew">Εβραϊκό ημερολόγιο</type>
 			<type key="calendar" type="indian">Ινδικό εθνικό ημερολόγιο</type>
@@ -1076,7 +1113,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="islamic-civil">Ισλαμικό ημερολόγιο (σε μορφή πίνακα, αστικό εποχής)</type>
 			<type key="calendar" type="islamic-rgsa" draft="contributed">Ισλαμικό ημερολόγιο (Σαουδική Αραβία, θέαση)</type>
 			<type key="calendar" type="islamic-tbla" draft="contributed">Ισλαμικό ημερολόγιο (δομημένο, αστρονομική εποχή)</type>
-			<type key="calendar" type="islamic-umalqura" draft="contributed">Ισλαμικό ημερολόγιο (Umm al-Qura)</type>
+			<type key="calendar" type="islamic-umalqura">Ισλαμικό ημερολόγιο (Umm al-Qura)</type>
 			<type key="calendar" type="iso8601">Ημερολόγιο ISO-8601</type>
 			<type key="calendar" type="japanese">Ιαπωνικό ημερολόγιο</type>
 			<type key="calendar" type="persian">Περσικό ημερολόγιο</type>
@@ -1093,21 +1130,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="colCaseLevel" type="no" draft="contributed">Ταξινόμηση με διάκριση χαρακτήρων</type>
 			<type key="colCaseLevel" type="yes" draft="contributed">Ταξινόμηση χαρακτήρων διάκρισης</type>
 			<type key="collation" type="big5han">Σειρά ταξινόμησης Παραδοσιακών Κινεζικών - Big5</type>
-			<type key="collation" type="compat" draft="contributed">Προηγούμενη σειρά ταξινόμησης, για συμβατότητα</type>
-			<type key="collation" type="dictionary" draft="contributed">Σειρά ταξινόμησης ημερολογίου</type>
+			<type key="collation" type="compat">Προηγούμενη σειρά ταξινόμησης, για συμβατότητα</type>
+			<type key="collation" type="dictionary">Σειρά ταξινόμησης λεξικού</type>
 			<type key="collation" type="ducet">Προεπιλεγμένη σειρά ταξινόμησης Unicode</type>
 			<type key="collation" type="eor" draft="contributed">Ευρωπαϊκοί κανόνες ταξινόμησης</type>
-			<type key="collation" type="gb2312han">Σειρά ταξινόμησης Απλουστευμένων Κινεζικών - GB2312</type>
+			<type key="collation" type="gb2312han">Σειρά ταξινόμησης Απλοποιημένων Κινεζικών - GB2312</type>
 			<type key="collation" type="phonebook">Σειρά ταξινόμησης τηλεφωνικού καταλόγου</type>
-			<type key="collation" type="phonetic" draft="contributed">Φωνητική σειρά ταξινόμησης</type>
+			<type key="collation" type="phonetic">Φωνητική σειρά ταξινόμησης</type>
 			<type key="collation" type="pinyin">Σειρά ταξινόμησης Πινγίν</type>
-			<type key="collation" type="reformed" draft="contributed">Ανασχηματισμένη σειρά ταξινόμησης</type>
+			<type key="collation" type="reformed">Ανασχηματισμένη σειρά ταξινόμησης</type>
 			<type key="collation" type="search">Αναζήτηση γενικού τύπου</type>
 			<type key="collation" type="searchjl" draft="contributed">Αναζήτηση κατά αρχικό σύμφωνο Χανγκούλ</type>
 			<type key="collation" type="standard">Τυπική σειρά ταξινόμησης</type>
 			<type key="collation" type="stroke">Σειρά ταξινόμησης κινήσεων</type>
 			<type key="collation" type="traditional">Παραδοσιακή σειρά ταξινόμησης</type>
-			<type key="collation" type="unihan" draft="contributed">Σειρά ταξινόμησης ριζικής αρίθμησης</type>
+			<type key="collation" type="unihan">Σειρά ταξινόμησης ριζικής αρίθμησης</type>
+			<type key="collation" type="zhuyin">Σειρά ταξινόμησης Τζουγίν</type>
 			<type key="colNormalization" type="no" draft="contributed">Ταξινόμηση χωρίς κανονικοποίηση</type>
 			<type key="colNormalization" type="yes" draft="contributed">Κανονικοποιημένη ταξινόμηση Unicode</type>
 			<type key="colNumeric" type="no" draft="contributed">Μεμονωμένη ταξινόμηση ψηφίων</type>
@@ -1137,6 +1175,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="armn">Αρμενικά αριθμητικά</type>
 			<type key="numbers" type="armnlow">Πεζά αρμενικά αριθμητικά</type>
 			<type key="numbers" type="beng">Βεγγαλικά ψηφία</type>
+			<type key="numbers" type="cakm">Ψηφία Τσάκμα</type>
 			<type key="numbers" type="deva">Ψηφία Ντεβαναγκάρι</type>
 			<type key="numbers" type="ethi">Αιθιοπικά αριθμητικά</type>
 			<type key="numbers" type="finance" draft="contributed">Οικονομικά αριθμητικά</type>
@@ -1152,6 +1191,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="hant">Παραδοσιακά κινεζικά αριθμητικά</type>
 			<type key="numbers" type="hantfin">Παραδοσιακά κινεζικά οικονομικά αριθμητικά</type>
 			<type key="numbers" type="hebr">Εβραϊκά αριθμητικά</type>
+			<type key="numbers" type="java">Ιαβαϊκά ψηφία</type>
 			<type key="numbers" type="jpan">Ιαπωνικά αριθμητικά</type>
 			<type key="numbers" type="jpanfin">Ιαπωνικά οικονομικά αριθμητικά</type>
 			<type key="numbers" type="khmr">Ψηφία Χμερ</type>
@@ -1160,8 +1200,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="latn">Ψηφία της Δύσης</type>
 			<type key="numbers" type="mlym">Μαλαγιαλαμικά ψηφία</type>
 			<type key="numbers" type="mong" draft="contributed">Μογγολικά ψηφία</type>
+			<type key="numbers" type="mtei">Ψηφία Μεϊτεί Μαγιέκ</type>
 			<type key="numbers" type="mymr">Ψηφία Μιανμάρ</type>
-			<type key="numbers" type="native" draft="contributed">Εγγενή ψηφία</type>
+			<type key="numbers" type="native">Εγγενή ψηφία</type>
+			<type key="numbers" type="olck">Ψηφία Ολ Τσίκι</type>
 			<type key="numbers" type="orya">Οριγικά ψηφία</type>
 			<type key="numbers" type="roman">Λατινικά αριθμητικά</type>
 			<type key="numbers" type="romanlow">Πεζά λατινικά αριθμητικά</type>
@@ -1171,7 +1213,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="thai">Ταϊλανδικά ψηφία</type>
 			<type key="numbers" type="tibt">Θιβετανικά ψηφία</type>
 			<type key="numbers" type="traditional" draft="contributed">Παραδοσιακά αριθμητικά</type>
-			<type key="numbers" type="vaii" draft="contributed">Ψηφία Βάι</type>
+			<type key="numbers" type="vaii">Ψηφία Βάι</type>
 		</types>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">Μετρικό</measurementSystemName>
@@ -1324,33 +1366,33 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="d" draft="contributed">d–d</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
-							<greatestDifference id="a" draft="contributed">h a – h a</greatestDifference>
-							<greatestDifference id="h" draft="contributed">h–h a</greatestDifference>
+							<greatestDifference id="a" draft="contributed">h a – h a</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h–h a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="H">
 							<greatestDifference id="H" draft="contributed">HH–HH</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hm">
-							<greatestDifference id="a" draft="contributed">h:mm a – h:mm a</greatestDifference>
-							<greatestDifference id="h" draft="contributed">h:mm–h:mm a</greatestDifference>
-							<greatestDifference id="m" draft="contributed">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="a" draft="contributed">h:mm a – h:mm a</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="m" draft="contributed">h:mm–h:mm a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hm">
 							<greatestDifference id="H" draft="contributed">HH:mm–HH:mm</greatestDifference>
 							<greatestDifference id="m" draft="contributed">HH:mm–HH:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
-							<greatestDifference id="a" draft="contributed">h:mm a – h:mm a v</greatestDifference>
-							<greatestDifference id="h" draft="contributed">h:mm–h:mm a v</greatestDifference>
-							<greatestDifference id="m" draft="contributed">h:mm–h:mm a v</greatestDifference>
+							<greatestDifference id="a" draft="contributed">h:mm a – h:mm a v</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h:mm–h:mm a v</greatestDifference>
+							<greatestDifference id="m" draft="contributed">h:mm–h:mm a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hmv">
 							<greatestDifference id="H" draft="contributed">HH:mm–HH:mm v</greatestDifference>
 							<greatestDifference id="m" draft="contributed">HH:mm–HH:mm v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hv">
-							<greatestDifference id="a" draft="contributed">h a – h a v</greatestDifference>
-							<greatestDifference id="h" draft="contributed">h–h a v</greatestDifference>
+							<greatestDifference id="a" draft="contributed">h a – h a v</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h–h a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hv">
 							<greatestDifference id="H" draft="contributed">HH–HH v</greatestDifference>
@@ -1611,10 +1653,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateTimeFormat>
 							<pattern>{1} - {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} στις {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
 							<pattern>{1} - {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} στις {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="medium">
@@ -1636,20 +1684,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="EBhm">E h:mm B</dateFormatItem>
 						<dateFormatItem id="EBhms">E h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="Ed">E d</dateFormatItem>
-						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
+						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
 						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
-						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
-						<dateFormatItem id="GyMd" draft="contributed">d/M/y GGGGG</dateFormatItem>
+						<dateFormatItem id="GyMd">d/M/y GGGGG</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, d MMM y G</dateFormatItem>
-						<dateFormatItem id="h">h a</dateFormatItem>
+						<dateFormatItem id="h">h a</dateFormatItem>
 						<dateFormatItem id="H">HH</dateFormatItem>
-						<dateFormatItem id="hm">h:mm a</dateFormatItem>
+						<dateFormatItem id="hm">h:mm a</dateFormatItem>
 						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
-						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="M">L</dateFormatItem>
 						<dateFormatItem id="Md">d/M</dateFormatItem>
@@ -1725,33 +1773,33 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="y">E d MMM y – E d MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
-							<greatestDifference id="a">h a – h a</greatestDifference>
-							<greatestDifference id="h">h–h a</greatestDifference>
+							<greatestDifference id="a">h a – h a</greatestDifference>
+							<greatestDifference id="h">h–h a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="H">
 							<greatestDifference id="H">HH–HH</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hm">
-							<greatestDifference id="a">h:mm a – h:mm a</greatestDifference>
-							<greatestDifference id="h">h:mm–h:mm a</greatestDifference>
-							<greatestDifference id="m">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="a">h:mm a – h:mm a</greatestDifference>
+							<greatestDifference id="h">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="m">h:mm–h:mm a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hm">
 							<greatestDifference id="H">HH:mm–HH:mm</greatestDifference>
 							<greatestDifference id="m">HH:mm–HH:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
-							<greatestDifference id="a">h:mm a – h:mm a v</greatestDifference>
-							<greatestDifference id="h">h:mm–h:mm a v</greatestDifference>
-							<greatestDifference id="m">h:mm–h:mm a v</greatestDifference>
+							<greatestDifference id="a">h:mm a – h:mm a v</greatestDifference>
+							<greatestDifference id="h">h:mm–h:mm a v</greatestDifference>
+							<greatestDifference id="m">h:mm–h:mm a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hmv">
 							<greatestDifference id="H">HH:mm–HH:mm v</greatestDifference>
 							<greatestDifference id="m">HH:mm–HH:mm v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hv">
-							<greatestDifference id="a">h a – h a v</greatestDifference>
-							<greatestDifference id="h">h–h a v</greatestDifference>
+							<greatestDifference id="a">h a – h a v</greatestDifference>
+							<greatestDifference id="h">h–h a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hv">
 							<greatestDifference id="H">HH–HH v</greatestDifference>
@@ -2124,25 +2172,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<timeFormats>
 					<timeFormatLength type="full">
 						<timeFormat>
-							<pattern>h:mm:ss a zzzz</pattern>
+							<pattern>h:mm:ss a zzzz</pattern>
 							<datetimeSkeleton>ahmmsszzzz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="long">
 						<timeFormat>
-							<pattern>h:mm:ss a z</pattern>
+							<pattern>h:mm:ss a z</pattern>
 							<datetimeSkeleton>ahmmssz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="medium">
 						<timeFormat>
-							<pattern>h:mm:ss a</pattern>
+							<pattern>h:mm:ss a</pattern>
 							<datetimeSkeleton>ahmmss</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="short">
 						<timeFormat>
-							<pattern>h:mm a</pattern>
+							<pattern>h:mm a</pattern>
 							<datetimeSkeleton>ahmm</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
@@ -2152,10 +2200,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateTimeFormat>
 							<pattern>{1} - {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} στις {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
 							<pattern>{1} - {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} στις {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="medium">
@@ -2177,24 +2231,24 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="EBhm">E h:mm B</dateFormatItem>
 						<dateFormatItem id="EBhms">E h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="Ed">E d</dateFormatItem>
-						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
+						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
 						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
-						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
 						<dateFormatItem id="GyMd">d/M/y GGGGG</dateFormatItem>
 						<dateFormatItem id="GyMMM">LLL y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E d MMM y G</dateFormatItem>
-						<dateFormatItem id="h">h a</dateFormatItem>
+						<dateFormatItem id="h">h a</dateFormatItem>
 						<dateFormatItem id="H">HH</dateFormatItem>
-						<dateFormatItem id="hm">h:mm a</dateFormatItem>
+						<dateFormatItem id="hm">h:mm a</dateFormatItem>
 						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
-						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
-						<dateFormatItem id="hmsv">h:mm:ss a v</dateFormatItem>
+						<dateFormatItem id="hmsv">h:mm:ss a v</dateFormatItem>
 						<dateFormatItem id="Hmsv">HH:mm:ss v</dateFormatItem>
-						<dateFormatItem id="hmv">h:mm a v</dateFormatItem>
+						<dateFormatItem id="hmv">h:mm a v</dateFormatItem>
 						<dateFormatItem id="Hmv">HH:mm v</dateFormatItem>
 						<dateFormatItem id="M">L</dateFormatItem>
 						<dateFormatItem id="Md">d/M</dateFormatItem>
@@ -2276,33 +2330,33 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="y">E d MMM y – E d MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
-							<greatestDifference id="a">h a – h a</greatestDifference>
-							<greatestDifference id="h">h–h a</greatestDifference>
+							<greatestDifference id="a">h a – h a</greatestDifference>
+							<greatestDifference id="h">h–h a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="H">
 							<greatestDifference id="H">HH–HH</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hm">
-							<greatestDifference id="a">h:mm a – h:mm a</greatestDifference>
-							<greatestDifference id="h">h:mm–h:mm a</greatestDifference>
-							<greatestDifference id="m">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="a">h:mm a – h:mm a</greatestDifference>
+							<greatestDifference id="h">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="m">h:mm–h:mm a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hm">
 							<greatestDifference id="H">HH:mm–HH:mm</greatestDifference>
 							<greatestDifference id="m">HH:mm–HH:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
-							<greatestDifference id="a">h:mm a – h:mm a v</greatestDifference>
-							<greatestDifference id="h">h:mm–h:mm a v</greatestDifference>
-							<greatestDifference id="m">h:mm–h:mm a v</greatestDifference>
+							<greatestDifference id="a">h:mm a – h:mm a v</greatestDifference>
+							<greatestDifference id="h">h:mm–h:mm a v</greatestDifference>
+							<greatestDifference id="m">h:mm–h:mm a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hmv">
 							<greatestDifference id="H">HH:mm–HH:mm v</greatestDifference>
 							<greatestDifference id="m">HH:mm–HH:mm v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hv">
-							<greatestDifference id="a">h a – h a v</greatestDifference>
-							<greatestDifference id="h">h–h a v</greatestDifference>
+							<greatestDifference id="a">h a – h a v</greatestDifference>
+							<greatestDifference id="h">h–h a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hv">
 							<greatestDifference id="H">HH–HH v</greatestDifference>
@@ -4047,7 +4101,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>Έντερμπερι</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kanton">
-				<exemplarCity draft="contributed">Καντών</exemplarCity>
+				<exemplarCity>Καντών</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
 				<exemplarCity>Κιριτιμάτι</exemplarCity>
@@ -5749,9 +5803,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>#,##0.00 ¤</pattern>
+					<pattern alt="noCurrency" draft="provisional">#,##0.00</pattern>
 				</currencyFormat>
 				<currencyFormat type="accounting">
 					<pattern>#,##0.00 ¤</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
@@ -8013,6 +8069,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="genitive">{0} ετών</unitPattern>
 				<perUnitPattern>{0} ανά έτος</perUnitPattern>
 			</unit>
+			<unit type="duration-quarter">
+				<gender>neuter</gender>
+				<displayName>τέταρτα</displayName>
+				<unitPattern count="one">{0} τέταρτο</unitPattern>
+				<unitPattern count="one" case="accusative">{0} τέταρτο</unitPattern>
+				<unitPattern count="one" case="genitive">{0} τέταρτου</unitPattern>
+				<unitPattern count="other">{0} τέταρτα</unitPattern>
+				<unitPattern count="other" case="accusative">{0} τέταρτα</unitPattern>
+				<unitPattern count="other" case="genitive">{0} τέταρτων</unitPattern>
+				<perUnitPattern>{0}/τέτ.</perUnitPattern>
+			</unit>
 			<unit type="duration-month">
 				<gender draft="contributed">masculine</gender>
 				<displayName>μήνες</displayName>
@@ -8358,7 +8425,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>χιλιόμετρα</displayName>
 				<unitPattern count="one">{0} χιλιόμετρο</unitPattern>
 				<unitPattern count="one" case="accusative">{0} χιλιόμετρο</unitPattern>
-				<unitPattern count="one" case="genitive">{0} χιλιόμετρου</unitPattern>
+				<unitPattern count="one" case="genitive">χιλιομέτρου</unitPattern>
 				<unitPattern count="other">{0} χιλιόμετρα</unitPattern>
 				<unitPattern count="other" case="accusative">{0} χιλιόμετρα</unitPattern>
 				<unitPattern count="other" case="genitive">{0} χιλιομέτρων</unitPattern>
@@ -8380,7 +8447,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>δεκατόμετρα</displayName>
 				<unitPattern count="one">{0} δεκατόμετρο</unitPattern>
 				<unitPattern count="one" case="accusative">{0} δεκατόμετρο</unitPattern>
-				<unitPattern count="one" case="genitive">{0} δεκατόμετρο</unitPattern>
+				<unitPattern count="one" case="genitive">{0} δεκατομέτρου</unitPattern>
 				<unitPattern count="other">{0} δεκατόμετρα</unitPattern>
 				<unitPattern count="other" case="accusative">{0} δεκατόμετρα</unitPattern>
 				<unitPattern count="other" case="genitive">{0} δεκατόμετρων</unitPattern>
@@ -8410,20 +8477,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender>neuter</gender>
 				<unitPattern count="one">{0} μικρόμετρο</unitPattern>
 				<unitPattern count="one" case="accusative">{0} μικρόμετρο</unitPattern>
-				<unitPattern count="one" case="genitive">{0} μικρόμετρο</unitPattern>
+				<unitPattern count="one" case="genitive">{0} μικρομέτρου</unitPattern>
 				<unitPattern count="other">{0} μικρόμετρα</unitPattern>
 				<unitPattern count="other" case="accusative">{0} μικρόμετρα</unitPattern>
-				<unitPattern count="other" case="genitive">{0} μικρόμετρων</unitPattern>
+				<unitPattern count="other" case="genitive">{0} μικρομέτρων</unitPattern>
 			</unit>
 			<unit type="length-nanometer">
 				<gender>neuter</gender>
 				<displayName>νανόμετρα</displayName>
 				<unitPattern count="one">{0} νανόμετρο</unitPattern>
 				<unitPattern count="one" case="accusative">{0} νανόμετρο</unitPattern>
-				<unitPattern count="one" case="genitive">{0} νανόμετρου</unitPattern>
+				<unitPattern count="one" case="genitive">{0} νανομέτρου</unitPattern>
 				<unitPattern count="other">{0} νανόμετρα</unitPattern>
 				<unitPattern count="other" case="accusative">{0} νανόμετρα</unitPattern>
-				<unitPattern count="other" case="genitive">{0} νανόμετρων</unitPattern>
+				<unitPattern count="other" case="genitive">{0} νανομέτρων</unitPattern>
 			</unit>
 			<unit type="length-picometer">
 				<gender>neuter</gender>
@@ -8540,7 +8607,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ηλιακή φωτεινότητα</unitPattern>
 				<unitPattern count="other">{0} ηλιακές φωτεινότητες</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<gender>masculine</gender>
 				<displayName>τόνοι</displayName>
 				<unitPattern count="one">{0} τόνος</unitPattern>
@@ -8874,7 +8941,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>κυβικά χιλιόμετρα</displayName>
 				<unitPattern count="one">{0} κυβικό χιλιόμετρο</unitPattern>
 				<unitPattern count="one" case="accusative">{0} κυβικό χιλιόμετρο</unitPattern>
-				<unitPattern count="one" case="genitive">{0} κυβικού χιλιόμετρου</unitPattern>
+				<unitPattern count="one" case="genitive">{0} κυβικού χιλιομέτρου</unitPattern>
 				<unitPattern count="other">{0} κυβικά χιλιόμετρα</unitPattern>
 				<unitPattern count="other" case="accusative">{0} κυβικά χιλιόμετρα</unitPattern>
 				<unitPattern count="other" case="genitive">{0} κυβικών χιλιομέτρων</unitPattern>
@@ -9425,6 +9492,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} έτ.</unitPattern>
 				<perUnitPattern>{0}/έτ.</perUnitPattern>
 			</unit>
+			<unit type="duration-quarter">
+				<displayName>τετ.</displayName>
+				<unitPattern count="one">{0} τέτ.</unitPattern>
+				<unitPattern count="other">{0} τέτ/α</unitPattern>
+				<perUnitPattern>{0}/τέτ.</perUnitPattern>
+			</unit>
 			<unit type="duration-month">
 				<displayName>μήνες</displayName>
 				<unitPattern count="one">{0} μήν.</unitPattern>
@@ -9725,7 +9798,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} L☉</unitPattern>
 				<unitPattern count="other">{0} L☉</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>τ.</displayName>
 				<unitPattern count="one">{0} τ.</unitPattern>
 				<unitPattern count="other">{0} τ.</unitPattern>
@@ -10295,6 +10368,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} έ</unitPattern>
 				<perUnitPattern>{0}/έ</perUnitPattern>
 			</unit>
+			<unit type="duration-quarter">
+				<unitPattern count="one">{0} τέτ.</unitPattern>
+				<unitPattern count="other">{0} τέτ.</unitPattern>
+				<perUnitPattern>{0}/τέτ.</perUnitPattern>
+			</unit>
 			<unit type="duration-month">
 				<displayName>μήνας</displayName>
 				<unitPattern count="one">{0} μ</unitPattern>
@@ -10831,4 +10909,90 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<featureName type="tnum">αριθμοί σε πίνακα</featureName>
 		<featureName type="zero">μηδέν με γραμμή</featureName>
 	</typographicNames>
+	<personNames>
+		<nameOrderLocales order="givenFirst">und el</nameOrderLocales>
+		<nameOrderLocales order="surnameFirst">ko vi yue zh</nameOrderLocales>
+		<personName order="givenFirst" length="long" usage="referring" formality="informal">
+			<namePattern>{given-informal} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="addressing" formality="formal">
+			<namePattern>{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="addressing" formality="informal">
+			<namePattern>{given}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="referring" formality="formal">
+			<namePattern>{surname} {given} {given2} {suffix}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="referring" formality="informal">
+			<namePattern>{surname} {given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="addressing" formality="formal">
+			<namePattern>{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="referring" formality="formal">
+			<namePattern>{surname} {given} {given2-initial} {suffix}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="referring" formality="informal">
+			<namePattern>{surname} {given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="addressing" formality="formal">
+			<namePattern>{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="referring" formality="formal">
+			<namePattern>{surname} {given-initial} {given2-initial}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="referring" formality="informal">
+			<namePattern>{surname} {given-initial}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="addressing" formality="formal">
+			<namePattern>{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="sorting" length="long" usage="referring" formality="formal">
+			<namePattern>{surname-core}, {surname-prefix} {given} {given2}</namePattern>
+		</personName>
+		<personName order="sorting" length="long" usage="referring" formality="informal">
+			<namePattern>{surname}, {given-informal}</namePattern>
+		</personName>
+		<personName order="sorting" length="medium" usage="referring" formality="informal">
+			<namePattern>{surname}, {given-informal}</namePattern>
+		</personName>
+		<personName order="sorting" length="short" usage="referring" formality="informal">
+			<namePattern>{surname}, {given-informal}</namePattern>
+		</personName>
+		<sampleName item="givenOnly">
+			<nameField type="given">Δημήτρης</nameField>
+		</sampleName>
+		<sampleName item="givenSurnameOnly">
+			<nameField type="given">Ειρήνη</nameField>
+			<nameField type="surname">Πολίτη</nameField>
+		</sampleName>
+		<sampleName item="given12Surname">
+			<nameField type="given">Πέτρος</nameField>
+			<nameField type="given2">Νικόλαος</nameField>
+			<nameField type="surname">Καρατζής</nameField>
+		</sampleName>
+		<sampleName item="full">
+			<nameField type="prefix">Καθ. δρ.</nameField>
+			<nameField type="given">Άννα Μαρία</nameField>
+			<nameField type="given-informal">Σωτήρης</nameField>
+			<nameField type="given2">Βεατρίκη Μαρίνα</nameField>
+			<nameField type="surname-prefix">φαν ντεν</nameField>
+			<nameField type="surname-core">Δεληγιάννης</nameField>
+			<nameField type="surname2">Δημητρίου Αργυρακάκης</nameField>
+			<nameField type="suffix">M.D. Ph.D.</nameField>
+		</sampleName>
+	</personNames>
 </ldml>

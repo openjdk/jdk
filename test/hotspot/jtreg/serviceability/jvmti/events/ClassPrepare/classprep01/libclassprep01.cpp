@@ -63,6 +63,13 @@ static class_info virtual_classes[] = {
     { (char *)"Lclassprep01$TestClassVirtual;", EXP_STATUS, 3, 2, 1 }
 };
 
+// These classes are loaded on a different thread.
+// We should not get ClassPrepare events for them.
+static const class_info unexpectedClasses[] = {
+    { (char *)"Lclassprep01$TestInterface2;", 0, 0, 0, 0 },
+    { (char *)"Lclassprep01$TestClass2;", 0, 0, 0, 0}
+};
+
 void printStatus(jint status) {
   int flags = 0;
   if ((status & JVMTI_CLASS_STATUS_VERIFIED) != 0) {
@@ -85,6 +92,17 @@ void printStatus(jint status) {
     flags++;
   }
   LOG(" (0x%x)\n", status);
+}
+
+const size_t NOT_FOUND = (size_t)(-1);
+
+size_t findClass(const char *classSig, const class_info *arr, int size) {
+    for (int i = 0; i < size; i++) {
+        if (strcmp(classSig, arr[i].sig) == 0) {
+            return i;
+        }
+    }
+    return NOT_FOUND;
 }
 
 void JNICALL ClassPrepare(jvmtiEnv *jvmti, JNIEnv *jni, jthread thr, jclass cls) {
@@ -183,9 +201,21 @@ void JNICALL ClassPrepare(jvmtiEnv *jvmti, JNIEnv *jni, jthread thr, jclass cls)
   }
   LOG("\n");
 
-  if (eventsCount >= eventsExpected) {
-    LOG("(#%" PRIuPTR ") too many events: %" PRIuPTR ", expected: %" PRIuPTR "\n",
-        eventsCount, eventsCount + 1, eventsExpected);
+  size_t expectedClassIdx = findClass(inf.sig, classes, 2);
+  // Test classes loading may cause system classes loading - skip them.
+  if (expectedClassIdx == NOT_FOUND) {
+    size_t unexpectedClassIdx = findClass(inf.sig, unexpectedClasses,
+                                          sizeof(unexpectedClasses)/sizeof(class_info));
+    if (unexpectedClassIdx != NOT_FOUND) {
+      printf("# wrong class: \"%s\"\n", inf.sig);
+      result = STATUS_FAILED;
+    }
+    return;
+  }
+
+  if (eventsCount != expectedClassIdx) {
+    printf("(#%" PRIuPTR ") unexpected order: %" PRIuPTR ", expected: %" PRIuPTR "\n",
+           eventsCount, expectedClassIdx, eventsCount);
     result = STATUS_FAILED;
     return;
   }
@@ -266,24 +296,17 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 }
 
 JNIEXPORT void JNICALL
-Java_classprep01_getReady(JNIEnv *jni, jclass cls) {
+Java_classprep01_getReady(JNIEnv *jni, jclass cls, jthread thread) {
   jvmtiError err;
-  jthread prep_thread;
 
   if (jvmti == NULL) {
     LOG("JVMTI client was not properly loaded!\n");
     return;
   }
 
-  err = jvmti->GetCurrentThread(&prep_thread);
-  if (err != JVMTI_ERROR_NONE) {
-    LOG("Failed to get current thread: %s (%d)\n", TranslateError(err), err);
-    result = STATUS_FAILED;
-    return;
-  }
 
   eventsCount = 0;
-  if (jni->IsVirtualThread(prep_thread)) {
+  if (jni->IsVirtualThread(thread)) {
     classes = virtual_classes;
     eventsExpected = sizeof(virtual_classes)/sizeof(class_info);
   } else {
@@ -291,9 +314,9 @@ Java_classprep01_getReady(JNIEnv *jni, jclass cls) {
     eventsExpected = sizeof(kernel_classes)/sizeof(class_info);
   }
   LOG("Requesting enabling JVMTI_EVENT_CLASS_PREPARE in thread.\n");
-  print_thread_info(jvmti, jni, prep_thread);
+  print_thread_info(jvmti, jni, thread);
 
-  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_PREPARE, prep_thread);
+  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_PREPARE, thread);
   if (err != JVMTI_ERROR_NONE) {
     LOG("Failed to enable JVMTI_EVENT_CLASS_PREPARE: %s (%d)\n", TranslateError(err), err);
     result = STATUS_FAILED;
@@ -301,25 +324,18 @@ Java_classprep01_getReady(JNIEnv *jni, jclass cls) {
 }
 
 JNIEXPORT jint JNICALL
-Java_classprep01_check(JNIEnv *jni, jclass cls) {
+Java_classprep01_check(JNIEnv *jni, jclass cls, jthread thread) {
   jvmtiError err;
-  jthread prep_thread;
 
   if (jvmti == NULL) {
     LOG("JVMTI client was not properly loaded!\n");
     return STATUS_FAILED;
   }
 
-  err = jvmti->GetCurrentThread(&prep_thread);
-  if (err != JVMTI_ERROR_NONE) {
-    LOG("Failed to get current thread: %s (%d)\n", TranslateError(err), err);
-    return STATUS_FAILED;
-  }
-
   LOG("Requesting disabling JVMTI_EVENT_CLASS_PREPARE in thread.\n");
-  print_thread_info(jvmti, jni, prep_thread);
+  print_thread_info(jvmti, jni, thread);
 
-  err = jvmti->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_CLASS_PREPARE, prep_thread);
+  err = jvmti->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_CLASS_PREPARE, thread);
   if (err != JVMTI_ERROR_NONE) {
     LOG("Failed to disable JVMTI_EVENT_CLASS_PREPARE: %s (%d)\n", TranslateError(err), err);
     result = STATUS_FAILED;

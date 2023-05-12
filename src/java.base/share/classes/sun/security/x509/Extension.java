@@ -28,6 +28,8 @@ package sun.security.x509;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Arrays;
+import java.util.Objects;
+
 import sun.security.util.*;
 
 /**
@@ -58,7 +60,7 @@ import sun.security.util.*;
  * @author Amit Kapoor
  * @author Hemma Prafullchandra
  */
-public class Extension implements java.security.cert.Extension {
+public class Extension implements java.security.cert.Extension, DerEncoder {
 
     protected ObjectIdentifier  extensionId = null;
     protected boolean           critical = false;
@@ -140,36 +142,41 @@ public class Extension implements java.security.cert.Extension {
         return ext;
     }
 
-    public void encode(OutputStream out) throws IOException {
+    /**
+     * Implementing {@link java.security.cert.Extension#encode(OutputStream)}.
+     * This implementation is made final to make sure all {@code encode()}
+     * methods in child classes are actually implementations of
+     * {@link #encode(DerOutputStream)} below.
+     *
+     * @param out the output stream
+     * @throws IOException
+     */
+    @Override
+    public final void encode(OutputStream out) throws IOException {
         if (out == null) {
             throw new NullPointerException();
         }
-
-        DerOutputStream dos1 = new DerOutputStream();
-        DerOutputStream dos2 = new DerOutputStream();
-
-        dos1.putOID(extensionId);
-        if (critical) {
-            dos1.putBoolean(true);
+        if (out instanceof DerOutputStream dos) {
+            encode(dos);
+        } else {
+            DerOutputStream dos = new DerOutputStream();
+            encode(dos);
+            out.write(dos.toByteArray());
         }
-        dos1.putOctetString(extensionValue);
-
-        dos2.write(DerValue.tag_Sequence, dos1);
-        out.write(dos2.toByteArray());
     }
 
     /**
      * Write the extension to the DerOutputStream.
      *
      * @param out the DerOutputStream to write the extension to.
-     * @exception IOException on encoding errors
      */
-    public void encode(DerOutputStream out) throws IOException {
+    @Override
+    public void encode(DerOutputStream out) {
 
-        if (extensionId == null)
-            throw new IOException("Null OID to encode for the extension!");
-        if (extensionValue == null)
-            throw new IOException("No value to encode for the extension!");
+        Objects.requireNonNull(extensionId,
+                "No OID to encode for the extension");
+        Objects.requireNonNull(extensionValue,
+                "No value to encode for the extension");
 
         DerOutputStream dos = new DerOutputStream();
 
@@ -208,6 +215,15 @@ public class Extension implements java.security.cert.Extension {
      */
     public byte[] getExtensionValue() {
         return extensionValue;
+    }
+
+    /**
+     * Returns the extension name. The default implementation returns the
+     * string form of the extensionId. Known extensions should override this
+     * method to return a human readable name.
+     */
+    public String getName() {
+        return getId();
     }
 
     public String getId() {

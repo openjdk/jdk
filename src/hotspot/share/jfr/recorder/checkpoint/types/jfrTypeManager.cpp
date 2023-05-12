@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,8 @@
 #include "memory/resourceArea.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/semaphore.hpp"
+#include "runtime/thread.inline.hpp"
+#include "services/memTracker.hpp"
 #include "utilities/macros.hpp"
 
 class JfrSerializerRegistration : public JfrCHeapObj {
@@ -104,7 +106,7 @@ void JfrTypeManager::write_threads(JfrCheckpointWriter& writer) {
 JfrBlobHandle JfrTypeManager::create_thread_blob(JavaThread* jt, traceid tid /* 0 */, oop vthread /* nullptr */) {
   assert(jt != NULL, "invariant");
   ResourceMark rm(jt);
-  JfrCheckpointWriter writer(jt, true, THREADS, false); // Thread local lease for blob creation.
+  JfrCheckpointWriter writer(jt, true, THREADS, JFR_THREADLOCAL); // Thread local lease for blob creation.
   // TYPE_THREAD and count is written unconditionally for blobs, also for vthreads.
   writer.write_type(TYPE_THREAD);
   writer.write_count(1);
@@ -119,7 +121,7 @@ void JfrTypeManager::write_checkpoint(Thread* t, traceid tid /* 0 */, oop vthrea
   assert(current != NULL, "invariant");
   const bool is_vthread = vthread != nullptr;
   ResourceMark rm(current);
-  JfrCheckpointWriter writer(current, true, THREADS, !is_vthread); // Virtual Threads use thread local lease.
+  JfrCheckpointWriter writer(current, true, THREADS, is_vthread ? JFR_VIRTUAL_THREADLOCAL : JFR_THREADLOCAL);
   if (is_vthread) {
     // TYPE_THREAD and count is written later as part of vthread bulk serialization.
     writer.set_count(1); // Only a logical marker for the checkpoint header.
@@ -202,7 +204,7 @@ static bool register_static_type(JfrTypeId id, bool permit_cache, JfrSerializer*
   assert(!types.in_list(registration), "invariant");
   DEBUG_ONLY(assert_not_registered_twice(id, types);)
   if (JfrRecorder::is_recording()) {
-    JfrCheckpointWriter writer(STATICS);
+    JfrCheckpointWriter writer(Thread::current(), true, STATICS);
     registration->invoke(writer);
   }
   types.add(registration);
@@ -236,6 +238,9 @@ bool JfrTypeManager::initialize() {
   register_static_type(TYPE_THREADSTATE, true, new ThreadStateConstant());
   register_static_type(TYPE_BYTECODE, true, new BytecodeConstant());
   register_static_type(TYPE_COMPILERTYPE, true, new CompilerTypeConstant());
+  if (MemTracker::enabled()) {
+    register_static_type(TYPE_NMTTYPE, true, new NMTTypeConstant());
+  }
   return load_thread_constants(JavaThread::current());
 }
 

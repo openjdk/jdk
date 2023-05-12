@@ -43,8 +43,8 @@ import jdk.test.lib.Asserts;
  * @requires vm.hasJFR & vm.continuations
  * @library /test/lib /test/jdk
  * @modules jdk.jfr/jdk.jfr.internal
- * @compile --enable-preview -source ${jdk.version} TestManyVirtualThreads.java
- * @run main/othervm --enable-preview jdk.jfr.threading.TestManyVirtualThreads
+ * @enablePreview
+ * @run main/othervm jdk.jfr.threading.TestManyVirtualThreads
  */
 public class TestManyVirtualThreads {
 

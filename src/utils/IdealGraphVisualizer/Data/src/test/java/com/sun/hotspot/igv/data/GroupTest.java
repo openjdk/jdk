@@ -26,8 +26,8 @@ package com.sun.hotspot.igv.data;
 
 import java.util.Arrays;
 import java.util.HashSet;
-import static org.junit.Assert.assertEquals;
 import org.junit.*;
+import static org.junit.Assert.assertEquals;
 
 /**
  *

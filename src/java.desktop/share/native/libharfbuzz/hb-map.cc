@@ -56,8 +56,6 @@ hb_map_create ()
   if (!(map = hb_object_create<hb_map_t> ()))
     return hb_map_get_empty ();
 
-  map->init_shallow ();
-
   return map;
 }
 
@@ -107,8 +105,6 @@ hb_map_destroy (hb_map_t *map)
 {
   if (!hb_object_destroy (map)) return;
 
-  map->fini_shallow ();
-
   hb_free (map);
 }
 
@@ -122,7 +118,7 @@ hb_map_destroy (hb_map_t *map)
  *
  * Attaches a user-data key/data pair to the specified map.
  *
- * Return value: %true if success, %false otherwise
+ * Return value: `true` if success, `false` otherwise
  *
  * Since: 1.7.7
  **/
@@ -149,7 +145,7 @@ hb_map_set_user_data (hb_map_t           *map,
  * Since: 1.7.7
  **/
 void *
-hb_map_get_user_data (hb_map_t           *map,
+hb_map_get_user_data (const hb_map_t     *map,
                       hb_user_data_key_t *key)
 {
   return hb_object_get_user_data (map, key);
@@ -162,7 +158,7 @@ hb_map_get_user_data (hb_map_t           *map,
  *
  * Tests whether memory allocation for a set was successful.
  *
- * Return value: %true if allocation succeeded, %false otherwise
+ * Return value: `true` if allocation succeeded, `false` otherwise
  *
  * Since: 1.7.7
  **/
@@ -178,7 +174,7 @@ hb_map_allocation_successful (const hb_map_t  *map)
  *
  * Allocate a copy of @map.
  *
- * Return value: Newly-allocated map.
+ * Return value: (transfer full): Newly-allocated map.
  *
  * Since: 4.4.0
  **/
@@ -186,9 +182,10 @@ hb_map_t *
 hb_map_copy (const hb_map_t *map)
 {
   hb_map_t *copy = hb_map_create ();
-  if (unlikely (!copy)) return nullptr;
-  copy->resize (map->population);
-  hb_copy (*map, *copy);
+  if (unlikely (copy->in_error ()))
+    return hb_map_get_empty ();
+
+  *copy = *map;
   return copy;
 }
 
@@ -251,7 +248,7 @@ hb_map_del (hb_map_t       *map,
  *
  * Tests whether @key is an element of @map.
  *
- * Return value: %true if @key is found in @map, %false otherwise
+ * Return value: `true` if @key is found in @map, `false` otherwise
  *
  * Since: 1.7.7
  **/
@@ -283,7 +280,7 @@ hb_map_clear (hb_map_t *map)
  *
  * Tests whether @map is empty (contains no elements).
  *
- * Return value: %true if @map is empty
+ * Return value: `true` if @map is empty
  *
  * Since: 1.7.7
  **/
@@ -317,7 +314,7 @@ hb_map_get_population (const hb_map_t *map)
  * Tests whether @map and @other are equal (contain the same
  * elements).
  *
- * Return value: %true if the two maps are equal, %false otherwise.
+ * Return value: `true` if the two maps are equal, `false` otherwise.
  *
  * Since: 4.3.0
  **/
@@ -339,9 +336,84 @@ hb_map_is_equal (const hb_map_t *map,
  *
  * Since: 4.4.0
  **/
-HB_EXTERN unsigned int
+unsigned int
 hb_map_hash (const hb_map_t *map)
 {
   return map->hash ();
 }
 
+/**
+ * hb_map_update:
+ * @map: A map
+ * @other: Another map
+ *
+ * Add the contents of @other to @map.
+ *
+ * Since: 7.0.0
+ **/
+HB_EXTERN void
+hb_map_update (hb_map_t *map,
+               const hb_map_t *other)
+{
+  map->update (*other);
+}
+
+/**
+ * hb_map_next:
+ * @map: A map
+ * @idx: (inout): Iterator internal state
+ * @key: (out): Key retrieved
+ * @value: (out): Value retrieved
+ *
+ * Fetches the next key/value paire in @map.
+ *
+ * Set @idx to -1 to get started.
+ *
+ * If the map is modified during iteration, the behavior is undefined.
+ *
+ * The order in which the key/values are returned is undefined.
+ *
+ * Return value: `true` if there was a next value, `false` otherwise
+ *
+ * Since: 7.0.0
+ **/
+hb_bool_t
+hb_map_next (const hb_map_t *map,
+             int *idx,
+             hb_codepoint_t *key,
+             hb_codepoint_t *value)
+{
+  return map->next (idx, key, value);
+}
+
+/**
+ * hb_map_keys:
+ * @map: A map
+ * @keys: A set
+ *
+ * Add the keys of @map to @keys.
+ *
+ * Since: 7.0.0
+ **/
+void
+hb_map_keys (const hb_map_t *map,
+             hb_set_t *keys)
+{
+  map->keys (*keys);
+}
+
+/**
+ * hb_map_values:
+ * @map: A map
+ * @values: A set
+ *
+ * Add the values of @map to @values.
+ *
+ * Since: 7.0.0
+ **/
+void
+hb_map_values (const hb_map_t *map,
+               hb_set_t *values)
+{
+  map->values (*values);
+}

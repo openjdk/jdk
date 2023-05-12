@@ -25,7 +25,7 @@
 /**
  * @test
  * @key headful
- * @bug 8287600 8291266
+ * @bug 8287600 8291266 8299207
  * @requires os.family == "mac"
  * @summary [macosx] Some primitives do not render in metal pipeline
  * @run main DrawPrimitivesTest

@@ -25,7 +25,7 @@
 /*
  * @test
  * @enablePreview
- * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64"
+ * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64" | os.arch == "riscv64"
  *
  * @run testng/othervm/native
  *   --enable-native-access=ALL-UNNAMED
@@ -37,12 +37,12 @@
  *   TestUpcallStructScope
  */
 
-import java.lang.foreign.Addressable;
+import java.lang.foreign.Arena;
 import java.lang.foreign.Linker;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
+
 import org.testng.annotations.Test;
 
 import java.lang.invoke.MethodHandle;
@@ -89,14 +89,14 @@ public class TestUpcallStructScope extends NativeTestHelper {
         AtomicReference<MemorySegment> capturedSegment = new AtomicReference<>();
         MethodHandle target = methodHandle(capturedSegment::set);
         FunctionDescriptor upcallDesc = FunctionDescriptor.ofVoid(S_PDI_LAYOUT);
-        try (MemorySession session = MemorySession.openConfined()) {
-            Addressable upcallStub = LINKER.upcallStub(target, upcallDesc, session);
-            MemorySegment argSegment = MemorySegment.allocateNative(S_PDI_LAYOUT, session);
+        try (Arena arena = Arena.openConfined()) {
+            MemorySegment upcallStub = LINKER.upcallStub(target, upcallDesc, arena.scope());
+            MemorySegment argSegment = MemorySegment.allocateNative(S_PDI_LAYOUT, arena.scope());;
             MH_do_upcall.invoke(upcallStub, argSegment);
         }
 
         MemorySegment captured = capturedSegment.get();
-        assertFalse(captured.session().isAlive());
+        assertFalse(captured.scope().isAlive());
     }
 
 }

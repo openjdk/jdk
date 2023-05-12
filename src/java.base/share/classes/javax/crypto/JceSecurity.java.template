@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -235,7 +235,11 @@ final class JceSecurity {
 
     // return whether this provider is properly signed and can be used by JCE
     static boolean canUseProvider(Provider p) {
-        return getVerificationResult(p) == null;
+        Exception e = getVerificationResult(p);
+        if (debug != null && e != null) {
+            debug.println("Provider verification result: " + e);
+        }
+        return e == null;
     }
 
     // dummy object to represent null
@@ -243,7 +247,8 @@ final class JceSecurity {
 
     static {
         try {
-            NULL_URL = new URL("http://null.oracle.com/");
+            @SuppressWarnings("deprecation")
+            var _unused = NULL_URL = new URL("http://null.oracle.com/");
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

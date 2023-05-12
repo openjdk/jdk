@@ -17,54 +17,104 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<localeKeyTypePattern>{0}፦ {1}</localeKeyTypePattern>
 		</localeDisplayPattern>
 		<languages>
+			<language type="ab">ኣብካዝኛ</language>
+			<language type="ace">ኣቸኒዝኛ</language>
+			<language type="ada">ኣዳንግሜ</language>
+			<language type="ady">ኣዲጊ</language>
 			<language type="af">ኣፍሪካንስ</language>
 			<language type="agq">ኣገም</language>
+			<language type="ain">ኣይኑ</language>
 			<language type="ak">ኣካን</language>
+			<language type="ale">ኣለውትኛ</language>
+			<language type="alt">ደቡባዊ ኣልታይ</language>
 			<language type="am">ኣምሓርኛ</language>
+			<language type="an">ኣራጎንኛ</language>
+			<language type="ann">ኦቦሎ</language>
+			<language type="anp">ኣንጂካ</language>
 			<language type="ar">ዓረብ</language>
 			<language type="ar_001">ዘመናዊ ምዱብ ዓረብ</language>
+			<language type="arn">ማፑቺ</language>
+			<language type="arp">ኣራፓሆ</language>
+			<language type="ars">ናጅዲ ዓረብኛ</language>
 			<language type="as">ኣሳሜዝኛ</language>
 			<language type="asa">ኣሱ</language>
 			<language type="ast">ኣስቱርያን</language>
+			<language type="atj">ኣቲካመክ</language>
+			<language type="av">ኣቫር</language>
+			<language type="awa">ኣዋዲ</language>
+			<language type="ay">ኣይማራ</language>
 			<language type="az">ኣዘርባጃንኛ</language>
 			<language type="az" alt="short">ኣዘሪ</language>
+			<language type="ba">ባሽኪር</language>
+			<language type="ban">ባሊንኛ</language>
 			<language type="bas">ባሳ</language>
 			<language type="be">ቤላሩስኛ</language>
 			<language type="bem">ቤምባ</language>
 			<language type="bez">በና</language>
 			<language type="bg">ቡልጋርኛ</language>
+			<language type="bho">ቦጅፑሪ</language>
+			<language type="bi">ቢስላማ</language>
+			<language type="bin">ቢኒ</language>
+			<language type="bla">ሲክሲካ</language>
 			<language type="bm">ባምባራ</language>
 			<language type="bn">በንጋሊ</language>
 			<language type="bo">ቲበታንኛ</language>
 			<language type="br">ብረቶንኛ</language>
 			<language type="brx">ቦዶ</language>
 			<language type="bs">ቦዝንኛ</language>
+			<language type="bug">ቡጊንኛ</language>
+			<language type="byn">ብሊን</language>
 			<language type="ca">ካታላን</language>
+			<language type="cay">ካዩጋ</language>
 			<language type="ccp">ቻክማ</language>
 			<language type="ce">ቸቸንይና</language>
 			<language type="ceb">ሰብዋኖ</language>
 			<language type="cgg">ቺጋ</language>
+			<language type="ch">ቻሞሮ</language>
+			<language type="chk">ቹኪዝኛ</language>
+			<language type="chm">ማሪ</language>
+			<language type="cho">ቾክቶ</language>
+			<language type="chp">ቺፐውያን</language>
 			<language type="chr">ቸሮኪ</language>
+			<language type="chy">ሻያን</language>
 			<language type="ckb">ሶራኒ ኩርዲሽ</language>
 			<language type="ckb" alt="variant">ማእከላይ ኩርዲሽ</language>
+			<language type="clc">ቺልኮቲን</language>
 			<language type="co">ኮርስኛ</language>
+			<language type="crg">ሚቺፍ</language>
+			<language type="crj">ደቡባዊ ምብራቕ ክሪ</language>
+			<language type="crk">ክሪ ፕሌንስ</language>
+			<language type="crl">ሰሜናዊ ምብራቕ ክሪ</language>
+			<language type="crm">ሙስ ክሪ</language>
+			<language type="crr">ካቶሊና አልጎንጉያኛ</language>
 			<language type="cs">ቸክኛ</language>
+			<language type="csw">ክሪ ረግረግ</language>
 			<language type="cu">ቤተ-ክርስትያን ስላቭኛ</language>
+			<language type="cv">ቹቫሽኛ</language>
 			<language type="cy">ዌልስኛ</language>
 			<language type="da">ዳኒሽ</language>
+			<language type="dak">ዳኮታ</language>
+			<language type="dar">ዳርግዋ</language>
 			<language type="dav">ታይታ</language>
 			<language type="de">ጀርመን</language>
+			<language type="dgr">ዶግሪብ</language>
 			<language type="dje">ዛርማ</language>
 			<language type="doi">ዶግሪ</language>
 			<language type="dsb">ታሕተዋይ ሶርብኛ</language>
 			<language type="dua">ድዋላ</language>
+			<language type="dv">ዲቨሂ</language>
 			<language type="dyo">ጆላ-ፎኒይ</language>
 			<language type="dz">ድዞንግካ</language>
+			<language type="dzg">ዳዛጋ</language>
 			<language type="ebu">ኤምቡ</language>
 			<language type="ee">ኢው</language>
+			<language type="efi">ኤፊክ</language>
+			<language type="eka">ኤካጁክ</language>
 			<language type="el">ግሪኽኛ</language>
 			<language type="en">እንግሊዝኛ</language>
+			<language type="en_GB" alt="short">እንግሊዝኛ (ዩ.ኪ.)</language>
 			<language type="en_US">እንግሊዝኛ (ሕቡራት መንግስታት)</language>
+			<language type="en_US" alt="short">እንግሊዝኛ (ሕ.መ.)</language>
 			<language type="eo">ኤስፐራንቶ</language>
 			<language type="es">ስጳንኛ</language>
 			<language type="et">ኤስቶንኛ</language>
@@ -75,123 +125,208 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ff">ፉላ</language>
 			<language type="fi">ፊንላንድኛ</language>
 			<language type="fil">ፊሊፒንኛ</language>
+			<language type="fj">ፊጅያንኛ</language>
 			<language type="fo">ፋሮእይና</language>
+			<language type="fon">ፎን</language>
 			<language type="fr">ፈረንሳይኛ</language>
 			<language type="frc">ካጁን ፈረንሳይ</language>
+			<language type="frr">ሰሜናዊ ፍሪስኛ</language>
 			<language type="fur">ፍርዩልኛ</language>
 			<language type="fy">ምዕራባዊ ፍሪስኛ</language>
 			<language type="ga">ኣየርላንድኛ</language>
+			<language type="gaa">ጋ</language>
 			<language type="gd">ስኮትላንዳዊ ጋኤሊክኛ</language>
+			<language type="gez">ግእዝ</language>
+			<language type="gil">ጊልበርትኛ</language>
 			<language type="gl">ጋሊሽያን</language>
 			<language type="gn">ጓራኒ</language>
+			<language type="gor">ጎሮንታሎ</language>
 			<language type="gsw">ስዊዘርላንዳዊ ጀርመን</language>
 			<language type="gu">ጉጃራቲ</language>
 			<language type="guz">ጉሲ</language>
 			<language type="gv">ማንክስ</language>
+			<language type="gwi">ጒቺን</language>
 			<language type="ha">ሃውሳ</language>
+			<language type="hai">ሃይዳ</language>
 			<language type="haw">ሃዋይኛ</language>
+			<language type="hax">ደቡባዊ ሃይዳ</language>
 			<language type="he">እብራይስጢ</language>
 			<language type="hi">ሂንዲ</language>
+			<language type="hi_Latn" alt="variant">ሂንግሊሽ</language>
+			<language type="hil">ሂሊጋይኖን</language>
 			<language type="hmn">ህሞንግ</language>
 			<language type="hr">ክሮኤሽያን</language>
 			<language type="hsb">ላዕለዋይ ሶርብኛ</language>
 			<language type="ht">ክርዮል ሃይትኛ</language>
 			<language type="hu">ሃንጋርኛ</language>
+			<language type="hup">ሁፓ</language>
+			<language type="hur">ሃልኮመለም</language>
 			<language type="hy">ኣርሜንኛ</language>
+			<language type="hz">ሄረሮ</language>
 			<language type="ia">ኢንተርሊንጓ</language>
+			<language type="iba">ኢባን</language>
+			<language type="ibb">ኢቢብዮ</language>
 			<language type="id">ኢንዶነዥኛ</language>
 			<language type="ig">ኢግቦ</language>
 			<language type="ii">ሲችዋን ዪ</language>
+			<language type="ikt">ምዕራባዊ ካናዳዊ ኢናክቲቱት</language>
+			<language type="ilo">ኢሎካኖ</language>
+			<language type="inh">ኢንጉሽኛ</language>
+			<language type="io">ኢዶ</language>
 			<language type="is">ኣይስላንድኛ</language>
 			<language type="it">ጥልያን</language>
+			<language type="iu">ኢናክቲቱት</language>
 			<language type="ja">ጃፓንኛ</language>
-			<language type="jgo">ንጎምባ</language>
+			<language type="jbo">ሎጅባን</language>
+			<language type="jgo">ኤንጎምባ</language>
 			<language type="jmc">ማኬም</language>
 			<language type="jv">ጃቫንኛ</language>
 			<language type="ka">ጆርጅያንኛ</language>
 			<language type="kab">ካቢልኛ</language>
+			<language type="kac">ካቺን</language>
+			<language type="kaj">ጅጁ</language>
 			<language type="kam">ካምባ</language>
+			<language type="kbd">ካባርድኛ</language>
+			<language type="kcg">ታያፕ</language>
 			<language type="kde">ማኮንደ</language>
 			<language type="kea">ክርዮል ኬፕ ቨርድኛ</language>
+			<language type="kfo">ኮሮ</language>
 			<language type="kgp">ካይንጋንግ</language>
+			<language type="kha">ካሲ</language>
 			<language type="khq">ኮይራ ቺኒ</language>
 			<language type="ki">ኪኩዩ</language>
+			<language type="kj">ክዋንያማ</language>
 			<language type="kk">ካዛክ</language>
 			<language type="kkj">ካኮ</language>
 			<language type="kl">ግሪንላንድኛ</language>
 			<language type="kln">ካለንጂን</language>
 			<language type="km">ክመር</language>
+			<language type="kmb">ኪምቡንዱ</language>
 			<language type="kn">ካንናዳ</language>
 			<language type="ko">ኮርይኛ</language>
 			<language type="kok">ኮንካኒ</language>
+			<language type="kpe">ክፐለ</language>
+			<language type="kr">ካኑሪ</language>
+			<language type="krc">ካራቻይ-ባልካርኛ</language>
+			<language type="krl">ካረልኛ</language>
+			<language type="kru">ኩሩክ</language>
 			<language type="ks">ካሽሚሪ</language>
 			<language type="ksb">ሻምባላ</language>
 			<language type="ksf">ባፍያ</language>
 			<language type="ksh">ኮልሽ</language>
 			<language type="ku">ኩርዲሽ</language>
+			<language type="kum">ኩሚይክ</language>
+			<language type="kv">ኮሚ</language>
 			<language type="kw">ኮርንኛ</language>
+			<language type="kwk">ክዋክዋላ</language>
 			<language type="ky">ኪርጊዝኛ</language>
 			<language type="la">ላቲን</language>
+			<language type="lad">ላዲኖ</language>
 			<language type="lag">ላንጊ</language>
 			<language type="lb">ሉክሰምበርግኛ</language>
+			<language type="lez">ለዝግኛ</language>
 			<language type="lg">ጋንዳ</language>
+			<language type="li">ሊምበርግኛ</language>
 			<language type="lij">ሊጉርኛ</language>
+			<language type="lil">ሊሉት</language>
 			<language type="lkt">ላኮታ</language>
 			<language type="ln">ሊንጋላ</language>
 			<language type="lo">ላኦ</language>
 			<language type="lou">ክርዮል ሉዊዝያና</language>
+			<language type="loz">ሎዚ</language>
 			<language type="lrc">ሰሜናዊ ሉሪ</language>
+			<language type="lsm">ሳምያ</language>
 			<language type="lt">ሊትዌንኛ</language>
 			<language type="lu">ሉባ-ካታንጋ</language>
+			<language type="lua">ሉባ-ሉልዋ</language>
+			<language type="lun">ሉንዳ</language>
 			<language type="luo">ሉኦ</language>
+			<language type="lus">ማይዞ</language>
 			<language type="luy">ሉይያ</language>
 			<language type="lv">ላትቭኛ</language>
+			<language type="mad">ማዱሪዝኛ</language>
+			<language type="mag">ማጋሂ</language>
 			<language type="mai">ማይቲሊ</language>
+			<language type="mak">ማካሳር</language>
 			<language type="mas">ማሳይ</language>
+			<language type="mdf">ሞክሻ</language>
+			<language type="men">መንዴ</language>
 			<language type="mer">መሩ</language>
 			<language type="mfe">ክርዮል ማውሪሽይና</language>
 			<language type="mg">ማላጋሲ</language>
 			<language type="mgh">ማክዋ-ሜቶ</language>
 			<language type="mgo">መታ</language>
+			<language type="mh">ማርሻሊዝኛ</language>
 			<language type="mi">ማኦሪ</language>
+			<language type="mic">ሚክማክ</language>
+			<language type="min">ሚናንግካባው</language>
 			<language type="mk">መቄዶንኛ</language>
 			<language type="ml">ማላያላም</language>
 			<language type="mn">ሞንጎልኛ</language>
 			<language type="mni">ማኒፑሪ</language>
+			<language type="moe">ኢኑ-ኤመን</language>
+			<language type="moh">ሞሃውክ</language>
+			<language type="mos">ሞሲ</language>
 			<language type="mr">ማራቲ</language>
 			<language type="ms">ማላይኛ</language>
 			<language type="mt">ማልትኛ</language>
 			<language type="mua">ሙንዳንግ</language>
 			<language type="mul">ዝተፈላለዩ ቋንቋታት</language>
+			<language type="mus">ክሪክ</language>
+			<language type="mwl">ሚራንዲዝኛ</language>
 			<language type="my">በርምኛ</language>
+			<language type="myv">ኤርዝያ</language>
 			<language type="mzn">ማዛንደራኒ</language>
+			<language type="na">ናውርዋንኛ</language>
+			<language type="nap">ናፖሊታንኛ</language>
 			<language type="naq">ናማ</language>
 			<language type="nb">ኖርወያዊ ቦክማል</language>
-			<language type="nd">ሰሜን ንደበለ</language>
+			<language type="nd">ሰሜን ኤንደበለ</language>
 			<language type="nds">ትሑት ጀርመን</language>
 			<language type="nds_NL">ትሑት ሳክሰን</language>
 			<language type="ne">ኔፓሊ</language>
+			<language type="new">ነዋሪ</language>
+			<language type="ng">ኤንዶንጋ</language>
+			<language type="nia">ንያስ</language>
+			<language type="niu">ንዌንኛ</language>
 			<language type="nl">ዳች</language>
 			<language type="nl_BE">ፍላሚሽ</language>
 			<language type="nmg">ክዋስዮ</language>
 			<language type="nn">ኖርወያዊ ናይኖርስክ</language>
-			<language type="nnh">ንጌምቡን</language>
+			<language type="nnh">ኤንጌምቡን</language>
 			<language type="no">ኖርወይኛ</language>
+			<language type="nog">ኖጋይኛ</language>
+			<language type="nqo">ኤንኮ</language>
+			<language type="nr">ደቡብ ኤንደበለ</language>
+			<language type="nso">ሰሜናዊ ሶቶ</language>
 			<language type="nus">ንዌር</language>
 			<language type="nv">ናቫሆ</language>
 			<language type="ny">ንያንጃ</language>
 			<language type="nyn">ንያንኮል</language>
 			<language type="oc">ኦክሲታንኛ</language>
+			<language type="ojb">ሰሜናዊ ምዕራብ ኦጂብዋ</language>
+			<language type="ojc">ማእከላይ ኦጂብዋ</language>
+			<language type="ojs">ኦጂ-ክሪ</language>
+			<language type="ojw">ምዕራባዊ ኦጂብዋ</language>
+			<language type="oka">ኦካናጋን</language>
 			<language type="om">ኦሮሞ</language>
 			<language type="or">ኦድያ</language>
 			<language type="os">ኦሰትኛ</language>
 			<language type="pa">ፑንጃቢ</language>
+			<language type="pag">ፓንጋሲናን</language>
+			<language type="pam">ፓምፓንጋ</language>
+			<language type="pap">ፓፕያመንቶ</language>
+			<language type="pau">ፓላውኛ</language>
 			<language type="pcm">ፒጂን ናይጀርያ</language>
+			<language type="pis">ፒጂን</language>
 			<language type="pl">ፖሊሽ</language>
+			<language type="pqm">ማሊሲት-ፓሳማኳዲ</language>
 			<language type="prg">ፕሩስኛ</language>
 			<language type="ps">ፓሽቶ</language>
 			<language type="pt">ፖርቱጊዝኛ</language>
 			<language type="qu">ቀችዋ</language>
+			<language type="rap">ራፓኑይ</language>
+			<language type="rar">ራሮቶንጋንኛ</language>
 			<language type="rhg">ሮሂንግያ</language>
 			<language type="rm">ሮማንሽ</language>
 			<language type="rn">ኪሩንዲ</language>
@@ -199,13 +334,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ro_MD">ሞልዶቨኛ</language>
 			<language type="rof">ሮምቦ</language>
 			<language type="ru">ሩስኛ</language>
+			<language type="rup">ኣሩማንኛ</language>
 			<language type="rw">ኪንያርዋንዳ</language>
 			<language type="rwk">ርዋ</language>
 			<language type="sa">ሳንስክሪት</language>
+			<language type="sad">ሳንዳወ</language>
 			<language type="sah">ሳኻ</language>
 			<language type="saq">ሳምቡሩ</language>
 			<language type="sat">ሳንታሊ</language>
+			<language type="sba">ኤንጋምባይ</language>
 			<language type="sbp">ሳንጉ</language>
+			<language type="sc">ሳርዲንኛ</language>
+			<language type="scn">ሲሲልኛ</language>
+			<language type="sco">ስኮትኛ</language>
 			<language type="sd">ሲንድሂ</language>
 			<language type="se">ሰሜናዊ ሳሚ</language>
 			<language type="seh">ሰና</language>
@@ -213,50 +354,88 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="sg">ሳንጎ</language>
 			<language type="sh">ሰርቦ-ክሮኤሽያን</language>
 			<language type="shi">ታቸልሂት</language>
+			<language type="shn">ሻን</language>
 			<language type="si">ሲንሃላ</language>
 			<language type="sk">ስሎቫክኛ</language>
 			<language type="sl">ስሎቬንኛ</language>
+			<language type="slh">ደቡባዊ ሉሹትሲድ</language>
 			<language type="sm">ሳሞእኛ</language>
 			<language type="smn">ሳሚ ኢናሪ</language>
+			<language type="sms">ሳሚ ስኮልት</language>
 			<language type="sn">ሾና</language>
+			<language type="snk">ሶኒንከ</language>
 			<language type="so">ሶማሊ</language>
 			<language type="sq">ኣልባንኛ</language>
-			<language type="sr">ሰርብኛ</language>
+			<language type="sr">ቃንቃ ሰርቢያ</language>
+			<language type="srn">ስራናን ቶንጎ</language>
+			<language type="ss">ስዋዚ</language>
 			<language type="st">ደቡባዊ ሶቶ</language>
+			<language type="str">ሳሊሽ መጻብቦታት</language>
 			<language type="su">ሱንዳንኛ</language>
+			<language type="suk">ሱኩማ</language>
 			<language type="sv">ስዊድንኛ</language>
 			<language type="sw">ስዋሂሊ</language>
 			<language type="sw_CD">ስዋሂሊ (ኮንጎ)</language>
+			<language type="swb">ኮሞርኛ</language>
+			<language type="syr">ሱርስት</language>
 			<language type="ta">ታሚል</language>
+			<language type="tce">ደቡባዊ ታትቾን</language>
 			<language type="te">ተሉጉ</language>
+			<language type="tem">ቲምኔ</language>
 			<language type="teo">ተሶ</language>
+			<language type="tet">ቲተም</language>
 			<language type="tg">ታጂክኛ</language>
+			<language type="tgx">ታጊሽ</language>
 			<language type="th">ታይኛ</language>
+			<language type="tht">ታልተን</language>
 			<language type="ti">ትግርኛ</language>
+			<language type="tig">ትግረ</language>
 			<language type="tk">ቱርክመንኛ</language>
 			<language type="tlh">ክሊንጎን</language>
+			<language type="tli">ትሊንጊት</language>
+			<language type="tn">ስዋና</language>
 			<language type="to">ቶንጋንኛ</language>
+			<language type="tok">ቶኪ ፖና</language>
+			<language type="tpi">ቶክ ፒሲን</language>
 			<language type="tr">ቱርክኛ</language>
+			<language type="trv">ታሮኮ</language>
+			<language type="ts">ሶንጋ</language>
 			<language type="tt">ታታር</language>
+			<language type="ttm">ሰሜናዊ ታትቾን</language>
+			<language type="tum">ተምቡካ</language>
+			<language type="tvl">ቱቫልዋንኛ</language>
 			<language type="tw">ትዊ</language>
 			<language type="twq">ታሳዋቅ</language>
+			<language type="ty">ታሂትኛ</language>
+			<language type="tyv">ቱቪንኛ</language>
 			<language type="tzm">ማእከላይ ኣትላስ ታማዛይት</language>
+			<language type="udm">ዩድሙርት</language>
 			<language type="ug">ኡይጉር</language>
 			<language type="uk">ዩክረይንኛ</language>
+			<language type="umb">ኣምቡንዱ</language>
 			<language type="und">ዘይተፈልጠ ቋንቋ</language>
 			<language type="ur">ኡርዱ</language>
 			<language type="uz">ኡዝበክኛ</language>
 			<language type="vai">ቫይ</language>
+			<language type="ve">ቨንዳ</language>
+			<language type="vec">ቬንቲያንኛ</language>
 			<language type="vi">ቬትናምኛ</language>
 			<language type="vo">ቮላፑክ</language>
 			<language type="vun">ቩንጆ</language>
+			<language type="wa">ዋሎን</language>
 			<language type="wae">ዋልሰር</language>
+			<language type="wal">ዎላይታኛ</language>
+			<language type="war">ዋራይ</language>
 			<language type="wo">ዎሎፍ</language>
+			<language type="wuu">ቻይናዊ ዉ</language>
+			<language type="xal">ካልምይክ</language>
 			<language type="xh">ኮሳ</language>
 			<language type="xog">ሶጋ</language>
 			<language type="yav">ያንግበን</language>
+			<language type="ybb">የምባ</language>
 			<language type="yi">ይሁድኛ</language>
 			<language type="yo">ዮሩባ</language>
+			<language type="yrl">ኒንጋቱ</language>
 			<language type="yue">ካንቶንኛ</language>
 			<language type="yue" alt="menu">ቻይናዊ ካንቶንኛ</language>
 			<language type="zgh">ሞሮካዊ ምዱብ ታማዛይት</language>
@@ -267,7 +446,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="zh_Hant">ባህላዊ ቻይንኛ</language>
 			<language type="zh_Hant" alt="long">ባህላዊ ማንዳሪን ቻይንኛ</language>
 			<language type="zu">ዙሉ</language>
+			<language type="zun">ዙኚ</language>
 			<language type="zxx">ቋንቋዊ ትሕዝቶ የለን</language>
+			<language type="zza">ዛዛኪ</language>
 		</languages>
 		<scripts>
 			<script type="Ethi">ፊደል</script>
@@ -471,7 +652,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="MN">ሞንጎልያ</territory>
 			<territory type="MO">ፍሉይ ምምሕዳራዊ ዞባ ማካው (ቻይና)</territory>
 			<territory type="MO" alt="short">ማካው</territory>
-			<territory type="MP">ደሴታት ሰሜናዊ ማርያና</territory>
+			<territory type="MP">ሰሜናዊ ደሴታት ማርያና</territory>
 			<territory type="MQ">ማርቲኒክ</territory>
 			<territory type="MR">ማውሪታንያ</territory>
 			<territory type="MS">ሞንትሰራት</territory>
@@ -497,7 +678,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="OM">ዖማን</territory>
 			<territory type="PA">ፓናማ</territory>
 			<territory type="PE">ፔሩ</territory>
-			<territory type="PF">ፈረንሳይ ፖሊነዥያ</territory>
+			<territory type="PF">ፈረንሳዊት ፖሊነዥያ</territory>
 			<territory type="PG">ፓፕዋ ኒው ጊኒ</territory>
 			<territory type="PH">ፊሊፒንስ</territory>
 			<territory type="PK">ፓኪስታን</territory>
@@ -664,11 +845,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<dateTimeFormats>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} ሰዓት {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} ሰዓት {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -1067,11 +1254,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<dateTimeFormats>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} ሰዓት {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} ሰዓት {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -1793,13 +1986,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</relativeTime>
 			</field>
 			<field type="dayperiod-short">
-				<displayName>ቅ.ቀ./ድ.ቀ.</displayName>
+				<displayName>AM/PM</displayName>
 			</field>
 			<field type="dayperiod">
-				<displayName>ቅ.ቀ./ድ.ቀ.</displayName>
+				<displayName>AM/PM</displayName>
 			</field>
 			<field type="dayperiod-narrow">
-				<displayName>ቅ.ቀ./ድ.ቀ.</displayName>
+				<displayName>AM/PM</displayName>
 			</field>
 			<field type="hour">
 				<displayName>ሰዓት</displayName>
@@ -2555,6 +2748,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="Pacific/Enderbury">
 				<exemplarCity>ኤንደርበሪ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Kanton">
+				<exemplarCity>ካንቶን</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
 				<exemplarCity>ኪሪቲማቲ</exemplarCity>
@@ -3351,6 +3547,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>ግዜ ጋላፓጎስ</standard>
 				</long>
 			</metazone>
+			<metazone type="GMT">
+				<long>
+					<standard>GMT</standard>
+				</long>
+			</metazone>
 			<metazone type="Guyana">
 				<long>
 					<standard>ግዜ ጉያና</standard>
@@ -3550,37 +3751,65 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>¤#,##0.00</pattern>
+					<pattern alt="alphaNextToNumber" draft="provisional">¤ #,##0.00</pattern>
+					<pattern alt="noCurrency" draft="provisional">#,##0.00</pattern>
 				</currencyFormat>
 				<currencyFormat type="accounting">
 					<pattern>¤#,##0.00</pattern>
+					<pattern alt="alphaNextToNumber" draft="provisional">¤ #,##0.00</pattern>
+					<pattern alt="noCurrency" draft="provisional">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
 				<currencyFormat type="standard">
 					<pattern type="1000" count="one">¤0 ሽ</pattern>
+					<pattern type="1000" count="one" alt="alphaNextToNumber" draft="provisional">¤ 0 ሽ</pattern>
 					<pattern type="1000" count="other">¤0 ሽ</pattern>
+					<pattern type="1000" count="other" alt="alphaNextToNumber" draft="provisional">¤ 0 ሽ</pattern>
 					<pattern type="10000" count="one">¤00 ሽ</pattern>
+					<pattern type="10000" count="one" alt="alphaNextToNumber" draft="provisional">¤ 00 ሽ</pattern>
 					<pattern type="10000" count="other">¤00 ሽ</pattern>
+					<pattern type="10000" count="other" alt="alphaNextToNumber" draft="provisional">¤ 00 ሽ</pattern>
 					<pattern type="100000" count="one">¤000 ሽ</pattern>
+					<pattern type="100000" count="one" alt="alphaNextToNumber" draft="provisional">¤ 000 ሽ</pattern>
 					<pattern type="100000" count="other">¤000 ሽ</pattern>
+					<pattern type="100000" count="other" alt="alphaNextToNumber" draft="provisional">¤ 000 ሽ</pattern>
 					<pattern type="1000000" count="one">¤0 ሚ</pattern>
+					<pattern type="1000000" count="one" alt="alphaNextToNumber" draft="provisional">¤ 0 ሚ</pattern>
 					<pattern type="1000000" count="other">¤0 ሚ</pattern>
+					<pattern type="1000000" count="other" alt="alphaNextToNumber" draft="provisional">¤ 0 ሚ</pattern>
 					<pattern type="10000000" count="one">¤00 ሚ</pattern>
+					<pattern type="10000000" count="one" alt="alphaNextToNumber" draft="provisional">¤ 00 ሚ</pattern>
 					<pattern type="10000000" count="other">¤00 ሚ</pattern>
+					<pattern type="10000000" count="other" alt="alphaNextToNumber" draft="provisional">¤ 00 ሚ</pattern>
 					<pattern type="100000000" count="one">¤000 ሚ</pattern>
+					<pattern type="100000000" count="one" alt="alphaNextToNumber" draft="provisional">¤ 000 ሚ</pattern>
 					<pattern type="100000000" count="other">¤000 ሚ</pattern>
+					<pattern type="100000000" count="other" alt="alphaNextToNumber" draft="provisional">¤ 000 ሚ</pattern>
 					<pattern type="1000000000" count="one">¤0 ቢ</pattern>
+					<pattern type="1000000000" count="one" alt="alphaNextToNumber" draft="provisional">¤ 0 ቢ</pattern>
 					<pattern type="1000000000" count="other">¤0 ቢ</pattern>
+					<pattern type="1000000000" count="other" alt="alphaNextToNumber" draft="provisional">¤ 0 ቢ</pattern>
 					<pattern type="10000000000" count="one">¤00 ቢ</pattern>
+					<pattern type="10000000000" count="one" alt="alphaNextToNumber" draft="provisional">¤ 00 ቢ</pattern>
 					<pattern type="10000000000" count="other">¤00 ቢ</pattern>
+					<pattern type="10000000000" count="other" alt="alphaNextToNumber" draft="provisional">¤ 00 ቢ</pattern>
 					<pattern type="100000000000" count="one">¤000 ቢ</pattern>
+					<pattern type="100000000000" count="one" alt="alphaNextToNumber" draft="provisional">¤ 000 ቢ</pattern>
 					<pattern type="100000000000" count="other">¤000 ቢ</pattern>
+					<pattern type="100000000000" count="other" alt="alphaNextToNumber" draft="provisional">¤ 000 ቢ</pattern>
 					<pattern type="1000000000000" count="one">¤0 ት</pattern>
+					<pattern type="1000000000000" count="one" alt="alphaNextToNumber" draft="provisional">¤ 0 ት</pattern>
 					<pattern type="1000000000000" count="other">¤0 ት</pattern>
+					<pattern type="1000000000000" count="other" alt="alphaNextToNumber" draft="provisional">¤ 0 ት</pattern>
 					<pattern type="10000000000000" count="one">¤00 ት</pattern>
+					<pattern type="10000000000000" count="one" alt="alphaNextToNumber" draft="provisional">¤ 00 ት</pattern>
 					<pattern type="10000000000000" count="other">¤00 ት</pattern>
+					<pattern type="10000000000000" count="other" alt="alphaNextToNumber" draft="provisional">¤ 00 ት</pattern>
 					<pattern type="100000000000000" count="one">¤000 ት</pattern>
+					<pattern type="100000000000000" count="one" alt="alphaNextToNumber" draft="provisional">¤ 000 ት</pattern>
 					<pattern type="100000000000000" count="other">¤000 ት</pattern>
+					<pattern type="100000000000000" count="other" alt="alphaNextToNumber" draft="provisional">¤ 000 ት</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<unitPattern count="one">{0} {1}</unitPattern>
@@ -3665,8 +3894,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<pattern type="range">{0}–{1}</pattern>
 		</miscPatterns>
 		<minimalPairs>
-			<pluralMinimalPairs count="one" draft="contributed">{0} መዓልቲ</pluralMinimalPairs>
-			<pluralMinimalPairs count="other" draft="contributed">{0} መዓልታት</pluralMinimalPairs>
+			<pluralMinimalPairs count="one">{0} መዓልቲ</pluralMinimalPairs>
+			<pluralMinimalPairs count="other">{0} መዓልታት</pluralMinimalPairs>
 		</minimalPairs>
 	</numbers>
 	<units>
@@ -3770,9 +3999,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<characterLabel type="activities">ንጥፈታት</characterLabel>
 		<characterLabel type="animal">እንስሳታት</characterLabel>
 		<characterLabel type="animals_nature">እንስሳታትን ተፈጥሮን</characterLabel>
-		<characterLabel type="arrows">ፍላጻታት</characterLabel>
+		<characterLabel type="arrows">ፍላጻ</characterLabel>
 		<characterLabel type="body">ኣካላት</characterLabel>
-		<characterLabel type="building">ህንጻታት</characterLabel>
+		<characterLabel type="building">ህንጻ</characterLabel>
 		<characterLabel type="digits">ኣሃዛት</characterLabel>
 		<characterLabel type="emoji">ኢሞጂታት</characterLabel>
 		<characterLabel type="female">ደቂ ኣንስትዮ</characterLabel>
@@ -3817,4 +4046,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<styleName type="wght" subtype="700">ዓጺቕ</styleName>
 		<styleName type="wght" subtype="900">ጸሊም</styleName>
 	</typographicNames>
+	<personNames>
+		<nameOrderLocales order="givenFirst">und ti</nameOrderLocales>
+		<nameOrderLocales order="surnameFirst">ko si ta te vi yue zh</nameOrderLocales>
+	</personNames>
 </ldml>

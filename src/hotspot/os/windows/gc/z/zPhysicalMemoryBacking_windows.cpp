@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -195,7 +195,7 @@ public:
   void unmap(uintptr_t addr, size_t size) const {
     const size_t npages = size >> ZGranuleSizeShift;
 
-    const bool res = MapUserPhysicalPages((char*)addr, npages, NULL);
+    const bool res = MapUserPhysicalPages((char*)addr, npages, nullptr);
     if (!res) {
       fatal("Failed to unmap view " PTR_FORMAT " " SIZE_FORMAT "M (%d)",
             addr, size / M, GetLastError());

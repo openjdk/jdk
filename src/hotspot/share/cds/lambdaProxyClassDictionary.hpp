@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,8 +77,8 @@ public:
   unsigned int hash() const;
 
   static unsigned int dumptime_hash(Symbol* sym)  {
-    if (sym == NULL) {
-      // _invoked_name maybe NULL
+    if (sym == nullptr) {
+      // _invoked_name maybe null
       return 0;
     }
     return java_lang_String::hash_code((const jbyte*)sym->bytes(), sym->utf8_length());
@@ -107,16 +107,16 @@ public:
 class DumpTimeLambdaProxyClassInfo {
 public:
   GrowableArray<InstanceKlass*>* _proxy_klasses;
-  DumpTimeLambdaProxyClassInfo() : _proxy_klasses(NULL) {}
+  DumpTimeLambdaProxyClassInfo() : _proxy_klasses(nullptr) {}
   DumpTimeLambdaProxyClassInfo(const DumpTimeLambdaProxyClassInfo& src);
   DumpTimeLambdaProxyClassInfo& operator=(const DumpTimeLambdaProxyClassInfo&) = delete;
   ~DumpTimeLambdaProxyClassInfo();
 
   void add_proxy_klass(InstanceKlass* proxy_klass) {
-    if (_proxy_klasses == NULL) {
-      _proxy_klasses = new (ResourceObj::C_HEAP, mtClassShared) GrowableArray<InstanceKlass*>(5, mtClassShared);
+    if (_proxy_klasses == nullptr) {
+      _proxy_klasses = new (mtClassShared) GrowableArray<InstanceKlass*>(5, mtClassShared);
     }
-    assert(_proxy_klasses != NULL, "sanity");
+    assert(_proxy_klasses != nullptr, "sanity");
     _proxy_klasses->append(proxy_klass);
   }
 
@@ -160,7 +160,7 @@ class DumpTimeLambdaProxyClassDictionary
   : public ResourceHashtable<LambdaProxyClassKey,
                              DumpTimeLambdaProxyClassInfo,
                              137, // prime number
-                             ResourceObj::C_HEAP,
+                             AnyObj::C_HEAP,
                              mtClassShared,
                              LambdaProxyClassKey::DUMPTIME_HASH,
                              LambdaProxyClassKey::DUMPTIME_EQUALS> {

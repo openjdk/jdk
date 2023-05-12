@@ -101,7 +101,7 @@ public class AppContentTest {
             })
             // On macOS aarch64 we always signing app image and signing will fail, since
             // test produces invalid app bundle.
-            .setExpectedExitCode(testPathArgs.contains(TEST_BAD) || TKit.isArmMac() ? 1 : 0)
+            .setExpectedExitCode(testPathArgs.contains(TEST_BAD) || TKit.isOSX() ? 1 : 0)
             .run();
         }
 }

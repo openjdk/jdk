@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ uint StrIntrinsicNode::match_edge(uint idx) const {
 Node* StrIntrinsicNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   if (remove_dead_region(phase, can_reshape)) return this;
   // Don't bother trying to transform a dead node
-  if (in(0) && in(0)->is_top())  return NULL;
+  if (in(0) && in(0)->is_top())  return nullptr;
 
   if (can_reshape) {
     Node* mem = phase->transform(in(MemNode::Memory));
@@ -56,7 +56,7 @@ Node* StrIntrinsicNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       return this;
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 //------------------------------Value------------------------------------------
@@ -72,7 +72,7 @@ uint StrIntrinsicNode::size_of() const { return sizeof(*this); }
 // Return a node which is more "ideal" than the current node.  Strip out
 // control copies
 Node* StrCompressedCopyNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  return remove_dead_region(phase, can_reshape) ? this : NULL;
+  return remove_dead_region(phase, can_reshape) ? this : nullptr;
 }
 
 //=============================================================================
@@ -80,8 +80,23 @@ Node* StrCompressedCopyNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 // Return a node which is more "ideal" than the current node.  Strip out
 // control copies
 Node* StrInflatedCopyNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  return remove_dead_region(phase, can_reshape) ? this : NULL;
+  return remove_dead_region(phase, can_reshape) ? this : nullptr;
 }
+
+uint VectorizedHashCodeNode::match_edge(uint idx) const {
+  // Do not match memory edge.
+  return idx >= 2 && idx <=  5; // VectorizedHashCodeNode (Binary ary1 cnt1) (Binary result bt)
+}
+
+Node* VectorizedHashCodeNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  return remove_dead_region(phase, can_reshape) ? this : nullptr;
+}
+
+const Type* VectorizedHashCodeNode::Value(PhaseGVN* phase) const {
+  if (in(0) && phase->type(in(0)) == Type::TOP) return Type::TOP;
+  return bottom_type();
+}
+
 
 //=============================================================================
 //------------------------------match_edge-------------------------------------
@@ -94,7 +109,7 @@ uint EncodeISOArrayNode::match_edge(uint idx) const {
 // Return a node which is more "ideal" than the current node.  Strip out
 // control copies
 Node* EncodeISOArrayNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  return remove_dead_region(phase, can_reshape) ? this : NULL;
+  return remove_dead_region(phase, can_reshape) ? this : nullptr;
 }
 
 //------------------------------Value------------------------------------------
@@ -156,7 +171,7 @@ Node* CompressBitsNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       return new AndLNode(compr, src->in(1));
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 Node* compress_expand_identity(PhaseGVN* phase, Node* n) {
@@ -212,7 +227,7 @@ Node* ExpandBitsNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       return new AndLNode(src->in(1), mask);
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 Node* ExpandBitsNode::Identity(PhaseGVN* phase) {

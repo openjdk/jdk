@@ -58,7 +58,7 @@ static NSRange javaIntArrayToNSRange(JNIEnv* env, jintArray array) {
     if (values == NULL) {
         NSLog(@"%s failed calling GetIntArrayElements", __FUNCTION__);
         return DEFAULT_RANGE;
-    };
+    }
     return NSMakeRange(values[0], values[1] - values[0]);
 }
 

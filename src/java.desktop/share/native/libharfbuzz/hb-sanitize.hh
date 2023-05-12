@@ -198,10 +198,11 @@ struct hb_sanitize_context_t :
   void start_processing ()
   {
     reset_object ();
-    if (unlikely (hb_unsigned_mul_overflows (this->end - this->start, HB_SANITIZE_MAX_OPS_FACTOR)))
+    unsigned m;
+    if (unlikely (hb_unsigned_mul_overflows (this->end - this->start, HB_SANITIZE_MAX_OPS_FACTOR, &m)))
       this->max_ops = HB_SANITIZE_MAX_OPS_MAX;
     else
-      this->max_ops = hb_clamp ((unsigned) (this->end - this->start) * HB_SANITIZE_MAX_OPS_FACTOR,
+      this->max_ops = hb_clamp (m,
                                 (unsigned) HB_SANITIZE_MAX_OPS_MIN,
                                 (unsigned) HB_SANITIZE_MAX_OPS_MAX);
     this->edit_count = 0;
@@ -239,7 +240,7 @@ struct hb_sanitize_context_t :
 
     DEBUG_MSG_LEVEL (SANITIZE, p, this->debug_depth+1, 0,
                      "check_range [%p..%p]"
-                     " (%d bytes) in [%p..%p] -> %s",
+                     " (%u bytes) in [%p..%p] -> %s",
                      p, p + len, len,
                      this->start, this->end,
                      ok ? "OK" : "OUT-OF-RANGE");
@@ -252,8 +253,9 @@ struct hb_sanitize_context_t :
                     unsigned int a,
                     unsigned int b) const
   {
-    return !hb_unsigned_mul_overflows (a, b) &&
-           this->check_range (base, a * b);
+    unsigned m;
+    return !hb_unsigned_mul_overflows (a, b, &m) &&
+           this->check_range (base, m);
   }
 
   template <typename T>
@@ -262,8 +264,9 @@ struct hb_sanitize_context_t :
                     unsigned int b,
                     unsigned int c) const
   {
-    return !hb_unsigned_mul_overflows (a, b) &&
-           this->check_range (base, a * b, c);
+    unsigned m;
+    return !hb_unsigned_mul_overflows (a, b, &m) &&
+           this->check_range (base, m, c);
   }
 
   template <typename T>
@@ -305,7 +308,7 @@ struct hb_sanitize_context_t :
     this->edit_count++;
 
     DEBUG_MSG_LEVEL (SANITIZE, p, this->debug_depth+1, 0,
-       "may_edit(%u) [%p..%p] (%d bytes) in [%p..%p] -> %s",
+       "may_edit(%u) [%p..%p] (%u bytes) in [%p..%p] -> %s",
        this->edit_count,
        p, p + len, len,
        this->start, this->end,
@@ -350,13 +353,13 @@ struct hb_sanitize_context_t :
     {
       if (edit_count)
       {
-        DEBUG_MSG_FUNC (SANITIZE, start, "passed first round with %d edits; going for second round", edit_count);
+        DEBUG_MSG_FUNC (SANITIZE, start, "passed first round with %u edits; going for second round", edit_count);
 
         /* sanitize again to ensure no toe-stepping */
         edit_count = 0;
         sane = t->sanitize (this);
         if (edit_count) {
-          DEBUG_MSG_FUNC (SANITIZE, start, "requested %d edits in second round; FAILLING", edit_count);
+          DEBUG_MSG_FUNC (SANITIZE, start, "requested %u edits in second round; FAILLING", edit_count);
           sane = false;
         }
       }

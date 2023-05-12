@@ -160,6 +160,8 @@ jboolean JNICALL jfr_is_class_instrumented(JNIEnv* env, jobject jvm, jclass claz
 
 jboolean JNICALL jfr_is_containerized(JNIEnv* env, jobject jvm);
 
+jlong JNICALL jfr_host_total_memory(JNIEnv* env, jobject jvm);
+
 #ifdef __cplusplus
 }
 #endif

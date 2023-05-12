@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1224,11 +1224,6 @@ jobject awtJNI_GetColorModel(JNIEnv *env, AwtGraphicsConfigDataPtr aData)
             (*env)->PopLocalFrame(env, 0);
             return NULL;
         }
-
-        /* Set pData field of ColorModel to point to ColorData */
-        JNU_SetLongFieldFromPtr(env, awt_colormodel, g_CMpDataID,
-                                aData->color_data);
-
     }
 
     return (*env)->PopLocalFrame(env, awt_colormodel);

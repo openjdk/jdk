@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,8 +56,8 @@ class LatestMethodCache : public CHeapObj<mtClass> {
   int                   _method_idnum;
 
  public:
-  LatestMethodCache()   { _klass = NULL; _method_idnum = -1; }
-  ~LatestMethodCache()  { _klass = NULL; _method_idnum = -1; }
+  LatestMethodCache()   { _klass = nullptr; _method_idnum = -1; }
+  ~LatestMethodCache()  { _klass = nullptr; _method_idnum = -1; }
 
   void   init(Klass* k, Method* m);
   Klass* klass() const           { return _klass; }
@@ -185,7 +185,7 @@ class Universe: AllStatic {
 
   // Mirrors for primitive classes (created eagerly)
   static oop check_mirror(oop m) {
-    assert(m != NULL, "mirror not initialized");
+    assert(m != nullptr, "mirror not initialized");
     return m;
   }
 
@@ -195,6 +195,16 @@ class Universe: AllStatic {
 
   static uintptr_t _verify_oop_mask;
   static uintptr_t _verify_oop_bits;
+
+  // Table of primitive type mirrors, excluding T_OBJECT and T_ARRAY
+  // but including T_VOID, hence the index including T_VOID
+  static OopHandle _basic_type_mirrors[T_VOID+1];
+
+#if INCLUDE_CDS_JAVA_HEAP
+  // Each slot i stores an index that can be used to restore _basic_type_mirrors[i]
+  // from the archive heap using HeapShared::get_root(int)
+  static int _archived_basic_type_mirror_indices[T_VOID+1];
+#endif
 
  public:
   static void calculate_verify_data(HeapWord* low_boundary, HeapWord* high_boundary) PRODUCT_RETURN;
@@ -216,7 +226,7 @@ class Universe: AllStatic {
   static Klass* typeArrayKlassObj(BasicType t) {
     assert((uint)t >= T_BOOLEAN, "range check for type: %s", type2name(t));
     assert((uint)t < T_LONG+1,   "range check for type: %s", type2name(t));
-    assert(_typeArrayKlassObjs[t] != NULL, "domain check");
+    assert(_typeArrayKlassObjs[t] != nullptr, "domain check");
     return _typeArrayKlassObjs[t];
   }
 
@@ -231,12 +241,12 @@ class Universe: AllStatic {
   static oop short_mirror();
   static oop void_mirror();
 
-  // Table of primitive type mirrors, excluding T_OBJECT and T_ARRAY
-  // but including T_VOID, hence the index including T_VOID
-  static OopHandle _mirrors[T_VOID+1];
-
   static oop java_mirror(BasicType t);
-  static void replace_mirror(BasicType t, oop obj);
+
+#if INCLUDE_CDS_JAVA_HEAP
+  static void set_archived_basic_type_mirror_index(BasicType t, int index);
+  static void update_archived_basic_type_mirrors();
+#endif
 
   static oop      main_thread_group();
   static void set_main_thread_group(oop group);
@@ -312,7 +322,7 @@ class Universe: AllStatic {
 
   DEBUG_ONLY(static bool is_gc_active();)
   DEBUG_ONLY(static bool is_in_heap(const void* p);)
-  DEBUG_ONLY(static bool is_in_heap_or_null(const void* p) { return p == NULL || is_in_heap(p); })
+  DEBUG_ONLY(static bool is_in_heap_or_null(const void* p) { return p == nullptr || is_in_heap(p); })
 
   // Reserve Java heap and determine CompressedOops mode
   static ReservedHeapSpace reserve_heap(size_t heap_size, size_t alignment);

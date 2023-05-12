@@ -37,4 +37,7 @@
 #define shenandoah_padding(id) \
   DEFINE_PAD_MINUS_SIZE(id, SHENANDOAH_CACHE_LINE_SIZE, 0)
 
+#define shenandoah_padding_minus_size(id, size) \
+  DEFINE_PAD_MINUS_SIZE(id, SHENANDOAH_CACHE_LINE_SIZE, size)
+
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHPADDING_HPP

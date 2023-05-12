@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,12 @@
 
 package q;
 
-import java.io.IOException;
-import java.io.OutputStream;
 import sun.security.util.DerEncoder;
+import sun.security.util.DerOutputStream;
 
 public class NoRepl implements DerEncoder {
-    public void derEncode(OutputStream out) throws IOException {
-        throw new IOException();
+    @Override
+    public void encode(DerOutputStream out) {
+        throw new RuntimeException();
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,7 +76,6 @@ TEST_VM(G1ServiceThread, test_add_while_waiting) {
   // Make sure default tasks use long intervals so that the service thread
   // is doing a long wait for the next execution.
   AutoModifyRestore<uintx> f1(G1PeriodicGCInterval, 100000);
-  AutoModifyRestore<uintx> f2(G1ConcRefinementServiceIntervalMillis, 100000);
 
   // Create thread and let it start.
   G1ServiceThread* st = new G1ServiceThread();

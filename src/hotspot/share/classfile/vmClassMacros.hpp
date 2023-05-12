@@ -89,8 +89,9 @@
   do_klass(Thread_FieldHolder_klass,                    java_lang_Thread_FieldHolder                          ) \
   do_klass(Thread_Constants_klass,                      java_lang_Thread_Constants                            ) \
   do_klass(ThreadGroup_klass,                           java_lang_ThreadGroup                                 ) \
-  do_klass(BasicVirtualThread_klass,                    java_lang_BaseVirtualThread                           ) \
+  do_klass(BaseVirtualThread_klass,                     java_lang_BaseVirtualThread                           ) \
   do_klass(VirtualThread_klass,                         java_lang_VirtualThread                               ) \
+  do_klass(BoundVirtualThread_klass,                    java_lang_BoundVirtualThread                          ) \
   do_klass(Properties_klass,                            java_util_Properties                                  ) \
   do_klass(Module_klass,                                java_lang_Module                                      ) \
   do_klass(reflect_AccessibleObject_klass,              java_lang_reflect_AccessibleObject                    ) \

@@ -2,6 +2,15 @@ SummaryTest.java:14: warning: invalid use of @summary
     /** <p> {@summary illegal} **/
             ^
 SummaryTest.java:17: warning: invalid use of @summary
+    /** text {@summary illegal} **/
+             ^
+SummaryTest.java:20: warning: invalid use of @summary
+    /** &amp;{@summary illegal} **/
+             ^
+SummaryTest.java:23: warning: invalid use of @summary
+    /** @@{@summary illegal} **/
+          ^
+SummaryTest.java:26: warning: invalid use of @summary
     /** {@summary legal} text {@summary illegal} **/
                               ^
-2 warnings
+5 warnings

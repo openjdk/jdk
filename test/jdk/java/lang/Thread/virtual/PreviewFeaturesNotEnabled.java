@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,25 +24,25 @@
 /**
  * @test
  * @summary Test that preview APIs throws exception when preview features not enabled
- * @run testng/othervm PreviewFeaturesNotEnabled
+ * @run junit/othervm PreviewFeaturesNotEnabled
  */
 
 import java.lang.reflect.Method;
 import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.Executors;
 
-import org.testng.annotations.Test;
-import static org.testng.Assert.*;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class PreviewFeaturesNotEnabled {
+class PreviewFeaturesNotEnabled {
 
     /**
      * Thread.ofVirtual should fail with UOE.
      */
     @Test
-    public void testOfVirtual() throws Exception {
+    void testOfVirtual() throws Exception {
         Method ofVirtual = Thread.class.getDeclaredMethod("ofVirtual");
-        var exc = expectThrows(InvocationTargetException.class, () -> ofVirtual.invoke(null));
+        var exc = assertThrows(InvocationTargetException.class, () -> ofVirtual.invoke(null));
         assertTrue(exc.getCause() instanceof UnsupportedOperationException);
     }
 
@@ -50,10 +50,10 @@ public class PreviewFeaturesNotEnabled {
      * Thread.startVirtualThread should fail with UOE.
      */
     @Test
-    public void testStartVirutalThread() throws Exception {
+    void testStartVirutalThread() throws Exception {
         Method startVirtualThread = Thread.class.getMethod("startVirtualThread", Runnable.class);
         Runnable task = () -> { };
-        var exc = expectThrows(InvocationTargetException.class,
+        var exc = assertThrows(InvocationTargetException.class,
                 () -> startVirtualThread.invoke(null, task));
         assertTrue(exc.getCause() instanceof UnsupportedOperationException);
     }
@@ -62,9 +62,9 @@ public class PreviewFeaturesNotEnabled {
      * Executors.newVirtualThreadPerTaskExecutor should fail with UOE.
      */
     @Test
-    public void testNewVirtualThreadPerTaskExecutor() throws Exception {
+    void testNewVirtualThreadPerTaskExecutor() throws Exception {
         Method newVirtualThreadPerTaskExecutor = Executors.class.getMethod("newVirtualThreadPerTaskExecutor");
-        var exc = expectThrows(InvocationTargetException.class,
+        var exc = assertThrows(InvocationTargetException.class,
                 () -> newVirtualThreadPerTaskExecutor.invoke(null));
         assertTrue(exc.getCause() instanceof UnsupportedOperationException);
     }
@@ -73,8 +73,8 @@ public class PreviewFeaturesNotEnabled {
      * Directly accessing internal Continuation class should fail with UOE.
      */
     @Test
-    public void testContinuationInitializer() throws Exception {
-        var exc = expectThrows(ExceptionInInitializerError.class,
+    void testContinuationInitializer() throws Exception {
+        var exc = assertThrows(ExceptionInInitializerError.class,
                 () -> Class.forName("jdk.internal.vm.Continuation"));
         assertTrue(exc.getCause() instanceof UnsupportedOperationException);
     }
@@ -83,7 +83,7 @@ public class PreviewFeaturesNotEnabled {
      * Thread.isVirtual should not fail.
      */
     @Test
-    public void testIsVirtual() throws Exception {
+    void testIsVirtual() throws Exception {
         boolean isVirtual = isVirtual(Thread.currentThread());
         assertFalse(isVirtual);
     }
@@ -92,7 +92,7 @@ public class PreviewFeaturesNotEnabled {
      * Thread.ofPlatform should not fail.
      */
     @Test
-    public void testOfPlatform() throws Exception {
+    void testOfPlatform() throws Exception {
         Method ofPlatform = Thread.class.getDeclaredMethod("ofPlatform");
         Object builder = ofPlatform.invoke(null);
         Method startMethod = Class.forName("java.lang.Thread$Builder")

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,16 +26,15 @@
  * @bug 4215035
  * @summary standard extensions path is hard-coded in default
  *      system policy file
- * @run main/manual ExtDirs
+ * @run main ExtDirs
  */
 
 /*
- * Run this test manually with:
- * java    -Djava.security.manager \
- *         -Djava.ext.dirs=./ExtDirsA:./ExtDirsB \
- *         -Djava.security.policy==./ExtDirs.policy \
- *         -Djava.security.debug=parser \
- *         ExtDirs
+ * @test
+ * @bug 4215035
+ * @summary standard extensions path is hard-coded in default
+ *      system policy file
+ * @run main/othervm/policy=ExtDirs.policy ExtDirs
  */
 
 public class ExtDirs {

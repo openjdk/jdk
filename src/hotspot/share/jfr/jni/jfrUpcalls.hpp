@@ -25,8 +25,8 @@
 #ifndef SHARE_JFR_JNI_JFRUPCALLS_HPP
 #define SHARE_JFR_JNI_JFRUPCALLS_HPP
 
-#include "jni.h"
 #include "jfr/utilities/jfrAllocation.hpp"
+#include "jni.h"
 #include "utilities/exceptions.hpp"
 
 class JavaThread;

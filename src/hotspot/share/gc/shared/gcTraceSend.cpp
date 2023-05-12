@@ -244,6 +244,7 @@ class GCHeapSummaryEventSender : public GCHeapSummaryVisitor {
       e.set_edenUsedSize(g1_heap_summary->edenUsed());
       e.set_edenTotalSize(g1_heap_summary->edenCapacity());
       e.set_survivorUsedSize(g1_heap_summary->survivorUsed());
+      e.set_oldGenUsedSize(g1_heap_summary->oldGenUsed());
       e.set_numberOfRegions(g1_heap_summary->numberOfRegions());
       e.commit();
     }
@@ -389,6 +390,7 @@ void GCLockerTracer::report_gc_locker() {
     EventGCLocker event(UNTIMED);
     if (event.should_commit()) {
       event.set_starttime(_needs_gc_start_timestamp);
+      event.set_endtime(_needs_gc_start_timestamp);
       event.set_lockCount(_jni_lock_count);
       event.set_stallCount(_stall_count);
       event.commit();

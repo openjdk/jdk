@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1013,7 +1013,7 @@ public final class Float extends Number
      * @param floatBinary16 the binary16 value to convert to {@code float}
      * @since 20
      */
-    // @IntrinsicCandidate
+    @IntrinsicCandidate
     public static float float16ToFloat(short floatBinary16) {
         /*
          * The binary16 format has 1 sign bit, 5 exponent bits, and 10
@@ -1088,7 +1088,7 @@ public final class Float extends Number
      * @param f the {@code float} value to convert to binary16
      * @since 20
      */
-    // @IntrinsicCandidate
+    @IntrinsicCandidate
     public static short floatToFloat16(float f) {
         int doppel = Float.floatToRawIntBits(f);
         short sign_bit = (short)((doppel & 0x8000_0000) >> 16);
@@ -1218,7 +1218,7 @@ public final class Float extends Number
      * of the integer value returned is the same as that of the
      * integer that would be returned by the call:
      * <pre>
-     *    new Float(f1).compareTo(new Float(f2))
+     *    Float.valueOf(f1).compareTo(Float.valueOf(f2))
      * </pre>
      *
      * @param   f1        the first {@code float} to compare.

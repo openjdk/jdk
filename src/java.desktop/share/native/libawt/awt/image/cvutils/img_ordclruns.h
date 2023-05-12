@@ -91,7 +91,7 @@
  * calculation to handle mapping the values near 255 to the maximum
  * intensity, but ordered dithering uses a truncating calculation
  * so the value 255 will be rounded down to the second highest
- * intensity thereby causing an occasionaly dark pixel when rendering
+ * intensity thereby causing an occasionally dark pixel when rendering
  * the maximum input intensity.  Other intensities (less than 255)
  * are left alone since modifying them would slightly disturb their
  * error distribution.  In particular, for red, the value 0xe0 has

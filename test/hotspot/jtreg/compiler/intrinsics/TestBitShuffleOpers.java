@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,13 +27,14 @@
  * @key randomness
  * @summary To test various transforms added for bit COMPRESS_BITS and EXPAND_BITS operations
  * @requires vm.compiler2.enabled
- * @requires vm.cpu.features ~= ".*bmi2.*"
- * @requires vm.cpu.features ~= ".*bmi1.*"
- * @requires vm.cpu.features ~= ".*sse2.*"
+ * @requires (((os.arch=="x86" | os.arch=="amd64" | os.arch=="x86_64") &
+ *            (vm.cpu.features ~= ".*bmi2.*" & vm.cpu.features ~= ".*bmi1.*" &
+ *             vm.cpu.features ~= ".*sse2.*")) |
+ *            ((vm.opt.UseSVE == "null" | vm.opt.UseSVE > 1) &
+ *             os.arch=="aarch64" & vm.cpu.features ~= ".*svebitperm.*"))
  * @library /test/lib /
  * @run driver compiler.intrinsics.TestBitShuffleOpers
  */
-
 package compiler.intrinsics;
 
 import java.util.concurrent.Callable;
@@ -52,7 +53,7 @@ public class TestBitShuffleOpers {
 
     //===================== Compress Bits Transforms ================
     @Test
-    @IR(counts = {"RShiftI", " > 0 ", "AndI", " > 0"})
+    @IR(counts = {IRNode.RSHIFT_I, " > 0 ", IRNode.AND_I, " > 0"})
     public void test1(int[] ri, int[] ai, int[] bi) {
         for (int i = 0; i < ri.length; i++) {
            ri[i] = Integer.compress(ai[i], 1 << bi[i]);
@@ -67,7 +68,7 @@ public class TestBitShuffleOpers {
     }
 
     @Test
-    @IR(counts = {"URShiftI", " > 0 "})
+    @IR(counts = {IRNode.URSHIFT_I, " > 0 "})
     public void test2(int[] ri, int[] ai, int[] bi) {
         for (int i = 0; i < ri.length; i++) {
            ri[i] = Integer.compress(ai[i], -1 << bi[i]);
@@ -82,7 +83,7 @@ public class TestBitShuffleOpers {
     }
 
     @Test
-    @IR(counts = {"CompressBits", " > 0 ", "AndI" , " > 0 "})
+    @IR(counts = {IRNode.COMPRESS_BITS, " > 0 ", IRNode.AND_I , " > 0 "})
     public void test3(int[] ri, int[] ai, int[] bi) {
         for (int i = 0; i < ri.length; i++) {
            ri[i] = Integer.compress(Integer.expand(ai[i], bi[i]), bi[i]);
@@ -97,7 +98,7 @@ public class TestBitShuffleOpers {
     }
 
     @Test
-    @IR(counts = {"RShiftL", " > 0 ", "AndL", " > 0"})
+    @IR(counts = {IRNode.RSHIFT_L, " > 0 ", IRNode.AND_L, " > 0"})
     public void test4(long[] rl, long[] al, long[] bl) {
         for (int i = 0; i < rl.length; i++) {
            rl[i] = Long.compress(al[i], 1L << bl[i]);
@@ -112,7 +113,7 @@ public class TestBitShuffleOpers {
     }
 
     @Test
-    @IR(counts = {"URShiftL", " > 0 "})
+    @IR(counts = {IRNode.URSHIFT_L, " > 0 "})
     public void test5(long[] rl, long[] al, long[] bl) {
         for (int i = 0; i < rl.length; i++) {
            rl[i] = Long.compress(al[i], -1L << bl[i]);
@@ -127,7 +128,7 @@ public class TestBitShuffleOpers {
     }
 
     @Test
-    @IR(counts = {"CompressBits", " > 0 ", "AndL" , " > 0 "})
+    @IR(counts = {IRNode.COMPRESS_BITS, " > 0 ", IRNode.AND_L , " > 0 "})
     public void test6(long[] rl, long[] al, long[] bl) {
         for (int i = 0; i < rl.length; i++) {
            rl[i] = Long.compress(Long.expand(al[i], bl[i]), bl[i]);
@@ -142,7 +143,7 @@ public class TestBitShuffleOpers {
     }
     //===================== Expand Bits Transforms ================
     @Test
-    @IR(counts = {"LShiftI", " > 0 ", "AndI", " > 0"})
+    @IR(counts = {IRNode.LSHIFT_I, " > 0 ", IRNode.AND_I, " > 0"})
     public void test7(int[] ri, int[] ai, int[] bi) {
         for (int i = 0; i < ri.length; i++) {
            ri[i] = Integer.expand(ai[i], 1 << bi[i]);
@@ -157,7 +158,7 @@ public class TestBitShuffleOpers {
     }
 
     @Test
-    @IR(counts = {"LShiftI", " > 0 "})
+    @IR(counts = {IRNode.LSHIFT_I, " > 0 "})
     public void test8(int[] ri, int[] ai, int[] bi) {
         for (int i = 0; i < ri.length; i++) {
            ri[i] = Integer.expand(ai[i], -1 << bi[i]);
@@ -172,7 +173,7 @@ public class TestBitShuffleOpers {
     }
 
     @Test
-    @IR(counts = {"AndI" , " > 0 "})
+    @IR(counts = {IRNode.AND_I , " > 0 "})
     public void test9(int[] ri, int[] ai, int[] bi) {
         for (int i = 0; i < ri.length; i++) {
            ri[i] = Integer.expand(Integer.compress(ai[i], bi[i]), bi[i]);
@@ -187,7 +188,7 @@ public class TestBitShuffleOpers {
     }
 
     @Test
-    @IR(counts = {"LShiftL", " > 0 ", "AndL", " > 0"})
+    @IR(counts = {IRNode.LSHIFT_L, " > 0 ", IRNode.AND_L, " > 0"})
     public void test10(long[] rl, long[] al, long[] bl) {
         for (int i = 0; i < rl.length; i++) {
            rl[i] = Long.expand(al[i], 1L << bl[i]);
@@ -202,7 +203,7 @@ public class TestBitShuffleOpers {
     }
 
     @Test
-    @IR(counts = {"LShiftL", " > 0 "})
+    @IR(counts = {IRNode.LSHIFT_L, " > 0 "})
     public void test11(long[] rl, long[] al, long[] bl) {
         for (int i = 0; i < rl.length; i++) {
            rl[i] = Long.expand(al[i], -1L << bl[i]);
@@ -217,7 +218,7 @@ public class TestBitShuffleOpers {
     }
 
     @Test
-    @IR(counts = {"AndL" , " > 0 "})
+    @IR(counts = {IRNode.AND_L , " > 0 "})
     public void test12(long[] rl, long[] al, long[] bl) {
         for (int i = 0; i < rl.length; i++) {
            rl[i] = Long.expand(Long.compress(al[i], bl[i]), bl[i]);
@@ -234,7 +235,7 @@ public class TestBitShuffleOpers {
     // ================ Compress/ExpandBits Vanilla ================= //
 
     @Test
-    @IR(counts = {"CompressBits", " > 0 "})
+    @IR(counts = {IRNode.COMPRESS_BITS, " > 0 "})
     public void test13(int[] ri, int[] ai, int[] bi) {
         for (int i = 0; i < ri.length; i++) {
            ri[i] = Integer.compress(ai[i], bi[i]);
@@ -250,7 +251,7 @@ public class TestBitShuffleOpers {
     }
 
     @Test
-    @IR(counts = {"CompressBits", " > 0 "})
+    @IR(counts = {IRNode.COMPRESS_BITS, " > 0 "})
     public void test14(long[] rl, long[] al, long[] bl) {
         for (int i = 0; i < rl.length; i++) {
            rl[i] = Long.compress(al[i], bl[i]);
@@ -266,7 +267,7 @@ public class TestBitShuffleOpers {
     }
 
     @Test
-    @IR(counts = {"ExpandBits", " > 0 "})
+    @IR(counts = {IRNode.EXPAND_BITS, " > 0 "})
     public void test15(int[] ri, int[] ai, int[] bi) {
         for (int i = 0; i < ri.length; i++) {
            ri[i] = Integer.expand(ai[i], bi[i]);
@@ -282,7 +283,7 @@ public class TestBitShuffleOpers {
     }
 
     @Test
-    @IR(counts = {"ExpandBits", " > 0 "})
+    @IR(counts = {IRNode.EXPAND_BITS, " > 0 "})
     public void test16(long[] rl, long[] al, long[] bl) {
         for (int i = 0; i < rl.length; i++) {
            rl[i] = Long.expand(al[i], bl[i]);

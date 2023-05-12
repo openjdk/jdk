@@ -26,6 +26,7 @@
 
 package com.sun.tools.javac.comp;
 
+import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.JCAnnotatedType;
@@ -44,6 +45,7 @@ import com.sun.tools.javac.tree.JCTree.JCCatch;
 import com.sun.tools.javac.tree.JCTree.JCClassDecl;
 import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
 import com.sun.tools.javac.tree.JCTree.JCConditional;
+import com.sun.tools.javac.tree.JCTree.JCConstantCaseLabel;
 import com.sun.tools.javac.tree.JCTree.JCContinue;
 import com.sun.tools.javac.tree.JCTree.JCDefaultCaseLabel;
 import com.sun.tools.javac.tree.JCTree.JCDoWhileLoop;
@@ -69,6 +71,7 @@ import com.sun.tools.javac.tree.JCTree.JCNewArray;
 import com.sun.tools.javac.tree.JCTree.JCNewClass;
 import com.sun.tools.javac.tree.JCTree.JCOpens;
 import com.sun.tools.javac.tree.JCTree.JCPackageDecl;
+import com.sun.tools.javac.tree.JCTree.JCPatternCaseLabel;
 import com.sun.tools.javac.tree.JCTree.JCPrimitiveTypeTree;
 import com.sun.tools.javac.tree.JCTree.JCProvides;
 import com.sun.tools.javac.tree.JCTree.JCRecordPattern;
@@ -298,6 +301,18 @@ public class TreeDiffer extends TreeScanner {
     }
 
     @Override
+    public void visitConstantCaseLabel(JCConstantCaseLabel tree) {
+        JCConstantCaseLabel that = (JCConstantCaseLabel) parameter;
+        result = scan(tree.expr, that.expr);
+    }
+
+    @Override
+    public void visitPatternCaseLabel(JCPatternCaseLabel tree) {
+        JCPatternCaseLabel that = (JCPatternCaseLabel) parameter;
+        result = scan(tree.pat, that.pat) && scan(tree.guard, that.guard);
+    }
+
+    @Override
     public void visitDefaultCaseLabel(JCDefaultCaseLabel tree) {
         result = true;
     }
@@ -373,7 +388,7 @@ public class TreeDiffer extends TreeScanner {
     public void visitForeachLoop(JCEnhancedForLoop tree) {
         JCEnhancedForLoop that = (JCEnhancedForLoop) parameter;
         result =
-                scan(tree.var, that.var)
+                scan(tree.varOrRecordPattern, that.varOrRecordPattern)
                         && scan(tree.expr, that.expr)
                         && scan(tree.body, that.body);
     }

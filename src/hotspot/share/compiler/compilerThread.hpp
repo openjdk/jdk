@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,7 +92,7 @@ class CompilerThread : public JavaThread {
   CompileLog*   log()                            { return _log; }
   void          init_log(CompileLog* log) {
     // Set once, for good.
-    assert(_log == NULL, "set only once");
+    assert(_log == nullptr, "set only once");
     _log = log;
   }
 

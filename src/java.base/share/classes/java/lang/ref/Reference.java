@@ -41,6 +41,7 @@ import jdk.internal.ref.Cleaner;
  *
  * @author   Mark Reinhold
  * @since    1.2
+ * @sealedGraph
  */
 
 public abstract sealed class Reference<T>

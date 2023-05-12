@@ -34,7 +34,7 @@ public final class Settings {
         return reclaimPolicy.equals("balanced") || reclaimPolicy.equals("aggessive");
     }
 
-    final static long rootChunkWordSize = 512 * 1024;
+    final static long rootChunkWordSize = 2048 * 1024;
 
     static Settings theSettings;
 

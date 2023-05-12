@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,13 +24,12 @@
 /*
  * @test
  * @enablePreview
- *
- * @run testng/othervm -Dos.arch=unknown -Dos.name=unknown --enable-native-access=ALL-UNNAMED TestUnsupportedLinker
+ * @summary test with unknown architecture override
+ * @run testng/othervm -Dos.arch=unknown --enable-native-access=ALL-UNNAMED TestUnsupportedLinker
  */
 
 import java.lang.foreign.Linker;
-import java.lang.foreign.MemoryAddress;
-import java.lang.foreign.MemorySession;
+import java.lang.foreign.SegmentScope;
 import java.lang.foreign.VaList;
 import java.lang.foreign.ValueLayout;
 
@@ -50,11 +49,11 @@ public class TestUnsupportedLinker {
 
     @Test(expectedExceptions = UnsupportedOperationException.class)
     public void testNonEmptyVaList() {
-        VaList.make(builder -> builder.addVarg(ValueLayout.JAVA_INT, 42), MemorySession.openImplicit());
+        VaList.make(builder -> builder.addVarg(ValueLayout.JAVA_INT, 42), SegmentScope.auto());
     }
 
     @Test(expectedExceptions = UnsupportedOperationException.class)
     public void testUnsafeVaList() {
-        VaList.ofAddress(MemoryAddress.NULL, MemorySession.openImplicit());
+        VaList.ofAddress(0L, SegmentScope.auto());
     }
 }

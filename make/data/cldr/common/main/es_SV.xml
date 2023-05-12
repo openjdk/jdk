@@ -30,6 +30,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<field type="day">
 				<relative type="-2">antier</relative>
 			</field>
+			<field type="dayperiod">
+				<displayName draft="contributed">a. m./p. m.</displayName>
+			</field>
 		</fields>
 	</dates>
 	<numbers>

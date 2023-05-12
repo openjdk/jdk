@@ -40,8 +40,8 @@ import toolbox.ToolBox;
 
 public class TestTerminology extends JavadocTester {
     public static void main(String... args) throws Exception {
-        TestTerminology tester = new TestTerminology();
-        tester.runTests(m -> new Object[]{Path.of(m.getName())});
+        var tester = new TestTerminology();
+        tester.runTests();
     }
 
     private final ToolBox tb = new ToolBox();

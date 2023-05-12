@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2015 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -34,20 +34,20 @@
 #include "runtime/vmThread.hpp"
 
 void OSThread::pd_initialize() {
-  assert(this != NULL, "check");
+  assert(this != nullptr, "check");
   _thread_id        = 0;
   _kernel_thread_id = 0;
-  _siginfo = NULL;
-  _ucontext = NULL;
+  _siginfo = nullptr;
+  _ucontext = nullptr;
   _expanding_stack = 0;
-  _alt_sig_stack = NULL;
+  _alt_sig_stack = nullptr;
 
   _last_cpu_times.sys = _last_cpu_times.user = 0L;
 
   sigemptyset(&_caller_sigmask);
 
   _startThread_lock = new Monitor(Mutex::event, "startThread_lock");
-  assert(_startThread_lock != NULL, "check");
+  assert(_startThread_lock != nullptr, "check");
 }
 
 void OSThread::pd_destroy() {

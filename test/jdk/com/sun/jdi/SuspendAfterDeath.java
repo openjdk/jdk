@@ -26,7 +26,6 @@
  * @bug 8287847
  * @summary Test suspending a platform thread after it has terminated.
  * @enablePreview
- * @requires vm.continuations
  * @run build TestScaffold VMConnection TargetListener TargetAdapter
  * @run compile SuspendAfterDeath.java
  * @run main/othervm SuspendAfterDeath
@@ -37,7 +36,6 @@
  * @bug 8287847
  * @summary Test suspending a virtual thread after it has terminated.
  * @enablePreview
- * @requires vm.continuations
  * @run build TestScaffold VMConnection TargetListener TargetAdapter
  * @run compile SuspendAfterDeath.java
  * @run main/othervm SuspendAfterDeath Virtual

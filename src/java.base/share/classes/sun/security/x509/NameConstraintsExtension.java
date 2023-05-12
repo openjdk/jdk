@@ -26,10 +26,8 @@
 package sun.security.x509;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.*;
 
 import javax.security.auth.x500.X500Principal;
 
@@ -59,21 +57,11 @@ import sun.security.pkcs.PKCS9Attribute;
  * @author Amit Kapoor
  * @author Hemma Prafullchandra
  * @see Extension
- * @see CertAttrSet
  */
 public class NameConstraintsExtension extends Extension
-implements CertAttrSet<String>, Cloneable {
-    /**
-     * Identifier for this attribute, to be used with the
-     * get, set, delete methods of Certificate, x509 type.
-     */
-    public static final String IDENT = "x509.info.extensions.NameConstraints";
-    /**
-     * Attribute names.
-     */
+        implements Cloneable {
+
     public static final String NAME = "NameConstraints";
-    public static final String PERMITTED_SUBTREES = "permitted_subtrees";
-    public static final String EXCLUDED_SUBTREES = "excluded_subtrees";
 
     // Private data members
     private static final byte TAG_PERMITTED = 0;
@@ -113,7 +101,7 @@ implements CertAttrSet<String>, Cloneable {
     }
 
     // Encode this extension value.
-    private void encodeThis() throws IOException {
+    private void encodeThis() {
         minMaxValid = false;
         if (permitted == null && excluded == null) {
             this.extensionValue = null;
@@ -139,16 +127,19 @@ implements CertAttrSet<String>, Cloneable {
     }
 
     /**
-     * The default constructor for this class. Both parameters
-     * are optional and can be set to null.  The extension criticality
+     * The default constructor for this class. Both parameters are optional
+     * but at least one should be non null.  The extension criticality
      * is set to true.
      *
      * @param permitted the permitted GeneralSubtrees (null for optional).
      * @param excluded the excluded GeneralSubtrees (null for optional).
      */
     public NameConstraintsExtension(GeneralSubtrees permitted,
-                                    GeneralSubtrees excluded)
-    throws IOException {
+                                    GeneralSubtrees excluded) {
+        if (permitted == null && excluded == null) {
+            throw new IllegalArgumentException(
+                    "permitted and excluded cannot both be null");
+        }
         this.permitted = permitted;
         this.excluded = excluded;
 
@@ -233,89 +224,32 @@ implements CertAttrSet<String>, Cloneable {
     /**
      * Write the extension to the OutputStream.
      *
-     * @param out the OutputStream to write the extension to.
-     * @exception IOException on encoding errors.
+     * @param out the DerOutputStream to write the extension to.
      */
-    public void encode(OutputStream out) throws IOException {
-        DerOutputStream tmp = new DerOutputStream();
+    @Override
+    public void encode(DerOutputStream out) {
         if (this.extensionValue == null) {
             this.extensionId = PKIXExtensions.NameConstraints_Id;
             this.critical = true;
             encodeThis();
         }
-        super.encode(tmp);
-        out.write(tmp.toByteArray());
+        super.encode(out);
+    }
+
+    public GeneralSubtrees getPermittedSubtrees() {
+        return permitted;
+    }
+
+    public GeneralSubtrees getExcludedSubtrees() {
+        return excluded;
     }
 
     /**
-     * Set the attribute value.
+     * Return the name of this extension.
      */
-    public void set(String name, Object obj) throws IOException {
-        if (name.equalsIgnoreCase(PERMITTED_SUBTREES)) {
-            if (!(obj instanceof GeneralSubtrees)) {
-                throw new IOException("Attribute value should be"
-                                    + " of type GeneralSubtrees.");
-            }
-            permitted = (GeneralSubtrees)obj;
-        } else if (name.equalsIgnoreCase(EXCLUDED_SUBTREES)) {
-            if (!(obj instanceof GeneralSubtrees)) {
-                throw new IOException("Attribute value should be "
-                                    + "of type GeneralSubtrees.");
-            }
-            excluded = (GeneralSubtrees)obj;
-        } else {
-          throw new IOException("Attribute name not recognized by " +
-                        "CertAttrSet:NameConstraintsExtension.");
-        }
-        encodeThis();
-    }
-
-    /**
-     * Get the attribute value.
-     */
-    public GeneralSubtrees get(String name) throws IOException {
-        if (name.equalsIgnoreCase(PERMITTED_SUBTREES)) {
-            return (permitted);
-        } else if (name.equalsIgnoreCase(EXCLUDED_SUBTREES)) {
-            return (excluded);
-        } else {
-          throw new IOException("Attribute name not recognized by " +
-                        "CertAttrSet:NameConstraintsExtension.");
-        }
-    }
-
-    /**
-     * Delete the attribute value.
-     */
-    public void delete(String name) throws IOException {
-        if (name.equalsIgnoreCase(PERMITTED_SUBTREES)) {
-            permitted = null;
-        } else if (name.equalsIgnoreCase(EXCLUDED_SUBTREES)) {
-            excluded = null;
-        } else {
-          throw new IOException("Attribute name not recognized by " +
-                        "CertAttrSet:NameConstraintsExtension.");
-        }
-        encodeThis();
-    }
-
-    /**
-     * Return an enumeration of names of attributes existing within this
-     * attribute.
-     */
-    public Enumeration<String> getElements() {
-        AttributeNameEnumeration elements = new AttributeNameEnumeration();
-        elements.addElement(PERMITTED_SUBTREES);
-        elements.addElement(EXCLUDED_SUBTREES);
-
-        return (elements.elements());
-    }
-
-    /**
-     * Return the name of this attribute.
-     */
+    @Override
     public String getName() {
-        return (NAME);
+        return NAME;
     }
 
     /**
@@ -348,20 +282,25 @@ implements CertAttrSet<String>, Cloneable {
             return;
         }
 
+        boolean updated = false;
+
         /*
          * If excludedSubtrees is present in the certificate, set the
          * excluded subtrees state variable to the union of its previous
          * value and the value indicated in the extension field.
          */
 
-        GeneralSubtrees newExcluded = newConstraints.get(EXCLUDED_SUBTREES);
+        GeneralSubtrees newExcluded = newConstraints.getExcludedSubtrees();
         if (excluded == null) {
-            excluded = (newExcluded != null) ?
-                        (GeneralSubtrees)newExcluded.clone() : null;
+            if (newExcluded != null) {
+                excluded = (GeneralSubtrees) newExcluded.clone();
+                updated = true;
+            }
         } else {
             if (newExcluded != null) {
                 // Merge new excluded with current excluded (union)
                 excluded.union(newExcluded);
+                updated = true;
             }
         }
 
@@ -371,10 +310,12 @@ implements CertAttrSet<String>, Cloneable {
          * previous value and the value indicated in the extension field.
          */
 
-        GeneralSubtrees newPermitted = newConstraints.get(PERMITTED_SUBTREES);
+        GeneralSubtrees newPermitted = newConstraints.getPermittedSubtrees();
         if (permitted == null) {
-            permitted = (newPermitted != null) ?
-                        (GeneralSubtrees)newPermitted.clone() : null;
+            if (newPermitted != null) {
+                permitted = (GeneralSubtrees) newPermitted.clone();
+                updated = true;
+            }
         } else {
             if (newPermitted != null) {
                 // Merge new permitted with current permitted (intersection)
@@ -387,6 +328,7 @@ implements CertAttrSet<String>, Cloneable {
                     } else {
                         excluded = (GeneralSubtrees)newExcluded.clone();
                     }
+                    updated = true;
                 }
             }
         }
@@ -397,12 +339,14 @@ implements CertAttrSet<String>, Cloneable {
         // less space.
         if (permitted != null) {
             permitted.reduce(excluded);
+            updated = true;
         }
 
         // The NameConstraints have been changed, so re-encode them.  Methods in
         // this class assume that the encodings have already been done.
-        encodeThis();
-
+        if (updated) {
+            encodeThis();
+        }
     }
 
     /**
@@ -459,8 +403,7 @@ implements CertAttrSet<String>, Cloneable {
             if (altNameExt != null) {
                 // extract altNames from extension; this call does not
                 // return an IOException on null altnames
-                altNames = altNameExt.get(
-                        SubjectAlternativeNameExtension.SUBJECT_NAME);
+                altNames = altNameExt.getNames();
             }
         } catch (CertificateException ce) {
             throw new IOException("Unable to extract extensions from " +

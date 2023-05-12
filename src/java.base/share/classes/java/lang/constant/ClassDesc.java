@@ -99,6 +99,7 @@ public sealed interface ClassDesc
      * @jvms 4.2.1 Binary Class and Interface Names
      * @see ClassDesc#of(String)
      * @see ClassDesc#ofDescriptor(String)
+     * @since 20
      */
     static ClassDesc ofInternalName(String name) {
         ConstantUtils.validateInternalClassName(requireNonNull(name));

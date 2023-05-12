@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,7 +86,7 @@ void PhaseLive::compute(uint maxlrg) {
   _deltas = NEW_RESOURCE_ARRAY(IndexSet*,_cfg.number_of_blocks());
   memset(_deltas, 0, sizeof(IndexSet*)* _cfg.number_of_blocks());
 
-  _free_IndexSet = NULL;
+  _free_IndexSet = nullptr;
 
   // Blocks having done pass-1
   VectorSet first_pass;
@@ -176,7 +176,7 @@ void PhaseLive::compute(uint maxlrg) {
     }
   }
   IndexSet *free = _free_IndexSet;
-  while (free != NULL) {
+  while (free != nullptr) {
     IndexSet *temp = free;
     free = free->next();
     temp->clear();
@@ -223,7 +223,7 @@ void PhaseLive::freeset(Block *p) {
   }
   f->set_next(_free_IndexSet);
   _free_IndexSet = f;           // Drop onto free list
-  _deltas[p->_pre_order-1] = NULL;
+  _deltas[p->_pre_order-1] = nullptr;
 }
 
 // Add a live-out value to a given blocks live-out set.  If it is new, then

@@ -383,15 +383,15 @@ public enum HtmlStyle {
     previewLabel,
 
     /**
-     * The class for the list containing the {@code @see} tags of an element.
+     * The class for a list containing the tags of an element.
      */
-    seeList,
+    tagList,
 
     /**
-     * The class for the list containing the {@code @see} tags of an element
-     * when some of the tags have longer labels.
+     * The class for a list containing the tags of an element
+     * when some tags have longer labels or contain commas.
      */
-    seeListLong,
+    tagListLong,
 
     //</editor-fold>
 

@@ -192,6 +192,15 @@ public interface EventStream extends AutoCloseable {
      *
      * The event type of an event always arrives sometime before the actual event.
      * The action must be registered before the stream is started.
+     * <p>
+     * The following example shows how to listen to new event types, register
+     * an action if the event type name matches a regular expression and increase a
+     * counter if a matching event is found. A benefit of using an action per
+     * event type, instead of the generic {@link #onEvent(Consumer)} method,
+     * is that a stream implementation can avoid reading events that are of no
+     * interest.
+     *
+     * {@snippet class = "Snippets" region = "EventStreamMetadata"}
      *
      * @implSpec The default implementation of this method is empty.
      *
@@ -199,15 +208,24 @@ public interface EventStream extends AutoCloseable {
      *
      * @throws IllegalStateException if an action is added after the stream has
      *                               started
+     * @since 16
      */
      default void onMetadata(Consumer<MetadataEvent> action) {
      }
 
     /**
      * Registers an action to perform on all events in the stream.
+     * <p>
+     * To perform an action on a subset of event types, consider using
+     * {@link #onEvent(String, Consumer)} and {@link #onMetadata(Consumer)} as it is
+     * likely more performant than any selection or filtering mechanism implemented
+     * in a generic action.
      *
      * @param action an action to perform on each {@code RecordedEvent}, not
      *        {@code null}
+     *
+     * @see #onEvent(Consumer)
+     * @see #onMetadata(Consumer)
      */
     void onEvent(Consumer<RecordedEvent> action);
 

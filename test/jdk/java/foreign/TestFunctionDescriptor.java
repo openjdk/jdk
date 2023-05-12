@@ -25,12 +25,14 @@
 /*
  * @test
  * @enablePreview
- * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64"
+ * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64" | os.arch == "riscv64"
  * @run testng/othervm --enable-native-access=ALL-UNNAMED TestFunctionDescriptor
  */
 
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.MemorySegment;
+import java.lang.invoke.MethodType;
 import java.util.List;
 import java.util.Optional;
 import org.testng.annotations.Test;
@@ -98,10 +100,25 @@ public class TestFunctionDescriptor extends NativeTestHelper {
     @Test
     public void testEquals() {
         FunctionDescriptor fd = FunctionDescriptor.of(C_INT, C_INT, C_INT);
-        FunctionDescriptor fd_va1 = FunctionDescriptor.of(C_INT).asVariadic(C_INT, C_INT);
-        FunctionDescriptor fd_va2 = FunctionDescriptor.of(C_INT, C_INT).asVariadic(C_INT);
         assertEquals(fd, fd);
-        assertNotEquals(fd, fd_va1);
-        assertNotEquals(fd, fd_va2);
+    }
+
+    @Test
+    public void testCarrierMethodType() {
+        FunctionDescriptor fd = FunctionDescriptor.of(C_INT,
+                C_INT,
+                MemoryLayout.structLayout(C_INT, C_INT));
+        MethodType cmt = fd.toMethodType();
+        assertEquals(cmt, MethodType.methodType(int.class, int.class, MemorySegment.class));
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void testBadCarrierMethodType() {
+        FunctionDescriptor fd = FunctionDescriptor.of(C_INT,
+                C_INT,
+                MemoryLayout.structLayout(C_INT, C_INT),
+                MemoryLayout.sequenceLayout(3, C_INT),
+                MemoryLayout.paddingLayout(32));
+        fd.toMethodType(); // should throw
     }
 }

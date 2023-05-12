@@ -22,8 +22,9 @@
  */
 
 import java.io.IOException;
+import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
+import java.lang.foreign.SegmentScope;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Random;
@@ -51,11 +52,6 @@ public class AbstractChannelsTest {
         void accept(T action) throws X;
     }
 
-    static MemorySession closeableSessionOrNull(MemorySession session) {
-        return (session.isCloseable()) ?
-                session : null;
-    }
-
     static long remaining(ByteBuffer[] buffers) {
         return Arrays.stream(buffers).mapToLong(ByteBuffer::remaining).sum();
     }
@@ -72,7 +68,7 @@ public class AbstractChannelsTest {
 
     static final Random RANDOM = RandomFactory.getRandom();
 
-    static ByteBuffer segmentBufferOfSize(MemorySession session, int size) {
+    static ByteBuffer segmentBufferOfSize(SegmentScope session, int size) {
         var segment = MemorySegment.allocateNative(size, 1, session);
         for (int i = 0; i < size; i++) {
             segment.set(JAVA_BYTE, i, ((byte)RANDOM.nextInt()));
@@ -80,7 +76,7 @@ public class AbstractChannelsTest {
         return segment.asByteBuffer();
     }
 
-    static ByteBuffer[] segmentBuffersOfSize(int len, MemorySession session, int size) {
+    static ByteBuffer[] segmentBuffersOfSize(int len, SegmentScope session, int size) {
         ByteBuffer[] bufs = new ByteBuffer[len];
         for (int i = 0; i < len; i++)
             bufs[i] = segmentBufferOfSize(session, size);
@@ -92,7 +88,7 @@ public class AbstractChannelsTest {
      * where heap can be from the global session or session-less, and direct are
      * associated with the given session.
      */
-    static ByteBuffer[] mixedBuffersOfSize(int len, MemorySession session, int size) {
+    static ByteBuffer[] mixedBuffersOfSize(int len, SegmentScope session, int size) {
         ByteBuffer[] bufs;
         boolean atLeastOneSessionBuffer = false;
         do {
@@ -125,75 +121,50 @@ public class AbstractChannelsTest {
         }
     }
 
-    @DataProvider(name = "confinedSessions")
-    public static Object[][] confinedSessions() {
+    @DataProvider(name = "confinedArenas")
+    public static Object[][] confinedArenas() {
         return new Object[][] {
-                { SessionSupplier.NEW_CONFINED          },
+                { ArenaSupplier.NEW_CONFINED          },
         };
     }
 
-    @DataProvider(name = "sharedSessions")
-    public static Object[][] sharedSessions() {
+    @DataProvider(name = "sharedArenas")
+    public static Object[][] sharedArenas() {
         return new Object[][] {
-                { SessionSupplier.NEW_SHARED          },
+                { ArenaSupplier.NEW_SHARED          },
         };
     }
 
-    @DataProvider(name = "closeableSessions")
-    public static Object[][] closeableSessions() {
-        return Stream.of(sharedSessions(), confinedSessions())
+    @DataProvider(name = "closeableArenas")
+    public static Object[][] closeableArenas() {
+        return Stream.of(sharedArenas(), confinedArenas())
                 .flatMap(Arrays::stream)
                 .toArray(Object[][]::new);
     }
 
-    @DataProvider(name = "implicitSessions")
-    public static Object[][] implicitSessions() {
+    @DataProvider(name = "sharedArenasAndTimeouts")
+    public static Object[][] sharedArenasAndTimeouts() {
         return new Object[][] {
-                { SessionSupplier.GLOBAL       },
+                { ArenaSupplier.NEW_SHARED          ,  0 },
+                { ArenaSupplier.NEW_SHARED          , 30 },
         };
     }
 
-    @DataProvider(name = "sharedAndImplicitSessions")
-    public static Object[][] sharedAndImplicitSessions() {
-        return Stream.of(sharedSessions(), implicitSessions())
-                .flatMap(Arrays::stream)
-                .toArray(Object[][]::new);
-    }
+    static class ArenaSupplier implements Supplier<Arena> {
 
-    @DataProvider(name = "allSessions")
-    public static Object[][] allSessions() {
-        return Stream.of(implicitSessions(), closeableSessions())
-                .flatMap(Arrays::stream)
-                .toArray(Object[][]::new);
-    }
+        static final Supplier<Arena> NEW_CONFINED =
+                new ArenaSupplier(Arena::openConfined, "confined arena");
+        static final Supplier<Arena> NEW_SHARED =
+                new ArenaSupplier(Arena::openShared, "shared arena");
 
-    @DataProvider(name = "sharedSessionsAndTimeouts")
-    public static Object[][] sharedSessionsAndTimeouts() {
-        return new Object[][] {
-                { SessionSupplier.NEW_SHARED          ,  0 },
-                { SessionSupplier.NEW_SHARED          , 30 },
-        };
-    }
-
-    static class SessionSupplier implements Supplier<MemorySession> {
-
-        static final Supplier<MemorySession> NEW_CONFINED =
-                new SessionSupplier(MemorySession::openConfined, "newConfinedSession()");
-        static final Supplier<MemorySession> NEW_SHARED =
-                new SessionSupplier(MemorySession::openShared, "newSharedSession()");
-        static final Supplier<MemorySession> NEW_IMPLICIT =
-                new SessionSupplier(MemorySession::openImplicit, "newImplicitSession()");
-        static final Supplier<MemorySession> GLOBAL =
-                new SessionSupplier(MemorySession::global, "globalSession()");
-
-        private final Supplier<MemorySession> supplier;
+        private final Supplier<Arena> supplier;
         private final String str;
-        private SessionSupplier(Supplier<MemorySession> supplier, String str) {
+        private ArenaSupplier(Supplier<Arena> supplier, String str) {
             this.supplier = supplier;
             this.str = str;
         }
         @Override public String toString() { return str; }
-        @Override public MemorySession get() { return supplier.get(); }
+        @Override public Arena get() { return supplier.get(); }
     }
 }
 

@@ -46,7 +46,7 @@ public:
 
   static bool is_armed(nmethod* nm);
   static void disarm(nmethod* nm);
-  static void arm(nmethod* nm, int arm_value);
+  static void set_guard_value(nmethod* nm, int value);
 
   static void nmethod_oops_do(nmethod* nm, OopClosure* cl);
   static void nmethod_oops_do_inner(nmethod* nm, OopClosure* cl);

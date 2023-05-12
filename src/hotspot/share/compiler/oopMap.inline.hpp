@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,15 +47,15 @@ inline const ImmutableOopMap* ImmutableOopMapPair::get_from(const ImmutableOopMa
   return set->oopmap_at_offset(_oopmap_offset);
 }
 
-inline bool SkipNullValue::should_skip(oop val) {
-  return val == (oop)NULL || CompressedOops::is_base(val);
+inline bool SkipNullValue::should_skip(void* val) {
+  return val == nullptr || (UseCompressedOops && CompressedOops::is_base(val));
 }
 
 template <typename OopFnT, typename DerivedOopFnT, typename ValueFilterT>
 template <typename RegisterMapT>
 void OopMapDo<OopFnT, DerivedOopFnT, ValueFilterT>::iterate_oops_do(const frame *fr, const RegisterMapT *reg_map, const ImmutableOopMap* oopmap) {
   NOT_PRODUCT(if (TraceCodeBlobStacks) OopMapSet::trace_codeblob_maps(fr, reg_map->as_RegisterMap());)
-  assert(fr != NULL, "");
+  assert(fr != nullptr, "");
 
   // handle derived pointers first (otherwise base pointer may be
   // changed before derived pointer offset has been collected)
@@ -76,22 +76,23 @@ void OopMapDo<OopFnT, DerivedOopFnT, ValueFilterT>::iterate_oops_do(const frame 
 
       address loc = fr->oopmapreg_to_location(omv.reg(), reg_map);
 
-      DEBUG_ONLY(if (loc == NULL && reg_map->should_skip_missing()) continue;)
+      DEBUG_ONLY(if (loc == nullptr && reg_map->should_skip_missing()) continue;)
 
-      if (loc == NULL) {
+      if (loc == nullptr) {
         tty->print("oops reg: "); omv.reg()->print_on(tty); tty->cr();
         fr->print_on(tty);
       }
-      guarantee(loc != NULL, "missing saved register");
+      guarantee(loc != nullptr, "missing saved register");
       derived_pointer* derived_loc = (derived_pointer*)loc;
-      oop* base_loc = fr->oopmapreg_to_oop_location(omv.content_reg(), reg_map);
-      // Ignore NULL oops and decoded NULL narrow oops which
+      void** base_loc = (void**) fr->oopmapreg_to_location(omv.content_reg(), reg_map);
+
+      // Ignore nullptr oops and decoded null narrow oops which
       // equal to CompressedOops::base() when a narrow oop
       // implicit null check is used in compiled code.
-      // The narrow_oop_base could be NULL or be the address
+      // The narrow_oop_base could be nullptr or be the address
       // of the page below heap depending on compressed oops mode.
-      if (base_loc != NULL && *base_loc != (oop)NULL && !CompressedOops::is_base(*base_loc)) {
-        _derived_oop_fn->do_derived_oop(base_loc, derived_loc);
+      if (base_loc != nullptr && !SkipNullValue::should_skip(*base_loc)) {
+        _derived_oop_fn->do_derived_oop((oop*)base_loc, derived_loc);
       }
     }
   }
@@ -102,13 +103,13 @@ void OopMapDo<OopFnT, DerivedOopFnT, ValueFilterT>::iterate_oops_do(const frame 
       OopMapValue omv = oms.current();
       if (omv.type() != OopMapValue::oop_value && omv.type() != OopMapValue::narrowoop_value)
         continue;
-      oop* loc = fr->oopmapreg_to_oop_location(omv.reg(),reg_map);
+      void** loc = (void**) fr->oopmapreg_to_location(omv.reg(),reg_map);
       // It should be an error if no location can be found for a
       // register mentioned as contained an oop of some kind.  Maybe
       // this was allowed previously because value_value items might
       // be missing?
 #ifdef ASSERT
-      if (loc == NULL) {
+      if (loc == nullptr) {
         if (reg_map->should_skip_missing())
           continue;
         VMReg reg = omv.reg();
@@ -116,22 +117,22 @@ void OopMapDo<OopFnT, DerivedOopFnT, ValueFilterT>::iterate_oops_do(const frame 
         fr->print_on(tty);
       }
 #endif
-      if (loc == NULL) {
+      if (loc == nullptr) {
         tty->print("oops reg: "); omv.reg()->print_on(tty); tty->cr();
         fr->print_on(tty);
       }
-      guarantee(loc != NULL, "missing saved register");
+      guarantee(loc != nullptr, "missing saved register");
       if ( omv.type() == OopMapValue::oop_value ) {
-        oop val = *loc;
+        void* val = *loc;
         if (ValueFilterT::should_skip(val)) { // TODO: UGLY (basically used to decide if we're freezing/thawing continuation)
-          // Ignore NULL oops and decoded NULL narrow oops which
+          // Ignore nullptr oops and decoded nullptr narrow oops which
           // equal to CompressedOops::base() when a narrow oop
           // implicit null check is used in compiled code.
-          // The narrow_oop_base could be NULL or be the address
+          // The narrow_oop_base could be nullptr or be the address
           // of the page below heap depending on compressed oops mode.
           continue;
         }
-        _oop_fn->do_oop(loc);
+        _oop_fn->do_oop((oop*)loc);
       } else if ( omv.type() == OopMapValue::narrowoop_value ) {
         narrowOop *nl = (narrowOop*)loc;
 #ifndef VM_LITTLE_ENDIAN

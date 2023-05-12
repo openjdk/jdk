@@ -178,7 +178,7 @@ public class PopupFactory {
      * <code>Popup</code> creates to. A null <code>owner</code> implies there
      * is no valid parent. <code>x</code> and
      * <code>y</code> specify the preferred initial location to place
-     * the <code>Popup</code> at. Based on screen size, or other paramaters,
+     * the <code>Popup</code> at. Based on screen size, or other parameters,
      * the <code>Popup</code> may not display at <code>x</code> and
      * <code>y</code>.
      *
@@ -997,7 +997,7 @@ public class PopupFactory {
             rootPane = new JRootPane();
             // NOTE: this uses setOpaque vs LookAndFeel.installProperty as
             // there is NO reason for the RootPane not to be opaque. For
-            // painting to work the contentPane must be opaque, therefor the
+            // painting to work the contentPane must be opaque, therefore the
             // RootPane can also be opaque.
             rootPane.setOpaque(true);
             component.add(rootPane, BorderLayout.CENTER);

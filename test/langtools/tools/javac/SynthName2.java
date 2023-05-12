@@ -10,7 +10,7 @@
 import java.io.PrintStream;
 
 class SynthName2 {
-    public static void main(String args[]) {
+    public static void meth(String args[]) {
         run(args, System.out);
     }
     public static void run(String args[],PrintStream out) {

@@ -37,6 +37,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="am">الأمهرية</language>
 			<language type="an">الأراغونية</language>
 			<language type="ang">الإنجليزية القديمة</language>
+			<language type="ann">أوبلو</language>
 			<language type="anp">الأنجيكا</language>
 			<language type="ar">العربية</language>
 			<language type="ar_001">العربية الفصحى الحديثة</language>
@@ -49,6 +50,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="as">الأسامية</language>
 			<language type="asa">الآسو</language>
 			<language type="ast">الأسترية</language>
+			<language type="atj">الأتيكاميكو</language>
 			<language type="av">الأوارية</language>
 			<language type="awa">الأوادية</language>
 			<language type="ay">الأيمارا</language>
@@ -107,13 +109,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="chy">الشايان</language>
 			<language type="ckb">السورانية الكردية</language>
 			<language type="ckb" alt="menu">الكردية، السورانية</language>
+			<language type="clc">تسيلكوتين</language>
 			<language type="co">الكورسيكية</language>
 			<language type="cop">القبطية</language>
 			<language type="cr">الكرى</language>
+			<language type="crg">الميتشيف</language>
 			<language type="crh">لغة تتار القرم</language>
+			<language type="crj">الكري الجنوب شرقية</language>
+			<language type="crk">البلينز-كري</language>
+			<language type="crl">الكري شمال الشرقية</language>
+			<language type="crm">الموس-كري</language>
+			<language type="crr">الألغونكوية كارولينا</language>
 			<language type="crs">الفرنسية الكريولية السيشيلية</language>
 			<language type="cs">التشيكية</language>
 			<language type="csb">الكاشبايان</language>
+			<language type="csw">السوامبي-كري</language>
 			<language type="cu">سلافية كنسية</language>
 			<language type="cv">التشوفاشي</language>
 			<language type="cy">الويلزية</language>
@@ -208,8 +218,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="hai">الهيدا</language>
 			<language type="hak">الهاكا الصينية</language>
 			<language type="haw">لغة هاواي</language>
+			<language type="hax">هايدا الجنوبية</language>
 			<language type="he">العبرية</language>
 			<language type="hi">الهندية</language>
+			<language type="hi_Latn" alt="variant">الهنجليزية</language>
 			<language type="hil">الهيليجينون</language>
 			<language type="hit">الحثية</language>
 			<language type="hmn">الهمونجية</language>
@@ -220,6 +232,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ht">الكريولية الهايتية</language>
 			<language type="hu">الهنغارية</language>
 			<language type="hup">الهبا</language>
+			<language type="hur">الهالكوميليم</language>
 			<language type="hy">الأرمنية</language>
 			<language type="hz">الهيريرو</language>
 			<language type="ia">اللّغة الوسيطة</language>
@@ -230,6 +243,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ig">الإيجبو</language>
 			<language type="ii">السيتشيون يي</language>
 			<language type="ik">الإينبياك</language>
+			<language type="ikt">الإنكتيتوتية الكندية الغربية</language>
 			<language type="ilo">الإيلوكو</language>
 			<language type="inh">الإنجوشية</language>
 			<language type="io">الإيدو</language>
@@ -257,6 +271,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="kea">كابوفيرديانو</language>
 			<language type="kfo">الكورو</language>
 			<language type="kg">الكونغو</language>
+			<language type="kgp">الكاينغانغ</language>
 			<language type="kha">الكازية</language>
 			<language type="kho">الخوتانيز</language>
 			<language type="khq">كويرا تشيني</language>
@@ -287,6 +302,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="kut">الكتيناي</language>
 			<language type="kv">الكومي</language>
 			<language type="kw">الكورنية</language>
+			<language type="kwk">الكواكوالا</language>
 			<language type="ky">القيرغيزية</language>
 			<language type="la">اللاتينية</language>
 			<language type="lad">اللادينو</language>
@@ -297,6 +313,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="lez">الليزجية</language>
 			<language type="lg">الغاندا</language>
 			<language type="li">الليمبورغية</language>
+			<language type="lil">الليلويتية</language>
 			<language type="lkt">لاكوتا</language>
 			<language type="ln">اللينجالا</language>
 			<language type="lo">اللاوية</language>
@@ -304,6 +321,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="lou">الكريولية اللويزيانية</language>
 			<language type="loz">اللوزي</language>
 			<language type="lrc">اللرية الشمالية</language>
+			<language type="lsm">الساميا</language>
 			<language type="lt">الليتوانية</language>
 			<language type="lu">اللوبا كاتانغا</language>
 			<language type="lua">اللبا-لؤلؤ</language>
@@ -338,6 +356,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="mn">المنغولية</language>
 			<language type="mnc">المانشو</language>
 			<language type="mni">المانيبورية</language>
+			<language type="moe">إينو-ايمون</language>
 			<language type="moh">الموهوك</language>
 			<language type="mos">الموسي</language>
 			<language type="mr">الماراثية</language>
@@ -385,6 +404,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="nzi">النزيما</language>
 			<language type="oc">الأوكسيتانية</language>
 			<language type="oj">الأوجيبوا</language>
+			<language type="ojb">أوجيبوا الشمالية الغربية</language>
+			<language type="ojc">أوجيبوا الوسطى</language>
+			<language type="ojs">الأوجي-كري</language>
+			<language type="ojw">الأوجيبوا الغربية</language>
+			<language type="oka">الأوكاناغانية</language>
 			<language type="om">الأورومية</language>
 			<language type="or">الأورية</language>
 			<language type="os">الأوسيتيك</language>
@@ -400,8 +424,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="peo">الفارسية القديمة</language>
 			<language type="phn">الفينيقية</language>
 			<language type="pi">البالية</language>
+			<language type="pis">بيجين</language>
 			<language type="pl">البولندية</language>
 			<language type="pon">البوهنبيايان</language>
+			<language type="pqm">الماليزيت-باساماكودي</language>
 			<language type="prg">البروسياوية</language>
 			<language type="pro">البروفانسية القديمة</language>
 			<language type="ps">البشتو</language>
@@ -454,6 +480,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="sid">السيدامو</language>
 			<language type="sk">السلوفاكية</language>
 			<language type="sl">السلوفانية</language>
+			<language type="slh">لوشوتسيد الجنوبية</language>
 			<language type="sm">الساموائية</language>
 			<language type="sma">السامي الجنوبي</language>
 			<language type="smj">اللول سامي</language>
@@ -470,6 +497,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ss">السواتي</language>
 			<language type="ssy">لغة الساهو</language>
 			<language type="st">السوتو الجنوبية</language>
+			<language type="str">سترايتس ساليش</language>
 			<language type="su">السوندانية</language>
 			<language type="suk">السوكوما</language>
 			<language type="sus">السوسو</language>
@@ -481,13 +509,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="syc">سريانية تقليدية</language>
 			<language type="syr">السريانية</language>
 			<language type="ta">التاميلية</language>
+			<language type="tce">التوتشون الجنوبية</language>
 			<language type="te">التيلوغوية</language>
 			<language type="tem">التيمن</language>
 			<language type="teo">تيسو</language>
 			<language type="ter">التيرينو</language>
 			<language type="tet">التيتم</language>
 			<language type="tg">الطاجيكية</language>
+			<language type="tgx">التاغيش</language>
 			<language type="th">التايلاندية</language>
+			<language type="tht">التالتان</language>
 			<language type="ti">التغرينية</language>
 			<language type="tig">التيغرية</language>
 			<language type="tiv">التيف</language>
@@ -500,12 +531,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="tn">التسوانية</language>
 			<language type="to">التونغية</language>
 			<language type="tog">تونجا - نياسا</language>
+			<language type="tok">التوكي-بونا</language>
 			<language type="tpi">التوك بيسين</language>
 			<language type="tr">التركية</language>
 			<language type="trv">لغة التاروكو</language>
 			<language type="ts">السونجا</language>
 			<language type="tsi">التسيمشيان</language>
 			<language type="tt">التترية</language>
+			<language type="ttm">التوتشون الشمالية</language>
 			<language type="tum">التامبوكا</language>
 			<language type="tvl">التوفالو</language>
 			<language type="tw">التوي</language>
@@ -545,6 +578,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ybb">يمبا</language>
 			<language type="yi">اليديشية</language>
 			<language type="yo">اليوروبا</language>
+			<language type="yrl">النيينجاتو</language>
 			<language type="yue">الكَنْتُونية</language>
 			<language type="za">الزهيونج</language>
 			<language type="zap">الزابوتيك</language>
@@ -560,9 +594,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="zza">زازا</language>
 		</languages>
 		<scripts>
+			<script type="Adlm">أدلم</script>
 			<script type="Arab">العربية</script>
 			<script type="Arab" alt="variant">العربية الفارسية</script>
-			<script type="Aran" draft="contributed">نستعليق</script>
+			<script type="Aran">نستعليق</script>
 			<script type="Armn">الأرمينية</script>
 			<script type="Bali">البالية</script>
 			<script type="Batk">الباتاك</script>
@@ -573,6 +608,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Brai">البرايل</script>
 			<script type="Bugi">البجينيز</script>
 			<script type="Buhd">البهيدية</script>
+			<script type="Cakm">شاكما</script>
 			<script type="Cans">مقاطع كندية أصلية موحدة</script>
 			<script type="Cari">الكارية</script>
 			<script type="Cham">التشامية</script>
@@ -636,12 +672,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Mlym">الماليالام</script>
 			<script type="Mong">المغولية</script>
 			<script type="Moon">مون</script>
-			<script type="Mtei" draft="contributed">ميتي ماييك</script>
+			<script type="Mtei">ميتي ماييك</script>
 			<script type="Mymr">الميانمار</script>
 			<script type="Narb">العربية الشمالية القديمة</script>
 			<script type="Nkoo">أنكو</script>
 			<script type="Ogam">الأوجهام</script>
-			<script type="Olck" draft="contributed">أول تشيكي</script>
+			<script type="Olck">أول تشيكي</script>
 			<script type="Orkh">الأورخون</script>
 			<script type="Orya">الأوريا</script>
 			<script type="Osma">الأوسمانيا</script>
@@ -650,6 +686,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Phnx">الفينيقية</script>
 			<script type="Plrd">الصوتيات الجماء</script>
 			<script type="Qaag" draft="contributed">زوجيي</script>
+			<script type="Rohg">الحنيفي</script>
 			<script type="Roro">رنجورنجو</script>
 			<script type="Runr">الروني</script>
 			<script type="Sara">الساراتي</script>
@@ -1063,21 +1100,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="colCaseFirst" type="upper" draft="contributed">تصنيف الأحرف الكبيرة أولاً</type>
 			<type key="colCaseLevel" type="no" draft="contributed">تصنيف بحسب الأحرف غير الحساسة لحالة الأحرف</type>
 			<type key="colCaseLevel" type="yes" draft="contributed">تصنيف بحسب حساسية الأحرف</type>
-			<type key="collation" type="big5han">ترتيب فرز الصينية التقليدية (Big5)</type>
-			<type key="collation" type="compat" draft="contributed">ترتيب الفرز السابق: للتوافق</type>
-			<type key="collation" type="dictionary">ترتيب فرز القاموس</type>
+			<type key="collation" type="big5han">الترتيب حسب اللغة الصينية التقليدية (Big5)</type>
+			<type key="collation" type="compat">ترتيب الفرز السابق: للتوافق</type>
+			<type key="collation" type="dictionary">الترتيب حسب القاموس</type>
 			<type key="collation" type="ducet">ترتيب فرز Unicode الافتراضي</type>
-			<type key="collation" type="gb2312han">ترتيب فرز الصينية المبسطة (GB2312)</type>
-			<type key="collation" type="phonebook">ترتيب فرز دليل الهاتف</type>
-			<type key="collation" type="phonetic" draft="contributed">ترتيب الفرز الصوتي</type>
-			<type key="collation" type="pinyin">الترتيب الصيني بنيين المبسط</type>
-			<type key="collation" type="reformed">ترتيب فرز محسَّن</type>
+			<type key="collation" type="gb2312han">الترتيب حسب اللغة الصينية المبسّطة (GB2312)</type>
+			<type key="collation" type="phonebook">الترتيب حسب دليل الهاتف</type>
+			<type key="collation" type="phonetic">الترتيب حسب اللفظ</type>
+			<type key="collation" type="pinyin">الترتيب حسب نظام بنيين الصيني</type>
+			<type key="collation" type="reformed">الترتيب المحسَّن</type>
 			<type key="collation" type="search">بحث لأغراض عامة</type>
 			<type key="collation" type="searchjl" draft="contributed">بحث باستخدام حرف الهانغول الساكن الأول</type>
 			<type key="collation" type="standard">ترتيب الفرز القياسي</type>
-			<type key="collation" type="stroke">الترتيب الصيني بنيين التقليدي</type>
+			<type key="collation" type="stroke">الترتيب حسب نظام كتابة المجموع الصيني</type>
 			<type key="collation" type="traditional">ترتيب تقليدي</type>
-			<type key="collation" type="unihan">ترتيب تصنيف الجذر والضغطات</type>
+			<type key="collation" type="unihan">الترتيب حسب نظام الكتابة بالجذر والمجموع</type>
+			<type key="collation" type="zhuyin">الترتيب حسب نظام بوبوموفو</type>
 			<type key="colNormalization" type="no" draft="contributed">التصفية بدون تسوية</type>
 			<type key="colNormalization" type="yes" draft="contributed">تصنيف Unicode طبيعي</type>
 			<type key="colNumeric" type="no" draft="contributed">تصنيف الأرقام على حدة</type>
@@ -1107,6 +1145,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="armn">الأرقام الأرمينية</type>
 			<type key="numbers" type="armnlow">الأرقام الأرمينية الصغيرة</type>
 			<type key="numbers" type="beng">الأرقام البنغالية</type>
+			<type key="numbers" type="cakm">أرقام تشاكما</type>
 			<type key="numbers" type="deva">الأرقام الديفانغارية</type>
 			<type key="numbers" type="ethi">الأرقام الإثيوبية</type>
 			<type key="numbers" type="finance" draft="contributed">الأرقام المالية</type>
@@ -1122,6 +1161,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="hant">الأرقام الصينية التقليدية</type>
 			<type key="numbers" type="hantfin">الأرقام المالية الصينية التقليدية</type>
 			<type key="numbers" type="hebr">الأرقام العبرية</type>
+			<type key="numbers" type="java">الأرقام الجاوية</type>
 			<type key="numbers" type="jpan">الأرقام اليابانية</type>
 			<type key="numbers" type="jpanfin">الأرقام المالية اليابانية</type>
 			<type key="numbers" type="khmr">الأرقام الخيمرية</type>
@@ -1130,8 +1170,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="latn">الأرقام الغربية</type>
 			<type key="numbers" type="mlym">الأرقام الملايلامية</type>
 			<type key="numbers" type="mong">الأرقام المغولية</type>
+			<type key="numbers" type="mtei">أرقام ميتي</type>
 			<type key="numbers" type="mymr">أرقام ميانمار</type>
-			<type key="numbers" type="native" draft="contributed">الأرقام الأصلية</type>
+			<type key="numbers" type="native">الأرقام الأصلية</type>
+			<type key="numbers" type="olck">أرقام أُول تشيكي</type>
 			<type key="numbers" type="orya">أرقام الأوريا</type>
 			<type key="numbers" type="roman">الأرقام الرومانية</type>
 			<type key="numbers" type="romanlow">الأرقام الرومانية الصغيرة</type>
@@ -1141,7 +1183,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="thai">الأرقام التايلاندية</type>
 			<type key="numbers" type="tibt">الأرقام التبتية</type>
 			<type key="numbers" type="traditional" draft="contributed">أرقام تقليدية</type>
-			<type key="numbers" type="vaii" draft="contributed">أرقام فاي</type>
+			<type key="numbers" type="vaii">أرقام فاي</type>
 		</types>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">النظام المتري</measurementSystemName>
@@ -1174,10 +1216,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<moreInformation>؟</moreInformation>
 		<parseLenients scope="date" level="lenient">
 			<parseLenient sample=":">[\:∶]</parseLenient>
-		</parseLenients>
-		<parseLenients scope="general" level="lenient">
-			<parseLenient sample="$">[\$﹩＄$]</parseLenient>
-			<parseLenient sample="£">[£₤]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
 			<parseLenient sample="-">[\-‒⁻₋−➖﹣－]</parseLenient>
@@ -1353,22 +1391,28 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<dateTimeFormats>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
+							<pattern>{1}، {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} في {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
+							<pattern>{1}، {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} في {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="medium">
 						<dateTimeFormat>
-							<pattern>{1} في {0}</pattern>
+							<pattern>{1}، {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
-							<pattern>{1} في {0}</pattern>
+							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
@@ -1396,8 +1440,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="M">L</dateFormatItem>
-						<dateFormatItem id="Md">d/‏M</dateFormatItem>
-						<dateFormatItem id="MEd">E، d/‏M</dateFormatItem>
+						<dateFormatItem id="Md">d‏/M</dateFormatItem>
+						<dateFormatItem id="MEd">E، d‏/M</dateFormatItem>
 						<dateFormatItem id="MMM">LLL</dateFormatItem>
 						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd">E، d MMM</dateFormatItem>
@@ -1407,7 +1451,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yyyy">y G</dateFormatItem>
 						<dateFormatItem id="yyyyM">M‏/y G</dateFormatItem>
 						<dateFormatItem id="yyyyMd">d‏/M‏/y G</dateFormatItem>
-						<dateFormatItem id="yyyyMEd">E، d/‏M/‏y G</dateFormatItem>
+						<dateFormatItem id="yyyyMEd">E، d‏/M‏/y G</dateFormatItem>
 						<dateFormatItem id="yyyyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="yyyyMMMd">d MMM y G</dateFormatItem>
 						<dateFormatItem id="yyyyMMMEd">E، d MMM y G</dateFormatItem>
@@ -1494,12 +1538,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="M">M–M</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Md">
-							<greatestDifference id="d">d-M – d-M</greatestDifference>
-							<greatestDifference id="M">d-M – d-M</greatestDifference>
+							<greatestDifference id="d">d‏/M – d‏/M</greatestDifference>
+							<greatestDifference id="M">d‏/M – d‏/M</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
-							<greatestDifference id="d">E، d/‏M –‏ E، d/‏M</greatestDifference>
-							<greatestDifference id="M">E، d/‏M – E، d/‏M</greatestDifference>
+							<greatestDifference id="d">E، d‏/M – E، d‏/M</greatestDifference>
+							<greatestDifference id="M">E، d‏/M – E، d‏/M</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMM">
 							<greatestDifference id="M">MMM–MMM</greatestDifference>
@@ -1905,22 +1949,34 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<dateTimeFormats>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
+							<pattern>{1}، {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} في {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
+							<pattern>{1}، {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} في {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="medium">
 						<dateTimeFormat>
-							<pattern>{1}, {0}</pattern>
+							<pattern>{1}، {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1}، {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
-							<pattern>{1}, {0}</pattern>
+							<pattern>{1}، {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1}، {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
@@ -1952,8 +2008,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="hmv">h:mm a v</dateFormatItem>
 						<dateFormatItem id="Hmv">HH:mm v</dateFormatItem>
 						<dateFormatItem id="M">L</dateFormatItem>
-						<dateFormatItem id="Md">d/‏M</dateFormatItem>
-						<dateFormatItem id="MEd">E، d/‏M</dateFormatItem>
+						<dateFormatItem id="Md">d‏/M</dateFormatItem>
+						<dateFormatItem id="MEd">E، d‏/M</dateFormatItem>
 						<dateFormatItem id="MMdd">dd‏/MM</dateFormatItem>
 						<dateFormatItem id="MMM">LLL</dateFormatItem>
 						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
@@ -1970,7 +2026,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="y">y</dateFormatItem>
 						<dateFormatItem id="yM">M‏/y</dateFormatItem>
 						<dateFormatItem id="yMd">d‏/M‏/y</dateFormatItem>
-						<dateFormatItem id="yMEd">E، d/‏M/‏y</dateFormatItem>
+						<dateFormatItem id="yMEd">E، d‏/M‏/y</dateFormatItem>
 						<dateFormatItem id="yMM">MM‏/y</dateFormatItem>
 						<dateFormatItem id="yMMM">MMM y</dateFormatItem>
 						<dateFormatItem id="yMMMd">d MMM y</dateFormatItem>
@@ -2067,12 +2123,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="M">M–M</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Md">
-							<greatestDifference id="d">d-M – d-M</greatestDifference>
-							<greatestDifference id="M">M/d – M/d</greatestDifference>
+							<greatestDifference id="d">d‏/M – d‏/M</greatestDifference>
+							<greatestDifference id="M">d‏/M – d‏/M</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
-							<greatestDifference id="d">E، d/‏M –‏ E، d/‏M</greatestDifference>
-							<greatestDifference id="M">E، d/‏M – E، d/‏M</greatestDifference>
+							<greatestDifference id="d">E، d‏/M – E، d‏/M</greatestDifference>
+							<greatestDifference id="M">E، d‏/M – E، d‏/M</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMM">
 							<greatestDifference id="M">MMM–MMM</greatestDifference>
@@ -2377,8 +2433,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="M">L</dateFormatItem>
-						<dateFormatItem id="Md">d/‏M</dateFormatItem>
-						<dateFormatItem id="MEd">E، d/‏M</dateFormatItem>
+						<dateFormatItem id="Md">d‏/M</dateFormatItem>
+						<dateFormatItem id="MEd">E، d‏/M</dateFormatItem>
 						<dateFormatItem id="MMM">LLL</dateFormatItem>
 						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd">E، d MMM</dateFormatItem>
@@ -2387,7 +2443,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yyyy">y G</dateFormatItem>
 						<dateFormatItem id="yyyyM">M‏/y G</dateFormatItem>
 						<dateFormatItem id="yyyyMd">d‏/M‏/y G</dateFormatItem>
-						<dateFormatItem id="yyyyMEd">E، d/‏M/‏y G</dateFormatItem>
+						<dateFormatItem id="yyyyMEd">E، d‏/M‏/y G</dateFormatItem>
 						<dateFormatItem id="yyyyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="yyyyMMMd">d MMM y G</dateFormatItem>
 						<dateFormatItem id="yyyyMMMEd">E، d MMM y G</dateFormatItem>
@@ -4322,7 +4378,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>اندربيرج</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kanton">
-				<exemplarCity draft="contributed">كانتون</exemplarCity>
+				<exemplarCity>كانتون</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
 				<exemplarCity>كيريتي ماتي</exemplarCity>
@@ -6134,7 +6190,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<currencyFormats numberSystem="arab">
 			<currencyFormatLength>
 				<currencyFormat type="standard">
-					<pattern>#,##0.00 ¤</pattern>
+					<pattern>‏#,##0.00 ¤</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<unitPattern count="zero">{0} {1}</unitPattern>
@@ -6147,10 +6204,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<currencyFormats numberSystem="latn">
 			<currencyFormatLength>
 				<currencyFormat type="standard">
-					<pattern>¤ #,##0.00</pattern>
+					<pattern>‏#,##0.00 ¤;‏-#,##0.00 ¤</pattern>
+					<pattern alt="noCurrency" draft="provisional">#,##0.00</pattern>
 				</currencyFormat>
 				<currencyFormat type="accounting">
-					<pattern>¤#,##0.00;(¤#,##0.00)</pattern>
+					<pattern>؜#,##0.00¤;(؜#,##0.00¤)</pattern>
+					<pattern alt="alphaNextToNumber">؜#,##0.00 ¤;(؜#,##0.00 ¤)</pattern>
+					<pattern alt="noCurrency">#,##0.00;(#,##0.00)</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
@@ -6229,6 +6289,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<pattern type="100000000000000" count="other">000 ترليون ¤</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
+			<currencyPatternAppendISO draft="contributed">{0} ¤¤</currencyPatternAppendISO>
 			<unitPattern count="zero">{0} {1}</unitPattern>
 			<unitPattern count="one">{0} {1}</unitPattern>
 			<unitPattern count="two">{0} {1}</unitPattern>
@@ -9076,6 +9137,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} سنة</unitPattern>
 				<perUnitPattern>{0} في السنة</perUnitPattern>
 			</unit>
+			<unit type="duration-quarter">
+				<gender draft="contributed">masculine</gender>
+				<displayName>أرباع</displayName>
+				<unitPattern count="zero">{0} ربع سنوي</unitPattern>
+				<unitPattern count="one">ربع سنوي</unitPattern>
+				<unitPattern count="two">ربعان سنويان</unitPattern>
+				<unitPattern count="few">{0} أرباع سنوية</unitPattern>
+				<unitPattern count="many">{0} ربعًا سنويًا</unitPattern>
+				<unitPattern count="other">{0} ربع سنوي</unitPattern>
+				<perUnitPattern>{0} في الربع السنوي</perUnitPattern>
+			</unit>
 			<unit type="duration-month">
 				<gender>masculine</gender>
 				<displayName>شهور</displayName>
@@ -9696,7 +9768,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} ضياء شمسي</unitPattern>
 				<unitPattern count="other">{0} ضياء شمسي</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<gender>masculine</gender>
 				<displayName>طن متري</displayName>
 				<unitPattern count="zero">{0} طن متري</unitPattern>
@@ -10907,6 +10979,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} سنة</unitPattern>
 				<perUnitPattern>{0}/سنة</perUnitPattern>
 			</unit>
+			<unit type="duration-quarter">
+				<displayName>ربع سنوي</displayName>
+				<unitPattern count="zero">{0} ربع</unitPattern>
+				<unitPattern count="one">ربع</unitPattern>
+				<unitPattern count="two">ربعان</unitPattern>
+				<unitPattern count="few">{0} أرباع</unitPattern>
+				<unitPattern count="many">{0} ربعًا</unitPattern>
+				<unitPattern count="other">{0} ربع</unitPattern>
+				<perUnitPattern>{0}/ربع سنوي</perUnitPattern>
+			</unit>
 			<unit type="duration-month">
 				<displayName>شهور</displayName>
 				<unitPattern count="zero">{0} شهر</unitPattern>
@@ -11485,7 +11567,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} ضياء شمسي</unitPattern>
 				<unitPattern count="other">{0} ضياء شمسي</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>ط.م</displayName>
 				<unitPattern count="zero">{0} ط.م</unitPattern>
 				<unitPattern count="one">{0} ط.م</unitPattern>
@@ -12276,7 +12358,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="angle-degree">
 				<unitPattern count="zero">{0} درجة</unitPattern>
 				<unitPattern count="one">{0} درجة</unitPattern>
-				<unitPattern count="two">درجتان ({0})</unitPattern>
+				<unitPattern count="two">درجتان</unitPattern>
 				<unitPattern count="few">{0} درجات</unitPattern>
 				<unitPattern count="many">{0} درجة</unitPattern>
 				<unitPattern count="other">{0} درجة</unitPattern>
@@ -12292,12 +12374,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="angle-arc-second">
 				<displayName draft="contributed">ث قوسية</displayName>
-				<unitPattern count="zero">{0}″</unitPattern>
-				<unitPattern count="one">{0}″</unitPattern>
-				<unitPattern count="two">{0}″</unitPattern>
-				<unitPattern count="few">{0}″</unitPattern>
-				<unitPattern count="many">{0}″</unitPattern>
-				<unitPattern count="other">{0}″</unitPattern>
+				<unitPattern count="zero">{0} ث قوسية</unitPattern>
+				<unitPattern count="one">{0} ث قوسية</unitPattern>
+				<unitPattern count="two">{0} ث قوسية</unitPattern>
+				<unitPattern count="few">{0} ث قوسية</unitPattern>
+				<unitPattern count="many">{0} ث قوسية</unitPattern>
+				<unitPattern count="other">{0} ث قوسية</unitPattern>
 			</unit>
 			<unit type="area-square-kilometer">
 				<unitPattern count="zero">{0} كم²</unitPattern>
@@ -12462,6 +12544,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} سنة</unitPattern>
 				<unitPattern count="other">{0} سنة</unitPattern>
 				<perUnitPattern>{0}/سنة</perUnitPattern>
+			</unit>
+			<unit type="duration-quarter">
+				<displayName>ربع</displayName>
+				<unitPattern count="zero">{0} ربع</unitPattern>
+				<unitPattern count="one">ربع</unitPattern>
+				<unitPattern count="two">ربعان</unitPattern>
+				<unitPattern count="few">{0} أرباع</unitPattern>
+				<unitPattern count="many">{0} ربعًا</unitPattern>
+				<unitPattern count="other">{0} ربع</unitPattern>
+				<perUnitPattern>{0}/ر</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
 				<displayName>شهر</displayName>
@@ -13086,4 +13178,156 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<featureName type="tnum">أرقام مسطحة</featureName>
 		<featureName type="zero">الصفر المقسوم بشرطة مائلة</featureName>
 	</typographicNames>
+	<personNames>
+		<nameOrderLocales order="givenFirst">und ar</nameOrderLocales>
+		<nameOrderLocales order="surnameFirst">ko vi yue zh</nameOrderLocales>
+		<foreignSpaceReplacement xml:space="preserve"> </foreignSpaceReplacement>
+		<initialPattern type="initial">{0}</initialPattern>
+		<initialPattern type="initialSequence">{0}. {1}.</initialPattern>
+		<personName order="givenFirst" length="long" usage="referring" formality="formal">
+			<namePattern>{prefix} {given} {given2} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="referring" formality="informal">
+			<namePattern>{given-informal} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="addressing" formality="formal">
+			<namePattern>{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="monogram" formality="formal">
+			<namePattern>{given-monogram-allCaps}.{given2-monogram-allCaps}.{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="monogram" formality="informal">
+			<namePattern>{given-informal-monogram-allCaps}.{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="referring" formality="formal">
+			<namePattern>{prefix} {given} {given2-initial} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="referring" formality="informal">
+			<namePattern>{given-informal} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="addressing" formality="formal">
+			<namePattern>{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="monogram" formality="formal">
+			<namePattern>{given-monogram-allCaps}.{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="monogram" formality="informal">
+			<namePattern>{given-monogram-allCaps}.{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="referring" formality="formal">
+			<namePattern>{prefix} {given-initial} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="referring" formality="informal">
+			<namePattern>{given-informal-initial}. {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="addressing" formality="formal">
+			<namePattern>{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="monogram" formality="informal">
+			<namePattern>{given-monogram-allCaps}.{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="referring" formality="formal">
+			<namePattern>{surname}، {given} {given2}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="referring" formality="informal">
+			<namePattern>{surname} {given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="addressing" formality="formal">
+			<namePattern>{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}.{given-monogram-allCaps}.{given2-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="monogram" formality="informal">
+			<namePattern>{surname-monogram-allCaps}.{given-informal-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="referring" formality="formal">
+			<namePattern>{surname}، {given} {given2-initial}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="referring" formality="informal">
+			<namePattern>{surname} {given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="addressing" formality="formal">
+			<namePattern>{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}.</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="monogram" formality="informal">
+			<namePattern>{given-informal-monogram-allCaps}.</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="referring" formality="formal">
+			<namePattern>{surname}، {given-initial}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="referring" formality="informal">
+			<namePattern>{surname} {given-initial}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="addressing" formality="formal">
+			<namePattern>{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}.</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="monogram" formality="informal">
+			<namePattern>{given-informal-monogram-allCaps}.</namePattern>
+		</personName>
+		<personName order="sorting" length="long" usage="referring" formality="formal">
+			<namePattern>{surname-prefix} {surname-core}، {given} {given2}</namePattern>
+		</personName>
+		<personName order="sorting" length="long" usage="referring" formality="informal">
+			<namePattern>{surname}، {given-informal}</namePattern>
+		</personName>
+		<personName order="sorting" length="medium" usage="referring" formality="formal">
+			<namePattern>{surname-prefix} {surname-core}، {given} {given2-initial}</namePattern>
+		</personName>
+		<personName order="sorting" length="medium" usage="referring" formality="informal">
+			<namePattern>{surname}، {given-informal}</namePattern>
+		</personName>
+		<personName order="sorting" length="short" usage="referring" formality="formal">
+			<namePattern>{surname-prefix} {surname-core}، {given} {given2-initial}</namePattern>
+		</personName>
+		<personName order="sorting" length="short" usage="referring" formality="informal">
+			<namePattern>{surname}، {given-informal}</namePattern>
+		</personName>
+		<sampleName item="givenOnly">
+			<nameField type="given">منير</nameField>
+		</sampleName>
+		<sampleName item="givenSurnameOnly">
+			<nameField type="given">سميرة</nameField>
+			<nameField type="surname">النجار</nameField>
+		</sampleName>
+		<sampleName item="given12Surname">
+			<nameField type="given">كمال</nameField>
+			<nameField type="given2">مجدي</nameField>
+			<nameField type="surname">العامر</nameField>
+		</sampleName>
+		<sampleName item="full">
+			<nameField type="prefix">الدكتور</nameField>
+			<nameField type="given">علاء الدين</nameField>
+			<nameField type="given-informal">ربيع</nameField>
+			<nameField type="given2">رامي كامل</nameField>
+			<nameField type="surname-prefix">أبو</nameField>
+			<nameField type="surname-core">شقرا</nameField>
+			<nameField type="surname2">علم الدين</nameField>
+			<nameField type="suffix">ماجستير، دكتوراه</nameField>
+		</sampleName>
+	</personNames>
 </ldml>

@@ -31,6 +31,7 @@ import java.rmi.UnmarshalException;
 import java.rmi.server.UnicastRemoteObject;
 
 import java.util.Objects;
+import java.lang.ref.Reference;
 
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
@@ -76,6 +77,7 @@ public class FilterUROTest {
             int count = client.filterCount(obj);
             System.out.printf("count: %d, obj: %s%n", count, obj);
             Assert.assertEquals(count, expectedFilterCount, "wrong number of filter calls");
+            Reference.reachabilityFence(impl);
         } catch (RemoteException rex) {
             if (expectedFilterCount == -1 &&
                     UnmarshalException.class.equals(rex.getCause().getClass()) &&
@@ -103,6 +105,7 @@ public class FilterUROTest {
             int count = client.filterCount(obj);
             System.out.printf("count: %d, obj: %s%n", count, obj);
             Assert.assertEquals(count, expectedFilterCount, "wrong number of filter calls");
+            Reference.reachabilityFence(impl);
         } catch (RemoteException rex) {
             if (expectedFilterCount == -1 &&
                     UnmarshalException.class.equals(rex.getCause().getClass()) &&
