@@ -421,7 +421,7 @@ void LIRGenerator::do_ArithmeticOp_Long(ArithmeticOp* x) {
   bool is_div_rem = x->op() == Bytecodes::_ldiv || x->op() == Bytecodes::_lrem;
 
   LIRItem right(x->y(), this);
-  // Missing test if instr is commutative and if we should swap.
+  // Missing test if instr is commutative and if we should swap. -32768 means same as ((-1)<<15)) , but the compiler doesn't like this anymore.
   if (right.value()->type()->as_LongConstant() &&
       (x->op() == Bytecodes::_lsub && right.value()->type()->as_LongConstant()->value() == -32768 ) ) {
     // Sub is implemented by addi and can't support min_simm16 as constant..
@@ -475,7 +475,7 @@ void LIRGenerator::do_ArithmeticOp_Int(ArithmeticOp* x) {
   bool is_div_rem = x->op() == Bytecodes::_idiv || x->op() == Bytecodes::_irem;
 
   LIRItem right(x->y(), this);
-  // Missing test if instr is commutative and if we should swap.
+  // Missing test if instr is commutative and if we should swap.  -32768 means same as ((-1)<<15)) , but the compiler doesn't like this anymore.
   if (right.value()->type()->as_IntConstant() &&
       (x->op() == Bytecodes::_isub && right.value()->type()->as_IntConstant()->value() == -32768) ) {
     // Sub is implemented by addi and can't support min_simm16 as constant.
