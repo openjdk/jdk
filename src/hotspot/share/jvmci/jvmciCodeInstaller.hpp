@@ -152,6 +152,7 @@ private:
     EXCEPTION_HANDLER_ENTRY,
     DEOPT_HANDLER_ENTRY,
     FRAME_COMPLETE,
+    ENTRY_BARRIER_PATCH,
     INVOKEINTERFACE,
     INVOKEVIRTUAL,
     INVOKESTATIC,
@@ -271,6 +272,7 @@ private:
   jint          _sites_count;
 
   CodeOffsets   _offsets;
+  int           _nmethod_entry_patch_offset;
 
   jint          _code_size;
   jint          _total_frame_size;

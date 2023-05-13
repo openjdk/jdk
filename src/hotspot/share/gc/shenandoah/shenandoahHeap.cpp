@@ -58,7 +58,6 @@
 #include "gc/shenandoah/shenandoahParallelCleaning.inline.hpp"
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.inline.hpp"
-#include "gc/shenandoah/shenandoahStringDedup.hpp"
 #include "gc/shenandoah/shenandoahSTWMark.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahVerifier.hpp"
@@ -478,8 +477,8 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   _phase_timings(nullptr),
   _monitoring_support(nullptr),
   _memory_pool(nullptr),
-  _stw_memory_manager("Shenandoah Pauses", "end of GC pause"),
-  _cycle_memory_manager("Shenandoah Cycles", "end of GC cycle"),
+  _stw_memory_manager("Shenandoah Pauses"),
+  _cycle_memory_manager("Shenandoah Cycles"),
   _gc_timer(new ConcurrentGCTimer()),
   _soft_ref_policy(),
   _log_min_obj_alignment_in_bytes(LogMinObjAlignmentInBytes),
@@ -1186,9 +1185,6 @@ void ShenandoahHeap::gc_threads_do(ThreadClosure* tcl) const {
   if (_safepoint_workers != nullptr) {
     _safepoint_workers->threads_do(tcl);
   }
-  if (ShenandoahStringDedup::is_enabled()) {
-    ShenandoahStringDedup::threads_do(tcl);
-  }
 }
 
 void ShenandoahHeap::print_tracing_info() const {
@@ -1507,7 +1503,7 @@ public:
 
     size_t max = _heap->num_regions();
     while (Atomic::load(&_index) < max) {
-      size_t cur = Atomic::fetch_and_add(&_index, stride, memory_order_relaxed);
+      size_t cur = Atomic::fetch_then_add(&_index, stride, memory_order_relaxed);
       size_t start = cur;
       size_t end = MIN2(cur + stride, max);
       if (start >= max) break;
@@ -2193,13 +2189,13 @@ bool ShenandoahHeap::uncommit_bitmap_slice(ShenandoahHeapRegion *r) {
 }
 
 void ShenandoahHeap::safepoint_synchronize_begin() {
-  if (ShenandoahSuspendibleWorkers || UseStringDeduplication) {
+  if (ShenandoahSuspendibleWorkers) {
     SuspendibleThreadSet::synchronize();
   }
 }
 
 void ShenandoahHeap::safepoint_synchronize_end() {
-  if (ShenandoahSuspendibleWorkers || UseStringDeduplication) {
+  if (ShenandoahSuspendibleWorkers) {
     SuspendibleThreadSet::desynchronize();
   }
 }

@@ -341,6 +341,14 @@ public:
 template<typename E>
 const GrowableArrayView<E> GrowableArrayView<E>::EMPTY(nullptr, 0, 0);
 
+template <typename E>
+class GrowableArrayFromArray : public GrowableArrayView<E> {
+public:
+
+  GrowableArrayFromArray<E>(E* data, int len) :
+    GrowableArrayView<E>(data, len, len) {}
+};
+
 // GrowableArrayWithAllocator extends the "view" with
 // the capability to grow and deallocate the data array.
 //
@@ -809,12 +817,15 @@ public:
     this->clear_and_deallocate();
   }
 
-  void* operator new(size_t size) throw() {
+  void* operator new(size_t size) {
     return AnyObj::operator new(size, F);
   }
 
   void* operator new(size_t size, const std::nothrow_t&  nothrow_constant) throw() {
     return AnyObj::operator new(size, nothrow_constant, F);
+  }
+  void operator delete(void *p) {
+    AnyObj::operator delete(p);
   }
 };
 

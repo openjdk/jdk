@@ -2425,7 +2425,7 @@ void TemplateTable::load_invokedynamic_entry(Register method) {
   __ load_resolved_indy_entry(cache, index);
   __ z_lg(method, Address(cache, in_bytes(ResolvedIndyEntry::method_offset())));
 
-  // The invokedynamic is unresolved iff method is NULL
+  // The invokedynamic is unresolved iff method is null
   __ z_clgij(method, (unsigned long)nullptr, Assembler::bcondNotEqual, resolved); // method != 0, jump to resolved
   Bytecodes::Code code = bytecode();
   // Call to the interpreter runtime to resolve invokedynamic

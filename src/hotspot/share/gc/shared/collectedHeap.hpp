@@ -95,6 +95,7 @@ class CollectedHeap : public CHeapObj<mtGC> {
   friend class VMStructs;
   friend class JVMCIVMStructs;
   friend class IsGCActiveMark; // Block structured external access to _is_gc_active
+  friend class DisableIsGCActiveMark; // Disable current IsGCActiveMark
   friend class MemAllocator;
   friend class ParallelObjectIterator;
 
@@ -512,9 +513,6 @@ class CollectedHeap : public CHeapObj<mtGC> {
   // These functions are potentially safepointing.
   virtual void pin_object(JavaThread* thread, oop obj) = 0;
   virtual void unpin_object(JavaThread* thread, oop obj) = 0;
-
-  // Is the given object inside a CDS archive area?
-  virtual bool is_archived_object(oop object) const;
 
   // Support for loading objects from CDS archive into the heap
   // (usually as a snapshot of the old generation).
