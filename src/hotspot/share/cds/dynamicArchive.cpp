@@ -445,3 +445,12 @@ bool DynamicArchive::validate(FileMapInfo* dynamic_info) {
 
   return true;
 }
+
+void DynamicArchiveHeader::print(outputStream* st) {
+  ResourceMark rm;
+
+  st->print_cr("- base_header_crc:                0x%08x", base_header_crc());
+  for (int i = 0; i < NUM_CDS_REGIONS; i++) {
+    st->print_cr("- base_region_crc[%d]:             0x%08x", i, base_region_crc(i));
+  }
+}
