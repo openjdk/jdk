@@ -592,7 +592,7 @@ public sealed interface Linker permits AbstractLinker {
         }
 
         /**
-         * {@return A linker option used to save portions of the execution state immediately after
+         * {@return a linker option used to save portions of the execution state immediately after
          *          calling a foreign function associated with a downcall method handle,
          *          before it can be overwritten by the Java runtime, or read through conventional means}
          * <p>
@@ -640,7 +640,7 @@ public sealed interface Linker permits AbstractLinker {
         }
 
          /**
-         * {@return A struct layout that represents the layout of the capture state segment that is passed
+         * {@return a struct layout that represents the layout of the capture state segment that is passed
          *          to a downcall handle linked with {@link #captureCallState(String...)}}.
          * <p>
          * The capture state layout is <em>platform dependent</em> but is guaranteed to be
@@ -668,7 +668,7 @@ public sealed interface Linker permits AbstractLinker {
         }
 
         /**
-         * {@return A linker option used to mark a foreign function as <em>trivial</em>}
+         * {@return a linker option used to mark a foreign function as <em>trivial</em>}
          * <p>
          * A trivial function is a function that has an extremely short running time
          * in all cases (similar to calling an empty function), and does not call back into Java (e.g. using an upcall stub).

@@ -830,6 +830,10 @@ julong os::available_memory() {
   return win32::available_memory();
 }
 
+julong os::free_memory() {
+  return win32::available_memory();
+}
+
 julong os::win32::available_memory() {
   // Use GlobalMemoryStatusEx() because GlobalMemoryStatus() may return incorrect
   // value if total memory is larger than 4GB

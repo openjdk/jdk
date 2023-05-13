@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -147,7 +147,7 @@ uintptr_t XMarkStackSpace::expand_and_alloc_space(size_t size) {
 
   // Increment top before end to make sure another
   // thread can't steal out newly expanded space.
-  addr = Atomic::fetch_and_add(&_top, size);
+  addr = Atomic::fetch_then_add(&_top, size);
   Atomic::add(&_end, expand_size);
 
   return addr;
