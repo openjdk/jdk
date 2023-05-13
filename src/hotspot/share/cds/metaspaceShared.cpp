@@ -583,8 +583,7 @@ bool MetaspaceShared::may_be_eagerly_linked(InstanceKlass* ik) {
     // that may not be expected by custom class loaders.
     //
     // It's OK to do this for the built-in loaders as we know they can
-    // tolerate this. (Note that unregistered classes are loaded by the null
-    // loader during DumpSharedSpaces).
+    // tolerate this.
     return false;
   }
   return true;
