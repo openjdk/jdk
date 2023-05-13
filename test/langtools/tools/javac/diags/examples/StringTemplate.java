@@ -23,7 +23,7 @@
 
  // key: compiler.misc.feature.string.templates
  // key: compiler.warn.preview.feature.use.plural
- // options: --enable-preview -source 21  -Xlint:preview
+ // options: --enable-preview -source ${jdk.version} -Xlint:preview
 
 class StringTemplate {
     String m() {

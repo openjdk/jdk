@@ -79,6 +79,7 @@ vmTestbase/nsk/jdb/where/where005/where005.java 8278470 generic-all
 
 vmTestbase/nsk/jdb/list/list003/list003.java        8300707 generic-all
 vmTestbase/nsk/jdb/repeat/repeat001/repeat001.java  8300707 generic-all
+vmTestbase/nsk/jdb/kill/kill001/kill001.java        8306467 generic-all
 
 ####
 ## NSK JDI tests failing with wrapper
