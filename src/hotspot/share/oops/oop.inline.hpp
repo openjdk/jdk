@@ -278,6 +278,7 @@ void oopDesc::forward_to(oop p) {
 }
 
 void oopDesc::forward_to_self() {
+#ifdef _LP64
   if (UseAltGCForwarding) {
     markWord m = mark();
     // If mark is displaced, we need to preserve the real header during GC.
@@ -289,7 +290,9 @@ void oopDesc::forward_to_self() {
     m = m.set_self_forwarded();
     assert(forwardee(m) == cast_to_oop(this), "encoding must be reversible");
     set_mark(m);
-  } else {
+  } else
+#endif
+  {
     forward_to(oop(this));
   }
 }
@@ -307,6 +310,7 @@ oop oopDesc::forward_to_atomic(oop p, markWord compare, atomic_memory_order orde
 }
 
 oop oopDesc::forward_to_self_atomic(markWord compare, atomic_memory_order order) {
+#ifdef _LP64
   if (UseAltGCForwarding) {
     markWord m = compare;
     // If mark is displaced, we need to preserve the real header during GC.
@@ -324,16 +328,21 @@ oop oopDesc::forward_to_self_atomic(markWord compare, atomic_memory_order order)
       assert(old_mark.is_marked(), "must be marked here");
       return forwardee(old_mark);
     }
-  } else {
+  } else
+#endif
+  {
     return forward_to_atomic(cast_to_oop(this), compare, order);
   }
 }
 
 oop oopDesc::forwardee(markWord header) const {
   assert(header.is_marked(), "only decode when actually forwarded");
+#ifdef _LP64
   if (header.self_forwarded()) {
     return cast_to_oop(this);
-  } else {
+  } else
+#endif
+  {
     return cast_to_oop(header.decode_pointer());
   }
 }
