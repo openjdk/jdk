@@ -2394,6 +2394,13 @@ FileMapRegion* FileMapInfo::last_core_region() const {
   return region_at(MetaspaceShared::ro);
 }
 
+void FileMapInfo::print(outputStream* st) const {
+  header()->print(st);
+  if (!is_static()) {
+    dynamic_header()->print(st);
+  }
+}
+
 void FileMapHeader::set_as_offset(char* p, size_t *offset) {
   *offset = ArchiveBuilder::current()->any_to_offset((address)p);
 }

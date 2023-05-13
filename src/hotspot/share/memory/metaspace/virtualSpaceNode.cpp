@@ -415,7 +415,7 @@ void VirtualSpaceNode::verify() const {
   verify_locked();
 }
 
-volatile int test_access = 0;
+volatile uint test_access = 0;
 
 // Verify counters and basic structure. Slow mode: verify all chunks in depth
 void VirtualSpaceNode::verify_locked() const {
@@ -436,7 +436,7 @@ void VirtualSpaceNode::verify_locked() const {
   SOMETIMES(
     for (MetaWord* p = base(); p < base() + used_words(); p += os::vm_page_size()) {
       if (_commit_mask.is_committed_address(p)) {
-        test_access += *(int*)p;
+        test_access += *(uint*)p;
       }
     }
   )
