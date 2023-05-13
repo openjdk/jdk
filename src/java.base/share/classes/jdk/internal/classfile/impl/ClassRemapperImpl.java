@@ -204,7 +204,8 @@ public record ClassRemapperImpl(Function<ClassDesc, ClassDesc> mapFunction) impl
                         ii.isInterface());
                 case InvokeDynamicInstruction idi -> cob.invokeDynamicInstruction(DynamicCallSiteDesc.of(
                         idi.bootstrapMethod(), idi.name().stringValue(),
-                        mapMethodDesc(idi.typeSymbol())));
+                        mapMethodDesc(idi.typeSymbol()),
+                        idi.bootstrapArgs().stream().map(this::mapConstantValue).toArray(ConstantDesc[]::new)));
                 case NewObjectInstruction c -> cob.newObjectInstruction(map(c.className().asSymbol()));
                 case NewReferenceArrayInstruction c -> cob.anewarray(map(c.componentType().asSymbol()));
                 case NewMultiArrayInstruction c -> cob.multianewarray(map(c.arrayType().asSymbol()), c.dimensions());
