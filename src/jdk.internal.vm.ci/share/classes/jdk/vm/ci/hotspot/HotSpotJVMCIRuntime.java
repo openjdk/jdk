@@ -197,11 +197,6 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
         return result;
     }
 
-    @VMEntryPoint
-    static String callToString(Object o) {
-        return o.toString();
-    }
-
     /**
      * Set of recognized {@code "jvmci.*"} system properties.
      */

@@ -958,30 +958,6 @@ JVMCIObject JVMCIEnv::call_HotSpotJVMCIRuntime_getCompiler (JVMCIObject runtime,
   }
 }
 
-
-JVMCIObject JVMCIEnv::call_HotSpotJVMCIRuntime_callToString(JVMCIObject object, JVMCIEnv* JVMCIENV) {
-  JavaThread* THREAD = JVMCI::compilation_tick(JavaThread::current()); // For exception macros.
-  if (is_hotspot()) {
-    JavaCallArguments jargs;
-    jargs.push_oop(Handle(THREAD, HotSpotJVMCI::resolve(object)));
-    JavaValue result(T_OBJECT);
-    JavaCalls::call_static(&result,
-                           HotSpotJVMCI::HotSpotJVMCIRuntime::klass(),
-                           vmSymbols::callToString_name(),
-                           vmSymbols::callToString_signature(), &jargs, CHECK_(JVMCIObject()));
-    return wrap(result.get_oop());
-  } else {
-    JNIAccessMark jni(this, THREAD);
-    jobject result = (jstring) jni()->CallStaticObjectMethod(JNIJVMCI::HotSpotJVMCIRuntime::clazz(),
-                                                     JNIJVMCI::HotSpotJVMCIRuntime::callToString_method(),
-                                                     object.as_jobject());
-    if (jni()->ExceptionCheck()) {
-      return JVMCIObject();
-    }
-    return wrap(result);
-  }
-}
-
 void JVMCIEnv::call_HotSpotJVMCIRuntime_postTranslation(JVMCIObject object, JVMCIEnv* JVMCIENV) {
   JavaThread* THREAD = JVMCI::compilation_tick(JavaThread::current()); // For exception macros.
   if (is_hotspot()) {
