@@ -119,7 +119,7 @@ public interface ThreadMXBean extends java.lang.management.ThreadMXBean {
      * memory allocation measurement is disabled.
      *
      * @return an approximation of the total memory allocated, in bytes, in
-     * heap memory since the Java virtual machine was launched,
+     * heap memory since the Java virtual machine was started,
      * if thread memory allocation measurement is enabled;
      * {@code -1} otherwise.
      *
