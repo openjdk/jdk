@@ -65,7 +65,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  */
 public class InstrumentationImpl implements Instrumentation {
     private static final String TRACE_USAGE_PROP_NAME = "jdk.instrument.traceUsage";
-    private final static boolean TRACE_USAGE;
+    private static final boolean TRACE_USAGE;
     static {
         PrivilegedAction<String> pa = () -> System.getProperty(TRACE_USAGE_PROP_NAME);
         @SuppressWarnings("removal")
