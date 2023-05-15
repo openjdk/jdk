@@ -91,7 +91,8 @@ public class CreateDirectories {
     public void testCreateDirectories() throws IOException {
         final Path tmpdir = TestUtil.createTemporaryDirectory();
         // a no-op
-        Files.createDirectories(tmpdir);
+        Path d = Files.createDirectories(tmpdir);
+        assertTrue(d == tmpdir, d + " != " + tmpdir);
 
         // create one directory
         Path subdir = tmpdir.resolve("a");
@@ -123,9 +124,6 @@ public class CreateDirectories {
 
         // the returned path should not be absolute
         Path temp = Path.of(".temp/temp.abc/temp.def");
-        Files.deleteIfExists(temp);
-        Files.deleteIfExists(temp.getParent());
-        temp.toFile().deleteOnExit();
         Path a = Files.createDirectories(temp);
         assertTrue(a == temp, a + " != " + temp);
     }
