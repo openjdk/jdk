@@ -35,7 +35,7 @@
  * suspends debuggee at moment when additional threads try to obtain
  * lock on synchronized object (previously locked in main thread)
  * and then tries to kill them. If these threads are killed then
- * the value of the special "killed" variable should to the set
+ * the value of the special "killed" variable should be set
  * to the number of additional threads created. The value of
  * the "killed" variable is checked by "eval <expr>" command.
  * The test passes if the value is equal to the number of
