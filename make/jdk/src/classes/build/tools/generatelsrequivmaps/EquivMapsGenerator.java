@@ -229,9 +229,10 @@ public class EquivMapsGenerator {
             writer.write(getMapsText());
             writer.write(getLSRText());
             writeEquiv(writer, "singleEquivMap", sortedLanguageMap1);
-            writeMultiEquiv(writer);
-            writeEquiv(writer, "regionVariantEquivMap", sortedRegionVariantMap);
             writer.newLine();
+            writeMultiEquiv(writer);
+            writer.newLine();
+            writeEquiv(writer, "regionVariantEquivMap", sortedRegionVariantMap);
             writer.write(FOOTER_TEXT);
         } catch (IOException ex) {
             ex.printStackTrace(System.err);
@@ -290,7 +291,6 @@ public class EquivMapsGenerator {
     private static final String FOOTER_TEXT =
             """
                 }
-
 
             }
             """;
