@@ -284,6 +284,7 @@ public class DocCommentParser {
      * Non-standard tags are represented by {@link UnknownBlockTagTree}.
      */
     protected DCTree blockTag() {
+        newline = false;
         int p = bp;
         try {
             nextChar();

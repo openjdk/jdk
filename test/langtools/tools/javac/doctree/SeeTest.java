@@ -56,7 +56,7 @@ DocComment[DOC_COMMENT, pos:1
      * Test '@' in quoted string.
      * @see "{@code}"
      */
-    void at_sign_in_quote_string() { }
+    void at_sign_in_quoted_string() { }
 /*
 DocComment[DOC_COMMENT, pos:1
   firstSentence: 1
