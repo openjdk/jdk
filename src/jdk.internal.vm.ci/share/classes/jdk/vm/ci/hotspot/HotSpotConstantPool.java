@@ -400,6 +400,7 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
      * {@code index}.
      *
      * @param index constant pool index
+     * @param opcode the opcode of the instruction for which the lookup is being performed
      * @return {@code JVM_CONSTANT_NameAndType} reference constant pool entry
      */
     private int getNameAndTypeRefIndexAt(int index, int opcode) {
@@ -411,6 +412,7 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
      * entry denoted by {@code which}.
      *
      * @param which constant pool index or constant pool cache index
+     * @param opcode the opcode of the instruction for which the lookup is being performed
      * @return name as {@link String}
      */
     private String getNameOf(int which, int opcode) {
@@ -422,6 +424,7 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
      * index {@code index}.
      *
      * @param index constant pool index
+     * @param opcode the opcode of the instruction for which the lookup is being performed
      * @return name reference index
      */
     private int getNameRefIndexAt(int index) {
@@ -435,6 +438,7 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
      * another entry denoted by {@code which}.
      *
      * @param which constant pool index or constant pool cache index
+     * @param opcode the opcode of the instruction for which the lookup is being performed
      * @return signature as {@link String}
      */
     private String getSignatureOf(int which, int opcode) {
