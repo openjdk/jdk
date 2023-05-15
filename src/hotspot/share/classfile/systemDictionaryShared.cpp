@@ -438,7 +438,7 @@ bool SystemDictionaryShared::add_unregistered_class(Thread* current, InstanceKla
   // We only archive the first class with that name that succeeds putting
   // itself into the table.
   assert(Arguments::is_dumping_archive() || ClassListWriter::is_enabled(), "sanity");
-  MutexLocker ml(current, UnregisteredClassesTable_lock);
+  MutexLocker ml(current, UnregisteredClassesTable_lock, Mutex::_no_safepoint_check_flag);
   Symbol* name = klass->name();
   if (_unregistered_classes_table == nullptr) {
     _unregistered_classes_table = new (mtClass)UnregisteredClassesTable();
@@ -522,15 +522,19 @@ void SystemDictionaryShared::handle_class_unloading(InstanceKlass* klass) {
     remove_dumptime_info(klass);
   }
 
-  if (_unregistered_classes_table != nullptr) {
-    // Remove the class from _unregistered_classes_table: keep the entry but
-    // set it to null. This ensure no classes with the same name can be
-    // added again.
-    MutexLocker ml(Thread::current(), UnregisteredClassesTable_lock);
-    InstanceKlass** v = _unregistered_classes_table->get(klass->name());
-    if (v != nullptr) {
-      *v = nullptr;
+  if (Arguments::is_dumping_archive() || ClassListWriter::is_enabled()) {
+    MutexLocker ml(Thread::current(), UnregisteredClassesTable_lock, Mutex::_no_safepoint_check_flag);
+    if (_unregistered_classes_table != nullptr) {
+      // Remove the class from _unregistered_classes_table: keep the entry but
+      // set it to null. This ensure no classes with the same name can be
+      // added again.
+      InstanceKlass** v = _unregistered_classes_table->get(klass->name());
+      if (v != nullptr) {
+        *v = nullptr;
+      }
     }
+  } else {
+    assert(_unregistered_classes_table == nullptr, "must not be used");
   }
 
   if (ClassListWriter::is_enabled()) {

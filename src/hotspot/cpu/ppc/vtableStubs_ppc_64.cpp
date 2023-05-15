@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -49,9 +49,9 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
   // Read "A word on VtableStub sizing" in share/code/vtableStubs.hpp for details on stub sizing.
   const int stub_code_length = code_size_limit(true);
   VtableStub* s = new(stub_code_length) VtableStub(true, vtable_index);
-  // Can be NULL if there is no free space in the code cache.
-  if (s == NULL) {
-    return NULL;
+  // Can be null if there is no free space in the code cache.
+  if (s == nullptr) {
+    return nullptr;
   }
 
   // Count unused bytes in instruction sequences of variable size.
@@ -120,7 +120,7 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
                               // if the vtable entry is null, the method is abstract
                               // NOTE: for vtable dispatches, the vtable entry will never be null.
 
-  __ null_check(R19_method, in_bytes(Method::from_compiled_offset()), /*implicit only*/NULL);
+  __ null_check(R19_method, in_bytes(Method::from_compiled_offset()), /*implicit only*/nullptr);
   __ ld(R12_scratch2, in_bytes(Method::from_compiled_offset()), R19_method);
   __ mtctr(R12_scratch2);
   __ bctr();
@@ -135,9 +135,9 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   // Read "A word on VtableStub sizing" in share/code/vtableStubs.hpp for details on stub sizing.
   const int stub_code_length = code_size_limit(false);
   VtableStub* s = new(stub_code_length) VtableStub(false, itable_index);
-  // Can be NULL if there is no free space in the code cache.
-  if (s == NULL) {
-    return NULL;
+  // Can be null if there is no free space in the code cache.
+  if (s == nullptr) {
+    return nullptr;
   }
 
   // Count unused bytes in instruction sequences of variable size.

@@ -55,7 +55,7 @@ struct PairPosFormat1_3
 
     if (pairSet.len > glyphs->get_population () * hb_bit_storage ((unsigned) pairSet.len) / 4)
     {
-      for (hb_codepoint_t g = HB_SET_VALUE_INVALID; glyphs->next (&g);)
+      for (hb_codepoint_t g : glyphs->iter())
       {
         unsigned i = cov.get_coverage (g);
         if ((this+pairSet[i]).intersects (glyphs, valueFormat))

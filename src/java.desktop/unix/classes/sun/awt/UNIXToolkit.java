@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,11 @@ public abstract class UNIXToolkit extends SunToolkit
     private static final int[] BAND_OFFSETS = { 0, 1, 2 };
     private static final int[] BAND_OFFSETS_ALPHA = { 0, 1, 2, 3 };
     private static final int DEFAULT_DATATRANSFER_TIMEOUT = 10000;
+
+    private static final String GTK2_DEPRECATION_MESSAGE =
+            "WARNING: the GTK 2 library is deprecated and " +
+                    "its support will be removed in a future release";
+    private static volatile boolean gtk2WarningIssued = false;
 
     // Allowed GTK versions
     public enum GtkVersions {
@@ -405,6 +410,10 @@ public abstract class UNIXToolkit extends SunToolkit
         if (version == null) {
             return GtkVersions.ANY;
         } else if (version.startsWith("2")) {
+            if (!gtk2WarningIssued) {
+                System.err.println(GTK2_DEPRECATION_MESSAGE);
+                gtk2WarningIssued = true;
+            }
             return GtkVersions.GTK2;
         } else if("3".equals(version) ){
             return GtkVersions.GTK3;

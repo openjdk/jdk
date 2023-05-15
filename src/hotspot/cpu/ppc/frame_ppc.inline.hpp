@@ -127,7 +127,7 @@ inline frame::frame(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, address
 // Accessors
 
 // Return unique id for this frame. The id must have a value where we
-// can distinguish identity and younger/older relationship. NULL
+// can distinguish identity and younger/older relationship. null
 // represents an invalid (incomparable) frame.
 inline intptr_t* frame::id(void) const {
   // Use _fp. _sp or _unextended_sp wouldn't be correct due to resizing.
@@ -137,7 +137,7 @@ inline intptr_t* frame::id(void) const {
 // Return true if this frame is older (less recent activation) than
 // the frame represented by id.
 inline bool frame::is_older(intptr_t* id) const {
-   assert(this->id() != NULL && id != NULL, "NULL frame id");
+   assert(this->id() != nullptr && id != nullptr, "null frame id");
    // Stack grows towards smaller addresses on ppc64.
    return this->id() > id;
 }
@@ -320,7 +320,7 @@ inline frame frame::sender_for_compiled_frame(RegisterMap *map) const {
     } else {
       assert(!_cb->caller_must_gc_arguments(map->thread()), "");
       assert(!map->include_argument_oops(), "");
-      assert(oop_map() == NULL || !oop_map()->has_any(OopMapValue::callee_saved_value), "callee-saved value in compiled frame");
+      assert(oop_map() == nullptr || !oop_map()->has_any(OopMapValue::callee_saved_value), "callee-saved value in compiled frame");
     }
   }
 
@@ -339,29 +339,29 @@ inline frame frame::sender_for_compiled_frame(RegisterMap *map) const {
 
 inline oop frame::saved_oop_result(RegisterMap* map) const {
   oop* result_adr = (oop *)map->location(R3->as_VMReg(), sp());
-  guarantee(result_adr != NULL, "bad register save location");
+  guarantee(result_adr != nullptr, "bad register save location");
   return *result_adr;
 }
 
 inline void frame::set_saved_oop_result(RegisterMap* map, oop obj) {
   oop* result_adr = (oop *)map->location(R3->as_VMReg(), sp());
-  guarantee(result_adr != NULL, "bad register save location");
+  guarantee(result_adr != nullptr, "bad register save location");
 
   *result_adr = obj;
 }
 
 inline const ImmutableOopMap* frame::get_oop_map() const {
-  if (_cb == NULL) return NULL;
-  if (_cb->oop_maps() != NULL) {
+  if (_cb == nullptr) return nullptr;
+  if (_cb->oop_maps() != nullptr) {
     NativePostCallNop* nop = nativePostCallNop_at(_pc);
-    if (nop != NULL && nop->displacement() != 0) {
+    if (nop != nullptr && nop->displacement() != 0) {
       int slot = ((nop->displacement() >> 24) & 0xff);
       return _cb->oop_map_for_slot(slot, _pc);
     }
     const ImmutableOopMap* oop_map = OopMapSet::find_map(this);
     return oop_map;
   }
-  return NULL;
+  return nullptr;
 }
 
 inline int frame::compiled_frame_stack_argsize() const {
@@ -370,7 +370,7 @@ inline int frame::compiled_frame_stack_argsize() const {
 }
 
 inline void frame::interpreted_frame_oop_map(InterpreterOopMap* mask) const {
-  assert(mask != NULL, "");
+  assert(mask != nullptr, "");
   Method* m = interpreter_frame_method();
   int   bci = interpreter_frame_bci();
   m->mask_for(bci, mask); // OopMapCache::compute_one_oop_map(m, bci, mask);

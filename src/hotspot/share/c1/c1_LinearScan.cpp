@@ -4133,8 +4133,10 @@ Range::Range(int from, int to, Range* next) :
 
 // initialize sentinel
 Range* Range::_end = NULL;
-void Range::initialize(Arena* arena) {
-  _end = new (arena) Range(max_jint, max_jint, NULL);
+void Range::initialize() {
+  assert(_end == nullptr, "Range initialized more than once");
+  alignas(Range) static uint8_t end_storage[sizeof(Range)];
+  _end = ::new(static_cast<void*>(end_storage)) Range(max_jint, max_jint, NULL);
 }
 
 int Range::intersects_at(Range* r2) const {
@@ -4180,9 +4182,11 @@ void Range::print(outputStream* out) const {
 
 // initialize sentinel
 Interval* Interval::_end = NULL;
-void Interval::initialize(Arena* arena) {
-  Range::initialize(arena);
-  _end = new (arena) Interval(-1);
+void Interval::initialize() {
+  Range::initialize();
+  assert(_end == nullptr, "Interval initialized more than once");
+  alignas(Interval) static uint8_t end_storage[sizeof(Interval)];
+  _end = ::new(static_cast<void*>(end_storage)) Interval(-1);
 }
 
 Interval::Interval(int reg_num) :

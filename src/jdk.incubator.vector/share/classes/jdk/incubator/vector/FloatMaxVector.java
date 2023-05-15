@@ -141,24 +141,9 @@ final class FloatMaxVector extends FloatVector {
     @ForceInline
     FloatMaxShuffle iotaShuffle() { return FloatMaxShuffle.IOTA; }
 
-    @ForceInline
-    FloatMaxShuffle iotaShuffle(int start, int step, boolean wrap) {
-      if (wrap) {
-        return (FloatMaxShuffle)VectorSupport.shuffleIota(ETYPE, FloatMaxShuffle.class, VSPECIES, VLENGTH, start, step, 1,
-                (l, lstart, lstep, s) -> s.shuffleFromOp(i -> (VectorIntrinsics.wrapToRange(i*lstep + lstart, l))));
-      } else {
-        return (FloatMaxShuffle)VectorSupport.shuffleIota(ETYPE, FloatMaxShuffle.class, VSPECIES, VLENGTH, start, step, 0,
-                (l, lstart, lstep, s) -> s.shuffleFromOp(i -> (i*lstep + lstart)));
-      }
-    }
-
     @Override
     @ForceInline
-    FloatMaxShuffle shuffleFromBytes(byte[] reorder) { return new FloatMaxShuffle(reorder); }
-
-    @Override
-    @ForceInline
-    FloatMaxShuffle shuffleFromArray(int[] indexes, int i) { return new FloatMaxShuffle(indexes, i); }
+    FloatMaxShuffle shuffleFromArray(int[] indices, int i) { return new FloatMaxShuffle(indices, i); }
 
     @Override
     @ForceInline
@@ -344,9 +329,11 @@ final class FloatMaxVector extends FloatVector {
         return (long) super.reduceLanesTemplate(op, FloatMaxMask.class, (FloatMaxMask) m);  // specialized
     }
 
+    @Override
     @ForceInline
-    public VectorShuffle<Float> toShuffle() {
-        return super.toShuffleTemplate(FloatMaxShuffle.class); // specialize
+    public final
+    <F> VectorShuffle<F> toShuffle(AbstractSpecies<F> dsp) {
+        return super.toShuffleTemplate(dsp);
     }
 
     // Specialized unary testing
@@ -760,25 +747,28 @@ final class FloatMaxVector extends FloatVector {
 
     static final class FloatMaxShuffle extends AbstractShuffle<Float> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
-        static final Class<Float> ETYPE = float.class; // used by the JVM
+        static final Class<Integer> ETYPE = int.class; // used by the JVM
 
-        FloatMaxShuffle(byte[] reorder) {
-            super(VLENGTH, reorder);
+        FloatMaxShuffle(int[] indices) {
+            super(indices);
+            assert(VLENGTH == indices.length);
+            assert(indicesInRange(indices));
         }
 
-        public FloatMaxShuffle(int[] reorder) {
-            super(VLENGTH, reorder);
+        FloatMaxShuffle(int[] indices, int i) {
+            this(prepare(indices, i));
         }
 
-        public FloatMaxShuffle(int[] reorder, int i) {
-            super(VLENGTH, reorder, i);
+        FloatMaxShuffle(IntUnaryOperator fn) {
+            this(prepare(fn));
         }
 
-        public FloatMaxShuffle(IntUnaryOperator fn) {
-            super(VLENGTH, fn);
+        int[] indices() {
+            return (int[])getPayload();
         }
 
         @Override
+        @ForceInline
         public FloatSpecies vspecies() {
             return VSPECIES;
         }
@@ -786,40 +776,70 @@ final class FloatMaxVector extends FloatVector {
         static {
             // There must be enough bits in the shuffle lanes to encode
             // VLENGTH valid indexes and VLENGTH exceptional ones.
-            assert(VLENGTH < Byte.MAX_VALUE);
-            assert(Byte.MIN_VALUE <= -VLENGTH);
+            assert(VLENGTH < Integer.MAX_VALUE);
+            assert(Integer.MIN_VALUE <= -VLENGTH);
         }
         static final FloatMaxShuffle IOTA = new FloatMaxShuffle(IDENTITY);
 
         @Override
         @ForceInline
-        public FloatMaxVector toVector() {
-            return VectorSupport.shuffleToVector(VCLASS, ETYPE, FloatMaxShuffle.class, this, VLENGTH,
-                                                    (s) -> ((FloatMaxVector)(((AbstractShuffle<Float>)(s)).toVectorTemplate())));
+        IntMaxVector toBitsVector() {
+            return (IntMaxVector) super.toBitsVectorTemplate();
         }
 
         @Override
         @ForceInline
-        public <F> VectorShuffle<F> cast(VectorSpecies<F> s) {
-            AbstractSpecies<F> species = (AbstractSpecies<F>) s;
-            if (length() != species.laneCount())
-                throw new IllegalArgumentException("VectorShuffle length and species length differ");
-            int[] shuffleArray = toArray();
-            return s.shuffleFromArray(shuffleArray, 0).check(s);
+        IntVector toBitsVector0() {
+            return IntMaxVector.VSPECIES.dummyVector().vectorFactory(indices());
         }
 
-        @ForceInline
         @Override
-        public FloatMaxShuffle rearrange(VectorShuffle<Float> shuffle) {
-            FloatMaxShuffle s = (FloatMaxShuffle) shuffle;
-            byte[] reorder1 = reorder();
-            byte[] reorder2 = s.reorder();
-            byte[] r = new byte[reorder1.length];
-            for (int i = 0; i < reorder1.length; i++) {
-                int ssi = reorder2[i];
-                r[i] = reorder1[ssi];  // throws on exceptional index
+        @ForceInline
+        public int laneSource(int i) {
+            return (int)toBitsVector().lane(i);
+        }
+
+        @Override
+        @ForceInline
+        public void intoArray(int[] a, int offset) {
+            toBitsVector().intoArray(a, offset);
+        }
+
+        private static int[] prepare(int[] indices, int offset) {
+            int[] a = new int[VLENGTH];
+            for (int i = 0; i < VLENGTH; i++) {
+                int si = indices[offset + i];
+                si = partiallyWrapIndex(si, VLENGTH);
+                a[i] = (int)si;
             }
-            return new FloatMaxShuffle(r);
+            return a;
+        }
+
+        private static int[] prepare(IntUnaryOperator f) {
+            int[] a = new int[VLENGTH];
+            for (int i = 0; i < VLENGTH; i++) {
+                int si = f.applyAsInt(i);
+                si = partiallyWrapIndex(si, VLENGTH);
+                a[i] = (int)si;
+            }
+            return a;
+        }
+
+        private static boolean indicesInRange(int[] indices) {
+            int length = indices.length;
+            for (int si : indices) {
+                if (si >= (int)length || si < (int)(-length)) {
+                    boolean assertsEnabled = false;
+                    assert(assertsEnabled = true);
+                    if (assertsEnabled) {
+                        String msg = ("index "+si+"out of range ["+length+"] in "+
+                                  java.util.Arrays.toString(indices));
+                        throw new AssertionError(msg);
+                    }
+                    return false;
+                }
+            }
+            return true;
         }
     }
 

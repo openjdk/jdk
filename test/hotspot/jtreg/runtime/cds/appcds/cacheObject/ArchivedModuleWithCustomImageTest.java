@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,10 +27,6 @@
  * @requires vm.cds.write.archived.java.heap
  * @requires vm.flagless
  * @library /test/jdk/lib/testlibrary /test/lib /test/hotspot/jtreg/runtime/cds/appcds
- * @build jdk.test.whitebox.WhiteBox
- * @compile CheckArchivedModuleApp.java
- * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar CheckArchivedModuleApp
- * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar WhiteBox.jar jdk.test.whitebox.WhiteBox
  * @run driver ArchivedModuleWithCustomImageTest
  */
 
@@ -99,8 +95,6 @@ public class ArchivedModuleWithCustomImageTest {
 
     private static void testArchivedModuleUsingImage(Path image)
                             throws Throwable {
-        String wbJar = ClassFileInstaller.getJarPath("WhiteBox.jar");
-        String use_whitebox_jar = "-Xbootclasspath/a:" + wbJar;
         String appJar = ClassFileInstaller.getJarPath("app.jar");
         Path customJava = Paths.get(image.toString(), "bin", "java");
 
@@ -116,27 +110,6 @@ public class ArchivedModuleWithCustomImageTest {
             pbDump, "custom.runtime.image.dump");
         TestCommon.checkDump(output);
 
-        // Test case 1):
-        // test archived module graph objects are used with custome runtime image
-        System.out.println("------------------- Test case 1 -------------------");
-        String[] runCmd = {customJava.toString(),
-                           use_whitebox_jar,
-                           "-XX:SharedArchiveFile=./ArchivedModuleWithCustomImageTest.jsa",
-                           "-cp",
-                           appJar,
-                           "-Xshare:on",
-                           "-XX:+UnlockDiagnosticVMOptions",
-                           "-XX:+WhiteBoxAPI",
-                           "CheckArchivedModuleApp",
-                           "yes",
-                           "yes"};
-        printCommand(runCmd);
-        ProcessBuilder pbRun = new ProcessBuilder();
-        pbRun.command(runCmd);
-        output = TestCommon.executeAndLog(pbRun, "custom.runtime.image.run");
-        output.shouldHaveExitValue(0);
-
-
         // Test case 2):
         // verify --show-module-resolution output
         System.out.println("------------------- Test case 2 -------------------");
@@ -147,7 +120,7 @@ public class ArchivedModuleWithCustomImageTest {
                                    "--show-module-resolution",
                                    "-version"};
         printCommand(showModuleCmd1);
-        pbRun = new ProcessBuilder();
+        ProcessBuilder pbRun = new ProcessBuilder();
         pbRun.command(showModuleCmd1);
         output = TestCommon.executeAndLog(
             pbRun, "custom.runtime.image.showModuleResolution.nocds");

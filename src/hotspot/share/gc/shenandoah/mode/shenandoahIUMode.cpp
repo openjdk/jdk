@@ -40,7 +40,6 @@ void ShenandoahIUMode::initialize_flags() const {
   FLAG_SET_DEFAULT(ClassUnloadingWithConcurrentMark, false);
 
   if (ClassUnloading) {
-    FLAG_SET_DEFAULT(ShenandoahSuspendibleWorkers, true);
     FLAG_SET_DEFAULT(VerifyBeforeExit, false);
   }
 
