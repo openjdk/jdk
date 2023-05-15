@@ -25,6 +25,7 @@
 #include "asm/macroAssembler.inline.hpp"
 #include "code/codeBlob.hpp"
 #include "code/vmreg.inline.hpp"
+#include "compiler/compileTask.hpp"
 #include "gc/z/zAddress.hpp"
 #include "gc/z/zBarrier.inline.hpp"
 #include "gc/z/zBarrierSet.hpp"
@@ -320,12 +321,12 @@ static void emit_store_fast_path_check(MacroAssembler* masm, Address ref_addr, b
   __ jcc(Assembler::notEqual, medium_path);
 }
 
+#ifdef COMPILER2
 static int store_fast_path_check_size(MacroAssembler* masm, Address ref_addr, bool is_atomic, Label& medium_path) {
   if (!VM_Version::has_intel_jcc_erratum()) {
     return 0;
   }
   int size = 0;
-#ifdef COMPILER2
   bool in_scratch_emit_size = masm->code_section()->scratch_emit();
   if (!in_scratch_emit_size) {
     // Temporarily register as scratch buffer so that relocations don't register
@@ -347,9 +348,9 @@ static int store_fast_path_check_size(MacroAssembler* masm, Address ref_addr, bo
   }
   // Roll back code, now that we know the size
   masm->code_section()->set_end(insts_end);
-#endif
   return size;
 }
+#endif
 
 static void emit_store_fast_path_check_c2(MacroAssembler* masm, Address ref_addr, bool is_atomic, Label& medium_path) {
 #ifdef COMPILER2
@@ -1549,6 +1550,7 @@ void ZBarrierSetAssembler::generate_c2_store_barrier_stub(MacroAssembler* masm, 
 }
 
 #undef __
+#endif // COMPILER2
 
 static int patch_barrier_relocation_offset(int format) {
   switch (format) {
@@ -1623,7 +1625,6 @@ void ZBarrierSetAssembler::patch_barriers() {
   }
 }
 
-#endif // COMPILER2
 
 #undef __
 #define __ masm->
