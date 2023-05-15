@@ -162,9 +162,9 @@
  *   <li><p> The agent class must implement a public static {@code agentmain}
  *   method. </p></li>
  *
- *   <li><p> The JVM prints a warning on the standard error stream. The warning is
- *   printed for each agent started after JVM startup. The warning can be disabled
- *   by means of an implementation-specific command line option. </p></li>
+ *   <li><p> The JVM prints a warning on the standard error stream for each agent that
+ *   the JVM attempts to start after the JVM has started. Warnings can be disabled by
+ *   means of an implementation-specific command line option. </p></li>
  *
  * </ol>
  *

@@ -634,15 +634,15 @@ Agent_OnLoad_L(JavaVM *vm, char *options, void *reserved)</example>
   </intro>
 
   <intro id="onattach" label="Agent Start-Up (Live phase)">
-    A VM may support a mechanism to load an agent library and start an agent during the live
+    A VM may support a mechanism that allows agents to be started in the VM during the live
     <functionlink id="GetPhase">phase</functionlink>. The details of how this is supported,
     are implementation specific. For example, a tool may use some platform specific mechanism,
     or implementation specific API, to attach to the running VM, and request it start a given
     agent.
     <p/>
-    The VM will print a warning to the standard error stream for each agent that it starts
-    during the live phase. Warnings can be disabled by means of an implementation-specific
-    command line option.
+    The VM prints a warning on the standard error stream for each agent that it attempts
+    to start in the live phase.
+    Warnings can be disabled by means of an implementation-specific command line option.
     <p/>
     If an agent is started during the live phase then its agent library
     must export a start-up function
