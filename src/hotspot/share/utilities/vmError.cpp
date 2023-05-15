@@ -190,12 +190,33 @@ static bool stack_has_headroom(size_t headroom) {
 }
 
 #ifdef ASSERT
-void VMError::reattempt_test_hit_stack_limit() {
+void VMError::reattempt_test_hit_stack_limit(outputStream* st) {
   if (stack_has_headroom(_reattempt_required_stack_headroom)) {
-    volatile char stack_buffer[_reattempt_required_stack_headroom / 2];
-    static_cast<void>(stack_buffer[sizeof(stack_buffer) - 1] = '\0');
-    reattempt_test_hit_stack_limit();
-    static_cast<void>(stack_buffer[sizeof(stack_buffer) - 1] == '\0');
+    // Use all but (_reattempt_required_stack_headroom - K) unguarded stack space.
+    const size_t stack_size     = os::current_stack_size();
+    const size_t guard_size     = StackOverflow::stack_guard_zone_size();
+    const address stack_base    = os::current_stack_base();
+    const address stack_pointer = os::current_stack_pointer();
+
+    const size_t unguarded_stack_size = stack_size - guard_size;
+    const address unguarded_stack_end = stack_base - unguarded_stack_size;
+    const size_t available_headroom   = stack_pointer - unguarded_stack_end;
+    const size_t allocation_size      = available_headroom - _reattempt_required_stack_headroom + K;
+
+    st->print_cr("Current Stack Pointer: " PTR_FORMAT " alloca " SIZE_FORMAT
+                 " of " SIZE_FORMAT " bytes available unguarded stack space",
+                 p2i(stack_pointer), allocation_size, available_headroom);
+
+    // Allocate byte blob on the stack. Make pointer volatile to avoid having
+    // the compiler removing later reads.
+    volatile char* stack_buffer = static_cast<char*>(alloca(allocation_size));
+    // Initialize the last byte.
+    stack_buffer[allocation_size - 1] = '\0';
+    // Recursive call should hit the stack limit.
+    reattempt_test_hit_stack_limit(st);
+    // Perform a volatile read of the last byte to avoid having the complier
+    // remove the allocation.
+    static_cast<void>(stack_buffer[allocation_size - 1] == '\0');
   }
   controlled_crash(14);
 }
@@ -702,7 +723,7 @@ void VMError::report(outputStream* st, bool _verbose) {
   STEP_IF("test reattempt stack headroom",
       _verbose && TestCrashInErrorHandler == TEST_REATTEMPT_SECONDARY_CRASH)
     st->print_cr("test reattempt stack headroom");
-    reattempt_test_hit_stack_limit();
+    reattempt_test_hit_stack_limit(st);
 
   REATTEMPT_STEP_IF("test reattempt stack headroom, attempt 2",
       _verbose && TestCrashInErrorHandler == TEST_REATTEMPT_SECONDARY_CRASH)
