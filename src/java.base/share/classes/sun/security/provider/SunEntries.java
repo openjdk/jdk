@@ -218,7 +218,8 @@ public final class SunEntries {
          */
         addWithAlias(p, "KeyFactory", "DSA",
                 "sun.security.provider.DSAKeyFactory", attrs);
-        addWithAlias(p, "KeyFactory", "HSS/LMS", "sun.security.provider.HSS$KeyFactoryImpl", attrs);
+        addWithAlias(p, "KeyFactory", "HSS/LMS",
+                "sun.security.provider.HSS$KeyFactoryImpl", attrs);
 
         /*
          * Digest engines

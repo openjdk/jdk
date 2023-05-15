@@ -26,10 +26,12 @@
 package sun.security.util;
 
 import java.security.spec.KeySpec;
+//12345678901234567890123456789012345678901234567890123456789012345678901234567890
 
 /**
  * This is a KeySpec that is used to specify a key by its byte array implementation.
- * It is intended to be used in testing algorithms where the algorithm specification describes the key in this form.
+ * It is intended to be used in testing algorithms where the algorithm specification
+ * describes the key in this form.
  */
 public class RawKeySpec implements KeySpec {
     private final byte[] keyArr;
