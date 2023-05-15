@@ -51,8 +51,8 @@ class ZIndexDistributorStriped : public CHeapObj<mtGC> {
   }
 
 public:
-  ZIndexDistributorStriped(int max_index) :
-      _max_index(max_index),
+  ZIndexDistributorStriped(int max_index)
+    : _max_index(max_index),
       _claim_stripe(0),
       _mem() {
     memset(_mem, 0, MemSize + ZCacheLineSize);
@@ -266,8 +266,8 @@ private:
   }
 
 public:
-  ZIndexDistributorClaimTree(int count) :
-      _last_level_segment_size_shift(last_level_segment_size_shift(count)),
+  ZIndexDistributorClaimTree(int count)
+    : _last_level_segment_size_shift(last_level_segment_size_shift(count)),
       _malloced((char*)os::malloc(claim_variables_size() + os::vm_page_size(), mtGC)),
       _claim_array((volatile int*)align_up(_malloced, os::vm_page_size())) {
 
@@ -303,8 +303,8 @@ inline void* ZIndexDistributor::create_strategy(int count) {
   };
 }
 
-inline ZIndexDistributor::ZIndexDistributor(int count) :
-    _strategy(create_strategy(count)) {}
+inline ZIndexDistributor::ZIndexDistributor(int count)
+  : _strategy(create_strategy(count)) {}
 
 inline ZIndexDistributor::~ZIndexDistributor() {
   switch (ZIndexDistributorStrategy) {

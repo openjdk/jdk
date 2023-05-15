@@ -49,8 +49,8 @@ private:
   bool            _is_unloading;
 
 public:
-  ZIsUnloadingOopClosure(nmethod* nm) :
-      _color(ZNMethod::color(nm)),
+  ZIsUnloadingOopClosure(nmethod* nm)
+    : _color(ZNMethod::color(nm)),
       _is_unloading(false) {}
 
   virtual void do_oop(oop* p) {
@@ -114,8 +114,8 @@ public:
   }
 };
 
-ZUnload::ZUnload(ZWorkers* workers) :
-    _workers(workers) {
+ZUnload::ZUnload(ZWorkers* workers)
+  : _workers(workers) {
 
   if (!ClassUnloading) {
     return;

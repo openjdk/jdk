@@ -29,8 +29,8 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "utilities/debug.hpp"
 
-ZObjArrayAllocator::ZObjArrayAllocator(Klass* klass, size_t word_size, int length, bool do_zero, Thread* thread) :
-    ObjArrayAllocator(klass, word_size, length, do_zero, thread) {}
+ZObjArrayAllocator::ZObjArrayAllocator(Klass* klass, size_t word_size, int length, bool do_zero, Thread* thread)
+  : ObjArrayAllocator(klass, word_size, length, do_zero, thread) {}
 
 void ZObjArrayAllocator::yield_for_safepoint() const {
   ThreadBlockInVM tbivm(JavaThread::cast(_thread));
