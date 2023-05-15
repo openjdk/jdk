@@ -40,6 +40,26 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:-UseCompressedOops BaseOffsets
  */
+/*
+ * @test id=no-ccp
+ * @library /test/lib /
+ * @requires vm.bits == "64"
+ * @modules java.base/jdk.internal.misc
+ *          java.management
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:-UseCompressedClassPointers BaseOffsets
+ */
+/*
+ * @test id=no-compact-headers
+ * @library /test/lib /
+ * @requires vm.bits == "64"
+ * @modules java.base/jdk.internal.misc
+ *          java.management
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UnlockExperimentalVMOptions -XX:+UseCompactObjectHeaders BaseOffsets
+ */
 
 import java.lang.reflect.Field;
 import java.util.Arrays;
@@ -62,7 +82,11 @@ public class BaseOffsets {
     static final int  INT_ARRAY_OFFSET;
     static final int  LONG_ARRAY_OFFSET;
     static {
-        if (!Platform.is64bit() || WB.getBooleanVMFlag("UseCompactObjectHeaders")) {
+        if (!Platform.is64bit()) {
+            INT_OFFSET = 8;
+            INT_ARRAY_OFFSET = 12;
+            LONG_ARRAY_OFFSET = 16;
+        } else if (WB.getBooleanVMFlag("UseCompactObjectHeaders")) {
             INT_OFFSET = 8;
             INT_ARRAY_OFFSET = 16; // Should be 12 once JDK-8139457 lands.
             LONG_ARRAY_OFFSET = 16;
@@ -72,7 +96,7 @@ public class BaseOffsets {
             LONG_ARRAY_OFFSET = 16;
         } else {
             INT_OFFSET = 16;
-            INT_ARRAY_OFFSET = 20;
+            INT_ARRAY_OFFSET = 24; // Should be 20 once JDK-8139457 lands.
             LONG_ARRAY_OFFSET = 24;
         }
     }
