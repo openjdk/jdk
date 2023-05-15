@@ -123,7 +123,7 @@ class VMError : public AllStatic {
   }
 
   DEBUG_ONLY(static void reattempt_test_hit_stack_limit(outputStream* st));
-  static bool should_stop_reattempt_step(const char* &reason);
+  static bool can_reattempt_step(const char* &stop_reason);
 
   // Write a hint to the stream in case siginfo relates to a segv/bus error
   // and the offending address points into CDS store.

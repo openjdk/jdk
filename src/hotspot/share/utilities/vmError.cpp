@@ -222,18 +222,18 @@ void VMError::reattempt_test_hit_stack_limit(outputStream* st) {
 }
 #endif // ASSERT
 
-bool VMError::should_stop_reattempt_step(const char* &reason) {
+bool VMError::can_reattempt_step(const char* &stop_reason) {
   if (!stack_has_headroom(_reattempt_required_stack_headroom)) {
-    reason = "Stack headroom limit reached";
-    return true;
+    stop_reason = "Stack headroom limit reached";
+    return false;
   }
 
   if (_step_did_timeout) {
-    reason = "Step time limit reached";
-    return true;
+    stop_reason = "Step time limit reached";
+    return false;
   }
 
-  return false;
+  return true;
 }
 
 void VMError::record_coredump_status(const char* message, bool status) {
@@ -649,7 +649,7 @@ void VMError::report(outputStream* st, bool _verbose) {
     _current_step = __LINE__;                              \
     _current_step_info = s;                                \
     const bool cond_value = (cond);                        \
-    if (cond_value && should_stop_reattempt_step(          \
+    if (cond_value && !can_reattempt_step(                 \
                           stop_reattempt_reason)) {        \
       st->print_cr("[stop reattempt (%s) reason: %s]",     \
                    _current_step_info,                     \
