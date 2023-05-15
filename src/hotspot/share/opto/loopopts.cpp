@@ -4182,6 +4182,18 @@ void PhaseIdealLoop::move_unordered_reduction_out_of_loop(IdealLoopTree* loop) {
 
     UnorderedReductionNode* last_ur = phi->in(2)->as_UnorderedReduction();
 
+    // Determine types
+    const TypeVect* vec_t = last_ur->vect_type();
+    uint vector_length    = vec_t->length();
+    BasicType bt          = vec_t->element_basic_type();
+    const Type* bt_t      = Type::get_const_basic_type(bt);
+
+    if (!last_ur->make_normal_vector_op_implemented(vec_t)) {
+        DEBUG_ONLY( last_ur->dump(); )
+        assert(false, "do not have normal vector op for this reduction");
+        continue; // not implemented -> fails
+    }
+
     // Traverse up the chain of UnorderedReductions, checking that it loops back to
     // the phi. Check that all UnorderedReductions only have a single use, except for
     // the last (last_ur), which only has phi as a use in the loop, and all other uses
@@ -4213,8 +4225,6 @@ void PhaseIdealLoop::move_unordered_reduction_out_of_loop(IdealLoopTree* loop) {
         }
       } else {
         if (current->outcnt() != 1) {
-          DEBUG_ONLY( current->dump(-1); )
-          assert(false, "reduction (not last) has more than one use");
           break; // Chain traversal fails.
         }
       }
@@ -4241,12 +4251,6 @@ void PhaseIdealLoop::move_unordered_reduction_out_of_loop(IdealLoopTree* loop) {
       continue;
     }
     assert(first_ur != nullptr, "must have successfully terminated chain traversal");
-
-    // Determine types
-    const TypeVect* vec_t = last_ur->vect_type();
-    uint vector_length    = vec_t->length();
-    BasicType bt          = vec_t->element_basic_type();
-    const Type* bt_t      = Type::get_const_basic_type(bt);
 
     // Create vector of identity elements (zero for add, one for mul, etc)
     Node* identity_scalar = ReductionNode::make_identity_input_for_reduction_from_vector_opc(_igvn, last_ur->Opcode(), bt);

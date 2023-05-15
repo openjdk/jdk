@@ -241,6 +241,7 @@ public:
   }
 
   virtual VectorNode* make_normal_vector_op(Node* in1, Node* in2, const TypeVect* vt) = 0;
+  virtual bool make_normal_vector_op_implemented(const TypeVect* vt) = 0;
 };
 
 //------------------------------AddReductionVINode--------------------------------------
@@ -252,6 +253,9 @@ public:
   virtual VectorNode* make_normal_vector_op(Node* in1, Node* in2, const TypeVect* vt) {
     return new AddVINode(in1, in2, vt);
   }
+  virtual bool make_normal_vector_op_implemented(const TypeVect* vt) {
+    return Matcher::match_rule_supported_vector(Op_AddVI, vt->length(), vt->element_basic_type());
+  }
 };
 
 //------------------------------AddReductionVLNode--------------------------------------
@@ -262,6 +266,9 @@ public:
   virtual int Opcode() const;
   virtual VectorNode* make_normal_vector_op(Node* in1, Node* in2, const TypeVect* vt) {
     return new AddVLNode(in1, in2, vt);
+  }
+  virtual bool make_normal_vector_op_implemented(const TypeVect* vt) {
+    return Matcher::match_rule_supported_vector(Op_AddVL, vt->length(), vt->element_basic_type());
   }
 };
 
@@ -426,6 +433,9 @@ public:
   virtual VectorNode* make_normal_vector_op(Node* in1, Node* in2, const TypeVect* vt) {
     return new MulVINode(in1, in2, vt);
   }
+  virtual bool make_normal_vector_op_implemented(const TypeVect* vt) {
+    return Matcher::match_rule_supported_vector(Op_MulVI, vt->length(), vt->element_basic_type());
+  }
 };
 
 //------------------------------MulReductionVLNode--------------------------------------
@@ -436,6 +446,9 @@ public:
   virtual int Opcode() const;
   virtual VectorNode* make_normal_vector_op(Node* in1, Node* in2, const TypeVect* vt) {
     return new MulVLNode(in1, in2, vt);
+  }
+  virtual bool make_normal_vector_op_implemented(const TypeVect* vt) {
+    return Matcher::match_rule_supported_vector(Op_MulVL, vt->length(), vt->element_basic_type());
   }
 };
 
@@ -783,6 +796,9 @@ class AndReductionVNode : public UnorderedReductionNode {
   virtual VectorNode* make_normal_vector_op(Node* in1, Node* in2, const TypeVect* vt) {
     return new AndVNode(in1, in2, vt);
   }
+  virtual bool make_normal_vector_op_implemented(const TypeVect* vt) {
+    return Matcher::match_rule_supported_vector(Op_AndV, vt->length(), vt->element_basic_type());
+  }
 };
 
 //------------------------------OrVNode---------------------------------------
@@ -802,6 +818,9 @@ class OrReductionVNode : public UnorderedReductionNode {
   virtual int Opcode() const;
   virtual VectorNode* make_normal_vector_op(Node* in1, Node* in2, const TypeVect* vt) {
     return new OrVNode(in1, in2, vt);
+  }
+  virtual bool make_normal_vector_op_implemented(const TypeVect* vt) {
+    return Matcher::match_rule_supported_vector(Op_OrV, vt->length(), vt->element_basic_type());
   }
 };
 
@@ -823,6 +842,9 @@ class XorReductionVNode : public UnorderedReductionNode {
   virtual VectorNode* make_normal_vector_op(Node* in1, Node* in2, const TypeVect* vt) {
     return new XorVNode(in1, in2, vt);
   }
+  virtual bool make_normal_vector_op_implemented(const TypeVect* vt) {
+    return Matcher::match_rule_supported_vector(Op_XorV, vt->length(), vt->element_basic_type());
+  }
 };
 
 //------------------------------MinReductionVNode--------------------------------------
@@ -834,6 +856,9 @@ public:
   virtual VectorNode* make_normal_vector_op(Node* in1, Node* in2, const TypeVect* vt) {
     return new MinVNode(in1, in2, vt);
   }
+  virtual bool make_normal_vector_op_implemented(const TypeVect* vt) {
+    return Matcher::match_rule_supported_vector(Op_MinV, vt->length(), vt->element_basic_type());
+  }
 };
 
 //------------------------------MaxReductionVNode--------------------------------------
@@ -844,6 +869,9 @@ public:
   virtual int Opcode() const;
   virtual VectorNode* make_normal_vector_op(Node* in1, Node* in2, const TypeVect* vt) {
     return new MaxVNode(in1, in2, vt);
+  }
+  virtual bool make_normal_vector_op_implemented(const TypeVect* vt) {
+    return Matcher::match_rule_supported_vector(Op_MaxV, vt->length(), vt->element_basic_type());
   }
 };
 
