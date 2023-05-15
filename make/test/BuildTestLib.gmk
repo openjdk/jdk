@@ -57,7 +57,6 @@ $(eval $(call SetupJavaCompilation, BUILD_TEST_LIB_JAR, \
         --add-exports java.base/jdk.internal.classfile=ALL-UNNAMED \
         --add-exports java.base/jdk.internal.classfile.attribute=ALL-UNNAMED \
         --add-exports java.base/jdk.internal.classfile.constantpool=ALL-UNNAMED \
-        --add-exports java.base/jdk.internal.classfile.java.lang.constant=ALL-UNNAMED \
         --add-exports java.base/jdk.internal.module=ALL-UNNAMED \
         --enable-preview, \
 ))
