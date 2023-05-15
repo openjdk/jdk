@@ -59,6 +59,7 @@ SuperWord::SuperWord(PhaseIdealLoop* phase) :
   _mem_slice_head(arena(), 8,  0, nullptr),                 // memory slice heads
   _mem_slice_tail(arena(), 8,  0, nullptr),                 // memory slice tails
   _node_info(arena(), 8,  0, SWNodeInfo::initial),          // info needed per node
+  _clone_map(phase->C->clone_map()),                        // map of nodes created in cloning
   _cmovev_kit(_arena, this),                                // map to facilitate CMoveV creation
   _align_to_ref(nullptr),                                   // memory reference to align vectors to
   _disjoint_ptrs(arena(), 8,  0, OrderedPair::initial),     // runtime disambiguated pointer pairs
@@ -578,6 +579,18 @@ void SuperWord::mark_reductions() {
 //    extraction of scalar values from vectors.
 //
 bool SuperWord::SLP_extract() {
+
+#ifndef PRODUCT
+  if (_do_vector_loop && TraceSuperWord) {
+    tty->print("SuperWord::SLP_extract\n");
+    tty->print("input loop\n");
+    _lpt->dump_head();
+    _lpt->dump();
+    for (uint i = 0; i < _lpt->_body.size(); i++) {
+      _lpt->_body.at(i)->dump();
+    }
+  }
+#endif
   // Ready the block
   if (!construct_bb()) {
     return false; // Exit if no interesting nodes or complex graph.
@@ -705,7 +718,8 @@ void SuperWord::find_adjacent_refs() {
     // Set alignment relative to "align_to_ref" for all related memory operations.
     for (int i = memops.size() - 1; i >= 0; i--) {
       MemNode* s = memops.at(i)->as_Mem();
-      if (isomorphic(s, mem_ref)) {
+      if (isomorphic(s, mem_ref) &&
+           (!_do_vector_loop || same_origin_idx(s, mem_ref))) {
         SWPointer p2(s, this, nullptr, false);
         if (p2.comparable(align_to_ref_p)) {
           int align = memory_alignment(s, iv_adjustment);
@@ -730,7 +744,9 @@ void SuperWord::find_adjacent_refs() {
               Node_List* pair = new Node_List();
               pair->push(s1);
               pair->push(s2);
-              _packset.append(pair);
+              if (!_do_vector_loop || same_origin_idx(s1, s2)) {
+                _packset.append(pair);
+              }
             }
           }
         }
@@ -2084,7 +2100,7 @@ Node* CMoveKit::is_Bool_candidate(Node* def) const {
   }
   for (DUIterator_Fast jmax, j = def->fast_outs(jmax); j < jmax; j++) {
     use = def->fast_out(j);
-    if (!use->is_CMove()) {
+    if (!_sw->same_generation(def, use) || !use->is_CMove()) {
       return nullptr;
     }
   }
@@ -2098,7 +2114,7 @@ Node* CMoveKit::is_Cmp_candidate(Node* def) const {
   }
   for (DUIterator_Fast jmax, j = def->fast_outs(jmax); j < jmax; j++) {
     use = def->fast_out(j);
-    if ((use = is_Bool_candidate(use)) == nullptr) {
+    if (!_sw->same_generation(def, use) || (use = is_Bool_candidate(use)) == nullptr || !_sw->same_generation(def, use)) {
       return nullptr;
     }
   }
@@ -2123,6 +2139,7 @@ bool CMoveKit::can_merge_cmove_pack(Node_List* cmove_pk) {
   Node* bol = cmove->as_CMove()->in(CMoveNode::Condition);
   if (!bol->is_Bool() ||
       bol->outcnt() != 1 ||
+      !_sw->same_generation(bol, cmove) ||
       bol->in(0) != nullptr || // Bool node has control flow!!
       _sw->my_pack(bol) == nullptr) {
       NOT_PRODUCT(if(_sw->is_trace_cmov()) {tty->print("CMoveKit::can_merge_cmove_pack: Bool %d does not fit CMove %d for building vector, escaping...", bol->_idx, cmove->_idx); bol->dump();})
@@ -2136,6 +2153,7 @@ bool CMoveKit::can_merge_cmove_pack(Node_List* cmove_pk) {
   Node* cmp = bol->in(1);
   if (!cmp->is_Cmp() ||
       cmp->outcnt() != 1 ||
+      !_sw->same_generation(cmp, cmove) ||
       cmp->in(0) != nullptr || // Cmp node has control flow!!
       _sw->my_pack(cmp) == nullptr) {
       NOT_PRODUCT(if(_sw->is_trace_cmov()) {tty->print("CMoveKit::can_merge_cmove_pack: Cmp %d does not fit CMove %d for building vector, escaping...", cmp->_idx, cmove->_idx); cmp->dump();})
@@ -4741,7 +4759,7 @@ void SWPointer::Tracer::ctor_6(Node* mem) {
 }
 
 void SWPointer::Tracer::invariant_1(Node *n, Node *n_c) const {
-  if (_slp->is_debug() && _slp->_lpt->is_member(_slp->_phase->get_loop(n_c)) != (int)_slp->in_bb(n)) {
+  if (_slp->do_vector_loop() && _slp->is_debug() && _slp->_lpt->is_member(_slp->_phase->get_loop(n_c)) != (int)_slp->in_bb(n)) {
     int is_member =  _slp->_lpt->is_member(_slp->_phase->get_loop(n_c));
     int in_bb     =  _slp->in_bb(n);
     print_depth(); tty->print("  \\ ");  tty->print_cr(" %d SWPointer::invariant  conditions differ: n_c %d", n->_idx, n_c->_idx);
@@ -5113,5 +5131,15 @@ void DepSuccs::next() {
   } else {
     _done = true;
   }
+}
+
+//
+// --------------------------------- vectorization/simd -----------------------------------
+//
+bool SuperWord::same_origin_idx(Node* a, Node* b) const {
+  return a != nullptr && b != nullptr && _clone_map.same_idx(a->_idx, b->_idx);
+}
+bool SuperWord::same_generation(Node* a, Node* b) const {
+  return a != nullptr && b != nullptr && _clone_map.same_gen(a->_idx, b->_idx);
 }
 

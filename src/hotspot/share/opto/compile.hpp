@@ -52,6 +52,7 @@ class Block;
 class Bundle;
 class CallGenerator;
 class CallStaticJavaNode;
+class CloneMap;
 class ConnectionGraph;
 class IdealGraphPrinter;
 class InlineTree;
@@ -65,6 +66,7 @@ class Node;
 class Node_Array;
 class Node_List;
 class Node_Notes;
+class NodeCloneInfo;
 class OptoReg;
 class PhaseCFG;
 class PhaseGVN;
@@ -107,6 +109,63 @@ enum LoopOptsMode {
 // This type, if less than 32 bits, could limit the number of possible nodes.
 // (To make this type platform-specific, move to globalDefinitions_xxx.hpp.)
 typedef unsigned int node_idx_t;
+
+class NodeCloneInfo {
+ private:
+  uint64_t _idx_clone_orig;
+ public:
+
+  void set_idx(node_idx_t idx) {
+    _idx_clone_orig = (_idx_clone_orig & CONST64(0xFFFFFFFF00000000)) | idx;
+  }
+  node_idx_t idx() const { return (node_idx_t)(_idx_clone_orig & 0xFFFFFFFF); }
+
+  void set_gen(int generation) {
+    uint64_t g = (uint64_t)generation << 32;
+    _idx_clone_orig = (_idx_clone_orig & 0xFFFFFFFF) | g;
+  }
+  int gen() const { return (int)(_idx_clone_orig >> 32); }
+
+  void set(uint64_t x) { _idx_clone_orig = x; }
+  void set(node_idx_t x, int g) { set_idx(x); set_gen(g); }
+  uint64_t get() const { return _idx_clone_orig; }
+
+  NodeCloneInfo(uint64_t idx_clone_orig) : _idx_clone_orig(idx_clone_orig) {}
+  NodeCloneInfo(node_idx_t x, int g) : _idx_clone_orig(0) { set(x, g); }
+
+  void dump() const;
+};
+
+class CloneMap {
+  friend class Compile;
+ private:
+  bool      _debug;
+  Dict*     _dict;
+  int       _clone_idx;   // current cloning iteration/generation in loop unroll
+ public:
+  void*     _2p(node_idx_t key)   const          { return (void*)(intptr_t)key; } // 2 conversion functions to make gcc happy
+  node_idx_t _2_node_idx_t(const void* k) const  { return (node_idx_t)(intptr_t)k; }
+  Dict*     dict()                const          { return _dict; }
+  void insert(node_idx_t key, uint64_t val)      { assert(_dict->operator[](_2p(key)) == nullptr, "key existed"); _dict->Insert(_2p(key), (void*)val); }
+  void insert(node_idx_t key, NodeCloneInfo& ci) { insert(key, ci.get()); }
+  void remove(node_idx_t key)                    { _dict->Delete(_2p(key)); }
+  uint64_t value(node_idx_t key)  const          { return (uint64_t)_dict->operator[](_2p(key)); }
+  node_idx_t idx(node_idx_t key)  const          { return NodeCloneInfo(value(key)).idx(); }
+  int gen(node_idx_t key)         const          { return NodeCloneInfo(value(key)).gen(); }
+  int gen(const void* k)          const          { return gen(_2_node_idx_t(k)); }
+  int max_gen()                   const;
+  void clone(Node* old, Node* nnn, int gen);
+  void verify_insert_and_clone(Node* old, Node* nnn, int gen);
+  void dump(node_idx_t key)       const;
+
+  int  clone_idx() const                         { return _clone_idx; }
+  void set_clone_idx(int x)                      { _clone_idx = x; }
+  bool is_debug()                 const          { return _debug; }
+  void set_debug(bool debug)                     { _debug = debug; }
+
+  bool same_idx(node_idx_t k1, node_idx_t k2)  const { return idx(k1) == idx(k2); }
+  bool same_gen(node_idx_t k1, node_idx_t k2)  const { return gen(k1) == gen(k2); }
+};
 
 class Options {
   friend class Compile;
@@ -345,6 +404,7 @@ class Compile : public Phase {
   Arena                 _Compile_types;         // Arena for all types
   Arena*                _type_arena;            // Alias for _Compile_types except in Initialize_shared()
   Dict*                 _type_dict;             // Intern table
+  CloneMap              _clone_map;             // used for recording history of cloned nodes
   size_t                _type_last_size;        // Last allocation size (see Type::operator new/delete)
   ciMethod*             _last_tf_m;             // Cache for
   const TypeFunc*       _last_tf;               //  TypeFunc::make
@@ -1128,6 +1188,10 @@ class Compile : public Phase {
   // Auxiliary methods for randomized fuzzing/stressing
   int random();
   bool randomized_select(int count);
+
+  // supporting clone_map
+  CloneMap&     clone_map();
+  void          set_clone_map(Dict* d);
 
   bool needs_clinit_barrier(ciField* ik,         ciMethod* accessing_method);
   bool needs_clinit_barrier(ciMethod* ik,        ciMethod* accessing_method);

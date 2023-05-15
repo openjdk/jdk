@@ -308,6 +308,7 @@ class SuperWord : public ResourceObj {
   GrowableArray<Node*> _mem_slice_head;  // Memory slice head nodes
   GrowableArray<Node*> _mem_slice_tail;  // Memory slice tail nodes
   GrowableArray<SWNodeInfo> _node_info;  // Info needed per node
+  CloneMap&            _clone_map;       // map of nodes created in cloning
   CMoveKit             _cmovev_kit;      // support for vectorization of CMov
   MemNode* _align_to_ref;                // Memory reference that pre-loop will align to
 
@@ -463,6 +464,9 @@ class SuperWord : public ResourceObj {
   static bool requires_long_to_int_conversion(int opc);
   // For pack p, are all idx operands the same?
   bool same_inputs(Node_List* p, int idx);
+  // CloneMap utilities
+  bool same_origin_idx(Node* a, Node* b) const;
+  bool same_generation(Node* a, Node* b) const;
 
   // methods
 
