@@ -869,7 +869,7 @@ public final class LauncherHelper {
     }
 
     // Check the existence and signature of main and abort if incorrect
-    public static void validateMainClass(Class<?> mainClass) {
+    static void validateMainClass(Class<?> mainClass) {
         Method mainMethod = null;
         try {
             mainMethod = MainMethodFinder.findMainMethod(mainClass);

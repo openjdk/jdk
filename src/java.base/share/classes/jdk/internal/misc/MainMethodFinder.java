@@ -32,15 +32,11 @@ import java.util.List;
 
 public class MainMethodFinder {
     private static boolean isPrivate(Method method) {
-        return method != null && Modifier.isPrivate(method.getModifiers());
-    }
-
-    private static boolean isPublic(Method method) {
-        return method != null && Modifier.isPublic(method.getModifiers());
+        return Modifier.isPrivate(method.getModifiers());
     }
 
     private static boolean isStatic(Method method) {
-        return method != null && Modifier.isStatic(method.getModifiers());
+        return Modifier.isStatic(method.getModifiers());
     }
 
     private static boolean correctArgs(Method method) {
@@ -50,7 +46,7 @@ public class MainMethodFinder {
     }
 
     /**
-     * Gather all the "main" methods in the class heirarchy.
+     * Gather all the "main" methods in the class hierarchy.
      *
      * @param declc  the top level declaring class
      * @param refc   the declaring class or super class
@@ -131,7 +127,7 @@ public class MainMethodFinder {
     }
 
     /**
-     * {@return priority main method or null if none found}
+     * {@return priority main method if none found}
      *
      * @param mainClass main class
      *
