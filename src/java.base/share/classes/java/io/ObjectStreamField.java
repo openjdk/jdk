@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -175,18 +175,18 @@ public class ObjectStreamField
 
     /**
      * Returns character encoding of field type.  The encoding is as follows:
-     * {@snippet lang=java :
-     *     B            byte
-     *     C            char
-     *     D            double
-     *     F            float
-     *     I            int
-     *     J            long
-     *     L            class or interface
-     *     S            short
-     *     Z            boolean
-     *     [            array
-     * }
+     * <blockquote><pre>
+     * B            byte
+     * C            char
+     * D            double
+     * F            float
+     * I            int
+     * J            long
+     * L            class or interface
+     * S            short
+     * Z            boolean
+     * [            array
+     * </pre></blockquote>
      *
      * @return  the typecode of the serializable field
      */

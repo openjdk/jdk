@@ -390,9 +390,9 @@ public class StreamTokenizer {
      * Specifies that numbers should be parsed by this tokenizer. The
      * syntax table of this tokenizer is modified so that each of the twelve
      * characters:
-     * {@snippet lang=java :
-     *         0 1 2 3 4 5 6 7 8 9 . -
-     * }
+     * <blockquote><pre>
+     *     0 1 2 3 4 5 6 7 8 9 . -
+     * </pre></blockquote>
      * <p>
      * has the "numeric" attribute.
      * <p>
@@ -770,9 +770,9 @@ public class StreamTokenizer {
      * <p>The precise string returned is unspecified, although the following
      * example can be considered typical:
      *
-     * {@snippet lang=java :
+     * <blockquote><pre>
      *         Token['a'], line 10
-     * }
+     * </pre></blockquote>
      *
      * @return  a string representation of the token
      * @see     java.io.StreamTokenizer#nval

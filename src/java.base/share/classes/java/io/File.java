@@ -2369,7 +2369,7 @@ public class File
      * {@link java.nio.file.FileSystems#getDefault default-filesystem}.
      *
      * <p> The first invocation of this method works as if invoking it were
-     * equivalent to evaluating the statements:
+     * equivalent to evaluating the expression:
      * {@snippet lang=java :
      *         // @link substring="getDefault" target="java.nio.file.FileSystems#getDefault" @link substring="getPath" target="java.nio.file.FileSystem#getPath" @link substring="getPath()" target="#getPath" :
      *         FileSystems.getDefault().getPath(this.getPath());
