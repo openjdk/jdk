@@ -153,6 +153,7 @@ public abstract class AbstractNoBody implements HttpServerAdapters {
     @BeforeTest
     public void setup() throws Exception {
         printStamp(START, "setup");
+        HttpServerAdapters.enableServerLogging();
         sslContext = new SimpleSSLContext().get();
         if (sslContext == null)
             throw new AssertionError("Unexpected null sslContext");
@@ -194,10 +195,14 @@ public abstract class AbstractNoBody implements HttpServerAdapters {
         http2TestServer.start();
         https2TestServer.start();
 
+        var shared = newHttpClient(true);
+
         out.println("HTTP/1.1 server       (http) listening at: " + httpTestServer.serverAuthority());
         out.println("HTTP/1.1 server       (TLS)  listening at: " + httpsTestServer.serverAuthority());
         out.println("HTTP/2   server       (h2c)  listening at: " + http2TestServer.serverAuthority());
         out.println("HTTP/2   server       (h2)   listening at: " + https2TestServer.serverAuthority());
+
+        out.println("Shared client is: " + shared);
 
         printStamp(END,"setup");
     }

@@ -37,6 +37,7 @@ import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -52,6 +53,8 @@ import static org.testng.Assert.fail;
 
 public class NoBodyPartThree extends AbstractNoBody {
 
+    static final AtomicInteger REQID = new AtomicInteger();
+
     volatile boolean consumerHasBeenCalled;
     @Test(dataProvider = "variants")
     public void testAsByteArrayPublisher(String uri, boolean sameClient) throws Exception {
@@ -62,9 +65,11 @@ public class NoBodyPartThree extends AbstractNoBody {
                 client = newHttpClient(sameClient);
             }
             try (var cl = new CloseableClient(client, sameClient)) {
-                HttpRequest req = newRequestBuilder(uri + "?echo")
+                var u = uri + "/testAsByteArrayPublisher/first/" + REQID.getAndIncrement();
+                HttpRequest req = newRequestBuilder(u + "?echo")
                         .PUT(BodyPublishers.ofByteArrays(List.of()))
                         .build();
+                System.out.println("sending " + req);
                 Consumer<Optional<byte[]>> consumer = oba -> {
                     consumerHasBeenCalled = true;
                     oba.ifPresent(ba -> fail("Unexpected non-empty optional:"
@@ -75,9 +80,11 @@ public class NoBodyPartThree extends AbstractNoBody {
                 assertTrue(consumerHasBeenCalled);
                 assertEquals(response.statusCode(), 200);
 
-                req = newRequestBuilder(uri + "?echo")
+                u = uri + "/testAsByteArrayPublisher/second/" + REQID.getAndIncrement();
+                req = newRequestBuilder(u + "?echo")
                         .PUT(BodyPublishers.ofByteArrays(List.of(new byte[0])))
                         .build();
+                System.out.println("sending " + req);
                 consumerHasBeenCalled = false;
                 response = client.send(req, BodyHandlers.ofByteArrayConsumer(consumer));
                 assertTrue(consumerHasBeenCalled);
@@ -88,16 +95,18 @@ public class NoBodyPartThree extends AbstractNoBody {
 
     @Test(dataProvider = "variants")
     public void testStringPublisher(String uri, boolean sameClient) throws Exception {
-        printStamp(START, "testAsInputStream(\"%s\", %s)", uri, sameClient);
+        printStamp(START, "testStringPublisher(\"%s\", %s)", uri, sameClient);
         HttpClient client = null;
         for (int i=0; i< ITERATION_COUNT; i++) {
             if (!sameClient || client == null) {
                 client = newHttpClient(sameClient);
             }
             try (var cl = new CloseableClient(client, sameClient)) {
-                HttpRequest req = newRequestBuilder(uri + "?echo")
+                var u = uri + "/testStringPublisher/" + REQID.getAndIncrement();
+                HttpRequest req = newRequestBuilder(u + "?echo")
                         .PUT(BodyPublishers.ofString(""))
                         .build();
+                System.out.println("sending " + req);
                 HttpResponse<InputStream> response = client.send(req, BodyHandlers.ofInputStream());
                 assertEquals(response.statusCode(), 200);
                 byte[] body = response.body().readAllBytes();
@@ -108,16 +117,18 @@ public class NoBodyPartThree extends AbstractNoBody {
 
     @Test(dataProvider = "variants")
     public void testInputStreamPublisherBuffering(String uri, boolean sameClient) throws Exception {
-        printStamp(START, "testBuffering(\"%s\", %s)", uri, sameClient);
+        printStamp(START, "testInputStreamPublisherBuffering(\"%s\", %s)", uri, sameClient);
         HttpClient client = null;
         for (int i=0; i< ITERATION_COUNT; i++) {
             if (!sameClient || client == null) {
                 client = newHttpClient(sameClient);
             }
             try (var cl = new CloseableClient(client, sameClient)) {
-                HttpRequest req = newRequestBuilder(uri + "?echo")
+                var u = uri + "/testInputStreamPublisherBuffering/" + REQID.getAndIncrement();
+                HttpRequest req = newRequestBuilder(u + "?echo")
                         .PUT(BodyPublishers.ofInputStream(InputStream::nullInputStream))
                         .build();
+                System.out.println("sending " + req);
                 HttpResponse<byte[]> response = client.send(req,
                         BodyHandlers.buffering(BodyHandlers.ofByteArray(), 1024));
                 assertEquals(response.statusCode(), 200);
@@ -129,16 +140,18 @@ public class NoBodyPartThree extends AbstractNoBody {
 
     @Test(dataProvider = "variants")
     public void testEmptyArrayPublisher(String uri, boolean sameClient) throws Exception {
-        printStamp(START, "testDiscard(\"%s\", %s)", uri, sameClient);
+        printStamp(START, "testEmptyArrayPublisher(\"%s\", %s)", uri, sameClient);
         HttpClient client = null;
         for (int i=0; i< ITERATION_COUNT; i++) {
             if (!sameClient || client == null) {
                 client = newHttpClient(sameClient);
             }
             try (var cl = new CloseableClient(client, sameClient)) {
-                HttpRequest req = newRequestBuilder(uri + "?echo")
+                var u = uri + "/testEmptyArrayPublisher/" + REQID.getAndIncrement();
+                HttpRequest req = newRequestBuilder(u + "?echo")
                         .PUT(BodyPublishers.ofByteArray(new byte[0]))
                         .build();
+                System.out.println("sending " + req);
                 var response = client.send(req, BodyHandlers.ofLines());
                 assertEquals(response.statusCode(), 200);
                 assertEquals(response.body().toList(), List.of());
