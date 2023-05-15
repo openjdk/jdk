@@ -98,7 +98,7 @@ public:
   static address  ptrs_base_addr()           { return (address)&_narrow_oop._base; }
   static address  ptrs_base()                { return _narrow_oop._base; }
 
-#if defined(X86)
+#if defined(X86) && !defined(ZERO)
 #ifdef _LP64
   static bool     need_heapbase_reg()        { return UseCompressedOops && (PreserveHeapbaseReg || _narrow_oop._base != nullptr); }
 #endif
