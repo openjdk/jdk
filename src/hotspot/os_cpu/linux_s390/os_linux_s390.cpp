@@ -471,11 +471,11 @@ void os::print_register_info(outputStream *st, const void *context, int& continu
   while (n < register_count) {
     // Update continuation with next index before printing location
     continuation = n + 1;
-    if (n == 0) {
+    if (n == register_count - 1) {
       st->print("pc ="); print_location(st, (intptr_t)uc->uc_mcontext.psw.addr);
     } else {
-      st->print("r%-2d=", n-1);
-      print_location(st, uc->uc_mcontext.gregs[n-1]);
+      st->print("r%-2d=", n);
+      print_location(st, uc->uc_mcontext.gregs[n]);
     }
     ++n;
   }

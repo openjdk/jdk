@@ -484,20 +484,15 @@ void os::print_register_info(outputStream *st, const void *context, int& continu
   while (n < register_count) {
     // Update continuation with next index before printing location
     continuation = n + 1;
-    switch (n) {
-    case 0:
+    if (n == register_count - 1) {
       st->print("pc ="); print_location(st, (intptr_t)uc->uc_mcontext.jmp_context.iar);
-      break;
-    case 1:
+    } else if (n == register_count - 2) {
       st->print("lr ="); print_location(st, (intptr_t)uc->uc_mcontext.jmp_context.lr);
-      break;
-    case 2:
+    } else if (n == register_count - 3) {
       st->print("sp ="); print_location(st, (intptr_t)os::Aix::ucontext_get_sp(uc));
-      break;
-    default:
-      st->print("r%-2d=", n-3);
-      print_location(st, (intptr_t)uc->uc_mcontext.jmp_context.gpr[n-3]);
-      break;
+    } else {
+      st->print("r%-2d=", n);
+      print_location(st, (intptr_t)uc->uc_mcontext.jmp_context.gpr[n]);
     }
     ++n;
   }
