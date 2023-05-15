@@ -503,10 +503,16 @@ static void print_stack_location(outputStream* st, void* context, int& continuat
     // Update continuation with next index before printing location
     continuation = i + 1;
     // decode stack contents if possible
-    const intptr_t *slot = fr.sp() + i;
-    if (is_aligned(slot, sizeof(intptr_t)) && os::is_readable_pointer(slot)) {
+    const intptr_t *sp = fr.sp();
+    const intptr_t *slot = sp + i;
+    if (!is_aligned(slot, sizeof(intptr_t))) {
+      st->print_cr("Misaligned sp: " PTR_FORMAT, p2i(sp));
+      break;
+    } else if (os::is_readable_pointer(slot)) {
       st->print("stack at sp + %d slots: ", i);
       os::print_location(st, *(slot));
+    } else {
+      st->print_cr("unreadable stack slot at sp + %d", i);
     }
     ++i;
   }
