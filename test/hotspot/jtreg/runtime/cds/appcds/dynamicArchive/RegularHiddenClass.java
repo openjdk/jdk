@@ -36,6 +36,7 @@
  *                 jdk/test/lib/compiler/InMemoryJavaCompiler$FileManagerWrapper$1
  *                 jdk/test/lib/compiler/InMemoryJavaCompiler$FileManagerWrapper
  *                 jdk/test/lib/compiler/InMemoryJavaCompiler$MemoryJavaFileObject
+ *                 jdk/test/lib/compiler/InMemoryJavaCompiler$CloseableCompilationTask
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. RegularHiddenClass
  */

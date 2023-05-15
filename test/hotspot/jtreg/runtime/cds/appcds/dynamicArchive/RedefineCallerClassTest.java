@@ -52,7 +52,8 @@ public class RedefineCallerClassTest extends DynamicArchiveTestBase {
         "jdk/test/lib/compiler/InMemoryJavaCompiler",
         "jdk/test/lib/compiler/InMemoryJavaCompiler$FileManagerWrapper",
         "jdk/test/lib/compiler/InMemoryJavaCompiler$FileManagerWrapper$1",
-        "jdk/test/lib/compiler/InMemoryJavaCompiler$MemoryJavaFileObject"
+        "jdk/test/lib/compiler/InMemoryJavaCompiler$MemoryJavaFileObject",
+        "jdk/test/lib/compiler/InMemoryJavaCompiler$CloseableCompilationTask"
     };
 
     public static void main(String[] args) throws Exception {
