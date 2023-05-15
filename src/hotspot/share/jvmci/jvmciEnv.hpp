@@ -249,10 +249,16 @@ public:
   // Returns true if a pending exception was transferred, false otherwise.
   static jboolean transfer_pending_exception_to_jni(JavaThread* THREAD, JVMCIEnv* hotspot_env, JVMCIEnv* jni_env);
 
-  // Prints the toString() and stack trace of a pending exception.
+  // Prints the stack trace of a pending exception to `st` and clears the exception.
   // If there is no pending exception, this is a nop.
-  // If `clear` is false, the pending exception will remain pending upon return.
-  void describe_pending_exception(bool clear);
+  void describe_pending_exception(outputStream* st);
+
+  // Gets the output of calling toString and/or printStactTrace on the pending exception.
+  // If to_string is not null, the output of toString is returned in it.
+  // If stack_trace is not null, the output of printStackTrace is returned in it.
+  // Returns false if there is no pending exception otherwise clears the pending
+  // exception and returns true.
+  bool pending_exception_as_string(const char** to_string, const char** stack_trace);
 
   int get_length(JVMCIArray array);
 

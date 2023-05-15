@@ -125,6 +125,7 @@ bool JVMCIGlobals::check_jvmci_flags_are_consistent() {
   CHECK_NOT_SET(JVMCINativeLibraryThreadFraction,    EnableJVMCI)
   CHECK_NOT_SET(JVMCILibPath,                        EnableJVMCI)
   CHECK_NOT_SET(JVMCINativeLibraryErrorFile,         EnableJVMCI)
+  CHECK_NOT_SET(JVMCICompileMethodExceptionIsFatal,  EnableJVMCI)
   CHECK_NOT_SET(JVMCILibDumpJNIConfig,               EnableJVMCI)
 
 #ifndef COMPILER2

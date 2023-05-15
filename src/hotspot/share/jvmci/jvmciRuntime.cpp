@@ -35,6 +35,7 @@
 #include "jvmci/jvmciRuntime.hpp"
 #include "jvmci/metadataHandles.hpp"
 #include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/universe.hpp"
 #include "oops/constantPool.inline.hpp"
@@ -1602,19 +1603,14 @@ void JVMCIRuntime::bootstrap_finished(TRAPS) {
   }
 }
 
-void JVMCIRuntime::describe_pending_hotspot_exception(JavaThread* THREAD, bool clear) {
+void JVMCIRuntime::describe_pending_hotspot_exception(JavaThread* THREAD) {
   if (HAS_PENDING_EXCEPTION) {
     Handle exception(THREAD, PENDING_EXCEPTION);
-    const char* exception_file = THREAD->exception_file();
-    int exception_line = THREAD->exception_line();
     CLEAR_PENDING_EXCEPTION;
     java_lang_Throwable::print_stack_trace(exception, tty);
 
     // Clear and ignore any exceptions raised during printing
     CLEAR_PENDING_EXCEPTION;
-    if (!clear) {
-      THREAD->set_pending_exception(exception(), exception_file, exception_line);
-    }
   }
 }
 
@@ -1627,12 +1623,12 @@ void JVMCIRuntime::fatal_exception(JVMCIEnv* JVMCIENV, const char* message) {
     // Only report an error once
     tty->print_raw_cr(message);
     if (JVMCIENV != nullptr) {
-      JVMCIENV->describe_pending_exception(true);
+      JVMCIENV->describe_pending_exception(tty);
     } else {
-      describe_pending_hotspot_exception(THREAD, true);
+      describe_pending_hotspot_exception(THREAD);
     }
   } else {
-    // Allow error reporting thread to print the stack trace.
+    // Allow error reporting thread time to print the stack trace.
     THREAD->sleep(200);
   }
   fatal("Fatal exception in JVMCI: %s", message);
@@ -1985,18 +1981,24 @@ JVMCI::CodeInstallResult JVMCIRuntime::validate_compile_task_dependencies(Depend
 static bool after_compiler_upcall(JVMCIEnv* JVMCIENV, JVMCICompiler* compiler, const methodHandle& method, const char* function) {
   if (JVMCIENV->has_pending_exception()) {
     bool reason_on_C_heap = true;
-    const char* failure_reason = os::strdup(err_msg("uncaught exception in %s", function), mtJVMCI);
+    const char* pending_string = nullptr;
+    const char* pending_stack_trace = nullptr;
+    JVMCIENV->pending_exception_as_string(&pending_string, &pending_stack_trace);
+    if (pending_string == nullptr) pending_string = "null";
+    const char* failure_reason = os::strdup(err_msg("uncaught exception in %s [%s]", function, pending_string), mtJVMCI);
     if (failure_reason == nullptr) {
       failure_reason = "uncaught exception";
       reason_on_C_heap = false;
     }
+    JVMCI_event_1("%s", failure_reason);
     Log(jit, compilation) log;
     if (log.is_info()) {
       ResourceMark rm;
       log.info("%s while compiling %s", failure_reason, method->name_and_sig_as_C_string());
-      JVMCIENV->describe_pending_exception(true);
-    } else {
-      JVMCIENV->clear_pending_exception();
+      if (pending_stack_trace != nullptr) {
+        LogStream ls(log.info());
+        ls.print_raw_cr(pending_stack_trace);
+      }
     }
     JVMCICompileState* compile_state = JVMCIENV->compile_state();
     compile_state->set_failure(true, failure_reason, reason_on_C_heap);
@@ -2041,6 +2043,11 @@ void JVMCIRuntime::compile_method(JVMCIEnv* JVMCIENV, JVMCICompiler* compiler, c
 
   JVMCIObject result_object = JVMCIENV->call_HotSpotJVMCIRuntime_compileMethod(receiver, jvmci_method, entry_bci,
                                                                      (jlong) compile_state, compile_state->task()->compile_id());
+#ifdef ASSERT
+  if (JVMCIENV->has_pending_exception() && JVMCICompileMethodExceptionIsFatal) {
+    fatal_exception(JVMCIENV, "testing JVMCI fatal exception handling");
+  }
+#endif
   if (after_compiler_upcall(JVMCIENV, compiler, method, "call_HotSpotJVMCIRuntime_compileMethod")) {
     return;
   }

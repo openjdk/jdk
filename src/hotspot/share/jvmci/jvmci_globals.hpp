@@ -152,6 +152,10 @@ class fileStream;
           "error data to this file"                                         \
           "[default: ./" LIBJVMCI_ERR_FILE "] (%p replaced with pid)")      \
                                                                             \
+  notproduct(bool, JVMCICompileMethodExceptionIsFatal, false,               \
+          "An exception thrown by HotSpotJVMCIRuntime::compileMethod "      \
+          "is fatal. Used to test error handling only.")                    \
+                                                                            \
   NOT_COMPILER2(product(bool, UseMultiplyToLenIntrinsic, false, DIAGNOSTIC, \
           "Enables intrinsification of BigInteger.multiplyToLen()"))        \
                                                                             \
