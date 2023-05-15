@@ -379,7 +379,6 @@ RegMask _STACK_OR_LONG_REG_mask;
 RegMask _STACK_OR_INT_REG_mask;
 
 static bool need_r12_heapbase() {
-  // return UseCompressedOops && (PreserveHeapbaseReg || CompressedOops::ptrs_base() != nullptr);
   return CompressedOops::need_heapbase_reg();
 }
 

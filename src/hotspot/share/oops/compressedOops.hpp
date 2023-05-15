@@ -29,6 +29,7 @@
 #include "memory/memRegion.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "runtime/globals.hpp"
 #include <type_traits>
 
 class outputStream;
@@ -97,9 +98,11 @@ public:
   static address  ptrs_base_addr()           { return (address)&_narrow_oop._base; }
   static address  ptrs_base()                { return _narrow_oop._base; }
 
-#ifdef AMD64
-  static bool need_heapbase_reg()            { return UseCompressedOops && (PreserveHeapbaseReg || _narrow_oop._base != nullptr); }
+#if defined(X86)
+#ifdef _LP64
+  static bool     need_heapbase_reg()        { return UseCompressedOops && (PreserveHeapbaseReg || _narrow_oop._base != nullptr); }
 #endif
+#endif // X86_64 only
 
   static bool is_in(void* addr);
   static bool is_in(MemRegion mr);
