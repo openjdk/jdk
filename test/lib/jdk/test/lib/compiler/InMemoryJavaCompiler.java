@@ -24,16 +24,19 @@
 package jdk.test.lib.compiler;
 
 import java.io.ByteArrayOutputStream;
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.Writer;
 
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import javax.tools.ForwardingJavaFileManager;
+import javax.tools.DiagnosticListener;
 import javax.tools.FileObject;
+import javax.tools.ForwardingJavaFileManager;
 import javax.tools.JavaCompiler;
 import javax.tools.JavaCompiler.CompilationTask;
 import javax.tools.JavaFileManager;
@@ -168,25 +171,28 @@ public class InMemoryJavaCompiler {
      * @param className The name of the class
      * @param sourceCode The source code for the class with name {@code className}
      * @param options additional command line options
-     * @throws RuntimeException if the compilation did not succeed
+     * @throws RuntimeException if the compilation did not succeed or if closing
+     *         the {@code JavaFileManager} used for the compilation did not succeed
      * @return The resulting byte code from the compilation
      */
     public static byte[] compile(String className, CharSequence sourceCode, String... options) {
         MemoryJavaFileObject file = new MemoryJavaFileObject(className, sourceCode);
-        CompilationTask task = getCompilationTask(file, options);
+        try (CloseableCompilationTask task = getCompilationTask(file, options)) {
+            if(!task.call()) {
+                throw new RuntimeException("Could not compile " + className + " with source code " + sourceCode);
+            }
 
-        if(!task.call()) {
-            throw new RuntimeException("Could not compile " + className + " with source code " + sourceCode);
+            return file.getByteCode();
+        } catch (IOException ioe) {
+            throw new RuntimeException(ioe);
         }
-
-        return file.getByteCode();
     }
 
     private static JavaCompiler getCompiler() {
         return ToolProvider.getSystemJavaCompiler();
     }
 
-    private static CompilationTask getCompilationTask(MemoryJavaFileObject file, String... options) {
+    private static CloseableCompilationTask getCompilationTask(MemoryJavaFileObject file, String... options) {
         List<String> opts = new ArrayList<>();
         String moduleOverride = null;
         for (String opt : options) {
@@ -196,6 +202,38 @@ public class InMemoryJavaCompiler {
                 opts.add(opt);
             }
         }
-        return getCompiler().getTask(null, new FileManagerWrapper(file, moduleOverride), null, opts, null, Arrays.asList(file));
+        return CloseableCompilationTask.createTask(null, new FileManagerWrapper(file, moduleOverride), null, opts, null, Arrays.asList(file));
+    }
+
+    private static class CloseableCompilationTask implements Closeable {
+        final CompilationTask task;
+        final JavaFileManager fileManager;
+        private CloseableCompilationTask(CompilationTask task, JavaFileManager fileManager) {
+            this.task = task;
+            this.fileManager = fileManager;
+        }
+
+        public static CloseableCompilationTask createTask(Writer out,
+                                                          JavaFileManager fileManager,
+                                                          DiagnosticListener<? super JavaFileObject> diagnosticListener,
+                                                          Iterable<String> options,
+                                                          Iterable<String> classes,
+                                                          Iterable<? extends JavaFileObject> compilationUnits) {
+            CompilationTask task = getCompiler().getTask(out,
+                                                         fileManager,
+                                                         diagnosticListener,
+                                                         options,
+                                                         classes,
+                                                         compilationUnits);
+            return new CloseableCompilationTask(task, fileManager);
+        }
+
+        public void close() throws IOException {
+            fileManager.close();
+        }
+
+        public Boolean call() {
+            return task.call();
+        }
     }
 }
