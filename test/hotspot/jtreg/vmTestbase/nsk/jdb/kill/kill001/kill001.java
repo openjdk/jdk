@@ -149,7 +149,7 @@ public class kill001 extends JdbTest {
         String killed = grep.findFirst(DEBUGGEE_RESULT + " =" );
         if (killed.length() > 0) {
             if (killed.indexOf(DEBUGGEE_RESULT + " = " + numThreads) < 0) {
-                log.complain("Only " + killed + "out of " + numThreads + MYTHREAD + "s were killed.");
+                log.complain("Only " + killed + " out of " + numThreads + " " + MYTHREAD + "s were killed.");
                 success = false;
             }
         } else {
