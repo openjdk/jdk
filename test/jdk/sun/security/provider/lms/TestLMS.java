@@ -30,6 +30,7 @@
  */
 
 import java.io.*;
+import java.security.InvalidParameterException;
 import java.security.KeyFactory;
 import java.security.PublicKey;
 import java.security.Security;
@@ -57,14 +58,14 @@ public class TestLMS {
 
         // Additional Parameter sets for LMS Hash-Based Signatures (fluhrer)
         // These should fail because neither SHA256_M24 nor SHAKE are supported.
-        if (!katf1()) {
-            throw new RuntimeException("katf1 failed");
+        if (katf1()) {
+            throw new RuntimeException("katf1 unexpected pass");
         }
-        if (!katf2()) {
-            throw new RuntimeException("katf2 failed");
+        if (katf2()) {
+            throw new RuntimeException("katf2 unexpected pass");
         }
-        if (!katf3()) {
-            throw new RuntimeException("katf3 failed");
+        if (katf3()) {
+            throw new RuntimeException("katf3 unexpected pass");
         }
 
         // Tests 3-10 were generated with Bouncy Castle using parameter sets
@@ -94,8 +95,8 @@ public class TestLMS {
             throw new RuntimeException("test10_h20_w4_h15_w4 failed");
         }
 
-        if (!testProviderException()) {
-            throw new RuntimeException("testProviderException failed");
+        if (testBadSignature01()) {
+            throw new RuntimeException("testBadSignature01 unexpected pass");
         }
         if (!serializeTest()) {
             throw new RuntimeException("serializeTest failed");
@@ -666,8 +667,8 @@ public class TestLMS {
             return verify(pk, sig, msg);
         } catch (InvalidKeySpecException ex) {
             // SHA256_M24 not supported
+            return false;
         }
-        return true;
     }
 
     static boolean katf2() throws Exception {
@@ -758,8 +759,8 @@ public class TestLMS {
             return verify(pk, sig, msg);
         } catch (InvalidKeySpecException ex) {
             // SHAKE_M24 not supported
+            return false;
         }
-        return true;
     }
 
     static boolean katf3() throws Exception {
@@ -866,8 +867,8 @@ public class TestLMS {
             return verify(pk, sig, msg);
         } catch (InvalidKeySpecException ex) {
             // SHAKE_M24 not supported
+            return false;
         }
-        return true;
     }
 
     // LMSigParameters.lms_sha256_m32_h15, LMOtsParameters.sha256_n32_w8);
@@ -3453,14 +3454,12 @@ public class TestLMS {
         return verify(pk, sig, msg);
     }
 
-    static boolean testProviderException() {
-        // kat1 with bad bit in the signature
-        // First byte changed from 61 to 71.
+    static boolean testBadSignature01() throws Exception {
         var pk = decode("""
                 00000002
                 00000005
                 00000004
-                71a5d57d37f5e46bfb7520806b07a1b8
+                61a5d57d37f5e46bfb7520806b07a1b8
                 50650e3b31fe4a773ea29a07f09cf2ea
                 30e579f0df58ef8e298da0434cb2b878
                 """);
@@ -3638,7 +3637,7 @@ public class TestLMS {
                 c61908318de4b826f0fc86d4bb117d33
                 e865aa805009cc2918d9c2f840c4da43
                 a703ad9f5b5806163d7161696b5a0adc
-                00000005
+                00000006 // changed from H5 to H10
                 d5c0d1bebb06048ed6fe2ef2c6cef305
                 b3ed633941ebc8b3bec9738754cddd60
                 e1920ada52f43d055b5031cee6192520
@@ -3653,10 +3652,10 @@ public class TestLMS {
 
         try {
             verify(pk, sig, msg);
-        } catch (Exception ex) { // ProviderException
-            // bad public key
+            return true;
+        } catch (InvalidParameterException ex) {
+            return false;
         }
-        return true;
     }
 
     static boolean serializeTest() throws Exception {
