@@ -578,7 +578,6 @@ void Compile::print_ideal_ir(const char* phase_name) {
 
 // ============================================================================
 //------------------------------Compile standard-------------------------------
-debug_only( int Compile::_debug_idx = 100000; )
 
 // Compile a method.  entry_bci is -1 for normal compilations and indicates
 // the continuation bci for on stack replacement.
