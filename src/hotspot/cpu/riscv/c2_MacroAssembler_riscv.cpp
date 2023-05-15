@@ -1661,7 +1661,6 @@ void C2_MacroAssembler::minmax_fp_masked_v(VectorRegister dst, VectorRegister sr
 
   vmandn_mm(v0, vmask, tmp2);
   vfadd_vv(dst, src2, src2, Assembler::v0_t);
-  warning("minmax_fp_masked_v!");
 }
 
 // Set dst to NaN if any NaN input.
