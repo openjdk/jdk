@@ -445,7 +445,7 @@ class StubGenerator: public StubCodeGenerator {
   //
   // Results:
   //
-  //     R0: the new value stored in dest
+  //     R0: the new stored in dest
   //
   // Overwrites:
   //
@@ -481,32 +481,6 @@ class StubGenerator: public StubCodeGenerator {
       __ b(retry, ne);
       __ mov (R0, newval);
     }
-    __ bx(LR);
-
-    return start;
-  }
-
-  // Implementation of atomic_add(jlong add_value, volatile jlong* dest)
-  // used by Atomic::add(volatile jlong* dest, jlong add_value)
-  //
-  // Arguments :
-  //
-  //      add_value:      R1 (High), R0 (Low)
-  //      dest:           R2
-  //
-  // Results:
-  //
-  //     R0:R1: the new value stored in dest
-  //
-  // Overwrites:
-  //
-  //     R1, R2, R3, R4
-  //
-  address generate_atomic_add_long() {
-    address start;
-
-    StubCodeMark mark(this, "StubRoutines", "atomic_add_long");
-    Unimplemented();
     __ bx(LR);
 
     return start;
@@ -3103,14 +3077,6 @@ class StubGenerator: public StubCodeGenerator {
   //---------------------------------------------------------------------------
   // Initialization
 
-  static void should_not_call() {
-    report_should_not_call(__FILE__, __LINE__);
-  }
-
-  static address ShouldNotCallThisStub() {
-    return (address) should_not_call;
-  }
-
   void generate_initial_stubs() {
     // Generates all stubs and initializes the entry points
 
@@ -3136,7 +3102,6 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::Arm::_idiv_irem_entry = generate_idiv_irem();
 
     StubRoutines::_atomic_add_entry = generate_atomic_add();
-    StubRoutines::_atomic_add_long_entry = ShouldNotCallThisStub();
     StubRoutines::_atomic_xchg_entry = generate_atomic_xchg();
     StubRoutines::_atomic_cmpxchg_entry = generate_atomic_cmpxchg();
     StubRoutines::_atomic_cmpxchg_long_entry = generate_atomic_cmpxchg_long();

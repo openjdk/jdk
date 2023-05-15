@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2004, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,6 @@
 	.globl _Copy_conjoint_jlongs_atomic
 	.globl _mmx_Copy_arrayof_conjoint_jshorts
 
-        .globl _Atomic_add_long
         .globl _Atomic_cmpxchg_long
         .globl _Atomic_move_long
 
@@ -504,29 +503,6 @@ mmx_acs_CopyLeft:
 6:      cld
         popl     %edi
         popl     %esi
-        ret
-
-
-        # Support for jlong Atomic::add(volatile jlong* dest,
-        #                               jlong addend)
-        #
-        .p2align 4,,15
-        .type    _Atomic_add_long,@function
-_Atomic_add_long:
-                                   #  8(%esp) : return PC
-        pushl    %ebx              #  4(%esp) : old %ebx
-        pushl    %edi              #  0(%esp) : old %edi
-        movl     12(%esp), %ebx    # 12(%esp) : add_value (low)
-        movl     16(%esp), %ecx    # 16(%esp) : add_value (high)
-        movl     20(%esp), %edi    # 20(%esp) : dest
-	movl     0(%edi), %eax     # dest (low)
-        movl     4(%edi), %edx     # dest (high)
-        addl     %eax, %ebx        # result (low)
-        adcl     %edx, %ecx        # result (high)
-1:      lock cmpxchg8b (%edi)
-        jne      1b
-        popl     %edi
-        popl     %ebx
         ret
 
 

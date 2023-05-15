@@ -33,31 +33,33 @@
 
 class ARMAtomicFuncs : AllStatic {
 public:
-  typedef int64_t (*atomic_add_long_func_t)(int64_t add_value, volatile int64_t *dest);
   typedef int64_t (*cmpxchg_long_func_t)(int64_t, int64_t, volatile int64_t*);
   typedef int64_t (*load_long_func_t)(const volatile int64_t*);
-  typedef void    (*store_long_func_t)(int64_t, volatile int64_t*);
-  typedef int32_t (*atomic_add_func_t)(int32_t add_value, volatile int32_t *dest);
-  typedef int32_t (*atomic_xchg_func_t)(int32_t exchange_value, volatile int32_t *dest);
+  typedef void (*store_long_func_t)(int64_t, volatile int64_t*);
+  typedef int32_t  (*atomic_add_func_t)(int32_t add_value, volatile int32_t *dest);
+  typedef int32_t  (*atomic_xchg_func_t)(int32_t exchange_value, volatile int32_t *dest);
   typedef int32_t (*cmpxchg_func_t)(int32_t, int32_t, volatile int32_t*);
 
-  static atomic_add_long_func_t _add_long_func;
-  static cmpxchg_long_func_t    _cmpxchg_long_func;
-  static load_long_func_t       _load_long_func;
-  static store_long_func_t      _store_long_func;
-  static atomic_add_func_t      _add_func;
-  static atomic_xchg_func_t     _xchg_func;
-  static cmpxchg_func_t         _cmpxchg_func;
+  static cmpxchg_long_func_t  _cmpxchg_long_func;
+  static load_long_func_t     _load_long_func;
+  static store_long_func_t    _store_long_func;
+  static atomic_add_func_t    _add_func;
+  static atomic_xchg_func_t   _xchg_func;
+  static cmpxchg_func_t       _cmpxchg_func;
 
-  static int64_t add_long_bootstrap(int64_t add_value, volatile int64_t *dest);
   static int64_t cmpxchg_long_bootstrap(int64_t, int64_t, volatile int64_t*);
+
   static int64_t load_long_bootstrap(const volatile int64_t*);
-  static void    store_long_bootstrap(int64_t, volatile int64_t*);
-  static int32_t add_bootstrap(int32_t add_value, volatile int32_t *dest);
-  static int32_t xchg_bootstrap(int32_t exchange_value, volatile int32_t *dest);
-  static int32_t cmpxchg_bootstrap(int32_t compare_value,
-                                   int32_t exchange_value,
-                                   volatile int32_t *dest);
+
+  static void store_long_bootstrap(int64_t, volatile int64_t*);
+
+  static int32_t  add_bootstrap(int32_t add_value, volatile int32_t *dest);
+
+  static int32_t  xchg_bootstrap(int32_t exchange_value, volatile int32_t *dest);
+
+  static int32_t  cmpxchg_bootstrap(int32_t compare_value,
+                                    int32_t exchange_value,
+                                    volatile int32_t *dest);
 };
 
 /*
@@ -114,23 +116,6 @@ inline D Atomic::PlatformAdd<4>::add_then_fetch(D volatile* dest, I add_value,
   STATIC_ASSERT(4 == sizeof(I));
   STATIC_ASSERT(4 == sizeof(D));
   return add_using_helper<int32_t>(ARMAtomicFuncs::_add_func, dest, add_value);
-}
-
-template<>
-template<typename D, typename I>
-inline D Atomic::PlatformAdd<8>::add_then_fetch(D volatile* dest, I add_value,
-                                                atomic_memory_order order) const {
-  STATIC_ASSERT(8 == sizeof(I));
-  STATIC_ASSERT(8 == sizeof(D));
-
-#if 0
-  // TBD assembly stub
-  return add_using_helper<int64_t>(ARMAtomicFuncs::_add_long_func, dest, add_value);
-#else
-  D res = __atomic_add_fetch(dest, add_value, __ATOMIC_RELEASE);
-  FULL_MEM_BARRIER;
-  return res;
-#endif
 }
 
 

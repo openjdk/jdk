@@ -94,7 +94,6 @@ inline T Atomic::PlatformCmpxchg<4>::operator()(T volatile* dest,
 }
 
 #ifdef AMD64
-
 template<>
 template<typename D, typename I>
 inline D Atomic::PlatformAdd<8>::fetch_then_add(D volatile* dest, I add_value,
@@ -140,18 +139,8 @@ inline T Atomic::PlatformCmpxchg<8>::operator()(T volatile* dest,
 
 extern "C" {
   // defined in bsd_x86.s
-  int64_t _Atomic_add_long(int64_t, volatile int64_t*);
   int64_t _Atomic_cmpxchg_long(int64_t, volatile int64_t*, int64_t);
   void _Atomic_move_long(const volatile int64_t* src, volatile int64_t* dst);
-}
-
-template<>
-template<typename D, typename I>
-inline D Atomic::PlatformAdd<8>::fetch_then_add(D volatile* dest, I add_value,
-                                                atomic_memory_order order) const {
-  STATIC_ASSERT(8 == sizeof(I));
-  STATIC_ASSERT(8 == sizeof(D));
-  return add_using_helper<int64_t>(_Atomic_add_long, dest, add_value);
 }
 
 template<>

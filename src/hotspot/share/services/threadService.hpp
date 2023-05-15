@@ -62,7 +62,7 @@ private:
   static PerfVariable* _daemon_threads_count;
 
   // As could this...
-  // Number of heap bytes allocated by termianted threads.
+  // Number of heap bytes allocated by terminated threads.
   static volatile jlong _exited_allocated_bytes;
 
   // These 2 counters are like the above thread counts, but are
@@ -108,7 +108,8 @@ public:
 
   static jlong exited_allocated_bytes()       { return _exited_allocated_bytes; }
   static void incr_exited_allocated_bytes(jlong size) {
-    Atomic::add(&_exited_allocated_bytes, size, memory_order_relaxed);
+    // No need for atomicity, method is called under the Threads_lock
+    _exited_allocated_bytes += size;
   }
 
   // Support for thread dump

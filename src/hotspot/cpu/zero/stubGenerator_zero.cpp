@@ -194,7 +194,6 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_atomic_cmpxchg_entry      = ShouldNotCallThisStub();
     StubRoutines::_atomic_cmpxchg_long_entry = ShouldNotCallThisStub();
     StubRoutines::_atomic_add_entry          = ShouldNotCallThisStub();
-    StubRoutines::_atomic_add_long_entry     = ShouldNotCallThisStub();
     StubRoutines::_fence_entry               = ShouldNotCallThisStub();
   }
 
