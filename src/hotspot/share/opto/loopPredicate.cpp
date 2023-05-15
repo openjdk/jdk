@@ -43,7 +43,7 @@
  * The general idea of Loop Predication is to hoist a check inside a loop body by inserting a Hoisted Predicate with an
  * uncommon trap on the entry path to the loop. The old check inside the loop can be eliminated. If the condition of the
  * Hoisted Predicate fails at runtime, we'll execute the uncommon trap to avoid entering the loop which misses the check.
- * Loop Predication can currently remove array range check and loop invariant checks (such as null checks).
+ * Loop Predication can currently remove array range checks and loop invariant checks (such as null checks).
  *
  * On top of these predicates added by Loop Predication, there are other kinds of predicates. The following list provides
  * a complete description of all predicates used in the C2 compiler:
