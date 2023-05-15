@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -200,7 +200,7 @@ public:
     for (;;) {
       // Get granule offset
       const size_t size = XGranuleSize;
-      const uintptr_t offset = Atomic::fetch_and_add(&_start, size);
+      const uintptr_t offset = Atomic::fetch_then_add(&_start, size);
       if (offset >= _end) {
         // Done
         break;
