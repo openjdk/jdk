@@ -38,7 +38,7 @@
  * the value of the special "killed" variable should to the set
  * to the number of additional threads created. The value of
  * the "killed" variable is checked by "eval <expr>" command.
- * The test passes if the value is equal to the nunber of
+ * The test passes if the value is equal to the number of
  * additional thread created and fails otherwise.
  * COMMENTS
  *  Modified due to fix of the test bug:
