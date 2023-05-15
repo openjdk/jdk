@@ -113,6 +113,18 @@ public final class HSS extends SignatureSpi {
         }
         return result;
     }
+    @Override
+    protected void engineSetParameter(AlgorithmParameterSpec params)
+            throws InvalidAlgorithmParameterException {
+        if (params != null) {
+            throw new InvalidAlgorithmParameterException("No parameters accepted");
+        }
+    }
+
+    @Override
+    protected AlgorithmParameters engineGetParameters() {
+        return null;
+    }
 
     static class LMSPublicKey {
         final int type;
