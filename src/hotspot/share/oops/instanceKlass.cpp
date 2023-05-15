@@ -2598,6 +2598,8 @@ void InstanceKlass::remove_unshareable_info() {
 
 void InstanceKlass::remove_unshareable_flags() {
   // clear all the flags/stats that shouldn't be in the archived version
+  assert(!is_scratch_class(), "must be");
+  assert(!has_been_redefined(), "must be");
 #if INCLUDE_JVMTI
   set_is_being_redefined(false);
 #endif
