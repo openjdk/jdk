@@ -494,7 +494,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
                             Name name = ((StartElementTree) top.tree).getName();
                             // Links may use block display style so issue warning instead of error
                             if ("a".equalsIgnoreCase(name.toString())) {
-                                env.messages.warning(HTML, tree, "dc.tag.not.allowed.inline.element",
+                                env.messages.warning(HTML, tree, "dc.tag.not.allowed.element.default.style",
                                         treeName, name);
                             } else {
                                 env.messages.error(HTML, tree, "dc.tag.not.allowed.inline.element",
@@ -506,7 +506,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
 
                     case LINK, LINK_PLAIN -> {
                         String name = top.tree.getKind().tagName;
-                        env.messages.warning(HTML, tree, "dc.tag.not.allowed.inline.tag",
+                        env.messages.warning(HTML, tree, "dc.tag.not.allowed.tag.default.style",
                                 treeName, name);
                         return;
                     }
