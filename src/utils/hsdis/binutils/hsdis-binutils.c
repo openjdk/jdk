@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * The Universal Permissive License (UPL), Version 1.0
@@ -243,10 +243,27 @@ static const char* format_insn_close(const char* close,
   }
 
   strcpy(buf, close);
-  char* p = buf;
-  if (type)    sprintf(p += strlen(p), " type='%s'", type);
-  if (dsize)   sprintf(p += strlen(p), " dsize='%d'", dsize);
-  if (delays)  sprintf(p += strlen(p), " delay='%d'", delays);
+  size_t used_size = strlen(close);
+  char* p = buf + used_size;
+  bufsize -= used_size;
+  if (type) {
+    /* the buf capacity has been checked previously */
+    used_size = snprintf(p, bufsize, " type='%s'", type);
+    p += used_size;
+    bufsize -= used_size;
+  }
+
+  if (dsize) {
+    /* the buf capacity has been checked previously */
+    used_size = snprintf(p, bufsize, " dsize='%d'", dsize);
+    p += used_size;
+    bufsize -= used_size;
+  }
+
+  if (delays) {
+    snprintf(p, bufsize, " delay='%d'", delays);
+  }
+
   return buf;
 }
 
