@@ -777,8 +777,6 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
   if (!destroy_vm) {
     if (uncaught_exception.not_null()) {
       EXCEPTION_MARK;
-      // Last check for abort on exception
-      Exceptions::debug_check_abort(uncaught_exception);
       // Call method Thread.dispatchUncaughtException().
       Klass* thread_klass = vmClasses::Thread_klass();
       JavaValue result(T_VOID);
