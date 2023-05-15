@@ -2371,7 +2371,7 @@ public class File
      * <p> The first invocation of this method works as if invoking it were
      * equivalent to evaluating the expression:
      * {@snippet lang=java :
-     *         // @link substring="getDefault" target="java.nio.file.FileSystems#getDefault" @link substring="getPath" target="java.nio.file.FileSystem#getPath" @link substring="getPath()" target="#getPath" :
+     *         // @link substring="getDefault" target="java.nio.file.FileSystems#getDefault" @link regex="getPath(?=\(t)" target="java.nio.file.FileSystem#getPath" @link regex="getPath(?=\(\))" target="#getPath" :
      *         FileSystems.getDefault().getPath(this.getPath());
      * }
      * Subsequent invocations of this method return the same {@code Path}.
