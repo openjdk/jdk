@@ -227,7 +227,8 @@ bool CollectedHeap::is_oop(oop object) const {
     return false;
   }
 
-  if (is_in(object->klass_raw())) {
+  Klass* k = object->klass_raw();
+  if (!Metaspace::contains(k) || !k->is_klass()) {
     return false;
   }
 
