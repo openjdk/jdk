@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,7 +67,7 @@ class JfrCheckpointWriter : public JfrCheckpointWriterBase {
   u4 count() const;
   void set_count(u4 count);
   void increment();
-  const u1* session_data(size_t* size, bool move = false, const JfrCheckpointContext* ctx = NULL);
+  const u1* session_data(size_t* size, bool move = false, const JfrCheckpointContext* ctx = nullptr);
   void release();
   JfrCheckpointWriter(bool previous_epoch, Thread* thread, JfrCheckpointType type = GENERIC);
 public:
@@ -81,8 +81,8 @@ public:
   const JfrCheckpointContext context() const;
   void set_context(const JfrCheckpointContext ctx);
   bool has_data() const;
-  JfrBlobHandle copy(const JfrCheckpointContext* ctx = NULL);
-  JfrBlobHandle move(const JfrCheckpointContext* ctx = NULL);
+  JfrBlobHandle copy(const JfrCheckpointContext* ctx = nullptr);
+  JfrBlobHandle move(const JfrCheckpointContext* ctx = nullptr);
 };
 
 #endif // SHARE_JFR_RECORDER_CHECKPOINT_JFRCHECKPOINTWRITER_HPP

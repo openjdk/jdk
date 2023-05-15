@@ -301,6 +301,11 @@ void ReadClosure::do_u4(u4* p) {
   *p = (u4)(uintx(obj));
 }
 
+void ReadClosure::do_int(int* p) {
+  intptr_t obj = nextPtr();
+  *p = (int)(intx(obj));
+}
+
 void ReadClosure::do_bool(bool* p) {
   intptr_t obj = nextPtr();
   *p = (bool)(uintx(obj));

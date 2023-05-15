@@ -246,7 +246,8 @@ module java.base {
         jdk.jfr;
     exports jdk.internal.ref to
         java.desktop,
-        java.net.http;
+        java.net.http,
+        jdk.naming.dns;
     exports jdk.internal.reflect to
         java.logging,
         java.sql,
@@ -282,8 +283,9 @@ module java.base {
         java.security.jgss,
         java.smartcardio,
         jdk.charsets,
-        jdk.net,
-        jdk.jpackage;
+        jdk.jlink,
+        jdk.jpackage,
+        jdk.net;
     exports sun.net to
         java.net.http,
         jdk.naming.dns;

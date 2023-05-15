@@ -25,8 +25,8 @@
 /*
  * @test
  * @enablePreview
+ * @requires jdk.foreign.linker != "UNSUPPORTED"
  * @modules java.base/jdk.internal.foreign
- * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64" | os.arch == "riscv64"
  * @run testng/othervm --enable-native-access=ALL-UNNAMED TestIllegalLink
  */
 
@@ -109,14 +109,6 @@ public class TestIllegalLink extends NativeTestHelper {
     @DataProvider
     public static Object[][] types() {
         List<Object[]> cases = new ArrayList<>(Arrays.asList(new Object[][]{
-            {
-                    FunctionDescriptor.of(MemoryLayout.paddingLayout(64)),
-                    "Unsupported layout: x64"
-            },
-            {
-                    FunctionDescriptor.ofVoid(MemoryLayout.paddingLayout(64)),
-                    "Unsupported layout: x64"
-            },
             {
                     FunctionDescriptor.of(MemoryLayout.sequenceLayout(2, C_INT)),
                     "Unsupported layout: [2:i32]"

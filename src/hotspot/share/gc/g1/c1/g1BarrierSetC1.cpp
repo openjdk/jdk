@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,7 +106,7 @@ void G1BarrierSetC1::pre_barrier(LIRAccess& access, LIR_Opr addr_opr,
     assert(addr_opr == LIR_OprFact::illegalOpr, "sanity");
     assert(pre_val->is_register(), "must be");
     assert(pre_val->type() == T_OBJECT, "must be an object");
-    assert(info == NULL, "sanity");
+    assert(info == nullptr, "sanity");
 
     slow = new G1PreBarrierStub(pre_val);
   }
@@ -123,9 +123,9 @@ void G1BarrierSetC1::post_barrier(LIRAccess& access, LIR_Opr addr, LIR_Opr new_v
     return;
   }
 
-  // If the "new_val" is a constant NULL, no barrier is necessary.
+  // If the "new_val" is a constant null, no barrier is necessary.
   if (new_val->is_constant() &&
-      new_val->as_constant_ptr()->as_jobject() == NULL) return;
+      new_val->as_constant_ptr()->as_jobject() == nullptr) return;
 
   if (!new_val->is_register()) {
     LIR_Opr new_val_reg = gen->new_register(T_OBJECT);
@@ -204,7 +204,7 @@ class C1G1PreBarrierCodeGenClosure : public StubAssemblerCodeGenClosure {
   virtual OopMapSet* generate_code(StubAssembler* sasm) {
     G1BarrierSetAssembler* bs = (G1BarrierSetAssembler*)BarrierSet::barrier_set()->barrier_set_assembler();
     bs->generate_c1_pre_barrier_runtime_stub(sasm);
-    return NULL;
+    return nullptr;
   }
 };
 
@@ -212,7 +212,7 @@ class C1G1PostBarrierCodeGenClosure : public StubAssemblerCodeGenClosure {
   virtual OopMapSet* generate_code(StubAssembler* sasm) {
     G1BarrierSetAssembler* bs = (G1BarrierSetAssembler*)BarrierSet::barrier_set()->barrier_set_assembler();
     bs->generate_c1_post_barrier_runtime_stub(sasm);
-    return NULL;
+    return nullptr;
   }
 };
 

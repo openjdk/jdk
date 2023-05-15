@@ -204,10 +204,14 @@ class ObjectClosure : public Closure {
   virtual void do_object(oop obj) = 0;
 };
 
-
 class BoolObjectClosure : public Closure {
  public:
   virtual bool do_object_b(oop obj) = 0;
+};
+
+class OopFieldClosure {
+public:
+  virtual void do_field(oop base, oop* p) = 0;
 };
 
 class AlwaysTrueClosure: public BoolObjectClosure {
@@ -337,6 +341,9 @@ public:
   // Read/write the 32-bit unsigned integer pointed to by p.
   virtual void do_u4(u4* p) = 0;
 
+  // Read/write the int pointed to by p.
+  virtual void do_int(int* p) = 0;
+
   // Read/write the bool pointed to by p.
   virtual void do_bool(bool* p) = 0;
 
@@ -355,6 +362,9 @@ public:
   bool writing() {
     return !reading();
   }
+
+  // Useful alias
+  template <typename T> void do_ptr(T** p) { do_ptr((void**)p); }
 };
 
 class SymbolClosure : public StackObj {
