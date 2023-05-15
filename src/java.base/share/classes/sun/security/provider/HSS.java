@@ -486,7 +486,6 @@ public final class HSS extends SignatureSpi {
         final int ls;
         final int p;
         final String hashAlgName;
-//12345678901234567890123456789012345678901234567890123456789012345678901234567890
 
         // The initial buffer image for the lmotsPubKeyCandidate() function.
         // In that function a clone of this buffer is fed into the
