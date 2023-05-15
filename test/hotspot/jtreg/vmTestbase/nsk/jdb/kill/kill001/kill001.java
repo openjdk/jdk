@@ -39,7 +39,7 @@
  * to the number of additional threads created. The value of
  * the "killed" variable is checked by "eval <expr>" command.
  * The test passes if the value is equal to the number of
- * additional thread created and fails otherwise.
+ * additional threads created and fails otherwise.
  * COMMENTS
  *  Modified due to fix of the test bug:
  *  4940902 TEST_BUG: race in nsk/jdb/kill/kill001
