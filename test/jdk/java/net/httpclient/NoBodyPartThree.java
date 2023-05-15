@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8161157
+ * @bug 8308024
  * @summary Test request and response body handlers/subscribers when there is no body
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext jdk.httpclient.test.lib.http2.Http2TestServer
