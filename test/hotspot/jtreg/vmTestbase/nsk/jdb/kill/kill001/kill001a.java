@@ -144,7 +144,6 @@ class MyThread extends Thread {
     public void run() {
         // Concatenate strings in advance to avoid lambda calculations later
         String ThreadFinished = "Thread finished: " + this.name;
-        String ThreadInterrupted = "WARNING: Thread was interrupted while waiting for killing: " + this.name;
         String CaughtExpected = "Thread " + this.name + " caught expected async exception: " + expectedException;
         String CaughtUnexpected = "WARNING: Thread " + this.name + " caught unexpected exception:";
 
