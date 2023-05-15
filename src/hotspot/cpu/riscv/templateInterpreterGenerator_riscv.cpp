@@ -770,8 +770,10 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   __ sd(x19_sender_sp, Address(sp, 9 * wordSize));
   __ sd(zr, Address(sp, 8 * wordSize));
 
-  // Get mirror
+  // Get mirror and store it in the frame as GC root for this Method*
   __ load_mirror(t2, xmethod, x15, t1);
+  __ sd(t2, Address(sp, 4 * wordSize));
+
   if (!native_call) {
     __ ld(t0, Address(xmethod, Method::const_offset()));
     __ lhu(t0, Address(t0, ConstMethod::max_stack_offset()));
@@ -779,9 +781,8 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
     __ slli(t0, t0, 3);
     __ sub(t0, sp, t0);
     __ andi(t0, t0, -16);
-    // Store extended SP and mirror
+    // Store extended SP
     __ sd(t0, Address(sp, 5 * wordSize));
-    __ sd(t2, Address(sp, 4 * wordSize));
     // Move SP out of the way
     __ mv(sp, t0);
   } else {
@@ -789,7 +790,6 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
     // an exception (see TemplateInterpreterGenerator::generate_throw_exception())
     __ sub(t0, sp, 2 * wordSize);
     __ sd(t0, Address(sp, 5 * wordSize));
-    __ sd(zr, Address(sp, 4 * wordSize));
     __ mv(sp, t0);
   }
 }
@@ -1097,8 +1097,9 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     Label L;
     __ ld(x28, Address(xmethod, Method::native_function_offset()));
     address unsatisfied = (SharedRuntime::native_method_throw_unsatisfied_link_error_entry());
-    __ mv(t1, unsatisfied);
-    __ ld(t1, Address(t1, 0));
+    __ mv(t, unsatisfied);
+    __ load_long_misaligned(t1, Address(t, 0), t0, 2); // 2 bytes aligned, but not 4 or 8
+
     __ bne(x28, t1, L);
     __ call_VM(noreg,
                CAST_FROM_FN_PTR(address,

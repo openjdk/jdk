@@ -72,6 +72,7 @@ Thread::Thread() {
   set_stack_size(0);
   set_lgrp_id(-1);
   DEBUG_ONLY(clear_suspendible_thread();)
+  DEBUG_ONLY(clear_indirectly_suspendible_thread();)
 
   // allocated data structures
   set_osthread(nullptr);
@@ -98,6 +99,7 @@ Thread::Thread() {
   _jvmti_env_iteration_count = 0;
   set_allocated_bytes(0);
   _current_pending_raw_monitor = nullptr;
+  _vm_error_callbacks = nullptr;
 
   // thread-specific hashCode stream generator state - Marsaglia shift-xor form
   _hashStateX = os::random();
@@ -525,6 +527,7 @@ void Thread::print_owned_locks_on(outputStream* st) const {
 // should be revisited, and they should be removed if possible.
 
 bool Thread::is_lock_owned(address adr) const {
+  assert(LockingMode != LM_LIGHTWEIGHT, "should not be called with new lightweight locking");
   return is_in_full_stack(adr);
 }
 

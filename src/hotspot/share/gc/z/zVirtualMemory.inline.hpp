@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,22 +29,22 @@
 #include "gc/z/zMemory.inline.hpp"
 
 inline ZVirtualMemory::ZVirtualMemory() :
-    _start(UINTPTR_MAX),
-    _end(UINTPTR_MAX) {}
+    _start(zoffset(UINTPTR_MAX)),
+    _end(zoffset_end(UINTPTR_MAX)) {}
 
-inline ZVirtualMemory::ZVirtualMemory(uintptr_t start, size_t size) :
+inline ZVirtualMemory::ZVirtualMemory(zoffset start, size_t size) :
     _start(start),
-    _end(start + size) {}
+    _end(to_zoffset_end(start, size)) {}
 
 inline bool ZVirtualMemory::is_null() const {
-  return _start == UINTPTR_MAX;
+  return _start == zoffset(UINTPTR_MAX);
 }
 
-inline uintptr_t ZVirtualMemory::start() const {
+inline zoffset ZVirtualMemory::start() const {
   return _start;
 }
 
-inline uintptr_t ZVirtualMemory::end() const {
+inline zoffset_end ZVirtualMemory::end() const {
   return _end;
 }
 
@@ -61,7 +61,7 @@ inline size_t ZVirtualMemoryManager::reserved() const {
   return _reserved;
 }
 
-inline uintptr_t ZVirtualMemoryManager::lowest_available_address() const {
+inline zoffset ZVirtualMemoryManager::lowest_available_address() const {
   return _manager.peek_low_address();
 }
 
