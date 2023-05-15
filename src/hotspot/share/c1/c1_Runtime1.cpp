@@ -1505,7 +1505,7 @@ JRT_ENTRY(void, Runtime1::predicate_failed_trap(JavaThread* current))
 JRT_END
 
 // Check exception if AbortVMOnException flag set
-JRT_ENTRY(void, Runtime1::abort_on_vm_exception(JavaThread* current, oopDesc* ex))
+JRT_ENTRY(void, Runtime1::check_abort_on_vm_exception(JavaThread * current, oopDesc * ex))
     Handle exception(current, ex);
     Exceptions::debug_check_abort(exception);
 JRT_END

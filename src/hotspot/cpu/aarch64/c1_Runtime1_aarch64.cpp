@@ -505,7 +505,7 @@ void Runtime1::generate_unwind_exception(StubAssembler *sasm) {
 
   // Insert check if AbortVMOnException flag
   if (AbortVMOnException) {
-    __ call_VM(noreg, CAST_FROM_FN_PTR(address, Runtime1::abort_on_vm_exception), exception_oop);
+    __ call_VM(noreg, CAST_FROM_FN_PTR(address, Runtime1::check_abort_on_vm_exception), exception_oop);
   }
 
   // search the exception handler address of the caller (using the return address)
