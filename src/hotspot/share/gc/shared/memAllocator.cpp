@@ -53,10 +53,8 @@ class MemAllocator::Allocation: StackObj {
   size_t              _allocated_tlab_size;
   bool                _tlab_end_reset_for_sample;
 
-  bool check_out_of_memory();
+  bool throw_out_of_memory();
   void verify_before();
-  void verify_after();
-  void notify_allocation();
   void notify_allocation_jvmti_sampler();
   void notify_allocation_low_memory_detector();
   void notify_allocation_jfr_sampler();
@@ -77,13 +75,38 @@ public:
       _allocated_tlab_size(0),
       _tlab_end_reset_for_sample(false)
   {
+#ifdef ASSERT
     assert(Thread::current() == allocator._thread, "do not pass MemAllocator across threads");
     verify_before();
+#endif
   }
 
   ~Allocation() {
-    if (!check_out_of_memory()) {
-      notify_allocation();
+    if (obj() != nullptr) {
+      // Real allocation allocates actual memory: either allocates
+      // outside the TLAB, or allocates a new TLAB.
+      const bool is_real_allocation = _allocated_outside_tlab ||
+                                      (_allocated_tlab_size != 0);
+
+      if (is_real_allocation) {
+        notify_allocation_low_memory_detector();
+        notify_allocation_jfr_sampler();
+      }
+
+      if ((is_real_allocation || _tlab_end_reset_for_sample) &&
+          JvmtiExport::should_post_sampled_object_alloc()) {
+        notify_allocation_jvmti_sampler();
+      }
+
+      if (JvmtiExport::should_post_vm_object_alloc()) {
+        JvmtiExport::record_vm_internal_object_allocation(obj());
+      }
+
+      if (DTraceAllocProbes) {
+        notify_allocation_dtrace_sampler();
+      }
+    } else {
+      throw_out_of_memory();
     }
   }
 
@@ -113,13 +136,9 @@ public:
   }
 };
 
-bool MemAllocator::Allocation::check_out_of_memory() {
+bool MemAllocator::Allocation::throw_out_of_memory() {
   JavaThread* THREAD = _thread; // For exception macros.
   assert(!HAS_PENDING_EXCEPTION, "Unexpected exception, will result in uninitialized storage");
-
-  if (obj() != nullptr) {
-    return false;
-  }
 
   const char* message = _overhead_limit_exceeded ? "GC overhead limit exceeded" : "Java heap space";
   if (!_thread->in_retryable_allocation()) {
@@ -140,16 +159,16 @@ bool MemAllocator::Allocation::check_out_of_memory() {
   }
 }
 
+#ifdef ASSERT
 void MemAllocator::Allocation::verify_before() {
   // Clear unhandled oops for memory allocation.  Memory allocation might
   // not take out a lock if from tlab, so clear here.
   JavaThread* THREAD = _thread; // For exception macros.
   assert(!HAS_PENDING_EXCEPTION, "Should not allocate with exception pending");
-  debug_only(check_for_valid_allocation_state());
+  check_for_valid_allocation_state();
   assert(!Universe::heap()->is_gc_active(), "Allocation during gc not allowed");
 }
 
-#ifdef ASSERT
 void MemAllocator::Allocation::check_for_valid_allocation_state() const {
   // How to choose between a pending exception and a potential
   // OutOfMemoryError?  Don't allow pending exceptions.
@@ -162,20 +181,6 @@ void MemAllocator::Allocation::check_for_valid_allocation_state() const {
 #endif
 
 void MemAllocator::Allocation::notify_allocation_jvmti_sampler() {
-  // support for JVMTI VMObjectAlloc event (no-op if not enabled)
-  JvmtiExport::vm_object_alloc_event_collector(obj());
-
-  if (!JvmtiExport::should_post_sampled_object_alloc()) {
-    // Sampling disabled
-    return;
-  }
-
-  if (!_allocated_outside_tlab && _allocated_tlab_size == 0 && !_tlab_end_reset_for_sample) {
-    // Sample if it's a non-TLAB allocation, or a TLAB allocation that either refills the TLAB
-    // or expands it due to taking a sampler induced slow path.
-    return;
-  }
-
   // If we want to be sampling, protect the allocated object with a Handle
   // before doing the callback. The callback is done in the destructor of
   // the JvmtiSampledObjectAllocEventCollector.
@@ -219,21 +224,13 @@ void MemAllocator::Allocation::notify_allocation_jfr_sampler() {
 }
 
 void MemAllocator::Allocation::notify_allocation_dtrace_sampler() {
-  if (DTraceAllocProbes) {
-    // support for Dtrace object alloc event (no-op most of the time)
-    Klass* klass = obj()->klass();
-    size_t word_size = _allocator._word_size;
-    if (klass != nullptr && klass->name() != nullptr) {
-      SharedRuntime::dtrace_object_alloc(_thread, obj(), word_size);
-    }
+  assert(DTraceAllocProbes, "Should have been checked before");
+  // support for Dtrace object alloc event (no-op most of the time)
+  Klass* klass = obj()->klass();
+  size_t word_size = _allocator._word_size;
+  if (klass != nullptr && klass->name() != nullptr) {
+    SharedRuntime::dtrace_object_alloc(_thread, obj(), word_size);
   }
-}
-
-void MemAllocator::Allocation::notify_allocation() {
-  notify_allocation_low_memory_detector();
-  notify_allocation_jfr_sampler();
-  notify_allocation_dtrace_sampler();
-  notify_allocation_jvmti_sampler();
 }
 
 HeapWord* MemAllocator::mem_allocate_outside_tlab(Allocation& allocation) const {

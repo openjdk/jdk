@@ -389,12 +389,6 @@ class JvmtiExport : public AllStatic {
   static void record_vm_internal_object_allocation(oop object) NOT_JVMTI_RETURN;
   // Post objects collected by vm_object_alloc_event_collector.
   static void post_vm_object_alloc(JavaThread *thread, oop object) NOT_JVMTI_RETURN;
-  // Collects vm internal objects for later event posting.
-  inline static void vm_object_alloc_event_collector(oop object) {
-    if (should_post_vm_object_alloc()) {
-      record_vm_internal_object_allocation(object);
-    }
-  }
 
   // Used by C2 to deoptimize allocation intrinsics and post vm_object_alloc
   static int _should_notify_object_alloc;
