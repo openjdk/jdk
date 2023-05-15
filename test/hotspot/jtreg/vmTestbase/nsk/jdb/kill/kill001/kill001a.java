@@ -152,7 +152,7 @@ class MyThread extends Thread {
         synchronized (kill001a.waitnotify) {
             kill001a.waitnotify.notify();
         }
-            
+
         try {
             synchronized (kill001a.lock) { }
             // We need some code that does an invoke here to make sure the async exception
