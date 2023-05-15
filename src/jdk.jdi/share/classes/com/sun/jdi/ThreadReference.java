@@ -116,18 +116,20 @@ public interface ThreadReference extends ObjectReference {
      * A debugger thread in the target VM will stop this thread
      * with the given {@link java.lang.Throwable} object.
      * <p>
-     * The target VM may not support, or may only provide limited support,
-     * for stopping a virtual thread with an asynchronous exception. It may,
-     * for example, only support this operation when the virtual thread is
-     * suspended at a breakpoint or singlestep event.
+     * This method may be used to send an asynchronous
+     * exception to a virtual thread when it is suspended at an event.
+     * An implementation may support sending an asynchronous exception
+     * to a suspended virtual thread in other cases.
+
      *
      * @param throwable the asynchronous exception to throw
      * @throws InvalidTypeException if <code>throwable</code> is not
      * an instance of java.lang.Throwable in the target VM
-     * @throws IllegalThreadStateException if the thread has terminated
-     * @throws UnsupportedOperationException if the thread is a virtual
-     * thread and the target VM does not support this operation on
-     * virtual threads
+     * @throws IllegalThreadStateException if the thread has terminated,
+     * or if the thread is a virtual thread and was not suspended
+     * @throws OpaqueFrameException if the thread is a suspended
+     * virtual thread and the implementation was unable to throw an
+     * asynchronous exception from the thread's current frame
      * @throws VMCannotBeModifiedException if the VirtualMachine is read-only
      * @see VirtualMachine#canBeModified()
      */

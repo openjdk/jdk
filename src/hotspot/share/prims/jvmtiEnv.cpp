@@ -1190,9 +1190,15 @@ JvmtiEnv::StopThread(jthread thread, jobject exception) {
 
   jvmtiError err = get_threadOop_and_JavaThread(tlh.list(), thread, &java_thread, &thread_oop);
 
-  if (thread_oop != nullptr && thread_oop->is_a(vmClasses::BaseVirtualThread_klass())) {
-    // No support for virtual threads (yet).
-    return JVMTI_ERROR_UNSUPPORTED_OPERATION;
+  bool is_virtual = thread_oop != nullptr && thread_oop->is_a(vmClasses::BaseVirtualThread_klass());
+
+  if (is_virtual && !is_JavaThread_current(java_thread, thread_oop)) {
+    if (!is_vthread_suspended(thread_oop, java_thread)) {
+      return JVMTI_ERROR_THREAD_NOT_SUSPENDED;
+    }
+    if (java_thread == nullptr) { // unmounted virtual thread
+      return JVMTI_ERROR_OPAQUE_FRAME;
+    }
   }
   if (err != JVMTI_ERROR_NONE) {
     return err;

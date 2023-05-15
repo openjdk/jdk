@@ -260,6 +260,15 @@ public interface TreeVisitor<R,P> {
     R visitLiteral(LiteralTree node, P p);
 
     /**
+     * Visits a StringTemplateTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
+    @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES, reflective=true)
+    R visitStringTemplate(StringTemplateTree node, P p);
+
+    /**
      * Visits a {@code BindingPatternTree} node.
      * @param node the node being visited
      * @param p a parameter value

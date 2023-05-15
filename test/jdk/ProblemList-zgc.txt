@@ -27,4 +27,4 @@
 #
 #############################################################################
 
-java/util/concurrent/locks/Lock/OOMEInAQS.java 8298066 linux-aarch64,windows-x64
+java/util/concurrent/locks/Lock/OOMEInAQS.java 8298066 linux-all,windows-x64

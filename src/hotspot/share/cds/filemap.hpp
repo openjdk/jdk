@@ -530,9 +530,7 @@ public:
     return header()->region_at(i);
   }
 
-  void print(outputStream* st) {
-    header()->print(st);
-  }
+  void print(outputStream* st) const;
 
   const char* vm_version() {
     return header()->jvm_ident();

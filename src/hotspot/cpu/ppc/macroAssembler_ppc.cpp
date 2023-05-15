@@ -2658,7 +2658,7 @@ void MacroAssembler::compiler_fast_lock_object(ConditionRegister flag, Register 
   andi_(temp, displaced_header, markWord::monitor_value);
   bne(CCR0, object_has_monitor);
 
-  if (!UseHeavyMonitors) {
+  if (LockingMode != LM_MONITOR) {
     // Set displaced_header to be (markWord of object | UNLOCK_VALUE).
     ori(displaced_header, displaced_header, markWord::unlocked_value);
 
@@ -2776,7 +2776,7 @@ void MacroAssembler::compiler_fast_unlock_object(ConditionRegister flag, Registe
   }
 #endif
 
-  if (!UseHeavyMonitors) {
+  if (LockingMode != LM_MONITOR) {
     // Find the lock address and load the displaced header from the stack.
     ld(displaced_header, BasicLock::displaced_header_offset_in_bytes(), box);
 
@@ -2792,7 +2792,7 @@ void MacroAssembler::compiler_fast_unlock_object(ConditionRegister flag, Registe
   andi_(R0, current_header, markWord::monitor_value);
   bne(CCR0, object_has_monitor);
 
-  if (!UseHeavyMonitors) {
+  if (LockingMode != LM_MONITOR) {
     // Check if it is still a light weight lock, this is is true if we see
     // the stack address of the basicLock in the markWord of the object.
     // Cmpxchg sets flag to cmpd(current_header, box).
