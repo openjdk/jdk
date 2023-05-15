@@ -35,9 +35,11 @@
  * suspends debuggee at moment when additional threads try to obtain
  * lock on synchronized object (previously locked in main thread)
  * and then tries to kill them. If these threads are killed then
- * a value of the special "notKilled" variable should not be modified.
- * Value of "notKilled" variable is checked by "eval <expr>" command.
- * The test passes if the value is equal to 0 and fails otherwise..
+ * the value of the special "killed" variable should to the set
+ * to the number of additional threads created. The value of
+ * the "killed" variable is checked by "eval <expr>" command.
+ * The test passes if the value is equal to the nunber of
+ * additional thread created and fails otherwise.
  * COMMENTS
  *  Modified due to fix of the test bug:
  *  4940902 TEST_BUG: race in nsk/jdb/kill/kill001
