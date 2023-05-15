@@ -69,15 +69,19 @@ public class ConnectedVMs extends TestScaffold {
     protected boolean allowedExitValue(int exitValue) {
         if (passName.equals("Kill")) {
             // 143 is SIGTERM, which we expect to get when doing a Process.destroy(),
-            // unless we are on Windows, which will exit with a 1.
+            // unless we are on Windows, which will exit with a 1. However, sometimes
+            // there is a race and the main thread exits before SIGTERM can force
+            // an exit(143), so we need to allow exitValue 0 also.
             if (!Platform.isWindows()) {
-                return exitValue == 143;
+                return exitValue == 143 || exitValue == 0;
             } else {
-                return exitValue == 1;
+                return exitValue == 1 || exitValue == 0;
             }
         } else if (passName.equals("exit()")) {
             // This version of the test does an exit(1), so that's what we expect.
-            return exitValue == 1;
+            // But similar to the SIGTERM race issue, the exit(1) might not happen
+            // before the main thread exits, so we need to expect 0 also.
+            return exitValue == 1 || exitValue == 0;
         }
         return super.allowedExitValue(exitValue);
     }

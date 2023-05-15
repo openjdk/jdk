@@ -26,7 +26,7 @@
  // key: compiler.misc.unexpected.ret.val
  // key: compiler.err.prob.found.req
  // key: compiler.err.processor.type.cannot.be.a.raw.type
- // options: --enable-preview -source 21
+ // options: --enable-preview -source ${jdk.version}
 
 import java.lang.*;
 import java.lang.StringTemplate.Processor;
