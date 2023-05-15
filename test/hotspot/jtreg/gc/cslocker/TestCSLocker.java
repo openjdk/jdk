@@ -51,7 +51,6 @@ public class TestCSLocker extends Thread
 
         // check timeout to success deadlocking
         while(System.currentTimeMillis() < startTime + timeout) {
-            System.out.println("sleeping...");
             sleep(1000);
         }
 
