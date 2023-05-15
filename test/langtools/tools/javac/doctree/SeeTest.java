@@ -71,6 +71,25 @@ DocComment[DOC_COMMENT, pos:1
 */
 
     /**
+     * Test new line before quoted string.
+     * @see
+     *    "{@code}"
+     */
+    void new_line_before_quoted_string() { }
+/*
+DocComment[DOC_COMMENT, pos:1
+  firstSentence: 1
+    Text[TEXT, pos:1, Test_new_line_before_quoted_string.]
+  body: empty
+  block tags: 1
+    See[SEE, pos:38
+      reference: 1
+        Text[TEXT, pos:47, "{@code}"]
+    ]
+]
+*/
+
+    /**
      * abc.
      * @see <a href="url">url</a>
      */
