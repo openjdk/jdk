@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      8284030
+ * @bug      8284030 8307377
  * @summary  LinkFactory should not attempt to link to primitive types
  * @library  /tools/lib ../../lib
  * @modules  jdk.javadoc/jdk.javadoc.internal.tool
@@ -68,21 +68,21 @@ public class TestLinkTagletPrimitive extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput(Output.OUT, true,
-                "C.java:3: warning: Tag @link: reference not found: byte",
-                "C.java:4: warning: Tag @link: reference not found: void");
+                "C.java:3: warning: reference not found: byte",
+                "C.java:4: warning: reference not found: void");
 
         checkOutput("C.html", true,
                 """
                     <div class="block">Comment.
                      Byte:\s
                     <details class="invalid-tag">
-                    <summary>invalid @link</summary>
+                    <summary>invalid reference</summary>
                     <pre><code>byte</code></pre>
                     </details>
 
                      Void:\s
                     <details class="invalid-tag">
-                    <summary>invalid @link</summary>
+                    <summary>invalid reference</summary>
                     <pre><code>void</code></pre>
                     </details>
                     </div>
@@ -109,14 +109,14 @@ public class TestLinkTagletPrimitive extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput(Output.OUT, true,
-                "C.java:3: warning: Tag @link: reference not found: byte[]");
+                "C.java:3: warning: reference not found: byte[]");
 
         checkOutput("C.html", true,
                 """
                     <div class="block">Comment.
                      Byte[]:\s
                     <details class="invalid-tag">
-                    <summary>invalid @link</summary>
+                    <summary>invalid reference</summary>
                     <pre><code>byte[]</code></pre>
                     </details>
                     </div>
