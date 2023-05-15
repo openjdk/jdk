@@ -292,11 +292,11 @@ final class CompilerToVM {
      * The behavior of this method is undefined if {@code cpi} does not denote an entry containing a
      * {@code JVM_CONSTANT_NameAndType} index.
      */
-    int lookupNameAndTypeRefIndexInPool(HotSpotConstantPool constantPool, int cpi) {
-        return lookupNameAndTypeRefIndexInPool(constantPool, constantPool.getConstantPoolPointer(), cpi);
+    int lookupNameAndTypeRefIndexInPool(HotSpotConstantPool constantPool, int cpi, int opcode) {
+        return lookupNameAndTypeRefIndexInPool(constantPool, constantPool.getConstantPoolPointer(), cpi, opcode);
     }
 
-    private native int lookupNameAndTypeRefIndexInPool(HotSpotConstantPool constantPool, long constantPoolPointer, int cpi);
+    private native int lookupNameAndTypeRefIndexInPool(HotSpotConstantPool constantPool, long constantPoolPointer, int cpi, int opcode);
 
     /**
      * Gets the name of the {@code JVM_CONSTANT_NameAndType} entry referenced by another entry
@@ -305,11 +305,11 @@ final class CompilerToVM {
      * The behavior of this method is undefined if {@code which} does not denote a entry that
      * references a {@code JVM_CONSTANT_NameAndType} entry.
      */
-    String lookupNameInPool(HotSpotConstantPool constantPool, int which) {
-        return lookupNameInPool(constantPool, constantPool.getConstantPoolPointer(), which);
+    String lookupNameInPool(HotSpotConstantPool constantPool, int which, int opcode) {
+        return lookupNameInPool(constantPool, constantPool.getConstantPoolPointer(), which, opcode);
     }
 
-    private native String lookupNameInPool(HotSpotConstantPool constantPool, long constantPoolPointer, int which);
+    private native String lookupNameInPool(HotSpotConstantPool constantPool, long constantPoolPointer, int which, int opcode);
 
     /**
      * Gets the signature of the {@code JVM_CONSTANT_NameAndType} entry referenced by another entry
@@ -318,11 +318,11 @@ final class CompilerToVM {
      * The behavior of this method is undefined if {@code which} does not denote a entry that
      * references a {@code JVM_CONSTANT_NameAndType} entry.
      */
-    String lookupSignatureInPool(HotSpotConstantPool constantPool, int which) {
-        return lookupSignatureInPool(constantPool, constantPool.getConstantPoolPointer(), which);
+    String lookupSignatureInPool(HotSpotConstantPool constantPool, int which, int opcode) {
+        return lookupSignatureInPool(constantPool, constantPool.getConstantPoolPointer(), which, opcode);
     }
 
-    private native String lookupSignatureInPool(HotSpotConstantPool constantPool, long constantPoolPointer, int which);
+    private native String lookupSignatureInPool(HotSpotConstantPool constantPool, long constantPoolPointer, int which, int opcode);
 
     /**
      * Gets the {@code JVM_CONSTANT_Class} index from the entry at index {@code cpi} in
@@ -331,11 +331,11 @@ final class CompilerToVM {
      * The behavior of this method is undefined if {@code cpi} does not denote an entry containing a
      * {@code JVM_CONSTANT_Class} index.
      */
-    int lookupKlassRefIndexInPool(HotSpotConstantPool constantPool, int cpi) {
-        return lookupKlassRefIndexInPool(constantPool, constantPool.getConstantPoolPointer(), cpi);
+    int lookupKlassRefIndexInPool(HotSpotConstantPool constantPool, int cpi, int opcode) {
+        return lookupKlassRefIndexInPool(constantPool, constantPool.getConstantPoolPointer(), cpi, opcode);
     }
 
-    private native int lookupKlassRefIndexInPool(HotSpotConstantPool constantPool, long constantPoolPointer, int cpi);
+    private native int lookupKlassRefIndexInPool(HotSpotConstantPool constantPool, long constantPoolPointer, int cpi, int opcode);
 
     /**
      * Looks up a class denoted by the {@code JVM_CONSTANT_Class} entry at index {@code cpi} in

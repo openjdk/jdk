@@ -52,6 +52,7 @@ import compiler.jvmci.compilerToVM.ConstantPoolTestCase.Validator;
 import compiler.jvmci.compilerToVM.ConstantPoolTestsHelper.DummyClasses;
 import jdk.test.lib.Asserts;
 import jdk.vm.ci.hotspot.CompilerToVMHelper;
+import jdk.vm.ci.hotspot.HotSpotConstantPool.Bytecodes;
 import jdk.vm.ci.meta.ConstantPool;
 
 import java.util.HashMap;
@@ -103,7 +104,23 @@ public class LookupNameInPoolTest {
             index = cpci;
             cached = "cached ";
         }
-        String nameToVerify = CompilerToVMHelper.lookupNameInPool(constantPoolCTVM, index);
+        int opcode;
+        // Select an arbitrary bytecode of the type associated with the Constant pool entry
+        switch(cpType) {
+          case CONSTANT_FIELDREF:
+            opcode = Bytecodes.GETFIELD;
+            break;
+          case CONSTANT_METHODREF:
+          case CONSTANT_INTERFACEMETHODREF:
+            opcode = Bytecodes.INVOKEVIRTUAL;
+            break;
+          case CONSTANT_INVOKEDYNAMIC:
+            opcode = Bytecodes.INVOKEDYNAMIC;
+            break;
+          default:
+            throw new Error("Unexpected consant pool entry");
+        }
+        String nameToVerify = CompilerToVMHelper.lookupNameInPool(constantPoolCTVM, index, opcode);
         String nameToRefer = entry.name;
         String msg = String.format("Wrong name accessed by %sconstant pool index %d", cached, index);
         Asserts.assertEQ(nameToVerify, nameToRefer, msg);

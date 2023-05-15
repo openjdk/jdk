@@ -106,20 +106,20 @@ public class CompilerToVMHelper {
         return obj.object;
     }
 
-    public static int lookupNameAndTypeRefIndexInPool(ConstantPool constantPool, int cpi) {
-        return CTVM.lookupNameAndTypeRefIndexInPool((HotSpotConstantPool) constantPool, cpi);
+    public static int lookupNameAndTypeRefIndexInPool(ConstantPool constantPool, int cpi, int opcode) {
+        return CTVM.lookupNameAndTypeRefIndexInPool((HotSpotConstantPool) constantPool, cpi, opcode);
     }
 
-    public static String lookupNameInPool(ConstantPool constantPool, int cpi) {
-        return CTVM.lookupNameInPool((HotSpotConstantPool) constantPool, cpi);
+    public static String lookupNameInPool(ConstantPool constantPool, int cpi, int opcode) {
+        return CTVM.lookupNameInPool((HotSpotConstantPool) constantPool, cpi, opcode);
     }
 
-    public static String lookupSignatureInPool(ConstantPool constantPool, int cpi) {
-        return CTVM.lookupSignatureInPool((HotSpotConstantPool) constantPool, cpi);
+    public static String lookupSignatureInPool(ConstantPool constantPool, int cpi, int opcode) {
+        return CTVM.lookupSignatureInPool((HotSpotConstantPool) constantPool, cpi, opcode);
     }
 
-    public static int lookupKlassRefIndexInPool(ConstantPool constantPool, int cpi) {
-        return CTVM.lookupKlassRefIndexInPool((HotSpotConstantPool) constantPool, cpi);
+    public static int lookupKlassRefIndexInPool(ConstantPool constantPool, int cpi, int opcode) {
+        return CTVM.lookupKlassRefIndexInPool((HotSpotConstantPool) constantPool, cpi, opcode);
     }
 
     public static Object lookupKlassInPool(ConstantPool constantPool, int cpi) {

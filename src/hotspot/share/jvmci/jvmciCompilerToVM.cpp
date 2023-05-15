@@ -814,26 +814,26 @@ C2V_VMENTRY_NULL(jobjectArray, resolveBootstrapMethod, (JNIEnv* env, jobject, AR
   return JVMCIENV->get_jobjectArray(bsmi);
 C2V_END
 
-C2V_VMENTRY_0(jint, lookupNameAndTypeRefIndexInPool, (JNIEnv* env, jobject, ARGUMENT_PAIR(cp), jint index))
+C2V_VMENTRY_0(jint, lookupNameAndTypeRefIndexInPool, (JNIEnv* env, jobject, ARGUMENT_PAIR(cp), jint index, jint opcode))
   constantPoolHandle cp(THREAD, UNPACK_PAIR(ConstantPool, cp));
-  return cp->uncached_name_and_type_ref_index_at(index);
+  return cp->name_and_type_ref_index_at(index, (Bytecodes::Code)opcode);
 C2V_END
 
-C2V_VMENTRY_NULL(jobject, lookupNameInPool, (JNIEnv* env, jobject, ARGUMENT_PAIR(cp), jint which))
+C2V_VMENTRY_NULL(jobject, lookupNameInPool, (JNIEnv* env, jobject, ARGUMENT_PAIR(cp), jint which, jint opcode))
   constantPoolHandle cp(THREAD, UNPACK_PAIR(ConstantPool, cp));
-  JVMCIObject sym = JVMCIENV->create_string(cp->uncached_name_ref_at(which), JVMCI_CHECK_NULL);
+  JVMCIObject sym = JVMCIENV->create_string(cp->name_ref_at(which, (Bytecodes::Code)opcode), JVMCI_CHECK_NULL);
   return JVMCIENV->get_jobject(sym);
 C2V_END
 
-C2V_VMENTRY_NULL(jobject, lookupSignatureInPool, (JNIEnv* env, jobject, ARGUMENT_PAIR(cp), jint which))
+C2V_VMENTRY_NULL(jobject, lookupSignatureInPool, (JNIEnv* env, jobject, ARGUMENT_PAIR(cp), jint which, jint opcode))
   constantPoolHandle cp(THREAD, UNPACK_PAIR(ConstantPool, cp));
-  JVMCIObject sym = JVMCIENV->create_string(cp->uncached_signature_ref_at(which), JVMCI_CHECK_NULL);
+  JVMCIObject sym = JVMCIENV->create_string(cp->signature_ref_at(which, (Bytecodes::Code)opcode), JVMCI_CHECK_NULL);
   return JVMCIENV->get_jobject(sym);
 C2V_END
 
-C2V_VMENTRY_0(jint, lookupKlassRefIndexInPool, (JNIEnv* env, jobject, ARGUMENT_PAIR(cp), jint index))
+C2V_VMENTRY_0(jint, lookupKlassRefIndexInPool, (JNIEnv* env, jobject, ARGUMENT_PAIR(cp), jint index, jint opcode))
   constantPoolHandle cp(THREAD, UNPACK_PAIR(ConstantPool, cp));
-  return cp->uncached_klass_ref_index_at(index);
+  return cp->klass_ref_index_at(index, (Bytecodes::Code)opcode);
 C2V_END
 
 C2V_VMENTRY_NULL(jobject, resolveTypeInPool, (JNIEnv* env, jobject, ARGUMENT_PAIR(cp), jint index))
@@ -3085,10 +3085,10 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "lookupJClass",                                 CC "(J)" HS_RESOLVED_TYPE,                                                            FN_PTR(lookupJClass)},
   {CC "getArrayType",                                 CC "(C" HS_KLASS2 ")" HS_KLASS,                                                       FN_PTR(getArrayType)},
   {CC "lookupClass",                                  CC "(" CLASS ")" HS_RESOLVED_TYPE,                                                    FN_PTR(lookupClass)},
-  {CC "lookupNameInPool",                             CC "(" HS_CONSTANT_POOL2 "I)" STRING,                                                 FN_PTR(lookupNameInPool)},
-  {CC "lookupNameAndTypeRefIndexInPool",              CC "(" HS_CONSTANT_POOL2 "I)I",                                                       FN_PTR(lookupNameAndTypeRefIndexInPool)},
-  {CC "lookupSignatureInPool",                        CC "(" HS_CONSTANT_POOL2 "I)" STRING,                                                 FN_PTR(lookupSignatureInPool)},
-  {CC "lookupKlassRefIndexInPool",                    CC "(" HS_CONSTANT_POOL2 "I)I",                                                       FN_PTR(lookupKlassRefIndexInPool)},
+  {CC "lookupNameInPool",                             CC "(" HS_CONSTANT_POOL2 "II)" STRING,                                                FN_PTR(lookupNameInPool)},
+  {CC "lookupNameAndTypeRefIndexInPool",              CC "(" HS_CONSTANT_POOL2 "II)I",                                                      FN_PTR(lookupNameAndTypeRefIndexInPool)},
+  {CC "lookupSignatureInPool",                        CC "(" HS_CONSTANT_POOL2 "II)" STRING,                                                FN_PTR(lookupSignatureInPool)},
+  {CC "lookupKlassRefIndexInPool",                    CC "(" HS_CONSTANT_POOL2 "II)I",                                                      FN_PTR(lookupKlassRefIndexInPool)},
   {CC "lookupKlassInPool",                            CC "(" HS_CONSTANT_POOL2 "I)Ljava/lang/Object;",                                      FN_PTR(lookupKlassInPool)},
   {CC "lookupAppendixInPool",                         CC "(" HS_CONSTANT_POOL2 "I)" OBJECTCONSTANT,                                         FN_PTR(lookupAppendixInPool)},
   {CC "lookupMethodInPool",                           CC "(" HS_CONSTANT_POOL2 "IB" HS_METHOD2 ")" HS_METHOD,                               FN_PTR(lookupMethodInPool)},
