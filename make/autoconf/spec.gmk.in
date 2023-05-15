@@ -572,6 +572,9 @@ JDKEXE_LIBS:=@JDKEXE_LIBS@
 # LDFLAGS specific to C++ linking.
 LDFLAGS_CXX_JDK:=@LDFLAGS_CXX_JDK@
 
+# LDFLAGS specific to partial linking.
+LDFLAGS_CXX_PARTIAL_LINKING:=@LDFLAGS_CXX_PARTIAL_LINKING@
+
 # Sometimes a different linker is needed for c++ libs
 LDCXX := @LDCXX@
 # The flags for linking libstdc++ linker.
