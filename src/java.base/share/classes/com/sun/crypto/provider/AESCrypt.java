@@ -1368,11 +1368,11 @@ final class AESCrypt extends SymmetricCipher implements AESConstants {
         int[][] Ke = new int[ROUNDS + 1][]; // encryption round keys
         int[][] Kd = new int[ROUNDS + 1][]; // decryption round keys
 
-        // Due to JDK-8308105, it is significantly faster to avoid multiarray
-        // allocation in this code.
+        // It is significantly faster to allocate individual arrays,
+        // instead of doing the multi-array allocation. See JDK-8308105.
         for (int c = 0; c < ROUNDS + 1; c++) {
-            Ke[c] = new int[BC];
-            Kd[c] = new int[BC];
+            Ke[c] = new int[4];
+            Kd[c] = new int[4];
         }
 
         int KC = k.length/4; // keylen in 32-bit elements
@@ -1451,8 +1451,11 @@ final class AESCrypt extends SymmetricCipher implements AESConstants {
             // erase the previous values in sessionK
             Arrays.fill(sessionK[0], 0);
             Arrays.fill(sessionK[1], 0);
+        } else {
+            sessionK = new int[2][];
         }
-        sessionK = new int[][] { expandedKe, expandedKd };
+        sessionK[0] = expandedKe;
+        sessionK[1] = expandedKd;
     }
 
     /**
