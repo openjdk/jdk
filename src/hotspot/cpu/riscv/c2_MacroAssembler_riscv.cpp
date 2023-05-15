@@ -1632,29 +1632,28 @@ void C2_MacroAssembler::minmax_fp_v(VectorRegister dst, VectorRegister src1, Vec
 }
 
 // Set dst to NaN if any NaN input.
-void C2_MacroAssembler::minmax_fp_masked_v(VectorRegister dst_src1, VectorRegister src2,
+void C2_MacroAssembler::minmax_fp_masked_v(VectorRegister dst, VectorRegister src1, VectorRegister src2,
                                            bool is_double, bool is_min, int vector_length,
                                            VectorRegister tmp1, VectorRegister tmp2, VectorRegister vmask) {
-  assert_different_registers(dst_src1, src2);
-
+  assert_different_registers(dst, src2);
+  if (dst != src1) {
+    // Inactive elements need to transfer the value in src1 to dst
+    vmv_v_v(dst, src1);
+  }
   vsetvli_helper(is_double ? T_DOUBLE : T_FLOAT, vector_length);
 
-  // Check vector elements of src1 and src2 for quiet and signaling NaN.
-  vfclass_v(tmp1, dst_src1);
-  vfclass_v(tmp2, src2);
-  vsrl_vi(tmp1, tmp1, 8);
-  vsrl_vi(tmp2, tmp2, 8);
-  vmseq_vx(tmp1, tmp1, zr);
-  vmseq_vx(tmp2, tmp2, zr);
+  // Check vector elements of src1 and src2 for NaN.
+  vmfeq_vv(tmp1, src1, src1);
+  vmfeq_vv(tmp2, src2, src2);
+  vmand_mm(tmp1, tmp1, tmp2);
+  vmand_mm(v0, vmask, tmp1);
 
-  vmand_mm(tmp2, tmp1, tmp2);
-  vmand_mm(v0, vmask, tmp2);
-
-  is_min ? vfmin_vv(dst_src1, dst_src1, src2, Assembler::v0_t)
-         : vfmax_vv(dst_src1, dst_src1, src2, Assembler::v0_t);
+  is_min ? vfmin_vv(dst, src1, src2, Assembler::v0_t)
+         : vfmax_vv(dst, src1, src2, Assembler::v0_t);
 
   vmandn_mm(v0, vmask, tmp2);
-  vfadd_vv(dst_src1, src2, src2, Assembler::v0_t);
+  vfadd_vv(dst, src2, src2, Assembler::v0_t);
+  warning("minmax_fp_masked_v!");
 }
 
 // Set dst to NaN if any NaN input.
@@ -1664,26 +1663,36 @@ void C2_MacroAssembler::reduce_minmax_fp_v(FloatRegister dst,
                                            bool is_double, bool is_min, int vector_length, VectorMask vm) {
   assert_different_registers(src2, tmp1, tmp2);
 
-  Label L_done, L_NaN;
+  Label L_done, L_done_check, L_NaN_v, L_NaN_f;
+  // If src1 is NaN, set dst to src1 directly.
+  is_double ? feq_d(t0, src1, src1)
+            : feq_s(t0, src1, src1);
+  beqz(t0, L_NaN_f);
+
   vsetvli_helper(is_double ? T_DOUBLE : T_FLOAT, vector_length);
   vfmv_s_f(tmp2, src1);
 
   is_min ? vfredmin_vs(tmp1, src2, tmp2, vm)
          : vfredmax_vs(tmp1, src2, tmp2, vm);
 
-  fsflags(zr);
-  // Checking NaNs
-  vmflt_vf(tmp2, src2, src1, vm);
-  frflags(t0);
-  bnez(t0, L_NaN);
-  j(L_done);
+  // Checking NaNs in src2
+  vmfne_vv(tmp2, src2, src2, vm);
+  vcpop_m(t0, tmp2, vm);
+  bnez(t0, L_NaN_v);
+  j(L_done_check);
 
-  bind(L_NaN);
+  bind(L_NaN_v);
   vfmv_s_f(tmp2, src1);
   vfredusum_vs(tmp1, src2, tmp2, vm);
 
-  bind(L_done);
+  bind(L_done_check);
   vfmv_f_s(dst, tmp1);
+  j(L_done);
+
+  bind(L_NaN_f);
+  is_double ? fmv_d(dst, src1)
+            : fmv_s(dst, src1);
+  bind(L_done);
 }
 
 bool C2_MacroAssembler::in_scratch_emit_size() {
@@ -1762,41 +1771,18 @@ void C2_MacroAssembler::compare_integral_v(VectorRegister vd, BasicType bt, int 
 }
 
 void C2_MacroAssembler::compare_fp_v(VectorRegister vd, BasicType bt, int vector_length,
-                                     VectorRegister src1, VectorRegister src2,
-                                     VectorRegister tmp1, VectorRegister tmp2,
-                                     VectorRegister vmask, int cond, VectorMask vm) {
+                                     VectorRegister src1, VectorRegister src2, int cond, VectorMask vm) {
   assert(is_floating_point_type(bt), "unsupported element type");
-  assert(vd != v0, "should be different registers");
-  assert(vm == Assembler::v0_t ? vmask != v0 : true, "vmask should not be v0");
+  assert(vm == Assembler::v0_t ? vd != v0 : true, "should be different registers");
   vsetvli_helper(bt, vector_length);
-  // Check vector elements of src1 and src2 for quiet and signaling NaN.
-  vfclass_v(tmp1, src1);
-  vfclass_v(tmp2, src2);
-  vsrl_vi(tmp1, tmp1, 8);
-  vsrl_vi(tmp2, tmp2, 8);
-  vmseq_vx(tmp1, tmp1, zr);
-  vmseq_vx(tmp2, tmp2, zr);
-  if (vm == Assembler::v0_t) {
-    vmand_mm(tmp2, tmp1, tmp2);
-    if (cond == BoolTest::ne) {
-      vmandn_mm(tmp1, vmask, tmp2);
-    }
-    vmand_mm(v0, vmask, tmp2);
-  } else {
-    vmand_mm(v0, tmp1, tmp2);
-    if (cond == BoolTest::ne) {
-      vmnot_m(tmp1, v0);
-    }
-  }
   vmclr_m(vd);
   switch (cond) {
-    case BoolTest::eq: vmfeq_vv(vd, src1, src2, Assembler::v0_t); break;
-    case BoolTest::ne: vmfne_vv(vd, src1, src2, Assembler::v0_t);
-                       vmor_mm(vd, vd, tmp1); break;
-    case BoolTest::le: vmfle_vv(vd, src1, src2, Assembler::v0_t); break;
-    case BoolTest::ge: vmfge_vv(vd, src1, src2, Assembler::v0_t); break;
-    case BoolTest::lt: vmflt_vv(vd, src1, src2, Assembler::v0_t); break;
-    case BoolTest::gt: vmfgt_vv(vd, src1, src2, Assembler::v0_t); break;
+    case BoolTest::eq: vmfeq_vv(vd, src1, src2, vm); break;
+    case BoolTest::ne: vmfne_vv(vd, src1, src2, vm); break;
+    case BoolTest::le: vmfle_vv(vd, src1, src2, vm); break;
+    case BoolTest::ge: vmfge_vv(vd, src1, src2, vm); break;
+    case BoolTest::lt: vmflt_vv(vd, src1, src2, vm); break;
+    case BoolTest::gt: vmfgt_vv(vd, src1, src2, vm); break;
     default:
       assert(false, "unsupported compare condition");
       ShouldNotReachHere();
@@ -1877,10 +1863,8 @@ void C2_MacroAssembler::integer_narrow_v(VectorRegister dst, BasicType dst_bt, i
 #define VFCVT_SAFE(VFLOATCVT)                                                      \
 void C2_MacroAssembler::VFLOATCVT##_safe(VectorRegister dst, VectorRegister src) { \
   assert_different_registers(dst, src);                                            \
-  vfclass_v(v0, src);                                                              \
   vxor_vv(dst, dst, dst);                                                          \
-  vsrl_vi(v0, v0, 8);                                                              \
-  vmseq_vx(v0, v0, zr);                                                            \
+  vmfeq_vv(v0, src, src);                                                          \
   VFLOATCVT(dst, src, Assembler::v0_t);                                            \
 }
 

@@ -189,7 +189,7 @@
                   VectorRegister src1, VectorRegister src2,
                   bool is_double, bool is_min, int vector_length);
 
- void minmax_fp_masked_v(VectorRegister dst_src1, VectorRegister src2,
+ void minmax_fp_masked_v(VectorRegister dst, VectorRegister src1, VectorRegister src2,
                          bool is_double, bool is_min, int vector_length,
                          VectorRegister tmp1, VectorRegister tmp2, VectorRegister vmask);
 
@@ -210,8 +210,7 @@
                          VectorRegister src1, VectorRegister src2, int cond, VectorMask vm = Assembler::unmasked);
 
  void compare_fp_v(VectorRegister dst, BasicType bt, int vector_length,
-                   VectorRegister src1, VectorRegister src2, VectorRegister tmp1, VectorRegister tmp2,
-                   VectorRegister vmask, int cond, VectorMask vm = Assembler::unmasked);
+                   VectorRegister src1, VectorRegister src2, int cond, VectorMask vm = Assembler::unmasked);
 
  // In Matcher::scalable_predicate_reg_slots,
  // we assume each predicate register is one-eighth of the size of
