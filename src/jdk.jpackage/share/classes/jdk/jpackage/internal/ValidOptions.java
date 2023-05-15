@@ -139,7 +139,7 @@ class ValidOptions {
             put(CLIOptions.DMG_CONTENT.getId(), USE.INSTALL);
         }
 
-        if (OperatingSystem.isLinux()) {
+        if (OperatingSystem.isLinux() | OperatingSystem.isAix()) {
             put(CLIOptions.LINUX_BUNDLE_NAME.getId(), USE.INSTALL);
             put(CLIOptions.LINUX_DEB_MAINTAINER.getId(), USE.INSTALL);
             put(CLIOptions.LINUX_CATEGORY.getId(), USE.INSTALL);

@@ -332,7 +332,8 @@ public class LinuxRpmBundler extends LinuxPackageBundler {
 
     @Override
     public boolean supported(boolean runtimeInstaller) {
-        return OperatingSystem.isLinux() && (createRpmbuildToolValidator().validate() == null);
+        return (OperatingSystem.isLinux() | OperatingSystem.isAix())
+                && (createRpmbuildToolValidator().validate() == null);
     }
 
     @Override

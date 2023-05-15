@@ -47,7 +47,7 @@ public final class ToolValidator {
         this.toolPath = toolPath;
         args = new ArrayList<>();
 
-        if (OperatingSystem.isLinux()) {
+        if (OperatingSystem.isLinux() | OperatingSystem.isAix()) {
             setCommandLine("--version");
         }
 
