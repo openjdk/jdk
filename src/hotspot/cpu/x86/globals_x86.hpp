@@ -214,7 +214,7 @@ define_pd_global(intx, InitArrayShortSize, 8*BytesPerLong);
   product(bool, UseLibmIntrinsic, true, DIAGNOSTIC,                         \
           "Use Libm Intrinsics")                                            \
                                                                             \
-  product(bool, PreserveHeapbaseReg, true,                                  \
+  product(bool, PreserveHeapbaseReg, false,                                 \
           "preserve r12 as heapbase reg")                                   \
   /* Minimum array size in bytes to use AVX512 intrinsics */                \
   /* for copy, inflate and fill which don't bail out early based on any */  \

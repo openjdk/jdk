@@ -610,6 +610,7 @@ void Assembler::emit_operand_helper(int reg_enc, int base_enc, int index_enc,
                                     RelocationHolder const& rspec,
                                     int post_addr_length) {
   bool no_relocation = (rspec.type() == relocInfo::none);
+  assert (post_addr_length != -1 || no_relocation, "sanity");
 
   if (is_valid_encoding(base_enc)) {
     if (is_valid_encoding(index_enc)) {

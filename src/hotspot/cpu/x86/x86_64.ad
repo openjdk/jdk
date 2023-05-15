@@ -637,8 +637,7 @@ void encode_RegMem(CodeBuffer &cbuf,
 {
   assert(disp_reloc == relocInfo::none, "cannot have disp");
   MacroAssembler masm(&cbuf);
-  masm.emit_operand_helper(reg, base, index, (Address::ScaleFactor)scale, disp, RelocationHolder::none,
-                           -1 /* post_addr_length is used only in reloc mode */);
+  masm.emit_regmem(reg, base, index, (Address::ScaleFactor)scale, disp, RelocationHolder::none);
 }
 
 // This could be in MacroAssembler but it's fairly C2 specific

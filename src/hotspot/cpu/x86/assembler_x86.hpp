@@ -752,14 +752,12 @@ private:
                             Address::ScaleFactor scale, int index_enc, int base_enc,
                             int disp);
 
-public:
   void emit_operand_helper(int reg_enc,
                            int base_enc, int index_enc, Address::ScaleFactor scale,
                            int disp,
                            RelocationHolder const& rspec,
                            int post_addr_length);
 
-private:
   void emit_operand(Register reg,
                     Register base, Register index, Address::ScaleFactor scale,
                     int disp,
@@ -808,6 +806,16 @@ private:
   void emit_arith_operand(int op1, Register rm, Address adr, int32_t imm32);
   void emit_arith_operand_imm32(int op1, Register rm, Address adr, int32_t imm32);
 
+ public:
+  // a wrapper of emit_operand_helper ,only used in ad file
+  void emit_regmem(int reg_enc,
+                   int base_enc, int index_enc, Address::ScaleFactor scale,
+                   int disp,
+                   RelocationHolder const& rspec) {
+    assert(rspec.type() == relocInfo::none, "sanity");
+    emit_operand_helper(reg_enc, base_enc, index_enc, scale, disp, rspec,
+                        -1); // post_addr_length is unused if rspec is none
+  };
  protected:
 #ifdef ASSERT
   void check_relocation(RelocationHolder const& rspec, int format);

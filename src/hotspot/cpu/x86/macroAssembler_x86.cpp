@@ -5328,7 +5328,7 @@ void  MacroAssembler::decode_heap_oop_not_null(Register dst, Register src) {
   // Also do not verify_oop as this is called by verify_oop.
   if (CompressedOops::shift() != 0) {
     assert(LogMinObjAlignmentInBytes == CompressedOops::shift(), "decode alg wrong");
-    if (LogMinObjAlignmentInBytes == Address::times_8) {
+    if (LogMinObjAlignmentInBytes == Address::times_8 && CompressedOops::base() != nullptr) {
       leaq(dst, Address(r12_heapbase, src, Address::times_8, 0));
     } else {
       if (dst != src) {
