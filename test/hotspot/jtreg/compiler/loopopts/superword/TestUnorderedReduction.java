@@ -48,7 +48,7 @@ public class TestUnorderedReduction {
     public void runTests() throws Exception {
         int[] data = new int[RANGE];
 
-	init(data);
+        init(data);
         for (int i = 0; i < ITER; i++) {
             int r1 = test1(data, i);
             int r2 = ref1(data, i);
@@ -65,7 +65,7 @@ public class TestUnorderedReduction {
             }
         }
     }
- 
+
     @Test
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0",
                   IRNode.ADD_VI, "= 0",
@@ -104,7 +104,7 @@ public class TestUnorderedReduction {
         }
         return sum + x;
     }
- 
+
     @Test
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0",
                   IRNode.ADD_VI, "> 0",
