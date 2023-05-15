@@ -166,7 +166,6 @@ class MyThread extends Thread {
                 synchronized (kill001a.lock) {
                     kill001a.killed++;
                 }
-                kill001a.log.complain("No exception for " + this.name);
             } else {
                 kill001a.log.display(CaughtUnexpected);
                 kill001a.log.display(t);
