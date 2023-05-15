@@ -511,8 +511,11 @@ public class Robot {
      * }</pre>
      * @param   screenRect     Rect to capture in screen coordinates
      * @return  The captured image
-     * @throws  IllegalArgumentException if {@code screenRect} width and height are not greater than zero
-     * @throws  SecurityException if {@code readDisplayPixels} permission is not granted
+     * @throws  IllegalArgumentException if {@code screenRect} width and height
+     *          are not greater than zero
+     * @throws  SecurityException if {@code readDisplayPixels} permission
+     *          is not granted, or access to the screen is denied
+     *          by the desktop environment
      * @see     SecurityManager#checkPermission
      * @see     AWTPermission
      *
