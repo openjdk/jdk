@@ -640,9 +640,9 @@ void VMError::report(outputStream* st, bool _verbose) {
     _step_did_succeed = false;                             \
     _current_step = __LINE__;                              \
     _current_step_info = s;                                \
-    record_step_start_time();                              \
-    _step_did_timeout = false;                             \
-    if ((cond)) {
+    if ((cond)) {                                          \
+      record_step_start_time();                            \
+      _step_did_timeout = false;
       // [Step logic]
 
 # define STEP(s) STEP_IF(s, true)
