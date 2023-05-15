@@ -382,7 +382,7 @@ void os::print_register_info(outputStream *st, const void *context, int& continu
   while (n < register_count) {
     // Update continuation with next index before printing location
     continuation = n + 1;
-    st->print("%-*.*s=", 8, 8, reg_abi_names[n]);
+    st->print("%-8.8s=", reg_abi_names[n]);
     print_location(st, uc->uc_mcontext.__gregs[n]);
     ++n;
   }
