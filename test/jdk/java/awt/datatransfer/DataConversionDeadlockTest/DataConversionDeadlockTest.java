@@ -184,7 +184,7 @@ class ProcessResults {
                     // is thrown. If it is finished, we fall through and
                     // the variable finished is set to true.
                     pres.exitValue = p.exitValue();
-                    finished  = true;
+                    finished = true;
                 }
                 catch (IllegalThreadStateException e) {
                     // Process is not finished yet;

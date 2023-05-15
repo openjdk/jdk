@@ -61,7 +61,7 @@ public class ToolkitListenerTest implements AWTEventListener
                     AWTEvent.HIERARCHY_BOUNDS_EVENT_MASK);
         EventQueue.invokeAndWait(() -> {
             frame = new Frame("ToolkitListenerTest");
-            frame.setSize(200,200);
+            frame.setSize(200, 200);
             frame.add(new Button());
             frame.setBounds(100, 100, 100, 100);
         });
@@ -71,22 +71,31 @@ public class ToolkitListenerTest implements AWTEventListener
                     public void run() {}
                 });
 
-            if (!componentEventReceived) {
-                throw new RuntimeException("Test Failed: ComponentEvent was not dispatched");
-            }
-            if (!containerEventReceived) {
-                throw new RuntimeException("Test Failed: ContainerEvent was not dispatched");
-            }
-            if (!hierarchyEventReceived) {
-                throw new RuntimeException("Test Failed: HierarchyEvent(HIERARCHY_CHANGED) was not dispatched");
-            }
-            if (!hierarchyBoundsEventReceived) {
-                throw new RuntimeException("Test Failed: HierarchyEvent(ANCESTOR_MOVED or ANCESTOR_RESIZED) was not dispatched");
-            }
+            EventQueue.invokeAndWait(() -> {
+                if (!componentEventReceived) {
+                    throw new RuntimeException("Test Failed: ComponentEvent " +
+                        "was not dispatched");
+                }
+                if (!containerEventReceived) {
+                    throw new RuntimeException("Test Failed: ContainerEvent " +
+                        "was not dispatched");
+                }
+                if (!hierarchyEventReceived) {
+                    throw new RuntimeException("Test Failed: " +
+                        "HierarchyEvent(HIERARCHY_CHANGED) was not dispatched");
+                }
+                if (!hierarchyBoundsEventReceived) {
+                    throw new RuntimeException("Test Failed: " +
+                        "HierarchyEvent(ANCESTOR_MOVED or ANCESTOR_RESIZED) " +
+                        "was not dispatched");
+                }
+            });
         } catch (InterruptedException ie) {
-            throw new RuntimeException("Test Failed: InterruptedException accured.");
+            throw new RuntimeException("Test Failed: InterruptedException " +
+                "accured.");
         } catch (InvocationTargetException ite) {
-            throw new RuntimeException("Test Failed: InvocationTargetException accured.");
+            throw new RuntimeException("Test Failed: " +
+                "InvocationTargetException accured.");
         } finally {
             EventQueue.invokeAndWait(() -> {
                 if (frame != null) {

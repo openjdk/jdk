@@ -59,12 +59,12 @@ public class BestTextFlavorTest {
             tmpFlavors.addElement(plainAsciiFlavor);
             plainISOFlavor=new DataFlavor("text/plain; charset=iso8859-1");
             tmpFlavors.addElement(plainISOFlavor);
-        }//try
+        }
         catch (ClassNotFoundException e) {
             // should never happen...
             System.out.println("ClassNotFound Exception is thrown when"+
                 "flavors are created");
-        }//catch
+        }
     }
 
     public static void main(String[] args) {
@@ -80,9 +80,8 @@ public class BestTextFlavorTest {
         System.out.println("The Best Text Flavor is " + bestFlavor2);
 
         //Checking whether the selected flavors in both the arrays are same.
-        if(bestFlavor2.match(bestFlavor1)) {
+        if (bestFlavor2.match(bestFlavor1)) {
             System.out.println("The test is Passed");
-            System.out.println("Pass");
         }
         else {
             System.out.println("The test is Failed");
@@ -97,7 +96,7 @@ public class BestTextFlavorTest {
 
         DataFlavor[] tempFlavor = new DataFlavor[dataflavor.length];
         int j = 0;
-        for(int i = dataflavor.length - 1  ; i >= 0; i--) {
+        for (int i = dataflavor.length - 1  ; i >= 0; i--) {
             tempFlavor[j] = dataflavor[i];
             j++;
         }
