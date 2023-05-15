@@ -842,10 +842,20 @@ void MemDetailDiffReporter::old_virtual_memory_site(const VirtualMemoryAllocatio
 
 void MemDetailDiffReporter::diff_virtual_memory_site(const VirtualMemoryAllocationSite* early,
   const VirtualMemoryAllocationSite* current) const {
-  assert(early->flag() == current->flag() || early->flag() == mtNone,
-    "Expect the same flag, but %s != %s", NMTUtil::flag_to_name(early->flag()),NMTUtil::flag_to_name(current->flag()));
+  if ((early->flag() != current->flag()) || (current->flag() == mtNone) || (early->flag() == mtNone)) {
+    tty->print("Detected an anomaly in MemDetailDiffReporter::diff_virtual_memory_site:");
+    early->call_stack()->print_on(tty);
+    current->call_stack()->print_on(tty);
+  }
+  assert(current->flag() != mtNone && early->flag() != mtNone,
+         "Expect the flag not to be mtNone, but %s or %s is.",
+         NMTUtil::flag_to_name(early->flag()), NMTUtil::flag_to_name(current->flag()));
+  assert(early->flag() == current->flag(),
+         "Expect the same flag, but %s != %s",
+         NMTUtil::flag_to_name(early->flag()), NMTUtil::flag_to_name(current->flag()));
+
   diff_virtual_memory_site(current->call_stack(), current->reserved(), current->committed(),
-    early->reserved(), early->committed(), current->flag());
+                           early->reserved(), early->committed(), current->flag());
 }
 
 void MemDetailDiffReporter::diff_virtual_memory_site(const NativeCallStack* stack, size_t current_reserved,
