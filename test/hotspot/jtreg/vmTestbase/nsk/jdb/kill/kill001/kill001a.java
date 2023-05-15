@@ -44,7 +44,7 @@ public class kill001a {
     static final int numThreads          = 5;   // number of threads. one lock per thread.
     static Object lock                   = new Object();
     static Object waitnotify             = new Object();
-    public static volatile int notKilled = 0;
+    public static volatile int killed    = 0;
     static final String message          = "kill001a's Exception";
     static int waitTime;
 
@@ -86,6 +86,7 @@ public class kill001a {
                     }
                 }
             }
+
             breakHere();  // a break to get thread ids and then to kill MyThreads.
         }
 
@@ -110,7 +111,7 @@ public class kill001a {
             }
         }
         breakHere(); // a break to check if MyThreads were killed
-        log.display("notKilled == " + notKilled);
+        log.display("killed == " + killed);
 
         for (i = 0; i < numThreads ; i++) {
             if (holder[i].isAlive()) {
@@ -133,6 +134,7 @@ class MyException extends Exception {
 class MyThread extends Thread {
     String name;
     Throwable expectedException;
+    public boolean exceptionThrown = true;
 
     public MyThread(String n, Throwable e) {
         name = n;
@@ -140,12 +142,10 @@ class MyThread extends Thread {
     }
 
     public void run() {
-        boolean killed = false;
-
         // Concatenate strings in advance to avoid lambda calculations later
         String ThreadFinished = "Thread finished: " + this.name;
         String ThreadInterrupted = "WARNING: Thread was interrupted while waiting for killing: " + this.name;
-        String CaughtExpected ="Thread " + this.name + " caught expected async exception: " + expectedException;
+        String CaughtExpected = "Thread " + this.name + " caught expected async exception: " + expectedException;
         String CaughtUnexpected = "WARNING: Thread " + this.name + " caught unexpected exception:";
 
         kill001a.log.display("Thread started: " + this.name);
@@ -153,30 +153,24 @@ class MyThread extends Thread {
         synchronized (kill001a.waitnotify) {
             kill001a.waitnotify.notify();
         }
-        // prevent thread from early finish
-        synchronized (kill001a.lock) {}
-
-        // Sleep during waitTime to give debugger a chance to kill debugee's thread.
+            
         try {
-            Thread.currentThread().sleep(kill001a.waitTime);
-        } catch (InterruptedException e) {
-            kill001a.log.display(ThreadInterrupted);
-            e.printStackTrace(kill001a.log.getOutStream());
+            synchronized (kill001a.lock) { }
+            // We need some code that does an invoke here to make sure the async exception
+            // gets thrown before we leave the try block. Printing a log message works well.
+            kill001a.log.display("exited synchronized");
         } catch (Throwable t) {
             if (t == expectedException) {
                 kill001a.log.display(CaughtExpected);
-                killed = true;
+                // Need to make sure the increment is atomic
+                synchronized (kill001a.lock) {
+                    kill001a.killed++;
+                }
+                kill001a.log.complain("No exception for " + this.name);
             } else {
                 kill001a.log.display(CaughtUnexpected);
                 kill001a.log.display(t);
                 t.printStackTrace(kill001a.log.getOutStream());
-            }
-        }
-
-        if (!killed) {
-            // Need to make sure the increment is atomic
-            synchronized (kill001a.lock) {
-                kill001a.notKilled++;
             }
         }
         kill001a.log.display(ThreadFinished);

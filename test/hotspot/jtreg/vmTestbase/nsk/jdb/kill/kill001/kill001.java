@@ -88,17 +88,13 @@ public class kill001 extends JdbTest {
     static final String LAST_BREAK      = DEBUGGEE_CLASS + ".breakHere";
     static final String MYTHREAD        = "MyThread";
     static final String DEBUGGEE_THREAD = PACKAGE_NAME + "." + MYTHREAD;
-    static final String DEBUGGEE_RESULT = DEBUGGEE_CLASS + ".notKilled";
+    static final String DEBUGGEE_RESULT = DEBUGGEE_CLASS + ".killed";
     static final String DEBUGGEE_EXCEPTIONS = DEBUGGEE_CLASS + ".exceptions";
 
     static int numThreads = nsk.jdb.kill.kill001.kill001a.numThreads;
 
     protected void runCases() {
         String[] reply;
-        Paragrep grep;
-        int count;
-        Vector v;
-        String found;
         String[] threads;
 
         jdb.setBreakpointInMethod(LAST_BREAK);
@@ -147,11 +143,11 @@ public class kill001 extends JdbTest {
 
         reply = jdb.receiveReplyForWithMessageWait(JdbCommand.eval + DEBUGGEE_RESULT,
                                                    DEBUGGEE_RESULT + " =");
-        grep = new Paragrep(reply);
-        found = grep.findFirst(DEBUGGEE_RESULT + " =" );
-        if (found.length() > 0) {
-            if (found.indexOf(DEBUGGEE_RESULT + " = 0") < 0) {
-                log.complain("Not all " + MYTHREAD + "s were killed. " + found + " remaining");
+        Paragrep grep = new Paragrep(reply);
+        String killed = grep.findFirst(DEBUGGEE_RESULT + " =" );
+        if (killed.length() > 0) {
+            if (killed.indexOf(DEBUGGEE_RESULT + " = " + numThreads) < 0) {
+                log.complain("Only " + killed + "out of " + numThreads + MYTHREAD + "s were killed.");
                 success = false;
             }
         } else {
