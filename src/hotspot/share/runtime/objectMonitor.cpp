@@ -276,7 +276,6 @@ ObjectMonitor::ObjectMonitor(oop object) :
 { }
 
 ObjectMonitor::~ObjectMonitor() {
-  _object.release(_oop_storage);
 }
 
 oop ObjectMonitor::object() const {
@@ -594,6 +593,9 @@ bool ObjectMonitor::deflate_monitor() {
     // Install the old mark word if nobody else has already done it.
     install_displaced_markword_in_object(obj);
   }
+
+  // Release object's oop storage since the ObjectMonitor has been deflated:
+  release_object();
 
   // We leave owner == DEFLATER_MARKER and contentions < 0
   // to force any racing threads to retry.
