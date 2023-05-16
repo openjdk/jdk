@@ -161,13 +161,13 @@ public class IntraJVMGetDropSuccessTest implements AWTEventListener {
         frame.setTitle("IntraJVMGetDropSuccessTest");
         frame.setLocation(100, 100);
         frame.setLayout(new GridLayout(1, 3));
+        frame.getToolkit().addAWTEventListener(this, AWTEvent.MOUSE_EVENT_MASK);
         frame.add(canvas1);
         frame.add(canvas2);
         frame.add(canvas3);
         frame.pack();
 
         frame.setVisible(true);
-        frame.getToolkit().addAWTEventListener(this, AWTEvent.MOUSE_EVENT_MASK);
     }
 
     public static int sign(int n) {
@@ -177,7 +177,6 @@ public class IntraJVMGetDropSuccessTest implements AWTEventListener {
     public void start() {
         try {
             final Robot robot = new Robot();
-            robot.waitForIdle();
 
             Thread.sleep(FRAME_ACTIVATION_TIMEOUT);
 

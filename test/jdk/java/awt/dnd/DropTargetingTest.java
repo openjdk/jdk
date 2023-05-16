@@ -135,6 +135,7 @@ public class DropTargetingTest implements AWTEventListener {
 
         sourceFrame.setTitle("DropTargetingTest Source frame");
         sourceFrame.setBounds(100, 100, 100, 100);
+        sourceFrame.getToolkit().addAWTEventListener(this, AWTEvent.MOUSE_EVENT_MASK);
         dragSource.createDefaultDragGestureRecognizer(sourceFrame, DnDConstants.ACTION_COPY,
                                                       dragGestureListener);
         targetFrame1.setTitle("Target frame 1");
@@ -150,8 +151,6 @@ public class DropTargetingTest implements AWTEventListener {
         sourceFrame.setVisible(true);
         targetFrame1.setVisible(true);
         targetFrame2.setVisible(true);
-
-        sourceFrame.getToolkit().addAWTEventListener(this, AWTEvent.MOUSE_EVENT_MASK);
     }
 
     public static int sign(int n) {
@@ -204,7 +203,7 @@ public class DropTargetingTest implements AWTEventListener {
     }
 
     boolean test(Robot robot, JFrame targetFrame) throws InterruptedException {
-        robot.waitForIdle();
+//        robot.waitForIdle();
 
         final Point srcPoint = sourceFrame.getLocationOnScreen();
         Dimension d = sourceFrame.getSize();
