@@ -175,16 +175,6 @@ void assert_locked_or_safepoint(const Mutex* lock) {
   fatal("must own lock %s", lock->name());
 }
 
-// a weaker assertion than the above
-void assert_locked_or_safepoint_weak(const Mutex* lock) {
-  if (DebuggingContext::is_enabled() || VMError::is_error_reported()) return;
-  assert(lock != nullptr, "Need non-null lock");
-  if (lock->is_locked()) return;
-  if (SafepointSynchronize::is_at_safepoint()) return;
-  if (!Universe::is_fully_initialized()) return;
-  fatal("must own lock %s", lock->name());
-}
-
 // a stronger assertion than the above
 void assert_lock_strong(const Mutex* lock) {
   if (DebuggingContext::is_enabled() || VMError::is_error_reported()) return;

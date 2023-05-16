@@ -24,16 +24,21 @@
 /*
  * @test
  * @enablePreview
- * @requires os.arch=="amd64" | os.arch=="x86_64" | os.arch=="aarch64" | os.arch=="riscv64"
+ * @requires jdk.foreign.linker != "UNSUPPORTED"
+ * @modules java.base/jdk.internal.foreign
  * @run testng TestLinker
  */
 
+import jdk.internal.foreign.CABI;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.Linker;
 import java.lang.invoke.MethodHandle;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import static java.lang.foreign.MemoryLayout.*;
 import static java.lang.foreign.ValueLayout.JAVA_CHAR;
@@ -42,6 +47,8 @@ import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertNotSame;
 
 public class TestLinker extends NativeTestHelper {
+
+    static final boolean IS_FALLBACK_LINKER = CABI.current() == CABI.FALLBACK;
 
     record LinkRequest(FunctionDescriptor descriptor, Linker.Option... options) {}
 
@@ -75,7 +82,7 @@ public class TestLinker extends NativeTestHelper {
 
     @DataProvider
     public static Object[][] namedDescriptors() {
-        return new Object[][]{
+        List<Object[]> cases = new ArrayList<>(Arrays.asList(new Object[][]{
             { FunctionDescriptor.ofVoid(C_INT),
                     FunctionDescriptor.ofVoid(C_INT.withName("x")) },
             { FunctionDescriptor.ofVoid(structLayout(C_INT)),
@@ -90,17 +97,22 @@ public class TestLinker extends NativeTestHelper {
                     FunctionDescriptor.ofVoid(structLayout(sequenceLayout(1, C_INT).withName("x"))) },
             { FunctionDescriptor.ofVoid(structLayout(sequenceLayout(1, C_INT))),
                     FunctionDescriptor.ofVoid(structLayout(sequenceLayout(1, C_INT.withName("x")))) },
-            { FunctionDescriptor.ofVoid(unionLayout(C_INT)),
-                    FunctionDescriptor.ofVoid(unionLayout(C_INT).withName("x")) },
-            { FunctionDescriptor.ofVoid(unionLayout(C_INT)),
-                    FunctionDescriptor.ofVoid(unionLayout(C_INT.withName("x"))) },
             { FunctionDescriptor.ofVoid(C_POINTER),
                     FunctionDescriptor.ofVoid(C_POINTER.withName("x")) },
             { FunctionDescriptor.ofVoid(C_POINTER.withTargetLayout(C_INT)),
                     FunctionDescriptor.ofVoid(C_POINTER.withTargetLayout(C_INT.withName("x"))) },
             { FunctionDescriptor.ofVoid(C_POINTER.withTargetLayout(C_INT)),
                     FunctionDescriptor.ofVoid(C_POINTER.withName("x").withTargetLayout(C_INT.withName("x"))) },
-        };
+        }));
+
+        if (!IS_FALLBACK_LINKER) {
+            cases.add(new Object[]{ FunctionDescriptor.ofVoid(unionLayout(C_INT)),
+                    FunctionDescriptor.ofVoid(unionLayout(C_INT).withName("x")) });
+            cases.add(new Object[]{ FunctionDescriptor.ofVoid(unionLayout(C_INT)),
+                    FunctionDescriptor.ofVoid(unionLayout(C_INT.withName("x"))) });
+        }
+
+        return cases.toArray(Object[][]::new);
     }
 
     @DataProvider

@@ -483,10 +483,11 @@ void Thread::print_on_error(outputStream* st, char* buf, int buflen) const {
 
   OSThread* os_thr = osthread();
   if (os_thr != nullptr) {
+    st->fill_to(67);
     if (os_thr->get_state() != ZOMBIE) {
-      st->print(" [stack: " PTR_FORMAT "," PTR_FORMAT "]",
-                p2i(stack_end()), p2i(stack_base()));
-      st->print(" [id=%d]", osthread()->thread_id());
+      st->print(" [id=%d, stack(" PTR_FORMAT "," PTR_FORMAT ") (" PROPERFMT ")]",
+                osthread()->thread_id(), p2i(stack_end()), p2i(stack_base()),
+                PROPERFMTARGS(stack_size()));
     } else {
       st->print(" terminated");
     }

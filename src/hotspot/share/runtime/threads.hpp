@@ -128,7 +128,8 @@ public:
   static void print_on_error(outputStream* st, Thread* current, char* buf, int buflen);
   static void print_on_error(Thread* this_thread, outputStream* st, Thread* current, char* buf,
                              int buflen, bool* found_current);
-  static void print_threads_compiling(outputStream* st, char* buf, int buflen, bool short_form = false);
+  // Print threads busy compiling, and returns the number of printed threads.
+  static unsigned print_threads_compiling(outputStream* st, char* buf, int buflen, bool short_form = false);
 
   // Get Java threads that are waiting to enter a monitor.
   static GrowableArray<JavaThread*>* get_pending_threads(ThreadsList * t_list,

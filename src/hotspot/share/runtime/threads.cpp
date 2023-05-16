@@ -1298,14 +1298,19 @@ class PrintOnErrorClosure : public ThreadClosure {
   char* _buf;
   int _buflen;
   bool* _found_current;
+  unsigned _num_printed;
  public:
   PrintOnErrorClosure(outputStream* st, Thread* current, char* buf,
                       int buflen, bool* found_current) :
-   _st(st), _current(current), _buf(buf), _buflen(buflen), _found_current(found_current) {}
+   _st(st), _current(current), _buf(buf), _buflen(buflen), _found_current(found_current),
+   _num_printed(0) {}
 
   virtual void do_thread(Thread* thread) {
+    _num_printed++;
     Threads::print_on_error(thread, _st, _current, _buf, _buflen, _found_current);
   }
+
+  unsigned num_printed() const { return _num_printed; }
 };
 
 // Threads::print_on_error() is called by fatal error handler. It's possible
@@ -1319,12 +1324,18 @@ void Threads::print_on_error(outputStream* st, Thread* current, char* buf,
 
   bool found_current = false;
   st->print_cr("Java Threads: ( => current thread )");
+  unsigned num_java = 0;
   ALL_JAVA_THREADS(thread) {
     print_on_error(thread, st, current, buf, buflen, &found_current);
+    num_java++;
   }
+  st->print_cr("Total: %u", num_java);
   st->cr();
 
   st->print_cr("Other Threads:");
+  unsigned num_other = ((VMThread::vm_thread() != nullptr) ? 1 : 0) +
+      ((WatcherThread::watcher_thread() != nullptr) ? 1 : 0) +
+      ((AsyncLogWriter::instance() != nullptr)  ? 1 : 0);
   print_on_error(VMThread::vm_thread(), st, current, buf, buflen, &found_current);
   print_on_error(WatcherThread::watcher_thread(), st, current, buf, buflen, &found_current);
   print_on_error(AsyncLogWriter::instance(), st, current, buf, buflen, &found_current);
@@ -1332,21 +1343,26 @@ void Threads::print_on_error(outputStream* st, Thread* current, char* buf,
   if (Universe::heap() != nullptr) {
     PrintOnErrorClosure print_closure(st, current, buf, buflen, &found_current);
     Universe::heap()->gc_threads_do(&print_closure);
+    num_other += print_closure.num_printed();
   }
 
   if (!found_current) {
     st->cr();
     st->print("=>" PTR_FORMAT " (exited) ", p2i(current));
     current->print_on_error(st, buf, buflen);
+    num_other++;
     st->cr();
   }
+  st->print_cr("Total: %u", num_other);
   st->cr();
 
   st->print_cr("Threads with active compile tasks:");
-  print_threads_compiling(st, buf, buflen);
+  unsigned num = print_threads_compiling(st, buf, buflen);
+  st->print_cr("Total: %u", num);
 }
 
-void Threads::print_threads_compiling(outputStream* st, char* buf, int buflen, bool short_form) {
+unsigned Threads::print_threads_compiling(outputStream* st, char* buf, int buflen, bool short_form) {
+  unsigned num = 0;
   ALL_JAVA_THREADS(thread) {
     if (thread->is_Compiler_thread()) {
       CompilerThread* ct = (CompilerThread*) thread;
@@ -1360,9 +1376,11 @@ void Threads::print_threads_compiling(outputStream* st, char* buf, int buflen, b
         thread->print_name_on_error(st, buf, buflen);
         st->print("  ");
         task->print(st, nullptr, short_form, true);
+        num++;
       }
     }
   }
+  return num;
 }
 
 void Threads::verify() {
