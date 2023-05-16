@@ -1365,14 +1365,11 @@ final class AESCrypt extends SymmetricCipher implements AESConstants {
         int ROUND_KEY_COUNT = (ROUNDS + 1) * 4;
 
         int BC = 4;
-        int[][] Ke = new int[ROUNDS + 1][]; // encryption round keys
+        int[] Ke = new int[(ROUNDS + 1)*BC]; // encryption round keys
         int[][] Kd = new int[ROUNDS + 1][]; // decryption round keys
 
-        // It is significantly faster to allocate individual arrays,
-        // instead of doing the multi-array allocation. See JDK-8308105.
         for (int c = 0; c < ROUNDS + 1; c++) {
-            Ke[c] = new int[4];
-            Kd[c] = new int[4];
+            Kd[c] = new int[BC];
         }
 
         int KC = k.length/4; // keylen in 32-bit elements
@@ -1391,7 +1388,7 @@ final class AESCrypt extends SymmetricCipher implements AESConstants {
         // copy values into round key arrays
         int t = 0;
         for (j = 0; (j < KC) && (t < ROUND_KEY_COUNT); j++, t++) {
-            Ke[t / 4][t % 4] = tk[j];
+            Ke[t] = tk[j];
             Kd[ROUNDS - (t / 4)][t % 4] = tk[j];
         }
         int tt, rconpointer = 0;
@@ -1416,7 +1413,7 @@ final class AESCrypt extends SymmetricCipher implements AESConstants {
             }
             // copy values into round key arrays
             for (j = 0; (j < KC) && (t < ROUND_KEY_COUNT); j++, t++) {
-                Ke[t / 4][t % 4] = tk[j];
+                Ke[t] = tk[j];
                 Kd[ROUNDS - (t / 4)][t % 4] = tk[j];
             }
         }
@@ -1433,12 +1430,8 @@ final class AESCrypt extends SymmetricCipher implements AESConstants {
 
         // assemble the encryption (Ke) and decryption (Kd) round keys
         // and expand them into arrays of ints.
-        int[] expandedKe = expandToSubKey(Ke, false); // decrypting==false
         int[] expandedKd = expandToSubKey(Kd, true);  // decrypting==true
         Arrays.fill(tk, 0);
-        for (int[] ia: Ke) {
-            Arrays.fill(ia, 0);
-        }
         for (int[] ia: Kd) {
             Arrays.fill(ia, 0);
         }
@@ -1454,7 +1447,7 @@ final class AESCrypt extends SymmetricCipher implements AESConstants {
         } else {
             sessionK = new int[2][];
         }
-        sessionK[0] = expandedKe;
+        sessionK[0] = Ke;
         sessionK[1] = expandedKd;
     }
 
