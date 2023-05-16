@@ -470,7 +470,8 @@ void os::print_tos_pc(outputStream *st, const void *context) {
 void os::print_register_info(outputStream *st, const void *context, int& continuation) {
   const int register_count = AMD64_ONLY(16) NOT_AMD64(8);
   int n = continuation;
-  if (context == nullptr || n < 0 || n >= register_count) {
+  assert(n >= 0 && n <= register_count, "Invalid continuation value");
+  if (context == nullptr || n == register_count) {
     return;
   }
 
