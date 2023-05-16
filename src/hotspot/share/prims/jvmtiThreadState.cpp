@@ -556,7 +556,6 @@ JvmtiVTMSTransitionDisabler::VTMS_vthread_end(jobject vthread) {
   }
   VTMS_unmount_begin(vthread, /* last_unmount */ true);
   if (thread->jvmti_thread_state() != nullptr) {
-    assert(thread->jvmti_thread_state()->is_virtual(), "wrong JvmtiThreadState");
     JvmtiExport::cleanup_thread(thread);
     assert(thread->jvmti_thread_state() == nullptr, "should be null");
     assert(java_lang_Thread::jvmti_thread_state(JNIHandles::resolve(vthread)) == nullptr, "should be null");
