@@ -25,7 +25,6 @@
  * @test
  * @summary Tests handling of an exception thrown by HotSpotJVMCIRuntime.compileMethod.
  * @requires vm.jvmci
- * @requires vm.debug
  * @library /test/lib /
  * @modules jdk.internal.vm.ci/jdk.vm.ci.hotspot
  *          jdk.internal.vm.ci/jdk.vm.ci.code
@@ -72,8 +71,9 @@ public class TestUncaughtErrorInCompileMethod extends JVMCIServiceLocator {
             int total = 0;
             long start = System.currentTimeMillis();
 
-            // Use a 5 sec timeout just in case the compiler creation fails
-            while (System.currentTimeMillis() - start < 5000) {
+            // Use a 10 sec timeout to prevent endless loop if
+            // JVMCI compiler creation fails
+            while (System.currentTimeMillis() - start < 10_000) {
                 total += getTime();
                 if (watch.exists()) {
                     watch.delete();
@@ -95,7 +95,7 @@ public class TestUncaughtErrorInCompileMethod extends JVMCIServiceLocator {
             "-XX:-TieredCompilation",
             "-XX:+PrintCompilation",
             "--add-exports=jdk.internal.vm.ci/jdk.vm.ci.services=ALL-UNNAMED",
-            "-XX:" + (fatalError ? "+" : "-") + "JVMCICompileMethodExceptionIsFatal",
+            "-Dtest.jvmci.compileMethodExceptionIsFatal=" + (fatalError ? "true" : "false"),
             "-XX:+PrintWarnings",
             "-Xbootclasspath/a:.",
             TestUncaughtErrorInCompileMethod.class.getName(), "true");

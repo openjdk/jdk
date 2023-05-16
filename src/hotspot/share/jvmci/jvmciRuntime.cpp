@@ -46,6 +46,7 @@
 #include "oops/typeArrayOop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
@@ -2043,11 +2044,13 @@ void JVMCIRuntime::compile_method(JVMCIEnv* JVMCIENV, JVMCICompiler* compiler, c
 
   JVMCIObject result_object = JVMCIENV->call_HotSpotJVMCIRuntime_compileMethod(receiver, jvmci_method, entry_bci,
                                                                      (jlong) compile_state, compile_state->task()->compile_id());
-#ifdef ASSERT
-  if (JVMCIENV->has_pending_exception() && JVMCICompileMethodExceptionIsFatal) {
-    fatal_exception(JVMCIENV, "testing JVMCI fatal exception handling");
+  if (JVMCIENV->has_pending_exception()) {
+    const char* val = Arguments::PropertyList_get_value(Arguments::system_properties(), "test.jvmci.compileMethodExceptionIsFatal");
+    if (val != nullptr && strcmp(val, "true") == 0) {
+      fatal_exception(JVMCIENV, "testing JVMCI fatal exception handling");
+    }
   }
-#endif
+
   if (after_compiler_upcall(JVMCIENV, compiler, method, "call_HotSpotJVMCIRuntime_compileMethod")) {
     return;
   }
