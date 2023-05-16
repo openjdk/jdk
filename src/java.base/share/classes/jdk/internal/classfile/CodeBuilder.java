@@ -52,6 +52,7 @@ import jdk.internal.classfile.impl.CatchBuilderImpl;
 import jdk.internal.classfile.impl.ChainedCodeBuilder;
 import jdk.internal.classfile.impl.LabelImpl;
 import jdk.internal.classfile.impl.NonterminalCodeBuilder;
+import jdk.internal.classfile.impl.SwitchBuilderImpl;
 import jdk.internal.classfile.impl.TerminalCodeBuilder;
 import jdk.internal.classfile.instruction.ArrayLoadInstruction;
 import jdk.internal.classfile.instruction.ArrayStoreInstruction;
@@ -186,6 +187,10 @@ public sealed interface CodeBuilder
          * targeting the "break" label is appended to the built block.
          */
         Label breakLabel();
+
+        default CodeBuilder break_() {
+            return goto_(breakLabel());
+        }
     }
 
     /**
@@ -362,6 +367,44 @@ public sealed interface CodeBuilder
          * @see #catchingMulti
          */
         void catchingAll(Consumer<BlockCodeBuilder> catchAllHandler);
+    }
+
+    /**
+     * A builder to add switch cases.
+     *
+     * @see #switch
+     */
+    sealed interface SwitchBuilder permits SwitchBuilderImpl {
+        /**
+         * Adds a switch block that handles specific case value.
+         *
+         * @param caseValue case value handled by this block.
+         * @param caseHandler handler that receives a {@linkplain CodeBuilder} to
+         *                     generate the body of the switch case block.
+         * @return this builder
+         * @throws java.lang.IllegalArgumentException if an existing case block handles the same value.
+         */
+        SwitchBuilder switchCase(int caseValue, Consumer<BlockCodeBuilder> caseHandler);
+
+        /**
+         * Adds a switch block that handles specific case values.
+         *
+         * @param caseValues case values handled by this block.
+         * @param caseHandler handler that receives a {@linkplain CodeBuilder} to
+         *                     generate the body of the switch case block.
+         * @return this builder
+         * @throws java.lang.IllegalArgumentException if an existing case block handles the same value.
+         */
+        SwitchBuilder switchCase(List<Integer> caseValues, Consumer<BlockCodeBuilder> caseHandler);
+
+        /**
+         * Adds a switch block that handles default case.
+         *
+         * @param defaultHandler handler that receives a {@linkplain CodeBuilder} to
+         *                       generate the body of the default switch case
+         * @throws java.lang.IllegalArgumentException if an existing block handles default switch case.
+         */
+        void defaultCase(Consumer<BlockCodeBuilder> defaultHandler);
     }
 
     /**
@@ -1192,6 +1235,14 @@ public sealed interface CodeBuilder
         return lookupSwitchInstruction(defaultTarget, cases);
     }
 
+    default CodeBuilder lookupswitch(Consumer<SwitchBuilder> switchHandler) {
+        return block(b -> {
+            var switchBuilder = new SwitchBuilderImpl(b, true);
+            switchHandler.accept(switchBuilder);
+            switchBuilder.finish();
+        });
+    }
+
     default CodeBuilder l2d() {
         return convertInstruction(TypeKind.LongType, TypeKind.DoubleType);
     }
@@ -1376,6 +1427,14 @@ public sealed interface CodeBuilder
             if (i > high) high = i;
         }
         return tableSwitchInstruction(low, high, defaultTarget, cases);
+    }
+
+    default CodeBuilder tableswitch(Consumer<SwitchBuilder> switchHandler) {
+        return block(b -> {
+            var switchBuilder = new SwitchBuilderImpl(b, true);
+            switchHandler.accept(switchBuilder);
+            switchBuilder.finish();
+        });
     }
 
     // Structured conveniences:
