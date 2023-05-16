@@ -245,6 +245,10 @@ static bool is_close_to_brk(address a) {
   return false;
 }
 
+julong os::free_memory() {
+  return Aix::available_memory();
+}
+
 julong os::available_memory() {
   return Aix::available_memory();
 }
@@ -743,7 +747,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
   assert(thread->osthread() == nullptr, "caller responsible");
 
   // Allocate the OSThread object.
-  OSThread* osthread = new OSThread();
+  OSThread* osthread = new (std::nothrow) OSThread();
   if (osthread == nullptr) {
     return false;
   }
@@ -857,7 +861,7 @@ bool os::create_attached_thread(JavaThread* thread) {
 #endif
 
   // Allocate the OSThread object
-  OSThread* osthread = new OSThread();
+  OSThread* osthread = new (std::nothrow) OSThread();
 
   if (osthread == nullptr) {
     return false;

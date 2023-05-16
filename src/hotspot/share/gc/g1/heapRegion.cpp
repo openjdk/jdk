@@ -28,6 +28,7 @@
 #include "gc/g1/g1BlockOffsetTable.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectionSet.hpp"
+#include "gc/g1/g1CollectionSetCandidates.inline.hpp"
 #include "gc/g1/g1HeapRegionTraceType.hpp"
 #include "gc/g1/g1NUMA.hpp"
 #include "gc/g1/g1OopClosures.inline.hpp"
@@ -127,8 +128,6 @@ void HeapRegion::hr_clear(bool clear_space) {
 
   init_top_at_mark_start();
   if (clear_space) clear(SpaceDecorator::Mangle);
-
-  _gc_efficiency = -1.0;
 }
 
 void HeapRegion::clear_cardtable() {
@@ -136,7 +135,7 @@ void HeapRegion::clear_cardtable() {
   ct->clear_MemRegion(MemRegion(bottom(), end()));
 }
 
-void HeapRegion::calc_gc_efficiency() {
+double HeapRegion::calc_gc_efficiency() {
   // GC efficiency is the ratio of how much space would be
   // reclaimed over how long we predict it would take to reclaim it.
   G1Policy* policy = G1CollectedHeap::heap()->policy();
@@ -145,7 +144,7 @@ void HeapRegion::calc_gc_efficiency() {
   // a mixed gc because the region will only be evacuated during a
   // mixed gc.
   double region_elapsed_time_ms = policy->predict_region_total_time_ms(this, false /* for_young_only_phase */);
-  _gc_efficiency = (double) reclaimable_bytes() / region_elapsed_time_ms;
+  return (double)reclaimable_bytes() / region_elapsed_time_ms;
 }
 
 void HeapRegion::set_free() {
@@ -233,7 +232,8 @@ HeapRegion::HeapRegion(uint hrm_index,
   _parsable_bottom(nullptr),
   _garbage_bytes(0),
   _young_index_in_cset(-1),
-  _surv_rate_group(nullptr), _age_index(G1SurvRateGroup::InvalidAgeIndex), _gc_efficiency(-1.0),
+  _surv_rate_group(nullptr),
+  _age_index(G1SurvRateGroup::InvalidAgeIndex),
   _node_index(G1NUMA::UnknownNodeIndex)
 {
   assert(Universe::on_page_boundary(mr.start()) && Universe::on_page_boundary(mr.end()),
@@ -263,7 +263,7 @@ void HeapRegion::report_region_type_change(G1HeapRegionTraceType::Type to) {
                                             used());
 }
 
-void HeapRegion::note_evacuation_failure(bool during_concurrent_start) {
+ void HeapRegion::note_evacuation_failure(bool during_concurrent_start) {
   // PB must be bottom - we only evacuate old gen regions after scrubbing, and
   // young gen regions never have their PB set to anything other than bottom.
   assert(parsable_bottom_acquire() == bottom(), "must be");
@@ -429,6 +429,9 @@ void HeapRegion::print_on(outputStream* st) const {
   st->print("|%2s", get_short_type_str());
   if (in_collection_set()) {
     st->print("|CS");
+  } else if (is_collection_set_candidate()) {
+    G1CollectionSetCandidates* candidates = G1CollectedHeap::heap()->collection_set()->candidates();
+    st->print("|%s", candidates->get_short_type_str(this));
   } else {
     st->print("|  ");
   }
