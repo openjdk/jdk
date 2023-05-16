@@ -104,7 +104,7 @@ public class StopThreadTest {
             } else {
                 testTaskThread = Thread.ofPlatform().name("TestTaskThread").start(testTask);
             }
-            testTask.ensureAtPointA();
+            TestTask.ensureAtPointA();
 
             if (is_virtual) { // this check is for virtual target thread only
                 log("\nMain #A.1: unsuspended");
@@ -153,7 +153,7 @@ public class StopThreadTest {
         {
             // StopThread is called from the test task (own thread) and expected to succeed.
             // No suspension of the test task thread is required or can be done in this case.
-            testTask.ensureFinished();
+            TestTask.ensureFinished();
         }
 
         try {
