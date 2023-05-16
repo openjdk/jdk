@@ -156,7 +156,8 @@ public final class ValueLayouts {
                     || byteSize == ADDRESS_SIZE_BYTES;
             assert !carrier.isPrimitive() ||
                     // Primitive class byteSize must always correspond
-                    byteSize == (carrier == boolean.class ? 8 : Wrapper.forPrimitiveType(carrier).bitWidth());
+                    byteSize == (carrier == boolean.class ? 1 :
+                            Utils.bitsToBytes(Wrapper.forPrimitiveType(carrier).bitWidth()));
         }
 
         static boolean isValidCarrier(Class<?> carrier) {
