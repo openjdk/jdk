@@ -584,6 +584,10 @@ public:
     // '-XX:VerifyIterativeGVN=10'
     return ((VerifyIterativeGVN % 100) / 10) == 1;
   }
+  static bool is_verify_CFG() {
+    // '-XX:VerifyIterativeGVN=100'
+    return ((VerifyIterativeGVN % 1000) / 100) == 1;
+  }
 protected:
   // Sub-quadratic implementation of '-XX:VerifyIterativeGVN=1' (Use-Def verification).
   julong _verify_counter;

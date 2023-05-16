@@ -313,7 +313,7 @@ JVMFlag::Error TypeProfileLevelConstraintFunc(uint value, bool verbose) {
 
 JVMFlag::Error VerifyIterativeGVNConstraintFunc(uint value, bool verbose) {
   uint original_value = value;
-  for (int i = 0; i < 2; i++) {
+  for (int i = 0; i < 3; i++) {
     if (value % 10 > 1) {
       JVMFlag::printError(verbose,
                           "Invalid value (" UINT32_FORMAT ") "

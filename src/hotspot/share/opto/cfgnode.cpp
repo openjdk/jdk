@@ -2708,6 +2708,45 @@ Node *PCTableNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return remove_dead_region(phase, can_reshape) ? this : nullptr;
 }
 
+int PCTableNode::required_outcnt() const {
+  if (outcnt() != _size) {
+    // Check for a few special cases.  Rethrow Nodes never take the
+    // 'fall-thru' path, so expected kids is 1 less.
+    if (in(0) != nullptr && in(0)->in(0) != nullptr) {
+      if (in(0)->in(0)->is_Call()) {
+        CallNode* call = in(0)->in(0)->as_Call();
+        if (call->entry_point() == OptoRuntime::rethrow_stub()) {
+          return _size - 1; // Rethrow always has 1 less kid
+        } else if (call->req() > TypeFunc::Parms &&
+                   call->is_CallDynamicJava()) {
+          // Check for null receiver. In such case, the optimizer has
+          // detected that the virtual call will always result in a null
+          // pointer exception. The fall-through projection of this CatchNode
+          // will not be populated.
+          Node* arg0 = call->in(TypeFunc::Parms);
+          if (arg0->is_Type() &&
+              arg0->as_Type()->type()->higher_equal(TypePtr::NULL_PTR)) {
+            return _size - 1;
+          }
+        } else if (call->entry_point() == OptoRuntime::new_array_Java() ||
+                   call->entry_point() == OptoRuntime::new_array_nozero_Java()) {
+          // Check for illegal array length. In such case, the optimizer has
+          // detected that the allocation attempt will always result in an
+          // exception. There is no fall-through projection of this CatchNode.
+          assert(call->is_CallStaticJava(), "static call expected");
+          assert(call->req() == call->jvms()->endoff() + 1, "missing extra input");
+          uint valid_length_test_input = call->req() - 1;
+          Node* valid_length_test = call->in(valid_length_test_input);
+          if (valid_length_test->find_int_con(1) == 0) {
+            return _size - 1;
+          }
+        }
+      }
+    }
+  }
+  return _size;
+}
+
 //=============================================================================
 uint JumpProjNode::hash() const {
   return Node::hash() + _dest_bci;

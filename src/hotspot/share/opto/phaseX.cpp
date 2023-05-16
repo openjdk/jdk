@@ -1252,6 +1252,38 @@ void PhaseIterGVN::verify_optimize() {
     // in the verification code above if that is not possible for some reason (like Load nodes).
     assert(!failure, "Missed optimization opportunity in PhaseIterGVN");
   }
+  if (is_verify_CFG()) {
+    ResourceMark rm;
+    Unique_Node_List worklist;
+    bool failure = false;
+    // BFS all CFG nodes, starting at root
+    worklist.push(C->root());
+    for (uint j = 0; j < worklist.size(); ++j) {
+      Node* n = worklist.at(j);
+      MultiBranchNode* mb = n->isa_MultiBranch();
+      if (mb != nullptr && mb->required_outcnt() != (int)mb->outcnt()) {
+        tty->print_cr("MultiBranch has bad outcnt: %d (expected: %d)", mb->outcnt(), mb->required_outcnt());
+        mb->dump(-1);
+        failure = true;
+      }
+      // traverse all inputs and outputs
+      for (uint i = 0; i < n->req(); i++) {
+        Node* def = n->in(i);
+        if (def != nullptr && def->is_CFG()) {
+          worklist.push(def);
+        }
+      }
+      for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
+        Node* use = n->fast_out(i);
+        if (use->is_CFG()) {
+          worklist.push(use);
+        }
+      }
+    }
+    // If we hit this assert, it may be that data became top and control
+    // did not.
+    assert(!failure, "CFG is not consistent after PhaseIterGVN");
+  }
 }
 
 // Check that type(n) == n->Value(), return true if we have a failure.
