@@ -29,7 +29,7 @@ import java.net.URI;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.util.Iterator;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 import jdk.internal.classfile.ClassModel;
 import jdk.internal.classfile.Classfile;
@@ -51,7 +51,7 @@ public class RepeatedModelTraversal {
 
     @Setup(Level.Trial)
     public void setup() throws IOException {
-        models = new LinkedList<>();
+        models = new ArrayList<>();
         Files.walk(FileSystems.getFileSystem(URI.create("jrt:/")).getPath("modules/java.base/java/util")).forEach(p -> {
             if (Files.isRegularFile(p) && p.toString().endsWith(".class")) try {
                 var clm = Classfile.parse(p);

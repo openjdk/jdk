@@ -32,7 +32,7 @@ import java.nio.ByteBuffer;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.util.Iterator;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 import jdk.internal.classfile.Classfile;
 import jdk.internal.classfile.ClassReader;
@@ -83,7 +83,7 @@ public class GenerateStackMaps {
 
     @Setup(Level.Trial)
     public void setup() throws IOException {
-        data = new LinkedList<>();
+        data = new ArrayList<>();
         Files.walk(FileSystems.getFileSystem(URI.create("jrt:/")).getPath("modules/java.base/java")).forEach(p ->  {
             if (Files.isRegularFile(p) && p.toString().endsWith(".class")) try {
                 var clm = Classfile.parse(p);
