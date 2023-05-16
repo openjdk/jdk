@@ -24,10 +24,10 @@
 /**
  * @test
  * @bug 8307365
- * @summary Exercise JVMTI state creation concurrently with terminating vthreads
+ * @summary Exercise JvmtiThreadState creation concurrently with terminating vthreads
  * @requires vm.continuations
  * @modules java.base/java.lang:+open
- * @run main/othervm/native -agentlib:JVMTIStateSanityTest JVMTIStateSanityTest
+ * @run main/othervm/native -agentlib:ThreadStateTest ThreadStateTest
  */
 
 import java.util.concurrent.*;
@@ -37,8 +37,8 @@ import java.util.List;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
-public class JVMTIStateSanityTest {
-    private static final String agentLib = "JVMTIStateSanityTest";
+public class ThreadStateTest {
+    private static final String agentLib = "ThreadStateTest";
     static final int VTHREAD_COUNT = 64;
 
     private static native void SetSingleSteppingMode(boolean enable);
@@ -51,7 +51,7 @@ public class JVMTIStateSanityTest {
     private void runTest() throws Exception {
         int tryCount = 150;
 
-        // Force creation of JVMTI state on vthread start.
+        // Force creation of JvmtiThreadState on vthread start.
         SetMonitorContendedMode(true);
 
         while (tryCount-- > 0) {
@@ -70,7 +70,7 @@ public class JVMTIStateSanityTest {
             // Give some time for vthreads to finish.
             Thread.sleep(10);
 
-            // Trigger race of JVMTI state creation with terminating vthreads.
+            // Trigger race of JvmtiThreadState creation with terminating vthreads.
             SetMonitorContendedMode(false);
             SetMonitorContendedMode(true);
 
@@ -81,7 +81,7 @@ public class JVMTIStateSanityTest {
             scheduler.shutdown();
             Thread.sleep(20);
 
-            // Check that looping over all JVMTI states works fine.
+            // Check that looping over all JvmtiThreadStates works fine.
             SetSingleSteppingMode(true);
 
             // Reset for next iteration
@@ -97,7 +97,7 @@ public class JVMTIStateSanityTest {
             System.err.println("java.library.path: " + System.getProperty("java.library.path"));
             throw ex;
         }
-        JVMTIStateSanityTest obj = new JVMTIStateSanityTest();
+        ThreadStateTest obj = new ThreadStateTest();
         obj.runTest();
     }
 
