@@ -3944,6 +3944,7 @@ public class Check {
         private static final int MATCH_SCAN_DEPTH = 3;
 
         private boolean constructor;        // is this method a constructor?
+        private boolean firstStatement;     // at the first statement in method?
         private JCReturn earlyReturn;       // first return prior to the super()/init(), if any
         private Name initCall;              // whichever of "super" or "init" we've seen already
         private int scanDepth;              // current scan recursion depth in method body
@@ -3964,13 +3965,19 @@ public class Check {
             try {
 
                 // Scan method body
-                if (tree.body != null)
-                    scan(tree.body.stats);
+                if (tree.body != null) {
+                    firstStatement = true;
+                    for (List<JCStatement> l = tree.body.stats; l.nonEmpty(); l = l.tail) {
+                        scan(l.head);
+                        firstStatement = false;
+                    }
+                }
 
                 // Verify no 'return' seen prior to an explicit super()/this() call
                 if (constructor && earlyReturn != null && initCall != null)
                     log.error(earlyReturn.pos(), Errors.ReturnBeforeSuperclassInitialized(initCall));
             } finally {
+                firstStatement = false;
                 constructor = false;
                 earlyReturn = null;
                 initCall = null;
@@ -4013,6 +4020,10 @@ public class Check {
                     log.error(apply.pos(), Errors.RedundantSuperclassInit(methodName, initCall));
                     break;
                 }
+
+                // If super()/this() isn't first, require "statements before super()" feature
+                if (!firstStatement)
+                    preview.checkSourceLevel(apply.pos(), Feature.SUPER_INIT);
 
                 // We found a legitimate super()/this() call; remember it
                 initCall = methodName;

@@ -21,15 +21,13 @@
  * questions.
  */
 
-// key: compiler.err.return.before.superclass.initialized
-// key: compiler.note.preview.filename
-// key: compiler.note.preview.recompile
-// options: --enable-preview -source ${jdk.version}
+ // key: compiler.misc.feature.super.init
+ // key: compiler.warn.preview.feature.use
+ // options: --enable-preview -source ${jdk.version} -Xlint:preview
 
-class ReturnBeforeSuperclassInit {
-    ReturnBeforeSuperclassInit(boolean maybe) {
-        if (maybe)
-            return;
+class StatementsBeforeSuper {
+    StatementsBeforeSuper() {
+        System.out.println();
         super();
     }
 }
