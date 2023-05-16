@@ -56,5 +56,5 @@ public sealed interface UnionLayout extends GroupLayout permits UnionLayoutImpl 
      * @throws IllegalArgumentException {@inheritDoc}
      */
     @Override
-    UnionLayout withBitAlignment(long bitAlignment);
+    UnionLayout withByteAlignment(long byteAlignment);
 }
