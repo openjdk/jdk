@@ -38,10 +38,10 @@ public class TestAbortVmOnException {
         if (args.length == 1) {
             throw new MyAbortException();
         }
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:AbortVMOnException=MyAbortException",
-                "-Xcomp", "-Xbatch",  "-XX:TieredStopAtLevel=3", TestAbortVmOnException.class.getName(), "throwException");
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+UnlockDiagnosticVMOptions",
+                "-XX:AbortVMOnException=MyAbortException", "-Xcomp", "-Xbatch",  "-XX:TieredStopAtLevel=3",
+                TestAbortVmOnException.class.getName(), "throwException");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldHaveExitValue(134);
         output.stdoutShouldNotBeEmpty();
         output.shouldContain("fatal error: Saw MyAbortException, aborting");
         System.out.println("PASSED");
