@@ -46,10 +46,10 @@ public class ScrollPositionIntact {
 
     public static void main(String[] args) throws Exception {
         ScrollPositionIntact test = new ScrollPositionIntact();
+        test.init();
         test.start();
     }
-
-    public void start() throws Exception {
+    public void init() throws Exception {
         try {
             EventQueue.invokeAndWait(() -> {
                 pa = new Panel();
@@ -68,7 +68,11 @@ public class ScrollPositionIntact {
                 frame.add(sp);
                 frame.setVisible(true);
             });
+        }
+    }
 
+    public void start() throws Exception {
+        try {
             Robot robot = new Robot();
             robot.delay(1000);
             robot.waitForIdle();
