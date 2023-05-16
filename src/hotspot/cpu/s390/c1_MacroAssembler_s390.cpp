@@ -101,6 +101,8 @@ void C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hd
     z_btrue(slow_case);
   }
 
+  assert(LockingMode != LM_MONITOR, "LM_MONITOR is already handled, by emit_lock()");
+
   if (LockingMode == LM_LIGHTWEIGHT) {
     Unimplemented();
   } else if (LockingMode == LM_LEGACY) {

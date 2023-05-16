@@ -3191,6 +3191,7 @@ void MacroAssembler::compiler_fast_lock_object(Register oop, Register box, Regis
   } else {
     // Set NE to indicate 'failure' -> take slow-path
     z_ltgr(oop, oop);
+    z_bru(done);
   }
 
   // We did not see an unlocked object so try the fast recursive case.
@@ -3267,6 +3268,7 @@ void MacroAssembler::compiler_fast_unlock_object(Register oop, Register box, Reg
   } else {
     // Set NE to indicate 'failure' -> take slow-path
     z_ltgr(oop, oop);
+    z_bru(done);
   }
 
   // Handle existing monitor.
