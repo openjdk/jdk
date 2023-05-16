@@ -155,7 +155,14 @@ JNIEXPORT void JNICALL Java_sun_awt_X11_XTaskbarPeer_setBadge
     fp_unity_launcher_entry_set_count(entry, value);
     fp_unity_launcher_entry_set_count_visible(entry, visible);
     DbusmenuMenuitem* m;
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wparentheses"
+#endif
     if (m = fp_unity_launcher_entry_get_quicklist(entry)) {
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
         fp_unity_launcher_entry_set_quicklist(entry, m);
     }
     gtk->gdk_threads_leave();
@@ -171,7 +178,14 @@ JNIEXPORT void JNICALL Java_sun_awt_X11_XTaskbarPeer_setUrgent
     gtk->gdk_threads_enter();
     fp_unity_launcher_entry_set_urgent(entry, urgent);
     DbusmenuMenuitem* m;
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wparentheses"
+#endif
     if (m = fp_unity_launcher_entry_get_quicklist(entry)) {
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
         fp_unity_launcher_entry_set_quicklist(entry, m);
     }
     gtk->gdk_threads_leave();
@@ -188,7 +202,14 @@ JNIEXPORT void JNICALL Java_sun_awt_X11_XTaskbarPeer_updateProgress
     fp_unity_launcher_entry_set_progress(entry, value);
     fp_unity_launcher_entry_set_progress_visible(entry, visible);
     DbusmenuMenuitem* m;
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wparentheses"
+#endif
     if (m = fp_unity_launcher_entry_get_quicklist(entry)) {
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
         fp_unity_launcher_entry_set_quicklist(entry, m);
     }
     gtk->gdk_threads_leave();

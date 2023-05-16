@@ -147,6 +147,9 @@ void jvmLauncherLog(const char* format, ...) {
 #if defined(__GNUC__) && __GNUC__ >= 5
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#elif defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wformat-nonliteral"
 #endif
 #ifdef LINUX
     fprintf(stderr, "[%d]: ", getpid());
@@ -155,6 +158,8 @@ void jvmLauncherLog(const char* format, ...) {
     fprintf(stderr, "\n");
 #if defined(__GNUC__) && __GNUC__ >= 5
 #pragma GCC diagnostic pop
+#elif defined(__clang__)
+#pragma clang diagnostic pop
 #endif
 
     va_end (args);

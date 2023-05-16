@@ -569,8 +569,13 @@ static uintptr_t calc_prelinked_load_address(struct ps_prochandle* ph, int lib_f
 
   free(phbuf);
 
+#if defined(__clang__)
+if (ps_pdread(ph, (char *)link_map_addr + LINK_MAP_LD_OFFSET,
+               &lib_ld, sizeof(uintptr_t)) != PS_OK) {
+#else
   if (ps_pdread(ph, (psaddr_t)link_map_addr + LINK_MAP_LD_OFFSET,
                &lib_ld, sizeof(uintptr_t)) != PS_OK) {
+#endif
     print_debug("can't read address of dynamic section in shared object\n");
     return INVALID_LOAD_ADDRESS;
   }
@@ -616,15 +621,25 @@ static bool read_shared_lib_info(struct ps_prochandle* ph) {
   // we have got Dyn entry with DT_DEBUG
   debug_base = dyn.d_un.d_ptr;
   // at debug_base we have struct r_debug. This has first link map in r_map field
+#if defined(__clang__)
+  if (ps_pdread(ph, (char *) debug_base + FIRST_LINK_MAP_OFFSET,
+                 &first_link_map_addr, sizeof(uintptr_t)) != PS_OK) {
+#else
   if (ps_pdread(ph, (psaddr_t) debug_base + FIRST_LINK_MAP_OFFSET,
                  &first_link_map_addr, sizeof(uintptr_t)) != PS_OK) {
+#endif
     print_debug("can't read first link map address\n");
     return false;
   }
 
   // read ld_base address from struct r_debug
+#if defined(__clang__)
+  if (ps_pdread(ph, (char *)debug_base + LD_BASE_OFFSET, &ld_base_addr,
+                 sizeof(uintptr_t)) != PS_OK) {
+#else
   if (ps_pdread(ph, (psaddr_t) debug_base + LD_BASE_OFFSET, &ld_base_addr,
                  sizeof(uintptr_t)) != PS_OK) {
+#endif
     print_debug("can't read ld base address\n");
     return false;
   }
@@ -652,15 +667,25 @@ static bool read_shared_lib_info(struct ps_prochandle* ph) {
       // address mentioned in shared object and the actual virtual base where runtime
       // linker loaded it. We use "base diff" in read_lib_segments call below.
 
-      if (ps_pdread(ph, (psaddr_t) link_map_addr + LINK_MAP_ADDR_OFFSET,
+#if defined(__clang__)
+      if (ps_pdread(ph, (char *) link_map_addr + LINK_MAP_ADDR_OFFSET,
                    &lib_base_diff, sizeof(uintptr_t)) != PS_OK) {
+#else
+                    if (ps_pdread(ph, (psaddr_t) link_map_addr + LINK_MAP_ADDR_OFFSET,
+                   &lib_base_diff, sizeof(uintptr_t)) != PS_OK) {
+#endif
          print_debug("can't read shared object base address diff\n");
          return false;
       }
 
       // read address of the name
-      if (ps_pdread(ph, (psaddr_t) link_map_addr + LINK_MAP_NAME_OFFSET,
+#if defined(__clang__)
+      if (ps_pdread(ph, (char *) link_map_addr + LINK_MAP_NAME_OFFSET,
                     &lib_name_addr, sizeof(uintptr_t)) != PS_OK) {
+#else
+                      if (ps_pdread(ph, (psaddr_t) link_map_addr + LINK_MAP_NAME_OFFSET,
+                    &lib_name_addr, sizeof(uintptr_t)) != PS_OK) {
+#endif
          print_debug("can't read address of shared object name\n");
          return false;
       }
@@ -714,8 +739,13 @@ static bool read_shared_lib_info(struct ps_prochandle* ph) {
       }
 
     // read next link_map address
-    if (ps_pdread(ph, (psaddr_t) link_map_addr + LINK_MAP_NEXT_OFFSET,
+#if defined(__clang__)
+    if (ps_pdread(ph, (char *) link_map_addr + LINK_MAP_NEXT_OFFSET,
                    &link_map_addr, sizeof(uintptr_t)) != PS_OK) {
+#else
+                    if (ps_pdread(ph, (psaddr_t) link_map_addr + LINK_MAP_NEXT_OFFSET,
+                   &link_map_addr, sizeof(uintptr_t)) != PS_OK) {
+#endif
       print_debug("can't read next link in link_map\n");
       return false;
     }

@@ -45,8 +45,10 @@ extern "C" {
 
 // Condition was copied from
 // Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/gssapi/gssapi.h
-#if TARGET_OS_MAC && (defined(__ppc__) || defined(__ppc64__) || defined(__i386__) || defined(__x86_64__))
+#ifdef TARGET_OS_MAC
+#if (defined(__ppc__) || defined(__ppc64__) || defined(__i386__) || defined(__x86_64__))
 #    pragma pack(push,2)
+#endif
 #endif
 
 /*
@@ -697,8 +699,10 @@ GSS_DLLIMP OM_uint32 gss_canonicalize_name(
         gss_name_t *            /* output_name */
 );
 
-#if TARGET_OS_MAC && (defined(__ppc__) || defined(__ppc64__) || defined(__i386__) || defined(__x86_64__))
+#ifdef TARGET_OS_MAC
+#if (defined(__ppc__) || defined(__ppc64__) || defined(__i386__) || defined(__x86_64__))
 #    pragma pack(pop)
+#endif
 #endif
 
 #ifdef __cplusplus

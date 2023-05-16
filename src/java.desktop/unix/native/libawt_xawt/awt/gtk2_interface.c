@@ -1092,8 +1092,8 @@ static void init_toggle_widget(WidgetType widget_type, gint synth_state)
         ((GtkObject*)gtk2_widget)->flags &= ~GTK_HAS_FOCUS;
     }
 
-    if ((synth_state & MOUSE_OVER) != 0 && (synth_state & PRESSED) == 0 ||
-           (synth_state & FOCUSED) != 0 && (synth_state & PRESSED) != 0) {
+    if ((((synth_state & MOUSE_OVER) != 0) && ((synth_state & PRESSED) == 0)) ||
+           (((synth_state & FOCUSED) != 0) && ((synth_state & PRESSED) != 0))) {
         gtk2_widget->state = GTK_STATE_PRELIGHT;
     } else if ((synth_state & DISABLED) != 0) {
         gtk2_widget->state = GTK_STATE_INSENSITIVE;
@@ -1158,6 +1158,10 @@ static GtkWidget *gtk2_get_widget(WidgetType widget_type)
 {
     gboolean init_result = FALSE;
     GtkWidget *result = NULL;
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wparentheses"
+#endif
     switch (widget_type)
     {
         case BUTTON:
@@ -1551,6 +1555,9 @@ static GtkWidget *gtk2_get_widget(WidgetType widget_type)
             result = NULL;
             break;
     }
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
 
     if (result != NULL && init_result)
     {

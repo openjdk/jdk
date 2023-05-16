@@ -84,7 +84,14 @@ static gboolean filenameFilterCallback(const GtkFileFilterInfo * filter_info, gp
 static void quit(JNIEnv * env, jobject jpeer, gboolean isSignalHandler)
 {
     jthrowable pendingException;
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wparentheses"
+#endif
     if (pendingException = (*env)->ExceptionOccurred(env)) {
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
          (*env)->ExceptionClear(env);
     }
 

@@ -578,6 +578,10 @@ OGLPaints_CreateMultiGradProgram(jint flags,
     }
 
     if (cycleMethod == CYCLE_NONE) {
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wformat-nonliteral"
+#endif
         snprintf(cycleCode, sizeof(cycleCode), noCycleCode, texCoordCalcCode);
     } else if (cycleMethod == CYCLE_REFLECT) {
         snprintf(cycleCode, sizeof(cycleCode), reflectCode, texCoordCalcCode);
@@ -590,6 +594,9 @@ OGLPaints_CreateMultiGradProgram(jint flags,
             MAX_COLORS, maxFractions,
             maskVars, paintVars, distCode,
             cycleCode, colorSpaceCode, maskCode);
+#if defined(__clang__)
+#pragma clang diagnostic push
+#endif
 
     multiGradProgram = OGLContext_CreateFragmentProgram(finalSource);
     if (multiGradProgram == 0) {

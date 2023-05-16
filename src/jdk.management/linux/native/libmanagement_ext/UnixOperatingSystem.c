@@ -160,7 +160,14 @@ static int vread_statdata(const char *procfile, const char *fmt, va_list args) {
         // skip the ')' and the following space but check that the buffer is long enough
         tmp += 2;
         if (tmp < buf + n) {
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wformat-nonliteral"
+#endif
         n = vsscanf(tmp, fmt, args);
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
         }
     }
     }
