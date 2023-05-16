@@ -27,7 +27,7 @@ package sun.nio.ch;
 
 import java.io.IOException;
 import java.time.Instant;
-import sun.nio.ch.PollsetProvider;
+import sun.nio.ch.Pollset;
 
 /**
  * Poller implementation based on the AIX Pollset library.
@@ -35,7 +35,7 @@ import sun.nio.ch.PollsetProvider;
 
 class PollsetPoller extends Poller {
 
-    static { PollsetProvider.init(); /* Dynamically loads pollset C functions */ }
+    static { Pollset.init(); /* Dynamically loads pollset C functions */ }
 
     private int setid;
     private int setsize;
@@ -43,7 +43,7 @@ class PollsetPoller extends Poller {
     PollsetPoller(boolean read) throws IOException {
         super(read);
         this.setsize = 0;
-        this.setid = PollsetProvider.pollsetCreate();
+        this.setid = Pollset.pollsetCreate();
     }
 
     @Override
@@ -53,8 +53,8 @@ class PollsetPoller extends Poller {
 
     @Override
     void implRegister(int fd) throws IOException {
-        int ret = PollsetProvider.pollsetCtl(setid, PollsetProvider.PS_MOD, fd,
-        PollsetProvider.PS_POLLPRI | (this.reading() ? Net.POLLIN : Net.POLLOUT));
+        int ret = Pollset.pollsetCtl(setid, Pollset.PS_MOD, fd,
+        Pollset.PS_POLLPRI | (this.reading() ? Net.POLLIN : Net.POLLOUT));
         if (ret != 0) {
             throw new IOException("Unable to register fd " + fd);
         }
@@ -64,7 +64,7 @@ class PollsetPoller extends Poller {
     @Override
     void implDeregister(int fd) {
         assert (setsize > 0);
-        int ret = PollsetProvider.pollsetCtl(setid, PollsetProvider.PS_DELETE, fd, 0);
+        int ret = Pollset.pollsetCtl(setid, Pollset.PS_DELETE, fd, 0);
         assert ret == 0;
         setsize--;
     }
@@ -82,7 +82,7 @@ class PollsetPoller extends Poller {
             case 0:
                 n = pollInner(0);
                 break;
-            case PollsetProvider.PS_NO_TIMEOUT:
+            case Pollset.PS_NO_TIMEOUT:
                 do { n = pollInner(100); } while (n == 0);
                 break;
             default:
@@ -97,14 +97,14 @@ class PollsetPoller extends Poller {
         // The poll loop may start polling before any fds have been registered. But, if we use set
         // size 0 to allocatePollArray, it will return the null address and pollsetPoll will complain.
         // We avoid that by just passing set size 1, and letting poll block for subInterval.
-        long buffer = PollsetProvider.allocatePollArray(setsize > 0 ? setsize : 1);
-        int n = PollsetProvider.pollsetPoll(setid, buffer, setsize, subInterval);
+        long buffer = Pollset.allocatePollArray(setsize > 0 ? setsize : 1);
+        int n = Pollset.pollsetPoll(setid, buffer, setsize, subInterval);
         for(int i=0; i<n; i++) {
-            long eventAddress = PollsetProvider.getEvent(buffer, i);
-            int fd = PollsetProvider.getDescriptor(eventAddress);
+            long eventAddress = Pollset.getEvent(buffer, i);
+            int fd = Pollset.getDescriptor(eventAddress);
             polled(fd);
         }
-        PollsetProvider.freePollArray(buffer);
+        Pollset.freePollArray(buffer);
         return n;
     }
 }

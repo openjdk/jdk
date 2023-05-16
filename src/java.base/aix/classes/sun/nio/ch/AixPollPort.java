@@ -27,7 +27,7 @@
 package sun.nio.ch;
 
 import java.nio.channels.spi.AsynchronousChannelProvider;
-import sun.nio.ch.PollsetProvider;
+import sun.nio.ch.Pollset;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -44,7 +44,7 @@ final class AixPollPort
 {
     static {
         IOUtil.load();
-        PollsetProvider.init();
+        Pollset.init();
     }
 
     // pollset ID
@@ -120,16 +120,16 @@ final class AixPollPort
         super(provider, pool);
 
         // open pollset
-        this.pollset = PollsetProvider.pollsetCreate();
+        this.pollset = Pollset.pollsetCreate();
 
         // create socket pair for wakeup mechanism
         int[] sv = new int[2];
         try {
-            PollsetProvider.socketpair(sv);
+            Pollset.socketpair(sv);
             // register one end with pollset
-            PollsetProvider.pollsetCtl(pollset, PollsetProvider.PS_ADD, sv[0], Net.POLLIN);
+            Pollset.pollsetCtl(pollset, Pollset.PS_ADD, sv[0], Net.POLLIN);
         } catch (IOException x) {
-            PollsetProvider.pollsetDestroy(pollset);
+            Pollset.pollsetDestroy(pollset);
             throw x;
         }
         this.sp = sv;
@@ -137,21 +137,21 @@ final class AixPollPort
         // create socket pair for pollset control mechanism
         sv = new int[2];
         try {
-            PollsetProvider.socketpair(sv);
+            Pollset.socketpair(sv);
             // register one end with pollset
-            PollsetProvider.pollsetCtl(pollset, PollsetProvider.PS_ADD, sv[0], Net.POLLIN);
+            Pollset.pollsetCtl(pollset, Pollset.PS_ADD, sv[0], Net.POLLIN);
         } catch (IOException x) {
-            PollsetProvider.pollsetDestroy(pollset);
+            Pollset.pollsetDestroy(pollset);
             throw x;
         }
         this.ctlSp = sv;
 
         // allocate the poll array
-        this.address = PollsetProvider.allocatePollArray(PollsetProvider.MAX_POLL_EVENTS);
+        this.address = Pollset.allocatePollArray(Pollset.MAX_POLL_EVENTS);
 
         // create the queue and offer the special event to ensure that the first
         // threads polls
-        this.queue = new ArrayBlockingQueue<Event>(PollsetProvider.MAX_POLL_EVENTS);
+        this.queue = new ArrayBlockingQueue<Event>(Pollset.MAX_POLL_EVENTS);
         this.queue.offer(NEED_TO_POLL);
     }
 
@@ -169,19 +169,19 @@ final class AixPollPort
                 return;
             closed = true;
         }
-        PollsetProvider.freePollArray(address);
-        PollsetProvider.close0(sp[0]);
-        PollsetProvider.close0(sp[1]);
-        PollsetProvider.close0(ctlSp[0]);
-        PollsetProvider.close0(ctlSp[1]);
-        PollsetProvider.pollsetDestroy(pollset);
+        Pollset.freePollArray(address);
+        Pollset.close0(sp[0]);
+        Pollset.close0(sp[1]);
+        Pollset.close0(ctlSp[0]);
+        Pollset.close0(ctlSp[1]);
+        Pollset.pollsetDestroy(pollset);
     }
 
     void wakeup() {
         if (wakeupCount.incrementAndGet() == 1) {
             // write byte to socketpair to force wakeup
             try {
-                PollsetProvider.interrupt(sp[1]);
+                Pollset.interrupt(sp[1]);
             } catch (IOException x) {
                 throw new AssertionError(x);
             }
@@ -236,7 +236,7 @@ final class AixPollPort
             controlQueue.add(ev);
             // write byte to socketpair to force wakeup
             try {
-                PollsetProvider.interrupt(ctlSp[1]);
+                Pollset.interrupt(ctlSp[1]);
             } catch (IOException x) {
                 throw new AssertionError(x);
             }
@@ -277,9 +277,9 @@ final class AixPollPort
             Iterator<ControlEvent> iter = controlQueue.iterator();
             while (iter.hasNext()) {
                 ControlEvent ev = iter.next();
-                PollsetProvider.pollsetCtl(pollset, PollsetProvider.PS_DELETE, ev.fd(), 0);
+                Pollset.pollsetCtl(pollset, Pollset.PS_DELETE, ev.fd(), 0);
                 if (!ev.removeOnly()) {
-                    ev.setError(PollsetProvider.pollsetCtl(pollset, PollsetProvider.PS_MOD, ev.fd(), ev.events()));
+                    ev.setError(Pollset.pollsetCtl(pollset, Pollset.PS_MOD, ev.fd(), ev.events()));
                 }
                 iter.remove();
             }
@@ -303,8 +303,8 @@ final class AixPollPort
                     int n;
                     controlLock.lock();
                     try {
-                        n = PollsetProvider.pollsetPoll(pollset, address,
-                                     PollsetProvider.MAX_POLL_EVENTS, PollsetProvider.PS_NO_TIMEOUT);
+                        n = Pollset.pollsetPoll(pollset, address,
+                                     Pollset.MAX_POLL_EVENTS, Pollset.PS_NO_TIMEOUT);
                     } finally {
                         controlLock.unlock();
                     }
@@ -317,14 +317,14 @@ final class AixPollPort
                     fdToChannelLock.readLock().lock();
                     try {
                         while (n-- > 0) {
-                            long eventAddress = PollsetProvider.getEvent(address, n);
-                            int fd = PollsetProvider.getDescriptor(eventAddress);
+                            long eventAddress = Pollset.getEvent(address, n);
+                            int fd = Pollset.getDescriptor(eventAddress);
 
                             // To emulate one shot semantic we need to remove
                             // the file descriptor here.
                             if (fd != sp[0] && fd != ctlSp[0]) {
                                 synchronized (controlQueue) {
-                                    PollsetProvider.pollsetCtl(pollset, PollsetProvider.PS_DELETE, fd, 0);
+                                    Pollset.pollsetCtl(pollset, Pollset.PS_DELETE, fd, 0);
                                 }
                             }
 
@@ -332,7 +332,7 @@ final class AixPollPort
                             if (fd == sp[0]) {
                                 if (wakeupCount.decrementAndGet() == 0) {
                                     // no more wakeups so drain pipe
-                                    PollsetProvider.drain1(sp[0]);
+                                    Pollset.drain1(sp[0]);
                                 }
 
                                 // queue special event if there are more events
@@ -347,7 +347,7 @@ final class AixPollPort
                             // wakeup to process control event
                             if (fd == ctlSp[0]) {
                                 synchronized (controlQueue) {
-                                    PollsetProvider.drain1(ctlSp[0]);
+                                    Pollset.drain1(ctlSp[0]);
                                     processControlQueue();
                                 }
                                 if (n > 0) {
@@ -358,7 +358,7 @@ final class AixPollPort
 
                             PollableChannel channel = fdToChannel.get(fd);
                             if (channel != null) {
-                                int events = PollsetProvider.getRevents(eventAddress);
+                                int events = Pollset.getRevents(eventAddress);
                                 Event ev = new Event(channel, events);
 
                                 // n-1 events are queued; This thread handles

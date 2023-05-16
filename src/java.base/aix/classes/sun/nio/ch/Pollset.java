@@ -29,7 +29,7 @@ package sun.nio.ch;
 import java.io.IOException;
 import jdk.internal.misc.Unsafe;
 
-public class PollsetProvider {
+public class Pollset {
 
     private static final Unsafe unsafe = Unsafe.getUnsafe();
 
@@ -66,7 +66,7 @@ public class PollsetProvider {
      * Allocates a poll array to handle up to {@code count} events.
      */
     public static long allocatePollArray(int count) {
-        return unsafe.allocateMemory(count * PollsetProvider.SIZEOF_POLLFD);
+        return unsafe.allocateMemory(count * SIZEOF_POLLFD);
     }
 
     /**

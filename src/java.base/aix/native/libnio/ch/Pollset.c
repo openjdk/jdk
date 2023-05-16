@@ -29,7 +29,7 @@
 #include "jvm.h"
 #include "jlong.h"
 
-#include "sun_nio_ch_PollsetProvider.h"
+#include "sun_nio_ch_Pollset.h"
 
 #include <dlfcn.h>
 #include <errno.h>
@@ -57,7 +57,7 @@ static pollset_ctl_func* _pollset_ctl = NULL;
 static pollset_poll_func* _pollset_poll = NULL;
 
 JNIEXPORT void JNICALL
-Java_sun_nio_ch_PollsetProvider_init(JNIEnv* env, jclass this) {
+Java_sun_nio_ch_Pollset_init(JNIEnv* env, jclass this) {
     _pollset_create = (pollset_create_func*) dlsym(RTLD_DEFAULT, "pollset_create");
     _pollset_destroy = (pollset_destroy_func*) dlsym(RTLD_DEFAULT, "pollset_destroy");
     _pollset_ctl = (pollset_ctl_func*) dlsym(RTLD_DEFAULT, "pollset_ctl");
@@ -69,27 +69,27 @@ Java_sun_nio_ch_PollsetProvider_init(JNIEnv* env, jclass this) {
 }
 
 JNIEXPORT jint JNICALL
-Java_sun_nio_ch_PollsetProvider_eventSize(JNIEnv* env, jclass this) {
+Java_sun_nio_ch_Pollset_eventSize(JNIEnv* env, jclass this) {
     return sizeof(struct pollfd);
 }
 
 JNIEXPORT jint JNICALL
-Java_sun_nio_ch_PollsetProvider_eventsOffset(JNIEnv* env, jclass this) {
+Java_sun_nio_ch_Pollset_eventsOffset(JNIEnv* env, jclass this) {
     return offsetof(struct pollfd, events);
 }
 
 JNIEXPORT jint JNICALL
-Java_sun_nio_ch_PollsetProvider_reventsOffset(JNIEnv* env, jclass this) {
+Java_sun_nio_ch_Pollset_reventsOffset(JNIEnv* env, jclass this) {
     return offsetof(struct pollfd, revents);
 }
 
 JNIEXPORT jint JNICALL
-Java_sun_nio_ch_PollsetProvider_fdOffset(JNIEnv* env, jclass this) {
+Java_sun_nio_ch_Pollset_fdOffset(JNIEnv* env, jclass this) {
     return offsetof(struct pollfd, fd);
 }
 
 JNIEXPORT jint JNICALL
-Java_sun_nio_ch_PollsetProvider_pollsetCreate(JNIEnv *env, jclass c) {
+Java_sun_nio_ch_Pollset_pollsetCreate(JNIEnv *env, jclass c) {
     /* pollset_create can take the maximum number of fds, but we
      * cannot predict this number so we leave it at OPEN_MAX. */
     pollset_t ps = _pollset_create(-1);
@@ -100,7 +100,7 @@ Java_sun_nio_ch_PollsetProvider_pollsetCreate(JNIEnv *env, jclass c) {
 }
 
 JNIEXPORT jint JNICALL
-Java_sun_nio_ch_PollsetProvider_pollsetCtl(JNIEnv *env, jclass c, jint ps,
+Java_sun_nio_ch_Pollset_pollsetCtl(JNIEnv *env, jclass c, jint ps,
                                        jint opcode, jint fd, jint events) {
     struct poll_ctl event;
     int res;
@@ -115,7 +115,7 @@ Java_sun_nio_ch_PollsetProvider_pollsetCtl(JNIEnv *env, jclass c, jint ps,
 }
 
 JNIEXPORT jint JNICALL
-Java_sun_nio_ch_PollsetProvider_pollsetPoll(JNIEnv *env, jclass c,
+Java_sun_nio_ch_Pollset_pollsetPoll(JNIEnv *env, jclass c,
                                         jint ps, jlong address, jint numfds, jint timeout) {
     struct pollfd *events = jlong_to_ptr(address);
     int res;
@@ -129,13 +129,13 @@ Java_sun_nio_ch_PollsetProvider_pollsetPoll(JNIEnv *env, jclass c,
 }
 
 JNIEXPORT void JNICALL
-Java_sun_nio_ch_PollsetProvider_pollsetDestroy(JNIEnv *env, jclass c, jint ps) {
+Java_sun_nio_ch_Pollset_pollsetDestroy(JNIEnv *env, jclass c, jint ps) {
     int res;
     RESTARTABLE(_pollset_destroy((pollset_t)ps), res);
 }
 
 JNIEXPORT void JNICALL
-Java_sun_nio_ch_PollsetProvider_socketpair(JNIEnv* env, jclass clazz, jintArray sv) {
+Java_sun_nio_ch_Pollset_socketpair(JNIEnv* env, jclass clazz, jintArray sv) {
     int sp[2];
     if (socketpair(PF_UNIX, SOCK_STREAM, 0, sp) == -1) {
         JNU_ThrowIOExceptionWithLastError(env, "socketpair failed");
@@ -148,7 +148,7 @@ Java_sun_nio_ch_PollsetProvider_socketpair(JNIEnv* env, jclass clazz, jintArray 
 }
 
 JNIEXPORT void JNICALL
-Java_sun_nio_ch_PollsetProvider_interrupt(JNIEnv *env, jclass c, jint fd) {
+Java_sun_nio_ch_Pollset_interrupt(JNIEnv *env, jclass c, jint fd) {
     int res;
     int buf[1];
     buf[0] = 1;
@@ -159,7 +159,7 @@ Java_sun_nio_ch_PollsetProvider_interrupt(JNIEnv *env, jclass c, jint fd) {
 }
 
 JNIEXPORT void JNICALL
-Java_sun_nio_ch_PollsetProvider_drain1(JNIEnv *env, jclass cl, jint fd) {
+Java_sun_nio_ch_Pollset_drain1(JNIEnv *env, jclass cl, jint fd) {
     int res;
     char buf[1];
     RESTARTABLE(read(fd, buf, 1), res);
@@ -169,7 +169,7 @@ Java_sun_nio_ch_PollsetProvider_drain1(JNIEnv *env, jclass cl, jint fd) {
 }
 
 JNIEXPORT void JNICALL
-Java_sun_nio_ch_PollsetProvider_close0(JNIEnv *env, jclass c, jint fd) {
+Java_sun_nio_ch_Pollset_close0(JNIEnv *env, jclass c, jint fd) {
     int res;
     RESTARTABLE(close(fd), res);
 }
