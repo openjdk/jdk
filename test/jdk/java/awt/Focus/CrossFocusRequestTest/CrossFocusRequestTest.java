@@ -49,7 +49,7 @@ public class CrossFocusRequestTest {
     private static Frame frame1, frame2;
     private volatile static Button button;
     private volatile static TextField textField;
-    private volatile static int waitTimeout = 1000;
+    private static final int waitTimeout = 1000;
     private static final CountDownLatch clickLatch = new CountDownLatch(1);
     private static final CountDownLatch focusLatch = new CountDownLatch(1);
     private volatile static Point compAt;
@@ -75,14 +75,14 @@ public class CrossFocusRequestTest {
             robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
             robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
 
-            robot.waitForIdle();
+            robot.delay(waitTimeout);
             if (!clickLatch.await(waitTimeout, TimeUnit.MILLISECONDS)) {
                 throw new RuntimeException(
                     "FAIL: Button did not trigger actionPerformed when clicked."
                         + " Test cannot proceed!");
             }
 
-            robot.waitForIdle();
+            robot.delay(waitTimeout);
 
             EventQueue.invokeAndWait(() -> {
                 compAt = frame1.getLocationOnScreen();
@@ -94,7 +94,7 @@ public class CrossFocusRequestTest {
             robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
             robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
 
-            robot.waitForIdle();
+            robot.delay(waitTimeout);
             if (!focusLatch.await(waitTimeout, TimeUnit.MILLISECONDS)) {
                 throw new RuntimeException(
                     "FAIL: TextField did not gained focus. requestFocus "
