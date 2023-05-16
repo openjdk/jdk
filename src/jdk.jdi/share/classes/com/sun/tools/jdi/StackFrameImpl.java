@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -396,9 +396,22 @@ public class StackFrameImpl extends MirrorImpl
             switch (exc.errorCode()) {
             case JDWP.Error.OPAQUE_FRAME:
                 if (thread.isVirtual()) {
-                    throw new OpaqueFrameException();  // can only happen with virtual threads
+                    // We first need to find out if the current frame is native.
+                    StackFrameImpl sf;
+                    try {
+                        sf = (StackFrameImpl)thread.frame(0);
+                    } catch (IndexOutOfBoundsException e) {
+                        throw new InvalidStackFrameException("No more frames on the stack");
+                    }
+                    sf.validateStackFrame();
+                    MethodImpl meth = (MethodImpl)sf.location().method();
+                    if (meth.isNative()) {
+                        throw new NativeMethodException();
+                    } else {
+                        throw new OpaqueFrameException();
+                    }
                 } else {
-                    throw new NativeMethodException(); // can only happen with platform threads
+                    throw new NativeMethodException();
                 }
             case JDWP.Error.THREAD_NOT_SUSPENDED:
                 throw new IncompatibleThreadStateException(
