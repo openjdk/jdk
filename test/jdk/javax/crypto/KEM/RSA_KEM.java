@@ -383,7 +383,7 @@ public class RSA_KEM {
                 }
                 try {
                     byte[] Z = RSACore.rsa(encapsulation, rsk, false);
-                    return new SecretKeySpec(kdf(Z), from, to, algorithm);
+                    return new SecretKeySpec(kdf(Z), from, to - from, algorithm);
                 } catch (BadPaddingException e) {
                     throw new DecapsulateException("cannot decrypt", e);
                 }
@@ -421,7 +421,7 @@ public class RSA_KEM {
                     throw new AssertionError(e);
                 }
                 return new KEM.Encapsulated(
-                        new SecretKeySpec(kdf(Z), from, to, algorithm),
+                        new SecretKeySpec(kdf(Z), from, to - from, algorithm),
                         c, AlgorithmParametersImpl.encode(kspec));
             }
 

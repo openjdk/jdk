@@ -86,7 +86,12 @@ import java.security.spec.AlgorithmParameterSpec;
  *
  *         @Override
  *         public KEM.Encapsulated encapsulate(int from, int to, String algorithm) {
- *             // ...
+ *             byte[] encapsulation;
+ *             byte[] secret;
+ *             // calculating...
+ *             return new KEM.Encapsulated(
+ *                     new SecretKeySpec(secret, from, to - from, algorithm),
+ *                     encapsulation, null);
  *         }
  *
  *         // ...

@@ -145,6 +145,20 @@ public class Compliance {
         dec = d.decapsulate(enc.encapsulation(), 0, d.secretSize(), "AES");
         Asserts.assertTrue(Arrays.equals(enc.key().getEncoded(), dec.getEncoded()));
 
+        KEM.Encapsulated encHead = e2.encapsulate(0, 16, "AES");
+        Asserts.assertEQ(encHead.key().getEncoded().length, 16);
+        Asserts.assertEQ(encHead.key().getAlgorithm(), "AES");
+        SecretKey decHead = d.decapsulate(encHead.encapsulation(), 0, 16, "AES");
+        Asserts.assertEQ(encHead.key(), decHead);
+
+        KEM.Encapsulated encTail = e2.encapsulate(
+                e2.secretSize() - 16, e2.secretSize(), "AES");
+        Asserts.assertEQ(encTail.key().getEncoded().length, 16);
+        Asserts.assertEQ(encTail.key().getAlgorithm(), "AES");
+        SecretKey decTail = d.decapsulate(encTail.encapsulation(),
+                d.secretSize() - 16, d.secretSize(), "AES");
+        Asserts.assertEQ(encTail.key(), decTail);
+
         Utils.runAndCheckException(
                 () -> d.decapsulate(null),
                 NullPointerException.class);

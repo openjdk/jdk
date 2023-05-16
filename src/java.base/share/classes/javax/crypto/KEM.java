@@ -226,7 +226,9 @@ public final class KEM {
          *          parameters. The portion of the shared secret is a
          *          {@code SecretKey} containing the bytes of the secret
          *          ranging from {@code from} to {@code to}, exclusive,
-         *          and an algorithm name as specified.
+         *          and an algorithm name as specified. For example,
+         *          {@code encapsulate(0, 16, "AES")} uses the first 16 bytes
+         *          of the shared secret as a 128-bit AES key.
          * @throws IndexOutOfBoundsException if {@code from < 0},
          *     {@code from > to}, or {@code to > secretSize()}
          * @throws NullPointerException if {@code algorithm} is {@code null}
@@ -342,8 +344,12 @@ public final class KEM {
          * @param to the final index of the shared secret byte array
          *          to be returned, exclusive
          * @param algorithm the algorithm name for the secret key that is returned
-         * @return a portion of the shared secret as a {@code SecretKey} with
-         *          the specified algorithm
+         * @return a portion of the shared secret as a {@code SecretKey}
+         *          containing the bytes of the secret ranging from {@code from}
+         *          to {@code to}, exclusive, and an algorithm name as specified.
+         *          For example, {@code decapsulate(encapsulation, secretSize()
+         *          - 16, secretSize(), "AES")} uses the last 16 bytes
+         *          of the shared secret as a 128-bit AES key.
          * @throws DecapsulateException if an error occurs during the
          *          decapsulation process
          * @throws IndexOutOfBoundsException if {@code from < 0},

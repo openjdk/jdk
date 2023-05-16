@@ -81,7 +81,7 @@ public class DHKEM implements KEMSpi {
                         new SecretKeySpec(key, from, to - from, algorithm),
                         pkEm, null);
             } catch (Exception e) {
-                throw new ProviderException(e);
+                throw new ProviderException("internal error", e);
             }
         }
 
@@ -100,11 +100,11 @@ public class DHKEM implements KEMSpi {
                 byte[] pkRm = params.SerializePublicKey(pkR);
                 byte[] kem_context = concat(encapsulation, pkRm);
                 byte[] key = params.ExtractAndExpand(dh, kem_context);
-                return new SecretKeySpec(key, from, to, algorithm);
+                return new SecretKeySpec(key, from, to - from, algorithm);
             } catch (IOException | InvalidKeyException e) {
                 throw new DecapsulateException("Cannot decapsulate", e);
             } catch (Exception e) {
-                throw new ProviderException();
+                throw new ProviderException("internal error", e);
             }
         }
 
@@ -204,7 +204,7 @@ public class DHKEM implements KEMSpi {
                 g.initialize(spec, sr);
                 return g.generateKeyPair();
             } catch (Exception e) {
-                throw new ProviderException(e);
+                throw new ProviderException("internal error", e);
             }
         }
 
