@@ -395,16 +395,15 @@ public final class ProcessTools {
       java <jvm-args> -Dmain.wrapper=<wrapper-name> jdk.test.lib.process.ProcessTools <wrapper-name> <test-class> <test-args>
      */
 
-        private static List<String> addMainWrapperArgs(String mainWrapper, List<String> command) {
+    private static List<String> addMainWrapperArgs(String mainWrapper, List<String> command) {
 
         final List<String> unsupportedArgs = List.of(
-             "-jar", "-cp", "-classpath", "--class-path", "--describe-module", "-d",
-             "--dry-run", "--list-modules","--validate-modules", "-m", "--module", "-version");
+                "-jar", "-cp", "-classpath", "--class-path", "--describe-module", "-d",
+                "--dry-run", "--list-modules","--validate-modules", "-m", "--module", "-version");
 
         final List<String> doubleWordArgs = List.of(
-             "-jar", "-cp", "-classpath", "--class-path", "--add-opens", "--upgrade-module-path",
-             "--describe-module", "--add-modules", "-d", "--add-exports", "--limit-modules",
-             "--add-reads", "--patch-module", "--module-path", "--module", "-m", "-p");
+                "--add-opens", "--upgrade-module-path", "--add-modules", "--add-exports",
+                "--limit-modules", "--add-reads", "--patch-module", "--module-path", "-p");
 
         ArrayList<String> args = new ArrayList<>();
 
