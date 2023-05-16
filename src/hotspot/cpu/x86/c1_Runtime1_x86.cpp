@@ -827,7 +827,10 @@ void Runtime1::generate_unwind_exception(StubAssembler *sasm) {
   NOT_LP64(__ get_thread(thread);)
   // Get return address (is on top of stack after leave).
   __ movptr(exception_pc, Address(rsp, 0));
-
+  // Insert check if AbortVMOnException flag
+  if (AbortVMOnException) {
+    __ call_VM(noreg, CAST_FROM_FN_PTR(address, Runtime1::check_abort_on_vm_exception), exception_oop);
+  }
   // search the exception handler address of the caller (using the return address)
   __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::exception_handler_for_return_address), thread, exception_pc);
   // rax: exception handler address of the caller
