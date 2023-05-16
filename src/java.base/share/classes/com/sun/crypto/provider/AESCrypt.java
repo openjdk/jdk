@@ -1061,37 +1061,6 @@ final class AESCrypt extends SymmetricCipher implements AESConstants {
         this.K = sessionK[(decrypting? 1:0)];
     }
 
-    /**
-     * Expand an int[(ROUNDS+1)][4] into int[(ROUNDS+1)*4].
-     * For decryption round keys, need to rotate right by 4 ints.
-     * @param kr The round keys for encryption or decryption.
-     * @param decrypting True if 'kr' is for decryption and false otherwise.
-     */
-    private static final int[] expandToSubKey(int[][] kr, boolean decrypting) {
-        int total = kr.length;
-        int[] expK = new int[total*4];
-        if (decrypting) {
-            // decrypting, rotate right by 4 ints
-            // i.e. i==0
-            for(int j=0; j<4; j++) {
-                expK[j] = kr[total-1][j];
-            }
-            for(int i=1; i<total; i++) {
-                for(int j=0; j<4; j++) {
-                    expK[i*4 + j] = kr[i-1][j];
-                }
-            }
-        } else {
-            // encrypting, straight expansion
-            for(int i=0; i<total; i++) {
-                for(int j=0; j<4; j++) {
-                    expK[i*4 + j] = kr[i][j];
-                }
-            }
-        }
-        return expK;
-    }
-
     // check if the specified length (in bytes) is a valid keysize for AES
     static boolean isKeySizeValid(int len) {
         for (int aesKeysize : AES_KEYSIZES) {
@@ -1364,13 +1333,9 @@ final class AESCrypt extends SymmetricCipher implements AESConstants {
         int ROUNDS          = getRounds(k.length);
         int ROUND_KEY_COUNT = (ROUNDS + 1) * 4;
 
-        int BC = 4;
+        final int BC = 4;
         int[] Ke = new int[(ROUNDS + 1)*BC]; // encryption round keys
-        int[][] Kd = new int[ROUNDS + 1][]; // decryption round keys
-
-        for (int c = 0; c < ROUNDS + 1; c++) {
-            Kd[c] = new int[BC];
-        }
+        int[] Kd = new int[(ROUNDS + 1)*BC]; // decryption round keys
 
         int KC = k.length/4; // keylen in 32-bit elements
 
@@ -1389,7 +1354,7 @@ final class AESCrypt extends SymmetricCipher implements AESConstants {
         int t = 0;
         for (j = 0; (j < KC) && (t < ROUND_KEY_COUNT); j++, t++) {
             Ke[t] = tk[j];
-            Kd[ROUNDS - (t / 4)][t % 4] = tk[j];
+            Kd[(ROUNDS - (t / BC))*BC + (t % BC)] = tk[j];
         }
         int tt, rconpointer = 0;
         while (t < ROUND_KEY_COUNT) {
@@ -1414,27 +1379,28 @@ final class AESCrypt extends SymmetricCipher implements AESConstants {
             // copy values into round key arrays
             for (j = 0; (j < KC) && (t < ROUND_KEY_COUNT); j++, t++) {
                 Ke[t] = tk[j];
-                Kd[ROUNDS - (t / 4)][t % 4] = tk[j];
+                Kd[(ROUNDS - (t / BC))*BC + (t % BC)] = tk[j];
             }
         }
         for (int r = 1; r < ROUNDS; r++) {
             // inverse MixColumn where needed
             for (j = 0; j < BC; j++) {
-                tt = Kd[r][j];
-                Kd[r][j] = U1[(tt >>> 24) & 0xFF] ^
-                           U2[(tt >>> 16) & 0xFF] ^
-                           U3[(tt >>>  8) & 0xFF] ^
-                           U4[ tt         & 0xFF];
+                int idx = r*BC + j;
+                tt = Kd[idx];
+                Kd[idx] = U1[(tt >>> 24) & 0xFF] ^
+                          U2[(tt >>> 16) & 0xFF] ^
+                          U3[(tt >>>  8) & 0xFF] ^
+                          U4[ tt         & 0xFF];
             }
         }
 
-        // assemble the encryption (Ke) and decryption (Kd) round keys
-        // and expand them into arrays of ints.
-        int[] expandedKd = expandToSubKey(Kd, true);  // decrypting==true
+        // For decryption round keys, need to rotate right by 4 ints.
+        int[] KdTail = Arrays.copyOfRange(Kd, Kd.length - 4, Kd.length);
+        System.arraycopy(Kd, 0, Kd, BC, Kd.length - BC);
+        System.arraycopy(KdTail, 0, Kd, 0, BC);
+        Arrays.fill(KdTail, 0);
+
         Arrays.fill(tk, 0);
-        for (int[] ia: Kd) {
-            Arrays.fill(ia, 0);
-        }
         ROUNDS_12 = (ROUNDS>=12);
         ROUNDS_14 = (ROUNDS==14);
         limit = ROUNDS*4;
@@ -1448,7 +1414,7 @@ final class AESCrypt extends SymmetricCipher implements AESConstants {
             sessionK = new int[2][];
         }
         sessionK[0] = Ke;
-        sessionK[1] = expandedKd;
+        sessionK[1] = Kd;
     }
 
     /**
