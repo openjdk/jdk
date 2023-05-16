@@ -25,6 +25,7 @@
 
 package javax.crypto;
 
+import sun.security.pkcs.PKCS8Key;
 import sun.security.util.*;
 import sun.security.x509.AlgorithmId;
 
@@ -402,6 +403,45 @@ public class EncryptedPrivateKeyInfo {
         throws IOException {
         return encrypt(encodedBytes, password, DEFAULT_ALGO, null, null);
     }
+
+    /**
+     *
+     * @param data fd
+     * @param password fd
+     * @param p fds
+     * @return PrivateKey
+     * @throws IOException
+     */
+    public PrivateKey getKey(char[] password) throws IOException {
+        return getKey(password, null);
+    }
+    /**
+     *
+     * @param data fd
+     * @param password fd
+     * @param p fds
+     * @return PrivateKey
+     * @throws IOException
+     */
+    public PrivateKey getKey(char[] password, Provider p) throws IOException {
+        try {
+            PBEKeySpec pks = new PBEKeySpec(password);
+            SecretKeyFactory skf;
+            PKCS8EncodedKeySpec keySpec;
+            if (p == null) {
+                skf = SecretKeyFactory.getInstance(getAlgName());
+                keySpec = getKeySpec(skf.generateSecret(pks));
+            } else {
+                skf = SecretKeyFactory.getInstance(getAlgName(), p);
+                keySpec = getKeySpec(skf.generateSecret(pks), p);
+            }
+            return PKCS8Key.parseKey(keySpec.getEncoded());
+
+        } catch (Exception e) {
+            throw new IOException(e);
+        }
+    }
+
     /**
      * Extract the enclosed PKCS8EncodedKeySpec object from the
      * encrypted data and return it.

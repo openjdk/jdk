@@ -1,7 +1,8 @@
 package java.security;
 
-import jdk.internal.vm.annotation.ForceInline;
 import sun.security.pkcs.PKCS8Key;
+import sun.security.rsa.RSAPrivateCrtKeyImpl;
+import sun.security.rsa.RSAUtil;
 import sun.security.util.DerOutputStream;
 import sun.security.util.DerValue;
 import sun.security.util.Pem;
@@ -27,6 +28,9 @@ import java.util.Objects;
  */
 public class PEM {
 
+    private enum KeyType {
+        UNKNOWN, PRIVATE, PUBLIC, ENCRYPTED_PRIVATE, CERTIFICATE, CRL, RSAPRIVKEY
+    }
 
     private PEM() {}
 
@@ -36,7 +40,23 @@ public class PEM {
      * @return the encoder
      */
     public static Encoder getEncoder() {
-        return new Encoder();
+        return new PEMEncoder();
+    }
+
+    /**
+     * Gets encoder.
+     *
+     * @param s the s
+     * @return the encoder
+     */
+    public static Encoder getEncoder(String s) {
+        if (s == null) {
+            return new PEMEncoder();
+        }
+        if (s.equalsIgnoreCase("OpenSSL")) {
+            return new OpenSSLEncoder();
+        }
+        return null;
     }
 
     /**
@@ -48,19 +68,33 @@ public class PEM {
         return new Decoder();
     }
 
+    /**
+     * Gets encoder.
+     *
+     * @param s the s
+     * @return the encoder
+     */
+    public static Decoder getDecoder(String s) {
+        if (s == null) {
+            return new PEMDecoder();
+        }
+        if (s.equalsIgnoreCase("OpenSSL")) {
+            return new OpenSSLDecoder();
+        }
+        return null;
+    }
 
     /**
      * fdsa
      */
-    public static class Encoder {
-
-        private enum KeyType {
-            UNKNOWN, PRIVATE, PUBLIC, ENCRYPTED_PRIVATE, CERTIFICATE, CRL
-        }
+     public abstract static class Encoder {
 
         // XXX This is in java.security file
         // private static final String DEFAULT_ALGO = Security.getProperty("jdk.epkcs8.defaultAlgorithm");
-        private static final String DEFAULT_ALGO = "PBEWithHmacSHA256AndAES_128";
+        /**
+         * The Cipher.
+         */
+        protected static final String DEFAULT_ALGO = "PBEWithHmacSHA256AndAES_128";
 
         /**
          * The Cipher.
@@ -95,14 +129,72 @@ public class PEM {
          * @return the string
          * @throws IOException the io exception
          */
+        public String encode(Key k) throws IOException {return null;};
+
+        String pemEncoded(KeyType keyType, byte[] encoded) {
+            StringBuilder sb = new StringBuilder(100);
+            Base64.Encoder e = Base64.getEncoder();
+            switch (keyType) {
+                case PUBLIC -> {
+                    sb.append(Pem.PUBHEADER);
+                    sb.append(e.encodeToString(encoded));
+                    sb.append(Pem.PUBFOOTER);
+                }
+                case PRIVATE -> {
+                    sb.append(Pem.PKCS8HEADER);
+                    sb.append(e.encodeToString(encoded));
+                    sb.append(Pem.PKCS8FOOTER);
+                }
+                case ENCRYPTED_PRIVATE -> {
+                    sb.append(Pem.PKCS8ENCHEADER);
+                    sb.append(e.encodeToString(encoded));
+                    sb.append(Pem.PKCS8ENCFOOTER);
+                }
+                case RSAPRIVKEY -> {
+                    sb.append(Pem.PKCS1HEADER);
+                    sb.append(e.encodeToString(encoded));
+                    sb.append(Pem.PKCS1FOOTER);
+                }
+                default -> {
+                    return "";
+                }
+            }
+            return sb.toString();
+        }
+    }
+
+    /**
+     * The type Pem encoder.
+     */
+    public static class PEMEncoder extends Encoder {
+        PEMEncoder() {}
+
+        /**
+         * Instantiates a new Pem encoder.
+         *
+         * @param cipher the cipher
+         * @param algid  the algid
+         */
+        private PEMEncoder(Cipher cipher, AlgorithmId algid) {
+            super(cipher, algid);
+        }
+
+        /**
+         * Encode string.
+         *
+         * @param k the k
+         * @return the string
+         * @throws IOException the io exception
+         */
 // PKCS8 or X509
+        @Override
         public String encode(Key k) throws IOException {
             Objects.requireNonNull(k);
             if (k instanceof PublicKey) {
-                return build(k.getEncoded(), null);
+                return build(null, k.getEncoded());
             }
             if (k instanceof PrivateKey) {
-                return build(null, k.getEncoded());
+                return build(k.getEncoded(), null);
             }
             throw new IOException("Invalid Key type used.");
         }
@@ -254,7 +346,7 @@ public class PEM {
                 throw new IOException(e);
             }
 
-            return new Encoder(cipher, algid);
+            return new PEMEncoder(cipher, algid);
         }
 
         /**
@@ -290,53 +382,108 @@ public class PEM {
             }
             // PKCS8 only
             if (publicBytes == null && privateBytes != null) {
-                pemEncoded(KeyType.PRIVATE, privateBytes);
+                return pemEncoded(KeyType.PRIVATE, privateBytes);
             }
             // OAS
             return pemEncoded(KeyType.PRIVATE, PKCS8Key.getEncoded(publicBytes, privateBytes));
         }
 
-        private String pemEncoded(KeyType keyType, byte[] encoded) {
-            StringBuilder sb = new StringBuilder(100);
-            switch (keyType) {
-                case PUBLIC -> {
-                    sb.append(Pem.PUBHEADER);
-                    sb.append(encoded);
-                    sb.append(Pem.PUBFOOTER);
+    }
+
+
+    /**
+     * The type Open ssl encoder.
+     */
+    public static class OpenSSLEncoder extends Encoder {
+        /**
+         * Instantiates a new Open ssl encoder.
+         */
+        OpenSSLEncoder() {
+            super();
+        }
+
+        @Override
+        public String encode(Key k) throws IOException {
+            return pemEncoded(KeyType.RSAPRIVKEY,
+                ((RSAPrivateCrtKeyImpl) k).getPrivKeyMaterial());
+        }
+/*
+        private void decode(InputStream is) throws InvalidKeyException {
+            DerValue val = null;
+            try {
+                val = new DerValue(is);
+                if (val.tag != DerValue.tag_Sequence) {
+                    throw new InvalidKeyException("invalid key format");
                 }
-                case PRIVATE -> {
-                    sb.append(Pem.PKCS8HEADER);
-                    sb.append(encoded);
-                    sb.append(Pem.PKCS8FOOTER);
+
+                // Support check for V1, aka 0, and V2, aka 1.
+                version = val.data.getInteger();
+                if (version != V1) {
+                    throw new InvalidKeyException("unknown version: " + version);
                 }
-                case ENCRYPTED_PRIVATE -> {
-                    sb.append(Pem.PKCS8ENCHEADER);
-                    sb.append(encoded);
-                    sb.append(Pem.PKCS8ENCFOOTER);
+                // Store key material for subclasses to parse
+                privKeyMaterial = val.data.getOctetString();
+
+                // PKCS8 v1 typically ends here
+                if (val.data.available() == 0) {
+                    return;
                 }
-                default -> {
-                    return "";
+
+                 // OPTIONAL Context tag 0 for Attributes for PKCS8 v1 & v2
+                var result =
+                    val.data.getOptionalImplicitContextSpecific(0,
+                        DerValue.tag_Sequence);
+                if (result.isPresent()) {
+                    attributes = new DerInputStream(result.get().getDataBytes()).toByteArray();
+                    //attributes = result.get().data.getSequence(0)''
+                    if (val.data.available() == 0) {
+                        return;
+                    }
+                }
+
+                // OPTIONAL context tag 1 for Public Key for PKCS8 v2 only
+                if (version == V2) {
+                    System.err.println("writing pub");
+                    result = val.data.getOptionalImplicitContextSpecific(1,
+                        DerValue.tag_BitString);
+                    if (result.isPresent()) {
+                        // Store public key material for later parsing
+                        pubKeyEncoded = new X509Key(algid,
+                            result.get().getUnalignedBitString()).getEncoded();
+                    }
+                }
+
+                if (val.data.available() != 0) {
+                    throw new InvalidKeyException("Extra bytes");
+                }
+            } catch (Exception e) {
+                throw new InvalidKeyException("IOException : " + e.getMessage());
+            } finally {
+                if (val != null) {
+                    val.clear();
                 }
             }
-            return sb.toString();
-        }
+     }
+ */
     }
 
     /**
      * The type Decoder.
      */
     public static class Decoder {
-        private static final String STARTHEADER = "-----BEGIN ";
-        private static final String ENDFOOTER = "-----END ";
+        static final String STARTHEADER = "-----BEGIN ";
+        static final String ENDFOOTER = "-----END ";
 
+        private Decoder() {}
         /**
          * The enum Key type.
          */
+        /*
         private enum KeyType {
             UNKNOWN, PRIVATE, PUBLIC, ENCRYPTED_PRIVATE, CERTIFICATE, CRL
         }
 
-        private Decoder() {}
+         */
 
         /**
          * Decode PEM data.
@@ -346,13 +493,13 @@ public class PEM {
          * @throws IOException the io exception
          */
         public Object decode(String str) throws IOException {
-                return decode(new StringReader(str));
-            }
+            return decode(new StringReader(str));
+        }
 
         /**
          * Decode PEM data.
          *
-         * @param reader PEM data from a Reader000
+         * @param reader PEM data from a Reader
          * @return an Object that is contained in the PEM data
          * @throws IOException the io exception
          */
@@ -392,7 +539,11 @@ public class PEM {
             sb = new StringBuilder(4096);
             // Read data until we find the hyphens for END
             while (hyphen != 5) {
-                if ((c = (char) br.read()) == '-') {
+                c = (char) br.read();
+                if (c == '\n' || c =='\r') {
+                    continue;
+                }
+                if (c == '-') {
                     hyphen++;
                 } else {
                     hyphen = 0;
@@ -419,67 +570,33 @@ public class PEM {
                 throw new IOException("Proper header not found.");
             }
             return decode(data, header, footer);
+        }
+
+        /**
+         * Decode object.
+         *
+         * @param data   the data
+         * @param header the header
+         * @param footer the footer
+         * @return the object
+         * @throws IOException the io exception
+         */
+        protected Object decode(String data, String header, String footer) throws IOException {
+            KeyType keyType;
+
+            if (header.equalsIgnoreCase(Pem.PUBHEADER) ||
+                header.startsWith(Pem.PKCS8HEADER) ||
+                header.startsWith(Pem.PKCS8ENCHEADER) ||
+                header.startsWith(Pem.CERTHEADER) ||
+                header.startsWith(Pem.CRLHEADER)) {
+                return new PEMDecoder().decode(data, header, footer);
+            }
+            if (header.equalsIgnoreCase(Pem.PKCS1HEADER)) {
+                return new OpenSSLDecoder().decode(data, header, footer);
             }
 
-            private Object decode(String data, String header, String footer) throws IOException {
-                KeyType keyType;
-
-                if (header.equalsIgnoreCase(Pem.PUBHEADER) && footer.equalsIgnoreCase(Pem.PUBFOOTER)) {
-                    keyType = KeyType.PUBLIC;
-                } else if (header.startsWith(Pem.PKCS8HEADER) && footer.equalsIgnoreCase(Pem.PKCS8FOOTER)) {
-                    keyType = KeyType.PRIVATE;
-                } else if (header.startsWith(Pem.PKCS8ENCHEADER) && footer.equalsIgnoreCase(Pem.PKCS8ENCFOOTER)) {
-                    keyType = KeyType.ENCRYPTED_PRIVATE;
-                } else if (header.startsWith(Pem.CERTHEADER) && footer.equalsIgnoreCase(Pem.CERTFOOTER)) {
-                    keyType = KeyType.CERTIFICATE;
-                } else if (header.startsWith(Pem.CRLHEADER) && footer.equalsIgnoreCase(Pem.CRLFOOTER)) {
-                    keyType = KeyType.CRL;
-                } else {
-                    return null;
-                }
-
-                Base64.Decoder decoder = Base64.getDecoder();
-
-                switch (keyType) {
-                    case PUBLIC -> {
-                        return X509Key.parseKey(decoder.decode(data));
-                    }
-                    case PRIVATE -> {
-                        try {
-                            PKCS8Key p8key = new PKCS8Key(decoder.decode(data));
-                            if (p8key.getPubKeyEncoded() != null) {
-                                return new KeyPair(
-                                    X509Key.parseKey(p8key.getPubKeyEncoded()),
-                                    PKCS8Key.parseKey(p8key.getEncoded()));
-                            }
-                            return PKCS8Key.parseKey(p8key.getEncoded());
-                        } catch (InvalidKeyException e) {
-                            throw new IOException(e);
-                        }
-                    }
-                    case ENCRYPTED_PRIVATE -> {
-                        return new EncryptedPrivateKeyInfo(decoder.decode(data));
-                    }
-                    case CERTIFICATE -> {
-                        try {
-                            var cf = CertificateFactory.getInstance("X509");
-                            return cf.generateCertificate(new ByteArrayInputStream((header + "\n" + data + footer + "\n").getBytes()));
-                        } catch (CertificateException e) {
-                            throw new IOException(e);
-                        }
-                    }
-                    case CRL -> {
-                        try {
-                            var cf = CertificateFactory.getInstance("X509");
-                            return cf.generateCRL(new ByteArrayInputStream((header + "\n" + data + footer + "\n").getBytes()));
-                        } catch (Exception e) {
-                            throw new IOException(e);
-                        }
-                    }
-                    default -> throw new IOException("Unsupported type or not properly formatted PEM");
-
-                }
-            }
+            throw new IOException("Unknown header format");
+        }
 
         /**
          * Decode t.
@@ -506,5 +623,98 @@ public class PEM {
         public <T> T decode(Reader reader, Class <T> tClass) throws IOException {
             return tClass.cast(decode(reader));
         }
+    }
+
+    /**
+     * The type Open ssl decoder.
+     */
+    public static class OpenSSLDecoder extends Decoder {
+        private OpenSSLDecoder() {super();}
+
+        @Override
+        protected Object decode(String data, String header, String footer) throws IOException {
+            KeyType keyType;
+            KeyFactory kf;
+            if (header.startsWith(Pem.PKCS1HEADER) && footer.equalsIgnoreCase(Pem.PKCS1FOOTER)) {
+                keyType = KeyType.PRIVATE;
+                try {
+                    //kf = KeyFactory.getInstance("RSA");
+                    return RSAPrivateCrtKeyImpl.newKey(RSAUtil.KeyType.RSA, "PKCS#1",
+                        Base64.getDecoder().decode(data));
+                } catch (Exception e) {
+                    throw new IOException(e);
+                }
+            }
+
+            return null;
+        }
+    }
+
+    /**
+     * The type Pem decoder.
+     */
+    public static final class PEMDecoder extends Decoder {
+            private PEMDecoder() {super();}
+
+        protected Object decode(String data, String header, String footer) throws IOException {
+            KeyType keyType;
+
+            if (header.equalsIgnoreCase(Pem.PUBHEADER) && footer.equalsIgnoreCase(Pem.PUBFOOTER)) {
+                keyType = KeyType.PUBLIC;
+            } else if (header.startsWith(Pem.PKCS8HEADER) && footer.equalsIgnoreCase(Pem.PKCS8FOOTER)) {
+                keyType = KeyType.PRIVATE;
+            } else if (header.startsWith(Pem.PKCS8ENCHEADER) && footer.equalsIgnoreCase(Pem.PKCS8ENCFOOTER)) {
+                keyType = KeyType.ENCRYPTED_PRIVATE;
+            } else if (header.startsWith(Pem.CERTHEADER) && footer.equalsIgnoreCase(Pem.CERTFOOTER)) {
+                keyType = KeyType.CERTIFICATE;
+            } else if (header.startsWith(Pem.CRLHEADER) && footer.equalsIgnoreCase(Pem.CRLFOOTER)) {
+                keyType = KeyType.CRL;
+            } else {
+                return null;
+            }
+
+            Base64.Decoder decoder = Base64.getDecoder();
+
+            switch (keyType) {
+                case PUBLIC -> {
+                        return X509Key.parseKey(decoder.decode(data));
+                }
+                case PRIVATE -> {
+                    try {
+                        PKCS8Key p8key = new PKCS8Key(decoder.decode(data));
+                        if (p8key.getPubKeyEncoded() != null) {
+                            return new KeyPair(
+                                X509Key.parseKey(p8key.getPubKeyEncoded()),
+                                PKCS8Key.parseKey(p8key.getEncoded()));
+                        }
+                        return PKCS8Key.parseKey(p8key.getEncoded());
+                    } catch (InvalidKeyException e) {
+                        throw new IOException(e);
+                    }
+                }
+                case ENCRYPTED_PRIVATE -> {
+                    return new EncryptedPrivateKeyInfo(decoder.decode(data));
+                }
+                case CERTIFICATE -> {
+                    try {
+                        var cf = CertificateFactory.getInstance("X509");
+                        return cf.generateCertificate(new ByteArrayInputStream((header + "\n" + data + footer + "\n").getBytes()));
+                    } catch (CertificateException e) {
+                            throw new IOException(e);
+                    }
+                }
+                case CRL -> {
+                    try {
+                        var cf = CertificateFactory.getInstance("X509");
+                        return cf.generateCRL(new ByteArrayInputStream((header + "\n" + data + footer + "\n").getBytes()));
+                    } catch (Exception e) {
+                        throw new IOException(e);
+                    }
+                }
+                default -> throw new IOException("Unsupported type or not properly formatted PEM");
+
+            }
+        }
+
     }
 }

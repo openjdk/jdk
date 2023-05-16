@@ -67,6 +67,12 @@ public class Pem {
     public static final String CRLFOOTER = "-----END CRL-----";
 
     /**
+     * OpenSSL PKCS1 RSA Header
+     */
+    public static final String PKCS1HEADER = "-----BEGIN RSA PRIVATE KEY-----";
+    public static final String PKCS1FOOTER = "-----END RSA PRIVATE KEY-----";
+
+    /**
      * Decodes a PEM-encoded block.
      *
      * @param input the input string, according to RFC 1421, can only contain

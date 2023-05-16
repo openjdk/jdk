@@ -235,6 +235,10 @@ public class PKCS8Key implements PrivateKey, InternalPrivateKey {
         return pubKeyEncoded;
     }
 
+    public byte[] getPrivKeyMaterial() {
+        return privKeyMaterial;
+    }
+
     public boolean hasPublicKey() {
         return (pubKeyEncoded == null ? false : true);
     }
