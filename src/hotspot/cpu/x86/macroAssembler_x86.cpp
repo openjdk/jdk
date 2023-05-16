@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -7937,24 +7937,27 @@ void MacroAssembler::crc32c_ipl_alg2_alt2(Register in_out, Register in1, Registe
   addl(tmp1, in2);
   addq(tmp1, in1);
 
-  BIND(L_wordByWord);
   cmpq(in1, tmp1);
-  jcc(Assembler::greaterEqual, L_byteByByteProlog);
-    crc32(in_out, Address(in1, 0), 4);
-    addq(in1, 4);
-    jmp(L_wordByWord);
+  jccb(Assembler::greaterEqual, L_byteByByteProlog);
+  align(16);
+  BIND(L_wordByWord);
+    crc32(in_out, Address(in1, 0), 8);
+    addq(in1, 8);
+    cmpq(in1, tmp1);
+    jcc(Assembler::less, L_wordByWord);
 
   BIND(L_byteByByteProlog);
   andl(in2, 0x00000007);
   movl(tmp2, 1);
 
-  BIND(L_byteByByte);
   cmpl(tmp2, in2);
   jccb(Assembler::greater, L_exit);
+  BIND(L_byteByByte);
     crc32(in_out, Address(in1, 0), 1);
     incq(in1);
     incl(tmp2);
-    jmp(L_byteByByte);
+    cmpl(tmp2, in2);
+    jcc(Assembler::lessEqual, L_byteByByte);
 
   BIND(L_exit);
 }
