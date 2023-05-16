@@ -1640,26 +1640,23 @@ void C2_MacroAssembler::minmax_fp_v(VectorRegister dst, VectorRegister src1, Vec
 }
 
 // Set dst to NaN if any NaN input.
-void C2_MacroAssembler::minmax_fp_masked_v(VectorRegister dst, VectorRegister src1, VectorRegister src2,
-                                           bool is_double, bool is_min, int vector_length,
-                                           VectorRegister tmp1, VectorRegister tmp2, VectorRegister vmask) {
-  assert_different_registers(dst, src2);
-  if (dst != src1) {
-    // Inactive elements need to transfer the value in src1 to dst
-    vmv_v_v(dst, src1);
-  }
-  vsetvli_helper(is_double ? T_DOUBLE : T_FLOAT, vector_length);
+// The destination vector register elements corresponding to masked-off elements
+// are handled with a mask-undisturbed policy.
+void C2_MacroAssembler::minmax_fp_masked_v(VectorRegister dst, VectorRegister src1,
+                                           VectorRegister src2, bool is_double, bool is_min,
+                                           int vector_length, VectorRegister vmask) {
+  assert_different_registers(dst, src1, src2);
 
-  // Check vector elements of src1 and src2 for NaN.
-  vmfeq_vv(tmp1, src1, src1);
-  vmfeq_vv(tmp2, src2, src2);
-  vmand_mm(tmp1, tmp1, tmp2);
-  vmand_mm(v0, vmask, tmp1);
+  vsetvli_helper(is_double ? T_DOUBLE : T_FLOAT, vector_length);
+  vmmv_m(v0, vmask);
 
   is_min ? vfmin_vv(dst, src1, src2, Assembler::v0_t)
          : vfmax_vv(dst, src1, src2, Assembler::v0_t);
 
-  vmandn_mm(v0, vmask, tmp2);
+  vmfne_vv(v0, src1, src1, Assembler::v0_t);
+  vfadd_vv(dst, src1, src1, Assembler::v0_t);
+  vmmv_m(v0, vmask);
+  vmfne_vv(v0, src2, src2, Assembler::v0_t);
   vfadd_vv(dst, src2, src2, Assembler::v0_t);
 }
 

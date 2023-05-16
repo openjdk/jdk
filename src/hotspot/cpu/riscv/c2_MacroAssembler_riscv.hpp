@@ -190,8 +190,7 @@
                   bool is_double, bool is_min, int vector_length);
 
  void minmax_fp_masked_v(VectorRegister dst, VectorRegister src1, VectorRegister src2,
-                         bool is_double, bool is_min, int vector_length,
-                         VectorRegister tmp1, VectorRegister tmp2, VectorRegister vmask);
+                         bool is_double, bool is_min, int vector_length, VectorRegister vmask);
 
  void reduce_minmax_fp_v(FloatRegister dst,
                          FloatRegister src1, VectorRegister src2,
