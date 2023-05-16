@@ -1330,12 +1330,13 @@ final class AESCrypt extends SymmetricCipher implements AESConstants {
                     k.length + " bytes");
         }
 
-        int ROUNDS          = getRounds(k.length);
-        int ROUND_KEY_COUNT = (ROUNDS + 1) * 4;
-
         final int BC = 4;
-        int[] Ke = new int[(ROUNDS + 1)*BC]; // encryption round keys
-        int[] Kd = new int[(ROUNDS + 1)*BC]; // decryption round keys
+
+        int ROUNDS          = getRounds(k.length);
+        int ROUND_KEY_COUNT = (ROUNDS + 1) * BC;
+
+        int[] Ke = new int[ROUND_KEY_COUNT]; // encryption round keys
+        int[] Kd = new int[ROUND_KEY_COUNT]; // decryption round keys
 
         int KC = k.length/4; // keylen in 32-bit elements
 
@@ -1395,10 +1396,16 @@ final class AESCrypt extends SymmetricCipher implements AESConstants {
         }
 
         // For decryption round keys, need to rotate right by 4 ints.
-        int[] KdTail = Arrays.copyOfRange(Kd, Kd.length - 4, Kd.length);
-        System.arraycopy(Kd, 0, Kd, BC, Kd.length - BC);
-        System.arraycopy(KdTail, 0, Kd, 0, BC);
-        Arrays.fill(KdTail, 0);
+        // Do that without allocating and zeroing the small buffer.
+        int KdTail_0 = Kd[Kd.length - 4];
+        int KdTail_1 = Kd[Kd.length - 3];
+        int KdTail_2 = Kd[Kd.length - 2];
+        int KdTail_3 = Kd[Kd.length - 1];
+        System.arraycopy(Kd, 0, Kd, 4, Kd.length - 4);
+        Kd[0] = KdTail_0;
+        Kd[1] = KdTail_1;
+        Kd[2] = KdTail_2;
+        Kd[3] = KdTail_3;
 
         Arrays.fill(tk, 0);
         ROUNDS_12 = (ROUNDS>=12);
