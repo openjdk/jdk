@@ -85,7 +85,7 @@ void BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorators,
   case T_ARRAY:
   case T_OBJECT: {
     if (UseCompressedOops && in_heap) {
-      if (L_handle_null != NULL) { // Label provided.
+      if (L_handle_null != nullptr) { // Label provided.
         __ lwz(dst, ind_or_offs, base);
         __ cmpwi(CCR0, dst, 0);
         __ beq(CCR0, *L_handle_null);
@@ -100,7 +100,7 @@ void BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorators,
       }
     } else {
       __ ld(dst, ind_or_offs, base);
-      if (L_handle_null != NULL) {
+      if (L_handle_null != nullptr) {
         __ cmpdi(CCR0, dst, 0);
         __ beq(CCR0, *L_handle_null);
       }
@@ -117,7 +117,7 @@ void BarrierSetAssembler::resolve_jobject(MacroAssembler* masm, Register value,
                                           MacroAssembler::PreservationLevel preservation_level) {
   Label done, tagged, weak_tagged, verify;
   __ cmpdi(CCR0, value, 0);
-  __ beq(CCR0, done);         // Use NULL as-is.
+  __ beq(CCR0, done);         // Use null as-is.
 
   __ andi_(tmp1, value, JNIHandles::tag_mask);
   __ bne(CCR0, tagged);       // Test for tag.
@@ -151,7 +151,7 @@ void BarrierSetAssembler::resolve_global_jobject(MacroAssembler* masm, Register 
   Label done;
 
   __ cmpdi(CCR0, value, 0);
-  __ beq(CCR0, done);         // Use NULL as-is.
+  __ beq(CCR0, done);         // Use null as-is.
 
 #ifdef ASSERT
   {

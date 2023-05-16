@@ -438,7 +438,7 @@ bool SystemDictionaryShared::add_unregistered_class(Thread* current, InstanceKla
   // We only archive the first class with that name that succeeds putting
   // itself into the table.
   assert(Arguments::is_dumping_archive() || ClassListWriter::is_enabled(), "sanity");
-  MutexLocker ml(current, UnregisteredClassesTable_lock);
+  MutexLocker ml(current, UnregisteredClassesTable_lock, Mutex::_no_safepoint_check_flag);
   Symbol* name = klass->name();
   if (_unregistered_classes_table == nullptr) {
     _unregistered_classes_table = new (mtClass)UnregisteredClassesTable();
@@ -522,15 +522,19 @@ void SystemDictionaryShared::handle_class_unloading(InstanceKlass* klass) {
     remove_dumptime_info(klass);
   }
 
-  if (_unregistered_classes_table != nullptr) {
-    // Remove the class from _unregistered_classes_table: keep the entry but
-    // set it to null. This ensure no classes with the same name can be
-    // added again.
-    MutexLocker ml(Thread::current(), UnregisteredClassesTable_lock);
-    InstanceKlass** v = _unregistered_classes_table->get(klass->name());
-    if (v != nullptr) {
-      *v = nullptr;
+  if (Arguments::is_dumping_archive() || ClassListWriter::is_enabled()) {
+    MutexLocker ml(Thread::current(), UnregisteredClassesTable_lock, Mutex::_no_safepoint_check_flag);
+    if (_unregistered_classes_table != nullptr) {
+      // Remove the class from _unregistered_classes_table: keep the entry but
+      // set it to null. This ensure no classes with the same name can be
+      // added again.
+      InstanceKlass** v = _unregistered_classes_table->get(klass->name());
+      if (v != nullptr) {
+        *v = nullptr;
+      }
     }
+  } else {
+    assert(_unregistered_classes_table == nullptr, "must not be used");
   }
 
   if (ClassListWriter::is_enabled()) {
@@ -1162,22 +1166,19 @@ public:
   AdjustLambdaProxyClassInfo() {}
   bool do_entry(LambdaProxyClassKey& key, DumpTimeLambdaProxyClassInfo& info) {
     int len = info._proxy_klasses->length();
-    if (len > 1) {
-      for (int i = 0; i < len-1; i++) {
-        InstanceKlass* ok0 = info._proxy_klasses->at(i+0); // this is original klass
-        InstanceKlass* ok1 = info._proxy_klasses->at(i+1); // this is original klass
-        assert(ArchiveBuilder::current()->is_in_buffer_space(ok0), "must be");
-        assert(ArchiveBuilder::current()->is_in_buffer_space(ok1), "must be");
-        InstanceKlass* bk0 = ok0;
-        InstanceKlass* bk1 = ok1;
-        assert(bk0->next_link() == 0, "must be called after Klass::remove_unshareable_info()");
-        assert(bk1->next_link() == 0, "must be called after Klass::remove_unshareable_info()");
-        bk0->set_next_link(bk1);
-        bk1->set_lambda_proxy_is_available();
-        ArchivePtrMarker::mark_pointer(bk0->next_link_addr());
+    InstanceKlass* last_buff_k = nullptr;
+
+    for (int i = len - 1; i >= 0; i--) {
+      InstanceKlass* orig_k = info._proxy_klasses->at(i);
+      InstanceKlass* buff_k = ArchiveBuilder::current()->get_buffered_addr(orig_k);
+      assert(ArchiveBuilder::current()->is_in_buffer_space(buff_k), "must be");
+      buff_k->set_lambda_proxy_is_available();
+      buff_k->set_next_link(last_buff_k);
+      if (last_buff_k != nullptr) {
+        ArchivePtrMarker::mark_pointer(buff_k->next_link_addr());
       }
+      last_buff_k = buff_k;
     }
-    info._proxy_klasses->at(0)->set_lambda_proxy_is_available();
 
     return true;
   }
@@ -1201,6 +1202,7 @@ public:
 
       unsigned int hash;
       Symbol* name = info._klass->name();
+      name = ArchiveBuilder::current()->get_buffered_addr(name);
       hash = SystemDictionaryShared::hash_for_shared_dictionary((address)name);
       u4 delta = _builder->buffer_to_offset_u4((address)record);
       if (_is_builtin && info._klass->is_hidden()) {
@@ -1214,7 +1216,8 @@ public:
       }
 
       // Save this for quick runtime lookup of InstanceKlass* -> RunTimeClassInfo*
-      RunTimeClassInfo::set_for(info._klass, record);
+      InstanceKlass* buffered_klass = ArchiveBuilder::current()->get_buffered_addr(info._klass);
+      RunTimeClassInfo::set_for(buffered_klass, record);
     }
   }
 };
@@ -1264,7 +1267,7 @@ void SystemDictionaryShared::serialize_dictionary_headers(SerializeClosure* soc,
 
 void SystemDictionaryShared::serialize_vm_classes(SerializeClosure* soc) {
   for (auto id : EnumRange<vmClassID>{}) {
-    soc->do_ptr((void**)vmClasses::klass_addr_at(id));
+    soc->do_ptr(vmClasses::klass_addr_at(id));
   }
 }
 

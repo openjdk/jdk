@@ -66,6 +66,10 @@ void oopDesc::set_mark(HeapWord* mem, markWord m) {
   *(markWord*)(((char*)mem) + mark_offset_in_bytes()) = m;
 }
 
+void oopDesc::release_set_mark(HeapWord* mem, markWord m) {
+  Atomic::release_store((markWord*)(((char*)mem) + mark_offset_in_bytes()), m);
+}
+
 void oopDesc::release_set_mark(markWord m) {
   Atomic::release_store(&_mark, m);
 }
@@ -266,14 +270,12 @@ bool oopDesc::is_forwarded() const {
 
 // Used by scavengers
 void oopDesc::forward_to(oop p) {
-  verify_forwardee(p);
   markWord m = markWord::encode_pointer_as_mark(p);
   assert(m.decode_pointer() == p, "encoding must be reversible");
   set_mark(m);
 }
 
 oop oopDesc::forward_to_atomic(oop p, markWord compare, atomic_memory_order order) {
-  verify_forwardee(p);
   markWord m = markWord::encode_pointer_as_mark(p);
   assert(m.decode_pointer() == p, "encoding must be reversible");
   markWord old_mark = cas_set_mark(m, compare, order);

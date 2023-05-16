@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -536,19 +536,6 @@ public class TransPatterns extends TreeTranslator {
                         JCExpression test = (JCExpression) this.<JCTree>translate(label.pat);
                         if (label.guard != null) {
                             JCExpression guard = translate(label.guard);
-                            if (hasJoinedNull) {
-                                JCPattern pattern = label.pat;
-                                while (pattern instanceof JCParenthesizedPattern parenthesized) {
-                                    pattern = parenthesized.pattern;
-                                }
-                                Assert.check(pattern.hasTag(Tag.BINDINGPATTERN));
-                                BindingSymbol binding = (BindingSymbol) ((JCBindingPattern) pattern).var.sym;
-                                guard = makeBinary(Tag.OR,
-                                                   makeBinary(Tag.EQ,
-                                                              make.Ident(bindingContext.getBindingFor(binding)),
-                                                              makeNull()),
-                                                   guard);
-                            }
                             test = makeBinary(Tag.AND, test, guard);
                         }
                         c.stats = translate(c.stats);

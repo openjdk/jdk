@@ -884,23 +884,23 @@ protected:
   class InterfaceSet {
   private:
     GrowableArray<ciKlass*> _list;
-    void raw_add(ciKlass* interface);
-    void add(ciKlass* interface);
-    void verify() const;
-    uint _hash_computed:1;
-    uint _exact_klass_computed:1;
-    uint _is_loaded_computed:1;
     int _hash;
     ciKlass* _exact_klass;
-    bool _is_loaded;
+    DEBUG_ONLY(bool _initialized;)
+
+    void initialize();
+    void raw_add(ciKlass* interface);
+    void add(ciKlass* interface);
+    void verify() const NOT_DEBUG_RETURN;
     void compute_hash();
     void compute_exact_klass();
   public:
     InterfaceSet();
     InterfaceSet(GrowableArray<ciInstanceKlass*>* interfaces);
     bool eq(const InterfaceSet& other) const;
+    bool eq(ciInstanceKlass* k) const;
     int hash() const;
-    void dump(outputStream *st) const;
+    void dump(outputStream* st) const;
     InterfaceSet union_with(const InterfaceSet& other) const;
     InterfaceSet intersection_with(const InterfaceSet& other) const;
     bool contains(const InterfaceSet& other) const {
@@ -912,15 +912,13 @@ protected:
       Compile* compile = Compile::current();
       return compile->type_arena()->AmallocWords(x);
     }
-    inline void operator delete( void* ptr ) {
+    inline void operator delete(void* ptr) {
       ShouldNotReachHere();
     }
     ciKlass* exact_klass() const;
-    bool is_loaded() const;
+    void verify_is_loaded() const NOT_DEBUG_RETURN;
 
-    static int compare(ciKlass* const &, ciKlass* const & k2);
-
-    void compute_is_loaded();
+    static int compare(ciKlass* const& k1, ciKlass* const& k2);
   };
 
   static InterfaceSet interfaces(ciKlass*& k, bool klass, bool interface, bool array, InterfaceHandling interface_handling);
@@ -1202,7 +1200,7 @@ public:
   ciKlass* exact_klass(bool maybe_null = false) const { assert(klass_is_exact(), ""); ciKlass* k = exact_klass_helper(); assert(k != nullptr || maybe_null, ""); return k;  }
   ciKlass* unloaded_klass() const { assert(!is_loaded(), "only for unloaded types"); return klass(); }
 
-  virtual bool  is_loaded() const { return klass()->is_loaded() && _interfaces.is_loaded(); }
+  virtual bool  is_loaded() const { return klass()->is_loaded(); }
   virtual bool klass_is_exact()    const { return _klass_is_exact; }
 
   // Returns true if this pointer points at memory which contains a

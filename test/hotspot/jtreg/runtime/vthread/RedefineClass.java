@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -25,8 +25,8 @@
 /**
  * @test
  * @summary Regression test based on runtime/Metaspace/DefineClass.java
- * @compile --enable-preview -source ${jdk.version} RedefineClass.java
- * @run main/othervm --enable-preview -Djdk.attach.allowAttachSelf RedefineClass
+ * @compile RedefineClass.java
+ * @run main/othervm -Djdk.attach.allowAttachSelf RedefineClass
  */
 
 import java.io.ByteArrayOutputStream;

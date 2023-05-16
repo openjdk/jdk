@@ -109,7 +109,7 @@ class JfrThreadConstant : public JfrSerializer {
   oop _vthread;
   void write_name(JfrCheckpointWriter& writer, const char* name, int length);
  public:
-  JfrThreadConstant(Thread* t, traceid tid, oop vthread = NULL) : _thread(t), _tid(tid), _vthread(vthread) {}
+  JfrThreadConstant(Thread* t, traceid tid, oop vthread = nullptr) : _thread(t), _tid(tid), _vthread(vthread) {}
   void serialize(JfrCheckpointWriter& writer);
 };
 

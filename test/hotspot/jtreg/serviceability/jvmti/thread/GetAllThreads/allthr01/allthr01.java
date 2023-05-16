@@ -38,8 +38,8 @@
  *
  * @requires vm.continuations
  * @library /test/lib
- * @compile --enable-preview -source ${jdk.version} allthr01.java
- * @run main/othervm/native --enable-preview -Djava.util.concurrent.ForkJoinPool.common.parallelism=1 -agentlib:allthr01 allthr01
+ * @compile allthr01.java
+ * @run main/othervm/native -Djava.util.concurrent.ForkJoinPool.common.parallelism=1 -agentlib:allthr01 allthr01
  */
 
 import java.util.concurrent.atomic.AtomicBoolean;

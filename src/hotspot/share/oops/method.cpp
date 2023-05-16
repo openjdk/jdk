@@ -102,11 +102,6 @@ Method::Method(ConstMethod* xconst, AccessFlags access_flags, Symbol* name) {
   set_constMethod(xconst);
   set_access_flags(access_flags);
   set_intrinsic_id(vmIntrinsics::_none);
-  set_force_inline(false);
-  set_hidden(false);
-  set_dont_inline(false);
-  set_changes_current_thread(false);
-  set_has_injected_profile(false);
   set_method_data(nullptr);
   clear_method_counters();
   set_vtable_index(Method::garbage_vtable_index);
@@ -736,24 +731,27 @@ bool Method::compute_has_loops_flag() {
       case Bytecodes::_if_acmpne:
       case Bytecodes::_goto:
       case Bytecodes::_jsr:
-        if (bcs.dest() < bcs.next_bci()) _access_flags.set_has_loops();
+        if (bcs.dest() < bcs.next_bci()) {
+          return set_has_loops();
+        }
         break;
 
       case Bytecodes::_goto_w:
       case Bytecodes::_jsr_w:
-        if (bcs.dest_w() < bcs.next_bci()) _access_flags.set_has_loops();
+        if (bcs.dest_w() < bcs.next_bci()) {
+          return set_has_loops();
+        }
         break;
 
       case Bytecodes::_lookupswitch: {
         Bytecode_lookupswitch lookupswitch(this, bcs.bcp());
         if (lookupswitch.default_offset() < 0) {
-          _access_flags.set_has_loops();
+          return set_has_loops();
         } else {
           for (int i = 0; i < lookupswitch.number_of_pairs(); ++i) {
             LookupswitchPair pair = lookupswitch.pair_at(i);
             if (pair.offset() < 0) {
-              _access_flags.set_has_loops();
-              break;
+              return set_has_loops();
             }
           }
         }
@@ -762,11 +760,11 @@ bool Method::compute_has_loops_flag() {
       case Bytecodes::_tableswitch: {
         Bytecode_tableswitch tableswitch(this, bcs.bcp());
         if (tableswitch.default_offset() < 0) {
-          _access_flags.set_has_loops();
+          return set_has_loops();
         } else {
           for (int i = 0; i < tableswitch.length(); ++i) {
             if (tableswitch.dest_offset_at(i) < 0) {
-              _access_flags.set_has_loops();
+              return set_has_loops();
             }
           }
         }
@@ -776,8 +774,9 @@ bool Method::compute_has_loops_flag() {
         break;
     }
   }
-  _access_flags.set_loops_flag_init();
-  return _access_flags.has_loops();
+
+  _flags.set_has_loops_flag_init(true);
+  return false;
 }
 
 bool Method::is_final_method(AccessFlags class_access_flags) const {
@@ -1108,13 +1107,13 @@ void Method::set_not_compilable(const char* reason, int comp_level, bool report)
   }
   print_made_not_compilable(comp_level, /*is_osr*/ false, report, reason);
   if (comp_level == CompLevel_all) {
-    set_not_c1_compilable();
-    set_not_c2_compilable();
+    set_is_not_c1_compilable();
+    set_is_not_c2_compilable();
   } else {
     if (is_c1_compile(comp_level))
-      set_not_c1_compilable();
+      set_is_not_c1_compilable();
     if (is_c2_compile(comp_level))
-      set_not_c2_compilable();
+      set_is_not_c2_compilable();
   }
   assert(!CompilationPolicy::can_be_compiled(methodHandle(Thread::current(), this), comp_level), "sanity check");
 }
@@ -1134,13 +1133,13 @@ bool Method::is_not_osr_compilable(int comp_level) const {
 void Method::set_not_osr_compilable(const char* reason, int comp_level, bool report) {
   print_made_not_compilable(comp_level, /*is_osr*/ true, report, reason);
   if (comp_level == CompLevel_all) {
-    set_not_c1_osr_compilable();
-    set_not_c2_osr_compilable();
+    set_is_not_c1_osr_compilable();
+    set_is_not_c2_osr_compilable();
   } else {
     if (is_c1_compile(comp_level))
-      set_not_c1_osr_compilable();
+      set_is_not_c1_osr_compilable();
     if (is_c2_compile(comp_level))
-      set_not_c2_osr_compilable();
+      set_is_not_c2_osr_compilable();
   }
   assert(!CompilationPolicy::can_be_osr_compiled(methodHandle(Thread::current(), this), comp_level), "sanity check");
 }
@@ -1663,7 +1662,7 @@ void Method::init_intrinsic_id(vmSymbolID klass_id) {
     set_intrinsic_id(id);
     if (id == vmIntrinsics::_Class_cast) {
       // Even if the intrinsic is rejected, we want to inline this simple method.
-      set_force_inline(true);
+      set_force_inline();
     }
     return;
   }
@@ -2241,8 +2240,8 @@ void Method::set_on_stack(const bool value) {
   // on stack means some method referring to it is also on the stack.
   constants()->set_on_stack(value);
 
-  bool already_set = on_stack();
-  _access_flags.set_on_stack(value);
+  bool already_set = on_stack_flag();
+  set_on_stack_flag(value);
   if (value && !already_set) {
     MetadataOnStackMark::record(this);
   }
@@ -2304,6 +2303,7 @@ void Method::print_on(outputStream* st) const {
   st->print   (" - constants:         " PTR_FORMAT " ", p2i(constants()));
   constants()->print_value_on(st); st->cr();
   st->print   (" - access:            0x%x  ", access_flags().as_int()); access_flags().print_on(st); st->cr();
+  st->print   (" - flags:             0x%x  ", _flags.as_int()); _flags.print_on(st); st->cr();
   st->print   (" - name:              ");    name()->print_value_on(st); st->cr();
   st->print   (" - signature:         ");    signature()->print_value_on(st); st->cr();
   st->print_cr(" - max stack:         %d",   max_stack());

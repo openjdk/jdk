@@ -711,8 +711,15 @@ public interface HttpServerAdapters {
         public abstract Version getVersion();
 
         public String serverAuthority() {
-            return InetAddress.getLoopbackAddress().getHostName() + ":"
-                    + getAddress().getPort();
+            InetSocketAddress address = getAddress();
+            String hostString = address.getHostString();
+            hostString = address.getAddress().isLoopbackAddress() || hostString.equals("localhost")
+                    ? address.getAddress().getHostAddress() // use the raw IP address, if loopback
+                    : hostString; // use whatever host string was used to construct the address
+            hostString = hostString.contains(":")
+                    ? "[" + hostString + "]"
+                    : hostString;
+            return hostString + ":" + address.getPort();
         }
 
         public static HttpTestServer of(HttpServer server) {

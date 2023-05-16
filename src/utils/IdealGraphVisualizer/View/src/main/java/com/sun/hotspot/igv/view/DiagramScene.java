@@ -487,7 +487,6 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
                 }
             }
         });
-        update();
     }
 
     @Override
@@ -638,7 +637,6 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
     }
 
     private void graphChanged() {
-        update();
         centerRootNode();
         addUndo();
     }

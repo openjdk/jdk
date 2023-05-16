@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,21 +27,15 @@ package jdk.internal.loader;
 
 import java.io.File;
 import java.util.ArrayList;
-import sun.security.action.GetPropertyAction;
+
+import jdk.internal.util.OperatingSystem;
+import jdk.internal.util.Version;
 
 class ClassLoaderHelper {
-    private static final boolean hasDynamicLoaderCache;
-    static {
-        String osVersion = GetPropertyAction.privilegedGetProperty("os.version");
-        // dynamic linker cache support on os.version >= 11.x
-        int major = 11;
-        int i = osVersion.indexOf('.');
-        try {
-            major = Integer.parseInt(i < 0 ? osVersion : osVersion.substring(0, i));
-        } catch (NumberFormatException e) {}
-        // SDK 10.15 and earlier always reports 10.16 instead of 11.x.x
-        hasDynamicLoaderCache = major >= 11 || osVersion.equals("10.16");
-    }
+
+    // SDK 10.15 and earlier always reports 10.16 instead of 11.x.x
+    private static final boolean hasDynamicLoaderCache = OperatingSystem.version()
+            .compareTo(new Version(10, 16)) >= 0;
 
     private ClassLoaderHelper() {}
 

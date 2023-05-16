@@ -34,8 +34,8 @@
 # include <mach/mach_time.h>
 #endif
 
-class AgentLibrary;
 class frame;
+class JvmtiAgent;
 
 // Rules for using and implementing methods declared in the "os" class
 // ===================================================================
@@ -310,7 +310,13 @@ class os: AllStatic {
     return (_processor_count != 1);
   }
 
+  // On some platforms there is a distinction between "available" memory and "free" memory.
+  // For example, on Linux, "available" memory (`MemAvailable` in `/proc/meminfo`) is greater
+  // than "free" memory (`MemFree` in `/proc/meminfo`) because Linux can free memory
+  // aggressively (e.g. clear caches) so that it becomes available.
   static julong available_memory();
+  static julong free_memory();
+
   static julong physical_memory();
   static bool has_allocatable_memory_limit(size_t* limit);
   static bool is_server_class_machine();
@@ -576,7 +582,7 @@ class os: AllStatic {
   // multiple calls to naked_short_sleep. Only for use by non-JavaThreads.
   static void naked_sleep(jlong millis);
   // Never returns, use with CAUTION
-  [[noreturn]] static void infinite_sleep();
+  ATTRIBUTE_NORETURN static void infinite_sleep();
   static void naked_yield () ;
   static OSReturn set_priority(Thread* thread, ThreadPriority priority);
   static OSReturn get_priority(const Thread* const thread, ThreadPriority& priority);
@@ -601,26 +607,26 @@ class os: AllStatic {
   static int fork_and_exec(const char *cmd);
 
   // Call ::exit() on all platforms
-  [[noreturn]] static void exit(int num);
+  ATTRIBUTE_NORETURN static void exit(int num);
 
   // Call ::_exit() on all platforms. Similar semantics to die() except we never
   // want a core dump.
-  [[noreturn]] static void _exit(int num);
+  ATTRIBUTE_NORETURN static void _exit(int num);
 
   // Terminate the VM, but don't exit the process
   static void shutdown();
 
   // Terminate with an error.  Default is to generate a core file on platforms
   // that support such things.  This calls shutdown() and then aborts.
-  [[noreturn]] static void abort(bool dump_core, void *siginfo, const void *context);
-  [[noreturn]] static void abort(bool dump_core = true);
+  ATTRIBUTE_NORETURN static void abort(bool dump_core, void *siginfo, const void *context);
+  ATTRIBUTE_NORETURN static void abort(bool dump_core = true);
 
   // Die immediately, no exit hook, no abort hook, no cleanup.
   // Dump a core file, if possible, for debugging. os::abort() is the
   // preferred means to abort the VM on error. os::die() should only
   // be called if something has gone badly wrong. CreateCoredumpOnCrash
   // is intentionally not honored by this function.
-  [[noreturn]] static void die();
+  ATTRIBUTE_NORETURN static void die();
 
   // File i/o operations
   static int open(const char *path, int oflag, int mode);
@@ -732,11 +738,11 @@ class os: AllStatic {
   static void* get_default_process_handle();
 
   // Check for static linked agent library
-  static bool find_builtin_agent(AgentLibrary *agent_lib, const char *syms[],
+  static bool find_builtin_agent(JvmtiAgent *agent_lib, const char *syms[],
                                  size_t syms_len);
 
   // Find agent entry point
-  static void *find_agent_function(AgentLibrary *agent_lib, bool check_lib,
+  static void *find_agent_function(JvmtiAgent *agent_lib, bool check_lib,
                                    const char *syms[], size_t syms_len);
 
   // Provide C99 compliant versions of these functions, since some versions

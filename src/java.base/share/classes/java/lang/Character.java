@@ -168,6 +168,7 @@ import static java.lang.constant.ConstantDescs.DEFAULT_NAME;
  * use instances for synchronization, or unpredictable behavior may
  * occur. For example, in a future release, synchronization may fail.
  *
+ * @spec https://www.unicode.org/reports/tr27 Unicode 3.1.0
  * @author  Lee Boynton
  * @author  Guy Steele
  * @author  Akira Tanaka
@@ -4489,6 +4490,7 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
      * {@link Character.UnicodeScript#COMMON Common} or
      * {@link Character.UnicodeScript#UNKNOWN Unknown}.
      *
+     * @spec https://www.unicode.org/reports/tr24 Unicode Script Property
      * @since 1.7
      */
     public static enum UnicodeScript {
@@ -10576,6 +10578,9 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
      * @param   ch      the character to be tested.
      * @return  {@code true} if the character may start a Unicode
      *          identifier; {@code false} otherwise.
+     *
+     * @spec https://www.unicode.org/reports/tr44 Unicode Character Database
+     * @spec https://www.unicode.org/reports/tr31 Unicode Identifier and Pattern Syntax
      * @see     Character#isJavaIdentifierStart(char)
      * @see     Character#isLetter(char)
      * @see     Character#isUnicodeIdentifierPart(char)
@@ -10612,6 +10617,9 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
      * @param   codePoint the character (Unicode code point) to be tested.
      * @return  {@code true} if the character may start a Unicode
      *          identifier; {@code false} otherwise.
+     *
+     * @spec https://www.unicode.org/reports/tr44 Unicode Character Database
+     * @spec https://www.unicode.org/reports/tr31 Unicode Identifier and Pattern Syntax
      * @see     Character#isJavaIdentifierStart(int)
      * @see     Character#isLetter(int)
      * @see     Character#isUnicodeIdentifierPart(int)
@@ -10661,6 +10669,9 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
      * @param   ch      the character to be tested.
      * @return  {@code true} if the character may be part of a
      *          Unicode identifier; {@code false} otherwise.
+     *
+     * @spec https://www.unicode.org/reports/tr44 Unicode Character Database
+     * @spec https://www.unicode.org/reports/tr31 Unicode Identifier and Pattern Syntax
      * @see     Character#isIdentifierIgnorable(char)
      * @see     Character#isJavaIdentifierPart(char)
      * @see     Character#isLetterOrDigit(char)
@@ -10706,6 +10717,9 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
      * @param   codePoint the character (Unicode code point) to be tested.
      * @return  {@code true} if the character may be part of a
      *          Unicode identifier; {@code false} otherwise.
+     *
+     * @spec https://www.unicode.org/reports/tr44 Unicode Character Database
+     * @spec https://www.unicode.org/reports/tr31 Unicode Identifier and Pattern Syntax
      * @see     Character#isIdentifierIgnorable(int)
      * @see     Character#isJavaIdentifierPart(int)
      * @see     Character#isLetterOrDigit(int)

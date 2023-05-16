@@ -533,7 +533,7 @@ final class Exchange<T> {
         Function<ExchangeImpl<T>, CompletableFuture<Response>> after407Check;
         bodyIgnored = null;
         if (request.expectContinue()) {
-            request.addSystemHeader("Expect", "100-Continue");
+            request.setSystemHeader("Expect", "100-Continue");
             Log.logTrace("Sending Expect: 100-Continue");
             // wait for 100-Continue before sending body
             after407Check = this::expectContinue;

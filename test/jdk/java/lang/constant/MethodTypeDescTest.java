@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,7 +100,7 @@ public class MethodTypeDescTest extends SymbolicDescTest {
             ClassDesc rc = ClassDesc.ofDescriptor(r);
             MethodTypeDesc newDesc = mtDesc.changeReturnType(rc);
             assertEquals(newDesc, MethodTypeDesc.of(rc, paramTypes));
-            testMethodTypeDesc(newDesc, mt.changeReturnType((Class<?>)rc.resolveConstantDesc(LOOKUP)));
+            testMethodTypeDesc(newDesc, mt.changeReturnType(rc.resolveConstantDesc(LOOKUP)));
         }
 
         // try with null parameter
@@ -119,7 +119,7 @@ public class MethodTypeDescTest extends SymbolicDescTest {
                 ps[i] = pc;
                 MethodTypeDesc newDesc = mtDesc.changeParameterType(i, pc);
                 assertEquals(newDesc, MethodTypeDesc.of(returnType, ps));
-                testMethodTypeDesc(newDesc, mt.changeParameterType(i, (Class<?>)pc.resolveConstantDesc(LOOKUP)));
+                testMethodTypeDesc(newDesc, mt.changeParameterType(i, pc.resolveConstantDesc(LOOKUP)));
             }
         }
 
@@ -146,7 +146,7 @@ public class MethodTypeDescTest extends SymbolicDescTest {
                                           .toArray(ClassDesc[]::new);
                 MethodTypeDesc newDesc = mtDesc.insertParameterTypes(i, p);
                 assertEquals(newDesc, MethodTypeDesc.of(returnType, ps));
-                testMethodTypeDesc(newDesc, mt.insertParameterTypes(i, (Class<?>)p.resolveConstantDesc(LOOKUP)));
+                testMethodTypeDesc(newDesc, mt.insertParameterTypes(i, p.resolveConstantDesc(LOOKUP)));
             }
         }
 
