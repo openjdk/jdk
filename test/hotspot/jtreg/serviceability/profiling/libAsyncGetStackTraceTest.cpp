@@ -166,7 +166,7 @@ static bool checkForNonJava2() {
   trace.frames = frames;
 
   AsyncGetStackTrace(&trace, MAX_DEPTH, &context,
-    ASGST_INCLUDE_C_FRAMES | ASGST_INCLUDE_NON_JAVA_THREADS);
+    ASGST_INCLUDE_C_FRAMES | ASGST_INCLUDE_NON_JAVA_THREADS | ASGST_WALK_SAME_THREAD);
   if (trace.num_frames < 0) {
     fprintf(stderr, "checkForNonJava2: No frames found for non-java thread\n");
     return false;
@@ -200,7 +200,7 @@ static bool checkForNonJavaNoCFrames() {
   ASGST_CallFrame frames[MAX_DEPTH];
   trace.frames = frames;
 
-  AsyncGetStackTrace(&trace, MAX_DEPTH, &context, ASGST_INCLUDE_NON_JAVA_THREADS);
+  AsyncGetStackTrace(&trace, MAX_DEPTH, &context, ASGST_INCLUDE_NON_JAVA_THREADS | ASGST_WALK_SAME_THREAD);
   if (trace.num_frames != 0) {
     fprintf(stderr, "checkForNonJavaNoCFrames: Frames found for non-java thread\n");
     return false;
@@ -224,7 +224,7 @@ static bool checkForNonJavaNoJavaFramesIncluded() {
   ASGST_CallFrame frames[MAX_DEPTH];
   trace.frames = frames;
 
-  AsyncGetStackTrace(&trace, MAX_DEPTH, &context, 0);
+  AsyncGetStackTrace(&trace, MAX_DEPTH, &context, ASGST_WALK_SAME_THREAD);
   if (trace.num_frames != ASGST_THREAD_NOT_JAVA) {
     fprintf(stderr, "NoJavaFramesIncluded: Found incorrect error code %d\n", trace.num_frames);
     return false;
@@ -252,7 +252,7 @@ static void* checkForNonJava(void *arg) {
 
 
   AsyncGetStackTrace(&trace, MAX_DEPTH, &context,
-    ASGST_INCLUDE_C_FRAMES | ASGST_INCLUDE_NON_JAVA_THREADS);
+    ASGST_INCLUDE_C_FRAMES | ASGST_INCLUDE_NON_JAVA_THREADS | ASGST_WALK_SAME_THREAD);
   if (trace.num_frames < 0) {
     fprintf(stderr, "checkForNonJava: No frames found for non-java thread, error code %d\n", trace.num_frames);
     return NULL;
@@ -296,7 +296,9 @@ Java_profiling_sanity_ASGSTBaseTest_checkAsyncGetStackTraceCall(JNIEnv* env, jcl
   trace.frame_info = NULL;
   trace.num_frames = 0;
 
-  AsyncGetStackTrace(&trace, MAX_DEPTH, NULL, 0);
+  ucontext_t context;
+  getcontext(&context);
+  AsyncGetStackTrace(&trace, MAX_DEPTH, &context, ASGST_WALK_SAME_THREAD);
 
   if (trace.num_frames <= 0) {
     fprintf(stderr, "basic: The num_frames must be positive: %d\n", trace.num_frames);

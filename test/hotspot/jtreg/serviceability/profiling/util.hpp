@@ -135,14 +135,6 @@ bool doesFrameBelongToJavaMethod(ASGST_CallFrame frame, uint8_t type, const char
   return true;
 }
 
-bool isStubFrame(ASGST_CallFrame frame, const char* msg_prefix) {
-  if (frame.type != ASGST_FRAME_STUB) {
-    fprintf(stderr, "%s: Expected STUB frame, got %d", msg_prefix, frame.type);
-    return false;
-  }
-  return true;
-}
-
 bool isCppFrame(ASGST_CallFrame frame, const char* msg_prefix) {
   if (frame.type != ASGST_FRAME_CPP) {
     fprintf(stderr, "%s: Expected CPP frame, got %d", msg_prefix, frame.type);
@@ -214,8 +206,6 @@ template <size_t N = 0> const char* lookForMethod(void* pc, std::array<std::pair
 template <size_t N = 0> void printNonJavaFrame(FILE* stream, ASGST_NonJavaFrame frame, std::array<std::pair<const char*, void*>, N> methods = {}) {
   if (frame.type == ASGST_FRAME_CPP) {
     fprintf(stream, "CPP frame, pc = %p", frame.pc);
-  } else if (frame.type == ASGST_FRAME_STUB) {
-    fprintf(stream, "Stub frame, pc = %p", frame.pc);
   } else {
     fprintf(stream, "Unknown frame type: %d", frame.type);
   }
@@ -242,7 +232,6 @@ template <size_t N = 0> void printFrame(FILE* stream, ASGST_CallFrame frame, std
       printJavaFrame(stream, frame.java_frame);
       break;
     case ASGST_FRAME_CPP:
-    case ASGST_FRAME_STUB:
       printNonJavaFrame(stream, frame.non_java_frame, methods);
       break;
     default:
@@ -367,7 +356,7 @@ void initASGCT() {
   if (asgct != nullptr) {
     return;
   }
-  void *mptr = dlsym(RTLD_DEFAULT, "AsyncGetCallTrace");
+  void *mptr = dlsym((void*)-2, "AsyncGetCallTrace");
   if (mptr == nullptr) {
     fprintf(stderr, "Error: could not find AsyncGetCallTrace!\n");
     exit(0);
@@ -406,7 +395,7 @@ template <int max_depth = 100> void printSyncTraces(JNIEnv* oenv = nullptr) {
   ASGST_CallTrace trace;
   ASGST_CallFrame frames[max_depth];
   trace.frames = frames;
-  AsyncGetStackTrace(&trace, max_depth, &context, 0);
+  AsyncGetStackTrace(&trace, max_depth, &context, ASGST_WALK_SAME_THREAD);
   printTrace(stderr, trace);
   printASGCT<max_depth>(&context, oenv);
   printGST<max_depth>();
@@ -437,7 +426,7 @@ template<int max_depth = 100> bool check(const char* prefix, JNIEnv* oenv = null
   ASGST_CallTrace trace;
   ASGST_CallFrame frames[max_depth];
   trace.frames = frames;
-  AsyncGetStackTrace(&trace, max_depth, &ucontext, 0);
+  AsyncGetStackTrace(&trace, max_depth, &ucontext, ASGST_WALK_SAME_THREAD);
   int asgst_count = std::max(0, trace.num_frames);
 
   auto printAll = [&](){
@@ -489,7 +478,6 @@ template<int max_depth = 100> bool check(const char* prefix, JNIEnv* oenv = null
   // now check that the frames have the same method ids
   for (int i = 0; i < asgst_count; i++) {
     ASGST_CallFrame asgst_frame = trace.frames[i];
-    assert(asgst_frame.type != ASGST_FRAME_STUB);
 
     ASGST_JavaFrame asgst_java_frame = asgst_frame.java_frame;
 
@@ -570,13 +558,13 @@ template <int max_depth = 100> bool checkThatWithCAndWithoutAreSimilar(const cha
   ASGST_CallTrace trace;
   ASGST_CallFrame frames[max_depth];
   trace.frames = frames;
-  AsyncGetStackTrace(&trace, max_depth, &ucontext, 0);
+  AsyncGetStackTrace(&trace, max_depth, &ucontext, ASGST_WALK_SAME_THREAD);
   int asgst_count = std::max(0, trace.num_frames);
 
   ASGST_CallTrace traceWithC;
   ASGST_CallFrame framesWithC[max_depth * 10];
   traceWithC.frames = framesWithC;
-  AsyncGetStackTrace(&traceWithC, max_depth, &ucontext, ASGST_INCLUDE_C_FRAMES);
+  AsyncGetStackTrace(&traceWithC, max_depth, &ucontext, ASGST_INCLUDE_C_FRAMES | ASGST_WALK_SAME_THREAD);
   int asgstWithC_count = std::max(0, traceWithC.num_frames);
 
   auto printAll = [&]() {
@@ -598,7 +586,7 @@ template <int max_depth = 100> bool checkThatWithCAndWithoutAreSimilar(const cha
 
   for (int i = 0; i < asgst_count; i++) {
     ASGST_CallFrame asgst_frame = trace.frames[i];
-    while (traceWithC.frames[c_frame_count].type == ASGST_FRAME_CPP || traceWithC.frames[c_frame_count].type == ASGST_FRAME_STUB) {
+    while (traceWithC.frames[c_frame_count].type == ASGST_FRAME_CPP) {
       c_frame_count++;
     }
     ASGST_CallFrame asgstWithC_frame = traceWithC.frames[c_frame_count];

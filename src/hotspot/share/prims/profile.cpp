@@ -81,7 +81,7 @@ void fill_call_trace_given_top(JavaThread* thd,
       char buf[1000];
       int offset;
       os::dll_address_to_function_name(st.base_frame()->pc(), buf, 1000, &offset);
-      printf("C frame: %s\n", buf);
+      printf("C frame: %s   fp: %p, sp: %p, pc: %p\n", buf, st.base_frame()->fp(), st.base_frame()->sp(), st.base_frame()->pc());
       #endif
     }
   }
@@ -148,7 +148,6 @@ void asyncGetStackTraceImpl(ASGST_CallTrace *trace, jint depth, void* ucontext, 
   bool include_non_java_threads = (options & ASGST_INCLUDE_NON_JAVA_THREADS) != 0;
   bool walk_during_unsafe_states = (options & ASGST_WALK_DURING_UNSAFE_STATES) != 0;
   bool walk_same_thread = (options & ASGST_WALK_SAME_THREAD) != 0;
-
   Thread* raw_thread;
 
   if (walk_same_thread) {

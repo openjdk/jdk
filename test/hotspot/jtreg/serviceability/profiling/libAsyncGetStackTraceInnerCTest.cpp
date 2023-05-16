@@ -212,7 +212,6 @@ Java_profiling_innerc_ASGSTInnerCTest_checkNativeLeaf(JNIEnv* env, jclass cls) {
         "checkNativeLeaf", "chain frame 0") ||
       !doesFrameBelongToJavaMethod(trace.frames[1], ASGST_FRAME_JAVA,
         "checkJavaInner", "chain frame 1") ||
-      !isStubFrame(trace.frames[2], "chain frame 2") ||
       !areFramesCPPFrames(trace.frames, 3, 7, "chain frames 3-5")) {
     return false;
   }
