@@ -71,14 +71,14 @@ public class ComponentScrollTest {
                     scrollpane.getVAdjustable().setValue(20);
                 }
             });
+            frame.pack();
+            frame.setVisible(true);
         });
     }
 
     public void start() throws Exception {
         try {
             EventQueue.invokeAndWait(() -> {
-                frame.pack();
-                frame.setVisible(true);
                 scrollpane.getVAdjustable().setValue(20);
             });
 

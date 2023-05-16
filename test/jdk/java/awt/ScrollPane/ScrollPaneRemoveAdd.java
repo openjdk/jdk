@@ -72,6 +72,9 @@ public class ScrollPaneRemoveAdd {
                     latch.countDown();
                 }
             });
+            frame.pack();
+            frame.setLocationRelativeTo(null);
+            frame.setVisible(true);
         });
         robot = new Robot();
     }
@@ -79,9 +82,6 @@ public class ScrollPaneRemoveAdd {
     public void start() throws Exception {
         try {
             EventQueue.invokeAndWait(() -> {
-                frame.pack();
-                frame.setLocationRelativeTo(null);
-                frame.setVisible(true);
                 pane.remove(0);
                 pane.add(button);
                 buttonLoc = button.getLocationOnScreen();

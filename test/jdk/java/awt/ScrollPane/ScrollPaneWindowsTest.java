@@ -73,6 +73,13 @@ public class ScrollPaneWindowsTest implements AdjustmentListener {
             sp = new ScrollPane(ScrollPane.SCROLLBARS_ALWAYS);
             vScroll = (ScrollPaneAdjustable) sp.getVAdjustable();
             hScroll = (ScrollPaneAdjustable) sp.getHAdjustable();
+            sp.add(p);
+            frame.add(sp);
+            frame.pack();
+            frame.setSize(400, 400);
+            frame.setLocationRelativeTo(null);
+            frame.setAlwaysOnTop(true);
+            frame.setVisible(true);
         });
         robot = new Robot();
 
@@ -83,12 +90,6 @@ public class ScrollPaneWindowsTest implements AdjustmentListener {
     public void start() throws Exception {
         try {
             EventQueue.invokeAndWait(() -> {
-                sp.add(p);
-                frame.add(sp);
-                frame.pack();
-                frame.setSize(400, 400);
-                frame.setLocationRelativeTo(null);
-                frame.setVisible(true);
                 paneInsets = sp.getInsets();
                 System.out.println("Insets: right = " + paneInsets.right + " bottom =  " + paneInsets.bottom);
             });

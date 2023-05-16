@@ -67,33 +67,31 @@ public class ScrollPaneLimitation {
         EventQueue.invokeAndWait(() -> {
             frame = new Frame("Scroll Pane Limitation");
             frame.setLayout(new BorderLayout());
+            pane = new ScrollPane();
+            frame.add(pane);
+            child = new MyPanel();
+            child.addMouseListener(new MouseAdapter() {
+                public void mousePressed(MouseEvent e) {
+                    if (e.getID() == MouseEvent.MOUSE_PRESSED
+                            && e.getSource() == ScrollPaneLimitation.child
+                            && e.getY() > SCROLL_POS) {
+                        go.countDown();
+                    }
+                }
+            });
+            pane.add(child);
+            frame.setSize(200, 200);
+            frame.pack();
+            frame.setLocationRelativeTo(null);
+            frame.setAlwaysOnTop(true);
+            frame.setVisible(true);
+            pane.doLayout();
         });
         robot = new Robot();
     }
 
     public void start() throws Exception {
         try {
-            EventQueue.invokeAndWait(() -> {
-                pane = new ScrollPane();
-                frame.add(pane);
-                child = new MyPanel();
-                child.addMouseListener(new MouseAdapter() {
-                    public void mousePressed(MouseEvent e) {
-                    if (e.getID() == MouseEvent.MOUSE_PRESSED
-                            && e.getSource() == ScrollPaneLimitation.child
-                            && e.getY() > SCROLL_POS) {
-                        go.countDown();
-                    }
-                    }
-                });
-                pane.add(child);
-                frame.setSize(200, 200);
-                frame.pack();
-                frame.setLocationRelativeTo(null);
-                frame.setVisible(true);
-                pane.doLayout();
-            });
-
             robot.delay(1000);
             robot.waitForIdle();
 
