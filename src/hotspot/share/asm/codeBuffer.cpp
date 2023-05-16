@@ -709,7 +709,7 @@ csize_t CodeBuffer::copy_relocations_to(CodeBlob* dest) const {
     buf = (address)dest->relocation_begin();
     buf_limit = (address)dest->relocation_end() - buf;
   }
-  // if dest == null, this is just the sizing pass
+  // if dest is null, this is just the sizing pass
   //
   buf_offset = copy_relocations_to(buf, buf_limit, false);
 
@@ -877,7 +877,7 @@ void CodeBuffer::expand(CodeSection* which_cs, csize_t amount) {
 
   // Resizing must be allowed
   {
-    if (blob() == nullptr)  return;  // caller must check for blob == null
+    if (blob() == nullptr)  return;  // caller must check if blob is null
   }
 
   // Figure new capacity for each section.
@@ -968,7 +968,7 @@ void CodeBuffer::take_over_code_from(CodeBuffer* cb) {
 
 void CodeBuffer::verify_section_allocation() {
   address tstart = _total_start;
-  if (tstart == badAddress)  return;  // smashed by set_blob(null)
+  if (tstart == badAddress)  return;  // smashed by set_blob(nullptr)
   address tend   = tstart + _total_size;
   if (_blob != nullptr) {
     guarantee(tstart >= _blob->content_begin(), "sanity");
