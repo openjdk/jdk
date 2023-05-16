@@ -2728,6 +2728,16 @@ int PCTableNode::required_outcnt() const {
               arg0->as_Type()->type()->higher_equal(TypePtr::NULL_PTR)) {
             return _size - 1;
           }
+        } else if (call->is_AllocateArray()) {
+          // Check for illegal array length. In such case, the optimizer has
+          // detected that the allocation attempt will always result in an
+          // exception. There is no fall-through projection of this CatchNode.
+          if (call->in(AllocateNode::KlassNode)->is_top() ||
+              call->in(AllocateNode::ALength)->is_top() ||
+              call->in(AllocateNode::ValidLengthTest)->is_top() ||
+              call->in(AllocateNode::ValidLengthTest)->find_int_con(1) == 0) {
+            return _size - 1;
+          }
         } else if (call->entry_point() == OptoRuntime::new_array_Java() ||
                    call->entry_point() == OptoRuntime::new_array_nozero_Java()) {
           // Check for illegal array length. In such case, the optimizer has
