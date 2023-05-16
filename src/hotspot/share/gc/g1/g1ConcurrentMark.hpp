@@ -375,8 +375,6 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
 
   void weak_refs_work();
 
-  void report_object_count(bool mark_completed);
-
   void reclaim_empty_regions();
 
   // After reclaiming empty regions, update heap sizes.
