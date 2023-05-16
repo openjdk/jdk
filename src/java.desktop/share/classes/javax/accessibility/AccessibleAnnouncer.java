@@ -34,12 +34,12 @@ import java.lang.annotation.Native;
 public interface AccessibleAnnouncer {
 
     /**
-     * messages do not interrupt the current speech, they are spoken after the screen reader has spoken the current phrase
+     * messages do not interrupt the current output, they are spoken after the screen reader has spoken the current phrase
      */
     @Native int NO_INTERRUPT = 0;
 
     /**
-     * messages interrupt the current speech, but only when the focus is on the window of the calling application
+     * messages interrupt the current output
      */
     @Native int INTERRUPT = 1;
 
