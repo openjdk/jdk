@@ -28,6 +28,8 @@
 
 #include "asm/register.hpp"
 
+#define NOREG_ENCODING -1
+
 // forward declaration
 class VMRegImpl;
 typedef VMRegImpl* VMReg;
@@ -83,7 +85,7 @@ class Register {
     number_of_registers = 32
   };
 
-  constexpr Register(int encoding = -1) : _encoding(encoding) {}
+  constexpr Register(int encoding = NOREG_ENCODING) : _encoding(encoding) {}
   bool operator==(const Register rhs) const { return _encoding == rhs._encoding; }
   bool operator!=(const Register rhs) const { return _encoding != rhs._encoding; }
   const Register* operator->() const { return this; }
@@ -94,7 +96,7 @@ class Register {
   // accessors
   constexpr int encoding() const { assert(is_valid(), "invalid register"); return _encoding; }
   inline VMReg as_VMReg() const;
-  Register successor() const { return Register(encoding() + 1); }
+  Register successor() const { return Register(encoding() + 1) & (number_of_registers - 1); }
 
   // testers
   constexpr bool is_valid()       const { return ( 0 <= _encoding && _encoding <  number_of_registers); }
@@ -105,12 +107,13 @@ class Register {
 };
 
 inline constexpr Register as_Register(int encoding) {
-  assert(encoding >= -1 && encoding < 32, "bad register encoding");
+  assert(encoding == NOREG_ENCODING ||
+        (0 <= encoding && encoding < Register::number_of_registers), "bad register encoding");
   return Register(encoding);
 }
 
 // The integer registers of the PPC architecture
-constexpr Register noreg = as_Register(-1);
+constexpr Register noreg = as_Register(NOREG_ENCODING);
 
 constexpr Register  R0 = as_Register( 0);
 constexpr Register  R1 = as_Register( 1);
@@ -154,7 +157,7 @@ class ConditionRegister {
     number_of_registers = 8
   };
 
-  constexpr ConditionRegister(int encoding = -1) : _encoding(encoding) {}
+  constexpr ConditionRegister(int encoding = NOREG_ENCODING) : _encoding(encoding) {}
   bool operator==(const ConditionRegister rhs) const { return _encoding == rhs._encoding; }
   bool operator!=(const ConditionRegister rhs) const { return _encoding != rhs._encoding; }
   const ConditionRegister* operator->() const { return this; }
@@ -198,7 +201,7 @@ class FloatRegister {
     number_of_registers = 32
   };
 
-  constexpr FloatRegister(int encoding = -1) : _encoding(encoding) {}
+  constexpr FloatRegister(int encoding = NOREG_ENCODING) : _encoding(encoding) {}
   bool operator==(const FloatRegister rhs) const { return _encoding == rhs._encoding; }
   bool operator!=(const FloatRegister rhs) const { return _encoding != rhs._encoding; }
   const FloatRegister* operator->() const { return this; }
@@ -209,7 +212,7 @@ class FloatRegister {
   // accessors
   constexpr int encoding() const { assert(is_valid(), "invalid register"); return _encoding; }
   inline VMReg as_VMReg() const;
-  FloatRegister successor() const { return FloatRegister(encoding() + 1); }
+  FloatRegister successor() const { return FloatRegister(encoding() + 1) & (number_of_registers - 1); }
 
   // testers
   constexpr bool is_valid() const { return (0 <= _encoding && _encoding < number_of_registers); }
@@ -221,12 +224,13 @@ class FloatRegister {
 };
 
 inline constexpr FloatRegister as_FloatRegister(int encoding) {
-  assert(encoding >= -1 && encoding < 32, "bad float register encoding");
+  assert(encoding == NOREG_ENCODING ||
+        (0 <= encoding && encoding < FloatRegister::number_of_registers), "bad float register encoding");
   return FloatRegister(encoding);
 }
 
 // The float registers of the PPC architecture
-constexpr FloatRegister fnoreg = as_FloatRegister(-1);
+constexpr FloatRegister fnoreg = as_FloatRegister(NOREG_ENCODING);
 
 constexpr FloatRegister  F0 = as_FloatRegister( 0);
 constexpr FloatRegister  F1 = as_FloatRegister( 1);
@@ -270,7 +274,7 @@ class SpecialRegister {
     number_of_registers = 6
   };
 
-  constexpr SpecialRegister(int encoding = -1) : _encoding(encoding) {}
+  constexpr SpecialRegister(int encoding = NOREG_ENCODING) : _encoding(encoding) {}
   bool operator==(const SpecialRegister rhs) const { return _encoding == rhs._encoding; }
   bool operator!=(const SpecialRegister rhs) const { return _encoding != rhs._encoding; }
   const SpecialRegister* operator->() const { return this; }
@@ -309,7 +313,7 @@ class VectorRegister {
     number_of_registers = 32
   };
 
-  constexpr VectorRegister(int encoding = -1) : _encoding(encoding) {}
+  constexpr VectorRegister(int encoding = NOREG_ENCODING) : _encoding(encoding) {}
   bool operator==(const VectorRegister rhs) const { return _encoding == rhs._encoding; }
   bool operator!=(const VectorRegister rhs) const { return _encoding != rhs._encoding; }
   const VectorRegister* operator->() const { return this; }
@@ -334,7 +338,7 @@ inline constexpr VectorRegister as_VectorRegister(int encoding) {
 }
 
 // The Vector registers of the Power architecture
-constexpr VectorRegister vnoreg = as_VectorRegister(-1);
+constexpr VectorRegister vnoreg = as_VectorRegister(NOREG_ENCODING);
 
 constexpr VectorRegister  VR0 = as_VectorRegister( 0);
 constexpr VectorRegister  VR1 = as_VectorRegister( 1);
@@ -378,7 +382,7 @@ class VectorSRegister {
     number_of_registers = 64
   };
 
-  constexpr VectorSRegister(int encoding = -1) : _encoding(encoding) {}
+  constexpr VectorSRegister(int encoding = NOREG_ENCODING) : _encoding(encoding) {}
   bool operator==(const VectorSRegister rhs) const { return _encoding == rhs._encoding; }
   bool operator!=(const VectorSRegister rhs) const { return _encoding != rhs._encoding; }
   const VectorSRegister* operator->() const { return this; }
@@ -404,7 +408,7 @@ inline constexpr VectorSRegister as_VectorSRegister(int encoding) {
 }
 
 // The Vector-Scalar (VSX) registers of the POWER architecture.
-constexpr VectorSRegister vsnoreg = as_VectorSRegister(-1);
+constexpr VectorSRegister vsnoreg = as_VectorSRegister(NOREG_ENCODING);
 
 constexpr VectorSRegister  VSR0 = as_VectorSRegister( 0);
 constexpr VectorSRegister  VSR1 = as_VectorSRegister( 1);
