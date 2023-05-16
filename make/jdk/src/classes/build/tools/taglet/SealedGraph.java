@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -145,11 +145,15 @@ public final class SealedGraph implements Taglet {
 
         static void traverse(State state, TypeElement node, Set<String> exports) {
             state.addNode(node);
-            for (TypeElement subNode : permittedSubclasses(node, exports)) {
-                if (isInPublicApi(node, exports) && isInPublicApi(subNode, exports)) {
-                    state.addEdge(node, subNode);
+            if (!(node.getModifiers().contains(Modifier.SEALED) || node.getModifiers().contains(Modifier.FINAL))) {
+                state.addNonSealedEdge(node);
+            } else {
+                for (TypeElement subNode : permittedSubclasses(node, exports)) {
+                    if (isInPublicApi(node, exports) && isInPublicApi(subNode, exports)) {
+                        state.addEdge(node, subNode);
+                    }
+                    traverse(state, subNode, exports);
                 }
-                traverse(state, subNode, exports);
             }
         }
 
@@ -164,6 +168,8 @@ public final class SealedGraph implements Taglet {
             private final StringBuilder builder;
 
             private final Map<String, Map<String, StyleItem>> nodeStyleMap;
+
+            private int nonSealedHierarchyCount = 0;
 
             private sealed interface StyleItem {
                 String valueString();
@@ -204,15 +210,7 @@ public final class SealedGraph implements Taglet {
 
             public void addNode(TypeElement node) {
                 var styles = nodeStyleMap.computeIfAbsent(id(node), n -> new LinkedHashMap<>());
-                var nodeName = node.getSimpleName().toString();
-                StyleItem nodeLabel;
-                if (!(node.getModifiers().contains(Modifier.SEALED) || node.getModifiers().contains(Modifier.FINAL))) {
-                    // This indicates that the hierarchy is not closed
-                    nodeLabel = new StyleItem.HtmlString("<I>" + nodeName + "</I>");
-                } else {
-                    nodeLabel = new StyleItem.PlainString(nodeName);
-                }
-                styles.put(LABEL, nodeLabel);
+                styles.put(LABEL, new StyleItem.PlainString(node.getSimpleName().toString()));
                 styles.put(TOOLTIP, new StyleItem.PlainString(node.getQualifiedName().toString()));
                 styles.put(LINK, new StyleItem.PlainString(relativeLink(node)));
             }
@@ -239,6 +237,26 @@ public final class SealedGraph implements Taglet {
                         .append(quotedId(subNode))
                         .append(" -> ")
                         .append(quotedId(node))
+                        .append(";")
+                        .append(lineSeparator());
+            }
+
+            public void addNonSealedEdge(TypeElement node) {
+                // prepare open node
+                var openNodeId = "open node #" + nonSealedHierarchyCount++;
+                var styles = nodeStyleMap.computeIfAbsent(openNodeId, n -> new LinkedHashMap<>());
+                styles.put(LABEL, new StyleItem.HtmlString("<I>&lt;any&gt;</I>"));
+                styles.put(TOOLTIP, new StyleItem.PlainString("Non-sealed Hierarchy"));
+
+                // add link to parent node
+                builder.append("  ")
+                        .append('"')
+                        .append(openNodeId)
+                        .append('"')
+                        .append(" -> ")
+                        .append(quotedId(node))
+                        .append(" ")
+                        .append("[style=\"dashed\"]")
                         .append(";")
                         .append(lineSeparator());
             }
