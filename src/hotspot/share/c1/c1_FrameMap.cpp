@@ -118,7 +118,7 @@ CallingConvention* FrameMap::c_calling_convention(const BasicTypeArray* signatur
     }
   }
 
-  intptr_t out_preserve = SharedRuntime::c_calling_convention(sig_bt, regs, NULL, sizeargs);
+  intptr_t out_preserve = SharedRuntime::c_calling_convention(sig_bt, regs, nullptr, sizeargs);
   LIR_OprList* args = new LIR_OprList(signature->length());
   for (i = 0; i < sizeargs;) {
     BasicType t = sig_bt[i];
@@ -238,7 +238,7 @@ bool FrameMap::locations_for_slot  (int index, Location::Type loc_type,
   if (!location_for_sp_offset(offset_from_sp, loc_type, loc)) {
     return false;
   }
-  if (second != NULL) {
+  if (second != nullptr) {
     // two word item
     offset_from_sp = offset_from_sp + in_ByteSize(4);
     return location_for_sp_offset(offset_from_sp, loc_type, second);
