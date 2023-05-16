@@ -22,9 +22,6 @@
  */
 
 import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 
 import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.Platform;
@@ -65,7 +62,7 @@ public class CDSPluginTest {
 
         var module = "cds";
         helper.generateDefaultJModule(module);
-        Path image = helper.generateDefaultImage(new String[] { "--generate-cds-archive" },
+        var image = helper.generateDefaultImage(new String[] { "--generate-cds-archive" },
                                                 module)
             .assertSuccess();
 
@@ -86,5 +83,4 @@ public class CDSPluginTest {
                       new String[] { subDir + "classes.jsa" });
         }
     }
-
 }
