@@ -187,10 +187,6 @@ public sealed interface CodeBuilder
          * targeting the "break" label is appended to the built block.
          */
         Label breakLabel();
-
-        default CodeBuilder break_() {
-            return goto_(breakLabel());
-        }
     }
 
     /**
@@ -402,9 +398,10 @@ public sealed interface CodeBuilder
          *
          * @param defaultHandler handler that receives a {@linkplain CodeBuilder} to
          *                       generate the body of the default switch case
+         * @return this builder
          * @throws java.lang.IllegalArgumentException if an existing block handles default switch case.
          */
-        void defaultCase(Consumer<BlockCodeBuilder> defaultHandler);
+        SwitchBuilder defaultCase(Consumer<BlockCodeBuilder> defaultHandler);
     }
 
     /**

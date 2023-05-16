@@ -45,6 +45,7 @@ public final class SwitchBuilderImpl implements CodeBuilder.SwitchBuilder {
     final Set<Integer> values;
     final List<SwitchCase> cases;
     final List<HandlerBlock> handlers;
+    Label defaultLabel;
     Consumer<CodeBuilder.BlockCodeBuilder> defaultHandler;
 
     public SwitchBuilderImpl(BlockCodeBuilder b, boolean tableSwitch) {
@@ -56,16 +57,17 @@ public final class SwitchBuilderImpl implements CodeBuilder.SwitchBuilder {
     }
 
     public void finish() {
-        var defaultLabel = defaultHandler == null ? b.newLabel() : b.breakLabel();
-        if (tableSwitch) b.tableswitch(defaultLabel, cases);
-        else b.lookupswitch(defaultLabel, cases);
+        if (defaultLabel == null) {
+            defaultLabel = b.breakLabel();
+        }
+        if (tableSwitch) {
+            b.tableswitch(defaultLabel, cases);
+        } else {
+            b.lookupswitch(defaultLabel, cases);
+        }
         for (var h : handlers) {
             b.labelBinding(h.l);
             h.h.accept(b);
-        }
-        if (defaultHandler != null) {
-            b.labelBinding(defaultLabel);
-            defaultHandler.accept(b);
         }
     }
 
@@ -91,8 +93,13 @@ public final class SwitchBuilderImpl implements CodeBuilder.SwitchBuilder {
     }
 
     @Override
-    public void defaultCase(Consumer<CodeBuilder.BlockCodeBuilder> defaultHandler) {
-        if (defaultHandler != null) throw new IllegalArgumentException("Default switch handler has been already set");
+    public CodeBuilder.SwitchBuilder defaultCase(Consumer<CodeBuilder.BlockCodeBuilder> defaultHandler) {
+        if (this.defaultHandler != null) {
+            throw new IllegalArgumentException("Default switch handler has been already set");
+        }
         this.defaultHandler = defaultHandler;
+        this.defaultLabel = b.newLabel();
+        handlers.add(new HandlerBlock(defaultLabel, defaultHandler));
+        return this;
     }
 }
