@@ -1,0 +1,3 @@
+T8297602.java:37:22: compiler.err.record.patterns.annotations.not.allowed
+T8297602.java:40:30: compiler.err.record.patterns.annotations.not.allowed
+2 errors

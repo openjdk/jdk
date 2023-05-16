@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,31 +21,13 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 8297602
- * @summary Compiler crash with type annotation and generic record during pattern matching
- * @compile/fail/ref=T8297602.out -XDrawDiagnostics T8297602.java
- */
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Target;
+// key: compiler.err.record.patterns.annotations.not.allowed
 
-public class T8297602
-{
-    void meth(Foo<Integer> p) {
-        switch(p) {
-            case Foo<@Annot(field = "") Integer>(): {}
-        };
+class RecordPatternsAnnotationsNotAllowed {
 
-        if (p instanceof Foo<@Annot(field = "") Integer>()) {
-
-        }
+    public boolean test(Object o) {
+        return o instanceof @Deprecated R(String s);
     }
 
-    @Target({ElementType.TYPE_USE})
-    @interface Annot {
-        String field();
-    }
-
-    record Foo<T>() { }
+    record R(String s) {}
 }
