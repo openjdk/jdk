@@ -722,6 +722,13 @@ abstract public class TestScaffold extends TargetAdapter {
         return vmStartThread;
     }
 
+    /*
+     * Tests that expect an exitValue other than 0 or 1 will need to override this method.
+     */
+    protected boolean allowedExitValue(int exitValue) {
+        return exitValue == 0;
+    }
+
     public synchronized void waitForVMDisconnect() {
         traceln("TS: waitForVMDisconnect");
         while (!vmDisconnected) {
@@ -738,11 +745,9 @@ abstract public class TestScaffold extends TargetAdapter {
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
-        int res = p.exitValue();
-        // Some tests purposefully exit with an exception, which produces exitValue
-        // 1, so we have to allow it also.
-        if (res != 0 && res != 1) {
-            throw new RuntimeException("Non-zero debuggee exitValue: " + res);
+        int exitValue = p.exitValue();
+        if (!allowedExitValue(exitValue)) {
+            throw new RuntimeException("Invalid debuggee exitValue: " + exitValue);
         }
 
         traceln("TS: waitForVMDisconnect: done");
@@ -1028,6 +1033,15 @@ abstract public class TestScaffold extends TargetAdapter {
             vthread.setName("main");
             vthread.start();
             vthread.join();
+            if (tg.uncaughtThrowable != null) {
+                // Note we cant just rethrow tg.uncaughtThrowable because there are tests
+                // that track ExceptionEvents, and they will complain about the extra
+                // exception. So instead mimic what happens when the main thread exits
+                // with an exception.
+                System.out.println("Uncaught Exception: " + tg.uncaughtThrowable);
+                tg.uncaughtThrowable.printStackTrace(System.out);
+                System.exit(1);
+            }
         } else if (wrapper.equals("Kernel")) {
             MainThreadGroup tg = new MainThreadGroup();
             Thread t = new Thread(tg, () -> {

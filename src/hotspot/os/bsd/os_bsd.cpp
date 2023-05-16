@@ -138,6 +138,10 @@ julong os::available_memory() {
   return Bsd::available_memory();
 }
 
+julong os::free_memory() {
+  return Bsd::available_memory();
+}
+
 // available here means free
 julong os::Bsd::available_memory() {
   uint64_t available = physical_memory() >> 2;
@@ -586,7 +590,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
   assert(thread->osthread() == nullptr, "caller responsible");
 
   // Allocate the OSThread object
-  OSThread* osthread = new OSThread();
+  OSThread* osthread = new (std::nothrow) OSThread();
   if (osthread == nullptr) {
     return false;
   }
@@ -679,7 +683,7 @@ bool os::create_attached_thread(JavaThread* thread) {
 #endif
 
   // Allocate the OSThread object
-  OSThread* osthread = new OSThread();
+  OSThread* osthread = new (std::nothrow) OSThread();
 
   if (osthread == nullptr) {
     return false;
@@ -2073,7 +2077,7 @@ uint os::processor_id() {
     // Assign processor id to APIC id
     processor_id = Atomic::cmpxchg(&processor_id_map[apic_id], processor_id_unassigned, processor_id_assigning);
     if (processor_id == processor_id_unassigned) {
-      processor_id = Atomic::fetch_and_add(&processor_id_next, 1) % os::processor_count();
+      processor_id = Atomic::fetch_then_add(&processor_id_next, 1) % os::processor_count();
       Atomic::store(&processor_id_map[apic_id], processor_id);
     }
   }
