@@ -710,7 +710,8 @@ public class BasicFileChooserUI extends FileChooserUI {
                             && chooser.isTraversable(((File)objects[0]))
                             && (useSetDirectory
                                 || (!fsv.isFileSystem(((File)objects[0]))
-                                    && !Files.isSymbolicLink(((File)objects[0]).toPath())))) {
+                                    && !(fsv.isLink((File)objects[0])
+                                    && Files.isSymbolicLink(((File)objects[0]).toPath()))))) {
                             setDirectorySelected(true);
                             setDirectory(((File)objects[0]));
                         } else {
@@ -720,7 +721,8 @@ public class BasicFileChooserUI extends FileChooserUI {
                                 boolean isDir = f.isDirectory();
                                 if ((chooser.isFileSelectionEnabled() && !isDir)
                                     || (chooser.isDirectorySelectionEnabled()
-                                        && (fsv.isFileSystem(f) || Files.isSymbolicLink(f.toPath()))
+                                        && (fsv.isFileSystem(f)
+                                        || (fsv.isLink(f) && Files.isSymbolicLink(f.toPath())))
                                         && isDir)) {
                                     fList.add(f);
                                 }
@@ -742,7 +744,7 @@ public class BasicFileChooserUI extends FileChooserUI {
                         setDirectorySelected(true);
                         setDirectory(file);
                         if (usesSingleFilePane) {
-                            if (Files.isSymbolicLink(file.toPath())) {
+                            if (fsv.isLink(file) && Files.isSymbolicLink(file.toPath())) {
                                 chooser.setSelectedFile(file);
                             } else {
                                 chooser.setSelectedFile(null);
