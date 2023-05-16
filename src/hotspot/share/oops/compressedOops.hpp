@@ -98,12 +98,6 @@ public:
   static address  ptrs_base_addr()           { return (address)&_narrow_oop._base; }
   static address  ptrs_base()                { return _narrow_oop._base; }
 
-#if defined(X86) && !defined(ZERO)
-#ifdef _LP64
-  static bool     need_heapbase_reg()        { return UseCompressedOops && (PreserveHeapbaseReg || _narrow_oop._base != nullptr); }
-#endif
-#endif // X86_64 only
-
   static bool is_in(void* addr);
   static bool is_in(MemRegion mr);
 
@@ -145,6 +139,8 @@ public:
 
   template<typename T>
   static inline narrowOop narrow_oop_cast(T i);
+
+#include CPU_HEADER(compressedOops)
 };
 
 // For UseCompressedClassPointers.

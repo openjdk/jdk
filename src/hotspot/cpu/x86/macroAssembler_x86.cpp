@@ -5491,7 +5491,14 @@ void MacroAssembler::reinit_heapbase() {
   if (UseCompressedOops) {
     if (Universe::heap() != nullptr) {
       if (CompressedOops::base() == nullptr) {
-        MacroAssembler::xorptr(r12_heapbase, r12_heapbase);
+        if (CompressedOops::need_heapbase_reg()) {
+          MacroAssembler::xorptr(r12_heapbase, r12_heapbase);
+        }
+#ifndef PRODUCT
+        else {
+          mov64(r12_heapbase, (int64_t)0xAABBCCDDAABBCCDD);
+        }
+#endif
       } else {
         mov64(r12_heapbase, (int64_t)CompressedOops::ptrs_base());
       }
