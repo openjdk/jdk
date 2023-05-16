@@ -529,7 +529,7 @@ TRACE_REQUEST_FUNC(JavaThreadStatistics) {
 
 TRACE_REQUEST_FUNC(GCHeapMemoryUsage) {
   MemoryUsage usage = Universe::heap()->memory_usage();
-  EventGCHeapMemoryUsage event;
+  EventGCHeapMemoryUsage event(UNTIMED);
   event.set_used(usage.used());
   event.set_committed(usage.committed());
   event.set_max(usage.max_size());
@@ -545,7 +545,7 @@ TRACE_REQUEST_FUNC(GCHeapMemoryPoolUsage) {
     MemoryPool* pool = pools.at(i);
     if (pool->is_heap()) {
       MemoryUsage usage = pool->get_memory_usage();
-      EventGCHeapMemoryPoolUsage event;
+      EventGCHeapMemoryPoolUsage event(UNTIMED);
       event.set_name(pool->name());
       event.set_used(usage.used());
       event.set_committed(usage.committed());
