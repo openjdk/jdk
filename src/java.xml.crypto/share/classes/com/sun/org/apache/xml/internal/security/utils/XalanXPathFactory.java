@@ -20,12 +20,18 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package xalan;
+package com.sun.org.apache.xml.internal.security.utils;
 
-import com.sun.org.apache.xml.internal.security.utils.XPathFactory;
 
-public class TransformXPath2Filter extends com.sun.org.apache.xml.internal.security.transforms.implementations.TransformXPath2Filter {
-    protected XPathFactory getXPathFactory() {
-        return new XalanXPathFactory();
+/**
+ * A Factory to return a XalanXPathAPI instance.
+ */
+public class XalanXPathFactory extends XPathFactory {
+
+    /**
+     * Get a new XPathAPI instance
+     */
+    public XPathAPI newXPathAPI() {
+        return new XalanXPathAPI();
     }
 }

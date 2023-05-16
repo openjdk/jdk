@@ -20,10 +20,16 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+/*
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ */
 package com.sun.org.apache.xml.internal.security.transforms.implementations;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.security.Security;
 
 import javax.xml.transform.TransformerException;
 
@@ -51,6 +57,26 @@ public class TransformXPath extends TransformSpi {
 
     private static final com.sun.org.slf4j.internal.Logger LOG =
             com.sun.org.slf4j.internal.LoggerFactory.getLogger(TransformXPath.class);
+
+    // Whether the here() XPath function is supported.
+    static final boolean HEREFUNC;
+
+    static {
+        @SuppressWarnings("removal")
+        String prop =
+                AccessController.doPrivileged((PrivilegedAction<String>) () ->
+                        Security.getProperty("jdk.xml.dsig.hereFunctionSupported"));
+        if (prop == null) {
+            HEREFUNC = true; // default true
+        } else if (prop.equals("true")) {
+            HEREFUNC = true;
+        } else if (prop.equals("false")) {
+            HEREFUNC = false;
+        } else {
+            throw new IllegalArgumentException(
+                    "Invalid jdk.xml.dsig.hereFunctionSupported setting: " + prop);
+        }
+    }
 
     /**
      * {@inheritDoc}
@@ -109,7 +135,9 @@ public class TransformXPath extends TransformSpi {
     }
 
     protected XPathFactory getXPathFactory() {
-        return new JDKXPathFactory();
+        return HEREFUNC
+                ? XPathFactory.newInstance()
+                : new JDKXPathFactory();
     }
 
     /**

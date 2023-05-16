@@ -1001,6 +1001,17 @@ jdk.xml.dsig.secureValidationPolicy=\
     noDuplicateIds,\
     noRetrievalMethodLoops
 
+#
+# Support here() function
+#
+# This security property determines whether the here() XPath function is
+# supported in XML Signature generation and verification. It is set to
+# "true" by default.
+#
+# Note: This property is currently used by the JDK Reference implementation.
+# It is not guaranteed to be examined and used by other implementations.
+#
+#jdk.xml.dsig.hereFunctionSupported=true
 
 #
 # Deserialization JVM-wide filter factory

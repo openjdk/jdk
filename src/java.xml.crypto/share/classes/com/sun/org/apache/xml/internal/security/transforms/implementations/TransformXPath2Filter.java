@@ -95,7 +95,9 @@ public class TransformXPath2Filter extends TransformSpi {
                 inputDoc = XMLUtils.getOwnerDocument(input.getNodeSet());
             }
 
-            XPathFactory xpathFactory = getXPathFactory();
+            XPathFactory xpathFactory = TransformXPath.HEREFUNC
+                    ? XPathFactory.newInstance()
+                    : new JDKXPathFactory();
             for (int i = 0; i < xpathElements.length; i++) {
                 Element xpathElement = xpathElements[i];
 
@@ -130,10 +132,6 @@ public class TransformXPath2Filter extends TransformSpi {
         } catch (TransformerException | DOMException | XMLSecurityException | IOException ex) {
             throw new TransformationException(ex);
         }
-    }
-
-    protected XPathFactory getXPathFactory() {
-        return new JDKXPathFactory();
     }
 }
 

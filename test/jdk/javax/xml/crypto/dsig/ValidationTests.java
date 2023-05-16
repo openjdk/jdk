@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,6 +118,7 @@ public class ValidationTests {
         new Test("signature-x509-is.xml", CKS),
         new Test("signature-x509-ski.xml", CKS),
         new Test("signature-x509-sn.xml", CKS),
+        new Test("signature.xml", XKS),
         new Test("exc-signature.xml", KVKS),
         new Test("sign-spec.xml", RXKS),
         new Test("xmldsig-xfilter2.xml", KVKS)

@@ -28,23 +28,12 @@
  * @modules java.base/sun.security.util
  *          java.base/sun.security.x509
  *          java.xml.crypto/org.jcp.xml.dsig.internal.dom
- *          java.xml.crypto/com.sun.org.apache.xml.internal.security.utils
- *          java.xml.crypto/com.sun.org.apache.xml.internal.security.transforms.implementations
- *          java.xml.crypto/com.sun.org.slf4j.internal
- *          java.xml/com.sun.org.apache.xml.internal.dtm
- *          java.xml/com.sun.org.apache.xml.internal.utils
- *          java.xml/com.sun.org.apache.xpath.internal.functions
- *          java.xml/com.sun.org.apache.xpath.internal.objects
- *          java.xml/com.sun.org.apache.xpath.internal.res
- *          java.xml/com.sun.org.apache.xpath.internal
- *          java.xml/com.sun.org.apache.xpath.internal.compiler
- *
- *
  * @library /test/lib
  * @compile -XDignore.symbol.file KeySelectors.java SignatureValidator.java
  *     X509KeySelector.java ValidationTests.java
- * @compile xalan/TransformXPath.java xalan/TransformXPath2Filter.java
- * @run main/othervm XalanTest
+ * @run main/othervm HereFunction default true
+ * @run main/othervm HereFunction true true
+ * @run main/othervm HereFunction false false
  */
 import java.io.File;
 import java.io.FileInputStream;
@@ -60,38 +49,31 @@ import javax.xml.crypto.dsig.XMLSignatureFactory;
 
 import jdk.test.lib.security.SecurityUtils;
 
-/**
- * This test used to be part of ValidationTests but was moved into its own
- * test because it tests a signature that contains the here() function which
- * depends on Xalan internals. The Xalan dependency has been removed from
- * the DSig implementation. This test demonstrates how the here() function
- * can be supported by using a customized TransformXPath instance.
- */
-public class XalanTest {
+public class HereFunction {
 
     private static SignatureValidator validator;
     private final static String DIR = System.getProperty("test.src", ".");
     private final static String DATA_DIR =
-        DIR + System.getProperty("file.separator") + "data";
-    private final static String XALAN_DIR =
-            DIR + System.getProperty("file.separator") + "xalan";
+            DIR + System.getProperty("file.separator") + "data";
     private final static String KEYSTORE =
-        DATA_DIR + System.getProperty("file.separator") + "certs" +
-        System.getProperty("file.separator") + "xmldsig.jks";
+            DATA_DIR + System.getProperty("file.separator") + "certs" +
+                    System.getProperty("file.separator") + "xmldsig.jks";
     private final static String STYLESHEET =
-        "http://www.w3.org/TR/xml-stylesheet";
+            "http://www.w3.org/TR/xml-stylesheet";
     private final static String STYLESHEET_B64 =
-        "http://www.w3.org/Signature/2002/04/xml-stylesheet.b64";
+            "http://www.w3.org/Signature/2002/04/xml-stylesheet.b64";
 
     public static void main(String args[]) throws Exception {
+
+        if (!args[0].equals("default")) {
+            Security.setProperty("jdk.xml.dsig.hereFunctionSupported", args[0]);
+        }
+        boolean expected = Boolean.parseBoolean(args[1]);
+
         // Re-enable sha1 algs
         SecurityUtils.removeAlgsFromDSigPolicy("sha1");
-        // Use custom XPath implementation
-        System.setProperty(
-                "com.sun.org.apache.xml.internal.security.resource.config",
-                "xalan/config-xalan.xml");
 
-        validator = new SignatureValidator(new File(XALAN_DIR));
+        validator = new SignatureValidator(new File(DATA_DIR));
 
         KeyStore keystore = KeyStore.getInstance("JKS");
         KeySelector ks;
@@ -99,8 +81,12 @@ public class XalanTest {
             keystore.load(fis, "changeit".toCharArray());
             ks = new X509KeySelector(keystore, false);
         }
-        if (!validator.validate("signature.xml", ks, new HttpURIDereferencer(), false)) {
-            throw new Exception("Signature did not validate as expected");
+
+        boolean actual = validator.validate(
+                "signature.xml", ks, new HttpURIDereferencer(), false);
+
+        if (actual != expected) {
+            throw new Exception("Expected: " + expected + ", actual: " + actual);
         }
     }
 
@@ -121,7 +107,7 @@ public class XalanTest {
             if (uri.equals(STYLESHEET) || uri.equals(STYLESHEET_B64)) {
                 try {
                     FileInputStream fis = new FileInputStream(new File
-                        (DATA_DIR, uri.substring(uri.lastIndexOf('/'))));
+                            (DATA_DIR, uri.substring(uri.lastIndexOf('/'))));
                     return new OctetStreamData(fis,ref.getURI(),ref.getType());
                 } catch (Exception e) { throw new URIReferenceException(e); }
             }
