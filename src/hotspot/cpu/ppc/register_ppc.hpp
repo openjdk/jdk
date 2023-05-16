@@ -96,7 +96,7 @@ class Register {
   // accessors
   constexpr int encoding() const { assert(is_valid(), "invalid register"); return _encoding; }
   inline VMReg as_VMReg() const;
-  Register successor() const { return Register(encoding() + 1) & (number_of_registers - 1); }
+  Register successor() const { return Register((encoding() + 1) & (number_of_registers - 1)); }
 
   // testers
   constexpr bool is_valid()       const { return ( 0 <= _encoding && _encoding <  number_of_registers); }
@@ -212,7 +212,7 @@ class FloatRegister {
   // accessors
   constexpr int encoding() const { assert(is_valid(), "invalid register"); return _encoding; }
   inline VMReg as_VMReg() const;
-  FloatRegister successor() const { return FloatRegister(encoding() + 1) & (number_of_registers - 1); }
+  FloatRegister successor() const { return FloatRegister((encoding() + 1) & (number_of_registers - 1)); }
 
   // testers
   constexpr bool is_valid() const { return (0 <= _encoding && _encoding < number_of_registers); }
