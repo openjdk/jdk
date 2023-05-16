@@ -911,7 +911,6 @@ void InterpreterMacroAssembler::lock_object(Register Rlock) {
     }
 
     if (LockingMode == LM_LIGHTWEIGHT) {
-      log_trace(fastlock)("InterpreterMacroAssembler lock fast");
       fast_lock_2(Robj, R0 /* t1 */, Rmark /* t2 */, Rtemp /* t3 */, 0 /* savemask */, slow_case);
       b(done);
     } else if (LockingMode == LM_LEGACY) {
@@ -1025,8 +1024,6 @@ void InterpreterMacroAssembler::unlock_object(Register Rlock) {
     str(Rzero, Address(Rlock, obj_offset));
 
     if (LockingMode == LM_LIGHTWEIGHT) {
-
-      log_trace(fastlock)("InterpreterMacroAssembler unlock fast");
 
       // Check for non-symmetric locking. This is allowed by the spec and the interpreter
       // must handle it.
