@@ -2284,6 +2284,25 @@ oop JavaThread::current_park_blocker() {
   return NULL;
 }
 
+// Print current stack trace for checked JNI warnings and JNI fatal errors.
+// This is the external format, selecting the platform
+// as applicable, and allowing for a native-only stack.
+void JavaThread::print_jni_stack() {
+  assert(this == JavaThread::current(), "Can't print stack of other threads");
+  if (!has_last_Java_frame()) {
+    ResourceMark rm(this);
+    char* buf = NEW_RESOURCE_ARRAY_RETURN_NULL(char, O_BUFLEN);
+    if (buf == nullptr) {
+      tty->print_cr("Unable to print native stack - out of memory");
+      return;
+    }
+    frame f = os::current_frame();
+    VMError::print_native_stack(tty, f, this,
+                                buf, O_BUFLEN);
+  } else {
+    print_stack_on(tty);
+  }
+}
 
 void JavaThread::print_stack_on(outputStream* st) {
   if (!has_last_Java_frame()) return;
