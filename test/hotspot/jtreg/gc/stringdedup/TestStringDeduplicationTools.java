@@ -406,7 +406,7 @@ class TestStringDeduplicationTools {
         }
 
         private static void checkNotDeduplicated(Object value1, Object value2) {
-            // Note that the following check is invalid since a concurrent GC
+            // Note that the following check is invalid since a GC
             // can run and actually deduplicate the strings.
             //
             // if (value1 == value2) {
