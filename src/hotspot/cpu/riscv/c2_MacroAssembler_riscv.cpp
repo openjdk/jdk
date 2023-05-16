@@ -1653,7 +1653,7 @@ void C2_MacroAssembler::minmax_fp_masked_v(VectorRegister dst, VectorRegister sr
   vmfeq_vv(tmp2, src2, src2);
 
   vmandn_mm(v0, vmask, tmp1);
-  vfadd_vv(dst, src1, src1, Assembler::v0_t);  
+  vfadd_vv(dst, src1, src1, Assembler::v0_t);
   vmandn_mm(v0, vmask, tmp2);
   vfadd_vv(dst, src2, src2, Assembler::v0_t);
 
