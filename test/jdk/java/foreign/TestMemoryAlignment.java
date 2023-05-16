@@ -127,7 +127,7 @@ public class TestMemoryAlignment {
 
     @DataProvider(name = "alignments")
     public Object[][] createAlignments() {
-        return LongStream.range(3, 32)
+        return LongStream.range(1, 20)
                 .mapToObj(v -> new Object[] { 1L << v })
                 .toArray(Object[][]::new);
     }
