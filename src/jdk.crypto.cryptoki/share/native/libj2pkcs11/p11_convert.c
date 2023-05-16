@@ -1820,7 +1820,7 @@ jPkcs5Pbkd2ParamToCKPkcs5Pbkd2ParamPtr(JNIEnv *env, jobject jParam, CK_ULONG *pL
             && (*env)->IsInstanceOf(env, jParam, jPkcs5Pbkd2ParamsClass)) {
         paramVersion = PARAMS2;
     } else {
-        throwPKCS11RuntimeException(env, "Unknown PBKD2 mechanism parameters class.");
+        p11ThrowPKCS11RuntimeException(env, "Unknown PBKD2 mechanism parameters class.");
         return NULL;
     }
     fieldID = (*env)->GetFieldID(env, jPkcs5Pbkd2ParamsClass, "saltSource", "J");
@@ -1869,7 +1869,7 @@ jPkcs5Pbkd2ParamToCKPkcs5Pbkd2ParamPtr(JNIEnv *env, jobject jParam, CK_ULONG *pL
     if (ckParamPtr->version == PARAMS) {
         pUlPasswordLen = calloc(1, sizeof(CK_ULONG));
         if (pUlPasswordLen == NULL) {
-            throwOutOfMemoryError(env, 0);
+            p11ThrowOutOfMemoryError(env, 0);
             goto cleanup;
         }
         ckParamPtr->params.v1.ulPasswordLen = pUlPasswordLen;
