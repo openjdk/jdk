@@ -202,10 +202,10 @@ public class StopThreadTest {
                 log("TestTask.run: caught expected AssertionError from method A()");
                 seenExceptionFromA = true;
             }
+            Thread.interrupted();
             if (!seenExceptionFromA) {
                 StopThreadTest.setFailed("TestTask.run: expected AssertionError from method A()");
             }
-            Thread.interrupted();
             sleep(1); // to cause yield
 
             boolean seenExceptionFromB = false;
@@ -215,10 +215,10 @@ public class StopThreadTest {
                 log("TestTask.run: caught expected AssertionError from method B()");
                 seenExceptionFromB = true;
             }
+            Thread.interrupted();
             if (!seenExceptionFromB) {
                 StopThreadTest.setFailed("TestTask.run: expected AssertionError from method B()");
             }
-            Thread.interrupted();
             sleep(1); // to cause yield
 
             boolean seenExceptionFromC = false;
@@ -228,6 +228,7 @@ public class StopThreadTest {
                 log("TestTask.run: caught expected AssertionError from method C()");
                 seenExceptionFromC = true;
             }
+            Thread.interrupted();
             if (!seenExceptionFromC) {
                 StopThreadTest.setFailed("TestTask.run: expected AssertionError from method C()");
             }
