@@ -145,9 +145,11 @@
  *                                                   unrolling the main-loop, we create two Initialized Assertion
  *                                                   Predicates from the Template Assertion Predicates by replacing the
  *                                                   OpaqueLoop* nodes by actual values for the unrolled loop.
- *                                                   The Initialized Assertion Predicates are always true because we will
- *                                                   never enter the main loop because of the changed pre- and main-loop
- *                                                   exit conditions.
+ *                                                   The Initialized Assertion Predicates are always true: They are true
+ *                                                   when entering the main-loop (because we adjusted the pre-loop exit
+ *                                                   condition), when executing the last iteration of the main-loop
+ *                                                   (because we adjusted the main-loop exit condition), and during all
+ *                                                   other iterations of the main-loop in-between by implication.
  *                                                   Note that Range Check Elimination could remove additional range
  *                                                   checks which we were not possible to remove with Loop Predication
  *                                                   before (for example, because no Parse Predicates were available
@@ -173,41 +175,41 @@
  * Initially, before applying any loop-splitting optimizations, we find the following structure after Loop Predication
  * (predicates inside square brackets [] do not need to exist if there are no checks to hoist):
  *
- *   [Loop Hoisted Predicate 1 + 2 Template Assertion Predicates]                 \ Runtime       \
- *   [Loop Hoisted Predicate 2 + 2 Template Assertion Predicates]                 | Predicate     |
- *   ...                                                                          | Block         | Loop Predicate Block
- *   [Loop Hoisted Predicate n + 2 Template Assertion Predicates]                 /               |
- * Loop Parse Predicate                                                                           /
+ *   [Loop Hoisted Predicate 1 + two Template Assertion Predicates]                 \ Runtime       \
+ *   [Loop Hoisted Predicate 2 + two Template Assertion Predicates]                 | Predicate     |
+ *   ...                                                                            | Block         | Loop Predicate Block
+ *   [Loop Hoisted Predicate n + two Template Assertion Predicates]                 /               |
+ * Loop Parse Predicate                                                                             /
  *
- *   [Profiled Loop Hoisted Predicate 1 + 2 Template Assertion Predicates]       \ Runtime       \
- *   [Profiled Loop Hoisted Predicate 2 + 2 Template Assertion Predicates]       | Predicate     | Profiled Loop
- *   ...                                                                         | Block         | Predicate Block
- *   [Profiled Loop Hoisted Predicate m + 2 Template Assertion Predicates]       /               |
- * Profiled Loop Parse Predicate                                                                 /
- *                                                                               \ Runtime
- *   [Loop Limit Check Predicate] (at most 1)                                    / Predicate    \ Loop Limit Check
- * Loop Limit Check Parse Predicate                                                Block        / Predicate Block
+ *   [Profiled Loop Hoisted Predicate 1 + two Template Assertion Predicates]       \ Runtime       \
+ *   [Profiled Loop Hoisted Predicate 2 + two Template Assertion Predicates]       | Predicate     | Profiled Loop
+ *   ...                                                                           | Block         | Predicate Block
+ *   [Profiled Loop Hoisted Predicate m + two Template Assertion Predicates]       /               |
+ * Profiled Loop Parse Predicate                                                                   /
+ *                                                                                 \ Runtime
+ *   [Loop Limit Check Predicate] (at most one)                                    / Predicate     \ Loop Limit Check
+ * Loop Limit Check Parse Predicate                                                  Block         / Predicate Block
  * Loop Head
  *
  * As an example, let's look at how the predicate structure looks for the main-loop after creating pre/main/post loops
  * and applying Range Check Elimination (the order is insignificant):
  *
  * Main Loop entry (zero-trip) guard
- *   [For Loop Predicate 1: 2 Template + 2 Initialized Assertion Predicates]
- *   [For Loop Predicate 2: 2 Template + 2 Initialized Assertion Predicates]
+ *   [For Loop Predicate 1: Two Template + two Initialized Assertion Predicates]
+ *   [For Loop Predicate 2: Two Template + two Initialized Assertion Predicates]
  *   ...
- *   [For Loop Predicate n: 2 Template + 2 Initialized Assertion Predicates]
+ *   [For Loop Predicate n: Two Template + two Initialized Assertion Predicates]
  *
- *   [For Profiled Loop Predicate 1: 2 Template + 2 Initialized Assertion Predicates]
- *   [For Profiled Loop Predicate 2: 2 Template + 2 Initialized Assertion Predicates]
+ *   [For Profiled Loop Predicate 1: Two Template + two Initialized Assertion Predicates]
+ *   [For Profiled Loop Predicate 2: Two Template + two Initialized Assertion Predicates]
  *   ...
- *   [For Profiled Loop Predicate m: 2 Template + 2 Initialized Assertion Predicates]
+ *   [For Profiled Loop Predicate m: Two Template + two Initialized Assertion Predicates]
  *
- *   (after unrolling, we have 2 Initialized Assertion Predicates for the Assertion Predicates of Range Check Elimination)
- *   [For Range Check Elimination Check 1: 2 Templates + 1 Initialized Assertion Predicate]
- *   [For Range Check Elimination Check 2: 2 Templates + 1 Initialized Assertion Predicate]
+ *   (after unrolling, we have two Initialized Assertion Predicates for the Assertion Predicates of Range Check Elimination)
+ *   [For Range Check Elimination Check 1: Two Templates + one Initialized Assertion Predicate]
+ *   [For Range Check Elimination Check 2: Two Templates + one Initialized Assertion Predicate]
  *   ...
- *   [For Range Check Elimination Check k: 2 Templates + 1 Initialized Assertion Predicate]
+ *   [For Range Check Elimination Check k: Two Templates + one Initialized Assertion Predicate]
  * Main Loop Head
  */
 
