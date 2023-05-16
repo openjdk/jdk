@@ -130,7 +130,8 @@ public interface SymbolLookup {
     Optional<MemorySegment> find(String name);
 
     /**
-     * {@return a composed symbol lookup that returns result of finding the symbol with this lookup if found, otherwise returns the result of finding the symbol with the other lookup.}
+     * {@return a composed symbol lookup that returns result of finding the symbol with this lookup if found,
+     * otherwise returns the result of finding the symbol with the other lookup}
      *
      * @apiNote This method could be used to chain multiple symbol lookups together, e.g. so that symbols could
      * be retrieved, in order, from multiple libraries:
