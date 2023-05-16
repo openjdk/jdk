@@ -3418,7 +3418,7 @@ GraphBuilder::GraphBuilder(Compilation* compilation, IRScope* scope)
   CHECK_BAILOUT();
 
 # ifdef ASSERT
-  //All blocks reachable from start_block have _end != null
+  //All blocks reachable from start_block have _end isn't null
   {
     BlockList processed;
     BlockList to_go;
@@ -3426,7 +3426,7 @@ GraphBuilder::GraphBuilder(Compilation* compilation, IRScope* scope)
     while(to_go.length() > 0) {
       BlockBegin* current = to_go.pop();
       assert(current != nullptr, "Should not happen.");
-      assert(current->end() != nullptr, "All blocks reachable from start_block should have end() != null.");
+      assert(current->end() != nullptr, "All blocks reachable from start_block should have end() != nullptr.");
       processed.append(current);
       for(int i = 0; i < current->number_of_sux(); i++) {
         BlockBegin* s = current->sux_at(i);

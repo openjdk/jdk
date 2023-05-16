@@ -387,7 +387,7 @@ void LIRGenerator::walk(Value instr) {
   } else {
     assert(instr->subst() == instr, "shouldn't have missed substitution");
     instr->visit(this);
-    // assert(instr->use_count() > 0 || instr->as_Phi() != null, "leaf instruction must have a use");
+    // assert(instr->use_count() > 0 || instr->as_Phi() != nullptr, "leaf instruction must have a use");
   }
 }
 

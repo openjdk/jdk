@@ -606,7 +606,7 @@ JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* c
 
   // If the stack guard pages are enabled, check whether there is a handler in
   // the current method.  Otherwise (guard pages disabled), force an unwind and
-  // skip the exception cache update (i.e., just leave continuation==null).
+  // skip the exception cache update (i.e., just leave continuation as null).
   address continuation = nullptr;
   if (guard_pages_enabled) {
 

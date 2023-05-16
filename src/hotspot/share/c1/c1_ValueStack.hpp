@@ -252,7 +252,7 @@ class ValueStack: public CompilationResourceObj {
   int temp_var = state->locals_size();                                                         \
   for (index = 0;                                                                              \
        index < temp_var && (value = state->local_at(index), true);                             \
-       index += (value == nullptr || value->type()->is_illegal() ? 1 : value->type()->size()))    \
+       index += (value == nullptr || value->type()->is_illegal() ? 1 : value->type()->size())) \
     if (value != nullptr)
 
 
@@ -318,7 +318,7 @@ class ValueStack: public CompilationResourceObj {
   {                                                                                            \
     for_each_stack_value(cur_state, cur_index, value) {                                        \
       Phi* v_phi = value->as_Phi();                                                            \
-      if (v_phi != nullptr && v_phi->block() == v_block) {                                        \
+      if (v_phi != nullptr && v_phi->block() == v_block) {                                     \
         v_code;                                                                                \
       }                                                                                        \
     }                                                                                          \
@@ -326,7 +326,7 @@ class ValueStack: public CompilationResourceObj {
   {                                                                                            \
     for_each_local_value(cur_state, cur_index, value) {                                        \
       Phi* v_phi = value->as_Phi();                                                            \
-      if (v_phi != nullptr && v_phi->block() == v_block) {                                        \
+      if (v_phi != nullptr && v_phi->block() == v_block) {                                     \
         v_code;                                                                                \
       }                                                                                        \
     }                                                                                          \

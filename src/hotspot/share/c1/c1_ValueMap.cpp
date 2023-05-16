@@ -152,8 +152,8 @@ Value ValueMap::find_insert(Value x) {
   NOT_PRODUCT(_number_of_kills++);                                                       \
                                                                                          \
   for (int i = size() - 1; i >= 0; i--) {                                                \
-    ValueMapEntry* prev_entry = nullptr;                                                    \
-    for (ValueMapEntry* entry = entry_at(i); entry != nullptr; entry = entry->next()) {     \
+    ValueMapEntry* prev_entry = nullptr;                                                 \
+    for (ValueMapEntry* entry = entry_at(i); entry != nullptr; entry = entry->next()) {  \
       Value value = entry->value();                                                      \
                                                                                          \
       must_kill_implementation(must_kill, entry, value)                                  \
@@ -161,7 +161,7 @@ Value ValueMap::find_insert(Value x) {
       if (must_kill) {                                                                   \
         kill_value(value);                                                               \
                                                                                          \
-        if (prev_entry == nullptr) {                                                        \
+        if (prev_entry == nullptr) {                                                     \
           _entries.at_put(i, entry->next());                                             \
           _entry_count--;                                                                \
         } else if (prev_entry->nesting() == nesting()) {                                 \
@@ -182,13 +182,13 @@ Value ValueMap::find_insert(Value x) {
   bool must_kill = value->as_LoadField() != nullptr || value->as_LoadIndexed() != nullptr;
 
 #define MUST_KILL_ARRAY(must_kill, entry, value)                                         \
-  bool must_kill = value->as_LoadIndexed() != nullptr                                       \
+  bool must_kill = value->as_LoadIndexed() != nullptr                                    \
                    && value->type()->tag() == type->tag();
 
 #define MUST_KILL_FIELD(must_kill, entry, value)                                         \
   /* ciField's are not unique; must compare their contents */                            \
   LoadField* lf = value->as_LoadField();                                                 \
-  bool must_kill = lf != nullptr                                                            \
+  bool must_kill = lf != nullptr                                                         \
                    && lf->field()->holder() == field->holder()                           \
                    && (all_offsets || lf->field()->offset_in_bytes() == field->offset_in_bytes());
 

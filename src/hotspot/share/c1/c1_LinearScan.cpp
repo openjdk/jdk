@@ -3480,7 +3480,7 @@ void LinearScan::verify_constants() {
       assert(value != nullptr, "all intervals live across block boundaries must have Value");
       assert(value->operand()->is_register() && value->operand()->is_virtual(), "value must have virtual operand");
       assert(value->operand()->vreg_number() == r, "register number must match");
-      // TKR assert(value->as_Constant() == null || value->is_pinned(), "only pinned constants can be alive across block boundaries");
+      // TKR assert(value->as_Constant() == nullptr || value->is_pinned(), "only pinned constants can be alive across block boundaries");
     };
     live_at_edge.iterate(visitor, 0, size);
   }
