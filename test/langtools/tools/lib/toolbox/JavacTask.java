@@ -23,7 +23,6 @@
 
 package toolbox;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Path;
@@ -468,7 +467,7 @@ public class JavacTask extends AbstractTask<JavacTask> {
     private String toSearchPath(List<Path> files) {
         return files.stream()
             .map(Path::toString)
-            .collect(Collectors.joining(File.pathSeparator));
+            .collect(Collectors.joining(ToolBox.pathSeparator));
     }
 
     private Iterable<? extends JavaFileObject> joinFiles(
