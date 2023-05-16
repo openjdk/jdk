@@ -130,10 +130,7 @@ public interface SymbolLookup {
     Optional<MemorySegment> find(String name);
 
     /**
-     * {@return a composite symbol lookup which will retrieve symbols using both this and the provided symbol
-     * lookup} More specifically, if a symbol is not found using this lookup, the provided lookup will be
-     * used as fallback. In other words, the resulting symbol lookup will only return {@linkplain Optional#empty()}
-     * if both lookups fail to retrieve a given symbol.
+     * {@return a composed symbol lookup that returns result of finding the symbol with this lookup if found, otherwise returns the result of finding the symbol with the other lookup.}
      *
      * @apiNote This method could be used to chain multiple symbol lookups together, e.g. so that symbols could
      * be retrieved, in order, from multiple libraries:
