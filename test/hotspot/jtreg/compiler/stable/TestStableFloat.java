@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,23 +30,23 @@
  * @build jdk.test.whitebox.WhiteBox
  *
  * @run main/bootclasspath/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
- *                                 -XX:CompileOnly=*TestStableFloat*::get,*TestStableFloat*::get1,*TestStableFloat*::get2,*TestStableFloat*::get3,*TestStableFloat*::get4
+ *                                 -XX:CompileOnly=*TestStableFloat::get*
  *                                 -XX:-TieredCompilation
  *                                 -XX:+FoldStableValues
  *                                 compiler.stable.TestStableFloat
  * @run main/bootclasspath/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
- *                                 -XX:CompileOnly=*TestStableFloat*::get,*TestStableFloat*::get1,*TestStableFloat*::get2,*TestStableFloat*::get3,*TestStableFloat*::get4
+ *                                 -XX:CompileOnly=*TestStableFloat::get*
  *                                 -XX:-TieredCompilation
  *                                 -XX:-FoldStableValues
  *                                 compiler.stable.TestStableFloat
  *
  * @run main/bootclasspath/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
- *                                 -XX:CompileOnly=*TestStableFloat*::get,*TestStableFloat*::get1,*TestStableFloat*::get2,*TestStableFloat*::get3,*TestStableFloat*::get4
+ *                                 -XX:CompileOnly=*TestStableFloat::get*
  *                                 -XX:+TieredCompilation -XX:TieredStopAtLevel=1
  *                                 -XX:+FoldStableValues
  *                                 compiler.stable.TestStableFloat
  * @run main/bootclasspath/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
- *                                 -XX:CompileOnly=*TestStableFloat*::get,*TestStableFloat*::get1,*TestStableFloat*::get2,*TestStableFloat*::get3,*TestStableFloat*::get4
+ *                                 -XX:CompileOnly=*TestStableFloat::get*
  *                                 -XX:+TieredCompilation -XX:TieredStopAtLevel=1
  *                                 -XX:-FoldStableValues
  *                                 compiler.stable.TestStableFloat
