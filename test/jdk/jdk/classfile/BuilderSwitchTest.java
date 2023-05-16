@@ -62,15 +62,15 @@ class BuilderSwitchTest {
         testSwitch(cob -> cob
                 .iload(0)
                 .tableswitch(swb -> swb
-                        .switchCase(6, b -> b.iinc(0,1))
-                        .switchCase(4, b -> b.iinc(0,2))
+                        .switchCase(6, b -> b.iinc(0,6))
+                        .switchCase(4, b -> b.iinc(0,4))
                         .switchCase(3, b -> b.iinc(0,3))
                         .defaultCase(b -> b.iinc(0,100))
-                        .switchCase(1, b -> b.iinc(0,4))
-                        .switchCase(2, b -> b.iinc(0,5))
-                        .switchCase(5, b -> b.iinc(0,6)))
+                        .switchCase(1, b -> b.iinc(0,1))
+                        .switchCase(2, b -> b.iinc(0,2))
+                        .switchCase(5, b -> b.iinc(0,5)))
                 .iload(0).ireturn(),
-                115, 122, 122, 121, 19, 16, 12, 122, 123, 124
+                108, 9, 9, 114, 119, 10, 127, 115, 116, 117
         );
     }
 
