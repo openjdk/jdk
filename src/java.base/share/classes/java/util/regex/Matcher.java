@@ -356,7 +356,7 @@ public final class Matcher implements MatchResult {
             checkGroup(group);
             if ((groups[group * 2] == -1) || (groups[group * 2 + 1] == -1))
                 return null;
-            return text.subSequence(groups[group * 2] - offset, groups[group * 2 + 1] - offset).toString();
+            return text.substring(groups[group * 2] - offset, groups[group * 2 + 1] - offset);
         }
 
         @Override
@@ -1324,9 +1324,6 @@ public final class Matcher implements MatchResult {
             // State for concurrent modification checking
             // -1 for uninitialized
             int expectedCount = -1;
-            // The input sequence as a string, set once only after first find
-            // Avoids repeated conversion from CharSequence for each match
-            String textAsString;
 
             @Override
             public MatchResult next() {
@@ -1337,7 +1334,7 @@ public final class Matcher implements MatchResult {
                     throw new NoSuchElementException();
 
                 state = -1;
-                return toMatchResult(textAsString);
+                return toMatchResult(captureText());
             }
 
             @Override
@@ -1352,9 +1349,6 @@ public final class Matcher implements MatchResult {
                     return true;
 
                 boolean found = find();
-                // Capture the input sequence as a string on first find
-                if (found && state < 0)
-                    textAsString = captureText();
                 state = found ? 1 : 0;
                 expectedCount = modCount;
                 return found;
@@ -1377,12 +1371,9 @@ public final class Matcher implements MatchResult {
                 if (s < 0 && !find())
                     return;
 
-                // Capture the input sequence as a string on first find
-                textAsString = captureText();
-
                 do {
                     int ec = modCount;
-                    action.accept(toMatchResult(textAsString));
+                    action.accept(toMatchResult(captureText()));
                     if (ec != modCount)
                         throw new ConcurrentModificationException();
                 } while (find());

@@ -25,7 +25,9 @@ import jdk.test.lib.RandomFactory;
 import org.junit.jupiter.api.Test;
 
 import java.nio.CharBuffer;
+import java.util.List;
 import java.util.Random;
+import java.util.regex.MatchResult;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -47,22 +49,25 @@ public class ImmutableMatchResultTest {
     private static final int prefixLen;
     private static final int infixLen;
     private static final int suffixLen;
-
-    private static final String group1;
-    private static final String group2;
+    private static final String group1 = "abc";
+    private static final String group2 = "wxyz";
     private static final String group0;
-
     private static final String in;
+    private static final String groupResults = "(([a-z]+)([0-9]*))";
+    private static final String inResults;
+    private static final String letters1 = "abcd";
+    private static final String digits1 = "12";
+    private static final String letters2 = "pqr";
+    private static final String digits2 = "";
 
     static {
         Random rnd = RandomFactory.getRandom();
         prefixLen = rnd.nextInt(10);
         infixLen = rnd.nextInt(10);
         suffixLen = rnd.nextInt(10);
-        group1 = "abc";
-        group2 = "wxyz";
         group0 = group1 + "-".repeat(infixLen) + group2;
         in = "-".repeat(prefixLen) + group0 + "-".repeat(suffixLen);
+        inResults = " ".repeat(prefixLen) + letters1 + digits1 + " ".repeat(infixLen) + letters2 + digits2 + " ".repeat(suffixLen);
     }
 
     private static void test(CharSequence cs) {
@@ -100,6 +105,78 @@ public class ImmutableMatchResultTest {
     @Test
     void testCharBuffer() {
         test(CharBuffer.wrap(in));
+    }
+
+    private static void testResultsStream(CharSequence cs) {
+        Matcher m = Pattern.compile(groupResults).matcher(cs);
+        List<MatchResult> results = m.results().toList();
+        assertEquals(2, results.size());
+
+        int startLetters1 = prefixLen;
+        int endLetters1 = startLetters1 + letters1.length();
+        int startDigits1 = endLetters1;
+        int endDigits1 = startDigits1 + digits1.length();
+
+        assertEquals(startLetters1, results.get(0).start());
+        assertEquals(startLetters1, results.get(0).start(0));
+        assertEquals(startLetters1, results.get(0).start(1));
+        assertEquals(startLetters1, results.get(0).start(2));
+        assertEquals(startDigits1, results.get(0).start(3));
+
+        assertEquals(endDigits1, results.get(0).end());
+        assertEquals(endDigits1, results.get(0).end(0));
+        assertEquals(endDigits1, results.get(0).end(1));
+        assertEquals(endLetters1, results.get(0).end(2));
+        assertEquals(endDigits1, results.get(0).end(3));
+
+        assertEquals(letters1 + digits1, results.get(0).group());
+        assertEquals(letters1 + digits1, results.get(0).group(0));
+        assertEquals(letters1 + digits1, results.get(0).group(1));
+        assertEquals(letters1, results.get(0).group(2));
+        assertEquals(digits1, results.get(0).group(3));
+
+        int startLetters2 = endDigits1 + infixLen;
+        int endLetters2 = startLetters2 + letters2.length();
+        int startDigits2 = endLetters2;
+        int endDigits2 = startDigits2 + digits2.length();
+
+        assertEquals(startLetters2, results.get(1).start());
+        assertEquals(startLetters2, results.get(1).start(0));
+        assertEquals(startLetters2, results.get(1).start(1));
+        assertEquals(startLetters2, results.get(1).start(2));
+        assertEquals(startDigits2, results.get(1).start(3));
+
+        assertEquals(endDigits2, results.get(1).end());
+        assertEquals(endDigits2, results.get(1).end(0));
+        assertEquals(endDigits2, results.get(1).end(1));
+        assertEquals(endLetters2, results.get(1).end(2));
+        assertEquals(endDigits2, results.get(1).end(3));
+
+        assertEquals(letters2 + digits2, results.get(1).group());
+        assertEquals(letters2 + digits2, results.get(1).group(0));
+        assertEquals(letters2 + digits2, results.get(1).group(1));
+        assertEquals(letters2, results.get(1).group(2));
+        assertEquals(digits2, results.get(1).group(3));
+    }
+
+    @Test
+    void testResultsStreamString() {
+        testResultsStream(inResults);
+    }
+
+    @Test
+    void testResultsStreamStringBuilder() {
+        testResultsStream(new StringBuilder(inResults));
+    }
+
+    @Test
+    void testResultsStreamStringBuffer() {
+        testResultsStream(new StringBuffer(inResults));
+    }
+
+    @Test
+    void testResultsStreamCharBuffer() {
+        testResultsStream(CharBuffer.wrap(inResults));
     }
 
 }
