@@ -55,7 +55,7 @@ public class RebuildMethodBodies {
     public void setup() throws IOException {
         shared = new ArrayList<>();
         unshared = new ArrayList<>();
-        Files.walk(FileSystems.getFileSystem(URI.create("jrt:/")).getPath("modules/java.base/java")).forEach(p ->  {
+        Files.walk(FileSystems.getFileSystem(URI.create("jrt:/")).getPath("modules/java.base/java")).forEach(p -> {
             if (Files.isRegularFile(p) && p.toString().endsWith(".class")) try {
                 var clm = Classfile.parse(p,
                         Classfile.Option.constantPoolSharing(true),

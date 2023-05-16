@@ -52,7 +52,7 @@ public class RepeatedModelTraversal {
     @Setup(Level.Trial)
     public void setup() throws IOException {
         models = new LinkedList<>();
-        Files.walk(FileSystems.getFileSystem(URI.create("jrt:/")).getPath("modules/java.base/java/util")).forEach(p ->  {
+        Files.walk(FileSystems.getFileSystem(URI.create("jrt:/")).getPath("modules/java.base/java/util")).forEach(p -> {
             if (Files.isRegularFile(p) && p.toString().endsWith(".class")) try {
                 var clm = Classfile.parse(p);
                 models.add(clm);

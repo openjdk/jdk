@@ -82,7 +82,7 @@ public class StackMapDecoder {
         }
         for(var arg : methodType.parameterList()) {
             vtis[i++] = switch (arg.descriptorString().charAt(0)) {
-                case 'I', 'S', 'C' ,'B', 'Z' ->  SimpleVerificationTypeInfo.ITEM_INTEGER;
+                case 'I', 'S', 'C' ,'B', 'Z' -> SimpleVerificationTypeInfo.ITEM_INTEGER;
                 case 'J' -> SimpleVerificationTypeInfo.ITEM_LONG;
                 case 'F' -> SimpleVerificationTypeInfo.ITEM_FLOAT;
                 case 'D' -> SimpleVerificationTypeInfo.ITEM_DOUBLE;
