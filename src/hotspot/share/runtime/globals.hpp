@@ -953,9 +953,6 @@ const int ObjectAlignmentInBytes = 8;
           "null (+offset) will not raise a SIGSEGV, i.e.,"                  \
           "ImplicitNullChecks don't work (PPC64).")                         \
                                                                             \
-  product(bool, EnableThreadSMRExtraValidityChecks, true, DIAGNOSTIC,       \
-             "Enable Thread SMR extra validity checks")                     \
-                                                                            \
   product(bool, EnableThreadSMRStatistics, trueInDebug, DIAGNOSTIC,         \
              "Enable Thread SMR Statistics")                                \
                                                                             \

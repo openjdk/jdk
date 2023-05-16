@@ -29,8 +29,8 @@
 #include "runtime/orderAccess.hpp"
 #include "utilities/debug.hpp"
 
-ZPageTable::ZPageTable() :
-    _map(ZAddressOffsetMax) {}
+ZPageTable::ZPageTable()
+  : _map(ZAddressOffsetMax) {}
 
 void ZPageTable::insert(ZPage* page) {
   const zoffset offset = page->start();
@@ -68,8 +68,8 @@ void ZPageTable::replace(ZPage* old_page, ZPage* new_page) {
   }
 }
 
-ZGenerationPagesParallelIterator::ZGenerationPagesParallelIterator(const ZPageTable* page_table, ZGenerationId id, ZPageAllocator* page_allocator) :
-    _iterator(page_table),
+ZGenerationPagesParallelIterator::ZGenerationPagesParallelIterator(const ZPageTable* page_table, ZGenerationId id, ZPageAllocator* page_allocator)
+  : _iterator(page_table),
     _generation_id(id),
     _page_allocator(page_allocator) {
   _page_allocator->enable_safe_destroy();
@@ -81,8 +81,8 @@ ZGenerationPagesParallelIterator::~ZGenerationPagesParallelIterator() {
   _page_allocator->disable_safe_destroy();
 }
 
-ZGenerationPagesIterator::ZGenerationPagesIterator(const ZPageTable* page_table, ZGenerationId id, ZPageAllocator* page_allocator) :
-    _iterator(page_table),
+ZGenerationPagesIterator::ZGenerationPagesIterator(const ZPageTable* page_table, ZGenerationId id, ZPageAllocator* page_allocator)
+  : _iterator(page_table),
     _generation_id(id),
     _page_allocator(page_allocator) {
   _page_allocator->enable_safe_destroy();

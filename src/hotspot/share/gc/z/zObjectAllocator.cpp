@@ -40,8 +40,8 @@
 static const ZStatCounter ZCounterUndoObjectAllocationSucceeded("Memory", "Undo Object Allocation Succeeded", ZStatUnitOpsPerSecond);
 static const ZStatCounter ZCounterUndoObjectAllocationFailed("Memory", "Undo Object Allocation Failed", ZStatUnitOpsPerSecond);
 
-ZObjectAllocator::ZObjectAllocator(ZPageAge age) :
-    _age(age),
+ZObjectAllocator::ZObjectAllocator(ZPageAge age)
+  : _age(age),
     _use_per_cpu_shared_small_pages(ZHeuristics::use_per_cpu_shared_small_pages()),
     _used(0),
     _undone(0),
