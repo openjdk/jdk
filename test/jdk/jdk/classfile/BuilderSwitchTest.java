@@ -53,7 +53,7 @@ class BuilderSwitchTest {
         MethodHandle main = lookup.findStatic(lookup.lookupClass(), "main",
                 MethodType.methodType(Integer.TYPE, Integer.TYPE));
         for (int i = 0; i < 10; i++) {
-            System.out.print(main.invoke(i) + ", ");
+            assertEquals(expected[i], main.invoke(i));
         }
     }
 
