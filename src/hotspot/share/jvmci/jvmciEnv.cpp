@@ -322,24 +322,33 @@ void JVMCIEnv::describe_pending_exception(outputStream* st) {
     char* cursor = stack_trace;
     int line = 0;
     const int max_lines = LogEventsBufferEntries / 2;
+    char* last_line = nullptr;
     while (*cursor != '\0') {
       char* eol = strchr(cursor, '\n');
       if (eol == nullptr) {
-        if (line < max_lines) {
+        if (line == max_lines - 1) {
+          last_line = cursor;
+        } else if (line < max_lines) {
           JVMCI_event_1("%s", cursor);
         }
         cursor = cursor + strlen(cursor);
       } else {
         *eol = '\0';
-        if (line < max_lines) {
+        if (line == max_lines - 1) {
+          last_line = cursor;
+        } else if (line < max_lines) {
           JVMCI_event_1("%s", cursor);
         }
         cursor = eol + 1;
       }
       line++;
     }
-    if (line >= max_lines) {
-      JVMCI_event_1("[elided %d more stack trace lines]", line - max_lines);
+    if (last_line != nullptr) {
+      if (line > max_lines) {
+        JVMCI_event_1("%s [elided %d more stack trace lines]", last_line, line - max_lines);
+      } else {
+        JVMCI_event_1("%s", last_line);
+      }
     }
   }
 }
