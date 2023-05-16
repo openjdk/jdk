@@ -1125,7 +1125,9 @@ InstanceKlass* SystemDictionary::load_shared_class(InstanceKlass* ik,
                                                    PackageEntry* pkg_entry,
                                                    TRAPS) {
   assert(ik != nullptr, "sanity");
-  assert(!ik->is_unshareable_info_restored(), "shared class can be loaded only once");
+  assert(!ik->is_unshareable_info_restored(), "shared class can be restored only once");
+  DEBUG_ONLY( ik->_shared_class_load_count += 1; )
+  assert(ik->_shared_class_load_count == 1, "shared class loaded more than once");
   Symbol* class_name = ik->name();
 
   if (!is_shared_class_visible(class_name, ik, pkg_entry, class_loader)) {
