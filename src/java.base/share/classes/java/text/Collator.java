@@ -226,7 +226,13 @@ public abstract class Collator
     }
 
     /**
-     * Gets the Collator for the desired locale.
+     * Gets the Collator for the desired locale. If the desired locale
+     * has the "{@code ks}" and/or the "{@code kk}"
+     * <a href="https://www.unicode.org/reports/tr35/tr35-collation.html#Setting_Options">
+     * Unicode collation settings</a>, the returned {@code Collator} instance
+     * will have the specified strength and/or decomposition respectively. If the specified
+     * setting value is not recognized, strength and/or decomposition will not be
+     * overridden.
      * @apiNote Implementations of {@code Collator} class may produce
      * different instances based on the "{@code co}"
      * <a href="https://www.unicode.org/reports/tr35/#UnicodeCollationIdentifier">
@@ -258,6 +264,27 @@ public abstract class Collator
                 result = LocaleProviderAdapter.forJRE()
                              .getCollatorProvider().getInstance(desiredLocale);
             }
+
+            // Override strength and decomposition with `desiredLocale`, if any
+            var strength = desiredLocale.getUnicodeLocaleType("ks");
+            if (strength != null) {
+                strength = strength.toLowerCase(Locale.ROOT);
+                switch (strength) {
+                    case "level1" -> result.setStrength(PRIMARY);
+                    case "level2" -> result.setStrength(SECONDARY);
+                    case "level3" -> result.setStrength(TERTIARY);
+                    case "identic" -> result.setStrength(IDENTICAL);
+                }
+            }
+            var norm = desiredLocale.getUnicodeLocaleType("kk");
+            if (norm != null) {
+                norm = norm.toLowerCase(Locale.ROOT);
+                switch (norm) {
+                    case "true" -> result.setDecomposition(CANONICAL_DECOMPOSITION);
+                    case "false" -> result.setDecomposition(NO_DECOMPOSITION);
+                }
+            }
+
             while (true) {
                 if (ref != null) {
                     // Remove the empty SoftReference if any
