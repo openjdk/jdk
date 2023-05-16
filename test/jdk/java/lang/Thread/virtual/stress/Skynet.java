@@ -33,7 +33,7 @@
  * @requires vm.debug == true & vm.continuations
  * @requires vm.gc.Z
  * @run main/othervm/timeout=300 -XX:+UnlockDiagnosticVMOptions
- *     -XX:+ZVerifyViews -XX:ZCollectionInterval=0.01 -Xmx1g Skynet
+ *     -XX:+ZVerifyOops -XX:ZCollectionInterval=0.01 -Xmx1g Skynet
  */
 
 import java.util.concurrent.BlockingQueue;
