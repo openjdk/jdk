@@ -44,7 +44,7 @@ import jdk.vm.ci.meta.TriState;
 /**
  * Access to a HotSpot {@code MethodData} structure (defined in methodData.hpp).
  */
-final class HotSpotMethodData {
+final class HotSpotMethodData implements MetaspaceObject {
 
     /**
      * VM state that can be reset when building an AOT image.
@@ -174,6 +174,11 @@ final class HotSpotMethodData {
         this.state = VMState.instance();
     }
 
+    @Override
+    public long getMetaspacePointer() {
+        return methodDataPointer;
+    }
+
     /**
      * @return value of the MethodData::_data_size field
      */
@@ -197,16 +202,19 @@ final class HotSpotMethodData {
         return normalDataSize() > 0;
     }
 
+    /**
+     * Return true if there is an extra data section and the first tag is non-zero.
+     */
     public boolean hasExtraData() {
-        return extraDataSize() > 0;
+        return extraDataSize() > 0 && HotSpotMethodDataAccessor.readTag(state.config, this, getExtraDataBeginOffset()) != 0;
     }
 
-    public int getExtraDataBeginOffset() {
+    private int getExtraDataBeginOffset() {
         return normalDataSize();
     }
 
     public boolean isWithin(int position) {
-        return position >= 0 && position < normalDataSize() + extraDataSize();
+        return position >= 0 && position < normalDataSize();
     }
 
     public int getDeoptimizationCount(DeoptimizationReason reason) {
@@ -239,17 +247,6 @@ final class HotSpotMethodData {
         }
 
         return getData(position);
-    }
-
-    public HotSpotMethodDataAccessor getExtraData(int position) {
-        if (position >= normalDataSize() + extraDataSize()) {
-            return null;
-        }
-        HotSpotMethodDataAccessor data = getData(position);
-        if (data != null) {
-            return data;
-        }
-        return data;
     }
 
     public static HotSpotMethodDataAccessor getNoDataAccessor(boolean exceptionPossiblyNotRecorded) {
@@ -308,7 +305,7 @@ final class HotSpotMethodData {
 
     private HotSpotResolvedObjectTypeImpl readKlass(int position, int offsetInBytes) {
         long fullOffsetInBytes = state.computeFullOffset(position, offsetInBytes);
-        return compilerToVM().getResolvedJavaType(methodDataPointer + fullOffsetInBytes);
+        return compilerToVM().getResolvedJavaType(this, fullOffsetInBytes);
     }
 
     /**
@@ -344,20 +341,6 @@ final class HotSpotMethodData {
             }
         }
 
-        if (hasExtraData()) {
-            int pos = getExtraDataBeginOffset();
-            HotSpotMethodDataAccessor data;
-            while ((data = getExtraData(pos)) != null) {
-                if (pos == getExtraDataBeginOffset()) {
-                    sb.append(nl).append("--- Extra data:");
-                }
-                int bci = data.getBCI(this, pos);
-                sb.append(String.format("%n%-6d bci: %-6d%-20s", pos, bci, data.getClass().getSimpleName()));
-                sb.append(data.appendTo(new StringBuilder(), this, pos).toString().replace(nl, nlIndent));
-                pos = pos + data.getSize(this, pos);
-            }
-
-        }
         return sb.toString();
     }
 

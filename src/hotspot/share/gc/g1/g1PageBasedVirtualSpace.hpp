@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,7 +111,7 @@ class G1PageBasedVirtualSpace {
   // Uncommit the given area of pages starting at start being size_in_pages large.
   void uncommit(size_t start_page, size_t size_in_pages);
 
-  void pretouch(size_t start_page, size_t size_in_pages, WorkerThreads* pretouch_workers = NULL);
+  void pretouch(size_t start_page, size_t size_in_pages, WorkerThreads* pretouch_workers = nullptr);
 
   // Initialize the given reserved space with the given base address and the size
   // actually used.

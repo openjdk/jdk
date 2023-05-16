@@ -217,6 +217,17 @@ void Assembler::init_attributes(void) {
   _attributes = nullptr;
 }
 
+void Assembler::set_attributes(InstructionAttr* attributes) {
+  // Record the assembler in the attributes, so the attributes destructor can
+  // clear the assembler's attributes, cleaning up the otherwise dangling
+  // pointer.  gcc13 has a false positive warning, because it doesn't tie that
+  // cleanup to the assignment of _attributes here.
+  attributes->set_current_assembler(this);
+  PRAGMA_DIAG_PUSH
+  PRAGMA_DANGLING_POINTER_IGNORED
+  _attributes = attributes;
+  PRAGMA_DIAG_POP
+}
 
 void Assembler::membar(Membar_mask_bits order_constraint) {
   // We only have to handle StoreLoad
@@ -11442,7 +11453,6 @@ void Assembler::vex_prefix(Address adr, int nds_enc, int xreg_enc, VexSimdPrefix
     vex_x = adr.index_needs_rex();
   }
   set_attributes(attributes);
-  attributes->set_current_assembler(this);
 
   // For EVEX instruction (which is not marked as pure EVEX instruction) check and see if this instruction
   // is allowed in legacy mode and has resources which will fit in it.
@@ -11489,7 +11499,6 @@ int Assembler::vex_prefix_and_encode(int dst_enc, int nds_enc, int src_enc, VexS
   bool vex_b = (src_enc & 8) == 8;
   bool vex_x = false;
   set_attributes(attributes);
-  attributes->set_current_assembler(this);
 
   // For EVEX instruction (which is not marked as pure EVEX instruction) check and see if this instruction
   // is allowed in legacy mode and has resources which will fit in it.

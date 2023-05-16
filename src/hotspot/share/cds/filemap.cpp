@@ -361,6 +361,7 @@ void SharedClassPathEntry::set_name(const char* name, TRAPS) {
 }
 
 void SharedClassPathEntry::copy_from(SharedClassPathEntry* ent, ClassLoaderData* loader_data, TRAPS) {
+  assert(ent != NULL, "sanity");
   _type = ent->_type;
   _is_module_path = ent->_is_module_path;
   _timestamp = ent->_timestamp;
@@ -2391,6 +2392,13 @@ FileMapRegion* FileMapInfo::first_core_region() const {
 
 FileMapRegion* FileMapInfo::last_core_region() const {
   return region_at(MetaspaceShared::ro);
+}
+
+void FileMapInfo::print(outputStream* st) const {
+  header()->print(st);
+  if (!is_static()) {
+    dynamic_header()->print(st);
+  }
 }
 
 void FileMapHeader::set_as_offset(char* p, size_t *offset) {

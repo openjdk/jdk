@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,10 +27,10 @@
 #include "gc/z/zValue.hpp"
 
 #include "gc/shared/gc_globals.hpp"
+#include "gc/shared/workerThread.hpp"
 #include "gc/z/zCPU.inline.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zNUMA.hpp"
-#include "gc/z/zThread.inline.hpp"
 #include "gc/z/zUtils.hpp"
 #include "runtime/globals.hpp"
 #include "utilities/align.hpp"
@@ -106,11 +106,11 @@ inline size_t ZPerWorkerStorage::alignment() {
 }
 
 inline uint32_t ZPerWorkerStorage::count() {
-  return UseDynamicNumberOfGCThreads ? ConcGCThreads : MAX2(ConcGCThreads, ParallelGCThreads);
+  return ConcGCThreads;
 }
 
 inline uint32_t ZPerWorkerStorage::id() {
-  return ZThread::worker_id();
+  return WorkerThread::worker_id();
 }
 
 //

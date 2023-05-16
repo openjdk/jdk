@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,8 +100,19 @@ class TestStringDeduplicationTools {
             if (n.getType().equals(GarbageCollectionNotificationInfo.GARBAGE_COLLECTION_NOTIFICATION)) {
                 GarbageCollectionNotificationInfo info = GarbageCollectionNotificationInfo.from((CompositeData) n.getUserData());
                 // Shenandoah and Z GC also report GC pauses, skip them
-                if (info.getGcName().startsWith("Shenandoah") || info.getGcName().startsWith("ZGC")) {
+                if (info.getGcName().startsWith("Shenandoah")) {
                     if ("end of GC cycle".equals(info.getGcAction())) {
+                        gcCount++;
+                    }
+                } else if (info.getGcName().startsWith("ZGC")) {
+                    // Generational ZGC only triggers string deduplications from major collections
+                    if (info.getGcName().startsWith("ZGC Major") && "end of GC cycle".equals(info.getGcAction())) {
+                        gcCount++;
+                    }
+
+                    // Single-gen ZGC
+                    if (!info.getGcName().startsWith("ZGC Major") && !info.getGcName().startsWith("ZGC Minor") &&
+                            "end of GC cycle".equals(info.getGcAction())) {
                         gcCount++;
                     }
                 } else if (info.getGcName().startsWith("G1")) {
