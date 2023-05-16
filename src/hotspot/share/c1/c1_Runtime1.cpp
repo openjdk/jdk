@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -754,11 +754,11 @@ JRT_BLOCK_ENTRY(void, Runtime1::monitorenter(JavaThread* current, oopDesc* obj, 
     _monitorenter_slowcase_cnt++;
   }
 #endif
-  if (UseHeavyMonitors) {
+  if (LockingMode == LM_MONITOR) {
     lock->set_obj(obj);
   }
-  assert(obj == lock->obj(), "must match");
-  SharedRuntime::monitor_enter_helper(obj, lock->lock(), current);
+  assert(LockingMode == LM_LIGHTWEIGHT || obj == lock->obj(), "must match");
+  SharedRuntime::monitor_enter_helper(obj, LockingMode == LM_LIGHTWEIGHT ? nullptr : lock->lock(), current);
 JRT_END
 
 
@@ -1062,9 +1062,8 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* current, Runtime1::StubID stub_
         break;
       }
       case Bytecodes::_invokedynamic: {
-        ConstantPoolCacheEntry* cpce = pool->invokedynamic_cp_cache_entry_at(index);
-        cpce->set_dynamic_call(pool, info);
-        appendix = Handle(current, cpce->appendix_if_resolved(pool)); // just in case somebody already resolved the entry
+        int indy_index = pool->decode_invokedynamic_index(index);
+        appendix = Handle(current, pool->cache()->set_dynamic_call(info, indy_index));
         break;
       }
       default: fatal("unexpected bytecode for load_appendix_patching_id");

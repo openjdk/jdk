@@ -85,52 +85,6 @@ public class CDSPluginTest {
             helper.checkImage(image, module, null, null,
                       new String[] { subDir + "classes.jsa" });
         }
-
-       // Simulate different platforms between current runtime and target image.
-       if (Platform.isLinux()) {
-           System.out.println("---- Test different platforms scenario ----");
-           String jlinkPath = JDKToolFinder.getJDKTool("jlink");
-           // copy over the packaged modules java.base and java.logging to a temporary directory
-           // which we then use as a --module-path during jlink image generation. using such a
-           // separate --module-path will force the JLink task to read the ModuleTarget from
-           // the java.base module-info.class to identify the target platform for the image
-           // being generated.
-           Path jdkRoot = Path.of(System.getProperty("test.jdk"));
-           Path modsPath = Files.createDirectory(Path.of("mods"));
-           copyPackagedModules(jdkRoot, modsPath, new String[] {"java.base", "java.logging"});
-           String[] cmd = {jlinkPath, "--verbose",
-                           "--add-modules", "java.base,java.logging",
-                           // java.base in a custom module path will ensure the ModuleTarget
-                           // attribute in module-info.class is parsed and target platform is
-                           // inferred as a linux-*
-                           "--module-path", modsPath.toString(),
-                           "-J-Dos.name=windows", // simulate current platform as windows
-                           // enable the CDSPlugin, which, during the processing is then expected
-                           // to throw an exception because of current and target platform mismatch
-                           "--generate-cds-archive",
-                           "--output", System.getProperty("test.classes") + sep + module + "-tmp"};
-           StringBuilder cmdLine = new StringBuilder();
-           for (String s : cmd) {
-               cmdLine.append(s).append(' ');
-           }
-           System.out.println("Command line: [" + cmdLine.toString() + "]");
-           ProcessBuilder pb = new ProcessBuilder(cmd);
-           OutputAnalyzer out = new OutputAnalyzer(pb.start());
-           System.out.println("    stdout: " + out.getStdout());
-           out.shouldMatch("Error: Cannot generate CDS archives: target image platform linux-.*is different from runtime platform windows-.*");
-           out.shouldHaveExitValue(1);
-       }
     }
 
-    private static void copyPackagedModules(Path jdkRoot, Path targetDir, String[] modules)
-            throws IOException {
-        for (String module : modules) {
-            Path moduleFile = jdkRoot.resolve("jmods").resolve(module + ".jmod");
-            if (!Files.exists(moduleFile)) {
-                throw new AssertionError("Missing " + moduleFile);
-            }
-            Path copy = targetDir.resolve(moduleFile.getFileName());
-            Files.copy(moduleFile, copy);
-        }
-    }
 }

@@ -42,7 +42,6 @@
 #include "oops/klass.inline.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/continuation.hpp"
-#include "runtime/flags/flagSetting.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.hpp"
@@ -68,7 +67,7 @@
 bool AbstractAssembler::pd_check_instruction_mark() { return true; }
 #endif
 
-static Assembler::Condition reverse[] = {
+static const Assembler::Condition reverse[] = {
     Assembler::noOverflow     /* overflow      = 0x0 */ ,
     Assembler::overflow       /* noOverflow    = 0x1 */ ,
     Assembler::aboveEqual     /* carrySet      = 0x2, below         = 0x2 */ ,
@@ -403,7 +402,7 @@ void MacroAssembler::debug32(int rdi, int rsi, int rbp, int rsp, int rbx, int rd
 
 void MacroAssembler::print_state32(int rdi, int rsi, int rbp, int rsp, int rbx, int rdx, int rcx, int rax, int eip) {
   ttyLocker ttyl;
-  FlagSetting fs(Debugging, true);
+  DebuggingContext debugging{};
   tty->print_cr("eip = 0x%08x", eip);
 #ifndef PRODUCT
   if ((WizardMode || Verbose) && PrintMiscellaneous) {
@@ -832,7 +831,7 @@ void MacroAssembler::debug64(char* msg, int64_t pc, int64_t regs[]) {
 
 void MacroAssembler::print_state64(int64_t pc, int64_t regs[]) {
   ttyLocker ttyl;
-  FlagSetting fs(Debugging, true);
+  DebuggingContext debugging{};
   tty->print_cr("rip = 0x%016lx", (intptr_t)pc);
 #ifndef PRODUCT
   tty->cr();
@@ -5132,11 +5131,6 @@ void MacroAssembler::load_klass(Register dst, Register src, Register tmp) {
     movptr(dst, Address(src, oopDesc::klass_offset_in_bytes()));
 }
 
-void MacroAssembler::load_klass_check_null(Register dst, Register src, Register tmp) {
-  null_check(src, oopDesc::klass_offset_in_bytes());
-  load_klass(dst, src, tmp);
-}
-
 void MacroAssembler::store_klass(Register dst, Register src, Register tmp) {
   assert_different_registers(src, tmp);
   assert_different_registers(dst, tmp);
@@ -9195,7 +9189,7 @@ void MacroAssembler::fill64_masked(uint shift, Register dst, int disp,
                                        XMMRegister xmm, KRegister mask, Register length,
                                        Register temp, bool use64byteVector) {
   assert(MaxVectorSize >= 32, "vector length should be >= 32");
-  BasicType type[] = { T_BYTE, T_SHORT, T_INT, T_LONG};
+  const BasicType type[] = { T_BYTE, T_SHORT, T_INT, T_LONG};
   if (!use64byteVector) {
     fill32(dst, disp, xmm);
     subptr(length, 32 >> shift);
@@ -9211,7 +9205,7 @@ void MacroAssembler::fill32_masked(uint shift, Register dst, int disp,
                                        XMMRegister xmm, KRegister mask, Register length,
                                        Register temp) {
   assert(MaxVectorSize >= 32, "vector length should be >= 32");
-  BasicType type[] = { T_BYTE, T_SHORT, T_INT, T_LONG};
+  const BasicType type[] = { T_BYTE, T_SHORT, T_INT, T_LONG};
   fill_masked(type[shift], Address(dst, disp), xmm, mask, length, temp, Assembler::AVX_256bit);
 }
 
@@ -9675,4 +9669,71 @@ void MacroAssembler::check_stack_alignment(Register sp, const char* msg, unsigne
   block_comment(msg);
   stop(msg);
   bind(L_stack_ok);
+}
+
+// Implements fast-locking.
+// Branches to slow upon failure to lock the object, with ZF cleared.
+// Falls through upon success with unspecified ZF.
+//
+// obj: the object to be locked
+// hdr: the (pre-loaded) header of the object, must be rax
+// thread: the thread which attempts to lock obj
+// tmp: a temporary register
+void MacroAssembler::fast_lock_impl(Register obj, Register hdr, Register thread, Register tmp, Label& slow) {
+  assert(hdr == rax, "header must be in rax for cmpxchg");
+  assert_different_registers(obj, hdr, thread, tmp);
+
+  // First we need to check if the lock-stack has room for pushing the object reference.
+  // Note: we subtract 1 from the end-offset so that we can do a 'greater' comparison, instead
+  // of 'greaterEqual' below, which readily clears the ZF. This makes C2 code a little simpler and
+  // avoids one branch.
+  cmpl(Address(thread, JavaThread::lock_stack_top_offset()), LockStack::end_offset() - 1);
+  jcc(Assembler::greater, slow);
+
+  // Now we attempt to take the fast-lock.
+  // Clear lock_mask bits (locked state).
+  andptr(hdr, ~(int32_t)markWord::lock_mask_in_place);
+  movptr(tmp, hdr);
+  // Set unlocked_value bit.
+  orptr(hdr, markWord::unlocked_value);
+  lock();
+  cmpxchgptr(tmp, Address(obj, oopDesc::mark_offset_in_bytes()));
+  jcc(Assembler::notEqual, slow);
+
+  // If successful, push object to lock-stack.
+  movl(tmp, Address(thread, JavaThread::lock_stack_top_offset()));
+  movptr(Address(thread, tmp), obj);
+  incrementl(tmp, oopSize);
+  movl(Address(thread, JavaThread::lock_stack_top_offset()), tmp);
+}
+
+// Implements fast-unlocking.
+// Branches to slow upon failure, with ZF cleared.
+// Falls through upon success, with unspecified ZF.
+//
+// obj: the object to be unlocked
+// hdr: the (pre-loaded) header of the object, must be rax
+// tmp: a temporary register
+void MacroAssembler::fast_unlock_impl(Register obj, Register hdr, Register tmp, Label& slow) {
+  assert(hdr == rax, "header must be in rax for cmpxchg");
+  assert_different_registers(obj, hdr, tmp);
+
+  // Mark-word must be lock_mask now, try to swing it back to unlocked_value.
+  movptr(tmp, hdr); // The expected old value
+  orptr(tmp, markWord::unlocked_value);
+  lock();
+  cmpxchgptr(tmp, Address(obj, oopDesc::mark_offset_in_bytes()));
+  jcc(Assembler::notEqual, slow);
+  // Pop the lock object from the lock-stack.
+#ifdef _LP64
+  const Register thread = r15_thread;
+#else
+  const Register thread = rax;
+  get_thread(thread);
+#endif
+  subl(Address(thread, JavaThread::lock_stack_top_offset()), oopSize);
+#ifdef ASSERT
+  movl(tmp, Address(thread, JavaThread::lock_stack_top_offset()));
+  movptr(Address(thread, tmp), 0);
+#endif
 }

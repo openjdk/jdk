@@ -351,6 +351,180 @@ inline bool BitMap::iterate(BitMapClosureType* cl, idx_t beg, idx_t end) const {
   return iterate(function, beg, end);
 }
 
+template <typename Function>
+inline bool BitMap::reverse_iterate(Function function, idx_t beg, idx_t end) const {
+  auto invoke = IterateInvoker<decltype(function(beg))>();
+  for (idx_t index; true; end = index) {
+    index = find_last_set_bit(beg, end);
+    if (index >= end) {
+      return true;
+    } else if (!invoke(function, index)) {
+      return false;
+    }
+  }
+}
+
+template <typename BitMapClosureType>
+inline bool BitMap::reverse_iterate(BitMapClosureType* cl, idx_t beg, idx_t end) const {
+  auto function = [&](idx_t index) { return cl->do_bit(index); };
+  return reverse_iterate(function, beg, end);
+}
+
+/// BitMap::IteratorImpl
+
+inline BitMap::IteratorImpl::IteratorImpl()
+  : _map(nullptr), _cur_beg(0), _cur_end(0)
+{}
+
+inline BitMap::IteratorImpl::IteratorImpl(const BitMap* map, idx_t beg, idx_t end)
+  : _map(map), _cur_beg(beg), _cur_end(end)
+{}
+
+inline bool BitMap::IteratorImpl::is_empty() const {
+  return _cur_beg == _cur_end;
+}
+
+inline BitMap::idx_t BitMap::IteratorImpl::first() const {
+  assert_not_empty();
+  return _cur_beg;
+}
+
+inline BitMap::idx_t BitMap::IteratorImpl::last() const {
+  assert_not_empty();
+  return _cur_end - 1;
+}
+
+inline void BitMap::IteratorImpl::step_first() {
+  assert_not_empty();
+  _cur_beg = _map->find_first_set_bit(_cur_beg + 1, _cur_end);
+}
+
+inline void BitMap::IteratorImpl::step_last() {
+  assert_not_empty();
+  idx_t lastpos = last();
+  idx_t pos = _map->find_last_set_bit(_cur_beg, lastpos);
+  _cur_end = (pos < lastpos) ? (pos + 1) : _cur_beg;
+}
+
+/// BitMap::Iterator
+
+inline BitMap::Iterator::Iterator() : _impl() {}
+
+inline BitMap::Iterator::Iterator(const BitMap& map)
+  : Iterator(map, 0, map.size())
+{}
+
+inline BitMap::Iterator::Iterator(const BitMap& map, idx_t beg, idx_t end)
+  : _impl(&map, map.find_first_set_bit(beg, end), end)
+{}
+
+inline bool BitMap::Iterator::is_empty() const {
+  return _impl.is_empty();
+}
+
+inline BitMap::idx_t BitMap::Iterator::index() const {
+  return _impl.first();
+}
+
+inline void BitMap::Iterator::step() {
+  _impl.step_first();
+}
+
+inline BitMap::RBFIterator BitMap::Iterator::begin() const {
+  return RBFIterator(_impl._map, _impl._cur_beg, _impl._cur_end);
+}
+
+inline BitMap::RBFIterator BitMap::Iterator::end() const {
+  return RBFIterator(_impl._map, _impl._cur_end, _impl._cur_end);
+}
+
+/// BitMap::ReverseIterator
+
+inline BitMap::idx_t BitMap::ReverseIterator::initial_end(const BitMap& map,
+                                                          idx_t beg,
+                                                          idx_t end) {
+  idx_t pos = map.find_last_set_bit(beg, end);
+  return (pos < end) ? (pos + 1) : beg;
+}
+
+inline BitMap::ReverseIterator::ReverseIterator() : _impl() {}
+
+inline BitMap::ReverseIterator::ReverseIterator(const BitMap& map)
+  : ReverseIterator(map, 0, map.size())
+{}
+
+inline BitMap::ReverseIterator::ReverseIterator(const BitMap& map,
+                                                idx_t beg,
+                                                idx_t end)
+  : _impl(&map, beg, initial_end(map, beg, end))
+{}
+
+inline bool BitMap::ReverseIterator::is_empty() const {
+  return _impl.is_empty();
+}
+
+inline BitMap::idx_t BitMap::ReverseIterator::index() const {
+  return _impl.last();
+}
+
+inline void BitMap::ReverseIterator::step() {
+  _impl.step_last();
+}
+
+inline BitMap::ReverseRBFIterator BitMap::ReverseIterator::begin() const {
+  return ReverseRBFIterator(_impl._map, _impl._cur_beg, _impl._cur_end);
+}
+
+inline BitMap::ReverseRBFIterator BitMap::ReverseIterator::end() const {
+  return ReverseRBFIterator(_impl._map, _impl._cur_beg, _impl._cur_beg);
+}
+
+/// BitMap::RBFIterator
+
+inline BitMap::RBFIterator::RBFIterator(const BitMap* map, idx_t beg, idx_t end)
+  : _impl(map, beg, end)
+{}
+
+inline bool BitMap::RBFIterator::operator!=(const RBFIterator& i) const {
+  // Shouldn't be comparing RBF iterators from different contexts.
+  assert(_impl._map == i._impl._map, "mismatched range-based for iterators");
+  assert(_impl._cur_end == i._impl._cur_end, "mismatched range-based for iterators");
+  return _impl._cur_beg != i._impl._cur_beg;
+}
+
+inline BitMap::idx_t BitMap::RBFIterator::operator*() const {
+  return _impl.first();
+}
+
+inline BitMap::RBFIterator& BitMap::RBFIterator::operator++() {
+  _impl.step_first();
+  return *this;
+}
+
+/// BitMap::ReverseRBFIterator
+
+inline BitMap::ReverseRBFIterator::ReverseRBFIterator(const BitMap* map,
+                                                      idx_t beg,
+                                                      idx_t end)
+  : _impl(map, beg, end)
+{}
+
+inline bool BitMap::ReverseRBFIterator::operator!=(const ReverseRBFIterator& i) const {
+  // Shouldn't be comparing RBF iterators from different contexts.
+  assert(_impl._map == i._impl._map, "mismatched range-based for iterators");
+  assert(_impl._cur_beg == i._impl._cur_beg, "mismatched range-based for iterators");
+  return _impl._cur_end != i._impl._cur_end;
+}
+
+inline BitMap::idx_t BitMap::ReverseRBFIterator::operator*() const {
+  return _impl.last();
+}
+
+inline BitMap::ReverseRBFIterator& BitMap::ReverseRBFIterator::operator++() {
+  _impl.step_last();
+  return *this;
+}
+
 // Returns a bit mask for a range of bits [beg, end) within a single word.  Each
 // bit in the mask is 0 if the bit is in the range, 1 if not in the range.  The
 // returned mask can be used directly to clear the range, or inverted to set the

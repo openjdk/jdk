@@ -24,103 +24,44 @@
  */
 package jdk.tools.jlink.internal;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.ByteOrder;
+import jdk.internal.util.Architecture;
+import jdk.internal.util.OperatingSystem;
+
 import java.util.Locale;
-import java.util.Properties;
 
 /**
- * Supported platforms
+ * Supported OperatingSystem and Architecture.
  */
-public record Platform(OperatingSystem os, Architecture arch, ByteOrder endianness) {
-    private static final Properties PLATFORM_PROPERTIES;
-    private static final String ENDIANNESS_KEY_SUFFIX = ".endianness";
-
-    static {
-        Properties p = null;
-        try (InputStream is = Platform.class.getResourceAsStream("target.properties")) {
-            p = new Properties();
-            p.load(is);
-        } catch (IOException e) {
-            throw new ExceptionInInitializerError(e);
-        }
-        PLATFORM_PROPERTIES = p;
-    }
-
-    public enum OperatingSystem {
-        WINDOWS,
-        LINUX,
-        MACOS,
-        AIX,
-        UNKNOWN;
-    }
-
-    public enum Architecture {
-        X86,
-        x64,
-        ARM,
-        AARCH64,
-        PPC64,
-        PPC64LE,
-        s390x,
-        UNKNOWN;
-    }
-
-    public static final Platform UNKNOWN = new Platform(OperatingSystem.UNKNOWN, Architecture.UNKNOWN, null);
+public record Platform(OperatingSystem os, Architecture arch) {
 
     /*
      * Returns the {@code Platform} based on the platformString of the form <operating system>-<arch>.
+     * @throws IllegalArgumentException if the delimiter is missing or either OS or
+     * architecture is not known
      */
     public static Platform parsePlatform(String platformString) {
         String osName;
         String archName;
         int index = platformString.indexOf("-");
         if (index < 0) {
-            osName = platformString;
-            archName = "UNKNOWN";
-        } else {
-            osName = platformString.substring(0, index);
-            archName = platformString.substring(index + 1);
+            throw new IllegalArgumentException("platformString missing delimiter: " + platformString);
         }
-        OperatingSystem os;
-        try {
-            os = OperatingSystem.valueOf(osName.toUpperCase(Locale.ENGLISH));
-        } catch (IllegalArgumentException e) {
-            os = OperatingSystem.UNKNOWN;
-        }
-        Architecture arch = toArch(archName);
+        osName = platformString.substring(0, index);
+        OperatingSystem os = OperatingSystem.valueOf(osName.toUpperCase(Locale.ROOT));
 
-        if (os == OperatingSystem.UNKNOWN || arch == Architecture.UNKNOWN) {
-            return UNKNOWN;
-        }
-        // map the endianness from target.properties
-        // until ModuleTarget attribute is extended to include the endianness
-        String v = PLATFORM_PROPERTIES.getProperty(platformString + ENDIANNESS_KEY_SUFFIX);
-        ByteOrder endian = switch (v.trim().toLowerCase(Locale.ROOT)) {
-            case "little" -> ByteOrder.LITTLE_ENDIAN;
-            case "big" -> ByteOrder.BIG_ENDIAN;
-            default -> throw new InternalError("Unrecognized endian value '" + platformString + "'");
-        };
+        archName = platformString.substring(index + 1);
+        // Alias architecture "amd64" to "X64"
+        archName = archName.replace("amd64", "X64");
+        Architecture arch = Architecture.valueOf(archName.toUpperCase(Locale.ROOT));
 
-        return new Platform(os, arch, endian);
+        return new Platform(os, arch);
     }
 
     /**
-     * @return true if it's a 64-bit platform
-     */
-    public boolean is64Bit() {
-        return switch (arch) {
-            case x64, AARCH64, PPC64, PPC64LE, s390x -> true;
-            default -> false;
-        };
-    }
-
-    /**
-     * Returns the runtime {@code Platform}.
+     * {@return the runtime {@code Platform}}
      */
     public static Platform runtime() {
-        return new Platform(runtimeOS(), runtimeArch(), ByteOrder.nativeOrder());
+        return new Platform(OperatingSystem.current(), Architecture.current());
     }
 
     /**
@@ -128,46 +69,6 @@ public record Platform(OperatingSystem os, Architecture arch, ByteOrder endianne
      */
     @Override
     public String toString() {
-        return os.toString().toLowerCase() + "-" + arch.toString().toLowerCase();
-    }
-
-    /**
-     * Returns the runtime {@code Platform.OperatingSystem}.
-     */
-    private static OperatingSystem runtimeOS() {
-        String osName = System.getProperty("os.name").substring(0, 3).toLowerCase();
-        OperatingSystem os = switch (osName) {
-            case "win" -> OperatingSystem.WINDOWS;
-            case "lin" -> OperatingSystem.LINUX;
-            case "mac" -> OperatingSystem.MACOS;
-            case "aix" -> OperatingSystem.AIX;
-            default    -> OperatingSystem.UNKNOWN;
-        };
-        return os;
-    }
-
-    /**
-     * Returns the runtime {@code Platform.Architechrure}.
-     */
-    private static Architecture runtimeArch() {
-        String archName = System.getProperty("os.arch");
-        return toArch(archName);
-    }
-
-    /**
-     * Returns the {@code Platform.Architecture} based on the archName.
-     */
-    private static Architecture toArch(String archName) {
-        Architecture arch = switch (archName) {
-            case "x86"             -> Architecture.X86;
-            case "amd64", "x86_64" -> Architecture.x64;
-            case "arm"             -> Architecture.ARM;
-            case "aarch64"         -> Architecture.AARCH64;
-            case "ppc64"           -> Architecture.PPC64;
-            case "ppc64le"         -> Architecture.PPC64LE;
-            case "s390x"           -> Architecture.s390x;
-            default                -> Architecture.UNKNOWN;
-        };
-        return arch;
+        return os.toString().toLowerCase(Locale.ROOT) + "-" + arch.toString().toLowerCase(Locale.ROOT);
     }
 }

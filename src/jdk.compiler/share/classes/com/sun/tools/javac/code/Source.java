@@ -226,6 +226,7 @@ public enum Source {
         SWITCH_MULTIPLE_CASE_LABELS(JDK14, Fragments.FeatureMultipleCaseLabels, DiagKind.PLURAL),
         SWITCH_RULE(JDK14, Fragments.FeatureSwitchRules, DiagKind.PLURAL),
         SWITCH_EXPRESSION(JDK14, Fragments.FeatureSwitchExpressions, DiagKind.PLURAL),
+        NO_TARGET_ANNOTATION_APPLICABILITY(JDK14),
         TEXT_BLOCKS(JDK15, Fragments.FeatureTextBlocks, DiagKind.PLURAL),
         PATTERN_MATCHING_IN_INSTANCEOF(JDK16, Fragments.FeaturePatternMatchingInstanceof, DiagKind.NORMAL),
         REIFIABLE_TYPES_INSTANCEOF(JDK16, Fragments.FeatureReifiableTypesInstanceof, DiagKind.PLURAL),
@@ -234,8 +235,10 @@ public enum Source {
         CASE_NULL(JDK17, Fragments.FeatureCaseNull, DiagKind.NORMAL),
         PATTERN_SWITCH(JDK17, Fragments.FeaturePatternSwitch, DiagKind.PLURAL),
         REDUNDANT_STRICTFP(JDK17),
+        STRING_TEMPLATES(JDK21, Fragments.FeatureStringTemplates, DiagKind.PLURAL),
         UNCONDITIONAL_PATTERN_IN_INSTANCEOF(JDK19, Fragments.FeatureUnconditionalPatternsInInstanceof, DiagKind.PLURAL),
         RECORD_PATTERNS(JDK19, Fragments.FeatureDeconstructionPatterns, DiagKind.PLURAL),
+        WARN_ON_ILLEGAL_UTF8(MIN, JDK21),
         ;
 
         enum DiagKind {

@@ -58,7 +58,8 @@ static bool is_cause_full(GCCause::Cause cause) {
 VM_ParallelGCSystemGC::VM_ParallelGCSystemGC(uint gc_count,
                                              uint full_gc_count,
                                              GCCause::Cause gc_cause) :
-  VM_GC_Operation(gc_count, gc_cause, full_gc_count, is_cause_full(gc_cause))
+  VM_GC_Operation(gc_count, gc_cause, full_gc_count, is_cause_full(gc_cause)),
+  _full_gc_succeeded(false)
 {
 }
 
@@ -70,8 +71,8 @@ void VM_ParallelGCSystemGC::doit() {
   GCCauseSetter gccs(heap, _gc_cause);
   if (!_full) {
     // If (and only if) the scavenge fails, this will invoke a full gc.
-    heap->invoke_scavenge();
+    _full_gc_succeeded = heap->invoke_scavenge();
   } else {
-    heap->do_full_collection(false);
+    _full_gc_succeeded = PSParallelCompact::invoke(false);
   }
 }

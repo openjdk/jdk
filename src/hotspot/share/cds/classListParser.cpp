@@ -570,31 +570,31 @@ void ClassListParser::resolve_indy_impl(Symbol* class_name_symbol, TRAPS) {
     ConstantPool* cp = ik->constants();
     ConstantPoolCache* cpcache = cp->cache();
     bool found = false;
-    for (int cpcindex = 0; cpcindex < cpcache->length(); cpcindex ++) {
-      int indy_index = ConstantPool::encode_invokedynamic_index(cpcindex);
-      ConstantPoolCacheEntry* cpce = cpcache->entry_at(cpcindex);
-      int pool_index = cpce->constant_pool_index();
+    for (int indy_index = 0; indy_index < cpcache->resolved_indy_entries_length(); indy_index++) {
+      int pool_index = cpcache->resolved_indy_entry_at(indy_index)->constant_pool_index();
       constantPoolHandle pool(THREAD, cp);
-      if (pool->tag_at(pool_index).is_invoke_dynamic()) {
-        BootstrapInfo bootstrap_specifier(pool, pool_index, indy_index);
-        Handle bsm = bootstrap_specifier.resolve_bsm(CHECK);
-        if (!SystemDictionaryShared::is_supported_invokedynamic(&bootstrap_specifier)) {
-          log_debug(cds, lambda)("is_supported_invokedynamic check failed for cp_index %d", pool_index);
-          continue;
+      BootstrapInfo bootstrap_specifier(pool, pool_index, indy_index);
+      Handle bsm = bootstrap_specifier.resolve_bsm(CHECK);
+      if (!SystemDictionaryShared::is_supported_invokedynamic(&bootstrap_specifier)) {
+        log_debug(cds, lambda)("is_supported_invokedynamic check failed for cp_index %d", pool_index);
+        continue;
+      }
+      bool matched = is_matching_cp_entry(pool, pool_index, CHECK);
+      if (matched) {
+        found = true;
+        CallInfo info;
+        bool is_done = bootstrap_specifier.resolve_previously_linked_invokedynamic(info, CHECK);
+        if (!is_done) {
+          // resolve it
+          Handle recv;
+          LinkResolver::resolve_invoke(info,
+                                       recv,
+                                       pool,
+                                       ConstantPool::encode_invokedynamic_index(indy_index),
+                                       Bytecodes::_invokedynamic, CHECK);
+          break;
         }
-        bool matched = is_matching_cp_entry(pool, pool_index, CHECK);
-        if (matched) {
-          found = true;
-          CallInfo info;
-          bool is_done = bootstrap_specifier.resolve_previously_linked_invokedynamic(info, CHECK);
-          if (!is_done) {
-            // resolve it
-            Handle recv;
-            LinkResolver::resolve_invoke(info, recv, pool, indy_index, Bytecodes::_invokedynamic, CHECK);
-            break;
-          }
-          cpce->set_dynamic_call(pool, info);
-        }
+        cpcache->set_dynamic_call(info, indy_index);
       }
     }
     if (!found) {

@@ -73,6 +73,7 @@ class oopDesc {
 
   inline void set_mark(markWord m);
   static inline void set_mark(HeapWord* mem, markWord m);
+  static inline void release_set_mark(HeapWord* mem, markWord m);
 
   inline void release_set_mark(markWord m);
   inline markWord cas_set_mark(markWord new_mark, markWord old_mark);
@@ -256,8 +257,6 @@ class oopDesc {
 
   // Forward pointer operations for scavenge
   inline bool is_forwarded() const;
-
-  void verify_forwardee(oop forwardee) NOT_DEBUG_RETURN;
 
   inline void forward_to(oop p);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,11 +77,13 @@ import java.util.jar.Manifest;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import jdk.internal.util.OperatingSystem;
 import jdk.internal.misc.VM;
 import jdk.internal.module.ModuleBootstrap;
 import jdk.internal.module.Modules;
 import jdk.internal.platform.Container;
 import jdk.internal.platform.Metrics;
+import sun.util.calendar.ZoneInfoFile;
 
 /**
  * A utility package for the java(1), javaw(1) launchers.
@@ -168,7 +170,7 @@ public final class LauncherHelper {
                 printLocale();
                 break;
             case "system":
-                if (System.getProperty("os.name").contains("Linux")) {
+                if (OperatingSystem.isLinux()) {
                     printSystemMetrics();
                     break;
                 }
@@ -176,7 +178,7 @@ public final class LauncherHelper {
                 printVmSettings(initialHeapSize, maxHeapSize, stackSize);
                 printProperties();
                 printLocale();
-                if (System.getProperty("os.name").contains("Linux")) {
+                if (OperatingSystem.isLinux()) {
                     printSystemMetrics();
                 }
                 break;
@@ -279,6 +281,8 @@ public final class LauncherHelper {
                 Locale.getDefault(Category.DISPLAY).getDisplayName());
         ostream.println(INDENT + "default format locale = " +
                 Locale.getDefault(Category.FORMAT).getDisplayName());
+        ostream.println(INDENT + "tzdata version = " +
+                ZoneInfoFile.getVersion());
         printLocales();
         ostream.println();
     }
@@ -532,7 +536,7 @@ public final class LauncherHelper {
         initOutput(printToStderr);
         ostream.println(getLocalizedMessage("java.launcher.X.usage",
                 File.pathSeparator));
-        if (System.getProperty("os.name").contains("OS X")) {
+        if (OperatingSystem.isMacOS()) {
             ostream.println(getLocalizedMessage("java.launcher.X.macosx.usage",
                         File.pathSeparator));
         }
@@ -745,7 +749,7 @@ public final class LauncherHelper {
         Class<?> c = null;
         try {
             c = Class.forName(m, mainClass);
-            if (c == null && System.getProperty("os.name", "").contains("OS X")
+            if (c == null && OperatingSystem.isMacOS()
                     && Normalizer.isNormalized(mainClass, Normalizer.Form.NFD)) {
 
                 String cn = Normalizer.normalize(mainClass, Normalizer.Form.NFC);
@@ -789,7 +793,7 @@ public final class LauncherHelper {
             try {
                 mainClass = Class.forName(cn, false, scl);
             } catch (NoClassDefFoundError | ClassNotFoundException cnfe) {
-                if (System.getProperty("os.name", "").contains("OS X")
+                if (OperatingSystem.isMacOS()
                         && Normalizer.isNormalized(cn, Normalizer.Form.NFD)) {
                     try {
                         // On Mac OS X since all names with diacritical marks are

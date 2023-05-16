@@ -545,7 +545,7 @@ ping6(JNIEnv *env, jint fd, SOCKETADDRESS *sa, SOCKETADDRESS *netif,
     struct icmp6_hdr *icmp6;
     struct sockaddr_in6 sa_recv;
     jchar pid;
-    struct timeval tv;
+    struct timeval tv = { 0, 0 };
     size_t plen = sizeof(struct icmp6_hdr) + sizeof(tv);
 
 #if defined(__linux__)

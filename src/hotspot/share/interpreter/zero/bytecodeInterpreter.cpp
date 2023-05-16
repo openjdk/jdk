@@ -624,7 +624,7 @@ void BytecodeInterpreter::run(interpreterState istate) {
         // Traditional lightweight locking.
         markWord displaced = rcvr->mark().set_unlocked();
         mon->lock()->set_displaced_header(displaced);
-        bool call_vm = UseHeavyMonitors;
+        bool call_vm = (LockingMode == LM_MONITOR);
         bool inc_monitor_count = true;
         if (call_vm || rcvr->cas_set_mark(markWord::from_pointer(mon), displaced) != displaced) {
           // Is it simple recursive case?
@@ -723,7 +723,7 @@ void BytecodeInterpreter::run(interpreterState istate) {
       // traditional lightweight locking
       markWord displaced = lockee->mark().set_unlocked();
       entry->lock()->set_displaced_header(displaced);
-      bool call_vm = UseHeavyMonitors;
+      bool call_vm = (LockingMode == LM_MONITOR);
       bool inc_monitor_count = true;
       if (call_vm || lockee->cas_set_mark(markWord::from_pointer(entry), displaced) != displaced) {
         // Is it simple recursive case?
@@ -1653,7 +1653,7 @@ run:
           // traditional lightweight locking
           markWord displaced = lockee->mark().set_unlocked();
           entry->lock()->set_displaced_header(displaced);
-          bool call_vm = UseHeavyMonitors;
+          bool call_vm = (LockingMode == LM_MONITOR);
           bool inc_monitor_count = true;
           if (call_vm || lockee->cas_set_mark(markWord::from_pointer(entry), displaced) != displaced) {
             // Is it simple recursive case?
@@ -1689,7 +1689,7 @@ run:
 
             // If it isn't recursive we either must swap old header or call the runtime
             bool dec_monitor_count = true;
-            bool call_vm = UseHeavyMonitors;
+            bool call_vm = (LockingMode == LM_MONITOR);
             if (header.to_pointer() != nullptr || call_vm) {
               markWord old_header = markWord::encode(lock);
               if (call_vm || lockee->cas_set_mark(header, old_header) != old_header) {
@@ -2247,25 +2247,19 @@ run:
       }
 
       CASE(_invokedynamic): {
-
-        u4 index = Bytes::get_native_u4(pc+1);
-        ConstantPoolCacheEntry* cache = cp->constant_pool()->invokedynamic_cp_cache_entry_at(index);
-
-        // We are resolved if the resolved_references array contains a non-null object (CallSite, etc.)
-        // This kind of CP cache entry does not need to match the flags byte, because
-        // there is a 1-1 relation between bytecode type and CP entry type.
-        if (! cache->is_resolved((Bytecodes::Code) opcode)) {
+        u4 index = cp->constant_pool()->decode_invokedynamic_index(Bytes::get_native_u4(pc+1)); // index is originally negative
+        ResolvedIndyEntry* indy_info = cp->resolved_indy_entry_at(index);
+        if (!indy_info->is_resolved()) {
           CALL_VM(InterpreterRuntime::resolve_from_cache(THREAD, (Bytecodes::Code)opcode),
                   handle_exception);
-          cache = cp->constant_pool()->invokedynamic_cp_cache_entry_at(index);
+          indy_info = cp->resolved_indy_entry_at(index); // get resolved entry
         }
-
-        Method* method = cache->f1_as_method();
+        Method* method = indy_info->method();
         if (VerifyOops) method->verify();
 
-        if (cache->has_appendix()) {
+        if (indy_info->has_appendix()) {
           constantPoolHandle cp(THREAD, METHOD->constants());
-          SET_STACK_OBJECT(cache->appendix_if_resolved(cp), 0);
+          SET_STACK_OBJECT(cp->resolved_reference_from_indy(index), 0);
           MORE_STACK(1);
         }
 
@@ -3195,7 +3189,7 @@ run:
               illegal_state_oop = Handle(THREAD, THREAD->pending_exception());
               THREAD->clear_pending_exception();
             }
-          } else if (UseHeavyMonitors) {
+          } else if (LockingMode == LM_MONITOR) {
             InterpreterRuntime::monitorexit(base);
             if (THREAD->has_pending_exception()) {
               if (!suppress_error) illegal_state_oop = Handle(THREAD, THREAD->pending_exception());

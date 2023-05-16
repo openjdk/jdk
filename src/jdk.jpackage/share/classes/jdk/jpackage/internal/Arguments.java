@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,9 +38,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.ResourceBundle;
-import java.util.jar.Attributes;
-import java.util.jar.JarFile;
-import java.util.jar.Manifest;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -507,15 +504,6 @@ public class Arguments {
                 }
             }
 
-            if (hasMainJar && !hasMainClass) {
-                // try to get main-class from manifest
-                String mainClass = getMainClassFromManifest();
-                if (mainClass != null) {
-                    CLIOptions.setOptionValue(
-                            CLIOptions.APPCLASS.getId(), mainClass);
-                }
-            }
-
             // display error for arguments that are not supported
             // for current configuration.
 
@@ -825,27 +813,4 @@ public class Arguments {
         }
         return sb.toString();
     }
-
-    private String getMainClassFromManifest() {
-        if (mainJarPath == null ||
-            input == null ) {
-            return null;
-        }
-
-        JarFile jf;
-        try {
-            Path file = Path.of(input, mainJarPath);
-            if (!Files.exists(file)) {
-                return null;
-            }
-            jf = new JarFile(file.toFile());
-            Manifest m = jf.getManifest();
-            Attributes attrs = (m != null) ? m.getMainAttributes() : null;
-            if (attrs != null) {
-                return attrs.getValue(Attributes.Name.MAIN_CLASS);
-            }
-        } catch (IOException ignore) {}
-        return null;
-    }
-
 }

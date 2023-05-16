@@ -220,12 +220,17 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
 
   const Register cache = rbx;
   const Register index = rcx;
-  __ get_cache_and_index_at_bcp(cache, index, 1, index_size);
-
-  const Register flags = cache;
-  __ movl(flags, Address(cache, index, Address::times_ptr, ConstantPoolCache::base_offset() + ConstantPoolCacheEntry::flags_offset()));
-  __ andl(flags, ConstantPoolCacheEntry::parameter_size_mask);
-  __ lea(rsp, Address(rsp, flags, Interpreter::stackElementScale()));
+  if (index_size == sizeof(u4)) {
+    __ load_resolved_indy_entry(cache, index);
+    __ load_unsigned_short(cache, Address(cache, in_bytes(ResolvedIndyEntry::num_parameters_offset())));
+    __ lea(rsp, Address(rsp, cache, Interpreter::stackElementScale()));
+  } else {
+    __ get_cache_and_index_at_bcp(cache, index, 1, index_size);
+    Register flags = cache;
+    __ movl(flags, Address(cache, index, Address::times_ptr, ConstantPoolCache::base_offset() + ConstantPoolCacheEntry::flags_offset()));
+    __ andl(flags, ConstantPoolCacheEntry::parameter_size_mask);
+    __ lea(rsp, Address(rsp, flags, Interpreter::stackElementScale()));
+  }
 
    const Register java_thread = NOT_LP64(rcx) LP64_ONLY(r15_thread);
    if (JvmtiExport::can_pop_frame()) {

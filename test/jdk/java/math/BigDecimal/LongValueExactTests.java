@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 6806261 8211936
+ * @bug 6806261 8211936 8305343
  * @summary Tests of BigDecimal.longValueExact
  */
 import java.math.*;
@@ -37,6 +37,7 @@ public class LongValueExactTests {
 
         failures += longValueExactSuccessful();
         failures += longValueExactExceptional();
+        failures += longValueExactExceptional8305343();
 
         if (failures > 0) {
             throw new RuntimeException("Incurred " + failures +
@@ -117,4 +118,27 @@ public class LongValueExactTests {
         }
         return failures;
     }
+
+    private static int longValueExactExceptional8305343() {
+        int failures = 0;
+        List<BigDecimal> exceptionalCases =
+                List.of(new BigDecimal("1e" + (Integer.MAX_VALUE - 1)),
+                        new BigDecimal("1e" + (Integer.MAX_VALUE))
+                );
+
+        for (BigDecimal bd : exceptionalCases) {
+            try {
+                bd.longValueExact();
+                failures++;
+                System.err.println("Unexpected non-exceptional longValueExact on " + bd);
+            } catch (ArithmeticException e) {
+                if (!e.getMessage().toLowerCase().contains("overflow")) {
+                    failures++;
+                    System.err.println("Unexpected non-exceptional longValueExact on " + bd);
+                }
+            }
+        }
+        return failures;
+    }
+
 }

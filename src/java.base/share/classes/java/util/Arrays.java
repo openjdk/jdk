@@ -73,7 +73,7 @@ import java.util.stream.StreamSupport;
  * @author John Rose
  * @since  1.2
  */
-public class Arrays {
+public final class Arrays {
 
     // Suppresses default constructor, ensuring non-instantiability.
     private Arrays() {}
@@ -4185,6 +4185,10 @@ public class Arrays {
      * <p>The returned list implements the optional {@code Collection} methods, except
      * those that would change the size of the returned list. Those methods leave
      * the list unchanged and throw {@link UnsupportedOperationException}.
+     *
+     * <p>If the specified array's actual component type differs from the type
+     * parameter T, this can result in operations on the returned list throwing an
+     * {@code ArrayStoreException}.
      *
      * @apiNote
      * This method acts as bridge between array-based and collection-based

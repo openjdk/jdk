@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -271,7 +271,7 @@ jVersionToCKVersionPtr(JNIEnv *env, jobject jVersion)
     // allocate memory for CK_VERSION pointer
     ckpVersion = (CK_VERSION_PTR) calloc(1, sizeof(CK_VERSION));
     if (ckpVersion == NULL) {
-        throwOutOfMemoryError(env, 0);
+        p11ThrowOutOfMemoryError(env, 0);
         return NULL;
     }
 
@@ -320,7 +320,7 @@ CK_DATE * jDateObjectToCKDatePtr(JNIEnv *env, jobject jDate)
     // allocate memory for CK_DATE pointer
     ckpDate = (CK_DATE *) calloc(1, sizeof(CK_DATE));
     if (ckpDate == NULL) {
-        throwOutOfMemoryError(env, 0);
+        p11ThrowOutOfMemoryError(env, 0);
         return NULL;
     }
 
@@ -334,7 +334,7 @@ CK_DATE * jDateObjectToCKDatePtr(JNIEnv *env, jobject jDate)
         ckLength = (*env)->GetArrayLength(env, jYear);
         jTempChars = (jchar*) calloc(ckLength, sizeof(jchar));
         if (jTempChars == NULL) {
-            throwOutOfMemoryError(env, 0);
+            p11ThrowOutOfMemoryError(env, 0);
             goto cleanup;
         }
         (*env)->GetCharArrayRegion(env, jYear, 0, ckLength, jTempChars);
@@ -355,7 +355,7 @@ CK_DATE * jDateObjectToCKDatePtr(JNIEnv *env, jobject jDate)
         ckLength = (*env)->GetArrayLength(env, jMonth);
         jTempChars = (jchar*) calloc(ckLength, sizeof(jchar));
         if (jTempChars == NULL) {
-            throwOutOfMemoryError(env, 0);
+            p11ThrowOutOfMemoryError(env, 0);
             goto cleanup;
         }
         (*env)->GetCharArrayRegion(env, jMonth, 0, ckLength, jTempChars);
@@ -376,7 +376,7 @@ CK_DATE * jDateObjectToCKDatePtr(JNIEnv *env, jobject jDate)
         ckLength = (*env)->GetArrayLength(env, jDay);
         jTempChars = (jchar*) calloc(ckLength, sizeof(jchar));
         if (jTempChars == NULL) {
-            throwOutOfMemoryError(env, 0);
+            p11ThrowOutOfMemoryError(env, 0);
             goto cleanup;
         }
         (*env)->GetCharArrayRegion(env, jDay, 0, ckLength, jTempChars);
@@ -525,7 +525,7 @@ jSsl3MasterKeyDeriveParamToCKSsl3MasterKeyDeriveParamPtr(JNIEnv *env,
     // allocate memory for CK_SSL3_MASTER_KEY_DERIVE_PARAMS pointer
     ckParamPtr = calloc(1, sizeof(CK_SSL3_MASTER_KEY_DERIVE_PARAMS));
     if (ckParamPtr == NULL) {
-        throwOutOfMemoryError(env, 0);
+        p11ThrowOutOfMemoryError(env, 0);
         return NULL;
     }
 
@@ -585,7 +585,7 @@ jTls12MasterKeyDeriveParamToCKTls12MasterKeyDeriveParamPtr(JNIEnv *env,
     // allocate memory for CK_TLS12_MASTER_KEY_DERIVE_PARAMS pointer
     ckParamPtr = calloc(1, sizeof(CK_TLS12_MASTER_KEY_DERIVE_PARAMS));
     if (ckParamPtr == NULL) {
-        throwOutOfMemoryError(env, 0);
+        p11ThrowOutOfMemoryError(env, 0);
         return NULL;
     }
 
@@ -644,7 +644,7 @@ jTlsPrfParamsToCKTlsPrfParamPtr(JNIEnv *env, jobject jParam, CK_ULONG *pLength)
     // allocate memory for CK_TLS_PRF_PARAMS pointer
     ckParamPtr = calloc(1, sizeof(CK_TLS_PRF_PARAMS));
     if (ckParamPtr == NULL) {
-        throwOutOfMemoryError(env, 0);
+        p11ThrowOutOfMemoryError(env, 0);
         return NULL;
     }
 
@@ -716,7 +716,7 @@ jTlsMacParamsToCKTlsMacParamPtr(JNIEnv *env, jobject jParam, CK_ULONG *pLength)
     // allocate memory for CK_TLS_MAC_PARAMS pointer
     ckParamPtr = calloc(1, sizeof(CK_TLS_MAC_PARAMS));
     if (ckParamPtr == NULL) {
-        throwOutOfMemoryError(env, 0);
+        p11ThrowOutOfMemoryError(env, 0);
         return NULL;
     }
 
@@ -810,7 +810,7 @@ void keyMatParamToCKKeyMatParam(JNIEnv *env, jobject jParam,
     *cKKeyMatParamPReturnedKeyMaterial =
             (CK_SSL3_KEY_MAT_OUT_PTR) calloc(1, sizeof(CK_SSL3_KEY_MAT_OUT));
     if (*cKKeyMatParamPReturnedKeyMaterial == NULL) {
-        throwOutOfMemoryError(env, 0);
+        p11ThrowOutOfMemoryError(env, 0);
         goto cleanup;
     }
 
@@ -867,7 +867,7 @@ jSsl3KeyMatParamToCKSsl3KeyMatParamPtr(JNIEnv *env, jobject jParam, CK_ULONG *pL
     // allocate memory for CK_SSL3_KEY_MAT_PARAMS pointer
     ckParamPtr = calloc(1, sizeof(CK_SSL3_KEY_MAT_PARAMS));
     if (ckParamPtr == NULL) {
-        throwOutOfMemoryError(env, 0);
+        p11ThrowOutOfMemoryError(env, 0);
         return NULL;
     }
 
@@ -927,7 +927,7 @@ CK_TLS12_KEY_MAT_PARAMS_PTR jTls12KeyMatParamToCKTls12KeyMatParamPtr(JNIEnv *env
     // allocate memory for CK_TLS12_KEY_MAT_PARAMS pointer
     ckParamPtr = calloc(1, sizeof(CK_TLS12_KEY_MAT_PARAMS));
     if (ckParamPtr == NULL) {
-        throwOutOfMemoryError(env, 0);
+        p11ThrowOutOfMemoryError(env, 0);
         return NULL;
     }
 
@@ -989,7 +989,7 @@ jAesCtrParamsToCKAesCtrParamPtr(JNIEnv *env, jobject jParam, CK_ULONG *pLength)
     // allocate memory for CK_AES_CTR_PARAMS pointer
     ckParamPtr = calloc(1, sizeof(CK_AES_CTR_PARAMS));
     if (ckParamPtr == NULL) {
-        throwOutOfMemoryError(env, 0);
+        p11ThrowOutOfMemoryError(env, 0);
         return NULL;
     }
 
@@ -1056,7 +1056,7 @@ jGCMParamsToCKGCMParamPtr(JNIEnv *env, jobject jParam, CK_ULONG *pLength)
     // allocate memory for CK_GCM_PARAMS_NO_IVBITS pointer
     ckParamPtr = calloc(1, sizeof(CK_GCM_PARAMS_NO_IVBITS));
     if (ckParamPtr == NULL) {
-        throwOutOfMemoryError(env, 0);
+        p11ThrowOutOfMemoryError(env, 0);
         return NULL;
     }
 
@@ -1128,7 +1128,7 @@ jCCMParamsToCKCCMParamPtr(JNIEnv *env, jobject jParam, CK_ULONG *pLength)
     // allocate memory for CK_CCM_PARAMS pointer
     ckParamPtr = calloc(1, sizeof(CK_CCM_PARAMS));
     if (ckParamPtr == NULL) {
-        throwOutOfMemoryError(env, 0);
+        p11ThrowOutOfMemoryError(env, 0);
         return NULL;
     }
 
@@ -1198,7 +1198,7 @@ jSalsaChaChaPolyParamsToCKSalsaChaChaPolyParamPtr(
     // allocate memory for CK_SALSA20_CHACHA20_POLY1305_PARAMS pointer
     ckParamPtr = calloc(1, sizeof(CK_SALSA20_CHACHA20_POLY1305_PARAMS));
     if (ckParamPtr == NULL) {
-        throwOutOfMemoryError(env, 0);
+        p11ThrowOutOfMemoryError(env, 0);
         return NULL;
     }
 
@@ -1243,7 +1243,7 @@ CK_MECHANISM_PTR jMechanismToCKMechanismPtr(JNIEnv *env, jobject jMech)
     /* allocate memory for CK_MECHANISM_PTR */
     ckpMech =  (CK_MECHANISM_PTR) calloc(1, sizeof(CK_MECHANISM));
     if (ckpMech == NULL) {
-        throwOutOfMemoryError(env, 0);
+        p11ThrowOutOfMemoryError(env, 0);
         return NULL;
     }
     TRACE1("DEBUG jMechanismToCKMechanismPtr: allocated mech %p\n", ckpMech);
@@ -1553,7 +1553,7 @@ CK_VOID_PTR jMechParamToCKMechParamPtrSlow(JNIEnv *env, jobject jParam,
         case CKM_SKIPJACK_PRIVATE_WRAP: // CK_SKIPJACK_PRIVATE_WRAP_PARAMS
         case CKM_SKIPJACK_RELAYX: // CK_SKIPJACK_RELAYX_PARAMS
         case CKM_KEY_WRAP_SET_OAEP: // CK_KEY_WRAP_SET_OAEP_PARAMS
-            throwPKCS11RuntimeException(env, "No parameter support for this mechanism");
+            p11ThrowPKCS11RuntimeException(env, "No parameter support for this mechanism");
             break;
         default:
             /* if everything failed up to here */
@@ -1612,7 +1612,7 @@ jRsaPkcsOaepParamToCKRsaPkcsOaepParamPtr(JNIEnv *env, jobject jParam, CK_ULONG *
     // allocate memory for CK_RSA_PKCS_OAEP_PARAMS pointer
     ckParamPtr = calloc(1, sizeof(CK_RSA_PKCS_OAEP_PARAMS));
     if (ckParamPtr == NULL) {
-        throwOutOfMemoryError(env, 0);
+        p11ThrowOutOfMemoryError(env, 0);
         return NULL;
     }
 
@@ -1674,7 +1674,7 @@ jPbeParamToCKPbeParamPtr(JNIEnv *env, jobject jParam, CK_ULONG *pLength)
     // allocate memory for CK_PBE_PARAMS pointer
     ckParamPtr = calloc(1, sizeof(CK_PBE_PARAMS));
     if (ckParamPtr == NULL) {
-        throwOutOfMemoryError(env, 0);
+        p11ThrowOutOfMemoryError(env, 0);
         return NULL;
     }
 
@@ -1811,7 +1811,7 @@ jPkcs5Pbkd2ParamToCKPkcs5Pbkd2ParamPtr(JNIEnv *env, jobject jParam, CK_ULONG *pL
     // allocate memory for CK_PKCS5_PBKD2_PARAMS pointer
     ckParamPtr = calloc(1, sizeof(CK_PKCS5_PBKD2_PARAMS));
     if (ckParamPtr == NULL) {
-        throwOutOfMemoryError(env, 0);
+        p11ThrowOutOfMemoryError(env, 0);
         return NULL;
     }
 
@@ -1879,7 +1879,7 @@ jRsaPkcsPssParamToCKRsaPkcsPssParamPtr(JNIEnv *env, jobject jParam, CK_ULONG *pL
     // allocate memory for CK_RSA_PKCS_PSS_PARAMS pointer
     ckParamPtr = calloc(1, sizeof(CK_RSA_PKCS_PSS_PARAMS));
     if (ckParamPtr == NULL) {
-        throwOutOfMemoryError(env, 0);
+        p11ThrowOutOfMemoryError(env, 0);
         return NULL;
     }
 
@@ -1936,7 +1936,7 @@ jEcdh1DeriveParamToCKEcdh1DeriveParamPtr(JNIEnv *env, jobject jParam, CK_ULONG *
     // allocate memory for CK_ECDH1_DERIVE_PARAMS pointer
     ckParamPtr = calloc(1, sizeof(CK_ECDH1_DERIVE_PARAMS));
     if (ckParamPtr == NULL) {
-        throwOutOfMemoryError(env, 0);
+        p11ThrowOutOfMemoryError(env, 0);
         return NULL;
     }
 
@@ -2007,7 +2007,7 @@ jEcdh2DeriveParamToCKEcdh2DeriveParamPtr(JNIEnv *env, jobject jParam, CK_ULONG *
     // allocate memory for CK_ECDH2_DERIVE_PARAMS pointer
     ckParamPtr = calloc(1, sizeof(CK_ECDH2_DERIVE_PARAMS));
     if (ckParamPtr == NULL) {
-        throwOutOfMemoryError(env, 0);
+        p11ThrowOutOfMemoryError(env, 0);
         return NULL;
     }
 
@@ -2081,7 +2081,7 @@ jX942Dh1DeriveParamToCKX942Dh1DeriveParamPtr(JNIEnv *env, jobject jParam, CK_ULO
     // allocate memory for CK_X9_42_DH1_DERIVE_PARAMS pointer
     ckParamPtr = calloc(1, sizeof(CK_X9_42_DH1_DERIVE_PARAMS));
     if (ckParamPtr == NULL) {
-        throwOutOfMemoryError(env, 0);
+        p11ThrowOutOfMemoryError(env, 0);
         return NULL;
     }
 
@@ -2156,7 +2156,7 @@ jX942Dh2DeriveParamToCKX942Dh2DeriveParamPtr(JNIEnv *env, jobject jParam, CK_ULO
     // allocate memory for CK_DATE pointer
     ckParamPtr = calloc(1, sizeof(CK_X9_42_DH2_DERIVE_PARAMS));
     if (ckParamPtr == NULL) {
-        throwOutOfMemoryError(env, 0);
+        p11ThrowOutOfMemoryError(env, 0);
         return NULL;
     }
 
