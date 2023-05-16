@@ -65,7 +65,6 @@ class KlassFactory : AllStatic {
                                            ClassLoaderData* loader_data,
                                            const ClassLoadInfo& cl_info,
                                            TRAPS);
-  // Caller needs a ResourceMark because parts of the returned cfs are resource-allocated.
   static InstanceKlass* check_shared_class_file_load_hook(
                                           InstanceKlass* ik,
                                           Symbol* class_name,
