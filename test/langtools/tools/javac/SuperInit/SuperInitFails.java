@@ -2,8 +2,8 @@
  * @test /nodynamiccopyright/
  * @bug 8194743
  * @summary Permit additional statements before this/super in constructors
- *
- * @compile/fail/ref=SuperInitFails.out -XDrawDiagnostics --enable-preview -source ${jdk.version} SuperInitFails.java
+ * @compile/fail/ref=SuperInitFails.out -XDrawDiagnostics SuperInitFails.java
+ * @enablePreview
  */
 import java.util.concurrent.atomic.AtomicReference;
 public class SuperInitFails extends AtomicReference<Object> implements Iterable<Object> {

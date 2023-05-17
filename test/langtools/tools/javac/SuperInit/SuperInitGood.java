@@ -24,7 +24,7 @@
  * @test
  * @bug 8194743
  * @summary Test valid placements of super()/this() in constructors
- * @compile --enable-preview -source ${jdk.version} SuperInitGood.java
+ * @enablePreview
  */
 
 import java.util.concurrent.atomic.AtomicReference;
