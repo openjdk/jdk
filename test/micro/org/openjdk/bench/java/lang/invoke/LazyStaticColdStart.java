@@ -57,7 +57,6 @@ import static jdk.internal.classfile.Classfile.ACC_STATIC;
         "--add-exports", "java.base/jdk.internal.classfile.attribute=ALL-UNNAMED",
         "--add-exports", "java.base/jdk.internal.classfile.constantpool=ALL-UNNAMED",
         "--add-exports", "java.base/jdk.internal.classfile.instruction=ALL-UNNAMED",
-        "--add-exports", "java.base/jdk.internal.classfile.java.lang.constant=ALL-UNNAMED",
         "--add-exports", "java.base/jdk.internal.classfile.components=ALL-UNNAMED"
 })
 public class LazyStaticColdStart {
