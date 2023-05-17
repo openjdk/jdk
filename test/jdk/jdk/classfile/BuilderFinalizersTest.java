@@ -46,10 +46,10 @@ import org.junit.jupiter.api.Test;
 class BuilderFinalizersTest {
 
     public void testFinalizers(int cases, Consumer<CodeBuilder> gen) throws Throwable {
-        byte[] bytes = build(ClassDesc.of("TestSwitch"), List.of(Option.generateStackmap(true)), clb ->
+        byte[] bytes = build(ClassDesc.of("TestFinalizer"), List.of(Option.generateStackmap(true)), clb ->
                 clb.withFlags(ACC_PUBLIC)
                    .withMethodBody("main", MethodTypeDesc.of(CD_int, CD_int), ACC_PUBLIC | ACC_STATIC, gen));
-        ClassPrinter.toYaml(parse(bytes), ClassPrinter.Verbosity.CRITICAL_ATTRIBUTES, System.out::print);
+//        ClassPrinter.toYaml(parse(bytes), ClassPrinter.Verbosity.CRITICAL_ATTRIBUTES, System.out::print);
         MethodHandles.Lookup lookup = MethodHandles.lookup().defineHiddenClass(bytes, true);
         MethodHandle main = lookup.findStatic(lookup.lookupClass(), "main",
                 MethodType.methodType(Integer.TYPE, Integer.TYPE));
