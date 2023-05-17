@@ -39,7 +39,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @bug 8132995
  * @key randomness
  *
- * @summary Tests to excercise the optimization described in the bug report.
+ * @summary Tests to exercise the optimization described in the bug report.
  * @library /test/lib
  * @run junit ImmutableMatchResultTest
  */
