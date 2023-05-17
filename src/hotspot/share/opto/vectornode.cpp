@@ -348,6 +348,10 @@ int VectorNode::scalar_opcode(int sopc, BasicType bt) {
           return Op_MinI;
         case T_LONG:
           return Op_MinL;
+        case T_FLOAT:
+          return Op_MinF;
+        case T_DOUBLE:
+          return Op_MinD;
         default:
           assert(false, "basic type not handled");
           return 0;
@@ -365,6 +369,10 @@ int VectorNode::scalar_opcode(int sopc, BasicType bt) {
           return Op_MaxI;
         case T_LONG:
           return Op_MaxL;
+        case T_FLOAT:
+          return Op_MaxF;
+        case T_DOUBLE:
+          return Op_MaxD;
         default:
           assert(false, "basic type not handled");
           return 0;
