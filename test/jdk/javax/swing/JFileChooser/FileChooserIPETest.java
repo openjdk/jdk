@@ -48,15 +48,17 @@ public class FileChooserIPETest {
     static PassFailJFrame passFailJFrame;
 
     public static void main(String[] args) throws Exception {
-        SwingUtilities.invokeAndWait(new Runnable() {
-            public void run() {
+        SwingUtilities.invokeAndWait(() -> {
+            try {
                 initialize();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
             }
         });
         passFailJFrame.awaitAndCheck();
     }
 
-    static void initialize() throws InterruptedException, InvocationTargetException {
+    static void initialize() throws Exception {
         //Initialize the components
         final String INSTRUCTIONS = """
                 Instructions to Test:
