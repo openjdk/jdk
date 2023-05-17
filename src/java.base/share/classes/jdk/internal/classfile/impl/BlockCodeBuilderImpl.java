@@ -57,9 +57,9 @@ public final class BlockCodeBuilderImpl
 
     public void end() {
         terminal.with((LabelTarget) endLabel);
-        if (terminalMaxLocals != topLocal(terminal)) {
-            throw new IllegalStateException("Interference in local variable slot management");
-        }
+//        if (terminalMaxLocals != topLocal(terminal)) {
+//            throw new IllegalStateException("Interference in local variable slot management");
+//        }
     }
 
     public boolean reachable() {

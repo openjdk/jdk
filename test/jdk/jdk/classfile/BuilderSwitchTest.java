@@ -52,7 +52,7 @@ class BuilderSwitchTest {
         MethodHandles.Lookup lookup = MethodHandles.lookup().defineHiddenClass(bytes, true);
         MethodHandle main = lookup.findStatic(lookup.lookupClass(), "main",
                 MethodType.methodType(Integer.TYPE, Integer.TYPE));
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < expected.length; i++) {
             assertEquals(expected[i], main.invoke(i));
         }
     }
