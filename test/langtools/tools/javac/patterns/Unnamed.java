@@ -75,6 +75,8 @@ public class Unnamed {
         assertEquals(2, testMixVarWithExplicit(new Box<>(new R2())));
         assertEquals("binding", unnamedGuardAddsBindings("match1", "binding"));
         assertEquals("any", unnamedGuardAddsBindings(42, 42));
+
+        unnamedTest();
     }
 
     private void unnamedTest() {
@@ -87,17 +89,27 @@ public class Unnamed {
                 } catch (Exception _) {}
             }
         }
-        String[] strs = null;
+        String[] strs = new String[] { "str1", "str2" };
         for (var _ : strs) {
             for (var _ : strs) {
             }
         }
         TwoParams p1 = (_, _) -> {};
         TwoParams p2 = (var _, var _) -> {};
+        TwoIntParams p3 = (int _, int b) -> {};
+        TwoIntParams p4 = (int _, int _) -> {};
+        TwoIntParamsIntRet p5 = (int _, int _) -> { return 1; };
+
+        p1.run(1, 2);
+        p2.run(1, 2);
+        p3.run(1, 2);
+        p4.run(1, 2);
+        p5.run(1, 2);
+
         R r = new R(null);
         if (r instanceof R _) {}
         if (r instanceof R(_)) {}
-        for (int _ = 0, _ = 1; ;) {}
+        for (int _ = 0, _ = 1, x = 1; x <= 1 ; x++) {}
     }
 
     int testMultiValuesTopLevel(Object o) {
@@ -270,6 +282,12 @@ public class Unnamed {
     }
     interface TwoParams {
         public void run(Object o1, Object o2);
+    }
+    interface TwoIntParams {
+        public void run(int o1, int o2);
+    }
+    interface TwoIntParamsIntRet {
+        public int run(int a, int b);
     }
     record R(Object o) {}
 

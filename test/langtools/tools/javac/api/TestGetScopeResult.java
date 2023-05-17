@@ -148,6 +148,7 @@ public class TestGetScopeResult {
                multipleCandidates2);
 
         String[] implicitExplicitConflict1 = {
+            "<error>:t",
             "s:java.lang.String",
             "super:java.lang.Object",
             "this:Test"
@@ -158,6 +159,7 @@ public class TestGetScopeResult {
 
         String[] implicitExplicitConflict2 = {
             "s:none",
+            "<error>:t",
             "super:java.lang.Object",
             "this:Test"
         };
@@ -167,6 +169,7 @@ public class TestGetScopeResult {
 
         String[] noFunctionInterface = {
             "s:none",
+            "<error>:t",
             "super:java.lang.Object",
             "this:Test"
         };

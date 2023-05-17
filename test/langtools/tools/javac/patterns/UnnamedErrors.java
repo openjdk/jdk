@@ -97,6 +97,15 @@ public class UnnamedErrors {
         return success;
     }
 
+    void testUnderscoreWithoutInitializer() {
+        int _;
+        int x1 = 1, _, x2;
+
+        for (int x = 1, _; x<=1; x++) {
+
+        }
+    }
+
     class Lock implements AutoCloseable {
         @Override
         public void close() {}

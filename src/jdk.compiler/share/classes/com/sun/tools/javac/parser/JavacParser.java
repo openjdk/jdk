@@ -2069,15 +2069,15 @@ public class JavacParser implements Parser {
         List<JCVariableDecl> params;
 
         void addParameter(JCVariableDecl param) {
-            if (param.vartype != null && param.name != names.empty) {
+            if (param.vartype != null && param.name != names.error) {
                 if (restrictedTypeName(param.vartype, false) != null) {
                     reduce(LambdaParameterKind.VAR);
                 } else {
                     reduce(LambdaParameterKind.EXPLICIT);
                 }
             }
-            if (param.vartype == null && param.name != names.empty ||
-                param.vartype != null && param.name == names.empty) {
+            if (param.vartype == null && param.name != names.error ||
+                param.vartype != null && param.name == names.error) {
                 reduce(LambdaParameterKind.IMPLICIT);
             }
         }
@@ -3639,6 +3639,14 @@ public class JavacParser implements Parser {
             init = variableInitializer();
         }
         else if (reqInit) syntaxError(token.pos, Errors.Expected(EQ));
+
+        if (Feature.UNNAMED_VARIABLES.allowedInSource(source) && name == names.empty
+                && localDecl
+                && init == null
+                && token.kind != COLON) { // if its unnamed local variable, it needs to have an init unless in enhanced-for
+            syntaxError(token.pos, Errors.Expected(EQ));
+        }
+
         JCVariableDecl result;
         if (!isTypePattern) {
             int startPos = Position.NOPOS;
@@ -3769,7 +3777,7 @@ public class JavacParser implements Parser {
              *  instead of issuing an error and analyze the lambda parameters as a whole at
              *  a higher level.
              */
-            name = names.empty;
+            name = names.error;
         }
         if ((mods.flags & Flags.VARARGS) != 0 &&
                 token.kind == LBRACKET) {
