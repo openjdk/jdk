@@ -30,6 +30,8 @@
 #include "memory/memRegion.hpp"
 #include "oops/markWord.hpp"
 #include "oops/oopsHierarchy.hpp"
+#include "utilities/fastHash.hpp"
+#include "utilities/resourceHash.hpp"
 
 /**
  * SlidingForwarding is a method to store forwarding information in a compressed form into the object header,
@@ -100,26 +102,17 @@ private:
    * It is a single-threaded (not thread-safe) implementation, and that
    * is sufficient because G1 serial compaction is single-threaded.
    */
-  class FallbackTable : public CHeapObj<mtGC>{
-  private:
-    struct FallbackTableEntry {
-      FallbackTableEntry* _next;
-      HeapWord* _from;
-      HeapWord* _to;
-    };
-
-    static const uint TABLE_SIZE = 1024;
-    FallbackTableEntry _table[TABLE_SIZE];
-
-    static size_t home_index(HeapWord* from);
-
-  public:
-    FallbackTable();
-    ~FallbackTable();
-
-    void forward_to(HeapWord* from, HeapWord* to);
-    HeapWord* forwardee(HeapWord* from) const;
-  };
+  inline static unsigned hash(HeapWord* const& from) {
+    uint64_t val = reinterpret_cast<uint64_t>(from);
+    uint64_t hash = FastHash::get_hash64(val, UCONST64(0xAAAAAAAAAAAAAAAA));
+    return checked_cast<unsigned>(hash >> 32);
+  }
+  inline static bool equals(HeapWord* const& lhs, HeapWord* const& rhs) {
+    return lhs == rhs;
+  }
+  typedef ResourceHashtable<HeapWord* /* key-type */, HeapWord* /* value-type */,
+                            1024 /* size */, AnyObj::C_HEAP /* alloc-type */, mtGC,
+                            SlidingForwarding::hash, SlidingForwarding::equals> FallbackTable;
 
   static const uintptr_t MARK_LOWER_HALF_MASK = right_n_bits(32);
 

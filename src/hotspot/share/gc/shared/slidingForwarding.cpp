@@ -26,7 +26,6 @@
 #include "precompiled.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/slidingForwarding.hpp"
-#include "utilities/fastHash.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/powerOfTwo.hpp"
 
@@ -108,66 +107,17 @@ void SlidingForwarding::end() {
 
 void SlidingForwarding::fallback_forward_to(HeapWord* from, HeapWord* to) {
   if (_fallback_table == nullptr) {
-    _fallback_table = new FallbackTable();
+    _fallback_table = new (mtGC) FallbackTable();
   }
-  _fallback_table->forward_to(from, to);
+  _fallback_table->put_when_absent(from, to);
 }
 
 HeapWord* SlidingForwarding::fallback_forwardee(HeapWord* from) {
   assert(_fallback_table != nullptr, "fallback table must be present");
-  return _fallback_table->forwardee(from);
-}
-
-SlidingForwarding::FallbackTable::FallbackTable() {
-  for (uint i = 0; i < TABLE_SIZE; i++) {
-    _table[i]._next = nullptr;
-    _table[i]._from = nullptr;
-    _table[i]._to   = nullptr;
+  HeapWord** found = _fallback_table->get(from);
+  if (found != nullptr) {
+    return *found;
+  } else {
+    return nullptr;
   }
-}
-
-SlidingForwarding::FallbackTable::~FallbackTable() {
-  for (uint i = 0; i < TABLE_SIZE; i++) {
-    FallbackTableEntry* entry = _table[i]._next;
-    while (entry != nullptr) {
-      FallbackTableEntry* next = entry->_next;
-      FREE_C_HEAP_OBJ(entry);
-      entry = next;
-    }
-  }
-}
-
-size_t SlidingForwarding::FallbackTable::home_index(HeapWord* from) {
-  uint64_t val = reinterpret_cast<uint64_t>(from);
-  uint64_t hash = FastHash::get_hash64(val, UCONST64(0xAAAAAAAAAAAAAAAA));
-  return hash >> (64 - log2i_exact(TABLE_SIZE));
-}
-
-void SlidingForwarding::FallbackTable::forward_to(HeapWord* from, HeapWord* to) {
-  size_t idx = home_index(from);
-  FallbackTableEntry* head = &_table[idx];
-#ifdef ASSERT
-  // Search existing entry in chain starting at idx.
-  for (FallbackTableEntry* entry = head; entry != nullptr; entry = entry->_next) {
-    assert(entry->_from != from, "Don't re-forward entries into the fallback-table");
-  }
-#endif
-  // No entry found, create new one and insert after head.
-  FallbackTableEntry* new_entry = NEW_C_HEAP_OBJ(FallbackTableEntry, mtGC);
-  *new_entry = *head;
-  head->_next = new_entry;
-  head->_from = from;
-  head->_to   = to;
-}
-
-HeapWord* SlidingForwarding::FallbackTable::forwardee(HeapWord* from) const {
-  size_t idx = home_index(from);
-  const FallbackTableEntry* entry = &_table[idx];
-  while (entry != nullptr) {
-    if (entry->_from == from) {
-      return entry->_to;
-    }
-    entry = entry->_next;
-  }
-  return nullptr;
 }
