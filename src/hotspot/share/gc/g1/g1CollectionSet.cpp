@@ -320,16 +320,21 @@ static int compare_region_idx(const uint a, const uint b) {
 void G1CollectionSet::finalize_old_part(double time_remaining_ms) {
   double non_young_start_time_sec = os::elapsedTime();
 
-  if (collector_state()->in_mixed_phase()) {
+  if (!candidates()->is_empty()) {
     candidates()->verify();
 
     G1CollectionCandidateRegionList initial_old_regions;
     assert(_optional_old_regions.length() == 0, "must be");
 
-    _policy->select_candidates_from_marking(&candidates()->marking_regions(),
-                                            time_remaining_ms,
-                                            &initial_old_regions,
-                                            &_optional_old_regions);
+    time_remaining_ms = _policy->select_candidates_from_marking(&candidates()->marking_regions(),
+                                                                time_remaining_ms,
+                                                                &initial_old_regions,
+                                                                &_optional_old_regions);
+
+    _policy->select_candidates_from_retained(&candidates()->retained_regions(),
+                                             time_remaining_ms,
+                                             &initial_old_regions,
+                                             &_optional_old_regions);
 
     // Move initially selected old regions to collection set directly.
     move_candidates_to_collection_set(&initial_old_regions);

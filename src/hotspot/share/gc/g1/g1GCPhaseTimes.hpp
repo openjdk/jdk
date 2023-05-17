@@ -138,11 +138,13 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     MergePSSCopiedBytes,
     MergePSSLABSize,
     MergePSSLABWasteBytes,
-    MergePSSLABUndoWasteBytes
+    MergePSSLABUndoWasteBytes,
+    MergePSSEvacFailExtra
   };
 
   enum RestoreRetainedRegionsWorkItems {
-    RestoreRetainedRegionsNum,
+    RestoreRetainedRegionsFailedNum,
+    RestoreRetainedRegionsRetainedNum
   };
 
   enum RemoveSelfForwardsWorkItems {

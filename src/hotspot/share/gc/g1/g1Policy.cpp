@@ -513,6 +513,27 @@ double G1Policy::predict_survivor_regions_evac_time() const {
   return survivor_regions_evac_time;
 }
 
+double G1Policy::predict_retained_regions_evac_time() const {
+  uint num_regions = 0;
+  double result = 0.0;
+
+  G1CollectionCandidateList& list = candidates()->retained_regions();
+
+  for (HeapRegion* r : list) {
+    double predicted_time_ms = predict_region_total_time_ms(r, collector_state()->in_young_only_phase());
+
+    if (result + predicted_time_ms >= max_time_for_retaining()) {
+      // Over limit. Exit.
+      break;
+    }
+    result += predicted_time_ms;
+    num_regions++;
+  }
+  log_trace(gc, ergo, heap)("Selected %u of %u retained candidates taking %1.3fms additional time (max %1.3fms)",
+                            num_regions, list.length(), result, max_time_for_retaining());
+  return result;
+}
+
 G1GCPhaseTimes* G1Policy::phase_times() const {
   // Lazy allocation because it must follow initialization of all the
   // OopStorage objects by various other subsystems.
@@ -621,6 +642,17 @@ void G1Policy::record_concurrent_refinement_stats(size_t pending_cards,
     _analytics->report_dirtied_cards_rate_ms(dirtied_rate);
     log_debug(gc, refine, stats)("Generate dirty cards rate: %.2f cards/ms", dirtied_rate);
   }
+}
+
+bool G1Policy::retain_evac_failed_region(uint index) const {
+  size_t live_bytes= _g1h->region_at(index)->live_bytes();
+
+  assert(live_bytes != 0,
+         "live bytes not set for %u used %zu garbage %zu cm-live %zu",
+         index, _g1h->region_at(index)->used(), _g1h->region_at(index)->garbage_bytes(), live_bytes);
+
+  size_t threshold = G1MixedGCLiveThresholdPercent * HeapRegion::GrainBytes / 100;
+  return live_bytes < threshold;
 }
 
 void G1Policy::record_young_collection_start() {
@@ -1005,13 +1037,16 @@ double G1Policy::predict_base_time_ms(size_t pending_cards,
   double card_scan_time = _analytics->predict_card_scan_time_ms(effective_scanned_cards, in_young_only_phase);
   double constant_other_time = _analytics->predict_constant_other_time_ms();
   double survivor_evac_time = predict_survivor_regions_evac_time();
+  double retained_evac_time = predict_retained_regions_evac_time();
 
   double total_time = card_merge_time + card_scan_time + constant_other_time + survivor_evac_time;
 
   log_trace(gc, ergo, heap)("Predicted base time: total %f lb_cards %zu rs_length %zu effective_scanned_cards %zu "
-                            "card_merge_time %f card_scan_time %f constant_other_time %f survivor_evac_time %f",
+                            "card_merge_time %f card_scan_time %f constant_other_time %f "
+                            "survivor_evac_time %f retained_evac_time %f",
                             total_time, pending_cards, rs_length, effective_scanned_cards,
-                            card_merge_time, card_scan_time, constant_other_time, survivor_evac_time);
+                            card_merge_time, card_scan_time, constant_other_time,
+                            survivor_evac_time, retained_evac_time);
   return total_time;
 }
 
@@ -1492,6 +1527,75 @@ double G1Policy::select_candidates_from_marking(G1CollectionCandidateList* marki
   assert(initial_old_regions->length() == num_initial_regions_selected, "must be");
   assert(optional_old_regions->length() == num_optional_regions_selected, "must be");
   return time_remaining_ms;
+}
+
+void G1Policy::select_candidates_from_retained(G1CollectionCandidateList* retained_list,
+                                               double time_remaining_ms,
+                                               G1CollectionCandidateRegionList* initial_old_regions,
+                                               G1CollectionCandidateRegionList* optional_old_regions) {
+
+  // Guarantee some progress with retained regions regardless of available time by
+  // taking at least one region.
+  uint const min_regions = 1;
+
+  uint num_initial_regions_selected = 0;
+  uint num_optional_regions_selected = 0;
+  uint num_expensive_regions_selected = 0;
+  uint num_unreclaimable_regions = 0;
+
+  double predicted_initial_time_ms = 0.0;
+  double predicted_optional_time_ms = 0.0;
+
+  // We want to make sure that on the one hand we process the retained regions asap,
+  // but on the other hand do not take too many of them as optional regions.
+  // So we split the time budget into budget we will unconditionally take into the
+  // initial old regions, and budget for taking optional regions from the retained
+  // list.
+  double optional_time_remaining_ms = max_time_for_retaining();
+  time_remaining_ms = MIN2(time_remaining_ms, optional_time_remaining_ms);
+
+  log_debug(gc, ergo, cset)("Start adding retained candidates to collection set. "
+                            "Min %u regions, "
+                            "time remaining %1.2fms, optional remaining %1.2fms",
+                            min_regions, time_remaining_ms, optional_time_remaining_ms);
+
+  for (HeapRegion* r : *retained_list) {
+    double predicted_time_ms = predict_region_total_time_ms(r, collector_state()->in_young_only_phase());
+    bool fits_in_remaining_time = predicted_time_ms <= time_remaining_ms;
+
+    if (fits_in_remaining_time || (num_expensive_regions_selected < min_regions)) {
+      predicted_initial_time_ms += predicted_time_ms;
+      if (!fits_in_remaining_time) {
+        num_expensive_regions_selected++;
+      }
+      initial_old_regions->append(r);
+      num_initial_regions_selected++;
+    } else if (predicted_time_ms <= optional_time_remaining_ms) {
+      predicted_optional_time_ms += predicted_time_ms;
+      optional_old_regions->append(r);
+      num_optional_regions_selected++;
+    } else {
+      // Fits neither initial nor optional time limit. Exit.
+      break;
+    }
+    time_remaining_ms = MAX2(0.0, time_remaining_ms - predicted_time_ms);
+    optional_time_remaining_ms = MAX2(0.0, optional_time_remaining_ms - predicted_time_ms);
+  }
+
+  uint num_regions_selected = num_initial_regions_selected + num_optional_regions_selected + num_unreclaimable_regions;
+  if (num_regions_selected == retained_list->length()) {
+    log_debug(gc, ergo, cset)("Retained candidates exhausted.");
+  }
+  if (num_expensive_regions_selected > 0) {
+    log_debug(gc, ergo, cset)("Added %u retained candidates to collection set although the predicted time was too high.",
+                              num_expensive_regions_selected);
+  }
+
+  log_debug(gc, ergo, cset)("Finish adding retained candidates to collection set. Initial: %u, optional: %u, unreclaimable %u, "
+                            "predicted initial time: %1.2fms, predicted optional time: %1.2fms, "
+                            "time remaining: %1.2fms optional time remaining %1.2fms",
+                            num_initial_regions_selected, num_optional_regions_selected, num_unreclaimable_regions,
+                            predicted_initial_time_ms, predicted_optional_time_ms, time_remaining_ms, optional_time_remaining_ms);
 }
 
 void G1Policy::calculate_optional_collection_set_regions(G1CollectionCandidateRegionList* optional_regions,

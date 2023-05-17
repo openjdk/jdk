@@ -684,6 +684,8 @@ public:
   // at the same time.
   void free_region(HeapRegion* hr, FreeRegionList* free_list);
 
+  // Add the given region to the retained regions collection set candidates.
+  void retain_region(HeapRegion* hr);
   // It dirties the cards that cover the block so that the post
   // write barrier never queues anything when updating objects on this
   // block. It is assumed (and in fact we assert) that the block

@@ -144,6 +144,8 @@ public class TestVerifyGCType {
         output = testWithVerificationType(new String[] {"old"});
         output.shouldHaveExitValue(0);
 
+System.out.println(output.getStdout());
+
         output.shouldMatch("VerifyGCType: '.*' is unknown. Available types are: young-normal, young-evac-fail, concurrent-start, mixed, remark, cleanup and full");
         verifyCollection("Pause Young (Normal)", true, false, true, output.getStdout());
         verifyCollection("Pause Young (Concurrent Start)", true, false, true, output.getStdout());
@@ -161,7 +163,7 @@ public class TestVerifyGCType {
                                        "-XX:+UnlockDiagnosticVMOptions",
                                        "-XX:+UseG1GC",
                                        "-XX:+WhiteBoxAPI",
-                                       "-Xlog:gc,gc+start,gc+verify=info",
+                                       "-Xlog:gc,gc+start,gc+verify=info,gc+phases=debug,gc+heap=debug",
                                        "-Xms16m",
                                        "-Xmx16m",
                                        "-XX:ParallelGCThreads=1",

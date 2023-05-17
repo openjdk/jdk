@@ -247,6 +247,7 @@ private:
 
   size_t predict_bytes_to_copy(HeapRegion* hr) const;
   double predict_survivor_regions_evac_time() const;
+  double predict_retained_regions_evac_time() const;
 
   // Check whether a given young length (young_length) fits into the
   // given target pause time and whether the prediction for the amount
@@ -346,6 +347,11 @@ public:
                                         G1CollectionCandidateRegionList* initial_old_regions,
                                         G1CollectionCandidateRegionList* optional_old_regions);
 
+  void select_candidates_from_retained(G1CollectionCandidateList* retained_list,
+                                       double time_remaining_ms,
+                                       G1CollectionCandidateRegionList* initial_old_regions,
+                                       G1CollectionCandidateRegionList* optional_old_regions);
+
   // Calculate the number of optional regions from the given collection set candidates,
   // the remaining time and the maximum number of these regions and return the number
   // of actually selected regions in num_optional_regions.
@@ -401,6 +407,11 @@ public:
   void record_concurrent_refinement_stats(size_t pending_cards,
                                           size_t thread_buffer_cards);
 
+  bool retain_evac_failed_region(HeapRegion* r) const {
+    return retain_evac_failed_region(r->hrm_index());
+  }
+  bool retain_evac_failed_region(uint index) const;
+
 private:
   //
   // Survivor regions policy.
@@ -426,6 +437,9 @@ public:
   // Fraction used when evacuating the optional regions. This fraction of the
   // remaining time is used to choose what regions to include in the evacuation.
   double optional_evacuation_fraction() const { return 0.75; }
+
+  // Returns the total time that to at most reserve for handling retained regions.
+  double max_time_for_retaining() const { return max_pause_time_ms() * optional_prediction_fraction(); }
 
   uint tenuring_threshold() const { return _tenuring_threshold; }
 

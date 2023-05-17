@@ -1102,10 +1102,11 @@ class G1MergeHeapRootsTask : public WorkerTask {
 
     bool should_clear_region(HeapRegion* hr) const {
       // The bitmap for young regions must obviously be clear as we never mark through them;
-      // old regions are only in the collection set after the concurrent cycle completed,
-      // so their bitmaps must also be clear except when the pause occurs during the
-      // Concurrent Cleanup for Next Mark phase. Only at that point the region's bitmap may
-      // contain marks while being in the collection set at the same time.
+      // old regions that are currently being marked through are only in the collection set
+      // after the concurrent cycle completed, so their bitmaps must also be clear except when
+      // the pause occurs during the Concurrent Cleanup for Next Mark phase.
+      // Only at that point the region's bitmap may contain marks while being in the collection
+      // set at the same time.
       //
       // There is one exception: shutdown might have aborted the Concurrent Cleanup for Next
       // Mark phase midway, which might have also left stale marks in old generation regions.
@@ -1130,6 +1131,7 @@ class G1MergeHeapRootsTask : public WorkerTask {
       } else {
         assert_bitmap_clear(hr, _g1h->concurrent_mark()->mark_bitmap());
       }
+      _g1h->concurrent_mark()->clear_statistics(hr);
       return false;
     }
   };

@@ -533,7 +533,7 @@ public:
   }
 
   // Update the region state after a failed evacuation.
-  void handle_evacuation_failure();
+  void handle_evacuation_failure(bool retain);
 
   // Iterate over the objects overlapping the given memory region, applying cl
   // to all references in the region.  This is a helper for
