@@ -33,8 +33,8 @@
 #include "gc/z/zIndexDistributor.inline.hpp"
 #include "utilities/debug.hpp"
 
-inline ZForwardingTable::ZForwardingTable() :
-    _map(ZAddressOffsetMax) {}
+inline ZForwardingTable::ZForwardingTable()
+  : _map(ZAddressOffsetMax) {}
 
 inline ZForwarding* ZForwardingTable::at(size_t index) const {
   return _map.at(index);

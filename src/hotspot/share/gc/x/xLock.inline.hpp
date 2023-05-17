@@ -45,7 +45,7 @@ inline void XLock::unlock() {
 
 inline XReentrantLock::XReentrantLock() :
     _lock(),
-    _owner(NULL),
+    _owner(nullptr),
     _count(0) {}
 
 inline void XReentrantLock::lock() {
@@ -67,7 +67,7 @@ inline void XReentrantLock::unlock() {
   _count--;
 
   if (_count == 0) {
-    Atomic::store(&_owner, (Thread*)NULL);
+    Atomic::store(&_owner, (Thread*)nullptr);
     _lock.unlock();
   }
 }
@@ -105,14 +105,14 @@ inline void XConditionLock::notify_all() {
 template <typename T>
 inline XLocker<T>::XLocker(T* lock) :
     _lock(lock) {
-  if (_lock != NULL) {
+  if (_lock != nullptr) {
     _lock->lock();
   }
 }
 
 template <typename T>
 inline XLocker<T>::~XLocker() {
-  if (_lock != NULL) {
+  if (_lock != nullptr) {
     _lock->unlock();
   }
 }
