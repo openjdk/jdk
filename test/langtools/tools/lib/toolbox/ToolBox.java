@@ -92,7 +92,7 @@ public class ToolBox {
     /** The platform path separator. */
     public static final String pathSeparator = System.getProperty("path.separator");
     /** The platform file separator character. */
-    public static char fileSeparatorChar = System.getProperty("file.separator").toCharArray()[0];
+    public static char fileSeparatorChar = System.getProperty("file.separator").charAt(0);
     /** The platform OS name. */
     public static final String osName = System.getProperty("os.name");
 
