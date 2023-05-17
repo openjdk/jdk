@@ -54,23 +54,15 @@
 volatile Thread* ClassListParser::_parsing_thread = nullptr;
 ClassListParser* ClassListParser::_instance = nullptr;
 
-ClassListParser::ClassListParser(const char* file, ParseMode parse_mode) : _id2klass_table(INITIAL_TABLE_SIZE, MAX_TABLE_SIZE) {
+ClassListParser::ClassListParser(const char* file, ParseMode parse_mode)
+  : _reader(file), _id2klass_table(INITIAL_TABLE_SIZE, MAX_TABLE_SIZE) {
   log_info(cds)("Parsing %s%s", file,
                 (parse_mode == _parse_lambda_forms_invokers_only) ? " (lambda form invokers only)" : "");
   _classlist_file = file;
-  _file = nullptr;
-  // Use os::open() because neither fopen() nor os::fopen()
-  // can handle long path name on Windows.
-  int fd = os::open(file, O_RDONLY, S_IREAD);
-  if (fd != -1) {
-    // Obtain a File* from the file descriptor so that fgets()
-    // can be used in parse_one_line()
-    _file = os::fdopen(fd, "r");
-  }
-  if (_file == nullptr) {
+  if (!_reader.is_opened()) {
     char errmsg[JVM_MAXPATHLEN];
     os::lasterror(errmsg, JVM_MAXPATHLEN);
-    vm_exit_during_initialization("Loading classlist failed", errmsg);
+    vm_exit_during_initialization("Loading classlist failed", errmsg); // FIXME
   }
   _line_no = 0;
   _interfaces = new (mtClass) GrowableArray<int>(10, mtClass);
@@ -88,13 +80,16 @@ bool ClassListParser::is_parsing_thread() {
 }
 
 ClassListParser::~ClassListParser() {
-  if (_file != nullptr) {
-    fclose(_file);
-  }
   Atomic::store(&_parsing_thread, (Thread*)nullptr);
   delete _indy_items;
   delete _interfaces;
   _instance = nullptr;
+}
+
+int ClassListParser::parse_classlist(const char* classlist_path, ParseMode parse_mode, TRAPS) {
+  ResourceMark rm(THREAD);
+  ClassListParser parser(classlist_path, parse_mode);
+  return parser.parse(THREAD); // returns the number of classes loaded.
 }
 
 int ClassListParser::parse(TRAPS) {
@@ -165,7 +160,7 @@ int ClassListParser::parse(TRAPS) {
 
 bool ClassListParser::parse_one_line() {
   for (;;) {
-    if (fgets(_line, sizeof(_line), _file) == nullptr) {
+    if ((_line = _reader.get_line()) == nullptr) {
       return false;
     }
     ++ _line_no;

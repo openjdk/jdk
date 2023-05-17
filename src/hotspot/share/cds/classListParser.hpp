@@ -28,6 +28,7 @@
 #include "utilities/exceptions.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
+#include "utilities/lineReader.hpp"
 #include "utilities/resizeableResourceHash.hpp"
 
 #define LAMBDA_PROXY_TAG "@lambda-proxy"
@@ -96,14 +97,13 @@ private:
   static volatile Thread* _parsing_thread; // the thread that created _instance
   static ClassListParser* _instance; // the singleton.
   const char* _classlist_file;
-  FILE* _file;
+  LineReader _reader;
 
   ID2KlassTable _id2klass_table;
 
   // The following field contains information from the *current* line being
   // parsed.
-  char                _line[_line_buf_size];  // The buffer that holds the current line. Some characters in
-                                              // the buffer may be overwritten by '\0' during parsing.
+  char*               _line;                  // The current input line being processed
   int                 _line_len;              // Original length of the input line.
   int                 _line_no;               // Line number for current line being parsed
   const char*         _class_name;
@@ -136,11 +136,7 @@ private:
   ~ClassListParser();
 
 public:
-  static int parse_classlist(const char* classlist_path, ParseMode parse_mode, TRAPS) {
-    ClassListParser parser(classlist_path, parse_mode);
-    return parser.parse(THREAD); // returns the number of classes loaded.
-  }
-
+  static int parse_classlist(const char* classlist_path, ParseMode parse_mode, TRAPS);
   static bool is_parsing_thread();
   static ClassListParser* instance() {
     assert(is_parsing_thread(), "call this only in the thread that created ClassListParsing::_instance");

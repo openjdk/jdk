@@ -54,6 +54,7 @@
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/threads.hpp"
 #include "utilities/copy.hpp"
+#include "utilities/lineReader.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/utf8.hpp"
 
@@ -109,9 +110,10 @@ typedef struct _ciInlineRecord {
 class  CompileReplay;
 static CompileReplay* replay_state;
 
+// Must be used within a ResourceMark.
 class CompileReplay : public StackObj {
  private:
-  FILE*   _stream;
+  LineReader _reader;
   Thread* _thread;
   Handle  _protection_domain;
   bool    _protection_domain_initialized;
@@ -128,9 +130,9 @@ class CompileReplay : public StackObj {
 
   const char* _error_message;
 
-  char* _bufptr;
-  char* _buffer;
-  int   _buffer_length;
+  // These variables are set by get_line().
+  char* _buffer; // The current line being processed
+  char* _bufptr; // The position within _buffer that's being looked at
 
   // "compile" data
   ciKlass* _iklass;
@@ -139,23 +141,18 @@ class CompileReplay : public StackObj {
   int      _comp_level;
 
  public:
-  CompileReplay(const char* filename, TRAPS) {
+  CompileReplay(const char* filename, TRAPS) : _reader(filename) {
     _thread = THREAD;
     _loader = Handle(_thread, SystemDictionary::java_system_loader());
     _protection_domain = Handle();
     _protection_domain_initialized = false;
 
-    _stream = os::fopen(filename, "rt");
-    if (_stream == nullptr) {
+    if (!_reader.is_opened()) {
       fprintf(stderr, "ERROR: Can't open replay file %s\n", filename);
     }
 
     _ci_inline_records = nullptr;
     _error_message = nullptr;
-
-    _buffer_length = 32;
-    _buffer = NEW_RESOURCE_ARRAY(char, _buffer_length);
-    _bufptr = _buffer;
 
     _imethod = nullptr;
     _iklass  = nullptr;
@@ -166,13 +163,10 @@ class CompileReplay : public StackObj {
     test();
   }
 
-  ~CompileReplay() {
-    if (_stream != nullptr) fclose(_stream);
-  }
-
   void test() {
-    strcpy(_buffer, "1 2 foo 4 bar 0x9 \"this is it\"");
-    _bufptr = _buffer;
+    char tmp[] = "1 2 foo 4 bar 0x9 \"this is it\"";
+    _buffer = tmp;
+    _bufptr = tmp;
     assert(parse_int("test") == 1, "what");
     assert(parse_int("test") == 2, "what");
     assert(strcmp(parse_string(), "foo") == 0, "what");
@@ -187,7 +181,7 @@ class CompileReplay : public StackObj {
   }
 
   bool can_replay() {
-    return !(_stream == nullptr || had_error());
+    return _reader.is_opened() && !had_error();
   }
 
   void report_error(const char* msg) {
@@ -604,38 +598,17 @@ class CompileReplay : public StackObj {
     return m;
   }
 
-  int get_line(int c) {
-    int buffer_pos = 0;
-    while(c != EOF) {
-      if (buffer_pos + 1 >= _buffer_length) {
-        int new_length = _buffer_length * 2;
-        // Next call will throw error in case of OOM.
-        _buffer = REALLOC_RESOURCE_ARRAY(char, _buffer, _buffer_length, new_length);
-        _buffer_length = new_length;
-      }
-      if (c == '\n') {
-        c = getc(_stream); // get next char
-        break;
-      } else if (c == '\r') {
-        // skip LF
-      } else {
-        _buffer[buffer_pos++] = c;
-      }
-      c = getc(_stream);
-    }
-    // null terminate it, reset the pointer
-    _buffer[buffer_pos] = '\0'; // NL or EOF
+  bool get_line() {
+    _buffer = _reader.get_line();
     _bufptr = _buffer;
-    return c;
+    return (_buffer != nullptr);
   }
 
   // Process each line of the replay file executing each command until
   // the file ends.
   void process(TRAPS) {
     int line_no = 1;
-    int c = getc(_stream);
-    while(c != EOF) {
-      c = get_line(c);
+    while (get_line()) {
       process_command(THREAD);
       if (had_error()) {
         int pos = _bufptr - _buffer + 1;
@@ -720,9 +693,7 @@ class CompileReplay : public StackObj {
     _entry_bci  = entry_bci;
     _comp_level = comp_level;
     int line_no = 1;
-    int c = getc(_stream);
-    while(c != EOF) {
-      c = get_line(c);
+    while (get_line()) {
       // Expecting only lines with "compile" command in inline replay file.
       char* cmd = parse_string();
       if (cmd == nullptr || strcmp("compile", cmd) != 0) {
@@ -1362,6 +1333,7 @@ void* ciReplay::load_inline_data(ciMethod* method, int entry_bci, int comp_level
 
   VM_ENTRY_MARK;
   // Load and parse the replay data
+  ResourceMark rm(THREAD);
   CompileReplay rp(InlineDataFile, THREAD);
   if (!rp.can_replay()) {
     tty->print_cr("ciReplay: !rp.can_replay()");
