@@ -242,7 +242,7 @@ static const char* format_insn_close(const char* close,
   case dis_noninsn:     type = "noninsn";    break;
   }
 
-  size_t used_size = snprintf(buf, bufsize, "%s", close);
+  int used_size = snprintf(buf, bufsize, "%s", close);
   if ((used_size < 0) || (used_size >= bufsize)) {
     return close;
   }
