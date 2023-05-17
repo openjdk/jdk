@@ -466,12 +466,13 @@ static void addCertificatesToKeystore(JNIEnv *env, jobject keyStore)
 
             // See KeychainStore::createTrustedCertEntry for content of inputTrust
             // When inputTrust object is NULL, no trust settings were found for the cert
+            // We load trust settings from domains kSecTrustSettingsDomainUser and kSecTrustSettingsDomainAdmin
+            // kSecTrustSettingsDomainSystem is ignored because it seems to only contain data for root certificates
             jobject inputTrust = NULL;
             CFArrayRef trustSettings = NULL;
 
-            // Dump everything inside user trustSettings into inputTrust
-            SecTrustSettingsCopyTrustSettings(certRef, kSecTrustSettingsDomainUser, &trustSettings);
-            if (trustSettings != NULL) {
+            // Load user trustSettings into inputTrust
+            if (SecTrustSettingsCopyTrustSettings(certRef, kSecTrustSettingsDomainUser, &trustSettings) == errSecSuccess && trustSettings != NULL) {
                 inputTrust = (*env)->NewObject(env, jc_arrayListClass, jm_arrayListCons);
                 if (inputTrust == NULL) {
                     CFRelease(trustSettings);
@@ -479,11 +480,10 @@ static void addCertificatesToKeystore(JNIEnv *env, jobject keyStore)
                 }
                 addTrustSettingsToInputTrust(env, jm_listAdd, trustSettings, inputTrust);
                 CFRelease(trustSettings);
-                trustSettings = NULL;
             }
-            // Dump everything inside admin trustSettings into inputTrust
-            SecTrustSettingsCopyTrustSettings(certRef, kSecTrustSettingsDomainAdmin, &trustSettings);
-            if (trustSettings != NULL) {
+            // Load admin trustSettings into inputTrust
+            trustSettings = NULL;
+            if (SecTrustSettingsCopyTrustSettings(certRef, kSecTrustSettingsDomainAdmin, &trustSettings) == errSecSuccess && trustSettings != NULL) {
                 if (inputTrust == NULL) {
                     inputTrust = (*env)->NewObject(env, jc_arrayListClass, jm_arrayListCons);
                 }
@@ -493,7 +493,6 @@ static void addCertificatesToKeystore(JNIEnv *env, jobject keyStore)
                 }
                 addTrustSettingsToInputTrust(env, jm_listAdd, trustSettings, inputTrust);
                 CFRelease(trustSettings);
-                trustSettings = NULL;
             }
 
             // Find the creation date.
