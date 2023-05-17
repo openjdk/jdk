@@ -1816,7 +1816,7 @@ public class File
      * can be reached.
      *
      * <p> This method returns an array of {@code File} objects that denote the
-     * root directories of the existing filesystem roots.  It is guaranteed
+     * root directories of the available filesystem roots.  It is guaranteed
      * that the canonical pathname of any file physically present on the local
      * machine will begin with one of the roots returned by this method.
      *
