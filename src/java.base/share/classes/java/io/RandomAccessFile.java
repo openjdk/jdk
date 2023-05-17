@@ -900,9 +900,9 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * {@code b1}, {@code b2}, {@code b3},
      * {@code b4}, {@code b5}, {@code b6},
      * {@code b7}, and {@code b8,} where:
-     * <blockquote><pre>
-     *     0 &le; b1, b2, b3, b4, b5, b6, b7, b8 &le; 255,
-     * </pre></blockquote>
+     * {@snippet :
+     *         0 <= b1, b2, b3, b4, b5, b6, b7, b8 <= 255
+     * }
      * <p>
      * then the result is equal to:
      * {@snippet lang=java :
