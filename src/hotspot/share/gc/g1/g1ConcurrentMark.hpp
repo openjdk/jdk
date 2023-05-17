@@ -478,6 +478,8 @@ public:
   void clear_statistics(HeapRegion* r);
   // Notification for eagerly reclaimed regions to clean up.
   void humongous_object_eagerly_reclaimed(HeapRegion* r);
+  // Notification for non-humongous reclaimed old regions to clean up.
+  void region_reclaimed(HeapRegion* r);
   // Manipulation of the global mark stack.
   // The push and pop operations are used by tasks for transfers
   // between task-local queues and the global mark stack.

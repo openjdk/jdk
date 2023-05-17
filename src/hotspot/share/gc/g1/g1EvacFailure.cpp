@@ -90,20 +90,13 @@ public:
 // Fill the memory area from start to end with filler objects, and update the BOT
 // accordingly. Since we clear and use the bitmap for marking objects that failed
 // evacuation, there is no other work to be done there.
-static size_t zap_dead_objects(HeapRegion* hr, HeapWord* start, HeapWord* end) {
+static void zap_dead_objects(HeapRegion* hr, HeapWord* start, HeapWord* end) {
   assert(start <= end, "precondition");
   if (start == end) {
-    return 0;
+    return;
   }
 
   hr->fill_range_with_dead_objects(start, end);
-  return pointer_delta(end, start);
-}
-
-static void update_garbage_words_in_hr(HeapRegion* hr, size_t garbage_words) {
-  if (garbage_words != 0) {
-    hr->note_self_forward_chunk_done(garbage_words * HeapWordSize);
-  }
 }
 
 static void prefetch_obj(HeapWord* obj_addr) {
@@ -130,16 +123,14 @@ void G1RemoveSelfForwardsTask::process_chunk(uint worker_id,
   HeapWord* chunk_end = MIN2(chunk_start + _chunk_size, hr_top);
   HeapWord* first_marked_addr = bitmap->get_next_marked_addr(chunk_start, hr_top);
 
-  size_t garbage_words = 0;
-
   if (chunk_start == hr_bottom) {
+    hr->note_evacuation_failure_live_bytes(_cm->live_bytes(hr->hrm_index()));
     // This is the bottom-most chunk in this region; zap [bottom, first_marked_addr).
-    garbage_words += zap_dead_objects(hr, hr_bottom, first_marked_addr);
+    zap_dead_objects(hr, hr_bottom, first_marked_addr);
   }
 
   if (first_marked_addr >= chunk_end) {
     stat.register_empty_chunk();
-    update_garbage_words_in_hr(hr, garbage_words);
     return;
   }
 
@@ -175,15 +166,13 @@ void G1RemoveSelfForwardsTask::process_chunk(uint worker_id,
     // Use hr_top as the limit so that we zap dead ranges up to the next
     // marked obj or hr_top.
     HeapWord* next_marked_obj_addr = bitmap->get_next_marked_addr(obj_end_addr, hr_top);
-    garbage_words += zap_dead_objects(hr, obj_end_addr, next_marked_obj_addr);
+    zap_dead_objects(hr, obj_end_addr, next_marked_obj_addr);
     obj_addr = next_marked_obj_addr;
   } while (obj_addr < chunk_end);
 
   assert(marked_words > 0 && num_marked_objs > 0, "inv");
 
   stat.register_objects_count_and_size(num_marked_objs, marked_words);
-
-  update_garbage_words_in_hr(hr, garbage_words);
 }
 
 G1RemoveSelfForwardsTask::G1RemoveSelfForwardsTask(G1EvacFailureRegions* evac_failure_regions) :

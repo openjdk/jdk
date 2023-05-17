@@ -341,10 +341,13 @@ class G1PostEvacuateCollectionSetCleanupTask2::ClearRetainedRegionBitmaps : publ
   class ClearRetainedRegionBitmapsClosure : public HeapRegionClosure {
   public:
 
+    ClearRetainedRegionBitmapsClosure() : HeapRegionClosure() { }
+
     bool do_heap_region(HeapRegion* r) override {
-      assert(r->bottom() == r->top_at_mark_start(),
-             "TAMS should have been reset for region %u", r->hrm_index());
-      G1CollectedHeap::heap()->clear_bitmap_for_region(r);
+      G1CollectedHeap* g1h = G1CollectedHeap::heap();
+      g1h->clear_bitmap_for_region(r);
+      g1h->concurrent_mark()->clear_statistics(r);
+      r->reset_top_at_mark_start();
       return false;
     }
   };
@@ -539,6 +542,7 @@ class FreeCSetClosure : public HeapRegionClosure {
 
     // Free the region and its remembered set.
     _g1h->free_region(r, nullptr);
+    _g1h->concurrent_mark()->region_reclaimed(r);
     _g1h->hr_printer()->cleanup(r);
   }
 
@@ -621,7 +625,7 @@ public:
 
 class G1PostEvacuateCollectionSetCleanupTask2::FreeCollectionSetTask : public G1AbstractSubTask {
   G1CollectedHeap*  _g1h;
-  G1EvacInfo* _evacuation_info;
+  G1EvacInfo*       _evacuation_info;
   FreeCSetStats*    _worker_stats;
   HeapRegionClaimer _claimer;
   const size_t*     _surviving_young_words;

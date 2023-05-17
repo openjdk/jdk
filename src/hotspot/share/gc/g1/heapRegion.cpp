@@ -282,8 +282,8 @@ void HeapRegion::report_region_type_change(G1HeapRegionTraceType::Type to) {
   }
 }
 
-void HeapRegion::note_self_forward_chunk_done(size_t garbage_bytes) {
-  Atomic::add(&_garbage_bytes, garbage_bytes, memory_order_relaxed);
+void HeapRegion::note_evacuation_failure_live_bytes(size_t live_bytes) {
+  _garbage_bytes = used() - live_bytes;
 }
 
 // Code roots support

@@ -968,6 +968,14 @@ void G1YoungCollector::post_evacuate_collection_set(G1EvacInfo* evacuation_info,
 
   allocator()->release_gc_alloc_regions(evacuation_info);
 
+  if (evacuation_failed()) {
+    // After any evacuation finished, merge liveness information gathered during
+    // evacuation failure. This information is required in the next phase.
+    Ticks start = Ticks::now();
+    _g1h->concurrent_mark()->flush_all_task_caches();
+    phase_times()->record_merge_evac_failure_liveness_time((Ticks::now() - start).seconds() * 1000.0);
+  }
+
   post_evacuate_cleanup_1(per_thread_states);
 
   post_evacuate_cleanup_2(per_thread_states, evacuation_info);

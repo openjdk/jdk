@@ -489,9 +489,8 @@ public:
   // region.
   void note_evacuation_failure(bool during_concurrent_start);
 
-  // Notify the region that we have partially finished processing self-forwarded
-  // objects during evacuation failure handling.
-  void note_self_forward_chunk_done(size_t garbage_bytes);
+  // Notify the region with the amount of live bytes for evacuation failed regions.
+  void note_evacuation_failure_live_bytes(size_t garbage_bytes);
 
   uint index_in_opt_cset() const {
     assert(has_index_in_opt_cset(), "Opt cset index not set.");

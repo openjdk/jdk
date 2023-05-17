@@ -176,6 +176,8 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
   double _cur_pre_evacuate_prepare_time_ms;
 
+  double _merge_evac_failure_liveness_time_ms;
+
   double _cur_post_evacuate_cleanup_1_time_ms;
   double _cur_post_evacuate_cleanup_2_time_ms;
 
@@ -323,6 +325,10 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
   void record_register_regions(double time_ms) {
     _cur_region_register_time = time_ms;
+  }
+
+  void record_merge_evac_failure_liveness_time(double time_ms) {
+    _merge_evac_failure_liveness_time_ms = time_ms;
   }
 
   void record_post_evacuate_cleanup_task_1_time(double time_ms) {

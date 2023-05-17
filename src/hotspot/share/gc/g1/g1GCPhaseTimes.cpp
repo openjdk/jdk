@@ -170,6 +170,7 @@ void G1GCPhaseTimes::reset() {
   _cur_optional_prepare_merge_heap_roots_time_ms = 0.0;
   _cur_pre_evacuate_prepare_time_ms = 0.0;
   _cur_post_evacuate_cleanup_1_time_ms = 0.0;
+  _merge_evac_failure_liveness_time_ms = 0.0;
   _cur_post_evacuate_cleanup_2_time_ms = 0.0;
   _cur_expand_heap_time_ms = 0.0;
   _cur_ref_proc_time_ms = 0.0;
@@ -478,6 +479,7 @@ double G1GCPhaseTimes::print_post_evacuate_collection_set(bool evacuation_failed
                         _cur_ref_proc_time_ms +
                         (_weak_phase_times.total_time_sec() * MILLIUNITS) +
                         _cur_post_evacuate_cleanup_1_time_ms +
+                        _merge_evac_failure_liveness_time_ms +
                         _cur_post_evacuate_cleanup_2_time_ms +
                         _recorded_total_rebuild_freelist_time_ms +
                         _recorded_prepare_for_mutator_time_ms +
@@ -491,6 +493,10 @@ double G1GCPhaseTimes::print_post_evacuate_collection_set(bool evacuation_failed
   _ref_phase_times.print_all_references(2, false);
   _weak_phase_times.log_total(2);
   _weak_phase_times.log_subtotals(3);
+
+  if (evacuation_failed) {
+    debug_time("Merge Evacuation Failure Liveness", _merge_evac_failure_liveness_time_ms);
+  }
 
   debug_time("Post Evacuate Cleanup 1", _cur_post_evacuate_cleanup_1_time_ms);
   debug_phase(_gc_par_phases[MergePSS], 1);
