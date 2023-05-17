@@ -34,7 +34,7 @@
 //------------------------------VectorNode--------------------------------------
 
 // Return the vector operator for the specified scalar operation
-// and vector length.
+// and basic type.
 int VectorNode::opcode(int sopc, BasicType bt) {
   switch (sopc) {
   case Op_AddI:
@@ -271,6 +271,109 @@ int VectorNode::opcode(int sopc, BasicType bt) {
            "Convert node %s should be processed by VectorCastNode::opcode()",
            NodeClassNames[sopc]);
     return 0; // Unimplemented
+  }
+}
+
+// Return the scalar opcode for the specified vector opcode
+// and basic type.
+int VectorNode::scalar_opcode(int sopc, BasicType bt) {
+  switch (sopc) {
+    case Op_AddReductionVI:
+    case Op_AddVI:
+      return Op_AddI;
+    case Op_AddReductionVL:
+    case Op_AddVL:
+      return Op_AddL;
+    case Op_MulReductionVI:
+    case Op_MulVI:
+      return Op_MulI;
+    case Op_MulReductionVL:
+    case Op_MulVL:
+      return Op_MulL;
+    case Op_AndReductionV:
+    case Op_AndV:
+      switch (bt) {
+        case T_BOOLEAN:
+        case T_CHAR:
+        case T_BYTE:
+        case T_SHORT:
+        case T_INT:
+          return Op_AndI;
+        case T_LONG:
+          return Op_AndL;
+        default:
+          assert(false, "basic type not handled");
+          return 0;
+      }
+    case Op_OrReductionV:
+    case Op_OrV:
+      switch (bt) {
+        case T_BOOLEAN:
+        case T_CHAR:
+        case T_BYTE:
+        case T_SHORT:
+        case T_INT:
+          return Op_OrI;
+        case T_LONG:
+          return Op_OrL;
+        default:
+          assert(false, "basic type not handled");
+          return 0;
+      }
+    case Op_XorReductionV:
+    case Op_XorV:
+      switch (bt) {
+        case T_BOOLEAN:
+        case T_CHAR:
+        case T_BYTE:
+        case T_SHORT:
+        case T_INT:
+          return Op_XorI;
+        case T_LONG:
+          return Op_XorL;
+        default:
+          assert(false, "basic type not handled");
+          return 0;
+      }
+    case Op_MinReductionV:
+    case Op_MinV:
+      switch (bt) {
+        case T_BOOLEAN:
+        case T_CHAR:
+          assert(false, "boolean and char are signed, not implemented for Min");
+          return 0;
+        case T_BYTE:
+        case T_SHORT:
+        case T_INT:
+          return Op_MinI;
+        case T_LONG:
+          return Op_MinL;
+        default:
+          assert(false, "basic type not handled");
+          return 0;
+      }
+    case Op_MaxReductionV:
+    case Op_MaxV:
+      switch (bt) {
+        case T_BOOLEAN:
+        case T_CHAR:
+          assert(false, "boolean and char are signed, not implemented for Max");
+          return 0;
+        case T_BYTE:
+        case T_SHORT:
+        case T_INT:
+          return Op_MaxI;
+        case T_LONG:
+          return Op_MaxL;
+        default:
+          assert(false, "basic type not handled");
+          return 0;
+      }
+    default:
+      assert(false,
+             "Vector node %s is not handled in VectorNode::scalar_opcode",
+             NodeClassNames[sopc]);
+      return 0; // Unimplemented
   }
 }
 
@@ -1265,17 +1368,13 @@ int ReductionNode::opcode(int opc, BasicType bt) {
 }
 
 // Return the appropriate reduction node.
-ReductionNode* ReductionNode::make(int opc, Node* ctrl, Node* n1, Node* n2, BasicType bt) {
+ReductionNode* ReductionNode::make(int opc, Node *ctrl, Node* n1, Node* n2, BasicType bt) {
 
   int vopc = opcode(opc, bt);
 
   // This method should not be called for unimplemented vectors.
   guarantee(vopc != opc, "Vector for '%s' is not implemented", NodeClassNames[opc]);
 
-  return ReductionNode::make_from_vopc(vopc, ctrl, n1, n2, bt);
-}
-
-ReductionNode* ReductionNode::make_from_vopc(int vopc, Node* ctrl, Node* n1, Node* n2, BasicType bt) {
   switch (vopc) {
   case Op_AddReductionVI: return new AddReductionVINode(ctrl, n1, n2);
   case Op_AddReductionVL: return new AddReductionVLNode(ctrl, n1, n2);
@@ -1402,16 +1501,10 @@ Node* VectorCastNode::Identity(PhaseGVN* phase) {
   return this;
 }
 
-// Input opc of pre-reduction operation, eg AddI for AddReductionVI
-Node* ReductionNode::make_identity_input_for_reduction_from_scalar_opc(PhaseGVN& gvn, int opc, BasicType bt) {
-  int vopc = opcode(opc, bt);
-  guarantee(vopc != opc, "Vector reduction for '%s' is not implemented", NodeClassNames[opc]);
+Node* ReductionNode::make_identity_con_scalar(PhaseGVN& gvn, int sopc, BasicType bt) {
+  int vopc = opcode(sopc, bt);
+  guarantee(vopc != sopc, "Vector reduction for '%s' is not implemented", NodeClassNames[sopc]);
 
-  return make_identity_input_for_reduction_from_vector_opc(gvn, vopc, bt);
-}
-
-// Input opc of vector reduction, eg. AddReductionVI
-Node* ReductionNode::make_identity_input_for_reduction_from_vector_opc(PhaseGVN& gvn, int vopc, BasicType bt) {
   switch (vopc) {
     case Op_AndReductionV:
       switch (bt) {

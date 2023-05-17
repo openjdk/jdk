@@ -4188,7 +4188,10 @@ void PhaseIdealLoop::move_unordered_reduction_out_of_loop(IdealLoopTree* loop) {
     BasicType bt          = vec_t->element_basic_type();
     const Type* bt_t      = Type::get_const_basic_type(bt);
 
-    if (!last_ur->make_normal_vector_op_implemented(vec_t)) {
+    // Convert opcode from vector-reduction -> scalar -> normal-vector-op
+    const int sopc        = VectorNode::scalar_opcode(last_ur->Opcode(), bt);
+    const int vopc        = VectorNode::opcode(sopc, bt);
+    if (!Matcher::match_rule_supported_vector(vopc, vector_length, bt)) {
         DEBUG_ONLY( last_ur->dump(); )
         assert(false, "do not have normal vector op for this reduction");
         continue; // not implemented -> fails
@@ -4252,8 +4255,7 @@ void PhaseIdealLoop::move_unordered_reduction_out_of_loop(IdealLoopTree* loop) {
     }
     assert(first_ur != nullptr, "must have successfully terminated chain traversal");
 
-    // Create vector of identity elements (zero for add, one for mul, etc)
-    Node* identity_scalar = ReductionNode::make_identity_input_for_reduction_from_vector_opc(_igvn, last_ur->Opcode(), bt);
+    Node* identity_scalar = ReductionNode::make_identity_con_scalar(_igvn, sopc, bt);
     set_ctrl(identity_scalar, C->root());
     VectorNode* identity_vector = VectorNode::scalar2vector(identity_scalar, vector_length, bt_t);
     register_new_node(identity_vector, C->root());
@@ -4273,7 +4275,7 @@ void PhaseIdealLoop::move_unordered_reduction_out_of_loop(IdealLoopTree* loop) {
       // Create vector_accumulator to replace current.
       Node* last_vector_accumulator = current->in(1);
       Node* vector_input            = current->in(2);
-      VectorNode* vector_accumulator = current->make_normal_vector_op(last_vector_accumulator, vector_input, vec_t);
+      VectorNode* vector_accumulator = VectorNode::make(vopc, last_vector_accumulator, vector_input, vec_t);
       register_new_node(vector_accumulator, cl);
       _igvn.replace_node(current, vector_accumulator);
       VectorNode::trace_new_vector(vector_accumulator, "UnorderedReduction");
@@ -4285,7 +4287,7 @@ void PhaseIdealLoop::move_unordered_reduction_out_of_loop(IdealLoopTree* loop) {
 
     // Create post-loop reduction.
     Node* last_accumulator = phi->in(2);
-    Node* post_loop_reduction = ReductionNode::make_from_vopc(first_ur->Opcode(), nullptr, init, last_accumulator, bt);
+    Node* post_loop_reduction = ReductionNode::make(sopc, nullptr, init, last_accumulator, bt);
 
     // Take over uses of last_accumulator that are not in the loop.
     for (DUIterator i = last_accumulator->outs(); last_accumulator->has_out(i); i++) {

@@ -92,7 +92,8 @@ class VectorNode : public TypeNode {
 
   static bool is_rotate_opcode(int opc);
 
-  static int  opcode(int opc, BasicType bt);
+  static int opcode(int sopc, BasicType bt);         // scalar_opc -> vector_opc
+  static int scalar_opcode(int vopc, BasicType bt);  // vector_opc -> scalar_opc
   static int replicate_opcode(BasicType bt);
 
   // Limits on vector size (number of elements) for auto-vectorization.
@@ -207,12 +208,10 @@ class ReductionNode : public Node {
   }
 
   static ReductionNode* make(int opc, Node* ctrl, Node* in1, Node* in2, BasicType bt);
-  static ReductionNode* make_from_vopc(int vopc, Node* ctrl, Node* in1, Node* in2, BasicType bt);
   static int  opcode(int opc, BasicType bt);
   static bool implemented(int opc, uint vlen, BasicType bt);
-  // Make an identity element (zero for add, one for mul, etc) for opc of scalar/vector reduction.
-  static Node* make_identity_input_for_reduction_from_scalar_opc(PhaseGVN& gvn, int opc, BasicType bt);
-  static Node* make_identity_input_for_reduction_from_vector_opc(PhaseGVN& gvn, int vopc, BasicType bt);
+  // Make an identity scalar (zero for add, one for mul, etc) for scalar opc.
+  static Node* make_identity_con_scalar(PhaseGVN& gvn, int sopc, BasicType bt);
 
   virtual const Type* bottom_type() const {
     return _bottom_type;
@@ -239,9 +238,6 @@ public:
   UnorderedReductionNode(Node * ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {
     init_class_id(Class_UnorderedReduction);
   }
-
-  virtual VectorNode* make_normal_vector_op(Node* in1, Node* in2, const TypeVect* vt) = 0;
-  virtual bool make_normal_vector_op_implemented(const TypeVect* vt) = 0;
 };
 
 //------------------------------AddReductionVINode--------------------------------------
@@ -250,12 +246,6 @@ class AddReductionVINode : public UnorderedReductionNode {
 public:
   AddReductionVINode(Node * ctrl, Node* in1, Node* in2) : UnorderedReductionNode(ctrl, in1, in2) {}
   virtual int Opcode() const;
-  virtual VectorNode* make_normal_vector_op(Node* in1, Node* in2, const TypeVect* vt) {
-    return new AddVINode(in1, in2, vt);
-  }
-  virtual bool make_normal_vector_op_implemented(const TypeVect* vt) {
-    return Matcher::match_rule_supported_vector(Op_AddVI, vt->length(), vt->element_basic_type());
-  }
 };
 
 //------------------------------AddReductionVLNode--------------------------------------
@@ -264,12 +254,6 @@ class AddReductionVLNode : public UnorderedReductionNode {
 public:
   AddReductionVLNode(Node *ctrl, Node* in1, Node* in2) : UnorderedReductionNode(ctrl, in1, in2) {}
   virtual int Opcode() const;
-  virtual VectorNode* make_normal_vector_op(Node* in1, Node* in2, const TypeVect* vt) {
-    return new AddVLNode(in1, in2, vt);
-  }
-  virtual bool make_normal_vector_op_implemented(const TypeVect* vt) {
-    return Matcher::match_rule_supported_vector(Op_AddVL, vt->length(), vt->element_basic_type());
-  }
 };
 
 //------------------------------AddReductionVFNode--------------------------------------
@@ -430,12 +414,6 @@ class MulReductionVINode : public UnorderedReductionNode {
 public:
   MulReductionVINode(Node *ctrl, Node* in1, Node* in2) : UnorderedReductionNode(ctrl, in1, in2) {}
   virtual int Opcode() const;
-  virtual VectorNode* make_normal_vector_op(Node* in1, Node* in2, const TypeVect* vt) {
-    return new MulVINode(in1, in2, vt);
-  }
-  virtual bool make_normal_vector_op_implemented(const TypeVect* vt) {
-    return Matcher::match_rule_supported_vector(Op_MulVI, vt->length(), vt->element_basic_type());
-  }
 };
 
 //------------------------------MulReductionVLNode--------------------------------------
@@ -444,12 +422,6 @@ class MulReductionVLNode : public UnorderedReductionNode {
 public:
   MulReductionVLNode(Node *ctrl, Node* in1, Node* in2) : UnorderedReductionNode(ctrl, in1, in2) {}
   virtual int Opcode() const;
-  virtual VectorNode* make_normal_vector_op(Node* in1, Node* in2, const TypeVect* vt) {
-    return new MulVLNode(in1, in2, vt);
-  }
-  virtual bool make_normal_vector_op_implemented(const TypeVect* vt) {
-    return Matcher::match_rule_supported_vector(Op_MulVL, vt->length(), vt->element_basic_type());
-  }
 };
 
 //------------------------------MulReductionVFNode--------------------------------------
@@ -793,12 +765,6 @@ class AndReductionVNode : public UnorderedReductionNode {
  public:
   AndReductionVNode(Node *ctrl, Node* in1, Node* in2) : UnorderedReductionNode(ctrl, in1, in2) {}
   virtual int Opcode() const;
-  virtual VectorNode* make_normal_vector_op(Node* in1, Node* in2, const TypeVect* vt) {
-    return new AndVNode(in1, in2, vt);
-  }
-  virtual bool make_normal_vector_op_implemented(const TypeVect* vt) {
-    return Matcher::match_rule_supported_vector(Op_AndV, vt->length(), vt->element_basic_type());
-  }
 };
 
 //------------------------------OrVNode---------------------------------------
@@ -816,12 +782,6 @@ class OrReductionVNode : public UnorderedReductionNode {
  public:
   OrReductionVNode(Node *ctrl, Node* in1, Node* in2) : UnorderedReductionNode(ctrl, in1, in2) {}
   virtual int Opcode() const;
-  virtual VectorNode* make_normal_vector_op(Node* in1, Node* in2, const TypeVect* vt) {
-    return new OrVNode(in1, in2, vt);
-  }
-  virtual bool make_normal_vector_op_implemented(const TypeVect* vt) {
-    return Matcher::match_rule_supported_vector(Op_OrV, vt->length(), vt->element_basic_type());
-  }
 };
 
 //------------------------------XorVNode---------------------------------------
@@ -839,12 +799,6 @@ class XorReductionVNode : public UnorderedReductionNode {
  public:
   XorReductionVNode(Node *ctrl, Node* in1, Node* in2) : UnorderedReductionNode(ctrl, in1, in2) {}
   virtual int Opcode() const;
-  virtual VectorNode* make_normal_vector_op(Node* in1, Node* in2, const TypeVect* vt) {
-    return new XorVNode(in1, in2, vt);
-  }
-  virtual bool make_normal_vector_op_implemented(const TypeVect* vt) {
-    return Matcher::match_rule_supported_vector(Op_XorV, vt->length(), vt->element_basic_type());
-  }
 };
 
 //------------------------------MinReductionVNode--------------------------------------
@@ -853,12 +807,6 @@ class MinReductionVNode : public UnorderedReductionNode {
 public:
   MinReductionVNode(Node *ctrl, Node* in1, Node* in2) : UnorderedReductionNode(ctrl, in1, in2) {}
   virtual int Opcode() const;
-  virtual VectorNode* make_normal_vector_op(Node* in1, Node* in2, const TypeVect* vt) {
-    return new MinVNode(in1, in2, vt);
-  }
-  virtual bool make_normal_vector_op_implemented(const TypeVect* vt) {
-    return Matcher::match_rule_supported_vector(Op_MinV, vt->length(), vt->element_basic_type());
-  }
 };
 
 //------------------------------MaxReductionVNode--------------------------------------
@@ -867,12 +815,6 @@ class MaxReductionVNode : public UnorderedReductionNode {
 public:
   MaxReductionVNode(Node *ctrl, Node* in1, Node* in2) : UnorderedReductionNode(ctrl, in1, in2) {}
   virtual int Opcode() const;
-  virtual VectorNode* make_normal_vector_op(Node* in1, Node* in2, const TypeVect* vt) {
-    return new MaxVNode(in1, in2, vt);
-  }
-  virtual bool make_normal_vector_op_implemented(const TypeVect* vt) {
-    return Matcher::match_rule_supported_vector(Op_MaxV, vt->length(), vt->element_basic_type());
-  }
 };
 
 //------------------------------CompressVNode--------------------------------------
