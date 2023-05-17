@@ -124,7 +124,8 @@ public class ThreadAllocatedMemory {
         throws Exception {
 
         // start a thread
-        done = false; done1 = false;
+        done = false;
+        done1 = false;
         Thread curThread = new MyThread("MyThread");
         curThread.start();
         long id = curThread.getId();
@@ -166,7 +167,8 @@ public class ThreadAllocatedMemory {
         throws Exception {
 
         // start threads
-        done = false; done1 = false;
+        done = false;
+        done1 = false;
         for (int i = 0; i < NUM_THREADS; i++) {
             threads[i] = new MyThread("MyThread-" + i);
             threads[i].start();
@@ -225,7 +227,8 @@ public class ThreadAllocatedMemory {
         }
 
         // start threads
-        done = false; done1 = false;
+        done = false;
+        done1 = false;
         for (int i = 0; i < NUM_THREADS; i++) {
             threads[i] = new MyThread("MyThread-" + i);
             threads[i].start();
