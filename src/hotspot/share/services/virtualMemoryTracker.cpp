@@ -560,10 +560,9 @@ bool VirtualMemoryTracker::remove_released_region(address addr, size_t size) {
       assert(remove_rgn->base() < node_rgn->data()->base(), "not ascending bases");
 
       // Allow for the segment to be partially released
-      long offset = remove_rgn->base() - addr;
       long remove_size = 0;
-      if (offset < 0) {
-        remove_size = MIN(remove_rgn->size()+offset, remaining);
+      if (addr > remove_rgn->base()) {
+        remove_size = MIN(remove_rgn->size()-pointer_delta(addr, remove_rgn->base(), 1), remaining);
       } else {
         remove_size = MIN(remove_rgn->size(), remaining);
       }
