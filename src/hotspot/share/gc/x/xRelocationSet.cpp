@@ -61,7 +61,7 @@ public:
   XRelocationSetInstallTask(XForwardingAllocator* allocator, const XRelocationSetSelector* selector) :
       XTask("XRelocationSetInstallTask"),
       _allocator(allocator),
-      _forwardings(NULL),
+      _forwardings(nullptr),
       _nforwardings(selector->small()->length() + selector->medium()->length()),
       _small_iter(selector->small()),
       _medium_iter(selector->medium()),
@@ -109,7 +109,7 @@ public:
 XRelocationSet::XRelocationSet(XWorkers* workers) :
     _workers(workers),
     _allocator(),
-    _forwardings(NULL),
+    _forwardings(nullptr),
     _nforwardings(0) {}
 
 void XRelocationSet::install(const XRelocationSetSelector* selector) {

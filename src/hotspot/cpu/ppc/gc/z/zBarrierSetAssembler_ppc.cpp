@@ -860,7 +860,7 @@ class ZSaveLiveRegisters {
 
  public:
   ZSaveLiveRegisters(MacroAssembler *masm, ZBarrierStubC2 *stub)
-      : _masm(masm), _reg_mask(stub->live()), _result_reg(stub->result()) {
+    : _masm(masm), _reg_mask(stub->live()), _result_reg(stub->result()) {
 
     const int register_save_size = iterate_over_register_mask(ACTION_COUNT_ONLY) * BytesPerWord;
     _frame_size = align_up(register_save_size, frame::alignment_in_bytes)
@@ -972,8 +972,8 @@ class ZSetupArguments {
   const Address         _ref_addr;
 
  public:
-  ZSetupArguments(MacroAssembler* masm, ZLoadBarrierStubC2* stub) :
-      _masm(masm),
+  ZSetupArguments(MacroAssembler* masm, ZLoadBarrierStubC2* stub)
+    : _masm(masm),
       _ref(stub->ref()),
       _ref_addr(stub->ref_addr()) {
 

@@ -59,7 +59,7 @@ static void x_compare_and_swap(MacroAssembler& _masm, const MachNode* node,
   // z-specific load barrier requires strong CAS operations.
   // Weak CAS operations are thus only emitted if the barrier is elided.
   __ cmpxchgd(CCR0, tmp_xchg, oldval, newval, mem,
-              MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(), res, NULL, true,
+              MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(), res, nullptr, true,
               weak && node->barrier_data() == XLoadBarrierElided);
 
   if (node->barrier_data() != XLoadBarrierElided) {
@@ -73,7 +73,7 @@ static void x_compare_and_swap(MacroAssembler& _masm, const MachNode* node,
     x_load_barrier_slow_path(_masm, node, Address(mem), tmp_xchg, res /* used as tmp */);
 
     __ cmpxchgd(CCR0, tmp_xchg, oldval, newval, mem,
-                MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(), res, NULL, true, weak);
+                MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(), res, nullptr, true, weak);
 
     __ bind(skip_barrier);
   }
@@ -95,7 +95,7 @@ static void x_compare_and_exchange(MacroAssembler& _masm, const MachNode* node,
   // z-specific load barrier requires strong CAS operations.
   // Weak CAS operations are thus only emitted if the barrier is elided.
   __ cmpxchgd(CCR0, res, oldval, newval, mem,
-              MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(), noreg, NULL, true,
+              MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(), noreg, nullptr, true,
               weak && node->barrier_data() == XLoadBarrierElided);
 
   if (node->barrier_data() != XLoadBarrierElided) {
@@ -107,7 +107,7 @@ static void x_compare_and_exchange(MacroAssembler& _masm, const MachNode* node,
     x_load_barrier_slow_path(_masm, node, Address(mem), res, tmp);
 
     __ cmpxchgd(CCR0, res, oldval, newval, mem,
-                MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(), noreg, NULL, true, weak);
+                MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(), noreg, nullptr, true, weak);
 
     __ bind(skip_barrier);
   }

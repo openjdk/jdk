@@ -106,12 +106,12 @@ static void soft_reference_update_clock() {
 
 XReferenceProcessor::XReferenceProcessor(XWorkers* workers) :
     _workers(workers),
-    _soft_reference_policy(NULL),
+    _soft_reference_policy(nullptr),
     _encountered_count(),
     _discovered_count(),
     _enqueued_count(),
-    _discovered_list(NULL),
-    _pending_list(NULL),
+    _discovered_list(nullptr),
+    _pending_list(nullptr),
     _pending_list_tail(_pending_list.addr()) {}
 
 void XReferenceProcessor::set_soft_reference_policy(bool clear) {
@@ -132,11 +132,11 @@ bool XReferenceProcessor::is_inactive(oop reference, oop referent, ReferenceType
   if (type == REF_FINAL) {
     // A FinalReference is inactive if its next field is non-null. An application can't
     // call enqueue() or clear() on a FinalReference.
-    return reference_next(reference) != NULL;
+    return reference_next(reference) != nullptr;
   } else {
     // A non-FinalReference is inactive if the referent is null. The referent can only
     // be null if the application called Reference.enqueue() or Reference.clear().
-    return referent == NULL;
+    return referent == nullptr;
   }
 }
 
@@ -153,7 +153,7 @@ bool XReferenceProcessor::is_softly_live(oop reference, ReferenceType type) cons
   // Ask SoftReference policy
   const jlong clock = java_lang_ref_SoftReference::clock();
   assert(clock != 0, "Clock not initialized");
-  assert(_soft_reference_policy != NULL, "Policy not initialized");
+  assert(_soft_reference_policy != nullptr, "Policy not initialized");
   return !_soft_reference_policy->should_clear_reference(reference, clock);
 }
 
@@ -184,7 +184,7 @@ bool XReferenceProcessor::should_discover(oop reference, ReferenceType type) con
 
 bool XReferenceProcessor::should_drop(oop reference, ReferenceType type) const {
   const oop referent = reference_referent(reference);
-  if (referent == NULL) {
+  if (referent == nullptr) {
     // Reference has been cleared, by a call to Reference.enqueue()
     // or Reference.clear() from the application, which means we
     // should drop the reference.
@@ -215,7 +215,7 @@ void XReferenceProcessor::make_inactive(oop reference, ReferenceType type) const
     // to finalize(). A FinalReference is instead made inactive by self-looping the
     // next field. An application can't call FinalReference.enqueue(), so there is
     // no race to worry about when setting the next field.
-    assert(reference_next(reference) == NULL, "Already inactive");
+    assert(reference_next(reference) == nullptr, "Already inactive");
     reference_set_next(reference, reference);
   } else {
     // Clear referent
@@ -238,7 +238,7 @@ void XReferenceProcessor::discover(oop reference, ReferenceType type) {
   }
 
   // Add reference to discovered list
-  assert(reference_discovered(reference) == NULL, "Already discovered");
+  assert(reference_discovered(reference) == nullptr, "Already discovered");
   oop* const list = _discovered_list.addr();
   reference_set_discovered(reference, *list);
   *list = reference;
@@ -274,7 +274,7 @@ oop XReferenceProcessor::drop(oop reference, ReferenceType type) {
 
   // Unlink and return next in list
   const oop next = reference_discovered(reference);
-  reference_set_discovered(reference, NULL);
+  reference_set_discovered(reference, nullptr);
   return next;
 }
 
@@ -296,7 +296,7 @@ void XReferenceProcessor::work() {
   oop* const list = _discovered_list.addr();
   oop* p = list;
 
-  while (*p != NULL) {
+  while (*p != nullptr) {
     const oop reference = *p;
     const ReferenceType type = reference_type(reference);
 
@@ -308,27 +308,27 @@ void XReferenceProcessor::work() {
   }
 
   // Prepend discovered references to internal pending list
-  if (*list != NULL) {
+  if (*list != nullptr) {
     *p = Atomic::xchg(_pending_list.addr(), *list);
-    if (*p == NULL) {
+    if (*p == nullptr) {
       // First to prepend to list, record tail
       _pending_list_tail = p;
     }
 
     // Clear discovered list
-    *list = NULL;
+    *list = nullptr;
   }
 }
 
 bool XReferenceProcessor::is_empty() const {
   XPerWorkerConstIterator<oop> iter(&_discovered_list);
   for (const oop* list; iter.next(&list);) {
-    if (*list != NULL) {
+    if (*list != nullptr) {
       return false;
     }
   }
 
-  if (_pending_list.get() != NULL) {
+  if (_pending_list.get() != nullptr) {
     return false;
   }
 
@@ -437,7 +437,7 @@ void XReferenceProcessor::process_references() {
 void XReferenceProcessor::enqueue_references() {
   XStatTimer timer(XSubPhaseConcurrentReferencesEnqueue);
 
-  if (_pending_list.get() == NULL) {
+  if (_pending_list.get() == nullptr) {
     // Nothing to enqueue
     return;
   }
@@ -454,6 +454,6 @@ void XReferenceProcessor::enqueue_references() {
   }
 
   // Reset internal pending list
-  _pending_list.set(NULL);
+  _pending_list.set(nullptr);
   _pending_list_tail = _pending_list.addr();
 }

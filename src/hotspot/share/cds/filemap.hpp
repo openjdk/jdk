@@ -487,6 +487,7 @@ public:
   static void record_non_existent_class_path_entry(const char* path);
 
 #if INCLUDE_JVMTI
+  // Caller needs a ResourceMark because parts of the returned cfs are resource-allocated.
   static ClassFileStream* open_stream_for_jvmti(InstanceKlass* ik, Handle class_loader, TRAPS);
 #endif
 

@@ -322,6 +322,16 @@
       <setting name="enabled">false</setting>
     </event>
 
+    <event name="jdk.GCHeapMemoryUsage">
+      <setting name="enabled" control="gc-enabled-normal">true</setting>
+      <setting name="period">everyChunk</setting>
+    </event>
+
+    <event name="jdk.GCHeapMemoryPoolUsage">
+      <setting name="enabled" control="gc-enabled-normal">true</setting>
+      <setting name="period">everyChunk</setting>
+    </event>
+
     <event name="jdk.GCHeapSummary">
       <setting name="enabled" control="gc-enabled-normal">true</setting>
     </event>

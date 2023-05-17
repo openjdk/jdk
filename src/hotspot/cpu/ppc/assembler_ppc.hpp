@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2022 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1013,15 +1013,15 @@ class Assembler : public AbstractAssembler {
   // Test if x is within signed immediate range for nbits.
   static bool is_simm(int x, unsigned int nbits) {
     assert(0 < nbits && nbits < 32, "out of bounds");
-    const int   min      = -(((int)1) << nbits-1);
-    const int   maxplus1 =  (((int)1) << nbits-1);
+    const int   min      = -(((int)1) << (nbits-1));
+    const int   maxplus1 =  (((int)1) << (nbits-1));
     return min <= x && x < maxplus1;
   }
 
   static bool is_simm(jlong x, unsigned int nbits) {
     assert(0 < nbits && nbits < 64, "out of bounds");
-    const jlong min      = -(((jlong)1) << nbits-1);
-    const jlong maxplus1 =  (((jlong)1) << nbits-1);
+    const jlong min      = -(((jlong)1) << (nbits-1));
+    const jlong maxplus1 =  (((jlong)1) << (nbits-1));
     return min <= x && x < maxplus1;
   }
 
@@ -1044,7 +1044,7 @@ class Assembler : public AbstractAssembler {
   // X is supposed to fit in a field "nbits" wide
   // and be sign-extended. Check the range.
   static void assert_signed_range(intptr_t x, int nbits) {
-    assert(nbits == 32 || (-(1 << nbits-1) <= x && x < (1 << nbits-1)),
+    assert(nbits == 32 || (-(1 << (nbits-1)) <= x && x < (1 << (nbits-1))),
            "value out of range");
   }
 
@@ -1086,7 +1086,7 @@ class Assembler : public AbstractAssembler {
   // Same as u_field for signed values
   static int s_field(int x, int hi_bit, int lo_bit) {
     int nbits = hi_bit - lo_bit + 1;
-    assert(nbits == 32 || (-(1 << nbits-1) <= x && x < (1 << nbits-1)),
+    assert(nbits == 32 || (-(1 << (nbits-1)) <= x && x < (1 << (nbits-1))),
       "value out of range");
     x &= fmask(hi_bit, lo_bit);
     int r = x << lo_bit;
