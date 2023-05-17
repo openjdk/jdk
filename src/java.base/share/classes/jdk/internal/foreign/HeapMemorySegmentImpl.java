@@ -53,10 +53,10 @@ public abstract sealed class HeapMemorySegmentImpl extends AbstractMemorySegment
     private static final Unsafe UNSAFE = Unsafe.getUnsafe();
     private static final int BYTE_ARR_BASE = UNSAFE.arrayBaseOffset(byte[].class);
 
-    private static final long MAX_ALIGN_1 = ValueLayout.JAVA_BYTE.byteSize();
+    private static final long MAX_ALIGN_1 = ValueLayout.JAVA_BYTE.byteAlignment();
     private static final long MAX_ALIGN_2 = ValueLayout.JAVA_SHORT.byteAlignment();
     private static final long MAX_ALIGN_4 = ValueLayout.JAVA_INT.byteAlignment();
-    private static final long MAX_ALIGN_8 = ValueLayout.JAVA_LONG.byteSize();
+    private static final long MAX_ALIGN_8 = ValueLayout.JAVA_LONG.byteAlignment();
 
     final long offset;
     final Object base;
