@@ -202,7 +202,7 @@ import java.util.stream.Stream;
  * </tbody>
  * </table></blockquote>
  * <p>
- * All the native linker implementations can only operate on a subset of memory layouts, called <em>supported layouts</em>.
+ * More formally, all native linker implementations can only operate on a subset of memory layouts, called <em>supported layouts</em>.
  * A layout {@code L} is supported iff:
  * <ul>
  * <li>{@code L} is a value layout {@code V} and {@code V.withoutName()} is a canonical layout</li>
