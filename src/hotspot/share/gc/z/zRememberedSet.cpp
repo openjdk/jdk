@@ -38,8 +38,8 @@ void ZRememberedSet::flip() {
   _current ^= 1;
 }
 
-ZRememberedSet::ZRememberedSet() :
-    _bitmap{ZMovableBitMap(), ZMovableBitMap()} {
+ZRememberedSet::ZRememberedSet()
+  : _bitmap{ZMovableBitMap(), ZMovableBitMap()} {
   // Defer initialization of the bitmaps until the owning
   // page becomes old and its remembered set is initialized.
 }
@@ -127,8 +127,8 @@ zaddress_unsafe ZRememberedSetContainingIterator::to_addr(BitMap::idx_t index) {
   return ZOffset::address_unsafe(_page->global_offset(local_offset));
 }
 
-ZRememberedSetContainingIterator::ZRememberedSetContainingIterator(ZPage* page) :
-    _page(page),
+ZRememberedSetContainingIterator::ZRememberedSetContainingIterator(ZPage* page)
+  : _page(page),
     _remset_iter(page->remset_reverse_iterator_previous()),
     _obj(zaddress_unsafe::null),
     _obj_remset_iter(page->remset_reverse_iterator_previous()) {}
@@ -190,8 +190,8 @@ bool ZRememberedSetContainingIterator::next(ZRememberedSetContaining* containing
   return false;
 }
 
-ZRememberedSetContainingInLiveIterator::ZRememberedSetContainingInLiveIterator(ZPage* page) :
-    _iter(page),
+ZRememberedSetContainingInLiveIterator::ZRememberedSetContainingInLiveIterator(ZPage* page)
+  : _iter(page),
     _addr(zaddress::null),
     _addr_size(0),
     _count(0),

@@ -129,7 +129,7 @@ static XPage* alloc_page(const XForwarding* forwarding) {
   if (ZStressRelocateInPlace) {
     // Simulate failure to allocate a new page. This will
     // cause the page being relocated to be relocated in-place.
-    return NULL;
+    return nullptr;
   }
 
   XAllocationFlags flags;
@@ -147,7 +147,7 @@ static bool should_free_target_page(XPage* page) {
   // page if we allocated a new target page, and then lost the race to
   // relocate the remaining objects, leaving the target page empty when
   // relocation completed.
-  return page != NULL && page->top() == page->start();
+  return page != nullptr && page->top() == page->start();
 }
 
 class XRelocateSmallAllocator {
@@ -160,7 +160,7 @@ public:
 
   XPage* alloc_target_page(XForwarding* forwarding, XPage* target) {
     XPage* const page = alloc_page(forwarding);
-    if (page == NULL) {
+    if (page == nullptr) {
       Atomic::inc(&_in_place_count);
     }
 
@@ -182,7 +182,7 @@ public:
   }
 
   uintptr_t alloc_object(XPage* page, size_t size) const {
-    return (page != NULL) ? page->alloc_object(size) : 0;
+    return (page != nullptr) ? page->alloc_object(size) : 0;
   }
 
   void undo_alloc_object(XPage* page, uintptr_t addr, size_t size) const {
@@ -204,7 +204,7 @@ private:
 public:
   XRelocateMediumAllocator() :
       _lock(),
-      _shared(NULL),
+      _shared(nullptr),
       _in_place(false),
       _in_place_count(0) {}
 
@@ -228,7 +228,7 @@ public:
     // a new page.
     if (_shared == target) {
       _shared = alloc_page(forwarding);
-      if (_shared == NULL) {
+      if (_shared == nullptr) {
         Atomic::inc(&_in_place_count);
         _in_place = true;
       }
@@ -241,8 +241,8 @@ public:
     XLocker<XConditionLock> locker(&_lock);
 
     assert(_in_place, "Invalid state");
-    assert(_shared == NULL, "Invalid state");
-    assert(page != NULL, "Invalid page");
+    assert(_shared == nullptr, "Invalid state");
+    assert(page != nullptr, "Invalid page");
 
     _shared = page;
     _in_place = false;
@@ -259,7 +259,7 @@ public:
   }
 
   uintptr_t alloc_object(XPage* page, size_t size) const {
-    return (page != NULL) ? page->alloc_object_atomic(size) : 0;
+    return (page != nullptr) ? page->alloc_object_atomic(size) : 0;
   }
 
   void undo_alloc_object(XPage* page, uintptr_t addr, size_t size) const {
@@ -321,7 +321,7 @@ private:
       // relocated as the new target, which will cause it to be relocated
       // in-place.
       _target = _allocator->alloc_target_page(_forwarding, _target);
-      if (_target != NULL) {
+      if (_target != nullptr) {
         continue;
       }
 
@@ -337,8 +337,8 @@ private:
 public:
   XRelocateClosure(Allocator* allocator) :
       _allocator(allocator),
-      _forwarding(NULL),
-      _target(NULL) {}
+      _forwarding(nullptr),
+      _target(nullptr) {}
 
   ~XRelocateClosure() {
     _allocator->free_target_page(_target);
