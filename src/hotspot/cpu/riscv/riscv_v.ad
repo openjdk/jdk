@@ -4236,6 +4236,9 @@ instruct vmask_truecount(iRegINoSp dst, vRegMask src) %{
 
 // first true
 
+// Return the index of the first mask lane that is set, or vector length if none of
+// them are set.
+
 instruct vmask_firsttrue(iRegINoSp dst, vRegMask src, vRegMask tmp) %{
   match(Set dst (VectorMaskFirstTrue src));
   effect(TEMP tmp);
