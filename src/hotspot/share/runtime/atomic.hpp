@@ -168,7 +168,7 @@ public:
   //
   // Requirements:
   // - T is an integral type
-  // - sizeof(T) == sizeof(int) || sizeof(T) == sizeof(void*)
+  // - sizeof(T) == 1 || sizeof(T) == sizeof(int) || sizeof(T) == sizeof(void*)
 
   // Performs atomic bitwise-and of *dest and bits, storing the result in
   // *dest.  Returns the prior value of *dest.  That is, atomically performs

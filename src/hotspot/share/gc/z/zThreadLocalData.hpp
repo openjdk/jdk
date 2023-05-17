@@ -45,8 +45,8 @@ private:
   ZMarkThreadLocalStacks _mark_stacks[2];
   zaddress_unsafe*       _invisible_root;
 
-  ZThreadLocalData() :
-      _load_good_mask(0),
+  ZThreadLocalData()
+    : _load_good_mask(0),
       _load_bad_mask(0),
       _mark_bad_mask(0),
       _store_good_mask(0),

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * The Universal Permissive License (UPL), Version 1.0
@@ -219,8 +219,6 @@ static void* decode(struct hsdis_app_data* app_data, const char* options) {
 const decode_func_vtype decode_func_virtual_address = &decode_instructions_virtual;
 const decode_func_stype decode_func_address = &decode_instructions;
 
-#define remaining_buflen(buf, bufsize, p) ((bufsize) - ((p) - (buf)))
-
 static const char* format_insn_close(const char* close,
                                      disassemble_info* dinfo,
                                      char* buf, size_t bufsize) {
@@ -246,9 +244,9 @@ static const char* format_insn_close(const char* close,
 
   strcpy(buf, close);
   char* p = buf;
-  if (type)    snprintf(p += strlen(p), remaining_buflen(buf, bufsize, p), " type='%s'", type);
-  if (dsize)   snprintf(p += strlen(p), remaining_buflen(buf, bufsize, p), " dsize='%d'", dsize);
-  if (delays)  snprintf(p += strlen(p), remaining_buflen(buf, bufsize, p), " delay='%d'", delays);
+  if (type)    sprintf(p += strlen(p), " type='%s'", type);
+  if (dsize)   sprintf(p += strlen(p), " dsize='%d'", dsize);
+  if (delays)  sprintf(p += strlen(p), " delay='%d'", delays);
   return buf;
 }
 

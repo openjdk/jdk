@@ -215,12 +215,12 @@ uintptr_t XBarrier::mark_barrier_on_finalizable_oop_slow_path(uintptr_t addr) {
 //
 oop XBarrier::load_barrier_on_oop_field(volatile narrowOop* p) {
   ShouldNotReachHere();
-  return NULL;
+  return nullptr;
 }
 
 oop XBarrier::load_barrier_on_oop_field_preloaded(volatile narrowOop* p, oop o) {
   ShouldNotReachHere();
-  return NULL;
+  return nullptr;
 }
 
 void XBarrier::load_barrier_on_oop_array(volatile narrowOop* p, size_t length) {
@@ -229,12 +229,12 @@ void XBarrier::load_barrier_on_oop_array(volatile narrowOop* p, size_t length) {
 
 oop XBarrier::load_barrier_on_weak_oop_field_preloaded(volatile narrowOop* p, oop o) {
   ShouldNotReachHere();
-  return NULL;
+  return nullptr;
 }
 
 oop XBarrier::load_barrier_on_phantom_oop_field_preloaded(volatile narrowOop* p, oop o) {
   ShouldNotReachHere();
-  return NULL;
+  return nullptr;
 }
 
 oop XBarrier::weak_load_barrier_on_oop_field_preloaded(volatile narrowOop* p, oop o) {
@@ -244,19 +244,19 @@ oop XBarrier::weak_load_barrier_on_oop_field_preloaded(volatile narrowOop* p, oo
 
 oop XBarrier::weak_load_barrier_on_weak_oop_field_preloaded(volatile narrowOop* p, oop o) {
   ShouldNotReachHere();
-  return NULL;
+  return nullptr;
 }
 
 oop XBarrier::weak_load_barrier_on_phantom_oop_field_preloaded(volatile narrowOop* p, oop o) {
   ShouldNotReachHere();
-  return NULL;
+  return nullptr;
 }
 
 #ifdef ASSERT
 
 // ON_WEAK barriers should only ever be applied to j.l.r.Reference.referents.
 void XBarrier::verify_on_weak(volatile oop* referent_addr) {
-  if (referent_addr != NULL) {
+  if (referent_addr != nullptr) {
     uintptr_t base = (uintptr_t)referent_addr - java_lang_ref_Reference::referent_offset();
     oop obj = cast_to_oop(base);
     assert(oopDesc::is_oop(obj), "Verification failed for: ref " PTR_FORMAT " obj: " PTR_FORMAT, (uintptr_t)referent_addr, base);
