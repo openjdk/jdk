@@ -250,11 +250,7 @@ private:
   G1SurvRateGroup* _surv_rate_group;
   int  _age_index;
 
-  // Cached attributes used in the collection set policy information
-
-  // The calculated GC efficiency of the region.
-  double _gc_efficiency;
-
+  // NUMA node.
   uint _node_index;
 
   void report_region_type_change(G1HeapRegionTraceType::Type to);
@@ -341,9 +337,11 @@ public:
   // since it will also be reclaimed if we collect the region.
   size_t reclaimable_bytes() {
     size_t known_live_bytes = live_bytes();
-    assert(known_live_bytes <= capacity(), "sanity");
+    assert(known_live_bytes <= capacity(), "sanity %u %zu %zu %zu", hrm_index(), known_live_bytes, used(), garbage_bytes());
     return capacity() - known_live_bytes;
   }
+
+  inline bool is_collection_set_candidate() const;
 
   // Get the start of the unmarked area in this region.
   HeapWord* top_at_mark_start() const;
@@ -378,7 +376,7 @@ public:
   // This set only includes old regions - humongous regions only
   // contain a single object which is either dead or live, and young regions are never even
   // considered during concurrent scrub.
-  bool needs_scrubbing() const { return is_old(); }
+  bool needs_scrubbing() const;
   // Same question as above, during full gc. Full gc needs to scrub any region that
   // might be skipped for compaction. This includes young generation regions as the
   // region relabeling to old happens later than scrubbing.
@@ -439,6 +437,8 @@ public:
   }
 
   inline bool in_collection_set() const;
+
+  inline const char* collection_set_candidate_short_type_str() const;
 
   void prepare_remset_for_scan();
 
@@ -501,8 +501,7 @@ public:
   void set_index_in_opt_cset(uint index) { _index_in_opt_cset = index; }
   void clear_index_in_opt_cset() { _index_in_opt_cset = InvalidCSetIndex; }
 
-  void calc_gc_efficiency(void);
-  double gc_efficiency() const { return _gc_efficiency;}
+  double calc_gc_efficiency();
 
   uint  young_index_in_cset() const { return _young_index_in_cset; }
   void clear_young_index_in_cset() { _young_index_in_cset = 0; }
