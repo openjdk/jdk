@@ -103,10 +103,11 @@ public class PopFrameTest {
         } else {
             testTaskThread = Thread.ofPlatform().name("TestTaskThread").start(testTask);
         }
-        testTask.ensureStarted();
 
-        log("\nMain #A.1: unsuspended");
         {
+            TestTask.ensureAtPointA();
+
+            log("\nMain #A.1: unsuspended");
             errCode = popFrame(testTaskThread);
             if (errCode != THREAD_NOT_SUSPENDED) {
                 throwFailed("Main #A.1: expected THREAD_NOT_SUSPENDED instead of: " + errCode);
@@ -123,8 +124,8 @@ public class PopFrameTest {
                 log("Main #A.2: got expected JVMTI_ERROR_NONE");
             }
             resumeThread(testTaskThread);
-            testTask.clearDoLoop();
-            testTask.sleep(5);
+            TestTask.clearDoLoop();
+            TestTask.sleep(5);
         }
 
         log("\nMain #B: method B() must be blocked in a breakpoint event handler");
@@ -151,14 +152,14 @@ public class PopFrameTest {
             log("\nMain #B.3: unsuspended, call PopFrame on own thread");
             ensureAtBreakpoint();
             notifyAtBreakpoint();
-            testTask.sleep(5);
+            TestTask.sleep(5);
         }
 
         log("\nMain #C: method C() calls PopFrame on its own thread");
         {
             // PopFrame is called from the test task (own thread) and expected to succeed.
             // No suspension of the test task thread is required or can be done in this case.
-            testTask.ensureFinished();
+            TestTask.ensureFinished();
         }
 
         try {
@@ -170,13 +171,13 @@ public class PopFrameTest {
 
 
     static class TestTask implements Runnable {
-        static private volatile boolean doLoop = true;
         static void log(String str) { System.out.println(str); }
 
-        private volatile boolean started = false;
-        private volatile boolean finished = false;
+        static volatile boolean doLoop = true;
+        static volatile boolean atPointA = false;
+        static volatile boolean finished = false;
 
-        static public void sleep(long millis) {
+        static void sleep(long millis) {
             try {
                 Thread.sleep(millis);
             } catch (InterruptedException e) {
@@ -185,26 +186,25 @@ public class PopFrameTest {
         }
 
         // Ensure thread is ready.
-        public void ensureStarted() {
-            while (!started) {
+        static void ensureAtPointA() {
+            while (!atPointA) {
                 sleep(1);
             }
         }
 
         // Ensure thread is finished.
-        public void ensureFinished() {
+        static void ensureFinished() {
             while (!finished) {
                 sleep(1);
             }
         }
 
-        static public void clearDoLoop() {
+        static void clearDoLoop() {
             doLoop = false;
         }
 
         public void run() {
             log("TestTask.run: started");
-            started = true;
 
             A();
             sleep(1); // to cause yield
@@ -225,6 +225,7 @@ public class PopFrameTest {
         //  - when suspended: JVMTI_ERROR_NONE is expected
         static void A() {
             log("TestTask.A: started");
+            atPointA = true;
             while (doLoop) {
             }
             log("TestTask.A: finished");
