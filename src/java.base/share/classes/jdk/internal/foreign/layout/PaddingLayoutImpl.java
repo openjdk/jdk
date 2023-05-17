@@ -58,8 +58,8 @@ public final class PaddingLayoutImpl extends AbstractLayout<PaddingLayoutImpl> i
     }
 
     @Override
-    PaddingLayoutImpl dup(long bitAlignment, Optional<String> name) {
-        return new PaddingLayoutImpl(byteSize(), bitAlignment, name);
+    PaddingLayoutImpl dup(long byteAlignment, Optional<String> name) {
+        return new PaddingLayoutImpl(byteSize(), byteAlignment, name);
     }
 
     @Override

@@ -89,11 +89,6 @@ public final class Utils {
         return ms.asSlice(alignUp(offset, alignment) - offset);
     }
 
-    public static long bitsToBytes(long bits) {
-        assert Utils.isAligned(bits, 8);
-        return bits / Byte.SIZE;
-    }
-
     public static VarHandle makeSegmentViewVarHandle(ValueLayout layout) {
         final class VarHandleCache {
             private static final Map<ValueLayout, VarHandle> HANDLE_MAP = new ConcurrentHashMap<>();

@@ -50,8 +50,8 @@ public sealed abstract class AbstractGroupLayout<L extends AbstractGroupLayout<L
     private final List<MemoryLayout> elements;
     final long minByteAlignment;
 
-    AbstractGroupLayout(Kind kind, List<MemoryLayout> elements, long bitSize, long bitAlignment, long minByteAlignment, Optional<String> name) {
-        super(bitSize, bitAlignment, name); // Subclassing creates toctou problems here
+    AbstractGroupLayout(Kind kind, List<MemoryLayout> elements, long byteSize, long byteAlignment, long minByteAlignment, Optional<String> name) {
+        super(byteSize, byteAlignment, name); // Subclassing creates toctou problems here
         this.kind = kind;
         this.elements = List.copyOf(elements);
         this.minByteAlignment = minByteAlignment;

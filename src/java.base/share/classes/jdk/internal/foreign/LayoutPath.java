@@ -232,7 +232,7 @@ public class LayoutPath {
     }
 
     public MethodHandle sliceHandle() {
-        MethodHandle offsetHandle = offsetHandle(); // bit offset
+        MethodHandle offsetHandle = offsetHandle(); // byte offset
 
         MethodHandle sliceHandle = MH_SLICE; // (MS, long, long) -> MS
         sliceHandle = MethodHandles.insertArguments(sliceHandle, 2, layout.byteSize()); // (MS, long) -> MS

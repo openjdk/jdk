@@ -202,7 +202,7 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
 
     private static void checkHasNaturalAlignment(MemoryLayout layout) {
         if (!((AbstractLayout<?>) layout).hasNaturalAlignment()) {
-            throw new IllegalArgumentException("Layout bit alignment must be natural alignment: " + layout);
+            throw new IllegalArgumentException("Layout alignment must be natural alignment: " + layout);
         }
     }
 

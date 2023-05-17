@@ -46,7 +46,7 @@ import java.util.Optional;
 
 /**
  * A value layout. A value layout is used to model the memory layout associated with values of basic data types, such as <em>integral</em> types
- * (either signed or unsigned) and <em>floating-point</em> types. Each value layout has a size, an alignment (in bits),
+ * (either signed or unsigned) and <em>floating-point</em> types. Each value layout has a size, an alignment (expressed in bytes),
  * a {@linkplain ByteOrder byte order}, and a <em>carrier</em>, that is, the Java type that should be used when
  * {@linkplain MemorySegment#get(ValueLayout.OfInt, long) accessing} a memory region using the value layout.
  * <p>
@@ -157,7 +157,7 @@ public final class ValueLayouts {
             assert !carrier.isPrimitive() ||
                     // Primitive class byteSize must always correspond
                     byteSize == (carrier == boolean.class ? 1 :
-                            Utils.bitsToBytes(Wrapper.forPrimitiveType(carrier).bitWidth()));
+                            Utils.byteWidthOfPrimitive(carrier));
         }
 
         static boolean isValidCarrier(Class<?> carrier) {

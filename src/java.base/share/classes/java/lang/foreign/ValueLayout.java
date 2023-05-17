@@ -37,7 +37,7 @@ import jdk.internal.javac.PreviewFeature;
  * <em>integral</em> values (either signed or unsigned), <em>floating-point</em> values and
  * <em>address</em> values.
  * <p>
- * Each value layout has a size, an alignment (in bits),
+ * Each value layout has a size, an alignment (both expressed in bytes),
  * a {@linkplain ByteOrder byte order}, and a <em>carrier</em>, that is, the Java type that should be used when
  * {@linkplain MemorySegment#get(OfInt, long) accessing} a region of memory using the value layout.
  * <p>
@@ -129,7 +129,7 @@ public sealed interface ValueLayout extends MemoryLayout permits
      * featuring {@code shape.length + 1}
      * {@code long} coordinates.
      * @throws IllegalArgumentException if {@code shape[i] < 0}, for at least one index {@code i}.
-     * @throws UnsupportedOperationException if {@code bitAlignment() > bitSize()}.
+     * @throws UnsupportedOperationException if {@code byteAlignment() > byteSize()}.
      * @see MethodHandles#memorySegmentViewVarHandle
      * @see MemoryLayout#varHandle(PathElement...)
      * @see SequenceLayout
