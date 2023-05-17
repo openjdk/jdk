@@ -186,7 +186,7 @@ AC_DEFUN([FLAGS_SETUP_WARNINGS],
     gcc)
       DISABLE_WARNING_PREFIX="-Wno-"
       BUILD_CC_DISABLE_WARNING_PREFIX="-Wno-"
-      CFLAGS_WARNINGS_ARE_ERRORS=""
+      CFLAGS_WARNINGS_ARE_ERRORS="-Werror"
 
       # Additional warnings that are not activated by -Wall and -Wextra
       WARNINGS_ENABLE_ADDITIONAL="-Wpointer-arith -Wsign-compare \
